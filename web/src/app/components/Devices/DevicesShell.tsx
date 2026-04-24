@@ -1,6 +1,5 @@
 import { Outlet, useLocation, useParams } from 'react-router-dom'
 import { DeviceContextBanner } from '../DeviceContext'
-import { ShellWindowTitleStrip } from '../shared/ShellWindowTitleStrip'
 import { EmptyState } from '../shared/EmptyState'
 import {
   getDeviceEntry,
@@ -40,7 +39,6 @@ export function DevicesShell() {
   if (!entry) {
     return (
       <>
-        <ShellWindowTitleStrip />
         <div className="devices-shell">
           <div className="devices-shell__main">
             {deviceId ? (
@@ -62,7 +60,6 @@ export function DevicesShell() {
 
   return (
     <>
-      <ShellWindowTitleStrip />
       <div className="devices-shell">
         <div className="devices-shell__main">
           {entry.deviceContextKey ? (

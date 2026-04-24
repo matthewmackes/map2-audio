@@ -4,7 +4,7 @@ import { useEffect } from 'react'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { InlineNotification, Layer, Select, SelectItem, Tag, Tile } from '@carbon/react'
 
-import { PageHeader } from '../components/PageHeader'
+import { useSetShellWindow } from '../layout/useSetShellWindow'
 import { EmptyState } from '../components/shared/EmptyState'
 import { useToasts } from '../components/Toasts'
 import launchControlApi, { type LaunchControlProjectionControl } from '../../map2/clients/launchControl'
@@ -85,21 +85,19 @@ export function LaunchControlPage() {
     })
   }, [daemonStatus?.notification, pushToast])
 
+  useSetShellWindow({
+    title: 'Novation Launch Control',
+    subtitle: 'Dedicated Carbon workspace for Launch Control / XL connection posture, current snapshot mappings, and per-button LED override editing.',
+    kicker: 'Platform / Launch Control',
+    actions: [
+      { id: 'connected', label: state?.connected ? 'Connected' : 'Disconnected', status: state?.connected ? 'ok' : 'error', disabled: true },
+      ...(daemonStatus ? [{ id: 'daemon', label: daemonStatus.state.replace('_', ' '), status: (daemonTagType(daemonStatus.state) === 'green' ? 'ok' : daemonTagType(daemonStatus.state) === 'red' ? 'error' : 'warn') as 'ok' | 'warn' | 'error' | 'info', disabled: true }] : []),
+    ],
+  }, [state?.connected, daemonStatus])
+
+
   return (
     <div className="launch-control-page">
-      <PageHeader
-        title="Novation Launch Control"
-        subtitle="Dedicated Carbon workspace for Launch Control / XL connection posture, current snapshot mappings, and per-button LED override editing."
-        actions={(
-          <div className="launch-control-page__tag-row">
-            <Tag type={connectionTagType(Boolean(state?.connected))}>{state?.connected ? 'Connected' : 'Disconnected'}</Tag>
-            <Tag type="cool-gray">{state?.matched_port_count ?? 0} ports</Tag>
-            <Tag type="blue">{templateCount(state?.template_state_by_port)} templates</Tag>
-            {daemonStatus ? <Tag type={daemonTagType(daemonStatus.state)}>{daemonStatus.state.replace('_', ' ')}</Tag> : null}
-          </div>
-        )}
-      />
-
       {(statusQuery.isError || projectionQuery.isError) ? (
         <InlineNotification
           kind="error"

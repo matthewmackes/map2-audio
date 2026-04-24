@@ -74,7 +74,7 @@ import {
   Waveform,
 } from '@carbon/icons-react'
 import { LegacyButton } from '../../shared/LegacyButton'
-import { PageHeader } from '../../PageHeader'
+import { useSetShellWindow } from '../../../layout/useSetShellWindow'
 import { StatCard } from '../../StatCard'
 import { NumberInput } from '../../ParameterControl'
 import { useToasts } from '../../Toasts'
@@ -993,28 +993,25 @@ export function LCDView({ forcedSection, hideChrome }: LCDViewProps = {}) {
     { id: 'settings', label: 'Settings', icon: <SettingsAdjust size={16} /> },
   ]
 
+  useSetShellWindow(
+    hideChrome
+      ? {}
+      : {
+          title: 'LCD Management Console',
+          subtitle: 'Unified control center for dual-LCD display hardware, real-time events, alert routing, and system configuration',
+          kicker: 'Platform / Devices / LCD',
+          actions: [
+            { id: 'polling', label: isPolling ? 'Live' : 'Paused', active: isPolling, icon: isPolling ? Pause : Play, onClick: () => setIsPolling((v) => !v) },
+            { id: 'refresh', label: 'Refresh', icon: Renew, onClick: () => queryClient.invalidateQueries({ queryKey: ['lcd'] }) },
+          ],
+        },
+    [hideChrome, isPolling, queryClient],
+  )
+
   return (
     <section className="lcd-page-route">
       <Layer className="lcd-page-route__surface">
       <div className="lcd-page">
-      {!hideChrome && (
-        <PageHeader
-          title="LCD Management Console"
-          subtitle="Unified control center for dual-LCD display hardware, real-time events, alert routing, and system configuration"
-          icon={<MapRackDeviceIcon size={32} style={{ color: '#22c55e' }} />}
-          actions={
-            <div className="flex" style={{ gap: 8 }}>
-              <LegacyButton variant={isPolling ? 'primary' : 'ghost'} onClick={() => setIsPolling(!isPolling)} title={isPolling ? 'Pause live updates' : 'Resume live updates'}>
-                {isPolling ? <Pause size={16} /> : <Play size={16} />}
-                {isPolling ? 'Live' : 'Paused'}
-              </LegacyButton>
-              <LegacyButton variant="ghost" onClick={() => queryClient.invalidateQueries({ queryKey: ['lcd'] })}>
-                <Renew size={16} /> Refresh
-              </LegacyButton>
-            </div>
-          }
-        />
-      )}
 
       {!hideChrome && (
         <div className="grid four">

@@ -9,7 +9,6 @@ import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { motion, AnimatePresence } from 'framer-motion'
 import { NumberInput } from '../components/ParameterControl'
 import { EmptyState } from '../components/shared/EmptyState'
-import { ShellWindowTitleStrip } from '../components/shared/ShellWindowTitleStrip'
 import styles from './ExpressionPage.module.css'
 
 // ============================================================================
@@ -1321,7 +1320,6 @@ export function ExpressionView({
 export function ExpressionPage() {
   return (
     <>
-      <ShellWindowTitleStrip />
       <ExpressionView />
     </>
   )

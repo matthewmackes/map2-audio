@@ -41,7 +41,6 @@ import { fingerprintSnapshotData } from '../components/SnapshotEditor/snapshotEd
 import type { JuceGridRoutingFlowInfo } from '../components/SnapshotEditor/SnapshotEditorRoutingVisualizer'
 import { EmptyState } from '../components/shared/EmptyState'
 import { LoadingState } from '../components/shared/LoadingState'
-import { ShellWindowTitleStrip } from '../components/shared/ShellWindowTitleStrip'
 import { useToasts } from '../components/Toasts'
 import { useCommittedAudioState, useDesiredAudioState, useObservedAudioState } from '../hooks/useAuthoritativeAudioState'
 import { isSnapshotFlowRoute, usePendingLiveChangesNavigationGuard } from '../hooks/usePendingLiveChangesNavigationGuard'
@@ -1252,7 +1251,6 @@ export function SnapshotPublishPage() {
   if (!isValidSnapshotId) {
     return (
       <div className="snapshot-publish-page">
-        <ShellWindowTitleStrip />
         <EmptyState
           className="snapshot-publish-page__empty"
           title="Publish snapshot"
@@ -1265,7 +1263,6 @@ export function SnapshotPublishPage() {
   if (loading) {
     return (
       <div className="snapshot-publish-page">
-        <ShellWindowTitleStrip />
         <Tile className="snapshot-publish-page__empty">
           <LoadingState description="Loading publish workspace" />
         </Tile>
@@ -1276,7 +1273,6 @@ export function SnapshotPublishPage() {
   if (snapshotQuery.isError || readinessQuery.isError || !snapshot || !readiness) {
     return (
       <div className="snapshot-publish-page">
-        <ShellWindowTitleStrip />
         <EmptyState
           className="snapshot-publish-page__empty"
           title="Publish snapshot"
@@ -1295,7 +1291,6 @@ export function SnapshotPublishPage() {
 
   return (
     <div className="snapshot-publish-page">
-      <ShellWindowTitleStrip />
       <Grid condensed className="snapshot-publish-page__grid">
         <Column sm={4} md={8} lg={16}>
           <Layer className="snapshot-publish-page__hero">

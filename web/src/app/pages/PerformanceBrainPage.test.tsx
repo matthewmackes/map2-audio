@@ -26,15 +26,17 @@ const mockGetFactoryPacks = jest.fn()
 const mockGetGeneratedPacks = jest.fn()
 const mockUpdateDrumState = jest.fn()
 
-jest.mock('@/app/components/PageHeader', () => ({
-  PageHeader: ({ title, subtitle, actions }: { title: string; subtitle?: string; actions?: React.ReactNode }) => (
-    <header>
-      <h1>{title}</h1>
-      {subtitle ? <p>{subtitle}</p> : null}
-      {actions}
-    </header>
-  ),
+jest.mock('@/app/layout/useSetShellWindow', () => ({
+  useSetShellWindow: () => undefined,
 }))
+
+jest.mock('@/app/pages/brainViews/BrainOverviewShell', () => {
+  const React = require('react')
+  return {
+    BrainOverviewShell: () =>
+      React.createElement('div', { 'data-testid': 'brain-overview-shell' }, 'BrainOverviewShell'),
+  }
+})
 
 jest.mock('@carbon/react', () => {
   const React = require('react')
@@ -439,8 +441,8 @@ describe('PerformanceBrainPage', () => {
     expect(mockUpdateState).not.toHaveBeenCalled()
   })
 
-  it('runs the drum importer from the overview section', async () => {
-    renderPage('/brain')
+  it('runs the drum importer from the library section', async () => {
+    renderPage('/brain?section=library')
 
     await waitFor(() => expect(screen.getByText('Import Drum Machine')).toBeInTheDocument())
 
@@ -449,13 +451,10 @@ describe('PerformanceBrainPage', () => {
     await waitFor(() => expect(mockImportFromDrums).toHaveBeenCalled())
   })
 
-  it('renders the controller qualification strip on the overview section', async () => {
+  it('renders the BrainOverviewShell on the overview section', async () => {
     renderPage('/brain?section=overview')
 
-    await waitFor(() => expect(screen.getAllByText('4/4 surfaces ready · Tier A locked').length).toBeGreaterThan(0))
-    expect(screen.getAllByText('1 zones · 1 melodic slots · poly 48').length).toBeGreaterThan(0)
-    expect(screen.getAllByText('1 profiles · 8 pads · 2 trigger notes').length).toBeGreaterThan(0)
-    expect(screen.getByText('Authority IDs are bound to this scoped Brain instance.')).toBeInTheDocument()
+    await waitFor(() => expect(screen.getByTestId('brain-overview-shell')).toBeInTheDocument())
   })
 
   it('shows scoped qualification details on the inputs and diagnostics sections', async () => {
@@ -499,7 +498,9 @@ describe('PerformanceBrainPage', () => {
 
     await waitFor(() => expect(screen.getByText('Scoped controller qualification')).toBeInTheDocument())
     expect(screen.getAllByText('2/4 surfaces ready · Tier A drift').length).toBeGreaterThan(0)
-    expect(screen.getAllByText('instance-42__position-9').length).toBeGreaterThan(0)
+    expect(
+      screen.getByText((_content, element) => element?.textContent === 'Scope key · instance-42__position-9'),
+    ).toBeInTheDocument()
 
     fireEvent.click(screen.getByRole('button', { name: /^Diagnostics/ }))
 

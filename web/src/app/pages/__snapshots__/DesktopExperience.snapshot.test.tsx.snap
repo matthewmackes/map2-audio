@@ -3,7 +3,7 @@
 exports[`Desktop experience visual snapshots matches the boot splash shell 1`] = `
 <div
   class="app-shell app-shell--windowed app-shell--landing"
-  style="--window-shell-accent: var(--cds-support-warning); --global-tree-width: 16rem; --global-tree-banner-left-offset: 16rem;"
+  style="--window-shell-accent: var(--cds-support-warning); --global-tree-width: 16rem; --global-tree-banner-left-offset: 16rem; --ctx-h: 0px; --ws-h: 0px;"
 >
   <div
     class="app-shell__frame"
@@ -5198,7 +5198,7 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
 exports[`Desktop experience visual snapshots matches the desktop shell after boot completes 1`] = `
 <div
   class="app-shell app-shell--windowed app-shell--landing"
-  style="--window-shell-accent: var(--cds-support-warning); --global-tree-width: 16rem; --global-tree-banner-left-offset: 16rem;"
+  style="--window-shell-accent: var(--cds-support-warning); --global-tree-width: 16rem; --global-tree-banner-left-offset: 16rem; --ctx-h: 0px; --ws-h: 0px;"
 >
   <div
     class="app-shell__frame"
@@ -10393,8 +10393,128 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
 exports[`Desktop experience visual snapshots matches the global navigation shell 1`] = `
 <div
   class="app-shell app-shell--themed-workspace app-shell--windowed"
-  style="--window-shell-accent: #be95ff; --global-tree-width: 16rem; --global-tree-banner-left-offset: 16rem;"
+  style="--window-shell-accent: #be95ff; --global-tree-width: 16rem; --global-tree-banner-left-offset: 16rem; --ctx-h: 32px; --ws-h: 40px;"
 >
+  <div
+    aria-hidden="false"
+    aria-label="Workspace context"
+    class="shell-ctx"
+    role="region"
+  >
+    <div
+      class="shell-ctx__trail"
+    >
+      <span
+        aria-hidden="true"
+        class="shell-ctx__glyph"
+      >
+        ~
+      </span>
+      <span
+        style="display: inline-flex; align-items: center; gap: 8px;"
+      >
+        <span
+          class="shell-ctx__crumb"
+        >
+          Workspace surface
+        </span>
+        <span
+          class="shell-ctx__sep"
+        >
+          /
+        </span>
+      </span>
+      <span
+        style="display: inline-flex; align-items: center; gap: 8px;"
+      >
+        <span
+          class="shell-ctx__node"
+        >
+          Artifacts
+        </span>
+      </span>
+      <span
+        class="shell-ctx__query"
+      >
+        workspace / artifacts
+      </span>
+    </div>
+    <button
+      aria-label="Dismiss context bar"
+      class="shell-ctx__close"
+      title="Dismiss"
+      type="button"
+    >
+      ×
+    </button>
+  </div>
+  <div
+    aria-label="Workspace toolbar"
+    class="shell-ws"
+    role="toolbar"
+  >
+    <div
+      class="shell-ws__side"
+    >
+      <svg
+        aria-hidden="true"
+        class="shell-ws__side-glyph"
+        viewBox="0 0 24 24"
+      >
+        <path
+          d="M4 6h16M4 12h16M4 18h10"
+        />
+      </svg>
+      <span
+        class="shell-ws__side-label"
+      >
+        Global Navigation
+      </span>
+      <button
+        aria-label="Collapse global navigation"
+        class="shell-ws__side-toggle"
+        title="Collapse"
+        type="button"
+      >
+        ‹
+      </button>
+    </div>
+    <div
+      class="shell-ws__main"
+    >
+      <span
+        aria-hidden="true"
+        class="shell-ws__main-dot"
+      />
+      <span
+        class="shell-ws__main-label"
+      >
+        Platform Workspace
+      </span>
+      <span
+        class="shell-ws__main-sep"
+      >
+        ·
+      </span>
+      <strong
+        class="shell-ws__main-name"
+      >
+        Audio Artifacts
+      </strong>
+    </div>
+    <div
+      class="shell-ws__actions"
+    >
+      <button
+        aria-label="Close Audio Artifacts"
+        class="shell-ws__btn shell-ws__btn--close"
+        title="Close Audio Artifacts"
+        type="button"
+      >
+        ×
+      </button>
+    </div>
+  </div>
   <div
     class="app-shell__frame"
   >
@@ -14093,6 +14213,25 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
     <main
       class="app-content app-content--with-global-tree"
     >
+      <header
+        class="shell-kicker"
+      >
+        <div
+          class="shell-kicker__eyebrow"
+        >
+          Platform / Artifacts
+        </div>
+        <h1
+          class="shell-kicker__title"
+        >
+          Audio Artifacts
+        </h1>
+        <p
+          class="shell-kicker__subtitle"
+        >
+          Browse and manage all audio artifacts — LV2 plugins, NAM models, cabinet and reverb IRs, SoundFonts, and native JUCE processors — in a unified node-aware library.
+        </p>
+      </header>
       <div
         data-testid="artifacts-page"
       >

@@ -1,5 +1,4 @@
-import { Headphones } from '@carbon/icons-react'
-import { PageHeader } from '../../PageHeader'
+import { useSetShellWindow } from '../../../layout/useSetShellWindow'
 import { EmptyState } from '../../shared/EmptyState'
 import { LoadingState } from '../../shared/LoadingState'
 import { DeviceContextBanner } from '../../DeviceContext'
@@ -16,18 +15,16 @@ export function HoToneJoGGView() {
   const remoteSelected = selectedNodeId !== localNodeId
   const apiNodeId = remoteSelected ? selectedNodeId : null
 
+  useSetShellWindow({
+    title: 'HoTone JoGG',
+    subtitle: remoteSelected
+      ? `USB Audio Interface Configuration & Monitoring · Viewing ${selectedNode?.hostname ?? selectedNodeId}`
+      : 'USB Audio Interface Configuration & Monitoring',
+    kicker: 'Platform / Devices / HoTone JoGG',
+  }, [remoteSelected, selectedNode?.hostname, selectedNodeId])
+
   return (
     <div className="stack">
-      <PageHeader
-        title="HoTone JoGG"
-        subtitle={
-          remoteSelected
-            ? `USB Audio Interface Configuration & Monitoring · Viewing ${selectedNode?.hostname ?? selectedNodeId}`
-            : 'USB Audio Interface Configuration & Monitoring'
-        }
-        icon={<Headphones size={32} style={{ color: 'var(--interactive)' }} />}
-      />
-
       <DeviceContextBanner deviceName="HoTone JoGG" deviceKey="hotone-jogg" />
 
       {deviceState === 'loading' ? (

@@ -9,14 +9,11 @@ const mockRefresh = jest.fn()
 const mockUseCluster = jest.fn()
 const mockUseHostMachinePageData = jest.fn()
 
-jest.mock('../components/PageHeader', () => ({
-  PageHeader: ({ title, subtitle, icon }: { title: string; subtitle: string; icon?: React.ReactNode }) => (
-    <div data-testid="page-header">
-      {icon}
-      <h1>{title}</h1>
-      <p>{subtitle}</p>
-    </div>
-  ),
+const shellWindowPatches: Array<{ title?: string; subtitle?: string; kicker?: string }> = []
+jest.mock('../layout/useSetShellWindow', () => ({
+  useSetShellWindow: (patch: unknown) => {
+    shellWindowPatches.push(patch as never)
+  },
 }))
 
 jest.mock('../components/Toasts', () => ({
@@ -122,6 +119,7 @@ describe('HostMachinePage', () => {
     mockRefresh.mockReset()
     mockUseCluster.mockReset()
     mockUseHostMachinePageData.mockReset()
+    shellWindowPatches.length = 0
   })
 
   it('renders the loading shell', () => {
@@ -192,8 +190,9 @@ describe('HostMachinePage', () => {
     render(<HostMachinePage />)
 
     expect(document.querySelector('.hm-page--cluster')).toBeTruthy()
-    expect(screen.getByRole('heading', { name: /host machine · all nodes/i })).toBeInTheDocument()
-    expect(screen.getByText(/cluster-wide hardware comparison/i)).toBeInTheDocument()
+    const lastPatch = shellWindowPatches[shellWindowPatches.length - 1]
+    expect(lastPatch?.title).toMatch(/host machine · all nodes/i)
+    expect(lastPatch?.subtitle).toMatch(/cluster-wide hardware comparison/i)
     expect(screen.getByText(/none reported/i)).toBeInTheDocument()
   })
 

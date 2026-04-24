@@ -4,7 +4,7 @@ import { useEffect } from 'react'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { InlineNotification, Layer, Select, SelectItem, Tag, TextInput, Tile } from '@carbon/react'
 
-import { PageHeader } from '../components/PageHeader'
+import { useSetShellWindow } from '../layout/useSetShellWindow'
 import { EmptyState } from '../components/shared/EmptyState'
 import { useToasts } from '../components/Toasts'
 import midiCommanderApi, { type MidiCommanderProjectionControl } from '../../map2/clients/midiCommander'
@@ -70,20 +70,19 @@ export function MidiCommanderPage() {
     })
   }, [daemonStatus?.notification, pushToast])
 
+  useSetShellWindow({
+    title: 'MeloAudio MIDI Commander',
+    subtitle: 'Dedicated Carbon workspace for per-snapshot button and expression assignments, manual setup guidance, and reconnect posture.',
+    kicker: 'Platform / MIDI Commander',
+    actions: [
+      { id: 'connected', label: state?.connected ? 'Connected' : 'Disconnected', status: state?.connected ? 'ok' : 'error', disabled: true },
+      ...(daemonStatus ? [{ id: 'daemon', label: daemonStatus.state.replace('_', ' '), status: (daemonTagType(daemonStatus.state) === 'green' ? 'ok' : daemonTagType(daemonStatus.state) === 'red' ? 'error' : 'warn') as 'ok' | 'warn' | 'error' | 'info', disabled: true }] : []),
+    ],
+  }, [state?.connected, daemonStatus])
+
+
   return (
     <div className="midi-commander-page">
-      <PageHeader
-        title="MeloAudio MIDI Commander"
-        subtitle="Dedicated Carbon workspace for per-snapshot button and expression assignments, manual setup guidance, and reconnect posture."
-        actions={(
-          <div className="midi-commander-page__tag-row">
-            <Tag type={statusTagType(Boolean(state?.connected))}>{state?.connected ? 'Connected' : 'Disconnected'}</Tag>
-            <Tag type="cool-gray">{state?.matched_port_count ?? 0} ports</Tag>
-            {daemonStatus ? <Tag type={daemonTagType(daemonStatus.state)}>{daemonStatus.state.replace('_', ' ')}</Tag> : null}
-          </div>
-        )}
-      />
-
       {(statusQuery.isError || projectionQuery.isError) ? (
         <InlineNotification
           kind="error"

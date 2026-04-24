@@ -1,16 +1,29 @@
 import { createContext } from 'react'
-import type { ComponentType } from 'react'
+import type { ComponentType, ReactNode } from 'react'
+
+export type ShellActionStatus = 'ok' | 'warn' | 'error' | 'info'
+
+export interface ShellActionSlot {
+  id: string
+  label: string
+  icon?: ComponentType<{ size?: number; className?: string }>
+  onClick?: () => void
+  active?: boolean
+  status?: ShellActionStatus
+  disabled?: boolean
+  title?: string
+}
 
 export interface ShellWindowContextValue {
-  /** Display title for the current workspace/page */
   title: string
-  /** Icon component for the current workspace/page */
-  titleIcon: ComponentType<{ width?: number; height?: number; className?: string }>
-  /** Breadcrumb-style route hint (e.g. "midi-hub / connections") */
+  subtitle?: string
+  kicker?: string
+  crumbs?: string[]
+  titleIcon: ComponentType<{ width?: number; height?: number; className?: string; size?: number }>
   routeHint: string
-  /** CSS color string for the workspace accent */
   accentColor: string
-  /** Close handler — navigates back to home */
+  actions?: ShellActionSlot[]
+  lead?: ReactNode
   onClose: () => void
 }
 

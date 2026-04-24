@@ -6,6 +6,15 @@ import { MemoryRouter } from 'react-router-dom'
 
 import { PushSurfacePage } from './PushSurfacePage'
 
+jest.mock('../layout/useSetShellWindow', () => ({
+  useSetShellWindow: jest.fn(),
+}))
+
+function getShellWindowPatches(): Array<{ title?: string; subtitle?: string; actions?: Array<{ id: string; onClick?: () => void; disabled?: boolean; label?: string }> }> {
+  const mocked = jest.requireMock('../layout/useSetShellWindow') as { useSetShellWindow: jest.Mock }
+  return mocked.useSetShellWindow.mock.calls.map((call) => call[0])
+}
+
 jest.mock('../../assets/Abiliton-Push-Render.png', () => 'Abiliton-Push-Render.png')
 
 jest.mock('../../map2/clients/pushSurface', () => ({
@@ -256,7 +265,9 @@ describe('PushSurfacePage', () => {
   it('renders the Push labs editor, quick assignments, and seeded welcome examples', async () => {
     renderPage()
 
-    expect(await screen.findByText('Standalone Push WYSIWYG editor for mappings, welcome routines, and live surface management.')).toBeTruthy()
+    expect(await screen.findByText('Tap Tempo CC')).toBeTruthy()
+    const patches = getShellWindowPatches()
+    expect(patches.some((p) => p.subtitle === 'Standalone Push WYSIWYG editor for mappings, welcome routines, and live surface management.')).toBe(true)
     expect(await screen.findByText('Tap Tempo CC')).toBeTruthy()
     expect(await screen.findByText('Snapshot Program Change')).toBeTruthy()
     expect(await screen.findByText('10 seeded')).toBeTruthy()
@@ -282,7 +293,8 @@ describe('PushSurfacePage', () => {
     expect(await screen.findByText('Apply blue cross')).toBeTruthy()
     expect(screen.getByText('Clear lights')).toBeTruthy()
     expect(screen.getByTestId('labs-step-list')).toBeTruthy()
-    expect(screen.getByRole('button', { name: 'Back to Labs' })).toBeTruthy()
+    const patchesAfterPaint = getShellWindowPatches()
+    expect(patchesAfterPaint.some((p) => (p.actions ?? []).some((a) => a.id === 'back'))).toBe(true)
   })
 
   it('keeps the current surface content visible during reload', async () => {
@@ -298,7 +310,8 @@ describe('PushSurfacePage', () => {
       }),
     )
 
-    fireEvent.click(screen.getByRole('button', { name: 'Reload' }))
+    const reloadAction = getShellWindowPatches().flatMap((p) => p.actions ?? []).find((a) => a.id === 'reload')
+    reloadAction?.onClick?.()
 
     expect(screen.getByText('Tap Tempo CC')).toBeTruthy()
     expect(screen.getByText('Snapshot Program Change')).toBeTruthy()

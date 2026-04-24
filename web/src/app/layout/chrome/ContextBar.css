@@ -1,0 +1,92 @@
+/* T2438 ContextBar — blue route/breadcrumb strip, 32px sticky at top. */
+
+.shell-ctx {
+  position: sticky;
+  top: 0;
+  z-index: 60;
+  height: var(--ctx-h, 32px);
+  background: var(--shell-blue-60);
+  color: #ffffff;
+  display: grid;
+  grid-template-columns: 1fr auto;
+  align-items: center;
+  padding: 0 14px;
+  font-family: var(--shell-f-mono);
+  font-size: 12px;
+  letter-spacing: 0.02em;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+  transition: transform 200ms ease, opacity 200ms ease;
+}
+
+.shell-ctx--hidden {
+  transform: translateY(-100%);
+  opacity: 0;
+  pointer-events: none;
+}
+
+.shell-ctx__trail {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+}
+
+.shell-ctx__glyph {
+  opacity: 0.85;
+  font-size: 13px;
+}
+
+.shell-ctx__crumb {
+  color: rgba(255, 255, 255, 0.78);
+  text-decoration: none;
+  transition: color 120ms ease;
+}
+
+.shell-ctx__crumb:hover {
+  color: #fff;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+
+.shell-ctx__sep {
+  color: rgba(255, 255, 255, 0.55);
+}
+
+.shell-ctx__node {
+  color: #fff;
+  font-weight: 600;
+}
+
+.shell-ctx__query {
+  color: rgba(255, 255, 255, 0.72);
+  margin-left: 4px;
+}
+
+.shell-ctx__query::before {
+  content: '· ';
+  color: rgba(255, 255, 255, 0.5);
+  margin-right: 4px;
+}
+
+.shell-ctx__close {
+  width: 22px;
+  height: 22px;
+  display: inline-grid;
+  place-items: center;
+  background: transparent;
+  border: 0;
+  color: rgba(255, 255, 255, 0.85);
+  cursor: pointer;
+  font-family: var(--shell-f-mono);
+  font-size: 14px;
+  transition: background 120ms ease, color 120ms ease;
+}
+
+.shell-ctx__close:hover,
+.shell-ctx__close:focus-visible {
+  background: rgba(255, 255, 255, 0.15);
+  color: #fff;
+  outline: none;
+}

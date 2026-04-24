@@ -12,7 +12,7 @@ import {
 } from '@carbon/react'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { PageHeader } from '../components/PageHeader'
+import { useSetShellWindow } from '../layout/useSetShellWindow'
 import {
   maschineApi,
   type ButtonMidiMapping,
@@ -399,6 +399,17 @@ export function MaschineMidiMapEditor({ embedded = false }: { embedded?: boolean
   const [activeButtons, setActiveButtons] = useState<Set<string>>(new Set())
   const [status, setStatus] = useState<MaschineDaemonStatus | null>(null)
 
+  useSetShellWindow(
+    embedded
+      ? {}
+      : {
+          title: 'MIDI Map Editor',
+          subtitle: 'NI Maschine MK1 hardware-faithful layout. Click any element to edit its MIDI assignment.',
+          kicker: 'Platform / Maschine / MIDI Map',
+        },
+    [embedded],
+  )
+
   // Fetch MIDI map config
   const midiMapQuery = useQuery({
     queryKey: ['maschine', 'midi-map'],
@@ -546,26 +557,13 @@ export function MaschineMidiMapEditor({ embedded = false }: { embedded?: boolean
   if (!midiMap) {
     return (
       <div className="midi-map-page">
-        {embedded ? <p>Loading MIDI map configuration...</p> : <PageHeader title="MIDI Map Editor" subtitle="Loading MIDI map configuration..." />}
+        {embedded ? <p>Loading MIDI map configuration...</p> : <p>Loading MIDI map configuration...</p>}
       </div>
     )
   }
 
   return (
     <div className={embedded ? 'midi-map-page midi-map-page--embedded' : 'midi-map-page'}>
-      {!embedded ? (
-        <PageHeader
-          title="MIDI Map Editor"
-          subtitle="NI Maschine MK1 \u2014 hardware-faithful layout. Click any element to edit its MIDI assignment."
-          actions={
-            <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-              <Tag type={isConnected ? 'green' : 'red'}>{isConnected ? 'Connected' : 'Offline'}</Tag>
-              <Tag type="blue">Ch {midiMap.channel}</Tag>
-            </div>
-          }
-        />
-      ) : null}
-
       {statusQuery.isError && (
         <InlineNotification kind="error" lowContrast hideCloseButton title="Cannot reach backend" />
       )}

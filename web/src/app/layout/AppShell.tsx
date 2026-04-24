@@ -9,8 +9,8 @@ import { RebootOverlay } from './RebootOverlay'
 import { RestartOverlay } from './RestartOverlay'
 import { ShellPowerModal } from './ShellPowerModal'
 import { useRebootSystem } from './useRebootSystem'
-import { ShellWindowProvider } from './ShellWindowContext'
-import type { ShellWindowContextValue } from './ShellWindowContext'
+import { ShellWindowProvider, type ShellActionSlot, type ShellWindowContextValue } from './ShellWindowContext'
+import { ShellWindowMutatorProvider, type ShellWindowMutator, type ShellWindowPatch } from './ShellWindowMutatorContext'
 import { useAppShellPresentation } from './useAppShellPresentation'
 import { useRestartBackend } from './useRestartBackend'
 import { useRunningRoutes } from './useRunningRoutes'
@@ -19,6 +19,10 @@ import { SHELL_OPEN_RESTART_CONFIRM_EVENT } from './shellEvents'
 import { reloadHomeDesktopShell, returnHomeDesktopToBoot } from '../pages/homeDesktopSession'
 import { writeHomeShellRecentRoute } from '../pages/homeShellNavigation'
 import { GlobalTreeNav } from './GlobalTreeNav/GlobalTreeNav'
+import { ContextBar } from './chrome/ContextBar'
+import { WorkspaceBar } from './chrome/WorkspaceBar'
+import { ContentKicker } from './chrome/ContentKicker'
+import './chrome/chrome-tokens.css'
 import '../components/shared/GlobalPrimitives.css'
 import './AppShell.css'
 
@@ -42,12 +46,18 @@ export function AppShell({ children }: { children: ReactNode }) {
   const navigate = useNavigate()
   const { status: websocketStatus } = useWebSocketConnection()
   const [globalNavPinned, setGlobalNavPinned] = useState<boolean>(() => readGlobalNavPinned())
+  const [contextBarHidden, setContextBarHidden] = useState<boolean>(false)
+  const [shellPatch, setShellPatch] = useState<ShellWindowPatch>({})
   const closeShellMenus = useCallback(() => {}, [])
   const {
     isDesktopRoute,
     shellAccentColor,
     shellClassName,
+    shellCrumbs,
+    shellKicker,
     shellRouteHint,
+    shellSubtitle,
+    shellTitle,
     shellWindowIcon: ShellWindowIcon,
     shellWorkspaceLabel,
   } = useAppShellPresentation({
@@ -89,15 +99,57 @@ export function AppShell({ children }: { children: ReactNode }) {
     websocketStatus,
   })
 
+  // Reset the context-bar dismiss state on route change (session-only dismiss,
+  // but per-route at least so users can dismiss once and move on).
+  useEffect(() => {
+    setContextBarHidden(false)
+  }, [location.pathname])
+
+  // Reset page patch whenever route changes so stale per-page metadata
+  // doesn't leak across navigations.
+  useEffect(() => {
+    setShellPatch({})
+  }, [location.pathname])
+
+  const mutator = useMemo<ShellWindowMutator>(() => ({
+    set: (patch) => setShellPatch(patch),
+    clear: () => setShellPatch({}),
+  }), [])
+
+  const mergedActions: ShellActionSlot[] = shellPatch.actions ?? []
+
+  const mergedTitle = shellPatch.title ?? shellTitle
+  const mergedSubtitle = shellPatch.subtitle ?? shellSubtitle
+  const mergedKicker = shellPatch.kicker ?? shellKicker
+  const mergedCrumbs = shellPatch.crumbs ?? shellCrumbs
+  const mergedAccent = shellPatch.accentColor ?? shellAccentColor
+  const mergedLead = shellPatch.lead
+
   const shellWindowContext = useMemo<ShellWindowContextValue>(
     () => ({
-      title: shellWorkspaceLabel,
+      title: mergedTitle,
+      subtitle: mergedSubtitle,
+      kicker: mergedKicker,
+      crumbs: mergedCrumbs,
       titleIcon: ShellWindowIcon,
       routeHint: shellRouteHint,
-      accentColor: shellAccentColor,
+      accentColor: mergedAccent,
+      actions: mergedActions,
+      lead: mergedLead,
       onClose: handleCloseCurrentApp,
     }),
-    [shellWorkspaceLabel, ShellWindowIcon, shellRouteHint, shellAccentColor, handleCloseCurrentApp],
+    [
+      mergedTitle,
+      mergedSubtitle,
+      mergedKicker,
+      mergedCrumbs,
+      ShellWindowIcon,
+      shellRouteHint,
+      mergedAccent,
+      mergedActions,
+      mergedLead,
+      handleCloseCurrentApp,
+    ],
   )
 
   useEffect(() => {
@@ -127,6 +179,8 @@ export function AppShell({ children }: { children: ReactNode }) {
     }
   }, [globalNavPinned])
 
+  const showTopChrome = !isDesktopRoute && location.pathname !== '/perform'
+
   return (
     <div
       className={shellClassName}
@@ -134,8 +188,29 @@ export function AppShell({ children }: { children: ReactNode }) {
         '--window-shell-accent': shellAccentColor,
         '--global-tree-width': globalNavPinned ? '16rem' : '3.5rem',
         '--global-tree-banner-left-offset': globalNavPinned ? '16rem' : '3.5rem',
+        '--ctx-h': contextBarHidden || !showTopChrome ? '0px' : '32px',
+        '--ws-h': showTopChrome ? '40px' : '0px',
       } as CSSProperties}
     >
+      {showTopChrome ? (
+        <>
+          <ContextBar
+            crumbs={mergedCrumbs}
+            routeHint={shellRouteHint}
+            hidden={contextBarHidden}
+            onDismiss={() => setContextBarHidden(true)}
+          />
+          <WorkspaceBar
+            workspaceLabel={mergedTitle || shellWorkspaceLabel}
+            actions={mergedActions}
+            navPinned={globalNavPinned}
+            onToggleNavPin={() => setGlobalNavPinned((prev) => !prev)}
+            contextBarHidden={contextBarHidden}
+            onClose={handleCloseCurrentApp}
+            closeLabel={`Close ${mergedTitle || shellWorkspaceLabel}`}
+          />
+        </>
+      ) : null}
       <div className="app-shell__frame">
         {globalNavPinned ? (
           <GlobalTreeNav
@@ -159,8 +234,18 @@ export function AppShell({ children }: { children: ReactNode }) {
           </aside>
         )}
         <main className="app-content app-content--with-global-tree">
-          <ShellWindowProvider value={isDesktopRoute ? null : shellWindowContext}>
-            <PageTransition>{children}</PageTransition>
+          <ShellWindowProvider value={shellWindowContext}>
+            <ShellWindowMutatorProvider value={mutator}>
+              {showTopChrome ? (
+                <ContentKicker
+                  kicker={mergedKicker}
+                  title={mergedTitle}
+                  subtitle={mergedSubtitle}
+                  lead={mergedLead}
+                />
+              ) : null}
+              <PageTransition>{children}</PageTransition>
+            </ShellWindowMutatorProvider>
           </ShellWindowProvider>
         </main>
       </div>

@@ -4,7 +4,6 @@ import { act, fireEvent, render, screen, waitFor, within } from '@testing-librar
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { MemoryRouter, useLocation } from 'react-router-dom'
 
-import { ShellWindowTitleStrip } from '../components/shared/ShellWindowTitleStrip'
 import { AppShell } from './AppShell'
 import { HOST_MACHINE_ROUTE } from '../pages/hostMachineRoutes'
 
@@ -124,7 +123,6 @@ function LocationProbe() {
 function ShellAwareContent() {
   return (
     <>
-      <ShellWindowTitleStrip />
       <div>shell content</div>
     </>
   )
@@ -244,8 +242,8 @@ describe('AppShell global tree navigation', () => {
     )
 
     expect(screen.getByRole('button', { name: 'Close IntelFX Rack' })).toBeInTheDocument()
-    expect(container.querySelector('.window-title-strip__eyebrow')).toHaveTextContent('Workspace surface')
-    expect(container.querySelector('.window-title-strip__title')).toHaveTextContent('IntelFX Rack')
+    expect(container.querySelector('.shell-ctx__crumb')).toHaveTextContent('Workspace surface')
+    expect(container.querySelector('.shell-ws__main-name')).toHaveTextContent('IntelFX Rack')
     const navTree = screen.getByLabelText('Global navigation tree')
     expect(navTree).toBeInTheDocument()
     expect(within(navTree).getAllByText('Hardware').length).toBeGreaterThan(0)
@@ -257,7 +255,6 @@ describe('AppShell global tree navigation', () => {
     renderInRouter(
       <AppShell>
         <>
-          <ShellWindowTitleStrip />
           <LocationProbe />
         </>
       </AppShell>,

@@ -3,7 +3,7 @@ import './MaschinePage.css'
 import { Button, InlineNotification, Tag } from '@carbon/react'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { PageHeader } from '../components/PageHeader'
+import { useSetShellWindow } from '../layout/useSetShellWindow'
 import { MaschineConnectionPanel } from '../components/Maschine/MaschineConnectionPanel'
 import { MaschineEncoderMapPanel } from '../components/Maschine/MaschineEncoderMapPanel'
 import { MaschineFirmwarePanel } from '../components/Maschine/MaschineFirmwarePanel'
@@ -141,24 +141,24 @@ export function MaschinePage() {
     [],
   )
 
+  const handleScrollToHardware = useCallback(
+    () => document.getElementById('hardware-layout')?.scrollIntoView({ behavior: 'smooth', block: 'start' }),
+    [],
+  )
+
+  useSetShellWindow({
+    title: 'Maschine MK1',
+    subtitle,
+    kicker: 'Platform / Maschine MK1',
+    actions: [
+      { id: 'hardware-layout', label: 'Hardware Layout', onClick: handleScrollToHardware },
+      { id: 'status', label: pageStatusLabel(status), status: (pageStatusTone(status) === 'green' ? 'ok' : pageStatusTone(status) === 'red' ? 'error' : 'warn') as 'ok' | 'warn' | 'error' | 'info', disabled: true },
+    ],
+  }, [subtitle, handleScrollToHardware, status])
+
+
   return (
     <div className="maschine-page">
-      <PageHeader
-        title="Maschine MK1"
-        subtitle={subtitle}
-        actions={
-          <div style={{ display: 'flex', gap: '0.5rem', alignItems: 'center' }}>
-            <Button
-              kind="ghost"
-              size="sm"
-              onClick={() => document.getElementById('hardware-layout')?.scrollIntoView({ behavior: 'smooth', block: 'start' })}
-            >
-              Hardware Layout + MIDI Map
-            </Button>
-            <Tag type={pageStatusTone(status)}>{pageStatusLabel(status)}</Tag>
-          </div>
-        }
-      />
 
       {statusQuery.isError ? (
         <InlineNotification

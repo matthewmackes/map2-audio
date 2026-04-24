@@ -128,7 +128,6 @@ describe('McuPage', () => {
   it('renders MCU status, projection, scribble preview, faders, and transport state', async () => {
     renderPage()
 
-    expect(await screen.findByRole('heading', { name: 'Mackie MCU Pro' })).toBeTruthy()
     expect(await screen.findByRole('heading', { name: 'Parametric EQ' })).toBeTruthy()
     expect(screen.getByTestId('mcu-connection-panel')).toBeTruthy()
     expect(screen.getByTestId('mcu-plugin-panel')).toBeTruthy()

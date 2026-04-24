@@ -54,7 +54,7 @@ import {
   ErrorFilled,
   Play,
 } from '@carbon/icons-react'
-import { PageHeader } from '../../PageHeader'
+import { useSetShellWindow } from '../../../layout/useSetShellWindow'
 import { StatCard } from '../../StatCard'
 import { EmptyState } from '../../shared/EmptyState'
 import { LoadingState } from '../../shared/LoadingState'
@@ -258,57 +258,23 @@ export function EdirolUA1000View() {
     return 'error'
   }
 
+  useSetShellWindow({
+    title: 'Edirol UA-1000',
+    subtitle: remoteSelected
+      ? `Hi-Speed USB 2.0 Audio Interface · Viewing ${selectedNode?.hostname ?? selectedNodeId}`
+      : 'Hi-Speed USB 2.0 Audio Interface - Routed via PipeWire to JUCE Audio Engine',
+    kicker: 'Platform / Devices / Edirol UA-1000',
+    actions: [
+      isRunning
+        ? { id: 'stop', label: stopAudio.isPending ? 'Stopping…' : 'Stop', icon: StopFilled, onClick: () => stopAudio.mutate(), disabled: stopAudio.isPending }
+        : { id: 'start', label: startAudio.isPending ? 'Starting…' : 'Start', icon: Play, onClick: () => startAudio.mutate(), disabled: startAudio.isPending },
+      { id: 'restart', label: 'Restart', icon: Renew, onClick: () => restartAudio.mutate(), disabled: restartAudio.isPending || !isRunning },
+      { id: 'configure', label: 'Configure', icon: SettingsAdjust, onClick: () => setConfigDialogOpen(true) },
+    ],
+  }, [remoteSelected, selectedNode?.hostname, selectedNodeId, isRunning, startAudio.isPending, stopAudio.isPending, restartAudio.isPending])
+
   return (
     <div className="stack edirol-ua1000-page">
-      <PageHeader
-        title="Edirol UA-1000"
-        subtitle={
-          remoteSelected
-            ? `Hi-Speed USB 2.0 Audio Interface · Viewing ${selectedNode?.hostname ?? selectedNodeId}`
-            : 'Hi-Speed USB 2.0 Audio Interface - Routed via PipeWire to JUCE Audio Engine'
-        }
-        icon={<Usb size={32} style={{ color: '#3b82f6' }} />}
-        actions={
-          <div className="flex" style={{ gap: 8 }}>
-            {!isRunning ? (
-              <LegacyButton
-                variant="primary"
-                renderIcon={startAudio.isPending ? undefined : Play}
-                onClick={() => startAudio.mutate()}
-                disabled={startAudio.isPending}
-              >
-                {startAudio.isPending ? <CircularProgress size={16} /> : null}
-                Start Audio
-              </LegacyButton>
-            ) : (
-              <LegacyButton
-                variant="ghost"
-                renderIcon={stopAudio.isPending ? undefined : StopFilled}
-                onClick={() => stopAudio.mutate()}
-                disabled={stopAudio.isPending}
-              >
-                {stopAudio.isPending ? <CircularProgress size={16} /> : null}
-                Stop
-              </LegacyButton>
-            )}
-            <LegacyButton
-              variant="ghost"
-              renderIcon={Renew}
-              onClick={() => restartAudio.mutate()}
-              disabled={restartAudio.isPending || !isRunning}
-            >
-              Restart
-            </LegacyButton>
-            <LegacyButton
-              variant="primary"
-              renderIcon={SettingsAdjust}
-              onClick={() => setConfigDialogOpen(true)}
-            >
-              Configure
-            </LegacyButton>
-          </div>
-        }
-      />
 
       <DeviceContextBanner deviceName="Edirol UA-1000" deviceKey="edirol-ua1000" />
 

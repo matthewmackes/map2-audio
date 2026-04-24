@@ -1,0 +1,25 @@
+/* T2438 chrome-tokens.css — CSS variables for the new top chrome. */
+
+:root {
+  --ctx-h: 32px;
+  --ws-h: 40px;
+
+  --shell-blue-60: var(--cds-link-primary, #0f62fe);
+  --shell-blue-50: #4589ff;
+  --shell-blue-40: #78a9ff;
+  --shell-blue-30: #a6c8ff;
+  --shell-blue-20: #d0e2ff;
+
+  --shell-signal-green: #42be65;
+  --shell-signal-yellow: #f1c21b;
+  --shell-signal-red: #fa4d56;
+
+  --shell-chrome-bg-elev: #101010;
+  --shell-chrome-bg-main: #0f0f0f;
+  --shell-chrome-border: #2a2a2a;
+  --shell-chrome-border-strong: #3d3d3d;
+  --shell-chrome-hover: #1a1a1a;
+
+  --shell-f-mono: 'IBM Plex Mono', 'JetBrains Mono', ui-monospace, SFMono-Regular, Consolas, monospace;
+  --shell-f-sans: 'Inter Tight', 'Inter', 'IBM Plex Sans', system-ui, -apple-system, sans-serif;
+}

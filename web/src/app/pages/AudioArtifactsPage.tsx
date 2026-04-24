@@ -59,7 +59,6 @@ import { useToasts } from '../components/Toasts'
 import { getDisplayPluginName } from '../../map2/displayNames'
 import { WorkspacePageTemplate } from '../components/layout/WorkspacePageTemplate'
 import { UnifiedWorkspaceSideNav, type UnifiedWorkspaceSideNavItem } from '../components/navigation/UnifiedWorkspaceSideNav'
-import { ShellWindowTitleStrip } from '../components/shared/ShellWindowTitleStrip'
 import { EmptyState } from '../components/shared/EmptyState'
 import { NODE_PAGE_KEYS } from '../utils/nodeDisplay'
 import { ShellWindowProvider } from '../layout/ShellWindowContext'
@@ -1468,7 +1467,6 @@ export function AudioArtifactsPage({
   if (!renderShell) {
     return (
       <>
-        <ShellWindowTitleStrip />
         <section className="aap aap--embedded">
           <div className={`aap__embedded-layout${showArtifactsAside ? ' aap__embedded-layout--with-aside' : ''}`}>
             <div className={`aap__embedded-content${tableAnimated ? ' aap__embedded-content--visible' : ''}`}>
@@ -1484,7 +1482,6 @@ export function AudioArtifactsPage({
 
   return (
     <section className="aap">
-      <ShellWindowTitleStrip />
       <ShellWindowProvider value={null}>
         <Layer className="aap__surface">
           <WorkspacePageTemplate

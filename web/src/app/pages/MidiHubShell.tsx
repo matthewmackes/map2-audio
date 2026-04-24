@@ -5,7 +5,6 @@ import {
 import { useLocation, Outlet } from 'react-router-dom'
 import { WorkspacePageTemplate } from '../components/layout/WorkspacePageTemplate'
 import { MidiHubNodeScopeProvider } from '../components/MidiHub/MidiHubNodeScope'
-import { ShellWindowTitleStrip } from '../components/shared/ShellWindowTitleStrip'
 import { useMidiHubOverview } from '../components/MidiHub/useMidiHubOverview'
 import { MidiHubStatusBar } from '../components/MidiHub/MidiHubStatusBar'
 import { useNodePageContext } from '../hooks/useNodePageContext'
@@ -27,7 +26,6 @@ export function MidiHubShell() {
     <MidiHubNodeScopeProvider nodeId={apiNodeId} scopeKey={scopeKey}>
       <GlobalTheme theme={resolvedTheme}>
         <Theme as="div" theme={resolvedTheme} className="midi-hub-shell">
-          <ShellWindowTitleStrip />
           <ShellWindowProvider value={null}>
             <WorkspacePageTemplate
               className="midi-hub-shell__template"

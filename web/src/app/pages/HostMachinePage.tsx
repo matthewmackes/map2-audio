@@ -10,7 +10,7 @@ import { useState } from 'react'
 import { Tag } from '@carbon/react'
 import { CheckmarkFilled, Renew, WarningAltFilled } from '@carbon/icons-react'
 import '../components/HostMachine/HostMachine.css'
-import { PageHeader } from '../components/PageHeader'
+import { useSetShellWindow } from '../layout/useSetShellWindow'
 import { useToasts } from '../components/Toasts'
 import { useCluster } from '../contexts/useCluster'
 import { MapRackDeviceIcon } from '../components/icons/map'
@@ -65,6 +65,26 @@ export function HostMachinePage() {
     pushToast('Refreshing host machine data…', 'info')
   }
 
+  const shellTitle = allNodesSelected
+    ? 'Host Machine · All Nodes'
+    : remoteSelected
+    ? `Host Machine · ${selectedNode?.hostname ?? activeNodeId}`
+    : 'Host Machine'
+  const shellSubtitle = allNodesSelected
+    ? 'Cluster-wide hardware comparison'
+    : 'Hardware Information & Real-Time Health Monitoring'
+
+  useSetShellWindow({
+    title: shellTitle,
+    subtitle: shellSubtitle,
+    kicker: 'Platform / Hardware / Host Machine',
+    actions: [
+      { id: 'auto-refresh', label: autoRefresh ? 'Live' : 'Paused', active: autoRefresh, onClick: () => setAutoRefresh((v) => !v) },
+      { id: 'refresh', label: 'Refresh', onClick: handleManualRefresh },
+    ],
+  }, [shellTitle, shellSubtitle, autoRefresh, handleManualRefresh])
+
+
   // ── Loading ──────────────────────────────────────────────────────────────────
   if (isLoading) {
     return (
@@ -78,11 +98,6 @@ export function HostMachinePage() {
   if (isError || (!allNodesSelected && (!hostInfo.data || !branding.data))) {
     return (
       <div className="hm-page hm-page--error">
-        <PageHeader
-          title={allNodesSelected ? 'Host Machine · All Nodes' : 'Host Machine'}
-          subtitle="Hardware Information & Monitoring"
-          icon={<MapRackDeviceIcon size={28} className="hm-page__header-icon hm-page__header-icon--danger" />}
-        />
         <div className="hm-inline-notification hm-inline-notification--error hm-page__notice hm-page__notice--top">
           <WarningAltFilled size={16} />
           <span>{error instanceof Error ? error.message : 'Failed to load host machine information. Please try again.'}</span>
@@ -97,11 +112,6 @@ export function HostMachinePage() {
     return (
       <div className="hm-page hm-page--cluster">
         <div className="hm-page-toolbar">
-          <PageHeader
-            title="Host Machine · All Nodes"
-            subtitle="Cluster-wide hardware comparison"
-            icon={<MapRackDeviceIcon size={28} className="hm-page__header-icon hm-page__header-icon--interactive" />}
-          />
           <button className="hm-btn hm-btn--ghost" onClick={handleManualRefresh}>
             <Renew size={16} />
             Refresh
@@ -215,11 +225,6 @@ export function HostMachinePage() {
 
       {/* ── Toolbar ─────────────────────────────────────────────────── */}
       <div className="hm-page-toolbar">
-        <PageHeader
-          title={remoteSelected ? `Host Machine · ${selectedNode?.hostname ?? activeNodeId}` : 'Host Machine'}
-          subtitle="Hardware Information & Real-Time Health Monitoring"
-          icon={<MapRackDeviceIcon size={28} className="hm-page__header-icon hm-page__header-icon--interactive" />}
-        />
         <div className="hm-page__toolbar-actions">
           <button
             className={`hm-btn hm-btn--ghost${autoRefresh ? ' hm-btn--active' : ''}`}

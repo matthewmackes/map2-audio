@@ -39,7 +39,7 @@ import {
   type PushSurfaceWelcomeRoutine,
   type PushSurfaceWelcomeStep,
 } from '../../map2/clients/pushSurface'
-import { PageHeader } from '../components/PageHeader'
+import { useSetShellWindow } from '../layout/useSetShellWindow'
 import { useCluster } from '../contexts/useCluster'
 import { useLatencyPressure } from '../hooks/useLatencyPressure'
 import { useNodePageContext } from '../hooks/useNodePageContext'
@@ -903,40 +903,19 @@ export function PushSurfacePage() {
   const pendingActionLabel = labelForPendingAction(activePendingConfirmation)
   const showFallbackConfirmationModal = Boolean(activePendingConfirmation && editorQuery.data && !activeDevice)
 
+  useSetShellWindow({
+    title: 'Push Surface',
+    subtitle: 'Standalone Push WYSIWYG editor for mappings, welcome routines, and live surface management.',
+    kicker: 'Platform / Labs / Push Surface',
+    actions: [
+      { id: 'back', label: 'Back to Labs', icon: ArrowLeft, onClick: () => navigate('/labs') },
+      { id: 'reload', label: 'Reload', icon: Renew, onClick: () => { void handleReload() } },
+      { id: 'save', label: saveMutation.isPending ? 'Saving…' : 'Save', icon: Save, onClick: () => { void handleSaveAll() }, disabled: !isDirty || saveMutation.isPending },
+    ],
+  }, [navigate, handleReload, handleSaveAll, isDirty, saveMutation.isPending])
+
   return (
     <div className="push-surface-page">
-      <PageHeader
-        title="Push Surface"
-        subtitle="Standalone Push WYSIWYG editor for mappings, welcome routines, and live surface management."
-        actions={(
-          <>
-            <Button kind="ghost" size="sm" renderIcon={ArrowLeft} onClick={() => navigate('/labs')}>
-              Back to Labs
-            </Button>
-            <Button
-              kind="tertiary"
-              size="sm"
-              renderIcon={Renew}
-              onClick={() => {
-                void handleReload()
-              }}
-            >
-              Reload
-            </Button>
-            <Button
-              size="sm"
-              renderIcon={Save}
-              onClick={() => {
-                void handleSaveAll()
-              }}
-              disabled={!isDirty || saveMutation.isPending}
-            >
-              {saveMutation.isPending ? 'Saving…' : 'Save Push Surface'}
-            </Button>
-          </>
-        )}
-      />
-
       <Tile className="push-surface-page__refresh-rail">
         <div className="push-surface-page__refresh-copy">
           <p className="push-surface-page__eyebrow">Refresh status</p>

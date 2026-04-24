@@ -1,0 +1,54 @@
+/* T2438 ContentKicker — page-body kicker + H1 + lead. */
+
+.shell-kicker {
+  padding: 32px clamp(28px, 4vw, 56px) 20px;
+  display: grid;
+  gap: 10px;
+}
+
+.shell-kicker__eyebrow {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  font-family: var(--shell-f-mono);
+  font-size: 11px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--shell-blue-40);
+}
+
+.shell-kicker__eyebrow::before {
+  content: '';
+  width: 20px;
+  height: 1px;
+  background: var(--shell-blue-40);
+}
+
+.shell-kicker__title {
+  font-size: clamp(1.75rem, 3vw, 2.5rem);
+  font-weight: 300;
+  letter-spacing: -0.02em;
+  line-height: 1.08;
+  margin: 0;
+  color: var(--cds-text-primary, var(--text-primary));
+}
+
+.shell-kicker__subtitle {
+  color: var(--cds-text-secondary, var(--text-secondary));
+  font-size: 16px;
+  max-width: 62ch;
+  margin: 0;
+  line-height: 1.45;
+}
+
+.shell-kicker__lead {
+  color: var(--cds-text-secondary, var(--text-secondary));
+  font-size: 14px;
+  max-width: 62ch;
+  margin: 0;
+  line-height: 1.5;
+}
+
+.shell-kicker--empty {
+  display: none;
+}

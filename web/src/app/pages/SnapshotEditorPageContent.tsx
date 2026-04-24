@@ -117,7 +117,6 @@ import { useToasts } from '../components/Toasts'
 import type { NotificationOptions, NotificationTone } from '../components/Toasts'
 import { EmptyState } from '../components/shared/EmptyState'
 import { LoadingState } from '../components/shared/LoadingState'
-import { ShellWindowTitleStrip } from '../components/shared/ShellWindowTitleStrip'
 import { useCPUMetrics } from '../hooks/useCPUMetrics'
 import { usePluginOutputs } from '../hooks/usePluginOutputs'
 import { useSnapshots } from '../hooks/useSnapshots'
@@ -8128,7 +8127,6 @@ export function SnapshotEditorPage() {
   if (showViewportBlockScreen) {
     return (
       <div className="juce-grid-page">
-        <ShellWindowTitleStrip />
         <div className="juce-grid-page__viewport-block" role="alert" aria-live="polite">
           <MapAudioGridIcon size={120} />
           <h1 className="juce-grid-page__viewport-block-heading">This experience requires a 560x917 or larger display</h1>
@@ -8142,7 +8140,6 @@ export function SnapshotEditorPage() {
 
   return (
     <div className={`juce-grid-page ${isTabletTouchLayout ? 'is-tablet-mode' : ''}`}>
-      <ShellWindowTitleStrip />
       <LandscapePrompt componentId="juce-grid" />
       {snapshotLoadFailureMessage ? (
         <div className="juce-grid-page__inline-error" role="alert">

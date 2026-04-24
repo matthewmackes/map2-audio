@@ -4,7 +4,6 @@ import { act, fireEvent, render, screen, waitFor, within } from '@testing-librar
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom'
 
-import { ShellWindowTitleStrip } from '../components/shared/ShellWindowTitleStrip'
 import { AppShell } from '../layout/AppShell'
 import { HomePage } from './HomePage'
 
@@ -258,7 +257,6 @@ function ShellStubPage({
 }) {
   return (
     <>
-      <ShellWindowTitleStrip />
       <div data-testid={testId}>{children}</div>
     </>
   )
@@ -431,7 +429,7 @@ describe('Desktop experience integration', () => {
 
     expect(screen.getByTestId('perform-page')).toBeInTheDocument()
     expect(container.querySelector('.app-shell--perform-route')).toBeTruthy()
-    expect(container.querySelector('.window-title-strip')).toBeNull()
+    expect(container.querySelector('.shell-ws')).toBeNull()
     expect(screen.getByLabelText('Global navigation tree')).toBeInTheDocument()
   })
 })

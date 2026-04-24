@@ -1,0 +1,179 @@
+/* T2438 WorkspaceBar — 40px strip under the context bar, split into three cells. */
+
+.shell-ws {
+  position: sticky;
+  top: var(--ctx-h, 32px);
+  z-index: 55;
+  height: var(--ws-h, 40px);
+  display: grid;
+  grid-template-columns: var(--global-tree-width, 16rem) 1fr auto;
+  align-items: stretch;
+  background: var(--shell-chrome-bg-elev);
+  border-bottom: 1px solid var(--shell-chrome-border);
+  transition: top 200ms ease, grid-template-columns 160ms ease;
+}
+
+.shell-ws--ctx-hidden {
+  top: 0;
+}
+
+.shell-ws__side {
+  display: flex;
+  align-items: center;
+  padding: 0 16px;
+  background: var(--shell-chrome-bg-elev);
+  border-right: 1px solid var(--shell-chrome-border);
+  font-family: var(--shell-f-mono);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--cds-text-helper, #a8a8a8);
+  gap: 10px;
+}
+
+.shell-ws__side-glyph {
+  width: 14px;
+  height: 14px;
+  stroke: currentColor;
+  fill: none;
+  stroke-width: 1.5;
+  flex-shrink: 0;
+}
+
+.shell-ws__side-label {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.shell-ws__side-toggle {
+  margin-left: auto;
+  color: #6f6f6f;
+  background: transparent;
+  border: 0;
+  cursor: pointer;
+  width: 22px;
+  height: 22px;
+  display: inline-grid;
+  place-items: center;
+  font-family: var(--shell-f-mono);
+  font-size: 14px;
+  transition: color 120ms ease, background 120ms ease;
+}
+
+.shell-ws__side-toggle:hover,
+.shell-ws__side-toggle:focus-visible {
+  color: var(--cds-text-primary, #f4f4f4);
+  background: var(--shell-chrome-hover);
+  outline: none;
+}
+
+.shell-ws__main {
+  display: flex;
+  align-items: center;
+  gap: 12px;
+  padding: 0 18px;
+  background: var(--shell-chrome-bg-main);
+  font-family: var(--shell-f-mono);
+  font-size: 11px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--cds-text-helper, #a8a8a8);
+  min-width: 0;
+}
+
+.shell-ws__main-dot {
+  width: 6px;
+  height: 6px;
+  background: var(--shell-blue-50);
+  display: inline-block;
+  flex-shrink: 0;
+}
+
+.shell-ws__main-label {
+  white-space: nowrap;
+}
+
+.shell-ws__main-sep {
+  color: var(--shell-chrome-border-strong);
+}
+
+.shell-ws__main-name {
+  color: var(--cds-text-primary, #e0e0e0);
+  font-weight: 500;
+  letter-spacing: 0.14em;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.shell-ws__actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  padding-right: 10px;
+  background: var(--shell-chrome-bg-main);
+}
+
+.shell-ws__btn {
+  height: 28px;
+  min-width: 28px;
+  padding: 0 10px;
+  background: transparent;
+  border: 1px solid transparent;
+  color: var(--cds-text-helper, #a8a8a8);
+  font-family: var(--shell-f-mono);
+  font-size: 11px;
+  text-transform: uppercase;
+  letter-spacing: 0.08em;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  transition: background 120ms ease, color 120ms ease, border-color 120ms ease;
+}
+
+.shell-ws__btn:hover:not(:disabled),
+.shell-ws__btn:focus-visible:not(:disabled) {
+  color: var(--cds-text-primary, #f4f4f4);
+  background: var(--shell-chrome-hover);
+  outline: none;
+}
+
+.shell-ws__btn[data-active='true'] {
+  color: var(--shell-blue-30);
+  border-color: rgba(15, 98, 254, 0.35);
+  background: rgba(15, 98, 254, 0.08);
+}
+
+.shell-ws__btn:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+.shell-ws__btn-dot {
+  width: 6px;
+  height: 6px;
+  display: inline-block;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.shell-ws__btn-dot--ok {
+  background: var(--shell-signal-green);
+}
+
+.shell-ws__btn-dot--warn {
+  background: var(--shell-signal-yellow);
+}
+
+.shell-ws__btn-dot--error {
+  background: var(--shell-signal-red);
+}
+
+.shell-ws__btn-dot--info {
+  background: var(--shell-blue-50);
+}

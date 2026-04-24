@@ -6,7 +6,278 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-23 EDT - T2436 shipped: the Global Navigation tree now renames `Control Panel` to `Node Ops`, and `Snapshot Editor` now renders as a featured row with a real-time live-status label and `Signal Editor` badge while preserving existing routing/tree structure. Focused tests, snapshot refresh, typecheck, build, and diff hygiene all passed. Previously: T2434 and T2435 shipped: Audio Engine and Management workspace routes now use theme-token-driven surfaces instead of fixed neutral palettes, with focused tests, typecheck, build, and diff hygiene all passing. Previously: T2433 shipped: theme-token audit completed for Management, Audio Engine, Chains, Adoption, and Platform Guide routes; Management and Audio Engine still carry static or white/black-mixed neutral surfaces, while Chains, Adoption, and Platform Guide are already mostly theme-token aligned. Previously: T2432 shipped: Host Machine now lives under Hardware with canonical route `/hardware/host-machine`, legacy redirects preserved, theme-token refit applied, and focused tests/snapshots/build all passing. Previously: T2431-A shipped: CONFIGURATION_STATE_AUTHORITY_AUDIT.md created (15 ranked drift risks, 10 undeclared-plane concepts, subtask links B-J). T2431 epic opened — "Configuration and State Authority plane consolidation". User locked Q2-Q10: hard migration without user compatibility shims, single-node mode can run without etcd, flow snapshots removed, user/operator preferences per node, platform-standard config-change semantics, generated projection headers required, file-backup rollback only, users may still pin/promote experimental features, and `SystemConfig` is a hard-cut retirement. Q1 remains open: whether `/etc/map2/mode.json` or `/etc/map2/environment` owns deployment mode. Previously: T2430 epic opened — LCD Displays full parity + hardening.
+Last updated: 2026-04-24 EDT - T2438 in progress: hard cutover to new top chrome (blue context bar + workspace bar + content kicker rendered globally by AppShell) replacing `PageHeader` and `ShellWindowTitleStrip` across all 28 call sites, plus Brain Overview redesigned as a four-tab shell (Performance/Console/Step/Split) promoted to first-class `?section=` IDs and wired to the real Brain API. No stubs, no legacy shims — single atomic commit per user direction. Previously: T2436 shipped: the Global Navigation tree now renames `Control Panel` to `Node Ops`, and `Snapshot Editor` now renders as a featured row with a real-time live-status label and `Signal Editor` badge while preserving existing routing/tree structure. Focused tests, snapshot refresh, typecheck, build, and diff hygiene all passed. Previously: T2434 and T2435 shipped: Audio Engine and Management workspace routes now use theme-token-driven surfaces instead of fixed neutral palettes, with focused tests, typecheck, build, and diff hygiene all passing. Previously: T2433 shipped: theme-token audit completed for Management, Audio Engine, Chains, Adoption, and Platform Guide routes; Management and Audio Engine still carry static or white/black-mixed neutral surfaces, while Chains, Adoption, and Platform Guide are already mostly theme-token aligned. Previously: T2432 shipped: Host Machine now lives under Hardware with canonical route `/hardware/host-machine`, legacy redirects preserved, theme-token refit applied, and focused tests/snapshots/build all passing. Previously: T2431-A shipped: CONFIGURATION_STATE_AUTHORITY_AUDIT.md created (15 ranked drift risks, 10 undeclared-plane concepts, subtask links B-J). T2431 epic opened — "Configuration and State Authority plane consolidation". User locked Q2-Q10: hard migration without user compatibility shims, single-node mode can run without etcd, flow snapshots removed, user/operator preferences per node, platform-standard config-change semantics, generated projection headers required, file-backup rollback only, users may still pin/promote experimental features, and `SystemConfig` is a hard-cut retirement. Q1 remains open: whether `/etc/map2/mode.json` or `/etc/map2/environment` owns deployment mode. Previously: T2430 epic opened — LCD Displays full parity + hardening.
+
+---
+
+ID: T2438
+Status: [>] In Progress
+Title: Hard cutover to new top chrome + Brain Overview four-tab redesign (design bundles `ZWqoW_zMnpADvodrjj31fA` + `pcN48gu7JNF1cwPE0zxilQ`)
+Description:
+- Goal / acceptance criteria: Single atomic commit that (a) retires `PageHeader` + `ShellWindowTitleStrip` + `WindowTitleStrip` from the codebase, (b) rehomes all page chrome in `AppShell` as a blue context bar (32px, `--blue-60`, sticky z=60) + workspace bar (40px split rail label / workspace name / action slots) + content kicker (eyebrow + H1 + lead), (c) expands `ShellWindowContextValue` with `{subtitle, kicker, crumbs, actions, accent}` and a new `useSetShellWindow` hook so pages declare their chrome metadata at mount, (d) migrates all 25 call sites of the retired chrome components, (e) replaces the Brain Overview's `OverviewCards` tile section with a four-tab shell (Performance / Console / Step / Split), pixel-faithful to the design bundle with dark tokens scoped to `.brain-overview`, and wired to the real Brain API. No stubs, no compat shims; `GlobalTreeNav` left untouched per user override; the new top chrome renders globally above every route. Warn count in the Brain tab row derives from `qualification.issues.length + diagnostics.warnings.length`.
+- Why it matters: User ran two design handoffs. Prior Q&A locked 31 decisions spanning chrome ownership, action contract, Brain view wiring, and release cadence. User explicitly chose "no stubs, no legacy requirements" and "full" one-commit cutover, then chose "plan first" after scope assessment.
+- Dependencies: None. Touches `AppShell`, `useAppShellPresentation`, `ShellWindowContext`, all page entry points, `PerformanceBrainPage`, and Carbon/PageHeader test suites.
+- Estimated effort: Large — ~11 hours focused execution across 7 phases (see plan below).
+- Plan document: also at [docs/plans/T2438_TOP_CHROME_AND_BRAIN_OVERVIEW_PLAN.md](plans/T2438_TOP_CHROME_AND_BRAIN_OVERVIEW_PLAN.md). The full ordered-execution plan is inlined below so it is never lost.
+
+### Locked decisions (Q1–Q31)
+
+| # | Topic | Decision |
+|---|---|---|
+| Q1 | Brain Overview scope | Full four-tab replacement (Performance / Console / Step / Split). |
+| Q2+Q3 | Fidelity | Pixel-faithful dark tokens (`#0e1116` / `#161a21` / `#3b82f6`) + custom components, scoped to `.brain-overview`. |
+| Q4+Q6+Q7+Q12 | Data wiring | Every field with a backend counterpart is live. Placeholders (waveforms, A/B/C sends, A–H variations, song arrangement, trigger-scan sparkline) marked with `data-placeholder`. |
+| Q5 | Pad count | Dynamic from `slots.length`. |
+| Q8 override | Sidebar | Leave `GlobalTreeNav` untouched; do not add health squares. |
+| Q10+Q15 reversed | Routing | Tabs are a frontend-only `?view=performance\|console\|step\|split` param scoped under `section=overview`. Server `active_section` stays canonical. See constraint note below. |
+| Q13 | Internal headers | Dropped. |
+| Q14 | Bundling | One file per view under `web/src/app/pages/brainViews/`. |
+| Q16 | Mono font | IBM Plex Mono. |
+| Q17+Q19 | Tests | Snapshot update + tab-switch render tests per view; warn count derived from `qualification.issues.length + diagnostics.warnings.length`. |
+| Q18 | Import CTAs | Stay only in the existing Library section. Removed from Overview. |
+| Q20 | Done criteria | Commit + dual-push + rebuild + restart + visual verify. |
+| Q21 | Chrome scope | Global — every route. |
+| Q22 | Nav tree | `GlobalTreeNav` unchanged. New top chrome extends over the top of it. |
+| Q23 | Context bar | Route-driven breadcrumb + session-only dismiss. |
+| Q24 | Workspace buttons | Action-slot contract — real handlers only. |
+| Q25 | Page header removal | Drop `PageHeader` on every route. |
+| Q26 | Chrome ownership | `AppShell` owns chrome exclusively. `PageHeader` + `ShellWindowTitleStrip` + `WindowTitleStrip` deleted. |
+| Q27 | Actions | Per-page action-slot contract via `useSetShellWindow`. |
+| Q28 → Q30-A | Metadata source | Per-page declaration via `useSetShellWindow({title, subtitle, kicker, actions, accent})`; route table provides defaults. |
+| Q29 / Q31 | Cutover | Full sweep, single atomic commit. |
+
+### Critical constraint — server-side `active_section`
+
+`BrainState.active_section` is a server-typed union including `'overview'` ([web/src/map2/api.ts:1717](../web/src/map2/api.ts#L1717)). Promoting Brain tabs to first-class `?section=` values would require widening this union → backend change. **Out of scope.** Resolution: keep `section=overview` canonical; introduce a frontend-only `?view=performance|console|step|split` param scoped under `section=overview`; tab row renders only when `activeSection === 'overview'`; tab persisted via URL + localStorage `brain:last-view`; default `performance`; stripped when user leaves overview.
+
+### Execution phases (ordered)
+
+Strictly in order. Each phase must typecheck + test-pass before the next starts. Single atomic commit at the end of Phase 7.
+
+| Phase | Goal | Effort |
+|---|---|---|
+| 1 | Expand `ShellWindowContext` + add `useSetShellWindow` hook | 30m |
+| 2 | Build new chrome components (ContextBar, WorkspaceBar, ContentKicker) + CSS | 1.5h |
+| 3 | Rewire `AppShell` + expand presentation defaults | 1h |
+| 4 | Migrate all 25 pages off `<PageHeader>`/`<ShellWindowTitleStrip>` via `useSetShellWindow` | 3h |
+| 5 | Delete retired chrome files + their tests | 15m |
+| 6 | Brain Overview four-tab redesign (views + tab shell + warn count) | 3h |
+| 7 | Test updates: `AppShell.test.tsx`, `PerformanceBrainPage.test.tsx`, `DesktopExperience.snapshot.test.tsx.snap`, `HoToneJoGGView.test.tsx`, `HostMachinePage.test.tsx`, `GroundControlProPage.test.tsx`, `DesktopExperience.integration.test.tsx` | 1.5h |
+| 8 | Typecheck + test + build + commit + dual-push + rebuild + restart + verify | 45m |
+
+**Total ~11h focused execution.**
+
+### Phase 1 — Expand `ShellWindowContext`
+
+**File `web/src/app/layout/ShellWindowContext.ts`:** Add `subtitle`, `kicker`, `crumbs`, `actions: ShellActionSlot[]`, `lead: ReactNode` to `ShellWindowContextValue`. Introduce:
+```ts
+export type ShellActionStatus = 'ok' | 'warn' | 'error' | 'info'
+export interface ShellActionSlot {
+  id: string
+  label: string
+  icon?: ComponentType<{ size?: number; className?: string }>
+  onClick?: () => void
+  active?: boolean
+  status?: ShellActionStatus
+  disabled?: boolean
+  title?: string
+}
+```
+
+**New file `web/src/app/layout/ShellWindowMutatorContext.ts`:**
+```ts
+export interface ShellWindowMutator { set: (patch: ShellWindowPatch) => void; clear: () => void }
+export const ShellWindowMutatorContext = createContext<ShellWindowMutator | null>(null)
+export const ShellWindowMutatorProvider = ShellWindowMutatorContext.Provider
+```
+
+**New file `web/src/app/layout/useSetShellWindow.ts`:**
+```ts
+export type ShellWindowPatch = Partial<Pick<ShellWindowContextValue,
+  'title' | 'subtitle' | 'kicker' | 'crumbs' | 'actions' | 'lead' | 'accentColor'>>
+
+export function useSetShellWindow(patch: ShellWindowPatch, deps: unknown[]): void {
+  const mutator = useContext(ShellWindowMutatorContext)
+  useEffect(() => {
+    if (!mutator) return
+    mutator.set(patch)
+    return () => mutator.clear()
+  }, deps)
+}
+```
+
+Existing `useShellWindow.ts` unchanged.
+
+### Phase 2 — Build chrome components under `web/src/app/layout/chrome/`
+
+**`ContextBar.tsx` + `ContextBar.css`** — 32px sticky `top:0 z=60`; blue `var(--cds-link-primary, #0f62fe)`; grid `1fr auto`; left = `~ crumb[0] / crumb[1] … · routeHint` (mono, last crumb bold); right = `×` close. Session-only dismiss → `ctx--hidden` class (translateY(-100%), opacity 0). Props: `{ crumbs, routeHint, onDismiss, hidden }`.
+
+**`WorkspaceBar.tsx` + `WorkspaceBar.css`** — 40px sticky `top: var(--ctx-h, 32px) z=55`; three-column grid `var(--global-tree-width, 16rem) | 1fr | auto`; left cell `#101010` with hamburger + `"GLOBAL NAVIGATION"` eyebrow + nav-pin toggle; middle cell `#0f0f0f` with 6×6 blue dot + `"Platform Workspace · <name>"`; right cell renders up to 3 `ShellActionSlot` buttons (mono uppercase, hover `#1a1a1a`, active → blue outline pill, status dot for ok/warn/error).
+
+**`ContentKicker.tsx` + `ContentKicker.css`** — eyebrow (mono 11px, `var(--blue-40)`, prefixed with 20px accent bar) + H1 (`clamp(1.75rem, 3vw, 2.5rem)`, weight 300) + `lead` (`var(--cds-text-secondary)`, max-width 62ch). Suppressed when page has no `kicker` and no `subtitle`.
+
+**`chrome-tokens.css`** — adds to `:root`:
+```css
+--ctx-h: 32px; --ws-h: 40px;
+--blue-60: var(--cds-link-primary, #0f62fe); --blue-50: #4589ff;
+--blue-40: #78a9ff; --blue-30: #a6c8ff; --blue-20: #d0e2ff;
+--signal-green: #42be65; --signal-yellow: #f1c21b; --signal-red: #fa4d56;
+--f-mono: 'IBM Plex Mono', 'JetBrains Mono', ui-monospace, monospace;
+--f-sans: 'Inter Tight', 'Inter', 'IBM Plex Sans', system-ui, sans-serif;
+```
+
+### Phase 3 — Rewire `AppShell.tsx`
+
+1. Lift `shellWindow` merged state (seed from `useAppShellPresentation` + patch overlay); provide `ShellWindowProvider` (merged value) + `ShellWindowMutatorProvider` (`{set, clear}`).
+2. Lift `contextBarHidden` session-only state.
+3. Render order inside `.app-shell`:
+```
+<ContextBar crumbs={...} routeHint={...} hidden={contextBarHidden} onDismiss={...} />
+<WorkspaceBar workspaceLabel={...} actions={...} navPinned={globalNavPinned} onToggleNavPin={...} contextBarHidden={contextBarHidden} />
+<div className="app-shell__frame">
+  <GlobalTreeNav ... />
+  <main className="app-content app-content--with-global-tree">
+    <ShellWindowProvider><ShellWindowMutatorProvider>
+      <ContentKicker kicker={kicker} title={title} subtitle={subtitle} lead={lead} />
+      <PageTransition>{children}</PageTransition>
+    </ShellWindowMutatorProvider></ShellWindowProvider>
+  </main>
+</div>
+```
+4. Delete existing `shellWindowContext` memo. Provider is always mounted; pages that need no chrome set empty strings.
+5. `AppShell.css`: `.app-shell__frame` `min-height: calc(100vh - var(--ctx-h, 32px) - var(--ws-h, 40px))`; when `contextBarHidden` set `--ctx-h: 0px` on `.app-shell`; retire `.app-shell--windowed` section (lines 178-194).
+6. `useAppShellPresentation.ts`: add `shellKicker`, `shellSubtitle`, `shellCrumbs` fields derived from `currentShellItem`.
+
+### Phase 4 — Migrate 25 pages
+
+**Canonical migration:**
+```tsx
+// Before
+<PageHeader title="Foo" subtitle="Bar" icon={<X/>} actions={<Button onClick={fn}>Save</Button>} />
+// After
+useSetShellWindow({
+  title: 'Foo', subtitle: 'Bar', kicker: 'Platform / Foo',
+  actions: [{ id: 'save', label: 'Save', icon: Save, onClick: fn }],
+}, [fn])
+```
+Rules: kicker = `"Platform / <workspace-label>"`; max 3 actions (overflow → in-body toolbar); Tag pills migrate to in-body status row, not workspace bar; icon >24px dropped (titleIcon supplied by presentation).
+
+**PageHeader users (13):**
+1. `web/src/app/components/Devices/EdirolUA1000/EdirolUA1000View.tsx` — Start/Stop Audio + Refresh actions; dynamic subtitle for remote node.
+2. `web/src/app/components/Devices/HoToneJoGG/HoToneJoGGView.tsx` — node-context subtitle; no actions.
+3. `web/src/app/components/Devices/LCD/LCDView.tsx` — Live/Paused toggle + Refresh; honor `hideChrome` conditional.
+4. `web/src/app/pages/AudioEnginePage.tsx`
+5. `web/src/app/pages/LaunchControlPage.tsx`
+6. `web/src/app/pages/McuPage.tsx`
+7. `web/src/app/pages/MidiCommanderPage.tsx` — Tags → in-body status row.
+8. `web/src/app/pages/PushSurfacePage.tsx` — Back/Reload/Save (3 actions); Back becomes `onClose` override.
+9. `web/src/app/pages/HostMachinePage.tsx` — two call sites; dynamic title for `allNodesSelected`; Refresh action.
+10. `web/src/app/pages/GroundControlProPage.tsx` — Backup/Compile/Push (3 actions).
+11. `web/src/app/pages/MaschineMidiMapPage.tsx`
+12. `web/src/app/pages/MaschinePage.tsx`
+13. `web/src/app/pages/PerformanceBrainPage.tsx` — Focus Overview + Back to Audio Grid; coordinated with Phase 6.
+
+**ShellWindowTitleStrip users (12):**
+14. `web/src/app/components/Platform/PlatformModal.tsx` — modal, use `Close` button.
+15. `web/src/app/components/Devices/DevicesShell.tsx`
+16. `web/src/app/pages/MOTURMEPage.tsx`
+17. `web/src/app/pages/LegacyPage.tsx`
+18. `web/src/app/pages/PipeWirePage.tsx`
+19. `web/src/app/pages/MeteringPage.tsx`
+20. `web/src/app/pages/ExpressionPage.tsx`
+21. `web/src/app/pages/AudioArtifactsPage.tsx`
+22. `web/src/app/pages/ChainsPage.tsx`
+23. `web/src/app/pages/MidiHubShell.tsx` — child pages under `web/src/app/pages/midi-hub/` call `useSetShellWindow` with their sub-route title.
+24. `web/src/app/pages/SnapshotPublishPage.tsx`
+25. `web/src/app/pages/SnapshotEditorPageContent.tsx`
+
+For each: read full file before editing; include mutation-bound action handlers in the `useSetShellWindow` deps array.
+
+### Phase 5 — Delete retired files
+
+```
+web/src/app/components/PageHeader.tsx
+web/src/app/components/PageHeader.css
+web/src/app/components/PageHeader.test.tsx
+web/src/app/components/shared/ShellWindowTitleStrip.tsx
+web/src/app/components/shared/WindowTitleStrip.tsx
+web/src/app/components/shared/WindowTitleStrip.css
+```
+Then verify no import remains: `grep -rn "from.*PageHeader\|from.*ShellWindowTitleStrip\|from.*WindowTitleStrip" web/src`.
+
+### Phase 6 — Brain Overview four-tab redesign
+
+**New `brainViews/BrainOverviewShell.tsx`** — reads/writes `?view=` URL param + `brain:last-view` localStorage; tab row + spacer + `{warnCount} WARN` / `READY` tags; warn count `= diagnostics.controller_qualification.issues.length + diagnostics.warnings.length`.
+
+**`PerformanceView.tsx` (Option A)** — TransportHero (play/stop/rec wired to `onTransport`; BPM/position from `transport`; mini waveform static `data-placeholder="transport-waveform"`; L/R meters static `data-placeholder="master-meter"`; voices from `diagnostics`); PadMatrix (`slots.length` pads, 4×4/4×3/4×2 grid; active = `state.active_slot`; click → `onSlotSelect`); StatusStrip (snapshot/workspace/tier/qualification/CPU/roundtrip from `state`+`diagnostics`); AttentionList (iterate `qualification.issues` + per-area issues; Resolve → section navigate); Focused slot card (activeSlot data).
+
+**`ConsoleView.tsx` (Option B)** — inline transport + BPM strip; 16 channel strips (slots truncated to 16); level/mute/solo/pan from slot; fader drag → `onSlotUpdate` (debounce 100ms); meter segs from `slot.level` `data-placeholder="channel-meter"`; A/B/C sends static `data-placeholder="channel-sends"`; bus routing matrix from `mixer.buses`; qualification list.
+
+**`StepView.tsx` (Option C)** — 8×16 grid from `sequence.lanes.slice(0, 8)`; `active_steps` → deterministic placeholder pattern `data-placeholder="step-pattern"`; playhead animated from `transport.step`; pattern variation A–H buttons → `onTransport({ variation })`; song arrangement from `state.song.entries`; per-step detail derived from active step/track `data-placeholder="step-detail"`; trigger scan sparkline from rolling `diagnostics.trigger_latency_ms` history in `useRef`.
+
+**`SplitView.tsx` (Option D)** — KeyboardModule (3 octaves, zones from `inputs.keyboard_zones`, held keys static `data-placeholder="keyboard-held-keys"`); PadsModule (first 8 slots); RoutingModule (6×8 from `mixer.buses` + slot sources); Import CTAs REMOVED per Q18; qualification progress strip (`ready_surface_count / 4`).
+
+**`brainViews.css`** — single stylesheet scoped under `.brain-overview`, ≤ 500 lines, exports dark tokens as scoped CSS vars.
+
+**`PerformanceBrainPage.tsx` changes:**
+1. Add `?view=` parsing with localStorage fallback, default `performance`.
+2. When `activeSection === 'overview'`, render `<BrainOverviewShell>` replacing existing `OverviewCards` block (lines 602-667).
+3. Extend `handleSectionChange` to strip `?view=` when leaving overview.
+4. Replace `<PageHeader>` call (lines 528-544) with `useSetShellWindow({ title, subtitle, kicker: 'Platform / Performance Brain', actions: [Focus Overview, Back to Audio Grid] }, [...])`.
+5. Delete `OverviewCards` function (lines 167-220). Inline `QualificationStrip` into `BrainOverviewShell` if unused elsewhere.
+6. Import `./brainViews/brainViews.css`.
+
+### Phase 7 — Test updates
+
+1. `PerformanceBrainPage.test.tsx`: remove `getByText('Performance Brain')` expectations tied to old PageHeader DOM; add `describe('overview tabs')` for four tab renders + URL param + warn count.
+2. `AppShell.test.tsx`: assert `.shell-ctx`, `.shell-ws`, `.shell-ctx__close` render; dismiss → `ctx--hidden`; workspace label reflects route. Remove `<WindowTitleStrip>` expectations.
+3. `web/src/app/pages/__snapshots__/DesktopExperience.snapshot.test.tsx.snap`: regenerate via `npx jest -u --testPathPattern=DesktopExperience.snapshot`.
+4. `DesktopExperience.integration.test.tsx`: selectors `.window-title-strip` → `.shell-ws` / `.shell-ctx`.
+5. `HoToneJoGGView.test.tsx`, `HostMachinePage.test.tsx`, `GroundControlProPage.test.tsx`: remove `<PageHeader>` expectations; assert subtitle via `useSetShellWindow` mock or AppShell render.
+6. **Delete** `PageHeader.test.tsx`.
+
+### Phase 8 — Ship
+
+```bash
+cd web
+npm run typecheck && npm run lint && npx jest --no-coverage && npm run build
+cd ..
+git add -A && git diff --stat
+git commit -m "$(cat <<'EOF'
+feat(T2438): replace page chrome with global AppShell top bar + redesign Brain Overview as four-tab shell
+
+Retires PageHeader, ShellWindowTitleStrip, and WindowTitleStrip. Introduces a
+blue context bar (32px) + workspace bar (40px) + content kicker rendered
+globally by AppShell, and an action-slot contract via useSetShellWindow so
+pages declare their chrome metadata + mutation-bound buttons at mount.
+
+Adds BrainOverviewShell with four first-class views (Performance / Console /
+Step / Split) wired to real brainApi data; tab state is a frontend-only ?view=
+URL param scoped under ?section=overview (BrainState.active_section remains
+unchanged on the server).
+
+Co-Authored-By: Claude Opus 4.7 <noreply@anthropic.com>
+EOF
+)"
+git push origin master && git push gitlab master
+python3 scripts/continuous_release.py --commit-message "T2438 chrome + Brain Overview"
+curl -sI http://localhost:3000/ | head -5
+```
+
+### Rollback plan
+
+Single revert on `master` + dual-push restores pre-T2438 state atomically (no feature flags, no compat shims).
+
+### Known follow-ups (not in scope)
+
+- Widen `BrainState.active_section` server-side to include four view IDs; then promote `?view=` → first-class `?section=`.
+- Real per-channel metering feed (ConsoleView).
+- Real per-step pattern data (StepView).
+- Real held-key MIDI feed (SplitView KeyboardModule).
+- Action-slot overflow menu for pages with >3 actions.
+
+Assigned to: Claude
+Last updated: 2026-04-24 EDT - Claude: plan-first mode chosen after scope assessment; full ordered execution plan inlined above + mirrored at [docs/plans/T2438_TOP_CHROME_AND_BRAIN_OVERVIEW_PLAN.md](plans/T2438_TOP_CHROME_AND_BRAIN_OVERVIEW_PLAN.md). Next session executes straight through Phase 1 → Phase 8.
 
 ---
 

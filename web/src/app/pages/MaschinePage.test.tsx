@@ -6,6 +6,15 @@ import { MemoryRouter } from 'react-router-dom'
 
 import { MaschinePage } from './MaschinePage'
 
+jest.mock('../layout/useSetShellWindow', () => ({
+  useSetShellWindow: jest.fn(),
+}))
+
+function getShellWindowPatches(): Array<{ title?: string; subtitle?: string; actions?: Array<{ id: string }> }> {
+  const mocked = jest.requireMock('../layout/useSetShellWindow') as { useSetShellWindow: jest.Mock }
+  return mocked.useSetShellWindow.mock.calls.map((call) => call[0])
+}
+
 jest.mock('../../map2/clients/maschine', () => ({
   maschineApi: {
     getStatus: jest.fn(),
@@ -275,8 +284,15 @@ describe('MaschinePage', () => {
   it('renders all Maschine panels with cabl protocol info and shows connected status', async () => {
     renderPage()
 
-    expect(await screen.findByRole('heading', { name: 'Maschine MK1' })).toBeTruthy()
-    expect(await screen.findByText('Connected')).toBeTruthy()
+    // Wait for the async status query to resolve before synchronous assertions.
+    const portMatches = await screen.findAllByText('MAP2:Maschine-MK1')
+    expect(portMatches.length).toBeGreaterThan(0)
+    const patches = getShellWindowPatches()
+    expect(patches.some((p) => p.title === 'Maschine MK1')).toBe(true)
+    const hasStatusAction = patches.some((p) =>
+      (p.actions ?? []).some((a: { id: string }) => a.id === 'status'),
+    )
+    expect(hasStatusAction).toBe(true)
     expect(screen.getByRole('heading', { name: 'Connection' })).toBeTruthy()
     expect(screen.getByRole('heading', { name: 'USB Protocol' })).toBeTruthy()
     expect(screen.getByRole('heading', { name: 'Encoder Map' })).toBeTruthy()

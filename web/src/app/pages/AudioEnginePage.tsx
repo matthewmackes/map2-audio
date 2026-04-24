@@ -73,7 +73,7 @@ import type {
 } from '../../map2/types'
 import { useCluster } from '../contexts/useCluster'
 import { ClusterEngineGrid } from '../components/AudioEngine/ClusterEngineGrid'
-import { PageHeader } from '../components/PageHeader'
+import { useSetShellWindow } from '../layout/useSetShellWindow'
 import { useNodePageContext } from '../hooks/useNodePageContext'
 import { useViewedNodeStore } from '../stores/viewedNodeStore'
 import { NODE_PAGE_KEYS } from '../utils/nodeDisplay'
@@ -994,45 +994,42 @@ export function AudioEnginePage() {
 
   const alerts = pw.alerts
 
+  useSetShellWindow({
+    title: 'Audio Engine',
+    kicker: 'Platform / Audio Engine',
+    actions: [
+      { id: 'health', label: health.label, status: (health.type === 'green' ? 'ok' : health.type === 'red' ? 'error' : 'warn') as "ok" | "warn" | "error" | "info", disabled: true },
+    ],
+  }, [health.label, health.type])
+
   return (
     <div className="audio-engine-page">
       <Layer className="audio-engine-page__surface">
-        <PageHeader
-          title="Audio Engine"
-          icon={<Activity size={32} />}
-          actions={(
-            <div className="audio-engine-page__header-actions">
-              {isClusterMode ? (
-                <div className="audio-engine-page__header-control">
-                  <Dropdown
-                    id="audio-engine-node-selector"
-                    titleText="Detail node"
-                    label="Select a node"
-                    items={clusterOptions}
-                    selectedItem={selectedClusterOption}
-                    itemToString={(item) => item?.label ?? ''}
-                    onChange={({ selectedItem }) => {
-                      if (!selectedItem) {
-                        return
-                      }
-
-                      if (selectedItem.id === 'all') {
-                        setActiveNode('all')
-                        return
-                      }
-
-                      setActiveNode(null)
-                      setViewedNode(NODE_PAGE_KEYS.audioEngine, selectedItem.id)
-                    }}
-                  />
-                </div>
-              ) : null}
-              <Tag type={health.type} renderIcon={health.icon}>
-                {health.label}
-              </Tag>
+        {isClusterMode ? (
+          <div className="audio-engine-page__header-band audio-engine-page__header-band--dropdown">
+            <div className="audio-engine-page__header-control">
+              <Dropdown
+                id="audio-engine-node-selector"
+                titleText="Detail node"
+                label="Select a node"
+                items={clusterOptions}
+                selectedItem={selectedClusterOption}
+                itemToString={(item) => item?.label ?? ''}
+                onChange={({ selectedItem }) => {
+                  if (!selectedItem) {
+                    return
+                  }
+                  if (selectedItem.id === 'all') {
+                    setActiveNode('all')
+                    return
+                  }
+                  setActiveNode(null)
+                  setViewedNode(NODE_PAGE_KEYS.audioEngine, selectedItem.id)
+                }}
+              />
             </div>
-          )}
-        />
+          </div>
+        ) : null}
 
         <div className="audio-engine-page__header-band">
           {isClusterMode ? (

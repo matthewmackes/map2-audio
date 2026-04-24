@@ -17,13 +17,11 @@ jest.mock('../../../hooks/useDeviceNodeContext', () => ({
   useDeviceNodeContext: (...args: unknown[]) => mockUseDeviceNodeContext(...args),
 }))
 
-jest.mock('../../PageHeader', () => ({
-  PageHeader: ({ title, subtitle }: { title: string; subtitle?: string }) => (
-    <div>
-      <div>{title}</div>
-      {subtitle ? <div>{subtitle}</div> : null}
-    </div>
-  ),
+const shellWindowPatches: unknown[] = []
+jest.mock('../../../layout/useSetShellWindow', () => ({
+  useSetShellWindow: (patch: unknown) => {
+    shellWindowPatches.push(patch)
+  },
 }))
 
 jest.mock('../../DeviceContext', () => ({
@@ -72,9 +70,12 @@ describe('HoToneJoGGView', () => {
     })
     mockUseDeviceNodeContext.mockReturnValue({ deviceState: 'ready' })
 
+    shellWindowPatches.length = 0
     render(<HoToneJoGGView />)
 
-    expect(screen.getByText('USB Audio Interface Configuration & Monitoring · Viewing rack-b')).toBeTruthy()
+    expect((shellWindowPatches[shellWindowPatches.length - 1] as { subtitle?: string })?.subtitle).toBe(
+      'USB Audio Interface Configuration & Monitoring · Viewing rack-b',
+    )
     expect(screen.getByTestId('audio-interface-control').textContent).toBe('node-b')
     expect(mockAudioInterfaceControl.mock.calls[0]?.[0]).toEqual({ nodeId: 'node-b' })
   })

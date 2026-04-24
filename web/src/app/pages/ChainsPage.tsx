@@ -23,7 +23,6 @@ import { chainsApi } from '../../map2/api'
 import { EmptyState } from '../components/shared/EmptyState'
 import { LoadingState } from '../components/shared/LoadingState'
 import { MapAudioGridIcon } from '../components/icons/map'
-import { ShellWindowTitleStrip } from '../components/shared/ShellWindowTitleStrip'
 import { useCluster } from '../contexts/useCluster'
 import { useNodePageContext } from '../hooks/useNodePageContext'
 import { useViewedNodeStore } from '../stores/viewedNodeStore'
@@ -217,7 +216,6 @@ export function ChainsPage() {
 
     return (
       <div className="chains-page">
-        <ShellWindowTitleStrip />
         <Layer className="chains-page__hero">
           <div className="chains-page__header-row">
             <div className="chains-page__title-block">
@@ -328,7 +326,6 @@ export function ChainsPage() {
 
   return (
     <div className="chains-page">
-      <ShellWindowTitleStrip />
       <Layer className="chains-page__hero">
         <div className="chains-page__header-row">
           <div className="chains-page__title-block">

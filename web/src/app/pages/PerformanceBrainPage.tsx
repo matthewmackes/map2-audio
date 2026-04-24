@@ -21,7 +21,7 @@ import { Button, InlineLoading, InlineNotification, Tag, Tile } from '@carbon/re
 import { useNavigate, useSearchParams } from 'react-router-dom'
 
 import { UnifiedWorkspaceSideNav, type UnifiedWorkspaceSideNavItem } from '@/app/components/navigation/UnifiedWorkspaceSideNav'
-import { PageHeader } from '@/app/components/PageHeader'
+import { useSetShellWindow } from '@/app/layout/useSetShellWindow'
 import { useBrainRuntimeStateSync } from '@/app/hooks/useBrainRuntimeState'
 import {
   brainApi,
@@ -36,6 +36,7 @@ import {
 } from '@/map2/api'
 import type { DrumBackingTrackSummary, DrumBackingTrackTransportState, DrumPack } from '@/map2/types'
 import { parseBrainImportSource } from './brainHandoff'
+import { BrainOverviewShell } from './brainViews/BrainOverviewShell'
 import './PerformanceBrainPage.css'
 
 type SectionId =
@@ -121,31 +122,6 @@ function uniqueItems(values: string[]): string[] {
   return Array.from(new Set(values.filter(Boolean)))
 }
 
-function QualificationStrip({ qualification }: { qualification: BrainControllerQualification }) {
-  const areas = [
-    { key: 'keyboard', label: 'Keyboard', telemetry: qualification.keyboard },
-    { key: 'triggers', label: 'Triggers', telemetry: qualification.triggers },
-    { key: 'sequence', label: 'Sequence', telemetry: qualification.sequence },
-    { key: 'routing', label: 'Routing', telemetry: qualification.routing },
-  ] as const
-
-  return (
-    <div className="brain-page__qualification-grid">
-      {areas.map((area) => (
-        <Tile key={area.key} className="brain-page__summary-card brain-page__qualification-card">
-          <div className="brain-page__qualification-header">
-            <span className="brain-page__summary-eyebrow">{area.label}</span>
-            <Tag type={qualificationTagType(area.telemetry.ready)}>
-              {area.telemetry.ready ? 'Ready' : 'Attention'}
-            </Tag>
-          </div>
-          <strong>{area.telemetry.summary}</strong>
-          <span>{area.telemetry.issues[0] ?? 'Qualified for the current scoped workflow.'}</span>
-        </Tile>
-      ))}
-    </div>
-  )
-}
 
 function selectedBackingTrack(
   tracks: DrumBackingTrackSummary[],
@@ -164,60 +140,6 @@ function selectedPracticePack(
   return packs.find((pack) => pack.pack_id === activePackId)
 }
 
-function OverviewCards({
-  state,
-  diagnostics,
-  transport,
-}: {
-  state: BrainState
-  diagnostics: BrainDiagnostics
-  transport: BrainTransportState
-}) {
-  return (
-    <div className="brain-page__overview-grid">
-      <Tile className="brain-page__summary-card">
-        <span className="brain-page__summary-eyebrow">Realtime posture</span>
-        <strong>{transport.is_playing ? 'Transport running' : 'Transport stopped'}</strong>
-        <span>{diagnostics.buffer_size_samples} samples @ {diagnostics.sample_rate_hz / 1000} kHz</span>
-      </Tile>
-      <Tile className="brain-page__summary-card">
-        <span className="brain-page__summary-eyebrow">Voice budget</span>
-        <strong>{diagnostics.active_voices} active / {diagnostics.peak_voices} peak</strong>
-        <span>{diagnostics.polyphony_headroom} voices headroom</span>
-      </Tile>
-      <Tile className="brain-page__summary-card">
-        <span className="brain-page__summary-eyebrow">Sequence focus</span>
-        <strong>Pattern {transport.pattern + 1} · Var {transport.variation}</strong>
-        <span>Switch quantization: {transport.switch_quantization_beats} beats</span>
-      </Tile>
-      <Tile className="brain-page__summary-card">
-        <span className="brain-page__summary-eyebrow">Snapshot authority</span>
-        <strong>{state.snapshot_integration.authority_model}</strong>
-        <span>{state.snapshot_integration.committed_state_id}</span>
-      </Tile>
-      <Tile className="brain-page__summary-card">
-        <span className="brain-page__summary-eyebrow">Controller readiness</span>
-        <strong>{diagnostics.controller_qualification.summary}</strong>
-        <span>{diagnostics.controller_qualification.scoped_instance_key}</span>
-      </Tile>
-      <Tile className="brain-page__summary-card">
-        <span className="brain-page__summary-eyebrow">Keyboard posture</span>
-        <strong>{diagnostics.controller_qualification.keyboard.summary}</strong>
-        <span>{diagnostics.controller_qualification.keyboard.aftertouch_modes.join(', ') || 'No aftertouch mode'}</span>
-      </Tile>
-      <Tile className="brain-page__summary-card">
-        <span className="brain-page__summary-eyebrow">Trigger posture</span>
-        <strong>{diagnostics.controller_qualification.triggers.summary}</strong>
-        <span>{diagnostics.controller_qualification.triggers.fastest_scan_time_ms.toFixed(1)} ms fastest scan</span>
-      </Tile>
-      <Tile className="brain-page__summary-card">
-        <span className="brain-page__summary-eyebrow">Routing posture</span>
-        <strong>{diagnostics.controller_qualification.routing.summary}</strong>
-        <span>{diagnostics.controller_qualification.sequence.summary}</span>
-      </Tile>
-    </div>
-  )
-}
 
 export function PerformanceBrainPage() {
   const navigate = useNavigate()
@@ -525,24 +447,18 @@ export function PerformanceBrainPage() {
     stateMutation.mutate({ active_slot: slotId })
   }
 
+  useSetShellWindow({
+    title: 'Performance Brain',
+    subtitle: 'Unified drum-and-sequencer brain with keyboard layers, trigger nuance, routing, diagnostics, and snapshot-first workflow.',
+    kicker: 'Platform / Performance Brain',
+    actions: [
+      { id: 'focus-overview', label: 'Focus Overview', icon: Reset, onClick: () => handleSectionChange('overview'), active: activeSection === 'overview' },
+      { id: 'back-audio-grid', label: 'Back to Audio Grid', icon: ArrowLeft, onClick: () => navigate('/juce-grid') },
+    ],
+  }, [activeSection, handleSectionChange, navigate])
+
   return (
     <section className="brain-page">
-      <PageHeader
-        title="Performance Brain"
-        subtitle="Unified drum-and-sequencer brain with keyboard layers, trigger nuance, routing, diagnostics, and snapshot-first workflow."
-        icon={<Music size={24} />}
-        actions={(
-          <div className="brain-page__header-actions">
-            <Button kind="ghost" size="sm" renderIcon={Reset} onClick={() => handleSectionChange('overview')}>
-              Focus Overview
-            </Button>
-            <Button kind="secondary" size="sm" renderIcon={ArrowLeft} onClick={() => navigate('/juce-grid')}>
-              Back to Audio Grid
-            </Button>
-          </div>
-        )}
-      />
-
       <div className="brain-page__shell">
         <UnifiedWorkspaceSideNav
           ariaLabel="Performance Brain section navigation"
@@ -568,8 +484,6 @@ export function PerformanceBrainPage() {
         />
 
         <div className="brain-page__main">
-          <OverviewCards state={state} diagnostics={diagnostics} transport={transport} />
-
           <section className="brain-page__toolbar">
             <div className="brain-page__toolbar-block">
               <span className="brain-page__toolbar-label">Set</span>
@@ -600,70 +514,19 @@ export function PerformanceBrainPage() {
           <hr className="brain-page__divider" role="separator" aria-hidden="true" />
 
           {activeSection === 'overview' ? (
-            <div className="brain-page__section-grid">
-              <QualificationStrip qualification={qualification} />
-
-              <Tile className="brain-page__panel">
-                <span className="brain-page__panel-title">Why this brain</span>
-                <p className="brain-page__panel-copy">
-                  The replacement product separates by workflow speed, routing, trigger nuance, and instant layer control.
-                  Legacy `/drums` and `/synth-forge` remain live during migration, but this surface is the new command center.
-                </p>
-                <div className="brain-page__button-row">
-                  <Button
-                    size="sm"
-                    renderIcon={Launch}
-                    onClick={() => importDrumsMutation.mutate()}
-                    disabled={importDrumsMutation.isPending}
-                  >
-                    Import Drum Machine
-                  </Button>
-                  <Button
-                    size="sm"
-                    kind="secondary"
-                    renderIcon={Launch}
-                    onClick={() => importSynthForgeMutation.mutate()}
-                    disabled={importSynthForgeMutation.isPending}
-                  >
-                    Import SynthForge
-                  </Button>
-                </div>
-              </Tile>
-
-              <Tile className="brain-page__panel">
-                <span className="brain-page__panel-title">Focused slot</span>
-                <strong>{activeSlot?.name}</strong>
-                <span>{summaryForSlot(activeSlot)}</span>
-                <div className="brain-page__slot-strip">
-                  {slots.slice(0, 8).map((slot) => (
-                    <button
-                      key={slot.slot_id}
-                      type="button"
-                      className={`brain-page__slot-pill${slot.slot_id === state.active_slot ? ' brain-page__slot-pill--active' : ''}`}
-                      onClick={() => handleSlotSelect(slot.slot_id)}
-                    >
-                      {slot.slot_id + 1}
-                    </button>
-                  ))}
-                </div>
-              </Tile>
-
-              <Tile className="brain-page__panel">
-                <span className="brain-page__panel-title">Qualification posture</span>
-                <div className="brain-page__qualification-header">
-                  <strong>{qualification.summary}</strong>
-                  <Tag type={qualificationTagType(qualification.controller_ready)}>
-                    {qualification.controller_ready ? 'Qualified' : 'Needs attention'}
-                  </Tag>
-                </div>
-                <span>{diagnostics.roundtrip_latency_ms.toFixed(1)} ms roundtrip · {diagnostics.cpu_load_percent.toFixed(1)}% CPU · scope {qualification.scoped_instance_key}</span>
-                <ul className="brain-page__flat-list">
-                  <li>{qualification.scope_binding_ready ? 'Authority IDs are bound to this scoped Brain instance.' : 'Authority IDs are drifting away from the scoped Brain instance.'}</li>
-                  <li>{qualification.tier_a_runtime_locked ? 'Tier A runtime locks are currently preserved.' : 'Tier A runtime locks are outside the current qualification window.'}</li>
-                  <li>{controllerAlerts[0] ?? 'No open controller qualification issues.'}</li>
-                </ul>
-              </Tile>
-            </div>
+            <BrainOverviewShell
+              state={state}
+              transport={transport}
+              slots={slots}
+              layers={layers}
+              sequence={sequence}
+              mixer={mixer}
+              inputs={inputs}
+              diagnostics={diagnostics}
+              onTransportPatch={(patch) => transportMutation.mutate(patch)}
+              onSlotSelect={(slotId) => handleSlotSelect(slotId)}
+              onSlotUpdate={(slotId, patch) => slotMutation.mutate({ slotId, patch })}
+            />
           ) : null}
 
           {activeSection === 'perform' ? (
@@ -907,6 +770,31 @@ export function PerformanceBrainPage() {
 
           {activeSection === 'library' ? (
             <div className="brain-page__section-grid">
+              <Tile className="brain-page__panel">
+                <span className="brain-page__panel-title">Migration & import</span>
+                <p className="brain-page__panel-copy">
+                  Replacement surface for legacy Drums + SynthForge. Both remain live during migration; this is the new command center.
+                </p>
+                <div className="brain-page__button-row">
+                  <Button
+                    size="sm"
+                    renderIcon={Launch}
+                    onClick={() => importDrumsMutation.mutate()}
+                    disabled={importDrumsMutation.isPending}
+                  >
+                    Import Drum Machine
+                  </Button>
+                  <Button
+                    size="sm"
+                    kind="secondary"
+                    renderIcon={Launch}
+                    onClick={() => importSynthForgeMutation.mutate()}
+                    disabled={importSynthForgeMutation.isPending}
+                  >
+                    Import SynthForge
+                  </Button>
+                </div>
+              </Tile>
               {library.collections.map((collection) => (
                 <Tile key={collection.collection_id} className="brain-page__panel">
                   <span className="brain-page__panel-title">{collection.label}</span>

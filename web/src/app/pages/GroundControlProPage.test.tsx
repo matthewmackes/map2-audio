@@ -101,22 +101,11 @@ jest.mock('../components/DeviceContext', () => ({
   ),
 }))
 
-jest.mock('../components/PageHeader', () => ({
-  PageHeader: ({
-    title,
-    subtitle,
-    actions,
-  }: {
-    title: string
-    subtitle?: string
-    actions?: React.ReactNode
-  }) => (
-    <div>
-      <div>{title}</div>
-      {subtitle ? <div>{subtitle}</div> : null}
-      {actions}
-    </div>
-  ),
+const shellWindowPatches: Array<{ actions?: Array<{ id: string; label: string; onClick?: () => void; disabled?: boolean }> }> = []
+jest.mock('../layout/useSetShellWindow', () => ({
+  useSetShellWindow: (patch: unknown) => {
+    shellWindowPatches.push(patch as never)
+  },
 }))
 
 jest.mock('../../map2/groundControlProApi', () => ({
@@ -129,6 +118,7 @@ const { GroundControlProPage } =
 
 describe('GroundControlProPage', () => {
   beforeEach(() => {
+    shellWindowPatches.length = 0
     if (typeof window.matchMedia !== 'function') {
       Object.defineProperty(window, 'matchMedia', {
         writable: true,
@@ -204,13 +194,14 @@ describe('GroundControlProPage', () => {
     await waitFor(() => expect(mockGroundControlProApi.getPorts).toHaveBeenCalled())
     await waitFor(() => expect(mockGroundControlProApi.getFieldMap).toHaveBeenCalled())
 
-    expect(screen.getByText('Forensic-grade SysEx import, validation, editing, backup, and transmit workflow for Voodoo Lab Ground Control Pro.')).toBeTruthy()
+    const lastPatch = shellWindowPatches[shellWindowPatches.length - 1]
+    expect(lastPatch?.actions?.some((a) => a.id === 'push')).toBe(true)
+    expect(lastPatch?.actions?.find((a) => a.id === 'push')?.disabled).toBe(true)
     expect(screen.getByRole('tab', { name: 'Overview' })).toBeTruthy()
     expect(screen.getByRole('tab', { name: 'Configuration' })).toBeTruthy()
     expect(screen.getByRole('tab', { name: 'Presets' })).toBeTruthy()
     expect(screen.getByRole('tab', { name: 'Validation & Transfer' })).toBeTruthy()
     expect(screen.getByRole('tab', { name: 'Forensics' })).toBeTruthy()
-    expect(screen.getByRole('button', { name: 'Push To Device' })).toBeDisabled()
     expect(screen.getByText('Hardware not detected')).toBeTruthy()
     expect(screen.getByTestId('device-context-banner')).toHaveTextContent('Ground Control Pro context banner')
   })
@@ -257,8 +248,9 @@ describe('GroundControlProPage', () => {
 
     expect(screen.getByText('factory_default_v113.syx')).toBeTruthy()
     expect(screen.getByText('No fresh backup yet')).toBeTruthy()
-    expect(screen.getByRole('button', { name: 'Push To Device' })).toBeDisabled()
-    expect(screen.getAllByRole('button', { name: 'Compile' })[0]).not.toBeDisabled()
+    const afterImportPatch = shellWindowPatches[shellWindowPatches.length - 1]
+    expect(afterImportPatch?.actions?.find((a) => a.id === 'push')?.disabled).toBe(true)
+    expect(afterImportPatch?.actions?.find((a) => a.id === 'compile')?.disabled).toBe(false)
   })
 
   it('keeps GCX loop relay edits in the compiled preset model', async () => {
@@ -331,7 +323,8 @@ describe('GroundControlProPage', () => {
     expect(relayToggle).toHaveAttribute('aria-checked', 'false')
 
     fireEvent.click(relayToggle)
-    fireEvent.click(screen.getAllByRole('button', { name: 'Compile' })[0])
+    const compileAction = shellWindowPatches[shellWindowPatches.length - 1]?.actions?.find((a) => a.id === 'compile')
+    compileAction?.onClick?.()
 
     await waitFor(() => expect(mockGroundControlProApi.compileSession).toHaveBeenCalled())
     const compiledModel = mockGroundControlProApi.compileSession.mock.calls[0][1]

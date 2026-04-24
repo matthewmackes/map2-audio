@@ -118,7 +118,7 @@
 .app-shell__frame {
   display: grid;
   grid-template-columns: var(--global-tree-width, 0rem) 1fr;
-  min-height: 100vh;
+  min-height: calc(100vh - var(--ctx-h, 32px) - var(--ws-h, 40px));
   transition: grid-template-columns 160ms ease;
 }
 

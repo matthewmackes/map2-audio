@@ -22,7 +22,6 @@ import { PhaseCorrelationMeter } from '../components/Visualizations/PhaseCorrela
 import { VuMeterDisplay } from '../components/Visualizations/VuMeterDisplay'
 import { DynamicsMeteringPanel } from '../components/Visualizations/DynamicsMeteringPanel'
 import { ClusterMeteringStrip } from '../components/Visualizations/ClusterMeteringStrip'
-import { ShellWindowTitleStrip } from '../components/shared/ShellWindowTitleStrip'
 import { useIsMobile } from '../hooks/useIsMobile'
 import { useWebSocketTopic } from '../../map2/hooks/useWebSocket'
 import { useCluster } from '../contexts/useCluster'
@@ -131,7 +130,6 @@ export function MeteringPage() {
       background: 'rgba(12, 18, 28, 0.46)'
       }}
     >
-      <ShellWindowTitleStrip />
       {/* Header Section */}
       <header style={{
         marginBottom: 32,

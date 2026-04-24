@@ -66,6 +66,12 @@ export function useAppShellPresentation({
   const isThemedWorkspaceRoute = isAudioGridWorkspaceRoute || isIntegratedWorkspaceRoute
   const shellClassName = `app-shell${isTabletTouchRoute ? ' app-shell--juce-grid-tablet' : ''}${isAudioGridWorkspaceRoute ? ' app-shell--audio-grid' : ''}${isThemedWorkspaceRoute ? ' app-shell--themed-workspace' : ''}${pathname !== '/perform' ? ' app-shell--windowed' : ''}${pathname === '/perform' ? ' app-shell--perform-route' : ''}${pathname === '/' ? ' app-shell--landing' : ''}`
 
+  const workspaceLabel = currentShellItem?.shortLabel ?? currentShellItem?.label ?? 'Workspace'
+  const shellTitle = currentShellItem?.label ?? workspaceLabel
+  const shellSubtitle = currentShellItem?.description
+  const shellKicker = `Platform / ${workspaceLabel}`
+  const shellCrumbs = ['Workspace surface', workspaceLabel]
+
   return {
     currentShellItem,
     isAudioGridWorkspaceRoute,
@@ -83,9 +89,13 @@ export function useAppShellPresentation({
       : [],
     shellAccentColor: currentShellItem?.color ?? 'var(--cds-link-primary, #0f62fe)',
     shellClassName,
+    shellCrumbs,
+    shellKicker,
     shellRouteHint: formatShellRouteHint(canonicalPathname),
+    shellSubtitle,
+    shellTitle,
     shellWindowIcon: currentShellItem?.icon ?? Map2BrandMark,
-    shellWorkspaceLabel: currentShellItem?.shortLabel ?? currentShellItem?.label ?? 'Workspace',
+    shellWorkspaceLabel: workspaceLabel,
     startMenuTileItems,
   }
 }

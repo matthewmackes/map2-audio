@@ -46,7 +46,6 @@ import { MapOs2DrivesIcon, MapOs2HomeIcon } from '../icons/map'
 import { WorkspacePageTemplate } from '../layout/WorkspacePageTemplate'
 import { ShellWindowProvider } from '../../layout/ShellWindowContext'
 import { LoadingState } from '../shared/LoadingState'
-import { ShellWindowTitleStrip } from '../shared/ShellWindowTitleStrip'
 import { PlatformGrafanaPanelDeck, type PlatformGrafanaPanelDefinition } from './PlatformGrafanaPanel'
 import { PlatformsOverviewTopology } from './PlatformsOverviewTopology'
 import {
@@ -1031,7 +1030,6 @@ export function PlatformModalContent({
   )
   const workspaceShell = (
     <div className={`platform-shell-page${surface === 'route' ? ' platform-shell-page--route' : ''}`}>
-      {surface === 'route' ? <ShellWindowTitleStrip /> : null}
       {surface === 'route' ? (
         <ShellWindowProvider value={null}>
           {workspaceTemplate}

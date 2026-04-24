@@ -44,7 +44,7 @@ import {
 import { ArrowRight, Code, Download, Save, Send, Upload } from '@carbon/icons-react'
 
 import { EmptyState } from '../components/shared/EmptyState'
-import { PageHeader } from '../components/PageHeader'
+import { useSetShellWindow } from '../layout/useSetShellWindow'
 import { DeviceContextBanner } from '../components/DeviceContext'
 import { useDeviceLocation } from '../hooks/useDeviceLocation'
 import groundControlProApi, {
@@ -557,28 +557,21 @@ export function GroundControlProPage() {
     changed: latestValidation?.changed_offsets.some((offset) => offset >= (PRESET_AREA_OFFSET + (preset.index * 82)) && offset < (PRESET_AREA_OFFSET + ((preset.index + 1) * 82))) ? 'Changed' : 'Baseline',
   }))
 
+  useSetShellWindow({
+    title: 'Ground Control Pro',
+    subtitle: 'Forensic-grade SysEx import, validation, editing, backup, and transmit workflow for Voodoo Lab Ground Control Pro.',
+    kicker: 'Platform / Ground Control Pro',
+    actions: [
+      { id: 'backup', label: 'Backup', icon: Download, onClick: () => { void handleBackup() } },
+      { id: 'compile', label: 'Compile', icon: Save, onClick: () => { void handleCompile() }, disabled: !session || !draftModel },
+      { id: 'push', label: 'Push', icon: Send, onClick: () => setPushModalOpen(true), disabled: !pushReady },
+    ],
+  }, [handleBackup, handleCompile, session, draftModel, pushReady])
+
   return (
     <section className="ground-control-pro-page">
       <Layer className="ground-control-pro-page__surface">
         <div className="ground-control-pro-page__content">
-          <PageHeader
-            title="Ground Control Pro"
-            subtitle="Forensic-grade SysEx import, validation, editing, backup, and transmit workflow for Voodoo Lab Ground Control Pro."
-            icon={<Upload size={24} />}
-            actions={(
-              <div className="ground-control-pro-page__header-actions">
-                <Button kind="secondary" renderIcon={Download} onClick={() => void handleBackup()}>
-                  Capture Backup
-                </Button>
-                <Button kind="secondary" renderIcon={Save} onClick={() => void handleCompile()} disabled={!session || !draftModel}>
-                  Compile
-                </Button>
-                <Button kind="primary" renderIcon={Send} onClick={() => setPushModalOpen(true)} disabled={!pushReady}>
-                  Push To Device
-                </Button>
-              </div>
-            )}
-          />
           <DeviceContextBanner deviceName="Ground Control Pro" deviceKey="ground-control-pro" />
 
           {notice ? (
