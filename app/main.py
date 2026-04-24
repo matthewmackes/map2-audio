@@ -446,12 +446,12 @@ async def lifespan(app):
         use_mock_lcd = os.getenv("MAP2_USE_MOCK_LCD", "true").lower() in ("1", "true", "yes")
         api_port = int(os.getenv("MAP2_API_PORT", "8080"))
 
-        identity = NodeIdentity(mode=deployment_mode)
+        identity = NodeIdentity(mode=canonical_mode)
         node_id = identity.node_id
         node_label = identity.node_id
 
         # mDNS discovery
-        mdns_discovery = MDNSPeerDiscovery(node_id, deployment_mode, port=api_port)
+        mdns_discovery = MDNSPeerDiscovery(node_id, canonical_mode, port=api_port)
         platform_event_bus = get_platform_event_bus()
         try:
             from app.services.ws_federation import get_ws_federator
