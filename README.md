@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1261** Python | **1240** TypeScript | **136** C++/H | **145** Docs | **2723** total commits | **3** stars | **0** forks | **0** open issues
+**1263** Python | **1240** TypeScript | **136** C++/H | **145** Docs | **2726** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`3c3fefcc`](https://github.com/matthewmackes/map2-audio/commit/3c3fefcc708a46f982946ee5439a7d5f7701dca9) | Merge branch 'master' of https://github.com/matthewmackes... | Map2 Audio | 2026-04-23 |
+| [`316dd78b`](https://github.com/matthewmackes/map2-audio/commit/316dd78b594c9090d72f5a779b4f0d2f1b762da9) | feat(T2431-D): LayeredConfigLoader + forbidden-override e... | Map2 Audio | 2026-04-23 |
+| [`be8d8d35`](https://github.com/matthewmackes/map2-audio/commit/be8d8d354f71b0dd65627b0e754abcb162e4b11e) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-24 |
 | [`bf4d327b`](https://github.com/matthewmackes/map2-audio/commit/bf4d327b8202a2e6a065e850c0bad1fb4f1d8e2d) | feat(T2431-C): Map2Paths platform path authority + full m... | Map2 Audio | 2026-04-23 |
 | [`a55ae236`](https://github.com/matthewmackes/map2-audio/commit/a55ae236c640b8e48d31e0b6ebbe676be3b7ba86) | Merge branch 'master' of https://github.com/matthewmackes... | Map2 Audio | 2026-04-23 |
 | [`e131a0c8`](https://github.com/matthewmackes/map2-audio/commit/e131a0c815615c9ed9f6a77d1f3aa8cc97c0f9a0) | feat(brain): divide posture grid + toolbar from section c... | Map2 Audio | 2026-04-23 |
 | [`98a84c63`](https://github.com/matthewmackes/map2-audio/commit/98a84c632b692df76d4aff37dbc44804a25dbd48) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-24 |
 | [`0d208b06`](https://github.com/matthewmackes/map2-audio/commit/0d208b0603289a26a13ad71ba12325ea31fa6722) | feat(T2431-B): ConfigOption authority metadata + enforcem... | Map2 Audio | 2026-04-23 |
-| [`e04cce23`](https://github.com/matthewmackes/map2-audio/commit/e04cce23d392896f8b29bf649100d76fa40d925a) | Merge branch 'master' of https://github.com/matthewmackes... | Map2 Audio | 2026-04-23 |
-| [`aef38e04`](https://github.com/matthewmackes/map2-audio/commit/aef38e04b4d30fd613d3db16afe60463e515b5e1) | feat(theme): MAIN-DEFAULT becomes the canonical default d... | Map2 Audio | 2026-04-23 |
-| [`f9bb279f`](https://github.com/matthewmackes/map2-audio/commit/f9bb279fda1ea413340fbf0feca0f5077a2be919) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-23 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
