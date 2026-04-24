@@ -89,13 +89,12 @@ jest.mock('../../components/Toasts', () => ({
   }),
 }))
 
-jest.mock('./MidiHubAreaLayout', () => ({
-  MidiHubAreaLayout: ({ title, children }: { title: string; children: React.ReactNode }) => (
-    <div>
-      <h2>{title}</h2>
-      {children}
-    </div>
-  ),
+jest.mock('../../layout/useSetShellWindow', () => ({
+  useSetShellWindow: jest.fn(),
+}))
+
+jest.mock('./MidiHubContentFrame', () => ({
+  MidiHubContentFrame: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
 }))
 
 jest.mock('../../components/MidiHub/MidiHubHelpPrimitives', () => ({
@@ -182,8 +181,17 @@ describe('MidiHubEventsPage', () => {
   it('renders event lists, shows traffic-free status, saves events, captures learn mode, and sends MSC', async () => {
     renderPage()
 
-    expect(await screen.findByRole('heading', { name: 'Event Lists' })).toBeTruthy()
     expect(await screen.findByText('Show Open')).toBeTruthy()
+    const useSetShellWindowMock = (
+      jest.requireMock('../../layout/useSetShellWindow') as { useSetShellWindow: jest.Mock }
+    ).useSetShellWindow
+    expect(useSetShellWindowMock).toHaveBeenCalled()
+    expect(
+      useSetShellWindowMock.mock.calls.some((call: unknown[]) => {
+        const patch = call[0] as { kicker?: string }
+        return typeof patch?.kicker === 'string' && patch.kicker.includes('Events')
+      }),
+    ).toBe(true)
 
     fireEvent.click(screen.getByRole('button', { name: 'Event list actions for show-open' }))
     fireEvent.click(await screen.findByText('Open'))

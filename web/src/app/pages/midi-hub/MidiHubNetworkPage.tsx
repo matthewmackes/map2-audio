@@ -5,21 +5,18 @@ import { MidiNetworkPanel } from '../../components/MidiHub/MidiNetworkPanel'
 import { StringInterfacePanel } from '../../components/MidiHub/StringInterfacePanel'
 import { TesiraPanel } from '../../components/MidiHub/TesiraPanel'
 import { VirtualGpioPanel } from '../../components/MidiHub/VirtualGpioPanel'
-import { MidiHubAreaLayout } from './MidiHubAreaLayout'
+import { useSetShellWindow } from '../../layout/useSetShellWindow'
+import { MidiHubContentFrame } from './MidiHubContentFrame'
 import './MidiHubNetworkPage.css'
 
 export function MidiHubNetworkPage() {
+  useSetShellWindow({
+    subtitle: 'Run RTP-MIDI, OSC, MIDI 2.0, Tesira TTP, virtual GPIO, and string-command transport from one protocol workspace.',
+    kicker: 'Platform / MIDI Hub / Network',
+  }, [])
+
   return (
-    <MidiHubAreaLayout
-      routeKey="network"
-      title="Network & Protocol"
-      summary="Run RTP-MIDI, OSC, MIDI 2.0, Tesira TTP, virtual GPIO, and string-command transport from one protocol workspace."
-      tags={[
-        { label: 'RTP-MIDI', type: 'blue' },
-        { label: 'OSC', type: 'cool-gray' },
-        { label: 'Tesira', type: 'green' },
-      ]}
-    >
+    <MidiHubContentFrame routeKey="network">
       <section className="midi-hub-page-band midi-hub-network-page">
         <div className="midi-hub-network-page__grid">
           <MidiHubPanelShell panelId="network" actionTag={<Tag type="blue">Stage links</Tag>}>
@@ -43,7 +40,7 @@ export function MidiHubNetworkPage() {
           </MidiHubPanelShell>
         </div>
       </section>
-    </MidiHubAreaLayout>
+    </MidiHubContentFrame>
   )
 }
 

@@ -14,13 +14,12 @@ jest.mock('../../../map2/api', () => ({
   midiHubApi: mockMidiHubApi,
 }))
 
-jest.mock('./MidiHubAreaLayout', () => ({
-  MidiHubAreaLayout: ({ title, children }: { title: string; children: React.ReactNode }) => (
-    <div>
-      <h2>{title}</h2>
-      {children}
-    </div>
-  ),
+jest.mock('../../layout/useSetShellWindow', () => ({
+  useSetShellWindow: jest.fn(),
+}))
+
+jest.mock('./MidiHubContentFrame', () => ({
+  MidiHubContentFrame: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
 }))
 
 jest.mock('../../components/MidiHub/MidiHubHelpPrimitives', () => ({
@@ -129,7 +128,16 @@ describe('MidiHubProcessingPage', () => {
   it('renders the processing route and exercises filter, mapper, script, macro, and scheduler workflows', async () => {
     render(<MidiHubProcessingPage />)
 
-    expect(screen.getByRole('heading', { name: 'Message Processing' })).toBeTruthy()
+    const useSetShellWindowMock = (
+      jest.requireMock('../../layout/useSetShellWindow') as { useSetShellWindow: jest.Mock }
+    ).useSetShellWindow
+    expect(useSetShellWindowMock).toHaveBeenCalled()
+    expect(
+      useSetShellWindowMock.mock.calls.some((call: unknown[]) => {
+        const patch = call[0] as { kicker?: string }
+        return typeof patch?.kicker === 'string' && patch.kicker.includes('Processing')
+      }),
+    ).toBe(true)
     expect(screen.getByRole('button', { name: 'Save filter route' })).toBeTruthy()
 
     fireEvent.click(screen.getByRole('button', { name: 'Save filter route' }))

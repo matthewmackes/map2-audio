@@ -88,13 +88,12 @@ jest.mock('../../../map2/clients/maschine', () => ({
   maschineApi: mockMaschineApi,
 }))
 
-jest.mock('./MidiHubAreaLayout', () => ({
-  MidiHubAreaLayout: ({ title, children }: { title: string; children: React.ReactNode }) => (
-    <div>
-      <h2>{title}</h2>
-      {children}
-    </div>
-  ),
+jest.mock('../../layout/useSetShellWindow', () => ({
+  useSetShellWindow: jest.fn(),
+}))
+
+jest.mock('./MidiHubContentFrame', () => ({
+  MidiHubContentFrame: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
 }))
 
 jest.mock('../../components/MidiHub/MidiHubHelpPrimitives', () => ({
@@ -230,8 +229,17 @@ describe('MidiHubConnectionsPage', () => {
   it('renders ports, switches workspace views, and reports connected devices and traffic data', async () => {
     renderPage()
 
-    expect(await screen.findByRole('heading', { name: 'Connections' })).toBeTruthy()
-    expect(screen.getByText('USB In')).toBeTruthy()
+    expect(await screen.findByText('USB In')).toBeTruthy()
+    const useSetShellWindowMock = (
+      jest.requireMock('../../layout/useSetShellWindow') as { useSetShellWindow: jest.Mock }
+    ).useSetShellWindow
+    expect(useSetShellWindowMock).toHaveBeenCalled()
+    expect(
+      useSetShellWindowMock.mock.calls.some((call: unknown[]) => {
+        const patch = call[0] as { kicker?: string }
+        return typeof patch?.kicker === 'string' && patch.kicker.includes('Connections')
+      }),
+    ).toBe(true)
     expect(screen.getAllByText('DIN Out').length).toBeGreaterThan(0)
     expect(screen.getByRole('heading', { name: 'Connected MIDI devices' })).toBeTruthy()
     expect(await screen.findByText('Maschine MK1')).toBeTruthy()

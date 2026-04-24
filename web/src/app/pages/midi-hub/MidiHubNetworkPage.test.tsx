@@ -25,13 +25,12 @@ jest.mock('../../components/Toasts', () => ({
   useToasts: () => ({ pushToast: jest.fn() }),
 }))
 
-jest.mock('./MidiHubAreaLayout', () => ({
-  MidiHubAreaLayout: ({ children, title }: { children: React.ReactNode; title: string }) => (
-    <section>
-      <h2>{title}</h2>
-      {children}
-    </section>
-  ),
+jest.mock('../../layout/useSetShellWindow', () => ({
+  useSetShellWindow: jest.fn(),
+}))
+
+jest.mock('./MidiHubContentFrame', () => ({
+  MidiHubContentFrame: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
 }))
 
 jest.mock('../../components/MidiHub/MidiNetworkPanel', () => ({
@@ -69,7 +68,16 @@ describe('MidiHubNetworkPage', () => {
   it('renders all network protocol sections', () => {
     renderPage()
 
-    expect(screen.getByRole('heading', { name: 'Network & Protocol' })).toBeTruthy()
+    const useSetShellWindowMock = (
+      jest.requireMock('../../layout/useSetShellWindow') as { useSetShellWindow: jest.Mock }
+    ).useSetShellWindow
+    expect(useSetShellWindowMock).toHaveBeenCalled()
+    expect(
+      useSetShellWindowMock.mock.calls.some((call: unknown[]) => {
+        const patch = call[0] as { kicker?: string }
+        return typeof patch?.kicker === 'string' && patch.kicker.includes('Network')
+      }),
+    ).toBe(true)
     expect(screen.getByText('Network Panel Mock')).toBeTruthy()
     expect(screen.getByText('MIDI 2 Panel Mock')).toBeTruthy()
     expect(screen.getByText('Tesira Panel Mock')).toBeTruthy()

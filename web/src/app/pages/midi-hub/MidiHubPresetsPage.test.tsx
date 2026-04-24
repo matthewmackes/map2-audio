@@ -56,13 +56,12 @@ jest.mock('../../components/Toasts', () => ({
   }),
 }))
 
-jest.mock('./MidiHubAreaLayout', () => ({
-  MidiHubAreaLayout: ({ title, children }: { title: string; children: React.ReactNode }) => (
-    <div>
-      <h2>{title}</h2>
-      {children}
-    </div>
-  ),
+jest.mock('../../layout/useSetShellWindow', () => ({
+  useSetShellWindow: jest.fn(),
+}))
+
+jest.mock('./MidiHubContentFrame', () => ({
+  MidiHubContentFrame: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
 }))
 
 jest.mock('../../components/MidiHub/MidiHubHelpPrimitives', () => ({
@@ -157,8 +156,17 @@ describe('MidiHubPresetsPage', () => {
   it('renders presets, recalls a preset, opens the compare modal, and saves chain ordering', async () => {
     renderPage()
 
-    expect(await screen.findByRole('heading', { name: 'Presets & Recall' })).toBeTruthy()
     expect((await screen.findAllByText('Baseline')).length).toBeGreaterThanOrEqual(2)
+    const useSetShellWindowMock = (
+      jest.requireMock('../../layout/useSetShellWindow') as { useSetShellWindow: jest.Mock }
+    ).useSetShellWindow
+    expect(useSetShellWindowMock).toHaveBeenCalled()
+    expect(
+      useSetShellWindowMock.mock.calls.some((call: unknown[]) => {
+        const patch = call[0] as { kicker?: string }
+        return typeof patch?.kicker === 'string' && patch.kicker.includes('Presets')
+      }),
+    ).toBe(true)
 
     fireEvent.click(screen.getByRole('button', { name: 'Preset actions for baseline' }))
     fireEvent.click(await screen.findByText('Recall'))

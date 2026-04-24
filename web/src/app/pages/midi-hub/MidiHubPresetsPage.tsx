@@ -2,20 +2,18 @@ import { MidiClockPanel } from '../../components/MidiHub/MidiClockPanel'
 import { MidiHubPanelShell } from '../../components/MidiHub/MidiHubHelpPrimitives'
 import { MidiHubPresetManager } from '../../components/MidiHub/MidiHubPresetManager'
 import { MidiRecorderPanel } from '../../components/MidiHub/MidiRecorderPanel'
-import { MidiHubAreaLayout } from './MidiHubAreaLayout'
+import { useSetShellWindow } from '../../layout/useSetShellWindow'
+import { MidiHubContentFrame } from './MidiHubContentFrame'
 import './MidiHubPresetsPage.css'
 
 export function MidiHubPresetsPage() {
+  useSetShellWindow({
+    subtitle: 'Lock in repeatable states, recall, clock, and capture behavior once the route is stable.',
+    kicker: 'Platform / MIDI Hub / Presets',
+  }, [])
+
   return (
-    <MidiHubAreaLayout
-      routeKey="presets"
-      title="Presets & Recall"
-      summary="Lock in repeatable states, recall, clock, and capture behavior once the route is stable."
-      tags={[
-        { label: 'Presets', type: 'blue' },
-        { label: 'Capture', type: 'green' },
-      ]}
-    >
+    <MidiHubContentFrame routeKey="presets">
       <section className="midi-hub-presets-band">
         <div className="midi-hub-presets-layout">
           <MidiHubPanelShell panelId="presets">
@@ -31,7 +29,7 @@ export function MidiHubPresetsPage() {
           <MidiRecorderPanel />
         </MidiHubPanelShell>
       </section>
-    </MidiHubAreaLayout>
+    </MidiHubContentFrame>
   )
 }
 

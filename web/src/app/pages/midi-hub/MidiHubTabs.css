@@ -1,0 +1,69 @@
+.midi-hub-tabs {
+  flex: 0 0 auto;
+  background: var(--shell-chrome-bg-main);
+  border-bottom: 1px solid var(--shell-chrome-border);
+  padding: 8px 14px 0;
+  overflow-x: auto;
+}
+
+.midi-hub-tabs__rail {
+  display: flex;
+  gap: 0;
+  min-width: 0;
+}
+
+.midi-hub-tabs__tab {
+  display: flex;
+  flex-direction: column;
+  gap: 2px;
+  padding: 8px 14px;
+  cursor: pointer;
+  background: transparent;
+  color: var(--cds-text-helper, #a8a8a8);
+  border: 1px solid transparent;
+  border-bottom: 1px solid var(--shell-chrome-border);
+  border-radius: 6px 6px 0 0;
+  margin-bottom: -1px;
+  text-decoration: none;
+  font-family: var(--shell-f-sans);
+  position: relative;
+  min-width: 10rem;
+  white-space: nowrap;
+}
+
+.midi-hub-tabs__tab:hover {
+  background: var(--shell-chrome-hover);
+  color: var(--cds-text-primary, #f4f4f4);
+}
+
+.midi-hub-tabs__tab--active {
+  background: var(--cds-layer, #262626);
+  color: var(--cds-text-primary, #f4f4f4);
+  border-color: var(--shell-chrome-border);
+  border-bottom-color: var(--cds-layer, #262626);
+  font-weight: 600;
+}
+
+.midi-hub-tabs__tab--active::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 2px;
+  background: var(--shell-blue-60);
+  border-radius: 2px 2px 0 0;
+}
+
+.midi-hub-tabs__label {
+  font-size: 12.5px;
+  line-height: 1.1;
+}
+
+.midi-hub-tabs__sub {
+  font-family: var(--shell-f-mono);
+  font-size: 9.5px;
+  letter-spacing: 0.3px;
+  color: var(--cds-text-helper, #a8a8a8);
+  line-height: 1.1;
+}

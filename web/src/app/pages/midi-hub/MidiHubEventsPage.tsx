@@ -5,23 +5,22 @@ import { EventListStatus } from '../../components/MidiHub/EventListStatus'
 import { LearnModeControl } from '../../components/MidiHub/LearnModeControl'
 import { MidiHubPanelShell } from '../../components/MidiHub/MidiHubHelpPrimitives'
 import { MscCommandBuilder } from '../../components/MidiHub/MscCommandBuilder'
-import { MidiHubAreaLayout } from './MidiHubAreaLayout'
+import { useSetShellWindow } from '../../layout/useSetShellWindow'
+import { MidiHubContentFrame } from './MidiHubContentFrame'
 import { useState } from 'react'
 import './MidiHubEventsPage.css'
 
 export function MidiHubEventsPage() {
   const [selectedEventListId, setSelectedEventListId] = useState('')
 
+  useSetShellWindow({
+    subtitle:
+      'Build and run Net3-style event lists, cue learning, MSC sends, and timecode-driven recall from one show-control workspace.',
+    kicker: 'Platform / MIDI Hub / Events',
+  }, [])
+
   return (
-    <MidiHubAreaLayout
-      routeKey="events"
-      title="Event Lists"
-      summary="Build and run Net3-style event lists, cue learning, MSC sends, and timecode-driven recall from one show-control workspace."
-      tags={[
-        { label: 'Cue engine', type: 'green' },
-        { label: 'Timecode', type: 'blue' },
-      ]}
-    >
+    <MidiHubContentFrame routeKey="events">
       <section className="midi-hub-events-band">
         <div className="midi-hub-events-layout">
           <MidiHubPanelShell panelId="event-lists" actionTag={<Tag type="green">Live</Tag>}>
@@ -39,7 +38,7 @@ export function MidiHubEventsPage() {
           <EventEditor selectedEventListId={selectedEventListId} />
         </MidiHubPanelShell>
       </section>
-    </MidiHubAreaLayout>
+    </MidiHubContentFrame>
   )
 }
 

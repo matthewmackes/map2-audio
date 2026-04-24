@@ -3,20 +3,18 @@ import { AiLearnPanel } from '../../components/MidiHub/AiLearnPanel'
 import { DeviceShadowPanel } from '../../components/MidiHub/DeviceShadowPanel'
 import { MeshNetworkPanel } from '../../components/MidiHub/MeshNetworkPanel'
 import { MidiHubPanelShell } from '../../components/MidiHub/MidiHubHelpPrimitives'
-import { MidiHubAreaLayout } from './MidiHubAreaLayout'
+import { useSetShellWindow } from '../../layout/useSetShellWindow'
+import { MidiHubContentFrame } from './MidiHubContentFrame'
 import './MidiHubLabPage.css'
 
 export function MidiHubLabPage() {
+  useSetShellWindow({
+    subtitle: 'Review AI mapping suggestions, mesh peers, and device-shadow drift in one controlled Carbon lab workspace.',
+    kicker: 'Platform / MIDI Hub / Lab',
+  }, [])
+
   return (
-    <MidiHubAreaLayout
-      routeKey="lab"
-      title="Lab"
-      summary="Review AI mapping suggestions, mesh peers, and device-shadow drift in one controlled Carbon lab workspace."
-      tags={[
-        { label: 'AI', type: 'warm-gray' },
-        { label: 'Experimental', type: 'cool-gray' },
-      ]}
-    >
+    <MidiHubContentFrame routeKey="lab">
       <section className="midi-hub-page-band midi-hub-lab-page">
         <div className="midi-hub-lab-page__grid">
           <MidiHubPanelShell panelId="ai-learn" actionTag={<Tag type="warm-gray">Assistive</Tag>}>
@@ -32,7 +30,7 @@ export function MidiHubLabPage() {
           </MidiHubPanelShell>
         </div>
       </section>
-    </MidiHubAreaLayout>
+    </MidiHubContentFrame>
   )
 }
 

@@ -96,6 +96,7 @@ jest.mock('../theme', () => ({
     setTheme: jest.fn(),
     themes: {},
   }),
+  toCarbonBaseTheme: (value: string) => value,
 }))
 
 jest.mock('../components/MidiHub/MidiRoutingMatrix', () => ({

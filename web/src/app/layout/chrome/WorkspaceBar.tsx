@@ -59,7 +59,7 @@ export function WorkspaceBar({
             ×
           </button>
         ) : null}
-        {actions.slice(0, 3).map((action) => {
+        {actions.slice(0, 8).map((action) => {
           const Icon = action.icon
           return (
             <button

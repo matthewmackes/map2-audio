@@ -1056,4 +1056,9 @@ export const midiHubApi = {
 
   clearTraffic: (nodeId?: string | null) =>
     fetchJson<{ ok: boolean }>(appendNodeQuery(`${API_BASE}/midi/hub/traffic/clear`, nodeId), { method: 'POST' }),
+
+  startHub: (nodeId?: string | null) =>
+    fetchJson<Record<string, unknown>>(appendNodeQuery(`${API_BASE}/midi/hub/start`, nodeId), { method: 'POST' }),
+  stopHub: (nodeId?: string | null) =>
+    fetchJson<Record<string, unknown>>(appendNodeQuery(`${API_BASE}/midi/hub/stop`, nodeId), { method: 'POST' }),
 }

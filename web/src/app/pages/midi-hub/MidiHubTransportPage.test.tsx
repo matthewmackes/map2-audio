@@ -1,13 +1,12 @@
 import React from 'react'
 import { render, screen } from '@testing-library/react'
 
-jest.mock('./MidiHubAreaLayout', () => ({
-  MidiHubAreaLayout: ({ title, children }: { title: string; children: React.ReactNode }) => (
-    <div>
-      <h2>{title}</h2>
-      {children}
-    </div>
-  ),
+jest.mock('../../layout/useSetShellWindow', () => ({
+  useSetShellWindow: jest.fn(),
+}))
+
+jest.mock('./MidiHubContentFrame', () => ({
+  MidiHubContentFrame: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
 }))
 
 jest.mock('../../components/MidiHub/MidiHubHelpPrimitives', () => ({
@@ -40,7 +39,16 @@ describe('MidiHubTransportPage', () => {
   it('renders the transport route sections', () => {
     render(<MidiHubTransportPage />)
 
-    expect(screen.getByRole('heading', { name: 'Transport' })).toBeTruthy()
+    const useSetShellWindowMock = (
+      jest.requireMock('../../layout/useSetShellWindow') as { useSetShellWindow: jest.Mock }
+    ).useSetShellWindow
+    expect(useSetShellWindowMock).toHaveBeenCalled()
+    expect(
+      useSetShellWindowMock.mock.calls.some((call: unknown[]) => {
+        const patch = call[0] as { kicker?: string }
+        return typeof patch?.kicker === 'string' && patch.kicker.includes('Transport')
+      }),
+    ).toBe(true)
     expect(screen.getByText('Clock Panel Mock')).toBeTruthy()
     expect(screen.getByText('Recorder Panel Mock')).toBeTruthy()
   })

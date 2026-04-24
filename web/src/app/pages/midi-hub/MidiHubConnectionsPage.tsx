@@ -11,7 +11,8 @@ import { MidiTrafficMonitor } from '../../components/MidiHub/MidiTrafficMonitor'
 import { useMidiHubOverview } from '../../components/MidiHub/useMidiHubOverview'
 import { useMidiHubNodeScope } from '../../components/MidiHub/MidiHubNodeScope'
 import { maschineApi } from '../../../map2/clients/maschine'
-import { MidiHubAreaLayout } from './MidiHubAreaLayout'
+import { useSetShellWindow } from '../../layout/useSetShellWindow'
+import { MidiHubContentFrame } from './MidiHubContentFrame'
 import './MidiHubConnectionsPage.css'
 
 type RoutingWorkspaceMode = 'matrix' | 'patchbay'
@@ -30,16 +31,14 @@ export function MidiHubConnectionsPage() {
   const maschineTagType: 'green' | 'red' | 'warm-gray' =
     maschineState?.connected ? 'green' : maschineStatusQuery.isError ? 'red' : 'warm-gray'
 
+  useSetShellWindow({
+    subtitle:
+      'Build the active route first, then confirm live events and traffic before moving deeper into recall or automation.',
+    kicker: 'Platform / MIDI Hub / Connections',
+  }, [])
+
   return (
-    <MidiHubAreaLayout
-      routeKey="connections"
-      title="Connections"
-      summary="Build the active route first, then confirm live events and traffic before moving deeper into recall or automation."
-      tags={[
-        { label: 'Primary workflow', type: 'green' },
-        { label: 'Traffic monitor', type: 'cool-gray' },
-      ]}
-    >
+    <MidiHubContentFrame routeKey="connections">
       {ports.length === 0 ? (
         <InlineNotification
           kind="warning"
@@ -111,7 +110,7 @@ export function MidiHubConnectionsPage() {
           clockOutputPorts={clockStatus?.output_ports ?? []}
         />
       </section>
-    </MidiHubAreaLayout>
+    </MidiHubContentFrame>
   )
 }
 

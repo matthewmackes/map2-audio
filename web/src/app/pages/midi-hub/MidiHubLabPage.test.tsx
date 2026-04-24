@@ -23,13 +23,12 @@ jest.mock('../../../map2/api', () => ({
   }),
 }))
 
-jest.mock('./MidiHubAreaLayout', () => ({
-  MidiHubAreaLayout: ({ title, children }: { title: string; children: React.ReactNode }) => (
-    <div>
-      <h2>{title}</h2>
-      {children}
-    </div>
-  ),
+jest.mock('../../layout/useSetShellWindow', () => ({
+  useSetShellWindow: jest.fn(),
+}))
+
+jest.mock('./MidiHubContentFrame', () => ({
+  MidiHubContentFrame: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
 }))
 
 jest.mock('../../components/MidiHub/MidiHubHelpPrimitives', () => ({
@@ -125,7 +124,16 @@ describe('MidiHubLabPage', () => {
   it('renders the lab route and exercises AI suggestions, mesh peer CRUD, and shadow drift display', async () => {
     render(<MidiHubLabPage />)
 
-    expect(screen.getByRole('heading', { name: 'Lab' })).toBeTruthy()
+    const useSetShellWindowMock = (
+      jest.requireMock('../../layout/useSetShellWindow') as { useSetShellWindow: jest.Mock }
+    ).useSetShellWindow
+    expect(useSetShellWindowMock).toHaveBeenCalled()
+    expect(
+      useSetShellWindowMock.mock.calls.some((call: unknown[]) => {
+        const patch = call[0] as { kicker?: string }
+        return typeof patch?.kicker === 'string' && patch.kicker.includes('Lab')
+      }),
+    ).toBe(true)
     fireEvent.click(screen.getByRole('button', { name: 'Suggest mappings' }))
     await waitFor(() => expect(mockMidiHubApi.getLearnSuggestions).toHaveBeenCalled())
     expect(await screen.findByText('92% confidence')).toBeTruthy()
