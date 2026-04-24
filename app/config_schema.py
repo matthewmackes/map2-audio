@@ -246,9 +246,9 @@ AUDIO_SCHEMA: dict[str, ConfigOption] = {
     "audio_state.authority_backend": ConfigOption(
         key="audio_state.authority_backend",
         default="etcd",
-        description="Cluster authority backend for committed audio state",
+        description="Authority backend for committed audio state — 'etcd' for clustered deployments, 'local' for single-node appliances (T2431-I)",
         value_type=str,
-        choices=["etcd"],
+        choices=["etcd", "local"],
         env_var="MAP2_AUDIO_STATE_AUTHORITY_BACKEND",
         restart_required=True,
     ),

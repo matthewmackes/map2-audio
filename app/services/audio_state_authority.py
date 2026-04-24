@@ -150,31 +150,96 @@ class EtcdV3JsonClient:
         return int(lease_id)
 
 
+def _select_audio_state_authority_backend() -> str:
+    """Return the configured backend id; defaults to ``etcd`` for cluster mode."""
+    try:
+        manager = get_config()
+        raw = manager.get("audio_state.authority_backend", "etcd")
+    except Exception:  # pragma: no cover — defensive
+        return "etcd"
+    return str(raw or "etcd").strip().lower() or "etcd"
+
+
+def _build_local_backend():
+    """Construct the T2431-I local backend lazily to avoid import cycles."""
+    from app.paths import Map2Paths
+    from app.services.local_audio_state_backend import LocalAudioStateBackend
+
+    manager = get_config()
+    namespace = str(manager.get("audio_state.etcd_namespace", "/map2/audio-state/v1") or "/map2/audio-state/v1")
+    ttl = int(manager.get("audio_state.node_observation_ttl_s", 15) or 15)
+    storage_path = Map2Paths.service_file("audio_state", "local.json")
+    return LocalAudioStateBackend(
+        namespace=namespace.rstrip("/"),
+        observation_ttl_s=ttl,
+        storage_path=storage_path,
+    )
+
+
 class AudioStateAuthorityService:
-    """Authoritative etcd-backed storage facade for the audio-state control plane."""
+    """Authority facade for the audio-state control plane.
+
+    Dispatches to either the etcd-backed client (cluster mode) or the
+    T2431-I ``LocalAudioStateBackend`` (single-node mode) based on the
+    ``audio_state.authority_backend`` config key. Callers see an
+    identical async surface in both cases.
+    """
 
     COMMITTED_SUFFIX = "committed"
     DESIRED_SUFFIX = "desired"
     OBSERVED_SUFFIX = "observed"
 
-    def __init__(self, config: AudioStateEtcdConfig | None = None):
-        self.config = config or load_audio_state_etcd_config()
-        self.client = EtcdV3JsonClient(self.config)
+    def __init__(
+        self,
+        config: AudioStateEtcdConfig | None = None,
+        *,
+        backend: Any | None = None,
+    ):
+        # Explicit backend override wins (used by tests).
+        if backend is not None:
+            self._backend = backend
+            self.config = config or load_audio_state_etcd_config()
+            self.client = None
+            self._backend_id = "custom"
+            return
+
+        backend_id = _select_audio_state_authority_backend()
+        if backend_id == "local":
+            self._backend = _build_local_backend()
+            self.config = config or load_audio_state_etcd_config()
+            self.client = None
+            self._backend_id = "local"
+        else:
+            # Cluster etcd backend (unchanged behavior).
+            self.config = config or load_audio_state_etcd_config()
+            self.client = EtcdV3JsonClient(self.config)
+            self._backend = None
+            self._backend_id = "etcd"
+
+    @property
+    def backend_id(self) -> str:
+        return self._backend_id
 
     @property
     def namespace(self) -> str:
+        if self._backend is not None:
+            return self._backend.namespace
         return self.config.namespace
 
     def _key(self, suffix: str) -> str:
         return f"{self.namespace}/{suffix}"
 
     def observation_key(self, node_id: str) -> str:
+        if self._backend is not None:
+            return self._backend.observation_key(node_id)
         normalized = node_id.strip()
         if not normalized:
             raise AudioStateAuthorityError("node_id is required for audio-state observations")
         return f"{self.namespace}/{self.OBSERVED_SUFFIX}/{normalized}"
 
     async def get_committed_state(self) -> AudioStateEnvelope:
+        if self._backend is not None:
+            return await self._backend.get_committed_state()
         payload, revision = await self.client.get_json(self._key(self.COMMITTED_SUFFIX))
         if payload is None:
             raise AudioStateAuthorityError("No committed authoritative audio state exists in etcd")
@@ -186,6 +251,8 @@ class AudioStateAuthorityService:
         )
 
     async def next_state_version(self) -> int:
+        if self._backend is not None:
+            return await self._backend.next_state_version()
         try:
             current = await self.get_committed_state()
         except AudioStateAuthorityError as exc:
@@ -195,6 +262,8 @@ class AudioStateAuthorityService:
         return int(current.value.state_version) + 1
 
     async def get_desired_state(self) -> AudioStateDesiredEnvelope:
+        if self._backend is not None:
+            return await self._backend.get_desired_state()
         payload, revision = await self.client.get_json(self._key(self.DESIRED_SUFFIX))
         if payload is None:
             raise AudioStateAuthorityError("No desired audio state exists in etcd")
@@ -206,16 +275,22 @@ class AudioStateAuthorityService:
         )
 
     async def put_desired_state(self, desired: CompiledSnapshotIntent) -> AudioStateDesiredEnvelope:
+        if self._backend is not None:
+            return await self._backend.put_desired_state(desired)
         key = self._key(self.DESIRED_SUFFIX)
         revision = await self.client.put_json(key, desired.model_dump(mode="json"))
         return AudioStateDesiredEnvelope(namespace=self.namespace, key=key, revision=revision, value=desired)
 
     async def put_committed_state(self, state: AuthoritativeAudioState) -> AudioStateEnvelope:
+        if self._backend is not None:
+            return await self._backend.put_committed_state(state)
         key = self._key(self.COMMITTED_SUFFIX)
         revision = await self.client.put_json(key, state.model_dump(mode="json"))
         return AudioStateEnvelope(namespace=self.namespace, key=key, revision=revision, value=state)
 
     async def put_observation(self, observation: AudioStateObservation) -> AudioStateObservationEnvelope:
+        if self._backend is not None:
+            return await self._backend.put_observation(observation)
         lease_id = await self.client.grant_lease(self.config.observation_ttl_s)
         key = self.observation_key(observation.node_id)
         revision = await self.client.put_json(key, observation.model_dump(mode="json"), lease_id=lease_id)
@@ -228,6 +303,8 @@ class AudioStateAuthorityService:
         )
 
     async def list_observations(self, *, state_version: int | None = None) -> AudioStateObservationListResponse:
+        if self._backend is not None:
+            return await self._backend.list_observations(state_version=state_version)
         prefix = self._key(f"{self.OBSERVED_SUFFIX}/")
         rows = await self.client.get_prefix_json(prefix)
         observations = [
