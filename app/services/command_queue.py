@@ -55,8 +55,8 @@ class CommandType(Enum):
     LOAD_PRESET = "load_preset"
     DELETE_PRESET = "delete_preset"
 
-    # System operations
-    UPDATE_CONFIG = "update_config"
+    # System operations — UPDATE_CONFIG removed in T2431-G; generic
+    # system_config writes are no longer a first-class command.
     LOG_PERFORMANCE = "log_performance"
 
     # Batch operations
@@ -149,7 +149,6 @@ class CommandQueue(Singleton):
         self._handlers[CommandType.DELETE_PRESET] = self._handle_delete_preset
 
         # System handlers
-        self._handlers[CommandType.UPDATE_CONFIG] = self._handle_update_config
         self._handlers[CommandType.LOG_PERFORMANCE] = self._handle_log_performance
         self._handlers[CommandType.BATCH_UPDATE] = self._handle_batch_update
 
@@ -823,37 +822,11 @@ class CommandQueue(Singleton):
 
     # ==================== System Handlers ====================
 
-    async def _handle_update_config(self, params: Dict[str, Any]) -> CommandResult:
-        """Update system configuration."""
-        from app.database import get_session, SystemConfig
-
-        key = params.get("key")
-        value = params.get("value")
-
-        if not key:
-            return CommandResult(success=False, error="key required")
-
-        async with get_session() as session:
-            result = await session.execute(select(SystemConfig).where(SystemConfig.key == key))
-            config = result.scalar_one_or_none()
-
-            old_value = None
-            if config:
-                old_value = config.value
-                config.value = json.dumps(value) if not isinstance(value, str) else value
-            else:
-                config = SystemConfig(
-                    key=key,
-                    value=json.dumps(value) if not isinstance(value, str) else value
-                )
-                session.add(config)
-
-            logger.info(f"Updated config: {key}")
-            return CommandResult(
-                success=True,
-                data={"key": key, "value": value},
-                undo_data={"key": key, "value": old_value}
-            )
+    # T2431-G: _handle_update_config removed. Generic system_config writes
+    # are no longer a first-class command — every config concept must live
+    # in a typed store or State Authority extension. New handlers should
+    # target the domain-specific table directly rather than proxying through
+    # the key/value escape hatch.
 
     async def _handle_log_performance(self, params: Dict[str, Any]) -> CommandResult:
         """Log plugin performance data."""

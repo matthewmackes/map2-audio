@@ -2784,9 +2784,55 @@ class SrpAdmissionLog(Base):
 # UTILITY FUNCTIONS
 # =============================================================================
 
+# T2431-G ALLOWLIST — the only `system_config` keys permitted while the
+# generic key/value table is being retired. Each entry represents a domain
+# that will move to a typed store in a follow-up subtask. New callers MUST
+# NOT add keys here; they must land a typed domain store instead. See
+# docs/architecture/CONFIGURATION_STATE_AUTHORITY_AUDIT.md §11.
+_SYSTEM_CONFIG_ALLOWLIST_EXACT: frozenset[str] = frozenset({
+    # Snapshot runtime — State Authority activation hook list.
+    "state_authority.activation_hooks",
+})
+_SYSTEM_CONFIG_ALLOWLIST_PREFIXES: tuple[str, ...] = (
+    # chain_service.py — per-chain touchscreen assignments.
+    "touchscreen_",
+    # chain_service.py — named chain presets.
+    "chain_preset_",
+)
+
+
+class SystemConfigFrozenError(RuntimeError):
+    """Raised when code attempts to read/write a system_config key that is
+    not on the T2431-G allowlist.
+
+    New domains MUST use a typed table (or State Authority extension)
+    instead of the generic key/value escape hatch.
+    """
+
+
+def _assert_system_config_key_allowed(key: str) -> None:
+    if key in _SYSTEM_CONFIG_ALLOWLIST_EXACT:
+        return
+    for prefix in _SYSTEM_CONFIG_ALLOWLIST_PREFIXES:
+        if key.startswith(prefix):
+            return
+    raise SystemConfigFrozenError(
+        f"system_config key {key!r} is not on the T2431-G allowlist. "
+        "Add a typed domain store for this concept; do not extend the "
+        "generic key/value table. See "
+        "docs/architecture/CONFIGURATION_AUTHORITY_MODEL.md."
+    )
+
+
 async def get_or_create_system_config(session: AsyncSession, key: str, default_value: str = "") -> str:
-    """Get a system config value, creating it with default if not exists."""
+    """Get a system config value, creating it with default if not exists.
+
+    T2431-G: writes/creates are restricted to the allowlist; unknown keys
+    raise ``SystemConfigFrozenError`` so new generic-bucket usage is caught
+    at call time.
+    """
     from sqlalchemy import select
+    _assert_system_config_key_allowed(key)
     result = await session.execute(
         select(SystemConfig).where(SystemConfig.key == key)
     )
@@ -2802,8 +2848,13 @@ async def get_or_create_system_config(session: AsyncSession, key: str, default_v
 
 
 async def set_system_config(session: AsyncSession, key: str, value: str) -> None:
-    """Set a system config value, creating or updating as needed."""
+    """Set a system config value, creating or updating as needed.
+
+    T2431-G: restricted to allowlisted keys; unknown keys raise
+    ``SystemConfigFrozenError``.
+    """
     from sqlalchemy import select
+    _assert_system_config_key_allowed(key)
     result = await session.execute(
         select(SystemConfig).where(SystemConfig.key == key)
     )
