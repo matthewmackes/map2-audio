@@ -597,6 +597,8 @@ export function PerformanceBrainPage() {
             </div>
           </section>
 
+          <hr className="brain-page__divider" role="separator" aria-hidden="true" />
+
           {activeSection === 'overview' ? (
             <div className="brain-page__section-grid">
               <QualificationStrip qualification={qualification} />
