@@ -16,7 +16,7 @@ from app.database import (
 )
 
 
-ALLOWED_EXACT = {"state_authority.activation_hooks"}
+ALLOWED_EXACT: set[str] = set()  # T2436-A emptied the exact allowlist.
 ALLOWED_PREFIXES = ("touchscreen_", "chain_preset_")
 
 
@@ -26,9 +26,10 @@ def test_allowlist_constants_match_expected_domains() -> None:
     assert _SYSTEM_CONFIG_ALLOWLIST_PREFIXES == ALLOWED_PREFIXES
 
 
-def test_allowed_exact_keys_pass() -> None:
-    for key in ALLOWED_EXACT:
-        _assert_system_config_key_allowed(key)  # should not raise
+def test_exact_allowlist_is_empty_after_T2436_A() -> None:
+    """The exact-match allowlist must shrink toward zero; T2436-A removed
+    `state_authority.activation_hooks`, the last exact entry."""
+    assert _SYSTEM_CONFIG_ALLOWLIST_EXACT == frozenset()
 
 
 @pytest.mark.parametrize("key", [
@@ -47,6 +48,8 @@ def test_allowed_prefix_keys_pass(key: str) -> None:
     "system.everything",
     "backup_location",
     "legacy_key",
+    # T2436-A: moved to schema; no longer permitted through the generic bucket.
+    "state_authority.activation_hooks",
 ])
 def test_disallowed_keys_raise_frozen_error(key: str) -> None:
     with pytest.raises(SystemConfigFrozenError) as excinfo:

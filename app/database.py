@@ -2789,10 +2789,11 @@ class SrpAdmissionLog(Base):
 # that will move to a typed store in a follow-up subtask. New callers MUST
 # NOT add keys here; they must land a typed domain store instead. See
 # docs/architecture/CONFIGURATION_STATE_AUTHORITY_AUDIT.md §11.
-_SYSTEM_CONFIG_ALLOWLIST_EXACT: frozenset[str] = frozenset({
-    # Snapshot runtime — State Authority activation hook list.
-    "state_authority.activation_hooks",
-})
+# T2436-A: `state_authority.activation_hooks` migrated to the layered config
+# schema (plane=USER). The exact-match allowlist is now empty; only the
+# prefix allowlist remains active until T2436-B/C finish migrating the
+# touchscreen / chain-preset domains.
+_SYSTEM_CONFIG_ALLOWLIST_EXACT: frozenset[str] = frozenset()
 _SYSTEM_CONFIG_ALLOWLIST_PREFIXES: tuple[str, ...] = (
     # chain_service.py — per-chain touchscreen assignments.
     "touchscreen_",

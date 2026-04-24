@@ -700,6 +700,10 @@ class SnapshotRuntimeMixin:
         }
 
     async def get_activation_hook_plan(self) -> list[str]:
+        # T2436-A: the activation-hook order now lives in the layered config
+        # schema (`state_authority.activation_hooks`, plane=USER). The
+        # default list matches the ConfigOption default; we only fall back
+        # to it when the config value is malformed.
         default_hooks = [
             "push_footswitch_labels",
             "push_maschine_assignments",
@@ -711,18 +715,19 @@ class SnapshotRuntimeMixin:
             "push_controller_display_preview",
             "schedule_preload",
         ]
-        raw_value = await get_or_create_system_config(
-            self.session,
-            "state_authority.activation_hooks",
-            default_value=json.dumps(default_hooks),
-        )
-        try:
-            parsed = json.loads(raw_value or "[]")
-        except Exception:
-            parsed = default_hooks
+        from app.config import get_config
+
+        raw_value = get_config().get("state_authority.activation_hooks", default_hooks)
+        if isinstance(raw_value, str):
+            try:
+                raw_value = json.loads(raw_value)
+            except Exception:
+                raw_value = default_hooks
+        if not isinstance(raw_value, list):
+            raw_value = default_hooks
         hooks = [
             str(item).strip()
-            for item in parsed
+            for item in raw_value
             if isinstance(item, str) and str(item).strip()
         ]
         hooks = hooks or list(default_hooks)

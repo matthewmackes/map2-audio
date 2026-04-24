@@ -198,6 +198,52 @@ Last updated: 2026-04-23 07:13 - Codex
 
 ---
 
+ID: T2436
+Status: [>] In Progress
+Title: T2431-G phase 2 — migrate SystemConfig allowlist domains into typed stores
+Description:
+- Goal / acceptance criteria: empty the T2431-G `SystemConfig` allowlist by moving each remaining domain off the generic key/value bucket. Each subtask migrates one domain to either a typed ORM table or a schema-declared ConfigOption, removes the corresponding allowlist entry, and lands focused regression coverage. When every subtask completes, the `SystemConfig` ORM class itself can be deleted.
+- Why it matters: the allowlist ratchet only defers drift; a generic key/value table still violates the one-concept-one-authority rule until every consumer has a typed home.
+- Dependencies: T2431-G phase 1 (allowlist freeze).
+- Estimated effort: High (three separate migrations + final table drop).
+- Subtasks:
+  - ID: T2436-A
+    Status: [✓] Done
+    Title: Migrate `state_authority.activation_hooks` to the layered config schema
+    Description: Promote the ordered activation-hook list to a `ConfigOption` (plane=USER, owner="snapshot-runtime", list[str] with the existing 9 defaults) so it flows through the layered loader instead of the generic SystemConfig bucket. Remove the key from the T2431-G exact-match allowlist.
+    Completion note: 2026-04-24 - Claude: Added `state_authority.activation_hooks` to `app/config_schema.py` with `plane=USER`, `owner="snapshot-runtime"`, `runtime_mutable=True`, `startup=OPTIONAL`, `env_var="MAP2_STATE_AUTHORITY_ACTIVATION_HOOKS"`. Rewired `snapshot_runtime.SnapshotRuntimeMixin.get_activation_hook_plan` to read via `get_config().get()` instead of `get_or_create_system_config()`, removing the DB round-trip on every snapshot activation. Shrunk `_SYSTEM_CONFIG_ALLOWLIST_EXACT` to `frozenset()`. Updated `tests/test_system_config_allowlist.py` so the former-allowed key now appears in the disallowed-key parametrize list. Validation PASS: 30/30 config + allowlist tests, 69/69 state-authority + snapshot-service tests, 2806/2806 broader backend sweep.
+  - ID: T2436-B
+    Status: [ ] Todo
+    Title: Migrate `touchscreen_*` assignments (per-chain) into a typed store
+    Description: Replace the `touchscreen_{chain_id}` generic entries with a dedicated table (likely `chain_touchscreen_assignments`) and remove the `touchscreen_` prefix from the allowlist. Keep the `chain_service` API surface stable for frontend callers.
+  - ID: T2436-C
+    Status: [ ] Todo
+    Title: Migrate `chain_preset_*` into a typed presets table
+    Description: Replace the `chain_preset_{name}` entries with a typed `chain_presets` table (name, payload, timestamps). Update the chain-service preset CRUD paths and the frontend client, remove the `chain_preset_` prefix from the allowlist.
+  - ID: T2436-D
+    Status: [ ] Todo
+    Title: Remove `SystemConfig` ORM class after all domains migrate
+    Description: Once the allowlist is empty (both exact + prefix), delete the `SystemConfig` class, `get_or_create_system_config` / `set_system_config` helpers, the `SystemConfigFrozenError` + guard, and the `system_config` table entry from the audit doc. Ship a final removal commit that leaves the generic bucket permanently inaccessible.
+- Required outputs/deliverables: per-subtask typed models/migrations + tests; final ORM class deletion; CONFIGURATION_STATE_AUTHORITY_AUDIT.md updated to mark the concept retired.
+Assigned to: Claude
+Last updated: 2026-04-24 - Claude
+
+---
+
+ID: T2437
+Status: [ ] Todo
+Title: T2431-E phase 2 — retire the deployment-mode mirrors
+Description:
+- Goal / acceptance criteria: route every `DeploymentConfig`/`get_deployment_config()` consumer through `app.deployment.authority.get_deployment_mode_authority()`; delete the four legacy mirrors (`/etc/guitarfx-mode.conf`, `~/.map2/deployment.json`, the systemd mode drop-in template, and the hand-maintained `/etc/map2/environment` writer); rework `scripts/map2-mode.sh` as a thin reconciler that calls `map2-authority-doctor.py` subcommands.
+- Why it matters: the authority + doctor now exist (T2431-E + T2431-J), but the four-mirror scatter still runs in parallel. Retiring it closes T2431's highest-risk drift surface.
+- Dependencies: T2431-E (Done), T2431-J (Done).
+- Estimated effort: High (touches systemd unit files, installer, RPM spec, map2-mode.sh, ztp.py, runtime_profiles.py, and ~12 consumer call sites).
+- Required outputs/deliverables: migration-order plan, per-consumer switch commits, installer/RPM spec updates, deletion of legacy mirror files in the repo, doctor coverage for the residual boot path, and CONFIGURATION_STATE_AUTHORITY_AUDIT.md update to mark the mirror files retired.
+Assigned to: Claude
+Last updated: 2026-04-24 - Claude
+
+---
+
 ID: T2432
 Status: [✓] Done
 Title: Move Host Machine into Hardware navigation with a new canonical route and theme-token parity
