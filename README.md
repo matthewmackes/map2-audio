@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1265** Python | **1240** TypeScript | **136** C++/H | **145** Docs | **2729** total commits | **3** stars | **0** forks | **0** open issues
+**1263** Python | **1239** TypeScript | **136** C++/H | **145** Docs | **2732** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -193,8 +193,8 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 |  |  |  |
 | :---: | :---: | :---: |
 | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/map2-banner.png" width="280" alt="map2 banner"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/map2-banner-3.png" width="280" alt="map2 banner 3"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot-Cli.png" width="280" alt="Screenshot Cli"> |
-| <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 08-00-43 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 08 00 43 Mackes Audio Platform 2 FEB2025"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 07-58-14 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 07 58 14 Mackes Audio Platform 2 FEB2025"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 07-57-33 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 07 57 33 Mackes Audio Platform 2 FEB2025"> |
-| <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/MAP2_AUDIO-NODE_ARCH_DIAGRAM3.png" width="280" alt="MAP2 AUDIO NODE ARCH DIAGRAM3"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/MAP2_AUDIO-NODE_ARCH_DIAGRAM2-BANG.png" width="280" alt="MAP2 AUDIO NODE ARCH DIAGRAM2 BANG"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/MAP2_AUDIO-NODE_ARCH_DIAGRAM.png" width="280" alt="MAP2 AUDIO NODE ARCH DIAGRAM"> |
+| <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 08-00-43 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 08 00 43 Mackes Audio Platform 2 FEB2025"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 07-58-14 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 07 58 14 Mackes Audio Platform 2 FEB2025"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/MAP2_AUDIO-NODE_ARCH_DIAGRAM3.png" width="280" alt="MAP2 AUDIO NODE ARCH DIAGRAM3"> |
+| <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 07-57-33 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 07 57 33 Mackes Audio Platform 2 FEB2025"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/MAP2_AUDIO-NODE_ARCH_DIAGRAM2-BANG.png" width="280" alt="MAP2 AUDIO NODE ARCH DIAGRAM2 BANG"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/MAP2_AUDIO-NODE_ARCH_DIAGRAM.png" width="280" alt="MAP2 AUDIO NODE ARCH DIAGRAM"> |
 <!-- GALLERY:END -->
 
 <p align="right"><em>Add screenshots to <code>docs/images/</code> and they appear here automatically.</em></p>
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`c57af293`](https://github.com/matthewmackes/map2-audio/commit/c57af293f4517f1c3a38037e712ff1da6961d2b5) | Merge branch 'master' of https://github.com/matthewmackes... | Map2 Audio | 2026-04-23 |
+| [`64f86aae`](https://github.com/matthewmackes/map2-audio/commit/64f86aae8ca8c41a6d87144881492258fa259395) | feat(T2431-H): remove legacy flow_snapshots authority paths | Map2 Audio | 2026-04-23 |
+| [`64d7aae7`](https://github.com/matthewmackes/map2-audio/commit/64d7aae72f98c8dbd6daed8b98a6aa21eed2fc95) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-24 |
 | [`e73853e5`](https://github.com/matthewmackes/map2-audio/commit/e73853e51ec450caa23b28988d3e924651c2cdb6) | Merge branch 'master' of https://github.com/matthewmackes... | Map2 Audio | 2026-04-23 |
 | [`2bb9fc4e`](https://github.com/matthewmackes/map2-audio/commit/2bb9fc4e22958804c549cb10ddabec22c28e9e32) | feat(T2431-I): single-node audio-state authority backend | Map2 Audio | 2026-04-23 |
 | [`95ab3abd`](https://github.com/matthewmackes/map2-audio/commit/95ab3abd0ea1b6e8b6fabb82526ad2bb98e22e60) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-24 |
 | [`3c3fefcc`](https://github.com/matthewmackes/map2-audio/commit/3c3fefcc708a46f982946ee5439a7d5f7701dca9) | Merge branch 'master' of https://github.com/matthewmackes... | Map2 Audio | 2026-04-23 |
 | [`316dd78b`](https://github.com/matthewmackes/map2-audio/commit/316dd78b594c9090d72f5a779b4f0d2f1b762da9) | feat(T2431-D): LayeredConfigLoader + forbidden-override e... | Map2 Audio | 2026-04-23 |
-| [`be8d8d35`](https://github.com/matthewmackes/map2-audio/commit/be8d8d354f71b0dd65627b0e754abcb162e4b11e) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-24 |
-| [`bf4d327b`](https://github.com/matthewmackes/map2-audio/commit/bf4d327b8202a2e6a065e850c0bad1fb4f1d8e2d) | feat(T2431-C): Map2Paths platform path authority + full m... | Map2 Audio | 2026-04-23 |
-| [`a55ae236`](https://github.com/matthewmackes/map2-audio/commit/a55ae236c640b8e48d31e0b6ebbe676be3b7ba86) | Merge branch 'master' of https://github.com/matthewmackes... | Map2 Audio | 2026-04-23 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
