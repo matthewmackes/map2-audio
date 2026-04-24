@@ -145,14 +145,42 @@ async def set_deployment_mode(request: SetModeRequest):
 
 
 async def _sync_system_config(mode: DeploymentMode):
+    """Regenerate the deployment-mode projection from the authority.
+
+    T2437-B phase 2: the authority file (``/etc/map2/mode.json``) is the
+    single source of truth. Mode changes land there via
+    ``DeploymentConfig.set_mode()`` before this helper runs; this function
+    just asks the doctor to regenerate every projection so systemd picks
+    up the new value on next service restart.
+
+    The legacy ``/etc/guitarfx-mode.conf`` fallback write is retained for
+    operators whose init scripts still read that file — until the
+    ``map2-mode.sh`` rewrite lands, dropping it would break those paths.
     """
-    Sync the deployment mode to all system config stores.
-    
-    This ensures guitarfx-mode.conf, /etc/map2/environment, and
-    the systemd override all agree with deployment.json.
-    """
-    
-    # Map deployment enum → guitarfx-mode.conf value
+    try:
+        from app.deployment.authority import (
+            DeploymentModeDoctor,
+            get_deployment_mode_authority,
+        )
+
+        doctor = DeploymentModeDoctor(get_deployment_mode_authority())
+        report = await asyncio.to_thread(doctor.repair)
+        if report.healthy:
+            logger.info(
+                "System config synced via authority doctor (mode=%s)",
+                report.authority_mode,
+            )
+            return
+        logger.warning(
+            "Authority doctor could not fully repair projections: %s",
+            report.to_dict(),
+        )
+    except Exception as exc:
+        logger.warning("Authority-driven sync failed, falling back to legacy: %s", exc)
+
+    # Legacy guitarfx-mode.conf fallback — retained until map2-mode.sh
+    # is fully retired in a later pass. Kept minimal; no longer touches
+    # /etc/map2/environment (the authority doctor owns that).
     mode_map = {
         DeploymentMode.ALL_IN_ONE: "all-in-one",
         DeploymentMode.AUDIO_NODE: "audio",
@@ -160,26 +188,10 @@ async def _sync_system_config(mode: DeploymentMode):
         DeploymentMode.FRONTEND_ONLY: "management",
     }
     gfx_mode = mode_map.get(mode, "all-in-one")
-    
-    try:
-        # Use the unified map2-mode script if available (handles all stores + systemd)
-        result = await asyncio.to_thread(
-            subprocess.run,
-            ["/usr/local/bin/map2-mode", "apply"],
-            capture_output=True, text=True, timeout=15,
-            env={**__import__('os').environ, "SUDO_ASKPASS": "/bin/false"}
-        )
-        if result.returncode == 0:
-            logger.info(f"System config synced via map2-mode apply")
-            return
-    except Exception as e:
-        logger.debug(f"map2-mode script not available: {e}")
-    
-    # Fallback: update guitarfx-mode.conf directly if we have write access
     try:
         with open("/etc/guitarfx-mode.conf", "w") as f:
             f.write(f"MODE={gfx_mode}\n")
-        logger.info(f"Updated guitarfx-mode.conf → {gfx_mode}")
+        logger.info(f"Updated legacy guitarfx-mode.conf → {gfx_mode}")
     except PermissionError:
         logger.warning("Cannot write to /etc/guitarfx-mode.conf (need root)")
     except Exception as e:

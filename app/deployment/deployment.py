@@ -121,114 +121,171 @@ SERVICE_POLICIES = {
 class DeploymentConfig:
     """
     Manages deployment configuration.
-    
-    Single source of truth for deployment mode and service policies.
-    Persists to ~/.map2/deployment.json
+
+    T2437-B phase 2: mode authority is ``/etc/map2/mode.json`` (T2431-E).
+    This class is now a **view + service-policy resolver** over that
+    authority: it loads mode from the authority file, derives service
+    policies as a pure function of mode, and no longer writes its own
+    copy to ``~/.map2/deployment.json``. ``set_mode()`` updates the
+    authority and regenerates the environment projection so every
+    downstream consumer sees the change atomically.
+
+    The legacy ``~/.map2/deployment.json`` file is read once at startup
+    for backwards compatibility if the authority file is absent; it is
+    never written by this class again.
     """
 
     def __init__(self, config_dir: Optional[str] = None):
         if config_dir is None:
             config_dir = str(Path.home() / ".map2")
-        
+
         self.config_dir = Path(config_dir)
+        # Retained for backwards-compat introspection only; we no longer
+        # write to this file after T2437-B phase 2.
         self.config_file = self.config_dir / "deployment.json"
-        
+
         # Runtime state
         self.mode: DeploymentMode = DeploymentMode.ALL_IN_ONE
         self.service_policies: Dict[str, ServicePolicy] = {}
         self.created_at: Optional[str] = None
         self.updated_at: Optional[str] = None
-        
+
         # Load existing or create default
         self._load_or_create()
-    
+
     def _load_or_create(self):
-        """Load config from file or create default"""
+        """Load config from the T2437 authority, falling back to legacy."""
+        # T2437-B phase 2: authority first.
+        try:
+            from app.deployment.authority import (
+                DeploymentModeAuthorityError,
+                get_deployment_mode_authority,
+            )
+
+            authority = get_deployment_mode_authority()
+            if authority.exists():
+                try:
+                    payload = authority.read()
+                    self.mode = DeploymentMode(payload.mode)
+                    self.service_policies = SERVICE_POLICIES[self.mode].copy()
+                    self.created_at = payload.updated_at
+                    self.updated_at = payload.updated_at
+                    logger.info(
+                        "Loaded deployment mode from authority %s: %s",
+                        authority.path,
+                        self.mode.value,
+                    )
+                    return
+                except DeploymentModeAuthorityError as exc:
+                    logger.warning(
+                        "Authority file %s unreadable: %s — falling back to legacy",
+                        authority.path,
+                        exc,
+                    )
+        except Exception as exc:  # pragma: no cover — import/circular safety
+            logger.debug("Authority load skipped: %s", exc)
+
+        # Legacy fallback: ~/.map2/deployment.json (read-only after T2437-B).
         if self.config_file.exists():
             try:
                 self._load()
-                logger.info(f"Loaded deployment config: {self.mode.value}")
+                logger.info(
+                    "Loaded deployment config from legacy mirror %s: %s "
+                    "(authority file %s absent — operator should run "
+                    "`map2-authority-doctor.py create-authority <mode>`)",
+                    self.config_file,
+                    self.mode.value,
+                    "/etc/map2/mode.json",
+                )
             except Exception as e:
                 logger.error(f"Failed to load deployment config: {e}, using default")
                 self._create_default()
         else:
             self._create_default()
-    
+
     def _load(self):
-        """Load configuration from file"""
+        """Load configuration from the legacy mirror (read-only path)."""
         with open(self.config_file, 'r') as f:
             data = json.load(f)
-        
-        # Parse mode
+
         mode_str = data.get('mode', 'ALL-IN-ONE')
         self.mode = DeploymentMode(mode_str)
-        
-        # Parse service policies
+
         policies_data = data.get('service_policies', {})
         self.service_policies = {
             service: ServicePolicy(policy)
             for service, policy in policies_data.items()
         }
-        
-        # Ensure all services are present
+
         self._validate_policies()
-        
         self.created_at = data.get('created_at')
         self.updated_at = data.get('updated_at')
-    
+
     def _create_default(self):
-        """Create default configuration"""
-        logger.info("Creating default deployment config")
-        
-        # Check environment variable for initial mode
+        """Create default configuration from env var (read-only path)."""
+        logger.info("Creating default in-memory deployment config")
+
         mode_env = os.getenv("MAP2_DEPLOYMENT_MODE", "ALL-IN-ONE").upper()
         try:
             self.mode = DeploymentMode(mode_env)
         except ValueError:
             logger.warning(f"Invalid mode {mode_env}, using ALL-IN-ONE")
             self.mode = DeploymentMode.ALL_IN_ONE
-        
-        # Set policies for mode
+
         self.service_policies = SERVICE_POLICIES[self.mode].copy()
-        
-        # Timestamps
         now = utc_now().isoformat()
         self.created_at = now
         self.updated_at = now
-        
-        # Persist
-        self.save()
-    
+        # T2437-B phase 2: no longer persists. The authority is operator-
+        # created via `map2-authority-doctor.py create-authority <mode>`;
+        # this in-memory default keeps the process alive until then.
+
     def _validate_policies(self):
         """Ensure all services have policies"""
         default_policies = SERVICE_POLICIES[self.mode]
         for service, policy in default_policies.items():
             if service not in self.service_policies:
                 self.service_policies[service] = policy
-    
-    def save(self):
-        """Persist configuration to file"""
-        data = {
-            'mode': self.mode.value,
-            'service_policies': {
-                service: policy.value
-                for service, policy in self.service_policies.items()
-            },
-            'created_at': self.created_at,
-            'updated_at': utc_now().isoformat(),
-        }
 
-        _atomic_write_json(self.config_file, data)
-        self.updated_at = data['updated_at']
-        logger.info(f"Saved deployment config: {self.mode.value}")
-    
+    def save(self):
+        """No-op after T2437-B phase 2 — the authority owns persistence.
+
+        Retained so any external caller that invokes ``save()`` does not
+        crash. Writes are handled by ``set_mode()`` against the authority
+        file, not against the legacy mirror.
+        """
+        logger.debug(
+            "DeploymentConfig.save() is a no-op after T2437-B. "
+            "Mutate the authority via set_mode() or map2-authority-doctor.py."
+        )
+
     def set_mode(self, mode: DeploymentMode):
-        """Switch deployment mode and update service policies"""
+        """Switch deployment mode via the authority file."""
         logger.info(f"Switching deployment mode from {self.mode.value} to {mode.value}")
-        
+
         self.mode = mode
         self.service_policies = SERVICE_POLICIES[mode].copy()
-        self.save()
+        self.updated_at = utc_now().isoformat()
+
+        # T2437-B phase 2: write the authority file + regenerate the env
+        # projection. Doctors on other nodes will detect the new checksum.
+        try:
+            from app.deployment.authority import (
+                get_deployment_mode_authority,
+                write_environment_projection,
+            )
+
+            authority = get_deployment_mode_authority()
+            authority.write(mode.value, set_by="DeploymentConfig.set_mode")
+            try:
+                write_environment_projection(authority)
+            except Exception as exc:
+                logger.warning("Environment projection refresh failed: %s", exc)
+        except Exception as exc:
+            logger.warning(
+                "Authority-file write failed (mode still set in-memory): %s",
+                exc,
+            )
     
     def get_service_policy(self, service: str) -> ServicePolicy:
         """Get policy for a service"""
