@@ -548,3 +548,60 @@ def reset_deployment_mode_authority(path: Optional[Path] = None) -> DeploymentMo
     global _default_authority
     _default_authority = DeploymentModeAuthority(authority_path=path)
     return _default_authority
+
+
+def resolve_deployment_mode(
+    *,
+    authority: Optional[DeploymentModeAuthority] = None,
+    env_override: Optional[str] = None,
+    fallback: str = "ALL-IN-ONE",
+) -> str:
+    """Return the canonical deployment-mode string (T2437).
+
+    Precedence:
+      1. `env_override` — an explicit arg wins. Callers pass this when
+         they want to honor `MAP2_DEPLOYMENT_MODE` at call time.
+      2. `MAP2_DEPLOYMENT_MODE` env var — operator override at boot.
+      3. Authority file at `/etc/map2/mode.json`.
+      4. Legacy `~/.map2/deployment.json` — last-resort backwards compat.
+      5. `fallback` — when none of the above yields a value.
+
+    The returned value is always canonicalized. Unknown/malformed values
+    fall through to the next layer; the final `fallback` is guaranteed
+    to be a valid canonical mode.
+    """
+    if env_override:
+        try:
+            return canonicalize_mode(env_override)
+        except ValueError:
+            logger.warning("Ignoring invalid env_override=%r", env_override)
+
+    raw_env = os.environ.get("MAP2_DEPLOYMENT_MODE")
+    if raw_env:
+        try:
+            return canonicalize_mode(raw_env)
+        except ValueError:
+            logger.warning("Ignoring invalid MAP2_DEPLOYMENT_MODE=%r", raw_env)
+
+    auth = authority or get_deployment_mode_authority()
+    if auth.exists():
+        try:
+            return auth.read().mode
+        except DeploymentModeAuthorityError as exc:
+            logger.warning("Deployment authority file unreadable, falling back: %s", exc)
+
+    # Legacy fallback — the ~/.map2/deployment.json mirror will be
+    # retired in T2437 phase 2 once operator flows stop writing it.
+    try:
+        from app.deployment.deployment import get_deployment_config
+
+        legacy = get_deployment_config()
+        if legacy is not None:
+            try:
+                return canonicalize_mode(legacy.mode.value)
+            except ValueError:
+                pass
+    except Exception as exc:  # pragma: no cover — defensive
+        logger.debug("Legacy DeploymentConfig lookup failed during mode resolve: %s", exc)
+
+    return canonicalize_mode(fallback)

@@ -385,14 +385,32 @@ async def lifespan(app):
 
         # Initialize deployment configuration
         logger.info("Initializing deployment configuration...")
+        from app.deployment.authority import (
+            get_deployment_mode_authority,
+            resolve_deployment_mode,
+        )
         from app.deployment.deployment import initialize_deployment_config, get_deployment_config
-        # Set initial mode from environment
-        deployment_mode = os.getenv("MAP2_DEPLOYMENT_MODE", "AUDIO-NODE").upper()
-        
-        # Initialize config (will create ~/.map2/deployment.json if not exists)
+
+        # T2437: resolve the canonical mode through the authority chain
+        # (explicit override → MAP2_DEPLOYMENT_MODE → /etc/map2/mode.json
+        # → legacy ~/.map2/deployment.json → fallback). Log the provenance
+        # so boot diagnostics show which layer won.
+        authority = get_deployment_mode_authority()
+        canonical_mode = resolve_deployment_mode(authority=authority, fallback="AUDIO-NODE")
+        logger.info(
+            "Deployment mode resolved: %s (authority_file=%s exists=%s)",
+            canonical_mode,
+            authority.path,
+            authority.exists(),
+        )
+
+        # Initialize legacy config (creates ~/.map2/deployment.json if not exists).
+        # Still needed because many services read DeploymentConfig directly;
+        # retiring the legacy mirror fully is deferred until every consumer is
+        # migrated to resolve_deployment_mode().
         initialize_deployment_config()
         deployment_config = get_deployment_config()
-        logger.info(f"Deployment mode: {deployment_config.mode.value}")
+        logger.info(f"Legacy DeploymentConfig mode: {deployment_config.mode.value}")
 
         # Initialize runtime config watching so local file edits can fan out
         # through canonical PlatformEvents without requiring an API call first.

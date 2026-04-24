@@ -44,6 +44,15 @@ def normalize_node_type(node_type: str | None) -> str:
 
 
 def get_node_type() -> str:
+    # T2437: prefer the canonical authority resolver. If it raises
+    # (circular import during boot, missing module, etc.) we fall back to
+    # the legacy path so the audio runtime is never starved of a mode.
+    try:
+        from app.deployment.authority import resolve_deployment_mode
+
+        return normalize_node_type(resolve_deployment_mode())
+    except Exception:
+        pass
     try:
         return normalize_node_type(get_deployment_config().mode.value)
     except Exception:

@@ -9,8 +9,16 @@ def _mode(value: str):
     return SimpleNamespace(mode=SimpleNamespace(value=value))
 
 
+def _set_mode(monkeypatch, mode: str) -> None:
+    """Lock `get_node_type()` to `mode` across the T2437 resolve chain."""
+    from app.deployment import authority as authority_module
+
+    monkeypatch.setattr(authority_module, "resolve_deployment_mode", lambda **_: mode)
+    monkeypatch.setattr(runtime_profiles, "get_deployment_config", lambda: _mode(mode))
+
+
 def test_audio_node_defaults_to_performance(monkeypatch):
-    monkeypatch.setattr(runtime_profiles, "get_deployment_config", lambda: _mode("AUDIO-NODE"))
+    _set_mode(monkeypatch, "AUDIO-NODE")
     monkeypatch.setattr(runtime_profiles, "config_get", lambda key, default=None: default)
 
     status = runtime_profiles.get_runtime_profile_status()
@@ -22,7 +30,7 @@ def test_audio_node_defaults_to_performance(monkeypatch):
 
 
 def test_control_node_is_control_only(monkeypatch):
-    monkeypatch.setattr(runtime_profiles, "get_deployment_config", lambda: _mode("CONTROL-NODE"))
+    _set_mode(monkeypatch, "CONTROL-NODE")
     monkeypatch.setattr(runtime_profiles, "config_get", lambda key, default=None: default)
 
     status = runtime_profiles.get_runtime_profile_status()
@@ -34,7 +42,7 @@ def test_control_node_is_control_only(monkeypatch):
 
 
 def test_apply_runtime_profile_persists_policy(monkeypatch):
-    monkeypatch.setattr(runtime_profiles, "get_deployment_config", lambda: _mode("AUDIO-NODE"))
+    _set_mode(monkeypatch, "AUDIO-NODE")
     monkeypatch.setattr(runtime_profiles, "config_get", lambda key, default=None: default)
     persisted = {}
     monkeypatch.setattr(runtime_profiles, "config_set", lambda key, value: persisted.setdefault(key, value) or True)
@@ -49,7 +57,7 @@ def test_apply_runtime_profile_persists_policy(monkeypatch):
 
 
 def test_apply_runtime_profile_rejects_control_node(monkeypatch):
-    monkeypatch.setattr(runtime_profiles, "get_deployment_config", lambda: _mode("CONTROL-NODE"))
+    _set_mode(monkeypatch, "CONTROL-NODE")
     monkeypatch.setattr(runtime_profiles, "config_get", lambda key, default=None: default)
 
     with pytest.raises(ValueError):

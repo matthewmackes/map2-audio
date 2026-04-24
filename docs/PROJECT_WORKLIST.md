@@ -234,7 +234,7 @@ Last updated: 2026-04-24 - Claude
 ---
 
 ID: T2437
-Status: [ ] Todo
+Status: [>] In Progress (phase 1 shipped — resolver + main.py + runtime_profiles migrated; phase 2 removes remaining consumers + legacy mirror files)
 Title: T2431-E phase 2 — retire the deployment-mode mirrors
 Description:
 - Goal / acceptance criteria: route every `DeploymentConfig`/`get_deployment_config()` consumer through `app.deployment.authority.get_deployment_mode_authority()`; delete the four legacy mirrors (`/etc/guitarfx-mode.conf`, `~/.map2/deployment.json`, the systemd mode drop-in template, and the hand-maintained `/etc/map2/environment` writer); rework `scripts/map2-mode.sh` as a thin reconciler that calls `map2-authority-doctor.py` subcommands.
@@ -242,6 +242,16 @@ Description:
 - Dependencies: T2431-E (Done), T2431-J (Done).
 - Estimated effort: High (touches systemd unit files, installer, RPM spec, map2-mode.sh, ztp.py, runtime_profiles.py, and ~12 consumer call sites).
 - Required outputs/deliverables: migration-order plan, per-consumer switch commits, installer/RPM spec updates, deletion of legacy mirror files in the repo, doctor coverage for the residual boot path, and CONFIGURATION_STATE_AUTHORITY_AUDIT.md update to mark the mirror files retired.
+- Subtasks:
+  - ID: T2437-A
+    Status: [✓] Done
+    Title: Introduce `resolve_deployment_mode` resolver + migrate main.py / runtime_profiles
+    Description: Add a canonical resolver with the full precedence chain (explicit override → MAP2_DEPLOYMENT_MODE → /etc/map2/mode.json authority → legacy ~/.map2/deployment.json → fallback). Route the boot entry point (`app/main.py`) and the most widely-called consumer (`runtime_profiles.get_node_type`) through it. The remaining ~10 consumers + mirror-file deletion + map2-mode.sh rewrite live in phase 2.
+    Completion note: 2026-04-24 - Claude: Added `resolve_deployment_mode()` to `app/deployment/authority.py` implementing the five-layer precedence chain with canonical-mode normalization and invalid-value tolerance (malformed values fall through instead of crashing). Updated `app/main.py` boot sequence to call the resolver first and log provenance (`authority_file`, `exists`). Updated `runtime_profiles.get_node_type()` to prefer the resolver, falling back to `DeploymentConfig` on any import/lookup error so audio runtime never starves for a mode. Tests: 5 new precedence-chain tests in `tests/test_deployment_authority.py` (explicit override, env var, authority, fallback, invalid-env tolerance). Updated 3 `test_runtime_profiles.py` tests to monkeypatch the new resolver symbol alongside the legacy path so both layers stay testable. Validation PASS: 34/34 touched suites, 2824/2824 broader backend sweep. Legacy mirrors stay functional — phase 2 retires them.
+  - ID: T2437-B
+    Status: [ ] Todo
+    Title: Migrate remaining DeploymentConfig consumers + delete legacy mirrors
+    Description: Route the remaining consumers (`frontend_degradation.py`, `adoption.py`, `deployment_health.py`, `node_discovery_service.py`, `maschine_lcd_service.py`, `routes/deployment_health.py`, `routes/metrics.py`, `routes/deployment.py`) through `resolve_deployment_mode()`. Delete `/etc/guitarfx-mode.conf` writers, stop updating `~/.map2/deployment.json`, remove the hand-maintained `/etc/map2/environment` writer from `_sync_system_config`, and rewrite `scripts/map2-mode.sh` as a thin wrapper that calls `map2-authority-doctor.py create-authority` / `repair`.
 Assigned to: Claude
 Last updated: 2026-04-24 - Claude
 

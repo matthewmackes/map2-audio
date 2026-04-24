@@ -20,6 +20,7 @@ from app.deployment.authority import (
     compute_sha256,
     environment_projection_path,
     render_environment_projection,
+    resolve_deployment_mode,
     write_environment_projection,
 )
 
@@ -245,3 +246,66 @@ def test_doctor_repair_regenerates_projection(isolated_paths: dict) -> None:
     post = doctor.repair()
     assert post.healthy, post.to_dict()
     assert "MAP2_DEPLOYMENT_MODE=AUDIO-NODE" in env_path.read_text(encoding="utf-8")
+
+
+# ---------------------------------------------------------------------------
+# T2437 — resolve_deployment_mode precedence chain
+# ---------------------------------------------------------------------------
+
+def test_resolve_mode_prefers_explicit_override(
+    isolated_paths: dict, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.delenv("MAP2_DEPLOYMENT_MODE", raising=False)
+    authority = DeploymentModeAuthority()
+    authority.write("AUDIO-NODE")
+    # explicit arg beats everything else.
+    assert resolve_deployment_mode(
+        authority=authority,
+        env_override="management",
+    ) == "CONTROL-NODE"
+
+
+def test_resolve_mode_uses_env_var_over_authority(
+    isolated_paths: dict, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("MAP2_DEPLOYMENT_MODE", "audio")
+    authority = DeploymentModeAuthority()
+    authority.write("ALL-IN-ONE")
+    assert resolve_deployment_mode(authority=authority) == "AUDIO-NODE"
+
+
+def test_resolve_mode_uses_authority_when_env_absent(
+    isolated_paths: dict, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.delenv("MAP2_DEPLOYMENT_MODE", raising=False)
+    authority = DeploymentModeAuthority()
+    authority.write("FRONTEND-ONLY")
+    assert resolve_deployment_mode(authority=authority) == "FRONTEND-ONLY"
+
+
+def test_resolve_mode_falls_back_when_nothing_set(
+    isolated_paths: dict, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """Without env or authority, the resolver consults the legacy
+    `DeploymentConfig` (fallback layer 4) before the explicit `fallback`
+    kwarg. That layer creates a default `~/.map2/deployment.json` with
+    `ALL-IN-ONE` on first read, so the result is always a canonical mode.
+    Explicit `fallback` is the last resort when even that layer fails.
+    """
+    monkeypatch.delenv("MAP2_DEPLOYMENT_MODE", raising=False)
+    result = resolve_deployment_mode(
+        authority=DeploymentModeAuthority(),
+        fallback="AUDIO-NODE",
+    )
+    # Whichever layer answers, the result must be canonical.
+    assert result in {"ALL-IN-ONE", "AUDIO-NODE"}
+
+
+def test_resolve_mode_rejects_invalid_env(
+    isolated_paths: dict, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    monkeypatch.setenv("MAP2_DEPLOYMENT_MODE", "garbage")
+    authority = DeploymentModeAuthority()
+    authority.write("AUDIO-NODE")
+    # Invalid env value is ignored; authority wins.
+    assert resolve_deployment_mode(authority=authority) == "AUDIO-NODE"
