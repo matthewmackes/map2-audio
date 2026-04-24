@@ -9,6 +9,7 @@ from pathlib import Path
 from dataclasses import dataclass, field, asdict
 import shutil
 
+from app.paths import Map2Paths
 from app.utils.time import utc_now
 
 logger = logging.getLogger(__name__)
@@ -93,8 +94,8 @@ class SessionManager:
             sessions_dir: Directory for sessions (default: ~/.map2/sessions)
         """
         if sessions_dir is None:
-            sessions_dir = Path.home() / ".map2" / "sessions"
-        
+            sessions_dir = Map2Paths.user_sessions_dir()
+
         self.sessions_dir = sessions_dir
         self.sessions_dir.mkdir(parents=True, exist_ok=True)
         

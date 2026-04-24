@@ -10,11 +10,12 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
+from app.paths import Map2Paths
 from app.services.midi_hub.hub import MidiHub, get_midi_hub
 
 
 def _default_scheduler_path() -> Path:
-    return Path("~/.map2/midi_hub_scheduler.json").expanduser()
+    return Map2Paths.midi_hub_scheduler_path()
 
 
 @dataclass

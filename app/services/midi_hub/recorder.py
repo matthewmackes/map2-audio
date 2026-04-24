@@ -10,12 +10,13 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
+from app.paths import Map2Paths
 from app.services.midi_hub.hub import MidiHub, get_midi_hub
 from app.services.midi_hub.ports import MidiMessage
 
 
 def _default_recordings_dir() -> Path:
-    return Path("~/.map2/midi_hub_recordings").expanduser()
+    return Map2Paths.midi_hub_recordings_dir()
 
 
 def _varlen(value: int) -> bytes:

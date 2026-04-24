@@ -26,6 +26,8 @@ from datetime import datetime, timedelta, timezone
 from contextlib import contextmanager
 import threading
 
+from app.paths import Map2Paths
+
 logger = logging.getLogger(__name__)
 
 
@@ -46,14 +48,15 @@ class AemCache:
         "manual": "invalidation_manual_count",
     }
 
-    def __init__(self, db_path: str = "~/.map2/aem_cache.db"):
+    def __init__(self, db_path: Optional[str] = None):
         """
         Initialize AEM cache.
 
         Args:
-            db_path: Path to SQLite database file (default: ~/.map2/aem_cache.db)
+            db_path: Path to SQLite database file (defaults to
+                     Map2Paths.user_file('aem_cache.db'))
         """
-        self.db_path = Path(db_path).expanduser()
+        self.db_path = Path(db_path).expanduser() if db_path else Map2Paths.user_file("aem_cache.db")
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
         self._lock = threading.RLock()
 

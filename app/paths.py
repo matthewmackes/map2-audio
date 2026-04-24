@@ -4,28 +4,337 @@ Centralized path management for MAP2 storage locations.
 This module provides unified access to all NAM and IR file storage paths,
 eliminating fragmented path definitions across the codebase.
 
+Two complementary APIs live here:
+
+- ``StoragePaths`` — the original NAM/IR asset-path helpers.
+- ``Map2Paths`` — the T2431-C platform path authority. Owns all four
+  authority planes (host / service / user / runtime) per
+  ``docs/architecture/CONFIGURATION_AUTHORITY_MODEL.md`` and exposes every
+  canonical path the rest of the codebase is expected to consume. Hardcoded
+  ``/etc/map2``, ``/var/lib/map2``, and ``~/.map2`` literals in application
+  code are being migrated to this authority.
+
 Usage:
-    from app.paths import StoragePaths
+    from app.paths import Map2Paths, StoragePaths
 
-    # Get primary directories
+    # New code — platform paths
+    host_dir = Map2Paths.host_config_dir()
+    cluster_db = Map2Paths.cluster_db_path()
+    midi_routes = Map2Paths.user_file('midi_routes.json')
+
+    # Asset paths (unchanged)
     nam_dir = StoragePaths.get_nam_user_dir()
-    ir_cabinet_dir = StoragePaths.get_ir_cabinet_dir()
-
-    # Get all search paths for scanning
-    all_nam_paths = StoragePaths.get_all_nam_paths()
-    all_ir_paths = StoragePaths.get_all_ir_paths()
-
-    # Ensure directories exist on startup
-    StoragePaths.ensure_directories()
 """
 
 import logging
+import os
 from pathlib import Path
-from typing import List
+from typing import Dict, List, Optional
 
 from app.config import get_config
 
 logger = logging.getLogger(__name__)
+
+
+# ============================================================================
+# T2431-C — Map2Paths platform path authority
+# ============================================================================
+
+# Environment-variable overrides. Kept narrow on purpose — every override adds
+# a drift risk per CONFIGURATION_AUTHORITY_MODEL.md, so we only expose the
+# three plane-root vars plus a user-plane override for developers who want to
+# keep per-user data outside ~/.map2.
+_ENV_HOST_ROOT = "MAP2_HOST_CONFIG_DIR"      # Host plane — /etc/map2
+_ENV_SERVICE_ROOT = "MAP2_SERVICE_STATE_DIR"  # Service plane — /var/lib/map2
+_ENV_USER_ROOT = "MAP2_USER_DIR"              # User plane — ~/.map2
+
+# Default plane roots, matching docs/architecture/CONFIGURATION_AUTHORITY_MODEL.md.
+_DEFAULT_HOST_ROOT = Path("/etc/map2")
+_DEFAULT_SERVICE_ROOT = Path("/var/lib/map2")
+_DEFAULT_USER_ROOT = Path("~/.map2")
+
+
+def _resolve_root(env_var: str, default: Path) -> Path:
+    """Resolve a plane root, honoring the env override then falling back."""
+    raw = os.environ.get(env_var)
+    if raw:
+        return Path(raw).expanduser()
+    return default.expanduser()
+
+
+class Map2Paths:
+    """Platform path authority for MAP2 (T2431-C).
+
+    One method per canonical path. Every call routes through the plane
+    roots resolved from env vars (with defaults matching the authority
+    model), which means: one env override flips the whole tree at once.
+
+    Rules:
+    - Host-plane paths live under ``/etc/map2`` and hold desired config.
+    - Service-plane paths live under ``/var/lib/map2`` and hold durable
+      service state (databases, backups, event logs).
+    - User-plane paths live under ``~/.map2`` and hold per-operator state.
+    - Runtime-plane truths (``/proc``, PipeWire, etcd) do not live here;
+      they belong to their owning services.
+    """
+
+    # -- plane roots ---------------------------------------------------------
+
+    @staticmethod
+    def host_config_dir() -> Path:
+        """Host desired configuration root — ``/etc/map2`` by default."""
+        return _resolve_root(_ENV_HOST_ROOT, _DEFAULT_HOST_ROOT)
+
+    @staticmethod
+    def service_state_dir() -> Path:
+        """Durable service/cluster state root — ``/var/lib/map2`` by default."""
+        return _resolve_root(_ENV_SERVICE_ROOT, _DEFAULT_SERVICE_ROOT)
+
+    @staticmethod
+    def user_dir() -> Path:
+        """Per-user/operator root — ``~/.map2`` by default."""
+        return _resolve_root(_ENV_USER_ROOT, _DEFAULT_USER_ROOT)
+
+    # -- host plane (/etc/map2) ---------------------------------------------
+
+    @staticmethod
+    def host_file(*parts: str) -> Path:
+        """Join a path under the host config dir."""
+        return Map2Paths.host_config_dir().joinpath(*parts)
+
+    @staticmethod
+    def node_identity_path() -> Path:
+        return Map2Paths.host_file("node-identity.json")
+
+    @staticmethod
+    def node_conf_path() -> Path:
+        return Map2Paths.host_file("node.conf")
+
+    @staticmethod
+    def node_conf_backup_path() -> Path:
+        return Map2Paths.host_file("node.conf.bak")
+
+    @staticmethod
+    def host_environment_path() -> Path:
+        return Map2Paths.host_file("environment")
+
+    @staticmethod
+    def host_mode_json_path() -> Path:
+        return Map2Paths.host_file("mode.json")
+
+    @staticmethod
+    def trust_dir() -> Path:
+        return Map2Paths.host_file("trust")
+
+    @staticmethod
+    def trusted_nodes_path() -> Path:
+        return Map2Paths.trust_dir() / "trusted-nodes.json"
+
+    @staticmethod
+    def ssl_dir() -> Path:
+        return Map2Paths.host_file("ssl")
+
+    @staticmethod
+    def ssh_dir() -> Path:
+        return Map2Paths.host_file("ssh")
+
+    @staticmethod
+    def ca_cert_path() -> Path:
+        return Map2Paths.ssl_dir() / "ca-cert.pem"
+
+    @staticmethod
+    def node_cert_path() -> Path:
+        return Map2Paths.ssl_dir() / "node-cert.pem"
+
+    @staticmethod
+    def node_key_path() -> Path:
+        return Map2Paths.ssl_dir() / "node-key.pem"
+
+    # -- service plane (/var/lib/map2) --------------------------------------
+
+    @staticmethod
+    def service_file(*parts: str) -> Path:
+        """Join a path under the service state dir."""
+        return Map2Paths.service_state_dir().joinpath(*parts)
+
+    @staticmethod
+    def cluster_db_path() -> Path:
+        return Map2Paths.service_file("cluster.db")
+
+    @staticmethod
+    def cluster_config_database_path() -> Path:
+        return Map2Paths.service_file("database", "cluster.db")
+
+    @staticmethod
+    def platform_events_db_path() -> Path:
+        return Map2Paths.service_file("platform-events.db")
+
+    @staticmethod
+    def legacy_cluster_events_db_path() -> Path:
+        return Map2Paths.service_file("cluster-events.db")
+
+    @staticmethod
+    def backups_dir() -> Path:
+        return Map2Paths.service_file("backups")
+
+    @staticmethod
+    def config_repo_dir() -> Path:
+        return Map2Paths.service_file("config-repo")
+
+    @staticmethod
+    def config_distribution_dir() -> Path:
+        return Map2Paths.service_file("config")
+
+    @staticmethod
+    def config_manager_history_path() -> Path:
+        return Map2Paths.service_file("config-manager-history.json")
+
+    @staticmethod
+    def ztp_marker_path() -> Path:
+        return Map2Paths.service_file(".ztp-complete")
+
+    @staticmethod
+    def lifecycle_dir() -> Path:
+        return Map2Paths.service_file("lifecycle")
+
+    @staticmethod
+    def nam_library_dir() -> Path:
+        return Map2Paths.service_file("nam")
+
+    @staticmethod
+    def lv2_library_dir() -> Path:
+        return Map2Paths.service_file("lv2")
+
+    @staticmethod
+    def ir_cabinets_library_dir() -> Path:
+        return Map2Paths.service_file("irs", "cabinets")
+
+    @staticmethod
+    def ir_reverbs_library_dir() -> Path:
+        return Map2Paths.service_file("irs", "reverbs")
+
+    @staticmethod
+    def presets_dir() -> Path:
+        return Map2Paths.service_file("presets")
+
+    @staticmethod
+    def presets_pre_restore_dir() -> Path:
+        return Map2Paths.service_file("presets.pre-restore")
+
+    @staticmethod
+    def secrets_salt_path() -> Path:
+        return Map2Paths.service_file("secrets_salt")
+
+    # -- user plane (~/.map2) -----------------------------------------------
+
+    @staticmethod
+    def user_file(*parts: str) -> Path:
+        """Join a path under the user dir (``~/.map2`` by default)."""
+        return Map2Paths.user_dir().joinpath(*parts)
+
+    @staticmethod
+    def user_sessions_dir() -> Path:
+        return Map2Paths.user_file("sessions")
+
+    @staticmethod
+    def user_ir_download_state_path() -> Path:
+        return Map2Paths.user_file("download_state.json")
+
+    @staticmethod
+    def user_soundfont_download_state_path() -> Path:
+        return Map2Paths.user_file("soundfont_download_state.json")
+
+    # MIDI Hub user-plane files
+    @staticmethod
+    def midi_routes_path() -> Path:
+        return Map2Paths.user_file("midi_routes.json")
+
+    @staticmethod
+    def midi_hub_event_lists_path() -> Path:
+        return Map2Paths.user_file("midi_hub_event_lists.json")
+
+    @staticmethod
+    def midi_hub_macros_path() -> Path:
+        return Map2Paths.user_file("midi_hub_macros.json")
+
+    @staticmethod
+    def midi_hub_message_mapper_path() -> Path:
+        return Map2Paths.user_file("midi_hub_message_mapper.json")
+
+    @staticmethod
+    def midi_hub_scheduler_path() -> Path:
+        return Map2Paths.user_file("midi_hub_scheduler.json")
+
+    @staticmethod
+    def midi_hub_presets_path() -> Path:
+        return Map2Paths.user_file("midi_hub_presets", "presets.json")
+
+    @staticmethod
+    def midi_hub_recordings_dir() -> Path:
+        return Map2Paths.user_file("midi_hub_recordings")
+
+    @staticmethod
+    def midi_hub_traffic_exports_dir() -> Path:
+        return Map2Paths.user_file("midi_hub_traffic_exports")
+
+    @staticmethod
+    def midi_scripts_registry_path() -> Path:
+        return Map2Paths.user_file("midi_scripts", "scripts.json")
+
+    @staticmethod
+    def midi_scripts_state_path() -> Path:
+        return Map2Paths.user_file("midi_scripts", "state.json")
+
+    # -- diagnostics ---------------------------------------------------------
+
+    @staticmethod
+    def plane_summary() -> Dict[str, Dict[str, object]]:
+        """Return a per-plane summary for diagnostics / the authority doctor.
+
+        Each entry includes the resolved root, whether the default or an
+        env override is in effect, and whether the root currently exists
+        on disk. Consumed by the T2431-J ``map2 authority doctor`` CLI.
+        """
+        roots = {
+            "host": (_ENV_HOST_ROOT, _DEFAULT_HOST_ROOT, Map2Paths.host_config_dir()),
+            "service": (_ENV_SERVICE_ROOT, _DEFAULT_SERVICE_ROOT, Map2Paths.service_state_dir()),
+            "user": (_ENV_USER_ROOT, _DEFAULT_USER_ROOT, Map2Paths.user_dir()),
+        }
+        summary: Dict[str, Dict[str, object]] = {}
+        for plane, (env_var, default, resolved) in roots.items():
+            env_value = os.environ.get(env_var)
+            summary[plane] = {
+                "root": str(resolved),
+                "default": str(default.expanduser()),
+                "override_env_var": env_var,
+                "override_active": env_value is not None,
+                "exists": resolved.exists(),
+            }
+        return summary
+
+    # -- directory lifecycle -------------------------------------------------
+
+    @staticmethod
+    def ensure_user_directories() -> None:
+        """Create per-user directories needed by user-plane services.
+
+        Host and service plane directories are created by the installer /
+        systemd unit with the correct ownership and permissions, not by
+        application code running as the service user.
+        """
+        directories = [
+            Map2Paths.user_dir(),
+            Map2Paths.user_sessions_dir(),
+            Map2Paths.midi_hub_recordings_dir(),
+            Map2Paths.midi_hub_traffic_exports_dir(),
+            Map2Paths.midi_hub_presets_path().parent,
+            Map2Paths.midi_scripts_registry_path().parent,
+        ]
+        for directory in directories:
+            try:
+                directory.mkdir(parents=True, exist_ok=True)
+            except (PermissionError, OSError) as exc:
+                logger.warning("Cannot create user directory %s: %s", directory, exc)
 
 
 class StoragePaths:

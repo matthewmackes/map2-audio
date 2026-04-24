@@ -27,6 +27,8 @@ except ImportError:
     hashes = None  # type: ignore[assignment]
     PBKDF2 = None  # type: ignore[assignment]
 
+from app.paths import Map2Paths
+
 logger = logging.getLogger(__name__)
 if not CRYPTOGRAPHY_AVAILABLE:
     logger.info("cryptography module not installed — secrets manager disabled")
@@ -131,7 +133,7 @@ class SecretEncryption:
             )
         
         self.master_password = master_password
-        self.salt_path = Path(salt_path or "/var/lib/map2/secrets_salt")
+        self.salt_path = Path(salt_path) if salt_path else Map2Paths.secrets_salt_path()
         self.salt = self._get_or_create_salt()
         self.cipher = self._derive_cipher()
     

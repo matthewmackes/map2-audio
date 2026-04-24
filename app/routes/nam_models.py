@@ -12,6 +12,7 @@ from pathlib import Path
 import tempfile
 import shutil
 
+from app.paths import Map2Paths
 from app.services.nam_processor import get_nam_processor, NAMModel
 from app.services.nam_library import get_nam_library_service
 from app.utils.time import utc_now
@@ -91,7 +92,7 @@ async def upload_nam_model(file: UploadFile = File(...)):
                 raise HTTPException(400, "NAM model validation failed")
             
             # Create library directory if needed
-            library_dir = Path("/var/lib/map2/nam")
+            library_dir = Map2Paths.nam_library_dir()
             library_dir.mkdir(parents=True, exist_ok=True)
             
             # Move to library
@@ -158,7 +159,7 @@ async def get_nam_model(model_name: str):
         
         # Fallback to filesystem
         processor = get_nam_processor()
-        library_dir = Path("/var/lib/map2/nam")
+        library_dir = Map2Paths.nam_library_dir()
         
         for file_path in library_dir.glob("*"):
             if file_path.stem == model_name:

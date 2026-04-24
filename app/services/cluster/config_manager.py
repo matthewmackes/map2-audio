@@ -14,6 +14,7 @@ import hashlib
 from typing import Dict, Any, Optional
 from pathlib import Path
 
+from app.paths import Map2Paths
 from app.utils.singleton import Singleton
 from app.utils.time import utc_now
 
@@ -24,7 +25,7 @@ class ConfigManager(Singleton):
     """Manages cluster configuration with persistence."""
 
     def __init__(self):
-        self._history_path = Path("/var/lib/map2/config-manager-history.json")
+        self._history_path = Map2Paths.config_manager_history_path()
         self._history_path.parent.mkdir(parents=True, exist_ok=True)
         self._config: Dict[str, Any] = {
             "cluster_name": "map2-cluster",

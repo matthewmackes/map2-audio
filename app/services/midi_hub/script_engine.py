@@ -10,6 +10,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Callable, Dict, List, Optional
 
+from app.paths import Map2Paths
 from app.services.midi_hub.hub import MidiHub, get_midi_hub
 from app.services.midi_hub.router import MidiRouter, get_midi_router
 
@@ -44,11 +45,11 @@ SAFE_BUILTINS: Dict[str, Any] = {
 
 
 def _default_scripts_path() -> Path:
-    return Path("~/.map2/midi_scripts/scripts.json").expanduser()
+    return Map2Paths.midi_scripts_registry_path()
 
 
 def _default_state_path() -> Path:
-    return Path("~/.map2/midi_scripts/state.json").expanduser()
+    return Map2Paths.midi_scripts_state_path()
 
 
 @dataclass

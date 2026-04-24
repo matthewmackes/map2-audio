@@ -30,7 +30,7 @@ from .fokke_scraper import FokkeScraper
 from app.services.ir_loader import get_ir_loader
 from app.services.websocket_manager import ws_manager
 from app.database import get_session, ImpulseResponse
-from app.paths import StoragePaths
+from app.paths import Map2Paths, StoragePaths
 
 logger = logging.getLogger(__name__)
 
@@ -89,6 +89,9 @@ class EnhancedDownloadState:
 class IRDownloadManager:
     """Manage IR library downloads with pause/resume and state persistence."""
 
+    # Retained as a string for backwards compatibility with any callers that
+    # inspect the class attribute; the authoritative path is resolved via
+    # Map2Paths.user_ir_download_state_path() at init-time.
     STATE_FILE_PATH = "~/.map2/download_state.json"
     BROADCASTER_INTERVAL = 0.5  # Broadcast every 500ms
 
@@ -116,7 +119,7 @@ class IRDownloadManager:
         # Enhanced state management
         self._state_lock = asyncio.Lock()
         self._download_state = EnhancedDownloadState()
-        self.state_file_path = os.path.expanduser(self.STATE_FILE_PATH)
+        self.state_file_path = str(Map2Paths.user_ir_download_state_path())
 
         # Chunk assembler
         self.chunk_assembler = ChunkAssembler()

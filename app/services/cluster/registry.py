@@ -20,6 +20,7 @@ from dataclasses import asdict
 from datetime import datetime, timedelta
 from pathlib import Path
 
+from app.paths import Map2Paths
 from app.utils.singleton import Singleton
 from app.utils.time import utc_now
 
@@ -39,6 +40,9 @@ class ClusterRegistry(Singleton):
     - Automatic sync with discovered nodes
     """
 
+    # Kept for backwards compatibility with any external consumer that
+    # reads this attribute; the authoritative path resolves via
+    # Map2Paths.cluster_db_path() inside __init__.
     DB_PATH = Path("/var/lib/map2/cluster.db")
     SYNC_INTERVAL = 30  # seconds
 
@@ -47,9 +51,9 @@ class ClusterRegistry(Singleton):
         Initialize cluster registry.
 
         Args:
-            db_path: Path to SQLite database (defaults to /var/lib/map2/cluster.db)
+            db_path: Path to SQLite database (defaults to Map2Paths.cluster_db_path())
         """
-        self.db_path = db_path or self.DB_PATH
+        self.db_path = db_path or Map2Paths.cluster_db_path()
         self.db_path.parent.mkdir(parents=True, exist_ok=True)
         self.logger = logging.getLogger(__name__)
         self._init_db()

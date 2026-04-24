@@ -30,6 +30,8 @@ except ImportError:
     CRYPTOGRAPHY_AVAILABLE = False
     x509 = None  # type: ignore
 
+from app.paths import Map2Paths
+
 logger = logging.getLogger(__name__)
 if not CRYPTOGRAPHY_AVAILABLE:
     logger.info("cryptography module not installed — cluster CA disabled")
@@ -47,7 +49,7 @@ class ClusterCA:
     - CRL distribution
     """
 
-    CA_DIR = Path("/etc/map2/ssl")
+    CA_DIR = Map2Paths.ssl_dir()
     CA_CERT_PATH = CA_DIR / "ca-cert.pem"
     CA_KEY_PATH = CA_DIR / "ca-key.pem"
     NODE_CERT_FORMAT = "{node_id}-cert.pem"

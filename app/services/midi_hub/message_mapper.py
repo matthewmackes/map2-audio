@@ -9,12 +9,13 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
+from app.paths import Map2Paths
 from app.services.midi_hub.hub import MidiHub, get_midi_hub
 from app.services.midi_hub.ports import MidiMessage
 
 
 def _default_storage_path() -> Path:
-    return Path("~/.map2/midi_hub_message_mapper.json").expanduser()
+    return Map2Paths.midi_hub_message_mapper_path()
 
 
 def _normalize_message_type(value: str) -> str:

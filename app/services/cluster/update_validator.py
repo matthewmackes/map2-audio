@@ -14,6 +14,7 @@ from datetime import datetime, timezone
 from pathlib import Path
 import logging
 
+from app.paths import Map2Paths
 from app.services.cluster.registry import get_cluster_registry
 from app.services.cluster.health_aggregator import get_health_aggregator
 from app.services.cluster.fedora_package_manager import get_dnf_manager
@@ -567,7 +568,7 @@ class UpdateValidator:
     def check_recent_backup_exists(self) -> None:
         """Verify recent backup exists before updating."""
         try:
-            backup_dir = Path("/var/lib/map2/backups")
+            backup_dir = Map2Paths.backups_dir()
             max_age_hours = 24
             if not backup_dir.exists():
                 self.results.append(ValidationResult(

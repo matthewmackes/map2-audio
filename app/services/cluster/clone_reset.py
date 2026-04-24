@@ -18,6 +18,8 @@ from datetime import datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Set
 
+from app.paths import Map2Paths
+
 logger = logging.getLogger(__name__)
 
 
@@ -37,11 +39,11 @@ class IdentitySnapshot:
         return asdict(self)
 
 
-_NODE_IDENTITY_PATH = Path("/etc/map2/node-identity.json")
-_ENHANCED_NODE_CONFIG_PATH = Path("/etc/map2/node.conf")
-_ENHANCED_NODE_CONFIG_BACKUP_PATH = Path("/etc/map2/node.conf.bak")
-_TRUSTED_NODES_PATH = Path("/etc/map2/trust/trusted-nodes.json")
-_ZTP_MARKER_PATH = Path("/var/lib/map2/.ztp-complete")
+_NODE_IDENTITY_PATH = Map2Paths.node_identity_path()
+_ENHANCED_NODE_CONFIG_PATH = Map2Paths.node_conf_path()
+_ENHANCED_NODE_CONFIG_BACKUP_PATH = Map2Paths.node_conf_backup_path()
+_TRUSTED_NODES_PATH = Map2Paths.trusted_nodes_path()
+_ZTP_MARKER_PATH = Map2Paths.ztp_marker_path()
 
 
 def _read_json_dict(path: Path) -> Dict[str, Any]:

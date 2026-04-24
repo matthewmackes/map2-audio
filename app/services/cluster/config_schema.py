@@ -11,6 +11,8 @@ from typing import Any, Dict, List, Optional, Union
 import json
 from pathlib import Path
 
+from app.paths import Map2Paths
+
 
 # ============================================================================
 # Enumerations
@@ -57,12 +59,12 @@ class ClusterConfig:
 @dataclass
 class PathsConfig:
     """Directory and file paths."""
-    data_dir: str = "/var/lib/map2"
-    config_dir: str = "/etc/map2"
+    data_dir: str = field(default_factory=lambda: str(Map2Paths.service_state_dir()))
+    config_dir: str = field(default_factory=lambda: str(Map2Paths.host_config_dir()))
     log_dir: str = "/var/log/map2"
-    backup_dir: str = "/var/lib/map2/backups"
-    database_path: str = "/var/lib/map2/database/cluster.db"
-    ssl_dir: str = "/etc/map2/ssl"
+    backup_dir: str = field(default_factory=lambda: str(Map2Paths.backups_dir()))
+    database_path: str = field(default_factory=lambda: str(Map2Paths.cluster_config_database_path()))
+    ssl_dir: str = field(default_factory=lambda: str(Map2Paths.ssl_dir()))
     scripts_dir: str = "/opt/map2/scripts"
 
 
@@ -82,7 +84,7 @@ class ServerConfig:
 class DatabaseConfig:
     """Database configuration."""
     backend: str = "sqlite"  # sqlite, postgresql
-    path: str = "/var/lib/map2/database/cluster.db"
+    path: str = field(default_factory=lambda: str(Map2Paths.cluster_config_database_path()))
     connection_string: Optional[str] = None
     pool_size: int = 5
     max_overflow: int = 10
@@ -96,9 +98,9 @@ class DatabaseConfig:
 class SSLConfig:
     """TLS/SSL configuration."""
     enabled: bool = True
-    ca_cert_path: str = "/etc/map2/ssl/ca-cert.pem"
-    cert_path: str = "/etc/map2/ssl/node-cert.pem"
-    key_path: str = "/etc/map2/ssl/node-key.pem"
+    ca_cert_path: str = field(default_factory=lambda: str(Map2Paths.ca_cert_path()))
+    cert_path: str = field(default_factory=lambda: str(Map2Paths.node_cert_path()))
+    key_path: str = field(default_factory=lambda: str(Map2Paths.node_key_path()))
     verify_mode: str = "CERT_REQUIRED"  # CERT_NONE, CERT_OPTIONAL, CERT_REQUIRED
     cert_renewal_threshold: int = 80  # Renew at 80% of lifetime
     min_tls_version: str = "TLSv1.2"
@@ -173,7 +175,7 @@ class BackupConfig:
     
     # Storage
     backup_compression: str = "gzip"  # gzip, bzip2, none
-    backup_location: str = "/var/lib/map2/backups"
+    backup_location: str = field(default_factory=lambda: str(Map2Paths.backups_dir()))
     backup_retention_count: int = 10
     
     # Verification

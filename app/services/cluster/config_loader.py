@@ -18,6 +18,7 @@ try:
 except ImportError:
     HAS_JSONSCHEMA = False
 
+from app.paths import Map2Paths
 from app.services.cluster.config_schema import (
     ClusterConfigSchema,
     ClusterConfig,
@@ -228,12 +229,12 @@ class ConfigParser:
         
         paths_data = config_dict.get('paths', {})
         paths = PathsConfig(
-            data_dir=paths_data.get('data_dir', '/var/lib/map2'),
-            config_dir=paths_data.get('config_dir', '/etc/map2'),
+            data_dir=paths_data.get('data_dir', str(Map2Paths.service_state_dir())),
+            config_dir=paths_data.get('config_dir', str(Map2Paths.host_config_dir())),
             log_dir=paths_data.get('log_dir', '/var/log/map2'),
-            backup_dir=paths_data.get('backup_dir', '/var/lib/map2/backups'),
-            database_path=paths_data.get('database_path', '/var/lib/map2/database/cluster.db'),
-            ssl_dir=paths_data.get('ssl_dir', '/etc/map2/ssl'),
+            backup_dir=paths_data.get('backup_dir', str(Map2Paths.backups_dir())),
+            database_path=paths_data.get('database_path', str(Map2Paths.cluster_config_database_path())),
+            ssl_dir=paths_data.get('ssl_dir', str(Map2Paths.ssl_dir())),
             scripts_dir=paths_data.get('scripts_dir', '/opt/map2/scripts'),
         )
         
@@ -251,7 +252,7 @@ class ConfigParser:
         database_data = config_dict.get('database', {})
         database = DatabaseConfig(
             backend=database_data.get('backend', 'sqlite'),
-            path=database_data.get('path', '/var/lib/map2/database/cluster.db'),
+            path=database_data.get('path', str(Map2Paths.cluster_config_database_path())),
             pool_size=cls.parse_int(database_data.get('pool_size'), 5),
             max_overflow=cls.parse_int(database_data.get('max_overflow'), 10),
             echo=cls.parse_bool(database_data.get('echo', False)),
@@ -263,9 +264,9 @@ class ConfigParser:
         ssl_data = config_dict.get('ssl', {})
         ssl = SSLConfig(
             enabled=cls.parse_bool(ssl_data.get('enabled', True)),
-            ca_cert_path=ssl_data.get('ca_cert_path', '/etc/map2/ssl/ca-cert.pem'),
-            cert_path=ssl_data.get('cert_path', '/etc/map2/ssl/node-cert.pem'),
-            key_path=ssl_data.get('key_path', '/etc/map2/ssl/node-key.pem'),
+            ca_cert_path=ssl_data.get('ca_cert_path', str(Map2Paths.ca_cert_path())),
+            cert_path=ssl_data.get('cert_path', str(Map2Paths.node_cert_path())),
+            key_path=ssl_data.get('key_path', str(Map2Paths.node_key_path())),
             verify_mode=ssl_data.get('verify_mode', 'CERT_REQUIRED'),
             cert_renewal_threshold=cls.parse_int(ssl_data.get('cert_renewal_threshold'), 80),
             min_tls_version=ssl_data.get('min_tls_version', 'TLSv1.2'),
@@ -312,7 +313,7 @@ class ConfigParser:
             include_presets=cls.parse_bool(backup_data.get('include_presets', True)),
             include_config=cls.parse_bool(backup_data.get('include_config', True)),
             backup_compression=backup_data.get('backup_compression', 'gzip'),
-            backup_location=backup_data.get('backup_location', '/var/lib/map2/backups'),
+            backup_location=backup_data.get('backup_location', str(Map2Paths.backups_dir())),
             backup_retention_count=cls.parse_int(backup_data.get('backup_retention_count'), 10),
             verify_after_backup=cls.parse_bool(backup_data.get('verify_after_backup', True)),
         )

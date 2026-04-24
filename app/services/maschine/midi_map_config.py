@@ -14,6 +14,7 @@ from dataclasses import dataclass, field, asdict
 from pathlib import Path
 from typing import Any, Literal
 
+from app.paths import Map2Paths
 from app.services.maschine.mk1_protocol import (
     Button,
     Led,
@@ -22,8 +23,8 @@ from app.services.maschine.mk1_protocol import (
 )
 
 
-CONFIG_DIR = Path(os.path.expanduser("~/.map2"))
-CONFIG_FILE = CONFIG_DIR / "maschine_midi_map.json"
+CONFIG_DIR = Map2Paths.user_dir()
+CONFIG_FILE = Map2Paths.user_file("maschine_midi_map.json")
 
 MidiMessageType = Literal["note", "cc", "program_change"]
 VelocityCurve = Literal["linear", "log", "exp"]

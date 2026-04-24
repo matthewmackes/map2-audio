@@ -21,6 +21,7 @@ from datetime import datetime
 from enum import Enum
 from pathlib import Path
 
+from app.paths import Map2Paths
 from app.services.cluster.registry import get_cluster_registry
 from app.services.cluster.certificate_authority import get_cluster_ca
 from app.services.platform_event.bus import get_platform_event_bus
@@ -431,7 +432,7 @@ class NodeLifecycleManager:
         """Perform graceful node shutdown"""
         try:
             self.logger.info(f"Gracefully shutting down {self.node_id}...")
-            persist_dir = Path("/var/lib/map2/lifecycle")
+            persist_dir = Map2Paths.lifecycle_dir()
             persist_dir.mkdir(parents=True, exist_ok=True)
             persist_file = persist_dir / f"{self.node_id}.json"
             snapshot = {

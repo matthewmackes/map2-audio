@@ -11,7 +11,7 @@ from fastapi import APIRouter, HTTPException, BackgroundTasks
 from pydantic import BaseModel
 
 from app.services.folder_scanner import get_folder_scanner
-from app.paths import StoragePaths
+from app.paths import Map2Paths, StoragePaths
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/folders", tags=["folders"])
@@ -400,7 +400,7 @@ async def get_asset_counts() -> Dict:
         user_lv2_paths = [
             Path.home() / ".lv2",
             Path.home() / ".local/lib/lv2",
-            Path("/var/lib/map2/lv2"),
+            Map2Paths.lv2_library_dir(),
         ]
         
         for user_lv2_path in user_lv2_paths:

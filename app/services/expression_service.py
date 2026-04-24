@@ -22,12 +22,13 @@ from typing import Any, Deque, Dict, List, Optional, Tuple
 
 from app.database import ExpressionAssignment as ExpressionAssignmentRow
 from app.database import get_db_session, get_session
+from app.paths import Map2Paths
 from app.services.juce_engine_service import get_audio_engine
 from app.utils.singleton import Singleton
 
 logger = logging.getLogger(__name__)
 
-_RETIRED_JSON_PATH = os.path.expanduser("~/.map2/expression_assignments.json")
+_RETIRED_JSON_PATH = str(Map2Paths.user_file("expression_assignments.json"))
 _CC_DETECT_WINDOW_NS = 500_000_000
 _CC_DETECT_MIN_DELTA = 10
 

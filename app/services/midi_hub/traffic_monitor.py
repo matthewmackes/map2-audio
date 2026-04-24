@@ -11,6 +11,7 @@ from pathlib import Path
 from threading import RLock
 from typing import Any, Dict, List, Optional
 
+from app.paths import Map2Paths
 from app.services.midi_hub.ring_buffer import MidiRingBuffer
 
 
@@ -41,7 +42,7 @@ class MidiTrafficMonitor:
         self._buffer = MidiRingBuffer[MidiTrafficRecord](capacity, overwrite_on_full=True)
         self._lock = RLock()
         self._captured = 0
-        self._export_dir = export_dir or Path("~/.map2/midi_hub_traffic_exports").expanduser()
+        self._export_dir = export_dir or Map2Paths.midi_hub_traffic_exports_dir()
 
     def record(self, record: MidiTrafficRecord) -> None:
         with self._lock:

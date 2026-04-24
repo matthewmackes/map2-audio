@@ -16,7 +16,7 @@ from pathlib import Path
 import wave
 from collections import deque
 
-from app.paths import StoragePaths
+from app.paths import Map2Paths, StoragePaths
 
 logger = logging.getLogger(__name__)
 
@@ -363,11 +363,11 @@ class IRProcessor:
         if ir_type in ["all", "cabinet"]:
             search_dirs.append((StoragePaths.get_ir_cabinet_dir(), "cabinet"))
             # Also check system cabinet directory (legacy location with 's')
-            search_dirs.append((Path("/var/lib/map2/irs/cabinets"), "cabinet"))
+            search_dirs.append((Map2Paths.ir_cabinets_library_dir(), "cabinet"))
         if ir_type in ["all", "reverb"]:
             search_dirs.append((StoragePaths.get_ir_reverb_dir(), "reverb"))
             # Also check system reverb directory (legacy location with 's')
-            search_dirs.append((Path("/var/lib/map2/irs/reverbs"), "reverb"))
+            search_dirs.append((Map2Paths.ir_reverbs_library_dir(), "reverb"))
 
         # Downloaded library directories - categorize by subdirectory name
         download_dir = StoragePaths.get_ir_download_dir()

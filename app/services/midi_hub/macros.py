@@ -10,6 +10,7 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
+from app.paths import Map2Paths
 from app.services.midi_hub.hub import MidiHub, get_midi_hub
 from app.services.midi_hub.preset_service import MidiHubPresetService, get_midi_hub_preset_service
 from app.services.midi_hub.router import MidiRouter, get_midi_router
@@ -65,7 +66,7 @@ class MidiMacroService:
         self._hub = hub or get_midi_hub()
         self._router = router or get_midi_router()
         self._preset_service = preset_service or get_midi_hub_preset_service()
-        self._storage_path = storage_path or Path("~/.map2/midi_hub_macros.json").expanduser()
+        self._storage_path = storage_path or Map2Paths.midi_hub_macros_path()
         self._macros: Dict[str, MidiMacro] = {}
         self._load()
 

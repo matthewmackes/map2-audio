@@ -12,7 +12,7 @@ import asyncio
 
 from app.services.ir_loader import get_ir_loader
 from app.database import get_session, ImpulseResponse, NAMModel, Plugin
-from app.paths import StoragePaths
+from app.paths import Map2Paths, StoragePaths
 from app.utils.singleton import Singleton
 from app.utils.logging_utils import get_logger
 from app.utils.time import utc_now
@@ -36,7 +36,7 @@ class FolderScanner(Singleton):
         self.base_paths = {
             'nams': str(StoragePaths.get_nam_system_dir()),
             'irs': str(StoragePaths.get_ir_system_dir()),
-            'lv2': '/var/lib/map2/lv2'
+            'lv2': str(Map2Paths.lv2_library_dir()),
         }
 
         # Ensure directories exist

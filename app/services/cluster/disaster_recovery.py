@@ -24,6 +24,7 @@ from datetime import datetime, timedelta
 from pathlib import Path
 import subprocess
 
+from app.paths import Map2Paths
 from app.services.cluster.registry import get_cluster_registry
 from app.services.platform_event.bus import get_platform_event_bus
 from app.services.platform_event.factories import make_cluster_platform_event
@@ -242,7 +243,7 @@ class DisasterRecoveryManager(Singleton):
             preset_dir.mkdir(exist_ok=True)
             
             # Preset library location
-            preset_source = Path("/var/lib/map2/presets")
+            preset_source = Map2Paths.presets_dir()
             
             if not preset_source.exists():
                 self.logger.warning("Preset directory not found")
@@ -423,7 +424,7 @@ class DisasterRecoveryManager(Singleton):
                 return
             
             for db_file in db_dir.glob("*.db"):
-                dest = Path("/var/lib/map2") / db_file.name
+                dest = Map2Paths.service_state_dir() / db_file.name
                 
                 # Backup existing
                 if dest.exists():
@@ -445,11 +446,11 @@ class DisasterRecoveryManager(Singleton):
             if not preset_dir.exists():
                 return
             
-            dest = Path("/var/lib/map2/presets")
-            
+            dest = Map2Paths.presets_dir()
+
             # Backup existing
             if dest.exists():
-                backup_path = Path("/var/lib/map2/presets.pre-restore")
+                backup_path = Map2Paths.presets_pre_restore_dir()
                 if backup_path.exists():
                     shutil.rmtree(backup_path)
                 shutil.copytree(dest, backup_path)
@@ -470,7 +471,7 @@ class DisasterRecoveryManager(Singleton):
                 return
             
             for config_file in config_dir.glob("*.conf"):
-                dest = Path("/etc/map2") / config_file.name
+                dest = Map2Paths.host_config_dir() / config_file.name
                 
                 # Backup existing
                 if dest.exists():

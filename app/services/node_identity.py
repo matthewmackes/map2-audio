@@ -17,6 +17,7 @@ from typing import Dict, List, Optional
 import socket
 import hashlib
 
+from app.paths import Map2Paths
 from app.utils.time import utc_now
 
 logger = logging.getLogger(__name__)
@@ -122,9 +123,9 @@ class SSHTrustManager:
     - Verification
     """
     
-    def __init__(self, identity: NodeIdentity, trust_dir: str = "/etc/map2/trust"):
+    def __init__(self, identity: NodeIdentity, trust_dir: Optional[str] = None):
         self.identity = identity
-        self.trust_dir = Path(trust_dir)
+        self.trust_dir = Path(trust_dir) if trust_dir else Map2Paths.trust_dir()
         self.authorized_keys_file = Path.home() / ".ssh" / "authorized_keys"
         
         self.trust_dir.mkdir(parents=True, exist_ok=True)

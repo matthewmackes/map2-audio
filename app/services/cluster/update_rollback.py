@@ -14,6 +14,8 @@ import logging
 from datetime import datetime, timezone
 from pathlib import Path
 
+from app.paths import Map2Paths
+
 from .post_update_health import HealthCheckResult, HealthCheckPhase
 
 logger = logging.getLogger(__name__)
@@ -106,9 +108,9 @@ class UpdateRollbackManager:
     - Validation after rollback
     """
     
-    def __init__(self, snapshot_dir: str = "/var/lib/map2/rollback_snapshots"):
+    def __init__(self, snapshot_dir: Optional[str] = None):
         """Initialize rollback manager."""
-        self.snapshot_dir = Path(snapshot_dir)
+        self.snapshot_dir = Path(snapshot_dir) if snapshot_dir else Map2Paths.service_file("rollback_snapshots")
         self.snapshot_dir.mkdir(parents=True, exist_ok=True)
         
         # Packages to always capture in snapshot
@@ -382,7 +384,7 @@ class UpdateRollbackManager:
     
     def _backup_database(self, snapshot_id: str) -> Optional[str]:
         """Backup SQLite database."""
-        db_path = Path("/var/lib/map2/cluster.db")
+        db_path = Map2Paths.cluster_db_path()
         
         if not db_path.exists():
             return None
@@ -535,7 +537,7 @@ class UpdateRollbackManager:
         """Restore database from backup."""
         logger.info(f"Restoring database from {backup_path}")
         
-        db_path = Path("/var/lib/map2/cluster.db")
+        db_path = Map2Paths.cluster_db_path()
         
         try:
             subprocess.run(["cp", "-a", backup_path, str(db_path)], check=True)

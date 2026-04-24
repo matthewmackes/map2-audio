@@ -6,6 +6,8 @@ from pathlib import Path
 from typing import Dict, Any
 import json
 
+from app.paths import Map2Paths
+
 class Configuration:
     """System-wide configuration management"""
     
@@ -249,8 +251,8 @@ class Configuration:
                 'direct_wave1': False,
                 'direct_wave2': False,
                 'direct_wave3': False,
-                'db_path': '/var/lib/map2/platform-events.db',
-                'legacy_db_path': '/var/lib/map2/cluster-events.db',
+                'db_path': str(Map2Paths.platform_events_db_path()),
+                'legacy_db_path': str(Map2Paths.legacy_cluster_events_db_path()),
                 'retention_days': 7,
                 'session_replay_limit': 1000,
                 'websocket_topic_history_limit': 200,

@@ -15,6 +15,7 @@ from uuid import uuid4
 from app.services.event_publisher import RealtimeMessagePublisher, event_publisher
 from app.services.midi_hub.hub import MidiHub, get_midi_hub
 from app.services.midi_hub.ports import MidiMessage
+from app.paths import Map2Paths
 from app.services.midi_hub.traffic_monitor import MidiTrafficMonitor, MidiTrafficRecord, get_midi_traffic_monitor
 from app.services.midi_hub.transforms import MidiTransformEngine, TransformedMidiEvent, get_midi_transform_engine
 
@@ -23,7 +24,7 @@ RouteMatchMode = Literal["all_match", "first_match"]
 
 
 def _default_routes_path() -> Path:
-    return Path("~/.map2/midi_routes.json").expanduser()
+    return Map2Paths.midi_routes_path()
 
 
 def _resolve_local_node_id() -> str:

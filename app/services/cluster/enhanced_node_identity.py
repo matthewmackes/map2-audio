@@ -19,6 +19,7 @@ from dataclasses import dataclass, asdict, field
 import uuid
 import socket
 
+from app.paths import Map2Paths
 from app.utils.singleton import Singleton
 from app.utils.time import utc_now
 
@@ -410,8 +411,13 @@ class EnhancedNodeIdentity(Singleton):
     Auto-detects role based on hardware capabilities.
     """
     
-    CONFIG_PATH = Path("/etc/map2/node.conf")
-    BACKUP_CONFIG_PATH = Path("/etc/map2/node.conf.bak")
+    # These attributes are evaluated at class-definition time against the
+    # currently-resolved Map2Paths. At boot this produces the same values as
+    # the previous hardcoded literals; tests that want to redirect these
+    # paths should monkeypatch the attributes directly (they are class-level
+    # constants intentionally frozen once at import time).
+    CONFIG_PATH = Map2Paths.node_conf_path()
+    BACKUP_CONFIG_PATH = Map2Paths.node_conf_backup_path()
     
     def __init__(self):
         self.config: Optional[NodeConfig] = None

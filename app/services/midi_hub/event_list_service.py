@@ -12,13 +12,14 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional
 from zoneinfo import ZoneInfo
 
+from app.paths import Map2Paths
 from app.services.midi_hub.hub import MidiHub, get_midi_hub
 from app.services.midi_hub.macros import MidiMacroService, get_midi_macro_service
 from app.services.midi_hub.preset_service import MidiHubPresetService, get_midi_hub_preset_service
 
 
 def _default_storage_path() -> Path:
-    return Path("~/.map2/midi_hub_event_lists.json").expanduser()
+    return Map2Paths.midi_hub_event_lists_path()
 
 
 def _parse_timecode(value: str, fps: int) -> int:

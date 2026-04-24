@@ -10,13 +10,14 @@ from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Dict, List, Optional
 
+from app.paths import Map2Paths
 from app.services.midi_hub.hub import MidiHub, get_midi_hub
 from app.services.midi_hub.ports import MidiMessage, VirtualMidiPort
 from app.services.midi_hub.router import MidiRouter, get_midi_router
 
 
 def _default_presets_path() -> Path:
-    return Path("~/.map2/midi_hub_presets/presets.json").expanduser()
+    return Map2Paths.midi_hub_presets_path()
 
 
 @dataclass
@@ -197,9 +198,9 @@ class MidiHubPresetService:
         if preset is None:
             raise ValueError("preset not found")
         now = int(time.time())
-        target = Path(export_path).expanduser() if export_path else Path(
-            f"~/.map2/midi_hub_presets/exports/{preset_id}-{now}.json"
-        ).expanduser()
+        target = Path(export_path).expanduser() if export_path else Map2Paths.user_file(
+            "midi_hub_presets", "exports", f"{preset_id}-{now}.json"
+        )
         target.parent.mkdir(parents=True, exist_ok=True)
         target.write_text(json.dumps(preset.to_dict(), indent=2, sort_keys=True), encoding="utf-8")
         return {"ok": True, "preset_id": preset_id, "path": str(target)}

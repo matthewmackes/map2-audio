@@ -19,6 +19,7 @@ import subprocess
 import httpx
 import yaml
 
+from app.paths import Map2Paths
 from app.utils.singleton import Singleton
 from app.utils.time import utc_now
 
@@ -37,16 +38,16 @@ class ConfigDistributor(Singleton):
     - Automatic rollback on failure
     """
 
-    def __init__(self, git_repo: str, local_path: Path = Path("/var/lib/map2/config")):
+    def __init__(self, git_repo: str, local_path: Optional[Path] = None):
         """
         Initialize config distributor.
-        
+
         Args:
             git_repo: Git repository URL (https://github.com/user/config.git)
-            local_path: Local path for config clone
+            local_path: Local path for config clone (defaults to Map2Paths.config_distribution_dir())
         """
         self.git_repo = git_repo
-        self.local_path = local_path
+        self.local_path = local_path or Map2Paths.config_distribution_dir()
         self.current_commit = None
         self.current_checksum = None
         self.last_sync: Optional[str] = None

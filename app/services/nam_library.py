@@ -13,6 +13,7 @@ from typing import List, Dict, Any, Optional
 from sqlalchemy import Column, String, Integer, JSON, DateTime, create_engine, inspect
 from sqlalchemy.orm import declarative_base, Session, sessionmaker
 from app.database import RetryingSession
+from app.paths import Map2Paths
 from app.utils.singleton import Singleton
 from app.utils.time import utc_now
 
@@ -381,7 +382,7 @@ def get_nam_library_service() -> NAMLibraryService:
 
     with Singleton._lock:
         if NAMLibraryService not in Singleton._instances:
-            lib_dir = Path("/var/lib/map2")
+            lib_dir = Map2Paths.service_state_dir()
             lib_dir.mkdir(parents=True, exist_ok=True)
             Singleton._instances[NAMLibraryService] = NAMLibraryService()
         return Singleton._instances[NAMLibraryService]  # type: ignore[return-value]

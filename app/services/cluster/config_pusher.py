@@ -25,6 +25,7 @@ from datetime import datetime
 from pathlib import Path
 import aiohttp
 
+from app.paths import Map2Paths
 from app.utils.singleton import Singleton
 from app.utils.time import utc_now
 
@@ -50,14 +51,15 @@ class ConfigSync(Singleton):
     Uses local git repository for versioning and rollback.
     """
     
-    def __init__(self, config_repo_path: str = "/var/lib/map2/config-repo"):
+    def __init__(self, config_repo_path: Optional[str] = None):
         """
         Initialize config sync manager.
-        
+
         Args:
             config_repo_path: Path to local git repository for configs
+                (defaults to Map2Paths.config_repo_dir())
         """
-        self.repo_path = Path(config_repo_path)
+        self.repo_path = Path(config_repo_path) if config_repo_path else Map2Paths.config_repo_dir()
         self.logger = logging.getLogger(__name__)
         self._init_repo()
     
@@ -446,7 +448,7 @@ class ConfigSync(Singleton):
                     pushed = True
                     for file_path in self.repo_path.glob("**/*.json"):
                         rel = file_path.relative_to(self.repo_path).as_posix()
-                        remote_path = f"/etc/map2/{rel.split('/')[-1]}"
+                        remote_path = str(Map2Paths.host_file(rel.split('/')[-1]))
                         if not client.put_file(str(file_path), remote_path):
                             pushed = False
                             break
