@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-24 EDT - T2441 SHIPPED: Performance Brain no longer renders a page-local section rail; Brain subsection navigation now lives in the global tree via `/brain?section=...` children for Overview, Perform, Layers, Sequence, Routing, Inputs, Library, Diagnostics, Session Media, and Practice Coach. `PerformanceBrainPage` now renders full-width content, and global-tree query matching now treats route query params as required subsets so Brain section nodes stay selected during extra params like `import_source`. Focused frontend tests, desktop snapshot refresh, and `npm run typecheck` passed. Previously: T2440 SHIPPED: the hidden `API & Webhooks` standalone panel is now a visible Node Ops destination named `Midpoint`. Canonical panel id/path changed to `midpoint` with legacy redirects from `api-webhooks`, the Node Ops tree child list now includes Midpoint, AppShell navigation coverage was added, legacy tab-state storage migrates to the new key, and focused frontend tests plus typecheck passed. Previously: T2439 SHIPPED: applied the T2438 chrome pattern to /midi-hub. Dropped the null ShellWindowProvider from MidiHubShell so AppShell chrome passes through, deleted per-page MidiHubAreaLayout hero blocks, retired MidiHubStatusBar and replaced it with workspace-bar action slots (slot cap raised 3 → 8), added a Brain-style MidiHubTabs row for the 7 sub-routes, added MidiHubHealthDrawer with real stopHub→startHub restart + /events and /network drill-through links, extended the midiHubApi client with startHub/stopHub, replaced MidiHubAreaLayout scroll-memory with a new useMidiHubScrollMemory hook + MidiHubContentFrame. All 7 MIDI Hub sub-page tests migrated and green; typecheck + build clean; commit `0c3ed913` dual-pushed; new bundle live on port 3000. Previously: T2438 SHIPPED: single atomic commit `a06a16d5` (rebased to `ba4feca5`) replaced per-page `PageHeader`/`ShellWindowTitleStrip`/`WindowTitleStrip` with a global AppShell top chrome (blue context bar + 40px workspace bar + content kicker), added an action-slot contract via `useSetShellWindow`, and rebuilt Brain Overview as a four-tab shell (Performance/Console/Step/Split) wired to real `brainApi` data. 25 pages migrated, 6 chrome files deleted, 9 new layout + view files added, typecheck clean, build clean, dual-pushed to origin + gitlab, rebuild + server restart verified live on port 3000. No stubs, no compat shims. Previously: T2436 shipped: the Global Navigation tree now renames `Control Panel` to `Node Ops`, and `Snapshot Editor` now renders as a featured row with a real-time live-status label and `Signal Editor` badge while preserving existing routing/tree structure. Focused tests, snapshot refresh, typecheck, build, and diff hygiene all passed. Previously: T2434 and T2435 shipped: Audio Engine and Management workspace routes now use theme-token-driven surfaces instead of fixed neutral palettes, with focused tests, typecheck, build, and diff hygiene all passing. Previously: T2433 shipped: theme-token audit completed for Management, Audio Engine, Chains, Adoption, and Platform Guide routes; Management and Audio Engine still carry static or white/black-mixed neutral surfaces, while Chains, Adoption, and Platform Guide are already mostly theme-token aligned. Previously: T2432 shipped: Host Machine now lives under Hardware with canonical route `/hardware/host-machine`, legacy redirects preserved, theme-token refit applied, and focused tests/snapshots/build all passing. Previously: T2431-A shipped: CONFIGURATION_STATE_AUTHORITY_AUDIT.md created (15 ranked drift risks, 10 undeclared-plane concepts, subtask links B-J). T2431 epic opened — "Configuration and State Authority plane consolidation". User locked Q2-Q10: hard migration without user compatibility shims, single-node mode can run without etcd, flow snapshots removed, user/operator preferences per node, platform-standard config-change semantics, generated projection headers required, file-backup rollback only, users may still pin/promote experimental features, and `SystemConfig` is a hard-cut retirement. Q1 remains open: whether `/etc/map2/mode.json` or `/etc/map2/environment` owns deployment mode. Previously: T2430 epic opened — LCD Displays full parity + hardening.
+Last updated: 2026-04-24 EDT - Opened five follow-up epics (T2442–T2446) to continue chrome + polish work. Queued for user Q&A-driven scoping: T2442 widen server-side `BrainState.active_section` so the four Brain tabs become first-class `?section=` values; T2443 real per-channel metering feed for Brain ConsoleView; T2444 world-class visual polish sweep across live workspaces; T2445 remaining pre-existing test failures (5 suites); T2446 next-workspace chrome migration (Maschine / MPX1 / LCD / IntelFX). Previously: T2441 SHIPPED: Performance Brain no longer renders a page-local section rail; Brain subsection navigation now lives in the global tree via `/brain?section=...` children for Overview, Perform, Layers, Sequence, Routing, Inputs, Library, Diagnostics, Session Media, and Practice Coach. `PerformanceBrainPage` now renders full-width content, and global-tree query matching now treats route query params as required subsets so Brain section nodes stay selected during extra params like `import_source`. Focused frontend tests, desktop snapshot refresh, and `npm run typecheck` passed. Previously: T2440 SHIPPED: the hidden `API & Webhooks` standalone panel is now a visible Node Ops destination named `Midpoint`. Canonical panel id/path changed to `midpoint` with legacy redirects from `api-webhooks`, the Node Ops tree child list now includes Midpoint, AppShell navigation coverage was added, legacy tab-state storage migrates to the new key, and focused frontend tests plus typecheck passed. Previously: T2439 SHIPPED: applied the T2438 chrome pattern to /midi-hub. Dropped the null ShellWindowProvider from MidiHubShell so AppShell chrome passes through, deleted per-page MidiHubAreaLayout hero blocks, retired MidiHubStatusBar and replaced it with workspace-bar action slots (slot cap raised 3 → 8), added a Brain-style MidiHubTabs row for the 7 sub-routes, added MidiHubHealthDrawer with real stopHub→startHub restart + /events and /network drill-through links, extended the midiHubApi client with startHub/stopHub, replaced MidiHubAreaLayout scroll-memory with a new useMidiHubScrollMemory hook + MidiHubContentFrame. All 7 MIDI Hub sub-page tests migrated and green; typecheck + build clean; commit `0c3ed913` dual-pushed; new bundle live on port 3000. Previously: T2438 SHIPPED: single atomic commit `a06a16d5` (rebased to `ba4feca5`) replaced per-page `PageHeader`/`ShellWindowTitleStrip`/`WindowTitleStrip` with a global AppShell top chrome (blue context bar + 40px workspace bar + content kicker), added an action-slot contract via `useSetShellWindow`, and rebuilt Brain Overview as a four-tab shell (Performance/Console/Step/Split) wired to real `brainApi` data. 25 pages migrated, 6 chrome files deleted, 9 new layout + view files added, typecheck clean, build clean, dual-pushed to origin + gitlab, rebuild + server restart verified live on port 3000. No stubs, no compat shims. Previously: T2436 shipped: the Global Navigation tree now renames `Control Panel` to `Node Ops`, and `Snapshot Editor` now renders as a featured row with a real-time live-status label and `Signal Editor` badge while preserving existing routing/tree structure. Focused tests, snapshot refresh, typecheck, build, and diff hygiene all passed. Previously: T2434 and T2435 shipped: Audio Engine and Management workspace routes now use theme-token-driven surfaces instead of fixed neutral palettes, with focused tests, typecheck, build, and diff hygiene all passing. Previously: T2433 shipped: theme-token audit completed for Management, Audio Engine, Chains, Adoption, and Platform Guide routes; Management and Audio Engine still carry static or white/black-mixed neutral surfaces, while Chains, Adoption, and Platform Guide are already mostly theme-token aligned. Previously: T2432 shipped: Host Machine now lives under Hardware with canonical route `/hardware/host-machine`, legacy redirects preserved, theme-token refit applied, and focused tests/snapshots/build all passing. Previously: T2431-A shipped: CONFIGURATION_STATE_AUTHORITY_AUDIT.md created (15 ranked drift risks, 10 undeclared-plane concepts, subtask links B-J). T2431 epic opened — "Configuration and State Authority plane consolidation". User locked Q2-Q10: hard migration without user compatibility shims, single-node mode can run without etcd, flow snapshots removed, user/operator preferences per node, platform-standard config-change semantics, generated projection headers required, file-backup rollback only, users may still pin/promote experimental features, and `SystemConfig` is a hard-cut retirement. Q1 remains open: whether `/etc/map2/mode.json` or `/etc/map2/environment` owns deployment mode. Previously: T2430 epic opened — LCD Displays full parity + hardening.
 
 ---
 
@@ -37,6 +37,76 @@ Description:
 Completion note: 2026-04-24 16:01 - Codex: shipped. Replaced Brain launcher tree children with routed `/brain?section=...` entries for all Brain sections, removed `UnifiedWorkspaceSideNav` from `PerformanceBrainPage` so Brain content uses the full page width, and widened global-tree query matching so section children stay active when extra search params like `import_source` are present. Verification: `npm test -- --runInBand -u src/app/data/launcherCatalog.test.tsx src/app/pages/PerformanceBrainPage.test.tsx src/app/pages/DesktopExperience.snapshot.test.tsx src/app/pages/DesktopExperience.integration.test.tsx`; `npm run typecheck`.
 Assigned to: Codex
 Last updated: 2026-04-24 16:01 - Codex: SHIPPED.
+
+---
+
+ID: T2444
+Status: [ ] Todo
+Title: Visual polish + world-class design language sweep across live workspaces
+Description:
+- Goal: Raise the MIDI Hub, Brain Overview, and chrome-adopting workspaces from "functional" to "world-class professional / exciting" — typography hierarchy, spacing rhythm, motion, color accents, empty states, focus rings, density, and transition polish. Unify a shared design language across all workspaces using the existing `.brain-overview` dark-token pattern + Carbon tokens. No new features; this is craft-level polish on the already-landed chrome.
+- Scope candidates: MIDI Hub tab row animations, ContextBar + WorkspaceBar motion + active-slot shine, health drawer entrance polish, Brain Overview micro-interactions, ContentKicker typography, empty-state illustrations, and consistent hover/focus vocabularies.
+- Why: After T2438 + T2439 the chrome is structurally correct but visually utilitarian. A polish pass turns the existing surface into something that reads as premium.
+Assigned to: Claude
+Last updated: 2026-04-24 EDT - Claude: opened; pending user question cycle.
+
+---
+
+ID: T2443
+Status: [ ] Todo
+Title: Real per-channel metering feed for Brain Overview ConsoleView
+Description:
+- Goal: Replace the placeholder meter segs in `brainViews/ConsoleView.tsx` (currently drawn from `slot.level`, a target not a peak) with a live RMS/peak feed sourced from `/api/brain/metering` (new endpoint if needed) and streamed via the existing WebSocket infrastructure used by `useVuMeters`. Per-channel-strip meter segments animate from live peak/RMS; channel color temperature shifts at -3 dBFS / 0 dBFS; peak-hold indicator.
+- Dependencies: T2438 Brain Overview shipped.
+- Why: Flagged as a known follow-up in T2438's completion note. Currently the 16 channel strips render meters with fake data — looks like real metering but isn't.
+Assigned to: Claude
+Last updated: 2026-04-24 EDT - Claude: opened; pending user question cycle.
+
+---
+
+ID: T2442
+Status: [ ] Todo
+Title: Widen `BrainState.active_section` to include Performance / Console / Step / Split
+Description:
+- Goal: Promote Brain Overview's four tabs from a frontend-only `?view=` param to first-class `?section=` values. Requires widening the server-side `BrainState.active_section` union in `app/services/brain_state_service.py` + `app/schemas/brain.py` to add `'performance' | 'console' | 'step' | 'split'`, updating `BrainStateUpdate`, and removing the frontend's `?view=` indirection in `BrainOverviewShell.tsx`.
+- Dependencies: T2438 Brain Overview shipped.
+- Why: Known follow-up flagged in T2438's worklist entry. Completing this makes the four Brain tabs bookmarkable/deep-linkable at the same URL tier as `perform`, `layers`, `sequence`, etc. Also removes the special-case `?view=` handling in `PerformanceBrainPage.tsx` and `BrainOverviewShell`.
+- Backend impact: requires backend PR — Python schema change + migration for stored `active_section` values (probably `overview` rows need a default new subview).
+Assigned to: Claude
+Last updated: 2026-04-24 EDT - Claude: opened; pending user question cycle.
+
+---
+
+ID: T2445
+Status: [ ] Todo
+Title: Address remaining pre-existing test failures (5 suites)
+Description:
+- Goal: Fix the 5 test suites that have been failing on `master` since before T2438: `DevicesOverview.test.tsx`, `IntelFX/views/IntelFXLibraryView.test.tsx`, `Platform/PlatformModal.test.tsx`, `PluginCards/Custom/JUCE/AssetSelectorCards.test.tsx`, and the order-dependent `PerformanceBrainPage.test.tsx` (passes isolated; fails in full-suite order due to cross-suite state leakage).
+- Why: Clearing the pre-existing failure set unblocks reliable regression detection on future chrome/Brain/MIDI Hub work. Each suite is self-contained and should fit in a small atomic commit per suite.
+- Sub-tasks (investigate before committing):
+  - T2445-A: DevicesOverview — root-cause and fix.
+  - T2445-B: IntelFXLibraryView — root-cause and fix.
+  - T2445-C: PlatformModal — root-cause and fix.
+  - T2445-D: AssetSelectorCards — root-cause and fix.
+  - T2445-E: PerformanceBrainPage full-suite ordering leakage — isolate the offending prior suite and fix the cross-test state leak.
+Assigned to: Claude
+Last updated: 2026-04-24 EDT - Claude: opened; pending user question cycle.
+
+---
+
+ID: T2446
+Status: [ ] Todo
+Title: Apply T2438 chrome pattern to next chrome-heavy workspace (Maschine / MPX1 / LCD / IntelFX)
+Description:
+- Goal: Select one of Maschine, MPX1, LCD, or IntelFX and apply the same chrome-migration treatment as T2438 (Brain) and T2439 (MIDI Hub): route title/subtitle/kicker through `useSetShellWindow`, retire any in-body hero/status-bar duplicates, add a tab row under the workspace bar if the workspace has sub-routes, optionally add a health drawer on a clickable System slot.
+- Candidate notes:
+  - **Maschine** (`/maschine`): already calls `useSetShellWindow` (T2438 migration) but still renders substantial in-body chrome; pass to unify with the new pattern.
+  - **MPX1** (`/devices/mpx1/*`): has its own MPX1Shell pattern; multiple sub-routes (panel/editor/midi-map/matrix). Strong candidate for tab-row migration.
+  - **LCD** (`/devices/lcd/*`): 8 sub-routes under LCDShell; currently uses a `hideChrome` flag hack that should be replaced by the pattern from T2439.
+  - **IntelFX** (`/devices/intelfx/*`): several sub-views; library test in the pre-existing failure set (see T2445-B).
+- Why: Spreading the T2438/T2439 pattern further shrinks the per-page chrome surface area and unifies the operator experience across all workspaces.
+Assigned to: Claude
+Last updated: 2026-04-24 EDT - Claude: opened; pending user question cycle.
 
 ---
 
