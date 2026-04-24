@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1271** Python | **1248** TypeScript | **136** C++/H | **145** Docs | **2771** total commits | **3** stars | **0** forks | **0** open issues
+**1271** Python | **1248** TypeScript | **136** C++/H | **145** Docs | **2773** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -193,7 +193,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 |  |  |  |
 | :---: | :---: | :---: |
 | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/map2-banner.png" width="280" alt="map2 banner"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/map2-banner-3.png" width="280" alt="map2 banner 3"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot-Cli.png" width="280" alt="Screenshot Cli"> |
-| <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 08-00-43 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 08 00 43 Mackes Audio Platform 2 FEB2025"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 07-58-14 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 07 58 14 Mackes Audio Platform 2 FEB2025"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 07-57-33 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 07 57 33 Mackes Audio Platform 2 FEB2025"> |
+| <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 08-00-43 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 08 00 43 Mackes Audio Platform 2 FEB2025"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 07-57-33 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 07 57 33 Mackes Audio Platform 2 FEB2025"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 07-58-14 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 07 58 14 Mackes Audio Platform 2 FEB2025"> |
 | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/MAP2_AUDIO-NODE_ARCH_DIAGRAM3.png" width="280" alt="MAP2 AUDIO NODE ARCH DIAGRAM3"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/MAP2_AUDIO-NODE_ARCH_DIAGRAM2-BANG.png" width="280" alt="MAP2 AUDIO NODE ARCH DIAGRAM2 BANG"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/MAP2_AUDIO-NODE_ARCH_DIAGRAM.png" width="280" alt="MAP2 AUDIO NODE ARCH DIAGRAM"> |
 <!-- GALLERY:END -->
 
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`6ffd8a9a`](https://github.com/matthewmackes/map2-audio/commit/6ffd8a9a48c0a65efcbb0f77ed749731cd33fdf9) | feat(T2440): expose Midpoint in Node Ops | Map2 Audio | 2026-04-24 |
+| [`3f019953`](https://github.com/matthewmackes/map2-audio/commit/3f019953bc15f9e5c877d2db38babc36e5610e23) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-24 |
 | [`822236a0`](https://github.com/matthewmackes/map2-audio/commit/822236a026180970e23892ff97f5654b747eba0f) | chore(T2439): mark worklist T2439 Done with completion note | Map2 Audio | 2026-04-24 |
 | [`0c3ed913`](https://github.com/matthewmackes/map2-audio/commit/0c3ed91303db4a8e5c3a64f64f6c975e5ab959dc) | feat(T2439): apply T2438 chrome pattern to MIDI Hub | Map2 Audio | 2026-04-24 |
 | [`c2e8c566`](https://github.com/matthewmackes/map2-audio/commit/c2e8c56643349af7fa134b49d40397127106d354) | fix(T2438): move useSetShellWindow above early returns in... | Map2 Audio | 2026-04-24 |
 | [`940d0141`](https://github.com/matthewmackes/map2-audio/commit/940d01417755fad41f7c15bf9c080bd09354fa47) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-24 |
 | [`40e3bee6`](https://github.com/matthewmackes/map2-audio/commit/40e3bee65fff2c0c76358c8a24baa3aea0d434ef) | chore(T2438): mark worklist T2438 Done with completion note | Map2 Audio | 2026-04-24 |
 | [`9967a591`](https://github.com/matthewmackes/map2-audio/commit/9967a591afae02419a58b736ff0200c503dbbba4) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-24 |
-| [`ba4feca5`](https://github.com/matthewmackes/map2-audio/commit/ba4feca58f84ea46d1adeedf7702b71f4bdebaf7) | feat(T2438): replace page chrome with global AppShell top... | Map2 Audio | 2026-04-24 |
-| [`f68e4f89`](https://github.com/matthewmackes/map2-audio/commit/f68e4f89e8c9d33376fc3249ded6ad855ea7569c) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-24 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
