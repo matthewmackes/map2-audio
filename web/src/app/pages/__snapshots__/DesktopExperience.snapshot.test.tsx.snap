@@ -18,36 +18,6 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
         <div
           class="global-tree-nav__header"
         >
-          <div
-            class="global-tree-nav__header-row"
-          >
-            <p
-              class="global-tree-nav__eyebrow"
-            >
-              Global Navigation
-            </p>
-            <button
-              aria-label="Unpin Navigation"
-              aria-pressed="true"
-              class="global-tree-nav__pin-button"
-              type="button"
-            >
-              <svg
-                aria-hidden="true"
-                fill="currentColor"
-                focusable="false"
-                height="18"
-                preserveAspectRatio="xMidYMid meet"
-                viewBox="0 0 32 32"
-                width="18"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  d="M28.5858,13.3137,30,11.9,20,2,18.6858,3.415l1.1858,1.1857L8.38,14.3225,6.6641,12.6067,5.25,14l5.6572,5.6773L2,28.5831,3.41,30l8.9111-8.9087L18,26.7482l1.3929-1.414L17.6765,23.618l9.724-11.4895Z"
-                />
-              </svg>
-            </button>
-          </div>
           <span
             class="cds--popover-container cds--popover--caret cds--popover--drop-shadow cds--popover--bottom-start"
           >
@@ -4586,6 +4556,54 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
             </li>
           </ul>
         </div>
+        <div
+          class="global-tree-nav__footer"
+        >
+          <span
+            class="cds--popover-container cds--popover--caret cds--popover--high-contrast cds--popover--top cds--tooltip"
+          >
+            <div
+              class="cds--tooltip-trigger__wrapper"
+            >
+              <button
+                aria-label="Collapse global navigation"
+                aria-labelledby="tooltip-_r_d_"
+                class="global-tree-nav__footer-button global-tree-nav__footer-button--collapse"
+                type="button"
+              >
+                <svg
+                  aria-hidden="true"
+                  fill="currentColor"
+                  focusable="false"
+                  height="16"
+                  preserveAspectRatio="xMidYMid meet"
+                  viewBox="0 0 16 16"
+                  width="16"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M8 11 3 6 3.7 5.3 8 9.6 12.3 5.3 13 6z"
+                  />
+                </svg>
+              </button>
+            </div>
+            <span
+              aria-hidden="true"
+              class="cds--popover"
+              id="tooltip-_r_d_"
+              role="tooltip"
+            >
+              <span
+                class="cds--popover-content cds--tooltip-content"
+              >
+                Collapse global navigation
+              </span>
+              <span
+                class="cds--popover-caret"
+              />
+            </span>
+          </span>
+        </div>
       </aside>
     </div>
     <main
@@ -5200,13 +5218,13 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                       >
                         <h2
                           class="cds--data-table-header__title"
-                          id="tc-_r_d_-title"
+                          id="tc-_r_f_-title"
                         >
                           Operations table
                         </h2>
                         <p
                           class="cds--data-table-header__description"
-                          id="tc-_r_d_-description"
+                          id="tc-_r_f_-description"
                         >
                           All live home telemetry collapsed into one searchable Carbon table. Select a row to open the owning workspace.
                         </p>
@@ -5247,15 +5265,15 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                           </div>
                           <label
                             class="cds--label"
-                            for="table-toolbar-search-_r_e_"
-                            id="table-toolbar-search-_r_e_-search"
+                            for="table-toolbar-search-_r_g_"
+                            id="table-toolbar-search-_r_g_-search"
                           >
                             Filter table
                           </label>
                           <input
                             autocomplete="off"
                             class="cds--search-input"
-                            id="table-toolbar-search-_r_e_"
+                            id="table-toolbar-search-_r_g_"
                             placeholder="Filter table"
                             tabindex="0"
                             type="search"
@@ -5285,7 +5303,7 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                         </div>
                         <div
                           class="cds--tag cds--tag--sm cds--layout--size-sm cds--tag--cool-gray"
-                          id="tag-id-_r_g_"
+                          id="tag-id-_r_i_"
                         >
                           <span
                             class="cds--tag__label"
@@ -5298,7 +5316,7 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                         </div>
                         <div
                           class="cds--tag cds--tag--sm cds--layout--size-sm cds--tag--cool-gray"
-                          id="tag-id-_r_h_"
+                          id="tag-id-_r_j_"
                         >
                           <span
                             class="cds--tag__label"
@@ -5311,7 +5329,7 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                         </div>
                         <div
                           class="cds--tag cds--tag--sm cds--layout--size-sm cds--tag--green"
-                          id="tag-id-_r_i_"
+                          id="tag-id-_r_k_"
                         >
                           <span
                             class="cds--tag__label"
@@ -5323,7 +5341,7 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                         </div>
                         <div
                           class="cds--tag cds--tag--sm cds--layout--size-sm cds--tag--warm-gray"
-                          id="tag-id-_r_j_"
+                          id="tag-id-_r_l_"
                         >
                           <span
                             class="cds--tag__label"
@@ -5342,9 +5360,9 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                         class="cds--data-table-content"
                       >
                         <table
-                          aria-describedby="tc-_r_d_-description"
+                          aria-describedby="tc-_r_f_-description"
                           aria-label="Home telemetry table"
-                          aria-labelledby="tc-_r_d_-title"
+                          aria-labelledby="tc-_r_f_-title"
                           class="cds--data-table hp2-home-shell__table cds--data-table--sm cds--data-table--sort cds--data-table--zebra cds--data-table--visible-overflow-menu"
                         >
                           <thead>
@@ -5356,12 +5374,12 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                               >
                                 <div
                                   class="cds--table-sort__description"
-                                  id="table-sort-_r_k_"
+                                  id="table-sort-_r_m_"
                                 >
                                   Click to sort rows by Surface header in ascending order
                                 </div>
                                 <button
-                                  aria-describedby="table-sort-_r_k_"
+                                  aria-describedby="table-sort-_r_m_"
                                   class="cds--table-sort"
                                   type="button"
                                 >
@@ -5419,12 +5437,12 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                               >
                                 <div
                                   class="cds--table-sort__description"
-                                  id="table-sort-_r_l_"
+                                  id="table-sort-_r_n_"
                                 >
                                   Click to sort rows by Signal header in ascending order
                                 </div>
                                 <button
-                                  aria-describedby="table-sort-_r_l_"
+                                  aria-describedby="table-sort-_r_n_"
                                   class="cds--table-sort"
                                   type="button"
                                 >
@@ -5482,12 +5500,12 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                               >
                                 <div
                                   class="cds--table-sort__description"
-                                  id="table-sort-_r_m_"
+                                  id="table-sort-_r_o_"
                                 >
                                   Click to sort rows by Current state header in ascending order
                                 </div>
                                 <button
-                                  aria-describedby="table-sort-_r_m_"
+                                  aria-describedby="table-sort-_r_o_"
                                   class="cds--table-sort"
                                   type="button"
                                 >
@@ -5545,12 +5563,12 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                               >
                                 <div
                                   class="cds--table-sort__description"
-                                  id="table-sort-_r_n_"
+                                  id="table-sort-_r_p_"
                                 >
                                   Click to sort rows by Scope header in ascending order
                                 </div>
                                 <button
-                                  aria-describedby="table-sort-_r_n_"
+                                  aria-describedby="table-sort-_r_p_"
                                   class="cds--table-sort"
                                   type="button"
                                 >
@@ -5608,12 +5626,12 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                               >
                                 <div
                                   class="cds--table-sort__description"
-                                  id="table-sort-_r_o_"
+                                  id="table-sort-_r_q_"
                                 >
                                   Click to sort rows by Detail header in ascending order
                                 </div>
                                 <button
-                                  aria-describedby="table-sort-_r_o_"
+                                  aria-describedby="table-sort-_r_q_"
                                   class="cds--table-sort"
                                   type="button"
                                 >
@@ -5671,12 +5689,12 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                               >
                                 <div
                                   class="cds--table-sort__description"
-                                  id="table-sort-_r_p_"
+                                  id="table-sort-_r_r_"
                                 >
                                   Click to sort rows by Workspace header in ascending order
                                 </div>
                                 <button
-                                  aria-describedby="table-sort-_r_p_"
+                                  aria-describedby="table-sort-_r_r_"
                                   class="cds--table-sort"
                                   type="button"
                                 >
@@ -5741,7 +5759,7 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                               <td>
                                 <div
                                   class="cds--tag cds--tag--sm cds--layout--size-sm cds--tag--cool-gray"
-                                  id="tag-id-_r_q_"
+                                  id="tag-id-_r_s_"
                                 >
                                   <span
                                     class="cds--tag__label"
@@ -5770,7 +5788,7 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                                   </span>
                                   <div
                                     class="cds--tag cds--tag--sm cds--layout--size-sm cds--tag--green"
-                                    id="tag-id-_r_r_"
+                                    id="tag-id-_r_t_"
                                   >
                                     <span
                                       class="cds--tag__label"
@@ -5857,7 +5875,7 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
               >
                 <button
                   aria-label="Close"
-                  aria-labelledby="tooltip-_r_u_"
+                  aria-labelledby="tooltip-_r_10_"
                   class="cds--modal-close cds--btn cds--btn--primary cds--btn--icon-only"
                   type="button"
                 >
@@ -5881,7 +5899,7 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
               <span
                 aria-hidden="true"
                 class="cds--popover"
-                id="tooltip-_r_u_"
+                id="tooltip-_r_10_"
                 role="tooltip"
               >
                 <span
@@ -5944,13 +5962,13 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
             Cancel
           </button>
           <button
-            aria-describedby="danger-description-_r_12_"
+            aria-describedby="danger-description-_r_14_"
             class="cds--btn cds--btn--danger"
             type="button"
           >
             <span
               class="cds--visually-hidden"
-              id="danger-description-_r_12_"
+              id="danger-description-_r_14_"
             >
               danger
             </span>
@@ -6010,7 +6028,7 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
               >
                 <button
                   aria-label="Close"
-                  aria-labelledby="tooltip-_r_15_"
+                  aria-labelledby="tooltip-_r_17_"
                   class="cds--modal-close cds--btn cds--btn--primary cds--btn--icon-only"
                   type="button"
                 >
@@ -6034,7 +6052,7 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
               <span
                 aria-hidden="true"
                 class="cds--popover"
-                id="tooltip-_r_15_"
+                id="tooltip-_r_17_"
                 role="tooltip"
               >
                 <span
@@ -6101,36 +6119,6 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
         <div
           class="global-tree-nav__header"
         >
-          <div
-            class="global-tree-nav__header-row"
-          >
-            <p
-              class="global-tree-nav__eyebrow"
-            >
-              Global Navigation
-            </p>
-            <button
-              aria-label="Unpin Navigation"
-              aria-pressed="true"
-              class="global-tree-nav__pin-button"
-              type="button"
-            >
-              <svg
-                aria-hidden="true"
-                fill="currentColor"
-                focusable="false"
-                height="18"
-                preserveAspectRatio="xMidYMid meet"
-                viewBox="0 0 32 32"
-                width="18"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  d="M28.5858,13.3137,30,11.9,20,2,18.6858,3.415l1.1858,1.1857L8.38,14.3225,6.6641,12.6067,5.25,14l5.6572,5.6773L2,28.5831,3.41,30l8.9111-8.9087L18,26.7482l1.3929-1.414L17.6765,23.618l9.724-11.4895Z"
-                />
-              </svg>
-            </button>
-          </div>
           <span
             class="cds--popover-container cds--popover--caret cds--popover--drop-shadow cds--popover--bottom-start"
           >
@@ -6373,7 +6361,7 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                     </div>
                     <div
                       class="cds--tag cds--tag--cool-gray"
-                      id="tag-id-_r_1b_"
+                      id="tag-id-_r_1d_"
                     >
                       <span
                         class="cds--tag__label"
@@ -6399,7 +6387,7 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                     </span>
                     <div
                       class="cds--tag cds--tag--green"
-                      id="tag-id-_r_1c_"
+                      id="tag-id-_r_1e_"
                     >
                       <span
                         class="cds--tag__label"
@@ -6483,7 +6471,7 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
               >
                 <button
                   aria-label="Refresh"
-                  aria-labelledby="tooltip-_r_1e_"
+                  aria-labelledby="tooltip-_r_1g_"
                   class="global-tree-nav__quick-action global-tree-nav__quick-action--refresh"
                   type="button"
                 >
@@ -6509,7 +6497,7 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
               <span
                 aria-hidden="true"
                 class="cds--popover"
-                id="tooltip-_r_1e_"
+                id="tooltip-_r_1g_"
                 role="tooltip"
               >
                 <span
@@ -6530,7 +6518,7 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
               >
                 <button
                   aria-label="Restart"
-                  aria-labelledby="tooltip-_r_1g_"
+                  aria-labelledby="tooltip-_r_1i_"
                   class="global-tree-nav__quick-action global-tree-nav__quick-action--restart"
                   type="button"
                 >
@@ -6553,7 +6541,7 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
               <span
                 aria-hidden="true"
                 class="cds--popover"
-                id="tooltip-_r_1g_"
+                id="tooltip-_r_1i_"
                 role="tooltip"
               >
                 <span
@@ -6574,7 +6562,7 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
               >
                 <button
                   aria-label="Log Out"
-                  aria-labelledby="tooltip-_r_1i_"
+                  aria-labelledby="tooltip-_r_1k_"
                   class="global-tree-nav__quick-action global-tree-nav__quick-action--logout"
                   type="button"
                 >
@@ -6600,7 +6588,7 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
               <span
                 aria-hidden="true"
                 class="cds--popover"
-                id="tooltip-_r_1i_"
+                id="tooltip-_r_1k_"
                 role="tooltip"
               >
                 <span
@@ -6621,7 +6609,7 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
               >
                 <button
                   aria-label="Full system reboot"
-                  aria-labelledby="tooltip-_r_1k_"
+                  aria-labelledby="tooltip-_r_1m_"
                   class="global-tree-nav__quick-action global-tree-nav__quick-action--reboot"
                   type="button"
                 >
@@ -6647,7 +6635,7 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
               <span
                 aria-hidden="true"
                 class="cds--popover"
-                id="tooltip-_r_1k_"
+                id="tooltip-_r_1m_"
                 role="tooltip"
               >
                 <span
@@ -10669,6 +10657,54 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
             </li>
           </ul>
         </div>
+        <div
+          class="global-tree-nav__footer"
+        >
+          <span
+            class="cds--popover-container cds--popover--caret cds--popover--high-contrast cds--popover--top cds--tooltip"
+          >
+            <div
+              class="cds--tooltip-trigger__wrapper"
+            >
+              <button
+                aria-label="Collapse global navigation"
+                aria-labelledby="tooltip-_r_1p_"
+                class="global-tree-nav__footer-button global-tree-nav__footer-button--collapse"
+                type="button"
+              >
+                <svg
+                  aria-hidden="true"
+                  fill="currentColor"
+                  focusable="false"
+                  height="16"
+                  preserveAspectRatio="xMidYMid meet"
+                  viewBox="0 0 16 16"
+                  width="16"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M8 11 3 6 3.7 5.3 8 9.6 12.3 5.3 13 6z"
+                  />
+                </svg>
+              </button>
+            </div>
+            <span
+              aria-hidden="true"
+              class="cds--popover"
+              id="tooltip-_r_1p_"
+              role="tooltip"
+            >
+              <span
+                class="cds--popover-content cds--tooltip-content"
+              >
+                Collapse global navigation
+              </span>
+              <span
+                class="cds--popover-caret"
+              />
+            </span>
+          </span>
+        </div>
       </aside>
     </div>
     <main
@@ -11283,13 +11319,13 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                       >
                         <h2
                           class="cds--data-table-header__title"
-                          id="tc-_r_1n_-title"
+                          id="tc-_r_1r_-title"
                         >
                           Operations table
                         </h2>
                         <p
                           class="cds--data-table-header__description"
-                          id="tc-_r_1n_-description"
+                          id="tc-_r_1r_-description"
                         >
                           All live home telemetry collapsed into one searchable Carbon table. Select a row to open the owning workspace.
                         </p>
@@ -11330,15 +11366,15 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                           </div>
                           <label
                             class="cds--label"
-                            for="table-toolbar-search-_r_1o_"
-                            id="table-toolbar-search-_r_1o_-search"
+                            for="table-toolbar-search-_r_1s_"
+                            id="table-toolbar-search-_r_1s_-search"
                           >
                             Filter table
                           </label>
                           <input
                             autocomplete="off"
                             class="cds--search-input"
-                            id="table-toolbar-search-_r_1o_"
+                            id="table-toolbar-search-_r_1s_"
                             placeholder="Filter table"
                             tabindex="0"
                             type="search"
@@ -11368,7 +11404,7 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                         </div>
                         <div
                           class="cds--tag cds--tag--sm cds--layout--size-sm cds--tag--cool-gray"
-                          id="tag-id-_r_1q_"
+                          id="tag-id-_r_1u_"
                         >
                           <span
                             class="cds--tag__label"
@@ -11381,7 +11417,7 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                         </div>
                         <div
                           class="cds--tag cds--tag--sm cds--layout--size-sm cds--tag--cool-gray"
-                          id="tag-id-_r_1r_"
+                          id="tag-id-_r_1v_"
                         >
                           <span
                             class="cds--tag__label"
@@ -11394,7 +11430,7 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                         </div>
                         <div
                           class="cds--tag cds--tag--sm cds--layout--size-sm cds--tag--green"
-                          id="tag-id-_r_1s_"
+                          id="tag-id-_r_20_"
                         >
                           <span
                             class="cds--tag__label"
@@ -11406,7 +11442,7 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                         </div>
                         <div
                           class="cds--tag cds--tag--sm cds--layout--size-sm cds--tag--warm-gray"
-                          id="tag-id-_r_1t_"
+                          id="tag-id-_r_21_"
                         >
                           <span
                             class="cds--tag__label"
@@ -11425,9 +11461,9 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                         class="cds--data-table-content"
                       >
                         <table
-                          aria-describedby="tc-_r_1n_-description"
+                          aria-describedby="tc-_r_1r_-description"
                           aria-label="Home telemetry table"
-                          aria-labelledby="tc-_r_1n_-title"
+                          aria-labelledby="tc-_r_1r_-title"
                           class="cds--data-table hp2-home-shell__table cds--data-table--sm cds--data-table--sort cds--data-table--zebra cds--data-table--visible-overflow-menu"
                         >
                           <thead>
@@ -11439,12 +11475,12 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                               >
                                 <div
                                   class="cds--table-sort__description"
-                                  id="table-sort-_r_1u_"
+                                  id="table-sort-_r_22_"
                                 >
                                   Click to sort rows by Surface header in ascending order
                                 </div>
                                 <button
-                                  aria-describedby="table-sort-_r_1u_"
+                                  aria-describedby="table-sort-_r_22_"
                                   class="cds--table-sort"
                                   type="button"
                                 >
@@ -11502,12 +11538,12 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                               >
                                 <div
                                   class="cds--table-sort__description"
-                                  id="table-sort-_r_1v_"
+                                  id="table-sort-_r_23_"
                                 >
                                   Click to sort rows by Signal header in ascending order
                                 </div>
                                 <button
-                                  aria-describedby="table-sort-_r_1v_"
+                                  aria-describedby="table-sort-_r_23_"
                                   class="cds--table-sort"
                                   type="button"
                                 >
@@ -11565,12 +11601,12 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                               >
                                 <div
                                   class="cds--table-sort__description"
-                                  id="table-sort-_r_20_"
+                                  id="table-sort-_r_24_"
                                 >
                                   Click to sort rows by Current state header in ascending order
                                 </div>
                                 <button
-                                  aria-describedby="table-sort-_r_20_"
+                                  aria-describedby="table-sort-_r_24_"
                                   class="cds--table-sort"
                                   type="button"
                                 >
@@ -11628,12 +11664,12 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                               >
                                 <div
                                   class="cds--table-sort__description"
-                                  id="table-sort-_r_21_"
+                                  id="table-sort-_r_25_"
                                 >
                                   Click to sort rows by Scope header in ascending order
                                 </div>
                                 <button
-                                  aria-describedby="table-sort-_r_21_"
+                                  aria-describedby="table-sort-_r_25_"
                                   class="cds--table-sort"
                                   type="button"
                                 >
@@ -11691,12 +11727,12 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                               >
                                 <div
                                   class="cds--table-sort__description"
-                                  id="table-sort-_r_22_"
+                                  id="table-sort-_r_26_"
                                 >
                                   Click to sort rows by Detail header in ascending order
                                 </div>
                                 <button
-                                  aria-describedby="table-sort-_r_22_"
+                                  aria-describedby="table-sort-_r_26_"
                                   class="cds--table-sort"
                                   type="button"
                                 >
@@ -11754,12 +11790,12 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                               >
                                 <div
                                   class="cds--table-sort__description"
-                                  id="table-sort-_r_23_"
+                                  id="table-sort-_r_27_"
                                 >
                                   Click to sort rows by Workspace header in ascending order
                                 </div>
                                 <button
-                                  aria-describedby="table-sort-_r_23_"
+                                  aria-describedby="table-sort-_r_27_"
                                   class="cds--table-sort"
                                   type="button"
                                 >
@@ -11824,7 +11860,7 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                               <td>
                                 <div
                                   class="cds--tag cds--tag--sm cds--layout--size-sm cds--tag--cool-gray"
-                                  id="tag-id-_r_24_"
+                                  id="tag-id-_r_28_"
                                 >
                                   <span
                                     class="cds--tag__label"
@@ -11853,7 +11889,7 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                                   </span>
                                   <div
                                     class="cds--tag cds--tag--sm cds--layout--size-sm cds--tag--green"
-                                    id="tag-id-_r_25_"
+                                    id="tag-id-_r_29_"
                                   >
                                     <span
                                       class="cds--tag__label"
@@ -11940,7 +11976,7 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
               >
                 <button
                   aria-label="Close"
-                  aria-labelledby="tooltip-_r_28_"
+                  aria-labelledby="tooltip-_r_2c_"
                   class="cds--modal-close cds--btn cds--btn--primary cds--btn--icon-only"
                   type="button"
                 >
@@ -11964,7 +12000,7 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
               <span
                 aria-hidden="true"
                 class="cds--popover"
-                id="tooltip-_r_28_"
+                id="tooltip-_r_2c_"
                 role="tooltip"
               >
                 <span
@@ -12027,13 +12063,13 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
             Cancel
           </button>
           <button
-            aria-describedby="danger-description-_r_2c_"
+            aria-describedby="danger-description-_r_2g_"
             class="cds--btn cds--btn--danger"
             type="button"
           >
             <span
               class="cds--visually-hidden"
-              id="danger-description-_r_2c_"
+              id="danger-description-_r_2g_"
             >
               danger
             </span>
@@ -12093,7 +12129,7 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
               >
                 <button
                   aria-label="Close"
-                  aria-labelledby="tooltip-_r_2f_"
+                  aria-labelledby="tooltip-_r_2j_"
                   class="cds--modal-close cds--btn cds--btn--primary cds--btn--icon-only"
                   type="button"
                 >
@@ -12117,7 +12153,7 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
               <span
                 aria-hidden="true"
                 class="cds--popover"
-                id="tooltip-_r_2f_"
+                id="tooltip-_r_2j_"
                 role="tooltip"
               >
                 <span
@@ -12193,14 +12229,6 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
       >
         Global Navigation
       </span>
-      <button
-        aria-label="Collapse global navigation"
-        class="shell-ws__side-toggle"
-        title="Collapse"
-        type="button"
-      >
-        ‹
-      </button>
     </div>
     <div
       class="shell-ws__main"
@@ -12251,36 +12279,6 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
         <div
           class="global-tree-nav__header"
         >
-          <div
-            class="global-tree-nav__header-row"
-          >
-            <p
-              class="global-tree-nav__eyebrow"
-            >
-              Global Navigation
-            </p>
-            <button
-              aria-label="Unpin Navigation"
-              aria-pressed="true"
-              class="global-tree-nav__pin-button"
-              type="button"
-            >
-              <svg
-                aria-hidden="true"
-                fill="currentColor"
-                focusable="false"
-                height="18"
-                preserveAspectRatio="xMidYMid meet"
-                viewBox="0 0 32 32"
-                width="18"
-                xmlns="http://www.w3.org/2000/svg"
-              >
-                <path
-                  d="M28.5858,13.3137,30,11.9,20,2,18.6858,3.415l1.1858,1.1857L8.38,14.3225,6.6641,12.6067,5.25,14l5.6572,5.6773L2,28.5831,3.41,30l8.9111-8.9087L18,26.7482l1.3929-1.414L17.6765,23.618l9.724-11.4895Z"
-                />
-              </svg>
-            </button>
-          </div>
           <span
             class="cds--popover-container cds--popover--caret cds--popover--drop-shadow cds--popover--bottom-start"
           >
@@ -12523,7 +12521,7 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
                     </div>
                     <div
                       class="cds--tag cds--tag--cool-gray"
-                      id="tag-id-_r_2l_"
+                      id="tag-id-_r_2p_"
                     >
                       <span
                         class="cds--tag__label"
@@ -12549,7 +12547,7 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
                     </span>
                     <div
                       class="cds--tag cds--tag--green"
-                      id="tag-id-_r_2m_"
+                      id="tag-id-_r_2q_"
                     >
                       <span
                         class="cds--tag__label"
@@ -12633,7 +12631,7 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
               >
                 <button
                   aria-label="Refresh"
-                  aria-labelledby="tooltip-_r_2o_"
+                  aria-labelledby="tooltip-_r_2s_"
                   class="global-tree-nav__quick-action global-tree-nav__quick-action--refresh"
                   type="button"
                 >
@@ -12659,7 +12657,7 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
               <span
                 aria-hidden="true"
                 class="cds--popover"
-                id="tooltip-_r_2o_"
+                id="tooltip-_r_2s_"
                 role="tooltip"
               >
                 <span
@@ -12680,7 +12678,7 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
               >
                 <button
                   aria-label="Restart"
-                  aria-labelledby="tooltip-_r_2q_"
+                  aria-labelledby="tooltip-_r_2u_"
                   class="global-tree-nav__quick-action global-tree-nav__quick-action--restart"
                   type="button"
                 >
@@ -12703,7 +12701,7 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
               <span
                 aria-hidden="true"
                 class="cds--popover"
-                id="tooltip-_r_2q_"
+                id="tooltip-_r_2u_"
                 role="tooltip"
               >
                 <span
@@ -12724,7 +12722,7 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
               >
                 <button
                   aria-label="Log Out"
-                  aria-labelledby="tooltip-_r_2s_"
+                  aria-labelledby="tooltip-_r_30_"
                   class="global-tree-nav__quick-action global-tree-nav__quick-action--logout"
                   type="button"
                 >
@@ -12750,7 +12748,7 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
               <span
                 aria-hidden="true"
                 class="cds--popover"
-                id="tooltip-_r_2s_"
+                id="tooltip-_r_30_"
                 role="tooltip"
               >
                 <span
@@ -12771,7 +12769,7 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
               >
                 <button
                   aria-label="Full system reboot"
-                  aria-labelledby="tooltip-_r_2u_"
+                  aria-labelledby="tooltip-_r_32_"
                   class="global-tree-nav__quick-action global-tree-nav__quick-action--reboot"
                   type="button"
                 >
@@ -12797,7 +12795,7 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
               <span
                 aria-hidden="true"
                 class="cds--popover"
-                id="tooltip-_r_2u_"
+                id="tooltip-_r_32_"
                 role="tooltip"
               >
                 <span
@@ -16819,6 +16817,54 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
             </li>
           </ul>
         </div>
+        <div
+          class="global-tree-nav__footer"
+        >
+          <span
+            class="cds--popover-container cds--popover--caret cds--popover--high-contrast cds--popover--top cds--tooltip"
+          >
+            <div
+              class="cds--tooltip-trigger__wrapper"
+            >
+              <button
+                aria-label="Collapse global navigation"
+                aria-labelledby="tooltip-_r_35_"
+                class="global-tree-nav__footer-button global-tree-nav__footer-button--collapse"
+                type="button"
+              >
+                <svg
+                  aria-hidden="true"
+                  fill="currentColor"
+                  focusable="false"
+                  height="16"
+                  preserveAspectRatio="xMidYMid meet"
+                  viewBox="0 0 16 16"
+                  width="16"
+                  xmlns="http://www.w3.org/2000/svg"
+                >
+                  <path
+                    d="M8 11 3 6 3.7 5.3 8 9.6 12.3 5.3 13 6z"
+                  />
+                </svg>
+              </button>
+            </div>
+            <span
+              aria-hidden="true"
+              class="cds--popover"
+              id="tooltip-_r_35_"
+              role="tooltip"
+            >
+              <span
+                class="cds--popover-content cds--tooltip-content"
+              >
+                Collapse global navigation
+              </span>
+              <span
+                class="cds--popover-caret"
+              />
+            </span>
+          </span>
+        </div>
       </aside>
     </div>
     <main
@@ -16894,7 +16940,7 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
               >
                 <button
                   aria-label="Close"
-                  aria-labelledby="tooltip-_r_33_"
+                  aria-labelledby="tooltip-_r_39_"
                   class="cds--modal-close cds--btn cds--btn--primary cds--btn--icon-only"
                   type="button"
                 >
@@ -16918,7 +16964,7 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
               <span
                 aria-hidden="true"
                 class="cds--popover"
-                id="tooltip-_r_33_"
+                id="tooltip-_r_39_"
                 role="tooltip"
               >
                 <span
@@ -16981,13 +17027,13 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
             Cancel
           </button>
           <button
-            aria-describedby="danger-description-_r_37_"
+            aria-describedby="danger-description-_r_3d_"
             class="cds--btn cds--btn--danger"
             type="button"
           >
             <span
               class="cds--visually-hidden"
-              id="danger-description-_r_37_"
+              id="danger-description-_r_3d_"
             >
               danger
             </span>
@@ -17047,7 +17093,7 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
               >
                 <button
                   aria-label="Close"
-                  aria-labelledby="tooltip-_r_3a_"
+                  aria-labelledby="tooltip-_r_3g_"
                   class="cds--modal-close cds--btn cds--btn--primary cds--btn--icon-only"
                   type="button"
                 >
@@ -17071,7 +17117,7 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
               <span
                 aria-hidden="true"
                 class="cds--popover"
-                id="tooltip-_r_3a_"
+                id="tooltip-_r_3g_"
                 role="tooltip"
               >
                 <span

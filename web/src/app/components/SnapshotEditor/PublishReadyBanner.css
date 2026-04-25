@@ -1,0 +1,69 @@
+/* Snapshot Editor — Publish Ready banner.
+   Renders above the Snapshot Settings inspector when a draft of the active
+   snapshot has unsaved changes. Visual language mirrors the schematic accent
+   gradient + accent border used elsewhere in the snapshot toolbar. */
+
+.publish-ready-banner {
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
+  padding: 0.75rem 1rem;
+  border-radius: 10px;
+  border: 1px solid color-mix(in srgb, var(--cds-link-primary, #0f62fe) 45%, transparent);
+  background: linear-gradient(
+    90deg,
+    color-mix(in srgb, var(--cds-link-primary, #0f62fe) 18%, transparent),
+    color-mix(in srgb, var(--cds-link-primary, #0f62fe) 5%, transparent) 60%,
+    transparent
+  );
+  color: var(--cds-text-primary, #f4f4f4);
+}
+
+.publish-ready-banner__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  inline-size: 28px;
+  block-size: 28px;
+  flex-shrink: 0;
+  color: var(--cds-link-primary-hover, #4589ff);
+}
+
+.publish-ready-banner__copy {
+  flex: 1 1 auto;
+  min-inline-size: 0;
+  display: grid;
+  gap: 0.125rem;
+}
+
+.publish-ready-banner__title {
+  margin: 0;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--cds-text-primary, #f4f4f4);
+}
+
+.publish-ready-banner__subtitle {
+  margin: 0;
+  font-size: 0.75rem;
+  color: var(--cds-text-secondary, #b3bcc9);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.publish-ready-banner__actions {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}
+
+@media (max-width: 720px) {
+  .publish-ready-banner {
+    flex-wrap: wrap;
+  }
+  .publish-ready-banner__actions {
+    margin-inline-start: auto;
+  }
+}

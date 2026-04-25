@@ -224,6 +224,7 @@ import { applyFlowSlotUpdate } from '../utils/snapshotFlowSlots'
 import { JuceGridAudioPortModal } from '../components/modals/JuceGridAudioPortModal'
 import { JuceGridSelectedBlockMidiPanel } from '../components/SnapshotEditor/SnapshotEditorSelectedBlockMidiPanel'
 import { PedalboardBuildWizard } from '../components/SnapshotEditor/BottomWizard/PedalboardBuildWizard'
+import { PublishReadyBanner } from '../components/SnapshotEditor/PublishReadyBanner'
 import { SnapshotAbSwitchMidiCard } from '../components/SnapshotEditor/SnapshotAbSwitchMidiCard'
 import {
   type SnapshotEditorWorkspaceActionId,
@@ -8342,73 +8343,6 @@ export function SnapshotEditorPage() {
                 </Button>
               </Tile>
             )}
-            {!snapshotEntryRequired && activeChannelStatusRail && (
-              <div className="juce-grid-page__active-channel-rail" role="status" aria-live="polite">
-                <div className="juce-grid-page__active-channel-rail-main">
-                  <div className="juce-grid-page__active-channel-rail-identity">
-                    <span className="juce-grid-page__active-channel-rail-kicker">Active channel</span>
-                    <div className="juce-grid-page__active-channel-rail-channel">
-                      <span
-                        className="juce-grid-page__flow-card-label"
-                        title={activeChannelStatusRail.chainLabel}
-                        style={{ '--flow-color': activeFlow?.color ?? getFlowCardPaletteEntry(activeFlowIndex).color } as CSSProperties}
-                      >
-                        <span className="juce-grid-page__flow-card-label-text">{activeChannelStatusRail.channelLabel}</span>
-                      </span>
-                      <div className="juce-grid-page__active-channel-rail-copy">
-                        <strong className="juce-grid-page__active-channel-rail-chain">{activeChannelStatusRail.chainLabel}</strong>
-                        <span className="juce-grid-page__active-channel-rail-summary">{activeChannelStatusRail.blockSummary}</span>
-                      </div>
-                    </div>
-                  </div>
-                  <div className="juce-grid-page__active-channel-rail-tags">
-                    <Tag type={activeChannelStatusRail.stateLabel === 'Live' ? 'green' : 'cool-gray'}>{activeChannelStatusRail.stateLabel}</Tag>
-                    <Tag type="blue">{activeChannelStatusRail.blendLabel}</Tag>
-                    <Tag type="cool-gray">{activeChannelStatusRail.routingSourceLabel}</Tag>
-                    <Tag type={activeChannelStatusRail.muted ? 'red' : 'cool-gray'}>{activeChannelStatusRail.muted ? 'Mute' : 'M'}</Tag>
-                    <Tag type={activeChannelStatusRail.solo ? 'warm-gray' : 'cool-gray'}>{activeChannelStatusRail.solo ? 'Solo' : 'S'}</Tag>
-                  </div>
-                </div>
-                <div className="juce-grid-page__active-channel-rail-tools">
-                  <div className="juce-grid-page__flow-card-clip-bank" aria-label={`Active channel ${activeChannelStatusRail.channelLabel} clipping status`}>
-                    <div
-                      className={`juce-grid-page__flow-card-clip-readout ${activeChannelStatusRail.inputClipActive ? 'is-active' : ''}`}
-                      title={activeChannelStatusRail.inputClipActive ? `Channel ${activeChannelStatusRail.channelLabel} input clipping detected` : `Channel ${activeChannelStatusRail.channelLabel} input is clean`}
-                    >
-                      <SegmentedLedText value="IN" size="xs" color={FLOW_CARD_CLIP_LED_COLOR} />
-                    </div>
-                    <div
-                      className={`juce-grid-page__flow-card-clip-readout ${activeChannelStatusRail.outputClipActive ? 'is-active' : ''}`}
-                      title={activeChannelStatusRail.outputClipActive ? `Channel ${activeChannelStatusRail.channelLabel} output clipping detected` : `Channel ${activeChannelStatusRail.channelLabel} output is clean`}
-                    >
-                      <SegmentedLedText value="OUT" size="xs" color={FLOW_CARD_CLIP_LED_COLOR} />
-                    </div>
-                    <div
-                      className={`juce-grid-page__flow-card-clip-readout ${activeChannelStatusRail.clipActive ? 'is-active' : ''}`}
-                      title={activeChannelStatusRail.clipActive ? `Channel ${activeChannelStatusRail.channelLabel} chain clipping detected` : `Channel ${activeChannelStatusRail.channelLabel} chain is clean`}
-                    >
-                      <SegmentedLedText value="CLIP" size="xs" color={FLOW_CARD_CLIP_LED_COLOR} />
-                    </div>
-                  </div>
-                  <Button
-                    size="sm"
-                    kind="ghost"
-                    renderIcon={Flow}
-                    onClick={() => openSnapshotProgressModal('advanced', 'routing')}
-                  >
-                    Routing
-                  </Button>
-                  <Button
-                    size="sm"
-                    kind="ghost"
-                    renderIcon={SettingsAdjust}
-                    onClick={openSnapshotIoWorkspace}
-                  >
-                    Devices
-                  </Button>
-                </div>
-              </div>
-            )}
             <section className="juce-grid-page__slot-grid" aria-label="Signal flows">
               {livePathLayout.groups.map((group, groupIndex) => (
                 <div
@@ -8630,6 +8564,81 @@ export function SnapshotEditorPage() {
                 </div>
               ) : bottomEditorShowsSnapshotInspector ? (
                 <div className="juce-grid-page__snapshot-inspector-row">
+                  {activeSnapshot && snapshotsDirty ? (
+                    <PublishReadyBanner
+                      snapshotName={activeSnapshot.name}
+                      blockCount={currentChain?.plugins.length ?? 0}
+                      onDiff={openVersionHistoryWorkspace}
+                      onPublish={openGuidedProgress}
+                    />
+                  ) : null}
+                  {!snapshotEntryRequired && activeChannelStatusRail && (
+                    <div className="juce-grid-page__active-channel-rail" role="status" aria-live="polite">
+                      <div className="juce-grid-page__active-channel-rail-main">
+                        <div className="juce-grid-page__active-channel-rail-identity">
+                          <span className="juce-grid-page__active-channel-rail-kicker">Active channel</span>
+                          <div className="juce-grid-page__active-channel-rail-channel">
+                            <span
+                              className="juce-grid-page__flow-card-label"
+                              title={activeChannelStatusRail.chainLabel}
+                              style={{ '--flow-color': activeFlow?.color ?? getFlowCardPaletteEntry(activeFlowIndex).color } as CSSProperties}
+                            >
+                              <span className="juce-grid-page__flow-card-label-text">{activeChannelStatusRail.channelLabel}</span>
+                            </span>
+                            <div className="juce-grid-page__active-channel-rail-copy">
+                              <strong className="juce-grid-page__active-channel-rail-chain">{activeChannelStatusRail.chainLabel}</strong>
+                              <span className="juce-grid-page__active-channel-rail-summary">{activeChannelStatusRail.blockSummary}</span>
+                            </div>
+                          </div>
+                        </div>
+                        <div className="juce-grid-page__active-channel-rail-tags">
+                          <Tag type={activeChannelStatusRail.stateLabel === 'Live' ? 'green' : 'cool-gray'}>{activeChannelStatusRail.stateLabel}</Tag>
+                          <Tag type="blue">{activeChannelStatusRail.blendLabel}</Tag>
+                          <Tag type="cool-gray">{activeChannelStatusRail.routingSourceLabel}</Tag>
+                          <Tag type={activeChannelStatusRail.muted ? 'red' : 'cool-gray'}>{activeChannelStatusRail.muted ? 'Mute' : 'M'}</Tag>
+                          <Tag type={activeChannelStatusRail.solo ? 'warm-gray' : 'cool-gray'}>{activeChannelStatusRail.solo ? 'Solo' : 'S'}</Tag>
+                        </div>
+                      </div>
+                      <div className="juce-grid-page__active-channel-rail-tools">
+                        <div className="juce-grid-page__flow-card-clip-bank" aria-label={`Active channel ${activeChannelStatusRail.channelLabel} clipping status`}>
+                          <div
+                            className={`juce-grid-page__flow-card-clip-readout ${activeChannelStatusRail.inputClipActive ? 'is-active' : ''}`}
+                            title={activeChannelStatusRail.inputClipActive ? `Channel ${activeChannelStatusRail.channelLabel} input clipping detected` : `Channel ${activeChannelStatusRail.channelLabel} input is clean`}
+                          >
+                            <SegmentedLedText value="IN" size="xs" color={FLOW_CARD_CLIP_LED_COLOR} />
+                          </div>
+                          <div
+                            className={`juce-grid-page__flow-card-clip-readout ${activeChannelStatusRail.outputClipActive ? 'is-active' : ''}`}
+                            title={activeChannelStatusRail.outputClipActive ? `Channel ${activeChannelStatusRail.channelLabel} output clipping detected` : `Channel ${activeChannelStatusRail.channelLabel} output is clean`}
+                          >
+                            <SegmentedLedText value="OUT" size="xs" color={FLOW_CARD_CLIP_LED_COLOR} />
+                          </div>
+                          <div
+                            className={`juce-grid-page__flow-card-clip-readout ${activeChannelStatusRail.clipActive ? 'is-active' : ''}`}
+                            title={activeChannelStatusRail.clipActive ? `Channel ${activeChannelStatusRail.channelLabel} chain clipping detected` : `Channel ${activeChannelStatusRail.channelLabel} chain is clean`}
+                          >
+                            <SegmentedLedText value="CLIP" size="xs" color={FLOW_CARD_CLIP_LED_COLOR} />
+                          </div>
+                        </div>
+                        <Button
+                          size="sm"
+                          kind="ghost"
+                          renderIcon={Flow}
+                          onClick={() => openSnapshotProgressModal('advanced', 'routing')}
+                        >
+                          Routing
+                        </Button>
+                        <Button
+                          size="sm"
+                          kind="ghost"
+                          renderIcon={SettingsAdjust}
+                          onClick={openSnapshotIoWorkspace}
+                        >
+                          Devices
+                        </Button>
+                      </div>
+                    </div>
+                  )}
                   {pedalboardBuildWizard}
                   {snapshotInspectorControls}
                   {activeSnapshot ? (

@@ -240,7 +240,7 @@ export function PedalboardBuildWizard({
 
       <nav className="pedalboard-wizard__stepper" aria-label="Build stages">
         <ol className="pedalboard-wizard__stepper-list">
-          {machine.stages.map((stage) => {
+          {machine.stages.map((stage, index) => {
             const isActive = stage.id === activeStageId
             const isDisabled = stage.status === 'locked'
             const className = [
@@ -248,6 +248,7 @@ export function PedalboardBuildWizard({
               `pedalboard-wizard__stepper-item--${stage.status}`,
               isActive ? 'is-active' : '',
             ].filter(Boolean).join(' ')
+            const stepNumber = `STEP ${String(index + 1).padStart(2, '0')}`
             return (
               <li key={stage.id} className={className}>
                 <button
@@ -257,10 +258,13 @@ export function PedalboardBuildWizard({
                   disabled={isDisabled}
                   aria-current={isActive ? 'step' : undefined}
                 >
-                  <span className="pedalboard-wizard__stepper-glyph" aria-hidden="true">
-                    {stageGlyph(stage.status)}
+                  <span className="pedalboard-wizard__stepper-num" aria-hidden="true">{stepNumber}</span>
+                  <span className="pedalboard-wizard__stepper-name-row">
+                    <span className="pedalboard-wizard__stepper-label">{stage.label}</span>
+                    <span className="pedalboard-wizard__stepper-glyph" aria-hidden="true">
+                      {stageGlyph(stage.status)}
+                    </span>
                   </span>
-                  <span className="pedalboard-wizard__stepper-label">{stage.label}</span>
                   <span className="pedalboard-wizard__stepper-recap">{stage.recap}</span>
                 </button>
               </li>
