@@ -19,6 +19,7 @@ from datetime import datetime
 
 from fastapi import APIRouter, HTTPException, Query, Depends
 from pydantic import BaseModel, Field
+from sqlalchemy import select
 
 from app.database import get_session
 from app.services.midi_service import (

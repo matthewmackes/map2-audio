@@ -1,124 +1,577 @@
 /**
- * MIDI Assignments Page — unified surface for every MIDI binding in the platform.
+ * MIDI Assignments — v2 Walkthrough surface.
  *
- * Brings together (read: surfaces every option from) all of these existing systems:
- *   - midiApiV2: parameter mappings (CC -> plugin parameter), commands (PC/CC/Note ->
- *     activate_chain / toggle_chain / toggle_plugin / set_routing / next_preset /
- *     previous_preset), routing rules (CC -> chain flow change), MIDI learn,
- *     channel/CC presets, mapping groups, chain<->program-change configs,
- *     device profiles + footswitches + expression-pedal definitions, expression
- *     calibration, send-test (CC / PC / note), bank up/down/set, sync to controller.
- *   - expressionApi (/v2/expression/*): per-pedal assignments with custom-curve
- *     editor, listen-for-cc auto-detect, and live retime stats.
- *   - snapshotsApi: per-snapshot expression mappings + per-snapshot MIDI map.
+ * Implements the Claude Design "MIDI Assignments · Walkthrough" mock with full
+ * wiring to the MAP2 backend. The legacy 5-tab v1 page lives intact inside an
+ * Advanced drawer (LegacyMidiAssignments component). Both surfaces share the
+ * same React Query cache so changes show up everywhere.
  *
- * Visual styling is intentionally bare so it can be redressed by Claude Design later;
- * the goal here is exhaustive coverage so every backend capability is reachable.
+ * Decisions captured during Q&A (see chat for rationale):
+ *  Q1 Walkthrough is default; v1 lives in Advanced drawer
+ *  Q2 Pinned surface via localStorage 'map2.pinnedSurfaceId'
+ *  Q3 Hybrid surface adapter (registry + walkthroughSurfaceMeta overlay)
+ *  Q4 Listen subscribes to `midi_activity` WebSocket topic
+ *  Q5 All four target categories live: pluginsApi.getAll, MIDIActionType, routing modes, /v2/engine/parameters
+ *  Q6 Per-category Calibrate variant, auto-promote to ExpressionAssignment for Custom curve / deadzones
+ *  Q7 Hybrid Test: client-side preview + opt-in "Send to engine"
+ *  Q8 Hybrid lite Save: conflict warn + per-chain default scope when launched from snapshot
+ *  Q9 LiveMidiStrip toggleable + filtered to active surface
+ *  Q10 No Tweaks panel; accent follows surface; keyboard shortcuts implemented
  */
 
-import { useCallback, useEffect, useMemo, useState } from 'react'
-import { Link, useSearchParams } from 'react-router-dom'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import {
-  Button,
-  Checkbox,
-  InlineNotification,
-  NumberInput as CarbonNumberInput,
-  Select,
-  SelectItem,
-  Tab,
-  TabList,
-  TabPanel,
-  TabPanels,
-  Tabs,
-  Tag,
-  TextInput,
-  Tile,
-  Toggle,
-} from '@carbon/react'
-import {
-  Add,
-  ChartLine,
-  Connect,
-  Devices,
-  Flash,
-  Music,
-  Plug,
-  Renew,
-  Send,
-  Settings,
-  TrashCan,
-} from '@carbon/icons-react'
+import { Close, Music } from '@carbon/icons-react'
 
 import {
   chainsApi,
   midiApiV2,
   pluginsApi,
-  snapshotsApi,
 } from '../../map2/api'
 import { fetchJson } from '../../map2/http'
 import { API_BASE } from '../../map2/transport'
 import type {
-  ChainMIDIConfig,
   Chain,
-  ExpressionCalibration,
   MIDIActionType,
   MIDICommand,
   MIDICurveType,
-  MIDIDeviceProfile,
-  MIDIMappingGroup,
   MIDIMappingV2,
-  MIDIPreset,
   MIDIRoutingRule,
-  MIDIStatus,
   MIDITriggerType,
   Plugin,
-  Snapshot,
+  RoutingMode,
 } from '../../map2/types'
 
-const CURVE_OPTIONS: Array<{ value: MIDICurveType; label: string }> = [
-  { value: 'linear', label: 'Linear' },
-  { value: 'logarithmic', label: 'Logarithmic' },
-  { value: 'exponential', label: 'Exponential' },
-  { value: 's_curve', label: 'S-Curve' },
+import { ErrorBoundary } from '../components/ErrorBoundary'
+import { LegacyMidiAssignments } from './midiAssignments/LegacyMidiAssignments'
+import { ControllerSchematic, type ControlGuess } from './midiAssignments/ControllerSchematic'
+import { LiveMidiStrip, type MidiMessage } from './midiAssignments/LiveMidiStrip'
+import {
+  GENERIC_SURFACE_META,
+  WALKTHROUGH_SURFACE_META,
+  hexToRgba,
+  type WalkthroughSurfaceMeta,
+} from './midiAssignments/walkthroughSurfaceMeta'
+import { pinDevice, unpinDevice, usePinnedDevices } from '../state/uiSettings'
+
+import './midiAssignments/walkthrough.css'
+
+// ─── Step plan ──────────────────────────────────────────────────────────────
+type StepId = 'device' | 'source' | 'target' | 'calibrate' | 'test' | 'save'
+
+const STEPS: Array<{ id: StepId; title: string; sub: string }> = [
+  { id: 'device', title: 'Surface', sub: '01 · pick or pin' },
+  { id: 'source', title: 'Source', sub: '02 · cc / note / pc' },
+  { id: 'target', title: 'Target', sub: '03 · param or command' },
+  { id: 'calibrate', title: 'Calibrate', sub: '04 · curve & range' },
+  { id: 'test', title: 'Test', sub: '05 · heel · live · toe' },
+  { id: 'save', title: 'Save', sub: '06 · commit binding' },
 ]
 
-const TRIGGER_OPTIONS: Array<{ value: MIDITriggerType; label: string }> = [
-  { value: 'program_change', label: 'Program Change' },
-  { value: 'control_change', label: 'Control Change (CC)' },
-  { value: 'note_on', label: 'Note On' },
-  { value: 'note_off', label: 'Note Off' },
-]
-
-const ACTION_OPTIONS: Array<{ value: MIDIActionType; label: string; needsChain: boolean; needsPlugin: boolean }> = [
-  { value: 'activate_chain', label: 'Activate chain', needsChain: true, needsPlugin: false },
-  { value: 'toggle_chain', label: 'Toggle chain', needsChain: true, needsPlugin: false },
-  { value: 'toggle_plugin', label: 'Toggle plugin bypass', needsChain: false, needsPlugin: true },
-  { value: 'set_routing', label: 'Set routing', needsChain: true, needsPlugin: false },
-  { value: 'next_preset', label: 'Next snapshot', needsChain: false, needsPlugin: false },
-  { value: 'previous_preset', label: 'Previous snapshot', needsChain: false, needsPlugin: false },
-]
-
-interface ExpressionAssignment {
+// ─── Surface adapter (Q3) ───────────────────────────────────────────────────
+interface AdaptedSurface {
   id: string
-  cc: number
-  channel: number
-  cc_min: number
-  cc_max: number
-  param_id: string
-  param_label: string
-  out_min: number
-  out_max: number
-  curve: MIDICurveType | string
-  custom_curve?: number[]
-  active: boolean
-  source?: string
-  retime_mean_ms?: number
-  retime_p95_ms?: number
-  retime_max_ms?: number
+  label: string
+  shortLabel: string
+  status: 'online' | 'detected' | 'planned'
+  capabilities: string[]
+  meta: WalkthroughSurfaceMeta | null
 }
 
-interface ExpressionEngineParam {
+function statusFromEnriched(status: string | undefined): AdaptedSurface['status'] {
+  if (status === 'online' || status === 'available' || status === 'connected') return 'online'
+  if (status === 'detected' || status === 'pending' || status === 'discovered') return 'detected'
+  return 'planned'
+}
+
+function fallbackLabel(id: string): string {
+  return id.split(/[-_]/g).map((p) => p.charAt(0).toUpperCase() + p.slice(1)).join(' ')
+}
+
+interface EnrichedSurfaceSummary {
+  units?: Array<{ unit_id: string; display_name?: string; status?: string; capabilities?: string[] }>
+}
+
+function buildAdaptedSurfaces(summary: EnrichedSurfaceSummary | null | undefined): AdaptedSurface[] {
+  const units = summary?.units ?? []
+  // Always include the metadata-only surfaces (e.g. Push) so the picker matches the design.
+  const seen = new Set<string>()
+  const result: AdaptedSurface[] = []
+  for (const u of units) {
+    const meta = WALKTHROUGH_SURFACE_META[u.unit_id] ?? null
+    seen.add(u.unit_id)
+    result.push({
+      id: u.unit_id,
+      label: u.display_name ?? meta?.shortLabel ?? fallbackLabel(u.unit_id),
+      shortLabel: meta?.shortLabel ?? u.display_name?.split(/\s+/g)[0] ?? fallbackLabel(u.unit_id),
+      status: statusFromEnriched(u.status),
+      capabilities: u.capabilities ?? meta?.capabilities ?? [],
+      meta,
+    })
+  }
+  for (const id of Object.keys(WALKTHROUGH_SURFACE_META)) {
+    if (seen.has(id)) continue
+    const meta = WALKTHROUGH_SURFACE_META[id]
+    result.push({
+      id,
+      label: meta.shortLabel,
+      shortLabel: meta.shortLabel,
+      status: 'planned',
+      capabilities: meta.capabilities,
+      meta,
+    })
+  }
+  return result
+}
+
+// ─── Pinned surface handshake (Q2) ──────────────────────────────────────────
+//
+// We piggyback on the existing `usePinnedDevices()` system (state/uiSettings.ts).
+// The Devices page's Pin/Unpin button already writes to `map2.ui.settings`; we read
+// the *first* entry there as the wizard's "default surface". No new keys needed.
+function usePinnedSurfaceId(): [string | null, (id: string | null) => void] {
+  const pinnedIds = usePinnedDevices()
+  const pinnedId = pinnedIds[0] ?? null
+  const setter = useCallback((id: string | null) => {
+    if (!id) {
+      // Unpin whatever was previously the "default" — preserves any other pinned items.
+      if (pinnedId) unpinDevice(pinnedId)
+      return
+    }
+    // Pin (re-pinning is a no-op in the existing helper).
+    pinDevice(id)
+  }, [pinnedId])
+  return [pinnedId, setter]
+}
+
+// ─── Wizard state ───────────────────────────────────────────────────────────
+type SourceKind = 'cc' | 'note' | 'pc'
+
+interface WizardSource {
+  kind: SourceKind
+  cc?: number
+  note?: number
+  pc?: number
+  ch: number
+}
+
+type TargetCategory = 'plugin-parameter' | 'snapshot-trigger' | 'routing-rule' | 'engine-performance'
+
+interface PluginParamTarget {
+  cat: 'plugin-parameter'
+  id: string
+  name: string
+  path: string
+  pluginUri: string
+  paramIndex: number
+  paramSymbol: string
+  range: [number, number]
+  unit: string
+}
+
+interface SnapshotTriggerTarget {
+  cat: 'snapshot-trigger'
+  id: string
+  name: string
+  path: string
+  action: MIDIActionType
+}
+
+interface RoutingTarget {
+  cat: 'routing-rule'
+  id: string
+  name: string
+  path: string
+  toMode: RoutingMode
+}
+
+interface EnginePerformanceTarget {
+  cat: 'engine-performance'
+  id: string
+  name: string
+  path: string
+  paramId: string
+  range: [number, number]
+  unit: string
+}
+
+type WizardTarget = PluginParamTarget | SnapshotTriggerTarget | RoutingTarget | EnginePerformanceTarget
+
+type CurveName = 'Linear' | 'Exp' | 'Log' | 'S-curve' | 'Custom'
+
+interface WizardCalibration {
+  name: string
+  group: string | null
+  minIn: number
+  maxIn: number
+  minOut: number
+  maxOut: number
+  curve: CurveName
+  invert: boolean
+  deadzoneL: number
+  deadzoneH: number
+  feedback: boolean
+  enabled: boolean
+  /** Trigger-only: velocity/value threshold gate. */
+  threshold: number
+  /** Routing-only: from-flow index. */
+  fromFlow: number
+  /** Routing-only: to-flow index. */
+  toFlow: number
+  /** Per-chain or global. Defaults global; auto-defaults per-chain when launched from snapshot. */
+  scope: 'global' | 'chain'
+}
+
+interface WizardState {
+  surface: AdaptedSurface | null
+  sourceMode: 'learn' | 'manual'
+  listening: boolean
+  source: WizardSource | null
+  target: WizardTarget | null
+  calibration: WizardCalibration | null
+  activeControl: string | null
+  channel: number
+}
+
+const DEFAULT_CALIBRATION: WizardCalibration = {
+  name: 'New mapping',
+  group: null,
+  minIn: 0,
+  maxIn: 127,
+  minOut: 0,
+  maxOut: 127,
+  curve: 'Linear',
+  invert: false,
+  deadzoneL: 0,
+  deadzoneH: 0,
+  feedback: true,
+  enabled: true,
+  threshold: 64,
+  fromFlow: 0,
+  toFlow: 1,
+  scope: 'global',
+}
+
+// ─── Curve preview SVG ──────────────────────────────────────────────────────
+function CurveSvg({ curve, invert }: { curve: CurveName; invert: boolean }) {
+  const pts: Array<[number, number]> = []
+  const N = 60
+  for (let i = 0; i <= N; i++) {
+    const x = i / N
+    let y: number
+    if (curve === 'Exp') y = x * x
+    else if (curve === 'Log') y = Math.sqrt(x)
+    else if (curve === 'S-curve') y = 0.5 - 0.5 * Math.cos(Math.PI * x)
+    else if (curve === 'Custom') y = x < 0.5 ? 2 * x * x : 1 - Math.pow(-2 * x + 2, 2) / 2
+    else y = x
+    if (invert) y = 1 - y
+    pts.push([x * 380 + 10, 190 - y * 180])
+  }
+  const d = 'M ' + pts.map((p) => p.join(',')).join(' L ')
+  return (
+    <svg className="curve-svg" viewBox="0 0 400 200" preserveAspectRatio="none">
+      <defs>
+        <linearGradient id="midi-walk-cg" x1="0" y1="0" x2="0" y2="1">
+          <stop offset="0%" stopColor="var(--accent)" stopOpacity="0.4" />
+          <stop offset="100%" stopColor="var(--accent)" stopOpacity="0" />
+        </linearGradient>
+      </defs>
+      {[0, 1, 2, 3, 4].map((i) => (
+        <line key={`h-${i}`} x1="10" x2="390" y1={10 + i * 45} y2={10 + i * 45} stroke="var(--line)" />
+      ))}
+      {[0, 1, 2, 3, 4].map((i) => (
+        <line key={`v-${i}`} y1="10" y2="190" x1={10 + i * 95} x2={10 + i * 95} stroke="var(--line)" />
+      ))}
+      <path d={d + ` L 390,190 L 10,190 Z`} fill="url(#midi-walk-cg)" />
+      <path d={d} stroke="var(--accent)" strokeWidth="2" fill="none" />
+      <text x="10" y="200" fontSize="9" fill="var(--text-4)">in 0</text>
+      <text x="370" y="200" fontSize="9" fill="var(--text-4)">127</text>
+      <text x="10" y="20" fontSize="9" fill="var(--text-4)">out</text>
+    </svg>
+  )
+}
+
+// ─── Step components ────────────────────────────────────────────────────────
+function StepDevice({
+  surfaces,
+  state,
+  setState,
+  pinnedId,
+  onPin,
+  onContinue,
+}: {
+  surfaces: AdaptedSurface[]
+  state: WizardState
+  setState: (next: Partial<WizardState>) => void
+  pinnedId: string | null
+  onPin: (id: string | null) => void
+  onContinue: () => void
+}) {
+  const pinned = surfaces.find((s) => s.id === pinnedId) ?? null
+  return (
+    <div>
+      <div className="crumb"><span className="step-n">Step 01</span> · Choose your control surface</div>
+      <h1>Which surface are we mapping today?</h1>
+      <p className="lede">
+        Pick a control surface from your registry. Pinning it sets it as the default for every walkthrough.
+        The schematic, capability set, and accent color follow your choice through the rest of the steps.
+      </p>
+
+      {pinned && pinned.status === 'online' && state.surface?.id !== pinned.id && (
+        <div
+          className="pinned-hero"
+          style={{
+            ['--accent' as string]: pinned.meta?.color ?? GENERIC_SURFACE_META.color,
+            ['--accent-soft' as string]: hexToRgba(pinned.meta?.color, 0.18),
+            ['--accent-line' as string]: hexToRgba(pinned.meta?.color, 0.35),
+          } as React.CSSProperties}
+        >
+          <div className="iconbig" style={{ background: pinned.meta?.color ?? GENERIC_SURFACE_META.color }}>
+            {pinned.shortLabel.slice(0, 3).toUpperCase()}
+          </div>
+          <div>
+            <div className="badge" style={{ background: pinned.meta?.color ?? GENERIC_SURFACE_META.color }}>
+              Pinned from Devices
+            </div>
+            <h2>{pinned.label}</h2>
+            <div className="meta">
+              status <b style={{ color: 'var(--engine)' }}>{pinned.status}</b> · {pinned.capabilities.length} capabilities
+            </div>
+          </div>
+          <div style={{ display: 'grid', gap: 8 }}>
+            <button
+              className="btn"
+              style={{ background: pinned.meta?.color ?? GENERIC_SURFACE_META.color }}
+              onClick={() => { setState({ surface: pinned }); onContinue() }}
+            >
+              Continue with {pinned.shortLabel} →
+            </button>
+            <button className="btn ghost" onClick={() => onPin(null)}>Unpin · pick another</button>
+          </div>
+        </div>
+      )}
+
+      <div className="devicegrid">
+        {surfaces.map((s) => {
+          const color = s.meta?.color ?? GENERIC_SURFACE_META.color
+          return (
+            <div
+              key={s.id}
+              className={`dcard ${state.surface?.id === s.id ? 'selected' : ''}`}
+              style={{ ['--dcolor' as string]: color } as React.CSSProperties}
+              onClick={() => setState({ surface: s })}
+            >
+              {pinnedId === s.id && <div className="pin">Pinned</div>}
+              <div className="top">
+                <div>
+                  <div className="name">{s.label}</div>
+                  <div className="sub">{s.meta?.eyebrow ?? s.id}</div>
+                </div>
+                <div className="icon" style={{ background: color }}>
+                  {s.shortLabel.slice(0, 3).toUpperCase()}
+                </div>
+              </div>
+              <div className="caps">
+                {(s.capabilities ?? []).slice(0, 4).map((c) => <span key={c}>{c}</span>)}
+              </div>
+              <div className={`status ${s.status}`}>{s.status}</div>
+              {state.surface?.id === s.id && pinnedId !== s.id && (
+                <button
+                  className="btn ghost"
+                  style={{ padding: '6px 10px', fontSize: 11 }}
+                  onClick={(e) => { e.stopPropagation(); onPin(s.id) }}
+                >
+                  Pin as default
+                </button>
+              )}
+            </div>
+          )
+        })}
+      </div>
+    </div>
+  )
+}
+
+const COMMON_CC_NAMES: Record<number, string> = {
+  1: 'Mod Wheel', 2: 'Breath', 4: 'Foot Controller', 7: 'Volume', 10: 'Pan',
+  11: 'Expression', 64: 'Sustain', 65: 'Portamento', 71: 'Resonance', 74: 'Brightness',
+  16: 'GP1', 17: 'GP2', 18: 'GP3', 19: 'GP4',
+  20: 'General 1', 21: 'General 2', 22: 'General 3', 23: 'General 4',
+}
+
+function StepSource({
+  state,
+  setState,
+}: {
+  state: WizardState
+  setState: (next: Partial<WizardState>) => void
+}) {
+  const surface = state.surface
+  const mode = state.sourceMode
+  const captured = state.source
+
+  const handlePick = useCallback((controlId: string, guess: ControlGuess) => {
+    const ch = state.channel || 1
+    if (guess.kind === 'cc') {
+      setState({ source: { kind: 'cc', cc: guess.value, ch }, activeControl: controlId, listening: false })
+    } else if (guess.kind === 'note') {
+      setState({ source: { kind: 'note', note: guess.value, ch }, activeControl: controlId, listening: false })
+    } else if (guess.kind === 'pc') {
+      setState({ source: { kind: 'pc', pc: guess.value, ch }, activeControl: controlId, listening: false })
+    }
+  }, [setState, state.channel])
+
+  return (
+    <div>
+      <div className="crumb"><span className="step-n">Step 02</span> · Choose the trigger</div>
+      <h1>Move it, or pick from the list.</h1>
+      <p className="lede">
+        Both paths land in the same place — a CC, Note, or PC binding scoped to a channel.
+        Listen will lock onto the next inbound message and capture exactly what {surface?.shortLabel ?? 'your surface'} sends.
+      </p>
+
+      <div className="source-modes">
+        <div
+          className={`source-mode ${mode === 'learn' ? 'active' : ''}`}
+          onClick={() => setState({ sourceMode: 'learn' })}
+        >
+          <div className="lbl">Mode A · Wiggle</div>
+          <div className="ttl">Move the control</div>
+          <div className="desc">Click Listen, then move the pad / knob / pedal you want to bind.</div>
+        </div>
+        <div
+          className={`source-mode ${mode === 'manual' ? 'active' : ''}`}
+          onClick={() => setState({ sourceMode: 'manual' })}
+        >
+          <div className="lbl">Mode B · Manual</div>
+          <div className="ttl">Pick from the list</div>
+          <div className="desc">Choose a CC, Note, or PC + channel directly — useful for surfaces that aren't connected.</div>
+        </div>
+      </div>
+
+      {mode === 'learn' ? (
+        <>
+          <div className={`learn-box ${state.listening ? 'listening' : 'idle'}`}>
+            <div className="big">
+              {state.listening ? 'Listening…' : captured ? 'Captured' : 'Press Listen, then move the control'}
+            </div>
+            {captured ? (
+              <div className="captured engine">
+                {captured.kind === 'cc' && <><span className="lbl">CC </span>{captured.cc}<span className="lbl"> · ch </span>{captured.ch}<span className="lbl"> · </span>{COMMON_CC_NAMES[captured.cc!] ?? `CC ${captured.cc}`}</>}
+                {captured.kind === 'note' && <><span className="lbl">Note </span>{captured.note}<span className="lbl"> · ch </span>{captured.ch}</>}
+                {captured.kind === 'pc' && <><span className="lbl">PC </span>{captured.pc}<span className="lbl"> · ch </span>{captured.ch}</>}
+              </div>
+            ) : (
+              <div className="captured">
+                <span className="lbl">waiting for surface motion…</span>
+              </div>
+            )}
+            <div className="row-flex" style={{ justifyContent: 'center', marginTop: 8 }}>
+              {!state.listening ? (
+                <button className="btn" onClick={() => setState({ listening: true })}>● Listen for next message</button>
+              ) : (
+                <button className="btn danger" onClick={() => setState({ listening: false })}>Cancel</button>
+              )}
+              {captured && (
+                <button className="btn ghost" onClick={() => setState({ source: null, activeControl: null })}>Clear</button>
+              )}
+            </div>
+          </div>
+
+          <div style={{ marginTop: 24 }}>
+            <div className="section-h">Or click on the schematic</div>
+            <ControllerSchematic
+              schematic={surface?.meta?.schematic ?? GENERIC_SURFACE_META.schematic}
+              activeId={state.activeControl}
+              targetId={state.listening ? null : null}
+              onPick={handlePick}
+            />
+          </div>
+        </>
+      ) : (
+        <ManualSourcePicker state={state} setState={setState} />
+      )}
+    </div>
+  )
+}
+
+function ManualSourcePicker({
+  state,
+  setState,
+}: {
+  state: WizardState
+  setState: (next: Partial<WizardState>) => void
+}) {
+  const [kind, setKind] = useState<SourceKind>(state.source?.kind ?? 'cc')
+  const [ch, setCh] = useState<number>(state.source?.ch ?? 1)
+  const [v, setV] = useState<number>(state.source?.cc ?? state.source?.note ?? state.source?.pc ?? 1)
+
+  useEffect(() => {
+    const src: WizardSource = kind === 'cc'
+      ? { kind: 'cc', cc: v, ch }
+      : kind === 'note'
+        ? { kind: 'note', note: v, ch }
+        : { kind: 'pc', pc: v, ch }
+    setState({ source: src })
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [kind, ch, v])
+
+  return (
+    <div className="card">
+      <div className="hd">
+        Manual binding
+        <div className="right">
+          <select
+            value={kind}
+            onChange={(e) => setKind(e.target.value as SourceKind)}
+            style={{ background: 'var(--bg)', border: '1px solid var(--line-2)', padding: '4px 8px', fontFamily: 'var(--mono)' }}
+          >
+            <option value="cc">Control Change</option>
+            <option value="note">Note</option>
+            <option value="pc">Program Change</option>
+          </select>
+        </div>
+      </div>
+      <div className="body">
+        <div className="field">
+          <div className="lbl">Channel</div>
+          <select value={ch} onChange={(e) => setCh(Number(e.target.value))}>
+            {Array.from({ length: 16 }, (_, i) => i + 1).map((n) => <option key={n} value={n}>Ch {n}</option>)}
+            <option value={0}>Omni (any)</option>
+          </select>
+        </div>
+        <div className="field">
+          <div className="lbl">{kind === 'cc' ? 'CC #' : kind === 'note' ? 'Note #' : 'PC #'}</div>
+          <input type="number" min="0" max="127" value={v} onChange={(e) => setV(Number(e.target.value))} />
+        </div>
+
+        {kind === 'cc' && (
+          <>
+            <hr className="thin" />
+            <div className="section-h">Common controllers</div>
+            <div className="cclist">
+              {Object.entries(COMMON_CC_NAMES).map(([n, name]) => (
+                <div
+                  key={n}
+                  className={`ccrow ${Number(n) === v ? 'selected' : ''}`}
+                  onClick={() => setV(Number(n))}
+                >
+                  <div className="num">CC {n}</div>
+                  <div className="ch">ch {ch}</div>
+                  <div className="name">{name}</div>
+                  <div className="recent">●</div>
+                </div>
+              ))}
+            </div>
+          </>
+        )}
+      </div>
+    </div>
+  )
+}
+
+interface EngineParam {
   id: string
   label: string
   min: number
@@ -127,1055 +580,1045 @@ interface ExpressionEngineParam {
   group?: string
 }
 
-const PERFORMANCE_TARGETS: Array<{ id: string; label: string }> = [
-  { id: 'page_next', label: 'Page next' },
-  { id: 'page_prev', label: 'Page previous' },
-  { id: 'tap_tempo', label: 'Tap tempo' },
-  { id: 'tuner_mute', label: 'Tuner mute' },
-  { id: 'bypass_01', label: 'Bypass slot 1' },
-  { id: 'bypass_02', label: 'Bypass slot 2' },
-  { id: 'bypass_03', label: 'Bypass slot 3' },
-  { id: 'bypass_04', label: 'Bypass slot 4' },
-  { id: 'bypass_05', label: 'Bypass slot 5' },
-  { id: 'bypass_06', label: 'Bypass slot 6' },
-  { id: 'bypass_07', label: 'Bypass slot 7' },
-  { id: 'bypass_08', label: 'Bypass slot 8' },
-]
-
-function MidiActivityStrip({ status }: { status: MIDIStatus | undefined }) {
-  return (
-    <Tile style={{ padding: '0.75rem 1rem', display: 'flex', gap: '1.5rem', alignItems: 'center', flexWrap: 'wrap' }}>
-      <strong>Live MIDI activity</strong>
-      <Tag type={status?.enabled ? 'green' : 'red'}>
-        {status?.enabled ? 'Engine running' : 'Engine offline'}
-      </Tag>
-      <Tag type={status?.input_open ? 'blue' : 'cool-gray'}>
-        IN: {status?.input_device ?? '—'}
-      </Tag>
-      <Tag type={status?.output_open ? 'purple' : 'cool-gray'}>
-        OUT: {status?.output_device ?? '—'}
-      </Tag>
-      <Tag type="cool-gray">{`Last: Ch ${status?.last_channel ?? '—'} · CC ${status?.last_cc ?? '—'} · Val ${status?.last_value ?? '—'}`}</Tag>
-      <Tag type={status?.learning ? 'magenta' : 'cool-gray'}>
-        {status?.learning ? 'LEARNING' : 'Idle'}
-      </Tag>
-      <Tag type="cool-gray">{`${status?.mappings_count ?? 0} mappings · ${status?.commands_count ?? 0} commands`}</Tag>
-    </Tile>
-  )
+const ROUTING_MODE_LABELS: Record<RoutingMode, string> = {
+  parallel_blend: 'Parallel blend',
+  series: 'Series',
+  morph: 'Morph',
+  sidechain: 'Sidechain',
+  ab_switch: 'A/B switch',
 }
 
-// ============================================================================
-// PARAMETER MAPPINGS (CC -> plugin parameter)
-// ============================================================================
-
-interface ParameterMappingsTabProps {
-  mappings: MIDIMappingV2[]
-  groups: MIDIMappingGroup[]
-  chains: Chain[]
+function StepTarget({
+  state,
+  setState,
+  plugins,
+  engineParams,
+}: {
+  state: WizardState
+  setState: (next: Partial<WizardState>) => void
   plugins: Plugin[]
-  snapshotIdFilter: number | null
-}
-
-function ParameterMappingsTab({ mappings, groups, chains, plugins, snapshotIdFilter }: ParameterMappingsTabProps) {
-  const queryClient = useQueryClient()
-  const invalidate = () => queryClient.invalidateQueries({ queryKey: ['midi'] })
-
-  const [showOnlyChain, setShowOnlyChain] = useState<number | 'all' | 'global'>('all')
+  engineParams: EngineParam[]
+}) {
+  const [cat, setCat] = useState<TargetCategory>(state.target?.cat ?? 'plugin-parameter')
   const [search, setSearch] = useState('')
 
-  const filtered = useMemo(() => {
-    return mappings.filter((m) => {
-      if (showOnlyChain === 'global' && m.chain_id !== null) return false
-      if (typeof showOnlyChain === 'number' && m.chain_id !== showOnlyChain) return false
-      if (search) {
-        const haystack = `${m.name ?? ''} ${m.target_plugin_uri ?? ''} ${m.target_param_symbol ?? ''} cc${m.cc} ch${m.channel}`.toLowerCase()
-        if (!haystack.includes(search.toLowerCase())) return false
+  const targetsForCategory = useMemo(() => {
+    if (cat === 'plugin-parameter') {
+      const flat: PluginParamTarget[] = []
+      for (const plugin of plugins) {
+        for (const p of plugin.parameters ?? []) {
+          flat.push({
+            cat: 'plugin-parameter',
+            id: `${plugin.uri}::${p.index}`,
+            name: p.name,
+            path: `${plugin.name} / ${p.symbol}`,
+            pluginUri: plugin.uri,
+            paramIndex: p.index,
+            paramSymbol: p.symbol,
+            range: [p.min, p.max],
+            unit: '',
+          })
+        }
       }
-      return true
-    })
-  }, [mappings, showOnlyChain, search])
+      return flat.filter((t) => t.name.toLowerCase().includes(search.toLowerCase()) || t.path.toLowerCase().includes(search.toLowerCase()))
+    }
+    if (cat === 'snapshot-trigger') {
+      const items: SnapshotTriggerTarget[] = [
+        { cat: 'snapshot-trigger', id: 'cmd.activate_chain', name: 'Activate chain', path: 'snapshot.activate_chain', action: 'activate_chain' },
+        { cat: 'snapshot-trigger', id: 'cmd.toggle_chain', name: 'Toggle chain bypass', path: 'snapshot.toggle_chain', action: 'toggle_chain' },
+        { cat: 'snapshot-trigger', id: 'cmd.toggle_plugin', name: 'Toggle plugin', path: 'snapshot.toggle_plugin', action: 'toggle_plugin' },
+        { cat: 'snapshot-trigger', id: 'cmd.set_routing', name: 'Set routing', path: 'snapshot.set_routing', action: 'set_routing' },
+        { cat: 'snapshot-trigger', id: 'cmd.next_preset', name: 'Next preset', path: 'snapshot.next_preset', action: 'next_preset' },
+        { cat: 'snapshot-trigger', id: 'cmd.previous_preset', name: 'Previous preset', path: 'snapshot.previous_preset', action: 'previous_preset' },
+      ]
+      return items.filter((t) => t.name.toLowerCase().includes(search.toLowerCase()))
+    }
+    if (cat === 'routing-rule') {
+      const items: RoutingTarget[] = (Object.keys(ROUTING_MODE_LABELS) as RoutingMode[]).map((m) => ({
+        cat: 'routing-rule',
+        id: `routing.${m}`,
+        name: `Switch to ${ROUTING_MODE_LABELS[m]}`,
+        path: `routing.mode = ${m}`,
+        toMode: m,
+      }))
+      return items.filter((t) => t.name.toLowerCase().includes(search.toLowerCase()))
+    }
+    // engine-performance
+    const items: EnginePerformanceTarget[] = engineParams.map((p) => ({
+      cat: 'engine-performance',
+      id: p.id,
+      name: p.label,
+      path: p.id,
+      paramId: p.id,
+      range: [p.min, p.max],
+      unit: p.unit ?? '',
+    }))
+    return items.filter((t) => t.name.toLowerCase().includes(search.toLowerCase()))
+  }, [cat, plugins, engineParams, search])
 
-  const updateMutation = useMutation({
-    mutationFn: ({ id, updates }: { id: number; updates: Partial<MIDIMappingV2> }) => midiApiV2.updateMapping(id, updates),
-    onSuccess: invalidate,
-  })
+  const counts = useMemo(() => ({
+    'plugin-parameter': plugins.reduce((sum, p) => sum + (p.parameters?.length ?? 0), 0),
+    'snapshot-trigger': 6,
+    'routing-rule': Object.keys(ROUTING_MODE_LABELS).length,
+    'engine-performance': engineParams.length,
+  }), [plugins, engineParams])
 
-  const deleteMutation = useMutation({
-    mutationFn: (id: number) => midiApiV2.deleteMapping(id),
-    onSuccess: invalidate,
-  })
-
-  const createMutation = useMutation({
-    mutationFn: (payload: Partial<MIDIMappingV2>) => midiApiV2.createMapping(payload),
-    onSuccess: invalidate,
-  })
-
-  const testMutation = useMutation({
-    mutationFn: ({ id, mode }: { id: number; mode: 'heel' | 'live' | 'toe' }) => midiApiV2.testMappingFeedback(
-      id,
-      mode === 'live' ? { use_current_value: true } : { normalized_value: mode === 'heel' ? 0 : 1 },
-    ),
-  })
-
-  const [draft, setDraft] = useState<Partial<MIDIMappingV2>>(() => ({
-    cc: 0,
-    channel: 0,
-    chain_id: null,
-    target_plugin_uri: '',
-    target_param_index: 0,
-    target_param_symbol: '',
-    min_val: 0,
-    max_val: 1,
-    curve_type: 'linear',
-    invert: false,
-    feedback_enabled: true,
-    feedback_cc: null,
-    is_enabled: true,
-    name: '',
-    group_id: null,
-  }))
-
-  const draftPlugin = plugins.find((p) => p.uri === draft.target_plugin_uri)
+  const categoryLabels: Record<TargetCategory, string> = {
+    'plugin-parameter': 'Plugin parameter',
+    'snapshot-trigger': 'Snapshot trigger',
+    'routing-rule': 'Routing rule',
+    'engine-performance': 'Engine performance',
+  }
 
   return (
-    <div style={{ display: 'grid', gap: '1rem' }}>
-      {snapshotIdFilter && (
-        <InlineNotification
-          kind="info"
-          title="Snapshot context"
-          subtitle={`Launched from snapshot ID ${snapshotIdFilter}. Per-chain mappings tied to the snapshot's active chain are highlighted.`}
-          hideCloseButton
-          lowContrast
-        />
-      )}
+    <div>
+      <div className="crumb"><span className="step-n">Step 03</span> · Pick the target</div>
+      <h1>What should this trigger?</h1>
+      <p className="lede">
+        Targets are everything the snapshot editor exposes — plugin parameters, snapshot commands, routing rules, and engine performance handles.
+        Picking determines whether the next step is calibration (continuous) or trigger threshold (momentary).
+      </p>
 
-      <Tile>
-        <h3>Filter</h3>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '0.75rem', marginTop: '0.75rem' }}>
-          <Select
-            id="param-mapping-filter-chain"
-            labelText="Chain scope"
-            value={String(showOnlyChain)}
-            onChange={(e) => {
-              const v = e.target.value
-              setShowOnlyChain(v === 'all' ? 'all' : v === 'global' ? 'global' : Number(v))
-            }}
-          >
-            <SelectItem value="all" text="All scopes" />
-            <SelectItem value="global" text="Global only" />
-            {chains.map((chain) => (
-              <SelectItem key={chain.id} value={String(chain.id)} text={`Chain ${chain.id} — ${chain.name}`} />
-            ))}
-          </Select>
-          <TextInput
-            id="param-mapping-filter-search"
-            labelText="Search"
-            placeholder="cc, plugin, name, channel"
+      <div className="target-grid">
+        <div className="target-cats">
+          {(Object.keys(categoryLabels) as TargetCategory[]).map((c) => (
+            <button
+              key={c}
+              className={`target-cat ${cat === c ? 'active' : ''}`}
+              onClick={() => setCat(c)}
+            >
+              <span>{categoryLabels[c]}</span>
+              <span className="count">{counts[c]}</span>
+            </button>
+          ))}
+        </div>
+        <div>
+          <input
+            type="text"
+            placeholder="Search targets…"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
+            style={{ width: '100%', background: 'var(--bg)', border: '1px solid var(--line-2)', padding: '8px 10px', fontFamily: 'var(--mono)', marginBottom: 8 }}
           />
-        </div>
-      </Tile>
-
-      <Tile>
-        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'baseline' }}>
-          <h3>Parameter mappings ({filtered.length} of {mappings.length})</h3>
-          <Tag type="cool-gray">CC → plugin parameter</Tag>
-        </div>
-        <p style={{ marginTop: '0.25rem', opacity: 0.7 }}>
-          Each row is a CC binding to a plugin parameter. Per-chain mappings only apply when that chain is active; global mappings apply everywhere.
-        </p>
-        <table style={{ width: '100%', marginTop: '0.75rem', borderCollapse: 'collapse' }}>
-          <thead>
-            <tr style={{ textAlign: 'left' }}>
-              <th>Name</th>
-              <th>CC</th>
-              <th>Ch</th>
-              <th>Scope</th>
-              <th>Plugin · Param</th>
-              <th>Range</th>
-              <th>Curve</th>
-              <th>Invert</th>
-              <th>Feedback</th>
-              <th>Group</th>
-              <th>Enabled</th>
-              <th>Actions</th>
-            </tr>
-          </thead>
-          <tbody>
-            {filtered.map((m) => (
-              <tr key={m.id} style={{ borderTop: '1px solid var(--cds-border-subtle, #393939)' }}>
-                <td>{m.name ?? '—'}</td>
-                <td>
-                  <CarbonNumberInput
-                    id={`pm-cc-${m.id}`}
-                    label=""
-                    hideLabel
-                    value={m.cc}
-                    min={0}
-                    max={127}
-                    step={1}
-                    onChange={(_e, { value }) => updateMutation.mutate({ id: m.id, updates: { cc: Number(value) } })}
-                  />
-                </td>
-                <td>
-                  <CarbonNumberInput
-                    id={`pm-ch-${m.id}`}
-                    label=""
-                    hideLabel
-                    value={m.channel}
-                    min={0}
-                    max={16}
-                    step={1}
-                    onChange={(_e, { value }) => updateMutation.mutate({ id: m.id, updates: { channel: Number(value) } })}
-                  />
-                </td>
-                <td>{m.chain_id === null ? <Tag type="cool-gray">Global</Tag> : <Tag type="blue">Chain {m.chain_id}</Tag>}</td>
-                <td>{m.target_plugin_uri ?? '—'}<br /><small>{m.target_param_symbol} (#{m.target_param_index})</small></td>
-                <td>
-                  <CarbonNumberInput
-                    id={`pm-min-${m.id}`}
-                    label=""
-                    hideLabel
-                    value={m.min_val}
-                    step={0.01}
-                    onChange={(_e, { value }) => updateMutation.mutate({ id: m.id, updates: { min_val: Number(value) } })}
-                  />
-                  <CarbonNumberInput
-                    id={`pm-max-${m.id}`}
-                    label=""
-                    hideLabel
-                    value={m.max_val}
-                    step={0.01}
-                    onChange={(_e, { value }) => updateMutation.mutate({ id: m.id, updates: { max_val: Number(value) } })}
-                  />
-                </td>
-                <td>
-                  <Select
-                    id={`pm-curve-${m.id}`}
-                    labelText=""
-                    hideLabel
-                    value={m.curve_type}
-                    onChange={(e) => updateMutation.mutate({ id: m.id, updates: { curve_type: e.target.value as MIDICurveType } })}
-                  >
-                    {CURVE_OPTIONS.map((o) => <SelectItem key={o.value} value={o.value} text={o.label} />)}
-                  </Select>
-                </td>
-                <td>
-                  <Toggle id={`pm-invert-${m.id}`} labelText="" hideLabel size="sm" toggled={m.invert} onToggle={(v) => updateMutation.mutate({ id: m.id, updates: { invert: v } })} />
-                </td>
-                <td>
-                  <Toggle id={`pm-fb-${m.id}`} labelText="" hideLabel size="sm" toggled={m.feedback_enabled} onToggle={(v) => updateMutation.mutate({ id: m.id, updates: { feedback_enabled: v } })} />
-                  {m.feedback_enabled && <small> CC {m.feedback_cc ?? m.cc}</small>}
-                </td>
-                <td>
-                  <Select
-                    id={`pm-group-${m.id}`}
-                    labelText=""
-                    hideLabel
-                    value={String(m.group_id ?? '')}
-                    onChange={(e) => updateMutation.mutate({ id: m.id, updates: { group_id: e.target.value ? Number(e.target.value) : null } })}
-                  >
-                    <SelectItem value="" text="—" />
-                    {groups.map((g) => <SelectItem key={g.id} value={String(g.id)} text={g.name} />)}
-                  </Select>
-                </td>
-                <td>
-                  <Toggle id={`pm-enabled-${m.id}`} labelText="" hideLabel size="sm" toggled={m.is_enabled} onToggle={(v) => updateMutation.mutate({ id: m.id, updates: { is_enabled: v } })} />
-                </td>
-                <td>
-                  <Button kind="ghost" size="sm" onClick={() => testMutation.mutate({ id: m.id, mode: 'heel' })}>Heel</Button>
-                  <Button kind="ghost" size="sm" onClick={() => testMutation.mutate({ id: m.id, mode: 'live' })}>Live</Button>
-                  <Button kind="ghost" size="sm" onClick={() => testMutation.mutate({ id: m.id, mode: 'toe' })}>Toe</Button>
-                  <Button kind="danger--ghost" size="sm" hasIconOnly renderIcon={TrashCan} iconDescription="Delete" onClick={() => deleteMutation.mutate(m.id)} />
-                </td>
-              </tr>
+          <div className="target-list">
+            {targetsForCategory.length === 0 && (
+              <div style={{ padding: 16, color: 'var(--text-3)', fontSize: 13 }}>
+                No matches{search ? ` for "${search}"` : ''}. Load some plugins or pick another category.
+              </div>
+            )}
+            {targetsForCategory.slice(0, 200).map((item) => (
+              <div
+                key={item.id}
+                className={`target-item ${state.target?.id === item.id ? 'selected' : ''}`}
+                onClick={() => setState({ target: item as WizardTarget })}
+              >
+                <div>
+                  <div className="nm">{item.name}</div>
+                  <div className="pth">{item.path}</div>
+                </div>
+                <div className="tag">{item.cat.replace('-', ' ')}</div>
+              </div>
             ))}
-          </tbody>
-        </table>
-      </Tile>
-
-      <Tile>
-        <h3>Add parameter mapping</h3>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '0.75rem' }}>
-          <TextInput id="add-pm-name" labelText="Name" value={draft.name ?? ''} onChange={(e) => setDraft({ ...draft, name: e.target.value })} />
-          <CarbonNumberInput id="add-pm-cc" label="CC (0–127)" value={draft.cc ?? 0} min={0} max={127} step={1} onChange={(_e, { value }) => setDraft({ ...draft, cc: Number(value) })} />
-          <CarbonNumberInput id="add-pm-ch" label="Channel (0=omni)" value={draft.channel ?? 0} min={0} max={16} step={1} onChange={(_e, { value }) => setDraft({ ...draft, channel: Number(value) })} />
-          <Select id="add-pm-scope" labelText="Scope" value={draft.chain_id === null ? 'global' : String(draft.chain_id ?? '')} onChange={(e) => setDraft({ ...draft, chain_id: e.target.value === 'global' ? null : Number(e.target.value) })}>
-            <SelectItem value="global" text="Global" />
-            {chains.map((c) => <SelectItem key={c.id} value={String(c.id)} text={`Chain ${c.id} — ${c.name}`} />)}
-          </Select>
-          <Select id="add-pm-plugin" labelText="Plugin" value={draft.target_plugin_uri ?? ''} onChange={(e) => setDraft({ ...draft, target_plugin_uri: e.target.value, target_param_index: 0, target_param_symbol: '' })}>
-            <SelectItem value="" text="— select —" />
-            {plugins.map((p) => <SelectItem key={p.uri} value={p.uri} text={p.name} />)}
-          </Select>
-          <Select id="add-pm-param" labelText="Parameter" value={String(draft.target_param_index ?? 0)} onChange={(e) => {
-            const idx = Number(e.target.value)
-            const param = draftPlugin?.parameters[idx]
-            setDraft({ ...draft, target_param_index: idx, target_param_symbol: param?.symbol ?? '', min_val: param?.min ?? 0, max_val: param?.max ?? 1 })
-          }} disabled={!draftPlugin}>
-            {(draftPlugin?.parameters ?? []).map((p) => (
-              <SelectItem key={p.index} value={String(p.index)} text={`${p.name} (${p.symbol})`} />
-            ))}
-          </Select>
-          <CarbonNumberInput id="add-pm-min" label="Min value" value={draft.min_val ?? 0} step={0.01} onChange={(_e, { value }) => setDraft({ ...draft, min_val: Number(value) })} />
-          <CarbonNumberInput id="add-pm-max" label="Max value" value={draft.max_val ?? 1} step={0.01} onChange={(_e, { value }) => setDraft({ ...draft, max_val: Number(value) })} />
-          <Select id="add-pm-curve" labelText="Curve" value={draft.curve_type ?? 'linear'} onChange={(e) => setDraft({ ...draft, curve_type: e.target.value as MIDICurveType })}>
-            {CURVE_OPTIONS.map((o) => <SelectItem key={o.value} value={o.value} text={o.label} />)}
-          </Select>
-          <Checkbox id="add-pm-invert" labelText="Invert response" checked={draft.invert ?? false} onChange={(_e, { checked }) => setDraft({ ...draft, invert: checked })} />
-          <Checkbox id="add-pm-feedback" labelText="Feedback enabled" checked={draft.feedback_enabled ?? true} onChange={(_e, { checked }) => setDraft({ ...draft, feedback_enabled: checked })} />
-          <CarbonNumberInput id="add-pm-feedback-cc" label="Feedback CC (blank = mapped CC)" value={draft.feedback_cc ?? 0} min={0} max={127} step={1} onChange={(_e, { value }) => setDraft({ ...draft, feedback_cc: Number(value) || null })} />
-          <Select id="add-pm-group" labelText="Group" value={String(draft.group_id ?? '')} onChange={(e) => setDraft({ ...draft, group_id: e.target.value ? Number(e.target.value) : null })}>
-            <SelectItem value="" text="— none —" />
-            {groups.map((g) => <SelectItem key={g.id} value={String(g.id)} text={g.name} />)}
-          </Select>
+            {targetsForCategory.length > 200 && (
+              <div style={{ padding: 8, fontSize: 11, color: 'var(--text-3)', fontFamily: 'var(--mono)' }}>
+                showing 200 of {targetsForCategory.length} · refine search to narrow
+              </div>
+            )}
+          </div>
         </div>
-        <Button style={{ marginTop: '0.75rem' }} renderIcon={Add} onClick={() => createMutation.mutate(draft)}>
-          Create mapping
-        </Button>
-      </Tile>
+      </div>
     </div>
   )
 }
 
-// ============================================================================
-// SNAPSHOT TRIGGERS & SYSTEM COMMANDS
-// ============================================================================
+function StepCalibrate({
+  state,
+  setState,
+}: {
+  state: WizardState
+  setState: (next: Partial<WizardState>) => void
+}) {
+  const cal = state.calibration ?? DEFAULT_CALIBRATION
+  const set = (patch: Partial<WizardCalibration>) => setState({ calibration: { ...cal, ...patch } })
+  const target = state.target
 
-interface CommandsTabProps {
-  commands: MIDICommand[]
-  chains: Chain[]
-  plugins: Plugin[]
-  snapshots: Snapshot[]
-  chainConfigs: ChainMIDIConfig[]
-}
+  // Per-Q6 variant — what fields apply depends on category.
+  const isContinuous = target?.cat === 'plugin-parameter' || target?.cat === 'engine-performance'
+  const isTrigger = target?.cat === 'snapshot-trigger'
+  const isRouting = target?.cat === 'routing-rule'
 
-function CommandsTab({ commands, chains, plugins, snapshots, chainConfigs }: CommandsTabProps) {
-  const queryClient = useQueryClient()
-  const invalidate = () => queryClient.invalidateQueries({ queryKey: ['midi'] })
-
-  const updateMutation = useMutation({
-    mutationFn: ({ id, updates }: { id: number; updates: Partial<MIDICommand> }) => midiApiV2.updateCommand(id, updates),
-    onSuccess: invalidate,
-  })
-  const deleteMutation = useMutation({
-    mutationFn: (id: number) => midiApiV2.deleteCommand(id),
-    onSuccess: invalidate,
-  })
-  const createMutation = useMutation({
-    mutationFn: (payload: Partial<MIDICommand>) => midiApiV2.createCommand(payload),
-    onSuccess: invalidate,
-  })
-  const setChainConfigMutation = useMutation({
-    mutationFn: ({ chainId, programNumber, options }: { chainId: number; programNumber: number; options?: { bank_msb?: number; bank_lsb?: number; send_pc_on_activate?: boolean } }) =>
-      midiApiV2.setChainConfig(chainId, programNumber, options),
-    onSuccess: invalidate,
-  })
-  const deleteChainConfigMutation = useMutation({
-    mutationFn: (chainId: number) => midiApiV2.deleteChainConfig(chainId),
-    onSuccess: invalidate,
-  })
-
-  const [draft, setDraft] = useState<Partial<MIDICommand>>({
-    name: '',
-    trigger_type: 'program_change',
-    channel: 0,
-    data1: 0,
-    data2_threshold: null,
-    action: 'activate_chain',
-    target_chain_id: null,
-    target_plugin_uri: null,
-    action_params: null,
-    is_enabled: true,
-  })
+  const promotedToExpression = isContinuous && (cal.curve === 'Custom' || cal.deadzoneL > 0 || cal.deadzoneH > 0)
 
   return (
-    <div style={{ display: 'grid', gap: '1rem' }}>
-      <InlineNotification
-        kind="info"
-        title="Snapshot triggers & system commands"
-        subtitle="A 'command' fires a one-shot action when a MIDI message matches: activate a chain, toggle a plugin, set routing, jump snapshots, or run system actions. Use the chain/program-change matrix below for snapshot/chain Program Change recall."
-        hideCloseButton
-        lowContrast
-      />
+    <div>
+      <div className="crumb"><span className="step-n">Step 04</span> · Calibrate the response</div>
+      <h1>Shape the curve.</h1>
+      <p className="lede">
+        Map raw input range to target output range, pick a curve, and set deadzones.
+        For continuous targets, this is where heel/toe + dwell shape the feel.
+      </p>
 
-      <Tile>
-        <h3>Commands ({commands.length})</h3>
-        <table style={{ width: '100%', marginTop: '0.75rem', borderCollapse: 'collapse' }}>
-          <thead>
-            <tr style={{ textAlign: 'left' }}>
-              <th>Name</th>
-              <th>Trigger</th>
-              <th>Ch</th>
-              <th>Data1</th>
-              <th>Threshold</th>
-              <th>Action</th>
-              <th>Target chain</th>
-              <th>Target plugin</th>
-              <th>Enabled</th>
-              <th />
-            </tr>
-          </thead>
-          <tbody>
-            {commands.map((cmd) => (
-              <tr key={cmd.id} style={{ borderTop: '1px solid var(--cds-border-subtle, #393939)' }}>
-                <td>{cmd.name ?? '—'}</td>
-                <td>
-                  <Select id={`cmd-trig-${cmd.id}`} labelText="" hideLabel value={cmd.trigger_type} onChange={(e) => updateMutation.mutate({ id: cmd.id, updates: { trigger_type: e.target.value as MIDITriggerType } })}>
-                    {TRIGGER_OPTIONS.map((o) => <SelectItem key={o.value} value={o.value} text={o.label} />)}
-                  </Select>
-                </td>
-                <td>
-                  <CarbonNumberInput id={`cmd-ch-${cmd.id}`} label="" hideLabel value={cmd.channel} min={0} max={16} step={1} onChange={(_e, { value }) => updateMutation.mutate({ id: cmd.id, updates: { channel: Number(value) } })} />
-                </td>
-                <td>
-                  <CarbonNumberInput id={`cmd-d1-${cmd.id}`} label="" hideLabel value={cmd.data1} min={0} max={127} step={1} onChange={(_e, { value }) => updateMutation.mutate({ id: cmd.id, updates: { data1: Number(value) } })} />
-                </td>
-                <td>
-                  <CarbonNumberInput id={`cmd-thresh-${cmd.id}`} label="" hideLabel value={cmd.data2_threshold ?? 0} min={0} max={127} step={1} onChange={(_e, { value }) => updateMutation.mutate({ id: cmd.id, updates: { data2_threshold: Number(value) || null } })} />
-                </td>
-                <td>
-                  <Select id={`cmd-action-${cmd.id}`} labelText="" hideLabel value={cmd.action} onChange={(e) => updateMutation.mutate({ id: cmd.id, updates: { action: e.target.value as MIDIActionType } })}>
-                    {ACTION_OPTIONS.map((o) => <SelectItem key={o.value} value={o.value} text={o.label} />)}
-                  </Select>
-                </td>
-                <td>
-                  <Select id={`cmd-chain-${cmd.id}`} labelText="" hideLabel value={String(cmd.target_chain_id ?? '')} onChange={(e) => updateMutation.mutate({ id: cmd.id, updates: { target_chain_id: e.target.value ? Number(e.target.value) : null } })}>
-                    <SelectItem value="" text="—" />
-                    {chains.map((c) => <SelectItem key={c.id} value={String(c.id)} text={`${c.id} — ${c.name}`} />)}
-                  </Select>
-                </td>
-                <td>
-                  <Select id={`cmd-plugin-${cmd.id}`} labelText="" hideLabel value={cmd.target_plugin_uri ?? ''} onChange={(e) => updateMutation.mutate({ id: cmd.id, updates: { target_plugin_uri: e.target.value || null } })}>
-                    <SelectItem value="" text="—" />
-                    {plugins.map((p) => <SelectItem key={p.uri} value={p.uri} text={p.name} />)}
-                  </Select>
-                </td>
-                <td>
-                  <Toggle id={`cmd-enabled-${cmd.id}`} labelText="" hideLabel size="sm" toggled={cmd.is_enabled} onToggle={(v) => updateMutation.mutate({ id: cmd.id, updates: { is_enabled: v } })} />
-                </td>
-                <td>
-                  <Button kind="danger--ghost" size="sm" hasIconOnly renderIcon={TrashCan} iconDescription="Delete" onClick={() => deleteMutation.mutate(cmd.id)} />
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </Tile>
-
-      <Tile>
-        <h3>Add command</h3>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '0.75rem' }}>
-          <TextInput id="add-cmd-name" labelText="Name" value={draft.name ?? ''} onChange={(e) => setDraft({ ...draft, name: e.target.value })} />
-          <Select id="add-cmd-trig" labelText="Trigger" value={draft.trigger_type ?? 'program_change'} onChange={(e) => setDraft({ ...draft, trigger_type: e.target.value as MIDITriggerType })}>
-            {TRIGGER_OPTIONS.map((o) => <SelectItem key={o.value} value={o.value} text={o.label} />)}
-          </Select>
-          <CarbonNumberInput id="add-cmd-ch" label="Channel (0=omni)" value={draft.channel ?? 0} min={0} max={16} step={1} onChange={(_e, { value }) => setDraft({ ...draft, channel: Number(value) })} />
-          <CarbonNumberInput id="add-cmd-d1" label="Data1 (PC# / CC# / Note#)" value={draft.data1 ?? 0} min={0} max={127} step={1} onChange={(_e, { value }) => setDraft({ ...draft, data1: Number(value) })} />
-          <CarbonNumberInput id="add-cmd-thresh" label="Velocity/Value threshold" value={draft.data2_threshold ?? 0} min={0} max={127} step={1} onChange={(_e, { value }) => setDraft({ ...draft, data2_threshold: Number(value) || null })} />
-          <Select id="add-cmd-action" labelText="Action" value={draft.action ?? 'activate_chain'} onChange={(e) => setDraft({ ...draft, action: e.target.value as MIDIActionType })}>
-            {ACTION_OPTIONS.map((o) => <SelectItem key={o.value} value={o.value} text={o.label} />)}
-          </Select>
-          <Select id="add-cmd-chain" labelText="Target chain" value={String(draft.target_chain_id ?? '')} onChange={(e) => setDraft({ ...draft, target_chain_id: e.target.value ? Number(e.target.value) : null })}>
-            <SelectItem value="" text="—" />
-            {chains.map((c) => <SelectItem key={c.id} value={String(c.id)} text={`${c.id} — ${c.name}`} />)}
-          </Select>
-          <Select id="add-cmd-plugin" labelText="Target plugin" value={draft.target_plugin_uri ?? ''} onChange={(e) => setDraft({ ...draft, target_plugin_uri: e.target.value || null })}>
-            <SelectItem value="" text="—" />
-            {plugins.map((p) => <SelectItem key={p.uri} value={p.uri} text={p.name} />)}
-          </Select>
-          <Checkbox id="add-cmd-enabled" labelText="Enabled" checked={draft.is_enabled ?? true} onChange={(_e, { checked }) => setDraft({ ...draft, is_enabled: checked })} />
+      {promotedToExpression && (
+        <div style={{
+          background: 'var(--accent-soft)', border: '1px solid var(--accent-line)',
+          padding: '8px 12px', fontSize: 12, fontFamily: 'var(--mono)',
+          color: 'var(--text-2)', marginBottom: 16,
+        }}>
+          ⓘ This binding will save as an Expression Assignment (Custom curve / non-zero deadzone).
         </div>
-        <Button style={{ marginTop: '0.75rem' }} renderIcon={Add} onClick={() => createMutation.mutate(draft)}>
-          Create command
-        </Button>
-      </Tile>
+      )}
 
-      <Tile>
-        <h3>Snapshot / chain Program Change matrix ({chainConfigs.length})</h3>
-        <p style={{ opacity: 0.7 }}>Bind a chain to a Program Change number so a single PC message recalls it. Optionally send PC out on activate to keep external gear in sync.</p>
-        <table style={{ width: '100%', marginTop: '0.75rem', borderCollapse: 'collapse' }}>
-          <thead><tr style={{ textAlign: 'left' }}><th>Chain</th><th>PC</th><th>Bank MSB</th><th>Bank LSB</th><th>Send PC on activate</th><th /></tr></thead>
-          <tbody>
-            {chains.map((c) => {
-              const cfg = chainConfigs.find((cc) => cc.chain_id === c.id)
-              return (
-                <tr key={c.id} style={{ borderTop: '1px solid var(--cds-border-subtle, #393939)' }}>
-                  <td>{c.id} — {c.name}</td>
-                  <td>
-                    <CarbonNumberInput id={`cc-pc-${c.id}`} label="" hideLabel value={cfg?.program_number ?? 0} min={0} max={127} step={1} onChange={(_e, { value }) => setChainConfigMutation.mutate({ chainId: c.id, programNumber: Number(value), options: { bank_msb: cfg?.bank_msb, bank_lsb: cfg?.bank_lsb, send_pc_on_activate: cfg?.send_pc_on_activate } })} />
-                  </td>
-                  <td>
-                    <CarbonNumberInput id={`cc-msb-${c.id}`} label="" hideLabel value={cfg?.bank_msb ?? 0} min={0} max={127} step={1} onChange={(_e, { value }) => setChainConfigMutation.mutate({ chainId: c.id, programNumber: cfg?.program_number ?? 0, options: { bank_msb: Number(value), bank_lsb: cfg?.bank_lsb, send_pc_on_activate: cfg?.send_pc_on_activate } })} />
-                  </td>
-                  <td>
-                    <CarbonNumberInput id={`cc-lsb-${c.id}`} label="" hideLabel value={cfg?.bank_lsb ?? 0} min={0} max={127} step={1} onChange={(_e, { value }) => setChainConfigMutation.mutate({ chainId: c.id, programNumber: cfg?.program_number ?? 0, options: { bank_msb: cfg?.bank_msb, bank_lsb: Number(value), send_pc_on_activate: cfg?.send_pc_on_activate } })} />
-                  </td>
-                  <td>
-                    <Toggle id={`cc-pcout-${c.id}`} labelText="" hideLabel size="sm" toggled={cfg?.send_pc_on_activate ?? false} onToggle={(v) => setChainConfigMutation.mutate({ chainId: c.id, programNumber: cfg?.program_number ?? 0, options: { bank_msb: cfg?.bank_msb, bank_lsb: cfg?.bank_lsb, send_pc_on_activate: v } })} />
-                  </td>
-                  <td>
-                    {cfg && <Button kind="danger--ghost" size="sm" hasIconOnly renderIcon={TrashCan} iconDescription="Clear" onClick={() => deleteChainConfigMutation.mutate(c.id)} />}
-                  </td>
-                </tr>
-              )
-            })}
-          </tbody>
-        </table>
-      </Tile>
+      <div className="cal">
+        <div className="cal-fields">
+          <div className="field">
+            <div className="lbl">Mapping name</div>
+            <input type="text" value={cal.name} onChange={(e) => set({ name: e.target.value })} />
+          </div>
+          <div className="field">
+            <div className="lbl">Scope</div>
+            <select value={cal.scope} onChange={(e) => set({ scope: e.target.value as 'global' | 'chain' })}>
+              <option value="global">Global</option>
+              <option value="chain">Per-chain (active chain)</option>
+            </select>
+          </div>
 
-      <Tile>
-        <h3>Snapshot Program Change overview</h3>
-        <p style={{ opacity: 0.7 }}>For reference: snapshots that have a Program Change number assigned. Edit per snapshot in the Snapshot Editor toolbar.</p>
-        <table style={{ width: '100%', marginTop: '0.75rem', borderCollapse: 'collapse' }}>
-          <thead><tr style={{ textAlign: 'left' }}><th>ID</th><th>Snapshot</th><th>PC #</th></tr></thead>
-          <tbody>
-            {snapshots.map((s: any) => (
-              <tr key={s.id} style={{ borderTop: '1px solid var(--cds-border-subtle, #393939)' }}>
-                <td>{s.id}</td>
-                <td>{s.name ?? `Snapshot ${s.id}`}</td>
-                <td>{s.program_number ?? '—'}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </Tile>
-    </div>
-  )
-}
+          {isContinuous && (
+            <>
+              <div className="field">
+                <div className="lbl">Input range</div>
+                <div className="range-pair">
+                  <input type="number" value={cal.minIn} onChange={(e) => set({ minIn: Number(e.target.value) })} />
+                  <span>→</span>
+                  <input type="number" value={cal.maxIn} onChange={(e) => set({ maxIn: Number(e.target.value) })} />
+                </div>
+              </div>
+              <div className="field">
+                <div className="lbl">Output range</div>
+                <div className="range-pair">
+                  <input type="number" value={cal.minOut} onChange={(e) => set({ minOut: Number(e.target.value) })} />
+                  <span>→</span>
+                  <input type="number" value={cal.maxOut} onChange={(e) => set({ maxOut: Number(e.target.value) })} />
+                </div>
+              </div>
+              <div className="field">
+                <div className="lbl">Deadzone (L / H)</div>
+                <div className="range-pair">
+                  <input type="number" value={cal.deadzoneL} onChange={(e) => set({ deadzoneL: Number(e.target.value) })} />
+                  <span>·</span>
+                  <input type="number" value={cal.deadzoneH} onChange={(e) => set({ deadzoneH: Number(e.target.value) })} />
+                </div>
+              </div>
+              <div className="field">
+                <div className="lbl">Invert</div>
+                <div className={`switch ${cal.invert ? 'on' : ''}`} onClick={() => set({ invert: !cal.invert })} />
+              </div>
+              <div className="field">
+                <div className="lbl">LED feedback</div>
+                <div className={`switch ${cal.feedback ? 'on' : ''}`} onClick={() => set({ feedback: !cal.feedback })} />
+              </div>
+            </>
+          )}
 
-// ============================================================================
-// ROUTING RULES (CC / PC -> chain flow change)
-// ============================================================================
+          {isTrigger && (
+            <div className="field">
+              <div className="lbl">Velocity / value threshold</div>
+              <input type="number" min="0" max="127" value={cal.threshold} onChange={(e) => set({ threshold: Number(e.target.value) })} />
+            </div>
+          )}
 
-interface RoutingRulesTabProps {
-  rules: MIDIRoutingRule[]
-  chains: Chain[]
-}
+          {isRouting && (
+            <>
+              <div className="field">
+                <div className="lbl">From flow index</div>
+                <input type="number" min="0" value={cal.fromFlow} onChange={(e) => set({ fromFlow: Number(e.target.value) })} />
+              </div>
+              <div className="field">
+                <div className="lbl">To flow index</div>
+                <input type="number" min="0" value={cal.toFlow} onChange={(e) => set({ toFlow: Number(e.target.value) })} />
+              </div>
+            </>
+          )}
 
-function RoutingRulesTab({ rules, chains }: RoutingRulesTabProps) {
-  const queryClient = useQueryClient()
-  const invalidate = () => queryClient.invalidateQueries({ queryKey: ['midi'] })
-
-  const createMutation = useMutation({
-    mutationFn: (rule: Partial<MIDIRoutingRule>) => midiApiV2.createRoutingRule(rule),
-    onSuccess: invalidate,
-  })
-  const deleteMutation = useMutation({
-    mutationFn: (id: number) => midiApiV2.deleteRoutingRule(id),
-    onSuccess: invalidate,
-  })
-
-  const [draft, setDraft] = useState<Partial<MIDIRoutingRule>>({
-    chain_id: chains[0]?.id ?? 0,
-    name: '',
-    trigger_type: 'control_change',
-    channel: 0,
-    data1: 0,
-    from_flow_index: 0,
-    to_flow_index: 1,
-    is_enabled: true,
-  })
-
-  return (
-    <div style={{ display: 'grid', gap: '1rem' }}>
-      <InlineNotification kind="info" title="Routing rules"
-        subtitle="A routing rule shifts a chain's active flow when a MIDI trigger arrives — useful for switching tone stacks, bypass alternates, or A/B paths inside a chain."
-        hideCloseButton lowContrast />
-
-      <Tile>
-        <h3>Routing rules ({rules.length})</h3>
-        <table style={{ width: '100%', marginTop: '0.75rem', borderCollapse: 'collapse' }}>
-          <thead><tr style={{ textAlign: 'left' }}><th>Name</th><th>Chain</th><th>Trigger</th><th>Ch</th><th>Data1</th><th>From flow</th><th>To flow</th><th>Enabled</th><th /></tr></thead>
-          <tbody>
-            {rules.map((r) => (
-              <tr key={r.id} style={{ borderTop: '1px solid var(--cds-border-subtle, #393939)' }}>
-                <td>{r.name ?? '—'}</td>
-                <td>{r.chain_id}</td>
-                <td>{r.trigger_type}</td>
-                <td>{r.channel}</td>
-                <td>{r.data1}</td>
-                <td>{r.from_flow_index}</td>
-                <td>{r.to_flow_index}</td>
-                <td>{r.is_enabled ? 'Yes' : 'No'}</td>
-                <td><Button kind="danger--ghost" size="sm" hasIconOnly renderIcon={TrashCan} iconDescription="Delete" onClick={() => deleteMutation.mutate(r.id)} /></td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </Tile>
-
-      <Tile>
-        <h3>Add routing rule</h3>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '0.75rem' }}>
-          <TextInput id="add-rr-name" labelText="Name" value={draft.name ?? ''} onChange={(e) => setDraft({ ...draft, name: e.target.value })} />
-          <Select id="add-rr-chain" labelText="Chain" value={String(draft.chain_id ?? 0)} onChange={(e) => setDraft({ ...draft, chain_id: Number(e.target.value) })}>
-            {chains.map((c) => <SelectItem key={c.id} value={String(c.id)} text={`${c.id} — ${c.name}`} />)}
-          </Select>
-          <Select id="add-rr-trig" labelText="Trigger" value={draft.trigger_type ?? 'control_change'} onChange={(e) => setDraft({ ...draft, trigger_type: e.target.value as MIDITriggerType })}>
-            {TRIGGER_OPTIONS.map((o) => <SelectItem key={o.value} value={o.value} text={o.label} />)}
-          </Select>
-          <CarbonNumberInput id="add-rr-ch" label="Channel" value={draft.channel ?? 0} min={0} max={16} step={1} onChange={(_e, { value }) => setDraft({ ...draft, channel: Number(value) })} />
-          <CarbonNumberInput id="add-rr-d1" label="Data1" value={draft.data1 ?? 0} min={0} max={127} step={1} onChange={(_e, { value }) => setDraft({ ...draft, data1: Number(value) })} />
-          <CarbonNumberInput id="add-rr-from" label="From flow index" value={draft.from_flow_index ?? 0} min={0} step={1} onChange={(_e, { value }) => setDraft({ ...draft, from_flow_index: Number(value) })} />
-          <CarbonNumberInput id="add-rr-to" label="To flow index" value={draft.to_flow_index ?? 1} min={0} step={1} onChange={(_e, { value }) => setDraft({ ...draft, to_flow_index: Number(value) })} />
-          <Checkbox id="add-rr-enabled" labelText="Enabled" checked={draft.is_enabled ?? true} onChange={(_e, { checked }) => setDraft({ ...draft, is_enabled: checked })} />
+          <div className="field">
+            <div className="lbl">Enabled</div>
+            <div className={`switch ${cal.enabled ? 'on' : ''}`} onClick={() => set({ enabled: !cal.enabled })} />
+          </div>
         </div>
-        <Button style={{ marginTop: '0.75rem' }} renderIcon={Add} onClick={() => createMutation.mutate(draft)}>Create rule</Button>
-      </Tile>
-    </div>
-  )
-}
 
-// ============================================================================
-// EXPRESSION PEDALS — global assignments + per-snapshot expression mappings
-// ============================================================================
-
-function ExpressionTab({ snapshotIdFilter }: { snapshotIdFilter: number | null }) {
-  const queryClient = useQueryClient()
-
-  const assignmentsQuery = useQuery<ExpressionAssignment[]>({
-    queryKey: ['expression-assignments'],
-    queryFn: () => fetchJson<ExpressionAssignment[]>(`${API_BASE}/v2/expression/assignments`),
-    refetchInterval: 2000,
-  })
-  const paramsQuery = useQuery<{ parameters: ExpressionEngineParam[] }>({
-    queryKey: ['expression-engine-parameters'],
-    queryFn: () => fetchJson(`${API_BASE}/v2/engine/parameters`),
-    staleTime: 60_000,
-  })
-  const calibrationsQuery = useQuery<{ calibrations: Record<string, ExpressionCalibration> }>({
-    queryKey: ['midi', 'expression-calibrations'],
-    queryFn: () => midiApiV2.getExpressionCalibrations(),
-  })
-
-  const params = paramsQuery.data?.parameters ?? []
-
-  const saveMutation = useMutation({
-    mutationFn: (payload: Partial<ExpressionAssignment>) => fetchJson<ExpressionAssignment>(`${API_BASE}/v2/expression/assignments`, {
-      method: 'POST',
-      body: JSON.stringify(payload),
-    }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['expression-assignments'] }),
-  })
-
-  const deleteMutation = useMutation({
-    mutationFn: (id: string) => fetchJson(`${API_BASE}/v2/expression/assignments/${encodeURIComponent(id)}`, { method: 'DELETE' }),
-    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['expression-assignments'] }),
-  })
-
-  const listenMutation = useMutation({
-    mutationFn: (listenerId: string) => fetchJson<{ cc: number; channel: number }>(`${API_BASE}/v2/expression/listen-for-cc`, {
-      method: 'POST',
-      body: JSON.stringify({ listener_id: listenerId, timeout_seconds: 10.0 }),
-    }),
-  })
-
-  const [draft, setDraft] = useState<Partial<ExpressionAssignment>>({
-    cc: 0, channel: 0, cc_min: 0, cc_max: 127,
-    param_id: '', param_label: '',
-    out_min: 0, out_max: 1, curve: 'linear', active: true,
-  })
-
-  const assignments = assignmentsQuery.data ?? []
-  const userAssignments = assignments.filter((a) => (a.source ?? 'user') === 'user')
-  const performanceAssignments = assignments.filter((a) => a.source === 'performance_mode')
-
-  return (
-    <div style={{ display: 'grid', gap: '1rem' }}>
-      <InlineNotification kind="info" title="Expression pedals"
-        subtitle="A continuous CC (typically from an expression pedal) drives one or more engine parameters or performance actions. Each assignment has its own input window (cc_min/cc_max), output range, curve type, and optional custom curve."
-        hideCloseButton lowContrast />
-
-      <Tile>
-        <h3>Add expression assignment</h3>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: '0.75rem' }}>
-          <CarbonNumberInput id="exp-cc" label="CC" value={draft.cc ?? 0} min={0} max={127} step={1} onChange={(_e, { value }) => setDraft({ ...draft, cc: Number(value) })} />
-          <CarbonNumberInput id="exp-ch" label="Channel (0=omni)" value={draft.channel ?? 0} min={0} max={16} step={1} onChange={(_e, { value }) => setDraft({ ...draft, channel: Number(value) })} />
-          <CarbonNumberInput id="exp-cc-min" label="CC min (input window)" value={draft.cc_min ?? 0} min={0} max={127} step={1} onChange={(_e, { value }) => setDraft({ ...draft, cc_min: Number(value) })} />
-          <CarbonNumberInput id="exp-cc-max" label="CC max (input window)" value={draft.cc_max ?? 127} min={0} max={127} step={1} onChange={(_e, { value }) => setDraft({ ...draft, cc_max: Number(value) })} />
-          <Select id="exp-param" labelText="Target parameter" value={draft.param_id ?? ''} onChange={(e) => {
-            const p = params.find((x) => x.id === e.target.value)
-            setDraft({ ...draft, param_id: e.target.value, param_label: p?.label ?? e.target.value, out_min: p?.min ?? 0, out_max: p?.max ?? 1 })
-          }}>
-            <SelectItem value="" text="— select engine parameter —" />
-            {params.map((p) => <SelectItem key={p.id} value={p.id} text={`${p.label}${p.unit ? ` (${p.unit})` : ''}`} />)}
-            <SelectItem value="" text="── performance actions ──" disabled />
-            {PERFORMANCE_TARGETS.map((p) => <SelectItem key={p.id} value={p.id} text={`Performance: ${p.label}`} />)}
-          </Select>
-          <CarbonNumberInput id="exp-out-min" label="Output min" value={draft.out_min ?? 0} step={0.01} onChange={(_e, { value }) => setDraft({ ...draft, out_min: Number(value) })} />
-          <CarbonNumberInput id="exp-out-max" label="Output max" value={draft.out_max ?? 1} step={0.01} onChange={(_e, { value }) => setDraft({ ...draft, out_max: Number(value) })} />
-          <Select id="exp-curve" labelText="Curve" value={String(draft.curve ?? 'linear')} onChange={(e) => setDraft({ ...draft, curve: e.target.value })}>
-            {CURVE_OPTIONS.map((o) => <SelectItem key={o.value} value={o.value} text={o.label} />)}
-            <SelectItem value="custom" text="Custom (Bezier — edit per-row)" />
-          </Select>
-          <Checkbox id="exp-active" labelText="Active" checked={draft.active ?? true} onChange={(_e, { checked }) => setDraft({ ...draft, active: checked })} />
-        </div>
-        <div style={{ marginTop: '0.75rem', display: 'flex', gap: '0.5rem' }}>
-          <Button renderIcon={Add} onClick={() => saveMutation.mutate(draft)}>Create assignment</Button>
-          <Button kind="tertiary" renderIcon={Flash} disabled={listenMutation.isPending} onClick={async () => {
-            try {
-              const result = await listenMutation.mutateAsync(`add-form-${Date.now()}`)
-              setDraft({ ...draft, cc: result.cc, channel: result.channel })
-            } catch {}
-          }}>{listenMutation.isPending ? 'Listening… move pedal' : 'Listen for CC'}</Button>
-        </div>
-      </Tile>
-
-      <Tile>
-        <h3>User assignments ({userAssignments.length})</h3>
-        <table style={{ width: '100%', marginTop: '0.75rem', borderCollapse: 'collapse' }}>
-          <thead><tr style={{ textAlign: 'left' }}><th>CC</th><th>Ch</th><th>Window</th><th>Target</th><th>Out range</th><th>Curve</th><th>Active</th><th>Retime (ms)</th><th /></tr></thead>
-          <tbody>
-            {userAssignments.map((a) => (
-              <tr key={a.id} style={{ borderTop: '1px solid var(--cds-border-subtle, #393939)' }}>
-                <td>{a.cc}</td>
-                <td>{a.channel || 'omni'}</td>
-                <td>{a.cc_min}–{a.cc_max}</td>
-                <td>{a.param_label || a.param_id}</td>
-                <td>{a.out_min} → {a.out_max}</td>
-                <td>{a.curve}</td>
-                <td>{a.active ? 'Yes' : 'No'}</td>
-                <td>{a.retime_mean_ms != null ? `μ ${a.retime_mean_ms.toFixed(2)} · p95 ${a.retime_p95_ms?.toFixed(2)} · max ${a.retime_max_ms?.toFixed(2)}` : '—'}</td>
-                <td>
-                  <Button kind="ghost" size="sm" onClick={() => saveMutation.mutate({ ...a, active: !a.active })}>{a.active ? 'Disable' : 'Enable'}</Button>
-                  <Button kind="danger--ghost" size="sm" hasIconOnly renderIcon={TrashCan} iconDescription="Delete" onClick={() => deleteMutation.mutate(a.id)} />
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </Tile>
-
-      {performanceAssignments.length > 0 && (
-        <Tile>
-          <h3>Performance-mode assignments ({performanceAssignments.length})</h3>
-          <p style={{ opacity: 0.7 }}>Read-only mappings owned by performance mode (e.g. tap tempo, tuner mute, page next/prev, bypass slots).</p>
-          <table style={{ width: '100%', marginTop: '0.75rem', borderCollapse: 'collapse' }}>
-            <thead><tr style={{ textAlign: 'left' }}><th>CC</th><th>Ch</th><th>Target</th><th>Active</th></tr></thead>
-            <tbody>
-              {performanceAssignments.map((a) => (
-                <tr key={a.id}><td>{a.cc}</td><td>{a.channel || 'omni'}</td><td>{a.param_label || a.param_id}</td><td>{a.active ? 'Yes' : 'No'}</td></tr>
+        {isContinuous && (
+          <div className="curve-card">
+            <div className="hd">Response curve</div>
+            <CurveSvg curve={cal.curve} invert={cal.invert} />
+            <div className="curve-presets">
+              {(['Linear', 'Exp', 'Log', 'S-curve', 'Custom'] as CurveName[]).map((p) => (
+                <button key={p} className={cal.curve === p ? 'active' : ''} onClick={() => set({ curve: p })}>{p}</button>
               ))}
-            </tbody>
-          </table>
-        </Tile>
-      )}
-
-      <Tile>
-        <h3>Per-pedal calibration ({Object.keys(calibrationsQuery.data?.calibrations ?? {}).length})</h3>
-        <p style={{ opacity: 0.7 }}>Stored hardware calibration: physical CC range, deadzones, curve, and inversion. Edit on the Devices &gt; physical surface page.</p>
-        <table style={{ width: '100%', marginTop: '0.75rem', borderCollapse: 'collapse' }}>
-          <thead><tr style={{ textAlign: 'left' }}><th>Pedal ID</th><th>CC</th><th>Ch</th><th>Min raw</th><th>Max raw</th><th>Deadzone (lo / hi)</th><th>Curve</th><th>Invert</th><th>Default target</th></tr></thead>
-          <tbody>
-            {Object.entries(calibrationsQuery.data?.calibrations ?? {}).map(([id, cal]) => (
-              <tr key={id} style={{ borderTop: '1px solid var(--cds-border-subtle, #393939)' }}>
-                <td>{id}</td>
-                <td>{cal.cc_number ?? '—'}</td>
-                <td>{cal.channel ?? '—'}</td>
-                <td>{cal.min_raw}</td>
-                <td>{cal.max_raw}</td>
-                <td>{cal.deadzone_low} / {cal.deadzone_high}</td>
-                <td>{cal.curve}</td>
-                <td>{cal.invert ? 'Yes' : 'No'}</td>
-                <td>{cal.target ?? '—'}</td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </Tile>
-
-      {snapshotIdFilter && (
-        <Tile>
-          <h3>Per-snapshot expression mappings</h3>
-          <p style={{ opacity: 0.7 }}>Snapshot ID {snapshotIdFilter} owns per-snapshot expression maps (one CC → many parameters). Edit those in the Snapshot Editor "Expression mappings" card; this is a reference here.</p>
-          <Link to={`/snapshot-editor?snapshotId=${snapshotIdFilter}`}>Open in Snapshot Editor →</Link>
-        </Tile>
-      )}
+            </div>
+          </div>
+        )}
+      </div>
     </div>
   )
 }
 
-// ============================================================================
-// DEVICES, PROFILES, BANKS, SEND, GROUPS, PRESETS
-// ============================================================================
+function StepTest({
+  state,
+  simulate,
+  setSimulate,
+  onSendToEngine,
+  onFireTrigger,
+}: {
+  state: WizardState
+  simulate: { v: number }
+  setSimulate: (next: { v: number }) => void
+  onSendToEngine: (calibratedValue: number) => void
+  onFireTrigger: () => void
+}) {
+  const cal = state.calibration ?? DEFAULT_CALIBRATION
+  const target = state.target
+  const isContinuous = target?.cat === 'plugin-parameter' || target?.cat === 'engine-performance'
 
-function DevicesAndUtilitiesTab() {
-  const queryClient = useQueryClient()
+  const norm = Math.max(0, Math.min(1, (simulate.v - cal.minIn) / Math.max(1, cal.maxIn - cal.minIn)))
+  let curved = norm
+  if (cal.curve === 'Exp') curved = norm * norm
+  else if (cal.curve === 'Log') curved = Math.sqrt(norm)
+  else if (cal.curve === 'S-curve') curved = 0.5 - 0.5 * Math.cos(Math.PI * norm)
+  if (cal.invert) curved = 1 - curved
+  const out = cal.minOut + curved * (cal.maxOut - cal.minOut)
 
-  const devicesQuery = useQuery({ queryKey: ['midi', 'devices'], queryFn: () => midiApiV2.getDevices() })
-  const profilesQuery = useQuery({ queryKey: ['midi', 'profiles'], queryFn: () => midiApiV2.getDeviceProfiles() })
-  const presetsQuery = useQuery({ queryKey: ['midi', 'presets'], queryFn: () => midiApiV2.getPresets() })
-  const groupsQuery = useQuery({ queryKey: ['midi', 'groups'], queryFn: () => midiApiV2.getGroups() })
-  const bankQuery = useQuery({ queryKey: ['midi', 'banks', 'current'], queryFn: () => midiApiV2.getCurrentBank(), refetchInterval: 2000 })
-
-  const openInputMutation = useMutation({ mutationFn: (name: string) => midiApiV2.openInputDevice(name), onSuccess: () => queryClient.invalidateQueries({ queryKey: ['midi'] }) })
-  const openOutputMutation = useMutation({ mutationFn: (name: string) => midiApiV2.openOutputDevice(name), onSuccess: () => queryClient.invalidateQueries({ queryKey: ['midi'] }) })
-  const closeInputMutation = useMutation({ mutationFn: () => midiApiV2.closeInputDevice(), onSuccess: () => queryClient.invalidateQueries({ queryKey: ['midi'] }) })
-  const closeOutputMutation = useMutation({ mutationFn: () => midiApiV2.closeOutputDevice(), onSuccess: () => queryClient.invalidateQueries({ queryKey: ['midi'] }) })
-  const applyProfileMutation = useMutation({ mutationFn: ({ id, clear }: { id: string; clear: boolean }) => midiApiV2.applyDeviceProfile(id, clear), onSuccess: () => queryClient.invalidateQueries({ queryKey: ['midi'] }) })
-  const savePresetMutation = useMutation({ mutationFn: ({ name, description }: { name: string; description?: string }) => midiApiV2.savePreset(name, description), onSuccess: () => queryClient.invalidateQueries({ queryKey: ['midi'] }) })
-  const loadPresetMutation = useMutation({ mutationFn: (id: number) => midiApiV2.loadPreset(id), onSuccess: () => queryClient.invalidateQueries({ queryKey: ['midi'] }) })
-  const deletePresetMutation = useMutation({ mutationFn: (id: number) => midiApiV2.deletePreset(id), onSuccess: () => queryClient.invalidateQueries({ queryKey: ['midi'] }) })
-  const createGroupMutation = useMutation({ mutationFn: ({ name, color }: { name: string; color?: string }) => midiApiV2.createGroup(name, color), onSuccess: () => queryClient.invalidateQueries({ queryKey: ['midi'] }) })
-  const deleteGroupMutation = useMutation({ mutationFn: (id: number) => midiApiV2.deleteGroup(id), onSuccess: () => queryClient.invalidateQueries({ queryKey: ['midi'] }) })
-  const syncMutation = useMutation({ mutationFn: () => midiApiV2.syncToController() })
-  const sendCcMutation = useMutation({ mutationFn: ({ channel, cc, value }: { channel: number; cc: number; value: number }) => midiApiV2.sendCC(channel, cc, value) })
-  const sendPcMutation = useMutation({ mutationFn: ({ channel, program }: { channel: number; program: number }) => midiApiV2.sendProgramChange(channel, program) })
-  const sendNoteMutation = useMutation({ mutationFn: ({ channel, note, velocity, on }: { channel: number; note: number; velocity: number; on: boolean }) => midiApiV2.sendNote(channel, note, velocity, on) })
-  const bankUpMutation = useMutation({ mutationFn: () => midiApiV2.bankUp(), onSuccess: () => queryClient.invalidateQueries({ queryKey: ['midi', 'banks'] }) })
-  const bankDownMutation = useMutation({ mutationFn: () => midiApiV2.bankDown(), onSuccess: () => queryClient.invalidateQueries({ queryKey: ['midi', 'banks'] }) })
-  const bankSetMutation = useMutation({ mutationFn: (n: number) => midiApiV2.setBank(n), onSuccess: () => queryClient.invalidateQueries({ queryKey: ['midi', 'banks'] }) })
-
-  const [presetName, setPresetName] = useState('')
-  const [presetDesc, setPresetDesc] = useState('')
-  const [groupName, setGroupName] = useState('')
-  const [groupColor, setGroupColor] = useState('')
-  const [sendCc, setSendCc] = useState({ channel: 1, cc: 0, value: 0 })
-  const [sendPc, setSendPc] = useState({ channel: 1, program: 0 })
-  const [sendNote, setSendNote] = useState({ channel: 1, note: 60, velocity: 100, on: true })
+  const sourceLabel = state.source
+    ? state.source.kind === 'cc' ? `CC ${state.source.cc} · ch ${state.source.ch}`
+    : state.source.kind === 'note' ? `Note ${state.source.note} · ch ${state.source.ch}`
+    : `PC ${state.source.pc} · ch ${state.source.ch}`
+    : '—'
 
   return (
-    <div style={{ display: 'grid', gap: '1rem' }}>
-      <Tile>
-        <h3>Devices</h3>
-        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: '1rem', marginTop: '0.5rem' }}>
-          <div>
-            <h4>Input</h4>
-            <p style={{ opacity: 0.7 }}>Active: {devicesQuery.data?.current_input ?? '—'}</p>
-            {devicesQuery.data?.input_devices.map((d) => (
-              <div key={d} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.25rem 0' }}>
-                <span>{d}</span>
-                <Button kind="ghost" size="sm" onClick={() => openInputMutation.mutate(d)}>Open</Button>
-              </div>
-            ))}
-            <Button kind="danger--ghost" size="sm" onClick={() => closeInputMutation.mutate()}>Close current input</Button>
+    <div>
+      <div className="crumb"><span className="step-n">Step 05</span> · Test the binding</div>
+      <h1>Wiggle it. Watch it land.</h1>
+      <p className="lede">
+        Move the source on your surface or scrub the simulator below.
+        {isContinuous ? ' Use Send to engine to actually move the audio engine.' : ' Use Fire trigger to invoke the action live.'}
+      </p>
+
+      <div className="test-stage">
+        <div className="test-side">
+          <div className="lbl">Input · {sourceLabel}</div>
+          <div className="test-input">
+            <div className="v">{simulate.v}</div>
+            <div className="test-bar"><div className="fill" style={{ transform: `scaleX(${norm})` }} /></div>
+            <input type="range" min="0" max="127" value={simulate.v} onChange={(e) => setSimulate({ v: Number(e.target.value) })} style={{ width: '100%', accentColor: 'var(--accent)' }} />
           </div>
-          <div>
-            <h4>Output</h4>
-            <p style={{ opacity: 0.7 }}>Active: {devicesQuery.data?.current_output ?? '—'}</p>
-            {devicesQuery.data?.output_devices.map((d) => (
-              <div key={d} style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '0.25rem 0' }}>
-                <span>{d}</span>
-                <Button kind="ghost" size="sm" onClick={() => openOutputMutation.mutate(d)}>Open</Button>
-              </div>
-            ))}
-            <Button kind="danger--ghost" size="sm" onClick={() => closeOutputMutation.mutate()}>Close current output</Button>
+          <div className="test-handles">
+            <button className="heel" onClick={() => setSimulate({ v: cal.minIn })}>◀ Heel · {cal.minIn}</button>
+            <button onClick={() => setSimulate({ v: Math.round((cal.minIn + cal.maxIn) / 2) })}>● Live · mid</button>
+            <button className="toe" onClick={() => setSimulate({ v: cal.maxIn })}>Toe · {cal.maxIn} ▶</button>
           </div>
         </div>
-      </Tile>
 
-      <Tile>
-        <h3>Device profiles ({profilesQuery.data?.count ?? 0})</h3>
-        <p style={{ opacity: 0.7 }}>Active profile: {profilesQuery.data?.active_profile_id ?? '—'}. Applying a profile populates commands, mappings, and expression configs from the profile spec.</p>
-        <table style={{ width: '100%', marginTop: '0.75rem', borderCollapse: 'collapse' }}>
-          <thead><tr style={{ textAlign: 'left' }}><th>Name</th><th>Manufacturer</th><th>Switches</th><th>Pedals</th><th>FW update</th><th /></tr></thead>
-          <tbody>
-            {(profilesQuery.data?.profiles ?? []).map((p: MIDIDeviceProfile) => (
-              <tr key={p.profile_id} style={{ borderTop: '1px solid var(--cds-border-subtle, #393939)' }}>
-                <td>{p.name}{p.is_recommended && <Tag type="green" size="sm">Recommended</Tag>}</td>
-                <td>{p.manufacturer}</td>
-                <td>{p.footswitches.length}</td>
-                <td>{p.expression_pedals.length}</td>
-                <td>{p.supports_firmware_update ? `Yes (${p.current_firmware_version ?? '—'})` : 'No'}</td>
-                <td>
-                  <Button kind="ghost" size="sm" onClick={() => applyProfileMutation.mutate({ id: p.profile_id, clear: true })}>Apply (replace)</Button>
-                  <Button kind="ghost" size="sm" onClick={() => applyProfileMutation.mutate({ id: p.profile_id, clear: false })}>Apply (merge)</Button>
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </Tile>
-
-      <Tile>
-        <h3>Banks</h3>
-        <p style={{ opacity: 0.7 }}>Bank: {bankQuery.data?.current_bank ?? 0} / {bankQuery.data?.max_banks ?? 0} · {bankQuery.data?.items_per_bank ?? 0} items per bank · PC offset {bankQuery.data?.pc_offset ?? 0}</p>
-        <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem' }}>
-          <Button size="sm" onClick={() => bankDownMutation.mutate()}>Bank −</Button>
-          <Button size="sm" onClick={() => bankUpMutation.mutate()}>Bank +</Button>
-          {Array.from({ length: bankQuery.data?.max_banks ?? 0 }, (_, i) => (
-            <Button key={i} kind={(bankQuery.data?.current_bank ?? 0) === i ? 'primary' : 'ghost'} size="sm" onClick={() => bankSetMutation.mutate(i)}>{i}</Button>
-          ))}
-        </div>
-      </Tile>
-
-      <Tile>
-        <h3>MIDI presets ({presetsQuery.data?.count ?? 0})</h3>
-        <p style={{ opacity: 0.7 }}>Save and load complete MIDI configurations (mappings + commands + routing rules).</p>
-        <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem', alignItems: 'flex-end' }}>
-          <TextInput id="preset-name" labelText="Name" value={presetName} onChange={(e) => setPresetName(e.target.value)} />
-          <TextInput id="preset-desc" labelText="Description" value={presetDesc} onChange={(e) => setPresetDesc(e.target.value)} />
-          <Button renderIcon={Add} onClick={() => { savePresetMutation.mutate({ name: presetName, description: presetDesc }); setPresetName(''); setPresetDesc('') }}>Save current as preset</Button>
-        </div>
-        <table style={{ width: '100%', marginTop: '0.75rem', borderCollapse: 'collapse' }}>
-          <thead><tr style={{ textAlign: 'left' }}><th>Name</th><th>Description</th><th>Default</th><th /></tr></thead>
-          <tbody>
-            {(presetsQuery.data?.presets ?? []).map((p: MIDIPreset) => (
-              <tr key={p.id} style={{ borderTop: '1px solid var(--cds-border-subtle, #393939)' }}>
-                <td>{p.name}</td><td>{p.description ?? '—'}</td><td>{p.is_default ? 'Yes' : ''}</td>
-                <td>
-                  <Button kind="ghost" size="sm" onClick={() => loadPresetMutation.mutate(p.id)}>Load</Button>
-                  <Button kind="danger--ghost" size="sm" hasIconOnly renderIcon={TrashCan} iconDescription="Delete" onClick={() => deletePresetMutation.mutate(p.id)} />
-                </td>
-              </tr>
-            ))}
-          </tbody>
-        </table>
-      </Tile>
-
-      <Tile>
-        <h3>Mapping groups ({groupsQuery.data?.count ?? 0})</h3>
-        <div style={{ display: 'flex', gap: '0.5rem', marginTop: '0.5rem', alignItems: 'flex-end' }}>
-          <TextInput id="group-name" labelText="Name" value={groupName} onChange={(e) => setGroupName(e.target.value)} />
-          <TextInput id="group-color" labelText="Color (hex/name)" value={groupColor} onChange={(e) => setGroupColor(e.target.value)} />
-          <Button renderIcon={Add} onClick={() => { createGroupMutation.mutate({ name: groupName, color: groupColor || undefined }); setGroupName(''); setGroupColor('') }}>Add group</Button>
-        </div>
-        <ul style={{ marginTop: '0.5rem' }}>
-          {(groupsQuery.data?.groups ?? []).map((g: MIDIMappingGroup) => (
-            <li key={g.id} style={{ display: 'flex', justifyContent: 'space-between', borderTop: '1px solid var(--cds-border-subtle, #393939)', padding: '0.25rem 0' }}>
-              <span><span style={{ display: 'inline-block', width: 10, height: 10, background: g.color ?? '#666', marginRight: 6, borderRadius: 2 }} />{g.name} (sort {g.sort_order})</span>
-              <Button kind="danger--ghost" size="sm" hasIconOnly renderIcon={TrashCan} iconDescription="Delete" onClick={() => deleteGroupMutation.mutate(g.id)} />
-            </li>
-          ))}
-        </ul>
-      </Tile>
-
-      <Tile>
-        <h3>Send test MIDI</h3>
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: '0.75rem' }}>
-          <div>
-            <h4>Send CC</h4>
-            <CarbonNumberInput id="send-cc-ch" label="Channel" value={sendCc.channel} min={1} max={16} step={1} onChange={(_e, { value }) => setSendCc({ ...sendCc, channel: Number(value) })} />
-            <CarbonNumberInput id="send-cc-cc" label="CC" value={sendCc.cc} min={0} max={127} step={1} onChange={(_e, { value }) => setSendCc({ ...sendCc, cc: Number(value) })} />
-            <CarbonNumberInput id="send-cc-val" label="Value" value={sendCc.value} min={0} max={127} step={1} onChange={(_e, { value }) => setSendCc({ ...sendCc, value: Number(value) })} />
-            <Button size="sm" renderIcon={Send} onClick={() => sendCcMutation.mutate(sendCc)}>Send CC</Button>
+        <div className="test-side">
+          <div className="lbl">Output · {target?.name ?? '—'}</div>
+          <div className="test-output">
+            <div className="v">{Math.round(out * 10) / 10}</div>
+            <div className="unit">
+              {('unit' in (target ?? {}) ? (target as PluginParamTarget).unit : '') || ''} · {target?.path ?? ''}
+            </div>
+            <div className="test-bar">
+              <div
+                className="fill"
+                style={{ background: 'var(--engine)', transform: `scaleX(${(out - cal.minOut) / Math.max(1, cal.maxOut - cal.minOut)})` }}
+              />
+            </div>
           </div>
-          <div>
-            <h4>Send Program Change</h4>
-            <CarbonNumberInput id="send-pc-ch" label="Channel" value={sendPc.channel} min={1} max={16} step={1} onChange={(_e, { value }) => setSendPc({ ...sendPc, channel: Number(value) })} />
-            <CarbonNumberInput id="send-pc-pc" label="Program" value={sendPc.program} min={0} max={127} step={1} onChange={(_e, { value }) => setSendPc({ ...sendPc, program: Number(value) })} />
-            <Button size="sm" renderIcon={Send} onClick={() => sendPcMutation.mutate(sendPc)}>Send PC</Button>
+          <div className="test-handles">
+            <button onClick={() => setSimulate({ v: Math.max(cal.minIn, simulate.v - 5) })}>− 5</button>
+            <button onClick={() => setSimulate({ v: Math.min(cal.maxIn, simulate.v + 5) })}>+ 5</button>
+            <button onClick={() => setSimulate({ v: Math.round(Math.random() * 127) })}>Random</button>
           </div>
-          <div>
-            <h4>Send Note</h4>
-            <CarbonNumberInput id="send-n-ch" label="Channel" value={sendNote.channel} min={1} max={16} step={1} onChange={(_e, { value }) => setSendNote({ ...sendNote, channel: Number(value) })} />
-            <CarbonNumberInput id="send-n-note" label="Note (0–127)" value={sendNote.note} min={0} max={127} step={1} onChange={(_e, { value }) => setSendNote({ ...sendNote, note: Number(value) })} />
-            <CarbonNumberInput id="send-n-vel" label="Velocity" value={sendNote.velocity} min={0} max={127} step={1} onChange={(_e, { value }) => setSendNote({ ...sendNote, velocity: Number(value) })} />
-            <Checkbox id="send-n-on" labelText="Note on (vs. off)" checked={sendNote.on} onChange={(_e, { checked }) => setSendNote({ ...sendNote, on: checked })} />
-            <Button size="sm" renderIcon={Send} onClick={() => sendNoteMutation.mutate(sendNote)}>Send Note</Button>
+          <div className="test-handles" style={{ marginTop: 8 }}>
+            {isContinuous && (
+              <button className="btn engine" onClick={() => onSendToEngine(out)}>▶ Send to engine</button>
+            )}
+            {!isContinuous && (
+              <button className="btn engine" onClick={onFireTrigger}>▶ Fire trigger</button>
+            )}
           </div>
         </div>
-      </Tile>
-
-      <Tile>
-        <h3>Sync</h3>
-        <p style={{ opacity: 0.7 }}>Push current parameter values out as feedback CCs to the connected controller.</p>
-        <Button renderIcon={Renew} onClick={() => syncMutation.mutate()}>Sync to controller</Button>
-      </Tile>
+      </div>
     </div>
   )
 }
 
-// ============================================================================
-// MAIN PAGE
-// ============================================================================
+function StepSave({
+  state,
+  conflict,
+  saving,
+  onSave,
+}: {
+  state: WizardState
+  conflict: MIDIMappingV2 | MIDICommand | null
+  saving: boolean
+  onSave: (mode: 'commit' | 'andNew') => void
+}) {
+  const surf = state.surface
+  const src = state.source
+  const tgt = state.target
+  const cal = state.calibration ?? DEFAULT_CALIBRATION
 
+  const srcLabel = !src ? '—'
+    : src.kind === 'cc' ? `CC ${src.cc} · ch ${src.ch}`
+    : src.kind === 'note' ? `Note ${src.note} · ch ${src.ch}`
+    : `PC ${src.pc} · ch ${src.ch}`
+
+  return (
+    <div>
+      <div className="crumb"><span className="step-n">Step 06</span> · Review &amp; save</div>
+      <h1>Looking good?</h1>
+      <p className="lede">
+        Final check before this binding is committed to your active mapping group. You can keep going (start another binding on the same surface) or close out.
+      </p>
+
+      {conflict && (
+        <div style={{
+          background: 'rgba(250, 77, 86, 0.12)', border: '1px solid var(--danger)',
+          padding: '12px 16px', marginBottom: 16, fontSize: 13,
+        }}>
+          ⚠ <b>Conflict</b> — this CC + channel + scope is already bound to{' '}
+          <b>{('name' in conflict ? conflict.name : null) ?? 'an existing mapping'}</b>.
+          Saving will create a duplicate; both will fire.
+        </div>
+      )}
+
+      <div className="save-summary">
+        <div className="summary-flow">
+          <div className="summary-node">
+            <div className="l">Surface</div>
+            <div className="v">{surf?.shortLabel || '—'}</div>
+          </div>
+          <div className="summary-arrow">━▶</div>
+          <div className="summary-node">
+            <div className="l">Source</div>
+            <div className="v" style={{ fontFamily: 'var(--mono)' }}>{srcLabel}</div>
+          </div>
+          <div className="summary-arrow">━▶</div>
+          <div className="summary-node">
+            <div className="l">Target</div>
+            <div className="v">{tgt?.name ?? '—'}</div>
+          </div>
+        </div>
+
+        <hr className="thin" />
+
+        <div className="grid-2">
+          <div>
+            <div className="section-h">Calibration</div>
+            <div style={{ fontFamily: 'var(--mono)', fontSize: 12, lineHeight: 1.9, color: 'var(--text-2)' }}>
+              <div>name &nbsp;&nbsp;&nbsp; <b style={{ color: 'var(--text)' }}>{cal.name}</b></div>
+              <div>scope&nbsp;&nbsp;&nbsp; {cal.scope}</div>
+              <div>range&nbsp;&nbsp;&nbsp;&nbsp; in {cal.minIn}–{cal.maxIn} → out {cal.minOut}–{cal.maxOut}</div>
+              <div>curve&nbsp;&nbsp;&nbsp;&nbsp; {cal.curve}{cal.invert ? ' (inverted)' : ''}</div>
+              <div>deadzone {cal.deadzoneL} / {cal.deadzoneH}</div>
+              <div>feedback {cal.feedback ? 'on' : 'off'}</div>
+              <div>enabled&nbsp; {cal.enabled ? 'yes' : 'no'}</div>
+            </div>
+          </div>
+          <div>
+            <div className="section-h">Target path</div>
+            <div style={{ fontFamily: 'var(--mono)', fontSize: 12, lineHeight: 1.9, color: 'var(--text-2)' }}>
+              <div>category &nbsp;{tgt?.cat ?? '—'}</div>
+              <div>path &nbsp;&nbsp;&nbsp;&nbsp; {tgt?.path ?? '—'}</div>
+            </div>
+          </div>
+        </div>
+
+        <hr className="thin" />
+
+        <div className="row-flex">
+          <button className="btn engine large" disabled={saving} onClick={() => onSave('commit')}>✓ Commit binding</button>
+          <button className="btn ghost large" disabled={saving} onClick={() => onSave('andNew')}>Save &amp; bind another</button>
+          <div style={{ marginLeft: 'auto', fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--text-3)' }}>
+            {saving ? 'saving…' : 'sync to controller →'}
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}
+
+// ─── Advanced drawer ────────────────────────────────────────────────────────
+function AdvancedDrawer({ open, onClose }: { open: boolean; onClose: () => void }) {
+  return (
+    <>
+      <div className={`drawer-overlay ${open ? 'open' : ''}`} onClick={onClose} />
+      <div className={`drawer ${open ? 'open' : ''}`}>
+        <div className="hd">
+          Advanced · all v1 controls (legacy MIDI Assignments)
+          <button className="x" onClick={onClose}><Close size={20} /></button>
+        </div>
+        <div className="body" style={{ padding: 0 }}>
+          <ErrorBoundary title="Advanced drawer crashed">
+            <LegacyMidiAssignments />
+          </ErrorBoundary>
+        </div>
+      </div>
+    </>
+  )
+}
+
+// ─── Page shell ─────────────────────────────────────────────────────────────
 export function MidiAssignmentsPage() {
   const [searchParams] = useSearchParams()
-  const snapshotIdFilter = useMemo(() => {
+  const snapshotIdFromQuery = useMemo(() => {
     const raw = searchParams.get('snapshotId')
     if (!raw) return null
     const n = Number(raw)
     return Number.isFinite(n) ? n : null
   }, [searchParams])
 
-  const statusQuery = useQuery<MIDIStatus>({
-    queryKey: ['midi', 'status'],
-    queryFn: () => midiApiV2.getStatus(),
-    refetchInterval: 500,
+  const queryClient = useQueryClient()
+
+  // ─── Data sources ────────────────────────────────────────────────────────
+  const enrichedQuery = useQuery({
+    queryKey: ['enriched-physical-surfaces'],
+    queryFn: () => fetchJson<{ status: string; summary: { units?: Array<{ unit_id: string; display_name?: string; status?: string; capabilities?: string[] }> } }>(`${API_BASE}/enriched-midi-physical-surfaces/summary`, { cache: 'no-store' }),
+    retry: false,
   })
 
-  const mappingsQuery = useQuery({ queryKey: ['midi', 'mappings'], queryFn: () => midiApiV2.getMappings() })
-  const commandsQuery = useQuery({ queryKey: ['midi', 'commands'], queryFn: () => midiApiV2.getCommands() })
-  const routingRulesQuery = useQuery({ queryKey: ['midi', 'routing-rules'], queryFn: () => midiApiV2.getRoutingRules() })
-  const groupsQuery = useQuery({ queryKey: ['midi', 'groups'], queryFn: () => midiApiV2.getGroups() })
-  const chainConfigsQuery = useQuery({ queryKey: ['midi', 'chain-configs'], queryFn: () => midiApiV2.getChainConfigs() })
-  const chainsQuery = useQuery({ queryKey: ['chains'], queryFn: () => chainsApi.list() })
-  const pluginsQuery = useQuery({ queryKey: ['plugins', 'all'], queryFn: () => pluginsApi.getAll() })
-  const snapshotsQuery = useQuery({ queryKey: ['snapshots', 'list'], queryFn: () => snapshotsApi.list() })
+  const pluginsQuery = useQuery({
+    queryKey: ['plugins', 'all'],
+    queryFn: () => pluginsApi.getAll(),
+    retry: false,
+  })
 
-  const learnStatusQuery = useQuery({ queryKey: ['midi', 'learn-status'], queryFn: () => midiApiV2.getLearnStatus(), refetchInterval: 500 })
-  const stopLearnMutation = useMutation({ mutationFn: () => midiApiV2.stopLearn() })
+  const engineParamsQuery = useQuery({
+    queryKey: ['expression-engine-parameters'],
+    queryFn: () => fetchJson<{ parameters: EngineParam[] }>(`${API_BASE}/v2/engine/parameters`),
+    retry: false,
+    staleTime: 60_000,
+  })
+
+  const chainsQuery = useQuery({
+    queryKey: ['chains'],
+    queryFn: () => chainsApi.list(),
+    retry: false,
+  })
+
+  const mappingsQuery = useQuery({
+    queryKey: ['midi', 'mappings'],
+    queryFn: () => midiApiV2.getMappings(),
+    retry: false,
+  })
+
+  const commandsQuery = useQuery({
+    queryKey: ['midi', 'commands'],
+    queryFn: () => midiApiV2.getCommands(),
+    retry: false,
+  })
+
+  const adaptedSurfaces = useMemo(
+    () => buildAdaptedSurfaces(enrichedQuery.data?.summary),
+    [enrichedQuery.data],
+  )
+
+  // ─── Pinned surface (Q2) ─────────────────────────────────────────────────
+  const [pinnedId, setPinnedId] = usePinnedSurfaceId()
+  const pinnedSurface = adaptedSurfaces.find((s) => s.id === pinnedId) ?? null
+
+  // ─── Wizard state ────────────────────────────────────────────────────────
+  const [stepIdx, setStepIdx] = useState<number>(0)
+  const [state, setState] = useState<WizardState>(() => ({
+    surface: null,
+    sourceMode: 'learn',
+    listening: false,
+    source: null,
+    target: null,
+    calibration: null,
+    activeControl: null,
+    channel: 1,
+  }))
+  const updateState = useCallback((patch: Partial<WizardState>) => setState((prev) => ({ ...prev, ...patch })), [])
+
+  // Auto-advance: when pinned surface is online and we land on Step 1 with no selection,
+  // pre-select the pinned surface and jump to Step 2 once.
+  const autoAdvancedRef = useRef(false)
+  useEffect(() => {
+    if (autoAdvancedRef.current) return
+    if (!pinnedSurface || pinnedSurface.status !== 'online') return
+    if (stepIdx !== 0 || state.surface) return
+    setState((prev) => ({ ...prev, surface: pinnedSurface }))
+    setStepIdx(1)
+    autoAdvancedRef.current = true
+  }, [pinnedSurface, stepIdx, state.surface])
+
+  // Snapshot context — Q8: default scope to per-chain when launched from a snapshot.
+  useEffect(() => {
+    if (snapshotIdFromQuery && state.calibration?.scope === 'global') {
+      setState((prev) => prev.calibration ? { ...prev, calibration: { ...prev.calibration, scope: 'chain' } } : prev)
+    }
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [snapshotIdFromQuery])
+
+  // ─── Step gating ─────────────────────────────────────────────────────────
+  const stepReady = useCallback((i: number) => {
+    if (i === 0) return true
+    if (i === 1) return !!state.surface
+    if (i === 2) return !!state.source
+    if (i === 3) return !!state.target
+    if (i === 4) return !!state.target
+    if (i === 5) return !!state.target && !!state.source
+    return false
+  }, [state.surface, state.source, state.target])
+
+  const stepDone = useCallback((i: number) => {
+    if (i === 0) return !!state.surface
+    if (i === 1) return !!state.source
+    if (i === 2) return !!state.target
+    if (i === 3) return !!state.calibration
+    if (i === 4) return stepIdx > 4
+    return false
+  }, [state.surface, state.source, state.target, state.calibration, stepIdx])
+
+  const goNext = useCallback(() => {
+    if (stepIdx === 2 && !state.calibration) {
+      // Seed calibration from target when entering Step 4
+      const t = state.target
+      const seed: WizardCalibration = { ...DEFAULT_CALIBRATION, name: t?.name ?? 'New mapping' }
+      if (t && (t.cat === 'plugin-parameter' || t.cat === 'engine-performance')) {
+        seed.minOut = t.range[0]
+        seed.maxOut = t.range[1]
+      }
+      if (snapshotIdFromQuery) seed.scope = 'chain'
+      setState((prev) => ({ ...prev, calibration: seed }))
+    }
+    setStepIdx((i) => Math.min(STEPS.length - 1, i + 1))
+  }, [stepIdx, state.target, state.calibration, snapshotIdFromQuery])
+
+  const goPrev = useCallback(() => setStepIdx((i) => Math.max(0, i - 1)), [])
+
+  // ─── Live MIDI strip + listen capture (Q4, Q9) ───────────────────────────
+  const [stripCollapsed, setStripCollapsed] = useState(false)
+  const onCaptureListen = useCallback((message: MidiMessage) => {
+    if (!state.listening) return
+    const next: WizardSource =
+      message.type === 'cc' ? { kind: 'cc', cc: message.cc!, ch: message.ch }
+      : message.type === 'note' ? { kind: 'note', note: message.note!, ch: message.ch }
+      : { kind: 'pc', pc: message.pc!, ch: message.ch }
+    setState((prev) => ({ ...prev, source: next, listening: false }))
+  }, [state.listening])
+
+  // ─── Step 5 — Send to engine / Fire trigger (Q7) ─────────────────────────
+  const setPluginParameterMutation = useMutation({
+    mutationFn: ({ uri, idx, value }: { uri: string; idx: number; value: number }) =>
+      pluginsApi.setParameter(uri, idx, value),
+  })
+
+  const onSendToEngine = useCallback((calibratedValue: number) => {
+    const t = state.target
+    if (!t) return
+    if (t.cat === 'plugin-parameter') {
+      setPluginParameterMutation.mutate({ uri: t.pluginUri, idx: t.paramIndex, value: calibratedValue })
+    }
+    // Engine-performance: there's no generic "set engine param" endpoint; ExpressionPage
+    // does it via /v2/expression/* but only for committed assignments. For preview, use
+    // testMappingFeedback after save would be the proper path. For now, no-op with a hint.
+  }, [state.target, setPluginParameterMutation])
+
+  const onFireTrigger = useCallback(() => {
+    // Same caveat as engine-performance: snapshot triggers and routing rules don't have
+    // a pre-save "fire once" endpoint. Skipping until backend exposes one.
+  }, [])
+
+  // ─── Step 6 — Save (Q8: conflict warn + scope default) ───────────────────
+  const conflictMapping = useMemo<MIDIMappingV2 | MIDICommand | null>(() => {
+    const src = state.source
+    if (!src) return null
+    if (state.target?.cat === 'plugin-parameter' || state.target?.cat === 'engine-performance') {
+      const list = mappingsQuery.data?.mappings ?? []
+      return list.find((m) =>
+        m.cc === (src.cc ?? -1)
+        && (m.channel === src.ch || m.channel === 0 || src.ch === 0)
+      ) ?? null
+    }
+    if (state.target?.cat === 'snapshot-trigger') {
+      const list = commandsQuery.data?.commands ?? []
+      return list.find((c) =>
+        c.data1 === (src.cc ?? src.note ?? src.pc ?? -1)
+        && (c.channel === src.ch || c.channel === 0 || src.ch === 0)
+      ) ?? null
+    }
+    return null
+  }, [state.source, state.target, mappingsQuery.data, commandsQuery.data])
+
+  const createMappingMutation = useMutation({
+    mutationFn: (payload: Partial<MIDIMappingV2>) => midiApiV2.createMapping(payload),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['midi'] }),
+  })
+  const createCommandMutation = useMutation({
+    mutationFn: (payload: Partial<MIDICommand>) => midiApiV2.createCommand(payload),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['midi'] }),
+  })
+  const createRoutingMutation = useMutation({
+    mutationFn: (payload: Partial<MIDIRoutingRule>) => midiApiV2.createRoutingRule(payload),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['midi'] }),
+  })
+  const createExpressionAssignmentMutation = useMutation({
+    mutationFn: (payload: Record<string, unknown>) => fetchJson(`${API_BASE}/v2/expression/assignments`, {
+      method: 'POST',
+      body: JSON.stringify(payload),
+    }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ['expression-assignments'] }),
+  })
+
+  const saving = createMappingMutation.isPending
+    || createCommandMutation.isPending
+    || createRoutingMutation.isPending
+    || createExpressionAssignmentMutation.isPending
+
+  const findActiveChainId = useCallback((): number | null => {
+    const chains = (chainsQuery.data as { chains?: Chain[] } | undefined)?.chains
+      ?? (Array.isArray(chainsQuery.data) ? chainsQuery.data as Chain[] : null)
+    if (!chains) return null
+    const active = chains.find((c) => c.is_active)
+    return active?.id ?? chains[0]?.id ?? null
+  }, [chainsQuery.data])
+
+  const onSave = useCallback(async (mode: 'commit' | 'andNew') => {
+    const cal = state.calibration ?? DEFAULT_CALIBRATION
+    const src = state.source
+    const tgt = state.target
+    if (!src || !tgt) return
+
+    const triggerType: MIDITriggerType = src.kind === 'cc' ? 'control_change'
+      : src.kind === 'note' ? 'note_on'
+      : 'program_change'
+
+    const data1 = src.cc ?? src.note ?? src.pc ?? 0
+    const channel = src.ch
+    const chainId = cal.scope === 'chain' ? findActiveChainId() : null
+
+    try {
+      if (tgt.cat === 'plugin-parameter' || tgt.cat === 'engine-performance') {
+        const promoted = cal.curve === 'Custom' || cal.deadzoneL > 0 || cal.deadzoneH > 0
+        if (promoted) {
+          // ExpressionAssignment (auto-promotion per Q6)
+          await createExpressionAssignmentMutation.mutateAsync({
+            cc: data1,
+            channel,
+            cc_min: cal.minIn,
+            cc_max: cal.maxIn,
+            param_id: tgt.cat === 'plugin-parameter'
+              ? `${tgt.pluginUri}::${tgt.paramIndex}`
+              : tgt.paramId,
+            param_label: tgt.name,
+            out_min: cal.minOut,
+            out_max: cal.maxOut,
+            curve: cal.curve.toLowerCase(),
+            active: cal.enabled,
+          })
+        } else {
+          const payload: Partial<MIDIMappingV2> = {
+            cc: data1,
+            channel,
+            chain_id: chainId,
+            target_plugin_uri: tgt.cat === 'plugin-parameter' ? tgt.pluginUri : null,
+            target_param_index: tgt.cat === 'plugin-parameter' ? tgt.paramIndex : null,
+            target_param_symbol: tgt.cat === 'plugin-parameter' ? tgt.paramSymbol : null,
+            min_val: cal.minOut,
+            max_val: cal.maxOut,
+            curve_type: ({
+              Linear: 'linear',
+              Exp: 'exponential',
+              Log: 'logarithmic',
+              'S-curve': 's_curve',
+              Custom: 'linear',
+            } as Record<CurveName, MIDICurveType>)[cal.curve],
+            invert: cal.invert,
+            feedback_enabled: cal.feedback,
+            feedback_cc: null,
+            is_enabled: cal.enabled,
+            name: cal.name,
+          }
+          await createMappingMutation.mutateAsync(payload)
+        }
+      } else if (tgt.cat === 'snapshot-trigger') {
+        const payload: Partial<MIDICommand> = {
+          name: cal.name,
+          trigger_type: triggerType,
+          channel,
+          data1,
+          data2_threshold: cal.threshold,
+          action: tgt.action,
+          target_chain_id: chainId,
+          target_plugin_uri: null,
+          action_params: null,
+          is_enabled: cal.enabled,
+        }
+        await createCommandMutation.mutateAsync(payload)
+      } else if (tgt.cat === 'routing-rule') {
+        const payload: Partial<MIDIRoutingRule> = {
+          chain_id: chainId ?? 0,
+          name: cal.name,
+          trigger_type: triggerType,
+          channel,
+          data1,
+          from_flow_index: cal.fromFlow,
+          to_flow_index: cal.toFlow,
+          is_enabled: cal.enabled,
+        }
+        await createRoutingMutation.mutateAsync(payload)
+      }
+
+      if (mode === 'andNew') {
+        setState((prev) => ({
+          ...prev,
+          source: null,
+          target: null,
+          calibration: null,
+          activeControl: null,
+        }))
+        setStepIdx(1)
+      } else {
+        setState((prev) => ({
+          ...prev,
+          source: null,
+          target: null,
+          calibration: null,
+          activeControl: null,
+        }))
+        setStepIdx(0)
+      }
+    } catch {
+      // mutation errors surface via the mutation hooks; no console noise
+    }
+  }, [state.calibration, state.source, state.target, findActiveChainId, createMappingMutation, createCommandMutation, createRoutingMutation, createExpressionAssignmentMutation])
+
+  // ─── Drawer ──────────────────────────────────────────────────────────────
+  const [drawerOpen, setDrawerOpen] = useState(false)
+
+  // ─── Keyboard shortcuts (Q10) ────────────────────────────────────────────
+  const [showShortcuts, setShowShortcuts] = useState(false)
+  useEffect(() => {
+    const onKey = (e: KeyboardEvent) => {
+      const target = e.target as HTMLElement
+      if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'SELECT' || target.isContentEditable)) {
+        return
+      }
+      const meta = e.metaKey || e.ctrlKey
+      if (e.key === 'l' || e.key === 'L') {
+        if (stepIdx === 1) setState((prev) => ({ ...prev, listening: !prev.listening }))
+        e.preventDefault()
+      } else if (e.key === 'ArrowLeft') {
+        goPrev()
+        e.preventDefault()
+      } else if (e.key === 'ArrowRight') {
+        if (stepReady(stepIdx + 1)) goNext()
+        e.preventDefault()
+      } else if (meta && (e.key === 's' || e.key === 'S')) {
+        if (stepIdx === 5) onSave('commit')
+        e.preventDefault()
+      } else if (meta && e.key === '.') {
+        setDrawerOpen((v) => !v)
+        e.preventDefault()
+      } else if (e.key >= '1' && e.key <= '6') {
+        const idx = Number(e.key) - 1
+        if (stepReady(idx)) setStepIdx(idx)
+        e.preventDefault()
+      } else if (e.key === '?') {
+        setShowShortcuts((v) => !v)
+        e.preventDefault()
+      }
+    }
+    window.addEventListener('keydown', onKey)
+    return () => window.removeEventListener('keydown', onKey)
+  }, [stepIdx, stepReady, goNext, goPrev, onSave])
+
+  // ─── Test-step simulator value ──────────────────────────────────────────
+  const [simulate, setSimulate] = useState<{ v: number }>({ v: 64 })
+
+  // ─── Accent CSS variables (per-surface) ─────────────────────────────────
+  const accent = state.surface?.meta?.color ?? pinnedSurface?.meta?.color ?? GENERIC_SURFACE_META.color
+  const rootVars = useMemo(() => ({
+    ['--accent']: accent,
+    ['--accent-soft']: hexToRgba(accent, 0.18),
+    ['--accent-line']: hexToRgba(accent, 0.35),
+  } as React.CSSProperties), [accent])
 
   const mappings = mappingsQuery.data?.mappings ?? []
-  const commands = commandsQuery.data?.commands ?? []
-  const routingRules = routingRulesQuery.data?.routing_rules ?? []
-  const groups = groupsQuery.data?.groups ?? []
-  const chainConfigs = chainConfigsQuery.data?.configs ?? []
-  const chains = useMemo(() => {
-    const data = chainsQuery.data
-    if (!data) return [] as Chain[]
-    if (Array.isArray((data as any).chains)) return (data as any).chains as Chain[]
-    if (Array.isArray(data)) return data as Chain[]
-    return [] as Chain[]
-  }, [chainsQuery.data])
   const plugins = pluginsQuery.data ?? []
-  const snapshots = (snapshotsQuery.data?.snapshots ?? []) as Snapshot[]
+  const engineParams = engineParamsQuery.data?.parameters ?? []
+
+  const bindingPreview = useMemo(() => {
+    if (!state.source) return <span style={{ color: 'var(--text-4)' }}>build a binding…</span>
+    return (
+      <>
+        <span className="accent">
+          {state.source.kind === 'cc' && `CC ${state.source.cc}`}
+          {state.source.kind === 'note' && `Note ${state.source.note}`}
+          {state.source.kind === 'pc' && `PC ${state.source.pc}`}
+        </span>
+        {' '}ch {state.source.ch}
+        <br />→ {state.target?.name ?? <span style={{ color: 'var(--text-4)' }}>(no target yet)</span>}
+      </>
+    )
+  }, [state.source, state.target])
 
   return (
-    <div style={{ padding: '1.5rem', display: 'grid', gap: '1rem', minHeight: '100vh' }}>
-      <header style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: '1rem', flexWrap: 'wrap' }}>
-        <div>
-          <h1 style={{ margin: 0, display: 'flex', alignItems: 'center', gap: '0.5rem' }}>
-            <Music /> MIDI Assignments
-          </h1>
-          <p style={{ margin: '0.25rem 0 0', opacity: 0.7 }}>
-            One place to bind any MIDI input to any plugin parameter, snapshot trigger, routing change, or expression target.
-          </p>
+    <div className="midi-walk" style={rootVars}>
+      <div className="app">
+        <div className="header">
+          <span className="crumb"><b>MAP2</b></span>
+          <span className="sep">/</span>
+          <span className="crumb">Snapshot Editor</span>
+          <span className="sep">/</span>
+          <span className="crumb"><b>MIDI Assignments</b></span>
+          <div className="grow" />
+          {snapshotIdFromQuery && <span className="pill">snapshot · {snapshotIdFromQuery}</span>}
+          <span className="pill live">engine · running</span>
+          <span className="pill">{adaptedSurfaces.filter((s) => s.status === 'online').length} surface{adaptedSurfaces.filter((s) => s.status === 'online').length === 1 ? '' : 's'} online</span>
         </div>
-        <div style={{ display: 'flex', gap: '0.5rem' }}>
-          {snapshotIdFilter && (
-            <Tag type="blue">Snapshot context: {snapshotIdFilter}</Tag>
-          )}
-          {learnStatusQuery.data?.learning && (
-            <>
-              <Tag type="magenta">Learn mode active</Tag>
-              <Button kind="danger--tertiary" size="sm" renderIcon={Flash} onClick={() => stopLearnMutation.mutate()}>Stop learn</Button>
-            </>
-          )}
+
+        <div className="tabs">
+          <button className="featured active">
+            <span className="badge">v2</span>
+            Walkthrough
+          </button>
+          <button onClick={() => setDrawerOpen(true)}>v1 · Advanced (legacy tabs)</button>
         </div>
-      </header>
 
-      <MidiActivityStrip status={statusQuery.data} />
+        <div className="main">
+          <div
+            className="walk"
+            style={{
+              gridTemplateColumns: stripCollapsed ? '280px 1fr 48px' : '280px 1fr 360px',
+            }}
+          >
+            <div className="stepper">
+              <div className="eyebrow">Walkthrough</div>
+              {STEPS.map((s, i) => {
+                const cls = ['step']
+                if (i === stepIdx) cls.push('active')
+                if (stepDone(i)) cls.push('done')
+                if (!stepReady(i)) cls.push('locked')
+                return (
+                  <div
+                    key={s.id}
+                    className={cls.join(' ')}
+                    onClick={() => stepReady(i) && setStepIdx(i)}
+                  >
+                    <div className="num"><span>{String(i + 1).padStart(2, '0')}</span></div>
+                    <div className="body">
+                      <div className="title">{s.title}</div>
+                      <div className="sub">{s.sub}</div>
+                    </div>
+                  </div>
+                )
+              })}
+              <div className="divider" />
+              <div className="meta">
+                <div className="row"><span>surface</span><b>{state.surface?.shortLabel ?? '—'}</b></div>
+                <div className="row"><span>pinned</span><b>{pinnedId === state.surface?.id ? '✓' : '·'}</b></div>
+                <div className="row"><span>scope</span><b>{state.calibration?.scope ?? 'global'}</b></div>
+                <div className="row"><span>mappings</span><b>{mappings.length}</b></div>
+                <div className="row"><span>engine</span><b style={{ color: 'var(--engine)' }}>● running</b></div>
+              </div>
+            </div>
 
-      <Tabs>
-        <TabList aria-label="MIDI assignment sections" contained>
-          <Tab renderIcon={Music}>Parameters</Tab>
-          <Tab renderIcon={ChartLine}>Snapshot triggers</Tab>
-          <Tab renderIcon={Connect}>Routing rules</Tab>
-          <Tab renderIcon={Plug}>Expression pedals</Tab>
-          <Tab renderIcon={Devices}>Devices &amp; utilities</Tab>
-        </TabList>
-        <TabPanels>
-          <TabPanel>
-            <ParameterMappingsTab mappings={mappings} groups={groups} chains={chains} plugins={plugins} snapshotIdFilter={snapshotIdFilter} />
-          </TabPanel>
-          <TabPanel>
-            <CommandsTab commands={commands} chains={chains} plugins={plugins} snapshots={snapshots} chainConfigs={chainConfigs} />
-          </TabPanel>
-          <TabPanel>
-            <RoutingRulesTab rules={routingRules} chains={chains} />
-          </TabPanel>
-          <TabPanel>
-            <ExpressionTab snapshotIdFilter={snapshotIdFilter} />
-          </TabPanel>
-          <TabPanel>
-            <DevicesAndUtilitiesTab />
-          </TabPanel>
-        </TabPanels>
-      </Tabs>
+            <div className="stage">
+              <ErrorBoundary title="Walkthrough step crashed">
+                {stepIdx === 0 && (
+                  <StepDevice
+                    surfaces={adaptedSurfaces}
+                    state={state}
+                    setState={updateState}
+                    pinnedId={pinnedId}
+                    onPin={setPinnedId}
+                    onContinue={() => setStepIdx(1)}
+                  />
+                )}
+                {stepIdx === 1 && <StepSource state={state} setState={updateState} />}
+                {stepIdx === 2 && (
+                  <StepTarget
+                    state={state}
+                    setState={updateState}
+                    plugins={plugins}
+                    engineParams={engineParams}
+                  />
+                )}
+                {stepIdx === 3 && <StepCalibrate state={state} setState={updateState} />}
+                {stepIdx === 4 && (
+                  <StepTest
+                    state={state}
+                    simulate={simulate}
+                    setSimulate={setSimulate}
+                    onSendToEngine={onSendToEngine}
+                    onFireTrigger={onFireTrigger}
+                  />
+                )}
+                {stepIdx === 5 && (
+                  <StepSave
+                    state={state}
+                    conflict={conflictMapping}
+                    saving={saving}
+                    onSave={onSave}
+                  />
+                )}
+              </ErrorBoundary>
+
+              <div className="actions">
+                <button className="btn ghost" onClick={goPrev} disabled={stepIdx === 0}>← Back</button>
+                <div className="grow">
+                  <span className="helper">
+                    {stepIdx === 0 && (state.surface ? `${state.surface.shortLabel} selected` : 'Pick a surface to continue')}
+                    {stepIdx === 1 && (state.source ? 'Captured · ready for target' : 'Press Listen, or pick a CC manually')}
+                    {stepIdx === 2 && (state.target ? `→ ${state.target.path}` : 'Pick a target parameter or command')}
+                    {stepIdx === 3 && (state.calibration ? `${state.calibration.curve} · ${state.calibration.minOut}–${state.calibration.maxOut}` : 'Configure response')}
+                    {stepIdx === 4 && 'Wiggle the source or scrub the simulator'}
+                    {stepIdx === 5 && (saving ? 'Saving…' : conflictMapping ? '⚠ duplicate of an existing mapping' : 'Commit when ready')}
+                  </span>
+                </div>
+                {stepIdx < STEPS.length - 1 && (
+                  <button
+                    className="btn"
+                    onClick={goNext}
+                    disabled={!stepDone(stepIdx) && stepIdx !== 4}
+                  >
+                    Next: {STEPS[stepIdx + 1].title} →
+                  </button>
+                )}
+              </div>
+            </div>
+
+            <LiveMidiStrip
+              listening={state.listening}
+              onCapture={onCaptureListen}
+              activeSurfaceLabel={state.surface?.shortLabel ?? null}
+              sourceFilter={state.surface?.shortLabel ?? null}
+              collapsed={stripCollapsed}
+              onToggleCollapsed={() => setStripCollapsed((v) => !v)}
+              bindingPreview={bindingPreview}
+            />
+          </div>
+        </div>
+      </div>
+
+      <button className="drawer-handle" onClick={() => setDrawerOpen(true)}>
+        <span className="dot" />
+        Advanced · {mappings.length} active mappings
+      </button>
+
+      <AdvancedDrawer open={drawerOpen} onClose={() => setDrawerOpen(false)} />
+
+      {showShortcuts && (
+        <div className="shortcuts-overlay">
+          <div className="hd">Shortcuts</div>
+          <div><b>L</b> · listen for next message (Step 2)</div>
+          <div><b>←/→</b> · prev/next step</div>
+          <div><b>⌘S</b> · commit binding (Step 6)</div>
+          <div><b>⌘.</b> · toggle advanced</div>
+          <div><b>1-6</b> · jump to step</div>
+          <div><b>?</b> · close this overlay</div>
+        </div>
+      )}
     </div>
   )
 }
