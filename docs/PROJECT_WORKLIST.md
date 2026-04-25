@@ -85,7 +85,7 @@ Last updated: 2026-04-25 EDT - Claude: SHIPPED.
 ---
 
 ID: T2445
-Status: [ ] Todo
+Status: [✓] Done
 Title: Address remaining pre-existing test failures (5 suites)
 Locked decisions (user-confirmed 2026-04-24):
 - Q2 cadence: fix all 5 in one atomic commit; full release loop; worklist marked Done at end.
@@ -98,8 +98,9 @@ Description:
   - T2445-C: PlatformModal — root-cause and fix.
   - T2445-D: AssetSelectorCards — root-cause and fix.
   - T2445-E: PerformanceBrainPage full-suite ordering leakage — isolate the offending prior suite and fix the cross-test state leak.
+Completion note: 2026-04-25 — Claude: SHIPPED. **Full suite is now green: 311 suites / 1461 tests / 3 snapshots all pass.** Findings: (A) DevicesOverview asserted obsolete labels — KIND_LABELS in DevicesOverview.tsx renders "Audio Interfaces" + "Control Surfaces", not "Audio interfaces" + "Physical Surfaces". Also collided with same-named filter buttons; switched to role-scoped `getByRole('heading')`. (B) IntelFXLibraryView already passes in isolation — no fix needed; the failure was from an earlier session. (C) PlatformModal asserted Host Machine in the bottom three rail entries; T2432 moved Host Machine to /hardware/host-machine and Adoption took its slot. Updated assertions; "Open Adoption" is no longer styled as is-utility. (D) AssetSelectorCards asserted "Not active" text on NAMCard — that string is only rendered by CabinetIRCard/ReverbIRCard via `status.loaded` fact field. NAMCard surfaces stored-only state via the "Stored only" Tag and the absence of a "Live runtime" Tag. Replaced the `getByText('Not active')` assertion with `queryByText('Live runtime') ... not.toBeInTheDocument()`. (E) PerformanceBrainPage cross-suite ordering leak self-resolved — the only suite still failing in the full run after fixes A/C/D was MidiHubPage.test.tsx, where the test was asserting in-page chrome text ("MAP2 MIDI Hub", "Connections", "Presets & Recall") that was hoisted to AppShell during T2438/T2439 chrome migration; updated to assert on panel mock content instead. Verification: full `npm test -- --runInBand` reports `Test Suites: 311 passed, 311 total · Tests: 1461 passed, 1461 total`.
 Assigned to: Claude
-Last updated: 2026-04-24 EDT - Claude: opened; pending user question cycle.
+Last updated: 2026-04-25 EDT - Claude: SHIPPED.
 
 ---
 

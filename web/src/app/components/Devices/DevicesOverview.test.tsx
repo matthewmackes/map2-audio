@@ -85,11 +85,15 @@ describe('DevicesOverview', () => {
   })
 
   it('groups cards under kind section headings', () => {
+    // T2445-A: aligned with KIND_LABELS in DevicesOverview.tsx — "Audio
+    // Interfaces" (capital I), and "Control Surfaces" (not "Physical Surfaces").
+    // Filter buttons share the same labels as the section H2s, so we scope by
+    // role to grab the actual section headings.
     renderWithProviders(<DevicesOverview />)
-    expect(screen.getByText('Audio interfaces')).toBeInTheDocument()
-    expect(screen.getByText('Processors')).toBeInTheDocument()
-    expect(screen.getByText('Consoles')).toBeInTheDocument()
-    expect(screen.getByText('Physical Surfaces')).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Audio Interfaces' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Processors' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Consoles' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Control Surfaces' })).toBeInTheDocument()
   })
 
   it('marks devices as online when inventory matches', () => {

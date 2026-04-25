@@ -263,20 +263,25 @@ describe('MidiHubShell', () => {
   })
 
   it('renders the routed shell and connections area', async () => {
+    // T2445-pre-existing: the in-page "MAP2 MIDI Hub" h1 and "Connections"
+    // heading were hoisted to AppShell chrome via useSetShellWindow during the
+    // T2438/T2439 chrome migration. This test renders MidiHubShell + nested
+    // routes WITHOUT AppShell, so the chrome title is no longer in the DOM
+    // here. Assert only on the panel mock content the routes render.
     renderShell()
 
-    expect(await screen.findByText('MAP2 MIDI Hub')).toBeTruthy()
-    expect(screen.getByRole('heading', { name: 'Connections' })).toBeTruthy()
-    expect(screen.getByText('Routing Matrix Mock')).toBeTruthy()
+    expect(await screen.findByText('Routing Matrix Mock')).toBeTruthy()
     expect(screen.getByText('Traffic Monitor Mock')).toBeTruthy()
     expect(screen.getByText('Quick Router Mock')).toBeTruthy()
   })
 
   it('deep-links into the presets area', async () => {
+    // T2445-pre-existing: the in-page "Presets & Recall" heading was hoisted
+    // to AppShell chrome (kicker "Platform / MIDI Hub / Presets"). Assert on
+    // the panel mock content the route renders instead.
     renderShell('/midi-hub/presets')
 
-    await screen.findByText('Presets & Recall')
-    expect(screen.getByText('Preset Manager Mock')).toBeTruthy()
+    expect(await screen.findByText('Preset Manager Mock')).toBeTruthy()
     expect(screen.getByText('Clock Panel Mock')).toBeTruthy()
     expect(screen.getByText('Recorder Panel Mock')).toBeTruthy()
   })

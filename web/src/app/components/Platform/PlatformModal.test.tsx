@@ -463,14 +463,16 @@ describe('PlatformModalContent', () => {
       .map((item) => item.getAttribute('aria-label'))
       .filter((label): label is string => Boolean(label?.startsWith('Open ')))
 
+    // T2445-C: Host Machine moved to /hardware/host-machine in T2432 and is no
+    // longer in the Platforms rail. Adoption is now the third-to-last entry.
     expect(navLabels.slice(0, 2)).toEqual(['Open Overview', 'Open Audio Engine'])
     expect(navLabels.slice(-3)).toEqual([
-      'Open Host Machine',
+      'Open Adoption',
       'Open Theme',
       'Open Platform Guide',
     ])
 
-    for (const label of ['Open Host Machine', 'Open Theme', 'Open Platform Guide']) {
+    for (const label of ['Open Theme', 'Open Platform Guide']) {
       expect(screen.getByRole('treeitem', { name: label })).toHaveClass('is-utility')
     }
     expect(screen.getByRole('treeitem', { name: 'Open Audio Engine' })).not.toHaveClass('is-utility')

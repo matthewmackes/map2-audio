@@ -685,8 +685,11 @@ describe('JUCE asset selector cards', () => {
     )
 
     expect((await screen.findAllByText('Stored Draft Crunch')).length).toBeGreaterThan(0)
+    // T2445-D: NAMCard surfaces stored-only state via the "Stored only" Tag and
+    // the lack of a "Live runtime" Tag. The "Not active" string only appears on
+    // the IR cards (Cabinet/Reverb), which use a `status.loaded` fact field.
     expect(screen.getByText('Stored only')).toBeInTheDocument()
-    expect(screen.getByText('Not active')).toBeInTheDocument()
+    expect(screen.queryByText('Live runtime')).not.toBeInTheDocument()
   })
 
   it('stores NAM uploads in loader state when scoped runtime loading is unavailable', async () => {
