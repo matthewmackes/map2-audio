@@ -304,6 +304,19 @@ export interface MaschineHidEvent {
   payload?: Record<string, unknown>;
 }
 
+export interface MaschinePlatformEventOverlayState {
+  active: boolean;
+  event_id?: string | null;
+  severity?: string;
+  mode?: string;
+  title?: string;
+  message?: string;
+  pads?: unknown[];
+  lcd?: { left: MaschineLcdBitmap; right: MaschineLcdBitmap };
+  updated_at?: string | null;
+  expires_at?: string | null;
+}
+
 export interface MaschineDaemonStatus {
   connected: boolean;
   status: string;
@@ -327,6 +340,7 @@ export interface MaschineDaemonStatus {
   led_state: MaschineLedState;
   led_array?: number[] | null;
   audio_grid: MaschineAudioGridProjection;
+  platform_event_overlay?: MaschinePlatformEventOverlayState;
   led_slots?: number;
   encoders?: number;
   pad_count?: number;
@@ -2851,6 +2865,12 @@ export interface SnapshotRevisionSummary {
 
 export interface SnapshotSummary {
   id: number;
+  /**
+   * T2449: optimistic-concurrency token bumped on every PATCH. Echo this
+   * back via `{ ifMatchVersion: snapshot.version }` to opt into 412
+   * conflict detection on PATCH / activate / publish-retry.
+   */
+  version?: number;
   name: string;
   description: string;
   tags: string[];

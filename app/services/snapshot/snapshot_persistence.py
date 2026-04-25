@@ -1391,6 +1391,9 @@ class SnapshotPersistenceMixin:
 
         return {
             "id": snapshot_id,
+            # T2449: optimistic-concurrency token. Clients echo this back in the
+            # `If-Match` header on every PATCH / activate / publish-retry.
+            "version": int(snapshot_row.version or 1) if snapshot_row is not None else 1,
             "name": snapshot_row.name if snapshot_row is not None else "Unsaved Snapshot",
             "description": snapshot_row.description if snapshot_row is not None else "",
             "tags": list(snapshot_row.tags or []) if snapshot_row is not None else [],
@@ -1502,6 +1505,10 @@ class SnapshotPersistenceMixin:
         )
         return {
             "id": snapshot.id,
+            # T2449: surface the optimistic-concurrency token in the summary
+            # response too so list views can pre-arm `If-Match` for follow-up
+            # writes without an extra round-trip.
+            "version": int(snapshot.version or 1),
             "name": snapshot.name,
             "description": snapshot.description or "",
             "tags": list(snapshot.tags or []),

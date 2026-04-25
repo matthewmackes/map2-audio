@@ -611,6 +611,40 @@ def _ensure_chain_plugin_loader_state_schema_sync() -> None:
         )
 
 
+def _ensure_snapshot_version_token_schema_sync() -> None:
+    """T2449: add the snapshots.version optimistic-concurrency token column."""
+    if _engine is None or _engine.dialect.name != "sqlite":
+        return
+
+    with _engine.begin() as conn:
+        # SQLite cannot add a NOT NULL column without a constant default — the
+        # DEFAULT 1 satisfies both new rows and the in-flight migration of
+        # existing rows.
+        if _add_sqlite_column_if_missing(conn, "snapshots", "version", "INTEGER NOT NULL DEFAULT 1"):
+            conn.execute(
+                text(
+                    "UPDATE snapshots "
+                    "SET version = 1 "
+                    "WHERE version IS NULL"
+                )
+            )
+
+
+async def _ensure_snapshot_version_token_schema_async(conn) -> None:
+    """T2449: async sibling of _ensure_snapshot_version_token_schema_sync."""
+    if conn.dialect.name != "sqlite":
+        return
+
+    if await _add_sqlite_column_if_missing_async(conn, "snapshots", "version", "INTEGER NOT NULL DEFAULT 1"):
+        await conn.execute(
+            text(
+                "UPDATE snapshots "
+                "SET version = 1 "
+                "WHERE version IS NULL"
+            )
+        )
+
+
 def _ensure_plugin_metadata_schema_sync() -> None:
     """Apply additive schema upgrades for plugin user metadata on existing SQLite DBs."""
     if _engine is None or _engine.dialect.name != "sqlite":
@@ -1148,6 +1182,8 @@ SCHEMA_MIGRATIONS: Sequence[tuple[int, str, MigrationSync, MigrationAsync]] = (
     (5, "snapshot_graph_document_additive_sync", _ensure_snapshot_graph_document_schema_sync, _ensure_snapshot_graph_document_schema_async),
     (6, "preset_uniqueness_enforcement_sync", _ensure_preset_uniqueness_schema_sync, _ensure_preset_uniqueness_schema_async),
     (8, "plugin_metadata_additive_sync", _ensure_plugin_metadata_schema_sync, _ensure_plugin_metadata_schema_async),
+    # T2449: optimistic-concurrency token column on snapshots.
+    (9, "snapshot_version_token_additive_sync", _ensure_snapshot_version_token_schema_sync, _ensure_snapshot_version_token_schema_async),
 )
 
 
@@ -1599,6 +1635,13 @@ class Snapshot(Base):
     output_level_reference_dbfs = Column(Float, nullable=True)
     output_level_warning_threshold_db = Column(Float, default=3.0)
     tempo_bpm = Column(Float, default=120.0)
+
+    # T2449: optimistic-concurrency token. Bumped atomically inside the same
+    # session as every persisting mutation. Routes that mutate (PATCH, activate,
+    # publish-retry) accept an `If-Match: <version>` header; mismatched values
+    # raise PreconditionFailedError → 412 envelope so the UI can refresh and
+    # retry instead of silently clobbering a parallel save.
+    version = Column(Integer, nullable=False, default=1)
 
     community_uuid = Column(String(64), nullable=True, unique=True, index=True)
     community_shared = Column(Boolean, default=False)

@@ -745,6 +745,46 @@ def _plugin_tag_haystack(plugin_uri: Any, plugin_name: Any = None, loader_state:
     )
 
 
+class PreconditionFailedError(Exception):
+    """T2449: optimistic-concurrency mismatch on a snapshot write.
+
+    Raised by `update_snapshot` (and any future write path that takes
+    `if_match_version`) when the caller's expected version does not match
+    the row's current version. The route layer maps this to HTTP 412 with a
+    structured envelope so the UI can re-fetch and prompt the operator
+    before retrying.
+    """
+
+    def __init__(
+        self,
+        *,
+        snapshot_id: int,
+        current_version: int,
+        expected_version: int,
+        message: Optional[str] = None,
+    ):
+        self.snapshot_id = int(snapshot_id)
+        self.current_version = int(current_version)
+        self.expected_version = int(expected_version)
+        super().__init__(
+            message
+            or (
+                f"Snapshot {snapshot_id} version mismatch: "
+                f"expected {expected_version}, got {current_version}."
+            )
+        )
+
+    @property
+    def detail_payload(self) -> dict[str, Any]:
+        return {
+            "code": "snapshot_version_conflict",
+            "message": str(self),
+            "snapshot_id": self.snapshot_id,
+            "expected_version": self.expected_version,
+            "current_version": self.current_version,
+        }
+
+
 class SnapshotActivationPreflightError(ValueError):
     """Activation failed before any runtime mutation because the snapshot is incomplete."""
 

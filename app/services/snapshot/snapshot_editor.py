@@ -206,10 +206,25 @@ class SnapshotEditorMixin:
         create_revision: bool = False,
         capture_current_authority_extensions: bool = True,
         document_type: str = "snapshot",
+        if_match_version: Optional[int] = None,
     ) -> Optional[dict[str, Any]]:
         snapshot = await self._get_snapshot_model(snapshot_id)
         if snapshot is None:
             return None
+        # T2449: optimistic-concurrency check. If the caller provided an
+        # `If-Match` version, verify it matches the row's current version
+        # inside the same session. A mismatch means another writer landed in
+        # parallel — raise PreconditionFailedError so the route can map it to
+        # a 412 envelope and the UI can refresh + retry.
+        if if_match_version is not None:
+            current_version = int(snapshot.version or 1)
+            if current_version != int(if_match_version):
+                from app.services.snapshot.common import PreconditionFailedError
+                raise PreconditionFailedError(
+                    snapshot_id=snapshot_id,
+                    current_version=current_version,
+                    expected_version=int(if_match_version),
+                )
         revision_source = await self.get_snapshot(snapshot_id) if create_revision else None
         previous_input_device = snapshot.input_device
         previous_output_device = snapshot.output_device
@@ -282,6 +297,9 @@ class SnapshotEditorMixin:
             snapshot.is_locked = bool(is_locked)
         if display_order is not UNSET:
             snapshot.display_order = int(display_order)
+        # T2449: bump the optimistic-concurrency version atomically with the
+        # rest of this write. The session commits all of these in one tx.
+        snapshot.version = int(snapshot.version or 1) + 1
         snapshot.updated_at = _utcnow()
 
         if detail_payload is not UNSET:

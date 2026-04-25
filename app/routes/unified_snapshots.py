@@ -7,13 +7,18 @@ import json
 import logging
 from typing import Any, Optional
 
-from fastapi import APIRouter, Body, HTTPException, Query, Request, UploadFile
+from fastapi import APIRouter, Body, Header, HTTPException, Query, Request, UploadFile
 from fastapi.responses import Response
 from pydantic import BaseModel, Field
 
 from app.database import get_session
 from app.services.publish_readiness_service import PublishReadinessService
-from app.services.snapshot import SnapshotActivationPreflightError, SnapshotService, UNSET
+from app.services.snapshot import (
+    PreconditionFailedError,
+    SnapshotActivationPreflightError,
+    SnapshotService,
+    UNSET,
+)
 
 logger = logging.getLogger(__name__)
 router = APIRouter(tags=["snapshots"])
@@ -312,6 +317,39 @@ def _controls_payload_from_request(request: SnapshotCreateRequest | SnapshotUpda
 
 def _raise_not_found(entity: str) -> None:
     raise HTTPException(status_code=404, detail=f"{entity} not found")
+
+
+def _parse_if_match_header(value: Optional[str]) -> Optional[int]:
+    """Parse the `If-Match` header into an integer snapshot version, or None.
+
+    T2449. The header is optional — when absent, callers retain the legacy
+    last-write-wins behavior. When present we accept either a bare integer
+    (`If-Match: 4`) or a quoted ETag-style value (`If-Match: "4"`). Anything
+    else returns 400 so misuse is loud rather than silent.
+    """
+    if value is None:
+        return None
+    cleaned = value.strip()
+    if cleaned.startswith('"') and cleaned.endswith('"'):
+        cleaned = cleaned[1:-1]
+    if not cleaned:
+        return None
+    try:
+        return int(cleaned)
+    except ValueError as exc:
+        raise HTTPException(
+            status_code=400,
+            detail={
+                "error": {
+                    "code": "invalid_if_match",
+                    "message": "If-Match header must be an integer snapshot version.",
+                }
+            },
+        ) from exc
+
+
+def _raise_precondition_failed(exc: PreconditionFailedError) -> None:
+    raise HTTPException(status_code=412, detail={"error": exc.detail_payload})
 
 
 def _translate_value_error(exc: ValueError) -> None:
@@ -872,7 +910,16 @@ async def create_snapshot(request: SnapshotCreateRequest) -> dict[str, Any]:
 
 
 @router.patch("/api/snapshots/{snapshot_id}")
-async def update_snapshot(snapshot_id: int, request: SnapshotUpdateRequest) -> dict[str, Any]:
+async def update_snapshot(
+    snapshot_id: int,
+    request: SnapshotUpdateRequest,
+    if_match: Optional[str] = Header(default=None, alias="If-Match"),
+) -> dict[str, Any]:
+    """T2449: when the caller provides `If-Match: <version>`, the write is
+    rejected with HTTP 412 (`snapshot_version_conflict`) if the snapshot has
+    moved on since they read it. Without the header, the legacy last-write
+    behavior is preserved for compatibility."""
+    if_match_version = _parse_if_match_header(if_match)
     try:
         detail_payload = _detail_payload_from_request(request)
         provided = request.model_fields_set
@@ -896,6 +943,7 @@ async def update_snapshot(snapshot_id: int, request: SnapshotUpdateRequest) -> d
                 display_order=request.display_order if "display_order" in provided else UNSET,
                 detail_payload=detail_payload,
                 create_revision=request.create_revision,
+                if_match_version=if_match_version,
             )
             if snapshot is None:
                 _raise_not_found("Snapshot")
@@ -904,6 +952,8 @@ async def update_snapshot(snapshot_id: int, request: SnapshotUpdateRequest) -> d
                 "message": f"Updated snapshot {snapshot_id}",
                 "snapshot": snapshot,
             }
+    except PreconditionFailedError as exc:
+        _raise_precondition_failed(exc)
     except ValueError as exc:
         _translate_value_error(exc)
     except HTTPException:
@@ -980,16 +1030,38 @@ async def delete_snapshot(snapshot_id: int) -> dict[str, Any]:
 
 
 @router.post("/api/snapshots/{snapshot_id}/activate")
-async def activate_snapshot(snapshot_id: int) -> dict[str, Any]:
+async def activate_snapshot(
+    snapshot_id: int,
+    if_match: Optional[str] = Header(default=None, alias="If-Match"),
+) -> dict[str, Any]:
+    """T2449: when `If-Match: <version>` is supplied the route refuses to
+    activate a snapshot that has moved on since the operator read it. This
+    closes the save-vs-activate clobber race: a save in flight can no longer
+    land its document and have it published as the activated state under the
+    operator's nose."""
+    if_match_version = _parse_if_match_header(if_match)
     try:
         async with get_session() as session:
             service = SnapshotService(session)
+            if if_match_version is not None:
+                snapshot_model = await service._get_snapshot_model(snapshot_id)
+                if snapshot_model is None:
+                    _raise_not_found("Snapshot")
+                current_version = int(snapshot_model.version or 1)
+                if current_version != int(if_match_version):
+                    raise PreconditionFailedError(
+                        snapshot_id=snapshot_id,
+                        current_version=current_version,
+                        expected_version=int(if_match_version),
+                    )
             payload = await service.state_authority_activation.activate_snapshot(snapshot_id)
             if payload is None:
                 _raise_not_found("Snapshot")
         from app.routes.chains import _invalidate_chain_list_cache
         _invalidate_chain_list_cache()
         return payload
+    except PreconditionFailedError as exc:
+        _raise_precondition_failed(exc)
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=_activation_error_detail(exc)) from exc
     except HTTPException:
@@ -1020,9 +1092,26 @@ async def get_snapshot_publish_readiness(snapshot_id: int) -> dict[str, Any]:
 async def retry_snapshot_publish(
     snapshot_id: int,
     request: Optional[PublishRetryRequest] = Body(default=None),
+    if_match: Optional[str] = Header(default=None, alias="If-Match"),
 ) -> dict[str, Any]:
+    """T2449: publish-retry honors `If-Match: <version>` for the same reason
+    activate does — retrying after a parallel save without the version check
+    would re-publish the new save's state under the operator's intent."""
+    if_match_version = _parse_if_match_header(if_match)
     try:
         async with get_session() as session:
+            if if_match_version is not None:
+                service = SnapshotService(session)
+                snapshot_model = await service._get_snapshot_model(snapshot_id)
+                if snapshot_model is None:
+                    _raise_not_found("Snapshot")
+                current_version = int(snapshot_model.version or 1)
+                if current_version != int(if_match_version):
+                    raise PreconditionFailedError(
+                        snapshot_id=snapshot_id,
+                        current_version=current_version,
+                        expected_version=int(if_match_version),
+                    )
             payload = await _run_publish_repair_action(
                 snapshot_id=snapshot_id,
                 repair_action_id="retry_publish",
@@ -1033,6 +1122,8 @@ async def retry_snapshot_publish(
         from app.routes.chains import _invalidate_chain_list_cache
         _invalidate_chain_list_cache()
         return payload
+    except PreconditionFailedError as exc:
+        _raise_precondition_failed(exc)
     except ValueError as exc:
         raise HTTPException(status_code=422, detail=_activation_error_detail(exc)) from exc
     except HTTPException:

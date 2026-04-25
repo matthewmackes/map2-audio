@@ -489,10 +489,21 @@ export const snapshotsApi = {
       body: JSON.stringify(request),
     }),
 
-  update: (snapshotId: number, request: SnapshotUpdateRequest) =>
+  // T2449: callers pass `ifMatchVersion` to opt into optimistic-concurrency
+  // checks. When the server's row has moved on, the response is HTTP 412
+  // with `error.code === "snapshot_version_conflict"`; the UI should then
+  // refetch the snapshot and prompt the operator before retrying.
+  update: (
+    snapshotId: number,
+    request: SnapshotUpdateRequest,
+    options?: { ifMatchVersion?: number },
+  ) =>
     fetchJson<SnapshotUpdateResponse>(`${API_BASE}/snapshots/${snapshotId}`, {
       method: 'PATCH',
       body: JSON.stringify(request),
+      headers: options?.ifMatchVersion != null
+        ? { 'If-Match': String(options.ifMatchVersion) }
+        : undefined,
     }),
 
   saveAsNew: (snapshotId: number, request: { name?: string; description?: string } = {}) =>
@@ -506,9 +517,12 @@ export const snapshotsApi = {
       method: 'DELETE',
     }),
 
-  activate: (snapshotId: number) =>
+  activate: (snapshotId: number, options?: { ifMatchVersion?: number }) =>
     fetchJson<SnapshotActivationResponse>(`${API_BASE}/snapshots/${snapshotId}/activate`, {
       method: 'POST',
+      headers: options?.ifMatchVersion != null
+        ? { 'If-Match': String(options.ifMatchVersion) }
+        : undefined,
     }),
 
   getPublishReadiness: (snapshotId: number) =>
@@ -516,10 +530,17 @@ export const snapshotsApi = {
       cache: 'no-store',
     }),
 
-  retryPublish: (snapshotId: number, sessionId?: string) =>
+  retryPublish: (
+    snapshotId: number,
+    sessionId?: string,
+    options?: { ifMatchVersion?: number },
+  ) =>
     fetchJson<SnapshotPublishMutationResponse>(`${API_BASE}/snapshots/${snapshotId}/publish-retry`, {
       method: 'POST',
       body: JSON.stringify(sessionId ? { session_id: sessionId } : {}),
+      headers: options?.ifMatchVersion != null
+        ? { 'If-Match': String(options.ifMatchVersion) }
+        : undefined,
     }),
 
   runPublishRepairAction: (snapshotId: number, repairActionId: string) =>

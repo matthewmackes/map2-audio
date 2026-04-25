@@ -15282,7 +15282,13 @@ export interface paths {
         delete: operations["unified_snapshots_delete_snapshot_delete_api_snapshots_snapshot_id"];
         options?: never;
         head?: never;
-        /** Update Snapshot */
+        /**
+         * Update Snapshot
+         * @description T2449: when the caller provides `If-Match: <version>`, the write is
+         *     rejected with HTTP 412 (`snapshot_version_conflict`) if the snapshot has
+         *     moved on since they read it. Without the header, the legacy last-write
+         *     behavior is preserved for compatibility.
+         */
         patch: operations["unified_snapshots_update_snapshot_patch_api_snapshots_snapshot_id"];
         trace?: never;
     };
@@ -15346,7 +15352,14 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Activate Snapshot */
+        /**
+         * Activate Snapshot
+         * @description T2449: when `If-Match: <version>` is supplied the route refuses to
+         *     activate a snapshot that has moved on since the operator read it. This
+         *     closes the save-vs-activate clobber race: a save in flight can no longer
+         *     land its document and have it published as the activated state under the
+         *     operator's nose.
+         */
         post: operations["unified_snapshots_activate_snapshot_post_api_snapshots_snapshot_id_activate"];
         delete?: never;
         options?: never;
@@ -15380,7 +15393,12 @@ export interface paths {
         };
         get?: never;
         put?: never;
-        /** Retry Snapshot Publish */
+        /**
+         * Retry Snapshot Publish
+         * @description T2449: publish-retry honors `If-Match: <version>` for the same reason
+         *     activate does — retrying after a parallel save without the version check
+         *     would re-publish the new save's state under the operator's intent.
+         */
         post: operations["unified_snapshots_retry_snapshot_publish_post_api_snapshots_snapshot_id_publish_retry"];
         delete?: never;
         options?: never;
@@ -23859,6 +23877,57 @@ export interface paths {
          * @description Run a hardware diagnostic test against the physical MK1 device.
          */
         post: operations["maschine_run_maschine_hw_test_post_api_maschine_hw_test"];
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/maschine/incident-log": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Maschine Incident Log */
+        get: operations["maschine_get_maschine_incident_log_get_api_maschine_incident_log"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/maschine/platform-event-overlay": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        /** Get Maschine Platform Event Overlay */
+        get: operations["maschine_get_maschine_platform_event_overlay_get_api_maschine_platform_event_overlay"];
+        put?: never;
+        post?: never;
+        delete?: never;
+        options?: never;
+        head?: never;
+        patch?: never;
+        trace?: never;
+    };
+    "/api/maschine/platform-event-overlay/clear": {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        get?: never;
+        put?: never;
+        /** Clear Maschine Platform Event Overlay */
+        post: operations["maschine_clear_maschine_platform_event_overlay_post_api_maschine_platform_event_overlay_clear"];
         delete?: never;
         options?: never;
         head?: never;
@@ -35795,7 +35864,7 @@ export interface components {
         };
         /**
          * DownloadRequest
-         * @description Request to start IR download.
+         * @description Request to start SoundFont download.
          */
         DownloadRequest: {
             /** Sources */
@@ -35810,8 +35879,6 @@ export interface components {
              * @default true
              */
             skip_existing: boolean;
-            /** Limit */
-            limit?: number | null;
         };
         /** DrumBackingTrackSummaryModel */
         DrumBackingTrackSummaryModel: {
@@ -39436,7 +39503,7 @@ export interface components {
             output_port_index?: number | null;
             /**
              * Name Hint
-             * @default mpx
+             * @default intelfx
              */
             name_hint: string;
         };
@@ -39514,7 +39581,7 @@ export interface components {
         };
         /** MidiMapSaveRequest */
         MidiMapSaveRequest: {
-            midi_map: components["schemas"]["app__routes__intelfx__MidiMapRequest"];
+            midi_map: components["schemas"]["MidiMapRequest"];
             /**
              * Make Active
              * @default false
@@ -41587,17 +41654,16 @@ export interface components {
             /** Message */
             message: string;
         };
-        /**
-         * ReadinessResponse
-         * @description Readiness checklist response
-         */
+        /** ReadinessResponse */
         ReadinessResponse: {
-            /** Mode */
-            mode: string;
-            /** Ready */
-            ready: boolean;
-            /** Items */
-            items: components["schemas"]["ReadinessItem"][];
+            /** Candidate Id */
+            candidate_id: string;
+            /** Status */
+            status: string;
+            /** Checks */
+            checks?: components["schemas"]["AdoptionCheckResponse"][];
+            /** Computed At */
+            computed_at: string;
         };
         /** ReadinessSummaryResponse */
         ReadinessSummaryResponse: {
@@ -42050,6 +42116,8 @@ export interface components {
         SceneCaptureRequest: {
             /** Name */
             name: string;
+            /** Tags */
+            tags?: string[];
         };
         /** SceneUpdateRequest */
         SceneUpdateRequest: {
@@ -42347,8 +42415,10 @@ export interface components {
         };
         /** SetMuteRequest */
         SetMuteRequest: {
-            /** Muted */
-            muted: boolean;
+            /** Node Id */
+            node_id: number;
+            /** Mute */
+            mute: boolean;
         };
         /** SetQuantumRequest */
         SetQuantumRequest: {
@@ -44106,17 +44176,6 @@ export interface components {
             /** Client Id */
             client_id: string;
         };
-        /** ReadinessResponse */
-        app__routes__adoption__ReadinessResponse: {
-            /** Candidate Id */
-            candidate_id: string;
-            /** Status */
-            status: string;
-            /** Checks */
-            checks?: components["schemas"]["AdoptionCheckResponse"][];
-            /** Computed At */
-            computed_at: string;
-        };
         /**
          * HealthCheckResponse
          * @description Health check result.
@@ -44131,33 +44190,37 @@ export interface components {
             /** Severity */
             severity: number;
         };
-        /** MidiConnectRequest */
-        app__routes__intelfx__MidiConnectRequest: {
-            /** Input Port Index */
-            input_port_index?: number | null;
-            /** Output Port Index */
-            output_port_index?: number | null;
-            /**
-             * Name Hint
-             * @default intelfx
-             */
-            name_hint: string;
+        /**
+         * ReadinessResponse
+         * @description Readiness checklist response
+         */
+        app__routes__deployment_health__ReadinessResponse: {
+            /** Mode */
+            mode: string;
+            /** Ready */
+            ready: boolean;
+            /** Items */
+            items: components["schemas"]["ReadinessItem"][];
         };
-        /** MidiMapRequest */
-        app__routes__intelfx__MidiMapRequest: {
-            /** Id */
-            id?: string | null;
-            /** Name */
-            name: string;
-            /** Description */
-            description?: string | null;
+        /**
+         * DownloadRequest
+         * @description Request to start IR download.
+         */
+        app__routes__impulse_response__DownloadRequest: {
+            /** Sources */
+            sources?: string[] | null;
             /**
-             * Active
-             * @default false
+             * Parallel
+             * @default 4
              */
-            active: boolean;
-            /** Mappings */
-            mappings?: components["schemas"]["MidiMappingRequest"][];
+            parallel: number;
+            /**
+             * Skip Existing
+             * @default true
+             */
+            skip_existing: boolean;
+            /** Limit */
+            limit?: number | null;
         };
         /** SceneCaptureRequest */
         app__routes__intelfx__SceneCaptureRequest: {
@@ -44193,9 +44256,37 @@ export interface components {
             /** Tap Cc */
             tap_cc?: number | null;
         };
+        /** MidiConnectRequest */
+        app__routes__mpx1__MidiConnectRequest: {
+            /** Input Port Index */
+            input_port_index?: number | null;
+            /** Output Port Index */
+            output_port_index?: number | null;
+            /**
+             * Name Hint
+             * @default mpx
+             */
+            name_hint: string;
+        };
+        /** MidiMapRequest */
+        app__routes__mpx1__MidiMapRequest: {
+            /** Id */
+            id?: string | null;
+            /** Name */
+            name: string;
+            /** Description */
+            description?: string | null;
+            /**
+             * Active
+             * @default false
+             */
+            active: boolean;
+            /** Mappings */
+            mappings?: components["schemas"]["MidiMappingRequest"][];
+        };
         /** MidiMapSaveRequest */
         app__routes__mpx1__MidiMapSaveRequest: {
-            midi_map: components["schemas"]["MidiMapRequest"];
+            midi_map: components["schemas"]["app__routes__mpx1__MidiMapRequest"];
             /**
              * Make Active
              * @default false
@@ -44203,36 +44294,14 @@ export interface components {
             make_active: boolean;
         };
         /** SceneCaptureRequest */
-        app__routes__mpx1__SceneCaptureRequest: {
+        app__routes__tesira__SceneCaptureRequest: {
             /** Name */
             name: string;
-            /** Tags */
-            tags?: string[];
         };
         /** SetMuteRequest */
-        app__routes__pipewire__SetMuteRequest: {
-            /** Node Id */
-            node_id: number;
-            /** Mute */
-            mute: boolean;
-        };
-        /**
-         * DownloadRequest
-         * @description Request to start SoundFont download.
-         */
-        app__routes__soundfonts__DownloadRequest: {
-            /** Sources */
-            sources?: string[] | null;
-            /**
-             * Parallel
-             * @default 4
-             */
-            parallel: number;
-            /**
-             * Skip Existing
-             * @default true
-             */
-            skip_existing: boolean;
+        app__routes__tesira__SetMuteRequest: {
+            /** Muted */
+            muted: boolean;
         };
         /** MidiMapRequest */
         app__routes__unified_snapshots__MidiMapRequest: {
@@ -72192,7 +72261,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["DownloadRequest"];
+                "application/json": components["schemas"]["app__routes__impulse_response__DownloadRequest"];
             };
         };
         responses: {
@@ -80511,7 +80580,9 @@ export interface operations {
     unified_snapshots_update_snapshot_patch_api_snapshots_snapshot_id: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "If-Match"?: string | null;
+            };
             path: {
                 snapshot_id: number;
             };
@@ -80720,7 +80791,9 @@ export interface operations {
     unified_snapshots_activate_snapshot_post_api_snapshots_snapshot_id_activate: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "If-Match"?: string | null;
+            };
             path: {
                 snapshot_id: number;
             };
@@ -80822,7 +80895,9 @@ export interface operations {
     unified_snapshots_retry_snapshot_publish_post_api_snapshots_snapshot_id_publish_retry: {
         parameters: {
             query?: never;
-            header?: never;
+            header?: {
+                "If-Match"?: string | null;
+            };
             path: {
                 snapshot_id: number;
             };
@@ -84486,7 +84561,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["app__routes__soundfonts__DownloadRequest"];
+                "application/json": components["schemas"]["DownloadRequest"];
             };
         };
         responses: {
@@ -87195,7 +87270,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["MidiConnectRequest"];
+                "application/json": components["schemas"]["app__routes__mpx1__MidiConnectRequest"];
             };
         };
         responses: {
@@ -88167,7 +88242,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["app__routes__mpx1__SceneCaptureRequest"];
+                "application/json": components["schemas"]["SceneCaptureRequest"];
             };
         };
         responses: {
@@ -98017,7 +98092,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["app__routes__adoption__ReadinessResponse"];
+                    "application/json": components["schemas"]["ReadinessResponse"];
                 };
             };
             /** @description Validation Error */
@@ -102651,6 +102726,137 @@ export interface operations {
                 };
                 content: {
                     "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    maschine_get_maschine_incident_log_get_api_maschine_incident_log: {
+        parameters: {
+            query?: {
+                limit?: number;
+            };
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Validation Error */
+            422: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["HTTPValidationError"];
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    maschine_get_maschine_platform_event_overlay_get_api_maschine_platform_event_overlay: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
+                };
+            };
+            /** @description Internal server error */
+            500: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+            /** @description Service unavailable or dependency not ready */
+            503: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": components["schemas"]["ApiError"];
+                };
+            };
+        };
+    };
+    maschine_clear_maschine_platform_event_overlay_post_api_maschine_platform_event_overlay_clear: {
+        parameters: {
+            query?: never;
+            header?: never;
+            path?: never;
+            cookie?: never;
+        };
+        requestBody?: never;
+        responses: {
+            /** @description Successful Response */
+            200: {
+                headers: {
+                    [name: string]: unknown;
+                };
+                content: {
+                    "application/json": {
+                        [key: string]: unknown;
+                    };
                 };
             };
             /** @description Internal server error */
@@ -108650,7 +108856,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["app__routes__pipewire__SetMuteRequest"];
+                "application/json": components["schemas"]["SetMuteRequest"];
             };
         };
         responses: {
@@ -111869,7 +112075,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["app__routes__intelfx__MidiConnectRequest"];
+                "application/json": components["schemas"]["MidiConnectRequest"];
             };
         };
         responses: {
@@ -119049,7 +119255,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["ReadinessResponse"];
+                    "application/json": components["schemas"]["app__routes__deployment_health__ReadinessResponse"];
                 };
             };
             /** @description Internal server error */
@@ -121701,7 +121907,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["SetMuteRequest"];
+                "application/json": components["schemas"]["app__routes__tesira__SetMuteRequest"];
             };
         };
         responses: {
@@ -123044,7 +123250,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["SceneCaptureRequest"];
+                "application/json": components["schemas"]["app__routes__tesira__SceneCaptureRequest"];
             };
         };
         responses: {
