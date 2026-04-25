@@ -1,3 +1,5 @@
+import { readPersisted, writePersisted, type PersistedKey } from '../utils/persistedState'
+
 export const HOME_DESKTOP_WALLPAPER_STORAGE_KEY = 'map2:desktop-wallpaper'
 
 export type DesktopWallpaperMode = 'default-image' | 'solid-theme' | 'uploaded-image'
@@ -6,6 +8,11 @@ export interface DesktopWallpaperState {
   version: 1
   mode: DesktopWallpaperMode
   imageDataUrl?: string
+}
+
+const DEFAULT_STATE: DesktopWallpaperState = {
+  version: 1,
+  mode: 'default-image',
 }
 
 function isObject(value: unknown): value is Record<string, unknown> {
@@ -29,33 +36,28 @@ export function normalizeDesktopWallpaperState(value: unknown): DesktopWallpaper
     }
   }
 
-  return {
-    version: 1,
-    mode: 'default-image',
-  }
+  return { ...DEFAULT_STATE }
+}
+
+const DESKTOP_WALLPAPER_KEY: PersistedKey<DesktopWallpaperState> = {
+  storageKey: HOME_DESKTOP_WALLPAPER_STORAGE_KEY,
+  fallback: { ...DEFAULT_STATE },
+  parse: (raw) => {
+    try {
+      return normalizeDesktopWallpaperState(JSON.parse(raw) as unknown)
+    } catch {
+      return undefined
+    }
+  },
+  serialize: (value) => JSON.stringify(value),
 }
 
 export function readDesktopWallpaperState(): DesktopWallpaperState {
-  if (typeof window === 'undefined') {
-    return normalizeDesktopWallpaperState(null)
-  }
-
-  try {
-    const raw = window.localStorage.getItem(HOME_DESKTOP_WALLPAPER_STORAGE_KEY)
-    if (!raw) {
-      return normalizeDesktopWallpaperState(null)
-    }
-
-    return normalizeDesktopWallpaperState(JSON.parse(raw) as unknown)
-  } catch {
-    return normalizeDesktopWallpaperState(null)
-  }
+  return readPersisted(DESKTOP_WALLPAPER_KEY)
 }
 
 export function writeDesktopWallpaperState(state: DesktopWallpaperState): DesktopWallpaperState {
   const normalized = normalizeDesktopWallpaperState(state)
-  if (typeof window !== 'undefined') {
-    window.localStorage.setItem(HOME_DESKTOP_WALLPAPER_STORAGE_KEY, JSON.stringify(normalized))
-  }
+  writePersisted(DESKTOP_WALLPAPER_KEY, normalized)
   return normalized
 }

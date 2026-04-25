@@ -1,23 +1,27 @@
 import { useState, useCallback, useEffect } from 'react'
 import type { DeviceRegistryEntry } from '../../data/deviceRegistry'
+import { readPersisted, writePersisted, type PersistedKey } from '../../utils/persistedState'
 
-const PINNED_KEY = 'map2:storefront:pinned'
+const PINNED_DEVICES_KEY: PersistedKey<string[]> = {
+  storageKey: 'map2:storefront:pinned',
+  fallback: [],
+  parse: (raw) => {
+    try {
+      const parsed: unknown = JSON.parse(raw)
+      if (!Array.isArray(parsed)) return undefined
+      return parsed.filter((entry): entry is string => typeof entry === 'string')
+    } catch {
+      return undefined
+    }
+  },
+}
 
 function readPinned(): Set<string> {
-  try {
-    const raw = window.localStorage.getItem(PINNED_KEY)
-    if (!raw) return new Set()
-    const parsed = JSON.parse(raw)
-    return Array.isArray(parsed) ? new Set(parsed as string[]) : new Set()
-  } catch {
-    return new Set()
-  }
+  return new Set(readPersisted(PINNED_DEVICES_KEY))
 }
 
 function writePinned(ids: Set<string>) {
-  try {
-    window.localStorage.setItem(PINNED_KEY, JSON.stringify(Array.from(ids)))
-  } catch {}
+  writePersisted(PINNED_DEVICES_KEY, Array.from(ids))
 }
 
 export type StockFilter = 'all' | 'in-stock' | 'detected' | 'planned'

@@ -1,9 +1,17 @@
+import { readPersisted, writePersisted, type PersistedKey } from '../utils/persistedState'
+
 export const HOME_LANDING_PREFERENCES_STORAGE_KEY = 'map2:home-landing-preferences'
 
 export interface HomeLandingPreferences {
   version: 1
   cinematicBackdropEnabled: boolean
   bootSplashEnabled: boolean
+}
+
+const DEFAULT_PREFERENCES: HomeLandingPreferences = {
+  version: 1,
+  cinematicBackdropEnabled: false,
+  bootSplashEnabled: false,
 }
 
 function isObject(value: unknown): value is Record<string, unknown> {
@@ -19,43 +27,29 @@ export function normalizeHomeLandingPreferences(value: unknown): HomeLandingPref
     }
   }
 
-  return {
-    version: 1,
-    cinematicBackdropEnabled: false,
-    bootSplashEnabled: false,
-  }
+  return { ...DEFAULT_PREFERENCES }
+}
+
+const HOME_LANDING_PREFERENCES_KEY: PersistedKey<HomeLandingPreferences> = {
+  storageKey: HOME_LANDING_PREFERENCES_STORAGE_KEY,
+  fallback: { ...DEFAULT_PREFERENCES },
+  parse: (raw) => {
+    try {
+      return normalizeHomeLandingPreferences(JSON.parse(raw) as unknown)
+    } catch {
+      return undefined
+    }
+  },
+  serialize: (value) => JSON.stringify(value),
 }
 
 export function readHomeLandingPreferences(): HomeLandingPreferences {
-  if (typeof window === 'undefined') {
-    return normalizeHomeLandingPreferences(null)
-  }
-
-  try {
-    const raw = window.localStorage.getItem(HOME_LANDING_PREFERENCES_STORAGE_KEY)
-    if (!raw) {
-      return normalizeHomeLandingPreferences(null)
-    }
-
-    return normalizeHomeLandingPreferences(JSON.parse(raw) as unknown)
-  } catch {
-    return normalizeHomeLandingPreferences(null)
-  }
+  return readPersisted(HOME_LANDING_PREFERENCES_KEY)
 }
 
-export function writeHomeLandingPreferences(preferences: HomeLandingPreferences) {
-  if (typeof window === 'undefined') {
-    return preferences
-  }
-
+export function writeHomeLandingPreferences(preferences: HomeLandingPreferences): HomeLandingPreferences {
   const normalized = normalizeHomeLandingPreferences(preferences)
-
-  try {
-    window.localStorage.setItem(HOME_LANDING_PREFERENCES_STORAGE_KEY, JSON.stringify(normalized))
-  } catch {
-    // Ignore local-storage persistence failures and keep the in-memory value.
-  }
-
+  writePersisted(HOME_LANDING_PREFERENCES_KEY, normalized)
   return normalized
 }
 
