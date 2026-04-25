@@ -6763,6 +6763,22 @@ export function SnapshotEditorPage() {
             {midiMappings.length} shown
             {midiStatus?.mappings_count !== undefined ? ` / ${midiStatus.mappings_count} total` : ''}
           </Tag>
+          <Button
+            size="sm"
+            kind="tertiary"
+            renderIcon={Launch}
+            onClick={() => {
+              const params = new URLSearchParams()
+              if (activeSnapshot?.id != null) {
+                params.set('snapshotId', String(activeSnapshot.id))
+              }
+              const query = params.toString()
+              navigate(`/midi/assignments${query ? `?${query}` : ''}`)
+            }}
+            title="Open the unified MIDI Assignments page (parameters, snapshot triggers, routing rules, expression pedals, devices)"
+          >
+            MIDI Assignments
+          </Button>
           {options.closable && options.onClose && (
             <Button size="sm" kind="ghost" onClick={options.onClose}>
               Close

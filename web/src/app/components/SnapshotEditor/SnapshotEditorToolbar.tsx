@@ -1,4 +1,4 @@
-import { Redo, Router, Save, Settings, SettingsAdjust, Undo } from '@carbon/icons-react'
+import { Music, Redo, Router, Save, Settings, SettingsAdjust, Undo } from '@carbon/icons-react'
 import { Button } from '@carbon/react'
 
 type MonitorSegment = 'input' | 'output' | 'clip'
@@ -55,6 +55,7 @@ interface SnapshotEditorToolbarProps {
   onSelectMonitor?: (segment: MonitorSegment) => void
   onOpenRouting?: () => void
   onOpenDevices?: () => void
+  onOpenMidiAssignments?: () => void
 }
 
 export function SnapshotEditorToolbar({
@@ -88,6 +89,7 @@ export function SnapshotEditorToolbar({
   onSelectMonitor,
   onOpenRouting,
   onOpenDevices,
+  onOpenMidiAssignments,
 }: SnapshotEditorToolbarProps) {
   const liveClassName = [
     'snapshot-toolbar__status-chip',
@@ -217,6 +219,16 @@ export function SnapshotEditorToolbar({
         </div>
 
         <div className="snapshot-toolbar__group snapshot-toolbar__group--right" role="group" aria-label="Routing and devices">
+          <Button
+            size="sm"
+            kind="ghost"
+            className="snapshot-toolbar__text-button"
+            renderIcon={Music}
+            onClick={onOpenMidiAssignments}
+            title="Open MIDI Assignments for this snapshot"
+          >
+            MIDI
+          </Button>
           <Button
             size="sm"
             kind="ghost"

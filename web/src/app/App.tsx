@@ -98,6 +98,7 @@ const MeteringPage          = lazy(() => import('./pages/MeteringPage').then(m =
 const PipeWirePage          = lazy(() => import('./pages/PipeWirePage').then(m => ({ default: m.PipeWirePage })))
 const PerformPage           = lazy(() => import('./pages/PerformPage').then(m => ({ default: m.PerformPage })))
 const ExpressionPage        = lazy(() => import('./pages/ExpressionPage').then(m => ({ default: m.ExpressionPage })))
+const MidiAssignmentsPage   = lazy(() => import('./pages/MidiAssignmentsPage').then(m => ({ default: m.MidiAssignmentsPage })))
 const GroundControlProPage  = lazy(() => import('./pages/GroundControlProPage').then(m => ({ default: m.GroundControlProPage })))
 
 function RouteLoadingState({ variant }: { variant: 'default' | 'snapshot' | 'midi-hub' | 'metrics' | 'audio-engine' }) {
@@ -543,6 +544,9 @@ export function App() {
                                 <Route path="/welcome" element={<WelcomePage />} />
                                 <Route path="/brain" element={<PerformanceBrainPage />} />
                                 <Route path="/expression" element={<ExpressionPage />} />
+                                <Route path="/midi/assignments" element={<RouteBoundary title="MIDI Assignments crashed" actionLabel="Reload MIDI Assignments"><MidiAssignmentsPage /></RouteBoundary>} />
+                                <Route path="/midi-assignments" element={<Navigate to="/midi/assignments" replace />} />
+                                <Route path="/midi-hub/assignments" element={<Navigate to="/midi/assignments" replace />} />
                                 <Route path="/ground-control-pro" element={<GroundControlProPage />} />
                                 <Route path="*" element={<Navigate to="/" replace />} />
                             </Routes>

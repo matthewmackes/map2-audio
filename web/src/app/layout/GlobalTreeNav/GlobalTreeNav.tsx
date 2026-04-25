@@ -131,6 +131,7 @@ const TOP_LEVEL_ROUTE_ORDER = [
   '/brain',
   '/workspace',
   '/midi-hub',
+  '/midi/assignments',
   '/workspace/artifacts',
   '/hardware',
   '/platforms/about',
@@ -163,6 +164,7 @@ const TREE_ICON_OVERRIDES: Record<string, TreeIconComponent> = {
   '/ground-control-pro': Music,
   '/labs/push-surface': IbmWatsonMachineLearning,
   '/expression': ChartLine,
+  '/midi/assignments': Music,
   '/lcd': ScreenMap,
   // Control Panel (/workspace) sub-items
   '/workspace/platforms/overview': Dashboard,
@@ -191,6 +193,7 @@ const TREE_LABEL_OVERRIDES: Record<string, string> = {
   '/workspace': 'Node Ops',
   '/snapshot-editor': 'Snapshot Editor',
   '/midi-hub': 'MIDI Advanced',
+  '/midi/assignments': 'MIDI Assignments',
   '/workspace/artifacts': 'Audio Artifacts',
   '/platforms/about': 'Platform Guide',
   '/hardware': 'Hardware',
