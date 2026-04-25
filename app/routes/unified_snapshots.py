@@ -324,6 +324,9 @@ def _activation_error_detail(exc: ValueError) -> Any:
         EXPECTED_RATE_HZ,
         QuantumDriftError,
     )
+    from app.services.state_authority_activation_service import (
+        SnapshotVerificationError,
+    )
 
     if isinstance(exc, SnapshotActivationPreflightError):
         return exc.detail_payload
@@ -337,6 +340,14 @@ def _activation_error_detail(exc: ValueError) -> Any:
             "observed_quantum": exc.observed_quantum,
             "expected_rate": EXPECTED_RATE_HZ,
             "expected_quantum": EXPECTED_QUANTUM,
+        }
+    # T2452: structured envelope for strict-mode VERIFY failures so the UI
+    # can list every failing sub-sync, not just the first one.
+    if isinstance(exc, SnapshotVerificationError):
+        return {
+            "code": "activation_verify_failed",
+            "message": str(exc),
+            "errors": exc.errors,
         }
     return str(exc)
 

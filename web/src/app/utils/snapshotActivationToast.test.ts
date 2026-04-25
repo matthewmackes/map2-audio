@@ -209,4 +209,32 @@ describe('snapshotActivationToast', () => {
       ],
     })
   })
+
+  // T2452: structured strict-VERIFY envelope. The route returns
+  // { code: 'activation_verify_failed', message, errors: [{step, reason}] }.
+  // The extractor synthesizes a `failures` list so the existing UI rendering
+  // surfaces every failing sub-sync.
+  test('synthesizes a failures list from a strict-VERIFY envelope', () => {
+    const error = new ApiError(422, 'Unprocessable Entity', {
+      detail: {
+        code: 'activation_verify_failed',
+        message: 'Snapshot verification failed',
+        errors: [
+          { step: 'routing_apply', reason: 'engine offline' },
+          { step: 'morph_apply', reason: 'value out of range' },
+          { step: 'midi_map', reason: 'missing global command' },
+        ],
+      },
+    })
+    const detail = extractSnapshotActivationFailureDetail(error)
+    expect(detail).not.toBeNull()
+    expect(detail?.message).toBe('Snapshot verification failed')
+    expect(detail?.failures).toEqual([
+      'routing_apply: engine offline',
+      'morph_apply: value out of range',
+      'midi_map: missing global command',
+    ])
+    expect(extractSnapshotActivationFailureReason(error, { separator: ' • ' }))
+      .toBe('routing_apply: engine offline • morph_apply: value out of range • midi_map: missing global command')
+  })
 })

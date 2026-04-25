@@ -132,11 +132,27 @@ export function extractSnapshotActivationFailureDetail(error: unknown): Snapshot
   }
 
   const payload = detail as Record<string, unknown>
+  // T2452: synthesize `failures` from the strict-VERIFY envelope so the UI's
+  // existing failure list rendering surfaces every failing sub-sync (routing,
+  // morph, MIDI map, etc.) instead of just the first.
+  const synthesizedFailures: string[] =
+    payload.code === 'activation_verify_failed' && Array.isArray(payload.errors)
+      ? payload.errors
+        .filter((entry): entry is Record<string, unknown> => typeof entry === 'object' && entry !== null)
+        .map((entry) => {
+          const step = normalizeFailureText(entry.step) ?? 'unknown'
+          const reason = normalizeFailureText(entry.reason) ?? 'unknown error'
+          return `${step}: ${reason}`
+        })
+      : []
   const failures = Array.isArray(payload.failures)
-    ? payload.failures
-      .map((entry) => normalizeFailureText(entry))
-      .filter((entry): entry is string => entry !== null)
-    : []
+    ? [
+        ...payload.failures
+          .map((entry) => normalizeFailureText(entry))
+          .filter((entry): entry is string => entry !== null),
+        ...synthesizedFailures,
+      ]
+    : synthesizedFailures
   const issues = Array.isArray(payload.issues)
     ? payload.issues
       .filter((entry): entry is Record<string, unknown> => typeof entry === 'object' && entry !== null)

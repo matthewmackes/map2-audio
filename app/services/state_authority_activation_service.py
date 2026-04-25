@@ -13,7 +13,7 @@ import copy
 import json
 import logging
 import weakref
-from typing import Any, Callable, Optional
+from typing import Any, Callable, Literal, Optional
 from uuid import uuid4
 
 from sqlalchemy import select, update
@@ -48,6 +48,81 @@ async def _enforce_quantum_for_activation(
 ) -> QuantumEnforcementResult:
     """Wrapper so call sites stay readable; re-raises QuantumDriftError unchanged."""
     return await enforce_expected_quantum(policy=policy)
+
+
+# T2452: VERIFY phase strictness.
+#
+# Pre-T2452, every sub-sync in VERIFYING (routing, loop insertions, channel
+# state, morph, MIDI map, expression mappings, automation lanes) was wrapped in
+# a try/except that logged at DEBUG and continued. That meant a failed
+# sub-sync produced a "LIVE" badge in the UI but a partial apply on the
+# engine — the worst possible operator outcome.
+#
+# Default mode is now "strict": any sub-sync error fails the activation with a
+# ``SnapshotVerificationError`` carrying every error observed during the phase
+# (so a single failure pass surfaces all of them, not just the first). The
+# route layer translates this into a 422 with code ``activation_verify_failed``.
+#
+# Operators who need the old behaviour can opt into ``"lenient"`` per snapshot
+# by setting ``document.meta.verify_mode = "lenient"`` — failures still get
+# logged, but at WARNING (so they're visible in logs) and activation completes.
+VerifyMode = Literal["strict", "lenient"]
+
+
+class SnapshotVerificationError(ValueError):
+    """Raised when one or more VERIFYING sub-syncs fail in strict mode.
+
+    Carries the full list of (step, reason) pairs so the route can build a
+    structured error envelope.
+    """
+
+    def __init__(self, errors: list[dict[str, str]]):
+        self.errors = errors
+        joined = "; ".join(f"{e['step']}: {e['reason']}" for e in errors) or "no detail"
+        super().__init__(f"Snapshot verification failed: {joined}")
+
+
+def _extract_verify_mode(detail: Any) -> VerifyMode:
+    """Read ``document.meta.verify_mode`` from the snapshot detail, default strict."""
+    if not isinstance(detail, dict):
+        return "strict"
+    document = detail.get("document") or {}
+    meta = document.get("meta") if isinstance(document, dict) else None
+    mode = (meta or {}).get("verify_mode") if isinstance(meta, dict) else None
+    if mode in ("strict", "lenient"):
+        return mode
+    return "strict"
+
+
+async def _run_verify_step(
+    *,
+    step: str,
+    coro: Any,
+    fallback: dict[str, Any],
+    errors: list[dict[str, str]],
+    snapshot_id: Any,
+) -> dict[str, Any]:
+    """Await a verify sub-sync coroutine; capture any exception into ``errors``.
+
+    Returns ``fallback`` (the same shape callers used pre-T2452) on failure so
+    downstream metric assembly stays unchanged. The lenient/strict decision is
+    made *after* every step has had a chance to run, so a single activation
+    surfaces every failing sub-sync at once.
+    """
+    try:
+        return await coro
+    except Exception as exc:  # noqa: BLE001 — every failure mode surfaces
+        reason = str(exc) or exc.__class__.__name__
+        errors.append({"step": step, "reason": reason})
+        logger.warning(
+            "Snapshot verify step %s failed for snapshot %s: %s",
+            step,
+            snapshot_id,
+            reason,
+        )
+        result = dict(fallback)
+        result["reason"] = f"verify_failed:{reason}"
+        return result
 
 
 class StateAuthorityActivationService:
@@ -968,107 +1043,105 @@ class StateAuthorityActivationService:
                 status="in_progress",
                 note="Running post-apply verification and synchronization.",
             )
-            try:
-                routing_apply_result = await self.runtime_service_module.apply_snapshot_routing_to_engine(
-                    refreshed_detail
-                )
-            except Exception as exc:
-                logger.debug("Snapshot routing apply skipped for %s: %s", snapshot.id, exc)
-                routing_apply_result = {
+            # T2452: collect every sub-sync error across the phase so a single
+            # activation surfaces all failures at once, then enforce strictness.
+            verify_mode = _extract_verify_mode(detail)
+            verify_errors: list[dict[str, str]] = []
+
+            routing_apply_result = await _run_verify_step(
+                step="routing_apply",
+                coro=self.runtime_service_module.apply_snapshot_routing_to_engine(refreshed_detail),
+                fallback={
                     "applied": False,
-                    "reason": f"apply_failed:{exc}",
                     "removed_group_count": 0,
                     "created_group_id": None,
                     "branch_count": 0,
-                }
-            try:
-                loop_insertion_sync_result = await self.owner._sync_snapshot_loop_insertions_to_runtime(
-                    refreshed_detail
-                )
-            except Exception as exc:
-                logger.debug("Snapshot loop insertion sync skipped for %s: %s", snapshot.id, exc)
-                loop_insertion_sync_result = {
-                    "synced": False,
-                    "reason": f"sync_failed:{exc}",
-                    "chain_count": 0,
-                    "applied_count": 0,
-                }
-            try:
-                channel_state_sync_result = await self.owner._sync_snapshot_channel_state_to_runtime(
-                    refreshed_detail
-                )
-            except Exception as exc:
-                logger.debug("Snapshot channel-state sync skipped for %s: %s", snapshot.id, exc)
-                channel_state_sync_result = {
-                    "synced": False,
-                    "reason": f"sync_failed:{exc}",
-                    "channel_count": 0,
-                    "applied_count": 0,
-                }
-            try:
-                morph_apply_result = await self.runtime_service_module.apply_snapshot_morph_to_engine(
-                    refreshed_detail
-                )
-            except Exception as exc:
-                logger.debug("Snapshot morph apply skipped for %s: %s", snapshot.id, exc)
-                morph_apply_result = {
-                    "applied": False,
-                    "reason": f"apply_failed:{exc}",
-                    "plugin_count": 0,
-                    "applied_count": 0,
-                }
-            try:
-                midi_map_sync_result = await self.owner._sync_snapshot_midi_map_to_engine(
+                },
+                errors=verify_errors,
+                snapshot_id=snapshot.id,
+            )
+            loop_insertion_sync_result = await _run_verify_step(
+                step="loop_insertions",
+                coro=self.owner._sync_snapshot_loop_insertions_to_runtime(refreshed_detail),
+                fallback={"synced": False, "chain_count": 0, "applied_count": 0},
+                errors=verify_errors,
+                snapshot_id=snapshot.id,
+            )
+            channel_state_sync_result = await _run_verify_step(
+                step="channel_state",
+                coro=self.owner._sync_snapshot_channel_state_to_runtime(refreshed_detail),
+                fallback={"synced": False, "channel_count": 0, "applied_count": 0},
+                errors=verify_errors,
+                snapshot_id=snapshot.id,
+            )
+            morph_apply_result = await _run_verify_step(
+                step="morph_apply",
+                coro=self.runtime_service_module.apply_snapshot_morph_to_engine(refreshed_detail),
+                fallback={"applied": False, "plugin_count": 0, "applied_count": 0},
+                errors=verify_errors,
+                snapshot_id=snapshot.id,
+            )
+            midi_map_sync_result = await _run_verify_step(
+                step="midi_map",
+                coro=self.owner._sync_snapshot_midi_map_to_engine(
                     snapshot.id,
                     [
                         dict(entry)
                         for entry in refreshed_detail.get("controls", {}).get("midi_map", [])
                         if isinstance(entry, dict)
                     ],
-                )
-            except Exception as exc:
-                logger.debug("Snapshot MIDI map sync skipped for %s: %s", snapshot.id, exc)
-                midi_map_sync_result = {
+                ),
+                fallback={
                     "synced": False,
-                    "reason": f"sync_failed:{exc}",
                     "global_command_count": 0,
                     "snapshot_command_count": 0,
-                }
-            try:
-                expression_mapping_sync_result = await self.owner._sync_snapshot_expression_mappings_to_runtime(
+                },
+                errors=verify_errors,
+                snapshot_id=snapshot.id,
+            )
+            expression_mapping_sync_result = await _run_verify_step(
+                step="expression_mappings",
+                coro=self.owner._sync_snapshot_expression_mappings_to_runtime(
                     [
                         dict(entry)
                         for entry in refreshed_detail.get("controls", {}).get("expression_mappings", [])
                         if isinstance(entry, dict)
                     ],
-                )
-            except Exception as exc:
-                logger.debug("Snapshot expression mapping sync skipped for %s: %s", snapshot.id, exc)
-                expression_mapping_sync_result = {
+                ),
+                fallback={
                     "synced": False,
-                    "reason": f"sync_failed:{exc}",
                     "cleared_count": 0,
                     "applied_count": 0,
                     "active_snapshot_count": 0,
-                }
-            try:
-                automation_lane_sync_result = await self.owner._sync_snapshot_automation_lanes_to_runtime(
+                },
+                errors=verify_errors,
+                snapshot_id=snapshot.id,
+            )
+            automation_lane_sync_result = await _run_verify_step(
+                step="automation_lanes",
+                coro=self.owner._sync_snapshot_automation_lanes_to_runtime(
                     [
                         dict(entry)
                         for entry in refreshed_detail.get("controls", {}).get("automation_lanes", [])
                         if isinstance(entry, dict)
                     ],
-                )
-            except Exception as exc:
-                logger.debug("Snapshot automation lane sync skipped for %s: %s", snapshot.id, exc)
-                automation_lane_sync_result = {
+                ),
+                fallback={
                     "synced": False,
-                    "reason": f"sync_failed:{exc}",
                     "cleared_count": 0,
                     "applied_count": 0,
                     "invalid_count": 0,
                     "active_snapshot_count": 0,
-                }
+                },
+                errors=verify_errors,
+                snapshot_id=snapshot.id,
+            )
+
+            # T2452: in strict mode (default), any sub-sync failure aborts the
+            # activation; in lenient mode the WARN logs above are sufficient
+            # and we continue to mark VERIFYING completed.
+            if verify_mode == "strict" and verify_errors:
+                raise SnapshotVerificationError(verify_errors)
             brain_runtime_reconcile_result = await self.owner._reconcile_snapshot_brain_runtime_extensions(
                 current_extensions=pre_activation_extensions,
                 snapshot_extensions=(
@@ -1110,6 +1183,12 @@ class StateAuthorityActivationService:
                 "candidate_reason": None,
                 "candidates": [],
             }
+            # T2452: include verify mode + any captured sub-errors in the
+            # intent extra so reconciliation/diagnostics can surface lenient
+            # partial-applies. In strict mode this is always empty (we'd have
+            # raised above); in lenient mode it lists every step that failed.
+            runtime_metrics["verify_mode"] = verify_mode
+            runtime_metrics["verify_errors"] = verify_errors
             intent = await runtime_state_service.mark_intent_phase(
                 intent=intent,
                 phase="VERIFYING",
@@ -1118,6 +1197,8 @@ class StateAuthorityActivationService:
                 extra={
                     "channel_activity": runtime_metrics["channel_activity"],
                     "graph_document_apply": runtime_metrics["graph_document_apply"],
+                    "verify_mode": verify_mode,
+                    "verify_errors": verify_errors,
                 },
             )
             live_runtime_state = await runtime_state_service.confirm_live_intent(
