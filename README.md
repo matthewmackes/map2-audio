@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1280** Python | **1266** TypeScript | **136** C++/H | **145** Docs | **2813** total commits | **3** stars | **0** forks | **0** open issues
+**1282** Python | **1268** TypeScript | **136** C++/H | **145** Docs | **2818** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`13759ac6`](https://github.com/matthewmackes/map2-audio/commit/13759ac626b26be6a6f4551e3d45de51d19dcc20) | T2443: real per-channel metering feed for Brain ConsoleView | Map2 Audio | 2026-04-25 |
+| [`0fd0ccea`](https://github.com/matthewmackes/map2-audio/commit/0fd0cceaaf44123dbadff67aec3597479cb66d9e) | audit: migrate four more localStorage sites to persistedS... | Map2 Audio | 2026-04-25 |
+| [`3b714859`](https://github.com/matthewmackes/map2-audio/commit/3b714859038d6a701d75926991086f878f7eb8e3) | audit: migrate four more localStorage sites to persistedS... | Map2 Audio | 2026-04-25 |
+| [`6d94db91`](https://github.com/matthewmackes/map2-audio/commit/6d94db9172de2c5276b94aa5063f974dee30d995) | audit: migrate three more localStorage modules to persist... | Map2 Audio | 2026-04-25 |
+| [`1ef0bce2`](https://github.com/matthewmackes/map2-audio/commit/1ef0bce213e6c9c912fec0da81aaf7d8d42d0fae) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-25 |
 | [`2996e593`](https://github.com/matthewmackes/map2-audio/commit/2996e593e86fbf355edb1cd4c7ab90770deafc76) | T2456: reorder global tree headings + primary-theme separ... | Map2 Audio | 2026-04-25 |
 | [`d440305f`](https://github.com/matthewmackes/map2-audio/commit/d440305fc50dcda32b6c0d4a53faac0073d9ca22) | audit: migrate GlobalTreeNav expanded-ids to persistedSta... | Map2 Audio | 2026-04-25 |
 | [`f34c057a`](https://github.com/matthewmackes/map2-audio/commit/f34c057a3e35f0f90dc0d909a94bf74139d22262) | audit: drive no-explicit-any in src/app/pages from 26 → 0 | Map2 Audio | 2026-04-25 |
-| [`0820c32e`](https://github.com/matthewmackes/map2-audio/commit/0820c32e375db48a6d25ca22cd34613148b48e5d) | audit: expand routePrefetch registry from 4 buckets to 27... | Map2 Audio | 2026-04-25 |
-| [`be343178`](https://github.com/matthewmackes/map2-audio/commit/be343178498f19ea6eefd9ac88189f4efca3376f) | audit: route-gate the StageNotificationViewport god provider | Map2 Audio | 2026-04-25 |
-| [`ddf0844e`](https://github.com/matthewmackes/map2-audio/commit/ddf0844e4080d12f28477870695aadd7646cf67e) | audit: a11y landmarks + button semantics + persistedState... | Map2 Audio | 2026-04-25 |
-| [`1a749e26`](https://github.com/matthewmackes/map2-audio/commit/1a749e2612ca793a254e546bb625f87beade0991) | audit: ship security/performance hardening from Principal... | Map2 Audio | 2026-04-25 |
-| [`570fc49a`](https://github.com/matthewmackes/map2-audio/commit/570fc49a150ae0e723cc15e4ef85e58728ecaaf0) | feat(snapshot-editor): Build Workflow hero replaces inlin... | Map2 Audio | 2026-04-25 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
