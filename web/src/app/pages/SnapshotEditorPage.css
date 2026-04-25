@@ -4221,6 +4221,41 @@
   background: var(--cds-layer, var(--surface));
 }
 
+/* When the active-channel rail renders directly under the Snapshot
+   Management hero, drop its own card chrome and tuck it flush against
+   the hero so they read as one unified surface (per design merge). */
+.juce-grid-page__active-channel-rail.is-merged-with-mgmt {
+  margin-block-start: -1rem; /* eat the inspector-row gap (1rem) */
+  border-top: 0;
+  border-block-start: 0;
+  border-radius: 0 0 12px 12px;
+  background: linear-gradient(
+    180deg,
+    var(--cds-layer-01, color-mix(in srgb, var(--cds-layer, #161a21) 96%, #050505)),
+    var(--cds-layer, color-mix(in srgb, var(--cds-layer, #1c2129) 92%, #050505))
+  );
+  padding-block: 0.625rem;
+  padding-inline: 1.125rem;
+  flex: 1 1 100%;
+}
+
+/* Soften the divider between the merged rail and the hero — a thin inset
+   line instead of a hard border so the two surfaces still read as one card. */
+.juce-grid-page__active-channel-rail.is-merged-with-mgmt::before {
+  content: "";
+  position: absolute;
+  inset-inline: 1.125rem;
+  inset-block-start: 0;
+  block-size: 1px;
+  background: var(--cds-border-subtle-01, var(--cds-border-subtle, var(--border)));
+  opacity: 0.6;
+  pointer-events: none;
+}
+
+.juce-grid-page__active-channel-rail.is-merged-with-mgmt {
+  position: relative;
+}
+
 .juce-grid-page__active-channel-rail-main,
 .juce-grid-page__active-channel-rail-tools,
 .juce-grid-page__active-channel-rail-channel,
@@ -4748,6 +4783,13 @@
 .juce-grid-page__snapshot-inspector-row > .juce-grid-page__snapshot-inspector-controls {
   flex: 1 1 100%;
   min-inline-size: 0;
+}
+
+/* When the merged active-channel rail is the direct next sibling of the hero,
+   drop the hero's bottom border-radius so the two surfaces fuse cleanly. */
+.juce-grid-page__snapshot-inspector-controls:has(+ .juce-grid-page__active-channel-rail.is-merged-with-mgmt) {
+  border-radius: 12px 12px 0 0;
+  border-block-end: 0;
 }
 
 .juce-grid-page__snapshot-inspector-morph {

@@ -8583,7 +8583,7 @@ export function SnapshotEditorPage() {
                     />
                   ) : null}
                   {!snapshotEntryRequired && activeChannelStatusRail && (
-                    <div className="juce-grid-page__active-channel-rail" role="status" aria-live="polite">
+                    <div className="juce-grid-page__active-channel-rail is-merged-with-mgmt" role="status" aria-live="polite">
                       <div className="juce-grid-page__active-channel-rail-main">
                         <div className="juce-grid-page__active-channel-rail-identity">
                           <span className="juce-grid-page__active-channel-rail-kicker">Active channel</span>
