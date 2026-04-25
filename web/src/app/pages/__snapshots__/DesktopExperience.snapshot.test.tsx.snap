@@ -11,8 +11,8 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
     <div
       class="cds--layer-two global-tree-nav__layer"
     >
-      <aside
-        aria-label="Global navigation tree"
+      <nav
+        aria-label="Global navigation"
         class="global-tree-nav"
       >
         <div
@@ -4604,7 +4604,7 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
             </span>
           </span>
         </div>
-      </aside>
+      </nav>
     </div>
     <main
       class="app-content app-content--with-global-tree"
@@ -6112,8 +6112,8 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
     <div
       class="cds--layer-two global-tree-nav__layer"
     >
-      <aside
-        aria-label="Global navigation tree"
+      <nav
+        aria-label="Global navigation"
         class="global-tree-nav"
       >
         <div
@@ -10705,7 +10705,7 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
             </span>
           </span>
         </div>
-      </aside>
+      </nav>
     </div>
     <main
       class="app-content app-content--with-global-tree"
@@ -12272,8 +12272,8 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
     <div
       class="cds--layer-two global-tree-nav__layer"
     >
-      <aside
-        aria-label="Global navigation tree"
+      <nav
+        aria-label="Global navigation"
         class="global-tree-nav"
       >
         <div
@@ -16865,7 +16865,7 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
             </span>
           </span>
         </div>
-      </aside>
+      </nav>
     </div>
     <main
       class="app-content app-content--with-global-tree"

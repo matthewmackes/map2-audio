@@ -194,7 +194,7 @@ describe('AppShell global tree navigation', () => {
     )
 
     expect(container.querySelector('.window-title-strip')).toBeNull()
-    const navTree = screen.getByLabelText('Global navigation tree')
+    const navTree = screen.getByLabelText('Global navigation')
     expect(navTree).toBeInTheDocument()
     expectInDocumentOrder([
       'Home',
@@ -249,7 +249,7 @@ describe('AppShell global tree navigation', () => {
     // Blue context bar was retired in T2447 — workspace name now owns the title surface.
     expect(container.querySelector('.shell-ctx')).toBeNull()
     expect(container.querySelector('.shell-ws__main-name')).toHaveTextContent('IntelFX Rack')
-    const navTree = screen.getByLabelText('Global navigation tree')
+    const navTree = screen.getByLabelText('Global navigation')
     expect(navTree).toBeInTheDocument()
     expect(within(navTree).getAllByText('Hardware').length).toBeGreaterThan(0)
     expect(within(navTree).getAllByText('Devices').length).toBeGreaterThan(0)
@@ -349,7 +349,7 @@ describe('AppShell global tree navigation', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Collapse global navigation' }))
 
     await waitFor(() => {
-      expect(screen.queryByLabelText('Global navigation tree')).toBeNull()
+      expect(screen.queryByLabelText('Global navigation')).toBeNull()
       expect(screen.getByLabelText('Collapsed navigation rail')).toBeInTheDocument()
       expect(screen.getByRole('button', { name: 'Expand global navigation' })).toBeInTheDocument()
     })
@@ -357,7 +357,7 @@ describe('AppShell global tree navigation', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Expand global navigation' }))
 
     await waitFor(() => {
-      expect(screen.getByLabelText('Global navigation tree')).toBeInTheDocument()
+      expect(screen.getByLabelText('Global navigation')).toBeInTheDocument()
       expect(container.querySelector('.global-tree-nav')).toBeTruthy()
     })
   })

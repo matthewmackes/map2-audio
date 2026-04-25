@@ -188,8 +188,19 @@ function normalizeStageConfig(
   }
 }
 
-function shouldRenderTransient(stage: Required<StageNotificationConfig> | null): boolean {
-  return !stage || !stage.suppressTransient
+function shouldRenderTransient(
+  stage: Required<StageNotificationConfig> | null,
+  viewportMounted: boolean,
+): boolean {
+  if (!stage) return true
+  // When the rich stage viewport isn't mounted on this route (see
+  // STAGE_VIEWPORT_ROUTE_PREFIXES), critical/warning alerts must still
+  // surface — fall back to the toastify transient so a backend-unreachable
+  // or critical_alert is never silent.
+  if (!viewportMounted && (stage.kind === 'critical_alert' || stage.kind === 'warning_alert')) {
+    return true
+  }
+  return !stage.suppressTransient
 }
 
 function buildToastifyOptions(
@@ -1404,6 +1415,10 @@ const NotificationContext = createContext<NotificationContextValue | null>(null)
 export function NotificationProvider({ children }: { children: ReactNode }) {
   const [notifications, setNotifications] = useState<NotificationRecord[]>([])
   const timersRef = useRef<Map<string, ReturnType<typeof setTimeout>>>(new Map())
+  const location = useLocation()
+  const viewportMounted = shouldMountStageViewport(location.pathname)
+  const viewportMountedRef = useRef(viewportMounted)
+  viewportMountedRef.current = viewportMounted
 
   const dismissNotification = useCallback((id: string) => {
     setNotifications((prev) => prev.filter((notification) => notification.id !== id))
@@ -1452,7 +1467,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
       timersRef.current.set(id, timer)
     }
 
-    if (shouldRenderTransient(stage)) {
+    if (shouldRenderTransient(stage, viewportMountedRef.current)) {
       const content = (
         <div className="stage-notification-transient__body">
           <strong>{title}</strong>
@@ -1497,7 +1512,7 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
   return (
     <NotificationContext.Provider value={value}>
       {children}
-      <StageNotificationViewport />
+      <StageNotificationViewportGate />
       <ToastContainer
         position="top-right"
         newestOnTop
@@ -1510,6 +1525,36 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
       />
     </NotificationContext.Provider>
   )
+}
+
+// Routes that should mount the stage chyron + live-snapshot rail. Anything
+// not in this list does NOT instantiate StageNotificationViewport, which
+// avoids spinning up its CPU/VU/MIDI/cluster-live-state subscriptions on
+// dense editor surfaces (snapshot editor, MIDI Hub editors, device pages,
+// etc.) where the chyron has nothing to show anyway. Toast pushes still
+// work everywhere via NotificationContext + react-toastify.
+const STAGE_VIEWPORT_ROUTE_PREFIXES: readonly string[] = [
+  '/about',
+  '/chains',
+  '/legacy',
+  '/theme',
+  '/welcome',
+  '/workspace',
+]
+
+function shouldMountStageViewport(pathname: string): boolean {
+  if (pathname === '/' || pathname === '') return true
+  return STAGE_VIEWPORT_ROUTE_PREFIXES.some(
+    (prefix) => pathname === prefix || pathname.startsWith(`${prefix}/`),
+  )
+}
+
+function StageNotificationViewportGate() {
+  const location = useLocation()
+  if (!shouldMountStageViewport(location.pathname)) {
+    return null
+  }
+  return <StageNotificationViewport />
 }
 
 function StageNotificationViewport() {

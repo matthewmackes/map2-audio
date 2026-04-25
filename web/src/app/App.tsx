@@ -24,10 +24,12 @@ import { HOST_MACHINE_ROUTE } from './pages/hostMachineRoutes'
 import { buildDeviceRoute, getDeviceEntry } from './data/deviceRegistry'
 
 // Lazy-load devtools so they don't bloat the production shell chunk. The
-// import is also gated on import.meta.env.DEV so prod tree-shakes it
-// entirely — a previous version always rendered <ReactQueryDevtools /> with
-// initialIsOpen={false}, which still downloaded the chunk for every user.
-const ReactQueryDevtools = import.meta.env.DEV
+// import is also gated on NODE_ENV so the prod build tree-shakes the
+// `lazy()` call entirely. Using process.env.NODE_ENV (instead of
+// import.meta.env.DEV) keeps the gate compatible with both Vite (which
+// statically replaces `process.env.NODE_ENV` at build time) and Jest
+// (which sets NODE_ENV='test', so the gate is false in tests too).
+const ReactQueryDevtools = process.env.NODE_ENV !== 'production' && process.env.NODE_ENV !== 'test'
   ? lazy(() => import('@tanstack/react-query-devtools').then(m => ({ default: m.ReactQueryDevtools })))
   : null
 

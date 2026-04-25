@@ -314,7 +314,7 @@ describe('Desktop experience visual snapshots', () => {
   it('matches the global navigation shell', () => {
     const { container } = renderSnapshotHarness(['/workspace/artifacts'])
 
-    expect(screen.getByLabelText('Global navigation tree')).toBeInTheDocument()
+    expect(screen.getByLabelText('Global navigation')).toBeInTheDocument()
     expect(container.firstChild).toMatchSnapshot()
   })
 })

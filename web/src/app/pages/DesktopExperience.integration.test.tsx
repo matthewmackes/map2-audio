@@ -360,7 +360,7 @@ describe('Desktop experience integration', () => {
     const { container } = renderDesktopExperience(['/'])
 
     expect(await screen.findByTestId('home-shell')).toBeInTheDocument()
-    const navTree = screen.getByLabelText('Global navigation tree')
+    const navTree = screen.getByLabelText('Global navigation')
     fireEvent.click(within(navTree).getByText('Snapshot Editor'))
 
     await waitFor(() => {
@@ -383,7 +383,7 @@ describe('Desktop experience integration', () => {
   it('navigates through the persistent global tree rail', async () => {
     renderDesktopExperience(['/workspace'])
 
-    const navTree = screen.getByLabelText('Global navigation tree')
+    const navTree = screen.getByLabelText('Global navigation')
     expect(navTree).toBeInTheDocument()
     fireEvent.click(within(navTree).getByText('Snapshot Editor'))
 
@@ -430,6 +430,6 @@ describe('Desktop experience integration', () => {
     expect(screen.getByTestId('perform-page')).toBeInTheDocument()
     expect(container.querySelector('.app-shell--perform-route')).toBeTruthy()
     expect(container.querySelector('.shell-ws')).toBeNull()
-    expect(screen.getByLabelText('Global navigation tree')).toBeInTheDocument()
+    expect(screen.getByLabelText('Global navigation')).toBeInTheDocument()
   })
 })
