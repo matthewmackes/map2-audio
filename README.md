@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1275** Python | **1252** TypeScript | **136** C++/H | **145** Docs | **2783** total commits | **3** stars | **0** forks | **0** open issues
+**1276** Python | **1252** TypeScript | **136** C++/H | **145** Docs | **2786** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`845b98d3`](https://github.com/matthewmackes/map2-audio/commit/845b98d38903e4c7523d1a1ed58a7a17b001c0af) | feat(snapshots): VERIFY phase strict-by-default (T2452) | Map2 Audio | 2026-04-24 |
+| [`726a5867`](https://github.com/matthewmackes/map2-audio/commit/726a5867223c794f06233722e3623a373e9cc309) | fix(boot): rename undefined `deployment_mode` to `canonic... | Map2 Audio | 2026-04-24 |
+| [`f1704c5f`](https://github.com/matthewmackes/map2-audio/commit/f1704c5ffe12a28f578b14966256179e7b90635d) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-24 |
 | [`145f6735`](https://github.com/matthewmackes/map2-audio/commit/145f67359f9a76f17c69c5f9292cff68043ec0f4) | feat(snapshots): appliance-grade stability priority clust... | Map2 Audio | 2026-04-24 |
 | [`3a58bc96`](https://github.com/matthewmackes/map2-audio/commit/3a58bc96a90ad7d95ffcaeab3db21b3c7f6bce71) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-24 |
 | [`3a89dd0b`](https://github.com/matthewmackes/map2-audio/commit/3a89dd0b14d26e42f99802b3fda69fb1832baf13) | feat(T2447): remove redundant blue context bar from top c... | Map2 Audio | 2026-04-24 |
 | [`99e00930`](https://github.com/matthewmackes/map2-audio/commit/99e00930059851f8265fdbde07700a2aa90ddf6d) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-24 |
 | [`10eec3c8`](https://github.com/matthewmackes/map2-audio/commit/10eec3c8b8cd2b0657636677cc5e52f23a4afebf) | chore(worklist): lock Q1-Q5 answers on T2442-T2446 + open... | Map2 Audio | 2026-04-24 |
-| [`147aae31`](https://github.com/matthewmackes/map2-audio/commit/147aae3100193489d46fef914e81f19de0ccafc6) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-24 |
-| [`871fdbc6`](https://github.com/matthewmackes/map2-audio/commit/871fdbc6af2ddb84af73a2d22e76e18a1f26373d) | chore(worklist): open T2442-T2446 follow-up epics | Map2 Audio | 2026-04-24 |
-| [`bc16c0c6`](https://github.com/matthewmackes/map2-audio/commit/bc16c0c6321c23a5259b0a31277638bf77820447) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-24 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
