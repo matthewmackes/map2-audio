@@ -28,8 +28,13 @@ import { parseBrainImportSource } from './brainHandoff'
 import { BrainOverviewShell } from './brainViews/BrainOverviewShell'
 import './PerformanceBrainPage.css'
 
+// T2442: Brain Overview tabs are now first-class section ids. The legacy
+// `overview` aggregate is gone; `performance` is the default landing tab.
 type SectionId =
-  | 'overview'
+  | 'performance'
+  | 'console'
+  | 'step'
+  | 'split'
   | 'perform'
   | 'layers'
   | 'sequence'
@@ -41,7 +46,10 @@ type SectionId =
   | 'diagnostics'
 
 const SECTION_IDS: readonly SectionId[] = [
-  'overview',
+  'performance',
+  'console',
+  'step',
+  'split',
   'perform',
   'layers',
   'sequence',
@@ -52,6 +60,9 @@ const SECTION_IDS: readonly SectionId[] = [
   'practice_coach',
   'diagnostics',
 ] as const
+
+/** Subset of section ids that share the Brain Overview shell. */
+const OVERVIEW_SECTIONS: readonly SectionId[] = ['performance', 'console', 'step', 'split'] as const
 
 const PRACTICE_STYLES = [
   { id: 'rock_8', label: 'Rock 8', feel: 'Straight', signature: '4/4' },
@@ -329,7 +340,7 @@ export function PerformanceBrainPage() {
     ...(factoryPracticePacksQuery.data ?? []),
     ...(generatedPracticePacksQuery.data ?? []),
   ]
-  const activeSection = routeSection ?? state?.active_section ?? 'overview'
+  const activeSection: SectionId = routeSection ?? state?.active_section ?? 'performance'
   const currentSetName = state?.set_name ?? ''
 
   const handleSectionChange = useCallback((sectionId: SectionId) => {
@@ -348,7 +359,7 @@ export function PerformanceBrainPage() {
     subtitle: 'Unified drum-and-sequencer brain with keyboard layers, trigger nuance, routing, diagnostics, and snapshot-first workflow.',
     kicker: 'Platform / Performance Brain',
     actions: [
-      { id: 'focus-overview', label: 'Focus Overview', icon: Reset, onClick: () => handleSectionChange('overview'), active: activeSection === 'overview' },
+      { id: 'focus-overview', label: 'Focus Overview', icon: Reset, onClick: () => handleSectionChange('performance'), active: OVERVIEW_SECTIONS.includes(activeSection) },
       { id: 'back-audio-grid', label: 'Back to Audio Grid', icon: ArrowLeft, onClick: () => navigate('/juce-grid') },
     ],
   }, [activeSection, handleSectionChange, navigate])
@@ -450,7 +461,7 @@ export function PerformanceBrainPage() {
 
         <hr className="brain-page__divider" role="separator" aria-hidden="true" />
 
-        {activeSection === 'overview' ? (
+        {OVERVIEW_SECTIONS.includes(activeSection) ? (
           <BrainOverviewShell
             state={state}
             transport={transport}

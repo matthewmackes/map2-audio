@@ -326,8 +326,14 @@ class BrainStateModel(BaseModel):
     set_name: str = "Init Performance Brain"
     active_slot: int = Field(0, ge=0, le=15)
     active_layer_id: str = "main-stack"
+    # T2442: Brain Overview tabs (performance/console/step/split) are now first-class
+    # `?section=` values instead of frontend-only `?view=` indirection. The legacy
+    # `overview` aggregate value is migrated to `performance` at load time.
     active_section: Literal[
-        "overview",
+        "performance",
+        "console",
+        "step",
+        "split",
         "perform",
         "layers",
         "sequence",
@@ -337,7 +343,7 @@ class BrainStateModel(BaseModel):
         "session_media",
         "practice_coach",
         "diagnostics",
-    ] = "overview"
+    ] = "performance"
     transport: BrainTransportStateModel = Field(default_factory=BrainTransportStateModel)
     slots: list[BrainSlotModel] = Field(default_factory=list, min_length=16, max_length=16)
     layers: list[BrainLayerModel] = Field(default_factory=list)
@@ -368,7 +374,10 @@ class BrainStateUpdateModel(BaseModel):
     active_slot: int | None = Field(default=None, ge=0, le=15)
     active_layer_id: str | None = Field(default=None, min_length=1, max_length=80)
     active_section: Literal[
-        "overview",
+        "performance",
+        "console",
+        "step",
+        "split",
         "perform",
         "layers",
         "sequence",

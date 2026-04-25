@@ -1714,7 +1714,9 @@ export interface BrainState {
   set_name: string
   active_slot: number
   active_layer_id: string
-  active_section: 'overview' | 'perform' | 'layers' | 'sequence' | 'routing' | 'inputs' | 'library' | 'session_media' | 'practice_coach' | 'diagnostics'
+  // T2442: Brain Overview subviews (performance/console/step/split) promoted to
+  // first-class section ids; the legacy `overview` aggregate is gone.
+  active_section: 'performance' | 'console' | 'step' | 'split' | 'perform' | 'layers' | 'sequence' | 'routing' | 'inputs' | 'library' | 'session_media' | 'practice_coach' | 'diagnostics'
   transport: BrainTransportState
   slots: BrainSlot[]
   layers: BrainLayer[]

@@ -444,9 +444,10 @@ describe('PerformanceBrainPage', () => {
     await waitFor(() => expect(mockImportFromDrums).toHaveBeenCalled())
   })
 
-  it('renders the BrainOverviewShell on the overview section', async () => {
-    renderPage('/brain?section=overview')
-
+  it('renders the BrainOverviewShell on every Overview subview section', async () => {
+    // T2442: the four Brain Overview tabs are first-class section ids; any of
+    // them must mount the shell.
+    renderPage('/brain?section=performance')
     await waitFor(() => expect(screen.getByTestId('brain-overview-shell')).toBeInTheDocument())
   })
 
@@ -593,10 +594,10 @@ describe('PerformanceBrainPage', () => {
   })
 
   it('auto-runs a scoped drum handoff import and clears the handoff flag from the route', async () => {
-    renderPage('/brain?instance_id=42&plugin_position=9&section=overview&import_source=drums')
+    renderPage('/brain?instance_id=42&plugin_position=9&section=performance&import_source=drums')
 
     await waitFor(() => expect(mockImportFromDrums).toHaveBeenCalledWith({ instanceId: 42, pluginPosition: 9 }))
-    await waitFor(() => expect(screen.getByTestId('location-probe')).toHaveTextContent('/brain?instance_id=42&plugin_position=9&section=overview'))
+    await waitFor(() => expect(screen.getByTestId('location-probe')).toHaveTextContent('/brain?instance_id=42&plugin_position=9&section=performance'))
     expect(screen.getByTestId('location-probe')).not.toHaveTextContent('import_source')
     expect(mockImportFromSynthForge).not.toHaveBeenCalled()
   })

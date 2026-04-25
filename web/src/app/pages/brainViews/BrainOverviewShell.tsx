@@ -1,4 +1,4 @@
-import { useCallback, useEffect } from 'react'
+import { useCallback } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import {
   Categories,
@@ -14,8 +14,6 @@ import { StepView } from './StepView'
 import { SplitView } from './SplitView'
 import './brainViews.css'
 
-const STORAGE_KEY = 'brain:last-view'
-
 const TAB_META: Record<BrainViewId, { label: string; sub: string; Icon: typeof DataStructured }> = {
   performance: { label: 'Performance', sub: 'Pads · Transport · Meters', Icon: DataStructured },
   console: { label: 'Console', sub: 'Mixer · Faders · Routing', Icon: ConnectionSignal },
@@ -23,54 +21,29 @@ const TAB_META: Record<BrainViewId, { label: string; sub: string; Icon: typeof D
   split: { label: 'Split', sub: 'Keyboard · Pads · Routing', Icon: Categories },
 }
 
-function readStoredView(): BrainViewId {
-  if (typeof window === 'undefined') return 'performance'
-  try {
-    const raw = window.localStorage.getItem(STORAGE_KEY)
-    if (raw && (BRAIN_VIEW_IDS as readonly string[]).includes(raw)) {
-      return raw as BrainViewId
-    }
-  } catch {
-    // Ignore
-  }
-  return 'performance'
-}
-
-function writeStoredView(view: BrainViewId): void {
-  if (typeof window === 'undefined') return
-  try {
-    window.localStorage.setItem(STORAGE_KEY, view)
-  } catch {
-    // Ignore
-  }
-}
-
-function parseView(raw: string | null): BrainViewId | null {
+function parseSection(raw: string | null): BrainViewId | null {
   return raw && (BRAIN_VIEW_IDS as readonly string[]).includes(raw) ? (raw as BrainViewId) : null
 }
 
+/**
+ * Brain Overview shell.
+ *
+ * T2442: the four Brain Overview tabs (performance / console / step / split) are
+ * now first-class `?section=` values written directly by the parent
+ * PerformanceBrainPage. This shell simply reads `?section=` and falls back to
+ * `performance` if the param doesn't match one of the four. Storage and
+ * `?view=` indirection both removed.
+ */
 export function BrainOverviewShell(props: BrainOverviewSharedProps) {
   const [searchParams, setSearchParams] = useSearchParams()
-  const paramView = parseView(searchParams.get('view'))
-  const activeView = paramView ?? readStoredView()
-
-  // Persist view param to URL on mount + persist to localStorage.
-  useEffect(() => {
-    if (!paramView) {
-      const next = new URLSearchParams(searchParams)
-      next.set('view', activeView)
-      setSearchParams(next, { replace: true })
-    }
-    writeStoredView(activeView)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [activeView])
+  const sectionParam = parseSection(searchParams.get('section'))
+  const activeView: BrainViewId = sectionParam ?? 'performance'
 
   const onChangeView = useCallback(
     (view: BrainViewId) => {
       const next = new URLSearchParams(searchParams)
-      next.set('view', view)
+      next.set('section', view)
       setSearchParams(next)
-      writeStoredView(view)
     },
     [searchParams, setSearchParams],
   )

@@ -198,8 +198,13 @@ const LAUNCHER_STOREFRONT_OVERRIDES: Record<string, StorefrontOverride> = {
     ],
   },
   '/brain': {
+    // T2442: Brain Overview tabs (Performance / Console / Step / Split) are now
+    // first-class `?section=` values, alongside the other Brain sections.
     treeChildren: [
-      { route: '/brain?section=overview', label: 'Overview' },
+      { route: '/brain?section=performance', label: 'Performance' },
+      { route: '/brain?section=console', label: 'Console' },
+      { route: '/brain?section=step', label: 'Step' },
+      { route: '/brain?section=split', label: 'Split' },
       { route: '/brain?section=perform', label: 'Perform' },
       { route: '/brain?section=layers', label: 'Layers' },
       { route: '/brain?section=sequence', label: 'Sequence' },

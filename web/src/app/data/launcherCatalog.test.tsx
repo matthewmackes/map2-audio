@@ -165,7 +165,11 @@ describe('launcherCatalog', () => {
     ])
 
     expect(getLauncherCatalogTreeChildren('/brain')).toEqual([
-      { route: '/brain?section=overview', label: 'Overview' },
+      // T2442: Brain Overview tabs are now first-class
+      { route: '/brain?section=performance', label: 'Performance' },
+      { route: '/brain?section=console', label: 'Console' },
+      { route: '/brain?section=step', label: 'Step' },
+      { route: '/brain?section=split', label: 'Split' },
       { route: '/brain?section=perform', label: 'Perform' },
       { route: '/brain?section=layers', label: 'Layers' },
       { route: '/brain?section=sequence', label: 'Sequence' },

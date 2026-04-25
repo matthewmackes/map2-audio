@@ -755,6 +755,11 @@ class PerformanceBrainService(Singleton):
         path = self._state_path_for_key(instance_key)
         if path.exists():
             payload = json.loads(path.read_text())
+            # T2442: legacy `active_section: "overview"` is no longer valid — the
+            # four Brain Overview subviews are now first-class. Default migrated
+            # rows to `performance` (the most-common landing tab).
+            if isinstance(payload, dict) and payload.get("active_section") == "overview":
+                payload["active_section"] = "performance"
             state = BrainStateModel.model_validate(payload)
         else:
             state = self._default_state(instance_key)

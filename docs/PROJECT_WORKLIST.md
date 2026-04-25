@@ -69,7 +69,7 @@ Last updated: 2026-04-24 EDT - Claude: opened; pending user question cycle.
 ---
 
 ID: T2442
-Status: [ ] Todo
+Status: [✓] Done
 Title: Widen `BrainState.active_section` to include Performance / Console / Step / Split
 Locked decisions (user-confirmed 2026-04-24):
 - Q5 approach: full promotion, single atomic commit. Python + TypeScript unions widened in the same commit; stored `overview` rows migrate to a default subview (`performance`); `?view=` indirection fully removed from `PerformanceBrainPage` + `BrainOverviewShell`. Full release loop per T2438 cadence.
@@ -78,8 +78,9 @@ Description:
 - Dependencies: T2438 Brain Overview shipped.
 - Why: Known follow-up flagged in T2438's worklist entry. Completing this makes the four Brain tabs bookmarkable/deep-linkable at the same URL tier as `perform`, `layers`, `sequence`, etc. Also removes the special-case `?view=` handling in `PerformanceBrainPage.tsx` and `BrainOverviewShell`.
 - Backend impact: requires backend PR — Python schema change + migration for stored `active_section` values (probably `overview` rows need a default new subview).
+Completion note: 2026-04-25 — Claude: SHIPPED. Pydantic `BrainStateModel.active_section` + `BrainStateUpdateModel.active_section` Literals widened to add `performance`/`console`/`step`/`split`; default value moved from `"overview"` to `"performance"`. JSON loader (`_load_instance` in `performance_brain_service.py`) migrates legacy `active_section: "overview"` rows to `"performance"` before model validation. Frontend `SectionId` widened in `PerformanceBrainPage.tsx`; new `OVERVIEW_SECTIONS` set drives the shell-mount gate so any of the four subview ids renders `BrainOverviewShell`. `BrainOverviewShell.tsx` now reads `?section=` directly (storage + `?view=` indirection removed entirely). Launcher catalog `/brain` tree children replace the single Overview row with four entries (Performance / Console / Step / Split). `BrainState['active_section']` union widened in `web/src/map2/api.ts`. Tests: 31 backend pytest brain tests green; focused frontend Jest covers launcherCatalog, PerformanceBrainPage, DesktopExperience.snapshot (3 snapshots refreshed); typecheck clean; full production build clean.
 Assigned to: Claude
-Last updated: 2026-04-24 EDT - Claude: opened; pending user question cycle.
+Last updated: 2026-04-25 EDT - Claude: SHIPPED.
 
 ---
 
