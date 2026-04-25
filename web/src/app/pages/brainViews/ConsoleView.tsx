@@ -1,4 +1,32 @@
 import { BoKV, BoTag, formatMs, formatPercent, slotColor, type BrainOverviewSharedProps } from './brainViewShared'
+import { useBrainChannelMeters, type BrainChannelMeter } from '../../hooks/useBrainChannelMeters'
+
+const METER_FLOOR_DB = -60
+const METER_CEILING_DB = 0
+const YELLOW_THRESHOLD_DB = -12
+const RED_THRESHOLD_DB = -3
+const METER_SEGMENT_COUNT = 18
+
+const IDLE_METER: BrainChannelMeter = {
+  slotId: -1,
+  peakDb: METER_FLOOR_DB,
+  rmsDb: METER_FLOOR_DB,
+  clipping: false,
+  peakHoldDb: METER_FLOOR_DB,
+}
+
+function dbToFraction(db: number): number {
+  if (!Number.isFinite(db)) return 0
+  if (db <= METER_FLOOR_DB) return 0
+  if (db >= METER_CEILING_DB) return 1
+  return (db - METER_FLOOR_DB) / (METER_CEILING_DB - METER_FLOOR_DB)
+}
+
+function dbToColor(db: number): string {
+  if (db >= RED_THRESHOLD_DB) return 'var(--bo-danger)'
+  if (db >= YELLOW_THRESHOLD_DB) return 'var(--bo-warn)'
+  return 'var(--bo-ok)'
+}
 
 function ChannelStrip({
   index,
@@ -11,6 +39,7 @@ function ChannelStrip({
   onToggleSolo,
   reverbSend,
   waveformSeed,
+  meter,
 }: {
   index: number
   name: string
@@ -22,15 +51,26 @@ function ChannelStrip({
   onToggleSolo: () => void
   reverbSend: number
   waveformSeed: number
+  meter: BrainChannelMeter
 }) {
   const levelPct = Math.round(Math.max(0, Math.min(1, level)) * 100)
-  const metricBars = 18
+  const peakFraction = mute ? 0 : dbToFraction(meter.peakDb)
+  const rmsFraction = mute ? 0 : dbToFraction(meter.rmsDb)
+  const peakHoldFraction = mute ? 0 : dbToFraction(meter.peakHoldDb)
+  const clipping = !mute && meter.clipping
+  const peakColor = clipping ? 'var(--bo-danger)' : dbToColor(meter.peakDb)
   return (
     <div className="bo-chstrip" style={{ opacity: mute ? 0.55 : 1 }}>
       <div className="bo-chstrip__head">
         <div className="bo-chstrip__color" style={{ background: color }} />
         <div className="bo-chstrip__num">{String(index).padStart(2, '0')}</div>
         <div className="bo-chstrip__name">{name}</div>
+        <div
+          className="bo-chstrip__clip"
+          data-on={clipping ? 'true' : 'false'}
+          aria-label={clipping ? 'Clipping' : 'No clip'}
+          title={clipping ? 'Clipping at 0 dBFS' : ''}
+        />
       </div>
       <div className="bo-chstrip__wf" data-placeholder="channel-waveform">
         {Array.from({ length: 24 }).map((_, k) => {
@@ -63,19 +103,43 @@ function ChannelStrip({
             <div className="bo-chstrip__cap-line" style={{ background: color }} />
           </div>
         </div>
-        <div className="bo-chstrip__meter" data-placeholder="channel-meter">
-          {Array.from({ length: metricBars }).map((_, k) => {
-            const v = k / metricBars
-            const on = v < level
-            const segC = v > 0.85 ? 'var(--bo-danger)' : v > 0.7 ? 'var(--bo-warn)' : 'var(--bo-ok)'
+        <div
+          className="bo-chstrip__meter"
+          role="meter"
+          aria-label={`Channel ${index} peak`}
+          aria-valuemin={METER_FLOOR_DB}
+          aria-valuemax={METER_CEILING_DB}
+          aria-valuenow={Math.round(meter.peakDb)}
+        >
+          {/* RMS underlay — gradient that fades behind the peak segments */}
+          <div
+            className="bo-chstrip__meter-rms"
+            style={{
+              height: `${rmsFraction * 100}%`,
+              background: 'linear-gradient(to top, rgba(34,197,94,0.18), rgba(245,158,11,0.18) 70%, rgba(239,68,68,0.18))',
+            }}
+          />
+          {Array.from({ length: METER_SEGMENT_COUNT }).map((_, k) => {
+            const segFraction = (k + 1) / METER_SEGMENT_COUNT
+            const on = segFraction <= peakFraction
+            const segDb = METER_FLOOR_DB + segFraction * (METER_CEILING_DB - METER_FLOOR_DB)
             return (
               <div
                 key={k}
                 className="bo-chstrip__meter-seg"
-                style={{ background: on ? segC : 'rgba(255,255,255,0.04)' }}
+                style={{ background: on ? dbToColor(segDb) : 'rgba(255,255,255,0.04)' }}
               />
             )
           })}
+          {peakHoldFraction > 0 && (
+            <div
+              className="bo-chstrip__meter-hold"
+              style={{
+                bottom: `${peakHoldFraction * 100}%`,
+                background: peakColor,
+              }}
+            />
+          )}
         </div>
       </div>
       <div className="bo-chstrip__ms">
@@ -118,6 +182,7 @@ export function ConsoleView({
 }: BrainOverviewSharedProps) {
   const visibleSlots = slots.slice(0, 16)
   const qualification = diagnostics.controller_qualification
+  const { meters } = useBrainChannelMeters()
 
   return (
     <>
@@ -142,6 +207,7 @@ export function ConsoleView({
           {visibleSlots.map((slot, i) => {
             const color = slotColor(slot, i)
             const bus = mixer.buses[slot.output_bus] ?? mixer.buses[0]
+            const meter = meters[slot.slot_id] ?? IDLE_METER
             return (
               <ChannelStrip
                 key={slot.slot_id}
@@ -155,6 +221,7 @@ export function ConsoleView({
                 onToggleSolo={() => onSlotUpdate(slot.slot_id, { solo: !slot.solo })}
                 reverbSend={bus?.reverb_send ?? 0}
                 waveformSeed={slot.slot_id}
+                meter={meter}
               />
             )
           })}

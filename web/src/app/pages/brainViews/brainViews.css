@@ -598,11 +598,61 @@
   flex-direction: column-reverse;
   gap: 1px;
   padding: 1px;
+  position: relative;
+  overflow: hidden;
 }
 
 .bo-chstrip__meter-seg {
   flex: 1;
   border-radius: 0.5px;
+  position: relative;
+  z-index: 1;
+}
+
+/* RMS underlay — fills from the bottom up to the current RMS height,
+   sitting behind the segmented peak bars. The gradient communicates
+   "warmer = louder" without competing with the segmented peak readout. */
+.bo-chstrip__meter-rms {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  z-index: 0;
+  border-radius: 1px;
+  pointer-events: none;
+  transition: height 60ms linear;
+}
+
+/* 2-second peak-hold dot. Parks at the recent maximum and decays back to
+   the live peak after the hold expires. Sits above the segments so it's
+   visible against the lit portion of the meter. */
+.bo-chstrip__meter-hold {
+  position: absolute;
+  left: 1px;
+  right: 1px;
+  height: 2px;
+  z-index: 2;
+  border-radius: 1px;
+  box-shadow: 0 0 4px currentColor;
+  pointer-events: none;
+}
+
+/* Per-channel clip indicator — dark dot at rest, bright red glow when the
+   peak crosses 0 dBFS. Lives in the strip header next to the slot number. */
+.bo-chstrip__clip {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background: rgba(239, 68, 68, 0.18);
+  border: 1px solid rgba(239, 68, 68, 0.35);
+  margin-left: auto;
+  transition: background 80ms ease-out, box-shadow 80ms ease-out, border-color 80ms ease-out;
+}
+
+.bo-chstrip__clip[data-on='true'] {
+  background: var(--bo-danger);
+  border-color: var(--bo-danger);
+  box-shadow: 0 0 8px var(--bo-danger), 0 0 14px rgba(239, 68, 68, 0.55);
 }
 
 .bo-chstrip__ms {

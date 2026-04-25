@@ -14,6 +14,7 @@ from typing import Any
 
 from fastapi import APIRouter, HTTPException, Query
 
+from app.services.brain_metering_service import get_brain_metering_service
 from app.services.drum_kit_service import get_drum_kit_service
 from app.services.drum_machine_service import get_drum_machine_service
 from app.services.drum_sequencer_service import get_drum_sequencer_service
@@ -450,6 +451,17 @@ def get_brain_diagnostics(
 ) -> dict[str, Any]:
     _restore_authority_projection_blocking(instance_id=instance_id, plugin_position=plugin_position)
     return _service().get_diagnostics(instance_id=instance_id, plugin_position=plugin_position)
+
+
+@router.get("/api/engine/brain/metering")
+def get_brain_metering() -> dict[str, Any]:
+    """Polling fallback for the per-slot ConsoleView meters.
+
+    The 30 fps push path is the `brain_metering` WebSocket topic broadcast by
+    `MeteringBroadcastService`; this endpoint exists so the frontend can warm
+    its initial state without waiting for the first broadcast tick.
+    """
+    return get_brain_metering_service().read_payload()
 
 
 @router.post("/api/engine/brain/import/drums", response_model=BrainStateModel)

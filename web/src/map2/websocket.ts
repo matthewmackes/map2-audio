@@ -64,6 +64,7 @@ export type WebSocketTopic =
   | 'download:progress'
   | 'soundfont:download:progress'
   | 'brain:runtime'
+  | 'brain_metering'
   | 'snapshot_runtime_live_state'
   | 'snapshot_activation_events'
   | 'push_surface:pending_confirmation'
