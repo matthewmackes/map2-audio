@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1278** Python | **1259** TypeScript | **136** C++/H | **145** Docs | **2799** total commits | **3** stars | **0** forks | **0** open issues
+**1280** Python | **1266** TypeScript | **136** C++/H | **145** Docs | **2813** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -193,7 +193,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 |  |  |  |
 | :---: | :---: | :---: |
 | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/map2-banner.png" width="280" alt="map2 banner"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/map2-banner-3.png" width="280" alt="map2 banner 3"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot-Cli.png" width="280" alt="Screenshot Cli"> |
-| <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 08-00-43 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 08 00 43 Mackes Audio Platform 2 FEB2025"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 07-58-14 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 07 58 14 Mackes Audio Platform 2 FEB2025"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 07-57-33 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 07 57 33 Mackes Audio Platform 2 FEB2025"> |
+| <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 08-00-43 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 08 00 43 Mackes Audio Platform 2 FEB2025"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 07-57-33 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 07 57 33 Mackes Audio Platform 2 FEB2025"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 07-58-14 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 07 58 14 Mackes Audio Platform 2 FEB2025"> |
 | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/MAP2_AUDIO-NODE_ARCH_DIAGRAM3.png" width="280" alt="MAP2 AUDIO NODE ARCH DIAGRAM3"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/MAP2_AUDIO-NODE_ARCH_DIAGRAM2-BANG.png" width="280" alt="MAP2 AUDIO NODE ARCH DIAGRAM2 BANG"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/MAP2_AUDIO-NODE_ARCH_DIAGRAM.png" width="280" alt="MAP2 AUDIO NODE ARCH DIAGRAM"> |
 <!-- GALLERY:END -->
 
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
-| [`c8cac0c1`](https://github.com/matthewmackes/map2-audio/commit/c8cac0c1fcddec6f3db468da619355fcec5d10aa) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-25 |
-| [`ec5db813`](https://github.com/matthewmackes/map2-audio/commit/ec5db81378949c3637a1eed14597a3bbcd87081e) | feat(snapshots): T2449 — optimistic-concurrency If-Match ... | Map2 Audio | 2026-04-25 |
-| [`07bb8fae`](https://github.com/matthewmackes/map2-audio/commit/07bb8faef38ba34993352939159253c1a98809dc) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-25 |
-| [`2f4539f9`](https://github.com/matthewmackes/map2-audio/commit/2f4539f9b85acb54bd8f768bead231cab5fd743c) | feat(api-contract): T2455 — generate TypeScript snapshot ... | Map2 Audio | 2026-04-25 |
-| [`29d1a36b`](https://github.com/matthewmackes/map2-audio/commit/29d1a36b2cdccaf716691373251ae9a5e6f885e9) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-25 |
-| [`dce9c7be`](https://github.com/matthewmackes/map2-audio/commit/dce9c7beebd6fe22f6b71d2372286b1545cae12c) | refactor(maschine): T2446 — chrome polish pass per CLAUDE... | Map2 Audio | 2026-04-25 |
-| [`9a293417`](https://github.com/matthewmackes/map2-audio/commit/9a2934175afd46568b1d2bd3c64f678e72976e25) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-25 |
-| [`95ab474c`](https://github.com/matthewmackes/map2-audio/commit/95ab474cfd246bf8ee698c5c0f358fc1764ef8c0) | test(suite): T2445 — clear all pre-existing test failures... | Map2 Audio | 2026-04-25 |
+| [`2996e593`](https://github.com/matthewmackes/map2-audio/commit/2996e593e86fbf355edb1cd4c7ab90770deafc76) | T2456: reorder global tree headings + primary-theme separ... | Map2 Audio | 2026-04-25 |
+| [`d440305f`](https://github.com/matthewmackes/map2-audio/commit/d440305fc50dcda32b6c0d4a53faac0073d9ca22) | audit: migrate GlobalTreeNav expanded-ids to persistedSta... | Map2 Audio | 2026-04-25 |
+| [`f34c057a`](https://github.com/matthewmackes/map2-audio/commit/f34c057a3e35f0f90dc0d909a94bf74139d22262) | audit: drive no-explicit-any in src/app/pages from 26 → 0 | Map2 Audio | 2026-04-25 |
+| [`0820c32e`](https://github.com/matthewmackes/map2-audio/commit/0820c32e375db48a6d25ca22cd34613148b48e5d) | audit: expand routePrefetch registry from 4 buckets to 27... | Map2 Audio | 2026-04-25 |
+| [`be343178`](https://github.com/matthewmackes/map2-audio/commit/be343178498f19ea6eefd9ac88189f4efca3376f) | audit: route-gate the StageNotificationViewport god provider | Map2 Audio | 2026-04-25 |
+| [`ddf0844e`](https://github.com/matthewmackes/map2-audio/commit/ddf0844e4080d12f28477870695aadd7646cf67e) | audit: a11y landmarks + button semantics + persistedState... | Map2 Audio | 2026-04-25 |
+| [`1a749e26`](https://github.com/matthewmackes/map2-audio/commit/1a749e2612ca793a254e546bb625f87beade0991) | audit: ship security/performance hardening from Principal... | Map2 Audio | 2026-04-25 |
+| [`570fc49a`](https://github.com/matthewmackes/map2-audio/commit/570fc49a150ae0e723cc15e4ef85e58728ecaaf0) | feat(snapshot-editor): Build Workflow hero replaces inlin... | Map2 Audio | 2026-04-25 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
