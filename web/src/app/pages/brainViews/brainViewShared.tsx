@@ -53,7 +53,10 @@ export const SLOT_COLOR_ORDER = [
   '#e2e8f0',
 ]
 
-export function slotColor(slot: BrainSlot, index: number): string {
+// Color is derived from slot index, not slot identity — the slot argument
+// is kept for API symmetry / future-proofing only. Marked optional so
+// callers can safely pass undefined for missing-lane fallbacks.
+export function slotColor(_slot: BrainSlot | undefined, index: number): string {
   return SLOT_COLOR_ORDER[index % SLOT_COLOR_ORDER.length]
 }
 

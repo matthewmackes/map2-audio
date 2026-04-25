@@ -87,26 +87,27 @@ export function LiveMidiStrip({
   }, [onCapture])
 
   // WS topic — real-time messages. Backend uses `midi_activity` topic.
-  useWebSocketTopic('midi_activity', (data: any, message: any) => {
-    // Backend payload shape varies. Common cases:
-    //   { type: 'cc', channel, cc, value, port }
-    //   { type: 'note_on'|'note_off', channel, note, velocity, port }
-    //   { type: 'program_change', channel, program, port }
+  // Backend payload shape varies (cc, note_on/off, program_change, etc.) so
+  // the data is treated as an unknown record and each candidate field is
+  // probed in turn — avoids `any` while keeping the loose backend contract.
+  useWebSocketTopic<Record<string, unknown>>('midi_activity', (data, message) => {
     if (!data) return
     const ts = (() => {
       const t = new Date(message?.timestamp ?? Date.now())
       return `${String(t.getMinutes()).padStart(2, '0')}:${String(t.getSeconds()).padStart(2, '0')}.${String(t.getMilliseconds()).padStart(3, '0')}`
     })()
-    const t = data.type ?? data.kind ?? message?.type
+    const messageType = (message as { type?: unknown } | undefined)?.type
+    const t = (data.type ?? data.kind ?? messageType) as string | undefined
+    const ch = Number(data.channel ?? data.ch ?? 0)
+    const portRaw = data.port ?? data.source ?? data.device ?? null
+    const port = portRaw == null ? null : String(portRaw)
     let parsed: MidiMessage | null = null
-    const ch = data.channel ?? data.ch ?? 0
-    const port = data.port ?? data.source ?? data.device ?? null
     if (t === 'cc' || t === 'control_change' || t === 'midi_cc') {
-      parsed = { type: 'cc', cc: data.cc ?? data.controller ?? data.data1, ch, v: data.value ?? data.data2, ts, source: port }
+      parsed = { type: 'cc', cc: Number(data.cc ?? data.controller ?? data.data1), ch, v: Number(data.value ?? data.data2), ts, source: port }
     } else if (t === 'note' || t === 'note_on' || t === 'note_off') {
-      parsed = { type: 'note', note: data.note ?? data.data1, ch, v: data.velocity ?? data.value ?? data.data2, ts, source: port }
+      parsed = { type: 'note', note: Number(data.note ?? data.data1), ch, v: Number(data.velocity ?? data.value ?? data.data2), ts, source: port }
     } else if (t === 'pc' || t === 'program_change') {
-      parsed = { type: 'pc', pc: data.program ?? data.pc ?? data.data1, ch, ts, source: port }
+      parsed = { type: 'pc', pc: Number(data.program ?? data.pc ?? data.data1), ch, ts, source: port }
     }
     if (!parsed) return
     // Apply source filter (Q9 — by default scope to active surface)

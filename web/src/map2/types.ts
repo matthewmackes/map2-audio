@@ -610,6 +610,8 @@ export interface Snapshot {
   is_favorite: boolean;
   created_at: string;
   updated_at: string;
+  /** Optional Program Change number bound to this snapshot for MIDI recall. */
+  program_number?: number | null;
 }
 
 export interface SnapshotCategory {
@@ -949,6 +951,14 @@ export interface NAMModel {
   path?: string;
   size?: number;      // Size in bytes (from some endpoints)
   size_mb?: number;   // Size in MB (from list/scan endpoints)
+  // Metadata exposed by the artifact catalog (/nam/models). All optional —
+  // older endpoints don't populate these.
+  amp_type?: string;
+  amp_name?: string;
+  author?: string;
+  sample_rate?: number;
+  file_size?: number;
+  tags?: string[];
 }
 
 export interface NAMStatus {

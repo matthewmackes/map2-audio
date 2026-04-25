@@ -724,7 +724,7 @@ function HealthBar({ midiPulseSignal }: { midiPulseSignal: number }) {
           engineStatus,
           rtlMs: jitter.status === 'fulfilled' ? (jitter.value.rtl_p95_ms ?? 0) : 0,
           xruns: jitter.status === 'fulfilled' ? (jitter.value.xrun_count ?? 0) : 0,
-          cpuPct: cpu.status === 'fulfilled' ? ((cpu.value as any)?.cpu_percent ?? 0) : 0,
+          cpuPct: cpu.status === 'fulfilled' ? (cpu.value.cpu_percent ?? 0) : 0,
         })
       } catch { /* silent */ }
     }

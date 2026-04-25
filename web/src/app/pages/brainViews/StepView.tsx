@@ -27,7 +27,7 @@ export function StepView({
     const slot = slots.find((s) => s.slot_id === lane.slot_id)
     return {
       name: slot?.name ?? lane.name ?? `Track ${i + 1}`,
-      color: slotColor(slot ?? slots[0] ?? ({} as any), i),
+      color: slotColor(slot ?? slots[0], i),
       steps: patternForLane(lane.active_steps, stepCount),
       activeSteps: lane.active_steps,
     }
@@ -38,7 +38,7 @@ export function StepView({
     const i = lanes.length
     lanes.push({
       name: slots[i]?.name ?? `Lane ${i + 1}`,
-      color: slotColor(slots[i] ?? ({} as any), i),
+      color: slotColor(slots[i], i),
       steps: Array.from({ length: stepCount }, () => 0),
       activeSteps: 0,
     })

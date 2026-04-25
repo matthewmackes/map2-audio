@@ -1935,19 +1935,29 @@ export function SnapshotEditorPage() {
     localStorage.setItem('map2_juce_grid_collapsed_categories', JSON.stringify([...collapsedCategories]))
   }, [collapsedCategories])
 
-  // Update plugin levels from WebSocket data
+  // Mirror plugin peak telemetry into the editor store for legacy meter
+  // consumers. The inner record is keyed by lv2 port_symbol and stores
+  // PeakData; pull the max input/output peak across ports per uri rather
+  // than the previous `(peaks as any).inputPeak` access, which was silently
+  // returning undefined → 0 because no port_symbol literal matches that name.
   useEffect(() => {
-    if (pluginPeaks && outputsConnected) {
-      const levels: Record<string, { in: number; out: number }> = {}
-      for (const [uri, peaks] of Object.entries(pluginPeaks)) {
-        levels[uri] = {
-          in: (peaks as any).inputPeak || 0,
-          out: (peaks as any).outputPeak || 0,
+    if (!pluginPeaks || !outputsConnected) return
+    const levels: Record<string, { in: number; out: number }> = {}
+    for (const [uri, ports] of Object.entries(pluginPeaks)) {
+      let inPeak = 0
+      let outPeak = 0
+      for (const [portSymbol, data] of Object.entries(ports)) {
+        const symbol = portSymbol.toLowerCase()
+        if (symbol.includes('in')) {
+          if (data.peak > inPeak) inPeak = data.peak
+        } else if (symbol.includes('out')) {
+          if (data.peak > outPeak) outPeak = data.peak
         }
       }
-      setPluginLevels(levels)
+      levels[uri] = { in: inPeak, out: outPeak }
     }
-  }, [pluginPeaks, outputsConnected])
+    setPluginLevels(levels)
+  }, [pluginPeaks, outputsConnected, setPluginLevels])
 
   const flowClipPeakEntries = useMemo(
     () => Object.values(pluginPeaks ?? {}).flatMap((ports) => Object.values(ports)).map((peak) => ({
@@ -3976,14 +3986,20 @@ export function SnapshotEditorPage() {
     }
   }, [queryClient, pushToast]))
 
-  // Primary: WebSocket-driven instant MIDI activity (CC knob/fader feedback)
-  useWebSocketTopic('midi_activity', useCallback((data: Record<string, any>) => {
+  // Primary: WebSocket-driven instant MIDI activity (CC knob/fader feedback).
+  // Backend payload shape varies per source (data1/data2, raw_hex, etc.) so
+  // values are treated as unknown and probed; guards keep the cast off.
+  useWebSocketTopic('midi_activity', useCallback((data: Record<string, unknown>) => {
     const msgType = data.message_type ?? data.type
     if (msgType === 'control_change') {
+      const rawHex = typeof data.raw_hex === 'string' ? data.raw_hex : ''
+      const rawParts = rawHex.split(' ')
+      const ccFallback = parseInt(rawParts[1] ?? '0', 16)
+      const valueFallback = parseInt(rawParts[2] ?? '0', 16)
       setLastMidiActivityWs({
-        cc: data.data1 ?? parseInt(data.raw_hex?.split(' ')[1] ?? '0', 16),
-        value: data.data2 ?? parseInt(data.raw_hex?.split(' ')[2] ?? '0', 16),
-        channel: data.channel ?? 0,
+        cc: typeof data.data1 === 'number' ? data.data1 : ccFallback,
+        value: typeof data.data2 === 'number' ? data.data2 : valueFallback,
+        channel: typeof data.channel === 'number' ? data.channel : 0,
       })
       return
     }

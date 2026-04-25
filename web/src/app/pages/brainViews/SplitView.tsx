@@ -86,7 +86,7 @@ export function SplitView({
   const qualification = diagnostics.controller_qualification
   const zones = inputs.keyboard_zones.map((z, i) => ({
     ...z,
-    color: slotColor(slots[0] ?? ({} as any), i),
+    color: slotColor(slots[0], i),
   }))
   const visibleSlots = slots.slice(0, 8)
 

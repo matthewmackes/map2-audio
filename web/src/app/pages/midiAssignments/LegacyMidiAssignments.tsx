@@ -632,7 +632,7 @@ function CommandsTab({ commands, chains, plugins, snapshots, chainConfigs }: Com
         <table style={{ width: '100%', marginTop: '0.75rem', borderCollapse: 'collapse' }}>
           <thead><tr style={{ textAlign: 'left' }}><th>ID</th><th>Snapshot</th><th>PC #</th></tr></thead>
           <tbody>
-            {snapshots.map((s: any) => (
+            {snapshots.map((s) => (
               <tr key={s.id} style={{ borderTop: '1px solid var(--cds-border-subtle, #393939)' }}>
                 <td>{s.id}</td>
                 <td>{s.name ?? `Snapshot ${s.id}`}</td>
@@ -941,16 +941,27 @@ function DevicesAndUtilitiesTab() {
   // older   { input_devices: string[], output_devices: string[], current_input, current_output }
   // current { inputs: [{name, ...}], outputs: [{name, ...}] }
   // Normalize so we render either, and skip rendering anything we don't understand.
-  const devicesData = devicesQuery.data as any
+  type DeviceEntry = string | { name?: string }
+  type DevicesPayload = {
+    input_devices?: string[]
+    output_devices?: string[]
+    inputs?: DeviceEntry[]
+    outputs?: DeviceEntry[]
+    current_input?: string | null
+    current_output?: string | null
+  }
+  const devicesData = devicesQuery.data as DevicesPayload | undefined
+  const extractName = (entry: DeviceEntry): string | null =>
+    typeof entry === 'string' ? entry : entry?.name ?? null
   const inputDeviceNames: string[] = Array.isArray(devicesData?.input_devices)
     ? devicesData.input_devices
     : Array.isArray(devicesData?.inputs)
-      ? devicesData.inputs.map((d: any) => (typeof d === 'string' ? d : d?.name)).filter(Boolean)
+      ? devicesData.inputs.map(extractName).filter((name): name is string => Boolean(name))
       : []
   const outputDeviceNames: string[] = Array.isArray(devicesData?.output_devices)
     ? devicesData.output_devices
     : Array.isArray(devicesData?.outputs)
-      ? devicesData.outputs.map((d: any) => (typeof d === 'string' ? d : d?.name)).filter(Boolean)
+      ? devicesData.outputs.map(extractName).filter((name): name is string => Boolean(name))
       : []
   const currentInput = devicesData?.current_input ?? null
   const currentOutput = devicesData?.current_output ?? null
@@ -1147,12 +1158,13 @@ export function LegacyMidiAssignments() {
   const routingRules = routingRulesQuery.data?.routing_rules ?? []
   const groups = groupsQuery.data?.groups ?? []
   const chainConfigs = chainConfigsQuery.data?.configs ?? []
-  const chains = useMemo(() => {
-    const data = chainsQuery.data
-    if (!data) return [] as Chain[]
-    if (Array.isArray((data as any).chains)) return (data as any).chains as Chain[]
-    if (Array.isArray(data)) return data as Chain[]
-    return [] as Chain[]
+  const chains = useMemo<Chain[]>(() => {
+    // Backend has shipped both `Chain[]` and `{ chains: Chain[] }` shapes here.
+    const data = chainsQuery.data as Chain[] | { chains?: Chain[] } | undefined
+    if (!data) return []
+    if (Array.isArray(data)) return data
+    if (Array.isArray(data.chains)) return data.chains
+    return []
   }, [chainsQuery.data])
   const plugins = pluginsQuery.data ?? []
   const snapshots = (snapshotsQuery.data?.snapshots ?? []) as Snapshot[]

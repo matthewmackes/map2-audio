@@ -705,8 +705,13 @@ export function AudioArtifactsPage({
     queryKey: ['plugins', 'discover', 'native', selectedNodeId],
     queryFn: async () => {
       const result = await pluginsApi.discover(false, detailNodeId)
-      const list: any[] = Array.isArray(result) ? result : (result as any)?.plugins ?? []
-      return list.filter((p: any) => p.format === 'JUCE' || p.is_native === true)
+      const wrapper = result as { plugins?: unknown } | unknown[] | null | undefined
+      const list: Record<string, unknown>[] = Array.isArray(wrapper)
+        ? wrapper as Record<string, unknown>[]
+        : Array.isArray(wrapper?.plugins)
+          ? wrapper.plugins as Record<string, unknown>[]
+          : []
+      return list.filter((p) => p.format === 'JUCE' || p.is_native === true)
     },
     enabled: activeCategory === 'native-juce',
     staleTime: 30000,
@@ -754,7 +759,7 @@ export function AudioArtifactsPage({
 
   const soundfontsQuery = useQuery({
     queryKey: ['soundfonts', 'list', selectedNodeId],
-    queryFn: () => soundfontApi.listSoundfonts({ limit: 500 } as any, detailNodeId),
+    queryFn: () => soundfontApi.listSoundfonts({ limit: 500 }, detailNodeId),
     enabled: activeCategory === 'soundfonts',
     staleTime: 15000,
     refetchInterval: artifactsInventoryCadence,
@@ -785,8 +790,8 @@ export function AudioArtifactsPage({
 
     if (activeCategory === 'nam-models') {
       const active = namStatusQuery.data?.activeModel ?? null
-      return (namModelsQuery.data?.models ?? []).map((m: any) => ({
-        id: m.name ?? m.id ?? String(m),
+      return (namModelsQuery.data?.models ?? []).map((m) => ({
+        id: m.name ?? String(m),
         name: m.name ?? String(m),
         ampType: m.amp_type ?? '—',
         ampName: m.amp_name ?? '—',
@@ -794,15 +799,15 @@ export function AudioArtifactsPage({
         sampleRate: formatSampleRate(m.sample_rate),
         size: formatBytes(m.file_size),
         node: nodeName,
-        status: active === (m.name ?? m) ? 'loaded' : 'unloaded',
-        statusRaw: active === (m.name ?? m) ? 'active' : 'inactive',
+        status: active === m.name ? 'loaded' : 'unloaded',
+        statusRaw: active === m.name ? 'active' : 'inactive',
         tags: Array.isArray(m.tags) ? m.tags.join(', ') : '—',
       }))
     }
 
     if (activeCategory === 'cabinet-irs') {
       const loaded = irStatusQuery.data?.loaded_cabinet ?? null
-      return (irCabinetsQuery.data?.irs ?? []).map((ir: any) => ({
+      return (irCabinetsQuery.data?.irs ?? []).map((ir) => ({
         id: ir.name,
         name: ir.name,
         sampleRate: formatSampleRate(ir.sample_rate),
@@ -817,7 +822,7 @@ export function AudioArtifactsPage({
 
     if (activeCategory === 'reverb-irs') {
       const loaded = irStatusQuery.data?.loaded_reverb ?? null
-      return (irReverbsQuery.data?.irs ?? []).map((ir: any) => ({
+      return (irReverbsQuery.data?.irs ?? []).map((ir) => ({
         id: ir.name,
         name: ir.name,
         sampleRate: formatSampleRate(ir.sample_rate),
@@ -831,7 +836,11 @@ export function AudioArtifactsPage({
     }
 
     if (activeCategory === 'soundfonts') {
-      return ((soundfontsQuery.data as any)?.soundfonts ?? (soundfontsQuery.data as any)?.items ?? []).map((sf: any) => ({
+      // Backend has shipped both `soundfonts` and `items` keys — normalize.
+      type SoundfontEntry = { name?: string; filename?: string; preset_count?: number; presets?: number; file_size?: number; size?: number }
+      const sfData = soundfontsQuery.data as { soundfonts?: SoundfontEntry[]; items?: SoundfontEntry[] } | undefined
+      const items = sfData?.soundfonts ?? sfData?.items ?? []
+      return items.map((sf) => ({
         id: sf.name ?? sf.filename ?? String(sf),
         name: sf.name ?? sf.filename ?? String(sf),
         presetCount: sf.preset_count ?? sf.presets ?? '—',
@@ -843,11 +852,11 @@ export function AudioArtifactsPage({
     }
 
     // native-juce — from /plugins/discover filtered to format='JUCE' / is_native=true
-    return (nativePluginsQuery.data ?? []).map((p: any) => ({
-      id: p.uri,
-      name: getDisplayPluginName(p.name, p.uri),
-      version: p.version ?? '—',
-      category: p.category ?? p.class_label ?? '—',
+    return (nativePluginsQuery.data ?? []).map((p) => ({
+      id: String(p.uri),
+      name: getDisplayPluginName(String(p.name ?? ''), String(p.uri ?? '')),
+      version: (p.version as string | undefined) ?? '—',
+      category: (p.category as string | undefined) ?? (p.class_label as string | undefined) ?? '—',
       node: nodeName,
       status: 'active',
       statusRaw: 'active',
