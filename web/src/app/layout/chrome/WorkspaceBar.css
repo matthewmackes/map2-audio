@@ -48,28 +48,6 @@
   white-space: nowrap;
 }
 
-.shell-ws__side-toggle {
-  margin-left: auto;
-  color: #6f6f6f;
-  background: transparent;
-  border: 0;
-  cursor: pointer;
-  width: 22px;
-  height: 22px;
-  display: inline-grid;
-  place-items: center;
-  font-family: var(--shell-f-mono);
-  font-size: 14px;
-  transition: color 120ms ease, background 120ms ease;
-}
-
-.shell-ws__side-toggle:hover,
-.shell-ws__side-toggle:focus-visible {
-  color: var(--cds-text-primary, #f4f4f4);
-  background: var(--shell-chrome-hover);
-  outline: none;
-}
-
 .shell-ws__main {
   display: flex;
   align-items: center;

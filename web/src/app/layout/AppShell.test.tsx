@@ -346,19 +346,32 @@ describe('AppShell global tree navigation', () => {
       ['/brain'],
     )
 
-    fireEvent.click(screen.getByRole('button', { name: 'Unpin Navigation' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Collapse global navigation' }))
 
     await waitFor(() => {
       expect(screen.queryByLabelText('Global navigation tree')).toBeNull()
       expect(screen.getByLabelText('Collapsed navigation rail')).toBeInTheDocument()
-      expect(screen.getByRole('button', { name: 'Pin Navigation' })).toBeInTheDocument()
+      expect(screen.getByRole('button', { name: 'Expand global navigation' })).toBeInTheDocument()
     })
 
-    fireEvent.click(screen.getByRole('button', { name: 'Pin Navigation' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Expand global navigation' }))
 
     await waitFor(() => {
       expect(screen.getByLabelText('Global navigation tree')).toBeInTheDocument()
       expect(container.querySelector('.global-tree-nav')).toBeTruthy()
     })
+  })
+
+  it('uses the explicit Snapshot Editor shell naming on the snapshot editor route', () => {
+    renderInRouter(
+      <AppShell>
+        <div>shell content</div>
+      </AppShell>,
+      ['/snapshot-editor'],
+    )
+
+    expect(screen.getByText('Platform / Snapshot Editor')).toBeInTheDocument()
+    expect(screen.getAllByText('Snapshot Editor').length).toBeGreaterThan(0)
+    expect(screen.queryByText('Platform / Workspace')).toBeNull()
   })
 })

@@ -63,14 +63,17 @@ export function useAppShellPresentation({
     || canonicalPathname.startsWith('/midi-hub')
     || canonicalPathname.startsWith('/platforms')
   const isAudioGridWorkspaceRoute = pathname === '/juce-grid' || pathname === '/snapshot-editor'
+  const isSnapshotEditorRoute = canonicalPathname === '/snapshot-editor'
   const isThemedWorkspaceRoute = isAudioGridWorkspaceRoute || isIntegratedWorkspaceRoute
   const shellClassName = `app-shell${isTabletTouchRoute ? ' app-shell--juce-grid-tablet' : ''}${isAudioGridWorkspaceRoute ? ' app-shell--audio-grid' : ''}${isThemedWorkspaceRoute ? ' app-shell--themed-workspace' : ''}${pathname !== '/perform' ? ' app-shell--windowed' : ''}${pathname === '/perform' ? ' app-shell--perform-route' : ''}${pathname === '/' ? ' app-shell--landing' : ''}`
 
-  const workspaceLabel = currentShellItem?.shortLabel ?? currentShellItem?.label ?? 'Workspace'
+  const workspaceLabel = isSnapshotEditorRoute
+    ? 'Snapshot Editor'
+    : currentShellItem?.shortLabel ?? currentShellItem?.label ?? 'Workspace'
   const shellTitle = currentShellItem?.label ?? workspaceLabel
   const shellSubtitle = currentShellItem?.description
   const shellKicker = `Platform / ${workspaceLabel}`
-  const shellCrumbs = ['Workspace surface', workspaceLabel]
+  const shellCrumbs = [isSnapshotEditorRoute ? 'Snapshot Editor surface' : 'Workspace surface', workspaceLabel]
 
   return {
     currentShellItem,

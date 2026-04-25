@@ -23,51 +23,6 @@
   border-block-end: 1px solid var(--border);
 }
 
-.global-tree-nav__header-row {
-  display: flex;
-  align-items: center;
-  justify-content: space-between;
-  gap: var(--cds-spacing-03, 0.5rem);
-}
-
-.global-tree-nav__eyebrow {
-  margin: 0;
-  color: var(--text-secondary);
-  font-size: var(--cds-label-01-font-size, 0.75rem);
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-.global-tree-nav__pin-button {
-  appearance: none;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  inline-size: 2.25rem;
-  block-size: 2.25rem;
-  border: 1px solid color-mix(in srgb, var(--interactive) 34%, var(--border));
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--interactive) 8%, var(--surface-2));
-  color: var(--interactive);
-  cursor: pointer;
-  transition: border-color 120ms ease, background 120ms ease, color 120ms ease;
-}
-
-.global-tree-nav__pin-button:hover {
-  border-color: color-mix(in srgb, var(--interactive) 52%, var(--border));
-  background: color-mix(in srgb, var(--interactive) 14%, var(--surface-2));
-}
-
-.global-tree-nav__pin-button svg {
-  flex: 0 0 auto;
-}
-
-.global-tree-nav__pin-button:focus-visible {
-  outline: 2px solid var(--focus-ring);
-  outline-offset: 2px;
-}
-
 .global-tree-nav__node-button,
 .global-tree-nav__footer-button,
 .global-tree-nav__node-switcher-button {
@@ -158,6 +113,28 @@
   min-height: 0;
   overflow: auto;
   padding: var(--cds-spacing-04, 0.75rem) var(--cds-spacing-03, 0.5rem);
+}
+
+.global-tree-nav__footer {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  padding: var(--cds-spacing-03, 0.5rem);
+  border-block-start: 1px solid var(--border);
+}
+
+.global-tree-nav__footer-button--collapse {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  inline-size: 100%;
+  min-block-size: 2.5rem;
+  border-radius: 0.8rem;
+  color: var(--text-secondary);
+}
+
+.global-tree-nav__footer-button--collapse:hover {
+  color: var(--text-primary);
 }
 
 .global-tree-nav__tree {

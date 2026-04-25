@@ -4,8 +4,6 @@ import './WorkspaceBar.css'
 interface WorkspaceBarProps {
   workspaceLabel: string
   actions: ShellActionSlot[]
-  navPinned: boolean
-  onToggleNavPin: () => void
   onClose?: () => void
   closeLabel?: string
 }
@@ -13,8 +11,6 @@ interface WorkspaceBarProps {
 export function WorkspaceBar({
   workspaceLabel,
   actions,
-  navPinned,
-  onToggleNavPin,
   onClose,
   closeLabel,
 }: WorkspaceBarProps) {
@@ -29,15 +25,6 @@ export function WorkspaceBar({
           <path d="M4 6h16M4 12h16M4 18h10" />
         </svg>
         <span className="shell-ws__side-label">Global Navigation</span>
-        <button
-          type="button"
-          className="shell-ws__side-toggle"
-          onClick={onToggleNavPin}
-          aria-label={navPinned ? 'Collapse global navigation' : 'Expand global navigation'}
-          title={navPinned ? 'Collapse' : 'Expand'}
-        >
-          {navPinned ? '‹' : '›'}
-        </button>
       </div>
       <div className="shell-ws__main">
         <span className="shell-ws__main-dot" aria-hidden="true" />

@@ -18,6 +18,7 @@ import {
   ChartLine,
   ChartNetwork,
   Chemistry,
+  ChevronDown,
   ColorPalette,
   Connect,
   Dashboard,
@@ -31,8 +32,6 @@ import {
   Music,
   Logout,
   Network_3,
-  Pin,
-  PinFilled,
   PlayFilled,
   Plug,
   Power,
@@ -80,7 +79,6 @@ import type { SnapshotRuntimeClusterLiveStateResponse, SnapshotRuntimeLiveState 
 import './GlobalTreeNav.css'
 
 type GlobalTreeNavProps = {
-  isPinned: boolean
   onLogOut: () => void
   onOpenRebootConfirm: () => void
   onOpenRestartConfirm: () => void
@@ -646,7 +644,6 @@ function syncNodeScope(setViewedNode: (pageKey: string, nodeId: string) => void,
 }
 
 export function GlobalTreeNav({
-  isPinned,
   onLogOut,
   onOpenRebootConfirm,
   onOpenRestartConfirm,
@@ -733,18 +730,6 @@ export function GlobalTreeNav({
     <Layer className="global-tree-nav__layer">
       <aside className="global-tree-nav" aria-label="Global navigation tree">
         <div className="global-tree-nav__header">
-          <div className="global-tree-nav__header-row">
-            <p className="global-tree-nav__eyebrow">Global Navigation</p>
-            <button
-              type="button"
-              className="global-tree-nav__pin-button"
-              aria-label={isPinned ? 'Unpin Navigation' : 'Pin Navigation'}
-              aria-pressed={isPinned}
-              onClick={onTogglePinned}
-            >
-              {isPinned ? <PinFilled size={18} aria-hidden="true" /> : <Pin size={18} aria-hidden="true" />}
-            </button>
-          </div>
           <Popover
             align="bottom-start"
             caret
@@ -841,6 +826,18 @@ export function GlobalTreeNav({
               {renderTreeItems(treeItems, activeNodeId, expandedIds, setExpandedIds, (route) => navigate(route))}
             </TreeView>
           </FeatureFlags>
+        </div>
+        <div className="global-tree-nav__footer">
+          <Tooltip label="Collapse global navigation" align="top" enterDelayMs={300}>
+            <button
+              type="button"
+              className="global-tree-nav__footer-button global-tree-nav__footer-button--collapse"
+              aria-label="Collapse global navigation"
+              onClick={onTogglePinned}
+            >
+              <ChevronDown size={16} aria-hidden />
+            </button>
+          </Tooltip>
         </div>
 
       </aside>

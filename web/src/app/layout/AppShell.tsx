@@ -1,7 +1,7 @@
 import type { ReactNode } from 'react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import type { CSSProperties } from 'react'
-import { Pin } from '@carbon/icons-react'
+import { ChevronUp } from '@carbon/icons-react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { PageTransition } from '../components/PageTransition'
 import { RebootConfirmModal } from './RebootConfirmModal'
@@ -188,8 +188,6 @@ export function AppShell({ children }: { children: ReactNode }) {
         <WorkspaceBar
           workspaceLabel={mergedTitle || shellWorkspaceLabel}
           actions={mergedActions}
-          navPinned={globalNavPinned}
-          onToggleNavPin={() => setGlobalNavPinned((prev) => !prev)}
           onClose={handleCloseCurrentApp}
           closeLabel={`Close ${mergedTitle || shellWorkspaceLabel}`}
         />
@@ -197,7 +195,6 @@ export function AppShell({ children }: { children: ReactNode }) {
       <div className="app-shell__frame">
         {globalNavPinned ? (
           <GlobalTreeNav
-            isPinned={globalNavPinned}
             onLogOut={() => returnHomeDesktopToBoot()}
             onOpenRebootConfirm={() => void handleOpenRebootConfirm()}
             onOpenRestartConfirm={() => setRestartConfirmOpen(true)}
@@ -209,10 +206,10 @@ export function AppShell({ children }: { children: ReactNode }) {
             <button
               type="button"
               className="app-shell__nav-pin-toggle"
-              aria-label="Pin Navigation"
+              aria-label="Expand global navigation"
               onClick={() => setGlobalNavPinned(true)}
             >
-              <Pin size={18} aria-hidden="true" />
+              <ChevronUp size={18} aria-hidden="true" />
             </button>
           </aside>
         )}
