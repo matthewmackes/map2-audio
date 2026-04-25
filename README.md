@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1276** Python | **1252** TypeScript | **136** C++/H | **145** Docs | **2786** total commits | **3** stars | **0** forks | **0** open issues
+**1276** Python | **1257** TypeScript | **136** C++/H | **145** Docs | **2790** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -175,7 +175,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-DOCS:START -->
 | Document | Last Updated |
 |:---------|:------------|
-| [PROJECT WORKLIST](https://github.com/matthewmackes/map2-audio/blob/master/docs/PROJECT_WORKLIST.md) | 2026-04-24 |
+| [PROJECT WORKLIST](https://github.com/matthewmackes/map2-audio/blob/master/docs/PROJECT_WORKLIST.md) | 2026-04-25 |
 | [MAP2 LCD Console — Operator Guide](https://github.com/matthewmackes/map2-audio/blob/master/docs/LCD_OPERATOR_GUIDE.md) | 2026-04-23 |
 | [MAP2 Audio Platform — AI Instructions](https://github.com/matthewmackes/map2-audio/blob/master/docs/CLAUDE.md) | 2026-04-21 |
 | [AVDECC Future Implementation Guide](https://github.com/matthewmackes/map2-audio/blob/master/docs/AVDECC_FUTURE_IMPLEMENTATION_GUIDE.md) | 2026-04-20 |
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`486b9e90`](https://github.com/matthewmackes/map2-audio/commit/486b9e9073fac94bb6b15da8f377cd61d53838b1) | feat(brain): T2442 — promote Brain Overview tabs to first... | Map2 Audio | 2026-04-25 |
+| [`a2b9d9b5`](https://github.com/matthewmackes/map2-audio/commit/a2b9d9b5579ebb730b68e90c9f8c793ba96bb684) | feat(midi): MIDI Assignments Walkthrough — guided wizard ... | Map2 Audio | 2026-04-25 |
+| [`548ea1b3`](https://github.com/matthewmackes/map2-audio/commit/548ea1b34dfbbe14118a52c105f26577406d0b74) | feat(midi): unified MIDI Assignments page exposes every b... | Map2 Audio | 2026-04-24 |
+| [`5600fe99`](https://github.com/matthewmackes/map2-audio/commit/5600fe99e229cea897778d5f1f86589a7bd68dfd) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-25 |
 | [`845b98d3`](https://github.com/matthewmackes/map2-audio/commit/845b98d38903e4c7523d1a1ed58a7a17b001c0af) | feat(snapshots): VERIFY phase strict-by-default (T2452) | Map2 Audio | 2026-04-24 |
 | [`726a5867`](https://github.com/matthewmackes/map2-audio/commit/726a5867223c794f06233722e3623a373e9cc309) | fix(boot): rename undefined `deployment_mode` to `canonic... | Map2 Audio | 2026-04-24 |
 | [`f1704c5f`](https://github.com/matthewmackes/map2-audio/commit/f1704c5ffe12a28f578b14966256179e7b90635d) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-24 |
 | [`145f6735`](https://github.com/matthewmackes/map2-audio/commit/145f67359f9a76f17c69c5f9292cff68043ec0f4) | feat(snapshots): appliance-grade stability priority clust... | Map2 Audio | 2026-04-24 |
-| [`3a58bc96`](https://github.com/matthewmackes/map2-audio/commit/3a58bc96a90ad7d95ffcaeab3db21b3c7f6bce71) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-24 |
-| [`3a89dd0b`](https://github.com/matthewmackes/map2-audio/commit/3a89dd0b14d26e42f99802b3fda69fb1832baf13) | feat(T2447): remove redundant blue context bar from top c... | Map2 Audio | 2026-04-24 |
-| [`99e00930`](https://github.com/matthewmackes/map2-audio/commit/99e00930059851f8265fdbde07700a2aa90ddf6d) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-24 |
-| [`10eec3c8`](https://github.com/matthewmackes/map2-audio/commit/10eec3c8b8cd2b0657636677cc5e52f23a4afebf) | chore(worklist): lock Q1-Q5 answers on T2442-T2446 + open... | Map2 Audio | 2026-04-24 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
