@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1277** Python | **1259** TypeScript | **136** C++/H | **145** Docs | **2796** total commits | **3** stars | **0** forks | **0** open issues
+**1278** Python | **1259** TypeScript | **136** C++/H | **145** Docs | **2798** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`ec5db813`](https://github.com/matthewmackes/map2-audio/commit/ec5db81378949c3637a1eed14597a3bbcd87081e) | feat(snapshots): T2449 — optimistic-concurrency If-Match ... | Map2 Audio | 2026-04-25 |
+| [`07bb8fae`](https://github.com/matthewmackes/map2-audio/commit/07bb8faef38ba34993352939159253c1a98809dc) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-25 |
 | [`2f4539f9`](https://github.com/matthewmackes/map2-audio/commit/2f4539f9b85acb54bd8f768bead231cab5fd743c) | feat(api-contract): T2455 — generate TypeScript snapshot ... | Map2 Audio | 2026-04-25 |
 | [`29d1a36b`](https://github.com/matthewmackes/map2-audio/commit/29d1a36b2cdccaf716691373251ae9a5e6f885e9) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-25 |
 | [`dce9c7be`](https://github.com/matthewmackes/map2-audio/commit/dce9c7beebd6fe22f6b71d2372286b1545cae12c) | refactor(maschine): T2446 — chrome polish pass per CLAUDE... | Map2 Audio | 2026-04-25 |
 | [`9a293417`](https://github.com/matthewmackes/map2-audio/commit/9a2934175afd46568b1d2bd3c64f678e72976e25) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-25 |
 | [`95ab474c`](https://github.com/matthewmackes/map2-audio/commit/95ab474cfd246bf8ee698c5c0f358fc1764ef8c0) | test(suite): T2445 — clear all pre-existing test failures... | Map2 Audio | 2026-04-25 |
 | [`82b982eb`](https://github.com/matthewmackes/map2-audio/commit/82b982ebf7fd0709f2d24b1395929686aebf0855) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-25 |
-| [`486b9e90`](https://github.com/matthewmackes/map2-audio/commit/486b9e9073fac94bb6b15da8f377cd61d53838b1) | feat(brain): T2442 — promote Brain Overview tabs to first... | Map2 Audio | 2026-04-25 |
-| [`a2b9d9b5`](https://github.com/matthewmackes/map2-audio/commit/a2b9d9b5579ebb730b68e90c9f8c793ba96bb684) | feat(midi): MIDI Assignments Walkthrough — guided wizard ... | Map2 Audio | 2026-04-25 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
