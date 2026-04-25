@@ -199,18 +199,21 @@ describe('AppShell global tree navigation', () => {
     expectInDocumentOrder([
       'Home',
       'Snapshot Editor',
-      'Brain',
-      'Node Ops',
-      'MIDI Advanced',
+      'MIDI Assignments',
+      'Drums&Synth',
       'Audio Artifacts',
+      'MIDI Advanced',
+      'Node Ops',
       'Hardware',
       'Platform Guide',
     ])
+    expect(container.querySelectorAll('.global-tree-nav__separator-line')).toHaveLength(2)
     expect(screen.getAllByText('Node Ops')).toHaveLength(1)
     expect(screen.getByText('Snapshot Editor')).toBeInTheDocument()
     expect(within(navTree).getByText('Signal Editor')).toBeInTheDocument()
     expect(within(navTree).getByText('Live')).toBeInTheDocument()
-    expect(screen.getByText('Brain')).toBeInTheDocument()
+    expect(screen.getByText('MIDI Assignments')).toBeInTheDocument()
+    expect(screen.getByText('Drums&Synth')).toBeInTheDocument()
     expect(screen.getByText('Audio Artifacts')).toBeInTheDocument()
     expect(screen.getByText('Platform Guide')).toBeInTheDocument()
     expect(screen.getAllByText('Hardware').length).toBeGreaterThan(0)

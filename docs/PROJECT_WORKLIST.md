@@ -10,6 +10,21 @@ Last updated: 2026-04-24 EDT - T2452 SHIPPED: VERIFY phase is strict by default 
 
 ---
 
+ID: T2456
+Status: [✓] Done
+Title: Reorder the global tree headings and add primary-theme separator rows
+Description:
+- Goal / acceptance criteria: Update the left-hand global tree so the top-level order becomes `Home`, `Snapshot Editor`, `MIDI Assignments`, `Drums&Synth` (renamed from Brain), `Audio Artifacts`, primary-theme separator, `MIDI Advanced`, `Node Ops`, `Hardware`, primary-theme separator, `Platform Guide`. The two separators must be non-clickable horizontal lines only, and existing routes must remain intact.
+- Why it matters: The current left-rail order no longer matches the operator's requested information hierarchy, and the renamed Brain surface must now read as the dedicated Drums&Synth workspace.
+- Dependencies: T2436.
+- Estimated effort: Low.
+- Required outputs/deliverables: `GlobalTreeNav.tsx` / `.css` updates, focused frontend regression coverage, and worklist completion notes.
+Completion note: 2026-04-25 13:31 - Codex: shipped. Updated `web/src/app/layout/GlobalTreeNav/GlobalTreeNav.tsx` so the top-level order is now `Home`, `Snapshot Editor`, `MIDI Assignments`, `Drums&Synth`, `Audio Artifacts`, separator, `MIDI Advanced`, `Node Ops`, `Hardware`, separator, `Platform Guide`; Brain is relabeled to `Drums&Synth`; `MIDI Assignments` is restored directly under `Snapshot Editor`; and two non-clickable primary-theme separator rows render in the requested positions. Added separator styling in `GlobalTreeNav.css`, refreshed `AppShell.test.tsx` expectations, and updated `DesktopExperience.snapshot.test.tsx.snap`. Validation PASS: `npm --prefix web test -- --runInBand src/app/layout/AppShell.test.tsx`, `npm --prefix web test -- --runInBand src/app/layout/GlobalTreeNav/GlobalTreeNav.test.ts`, `npm --prefix web test -- --runInBand src/app/pages/DesktopExperience.snapshot.test.tsx -u`, `npm --prefix web run typecheck`, `git diff --check`.
+Assigned to: Codex
+Last updated: 2026-04-25 13:31 - Codex
+
+---
+
 ID: T2440
 Status: [✓] Done
 Title: Expose the hidden API/Webhooks/SSH operator surface in Node Ops as Midpoint

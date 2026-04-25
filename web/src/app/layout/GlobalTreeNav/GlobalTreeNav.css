@@ -145,6 +145,49 @@
   color: inherit;
 }
 
+.global-tree-nav__tree-node.is-separator {
+  pointer-events: none;
+  margin: 0.15rem 0;
+}
+
+.global-tree-nav__tree-node.is-separator > .cds--tree-node__label {
+  min-height: 0;
+  padding-block: 0.1rem;
+}
+
+.global-tree-nav__tree-node.is-separator > .cds--tree-node__label:hover,
+.global-tree-nav__tree-node.is-separator > .cds--tree-node__label:focus-visible {
+  background: transparent;
+}
+
+.global-tree-nav__tree-node.is-separator .cds--tree-node__label__details,
+.global-tree-nav__tree-node.is-separator .cds--tree-node__label__text,
+.global-tree-nav__tree-node.is-separator .cds--tree-node__label__details-text {
+  width: 100%;
+}
+
+.global-tree-nav__tree-node.is-separator .cds--tree-node__icon,
+.global-tree-nav__tree-node.is-separator .cds--tree-node__toggle {
+  display: none;
+}
+
+.global-tree-nav__separator-line {
+  display: block;
+  inline-size: 100%;
+  block-size: 1px;
+  border-radius: 999px;
+  background:
+    linear-gradient(
+      90deg,
+      transparent 0%,
+      color-mix(in srgb, var(--interactive) 32%, transparent) 8%,
+      color-mix(in srgb, var(--interactive) 72%, transparent) 50%,
+      color-mix(in srgb, var(--interactive) 32%, transparent) 92%,
+      transparent 100%
+    );
+  box-shadow: 0 0 0.35rem color-mix(in srgb, var(--interactive) 22%, transparent);
+}
+
 .global-tree-nav__group-header {
   padding: var(--cds-spacing-05, 1rem) var(--cds-spacing-03, 0.5rem) var(--cds-spacing-03, 0.5rem);
   color: var(--text-secondary);
