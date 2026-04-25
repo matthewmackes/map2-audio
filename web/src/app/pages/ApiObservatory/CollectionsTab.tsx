@@ -450,7 +450,7 @@ export function CollectionsTab({
           </div>
         </aside>
 
-        <main>
+        <section aria-label="Collection details">
           <h3>{activeCollection?.name ?? 'No collection selected'}</h3>
           {activeCollection ? (
             <>
@@ -575,7 +575,7 @@ export function CollectionsTab({
               align="left"
             />
           )}
-        </main>
+        </section>
       </div>
     </section>
   )

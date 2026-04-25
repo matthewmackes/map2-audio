@@ -326,7 +326,7 @@ export function WebSocketInspectorTab() {
           </ul>
         </aside>
 
-        <main className="api-observatory-websocket__messages">
+        <section className="api-observatory-websocket__messages" aria-label="Message stream">
           <header>
             <h3>Message Stream</h3>
             <div className="api-observatory-websocket__filters">
@@ -394,7 +394,7 @@ export function WebSocketInspectorTab() {
               <JsonDiffViewer left={diffLeft.payload} right={diffRight.payload} />
             </div>
           )}
-        </main>
+        </section>
       </div>
     </section>
   )

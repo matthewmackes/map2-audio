@@ -213,7 +213,7 @@ export function MPX1ModMatrix() {
           </div>
         </aside>
 
-        <main className="mpx1-matrix__grid-wrap">
+        <section className="mpx1-matrix__grid-wrap" aria-label="Modulation matrix">
           <div className="mpx1-matrix__grid" style={{ gridTemplateColumns: `160px repeat(${destinations.length}, minmax(96px, 1fr))` }}>
             <div className="mpx1-matrix__corner">Source / Destination</div>
             {destinations.map((destination) => (
@@ -256,7 +256,7 @@ export function MPX1ModMatrix() {
               </React.Fragment>
             ))}
           </div>
-        </main>
+        </section>
 
         <aside className="mpx1-matrix__detail">
           <div className="mpx1-matrix__section-title">Cell Detail</div>

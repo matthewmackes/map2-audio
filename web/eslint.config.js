@@ -106,8 +106,11 @@ export default tseslint.config(
     files: ['src/app/pages/**/*.{ts,tsx}', 'src/pages/**/*.{ts,tsx}'],
     rules: {
       // Page modules often carry staged UI handlers during iterative design.
+      // `no-explicit-any` is set to 'warn' (not 'off') so new `any` casts are
+      // visible in lint output and can ratchet downward — set back to 'off'
+      // only if a refactor needs runway, never silently.
       '@typescript-eslint/no-unused-vars': 'off',
-      '@typescript-eslint/no-explicit-any': 'off',
+      '@typescript-eslint/no-explicit-any': 'warn',
       'react-hooks/exhaustive-deps': 'off',
       'no-empty': 'off',
     },

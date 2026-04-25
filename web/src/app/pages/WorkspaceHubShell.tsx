@@ -119,11 +119,11 @@ export function WorkspaceHubShell() {
             contentClassName="workspace-hub-shell__content"
             sidebar={null}
             content={
-              <main className="workspace-hub-shell__content-body">
+              <section className="workspace-hub-shell__content-body" aria-label="Workspace hub content">
                 <section className="workspace-hub-shell__outlet-surface" key={`${location.pathname}${location.search}`}>
                   <Outlet />
                 </section>
-              </main>
+              </section>
             }
           />
         </WorkspaceHubContext.Provider>

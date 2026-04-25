@@ -1028,24 +1028,28 @@ function hydrateSnapshotEditorStoreOnce(): void {
   const initialPersistedState = loadInitialJuceGridState()
   const initialPluginPersistence = loadInitialPluginPersistence()
 
-  let selectedCategory = 'all'
-  try {
-    selectedCategory = localStorage.getItem('map2_juce_grid_plugin_category')
-      || localStorage.getItem('map2_grid_plugin_category')
-      || 'all'
-  } catch { /* localStorage unavailable */ }
+  // Two-key reads (current + legacy) wrapped in a single safe accessor so a
+  // poisoned localStorage entry can't crash the editor on mount.
+  const readSnapshotStorage = (currentKey: string, legacyKey: string): string | null => {
+    try {
+      return localStorage.getItem(currentKey) ?? localStorage.getItem(legacyKey)
+    } catch {
+      return null
+    }
+  }
+
+  const selectedCategory = readSnapshotStorage('map2_juce_grid_plugin_category', 'map2_grid_plugin_category') || 'all'
 
   let collapsedCategories: Set<string> = new Set<string>()
-  try {
-    const raw = localStorage.getItem('map2_juce_grid_collapsed_categories')
-      ?? localStorage.getItem('map2_grid_collapsed_categories')
-    if (raw) {
-      const parsed = JSON.parse(raw)
+  const collapsedRaw = readSnapshotStorage('map2_juce_grid_collapsed_categories', 'map2_grid_collapsed_categories')
+  if (collapsedRaw) {
+    try {
+      const parsed: unknown = JSON.parse(collapsedRaw)
       if (Array.isArray(parsed)) {
         collapsedCategories = new Set<string>(parsed.filter((entry): entry is string => typeof entry === 'string'))
       }
-    }
-  } catch { /* unparseable storage value — fall back to empty set */ }
+    } catch { /* unparseable storage value — fall back to empty set */ }
+  }
 
   useSnapshotEditorStore.setState({
     flowSlots: initialPersistedState.flowSlots,
@@ -8411,7 +8415,7 @@ export function SnapshotEditorPage() {
       >
 
         <div className="juce-grid-page__unified-block">
-          <main className="juce-grid-page__main">
+          <section className="juce-grid-page__main" aria-label="Snapshot editor workspace">
             {snapshotEntryRequired && (
               <Tile className="juce-grid-page__effect-modal-placeholder">
                 <div className="juce-grid-page__parameter-editor-copy">
@@ -8467,7 +8471,7 @@ export function SnapshotEditorPage() {
                 </div>
               ))}
             </section>
-          </main>
+          </section>
         </div>
       </section>
 

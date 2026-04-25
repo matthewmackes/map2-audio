@@ -728,7 +728,7 @@ export function GlobalTreeNav({
 
   return (
     <Layer className="global-tree-nav__layer">
-      <aside className="global-tree-nav" aria-label="Global navigation tree">
+      <nav className="global-tree-nav" aria-label="Global navigation">
         <div className="global-tree-nav__header">
           <Popover
             align="bottom-start"
@@ -840,7 +840,7 @@ export function GlobalTreeNav({
           </Tooltip>
         </div>
 
-      </aside>
+      </nav>
     </Layer>
   )
 }

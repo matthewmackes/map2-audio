@@ -515,7 +515,22 @@ export function PlatformCapabilities() {
                             background: expandedServices.has(service.name) ? '#1a1a1a' : 'transparent',
                           }}
                         >
-                          <div style={{ flex: 1, cursor: 'pointer' }} onClick={() => toggleServiceExpanded(service.name)}>
+                          <button
+                            type="button"
+                            aria-expanded={expandedServices.has(service.name)}
+                            aria-label={`Toggle details for ${service.display_name}`}
+                            onClick={() => toggleServiceExpanded(service.name)}
+                            style={{
+                              flex: 1,
+                              cursor: 'pointer',
+                              background: 'transparent',
+                              border: 0,
+                              padding: 0,
+                              textAlign: 'inherit',
+                              color: 'inherit',
+                              font: 'inherit',
+                            }}
+                          >
                             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
                               {expandedServices.has(service.name) ? (
                                 <CaretDown size={14} style={{ color: '#9ca3af' }} />
@@ -543,7 +558,7 @@ export function PlatformCapabilities() {
                                 {service.description}
                               </div>
                             )}
-                          </div>
+                          </button>
 
                           {/* Service Controls */}
                           <div style={{ display: 'flex', gap: 4, marginLeft: 12 }}>

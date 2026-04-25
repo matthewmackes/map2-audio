@@ -391,7 +391,7 @@ export function MPX1MidiMapper() {
           </div>
         </aside>
 
-        <main className="mpx1-midi-map__canvas-column">
+        <section className="mpx1-midi-map__canvas-column" aria-label="Connection canvas">
           <div className="mpx1-midi-map__title">Connection Canvas</div>
           <div className="mpx1-midi-map__canvas-wrap">
             <svg viewBox={`0 0 330 ${Math.max(180, lines.length * 42 + 36)}`} className="mpx1-midi-map__svg">
@@ -583,7 +583,7 @@ export function MPX1MidiMapper() {
               </button>
             </div>
           )}
-        </main>
+        </section>
 
         <aside className="mpx1-midi-map__column">
           <div className="mpx1-midi-map__title">MPX1 Targets</div>

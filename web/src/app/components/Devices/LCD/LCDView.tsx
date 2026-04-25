@@ -613,10 +613,16 @@ export function FT232HConfig({ onScan, onTestLCD, onTestWrite, scanResult, isSca
             <div className="scan-results-box">
               <div className="scan-header">Found {scanResult.lcd_count} device{scanResult.lcd_count !== 1 ? 's' : ''}</div>
               {scanResult.devices.map(device => (
-                <div key={device.address} className={`scan-device-item ${device.address === testAddress ? 'selected' : ''}`} onClick={() => setTestAddress(device.address)}>
+                <button
+                  type="button"
+                  key={device.address}
+                  aria-pressed={device.address === testAddress}
+                  className={`scan-device-item ${device.address === testAddress ? 'selected' : ''}`}
+                  onClick={() => setTestAddress(device.address)}
+                >
                   <span className="device-addr">{device.address_hex}</span>
                   <span className="device-type">{device.device_type}</span>
-                </div>
+                </button>
               ))}
             </div>
           )}
@@ -629,10 +635,50 @@ export function FT232HConfig({ onScan, onTestLCD, onTestWrite, scanResult, isSca
           <div className="board-image-wrapper">
             <img src="/images/ft232h-pinout.jpg" alt="FT232H Pinout Diagram" className="board-photo" />
             <div className="pin-overlays">
-              <div className={`pin-overlay i2c ${selectedPin === 'D0' ? 'selected' : ''}`} style={{ top: '33%', right: '8%' }} onClick={() => setSelectedPin(selectedPin === 'D0' ? null : 'D0')} title="D0 — SCL"><span className="pin-label">SCL</span></div>
-              <div className={`pin-overlay i2c ${selectedPin === 'D1' ? 'selected' : ''}`} style={{ top: '39%', right: '8%' }} onClick={() => setSelectedPin(selectedPin === 'D1' ? null : 'D1')} title="D1 — SDA"><span className="pin-label">SDA</span></div>
-              <div className={`pin-overlay power ${selectedPin === '5V' ? 'selected' : ''}`} style={{ top: '27%', right: '8%' }} onClick={() => setSelectedPin(selectedPin === '5V' ? null : '5V')} title="5V Power"><span className="pin-label">5V</span></div>
-              <div className={`pin-overlay power ${selectedPin === 'GND1' ? 'selected' : ''}`} style={{ top: '27%', left: '8%' }} onClick={() => setSelectedPin(selectedPin === 'GND1' ? null : 'GND1')} title="Ground"><span className="pin-label">GND</span></div>
+              <button
+                type="button"
+                aria-pressed={selectedPin === 'D0'}
+                aria-label="D0 — SCL"
+                title="D0 — SCL"
+                className={`pin-overlay i2c ${selectedPin === 'D0' ? 'selected' : ''}`}
+                style={{ top: '33%', right: '8%' }}
+                onClick={() => setSelectedPin(selectedPin === 'D0' ? null : 'D0')}
+              >
+                <span className="pin-label">SCL</span>
+              </button>
+              <button
+                type="button"
+                aria-pressed={selectedPin === 'D1'}
+                aria-label="D1 — SDA"
+                title="D1 — SDA"
+                className={`pin-overlay i2c ${selectedPin === 'D1' ? 'selected' : ''}`}
+                style={{ top: '39%', right: '8%' }}
+                onClick={() => setSelectedPin(selectedPin === 'D1' ? null : 'D1')}
+              >
+                <span className="pin-label">SDA</span>
+              </button>
+              <button
+                type="button"
+                aria-pressed={selectedPin === '5V'}
+                aria-label="5V Power"
+                title="5V Power"
+                className={`pin-overlay power ${selectedPin === '5V' ? 'selected' : ''}`}
+                style={{ top: '27%', right: '8%' }}
+                onClick={() => setSelectedPin(selectedPin === '5V' ? null : '5V')}
+              >
+                <span className="pin-label">5V</span>
+              </button>
+              <button
+                type="button"
+                aria-pressed={selectedPin === 'GND1'}
+                aria-label="Ground"
+                title="Ground"
+                className={`pin-overlay power ${selectedPin === 'GND1' ? 'selected' : ''}`}
+                style={{ top: '27%', left: '8%' }}
+                onClick={() => setSelectedPin(selectedPin === 'GND1' ? null : 'GND1')}
+              >
+                <span className="pin-label">GND</span>
+              </button>
             </div>
           </div>
 
@@ -733,8 +779,8 @@ interface EventDetailsModalProps {
 
 export function EventDetailsModal({ event, onClose, onPin, onUnpin, isPinned }: EventDetailsModalProps) {
   return (
-    <div className="event-modal-overlay" onClick={onClose}>
-      <div className="event-modal" onClick={(e) => e.stopPropagation()}>
+    <div className="event-modal-overlay" onClick={onClose} role="presentation">
+      <div className="event-modal" role="dialog" aria-modal="true" onClick={(e) => e.stopPropagation()}>
         <div className="event-modal-header">
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             <span style={{ fontSize: 32 }}>{event.icon}</span>

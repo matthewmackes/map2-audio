@@ -810,11 +810,25 @@ function StepCalibrate({
               </div>
               <div className="field">
                 <div className="lbl">Invert</div>
-                <div className={`switch ${cal.invert ? 'on' : ''}`} onClick={() => set({ invert: !cal.invert })} />
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={cal.invert}
+                  aria-label="Invert"
+                  className={`switch ${cal.invert ? 'on' : ''}`}
+                  onClick={() => set({ invert: !cal.invert })}
+                />
               </div>
               <div className="field">
                 <div className="lbl">LED feedback</div>
-                <div className={`switch ${cal.feedback ? 'on' : ''}`} onClick={() => set({ feedback: !cal.feedback })} />
+                <button
+                  type="button"
+                  role="switch"
+                  aria-checked={cal.feedback}
+                  aria-label="LED feedback"
+                  className={`switch ${cal.feedback ? 'on' : ''}`}
+                  onClick={() => set({ feedback: !cal.feedback })}
+                />
               </div>
             </>
           )}
@@ -841,7 +855,14 @@ function StepCalibrate({
 
           <div className="field">
             <div className="lbl">Enabled</div>
-            <div className={`switch ${cal.enabled ? 'on' : ''}`} onClick={() => set({ enabled: !cal.enabled })} />
+            <button
+              type="button"
+              role="switch"
+              aria-checked={cal.enabled}
+              aria-label="Enabled"
+              className={`switch ${cal.enabled ? 'on' : ''}`}
+              onClick={() => set({ enabled: !cal.enabled })}
+            />
           </div>
         </div>
 
@@ -1049,7 +1070,13 @@ function StepSave({
 function AdvancedDrawer({ open, onClose }: { open: boolean; onClose: () => void }) {
   return (
     <>
-      <div className={`drawer-overlay ${open ? 'open' : ''}`} onClick={onClose} />
+      <button
+        type="button"
+        aria-label="Close drawer"
+        tabIndex={open ? 0 : -1}
+        className={`drawer-overlay ${open ? 'open' : ''}`}
+        onClick={onClose}
+      />
       <div className={`drawer ${open ? 'open' : ''}`}>
         <div className="hd">
           Advanced · all v1 controls (legacy MIDI Assignments)

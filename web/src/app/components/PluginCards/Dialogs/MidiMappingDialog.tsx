@@ -270,9 +270,15 @@ export function MidiMappingDialog({
   if (!isOpen) return null
 
   return (
-    <div className="midi-mapping-dialog-overlay" onClick={handleClose}>
+    <div
+      className="midi-mapping-dialog-overlay"
+      onClick={handleClose}
+      role="presentation"
+    >
       <div
         className="midi-mapping-dialog"
+        role="dialog"
+        aria-modal="true"
         onClick={(e) => e.stopPropagation()}
       >
         {/* Header */}

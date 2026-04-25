@@ -15,6 +15,7 @@ import { useAppShellPresentation } from './useAppShellPresentation'
 import { useRestartBackend } from './useRestartBackend'
 import { useRunningRoutes } from './useRunningRoutes'
 import { useWebSocketConnection } from '../../map2/hooks/useWebSocket'
+import { readPersisted, writePersisted } from '../utils/persistedState'
 import { SHELL_OPEN_RESTART_CONFIRM_EVENT } from './shellEvents'
 import { reloadHomeDesktopShell, returnHomeDesktopToBoot } from '../pages/homeDesktopSession'
 import { writeHomeShellRecentRoute } from '../pages/homeShellNavigation'
@@ -25,26 +26,19 @@ import './chrome/chrome-tokens.css'
 import '../components/shared/GlobalPrimitives.css'
 import './AppShell.css'
 
-const GLOBAL_NAV_PINNED_STORAGE_KEY = 'map2:global-nav:pinned'
-
-function readGlobalNavPinned(): boolean {
-  if (typeof window === 'undefined') {
-    return true
-  }
-
-  try {
-    const raw = window.localStorage.getItem(GLOBAL_NAV_PINNED_STORAGE_KEY)
-    return raw == null ? true : raw !== 'false'
-  } catch {
-    return true
-  }
-}
+const GLOBAL_NAV_PINNED_KEY = {
+  storageKey: 'map2:global-nav:pinned',
+  fallback: true,
+  // Pinned by default — only the explicit string "false" unpins.
+  parse: (raw: string) => (raw === 'false' ? false : true),
+  serialize: (value: boolean) => (value ? 'true' : 'false'),
+} as const
 
 export function AppShell({ children }: { children: ReactNode }) {
   const location = useLocation()
   const navigate = useNavigate()
   const { status: websocketStatus } = useWebSocketConnection()
-  const [globalNavPinned, setGlobalNavPinned] = useState<boolean>(() => readGlobalNavPinned())
+  const [globalNavPinned, setGlobalNavPinned] = useState<boolean>(() => readPersisted(GLOBAL_NAV_PINNED_KEY))
   const [shellPatch, setShellPatch] = useState<ShellWindowPatch>({})
   const closeShellMenus = useCallback(() => {}, [])
   const {
@@ -161,14 +155,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   }, [location.pathname, location.search])
 
   useEffect(() => {
-    if (typeof window === 'undefined') {
-      return
-    }
-    try {
-      window.localStorage.setItem(GLOBAL_NAV_PINNED_STORAGE_KEY, globalNavPinned ? 'true' : 'false')
-    } catch {
-      // Ignore storage failures in restricted browser contexts.
-    }
+    writePersisted(GLOBAL_NAV_PINNED_KEY, globalNavPinned)
   }, [globalNavPinned])
 
   const showTopChrome = !isDesktopRoute && location.pathname !== '/perform'

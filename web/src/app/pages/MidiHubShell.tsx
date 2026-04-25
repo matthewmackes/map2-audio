@@ -109,10 +109,10 @@ export function MidiHubShell() {
             contentClassName="midi-hub-shell__content"
             sidebar={null}
             content={(
-              <main className="midi-hub-shell__content-body" key={location.pathname}>
+              <section className="midi-hub-shell__content-body" aria-label="MIDI Hub content" key={location.pathname}>
                 <MidiHubTabs />
                 <Outlet />
-              </main>
+              </section>
             )}
           />
           <MidiHubHealthDrawer
