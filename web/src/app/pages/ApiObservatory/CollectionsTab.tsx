@@ -11,8 +11,22 @@ import type {
 } from './types'
 import { createDefaultDraft, draftToHeaders, draftToUrl, parseBody } from './utils'
 import { CLUSTER_TEST_COLLECTIONS } from '../../data/clusterTestCollections'
+import { readPersisted, writePersisted, type PersistedKey } from '../../utils/persistedState'
 
-const STORAGE_KEY = 'map2.api_observatory.workspaces.v1'
+const WORKSPACES_KEY: PersistedKey<CollectionWorkspace[] | null> = {
+  storageKey: 'map2.api_observatory.workspaces.v1',
+  fallback: null,
+  parse: (raw) => {
+    try {
+      const parsed = JSON.parse(raw) as unknown
+      if (!Array.isArray(parsed)) return undefined
+      return parsed as CollectionWorkspace[]
+    } catch {
+      return undefined
+    }
+  },
+  serialize: (value) => (value === null ? '' : JSON.stringify(value)),
+}
 
 interface RunnerResult {
   requestId: string
@@ -100,37 +114,22 @@ export function CollectionsTab({
   const [parameterRowsText, setParameterRowsText] = useState('[{}]')
 
   useEffect(() => {
-    const raw = localStorage.getItem(STORAGE_KEY)
-    if (!raw) {
+    const stored = readPersisted(WORKSPACES_KEY)
+    if (!stored || stored.length === 0) {
       const initial = [makeDefaultWorkspace()]
       setWorkspaces(initial)
       setActiveWorkspaceId(initial[0].id)
       setActiveCollectionId(initial[0].collections[0]?.id ?? '')
       return
     }
-    try {
-      const parsed = JSON.parse(raw) as CollectionWorkspace[]
-      if (parsed.length === 0) {
-        const fallback = [makeDefaultWorkspace()]
-        setWorkspaces(fallback)
-        setActiveWorkspaceId(fallback[0].id)
-        setActiveCollectionId(fallback[0].collections[0]?.id ?? '')
-        return
-      }
-      setWorkspaces(parsed)
-      setActiveWorkspaceId(parsed[0].id)
-      setActiveCollectionId(parsed[0].collections[0]?.id ?? '')
-      setActiveEnvironmentId(parsed[0].environments[0]?.id ?? 'env-local')
-    } catch {
-      const fallback = [makeDefaultWorkspace()]
-      setWorkspaces(fallback)
-      setActiveWorkspaceId(fallback[0].id)
-      setActiveCollectionId(fallback[0].collections[0]?.id ?? '')
-    }
+    setWorkspaces(stored)
+    setActiveWorkspaceId(stored[0].id)
+    setActiveCollectionId(stored[0].collections[0]?.id ?? '')
+    setActiveEnvironmentId(stored[0].environments[0]?.id ?? 'env-local')
   }, [])
 
   useEffect(() => {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(workspaces))
+    writePersisted(WORKSPACES_KEY, workspaces)
   }, [workspaces])
 
   const activeWorkspace = useMemo(

@@ -3,6 +3,7 @@ import { Renew } from '@carbon/icons-react'
 
 import { useMPX1PageContext } from './MPX1Shell'
 import { NumberInput } from '../../ParameterControl'
+import { readPersisted, writePersisted, type PersistedKey } from '../../../utils/persistedState'
 import './MPX1ModMatrix.css'
 
 type CurveType = 'linear' | 'log' | 'exp' | 's_curve'
@@ -19,7 +20,32 @@ interface LfoConfig {
   depth: number
 }
 
-const STORAGE_KEY = 'map2.mpx1.mod_matrix.v1'
+interface MatrixPersistedState {
+  cells: Record<string, MatrixCell>
+  lfoConfigs: Record<string, LfoConfig>
+}
+
+const MATRIX_STATE_KEY: PersistedKey<MatrixPersistedState> = {
+  storageKey: 'map2.mpx1.mod_matrix.v1',
+  fallback: { cells: {}, lfoConfigs: {} },
+  parse: (raw) => {
+    try {
+      const parsed = JSON.parse(raw) as unknown
+      if (!parsed || typeof parsed !== 'object') return undefined
+      const candidate = parsed as { cells?: unknown; lfoConfigs?: unknown }
+      const cells = candidate.cells && typeof candidate.cells === 'object'
+        ? (candidate.cells as Record<string, MatrixCell>)
+        : {}
+      const lfoConfigs = candidate.lfoConfigs && typeof candidate.lfoConfigs === 'object'
+        ? (candidate.lfoConfigs as Record<string, LfoConfig>)
+        : {}
+      return { cells, lfoConfigs }
+    } catch {
+      return undefined
+    }
+  },
+  serialize: (value) => JSON.stringify(value),
+}
 
 function keyForCell(source: string, destination: string): string {
   return `${source}=>${destination}`
@@ -43,31 +69,17 @@ export function MPX1ModMatrix() {
     return list.slice(0, 14)
   }, [mpx1.registry?.modifier_matrix?.destinations])
 
-  const [cells, setCells] = useState<Record<string, MatrixCell>>({})
+  // Hydrate cells + LFO configs from the persistedState helper on first render.
+  // The parser drops malformed payloads silently and the fallback is empty.
+  const initialState = useMemo(() => readPersisted(MATRIX_STATE_KEY), [])
+  const [cells, setCells] = useState<Record<string, MatrixCell>>(() => initialState.cells)
   const [selectedSource, setSelectedSource] = useState<string>('')
   const [selectedCellKey, setSelectedCellKey] = useState<string | null>(null)
-  const [lfoConfigs, setLfoConfigs] = useState<Record<string, LfoConfig>>({})
+  const [lfoConfigs, setLfoConfigs] = useState<Record<string, LfoConfig>>(() => initialState.lfoConfigs)
   const [tick, setTick] = useState(0)
 
   useEffect(() => {
-    const saved = window.localStorage.getItem(STORAGE_KEY)
-    if (!saved) {
-      return
-    }
-    try {
-      const parsed = JSON.parse(saved)
-      if (parsed && typeof parsed === 'object') {
-        setCells(parsed.cells ?? {})
-        setLfoConfigs(parsed.lfoConfigs ?? {})
-      }
-    } catch {
-      // ignore invalid payload
-    }
-  }, [])
-
-  useEffect(() => {
-    const payload = JSON.stringify({ cells, lfoConfigs })
-    window.localStorage.setItem(STORAGE_KEY, payload)
+    writePersisted(MATRIX_STATE_KEY, { cells, lfoConfigs })
   }, [cells, lfoConfigs])
 
   useEffect(() => {

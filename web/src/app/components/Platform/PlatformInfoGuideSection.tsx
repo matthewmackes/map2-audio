@@ -4,6 +4,7 @@ import { Book, Document, Download, RecentlyViewed, Search } from '@carbon/icons-
 import { useLocation, useSearchParams } from 'react-router-dom'
 import { EmptyState } from '../shared/EmptyState'
 import { LoadingState } from '../shared/LoadingState'
+import { readPersisted, writePersisted, type PersistedKey } from '../../utils/persistedState'
 
 import './PlatformInfoGuideSection.css'
 
@@ -24,6 +25,27 @@ interface RecentDocumentRecord {
 
 const RECENT_DOCS_STORAGE_KEY = 'map2_doc_library_recent_v1'
 const MAX_RECENT_DOCS = 6
+
+const RECENT_DOCS_KEY: PersistedKey<RecentDocumentRecord[]> = {
+  storageKey: RECENT_DOCS_STORAGE_KEY,
+  fallback: [],
+  parse: (raw) => {
+    try {
+      const parsed = JSON.parse(raw) as unknown
+      if (!Array.isArray(parsed)) return undefined
+      return parsed.filter((entry): entry is RecentDocumentRecord => (
+        typeof entry === 'object'
+        && entry !== null
+        && typeof (entry as { name?: unknown }).name === 'string'
+        && typeof (entry as { openedAt?: unknown }).openedAt === 'number'
+        && typeof (entry as { count?: unknown }).count === 'number'
+      ))
+    } catch {
+      return undefined
+    }
+  },
+  serialize: (records) => JSON.stringify(records.slice(0, MAX_RECENT_DOCS)),
+}
 
 function normalizeDocumentList(payload: unknown): DocumentRecord[] {
   if (!Array.isArray(payload)) {
@@ -98,38 +120,11 @@ function buildSearchIndex(doc: DocumentRecord): string {
 }
 
 function safeReadRecentDocs(): RecentDocumentRecord[] {
-  if (typeof window === 'undefined') {
-    return []
-  }
-
-  try {
-    const raw = window.localStorage.getItem(RECENT_DOCS_STORAGE_KEY)
-    if (!raw) {
-      return []
-    }
-    const parsed = JSON.parse(raw)
-    if (!Array.isArray(parsed)) {
-      return []
-    }
-
-    return parsed.filter((entry): entry is RecentDocumentRecord => (
-      typeof entry === 'object'
-      && entry !== null
-      && typeof (entry as { name?: unknown }).name === 'string'
-      && typeof (entry as { openedAt?: unknown }).openedAt === 'number'
-      && typeof (entry as { count?: unknown }).count === 'number'
-    ))
-  } catch {
-    return []
-  }
+  return readPersisted(RECENT_DOCS_KEY)
 }
 
 function writeRecentDocs(records: RecentDocumentRecord[]) {
-  if (typeof window === 'undefined') {
-    return
-  }
-
-  window.localStorage.setItem(RECENT_DOCS_STORAGE_KEY, JSON.stringify(records.slice(0, MAX_RECENT_DOCS)))
+  writePersisted(RECENT_DOCS_KEY, records)
 }
 
 function rememberDocumentOpen(name: string, current: RecentDocumentRecord[]): RecentDocumentRecord[] {

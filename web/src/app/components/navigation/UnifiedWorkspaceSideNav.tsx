@@ -2,6 +2,8 @@ import { useEffect, useMemo, useState, type ComponentType, type ReactNode } from
 import { Categories, Tools } from '@carbon/icons-react'
 import { FeatureFlags, Layer, TreeView } from '@carbon/react'
 
+import { readPersisted, writePersisted, type PersistedKey } from '../../utils/persistedState'
+
 import './UnifiedWorkspaceSideNav.css'
 
 export interface UnifiedWorkspaceSideNavItem {
@@ -58,24 +60,27 @@ function slugifyStorageKey(value: string) {
     .replace(/^-+|-+$/g, '') || 'workspace'
 }
 
-function readExpandedGroupIds(storageId: string, defaults: string[]) {
-  if (typeof window === 'undefined') {
-    return defaults
+// Build a typed PersistedKey on the fly — the storage id is workspace-scoped
+// and the default expansion set varies per nav, so the key isn't a module
+// constant.
+function buildExpandedGroupsKey(storageId: string, defaults: string[]): PersistedKey<string[]> {
+  return {
+    storageKey: storageId,
+    fallback: defaults,
+    parse: (raw) => {
+      try {
+        const parsed: unknown = JSON.parse(raw)
+        if (!Array.isArray(parsed)) return undefined
+        return parsed.filter((value): value is string => typeof value === 'string')
+      } catch {
+        return undefined
+      }
+    },
   }
+}
 
-  try {
-    const raw = window.localStorage.getItem(storageId)
-    if (!raw) {
-      return defaults
-    }
-    const parsed = JSON.parse(raw)
-    if (!Array.isArray(parsed)) {
-      return defaults
-    }
-    return parsed.filter((value): value is string => typeof value === 'string')
-  } catch {
-    return defaults
-  }
+function readExpandedGroupIds(storageId: string, defaults: string[]) {
+  return readPersisted(buildExpandedGroupsKey(storageId, defaults))
 }
 
 function WorkspaceTreeLabel({
@@ -156,14 +161,7 @@ export function UnifiedWorkspaceSideNav({
   }, [defaultExpandedGroups, resolvedStorageKey])
 
   useEffect(() => {
-    if (typeof window === 'undefined') {
-      return
-    }
-    try {
-      window.localStorage.setItem(resolvedStorageKey, JSON.stringify(expandedGroups))
-    } catch {
-      // Ignore persistence failures so navigation still works in restricted contexts.
-    }
+    writePersisted(buildExpandedGroupsKey(resolvedStorageKey, []), expandedGroups)
   }, [expandedGroups, resolvedStorageKey])
 
   const activeGroupId = activeItem?.variant === 'utility' ? UTILITY_GROUP_ID : PRIMARY_GROUP_ID
