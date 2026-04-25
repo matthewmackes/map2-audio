@@ -232,7 +232,6 @@ import {
   SnapshotEditorSnapshotStatusPanel,
 } from '../components/SnapshotEditor/SnapshotEditorSnapshotStatusPanel'
 import { BlockPicker } from '../components/StateAuthority/BlockPicker'
-import { MorphPad } from '../components/StateAuthority/MorphPad'
 import { SnapshotExpressionMappingsCard } from '../components/SnapshotEditor/SnapshotExpressionMappingsCard'
 import { SnapshotFootswitchLabelCard } from '../components/SnapshotEditor/SnapshotFootswitchLabelCard'
 import { buildSnapshotEditorSelectedPluginCard } from '../components/SnapshotEditor/snapshotEditorSelectedPluginCard'
@@ -8143,6 +8142,64 @@ export function SnapshotEditorPage() {
       liveBadgeState={liveBadgeState}
     />
   )
+  // Snapshot management hero — new Build Workflow design (2026-04-25). Wires
+  // every section to its single source of truth:
+  //   • engine sync   → liveBadgeState (computeLiveBadgeState)
+  //   • routing map   → routing.mode + setRoutingMode + ROUTING_MODE_OPTIONS
+  //   • active channel→ activeChannelStatusRail memo
+  //   • morph pad     → <MorphPad/> (state-authority API)
+  const buildWorkflowEngineSync: { tone: 'live' | 'publishing' | 'desync' | 'idle'; label: string } = (() => {
+    switch (liveBadgeState) {
+      case 'live_confirmed': return { tone: 'live', label: 'Engine in sync' }
+      case 'publishing': return { tone: 'publishing', label: 'Publishing…' }
+      case 'engine_desync': return { tone: 'desync', label: 'Engine desync' }
+      case 'idle':
+      default: return { tone: 'idle', label: 'Engine idle' }
+    }
+  })()
+  const buildWorkflowRoutingOptions = useMemo(
+    () => ROUTING_MODE_OPTIONS.map((option) => ({
+      id: option.id,
+      label: option.label,
+      description: option.summary,
+    })),
+    [],
+  )
+  const buildWorkflowActiveChannel = useMemo(() => {
+    if (!activeChannelStatusRail) return null
+    const accentColor = activeFlow?.color ?? getFlowCardPaletteEntry(activeFlowIndex).color
+    return {
+      channelLabel: activeChannelStatusRail.channelLabel,
+      chainLabel: activeChannelStatusRail.chainLabel,
+      blockSummary: activeChannelStatusRail.blockSummary,
+      blendLabel: activeChannelStatusRail.blendLabel,
+      stateLabel: activeChannelStatusRail.stateLabel,
+      stateLive: activeChannelStatusRail.stateLabel === 'Live',
+      muted: activeChannelStatusRail.muted,
+      solo: activeChannelStatusRail.solo,
+      inputClipActive: activeChannelStatusRail.inputClipActive,
+      outputClipActive: activeChannelStatusRail.outputClipActive,
+      clipActive: activeChannelStatusRail.clipActive,
+      accentColor,
+    }
+  }, [activeChannelStatusRail, activeFlow?.color, activeFlowIndex])
+  const buildWorkflowChannelCounts = useMemo(() => {
+    const active = authoritativeAudioState?.derived.active_channel_count ?? activeSnapshot?.live_state?.paths.length ?? null
+    const total = authoritativeAudioState?.derived.total_channel_count ?? activeSnapshot?.channels.length ?? activeSnapshot?.paths.length ?? null
+    return { active, total }
+  }, [authoritativeAudioState, activeSnapshot])
+  const buildWorkflowUpdatedAtLabel = useMemo(() => {
+    const raw = activeSnapshot?.updated_at
+    if (!raw) return null
+    const ts = new Date(raw).getTime()
+    if (!Number.isFinite(ts)) return null
+    const seconds = Math.max(0, Math.round((Date.now() - ts) / 1000))
+    if (seconds < 30) return 'updated just now'
+    if (seconds < 90) return 'updated a minute ago'
+    if (seconds < 3600) return `updated ${Math.round(seconds / 60)} min ago`
+    if (seconds < 86_400) return `updated ${Math.round(seconds / 3600)} hr ago`
+    return `updated ${Math.round(seconds / 86_400)} d ago`
+  }, [activeSnapshot?.updated_at])
   const pedalboardBuildWizard = (
     <PedalboardBuildWizard
       hasSnapshot={Boolean(activeSnapshot)}
@@ -8169,6 +8226,20 @@ export function SnapshotEditorPage() {
       createSnapshotPending={createSnapshotFromEditorMutation.isPending}
       onOpenHelp={openKeyboardHelpWorkspace}
       snapshotTitle={activeSnapshot?.name ?? 'No snapshot loaded'}
+      activeChannelCount={buildWorkflowChannelCounts.active}
+      channelCount={buildWorkflowChannelCounts.total}
+      chainCount={activeSnapshot?.chain_count ?? null}
+      updatedAtLabel={buildWorkflowUpdatedAtLabel}
+      engineSyncTone={buildWorkflowEngineSync.tone}
+      engineSyncLabel={buildWorkflowEngineSync.label}
+      activeChannel={buildWorkflowActiveChannel}
+      routingOptions={buildWorkflowRoutingOptions}
+      routingValue={routing.mode}
+      onRoutingChange={(mode) => setRoutingMode(mode as RoutingMode)}
+      routingDisabled={snapshotEditingLocked}
+      onOpenRouting={() => openSnapshotProgressModal('advanced', 'routing')}
+      onOpenDevices={openSnapshotIoWorkspace}
+      showMorphPad={Boolean(activeSnapshot)}
     />
   )
   if (showViewportBlockScreen) {
@@ -8571,9 +8642,13 @@ export function SnapshotEditorPage() {
                 </div>
               ) : bottomEditorShowsSnapshotInspector ? (
                 <div className="juce-grid-page__snapshot-inspector-row">
-                  {/* Snapshot Management hero — eyebrow / live name / status / meta line on the left,
-                      grouped icon row + divider + Publish/Open/New trio on the right. */}
-                  {snapshotInspectorControls}
+                  {/* Build Workflow hero (2026-04-25) — single composite that
+                      replaced the old Management hero, active-channel rail,
+                      and standalone Morph tile. Engine sync, routing,
+                      channel meta, and the morph pad are all wired through
+                      this one component to their respective single sources
+                      of truth (computeLiveBadgeState, setRoutingMode,
+                      activeChannelStatusRail, <MorphPad/>). */}
                   {activeSnapshot && snapshotsDirty ? (
                     <PublishReadyBanner
                       snapshotName={activeSnapshot.name}
@@ -8582,80 +8657,7 @@ export function SnapshotEditorPage() {
                       onPublish={openGuidedProgress}
                     />
                   ) : null}
-                  {!snapshotEntryRequired && activeChannelStatusRail && (
-                    <div className="juce-grid-page__active-channel-rail is-merged-with-mgmt" role="status" aria-live="polite">
-                      <div className="juce-grid-page__active-channel-rail-main">
-                        <div className="juce-grid-page__active-channel-rail-identity">
-                          <span className="juce-grid-page__active-channel-rail-kicker">Active channel</span>
-                          <div className="juce-grid-page__active-channel-rail-channel">
-                            <span
-                              className="juce-grid-page__flow-card-label"
-                              title={activeChannelStatusRail.chainLabel}
-                              style={{ '--flow-color': activeFlow?.color ?? getFlowCardPaletteEntry(activeFlowIndex).color } as CSSProperties}
-                            >
-                              <span className="juce-grid-page__flow-card-label-text">{activeChannelStatusRail.channelLabel}</span>
-                            </span>
-                            <div className="juce-grid-page__active-channel-rail-copy">
-                              <strong className="juce-grid-page__active-channel-rail-chain">{activeChannelStatusRail.chainLabel}</strong>
-                              <span className="juce-grid-page__active-channel-rail-summary">{activeChannelStatusRail.blockSummary}</span>
-                            </div>
-                          </div>
-                        </div>
-                        <div className="juce-grid-page__active-channel-rail-tags">
-                          <Tag type={activeChannelStatusRail.stateLabel === 'Live' ? 'green' : 'cool-gray'}>{activeChannelStatusRail.stateLabel}</Tag>
-                          <Tag type="blue">{activeChannelStatusRail.blendLabel}</Tag>
-                          <Tag type="cool-gray">{activeChannelStatusRail.routingSourceLabel}</Tag>
-                          <Tag type={activeChannelStatusRail.muted ? 'red' : 'cool-gray'}>{activeChannelStatusRail.muted ? 'Mute' : 'M'}</Tag>
-                          <Tag type={activeChannelStatusRail.solo ? 'warm-gray' : 'cool-gray'}>{activeChannelStatusRail.solo ? 'Solo' : 'S'}</Tag>
-                        </div>
-                      </div>
-                      <div className="juce-grid-page__active-channel-rail-tools">
-                        <div className="juce-grid-page__flow-card-clip-bank" aria-label={`Active channel ${activeChannelStatusRail.channelLabel} clipping status`}>
-                          <div
-                            className={`juce-grid-page__flow-card-clip-readout ${activeChannelStatusRail.inputClipActive ? 'is-active' : ''}`}
-                            title={activeChannelStatusRail.inputClipActive ? `Channel ${activeChannelStatusRail.channelLabel} input clipping detected` : `Channel ${activeChannelStatusRail.channelLabel} input is clean`}
-                          >
-                            <SegmentedLedText value="IN" size="xs" color={FLOW_CARD_CLIP_LED_COLOR} />
-                          </div>
-                          <div
-                            className={`juce-grid-page__flow-card-clip-readout ${activeChannelStatusRail.outputClipActive ? 'is-active' : ''}`}
-                            title={activeChannelStatusRail.outputClipActive ? `Channel ${activeChannelStatusRail.channelLabel} output clipping detected` : `Channel ${activeChannelStatusRail.channelLabel} output is clean`}
-                          >
-                            <SegmentedLedText value="OUT" size="xs" color={FLOW_CARD_CLIP_LED_COLOR} />
-                          </div>
-                          <div
-                            className={`juce-grid-page__flow-card-clip-readout ${activeChannelStatusRail.clipActive ? 'is-active' : ''}`}
-                            title={activeChannelStatusRail.clipActive ? `Channel ${activeChannelStatusRail.channelLabel} chain clipping detected` : `Channel ${activeChannelStatusRail.channelLabel} chain is clean`}
-                          >
-                            <SegmentedLedText value="CLIP" size="xs" color={FLOW_CARD_CLIP_LED_COLOR} />
-                          </div>
-                        </div>
-                        <Button
-                          size="sm"
-                          kind="ghost"
-                          renderIcon={Flow}
-                          onClick={() => openSnapshotProgressModal('advanced', 'routing')}
-                        >
-                          Routing
-                        </Button>
-                        <Button
-                          size="sm"
-                          kind="ghost"
-                          renderIcon={SettingsAdjust}
-                          onClick={openSnapshotIoWorkspace}
-                        >
-                          Devices
-                        </Button>
-                      </div>
-                    </div>
-                  )}
                   {pedalboardBuildWizard}
-                  {activeSnapshot ? (
-                    <div className="juce-grid-page__snapshot-inspector-morph" aria-label="A/B/C/D morph">
-                      <p className="juce-grid-page__dense-card-kicker">Morph</p>
-                      <MorphPad size={160} />
-                    </div>
-                  ) : null}
                 </div>
               ) : (
                 <Tile className="juce-grid-page__bottom-editor-placeholder">

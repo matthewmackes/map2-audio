@@ -1,7 +1,10 @@
-import { useCallback, useEffect, useState, type ElementType } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
 import {
   Add,
+  ArrowRight,
   ChartLine,
+  Checkmark,
+  ChevronDown,
   Folder,
   Flow,
   Help,
@@ -9,13 +12,37 @@ import {
   SettingsAdjust,
   Time,
 } from '@carbon/icons-react'
-import { Button, Tag, Tile } from '@carbon/react'
+import { Button, Tag } from '@carbon/react'
+import { MorphPad } from '../../StateAuthority/MorphPad'
 import {
   useBuildStageMachine,
   type BuildStageDescriptor,
   type BuildStageId,
 } from './useBuildStageMachine'
 import './pedalboardBuildWizard.css'
+
+export type RoutingDropdownOption = {
+  id: string
+  label: string
+  description: string
+}
+
+export type ActiveChannelInfo = {
+  channelLabel: string
+  chainLabel: string
+  blockSummary: string
+  blendLabel: string
+  stateLabel: string
+  stateLive: boolean
+  muted: boolean
+  solo: boolean
+  inputClipActive: boolean
+  outputClipActive: boolean
+  clipActive: boolean
+  accentColor?: string
+}
+
+export type EngineSyncTone = 'live' | 'publishing' | 'desync' | 'idle'
 
 export interface PedalboardBuildWizardProps {
   hasSnapshot: boolean
@@ -52,26 +79,278 @@ export interface PedalboardBuildWizardProps {
   onOpenHelp?: () => void
 
   snapshotTitle?: string
+
+  // New for the Build Workflow design.
+  channelCount?: number | null
+  activeChannelCount?: number | null
+  chainCount?: number | null
+  updatedAtLabel?: string | null
+
+  engineSyncTone?: EngineSyncTone
+  engineSyncLabel?: string
+
+  activeChannel?: ActiveChannelInfo | null
+
+  routingOptions?: RoutingDropdownOption[]
+  routingValue?: string
+  onRoutingChange?: (id: string) => void
+  routingDisabled?: boolean
+
+  onOpenRouting?: () => void
+  onOpenDevices?: () => void
+
+  showMorphPad?: boolean
 }
 
-type StageButton = {
-  id: string
-  label: string
-  icon: ElementType
-  onClick?: () => void
-  disabled?: boolean
-  pending?: boolean
-  active?: boolean
-  kind?: 'primary' | 'secondary' | 'tertiary'
+type StepCopy = {
+  detail: string
+  meta: Array<[string, string]>
+  primaryCta: { label: string; onClick?: () => void; disabled?: boolean; pending?: boolean }
+  secondaryCta?: { label: string; onClick?: () => void; disabled?: boolean }
 }
 
-function stageGlyph(status: BuildStageDescriptor['status']): string {
+function stageStatusToVariant(status: BuildStageDescriptor['status']): 'done' | 'active' | 'todo' {
   switch (status) {
-    case 'complete': return '✓'
-    case 'active': return '●'
-    case 'ready': return '○'
-    case 'locked': return '◌'
+    case 'complete': return 'done'
+    case 'active': return 'active'
+    case 'ready': return 'todo'
+    case 'locked': return 'todo'
   }
+}
+
+function buildStepCopy(
+  stage: BuildStageDescriptor,
+  ctx: {
+    pluginCount: number
+    hasSelectedBlock: boolean
+    hasUnsavedChanges: boolean
+    hasLiveSnapshot: boolean
+    automationActive: boolean
+    routingLabel: string
+    onOpenSignalGrid?: () => void
+    onOpenDirectory?: () => void
+    directoryDisabled?: boolean
+    onOpenParameters?: () => void
+    parametersDisabled?: boolean
+    onOpenAutomation?: () => void
+    onSaveDraft?: () => void
+    saveDraftDisabled?: boolean
+    saveDraftPending?: boolean
+    onOpenProgressModal?: () => void
+    onOpenSnapshots?: () => void
+    onOpenVersionHistory?: () => void
+    versionHistoryDisabled?: boolean
+  },
+): StepCopy {
+  switch (stage.id) {
+    case 'layout':
+      return {
+        detail: 'Block topology committed. Drag additional blocks from the directory to extend the rig graph.',
+        meta: [
+          ['Blocks', String(ctx.pluginCount)],
+          ['Status', stage.recap],
+        ],
+        primaryCta: {
+          label: 'Add block',
+          onClick: ctx.onOpenDirectory,
+          disabled: ctx.directoryDisabled,
+        },
+        secondaryCta: {
+          label: 'Open signal grid',
+          onClick: ctx.onOpenSignalGrid,
+        },
+      }
+    case 'wire':
+      return {
+        detail: ctx.hasSelectedBlock
+          ? 'Editing the selected block — adjust parameters in the inspector below.'
+          : 'Choose a block, then open its parameters panel to attach inputs, outputs and CV routing.',
+        meta: [
+          ['Selected', ctx.hasSelectedBlock ? 'Yes' : '—'],
+          ['Routing map', ctx.routingLabel],
+        ],
+        primaryCta: {
+          label: ctx.hasSelectedBlock ? 'Open parameters' : 'Open parameters',
+          onClick: ctx.onOpenParameters,
+          disabled: ctx.parametersDisabled,
+        },
+      }
+    case 'tune':
+      return {
+        detail: 'Curve parameters across the morph pad, attach LFOs, and bind macros to physical controls.',
+        meta: [
+          ['Automation', ctx.automationActive ? 'Open' : 'Idle'],
+          ['Status', stage.recap],
+        ],
+        primaryCta: {
+          label: ctx.automationActive ? 'Close automation' : 'Open automation',
+          onClick: ctx.onOpenAutomation,
+        },
+      }
+    case 'save':
+      return {
+        detail: 'Snapshot the current rig state as a draft. You can keep iterating without losing the version.',
+        meta: [
+          ['Draft', ctx.hasUnsavedChanges ? 'Unsaved' : 'Saved'],
+          ['Versions', 'Open history'],
+        ],
+        primaryCta: {
+          label: ctx.hasUnsavedChanges ? 'Save draft' : 'Draft saved',
+          onClick: ctx.onSaveDraft,
+          disabled: ctx.saveDraftDisabled,
+          pending: ctx.saveDraftPending,
+        },
+        secondaryCta: {
+          label: 'Version history',
+          onClick: ctx.onOpenVersionHistory,
+          disabled: ctx.versionHistoryDisabled,
+        },
+      }
+    case 'publish':
+      return {
+        detail: 'Promote the rig to the live channel set, or open the snapshot library to review history.',
+        meta: [
+          ['Live', ctx.hasLiveSnapshot ? 'Loaded' : 'None'],
+          ['Status', stage.recap],
+        ],
+        primaryCta: {
+          label: 'Publish to live',
+          onClick: ctx.onOpenProgressModal,
+        },
+        secondaryCta: {
+          label: 'Open snapshots',
+          onClick: ctx.onOpenSnapshots,
+        },
+      }
+  }
+}
+
+function RoutingDropdown({
+  options,
+  value,
+  onChange,
+  disabled,
+}: {
+  options: RoutingDropdownOption[]
+  value: string | undefined
+  onChange?: (id: string) => void
+  disabled?: boolean
+}) {
+  const [open, setOpen] = useState(false)
+  const wrapRef = useRef<HTMLDivElement | null>(null)
+
+  useEffect(() => {
+    if (!open) return
+    const onDoc = (event: MouseEvent) => {
+      if (!wrapRef.current?.contains(event.target as Node)) setOpen(false)
+    }
+    const onKey = (event: KeyboardEvent) => {
+      if (event.key === 'Escape') setOpen(false)
+    }
+    document.addEventListener('mousedown', onDoc)
+    document.addEventListener('keydown', onKey)
+    return () => {
+      document.removeEventListener('mousedown', onDoc)
+      document.removeEventListener('keydown', onKey)
+    }
+  }, [open])
+
+  const current = options.find((option) => option.id === value) ?? options[0]
+  if (!current) return null
+
+  return (
+    <div className="pedalboard-wizard__routing" ref={wrapRef}>
+      <span className="pedalboard-wizard__routing-label">Routing map</span>
+      <button
+        type="button"
+        className={`pedalboard-wizard__routing-trigger${open ? ' is-open' : ''}`}
+        onClick={() => !disabled && setOpen((next) => !next)}
+        aria-haspopup="listbox"
+        aria-expanded={open}
+        disabled={disabled}
+      >
+        <span className="pedalboard-wizard__routing-value">{current.label}</span>
+        <ChevronDown size={14} aria-hidden />
+      </button>
+      {open ? (
+        <ul className="pedalboard-wizard__routing-menu" role="listbox" aria-label="Routing map">
+          {options.map((option) => {
+            const selected = option.id === value
+            return (
+              <li key={option.id}>
+                <button
+                  type="button"
+                  role="option"
+                  aria-selected={selected}
+                  className={`pedalboard-wizard__routing-option${selected ? ' is-selected' : ''}`}
+                  onClick={() => {
+                    onChange?.(option.id)
+                    setOpen(false)
+                  }}
+                >
+                  <span className="pedalboard-wizard__routing-option-row">
+                    <span className="pedalboard-wizard__routing-option-label">{option.label}</span>
+                    {selected ? <Checkmark size={14} aria-hidden /> : null}
+                  </span>
+                  <span className="pedalboard-wizard__routing-option-desc">{option.description}</span>
+                </button>
+              </li>
+            )
+          })}
+        </ul>
+      ) : null}
+    </div>
+  )
+}
+
+function SegmentedToggle({
+  options,
+  value,
+  ariaLabel,
+}: {
+  options: Array<{ id: string; label: string; on: boolean; tone?: 'warn' | 'error' | 'ok' }>
+  value?: string
+  ariaLabel: string
+}) {
+  return (
+    <div className="pedalboard-wizard__segmented" role="group" aria-label={ariaLabel}>
+      {options.map((option) => (
+        <span
+          key={option.id}
+          className={`pedalboard-wizard__segmented-item${option.on ? ' is-on' : ''}${option.tone ? ` is-tone-${option.tone}` : ''}`}
+          aria-pressed={option.on}
+          title={option.label}
+        >
+          {option.label}
+        </span>
+      ))}
+    </div>
+  )
+}
+
+function HeroIconRow({
+  items,
+}: {
+  items: Array<{ id: string; label: string; icon: ReactNode; onClick?: () => void; active?: boolean; disabled?: boolean }>
+}) {
+  return (
+    <div className="pedalboard-wizard__icon-row">
+      {items.map((item) => (
+        <button
+          key={item.id}
+          type="button"
+          className={`pedalboard-wizard__icon-btn${item.active ? ' is-active' : ''}`}
+          aria-label={item.label}
+          aria-pressed={item.active}
+          title={item.label}
+          onClick={item.onClick}
+          disabled={item.disabled || !item.onClick}
+        >
+          {item.icon}
+        </button>
+      ))}
+    </div>
+  )
 }
 
 export function PedalboardBuildWizard({
@@ -99,6 +378,20 @@ export function PedalboardBuildWizard({
   createSnapshotPending,
   onOpenHelp,
   snapshotTitle,
+  channelCount,
+  activeChannelCount,
+  chainCount,
+  updatedAtLabel,
+  engineSyncTone = 'idle',
+  engineSyncLabel,
+  activeChannel,
+  routingOptions,
+  routingValue,
+  onRoutingChange,
+  routingDisabled,
+  onOpenRouting,
+  onOpenDevices,
+  showMorphPad = true,
 }: PedalboardBuildWizardProps) {
   const machine = useBuildStageMachine({
     hasSnapshot,
@@ -126,183 +419,300 @@ export function PedalboardBuildWizard({
     setExplicitStageId(stageId)
   }, [machine.stages])
 
-  const activeStage = machine.stages.find((stage) => stage.id === activeStageId)!
+  const stageIndex = machine.stages.findIndex((stage) => stage.id === activeStageId)
+  const safeIndex = stageIndex < 0 ? 0 : stageIndex
+  const activeStage = machine.stages[safeIndex]
+  const progressFraction = machine.stages.length > 1 ? safeIndex / (machine.stages.length - 1) : 0
 
-  const stageButtons: Record<BuildStageId, StageButton[]> = {
-    layout: [
-      {
-        id: 'signal-grid',
-        label: 'Open Signal Grid',
-        icon: Flow,
-        onClick: onOpenSignalGrid,
-        active: activeWorkspaceActionId === 'signal-grid',
-        kind: 'secondary',
-      },
-      {
-        id: 'directory',
-        label: 'Add block from directory',
-        icon: Folder,
-        onClick: onOpenDirectory,
-        disabled: directoryDisabled,
-        kind: 'primary',
-      },
-    ],
-    wire: [
-      {
-        id: 'parameters',
-        label: hasSelectedBlock ? 'Edit block parameters' : 'Select a block, then open parameters',
-        icon: SettingsAdjust,
-        onClick: onOpenParameters,
-        disabled: parametersDisabled,
-        active: activeWorkspaceActionId === 'parameters',
-        kind: 'primary',
-      },
-    ],
-    tune: [
-      {
-        id: 'automation',
-        label: automationActive ? 'Close automation' : 'Open automation lanes',
-        icon: ChartLine,
-        onClick: onOpenAutomation,
-        active: automationActive,
-        kind: 'primary',
-      },
-    ],
-    save: [
-      {
-        id: 'save-draft',
-        label: hasUnsavedChanges ? 'Save draft' : 'Draft saved',
-        icon: Launch,
-        onClick: onSaveDraft,
-        disabled: saveDraftDisabled,
-        pending: saveDraftPending,
-        kind: 'primary',
-      },
-      {
-        id: 'version-history',
-        label: 'Version history',
-        icon: Time,
-        onClick: onOpenVersionHistory,
-        disabled: versionHistoryDisabled,
-        active: activeWorkspaceActionId === 'version-history',
-        kind: 'secondary',
-      },
-      {
-        id: 'new-snapshot',
-        label: createSnapshotPending ? 'Creating…' : 'New snapshot',
-        icon: Add,
-        onClick: onCreateSnapshot,
-        disabled: createSnapshotPending,
-        pending: createSnapshotPending,
-        kind: 'secondary',
-      },
-    ],
-    publish: [
-      {
-        id: 'publish-to-live',
-        label: 'Publish to live',
-        icon: Launch,
-        onClick: onOpenProgressModal,
-        disabled: !hasLiveSnapshot && !onOpenProgressModal,
-        kind: 'primary',
-      },
-      {
-        id: 'open-snapshots',
-        label: 'Open snapshot library',
-        icon: Folder,
-        onClick: onOpenSnapshots,
-        kind: 'secondary',
-      },
-    ],
-  }
+  const routingLabel = useMemo(() => {
+    if (!routingOptions || !routingValue) return 'Shared'
+    return routingOptions.find((option) => option.id === routingValue)?.label ?? 'Shared'
+  }, [routingOptions, routingValue])
+
+  const stepCopy = buildStepCopy(activeStage, {
+    pluginCount,
+    hasSelectedBlock,
+    hasUnsavedChanges,
+    hasLiveSnapshot,
+    automationActive,
+    routingLabel,
+    onOpenSignalGrid,
+    onOpenDirectory,
+    directoryDisabled,
+    onOpenParameters,
+    parametersDisabled,
+    onOpenAutomation,
+    onSaveDraft,
+    saveDraftDisabled,
+    saveDraftPending,
+    onOpenProgressModal,
+    onOpenSnapshots,
+    onOpenVersionHistory,
+    versionHistoryDisabled,
+  })
+
+  const goPrev = useCallback(() => {
+    for (let i = safeIndex - 1; i >= 0; i -= 1) {
+      const candidate = machine.stages[i]
+      if (candidate && candidate.status !== 'locked') {
+        setExplicitStageId(candidate.id)
+        return
+      }
+    }
+  }, [machine.stages, safeIndex])
+
+  const goNext = useCallback(() => {
+    for (let i = safeIndex + 1; i < machine.stages.length; i += 1) {
+      const candidate = machine.stages[i]
+      if (candidate && candidate.status !== 'locked') {
+        setExplicitStageId(candidate.id)
+        return
+      }
+    }
+  }, [machine.stages, safeIndex])
+
+  const isLast = safeIndex === machine.stages.length - 1
+  const hasPrev = machine.stages.slice(0, safeIndex).some((s) => s.status !== 'locked')
+  const hasNext = machine.stages.slice(safeIndex + 1).some((s) => s.status !== 'locked')
+
+  const channelsLabel = (() => {
+    if (typeof activeChannelCount === 'number' && typeof channelCount === 'number') {
+      return `${activeChannelCount} of ${channelCount} channels active`
+    }
+    if (typeof channelCount === 'number') {
+      return `${channelCount} channels`
+    }
+    return null
+  })()
+
+  const metaLine = (() => {
+    const parts: string[] = []
+    if (typeof chainCount === 'number') parts.push(`${chainCount} ${chainCount === 1 ? 'chain' : 'chains'}`)
+    if (updatedAtLabel) parts.push(updatedAtLabel)
+    return parts.join(' · ')
+  })()
+
+  const heroIconItems = [
+    { id: 'signal-grid', label: 'Signal grid', icon: <Flow size={14} />, onClick: onOpenSignalGrid, active: activeWorkspaceActionId === 'signal-grid' },
+    { id: 'directory', label: 'Directory', icon: <Folder size={14} />, onClick: onOpenDirectory, disabled: directoryDisabled },
+    { id: 'parameters', label: 'Parameters', icon: <SettingsAdjust size={14} />, onClick: onOpenParameters, active: activeWorkspaceActionId === 'parameters', disabled: parametersDisabled },
+    { id: 'automation', label: 'Automation', icon: <ChartLine size={14} />, onClick: onOpenAutomation, active: activeWorkspaceActionId === 'automation' },
+    { id: 'version-history', label: 'Version history', icon: <Time size={14} />, onClick: onOpenVersionHistory, active: activeWorkspaceActionId === 'version-history', disabled: versionHistoryDisabled },
+    { id: 'help', label: 'Help', icon: <Help size={14} />, onClick: onOpenHelp, active: activeWorkspaceActionId === 'help' },
+  ]
+
+  const channelToneClass = activeChannel?.muted
+    ? 'is-muted'
+    : activeChannel?.solo
+      ? 'is-solo'
+      : activeChannel?.stateLive
+        ? 'is-live'
+        : 'is-idle'
 
   return (
-    <Tile className="pedalboard-wizard" aria-label="Pedalboard build wizard">
-      <header className="pedalboard-wizard__header">
-        <div className="pedalboard-wizard__title-col">
-          <p className="pedalboard-wizard__kicker">Pedalboard build</p>
-          <h3 className="pedalboard-wizard__title">
-            {snapshotTitle ?? 'No snapshot loaded'}
-          </h3>
+    <section className="pedalboard-wizard" aria-label="Build workflow">
+      <header className="pedalboard-wizard__hero">
+        <div className="pedalboard-wizard__hero-meta">
+          <span className="pedalboard-wizard__hero-eyebrow">
+            <span className="pedalboard-wizard__hero-eyebrow-dot" aria-hidden />
+            Snapshot management
+          </span>
+          <div className="pedalboard-wizard__hero-title-row">
+            <h2 className="pedalboard-wizard__hero-title">{snapshotTitle ?? 'No snapshot loaded'}</h2>
+            {engineSyncLabel ? (
+              <span
+                className={`pedalboard-wizard__sync-chip pedalboard-wizard__sync-chip--${engineSyncTone}`}
+                role="status"
+              >
+                <span className="pedalboard-wizard__sync-chip-dot" aria-hidden />
+                {engineSyncLabel}
+              </span>
+            ) : null}
+          </div>
+          <div className="pedalboard-wizard__hero-sub">
+            {channelsLabel ? (
+              <span className="pedalboard-wizard__hero-sub-chip">
+                <span className="pedalboard-wizard__sync-chip-dot" aria-hidden />
+                {channelsLabel}
+              </span>
+            ) : null}
+            {metaLine ? <span className="pedalboard-wizard__hero-sub-meta">{metaLine}</span> : null}
+          </div>
         </div>
-        {onOpenHelp ? (
-          <button
-            type="button"
-            className="pedalboard-wizard__help-badge"
-            onClick={onOpenHelp}
-            aria-label="Open keyboard and workflow help"
-            title="Help"
-          >
-            <Help size={16} />
-          </button>
-        ) : null}
+        <div className="pedalboard-wizard__hero-actions">
+          <HeroIconRow items={heroIconItems} />
+          <div className="pedalboard-wizard__hero-buttons">
+            <Button size="sm" kind="ghost" renderIcon={Launch} onClick={onOpenProgressModal} disabled={!onOpenProgressModal}>
+              Publish to live
+            </Button>
+            <Button size="sm" kind="ghost" renderIcon={Folder} onClick={onOpenSnapshots} disabled={!onOpenSnapshots}>
+              Open snapshots
+            </Button>
+            <Button
+              size="sm"
+              kind="primary"
+              renderIcon={Add}
+              onClick={onCreateSnapshot}
+              disabled={!onCreateSnapshot || createSnapshotPending}
+            >
+              {createSnapshotPending ? 'Creating…' : 'New snapshot'}
+            </Button>
+          </div>
+        </div>
       </header>
 
-      <nav className="pedalboard-wizard__stepper" aria-label="Build stages">
-        <ol className="pedalboard-wizard__stepper-list">
-          {machine.stages.map((stage, index) => {
-            const isActive = stage.id === activeStageId
-            const isDisabled = stage.status === 'locked'
-            const className = [
-              'pedalboard-wizard__stepper-item',
-              `pedalboard-wizard__stepper-item--${stage.status}`,
-              isActive ? 'is-active' : '',
-            ].filter(Boolean).join(' ')
-            const stepNumber = `STEP ${String(index + 1).padStart(2, '0')}`
-            return (
-              <li key={stage.id} className={className}>
-                <button
-                  type="button"
-                  className="pedalboard-wizard__stepper-button"
-                  onClick={() => selectStage(stage.id)}
-                  disabled={isDisabled}
-                  aria-current={isActive ? 'step' : undefined}
-                >
-                  <span className="pedalboard-wizard__stepper-num" aria-hidden="true">{stepNumber}</span>
-                  <span className="pedalboard-wizard__stepper-name-row">
-                    <span className="pedalboard-wizard__stepper-label">{stage.label}</span>
-                    <span className="pedalboard-wizard__stepper-glyph" aria-hidden="true">
-                      {stageGlyph(stage.status)}
-                    </span>
-                  </span>
-                  <span className="pedalboard-wizard__stepper-recap">{stage.recap}</span>
-                </button>
-              </li>
-            )
-          })}
-        </ol>
-      </nav>
-
-      <section
-        className={`pedalboard-wizard__stage-body pedalboard-wizard__stage-body--${activeStage.id}`}
-        aria-live="polite"
-      >
-        <div className="pedalboard-wizard__stage-meta">
-          <Tag type={activeStage.status === 'complete' ? 'green' : activeStage.status === 'active' ? 'blue' : 'cool-gray'}>
-            {activeStage.label}
-          </Tag>
-          <span className="pedalboard-wizard__stage-recap">{activeStage.recap}</span>
-        </div>
-        <div className="pedalboard-wizard__stage-actions">
-          {stageButtons[activeStage.id].filter((action) => Boolean(action.onClick)).map((action) => {
-            const Icon = action.icon
-            const kind = action.kind ?? 'secondary'
-            return (
-              <Button
-                key={action.id}
-                size="sm"
-                kind={action.active ? 'secondary' : kind}
-                renderIcon={Icon}
-                onClick={action.onClick}
-                disabled={Boolean(action.disabled) || Boolean(action.pending)}
-                aria-current={action.active ? 'page' : undefined}
+      <ol className="pedalboard-wizard__stepper" role="tablist" aria-label="Build stages">
+        {machine.stages.map((stage, index) => {
+          const variant = stageStatusToVariant(stage.status)
+          const stepNumber = String(index + 1).padStart(2, '0')
+          const isCurrent = stage.id === activeStageId
+          const className = [
+            'pedalboard-wizard__step',
+            `pedalboard-wizard__step--${variant}`,
+            isCurrent ? 'is-active' : '',
+            stage.status === 'locked' ? 'is-locked' : '',
+          ].filter(Boolean).join(' ')
+          return (
+            <li key={stage.id} className={className}>
+              <button
+                type="button"
+                className="pedalboard-wizard__step-button"
+                onClick={() => selectStage(stage.id)}
+                disabled={stage.status === 'locked'}
+                role="tab"
+                aria-selected={isCurrent}
               >
-                {action.pending ? `${action.label}…` : action.label}
-              </Button>
-            )
-          })}
+                <span className="pedalboard-wizard__step-marker" aria-hidden>
+                  {variant === 'done' ? <Checkmark size={12} /> : <span className="pedalboard-wizard__step-num">{stepNumber}</span>}
+                </span>
+                <span className="pedalboard-wizard__step-text">
+                  <span className="pedalboard-wizard__step-label">{stage.label}</span>
+                  <span className="pedalboard-wizard__step-recap">{stage.recap}</span>
+                </span>
+              </button>
+            </li>
+          )
+        })}
+      </ol>
+
+      <div className="pedalboard-wizard__progress" aria-hidden>
+        <div className="pedalboard-wizard__progress-track">
+          <div className="pedalboard-wizard__progress-fill" style={{ width: `${progressFraction * 100}%` }} />
+        </div>
+        <span className="pedalboard-wizard__progress-label">
+          <span className="pedalboard-wizard__progress-num">{safeIndex + 1}</span>
+          <span className="pedalboard-wizard__progress-of"> / {machine.stages.length}</span>
+        </span>
+      </div>
+
+      <section className="pedalboard-wizard__detail" aria-live="polite">
+        <div className="pedalboard-wizard__detail-copy">
+          <span className="pedalboard-wizard__detail-tag">Current step</span>
+          <p className="pedalboard-wizard__detail-text">{stepCopy.detail}</p>
+          <div className="pedalboard-wizard__detail-meta">
+            {stepCopy.meta.map(([key, val]) => (
+              <div key={key} className="pedalboard-wizard__detail-meta-cell">
+                <span className="pedalboard-wizard__detail-meta-key">{key}</span>
+                <span className="pedalboard-wizard__detail-meta-val">{val}</span>
+              </div>
+            ))}
+          </div>
+        </div>
+        <div className="pedalboard-wizard__detail-actions">
+          <Button size="sm" kind="ghost" onClick={goPrev} disabled={!hasPrev}>
+            Previous
+          </Button>
+          {stepCopy.secondaryCta && stepCopy.secondaryCta.onClick ? (
+            <Button
+              size="sm"
+              kind="secondary"
+              onClick={stepCopy.secondaryCta.onClick}
+              disabled={stepCopy.secondaryCta.disabled}
+            >
+              {stepCopy.secondaryCta.label}
+            </Button>
+          ) : null}
+          <Button
+            size="sm"
+            kind="primary"
+            renderIcon={isLast ? Launch : ArrowRight}
+            onClick={isLast ? stepCopy.primaryCta.onClick : (hasNext ? goNext : stepCopy.primaryCta.onClick)}
+            disabled={isLast ? (stepCopy.primaryCta.disabled || !stepCopy.primaryCta.onClick) : (!hasNext && (stepCopy.primaryCta.disabled || !stepCopy.primaryCta.onClick))}
+          >
+            {isLast ? stepCopy.primaryCta.label : 'Continue'}
+          </Button>
         </div>
       </section>
-    </Tile>
+
+      {activeChannel || (routingOptions && routingOptions.length > 0) || showMorphPad ? (
+        <div className="pedalboard-wizard__secondary">
+          {activeChannel ? (
+            <article className="pedalboard-wizard__channel-card">
+              <span className="pedalboard-wizard__card-eyebrow">Active channel</span>
+              <div className="pedalboard-wizard__channel-row">
+                <div className="pedalboard-wizard__channel-id">
+                  <span
+                    className={`pedalboard-wizard__channel-letter ${channelToneClass}`}
+                    style={activeChannel.accentColor ? { '--pw-channel-accent': activeChannel.accentColor } as React.CSSProperties : undefined}
+                  >
+                    {activeChannel.channelLabel}
+                  </span>
+                  <div className="pedalboard-wizard__channel-text">
+                    <span className="pedalboard-wizard__channel-name">{activeChannel.chainLabel}</span>
+                    <span className="pedalboard-wizard__channel-sub">{activeChannel.blockSummary}</span>
+                  </div>
+                </div>
+                <div className="pedalboard-wizard__channel-tags">
+                  <Tag type={activeChannel.stateLive ? 'green' : 'cool-gray'} size="sm">{activeChannel.stateLabel}</Tag>
+                  <Tag type="blue" size="sm">{activeChannel.blendLabel}</Tag>
+                  <Tag type={activeChannel.muted ? 'red' : 'cool-gray'} size="sm">{activeChannel.muted ? 'Mute' : 'M'}</Tag>
+                  <Tag type={activeChannel.solo ? 'warm-gray' : 'cool-gray'} size="sm">{activeChannel.solo ? 'Solo' : 'S'}</Tag>
+                </div>
+                {routingOptions && routingOptions.length > 0 ? (
+                  <RoutingDropdown
+                    options={routingOptions}
+                    value={routingValue}
+                    onChange={onRoutingChange}
+                    disabled={routingDisabled}
+                  />
+                ) : null}
+                <div className="pedalboard-wizard__channel-toggles">
+                  <SegmentedToggle
+                    ariaLabel="Mute / solo"
+                    options={[
+                      { id: 'm', label: 'M', on: activeChannel.muted, tone: activeChannel.muted ? 'error' : undefined },
+                      { id: 's', label: 'S', on: activeChannel.solo, tone: activeChannel.solo ? 'warn' : undefined },
+                    ]}
+                  />
+                  <SegmentedToggle
+                    ariaLabel="Channel clip status"
+                    options={[
+                      { id: 'in', label: 'IN', on: activeChannel.inputClipActive, tone: activeChannel.inputClipActive ? 'error' : undefined },
+                      { id: 'out', label: 'OUT', on: activeChannel.outputClipActive, tone: activeChannel.outputClipActive ? 'error' : undefined },
+                      { id: 'clip', label: 'CLIP', on: activeChannel.clipActive, tone: activeChannel.clipActive ? 'error' : undefined },
+                    ]}
+                  />
+                  <Button size="sm" kind="ghost" renderIcon={Flow} onClick={onOpenRouting} disabled={!onOpenRouting}>
+                    Routing
+                  </Button>
+                  <Button size="sm" kind="ghost" renderIcon={SettingsAdjust} onClick={onOpenDevices} disabled={!onOpenDevices}>
+                    Devices
+                  </Button>
+                </div>
+              </div>
+            </article>
+          ) : null}
+
+          {showMorphPad ? (
+            <article className="pedalboard-wizard__morph-card">
+              <span className="pedalboard-wizard__card-eyebrow">Morph pad</span>
+              <div className="pedalboard-wizard__morph-host">
+                <MorphPad size={180} />
+              </div>
+            </article>
+          ) : null}
+        </div>
+      ) : null}
+    </section>
   )
 }
