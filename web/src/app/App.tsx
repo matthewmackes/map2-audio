@@ -23,10 +23,13 @@ import { buildWorkspaceArtifactsDiscoverPath, buildWorkspaceArtifactsPath } from
 import { HOST_MACHINE_ROUTE } from './pages/hostMachineRoutes'
 import { buildDeviceRoute, getDeviceEntry } from './data/deviceRegistry'
 
-// Lazy-load devtools so they don't bloat the production shell chunk
-const ReactQueryDevtools = lazy(() =>
-  import('@tanstack/react-query-devtools').then(m => ({ default: m.ReactQueryDevtools }))
-)
+// Lazy-load devtools so they don't bloat the production shell chunk. The
+// import is also gated on import.meta.env.DEV so prod tree-shakes it
+// entirely — a previous version always rendered <ReactQueryDevtools /> with
+// initialIsOpen={false}, which still downloaded the chunk for every user.
+const ReactQueryDevtools = import.meta.env.DEV
+  ? lazy(() => import('@tanstack/react-query-devtools').then(m => ({ default: m.ReactQueryDevtools })))
+  : null
 
 // ============================================================================
 // Route-level code splitting — each page is a separate async chunk.
@@ -275,11 +278,18 @@ function IntelFXLegacyRedirect() {
   return <Navigate to={`/devices/intelfx/${params.view ?? 'panel'}`} replace />
 }
 
+// Default queries to "fetch once, cache for the session." Live data flows
+// through WebSocket events (see PlatformEventProvider / useWebSocketConnection)
+// which call queryClient.setQueryData() to push fresh state into the cache,
+// so polling defaults are wasteful. Queries that genuinely need polling
+// (cluster peers, CPU/VU meters) opt in explicitly via refetchInterval.
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 5000,
+      staleTime: Infinity,
+      gcTime: 5 * 60 * 1000,
       refetchOnWindowFocus: false,
+      refetchOnReconnect: true,
       retry: 1,
     },
     mutations: {
@@ -564,9 +574,11 @@ export function App() {
     </HistoryRouter>
       </ViewportPolicyGate>
       </BrandingProvider>
-      <Suspense fallback={null}>
-        <ReactQueryDevtools initialIsOpen={false} />
-      </Suspense>
+      {ReactQueryDevtools ? (
+        <Suspense fallback={null}>
+          <ReactQueryDevtools initialIsOpen={false} />
+        </Suspense>
+      ) : null}
     </QueryClientProvider>
   )
 }

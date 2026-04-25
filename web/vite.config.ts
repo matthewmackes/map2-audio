@@ -43,17 +43,27 @@ export default defineConfig({
   build: {
     chunkSizeWarningLimit: 600,
     outDir: 'dist',
-    sourcemap: true,
-    // Supported production builds publish atomically via
-    // scripts/build_web_dist_atomic.py. That helper builds into a staging
-    // directory, merges prior hashed assets, and swaps the finished bundle
-    // into place, so Vite can safely clear the staging outDir each run.
+    // Hidden source maps: Vite emits .map files but omits the
+    // //# sourceMappingURL footer, so browsers don't fetch them. The static
+    // server in scripts/serve_web_dist.mjs additionally 404s any *.map URL.
+    sourcemap: 'hidden',
     emptyOutDir: true,
-    // NOTE: manualChunks was removed because splitting React-dependent
-    // libraries (recharts, @emotion, @mui, reactflow) into separate
-    // chunks from React itself causes circular initialization errors
-    // at runtime (e.g. "can't access forwardRef before initialization").
-    // Vite's automatic chunking handles dependency ordering correctly.
+    rollupOptions: {
+      output: {
+        // Surgical splits — only leaf libs that are not on the React/Emotion
+        // graph. Splitting React-dependent libs (recharts, MUI, ReactFlow)
+        // off React itself caused forwardRef init errors, so they remain in
+        // the auto-graph; these four are independent and worth their own
+        // chunks (Monaco ~3MB, xterm ~250KB, etc.).
+        manualChunks(id: string) {
+          if (id.includes('monaco-editor') || id.includes('@monaco-editor')) return 'monaco'
+          if (id.includes('@xterm/')) return 'xterm'
+          if (id.includes('reactflow') || id.includes('dagre')) return 'flow'
+          if (id.includes('framer-motion')) return 'motion'
+          return undefined
+        },
+      },
+    },
   },
   plugins: [react(), svgr()],
 })

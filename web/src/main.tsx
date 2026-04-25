@@ -1,15 +1,15 @@
 import { createRoot } from 'react-dom/client'
+// IBM Plex Sans is the default Carbon-aligned typography and the JetBrains
+// Mono mono preset is used for diagnostic readouts; both are eager because
+// they're nearly always on screen. Every other family is lazy-loaded on
+// demand via loadPlatformFontFamily() when the user picks it.
 import '@fontsource/ibm-plex-sans/400.css'
-import '@fontsource/ibm-plex-sans/500.css'
 import '@fontsource/ibm-plex-sans/600.css'
-import '@fontsource/ibm-plex-sans/700.css'
 import '@fontsource/jetbrains-mono/400.css'
-import '@fontsource/jetbrains-mono/500.css'
-import '@fontsource/jetbrains-mono/600.css'
 import '@carbon/styles/css/styles.css'
 import './app/theme/themeBlueprint.css'
 import './index.css'
-import ErrorBoundary from './ErrorBoundary'
+import ErrorBoundary from './app/components/ErrorBoundary'
 import { initializePlatformTypography, initializeTheme } from './app/theme'
 import { installDevResponsivenessDiagnostics, markShellReady } from './app/performance/devDiagnostics'
 
@@ -65,57 +65,6 @@ function nextAnimationFrame(): Promise<void> {
   })
 }
 
-function preloadNonCriticalFonts(): void {
-  if (typeof window === 'undefined') {
-    return
-  }
-
-  const loadFonts = () => {
-    void Promise.allSettled([
-      import('@fontsource/fira-sans/400.css'),
-      import('@fontsource/fira-sans/500.css'),
-      import('@fontsource/fira-sans/600.css'),
-      import('@fontsource/fira-sans/700.css'),
-      import('@fontsource/inter/400.css'),
-      import('@fontsource/inter/500.css'),
-      import('@fontsource/inter/600.css'),
-      import('@fontsource/inter/700.css'),
-      import('@fontsource/roboto/400.css'),
-      import('@fontsource/roboto/500.css'),
-      import('@fontsource/roboto/700.css'),
-      import('@fontsource/space-grotesk/400.css'),
-      import('@fontsource/space-grotesk/500.css'),
-      import('@fontsource/space-grotesk/700.css'),
-      import('@fontsource/open-sans/400.css'),
-      import('@fontsource/open-sans/500.css'),
-      import('@fontsource/open-sans/600.css'),
-      import('@fontsource/open-sans/700.css'),
-      import('@fontsource/lato/400.css'),
-      import('@fontsource/lato/700.css'),
-      import('@fontsource/poppins/400.css'),
-      import('@fontsource/poppins/500.css'),
-      import('@fontsource/poppins/600.css'),
-      import('@fontsource/poppins/700.css'),
-      import('@fontsource/montserrat/400.css'),
-      import('@fontsource/montserrat/500.css'),
-      import('@fontsource/montserrat/600.css'),
-      import('@fontsource/montserrat/700.css'),
-      import('@fontsource/source-sans-3/400.css'),
-      import('@fontsource/source-sans-3/600.css'),
-      import('@fontsource/source-sans-3/700.css'),
-      import('@fontsource/dm-sans/400.css'),
-      import('@fontsource/dm-sans/500.css'),
-      import('@fontsource/dm-sans/700.css'),
-      import('@fontsource/work-sans/400.css'),
-      import('@fontsource/work-sans/500.css'),
-      import('@fontsource/work-sans/600.css'),
-      import('@fontsource/work-sans/700.css'),
-    ])
-  }
-
-  window.setTimeout(loadFonts, 0)
-}
-
 function installVitePreloadRecovery(): void {
   if (typeof window === 'undefined') return
 
@@ -150,7 +99,7 @@ async function mountApp() {
   // Apply the saved theme immediately so the first paint lands in the right color system.
   initializeTheme()
   createRoot(rootElement).render(
-    <ErrorBoundary>
+    <ErrorBoundary title="Mackes Audio Platform crashed" actionLabel="Reload">
       <App />
     </ErrorBoundary>
   )
@@ -159,10 +108,12 @@ async function mountApp() {
   markShellReady()
 
   // Typography settlement is cosmetic; do it after the shell is already visible.
+  // initializePlatformTypography() resolves the saved preset and lazy-loads
+  // its weights via loadPlatformFontFamily() — it never touches @fontsource
+  // for families the user hasn't selected.
   void waitForStylesheetsReady(STYLESHEET_READY_TIMEOUT_MS).then(() => {
     initializePlatformTypography()
   })
-  preloadNonCriticalFonts()
 }
 
 void mountApp()

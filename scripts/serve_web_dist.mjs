@@ -16,6 +16,7 @@ const UPGRADE_PROXY_PREFIXES = ['/ws', '/pipedal'];
 const STATIC_PREFIXES = ['/assets/', '/css/', '/img/', '/posters/'];
 
 const MIME_TYPES = {
+  '.avif': 'image/avif',
   '.css': 'text/css; charset=utf-8',
   '.gif': 'image/gif',
   '.html': 'text/html; charset=utf-8',
@@ -24,7 +25,6 @@ const MIME_TYPES = {
   '.jpg': 'image/jpeg',
   '.js': 'text/javascript; charset=utf-8',
   '.json': 'application/json; charset=utf-8',
-  '.map': 'application/json; charset=utf-8',
   '.mjs': 'text/javascript; charset=utf-8',
   '.otf': 'font/otf',
   '.png': 'image/png',
@@ -34,6 +34,32 @@ const MIME_TYPES = {
   '.webp': 'image/webp',
   '.woff': 'font/woff',
   '.woff2': 'font/woff2',
+};
+
+// Source maps must never reach end-user browsers — they leak the full TS source.
+function isForbiddenStaticPath(pathname) {
+  return pathname.endsWith('.map');
+}
+
+// Local-network audio control plane: lock script/style to same-origin and allow
+// WebSocket + HTTP backend on :8080. CSP is intentionally strict — adjust only
+// when the app truly needs another origin.
+const SECURITY_HEADERS = {
+  'Content-Security-Policy': [
+    "default-src 'self'",
+    "script-src 'self'",
+    "style-src 'self' 'unsafe-inline'",
+    "img-src 'self' data: blob:",
+    "font-src 'self' data:",
+    "connect-src 'self' ws: wss: http: https:",
+    "frame-ancestors 'none'",
+    "base-uri 'self'",
+    "form-action 'self'",
+  ].join('; '),
+  'Referrer-Policy': 'strict-origin-when-cross-origin',
+  'X-Content-Type-Options': 'nosniff',
+  'X-Frame-Options': 'DENY',
+  'Permissions-Policy': 'camera=(), microphone=(), geolocation=()',
 };
 
 function parseArgs(argv) {
@@ -146,10 +172,10 @@ async function fileExists(filePath) {
 async function sendFile(response, filePath, requestPath, method, isHtmlFallback = false) {
   const stat = await fs.promises.stat(filePath);
   response.writeHead(200, {
+    ...SECURITY_HEADERS,
     'Cache-Control': cacheControlForPath(requestPath, isHtmlFallback),
     'Content-Length': stat.size,
     'Content-Type': contentTypeFor(filePath),
-    'X-Content-Type-Options': 'nosniff',
   });
 
   if (method === 'HEAD') {
@@ -269,6 +295,11 @@ function createServer(options) {
       return;
     }
 
+    if (isForbiddenStaticPath(pathname)) {
+      sendText(response, 404, 'Not Found');
+      return;
+    }
+
     const requestPath = pathname === '/' ? '/index.html' : pathname;
     const resolvedPath = safeJoin(distDir, requestPath);
     if (resolvedPath === null) {
@@ -375,9 +406,11 @@ export {
   cacheControlForPath,
   contentTypeFor,
   createServer,
+  isForbiddenStaticPath,
   isHttpProxyPath,
   isUpgradeProxyPath,
   parseArgs,
+  SECURITY_HEADERS,
   shouldServeSpaFallback,
   safeJoin,
 };

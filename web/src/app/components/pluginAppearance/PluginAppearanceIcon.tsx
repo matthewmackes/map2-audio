@@ -1,8 +1,21 @@
-import type { CSSProperties } from 'react'
+import { useMemo, type CSSProperties } from 'react'
+import DOMPurify from 'dompurify'
 
 import { getPluginGlyph, type PluginType } from '../../utils/pluginLegacyCompat'
 
 import { renderPluginAppearanceFallback, resolvePluginAppearanceIconOption } from '../../utils/pluginAppearanceIcons'
+
+// Plugin-supplied SVG markup is treated as untrusted: presets and library
+// imports can flow from `.syx` files and the plugin marketplace, both of
+// which are attacker-reachable. Strip scripts/event handlers/foreign content
+// before injecting via dangerouslySetInnerHTML.
+function sanitizeSvg(markup: string): string {
+  return DOMPurify.sanitize(markup, {
+    USE_PROFILES: { svg: true, svgFilters: true },
+    FORBID_TAGS: ['script', 'foreignObject'],
+    FORBID_ATTR: ['onload', 'onerror', 'onclick', 'onmouseover', 'href', 'xlink:href'],
+  })
+}
 
 interface PluginAppearanceIconProps {
   identifier?: string | null
@@ -32,6 +45,10 @@ export function PluginAppearanceIcon({
   label = 'Plugin icon',
 }: PluginAppearanceIconProps) {
   const option = resolvePluginAppearanceIconOption(identifier)
+  const sanitizedSvg = useMemo(
+    () => (customSvg ? sanitizeSvg(customSvg) : ''),
+    [customSvg],
+  )
 
   if (option) {
     const Icon = option.Icon
@@ -42,12 +59,12 @@ export function PluginAppearanceIcon({
     )
   }
 
-  if (identifier?.startsWith('custom:') && customSvg) {
+  if (identifier?.startsWith('custom:') && sanitizedSvg) {
     const content = (
       <span
         className={className}
         style={{ display: 'inline-flex', inlineSize: size, blockSize: size, color, opacity, ...style }}
-        dangerouslySetInnerHTML={{ __html: customSvg }}
+        dangerouslySetInnerHTML={{ __html: sanitizedSvg }}
       />
     )
 

@@ -3,6 +3,9 @@
 
 <head>
     <meta charset="UTF-8" />
+    <meta http-equiv="Content-Security-Policy" content="default-src 'self'; script-src 'self'; style-src 'self' 'unsafe-inline'; img-src 'self' data: blob:; font-src 'self' data:; connect-src 'self' ws: wss: http: https:; frame-ancestors 'none'; base-uri 'self'; form-action 'self'" />
+    <meta http-equiv="X-Content-Type-Options" content="nosniff" />
+    <meta name="referrer" content="strict-origin-when-cross-origin" />
     <link rel="icon" type="image/svg+xml" href="/map-brand-mark.svg" />
     <link rel="alternate icon" type="image/x-icon" href="/favicon.ico" />
     <link rel="apple-touch-icon" href="/logo192.png" />
@@ -30,6 +33,11 @@
 
 <body>
     <div id="root"></div>
+    <noscript>
+        <div style="padding:24px;color:#fff;font-family:system-ui,sans-serif">
+            Mackes Audio Platform requires JavaScript to run.
+        </div>
+    </noscript>
     <script type="module" src="/src/main.tsx"></script>
 </body>
 

@@ -1,4 +1,4 @@
-import { createContext, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
+import { createContext, useCallback, useContext, useEffect, useMemo, useState, type ReactNode } from 'react'
 
 import {
   DEFAULT_BRAND,
@@ -32,22 +32,19 @@ export function BrandingProvider({ children, initialBrand }: BrandingProviderPro
   const [loading, setLoading] = useState(!initialBrand)
   const [error, setError] = useState<string | null>(null)
 
-  const refresh = useMemo(
-    () => async () => {
-      try {
-        setLoading(true)
-        setError(null)
-        const next = await fetchBrandManifest()
-        setBrand(next)
-        window.dispatchEvent(new CustomEvent(BRANDING_CHANGE_EVENT, { detail: next }))
-      } catch (err) {
-        setError(err instanceof Error ? err.message : String(err))
-      } finally {
-        setLoading(false)
-      }
-    },
-    [],
-  )
+  const refresh = useCallback(async () => {
+    try {
+      setLoading(true)
+      setError(null)
+      const next = await fetchBrandManifest()
+      setBrand(next)
+      window.dispatchEvent(new CustomEvent(BRANDING_CHANGE_EVENT, { detail: next }))
+    } catch (err) {
+      setError(err instanceof Error ? err.message : String(err))
+    } finally {
+      setLoading(false)
+    }
+  }, [])
 
   useEffect(() => {
     if (!initialBrand) {
@@ -63,25 +60,19 @@ export function BrandingProvider({ children, initialBrand }: BrandingProviderPro
     }
   }, [brand?.productName])
 
-  const patch = useMemo(
-    () => async (partial: Partial<BrandManifest>) => {
-      const next = await patchBrandManifest(partial)
-      setBrand(next)
-      window.dispatchEvent(new CustomEvent(BRANDING_CHANGE_EVENT, { detail: next }))
-      return next
-    },
-    [],
-  )
+  const patch = useCallback(async (partial: Partial<BrandManifest>) => {
+    const next = await patchBrandManifest(partial)
+    setBrand(next)
+    window.dispatchEvent(new CustomEvent(BRANDING_CHANGE_EVENT, { detail: next }))
+    return next
+  }, [])
 
-  const reset = useMemo(
-    () => async () => {
-      const next = await resetBrandManifest()
-      setBrand(next)
-      window.dispatchEvent(new CustomEvent(BRANDING_CHANGE_EVENT, { detail: next }))
-      return next
-    },
-    [],
-  )
+  const reset = useCallback(async () => {
+    const next = await resetBrandManifest()
+    setBrand(next)
+    window.dispatchEvent(new CustomEvent(BRANDING_CHANGE_EVENT, { detail: next }))
+    return next
+  }, [])
 
   const value = useMemo<BrandingContextValue>(
     () => ({ brand, loading, error, refresh, patch, reset }),

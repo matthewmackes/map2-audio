@@ -144,6 +144,90 @@ export const PLATFORM_FONT_PRESETS: Record<PlatformFontPresetId, PlatformFontPre
   },
 };
 
+// Lazy-load each non-default family on demand. main.tsx eagerly imports
+// IBM Plex Sans (400/600) and JetBrains Mono (400) only; everything else
+// is fetched the first time the user selects it. Modules are cached, so
+// repeat selection of the same family is a no-op.
+const loadedFontFamilies = new Set<PlatformFontPresetId>(['ibm-plex-sans', 'jetbrains-mono', 'system-ui']);
+
+function loadPlatformFontFamily(presetId: PlatformFontPresetId): void {
+  if (loadedFontFamilies.has(presetId)) return;
+  loadedFontFamilies.add(presetId);
+
+  switch (presetId) {
+    case 'roboto':
+      void Promise.allSettled([
+        import('@fontsource/roboto/400.css'),
+        import('@fontsource/roboto/500.css'),
+        import('@fontsource/roboto/700.css'),
+      ]);
+      return;
+    case 'fira-sans':
+      void Promise.allSettled([
+        import('@fontsource/fira-sans/400.css'),
+        import('@fontsource/fira-sans/600.css'),
+      ]);
+      return;
+    case 'space-grotesk':
+      void Promise.allSettled([
+        import('@fontsource/space-grotesk/400.css'),
+        import('@fontsource/space-grotesk/500.css'),
+        import('@fontsource/space-grotesk/700.css'),
+      ]);
+      return;
+    case 'inter':
+      void Promise.allSettled([
+        import('@fontsource/inter/400.css'),
+        import('@fontsource/inter/600.css'),
+      ]);
+      return;
+    case 'open-sans':
+      void Promise.allSettled([
+        import('@fontsource/open-sans/400.css'),
+        import('@fontsource/open-sans/600.css'),
+      ]);
+      return;
+    case 'lato':
+      void Promise.allSettled([
+        import('@fontsource/lato/400.css'),
+        import('@fontsource/lato/700.css'),
+      ]);
+      return;
+    case 'poppins':
+      void Promise.allSettled([
+        import('@fontsource/poppins/400.css'),
+        import('@fontsource/poppins/600.css'),
+      ]);
+      return;
+    case 'montserrat':
+      void Promise.allSettled([
+        import('@fontsource/montserrat/400.css'),
+        import('@fontsource/montserrat/600.css'),
+      ]);
+      return;
+    case 'source-sans-3':
+      void Promise.allSettled([
+        import('@fontsource/source-sans-3/400.css'),
+        import('@fontsource/source-sans-3/600.css'),
+      ]);
+      return;
+    case 'dm-sans':
+      void Promise.allSettled([
+        import('@fontsource/dm-sans/400.css'),
+        import('@fontsource/dm-sans/500.css'),
+      ]);
+      return;
+    case 'work-sans':
+      void Promise.allSettled([
+        import('@fontsource/work-sans/400.css'),
+        import('@fontsource/work-sans/600.css'),
+      ]);
+      return;
+    default:
+      return;
+  }
+}
+
 function resolvePlatformFontPresetId(presetId: string | null | undefined): PlatformFontPresetId {
   if (presetId && presetId in PLATFORM_FONT_PRESETS) {
     return presetId as PlatformFontPresetId;
@@ -197,6 +281,7 @@ export function applyPlatformFontPreset(presetId: string): PlatformFontPresetId 
   const resolvedPresetId = resolvePlatformFontPresetId(presetId);
   const preset = PLATFORM_FONT_PRESETS[resolvedPresetId];
 
+  loadPlatformFontFamily(resolvedPresetId);
   applyPlatformFontVariables(preset);
 
   if (typeof localStorage !== 'undefined') {

@@ -1015,6 +1015,58 @@ function extractActivationProgressMetrics(event: { runtime_metrics?: Record<stri
   }
 }
 
+// One-shot store hydration runs at module import, before any React render.
+// The page is lazy-loaded (App.tsx routes via React.lazy), so this fires
+// only when the user actually navigates to the snapshot editor and runs
+// exactly once per session — Strict Mode's double-invocation cannot
+// re-trigger module evaluation.
+let snapshotEditorStoreHydrated = false
+function hydrateSnapshotEditorStoreOnce(): void {
+  if (snapshotEditorStoreHydrated) return
+  snapshotEditorStoreHydrated = true
+
+  const initialPersistedState = loadInitialJuceGridState()
+  const initialPluginPersistence = loadInitialPluginPersistence()
+
+  let selectedCategory = 'all'
+  try {
+    selectedCategory = localStorage.getItem('map2_juce_grid_plugin_category')
+      || localStorage.getItem('map2_grid_plugin_category')
+      || 'all'
+  } catch { /* localStorage unavailable */ }
+
+  let collapsedCategories: Set<string> = new Set<string>()
+  try {
+    const raw = localStorage.getItem('map2_juce_grid_collapsed_categories')
+      ?? localStorage.getItem('map2_grid_collapsed_categories')
+    if (raw) {
+      const parsed = JSON.parse(raw)
+      if (Array.isArray(parsed)) {
+        collapsedCategories = new Set<string>(parsed.filter((entry): entry is string => typeof entry === 'string'))
+      }
+    }
+  } catch { /* unparseable storage value — fall back to empty set */ }
+
+  useSnapshotEditorStore.setState({
+    flowSlots: initialPersistedState.flowSlots,
+    routing: initialPersistedState.routing,
+    activeFlowIndex: initialPersistedState.activeFlowIndex,
+    selectedPluginUri: initialPluginPersistence.selectedPluginUri,
+    selectedPluginPosition: initialPluginPersistence.selectedPluginPosition,
+    effectModalOpen: initialPluginPersistence.effectModalOpen,
+    selectedCategory,
+    collapsedCategories,
+    footswitchLabelDrafts: createEmptyFootswitchLabelDrafts(),
+    snapshotIoModalState: buildSnapshotIoModalState(null, null),
+    noiseGateThresholdDraft: DEFAULT_SYSTEM_NOISE_GATE_DEFAULTS.thresholdDb,
+    noiseGateReleaseDraft: DEFAULT_SYSTEM_NOISE_GATE_DEFAULTS.releaseMs,
+  })
+}
+
+if (typeof window !== 'undefined') {
+  hydrateSnapshotEditorStoreOnce()
+}
+
 export function SnapshotEditorPage() {
   const location = useLocation()
   const navigate = useNavigate()
@@ -1030,48 +1082,6 @@ export function SnapshotEditorPage() {
   const showCompactWorkflowPanels = isCompactLayout && !isTabletTouchLayout
   const showViewportBlockScreen = isMobile
   const showViewportRotateHint = showViewportBlockScreen && isTouchCapable
-
-  const initialPersistedStateRef = useRef<ReturnType<typeof loadInitialJuceGridState> | null>(null)
-  const initialPersistedState = initialPersistedStateRef.current
-    ?? (initialPersistedStateRef.current = loadInitialJuceGridState())
-  const initialPluginPersistenceRef = useRef<ReturnType<typeof loadInitialPluginPersistence> | null>(null)
-  const initialPluginPersistence = initialPluginPersistenceRef.current
-    ?? (initialPluginPersistenceRef.current = loadInitialPluginPersistence())
-
-  // T710-sub29: All state below is sourced from the Zustand store. Initial
-  // persistence values (flows/routing/activeFlowIndex/pluginSelection/category/
-  // collapsedCategories) are hydrated once on first render via the
-  // `useSnapshotEditorHydration` ref below, before any effect runs.
-  const storeHydratedRef = useRef(false)
-  if (!storeHydratedRef.current) {
-    storeHydratedRef.current = true
-    useSnapshotEditorStore.setState({
-      flowSlots: initialPersistedState.flowSlots,
-      routing: initialPersistedState.routing,
-      activeFlowIndex: initialPersistedState.activeFlowIndex,
-      selectedPluginUri: initialPluginPersistence.selectedPluginUri,
-      selectedPluginPosition: initialPluginPersistence.selectedPluginPosition,
-      effectModalOpen: initialPluginPersistence.effectModalOpen,
-      selectedCategory: (() => {
-        try {
-          return localStorage.getItem('map2_juce_grid_plugin_category')
-            || localStorage.getItem('map2_grid_plugin_category')
-            || 'all'
-        } catch { return 'all' }
-      })(),
-      collapsedCategories: (() => {
-        try {
-          const val = localStorage.getItem('map2_juce_grid_collapsed_categories')
-            ?? localStorage.getItem('map2_grid_collapsed_categories')
-          return val ? new Set<string>(JSON.parse(val)) : new Set<string>()
-        } catch { return new Set<string>() }
-      })(),
-      footswitchLabelDrafts: createEmptyFootswitchLabelDrafts(),
-      snapshotIoModalState: buildSnapshotIoModalState(null, null),
-      noiseGateThresholdDraft: DEFAULT_SYSTEM_NOISE_GATE_DEFAULTS.thresholdDb,
-      noiseGateReleaseDraft: DEFAULT_SYSTEM_NOISE_GATE_DEFAULTS.releaseMs,
-    })
-  }
 
   const compactTab = useSnapshotEditorStore((s) => s.compactTab)
   const setCompactTab = useSnapshotEditorStore((s) => s.setCompactTab)

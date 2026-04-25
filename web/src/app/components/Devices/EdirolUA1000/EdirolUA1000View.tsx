@@ -92,6 +92,24 @@ interface CpuData {
   dsp_load?: number
 }
 
+function PanelImageFallback({
+  title,
+  heading,
+  detail,
+}: {
+  title: string
+  heading: string
+  detail: string
+}) {
+  return (
+    <div style={{ padding: 40, color: '#888', textAlign: 'center' }}>
+      <div style={{ fontSize: 48, marginBottom: 12 }}>{title}</div>
+      <div>{heading}</div>
+      <div style={{ fontSize: '0.75rem', opacity: 0.7 }}>{detail}</div>
+    </div>
+  )
+}
+
 export function EdirolUA1000View() {
   const { pushToast } = useToasts()
   const queryClient = useQueryClient()
@@ -101,6 +119,8 @@ export function EdirolUA1000View() {
   const [selectedTab, setSelectedTab] = useState('engine')
   const [configDialogOpen, setConfigDialogOpen] = useState(false)
   const [shoppingDialogOpen, setShoppingDialogOpen] = useState(false)
+  const [frontImageFailed, setFrontImageFailed] = useState(false)
+  const [backImageFailed, setBackImageFailed] = useState(false)
   const selectedNodeId = activeNodeId && activeNodeId !== 'all' ? activeNodeId : localNodeId
   const selectedNode = nodes.find((node) => node.nodeId === selectedNodeId)
   const remoteSelected = selectedNodeId !== localNodeId
@@ -455,26 +475,25 @@ export function EdirolUA1000View() {
               }} />
               {isRunning ? 'Active' : 'Inactive'}
             </div>
-            <img
-              src={UA1000_FRONT_IMAGE}
-              alt="Edirol UA-1000 Front Panel"
-              style={{
-                maxWidth: '100%',
-                height: 'auto',
-                borderRadius: 4,
-                display: 'block',
-              }}
-              onError={(e) => {
-                e.currentTarget.style.display = 'none'
-                e.currentTarget.parentElement!.innerHTML = `
-                  <div style="padding: 40px; color: #888; text-align: center; --ua1000-fallback-title-size: 48px; --ua1000-fallback-copy-size: 0.75rem;">
-                    <div style="font-size: var(--ua1000-fallback-title-size); margin-bottom: 12px;">Front</div>
-                    <div>Front Panel Image</div>
-                    <div style="font-size: var(--ua1000-fallback-copy-size); opacity: 0.7;">XLR/TRS Inputs 1-4 • Headphones • Gain Controls</div>
-                  </div>
-                `
-              }}
-            />
+            {frontImageFailed ? (
+              <PanelImageFallback
+                title="Front"
+                heading="Front Panel Image"
+                detail="XLR/TRS Inputs 1-4 • Headphones • Gain Controls"
+              />
+            ) : (
+              <img
+                src={UA1000_FRONT_IMAGE}
+                alt="Edirol UA-1000 Front Panel"
+                style={{
+                  maxWidth: '100%',
+                  height: 'auto',
+                  borderRadius: 4,
+                  display: 'block',
+                }}
+                onError={() => setFrontImageFailed(true)}
+              />
+            )}
           </div>
         </div>
 
@@ -487,26 +506,25 @@ export function EdirolUA1000View() {
             display: 'inline-block',
             boxShadow: '0 4px 20px rgba(0,0,0,0.3)'
           }}>
-            <img
-              src={UA1000_BACK_IMAGE}
-              alt="Edirol UA-1000 Rear Panel"
-              style={{
-                maxWidth: '100%',
-                height: 'auto',
-                borderRadius: 4,
-                display: 'block',
-              }}
-              onError={(e) => {
-                e.currentTarget.style.display = 'none'
-                e.currentTarget.parentElement!.innerHTML = `
-                  <div style="padding: 40px; color: #888; text-align: center; --ua1000-fallback-title-size: 48px; --ua1000-fallback-copy-size: 0.75rem;">
-                    <div style="font-size: var(--ua1000-fallback-title-size); margin-bottom: 12px;">Rear</div>
-                    <div>Rear Panel Image</div>
-                    <div style="font-size: var(--ua1000-fallback-copy-size); opacity: 0.7;">Outputs 1-8 • S/PDIF • ADAT • Word Clock • MIDI • USB</div>
-                  </div>
-                `
-              }}
-            />
+            {backImageFailed ? (
+              <PanelImageFallback
+                title="Rear"
+                heading="Rear Panel Image"
+                detail="Outputs 1-8 • S/PDIF • ADAT • Word Clock • MIDI • USB"
+              />
+            ) : (
+              <img
+                src={UA1000_BACK_IMAGE}
+                alt="Edirol UA-1000 Rear Panel"
+                style={{
+                  maxWidth: '100%',
+                  height: 'auto',
+                  borderRadius: 4,
+                  display: 'block',
+                }}
+                onError={() => setBackImageFailed(true)}
+              />
+            )}
           </div>
         </div>
       </LegacyTile>

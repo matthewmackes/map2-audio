@@ -2,6 +2,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import { useSpecialSettings } from '../hooks/useSpecialSettings'
 import { useRealtimeCadence } from '../hooks/useRealtimeCadence'
+import { readPersisted, writePersisted, type PersistedKey } from '../utils/persistedState'
 import { ClusterContext, type ClusterContextValue, type NodeInfo } from './ClusterContextStore'
 
 type PeersResponse = {
@@ -18,8 +19,6 @@ type PeersResponse = {
   }>
 }
 
-const ACTIVE_NODE_KEY = 'map2_active_node'
-
 function normalizeStoredNodeId(nodeId: string | null | undefined): string | null {
   if (typeof nodeId !== 'string') return null
 
@@ -29,6 +28,13 @@ function normalizeStoredNodeId(nodeId: string | null | undefined): string | null
   }
 
   return normalized
+}
+
+const ACTIVE_NODE_KEY: PersistedKey<string | null> = {
+  storageKey: 'map2_active_node',
+  fallback: null,
+  parse: (raw) => normalizeStoredNodeId(raw),
+  serialize: (value) => value ?? 'null',
 }
 
 function buildNodes(data: PeersResponse | undefined): { nodes: NodeInfo[]; localNodeId: string } {
@@ -70,9 +76,7 @@ function buildNodes(data: PeersResponse | undefined): { nodes: NodeInfo[]; local
 }
 
 export function ClusterProvider({ children }: { children: React.ReactNode }) {
-  const initialActive = useMemo(() => {
-    return normalizeStoredNodeId(window.localStorage.getItem(ACTIVE_NODE_KEY))
-  }, [])
+  const initialActive = useMemo(() => readPersisted(ACTIVE_NODE_KEY), [])
   const [activeNodeId, setActiveNodeId] = useState<string | null>(initialActive)
   const [preferencesReady, setPreferencesReady] = useState(false)
   const userSelectionRef = useRef(false)
@@ -104,7 +108,7 @@ export function ClusterProvider({ children }: { children: React.ReactNode }) {
   const isClusterMode = nodes.length > 1
 
   useEffect(() => {
-    window.localStorage.setItem(ACTIVE_NODE_KEY, activeNodeId ?? 'null')
+    writePersisted(ACTIVE_NODE_KEY, activeNodeId)
   }, [activeNodeId])
 
   useEffect(() => {
@@ -163,7 +167,7 @@ export function ClusterProvider({ children }: { children: React.ReactNode }) {
   const handleSetActiveNode = useCallback((nodeId: string | null) => {
     userSelectionRef.current = true
     const normalizedNodeId = normalizeStoredNodeId(nodeId)
-    window.localStorage.setItem(ACTIVE_NODE_KEY, normalizedNodeId ?? 'null')
+    writePersisted(ACTIVE_NODE_KEY, normalizedNodeId)
     setActiveNodeId(normalizedNodeId)
   }, [])
 
