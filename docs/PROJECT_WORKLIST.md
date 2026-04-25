@@ -122,10 +122,11 @@ Last updated: 2026-04-24 EDT - Claude: opened per user directive; 3-question sco
 ---
 
 ID: T2446
-Status: [ ] Todo
+Status: [✓] Done
 Title: Apply T2438 chrome pattern to Maschine workspace
 Locked decisions (user-confirmed 2026-04-24):
 - Q1 target workspace: Maschine (`/maschine`). Polish pass to unify the existing partial migration, not a from-scratch rewrite. LCD / MPX1 / IntelFX deferred.
+Completion note: 2026-04-25 — Claude: SHIPPED. Polish-only pass per Q1. (1) Tightened `useSetShellWindow` subtitle from a 245-char paragraph ("NI Maschine MK1 control surface — cabl-derived USB bulk protocol, 62 LED slots, 255×64 dual LCD, 16-pad 12-bit pressure input.") to a clean 99-char operator subtitle ("NI Maschine MK1 — cabl USB bulk protocol · 62 LEDs · dual 255×64 LCDs · 16 12-bit pressure pads.") that fits AppShell chrome without aggressive wrapping. (2) Dropped the multi-sentence `<p className="maschine-page__panel-copy">` paragraph from the Hardware Layout section per CLAUDE.md page-design rule "No multi-sentence summary paragraphs on panels — use a `shortLabel` one-liner Tag instead"; added explicit `size="sm"` to the canonical-surface Tag for visual consistency. (3) Removed unused `Button` import. Verification: typecheck clean; production build clean; MaschinePage Jest test passes.
 Description:
 - Goal: Select one of Maschine, MPX1, LCD, or IntelFX and apply the same chrome-migration treatment as T2438 (Brain) and T2439 (MIDI Hub): route title/subtitle/kicker through `useSetShellWindow`, retire any in-body hero/status-bar duplicates, add a tab row under the workspace bar if the workspace has sub-routes, optionally add a health drawer on a clickable System slot.
 - Candidate notes:

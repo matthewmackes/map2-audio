@@ -1,6 +1,6 @@
 import './MaschinePage.css'
 
-import { Button, InlineNotification, Tag } from '@carbon/react'
+import { InlineNotification, Tag } from '@carbon/react'
 import { useMutation, useQuery } from '@tanstack/react-query'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useSetShellWindow } from '../layout/useSetShellWindow'
@@ -136,8 +136,10 @@ export function MaschinePage() {
     [status, selectBlockMutation],
   )
 
+  // T2446: tightened from a 245-char paragraph to a clean operator subtitle
+  // that fits the AppShell chrome without wrapping aggressively.
   const subtitle = useMemo(
-    () => 'NI Maschine MK1 control surface — cabl-derived USB bulk protocol, 62 LED slots, 255\u00d764 dual LCD, 16-pad 12-bit pressure input.',
+    () => 'NI Maschine MK1 — cabl USB bulk protocol · 62 LEDs · dual 255×64 LCDs · 16 12-bit pressure pads.',
     [],
   )
 
@@ -195,13 +197,13 @@ export function MaschinePage() {
       </div>
 
       <section id="hardware-layout" className="maschine-page__embedded-map">
+        {/* T2446: dropped the multi-sentence panel-copy paragraph
+            (per CLAUDE.md page-design rule); the canonical-surface tag carries
+            the necessary signal as a shortLabel. */}
         <div className="maschine-page__panel-head">
           <h2>Hardware Layout + MIDI Map</h2>
-          <Tag type="blue">/maschine canonical surface</Tag>
+          <Tag type="blue" size="sm">/maschine canonical surface</Tag>
         </div>
-        <p className="maschine-page__panel-copy">
-          Phase 1 merges the physical layout editor into the main Maschine workspace. The legacy `/maschine/midi-map` route now redirects here.
-        </p>
         <MaschineMidiMapEditor embedded />
       </section>
     </div>
