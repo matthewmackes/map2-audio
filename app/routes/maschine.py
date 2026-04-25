@@ -10,6 +10,7 @@ from pydantic import BaseModel, ConfigDict, Field
 from app.config import get_config as get_runtime_config_manager
 from app.database import get_session
 from app.services.maschine.admin_console import get_maschine_admin_console_service
+from app.services.maschine.incident_log import get_maschine_incident_log_service
 from app.services.maschine_lcd_service import get_maschine_lcd_render_service
 from app.services.maschine_service import get_maschine_service
 from app.services.maschine.midi_map_config import (
@@ -356,6 +357,35 @@ async def run_maschine_hw_test(request: MaschineHwTestRequest) -> dict[str, Any]
         "status": "ok" if result.get("success", False) else "error",
         "test": request.test,
         "result": result,
+    }
+
+
+@router.get("/incident-log")
+async def get_maschine_incident_log(limit: int = Query(default=50, ge=1, le=500)) -> dict[str, Any]:
+    entries = get_maschine_incident_log_service().list_entries(limit=int(limit))
+    return {
+        "status": "ok",
+        "entries": entries,
+        "limit": int(limit),
+    }
+
+
+@router.get("/platform-event-overlay")
+async def get_maschine_platform_event_overlay() -> dict[str, Any]:
+    state = get_maschine_service().get_status()
+    overlay = state.get("platform_event_overlay") or {}
+    return {
+        "status": "ok",
+        "overlay": overlay,
+    }
+
+
+@router.post("/platform-event-overlay/clear")
+async def clear_maschine_platform_event_overlay() -> dict[str, Any]:
+    overlay = await get_maschine_service().clear_platform_event_overlay()
+    return {
+        "status": "ok",
+        "overlay": overlay,
     }
 
 

@@ -1,0 +1,288 @@
+/* Node Identity Card — D3 Hero Band (replaces the prior global-tree-nav node button).
+   Sits at the top of the global navigation rail, below the eyebrow + pin and above
+   the four reserved quick-action buttons. Click anywhere opens the node selector. */
+
+.node-id-card {
+  --nic-status: var(--cds-text-secondary);
+  --nic-bg: #1c1c1c;
+  --nic-bg-deep: #0b0b0b;
+  --nic-border: #2a2a2a;
+  --nic-border-strong: #3d3d3d;
+  --nic-text: #f4f4f4;
+  --nic-text-dim: #a8a8a8;
+  --nic-text-meta: #6f6f6f;
+  --nic-mono: ui-monospace, "IBM Plex Mono", "JetBrains Mono", monospace;
+
+  appearance: none;
+  display: block;
+  width: 100%;
+  margin: 0;
+  padding: 0;
+  background: var(--nic-bg);
+  border: 1px solid var(--nic-border);
+  color: var(--nic-text);
+  font: inherit;
+  text-align: left;
+  cursor: pointer;
+  transition: border-color 120ms ease;
+}
+
+.node-id-card:hover {
+  border-color: var(--nic-border-strong);
+}
+
+.node-id-card:focus-visible {
+  outline: 2px solid var(--focus-ring, #4589ff);
+  outline-offset: 2px;
+}
+
+.node-id-card[data-status="ok"]       { --nic-status: #42be65; }
+.node-id-card[data-status="warn"]     { --nic-status: #f1c21b; }
+.node-id-card[data-status="critical"] { --nic-status: #fa4d56; }
+.node-id-card[data-status="offline"]  { --nic-status: #525252; }
+
+/* ── Eyebrow ───────────────────────────────────────────────────────────── */
+.node-id-card__eyebrow {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 8px 12px;
+  background: #161616;
+  border-bottom: 1px solid var(--nic-border);
+  font-family: var(--nic-mono);
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--nic-text-dim);
+}
+
+.node-id-card__eyebrow-left {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+
+.node-id-card__eyebrow-status {
+  color: var(--nic-status);
+  font-weight: 500;
+}
+
+/* ── Status dot (pulses for active states) ─────────────────────────────── */
+.node-id-card__dot {
+  display: inline-block;
+  width: 6px;
+  height: 6px;
+  background: var(--nic-status);
+  flex-shrink: 0;
+}
+
+.node-id-card[data-status="ok"] .node-id-card__dot {
+  animation: nodeIdCardPulse 2.2s infinite;
+}
+
+@keyframes nodeIdCardPulse {
+  0%   { box-shadow: 0 0 0 0 rgba(66, 190, 101, 0.55); }
+  70%  { box-shadow: 0 0 0 6px rgba(66, 190, 101, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(66, 190, 101, 0); }
+}
+
+/* ── Hero band ─────────────────────────────────────────────────────────── */
+.node-id-card__hero {
+  position: relative;
+  background: var(--nic-bg-deep);
+  display: flex;
+  align-items: flex-start;
+  justify-content: center;
+  /* Frame accent: 1px border in status color, inset 8px (matches design D3 frame). */
+  border: 1px solid var(--nic-status);
+  margin: 8px;
+  padding: 42px 12px 188px 36px;
+  min-height: 184px;
+  overflow: hidden;
+}
+
+.node-id-card[data-resources-overlay="false"] .node-id-card__hero {
+  padding-bottom: 130px;
+}
+
+.node-id-card__hero-mark {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  width: 144px;
+  height: 144px;
+  padding: 4px;
+}
+
+.node-id-card__hero-mark img {
+  width: 115%;
+  height: 115%;
+  object-fit: cover;
+  mix-blend-mode: screen;
+  pointer-events: none;
+  user-select: none;
+}
+
+/* Role chip (top-left of hero band) */
+.node-id-card__role-chip {
+  position: absolute;
+  top: 8px;
+  left: 32px;
+  padding: 2px 6px;
+  border: 1px solid var(--nic-status);
+  background: rgba(0, 0, 0, 0.5);
+  color: var(--nic-status);
+  font-family: var(--nic-mono);
+  font-size: 9px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  z-index: 2;
+}
+
+/* Caret (top-right of hero band) */
+.node-id-card__caret {
+  position: absolute;
+  top: 8px;
+  right: 10px;
+  font-family: var(--nic-mono);
+  font-size: 10px;
+  color: var(--nic-text-meta);
+  transition: transform 160ms ease;
+  z-index: 2;
+}
+
+.node-id-card[aria-expanded="true"] .node-id-card__caret {
+  transform: rotate(180deg);
+}
+
+/* Vertical node ID — runs up the left edge of the hero band */
+.node-id-card__vertical-id {
+  position: absolute;
+  left: 6px;
+  top: 8px;
+  bottom: 8px;
+  width: 18px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 2;
+}
+
+.node-id-card__vertical-id-text {
+  transform: rotate(-90deg);
+  white-space: nowrap;
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--nic-text);
+  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.85);
+  line-height: 1;
+}
+
+/* Bottom info zone — KV plate + CPU/MEM overlay, anchored to bottom */
+.node-id-card__info {
+  position: absolute;
+  left: 36px;
+  right: 12px;
+  bottom: 10px;
+  display: grid;
+  gap: 8px;
+  z-index: 2;
+}
+
+.node-id-card__overlay {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 8px;
+}
+
+.node-id-card__plate {
+  display: grid;
+  gap: 3px;
+  background: rgba(0, 0, 0, 0.55);
+  padding: 6px 8px;
+  backdrop-filter: blur(2px);
+}
+
+.node-id-card__kv {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 8px;
+}
+
+.node-id-card__kv-key {
+  font-family: var(--nic-mono);
+  font-size: 9px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--nic-text-meta);
+}
+
+.node-id-card__kv-value {
+  font-family: var(--nic-mono);
+  font-size: 10px;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: #e0e0e0;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
+}
+
+.node-id-card__kv-value--score-stable   { color: #42be65; }
+.node-id-card__kv-value--score-watch    { color: #f1c21b; }
+.node-id-card__kv-value--score-critical { color: #fa4d56; }
+.node-id-card__kv-value--score-offline  { color: #fa4d56; }
+.node-id-card__kv-value--score-waiting  { color: #6f6f6f; }
+
+.node-id-card__kv-status {
+  margin-left: 6px;
+  color: var(--nic-text-meta);
+}
+
+/* CPU/MEM mini overlay tiles */
+.node-id-card__res-mini {
+  background: rgba(0, 0, 0, 0.6);
+  border: 1px solid currentColor;
+  padding: 3px 6px;
+  /* currentColor is overridden inline via --nic-mini-fill */
+}
+
+.node-id-card__res-mini-row {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+}
+
+.node-id-card__res-mini-label {
+  font-family: var(--nic-mono);
+  font-size: 8px;
+  letter-spacing: 0.06em;
+  text-transform: uppercase;
+  color: var(--nic-text-dim);
+}
+
+.node-id-card__res-mini-value {
+  font-family: var(--nic-mono);
+  font-size: 11px;
+  color: #fff;
+  font-variant-numeric: tabular-nums;
+}
+
+.node-id-card__res-mini-value-pct {
+  font-size: 8px;
+  color: var(--nic-text-dim);
+  margin-left: 1px;
+}
+
+.node-id-card__res-mini-bar {
+  height: 2px;
+  background: rgba(255, 255, 255, 0.08);
+  margin-top: 2px;
+}
+
+.node-id-card__res-mini-bar-fill {
+  height: 100%;
+}

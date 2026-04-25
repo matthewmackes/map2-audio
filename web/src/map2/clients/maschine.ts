@@ -108,6 +108,71 @@ export interface MaschineTransportConfigResponse {
   note?: string
 }
 
+export interface MaschineAdminConsoleAction {
+  action_id: string
+  label: string
+  detail: string
+  tier?: string
+  kind?: string
+  is_selected: boolean
+  is_active: boolean
+}
+
+export interface MaschineAdminConsoleSnapshot {
+  session_unlocked: boolean
+  selected_action_id: string | null
+  selected_action_index: number
+  selected_action_label: string
+  selected_action_detail: string
+  confirmation_progress: number
+  confirmation_required: number
+  busy: boolean
+  active_action_id: string | null
+  active_action_started_at: string | null
+  last_result: Record<string, unknown>
+  actions: MaschineAdminConsoleAction[]
+  updated_at: string
+}
+
+export interface MaschineAdminConsoleResponse {
+  status: string
+  admin_console: MaschineAdminConsoleSnapshot
+}
+
+export interface MaschineIncidentLogEntry {
+  timestamp: string
+  severity: 'info' | 'warn' | 'error' | 'critical'
+  source: string
+  message: string
+  detail?: string
+  event?: string
+  context?: Record<string, unknown>
+}
+
+export interface MaschineIncidentLogResponse {
+  status: string
+  entries: MaschineIncidentLogEntry[]
+  limit: number
+}
+
+export interface MaschinePlatformEventOverlay {
+  active: boolean
+  event_id?: string | null
+  severity?: string
+  mode?: string
+  title?: string
+  message?: string
+  pads?: unknown[]
+  lcd?: { left: MaschineLcdBitmap; right: MaschineLcdBitmap }
+  updated_at?: string | null
+  expires_at?: string | null
+}
+
+export interface MaschinePlatformEventOverlayResponse {
+  status: string
+  overlay: MaschinePlatformEventOverlay
+}
+
 export const maschineApi = {
   getStatus: () =>
     fetchJson<MaschineStatusResponse>(`${MASCHINE_API_BASE}/status`, { cache: 'no-store' }),
@@ -179,6 +244,48 @@ export const maschineApi = {
     fetchJson<MaschineHwTestResponse>(`${MASCHINE_API_BASE}/led/set`, {
       method: 'POST',
       body: JSON.stringify({ slot, brightness }),
+    }),
+
+  getAdminConsole: () =>
+    fetchJson<MaschineAdminConsoleResponse>(`${MASCHINE_API_BASE}/admin-console`, { cache: 'no-store' }),
+
+  unlockAdminConsole: () =>
+    fetchJson<MaschineAdminConsoleResponse>(`${MASCHINE_API_BASE}/admin-console/unlock`, { method: 'POST' }),
+
+  lockAdminConsole: () =>
+    fetchJson<MaschineAdminConsoleResponse>(`${MASCHINE_API_BASE}/admin-console/lock`, { method: 'POST' }),
+
+  selectAdminConsoleAction: (delta: number) =>
+    fetchJson<MaschineAdminConsoleResponse>(`${MASCHINE_API_BASE}/admin-console/select`, {
+      method: 'POST',
+      body: JSON.stringify({ delta }),
+    }),
+
+  confirmAdminConsoleAction: () =>
+    fetchJson<MaschineAdminConsoleResponse>(`${MASCHINE_API_BASE}/admin-console/confirm`, { method: 'POST' }),
+
+  cancelAdminConsoleAction: () =>
+    fetchJson<MaschineAdminConsoleResponse>(`${MASCHINE_API_BASE}/admin-console/cancel`, { method: 'POST' }),
+
+  getIncidentLog: (limit = 50) =>
+    fetchJson<MaschineIncidentLogResponse>(`${MASCHINE_API_BASE}/incident-log?limit=${limit}`, { cache: 'no-store' }),
+
+  getPlatformEventOverlay: () =>
+    fetchJson<MaschinePlatformEventOverlayResponse>(`${MASCHINE_API_BASE}/platform-event-overlay`, { cache: 'no-store' }),
+
+  clearPlatformEventOverlay: () =>
+    fetchJson<MaschinePlatformEventOverlayResponse>(`${MASCHINE_API_BASE}/platform-event-overlay/clear`, { method: 'POST' }),
+
+  selectAudioGridBlock: (blockId: string) =>
+    fetchJson<MaschineAudioGridResponse>(`${MASCHINE_API_BASE}/audio-grid/select`, {
+      method: 'POST',
+      body: JSON.stringify({ block_id: blockId }),
+    }),
+
+  toggleAudioGridBlockBypass: (blockId: string) =>
+    fetchJson<MaschineAudioGridResponse>(`${MASCHINE_API_BASE}/audio-grid/bypass`, {
+      method: 'POST',
+      body: JSON.stringify({ block_id: blockId }),
     }),
 }
 

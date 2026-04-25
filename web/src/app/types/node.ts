@@ -8,6 +8,8 @@ export type NodeServices = {
   pipewire: boolean
 }
 
+export type LatencyPressureStatus = 'waiting' | 'offline' | 'stable' | 'watch' | 'critical'
+
 export type NodeHealth = {
   status: NodeStatus
   cpu_percent: number
@@ -15,6 +17,12 @@ export type NodeHealth = {
   xrun_count: number
   audio_latency_ms: number
   services: NodeServices
+  /** First-class latency-pressure score (0..10). Null when no telemetry yet. */
+  latency_pressure_score?: number | null
+  /** Pressure as 0..100% (100 = critical / offline). Null when no telemetry yet. */
+  latency_pressure_percent?: number | null
+  /** Status band derived from the score. Defaults to 'waiting' when not present. */
+  latency_pressure_status?: LatencyPressureStatus
 }
 
 export type NodeIdentity = {

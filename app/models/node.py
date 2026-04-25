@@ -27,6 +27,9 @@ class NodeServices(_NodeBaseModel):
     pipewire: bool = False
 
 
+LatencyPressureStatusLiteral = Literal["waiting", "offline", "stable", "watch", "critical"]
+
+
 class NodeHealth(_NodeBaseModel):
     status: Literal["ok", "warn", "critical", "offline"] = "offline"
     cpu_percent: float = 0.0
@@ -34,6 +37,11 @@ class NodeHealth(_NodeBaseModel):
     xrun_count: int = 0
     audio_latency_ms: float = 0.0
     services: NodeServices = Field(default_factory=NodeServices)
+    # First-class latency pressure (mirrors web/src/app/utils/latencyPressure.ts).
+    # null score/percent => no telemetry available yet for this node ("waiting").
+    latency_pressure_score: Optional[int] = None
+    latency_pressure_percent: Optional[int] = None
+    latency_pressure_status: LatencyPressureStatusLiteral = "waiting"
 
 
 class NodeIdentity(_NodeBaseModel):

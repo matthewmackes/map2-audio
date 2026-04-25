@@ -11,6 +11,7 @@ import { MaschineHidTrafficPanel } from '../components/Maschine/MaschineHidTraff
 import { MaschineHwTestPanel } from '../components/Maschine/MaschineHwTestPanel'
 import { MaschineLcdSimulatorPanel } from '../components/Maschine/MaschineLcdSimulatorPanel'
 import { MaschineLedPreviewPanel } from '../components/Maschine/MaschineLedPreviewPanel'
+import { MaschineOperationsConsolePanel } from '../components/Maschine/MaschineOperationsConsolePanel'
 import { MaschineTransportPanel } from '../components/Maschine/MaschineTransportPanel'
 import { MaschineMidiMapEditor } from './MaschineMidiMapPage'
 import {
@@ -171,6 +172,8 @@ export function MaschinePage() {
           subtitle="The backend did not return a valid status payload."
         />
       ) : null}
+
+      <MaschineOperationsConsolePanel status={status} audioGrid={status?.audio_grid ?? null} />
 
       <div className="maschine-page__grid">
         <MaschineConnectionPanel status={status} />

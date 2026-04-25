@@ -52,24 +52,216 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
             class="cds--popover-container cds--popover--caret cds--popover--drop-shadow cds--popover--bottom-start"
           >
             <button
-              aria-label="Open node selector"
-              class="global-tree-nav__node-button"
+              aria-expanded="false"
+              aria-label="Node MAP2-TESTBED, status OK. Click to switch nodes."
+              class="node-id-card"
+              data-resources-overlay="true"
+              data-status="ok"
               type="button"
             >
-              <span
-                class="global-tree-nav__node-button-copy"
+              <div
+                class="node-id-card__eyebrow"
               >
                 <span
-                  class="global-tree-nav__node-button-label"
+                  class="node-id-card__eyebrow-left"
                 >
-                  MAP2-TESTBED
+                  <span
+                    class="node-id-card__dot"
+                  />
+                  <span>
+                    Current Node in View
+                  </span>
                 </span>
                 <span
-                  class="global-tree-nav__node-button-status"
+                  class="node-id-card__eyebrow-status"
                 >
                   OK
                 </span>
-              </span>
+              </div>
+              <div
+                class="node-id-card__hero"
+              >
+                <span
+                  class="node-id-card__role-chip"
+                >
+                  ALL-IN-ONE
+                </span>
+                <span
+                  aria-hidden="true"
+                  class="node-id-card__caret"
+                >
+                  ▾
+                </span>
+                <div
+                  class="node-id-card__hero-mark"
+                >
+                  <img
+                    alt=""
+                    src="/img/MAP2-Node-v2.png"
+                  />
+                </div>
+                <div
+                  class="node-id-card__vertical-id"
+                >
+                  <span
+                    class="node-id-card__vertical-id-text"
+                  >
+                    MAP2-TESTBED
+                  </span>
+                </div>
+                <div
+                  class="node-id-card__info"
+                >
+                  <div
+                    class="node-id-card__overlay"
+                  >
+                    <div
+                      class="node-id-card__res-mini"
+                      style="color: rgba(66, 190, 101, 0.4);"
+                    >
+                      <div
+                        class="node-id-card__res-mini-row"
+                      >
+                        <span
+                          class="node-id-card__res-mini-label"
+                        >
+                          CPU
+                        </span>
+                        <span
+                          class="node-id-card__res-mini-value"
+                        >
+                          18
+                          <span
+                            class="node-id-card__res-mini-value-pct"
+                          >
+                            %
+                          </span>
+                        </span>
+                      </div>
+                      <div
+                        class="node-id-card__res-mini-bar"
+                      >
+                        <div
+                          class="node-id-card__res-mini-bar-fill"
+                          style="width: 18%; background: rgb(66, 190, 101);"
+                        />
+                      </div>
+                    </div>
+                    <div
+                      class="node-id-card__res-mini"
+                      style="color: rgba(66, 190, 101, 0.4);"
+                    >
+                      <div
+                        class="node-id-card__res-mini-row"
+                      >
+                        <span
+                          class="node-id-card__res-mini-label"
+                        >
+                          MEM
+                        </span>
+                        <span
+                          class="node-id-card__res-mini-value"
+                        >
+                          35
+                          <span
+                            class="node-id-card__res-mini-value-pct"
+                          >
+                            %
+                          </span>
+                        </span>
+                      </div>
+                      <div
+                        class="node-id-card__res-mini-bar"
+                      >
+                        <div
+                          class="node-id-card__res-mini-bar-fill"
+                          style="width: 35%; background: rgb(66, 190, 101);"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  <div
+                    class="node-id-card__plate"
+                  >
+                    <div
+                      class="node-id-card__kv"
+                    >
+                      <span
+                        class="node-id-card__kv-key"
+                      >
+                        HOST
+                      </span>
+                      <span
+                        class="node-id-card__kv-value"
+                      >
+                        MAP2-TESTBED
+                      </span>
+                    </div>
+                    <div
+                      class="node-id-card__kv"
+                    >
+                      <span
+                        class="node-id-card__kv-key"
+                      >
+                        ROLE
+                      </span>
+                      <span
+                        class="node-id-card__kv-value"
+                      >
+                        ALL-IN-ONE
+                      </span>
+                    </div>
+                    <div
+                      class="node-id-card__kv"
+                    >
+                      <span
+                        class="node-id-card__kv-key"
+                      >
+                        LATENCY
+                      </span>
+                      <span
+                        class="node-id-card__kv-value"
+                      >
+                        2.70 ms
+                      </span>
+                    </div>
+                    <div
+                      class="node-id-card__kv"
+                    >
+                      <span
+                        class="node-id-card__kv-key"
+                      >
+                        XRUNS
+                      </span>
+                      <span
+                        class="node-id-card__kv-value"
+                      >
+                        0
+                      </span>
+                    </div>
+                    <div
+                      class="node-id-card__kv"
+                    >
+                      <span
+                        class="node-id-card__kv-key"
+                      >
+                        LAT PRESS
+                      </span>
+                      <span
+                        class="node-id-card__kv-value node-id-card__kv-value--score-waiting"
+                      >
+                        --/10
+                        <span
+                          class="node-id-card__kv-status"
+                        >
+                          · 
+                          WAITING
+                        </span>
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </button>
             <span
               class="cds--popover"
@@ -5943,24 +6135,216 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
             class="cds--popover-container cds--popover--caret cds--popover--drop-shadow cds--popover--bottom-start"
           >
             <button
-              aria-label="Open node selector"
-              class="global-tree-nav__node-button"
+              aria-expanded="false"
+              aria-label="Node MAP2-TESTBED, status OK. Click to switch nodes."
+              class="node-id-card"
+              data-resources-overlay="true"
+              data-status="ok"
               type="button"
             >
-              <span
-                class="global-tree-nav__node-button-copy"
+              <div
+                class="node-id-card__eyebrow"
               >
                 <span
-                  class="global-tree-nav__node-button-label"
+                  class="node-id-card__eyebrow-left"
                 >
-                  MAP2-TESTBED
+                  <span
+                    class="node-id-card__dot"
+                  />
+                  <span>
+                    Current Node in View
+                  </span>
                 </span>
                 <span
-                  class="global-tree-nav__node-button-status"
+                  class="node-id-card__eyebrow-status"
                 >
                   OK
                 </span>
-              </span>
+              </div>
+              <div
+                class="node-id-card__hero"
+              >
+                <span
+                  class="node-id-card__role-chip"
+                >
+                  ALL-IN-ONE
+                </span>
+                <span
+                  aria-hidden="true"
+                  class="node-id-card__caret"
+                >
+                  ▾
+                </span>
+                <div
+                  class="node-id-card__hero-mark"
+                >
+                  <img
+                    alt=""
+                    src="/img/MAP2-Node-v2.png"
+                  />
+                </div>
+                <div
+                  class="node-id-card__vertical-id"
+                >
+                  <span
+                    class="node-id-card__vertical-id-text"
+                  >
+                    MAP2-TESTBED
+                  </span>
+                </div>
+                <div
+                  class="node-id-card__info"
+                >
+                  <div
+                    class="node-id-card__overlay"
+                  >
+                    <div
+                      class="node-id-card__res-mini"
+                      style="color: rgba(66, 190, 101, 0.4);"
+                    >
+                      <div
+                        class="node-id-card__res-mini-row"
+                      >
+                        <span
+                          class="node-id-card__res-mini-label"
+                        >
+                          CPU
+                        </span>
+                        <span
+                          class="node-id-card__res-mini-value"
+                        >
+                          18
+                          <span
+                            class="node-id-card__res-mini-value-pct"
+                          >
+                            %
+                          </span>
+                        </span>
+                      </div>
+                      <div
+                        class="node-id-card__res-mini-bar"
+                      >
+                        <div
+                          class="node-id-card__res-mini-bar-fill"
+                          style="width: 18%; background: rgb(66, 190, 101);"
+                        />
+                      </div>
+                    </div>
+                    <div
+                      class="node-id-card__res-mini"
+                      style="color: rgba(66, 190, 101, 0.4);"
+                    >
+                      <div
+                        class="node-id-card__res-mini-row"
+                      >
+                        <span
+                          class="node-id-card__res-mini-label"
+                        >
+                          MEM
+                        </span>
+                        <span
+                          class="node-id-card__res-mini-value"
+                        >
+                          35
+                          <span
+                            class="node-id-card__res-mini-value-pct"
+                          >
+                            %
+                          </span>
+                        </span>
+                      </div>
+                      <div
+                        class="node-id-card__res-mini-bar"
+                      >
+                        <div
+                          class="node-id-card__res-mini-bar-fill"
+                          style="width: 35%; background: rgb(66, 190, 101);"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  <div
+                    class="node-id-card__plate"
+                  >
+                    <div
+                      class="node-id-card__kv"
+                    >
+                      <span
+                        class="node-id-card__kv-key"
+                      >
+                        HOST
+                      </span>
+                      <span
+                        class="node-id-card__kv-value"
+                      >
+                        MAP2-TESTBED
+                      </span>
+                    </div>
+                    <div
+                      class="node-id-card__kv"
+                    >
+                      <span
+                        class="node-id-card__kv-key"
+                      >
+                        ROLE
+                      </span>
+                      <span
+                        class="node-id-card__kv-value"
+                      >
+                        ALL-IN-ONE
+                      </span>
+                    </div>
+                    <div
+                      class="node-id-card__kv"
+                    >
+                      <span
+                        class="node-id-card__kv-key"
+                      >
+                        LATENCY
+                      </span>
+                      <span
+                        class="node-id-card__kv-value"
+                      >
+                        2.70 ms
+                      </span>
+                    </div>
+                    <div
+                      class="node-id-card__kv"
+                    >
+                      <span
+                        class="node-id-card__kv-key"
+                      >
+                        XRUNS
+                      </span>
+                      <span
+                        class="node-id-card__kv-value"
+                      >
+                        0
+                      </span>
+                    </div>
+                    <div
+                      class="node-id-card__kv"
+                    >
+                      <span
+                        class="node-id-card__kv-key"
+                      >
+                        LAT PRESS
+                      </span>
+                      <span
+                        class="node-id-card__kv-value node-id-card__kv-value--score-waiting"
+                      >
+                        --/10
+                        <span
+                          class="node-id-card__kv-status"
+                        >
+                          · 
+                          WAITING
+                        </span>
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </button>
             <span
               class="cds--popover"
@@ -11901,24 +12285,216 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
             class="cds--popover-container cds--popover--caret cds--popover--drop-shadow cds--popover--bottom-start"
           >
             <button
-              aria-label="Open node selector"
-              class="global-tree-nav__node-button"
+              aria-expanded="false"
+              aria-label="Node MAP2-TESTBED, status OK. Click to switch nodes."
+              class="node-id-card"
+              data-resources-overlay="true"
+              data-status="ok"
               type="button"
             >
-              <span
-                class="global-tree-nav__node-button-copy"
+              <div
+                class="node-id-card__eyebrow"
               >
                 <span
-                  class="global-tree-nav__node-button-label"
+                  class="node-id-card__eyebrow-left"
                 >
-                  MAP2-TESTBED
+                  <span
+                    class="node-id-card__dot"
+                  />
+                  <span>
+                    Current Node in View
+                  </span>
                 </span>
                 <span
-                  class="global-tree-nav__node-button-status"
+                  class="node-id-card__eyebrow-status"
                 >
                   OK
                 </span>
-              </span>
+              </div>
+              <div
+                class="node-id-card__hero"
+              >
+                <span
+                  class="node-id-card__role-chip"
+                >
+                  ALL-IN-ONE
+                </span>
+                <span
+                  aria-hidden="true"
+                  class="node-id-card__caret"
+                >
+                  ▾
+                </span>
+                <div
+                  class="node-id-card__hero-mark"
+                >
+                  <img
+                    alt=""
+                    src="/img/MAP2-Node-v2.png"
+                  />
+                </div>
+                <div
+                  class="node-id-card__vertical-id"
+                >
+                  <span
+                    class="node-id-card__vertical-id-text"
+                  >
+                    MAP2-TESTBED
+                  </span>
+                </div>
+                <div
+                  class="node-id-card__info"
+                >
+                  <div
+                    class="node-id-card__overlay"
+                  >
+                    <div
+                      class="node-id-card__res-mini"
+                      style="color: rgba(66, 190, 101, 0.4);"
+                    >
+                      <div
+                        class="node-id-card__res-mini-row"
+                      >
+                        <span
+                          class="node-id-card__res-mini-label"
+                        >
+                          CPU
+                        </span>
+                        <span
+                          class="node-id-card__res-mini-value"
+                        >
+                          18
+                          <span
+                            class="node-id-card__res-mini-value-pct"
+                          >
+                            %
+                          </span>
+                        </span>
+                      </div>
+                      <div
+                        class="node-id-card__res-mini-bar"
+                      >
+                        <div
+                          class="node-id-card__res-mini-bar-fill"
+                          style="width: 18%; background: rgb(66, 190, 101);"
+                        />
+                      </div>
+                    </div>
+                    <div
+                      class="node-id-card__res-mini"
+                      style="color: rgba(66, 190, 101, 0.4);"
+                    >
+                      <div
+                        class="node-id-card__res-mini-row"
+                      >
+                        <span
+                          class="node-id-card__res-mini-label"
+                        >
+                          MEM
+                        </span>
+                        <span
+                          class="node-id-card__res-mini-value"
+                        >
+                          35
+                          <span
+                            class="node-id-card__res-mini-value-pct"
+                          >
+                            %
+                          </span>
+                        </span>
+                      </div>
+                      <div
+                        class="node-id-card__res-mini-bar"
+                      >
+                        <div
+                          class="node-id-card__res-mini-bar-fill"
+                          style="width: 35%; background: rgb(66, 190, 101);"
+                        />
+                      </div>
+                    </div>
+                  </div>
+                  <div
+                    class="node-id-card__plate"
+                  >
+                    <div
+                      class="node-id-card__kv"
+                    >
+                      <span
+                        class="node-id-card__kv-key"
+                      >
+                        HOST
+                      </span>
+                      <span
+                        class="node-id-card__kv-value"
+                      >
+                        MAP2-TESTBED
+                      </span>
+                    </div>
+                    <div
+                      class="node-id-card__kv"
+                    >
+                      <span
+                        class="node-id-card__kv-key"
+                      >
+                        ROLE
+                      </span>
+                      <span
+                        class="node-id-card__kv-value"
+                      >
+                        ALL-IN-ONE
+                      </span>
+                    </div>
+                    <div
+                      class="node-id-card__kv"
+                    >
+                      <span
+                        class="node-id-card__kv-key"
+                      >
+                        LATENCY
+                      </span>
+                      <span
+                        class="node-id-card__kv-value"
+                      >
+                        2.70 ms
+                      </span>
+                    </div>
+                    <div
+                      class="node-id-card__kv"
+                    >
+                      <span
+                        class="node-id-card__kv-key"
+                      >
+                        XRUNS
+                      </span>
+                      <span
+                        class="node-id-card__kv-value"
+                      >
+                        0
+                      </span>
+                    </div>
+                    <div
+                      class="node-id-card__kv"
+                    >
+                      <span
+                        class="node-id-card__kv-key"
+                      >
+                        LAT PRESS
+                      </span>
+                      <span
+                        class="node-id-card__kv-value node-id-card__kv-value--score-waiting"
+                      >
+                        --/10
+                        <span
+                          class="node-id-card__kv-status"
+                        >
+                          · 
+                          WAITING
+                        </span>
+                      </span>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </button>
             <span
               class="cds--popover"

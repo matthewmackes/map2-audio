@@ -44,6 +44,7 @@ import {
 } from '@carbon/icons-react'
 
 import { MapRackDeviceIcon } from '../../components/icons/map'
+import { NodeIdentityCard } from '../../components/NodeNav/NodeIdentityCard'
 import { NodeMiniCard } from '../../components/NodeNav/NodeMiniCard'
 import {
   allRouteNavigationItems,
@@ -750,21 +751,12 @@ export function GlobalTreeNav({
             open={nodeSelectorOpen}
             onRequestClose={() => setNodeSelectorOpen(false)}
           >
-            <button
-              type="button"
-              className="global-tree-nav__node-button"
-              aria-label="Open node selector"
-              onClick={() => setNodeSelectorOpen((current) => !current)}
-            >
-              <span className="global-tree-nav__node-button-copy">
-                <span className="global-tree-nav__node-button-label">
-                  {displayedNode ? formatNodeDisplayName(displayedNode) : 'Node discovery unavailable'}
-                </span>
-                <span className="global-tree-nav__node-button-status">
-                  {displayedNode ? getNodeStatusLabel(displayedNode.status) : nodeTopologyQuery.isLoading ? 'Loading' : 'Unavailable'}
-                </span>
-              </span>
-            </button>
+            <NodeIdentityCard
+              node={displayedNode ?? null}
+              isOpen={nodeSelectorOpen}
+              onToggle={() => setNodeSelectorOpen((current) => !current)}
+              loadingLabel={nodeTopologyQuery.isLoading ? 'LOADING' : 'UNAVAILABLE'}
+            />
             <PopoverContent className="global-tree-nav__node-popover">
               {displayedNode ? <NodeMiniCard node={displayedNode} pageKey={pageKey} onClose={() => setNodeSelectorOpen(false)} /> : null}
               <div className="global-tree-nav__node-switcher">

@@ -15,6 +15,10 @@ import psutil
 
 from app.config import config_get
 from app.models.node import NodeHealth, NodeServices
+from app.utils.latency_pressure import (
+    LatencyPressureInputs,
+    compute_latency_pressure,
+)
 from app.utils.singleton import Singleton
 
 logger = logging.getLogger(__name__)
@@ -42,6 +46,15 @@ class NodeHealthService(Singleton):
         xrun_count = await self._get_local_xrun_count(audio_service)
         audio_latency_ms = self._get_audio_latency_ms(audio_service)
 
+        latency_pressure = compute_latency_pressure(
+            self._collect_latency_pressure_inputs(
+                audio_service=audio_service,
+                services=services,
+                xrun_count=xrun_count,
+                audio_latency_ms=audio_latency_ms,
+            )
+        )
+
         return NodeHealth(
             status=self._derive_status(
                 services=services,
@@ -53,6 +66,72 @@ class NodeHealthService(Singleton):
             xrun_count=xrun_count,
             audio_latency_ms=audio_latency_ms,
             services=services,
+            latency_pressure_score=latency_pressure.score,
+            latency_pressure_percent=latency_pressure.pressure_percent,
+            latency_pressure_status=latency_pressure.status,
+        )
+
+    def _collect_latency_pressure_inputs(
+        self,
+        *,
+        audio_service,
+        services: NodeServices,
+        xrun_count: int,
+        audio_latency_ms: float,
+    ) -> LatencyPressureInputs:
+        running: Optional[bool] = bool(services.juce_engine and services.pipewire)
+
+        # Jitter / RTL stats (rolling 60s window, populated by the audio callback).
+        jitter_p95: Optional[float] = None
+        rtl_p95: Optional[float] = None
+        try:
+            from app.services.timing_jitter_collector import get_timing_jitter_collector
+
+            stats = get_timing_jitter_collector().get_stats()
+            jitter_value = float(stats.get("p95_ms", 0.0) or 0.0)
+            rtl_value = float(stats.get("rtl_p95_ms", 0.0) or 0.0)
+            jitter_p95 = jitter_value if jitter_value > 0.0 else None
+            rtl_p95 = rtl_value if rtl_value > 0.0 else None
+            sample_count = int(stats.get("sample_count", 0) or 0)
+            if sample_count > 0:
+                running = bool(stats.get("running", False))
+        except Exception as exc:
+            logger.debug("Latency pressure: jitter collector lookup failed: %s", exc)
+
+        # CPU callback metrics (budget, current, headroom).
+        callback_budget_ms: Optional[float] = None
+        current_callback_ms: Optional[float] = None
+        headroom_percent: Optional[float] = None
+        if audio_service is not None:
+            try:
+                if hasattr(audio_service, "get_cpu_metrics"):
+                    metrics = audio_service.get_cpu_metrics()
+                    if asyncio.iscoroutine(metrics):
+                        metrics = None  # avoid blocking; sync path only here
+                else:
+                    metrics = None
+                if isinstance(metrics, dict):
+                    budget = float(metrics.get("budget_ms", 0.0) or 0.0)
+                    current = float(metrics.get("current_callback_ms", 0.0) or 0.0)
+                    headroom = float(metrics.get("headroom_percent", 0.0) or 0.0)
+                    callback_budget_ms = budget if budget > 0.0 else None
+                    current_callback_ms = current if current > 0.0 else None
+                    headroom_percent = headroom if headroom > 0.0 else None
+            except Exception as exc:
+                logger.debug("Latency pressure: CPU metrics lookup failed: %s", exc)
+
+        # Total latency: prefer audio_latency_ms (buffer/sample-rate derived).
+        total_latency_ms = audio_latency_ms if audio_latency_ms > 0.0 else None
+
+        return LatencyPressureInputs(
+            running=running,
+            total_latency_ms=total_latency_ms,
+            rtl_p95_ms=rtl_p95,
+            jitter_p95_ms=jitter_p95,
+            xrun_count=xrun_count,
+            callback_budget_ms=callback_budget_ms,
+            current_callback_ms=current_callback_ms,
+            headroom_percent=headroom_percent,
         )
 
     async def get_remote_health(self, host: str) -> NodeHealth:

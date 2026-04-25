@@ -225,7 +225,10 @@ describe('AppShell global tree navigation', () => {
     expect(within(navTree).getAllByText('Biamp Tesira').length).toBeGreaterThan(0)
     expect(within(navTree).getAllByText('Rocktron IntelliFex').length).toBeGreaterThan(0)
     expect(screen.queryByText('Files')).toBeNull()
-    expect(screen.getByRole('button', { name: 'Open node selector' })).toHaveTextContent('map2-host (Studio)')
+    // The node identity card surfaces the display name plus the host/role plate.
+    const nodeCard = screen.getByRole('button', { name: /Node map2-host \(Studio\)/i })
+    expect(nodeCard).toHaveTextContent('map2-host')
+    expect(nodeCard).toHaveTextContent('ALL-IN-ONE')
   })
 
   it('renders non-landing routes with the title strip and the global tree rail', () => {
