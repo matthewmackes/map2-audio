@@ -75,6 +75,7 @@ import {
   pageKeyFromPathname,
 } from '../../utils/nodeDisplay'
 import { useClusterSnapshotRuntimeLiveState } from '../../hooks/useSnapshotRuntimeState'
+import { readPersisted, writePersisted, type PersistedKey } from '../../utils/persistedState'
 import type { SnapshotRuntimeClusterLiveStateResponse, SnapshotRuntimeLiveState } from '../../../map2/types'
 import './GlobalTreeNav.css'
 
@@ -105,6 +106,7 @@ export type TreeItemDefinition = {
   badge?: string
   featured?: boolean
   groupBoundary?: boolean
+  separator?: boolean
 }
 
 type TreeNodeSecondaryTone = 'neutral' | 'live' | 'warning' | 'offline'
@@ -122,23 +124,41 @@ const DEVICE_KIND_ORDER: DeviceRegistryEntry['kind'][] = [
 ]
 
 const BROWSE_DEVICES_TREE_ID = '/hardware::devices::browse'
+const PRIMARY_SEPARATOR_ONE_ID = '__separator-primary-1__'
+const PRIMARY_SEPARATOR_TWO_ID = '__separator-primary-2__'
 
-const GLOBAL_TREE_STORAGE_KEY = 'map2:global-tree:expanded'
+const DEFAULT_EXPANDED_IDS: readonly string[] = ['/workspace', '/midi-hub', '/hardware', '/hardware::devices']
+const GLOBAL_TREE_EXPANDED_KEY: PersistedKey<string[]> = {
+  storageKey: 'map2:global-tree:expanded',
+  fallback: [...DEFAULT_EXPANDED_IDS],
+  parse: (raw) => {
+    try {
+      const parsed: unknown = JSON.parse(raw)
+      if (!Array.isArray(parsed)) return undefined
+      return parsed.filter((value): value is string => typeof value === 'string')
+    } catch {
+      return undefined
+    }
+  },
+}
 const TOP_LEVEL_ROUTE_ORDER = [
   '/',
   '/snapshot-editor',
-  '/brain',
-  '/workspace',
-  '/midi-hub',
   '/midi/assignments',
+  '/brain',
   '/workspace/artifacts',
+  PRIMARY_SEPARATOR_ONE_ID,
+  '/midi-hub',
+  '/workspace',
   '/hardware',
+  PRIMARY_SEPARATOR_TWO_ID,
   '/platforms/about',
 ] as const
 
 const FLAT_TOP_LEVEL_ROUTES = new Set([
   '/',
   '/snapshot-editor',
+  '/midi/assignments',
   '/platforms/about',
 ])
 const HARDWARE_TREE_ID = '/hardware'
@@ -191,6 +211,7 @@ const TREE_ICON_OVERRIDES: Record<string, TreeIconComponent> = {
 const TREE_LABEL_OVERRIDES: Record<string, string> = {
   '/workspace': 'Node Ops',
   '/snapshot-editor': 'Snapshot Editor',
+  '/brain': 'Drums&Synth',
   '/midi-hub': 'MIDI Advanced',
   '/midi/assignments': 'MIDI Assignments',
   '/workspace/artifacts': 'Audio Artifacts',
@@ -229,25 +250,6 @@ function routeMatchesLocation(target: string, pathname: string, search: string):
   }
 
   return true
-}
-
-function readExpandedIds(): string[] {
-  const defaultExpandedIds = ['/workspace', '/midi-hub', HARDWARE_TREE_ID, HARDWARE_DEVICES_ID]
-
-  if (typeof window === 'undefined') {
-    return defaultExpandedIds
-  }
-
-  try {
-    const raw = window.localStorage.getItem(GLOBAL_TREE_STORAGE_KEY)
-    if (!raw) {
-      return defaultExpandedIds
-    }
-    const parsed = JSON.parse(raw)
-    return Array.isArray(parsed) ? parsed.filter((value): value is string => typeof value === 'string') : defaultExpandedIds
-  } catch {
-    return defaultExpandedIds
-  }
 }
 
 function findNavigationItem(route: string): PlatformPinnedNavItem | ShellNavigationItem | HardwareInterfaceMenuItem | null {
@@ -427,6 +429,14 @@ function buildTreeItems(
   snapshotEditorStatus: SnapshotEditorTreeStatus,
 ): TreeItemDefinition[] {
   return TOP_LEVEL_ROUTE_ORDER.flatMap((route) => {
+    if (route === PRIMARY_SEPARATOR_ONE_ID || route === PRIMARY_SEPARATOR_TWO_ID) {
+      return [{
+        id: route,
+        label: '',
+        separator: true,
+      }]
+    }
+
     if (route === HARDWARE_TREE_ID) {
       return [buildHardwareTree(pinnedIds, navigateTo, onRequestUnpin)]
     }
@@ -540,6 +550,7 @@ function TreeNodeLabel({
 const BOLD_TOP_LEVEL_ROUTES = new Set([
   '/',
   '/snapshot-editor',
+  '/midi/assignments',
   '/brain',
   '/workspace',
   '/midi-hub',
@@ -575,7 +586,22 @@ function renderTreeItems(
       selected && 'is-selected',
       item.featured && 'is-featured',
       item.groupBoundary && 'is-group-boundary',
+      item.separator && 'is-separator',
     )
+
+    if (item.separator) {
+      return (
+        <TreeView.TreeNode
+          key={item.id}
+          id={item.id}
+          className={nodeClass}
+          label={<span className="global-tree-nav__separator-line" aria-hidden="true" />}
+          onSelect={(event) => {
+            event.preventDefault()
+          }}
+        />
+      )
+    }
 
     if (item.children?.length) {
       return (
@@ -655,7 +681,7 @@ export function GlobalTreeNav({
   const pageKey = pageKeyFromPathname(location.pathname) ?? NODE_PAGE_KEYS.home
   const { topologyNodes, viewedNodeId, nodeTopologyQuery } = useNodePageContext(pageKey)
   const setViewedNode = useViewedNodeStore((state) => state.setViewedNode)
-  const [expandedIds, setExpandedIds] = useState<string[]>(() => readExpandedIds())
+  const [expandedIds, setExpandedIds] = useState<string[]>(() => readPersisted(GLOBAL_TREE_EXPANDED_KEY))
   const [nodeSelectorOpen, setNodeSelectorOpen] = useState(false)
   const pinnedDeviceIds = usePinnedDevices()
   const clusterRuntimeStateQuery = useClusterSnapshotRuntimeLiveState({ refetchInterval: false })
@@ -702,14 +728,7 @@ export function GlobalTreeNav({
   }, [topologyNodes])
 
   useEffect(() => {
-    if (typeof window === 'undefined') {
-      return
-    }
-    try {
-      window.localStorage.setItem(GLOBAL_TREE_STORAGE_KEY, JSON.stringify(expandedIds))
-    } catch {
-      // Ignore storage failures in restricted browser contexts.
-    }
+    writePersisted(GLOBAL_TREE_EXPANDED_KEY, expandedIds)
   }, [expandedIds])
 
   useEffect(() => {
