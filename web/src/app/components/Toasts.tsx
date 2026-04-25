@@ -14,6 +14,7 @@ import { audioApi } from '../../map2/clients/audio'
 import { midiHubApi } from '../../map2/api'
 import type { SnapshotRuntimeDisplayState, SnapshotRuntimeLiveState } from '../../map2/types'
 import { withNodeQuery } from '../utils/clusterTransport'
+import { readPersisted, writePersisted, type PersistedKey } from '../utils/persistedState'
 import { buildSnapshotActivationFailureStageToast } from '../utils/snapshotActivationToast'
 import { StageChyronCard, type ChyronLiveState } from './StageChyronCard'
 import { StageDateline, StageChyronStrap, StageEventTicker, StageMidiPanel, type StageMidiEvent, type TickerEvent } from './StageMissionChrome'
@@ -1549,6 +1550,13 @@ function shouldMountStageViewport(pathname: string): boolean {
   )
 }
 
+type HeartbeatDensity = 'compact' | 'comfortable' | 'spacious'
+const HEARTBEAT_DENSITY_KEY: PersistedKey<HeartbeatDensity> = {
+  storageKey: 'map2_heartbeat_density',
+  fallback: 'comfortable',
+  parse: (raw) => (raw === 'compact' || raw === 'spacious' || raw === 'comfortable' ? raw : undefined),
+}
+
 function StageNotificationViewportGate() {
   const location = useLocation()
   if (!shouldMountStageViewport(location.pathname)) {
@@ -1563,18 +1571,13 @@ function StageNotificationViewport() {
   const navigate = useNavigate()
   const bannerRef = useRef<HTMLDivElement | null>(null)
   const [liveSnapshotCollapsed, setLiveSnapshotCollapsed] = useState(false)
-  // Slice I — heartbeat density toggle (persisted to localStorage)
-  const [heartbeatDensity, setHeartbeatDensity] = useState<'compact' | 'comfortable' | 'spacious'>(() => {
-    if (typeof window === 'undefined') return 'comfortable'
-    const saved = window.localStorage.getItem('map2_heartbeat_density')
-    return saved === 'compact' || saved === 'spacious' ? saved : 'comfortable'
-  })
+  // Slice I — heartbeat density toggle (persisted via persistedState helper).
+  const [heartbeatDensity, setHeartbeatDensity] = useState<HeartbeatDensity>(() => readPersisted(HEARTBEAT_DENSITY_KEY))
   const cycleHeartbeatDensity = useCallback(() => {
     setHeartbeatDensity((prev) => {
-      const next = prev === 'comfortable' ? 'compact' : prev === 'compact' ? 'spacious' : 'comfortable'
-      if (typeof window !== 'undefined') {
-        window.localStorage.setItem('map2_heartbeat_density', next)
-      }
+      const next: HeartbeatDensity =
+        prev === 'comfortable' ? 'compact' : prev === 'compact' ? 'spacious' : 'comfortable'
+      writePersisted(HEARTBEAT_DENSITY_KEY, next)
       return next
     })
   }, [])

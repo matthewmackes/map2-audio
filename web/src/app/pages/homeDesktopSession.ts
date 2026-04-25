@@ -1,3 +1,5 @@
+import { clearPersisted, readPersisted, writePersisted, type PersistedKey } from '../utils/persistedState'
+
 export const HOME_DESKTOP_SESSION_STORAGE_KEY = 'map2:desktop-session'
 
 export interface HomeDesktopSessionState {
@@ -11,29 +13,18 @@ function isObject(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null
 }
 
-export function readHomeDesktopSession(): HomeDesktopSessionState | null {
-  if (typeof window === 'undefined') {
-    return null
-  }
-
+function parseStoredSession(raw: string): HomeDesktopSessionState | undefined {
   try {
-    const raw = window.localStorage.getItem(HOME_DESKTOP_SESSION_STORAGE_KEY)
-    if (!raw) {
-      return null
-    }
-
     const parsed = JSON.parse(raw) as unknown
     if (!isObject(parsed) || typeof parsed.bootCompletedAt !== 'string') {
-      return null
+      return undefined
     }
-
     const runningRoutes = Array.isArray(parsed.runningRoutes)
       ? parsed.runningRoutes.filter((route): route is string => typeof route === 'string' && route.startsWith('/'))
       : []
     const currentRoute = typeof parsed.currentRoute === 'string' && parsed.currentRoute.startsWith('/')
       ? parsed.currentRoute
       : '/'
-
     return {
       version: 2,
       bootCompletedAt: parsed.bootCompletedAt,
@@ -41,16 +32,26 @@ export function readHomeDesktopSession(): HomeDesktopSessionState | null {
       currentRoute,
     }
   } catch {
-    return null
+    return undefined
   }
 }
 
-export function writeHomeDesktopSession(state: HomeDesktopSessionState): void {
-  if (typeof window === 'undefined') {
-    return
-  }
+// Session uses null-as-fallback (callers depend on null to detect "no session
+// recorded yet" — see shouldShowHomeBootSplash). PersistedKey<T | null> keeps
+// that contract while routing through the typed helper.
+const HOME_DESKTOP_SESSION_KEY: PersistedKey<HomeDesktopSessionState | null> = {
+  storageKey: HOME_DESKTOP_SESSION_STORAGE_KEY,
+  fallback: null,
+  parse: (raw) => parseStoredSession(raw) ?? null,
+  serialize: (value) => (value === null ? '' : JSON.stringify(value)),
+}
 
-  window.localStorage.setItem(HOME_DESKTOP_SESSION_STORAGE_KEY, JSON.stringify(state))
+export function readHomeDesktopSession(): HomeDesktopSessionState | null {
+  return readPersisted(HOME_DESKTOP_SESSION_KEY)
+}
+
+export function writeHomeDesktopSession(state: HomeDesktopSessionState): void {
+  writePersisted(HOME_DESKTOP_SESSION_KEY, state)
 }
 
 export function completeHomeDesktopBoot(now = new Date()): HomeDesktopSessionState {
@@ -84,11 +85,7 @@ export function updateHomeDesktopSession(
 }
 
 export function clearHomeDesktopSession(): void {
-  if (typeof window === 'undefined') {
-    return
-  }
-
-  window.localStorage.removeItem(HOME_DESKTOP_SESSION_STORAGE_KEY)
+  clearPersisted(HOME_DESKTOP_SESSION_KEY)
 }
 
 export function reloadHomeDesktopShell(): void {

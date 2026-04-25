@@ -1,34 +1,45 @@
 import { Tab, TabList, TabPanel, TabPanels, Tabs } from '@carbon/react'
 import { useCallback, useEffect, useState } from 'react'
 
+import { clearPersisted, readPersisted, writePersisted, type PersistedKey } from '../../utils/persistedState'
 import { EventFeedTab } from './EventFeedTab'
 import { WebSshTab } from './WebSshTab'
 import './ApiWebhooksPage.css'
 
-const STORAGE_KEY = 'map2_midpoint_active_tab'
-const LEGACY_STORAGE_KEY = 'map2_api_webhooks_active_tab'
 const TAB_IDS = ['event-feed', 'web-ssh'] as const
 type TabId = (typeof TAB_IDS)[number]
 
-function isTabId(value: string | null): value is TabId {
+function isTabId(value: string | null | undefined): value is TabId {
   return value === 'event-feed' || value === 'web-ssh'
 }
 
+const ACTIVE_TAB_KEY: PersistedKey<TabId> = {
+  storageKey: 'map2_midpoint_active_tab',
+  fallback: 'event-feed',
+  parse: (raw) => (isTabId(raw) ? raw : undefined),
+}
+const LEGACY_ACTIVE_TAB_KEY: PersistedKey<TabId> = {
+  storageKey: 'map2_api_webhooks_active_tab',
+  fallback: 'event-feed',
+  parse: (raw) => (isTabId(raw) ? raw : undefined),
+}
+
 function readStoredTab(): TabId {
-  if (typeof window === 'undefined') {
-    return 'event-feed'
-  }
-  const stored = window.localStorage.getItem(STORAGE_KEY) ?? window.localStorage.getItem(LEGACY_STORAGE_KEY)
-  return isTabId(stored) ? stored : 'event-feed'
+  // Prefer the current key; only fall back to the legacy key if the current
+  // value is missing (we can't tell missing from default through the helper,
+  // so re-read raw for the migration path then drop the legacy entry).
+  const current = typeof window !== 'undefined' ? window.localStorage.getItem(ACTIVE_TAB_KEY.storageKey) : null
+  if (isTabId(current)) return current
+  const legacy = readPersisted(LEGACY_ACTIVE_TAB_KEY)
+  return legacy
 }
 
 export function ApiWebhooksPage() {
   const [activeTab, setActiveTab] = useState<TabId>(() => readStoredTab())
 
   useEffect(() => {
-    if (typeof window === 'undefined') return
-    window.localStorage.setItem(STORAGE_KEY, activeTab)
-    window.localStorage.removeItem(LEGACY_STORAGE_KEY)
+    writePersisted(ACTIVE_TAB_KEY, activeTab)
+    clearPersisted(LEGACY_ACTIVE_TAB_KEY)
   }, [activeTab])
 
   const handleChange = useCallback(({ selectedIndex }: { selectedIndex: number }) => {

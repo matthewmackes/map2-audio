@@ -17,6 +17,7 @@
 import { useState, useCallback, useMemo, useRef, useEffect } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useToasts } from '../Toasts'
+import { readPersisted, writePersisted, type PersistedKey } from '../../utils/persistedState'
 import { EmptyState } from '../shared/EmptyState'
 import { LoadingState } from '../shared/LoadingState'
 import {
@@ -61,7 +62,15 @@ import {
 
 // ── Constants ────────────────────────────────────────────────────────────────
 
-const TAB_STORAGE_KEY = 'map2_audio_nodes_modal_tab'
+const TAB_STORAGE_KEY: PersistedKey<number> = {
+  storageKey: 'map2_audio_nodes_modal_tab',
+  fallback: 0,
+  parse: (raw) => {
+    const parsed = Number.parseInt(raw, 10)
+    return Number.isFinite(parsed) ? parsed : undefined
+  },
+  serialize: (value) => String(value),
+}
 const PAGE_SIZES = [5, 10, 20]
 
 const API_BASE = (() => {
@@ -833,18 +842,11 @@ export function AudioNodesModal({ open, onClose }: AudioNodesModalProps) {
   const queryClient = useQueryClient()
 
   // Persist last-viewed tab
-  const [tabIndex, setTabIndex] = useState<number>(() => {
-    try { return parseInt(localStorage.getItem(TAB_STORAGE_KEY) ?? '0', 10) || 0 }
-    catch { return 0 }
-  })
+  const [tabIndex, setTabIndex] = useState<number>(() => readPersisted(TAB_STORAGE_KEY))
 
   const saveTab = (idx: number) => {
     setTabIndex(idx)
-    try {
-      localStorage.setItem(TAB_STORAGE_KEY, String(idx))
-    } catch {
-      // Ignore storage writes when the browser blocks localStorage.
-    }
+    writePersisted(TAB_STORAGE_KEY, idx)
   }
 
   // Queries — only fetch when modal is open
