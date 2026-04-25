@@ -4531,6 +4531,13 @@
   justify-content: space-between;
 }
 
+/* When the Snapshot Management hero is rendering inside the body of the
+   bottom editor, the header above duplicates the same eyebrow + title.
+   Collapse it to nothing in that case so the hero owns the chrome. */
+.juce-grid-page__bottom-editor-header.is-hero-only {
+  display: none;
+}
+
 .juce-grid-page__bottom-editor-identity {
   min-width: 0;
   flex: 1 1 auto;
@@ -4735,8 +4742,11 @@
   gap: 1rem;
 }
 
+/* Snapshot Management hero spans the full width of the inspector row so the
+   eyebrow/title/meta + grouped action cluster read as a single unit. The
+   secondary cards (wizard, active-channel rail, morph) flow underneath. */
 .juce-grid-page__snapshot-inspector-row > .juce-grid-page__snapshot-inspector-controls {
-  flex: 1 1 auto;
+  flex: 1 1 100%;
   min-inline-size: 0;
 }
 
@@ -4758,29 +4768,71 @@
 }
 
 .juce-grid-page__snapshot-inspector-controls {
-  display: flex;
-  flex-wrap: wrap;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 1.125rem;
   align-items: center;
-  justify-content: space-between;
-  gap: 1rem;
   min-block-size: 6.5rem;
-  padding: 1rem;
-  border: 1px dashed color-mix(in srgb, var(--cds-border-subtle, var(--border)) 72%, var(--cds-link-primary, #0f62fe));
-  background:
-    linear-gradient(135deg, color-mix(in srgb, var(--cds-link-primary, #0f62fe) 8%, transparent), transparent 60%),
-    color-mix(in srgb, var(--cds-layer, #161616) 92%, #050505);
+  padding: 0.875rem 1.125rem;
+  border: 1px solid var(--cds-border-subtle-01, var(--cds-border-subtle, var(--border)));
+  border-radius: 12px;
+  /* Mirrors the design's mgmt-head linear gradient: subtle elevation lift
+     between two layer tones, no accent overlay. */
+  background: linear-gradient(
+    180deg,
+    var(--cds-layer-02, color-mix(in srgb, var(--cds-layer, #1c2129) 90%, #0b0d10)),
+    var(--cds-layer-01, color-mix(in srgb, var(--cds-layer, #161a21) 96%, #050505))
+  );
 }
 
 .juce-grid-page__snapshot-inspector-controls-copy {
   display: flex;
-  flex: 1 1 28rem;
   min-width: 0;
   flex-direction: column;
-  gap: 0.5rem;
+  gap: 0.375rem;
 }
 
-.juce-grid-page__snapshot-inspector-controls-tags,
-.juce-grid-page__snapshot-inspector-controls-actions {
+/* SNAPSHOT MANAGEMENT eyebrow — small caps mono label above the title. */
+.juce-grid-page__snapshot-mgmt-eyebrow {
+  margin: 0;
+  font-family: 'IBM Plex Mono', ui-monospace, monospace;
+  font-size: 0.625rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--cds-text-secondary, #b3bcc9);
+}
+
+/* Big live-snapshot title — replaces the previous placeholder-style heading. */
+.juce-grid-page__snapshot-mgmt-title {
+  margin: 0;
+  font-size: 1.125rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  color: var(--cds-text-primary, #f4f4f4);
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+.juce-grid-page__snapshot-mgmt-title.is-empty {
+  font-weight: 500;
+  font-style: italic;
+  color: var(--cds-text-secondary, #b3bcc9);
+}
+
+/* Mono meta line — N CHAINS · UPDATED <time> when a snapshot is loaded,
+   or the idle copy when the engine is empty. */
+.juce-grid-page__snapshot-mgmt-meta {
+  margin: 0.125rem 0 0;
+  font-family: 'IBM Plex Mono', ui-monospace, monospace;
+  font-size: 0.6875rem;
+  letter-spacing: 0.06em;
+  color: var(--cds-text-secondary, #7c8593);
+}
+.juce-grid-page__snapshot-mgmt-meta.is-idle {
+  color: var(--cds-text-disabled, #525a67);
+}
+
+.juce-grid-page__snapshot-inspector-controls-tags {
   display: flex;
   flex-wrap: wrap;
   align-items: center;
@@ -4788,8 +4840,34 @@
 }
 
 .juce-grid-page__snapshot-inspector-controls-actions {
-  flex: 0 1 38rem;
+  display: flex;
+  align-items: center;
+  gap: 0.875rem;
   justify-content: flex-end;
+}
+
+/* Vertical divider between the icon-row pill and the primary button trio. */
+.juce-grid-page__snapshot-mgmt-divider {
+  display: inline-block;
+  inline-size: 1px;
+  block-size: 1.5rem;
+  background: var(--cds-border-subtle-01, var(--cds-border-subtle, var(--border)));
+}
+
+.juce-grid-page__snapshot-mgmt-primary {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+@media (max-width: 960px) {
+  .juce-grid-page__snapshot-inspector-controls {
+    grid-template-columns: minmax(0, 1fr);
+  }
+  .juce-grid-page__snapshot-inspector-controls-actions {
+    justify-content: flex-start;
+    flex-wrap: wrap;
+  }
 }
 
 .juce-grid-page__snapshot-inspector-workspace-actions {

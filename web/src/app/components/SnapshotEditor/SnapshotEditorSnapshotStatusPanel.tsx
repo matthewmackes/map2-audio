@@ -5,6 +5,13 @@ import { useMemo, type KeyboardEvent } from 'react'
 import type { AuthoritativeAudioState, SnapshotDetail, SnapshotDraftData, SnapshotRuntimeLiveState } from '../../../map2/types'
 import type { SnapshotGoLiveState } from '../../utils/snapshotGoLiveState'
 import type { SnapshotLiveBadgeState } from '../../hooks/useSnapshotReconciliation'
+import { formatSnapshotLastUsedValue } from '../../utils/snapshotLastUsed'
+
+function formatRelativeTimestamp(value: string | null | undefined): string {
+  if (!value) return ''
+  const result = formatSnapshotLastUsedValue(value)
+  return result === 'Never' ? '' : result
+}
 
 interface FlowSlotRef {
   id: string
@@ -449,6 +456,19 @@ export function SnapshotEditorSnapshotInspectorControls({
     [authoritativeAudioState, liveSnapshot],
   )
   const snapshotTitle = liveSnapshot?.name ?? 'No live snapshot loaded'
+  const hasLiveSnapshot = Boolean(liveSnapshot)
+  // Meta line for the management hero. Only shows tokens we actually have on
+  // the snapshot — never synthesize a SIZE / BLOCKS value when the API doesn't
+  // expose it. CHAIN_COUNT and UPDATED_AT are first-class on SnapshotDetail.
+  const metaTokens: string[] = []
+  if (liveSnapshot && typeof liveSnapshot.chain_count === 'number') {
+    metaTokens.push(`${liveSnapshot.chain_count} ${liveSnapshot.chain_count === 1 ? 'CHAIN' : 'CHAINS'}`)
+  }
+  if (liveSnapshot?.updated_at) {
+    const relative = formatRelativeTimestamp(liveSnapshot.updated_at)
+    if (relative) metaTokens.push(`UPDATED ${relative.toUpperCase()}`)
+  }
+  const idleMetaText = 'ENGINE IDLE — LOAD OR CREATE A SNAPSHOT TO BEGIN'
   const workspaceActions = [
     {
       id: 'signal-grid' as const,
@@ -493,10 +513,20 @@ export function SnapshotEditorSnapshotInspectorControls({
   ].filter((action) => Boolean(action.onClick))
 
   return (
-    <Tile className="juce-grid-page__snapshot-inspector-controls" aria-label="Snapshot settings">
+    <Tile className="juce-grid-page__snapshot-inspector-controls" aria-label="Snapshot management">
+      {/* Left column — eyebrow / live name / status row / meta line. Mirrors
+          the design's mgmt-head left block: small caps eyebrow above the
+          large snapshot title, status pill row underneath, mono meta line
+          at the bottom. Empty-state title uses italic muted copy. */}
       <div className="juce-grid-page__snapshot-inspector-controls-copy">
-        <p className="juce-grid-page__dense-card-kicker">Snapshot settings</p>
-        <h3 className="juce-grid-page__selected-block-placeholder-heading">{snapshotTitle}</h3>
+        <p className="juce-grid-page__snapshot-mgmt-eyebrow">Snapshot Management</p>
+        <h3
+          className={`juce-grid-page__snapshot-mgmt-title${
+            hasLiveSnapshot ? '' : ' is-empty'
+          }`}
+        >
+          {snapshotTitle}
+        </h3>
         <div className="juce-grid-page__snapshot-inspector-controls-tags">
           <Tag
             type={
@@ -540,7 +570,17 @@ export function SnapshotEditorSnapshotInspectorControls({
             </Tag>
           ) : null}
         </div>
+        <p
+          className={`juce-grid-page__snapshot-mgmt-meta${
+            hasLiveSnapshot ? '' : ' is-idle'
+          }`}
+        >
+          {hasLiveSnapshot && metaTokens.length > 0 ? metaTokens.join(' · ') : idleMetaText}
+        </p>
       </div>
+      {/* Right column — grouped icon row, divider, then three primary buttons.
+          Mirrors the design's mgmt-actions: bordered icon-row pill (six glanceable
+          workspace destinations) + divider + the canonical Publish / Open / New trio. */}
       <div className="juce-grid-page__snapshot-inspector-controls-actions">
         {workspaceActions.length > 0 ? (
           <div className="juce-grid-page__snapshot-inspector-workspace-actions" aria-label="Snapshot workspace destinations">
@@ -564,39 +604,42 @@ export function SnapshotEditorSnapshotInspectorControls({
             })}
           </div>
         ) : null}
-        {onOpenProgressModal ? (
-          <Button
-            size="sm"
-            kind="secondary"
-            renderIcon={SettingsAdjust}
-            className="juce-grid-page__snapshot-status-config-button"
-            onClick={onOpenProgressModal}
-            disabled={!liveSnapshot}
-          >
-            Publish to live
-          </Button>
-        ) : null}
-        {onOpenSnapshots ? (
-          <Button
-            size="sm"
-            kind="secondary"
-            renderIcon={Folder}
-            onClick={onOpenSnapshots}
-          >
-            Open Snapshots
-          </Button>
-        ) : null}
-        {onCreateSnapshot ? (
-          <Button
-            size="sm"
-            kind="primary"
-            renderIcon={Add}
-            onClick={onCreateSnapshot}
-            disabled={createSnapshotPending}
-          >
-            {createSnapshotPending ? 'Creating…' : 'New Snapshot'}
-          </Button>
-        ) : null}
+        <span className="juce-grid-page__snapshot-mgmt-divider" aria-hidden />
+        <div className="juce-grid-page__snapshot-mgmt-primary">
+          {onOpenProgressModal ? (
+            <Button
+              size="sm"
+              kind="secondary"
+              renderIcon={Launch}
+              className="juce-grid-page__snapshot-status-config-button"
+              onClick={onOpenProgressModal}
+              disabled={!liveSnapshot}
+            >
+              Publish to live
+            </Button>
+          ) : null}
+          {onOpenSnapshots ? (
+            <Button
+              size="sm"
+              kind="secondary"
+              renderIcon={Folder}
+              onClick={onOpenSnapshots}
+            >
+              Open Snapshots
+            </Button>
+          ) : null}
+          {onCreateSnapshot ? (
+            <Button
+              size="sm"
+              kind="primary"
+              renderIcon={Add}
+              onClick={onCreateSnapshot}
+              disabled={createSnapshotPending}
+            >
+              {createSnapshotPending ? 'Creating…' : 'New Snapshot'}
+            </Button>
+          ) : null}
+        </div>
       </div>
     </Tile>
   )

@@ -8486,7 +8486,14 @@ export function SnapshotEditorPage() {
           aria-hidden={bottomEditorOpen || bottomEditorShowsSnapshotInspector ? undefined : true}
         >
           <Layer className={`juce-grid-page__bottom-editor-panel ${bottomEditorOpen ? 'is-open' : 'is-closed'}`}>
-            <div className="juce-grid-page__bottom-editor-header">
+            {/* Suppress the redundant top-of-panel kicker/heading/subtitle when
+                we're showing the Snapshot Management hero — the hero now carries
+                all of that copy and pinning a second header here is duplication. */}
+            <div
+              className={`juce-grid-page__bottom-editor-header${
+                bottomEditorShowsSnapshotInspector && !bottomEditorOpen ? ' is-hero-only' : ''
+              }`}
+            >
               <div className="juce-grid-page__bottom-editor-identity">
                 <div
                   className={`juce-grid-page__bottom-editor-icon ${selectedPlugin?.bypassed ? 'is-bypassed' : ''}`}
@@ -8564,6 +8571,9 @@ export function SnapshotEditorPage() {
                 </div>
               ) : bottomEditorShowsSnapshotInspector ? (
                 <div className="juce-grid-page__snapshot-inspector-row">
+                  {/* Snapshot Management hero — eyebrow / live name / status / meta line on the left,
+                      grouped icon row + divider + Publish/Open/New trio on the right. */}
+                  {snapshotInspectorControls}
                   {activeSnapshot && snapshotsDirty ? (
                     <PublishReadyBanner
                       snapshotName={activeSnapshot.name}
@@ -8640,7 +8650,6 @@ export function SnapshotEditorPage() {
                     </div>
                   )}
                   {pedalboardBuildWizard}
-                  {snapshotInspectorControls}
                   {activeSnapshot ? (
                     <div className="juce-grid-page__snapshot-inspector-morph" aria-label="A/B/C/D morph">
                       <p className="juce-grid-page__dense-card-kicker">Morph</p>
