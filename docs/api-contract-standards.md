@@ -138,3 +138,57 @@ Success response:
   "xruns": 0
 }
 ```
+
+---
+
+## TypeScript contract generation (T2455)
+
+Snapshot request/response payload types are generated from the live Pydantic
+models so backend renames cannot silently drift away from the TS surface.
+
+**Generator**: `scripts/generate_typescript_contracts.py`
+
+  - Default: rewrites `web/src/map2/clients/snapshots.generated.ts` from the
+    backend's `/openapi.json`. Tries `localhost:8080` first; falls back to
+    importing the FastAPI app in-process.
+  - `--check`: regenerates to a temp file and compares; non-zero exit if the
+    committed file would change. Use this in CI.
+
+**npm scripts** (run from `web/`):
+
+  - `npm run generate:types` — write the file in place.
+  - `npm run verify:contracts` — CI freshness check.
+
+**Consumption surface**: `web/src/map2/clients/snapshots.contract.ts` —
+re-exports the snapshot input/output types from the generated dump. Always
+import contract types from here, not from the raw `snapshots.generated.ts`
+(which is `// @ts-nocheck` to tolerate duplicate operation ids in the
+cluster-proxy routes).
+
+**Hand-written types** in `web/src/map2/clients/snapshots.ts` and
+`web/src/app/components/SnapshotEditor/snapshotEditorState.ts` may continue
+to live alongside the generated contract — they layer rich UI state on top
+of the request payloads. Treat the generated contract as authoritative for
+**everything sent to or received from `/api/snapshots/*`**; the hand types
+are UI-state derivatives.
+
+**Updating after a backend Pydantic change**:
+
+```bash
+cd web && npm run generate:types
+```
+
+Commit the regenerated `snapshots.generated.ts` in the same commit as the
+Python change so the contract stays in sync.
+
+---
+
+## TypeScript contract generation (T2455)
+
+Snapshot request/response payload types are generated from the live Pydantic
+models so backend renames cannot silently drift away from the TS surface.
+
+**Generator**: `scripts/generate_typescript_contracts.py`
+
+  * Default: rewrites `web/src/map2/clients/snapshots.generated.ts` from the
+    backends
