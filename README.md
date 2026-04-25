@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1276** Python | **1257** TypeScript | **136** C++/H | **145** Docs | **2792** total commits | **3** stars | **0** forks | **0** open issues
+**1276** Python | **1257** TypeScript | **136** C++/H | **145** Docs | **2794** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`dce9c7be`](https://github.com/matthewmackes/map2-audio/commit/dce9c7beebd6fe22f6b71d2372286b1545cae12c) | refactor(maschine): T2446 — chrome polish pass per CLAUDE... | Map2 Audio | 2026-04-25 |
+| [`9a293417`](https://github.com/matthewmackes/map2-audio/commit/9a2934175afd46568b1d2bd3c64f678e72976e25) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-25 |
 | [`95ab474c`](https://github.com/matthewmackes/map2-audio/commit/95ab474cfd246bf8ee698c5c0f358fc1764ef8c0) | test(suite): T2445 — clear all pre-existing test failures... | Map2 Audio | 2026-04-25 |
 | [`82b982eb`](https://github.com/matthewmackes/map2-audio/commit/82b982ebf7fd0709f2d24b1395929686aebf0855) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-25 |
 | [`486b9e90`](https://github.com/matthewmackes/map2-audio/commit/486b9e9073fac94bb6b15da8f377cd61d53838b1) | feat(brain): T2442 — promote Brain Overview tabs to first... | Map2 Audio | 2026-04-25 |
 | [`a2b9d9b5`](https://github.com/matthewmackes/map2-audio/commit/a2b9d9b5579ebb730b68e90c9f8c793ba96bb684) | feat(midi): MIDI Assignments Walkthrough — guided wizard ... | Map2 Audio | 2026-04-25 |
 | [`548ea1b3`](https://github.com/matthewmackes/map2-audio/commit/548ea1b34dfbbe14118a52c105f26577406d0b74) | feat(midi): unified MIDI Assignments page exposes every b... | Map2 Audio | 2026-04-24 |
 | [`5600fe99`](https://github.com/matthewmackes/map2-audio/commit/5600fe99e229cea897778d5f1f86589a7bd68dfd) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-25 |
-| [`845b98d3`](https://github.com/matthewmackes/map2-audio/commit/845b98d38903e4c7523d1a1ed58a7a17b001c0af) | feat(snapshots): VERIFY phase strict-by-default (T2452) | Map2 Audio | 2026-04-24 |
-| [`726a5867`](https://github.com/matthewmackes/map2-audio/commit/726a5867223c794f06233722e3623a373e9cc309) | fix(boot): rename undefined `deployment_mode` to `canonic... | Map2 Audio | 2026-04-24 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
