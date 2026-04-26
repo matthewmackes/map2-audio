@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1285** Python | **1273** TypeScript | **136** C++/H | **145** Docs | **2823** total commits | **3** stars | **0** forks | **0** open issues
+**1285** Python | **1276** TypeScript | **136** C++/H | **145** Docs | **2825** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`c46349fa`](https://github.com/matthewmackes/map2-audio/commit/c46349fa78fcc580d953707693ce88f24d58bdbd) | T2454-C: frontend wire-in for snapshot preload pinning | Map2 Audio | 2026-04-25 |
+| [`65048cdc`](https://github.com/matthewmackes/map2-audio/commit/65048cdc8cbaee01e2e3baef7b44f79db3e2845c) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-26 |
 | [`2944550a`](https://github.com/matthewmackes/map2-audio/commit/2944550a108c437a7bced028dc465b0eb8d6a7e7) | T2454 slice 1: operator-curated pinned-snapshot warm cach... | Map2 Audio | 2026-04-25 |
 | [`35007ced`](https://github.com/matthewmackes/map2-audio/commit/35007cedf2e3cc2019a8afbcce5859265f604eee) | Fix MIDI Assignments shell title | Map2 Audio | 2026-04-25 |
 | [`4867afce`](https://github.com/matthewmackes/map2-audio/commit/4867afce5d46dce1b17718022d1c18709b2bf3b9) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-26 |
 | [`141ac311`](https://github.com/matthewmackes/map2-audio/commit/141ac3111a04a33135e76873cfce5b78ae57b442) | T2444: world-class design-language polish sweep across li... | Map2 Audio | 2026-04-25 |
 | [`55e89625`](https://github.com/matthewmackes/map2-audio/commit/55e89625c0c16e0c07c3108e3ec9062407d0caba) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-25 |
 | [`13759ac6`](https://github.com/matthewmackes/map2-audio/commit/13759ac626b26be6a6f4551e3d45de51d19dcc20) | T2443: real per-channel metering feed for Brain ConsoleView | Map2 Audio | 2026-04-25 |
-| [`0fd0ccea`](https://github.com/matthewmackes/map2-audio/commit/0fd0cceaaf44123dbadff67aec3597479cb66d9e) | audit: migrate four more localStorage sites to persistedS... | Map2 Audio | 2026-04-25 |
-| [`3b714859`](https://github.com/matthewmackes/map2-audio/commit/3b714859038d6a701d75926991086f878f7eb8e3) | audit: migrate four more localStorage sites to persistedS... | Map2 Audio | 2026-04-25 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
