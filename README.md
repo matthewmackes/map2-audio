@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1288** Python | **1278** TypeScript | **136** C++/H | **145** Docs | **2832** total commits | **3** stars | **0** forks | **0** open issues
+**1290** Python | **1278** TypeScript | **136** C++/H | **145** Docs | **2834** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`c79f2e50`](https://github.com/matthewmackes/map2-audio/commit/c79f2e50de1b593dfc20e03a38700e919dc4842f) | T2454-E: memory-pressure-aware warm-cache cap (PSI + free... | Map2 Audio | 2026-04-26 |
+| [`0ac478c5`](https://github.com/matthewmackes/map2-audio/commit/0ac478c576497b62fbb6b3f1d0bc2af0cbfcf62e) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-26 |
 | [`b1cc938c`](https://github.com/matthewmackes/map2-audio/commit/b1cc938c9128c8c4edf1d99a38af381f7c1a09b5) | T2454-B2: open per-slot adoption observability follow-up | Map2 Audio | 2026-04-26 |
 | [`9ca5de8d`](https://github.com/matthewmackes/map2-audio/commit/9ca5de8dcc1bd963e02e49e997a0f080fec57391) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-26 |
 | [`dfb6cebe`](https://github.com/matthewmackes/map2-audio/commit/dfb6cebeff0abb143e0e1c5dbb173bef616ddf78) | T2454-B: warm-path delta activation FSM + dynamic-crossfa... | Map2 Audio | 2026-04-26 |
 | [`aa44ca90`](https://github.com/matthewmackes/map2-audio/commit/aa44ca908657ab8b1ce05f9ce8b93c240ec9cdc1) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-26 |
 | [`9a1b0398`](https://github.com/matthewmackes/map2-audio/commit/9a1b03987787b291b711b781303ce6957e531f6c) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-26 |
 | [`f7328d68`](https://github.com/matthewmackes/map2-audio/commit/f7328d68aa372aa2c36224afc6dc559f64783b08) | T2454-D: per-row Pin icon retrofit on snapshot library + ... | Map2 Audio | 2026-04-25 |
-| [`a96edf78`](https://github.com/matthewmackes/map2-audio/commit/a96edf788cdf582a68c947e21684cd4369da9aef) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-26 |
-| [`c46349fa`](https://github.com/matthewmackes/map2-audio/commit/c46349fa78fcc580d953707693ce88f24d58bdbd) | T2454-C: frontend wire-in for snapshot preload pinning | Map2 Audio | 2026-04-25 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
