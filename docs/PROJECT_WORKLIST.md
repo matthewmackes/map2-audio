@@ -22,6 +22,36 @@ Last updated: 2026-04-26 EDT - Claude: SHIPPED.
 
 ---
 
+ID: T2458
+Status: [✓] Done
+Title: List required connected test devices and move external-device jobs to the blocked tail
+Description:
+- Goal / acceptance criteria: Record the concrete device inventory required to clear the remaining hardware-backed testing tasks, reorder the pending execution sequence so the external-device-specific jobs sit at the end, and explicitly keep those end-of-list jobs blocked until the devices are physically connected and visible.
+- Why it matters: The remaining closure work is now mostly HIL. The lab needs one canonical list of what must be connected before each pass, plus a clear split between bench-ready work and external-device-dependent work that must stay blocked until the gear is attached.
+- Dependencies: `T055`, `T066`, `T219`, `T563`, `T203-subK`, `T099`.
+- Estimated effort: Low.
+- Required outputs: connected-device inventory, reordered testing sequence, and explicit blocked-tail notes for the external-device jobs.
+Subtasks: None
+Assigned to: Codex
+Last updated: 2026-04-26 12:03 EDT - Codex
+- Completion notes:
+  - Recorded the required connected-device inventory for the remaining test closures:
+    - Core host/runtime: MAP2 test host with backend on `:8080`, frontend on `:3000`, reachable JACK/PipeWire, and ALSA sequencer visibility where MIDI HIL is required.
+    - Audio-latency path (`T055`): EDIROL/Roland UA-1000, active UA-1000 JACK ports, and the physical analog loopback patch cable on the measured I/O pair.
+    - MIDI Hub adapter path (`T066-subQ`, `T066-subR`): one or more class-compliant USB-to-DIN adapters under test, DIN-side MIDI endpoint or loop target, and any required network-session target for optional SysEx smoke-send.
+    - Drum-machine HIL (`T219-F`): external MIDI input source or controller capable of live pad/note injection into the drum path, with the real audio callback path running so metering and transport behavior can be observed.
+    - Ground Control Pro HIL (`T563`): physical Voodoo Lab Ground Control Pro plus working MIDI input/output cabling and ports visible to the Ground Control Pro transport.
+    - Tesira HIL (`T203-subK`): live Tesira system on the network, reachable over the configured Tesira control transport, with the intended instance tags/presets available for validation.
+    - Dynamic-response study (`T099`): reference amp, competitor modeler, recording interface, reamp/capture path, monitoring path, and evaluator listening positions.
+  - Reordered the remaining execution sequence so external-device-specific jobs are at the end:
+    - 1. `T055` UA-1000 analog loopback latency matrix.
+    - 2. `T219-F` drum-machine full-stack HIL with live MIDI input and metering verification.
+    - 3. `T099` dynamic-response recording/evaluator session once the core audio path is proven stable.
+    - 4. Blocked external-device tail: `T066-subQ` USB-to-DIN adapter qualification, `T066-subR` MIDI Hub full adapter-backed soak/qualification, `T563` Ground Control Pro hardware verification, `T203-subK` Tesira hardware integration.
+  - Held the external-device tail explicitly blocked: those jobs do not move until the required third-party hardware is attached, enumerated, and confirmed reachable by the existing precheck/runbook paths.
+
+---
+
 ID: T2456
 Status: [✓] Done
 Title: Reorder the global tree headings and add primary-theme separator rows
