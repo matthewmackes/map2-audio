@@ -320,6 +320,32 @@ class StateAuthorityActivationService:
         if not applied:
             return None
 
+        # T2454-B2: read per-call adoption stats from the engine. The C++
+        # `loadGraphDocument` records `reused.size()` (instances pre-loaded
+        # in the host, including pre-staged ones from the orchestrator) and
+        # `newlyLoaded.size()` (slots that required a fresh `loadPlugin()`).
+        # Defensive: if the engine binding doesn't yet have the method
+        # (running against an older build), default to None and let the
+        # FSM observability fields stay None rather than fabricating
+        # numbers.
+        engine_load_stats: dict[str, Any] | None = None
+        get_stats = getattr(engine, "get_last_graph_load_stats", None)
+        if callable(get_stats):
+            try:
+                stats = get_stats()
+                if isinstance(stats, dict):
+                    engine_load_stats = {
+                        "plugins_total": int(stats.get("plugins_total") or 0),
+                        "plugins_adopted": int(stats.get("plugins_adopted") or 0),
+                        "plugins_freshly_loaded": int(stats.get("plugins_freshly_loaded") or 0),
+                    }
+            except Exception as exc:
+                logger.debug(
+                    "T2454-B2 engine adoption stats read failed for snapshot %s: %s",
+                    snapshot.id, exc,
+                )
+                engine_load_stats = None
+
         graph = document.get("graph") if isinstance(document.get("graph"), dict) else {}
         chains = graph.get("chains") if isinstance(graph.get("chains"), list) else []
         plugin_count = 0
@@ -340,6 +366,9 @@ class StateAuthorityActivationService:
             "bypass_count": bypass_count,
             "used_independent_crossfade": True,
             "max_crossfade_ms": max_crossfade_ms,
+            # T2454-B2: per-slot adoption observability. None if the engine
+            # binding predates the get_last_graph_load_stats method.
+            "engine_load_stats": engine_load_stats,
         }
 
     @staticmethod
@@ -1061,23 +1090,42 @@ class StateAuthorityActivationService:
                 activation_topology_metrics["before"],
                 await self.get_audio_engine().get_topology_mutation_stats(),
             )
+            # T2454-B2: thread per-slot adoption stats into the activation
+            # intent extra so ops can attribute warm-vs-cold instance reuse
+            # on a per-activation basis. None if the engine binding predates
+            # the get_last_graph_load_stats method (graceful degrade).
+            engine_load_stats = (
+                graph_document_apply_result.get("engine_load_stats")
+                if graph_document_apply_result is not None
+                else None
+            )
+            applying_extra = {
+                "params_applied": params_applied,
+                "bypass_applied": bypass_applied,
+                # T2454-B: activation observability — operator + ops
+                # can attribute warm-path benefit honestly.
+                "warm_path": warm_path_outcome,
+                "max_crossfade_ms": int(
+                    graph_document_apply_result.get("max_crossfade_ms")
+                    if graph_document_apply_result is not None and graph_document_apply_result.get("max_crossfade_ms") is not None
+                    else 500
+                ),
+            }
+            if engine_load_stats is not None:
+                # Surface as both nested dict (for structured consumers) and
+                # flat ints (for log greppers / quick eyeballs).
+                applying_extra["engine_load_stats"] = engine_load_stats
+                applying_extra["plugins_total"] = int(engine_load_stats.get("plugins_total") or 0)
+                applying_extra["plugins_adopted"] = int(engine_load_stats.get("plugins_adopted") or 0)
+                applying_extra["plugins_freshly_loaded"] = int(
+                    engine_load_stats.get("plugins_freshly_loaded") or 0
+                )
             intent = await runtime_state_service.mark_intent_phase(
                 intent=intent,
                 phase="APPLYING",
                 status="completed",
                 note="Engine apply finished.",
-                extra={
-                    "params_applied": params_applied,
-                    "bypass_applied": bypass_applied,
-                    # T2454-B: activation observability — operator + ops
-                    # can attribute warm-path benefit honestly.
-                    "warm_path": warm_path_outcome,
-                    "max_crossfade_ms": int(
-                        graph_document_apply_result.get("max_crossfade_ms")
-                        if graph_document_apply_result is not None and graph_document_apply_result.get("max_crossfade_ms") is not None
-                        else 500
-                    ),
-                },
+                extra=applying_extra,
             )
 
             activated_at = self._utcnow()

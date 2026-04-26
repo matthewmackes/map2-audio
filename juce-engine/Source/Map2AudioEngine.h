@@ -386,6 +386,21 @@ public:
         const std::string& graphDocumentJson,
         bool useIndependentCrossfade = false,
         int maxCrossfadeMs = 500);
+
+    // T2454-B2: per-call adoption stats from the most-recent loadGraphDocument.
+    // - pluginsTotal: total plugin slots in the requested document
+    // - pluginsAdopted: slots that reused an already-loaded instance (including
+    //   pre-staged ones from SnapshotPreloadOrchestrator)
+    // - pluginsFreshlyLoaded: slots that required a fresh loadPlugin() call
+    // The orchestrator's claim() carries the staged_instance_ids; this struct
+    // tells the FSM how many of them the engine actually adopted.
+    struct GraphLoadStats {
+        int pluginsTotal = 0;
+        int pluginsAdopted = 0;
+        int pluginsFreshlyLoaded = 0;
+    };
+    GraphLoadStats getLastGraphLoadStats() const;
+
     bool clearMorphEndpoints();
     bool setMorphEndpoint(const std::string& cornerId, const std::string& graphDocumentJson);
     bool setMorphPosition(float x, float y);
@@ -1654,6 +1669,11 @@ private:
     int nextIndependentGraphCrossfadeId_ = 1;
     mutable std::mutex morphStateMutex_;
     QuadMorphState quadMorphState_;
+    // T2454-B2: stats from the most-recent loadGraphDocument call —
+    // populated at the end of each call and consulted by Python to attribute
+    // warm-vs-cold instance reuse on a per-activation basis.
+    mutable std::mutex graphLoadStatsMutex_;
+    GraphLoadStats lastGraphLoadStats_;
     mutable std::mutex nativeSpilloverMutex_;
     std::vector<std::shared_ptr<DelaySpilloverState>> delaySpillovers_;
     std::vector<std::shared_ptr<ShoeGazeSpilloverState>> shoegazeSpillovers_;

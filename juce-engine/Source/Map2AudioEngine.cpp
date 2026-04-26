@@ -4091,7 +4091,24 @@ bool Map2AudioEngine::loadGraphDocument(
         }
     }
 
+    // T2454-B2: record per-call adoption stats for the FSM to thread into
+    // the activation intent extra. `reused` is the set of pre-loaded
+    // instance ids the document reused (including pre-staged ones from
+    // SnapshotPreloadOrchestrator); `newlyLoaded` is the set of slots
+    // that required a fresh loadPlugin() call.
+    {
+        const std::lock_guard<std::mutex> statsLock(graphLoadStatsMutex_);
+        lastGraphLoadStats_.pluginsTotal = static_cast<int>(nextOrder.size());
+        lastGraphLoadStats_.pluginsAdopted = static_cast<int>(reused.size());
+        lastGraphLoadStats_.pluginsFreshlyLoaded = static_cast<int>(newlyLoaded.size());
+    }
+
     return true;
+}
+
+Map2AudioEngine::GraphLoadStats Map2AudioEngine::getLastGraphLoadStats() const {
+    const std::lock_guard<std::mutex> lock(graphLoadStatsMutex_);
+    return lastGraphLoadStats_;
 }
 
 bool Map2AudioEngine::clearMorphEndpoints() {

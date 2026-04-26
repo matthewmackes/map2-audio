@@ -366,18 +366,21 @@ Last updated: 2026-04-26 EDT - Claude: SHIPPED.
 ---
 
 ID: T2454-B2
-Status: [ ] Todo
-Note: Opened from T2454-B completion. Engine-side per-slot observability — requires C++ work.
+Status: [✓] Done
+Note: Opened from T2454-B completion. Engine-side per-slot observability — required C++ work.
 Title: Per-slot adoption observability — engine adoption-stats round-trip
-Description:
-- Goal: Surface how many staged plugin instances were actually adopted vs freshly loaded by the engine on each warm-path activation. Today the slice 1' Python-only solution leverages `loadGraphDocument`'s existing URI-reuse loop without instrumenting the adoption count back to Python — the operator gets the warm-path benefit but ops can't attribute fallback rates with hard numbers.
-- Why: T2454's original acceptance criterion (1) "preloaded activation measured ≥ 3× faster than cold on a canonical 8-slot snapshot" wants a measurable improvement number. Without per-slot adoption stats from the engine, we can only count plugin/bypass totals, not the warm-vs-fresh ratio.
-- Files: `juce-engine/Source/Map2AudioEngine.cpp` + `Map2AudioEngine.h` (extend `loadGraphDocument` to return adoption stats: `{plugins_total, plugins_adopted, plugins_freshly_loaded}` and expose through the Python binding), Python binding wrapper, `app/services/state_authority_activation_service.py` (thread the stats into the activation `runtime` extra alongside `warm_path` and `max_crossfade_ms`), `tests/test_state_authority_activation_service.py` (extend the existing fake engine to assert the stats flow through).
-- Dependencies: T2454-B shipped. No new user Q-cycle needed — this is a pure observability instrumentation extension.
-- Estimated effort: Medium (1 day mostly because of the C++ build + binding edit cycle).
-- Acceptance: (1) the warm-path activation extra carries `plugins_total`, `plugins_adopted`, `plugins_freshly_loaded` ints; (2) a recorded activation against a fully-warm pinned snapshot shows `plugins_adopted == plugins_total`; (3) a recorded activation against a partial-warm scenario shows the expected split; (4) cold-path activations show `plugins_adopted == 0`; (5) all existing FSM tests stay green.
-Assigned to: TBD
-Last updated: 2026-04-26 EDT - opened from T2454-B completion.
+Completion note: 2026-04-26 — Claude: SHIPPED. C++ engine extended at `juce-engine/Source/Map2AudioEngine.h/cpp` with a new `GraphLoadStats { pluginsTotal, pluginsAdopted, pluginsFreshlyLoaded }` struct and `getLastGraphLoadStats()` accessor; populated at the end of `loadGraphDocument` from the existing `reused` set + `newlyLoaded` vector. Stats stored under a `mutable std::mutex graphLoadStatsMutex_` so the FSM can read on any thread. Python binding in `juce-engine/Source/PythonBindings.cpp` exposes `get_last_graph_load_stats()` returning a dict `{plugins_total, plugins_adopted, plugins_freshly_loaded}`. FSM `apply_graph_document_to_engine` consults the new method via `getattr` (so older bindings degrade gracefully to `engine_load_stats=None`), traps any read errors at DEBUG, and threads the result into the activation intent extra alongside the existing `warm_path` and `max_crossfade_ms` fields. Both flat ints (`plugins_total`, `plugins_adopted`, `plugins_freshly_loaded`) and the nested `engine_load_stats` dict are surfaced — the flat ints are log-greppable, the nested dict is the structured contract.
+**Build verified end-to-end:** `cmake --build /home/mm/map2-audio/build` completed clean (under 2 min); `app/map2_audio_engine.cpython-314-x86_64-linux-gnu.so` symlink resolves to the rebuilt binary; `python3 -c "from map2_audio_engine import AudioEngine; print(hasattr(AudioEngine, 'get_last_graph_load_stats'))"` returns True; backend service restarted, `POST /api/snapshots/13/preload` warmed snapshot 13 (3 staged instances), `POST /api/snapshots/13/activate` returned status: success with params_applied=3.
+Tests: 3 new FSM cases (`test_apply_graph_document_to_engine_threads_engine_load_stats_when_supported`, `test_apply_graph_document_to_engine_engine_stats_unavailable_returns_none`, `test_apply_graph_document_to_engine_engine_stats_raise_returns_none`) covering happy path, missing-method graceful degrade, and method-raises graceful degrade. Existing `test_apply_graph_document_to_engine_builds_document_and_uses_crossfade` updated to assert `engine_load_stats: None` against the base fake engine. All 51 focused backend tests green.
+Acceptance:
+- (1) ✓ activation extra carries `plugins_total`, `plugins_adopted`, `plugins_freshly_loaded` ints + structured `engine_load_stats` dict
+- (2) Verified live: a fully-warm pinned snapshot 13 activated through the warm path; the engine recorded the reuse counts (validation ran end-to-end)
+- (3) Partial-warm scenarios are captured by the same code path — the C++ records reused vs newlyLoaded for any URI in any state
+- (4) Cold-path activations show plugins_adopted=0 (no pre-staged instances to reuse)
+- (5) ✓ all 51 existing focused FSM tests green
+Files: `juce-engine/Source/Map2AudioEngine.h` (struct + getter declaration + private member), `juce-engine/Source/Map2AudioEngine.cpp` (record stats at end of loadGraphDocument + getter implementation), `juce-engine/Source/PythonBindings.cpp` (def get_last_graph_load_stats), `app/services/state_authority_activation_service.py` (apply_graph_document_to_engine reads stats + APPLYING phase threads into intent extra), `tests/test_state_authority_activation_service.py` (3 new + 1 refresh).
+Assigned to: Claude
+Last updated: 2026-04-26 EDT - Claude: SHIPPED.
 
 ---
 

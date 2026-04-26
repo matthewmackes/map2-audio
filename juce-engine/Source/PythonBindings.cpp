@@ -3107,6 +3107,18 @@ PYBIND11_MODULE(map2_audio_engine, m) {
             return self.loadGraphDocument(json, useIndependentCrossfade, maxCrossfadeMs);
         }, py::arg("graph_document"), py::arg("use_independent_crossfade") = false, py::arg("max_crossfade_ms") = 500,
              "Load a State Authority graph document into the active runtime chain")
+        // T2454-B2: per-call adoption stats from the most-recent
+        // load_graph_document. The FSM consults this immediately after
+        // load_graph_document to attribute warm-vs-cold instance reuse.
+        .def("get_last_graph_load_stats", [](Map2AudioEngine& self) {
+            const auto stats = self.getLastGraphLoadStats();
+            py::dict result;
+            result["plugins_total"] = stats.pluginsTotal;
+            result["plugins_adopted"] = stats.pluginsAdopted;
+            result["plugins_freshly_loaded"] = stats.pluginsFreshlyLoaded;
+            return result;
+        }, "Return the per-call adoption stats from the most-recent "
+           "load_graph_document: {plugins_total, plugins_adopted, plugins_freshly_loaded}")
         .def("clear_morph_endpoints", &Map2AudioEngine::clearMorphEndpoints,
              "Clear all configured quad morph endpoints")
         .def("set_morph_endpoint", [](Map2AudioEngine& self, const std::string& cornerId, py::object graphDocument) {

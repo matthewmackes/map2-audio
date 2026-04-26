@@ -86,15 +86,18 @@ def test_apply_graph_document_to_engine_builds_document_and_uses_crossfade():
         )
     )
 
-    # T2454-B: result now carries the dynamically-computed max_crossfade_ms.
+    # T2454-B: result carries the dynamically-computed max_crossfade_ms.
     # This normalized fixture has no tail-bearing processors so the value is
     # the 500ms floor.
+    # T2454-B2: result also carries `engine_load_stats` — None here because
+    # the fake engine doesn't yet expose `get_last_graph_load_stats`.
     assert result == {
         "applied": True,
         "plugin_count": 2,
         "bypass_count": 1,
         "used_independent_crossfade": True,
         "max_crossfade_ms": 500,
+        "engine_load_stats": None,
     }
     assert fake_engine.calls
     document, use_independent_crossfade, max_crossfade_ms = fake_engine.calls[0]
@@ -129,6 +132,86 @@ def test_apply_graph_document_to_engine_reuses_snapshot_document_when_present():
 
     assert result["applied"] is True
     assert fake_engine.calls[0][0]["meta"]["name"] == "Stored"
+
+
+def test_apply_graph_document_to_engine_threads_engine_load_stats_when_supported():
+    """T2454-B2: when the engine binding exposes `get_last_graph_load_stats`,
+    the apply result carries the per-call adoption stats. The fake engine
+    here returns 4-of-4 adopted (a fully-warm activation)."""
+    class _StatsAwareEngine(_FakeAudioEngine):
+        def __init__(self):
+            super().__init__()
+            self._stats = {
+                "plugins_total": 4,
+                "plugins_adopted": 4,
+                "plugins_freshly_loaded": 0,
+            }
+
+        def get_last_graph_load_stats(self):
+            return dict(self._stats)
+
+    fake_engine = _StatsAwareEngine()
+    owner = SimpleNamespace(
+        state_authority_documents=SimpleNamespace(
+            build_validated_document=lambda snapshot, normalized: {"meta": {"name": "Built"}}
+        )
+    )
+    service = _build_service(fake_engine, owner=owner)
+    snapshot = SimpleNamespace(id=9, document=None)
+
+    result = asyncio.run(
+        service.apply_graph_document_to_engine(snapshot=snapshot, normalized={"chains": []})
+    )
+
+    assert result["engine_load_stats"] == {
+        "plugins_total": 4,
+        "plugins_adopted": 4,
+        "plugins_freshly_loaded": 0,
+    }
+
+
+def test_apply_graph_document_to_engine_engine_stats_unavailable_returns_none():
+    """Defensive: when the engine binding doesn't expose
+    `get_last_graph_load_stats`, the apply result reports
+    `engine_load_stats: None` rather than fabricating numbers."""
+    fake_engine = _FakeAudioEngine()  # base fake — no stats method
+    owner = SimpleNamespace(
+        state_authority_documents=SimpleNamespace(
+            build_validated_document=lambda snapshot, normalized: {"meta": {"name": "Built"}}
+        )
+    )
+    service = _build_service(fake_engine, owner=owner)
+    snapshot = SimpleNamespace(id=10, document=None)
+
+    result = asyncio.run(
+        service.apply_graph_document_to_engine(snapshot=snapshot, normalized={"chains": []})
+    )
+
+    assert result["engine_load_stats"] is None
+
+
+def test_apply_graph_document_to_engine_engine_stats_raise_returns_none():
+    """If the engine method raises (binding ABI mismatch, etc.), the FSM
+    surfaces None rather than crashing the activation."""
+    class _RaisingStatsEngine(_FakeAudioEngine):
+        def get_last_graph_load_stats(self):
+            raise RuntimeError("simulated ABI mismatch")
+
+    fake_engine = _RaisingStatsEngine()
+    owner = SimpleNamespace(
+        state_authority_documents=SimpleNamespace(
+            build_validated_document=lambda snapshot, normalized: {"meta": {"name": "Built"}}
+        )
+    )
+    service = _build_service(fake_engine, owner=owner)
+    snapshot = SimpleNamespace(id=11, document=None)
+
+    result = asyncio.run(
+        service.apply_graph_document_to_engine(snapshot=snapshot, normalized={"chains": []})
+    )
+
+    assert result["engine_load_stats"] is None
+    assert result["applied"] is True
 
 
 def test_activate_snapshot_marks_validating_phase_before_preflight_failure(monkeypatch):
