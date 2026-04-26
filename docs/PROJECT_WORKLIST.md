@@ -14247,6 +14247,7 @@ Last updated: 2026-03-29 20:28 EDT - Codex
   - Matrix runner and runbook are complete in the archive.
   - Current host audio inventory shows `Jogg USB Audio`, onboard `HDA Intel PCH` analog I/O, and HDMI playback, but no attached UA-1000.
   - Remaining blocker is specifically the UA-1000 hardware + physical loopback session, not generic ALSA device access.
+  - 2026-04-26 13:17 EDT - Codex execution attempt: host/API/web preflight passed, but `jack_lsp` still showed `Jogg USB Audio` and built-in audio with no UA-1000 ports. Ran `python3 scripts/run_t055_ua1000_loopback_matrix.py --output-dir docs/fit-for-purpose-evidence/20260426/t055-execute --duration 15 --trials 3`; runner exited `2` with `overall_status=BLOCKED`. Evidence: `docs/fit-for-purpose-evidence/20260426/t055-execute/`.
 
 ID: T099
 Status: [✗] Blocked
@@ -14263,6 +14264,7 @@ Last updated: 2026-03-16 00:00 - Codex
 - Blocked notes:
   - Protocol, analysis tooling, and evidence-draft prep are complete in the archive.
   - Remaining blocker is the live recording and evaluator session.
+  - 2026-04-26 13:17 EDT - Codex execution check: only T099 protocol/template files are present under `docs/fit-for-purpose-evidence`; no run manifest, WAV pair manifest, quantitative summary, or evaluator JSON files are staged. Task remains blocked until the live recording and evaluator session produces those artifacts.
 
 ## Repo Hygiene
 
@@ -15890,6 +15892,7 @@ Last updated: 2026-03-20 17:01 - Codex
   - Validation: `ctest --test-dir juce-engine/build-synthforge-tests -R '^synthforge_tests$' --output-on-failure` -> pass.
   - Validation: `pytest -q tests/test_drum_integration.py` -> pass.
   - Validation: `pytest -q tests/test_juce_engine_drum_native_stability.py` -> pass.
+  - 2026-04-26 13:17 EDT - Codex execution attempt: reran `pytest -q tests/test_drum_integration.py tests/test_juce_engine_drum_native_stability.py` -> PASS (`3 passed, 1 skipped`). Live drum API endpoints `/api/engine/drums/metering` and `/api/engine/drums/transport` responded, but metering was idle and ALSA showed no dedicated external drum-triggering MIDI input device beyond internal/MAP2 bridge endpoints. `T219-F` remains blocked on live external MIDI/HIL proof.
 
 ---
 

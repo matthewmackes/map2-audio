@@ -1,0 +1,58 @@
+{
+  "task_id": "T055",
+  "checked_at_utc": "2026-04-26T17:17:08Z",
+  "settings": {
+    "duration_seconds": 15,
+    "trials_per_condition": 3,
+    "host": "http://127.0.0.1:8080",
+    "measure_script": "/home/mm/map2-audio/scripts/measure_latency.sh",
+    "ua1000_pattern": "UA-1000",
+    "stabilize_seconds": 2.0
+  },
+  "preflight": {
+    "status": "BLOCKED",
+    "reason": "UA-1000 ports are absent from the current JACK graph.",
+    "ua1000_port_count": 0,
+    "jack_lsp_artifact": "jack_lsp.txt",
+    "selected_playback_port": null,
+    "selected_capture_port": null,
+    "matched_ports": []
+  },
+  "conditions": {
+    "tuned": {
+      "label": "tuned",
+      "status": "BLOCKED",
+      "reason": "Skipped because preflight failed.",
+      "trial_count_requested": 3,
+      "trial_count_measured": 0,
+      "trial_count_failed": 3,
+      "xruns_total": 0,
+      "mean_round_trip_ms": null,
+      "p95_round_trip_ms": null
+    },
+    "rollback": {
+      "label": "rollback",
+      "status": "BLOCKED",
+      "reason": "Skipped because preflight failed.",
+      "trial_count_requested": 3,
+      "trial_count_measured": 0,
+      "trial_count_failed": 3,
+      "xruns_total": 0,
+      "mean_round_trip_ms": null,
+      "p95_round_trip_ms": null
+    }
+  },
+  "comparison": {
+    "status": "INCOMPLETE",
+    "mean_round_trip_delta_ms": null,
+    "p95_round_trip_delta_ms": null,
+    "recommendation": "Reconnect or activate the UA-1000 so JACK exposes UA-1000 ports, then rerun the matrix."
+  },
+  "restore": {
+    "command": null,
+    "status": "SKIPPED",
+    "log": null
+  },
+  "overall_status": "BLOCKED",
+  "conclusion": "Blocked: UA-1000-specific loopback matrix cannot run until JACK exposes UA-1000 ports."
+}
