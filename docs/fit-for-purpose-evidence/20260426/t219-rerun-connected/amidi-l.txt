@@ -1,0 +1,2 @@
+Dir Device    Name
+IO  hw:3,0,0  UA-1000 MIDI

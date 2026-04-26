@@ -14248,6 +14248,7 @@ Last updated: 2026-03-29 20:28 EDT - Codex
   - Current host audio inventory shows `Jogg USB Audio`, onboard `HDA Intel PCH` analog I/O, and HDMI playback, but no attached UA-1000.
   - Remaining blocker is specifically the UA-1000 hardware + physical loopback session, not generic ALSA device access.
   - 2026-04-26 13:17 EDT - Codex execution attempt: host/API/web preflight passed, but `jack_lsp` still showed `Jogg USB Audio` and built-in audio with no UA-1000 ports. Ran `python3 scripts/run_t055_ua1000_loopback_matrix.py --output-dir docs/fit-for-purpose-evidence/20260426/t055-execute --duration 15 --trials 3`; runner exited `2` with `overall_status=BLOCKED`. Evidence: `docs/fit-for-purpose-evidence/20260426/t055-execute/`.
+  - 2026-04-26 13:43 EDT - Codex connected-device rerun: UA-1000 JACK and MIDI ports are now visible, and matrix preflight passed with 14 matched UA-1000 ports. Ran the T055 matrix against `EDIROL UA-1000 Pro:playback_AUX0` -> `EDIROL UA-1000 Pro:capture_AUX0`; tuned and rollback conditions both failed because `jack_iodelay` found no loopback samples. Additional 4-second probes across all 16 AUX playback/capture pairings (`AUX0..3` x `AUX0..3`) also found no loopback samples. Device enumeration is unblocked, but the task remains blocked on the physical analog loopback signal or JACK routing. Evidence: `docs/fit-for-purpose-evidence/20260426/t055-rerun-connected/`.
 
 ID: T099
 Status: [✗] Blocked
@@ -15893,6 +15894,7 @@ Last updated: 2026-03-20 17:01 - Codex
   - Validation: `pytest -q tests/test_drum_integration.py` -> pass.
   - Validation: `pytest -q tests/test_juce_engine_drum_native_stability.py` -> pass.
   - 2026-04-26 13:17 EDT - Codex execution attempt: reran `pytest -q tests/test_drum_integration.py tests/test_juce_engine_drum_native_stability.py` -> PASS (`3 passed, 1 skipped`). Live drum API endpoints `/api/engine/drums/metering` and `/api/engine/drums/transport` responded, but metering was idle and ALSA showed no dedicated external drum-triggering MIDI input device beyond internal/MAP2 bridge endpoints. `T219-F` remains blocked on live external MIDI/HIL proof.
+  - 2026-04-26 13:43 EDT - Codex connected-device rerun: reran `pytest -q tests/test_drum_integration.py tests/test_juce_engine_drum_native_stability.py` -> PASS (`3 passed, 1 skipped`). UA-1000 raw MIDI is present as `hw:3,0,0 UA-1000 MIDI`; ALSA sequencer shows `UA-1000 MIDI` connected to MAP2/RtMidi clients; drum metering and transport endpoints responded. A 10-second `aseqdump -p 28:0` capture observed only the subscription event and no live note/controller events, so hardware-backed closure still requires a live MIDI trigger into the UA-1000 during capture. Evidence: `docs/fit-for-purpose-evidence/20260426/t219-rerun-connected/`.
 
 ---
 

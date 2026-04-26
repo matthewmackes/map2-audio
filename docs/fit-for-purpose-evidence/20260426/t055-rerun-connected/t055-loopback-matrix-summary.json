@@ -1,0 +1,145 @@
+{
+  "task_id": "T055",
+  "checked_at_utc": "2026-04-26T17:37:20Z",
+  "settings": {
+    "duration_seconds": 15,
+    "trials_per_condition": 3,
+    "host": "http://127.0.0.1:8080",
+    "measure_script": "/home/mm/map2-audio/scripts/measure_latency.sh",
+    "ua1000_pattern": "UA-1000",
+    "stabilize_seconds": 2.0
+  },
+  "preflight": {
+    "status": "PASS",
+    "reason": "UA-1000 JACK ports are available for the loopback matrix.",
+    "ua1000_port_count": 14,
+    "jack_lsp_artifact": "jack_lsp.txt",
+    "selected_playback_port": "EDIROL UA-1000 Pro:playback_AUX0",
+    "selected_capture_port": "EDIROL UA-1000 Pro:capture_AUX0",
+    "matched_ports": [
+      "EDIROL UA-1000 Pro:capture_AUX0",
+      "EDIROL UA-1000 Pro:capture_AUX1",
+      "EDIROL UA-1000 Pro:capture_AUX2",
+      "EDIROL UA-1000 Pro:capture_AUX3",
+      "EDIROL UA-1000 Pro:playback_AUX0",
+      "EDIROL UA-1000 Pro:playback_AUX1",
+      "EDIROL UA-1000 Pro:playback_AUX2",
+      "EDIROL UA-1000 Pro:playback_AUX3",
+      "EDIROL UA-1000 Pro:monitor_AUX0",
+      "EDIROL UA-1000 Pro:monitor_AUX1",
+      "EDIROL UA-1000 Pro:monitor_AUX2",
+      "EDIROL UA-1000 Pro:monitor_AUX3",
+      "Midi-Bridge:UA-1000 MIDI (capture)",
+      "Midi-Bridge:UA-1000 MIDI (playback)"
+    ]
+  },
+  "conditions": {
+    "tuned": {
+      "label": "tuned",
+      "setup_command": null,
+      "verify_command": null,
+      "setup_status": "SKIPPED",
+      "verify_status": "SKIPPED",
+      "setup_log": null,
+      "verify_log": null,
+      "trial_count_requested": 3,
+      "trial_count_measured": 0,
+      "trial_count_failed": 3,
+      "trial_files": [
+        "tuned/trial1.json",
+        "tuned/trial2.json",
+        "tuned/trial3.json"
+      ],
+      "measured_trial_files": [],
+      "failed_trials": [
+        {
+          "trial_number": 1,
+          "file": "tuned/trial1.json",
+          "reason": "measurement command exited with code 2 and did not write a trial artifact"
+        },
+        {
+          "trial_number": 2,
+          "file": "tuned/trial2.json",
+          "reason": "measurement command exited with code 2 and did not write a trial artifact"
+        },
+        {
+          "trial_number": 3,
+          "file": "tuned/trial3.json",
+          "reason": "measurement command exited with code 2 and did not write a trial artifact"
+        }
+      ],
+      "trial_mean_rtt_ms": [],
+      "trial_p95_rtt_ms": [],
+      "trial_jitter_p95_ms": [],
+      "trial_gates": [],
+      "mean_round_trip_ms": null,
+      "p95_round_trip_ms": null,
+      "best_round_trip_ms": null,
+      "worst_round_trip_ms": null,
+      "mean_trial_p95_ms": null,
+      "xruns_total": 0,
+      "status": "FAIL",
+      "reason": "No usable tuned trials were captured."
+    },
+    "rollback": {
+      "label": "rollback",
+      "setup_command": null,
+      "verify_command": null,
+      "setup_status": "SKIPPED",
+      "verify_status": "SKIPPED",
+      "setup_log": null,
+      "verify_log": null,
+      "trial_count_requested": 3,
+      "trial_count_measured": 0,
+      "trial_count_failed": 3,
+      "trial_files": [
+        "rollback/trial1.json",
+        "rollback/trial2.json",
+        "rollback/trial3.json"
+      ],
+      "measured_trial_files": [],
+      "failed_trials": [
+        {
+          "trial_number": 1,
+          "file": "rollback/trial1.json",
+          "reason": "measurement command exited with code 2 and did not write a trial artifact"
+        },
+        {
+          "trial_number": 2,
+          "file": "rollback/trial2.json",
+          "reason": "measurement command exited with code 2 and did not write a trial artifact"
+        },
+        {
+          "trial_number": 3,
+          "file": "rollback/trial3.json",
+          "reason": "measurement command exited with code 2 and did not write a trial artifact"
+        }
+      ],
+      "trial_mean_rtt_ms": [],
+      "trial_p95_rtt_ms": [],
+      "trial_jitter_p95_ms": [],
+      "trial_gates": [],
+      "mean_round_trip_ms": null,
+      "p95_round_trip_ms": null,
+      "best_round_trip_ms": null,
+      "worst_round_trip_ms": null,
+      "mean_trial_p95_ms": null,
+      "xruns_total": 0,
+      "status": "FAIL",
+      "reason": "No usable rollback trials were captured."
+    }
+  },
+  "comparison": {
+    "status": "INCOMPLETE",
+    "mean_round_trip_delta_ms": null,
+    "p95_round_trip_delta_ms": null,
+    "recommendation": "Incomplete matrix: rerun the missing condition(s) after restoring UA-1000 loopback signal."
+  },
+  "restore": {
+    "command": null,
+    "status": "SKIPPED",
+    "log": null
+  },
+  "overall_status": "FAIL",
+  "conclusion": "Fail: matrix did not capture all requested tuned and rollback trials."
+}

@@ -42,6 +42,38 @@ Evidence:
 
 Reason: UA-1000 JACK ports are absent from the current JACK graph. The host is still on `Jogg USB Audio` / built-in audio, so no physical UA-1000 tuned-vs-rollback matrix can execute.
 
+### Connected-device rerun
+
+Date: 2026-04-26 13:43 EDT
+
+Rerun command:
+
+```bash
+python3 scripts/run_t055_ua1000_loopback_matrix.py \
+  --output-dir docs/fit-for-purpose-evidence/20260426/t055-rerun-connected \
+  --duration 15 \
+  --trials 3 \
+  --jack-playback-port 'EDIROL UA-1000 Pro:playback_AUX0' \
+  --jack-capture-port 'EDIROL UA-1000 Pro:capture_AUX0'
+```
+
+Result: `FAIL`
+
+Observed:
+
+- UA-1000 JACK ports were present: `capture_AUX0..3`, `playback_AUX0..3`, `monitor_AUX0..3`, and UA-1000 MIDI bridge ports.
+- Matrix preflight passed, but all tuned and rollback trials failed before writing trial JSON.
+- `jack_iodelay` reported no loopback latency samples.
+- Manual 4-second probes across all 16 AUX playback/capture pairings (`AUX0..3` x `AUX0..3`) also returned no loopback samples.
+
+Evidence:
+
+- `docs/fit-for-purpose-evidence/20260426/t055-rerun-connected/t055-loopback-matrix-summary.json`
+- `docs/fit-for-purpose-evidence/20260426/t055-rerun-connected/T055_UA1000_LOOPBACK_MATRIX_SUMMARY.md`
+- `docs/fit-for-purpose-evidence/20260426/t055-rerun-connected/probes/`
+
+Status: device enumeration is no longer blocked, but the task remains blocked/failed on physical loopback signal or JACK routing. The next attempt should verify the analog patch path with signal present on the selected UA-1000 input before rerunning the matrix.
+
 ## T219-F Drum Machine Integration
 
 Command:
@@ -67,6 +99,28 @@ Observed:
 
 Status: automated full-stack and native-engine coverage passed; hardware-backed end-to-end closure remains blocked until a live external MIDI input source is attached and used to prove pad triggers, metering response, playback edit behavior, song progression, and kit-switch behavior on the running audio path.
 
+### Connected-device rerun
+
+Date: 2026-04-26 13:43 EDT
+
+Result: `3 passed, 1 skipped`
+
+Observed:
+
+- UA-1000 raw MIDI device is present as `hw:3,0,0 UA-1000 MIDI`.
+- ALSA sequencer shows `UA-1000 MIDI` connected to MAP2/RtMidi input and output clients.
+- Drum metering and transport endpoints remained reachable.
+- A 10-second `aseqdump -p 28:0` capture observed only the subscription event and no live note/controller events.
+
+Evidence:
+
+- `docs/fit-for-purpose-evidence/20260426/t219-rerun-connected/pytest-drum-integration.txt`
+- `docs/fit-for-purpose-evidence/20260426/t219-rerun-connected/aconnect-l.txt`
+- `docs/fit-for-purpose-evidence/20260426/t219-rerun-connected/amidi-l.txt`
+- `docs/fit-for-purpose-evidence/20260426/t219-rerun-connected/ua1000-midi-aseqdump-10s.txt`
+
+Status: automated coverage and device visibility pass. Hardware-backed closure still requires a live MIDI trigger event during capture so pad trigger, metering response, and running-path behavior can be proven.
+
 ## T099 Dynamic Response
 
 Readiness check:
@@ -88,6 +142,6 @@ Status: blocked until the live recording session produces the run manifest, refe
 
 ## Next Physical Actions
 
-1. Switch the host audio graph to the UA-1000, confirm `jack_lsp` contains UA-1000 playback/capture ports, then rerun `T055`.
-2. Attach a real external MIDI trigger source for drums, confirm it appears in `aconnect -l` or the MAP2 MIDI Hub, then run the live `T219-F` trigger/metering procedure.
+1. Restore or repatch the UA-1000 analog loopback signal, then confirm `jack_iodelay` produces samples on one UA-1000 playback/capture pair before rerunning `T055`.
+2. Generate a live MIDI note/controller event into `UA-1000 MIDI` during capture, then rerun the live `T219-F` trigger/metering procedure.
 3. Stage the `T099` recording session artifacts before running `scripts/analyze_envelope.py` and `scripts/summarize_dynamic_response_study.py`.

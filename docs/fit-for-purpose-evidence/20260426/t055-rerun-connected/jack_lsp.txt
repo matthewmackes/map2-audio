@@ -1,0 +1,36 @@
+EDIROL UA-1000 Pro:capture_AUX0
+EDIROL UA-1000 Pro:capture_AUX1
+EDIROL UA-1000 Pro:capture_AUX2
+EDIROL UA-1000 Pro:capture_AUX3
+Jogg USB Audio Mono:capture_MONO
+Built-in Audio Analog Stereo:capture_FL
+Built-in Audio Analog Stereo:capture_FR
+PipeWire ALSA [python3.14]/ALSA Playback [python3.14]:output_FL
+PipeWire ALSA [python3.14]/ALSA Playback [python3.14]:output_FR
+EDIROL UA-1000 Pro:playback_AUX0
+EDIROL UA-1000 Pro:playback_AUX1
+EDIROL UA-1000 Pro:playback_AUX2
+EDIROL UA-1000 Pro:playback_AUX3
+EDIROL UA-1000 Pro:monitor_AUX0
+EDIROL UA-1000 Pro:monitor_AUX1
+EDIROL UA-1000 Pro:monitor_AUX2
+EDIROL UA-1000 Pro:monitor_AUX3
+Jogg USB Audio Analog Stereo:playback_FL
+Jogg USB Audio Analog Stereo:playback_FR
+Jogg USB Audio Analog Stereo:monitor_FL
+Jogg USB Audio Analog Stereo:monitor_FR
+Built-in Audio Analog Stereo:playback_FL
+Built-in Audio Analog Stereo:playback_FR
+Built-in Audio Analog Stereo:monitor_FL
+Built-in Audio Analog Stereo:monitor_FR
+PipeWire ALSA [python3.14]/ALSA Capture [python3.14]:input_MONO
+PipeWire ALSA [python3.14]/ALSA Capture [python3.14]:monitor_MONO
+Midi-Bridge:Midi Through Port-0 (capture)
+Midi-Bridge:RtMidiOut ClientMAP2:Maschine-MK1 (capture)
+Midi-Bridge:MAP2 Audio EngineMIDI Out (capture)
+Midi-Bridge:UA-1000 MIDI (capture)
+Midi-Bridge:RtMidiOut ClientRtMidi output (capture)
+Midi-Bridge:Midi Through Port-0 (playback)
+Midi-Bridge:MAP2 Audio EngineMIDI In (playback)
+Midi-Bridge:UA-1000 MIDI (playback)
+Midi-Bridge:RtMidiIn ClientRtMidi input (playback)

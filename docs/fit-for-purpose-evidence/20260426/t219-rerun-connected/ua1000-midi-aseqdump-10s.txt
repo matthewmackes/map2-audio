@@ -1,0 +1,3 @@
+Waiting for data. Press Ctrl+C to end.
+Source  Event                  Ch  Data
+  0:1   Port subscribed            136:0 -> 133:0

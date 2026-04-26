@@ -1,0 +1,44 @@
+client 0: 'System' [type=kernel]
+    0 'Timer           '
+	Connecting To: 142:0
+    1 'Announce        '
+	Connecting To: 142:0, 129:0
+client 14: 'Midi Through' [type=kernel]
+    0 'Midi Through Port-0'
+client 28: 'UA-1000' [type=kernel,card=3]
+    0 'UA-1000 MIDI    '
+	Connecting To: 131:0, 134:0, 133:0
+	Connected From: 132:0[real:0], 135:0[real:0], 137:0[real:0]
+client 128: 'RtMidiOut Client' [type=user,pid=2061]
+    0 'MAP2:Maschine-MK1'
+client 129: 'JUCE' [type=user,pid=2203]
+    0 'announcements   '
+	Connected From: 0:1
+client 130: 'MAP2 Audio Engine' [type=user,pid=2320]
+    0 'MIDI In         '
+    1 'MIDI Out        '
+client 131: 'RtMidiIn Client' [type=user,pid=2332]
+    0 'RtMidi input    '
+	Connected From: 28:0
+client 132: 'RtMidiOut Client' [type=user,pid=2332]
+    0 'RtMidi output   '
+	Connecting To: 28:0[real:0]
+client 133: 'RtMidiIn Client' [type=user,pid=2332]
+    0 'RtMidi input    '
+	Connected From: 28:0
+client 134: 'RtMidiIn Client' [type=user,pid=2332]
+    0 'RtMidi input    '
+	Connected From: 28:0
+client 135: 'RtMidiOut Client' [type=user,pid=2332]
+    0 'RtMidi output   '
+	Connecting To: 28:0[real:0]
+client 136: 'RtMidiOut Client' [type=user,pid=2332]
+    0 'RtMidi output   '
+client 137: 'RtMidiOut Client' [type=user,pid=2332]
+    0 'RtMidi output   '
+	Connecting To: 28:0[real:0]
+client 142: 'PipeWire-System' [type=user,UMP-MIDI2,pid=2071]
+    0 'input           '
+	Connected From: 0:1, 0:0
+client 143: 'PipeWire-RT-Event' [type=user,UMP-MIDI2,pid=2071]
+    0 'input           '
