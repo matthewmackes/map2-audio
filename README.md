@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1285** Python | **1278** TypeScript | **136** C++/H | **145** Docs | **2827** total commits | **3** stars | **0** forks | **0** open issues
+**1285** Python | **1278** TypeScript | **136** C++/H | **145** Docs | **2828** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,6 +206,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`9a1b0398`](https://github.com/matthewmackes/map2-audio/commit/9a1b03987787b291b711b781303ce6957e531f6c) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-26 |
 | [`f7328d68`](https://github.com/matthewmackes/map2-audio/commit/f7328d68aa372aa2c36224afc6dc559f64783b08) | T2454-D: per-row Pin icon retrofit on snapshot library + ... | Map2 Audio | 2026-04-25 |
 | [`a96edf78`](https://github.com/matthewmackes/map2-audio/commit/a96edf788cdf582a68c947e21684cd4369da9aef) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-26 |
 | [`c46349fa`](https://github.com/matthewmackes/map2-audio/commit/c46349fa78fcc580d953707693ce88f24d58bdbd) | T2454-C: frontend wire-in for snapshot preload pinning | Map2 Audio | 2026-04-25 |
@@ -213,7 +214,6 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 | [`2944550a`](https://github.com/matthewmackes/map2-audio/commit/2944550a108c437a7bced028dc465b0eb8d6a7e7) | T2454 slice 1: operator-curated pinned-snapshot warm cach... | Map2 Audio | 2026-04-25 |
 | [`35007ced`](https://github.com/matthewmackes/map2-audio/commit/35007cedf2e3cc2019a8afbcce5859265f604eee) | Fix MIDI Assignments shell title | Map2 Audio | 2026-04-25 |
 | [`4867afce`](https://github.com/matthewmackes/map2-audio/commit/4867afce5d46dce1b17718022d1c18709b2bf3b9) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-26 |
-| [`141ac311`](https://github.com/matthewmackes/map2-audio/commit/141ac3111a04a33135e76873cfce5b78ae57b442) | T2444: world-class design-language polish sweep across li... | Map2 Audio | 2026-04-25 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
