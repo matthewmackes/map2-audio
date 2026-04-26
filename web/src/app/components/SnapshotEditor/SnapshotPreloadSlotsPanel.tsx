@@ -14,9 +14,9 @@
  * Cyan accent comes from the T2444 design-language token `--map2-accent-active`.
  */
 
-import { useCallback, useMemo } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 import { Tag, Button, IconButton } from '@carbon/react'
-import { Pin, ChevronUp, ChevronDown, Close, Add } from '@carbon/icons-react'
+import { Pin, ChevronUp, ChevronDown, Close, Add, Flash } from '@carbon/icons-react'
 
 import {
   SNAPSHOT_PRELOAD_PIN_LIMIT,
@@ -45,7 +45,8 @@ export function SnapshotPreloadSlotsPanel({
   selectedSnapshotId,
 }: SnapshotPreloadSlotsPanelProps) {
   const { pins, isLoading, error, isCapReached, pin, unpin, reorder } = useSnapshotPreloadPins()
-  const { isWarm, refetch: refetchStatus } = useSnapshotPreloadStatus()
+  const { isWarm, refetch: refetchStatus, preloadNow, isPreloading } = useSnapshotPreloadStatus()
+  const [warmingSnapshotId, setWarmingSnapshotId] = useState<number | null>(null)
 
   const slots = useMemo<SlotView[]>(() => {
     const filled: SlotView[] = pins.map((snapshotId, index) => ({
@@ -91,9 +92,36 @@ export function SnapshotPreloadSlotsPanel({
     if (selectedSnapshotId == null) return
     const result = await pin(selectedSnapshotId)
     if (result.ok) {
-      refetchStatus()
+      // Kick the orchestrator so the new pin warms within ~ms instead of
+      // waiting for the 30s reconciler tick. Best-effort — surface failures
+      // through the warm dot rather than via a toast since the reconciler
+      // will retry anyway.
+      setWarmingSnapshotId(selectedSnapshotId)
+      try {
+        await preloadNow(selectedSnapshotId)
+      } catch {
+        // ignore — reconciler retries
+      } finally {
+        setWarmingSnapshotId(null)
+        refetchStatus()
+      }
     }
-  }, [selectedSnapshotId, pin, refetchStatus])
+  }, [selectedSnapshotId, pin, preloadNow, refetchStatus])
+
+  const handleWarmNow = useCallback(
+    async (snapshotId: number) => {
+      setWarmingSnapshotId(snapshotId)
+      try {
+        await preloadNow(snapshotId)
+      } catch {
+        // ignore — reconciler retries
+      } finally {
+        setWarmingSnapshotId(null)
+        refetchStatus()
+      }
+    },
+    [preloadNow, refetchStatus],
+  )
 
   const canPinSelected =
     selectedSnapshotId != null &&
@@ -136,15 +164,31 @@ export function SnapshotPreloadSlotsPanel({
                   <span
                     className="snapshot-preload-slots__dot"
                     data-warm={slot.warm ? 'true' : 'false'}
+                    data-warming={warmingSnapshotId === slot.snapshotId ? 'true' : 'false'}
                     aria-hidden
                   />
                   <span className="snapshot-preload-slots__name" title={slot.name}>
                     {slot.name}
                   </span>
                   <span className="snapshot-preload-slots__state" aria-live="polite">
-                    {slot.warm ? 'Warm' : 'Cold'}
+                    {warmingSnapshotId === slot.snapshotId
+                      ? 'Warming…'
+                      : slot.warm
+                      ? 'Warm'
+                      : 'Cold'}
                   </span>
                   <span className="snapshot-preload-slots__row-actions">
+                    {!slot.warm && warmingSnapshotId !== slot.snapshotId ? (
+                      <IconButton
+                        kind="ghost"
+                        size="sm"
+                        label="Warm now"
+                        disabled={isLoading || isPreloading}
+                        onClick={() => void handleWarmNow(slot.snapshotId as number)}
+                      >
+                        <Flash />
+                      </IconButton>
+                    ) : null}
                     <IconButton
                       kind="ghost"
                       size="sm"

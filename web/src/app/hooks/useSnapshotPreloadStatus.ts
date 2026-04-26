@@ -11,10 +11,14 @@
  * seconds, not wait for the next reconciler tick.
  */
 
-import { useQuery } from '@tanstack/react-query'
-import { useMemo } from 'react'
+import { useMutation, useQuery } from '@tanstack/react-query'
+import { useCallback, useMemo } from 'react'
 
-import { snapshotsApi, type SnapshotPreloadStatusResponse } from '../../map2/clients/snapshots'
+import {
+  snapshotsApi,
+  type SnapshotPreloadResponse,
+  type SnapshotPreloadStatusResponse,
+} from '../../map2/clients/snapshots'
 
 const STATUS_POLL_INTERVAL_MS = 5_000
 
@@ -28,6 +32,13 @@ export interface SnapshotPreloadStatusApi {
   /** True if `snapshot_id` is pinned (warm or cold). */
   isPinned: (snapshotId: number) => boolean
   refetch: () => void
+  /** Manually trigger a warm of `snapshotId`. Resolves to the route's
+   *  `SnapshotPreloadResponse`. Used by Go Live cold-gate + the panel's
+   *  "warm now" affordance so the operator doesn't have to wait for the
+   *  next reconciler tick. */
+  preloadNow: (snapshotId: number) => Promise<SnapshotPreloadResponse>
+  /** True while `preloadNow` is in flight (any snapshot id). */
+  isPreloading: boolean
 }
 
 export function useSnapshotPreloadStatus(): SnapshotPreloadStatusApi {
@@ -54,6 +65,18 @@ export function useSnapshotPreloadStatus(): SnapshotPreloadStatusApi {
     return set
   }, [query.data])
 
+  const preloadMutation = useMutation({
+    mutationFn: (snapshotId: number) => snapshotsApi.preload(snapshotId),
+    onSuccess: () => {
+      void query.refetch()
+    },
+  })
+
+  const preloadNow = useCallback(
+    (snapshotId: number) => preloadMutation.mutateAsync(snapshotId),
+    [preloadMutation],
+  )
+
   return {
     status: query.data,
     isLoading: query.isLoading,
@@ -64,5 +87,7 @@ export function useSnapshotPreloadStatus(): SnapshotPreloadStatusApi {
     refetch: () => {
       void query.refetch()
     },
+    preloadNow,
+    isPreloading: preloadMutation.isPending,
   }
 }

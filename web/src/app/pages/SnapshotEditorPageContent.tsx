@@ -223,6 +223,9 @@ import {
 import { applyFlowSlotUpdate } from '../utils/snapshotFlowSlots'
 import { JuceGridAudioPortModal } from '../components/modals/JuceGridAudioPortModal'
 import { JuceGridSelectedBlockMidiPanel } from '../components/SnapshotEditor/SnapshotEditorSelectedBlockMidiPanel'
+import { SnapshotPreloadSlotsPanel } from '../components/SnapshotEditor/SnapshotPreloadSlotsPanel'
+import { decidePreloadGate } from '../components/SnapshotEditor/snapshotEditorPreloadGate'
+import { useSnapshotPreloadStatus } from '../hooks/useSnapshotPreloadStatus'
 import { PedalboardBuildWizard } from '../components/SnapshotEditor/BottomWizard/PedalboardBuildWizard'
 import { PublishReadyBanner } from '../components/SnapshotEditor/PublishReadyBanner'
 import { SnapshotAbSwitchMidiCard } from '../components/SnapshotEditor/SnapshotAbSwitchMidiCard'
@@ -1566,6 +1569,11 @@ export function SnapshotEditorPage() {
     queryFn: () => snapshotsApi.list(),
     refetchInterval: snapshotStandardCadence,
   })
+  // T2454 slice 1C: warm-cache status for the Preload Slots panel + the
+  // Go Live cold-gate. Polls /api/snapshots/preload-status every 5s and
+  // exposes `preloadNow()` so Go Live can warm a pinned-but-cold target
+  // synchronously instead of waiting for the 30s reconciler tick.
+  const snapshotPreloadStatus = useSnapshotPreloadStatus()
   const systemNoiseGateDefaultsQuery = useQuery({
     queryKey: ['config', 'snapshot-noise-gate-defaults'],
     queryFn: async () => {
@@ -1675,6 +1683,21 @@ export function SnapshotEditorPage() {
       .filter((name): name is string => typeof name === 'string' && name.trim().length > 0),
     [snapshotsSummaryQuery.data?.snapshots],
   )
+  // T2454 slice 1C: snapshot id → display name map for the Preload Slots
+  // panel. Keyed by id so the panel can render the operator-pinned slots
+  // even when the snapshot list is paginated or filtered upstream.
+  const snapshotNamesById = useMemo<Map<number, string>>(() => {
+    const out = new Map<number, string>()
+    for (const snapshot of snapshotsSummaryQuery.data?.snapshots ?? []) {
+      const id = typeof snapshot.id === 'number' ? snapshot.id : Number.parseInt(String(snapshot.id), 10)
+      if (!Number.isInteger(id)) continue
+      const name = typeof snapshot.name === 'string' && snapshot.name.trim().length > 0
+        ? snapshot.name
+        : `Snapshot ${id}`
+      out.set(id, name)
+    }
+    return out
+  }, [snapshotsSummaryQuery.data?.snapshots])
   const snapshotEntryRequired = committedAudioStateQuery.isSuccess && currentEditorSnapshotId === null
 
   const openArtifactsSnapshots = useCallback(() => {
@@ -6538,6 +6561,34 @@ export function SnapshotEditorPage() {
         snapshotId = updated.snapshot.id
       }
 
+      // T2454 slice 1C: warm-state gate per locked Q4=D. If the target is
+      // pinned but cold, fire `preloadNow()` synchronously before activation
+      // so Go Live takes the warm path. Non-pinned snapshots still flow
+      // through the existing cold rebuild path — pins are the only thing we
+      // promise sub-20ms recall on. The actual warm-path delta activation in
+      // the FSM is T2454-B; today this just guarantees the engine has the
+      // plugin instances staged before the cold rebuild starts, shaving the
+      // plugin-load portion off the critical path.
+      const gateAction = decidePreloadGate({
+        isPinned: snapshotPreloadStatus.isPinned(snapshotId),
+        isWarm: snapshotPreloadStatus.isWarm(snapshotId),
+      })
+      if (gateAction === 'warm-then-activate') {
+        try {
+          await snapshotPreloadStatus.preloadNow(snapshotId)
+        } catch (warmError) {
+          // Don't block the operator on a warm failure — the cold path is
+          // always available. Surface the failure for diagnostics but
+          // continue to activation.
+          pushToast(
+            warmError instanceof Error
+              ? `Preload warm failed (${warmError.message}); falling back to cold activation.`
+              : 'Preload warm failed; falling back to cold activation.',
+            'warn',
+          )
+        }
+      }
+
       activateCurrentSnapshotMutation.mutate(snapshotId)
     } catch (error) {
       pushToast(error instanceof Error ? error.message : 'Failed to save draft before live activation', 'error')
@@ -6551,6 +6602,7 @@ export function SnapshotEditorPage() {
     snapshotGoLiveState.phase,
     snapshotsDirty,
     updateActiveSnapshotMutation,
+    snapshotPreloadStatus,
   ])
   const openSnapshotProgressModal = useCallback((
     tab: 'wizard' | 'guided' | 'advanced' = 'wizard',
@@ -8401,6 +8453,14 @@ export function SnapshotEditorPage() {
             outputLevelWarningMessage={outputLevelWarningMessage}
             onOpenProgressModal={openGuidedProgress}
             liveBadgeState={liveBadgeState}
+          />
+          {/* T2454 slice 1C: operator-curated preload slots. Lives below the
+              snapshot hero so pinning is one click away from the active
+              snapshot. The "Add selected" affordance pins the snapshot
+              currently loaded in the editor. */}
+          <SnapshotPreloadSlotsPanel
+            snapshotNamesById={snapshotNamesById}
+            selectedSnapshotId={currentEditorSnapshotId}
           />
         </div>
       </section>

@@ -106,6 +106,17 @@
   animation: snapshot-preload-dot-pulse 2.4s ease-in-out infinite;
 }
 
+.snapshot-preload-slots__dot[data-warming='true'] {
+  background: var(--map2-accent-armed, #f5a524);
+  box-shadow: 0 0 6px var(--map2-accent-armed-glow, rgba(245, 165, 36, 0.4));
+  animation: snapshot-preload-dot-warming 0.9s ease-in-out infinite;
+}
+
+@keyframes snapshot-preload-dot-warming {
+  0%, 100% { opacity: 0.65; }
+  50% { opacity: 1; }
+}
+
 @keyframes snapshot-preload-dot-pulse {
   0%, 100% { opacity: 0.85; }
   50% { opacity: 1; }
