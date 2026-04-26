@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1285** Python | **1278** TypeScript | **136** C++/H | **145** Docs | **2828** total commits | **3** stars | **0** forks | **0** open issues
+**1288** Python | **1278** TypeScript | **136** C++/H | **145** Docs | **2830** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -175,7 +175,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-DOCS:START -->
 | Document | Last Updated |
 |:---------|:------------|
-| [PROJECT WORKLIST](https://github.com/matthewmackes/map2-audio/blob/master/docs/PROJECT_WORKLIST.md) | 2026-04-25 |
+| [PROJECT WORKLIST](https://github.com/matthewmackes/map2-audio/blob/master/docs/PROJECT_WORKLIST.md) | 2026-04-26 |
 | [MAP2 API Contract Standards](https://github.com/matthewmackes/map2-audio/blob/master/docs/api-contract-standards.md) | 2026-04-25 |
 | [MAP2 LCD Console — Operator Guide](https://github.com/matthewmackes/map2-audio/blob/master/docs/LCD_OPERATOR_GUIDE.md) | 2026-04-23 |
 | [MAP2 Audio Platform — AI Instructions](https://github.com/matthewmackes/map2-audio/blob/master/docs/CLAUDE.md) | 2026-04-21 |
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`dfb6cebe`](https://github.com/matthewmackes/map2-audio/commit/dfb6cebeff0abb143e0e1c5dbb173bef616ddf78) | T2454-B: warm-path delta activation FSM + dynamic-crossfa... | Map2 Audio | 2026-04-26 |
+| [`aa44ca90`](https://github.com/matthewmackes/map2-audio/commit/aa44ca908657ab8b1ce05f9ce8b93c240ec9cdc1) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-26 |
 | [`9a1b0398`](https://github.com/matthewmackes/map2-audio/commit/9a1b03987787b291b711b781303ce6957e531f6c) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-26 |
 | [`f7328d68`](https://github.com/matthewmackes/map2-audio/commit/f7328d68aa372aa2c36224afc6dc559f64783b08) | T2454-D: per-row Pin icon retrofit on snapshot library + ... | Map2 Audio | 2026-04-25 |
 | [`a96edf78`](https://github.com/matthewmackes/map2-audio/commit/a96edf788cdf582a68c947e21684cd4369da9aef) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-26 |
 | [`c46349fa`](https://github.com/matthewmackes/map2-audio/commit/c46349fa78fcc580d953707693ce88f24d58bdbd) | T2454-C: frontend wire-in for snapshot preload pinning | Map2 Audio | 2026-04-25 |
 | [`65048cdc`](https://github.com/matthewmackes/map2-audio/commit/65048cdc8cbaee01e2e3baef7b44f79db3e2845c) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-26 |
 | [`2944550a`](https://github.com/matthewmackes/map2-audio/commit/2944550a108c437a7bced028dc465b0eb8d6a7e7) | T2454 slice 1: operator-curated pinned-snapshot warm cach... | Map2 Audio | 2026-04-25 |
-| [`35007ced`](https://github.com/matthewmackes/map2-audio/commit/35007cedf2e3cc2019a8afbcce5859265f604eee) | Fix MIDI Assignments shell title | Map2 Audio | 2026-04-25 |
-| [`4867afce`](https://github.com/matthewmackes/map2-audio/commit/4867afce5d46dce1b17718022d1c18709b2bf3b9) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-26 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
