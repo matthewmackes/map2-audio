@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1282** Python | **1269** TypeScript | **136** C++/H | **145** Docs | **2820** total commits | **3** stars | **0** forks | **0** open issues
+**1285** Python | **1273** TypeScript | **136** C++/H | **145** Docs | **2823** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`2944550a`](https://github.com/matthewmackes/map2-audio/commit/2944550a108c437a7bced028dc465b0eb8d6a7e7) | T2454 slice 1: operator-curated pinned-snapshot warm cach... | Map2 Audio | 2026-04-25 |
+| [`35007ced`](https://github.com/matthewmackes/map2-audio/commit/35007cedf2e3cc2019a8afbcce5859265f604eee) | Fix MIDI Assignments shell title | Map2 Audio | 2026-04-25 |
+| [`4867afce`](https://github.com/matthewmackes/map2-audio/commit/4867afce5d46dce1b17718022d1c18709b2bf3b9) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-26 |
 | [`141ac311`](https://github.com/matthewmackes/map2-audio/commit/141ac3111a04a33135e76873cfce5b78ae57b442) | T2444: world-class design-language polish sweep across li... | Map2 Audio | 2026-04-25 |
 | [`55e89625`](https://github.com/matthewmackes/map2-audio/commit/55e89625c0c16e0c07c3108e3ec9062407d0caba) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-25 |
 | [`13759ac6`](https://github.com/matthewmackes/map2-audio/commit/13759ac626b26be6a6f4551e3d45de51d19dcc20) | T2443: real per-channel metering feed for Brain ConsoleView | Map2 Audio | 2026-04-25 |
 | [`0fd0ccea`](https://github.com/matthewmackes/map2-audio/commit/0fd0cceaaf44123dbadff67aec3597479cb66d9e) | audit: migrate four more localStorage sites to persistedS... | Map2 Audio | 2026-04-25 |
 | [`3b714859`](https://github.com/matthewmackes/map2-audio/commit/3b714859038d6a701d75926991086f878f7eb8e3) | audit: migrate four more localStorage sites to persistedS... | Map2 Audio | 2026-04-25 |
-| [`6d94db91`](https://github.com/matthewmackes/map2-audio/commit/6d94db9172de2c5276b94aa5063f974dee30d995) | audit: migrate three more localStorage modules to persist... | Map2 Audio | 2026-04-25 |
-| [`1ef0bce2`](https://github.com/matthewmackes/map2-audio/commit/1ef0bce213e6c9c912fec0da81aaf7d8d42d0fae) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-25 |
-| [`2996e593`](https://github.com/matthewmackes/map2-audio/commit/2996e593e86fbf355edb1cd4c7ab90770deafc76) | T2456: reorder global tree headings + primary-theme separ... | Map2 Audio | 2026-04-25 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
