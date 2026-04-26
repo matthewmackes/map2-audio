@@ -50,6 +50,19 @@ class PreloadEntry:
     warmed_at: float = field(default_factory=time.monotonic)
     warm: bool = False
     last_error: Optional[str] = None
+    # T2454-B: in-flight lock so concurrent reconciler ticks don't release
+    # the staged instances out from under an activation that has claimed
+    # this entry. Set by `claim()`, cleared by `mark_consumed()`.
+    in_flight: bool = False
+
+
+@dataclass(frozen=True)
+class PreloadClaim:
+    """Snapshot of an in-flight warm-cache entry handed to the activation FSM."""
+
+    snapshot_id: int
+    version: int
+    staged_instance_ids: tuple[int, ...]
 
 
 class SnapshotPreloadOrchestrator:
@@ -136,9 +149,22 @@ class SnapshotPreloadOrchestrator:
 
             target_version = int(snapshot_row.version or 1)
 
-            # Fast path: already warm and not drifted.
             async with self._lock:
                 existing = self._entries.get(snapshot_id)
+                # T2454-B: refuse to re-stage an in-flight entry — the FSM has
+                # claim()-ed the staged instances and is mid-activation.
+                # Re-staging would race the adopt path and could leak
+                # instances. Checked BEFORE the already_warm fast-path so a
+                # caller probing during activation gets the truthful answer.
+                if existing is not None and existing.in_flight:
+                    return {
+                        "snapshot_id": snapshot_id,
+                        "warm": existing.warm,
+                        "version": existing.version,
+                        "staged_instance_count": len(existing.staged_instance_ids),
+                        "reason": "in_flight",
+                    }
+                # Fast path: already warm and not drifted.
                 if existing and existing.warm and existing.version == target_version:
                     return {
                         "snapshot_id": snapshot_id,
@@ -201,14 +227,28 @@ class SnapshotPreloadOrchestrator:
                 "reason": "warmed" if warmings_succeeded else "stage_failed",
             }
 
-    async def evict(self, snapshot_id: int) -> dict[str, Any]:
-        """Drop a warm entry and release its staged engine instances."""
+    async def evict(self, snapshot_id: int, *, force: bool = False) -> dict[str, Any]:
+        """Drop a warm entry and release its staged engine instances.
+
+        T2454-B: respects the `in_flight` lock — an entry that's been
+        `claim()`-ed by an in-flight activation will not be evicted unless
+        `force=True`. The reconciler always passes `force=False`; the FSM's
+        `mark_consumed(success=False)` path passes `force=True` because at
+        that point it owns the staged instances.
+        """
         snapshot_id = int(snapshot_id)
         released: list[int] = []
         async with self._lock:
-            entry = self._entries.pop(snapshot_id, None)
+            entry = self._entries.get(snapshot_id)
             if entry is None:
                 return {"snapshot_id": snapshot_id, "evicted": False, "reason": "not_warm"}
+            if entry.in_flight and not force:
+                return {
+                    "snapshot_id": snapshot_id,
+                    "evicted": False,
+                    "reason": "in_flight",
+                }
+            self._entries.pop(snapshot_id, None)
             released = list(entry.staged_instance_ids)
 
         if released:
@@ -229,6 +269,55 @@ class SnapshotPreloadOrchestrator:
             "evicted": True,
             "released_instance_count": len(released),
         }
+
+    async def claim(self, snapshot_id: int) -> Optional[PreloadClaim]:
+        """T2454-B: hand the activation FSM a snapshot of the warm entry's
+        staged instance ids and mark the entry in-flight so the reconciler
+        won't release them mid-activation. Returns None if the entry is
+        cold, missing, or already in-flight.
+
+        Always pair with `mark_consumed(snapshot_id, success=...)` once
+        activation either commits or aborts — even on exception paths."""
+        snapshot_id = int(snapshot_id)
+        async with self._lock:
+            entry = self._entries.get(snapshot_id)
+            if entry is None or not entry.warm or entry.in_flight:
+                return None
+            entry.in_flight = True
+            return PreloadClaim(
+                snapshot_id=entry.snapshot_id,
+                version=entry.version,
+                staged_instance_ids=tuple(entry.staged_instance_ids),
+            )
+
+    async def mark_consumed(self, snapshot_id: int, *, success: bool) -> dict[str, Any]:
+        """T2454-B: clear the in-flight lock set by `claim()`.
+
+        On `success=True`: the FSM's warm path adopted the staged instances
+        and the engine has incorporated them into the live graph. The cache
+        entry is invalidated (the staged instances are now part of the live
+        graph, not the warm cache) so the next reconciler tick re-warms
+        from a clean slate. We force-evict to skip the in-flight check we
+        ourselves set.
+
+        On `success=False`: the warm path failed (engine reject, partial
+        adopt, etc.). Force-evict the entry so the reconciler re-warms it
+        on the next tick (Q4=D self-healing fallback)."""
+        snapshot_id = int(snapshot_id)
+        async with self._lock:
+            entry = self._entries.get(snapshot_id)
+            if entry is None:
+                return {"snapshot_id": snapshot_id, "consumed": False, "reason": "not_warm"}
+            entry.in_flight = False
+
+        # Both success and failure invalidate the warm-cache entry — the
+        # staged instances are no longer ours to hand out (success: live
+        # graph owns them now; failure: they may have been partially
+        # consumed and we cannot trust the cache state).
+        result = await self.evict(snapshot_id, force=True)
+        result["consumed"] = True
+        result["consume_outcome"] = "success" if success else "failure"
+        return result
 
     async def reconcile(self, pinned_ids: list[int]) -> dict[str, Any]:
         """Walk the pinned set, evict orphans, warm anything cold or
@@ -251,6 +340,8 @@ class SnapshotPreloadOrchestrator:
                 logger.warning("Preload reconciler: evict %s failed: %s", snapshot_id, exc)
 
         # 2. Warm any pinned snapshot that's cold or whose version drifted.
+        # T2454-B: skip in-flight entries — the FSM has claim()-ed them and
+        # is mid-activation; re-warming would race the adopt path.
         targets: list[int] = []
         async with get_session() as session:
             for snapshot_id in pinned_ids:
@@ -260,6 +351,8 @@ class SnapshotPreloadOrchestrator:
                 target_version = int(snapshot_row.version or 1)
                 async with self._lock:
                     existing = self._entries.get(snapshot_id)
+                    if existing is not None and existing.in_flight:
+                        continue
                 if existing is None or not existing.warm or existing.version != target_version:
                     targets.append(snapshot_id)
 

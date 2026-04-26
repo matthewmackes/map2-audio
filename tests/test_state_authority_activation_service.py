@@ -86,11 +86,15 @@ def test_apply_graph_document_to_engine_builds_document_and_uses_crossfade():
         )
     )
 
+    # T2454-B: result now carries the dynamically-computed max_crossfade_ms.
+    # This normalized fixture has no tail-bearing processors so the value is
+    # the 500ms floor.
     assert result == {
         "applied": True,
         "plugin_count": 2,
         "bypass_count": 1,
         "used_independent_crossfade": True,
+        "max_crossfade_ms": 500,
     }
     assert fake_engine.calls
     document, use_independent_crossfade, max_crossfade_ms = fake_engine.calls[0]

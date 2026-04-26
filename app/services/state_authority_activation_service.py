@@ -297,11 +297,21 @@ class StateAuthorityActivationService:
         if not isinstance(document, dict):
             document = self.owner.state_authority_documents.build_validated_document(snapshot, normalized)
 
+        # T2454-B: dynamic crossfade length scales to the longest active
+        # tail-bearing processor in the target snapshot. Always-spill behavior
+        # is preserved (`use_independent_crossfade=True`); only the duration
+        # adapts. See `state_authority_dynamic_crossfade.py` for the locked
+        # URI vocabulary (delay 1500 / shoegaze 1200 / lexilove 2000 / default
+        # 500, clamped to [500, 2000]ms).
+        from app.services.state_authority_dynamic_crossfade import compute_dynamic_crossfade_ms
+
+        max_crossfade_ms = compute_dynamic_crossfade_ms(normalized)
+
         try:
             applied = await engine.load_graph_document(
                 copy.deepcopy(document),
                 use_independent_crossfade=True,
-                max_crossfade_ms=500,
+                max_crossfade_ms=max_crossfade_ms,
             )
         except Exception as exc:
             logger.debug("Graph-document engine activation skipped for %s: %s", snapshot.id, exc)
@@ -329,6 +339,7 @@ class StateAuthorityActivationService:
             "plugin_count": plugin_count,
             "bypass_count": bypass_count,
             "used_independent_crossfade": True,
+            "max_crossfade_ms": max_crossfade_ms,
         }
 
     @staticmethod
@@ -973,23 +984,79 @@ class StateAuthorityActivationService:
             refreshed_detail = channel_health["snapshot_payload"]
 
             snapshot_payload = copy.deepcopy(refreshed_detail)
+            # T2454-B: claim the warm-cache entry (if any) so the reconciler
+            # won't release the staged plugin instances mid-adoption. Always
+            # paired with mark_consumed() below — even on exception paths.
+            from app.services.snapshot.preload_orchestrator import (
+                get_preload_orchestrator,
+            )
+
+            warm_path_orchestrator = get_preload_orchestrator()
+            warm_claim = None
+            try:
+                warm_claim = await warm_path_orchestrator.claim(int(snapshot.id))
+            except Exception as exc:
+                # claim() itself shouldn't fail, but be defensive — falling
+                # through to cold path is always safe.
+                logger.debug(
+                    "T2454-B warm-path claim() raised for snapshot %s: %s",
+                    snapshot.id, exc,
+                )
+                warm_claim = None
+            warm_path_outcome: str = "cold"  # one of "adopted" | "fallback:<reason>" | "cold"
+
             intent = await runtime_state_service.mark_intent_phase(
                 intent=intent,
                 phase="APPLYING",
                 status="in_progress",
                 note="Applying snapshot runtime state to the engine.",
             )
-            graph_document_apply_result = await self.apply_graph_document_to_engine(
-                snapshot=snapshot,
-                normalized=normalized,
-            )
-            if graph_document_apply_result is not None:
-                params_applied = int(graph_document_apply_result.get("plugin_count") or 0)
-                bypass_applied = int(graph_document_apply_result.get("bypass_count") or 0)
-            else:
-                params_applied, bypass_applied = await self.runtime_service_module.apply_snapshot_to_engine(
-                    copy.deepcopy(snapshot_payload)
+            warm_path_succeeded = False
+            try:
+                graph_document_apply_result = await self.apply_graph_document_to_engine(
+                    snapshot=snapshot,
+                    normalized=normalized,
                 )
+                if graph_document_apply_result is not None:
+                    params_applied = int(graph_document_apply_result.get("plugin_count") or 0)
+                    bypass_applied = int(graph_document_apply_result.get("bypass_count") or 0)
+                    if warm_claim is not None:
+                        # The engine's load_graph_document already adopts any
+                        # loaded instance (including pre-staged ones) by URI.
+                        # If we held a warm claim and the apply succeeded, the
+                        # staged instances were either adopted into the live
+                        # graph or unloaded as redundant — either way they are
+                        # not ours to hand out anymore.
+                        warm_path_outcome = "adopted"
+                        warm_path_succeeded = True
+                else:
+                    params_applied, bypass_applied = await self.runtime_service_module.apply_snapshot_to_engine(
+                        copy.deepcopy(snapshot_payload)
+                    )
+                    if warm_claim is not None:
+                        # apply_graph_document_to_engine returned None — the
+                        # engine isn't running, doesn't expose the API, or
+                        # the document was malformed. Self-heal per Q4=D:
+                        # log WARNING + evict, no toast.
+                        warm_path_outcome = "fallback:engine_apply_unavailable"
+                        warm_path_succeeded = False
+                        logger.warning(
+                            "T2454-B warm-path fell back to cold rebuild for snapshot %s: %s",
+                            snapshot.id, warm_path_outcome,
+                        )
+            finally:
+                if warm_claim is not None:
+                    try:
+                        await warm_path_orchestrator.mark_consumed(
+                            int(snapshot.id), success=warm_path_succeeded,
+                        )
+                    except Exception as exc:
+                        # mark_consumed shouldn't raise either, but protect
+                        # the FSM from a leaked in-flight lock.
+                        logger.debug(
+                            "T2454-B warm-path mark_consumed() raised for snapshot %s: %s",
+                            snapshot.id, exc,
+                        )
             activation_topology_metrics = self._build_activation_topology_metrics(
                 activation_topology_metrics["before"],
                 await self.get_audio_engine().get_topology_mutation_stats(),
@@ -1002,6 +1069,14 @@ class StateAuthorityActivationService:
                 extra={
                     "params_applied": params_applied,
                     "bypass_applied": bypass_applied,
+                    # T2454-B: activation observability — operator + ops
+                    # can attribute warm-path benefit honestly.
+                    "warm_path": warm_path_outcome,
+                    "max_crossfade_ms": int(
+                        graph_document_apply_result.get("max_crossfade_ms")
+                        if graph_document_apply_result is not None and graph_document_apply_result.get("max_crossfade_ms") is not None
+                        else 500
+                    ),
                 },
             )
 
