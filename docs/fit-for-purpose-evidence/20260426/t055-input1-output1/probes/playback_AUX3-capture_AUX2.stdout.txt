@@ -1,0 +1,5 @@
+MAP2 latency measurement
+  method: jack
+  duration: 5s
+  target: 48000Hz / 64 samples
+  cycles: 3750

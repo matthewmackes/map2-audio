@@ -74,6 +74,45 @@ Evidence:
 
 Status: device enumeration is no longer blocked, but the task remains blocked/failed on physical loopback signal or JACK routing. The next attempt should verify the analog patch path with signal present on the selected UA-1000 input before rerunning the matrix.
 
+### All-eight loopback rerun
+
+Date: 2026-04-26
+
+Setup:
+
+- UA-1000 rebooted into `44.1 kHz` mode.
+- JACK/PipeWire exposed `playback_AUX0..9` and `capture_AUX0..11`.
+- Physical loopbacks connected for channels 1 through 8.
+- `scripts/measure_latency.sh` was fixed to detect this host's `jack_iodelay` client names (`jack_delay:out` / `jack_delay:in`) and to fall back to `pw-link` when `jack_connect` does not establish PipeWire JACK links.
+
+Result: `FAIL`
+
+Observed:
+
+- All eight same-index pairs produced measurable samples, confirming the physical signal path is alive.
+- Every channel failed the latency gate with unstable/high round-trip values.
+- No XRUNs were reported during the eight-channel pass.
+
+Summary:
+
+| Channel | JACK pair | Gate | Mean ms | P95 ms | Jitter p95 ms | XRUNs |
+|---|---|---:|---:|---:|---:|---:|
+| 1 | `playback_AUX0` -> `capture_AUX0` | FAIL | 310.3383 | 1161.242 | 1161.242 | 0 |
+| 2 | `playback_AUX1` -> `capture_AUX1` | FAIL | 1015.3517 | 1032.641 | 64.169 | 0 |
+| 3 | `playback_AUX2` -> `capture_AUX2` | FAIL | 421.8012 | 1160.586 | 1151.384 | 0 |
+| 4 | `playback_AUX3` -> `capture_AUX3` | FAIL | 710.3597 | 1161.219 | 1150.655 | 0 |
+| 5 | `playback_AUX4` -> `capture_AUX4` | FAIL | 413.2567 | 1331.962 | 1278.683 | 0 |
+| 6 | `playback_AUX5` -> `capture_AUX5` | FAIL | 588.6588 | 1331.921 | 1321.327 | 0 |
+| 7 | `playback_AUX6` -> `capture_AUX6` | FAIL | 330.9484 | 1161.250 | 1108.617 | 0 |
+| 8 | `playback_AUX7` -> `capture_AUX7` | FAIL | 352.0513 | 1333.174 | 1333.174 | 0 |
+
+Evidence:
+
+- `docs/fit-for-purpose-evidence/20260426/t055-all-eight-loopbacks/results.csv`
+- `docs/fit-for-purpose-evidence/20260426/t055-all-eight-loopbacks/ch*_AUX*.json`
+
+Status: the blocker moved from missing signal to invalid/unstable loopback measurement. Next action is to isolate one physical loop only, disable any UA-1000 direct-monitor/internal mixer loopback, and rerun that single pair to get a stable `jack_iodelay` lock before attempting the full tuned-vs-rollback matrix.
+
 ## T219-F Drum Machine Integration
 
 Command:

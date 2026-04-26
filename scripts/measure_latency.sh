@@ -136,6 +136,8 @@ detect_iodelay_out_port() {
     local port=""
     port=$(first_jack_port_match '^jack_iodelay:output$')
     [[ -z "$port" ]] && port=$(first_jack_port_match '^jack_iodelay:out$')
+    [[ -z "$port" ]] && port=$(first_jack_port_match '^jack_delay:out$')
+    [[ -z "$port" ]] && port=$(first_jack_port_match '^jack_delay-[0-9]+:out$')
     echo "$port"
 }
 
@@ -143,19 +145,31 @@ detect_iodelay_in_port() {
     local port=""
     port=$(first_jack_port_match '^jack_iodelay:input$')
     [[ -z "$port" ]] && port=$(first_jack_port_match '^jack_iodelay:in$')
+    [[ -z "$port" ]] && port=$(first_jack_port_match '^jack_delay:in$')
+    [[ -z "$port" ]] && port=$(first_jack_port_match '^jack_delay-[0-9]+:in$')
     echo "$port"
 }
 
 connect_jack_ports() {
     local source_port="$1"
     local target_port="$2"
+    local connected=false
     if command -v jack_connect >/dev/null 2>&1; then
-        jack_connect "$source_port" "$target_port" 2>/dev/null || true
+        if jack_connect "$source_port" "$target_port" 2>/dev/null; then
+            connected=true
+        fi
+    fi
+    if [[ "$connected" != true ]] && command -v pw-link >/dev/null 2>&1; then
+        if pw-link "$source_port" "$target_port" 2>/dev/null; then
+            connected=true
+        fi
+    fi
+    if [[ "$connected" == true ]]; then
         return 0
     fi
     if command -v pw-jack >/dev/null 2>&1; then
-        pw-jack jack_connect "$source_port" "$target_port" 2>/dev/null || true
-        return 0
+        pw-jack jack_connect "$source_port" "$target_port" 2>/dev/null
+        return $?
     fi
     return 1
 }
@@ -304,9 +318,9 @@ if [[ "$METHOD" == "jack" ]]; then
     trap 'rm -f "$values_file" "$jack_output_file"' EXIT
 
     if command -v pw-jack >/dev/null 2>&1; then
-        timeout "$DURATION_SECONDS" pw-jack jack_iodelay >"$jack_output_file" 2>&1 &
+        timeout --signal=INT "$DURATION_SECONDS" stdbuf -oL -eL pw-jack jack_iodelay >"$jack_output_file" 2>&1 &
     else
-        timeout "$DURATION_SECONDS" jack_iodelay >"$jack_output_file" 2>&1 &
+        timeout --signal=INT "$DURATION_SECONDS" stdbuf -oL -eL jack_iodelay >"$jack_output_file" 2>&1 &
     fi
     jack_pid=$!
 

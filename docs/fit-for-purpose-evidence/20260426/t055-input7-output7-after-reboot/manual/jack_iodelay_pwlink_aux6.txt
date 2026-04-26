@@ -1,0 +1,168 @@
+new capture latency: [0, 0]
+new playback latency: [0, 0]
+Signal below threshold...
+Signal below threshold...
+Signal below threshold...
+Signal below threshold...
+Signal below threshold...
+Signal below threshold...
+Signal below threshold...
+new playback latency: [64, 64]
+Signal below threshold...
+new capture latency: [64, 64]
+     0.000 frames      0.000 ms total roundtrip latency
+	extra loopback latency: 4294967168 frames
+	use 2147483584 for the backend arguments -I and -O ?? Inv
+     0.000 frames      0.000 ms total roundtrip latency
+	extra loopback latency: 4294967168 frames
+	use 2147483584 for the backend arguments -I and -O ??
+     0.000 frames      0.000 ms total roundtrip latency
+	extra loopback latency: 4294967168 frames
+	use 2147483584 for the backend arguments -I and -O ?? Inv
+     0.000 frames      0.000 ms total roundtrip latency
+	extra loopback latency: 4294967168 frames
+	use 2147483584 for the backend arguments -I and -O ??
+     0.000 frames      0.000 ms total roundtrip latency
+	extra loopback latency: 4294967168 frames
+	use 2147483584 for the backend arguments -I and -O ?? Inv
+     0.000 frames      0.000 ms total roundtrip latency
+	extra loopback latency: 4294967168 frames
+	use 2147483584 for the backend arguments -I and -O ??
+     0.000 frames      0.000 ms total roundtrip latency
+	extra loopback latency: 4294967168 frames
+	use 2147483584 for the backend arguments -I and -O ?? Inv
+     0.000 frames      0.000 ms total roundtrip latency
+	extra loopback latency: 4294967168 frames
+	use 2147483584 for the backend arguments -I and -O ??
+     0.000 frames      0.000 ms total roundtrip latency
+	extra loopback latency: 4294967168 frames
+	use 2147483584 for the backend arguments -I and -O ?? Inv
+     0.000 frames      0.000 ms total roundtrip latency
+	extra loopback latency: 4294967168 frames
+	use 2147483584 for the backend arguments -I and -O ??
+     0.000 frames      0.000 ms total roundtrip latency
+	extra loopback latency: 4294967168 frames
+	use 2147483584 for the backend arguments -I and -O ?? Inv
+     0.000 frames      0.000 ms total roundtrip latency
+	extra loopback latency: 4294967168 frames
+	use 2147483584 for the backend arguments -I and -O ??
+     0.000 frames      0.000 ms total roundtrip latency
+	extra loopback latency: 4294967168 frames
+	use 2147483584 for the backend arguments -I and -O ?? Inv
+     0.000 frames      0.000 ms total roundtrip latency
+	extra loopback latency: 4294967168 frames
+	use 2147483584 for the backend arguments -I and -O ??
+     0.000 frames      0.000 ms total roundtrip latency
+	extra loopback latency: 4294967168 frames
+	use 2147483584 for the backend arguments -I and -O ?? Inv
+     0.000 frames      0.000 ms total roundtrip latency
+	extra loopback latency: 4294967168 frames
+	use 2147483584 for the backend arguments -I and -O ??
+     0.000 frames      0.000 ms total roundtrip latency
+	extra loopback latency: 4294967168 frames
+	use 2147483584 for the backend arguments -I and -O ?? Inv
+     0.000 frames      0.000 ms total roundtrip latency
+	extra loopback latency: 4294967168 frames
+	use 2147483584 for the backend arguments -I and -O ??
+     0.000 frames      0.000 ms total roundtrip latency
+	extra loopback latency: 4294967168 frames
+	use 2147483584 for the backend arguments -I and -O ?? Inv
+     0.000 frames      0.000 ms total roundtrip latency
+	extra loopback latency: 4294967168 frames
+	use 2147483584 for the backend arguments -I and -O ??
+     0.000 frames      0.000 ms total roundtrip latency
+	extra loopback latency: 4294967168 frames
+	use 2147483584 for the backend arguments -I and -O ?? Inv
+     0.000 frames      0.000 ms total roundtrip latency
+	extra loopback latency: 4294967168 frames
+	use 2147483584 for the backend arguments -I and -O ??
+     0.000 frames      0.000 ms total roundtrip latency
+	extra loopback latency: 4294967168 frames
+	use 2147483584 for the backend arguments -I and -O ?? Inv
+ 59902.973 frames   1247.979 ms total roundtrip latency
+	extra loopback latency: 59774 frames
+	use 29887 for the backend arguments -I and -O ??
+ 59902.973 frames   1247.979 ms total roundtrip latency
+	extra loopback latency: 59774 frames
+	use 29887 for the backend arguments -I and -O ?? Inv
+ 59902.973 frames   1247.979 ms total roundtrip latency
+	extra loopback latency: 59774 frames
+	use 29887 for the backend arguments -I and -O ??
+ 59902.973 frames   1247.979 ms total roundtrip latency
+	extra loopback latency: 59774 frames
+	use 29887 for the backend arguments -I and -O ?? Inv
+ 59902.973 frames   1247.979 ms total roundtrip latency
+	extra loopback latency: 59774 frames
+	use 29887 for the backend arguments -I and -O ??
+ 59902.973 frames   1247.979 ms total roundtrip latency
+	extra loopback latency: 59774 frames
+	use 29887 for the backend arguments -I and -O ?? Inv
+ 59902.973 frames   1247.979 ms total roundtrip latency
+	extra loopback latency: 59774 frames
+	use 29887 for the backend arguments -I and -O ??
+ 59902.973 frames   1247.979 ms total roundtrip latency
+	extra loopback latency: 59774 frames
+	use 29887 for the backend arguments -I and -O ?? Inv
+ 59902.973 frames   1247.979 ms total roundtrip latency
+	extra loopback latency: 59774 frames
+	use 29887 for the backend arguments -I and -O ??
+ 59902.973 frames   1247.979 ms total roundtrip latency
+	extra loopback latency: 59774 frames
+	use 29887 for the backend arguments -I and -O ?? Inv
+ 59902.973 frames   1247.979 ms total roundtrip latency
+	extra loopback latency: 59774 frames
+	use 29887 for the backend arguments -I and -O ??
+ 59902.973 frames   1247.979 ms total roundtrip latency
+	extra loopback latency: 59774 frames
+	use 29887 for the backend arguments -I and -O ?? Inv
+ 59902.973 frames   1247.979 ms total roundtrip latency
+	extra loopback latency: 59774 frames
+	use 29887 for the backend arguments -I and -O ??
+ 59902.973 frames   1247.979 ms total roundtrip latency
+	extra loopback latency: 59774 frames
+	use 29887 for the backend arguments -I and -O ?? Inv
+ 39357.586 frames    819.950 ms total roundtrip latency
+	extra loopback latency: 39229 frames
+	use 19614 for the backend arguments -I and -O ??
+ 39357.586 frames    819.950 ms total roundtrip latency
+	extra loopback latency: 39229 frames
+	use 19614 for the backend arguments -I and -O ?? Inv
+ 39357.586 frames    819.950 ms total roundtrip latency
+	extra loopback latency: 39229 frames
+	use 19614 for the backend arguments -I and -O ??
+ 39357.586 frames    819.950 ms total roundtrip latency
+	extra loopback latency: 39229 frames
+	use 19614 for the backend arguments -I and -O ?? Inv
+ 39357.586 frames    819.950 ms total roundtrip latency
+	extra loopback latency: 39229 frames
+	use 19614 for the backend arguments -I and -O ??
+ 39357.586 frames    819.950 ms total roundtrip latency
+	extra loopback latency: 39229 frames
+	use 19614 for the backend arguments -I and -O ?? Inv
+ 39357.586 frames    819.950 ms total roundtrip latency
+	extra loopback latency: 39229 frames
+	use 19614 for the backend arguments -I and -O ??
+ 39357.586 frames    819.950 ms total roundtrip latency
+	extra loopback latency: 39229 frames
+	use 19614 for the backend arguments -I and -O ?? Inv
+ 39357.586 frames    819.950 ms total roundtrip latency
+	extra loopback latency: 39229 frames
+	use 19614 for the backend arguments -I and -O ??
+ 39357.586 frames    819.950 ms total roundtrip latency
+	extra loopback latency: 39229 frames
+	use 19614 for the backend arguments -I and -O ?? Inv
+ 39357.586 frames    819.950 ms total roundtrip latency
+	extra loopback latency: 39229 frames
+	use 19614 for the backend arguments -I and -O ??
+ 39357.586 frames    819.950 ms total roundtrip latency
+	extra loopback latency: 39229 frames
+	use 19614 for the backend arguments -I and -O ?? Inv
+ 39357.586 frames    819.950 ms total roundtrip latency
+	extra loopback latency: 39229 frames
+	use 19614 for the backend arguments -I and -O ??
+ 39357.586 frames    819.950 ms total roundtrip latency
+	extra loopback latency: 39229 frames
+	use 19614 for the backend arguments -I and -O ?? Inv
+ 39357.586 frames    819.950 ms total roundtrip latency
+	extra loopback latency: 39229 frames
+	use 19614 for the backend arguments -I and -O ??

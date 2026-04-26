@@ -1,0 +1,7 @@
+MAP2 latency measurement
+  method: jack
+  duration: 14s
+  target: 48000Hz / 64 samples
+  cycles: 10500
+Result: {"gate": "FAIL", "rtl_p95_ms": 1161.219, "jitter_p95_ms": 1150.655, "xruns": 0, "evidence_file": "docs/fit-for-purpose-evidence/20260426/t055-all-eight-loopbacks/ch4_AUX3.json"}
+Evidence: docs/fit-for-purpose-evidence/20260426/t055-all-eight-loopbacks/ch4_AUX3.json
