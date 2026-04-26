@@ -2,6 +2,7 @@ import type { ShellActionSlot } from '../ShellWindowContext'
 import './WorkspaceBar.css'
 
 interface WorkspaceBarProps {
+  sectionLabel?: string
   workspaceLabel: string
   actions: ShellActionSlot[]
   onClose?: () => void
@@ -9,6 +10,7 @@ interface WorkspaceBarProps {
 }
 
 export function WorkspaceBar({
+  sectionLabel = 'Platform Workspace',
   workspaceLabel,
   actions,
   onClose,
@@ -28,7 +30,7 @@ export function WorkspaceBar({
       </div>
       <div className="shell-ws__main">
         <span className="shell-ws__main-dot" aria-hidden="true" />
-        <span className="shell-ws__main-label">Platform Workspace</span>
+        <span className="shell-ws__main-label">{sectionLabel}</span>
         <span className="shell-ws__main-sep">·</span>
         <strong className="shell-ws__main-name">{workspaceLabel}</strong>
       </div>

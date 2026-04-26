@@ -8,6 +8,44 @@ import { buildStartMenuItems } from './startMenuItems'
 import type { HomePlatformStatus } from '../hooks/useHomePlatformStatus'
 import type { StartMenuTileItem } from './ShellLauncherPanel'
 
+type ShellRoutePresentation = {
+  sectionLabel: string
+  windowLabel: string
+}
+
+const NODE_OPS_ROUTE_PRESENTATION: Record<string, ShellRoutePresentation> = {
+  '/workspace': { sectionLabel: 'Node Ops', windowLabel: 'Overview' },
+  '/workspace/platforms/overview': { sectionLabel: 'Node Ops', windowLabel: 'Overview' },
+  '/platforms/overview': { sectionLabel: 'Node Ops', windowLabel: 'Overview' },
+  '/workspace/platforms/management': { sectionLabel: 'Node Ops', windowLabel: 'Device Manager' },
+  '/platforms/management': { sectionLabel: 'Node Ops', windowLabel: 'Device Manager' },
+  '/workspace/platforms/audio-engine': { sectionLabel: 'Node Ops', windowLabel: 'Audio Engine' },
+  '/platforms/audio-engine': { sectionLabel: 'Node Ops', windowLabel: 'Audio Engine' },
+  '/chains': { sectionLabel: 'Node Ops', windowLabel: 'Chains' },
+  '/workspace/platforms/avb-routing': { sectionLabel: 'Node Ops', windowLabel: 'AVB Routing' },
+  '/platforms/avb-routing': { sectionLabel: 'Node Ops', windowLabel: 'AVB Routing' },
+  '/workspace/platforms/network-discovery': { sectionLabel: 'Node Ops', windowLabel: 'Network Discovery' },
+  '/platforms/network-discovery': { sectionLabel: 'Node Ops', windowLabel: 'Network Discovery' },
+  '/workspace/platforms/cluster-dashboard': { sectionLabel: 'Node Ops', windowLabel: 'Cluster Dashboard' },
+  '/platforms/cluster-dashboard': { sectionLabel: 'Node Ops', windowLabel: 'Cluster Dashboard' },
+  '/workspace/platforms/midpoint': { sectionLabel: 'Node Ops', windowLabel: 'Midpoint' },
+  '/platforms/midpoint': { sectionLabel: 'Node Ops', windowLabel: 'Midpoint' },
+  '/platforms/api-webhooks': { sectionLabel: 'Node Ops', windowLabel: 'Midpoint' },
+  '/workspace/platforms/api-webhooks': { sectionLabel: 'Node Ops', windowLabel: 'Midpoint' },
+  '/workspace/platforms/adoption': { sectionLabel: 'Node Ops', windowLabel: 'Adoption' },
+  '/platforms/adoption': { sectionLabel: 'Node Ops', windowLabel: 'Adoption' },
+  '/workspace/platforms/theme': { sectionLabel: 'Node Ops', windowLabel: 'Theme' },
+  '/platforms/theme': { sectionLabel: 'Node Ops', windowLabel: 'Theme' },
+  '/workspace/platforms/about': { sectionLabel: 'Node Ops', windowLabel: 'About' },
+  '/platforms/about': { sectionLabel: 'Node Ops', windowLabel: 'About' },
+}
+
+function resolveShellRoutePresentation(pathname: string, canonicalPathname: string): ShellRoutePresentation | null {
+  return NODE_OPS_ROUTE_PRESENTATION[pathname]
+    ?? NODE_OPS_ROUTE_PRESENTATION[canonicalPathname]
+    ?? null
+}
+
 export type TaskbarPillItem = {
   label: string
   route: string
@@ -66,18 +104,28 @@ export function useAppShellPresentation({
   const isAudioGridWorkspaceRoute = pathname === '/juce-grid' || pathname === '/snapshot-editor'
   const isSnapshotEditorRoute = canonicalPathname === '/snapshot-editor'
   const isMidiAssignmentsRoute = canonicalPathname === '/midi/assignments'
+  const shellRoutePresentation = resolveShellRoutePresentation(pathname, canonicalPathname)
   const isThemedWorkspaceRoute = isAudioGridWorkspaceRoute || isIntegratedWorkspaceRoute
   const shellClassName = `app-shell${isTabletTouchRoute ? ' app-shell--juce-grid-tablet' : ''}${isAudioGridWorkspaceRoute ? ' app-shell--audio-grid' : ''}${isThemedWorkspaceRoute ? ' app-shell--themed-workspace' : ''}${pathname !== '/perform' ? ' app-shell--windowed' : ''}${pathname === '/perform' ? ' app-shell--perform-route' : ''}${pathname === '/' ? ' app-shell--landing' : ''}`
 
-  const workspaceLabel = isSnapshotEditorRoute
+  const shellSectionLabel = shellRoutePresentation?.sectionLabel ?? 'Platform Workspace'
+  const workspaceLabel = shellRoutePresentation
+    ? `${shellRoutePresentation.sectionLabel}: ${shellRoutePresentation.windowLabel}`
+    : isSnapshotEditorRoute
     ? 'Snapshot Editor'
     : isMidiAssignmentsRoute
       ? 'MIDI Assignments'
     : currentShellItem?.shortLabel ?? currentShellItem?.label ?? 'Workspace'
-  const shellTitle = currentShellItem?.label ?? workspaceLabel
+  const shellTitle = shellRoutePresentation
+    ? `${shellRoutePresentation.sectionLabel}: ${shellRoutePresentation.windowLabel}`
+    : currentShellItem?.label ?? workspaceLabel
   const shellSubtitle = currentShellItem?.description
-  const shellKicker = `Platform / ${workspaceLabel}`
-  const shellCrumbs = [isSnapshotEditorRoute ? 'Snapshot Editor surface' : 'Workspace surface', workspaceLabel]
+  const shellKicker = shellRoutePresentation
+    ? `${shellRoutePresentation.sectionLabel} / ${shellRoutePresentation.windowLabel}`
+    : `Platform / ${workspaceLabel}`
+  const shellCrumbs = shellRoutePresentation
+    ? [shellRoutePresentation.sectionLabel, shellRoutePresentation.windowLabel]
+    : [isSnapshotEditorRoute ? 'Snapshot Editor surface' : 'Workspace surface', workspaceLabel]
 
   return {
     currentShellItem,
@@ -99,6 +147,7 @@ export function useAppShellPresentation({
     shellCrumbs,
     shellKicker,
     shellRouteHint: formatShellRouteHint(canonicalPathname),
+    shellSectionLabel,
     shellSubtitle,
     shellTitle,
     shellWindowIcon: currentShellItem?.icon ?? Map2BrandMark,

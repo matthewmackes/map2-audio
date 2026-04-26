@@ -49,6 +49,7 @@ export function AppShell({ children }: { children: ReactNode }) {
     shellCrumbs,
     shellKicker,
     shellRouteHint,
+    shellSectionLabel,
     shellSubtitle,
     shellTitle,
     shellWindowIcon: ShellWindowIcon,
@@ -174,6 +175,7 @@ export function AppShell({ children }: { children: ReactNode }) {
     >
       {showTopChrome ? (
         <WorkspaceBar
+          sectionLabel={shellSectionLabel}
           workspaceLabel={mergedTitle || shellWorkspaceLabel}
           actions={mergedActions}
           onClose={handleCloseCurrentApp}
