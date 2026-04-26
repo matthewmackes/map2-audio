@@ -347,6 +347,22 @@ Last updated: 2026-04-26 EDT - Claude: SHIPPED.
 
 ---
 
+ID: T2454-B2
+Status: [ ] Todo
+Note: Opened from T2454-B completion. Engine-side per-slot observability — requires C++ work.
+Title: Per-slot adoption observability — engine adoption-stats round-trip
+Description:
+- Goal: Surface how many staged plugin instances were actually adopted vs freshly loaded by the engine on each warm-path activation. Today the slice 1' Python-only solution leverages `loadGraphDocument`'s existing URI-reuse loop without instrumenting the adoption count back to Python — the operator gets the warm-path benefit but ops can't attribute fallback rates with hard numbers.
+- Why: T2454's original acceptance criterion (1) "preloaded activation measured ≥ 3× faster than cold on a canonical 8-slot snapshot" wants a measurable improvement number. Without per-slot adoption stats from the engine, we can only count plugin/bypass totals, not the warm-vs-fresh ratio.
+- Files: `juce-engine/Source/Map2AudioEngine.cpp` + `Map2AudioEngine.h` (extend `loadGraphDocument` to return adoption stats: `{plugins_total, plugins_adopted, plugins_freshly_loaded}` and expose through the Python binding), Python binding wrapper, `app/services/state_authority_activation_service.py` (thread the stats into the activation `runtime` extra alongside `warm_path` and `max_crossfade_ms`), `tests/test_state_authority_activation_service.py` (extend the existing fake engine to assert the stats flow through).
+- Dependencies: T2454-B shipped. No new user Q-cycle needed — this is a pure observability instrumentation extension.
+- Estimated effort: Medium (1 day mostly because of the C++ build + binding edit cycle).
+- Acceptance: (1) the warm-path activation extra carries `plugins_total`, `plugins_adopted`, `plugins_freshly_loaded` ints; (2) a recorded activation against a fully-warm pinned snapshot shows `plugins_adopted == plugins_total`; (3) a recorded activation against a partial-warm scenario shows the expected split; (4) cold-path activations show `plugins_adopted == 0`; (5) all existing FSM tests stay green.
+Assigned to: TBD
+Last updated: 2026-04-26 EDT - opened from T2454-B completion.
+
+---
+
 ID: T2454-C
 Status: [✓] Done
 Note: Opened from T2454 slice 1. Pure UI plumbing, no backend changes.
