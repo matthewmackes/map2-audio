@@ -21,6 +21,7 @@ from app.services.special_settings_normalization import (
     DEFAULT_SNAPSHOT_EDITOR_FLOW_ANIMATION,
     DEFAULT_SNAPSHOT_EDITOR_GRID_BACKDROP,
     DEFAULT_SNAPSHOT_EDITOR_NODE_SHAPE,
+    DEFAULT_SNAPSHOT_PRELOAD_PINS,
     DEFAULT_SNAPSHOT_SETLIST_MODE,
     DEFAULT_SNAPSHOT_SETLIST_ORDER,
     normalize_landing_tiles,
@@ -30,6 +31,7 @@ from app.services.special_settings_normalization import (
     normalize_snapshot_editor_flow_animation,
     normalize_snapshot_editor_grid_backdrop,
     normalize_snapshot_editor_node_shape,
+    normalize_snapshot_preload_pins,
     normalize_snapshot_setlist_mode,
     normalize_snapshot_setlist_order,
     resolve_landing_tiles_from_settings,
@@ -37,6 +39,7 @@ from app.services.special_settings_normalization import (
     resolve_snapshot_editor_flow_animation_from_settings,
     resolve_snapshot_editor_grid_backdrop_from_settings,
     resolve_snapshot_editor_node_shape_from_settings,
+    resolve_snapshot_preload_pins_from_settings,
     resolve_snapshot_setlist_mode_from_settings,
     resolve_snapshot_setlist_order_from_settings,
 )
@@ -54,11 +57,13 @@ _normalize_snapshot_editor_grid_backdrop = normalize_snapshot_editor_grid_backdr
 _normalize_snapshot_editor_node_shape = normalize_snapshot_editor_node_shape
 _normalize_snapshot_setlist_mode = normalize_snapshot_setlist_mode
 _normalize_snapshot_setlist_order = normalize_snapshot_setlist_order
+_normalize_snapshot_preload_pins = normalize_snapshot_preload_pins
 _resolve_snapshot_editor_flow_animation = resolve_snapshot_editor_flow_animation_from_settings
 _resolve_snapshot_editor_grid_backdrop = resolve_snapshot_editor_grid_backdrop_from_settings
 _resolve_snapshot_editor_node_shape = resolve_snapshot_editor_node_shape_from_settings
 _resolve_snapshot_setlist_mode = resolve_snapshot_setlist_mode_from_settings
 _resolve_snapshot_setlist_order = resolve_snapshot_setlist_order_from_settings
+_resolve_snapshot_preload_pins = resolve_snapshot_preload_pins_from_settings
 
 
 class SpecialSettingsStateManager:
@@ -108,6 +113,7 @@ class SpecialSettingsStateManager:
                         snapshot_editor_flow_animation=DEFAULT_SNAPSHOT_EDITOR_FLOW_ANIMATION,
                         snapshot_editor_grid_backdrop=DEFAULT_SNAPSHOT_EDITOR_GRID_BACKDROP,
                         snapshot_editor_node_shape=DEFAULT_SNAPSHOT_EDITOR_NODE_SHAPE,
+                        snapshot_preload_pins=DEFAULT_SNAPSHOT_PRELOAD_PINS.copy(),
                         last_active_node=None,
                         version=1
                     )
@@ -144,6 +150,9 @@ class SpecialSettingsStateManager:
                 settings.snapshot_editor_node_shape = _normalize_snapshot_editor_node_shape(
                     entry_data.get("snapshot_editor.node_shape", entry_data.get("snapshot_editor_node_shape", _resolve_snapshot_editor_node_shape(settings)))
                 )
+                settings.snapshot_preload_pins = _normalize_snapshot_preload_pins(
+                    entry_data.get("snapshot_preload_pins", _resolve_snapshot_preload_pins(settings))
+                )
                 settings.last_active_node = _normalize_last_active_node(
                     entry_data.get("last_active_node")
                 )
@@ -164,6 +173,7 @@ class SpecialSettingsStateManager:
                     f"snapshot_editor_flow_animation={settings.snapshot_editor_flow_animation}, "
                     f"snapshot_editor_grid_backdrop={settings.snapshot_editor_grid_backdrop}, "
                     f"snapshot_editor_node_shape={settings.snapshot_editor_node_shape}, "
+                    f"snapshot_preload_pins={len(settings.snapshot_preload_pins or [])}, "
                     f"last_active_node={settings.last_active_node}, "
                     f"version={settings.version}"
                 )
@@ -196,6 +206,7 @@ class SpecialSettingsStateManager:
                     "snapshot_editor.flow_animation": _resolve_snapshot_editor_flow_animation(settings),
                     "snapshot_editor.grid_backdrop": _resolve_snapshot_editor_grid_backdrop(settings),
                     "snapshot_editor.node_shape": _resolve_snapshot_editor_node_shape(settings),
+                    "snapshot_preload_pins": _resolve_snapshot_preload_pins(settings),
                     "last_active_node": _normalize_last_active_node(getattr(settings, "last_active_node", None)),
                     "version": settings.version,
                     "updated_by_node": settings.updated_by_node,
@@ -219,6 +230,7 @@ async def replicate_special_settings_to_raft(
     snapshot_editor_flow_animation: str,
     snapshot_editor_grid_backdrop: bool,
     snapshot_editor_node_shape: str,
+    snapshot_preload_pins: list,
     last_active_node,
     node_id: str
 ) -> int:
@@ -253,6 +265,7 @@ async def replicate_special_settings_to_raft(
             "snapshot_editor.flow_animation": _normalize_snapshot_editor_flow_animation(snapshot_editor_flow_animation),
             "snapshot_editor.grid_backdrop": _normalize_snapshot_editor_grid_backdrop(snapshot_editor_grid_backdrop),
             "snapshot_editor.node_shape": _normalize_snapshot_editor_node_shape(snapshot_editor_node_shape),
+            "snapshot_preload_pins": _normalize_snapshot_preload_pins(snapshot_preload_pins),
             "last_active_node": _normalize_last_active_node(last_active_node),
             "updated_by_node": node_id,
             "timestamp": datetime.now(timezone.utc).isoformat(),
@@ -276,6 +289,7 @@ async def replicate_special_settings_to_raft(
             f"snapshot_editor_flow_animation={entry_data['snapshot_editor.flow_animation']}, "
             f"snapshot_editor_grid_backdrop={entry_data['snapshot_editor.grid_backdrop']}, "
             f"snapshot_editor_node_shape={entry_data['snapshot_editor.node_shape']}, "
+            f"snapshot_preload_pins={len(entry_data['snapshot_preload_pins'])}, "
             f"last_active_node={entry_data['last_active_node']}, version={version}"
         )
         

@@ -12,6 +12,8 @@ DEFAULT_SNAPSHOT_SETLIST_ORDER: list[int] = []
 DEFAULT_SNAPSHOT_EDITOR_FLOW_ANIMATION = "cascade"
 DEFAULT_SNAPSHOT_EDITOR_GRID_BACKDROP = True
 DEFAULT_SNAPSHOT_EDITOR_NODE_SHAPE = "square"
+DEFAULT_SNAPSHOT_PRELOAD_PINS: list[int] = []
+SNAPSHOT_PRELOAD_PIN_CAP = 5
 SNAPSHOT_EDITOR_FLOW_ANIMATIONS = {
     "off",
     "dashmarch",
@@ -205,6 +207,51 @@ def resolve_snapshot_editor_node_shape_from_settings(settings) -> str:
             "snapshot_editor_node_shape",
             DEFAULT_SNAPSHOT_EDITOR_NODE_SHAPE,
         )
+    )
+
+
+def normalize_snapshot_preload_pins(pins: Optional[list]) -> list[int]:
+    """T2454: ordered, deduplicated, capped-at-5 list of snapshot ids the
+    operator has explicitly pinned for preload. Mirrors normalize_snapshot_setlist_order
+    semantics — accepts ints or string-coerced ints, drops invalid entries, preserves
+    the operator's chosen order."""
+    if not pins:
+        return []
+
+    normalized: list[int] = []
+    seen: set[int] = set()
+
+    for raw_snapshot_id in pins:
+        if isinstance(raw_snapshot_id, bool):
+            continue
+
+        if isinstance(raw_snapshot_id, int):
+            snapshot_id = raw_snapshot_id
+        elif isinstance(raw_snapshot_id, str):
+            raw_value = raw_snapshot_id.strip()
+            if not raw_value:
+                continue
+            try:
+                snapshot_id = int(raw_value, 10)
+            except ValueError:
+                continue
+        else:
+            continue
+
+        if snapshot_id < 1 or snapshot_id in seen:
+            continue
+
+        seen.add(snapshot_id)
+        normalized.append(snapshot_id)
+        if len(normalized) >= SNAPSHOT_PRELOAD_PIN_CAP:
+            break
+
+    return normalized
+
+
+def resolve_snapshot_preload_pins_from_settings(settings) -> list[int]:
+    return normalize_snapshot_preload_pins(
+        getattr(settings, "snapshot_preload_pins", DEFAULT_SNAPSHOT_PRELOAD_PINS)
     )
 
 

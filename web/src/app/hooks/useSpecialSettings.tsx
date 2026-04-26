@@ -51,6 +51,8 @@ export const DEFAULT_SNAPSHOT_EDITOR_SIGNAL_CANVAS_SETTINGS: SnapshotEditorSigna
   nodeShape: 'square',
 }
 
+export const SNAPSHOT_PRELOAD_PIN_CAP = 5
+
 export interface SpecialSettings {
   enabled: boolean
   hiddenPlugins: string[]
@@ -62,6 +64,8 @@ export interface SpecialSettings {
   'snapshot_editor.flow_animation': SnapshotEditorFlowAnimation
   'snapshot_editor.grid_backdrop': boolean
   'snapshot_editor.node_shape': SnapshotEditorNodeShape
+  /** T2454: ordered snapshot ids the operator has explicitly pinned for preload (max 5). */
+  snapshotPreloadPins: number[]
   lastActiveNode?: string | null
   version?: number
   lastUpdated?: string
@@ -127,6 +131,38 @@ function resolveSnapshotSetlistOrder(data: Record<string, unknown>): number[] {
   return normalized
 }
 
+/** T2454: dedupe + cap-at-5 for snapshot_preload_pins. Mirrors the backend
+ * `normalize_snapshot_preload_pins` exactly. */
+export function normalizeSnapshotPreloadPins(values: ReadonlyArray<unknown>): number[] {
+  const normalized: number[] = []
+  const seen = new Set<number>()
+
+  for (const raw of values) {
+    let candidate: number | null = null
+    if (typeof raw === 'number' && Number.isInteger(raw)) {
+      candidate = raw
+    } else if (typeof raw === 'string') {
+      const trimmed = raw.trim()
+      if (trimmed.length === 0) continue
+      const parsed = Number.parseInt(trimmed, 10)
+      if (Number.isInteger(parsed)) candidate = parsed
+    }
+    if (candidate === null || candidate < 1 || seen.has(candidate)) continue
+
+    seen.add(candidate)
+    normalized.push(candidate)
+    if (normalized.length >= SNAPSHOT_PRELOAD_PIN_CAP) break
+  }
+
+  return normalized
+}
+
+function resolveSnapshotPreloadPins(data: Record<string, unknown>): number[] {
+  const raw = data.snapshot_preload_pins
+  if (!Array.isArray(raw)) return []
+  return normalizeSnapshotPreloadPins(raw)
+}
+
 function isSnapshotEditorFlowAnimation(value: unknown): value is SnapshotEditorFlowAnimation {
   return typeof value === 'string' && SNAPSHOT_EDITOR_FLOW_ANIMATION_OPTIONS.some((option) => option.id === value)
 }
@@ -174,6 +210,7 @@ function toSpecialSettings(data: Record<string, unknown>): SpecialSettings {
     'snapshot_editor.flow_animation': resolveSnapshotEditorFlowAnimation(data),
     'snapshot_editor.grid_backdrop': resolveSnapshotEditorGridBackdrop(data),
     'snapshot_editor.node_shape': resolveSnapshotEditorNodeShape(data),
+    snapshotPreloadPins: resolveSnapshotPreloadPins(data),
     lastActiveNode: typeof data.last_active_node === 'string' ? data.last_active_node : null,
     version: typeof data.version === 'number' ? data.version : undefined,
     lastUpdated: typeof data.last_updated === 'string' ? data.last_updated : undefined,
@@ -206,6 +243,9 @@ function buildUpdatePayload(newSettings: Partial<SpecialSettings>, currentSettin
     'snapshot_editor.node_shape': newSettings['snapshot_editor.node_shape']
       ?? currentSettings?.['snapshot_editor.node_shape']
       ?? DEFAULT_SNAPSHOT_EDITOR_SIGNAL_CANVAS_SETTINGS.nodeShape,
+    snapshot_preload_pins: normalizeSnapshotPreloadPins(
+      newSettings.snapshotPreloadPins ?? currentSettings?.snapshotPreloadPins ?? [],
+    ),
     promoted_advanced_routes: pinnedRoutes,
     last_active_node: newSettings.lastActiveNode ?? currentSettings?.lastActiveNode ?? null,
   }

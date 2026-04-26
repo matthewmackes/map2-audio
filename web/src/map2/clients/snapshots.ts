@@ -110,6 +110,32 @@ export interface SnapshotPublishMutationResponse extends SnapshotActivationRespo
   session_id?: string
 }
 
+// T2454 slice 1: preload status surface for the editor's Preload Slots panel.
+export interface SnapshotPreloadSlot {
+  snapshot_id: number
+  warm: boolean
+  version: number | null
+  warmed_at: number | null
+  staged_instance_count: number
+  last_error: string | null
+}
+
+export interface SnapshotPreloadStatusResponse {
+  pinned_count: number
+  warm_count: number
+  slots: SnapshotPreloadSlot[]
+}
+
+export interface SnapshotPreloadResponse {
+  snapshot_id: number
+  warm: boolean
+  version?: number
+  staged_instance_count?: number
+  reason?: string
+  status?: string
+  warnings?: string[]
+}
+
 export interface SnapshotCreateResponse {
   status: string
   snapshot_id: number
@@ -442,6 +468,22 @@ export const snapshotsApi = {
 
   getClusterRuntimeLiveState: () =>
     fetchJson<SnapshotRuntimeClusterLiveStateResponse>(`${API_BASE}/cluster/runtime/live-state`, { cache: 'no-store' }),
+
+  // T2454 slice 1: explicitly warm a snapshot's plugin instances in the engine.
+  // Idempotent — if the snapshot is already warm at the current version, the
+  // backend returns reason='already_warm' without re-staging.
+  preload: (snapshotId: number) =>
+    fetchJson<SnapshotPreloadResponse>(`${API_BASE}/snapshots/${snapshotId}/preload`, {
+      method: 'POST',
+    }),
+
+  // T2454 slice 1: live warm-cache status across all pinned snapshots.
+  // Joins the orchestrator's process-local cache with the Raft-replicated
+  // pinned set so the UI always sees the canonical 5-slot layout.
+  getPreloadStatus: () =>
+    fetchJson<SnapshotPreloadStatusResponse>(`${API_BASE}/snapshots/preload-status`, {
+      cache: 'no-store',
+    }),
 
   getActivationEvents: (limit = 100, nodeId?: string | null) => {
     const params = new URLSearchParams()

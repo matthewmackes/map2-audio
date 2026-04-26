@@ -547,6 +547,77 @@ def _ensure_special_settings_schema_sync() -> None:
             logger.info("Added special_settings.snapshot_editor_node_shape schema upgrade")
 
 
+def _ensure_special_settings_snapshot_editor_columns_sync() -> None:
+    """T2454 slice 1: schema-drift recovery for special_settings.
+
+    The `snapshot_editor_flow_animation`, `snapshot_editor_grid_backdrop`,
+    and `snapshot_editor_node_shape` columns were appended to migration-v1's
+    body after migration-v1 had already been recorded as applied on existing
+    DBs — leaving those DBs missing the columns. The additive pattern only
+    runs a versioned migration once, so subsequent edits to the body were
+    silently ineffective on long-lived databases. This versioned migration
+    explicitly catches up older DBs.
+    """
+    if _engine is None or _engine.dialect.name != "sqlite":
+        return
+
+    with _engine.begin() as conn:
+        if _add_sqlite_column_if_missing(
+            conn, "special_settings", "snapshot_editor_flow_animation", "VARCHAR(32)"
+        ):
+            conn.execute(
+                text(
+                    "UPDATE special_settings "
+                    "SET snapshot_editor_flow_animation = :flow_animation "
+                    "WHERE snapshot_editor_flow_animation IS NULL"
+                ),
+                {"flow_animation": _special_settings_default_snapshot_editor_flow_animation()},
+            )
+        if _add_sqlite_column_if_missing(
+            conn, "special_settings", "snapshot_editor_grid_backdrop", "BOOLEAN"
+        ):
+            conn.execute(
+                text(
+                    "UPDATE special_settings "
+                    "SET snapshot_editor_grid_backdrop = 1 "
+                    "WHERE snapshot_editor_grid_backdrop IS NULL"
+                )
+            )
+        if _add_sqlite_column_if_missing(
+            conn, "special_settings", "snapshot_editor_node_shape", "VARCHAR(16)"
+        ):
+            conn.execute(
+                text(
+                    "UPDATE special_settings "
+                    "SET snapshot_editor_node_shape = :node_shape "
+                    "WHERE snapshot_editor_node_shape IS NULL"
+                ),
+                {"node_shape": _special_settings_default_snapshot_editor_node_shape()},
+            )
+
+
+def _ensure_snapshot_preload_pins_schema_sync() -> None:
+    """T2454 slice 1: add the snapshot_preload_pins column to special_settings.
+
+    Versioned as its own migration so it runs against existing dev/prod DBs
+    where the migration-1 body was already recorded as applied (the additive
+    pattern doesn't re-run prior migration bodies). Mirrors the structural
+    shape of `_ensure_snapshot_version_token_schema_sync` (T2449).
+    """
+    if _engine is None or _engine.dialect.name != "sqlite":
+        return
+
+    with _engine.begin() as conn:
+        if _add_sqlite_column_if_missing(conn, "special_settings", "snapshot_preload_pins", "JSON"):
+            conn.execute(
+                text(
+                    "UPDATE special_settings "
+                    "SET snapshot_preload_pins = '[]' "
+                    "WHERE snapshot_preload_pins IS NULL"
+                )
+            )
+
+
 def _sqlite_columns(conn, table_name: str) -> set[str]:
     result = conn.execute(text(f"PRAGMA table_info({table_name})"))
     return {str(row[1]) for row in result.fetchall()}
@@ -874,6 +945,61 @@ async def _ensure_special_settings_schema_async(conn) -> None:
         logger.info("Added async special_settings.snapshot_editor_node_shape schema upgrade")
 
 
+async def _ensure_special_settings_snapshot_editor_columns_async(conn) -> None:
+    """T2454 slice 1: async sibling of the schema-drift recovery for the
+    snapshot_editor_* columns. See sync sibling for full context."""
+    if conn.dialect.name != "sqlite":
+        return
+
+    if await _add_sqlite_column_if_missing_async(
+        conn, "special_settings", "snapshot_editor_flow_animation", "VARCHAR(32)"
+    ):
+        await conn.execute(
+            text(
+                "UPDATE special_settings "
+                "SET snapshot_editor_flow_animation = :flow_animation "
+                "WHERE snapshot_editor_flow_animation IS NULL"
+            ),
+            {"flow_animation": _special_settings_default_snapshot_editor_flow_animation()},
+        )
+    if await _add_sqlite_column_if_missing_async(
+        conn, "special_settings", "snapshot_editor_grid_backdrop", "BOOLEAN"
+    ):
+        await conn.execute(
+            text(
+                "UPDATE special_settings "
+                "SET snapshot_editor_grid_backdrop = 1 "
+                "WHERE snapshot_editor_grid_backdrop IS NULL"
+            )
+        )
+    if await _add_sqlite_column_if_missing_async(
+        conn, "special_settings", "snapshot_editor_node_shape", "VARCHAR(16)"
+    ):
+        await conn.execute(
+            text(
+                "UPDATE special_settings "
+                "SET snapshot_editor_node_shape = :node_shape "
+                "WHERE snapshot_editor_node_shape IS NULL"
+            ),
+            {"node_shape": _special_settings_default_snapshot_editor_node_shape()},
+        )
+
+
+async def _ensure_snapshot_preload_pins_schema_async(conn) -> None:
+    """T2454 slice 1: async sibling of `_ensure_snapshot_preload_pins_schema_sync`."""
+    if conn.dialect.name != "sqlite":
+        return
+
+    if await _add_sqlite_column_if_missing_async(conn, "special_settings", "snapshot_preload_pins", "JSON"):
+        await conn.execute(
+            text(
+                "UPDATE special_settings "
+                "SET snapshot_preload_pins = '[]' "
+                "WHERE snapshot_preload_pins IS NULL"
+            )
+        )
+
+
 async def _sqlite_columns_async(conn, table_name: str) -> set[str]:
     result = await conn.execute(text(f"PRAGMA table_info({table_name})"))
     return {str(row[1]) for row in result.fetchall()}
@@ -1184,6 +1310,14 @@ SCHEMA_MIGRATIONS: Sequence[tuple[int, str, MigrationSync, MigrationAsync]] = (
     (8, "plugin_metadata_additive_sync", _ensure_plugin_metadata_schema_sync, _ensure_plugin_metadata_schema_async),
     # T2449: optimistic-concurrency token column on snapshots.
     (9, "snapshot_version_token_additive_sync", _ensure_snapshot_version_token_schema_sync, _ensure_snapshot_version_token_schema_async),
+    # T2454 slice 1: snapshot_preload_pins on special_settings (operator-pinned
+    # preload set, cap=5, Raft-replicated).
+    (10, "snapshot_preload_pins_additive_sync", _ensure_snapshot_preload_pins_schema_sync, _ensure_snapshot_preload_pins_schema_async),
+    # T2454 slice 1 schema-drift recovery: catch up older DBs that missed
+    # the snapshot_editor_* columns appended to migration-v1's body after v1
+    # was already recorded as applied. Without this, GET /api/settings/special
+    # 500s on long-lived DBs that never picked up T2433-era column work.
+    (11, "special_settings_snapshot_editor_recovery_sync", _ensure_special_settings_snapshot_editor_columns_sync, _ensure_special_settings_snapshot_editor_columns_async),
 )
 
 
@@ -2793,6 +2927,11 @@ class SpecialSettings(Base):
     snapshot_editor_flow_animation = Column(String(32), nullable=False, default="cascade")
     snapshot_editor_grid_backdrop = Column(Boolean, nullable=False, default=True)
     snapshot_editor_node_shape = Column(String(16), nullable=False, default="square")
+    # T2454: ordered list of snapshot ids (max 5) the operator has explicitly
+    # pinned for preload. Persisted here (not on Snapshot rows) so pins are
+    # operator/session-scoped state, mirror the promoted_advanced_routes pattern,
+    # and replicate via Raft consensus across cluster nodes.
+    snapshot_preload_pins = Column(JSON, default=list)
     last_active_node = Column(String(128), nullable=True)
     
     # Cluster replication metadata

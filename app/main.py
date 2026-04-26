@@ -541,6 +541,16 @@ async def lifespan(app):
         await safe_start_service(logger, "MIDI broadcast service", start_midi_broadcast)
         # Start authoritative snapshot runtime heartbeat broadcaster.
         await safe_start_service(logger, "Snapshot runtime heartbeat", start_snapshot_runtime_heartbeat)
+        # T2454 slice 1: 30s reconciler loop that walks the operator-pinned
+        # snapshot set and self-heals warm-cache state (evicts orphans,
+        # re-warms drifted/cold pins). Cancelled cleanly on shutdown.
+        try:
+            from app.services.snapshot.preload_reconciler import get_preload_reconciler
+
+            preload_reconciler = get_preload_reconciler()
+            preload_reconciler.start()
+        except Exception as exc:
+            logger.warning("Failed to start snapshot preload reconciler: %s", exc)
         # Attach MIDI v2 service to MidiHub consumer stream (program-change handling).
         try:
             from app.services.midi_service import midi_service
@@ -909,6 +919,18 @@ async def lifespan(app):
         
         await safe_stop_service(logger, "MIDI broadcast service", stop_midi_broadcast)
         await safe_stop_service(logger, "Snapshot runtime heartbeat", stop_snapshot_runtime_heartbeat)
+        # T2454 slice 1: stop the preload reconciler and let in-flight
+        # warming complete (5s timeout inside `stop()`).
+        try:
+            from app.services.snapshot.preload_reconciler import get_preload_reconciler
+
+            await safe_stop_service(
+                logger,
+                "Snapshot preload reconciler",
+                get_preload_reconciler().stop,
+            )
+        except Exception as exc:
+            logger.debug("Preload reconciler stop skipped: %s", exc)
         await safe_stop_service(logger, "Metering broadcast service", stop_metering_broadcast)
         if push_surface_manager is not None:
             await safe_stop_service(logger, "Push surface manager", push_surface_manager.stop)

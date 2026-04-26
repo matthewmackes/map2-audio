@@ -566,6 +566,58 @@ async def get_live_snapshot() -> dict[str, Any]:
         raise HTTPException(status_code=500, detail=str(exc)) from exc
 
 
+@router.get("/api/snapshots/preload-status")
+async def get_snapshot_preload_status() -> dict[str, Any]:
+    """T2454: live warm-cache status for the editor's Preload Slots panel.
+
+    Joins the orchestrator's process-local warm cache with the Raft-replicated
+    pinned set so the UI always renders the canonical 5-slot layout, with
+    each slot tagged warm/cold. Declared before the parametrized
+    `/api/snapshots/{snapshot_id}` route so the static segment wins routing.
+    """
+    from app.services.snapshot.preload_orchestrator import get_preload_orchestrator
+    from app.database import SpecialSettings
+    from sqlalchemy import select
+
+    try:
+        orchestrator = get_preload_orchestrator()
+        warm_entries = await orchestrator.snapshot_status()
+        warm_by_id = {entry["snapshot_id"]: entry for entry in warm_entries}
+
+        async with get_session() as session:
+            settings = (
+                await session.execute(select(SpecialSettings).where(SpecialSettings.id == 1))
+            ).scalar_one_or_none()
+            pinned_ids: list[int] = []
+            if settings is not None:
+                from app.services.special_settings_normalization import (
+                    resolve_snapshot_preload_pins_from_settings,
+                )
+
+                pinned_ids = resolve_snapshot_preload_pins_from_settings(settings)
+
+        slots: list[dict[str, Any]] = []
+        for snapshot_id in pinned_ids:
+            entry = warm_by_id.get(snapshot_id)
+            slots.append({
+                "snapshot_id": snapshot_id,
+                "warm": bool(entry and entry.get("warm")),
+                "version": entry.get("version") if entry else None,
+                "warmed_at": entry.get("warmed_at") if entry else None,
+                "staged_instance_count": entry.get("staged_instance_count", 0) if entry else 0,
+                "last_error": entry.get("last_error") if entry else None,
+            })
+
+        return {
+            "pinned_count": len(pinned_ids),
+            "warm_count": sum(1 for slot in slots if slot["warm"]),
+            "slots": slots,
+        }
+    except Exception as exc:
+        logger.error("Error reading snapshot preload status: %s", exc)
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
+
+
 @router.get("/api/templates")
 async def list_templates(
     tags: Optional[str] = Query(default=None),
@@ -1366,6 +1418,29 @@ async def get_snapshot_preload_plan(snapshot_id: int, limit: int = Query(default
         raise
     except Exception as exc:
         logger.error("Error building preload plan for snapshot %s: %s", snapshot_id, exc)
+        raise HTTPException(status_code=500, detail=str(exc)) from exc
+
+
+@router.post("/api/snapshots/{snapshot_id}/preload")
+async def preload_snapshot(snapshot_id: int) -> dict[str, Any]:
+    """T2454: explicitly warm a snapshot's plugin instances in the engine.
+
+    Called by the operator pinning a snapshot, by the reconciler self-heal loop,
+    and on demand from the editor. Idempotent. Returns the resulting warm
+    state so the UI can refresh its dot/spinner.
+    """
+    from app.services.snapshot.preload_orchestrator import get_preload_orchestrator
+
+    try:
+        orchestrator = get_preload_orchestrator()
+        result = await orchestrator.preload(snapshot_id)
+        if result.get("reason") == "not_found":
+            _raise_not_found("Snapshot")
+        return result
+    except HTTPException:
+        raise
+    except Exception as exc:
+        logger.error("Error preloading snapshot %s: %s", snapshot_id, exc)
         raise HTTPException(status_code=500, detail=str(exc)) from exc
 
 

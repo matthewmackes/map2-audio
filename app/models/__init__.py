@@ -99,6 +99,9 @@ class SpecialSettingsResponse(BaseModel):
         default="square",
         alias="snapshot_editor.node_shape",
     )
+    # T2454: ordered list of snapshot ids (max 5) the operator has explicitly
+    # pinned for preload. Cap enforced in normalize_snapshot_preload_pins.
+    snapshot_preload_pins: List[int] = Field(default_factory=list)
     last_active_node: Optional[str] = None
     version: int = 1
     last_updated: Optional[str] = None
@@ -144,6 +147,7 @@ class SpecialSettingsUpdateRequest(BaseModel):
         default="square",
         alias="snapshot_editor.node_shape",
     )
+    snapshot_preload_pins: List[int] = Field(default_factory=list)
     last_active_node: Optional[str] = None
 
     @model_validator(mode="before")
