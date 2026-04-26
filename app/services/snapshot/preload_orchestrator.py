@@ -322,29 +322,63 @@ class SnapshotPreloadOrchestrator:
     async def reconcile(self, pinned_ids: list[int]) -> dict[str, Any]:
         """Walk the pinned set, evict orphans, warm anything cold or
         version-drifted. Capped concurrency = 2. Returns a summary the
-        reconciler logger can use to track progress."""
-        pinned_ids = [int(value) for value in pinned_ids if isinstance(value, (int, str))]
-        pinned_set = {value for value in pinned_ids if value > 0}
+        reconciler logger can use to track progress.
 
-        # 1. Evict warmed entries that are no longer pinned.
+        T2454 hardening — memory-pressure-aware cap. The pinned set in
+        Special Settings is unchanged (max 5), but the *warm cache* is
+        capped at `compute_warm_cap().cap` ∈ [2, 5] so the host can
+        gracefully shrink under PSI/free-ratio pressure. Eviction order
+        for over-cap pins follows the operator's pin order — keep the
+        tail (most-recently-pinned), drop the head (oldest-pinned).
+        In-flight entries are NEVER evicted by pressure — the FSM owns
+        them mid-activation."""
+        pinned_ids = [int(value) for value in pinned_ids if isinstance(value, (int, str))]
+
+        # T2454 hardening: compute the memory-pressure cap once per tick.
+        from app.services.snapshot.preload_memory_pressure import compute_warm_cap
+
+        pressure = compute_warm_cap()
+        cap = pressure.cap
+
+        # The orchestrator's *effective* warm set is the tail of the pinned
+        # list (most-recently-pinned `cap` ids). Pins beyond the cap are
+        # NOT removed from Special Settings — they're just not held warm
+        # right now. When pressure releases, the cap rises and they
+        # re-warm on a subsequent tick.
+        if len(pinned_ids) > cap:
+            effective_warm_ids = pinned_ids[-cap:]
+        else:
+            effective_warm_ids = list(pinned_ids)
+        effective_warm_set = {sid for sid in effective_warm_ids if sid > 0}
+        pressure_dropped_ids = [sid for sid in pinned_ids if sid not in effective_warm_set]
+
+        # 1. Evict warmed entries that are no longer in the effective warm
+        # set — either unpinned entirely, OR pinned but pushed out by
+        # memory pressure. evict() respects the in_flight lock.
         async with self._lock:
-            stale = [snapshot_id for snapshot_id in self._entries if snapshot_id not in pinned_set]
+            stale = [
+                snapshot_id for snapshot_id in self._entries
+                if snapshot_id not in effective_warm_set
+            ]
 
         evicted = 0
+        evicted_for_pressure = 0
         for snapshot_id in stale:
             try:
                 result = await self.evict(snapshot_id)
                 if result.get("evicted"):
                     evicted += 1
+                    if snapshot_id in pressure_dropped_ids:
+                        evicted_for_pressure += 1
             except Exception as exc:
                 logger.warning("Preload reconciler: evict %s failed: %s", snapshot_id, exc)
 
-        # 2. Warm any pinned snapshot that's cold or whose version drifted.
+        # 2. Warm any effective-warm snapshot that's cold or version-drifted.
         # T2454-B: skip in-flight entries — the FSM has claim()-ed them and
         # is mid-activation; re-warming would race the adopt path.
         targets: list[int] = []
         async with get_session() as session:
-            for snapshot_id in pinned_ids:
+            for snapshot_id in effective_warm_ids:
                 snapshot_row = await self._read_snapshot_row(session, snapshot_id)
                 if snapshot_row is None:
                     continue
@@ -384,6 +418,11 @@ class SnapshotPreloadOrchestrator:
             "evicted": evicted,
             "warmed": warmed,
             "targets_attempted": len(targets),
+            # T2454 hardening — memory-pressure observability.
+            "memory_pressure_cap": cap,
+            "memory_pressure_source": pressure.source,
+            "evicted_for_pressure": evicted_for_pressure,
+            "effective_warm_count": len(effective_warm_set),
         }
 
     async def _read_snapshot_row(self, session, snapshot_id: int) -> Optional[Snapshot]:

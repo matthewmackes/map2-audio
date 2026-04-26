@@ -321,6 +321,24 @@ Last updated: 2026-04-25 EDT - Claude: slice 1 SHIPPED; T2454-B + T2454-C opened
 
 ---
 
+ID: T2454-E
+Status: [✓] Done
+Note: Hardening pass on the slice-1 + B/C/D-shipped warm cache. Re-introduces the originally-locked Q2=B memory-pressure adaptation.
+Title: Memory-pressure-aware warm-cache cap (PSI primary + free-ratio fallback)
+Locked decisions (user-confirmed 2026-04-26 best-practice):
+- D-primary + C-fallback: Linux PSI (`/proc/pressure/memory`) is the primary signal — `some avg10` percentage maps to cap thresholds (≥10% → 2, ≥5% → 3, ≥1% → 4, idle → 5). When PSI is unavailable, fall back to psutil free-ratio with a smooth linear scale (0.10 → cap 2, 0.40 → cap 5).
+- Drop-oldest eviction order: pins beyond the cap evict by *pin-list head order* (oldest pin drops first; tail pins stay warm). Matches operator mental model "the snapshot I just pinned is the one I care about now."
+- In-flight protection: pressure NEVER evicts a `claim()`-ed entry. The FSM owns the staged instances mid-activation; pressure relief comes from elsewhere.
+Completion note: 2026-04-26 — Claude: SHIPPED. New `app/services/snapshot/preload_memory_pressure.py` pure helper with `read_psi_some_avg10()`, `read_free_ratio()`, `compute_cap_from_psi()`, `compute_cap_from_free_ratio()`, and `compute_warm_cap()` returning a `MemoryPressureSnapshot` dataclass (`cap`, `source`, `psi_avg10`, `free_ratio`, `notes`). PSI reader is defensive: missing file, permission denied, malformed line, NaN/Inf values all return None and fall through to free-ratio. First-failure logged at WARNING; subsequent reads degrade silently.
+Orchestrator's `reconcile()` consults `compute_warm_cap()` each tick, computes the *effective warm set* as the tail of the operator's pinned list (most-recently-pinned `cap` ids), treats pinned-but-over-cap ids as effective evictions while leaving the Special Settings pin list untouched. Pressure relief re-warms automatically on the next tick — pressure eviction is ephemeral. In-flight entries are excluded from pressure eviction by the existing `evict()` in_flight guard. Reconcile result carries `memory_pressure_cap`, `memory_pressure_source`, `evicted_for_pressure`, `effective_warm_count` for ops observability.
+Tests: 14 new helper cases (PSI scoring at each threshold, free-ratio smooth interp, monotonic ordering, malformed PSI returns None, NaN guard, psutil-missing graceful degrade, primary-PSI-wins-over-free-ratio, fallback when both signals missing) + 3 reconcile-integration cases (drop-oldest pressure eviction, pressure-relief re-warm, in-flight protected from pressure eviction). 48 focused backend tests green.
+Validation: backend service restarted cleanly; both `/api/snapshots/preload-status` and `/api/settings/special/` HTTP 200.
+Files: `app/services/snapshot/preload_memory_pressure.py` (new), `app/services/snapshot/preload_orchestrator.py` (reconcile() integration), `tests/test_preload_memory_pressure.py` (new), `tests/test_snapshot_preload_warm_path.py` (3 new cases).
+Assigned to: Claude
+Last updated: 2026-04-26 EDT - Claude: SHIPPED.
+
+---
+
 ID: T2454-B
 Status: [✓] Done
 Note: Opened from T2454 slice 1. Safety-critical FSM mutation; deserves its own focused session.

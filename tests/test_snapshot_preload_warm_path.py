@@ -255,3 +255,125 @@ def test_reconcile_skips_in_flight_entries(monkeypatch, patch_chain_service_for_
     # Pull our claim back so we don't leave the singleton in a weird state
     # for downstream tests in the same process.
     asyncio.run(orchestrator.mark_consumed(13, success=True))
+
+
+# ---------- T2454 hardening: memory-pressure cap ----------
+
+
+def _patch_pressure_cap(monkeypatch, cap: int, source: str = "psi"):
+    """Force `compute_warm_cap()` to return the given cap so reconcile()
+    sees a deterministic memory-pressure decision."""
+    from app.services.snapshot import preload_memory_pressure as mp
+
+    snapshot = mp.MemoryPressureSnapshot(
+        cap=cap, source=source, psi_avg10=12.0 if source == "psi" else None,
+        free_ratio=None,
+    )
+    monkeypatch.setattr(mp, "compute_warm_cap", lambda: snapshot)
+
+
+def test_reconcile_respects_pressure_cap_dropping_oldest_pin(
+    monkeypatch, patch_chain_service_for_evict
+):
+    SnapshotPreloadOrchestrator.reset_for_tests()
+    chain = _FakeChainService(instance_ids=[6001])
+    rows = {
+        21: _FakeSnapshotRow(21, 1),
+        22: _FakeSnapshotRow(22, 1),
+        23: _FakeSnapshotRow(23, 1),
+        24: _FakeSnapshotRow(24, 1),
+        25: _FakeSnapshotRow(25, 1),
+    }
+    _patch_orchestrator_session(monkeypatch, rows, chain)
+    orchestrator = SnapshotPreloadOrchestrator.get_instance()
+
+    # Pre-warm all 5 pins (default cap=5 with no pressure mock).
+    _patch_pressure_cap(monkeypatch, cap=5)
+    asyncio.run(orchestrator.reconcile([21, 22, 23, 24, 25]))
+    assert all(asyncio.run(orchestrator.is_warm(sid)) for sid in [21, 22, 23, 24, 25])
+
+    # Force pressure cap = 2 — only the LAST 2 pins (24, 25) stay warm,
+    # the OLDEST 3 (21, 22, 23) are evicted.
+    _patch_pressure_cap(monkeypatch, cap=2)
+    summary = asyncio.run(orchestrator.reconcile([21, 22, 23, 24, 25]))
+    assert summary["pinned_count"] == 5
+    assert summary["memory_pressure_cap"] == 2
+    assert summary["effective_warm_count"] == 2
+    assert summary["evicted_for_pressure"] == 3
+    assert asyncio.run(orchestrator.is_warm(21)) is False
+    assert asyncio.run(orchestrator.is_warm(22)) is False
+    assert asyncio.run(orchestrator.is_warm(23)) is False
+    assert asyncio.run(orchestrator.is_warm(24)) is True
+    assert asyncio.run(orchestrator.is_warm(25)) is True
+
+
+def test_reconcile_pressure_relief_re_warms_dropped_pins(
+    monkeypatch, patch_chain_service_for_evict
+):
+    """Cap rises after a low-pressure reading — the orchestrator re-warms
+    the previously-dropped pins on the next tick. Verifies pressure
+    eviction is ephemeral and recoverable."""
+    SnapshotPreloadOrchestrator.reset_for_tests()
+    chain = _FakeChainService(instance_ids=[7001])
+    rows = {
+        31: _FakeSnapshotRow(31, 1),
+        32: _FakeSnapshotRow(32, 1),
+        33: _FakeSnapshotRow(33, 1),
+    }
+    _patch_orchestrator_session(monkeypatch, rows, chain)
+    orchestrator = SnapshotPreloadOrchestrator.get_instance()
+
+    # Pressure cap = 2 — only the last 2 pins warm.
+    _patch_pressure_cap(monkeypatch, cap=2)
+    asyncio.run(orchestrator.reconcile([31, 32, 33]))
+    assert asyncio.run(orchestrator.is_warm(31)) is False
+    assert asyncio.run(orchestrator.is_warm(32)) is True
+    assert asyncio.run(orchestrator.is_warm(33)) is True
+
+    # Pressure releases — cap = 5, the dropped pin (31) re-warms.
+    _patch_pressure_cap(monkeypatch, cap=5)
+    summary = asyncio.run(orchestrator.reconcile([31, 32, 33]))
+    assert summary["memory_pressure_cap"] == 5
+    assert summary["effective_warm_count"] == 3
+    assert summary["evicted_for_pressure"] == 0
+    assert asyncio.run(orchestrator.is_warm(31)) is True
+    assert asyncio.run(orchestrator.is_warm(32)) is True
+    assert asyncio.run(orchestrator.is_warm(33)) is True
+
+
+def test_reconcile_pressure_never_evicts_in_flight_entry(
+    monkeypatch, patch_chain_service_for_evict
+):
+    """Even under heavy memory pressure, an in-flight (claimed) entry
+    must not be evicted — the FSM owns the staged instances."""
+    SnapshotPreloadOrchestrator.reset_for_tests()
+    chain = _FakeChainService(instance_ids=[8001])
+    rows = {
+        41: _FakeSnapshotRow(41, 1),
+        42: _FakeSnapshotRow(42, 1),
+        43: _FakeSnapshotRow(43, 1),
+    }
+    _patch_orchestrator_session(monkeypatch, rows, chain)
+    orchestrator = SnapshotPreloadOrchestrator.get_instance()
+
+    # Warm all 3 pins under cap=5.
+    _patch_pressure_cap(monkeypatch, cap=5)
+    asyncio.run(orchestrator.reconcile([41, 42, 43]))
+
+    # FSM claims the OLDEST pin (41) — the one pressure would drop first.
+    claim = asyncio.run(orchestrator.claim(41))
+    assert claim is not None
+
+    # Pressure cap drops to 1 — would evict 41 + 42 if the in-flight lock
+    # didn't protect 41.
+    _patch_pressure_cap(monkeypatch, cap=1)
+    asyncio.run(orchestrator.reconcile([41, 42, 43]))
+    # 41 is in-flight — protected from eviction.
+    # 42 is dropped by pressure (oldest non-in-flight).
+    # 43 stays warm (last pin).
+    assert asyncio.run(orchestrator.is_warm(41)) is True  # in_flight protects
+    assert asyncio.run(orchestrator.is_warm(42)) is False  # evicted by pressure
+    assert asyncio.run(orchestrator.is_warm(43)) is True  # tail of pinned list
+
+    # Release the claim so downstream tests start clean.
+    asyncio.run(orchestrator.mark_consumed(41, success=True))
