@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1291** Python | **1278** TypeScript | **136** C++/H | **145** Docs | **2844** total commits | **3** stars | **0** forks | **0** open issues
+**1291** Python | **1278** TypeScript | **136** C++/H | **145** Docs | **2847** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`74041ae0`](https://github.com/matthewmackes/map2-audio/commit/74041ae055ac49244a2d46ac273e407ceaf5f342) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-26 |
+| [`60d2e061`](https://github.com/matthewmackes/map2-audio/commit/60d2e06128d564024edcb0a2f8fa576afda18d20) | Record connected hardware test rerun evidence | Map2 Audio | 2026-04-26 |
+| [`506b8cf6`](https://github.com/matthewmackes/map2-audio/commit/506b8cf6587abb344cdff1e80735f29e20df4eb3) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-26 |
 | [`4ab38e81`](https://github.com/matthewmackes/map2-audio/commit/4ab38e813bf75bb763c58886271a746a0b058cc3) | docs: archive bench execution attempt | Map2 Audio | 2026-04-26 |
 | [`30c7e540`](https://github.com/matthewmackes/map2-audio/commit/30c7e540465a36c9c5819b91c8a35a2ff894d8a7) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-26 |
 | [`d83adb75`](https://github.com/matthewmackes/map2-audio/commit/d83adb752117aa9074b83dbaf4ee6da99bc57eff) | docs: record remaining HIL device inventory | Map2 Audio | 2026-04-26 |
 | [`9d870e36`](https://github.com/matthewmackes/map2-audio/commit/9d870e36115e4de1b50d56efff6a67a94d713a4b) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-26 |
 | [`e2be4663`](https://github.com/matthewmackes/map2-audio/commit/e2be46636de320631afaaf3b48c8c3e61d331ee8) | T2457: AppShell section-label routing — Node Ops route pr... | Map2 Audio | 2026-04-26 |
-| [`2230e00c`](https://github.com/matthewmackes/map2-audio/commit/2230e00c856f66ab24e40ee016d2ad0ded996991) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-26 |
-| [`4b5e42eb`](https://github.com/matthewmackes/map2-audio/commit/4b5e42ebc34012979d9beca503edd723dadb1987) | T2454-F: continuous warm-activation soak script + 30-min ... | Map2 Audio | 2026-04-26 |
-| [`c3764fa3`](https://github.com/matthewmackes/map2-audio/commit/c3764fa3eb5f0fe49e2101534cf9f4004f8abbff) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-26 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
