@@ -25,6 +25,8 @@ import { Add, Copy, Edit, Launch, TrashCan } from '@carbon/icons-react'
 
 import { snapshotsApi } from '../../map2/clients/snapshots'
 import type { SnapshotSummary } from '../../map2/types'
+import { SnapshotPinButton } from '../components/SnapshotEditor/SnapshotPinButton'
+import '../components/SnapshotEditor/SnapshotPinButton.css'
 
 import './SnapshotsBrowserPage.css'
 
@@ -309,6 +311,9 @@ export function SnapshotsBrowserPage() {
                           })}
                           <TableCell>
                             <div className="snapshots-browser__row-actions">
+                              {/* T2454-D: per-row Pin button — cyan-fill on
+                                  pinned, disabled tooltip on cap-reached. */}
+                              <SnapshotPinButton snapshotId={snapshotId} />
                               <Button
                                 size="sm"
                                 kind="ghost"

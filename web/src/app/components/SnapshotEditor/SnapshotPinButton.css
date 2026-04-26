@@ -1,0 +1,7 @@
+/* T2454-D — Snapshot Pin button cyan-fill state.
+ * Token references match the T2444 design-language palette. */
+
+.snapshot-pin-button[data-pinned='true'] svg {
+  fill: var(--map2-accent-active, #22d3ee);
+  filter: drop-shadow(0 0 4px var(--map2-accent-active-glow, rgba(34, 211, 238, 0.42)));
+}

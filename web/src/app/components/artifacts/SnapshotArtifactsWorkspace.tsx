@@ -26,6 +26,8 @@ import { audioStateApi } from '../../../map2/clients/audioState'
 import { snapshotsApi, snapshotDetailToDraftData } from '../../../map2/clients/snapshots'
 import type { SnapshotDetail, SnapshotExport, SnapshotRuntimeLiveState, SnapshotSummary } from '../../../map2/types'
 import { fingerprintSnapshotData } from '../SnapshotEditor/snapshotEditorComparison'
+import { SnapshotPinButton } from '../SnapshotEditor/SnapshotPinButton'
+import '../SnapshotEditor/SnapshotPinButton.css'
 import { buildDefaultSnapshotName } from '../../utils/snapshotNames'
 import {
   buildSnapshotActivationFailureToastMessage,
@@ -612,6 +614,12 @@ export function SnapshotArtifactsWorkspace({
                         </p>
                       </div>
                       <div className="aap-snapshots__card-actions">
+                        {/* T2454-D: per-row Pin button. Wrapped in a span so
+                            the click is contained inside the button surface
+                            and doesn't bubble up to the card's selection handler. */}
+                        <span onClick={(event) => event.stopPropagation()}>
+                          <SnapshotPinButton snapshotId={snapshot.id} />
+                        </span>
                         <OverflowMenu ariaLabel={`Snapshot actions for ${snapshot.name}`} onClick={(event) => event.stopPropagation()}>
                           <OverflowMenuItem itemText="Make Live" onClick={() => activateMutation.mutate(snapshot.id)} />
                           <OverflowMenuItem
