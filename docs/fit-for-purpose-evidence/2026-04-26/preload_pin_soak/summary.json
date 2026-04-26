@@ -1,0 +1,34 @@
+{
+  "started_at": "2026-04-26T13:44:09.507862+00:00",
+  "duration_seconds": 1800,
+  "pin_ids": [
+    13
+  ],
+  "cycles_completed": 422,
+  "activations_total": 422,
+  "activations_succeeded": 422,
+  "activations_failed": 0,
+  "leak_alerts": 0,
+  "initial_rss_kb": 5611508,
+  "final_rss_kb": 5697440,
+  "rss_growth_kb": 85932,
+  "rss_growth_mb": 83.92,
+  "warm_duration_ms": {
+    "min": 8.18,
+    "max": 799.35,
+    "median": 32.07,
+    "mean": 81.46
+  },
+  "activate_duration_ms": {
+    "min": 728.72,
+    "max": 11363.13,
+    "median": 1981.78,
+    "mean": 2182.28
+  },
+  "acceptance": {
+    "rss_growth_under_100mb": true,
+    "zero_activation_failures": true,
+    "zero_leak_alerts": true,
+    "passed": true
+  }
+}
