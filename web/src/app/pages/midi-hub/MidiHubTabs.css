@@ -27,32 +27,57 @@
   text-decoration: none;
   font-family: var(--shell-f-sans);
   position: relative;
+  isolation: isolate;
   min-width: 10rem;
   white-space: nowrap;
+  transition:
+    color var(--map2-dur-fast, 140ms) var(--map2-ease-out-snap, ease),
+    background var(--map2-dur-fast, 140ms) var(--map2-ease-out-snap, ease);
 }
 
-.midi-hub-tabs__tab:hover {
+.midi-hub-tabs__tab:hover:not(.midi-hub-tabs__tab--active) {
   background: var(--shell-chrome-hover);
   color: var(--cds-text-primary, #f4f4f4);
 }
 
+.midi-hub-tabs__tab:focus-visible {
+  outline: none;
+  box-shadow: var(--map2-ring-focus);
+  z-index: 1;
+}
+
 .midi-hub-tabs__tab--active {
-  background: var(--cds-layer, #262626);
   color: var(--cds-text-primary, #f4f4f4);
-  border-color: var(--shell-chrome-border);
-  border-bottom-color: var(--cds-layer, #262626);
   font-weight: 600;
 }
 
-.midi-hub-tabs__tab--active::before {
+.midi-hub-tabs__indicator {
+  position: absolute;
+  inset: 0;
+  z-index: -1;
+  background: var(--cds-layer, #262626);
+  border: 1px solid var(--shell-chrome-border);
+  border-bottom-color: var(--cds-layer, #262626);
+  border-radius: 6px 6px 0 0;
+  pointer-events: none;
+}
+
+.midi-hub-tabs__indicator::before {
   content: '';
   position: absolute;
-  top: 0;
+  top: -1px;
   left: 0;
   right: 0;
   height: 2px;
-  background: var(--shell-blue-60);
+  background: linear-gradient(
+    90deg,
+    transparent 0%,
+    var(--map2-accent-active, var(--shell-blue-60)) 25%,
+    var(--map2-accent-active, var(--shell-blue-60)) 75%,
+    transparent 100%
+  );
   border-radius: 2px 2px 0 0;
+  box-shadow: 0 0 8px var(--map2-accent-active-glow, rgba(34, 211, 238, 0.5));
 }
 
 .midi-hub-tabs__label {
@@ -66,4 +91,8 @@
   letter-spacing: 0.3px;
   color: var(--cds-text-helper, #a8a8a8);
   line-height: 1.1;
+}
+
+.midi-hub-tabs__tab--active .midi-hub-tabs__sub {
+  color: var(--map2-accent-active, var(--shell-blue-40));
 }

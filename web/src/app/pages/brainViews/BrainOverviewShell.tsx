@@ -6,12 +6,14 @@ import {
   DataStructured,
   Flow,
 } from '@carbon/icons-react'
+import { AnimatePresence, LayoutGroup, motion } from 'framer-motion'
 
 import { BoTag, computeWarnCount, BRAIN_VIEW_IDS, type BrainOverviewSharedProps, type BrainViewId } from './brainViewShared'
 import { PerformanceView } from './PerformanceView'
 import { ConsoleView } from './ConsoleView'
 import { StepView } from './StepView'
 import { SplitView } from './SplitView'
+import { MAP2_SPRING, tabContentVariants } from '../../styles/motionPrimitives'
 import './brainViews.css'
 
 const TAB_META: Record<BrainViewId, { label: string; sub: string; Icon: typeof DataStructured }> = {
@@ -33,6 +35,9 @@ function parseSection(raw: string | null): BrainViewId | null {
  * PerformanceBrainPage. This shell simply reads `?section=` and falls back to
  * `performance` if the param doesn't match one of the four. Storage and
  * `?view=` indirection both removed.
+ *
+ * T2444: tab indicator now magic-moves via Framer Motion `layoutId`, view
+ * content cross-fades via AnimatePresence with mode="wait".
  */
 export function BrainOverviewShell(props: BrainOverviewSharedProps) {
   const [searchParams, setSearchParams] = useSearchParams()
@@ -53,38 +58,61 @@ export function BrainOverviewShell(props: BrainOverviewSharedProps) {
 
   return (
     <div className="brain-overview">
-      <div className="brain-overview__tabs">
-        {BRAIN_VIEW_IDS.map((id) => {
-          const { label, sub, Icon } = TAB_META[id]
-          const isActive = id === activeView
-          return (
-            <button
-              key={id}
-              type="button"
-              className={`brain-overview__tab${isActive ? ' brain-overview__tab--active' : ''}`}
-              onClick={() => onChangeView(id)}
-            >
-              <div className="brain-overview__tab-icon">
-                <Icon size={12} />
-              </div>
-              <div className="brain-overview__tab-labels">
-                <div className="brain-overview__tab-label">{label}</div>
-                <div className="brain-overview__tab-sub">{sub}</div>
-              </div>
-            </button>
-          )
-        })}
-        <div className="brain-overview__tab-spacer" />
-        <div className="brain-overview__tab-meta">
-          {warnCount > 0 ? <BoTag tone="warn">{warnCount} WARN</BoTag> : null}
-          {qualification.controller_ready ? <BoTag tone="ok">READY</BoTag> : null}
+      <LayoutGroup id="brain-overview-tabs">
+        <div className="brain-overview__tabs" role="tablist" aria-label="Brain Overview sections">
+          {BRAIN_VIEW_IDS.map((id) => {
+            const { label, sub, Icon } = TAB_META[id]
+            const isActive = id === activeView
+            return (
+              <button
+                key={id}
+                type="button"
+                role="tab"
+                aria-selected={isActive}
+                className={`brain-overview__tab${isActive ? ' brain-overview__tab--active' : ''}`}
+                onClick={() => onChangeView(id)}
+              >
+                {isActive ? (
+                  <motion.span
+                    layoutId="brain-overview__tab-indicator"
+                    className="brain-overview__tab-indicator"
+                    aria-hidden="true"
+                    transition={MAP2_SPRING.tabIndicator}
+                  />
+                ) : null}
+                <div className="brain-overview__tab-icon">
+                  <Icon size={12} />
+                </div>
+                <div className="brain-overview__tab-labels">
+                  <div className="brain-overview__tab-label">{label}</div>
+                  <div className="brain-overview__tab-sub">{sub}</div>
+                </div>
+              </button>
+            )
+          })}
+          <div className="brain-overview__tab-spacer" />
+          <div className="brain-overview__tab-meta">
+            {warnCount > 0 ? <BoTag tone="warn">{warnCount} WARN</BoTag> : null}
+            {qualification.controller_ready ? <BoTag tone="ok">READY</BoTag> : null}
+          </div>
         </div>
-      </div>
+      </LayoutGroup>
       <div className="brain-overview__body">
-        {activeView === 'performance' ? <PerformanceView {...props} /> : null}
-        {activeView === 'console' ? <ConsoleView {...props} /> : null}
-        {activeView === 'step' ? <StepView {...props} /> : null}
-        {activeView === 'split' ? <SplitView {...props} /> : null}
+        <AnimatePresence mode="wait" initial={false}>
+          <motion.div
+            key={activeView}
+            className="brain-overview__view"
+            variants={tabContentVariants}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+          >
+            {activeView === 'performance' ? <PerformanceView {...props} /> : null}
+            {activeView === 'console' ? <ConsoleView {...props} /> : null}
+            {activeView === 'step' ? <StepView {...props} /> : null}
+            {activeView === 'split' ? <SplitView {...props} /> : null}
+          </motion.div>
+        </AnimatePresence>
       </div>
     </div>
   )

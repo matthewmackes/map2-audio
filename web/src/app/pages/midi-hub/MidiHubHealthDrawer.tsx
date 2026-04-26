@@ -72,7 +72,7 @@ export function MidiHubHealthDrawer({ open, onClose, apiNodeId, scopeKey }: Midi
       {open ? (
         <button
           type="button"
-          className="midi-hub-health-drawer__scrim"
+          className="midi-hub-health-drawer__scrim midi-hub-health-drawer__scrim--open"
           aria-label="Close health drawer"
           onClick={onClose}
         />

@@ -23,6 +23,7 @@ import { GlobalTreeNav } from './GlobalTreeNav/GlobalTreeNav'
 import { WorkspaceBar } from './chrome/WorkspaceBar'
 import { ContentKicker } from './chrome/ContentKicker'
 import './chrome/chrome-tokens.css'
+import '../styles/design-language.css'
 import '../components/shared/GlobalPrimitives.css'
 import './AppShell.css'
 

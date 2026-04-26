@@ -26,6 +26,19 @@
   border: 1px solid color-mix(in srgb, var(--border) 82%, transparent);
   background:
     linear-gradient(180deg, color-mix(in srgb, var(--surface) 88%, var(--interactive) 12%), var(--surface));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.025),
+    0 1px 0 rgba(0, 0, 0, 0.18);
+  transition:
+    border-color var(--map2-dur-base, 220ms) var(--map2-ease-out-snap, ease),
+    box-shadow var(--map2-dur-base, 220ms) var(--map2-ease-out-snap, ease);
+}
+
+.maschine-page__panel:focus-within {
+  border-color: var(--map2-accent-active-rim, rgba(34, 211, 238, 0.55));
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.04),
+    0 0 14px var(--map2-accent-active-soft, rgba(34, 211, 238, 0.18));
 }
 
 .maschine-page__panel-head {
@@ -98,11 +111,22 @@
 .maschine-page__pad--active {
   background: var(--support-success);
   color: var(--text-primary);
+  box-shadow:
+    inset 0 0 0 1px rgba(255, 255, 255, 0.06),
+    0 0 14px rgba(66, 190, 101, 0.45);
 }
 
 .maschine-page__pad--selected {
   animation: maschine-pad-pulse 1.1s ease-in-out infinite;
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--text-primary) 22%, transparent) inset;
+  box-shadow:
+    inset 0 0 0 2px var(--map2-accent-active-rim, rgba(34, 211, 238, 0.65)),
+    0 0 18px var(--map2-accent-active-glow, rgba(34, 211, 238, 0.42));
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .maschine-page__pad--selected {
+    animation: none;
+  }
 }
 
 .maschine-page__lcd-grid {
