@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1291** Python | **1278** TypeScript | **136** C++/H | **145** Docs | **2838** total commits | **3** stars | **0** forks | **0** open issues
+**1291** Python | **1278** TypeScript | **136** C++/H | **145** Docs | **2840** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`e2be4663`](https://github.com/matthewmackes/map2-audio/commit/e2be46636de320631afaaf3b48c8c3e61d331ee8) | T2457: AppShell section-label routing — Node Ops route pr... | Map2 Audio | 2026-04-26 |
+| [`2230e00c`](https://github.com/matthewmackes/map2-audio/commit/2230e00c856f66ab24e40ee016d2ad0ded996991) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-26 |
 | [`4b5e42eb`](https://github.com/matthewmackes/map2-audio/commit/4b5e42ebc34012979d9beca503edd723dadb1987) | T2454-F: continuous warm-activation soak script + 30-min ... | Map2 Audio | 2026-04-26 |
 | [`c3764fa3`](https://github.com/matthewmackes/map2-audio/commit/c3764fa3eb5f0fe49e2101534cf9f4004f8abbff) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-26 |
 | [`73ba04e9`](https://github.com/matthewmackes/map2-audio/commit/73ba04e9f6ad62c33e17755fcbfc073cad75efdd) | T2454-B2: per-slot adoption observability — engine adopti... | Map2 Audio | 2026-04-26 |
 | [`31ab5c05`](https://github.com/matthewmackes/map2-audio/commit/31ab5c053d4107f22a93066ab3f99878e74fa167) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-26 |
 | [`c79f2e50`](https://github.com/matthewmackes/map2-audio/commit/c79f2e50de1b593dfc20e03a38700e919dc4842f) | T2454-E: memory-pressure-aware warm-cache cap (PSI + free... | Map2 Audio | 2026-04-26 |
 | [`0ac478c5`](https://github.com/matthewmackes/map2-audio/commit/0ac478c576497b62fbb6b3f1d0bc2af0cbfcf62e) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-26 |
-| [`b1cc938c`](https://github.com/matthewmackes/map2-audio/commit/b1cc938c9128c8c4edf1d99a38af381f7c1a09b5) | T2454-B2: open per-slot adoption observability follow-up | Map2 Audio | 2026-04-26 |
-| [`9ca5de8d`](https://github.com/matthewmackes/map2-audio/commit/9ca5de8dcc1bd963e02e49e997a0f080fec57391) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-26 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
