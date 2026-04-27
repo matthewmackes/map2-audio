@@ -1,0 +1,142 @@
+<?xml version='1.0' encoding='utf-8'?>
+<!--
+  Synthetic Mixxx-format fixture for T2459-B5.
+  Modeled after the upstream Behringer-CMD-Micro.midi.xml shape
+  (medium-complexity mapping — script-driven scratch + per-deck
+  pitch-bend buttons). NOT verbatim upstream content; MAP2-authored
+  under AGPL-3.0-only for the CI fixture set.
+-->
+<MixxxControllerPreset schemaVersion="1" mixxxVersion="2.4.0">
+  <info>
+    <name>Behringer CMD Micro (synthetic fixture)</name>
+    <author>MAP2 fixture</author>
+    <description>Medium-complexity mapping fixture for B5 smoke test.</description>
+  </info>
+  <controller id="Behringer-CMD-Micro">
+    <scriptfiles>
+      <file filename="Behringer-CMD-Micro-scripts.js" functionprefix="BehringerCMDMicro"/>
+    </scriptfiles>
+    <controls>
+      <!-- Per-deck transport -->
+      <control>
+        <group>[Channel1]</group>
+        <key>play</key>
+        <status>0x90</status>
+        <midino>0x01</midino>
+      </control>
+      <control>
+        <group>[Channel2]</group>
+        <key>play</key>
+        <status>0x91</status>
+        <midino>0x01</midino>
+      </control>
+      <control>
+        <group>[Channel1]</group>
+        <key>cue_default</key>
+        <status>0x90</status>
+        <midino>0x02</midino>
+      </control>
+      <control>
+        <group>[Channel2]</group>
+        <key>cue_default</key>
+        <status>0x91</status>
+        <midino>0x02</midino>
+      </control>
+      <!-- Volume + EQ -->
+      <control>
+        <group>[Channel1]</group>
+        <key>volume</key>
+        <status>0xB0</status>
+        <midino>0x07</midino>
+      </control>
+      <control>
+        <group>[Channel2]</group>
+        <key>volume</key>
+        <status>0xB1</status>
+        <midino>0x07</midino>
+      </control>
+      <control>
+        <group>[Channel1]</group>
+        <key>filterLow</key>
+        <status>0xB0</status>
+        <midino>0x10</midino>
+      </control>
+      <control>
+        <group>[Channel1]</group>
+        <key>filterMid</key>
+        <status>0xB0</status>
+        <midino>0x11</midino>
+      </control>
+      <control>
+        <group>[Channel1]</group>
+        <key>filterHigh</key>
+        <status>0xB0</status>
+        <midino>0x12</midino>
+      </control>
+      <!-- Crossfader -->
+      <control>
+        <group>[Master]</group>
+        <key>crossfader</key>
+        <status>0xB0</status>
+        <midino>0x20</midino>
+      </control>
+      <!-- Script-driven scratch -->
+      <control>
+        <group>[Channel1]</group>
+        <key>jogTouch</key>
+        <status>0x90</status>
+        <midino>0x30</midino>
+        <options>
+          <Script-Binding/>
+        </options>
+      </control>
+      <control>
+        <group>[Channel1]</group>
+        <key>jogScratch</key>
+        <status>0xB0</status>
+        <midino>0x31</midino>
+        <options>
+          <Script-Binding/>
+        </options>
+      </control>
+      <!-- Hot cues -->
+      <control>
+        <group>[Channel1]</group>
+        <key>hotcue_1_activate</key>
+        <status>0x90</status>
+        <midino>0x40</midino>
+      </control>
+      <control>
+        <group>[Channel1]</group>
+        <key>hotcue_2_activate</key>
+        <status>0x90</status>
+        <midino>0x41</midino>
+      </control>
+      <!-- Sampler — should fail soft per the bridge -->
+      <control>
+        <group>[Sampler1]</group>
+        <key>play</key>
+        <status>0x90</status>
+        <midino>0x50</midino>
+      </control>
+    </controls>
+    <outputs>
+      <output>
+        <group>[Channel1]</group>
+        <key>play</key>
+        <status>0x90</status>
+        <midino>0x01</midino>
+        <on>0x7F</on>
+        <off>0x00</off>
+      </output>
+      <output>
+        <group>[Channel2]</group>
+        <key>play</key>
+        <status>0x91</status>
+        <midino>0x01</midino>
+        <on>0x7F</on>
+        <off>0x00</off>
+      </output>
+    </outputs>
+  </controller>
+</MixxxControllerPreset>

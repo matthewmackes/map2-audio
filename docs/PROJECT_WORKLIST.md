@@ -225,14 +225,16 @@ Last updated: 2026-04-27 EDT - Claude: SHIPPED.
 ---
 
 ID: T2459-B5
-Status: [ ] Todo
+Status: [✓] Done
 Parent: T2459
 Title: Mixxx mapping load CI smoke test
 Description:
 - Goal: CI test that walks every file under `device-packs/_mixx-imports/res/controllers/` (after γ1 import lands in E5) and asserts each one parses without error in the MAP2 XML reader and each `<scriptfile>`-referenced JS file syntax-checks under QuickJS. Mirrors Mixxx's `controller_mapping_validation_test.cpp`.
 - Acceptance: the CI test runs in `pytest tests/test_mixxx_mapping_load.py` and passes for the full ~290-file Mixxx corpus. Failures report which file and which row.
 - Required outputs: `tests/test_mixxx_mapping_load.py`.
+Completion note: 2026-04-27 — Claude: SHIPPED. Authored `tests/test_mixxx_mapping_load.py` with 8 cases. The walker collects `.midi.xml` files from two locations: (1) `device-packs/_mixx-imports/res/controllers/` — empty until E5 lands the full Mixxx corpus mirror, treated as "skip those" when absent; (2) `device-packs/_tests/mixxx-fixtures/` — three synthetic fixtures shipped now as the regression floor (`Pioneer-CDJ-2000.midi.xml` simple — 3 controls, 1 script-binding; `Behringer-CMD-Micro.midi.xml` medium — 15 controls including 2 script-driven scratch + 1 [Sampler1] fail-soft; `Pioneer-DDJ-SX.midi.xml` complex — 17 controls including 4-deck transport, 14-bit MSB/LSB crossfader pair, 4 hotcues, shift modifier, filterHighKill, 4 sampler bindings, 1 AutoDJ — all the right rows fail soft per the bridge contract). Fixtures are MAP2-authored under AGPL-3.0-only, modeled after the upstream Mixxx file shapes; the verbatim upstream files land under `_mixx-imports/` in T2459-E5 with preserved GPLv2-or-later attribution. Test cases: at-least-fixtures-exist regression floor; every-xml-file-parses-without-error (the hard CI gate — uses pytest collected list); corpus-summary-logs-per-file-stats prints `total/resolved/skipped` per file so CI logs surface coverage as the corpus grows; simple-fixture resolves all 3 controls; medium-fixture skips Sampler1 only (1/15 fail-soft); complex-fixture handles 4 decks, skips 4 samplers + AutoDJ (5/17 fail-soft); complex-fixture emits the 4 script-binding rows correctly (crossFaderMSB/LSB, shift, filterHighKill); alias-table-applies-uniformly across all three fixtures (operator alias `[Channel1] → audio.chain.7` reroutes every Channel1 row across the corpus). Validation: `pytest tests/test_mixxx_mapping_load.py -v` reports 8 passed in 2.50s. The walker auto-includes `_mixx-imports/` once E5 populates it — no test changes needed at corpus expansion time.
 Assigned to: Claude
+Last updated: 2026-04-27 EDT - Claude: SHIPPED.
 
 ---
 

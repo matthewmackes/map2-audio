@@ -1,0 +1,55 @@
+<?xml version='1.0' encoding='utf-8'?>
+<!--
+  Synthetic Mixxx-format fixture for T2459-B5.
+  Modeled after the upstream Pioneer-CDJ-2000.midi.xml shape (simple
+  mapping — 3 controls, all script-binding routed). NOT verbatim
+  upstream content — this is MAP2-authored under AGPL-3.0-only for
+  the CI fixture set. The real upstream file lands under
+  device-packs/_mixx-imports/res/controllers/ in T2459-E5 with
+  preserved GPLv2-or-later attribution.
+-->
+<MixxxControllerPreset schemaVersion="1" mixxxVersion="2.4.0">
+  <info>
+    <name>Pioneer CDJ-2000 (synthetic fixture)</name>
+    <author>MAP2 fixture</author>
+    <description>Simple mapping fixture for B5 smoke test.</description>
+  </info>
+  <controller id="Pioneer-CDJ-2000">
+    <scriptfiles>
+      <file filename="Pioneer-CDJ-2000-scripts.js" functionprefix="PioneerCDJ2000" />
+    </scriptfiles>
+    <controls>
+      <control>
+        <group>[Channel1]</group>
+        <key>jog_wheel</key>
+        <status>0xB0</status>
+        <midino>0x10</midino>
+        <options>
+          <Script-Binding/>
+        </options>
+      </control>
+      <control>
+        <group>[Channel1]</group>
+        <key>volume</key>
+        <status>0xB0</status>
+        <midino>0x07</midino>
+      </control>
+      <control>
+        <group>[Channel1]</group>
+        <key>play</key>
+        <status>0x90</status>
+        <midino>0x01</midino>
+      </control>
+    </controls>
+    <outputs>
+      <output>
+        <group>[Channel1]</group>
+        <key>play</key>
+        <status>0x90</status>
+        <midino>0x01</midino>
+        <on>0x7F</on>
+        <off>0x00</off>
+      </output>
+    </outputs>
+  </controller>
+</MixxxControllerPreset>

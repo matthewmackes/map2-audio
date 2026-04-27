@@ -1,0 +1,83 @@
+<?xml version='1.0' encoding='utf-8'?>
+<!--
+  Synthetic Mixxx-format fixture for T2459-B5.
+  Modeled after the upstream Pioneer-DDJ-SX.midi.xml shape (complex
+  4-deck mapping with 14-bit MSB/LSB faders, performance pads, shift
+  modifier layer, sampler bindings). NOT verbatim upstream content;
+  MAP2-authored under AGPL-3.0-only for the CI fixture set.
+-->
+<MixxxControllerPreset schemaVersion="1" mixxxVersion="2.4.0">
+  <info>
+    <name>Pioneer DDJ-SX (synthetic fixture)</name>
+    <author>MAP2 fixture</author>
+    <description>Complex 4-deck mapping fixture for B5 smoke test.</description>
+  </info>
+  <controller id="Pioneer-DDJ-SX">
+    <scriptfiles>
+      <file filename="Pioneer-DDJ-SX-scripts.js" functionprefix="PioneerDDJSX"/>
+    </scriptfiles>
+    <controls>
+      <!-- Per-deck transport (4 decks) -->
+      <control><group>[Channel1]</group><key>play</key><status>0x90</status><midino>0x0B</midino></control>
+      <control><group>[Channel2]</group><key>play</key><status>0x91</status><midino>0x0B</midino></control>
+      <control><group>[Channel3]</group><key>play</key><status>0x92</status><midino>0x0B</midino></control>
+      <control><group>[Channel4]</group><key>play</key><status>0x93</status><midino>0x0B</midino></control>
+      <!-- 14-bit crossfader (MSB / LSB pair, both routed to JS) -->
+      <control>
+        <group>[Master]</group>
+        <key>crossFaderMSB</key>
+        <status>0xB6</status>
+        <midino>0x1F</midino>
+        <options>
+          <Script-Binding/>
+        </options>
+      </control>
+      <control>
+        <group>[Master]</group>
+        <key>crossFaderLSB</key>
+        <status>0xB6</status>
+        <midino>0x3F</midino>
+        <options>
+          <Script-Binding/>
+        </options>
+      </control>
+      <!-- Performance pads (16 per deck — abbreviated to 4 each) -->
+      <control><group>[Channel1]</group><key>hotcue_1_activate</key><status>0x97</status><midino>0x00</midino></control>
+      <control><group>[Channel1]</group><key>hotcue_2_activate</key><status>0x97</status><midino>0x01</midino></control>
+      <control><group>[Channel1]</group><key>hotcue_3_activate</key><status>0x97</status><midino>0x02</midino></control>
+      <control><group>[Channel1]</group><key>hotcue_4_activate</key><status>0x97</status><midino>0x03</midino></control>
+      <!-- Shift modifier — script tracks state -->
+      <control>
+        <group>[Channel1]</group>
+        <key>shift</key>
+        <status>0x90</status>
+        <midino>0x60</midino>
+        <options>
+          <Script-Binding/>
+        </options>
+      </control>
+      <!-- EQ band kills (script-driven momentary on the DDJ-SX) -->
+      <control>
+        <group>[Channel1]</group>
+        <key>filterHighKill</key>
+        <status>0x90</status>
+        <midino>0x70</midino>
+        <options>
+          <Script-Binding/>
+        </options>
+      </control>
+      <!-- Sampler bindings — fail soft on MAP2 -->
+      <control><group>[Sampler1]</group><key>play</key><status>0x9F</status><midino>0x00</midino></control>
+      <control><group>[Sampler2]</group><key>play</key><status>0x9F</status><midino>0x01</midino></control>
+      <control><group>[Sampler3]</group><key>play</key><status>0x9F</status><midino>0x02</midino></control>
+      <control><group>[Sampler4]</group><key>play</key><status>0x9F</status><midino>0x03</midino></control>
+      <!-- AutoDJ — explicitly unsupported -->
+      <control>
+        <group>[AutoDJ]</group>
+        <key>shuffle_playlist</key>
+        <status>0x90</status>
+        <midino>0x77</midino>
+      </control>
+    </controls>
+  </controller>
+</MixxxControllerPreset>
