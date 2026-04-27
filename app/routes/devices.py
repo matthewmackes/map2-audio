@@ -781,6 +781,144 @@ import time   # noqa: E402  isort:skip
 
 
 # ---------------------------------------------------------------------------
+# T2459-G9 — Pack Sources admin: sync-mixxx subprocess streamer +
+# IMPORT_CHECKSUMS.txt integrity gate.
+# ---------------------------------------------------------------------------
+
+import asyncio as _asyncio_g9   # noqa: E402
+import hashlib as _hashlib_g9   # noqa: E402
+import json   # noqa: E402
+from pathlib import Path   # noqa: E402
+
+from fastapi.responses import StreamingResponse   # noqa: E402
+
+REPO_ROOT_G9 = Path(__file__).resolve().parents[2]
+MIXX_IMPORTS_ROOT = REPO_ROOT_G9 / "device-packs" / "_mixx-imports"
+SYNC_SCRIPT = REPO_ROOT_G9 / "scripts" / "sync_mixxx_imports.py"
+CHECKSUMS_FILE = MIXX_IMPORTS_ROOT / "IMPORT_CHECKSUMS.txt"
+
+
+class _SyncMixxxRequest(BaseModel):
+    mixxx_clone_path: str
+    checksum_only: bool = False
+
+
+@router.get("/sources/mixxx-checksums")
+async def list_mixxx_checksums() -> dict[str, Any]:
+    """Hash every shipped file under device-packs/_mixx-imports/ and
+    diff against the recorded `IMPORT_CHECKSUMS.txt`. Returns a row
+    per drifted file so the admin tab can surface "imported corpus
+    has been modified" warnings inline.
+    """
+    if not MIXX_IMPORTS_ROOT.is_dir():
+        return {"present": False, "drift": [], "files_checked": 0}
+    if not CHECKSUMS_FILE.is_file():
+        return {"present": True, "drift": [], "files_checked": 0,
+                "note": "IMPORT_CHECKSUMS.txt missing — run sync once to populate"}
+
+    expected: dict[str, str] = {}
+    for line in CHECKSUMS_FILE.read_text(encoding="utf-8").splitlines():
+        line = line.strip()
+        if not line or line.startswith("#"):
+            continue
+        parts = line.split(None, 1)
+        if len(parts) != 2:
+            continue
+        expected[parts[1].strip()] = parts[0].strip()
+
+    drift: list[dict[str, str]] = []
+    files_checked = 0
+    for p in sorted(MIXX_IMPORTS_ROOT.rglob("*")):
+        if not p.is_file():
+            continue
+        if p.name.endswith(".MAP2.yaml"):
+            continue   # MAP2-mutable sidecars skip the immutability gate
+        try:
+            rel = str(p.relative_to(REPO_ROOT_G9))
+        except ValueError:
+            continue
+        files_checked += 1
+        actual = _hashlib_g9.sha256(p.read_bytes()).hexdigest()
+        want = expected.get(rel)
+        if want is None:
+            drift.append({"path": rel, "kind": "untracked", "actual_sha256": actual})
+        elif want != actual:
+            drift.append({"path": rel, "kind": "modified",
+                          "expected_sha256": want, "actual_sha256": actual})
+    # Files in the manifest but missing from disk:
+    for rel in expected:
+        full = REPO_ROOT_G9 / rel
+        if not full.is_file():
+            drift.append({"path": rel, "kind": "missing",
+                          "expected_sha256": expected[rel]})
+
+    return {
+        "present": True,
+        "files_checked": files_checked,
+        "drift": drift,
+        "checksums_path": str(CHECKSUMS_FILE.relative_to(REPO_ROOT_G9)),
+    }
+
+
+@router.post("/sources/sync-mixxx")
+async def sync_mixxx(req: _SyncMixxxRequest) -> StreamingResponse:
+    """Stream the output of `scripts/sync_mixxx_imports.py` line-by-line
+    as SSE so the admin tab can render it in a Carbon `CodeSnippet`.
+
+    The script does not commit; the operator commits via the standard
+    `update` shorthand once the diff looks right.
+    """
+    clone_path = Path(req.mixxx_clone_path).expanduser()
+    if not clone_path.is_dir():
+        raise _g1_error(
+            status_code=400,
+            detail=f"mixxx_clone_path does not exist: {clone_path}",
+            code="invalid_clone_path",
+            source="sync_mixxx",
+        )
+    if not SYNC_SCRIPT.is_file():
+        raise _g1_error(
+            status_code=500,
+            detail=f"sync script missing: {SYNC_SCRIPT}",
+            code="sync_script_missing",
+            source="sync_mixxx",
+        )
+
+    cmd = ["python3", str(SYNC_SCRIPT)]
+    if req.checksum_only:
+        cmd.append("--checksum-only")
+    cmd.append(str(clone_path))
+
+    async def _stream():
+        proc = await _asyncio_g9.create_subprocess_exec(
+            *cmd,
+            stdout=_asyncio_g9.subprocess.PIPE,
+            stderr=_asyncio_g9.subprocess.STDOUT,
+            cwd=str(REPO_ROOT_G9),
+        )
+        yield f"event: start\ndata: {json.dumps({'cmd': cmd})}\n\n"
+        try:
+            assert proc.stdout is not None
+            while True:
+                line = await proc.stdout.readline()
+                if not line:
+                    break
+                # Standard SSE framing — JSON-encoded so newlines and
+                # quotes survive round-trip through the GUI.
+                yield f"data: {json.dumps({'line': line.decode('utf-8', errors='replace').rstrip()})}\n\n"
+            await proc.wait()
+            yield f"event: end\ndata: {json.dumps({'exit_code': proc.returncode})}\n\n"
+        except Exception as exc:   # noqa: BLE001
+            yield f"event: error\ndata: {json.dumps({'error': str(exc)})}\n\n"
+            try:
+                proc.kill()
+            except ProcessLookupError:
+                pass
+
+    return StreamingResponse(_stream(), media_type="text/event-stream")
+
+
+# ---------------------------------------------------------------------------
 # T2459-G7 — Bindings write + Undo
 # ---------------------------------------------------------------------------
 

@@ -1,0 +1,71 @@
+.pack-sources-admin {
+  padding: 1.5rem 2rem 4rem;
+  max-width: 1400px;
+  margin: 0 auto;
+}
+
+.pack-sources-admin__crumb {
+  margin: 0;
+  font-size: 0.75rem;
+  color: var(--cds-text-helper);
+}
+
+.pack-sources-admin__crumb a {
+  color: var(--cds-link-primary);
+  text-decoration: none;
+}
+
+.pack-sources-admin__crumb a:hover {
+  text-decoration: underline;
+}
+
+.pack-sources-admin__head h1 {
+  font-size: 1.75rem;
+  font-weight: 400;
+  margin: 0.25rem 0;
+  color: var(--cds-text-primary);
+}
+
+.pack-sources-admin__sub {
+  margin: 0 0 1.5rem;
+  font-size: 0.875rem;
+  color: var(--cds-text-helper);
+}
+
+.pack-sources-admin__section {
+  margin-bottom: 2rem;
+}
+
+.pack-sources-admin__section h2 {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--cds-text-primary);
+  margin: 0 0 0.75rem;
+}
+
+.pack-sources-admin__hint {
+  margin: 0 0 0.75rem;
+  font-size: 0.875rem;
+  color: var(--cds-text-helper);
+}
+
+.pack-sources-admin__form {
+  display: flex;
+  align-items: flex-end;
+  gap: 0.75rem;
+  flex-wrap: wrap;
+  margin-bottom: 1rem;
+}
+
+.pack-sources-admin__form .cds--text-input {
+  width: 24rem;
+  max-width: 100%;
+}
+
+.pack-sources-admin__checkbox {
+  display: flex;
+  gap: 0.375rem;
+  align-items: center;
+  font-size: 0.875rem;
+  color: var(--cds-text-primary);
+}

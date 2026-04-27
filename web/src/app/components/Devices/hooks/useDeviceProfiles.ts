@@ -13,6 +13,7 @@
 import { useQuery } from '@tanstack/react-query'
 
 import {
+  getMixxxChecksumStatus,
   listConnectedDevices,
   listDeviceDiagnostics,
   listDeviceProfiles,
@@ -25,6 +26,7 @@ import {
   type DiagnosticsResponse,
   type KnownDeviceRow,
   type MeasureLatencyHistoryRow,
+  type MixxxChecksumStatus,
   type PackSourceRow,
   type RecentlyDisconnectedRow,
 } from '../../../../map2/clients/devices'
@@ -105,5 +107,14 @@ export function useMeasureLatencyHistory(packId: string, model: string, limit = 
     queryFn: () => listMeasureLatencyHistory(packId, model, limit),
     enabled: Boolean(packId && model),
     staleTime: 10_000,
+  })
+}
+
+export function useMixxxChecksumStatus() {
+  return useQuery<MixxxChecksumStatus>({
+    queryKey: ['devices', 'sources', 'mixxx-checksums'],
+    queryFn: () => getMixxxChecksumStatus(),
+    staleTime: 30_000,
+    refetchInterval: 60_000,
   })
 }

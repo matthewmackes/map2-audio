@@ -475,3 +475,29 @@ export async function undoBindings(
     },
   )
 }
+
+// T2459-G9 — Pack Sources admin: Mixxx imports checksum integrity
+export interface MixxxChecksumDriftRow {
+  path: string
+  kind: 'modified' | 'missing' | 'untracked'
+  expected_sha256?: string
+  actual_sha256?: string
+}
+
+export interface MixxxChecksumStatus {
+  present: boolean
+  files_checked: number
+  drift: MixxxChecksumDriftRow[]
+  checksums_path?: string
+  note?: string
+}
+
+export async function getMixxxChecksumStatus(): Promise<MixxxChecksumStatus> {
+  return fetchJson(`${API_BASE}/api/devices/sources/mixxx-checksums`)
+}
+
+// SSE-friendly URL builder; the EventSource consumer in the admin
+// tab opens it directly.
+export function syncMixxxStreamUrl(): string {
+  return `${API_BASE}/api/devices/sources/sync-mixxx`
+}

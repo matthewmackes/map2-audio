@@ -71,6 +71,8 @@ const HardwareStorePage     = lazy(() => import('./components/Devices/HardwareSt
 const DeviceDetailRoute     = lazy(() => import('./components/Devices/DeviceDetail/DeviceDetailRoute').then(m => ({ default: m.DeviceDetailRoute })))
 // T2459-G8 — bench-wide diagnostics aggregate.
 const DiagnosticsAggregatePage = lazy(() => import('./components/Devices/DiagnosticsAggregatePage').then(m => ({ default: m.DiagnosticsAggregatePage })))
+// T2459-G9 — Pack Sources admin tab (sync runner + checksum gate).
+const PackSourcesAdminPage = lazy(() => import('./components/Devices/PackSourcesAdminPage').then(m => ({ default: m.PackSourcesAdminPage })))
 const EdirolUA1000View      = lazy(() => import('./components/Devices/EdirolUA1000/EdirolUA1000View').then(m => ({ default: m.EdirolUA1000View })))
 const HoToneJoGGView        = lazy(() => import('./components/Devices/HoToneJoGG/HoToneJoGGView').then(m => ({ default: m.HoToneJoGGView })))
 // T2459-C1 — auto-rendered device panel for any pack/model under
@@ -501,6 +503,7 @@ export function App() {
                                   <Route index element={<DevicesStorePage />} />
                                   <Route path="store-v2" element={<RouteBoundary title="Hardware Store (preview) crashed" actionLabel="Reload"><HardwareStorePage /></RouteBoundary>} />
                                   <Route path="diagnostics-v2" element={<RouteBoundary title="Diagnostics aggregate crashed" actionLabel="Reload"><DiagnosticsAggregatePage /></RouteBoundary>} />
+                                  <Route path="pack-sources-v2" element={<RouteBoundary title="Pack Sources crashed" actionLabel="Reload"><PackSourcesAdminPage /></RouteBoundary>} />
                                   <Route path="edirol-ua1000" element={<EdirolUA1000View />} />
                                   <Route path="edirol-ua1000/:view" element={<EdirolUA1000View />} />
                                   <Route path="hotone-jogg" element={<HoToneJoGGView />} />
