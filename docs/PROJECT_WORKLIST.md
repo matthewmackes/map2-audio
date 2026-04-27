@@ -141,26 +141,30 @@ Last updated: 2026-04-26 EDT - Claude: SHIPPED.
 ---
 
 ID: T2459-A5
-Status: [ ] Todo
+Status: [✓] Done
 Parent: T2459
 Title: Controller-host IPC schema (Python TypedDicts + C++ structs, sync-tested)
 Description:
 - Goal: Define the bidirectional message schema between `map2-backend` and `map2-controller-host` over a Unix-domain socket at `/run/map2/controller-host.sock`. Inbound (backend → host): `ScriptLoadRequest`, `MappingActivate`, `MidiSendRequest`, `Shutdown`. Outbound (host → backend): `EngineCommand`, `ControllerEvent`, `LogEvent`, `ScriptError`. Length-prefixed JSON frames.
 - Acceptance: Python TypedDicts in `app/schemas/controller_host.py`, matching C++ structs in `juce-engine/Source/ControllerHost/IpcMessages.h`, schema-sync test that mirrors the existing JUCE-engine schema-sync test (CI fails if struct fields drift from TypedDict fields).
 - Required outputs: `app/schemas/controller_host.py`, `juce-engine/Source/ControllerHost/IpcMessages.h`, `tests/test_controller_host_ipc_schema.py`.
+Completion note: 2026-04-27 — Claude: SHIPPED. Created `app/schemas/` package + `app/schemas/controller_host.py` with all 8 message TypedDicts (ScriptLoadRequest, MappingActivate, MidiSendRequest, Shutdown inbound; EngineCommand, ControllerEvent, LogEvent, ScriptError outbound) + 2 shared payloads (MappingControlPayload, MappingDescriptorPayload) + the SCHEMA_VERSION constant + `FIELD_MANIFEST` dict + wire-format helpers (`encode_frame` / `decode_frame` for length-prefixed JSON framing). Created `juce-engine/Source/ControllerHost/IpcMessages.h` with matching C++ structs in `map2::ipc::controller_host` namespace + `kSchemaVersion` constant + `CPP_FIELD_MANIFEST_BEGIN/END` text block listing every field for each struct. Authored `tests/test_controller_host_ipc_schema.py` with 9 cases: cpp header exists, manifest parses, python↔cpp manifest field-list match (the actual sync gate — fails if either side drifts), schema version match, every TypedDict instantiates, encode/decode round-trip, partial frame returns None + preserves buffer, multi-frame buffer drains in order, sub-4-byte buffer returns None. Validation: 9 passed in 2.53s.
 Assigned to: Claude
+Last updated: 2026-04-27 EDT - Claude: SHIPPED.
 
 ---
 
 ID: T2459-A6
-Status: [ ] Todo
+Status: [✓] Done
 Parent: T2459
 Title: `app/services/controller_host_service.py` supervisor
 Description:
 - Goal: Python supervisor that launches `juce-engine/build/map2-controller-host` as a child process, manages the Unix-domain-socket connection, restarts on crash with exponential backoff, captures last-crash diagnostic to `/var/lib/map2/controller-host/last-crash.log`. CPU affinity pins the child to CPUs `0-3` (off the isolated audio cores per CLAUDE.md §5).
 - Acceptance: supervisor brings up controller-host on backend startup, surfaces `controller_host` health in `/api/health` payload, restart-storm guard (after 5 crashes in 60s, mark service `degraded` and stop auto-restarting), all paths covered by pytest.
 - Required outputs: `app/services/controller_host_service.py`, `app/main.py` lifespan integration, `tests/test_controller_host_service.py`.
+Completion note: 2026-04-27 — Claude: SHIPPED. Created `app/services/controller_host_service.py` with `ControllerHostService` async supervisor: launches `juce-engine/build/map2-controller-host` via `asyncio.create_subprocess_exec` with `taskset -c 0,1,2,3` CPU pinning (off the isolated audio cores 4,5 per CLAUDE.md §5), spawn → RUNNING → exit-detected → crash-log → exponential backoff (configurable `initial_backoff_seconds` / `max_backoff_seconds` for testability) → restart cycle. Restart-storm guard: after 5 crashes within a 60s window (deque + timestamp comparison), supervisor marks service `degraded` and stops auto-restarting until `reset_storm_guard()` is called. Crash-log written to `/var/lib/map2/controller-host/last-crash.log` (or whatever path the constructor receives) on every crash, with the last 50 lines of stderr from the child. Status surface (`status_payload()`) exposes binary path, binary_exists, socket path, PID, restart count, crash count in window, last error string — consumed by `/api/health` and the GUI's degraded-card. **Critical**: missing binary (the typical state until T2459-B2 ships the C++ build) puts the supervisor in `WAITING_FOR_BINARY` mode and the backend continues to boot normally; supervisor re-checks every 30s so a fresh build is picked up automatically. Wired into `app/main.py` lifespan: started in the same try/except block as the controller subsystem registration; stopped in the SHUTDOWN section before the existing service-stop chain. Test coverage: `tests/test_controller_host_service.py` (7 cases — stopped initial state; missing binary doesn't block startup; spawn → RUNNING → SIGTERM clean shutdown; crash writes diagnostic log with exit code + stderr tail; storm guard trips after 5 fast crashes; reset_storm_guard re-enables; singleton lifecycle). Validation: 7 passed in 4.15s. Smoke import: `python3 -c "from app.services.controller_host_service import get_controller_host_service; svc = get_controller_host_service(); print(svc.status_payload())"` reports binary_exists=False without raising.
 Assigned to: Claude
+Last updated: 2026-04-27 EDT - Claude: SHIPPED.
 
 ---
 

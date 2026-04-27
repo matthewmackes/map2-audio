@@ -866,6 +866,19 @@ async def lifespan(app):
         logger.info("Stopping MAP2 Audio Platform services...")
         await cancel_background_startup_tasks(background_start_tasks)
 
+        # T2459 — Stop the controller-host supervisor + clear active mappings.
+        try:
+            from app.services.controllers import get_controller_service
+            from app.services.controller_host_service import get_controller_host_service
+            await safe_stop_service(
+                logger,
+                "Controller host supervisor",
+                get_controller_host_service().stop,
+            )
+            get_controller_service().stop()
+        except Exception as exc:
+            logger.debug("Controller subsystem stop skipped: %s", exc)
+
         if state_authority_scheduler is not None:
             await safe_stop_service(
                 logger,
@@ -1157,10 +1170,21 @@ def create_app():
         try:
             from app.routes import devices as devices_routes
             from app.services.controllers import get_controller_service
+            from app.services.controller_host_service import get_controller_host_service
             controller_service = get_controller_service()
             controller_service.start()
             app.include_router(devices_routes.router)
             logger.info("Controller / Device-Pack routes registered (T2459)")
+
+            # Supervisor for the separate map2-controller-host process.
+            # Until T2459-B2 builds the binary, the supervisor enters
+            # WAITING_FOR_BINARY and the backend continues normally.
+            controller_host = get_controller_host_service()
+            await controller_host.start()
+            logger.info(
+                "ControllerHostService supervisor started (status=%s)",
+                controller_host.status,
+            )
         except Exception as e:
             logger.warning(f"Failed to load Controller / Device-Pack subsystem: {e}")
 
