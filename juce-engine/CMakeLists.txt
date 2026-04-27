@@ -905,8 +905,10 @@ endif()
 if(BUILD_CONTROLLER_HOST_TESTS)
     add_executable(controller_host_tests
         tests/QuickJSEngineTests.cpp
+        tests/Map2HidControllerTests.cpp
         Source/ControllerHost/QuickJSEngine.cpp
         Source/ControllerHost/EngineApiBindings.cpp
+        Source/ControllerHost/Hid/Map2HidController.cpp
     )
     target_include_directories(controller_host_tests PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/Source

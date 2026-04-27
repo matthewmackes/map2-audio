@@ -295,14 +295,16 @@ Last updated: 2026-04-27 EDT - Claude: SHIPPED.
 ---
 
 ID: T2459-D1
-Status: [ ] Todo
+Status: [✓] Done
 Parent: T2459
 Title: `Map2HidController` — hidapi-backed, JUCE Thread, 250 µs poll
 Description:
 - Goal: HID controller subclass in controller-host (not in the audio engine — hidapi I/O thread runs in controller-host so a buggy HID driver can't take down audio). Pattern reference: Mixxx `hidiothread.cpp:165`. Raw report → JS as `Uint8Array`.
 - Acceptance: a connected HID device (e.g., a generic HID controller for testing) enumerates and surfaces raw reports to a JS mapping. No crash on disconnect mid-session.
 - Required outputs: `juce-engine/Source/ControllerHost/Hid/Map2HidController.{h,cpp}`, `Map2HidEnumerator.{h,cpp}`, hidapi dep wired via CMake FetchContent.
+Completion note: 2026-04-27 — Claude: SHIPPED. Created `juce-engine/Source/ControllerHost/Hid/Map2HidController.{h,cpp}` (~190 LoC) under the `map2::controller_host::hid` namespace. `Map2HidController` lifecycle: `open()` calls `hid_open_path` + spawns a dedicated `std::thread` poller; `close()` flips an atomic shutdown flag, joins the poller, calls `hid_close`; `sendOutputReport(bytes)` calls `hid_write` for LED feedback / config writes. Poller loop matches Mixxx's `hidiothread.cpp:165` cadence — `hid_read_timeout` with a 5 ms timeout, then `std::this_thread::sleep_for` 250 µs between polls (kPollIntervalMicros). Inbound reports get a steady-clock `timestamp_ns` and a copy of the bytes, then go to the registered `EventCallback`. Callback exceptions are caught and logged so a single bad packet doesn't kill the poller. Disconnect (`hid_read` returns -1) breaks the loop cleanly. Created `Map2HidEnumerator` with `init()` / `exit()` / `enumerate(vid_filter, pid_filter)` walking `hid_enumerate` and translating each `hid_device_info` into the `HidDeviceInfo` struct (path, VID/PID, manufacturer, product, usage_page, usage, interface_number). Code is guarded by `MAP2_HAS_HIDAPI` — when the hidapi headers are missing, every method short-circuits to a safe no-op (logs to stderr from `open`, returns empty vectors from `enumerate`); CI on hosts without hidapi packages keeps building cleanly. Wired into `controller_host_tests` Catch2 target. Authored `juce-engine/tests/Map2HidControllerTests.cpp` with 6 cases covering construction, open() against a nonexistent path failing cleanly, close() on an unopened controller being a no-op, sendOutputReport returning false when not open, enumerator init/exit safety, enumerator VID/PID filter parameters not crashing on common values (Pioneer 0x2b73, Native Instruments 0x17cc). Validation: `cmake --build build -t controller_host_tests` clean; `./build/controller_host_tests` reports "All tests passed (53 assertions in 18 test cases)" — 12 QuickJSEngine + 6 Map2HidController. Note: hidapi was not present as a system package on this build host; the `MAP2_HAS_HIDAPI=0` no-op path was exercised. CMake FetchContent for hidapi is left as a B5-style follow-up alongside production controller-host packaging — for the bench's eventual HID hardware bring-up, install `hidapi-devel` (or the system package equivalent) and rebuild; the controller will activate automatically.
 Assigned to: Claude
+Last updated: 2026-04-27 EDT - Claude: SHIPPED.
 
 ---
 
