@@ -1,0 +1,166 @@
+# JSON Schema (Draft-07) for a MAP2 audio device profile.
+# File pattern: device-packs/<vendor>/profiles/<model>.audio.yaml
+# Worklist: T2459-A4
+# Spec: docs/architecture/CONTROLLER_LAYER.md §4.2
+
+$schema: "http://json-schema.org/draft-07/schema#"
+$id: "https://map2.audio/schemas/device-packs/audio-profile.schema.yaml"
+title: "MAP2 Audio Device Profile"
+type: object
+required:
+  - schema_version
+  - identity
+  - ports
+properties:
+  schema_version:
+    type: integer
+    enum: [1]
+  identity:
+    type: object
+    required: [manufacturer, model, hardware_id]
+    properties:
+      manufacturer: { type: string }
+      model: { type: string }
+      family: { type: string }
+      hardware_id:
+        type: string
+        pattern: "^(usb|alsa-seq|pci):.+"
+        description: "Canonical identifier — 'usb:VVVV:PPPP' for USB, 'alsa-seq:<client>:<port>' otherwise."
+      alsa_card_regex:
+        type: string
+        description: "Regex matched against the ALSA card name to identify this device at runtime."
+  ports:
+    type: array
+    minItems: 1
+    items: { $ref: "#/definitions/port" }
+  mixer_surfaces:
+    type: array
+    items: { $ref: "#/definitions/mixer_surface" }
+    default: []
+  on_device_dsp:
+    type: array
+    items: { $ref: "#/definitions/dsp_block" }
+    default: []
+  routing_topology:
+    type: object
+    properties:
+      default_matrix:
+        type: string
+        enum: [identity_NxN, identity_2x2, identity_8x8, identity_10x10, identity_16x16, identity_1x1, custom]
+      allowed_routes:
+        type: array
+        items: { type: string }
+      fixed_links:
+        type: array
+        items: { type: object }
+  loopback_ports:
+    type: object
+    description: "JACK port names used by scripts/measure_loopback_ir.py (T2459-E3) for the 'Measure latency' GUI button."
+    properties:
+      playback: { type: string }
+      capture: { type: string }
+  use_case_presets:
+    type: array
+    items: { $ref: "#/definitions/use_case_preset" }
+    default: []
+  metadata:
+    type: object
+    properties:
+      product_image_urls:
+        type: array
+        items: { type: string, format: uri }
+      datasheet_url: { type: string, format: uri }
+      manual_url: { type: string, format: uri }
+      vendor_support_url: { type: string, format: uri }
+additionalProperties: false
+
+definitions:
+  port:
+    type: object
+    required: [id, kind, direction]
+    properties:
+      id:
+        type: string
+        pattern: "^[a-z0-9_]+$"
+      kind:
+        type: string
+        enum: [analog, digital, headphone, network_audio, midi_din, midi_usb, hid, monitor]
+      direction:
+        type: string
+        enum: [input, output, bidirectional]
+      count:
+        type: integer
+        minimum: 1
+      sample_rates:
+        type: array
+        items: { type: integer, minimum: 8000 }
+      bit_depths:
+        type: array
+        items: { type: integer, minimum: 8 }
+      connectors:
+        type: array
+        items:
+          type: string
+          enum: [trs_quarter_inch, ts_quarter_inch, xlr_male, xlr_female, rca, spdif_coax, spdif_optical, adat_optical, rbus_db25, headphone_quarter_inch, headphone_3_5mm, ethernet_rj45, midi_din5, usb_b, usb_c, usb_a, type_c]
+      jack_node_pattern:
+        type: string
+        description: "PipeWire/JACK node name pattern used to identify this port at runtime."
+    additionalProperties: false
+  mixer_surface:
+    type: object
+    required: [id, kind]
+    properties:
+      id: { type: string }
+      kind:
+        type: string
+        enum: [hardware, software, hybrid]
+      description: { type: string }
+      channel_strips: { type: integer, minimum: 0 }
+      sends: { type: integer, minimum: 0 }
+      monitor_buses: { type: integer, minimum: 0 }
+    additionalProperties: false
+  dsp_block:
+    type: object
+    required: [id, kind]
+    properties:
+      id: { type: string }
+      kind:
+        type: string
+        enum: [amp_model, cabinet_sim, effect_block, eq, compressor, limiter, reverb, delay]
+      params:
+        type: array
+        items:
+          type: object
+          required: [name, type]
+          properties:
+            name: { type: string }
+            type:
+              type: string
+              enum: [continuous, discrete, boolean, list]
+            min: { type: number }
+            max: { type: number }
+            default: {}
+            list_values:
+              type: array
+              items: { type: string }
+      controllable_via:
+        type: array
+        items:
+          type: string
+          enum: [midi_cc, midi_pc, sysex, hardware_only]
+    additionalProperties: false
+  use_case_preset:
+    type: object
+    required: [id, name]
+    properties:
+      id: { type: string, pattern: "^[a-z0-9_]+$" }
+      name: { type: string }
+      description: { type: string }
+      ports_used:
+        type: array
+        items: { type: string }
+      routing: { type: string }
+      recommended_for:
+        type: array
+        items: { type: string }
+    additionalProperties: false

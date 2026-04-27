@@ -1,0 +1,125 @@
+# JSON Schema (Draft-07) for a MAP2 MIDI controller profile.
+# File pattern: device-packs/<vendor>/profiles/<model>.midi.yaml
+# Worklist: T2459-A4
+# Spec: docs/architecture/CONTROLLER_LAYER.md §4.2, §6 (Mixxx interop)
+
+$schema: "http://json-schema.org/draft-07/schema#"
+$id: "https://map2.audio/schemas/device-packs/midi-profile.schema.yaml"
+title: "MAP2 MIDI Controller Profile"
+type: object
+required:
+  - schema_version
+  - identity
+  - controls
+properties:
+  schema_version:
+    type: integer
+    enum: [1]
+  identity:
+    type: object
+    required: [manufacturer, model, alsa_client_pattern]
+    properties:
+      manufacturer: { type: string }
+      model: { type: string }
+      alsa_client_pattern:
+        type: string
+        description: "Pattern matched against ALSA seq client names to identify the controller's MIDI port."
+      hardware_id:
+        type: string
+        pattern: "^(usb|alsa-seq):.+"
+  scripts:
+    type: array
+    items:
+      type: string
+      pattern: "^[A-Za-z0-9_./-]+\\.js$"
+    description: "Relative paths from the pack root to JS files this profile depends on (loaded by map2-controller-host QuickJS)."
+  controls:
+    type: array
+    items: { $ref: "#/definitions/control" }
+  outputs:
+    type: array
+    items: { $ref: "#/definitions/output" }
+    default: []
+  settings:
+    type: array
+    description: "Per-mapping operator-tunable settings exposed to the GUI (volume sensitivity, scratch alpha, etc.)."
+    items: { $ref: "#/definitions/setting" }
+    default: []
+  mixxx_alias_table:
+    type: object
+    description: "Per-pack alias table for translating Mixxx ControlObject group names ([Channel1], [Master], ...) to MAP2 engine target prefixes (audio.chain.1, audio.master, ...)."
+    additionalProperties:
+      type: string
+additionalProperties: false
+
+definitions:
+  control:
+    type: object
+    description: "A single hardware control row. Either binds directly to a MAP2 engine target, or invokes a JS function."
+    required: [status]
+    properties:
+      status:
+        type: integer
+        minimum: 0x80
+        maximum: 0xFF
+        description: "MIDI status byte (0x80 note-off, 0x90 note-on, 0xB0 CC, 0xC0 PC, 0xD0 channel pressure, 0xE0 pitch bend, 0xF0 SysEx)."
+      midino:
+        type: integer
+        minimum: 0
+        maximum: 127
+        description: "Note number or CC number. For pitch bend, omit. For PC, omit."
+      channel:
+        type: integer
+        minimum: 1
+        maximum: 16
+      target:
+        type: string
+        description: "Direct MAP2 engine target (e.g. 'audio.chain.1.volume'). Mutually exclusive with 'script'."
+      action:
+        type: string
+        enum: [set, toggle, increment, decrement, momentary, latch, send_pc]
+      script:
+        type: string
+        description: "Fully-qualified JS function name from a referenced scripts file (e.g. 'UA1000Mapping.crossFader'). Mutually exclusive with 'target'."
+      fast_path:
+        type: boolean
+        default: false
+        description: "If true, this binding is wired in C++ inside Map2MidiController::dispatch() and bypasses the IPC + QuickJS round-trip. Per-control opt-in only; arbitrary JS cannot be promoted to fast path."
+      description:
+        type: string
+        description: "Human-readable purpose of this control; surfaces in the GUI's control browser."
+    additionalProperties: false
+  output:
+    type: object
+    description: "An outbound MIDI message (LED feedback, etc.) bound to a MAP2 engine event."
+    required: [status]
+    properties:
+      status: { type: integer, minimum: 0x80, maximum: 0xFF }
+      midino: { type: integer, minimum: 0, maximum: 127 }
+      channel: { type: integer, minimum: 1, maximum: 16 }
+      source:
+        type: string
+        description: "MAP2 engine source path that drives this output (e.g. 'audio.chain.1.bypass'). Inverse of target on a control row."
+      script:
+        type: string
+        description: "JS function that emits the output bytes."
+      description: { type: string }
+    additionalProperties: false
+  setting:
+    type: object
+    required: [id, type, default]
+    properties:
+      id: { type: string, pattern: "^[a-z0-9_]+$" }
+      label: { type: string }
+      type:
+        type: string
+        enum: [number, boolean, string, choice]
+      default: {}
+      min: { type: number }
+      max: { type: number }
+      step: { type: number }
+      choices:
+        type: array
+        items: { type: string }
+      description: { type: string }
+    additionalProperties: false

@@ -1,0 +1,56 @@
+# JSON Schema (Draft-07) for a MAP2 device-pack manifest (`pack.yaml`).
+# Worklist: T2459-A4
+# Spec: docs/architecture/CONTROLLER_LAYER.md §4
+
+$schema: "http://json-schema.org/draft-07/schema#"
+$id: "https://map2.audio/schemas/device-packs/pack.schema.yaml"
+title: "MAP2 Device Pack Manifest"
+type: object
+required:
+  - schema_version
+  - pack_id
+  - vendor
+  - description
+  - license
+properties:
+  schema_version:
+    type: integer
+    enum: [1]
+    description: "Schema version of this pack manifest. Bump on breaking changes."
+  pack_id:
+    type: string
+    pattern: "^[a-z0-9][a-z0-9_-]*$"
+    description: "Stable lowercase identifier matching the directory name (e.g. 'edirol-ua')."
+  vendor:
+    type: object
+    required: [name]
+    properties:
+      name: { type: string }
+      website: { type: string, format: uri }
+      support_url: { type: string, format: uri }
+  description:
+    type: string
+    description: "One-paragraph human-readable summary of what this pack covers."
+  license:
+    type: string
+    description: "SPDX license identifier for pack-original content (overrides + scripts). Mixxx-imported files retain their own headers."
+  source:
+    type: string
+    enum: ["map2-native", "mixxx-import"]
+    default: "map2-native"
+    description: "Origin of this pack. Mixxx imports are GPLv2-or-later attributed under device-packs/_mixx-imports/."
+  upstream_commit:
+    type: string
+    description: "If source is mixxx-import: the upstream Mixxx commit hash this pack was synced from."
+  imported_at:
+    type: string
+    format: date-time
+    description: "If source is mixxx-import: ISO-8601 timestamp of import."
+  identifier_rules_path:
+    type: string
+    description: "Relative path to shared/identifier_rules.yaml within this pack."
+  models:
+    type: array
+    items: { type: string }
+    description: "Stable model ids (e.g. 'ua-1000', 'ua-101'). One profile YAML per model per kind."
+additionalProperties: false

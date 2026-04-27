@@ -125,14 +125,16 @@ Assigned to: Claude
 ---
 
 ID: T2459-A4
-Status: [ ] Todo
+Status: [✓] Done
 Parent: T2459
 Title: `device-packs/` skeleton with JSON Schema files
 Description:
 - Goal: Create the canonical `device-packs/` directory layout with `_runtime/`, `_schema/`, `_mixx-imports/`, `_tests/fixture-pack/` subdirs; author the four JSON Schema files (`pack.schema.yaml`, `audio-profile.schema.yaml`, `midi-profile.schema.yaml`, `hid-profile.schema.yaml`); write `device-packs/README.md` (operator + pack-author guide) and `device-packs/SCHEMA.md` (schema reference).
 - Acceptance: schemas are jsonschema-Draft-07 compliant; fixture pack validates; CI test exists that walks `device-packs/` and validates every YAML.
 - Required outputs: `device-packs/{README.md,SCHEMA.md,_schema/*.schema.yaml,_tests/fixture-pack/...}`, `tests/test_device_packs_schema.py`.
+Completion note: 2026-04-26 — Claude: SHIPPED. Created `device-packs/` directory tree with `_runtime/`, `_schema/`, `_mixx-imports/`, `_tests/fixture-pack/{profiles,scripts}/`, plus per-vendor stubs created lazily as packs land. Authored four JSON Schema (Draft-07) files: `pack.schema.yaml` (vendor manifest with map2-native vs mixxx-import source field, license SPDX, identifier_rules_path, models list), `audio-profile.schema.yaml` (identity with hardware_id pattern + ALSA card regex, ports with kind/direction/connectors enums, mixer_surfaces, on_device_dsp blocks, routing_topology, loopback_ports for path-c integration, use_case_presets, metadata with product imagery + datasheet/manual URLs), `midi-profile.schema.yaml` (identity with ALSA client pattern, scripts list, controls with status/midino/channel and exclusive target/script + fast_path opt-in flag, outputs for LED feedback, settings, mixxx_alias_table for ControlObject bridge), `hid-profile.schema.yaml` (USB VID/PID + usage page/usage + interface_number, reports with input/output/feature direction and per-control offset/size_bits/kind/signed/min/max/target/script). Wrote `device-packs/README.md` (directory layout, hard rules, authoring guide, Mixxx interop posture, license posture) and `device-packs/SCHEMA.md` (per-schema worked examples for the EDIROL UA-1000 case). Authored `_tests/fixture-pack/` with valid pack.yaml + audio + MIDI + HID profile YAMLs + fixture JS scripts that satisfy the script-resolution test. Authored `_runtime/map2-components.js` (Component/Button/Knob/Encoder/Pad framework — MAP2-authored AGPLv3 rewrite of Mixxx midi-components-0.0.js pattern; T2459-B2 fully populates) and `_runtime/common-hid-parser.js` (HID packet parser scaffold — MAP2-authored AGPLv3 rewrite of Mixxx common-hid-packet-parser.js pattern; T2459-D2 fully populates). Authored `tests/test_device_packs_schema.py` with 12 test cases covering: every schema file loads + has Draft-07 marker, every pack manifest validates, every audio/MIDI/HID profile validates against its schema, every script reference resolves, every shipped JS file parses with `node --check`, fail-soft contract sanity check. Added `jsonschema>=4.26.0,<5.0.0` to `requirements-backend-runtime.txt` for repeatable installs. Validation: `pytest tests/test_device_packs_schema.py -v` reports 12 passed.
 Assigned to: Claude
+Last updated: 2026-04-26 EDT - Claude: SHIPPED.
 
 ---
 

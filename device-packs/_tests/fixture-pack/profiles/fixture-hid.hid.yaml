@@ -1,0 +1,34 @@
+schema_version: 1
+identity:
+  manufacturer: MAP2 Test Fixtures
+  model: fixture-hid
+  vendor_id: 0x0000
+  product_id: 0x0001
+  usage_page: 0x0001
+  usage: 0x0006
+  interface_number: 0
+scripts:
+  - scripts/fixture-hid-scripts.js
+reports:
+  - id: 1
+    direction: input
+    size: 8
+    controls:
+      - id: pad_1_velocity
+        offset: 1
+        size_bits: 8
+        kind: pad_velocity
+        signed: false
+        min: 0
+        max: 127
+        target: audio.chain.1.gate
+        description: 'Pad 1 velocity drives chain 1 gate.'
+      - id: jog_wheel
+        offset: 4
+        size_bits: 16
+        kind: jog_wheel
+        signed: true
+        script: FixtureHid.jogWheel
+  - id: 2
+    direction: output
+    size: 8

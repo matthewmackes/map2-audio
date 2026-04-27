@@ -1,0 +1,34 @@
+schema_version: 1
+identity:
+  manufacturer: MAP2 Test Fixtures
+  model: fixture-audio
+  family: Synthetic
+  hardware_id: usb:0000:0001
+  alsa_card_regex: '^FIXTURE_AUDIO\b'
+ports:
+  - id: out_l
+    kind: analog
+    direction: output
+    count: 1
+    sample_rates: [48000]
+    bit_depths: [24]
+    connectors: [trs_quarter_inch]
+    jack_node_pattern: 'FIXTURE_AUDIO'
+  - id: in_l
+    kind: analog
+    direction: input
+    count: 1
+    sample_rates: [48000]
+    bit_depths: [24]
+    connectors: [trs_quarter_inch]
+    jack_node_pattern: 'FIXTURE_AUDIO'
+loopback_ports:
+  playback: 'FIXTURE_AUDIO:playback_FL'
+  capture: 'FIXTURE_AUDIO:capture_FL'
+use_case_presets:
+  - id: passthrough
+    name: 'Passthrough'
+    ports_used: [out_l, in_l]
+    routing: identity
+metadata:
+  manual_url: 'https://map2.audio/fixtures/manual'

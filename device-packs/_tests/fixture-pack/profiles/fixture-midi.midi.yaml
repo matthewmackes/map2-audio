@@ -1,0 +1,36 @@
+schema_version: 1
+identity:
+  manufacturer: MAP2 Test Fixtures
+  model: fixture-midi
+  alsa_client_pattern: 'FIXTURE_MIDI'
+  hardware_id: alsa-seq:FIXTURE_MIDI:0
+scripts:
+  - scripts/fixture-midi-scripts.js
+controls:
+  - status: 0xB0
+    midino: 64
+    target: audio.chain.1.bypass
+    action: toggle
+    fast_path: true
+    description: 'Pedal CC 64 (fast-path).'
+  - status: 0xB0
+    midino: 7
+    script: FixtureMidi.masterVolume
+    description: 'CC 7 → JS master volume.'
+  - status: 0x90
+    midino: 60
+    target: audio.chain.1.solo
+    action: latch
+outputs:
+  - status: 0xB0
+    midino: 64
+    source: audio.chain.1.bypass
+settings:
+  - id: master_volume_curve
+    label: 'Master volume curve'
+    type: choice
+    default: linear
+    choices: [linear, log, exp]
+mixxx_alias_table:
+  '[Channel1]': audio.chain.1
+  '[Master]': audio.master

@@ -1,0 +1,14 @@
+schema_version: 1
+pack_id: fixture-pack
+vendor:
+  name: MAP2 Test Fixtures
+description: |
+  Synthetic device pack used by tests/test_device_packs_schema.py to verify
+  the pack loader, schema validation, and end-to-end profile parsing without
+  depending on a real vendor pack. Worklist: T2459-A4.
+license: AGPL-3.0-only
+source: map2-native
+models:
+  - fixture-audio
+  - fixture-midi
+  - fixture-hid

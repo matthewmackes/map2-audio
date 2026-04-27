@@ -26,6 +26,8 @@ websockets>=16.0,<17.0.0
 asyncssh>=2.21.0,<3.0.0
 # YAML parsing and emitted configuration artifacts
 PyYAML>=6.0.2,<7.0.0
+# JSON Schema validation for device-packs/ profile YAML files (T2459 controller subsystem)
+jsonschema>=4.26.0,<5.0.0
 # System/process telemetry
 psutil>=7.2.1,<8.0.0
 # Network discovery and advertisement

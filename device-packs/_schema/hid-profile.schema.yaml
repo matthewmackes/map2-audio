@@ -1,0 +1,92 @@
+# JSON Schema (Draft-07) for a MAP2 HID controller profile.
+# File pattern: device-packs/<vendor>/profiles/<model>.hid.yaml
+# Worklist: T2459-A4
+# Spec: docs/architecture/CONTROLLER_LAYER.md §4.2
+
+$schema: "http://json-schema.org/draft-07/schema#"
+$id: "https://map2.audio/schemas/device-packs/hid-profile.schema.yaml"
+title: "MAP2 HID Controller Profile"
+type: object
+required:
+  - schema_version
+  - identity
+  - reports
+properties:
+  schema_version:
+    type: integer
+    enum: [1]
+  identity:
+    type: object
+    required: [manufacturer, model, vendor_id, product_id]
+    properties:
+      manufacturer: { type: string }
+      model: { type: string }
+      vendor_id:
+        type: integer
+        minimum: 0
+        maximum: 0xFFFF
+        description: "USB vendor ID (16-bit)."
+      product_id:
+        type: integer
+        minimum: 0
+        maximum: 0xFFFF
+        description: "USB product ID (16-bit)."
+      usage_page:
+        type: integer
+        description: "HID usage page (16-bit)."
+      usage:
+        type: integer
+        description: "HID usage (16-bit)."
+      interface_number:
+        type: integer
+        description: "USB interface number to claim. Some devices expose multiple HID interfaces."
+  scripts:
+    type: array
+    items:
+      type: string
+      pattern: "^[A-Za-z0-9_./-]+\\.js$"
+  reports:
+    type: array
+    items:
+      type: object
+      required: [id, direction]
+      properties:
+        id:
+          type: integer
+          minimum: 0
+          maximum: 255
+          description: "HID report ID. Some devices use 0 (no report ID prefix)."
+        direction:
+          type: string
+          enum: [input, output, feature]
+        size:
+          type: integer
+          minimum: 1
+          description: "Report size in bytes."
+        controls:
+          type: array
+          items:
+            type: object
+            required: [id, offset, kind]
+            properties:
+              id: { type: string }
+              offset:
+                type: integer
+                minimum: 0
+                description: "Byte offset within the report (or bit offset if size_bits is set)."
+              size_bits:
+                type: integer
+                minimum: 1
+                maximum: 64
+              kind:
+                type: string
+                enum: [button, knob_absolute, knob_relative, encoder, fader_absolute, fader_relative, pad_velocity, pad_pressure, pitch_wheel, mod_wheel, jog_wheel]
+              signed: { type: boolean, default: false }
+              min: { type: integer }
+              max: { type: integer }
+              target: { type: string }
+              script: { type: string }
+              fast_path: { type: boolean, default: false }
+              description: { type: string }
+            additionalProperties: false
+additionalProperties: false
