@@ -397,3 +397,97 @@ async def learn_assign(req: LearnAssignRequest) -> dict[str, Any]:
 async def learn_cancel(session_id: str) -> dict[str, Any]:
     cancelled = get_learn_registry().cancel(session_id)
     return {"session_id": session_id, "cancelled": cancelled}
+
+
+# ---------------------------------------------------------------------------
+# T2459-E4 — "Measure latency" GUI endpoint
+# ---------------------------------------------------------------------------
+
+class MeasureLatencyRequest(BaseModel):
+    pack_id: str
+    model: str
+    trials: int = 3
+    duration_ms: int = 500
+    tail_ms: int = 200
+
+
+@router.post("/measure-latency")
+async def measure_latency(req: MeasureLatencyRequest) -> dict[str, Any]:
+    """Run path-c IR loopback measurement against the device's
+    profile-defined `loopback_ports` and write versioned evidence
+    under `docs/fit-for-purpose-evidence/<date>/<pack>/<model>/`.
+    """
+    import asyncio
+    import json
+    from datetime import datetime, timezone
+    from pathlib import Path
+
+    svc = get_controller_service()
+    detail = svc.get_profile(req.pack_id, req.model, "audio")
+    if detail is None:
+        raise HTTPException(status_code=404, detail={
+            "error": {"code": "not_found",
+                      "message": f"Audio profile {req.pack_id}/{req.model} not found.",
+                      "details": None}
+        })
+    doc = detail.get("document", {}) or {}
+    loopback = doc.get("loopback_ports") or {}
+    playback = loopback.get("playback")
+    capture = loopback.get("capture")
+    if not playback or not capture:
+        raise HTTPException(status_code=400, detail={
+            "error": {"code": "no_loopback_ports",
+                      "message": f"Profile {req.pack_id}/{req.model} does not declare loopback_ports.",
+                      "details": None}
+        })
+
+    from scripts.measure_loopback_ir import measure_loopback_ir
+
+    loop = asyncio.get_running_loop()
+
+    def _run():
+        return measure_loopback_ir(
+            playback_port=playback,
+            capture_port=capture,
+            sample_rate=48000,
+            duration_ms=req.duration_ms,
+            tail_ms=req.tail_ms,
+            trials=req.trials,
+            use_synthetic_fallback=True,
+        )
+
+    result = await loop.run_in_executor(None, _run)
+
+    evidence_dir = (
+        Path(__file__).resolve().parents[2]
+        / "docs" / "fit-for-purpose-evidence"
+        / datetime.now().strftime("%Y%m%d")
+        / req.pack_id / req.model
+    )
+    evidence_dir.mkdir(parents=True, exist_ok=True)
+    payload = {
+        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "pack_id": req.pack_id,
+        "model": req.model,
+        "method": result.method,
+        "sample_rate": result.sample_rate,
+        "duration_ms": result.duration_ms,
+        "tail_ms": result.tail_ms,
+        "trials": [
+            {"rtt_ms": t.rtt_ms,
+             "peak_correlation": t.peak_correlation,
+             "secondary_peak_ratio": t.secondary_peak_ratio}
+            for t in result.trials
+        ],
+        "mean_rtt_ms": result.mean_rtt_ms,
+        "p95_rtt_ms": result.p95_rtt_ms,
+        "jitter_p95_ms": result.jitter_p95_ms,
+        "notes": result.notes,
+        "loopback_ports": {"playback": playback, "capture": capture},
+    }
+    evidence_path = evidence_dir / f"loopback-{datetime.now().strftime('%H%M%S')}.json"
+    evidence_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+    payload["evidence_path"] = str(
+        evidence_path.relative_to(Path(__file__).resolve().parents[2])
+    )
+    return payload

@@ -5,15 +5,17 @@
 
 import '@testing-library/jest-dom'
 import React from 'react'
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen, waitFor, fireEvent } from '@testing-library/react'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 
 import { DeviceProfilePanel } from './DeviceProfilePanel'
 
 // Mock the API client so the test runs without a backend.
 const mockGetDeviceProfile = jest.fn()
+const mockMeasureLatency = jest.fn()
 jest.mock('../../../../map2/clients/devices', () => ({
   getDeviceProfile: (...args) => mockGetDeviceProfile(...args),
+  measureLatency: (...args) => mockMeasureLatency(...args),
 }))
 
 function withClient(node: React.ReactElement): React.ReactElement {
@@ -49,6 +51,10 @@ const UA1000_AUDIO_PROFILE = {
     use_case_presets: [
       { id: 'studio_recording_8ch', name: '8-channel studio recording', description: 'Identity routing.' },
     ],
+    loopback_ports: {
+      playback: 'EDIROL UA-1000 Pro:playback_AUX0',
+      capture: 'EDIROL UA-1000 Pro:capture_AUX0',
+    },
     metadata: {
       product_image_urls: ['https://example.com/ua-1000.jpg'],
       datasheet_url: 'https://example.com/ua-1000.pdf',
@@ -91,6 +97,7 @@ const UA1000_MIDI_PROFILE = {
 
 beforeEach(() => {
   mockGetDeviceProfile.mockReset()
+  mockMeasureLatency.mockReset()
 })
 
 describe('DeviceProfilePanel — T2459-C1', () => {
@@ -184,6 +191,66 @@ describe('DeviceProfilePanel — T2459-C1', () => {
     await waitFor(() => {
       expect(screen.getByText('Profile not found')).toBeInTheDocument()
     })
+  })
+
+  it('shows the Measure latency section when loopback_ports are declared', async () => {
+    setupHappyPath()
+    render(withClient(<DeviceProfilePanel packId="edirol-ua" model="ua-1000" />))
+    await waitFor(() => {
+      expect(screen.getByTestId('device-latency-measure-section')).toBeInTheDocument()
+    })
+    expect(screen.getByText('Measure latency now')).toBeInTheDocument()
+  })
+
+  it('clicking Measure latency calls the client and shows the result', async () => {
+    setupHappyPath()
+    mockMeasureLatency.mockResolvedValue({
+      timestamp: '2026-04-27T10:00:00Z',
+      pack_id: 'edirol-ua',
+      model: 'ua-1000',
+      method: 'synthetic',
+      sample_rate: 48000,
+      duration_ms: 500,
+      tail_ms: 200,
+      trials: [],
+      mean_rtt_ms: 5.0,
+      p95_rtt_ms: 5.0,
+      jitter_p95_ms: 0.0,
+      notes: '',
+      loopback_ports: {
+        playback: 'EDIROL UA-1000 Pro:playback_AUX0',
+        capture: 'EDIROL UA-1000 Pro:capture_AUX0',
+      },
+      evidence_path: 'docs/fit-for-purpose-evidence/20260427/edirol-ua/ua-1000/loopback-100000.json',
+    })
+
+    render(withClient(<DeviceProfilePanel packId="edirol-ua" model="ua-1000" />))
+    await waitFor(() => {
+      expect(screen.getByText('Measure latency now')).toBeInTheDocument()
+    })
+    fireEvent.click(screen.getByText('Measure latency now'))
+    await waitFor(() => {
+      expect(screen.getByTestId('latency-measure-result')).toBeInTheDocument()
+    })
+    expect(screen.getByText(/mean 5.00 ms/)).toBeInTheDocument()
+    expect(mockMeasureLatency).toHaveBeenCalledWith({
+      pack_id: 'edirol-ua', model: 'ua-1000', trials: 3,
+    })
+  })
+
+  it('Measure latency section disabled with explanatory copy when no loopback_ports', async () => {
+    const noLoopback = JSON.parse(JSON.stringify(UA1000_AUDIO_PROFILE))
+    delete noLoopback.document.loopback_ports
+    mockGetDeviceProfile.mockImplementation((_p, _m, kind) => {
+      if (kind === 'audio') return Promise.resolve({ profile: noLoopback })
+      return Promise.resolve({ profile: undefined })
+    })
+    render(withClient(<DeviceProfilePanel packId="edirol-ua" model="ua-1000" />))
+    await waitFor(() => {
+      expect(screen.getByTestId('device-latency-measure-section')).toBeInTheDocument()
+    })
+    expect(screen.queryByText('Measure latency now')).not.toBeInTheDocument()
+    expect(screen.getByText(/does not declare/)).toBeInTheDocument()
   })
 
   it('renders a vendor-override slot when provided (T2459-C2 contract)', async () => {

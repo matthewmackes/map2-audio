@@ -229,3 +229,44 @@ export async function learnCancel(sessionId: string): Promise<{
     { method: 'POST' },
   )
 }
+
+// ---------------------------------------------------------------------------
+// T2459-E4 — Measure latency
+// ---------------------------------------------------------------------------
+
+export interface MeasureLatencyTrial {
+  rtt_ms: number
+  peak_correlation: number
+  secondary_peak_ratio: number
+}
+
+export interface MeasureLatencyResult {
+  timestamp: string
+  pack_id: string
+  model: string
+  method: 'jack' | 'synthetic'
+  sample_rate: number
+  duration_ms: number
+  tail_ms: number
+  trials: MeasureLatencyTrial[]
+  mean_rtt_ms: number
+  p95_rtt_ms: number
+  jitter_p95_ms: number
+  notes: string
+  loopback_ports: { playback: string; capture: string }
+  evidence_path: string
+}
+
+export async function measureLatency(req: {
+  pack_id: string
+  model: string
+  trials?: number
+  duration_ms?: number
+  tail_ms?: number
+}): Promise<MeasureLatencyResult> {
+  return fetchJson(`${API_BASE}/api/devices/measure-latency`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(req),
+  })
+}

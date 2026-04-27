@@ -393,14 +393,16 @@ Last updated: 2026-04-27 EDT - Claude: SHIPPED.
 ---
 
 ID: T2459-E4
-Status: [ ] Todo
+Status: [✓] Done
 Parent: T2459
 Title: "Measure latency" GUI button on every device panel
 Description:
 - Goal: Add a "Measure latency" Carbon button to `<DeviceProfilePanel/>` that invokes `scripts/measure_loopback_ir.py` against the device's profile-defined `loopback_ports`, streams progress to the operator, and writes versioned evidence under `docs/fit-for-purpose-evidence/<date>/<device-id>/` on completion. Last result is shown inline on the panel (RTT, jitter, evidence link).
 - Acceptance: clicking the button on `/devices/edirol-ua-1000` and `/devices/hotone-jogg` runs the measurement, displays the RTT, and writes evidence. Disabled with explanatory tooltip when no `loopback_ports` declared in the profile.
 - Required outputs: button component, backend `/api/devices/<id>/measure-latency` route, evidence-writer integration, frontend status display, Jest + pytest coverage.
+Completion note: 2026-04-27 — Claude: SHIPPED. Extended `app/routes/devices.py` with the `POST /api/devices/measure-latency` endpoint accepting `{pack_id, model, trials, duration_ms, tail_ms}`. The handler resolves the device's audio profile through `ControllerService.get_profile`, refuses with HTTP 400 + `no_loopback_ports` error code if `loopback_ports` is absent, runs `scripts.measure_loopback_ir.measure_loopback_ir` via `loop.run_in_executor` (off-loop so the FastAPI event loop stays responsive), and writes versioned evidence to `docs/fit-for-purpose-evidence/<YYYYMMDD>/<pack_id>/<model>/loopback-<HHMMSS>.json` containing the timestamp, method (jack | synthetic), per-trial RTT/peak/secondary-peak-ratio, mean/p95 RTT, jitter p95, the resolved loopback_ports, and the relative evidence_path the GUI surfaces. Extended `web/src/map2/clients/devices.ts` with `measureLatency(req)` + `MeasureLatencyResult` + `MeasureLatencyTrial` types. Added `<DeviceLatencyMeasureSection/>` inline in `DeviceProfilePanel.tsx` reading `loopback_ports` from the audio profile and rendering either an explanatory "this profile does not declare loopback_ports" message OR a Carbon Primary button "Measure latency now" with the resolved playback→capture path shown as a code monospace line; on click, runs the measurement (Loading spinner during the 3 IR trials), displays the result as a tag row showing method (green when "jack", warm-gray when "synthetic"), mean RTT in ms, p95 RTT, jitter p95, plus the relative evidence_path as a code monospace line operators can find on disk; surfaces errors via Carbon InlineNotification. Added `MeterAlt` to the Carbon icon imports. Extended `DeviceProfilePanel.test.tsx` with 3 new cases — Measure-latency section visible when loopback_ports declared, click runs measureLatency client + shows result with mean/p95/jitter Tags + evidence_path link, section shows explanatory copy + hides the button when loopback_ports is absent. The fixture profile now declares `loopback_ports` so the existing 9 tests + the 3 new ones pass. Validation: `node ../node_modules/jest/bin/jest.js --config ../package.json --testPathPatterns=DeviceProfilePanel` reports "14 passed in 3.165s" (12 DeviceProfilePanel — 9 original + 3 new — plus 2 overrideLoader); `npm --prefix web run typecheck` clean; `python3 -c "from app.routes.devices import router; ..."` confirms `/api/devices/measure-latency` registers.
 Assigned to: Claude
+Last updated: 2026-04-27 EDT - Claude: SHIPPED.
 
 ---
 

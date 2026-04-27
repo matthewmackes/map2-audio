@@ -5,7 +5,7 @@
 // Worklist: T2459-C1.
 // Architecture: docs/architecture/CONTROLLER_LAYER.md §4.
 
-import React, { Suspense, useMemo, lazy } from 'react'
+import React, { Suspense, useMemo, lazy, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import {
   Layer,
@@ -19,11 +19,13 @@ import {
   StructuredListCell,
   StructuredListBody,
 } from '@carbon/react'
-import { Launch, Document, Help } from '@carbon/icons-react'
+import { Launch, Document, Help, MeterAlt } from '@carbon/icons-react'
 
 import {
   getDeviceProfile,
+  measureLatency,
   type DeviceProfileDetail,
+  type MeasureLatencyResult,
 } from '../../../../map2/clients/devices'
 import { findOverride } from './overrideLoader'
 
@@ -115,6 +117,11 @@ export function DeviceProfilePanel({
       <DeviceMixerSurfacesSection profile={audio} />
       <DeviceOnDeviceDspSection profile={audio} />
       <DeviceUseCasesSection profile={audio} />
+      <DeviceLatencyMeasureSection
+        packId={packId}
+        model={model}
+        profile={audio}
+      />
       {midi && <DeviceMidiBindingsSection profile={midi} />}
       {overrideToRender && (
         <Layer level={1} data-testid="device-profile-panel-vendor-override">
@@ -123,6 +130,99 @@ export function DeviceProfilePanel({
           </Suspense>
         </Layer>
       )}
+    </Layer>
+  )
+}
+
+function DeviceLatencyMeasureSection({
+  packId,
+  model,
+  profile,
+}: {
+  packId: string
+  model: string
+  profile: DeviceProfileDetail
+}): JSX.Element {
+  const doc = profile.document as Record<string, any>
+  const loopback = doc.loopback_ports as { playback?: string; capture?: string } | undefined
+  const hasLoopback = !!(loopback?.playback && loopback?.capture)
+
+  const [busy, setBusy] = useState(false)
+  const [result, setResult] = useState<MeasureLatencyResult | null>(null)
+  const [error, setError] = useState<string | null>(null)
+
+  const handleMeasure = async () => {
+    setBusy(true)
+    setError(null)
+    try {
+      const r = await measureLatency({ pack_id: packId, model, trials: 3 })
+      setResult(r)
+    } catch (exc) {
+      setError(exc instanceof Error ? exc.message : String(exc))
+    } finally {
+      setBusy(false)
+    }
+  }
+
+  return (
+    <Layer level={1} data-testid="device-latency-measure-section">
+      <h4 style={{ padding: '1rem 1rem 0.5rem' }}>Measure latency</h4>
+      <div style={{ padding: '0 1rem 1rem' }}>
+        {!hasLoopback ? (
+          <p style={{ fontSize: '0.875rem', fontStyle: 'italic' }}>
+            This profile does not declare <code>loopback_ports</code>.
+            Latency measurement requires a physical loopback cable from
+            the playback port back to the capture port plus matching
+            JACK port names in the audio profile.
+          </p>
+        ) : (
+          <>
+            <Button
+              kind="primary"
+              renderIcon={MeterAlt}
+              onClick={handleMeasure}
+              disabled={busy}
+            >
+              Measure latency now
+            </Button>
+            <p style={{ fontSize: '0.875rem', marginTop: '0.5rem' }}>
+              Loopback path:{' '}
+              <code>{loopback!.playback}</code> →{' '}
+              <code>{loopback!.capture}</code>
+            </p>
+            {busy && <Loading description="Running 3 IR trials..." withOverlay={false} />}
+            {error && (
+              <InlineNotification
+                kind="error"
+                title="Measurement failed"
+                subtitle={error}
+                hideCloseButton
+              />
+            )}
+            {result && (
+              <div data-testid="latency-measure-result" style={{ marginTop: '0.5rem' }}>
+                <div style={{ display: 'flex', gap: '0.5rem', flexWrap: 'wrap' }}>
+                  <Tag type={result.method === 'jack' ? 'green' : 'warm-gray'}>
+                    {result.method}
+                  </Tag>
+                  <Tag type="purple">
+                    mean {result.mean_rtt_ms.toFixed(2)} ms
+                  </Tag>
+                  <Tag type="cool-gray">
+                    p95 {result.p95_rtt_ms.toFixed(2)} ms
+                  </Tag>
+                  <Tag type="cool-gray">
+                    jitter {result.jitter_p95_ms.toFixed(2)} ms
+                  </Tag>
+                </div>
+                <p style={{ fontSize: '0.75rem', marginTop: '0.5rem' }}>
+                  Evidence written to <code>{result.evidence_path}</code>
+                </p>
+              </div>
+            )}
+          </>
+        )}
+      </div>
     </Layer>
   )
 }
