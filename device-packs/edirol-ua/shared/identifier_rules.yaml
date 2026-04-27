@@ -1,0 +1,13 @@
+# Shared identifier rules for the Edirol UA range.
+# Roland's USB vendor ID is 0x0582; per-product PID assignments differ
+# per SKU. ALSA card-name regex and PipeWire JACK node patterns live in
+# each individual model's profile YAML.
+
+vendor_id: 0x0582
+product_ids:
+  ua-1000: 0x00ed
+  ua-25:   0x00b9
+  ua-25ex: 0x00e6
+  ua-101:  0x008c
+  ua-700:  0x0095
+  ua-1010: 0x012a

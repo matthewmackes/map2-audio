@@ -1,0 +1,148 @@
+schema_version: 1
+identity:
+  manufacturer: Edirol (Roland)
+  model: UA-1000
+  family: Edirol UA series
+  hardware_id: usb:0582:00ed
+  alsa_card_regex: '^UA1000\b'
+
+ports:
+  # 8x analog 1/4" I/O (AUX0..AUX7) — bidirectional pairs.
+  - id: aux0
+    kind: analog
+    direction: bidirectional
+    count: 1
+    sample_rates: [44100, 48000, 88200, 96000]
+    bit_depths: [24]
+    connectors: [trs_quarter_inch]
+    jack_node_pattern: 'EDIROL UA-1000 Pro'
+  - id: aux1
+    kind: analog
+    direction: bidirectional
+    count: 1
+    sample_rates: [44100, 48000, 88200, 96000]
+    bit_depths: [24]
+    connectors: [trs_quarter_inch]
+    jack_node_pattern: 'EDIROL UA-1000 Pro'
+  - id: aux2
+    kind: analog
+    direction: bidirectional
+    count: 1
+    sample_rates: [44100, 48000, 88200, 96000]
+    bit_depths: [24]
+    connectors: [trs_quarter_inch]
+    jack_node_pattern: 'EDIROL UA-1000 Pro'
+  - id: aux3
+    kind: analog
+    direction: bidirectional
+    count: 1
+    sample_rates: [44100, 48000, 88200, 96000]
+    bit_depths: [24]
+    connectors: [trs_quarter_inch]
+    jack_node_pattern: 'EDIROL UA-1000 Pro'
+  - id: aux4
+    kind: analog
+    direction: bidirectional
+    count: 1
+    sample_rates: [44100, 48000, 88200, 96000]
+    bit_depths: [24]
+    connectors: [trs_quarter_inch]
+    jack_node_pattern: 'EDIROL UA-1000 Pro'
+  - id: aux5
+    kind: analog
+    direction: bidirectional
+    count: 1
+    sample_rates: [44100, 48000, 88200, 96000]
+    bit_depths: [24]
+    connectors: [trs_quarter_inch]
+    jack_node_pattern: 'EDIROL UA-1000 Pro'
+  - id: aux6
+    kind: analog
+    direction: bidirectional
+    count: 1
+    sample_rates: [44100, 48000, 88200, 96000]
+    bit_depths: [24]
+    connectors: [trs_quarter_inch]
+    jack_node_pattern: 'EDIROL UA-1000 Pro'
+  - id: aux7
+    kind: analog
+    direction: bidirectional
+    count: 1
+    sample_rates: [44100, 48000, 88200, 96000]
+    bit_depths: [24]
+    connectors: [trs_quarter_inch]
+    jack_node_pattern: 'EDIROL UA-1000 Pro'
+
+  # S/PDIF coax in/out (AUX8/9 on the playback side, AUX8..11 on capture
+  # accommodate the additional R-BUS-fed channels reflected as ALSA AUX10/11).
+  - id: spdif_in
+    kind: digital
+    direction: input
+    count: 2
+    sample_rates: [44100, 48000, 88200, 96000]
+    bit_depths: [24]
+    connectors: [spdif_coax, spdif_optical]
+  - id: spdif_out
+    kind: digital
+    direction: output
+    count: 2
+    sample_rates: [44100, 48000, 88200, 96000]
+    bit_depths: [24]
+    connectors: [spdif_coax, spdif_optical]
+
+  # R-BUS digital I/O for cascading additional Roland gear.
+  - id: rbus_in
+    kind: digital
+    direction: input
+    count: 8
+    connectors: [rbus_db25]
+  - id: rbus_out
+    kind: digital
+    direction: output
+    count: 8
+    connectors: [rbus_db25]
+
+mixer_surfaces:
+  - id: front_panel_monitor
+    kind: hardware
+    description: |
+      Front-panel hardware monitor mix is controlled physically. MAP2
+      cannot read or write it via USB; the override TSX surfaces the
+      operating notes for the front panel knobs in the device panel.
+
+on_device_dsp: []  # UA-1000 has no internal DSP processors.
+
+routing_topology:
+  default_matrix: identity_10x10
+  allowed_routes:
+    - identity
+    - fan_out
+    - monitor_send
+
+loopback_ports:
+  playback: 'EDIROL UA-1000 Pro:playback_AUX0'
+  capture: 'EDIROL UA-1000 Pro:capture_AUX0'
+
+use_case_presets:
+  - id: studio_recording_8ch
+    name: '8-channel studio recording'
+    description: 'Identity routing across all 8 analog 1/4" pairs.'
+    ports_used: [aux0, aux1, aux2, aux3, aux4, aux5, aux6, aux7]
+    routing: identity
+  - id: stereo_main_with_monitor_send
+    name: 'Stereo main + monitor send'
+    description: 'AUX0/1 main, AUX2/3 monitor send.'
+    ports_used: [aux0, aux1, aux2, aux3]
+    routing: monitor_send
+  - id: spdif_only
+    name: 'S/PDIF I/O only'
+    description: 'Digital path for cascading another converter.'
+    ports_used: [spdif_in, spdif_out]
+    routing: identity
+
+metadata:
+  product_image_urls:
+    - 'https://www.roland.com/us/products/ua-1000/images/ua-1000_front.jpg'
+  datasheet_url: 'https://static.roland.com/assets/media/pdf/UA-1000_OM.pdf'
+  manual_url: 'https://www.roland.com/us/support/by_product/ua-1000/owners_manuals/'
+  vendor_support_url: 'https://www.roland.com/us/support/by_product/ua-1000/'

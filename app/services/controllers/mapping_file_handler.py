@@ -92,8 +92,11 @@ class MappingFileHandler:
         controls = tuple(
             self._parse_midi_control(row) for row in (document.get("controls") or [])
         )
+        # Outputs use `source` (engine path that drives the LED) instead of
+        # `target` (engine path the control writes to). Normalise so the
+        # shared MappingControl shape works for both.
         outputs = tuple(
-            self._parse_midi_control(row) for row in (document.get("outputs") or [])
+            self._parse_midi_output(row) for row in (document.get("outputs") or [])
         )
         settings = tuple(dict(s) for s in (document.get("settings") or []))
         alias_table = dict(document.get("mixxx_alias_table") or {})
@@ -170,6 +173,29 @@ class MappingFileHandler:
                 for k, v in row.items()
                 if k not in {"status", "midino", "channel", "target", "action",
                               "script", "fast_path", "description"}
+            },
+        )
+
+    @staticmethod
+    def _parse_midi_output(row: dict[str, Any]) -> MappingControl:
+        """Output rows use `source` (engine path that drives the LED)
+        rather than `target`. Normalise to MappingControl.target so the
+        shared shape works for outputs and inputs symmetrically.
+        """
+        return MappingControl(
+            status=row.get("status"),
+            midino=row.get("midino"),
+            channel=row.get("channel"),
+            target=row.get("source") or row.get("target"),
+            action=row.get("action") or "led_feedback",
+            script=row.get("script"),
+            fast_path=False,
+            description=str(row.get("description", "")),
+            extra={
+                k: v
+                for k, v in row.items()
+                if k not in {"status", "midino", "channel", "source", "target",
+                              "action", "script", "description"}
             },
         )
 

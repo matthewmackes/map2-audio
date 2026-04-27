@@ -1,0 +1,80 @@
+schema_version: 1
+identity:
+  manufacturer: Edirol (Roland)
+  model: ua-1000
+  alsa_client_pattern: 'UA-1000 MIDI'
+  hardware_id: alsa-seq:UA-1000 MIDI:0
+
+scripts:
+  - scripts/ua-1000-scripts.js
+
+# Pilot bindings exercising both the fast-path C++ shortcut and the
+# JS-driven slow path. The pedal CC 64 toggle is the canonical T2459-B4
+# acceptance gate: a real pedal press arrives on ALSA seq, the
+# Map2MidiController fast-path hop fires audio.chain.1.bypass.toggle
+# WITHOUT crossing the IPC boundary to map2-controller-host.
+controls:
+  - status: 0xB0
+    midino: 64
+    target: audio.chain.1.bypass
+    action: toggle
+    fast_path: true
+    description: |
+      Pedal CC 64 → toggle chain 1 bypass via the in-engine fast-path
+      (no JS, no IPC). Sub-millisecond response is the goal here.
+      The UA-1000's hardware MIDI bridge is the canonical surface
+      for connecting an expression pedal or footswitch into a
+      MAP2 rig.
+
+  - status: 0xB0
+    midino: 7
+    script: UA1000Mapping.masterVolume
+    description: |
+      CC 7 → master volume via JS so the operator can pick a curve
+      (linear / log / exp / s-curve) in the pack's settings.
+
+  - status: 0xC0
+    target: audio.snapshot.recall
+    action: send_pc
+    description: |
+      Program Change → snapshot recall. The "send_pc" action has the
+      audio engine recall the snapshot whose program-change number
+      matches the inbound PC.
+
+outputs:
+  - status: 0xB0
+    midino: 64
+    source: audio.chain.1.bypass
+    description: |
+      LED feedback back through the UA-1000's MIDI out: the pedal's
+      LED reflects chain 1 bypass state (CC 64 = 0x7F when bypassed,
+      0x00 when active).
+
+settings:
+  - id: master_volume_curve
+    label: 'Master volume curve'
+    type: choice
+    default: linear
+    choices: [linear, log, exp, s_curve]
+    description: |
+      Shapes how CC 7 maps to audio.master.volume. UA1000Mapping.
+      masterVolume() applies this curve to the 0-127 input.
+
+  - id: pedal_fast_path
+    label: 'Pedal bypass uses fast-path C++ binding'
+    type: boolean
+    default: true
+    description: |
+      When true (default), CC 64 routes through Map2MidiController's
+      C++ fast-path with no JS round-trip. Disable for debugging if
+      a JS handler needs to inspect the pedal event.
+
+# Mixxx ControlObject bridge — UA-1000 doesn't have decks, but if a
+# user imports a Mixxx mapping that targets [Channel1] etc. this alias
+# table directs them to MAP2 chains.
+mixxx_alias_table:
+  '[Channel1]': audio.chain.1
+  '[Channel2]': audio.chain.2
+  '[Channel3]': audio.chain.3
+  '[Channel4]': audio.chain.4
+  '[Master]': audio.master

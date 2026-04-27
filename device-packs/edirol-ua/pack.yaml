@@ -1,0 +1,16 @@
+schema_version: 1
+pack_id: edirol-ua
+vendor:
+  name: Edirol (Roland)
+  website: https://www.roland.com/global/categories/computer_music/audio_capture/
+  support_url: https://www.roland.com/us/support/
+description: |
+  Audio interface family from Edirol/Roland's UA series. The UA-1000 is the
+  primary bench device for MAP2 hardware testing — 10x10 analog I/O, S/PDIF,
+  R-BUS digital, hardware MIDI bridge, and a front-panel hardware mixer with
+  direct monitoring.
+license: AGPL-3.0-only
+source: map2-native
+identifier_rules_path: shared/identifier_rules.yaml
+models:
+  - ua-1000
