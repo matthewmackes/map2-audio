@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1354** Python | **1327** TypeScript | **157** C++/H | **145** Docs | **2958** total commits | **3** stars | **0** forks | **0** open issues
+**1354** Python | **1327** TypeScript | **157** C++/H | **145** Docs | **2960** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`446d8a9c`](https://github.com/matthewmackes/map2-audio/commit/446d8a9c9ab8c57216b05da6b76fffcddc14e02c) | docs(philosophy): add eight technical philosophy manuals ... | Map2 Audio | 2026-04-27 |
+| [`ff4f4edd`](https://github.com/matthewmackes/map2-audio/commit/ff4f4edde32b4b5f6f5e4a2324887dfc411dec18) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-27 |
 | [`2bca1940`](https://github.com/matthewmackes/map2-audio/commit/2bca19406f7719caec869cfc76b11887c047ea9d) | chore: working-tree sweep + open T2459-H MIDI backend uni... | Map2 Audio | 2026-04-27 |
 | [`2c8db49d`](https://github.com/matthewmackes/map2-audio/commit/2c8db49deef58dc3f586202b6ce62689a6b81ddb) | fix(chyron card): render every plugin instead of dropping... | Map2 Audio | 2026-04-27 |
 | [`9750ce1f`](https://github.com/matthewmackes/map2-audio/commit/9750ce1fa628e27ccbc1010df50d1a7a1083f344) | fix(snapshot editor): re-sync live_snapshot_payload after... | Map2 Audio | 2026-04-27 |
 | [`64bc6408`](https://github.com/matthewmackes/map2-audio/commit/64bc640828907338eda0b3a7568924b8d8706e26) | fix(state-authority client): drop doubled `/api/` prefix ... | Map2 Audio | 2026-04-27 |
 | [`a794284e`](https://github.com/matthewmackes/map2-audio/commit/a794284e35f8f1238ec9beefcd609524c9b23c0d) | Expose legacy devices in hardware catalogue | Map2 Audio | 2026-04-27 |
 | [`8536af34`](https://github.com/matthewmackes/map2-audio/commit/8536af346615711f10257c9024c23559843e752f) | fix(devices client): drop doubled `/api/` prefix on every... | Map2 Audio | 2026-04-27 |
-| [`f9b9bcf4`](https://github.com/matthewmackes/map2-audio/commit/f9b9bcf468405f2c00f43453748f2e234c5b615b) | fix(preview-server): forward WebSocket upgrades for /api/... | Map2 Audio | 2026-04-27 |
-| [`194abb15`](https://github.com/matthewmackes/map2-audio/commit/194abb15a3aa55af1328b8e585130cb56b5a9012) | fix(backend): unblock boot — move await calls out of sync... | Map2 Audio | 2026-04-27 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
