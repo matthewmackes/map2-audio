@@ -15,15 +15,15 @@
 
 import * as React from 'react'
 import {
-  Tile,
   Tag,
   Loading,
   InlineNotification,
   SkeletonText,
 } from '@carbon/react'
-import { Link as RouterLink } from 'react-router-dom'
+import { useQueryClient } from '@tanstack/react-query'
 
 import { useDeviceConnections } from './hooks/useDeviceConnections'
+import { useHotPlugToast } from './hooks/useHotPlugToast'
 import {
   useKnownDevices,
   useRecentlyDisconnected,
@@ -31,6 +31,7 @@ import {
   useDeviceProfiles,
   usePackSources,
 } from './hooks/useDeviceProfiles'
+import { DeviceCard, type DeviceCardRow } from './DeviceCard'
 import type {
   DeviceProfileSummary,
   PackSourceRow,
@@ -38,18 +39,7 @@ import type {
 
 import './HardwareStorePage.css'
 
-interface ProfileRow {
-  profileKey: string
-  packId: string
-  model: string
-  kind: 'audio' | 'midi' | 'hid'
-  vendor?: string
-  source?: PackSourceRow['source']
-  isDegraded?: boolean
-  isConnected: boolean
-  isPinned: boolean
-  lastSeenAt: number | null
-}
+type ProfileRow = DeviceCardRow
 
 function indexProfiles(profiles: DeviceProfileSummary[]): Record<string, DeviceProfileSummary> {
   const out: Record<string, DeviceProfileSummary> = {}
@@ -65,27 +55,21 @@ function indexPacks(rows: PackSourceRow[]): Record<string, PackSourceRow> {
   return out
 }
 
-function formatLastSeen(ts: number | null): string {
-  if (ts === null) return '—'
-  const ago = Math.max(0, Math.floor(Date.now() / 1000 - ts))
-  if (ago < 60) return `${ago}s ago`
-  if (ago < 3600) return `${Math.floor(ago / 60)}m ago`
-  if (ago < 86400) return `${Math.floor(ago / 3600)}h ago`
-  return `${Math.floor(ago / 86400)}d ago`
-}
-
 function buildProfileRows(args: {
   profileKeys: string[]
   profileIndex: Record<string, DeviceProfileSummary>
   packIndex: Record<string, PackSourceRow>
   connectedKeys: Set<string>
   pinnedKeys: Set<string>
-  knownKeys: Set<string>
+  recentlyDisconnectedKeys: Set<string>
   knownLastSeen: Record<string, number | null>
 }): ProfileRow[] {
-  const { profileKeys, profileIndex, packIndex, connectedKeys, pinnedKeys, knownLastSeen } = args
+  const {
+    profileKeys, profileIndex, packIndex, connectedKeys, pinnedKeys,
+    recentlyDisconnectedKeys, knownLastSeen,
+  } = args
   return profileKeys
-    .map((key) => {
+    .map<ProfileRow>((key) => {
       const p = profileIndex[key]
       if (!p) {
         const [packId, rest] = key.split('/')
@@ -100,6 +84,7 @@ function buildProfileRows(args: {
           isDegraded: packIndex[packId ?? '']?.is_degraded,
           isConnected: connectedKeys.has(key),
           isPinned: pinnedKeys.has(key),
+          recentlyDisconnected: recentlyDisconnectedKeys.has(key),
           lastSeenAt: knownLastSeen[key] ?? null,
         }
       }
@@ -113,60 +98,11 @@ function buildProfileRows(args: {
         isDegraded: packIndex[p.pack_id]?.is_degraded,
         isConnected: connectedKeys.has(key),
         isPinned: pinnedKeys.has(key),
+        recentlyDisconnected: recentlyDisconnectedKeys.has(key),
         lastSeenAt: knownLastSeen[key] ?? null,
       }
     })
     .sort((a, b) => a.profileKey.localeCompare(b.profileKey))
-}
-
-interface DeviceTileProps {
-  row: ProfileRow
-  badge?: React.ReactNode
-}
-
-function DeviceTile({ row, badge }: DeviceTileProps): React.JSX.Element {
-  const sourceLabel: Record<NonNullable<ProfileRow['source']>, string> = {
-    shipped: 'Shipped',
-    user: 'User',
-    imported: 'Imported',
-  }
-  const sourceTag: Record<NonNullable<ProfileRow['source']>, string> = {
-    shipped: 'green',
-    user: 'cyan',
-    imported: 'magenta',
-  }
-  return (
-    <Tile className="hwstore-tile" data-profile-key={row.profileKey}>
-      <div className="hwstore-tile__head">
-        <div className="hwstore-tile__title">
-          <span className="hwstore-tile__model">{row.model}</span>
-          <span className="hwstore-tile__vendor">{row.vendor ?? row.packId}</span>
-        </div>
-        {badge}
-      </div>
-      <div className="hwstore-tile__tags">
-        <Tag size="sm" type="cool-gray">{row.kind}</Tag>
-        {row.source ? (
-          <Tag size="sm" type={sourceTag[row.source] as never}>
-            {sourceLabel[row.source]}
-          </Tag>
-        ) : null}
-        {row.isPinned ? <Tag size="sm" type="purple">Pinned</Tag> : null}
-        {row.isDegraded ? <Tag size="sm" type="warm-gray">Pack degraded</Tag> : null}
-      </div>
-      <div className="hwstore-tile__meta">
-        <RouterLink
-          to={`/devices/profile/${encodeURIComponent(row.packId)}/${encodeURIComponent(row.model)}`}
-          className="hwstore-tile__open"
-        >
-          Open
-        </RouterLink>
-        {row.lastSeenAt !== null && !row.isConnected ? (
-          <span className="hwstore-tile__last-seen">Last seen {formatLastSeen(row.lastSeenAt)}</span>
-        ) : null}
-      </div>
-    </Tile>
-  )
 }
 
 interface SectionProps {
@@ -174,10 +110,13 @@ interface SectionProps {
   subtitle?: string
   rows: ProfileRow[]
   emptyMessage?: string
-  badgeFor?: (row: ProfileRow) => React.ReactNode
+  pulseTokenFor?: (row: ProfileRow) => number | undefined
+  onPinChanged?: () => void
 }
 
-function Section({ title, subtitle, rows, emptyMessage, badgeFor }: SectionProps): React.JSX.Element {
+function Section({
+  title, subtitle, rows, emptyMessage, pulseTokenFor, onPinChanged,
+}: SectionProps): React.JSX.Element {
   return (
     <section className="hwstore-section">
       <header className="hwstore-section__head">
@@ -190,7 +129,11 @@ function Section({ title, subtitle, rows, emptyMessage, badgeFor }: SectionProps
       ) : (
         <div className="hwstore-section__grid">
           {rows.map((row) => (
-            <DeviceTile key={row.profileKey} row={row} badge={badgeFor?.(row)} />
+            <DeviceCard
+              key={row.profileKey}
+              row={{ ...row, pulseToken: pulseTokenFor?.(row) }}
+              onPinChanged={onPinChanged}
+            />
           ))}
         </div>
       )}
@@ -200,11 +143,43 @@ function Section({ title, subtitle, rows, emptyMessage, badgeFor }: SectionProps
 
 export function HardwareStorePage(): React.JSX.Element {
   const ws = useDeviceConnections()
+  useHotPlugToast(ws.lastEvent)
+  const queryClient = useQueryClient()
   const profilesQuery = useDeviceProfiles()
   const packsQuery = usePackSources()
   const connectedFallback = useConnectedDevices()
   const knownQuery = useKnownDevices()
   const recentQuery = useRecentlyDisconnected()
+
+  const handlePinChanged = React.useCallback(() => {
+    queryClient.invalidateQueries({ queryKey: ['devices', 'known'] })
+  }, [queryClient])
+
+  // Compute the per-row pulse token for the most recent WS event.
+  // The WS hook doesn't scope events to a specific row (it stores
+  // lastEvent), so we resolve here: if the event names a profile_key
+  // and that key matches the row, use the event timestamp; otherwise
+  // undefined (no pulse).
+  const lastEventProfileKey = React.useMemo<string | null>(() => {
+    const evt = ws.lastEvent
+    if (!evt) return null
+    if (evt.type === 'device.connected' || evt.type === 'device.disconnected') {
+      return String(evt.data?.profile_key ?? '')
+    }
+    return null
+  }, [ws.lastEvent])
+
+  const lastEventTimestamp = ws.lastEvent?.timestamp ?? 0
+
+  const pulseTokenFor = React.useCallback(
+    (row: ProfileRow): number | undefined => {
+      if (lastEventProfileKey && row.profileKey === lastEventProfileKey) {
+        return lastEventTimestamp
+      }
+      return undefined
+    },
+    [lastEventProfileKey, lastEventTimestamp],
+  )
 
   const profileIndex = React.useMemo(
     () => indexProfiles(profilesQuery.data?.profiles ?? []),
@@ -247,14 +222,14 @@ export function HardwareStorePage(): React.JSX.Element {
   const connectedRows = buildProfileRows({
     profileKeys: Array.from(connectedKeys),
     profileIndex, packIndex,
-    connectedKeys, pinnedKeys, knownKeys,
+    connectedKeys, pinnedKeys, recentlyDisconnectedKeys,
     knownLastSeen,
   })
 
   const recentRows = buildProfileRows({
     profileKeys: Array.from(recentlyDisconnectedKeys).filter((k) => !connectedKeys.has(k)),
     profileIndex, packIndex,
-    connectedKeys, pinnedKeys, knownKeys,
+    connectedKeys, pinnedKeys, recentlyDisconnectedKeys,
     knownLastSeen,
   })
 
@@ -263,7 +238,7 @@ export function HardwareStorePage(): React.JSX.Element {
       (k) => !connectedKeys.has(k) && !recentlyDisconnectedKeys.has(k),
     ),
     profileIndex, packIndex,
-    connectedKeys, pinnedKeys, knownKeys,
+    connectedKeys, pinnedKeys, recentlyDisconnectedKeys,
     knownLastSeen,
   })
 
@@ -280,7 +255,7 @@ export function HardwareStorePage(): React.JSX.Element {
     return buildProfileRows({
       profileKeys: all.filter((k) => !usedKeys.has(k)),
       profileIndex, packIndex,
-      connectedKeys, pinnedKeys, knownKeys,
+      connectedKeys, pinnedKeys, recentlyDisconnectedKeys,
       knownLastSeen,
     })
   }, [
@@ -356,32 +331,29 @@ export function HardwareStorePage(): React.JSX.Element {
             subtitle="Detected on the bench right now"
             rows={connectedRows}
             emptyMessage="No devices currently connected. Plug something in to populate this section."
-            badgeFor={(row) => (
-              <Tag size="sm" type="green">
-                {row.isConnected ? 'Connected' : ''}
-              </Tag>
-            )}
+            pulseTokenFor={pulseTokenFor}
+            onPinChanged={handlePinChanged}
           />
           <Section
             title="Recently disconnected"
             subtitle="Within the last 30 seconds"
             rows={recentRows}
-            badgeFor={() => <Tag size="sm" type="warm-gray">Disconnected</Tag>}
+            pulseTokenFor={pulseTokenFor}
+            onPinChanged={handlePinChanged}
           />
           <Section
             title="Known to this bench"
             subtitle="Pinned or seen within the last 24 hours"
             rows={knownNotRecentRows}
-            badgeFor={(row) => (
-              row.isPinned
-                ? <Tag size="sm" type="purple">Pinned</Tag>
-                : <Tag size="sm" type="cool-gray">Known</Tag>
-            )}
+            pulseTokenFor={pulseTokenFor}
+            onPinChanged={handlePinChanged}
           />
           <Section
             title="Catalogue"
             subtitle="Every shipped, user, and imported device pack"
             rows={catalogueRows}
+            pulseTokenFor={pulseTokenFor}
+            onPinChanged={handlePinChanged}
           />
         </>
       )}

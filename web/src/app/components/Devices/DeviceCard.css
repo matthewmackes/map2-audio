@@ -1,0 +1,106 @@
+/*
+ * DeviceCard — T2459-G4. Carbon Tile + Tag + Button only; no custom badges.
+ */
+
+.device-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  min-height: 11rem;
+  padding: 1rem !important;
+  position: relative;
+  transition: box-shadow 120ms ease, transform 120ms ease;
+}
+
+.device-card:hover {
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.18);
+}
+
+.device-card--connected {
+  border-left: 3px solid var(--cds-support-success);
+  padding-left: calc(1rem - 3px) !important;
+}
+
+.device-card[data-recently-disconnected='true'] {
+  border-left: 3px solid var(--cds-support-warning);
+  padding-left: calc(1rem - 3px) !important;
+}
+
+/* Q11 hot-plug pulse: brief outer glow when an event fires for this row. */
+.device-card--pulse {
+  animation: device-card-pulse 1.2s ease-out 1;
+}
+
+@keyframes device-card-pulse {
+  0%   { box-shadow: 0 0 0 0 rgba(36, 161, 72, 0.5); }
+  60%  { box-shadow: 0 0 0 8px rgba(36, 161, 72, 0); }
+  100% { box-shadow: 0 0 0 0 rgba(36, 161, 72, 0); }
+}
+
+.device-card__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.device-card__title {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  min-width: 0;
+}
+
+.device-card__model-link {
+  text-decoration: none;
+  color: inherit;
+}
+
+.device-card__model-link:hover .device-card__model {
+  text-decoration: underline;
+  color: var(--cds-link-primary);
+}
+
+.device-card__model {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--cds-text-primary);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.device-card__vendor {
+  font-size: 0.75rem;
+  color: var(--cds-text-helper);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.device-card__tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.25rem;
+}
+
+.device-card__last-seen {
+  margin: 0;
+  font-size: 0.75rem;
+  color: var(--cds-text-helper);
+  font-variant-numeric: tabular-nums;
+}
+
+.device-card__actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+  margin-top: auto;
+  padding-top: 0.5rem;
+  border-top: 1px solid var(--cds-border-subtle);
+}
+
+.device-card__actions .cds--btn {
+  flex: 1 1 auto;
+  min-width: 0;
+}
