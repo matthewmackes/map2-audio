@@ -12,7 +12,10 @@ const PROJECT_ROOT = path.resolve(__dirname, '..');
 const DEFAULT_DIST_DIR = path.join(PROJECT_ROOT, 'web', 'dist');
 
 const HTTP_PROXY_PREFIXES = ['/api', '/folders', '/resources', '/var'];
-const UPGRADE_PROXY_PREFIXES = ['/ws', '/pipedal'];
+// T2459-G16 — `/api` added so WebSocket endpoints under the API
+// namespace (e.g. /api/devices/ws from T2459-G2) upgrade through the
+// preview server proxy. Previously only /ws and /pipedal upgraded.
+const UPGRADE_PROXY_PREFIXES = ['/ws', '/pipedal', '/api'];
 const STATIC_PREFIXES = ['/assets/', '/css/', '/img/', '/posters/'];
 
 const MIME_TYPES = {
