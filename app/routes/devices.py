@@ -496,6 +496,74 @@ async def measure_latency(req: MeasureLatencyRequest) -> dict[str, Any]:
     return payload
 
 
+@router.get("/measure-latency/history")
+async def measure_latency_history(
+    pack_id: str = Query(...),
+    model: str = Query(...),
+    limit: int = Query(default=20, ge=1, le=200),
+) -> dict[str, Any]:
+    """T2459-G6 — list prior loopback evidence files for a pack+model.
+
+    Walks ``docs/fit-for-purpose-evidence/<YYYYMMDD>/<pack>/<model>/``
+    across every dated directory and returns the most-recent N
+    measurements with their summary stats. The frontend reads this
+    to render the history list and the Compare-to-baseline diff.
+    """
+    import json as _json
+    from datetime import datetime as _dt
+    from pathlib import Path as _P
+
+    repo_root = _P(__file__).resolve().parents[2]
+    evidence_root = repo_root / "docs" / "fit-for-purpose-evidence"
+    if not evidence_root.is_dir():
+        return {"history": [], "count": 0}
+
+    rows: list[dict[str, Any]] = []
+    for date_dir in evidence_root.iterdir():
+        if not date_dir.is_dir():
+            continue
+        target_dir = date_dir / pack_id / model
+        if not target_dir.is_dir():
+            continue
+        for f in target_dir.iterdir():
+            if not (f.is_file() and f.suffix == ".json"):
+                continue
+            try:
+                doc = _json.loads(f.read_text(encoding="utf-8"))
+            except Exception:   # noqa: BLE001 — defensive
+                continue
+            if not isinstance(doc, dict):
+                continue
+            ts = doc.get("timestamp")
+            try:
+                # Sort key: parse ISO; fall back to file mtime.
+                sort_ts = _dt.fromisoformat(str(ts).replace("Z", "+00:00")).timestamp() \
+                    if isinstance(ts, str) else f.stat().st_mtime
+            except Exception:   # noqa: BLE001
+                sort_ts = f.stat().st_mtime
+            try:
+                rel_path = str(f.relative_to(repo_root))
+            except ValueError:
+                rel_path = str(f)
+            rows.append({
+                "evidence_path": rel_path,
+                "timestamp": ts,
+                "method": doc.get("method"),
+                "mean_rtt_ms": doc.get("mean_rtt_ms"),
+                "p95_rtt_ms": doc.get("p95_rtt_ms"),
+                "jitter_p95_ms": doc.get("jitter_p95_ms"),
+                "trial_count": len(doc.get("trials") or []),
+                "_sort_ts": sort_ts,
+            })
+
+    rows.sort(key=lambda r: r["_sort_ts"], reverse=True)
+    rows = rows[:limit]
+    for r in rows:
+        r.pop("_sort_ts", None)
+
+    return {"history": rows, "count": len(rows)}
+
+
 # ---------------------------------------------------------------------------
 # T2459-G1 — Hardware Store integration: connected / known / diagnostics
 # ---------------------------------------------------------------------------

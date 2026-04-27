@@ -271,6 +271,29 @@ export async function measureLatency(req: {
   })
 }
 
+// T2459-G6 — history of prior IR loopback measurements for one device.
+export interface MeasureLatencyHistoryRow {
+  evidence_path: string
+  timestamp: string | null
+  method: 'jack' | 'synthetic' | null
+  mean_rtt_ms: number | null
+  p95_rtt_ms: number | null
+  jitter_p95_ms: number | null
+  trial_count: number
+}
+
+export async function listMeasureLatencyHistory(
+  packId: string,
+  model: string,
+  limit = 20,
+): Promise<{ history: MeasureLatencyHistoryRow[]; count: number }> {
+  const url = new URL(`${API_BASE}/api/devices/measure-latency/history`)
+  url.searchParams.set('pack_id', packId)
+  url.searchParams.set('model', model)
+  url.searchParams.set('limit', String(limit))
+  return fetchJson(url.toString())
+}
+
 // ---------------------------------------------------------------------------
 // T2459-G1 / G2 — Hardware Store endpoints
 // ---------------------------------------------------------------------------

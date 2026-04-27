@@ -1,0 +1,32 @@
+.audio-io-tab {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+  padding: 1rem 0;
+}
+
+.audio-io-tab__panel h3 {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--cds-text-primary);
+  margin: 0 0 0.5rem;
+}
+
+.audio-io-tab__measure-row {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  margin-bottom: 0.75rem;
+  flex-wrap: wrap;
+}
+
+.audio-io-tab__result {
+  margin-top: 1rem;
+}
+
+.audio-io-tab__empty {
+  font-size: 0.875rem;
+  color: var(--cds-text-helper);
+  font-style: italic;
+  margin: 0;
+}

@@ -17,12 +17,14 @@ import {
   listDeviceDiagnostics,
   listDeviceProfiles,
   listKnownDevices,
+  listMeasureLatencyHistory,
   listPackSources,
   listRecentlyDisconnected,
   type DeviceProfileSummary,
   type ConnectedResponse,
   type DiagnosticsResponse,
   type KnownDeviceRow,
+  type MeasureLatencyHistoryRow,
   type PackSourceRow,
   type RecentlyDisconnectedRow,
 } from '../../../../map2/clients/devices'
@@ -94,5 +96,14 @@ export function useDeviceDiagnostics(opts?: {
     queryFn: () => listDeviceDiagnostics(opts),
     staleTime: 5_000,
     refetchInterval: 15_000,
+  })
+}
+
+export function useMeasureLatencyHistory(packId: string, model: string, limit = 20) {
+  return useQuery<{ history: MeasureLatencyHistoryRow[]; count: number }>({
+    queryKey: ['devices', 'measure-latency', 'history', packId, model, limit],
+    queryFn: () => listMeasureLatencyHistory(packId, model, limit),
+    enabled: Boolean(packId && model),
+    staleTime: 10_000,
   })
 }
