@@ -419,3 +419,59 @@ export async function listPackSources(): Promise<{
 }> {
   return fetchJson(`${API_BASE}/api/devices/packs/sources`)
 }
+
+// T2459-G7 — bindings write + Undo
+export interface BindingControlRow {
+  status?: number | string
+  midino?: number | string
+  channel?: number | string
+  target?: string
+  action?: string
+  script?: string
+  fast_path?: boolean
+  description?: string
+  [key: string]: unknown
+}
+
+export interface BindingsWriteResponse {
+  revision: string
+  undo_token: string
+  profile_key: string
+  bytes_written: number
+}
+
+export interface BindingsUndoResponse {
+  revision: string
+  profile_key?: string
+  profile_key_from_token?: string
+  expected?: string
+  bytes_written: number
+}
+
+export async function postBindings(
+  packId: string, model: string, kind: 'midi' | 'hid',
+  payload: { controls?: BindingControlRow[]; outputs?: BindingControlRow[] },
+): Promise<BindingsWriteResponse> {
+  return fetchJson(
+    `${API_BASE}/api/devices/profiles/${encodeURIComponent(packId)}/${encodeURIComponent(model)}/${kind}/bindings`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    },
+  )
+}
+
+export async function undoBindings(
+  packId: string, model: string, kind: 'midi' | 'hid',
+  undoToken: string,
+): Promise<BindingsUndoResponse> {
+  return fetchJson(
+    `${API_BASE}/api/devices/profiles/${encodeURIComponent(packId)}/${encodeURIComponent(model)}/${kind}/bindings/undo`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ undo_token: undoToken }),
+    },
+  )
+}

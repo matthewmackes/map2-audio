@@ -1,0 +1,29 @@
+.bindings-tab {
+  display: flex;
+  flex-direction: column;
+  gap: 1.25rem;
+  padding: 1rem 0;
+}
+
+.bindings-tab__head {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+  align-items: center;
+  padding-bottom: 0.5rem;
+  border-bottom: 1px solid var(--cds-border-subtle);
+}
+
+.bindings-tab__section h3 {
+  font-size: 0.9375rem;
+  font-weight: 600;
+  color: var(--cds-text-primary);
+  margin: 0 0 0.5rem;
+}
+
+.bindings-tab__readonly-note {
+  margin: 0 0 0.5rem;
+  font-size: 0.75rem;
+  color: var(--cds-text-helper);
+  font-style: italic;
+}

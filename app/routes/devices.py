@@ -781,6 +781,128 @@ import time   # noqa: E402  isort:skip
 
 
 # ---------------------------------------------------------------------------
+# T2459-G7 — Bindings write + Undo
+# ---------------------------------------------------------------------------
+
+from app.services.controllers.bindings_writer import (   # noqa: E402
+    BindingsWriteError,
+    get_bindings_writer,
+)
+
+
+class _BindingsRequest(BaseModel):
+    controls: list[dict[str, Any]] | None = None
+    outputs: list[dict[str, Any]] | None = None
+
+
+class _UndoRequest(BaseModel):
+    undo_token: str
+
+
+@router.post("/profiles/{pack_id}/{model}/{kind}/bindings")
+async def write_bindings(
+    pack_id: str, model: str, kind: str, req: _BindingsRequest,
+) -> dict[str, Any]:
+    """Q20-shaped: atomic write the new ``controls``/``outputs`` block
+    to the profile YAML, return ``{revision, undo_token}`` so the GUI
+    can offer an 8-second Undo (Q13).
+    """
+    if kind not in {"midi", "hid"}:
+        raise _g1_error(
+            status_code=400,
+            detail="binding writes only allowed for midi/hid profiles",
+            code="invalid_kind",
+            source="bindings_writer",
+        )
+    if req.controls is None and req.outputs is None:
+        raise _g1_error(
+            status_code=400,
+            detail="must supply at least one of controls / outputs",
+            code="empty_payload",
+            source="bindings_writer",
+        )
+
+    registry = get_profile_registry()
+    pack = registry.get_pack(pack_id)
+    if pack is None:
+        raise _g1_error(
+            status_code=404,
+            detail=f"pack {pack_id} not found",
+            code="pack_not_found",
+            source="profile_registry",
+        )
+
+    profile = next(
+        (p for p in registry.profiles(kind=kind)
+         if p.pack_id == pack_id and p.model == model),
+        None,
+    )
+    if profile is None:
+        raise _g1_error(
+            status_code=404,
+            detail=f"profile {pack_id}/{model}.{kind} not found",
+            code="profile_not_found",
+            source="profile_registry",
+        )
+
+    try:
+        result = get_bindings_writer().write_bindings(
+            profile_path=profile.path,
+            profile_kind=kind,
+            new_controls=req.controls,
+            new_outputs=req.outputs,
+            registry=registry,
+        )
+    except BindingsWriteError as exc:
+        raise _g1_error(
+            status_code=400,
+            detail=str(exc),
+            code="binding_write_failed",
+            source="bindings_writer",
+        )
+
+    return {
+        "revision": result.revision,
+        "undo_token": result.undo_token,
+        "profile_key": result.profile_key,
+        "bytes_written": result.bytes_written,
+    }
+
+
+@router.post("/profiles/{pack_id}/{model}/{kind}/bindings/undo")
+async def undo_bindings(
+    pack_id: str, model: str, kind: str, req: _UndoRequest,
+) -> dict[str, Any]:
+    """Q13: restore the previous YAML body keyed by the undo token."""
+    registry = get_profile_registry()
+    try:
+        result = get_bindings_writer().apply_undo(req.undo_token, registry=registry)
+    except BindingsWriteError as exc:
+        raise _g1_error(
+            status_code=410,
+            detail=str(exc),
+            code="undo_token_unknown",
+            source="bindings_writer",
+        )
+    # Sanity: the token's profile_key should match the URL.
+    expected = f"{pack_id}/{model}.{kind}"
+    if result.profile_key != f"{pack_id}/{model}":
+        # The writer keys profile_key as <vendor>/<filename-stem>; route
+        # uses <pack>/<model>.<kind>. Reconcile by surfacing both.
+        return {
+            "revision": result.revision,
+            "profile_key_from_token": result.profile_key,
+            "expected": expected,
+            "bytes_written": result.bytes_written,
+        }
+    return {
+        "revision": result.revision,
+        "profile_key": result.profile_key,
+        "bytes_written": result.bytes_written,
+    }
+
+
+# ---------------------------------------------------------------------------
 # T2459-G2 — WebSocket hot-plug channel
 # ---------------------------------------------------------------------------
 
