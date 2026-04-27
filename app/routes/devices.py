@@ -491,3 +491,219 @@ async def measure_latency(req: MeasureLatencyRequest) -> dict[str, Any]:
         evidence_path.relative_to(Path(__file__).resolve().parents[2])
     )
     return payload
+
+
+# ---------------------------------------------------------------------------
+# T2459-G1 — Hardware Store integration: connected / known / diagnostics
+# ---------------------------------------------------------------------------
+#
+# These endpoints use the locked Q20 error envelope:
+#   {"detail": "...", "code": "...", "source": "...", "degraded_files": [...]}
+# Legacy endpoints above keep their existing envelope shape for backward
+# compatibility — they predate the Q20 lock.
+
+from app.services.controllers.bench_state import (   # noqa: E402
+    get_bench_state_tracker,
+)
+from app.services.controllers.connection_detector import (   # noqa: E402
+    detect_connections,
+)
+from app.services.controllers.profile_registry import (   # noqa: E402
+    get_profile_registry,
+)
+
+
+def _g1_error(
+    *, status_code: int, detail: str, code: str, source: str,
+    degraded_files: list[str] | None = None,
+) -> HTTPException:
+    """Q20-locked error envelope used by the G1 endpoints."""
+    return HTTPException(status_code=status_code, detail={
+        "detail": detail,
+        "code": code,
+        "source": source,
+        "degraded_files": degraded_files or [],
+    })
+
+
+def _classify_pack_source(pack_path: str) -> str:
+    """Classify a pack as shipped / user / imported per Q14/Q15.
+
+    - shipped:  ``device-packs/<vendor>/`` (top-level, repo-tracked)
+    - imported: ``device-packs/_mixx-imports/...``
+    - user:     ``~/.map2/device-packs-user/...``
+    """
+    p = str(pack_path)
+    if "/_mixx-imports" in p or "_mixx-imports" in p.split("/"):
+        return "imported"
+    if "/.map2/device-packs-user" in p:
+        return "user"
+    return "shipped"
+
+
+@router.get("/connected")
+async def list_connected_devices() -> dict[str, Any]:
+    """Live detector snapshot. Q3 chain: USB + ALSA seq + ALSA card +
+    PipeWire. Each detection source can fail independently; failed
+    sources surface in ``sources_failed`` so the GUI can show partial
+    detection state honestly.
+
+    Side-effect: every matched profile gets recorded in the bench-state
+    tracker so ``/known`` and ``/recently-disconnected`` work.
+    """
+    registry = get_profile_registry()
+    snapshot = detect_connections(registry)
+    tracker = get_bench_state_tracker()
+    tracker.record_seen([r.profile_key for r in snapshot.records])
+
+    return {
+        "snapshot": snapshot.to_dict(),
+        "count": len(snapshot.records),
+    }
+
+
+@router.get("/recently-disconnected")
+async def list_recently_disconnected() -> dict[str, Any]:
+    """Profile keys seen within the 30-second grace window but absent
+    from the current detector pass (Q12 lifecycle).
+    """
+    registry = get_profile_registry()
+    snapshot = detect_connections(registry)
+    currently = {r.profile_key for r in snapshot.records}
+    tracker = get_bench_state_tracker()
+    tracker.record_seen(list(currently))
+
+    keys = tracker.recently_disconnected_keys(currently)
+    rows = []
+    for key in keys:
+        last = tracker.last_seen(key)
+        rows.append({
+            "profile_key": key,
+            "last_seen_at": last,
+        })
+    return {"recently_disconnected": rows, "count": len(rows)}
+
+
+@router.get("/known")
+async def list_known_devices() -> dict[str, Any]:
+    """Pinned profiles + profiles seen within the last 24 h (Q12/Q14)."""
+    tracker = get_bench_state_tracker()
+    rows = []
+    for key in tracker.known_keys():
+        rows.append({
+            "profile_key": key,
+            "is_pinned": tracker.is_pinned(key),
+            "last_seen_at": tracker.last_seen(key),
+        })
+    return {"known": rows, "count": len(rows)}
+
+
+class PinRequest(BaseModel):
+    profile_key: str
+
+
+@router.post("/pin")
+async def pin_device(req: PinRequest) -> dict[str, Any]:
+    """Pin a profile so it stays in the Known-to-Bench section
+    regardless of connection state (Q12)."""
+    tracker = get_bench_state_tracker()
+    added = tracker.pin(req.profile_key)
+    return {"profile_key": req.profile_key, "pinned": True, "newly_added": added}
+
+
+@router.post("/unpin")
+async def unpin_device(req: PinRequest) -> dict[str, Any]:
+    tracker = get_bench_state_tracker()
+    removed = tracker.unpin(req.profile_key)
+    return {"profile_key": req.profile_key, "pinned": False, "newly_removed": removed}
+
+
+@router.get("/diagnostics")
+async def list_diagnostics(
+    severity: str | None = Query(default=None, pattern="^(info|warning|error)$"),
+    source: str | None = Query(default=None),
+) -> dict[str, Any]:
+    """Bench-wide diagnostics aggregate (Q19).
+
+    Sources unioned:
+      - profile_registry: degraded packs (broken YAML, schema fail)
+      - controller_host:  recent crash + storm-guard state
+    """
+    registry = get_profile_registry()
+    rows: list[dict[str, Any]] = []
+    now = time.time()
+
+    for pack in registry.packs():
+        if not pack.is_degraded:
+            continue
+        for f in pack.degraded_files:
+            rows.append({
+                "severity": "error",
+                "source": "profile_registry",
+                "code": "pack_degraded",
+                "detail": f"Pack {pack.pack_id} has a broken file: {f}",
+                "pack_id": pack.pack_id,
+                "file": str(f),
+                "ts": now,
+            })
+
+    try:
+        from app.services.controller_host_service import get_controller_host_service
+        host = get_controller_host_service()
+        payload = host.status_payload()
+        if payload.get("status") == "DEGRADED" or (payload.get("crashes_in_window") or 0) > 0:
+            rows.append({
+                "severity": "error" if payload.get("status") == "DEGRADED" else "warning",
+                "source": "controller_host",
+                "code": "host_unhealthy",
+                "detail": payload.get("last_error") or f"Controller host status: {payload.get('status')}",
+                "pid": payload.get("pid"),
+                "restart_count": payload.get("restart_count"),
+                "crashes_in_window": payload.get("crashes_in_window"),
+                "ts": now,
+            })
+    except Exception as exc:   # noqa: BLE001 — defensive
+        logger.warning("Controller host diagnostics unavailable: %s", exc)
+
+    if severity is not None:
+        rows = [r for r in rows if r["severity"] == severity]
+    if source is not None:
+        rows = [r for r in rows if r["source"] == source]
+
+    counts = {"info": 0, "warning": 0, "error": 0}
+    for r in rows:
+        s = r.get("severity")
+        if s in counts:
+            counts[s] += 1
+
+    return {
+        "diagnostics": rows,
+        "count": len(rows),
+        "counts_by_severity": counts,
+    }
+
+
+@router.get("/packs/sources")
+async def list_pack_sources() -> dict[str, Any]:
+    """Provenance summary per pack (Q15/Q18). Source classification:
+    shipped / user / imported.
+    """
+    registry = get_profile_registry()
+    rows = []
+    for pack in registry.packs():
+        rows.append({
+            "pack_id": pack.pack_id,
+            "vendor": pack.vendor_name,
+            "source": _classify_pack_source(str(pack.path)),
+            "path": str(pack.path),
+            "is_degraded": pack.is_degraded,
+            "degraded_files": [str(f) for f in pack.degraded_files],
+            "model_count": len(pack.models),
+            "profile_count": len(pack.profiles),
+        })
+    return {"sources": rows, "count": len(rows)}
+
+
+# Need ``time`` for /diagnostics ts fields; local import to keep the
+# legacy block above untouched.
+import time   # noqa: E402  isort:skip
