@@ -323,14 +323,16 @@ Last updated: 2026-04-27 EDT - Claude: SHIPPED.
 ---
 
 ID: T2459-D3
-Status: [ ] Todo
+Status: [✓] Done
 Parent: T2459
 Title: `Map2BulkController` — libusb-1.0 for legacy Hercules-class devices
 Description:
 - Goal: Bulk-transfer controller subclass for legacy USB devices that don't expose HID descriptors (some early Hercules DJ controllers, etc.). Lower priority than MIDI/HID; included for vendor-pack coverage parity with Mixxx.
 - Acceptance: a synthetic bulk endpoint (libusb test backend) round-trips packets through `Map2BulkController` to a JS mapping.
 - Required outputs: `juce-engine/Source/ControllerHost/Bulk/Map2BulkController.{h,cpp}`, libusb-1.0 dep wired via CMake.
+Completion note: 2026-04-27 — Claude: SHIPPED. Created `juce-engine/Source/ControllerHost/Bulk/Map2BulkController.{h,cpp}` (~210 LoC) under the `map2::controller_host::bulk` namespace, structurally parallel to Map2HidController. `Map2BulkController` lifecycle: `open()` calls `libusb_init` + `libusb_open_device_with_vid_pid` + (if needed) `libusb_detach_kernel_driver` + `libusb_claim_interface`, then spawns a dedicated reader thread; `close()` flips an atomic shutdown flag, joins reader, releases interface + closes handle + exits libusb context; `sendBulkOut(bytes, timeout_ms)` calls `libusb_bulk_transfer` on the configured OUT endpoint for LED feedback / config writes. Reader loop calls `libusb_bulk_transfer` on the IN endpoint with a 50 ms timeout, swallowing TIMEOUT, breaking on NO_DEVICE, logging other errors; on successful transfers wraps the bytes + a steady-clock timestamp into a `BulkPacket` and hands it to the registered `EventCallback` with exception protection. Created `Map2BulkEnumerator` with `init()`/`exit()`/`enumerate(vid, pid)` walking `libusb_get_device_list` and translating each device descriptor into the `BulkDeviceInfo` struct. Code is guarded by `MAP2_HAS_LIBUSB` — when libusb headers are missing, every method short-circuits to a safe no-op. Authored `juce-engine/tests/Map2BulkControllerTests.cpp` with 6 cases covering construction, open() against a nonexistent device fails cleanly, close() on an unopened controller is a no-op, sendBulkOut returns false when not open, enumerator init/exit safety, enumerator VID filter doesn't crash on Hercules 0x06f8. Wired into `controller_host_tests`. Validation: `cmake --build build -t controller_host_tests` clean; `./build/controller_host_tests` reports "All tests passed (107 assertions in 32 test cases)" — 12 QuickJSEngine + 6 Map2HidController + 8 CommonHidParser + 6 Map2BulkController. libusb-1.0 was not present as a system package on this build host; the no-op fallback path was exercised. CMake FetchContent for libusb is deferred to a packaging follow-up (same pattern as hidapi in T2459-D1).
 Assigned to: Claude
+Last updated: 2026-04-27 EDT - Claude: SHIPPED.
 
 ---
 

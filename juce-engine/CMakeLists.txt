@@ -907,9 +907,11 @@ if(BUILD_CONTROLLER_HOST_TESTS)
         tests/QuickJSEngineTests.cpp
         tests/Map2HidControllerTests.cpp
         tests/CommonHidParserTests.cpp
+        tests/Map2BulkControllerTests.cpp
         Source/ControllerHost/QuickJSEngine.cpp
         Source/ControllerHost/EngineApiBindings.cpp
         Source/ControllerHost/Hid/Map2HidController.cpp
+        Source/ControllerHost/Bulk/Map2BulkController.cpp
     )
     target_include_directories(controller_host_tests PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/Source
