@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1326** Python | **1301** TypeScript | **157** C++/H | **145** Docs | **2903** total commits | **3** stars | **0** forks | **0** open issues
+**1328** Python | **1301** TypeScript | **157** C++/H | **145** Docs | **2905** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`844b995e`](https://github.com/matthewmackes/map2-audio/commit/844b995edae413c31e913c38a477b117d664c54d) | T2459-F4: HIL smoke runner + 4 self-test cases + first PA... | Map2 Audio | 2026-04-27 |
+| [`60883669`](https://github.com/matthewmackes/map2-audio/commit/60883669425987bd40af2c387ef4bbdb1bc920c6) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-27 |
 | [`bec02d10`](https://github.com/matthewmackes/map2-audio/commit/bec02d10f4e808c5b0afc5c802e4f6f85b6b3d96) | T2459-F3: QuickJS integration pytest + 17 cases | Map2 Audio | 2026-04-27 |
 | [`8925f729`](https://github.com/matthewmackes/map2-audio/commit/8925f7291bb53c58a5ff532659fc89c18d8f5e69) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-27 |
 | [`9b332e26`](https://github.com/matthewmackes/map2-audio/commit/9b332e266d120f2cdc503d248e2cfed3b92bcc72) | T2459-F2: synthesized-MIDI dispatch pytest + 19 cases | Map2 Audio | 2026-04-27 |
 | [`2f98af34`](https://github.com/matthewmackes/map2-audio/commit/2f98af340419e3b3f7b5ff23b60beb8f4334f385) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-27 |
 | [`a2bc0e53`](https://github.com/matthewmackes/map2-audio/commit/a2bc0e538e6e3929d31ab5353d9e6fcaacc0960f) | T2459-F1: schema validation CI hardening — 4 new checks | Map2 Audio | 2026-04-27 |
 | [`4f9897ff`](https://github.com/matthewmackes/map2-audio/commit/4f9897ff98eb135e983553d7734fe00150f56ac8) | T2459-E5: γ1 full Mixxx imports mirror — 397 files + immu... | Map2 Audio | 2026-04-27 |
-| [`855403f5`](https://github.com/matthewmackes/map2-audio/commit/855403f5f131b70640426e2d590ac45b172b10f2) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-27 |
-| [`83bcfecb`](https://github.com/matthewmackes/map2-audio/commit/83bcfecb6aa996fb3543a04eecc2dfa03df5a29a) | T2459-E4: Measure latency GUI button + endpoint + 3 new J... | Map2 Audio | 2026-04-27 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
