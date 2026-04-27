@@ -54,13 +54,13 @@ export interface ActiveMappingSummary {
 // ---------------------------------------------------------------------------
 
 export async function listDevicePacks(): Promise<{ packs: DevicePackSummary[]; count: number }> {
-  return fetchJson(`${API_BASE}/api/devices/packs`)
+  return fetchJson(`${API_BASE}/devices/packs`)
 }
 
 export async function listDeviceProfiles(
   kind?: 'audio' | 'midi' | 'hid',
 ): Promise<{ profiles: DeviceProfileSummary[]; count: number }> {
-  const url = new URL(`${API_BASE}/api/devices/profiles`)
+  const url = new URL(`${API_BASE}/devices/profiles`)
   if (kind) url.searchParams.set('kind', kind)
   return fetchJson(url.toString())
 }
@@ -71,12 +71,12 @@ export async function getDeviceProfile(
   kind: 'audio' | 'midi' | 'hid',
 ): Promise<{ profile: DeviceProfileDetail }> {
   return fetchJson(
-    `${API_BASE}/api/devices/profiles/${encodeURIComponent(packId)}/${encodeURIComponent(model)}/${kind}`,
+    `${API_BASE}/devices/profiles/${encodeURIComponent(packId)}/${encodeURIComponent(model)}/${kind}`,
   )
 }
 
 export async function reloadDevicePack(packId: string): Promise<{ reloaded: string }> {
-  return fetchJson(`${API_BASE}/api/devices/profiles/reload/${encodeURIComponent(packId)}`, {
+  return fetchJson(`${API_BASE}/devices/profiles/reload/${encodeURIComponent(packId)}`, {
     method: 'POST',
   })
 }
@@ -85,7 +85,7 @@ export async function listActiveMappings(): Promise<{
   active_mappings: ActiveMappingSummary[]
   count: number
 }> {
-  return fetchJson(`${API_BASE}/api/devices/mappings`)
+  return fetchJson(`${API_BASE}/devices/mappings`)
 }
 
 export async function assignMapping(req: {
@@ -101,7 +101,7 @@ export async function assignMapping(req: {
   kind: string
   control_count: number
 }> {
-  return fetchJson(`${API_BASE}/api/devices/mappings/assign`, {
+  return fetchJson(`${API_BASE}/devices/mappings/assign`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(req),
@@ -109,7 +109,7 @@ export async function assignMapping(req: {
 }
 
 export async function clearMapping(controllerKey: string): Promise<{ cleared: string }> {
-  return fetchJson(`${API_BASE}/api/devices/mappings/clear`, {
+  return fetchJson(`${API_BASE}/devices/mappings/clear`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ controller_key: controllerKey }),
@@ -154,7 +154,7 @@ export async function importMixxxXml(req: {
   xml_body: string
   alias_table?: Record<string, string>
 }): Promise<MixxxImportResponse> {
-  return fetchJson(`${API_BASE}/api/devices/mixxx/import`, {
+  return fetchJson(`${API_BASE}/devices/mixxx/import`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(req),
@@ -166,7 +166,7 @@ export async function exportMixxxXml(req: {
   model: string
 }): Promise<{ xml_body: string }> {
   return fetchJson(
-    `${API_BASE}/api/devices/mixxx/export/${encodeURIComponent(req.pack_id)}/${encodeURIComponent(req.model)}`,
+    `${API_BASE}/devices/mixxx/export/${encodeURIComponent(req.pack_id)}/${encodeURIComponent(req.model)}`,
   )
 }
 
@@ -189,7 +189,7 @@ export async function learnStart(req: {
   pack_id: string
   model: string
 }): Promise<{ session_id: string }> {
-  return fetchJson(`${API_BASE}/api/devices/learn/start`, {
+  return fetchJson(`${API_BASE}/devices/learn/start`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(req),
@@ -201,7 +201,7 @@ export async function learnCapture(req: {
   bytes: number[]
   timestamp_ns?: number
 }): Promise<LearnClassification> {
-  return fetchJson(`${API_BASE}/api/devices/learn/capture`, {
+  return fetchJson(`${API_BASE}/devices/learn/capture`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ ...req, timestamp_ns: req.timestamp_ns ?? 0 }),
@@ -215,7 +215,7 @@ export async function learnAssign(req: {
   action?: string
   fast_path?: boolean
 }): Promise<{ session_id: string; row: Record<string, unknown> }> {
-  return fetchJson(`${API_BASE}/api/devices/learn/assign`, {
+  return fetchJson(`${API_BASE}/devices/learn/assign`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(req),
@@ -227,7 +227,7 @@ export async function learnCancel(sessionId: string): Promise<{
   cancelled: boolean
 }> {
   return fetchJson(
-    `${API_BASE}/api/devices/learn/cancel/${encodeURIComponent(sessionId)}`,
+    `${API_BASE}/devices/learn/cancel/${encodeURIComponent(sessionId)}`,
     { method: 'POST' },
   )
 }
@@ -266,7 +266,7 @@ export async function measureLatency(req: {
   duration_ms?: number
   tail_ms?: number
 }): Promise<MeasureLatencyResult> {
-  return fetchJson(`${API_BASE}/api/devices/measure-latency`, {
+  return fetchJson(`${API_BASE}/devices/measure-latency`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify(req),
@@ -289,7 +289,7 @@ export async function listMeasureLatencyHistory(
   model: string,
   limit = 20,
 ): Promise<{ history: MeasureLatencyHistoryRow[]; count: number }> {
-  const url = new URL(`${API_BASE}/api/devices/measure-latency/history`)
+  const url = new URL(`${API_BASE}/devices/measure-latency/history`)
   url.searchParams.set('pack_id', packId)
   url.searchParams.set('model', model)
   url.searchParams.set('limit', String(limit))
@@ -367,21 +367,21 @@ export interface PackSourceRow {
 }
 
 export async function listConnectedDevices(): Promise<ConnectedResponse> {
-  return fetchJson(`${API_BASE}/api/devices/connected`)
+  return fetchJson(`${API_BASE}/devices/connected`)
 }
 
 export async function listRecentlyDisconnected(): Promise<{
   recently_disconnected: RecentlyDisconnectedRow[]
   count: number
 }> {
-  return fetchJson(`${API_BASE}/api/devices/recently-disconnected`)
+  return fetchJson(`${API_BASE}/devices/recently-disconnected`)
 }
 
 export async function listKnownDevices(): Promise<{
   known: KnownDeviceRow[]
   count: number
 }> {
-  return fetchJson(`${API_BASE}/api/devices/known`)
+  return fetchJson(`${API_BASE}/devices/known`)
 }
 
 export async function pinDeviceProfile(profileKey: string): Promise<{
@@ -389,7 +389,7 @@ export async function pinDeviceProfile(profileKey: string): Promise<{
   pinned: boolean
   newly_added: boolean
 }> {
-  return fetchJson(`${API_BASE}/api/devices/pin`, {
+  return fetchJson(`${API_BASE}/devices/pin`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ profile_key: profileKey }),
@@ -401,7 +401,7 @@ export async function unpinDeviceProfile(profileKey: string): Promise<{
   pinned: boolean
   newly_removed: boolean
 }> {
-  return fetchJson(`${API_BASE}/api/devices/unpin`, {
+  return fetchJson(`${API_BASE}/devices/unpin`, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ profile_key: profileKey }),
@@ -412,7 +412,7 @@ export async function listDeviceDiagnostics(opts?: {
   severity?: 'info' | 'warning' | 'error'
   source?: string
 }): Promise<DiagnosticsResponse> {
-  const url = new URL(`${API_BASE}/api/devices/diagnostics`)
+  const url = new URL(`${API_BASE}/devices/diagnostics`)
   if (opts?.severity) url.searchParams.set('severity', opts.severity)
   if (opts?.source) url.searchParams.set('source', opts.source)
   return fetchJson(url.toString())
@@ -422,7 +422,7 @@ export async function listPackSources(): Promise<{
   sources: PackSourceRow[]
   count: number
 }> {
-  return fetchJson(`${API_BASE}/api/devices/packs/sources`)
+  return fetchJson(`${API_BASE}/devices/packs/sources`)
 }
 
 // T2461-A9 — snapshot of bench device state at save time
@@ -434,7 +434,7 @@ export interface DeviceSnapshotKeys {
 }
 
 export async function getDeviceSnapshotKeys(): Promise<DeviceSnapshotKeys> {
-  return fetchJson(`${API_BASE}/api/devices/snapshot-keys`)
+  return fetchJson(`${API_BASE}/devices/snapshot-keys`)
 }
 
 // T2461-A5 — Brain monitor candidates: connected devices that declare
@@ -460,7 +460,7 @@ export async function listBrainMonitorCandidates(): Promise<{
   candidates: BrainMonitorCandidate[]
   count: number
 }> {
-  return fetchJson(`${API_BASE}/api/devices/brain-monitor-candidates`)
+  return fetchJson(`${API_BASE}/devices/brain-monitor-candidates`)
 }
 
 // T2459-G7 — bindings write + Undo
@@ -496,7 +496,7 @@ export async function postBindings(
   payload: { controls?: BindingControlRow[]; outputs?: BindingControlRow[] },
 ): Promise<BindingsWriteResponse> {
   return fetchJson(
-    `${API_BASE}/api/devices/profiles/${encodeURIComponent(packId)}/${encodeURIComponent(model)}/${kind}/bindings`,
+    `${API_BASE}/devices/profiles/${encodeURIComponent(packId)}/${encodeURIComponent(model)}/${kind}/bindings`,
     {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -510,7 +510,7 @@ export async function undoBindings(
   undoToken: string,
 ): Promise<BindingsUndoResponse> {
   return fetchJson(
-    `${API_BASE}/api/devices/profiles/${encodeURIComponent(packId)}/${encodeURIComponent(model)}/${kind}/bindings/undo`,
+    `${API_BASE}/devices/profiles/${encodeURIComponent(packId)}/${encodeURIComponent(model)}/${kind}/bindings/undo`,
     {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
@@ -536,13 +536,13 @@ export interface MixxxChecksumStatus {
 }
 
 export async function getMixxxChecksumStatus(): Promise<MixxxChecksumStatus> {
-  return fetchJson(`${API_BASE}/api/devices/sources/mixxx-checksums`)
+  return fetchJson(`${API_BASE}/devices/sources/mixxx-checksums`)
 }
 
 // SSE-friendly URL builder; the EventSource consumer in the admin
 // tab opens it directly.
 export function syncMixxxStreamUrl(): string {
-  return `${API_BASE}/api/devices/sources/sync-mixxx`
+  return `${API_BASE}/devices/sources/sync-mixxx`
 }
 
 // T2461-A8 — Mixxx alias resolver. Wizard target step posts a
@@ -559,7 +559,7 @@ export async function resolveMixxxAlias(
   group: string, key: string,
 ): Promise<MixxxAliasResolveResult> {
   return fetchJson(
-    `${API_BASE}/api/devices/profiles/${encodeURIComponent(packId)}/${encodeURIComponent(model)}/${kind}/resolve-alias`,
+    `${API_BASE}/devices/profiles/${encodeURIComponent(packId)}/${encodeURIComponent(model)}/${kind}/resolve-alias`,
     {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
