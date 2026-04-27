@@ -92,7 +92,7 @@ const PREFETCH_RULES: PrefetchRule[] = [
     prefix: '/devices',
     loaders: [
       () => import('./components/Devices/DevicesShell'),
-      () => import('./components/Devices/DevicesStorePage'),
+      () => import('./components/Devices/HardwareStorePage'),
     ],
   },
   {

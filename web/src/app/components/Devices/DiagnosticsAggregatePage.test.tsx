@@ -99,5 +99,5 @@ test('DiagnosticsAggregatePage: pack_id column links to device profile', async (
     expect(screen.getByText('edirol-ua')).toBeInTheDocument()
   })
   const link = screen.getByText('edirol-ua').closest('a')
-  expect(link?.getAttribute('href')).toBe('/devices/profile/edirol-ua/')
+  expect(link?.getAttribute('href')).toBe('/devices/profile/edirol-ua/?from=diagnostics')
 })

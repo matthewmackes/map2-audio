@@ -94,7 +94,7 @@ export function DeviceCard({ row, onPinChanged }: DeviceCardProps): React.JSX.El
 
   const handleOpen = React.useCallback(() => {
     navigate(
-      `/devices/profile/${encodeURIComponent(row.packId)}/${encodeURIComponent(row.model)}`,
+      `/devices/profile/${encodeURIComponent(row.packId)}/${encodeURIComponent(row.model)}/v2`,
     )
   }, [navigate, row.packId, row.model])
 
@@ -188,7 +188,7 @@ export function DeviceCard({ row, onPinChanged }: DeviceCardProps): React.JSX.El
       <div className="device-card__head">
         <div className="device-card__title">
           <RouterLink
-            to={`/devices/profile/${encodeURIComponent(row.packId)}/${encodeURIComponent(row.model)}`}
+            to={`/devices/profile/${encodeURIComponent(row.packId)}/${encodeURIComponent(row.model)}/v2`}
             className="device-card__model-link"
           >
             <span className="device-card__model">{row.model}</span>

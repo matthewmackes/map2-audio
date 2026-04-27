@@ -1,4 +1,14 @@
 /**
+ * @deprecated T2459-G11. The /devices storefront is now driven by the
+ * profile-registry-backed HardwareStorePage. This hand-coded registry
+ * remains only because GlobalTreeNav still uses it for the left-rail
+ * pinned-device list; that migration is queued as T2459-G11b.
+ *
+ * DO NOT add new entries here. New devices ship as profile YAML under
+ * device-packs/<vendor>/profiles/ and surface automatically in the
+ * Hardware Store.
+ *
+ * Original purpose (kept for context until G11b lands):
  * Device Registry — canonical catalog of all hardware devices and control
  * surfaces managed by the platform. Consumed by the Unified Devices view
  * (T2420) to drive a single `/devices` shell + sidebar + grid overview.

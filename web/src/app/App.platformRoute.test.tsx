@@ -171,8 +171,8 @@ jest.mock('./components/Devices/DevicesShell', () => ({
   },
 }))
 
-jest.mock('./components/Devices/DevicesStorePage', () => ({
-  DevicesStorePage: () => {
+jest.mock('./components/Devices/HardwareStorePage', () => ({
+  HardwareStorePage: () => {
     const { useLocation: mockUseLocation } = jest.requireActual('react-router-dom') as typeof import('react-router-dom')
     const location = mockUseLocation()
     return <div data-testid="devices-store-route">{`${location.pathname}${location.search}`}</div>

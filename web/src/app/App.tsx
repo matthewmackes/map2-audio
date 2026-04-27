@@ -64,8 +64,7 @@ const SnapshotsBrowserPage  = lazy(() => import('./pages/SnapshotsBrowserPage').
 const StateAuthorityPage    = lazy(() => import('./pages/StateAuthorityPage').then(m => ({ default: m.StateAuthorityPage })))
 const SnapshotPublishPage   = lazy(() => import('./pages/SnapshotPublishPage').then(m => ({ default: m.SnapshotPublishPage })))
 const DevicesShell          = lazy(() => import('./components/Devices/DevicesShell').then(m => ({ default: m.DevicesShell })))
-const DevicesStorePage      = lazy(() => import('./components/Devices/DevicesStorePage').then(m => ({ default: m.DevicesStorePage })))
-// T2459-G3 — Hardware Store (preview route until G11 cuts over the index).
+// T2459-G3 — Hardware Store (now owns the /devices index per T2459-G11).
 const HardwareStorePage     = lazy(() => import('./components/Devices/HardwareStorePage').then(m => ({ default: m.HardwareStorePage })))
 // T2459-G5 — Device detail tabs (preview route until G11 cuts over).
 const DeviceDetailRoute     = lazy(() => import('./components/Devices/DeviceDetail/DeviceDetailRoute').then(m => ({ default: m.DeviceDetailRoute })))
@@ -500,10 +499,14 @@ export function App() {
                                 <Route path="/snapshots/:snapshotId/publish" element={<RouteBoundary title="Snapshot publish workspace crashed" actionLabel="Reload publish workspace"><SnapshotPublishPage /></RouteBoundary>} />
                                 <Route path="/grid-3d" element={<Navigate to="/snapshot-editor" replace />} />
                                 <Route path="/devices" element={<RouteBoundary title="Devices workspace crashed" actionLabel="Reload devices"><DevicesShell /></RouteBoundary>}>
-                                  <Route index element={<DevicesStorePage />} />
-                                  <Route path="store-v2" element={<RouteBoundary title="Hardware Store (preview) crashed" actionLabel="Reload"><HardwareStorePage /></RouteBoundary>} />
-                                  <Route path="diagnostics-v2" element={<RouteBoundary title="Diagnostics aggregate crashed" actionLabel="Reload"><DiagnosticsAggregatePage /></RouteBoundary>} />
-                                  <Route path="pack-sources-v2" element={<RouteBoundary title="Pack Sources crashed" actionLabel="Reload"><PackSourcesAdminPage /></RouteBoundary>} />
+                                  {/* T2459-G11 — HardwareStorePage now owns the index. */}
+                                  <Route index element={<RouteBoundary title="Hardware Store crashed" actionLabel="Reload"><HardwareStorePage /></RouteBoundary>} />
+                                  {/* Backward-compat redirects from the preview routes. */}
+                                  <Route path="store-v2" element={<Navigate to="/devices" replace />} />
+                                  <Route path="diagnostics" element={<RouteBoundary title="Diagnostics aggregate crashed" actionLabel="Reload"><DiagnosticsAggregatePage /></RouteBoundary>} />
+                                  <Route path="diagnostics-v2" element={<Navigate to="/devices/diagnostics" replace />} />
+                                  <Route path="pack-sources" element={<RouteBoundary title="Pack Sources crashed" actionLabel="Reload"><PackSourcesAdminPage /></RouteBoundary>} />
+                                  <Route path="pack-sources-v2" element={<Navigate to="/devices/pack-sources" replace />} />
                                   <Route path="edirol-ua1000" element={<EdirolUA1000View />} />
                                   <Route path="edirol-ua1000/:view" element={<EdirolUA1000View />} />
                                   <Route path="hotone-jogg" element={<HoToneJoGGView />} />

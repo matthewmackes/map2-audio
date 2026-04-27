@@ -203,7 +203,7 @@ export function DiagnosticsAggregatePage(): React.JSX.Element {
                       <TableCell>
                         {r.pack_id ? (
                           <RouterLink
-                            to={`/devices/profile/${encodeURIComponent(r.pack_id)}/`}
+                            to={`/devices/profile/${encodeURIComponent(r.pack_id)}/?from=diagnostics`}
                             className="diagnostics-aggregate-page__pack-link"
                           >
                             {r.pack_id}
