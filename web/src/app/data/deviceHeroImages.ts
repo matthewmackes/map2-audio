@@ -1,5 +1,7 @@
 /**
- * Unified device hero images — keyed on DEVICE_REGISTRY.id.
+ * Unified device hero images — keyed on LEGACY_DEVICE_MANIFEST id
+ * (legacy hand-coded devices) or profile_key (Hardware Store
+ * profile-registry devices). Was DEVICE_REGISTRY.id before T2459-G11b.
  *
  * SVG files live under /assets/devices/. Historically they were split across
  * /assets/physical-surfaces/ and /assets/outboard-hardware/; the unified

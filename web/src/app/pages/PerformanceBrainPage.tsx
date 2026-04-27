@@ -14,6 +14,7 @@ import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useSetShellWindow } from '@/app/layout/useSetShellWindow'
 import { useBrainRuntimeStateSync } from '@/app/hooks/useBrainRuntimeState'
 import { useDeviceDiagnostics } from '@/app/components/Devices/hooks/useDeviceProfiles'
+import { getDeviceSnapshotKeys } from '@/map2/clients/devices'
 import {
   brainApi,
   drumsApi,
@@ -344,6 +345,32 @@ export function PerformanceBrainPage() {
   ]
   const activeSection: SectionId = routeSection ?? state?.active_section ?? 'performance'
   const currentSetName = state?.set_name ?? ''
+
+  // T2461-A9 — bench snapshot captured at "Tag" click time so the
+  // operator sees what was on the bench when an asset was authored.
+  // The snapshot is an array of profile_keys; in production a Brain
+  // library save handler would persist these onto the asset model
+  // (BrainLibraryAssetModel.authored_with_devices already accepts the
+  // field shape — see app/services/performance_brain/models.py).
+  const [librarySnapshot, setLibrarySnapshot] = useState<{
+    keys: string[]
+    capturedAt: number
+  } | null>(null)
+  const [librarySnapshotPending, setLibrarySnapshotPending] = useState(false)
+  const handleCaptureLibrarySnapshot = useCallback(async () => {
+    setLibrarySnapshotPending(true)
+    try {
+      const snap = await getDeviceSnapshotKeys()
+      setLibrarySnapshot({
+        keys: [...new Set([...(snap.connected ?? []), ...(snap.pinned ?? [])])].sort(),
+        capturedAt: snap.snapshot_at ?? Date.now() / 1000,
+      })
+    } catch {
+      setLibrarySnapshot({ keys: [], capturedAt: Date.now() / 1000 })
+    } finally {
+      setLibrarySnapshotPending(false)
+    }
+  }, [])
 
   const handleSectionChange = useCallback((sectionId: SectionId) => {
     if (searchParams.get('section') !== sectionId) {
@@ -742,6 +769,33 @@ export function PerformanceBrainPage() {
           {activeSection === 'library' ? (
             <div className="brain-page__section-grid">
               <Tile className="brain-page__panel">
+                <span className="brain-page__panel-title">Bench snapshot for new assets (T2461-A9)</span>
+                <p className="brain-page__panel-copy">
+                  Captures the current connected + pinned profile_keys so the next library save records which devices were on the bench. The Brain library save handler reads this snapshot off <code>BrainLibraryAssetModel.authored_with_devices</code>.
+                </p>
+                <div className="brain-page__button-row">
+                  <Button
+                    size="sm"
+                    onClick={handleCaptureLibrarySnapshot}
+                    disabled={librarySnapshotPending}
+                  >
+                    {librarySnapshotPending ? 'Capturing…' : 'Capture bench snapshot'}
+                  </Button>
+                  {librarySnapshot && librarySnapshot.keys.length === 0 ? (
+                    <Tag size="sm" type="warm-gray">Authored without hardware</Tag>
+                  ) : null}
+                </div>
+                {librarySnapshot && librarySnapshot.keys.length > 0 ? (
+                  <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginTop: 8 }}>
+                    {librarySnapshot.keys.map((key) => (
+                      <Tag key={key} size="sm" type="cyan" data-testid="library-snapshot-tag">
+                        {key}
+                      </Tag>
+                    ))}
+                  </div>
+                ) : null}
+              </Tile>
+              <Tile className="brain-page__panel">
                 <span className="brain-page__panel-title">Migration & import</span>
                 <p className="brain-page__panel-copy">
                   Replacement surface for legacy Drums + SynthForge. Both remain live during migration; this is the new command center.
@@ -771,11 +825,21 @@ export function PerformanceBrainPage() {
                   <span className="brain-page__panel-title">{collection.label}</span>
                   <span className="brain-page__panel-copy">{collection.asset_count} assets</span>
                   <ul className="brain-page__flat-list">
-                    {collection.assets.slice(0, 6).map((asset) => (
-                      <li key={asset.asset_id}>
-                        <strong>{asset.name}</strong> · {asset.asset_type} · {asset.source}
-                      </li>
-                    ))}
+                    {collection.assets.slice(0, 6).map((asset) => {
+                      const authored = (asset as { authored_with_devices?: string[] }).authored_with_devices ?? []
+                      return (
+                        <li key={asset.asset_id}>
+                          <strong>{asset.name}</strong> · {asset.asset_type} · {asset.source}
+                          {authored.length > 0 ? (
+                            <span style={{ marginLeft: 8, display: 'inline-flex', gap: 4, flexWrap: 'wrap' }}>
+                              {authored.map((key) => (
+                                <Tag key={key} size="sm" type="cyan">{key}</Tag>
+                              ))}
+                            </span>
+                          ) : null}
+                        </li>
+                      )
+                    })}
                   </ul>
                 </Tile>
               ))}

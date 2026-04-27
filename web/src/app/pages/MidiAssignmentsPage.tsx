@@ -19,6 +19,7 @@
  *  Q10 No Tweaks panel; accent follows surface; keyboard shortcuts implemented
  */
 
+import * as React from 'react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
@@ -634,6 +635,159 @@ const ROUTING_MODE_LABELS: Record<RoutingMode, string> = {
   ab_switch: 'A/B switch',
 }
 
+// T2461-A8 — parse a Mixxx-shorthand into (group, key). Returns null
+// when the query isn't of the form `[Group].key`.
+export function parseMixxxShorthand(query: string): { group: string; key: string } | null {
+  const m = /^\s*(\[[^\]]+\])\.(\w+)\s*$/.exec(query)
+  if (!m) return null
+  return { group: m[1], key: m[2] }
+}
+
+// T2461-A8 — extract the (pack_id, model, kind) tuple from a synthetic
+// bench-pin AdaptedSurface id (`bench-pin:<pack>/<model>.<kind>`).
+export function parseBenchPinSurfaceId(
+  id: string,
+): { packId: string; model: string; kind: 'midi' | 'hid' } | null {
+  if (!id.startsWith('bench-pin:')) return null
+  const profileKey = id.slice('bench-pin:'.length)
+  const slash = profileKey.indexOf('/')
+  if (slash < 0) return null
+  const packId = profileKey.slice(0, slash)
+  const dotted = profileKey.slice(slash + 1)
+  const lastDot = dotted.lastIndexOf('.')
+  const model = lastDot > 0 ? dotted.slice(0, lastDot) : dotted
+  const kindRaw = lastDot > 0 ? dotted.slice(lastDot + 1) : 'midi'
+  const kind = kindRaw === 'hid' ? 'hid' : 'midi'
+  return { packId, model, kind }
+}
+
+// T2461-A6 — render a Brain capture frame stream into a small SVG
+// waveform. Uses the peak_db track only (rms is similar shape, so
+// the second polyline would be visually redundant at this size).
+export function buildBrainCaptureWaveformPath(
+  frames: Array<{ peak_db: number; ts: number }>,
+  startedAt: number,
+  durationS: number,
+  width: number,
+  height: number,
+  floorDb = -60,
+): string {
+  if (frames.length === 0 || durationS <= 0 || width <= 0 || height <= 0) {
+    return ''
+  }
+  const ceilingDb = 0
+  const dbRange = ceilingDb - floorDb
+  const points = frames.map((f) => {
+    const t = Math.max(0, Math.min(1, (f.ts - startedAt) / durationS))
+    const db = Math.max(floorDb, Math.min(ceilingDb, f.peak_db))
+    const norm = (db - floorDb) / dbRange   // 0..1, floor=0, ceiling=1
+    const x = t * width
+    const y = height - norm * height
+    return `${x.toFixed(1)},${y.toFixed(1)}`
+  })
+  return `M ${points.join(' L ')}`
+}
+
+interface MixxxAliasPreviewProps {
+  query: string
+  surface: AdaptedSurface | null
+}
+
+function MixxxAliasPreview({ query, surface }: MixxxAliasPreviewProps): React.JSX.Element | null {
+  const shorthand = parseMixxxShorthand(query)
+  const benchPin = surface ? parseBenchPinSurfaceId(surface.id) : null
+
+  const [resolved, setResolved] = useState<{ target: string; aliasUsed: boolean } | null>(null)
+  const [reason, setReason] = useState<string | null>(null)
+  const [pending, setPending] = useState(false)
+
+  useEffect(() => {
+    if (!shorthand || !benchPin) {
+      setResolved(null)
+      setReason(null)
+      return
+    }
+    let cancelled = false
+    setPending(true)
+    setReason(null)
+    fetchJson<{ resolved: boolean; target?: string; alias_table_used?: boolean; reason?: string }>(
+      `${API_BASE}/devices/profiles/${encodeURIComponent(benchPin.packId)}/${encodeURIComponent(benchPin.model)}/${benchPin.kind}/resolve-alias`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ group: shorthand.group, key: shorthand.key }),
+      },
+    )
+      .then((r) => {
+        if (cancelled) return
+        if (r.resolved && r.target) {
+          setResolved({ target: r.target, aliasUsed: !!r.alias_table_used })
+          setReason(null)
+        } else {
+          setResolved(null)
+          setReason(r.reason ?? 'unmapped')
+        }
+      })
+      .catch((err: Error) => {
+        if (cancelled) return
+        setResolved(null)
+        setReason(err.message ?? 'resolver request failed')
+      })
+      .finally(() => {
+        if (!cancelled) setPending(false)
+      })
+    return () => { cancelled = true }
+  }, [shorthand?.group, shorthand?.key, benchPin?.packId, benchPin?.model, benchPin?.kind])
+
+  if (!shorthand) return null
+
+  if (!benchPin) {
+    return (
+      <div
+        data-testid="mixxx-alias-preview"
+        style={{
+          padding: '8px 10px', marginBottom: 8, fontSize: 12,
+          fontFamily: 'var(--mono)', color: 'var(--text-3)',
+          border: '1px dashed var(--line-2)',
+        }}
+      >
+        ⓘ Mixxx-shorthand detected. Pick a Hardware-Store-pinned device in Step 01 to resolve through its alias table.
+      </div>
+    )
+  }
+
+  return (
+    <div
+      data-testid="mixxx-alias-preview"
+      style={{
+        padding: '8px 10px', marginBottom: 8, fontSize: 12,
+        fontFamily: 'var(--mono)',
+        background: resolved ? 'var(--accent-soft, rgba(0,109,255,0.08))' : 'var(--bg)',
+        border: `1px solid ${resolved ? 'var(--accent-line, rgba(0,109,255,0.35))' : 'var(--line-2)'}`,
+      }}
+    >
+      <div style={{ marginBottom: 4 }}>
+        <strong>Mixxx alias resolve</strong> · {benchPin.packId}/{benchPin.model}.{benchPin.kind}
+        {pending ? <span style={{ marginLeft: 8, opacity: 0.6 }}>resolving…</span> : null}
+      </div>
+      {resolved ? (
+        <div>
+          <code>{shorthand.group}.{shorthand.key}</code>
+          <span style={{ margin: '0 8px' }}>→</span>
+          <code style={{ color: 'var(--engine, #198038)' }}>{resolved.target}</code>
+          {resolved.aliasUsed
+            ? <span style={{ marginLeft: 8, opacity: 0.6 }}>(via pack alias_table)</span>
+            : <span style={{ marginLeft: 8, opacity: 0.6 }}>(via WELL_KNOWN bridge)</span>}
+        </div>
+      ) : reason ? (
+        <div style={{ color: 'var(--warn, #f1c21b)' }}>
+          Could not resolve: {reason}
+        </div>
+      ) : null}
+    </div>
+  )
+}
+
 function StepTarget({
   state,
   setState,
@@ -759,11 +913,12 @@ function StepTarget({
         <div>
           <input
             type="text"
-            placeholder="Search targets…"
+            placeholder="Search targets… (or type [Channel1].volume to resolve via Mixxx alias)"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
             style={{ width: '100%', background: 'var(--bg)', border: '1px solid var(--line-2)', padding: '8px 10px', fontFamily: 'var(--mono)', marginBottom: 8 }}
           />
+          <MixxxAliasPreview query={search} surface={state.surface} />
           <div className="target-list">
             {targetsForCategory.length === 0 && (
               <div style={{ padding: 16, color: 'var(--text-3)', fontSize: 13 }}>
@@ -791,6 +946,103 @@ function StepTarget({
           </div>
         </div>
       </div>
+    </div>
+  )
+}
+
+// T2461-A6 — Brain capture widget. Operator clicks Capture; backend
+// arms the buffer for the supplied slot for `durationS`; widget polls
+// /capture/<id> after stop and renders a small SVG waveform of the
+// peak_db track over the calibrate window.
+function BrainCaptureWidget(): React.JSX.Element {
+  const [slotId, setSlotId] = useState(0)
+  const [durationS, setDurationS] = useState(5)
+  const [pending, setPending] = useState(false)
+  const [error, setError] = useState<string | null>(null)
+  const [session, setSession] = useState<{
+    sessionId: string
+    startedAt: number
+    durationS: number
+    frames: Array<{ ts: number; peak_db: number; rms_db: number; clipping: boolean }>
+  } | null>(null)
+
+  const handleCapture = useCallback(async () => {
+    setPending(true)
+    setError(null)
+    setSession(null)
+    try {
+      const start = await brainApi.startCapture(slotId, durationS)
+      // Wait for the capture to finish, then stop + fetch frames.
+      await new Promise((r) => window.setTimeout(r, durationS * 1000 + 200))
+      await brainApi.stopCapture()
+      const detail = await brainApi.getCapture(start.session_id)
+      if (!detail.found || !detail.frames || !detail.started_at || !detail.duration_s) {
+        setError('Capture session had no frames (Brain meter pipeline idle).')
+        return
+      }
+      setSession({
+        sessionId: start.session_id,
+        startedAt: detail.started_at,
+        durationS: detail.duration_s,
+        frames: detail.frames as Array<{ ts: number; peak_db: number; rms_db: number; clipping: boolean }>,
+      })
+    } catch (err) {
+      setError((err as Error).message ?? 'capture failed')
+    } finally {
+      setPending(false)
+    }
+  }, [slotId, durationS])
+
+  const path = session
+    ? buildBrainCaptureWaveformPath(session.frames, session.startedAt, session.durationS, 320, 60)
+    : ''
+
+  return (
+    <div
+      data-testid="brain-capture-widget"
+      style={{
+        padding: '8px 10px', marginBottom: 12, fontSize: 12,
+        fontFamily: 'var(--mono)', border: '1px solid var(--line-2)',
+      }}
+    >
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+        <strong>Brain capture (T2461-A6)</strong>
+        <label>slot
+          <input
+            type="number" min={0} max={15} value={slotId}
+            onChange={(e) => setSlotId(Number(e.target.value))}
+            style={{ width: 48, marginLeft: 4 }}
+          />
+        </label>
+        <label>seconds
+          <input
+            type="number" min={1} max={30} value={durationS}
+            onChange={(e) => setDurationS(Number(e.target.value))}
+            style={{ width: 48, marginLeft: 4 }}
+          />
+        </label>
+        <button onClick={handleCapture} disabled={pending}>
+          {pending ? 'Capturing…' : 'Capture from Brain'}
+        </button>
+        {session ? (
+          <span style={{ opacity: 0.6 }}>{session.frames.length} frames captured</span>
+        ) : null}
+      </div>
+      {error ? (
+        <div style={{ color: 'var(--warn, #f1c21b)', marginTop: 6 }}>{error}</div>
+      ) : null}
+      {session && session.frames.length > 0 ? (
+        <svg
+          width="320" height="60"
+          style={{ marginTop: 6, background: 'var(--bg)', border: '1px solid var(--line-2)' }}
+          aria-label="Brain capture waveform"
+          data-testid="brain-capture-svg"
+        >
+          {/* Floor reference line */}
+          <line x1={0} y1={60} x2={320} y2={60} stroke="var(--line-2)" strokeWidth={1} />
+          <path d={path} fill="none" stroke="var(--engine, #198038)" strokeWidth={1.5} />
+        </svg>
+      ) : null}
     </div>
   )
 }
@@ -831,6 +1083,11 @@ function StepCalibrate({
           ⓘ This binding will save as an Expression Assignment (Custom curve / non-zero deadzone).
         </div>
       )}
+
+      {/* T2461-A6 — Brain capture widget. Surfaced for any target so
+          operators can capture the Brain response while dialling the
+          curve, regardless of whether the target is a Brain action. */}
+      <BrainCaptureWidget />
 
       <div className="cal">
         <div className="cal-fields">

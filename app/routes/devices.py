@@ -832,6 +832,70 @@ async def list_brain_monitor_candidates() -> dict[str, Any]:
     return {"candidates": candidates, "count": len(candidates)}
 
 
+# ---------------------------------------------------------------------------
+# T2461-A2 — Brain slot ↔ device profile_key binding map.
+# ---------------------------------------------------------------------------
+
+from app.services.controllers.slot_device_bindings import (   # noqa: E402
+    get_slot_device_bindings,
+)
+
+
+class _SlotBindingRequest(BaseModel):
+    slot_id: int
+    profile_key: str
+
+
+@router.get("/slot-bindings")
+async def list_slot_bindings() -> dict[str, Any]:
+    """T2461-A2 — return every active Brain-slot ↔ device binding.
+
+    Read by both the Hardware Store DeviceCard (to scope its pulse
+    animation to the bound slot's clip events) and the Brain
+    ConsoleView (to greys out a strip when the bound device drops).
+    """
+    bindings = get_slot_device_bindings().all_bindings()
+    return {
+        "bindings": [
+            {"slot_id": b.slot_id, "profile_key": b.profile_key, "bound_at": b.bound_at}
+            for b in bindings
+        ],
+        "count": len(bindings),
+    }
+
+
+@router.post("/slot-bindings")
+async def bind_slot_to_profile(req: _SlotBindingRequest) -> dict[str, Any]:
+    """Bind one Brain slot to one device profile_key. Replaces any
+    prior binding on either side."""
+    try:
+        binding = get_slot_device_bindings().bind(req.slot_id, req.profile_key)
+    except ValueError as exc:
+        raise _g1_error(
+            status_code=400,
+            detail=str(exc),
+            code="invalid_binding",
+            source="slot_device_bindings",
+        )
+    return {
+        "slot_id": binding.slot_id,
+        "profile_key": binding.profile_key,
+        "bound_at": binding.bound_at,
+    }
+
+
+@router.delete("/slot-bindings/by-slot/{slot_id}")
+async def unbind_slot(slot_id: int) -> dict[str, Any]:
+    removed = get_slot_device_bindings().unbind_slot(slot_id)
+    return {"slot_id": slot_id, "removed": removed}
+
+
+@router.delete("/slot-bindings/by-profile")
+async def unbind_profile(profile_key: str = Query(...)) -> dict[str, Any]:
+    removed = get_slot_device_bindings().unbind_profile(profile_key)
+    return {"profile_key": profile_key, "removed": removed}
+
+
 @router.get("/snapshot-keys")
 async def snapshot_keys() -> dict[str, Any]:
     """T2461-A9 — return the current connected + recently-disconnected

@@ -21,7 +21,24 @@ import {
 import { LoadingState } from './components/shared/LoadingState'
 import { buildWorkspaceArtifactsDiscoverPath, buildWorkspaceArtifactsPath } from './pages/audioArtifactsRoutes'
 import { HOST_MACHINE_ROUTE } from './pages/hostMachineRoutes'
-import { buildDeviceRoute, getDeviceEntry } from './data/deviceRegistry'
+// T2459-G11b — small inline whitelist replacing the deprecated
+// `deviceRegistry` lookups for the legacy redirect resolvers.
+// Add entries here as new legacy device ids appear (rare; the
+// modern path is the profile-registry-driven Hardware Store).
+const KNOWN_LEGACY_DEVICE_IDS = new Set<string>([
+  'mpx1',
+  'intelfx',
+  'edirol-ua1000',
+  'hotone-jogg',
+  'lcd',
+  'tesira',
+])
+
+function buildDeviceRoute(deviceId: string, viewId?: string): string {
+  return viewId
+    ? `/devices/${deviceId}/${viewId}`
+    : `/devices/${deviceId}`
+}
 
 // Lazy-load devtools so they don't bloat the production shell chunk. The
 // import is also gated on NODE_ENV so the prod build tree-shakes the
@@ -269,7 +286,7 @@ function LegacyPlatformWorkspaceRedirect() {
 function LegacyPhysicalSurfacesRedirect() {
   const location = useLocation()
   const params = useParams<{ surfaceId?: string }>()
-  const targetId = params.surfaceId && getDeviceEntry(params.surfaceId) ? params.surfaceId : null
+  const targetId = params.surfaceId && KNOWN_LEGACY_DEVICE_IDS.has(params.surfaceId) ? params.surfaceId : null
   const target = targetId ? buildDeviceRoute(targetId) : '/devices'
   return <Navigate to={`${target}${location.search || ''}`} replace />
 }
@@ -277,7 +294,7 @@ function LegacyPhysicalSurfacesRedirect() {
 function LegacyOutboardHardwareRedirect() {
   const location = useLocation()
   const params = useParams<{ deviceId?: string }>()
-  const targetId = params.deviceId && getDeviceEntry(params.deviceId) ? params.deviceId : null
+  const targetId = params.deviceId && KNOWN_LEGACY_DEVICE_IDS.has(params.deviceId) ? params.deviceId : null
   const target = targetId ? buildDeviceRoute(targetId) : '/devices'
   return <Navigate to={`${target}${location.search || ''}`} replace />
 }

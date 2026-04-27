@@ -57,11 +57,9 @@ import {
   type LauncherCatalogTreeChild,
 } from '../../data/launcherCatalog'
 import {
-  DEVICE_REGISTRY,
-  buildDeviceRoute,
-  resolveDeviceOpenRoute,
-  type DeviceRegistryEntry,
-} from '../../data/deviceRegistry'
+  LEGACY_DEVICE_MANIFEST,
+  type LegacyDeviceManifestEntry,
+} from '../../data/legacyDeviceManifest'
 import { useKnownDevices } from '../../components/Devices/hooks/useDeviceProfiles'
 import { platformPinnedItems, type PlatformPinnedNavItem } from '../../data/platformMenuItems'
 import { pinDevice, unpinDevice, usePinnedDevices } from '../../state/uiSettings'
@@ -117,12 +115,12 @@ type SnapshotEditorTreeStatus = {
   tone: TreeNodeSecondaryTone
 }
 
-const DEVICE_KIND_ORDER: DeviceRegistryEntry['kind'][] = [
-  'processor',
-  'console',
-  'control-surface',
-  'audio-interface',
-]
+// T2459-G11b — legacy registry was previously grouped by `kind`
+// (processor / console / control-surface / audio-interface). With the
+// registry retired in favour of LEGACY_DEVICE_MANIFEST + the
+// profile-registry-driven Hardware Store, the left rail renders all
+// legacy pins as a single flat group sorted by label. Operators who
+// want richer grouping now get it on the Hardware Store catalogue.
 
 const BROWSE_DEVICES_TREE_ID = '/hardware::devices::browse'
 const PRIMARY_SEPARATOR_ONE_ID = '__separator-primary-1__'
@@ -340,11 +338,11 @@ function buildChildTreeItem(parentId: string, child: LauncherCatalogTreeChild): 
 export function buildDevicesSubtree(
   pinnedIds: string[],
   navigateTo: (route: string) => void,
-  onRequestUnpin: (entry: DeviceRegistryEntry) => void,
+  onRequestUnpin: (entry: LegacyDeviceManifestEntry) => void,
   benchStorePins: string[] = [],
 ): TreeItemDefinition[] {
   const pinnedSet = new Set(pinnedIds)
-  const pinnedEntries = DEVICE_REGISTRY.filter((entry) => pinnedSet.has(entry.id))
+  const pinnedEntries = LEGACY_DEVICE_MANIFEST.filter((entry) => pinnedSet.has(entry.id))
 
   // T2459-G11b — append Hardware Store BenchStateTracker pins as a
   // parallel section. Each entry routes to the v2 device detail strip.
@@ -389,40 +387,22 @@ export function buildDevicesSubtree(
     ]
   }
 
-  const grouped = DEVICE_KIND_ORDER.flatMap((kind) => {
-    const entries = pinnedEntries
-      .filter((entry) => entry.kind === kind)
-      .sort((left, right) => left.label.localeCompare(right.label))
-    return entries.map((entry, entryIndexWithinKind) => ({ entry, boundary: entryIndexWithinKind === 0 }))
-  })
-
-  // The very first child must not carry a group boundary (nothing to separate from above).
-  const nodes: TreeItemDefinition[] = grouped.map(({ entry, boundary }, index) => {
-    const route = resolveDeviceOpenRoute(entry.id)
+  // Single flat group sorted by label (the registry's per-kind grouping
+  // is gone with T2459-G11b; richer grouping now lives in the Hardware
+  // Store catalogue at /devices).
+  const sorted = [...pinnedEntries].sort((left, right) => left.label.localeCompare(right.label))
+  const nodes: TreeItemDefinition[] = sorted.map((entry) => {
     const routePath = `/devices/${entry.id}`
-    const isFirst = index === 0
-    const hasUnifiedRoute = entry.kind !== 'control-surface'
     return {
       id: `${HARDWARE_DEVICES_ID}::${routePath}`,
       label: entry.label,
-      route,
+      route: entry.legacyRoute,
       icon: TREE_ICON_OVERRIDES[routePath] ?? entry.icon,
-      groupBoundary: boundary && !isFirst,
       actions: [
         { label: 'Unpin', onClick: () => onRequestUnpin(entry) },
         { label: 'Open in store', onClick: () => navigateTo('/devices') },
       ],
-      // Sub-views only expand for devices whose unified `/devices/<id>/<view>`
-      // routes are mounted in the router. Control-surface entries fall back to
-      // their `legacyRoute` and do not expose per-view children in the tree.
-      children: hasUnifiedRoute
-        ? entry.views.map((view) => ({
-            id: `${HARDWARE_DEVICES_ID}::${routePath}/${view.id}`,
-            label: view.label,
-            route: buildDeviceRoute(entry.id, view.id),
-            icon: view.icon,
-          }))
-        : [],
+      children: [],
     }
   })
 
@@ -437,7 +417,7 @@ export function buildDevicesSubtree(
 function buildHardwareTree(
   pinnedIds: string[],
   navigateTo: (route: string) => void,
-  onRequestUnpin: (entry: DeviceRegistryEntry) => void,
+  onRequestUnpin: (entry: LegacyDeviceManifestEntry) => void,
   benchStorePins: string[] = [],
 ): TreeItemDefinition {
   return {
@@ -465,7 +445,7 @@ function buildHardwareTree(
 function buildTreeItems(
   pinnedIds: string[],
   navigateTo: (route: string) => void,
-  onRequestUnpin: (entry: DeviceRegistryEntry) => void,
+  onRequestUnpin: (entry: LegacyDeviceManifestEntry) => void,
   snapshotEditorStatus: SnapshotEditorTreeStatus,
   benchStorePins: string[] = [],
 ): TreeItemDefinition[] {
@@ -729,7 +709,7 @@ export function GlobalTreeNav({
   const { pushToast } = useToasts()
 
   const handleRequestUnpin = useMemo(() => {
-    return (entry: DeviceRegistryEntry) => {
+    return (entry: LegacyDeviceManifestEntry) => {
       unpinDevice(entry.id)
       pushToast(`Unpinned ${entry.label} from Devices.`, 'info', {
         durationMs: 5000,
