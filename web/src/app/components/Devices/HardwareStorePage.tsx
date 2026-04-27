@@ -38,6 +38,7 @@ import type {
   DeviceProfileSummary,
   PackSourceRow,
 } from '../../../map2/clients/devices'
+import { LEGACY_DEVICE_MANIFEST } from '../../data/legacyDeviceManifest'
 
 import './HardwareStorePage.css'
 
@@ -306,13 +307,39 @@ export function HardwareStorePage(): React.JSX.Element {
     pinnedKeys, knownLastSeen, knownLastBound, diagByPack,
   ])
 
+  // T2459-G11b — synthesize legacy hand-coded device rows so MPX-1,
+  // IntelFX, Maschine, Push, Tesira, Novation, etc. surface in the
+  // catalogue alongside profile-registry devices. They have no profile
+  // YAML and no pin/configure semantics; the card hides those actions
+  // when source === 'legacy' and routes Open to entry.legacyRoute.
+  const legacyCatalogueRows = React.useMemo<ProfileRow[]>(() => {
+    const audioIds = new Set(['edirol-ua1000', 'hotone-jogg'])
+    return LEGACY_DEVICE_MANIFEST.map((entry) => ({
+      profileKey: `legacy:${entry.id}`,
+      packId: entry.id,
+      model: entry.label,
+      kind: audioIds.has(entry.id) ? 'audio' : 'midi',
+      vendor: entry.label,
+      source: 'legacy' as const,
+      isConnected: false,
+      isPinned: false,
+      lastSeenAt: null,
+      legacyRoute: entry.legacyRoute,
+    }))
+  }, [])
+
+  const combinedCatalogueRows = React.useMemo<ProfileRow[]>(
+    () => [...catalogueRows, ...legacyCatalogueRows],
+    [catalogueRows, legacyCatalogueRows],
+  )
+
   const isLoading = profilesQuery.isLoading || packsQuery.isLoading
   const isEmpty =
     !isLoading &&
     connectedRows.length === 0 &&
     recentRows.length === 0 &&
     knownNotRecentRows.length === 0 &&
-    catalogueRows.length === 0
+    combinedCatalogueRows.length === 0
 
   return (
     <div className="hwstore-page" data-ws-status={ws.status}>
@@ -392,7 +419,7 @@ export function HardwareStorePage(): React.JSX.Element {
             onPinChanged={handlePinChanged}
           />
           <CatalogueSection
-            rows={catalogueRows}
+            rows={combinedCatalogueRows}
             pulseTokenFor={pulseTokenFor}
             onPinChanged={handlePinChanged}
           />

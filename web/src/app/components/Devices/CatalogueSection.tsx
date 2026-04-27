@@ -38,10 +38,11 @@ const PROTOCOL_OPTIONS: Array<{ id: 'audio' | 'midi' | 'hid'; label: string }> =
   { id: 'hid', label: 'HID' },
 ]
 
-const SOURCE_OPTIONS: Array<{ id: 'shipped' | 'user' | 'imported'; label: string }> = [
+const SOURCE_OPTIONS: Array<{ id: 'shipped' | 'user' | 'imported' | 'legacy'; label: string }> = [
   { id: 'shipped', label: 'Shipped' },
   { id: 'user', label: 'User' },
   { id: 'imported', label: 'Imported (Mixxx)' },
+  { id: 'legacy', label: 'Legacy' },
 ]
 
 export function CatalogueSection({
@@ -50,7 +51,7 @@ export function CatalogueSection({
   const navigate = useNavigate()
   const [query, setQuery] = React.useState('')
   const [protocols, setProtocols] = React.useState<Array<'audio' | 'midi' | 'hid'>>([])
-  const [sources, setSources] = React.useState<Array<'shipped' | 'user' | 'imported'>>([])
+  const [sources, setSources] = React.useState<Array<'shipped' | 'user' | 'imported' | 'legacy'>>([])
   const [vendors, setVendors] = React.useState<string[]>([])
   const [showAllImported, setShowAllImported] = React.useState(false)
 
@@ -104,11 +105,12 @@ export function CatalogueSection({
 
   // Counts for the hero summary.
   const counts = React.useMemo(() => {
-    const out = { total: rows.length, shipped: 0, user: 0, imported: 0, audio: 0, midi: 0, hid: 0 }
+    const out = { total: rows.length, shipped: 0, user: 0, imported: 0, legacy: 0, audio: 0, midi: 0, hid: 0 }
     for (const r of rows) {
       if (r.source === 'shipped') out.shipped += 1
       else if (r.source === 'user') out.user += 1
       else if (r.source === 'imported') out.imported += 1
+      else if (r.source === 'legacy') out.legacy += 1
       if (r.kind === 'audio') out.audio += 1
       else if (r.kind === 'midi') out.midi += 1
       else if (r.kind === 'hid') out.hid += 1
@@ -132,6 +134,7 @@ export function CatalogueSection({
           <Tag size="md" type="green">{counts.shipped} shipped</Tag>
           <Tag size="md" type="cyan">{counts.user} user</Tag>
           <Tag size="md" type="magenta">{counts.imported} imported</Tag>
+          <Tag size="md" type="cool-gray">{counts.legacy} legacy</Tag>
           <span className="catalogue-section__hero-sep" />
           <Tag size="md" type="cool-gray">{counts.audio} audio</Tag>
           <Tag size="md" type="cool-gray">{counts.midi} midi</Tag>
@@ -164,7 +167,7 @@ export function CatalogueSection({
             items={SOURCE_OPTIONS}
             itemToString={(i) => (i ? i.label : '')}
             selectedItems={SOURCE_OPTIONS.filter((o) => sources.includes(o.id))}
-            onChange={(e) => setSources((e.selectedItems ?? []).map((i: { id: 'shipped'|'user'|'imported' }) => i.id))}
+            onChange={(e) => setSources((e.selectedItems ?? []).map((i: { id: 'shipped'|'user'|'imported'|'legacy' }) => i.id))}
           />
           <MultiSelect
             id="catalogue-vendor"

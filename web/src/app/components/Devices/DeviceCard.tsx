@@ -20,7 +20,7 @@ import { useToasts } from '../Toasts'
 
 import './DeviceCard.css'
 
-export type DeviceCardSourceLabel = 'shipped' | 'user' | 'imported' | undefined
+export type DeviceCardSourceLabel = 'shipped' | 'user' | 'imported' | 'legacy' | undefined
 
 export interface DeviceCardRow {
   profileKey: string
@@ -51,6 +51,10 @@ export interface DeviceCardRow {
   /** T2461-A7 — capability strings from the device profile YAML.
    * The card maps these to Brain section deep-links. */
   capabilities?: string[]
+  /** T2459-G11b — legacy hand-coded device page route. When `source`
+   * is `'legacy'`, Open and the title link navigate here instead of
+   * the profile-registry `/devices/profile/...` route. */
+  legacyRoute?: string
 }
 
 export interface DeviceCardProps {
@@ -65,12 +69,14 @@ const SOURCE_TAG_TYPE: Record<NonNullable<DeviceCardSourceLabel>, string> = {
   shipped: 'green',
   user: 'cyan',
   imported: 'magenta',
+  legacy: 'cool-gray',
 }
 
 const SOURCE_TAG_LABEL: Record<NonNullable<DeviceCardSourceLabel>, string> = {
   shipped: 'Shipped',
   user: 'User',
   imported: 'Imported',
+  legacy: 'Legacy',
 }
 
 /**
@@ -126,10 +132,14 @@ export function DeviceCard({ row, onPinChanged }: DeviceCardProps): React.JSX.El
   // ---- Q6 actions -----------------------------------------------------
 
   const handleOpen = React.useCallback(() => {
+    if (row.source === 'legacy' && row.legacyRoute) {
+      navigate(row.legacyRoute)
+      return
+    }
     navigate(
       `/devices/profile/${encodeURIComponent(row.packId)}/${encodeURIComponent(row.model)}/v2`,
     )
-  }, [navigate, row.packId, row.model])
+  }, [navigate, row.packId, row.model, row.source, row.legacyRoute])
 
   const handleConfigure = React.useCallback(() => {
     navigate(
@@ -221,7 +231,11 @@ export function DeviceCard({ row, onPinChanged }: DeviceCardProps): React.JSX.El
       <div className="device-card__head">
         <div className="device-card__title">
           <RouterLink
-            to={`/devices/profile/${encodeURIComponent(row.packId)}/${encodeURIComponent(row.model)}/v2`}
+            to={
+              row.source === 'legacy' && row.legacyRoute
+                ? row.legacyRoute
+                : `/devices/profile/${encodeURIComponent(row.packId)}/${encodeURIComponent(row.model)}/v2`
+            }
             className="device-card__model-link"
           >
             <span className="device-card__model">{row.model}</span>
@@ -273,17 +287,21 @@ export function DeviceCard({ row, onPinChanged }: DeviceCardProps): React.JSX.El
 
       <div className="device-card__actions" role="group" aria-label={`${row.model} actions`}>
         <Button kind="primary" size="sm" onClick={handleOpen}>Open</Button>
-        <Button
-          kind={row.isPinned ? 'danger--ghost' : 'tertiary'}
-          size="sm"
-          onClick={handleTogglePin}
-        >
-          {row.isPinned ? 'Unpin' : 'Pin'}
-        </Button>
-        <Button kind="ghost" size="sm" onClick={handleConfigure}>Configure</Button>
-        <Button kind="ghost" size="sm" onClick={handleIdentifyOrTest}>
-          {row.kind === 'audio' ? 'Test latency' : 'Identify'}
-        </Button>
+        {row.source === 'legacy' ? null : (
+          <>
+            <Button
+              kind={row.isPinned ? 'danger--ghost' : 'tertiary'}
+              size="sm"
+              onClick={handleTogglePin}
+            >
+              {row.isPinned ? 'Unpin' : 'Pin'}
+            </Button>
+            <Button kind="ghost" size="sm" onClick={handleConfigure}>Configure</Button>
+            <Button kind="ghost" size="sm" onClick={handleIdentifyOrTest}>
+              {row.kind === 'audio' ? 'Test latency' : 'Identify'}
+            </Button>
+          </>
+        )}
       </div>
     </Tile>
   )
