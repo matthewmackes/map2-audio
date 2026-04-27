@@ -2,11 +2,17 @@ import { useQueries, useQuery } from '@tanstack/react-query'
 import { startTransition, useCallback, useEffect, useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
+  Button,
+  Checkbox,
   Column,
+  ComposedModal,
   Content,
   DataTable,
   Grid,
   InlineLoading,
+  ModalBody,
+  ModalFooter,
+  ModalHeader,
   Table,
   TableBody,
   TableCell,
@@ -29,6 +35,7 @@ import landingHeroBrandImage from '../../../../branding/MAP-LOGO-2026.jpg'
 import { completeHomeDesktopBoot, shouldShowHomeBootSplash } from './homeDesktopSession'
 import { readDesktopWallpaperState } from './desktopWallpaper'
 import { readHomeLandingPreferences } from './homeLandingPreferences'
+import { readHomeWelcomeNoticeHidden, writeHomeWelcomeNoticeHidden } from './homeWelcomeNotice'
 import { useReducedEffectsPreference } from '../hooks/useReducedEffectsPreference'
 import { useShellSummaryData } from '../layout/useShellSummaryData'
 import { navigateHomeShellRoute, prefetchHomeShellRoute } from './homeShellNavigation'
@@ -59,6 +66,14 @@ import './HomePage.boot.css'
 import './HomePage.landing.css'
 
 const HOME_BOOT_SPLASH_DURATION_MS = 4_000
+
+const HOME_WELCOME_NOTICE_QUESTIONS = [
+  'What is MAP intended to demonstrate?',
+  'Is MAP production ready?',
+  'Should MAP be treated as a replacement for professional audio, broadcast, studio, live sound, AVB/TSN, DSP, or music infrastructure products?',
+  'Why should users continue supporting professional music and audio infrastructure manufacturers?',
+  'Do you acknowledge that MAP is provided for learning, experimentation, evaluation, and demonstration purposes only?',
+] as const
 
 const HOME_TABLE_HEADERS = [
   { key: 'surface', header: 'Surface' },
@@ -250,6 +265,79 @@ function toneToLabel(tone: HomeTelemetryTone): string {
   }
 
   return 'Info'
+}
+
+function HomeWelcomeNoticeModal() {
+  const [open, setOpen] = useState(() => !readHomeWelcomeNoticeHidden())
+  const [hideNotice, setHideNotice] = useState(false)
+
+  const handleClose = useCallback(() => {
+    if (hideNotice) {
+      writeHomeWelcomeNoticeHidden(true)
+    }
+    setOpen(false)
+  }, [hideNotice])
+
+  return (
+    <ComposedModal className="hp2-welcome-notice" open={open} onClose={handleClose} size="md">
+      <ModalHeader title="MAP GUI Welcome / Notice" label="Welcome" closeModal={handleClose} />
+      <ModalBody>
+        <div className="hp2-welcome-notice__body">
+          <section className="hp2-welcome-notice__section" aria-labelledby="map-welcome-heading">
+            <h2 id="map-welcome-heading">Welcome to Mackes Audio Platform (MAP)</h2>
+            <p>
+              MAP is a demonstration platform created to showcase my software development, systems architecture,
+              audio infrastructure, and project management skill sets.
+            </p>
+            <p>
+              My goal is to build and share a feature-complete, open platform that explores how modern audio
+              processing, routing, control, and appliance-style design can work together in a practical environment.
+            </p>
+          </section>
+
+          <section className="hp2-welcome-notice__section" aria-labelledby="map-notice-heading">
+            <h2 id="map-notice-heading">Important Notice</h2>
+            <p>MAP should be understood as a teaching tool, research project, and technical demonstration.</p>
+            <p>It is not production ready.</p>
+            <p>
+              It should not be considered a replacement for, substitute for, or competitor to any professional audio,
+              broadcast, studio, live sound, AVB/TSN, DSP, or music infrastructure product.
+            </p>
+            <p>
+              Professional music and audio infrastructure manufacturers build essential tools for working musicians,
+              engineers, venues, studios, integrators, and production teams. Please continue to support and invest in
+              those manufacturers.
+            </p>
+            <p>
+              By continuing, you acknowledge that MAP is provided for learning, experimentation, evaluation, and
+              demonstration purposes only.
+            </p>
+          </section>
+
+          <section className="hp2-welcome-notice__section" aria-labelledby="map-questions-heading">
+            <h2 id="map-questions-heading">Five questions</h2>
+            <ol className="hp2-welcome-notice__questions">
+              {HOME_WELCOME_NOTICE_QUESTIONS.map((question) => (
+                <li key={question}>{question}</li>
+              ))}
+            </ol>
+          </section>
+
+          <Checkbox
+            id="home-welcome-notice-hide"
+            labelText="Do not show this notice again"
+            checked={hideNotice}
+            onChange={(_event, { checked }) => setHideNotice(checked)}
+          />
+        </div>
+      </ModalBody>
+      <ModalFooter>
+        <Button kind="primary" onClick={handleClose}>
+          Continue
+        </Button>
+      </ModalFooter>
+    </ComposedModal>
+  )
 }
 
 export function HomePage() {
@@ -932,6 +1020,7 @@ export function HomePage() {
         />
       ) : null}
       <div className="hp2-root__backdrop" aria-hidden="true" />
+      <HomeWelcomeNoticeModal />
 
       <Content className="hp2-home-shell__content">
         <Grid className="hp2-home-shell__grid" condensed>

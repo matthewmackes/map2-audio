@@ -7,6 +7,7 @@ import { HomePage } from './HomePage'
 import { HOME_DESKTOP_SESSION_STORAGE_KEY } from './homeDesktopSession'
 import { HOME_DESKTOP_WALLPAPER_STORAGE_KEY } from './desktopWallpaper'
 import { HOME_LANDING_PREFERENCES_STORAGE_KEY } from './homeLandingPreferences'
+import { HOME_WELCOME_NOTICE_HIDDEN_STORAGE_KEY } from './homeWelcomeNotice'
 import { resetPrefetchedRoutesForTests } from '../routePrefetch'
 
 const originalFetch = global.fetch
@@ -474,6 +475,13 @@ describe('HomePage landing', () => {
     renderHome()
 
     expect(await screen.findByTestId('home-shell')).toBeInTheDocument()
+    expect(screen.getByRole('dialog')).toHaveTextContent('MAP GUI Welcome / Notice')
+    expect(screen.getByText('MAP GUI Welcome / Notice')).toBeInTheDocument()
+    expect(screen.getByText('Welcome to Mackes Audio Platform (MAP)')).toBeInTheDocument()
+    expect(screen.getByText('It is not production ready.')).toBeInTheDocument()
+    expect(screen.getByText('Five questions')).toBeInTheDocument()
+    expect(screen.getByText('What is MAP intended to demonstrate?')).toBeInTheDocument()
+    expect(screen.getByText(/Do you acknowledge that MAP is provided for learning/i)).toBeInTheDocument()
     expect(screen.getByRole('heading', { name: 'MAP: Mackes Audio Platform' })).toBeInTheDocument()
     expect(screen.getByRole('img', { name: 'MAP: Mackes Audio Platform' })).toHaveAttribute(
       'src',
@@ -487,6 +495,23 @@ describe('HomePage landing', () => {
     expect(screen.getAllByText('Roland Edirol UA-1000').length).toBeGreaterThan(0)
     expect(screen.getByText('Main Show Snapshot')).toBeInTheDocument()
     expect(window.localStorage.getItem(HOME_DESKTOP_SESSION_STORAGE_KEY)).toContain('bootCompletedAt')
+  })
+
+  it('persists the home notice hide preference from the popup checkbox', async () => {
+    const { unmount } = renderHome()
+
+    expect(await screen.findByTestId('home-shell')).toBeInTheDocument()
+    expect(screen.getByText('MAP GUI Welcome / Notice')).toBeInTheDocument()
+
+    fireEvent.click(screen.getByLabelText('Do not show this notice again'))
+    fireEvent.click(screen.getByRole('button', { name: 'Continue' }))
+
+    expect(window.localStorage.getItem(HOME_WELCOME_NOTICE_HIDDEN_STORAGE_KEY)).toBe('true')
+    unmount()
+
+    renderHome()
+    expect(await screen.findByTestId('home-shell')).toBeInTheDocument()
+    expect(screen.queryByRole('dialog')).toBeNull()
   })
 
   it('navigates through live telemetry rows', async () => {
