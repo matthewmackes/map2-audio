@@ -67,6 +67,9 @@ const DevicesShell          = lazy(() => import('./components/Devices/DevicesShe
 const DevicesStorePage      = lazy(() => import('./components/Devices/DevicesStorePage').then(m => ({ default: m.DevicesStorePage })))
 const EdirolUA1000View      = lazy(() => import('./components/Devices/EdirolUA1000/EdirolUA1000View').then(m => ({ default: m.EdirolUA1000View })))
 const HoToneJoGGView        = lazy(() => import('./components/Devices/HoToneJoGG/HoToneJoGGView').then(m => ({ default: m.HoToneJoGGView })))
+// T2459-C1 — auto-rendered device panel for any pack/model under
+// device-packs/<vendor>/profiles/<model>.audio.yaml.
+const DevicePage            = lazy(() => import('./pages/DevicePage').then(m => ({ default: m.DevicePage })))
 // Note: LCDView is no longer a route target (T2430-A split it into LCDShell + 8 sub-views).
 // It remains as a shared component module exporting LCDSimulator, InputController, etc.
 const LCDShell              = lazy(() => import('./components/Devices/LCD/LCDShell').then(m => ({ default: m.LCDShell })))
@@ -492,6 +495,8 @@ export function App() {
                                   <Route path="edirol-ua1000/:view" element={<EdirolUA1000View />} />
                                   <Route path="hotone-jogg" element={<HoToneJoGGView />} />
                                   <Route path="hotone-jogg/:view" element={<HoToneJoGGView />} />
+                                  {/* T2459-C1 — auto-rendered profile-driven device pages. */}
+                                  <Route path="profile/:packId/:model" element={<RouteBoundary title="Device profile crashed" actionLabel="Reload"><DevicePage /></RouteBoundary>} />
                                   <Route path="lcd/*" element={<LCDShell />}>
                                     <Route index element={<Navigate to="displays" replace />} />
                                     <Route path="displays" element={<LCDDisplaysView />} />
