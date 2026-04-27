@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1336** Python | **1303** TypeScript | **157** C++/H | **145** Docs | **2915** total commits | **3** stars | **0** forks | **0** open issues
+**1336** Python | **1306** TypeScript | **157** C++/H | **145** Docs | **2917** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -193,7 +193,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 |  |  |  |
 | :---: | :---: | :---: |
 | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/map2-banner.png" width="280" alt="map2 banner"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/map2-banner-3.png" width="280" alt="map2 banner 3"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot-Cli.png" width="280" alt="Screenshot Cli"> |
-| <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 08-00-43 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 08 00 43 Mackes Audio Platform 2 FEB2025"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 07-58-14 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 07 58 14 Mackes Audio Platform 2 FEB2025"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 07-57-33 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 07 57 33 Mackes Audio Platform 2 FEB2025"> |
+| <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 08-00-43 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 08 00 43 Mackes Audio Platform 2 FEB2025"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 07-57-33 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 07 57 33 Mackes Audio Platform 2 FEB2025"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 07-58-14 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 07 58 14 Mackes Audio Platform 2 FEB2025"> |
 | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/MAP2_AUDIO-NODE_ARCH_DIAGRAM3.png" width="280" alt="MAP2 AUDIO NODE ARCH DIAGRAM3"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/MAP2_AUDIO-NODE_ARCH_DIAGRAM2-BANG.png" width="280" alt="MAP2 AUDIO NODE ARCH DIAGRAM2 BANG"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/MAP2_AUDIO-NODE_ARCH_DIAGRAM.png" width="280" alt="MAP2 AUDIO NODE ARCH DIAGRAM"> |
 <!-- GALLERY:END -->
 
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`8d6d1f60`](https://github.com/matthewmackes/map2-audio/commit/8d6d1f6052ed24dd73cc61bb6559a6f3b9d05879) | T2459-G3: Hardware Store page shell + 5 page tests + REST... | Map2 Audio | 2026-04-27 |
+| [`42eb0cbb`](https://github.com/matthewmackes/map2-audio/commit/42eb0cbb96ddf951e354b709b1a101cd577a9b7c) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-27 |
 | [`7427a417`](https://github.com/matthewmackes/map2-audio/commit/7427a4170e382e5efbc4a62620e3dad8b90e1047) | T2459-G2: Hardware Store hot-plug WebSocket channel + 19 ... | Map2 Audio | 2026-04-27 |
 | [`b3c68e1b`](https://github.com/matthewmackes/map2-audio/commit/b3c68e1ba5386a4854c1c28fe2e663628244e990) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-27 |
 | [`ba99e1cb`](https://github.com/matthewmackes/map2-audio/commit/ba99e1cb86e4e231b39bdbf5be212dad726b312e) | T2459-G1: Hardware Store backend foundation + 22 new tests | Map2 Audio | 2026-04-27 |
 | [`9fdd2800`](https://github.com/matthewmackes/map2-audio/commit/9fdd28009f31b53e89252f012b538fc2e9545376) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-27 |
 | [`2362cfd0`](https://github.com/matthewmackes/map2-audio/commit/2362cfd0eb10e320811f29dd1bc5c2b3b6aa5f96) | T2459-G epic open: Hardware Store GUI integration design ... | Map2 Audio | 2026-04-27 |
 | [`d03f4c95`](https://github.com/matthewmackes/map2-audio/commit/d03f4c9520fc73f6ce1d935f6941497eb2d32e81) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-27 |
-| [`c3ff28c0`](https://github.com/matthewmackes/map2-audio/commit/c3ff28c039c3f9c04ef76da436f71330fb79b279) | T2459 epic close: 30/30 subtasks Done, full test suite green | Map2 Audio | 2026-04-27 |
-| [`b5fd05a5`](https://github.com/matthewmackes/map2-audio/commit/b5fd05a5ee245be138e3dccb8bcfb95050b08c47) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-27 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
