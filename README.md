@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1291** Python | **1278** TypeScript | **136** C++/H | **145** Docs | **2854** total commits | **3** stars | **0** forks | **0** open issues
+**1291** Python | **1278** TypeScript | **141** C++/H | **145** Docs | **2856** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`ac862132`](https://github.com/matthewmackes/map2-audio/commit/ac862132755c0b7edfe8744ba78437e30a4a9655) | T2459-A2: Map2Controller C++ skeleton + factory + Catch2 ... | Map2 Audio | 2026-04-26 |
+| [`52e75eff`](https://github.com/matthewmackes/map2-audio/commit/52e75effa67724bad9a3b16bc07dc4129cc7f625) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-27 |
 | [`e3bb95d7`](https://github.com/matthewmackes/map2-audio/commit/e3bb95d75ea92a51ea43654be6d5973195806be9) | T2459 epic open: Controller / Mapping / Device-Pack Subsy... | Map2 Audio | 2026-04-26 |
 | [`7a317bff`](https://github.com/matthewmackes/map2-audio/commit/7a317bff3d20740d98f9e62c9f871e05ed9e0ccc) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-27 |
 | [`1f079def`](https://github.com/matthewmackes/map2-audio/commit/1f079def3df09833728e3e3cd65949e3e835a175) | Stabilize loopback latency harness; capture UA-1000/Jogg ... | Map2 Audio | 2026-04-26 |
 | [`23f2a660`](https://github.com/matthewmackes/map2-audio/commit/23f2a660951792e97547e79994c2dacfed2b59a8) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-26 |
 | [`df13715b`](https://github.com/matthewmackes/map2-audio/commit/df13715baa173cd25e86604696b32f3137019f84) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-26 |
 | [`d47f7e92`](https://github.com/matthewmackes/map2-audio/commit/d47f7e9298c12904d4fe8a23393e97aa2b6a579d) | Fix latency loopback harness and archive all-eight UA-100... | Map2 Audio | 2026-04-26 |
-| [`dd59f815`](https://github.com/matthewmackes/map2-audio/commit/dd59f81514ba16fb2fc34e84a61dccf26dc9f76b) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-26 |
-| [`74041ae0`](https://github.com/matthewmackes/map2-audio/commit/74041ae055ac49244a2d46ac273e407ceaf5f342) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-04-26 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
