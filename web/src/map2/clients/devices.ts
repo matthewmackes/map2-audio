@@ -113,3 +113,57 @@ export async function clearMapping(controllerKey: string): Promise<{ cleared: st
     body: JSON.stringify({ controller_key: controllerKey }),
   })
 }
+
+// ---------------------------------------------------------------------------
+// T2459-C4 — Mixxx XML import + export.
+// ---------------------------------------------------------------------------
+
+export interface MixxxParseStats {
+  total_controls: number
+  resolved_controls: number
+  skipped_controls: number
+  skip_reasons: string[]
+}
+
+export interface MixxxImportResponse {
+  pack_id: string
+  model: string
+  kind: 'midi'
+  controls: Array<{
+    status: number | null
+    midino: number | null
+    channel: number | null
+    target: string | null
+    action: string | null
+    script: string | null
+    fast_path: boolean
+    description: string
+    mixxx_group?: string
+    mixxx_key?: string
+  }>
+  outputs: Array<Record<string, unknown>>
+  scripts: string[]
+  mixxx_alias_table: Record<string, string>
+  stats: MixxxParseStats
+}
+
+export async function importMixxxXml(req: {
+  pack_id: string
+  xml_body: string
+  alias_table?: Record<string, string>
+}): Promise<MixxxImportResponse> {
+  return fetchJson(`${API_BASE}/api/devices/mixxx/import`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(req),
+  })
+}
+
+export async function exportMixxxXml(req: {
+  pack_id: string
+  model: string
+}): Promise<{ xml_body: string }> {
+  return fetchJson(
+    `${API_BASE}/api/devices/mixxx/export/${encodeURIComponent(req.pack_id)}/${encodeURIComponent(req.model)}`,
+  )
+}

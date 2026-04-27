@@ -70,6 +70,8 @@ const HoToneJoGGView        = lazy(() => import('./components/Devices/HoToneJoGG
 // T2459-C1 — auto-rendered device panel for any pack/model under
 // device-packs/<vendor>/profiles/<model>.audio.yaml.
 const DevicePage            = lazy(() => import('./pages/DevicePage').then(m => ({ default: m.DevicePage })))
+// T2459-C4 — Carbon node-graph mapping editor with Mixxx XML round-trip.
+const DeviceMappingsPage    = lazy(() => import('./pages/DeviceMappingsPage').then(m => ({ default: m.DeviceMappingsPage })))
 // Note: LCDView is no longer a route target (T2430-A split it into LCDShell + 8 sub-views).
 // It remains as a shared component module exporting LCDSimulator, InputController, etc.
 const LCDShell              = lazy(() => import('./components/Devices/LCD/LCDShell').then(m => ({ default: m.LCDShell })))
@@ -497,6 +499,8 @@ export function App() {
                                   <Route path="hotone-jogg/:view" element={<HoToneJoGGView />} />
                                   {/* T2459-C1 — auto-rendered profile-driven device pages. */}
                                   <Route path="profile/:packId/:model" element={<RouteBoundary title="Device profile crashed" actionLabel="Reload"><DevicePage /></RouteBoundary>} />
+                                  {/* T2459-C4 — node-graph mapping editor. */}
+                                  <Route path="profile/:packId/:model/mappings" element={<RouteBoundary title="Mapping editor crashed" actionLabel="Reload"><DeviceMappingsPage /></RouteBoundary>} />
                                   <Route path="lcd/*" element={<LCDShell />}>
                                     <Route index element={<Navigate to="displays" replace />} />
                                     <Route path="displays" element={<LCDDisplaysView />} />

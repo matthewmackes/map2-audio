@@ -35,6 +35,8 @@ from app.services.controllers.metadata_enrichment import (
     list_cached_assets,
     refresh_pack_async,
 )
+from app.services.controllers.mixxx_xml_reader import parse_mixxx_xml
+from app.services.controllers.mixxx_xml_writer import write_mixxx_xml
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/devices", tags=["Devices"])
@@ -223,3 +225,110 @@ async def refresh_metadata(pack_id: str) -> dict[str, Any]:
         })
     counts = await refresh_pack_async(pack.path)
     return {"pack_id": pack_id, **counts}
+
+
+# ---------------------------------------------------------------------------
+# T2459-C4 — Mixxx XML import + export
+# ---------------------------------------------------------------------------
+
+class MixxxImportRequest(BaseModel):
+    pack_id: str
+    xml_body: str
+    alias_table: dict[str, str] | None = None
+
+
+@router.post("/mixxx/import")
+async def import_mixxx_xml(req: MixxxImportRequest) -> dict[str, Any]:
+    """Parse a Mixxx-format XML mapping body and return the resolved
+    descriptor.
+
+    The frontend's ``<MappingNodeGraphEditor/>`` import flow uploads a
+    raw XML body here and renders the returned descriptor as a node
+    graph. Bindings that fail soft surface in ``stats.skip_reasons``
+    so the GUI can show "N bindings imported, M skipped".
+    """
+    import tempfile
+    from pathlib import Path
+
+    # parse_mixxx_xml expects a Path; write the body to a tmpfile.
+    with tempfile.NamedTemporaryFile(suffix=".midi.xml", delete=False, mode="w", encoding="utf-8") as f:
+        f.write(req.xml_body)
+        tmp_path = Path(f.name)
+    try:
+        try:
+            result = parse_mixxx_xml(tmp_path, pack_id=req.pack_id, alias_table=req.alias_table)
+        except Exception as exc:  # noqa: BLE001
+            raise HTTPException(status_code=422, detail={
+                "error": {"code": "mixxx_parse_failed",
+                          "message": str(exc),
+                          "details": None}
+            }) from exc
+    finally:
+        try:
+            tmp_path.unlink()
+        except OSError:
+            pass
+
+    descriptor = result.descriptor
+    return {
+        "pack_id": descriptor.pack_id,
+        "model": descriptor.model,
+        "kind": descriptor.kind,
+        "controls": [
+            {
+                "status": c.status,
+                "midino": c.midino,
+                "channel": c.channel,
+                "target": c.target,
+                "action": c.action,
+                "script": c.script,
+                "fast_path": c.fast_path,
+                "description": c.description,
+                "mixxx_group": (c.extra or {}).get("mixxx_group"),
+                "mixxx_key": (c.extra or {}).get("mixxx_key"),
+            }
+            for c in descriptor.controls
+        ],
+        "outputs": [
+            {
+                "status": o.status,
+                "midino": o.midino,
+                "channel": o.channel,
+                "target": o.target,
+                "action": o.action,
+                "extra": dict(o.extra or {}),
+            }
+            for o in descriptor.outputs
+        ],
+        "scripts": list(descriptor.scripts),
+        "mixxx_alias_table": dict(descriptor.mixxx_alias_table or {}),
+        "stats": {
+            "total_controls": result.stats.total_controls,
+            "resolved_controls": result.stats.resolved_controls,
+            "skipped_controls": result.stats.skipped_controls,
+            "skip_reasons": list(result.stats.skip_reasons),
+        },
+    }
+
+
+@router.get("/mixxx/export/{pack_id}/{model}")
+async def export_mixxx_xml(pack_id: str, model: str) -> dict[str, str]:
+    """Serialize a MAP2 native MIDI mapping back to Mixxx-format XML."""
+    svc = get_controller_service()
+    try:
+        descriptor = svc.load_mapping(pack_id, model, "midi")
+    except MappingLoadError as exc:
+        raise HTTPException(status_code=404, detail={
+            "error": {"code": "mapping_load_failed",
+                      "message": str(exc),
+                      "details": None}
+        }) from exc
+    try:
+        xml_body = write_mixxx_xml(descriptor)
+    except ValueError as exc:
+        raise HTTPException(status_code=400, detail={
+            "error": {"code": "export_unsupported",
+                      "message": str(exc),
+                      "details": None}
+        }) from exc
+    return {"xml_body": xml_body}
