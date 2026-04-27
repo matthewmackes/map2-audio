@@ -309,14 +309,16 @@ Last updated: 2026-04-27 EDT - Claude: SHIPPED.
 ---
 
 ID: T2459-D2
-Status: [ ] Todo
+Status: [✓] Done
 Parent: T2459
 Title: `device-packs/_runtime/common-hid-parser.js` — HID packet parser library
 Description:
 - Goal: MAP2-authored rewrite of Mixxx's `common-hid-packet-parser.js` (2243 lines). Provides a JS API for vendor packs to register HID packet structures (offset, bit-mask, signed/unsigned, name) and dispatches per-control callbacks. The pattern is structurally similar so existing Mixxx community knowledge transfers; rewritten under MAP2's AGPL-3.0 license.
 - Acceptance: a Mixxx HID mapping that uses `common-hid-packet-parser.js` (e.g., `Traktor-Kontrol-S3-hid-scripts.js`) loads and dispatches under MAP2's runtime parser. Unit tests cover packet structure registration, dispatch, edge cases (signed integers, bit-fields).
 - Required outputs: `device-packs/_runtime/common-hid-parser.js`, `tests/test_common_hid_parser.py` (drives via QuickJS).
+Completion note: 2026-04-27 — Claude: SHIPPED. Expanded `device-packs/_runtime/common-hid-parser.js` from the T2459-A4 scaffold to ~150 LoC with the full feature set: bit-aligned `readBits(bytes, byteOffset, bitOffset, sizeBits)` reader (little-endian, walks across byte boundaries), `signExtend(v, sizeBits)` for signed-field support, `HidField` class with id/byteOffset/bitOffset/sizeBits/signed/min/max/callback/lastValue and `dispatchIfChanged()` that only fires the callback when the value actually changed (matches Mixxx's `common-hid-packet-parser.js` behaviour — keeps callback volume manageable on high-frequency controllers like jog wheels), `HidInputReport` with reportId+sizeBytes+addField()+parse() that handles both report-ID-prefixed and unprefixed devices via the `subarray(base)` window, top-level registry exposing `HID.registerInputReport`/`getRegisteredReport`/`clearRegistry`/`dispatch`. Field callback exceptions are caught + logged via `engine.logError` so a single bad handler can't break the whole parse. Wrote `juce-engine/tests/CommonHidParserTests.cpp` with 8 cases driving the parser through real QuickJS execution: parser loads without exceptions; addField + parse with reportId-prefixed bytes routes the unsigned 8-bit pad velocity correctly; dispatch only fires callback when value changes (3 dispatches with 2 distinct values fires twice); signed fields sign-extend correctly (0xFF as 8-bit signed → -1); bit-aligned reads work across byte boundaries (4-bit halves of 0xAB → 11 + 10); `HID.clearRegistry` resets between mappings; dispatch on unregistered reportId returns 0 without crashing; field-callback exceptions don't break dispatch (subsequent fields still fire). `MAP2_REPO_ROOT` define injected into the controllers test target so the parser path resolves regardless of build directory. Validation: `cmake --build build -t controller_host_tests` clean; `./build/controller_host_tests` reports "All tests passed (97 assertions in 26 test cases)" — 12 QuickJSEngine + 6 Map2HidController + 8 CommonHidParser.
 Assigned to: Claude
+Last updated: 2026-04-27 EDT - Claude: SHIPPED.
 
 ---
 

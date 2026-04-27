@@ -906,12 +906,16 @@ if(BUILD_CONTROLLER_HOST_TESTS)
     add_executable(controller_host_tests
         tests/QuickJSEngineTests.cpp
         tests/Map2HidControllerTests.cpp
+        tests/CommonHidParserTests.cpp
         Source/ControllerHost/QuickJSEngine.cpp
         Source/ControllerHost/EngineApiBindings.cpp
         Source/ControllerHost/Hid/Map2HidController.cpp
     )
     target_include_directories(controller_host_tests PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/Source
+    )
+    target_compile_definitions(controller_host_tests PRIVATE
+        MAP2_REPO_ROOT="${CMAKE_CURRENT_SOURCE_DIR}/.."
     )
     target_link_libraries(controller_host_tests PRIVATE
         Catch2::Catch2WithMain
