@@ -232,3 +232,68 @@ describe('GlobalTreeNav devices subtree', () => {
     })
   })
 })
+
+describe('GlobalTreeNav T2459-G11b — bench-store pins', () => {
+  const navigate = jest.fn()
+  const onRequestUnpin = jest.fn()
+
+  beforeEach(() => {
+    navigate.mockReset()
+    onRequestUnpin.mockReset()
+  })
+
+  it('appends bench-store pins as separate tree nodes after the legacy pins', () => {
+    // Pick a real legacy pin id so the legacy section is non-empty.
+    const legacyPinId = DEVICE_REGISTRY[0]?.id
+    if (!legacyPinId) {
+      throw new Error('expected DEVICE_REGISTRY to have at least one entry')
+    }
+    const subtree = buildDevicesSubtree(
+      [legacyPinId],
+      navigate,
+      onRequestUnpin,
+      ['edirol-ua/ua-1000.audio', 'hotone/jogg.audio'],
+    )
+
+    // 1 legacy + 2 bench-store = 3 nodes total.
+    expect(subtree).toHaveLength(3)
+    // The bench-store nodes route to the v2 detail strip.
+    expect(subtree[1]?.route).toBe('/devices/profile/edirol-ua/ua-1000/v2')
+    expect(subtree[2]?.route).toBe('/devices/profile/hotone/jogg/v2')
+    // Labels carry the model + the "(Hardware Store)" qualifier.
+    expect(subtree[1]?.label).toBe('ua-1000 (Hardware Store)')
+    expect(subtree[2]?.label).toBe('jogg (Hardware Store)')
+  })
+
+  it('renders bench-store pins even when the legacy registry pin set is empty', () => {
+    const subtree = buildDevicesSubtree(
+      [],
+      navigate,
+      onRequestUnpin,
+      ['edirol-ua/ua-1000.audio'],
+    )
+    // Should be: the Browse row + 1 bench-store pin = 2 nodes.
+    expect(subtree).toHaveLength(2)
+    expect(subtree[0]?.label).toMatch(/Browse devices/i)
+    expect(subtree[1]?.label).toBe('ua-1000 (Hardware Store)')
+  })
+
+  it('falls back to the Browse row when both pin sets are empty', () => {
+    const subtree = buildDevicesSubtree([], navigate, onRequestUnpin, [])
+    expect(subtree).toHaveLength(1)
+    expect(subtree[0]?.label).toMatch(/Browse devices/i)
+  })
+
+  it('skips malformed bench-store profile keys', () => {
+    const subtree = buildDevicesSubtree(
+      [],
+      navigate,
+      onRequestUnpin,
+      ['malformed-no-slash', 'edirol-ua/ua-1000.audio'],
+    )
+    // Browse + 1 valid bench-store pin = 2 nodes (the malformed one
+    // is dropped silently).
+    expect(subtree).toHaveLength(2)
+    expect(subtree[1]?.label).toBe('ua-1000 (Hardware Store)')
+  })
+})

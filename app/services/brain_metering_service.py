@@ -188,6 +188,25 @@ class BrainMeteringService:
                     # so clip flag fires when the peak crosses 0 dBFS.
                     clipping = peak_db >= 0.0
                 readings.append(SlotMeterReading(slot_id=slot_id, peak_db=peak_db, rms_db=rms_db, clipping=clipping))
+
+        # T2461-A6 — feed the wizard-calibrate capture buffer if armed.
+        # The buffer drops frames for inactive sessions internally, so
+        # this is a constant-time no-op when nobody's calibrating.
+        try:
+            from app.services.performance_brain.brain_capture_buffer import (
+                get_brain_capture_buffer,
+            )
+            buf = get_brain_capture_buffer()
+            if buf.is_active():
+                for r in readings:
+                    buf.record_frame(
+                        slot_id=r.slot_id,
+                        peak_db=r.peak_db,
+                        rms_db=r.rms_db,
+                        clipping=r.clipping,
+                    )
+        except Exception:   # noqa: BLE001 — defensive, never break metering
+            pass
         return readings
 
     def read_payload(self) -> Dict[str, Any]:

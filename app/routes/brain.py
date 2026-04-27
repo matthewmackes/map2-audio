@@ -582,8 +582,90 @@ async def import_brain_from_synthforge(
 # ---------------------------------------------------------------------------
 
 from app.services.performance_brain.brain_action_registry import (   # noqa: E402
+    find_action as _find_brain_action,
     list_actions as _list_brain_actions,
 )
+from pydantic import BaseModel as _BaseModelA4   # noqa: E402
+
+
+class _BrainActionDispatchRequest(_BaseModelA4):
+    """T2461-A4 dispatch request — the binding writer fires this when
+    a bound MIDI control fires.
+
+    `action_id` matches an entry from /api/engine/brain/actions.
+    `value` is the normalised CC / button value (0..127 for triggers,
+    0/1 for toggles, 0..1 for continuous).
+    """
+    action_id: str
+    value: float = 1.0
+
+
+@router.post("/api/engine/brain/actions/dispatch")
+async def dispatch_brain_action(req: _BrainActionDispatchRequest) -> dict[str, object]:
+    """Execute a Brain action. Maps the dotted action id back to the
+    appropriate state mutation:
+
+      brain.transport.play         → transport.is_playing = True
+      brain.transport.pause        → transport.is_playing = False
+      brain.transport.stop         → transport.is_playing = False
+      brain.transport.toggle       → transport.is_playing = !current
+      brain.section.<id>           → state.active_section = <id>
+      brain.slot.<n>.mute_toggle   → slot.mute = !current
+
+    Trigger-kind actions ignore `value`; toggle-kind actions treat
+    `value >= 0.5` as "on". Returns the descriptor + applied flag.
+    """
+    descriptor = _find_brain_action(req.action_id)
+    if descriptor is None:
+        return {"applied": False, "error": "unknown_action_id", "action_id": req.action_id}
+
+    service = _service()
+    applied = False
+    try:
+        if req.action_id.startswith("brain.transport."):
+            from app.services.performance_brain.models import BrainTransportUpdateModel
+            sub = req.action_id.split(".", 2)[-1]
+            current = service.get_transport().get("is_playing", False)
+            if sub == "play":
+                service.update_transport(BrainTransportUpdateModel(is_playing=True))
+                applied = True
+            elif sub == "pause" or sub == "stop":
+                service.update_transport(BrainTransportUpdateModel(is_playing=False))
+                applied = True
+            elif sub == "toggle":
+                service.update_transport(BrainTransportUpdateModel(is_playing=not current))
+                applied = True
+        elif req.action_id.startswith("brain.section."):
+            from app.services.performance_brain.models import BrainStateUpdateModel
+            section_id = req.action_id.split(".", 2)[-1]
+            try:
+                service.update_state(BrainStateUpdateModel(active_section=section_id))
+                applied = True
+            except Exception:
+                applied = False
+        elif req.action_id.startswith("brain.slot."):
+            # brain.slot.<n>.mute_toggle
+            parts = req.action_id.split(".")
+            if len(parts) >= 4 and parts[3] == "mute_toggle":
+                try:
+                    slot_id = int(parts[2])
+                    from app.services.performance_brain.models import BrainSlotUpdateModel
+                    current_slots = service.list_slots()
+                    current_slot = next((s for s in current_slots if s.get("slot_id") == slot_id), None)
+                    if current_slot is not None:
+                        new_mute = not bool(current_slot.get("mute", False))
+                        service.update_slot(slot_id, BrainSlotUpdateModel(mute=new_mute))
+                        applied = True
+                except (ValueError, Exception):
+                    applied = False
+    except Exception:   # noqa: BLE001 — defensive; never 500 from a binding fire
+        applied = False
+
+    return {
+        "applied": applied,
+        "action_id": req.action_id,
+        "descriptor": descriptor.to_dict(),
+    }
 
 
 @router.get("/api/engine/brain/actions")

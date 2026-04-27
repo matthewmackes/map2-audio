@@ -62,6 +62,7 @@ import {
   resolveDeviceOpenRoute,
   type DeviceRegistryEntry,
 } from '../../data/deviceRegistry'
+import { useKnownDevices } from '../../components/Devices/hooks/useDeviceProfiles'
 import { platformPinnedItems, type PlatformPinnedNavItem } from '../../data/platformMenuItems'
 import { pinDevice, unpinDevice, usePinnedDevices } from '../../state/uiSettings'
 import { useToasts } from '../../components/Toasts'
@@ -340,11 +341,31 @@ export function buildDevicesSubtree(
   pinnedIds: string[],
   navigateTo: (route: string) => void,
   onRequestUnpin: (entry: DeviceRegistryEntry) => void,
+  benchStorePins: string[] = [],
 ): TreeItemDefinition[] {
   const pinnedSet = new Set(pinnedIds)
   const pinnedEntries = DEVICE_REGISTRY.filter((entry) => pinnedSet.has(entry.id))
 
-  if (pinnedEntries.length === 0) {
+  // T2459-G11b — append Hardware Store BenchStateTracker pins as a
+  // parallel section. Each entry routes to the v2 device detail strip.
+  // The tree node label is the model name extracted from the
+  // profile_key (`<pack_id>/<model>.<kind>`).
+  const benchStoreNodes: TreeItemDefinition[] = benchStorePins.map((profileKey) => {
+    const slash = profileKey.indexOf('/')
+    if (slash < 0) return null
+    const packId = profileKey.slice(0, slash)
+    const dotted = profileKey.slice(slash + 1)
+    const lastDot = dotted.lastIndexOf('.')
+    const model = lastDot > 0 ? dotted.slice(0, lastDot) : dotted
+    return {
+      id: `${HARDWARE_DEVICES_ID}::bench-pin::${profileKey}`,
+      label: `${model} (Hardware Store)`,
+      route: `/devices/profile/${encodeURIComponent(packId)}/${encodeURIComponent(model)}/v2`,
+      icon: Devices,
+    } as TreeItemDefinition
+  }).filter((n): n is TreeItemDefinition => n !== null)
+
+  if (pinnedEntries.length === 0 && benchStoreNodes.length === 0) {
     return [
       {
         id: BROWSE_DEVICES_TREE_ID,
@@ -352,6 +373,19 @@ export function buildDevicesSubtree(
         route: '/devices',
         icon: Add,
       },
+    ]
+  }
+
+  if (pinnedEntries.length === 0) {
+    // Only bench-store pins; no legacy registry entries.
+    return [
+      {
+        id: BROWSE_DEVICES_TREE_ID,
+        label: '➕ Browse devices…',
+        route: '/devices',
+        icon: Add,
+      },
+      ...benchStoreNodes.map((n, i) => ({ ...n, groupBoundary: i === 0 })),
     ]
   }
 
@@ -392,13 +426,19 @@ export function buildDevicesSubtree(
     }
   })
 
-  return nodes
+  // T2459-G11b — append bench-store pins after the legacy nodes with
+  // a groupBoundary divider so operators see them as a distinct group.
+  return [
+    ...nodes,
+    ...benchStoreNodes.map((n, i) => ({ ...n, groupBoundary: i === 0 })),
+  ]
 }
 
 function buildHardwareTree(
   pinnedIds: string[],
   navigateTo: (route: string) => void,
   onRequestUnpin: (entry: DeviceRegistryEntry) => void,
+  benchStorePins: string[] = [],
 ): TreeItemDefinition {
   return {
     id: HARDWARE_TREE_ID,
@@ -416,7 +456,7 @@ function buildHardwareTree(
         label: 'Devices',
         route: '/devices',
         icon: Devices,
-        children: buildDevicesSubtree(pinnedIds, navigateTo, onRequestUnpin),
+        children: buildDevicesSubtree(pinnedIds, navigateTo, onRequestUnpin, benchStorePins),
       },
     ],
   }
@@ -427,6 +467,7 @@ function buildTreeItems(
   navigateTo: (route: string) => void,
   onRequestUnpin: (entry: DeviceRegistryEntry) => void,
   snapshotEditorStatus: SnapshotEditorTreeStatus,
+  benchStorePins: string[] = [],
 ): TreeItemDefinition[] {
   return TOP_LEVEL_ROUTE_ORDER.flatMap((route) => {
     if (route === PRIMARY_SEPARATOR_ONE_ID || route === PRIMARY_SEPARATOR_TWO_ID) {
@@ -438,7 +479,7 @@ function buildTreeItems(
     }
 
     if (route === HARDWARE_TREE_ID) {
-      return [buildHardwareTree(pinnedIds, navigateTo, onRequestUnpin)]
+      return [buildHardwareTree(pinnedIds, navigateTo, onRequestUnpin, benchStorePins)]
     }
 
     const launcherItem = getLauncherCatalogItem(route)
@@ -707,9 +748,18 @@ export function GlobalTreeNav({
     [clusterRuntimeStateQuery.data],
   )
 
+  // T2459-G11b — read Hardware Store BenchStateTracker pins so the
+  // left-rail mirrors the new pin path alongside the legacy registry one.
+  const knownDevicesQuery = useKnownDevices()
+  const benchStorePins = useMemo(() => {
+    return (knownDevicesQuery.data?.known ?? [])
+      .filter((row) => row.is_pinned)
+      .map((row) => row.profile_key)
+  }, [knownDevicesQuery.data])
+
   const treeItems = useMemo(
-    () => buildTreeItems(pinnedDeviceIds, (route) => navigate(route), handleRequestUnpin, snapshotEditorStatus),
-    [pinnedDeviceIds, navigate, handleRequestUnpin, snapshotEditorStatus],
+    () => buildTreeItems(pinnedDeviceIds, (route) => navigate(route), handleRequestUnpin, snapshotEditorStatus, benchStorePins),
+    [pinnedDeviceIds, navigate, handleRequestUnpin, snapshotEditorStatus, benchStorePins],
   )
   const activeNodePath = useMemo(
     () => findActiveNodePath(treeItems, location.pathname, location.search),
