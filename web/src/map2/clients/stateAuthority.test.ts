@@ -38,7 +38,7 @@ describe('stateAuthorityApi', () => {
 
     const result = await stateAuthorityApi.getCatalog()
 
-    expect(fetchMock.mock.calls[0]?.[0]).toBe(`${API_BASE}/api/state-authority/uri-catalog`)
+    expect(fetchMock.mock.calls[0]?.[0]).toBe(`${API_BASE}/state-authority/uri-catalog`)
     expect(result.count).toBe(1)
     expect(result.entries[0].uri).toBe('map2:fx:nam')
   })
@@ -51,7 +51,7 @@ describe('stateAuthorityApi', () => {
 
     await stateAuthorityApi.getCatalogByType('sys')
 
-    expect(fetchMock.mock.calls[0]?.[0]).toBe(`${API_BASE}/api/state-authority/uri-catalog/sys`)
+    expect(fetchMock.mock.calls[0]?.[0]).toBe(`${API_BASE}/state-authority/uri-catalog/sys`)
   })
 
   it('POSTs to /api/state-authority/uri-resolve with the provided URI', async () => {
@@ -77,7 +77,7 @@ describe('stateAuthorityApi', () => {
 
     const result = await stateAuthorityApi.resolveUri('map2://juce/nam')
 
-    expect(fetchMock.mock.calls[0]?.[0]).toBe(`${API_BASE}/api/state-authority/uri-resolve`)
+    expect(fetchMock.mock.calls[0]?.[0]).toBe(`${API_BASE}/state-authority/uri-resolve`)
     expect(fetchMock.mock.calls[0]?.[1]?.method).toBe('POST')
     expect(fetchMock.mock.calls[0]?.[1]?.body).toBe(JSON.stringify({ uri: 'map2://juce/nam' }))
     expect(result.canonical).toBe('map2:fx:nam')
@@ -92,7 +92,7 @@ describe('stateAuthorityApi', () => {
 
     const schema = await stateAuthorityApi.getSchema()
 
-    expect(fetchMock.mock.calls[0]?.[0]).toBe(`${API_BASE}/api/state-authority/schema`)
+    expect(fetchMock.mock.calls[0]?.[0]).toBe(`${API_BASE}/state-authority/schema`)
     expect(schema.title).toBe('MAP2 Snapshot Graph v2026.04')
   })
 
@@ -104,7 +104,7 @@ describe('stateAuthorityApi', () => {
 
     const result = await stateAuthorityApi.setMorphPosition(0.25, 0.75)
 
-    expect(fetchMock.mock.calls[0]?.[0]).toBe(`${API_BASE}/api/state-authority/morph/position`)
+    expect(fetchMock.mock.calls[0]?.[0]).toBe(`${API_BASE}/state-authority/morph/position`)
     expect(fetchMock.mock.calls[0]?.[1]?.method).toBe('POST')
     expect(fetchMock.mock.calls[0]?.[1]?.body).toBe(JSON.stringify({ x: 0.25, y: 0.75 }))
     expect(result.x).toBe(0.25)
@@ -120,7 +120,7 @@ describe('stateAuthorityApi', () => {
 
     const state = await stateAuthorityApi.getMorphState()
 
-    expect(fetchMock.mock.calls[0]?.[0]).toBe(`${API_BASE}/api/state-authority/morph/state`)
+    expect(fetchMock.mock.calls[0]?.[0]).toBe(`${API_BASE}/state-authority/morph/state`)
     expect(state.x).toBe(0.5)
   })
 
@@ -137,7 +137,7 @@ describe('stateAuthorityApi', () => {
 
     const result = await stateAuthorityApi.getLiveDocument()
 
-    expect(fetchMock.mock.calls[0]?.[0]).toBe(`${API_BASE}/api/state-authority/live-document`)
+    expect(fetchMock.mock.calls[0]?.[0]).toBe(`${API_BASE}/state-authority/live-document`)
     expect(result.snapshot_id).toBe(42)
     expect(result.is_live).toBe(true)
     expect((result.document as any).meta.name).toBe('Live Tone')
@@ -157,7 +157,7 @@ describe('stateAuthorityApi', () => {
     const result = await stateAuthorityApi.getSnapshotDocument(101)
 
     expect(fetchMock.mock.calls[0]?.[0]).toBe(
-      `${API_BASE}/api/state-authority/snapshots/101/document`,
+      `${API_BASE}/state-authority/snapshots/101/document`,
     )
     expect(result.snapshot_id).toBe(101)
     expect(result.is_live).toBe(false)
@@ -188,7 +188,7 @@ describe('stateAuthorityApi', () => {
     const payload = await stateAuthorityApi.getReconciliationMetrics()
 
     expect(fetchMock.mock.calls[0]?.[0]).toBe(
-      `${API_BASE}/api/state-authority/reconciliation/metrics`,
+      `${API_BASE}/state-authority/reconciliation/metrics`,
     )
     expect(payload.metrics.local_runs_total).toBe(7)
     expect(payload.prometheus).toContain('map2_state_authority_local_runs_total')

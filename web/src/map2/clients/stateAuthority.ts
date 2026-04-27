@@ -64,18 +64,18 @@ export interface StateAuthorityReconciliationMetrics {
 
 export const stateAuthorityApi = {
   getCatalog: async (): Promise<StateAuthorityCatalogResponse> =>
-    fetchJson<StateAuthorityCatalogResponse>(`${API_BASE}/api/state-authority/uri-catalog`),
+    fetchJson<StateAuthorityCatalogResponse>(`${API_BASE}/state-authority/uri-catalog`),
 
   getCatalogByType: async (
     catalogType: StateAuthorityCatalogType,
   ): Promise<StateAuthorityCatalogResponse> =>
     fetchJson<StateAuthorityCatalogResponse>(
-      `${API_BASE}/api/state-authority/uri-catalog/${catalogType}`,
+      `${API_BASE}/state-authority/uri-catalog/${catalogType}`,
     ),
 
   resolveUri: async (uri: string): Promise<StateAuthorityUriResolveResponse> =>
     fetchJson<StateAuthorityUriResolveResponse>(
-      `${API_BASE}/api/state-authority/uri-resolve`,
+      `${API_BASE}/state-authority/uri-resolve`,
       {
         method: 'POST',
         body: JSON.stringify({ uri }),
@@ -83,27 +83,27 @@ export const stateAuthorityApi = {
     ),
 
   getSchema: async (): Promise<Record<string, unknown>> =>
-    fetchJson<Record<string, unknown>>(`${API_BASE}/api/state-authority/schema`),
+    fetchJson<Record<string, unknown>>(`${API_BASE}/state-authority/schema`),
 
   setMorphPosition: async (x: number, y: number): Promise<StateAuthorityMorphState> =>
-    fetchJson<StateAuthorityMorphState>(`${API_BASE}/api/state-authority/morph/position`, {
+    fetchJson<StateAuthorityMorphState>(`${API_BASE}/state-authority/morph/position`, {
       method: 'POST',
       body: JSON.stringify({ x, y }),
     }),
 
   getMorphState: async (): Promise<StateAuthorityMorphState> =>
-    fetchJson<StateAuthorityMorphState>(`${API_BASE}/api/state-authority/morph/state`),
+    fetchJson<StateAuthorityMorphState>(`${API_BASE}/state-authority/morph/state`),
 
   getReconciliationMetrics: async (): Promise<StateAuthorityReconciliationMetrics> =>
     fetchJson<StateAuthorityReconciliationMetrics>(
-      `${API_BASE}/api/state-authority/reconciliation/metrics`,
+      `${API_BASE}/state-authority/reconciliation/metrics`,
     ),
 
   getLiveDocument: async (): Promise<StateAuthorityDocument> =>
-    fetchJson<StateAuthorityDocument>(`${API_BASE}/api/state-authority/live-document`),
+    fetchJson<StateAuthorityDocument>(`${API_BASE}/state-authority/live-document`),
 
   getSnapshotDocument: async (snapshotId: number): Promise<StateAuthorityDocument> =>
     fetchJson<StateAuthorityDocument>(
-      `${API_BASE}/api/state-authority/snapshots/${snapshotId}/document`,
+      `${API_BASE}/state-authority/snapshots/${snapshotId}/document`,
     ),
 }
