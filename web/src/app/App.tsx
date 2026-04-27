@@ -65,6 +65,8 @@ const StateAuthorityPage    = lazy(() => import('./pages/StateAuthorityPage').th
 const SnapshotPublishPage   = lazy(() => import('./pages/SnapshotPublishPage').then(m => ({ default: m.SnapshotPublishPage })))
 const DevicesShell          = lazy(() => import('./components/Devices/DevicesShell').then(m => ({ default: m.DevicesShell })))
 const DevicesStorePage      = lazy(() => import('./components/Devices/DevicesStorePage').then(m => ({ default: m.DevicesStorePage })))
+// T2459-G3 — Hardware Store (preview route until G11 cuts over the index).
+const HardwareStorePage     = lazy(() => import('./components/Devices/HardwareStorePage').then(m => ({ default: m.HardwareStorePage })))
 const EdirolUA1000View      = lazy(() => import('./components/Devices/EdirolUA1000/EdirolUA1000View').then(m => ({ default: m.EdirolUA1000View })))
 const HoToneJoGGView        = lazy(() => import('./components/Devices/HoToneJoGG/HoToneJoGGView').then(m => ({ default: m.HoToneJoGGView })))
 // T2459-C1 — auto-rendered device panel for any pack/model under
@@ -493,6 +495,7 @@ export function App() {
                                 <Route path="/grid-3d" element={<Navigate to="/snapshot-editor" replace />} />
                                 <Route path="/devices" element={<RouteBoundary title="Devices workspace crashed" actionLabel="Reload devices"><DevicesShell /></RouteBoundary>}>
                                   <Route index element={<DevicesStorePage />} />
+                                  <Route path="store-v2" element={<RouteBoundary title="Hardware Store (preview) crashed" actionLabel="Reload"><HardwareStorePage /></RouteBoundary>} />
                                   <Route path="edirol-ua1000" element={<EdirolUA1000View />} />
                                   <Route path="edirol-ua1000/:view" element={<EdirolUA1000View />} />
                                   <Route path="hotone-jogg" element={<HoToneJoGGView />} />

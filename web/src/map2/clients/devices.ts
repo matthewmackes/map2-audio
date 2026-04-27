@@ -270,3 +270,129 @@ export async function measureLatency(req: {
     body: JSON.stringify(req),
   })
 }
+
+// ---------------------------------------------------------------------------
+// T2459-G1 / G2 — Hardware Store endpoints
+// ---------------------------------------------------------------------------
+
+export interface ConnectionRecord {
+  pack_id: string
+  model: string
+  kind: 'audio' | 'midi' | 'hid'
+  profile_key: string
+  matched_sources: string[]
+  evidence: Record<string, unknown>
+  detected_at: number
+}
+
+export interface DetectionSnapshot {
+  records: ConnectionRecord[]
+  sources_attempted: string[]
+  sources_failed: string[]
+  snapshot_at: number
+}
+
+export interface ConnectedResponse {
+  snapshot: DetectionSnapshot
+  count: number
+}
+
+export interface KnownDeviceRow {
+  profile_key: string
+  is_pinned: boolean
+  last_seen_at: number | null
+}
+
+export interface RecentlyDisconnectedRow {
+  profile_key: string
+  last_seen_at: number | null
+}
+
+export interface DiagnosticEntry {
+  severity: 'info' | 'warning' | 'error'
+  source: string
+  code: string
+  detail: string
+  pack_id?: string
+  file?: string
+  ts: number
+  pid?: number | null
+  restart_count?: number
+  crashes_in_window?: number
+}
+
+export interface DiagnosticsResponse {
+  diagnostics: DiagnosticEntry[]
+  count: number
+  counts_by_severity: { info: number; warning: number; error: number }
+}
+
+export interface PackSourceRow {
+  pack_id: string
+  vendor: string
+  source: 'shipped' | 'user' | 'imported'
+  path: string
+  is_degraded: boolean
+  degraded_files: string[]
+  model_count: number
+  profile_count: number
+}
+
+export async function listConnectedDevices(): Promise<ConnectedResponse> {
+  return fetchJson(`${API_BASE}/api/devices/connected`)
+}
+
+export async function listRecentlyDisconnected(): Promise<{
+  recently_disconnected: RecentlyDisconnectedRow[]
+  count: number
+}> {
+  return fetchJson(`${API_BASE}/api/devices/recently-disconnected`)
+}
+
+export async function listKnownDevices(): Promise<{
+  known: KnownDeviceRow[]
+  count: number
+}> {
+  return fetchJson(`${API_BASE}/api/devices/known`)
+}
+
+export async function pinDeviceProfile(profileKey: string): Promise<{
+  profile_key: string
+  pinned: boolean
+  newly_added: boolean
+}> {
+  return fetchJson(`${API_BASE}/api/devices/pin`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ profile_key: profileKey }),
+  })
+}
+
+export async function unpinDeviceProfile(profileKey: string): Promise<{
+  profile_key: string
+  pinned: boolean
+  newly_removed: boolean
+}> {
+  return fetchJson(`${API_BASE}/api/devices/unpin`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ profile_key: profileKey }),
+  })
+}
+
+export async function listDeviceDiagnostics(opts?: {
+  severity?: 'info' | 'warning' | 'error'
+  source?: string
+}): Promise<DiagnosticsResponse> {
+  const url = new URL(`${API_BASE}/api/devices/diagnostics`)
+  if (opts?.severity) url.searchParams.set('severity', opts.severity)
+  if (opts?.source) url.searchParams.set('source', opts.source)
+  return fetchJson(url.toString())
+}
+
+export async function listPackSources(): Promise<{
+  sources: PackSourceRow[]
+  count: number
+}> {
+  return fetchJson(`${API_BASE}/api/devices/packs/sources`)
+}
