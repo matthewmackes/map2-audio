@@ -742,6 +742,51 @@ class SnapshotEditorMixin:
         await self._sync_snapshot_document_from_relational_projection(snapshot_id)
         return await self._reload_snapshot_detail(snapshot_id)
 
+    async def _sync_live_payload_after_plugin_mutation(
+        self,
+        snapshot_id: int,
+        *,
+        mutation_kind: str,
+        metadata: dict[str, Any],
+    ) -> Optional[dict[str, Any]]:
+        """Reload the snapshot detail and re-sync `live_snapshot_payload` if this
+        snapshot is currently the live one. Without this sync, plugin
+        adds/removes/reorders/bypasses on the live snapshot are invisible to
+        every consumer of `live_snapshot_payload` (home chyron card, GCP, MIDI
+        commander, launch control surface, etc.) because the row-stored
+        payload is only refreshed by other mutation paths.
+        """
+        detail = await self._reload_snapshot_detail(snapshot_id)
+        if detail is None:
+            return None
+
+        try:
+            from app.services.snapshot_runtime_state_service import SnapshotRuntimeStateService
+
+            runtime_state_service = SnapshotRuntimeStateService(self.session)
+            current_runtime_payload = await runtime_state_service.get_live_snapshot_payload()
+            is_current_live_snapshot = (
+                isinstance(current_runtime_payload, dict)
+                and int(current_runtime_payload.get("id") or 0) == int(snapshot_id)
+            )
+            if is_current_live_snapshot:
+                await runtime_state_service.sync_live_snapshot_payload(
+                    snapshot_id=snapshot_id,
+                    live_snapshot_payload=detail,
+                    snapshot_revision=detail.get("snapshot_revision"),
+                )
+                await self._record_retained_live_runtime_edit(
+                    runtime_state_service=runtime_state_service,
+                    snapshot_id=snapshot_id,
+                    snapshot_revision=detail.get("snapshot_revision"),
+                    mutation_kind=mutation_kind,
+                    metadata=metadata,
+                )
+        except Exception as exc:
+            logger.debug("Snapshot plugin live-state sync skipped for %s: %s", snapshot_id, exc)
+
+        return detail
+
     async def add_plugin(
         self,
         snapshot_id: int,
@@ -770,7 +815,16 @@ class SnapshotEditorMixin:
         await self.session.flush()
         await self._sync_snapshot_tags(snapshot_id)
         await self._sync_snapshot_document_from_relational_projection(snapshot_id)
-        return await self._reload_snapshot_detail(snapshot_id)
+        return await self._sync_live_payload_after_plugin_mutation(
+            snapshot_id,
+            mutation_kind="add_plugin",
+            metadata={
+                "chain_id": int(chain_id),
+                "plugin_uri": str(plugin_uri),
+                "plugin_name": plugin_name,
+                "position": int(next_position),
+            },
+        )
 
     async def remove_plugin(
         self,
@@ -783,12 +837,21 @@ class SnapshotEditorMixin:
             return None
         if self._snapshot_chain_plugin_is_system_noise_gate(plugin):
             raise ValueError("The system noise gate cannot be removed from a snapshot chain.")
+        plugin_uri = str(plugin.plugin_uri)
         await self.session.delete(plugin)
         await self.session.flush()
         await self._resequence_plugins(chain_id)
         await self._sync_snapshot_tags(snapshot_id)
         await self._sync_snapshot_document_from_relational_projection(snapshot_id)
-        return await self._reload_snapshot_detail(snapshot_id)
+        return await self._sync_live_payload_after_plugin_mutation(
+            snapshot_id,
+            mutation_kind="remove_plugin",
+            metadata={
+                "chain_id": int(chain_id),
+                "plugin_id": int(plugin_id),
+                "plugin_uri": plugin_uri,
+            },
+        )
 
     async def reorder_plugins(
         self,
@@ -814,7 +877,14 @@ class SnapshotEditorMixin:
         await self.session.flush()
         await self._resequence_plugins(chain_id)
         await self._sync_snapshot_document_from_relational_projection(snapshot_id)
-        return await self._reload_snapshot_detail(snapshot_id)
+        return await self._sync_live_payload_after_plugin_mutation(
+            snapshot_id,
+            mutation_kind="reorder_plugins",
+            metadata={
+                "chain_id": int(chain_id),
+                "plugin_ids": [int(p) for p in plugin_ids],
+            },
+        )
 
     async def set_plugin_bypass(
         self,
@@ -830,7 +900,15 @@ class SnapshotEditorMixin:
         plugin.updated_at = _utcnow()
         await self.session.flush()
         await self._sync_snapshot_document_from_relational_projection(snapshot_id)
-        return await self._reload_snapshot_detail(snapshot_id)
+        return await self._sync_live_payload_after_plugin_mutation(
+            snapshot_id,
+            mutation_kind="set_plugin_bypass",
+            metadata={
+                "chain_id": int(chain_id),
+                "plugin_id": int(plugin_id),
+                "bypass": bool(bypass),
+            },
+        )
 
     async def set_plugin_parameters(
         self,
@@ -852,7 +930,15 @@ class SnapshotEditorMixin:
         plugin.updated_at = _utcnow()
         await self.session.flush()
         await self._sync_snapshot_document_from_relational_projection(snapshot_id)
-        return await self._reload_snapshot_detail(snapshot_id)
+        return await self._sync_live_payload_after_plugin_mutation(
+            snapshot_id,
+            mutation_kind="set_plugin_parameters",
+            metadata={
+                "chain_id": int(chain_id),
+                "plugin_id": int(plugin_id),
+                "parameter_keys": sorted(next_parameters.keys()),
+            },
+        )
 
     async def update_plugin_parameter_by_position(
         self,
