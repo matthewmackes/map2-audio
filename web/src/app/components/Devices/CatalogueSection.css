@@ -1,0 +1,119 @@
+.catalogue-section {
+  margin-bottom: 2.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+}
+
+.catalogue-section__head {
+  display: flex;
+  align-items: baseline;
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+  border-bottom: 1px solid var(--cds-border-subtle);
+  padding-bottom: 0.5rem;
+}
+
+.catalogue-section__title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin: 0;
+  color: var(--cds-text-primary);
+}
+
+.catalogue-section__count {
+  font-variant-numeric: tabular-nums;
+  font-size: 0.75rem;
+  color: var(--cds-text-helper);
+  background: var(--cds-layer-accent-01);
+  border-radius: 999px;
+  padding: 0.125rem 0.5rem;
+  min-width: 1.5rem;
+  text-align: center;
+}
+
+.catalogue-section__subtitle {
+  font-size: 0.75rem;
+  color: var(--cds-text-helper);
+  margin-left: auto;
+}
+
+.catalogue-section__pane--top {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 0.75rem 0;
+  border-bottom: 1px solid var(--cds-border-subtle);
+  margin-bottom: 1rem;
+}
+
+.catalogue-section__hero {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.375rem;
+  align-items: center;
+}
+
+.catalogue-section__hero-sep {
+  width: 1px;
+  height: 1.25rem;
+  background: var(--cds-border-subtle);
+  margin: 0 0.5rem;
+}
+
+.catalogue-section__facets {
+  display: grid;
+  grid-template-columns: minmax(16rem, 2fr) repeat(3, minmax(10rem, 1fr));
+  gap: 0.5rem;
+  align-items: end;
+}
+
+@media (max-width: 900px) {
+  .catalogue-section__facets {
+    grid-template-columns: 1fr;
+  }
+}
+
+.catalogue-section__pane--bottom {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  max-height: 70vh;
+  overflow-y: auto;
+}
+
+.catalogue-section__list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+  gap: 1rem;
+}
+
+.catalogue-section__divider {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.875rem;
+  font-weight: 600;
+  color: var(--cds-text-helper);
+  padding: 0.5rem 0 0.25rem;
+  border-top: 1px dashed var(--cds-border-subtle);
+}
+
+.catalogue-section__more {
+  display: flex;
+  justify-content: center;
+  padding: 0.5rem 0;
+}
+
+.catalogue-section__unknown {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1rem 0;
+}
+
+.catalogue-section__unknown-actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}

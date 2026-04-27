@@ -33,6 +33,7 @@ import {
   usePackSources,
 } from './hooks/useDeviceProfiles'
 import { DeviceCard, type DeviceCardRow } from './DeviceCard'
+import { CatalogueSection } from './CatalogueSection'
 import type {
   DeviceProfileSummary,
   PackSourceRow,
@@ -378,9 +379,7 @@ export function HardwareStorePage(): React.JSX.Element {
             pulseTokenFor={pulseTokenFor}
             onPinChanged={handlePinChanged}
           />
-          <Section
-            title="Catalogue"
-            subtitle="Every shipped, user, and imported device pack"
+          <CatalogueSection
             rows={catalogueRows}
             pulseTokenFor={pulseTokenFor}
             onPinChanged={handlePinChanged}
