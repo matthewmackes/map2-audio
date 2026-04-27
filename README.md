@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1310** Python | **1278** TypeScript | **150** C++/H | **145** Docs | **2870** total commits | **3** stars | **0** forks | **0** open issues
+**1311** Python | **1278** TypeScript | **150** C++/H | **145** Docs | **2872** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`67838285`](https://github.com/matthewmackes/map2-audio/commit/67838285f737d84578918c6bfa8e820c0ba9d345) | T2459-B5: Mixxx mapping load CI smoke test + 3 fixtures +... | Map2 Audio | 2026-04-27 |
+| [`14b06d25`](https://github.com/matthewmackes/map2-audio/commit/14b06d2593021dd28f2f55f8d6a942b1d3b0d724) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-27 |
 | [`fb2bc3eb`](https://github.com/matthewmackes/map2-audio/commit/fb2bc3ebc71a85f95464abdc3bbe8ad34b70600e) | T2459-B4: UA-1000 pilot pack — first complete vendor pack... | Map2 Audio | 2026-04-27 |
 | [`5bb90747`](https://github.com/matthewmackes/map2-audio/commit/5bb9074736d780ecca1d6253312688c914655f6f) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-27 |
 | [`2116baf5`](https://github.com/matthewmackes/map2-audio/commit/2116baf5f65d6afb500af0a869ba336a6d83f8d3) | T2459-B3: Mixxx ControlObject bridge + Mixxx XML reader +... | Map2 Audio | 2026-04-27 |
 | [`134387e2`](https://github.com/matthewmackes/map2-audio/commit/134387e292bef94e42b33ec8b456f1cdae0f7a03) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-27 |
 | [`e987c45e`](https://github.com/matthewmackes/map2-audio/commit/e987c45ea59b126a4a2622f15ead053b24b46f4b) | T2459-B2: QuickJS engine + map2-controller-host binary + ... | Map2 Audio | 2026-04-27 |
 | [`20a0af77`](https://github.com/matthewmackes/map2-audio/commit/20a0af7755d3f05c098756841af9ea517b059af8) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-27 |
-| [`c0b29868`](https://github.com/matthewmackes/map2-audio/commit/c0b29868ae308e5d5d2704995d09efc676305f2d) | T2459-B1: Map2MidiController — ALSA-seq enumeration + sub... | Map2 Audio | 2026-04-27 |
-| [`7265b074`](https://github.com/matthewmackes/map2-audio/commit/7265b0745720ae91a4a32b49402f3bff27f29689) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-27 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
