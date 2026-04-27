@@ -99,14 +99,16 @@ Assigned to: Claude
 ---
 
 ID: T2459-A2
-Status: [ ] Todo
+Status: [✓] Done
 Parent: T2459
 Title: C++ skeleton — `juce-engine/Source/Controllers/` (Map2Controller abstract + factory + lifecycle)
 Description:
 - Goal: Create the abstract C++ base classes and factory for the controller subsystem inside the existing JUCE engine. This is the in-engine half — protocol enumeration only. QuickJS execution and JS mapping logic live in the separate `map2-controller-host` process built in A6/B2; this skeleton owns lifecycle, fast-path direct bindings, and IPC origination from the audio engine side.
 - Acceptance: `Map2Controller` abstract base, `Map2ControllerFactory`, lifecycle (open/close/poll), CMake integration, smoke test that a `Map2Controller` instance can be constructed with a fake protocol backend and dispatched to a fake fast-path binding.
 - Required outputs: `juce-engine/Source/Controllers/Map2Controller.{h,cpp}`, `Map2ControllerFactory.{h,cpp}`, CMake updates, `juce-engine/build` produces clean linked binary.
+Completion note: 2026-04-26 — Claude: SHIPPED. Created `juce-engine/Source/Controllers/{Map2Controller.h,Map2Controller.cpp,Map2ControllerFactory.h,Map2ControllerFactory.cpp}` with abstract base owning identity, lifecycle (open/close/isOpen with idempotent setOpen + state callback), fast-path binding table (CriticalSection-protected, dispatch consults bindings before forwarding to JS callback), event/state callbacks, and `dispatch()`/`applyFastPath()` infrastructure. Subdirs `Midi/`, `Hid/`, `Bulk/`, `Enumerators/` created for upcoming subtasks. Wired into CMakeLists.txt SOURCES + HEADERS lists; new BUILD_CONTROLLERS_TESTS option (default ON) builds a Catch2 `controllers_tests` target with 8 test cases / 17 assertions covering lifecycle, state callback idempotence, event dispatch, fast-path matching + clearing, send(), factory protocol routing. Build verification: `cd juce-engine && cmake --build build -t map2_audio_engine` clean (engine shared module re-links with new sources); `cmake --build build -t controllers_tests` clean; `./build/controllers_tests` reports "All tests passed (17 assertions in 8 test cases)".
 Assigned to: Claude
+Last updated: 2026-04-26 EDT - Claude: SHIPPED.
 
 ---
 

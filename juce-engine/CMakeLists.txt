@@ -305,6 +305,13 @@ set(SOURCES
     Source/SynthForge/Sampler/SfzLoader.cpp
     Source/SynthForge/Sound/SynthVoice.cpp
 
+    # Controllers / Mapping subsystem (T2459 — see
+    # docs/architecture/CONTROLLER_LAYER.md). Abstract base + protocol
+    # factory live in-engine. HID/bulk subclasses live in the separate
+    # map2-controller-host binary; only MIDI is constructed here.
+    Source/Controllers/Map2Controller.cpp
+    Source/Controllers/Map2ControllerFactory.cpp
+
     # Existing components (updated)
     Source/MidiHandler.cpp
     Source/VuMeter.cpp
@@ -397,6 +404,10 @@ set(HEADERS
     Source/SynthForge/SynthForgeGraphAdapter.h
     Source/DrumMachine/DrumSequencer.h
     Source/DrumMachine/DrumMachineGraphAdapter.h
+
+    # Controllers / Mapping subsystem (T2459)
+    Source/Controllers/Map2Controller.h
+    Source/Controllers/Map2ControllerFactory.h
 
     # Existing components
     Source/MidiHandler.h
@@ -640,6 +651,7 @@ install(TARGETS map2_audio_engine
 include(CTest)
 option(BUILD_AVB_TESTS "Build AVB/Catch2 unit tests" OFF)
 option(BUILD_SYNTHFORGE_TESTS "Build SynthForge/Catch2 unit tests" OFF)
+option(BUILD_CONTROLLERS_TESTS "Build Controllers/Catch2 unit tests" ON)
 
 if(BUILD_AVB_TESTS AND AVB_AVAILABLE)
     set(AVTP_TEST_SOURCES
@@ -728,6 +740,44 @@ if(BUILD_SYNTHFORGE_TESTS)
         juce::juce_dsp
     )
     add_test(NAME synthforge_tests COMMAND synthforge_tests)
+endif()
+
+# T2459-A2 — Map2Controller / factory smoke tests.
+# Lightweight: only links the controller subsystem files + juce_core.
+if(BUILD_CONTROLLERS_TESTS)
+    FetchContent_Declare(
+        catch2
+        GIT_REPOSITORY https://github.com/catchorg/Catch2.git
+        GIT_TAG v3.5.2
+        GIT_SHALLOW TRUE
+    )
+    FetchContent_MakeAvailable(catch2)
+
+    add_executable(controllers_tests
+        tests/Map2ControllerTests.cpp
+        Source/Controllers/Map2Controller.cpp
+        Source/Controllers/Map2ControllerFactory.cpp
+    )
+    target_compile_definitions(controllers_tests PRIVATE
+        JUCE_GLOBAL_MODULE_SETTINGS_INCLUDED=1
+        JUCE_WEB_BROWSER=0
+        JUCE_USE_CURL=0
+    )
+    target_include_directories(controllers_tests PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/Source
+    )
+    target_link_libraries(controllers_tests PRIVATE
+        Catch2::Catch2WithMain
+        juce::juce_core
+    )
+    add_test(NAME controllers_tests COMMAND controllers_tests)
+
+    add_custom_target(check-controllers
+        COMMAND ${CMAKE_CTEST_COMMAND} -R "controllers_tests" --output-on-failure
+        DEPENDS controllers_tests
+        WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+        COMMENT "Running Controllers Catch2 tests (T2459-A2)"
+    )
 endif()
 
 # ========================================
