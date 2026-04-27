@@ -6,12 +6,14 @@ import {
   PauseFilled,
   PlayFilled,
   Reset,
+  WarningAlt,
 } from '@carbon/icons-react'
 import { Button, InlineLoading, InlineNotification, Tag, Tile } from '@carbon/react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 
 import { useSetShellWindow } from '@/app/layout/useSetShellWindow'
 import { useBrainRuntimeStateSync } from '@/app/hooks/useBrainRuntimeState'
+import { useDeviceDiagnostics } from '@/app/components/Devices/hooks/useDeviceProfiles'
 import {
   brainApi,
   drumsApi,
@@ -354,6 +356,19 @@ export function PerformanceBrainPage() {
     }
   }, [activeSection, searchParams, setSearchParams, stateMutation])
 
+  // T2461-A10 — Bench health pill mirrors /devices/diagnostics counts.
+  const benchHealthQuery = useDeviceDiagnostics()
+  const benchHealthCounts = benchHealthQuery.data?.counts_by_severity ?? {
+    info: 0, warning: 0, error: 0,
+  }
+  const benchHealthStatus: 'ok' | 'warn' | 'error' =
+    benchHealthCounts.error > 0 ? 'error'
+    : benchHealthCounts.warning > 0 ? 'warn'
+    : 'ok'
+  const benchHealthLabel = benchHealthStatus === 'ok'
+    ? 'Bench healthy'
+    : `Bench: ${benchHealthCounts.error} err / ${benchHealthCounts.warning} warn`
+
   useSetShellWindow({
     title: 'Performance Brain',
     subtitle: 'Unified drum-and-sequencer brain with keyboard layers, trigger nuance, routing, diagnostics, and snapshot-first workflow.',
@@ -361,8 +376,16 @@ export function PerformanceBrainPage() {
     actions: [
       { id: 'focus-overview', label: 'Focus Overview', icon: Reset, onClick: () => handleSectionChange('performance'), active: OVERVIEW_SECTIONS.includes(activeSection) },
       { id: 'back-audio-grid', label: 'Back to Audio Grid', icon: ArrowLeft, onClick: () => navigate('/juce-grid') },
+      {
+        id: 'bench-health',
+        label: benchHealthLabel,
+        icon: WarningAlt,
+        onClick: () => navigate('/devices/diagnostics'),
+        status: benchHealthStatus,
+        title: 'Open bench-wide diagnostics aggregate',
+      },
     ],
-  }, [activeSection, handleSectionChange, navigate])
+  }, [activeSection, handleSectionChange, navigate, benchHealthLabel, benchHealthStatus])
 
   if (
     stateQuery.isLoading

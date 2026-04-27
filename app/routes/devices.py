@@ -759,6 +759,29 @@ async def list_diagnostics(
     }
 
 
+@router.get("/snapshot-keys")
+async def snapshot_keys() -> dict[str, Any]:
+    """T2461-A9 — return the current connected + recently-disconnected
+    profile_keys plus a timestamp so callers (e.g. Brain Library save
+    flow) can record which devices were on the bench when an asset
+    was authored. Non-blocking; reads from the BenchStateTracker that
+    G1 + G2 already keep up to date.
+    """
+    tracker = get_bench_state_tracker()
+    registry = get_profile_registry()
+    snapshot = detect_connections(registry)
+    connected = sorted({r.profile_key for r in snapshot.records})
+    tracker.record_seen(connected)
+    recent = list(tracker.recently_disconnected_keys(set(connected)))
+    pinned = list(tracker.pinned_keys())
+    return {
+        "connected": connected,
+        "recently_disconnected": recent,
+        "pinned": pinned,
+        "snapshot_at": time.time(),
+    }
+
+
 @router.get("/packs/sources")
 async def list_pack_sources() -> dict[str, Any]:
     """Provenance summary per pack (Q15/Q18). Source classification:

@@ -207,6 +207,12 @@ class BrainLibraryAssetModel(BaseModel):
     description: str = ""
     default_slot_mode: Literal["chromatic", "drum", "hybrid"] = "chromatic"
     tags: list[str] = Field(default_factory=list)
+    # T2461-A9 — snapshot of `profile_key`s connected to the bench at
+    # save time (from /api/devices/snapshot-keys). Empty list when the
+    # asset wasn't saved with hardware attached. Library detail row
+    # surfaces these as device-pin Tags + a "Used in N Brain entries"
+    # reverse-link on the matching Hardware Store cards.
+    authored_with_devices: list[str] = Field(default_factory=list)
 
 
 class BrainLibraryCollectionModel(BaseModel):

@@ -425,6 +425,18 @@ export async function listPackSources(): Promise<{
   return fetchJson(`${API_BASE}/api/devices/packs/sources`)
 }
 
+// T2461-A9 — snapshot of bench device state at save time
+export interface DeviceSnapshotKeys {
+  connected: string[]
+  recently_disconnected: string[]
+  pinned: string[]
+  snapshot_at: number
+}
+
+export async function getDeviceSnapshotKeys(): Promise<DeviceSnapshotKeys> {
+  return fetchJson(`${API_BASE}/api/devices/snapshot-keys`)
+}
+
 // T2459-G7 — bindings write + Undo
 export interface BindingControlRow {
   status?: number | string
