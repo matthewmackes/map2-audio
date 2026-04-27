@@ -51,6 +51,11 @@ class BenchStateTracker:
         self._pin_file = pin_file or DEFAULT_PIN_FILE
         self._pinned: set[str] = set()
         self._sightings: dict[str, _Sighting] = {}
+        # T2461-A3 — track last-binding-save timestamp per profile_key
+        # so the Hardware Store DeviceCard can show "Bound 2m ago".
+        # Same TTL semantics as sightings (24 h) — bindings older than
+        # 24 h drop out of the surface to avoid stale-state confusion.
+        self._bindings: dict[str, float] = {}
         self._lock = threading.RLock()
         self._load_pins()
 
@@ -124,6 +129,22 @@ class BenchStateTracker:
         with self._lock:
             s = self._sightings.get(profile_key)
             return s.last_seen_at if s else None
+
+    def record_binding_save(self, profile_key: str, *, now: float | None = None) -> None:
+        """T2461-A3 — note that the operator just saved bindings for
+        this profile. Surfaces in /api/devices/known as `last_bound_at`.
+        """
+        ts = now if now is not None else time.time()
+        with self._lock:
+            self._bindings[profile_key] = ts
+            cutoff = ts - KNOWN_RETENTION_S
+            stale = [k for k, t in self._bindings.items() if t < cutoff]
+            for k in stale:
+                self._bindings.pop(k, None)
+
+    def last_bound(self, profile_key: str) -> float | None:
+        with self._lock:
+            return self._bindings.get(profile_key)
 
     def known_keys(self, *, now: float | None = None) -> tuple[str, ...]:
         """Pinned ∪ seen-within-24h."""

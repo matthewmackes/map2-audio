@@ -32,6 +32,8 @@ export interface DeviceProfileSummary {
   hardware_id: string | null
   alsa_card_regex?: string | null
   alsa_client_pattern?: string | null
+  /** T2461-A7 — capability strings declared by the profile YAML. */
+  capabilities?: string[]
 }
 
 export interface DeviceProfileDetail extends DeviceProfileSummary {
@@ -324,6 +326,9 @@ export interface KnownDeviceRow {
   profile_key: string
   is_pinned: boolean
   last_seen_at: number | null
+  /** T2461-A3 — timestamp of the most recent binding save through the
+   *  bindings_writer or the MIDI Assignments wizard. */
+  last_bound_at?: number | null
 }
 
 export interface RecentlyDisconnectedRow {
@@ -500,4 +505,27 @@ export async function getMixxxChecksumStatus(): Promise<MixxxChecksumStatus> {
 // tab opens it directly.
 export function syncMixxxStreamUrl(): string {
   return `${API_BASE}/api/devices/sources/sync-mixxx`
+}
+
+// T2461-A8 — Mixxx alias resolver. Wizard target step posts a
+// (group, key) shorthand and gets back the MAP2 target string.
+export interface MixxxAliasResolveResult {
+  resolved: boolean
+  target?: string
+  alias_table_used?: boolean
+  reason?: string
+}
+
+export async function resolveMixxxAlias(
+  packId: string, model: string, kind: 'midi' | 'hid',
+  group: string, key: string,
+): Promise<MixxxAliasResolveResult> {
+  return fetchJson(
+    `${API_BASE}/api/devices/profiles/${encodeURIComponent(packId)}/${encodeURIComponent(model)}/${kind}/resolve-alias`,
+    {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ group, key }),
+    },
+  )
 }

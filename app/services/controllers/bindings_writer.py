@@ -159,6 +159,26 @@ class BindingsWriter:
         except Exception as exc:   # noqa: BLE001 — defensive
             logger.warning("Pack reload after binding write failed: %s", exc)
 
+        # T2461-A3 — record the save timestamp on the bench-state
+        # tracker so the Hardware Store DeviceCard can render
+        # "Bound 2m ago" alongside the existing "Last seen" row.
+        try:
+            from app.services.controllers.bench_state import (
+                get_bench_state_tracker,
+            )
+            # The writer's profile_key shape is `<pack_id>/<filename-stem>`,
+            # but the tracker keys by `<pack_id>/<model>.<kind>`. Build the
+            # tracker form from filesystem metadata so the field aligns
+            # with /api/devices/known rows.
+            tracker_key = f"{pack_id}/{profile_path.stem}.{profile_kind}"
+            # filename-stem is `<model>.<kind>`; keep pack_id form below
+            # by stripping the trailing `.<kind>` if duplicated.
+            if tracker_key.endswith(f".{profile_kind}.{profile_kind}"):
+                tracker_key = tracker_key.rsplit(f".{profile_kind}", 1)[0]
+            get_bench_state_tracker().record_binding_save(tracker_key)
+        except Exception as exc:   # noqa: BLE001
+            logger.debug("record_binding_save skipped: %s", exc)
+
         return WriteResult(
             revision=revision,
             undo_token=undo_token,

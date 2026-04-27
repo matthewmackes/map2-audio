@@ -657,7 +657,11 @@ async def list_recently_disconnected() -> dict[str, Any]:
 
 @router.get("/known")
 async def list_known_devices() -> dict[str, Any]:
-    """Pinned profiles + profiles seen within the last 24 h (Q12/Q14)."""
+    """Pinned profiles + profiles seen within the last 24 h (Q12/Q14).
+
+    T2461-A3 — also includes ``last_bound_at`` from the bench-state
+    tracker so the GUI can render "Bound Nm ago" beside "Last seen".
+    """
     tracker = get_bench_state_tracker()
     rows = []
     for key in tracker.known_keys():
@@ -665,6 +669,7 @@ async def list_known_devices() -> dict[str, Any]:
             "profile_key": key,
             "is_pinned": tracker.is_pinned(key),
             "last_seen_at": tracker.last_seen(key),
+            "last_bound_at": tracker.last_bound(key),
         })
     return {"known": rows, "count": len(rows)}
 
@@ -916,6 +921,76 @@ async def sync_mixxx(req: _SyncMixxxRequest) -> StreamingResponse:
                 pass
 
     return StreamingResponse(_stream(), media_type="text/event-stream")
+
+
+# ---------------------------------------------------------------------------
+# T2461-A8 — Mixxx-shorthand → MAP2 target resolver
+# ---------------------------------------------------------------------------
+
+class _MixxxAliasResolveRequest(BaseModel):
+    """Body for POST /api/devices/profiles/{...}/resolve-alias.
+
+    The wizard sends Mixxx-native form (``[Channel1].volume``) plus the
+    target profile_key so we can read its ``mixxx_alias_table`` and
+    apply per-pack overrides.
+    """
+    group: str
+    key: str
+
+
+@router.post("/profiles/{pack_id}/{model}/{kind}/resolve-alias")
+async def resolve_mixxx_alias(
+    pack_id: str, model: str, kind: str,
+    req: _MixxxAliasResolveRequest,
+) -> dict[str, Any]:
+    """T2461-A8 — translate a Mixxx ``(group, key)`` shorthand to the
+    MAP2 target string the binding writer accepts. The wizard's target
+    step calls this so operators can type the form they already know.
+
+    Returns ``{resolved: true, target: "audio.chain.1.volume"}`` on a
+    hit; ``{resolved: false, reason: "..."}`` on a miss (fail-soft).
+    """
+    from app.services.controllers.mixxx_control_object_bridge import (
+        resolve as bridge_resolve,
+    )
+
+    if kind not in {"midi", "hid"}:
+        raise _g1_error(
+            status_code=400,
+            detail="alias resolution only meaningful for midi/hid profiles",
+            code="invalid_kind",
+            source="mixxx_alias_resolver",
+        )
+
+    registry = get_profile_registry()
+    profile = next(
+        (p for p in registry.profiles(kind=kind)
+         if p.pack_id == pack_id and p.model == model),
+        None,
+    )
+    if profile is None:
+        raise _g1_error(
+            status_code=404,
+            detail=f"profile {pack_id}/{model}.{kind} not found",
+            code="profile_not_found",
+            source="profile_registry",
+        )
+
+    alias_table = profile.document.get("mixxx_alias_table") or {}
+    if not isinstance(alias_table, dict):
+        alias_table = {}
+
+    result = bridge_resolve(req.group, req.key, alias_table)
+    if result.resolved:
+        return {
+            "resolved": True,
+            "target": result.target,
+            "alias_table_used": req.group in alias_table,
+        }
+    return {
+        "resolved": False,
+        "reason": result.fail_soft_reason or "no mapping for this (group, key)",
+    }
 
 
 # ---------------------------------------------------------------------------

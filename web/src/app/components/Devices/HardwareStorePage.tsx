@@ -65,11 +65,12 @@ function buildProfileRows(args: {
   pinnedKeys: Set<string>
   recentlyDisconnectedKeys: Set<string>
   knownLastSeen: Record<string, number | null>
+  knownLastBound: Record<string, number | null>
   diagByPack: Record<string, { count: number; worst: 'info' | 'warning' | 'error' }>
 }): ProfileRow[] {
   const {
     profileKeys, profileIndex, packIndex, connectedKeys, pinnedKeys,
-    recentlyDisconnectedKeys, knownLastSeen, diagByPack,
+    recentlyDisconnectedKeys, knownLastSeen, knownLastBound, diagByPack,
   } = args
   return profileKeys
     .map<ProfileRow>((key) => {
@@ -90,6 +91,7 @@ function buildProfileRows(args: {
           isPinned: pinnedKeys.has(key),
           recentlyDisconnected: recentlyDisconnectedKeys.has(key),
           lastSeenAt: knownLastSeen[key] ?? null,
+          lastBoundAt: knownLastBound[key] ?? null,
           diagnosticCount: dx?.count,
           diagnosticWorstSeverity: dx?.worst,
         }
@@ -107,8 +109,10 @@ function buildProfileRows(args: {
         isPinned: pinnedKeys.has(key),
         recentlyDisconnected: recentlyDisconnectedKeys.has(key),
         lastSeenAt: knownLastSeen[key] ?? null,
+        lastBoundAt: knownLastBound[key] ?? null,
         diagnosticCount: dx?.count,
         diagnosticWorstSeverity: dx?.worst,
+        capabilities: p?.capabilities,
       }
     })
     .sort((a, b) => a.profileKey.localeCompare(b.profileKey))
@@ -238,6 +242,14 @@ export function HardwareStorePage(): React.JSX.Element {
     return out
   }, [knownQuery.data])
 
+  const knownLastBound = React.useMemo<Record<string, number | null>>(() => {
+    const out: Record<string, number | null> = {}
+    for (const r of knownQuery.data?.known ?? []) {
+      out[r.profile_key] = r.last_bound_at ?? null
+    }
+    return out
+  }, [knownQuery.data])
+
   const recentlyDisconnectedKeys = React.useMemo(() => {
     return new Set(
       (recentQuery.data?.recently_disconnected ?? []).map((r) => r.profile_key),
@@ -254,14 +266,14 @@ export function HardwareStorePage(): React.JSX.Element {
     profileKeys: Array.from(connectedKeys),
     profileIndex, packIndex,
     connectedKeys, pinnedKeys, recentlyDisconnectedKeys,
-    knownLastSeen, diagByPack,
+    knownLastSeen, knownLastBound, diagByPack,
   })
 
   const recentRows = buildProfileRows({
     profileKeys: Array.from(recentlyDisconnectedKeys).filter((k) => !connectedKeys.has(k)),
     profileIndex, packIndex,
     connectedKeys, pinnedKeys, recentlyDisconnectedKeys,
-    knownLastSeen, diagByPack,
+    knownLastSeen, knownLastBound, diagByPack,
   })
 
   const knownNotRecentRows = buildProfileRows({
@@ -270,7 +282,7 @@ export function HardwareStorePage(): React.JSX.Element {
     ),
     profileIndex, packIndex,
     connectedKeys, pinnedKeys, recentlyDisconnectedKeys,
-    knownLastSeen, diagByPack,
+    knownLastSeen, knownLastBound, diagByPack,
   })
 
   // Catalogue: all known profiles minus those already shown in
@@ -287,11 +299,11 @@ export function HardwareStorePage(): React.JSX.Element {
       profileKeys: all.filter((k) => !usedKeys.has(k)),
       profileIndex, packIndex,
       connectedKeys, pinnedKeys, recentlyDisconnectedKeys,
-      knownLastSeen, diagByPack,
+      knownLastSeen, knownLastBound, diagByPack,
     })
   }, [
     connectedKeys, recentlyDisconnectedKeys, knownKeys, profileIndex, packIndex,
-    pinnedKeys, knownLastSeen, diagByPack,
+    pinnedKeys, knownLastSeen, knownLastBound, diagByPack,
   ])
 
   const isLoading = profilesQuery.isLoading || packsQuery.isLoading

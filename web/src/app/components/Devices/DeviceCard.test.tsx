@@ -124,6 +124,42 @@ test('DeviceCard: G8 — no diagnostic tag when count is 0', () => {
   expect(screen.queryByText(/0 info/)).not.toBeInTheDocument()
 })
 
+test('DeviceCard: T2461-A3 — last-bound row renders when lastBoundAt is set', () => {
+  const tenMinAgo = Math.floor(Date.now() / 1000) - 10 * 60
+  renderCard({ lastBoundAt: tenMinAgo, isConnected: false })
+  expect(screen.getByText(/Bound \d+m ago/)).toBeInTheDocument()
+})
+
+test('DeviceCard: T2461-A3 — last-bound row hidden when lastBoundAt is null', () => {
+  renderCard({ lastBoundAt: null, isConnected: false })
+  expect(screen.queryByText(/Bound \d+/)).not.toBeInTheDocument()
+})
+
+test('DeviceCard: T2461-A7 — step-pads capability renders Brain Step deep-link', () => {
+  renderCard({ capabilities: ['step-pads', 'midi'] })
+  const link = screen.getByText('Brain Step').closest('a')
+  expect(link?.getAttribute('href')).toContain('/brain?section=step')
+  expect(link?.getAttribute('href')).toContain('device=edirol-ua%2Fua-1000.audio')
+})
+
+test('DeviceCard: T2461-A7 — monitor-mixer capability renders Brain Console deep-link', () => {
+  renderCard({ capabilities: ['monitor-mixer'] })
+  const link = screen.getByText('Brain Console').closest('a')
+  expect(link?.getAttribute('href')).toContain('/brain?section=console')
+})
+
+test('DeviceCard: T2461-A7 — no Brain tag when no matching capability', () => {
+  renderCard({ capabilities: ['some-unrelated-cap'] })
+  expect(screen.queryByText(/^Brain /)).not.toBeInTheDocument()
+})
+
+test('DeviceCard: T2461-A7 — first matching capability wins (priority order)', () => {
+  // step-pads has priority over monitor-mixer.
+  renderCard({ capabilities: ['monitor-mixer', 'step-pads'] })
+  expect(screen.getByText('Brain Step')).toBeInTheDocument()
+  expect(screen.queryByText('Brain Console')).not.toBeInTheDocument()
+})
+
 test('DeviceCard: Pin button calls pinDeviceProfile + shows Undo toast', async () => {
   renderCard({ isPinned: false })
 

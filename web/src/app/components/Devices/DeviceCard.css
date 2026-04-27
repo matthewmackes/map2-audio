@@ -91,6 +91,13 @@
   font-variant-numeric: tabular-nums;
 }
 
+.device-card__last-bound {
+  margin: 0;
+  font-size: 0.75rem;
+  color: var(--cds-link-primary);
+  font-variant-numeric: tabular-nums;
+}
+
 .device-card__actions {
   display: flex;
   flex-wrap: wrap;

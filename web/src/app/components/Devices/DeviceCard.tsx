@@ -45,6 +45,12 @@ export interface DeviceCardRow {
    * computes this from `useDeviceDiagnostics`. */
   diagnosticCount?: number
   diagnosticWorstSeverity?: 'info' | 'warning' | 'error'
+  /** T2461-A3 — last binding save (epoch seconds) so the card shows
+   * "Bound 2m ago" alongside "Last seen". */
+  lastBoundAt?: number | null
+  /** T2461-A7 — capability strings from the device profile YAML.
+   * The card maps these to Brain section deep-links. */
+  capabilities?: string[]
 }
 
 export interface DeviceCardProps {
@@ -65,6 +71,33 @@ const SOURCE_TAG_LABEL: Record<NonNullable<DeviceCardSourceLabel>, string> = {
   shipped: 'Shipped',
   user: 'User',
   imported: 'Imported',
+}
+
+/**
+ * T2461-A7 — capability → Brain section deep-link map.
+ * The first matching capability wins (priority by spec order).
+ */
+const BRAIN_CAPABILITY_MAP: Array<{
+  capability: string
+  section: 'console' | 'step' | 'perform' | 'split' | 'routing'
+  label: string
+}> = [
+  { capability: 'step-pads', section: 'step', label: 'Brain Step' },
+  { capability: 'transport-controls', section: 'perform', label: 'Brain Performance' },
+  { capability: 'monitor-mixer', section: 'console', label: 'Brain Console' },
+  { capability: 'expression-pedal', section: 'perform', label: 'Brain Performance' },
+  { capability: 'crossfader', section: 'split', label: 'Brain Split' },
+]
+
+function brainTagFor(capabilities: string[] | undefined):
+  { label: string; section: string } | null {
+  if (!capabilities || capabilities.length === 0) return null
+  for (const m of BRAIN_CAPABILITY_MAP) {
+    if (capabilities.includes(m.capability)) {
+      return { label: m.label, section: m.section }
+    }
+  }
+  return null
 }
 
 function formatLastSeen(ts: number | null): string {
@@ -216,10 +249,26 @@ export function DeviceCard({ row, onPinChanged }: DeviceCardProps): React.JSX.El
             {row.diagnosticCount > 1 ? 's' : ''}
           </Tag>
         ) : null}
+        {(() => {
+          const brain = brainTagFor(row.capabilities)
+          if (!brain) return null
+          return (
+            <RouterLink
+              to={`/brain?section=${brain.section}&device=${encodeURIComponent(row.profileKey)}`}
+              className="device-card__brain-tag-link"
+              aria-label={`Open ${brain.label}`}
+            >
+              <Tag size="sm" type="teal">{brain.label}</Tag>
+            </RouterLink>
+          )
+        })()}
       </div>
 
       {row.lastSeenAt !== null && !row.isConnected ? (
         <p className="device-card__last-seen">Last seen {formatLastSeen(row.lastSeenAt)}</p>
+      ) : null}
+      {row.lastBoundAt ? (
+        <p className="device-card__last-bound">Bound {formatLastSeen(row.lastBoundAt)}</p>
       ) : null}
 
       <div className="device-card__actions" role="group" aria-label={`${row.model} actions`}>

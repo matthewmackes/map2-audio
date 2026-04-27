@@ -93,6 +93,39 @@ interface EnrichedSurfaceSummary {
   units?: Array<{ unit_id: string; display_name?: string; status?: string; capabilities?: string[] }>
 }
 
+/**
+ * T2461-A1 — merge Hardware Store pinned profile keys into the surface
+ * picker as synthetic AdaptedSurface entries at the top of the list.
+ * profile_key shape is `<pack_id>/<model>.<kind>`.
+ */
+export function mergeBenchPinsIntoSurfaces(
+  baseSurfaces: AdaptedSurface[],
+  pinnedProfileKeys: string[],
+): AdaptedSurface[] {
+  if (pinnedProfileKeys.length === 0) return baseSurfaces
+  const existingIds = new Set(baseSurfaces.map((s) => s.id))
+  const synthetic: AdaptedSurface[] = []
+  for (const key of pinnedProfileKeys) {
+    const slash = key.indexOf('/')
+    if (slash < 0) continue
+    const dotted = key.slice(slash + 1)
+    const lastDot = dotted.lastIndexOf('.')
+    const model = lastDot > 0 ? dotted.slice(0, lastDot) : dotted
+    const kind = lastDot > 0 ? dotted.slice(lastDot + 1) : 'midi'
+    const synId = `bench-pin:${key}`
+    if (existingIds.has(synId)) continue
+    synthetic.push({
+      id: synId,
+      label: `${model} (Hardware Store pin)`,
+      shortLabel: model,
+      status: 'online',
+      capabilities: [`${kind} bindings`, 'pinned in Hardware Store'],
+      meta: null,
+    })
+  }
+  return [...synthetic, ...baseSurfaces]
+}
+
 function buildAdaptedSurfaces(summary: EnrichedSurfaceSummary | null | undefined): AdaptedSurface[] {
   const units = summary?.units ?? []
   // Always include the metadata-only surfaces (e.g. Push) so the picker matches the design.
@@ -1147,6 +1180,33 @@ export function MidiAssignmentsPage() {
     [enrichedQuery.data],
   )
 
+  // T2461-A1 — Hardware Store pinned devices appear as synthetic
+  // AdaptedSurface entries at the top of the wizard's device picker.
+  // The Hardware Store BenchStateTracker is the single source of truth
+  // for "this is the device I'm working on right now"; we read it and
+  // merge into the existing surface list so operators don't pin twice.
+  const knownDevicesQuery = useQuery({
+    queryKey: ['devices', 'known-for-wizard'],
+    queryFn: async () => {
+      const r = await fetch('/api/devices/known')
+      if (!r.ok) throw new Error(`/api/devices/known ${r.status}`)
+      return r.json() as Promise<{
+        known: Array<{ profile_key: string; is_pinned: boolean; last_seen_at: number | null }>
+      }>
+    },
+    refetchInterval: 30_000,
+    staleTime: 15_000,
+    retry: false,
+  })
+
+  const surfacesWithBenchPins = useMemo<AdaptedSurface[]>(
+    () => mergeBenchPinsIntoSurfaces(
+      adaptedSurfaces,
+      (knownDevicesQuery.data?.known ?? []).filter((r) => r.is_pinned).map((r) => r.profile_key),
+    ),
+    [adaptedSurfaces, knownDevicesQuery.data],
+  )
+
   // ─── Pinned surface (Q2) ─────────────────────────────────────────────────
   const [pinnedId, setPinnedId] = usePinnedSurfaceId()
   const pinnedSurface = adaptedSurfaces.find((s) => s.id === pinnedId) ?? null
@@ -1554,7 +1614,7 @@ export function MidiAssignmentsPage() {
               <ErrorBoundary title="Walkthrough step crashed">
                 {stepIdx === 0 && (
                   <StepDevice
-                    surfaces={adaptedSurfaces}
+                    surfaces={surfacesWithBenchPins}
                     state={state}
                     setState={updateState}
                     pinnedId={pinnedId}
