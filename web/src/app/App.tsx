@@ -67,6 +67,8 @@ const DevicesShell          = lazy(() => import('./components/Devices/DevicesShe
 const DevicesStorePage      = lazy(() => import('./components/Devices/DevicesStorePage').then(m => ({ default: m.DevicesStorePage })))
 // T2459-G3 — Hardware Store (preview route until G11 cuts over the index).
 const HardwareStorePage     = lazy(() => import('./components/Devices/HardwareStorePage').then(m => ({ default: m.HardwareStorePage })))
+// T2459-G5 — Device detail tabs (preview route until G11 cuts over).
+const DeviceDetailRoute     = lazy(() => import('./components/Devices/DeviceDetail/DeviceDetailRoute').then(m => ({ default: m.DeviceDetailRoute })))
 const EdirolUA1000View      = lazy(() => import('./components/Devices/EdirolUA1000/EdirolUA1000View').then(m => ({ default: m.EdirolUA1000View })))
 const HoToneJoGGView        = lazy(() => import('./components/Devices/HoToneJoGG/HoToneJoGGView').then(m => ({ default: m.HoToneJoGGView })))
 // T2459-C1 — auto-rendered device panel for any pack/model under
@@ -502,6 +504,8 @@ export function App() {
                                   <Route path="hotone-jogg/:view" element={<HoToneJoGGView />} />
                                   {/* T2459-C1 — auto-rendered profile-driven device pages. */}
                                   <Route path="profile/:packId/:model" element={<RouteBoundary title="Device profile crashed" actionLabel="Reload"><DevicePage /></RouteBoundary>} />
+                                  {/* T2459-G5 — Hardware Store device detail tabs (preview). */}
+                                  <Route path="profile/:packId/:model/v2" element={<RouteBoundary title="Device detail v2 crashed" actionLabel="Reload"><DeviceDetailRoute /></RouteBoundary>} />
                                   {/* T2459-C4 — node-graph mapping editor. */}
                                   <Route path="profile/:packId/:model/mappings" element={<RouteBoundary title="Mapping editor crashed" actionLabel="Reload"><DeviceMappingsPage /></RouteBoundary>} />
                                   <Route path="lcd/*" element={<LCDShell />}>
