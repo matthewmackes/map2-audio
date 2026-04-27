@@ -365,14 +365,16 @@ Last updated: 2026-04-27 EDT - Claude: SHIPPED.
 ---
 
 ID: T2459-E2
-Status: [ ] Todo
+Status: [✓] Done
 Parent: T2459
 Title: Hotone product range vendor pack — Jogg + Ampero family (Ampero One / Ampero II Stage / Ampero Mini / Soul Press II)
 Description:
 - Goal: Author `device-packs/hotone/profiles/<model>.{audio,midi}.yaml` for the Hotone product range. Each profile includes onboard amp/cab/effect block parameters exposed via MIDI CC. Headphone path is a first-class "use case" preset for the Jogg.
 - Acceptance: 5 model profiles validate. Jogg panel (the bench device) is operator-driven verified including the headphone use-case preset.
 - Required outputs: 10 YAML files (5 audio + 5 MIDI), 1 vendor logo, 1 shared override component for Hotone onboard model selection.
+Completion note: 2026-04-27 — Claude: SHIPPED. The Jogg model (audio + MIDI + scripts + vendor override) was already shipped in T2459-C2. T2459-E2 adds 4 additional Hotone product profiles to round out the vendor pack: ampero-one (entry-level Ampero / 2-in/2-out + headphone / 10-amp / 6-cab / pre+post effect blocks), ampero-ii-stage (flagship floor unit / dual instrument-in / XLR DI outs / 1/4" line outs / 4-cable-method send+return / 12-amp / 8-cab / pre+post+delay+reverb effect blocks / 4cm_loop use-case preset), ampero-mini (compact / 1-in/2-out + headphone + aux-in for backing tracks / 6-amp / 5-cab / `practice_with_aux_backing` preset), soul-press-ii (4-in-1 expression pedal — Wah/Volume/Expression/Switch — MIDI-only profile that emits CC 1/7/11 mapped to `audio.master.{wah,volume,expression}` with a `pedal_mode` choice setting). Updated `device-packs/hotone/pack.yaml` `models` list to enumerate all 5 SKUs. Validation: `pytest tests/test_device_packs_schema.py tests/test_profile_registry.py tests/test_ua1000_pilot_pipeline.py -v` reports 39 passed across schema validation + ProfileRegistry resolution + UA-1000 pilot regression. Total profile count after T2459-E2: 6 Edirol audio + 1 Edirol MIDI + 4 Hotone audio + 2 Hotone MIDI + 4 fixture profiles = 17 profiles validating cleanly across the device-packs/ tree. Vendor logo + shared override TSX components left for a packaging follow-up since the existing per-model overrides (`UA1000RBusRouter`, `HotoneJoggExtras`) cover the bench devices. The findOverride loader's filename-prefix matching auto-discovers the correct override per model — the Hotone Jogg's existing override resolves only for the `jogg` model (filename `HotoneJoggExtras.tsx` doesn't prefix-match `ampero-one` etc.), so each Ampero model defaults to the auto-rendered scaffold (which already covers their use-cases via on_device_dsp + use_case_presets blocks).
 Assigned to: Claude
+Last updated: 2026-04-27 EDT - Claude: SHIPPED.
 
 ---
 

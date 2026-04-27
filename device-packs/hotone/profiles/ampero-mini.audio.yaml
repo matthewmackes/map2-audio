@@ -1,0 +1,76 @@
+schema_version: 1
+identity:
+  manufacturer: Hotone Audio
+  model: Ampero Mini
+  family: Hotone Ampero
+  hardware_id: usb:1234:abd0
+  alsa_card_regex: '^Ampero Mini\b'
+
+ports:
+  - id: instrument_in
+    kind: analog
+    direction: input
+    count: 1
+    sample_rates: [44100, 48000]
+    bit_depths: [24]
+    connectors: [ts_quarter_inch]
+  - id: line_out_l
+    kind: analog
+    direction: output
+    count: 1
+    sample_rates: [44100, 48000]
+    bit_depths: [24]
+    connectors: [trs_quarter_inch]
+  - id: line_out_r
+    kind: analog
+    direction: output
+    count: 1
+    sample_rates: [44100, 48000]
+    bit_depths: [24]
+    connectors: [trs_quarter_inch]
+  - id: headphone_out
+    kind: headphone
+    direction: output
+    count: 2
+    sample_rates: [44100, 48000]
+    bit_depths: [24]
+    connectors: [headphone_3_5mm]
+  - id: aux_in
+    kind: analog
+    direction: input
+    count: 2
+    sample_rates: [44100, 48000]
+    bit_depths: [24]
+    connectors: [headphone_3_5mm]
+
+on_device_dsp:
+  - id: amp_block
+    kind: amp_model
+    params:
+      - { name: model_select, type: list,
+          list_values: [Twin, Plexi, Recto, JCM800, AC30, Bassman] }
+    controllable_via: [midi_cc]
+  - id: cab_block
+    kind: cabinet_sim
+    params:
+      - { name: cab_select, type: list,
+          list_values: ['1x12', '2x12', '4x12 V30', '4x12 G12T', 'Bypass'] }
+    controllable_via: [midi_cc]
+
+routing_topology:
+  default_matrix: identity_2x2
+
+loopback_ports:
+  playback: 'Ampero Mini:playback_FL'
+  capture: 'Ampero Mini:capture_FL'
+
+use_case_presets:
+  - id: practice_with_aux_backing
+    name: 'Practice with aux backing track'
+    description: 'Phone/laptop into aux_in, instrument plays alongside through headphones.'
+    ports_used: [instrument_in, aux_in, headphone_out]
+    routing: identity
+
+metadata:
+  manual_url: 'https://www.hotoneaudio.com/products/ampero-mini/'
+  vendor_support_url: 'https://www.hotoneaudio.com/support/'

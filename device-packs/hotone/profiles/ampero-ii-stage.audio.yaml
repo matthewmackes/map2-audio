@@ -1,0 +1,134 @@
+schema_version: 1
+identity:
+  manufacturer: Hotone Audio
+  model: Ampero II Stage
+  family: Hotone Ampero
+  hardware_id: usb:1234:abcf
+  alsa_card_regex: '^Ampero II Stage\b'
+
+ports:
+  - id: instrument_in_l
+    kind: analog
+    direction: input
+    count: 1
+    sample_rates: [44100, 48000, 96000]
+    bit_depths: [24]
+    connectors: [ts_quarter_inch]
+  - id: instrument_in_r
+    kind: analog
+    direction: input
+    count: 1
+    sample_rates: [44100, 48000, 96000]
+    bit_depths: [24]
+    connectors: [ts_quarter_inch]
+  - id: xlr_out_l
+    kind: analog
+    direction: output
+    count: 1
+    sample_rates: [44100, 48000, 96000]
+    bit_depths: [24]
+    connectors: [xlr_male]
+  - id: xlr_out_r
+    kind: analog
+    direction: output
+    count: 1
+    sample_rates: [44100, 48000, 96000]
+    bit_depths: [24]
+    connectors: [xlr_male]
+  - id: line_out_l
+    kind: analog
+    direction: output
+    count: 1
+    sample_rates: [44100, 48000, 96000]
+    bit_depths: [24]
+    connectors: [trs_quarter_inch]
+  - id: line_out_r
+    kind: analog
+    direction: output
+    count: 1
+    sample_rates: [44100, 48000, 96000]
+    bit_depths: [24]
+    connectors: [trs_quarter_inch]
+  - id: headphone_out
+    kind: headphone
+    direction: output
+    count: 2
+    sample_rates: [44100, 48000, 96000]
+    bit_depths: [24]
+    connectors: [headphone_quarter_inch]
+  - id: send_out
+    kind: analog
+    direction: output
+    count: 1
+    sample_rates: [44100, 48000, 96000]
+    bit_depths: [24]
+    connectors: [trs_quarter_inch]
+  - id: return_in
+    kind: analog
+    direction: input
+    count: 1
+    sample_rates: [44100, 48000, 96000]
+    bit_depths: [24]
+    connectors: [trs_quarter_inch]
+
+on_device_dsp:
+  - id: amp_block
+    kind: amp_model
+    params:
+      - { name: model_select, type: list,
+          list_values: [Twin, Plexi, Recto, JCM800, AC30, Bassman, Soldano, Diezel, Bogner, Mark IV, EVH 5150, Splawn] }
+      - { name: gain, type: continuous, min: 0.0, max: 1.0, default: 0.5 }
+    controllable_via: [midi_cc]
+  - id: cab_block
+    kind: cabinet_sim
+    params:
+      - { name: cab_select, type: list,
+          list_values: ['1x12', '2x12', '4x12 V30', '4x12 G12T', '4x12 Greenback', '4x10', '8x10', 'Bypass'] }
+    controllable_via: [midi_cc]
+  - id: effect_pre
+    kind: effect_block
+    params:
+      - { name: type, type: list, list_values: [Compressor, OD, Distortion, Fuzz, Wah, Boost, Bypass] }
+    controllable_via: [midi_cc]
+  - id: effect_post
+    kind: effect_block
+    params:
+      - { name: type, type: list, list_values: [Chorus, Phaser, Flanger, Tremolo, Vibrato, Bypass] }
+    controllable_via: [midi_cc]
+  - id: effect_delay
+    kind: delay
+    params:
+      - { name: type, type: list, list_values: [Tape, Analog, Digital, Reverse, Bypass] }
+      - { name: time_ms, type: continuous, min: 1.0, max: 2000.0, default: 350.0 }
+      - { name: feedback, type: continuous, min: 0.0, max: 1.0, default: 0.4 }
+    controllable_via: [midi_cc]
+  - id: effect_reverb
+    kind: reverb
+    params:
+      - { name: type, type: list, list_values: [Room, Hall, Plate, Spring, Shimmer, Bypass] }
+    controllable_via: [midi_cc]
+
+routing_topology:
+  default_matrix: identity_2x2
+
+loopback_ports:
+  playback: 'Ampero II Stage:playback_FL'
+  capture: 'Ampero II Stage:capture_FL'
+
+use_case_presets:
+  - id: stereo_to_xlr
+    name: 'Stereo to FOH (XLR)'
+    ports_used: [instrument_in_l, instrument_in_r, xlr_out_l, xlr_out_r]
+    routing: identity
+  - id: stereo_to_amp
+    name: 'Stereo to amp (1/4" line out)'
+    ports_used: [instrument_in_l, instrument_in_r, line_out_l, line_out_r]
+    routing: identity
+  - id: 4cm_loop
+    name: '4-cable method (FX loop)'
+    ports_used: [instrument_in_l, send_out, return_in, line_out_l]
+    routing: monitor_send
+
+metadata:
+  manual_url: 'https://www.hotoneaudio.com/products/ampero-ii-stage/'
+  vendor_support_url: 'https://www.hotoneaudio.com/support/'

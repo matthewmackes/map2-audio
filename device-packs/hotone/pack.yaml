@@ -13,3 +13,7 @@ license: AGPL-3.0-only
 source: map2-native
 models:
   - jogg
+  - ampero-one
+  - ampero-ii-stage
+  - ampero-mini
+  - soul-press-ii

@@ -1,0 +1,39 @@
+schema_version: 1
+identity:
+  manufacturer: Hotone Audio
+  model: soul-press-ii
+  alsa_client_pattern: 'Soul Press II'
+  hardware_id: alsa-seq:Soul Press II:0
+
+# The Soul Press II is a 4-in-1 expression pedal: Wah / Volume / Expression /
+# Switch. It sends MIDI CC for the expression position so a host (MAP2) can
+# route it to any audio.* engine target.
+controls:
+  - status: 0xB0
+    midino: 11
+    target: audio.master.expression
+    action: set
+    description: 'Expression CC 11 → master expression target.'
+
+  - status: 0xB0
+    midino: 7
+    target: audio.master.volume
+    action: set
+    description: 'Volume mode → master volume.'
+
+  - status: 0xB0
+    midino: 1
+    target: audio.master.wah
+    action: set
+    description: 'Wah mode → master wah.'
+
+settings:
+  - id: pedal_mode
+    label: 'Pedal mode'
+    type: choice
+    default: expression
+    choices: [wah, volume, expression, switch]
+
+mixxx_alias_table:
+  '[Master]': audio.master
+  '[Channel1]': audio.chain.1

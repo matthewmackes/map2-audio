@@ -1,0 +1,84 @@
+schema_version: 1
+identity:
+  manufacturer: Hotone Audio
+  model: Ampero One
+  family: Hotone Ampero
+  hardware_id: usb:1234:abce
+  alsa_card_regex: '^Ampero One\b'
+
+ports:
+  - id: instrument_in
+    kind: analog
+    direction: input
+    count: 1
+    sample_rates: [44100, 48000]
+    bit_depths: [24]
+    connectors: [ts_quarter_inch]
+  - id: line_out_l
+    kind: analog
+    direction: output
+    count: 1
+    sample_rates: [44100, 48000]
+    bit_depths: [24]
+    connectors: [trs_quarter_inch]
+  - id: line_out_r
+    kind: analog
+    direction: output
+    count: 1
+    sample_rates: [44100, 48000]
+    bit_depths: [24]
+    connectors: [trs_quarter_inch]
+  - id: headphone_out
+    kind: headphone
+    direction: output
+    count: 2
+    sample_rates: [44100, 48000]
+    bit_depths: [24]
+    connectors: [headphone_3_5mm]
+
+mixer_surfaces: []
+on_device_dsp:
+  - id: amp_block
+    kind: amp_model
+    params:
+      - { name: model_select, type: list,
+          list_values: [Twin, Plexi, Recto, JCM800, AC30, Bassman, Soldano, Diezel, Bogner, Mark IV] }
+      - { name: gain, type: continuous, min: 0.0, max: 1.0, default: 0.5 }
+    controllable_via: [midi_cc]
+  - id: cab_block
+    kind: cabinet_sim
+    params:
+      - { name: cab_select, type: list,
+          list_values: ['1x12', '2x12', '4x12 V30', '4x12 G12T', '4x12 Greenback', 'Bypass'] }
+    controllable_via: [midi_cc]
+  - id: effect_pre
+    kind: effect_block
+    params:
+      - { name: type, type: list, list_values: [Compressor, OD, Distortion, Fuzz, Wah, Bypass] }
+    controllable_via: [midi_cc]
+  - id: effect_post
+    kind: effect_block
+    params:
+      - { name: type, type: list, list_values: [Chorus, Phaser, Flanger, Tremolo, Delay, Reverb, Bypass] }
+    controllable_via: [midi_cc]
+
+routing_topology:
+  default_matrix: identity_2x2
+
+loopback_ports:
+  playback: 'Ampero One:playback_FL'
+  capture: 'Ampero One:capture_FL'
+
+use_case_presets:
+  - id: stage_main_out
+    name: 'Stage main out'
+    ports_used: [instrument_in, line_out_l, line_out_r]
+    routing: identity
+  - id: practice_headphones
+    name: 'Practice through headphones'
+    ports_used: [instrument_in, headphone_out]
+    routing: identity
+
+metadata:
+  manual_url: 'https://www.hotoneaudio.com/products/ampero-one/'
+  vendor_support_url: 'https://www.hotoneaudio.com/support/'
