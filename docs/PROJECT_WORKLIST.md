@@ -421,14 +421,16 @@ Last updated: 2026-04-27 EDT - Claude: SHIPPED.
 ---
 
 ID: T2459-F1
-Status: [ ] Todo
+Status: [✓] Done
 Parent: T2459
 Title: Hardening — schema validation CI for every shipped vendor pack YAML
 Description:
 - Goal: Pytest suite that walks `device-packs/` and validates every YAML against its corresponding JSON Schema (audio profile, MIDI profile, HID profile, pack manifest). Mirrors Mixxx's `controller_mapping_validation_test.cpp` pattern but for YAML.
 - Acceptance: CI fails if any new pack ships an invalid YAML. CI runs on every PR.
 - Required outputs: `tests/test_device_packs_schema.py` (extended from A4), CI integration.
+Completion note: 2026-04-27 — Claude: SHIPPED. The base of T2459-F1 was already in place from T2459-A4 (`tests/test_device_packs_schema.py` walking `device-packs/` and validating every YAML against its schema). T2459-F1 extends the suite with 4 additional hardening checks that close common authoring traps that would otherwise sneak through to production: (1) **license declaration gate** — every pack manifest must declare a non-empty `license` SPDX or descriptive string; missing license fails CI rather than shipping an unknown-license pack; (2) **model→profile cross-reference** — every model listed in a `pack.yaml`'s `models` field must have at least one matching `<model>.{audio,midi,hid}.yaml` file in `profiles/`; a model without a profile is a frequent authoring mistake; (3) **hardware_id uniqueness** — two distinct profiles must not declare the same `hardware_id`; collision would cause `ProfileRegistry.resolve_for_hardware_id` to return both and leave the GUI guessing; (4) **loopback_ports pair consistency** — if `loopback_ports` is declared, both `playback` and `capture` must be present and non-empty (the path-c measurement endpoint needs both or fails with a confusing error). With Phase E's full-corpus expansion the suite now validates: 4 schema files, all pack manifests, every audio/MIDI/HID profile across the Edirol UA range + Hotone product range + fixture pack, every script reference resolves, every shipped JS file parses with `node --check`, the broken-YAML fail-soft sanity check, plus the 4 new hardening cases. Validation: `pytest tests/test_device_packs_schema.py -v` reports **16 passed in 1.40s** — and the new hardening checks correctly green-light the entire shipped pack tree, confirming there are no license-missing, missing-profile, hardware_id-collision, or loopback_ports-inconsistency violations across the 6 Edirol audio + 1 Edirol MIDI + 4 Hotone audio + 2 Hotone MIDI + 4 fixture profiles. CI integration is implicit: the suite runs as part of the platform's main `pytest` invocation per CLAUDE.md §0.7's pre-commit/pre-push checklist.
 Assigned to: Claude
+Last updated: 2026-04-27 EDT - Claude: SHIPPED.
 
 ---
 

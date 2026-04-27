@@ -282,3 +282,100 @@ def test_broken_yaml_raises_a_known_error() -> None:
     schema = {"type": "object", "required": ["x"]}
     with pytest.raises(jsonschema.ValidationError):
         jsonschema.validate(doc, schema)
+
+
+# ---------------------------------------------------------------------------
+# T2459-F1 — extended hardening checks across the now-larger pack tree.
+# ---------------------------------------------------------------------------
+
+def test_every_vendor_pack_declares_a_license() -> None:
+    """Every pack's manifest must declare its license (SPDX identifier
+    or descriptive string). A missing license is a contributor error
+    that should fail CI, not silently ship an unknown-license pack.
+    """
+    failures: list[str] = []
+    for pack_dir in _walk_packs():
+        manifest = pack_dir / "pack.yaml"
+        if not manifest.exists():
+            continue
+        with open(manifest, encoding="utf-8") as f:
+            doc = yaml.safe_load(f)
+        license_value = doc.get("license")
+        if not license_value or not isinstance(license_value, str):
+            failures.append(f"{pack_dir.name}/pack.yaml: missing or invalid `license` field")
+    assert not failures, "Pack license violations:\n  " + "\n  ".join(failures)
+
+
+def test_every_pack_with_models_has_at_least_one_profile() -> None:
+    """A pack that lists models in its manifest must have at least one
+    matching profile YAML. A model listed without a profile is a
+    common authoring mistake we want CI to catch.
+    """
+    failures: list[str] = []
+    for pack_dir in _walk_packs():
+        manifest = pack_dir / "pack.yaml"
+        if not manifest.exists():
+            continue
+        with open(manifest, encoding="utf-8") as f:
+            doc = yaml.safe_load(f)
+        models = doc.get("models") or []
+        for model in models:
+            audio_path = pack_dir / "profiles" / f"{model}.audio.yaml"
+            midi_path = pack_dir / "profiles" / f"{model}.midi.yaml"
+            hid_path = pack_dir / "profiles" / f"{model}.hid.yaml"
+            if not (audio_path.exists() or midi_path.exists() or hid_path.exists()):
+                failures.append(
+                    f"{pack_dir.name}: model '{model}' listed in pack.yaml "
+                    f"but no matching profile YAML exists in profiles/"
+                )
+    assert not failures, "Missing-profile failures:\n  " + "\n  ".join(failures)
+
+
+def test_every_audio_profile_has_unique_hardware_id() -> None:
+    """Two distinct profiles must not share a hardware_id. That would
+    cause `ProfileRegistry.resolve_for_hardware_id` to return both and
+    leave the GUI guessing which to render.
+    """
+    seen: dict[str, str] = {}
+    failures: list[str] = []
+    for pack_dir in _walk_packs():
+        for profile in _profile_files(pack_dir, "audio"):
+            with open(profile, encoding="utf-8") as f:
+                doc = yaml.safe_load(f)
+            identity = doc.get("identity", {}) or {}
+            hwid = identity.get("hardware_id")
+            if not hwid:
+                continue
+            rel = str(profile.relative_to(REPO_ROOT))
+            if hwid in seen:
+                failures.append(
+                    f"hardware_id collision: '{hwid}' declared by both "
+                    f"{seen[hwid]} and {rel}"
+                )
+            else:
+                seen[hwid] = rel
+    assert not failures, "Hardware-id collisions:\n  " + "\n  ".join(failures)
+
+
+def test_every_audio_profile_loopback_ports_pair_consistency() -> None:
+    """If `loopback_ports` is declared, both `playback` and `capture`
+    must be present + non-empty. The path-c measurement (T2459-E3 +
+    E4 GUI button) needs both to exist or the call fails with a
+    confusing error.
+    """
+    failures: list[str] = []
+    for pack_dir in _walk_packs():
+        for profile in _profile_files(pack_dir, "audio"):
+            with open(profile, encoding="utf-8") as f:
+                doc = yaml.safe_load(f)
+            loopback = doc.get("loopback_ports")
+            if loopback is None:
+                continue
+            playback = loopback.get("playback") if isinstance(loopback, dict) else None
+            capture = loopback.get("capture") if isinstance(loopback, dict) else None
+            if not playback or not capture:
+                failures.append(
+                    f"{profile.relative_to(REPO_ROOT)}: loopback_ports declared "
+                    f"but missing playback or capture (got {loopback})"
+                )
+    assert not failures, "Loopback port consistency failures:\n  " + "\n  ".join(failures)
