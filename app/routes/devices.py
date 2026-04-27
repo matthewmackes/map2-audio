@@ -24,7 +24,10 @@ from __future__ import annotations
 import logging
 from typing import Any
 
-from fastapi import APIRouter, HTTPException, Query
+import asyncio
+import uuid
+
+from fastapi import APIRouter, HTTPException, Query, WebSocket, WebSocketDisconnect
 from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
 
@@ -707,3 +710,60 @@ async def list_pack_sources() -> dict[str, Any]:
 # Need ``time`` for /diagnostics ts fields; local import to keep the
 # legacy block above untouched.
 import time   # noqa: E402  isort:skip
+
+
+# ---------------------------------------------------------------------------
+# T2459-G2 — WebSocket hot-plug channel
+# ---------------------------------------------------------------------------
+
+from app.services.controllers.connection_event_bus import (   # noqa: E402
+    EVT_HEARTBEAT,
+    EVT_SNAPSHOT,
+    get_connection_event_bus,
+)
+
+
+@router.websocket("/ws")
+async def devices_websocket(websocket: WebSocket) -> None:
+    """Hardware Store hot-plug channel.
+
+    Emits:
+      - ``devices.snapshot``    — initial state on connect
+      - ``device.connected``    — profile started matching the detector
+      - ``device.disconnected`` — profile stopped matching
+      - ``pack.degraded``       — a pack transitioned to degraded
+      - ``host.crash``          — controller-host supervisor recorded a crash
+      - ``devices.heartbeat``   — every 10 s if no other event has fired
+
+    The connection is read-only — clients send no frames. The server
+    pushes JSON until the client disconnects.
+    """
+    await websocket.accept()
+    bus = get_connection_event_bus()
+    client_id = f"hwstore-{uuid.uuid4()}"
+    queue = await bus.register_client(client_id)
+
+    try:
+        await websocket.send_json({
+            "type": EVT_SNAPSHOT,
+            "data": bus.build_initial_snapshot(),
+            "timestamp": time.time(),
+        })
+        while True:
+            try:
+                message = await asyncio.wait_for(queue.get(), timeout=15.0)
+                await websocket.send_json(message)
+            except asyncio.TimeoutError:
+                # Liveness probe so the GUI can detect a dead WS even
+                # when the bus loop has stalled.
+                await websocket.send_json({
+                    "type": EVT_HEARTBEAT,
+                    "data": {"server_alive": True},
+                    "timestamp": time.time(),
+                })
+    except WebSocketDisconnect:
+        return
+    except Exception as exc:   # noqa: BLE001
+        logger.warning("Hardware Store WS error for %s: %s", client_id, exc)
+    finally:
+        await bus.unregister_client(client_id)

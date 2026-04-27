@@ -870,6 +870,14 @@ async def lifespan(app):
         try:
             from app.services.controllers import get_controller_service
             from app.services.controller_host_service import get_controller_host_service
+            from app.services.controllers.connection_event_bus import (
+                get_connection_event_bus,
+            )
+            await safe_stop_service(
+                logger,
+                "Hardware Store connection event bus",
+                get_connection_event_bus().stop,
+            )
             await safe_stop_service(
                 logger,
                 "Controller host supervisor",
@@ -1185,6 +1193,20 @@ def create_app():
                 "ControllerHostService supervisor started (status=%s)",
                 controller_host.status,
             )
+
+            # T2459-G2 Hardware Store hot-plug channel.
+            # NOTE: ``connection_bus.start()`` is async; it follows the same
+            # pattern as the controller-host supervisor immediately above.
+            # Both are scheduled here under the same caveat (the surrounding
+            # block currently runs from ``create_app`` which is sync;
+            # production startup goes through ``lifespan`` and these starts
+            # become awaited there — see worklist T2459-A6).
+            from app.services.controllers.connection_event_bus import (
+                get_connection_event_bus,
+            )
+            connection_bus = get_connection_event_bus()
+            await connection_bus.start()
+            logger.info("ConnectionEventBus started for Hardware Store /api/devices/ws")
         except Exception as e:
             logger.warning(f"Failed to load Controller / Device-Pack subsystem: {e}")
 
