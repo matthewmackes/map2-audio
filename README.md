@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1316** Python | **1291** TypeScript | **150** C++/H | **145** Docs | **2880** total commits | **3** stars | **0** forks | **0** open issues
+**1316** Python | **1291** TypeScript | **153** C++/H | **145** Docs | **2882** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`0a423974`](https://github.com/matthewmackes/map2-audio/commit/0a42397406ee5ab8a1bfd78f18a721acb9232d88) | T2459-D1: Map2HidController + Map2HidEnumerator + 6 Catch... | Map2 Audio | 2026-04-27 |
+| [`c200c137`](https://github.com/matthewmackes/map2-audio/commit/c200c1376b7e65b0562a14363e28ddcf9e4937cb) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-27 |
 | [`1152a6aa`](https://github.com/matthewmackes/map2-audio/commit/1152a6aa2bb8ee5e2d3d8bb659a051188bd75bd6) | T2459-C4: Mixxx XML round-trip writer + node-graph editor... | Map2 Audio | 2026-04-27 |
 | [`fa3408fc`](https://github.com/matthewmackes/map2-audio/commit/fa3408fcb16940940b35223c232473448bda8d98) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-27 |
 | [`ac5c144c`](https://github.com/matthewmackes/map2-audio/commit/ac5c144c8dffd70ce81253a9b1bffc2fa2645e02) | T2459-C3: metadata enrichment pipeline + asset endpoints ... | Map2 Audio | 2026-04-27 |
 | [`38da9eb3`](https://github.com/matthewmackes/map2-audio/commit/38da9eb3b005172e29d0e49f02b6d260d7495691) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-27 |
 | [`3cfe3354`](https://github.com/matthewmackes/map2-audio/commit/3cfe335443d84119b424e9d366dbe058365de5e5) | T2459-C2: vendor override slot + 2 pilot overrides + Hoto... | Map2 Audio | 2026-04-27 |
 | [`8fa5653a`](https://github.com/matthewmackes/map2-audio/commit/8fa5653a3a4ddbf321c22b7d8879c262bedb5537) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-27 |
-| [`65bbdc26`](https://github.com/matthewmackes/map2-audio/commit/65bbdc2671328c86c017ed8b0750fdadaf4e488b) | T2459-C1: DeviceProfilePanel + DevicePage route + 9 Jest ... | Map2 Audio | 2026-04-27 |
-| [`f26e02b6`](https://github.com/matthewmackes/map2-audio/commit/f26e02b6a52017f0211324298ea6875ee4531877) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-27 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
