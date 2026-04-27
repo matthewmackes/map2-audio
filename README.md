@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1320** Python | **1294** TypeScript | **157** C++/H | **145** Docs | **2890** total commits | **3** stars | **0** forks | **0** open issues
+**1320** Python | **1294** TypeScript | **157** C++/H | **145** Docs | **2892** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`59607069`](https://github.com/matthewmackes/map2-audio/commit/59607069739218ee66959d3df31676e7c95ec782) | T2459-E2: Hotone product range — 4 additional SKU profiles | Map2 Audio | 2026-04-27 |
+| [`b565bc28`](https://github.com/matthewmackes/map2-audio/commit/b565bc2813c7f9b1aae8a01d0f85bee1f831adf0) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-27 |
 | [`6f9a0a61`](https://github.com/matthewmackes/map2-audio/commit/6f9a0a61fa2613064e03ed84be6e13dbfadd16e1) | T2459-E1: Edirol UA range — 5 additional SKU audio profiles | Map2 Audio | 2026-04-27 |
 | [`8b141d2f`](https://github.com/matthewmackes/map2-audio/commit/8b141d2f8fd48cd77a9ddc64dd7db9638a499df3) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-27 |
 | [`0e4b221d`](https://github.com/matthewmackes/map2-audio/commit/0e4b221d1df6e4272da90327e855f928f366bc56) | T2459-D4: MidiLearnWizard + learning classifier + session... | Map2 Audio | 2026-04-27 |
 | [`de3467ca`](https://github.com/matthewmackes/map2-audio/commit/de3467cab21d28499fda2652ae0a3d1569dd1d7b) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-27 |
 | [`446247fb`](https://github.com/matthewmackes/map2-audio/commit/446247fb4240a0f47149c503643df578938ab45a) | T2459-D3: Map2BulkController + Map2BulkEnumerator + 6 Cat... | Map2 Audio | 2026-04-27 |
 | [`214fb0b1`](https://github.com/matthewmackes/map2-audio/commit/214fb0b1c57b759fc187dc700c22e3c6caa7079f) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-27 |
-| [`b11bc03e`](https://github.com/matthewmackes/map2-audio/commit/b11bc03efd31106c81260eda35e73ca679357f0c) | T2459-D2: common-hid-parser.js full feature + 8 Catch2 cases | Map2 Audio | 2026-04-27 |
-| [`450e2ad0`](https://github.com/matthewmackes/map2-audio/commit/450e2ad0d197920e0208032ebdd9a7d8c0ea8590) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-27 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
