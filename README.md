@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1336** Python | **1310** TypeScript | **157** C++/H | **145** Docs | **2919** total commits | **3** stars | **0** forks | **0** open issues
+**1336** Python | **1319** TypeScript | **157** C++/H | **145** Docs | **2921** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`229ffa72`](https://github.com/matthewmackes/map2-audio/commit/229ffa72e86de8188e8e9e0cb815697a569fbb05) | T2459-G5: device detail route + tabs (Overview + License ... | Map2 Audio | 2026-04-27 |
+| [`de847e54`](https://github.com/matthewmackes/map2-audio/commit/de847e5419bed53025d8ec20d391b61637f88cb8) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-27 |
 | [`d4850cc6`](https://github.com/matthewmackes/map2-audio/commit/d4850cc6b006fe7c9f95ec65e78b456958c6249d) | T2459-G4: DeviceCard with Q6/Q11/Q12/Q15 surfaces + 8 new... | Map2 Audio | 2026-04-27 |
 | [`7819ab01`](https://github.com/matthewmackes/map2-audio/commit/7819ab013e594c28b784bf1e715c38ea574068af) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-27 |
 | [`8d6d1f60`](https://github.com/matthewmackes/map2-audio/commit/8d6d1f6052ed24dd73cc61bb6559a6f3b9d05879) | T2459-G3: Hardware Store page shell + 5 page tests + REST... | Map2 Audio | 2026-04-27 |
 | [`42eb0cbb`](https://github.com/matthewmackes/map2-audio/commit/42eb0cbb96ddf951e354b709b1a101cd577a9b7c) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-27 |
 | [`7427a417`](https://github.com/matthewmackes/map2-audio/commit/7427a4170e382e5efbc4a62620e3dad8b90e1047) | T2459-G2: Hardware Store hot-plug WebSocket channel + 19 ... | Map2 Audio | 2026-04-27 |
 | [`b3c68e1b`](https://github.com/matthewmackes/map2-audio/commit/b3c68e1ba5386a4854c1c28fe2e663628244e990) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-27 |
-| [`ba99e1cb`](https://github.com/matthewmackes/map2-audio/commit/ba99e1cb86e4e231b39bdbf5be212dad726b312e) | T2459-G1: Hardware Store backend foundation + 22 new tests | Map2 Audio | 2026-04-27 |
-| [`9fdd2800`](https://github.com/matthewmackes/map2-audio/commit/9fdd28009f31b53e89252f012b538fc2e9545376) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-27 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
