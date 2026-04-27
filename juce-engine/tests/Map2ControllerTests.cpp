@@ -199,11 +199,11 @@ TEST_CASE ("Factory returns nullptr for unsupported protocols (HID, bulk, unknow
     REQUIRE (Map2ControllerFactory::create (makeIdentity ("unknown")) == nullptr);
 }
 
-TEST_CASE ("Factory returns nullptr for MIDI until T2459-B1 lands", "[T2459-A2]")
+TEST_CASE ("Factory returns a Map2MidiController for MIDI identities", "[T2459-B1]")
 {
-    // The factory will return a Map2MidiController instance once T2459-B1
-    // ships. Until then, MIDI returns nullptr by design — recorded here as
-    // a regression guard so the test fails noisily when B1 lands and is
-    // updated to expect a non-null result.
-    REQUIRE (Map2ControllerFactory::create (makeIdentity ("midi")) == nullptr);
+    // After T2459-B1, MIDI identities produce a real Map2MidiController.
+    // We only assert non-null here; opening it would attempt an ALSA-seq
+    // connection which is environment-dependent and tested separately.
+    auto controller = Map2ControllerFactory::create (makeIdentity ("midi"));
+    REQUIRE (controller != nullptr);
 }

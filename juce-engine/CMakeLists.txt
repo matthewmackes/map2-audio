@@ -311,6 +311,7 @@ set(SOURCES
     # map2-controller-host binary; only MIDI is constructed here.
     Source/Controllers/Map2Controller.cpp
     Source/Controllers/Map2ControllerFactory.cpp
+    Source/Controllers/Midi/Map2MidiController.cpp
 
     # Existing components (updated)
     Source/MidiHandler.cpp
@@ -408,6 +409,7 @@ set(HEADERS
     # Controllers / Mapping subsystem (T2459)
     Source/Controllers/Map2Controller.h
     Source/Controllers/Map2ControllerFactory.h
+    Source/Controllers/Midi/Map2MidiController.h
 
     # Existing components
     Source/MidiHandler.h
@@ -757,6 +759,7 @@ if(BUILD_CONTROLLERS_TESTS)
         tests/Map2ControllerTests.cpp
         Source/Controllers/Map2Controller.cpp
         Source/Controllers/Map2ControllerFactory.cpp
+        Source/Controllers/Midi/Map2MidiController.cpp
     )
     target_compile_definitions(controllers_tests PRIVATE
         JUCE_GLOBAL_MODULE_SETTINGS_INCLUDED=1
@@ -770,6 +773,13 @@ if(BUILD_CONTROLLERS_TESTS)
         Catch2::Catch2WithMain
         juce::juce_core
     )
+    # ALSA seq for Map2MidiController. Optional — Map2MidiController has
+    # a #if MAP2_HAS_ALSA_SEQ guard that turns into a no-op when the
+    # header is missing.
+    find_library(ALSA_LIBRARY NAMES asound)
+    if(ALSA_LIBRARY)
+        target_link_libraries(controllers_tests PRIVATE ${ALSA_LIBRARY})
+    endif()
     add_test(NAME controllers_tests COMMAND controllers_tests)
 
     add_custom_target(check-controllers

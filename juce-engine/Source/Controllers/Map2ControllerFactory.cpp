@@ -2,6 +2,7 @@
 // Copyright (c) 2026 Matthew Mackes — MAP2 Audio Platform
 
 #include "Map2ControllerFactory.h"
+#include "Midi/Map2MidiController.h"
 
 namespace map2::controllers
 {
@@ -14,14 +15,29 @@ std::unique_ptr<Map2Controller> Map2ControllerFactory::create (
     // process by its own factory. See docs/architecture/CONTROLLER_LAYER.md §3.
     if (identity.protocol == "midi")
     {
-        // Map2MidiController is forward-declared via T2459-B1; until that
-        // subtask lands the factory returns nullptr for MIDI as well.
-        // The factory is wired now so the rest of the controller subsystem
-        // (the IPC layer, the supervisor) can be built and tested against
-        // the abstract base without waiting for the protocol implementation.
-        //
-        // TODO(T2459-B1): include Midi/Map2MidiController.h and instantiate.
-        return nullptr;
+        // Resolve the ALSA-seq client pattern from the identity.
+        // The hardware_id format for ALSA-seq endpoints is
+        // "alsa-seq:<client_pattern>:<port_index>" — parse those out.
+        midi::AlsaSeqTarget target;
+        target.clientPattern = identity.displayName;
+        target.portIndex = 0;
+
+        const juce::String hwid = identity.hardwareId;
+        if (hwid.startsWith ("alsa-seq:"))
+        {
+            const juce::String tail = hwid.fromFirstOccurrenceOf ("alsa-seq:", false, false);
+            const int lastColon = tail.lastIndexOfChar (':');
+            if (lastColon > 0)
+            {
+                target.clientPattern = tail.substring (0, lastColon);
+                target.portIndex = tail.substring (lastColon + 1).getIntValue();
+            }
+            else
+            {
+                target.clientPattern = tail;
+            }
+        }
+        return std::make_unique<midi::Map2MidiController> (identity, target);
     }
 
     // HID and bulk are explicitly unsupported in the audio engine binary.
