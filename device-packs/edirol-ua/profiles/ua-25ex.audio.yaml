@@ -1,0 +1,80 @@
+schema_version: 1
+identity:
+  manufacturer: Edirol (Roland)
+  model: UA-25EX
+  family: Edirol UA series
+  hardware_id: usb:0582:00e6
+  alsa_card_regex: '^UA-?25EX\b'
+
+ports:
+  - id: input_l
+    kind: analog
+    direction: input
+    count: 1
+    sample_rates: [44100, 48000, 96000, 192000]
+    bit_depths: [24]
+    connectors: [trs_quarter_inch, xlr_female]
+  - id: input_r
+    kind: analog
+    direction: input
+    count: 1
+    sample_rates: [44100, 48000, 96000, 192000]
+    bit_depths: [24]
+    connectors: [trs_quarter_inch, xlr_female]
+  - id: output_l
+    kind: analog
+    direction: output
+    count: 1
+    sample_rates: [44100, 48000, 96000, 192000]
+    bit_depths: [24]
+    connectors: [trs_quarter_inch]
+  - id: output_r
+    kind: analog
+    direction: output
+    count: 1
+    sample_rates: [44100, 48000, 96000, 192000]
+    bit_depths: [24]
+    connectors: [trs_quarter_inch]
+  - id: headphone_out
+    kind: headphone
+    direction: output
+    count: 2
+    sample_rates: [44100, 48000, 96000, 192000]
+    bit_depths: [24]
+    connectors: [headphone_quarter_inch]
+  - id: spdif_in
+    kind: digital
+    direction: input
+    count: 2
+    connectors: [spdif_coax, spdif_optical]
+  - id: spdif_out
+    kind: digital
+    direction: output
+    count: 2
+    connectors: [spdif_coax, spdif_optical]
+
+mixer_surfaces:
+  - id: front_panel_direct_monitor
+    kind: hardware
+    description: 'Hardware direct-monitor knob with pre/post select.'
+
+routing_topology:
+  default_matrix: identity_2x2
+
+loopback_ports:
+  playback: 'EDIROL UA-25EX:playback_FL'
+  capture: 'EDIROL UA-25EX:capture_FL'
+
+use_case_presets:
+  - id: hires_stereo_recording
+    name: 'High-resolution stereo recording (192 kHz)'
+    ports_used: [input_l, input_r]
+    routing: identity
+  - id: spdif_archive
+    name: 'S/PDIF digital archive'
+    ports_used: [spdif_in, spdif_out]
+    routing: identity
+
+metadata:
+  manual_url: 'https://www.roland.com/global/products/ua-25ex/'
+  vendor_support_url: 'https://www.roland.com/global/support/'

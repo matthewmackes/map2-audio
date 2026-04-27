@@ -1,0 +1,80 @@
+schema_version: 1
+identity:
+  manufacturer: Edirol (Roland)
+  model: UA-25
+  family: Edirol UA series
+  hardware_id: usb:0582:00b9
+  alsa_card_regex: '^UA-?25\b'
+
+ports:
+  - id: input_l
+    kind: analog
+    direction: input
+    count: 1
+    sample_rates: [44100, 48000, 96000]
+    bit_depths: [24]
+    connectors: [trs_quarter_inch, xlr_female]
+  - id: input_r
+    kind: analog
+    direction: input
+    count: 1
+    sample_rates: [44100, 48000, 96000]
+    bit_depths: [24]
+    connectors: [trs_quarter_inch, xlr_female]
+  - id: output_l
+    kind: analog
+    direction: output
+    count: 1
+    sample_rates: [44100, 48000, 96000]
+    bit_depths: [24]
+    connectors: [trs_quarter_inch]
+  - id: output_r
+    kind: analog
+    direction: output
+    count: 1
+    sample_rates: [44100, 48000, 96000]
+    bit_depths: [24]
+    connectors: [trs_quarter_inch]
+  - id: headphone_out
+    kind: headphone
+    direction: output
+    count: 2
+    sample_rates: [44100, 48000, 96000]
+    bit_depths: [24]
+    connectors: [headphone_quarter_inch]
+  - id: spdif_in
+    kind: digital
+    direction: input
+    count: 2
+    connectors: [spdif_coax, spdif_optical]
+  - id: spdif_out
+    kind: digital
+    direction: output
+    count: 2
+    connectors: [spdif_coax, spdif_optical]
+
+mixer_surfaces:
+  - id: front_panel_direct_monitor
+    kind: hardware
+    description: 'Hardware direct-monitor knob; controlled physically.'
+
+routing_topology:
+  default_matrix: identity_2x2
+
+loopback_ports:
+  playback: 'EDIROL UA-25:playback_FL'
+  capture: 'EDIROL UA-25:capture_FL'
+
+use_case_presets:
+  - id: stereo_recording
+    name: 'Stereo recording'
+    ports_used: [input_l, input_r]
+    routing: identity
+  - id: mic_practice
+    name: 'Mic + headphone practice'
+    ports_used: [input_l, headphone_out]
+    routing: identity
+
+metadata:
+  manual_url: 'https://www.roland.com/global/products/ua-25/'
+  vendor_support_url: 'https://www.roland.com/global/support/'

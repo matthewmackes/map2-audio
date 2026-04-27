@@ -1,0 +1,94 @@
+schema_version: 1
+identity:
+  manufacturer: Edirol (Roland)
+  model: UA-700
+  family: Edirol UA series
+  hardware_id: usb:0582:0095
+  alsa_card_regex: '^UA-?700\b'
+
+ports:
+  - id: input_l
+    kind: analog
+    direction: input
+    count: 1
+    sample_rates: [44100, 48000, 96000]
+    bit_depths: [24]
+    connectors: [trs_quarter_inch, xlr_female]
+  - id: input_r
+    kind: analog
+    direction: input
+    count: 1
+    sample_rates: [44100, 48000, 96000]
+    bit_depths: [24]
+    connectors: [trs_quarter_inch, xlr_female]
+  - id: output_l
+    kind: analog
+    direction: output
+    count: 1
+    sample_rates: [44100, 48000, 96000]
+    bit_depths: [24]
+    connectors: [trs_quarter_inch]
+  - id: output_r
+    kind: analog
+    direction: output
+    count: 1
+    sample_rates: [44100, 48000, 96000]
+    bit_depths: [24]
+    connectors: [trs_quarter_inch]
+  - id: headphone_out
+    kind: headphone
+    direction: output
+    count: 2
+    sample_rates: [44100, 48000, 96000]
+    bit_depths: [24]
+    connectors: [headphone_quarter_inch]
+  - id: spdif_in
+    kind: digital
+    direction: input
+    count: 2
+    connectors: [spdif_coax, spdif_optical]
+  - id: spdif_out
+    kind: digital
+    direction: output
+    count: 2
+    connectors: [spdif_coax, spdif_optical]
+
+mixer_surfaces:
+  - id: hardware_dsp_console
+    kind: hardware
+    description: |
+      The UA-700 is a hybrid USB interface + standalone DSP processor;
+      its compressor / EQ / amp-sim section is operated entirely via the
+      front-panel knobs and is not USB-addressable. MAP2 surfaces the
+      audio I/O routing only.
+
+on_device_dsp:
+  - id: hardware_amp_sim
+    kind: amp_model
+    params:
+      - { name: model_select, type: list, list_values: [JC-120, Twin, Plexi, AC30, Bypass] }
+    controllable_via: [hardware_only]
+  - id: hardware_eq
+    kind: eq
+    params:
+      - { name: low_gain, type: continuous, min: -12.0, max: 12.0, default: 0.0 }
+      - { name: mid_gain, type: continuous, min: -12.0, max: 12.0, default: 0.0 }
+      - { name: high_gain, type: continuous, min: -12.0, max: 12.0, default: 0.0 }
+    controllable_via: [hardware_only]
+
+routing_topology:
+  default_matrix: identity_2x2
+
+loopback_ports:
+  playback: 'EDIROL UA-700:playback_FL'
+  capture: 'EDIROL UA-700:capture_FL'
+
+use_case_presets:
+  - id: stereo_with_hardware_dsp
+    name: 'Stereo recording through hardware DSP'
+    ports_used: [input_l, input_r]
+    routing: identity
+
+metadata:
+  manual_url: 'https://www.roland.com/global/products/ua-700/'
+  vendor_support_url: 'https://www.roland.com/global/support/'

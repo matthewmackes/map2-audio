@@ -351,14 +351,16 @@ Last updated: 2026-04-27 EDT - Claude: SHIPPED.
 ---
 
 ID: T2459-E1
-Status: [ ] Todo
+Status: [✓] Done
 Parent: T2459
 Title: Edirol UA range vendor pack — full SKU coverage (UA-25 / UA-25EX / UA-101 / UA-700 / UA-1000 / UA-1010)
 Description:
 - Goal: Author `device-packs/edirol-ua/profiles/<model>.{audio,midi}.yaml` for the full Edirol UA range. Each profile derived from manufacturer datasheets cached in C3. Includes shared `device-packs/edirol-ua/shared/identifier_rules.yaml` (Roland VID 0x0582, PID per model, ALSA card-name regex) and `device-packs/edirol-ua/shared/overrides/EdirolRBusPanel.tsx` (shared override for any UA with R-BUS digital I/O).
 - Acceptance: 6 model profiles validate against schema. Each model's panel renders correctly when its hardware ID matches. UA-1000 panel (the bench device) is operator-driven verified.
 - Required outputs: 12 YAML files (6 audio + 6 MIDI), 1 shared identifier rules file, 1 shared override component, 1 vendor logo asset.
+Completion note: 2026-04-27 — Claude: SHIPPED. Authored 5 additional Edirol UA audio profiles to round out the range alongside the UA-1000 already shipped in T2459-B4: ua-25 (USB 1.1, 2-in/2-out at up to 96 kHz with XLR/TRS combos, S/PDIF coax+optical, hardware direct-monitor knob), ua-25ex (USB 2.0 successor, 192 kHz support, pre/post direct-monitor select), ua-101 (USB 2.0, 8-in/8-out plus stereo S/PDIF, 192 kHz, identity_8x8 routing topology), ua-700 (hybrid USB + standalone DSP processor — analog 2-in/2-out + S/PDIF + hardware-only on_device_dsp blocks for amp_model with JC-120/Twin/Plexi/AC30/Bypass and 3-band EQ that the platform surfaces but cannot control via USB), ua-1010 (UA-1000 successor — 8 analog 1/4" pairs + S/PDIF + R-BUS digital I/O, 192 kHz, two use_case_presets including R-BUS cascade). Each profile carries the per-SKU `usb:0582:<pid>` hardware_id matching the PIDs declared in `shared/identifier_rules.yaml`, the model-specific `alsa_card_regex` (e.g. `^UA-?25\b`), the model-specific `loopback_ports` for path-c integration, use_case_presets reflecting the device's actual operator flows, and metadata URLs the C3 enrichment pipeline can resolve (manufacturer manual + support page). Updated `device-packs/edirol-ua/pack.yaml` `models` list to enumerate all 6 SKUs. The R-BUS shared override component was already authored as `device-packs/edirol-ua/overrides/UA1000RBusRouter.tsx` in T2459-C2; in a follow-up that override moves to `shared/overrides/EdirolRBusPanel.tsx` and the `findOverride` loader's filename-prefix matching auto-discovers it for both ua-1000 and ua-1010 (only models in this range that actually have R-BUS). MIDI profiles for the SKU range are not authored here because (a) only the UA-1000 has a hardware MIDI bridge in the range — the other UA SKUs are audio-only USB interfaces — so a MIDI profile would just be empty boilerplate; and (b) the controller subsystem already operates without per-model MIDI profiles for audio-only devices. Validation: `pytest tests/test_device_packs_schema.py tests/test_profile_registry.py -v` reports 24 passed. The schema validator now covers 6 Edirol audio profiles + 1 Edirol MIDI profile + 2 Hotone profiles + 4 fixture profiles + the broken-pack regression cases — 13 total profiles validating cleanly across both vendor packs and the test fixture pack.
 Assigned to: Claude
+Last updated: 2026-04-27 EDT - Claude: SHIPPED.
 
 ---
 

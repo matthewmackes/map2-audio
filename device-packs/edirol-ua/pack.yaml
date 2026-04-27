@@ -13,4 +13,9 @@ license: AGPL-3.0-only
 source: map2-native
 identifier_rules_path: shared/identifier_rules.yaml
 models:
+  - ua-25
+  - ua-25ex
+  - ua-101
+  - ua-700
   - ua-1000
+  - ua-1010

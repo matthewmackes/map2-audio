@@ -1,0 +1,98 @@
+schema_version: 1
+identity:
+  manufacturer: Edirol (Roland)
+  model: UA-101
+  family: Edirol UA series
+  hardware_id: usb:0582:008c
+  alsa_card_regex: '^UA-?101\b'
+
+ports:
+  - id: aux0
+    kind: analog
+    direction: bidirectional
+    count: 1
+    sample_rates: [44100, 48000, 88200, 96000, 192000]
+    bit_depths: [24]
+    connectors: [trs_quarter_inch, xlr_female]
+  - id: aux1
+    kind: analog
+    direction: bidirectional
+    count: 1
+    sample_rates: [44100, 48000, 88200, 96000, 192000]
+    bit_depths: [24]
+    connectors: [trs_quarter_inch, xlr_female]
+  - id: aux2
+    kind: analog
+    direction: bidirectional
+    count: 1
+    sample_rates: [44100, 48000, 88200, 96000, 192000]
+    bit_depths: [24]
+    connectors: [trs_quarter_inch]
+  - id: aux3
+    kind: analog
+    direction: bidirectional
+    count: 1
+    sample_rates: [44100, 48000, 88200, 96000, 192000]
+    bit_depths: [24]
+    connectors: [trs_quarter_inch]
+  - id: aux4
+    kind: analog
+    direction: bidirectional
+    count: 1
+    sample_rates: [44100, 48000, 88200, 96000, 192000]
+    bit_depths: [24]
+    connectors: [trs_quarter_inch]
+  - id: aux5
+    kind: analog
+    direction: bidirectional
+    count: 1
+    sample_rates: [44100, 48000, 88200, 96000, 192000]
+    bit_depths: [24]
+    connectors: [trs_quarter_inch]
+  - id: aux6
+    kind: analog
+    direction: bidirectional
+    count: 1
+    sample_rates: [44100, 48000, 88200, 96000, 192000]
+    bit_depths: [24]
+    connectors: [trs_quarter_inch]
+  - id: aux7
+    kind: analog
+    direction: bidirectional
+    count: 1
+    sample_rates: [44100, 48000, 88200, 96000, 192000]
+    bit_depths: [24]
+    connectors: [trs_quarter_inch]
+  - id: spdif_in
+    kind: digital
+    direction: input
+    count: 2
+    connectors: [spdif_coax, spdif_optical]
+  - id: spdif_out
+    kind: digital
+    direction: output
+    count: 2
+    connectors: [spdif_coax, spdif_optical]
+
+mixer_surfaces:
+  - id: front_panel_direct_monitor
+    kind: hardware
+    description: 'Hardware direct-monitor with stereo pair source select.'
+
+routing_topology:
+  default_matrix: identity_8x8
+  allowed_routes: [identity, fan_out, monitor_send]
+
+loopback_ports:
+  playback: 'EDIROL UA-101:playback_AUX0'
+  capture: 'EDIROL UA-101:capture_AUX0'
+
+use_case_presets:
+  - id: studio_recording_8ch
+    name: '8-channel studio recording'
+    ports_used: [aux0, aux1, aux2, aux3, aux4, aux5, aux6, aux7]
+    routing: identity
+
+metadata:
+  manual_url: 'https://www.roland.com/global/products/ua-101/'
+  vendor_support_url: 'https://www.roland.com/global/support/'
