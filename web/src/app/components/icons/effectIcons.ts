@@ -277,6 +277,11 @@ const PEDAL_KIND_CATEGORY: Record<string, string> = {
   delay:      'delay',
   reverb:     'reverb',
   looper:     'modulator',
+  amp:        'amp',
+  cab:        'cabinet',
+  gate:       'gate',
+  modulation: 'modulator',
+  utility:    'utility',
 }
 
 /**

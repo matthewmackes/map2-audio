@@ -5,6 +5,7 @@ import { getPedalKindIcon } from './icons/effectIcons'
 export type PedalKind =
   | 'tuner' | 'comp' | 'overdrive' | 'distortion' | 'fuzz' | 'eq' | 'wah'
   | 'chorus' | 'phaser' | 'flanger' | 'tremolo' | 'pitch' | 'delay' | 'reverb' | 'looper'
+  | 'amp' | 'cab' | 'gate' | 'modulation' | 'utility'
 
 export interface PedalSpec {
   model: string
@@ -31,6 +32,11 @@ export const PEDAL_SPECS: Record<PedalKind, PedalSpec> = {
   delay:      { model: 'DD-7', name: 'DIGITAL DELAY',   body: '#2fa36b', plate: '#2fa36b', knobs: 4, ink: '#071a10' },
   reverb:     { model: 'RV-6', name: 'REVERB',          body: '#2fb7b4', plate: '#2fb7b4', knobs: 4, ink: '#07201f' },
   looper:     { model: 'RC-5', name: 'LOOP STATION',    body: '#e9e9e6', plate: '#2fa36b', knobs: 3, ink: '#111' },
+  amp:        { model: 'AMP',  name: 'AMP MODELER',     body: '#7a3b3b', plate: '#7a3b3b', knobs: 4, ink: '#f5e9d6' },
+  cab:        { model: 'CAB',  name: 'CABINET IR',      body: '#5a4a2e', plate: '#5a4a2e', knobs: 3, ink: '#f5e9d6' },
+  gate:       { model: 'NS-2', name: 'NOISE GATE',      body: '#cdd2d6', plate: '#cdd2d6', knobs: 2, ink: '#111' },
+  modulation: { model: 'MOD',  name: 'MODULATION',      body: '#5b6dc4', plate: '#5b6dc4', knobs: 4, ink: '#f0f0f0' },
+  utility:    { model: 'UTL',  name: 'UTILITY',         body: '#3a3a3a', plate: '#3a3a3a', knobs: 2, ink: '#f0f0f0' },
 }
 
 export const PEDAL_LED: Record<PedalKind, string> = {
@@ -38,6 +44,7 @@ export const PEDAL_LED: Record<PedalKind, string> = {
   fuzz: '#d0d0d0', eq: '#ffffff', wah: '#ff6a00', chorus: '#5ca8ff',
   phaser: '#b48cff', flanger: '#d9cfff', tremolo: '#c9d050', pitch: '#ff9ac6',
   delay: '#3fdb8a', reverb: '#4ff0ed', looper: '#3fdb8a',
+  amp: '#ff8a3c', cab: '#d9b774', gate: '#7ec9e8', modulation: '#7aa3ff', utility: '#cccccc',
 }
 
 export interface PedalStage {
@@ -53,14 +60,15 @@ export const DEFAULT_PEDAL_CHAIN: PedalStage[] = [
   { kind: 'reverb',    on: true },
 ]
 
-function pluginNameToPedalKind(name: string, uri: string): PedalKind | null {
+function pluginNameToPedalKind(name: string, uri: string): PedalKind {
   const s = `${name} ${uri}`.toLowerCase()
-  if (/tun(er|ing)|chromatic/.test(s))          return 'tuner'
+  if (/\b(?:gate|noise.gate|ns-?[0-9]|dynamics\/gate)\b/.test(s)) return 'gate'
+  if (/tun(?:er|ing)|chromatic/.test(s))         return 'tuner'
   if (/compres|sustain|cs-?3/.test(s))           return 'comp'
   if (/overdrive|sd-?1|tube\s*scream/.test(s))   return 'overdrive'
   if (/distort|ds-?1|metal/.test(s))             return 'distortion'
   if (/fuzz|fz-?[0-9]/.test(s))                  return 'fuzz'
-  if (/equaliz|eq|ge-?7/.test(s))                return 'eq'
+  if (/\b(?:equaliz(?:er|ation)?|eq|ge-?7)\b/.test(s)) return 'eq'
   if (/wah|auto.?wah|aw-?3/.test(s))             return 'wah'
   if (/chorus|ce-?[0-9]/.test(s))                return 'chorus'
   if (/phase|ph-?3/.test(s))                     return 'phaser'
@@ -70,20 +78,21 @@ function pluginNameToPedalKind(name: string, uri: string): PedalKind | null {
   if (/delay|dd-?[0-9]|echo/.test(s))            return 'delay'
   if (/reverb|rv-?[0-9]|hall|room|plate/.test(s)) return 'reverb'
   if (/loop|looper|rc-?[0-9]/.test(s))           return 'looper'
-  if (/nam|neural\s*amp/.test(s))                return 'overdrive'
-  if (/cabinet|cab\b|ir\b|impulse/.test(s))      return 'distortion'
-  return null
+  if (/\bnam\b|neural\s*amp/.test(s))            return 'amp'
+  if (/peavey|5150|marshall|mesa|fender|tweed|bassman|jcm|amp\b/.test(s)) return 'amp'
+  if (/cabinet|\bcab\b|\bir\b|impulse|convolution/.test(s)) return 'cab'
+  if (/modulation|intellifx|lex|h3000|effect/.test(s)) return 'modulation'
+  return 'utility'
 }
 
 export interface RawPlugin { uri: string; name?: string | null; bypass: boolean }
 
 export function deriveChainFromPlugins(plugins: RawPlugin[]): PedalStage[] {
-  const stages: PedalStage[] = []
-  for (const p of plugins) {
-    const kind = pluginNameToPedalKind(p.name ?? '', p.uri)
-    if (kind) stages.push({ kind, on: !p.bypass })
-  }
-  return stages.length > 0 ? stages : DEFAULT_PEDAL_CHAIN
+  if (plugins.length === 0) return DEFAULT_PEDAL_CHAIN
+  return plugins.map((p) => ({
+    kind: pluginNameToPedalKind(p.name ?? '', p.uri),
+    on: !p.bypass,
+  }))
 }
 
 interface PedalProps {
