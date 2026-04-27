@@ -1,0 +1,15 @@
+schema_version: 1
+pack_id: hotone
+vendor:
+  name: Hotone Audio
+  website: https://www.hotoneaudio.com/
+  support_url: https://www.hotoneaudio.com/support/
+description: |
+  Hotone product family: Jogg portable USB-C audio interface with onboard
+  amp/cab modeling, plus the Ampero pedal-format range with USB MIDI for
+  preset switching. Pack lays the ground for T2459-E2 to add the full
+  Ampero family.
+license: AGPL-3.0-only
+source: map2-native
+models:
+  - jogg

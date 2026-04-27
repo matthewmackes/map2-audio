@@ -5,7 +5,7 @@
 // Worklist: T2459-C1.
 // Architecture: docs/architecture/CONTROLLER_LAYER.md §4.
 
-import React, { useMemo } from 'react'
+import React, { Suspense, useMemo, lazy } from 'react'
 import { useQuery } from '@tanstack/react-query'
 import {
   Layer,
@@ -25,14 +25,21 @@ import {
   getDeviceProfile,
   type DeviceProfileDetail,
 } from '../../../../map2/clients/devices'
+import { findOverride } from './overrideLoader'
 
 export interface DeviceProfilePanelProps {
   packId: string
   model: string
   /** When provided, the panel renders the matching kind first. */
   initialKind?: 'audio' | 'midi' | 'hid'
-  /** Optional vendor-override slot rendered after the auto-rendered scaffold. */
+  /** Explicit vendor-override slot rendered after the auto-rendered scaffold.
+   *  If omitted, the panel auto-discovers an override TSX from
+   *  `device-packs/<packId>/overrides/` or
+   *  `device-packs/<packId>/shared/overrides/`.
+   */
   vendorOverride?: React.ReactNode
+  /** When true, suppress the auto-discovered override entirely (test hook). */
+  disableAutoOverride?: boolean
 }
 
 /** Auto-rendered device panel.
@@ -52,6 +59,7 @@ export function DeviceProfilePanel({
   model,
   initialKind = 'audio',
   vendorOverride,
+  disableAutoOverride = false,
 }: DeviceProfilePanelProps): JSX.Element {
   const audioQuery = useQuery({
     queryKey: ['device-profile', packId, model, 'audio'],
@@ -64,6 +72,17 @@ export function DeviceProfilePanel({
     queryFn: () => getDeviceProfile(packId, model, 'midi'),
     retry: 1,
   })
+
+  // Auto-discover a vendor override if no explicit slot was passed.
+  const autoOverride = useMemo(() => {
+    if (disableAutoOverride || vendorOverride) return null
+    const importer = findOverride(packId, model)
+    if (importer == null) return null
+    const Lazy = lazy(importer)
+    return <Lazy />
+  }, [packId, model, vendorOverride, disableAutoOverride])
+
+  const overrideToRender = vendorOverride ?? autoOverride
 
   if (audioQuery.isLoading) {
     return (
@@ -97,9 +116,11 @@ export function DeviceProfilePanel({
       <DeviceOnDeviceDspSection profile={audio} />
       <DeviceUseCasesSection profile={audio} />
       {midi && <DeviceMidiBindingsSection profile={midi} />}
-      {vendorOverride && (
+      {overrideToRender && (
         <Layer level={1} data-testid="device-profile-panel-vendor-override">
-          {vendorOverride}
+          <Suspense fallback={<Loading description="Loading vendor extras" withOverlay={false} />}>
+            {overrideToRender}
+          </Suspense>
         </Layer>
       )}
     </Layer>

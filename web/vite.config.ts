@@ -38,6 +38,19 @@ export default defineConfig({
     alias: {
       '@': path.resolve(__dirname, './src'),
       '@/map2': path.resolve(__dirname, './src/map2'),
+      // T2459-C2 — vendor packs ship optional override TSX components
+      // under device-packs/<vendor>/{shared,}/overrides/*.tsx. This
+      // alias keeps the import paths stable across packs.
+      '@/device-packs': path.resolve(__dirname, '..', 'device-packs'),
+    },
+  },
+  server: {
+    fs: {
+      // Allow Vite to serve files from device-packs/ at the repo root
+      // (outside the web/ project root). T2459-C2.
+      allow: [
+        path.resolve(__dirname, '..'),
+      ],
     },
   },
   build: {

@@ -1,0 +1,31 @@
+schema_version: 1
+identity:
+  manufacturer: Hotone Audio
+  model: jogg
+  alsa_client_pattern: 'Jogg MIDI'
+  hardware_id: alsa-seq:Jogg MIDI:0
+
+scripts:
+  - scripts/jogg-scripts.js
+
+controls:
+  - status: 0xB0
+    midino: 50
+    script: HotoneJogg.amp_model_select
+    description: 'CC 50 → onboard amp model select (Twin/Plexi/Recto/JCM800/AC30).'
+
+  - status: 0xB0
+    midino: 51
+    script: HotoneJogg.cab_select
+    description: 'CC 51 → onboard cabinet sim select.'
+
+  - status: 0xB0
+    midino: 7
+    target: audio.master.headphone_volume
+    action: set
+    fast_path: true
+    description: 'CC 7 → headphone volume fast-path.'
+
+mixxx_alias_table:
+  '[Channel1]': audio.chain.1
+  '[Master]': audio.master

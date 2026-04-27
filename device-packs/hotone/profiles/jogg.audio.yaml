@@ -1,0 +1,76 @@
+schema_version: 1
+identity:
+  manufacturer: Hotone Audio
+  model: Jogg
+  family: Hotone USB Audio
+  hardware_id: usb:1234:abcd  # Placeholder — confirm from `lsusb` on bench.
+  alsa_card_regex: '^Jogg\b'
+
+ports:
+  - id: instrument_in
+    kind: analog
+    direction: input
+    count: 1
+    sample_rates: [44100, 48000, 88200, 96000, 192000]
+    bit_depths: [24]
+    connectors: [ts_quarter_inch]
+    jack_node_pattern: 'Jogg USB Audio Mono'
+
+  - id: line_out
+    kind: analog
+    direction: output
+    count: 1
+    sample_rates: [44100, 48000, 88200, 96000, 192000]
+    bit_depths: [24]
+    connectors: [ts_quarter_inch]
+    jack_node_pattern: 'Jogg USB Audio Analog Stereo'
+
+  - id: headphone_out
+    kind: headphone
+    direction: output
+    count: 2
+    sample_rates: [44100, 48000, 88200, 96000, 192000]
+    bit_depths: [24]
+    connectors: [headphone_3_5mm]
+
+mixer_surfaces: []
+on_device_dsp:
+  - id: amp_model
+    kind: amp_model
+    params:
+      - { name: model_select, type: list, list_values: [Twin, Plexi, Recto, JCM800, AC30] }
+      - { name: gain, type: continuous, min: 0.0, max: 1.0, default: 0.5 }
+    controllable_via: [midi_cc]
+  - id: cabinet_sim
+    kind: cabinet_sim
+    params:
+      - { name: cab_select, type: list, list_values: ['1x12', '2x12', '4x12 V30', '4x12 G12T', 'Bypass'] }
+    controllable_via: [midi_cc]
+
+routing_topology:
+  default_matrix: identity_2x2
+
+loopback_ports:
+  playback: 'Jogg USB Audio Analog Stereo:playback_FL'
+  capture: 'Jogg USB Audio Mono:capture_MONO'
+
+use_case_presets:
+  - id: practice_headphones
+    name: 'Practice through headphones'
+    description: 'Instrument in → onboard amp/cab → headphone out (no main out).'
+    ports_used: [instrument_in, headphone_out]
+    routing: identity
+  - id: stage_main_out
+    name: 'Stage main out'
+    description: 'Instrument in → onboard amp/cab → 1/4" line out (no headphones).'
+    ports_used: [instrument_in, line_out]
+    routing: identity
+  - id: silent_record
+    name: 'Silent recording'
+    description: 'Capture dry signal into MAP2 chain; monitor through MAP2 instead.'
+    ports_used: [instrument_in]
+    routing: identity
+
+metadata:
+  manual_url: 'https://www.hotoneaudio.com/products/jogg/'
+  vendor_support_url: 'https://www.hotoneaudio.com/support/'
