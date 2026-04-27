@@ -29,6 +29,7 @@ import {
   midiApiV2,
   pluginsApi,
 } from '../../map2/api'
+import { brainApi } from '../../map2/clients/brain'
 import { fetchJson } from '../../map2/http'
 import { API_BASE } from '../../map2/transport'
 import type {
@@ -189,7 +190,8 @@ interface WizardSource {
   ch: number
 }
 
-type TargetCategory = 'plugin-parameter' | 'snapshot-trigger' | 'routing-rule' | 'engine-performance'
+// T2461-A4 — `brain-action` joins the locked four target categories.
+type TargetCategory = 'plugin-parameter' | 'snapshot-trigger' | 'routing-rule' | 'engine-performance' | 'brain-action'
 
 interface PluginParamTarget {
   cat: 'plugin-parameter'
@@ -229,7 +231,18 @@ interface EnginePerformanceTarget {
   unit: string
 }
 
-type WizardTarget = PluginParamTarget | SnapshotTriggerTarget | RoutingTarget | EnginePerformanceTarget
+// T2461-A4 — Brain action target. Each row carries the dotted action
+// id the binding writer accepts directly (e.g. `brain.transport.play`).
+interface BrainActionTarget {
+  cat: 'brain-action'
+  id: string
+  name: string
+  path: string
+  brainKind: 'transport' | 'section' | 'slot' | 'layer'
+  valueType: 'trigger' | 'toggle' | 'continuous'
+}
+
+type WizardTarget = PluginParamTarget | SnapshotTriggerTarget | RoutingTarget | EnginePerformanceTarget | BrainActionTarget
 
 type CurveName = 'Linear' | 'Exp' | 'Log' | 'S-curve' | 'Custom'
 
@@ -626,11 +639,13 @@ function StepTarget({
   setState,
   plugins,
   engineParams,
+  brainActions,
 }: {
   state: WizardState
   setState: (next: Partial<WizardState>) => void
   plugins: Plugin[]
   engineParams: EngineParam[]
+  brainActions: Array<{ id: string; label: string; kind: 'transport' | 'section' | 'slot' | 'layer'; value_type: 'trigger' | 'toggle' | 'continuous' }>
 }) {
   const [cat, setCat] = useState<TargetCategory>(state.target?.cat ?? 'plugin-parameter')
   const [search, setSearch] = useState('')
@@ -676,6 +691,20 @@ function StepTarget({
       }))
       return items.filter((t) => t.name.toLowerCase().includes(search.toLowerCase()))
     }
+    if (cat === 'brain-action') {
+      const items: BrainActionTarget[] = brainActions.map((a) => ({
+        cat: 'brain-action',
+        id: a.id,
+        name: a.label,
+        path: a.id,
+        brainKind: a.kind,
+        valueType: a.value_type,
+      }))
+      return items.filter((t) =>
+        t.name.toLowerCase().includes(search.toLowerCase())
+        || t.path.toLowerCase().includes(search.toLowerCase()),
+      )
+    }
     // engine-performance
     const items: EnginePerformanceTarget[] = engineParams.map((p) => ({
       cat: 'engine-performance',
@@ -687,20 +716,22 @@ function StepTarget({
       unit: p.unit ?? '',
     }))
     return items.filter((t) => t.name.toLowerCase().includes(search.toLowerCase()))
-  }, [cat, plugins, engineParams, search])
+  }, [cat, plugins, engineParams, brainActions, search])
 
   const counts = useMemo(() => ({
     'plugin-parameter': plugins.reduce((sum, p) => sum + (p.parameters?.length ?? 0), 0),
     'snapshot-trigger': 6,
     'routing-rule': Object.keys(ROUTING_MODE_LABELS).length,
     'engine-performance': engineParams.length,
-  }), [plugins, engineParams])
+    'brain-action': brainActions.length,
+  }), [plugins, engineParams, brainActions])
 
   const categoryLabels: Record<TargetCategory, string> = {
     'plugin-parameter': 'Plugin parameter',
     'snapshot-trigger': 'Snapshot trigger',
     'routing-rule': 'Routing rule',
     'engine-performance': 'Engine performance',
+    'brain-action': 'Brain action',
   }
 
   return (
@@ -1175,6 +1206,17 @@ export function MidiAssignmentsPage() {
     retry: false,
   })
 
+  // T2461-A4 — fetch the Brain action catalogue once per page mount.
+  // Static data; the fetch is lightweight and the wizard's StepTarget
+  // is the only consumer.
+  const brainActionsQuery = useQuery({
+    queryKey: ['brain', 'actions'],
+    queryFn: () => brainApi.listActions(),
+    retry: false,
+    staleTime: 5 * 60 * 1000,   // 5 min
+  })
+  const brainActions = brainActionsQuery.data?.actions ?? []
+
   const adaptedSurfaces = useMemo(
     () => buildAdaptedSurfaces(enrichedQuery.data?.summary),
     [enrichedQuery.data],
@@ -1629,6 +1671,7 @@ export function MidiAssignmentsPage() {
                     setState={updateState}
                     plugins={plugins}
                     engineParams={engineParams}
+                    brainActions={brainActions}
                   />
                 )}
                 {stepIdx === 3 && <StepCalibrate state={state} setState={updateState} />}

@@ -105,4 +105,63 @@ export const brainApi = {
     fetchJson<Api.BrainState>(scopedPath('/import/synthforge', options), {
       method: 'POST',
     }),
+
+  // T2461-A4 — Brain action catalogue exposed for the MIDI Assignments
+  // wizard's target-source picker. Read-only; mutation flows through
+  // the existing transport / state endpoints.
+  listActions: () =>
+    fetchJson<{ actions: BrainActionDescriptor[]; count: number }>(
+      `${API_BASE}/engine/brain/actions`,
+    ),
+
+  // T2461-A6 — Brain capture buffer for the wizard's Calibrate step.
+  startCapture: (slotId: number, durationS = 5.0) =>
+    fetchJson<{ session_id: string; duration_s: number; slot_id: number }>(
+      `${API_BASE}/engine/brain/capture/start`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ slot_id: slotId, duration_s: durationS }),
+      },
+    ),
+
+  stopCapture: () =>
+    fetchJson<{ finalised: boolean; session_id?: string; frame_count?: number }>(
+      `${API_BASE}/engine/brain/capture/stop`,
+      { method: 'POST' },
+    ),
+
+  getCapture: (sessionId: string) =>
+    fetchJson<BrainCaptureSession>(
+      `${API_BASE}/engine/brain/capture/${encodeURIComponent(sessionId)}`,
+    ),
+}
+
+// T2461-A6 — Brain capture buffer payload.
+export interface BrainCaptureFrame {
+  slot_id: number
+  peak_db: number
+  rms_db: number
+  clipping: boolean
+  ts: number
+}
+
+export interface BrainCaptureSession {
+  found: boolean
+  session_id?: string
+  slot_id?: number
+  started_at?: number
+  duration_s?: number
+  finalised_at?: number | null
+  frame_count?: number
+  frames?: BrainCaptureFrame[]
+}
+
+// T2461-A4 — Brain action descriptor surfaced in the wizard target tree.
+export interface BrainActionDescriptor {
+  id: string
+  label: string
+  kind: 'transport' | 'section' | 'slot' | 'layer'
+  value_type: 'trigger' | 'toggle' | 'continuous'
+  description: string
 }

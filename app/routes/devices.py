@@ -759,6 +759,79 @@ async def list_diagnostics(
     }
 
 
+@router.get("/brain-monitor-candidates")
+async def list_brain_monitor_candidates() -> dict[str, Any]:
+    """T2461-A5 — return connected devices that declare loopback_ports
+    plus their latest measure-latency mean/p95/jitter (if any).
+
+    The Brain ConsoleView's "Bench monitor" affordance reads this to
+    populate the strip-routing menu and surface a yellow jitter chip
+    when the most-recent loopback exceeds the strip's threshold.
+
+    Worklist: T2461-A5.
+    """
+    import json as _json
+    from datetime import datetime as _dt
+
+    registry = get_profile_registry()
+    snapshot = detect_connections(registry)
+    connected_keys = {r.profile_key for r in snapshot.records}
+
+    candidates: list[dict[str, Any]] = []
+    repo_root = Path(__file__).resolve().parents[2]
+    evidence_root = repo_root / "docs" / "fit-for-purpose-evidence"
+
+    for profile in registry.profiles(kind="audio"):
+        key = f"{profile.pack_id}/{profile.model}.audio"
+        if key not in connected_keys:
+            continue
+        doc = profile.document
+        loopback = (doc.get("loopback_ports") or {}) if isinstance(doc, dict) else {}
+        playback = loopback.get("playback")
+        capture = loopback.get("capture")
+        if not (playback and capture):
+            continue
+
+        # Find the most-recent measurement evidence for this profile.
+        latest: dict[str, Any] | None = None
+        if evidence_root.is_dir():
+            for date_dir in sorted(evidence_root.iterdir(), reverse=True):
+                if not date_dir.is_dir():
+                    continue
+                target_dir = date_dir / profile.pack_id / profile.model
+                if not target_dir.is_dir():
+                    continue
+                files = sorted(target_dir.glob("*.json"), reverse=True)
+                for f in files:
+                    try:
+                        latest = _json.loads(f.read_text(encoding="utf-8"))
+                        break
+                    except Exception:   # noqa: BLE001
+                        continue
+                if latest:
+                    break
+
+        candidates.append({
+            "profile_key": key,
+            "pack_id": profile.pack_id,
+            "model": profile.model,
+            "vendor": registry.get_pack(profile.pack_id).vendor_name if registry.get_pack(profile.pack_id) else None,
+            "loopback_ports": {"playback": playback, "capture": capture},
+            "latest_measurement": (
+                None if latest is None
+                else {
+                    "timestamp": latest.get("timestamp"),
+                    "method": latest.get("method"),
+                    "mean_rtt_ms": latest.get("mean_rtt_ms"),
+                    "p95_rtt_ms": latest.get("p95_rtt_ms"),
+                    "jitter_p95_ms": latest.get("jitter_p95_ms"),
+                }
+            ),
+        })
+
+    return {"candidates": candidates, "count": len(candidates)}
+
+
 @router.get("/snapshot-keys")
 async def snapshot_keys() -> dict[str, Any]:
     """T2461-A9 — return the current connected + recently-disconnected

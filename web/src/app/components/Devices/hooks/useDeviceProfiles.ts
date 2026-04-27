@@ -14,6 +14,7 @@ import { useQuery } from '@tanstack/react-query'
 
 import {
   getMixxxChecksumStatus,
+  listBrainMonitorCandidates,
   listConnectedDevices,
   listDeviceDiagnostics,
   listDeviceProfiles,
@@ -21,6 +22,7 @@ import {
   listMeasureLatencyHistory,
   listPackSources,
   listRecentlyDisconnected,
+  type BrainMonitorCandidate,
   type DeviceProfileSummary,
   type ConnectedResponse,
   type DiagnosticsResponse,
@@ -116,5 +118,15 @@ export function useMixxxChecksumStatus() {
     queryFn: () => getMixxxChecksumStatus(),
     staleTime: 30_000,
     refetchInterval: 60_000,
+  })
+}
+
+// T2461-A5 — connected loopback-capable devices + their latest measurement.
+export function useBrainMonitorCandidates() {
+  return useQuery<{ candidates: BrainMonitorCandidate[]; count: number }>({
+    queryKey: ['devices', 'brain-monitor-candidates'],
+    queryFn: () => listBrainMonitorCandidates(),
+    staleTime: 10_000,
+    refetchInterval: 30_000,
   })
 }

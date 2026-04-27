@@ -1,5 +1,9 @@
+import { useEffect, useRef, useState } from 'react'
 import { BoKV, BoTag, formatMs, formatPercent, slotColor, type BrainOverviewSharedProps } from './brainViewShared'
 import { useBrainChannelMeters, type BrainChannelMeter } from '../../hooks/useBrainChannelMeters'
+import { useBrainMonitorCandidates } from '../../components/Devices/hooks/useDeviceProfiles'
+import { useDeviceConnections } from '../../components/Devices/hooks/useDeviceConnections'
+import { useToasts } from '../../components/Toasts'
 
 const METER_FLOOR_DB = -60
 const METER_CEILING_DB = 0
@@ -183,9 +187,75 @@ export function ConsoleView({
   const visibleSlots = slots.slice(0, 16)
   const qualification = diagnostics.controller_qualification
   const { meters } = useBrainChannelMeters()
+  const { pushToast } = useToasts()
+
+  // T2461-A2 — Brain strip clip → bench notification.
+  // Watches each slot's meter; when `clipping` flips false→true,
+  // emits a single warn toast scoped to that slot. The Hardware Store
+  // listens via its own useHotPlugToast hook, so the operator sees
+  // the same alert from either surface.
+  const lastClipRef = useRef<Record<number, boolean>>({})
+  useEffect(() => {
+    for (const meter of Object.values(meters)) {
+      const wasClipping = lastClipRef.current[meter.slotId] ?? false
+      if (meter.clipping && !wasClipping) {
+        pushToast(`Brain slot ${meter.slotId + 1} is clipping`, 'warn',
+          { durationMs: 4000 })
+      }
+      lastClipRef.current[meter.slotId] = meter.clipping
+    }
+  }, [meters, pushToast])
+
+  // T2461-A2 — Bench-device disconnect mid-performance → ConsoleView banner.
+  // Subscribes to the same WS hook the Hardware Store uses; tracks the
+  // most recent disconnect for 30 s.
+  const ws = useDeviceConnections()
+  const [recentDisconnect, setRecentDisconnect] = useState<{
+    profileKey: string; ts: number
+  } | null>(null)
+  useEffect(() => {
+    const evt = ws.lastEvent
+    if (!evt || evt.type !== 'device.disconnected') return
+    const key = String(evt.data?.profile_key ?? '')
+    if (!key) return
+    setRecentDisconnect({ profileKey: key, ts: evt.timestamp })
+    const t = window.setTimeout(() => setRecentDisconnect(null), 30_000)
+    return () => window.clearTimeout(t)
+  }, [ws.lastEvent])
+
+  // T2461-A5 — Bench monitor summary: surface the worst jitter from any
+  // connected loopback-capable device so operators see a regression chip
+  // without leaving the ConsoleView.
+  const monitorQuery = useBrainMonitorCandidates()
+  const benchMonitor = (() => {
+    const candidates = monitorQuery.data?.candidates ?? []
+    if (candidates.length === 0) return null
+    let worstJitter: number | null = null
+    let worstFrom: string | null = null
+    for (const c of candidates) {
+      const j = c.latest_measurement?.jitter_p95_ms
+      if (typeof j === 'number' && (worstJitter === null || j > worstJitter)) {
+        worstJitter = j
+        worstFrom = c.model
+      }
+    }
+    if (worstJitter === null) return { count: candidates.length, jitterText: '—', tone: 'idle' as const, from: null }
+    const tone = worstJitter > 0.5 ? 'warn' as const : 'ok' as const
+    return { count: candidates.length, jitterText: `${worstJitter.toFixed(2)} ms`, tone, from: worstFrom }
+  })()
 
   return (
     <>
+      {recentDisconnect ? (
+        <div
+          className="bo-panel__head"
+          role="status"
+          style={{ background: 'var(--bo-warn, #f1c21b)', color: 'var(--bo-bg, #161616)', padding: '6px 12px', marginBottom: 8, borderRadius: 4 }}
+        >
+          Bench device disconnected: <code>{recentDisconnect.profileKey}</code>
+          <span style={{ marginLeft: 8, opacity: 0.75 }}>(banner clears in ~30s)</span>
+        </div>
+      ) : null}
       <div className="bo-mixer">
         <div className="bo-panel__head">
           <div className="bo-panel__title">Mixer · {visibleSlots.length} tracks</div>
@@ -197,6 +267,14 @@ export function ConsoleView({
             <BoKV label="CPU" value={formatPercent(diagnostics.cpu_load_percent)} />
             <BoKV label="Latency" value={`${formatMs(diagnostics.roundtrip_latency_ms)} ms`} />
             <BoKV label="Buses" value={mixer.buses.length.toString()} />
+            {benchMonitor !== null ? (
+              <BoKV
+                label={`Bench monitor (${benchMonitor.count})`}
+                value={benchMonitor.from
+                  ? `${benchMonitor.from} jitter ${benchMonitor.jitterText}${benchMonitor.tone === 'warn' ? ' (high)' : ''}`
+                  : `${benchMonitor.count} candidate${benchMonitor.count === 1 ? '' : 's'}`}
+              />
+            ) : null}
           </div>
         </div>
 

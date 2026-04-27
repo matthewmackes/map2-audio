@@ -575,3 +575,81 @@ async def import_brain_from_synthforge(
     )
     await _broadcast_runtime_update("state", instance_id=instance_id, plugin_position=plugin_position)
     return state
+
+
+# ---------------------------------------------------------------------------
+# T2461-A4 — Brain action registry exposed for the MIDI Assignments wizard.
+# ---------------------------------------------------------------------------
+
+from app.services.performance_brain.brain_action_registry import (   # noqa: E402
+    list_actions as _list_brain_actions,
+)
+
+
+@router.get("/api/engine/brain/actions")
+async def list_brain_actions() -> dict[str, object]:
+    """Return the operator-facing Brain action catalogue.
+
+    The MIDI Assignments wizard's target step adds these as a fifth
+    target source (alongside plugins, MIDIActionType, routing modes,
+    and `/v2/engine/parameters`). Each action id is a dotted target
+    the binding writer accepts directly.
+
+    Worklist: T2461-A4.
+    """
+    descriptors = _list_brain_actions()
+    return {
+        "actions": [d.to_dict() for d in descriptors],
+        "count": len(descriptors),
+    }
+
+
+# ---------------------------------------------------------------------------
+# T2461-A6 — Brain capture buffer for the wizard's Calibrate step.
+# ---------------------------------------------------------------------------
+
+from app.services.performance_brain.brain_capture_buffer import (   # noqa: E402
+    get_brain_capture_buffer,
+)
+
+from pydantic import BaseModel as _BaseModel   # noqa: E402
+
+
+class _CaptureStartRequest(_BaseModel):
+    slot_id: int
+    duration_s: float = 5.0
+
+
+@router.post("/api/engine/brain/capture/start")
+async def brain_capture_start(req: _CaptureStartRequest) -> dict[str, object]:
+    """Arm the Brain capture buffer for one slot. The wizard's
+    Calibrate step calls this when the operator clicks Calibrate;
+    pairs with `/stop` to finalise.
+    """
+    buf = get_brain_capture_buffer()
+    try:
+        session_id = buf.start_capture(req.slot_id, req.duration_s)
+    except ValueError as exc:
+        return {"error": str(exc)}
+    return {"session_id": session_id, "duration_s": req.duration_s, "slot_id": req.slot_id}
+
+
+@router.post("/api/engine/brain/capture/stop")
+async def brain_capture_stop() -> dict[str, object]:
+    """Finalise the active capture session, returning its frames."""
+    buf = get_brain_capture_buffer()
+    session = buf.stop_capture()
+    if session is None:
+        return {"finalised": False}
+    return {"finalised": True, "session_id": session.session_id,
+            "frame_count": len(session.frames)}
+
+
+@router.get("/api/engine/brain/capture/{session_id}")
+async def brain_capture_get(session_id: str) -> dict[str, object]:
+    """Read back a finalised capture session."""
+    buf = get_brain_capture_buffer()
+    payload = buf.session_payload(session_id)
+    if payload is None:
+        return {"found": False}
+    return {"found": True, **payload}

@@ -437,6 +437,32 @@ export async function getDeviceSnapshotKeys(): Promise<DeviceSnapshotKeys> {
   return fetchJson(`${API_BASE}/api/devices/snapshot-keys`)
 }
 
+// T2461-A5 — Brain monitor candidates: connected devices that declare
+// loopback_ports + their most-recent measure-latency stats.
+export interface BrainMonitorMeasurement {
+  timestamp: string | null
+  method: 'jack' | 'synthetic' | null
+  mean_rtt_ms: number | null
+  p95_rtt_ms: number | null
+  jitter_p95_ms: number | null
+}
+
+export interface BrainMonitorCandidate {
+  profile_key: string
+  pack_id: string
+  model: string
+  vendor: string | null
+  loopback_ports: { playback: string; capture: string }
+  latest_measurement: BrainMonitorMeasurement | null
+}
+
+export async function listBrainMonitorCandidates(): Promise<{
+  candidates: BrainMonitorCandidate[]
+  count: number
+}> {
+  return fetchJson(`${API_BASE}/api/devices/brain-monitor-candidates`)
+}
+
 // T2459-G7 — bindings write + Undo
 export interface BindingControlRow {
   status?: number | string
