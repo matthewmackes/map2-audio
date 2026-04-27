@@ -25,10 +25,16 @@ import logging
 from typing import Any
 
 from fastapi import APIRouter, HTTPException, Query
+from fastapi.responses import FileResponse
 from pydantic import BaseModel, Field
 
 from app.services.controllers import get_controller_service
 from app.services.controllers.mapping_file_handler import MappingLoadError
+from app.services.controllers.metadata_enrichment import (
+    get_cached_asset_path,
+    list_cached_assets,
+    refresh_pack_async,
+)
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/devices", tags=["Devices"])
@@ -167,3 +173,53 @@ async def clear_mapping(req: ClearMappingRequest) -> dict[str, Any]:
     svc = get_controller_service()
     svc.clear_mapping(req.controller_key)
     return {"cleared": req.controller_key}
+
+
+# ---------------------------------------------------------------------------
+# T2459-C3 — metadata enrichment: cached asset serving + refresh
+# ---------------------------------------------------------------------------
+
+@router.get("/{pack_id}/{model}/assets")
+async def list_assets(pack_id: str, model: str) -> dict[str, Any]:
+    """List every cached metadata asset (image / datasheet / manual)
+    for a device, by filename. The frontend uses this to know what
+    paths are available under the asset endpoint.
+    """
+    return {
+        "pack_id": pack_id,
+        "model": model,
+        "assets": list_cached_assets(pack_id, model),
+    }
+
+
+@router.get("/{pack_id}/{model}/asset/{filename}")
+async def serve_asset(pack_id: str, model: str, filename: str) -> FileResponse:
+    """Serve one cached metadata asset by filename."""
+    path = get_cached_asset_path(pack_id, model, filename)
+    if path is None:
+        raise HTTPException(status_code=404, detail={
+            "error": {"code": "asset_not_cached",
+                      "message": f"Asset {filename} for {pack_id}/{model} is not cached.",
+                      "details": None}
+        })
+    return FileResponse(path)
+
+
+@router.post("/{pack_id}/refresh-metadata")
+async def refresh_metadata(pack_id: str) -> dict[str, Any]:
+    """Trigger a background metadata fetch for the pack.
+
+    Pulls product images, datasheet, and manual URLs declared in each
+    of the pack's audio profiles. Network failures are swallowed and
+    surface in the returned counts.
+    """
+    svc = get_controller_service()
+    pack = svc._profiles.get_pack(pack_id)  # noqa: SLF001 — internal API
+    if pack is None:
+        raise HTTPException(status_code=404, detail={
+            "error": {"code": "not_found",
+                      "message": f"Pack {pack_id} not found.",
+                      "details": None}
+        })
+    counts = await refresh_pack_async(pack.path)
+    return {"pack_id": pack_id, **counts}

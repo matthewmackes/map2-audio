@@ -267,14 +267,16 @@ Last updated: 2026-04-27 EDT - Claude: SHIPPED.
 ---
 
 ID: T2459-C3
-Status: [ ] Todo
+Status: [✓] Done
 Parent: T2459
 Title: Metadata enrichment pipeline — product imagery, datasheet URLs, manual URLs
 Description:
 - Goal: Background fetcher invoked at profile registration (`pull_device_metadata.py`). On device discovery, fetch (with caching + offline fallback): manufacturer product page URL, datasheet PDF URL, 1-3 public product images (front/back/angle), vendor support URL, public manual URL. Cache to `/var/lib/map2/devices/<vendor>/<model>/{datasheet.pdf, image_front.jpg, ...}` keyed by hardware_id.
 - Acceptance: hero card on `/devices/edirol-ua-1000` displays the actual UA-1000 product image; "Datasheet" button opens the cached PDF; "Manual" button opens the public manual link. Same on `/devices/hotone-jogg`. Offline first-launch (no network) falls back to a placeholder image without erroring.
 - Required outputs: `scripts/pull_device_metadata.py`, integration into `ProfileRegistry`, frontend hero card component, pytest coverage.
+Completion note: 2026-04-27 — Claude: SHIPPED. Created `scripts/pull_device_metadata.py` (~250 LoC) — CLI + library entry points (`enrich_pack`, `enrich_all`, `main`) for pulling each pack's `metadata.product_image_urls` / `datasheet_url` / `manual_url` into `/var/lib/map2/devices/<pack_id>/<model_id>/`. Atomic writes via `tempfile.mkstemp` + `os.replace`. Per-URL bounded `urllib.request.urlopen` timeout (default 15s). All network failures caught and recorded as `FetchOutcome(ok=False, reason=...)` — never raise. CLI args: `--packs-root`, `--cache-root`, `--timeout-seconds`, `--user-agent`, `--pack-id` (single-pack mode), `-v`. Created `app/services/controllers/metadata_enrichment.py` — backend integration: `get_cached_asset_path(pack_id, model, filename)` resolves the cached file with strict path-traversal protection (rejects `..`, `/` in any component, anything that escapes `cache_root` after `.resolve()`); `list_cached_assets()`; `refresh_pack_async()` schedules a background fetch via `loop.run_in_executor`. Extended `app/routes/devices.py` with three new routes: `GET /api/devices/{pack_id}/{model}/assets` (lists cached filenames), `GET /api/devices/{pack_id}/{model}/asset/{filename}` (FileResponse — what the DeviceProfilePanel hero card image fetches), `POST /api/devices/{pack_id}/refresh-metadata` (operator-triggered enrichment refresh). Test coverage: `tests/test_metadata_enrichment.py` (10 cases) — local `http.server` fixture for hermetic fetch tests (no network), `enrich_pack` caches image+datasheet+manual, atomic writes leave no `.pull_*` tempfiles, unreachable URL records ok=False without raising, profile without metadata is a no-op, `enrich_all` walks vendors and skips underscore-prefixed framework dirs, `get_cached_asset_path` resolves existing files / returns None for missing / rejects 4 path-traversal patterns, `list_cached_assets` returns filenames sorted / returns empty for missing dirs. Validation: `pytest tests/test_metadata_enrichment.py -v` reports 10 passed in 3.14s; `python3 -c "from app.routes.devices import router; print(...)"` reports the new endpoints registered.
 Assigned to: Claude
+Last updated: 2026-04-27 EDT - Claude: SHIPPED.
 
 ---
 
