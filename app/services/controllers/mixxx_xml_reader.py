@@ -134,9 +134,14 @@ def parse_mixxx_xml(
         raise MappingLoadError(f"{path}: invalid XML: {exc}") from exc
 
     root = tree.getroot()
-    if root.tag != "MixxxControllerPreset":
+    # Mixxx has shipped two root-tag spellings over time:
+    # - "MixxxControllerPreset" (current, since 1.11)
+    # - "MixxxMIDIPreset" (legacy, pre-1.11) — still in upstream
+    #   `res/controllers/` for older devices
+    valid_roots = {"MixxxControllerPreset", "MixxxMIDIPreset"}
+    if root.tag not in valid_roots:
         raise MappingLoadError(
-            f"{path}: expected <MixxxControllerPreset> root, got <{root.tag}>"
+            f"{path}: expected one of {sorted(valid_roots)} as root, got <{root.tag}>"
         )
 
     controller_elem = root.find("controller")

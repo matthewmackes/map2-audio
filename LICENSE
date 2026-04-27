@@ -25,3 +25,10 @@ Project notices:
 - Educational statements in documentation describe project intent and do not
   add restrictions beyond AGPLv3.
 - This license does not grant trademark rights.
+- The directory `device-packs/_mixx-imports/` contains controller mapping
+  files imported verbatim from the upstream Mixxx project
+  (https://github.com/mixxxdj/mixxx) under the GPL-2.0-or-later license.
+  Each imported file retains its original Mixxx copyright header. The full
+  upstream LICENSE text is at `device-packs/_mixx-imports/LICENSE.MIXX`.
+  The combined work is distributed under AGPLv3 via the GPLv2-or-later →
+  GPLv3 → AGPLv3 upward-compatibility chain.

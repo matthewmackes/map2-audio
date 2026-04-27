@@ -1,0 +1,39 @@
+# Mixxx imports manifest.
+# Records the upstream commit + import date for the controller mapping
+# corpus mirrored under res/controllers/ from
+# https://github.com/mixxxdj/mixxx.
+#
+# License: each file in res/controllers/ retains its original Mixxx
+# copyright + GPLv2-or-later license header. The full upstream LICENSE
+# text is at LICENSE.MIXX in this directory.
+#
+# Worklist: T2459-E5.
+
+upstream_repo: https://github.com/mixxxdj/mixxx
+upstream_commit: 9d5df54b7a81c949a40b53c5ace60c6c4f78aa3f
+imported_at: '2026-04-27'
+imported_by: T2459-E5
+import_method: |
+  cp -a /tmp/mixxx/res/controllers/. device-packs/_mixx-imports/res/controllers/
+
+  Followed by no edits — every imported file retains its upstream
+  contents byte-for-byte. CI test tests/test_mixxx_imports_immutable.py
+  verifies that no Mixxx-attributed file has been modified after
+  import.
+
+license: GPL-2.0-or-later
+combined_license_compatibility: |
+  MAP2 is AGPL-3.0-only. Mixxx is GPLv2-or-later. The combined work
+  complies via the GPLv2-or-later → GPLv3 → AGPLv3 upward chain.
+  The combined work is distributed under AGPLv3.
+
+mutability_policy: |
+  Mixxx-imported files MUST NOT be edited in-place. Operator-level
+  per-pack metadata (alias_table, status flags, MAP2 commit when
+  imported, upstream Mixxx commit hash) is stored in sidecar
+  <file>.MAP2.yaml files NEXT to each XML. Sidecars are MAP2-mutable;
+  the XML and JS imports themselves are read-only.
+
+  CI test tests/test_mixxx_imports_immutable.py asserts the
+  invariant by checksumming every imported file against the
+  upstream version on the recorded commit.
