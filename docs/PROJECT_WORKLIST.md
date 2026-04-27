@@ -53,7 +53,7 @@ Last updated: 2026-04-26 12:03 EDT - Codex
 ---
 
 ID: T2459
-Status: [>] In Progress
+Status: [✓] Done
 Title: T800-equivalent Epic — Controller / Mapping / Device-Pack Subsystem (Mixxx-pattern reference, native MAP2 implementation)
 Description:
 - Goal / acceptance criteria: Build a native MAP2 controller/mapping subsystem inspired by Mixxx's mature `src/controllers/` architecture but rewritten end-to-end in MAP2's own stack (C++/JUCE for protocol I/O, separate `map2-controller-host` process for QuickJS-driven mapping execution, Python FastAPI for orchestration and metadata enrichment, React + Carbon for the GUI). The subsystem must (1) make the EDIROL UA-1000 and Hotone Jogg fully operational on the platform with auto-rendered Carbon panels driven by YAML capability profiles, (2) support a Carbon node-graph editor as the primary mapping authoring surface with hand-written QuickJS as an explicit escape hatch, (3) implement bidirectional Mixxx XML/JS round-trip compatibility so any Mixxx mapping loads and runs unchanged on MAP2 and any MAP2-authored mapping can be exported as Mixxx XML+JS, (4) ship a full mirror of upstream `mixxx/res/controllers/` under `device-packs/_mixx-imports/` with preserved GPLv2-or-later attribution, (5) implement path (c) — replace `jack_iodelay` with an in-repo numpy/JUCE impulse-response measurement (`scripts/measure_loopback_ir.py`) wired to a "Measure latency" GUI button on every device panel, (6) deliver vendor-pack coverage for the full Edirol UA range (UA-25, UA-25EX, UA-101, UA-700, UA-1000, UA-1010) and Hotone product range, (7) ship hardening: schema-validation CI, QuickJS unit tests, MIDI-driven controller integration tests, hardware-in-the-loop smoke runner, and IPC failure-injection harness.
