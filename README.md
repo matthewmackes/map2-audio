@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1337** Python | **1321** TypeScript | **157** C++/H | **145** Docs | **2925** total commits | **3** stars | **0** forks | **0** open issues
+**1340** Python | **1322** TypeScript | **157** C++/H | **145** Docs | **2927** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`2190ebf8`](https://github.com/matthewmackes/map2-audio/commit/2190ebf8e39efbcc3cb1ef042ae664f7a53b1320) | T2459-G7: Bindings tab + Q13 Undo + Q16 Learn Wizard hookup | Map2 Audio | 2026-04-27 |
+| [`c0001702`](https://github.com/matthewmackes/map2-audio/commit/c0001702564fe91320858fc421fd098c6df6221f) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-27 |
 | [`776c53af`](https://github.com/matthewmackes/map2-audio/commit/776c53af2f27a6f71273415959a3ee6eae39c8f9) | T2459-G6: Audio I/O tab — Q17 measure + history + baselin... | Map2 Audio | 2026-04-27 |
 | [`c6f55a3a`](https://github.com/matthewmackes/map2-audio/commit/c6f55a3a7f075d6898dbfcce26e5458da765d626) | T2460: home welcome / notice popup with hide preference (... | Map2 Audio | 2026-04-27 |
 | [`f1b0cbd0`](https://github.com/matthewmackes/map2-audio/commit/f1b0cbd0b5182c4bd5398fba5960d5d7973fa314) | fix(react19): JSX.Element -> React.JSX.Element in T2459 d... | Map2 Audio | 2026-04-27 |
 | [`ff6698ff`](https://github.com/matthewmackes/map2-audio/commit/ff6698ff8d1f8c14d9670834fa08cc14f3ce5fc6) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-27 |
 | [`229ffa72`](https://github.com/matthewmackes/map2-audio/commit/229ffa72e86de8188e8e9e0cb815697a569fbb05) | T2459-G5: device detail route + tabs (Overview + License ... | Map2 Audio | 2026-04-27 |
 | [`de847e54`](https://github.com/matthewmackes/map2-audio/commit/de847e5419bed53025d8ec20d391b61637f88cb8) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-27 |
-| [`d4850cc6`](https://github.com/matthewmackes/map2-audio/commit/d4850cc6b006fe7c9f95ec65e78b456958c6249d) | T2459-G4: DeviceCard with Q6/Q11/Q12/Q15 surfaces + 8 new... | Map2 Audio | 2026-04-27 |
-| [`7819ab01`](https://github.com/matthewmackes/map2-audio/commit/7819ab013e594c28b784bf1e715c38ea574068af) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-27 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
