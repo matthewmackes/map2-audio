@@ -1,0 +1,28 @@
+{
+  "timestamp": "2026-04-26T23:23:32.257591+00:00",
+  "git_commit": "df13715b",
+  "hardware": {
+    "interface": "UA-1000",
+    "buffer_size": 64,
+    "sample_rate": 48000,
+    "cpu_cores": [
+      4,
+      5
+    ]
+  },
+  "rtl": {
+    "min_ms": 276.83,
+    "mean_ms": 276.844,
+    "p50_ms": 276.846,
+    "p95_ms": 276.846,
+    "p99_ms": 276.846,
+    "max_ms": 276.846
+  },
+  "jitter": {
+    "p95_ms": 0.0104,
+    "max_ms": 0.016
+  },
+  "xruns": 0,
+  "gate": "FAIL",
+  "notes": "method=jack; window_cycles=9000; converged_samples=8"
+}

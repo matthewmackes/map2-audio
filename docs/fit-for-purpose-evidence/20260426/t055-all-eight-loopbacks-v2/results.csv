@@ -1,0 +1,9 @@
+channel,playback,capture,rc,gate,mean_ms,p95_ms,jitter_p95_ms,converged_samples,xruns
+1,playback_AUX0,capture_AUX0,1,FAIL,351.239,351.239,0.0,23,0
+2,playback_AUX1,capture_AUX1,1,FAIL,10.5714,10.586,0.021,36,0
+3,playback_AUX2,capture_AUX2,1,FAIL,351.4124,351.42,0.0446,15,0
+4,playback_AUX3,capture_AUX3,1,FAIL,276.844,276.846,0.0104,8,0
+5,playback_AUX4,capture_AUX4,1,FAIL,1032.7097,1032.759,0.132,6,0
+6,playback_AUX5,capture_AUX5,1,FAIL,10.0734,10.102,0.104,27,0
+7,playback_AUX6,capture_AUX6,1,FAIL,223.414,223.43,0.056,7,0
+8,playback_AUX7,capture_AUX7,1,FAIL,1150.7681,1154.225,4.28,13,0

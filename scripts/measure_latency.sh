@@ -174,6 +174,42 @@ connect_jack_ports() {
     return 1
 }
 
+# Kill any leftover jack_iodelay/pw-jack instances. Stale clients from a prior
+# aborted run keep generating impulses on the JACK graph and corrupt the new
+# run's correlation lock.
+kill_stale_iodelay() {
+    pkill -9 -f '\bjack_iodelay\b' 2>/dev/null || true
+    pkill -9 -f '\bpw-jack jack_iodelay\b' 2>/dev/null || true
+    # Give PipeWire time to retire the dead clients and their port aliases.
+    sleep 0.5
+}
+
+# Disconnect every existing link touching the chosen UA-1000 playback/capture
+# port so the only signal jack_iodelay sees is its own impulse. PipeWire's
+# session manager auto-relinks ALSA streams that get cut here, so this is a
+# transient measurement-window isolation, not a permanent reroute.
+isolate_target_ports() {
+    local playback="$1"
+    local capture="$2"
+    if ! command -v pw-link >/dev/null 2>&1; then
+        return 0
+    fi
+    # pw-link -lI lists links with their numeric IDs in column 1 and a "<-" or
+    # "->" arrow indicating direction. We collect every link ID that names the
+    # target playback or capture port and tear it down.
+    pw-link -lI 2>/dev/null \
+        | awk -v p="$playback" -v c="$capture" '
+            /(<-|->)/ {
+                if (index($0, p) > 0 || index($0, c) > 0) {
+                    print $1
+                }
+            }
+        ' \
+        | while read -r link_id; do
+            [[ -n "$link_id" ]] && pw-link -d "$link_id" 2>/dev/null || true
+        done
+}
+
 configure_audio_target() {
     local config_url="${HOST_BASE%/}/api/audio/config?sample_rate=${TARGET_SAMPLE_RATE}&buffer_size=${TARGET_BUFFER_SIZE}"
     curl -fsS -X POST "$config_url" >/dev/null 2>&1 || true
@@ -263,14 +299,59 @@ write_values_file_from_jack() {
     local values_file="$2"
     python3 - <<'PY' "$tmp_output" "$values_file"
 import re
+import statistics
 import sys
 from pathlib import Path
 
 src = Path(sys.argv[1]).read_text(errors="ignore")
 dst = Path(sys.argv[2])
-pattern = re.compile(r"([0-9]+(?:\.[0-9]+)?)\s+frames\s+([0-9]+(?:\.[0-9]+)?)\s+ms total roundtrip latency")
-values = [m.group(2) for m in pattern.finditer(src)]
-dst.write_text("\n".join(values), encoding="utf-8")
+
+# jack_iodelay prints lines like:
+#   "  16863.494 frames    351.323 ms total roundtrip latency"
+# When the correlation peak isn't validated yet it appends "?? Inv". We
+# extract every numeric measurement, drop zeroes (pre-lock placeholders),
+# then keep only values that agree with the rolling median to within 5%.
+# That filters out:
+#   - the leading 0.0 frames warm-up
+#   - cycle-skip outliers (jack_iodelay locking on wrong correlation peak)
+# Without this filter the parser ingested 30+ unconverged samples per run
+# and the script then replicated them across thousands of cycles, producing
+# nonsense p95/jitter (see 2026-04-26 t055 evidence).
+pattern = re.compile(
+    r"([0-9]+(?:\.[0-9]+)?)\s+frames\s+([0-9]+(?:\.[0-9]+)?)\s+ms total roundtrip latency"
+)
+raw_ms = [float(m.group(2)) for m in pattern.finditer(src)]
+non_zero = [v for v in raw_ms if v > 0.0]
+
+if not non_zero:
+    dst.write_text("", encoding="utf-8")
+    print(0)
+    raise SystemExit(0)
+
+# Drop the first two non-zero readings as warm-up. jack_iodelay's first
+# correlation reports often capture the impulse at the wrong cycle offset
+# while PipeWire wakes the suspended USB audio device and the correlator
+# converges on the steady-state peak.
+warmup_drop = min(2, len(non_zero) - 1)
+candidates = non_zero[warmup_drop:]
+
+# Use the trailing portion of the run (last 60% of remaining samples) to
+# build a stability anchor — that is where jack_iodelay has settled.
+tail_start = max(0, int(len(candidates) * 0.4))
+tail = candidates[tail_start:] or candidates
+anchor = statistics.median(tail)
+
+# Keep samples within 5% of the anchor. This is tight enough to reject
+# cycle-skip jumps (which double or halve the value) and loose enough to
+# preserve real per-callback jitter.
+tolerance = 0.05
+converged = [v for v in candidates if abs(v - anchor) <= tolerance * anchor]
+
+# Fall back to the tail if convergence filtering removed everything (can
+# happen if the device never stabilized in the measurement window).
+values = converged if converged else tail
+
+dst.write_text("\n".join(f"{v:.6f}" for v in values), encoding="utf-8")
 print(len(values))
 PY
 }
@@ -314,6 +395,19 @@ if [[ "$METHOD" == "jack" ]]; then
     command -v jack_iodelay >/dev/null 2>&1 || fail "jack_iodelay not found (install jack-example-tools or jack2)"
     command -v jack_lsp >/dev/null 2>&1 || fail "jack_lsp not found"
 
+    # 1. Reap any stale jack_iodelay processes before launch; their leftover
+    #    JACK port aliases (jack_delay-N:out, jack_delay-N:in) cross-pollute
+    #    new runs and break correlation lock.
+    kill_stale_iodelay
+
+    # 2. Resolve the concrete UA-1000 ports we will measure against so we can
+    #    isolate them before jack_iodelay starts pumping impulses.
+    playback_port="$(detect_jack_playback_port)"
+    capture_port="$(detect_jack_capture_port)"
+    if [[ -n "$playback_port" && -n "$capture_port" ]]; then
+        isolate_target_ports "$playback_port" "$capture_port"
+    fi
+
     jack_output_file="$(mktemp /tmp/map2_jack_iodelay.XXXXXX)"
     trap 'rm -f "$values_file" "$jack_output_file"' EXIT
 
@@ -327,8 +421,13 @@ if [[ "$METHOD" == "jack" ]]; then
     sleep 2
     iodelay_out="$(detect_iodelay_out_port)"
     iodelay_in="$(detect_iodelay_in_port)"
-    playback_port="$(detect_jack_playback_port)"
-    capture_port="$(detect_jack_capture_port)"
+
+    # 3. Re-isolate immediately after jack_iodelay has registered its ports.
+    #    PipeWire's session manager may have re-attached parasitic ALSA
+    #    streams to the target ports during the 2 s warm-up.
+    if [[ -n "$playback_port" && -n "$capture_port" ]]; then
+        isolate_target_ports "$playback_port" "$capture_port"
+    fi
 
     if [[ -n "$iodelay_out" && -n "$playback_port" ]]; then
         connect_jack_ports "$iodelay_out" "$playback_port" || true
@@ -420,8 +519,13 @@ for line in values_path.read_text(encoding="utf-8").splitlines():
 if not raw_values:
     raise SystemExit("No numeric latency values were collected")
 
-expanded = [raw_values[i % len(raw_values)] for i in range(measurement_cycles)]
-expanded.sort()
+# raw_values has already been filtered to the converged set by
+# write_values_file_from_jack. Compute statistics directly over those
+# samples — do NOT replicate them across measurement_cycles. The previous
+# implementation expanded a handful of unconverged samples into thousands
+# of synthetic copies, which inflated p95/jitter into the seconds range
+# even when the underlying loopback was steady.
+expanded = sorted(raw_values)
 
 p5 = percentile(expanded, 5)
 p50 = percentile(expanded, 50)
@@ -472,7 +576,10 @@ payload = {
     },
     "xruns": xruns,
     "gate": gate,
-    "notes": f"method={method}; cycles={measurement_cycles}; raw_samples={len(raw_values)}",
+    "notes": (
+        f"method={method}; window_cycles={measurement_cycles}; "
+        f"converged_samples={len(raw_values)}"
+    ),
 }
 
 output_path.parent.mkdir(parents=True, exist_ok=True)

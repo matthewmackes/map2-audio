@@ -1,0 +1,2 @@
+channel,playback,capture,rc,gate,mean_ms,p95_ms,jitter_p95_ms,converged_samples,xruns
+1,playback_FL,capture_FL,1,FAIL,25.0775,25.3701,1.0042,27,0

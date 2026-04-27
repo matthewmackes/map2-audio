@@ -1,0 +1,7 @@
+MAP2 latency measurement
+  method: jack
+  duration: 12s
+  target: 48000Hz / 64 samples
+  cycles: 9000
+Result: {"gate": "FAIL", "rtl_p95_ms": 25.154, "jitter_p95_ms": 1.9044, "xruns": 0, "evidence_file": "/home/mm/map2-audio/docs/fit-for-purpose-evidence/20260426/t055-jogg-comparison/jogg_trial2.json"}
+Evidence: /home/mm/map2-audio/docs/fit-for-purpose-evidence/20260426/t055-jogg-comparison/jogg_trial2.json
