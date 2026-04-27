@@ -1,0 +1,68 @@
+.diagnostics-aggregate-page {
+  padding: 1.5rem 2rem 4rem;
+  max-width: 1600px;
+  margin: 0 auto;
+}
+
+.diagnostics-aggregate-page__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  margin-bottom: 1.5rem;
+  padding-bottom: 1rem;
+  border-bottom: 1px solid var(--cds-border-subtle);
+}
+
+.diagnostics-aggregate-page__crumb {
+  margin: 0;
+  font-size: 0.75rem;
+  color: var(--cds-text-helper);
+}
+
+.diagnostics-aggregate-page__crumb a {
+  color: var(--cds-link-primary);
+  text-decoration: none;
+}
+
+.diagnostics-aggregate-page__crumb a:hover {
+  text-decoration: underline;
+}
+
+.diagnostics-aggregate-page__head h1 {
+  font-size: 1.75rem;
+  font-weight: 400;
+  margin: 0.25rem 0;
+  color: var(--cds-text-primary);
+}
+
+.diagnostics-aggregate-page__sub {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--cds-text-helper);
+}
+
+.diagnostics-aggregate-page__counts {
+  display: flex;
+  gap: 0.375rem;
+  flex-wrap: wrap;
+}
+
+.diagnostics-aggregate-page__notice {
+  margin-bottom: 1rem;
+  width: 100%;
+  max-width: none;
+}
+
+.diagnostics-aggregate-page__loading {
+  padding: 1rem 0;
+}
+
+.diagnostics-aggregate-page__pack-link {
+  color: var(--cds-link-primary);
+  text-decoration: none;
+}
+
+.diagnostics-aggregate-page__pack-link:hover {
+  text-decoration: underline;
+}

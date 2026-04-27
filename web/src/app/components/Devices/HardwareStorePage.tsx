@@ -25,6 +25,7 @@ import { useQueryClient } from '@tanstack/react-query'
 import { useDeviceConnections } from './hooks/useDeviceConnections'
 import { useHotPlugToast } from './hooks/useHotPlugToast'
 import {
+  useDeviceDiagnostics,
   useKnownDevices,
   useRecentlyDisconnected,
   useConnectedDevices,
@@ -63,10 +64,11 @@ function buildProfileRows(args: {
   pinnedKeys: Set<string>
   recentlyDisconnectedKeys: Set<string>
   knownLastSeen: Record<string, number | null>
+  diagByPack: Record<string, { count: number; worst: 'info' | 'warning' | 'error' }>
 }): ProfileRow[] {
   const {
     profileKeys, profileIndex, packIndex, connectedKeys, pinnedKeys,
-    recentlyDisconnectedKeys, knownLastSeen,
+    recentlyDisconnectedKeys, knownLastSeen, diagByPack,
   } = args
   return profileKeys
     .map<ProfileRow>((key) => {
@@ -74,6 +76,7 @@ function buildProfileRows(args: {
       if (!p) {
         const [packId, rest] = key.split('/')
         const [model, kind] = (rest ?? '').split('.')
+        const dx = diagByPack[packId ?? '']
         return {
           profileKey: key,
           packId: packId ?? '',
@@ -86,8 +89,11 @@ function buildProfileRows(args: {
           isPinned: pinnedKeys.has(key),
           recentlyDisconnected: recentlyDisconnectedKeys.has(key),
           lastSeenAt: knownLastSeen[key] ?? null,
+          diagnosticCount: dx?.count,
+          diagnosticWorstSeverity: dx?.worst,
         }
       }
+      const dx = diagByPack[p.pack_id]
       return {
         profileKey: key,
         packId: p.pack_id,
@@ -100,6 +106,8 @@ function buildProfileRows(args: {
         isPinned: pinnedKeys.has(key),
         recentlyDisconnected: recentlyDisconnectedKeys.has(key),
         lastSeenAt: knownLastSeen[key] ?? null,
+        diagnosticCount: dx?.count,
+        diagnosticWorstSeverity: dx?.worst,
       }
     })
     .sort((a, b) => a.profileKey.localeCompare(b.profileKey))
@@ -150,6 +158,7 @@ export function HardwareStorePage(): React.JSX.Element {
   const connectedFallback = useConnectedDevices()
   const knownQuery = useKnownDevices()
   const recentQuery = useRecentlyDisconnected()
+  const diagnosticsQuery = useDeviceDiagnostics()
 
   const handlePinChanged = React.useCallback(() => {
     queryClient.invalidateQueries({ queryKey: ['devices', 'known'] })
@@ -170,6 +179,27 @@ export function HardwareStorePage(): React.JSX.Element {
   }, [ws.lastEvent])
 
   const lastEventTimestamp = ws.lastEvent?.timestamp ?? 0
+
+  // T2459-G8 — per-pack diagnostic rollup. Counts + worst severity
+  // scoped to each pack id; passed into DeviceCard as a Carbon Tag.
+  const diagByPack = React.useMemo<Record<string, { count: number; worst: 'info' | 'warning' | 'error' }>>(() => {
+    const out: Record<string, { count: number; worst: 'info' | 'warning' | 'error' }> = {}
+    const order = { error: 2, warning: 1, info: 0 } as const
+    for (const r of diagnosticsQuery.data?.diagnostics ?? []) {
+      const pid = r.pack_id
+      if (!pid) continue
+      const existing = out[pid]
+      if (!existing) {
+        out[pid] = { count: 1, worst: r.severity }
+      } else {
+        existing.count += 1
+        if (order[r.severity] > order[existing.worst]) {
+          existing.worst = r.severity
+        }
+      }
+    }
+    return out
+  }, [diagnosticsQuery.data])
 
   const pulseTokenFor = React.useCallback(
     (row: ProfileRow): number | undefined => {
@@ -223,14 +253,14 @@ export function HardwareStorePage(): React.JSX.Element {
     profileKeys: Array.from(connectedKeys),
     profileIndex, packIndex,
     connectedKeys, pinnedKeys, recentlyDisconnectedKeys,
-    knownLastSeen,
+    knownLastSeen, diagByPack,
   })
 
   const recentRows = buildProfileRows({
     profileKeys: Array.from(recentlyDisconnectedKeys).filter((k) => !connectedKeys.has(k)),
     profileIndex, packIndex,
     connectedKeys, pinnedKeys, recentlyDisconnectedKeys,
-    knownLastSeen,
+    knownLastSeen, diagByPack,
   })
 
   const knownNotRecentRows = buildProfileRows({
@@ -239,7 +269,7 @@ export function HardwareStorePage(): React.JSX.Element {
     ),
     profileIndex, packIndex,
     connectedKeys, pinnedKeys, recentlyDisconnectedKeys,
-    knownLastSeen,
+    knownLastSeen, diagByPack,
   })
 
   // Catalogue: all known profiles minus those already shown in
@@ -256,11 +286,11 @@ export function HardwareStorePage(): React.JSX.Element {
       profileKeys: all.filter((k) => !usedKeys.has(k)),
       profileIndex, packIndex,
       connectedKeys, pinnedKeys, recentlyDisconnectedKeys,
-      knownLastSeen,
+      knownLastSeen, diagByPack,
     })
   }, [
     connectedKeys, recentlyDisconnectedKeys, knownKeys, profileIndex, packIndex,
-    pinnedKeys, knownLastSeen,
+    pinnedKeys, knownLastSeen, diagByPack,
   ])
 
   const isLoading = profilesQuery.isLoading || packsQuery.isLoading

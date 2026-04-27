@@ -40,6 +40,11 @@ export interface DeviceCardRow {
    * highlights itself. Pages set this to the WS lastEvent.timestamp
    * scoped to events that match this row. */
   pulseToken?: number
+  /** T2459-G8 — diagnostic count + worst severity scoped to this
+   * device's pack, surfaced as a Carbon Tag on the card. The page
+   * computes this from `useDeviceDiagnostics`. */
+  diagnosticCount?: number
+  diagnosticWorstSeverity?: 'info' | 'warning' | 'error'
 }
 
 export interface DeviceCardProps {
@@ -198,6 +203,19 @@ export function DeviceCard({ row, onPinChanged }: DeviceCardProps): React.JSX.El
         {sourceTag}
         {row.isPinned ? <Tag size="sm" type="purple">Pinned</Tag> : null}
         {row.isDegraded ? <Tag size="sm" type="warm-gray">Pack degraded</Tag> : null}
+        {row.diagnosticCount && row.diagnosticCount > 0 && row.diagnosticWorstSeverity ? (
+          <Tag
+            size="sm"
+            type={
+              row.diagnosticWorstSeverity === 'error' ? 'red'
+              : row.diagnosticWorstSeverity === 'warning' ? 'warm-gray'
+              : 'gray'
+            }
+          >
+            {row.diagnosticCount} {row.diagnosticWorstSeverity}
+            {row.diagnosticCount > 1 ? 's' : ''}
+          </Tag>
+        ) : null}
       </div>
 
       {row.lastSeenAt !== null && !row.isConnected ? (

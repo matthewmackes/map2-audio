@@ -108,6 +108,22 @@ test('DeviceCard: Q15 — renders source tag when source is set', () => {
   expect(screen.getByText('Imported')).toBeInTheDocument()
 })
 
+test('DeviceCard: G8 — diagnostic count tag renders with worst-severity tone', () => {
+  renderCard({ diagnosticCount: 3, diagnosticWorstSeverity: 'error' })
+  // "3 errors" — pluralised when count > 1.
+  expect(screen.getByText('3 errors')).toBeInTheDocument()
+})
+
+test('DeviceCard: G8 — single diagnostic uses singular form', () => {
+  renderCard({ diagnosticCount: 1, diagnosticWorstSeverity: 'warning' })
+  expect(screen.getByText('1 warning')).toBeInTheDocument()
+})
+
+test('DeviceCard: G8 — no diagnostic tag when count is 0', () => {
+  renderCard({ diagnosticCount: 0, diagnosticWorstSeverity: 'info' })
+  expect(screen.queryByText(/0 info/)).not.toBeInTheDocument()
+})
+
 test('DeviceCard: Pin button calls pinDeviceProfile + shows Undo toast', async () => {
   renderCard({ isPinned: false })
 

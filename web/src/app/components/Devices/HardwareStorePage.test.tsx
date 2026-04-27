@@ -75,6 +75,11 @@ jest.mock('../../../map2/clients/devices', () => ({
     recently_disconnected: [],
     count: 0,
   })),
+  listDeviceDiagnostics: jest.fn(async () => ({
+    diagnostics: [],
+    count: 0,
+    counts_by_severity: { info: 0, warning: 0, error: 0 },
+  })),
 }))
 
 import { HardwareStorePage } from './HardwareStorePage'
@@ -153,6 +158,10 @@ test('HardwareStorePage: empty-state renders when nothing in any section', async
   ;(devicesMock.listConnectedDevices as jest.Mock).mockResolvedValueOnce({
     snapshot: { records: [], sources_attempted: [], sources_failed: [], snapshot_at: 1 },
     count: 0,
+  })
+  ;(devicesMock.listDeviceDiagnostics as jest.Mock).mockResolvedValueOnce({
+    diagnostics: [], count: 0,
+    counts_by_severity: { info: 0, warning: 0, error: 0 },
   })
 
   // Override the WS hook for the empty case.
