@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1316** Python | **1291** TypeScript | **154** C++/H | **145** Docs | **2884** total commits | **3** stars | **0** forks | **0** open issues
+**1316** Python | **1291** TypeScript | **157** C++/H | **145** Docs | **2886** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`446247fb`](https://github.com/matthewmackes/map2-audio/commit/446247fb4240a0f47149c503643df578938ab45a) | T2459-D3: Map2BulkController + Map2BulkEnumerator + 6 Cat... | Map2 Audio | 2026-04-27 |
+| [`214fb0b1`](https://github.com/matthewmackes/map2-audio/commit/214fb0b1c57b759fc187dc700c22e3c6caa7079f) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-27 |
 | [`b11bc03e`](https://github.com/matthewmackes/map2-audio/commit/b11bc03efd31106c81260eda35e73ca679357f0c) | T2459-D2: common-hid-parser.js full feature + 8 Catch2 cases | Map2 Audio | 2026-04-27 |
 | [`450e2ad0`](https://github.com/matthewmackes/map2-audio/commit/450e2ad0d197920e0208032ebdd9a7d8c0ea8590) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-27 |
 | [`0a423974`](https://github.com/matthewmackes/map2-audio/commit/0a42397406ee5ab8a1bfd78f18a721acb9232d88) | T2459-D1: Map2HidController + Map2HidEnumerator + 6 Catch... | Map2 Audio | 2026-04-27 |
 | [`c200c137`](https://github.com/matthewmackes/map2-audio/commit/c200c1376b7e65b0562a14363e28ddcf9e4937cb) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-27 |
 | [`1152a6aa`](https://github.com/matthewmackes/map2-audio/commit/1152a6aa2bb8ee5e2d3d8bb659a051188bd75bd6) | T2459-C4: Mixxx XML round-trip writer + node-graph editor... | Map2 Audio | 2026-04-27 |
 | [`fa3408fc`](https://github.com/matthewmackes/map2-audio/commit/fa3408fcb16940940b35223c232473448bda8d98) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-27 |
-| [`ac5c144c`](https://github.com/matthewmackes/map2-audio/commit/ac5c144c8dffd70ce81253a9b1bffc2fa2645e02) | T2459-C3: metadata enrichment pipeline + asset endpoints ... | Map2 Audio | 2026-04-27 |
-| [`38da9eb3`](https://github.com/matthewmackes/map2-audio/commit/38da9eb3b005172e29d0e49f02b6d260d7495691) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-27 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
