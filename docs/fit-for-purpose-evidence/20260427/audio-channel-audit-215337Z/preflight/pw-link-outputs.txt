@@ -1,0 +1,38 @@
+Midi-Bridge:Midi Through Port-0 (capture)
+Midi-Bridge:RtMidiOut ClientMAP2:Maschine-MK1 (capture)
+Midi-Bridge:UA-1000 MIDI (capture)
+Midi-Bridge:RtMidiOut ClientRtMidi output (capture)
+Midi-Bridge:MAP2 Audio EngineMIDI Out (capture)
+alsa_output.usb-HotoneAudio_Jogg_USB_Audio_20210601-00.analog-stereo:monitor_FL
+alsa_output.usb-HotoneAudio_Jogg_USB_Audio_20210601-00.analog-stereo:monitor_FR
+alsa_input.usb-HotoneAudio_Jogg_USB_Audio_20210601-00.mono-fallback:capture_MONO
+alsa_output.pci-0000_00_1b.0.analog-stereo:monitor_FL
+alsa_output.pci-0000_00_1b.0.analog-stereo:monitor_FR
+alsa_input.pci-0000_00_1b.0.analog-stereo:capture_FL
+alsa_input.pci-0000_00_1b.0.analog-stereo:capture_FR
+alsa_output.usb-EDIROL_UA-1000_ZS22041-02.pro-output-0:monitor_AUX0
+alsa_output.usb-EDIROL_UA-1000_ZS22041-02.pro-output-0:monitor_AUX1
+alsa_output.usb-EDIROL_UA-1000_ZS22041-02.pro-output-0:monitor_AUX2
+alsa_output.usb-EDIROL_UA-1000_ZS22041-02.pro-output-0:monitor_AUX3
+alsa_output.usb-EDIROL_UA-1000_ZS22041-02.pro-output-0:monitor_AUX4
+alsa_output.usb-EDIROL_UA-1000_ZS22041-02.pro-output-0:monitor_AUX5
+alsa_output.usb-EDIROL_UA-1000_ZS22041-02.pro-output-0:monitor_AUX6
+alsa_output.usb-EDIROL_UA-1000_ZS22041-02.pro-output-0:monitor_AUX7
+alsa_output.usb-EDIROL_UA-1000_ZS22041-02.pro-output-0:monitor_AUX8
+alsa_output.usb-EDIROL_UA-1000_ZS22041-02.pro-output-0:monitor_AUX9
+alsa_input.usb-EDIROL_UA-1000_ZS22041-02.pro-input-0:capture_AUX0
+alsa_input.usb-EDIROL_UA-1000_ZS22041-02.pro-input-0:capture_AUX1
+alsa_input.usb-EDIROL_UA-1000_ZS22041-02.pro-input-0:capture_AUX2
+alsa_input.usb-EDIROL_UA-1000_ZS22041-02.pro-input-0:capture_AUX3
+alsa_input.usb-EDIROL_UA-1000_ZS22041-02.pro-input-0:capture_AUX4
+alsa_input.usb-EDIROL_UA-1000_ZS22041-02.pro-input-0:capture_AUX5
+alsa_input.usb-EDIROL_UA-1000_ZS22041-02.pro-input-0:capture_AUX6
+alsa_input.usb-EDIROL_UA-1000_ZS22041-02.pro-input-0:capture_AUX7
+alsa_input.usb-EDIROL_UA-1000_ZS22041-02.pro-input-0:capture_AUX8
+alsa_input.usb-EDIROL_UA-1000_ZS22041-02.pro-input-0:capture_AUX9
+alsa_input.usb-EDIROL_UA-1000_ZS22041-02.pro-input-0:capture_AUX10
+alsa_input.usb-EDIROL_UA-1000_ZS22041-02.pro-input-0:capture_AUX11
+alsa_capture.python3.14:monitor_FL
+alsa_capture.python3.14:monitor_FR
+alsa_playback.python3.14:output_FL
+alsa_playback.python3.14:output_FR

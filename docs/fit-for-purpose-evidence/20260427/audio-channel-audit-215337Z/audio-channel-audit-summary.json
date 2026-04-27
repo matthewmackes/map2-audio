@@ -1,0 +1,314 @@
+{
+  "generated_at_utc": "2026-04-27T22:01:41.263005+00:00",
+  "run_dir": "docs/fit-for-purpose-evidence/20260427/audio-channel-audit-215337Z",
+  "notes": [
+    "Hardware-backed IR loopback used --require-jack after installing jack-client 0.5.5 into the local user Python environment. The backend runtime manifest/contract was updated after the audit to include jack-client.",
+    "Initial UA-1000 AUX0 attempt before jack-client install failed setup and wrote no latency JSON.",
+    "Initial UA-1000 AUX0 hardware result was captured before stale Python/PipeWire links were disconnected; ua1000-aux0-clean is the post-cleanup comparison row.",
+    "All latency gates use measure_loopback_ir.py defaults: p95 RTT <= 5.0 ms and jitter <= 1.0 ms.",
+    "Soak gates use historical random-FX thresholds: xruns <= 0, peak callback jitter <= 0.35 ms, budget utilization <= 80%, flow errors <= 0, exactly 10 effects active."
+  ],
+  "latency": {
+    "rows": [
+      {
+        "artifact": "latency/hotone-jogg-fl.json",
+        "label": "hotone-jogg-fl",
+        "method": "jack",
+        "gate": "FAIL",
+        "mean_rtt_ms": 21.20346622467041,
+        "p95_rtt_ms": 24.287417602539062,
+        "jitter_p95_ms": 10.453278541564941,
+        "trials_ms": [
+          14.0155611038208,
+          20.903676986694336,
+          23.561729431152344,
+          24.468839645385742,
+          23.067523956298828
+        ],
+        "secondary_peak_ratio_max": 0.4430399472694967
+      },
+      {
+        "artifact": "latency/hotone-jogg-fr.json",
+        "label": "hotone-jogg-fr",
+        "method": "jack",
+        "gate": "FAIL",
+        "mean_rtt_ms": 396.07490100860593,
+        "p95_rtt_ms": 1154.3967407226562,
+        "jitter_p95_ms": 1270.5713481903076,
+        "trials_ms": [
+          4.881776809692383,
+          12.526606559753418,
+          1275.453125,
+          17.341793060302734,
+          670.1712036132812
+        ],
+        "secondary_peak_ratio_max": 0.9876107616285571
+      },
+      {
+        "artifact": "latency/ua1000-aux0-clean.json",
+        "label": "ua1000-aux0-clean",
+        "method": "jack",
+        "gate": "FAIL",
+        "mean_rtt_ms": 9.460945892333985,
+        "p95_rtt_ms": 9.808418273925781,
+        "jitter_p95_ms": 1.0638132095336914,
+        "trials_ms": [
+          8.756572723388672,
+          9.820385932922363,
+          9.760547637939453,
+          9.216285705566406,
+          9.750937461853027
+        ],
+        "secondary_peak_ratio_max": 0.5801445891065611
+      },
+      {
+        "artifact": "latency/ua1000-aux0.json",
+        "label": "ua1000-aux0",
+        "method": "jack",
+        "gate": "FAIL",
+        "mean_rtt_ms": 9.246296501159668,
+        "p95_rtt_ms": 9.825392150878907,
+        "jitter_p95_ms": 1.3895320892333984,
+        "trials_ms": [
+          9.247005462646484,
+          9.206308364868164,
+          8.580456733703613,
+          9.969988822937012,
+          9.227723121643066
+        ],
+        "secondary_peak_ratio_max": 0.7587082469322911
+      },
+      {
+        "artifact": "latency/ua1000-aux1.json",
+        "label": "ua1000-aux1",
+        "method": "jack",
+        "gate": "FAIL",
+        "mean_rtt_ms": 10.239190673828125,
+        "p95_rtt_ms": 10.56611328125,
+        "jitter_p95_ms": 0.7721138000488281,
+        "trials_ms": [
+          9.843503952026367,
+          9.800768852233887,
+          10.53903579711914,
+          10.439762115478516,
+          10.572882652282715
+        ],
+        "secondary_peak_ratio_max": 0.8282745315420759
+      },
+      {
+        "artifact": "latency/ua1000-aux2.json",
+        "label": "ua1000-aux2",
+        "method": "jack",
+        "gate": "FAIL",
+        "mean_rtt_ms": 9.857475852966308,
+        "p95_rtt_ms": 10.584485626220703,
+        "jitter_p95_ms": 1.605855941772461,
+        "trials_ms": [
+          10.559871673583984,
+          9.88572883605957,
+          9.266356468200684,
+          10.590639114379883,
+          8.984783172607422
+        ],
+        "secondary_peak_ratio_max": 0.6249342302099803
+      },
+      {
+        "artifact": "latency/ua1000-aux3.json",
+        "label": "ua1000-aux3",
+        "method": "jack",
+        "gate": "FAIL",
+        "mean_rtt_ms": 9.833492469787597,
+        "p95_rtt_ms": 10.471028518676757,
+        "jitter_p95_ms": 1.3191680908203125,
+        "trials_ms": [
+          9.233399391174316,
+          9.30926513671875,
+          9.92735767364502,
+          10.552567481994629,
+          10.144872665405273
+        ],
+        "secondary_peak_ratio_max": 0.550126936268418
+      },
+      {
+        "artifact": "latency/ua1000-aux4.json",
+        "label": "ua1000-aux4",
+        "method": "jack",
+        "gate": "FAIL",
+        "mean_rtt_ms": 9.609906005859376,
+        "p95_rtt_ms": 9.883171081542969,
+        "jitter_p95_ms": 0.6897926330566406,
+        "trials_ms": [
+          9.865880012512207,
+          9.867622375488281,
+          9.88705825805664,
+          9.197265625,
+          9.231703758239746
+        ],
+        "secondary_peak_ratio_max": 0.5779740986806478
+      },
+      {
+        "artifact": "latency/ua1000-aux5.json",
+        "label": "ua1000-aux5",
+        "method": "jack",
+        "gate": "FAIL",
+        "mean_rtt_ms": 9.364400482177734,
+        "p95_rtt_ms": 9.966187667846679,
+        "jitter_p95_ms": 1.4526853561401367,
+        "trials_ms": [
+          9.844063758850098,
+          9.865228652954102,
+          9.991427421569824,
+          8.582540512084961,
+          8.538742065429688
+        ],
+        "secondary_peak_ratio_max": 0.5466715786631305
+      },
+      {
+        "artifact": "latency/ua1000-aux6.json",
+        "label": "ua1000-aux6",
+        "method": "jack",
+        "gate": "FAIL",
+        "mean_rtt_ms": 9.426198768615723,
+        "p95_rtt_ms": 10.361889839172363,
+        "jitter_p95_ms": 2.030324935913086,
+        "trials_ms": [
+          10.587945938110352,
+          8.557621002197266,
+          9.45766544342041,
+          9.249139785766602,
+          9.278621673583984
+        ],
+        "secondary_peak_ratio_max": 0.8257314441645907
+      },
+      {
+        "artifact": "latency/ua1000-aux7.json",
+        "label": "ua1000-aux7",
+        "method": "jack",
+        "gate": "FAIL",
+        "mean_rtt_ms": 10.007915115356445,
+        "p95_rtt_ms": 10.570001983642578,
+        "jitter_p95_ms": 1.3444976806640625,
+        "trials_ms": [
+          10.573151588439941,
+          9.859363555908203,
+          10.557403564453125,
+          9.821002960205078,
+          9.228653907775879
+        ],
+        "secondary_peak_ratio_max": 0.4949558548853935
+      }
+    ],
+    "rollup_excluding_preclean_aux0": {
+      "ua1000_mean_rtt_min_ms": 9.364400482177734,
+      "ua1000_mean_rtt_max_ms": 10.239190673828125,
+      "ua1000_p95_rtt_max_ms": 10.584485626220703,
+      "ua1000_all_gates_pass": false,
+      "hotone_mean_rtt_min_ms": 21.20346622467041,
+      "hotone_mean_rtt_max_ms": 396.07490100860593,
+      "hotone_p95_rtt_max_ms": 1154.3967407226562,
+      "hotone_all_gates_pass": false
+    }
+  },
+  "soak": {
+    "rows": [
+      {
+        "artifact": "soak/juce-random-fx-live-20s-fixed-pool.json",
+        "label": "juce-random-fx-live-20s-fixed-pool",
+        "overall_pass": false,
+        "duration_target_seconds": null,
+        "actual_duration_seconds": null,
+        "flow_count": 3,
+        "final_xrun_count": 56,
+        "xrun_rate_per_second": 2.7860696517412933,
+        "peak_callback_jitter_ms": 6.225323666666666,
+        "callback_jitter_p95_ms": 0.26421900775161294,
+        "budget_utilization_percent": {
+          "min": 35.601732565840145,
+          "max": 45.89032319285129,
+          "mean": 37.37172356071566
+        },
+        "checks": {
+          "xruns_ok": false,
+          "jitter_ok": false,
+          "budget_ok": true,
+          "flow_errors_ok": true,
+          "effect_count_ok": true
+        }
+      },
+      {
+        "artifact": "soak/juce-random-fx-live-20s-reuse-effects.json",
+        "label": "juce-random-fx-live-20s-reuse-effects",
+        "overall_pass": false,
+        "duration_target_seconds": null,
+        "actual_duration_seconds": null,
+        "flow_count": 3,
+        "final_xrun_count": 76,
+        "xrun_rate_per_second": 3.7826000398168427,
+        "peak_callback_jitter_ms": 9.440799666666665,
+        "callback_jitter_p95_ms": 0.26364847957405196,
+        "budget_utilization_percent": {
+          "min": 34.9312067644553,
+          "max": 47.91095798866498,
+          "mean": 37.46234229739431
+        },
+        "checks": {
+          "xruns_ok": false,
+          "jitter_ok": false,
+          "budget_ok": true,
+          "flow_errors_ok": true,
+          "effect_count_ok": true
+        }
+      },
+      {
+        "artifact": "soak/juce-random-fx-safe-60s.json",
+        "label": "juce-random-fx-safe-60s",
+        "overall_pass": false,
+        "duration_target_seconds": null,
+        "actual_duration_seconds": null,
+        "flow_count": 5,
+        "final_xrun_count": 255,
+        "xrun_rate_per_second": 4.246956347950635,
+        "peak_callback_jitter_ms": 17.46752366666667,
+        "callback_jitter_p95_ms": 0.26377839489582006,
+        "budget_utilization_percent": {
+          "min": 34.259491114307174,
+          "max": 80.63765566781596,
+          "mean": 37.983323895891445
+        },
+        "checks": {
+          "xruns_ok": false,
+          "jitter_ok": false,
+          "budget_ok": false,
+          "flow_errors_ok": true,
+          "effect_count_ok": true
+        }
+      }
+    ],
+    "historical_comparison": [
+      {
+        "artifact": "docs/fit-for-purpose-evidence/20260402/juce-random-fx-soak-20260402T223553Z.json",
+        "overall_pass": false,
+        "final_xrun_count": 5,
+        "peak_callback_jitter_ms": 3.9337116666666665,
+        "callback_jitter_p95_ms": 0.003073618126371515,
+        "budget_utilization_percent": {
+          "min": 34.42357987631002,
+          "max": 37.46318238467268,
+          "mean": 35.5044542866297
+        }
+      },
+      {
+        "artifact": "docs/fit-for-purpose-evidence/20260402/juce-random-fx-soak-20260402T223622Z.json",
+        "overall_pass": false,
+        "final_xrun_count": 4,
+        "peak_callback_jitter_ms": 23.402907666666668,
+        "callback_jitter_p95_ms": 0.004053936664195878,
+        "budget_utilization_percent": {
+          "min": 34.41432224219747,
+          "max": 41.367940047546476,
+          "mean": 36.08693714474176
+        }
+      }
+    ]
+  }
+}

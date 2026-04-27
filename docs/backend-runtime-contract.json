@@ -4,7 +4,7 @@
       "default": "'disabled'",
       "file": "app/routes/special_settings.py",
       "kind": "os.getenv",
-      "line": 56,
+      "line": 59,
       "variable": "CLUSTER_MODE"
     },
     {
@@ -102,7 +102,7 @@
       "default": "'8080'",
       "file": "app/main.py",
       "kind": "os.getenv",
-      "line": 429,
+      "line": 447,
       "variable": "MAP2_API_PORT"
     },
     {
@@ -110,6 +110,13 @@
       "file": "app/services/snapshot_deployment_service.py",
       "kind": "os.getenv",
       "line": 27,
+      "variable": "MAP2_API_PORT"
+    },
+    {
+      "default": "'8080'",
+      "file": "app/services/state_authority_cluster_transport.py",
+      "kind": "os.getenv",
+      "line": 37,
       "variable": "MAP2_API_PORT"
     },
     {
@@ -228,7 +235,7 @@
       "default": "'false'",
       "file": "app/main.py",
       "kind": "os.getenv",
-      "line": 593,
+      "line": 631,
       "variable": "MAP2_CLUSTER_ENABLED"
     },
     {
@@ -242,7 +249,7 @@
       "default": null,
       "file": "app/main.py",
       "kind": "os.getenv",
-      "line": 607,
+      "line": 645,
       "variable": "MAP2_CONFIG_GIT_REPO"
     },
     {
@@ -253,24 +260,24 @@
       "variable": "MAP2_CORE_CONFIG_FILE"
     },
     {
-      "default": "'ALL-IN-ONE'",
-      "file": "app/deployment/deployment.py",
-      "kind": "os.getenv",
-      "line": 184,
+      "default": null,
+      "file": "app/deployment/authority.py",
+      "kind": "os.environ.get",
+      "line": 579,
       "variable": "MAP2_DEPLOYMENT_MODE"
     },
     {
-      "default": "'AUDIO-NODE'",
-      "file": "app/main.py",
+      "default": "'ALL-IN-ONE'",
+      "file": "app/deployment/deployment.py",
       "kind": "os.getenv",
-      "line": 390,
+      "line": 228,
       "variable": "MAP2_DEPLOYMENT_MODE"
     },
     {
       "default": "'AUDIO-NODE' if role == 'AUDIO-NODE' else 'CONTROL-NODE'",
       "file": "app/services/cluster/enhanced_node_identity.py",
       "kind": "os.getenv",
-      "line": 491,
+      "line": 497,
       "variable": "MAP2_DEPLOYMENT_MODE"
     },
     {
@@ -284,7 +291,7 @@
       "default": "DeploymentMode.ALL_IN_ONE.value",
       "file": "app/services/runtime_profiles.py",
       "kind": "os.getenv",
-      "line": 50,
+      "line": 59,
       "variable": "MAP2_DEPLOYMENT_MODE"
     },
     {
@@ -298,7 +305,7 @@
       "default": "'true'",
       "file": "app/main.py",
       "kind": "os.getenv",
-      "line": 790,
+      "line": 1041,
       "variable": "MAP2_DISABLE_UVICORN_ACCESS_LOG"
     },
     {
@@ -438,7 +445,7 @@
       "default": "'true'",
       "file": "app/main.py",
       "kind": "os.getenv",
-      "line": 561,
+      "line": 599,
       "variable": "MAP2_ENABLE_PIPEWIRE_RECOVERY"
     },
     {
@@ -473,7 +480,7 @@
       "default": "''",
       "file": "app/services/runtime_profiles.py",
       "kind": "os.getenv",
-      "line": 76,
+      "line": 85,
       "variable": "MAP2_HEADLESS_LIVE"
     },
     {
@@ -543,7 +550,7 @@
       "default": "'false'",
       "file": "app/main.py",
       "kind": "os.getenv",
-      "line": 548,
+      "line": 586,
       "variable": "MAP2_PUSH_SURFACE_ENABLED"
     },
     {
@@ -564,7 +571,7 @@
       "default": null,
       "file": "app/main.py",
       "kind": "os.getenv",
-      "line": 410,
+      "line": 428,
       "variable": "MAP2_REMOTE_BACKEND_URL"
     },
     {
@@ -578,21 +585,28 @@
       "default": "''",
       "file": "app/services/runtime_profiles.py",
       "kind": "os.getenv",
-      "line": 73,
+      "line": 82,
       "variable": "MAP2_RUNTIME_BOOT_PROFILE"
     },
     {
       "default": null,
       "file": "app/services/secrets_manager.py",
       "kind": "os.environ.get",
-      "line": 120,
+      "line": 122,
       "variable": "MAP2_SECRETS_MASTER_PASSWORD"
+    },
+    {
+      "default": null,
+      "file": "app/services/ssh_bridge_service.py",
+      "kind": "os.environ.get",
+      "line": 513,
+      "variable": "MAP2_SSH_BRIDGE_MAX_SESSIONS"
     },
     {
       "default": "'true'",
       "file": "app/main.py",
       "kind": "os.getenv",
-      "line": 848,
+      "line": 1099,
       "variable": "MAP2_STRICT_ROUTE_LOADING"
     },
     {
@@ -620,21 +634,21 @@
       "default": "'true'",
       "file": "app/main.py",
       "kind": "os.getenv",
-      "line": 816,
+      "line": 1067,
       "variable": "MAP2_TRAFFIC_CAPTURE"
     },
     {
       "default": "'true'",
       "file": "app/main.py",
       "kind": "os.getenv",
-      "line": 428,
+      "line": 446,
       "variable": "MAP2_USE_MOCK_LCD"
     },
     {
       "default": "'standalone'",
       "file": "app/routes/special_settings.py",
       "kind": "os.getenv",
-      "line": 169,
+      "line": 176,
       "variable": "NODE_ID"
     },
     {
@@ -666,7 +680,7 @@
           "default": "'disabled'",
           "file": "app/routes/special_settings.py",
           "kind": "os.getenv",
-          "line": 56,
+          "line": 59,
           "variable": "CLUSTER_MODE"
         }
       ],
@@ -829,7 +843,7 @@
           "default": "'8080'",
           "file": "app/main.py",
           "kind": "os.getenv",
-          "line": 429,
+          "line": 447,
           "variable": "MAP2_API_PORT"
         },
         {
@@ -837,6 +851,13 @@
           "file": "app/services/snapshot_deployment_service.py",
           "kind": "os.getenv",
           "line": 27,
+          "variable": "MAP2_API_PORT"
+        },
+        {
+          "default": "'8080'",
+          "file": "app/services/state_authority_cluster_transport.py",
+          "kind": "os.getenv",
+          "line": 37,
           "variable": "MAP2_API_PORT"
         }
       ],
@@ -1011,7 +1032,7 @@
           "default": "'false'",
           "file": "app/main.py",
           "kind": "os.getenv",
-          "line": 593,
+          "line": 631,
           "variable": "MAP2_CLUSTER_ENABLED"
         },
         {
@@ -1030,7 +1051,7 @@
           "default": null,
           "file": "app/main.py",
           "kind": "os.getenv",
-          "line": 607,
+          "line": 645,
           "variable": "MAP2_CONFIG_GIT_REPO"
         }
       ],
@@ -1051,24 +1072,24 @@
     {
       "occurrences": [
         {
-          "default": "'ALL-IN-ONE'",
-          "file": "app/deployment/deployment.py",
-          "kind": "os.getenv",
-          "line": 184,
+          "default": null,
+          "file": "app/deployment/authority.py",
+          "kind": "os.environ.get",
+          "line": 579,
           "variable": "MAP2_DEPLOYMENT_MODE"
         },
         {
-          "default": "'AUDIO-NODE'",
-          "file": "app/main.py",
+          "default": "'ALL-IN-ONE'",
+          "file": "app/deployment/deployment.py",
           "kind": "os.getenv",
-          "line": 390,
+          "line": 228,
           "variable": "MAP2_DEPLOYMENT_MODE"
         },
         {
           "default": "'AUDIO-NODE' if role == 'AUDIO-NODE' else 'CONTROL-NODE'",
           "file": "app/services/cluster/enhanced_node_identity.py",
           "kind": "os.getenv",
-          "line": 491,
+          "line": 497,
           "variable": "MAP2_DEPLOYMENT_MODE"
         },
         {
@@ -1082,7 +1103,7 @@
           "default": "DeploymentMode.ALL_IN_ONE.value",
           "file": "app/services/runtime_profiles.py",
           "kind": "os.getenv",
-          "line": 50,
+          "line": 59,
           "variable": "MAP2_DEPLOYMENT_MODE"
         }
       ],
@@ -1106,7 +1127,7 @@
           "default": "'true'",
           "file": "app/main.py",
           "kind": "os.getenv",
-          "line": 790,
+          "line": 1041,
           "variable": "MAP2_DISABLE_UVICORN_ACCESS_LOG"
         }
       ],
@@ -1324,7 +1345,7 @@
           "default": "'true'",
           "file": "app/main.py",
           "kind": "os.getenv",
-          "line": 561,
+          "line": 599,
           "variable": "MAP2_ENABLE_PIPEWIRE_RECOVERY"
         }
       ],
@@ -1384,7 +1405,7 @@
           "default": "''",
           "file": "app/services/runtime_profiles.py",
           "kind": "os.getenv",
-          "line": 76,
+          "line": 85,
           "variable": "MAP2_HEADLESS_LIVE"
         }
       ],
@@ -1499,7 +1520,7 @@
           "default": null,
           "file": "app/main.py",
           "kind": "os.getenv",
-          "line": 410,
+          "line": 428,
           "variable": "MAP2_REMOTE_BACKEND_URL"
         }
       ],
@@ -1523,7 +1544,7 @@
           "default": "''",
           "file": "app/services/runtime_profiles.py",
           "kind": "os.getenv",
-          "line": 73,
+          "line": 82,
           "variable": "MAP2_RUNTIME_BOOT_PROFILE"
         }
       ],
@@ -1535,7 +1556,7 @@
           "default": null,
           "file": "app/services/secrets_manager.py",
           "kind": "os.environ.get",
-          "line": 120,
+          "line": 122,
           "variable": "MAP2_SECRETS_MASTER_PASSWORD"
         }
       ],
@@ -1544,10 +1565,22 @@
     {
       "occurrences": [
         {
+          "default": null,
+          "file": "app/services/ssh_bridge_service.py",
+          "kind": "os.environ.get",
+          "line": 513,
+          "variable": "MAP2_SSH_BRIDGE_MAX_SESSIONS"
+        }
+      ],
+      "variable": "MAP2_SSH_BRIDGE_MAX_SESSIONS"
+    },
+    {
+      "occurrences": [
+        {
           "default": "'true'",
           "file": "app/main.py",
           "kind": "os.getenv",
-          "line": 848,
+          "line": 1099,
           "variable": "MAP2_STRICT_ROUTE_LOADING"
         }
       ],
@@ -1585,7 +1618,7 @@
           "default": "'true'",
           "file": "app/main.py",
           "kind": "os.getenv",
-          "line": 816,
+          "line": 1067,
           "variable": "MAP2_TRAFFIC_CAPTURE"
         }
       ],
@@ -1597,7 +1630,7 @@
           "default": "'true'",
           "file": "app/main.py",
           "kind": "os.getenv",
-          "line": 428,
+          "line": 446,
           "variable": "MAP2_USE_MOCK_LCD"
         }
       ],
@@ -1609,7 +1642,7 @@
           "default": "'standalone'",
           "file": "app/routes/special_settings.py",
           "kind": "os.getenv",
-          "line": 169,
+          "line": 176,
           "variable": "NODE_ID"
         },
         {
@@ -1750,9 +1783,21 @@
     },
     {
       "group": "api_and_orchestration",
+      "package": "asyncssh",
+      "specifier": ">=2.21.0,<3.0.0",
+      "why": "SSH transport for Tesira TTP fallback and the Web SSH bridge (T2419)"
+    },
+    {
+      "group": "api_and_orchestration",
       "package": "PyYAML",
       "specifier": ">=6.0.2,<7.0.0",
       "why": "YAML parsing and emitted configuration artifacts"
+    },
+    {
+      "group": "api_and_orchestration",
+      "package": "jsonschema",
+      "specifier": ">=4.26.0,<5.0.0",
+      "why": "JSON Schema validation for device-packs/ profile YAML files (T2459 controller subsystem)"
     },
     {
       "group": "api_and_orchestration",
@@ -1792,6 +1837,12 @@
     },
     {
       "group": "audio_and_control",
+      "package": "jack-client",
+      "specifier": ">=0.5.5,<0.6.0",
+      "why": "Python JACK/PipeWire client used by hardware loopback latency measurements"
+    },
+    {
+      "group": "audio_and_control",
       "package": "python-rtmidi",
       "specifier": ">=1.5.8,<2.0.0",
       "why": "MIDI device access"
@@ -1807,6 +1858,12 @@
       "package": "pyserial",
       "specifier": ">=3.5,<4.0.0",
       "why": "Serial-connected hardware workflows"
+    },
+    {
+      "group": "image_processing",
+      "package": "Pillow",
+      "specifier": ">=11.0.0,<13.0.0",
+      "why": "Device hero-image uploads: PNG decode, center-crop to 1:1, downscale to 1024x1024"
     },
     {
       "group": "content_and_library_features",
@@ -1882,7 +1939,7 @@
     {
       "config_key": "audio_state.authority_backend",
       "default": "etcd",
-      "description": "Cluster authority backend for committed audio state",
+      "description": "Authority backend for committed audio state \u2014 'etcd' for clustered deployments, 'local' for single-node appliances (T2431-I)",
       "env_var": "MAP2_AUDIO_STATE_AUTHORITY_BACKEND",
       "locked": false,
       "restart_required": true,
@@ -2269,6 +2326,25 @@
       "value_type": "str"
     },
     {
+      "config_key": "state_authority.activation_hooks",
+      "default": [
+        "push_footswitch_labels",
+        "push_maschine_assignments",
+        "push_push_surface_state",
+        "push_ground_control_pro_assignments",
+        "push_mcu_surface_state",
+        "push_launch_control_assignments",
+        "push_midi_commander_assignments",
+        "push_controller_display_preview",
+        "schedule_preload"
+      ],
+      "description": "Ordered list of activation-hook names fired after a State Authority snapshot activation.",
+      "env_var": "MAP2_STATE_AUTHORITY_ACTIVATION_HOOKS",
+      "locked": false,
+      "restart_required": false,
+      "value_type": "list"
+    },
+    {
       "config_key": "storage.ir_user_dir",
       "default": "~/.local/share/map2/ir",
       "description": "User IR files directory",
@@ -2306,10 +2382,10 @@
     }
   ],
   "summary": {
-    "direct_env_read_count": 94,
-    "direct_only_env_count": 73,
-    "runtime_requirement_count": 18,
-    "schema_env_count": 54,
+    "direct_env_read_count": 96,
+    "direct_only_env_count": 74,
+    "runtime_requirement_count": 22,
+    "schema_env_count": 55,
     "systemd_inline_env_count": 11
   },
   "systemd_backend_service": {

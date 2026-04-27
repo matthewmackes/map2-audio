@@ -8,20 +8,26 @@ import { useDeviceNodeContext } from '../../../hooks/useDeviceNodeContext'
 
 export function HoToneJoGGView() {
   const { activeNodeId, localNodeId, nodes } = useCluster()
-  const { deviceState } = useDeviceNodeContext('hotone-jogg')
+  const { deviceState, deviceLocation, targetNode } = useDeviceNodeContext('hotone-jogg')
 
   const selectedNodeId = activeNodeId && activeNodeId !== 'all' ? activeNodeId : localNodeId
   const selectedNode = nodes.find((node) => node.nodeId === selectedNodeId)
-  const remoteSelected = selectedNodeId !== localNodeId
-  const apiNodeId = remoteSelected ? selectedNodeId : null
+  const controlNodeId = deviceState === 'needs_switch'
+    ? deviceLocation?.nodeId ?? null
+    : selectedNodeId
+  const controlIsRemote = Boolean(controlNodeId && controlNodeId !== localNodeId)
+  const apiNodeId = controlIsRemote ? controlNodeId : null
+  const controlHostname = deviceState === 'needs_switch'
+    ? targetNode?.hostname ?? deviceLocation?.hostname ?? controlNodeId
+    : selectedNode?.hostname ?? selectedNodeId
 
   useSetShellWindow({
     title: 'HoTone JoGG',
-    subtitle: remoteSelected
-      ? `USB Audio Interface Configuration & Monitoring · Viewing ${selectedNode?.hostname ?? selectedNodeId}`
+    subtitle: controlIsRemote
+      ? `USB Audio Interface Configuration & Monitoring · Viewing ${controlHostname}`
       : 'USB Audio Interface Configuration & Monitoring',
     kicker: 'Platform / Devices / HoTone JoGG',
-  }, [remoteSelected, selectedNode?.hostname, selectedNodeId])
+  }, [controlHostname, controlIsRemote])
 
   return (
     <div className="stack">
@@ -39,7 +45,15 @@ export function HoToneJoGGView() {
         />
       ) : null}
 
-      {deviceState === 'ready' ? (
+      {deviceState === 'node_offline' ? (
+        <EmptyState
+          title="The node with the HoTone JoGG interface is offline"
+          description="Bring that node back online or connect the interface to the current node to manage it here."
+          align="left"
+        />
+      ) : null}
+
+      {deviceState === 'ready' || deviceState === 'needs_switch' ? (
         <AudioInterfaceControl nodeId={apiNodeId} />
       ) : null}
     </div>

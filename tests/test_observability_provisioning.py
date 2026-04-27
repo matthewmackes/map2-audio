@@ -42,3 +42,26 @@ def test_packaging_and_mode_script_reference_monitoring_units():
     assert "map2-grafana.service" in spec_text
     assert "apply_observability_policy" in mode_script_text
     assert "map2-prometheus.service map2-grafana.service" in mode_script_text
+
+
+def test_packaging_spec_includes_current_runtime_layers():
+    spec_text = (REPO_ROOT / "packaging" / "map2-audio.spec").read_text(encoding="utf-8")
+    legacy_spec_text = (REPO_ROOT / "packaging" / "rpm" / "map2.spec").read_text(
+        encoding="utf-8"
+    )
+    backend_unit = (REPO_ROOT / "packaging" / "systemd" / "map2-backend.service").read_text(
+        encoding="utf-8"
+    )
+
+    assert "License:        AGPL-3.0-only" in spec_text
+    assert "License:        AGPL-3.0-only" in legacy_spec_text
+    assert "License:        MIT" not in spec_text
+    assert "License:        MIT" not in legacy_spec_text
+    assert "requirements-backend-runtime.txt" in spec_text
+    assert "requirements-installer.txt" in spec_text
+    assert "device-packs" in spec_text
+    assert "map2-controller-host" in spec_text
+    assert "map2_audio_engine*.so" in spec_text
+    assert "systemd/map2-irq-affinity.sh" in spec_text
+    assert "WorkingDirectory=/opt/map2" in backend_unit
+    assert "PYTHONPATH=/opt/map2:/opt/map2/juce-engine/build" in backend_unit

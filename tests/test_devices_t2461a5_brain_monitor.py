@@ -117,6 +117,7 @@ def test_brain_monitor_candidates_carries_latest_measurement(monkeypatch, client
     """Latest evidence under docs/fit-for-purpose-evidence/<date>/<pack>/<model>/
     surfaces as latest_measurement."""
     from app.services.controllers import connection_detector as cd
+    monkeypatch.setenv("MAP2_SERVICE_STATE_DIR", str(tmp_path / "state"))
     monkeypatch.setattr(cd, "_read_usb_devices",
                         lambda: [{"vid": "0582", "pid": "00ed", "path": "/sys/foo"}])
     monkeypatch.setattr(cd, "_read_alsa_seq_clients", lambda: [])

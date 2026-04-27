@@ -1,0 +1,140 @@
+SOAK safe-rewire-60s
+Initializing MAP2 Audio Engine v2.0.0-juce (JUCE)
+Scanning for plugins...
+lilv_world_add_plugin(): warning: Reloading plugin <http://distrho.sf.net/plugins/MVerb>
+lilv_world_add_plugin(): warning: Reloading plugin <http://www.niallmoody.com/ndcplugs/soulforce.htm>
+lilv_world_add_plugin(): warning: Reloading plugin <https://github.com/michaelwillis/dragonfly-reverb>
+lilv_world_add_plugin(): warning: Reloading plugin <urn:dragonfly:plate>
+lilv_world_add_plugin(): warning: Reloading plugin <urn:dragonfly:room>
+lilv_world_add_plugin(): warning: Reloading plugin <urn:dragonfly:early>
+lilv_world_add_plugin(): warning: Reloading plugin <http://tomszilagyi.github.io/plugins/lv2/ir>
+lilv_world_add_plugin(): warning: Reloading plugin <https://www.auburnsounds.com/products/Graillon.html40733133#mono>
+lilv_world_add_plugin(): warning: Reloading plugin <https://www.auburnsounds.com/products/Graillon.html40733133#stereo>
+  [11%] urn:dragonfly:room
+  [22%] urn:dragonfly:plate
+  [33%] urn:dragonfly:early
+  [44%] https://www.auburnsounds.com/products/Graillon.html40733133#stereo
+  [55%] https://www.auburnsounds.com/products/Graillon.html40733133#mono
+  [66%] https://github.com/michaelwillis/dragonfly-reverb
+  [77%] http://www.niallmoody.com/ndcplugs/soulforce.htm
+  [88%] http://tomszilagyi.github.io/plugins/lv2/ir
+  Configuring audio: 2 inputs, 2 outputs
+  Available audio device types:
+    - ALSA
+    - JACK
+  Using default audio backend/device type (set MAP2_AUDIO_PREFER_JACK=1 to force JACK).
+  All memory locked to RAM (mlockall)
+MIDI Handler initialized with enhanced features
+  NAM (Neural Amp Modeler): Available
+  Modulation processors: Chorus, Phaser, Pitch Shifter, IntelliFX 8-Voice, ShoeGaze, LexiLove, H3000, Peavey5150, TweedBassman, PassionFX
+  SynthForge: Graph-registered instrument (16-part MIDI/voice core)
+  Drum Machine: Graph-registered instrument (16-pad sequencer)
+MAP2 Audio Engine initialized successfully
+  Sample Rate: 48000 Hz
+  Buffer Size: 64 samples
+  Audio Device: Default ALSA Output (currently PipeWire Media Server)
+  Plugins Found: 9
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Audio processing started
+Audio processing stopped
+Shutting down MAP2 Audio Engine
+progress elapsed=30s flow=3 template=parallel5x5 blend=hard_b:1.000 effects=10 xruns=123 cpu=37.11% jitter_peak=9.323ms topo_peak=0.163ms
+wrote_json=docs/fit-for-purpose-evidence/20260427/audio-channel-audit-215337Z/soak/juce-random-fx-safe-60s.json
+wrote_md=docs/fit-for-purpose-evidence/20260427/audio-channel-audit-215337Z/soak/juce-random-fx-safe-60s.md
+overall_pass=False
+RESULT safe-rewire-60s rc=0
+SOAK live-rewire-20s-fixed-pool
+Initializing MAP2 Audio Engine v2.0.0-juce (JUCE)
+Scanning for plugins...
+lilv_world_add_plugin(): warning: Reloading plugin <http://distrho.sf.net/plugins/MVerb>
+lilv_world_add_plugin(): warning: Reloading plugin <http://www.niallmoody.com/ndcplugs/soulforce.htm>
+lilv_world_add_plugin(): warning: Reloading plugin <https://github.com/michaelwillis/dragonfly-reverb>
+lilv_world_add_plugin(): warning: Reloading plugin <urn:dragonfly:plate>
+lilv_world_add_plugin(): warning: Reloading plugin <urn:dragonfly:room>
+lilv_world_add_plugin(): warning: Reloading plugin <urn:dragonfly:early>
+lilv_world_add_plugin(): warning: Reloading plugin <http://tomszilagyi.github.io/plugins/lv2/ir>
+lilv_world_add_plugin(): warning: Reloading plugin <https://www.auburnsounds.com/products/Graillon.html40733133#mono>
+lilv_world_add_plugin(): warning: Reloading plugin <https://www.auburnsounds.com/products/Graillon.html40733133#stereo>
+  [11%] urn:dragonfly:room
+  [22%] urn:dragonfly:plate
+  [33%] urn:dragonfly:early
+  [44%] https://www.auburnsounds.com/products/Graillon.html40733133#stereo
+  [55%] https://www.auburnsounds.com/products/Graillon.html40733133#mono
+  [66%] https://github.com/michaelwillis/dragonfly-reverb
+  [77%] http://www.niallmoody.com/ndcplugs/soulforce.htm
+  [88%] http://tomszilagyi.github.io/plugins/lv2/ir
+  Configuring audio: 2 inputs, 2 outputs
+  Available audio device types:
+    - ALSA
+    - JACK
+  Using default audio backend/device type (set MAP2_AUDIO_PREFER_JACK=1 to force JACK).
+  All memory locked to RAM (mlockall)
+MIDI Handler initialized with enhanced features
+  NAM (Neural Amp Modeler): Available
+  Modulation processors: Chorus, Phaser, Pitch Shifter, IntelliFX 8-Voice, ShoeGaze, LexiLove, H3000, Peavey5150, TweedBassman, PassionFX
+  SynthForge: Graph-registered instrument (16-part MIDI/voice core)
+  Drum Machine: Graph-registered instrument (16-pad sequencer)
+MAP2 Audio Engine initialized successfully
+  Sample Rate: 48000 Hz
+  Buffer Size: 64 samples
+  Audio Device: Default ALSA Output (currently PipeWire Media Server)
+  Plugins Found: 9
+Audio processing started
+Audio processing stopped
+Shutting down MAP2 Audio Engine
+wrote_json=docs/fit-for-purpose-evidence/20260427/audio-channel-audit-215337Z/soak/juce-random-fx-live-20s-fixed-pool.json
+wrote_md=docs/fit-for-purpose-evidence/20260427/audio-channel-audit-215337Z/soak/juce-random-fx-live-20s-fixed-pool.md
+overall_pass=False
+RESULT live-rewire-20s-fixed-pool rc=0
+SOAK live-rewire-20s-reuse-effects
+Initializing MAP2 Audio Engine v2.0.0-juce (JUCE)
+Scanning for plugins...
+lilv_world_add_plugin(): warning: Reloading plugin <http://distrho.sf.net/plugins/MVerb>
+lilv_world_add_plugin(): warning: Reloading plugin <http://www.niallmoody.com/ndcplugs/soulforce.htm>
+lilv_world_add_plugin(): warning: Reloading plugin <https://github.com/michaelwillis/dragonfly-reverb>
+lilv_world_add_plugin(): warning: Reloading plugin <urn:dragonfly:plate>
+lilv_world_add_plugin(): warning: Reloading plugin <urn:dragonfly:room>
+lilv_world_add_plugin(): warning: Reloading plugin <urn:dragonfly:early>
+lilv_world_add_plugin(): warning: Reloading plugin <http://tomszilagyi.github.io/plugins/lv2/ir>
+lilv_world_add_plugin(): warning: Reloading plugin <https://www.auburnsounds.com/products/Graillon.html40733133#mono>
+lilv_world_add_plugin(): warning: Reloading plugin <https://www.auburnsounds.com/products/Graillon.html40733133#stereo>
+  [11%] urn:dragonfly:room
+  [22%] urn:dragonfly:plate
+  [33%] urn:dragonfly:early
+  [44%] https://www.auburnsounds.com/products/Graillon.html40733133#stereo
+  [55%] https://www.auburnsounds.com/products/Graillon.html40733133#mono
+  [66%] https://github.com/michaelwillis/dragonfly-reverb
+  [77%] http://www.niallmoody.com/ndcplugs/soulforce.htm
+  [88%] http://tomszilagyi.github.io/plugins/lv2/ir
+  Configuring audio: 2 inputs, 2 outputs
+  Available audio device types:
+    - ALSA
+    - JACK
+  Using default audio backend/device type (set MAP2_AUDIO_PREFER_JACK=1 to force JACK).
+  All memory locked to RAM (mlockall)
+MIDI Handler initialized with enhanced features
+  NAM (Neural Amp Modeler): Available
+  Modulation processors: Chorus, Phaser, Pitch Shifter, IntelliFX 8-Voice, ShoeGaze, LexiLove, H3000, Peavey5150, TweedBassman, PassionFX
+  SynthForge: Graph-registered instrument (16-part MIDI/voice core)
+  Drum Machine: Graph-registered instrument (16-pad sequencer)
+MAP2 Audio Engine initialized successfully
+  Sample Rate: 48000 Hz
+  Buffer Size: 64 samples
+  Audio Device: Default ALSA Output (currently PipeWire Media Server)
+  Plugins Found: 9
+Audio processing started
+Audio processing stopped
+Shutting down MAP2 Audio Engine
+wrote_json=docs/fit-for-purpose-evidence/20260427/audio-channel-audit-215337Z/soak/juce-random-fx-live-20s-reuse-effects.json
+wrote_md=docs/fit-for-purpose-evidence/20260427/audio-channel-audit-215337Z/soak/juce-random-fx-live-20s-reuse-effects.md
+overall_pass=False
+RESULT live-rewire-20s-reuse-effects rc=0

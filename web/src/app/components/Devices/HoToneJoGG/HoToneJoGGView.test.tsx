@@ -37,26 +37,37 @@ jest.mock('../../../../map2/components/AudioInterfaceControl', () => ({
 describe('HoToneJoGGView', () => {
   beforeEach(() => {
     mockAudioInterfaceControl.mockClear()
+    shellWindowPatches.length = 0
     mockUseCluster.mockReturnValue({
       activeNodeId: null,
       localNodeId: 'node-local',
       nodes: [
-        { nodeId: 'node-local', hostname: 'local-rack' },
-        { nodeId: 'node-b', hostname: 'rack-b' },
+        { nodeId: 'node-local', hostname: 'local-rack', isOnline: true },
+        { nodeId: 'node-b', hostname: 'rack-b', isOnline: true },
       ],
     })
     mockUseDeviceNodeContext.mockReturnValue({
       deviceState: 'needs_switch',
+      deviceLocation: { nodeId: 'node-b', hostname: 'rack-b' },
+      targetNode: { nodeId: 'node-b', hostname: 'rack-b', isOnline: true },
     })
   })
 
-  it('shows a switch prompt when the hardware is on another node', () => {
-    mockUseDeviceNodeContext.mockReturnValue({ deviceState: 'needs_switch' })
+  it('renders controls against the reporting node when the hardware is on another node', () => {
+    mockUseDeviceNodeContext.mockReturnValue({
+      deviceState: 'needs_switch',
+      deviceLocation: { nodeId: 'node-b', hostname: 'rack-b' },
+      targetNode: { nodeId: 'node-b', hostname: 'rack-b', isOnline: true },
+    })
 
     render(<HoToneJoGGView />)
 
     expect(screen.getByTestId('device-context-banner').textContent).toContain('HoTone JoGG context banner')
-    expect(screen.queryByTestId('audio-interface-control')).toBeNull()
+    expect(screen.getByTestId('audio-interface-control').textContent).toBe('node-b')
+    expect(mockAudioInterfaceControl.mock.calls[0]?.[0]).toEqual({ nodeId: 'node-b' })
+    expect((shellWindowPatches[shellWindowPatches.length - 1] as { subtitle?: string })?.subtitle).toBe(
+      'USB Audio Interface Configuration & Monitoring · Viewing rack-b',
+    )
   })
 
   it('renders the interface control with a remote node id when already viewing the owning node', () => {
@@ -64,13 +75,16 @@ describe('HoToneJoGGView', () => {
       activeNodeId: 'node-b',
       localNodeId: 'node-local',
       nodes: [
-        { nodeId: 'node-local', hostname: 'local-rack' },
-        { nodeId: 'node-b', hostname: 'rack-b' },
+        { nodeId: 'node-local', hostname: 'local-rack', isOnline: true },
+        { nodeId: 'node-b', hostname: 'rack-b', isOnline: true },
       ],
     })
-    mockUseDeviceNodeContext.mockReturnValue({ deviceState: 'ready' })
+    mockUseDeviceNodeContext.mockReturnValue({
+      deviceState: 'ready',
+      deviceLocation: { nodeId: 'node-b', hostname: 'rack-b' },
+      targetNode: { nodeId: 'node-b', hostname: 'rack-b', isOnline: true },
+    })
 
-    shellWindowPatches.length = 0
     render(<HoToneJoGGView />)
 
     expect((shellWindowPatches[shellWindowPatches.length - 1] as { subtitle?: string })?.subtitle).toBe(
@@ -81,11 +95,28 @@ describe('HoToneJoGGView', () => {
   })
 
   it('shows a cluster-wide warning when the interface is not detected anywhere', () => {
-    mockUseDeviceNodeContext.mockReturnValue({ deviceState: 'not_found' })
+    mockUseDeviceNodeContext.mockReturnValue({
+      deviceState: 'not_found',
+      deviceLocation: null,
+      targetNode: null,
+    })
 
     render(<HoToneJoGGView />)
 
     expect(screen.getByText('No HoTone JoGG interface is currently detected on any cluster node')).toBeTruthy()
+    expect(screen.queryByTestId('audio-interface-control')).toBeNull()
+  })
+
+  it('shows an offline-node message instead of controls when the reporting node is offline', () => {
+    mockUseDeviceNodeContext.mockReturnValue({
+      deviceState: 'node_offline',
+      deviceLocation: { nodeId: 'node-b', hostname: 'rack-b' },
+      targetNode: { nodeId: 'node-b', hostname: 'rack-b', isOnline: false },
+    })
+
+    render(<HoToneJoGGView />)
+
+    expect(screen.getByText('The node with the HoTone JoGG interface is offline')).toBeTruthy()
     expect(screen.queryByTestId('audio-interface-control')).toBeNull()
   })
 })

@@ -1,0 +1,39 @@
+MEASURE ua1000-aux0
+2026-04-27 17:53:37,911 WARNING measure_loopback_ir: jack-client not installed; using synthetic loopback.
+2026-04-27 17:53:37,912 ERROR measure_loopback_ir: Measurement failed: JACK playback/capture failed for EDIROL UA-1000 Pro:playback_AUX0 → EDIROL UA-1000 Pro:capture_AUX0 and synthetic fallback is disabled.
+
+RERUN after jack-client install 2026-04-27T21:54:21Z
+MEASURE ua1000-aux0
+2026-04-27 17:54:34,512 INFO measure_loopback_ir: Wrote evidence to docs/fit-for-purpose-evidence/20260427/audio-channel-audit-215337Z/latency/ua1000-aux0.json
+
+RERUN after stale-link disconnect 2026-04-27T21:55:26Z
+MEASURE ua1000-aux0-clean
+2026-04-27 17:55:38,373 INFO measure_loopback_ir: Wrote evidence to docs/fit-for-purpose-evidence/20260427/audio-channel-audit-215337Z/latency/ua1000-aux0-clean.json
+RESULT ua1000-aux0-clean rc=1
+MEASURE ua1000-aux1
+2026-04-27 17:55:50,380 INFO measure_loopback_ir: Wrote evidence to docs/fit-for-purpose-evidence/20260427/audio-channel-audit-215337Z/latency/ua1000-aux1.json
+RESULT ua1000-aux1 rc=1
+MEASURE ua1000-aux2
+2026-04-27 17:56:02,411 INFO measure_loopback_ir: Wrote evidence to docs/fit-for-purpose-evidence/20260427/audio-channel-audit-215337Z/latency/ua1000-aux2.json
+RESULT ua1000-aux2 rc=1
+MEASURE ua1000-aux3
+2026-04-27 17:56:14,333 INFO measure_loopback_ir: Wrote evidence to docs/fit-for-purpose-evidence/20260427/audio-channel-audit-215337Z/latency/ua1000-aux3.json
+RESULT ua1000-aux3 rc=1
+MEASURE ua1000-aux4
+2026-04-27 17:56:26,384 INFO measure_loopback_ir: Wrote evidence to docs/fit-for-purpose-evidence/20260427/audio-channel-audit-215337Z/latency/ua1000-aux4.json
+RESULT ua1000-aux4 rc=1
+MEASURE ua1000-aux5
+2026-04-27 17:56:38,330 INFO measure_loopback_ir: Wrote evidence to docs/fit-for-purpose-evidence/20260427/audio-channel-audit-215337Z/latency/ua1000-aux5.json
+RESULT ua1000-aux5 rc=1
+MEASURE ua1000-aux6
+2026-04-27 17:56:50,324 INFO measure_loopback_ir: Wrote evidence to docs/fit-for-purpose-evidence/20260427/audio-channel-audit-215337Z/latency/ua1000-aux6.json
+RESULT ua1000-aux6 rc=1
+MEASURE ua1000-aux7
+2026-04-27 17:57:02,244 INFO measure_loopback_ir: Wrote evidence to docs/fit-for-purpose-evidence/20260427/audio-channel-audit-215337Z/latency/ua1000-aux7.json
+RESULT ua1000-aux7 rc=1
+MEASURE hotone-jogg-fl
+2026-04-27 17:57:13,324 INFO measure_loopback_ir: Wrote evidence to docs/fit-for-purpose-evidence/20260427/audio-channel-audit-215337Z/latency/hotone-jogg-fl.json
+RESULT hotone-jogg-fl rc=1
+MEASURE hotone-jogg-fr
+2026-04-27 17:57:24,407 INFO measure_loopback_ir: Wrote evidence to docs/fit-for-purpose-evidence/20260427/audio-channel-audit-215337Z/latency/hotone-jogg-fr.json
+RESULT hotone-jogg-fr rc=1

@@ -1,0 +1,20 @@
+Midi-Bridge:Midi Through Port-0 (playback)
+Midi-Bridge:UA-1000 MIDI (playback)
+Midi-Bridge:RtMidiIn ClientRtMidi input (playback)
+Midi-Bridge:MAP2 Audio EngineMIDI In (playback)
+alsa_output.usb-HotoneAudio_Jogg_USB_Audio_20210601-00.analog-stereo:playback_FL
+alsa_output.usb-HotoneAudio_Jogg_USB_Audio_20210601-00.analog-stereo:playback_FR
+alsa_output.pci-0000_00_1b.0.analog-stereo:playback_FL
+alsa_output.pci-0000_00_1b.0.analog-stereo:playback_FR
+alsa_output.usb-EDIROL_UA-1000_ZS22041-02.pro-output-0:playback_AUX0
+alsa_output.usb-EDIROL_UA-1000_ZS22041-02.pro-output-0:playback_AUX1
+alsa_output.usb-EDIROL_UA-1000_ZS22041-02.pro-output-0:playback_AUX2
+alsa_output.usb-EDIROL_UA-1000_ZS22041-02.pro-output-0:playback_AUX3
+alsa_output.usb-EDIROL_UA-1000_ZS22041-02.pro-output-0:playback_AUX4
+alsa_output.usb-EDIROL_UA-1000_ZS22041-02.pro-output-0:playback_AUX5
+alsa_output.usb-EDIROL_UA-1000_ZS22041-02.pro-output-0:playback_AUX6
+alsa_output.usb-EDIROL_UA-1000_ZS22041-02.pro-output-0:playback_AUX7
+alsa_output.usb-EDIROL_UA-1000_ZS22041-02.pro-output-0:playback_AUX8
+alsa_output.usb-EDIROL_UA-1000_ZS22041-02.pro-output-0:playback_AUX9
+alsa_capture.python3.14:input_FL
+alsa_capture.python3.14:input_FR

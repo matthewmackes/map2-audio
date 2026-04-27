@@ -29,6 +29,7 @@ def evidence_tree(tmp_path, monkeypatch):
         docs/fit-for-purpose-evidence/20260427/edirol-ua/ua-1000/broken.json
         docs/fit-for-purpose-evidence/20260427/hotone/jogg/loopback-130000.json
     """
+    monkeypatch.setenv("MAP2_SERVICE_STATE_DIR", str(tmp_path / "state"))
     docs = tmp_path / "docs" / "fit-for-purpose-evidence"
     rows = [
         ("20260425", "edirol-ua", "ua-1000", "loopback-100000.json", "2026-04-25T10:00:00+00:00", 4.5),

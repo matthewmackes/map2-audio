@@ -28,7 +28,9 @@ RUNTIME_REQUIREMENT_GROUPS = {
         ("httpx", ">=0.28.1,<0.29.0", "Outbound API calls for cluster and device integrations"),
         ("aiohttp", ">=3.13.3,<4.0.0", "Async HTTP clients used across discovery/scraper/integration services"),
         ("websockets", ">=16.0,<17.0.0", "WebSocket client support used by hardware daemons such as Maschine MK1"),
+        ("asyncssh", ">=2.21.0,<3.0.0", "SSH transport for Tesira TTP fallback and the Web SSH bridge (T2419)"),
         ("PyYAML", ">=6.0.2,<7.0.0", "YAML parsing and emitted configuration artifacts"),
+        ("jsonschema", ">=4.26.0,<5.0.0", "JSON Schema validation for device-packs/ profile YAML files (T2459 controller subsystem)"),
         ("psutil", ">=7.2.1,<8.0.0", "System/process telemetry"),
         ("zeroconf", ">=0.148.0,<1.0.0", "Network discovery and advertisement"),
     ],
@@ -37,9 +39,13 @@ RUNTIME_REQUIREMENT_GROUPS = {
         ("scipy", ">=1.17.0,<2.0.0", "DSP/scientific utilities used by audio features"),
         ("sounddevice", ">=0.5.3,<0.6.0", "Python-side audio I/O helpers and diagnostics"),
         ("soundfile", ">=0.13.1,<0.14.0", "Audio file read/write support"),
+        ("jack-client", ">=0.5.5,<0.6.0", "Python JACK/PipeWire client used by hardware loopback latency measurements"),
         ("python-rtmidi", ">=1.5.8,<2.0.0", "MIDI device access"),
         ("hidapi", ">=0.14.0,<1.0.0", "USB HID access for hardware control surfaces such as Maschine MK1"),
         ("pyserial", ">=3.5,<4.0.0", "Serial-connected hardware workflows"),
+    ],
+    "image_processing": [
+        ("Pillow", ">=11.0.0,<13.0.0", "Device hero-image uploads: PNG decode, center-crop to 1:1, downscale to 1024x1024"),
     ],
     "content_and_library_features": [
         ("beautifulsoup4", ">=4.14.3,<5.0.0", "HTML parsing for library/discovery features"),

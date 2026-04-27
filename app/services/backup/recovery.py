@@ -776,12 +776,23 @@ DNF_PACKAGES=(
     gcc
     gcc-c++
     cmake
+    ninja-build
     make
     git
+    pkgconf-pkg-config
 
     # Development libraries
     sqlite
     sqlite-devel
+    freetype-devel
+    fontconfig-devel
+    libcurl-devel
+    libX11-devel
+    libXext-devel
+    libXinerama-devel
+    libXrandr-devel
+    libXcursor-devel
+    mesa-libGL-devel
 
     # Utilities
     htop
@@ -824,7 +835,21 @@ PYTHON_PACKAGES=(
     # Utilities
     psutil
     pydantic
+    PyYAML
+    jsonschema
+    websockets
+    asyncssh
+    zeroconf
     python-multipart
+    numpy
+    scipy
+    sounddevice
+    soundfile
+    python-rtmidi
+    hidapi
+    pyserial
+    Pillow
+    beautifulsoup4
 
     # Testing
     pytest
@@ -1043,22 +1068,52 @@ install_python_packages() {{
     log_step "Installing Python Packages"
 
     if [[ "$DRY_RUN" == "true" ]]; then
-        log_info "[DRY-RUN] Would install ${{#PYTHON_PACKAGES[@]}} Python packages:"
+        log_info "[DRY-RUN] Would install Python packages from repo manifests when present:"
+        log_info "    $INSTALL_DIR/requirements-backend-runtime.txt"
+        log_info "    $INSTALL_DIR/requirements-installer.txt"
+        log_info "[DRY-RUN] Fallback direct package set:"
         printf '    %s\\n' "${{PYTHON_PACKAGES[@]}}"
+        log_info "[DRY-RUN] Would create/update $INSTALL_DIR/.venv for units that use the project venv"
         return
     fi
+
+    mkdir -p "$INSTALL_DIR"
 
     # Upgrade pip first
     log_info "Upgrading pip..."
     python3 -m pip install --upgrade pip 2>&1 | tee -a "$LOG_FILE"
 
-    # Install packages globally
-    log_info "Installing Python packages globally..."
-    python3 -m pip install "${{PYTHON_PACKAGES[@]}}" 2>&1 | tee -a "$LOG_FILE"
+    local pip_manifests=()
+    if [[ -f "$INSTALL_DIR/requirements-backend-runtime.txt" ]]; then
+        pip_manifests+=("$INSTALL_DIR/requirements-backend-runtime.txt")
+    fi
+    if [[ -f "$INSTALL_DIR/requirements-installer.txt" ]]; then
+        pip_manifests+=("$INSTALL_DIR/requirements-installer.txt")
+    fi
 
-    # Also install for the target user
-    log_info "Installing Python packages for user $INSTALL_USER..."
-    sudo -u "$INSTALL_USER" python3 -m pip install --user "${{PYTHON_PACKAGES[@]}}" 2>&1 | tee -a "$LOG_FILE"
+    # Install packages globally for systemd units that run /usr/bin/python3.
+    if [[ ${{#pip_manifests[@]}} -gt 0 ]]; then
+        log_info "Installing Python package manifests globally..."
+        for manifest in "${{pip_manifests[@]}}"; do
+            python3 -m pip install -r "$manifest" 2>&1 | tee -a "$LOG_FILE"
+        done
+    else
+        log_warning "Repo requirements files not found; using fallback package list"
+        python3 -m pip install "${{PYTHON_PACKAGES[@]}}" 2>&1 | tee -a "$LOG_FILE"
+    fi
+
+    # Also install into the project venv because LCD/utility services use it.
+    log_info "Creating/updating project virtualenv..."
+    python3 -m venv "$INSTALL_DIR/.venv"
+    "$INSTALL_DIR/.venv/bin/python" -m pip install --upgrade pip 2>&1 | tee -a "$LOG_FILE"
+    if [[ ${{#pip_manifests[@]}} -gt 0 ]]; then
+        for manifest in "${{pip_manifests[@]}}"; do
+            "$INSTALL_DIR/.venv/bin/python" -m pip install -r "$manifest" 2>&1 | tee -a "$LOG_FILE"
+        done
+    else
+        "$INSTALL_DIR/.venv/bin/python" -m pip install "${{PYTHON_PACKAGES[@]}}" 2>&1 | tee -a "$LOG_FILE"
+    fi
+    chown -R "$INSTALL_USER:$INSTALL_USER" "$INSTALL_DIR/.venv"
 
     log_success "Python packages installed"
 }}
@@ -1124,8 +1179,12 @@ install_node_packages() {{
 
     cd "$INSTALL_DIR"
 
-    log_info "Installing npm packages..."
-    sudo -u "$INSTALL_USER" npm install 2>&1 | tee -a "$LOG_FILE"
+    log_info "Installing root npm packages..."
+    if [[ -f package-lock.json ]]; then
+        sudo -u "$INSTALL_USER" npm ci 2>&1 | tee -a "$LOG_FILE"
+    else
+        sudo -u "$INSTALL_USER" npm install 2>&1 | tee -a "$LOG_FILE"
+    fi
 
     log_success "Node.js dependencies installed"
 }}
@@ -1147,7 +1206,11 @@ build_web_assets() {{
 
     if [[ -f "package.json" ]]; then
         log_info "Installing web dependencies..."
-        sudo -u "$INSTALL_USER" npm install 2>&1 | tee -a "$LOG_FILE"
+        if [[ -f package-lock.json ]]; then
+            sudo -u "$INSTALL_USER" npm ci 2>&1 | tee -a "$LOG_FILE"
+        else
+            sudo -u "$INSTALL_USER" npm install 2>&1 | tee -a "$LOG_FILE"
+        fi
 
         log_info "Building web assets..."
         sudo -u "$INSTALL_USER" npm run build 2>&1 | tee -a "$LOG_FILE" || {{
@@ -1156,6 +1219,36 @@ build_web_assets() {{
     fi
 
     log_success "Web assets built"
+}}
+
+build_juce_engine() {{
+    log_step "Building JUCE Engine and Controller Host"
+
+    if [[ "$DRY_RUN" == "true" ]]; then
+        log_info "[DRY-RUN] Would configure and build juce-engine targets:"
+        log_info "    map2_audio_engine"
+        log_info "    map2-controller-host"
+        return
+    fi
+
+    if [[ ! -d "$INSTALL_DIR/juce-engine" ]]; then
+        log_warning "No juce-engine directory found, skipping native build"
+        return
+    fi
+
+    cd "$INSTALL_DIR/juce-engine"
+
+    log_info "Configuring JUCE engine..."
+    sudo -u "$INSTALL_USER" cmake -S . -B build \
+        -DCMAKE_BUILD_TYPE=Release \
+        -DENABLE_NATIVE_OPTIMIZATIONS=ON \
+        -DENABLE_FAST_MATH=ON \
+        -DBUILD_CONTROLLER_HOST=ON 2>&1 | tee -a "$LOG_FILE"
+
+    log_info "Building audio engine and controller host..."
+    sudo -u "$INSTALL_USER" cmake --build build --target map2_audio_engine map2-controller-host --parallel "$(nproc)" 2>&1 | tee -a "$LOG_FILE"
+
+    log_success "JUCE engine and controller host built"
 }}
 
 # =============================================================================
@@ -1220,6 +1313,10 @@ install_systemd_services() {{
                 log_info "Installed: $(basename $unit)"
             fi
         done
+        if [[ -f systemd/map2-irq-affinity.sh ]]; then
+            install -m 755 systemd/map2-irq-affinity.sh /usr/local/bin/map2-irq-affinity.sh
+            log_info "Installed: map2-irq-affinity.sh"
+        fi
         systemctl daemon-reload
         log_success "Systemd units installed"
     else
@@ -1278,7 +1375,7 @@ verify_installation() {{
     fi
 
     # Check Python packages
-    for pkg in fastapi uvicorn textual sqlalchemy rich; do
+    for pkg in fastapi uvicorn textual sqlalchemy rich yaml jsonschema websockets asyncssh numpy sounddevice hid; do
         if python3 -c "import $pkg" 2>/dev/null; then
             log_success "Python: $pkg ✓"
         else
@@ -1330,6 +1427,27 @@ verify_installation() {{
         log_success "MAP2 TUI directory: exists"
     else
         log_warning "MAP2 TUI directory not found"
+        ((warnings++))
+    fi
+
+    if [[ -d "$INSTALL_DIR/device-packs" ]] && [[ -d "$INSTALL_DIR/device-packs/_schema" ]]; then
+        log_success "Device packs: present"
+    else
+        log_error "Device packs missing"
+        ((errors++))
+    fi
+
+    if [[ -x "$INSTALL_DIR/juce-engine/build/map2-controller-host" ]]; then
+        log_success "Controller host binary: present"
+    else
+        log_error "Controller host binary missing: $INSTALL_DIR/juce-engine/build/map2-controller-host"
+        ((errors++))
+    fi
+
+    if [[ -d "$INSTALL_DIR/web/dist" ]]; then
+        log_success "Web build: present"
+    else
+        log_warning "Web build not found"
         ((warnings++))
     fi
 
@@ -1481,14 +1599,14 @@ main() {{
         log_info "Skipping DNF packages (--skip-packages)"
     fi
 
+    # Source code
+    setup_source_code
+
     if [[ "$SKIP_PYTHON" != "true" ]]; then
         install_python_packages
     else
         log_info "Skipping Python packages (--skip-python)"
     fi
-
-    # Source code
-    setup_source_code
 
     if [[ "$SKIP_NODE" != "true" ]]; then
         install_node_packages
@@ -1498,8 +1616,9 @@ main() {{
 
     if [[ "$SKIP_BUILD" != "true" ]]; then
         build_web_assets
+        build_juce_engine
     else
-        log_info "Skipping web build (--skip-build)"
+        log_info "Skipping web/native build (--skip-build)"
     fi
 
     # Data directories

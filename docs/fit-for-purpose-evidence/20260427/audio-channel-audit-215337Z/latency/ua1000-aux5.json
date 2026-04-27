@@ -1,0 +1,39 @@
+{
+  "timestamp": "2026-04-27T21:56:38.330112+00:00",
+  "method": "jack",
+  "sample_rate": 48000,
+  "duration_ms": 500,
+  "tail_ms": 1500,
+  "trials": [
+    {
+      "rtt_ms": 9.844063758850098,
+      "peak_correlation": 23.513423919677734,
+      "secondary_peak_ratio": 0.4957705775058433
+    },
+    {
+      "rtt_ms": 9.865228652954102,
+      "peak_correlation": 23.463911056518555,
+      "secondary_peak_ratio": 0.49640740939145156
+    },
+    {
+      "rtt_ms": 9.991427421569824,
+      "peak_correlation": 23.9450740814209,
+      "secondary_peak_ratio": 0.48543162939004464
+    },
+    {
+      "rtt_ms": 8.582540512084961,
+      "peak_correlation": 22.801219940185547,
+      "secondary_peak_ratio": 0.5466715786631305
+    },
+    {
+      "rtt_ms": 8.538742065429688,
+      "peak_correlation": 20.0896053314209,
+      "secondary_peak_ratio": 0.3589898838279388
+    }
+  ],
+  "mean_rtt_ms": 9.364400482177734,
+  "p95_rtt_ms": 9.966187667846679,
+  "jitter_p95_ms": 1.4526853561401367,
+  "notes": "f0=50.0Hz f1=20000.0Hz duration_ms=500 tail_ms=1500",
+  "gate": "FAIL"
+}

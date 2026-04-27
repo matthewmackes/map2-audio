@@ -10,10 +10,10 @@ pip install -r requirements-backend-runtime.txt
 
 ## Summary
 
-- Runtime manifest packages: `18`
-- Schema-backed environment variables: `54`
-- Direct environment reads in `app/`: `94`
-- Direct-only environment variables (not modeled in `app/config.py`): `73`
+- Runtime manifest packages: `22`
+- Schema-backed environment variables: `55`
+- Direct environment reads in `app/`: `96`
+- Direct-only environment variables (not modeled in `app/config.py`): `74`
 - Inline backend systemd environment entries: `11`
 
 ## Runtime manifest scope
@@ -32,7 +32,9 @@ It excludes legacy or non-backend surfaces such as the Flask stub under `app/api
 - `httpx>=0.28.1,<0.29.0`: Outbound API calls for cluster and device integrations
 - `aiohttp>=3.13.3,<4.0.0`: Async HTTP clients used across discovery/scraper/integration services
 - `websockets>=16.0,<17.0.0`: WebSocket client support used by hardware daemons such as Maschine MK1
+- `asyncssh>=2.21.0,<3.0.0`: SSH transport for Tesira TTP fallback and the Web SSH bridge (T2419)
 - `PyYAML>=6.0.2,<7.0.0`: YAML parsing and emitted configuration artifacts
+- `jsonschema>=4.26.0,<5.0.0`: JSON Schema validation for device-packs/ profile YAML files (T2459 controller subsystem)
 - `psutil>=7.2.1,<8.0.0`: System/process telemetry
 - `zeroconf>=0.148.0,<1.0.0`: Network discovery and advertisement
 
@@ -42,9 +44,14 @@ It excludes legacy or non-backend surfaces such as the Flask stub under `app/api
 - `scipy>=1.17.0,<2.0.0`: DSP/scientific utilities used by audio features
 - `sounddevice>=0.5.3,<0.6.0`: Python-side audio I/O helpers and diagnostics
 - `soundfile>=0.13.1,<0.14.0`: Audio file read/write support
+- `jack-client>=0.5.5,<0.6.0`: Python JACK/PipeWire client used by hardware loopback latency measurements
 - `python-rtmidi>=1.5.8,<2.0.0`: MIDI device access
 - `hidapi>=0.14.0,<1.0.0`: USB HID access for hardware control surfaces such as Maschine MK1
 - `pyserial>=3.5,<4.0.0`: Serial-connected hardware workflows
+
+### Image Processing
+
+- `Pillow>=11.0.0,<13.0.0`: Device hero-image uploads: PNG decode, center-crop to 1:1, downscale to 1024x1024
 
 ### Content And Library Features
 
@@ -102,7 +109,7 @@ It excludes legacy or non-backend surfaces such as the Flask stub under `app/api
 | `MAP2_AUDIO_DEVICE` | `audio.device` | `null` | `True` | `False` | Audio device name (None for PipeWire/system default via JACK) |
 | `MAP2_PIPEWIRE_USE_JACK` | `audio.pipewire_use_jack` | `true` | `True` | `False` | Use PipeWire's JACK compatibility layer (recommended) |
 | `MAP2_SAMPLE_RATE` | `audio.sample_rate` | `48000` | `True` | `True` | Audio sample rate in Hz (LOCKED for Tier A performance - set in systemd service only) |
-| `MAP2_AUDIO_STATE_AUTHORITY_BACKEND` | `audio_state.authority_backend` | `etcd` | `True` | `False` | Cluster authority backend for committed audio state |
+| `MAP2_AUDIO_STATE_AUTHORITY_BACKEND` | `audio_state.authority_backend` | `etcd` | `True` | `False` | Authority backend for committed audio state — 'etcd' for clustered deployments, 'local' for single-node appliances (T2431-I) |
 | `MAP2_AUDIO_STATE_ETCD_CA_CERT_PATH` | `audio_state.etcd_ca_cert_path` | `` | `True` | `False` | Optional CA bundle path for etcd TLS validation |
 | `MAP2_AUDIO_STATE_ETCD_CONNECT_TIMEOUT_S` | `audio_state.etcd_connect_timeout_s` | `2.0` | `True` | `False` | Connection timeout in seconds for etcd control-plane requests |
 | `MAP2_AUDIO_STATE_ETCD_ENDPOINTS` | `audio_state.etcd_endpoints` | `["http://127.0.0.1:2379"]` | `True` | `False` | Ordered etcd endpoint list for the authoritative audio state control plane |
@@ -145,6 +152,7 @@ It excludes legacy or non-backend surfaces such as the Flask stub under `app/api
 | `MAP2_PUSH_SURFACE_ENABLED` | `push_surface.enabled` | `false` | `False` | `False` | Enable the Ableton Push hardware surface subsystem |
 | `MAP2_PUSH_SURFACE_REST_BASE_URL` | `push_surface.rest_base_url` | `http://127.0.0.1:8080` | `False` | `False` | REST base URL for external Push surface bridge mode |
 | `MAP2_PUSH_SURFACE_WEBSOCKET_URL` | `push_surface.websocket_url` | `ws://127.0.0.1:8080/ws/events` | `False` | `False` | WebSocket URL for external Push surface bridge mode |
+| `MAP2_STATE_AUTHORITY_ACTIVATION_HOOKS` | `state_authority.activation_hooks` | `["push_footswitch_labels", "push_maschine_assignments", "push_push_surface_state", "push_ground_control_pro_assignments", "push_mcu_surface_state", "push_launch_control_assignments", "push_midi_commander_assignments", "push_controller_display_preview", "schedule_preload"]` | `False` | `False` | Ordered list of activation-hook names fired after a State Authority snapshot activation. |
 | `MAP2_IR_DIR` | `storage.ir_user_dir` | `~/.local/share/map2/ir` | `False` | `False` | User IR files directory |
 | `MAP2_NAM_DIR` | `storage.nam_user_dir` | `~/.local/share/map2/nam` | `False` | `False` | User NAM models directory |
 | `MAP2_TESIRA_DEVICES` | `tesira.devices` | `[]` | `False` | `False` | List of Tesira device connection configs. Each entry: {host, port=23, name='', enabled=true, metering_tags=[]} |
@@ -156,7 +164,7 @@ These variables are read directly in code and are not represented in `app/config
 
 | Variable | First observed source | Default | Occurrences |
 | --- | --- | --- | ---: |
-| `CLUSTER_MODE` | `app/routes/special_settings.py:56` | `'disabled'` | 1 |
+| `CLUSTER_MODE` | `app/routes/special_settings.py:59` | `'disabled'` | 1 |
 | `DEBUG` | `app/routes/www.py:172` | `'false'` | 1 |
 | `DEBUG_RESILIENCE` | `app/deployment/resilience_config.py:98` | `'false'` | 1 |
 | `ENABLE_CIRCUIT_BREAKER` | `app/deployment/resilience_config.py:85` | `'true'` | 1 |
@@ -169,7 +177,7 @@ These variables are read directly in code and are not represented in `app/config
 | `MAP2_API_AUTH_MODE` | `app/middleware/api_auth.py:53` | `'disabled'` | 1 |
 | `MAP2_API_CLUSTER_TOKEN` | `app/middleware/api_auth.py:56` | `''` | 1 |
 | `MAP2_API_OPERATOR_TOKEN` | `app/middleware/api_auth.py:54` | `''` | 1 |
-| `MAP2_API_PORT` | `app/main.py:429` | `'8080'` | 2 |
+| `MAP2_API_PORT` | `app/main.py:447` | `'8080'` | 3 |
 | `MAP2_APP_DIR` | `app/services/backup/orchestration.py:33` | `` | 1 |
 | `MAP2_AUDIO_LATENCY_CACHE_TTL_SECONDS` | `app/routes/audio/monitoring.py:26` | `'0.50'` | 1 |
 | `MAP2_AUDIO_LEVELS_CACHE_TTL_SECONDS` | `app/routes/audio/monitoring.py:10` | `'0.20'` | 1 |
@@ -183,12 +191,12 @@ These variables are read directly in code and are not represented in `app/config
 | `MAP2_BOOTSTRAP_TOKEN_SECRET` | `app/services/cluster/adoption_bootstrap.py:85` | `` | 1 |
 | `MAP2_BRAIN_ROOT` | `app/services/performance_brain_service.py:72` | `Path.home() / '.map2' / 'performance_brain'` | 1 |
 | `MAP2_CHAIN_ROUTE_TIMEOUT_SECONDS` | `app/routes/chains.py:88` | `'2.0'` | 1 |
-| `MAP2_CLUSTER_ENABLED` | `app/main.py:593` | `'false'` | 2 |
-| `MAP2_CONFIG_GIT_REPO` | `app/main.py:607` | `` | 1 |
+| `MAP2_CLUSTER_ENABLED` | `app/main.py:631` | `'false'` | 2 |
+| `MAP2_CONFIG_GIT_REPO` | `app/main.py:645` | `` | 1 |
 | `MAP2_CORE_CONFIG_FILE` | `app/routes/system.py:33` | `'/tmp/map2_core_config_state.json'` | 1 |
-| `MAP2_DEPLOYMENT_MODE` | `app/deployment/deployment.py:184` | `'ALL-IN-ONE'` | 5 |
+| `MAP2_DEPLOYMENT_MODE` | `app/deployment/authority.py:579` | `` | 5 |
 | `MAP2_DEV_PROXY` | `app/routes/dev_proxy.py:64` | `''` | 1 |
-| `MAP2_DISABLE_UVICORN_ACCESS_LOG` | `app/main.py:790` | `'true'` | 1 |
+| `MAP2_DISABLE_UVICORN_ACCESS_LOG` | `app/main.py:1041` | `'true'` | 1 |
 | `MAP2_DRUMS_ACTIVE_KIT_STATE_PATH` | `app/services/drum_kit_service.py:30` | `_DEFAULT_DRUMS_ROOT / 'active_kit.json'` | 1 |
 | `MAP2_DRUMS_AUTOSAVE_PATH` | `app/services/drum_sequencer_service.py:25` | `_DEFAULT_DRUMS_ROOT / 'sequencer-autosave.json'` | 1 |
 | `MAP2_DRUMS_BACKING_TRACK_STATE_PATH` | `app/services/drum_machine_service.py:30` | `_DEFAULT_DRUMS_ROOT / 'backing_track_state.json'` | 1 |
@@ -205,12 +213,12 @@ These variables are read directly in code and are not represented in `app/config
 | `MAP2_DRUM_POSITION_POLL_INTERVAL_SECONDS` | `app/services/drum_machine_service.py:34` | `'0.05'` | 1 |
 | `MAP2_ENABLE_ENGINE_CHAIN_DEPLOY` | `app/services/chain_service.py:49` | `'true'` | 1 |
 | `MAP2_ENABLE_ENGINE_PLUGIN_OPS` | `app/routes/plugins.py:236` | `'false'` | 1 |
-| `MAP2_ENABLE_PIPEWIRE_RECOVERY` | `app/main.py:561` | `'true'` | 1 |
+| `MAP2_ENABLE_PIPEWIRE_RECOVERY` | `app/main.py:599` | `'true'` | 1 |
 | `MAP2_ENABLE_SYNC_ENGINE_PLUGIN_OPS` | `app/routes/plugins.py:242` | `'false'` | 1 |
 | `MAP2_ENGINE_OP_MAX_RETRIES` | `app/routes/plugins.py:249` | `'6'` | 1 |
 | `MAP2_ENGINE_OP_QUEUE_MAX` | `app/routes/plugins.py:248` | `'2048'` | 1 |
 | `MAP2_ENGINE_OP_RETRY_BASE_DELAY` | `app/routes/plugins.py:250` | `'0.05'` | 1 |
-| `MAP2_HEADLESS_LIVE` | `app/services/runtime_profiles.py:76` | `''` | 1 |
+| `MAP2_HEADLESS_LIVE` | `app/services/runtime_profiles.py:85` | `''` | 1 |
 | `MAP2_MASCHINE_ALLOW_KERNEL_DETACH` | `app/services/maschine/maschine_mk1_daemon.py:269` | `` | 1 |
 | `MAP2_NODE_ID` | `app/services/cluster/audio_path_discovery.py:500` | `'local'` | 2 |
 | `MAP2_NODE_LABEL` | `app/services/push_surface/drum_registry.py:28` | `` | 1 |
@@ -219,15 +227,16 @@ These variables are read directly in code and are not represented in `app/config
 | `MAP2_PUSH_SURFACE_CONFIG` | `app/services/push_surface/config.py:34` | `Path.home() / '.map2' / 'push_surface.json'` | 1 |
 | `MAP2_PUSH_SURFACE_LABS_STORE` | `app/services/push_surface/labs_store.py:15` | `Path.home() / '.map2' / 'push_surface_labs.json'` | 1 |
 | `MAP2_RAFT_STATE_DIR` | `app/services/cluster/raft_consensus.py:191` | `''` | 1 |
-| `MAP2_REMOTE_BACKEND_URL` | `app/main.py:410` | `` | 1 |
+| `MAP2_REMOTE_BACKEND_URL` | `app/main.py:428` | `` | 1 |
 | `MAP2_REQUEST_LOGGING` | `app/middleware/request_logging.py:39` | `''` | 1 |
-| `MAP2_RUNTIME_BOOT_PROFILE` | `app/services/runtime_profiles.py:73` | `''` | 1 |
-| `MAP2_SECRETS_MASTER_PASSWORD` | `app/services/secrets_manager.py:120` | `` | 1 |
-| `MAP2_STRICT_ROUTE_LOADING` | `app/main.py:848` | `'true'` | 1 |
+| `MAP2_RUNTIME_BOOT_PROFILE` | `app/services/runtime_profiles.py:82` | `''` | 1 |
+| `MAP2_SECRETS_MASTER_PASSWORD` | `app/services/secrets_manager.py:122` | `` | 1 |
+| `MAP2_SSH_BRIDGE_MAX_SESSIONS` | `app/services/ssh_bridge_service.py:513` | `` | 1 |
+| `MAP2_STRICT_ROUTE_LOADING` | `app/main.py:1099` | `'true'` | 1 |
 | `MAP2_TEST_MODE` | `app/main.py:336` | `'false'` | 3 |
-| `MAP2_TRAFFIC_CAPTURE` | `app/main.py:816` | `'true'` | 1 |
-| `MAP2_USE_MOCK_LCD` | `app/main.py:428` | `'true'` | 1 |
-| `NODE_ID` | `app/routes/special_settings.py:169` | `'standalone'` | 3 |
+| `MAP2_TRAFFIC_CAPTURE` | `app/main.py:1067` | `'true'` | 1 |
+| `MAP2_USE_MOCK_LCD` | `app/main.py:446` | `'true'` | 1 |
+| `NODE_ID` | `app/routes/special_settings.py:176` | `'standalone'` | 3 |
 | `PROMETHEUS_URL` | `app/services/cluster/post_update_health.py:360` | `'http://localhost:9090'` | 1 |
 
 ## Notes

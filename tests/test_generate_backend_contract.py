@@ -56,4 +56,5 @@ def test_build_runtime_manifest_lines_contains_core_packages():
     joined = "\n".join(lines)
     assert "fastapi>=0.128.0,<0.129.0" in joined
     assert "uvicorn>=0.40.0,<0.41.0" in joined
+    assert "jack-client>=0.5.5,<0.6.0" in joined
     assert "python-rtmidi>=1.5.8,<2.0.0" in joined

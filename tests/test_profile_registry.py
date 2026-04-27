@@ -265,3 +265,133 @@ def test_invalid_alsa_card_regex_logs_and_returns_none(
     profiles = registry.profiles(kind="audio")
     assert len(profiles) == 1
     assert profiles[0].alsa_card_regex is None
+
+
+# ---------------------------------------------------------------------------
+# T2459-B3 — Mixxx import surface in the catalogue.
+# ---------------------------------------------------------------------------
+
+
+def _write_mixxx_xml(
+    path: Path,
+    *,
+    name: str = "Test Mapping",
+    author: str = "Test Author",
+    controller_id: str = "TestCtl",
+) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    path.write_text(textwrap.dedent(f"""\
+        <?xml version="1.0" encoding="utf-8"?>
+        <MixxxMIDIPreset mixxxVersion="1.10.1+" schemaVersion="1">
+          <info>
+            <name>{name}</name>
+            <author>{author}</author>
+            <description>Test fixture.</description>
+          </info>
+          <controller id="{controller_id}">
+            <controls/>
+          </controller>
+        </MixxxMIDIPreset>
+    """))
+
+
+@pytest.fixture
+def mixxx_imports_root(tmp_path: Path, repo_packs_root: Path) -> Path:
+    """A tmp packs-root with a real ``_schema/`` and a populated
+    ``_mixx-imports/res/controllers/`` so the Mixxx synthesis path runs
+    end-to-end.
+    """
+    import shutil
+
+    shutil.copytree(repo_packs_root / "_schema", tmp_path / "_schema")
+    controllers = tmp_path / "_mixx-imports" / "res" / "controllers"
+    _write_mixxx_xml(
+        controllers / "Akai LPD8.midi.xml",
+        name="Akai LPD8", author="Rob K", controller_id="LPD8",
+    )
+    _write_mixxx_xml(
+        controllers / "Behringer BCD2000.midi.xml",
+        name="Behringer BCD2000", author="Mixxx Team",
+        controller_id="BCD2000",
+    )
+    return tmp_path
+
+
+def test_mixxx_imports_surface_as_imported_packs(mixxx_imports_root: Path) -> None:
+    registry = ProfileRegistry(packs_root=mixxx_imports_root)
+    registry.load_packs()
+    pack_ids = {p.pack_id for p in registry.packs()}
+    assert "mixxx:Akai-LPD8" in pack_ids
+    assert "mixxx:Behringer-BCD2000" in pack_ids
+
+
+def test_mixxx_imports_yield_one_midi_profile_each(mixxx_imports_root: Path) -> None:
+    registry = ProfileRegistry(packs_root=mixxx_imports_root)
+    registry.load_packs()
+    midi = [
+        p for p in registry.profiles(kind="midi")
+        if p.pack_id.startswith("mixxx:")
+    ]
+    assert len(midi) == 2
+    for p in midi:
+        assert p.kind == "midi"
+        assert p.path.suffix == ".xml"
+        # Synthesized profile carries the schema-required scaffolding
+        # so downstream serializers don't blow up, but ``controls`` is
+        # empty — full parsing is deferred to mapping load time.
+        assert p.document["schema_version"] == 1
+        assert p.document["controls"] == []
+
+
+def test_mixxx_pack_path_classifies_as_imported(mixxx_imports_root: Path) -> None:
+    """The synthetic pack's path must live under ``_mixx-imports`` so
+    /api/devices/packs/sources tags it ``source: imported``.
+    """
+    from app.routes.devices import _classify_pack_source
+
+    registry = ProfileRegistry(packs_root=mixxx_imports_root)
+    registry.load_packs()
+    mixxx_packs = [p for p in registry.packs() if p.pack_id.startswith("mixxx:")]
+    assert mixxx_packs, "no mixxx packs synthesized"
+    for pack in mixxx_packs:
+        assert _classify_pack_source(str(pack.path)) == "imported"
+
+
+def test_mixxx_malformed_xml_is_skipped_not_fatal(
+    tmp_path: Path, repo_packs_root: Path,
+) -> None:
+    """A broken Mixxx XML must not block backend boot; valid siblings
+    must still surface.
+    """
+    import shutil
+
+    shutil.copytree(repo_packs_root / "_schema", tmp_path / "_schema")
+    controllers = tmp_path / "_mixx-imports" / "res" / "controllers"
+    controllers.mkdir(parents=True)
+    (controllers / "Broken.midi.xml").write_text("<not-xml")
+    _write_mixxx_xml(
+        controllers / "Good.midi.xml",
+        name="Good", author="Author", controller_id="Good",
+    )
+    registry = ProfileRegistry(packs_root=tmp_path)
+    registry.load_packs()  # MUST NOT raise
+    pack_ids = {p.pack_id for p in registry.packs()}
+    assert "mixxx:Good" in pack_ids
+    assert "mixxx:Broken" not in pack_ids
+
+
+def test_mixxx_pack_id_collision_is_disambiguated(tmp_path: Path, repo_packs_root: Path) -> None:
+    """Two Mixxx XMLs whose filenames sanitize to the same model must
+    not collide in the registry's pack id space.
+    """
+    import shutil
+
+    shutil.copytree(repo_packs_root / "_schema", tmp_path / "_schema")
+    controllers = tmp_path / "_mixx-imports" / "res" / "controllers"
+    # After sanitisation both stems collapse to "Foo-Bar".
+    _write_mixxx_xml(controllers / "Foo Bar.midi.xml", name="Foo Bar")
+    _write_mixxx_xml(controllers / "Foo+Bar.midi.xml", name="Foo+Bar")
+    registry = ProfileRegistry(packs_root=tmp_path)
+    registry.load_packs()
+    mixxx = sorted(p.pack_id for p in registry.packs() if p.pack_id.startswith("mixxx:"))
+    assert mixxx == ["mixxx:Foo-Bar", "mixxx:Foo-Bar-2"]

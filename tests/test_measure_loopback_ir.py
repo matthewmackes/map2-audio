@@ -18,6 +18,15 @@ from scripts.measure_loopback_ir import (
 )
 
 
+@pytest.fixture(autouse=True)
+def _force_synthetic_loopback(monkeypatch: pytest.MonkeyPatch) -> None:
+    """Keep unit tests hermetic even on bench hosts with JACK available."""
+    monkeypatch.setattr(
+        "scripts.measure_loopback_ir._play_and_capture_via_jack",
+        lambda *args, **kwargs: None,
+    )
+
+
 def test_synthetic_fallback_recovers_5ms_round_trip() -> None:
     """The synthetic loopback inserts a 5 ms delay; the IR cross-
     correlation should recover it within sub-sample tolerance.

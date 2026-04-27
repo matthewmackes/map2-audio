@@ -31,8 +31,15 @@ import re
 from collections.abc import Iterable, Iterator
 from pathlib import Path
 from typing import Any
+from xml.etree import ElementTree as ET
 
 logger = logging.getLogger(__name__)
+
+
+_MIXXX_IMPORTS_DIRNAME = "_mixx-imports"
+_MIXXX_CONTROLLERS_SUBPATH = ("res", "controllers")
+_MIXXX_PACK_PREFIX = "mixxx"
+_MIXXX_MODEL_SAFE = re.compile(r"[^A-Za-z0-9._-]+")
 
 
 class PackLoadError(Exception):
@@ -176,6 +183,15 @@ class ProfileRegistry:
                 len(pack.profiles),
                 ", DEGRADED" if pack.is_degraded else "",
             )
+
+        # T2459-B3 — surface Mixxx imports in the catalogue. These are
+        # XML mappings, not MAP2 YAML profiles; we synthesize one pack
+        # per XML so they appear in /api/devices/profiles + /packs/sources
+        # tagged as ``imported`` (via _classify_pack_source on path).
+        # Mapping invocation still goes through the Mixxx XML reader,
+        # not this surface.
+        for synthetic in self._iter_mixxx_synthetic_packs():
+            self._packs[synthetic.pack_id] = synthetic
 
     def packs(self) -> tuple[DevicePack, ...]:
         return tuple(self._packs.values())
@@ -356,6 +372,127 @@ class ProfileRegistry:
     def _extract_model_from_filename(name: str, kind: str) -> str:
         suffix = f".{kind}.yaml"
         return name[: -len(suffix)]
+
+    # ------------------------------------------------------------------
+    # T2459-B3 — Mixxx import surface.
+    #
+    # The Mixxx corpus lives under ``device-packs/_mixx-imports/`` (the
+    # underscore-prefixed dir is otherwise skipped by ``_iter_pack_dirs``).
+    # Each ``res/controllers/*.midi.xml`` becomes one synthetic
+    # :class:`DevicePack` with one MIDI :class:`DeviceProfile`. Only the
+    # header (info.name, info.author, controller@id) is parsed here so
+    # boot stays fast on a 144-XML corpus; the full control list is read
+    # by the Mixxx XML reader on demand at mapping load time.
+    #
+    # The synthesized profile's ``document`` contains the schema-required
+    # fields so downstream code that treats it like any other profile
+    # doesn't break, but it is *not* validated against the JSON Schema —
+    # these are bridge entries, not authored MAP2 profiles.
+    # ------------------------------------------------------------------
+
+    def _iter_mixxx_synthetic_packs(self) -> Iterator[DevicePack]:
+        root = self._packs_root / _MIXXX_IMPORTS_DIRNAME
+        for sub in _MIXXX_CONTROLLERS_SUBPATH:
+            root = root / sub
+        if not root.is_dir():
+            return
+        seen_pack_ids: set[str] = set()
+        for xml_path in sorted(root.glob("*.midi.xml")):
+            try:
+                pack = self._mixxx_xml_to_synthetic_pack(xml_path, seen_pack_ids)
+            except Exception as exc:  # noqa: BLE001 — defensive boot
+                logger.warning(
+                    "ProfileRegistry: Mixxx import %s failed to parse: %s. "
+                    "Skipping; backend boot continues.",
+                    xml_path.name, exc,
+                )
+                continue
+            if pack is None:
+                continue
+            seen_pack_ids.add(pack.pack_id)
+            yield pack
+
+    def _mixxx_xml_to_synthetic_pack(
+        self, xml_path: Path, seen_pack_ids: set[str],
+    ) -> DevicePack | None:
+        """Parse the header of one Mixxx XML into a synthetic pack."""
+        try:
+            tree = ET.parse(xml_path)  # noqa: S314 — local trusted file
+        except ET.ParseError as exc:
+            logger.warning(
+                "ProfileRegistry: Mixxx XML %s is malformed: %s",
+                xml_path, exc,
+            )
+            return None
+        root_el = tree.getroot()
+        info = root_el.find("info")
+        controller = root_el.find("controller")
+        name_el = info.find("name") if info is not None else None
+        author_el = info.find("author") if info is not None else None
+        display_name = (name_el.text or "").strip() if name_el is not None else ""
+        if not display_name:
+            display_name = xml_path.stem.replace(".midi", "")
+        author = (author_el.text or "").strip() if author_el is not None else ""
+
+        # ``model`` is the on-disk filename stem (without ``.midi``); it
+        # round-trips through the URL path on the device detail route.
+        model_raw = xml_path.stem
+        if model_raw.endswith(".midi"):
+            model_raw = model_raw[: -len(".midi")]
+        model = _MIXXX_MODEL_SAFE.sub("-", model_raw).strip("-")
+        if not model:
+            return None
+
+        pack_id = self._mixxx_pack_id(model, seen_pack_ids)
+
+        controller_id = (
+            controller.get("id") if controller is not None else None
+        ) or display_name
+
+        manifest: dict[str, Any] = {
+            "schema_version": 1,
+            "pack_id": pack_id,
+            "vendor": {"name": author or display_name or "Mixxx import"},
+            "description": f"Mixxx mapping: {display_name}",
+            "license": "GPL-2.0-or-later",
+            "models": [model],
+        }
+        document: dict[str, Any] = {
+            "schema_version": 1,
+            "identity": {
+                "manufacturer": author or display_name or "Mixxx",
+                "model": display_name or model,
+                "alsa_client_pattern": str(controller_id),
+            },
+            "controls": [],
+        }
+        profile = DeviceProfile(
+            pack_id=pack_id,
+            model=model,
+            kind="midi",
+            path=xml_path,
+            document=document,
+        )
+        # ``DevicePack.path`` drives ``_classify_pack_source``; pointing
+        # it at the XML keeps the path under ``_mixx-imports`` so the
+        # source classifier returns ``imported``.
+        return DevicePack(
+            pack_id=pack_id,
+            path=xml_path,
+            manifest=manifest,
+            profiles=(profile,),
+        )
+
+    @staticmethod
+    def _mixxx_pack_id(model: str, seen: set[str]) -> str:
+        base = f"{_MIXXX_PACK_PREFIX}:{model}"
+        if base not in seen:
+            return base
+        # Filename collision after sanitisation — append a suffix.
+        i = 2
+        while f"{base}-{i}" in seen:
+            i += 1
+        return f"{base}-{i}"
 
 
 # ---------------------------------------------------------------------------

@@ -5,7 +5,8 @@ After=network.target
 [Service]
 Type=simple
 User=map2
-WorkingDirectory=/usr/lib/map2
+WorkingDirectory=/opt/map2
+Environment="PYTHONPATH=/opt/map2:/opt/map2/juce-engine/build"
 Environment="XDG_RUNTIME_DIR=/run/user/1000"
 Environment="DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/1000/bus"
 Environment="PIPEWIRE_REMOTE=pipewire-0"
@@ -15,7 +16,7 @@ Environment="JACK_DEFAULT_SERVER=pipewire"
 ExecStartPre=/usr/bin/pw-metadata -n settings 0 clock.force-rate 48000
 ExecStartPre=/usr/bin/pw-metadata -n settings 0 clock.force-quantum 128
 Environment="PIPEWIRE_LATENCY=128/48000"
-ExecStart=/usr/bin/python3 -m uvicorn app.main:create_app --factory --host 0.0.0.0 --port 8080 --no-access-log
+ExecStart=/usr/bin/python3 -m uvicorn app.main:app --host 0.0.0.0 --port 8080 --no-access-log
 Restart=on-failure
 RestartSec=5
 

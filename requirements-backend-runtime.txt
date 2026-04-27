@@ -42,6 +42,8 @@ scipy>=1.17.0,<2.0.0
 sounddevice>=0.5.3,<0.6.0
 # Audio file read/write support
 soundfile>=0.13.1,<0.14.0
+# Python JACK/PipeWire client used by hardware loopback latency measurements
+jack-client>=0.5.5,<0.6.0
 # MIDI device access
 python-rtmidi>=1.5.8,<2.0.0
 # USB HID access for hardware control surfaces such as Maschine MK1
@@ -49,8 +51,8 @@ hidapi>=0.14.0,<1.0.0
 # Serial-connected hardware workflows
 pyserial>=3.5,<4.0.0
 
-# Image processing — device hero-image uploads (T2426-C): PNG decode,
-# center-crop to 1:1, downscale to 1024x1024.
+# Image Processing
+# Device hero-image uploads: PNG decode, center-crop to 1:1, downscale to 1024x1024
 Pillow>=11.0.0,<13.0.0
 
 # Content And Library Features

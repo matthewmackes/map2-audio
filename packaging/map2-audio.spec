@@ -3,7 +3,7 @@ Version:        1.0.0
 Release:        1%{?dist}
 Summary:        Mackes Audio Platform - Professional real-time audio processing
 
-License:        MIT
+License:        AGPL-3.0-only
 URL:            https://github.com/matthewmackes/map2-audio
 Source0:        %{name}-%{version}.tar.gz
 
@@ -12,16 +12,34 @@ BuildRequires:  python3-pip
 BuildRequires:  nodejs >= 18
 BuildRequires:  npm
 BuildRequires:  git
+BuildRequires:  cmake
+BuildRequires:  gcc-c++
+BuildRequires:  make
+BuildRequires:  pkgconf-pkg-config
+BuildRequires:  alsa-lib-devel
+BuildRequires:  pipewire-jack-audio-connection-kit-devel
+BuildRequires:  freetype-devel
+BuildRequires:  fontconfig-devel
+BuildRequires:  libcurl-devel
+BuildRequires:  libX11-devel
+BuildRequires:  libXext-devel
+BuildRequires:  libXinerama-devel
+BuildRequires:  libXrandr-devel
+BuildRequires:  libXcursor-devel
+BuildRequires:  mesa-libGL-devel
 
 Requires:       python3 >= 3.12
 Requires:       python3-fastapi
 Requires:       python3-httpx
 Requires:       python3-pydantic
 Requires:       python3-aiofiles
+Requires:       python3-jsonschema
+Requires:       python3-pyyaml
 Requires:       pipewire
 Requires:       jack-audio-connection-kit
 Requires:       alsa-lib
 Requires:       systemd
+Requires:       nodejs
 
 %description
 MAP2 Audio Platform provides a distributed audio processing cluster
@@ -33,14 +51,19 @@ and automated system updates.
 %autosetup
 
 %build
-# Build Python backend
-cd %{_builddir}/%{name}-%{version}
-python3 -m pip install --no-deps --target ./build/lib .
-
-# Build React frontend
-cd web
+# Build React frontend.
+cd %{_builddir}/%{name}-%{version}/web
 npm ci
 npm run build
+
+# Build native audio engine and the QuickJS controller-host supervisor child.
+cd %{_builddir}/%{name}-%{version}
+cmake -S juce-engine -B juce-engine/build \
+  -DCMAKE_BUILD_TYPE=Release \
+  -DENABLE_NATIVE_OPTIMIZATIONS=ON \
+  -DENABLE_FAST_MATH=ON \
+  -DBUILD_CONTROLLER_HOST=ON
+cmake --build juce-engine/build --target map2_audio_engine map2-controller-host --parallel %{?_smp_build_ncpus}
 
 %install
 # Create application directories
@@ -56,17 +79,24 @@ mkdir -p %{buildroot}/usr/local/bin
 
 # Install Python backend
 cp -r app %{buildroot}/opt/map2/
-cp -r build/lib/* %{buildroot}/opt/map2/lib/
 cp -r tui %{buildroot}/opt/map2/
+cp -r lcd %{buildroot}/opt/map2/
 
 # Install React frontend
 cp -r web/dist %{buildroot}/opt/map2/web/
 
 # Install main application files
-cp requirements.txt %{buildroot}/opt/map2/
-cp setup.py %{buildroot}/opt/map2/
-cp main.py %{buildroot}/opt/map2/
+cp requirements-backend-runtime.txt %{buildroot}/opt/map2/
+cp requirements-installer.txt %{buildroot}/opt/map2/
+cp LICENSE %{buildroot}/opt/map2/
+cp README.md %{buildroot}/opt/map2/
 cp -r scripts %{buildroot}/opt/map2/
+cp -r device-packs %{buildroot}/opt/map2/
+
+# Install native build outputs at the paths used by runtime probes/supervisors.
+mkdir -p %{buildroot}/opt/map2/juce-engine/build
+install -m 755 juce-engine/build/map2-controller-host %{buildroot}/opt/map2/juce-engine/build/map2-controller-host
+install -m 755 juce-engine/build/map2_audio_engine*.so %{buildroot}/opt/map2/juce-engine/build/
 
 # Install observability configs
 install -m 644 config/prometheus.yml %{buildroot}/etc/map2/prometheus/prometheus.yml
@@ -91,11 +121,15 @@ install -m 644 packaging/systemd/map2-srpd.service %{buildroot}/usr/lib/systemd/
 cat > %{buildroot}/usr/local/bin/map2 << 'EOF'
 #!/bin/bash
 cd /opt/map2
-exec python3 main.py "$@"
+exec python3 -m uvicorn app.main:app "$@"
 EOF
 chmod +x %{buildroot}/usr/local/bin/map2
 
+install -m 755 systemd/map2-irq-affinity.sh %{buildroot}/usr/local/bin/map2-irq-affinity.sh
+
 %files
+%license /opt/map2/LICENSE
+%doc /opt/map2/README.md
 /opt/map2
 /etc/map2
 /var/lib/map2
@@ -103,8 +137,12 @@ chmod +x %{buildroot}/usr/local/bin/map2
 /usr/lib/systemd/system/map2-*.service
 /usr/lib/systemd/system/map2-avb.target
 /usr/local/bin/map2
+/usr/local/bin/map2-irq-affinity.sh
 
 %post
+# Create map2 user before assigning ownership.
+getent passwd map2 > /dev/null || useradd -r -s /sbin/nologin -d /var/lib/map2 -m map2 2>/dev/null || true
+
 # Enable services
 systemctl daemon-reload
 systemctl enable map2-backend.service
@@ -113,9 +151,6 @@ systemctl enable map2-cluster.service
 
 # Set permissions
 chown -R map2:map2 /opt/map2 /var/lib/map2 /var/log/map2 2>/dev/null || true
-
-# Create map2 user if it doesn't exist
-getent passwd map2 > /dev/null || useradd -r -s /sbin/nologin -d /var/lib/map2 -m map2 2>/dev/null || true
 
 echo "MAP2 Audio Platform installed successfully"
 echo "Services installed: map2-backend, map2-frontend, map2-cluster"

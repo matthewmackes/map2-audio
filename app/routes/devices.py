@@ -22,6 +22,7 @@ Worklist: ``T2459-A3``.
 from __future__ import annotations
 
 import logging
+from pathlib import Path
 from typing import Any
 
 import asyncio
@@ -41,6 +42,7 @@ from app.services.controllers.metadata_enrichment import (
 from app.services.controllers.mixxx_xml_reader import parse_mixxx_xml
 from app.services.controllers.mixxx_xml_writer import write_mixxx_xml
 from app.services.controllers.learn_session import get_learn_registry
+from app.paths import Map2Paths
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/devices", tags=["Devices"])
@@ -414,16 +416,89 @@ class MeasureLatencyRequest(BaseModel):
     tail_ms: int = 200
 
 
+def _repo_root() -> Path:
+    return Path(__file__).resolve().parents[2]
+
+
+def _service_measure_latency_evidence_root() -> Path:
+    return Map2Paths.service_file("fit-for-purpose-evidence")
+
+
+def _legacy_measure_latency_evidence_root() -> Path:
+    return _repo_root() / "docs" / "fit-for-purpose-evidence"
+
+
+def _measure_latency_evidence_roots() -> list[Path]:
+    roots: list[Path] = []
+    seen: set[str] = set()
+    for root in (
+        _service_measure_latency_evidence_root(),
+        _legacy_measure_latency_evidence_root(),
+    ):
+        key = str(root)
+        if key in seen:
+            continue
+        roots.append(root)
+        seen.add(key)
+    return roots
+
+
+def _format_measure_latency_evidence_path(path: Path) -> str:
+    repo_root = _repo_root()
+    try:
+        return str(path.relative_to(repo_root))
+    except ValueError:
+        return str(path)
+
+
+def _measure_latency_doc_sort_key(path: Path, doc: dict[str, Any]) -> float:
+    from datetime import datetime as _dt
+
+    ts = doc.get("timestamp")
+    try:
+        return _dt.fromisoformat(str(ts).replace("Z", "+00:00")).timestamp() \
+            if isinstance(ts, str) else path.stat().st_mtime
+    except Exception:   # noqa: BLE001
+        return path.stat().st_mtime
+
+
+def _load_latest_measure_latency_doc(pack_id: str, model: str) -> dict[str, Any] | None:
+    import json as _json
+
+    latest: dict[str, Any] | None = None
+    latest_sort_ts = float("-inf")
+    for evidence_root in _measure_latency_evidence_roots():
+        if not evidence_root.is_dir():
+            continue
+        for date_dir in sorted(evidence_root.iterdir(), reverse=True):
+            if not date_dir.is_dir():
+                continue
+            target_dir = date_dir / pack_id / model
+            if not target_dir.is_dir():
+                continue
+            for f in sorted(target_dir.glob("*.json"), reverse=True):
+                try:
+                    doc = _json.loads(f.read_text(encoding="utf-8"))
+                except Exception:   # noqa: BLE001
+                    continue
+                if not isinstance(doc, dict):
+                    continue
+                sort_ts = _measure_latency_doc_sort_key(f, doc)
+                if sort_ts > latest_sort_ts:
+                    latest = doc
+                    latest_sort_ts = sort_ts
+    return latest
+
+
 @router.post("/measure-latency")
 async def measure_latency(req: MeasureLatencyRequest) -> dict[str, Any]:
     """Run path-c IR loopback measurement against the device's
     profile-defined `loopback_ports` and write versioned evidence
-    under `docs/fit-for-purpose-evidence/<date>/<pack>/<model>/`.
+    under the service-state `fit-for-purpose-evidence` tree.
     """
     import asyncio
     import json
     from datetime import datetime, timezone
-    from pathlib import Path
 
     svc = get_controller_service()
     detail = svc.get_profile(req.pack_id, req.model, "audio")
@@ -461,15 +536,14 @@ async def measure_latency(req: MeasureLatencyRequest) -> dict[str, Any]:
 
     result = await loop.run_in_executor(None, _run)
 
+    now = datetime.now(timezone.utc)
     evidence_dir = (
-        Path(__file__).resolve().parents[2]
-        / "docs" / "fit-for-purpose-evidence"
-        / datetime.now().strftime("%Y%m%d")
+        _service_measure_latency_evidence_root()
+        / now.strftime("%Y%m%d")
         / req.pack_id / req.model
     )
-    evidence_dir.mkdir(parents=True, exist_ok=True)
     payload = {
-        "timestamp": datetime.now(timezone.utc).isoformat(),
+        "timestamp": now.isoformat(),
         "pack_id": req.pack_id,
         "model": req.model,
         "method": result.method,
@@ -488,11 +562,20 @@ async def measure_latency(req: MeasureLatencyRequest) -> dict[str, Any]:
         "notes": result.notes,
         "loopback_ports": {"playback": playback, "capture": capture},
     }
-    evidence_path = evidence_dir / f"loopback-{datetime.now().strftime('%H%M%S')}.json"
-    evidence_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
-    payload["evidence_path"] = str(
-        evidence_path.relative_to(Path(__file__).resolve().parents[2])
-    )
+    evidence_path = evidence_dir / f"loopback-{now.strftime('%H%M%S')}.json"
+    try:
+        evidence_dir.mkdir(parents=True, exist_ok=True)
+        evidence_path.write_text(json.dumps(payload, indent=2) + "\n", encoding="utf-8")
+    except OSError as exc:
+        logger.warning("Failed to write latency measurement evidence to %s: %s", evidence_dir, exc)
+        raise HTTPException(status_code=503, detail={
+            "error": {
+                "code": "evidence_write_failed",
+                "message": "Latency measurement completed, but evidence could not be written.",
+                "details": {"path": str(evidence_dir), "reason": str(exc)},
+            }
+        }) from exc
+    payload["evidence_path"] = _format_measure_latency_evidence_path(evidence_path)
     return payload
 
 
@@ -504,57 +587,44 @@ async def measure_latency_history(
 ) -> dict[str, Any]:
     """T2459-G6 — list prior loopback evidence files for a pack+model.
 
-    Walks ``docs/fit-for-purpose-evidence/<YYYYMMDD>/<pack>/<model>/``
-    across every dated directory and returns the most-recent N
-    measurements with their summary stats. The frontend reads this
-    to render the history list and the Compare-to-baseline diff.
+    Walks the service-state evidence tree plus legacy repository evidence
+    across every dated directory and returns the most-recent N measurements.
     """
     import json as _json
-    from datetime import datetime as _dt
-    from pathlib import Path as _P
 
-    repo_root = _P(__file__).resolve().parents[2]
-    evidence_root = repo_root / "docs" / "fit-for-purpose-evidence"
-    if not evidence_root.is_dir():
+    evidence_roots = [root for root in _measure_latency_evidence_roots() if root.is_dir()]
+    if not evidence_roots:
         return {"history": [], "count": 0}
 
     rows: list[dict[str, Any]] = []
-    for date_dir in evidence_root.iterdir():
-        if not date_dir.is_dir():
-            continue
-        target_dir = date_dir / pack_id / model
-        if not target_dir.is_dir():
-            continue
-        for f in target_dir.iterdir():
-            if not (f.is_file() and f.suffix == ".json"):
+    for evidence_root in evidence_roots:
+        for date_dir in evidence_root.iterdir():
+            if not date_dir.is_dir():
                 continue
-            try:
-                doc = _json.loads(f.read_text(encoding="utf-8"))
-            except Exception:   # noqa: BLE001 — defensive
+            target_dir = date_dir / pack_id / model
+            if not target_dir.is_dir():
                 continue
-            if not isinstance(doc, dict):
-                continue
-            ts = doc.get("timestamp")
-            try:
-                # Sort key: parse ISO; fall back to file mtime.
-                sort_ts = _dt.fromisoformat(str(ts).replace("Z", "+00:00")).timestamp() \
-                    if isinstance(ts, str) else f.stat().st_mtime
-            except Exception:   # noqa: BLE001
-                sort_ts = f.stat().st_mtime
-            try:
-                rel_path = str(f.relative_to(repo_root))
-            except ValueError:
-                rel_path = str(f)
-            rows.append({
-                "evidence_path": rel_path,
-                "timestamp": ts,
-                "method": doc.get("method"),
-                "mean_rtt_ms": doc.get("mean_rtt_ms"),
-                "p95_rtt_ms": doc.get("p95_rtt_ms"),
-                "jitter_p95_ms": doc.get("jitter_p95_ms"),
-                "trial_count": len(doc.get("trials") or []),
-                "_sort_ts": sort_ts,
-            })
+            for f in target_dir.iterdir():
+                if not (f.is_file() and f.suffix == ".json"):
+                    continue
+                try:
+                    doc = _json.loads(f.read_text(encoding="utf-8"))
+                except Exception:   # noqa: BLE001 — defensive
+                    continue
+                if not isinstance(doc, dict):
+                    continue
+                ts = doc.get("timestamp")
+                sort_ts = _measure_latency_doc_sort_key(f, doc)
+                rows.append({
+                    "evidence_path": _format_measure_latency_evidence_path(f),
+                    "timestamp": ts,
+                    "method": doc.get("method"),
+                    "mean_rtt_ms": doc.get("mean_rtt_ms"),
+                    "p95_rtt_ms": doc.get("p95_rtt_ms"),
+                    "jitter_p95_ms": doc.get("jitter_p95_ms"),
+                    "trial_count": len(doc.get("trials") or []),
+                    "_sort_ts": sort_ts,
+                })
 
     rows.sort(key=lambda r: r["_sort_ts"], reverse=True)
     rows = rows[:limit]
@@ -770,17 +840,11 @@ async def list_brain_monitor_candidates() -> dict[str, Any]:
 
     Worklist: T2461-A5.
     """
-    import json as _json
-    from datetime import datetime as _dt
-
     registry = get_profile_registry()
     snapshot = detect_connections(registry)
     connected_keys = {r.profile_key for r in snapshot.records}
 
     candidates: list[dict[str, Any]] = []
-    repo_root = Path(__file__).resolve().parents[2]
-    evidence_root = repo_root / "docs" / "fit-for-purpose-evidence"
-
     for profile in registry.profiles(kind="audio"):
         key = f"{profile.pack_id}/{profile.model}.audio"
         if key not in connected_keys:
@@ -793,23 +857,7 @@ async def list_brain_monitor_candidates() -> dict[str, Any]:
             continue
 
         # Find the most-recent measurement evidence for this profile.
-        latest: dict[str, Any] | None = None
-        if evidence_root.is_dir():
-            for date_dir in sorted(evidence_root.iterdir(), reverse=True):
-                if not date_dir.is_dir():
-                    continue
-                target_dir = date_dir / profile.pack_id / profile.model
-                if not target_dir.is_dir():
-                    continue
-                files = sorted(target_dir.glob("*.json"), reverse=True)
-                for f in files:
-                    try:
-                        latest = _json.loads(f.read_text(encoding="utf-8"))
-                        break
-                    except Exception:   # noqa: BLE001
-                        continue
-                if latest:
-                    break
+        latest = _load_latest_measure_latency_doc(profile.pack_id, profile.model)
 
         candidates.append({
             "profile_key": key,
@@ -953,7 +1001,6 @@ import time   # noqa: E402  isort:skip
 import asyncio as _asyncio_g9   # noqa: E402
 import hashlib as _hashlib_g9   # noqa: E402
 import json   # noqa: E402
-from pathlib import Path   # noqa: E402
 
 from fastapi.responses import StreamingResponse   # noqa: E402
 
