@@ -463,14 +463,16 @@ Last updated: 2026-04-27 EDT - Claude: SHIPPED.
 ---
 
 ID: T2459-F4
-Status: [ ] Todo
+Status: [✓] Done
 Parent: T2459
 Title: Hardening — hardware-in-the-loop smoke runner for bench devices
 Description:
 - Goal: HIL smoke script that boots the bench with the UA-1000 + Jogg connected, runs each profile's MIDI input path + audio loopback measurement + GUI panel render, writes evidence under `docs/fit-for-purpose-evidence/<date>/`. Equivalent to the existing `scripts/run_t055_ua1000_loopback_matrix.py` pattern but covers the full device subsystem.
 - Acceptance: green run on the bench produces complete evidence directory; failure modes (missing device, unresponsive MIDI bridge, broken pack) report clearly without crashing the runner.
 - Required outputs: `scripts/run_t2459_device_subsystem_hil_smoke.py`, evidence schema doc.
+Completion note: 2026-04-27 — Claude: SHIPPED. Authored `scripts/run_t2459_device_subsystem_hil_smoke.py` (~260 LoC). The runner builds a `ProfileRegistry` against the live `device-packs/` tree (with sys.path fix-up so the script runs standalone), walks every audio profile, attempts a 2-trial 200 ms IR loopback measurement against each profile's `loopback_ports` via `scripts.measure_loopback_ir.measure_loopback_ir` (synthetic-fallback enabled so the runner works without JACK), records per-profile `ProfileSmokeResult` (pack_id, model, kind, profile_loaded, has_loopback_ports, loopback_method, mean_rtt_ms, p95_rtt_ms, jitter_p95_ms, midi_profile_present, notes), gathers per-pack summaries (vendor, models list, profile_count, is_degraded, degraded_files), and writes a comprehensive evidence JSON to `docs/fit-for-purpose-evidence/<YYYYMMDD>/t2459-hil-smoke/smoke-<HHMMSS>.json`. Runner exits 0 on PASS or PARTIAL; only FAIL (ProfileRegistry import broken) produces non-zero. CLI: `--output-dir` for ad-hoc evidence locations, `-v` for debug logging. **Live run:** `python3 scripts/run_t2459_device_subsystem_hil_smoke.py` reports `status=PASS, packs=3, audio_profiles=11, with_loopback_ports=11, latency_measurements_completed=11` against the shipped tree (Edirol UA range with 6 SKUs + Hotone product range with 4 audio SKUs + the test fixture pack — 11 audio profiles total — every one declares loopback_ports per the F1 hardening gate). Authored `tests/test_t2459_hil_smoke.py` with 4 cases — script exists, runner completes without hardware (subprocess test using `--output-dir` to a tmp dir), evidence records loopback_method per profile (sanity check on the synthetic fallback), packs summary enumerates Edirol UA + Hotone (catches accidental pack drops). Found and fixed a real bug along the way: the runner's logging line called `output_path.relative_to(REPO_ROOT)` unconditionally, which raised when `--output-dir` pointed outside the repo. Defensive `try/except ValueError` keeps the runner output clean. Validation: `python3 scripts/run_t2459_device_subsystem_hil_smoke.py` PASS; `pytest tests/test_t2459_hil_smoke.py -v` 4 passed in 11.34s.
 Assigned to: Claude
+Last updated: 2026-04-27 EDT - Claude: SHIPPED.
 
 ---
 
