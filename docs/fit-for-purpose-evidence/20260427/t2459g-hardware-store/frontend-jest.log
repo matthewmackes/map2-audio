@@ -1,0 +1,608 @@
+PASS web/src/app/components/Devices/HardwareStorePage.test.tsx
+  ● Console
+
+    console.warn
+      ⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition.
+
+      89 |     defaultOptions: { queries: { retry: false, gcTime: 0 } },
+      90 |   })
+    > 91 |   return render(
+         |                ^
+      92 |     <MemoryRouter>
+      93 |       <QueryClientProvider client={client}>
+      94 |         <HardwareStorePage />
+
+      at warn (web/node_modules/react-router/lib/deprecations.ts:9:13)
+      at warnOnce (web/node_modules/react-router/lib/deprecations.ts:14:3)
+      at logDeprecation (web/node_modules/react-router/lib/deprecations.ts:26:5)
+      at logV6DeprecationWarnings (web/node_modules/react-router/lib/components.tsx:257:25)
+      at Object.react_stack_bottom_frame (node_modules/react-dom/cjs/react-dom-client.development.js:25989:20)
+      at runWithFiberInDEV (node_modules/react-dom/cjs/react-dom-client.development.js:874:13)
+      at commitHookEffectListMount (node_modules/react-dom/cjs/react-dom-client.development.js:13249:29)
+      at commitHookPassiveMountEffects (node_modules/react-dom/cjs/react-dom-client.development.js:13336:11)
+      at commitPassiveMountOnFiber (node_modules/react-dom/cjs/react-dom-client.development.js:15484:13)
+      at recursivelyTraversePassiveMountEffects (node_modules/react-dom/cjs/react-dom-client.development.js:15439:11)
+      at commitPassiveMountOnFiber (node_modules/react-dom/cjs/react-dom-client.development.js:15519:11)
+      at flushPassiveEffects (node_modules/react-dom/cjs/react-dom-client.development.js:18432:9)
+      at node_modules/react-dom/cjs/react-dom-client.development.js:17923:15
+      at flushActQueue (node_modules/react/cjs/react.development.js:590:34)
+      at process.env.NODE_ENV.exports.act (node_modules/react/cjs/react.development.js:884:10)
+      at node_modules/@testing-library/react/dist/act-compat.js:46:25
+      at renderRoot (node_modules/@testing-library/react/dist/pure.js:189:26)
+      at render (node_modules/@testing-library/react/dist/pure.js:291:10)
+      at renderShell (web/src/app/components/Devices/HardwareStorePage.test.tsx:91:16)
+      at renderShell (web/src/app/components/Devices/HardwareStorePage.test.tsx:101:3)
+      at Generator.call (web/src/app/components/Devices/HardwareStorePage.test.tsx:2:1)
+      at Generator._invoke [as next] (web/src/app/components/Devices/HardwareStorePage.test.tsx:2:1)
+      at asyncGeneratorStep (web/src/app/components/Devices/HardwareStorePage.test.tsx:2:1)
+      at asyncGeneratorStep (web/src/app/components/Devices/HardwareStorePage.test.tsx:2:1)
+      at _next (web/src/app/components/Devices/HardwareStorePage.test.tsx:2:1)
+      at Object.<anonymous> (web/src/app/components/Devices/HardwareStorePage.test.tsx:2:1)
+
+    console.warn
+      ⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath.
+
+      89 |     defaultOptions: { queries: { retry: false, gcTime: 0 } },
+      90 |   })
+    > 91 |   return render(
+         |                ^
+      92 |     <MemoryRouter>
+      93 |       <QueryClientProvider client={client}>
+      94 |         <HardwareStorePage />
+
+      at warn (web/node_modules/react-router/lib/deprecations.ts:9:13)
+      at warnOnce (web/node_modules/react-router/lib/deprecations.ts:14:3)
+      at logDeprecation (web/node_modules/react-router/lib/deprecations.ts:37:5)
+      at logV6DeprecationWarnings (web/node_modules/react-router/lib/components.tsx:257:25)
+      at Object.react_stack_bottom_frame (node_modules/react-dom/cjs/react-dom-client.development.js:25989:20)
+      at runWithFiberInDEV (node_modules/react-dom/cjs/react-dom-client.development.js:874:13)
+      at commitHookEffectListMount (node_modules/react-dom/cjs/react-dom-client.development.js:13249:29)
+      at commitHookPassiveMountEffects (node_modules/react-dom/cjs/react-dom-client.development.js:13336:11)
+      at commitPassiveMountOnFiber (node_modules/react-dom/cjs/react-dom-client.development.js:15484:13)
+      at recursivelyTraversePassiveMountEffects (node_modules/react-dom/cjs/react-dom-client.development.js:15439:11)
+      at commitPassiveMountOnFiber (node_modules/react-dom/cjs/react-dom-client.development.js:15519:11)
+      at flushPassiveEffects (node_modules/react-dom/cjs/react-dom-client.development.js:18432:9)
+      at node_modules/react-dom/cjs/react-dom-client.development.js:17923:15
+      at flushActQueue (node_modules/react/cjs/react.development.js:590:34)
+      at process.env.NODE_ENV.exports.act (node_modules/react/cjs/react.development.js:884:10)
+      at node_modules/@testing-library/react/dist/act-compat.js:46:25
+      at renderRoot (node_modules/@testing-library/react/dist/pure.js:189:26)
+      at render (node_modules/@testing-library/react/dist/pure.js:291:10)
+      at renderShell (web/src/app/components/Devices/HardwareStorePage.test.tsx:91:16)
+      at renderShell (web/src/app/components/Devices/HardwareStorePage.test.tsx:101:3)
+      at Generator.call (web/src/app/components/Devices/HardwareStorePage.test.tsx:2:1)
+      at Generator._invoke [as next] (web/src/app/components/Devices/HardwareStorePage.test.tsx:2:1)
+      at asyncGeneratorStep (web/src/app/components/Devices/HardwareStorePage.test.tsx:2:1)
+      at asyncGeneratorStep (web/src/app/components/Devices/HardwareStorePage.test.tsx:2:1)
+      at _next (web/src/app/components/Devices/HardwareStorePage.test.tsx:2:1)
+      at Object.<anonymous> (web/src/app/components/Devices/HardwareStorePage.test.tsx:2:1)
+
+PASS web/src/app/components/Devices/DeviceDetail/tabs/LicenseTab.test.tsx
+PASS web/src/app/components/Devices/DeviceDetail/tabs/OverviewTab.test.tsx
+PASS web/src/app/components/Devices/DeviceDetail/tabs/BindingsTab.test.tsx
+  ● Console
+
+    console.warn
+      ⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition.
+
+      55 |
+      56 | function renderTab(profile = makeMidi()) {
+    > 57 |   return render(
+         |                ^
+      58 |     <MemoryRouter>
+      59 |       <BindingsTab profile={profile} />
+      60 |     </MemoryRouter>,
+
+      at warn (web/node_modules/react-router/lib/deprecations.ts:9:13)
+      at warnOnce (web/node_modules/react-router/lib/deprecations.ts:14:3)
+      at logDeprecation (web/node_modules/react-router/lib/deprecations.ts:26:5)
+      at logV6DeprecationWarnings (web/node_modules/react-router/lib/components.tsx:257:25)
+      at Object.react_stack_bottom_frame (node_modules/react-dom/cjs/react-dom-client.development.js:25989:20)
+      at runWithFiberInDEV (node_modules/react-dom/cjs/react-dom-client.development.js:874:13)
+      at commitHookEffectListMount (node_modules/react-dom/cjs/react-dom-client.development.js:13249:29)
+      at commitHookPassiveMountEffects (node_modules/react-dom/cjs/react-dom-client.development.js:13336:11)
+      at commitPassiveMountOnFiber (node_modules/react-dom/cjs/react-dom-client.development.js:15484:13)
+      at recursivelyTraversePassiveMountEffects (node_modules/react-dom/cjs/react-dom-client.development.js:15439:11)
+      at commitPassiveMountOnFiber (node_modules/react-dom/cjs/react-dom-client.development.js:15519:11)
+      at flushPassiveEffects (node_modules/react-dom/cjs/react-dom-client.development.js:18432:9)
+      at node_modules/react-dom/cjs/react-dom-client.development.js:17923:15
+      at flushActQueue (node_modules/react/cjs/react.development.js:590:34)
+      at process.env.NODE_ENV.exports.act (node_modules/react/cjs/react.development.js:884:10)
+      at node_modules/@testing-library/react/dist/act-compat.js:46:25
+      at renderRoot (node_modules/@testing-library/react/dist/pure.js:189:26)
+      at render (node_modules/@testing-library/react/dist/pure.js:291:10)
+      at renderTab (web/src/app/components/Devices/DeviceDetail/tabs/BindingsTab.test.tsx:57:16)
+      at Object.renderTab (web/src/app/components/Devices/DeviceDetail/tabs/BindingsTab.test.tsx:71:3)
+
+    console.warn
+      ⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath.
+
+      55 |
+      56 | function renderTab(profile = makeMidi()) {
+    > 57 |   return render(
+         |                ^
+      58 |     <MemoryRouter>
+      59 |       <BindingsTab profile={profile} />
+      60 |     </MemoryRouter>,
+
+      at warn (web/node_modules/react-router/lib/deprecations.ts:9:13)
+      at warnOnce (web/node_modules/react-router/lib/deprecations.ts:14:3)
+      at logDeprecation (web/node_modules/react-router/lib/deprecations.ts:37:5)
+      at logV6DeprecationWarnings (web/node_modules/react-router/lib/components.tsx:257:25)
+      at Object.react_stack_bottom_frame (node_modules/react-dom/cjs/react-dom-client.development.js:25989:20)
+      at runWithFiberInDEV (node_modules/react-dom/cjs/react-dom-client.development.js:874:13)
+      at commitHookEffectListMount (node_modules/react-dom/cjs/react-dom-client.development.js:13249:29)
+      at commitHookPassiveMountEffects (node_modules/react-dom/cjs/react-dom-client.development.js:13336:11)
+      at commitPassiveMountOnFiber (node_modules/react-dom/cjs/react-dom-client.development.js:15484:13)
+      at recursivelyTraversePassiveMountEffects (node_modules/react-dom/cjs/react-dom-client.development.js:15439:11)
+      at commitPassiveMountOnFiber (node_modules/react-dom/cjs/react-dom-client.development.js:15519:11)
+      at flushPassiveEffects (node_modules/react-dom/cjs/react-dom-client.development.js:18432:9)
+      at node_modules/react-dom/cjs/react-dom-client.development.js:17923:15
+      at flushActQueue (node_modules/react/cjs/react.development.js:590:34)
+      at process.env.NODE_ENV.exports.act (node_modules/react/cjs/react.development.js:884:10)
+      at node_modules/@testing-library/react/dist/act-compat.js:46:25
+      at renderRoot (node_modules/@testing-library/react/dist/pure.js:189:26)
+      at render (node_modules/@testing-library/react/dist/pure.js:291:10)
+      at renderTab (web/src/app/components/Devices/DeviceDetail/tabs/BindingsTab.test.tsx:57:16)
+      at Object.renderTab (web/src/app/components/Devices/DeviceDetail/tabs/BindingsTab.test.tsx:71:3)
+
+PASS web/src/app/components/Devices/hooks/useDeviceConnections.test.tsx
+PASS web/src/app/components/Devices/DiagnosticsAggregatePage.test.tsx
+  ● Console
+
+    console.error
+      A props object containing a "key" prop is being spread into JSX:
+        let props = {key: someKey, sortDirection: ..., isSortable: ..., isSortHeader: ..., slug: ..., decorator: ..., onClick: ..., children: ...};
+        <TableHeader {...props} />
+      React keys must be passed directly to JSX without using spread:
+        let props = {sortDirection: ..., isSortable: ..., isSortHeader: ..., slug: ..., decorator: ..., onClick: ..., children: ...};
+        <TableHeader key={someKey} {...props} />
+
+      178 |                 <TableRow>
+      179 |                   {headers.map((h) => (
+    > 180 |                     <TableHeader key={h.key} {...getHeaderProps({ header: h })}>
+          |                     ^
+      181 |                       {h.header}
+      182 |                     </TableHeader>
+      183 |                   ))}
+
+      at jsxDEVImpl (web/node_modules/react/cjs/react-jsx-runtime.development.js:497:19)
+      at process.env.NODE_ENV.exports.jsx (web/node_modules/react/cjs/react-jsx-runtime.development.js:651:14)
+      at web/src/app/components/Devices/DiagnosticsAggregatePage.tsx:180:21
+          at Array.map (<anonymous>)
+      at map (web/src/app/components/Devices/DiagnosticsAggregatePage.tsx:179:28)
+      at DataTable (web/node_modules/@carbon/react/lib/components/DataTable/DataTable.js:559:12)
+      at Object.react_stack_bottom_frame (node_modules/react-dom/cjs/react-dom-client.development.js:25904:20)
+      at renderWithHooks (node_modules/react-dom/cjs/react-dom-client.development.js:7662:22)
+      at updateFunctionComponent (node_modules/react-dom/cjs/react-dom-client.development.js:10166:19)
+      at beginWork (node_modules/react-dom/cjs/react-dom-client.development.js:11778:18)
+      at runWithFiberInDEV (node_modules/react-dom/cjs/react-dom-client.development.js:874:13)
+      at performUnitOfWork (node_modules/react-dom/cjs/react-dom-client.development.js:17641:22)
+      at workLoopSync (node_modules/react-dom/cjs/react-dom-client.development.js:17469:41)
+      at renderRootSync (node_modules/react-dom/cjs/react-dom-client.development.js:17450:11)
+      at performWorkOnRoot (node_modules/react-dom/cjs/react-dom-client.development.js:16504:11)
+      at performWorkOnRootViaSchedulerTask (node_modules/react-dom/cjs/react-dom-client.development.js:18957:7)
+      at flushActQueue (node_modules/react/cjs/react.development.js:590:34)
+      at process.env.NODE_ENV.exports.act (node_modules/react/cjs/react.development.js:884:10)
+      at node_modules/@testing-library/react/dist/act-compat.js:46:25
+      at renderRoot (node_modules/@testing-library/react/dist/pure.js:189:26)
+      at render (node_modules/@testing-library/react/dist/pure.js:291:10)
+      at renderPage (web/src/app/components/Devices/DiagnosticsAggregatePage.test.tsx:32:16)
+      at renderPage (web/src/app/components/Devices/DiagnosticsAggregatePage.test.tsx:55:3)
+      at Generator.call (web/src/app/components/Devices/DiagnosticsAggregatePage.test.tsx:2:1)
+      at Generator._invoke [as next] (web/src/app/components/Devices/DiagnosticsAggregatePage.test.tsx:2:1)
+      at asyncGeneratorStep (web/src/app/components/Devices/DiagnosticsAggregatePage.test.tsx:2:1)
+      at asyncGeneratorStep (web/src/app/components/Devices/DiagnosticsAggregatePage.test.tsx:2:1)
+      at _next (web/src/app/components/Devices/DiagnosticsAggregatePage.test.tsx:2:1)
+      at Object.<anonymous> (web/src/app/components/Devices/DiagnosticsAggregatePage.test.tsx:2:1)
+
+    console.warn
+      ⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition.
+
+      30 | function renderPage() {
+      31 |   const client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 0 } } })
+    > 32 |   return render(
+         |                ^
+      33 |     <MemoryRouter>
+      34 |       <QueryClientProvider client={client}>
+      35 |         <DiagnosticsAggregatePage />
+
+      at warn (web/node_modules/react-router/lib/deprecations.ts:9:13)
+      at warnOnce (web/node_modules/react-router/lib/deprecations.ts:14:3)
+      at logDeprecation (web/node_modules/react-router/lib/deprecations.ts:26:5)
+      at logV6DeprecationWarnings (web/node_modules/react-router/lib/components.tsx:257:25)
+      at Object.react_stack_bottom_frame (node_modules/react-dom/cjs/react-dom-client.development.js:25989:20)
+      at runWithFiberInDEV (node_modules/react-dom/cjs/react-dom-client.development.js:874:13)
+      at commitHookEffectListMount (node_modules/react-dom/cjs/react-dom-client.development.js:13249:29)
+      at commitHookPassiveMountEffects (node_modules/react-dom/cjs/react-dom-client.development.js:13336:11)
+      at commitPassiveMountOnFiber (node_modules/react-dom/cjs/react-dom-client.development.js:15484:13)
+      at recursivelyTraversePassiveMountEffects (node_modules/react-dom/cjs/react-dom-client.development.js:15439:11)
+      at commitPassiveMountOnFiber (node_modules/react-dom/cjs/react-dom-client.development.js:15519:11)
+      at flushPassiveEffects (node_modules/react-dom/cjs/react-dom-client.development.js:18432:9)
+      at node_modules/react-dom/cjs/react-dom-client.development.js:17923:15
+      at flushActQueue (node_modules/react/cjs/react.development.js:590:34)
+      at process.env.NODE_ENV.exports.act (node_modules/react/cjs/react.development.js:884:10)
+      at node_modules/@testing-library/react/dist/act-compat.js:46:25
+      at renderRoot (node_modules/@testing-library/react/dist/pure.js:189:26)
+      at render (node_modules/@testing-library/react/dist/pure.js:291:10)
+      at renderPage (web/src/app/components/Devices/DiagnosticsAggregatePage.test.tsx:32:16)
+      at renderPage (web/src/app/components/Devices/DiagnosticsAggregatePage.test.tsx:55:3)
+      at Generator.call (web/src/app/components/Devices/DiagnosticsAggregatePage.test.tsx:2:1)
+      at Generator._invoke [as next] (web/src/app/components/Devices/DiagnosticsAggregatePage.test.tsx:2:1)
+      at asyncGeneratorStep (web/src/app/components/Devices/DiagnosticsAggregatePage.test.tsx:2:1)
+      at asyncGeneratorStep (web/src/app/components/Devices/DiagnosticsAggregatePage.test.tsx:2:1)
+      at _next (web/src/app/components/Devices/DiagnosticsAggregatePage.test.tsx:2:1)
+      at Object.<anonymous> (web/src/app/components/Devices/DiagnosticsAggregatePage.test.tsx:2:1)
+
+    console.warn
+      ⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath.
+
+      30 | function renderPage() {
+      31 |   const client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 0 } } })
+    > 32 |   return render(
+         |                ^
+      33 |     <MemoryRouter>
+      34 |       <QueryClientProvider client={client}>
+      35 |         <DiagnosticsAggregatePage />
+
+      at warn (web/node_modules/react-router/lib/deprecations.ts:9:13)
+      at warnOnce (web/node_modules/react-router/lib/deprecations.ts:14:3)
+      at logDeprecation (web/node_modules/react-router/lib/deprecations.ts:37:5)
+      at logV6DeprecationWarnings (web/node_modules/react-router/lib/components.tsx:257:25)
+      at Object.react_stack_bottom_frame (node_modules/react-dom/cjs/react-dom-client.development.js:25989:20)
+      at runWithFiberInDEV (node_modules/react-dom/cjs/react-dom-client.development.js:874:13)
+      at commitHookEffectListMount (node_modules/react-dom/cjs/react-dom-client.development.js:13249:29)
+      at commitHookPassiveMountEffects (node_modules/react-dom/cjs/react-dom-client.development.js:13336:11)
+      at commitPassiveMountOnFiber (node_modules/react-dom/cjs/react-dom-client.development.js:15484:13)
+      at recursivelyTraversePassiveMountEffects (node_modules/react-dom/cjs/react-dom-client.development.js:15439:11)
+      at commitPassiveMountOnFiber (node_modules/react-dom/cjs/react-dom-client.development.js:15519:11)
+      at flushPassiveEffects (node_modules/react-dom/cjs/react-dom-client.development.js:18432:9)
+      at node_modules/react-dom/cjs/react-dom-client.development.js:17923:15
+      at flushActQueue (node_modules/react/cjs/react.development.js:590:34)
+      at process.env.NODE_ENV.exports.act (node_modules/react/cjs/react.development.js:884:10)
+      at node_modules/@testing-library/react/dist/act-compat.js:46:25
+      at renderRoot (node_modules/@testing-library/react/dist/pure.js:189:26)
+      at render (node_modules/@testing-library/react/dist/pure.js:291:10)
+      at renderPage (web/src/app/components/Devices/DiagnosticsAggregatePage.test.tsx:32:16)
+      at renderPage (web/src/app/components/Devices/DiagnosticsAggregatePage.test.tsx:55:3)
+      at Generator.call (web/src/app/components/Devices/DiagnosticsAggregatePage.test.tsx:2:1)
+      at Generator._invoke [as next] (web/src/app/components/Devices/DiagnosticsAggregatePage.test.tsx:2:1)
+      at asyncGeneratorStep (web/src/app/components/Devices/DiagnosticsAggregatePage.test.tsx:2:1)
+      at asyncGeneratorStep (web/src/app/components/Devices/DiagnosticsAggregatePage.test.tsx:2:1)
+      at _next (web/src/app/components/Devices/DiagnosticsAggregatePage.test.tsx:2:1)
+      at Object.<anonymous> (web/src/app/components/Devices/DiagnosticsAggregatePage.test.tsx:2:1)
+
+    console.error
+      A props object containing a "key" prop is being spread into JSX:
+        let props = {key: someKey, onClick: ..., onExpand: ..., isExpanded: ..., aria-label: ..., aria-controls: ..., isSelected: ..., disabled: ..., expandHeader: ..., children: ...};
+        <ForwardRef {...props} />
+      React keys must be passed directly to JSX without using spread:
+        let props = {onClick: ..., onExpand: ..., isExpanded: ..., aria-label: ..., aria-controls: ..., isSelected: ..., disabled: ..., expandHeader: ..., children: ...};
+        <ForwardRef key={someKey} {...props} />
+
+      194 |                   const r = rows.find((rr) => rr.id === dtr.id)!
+      195 |                   return (
+    > 196 |                     <TableRow key={dtr.id} {...getRowProps({ row: dtr })}>
+          |                     ^
+      197 |                       <TableCell>
+      198 |                         <Tag size="sm" type={SEVERITY_TONE[r.severity] as never}>{r.severity}</Tag>
+      199 |                       </TableCell>
+
+      at jsxDEVImpl (web/node_modules/react/cjs/react-jsx-runtime.development.js:497:19)
+      at process.env.NODE_ENV.exports.jsxs (web/node_modules/react/cjs/react-jsx-runtime.development.js:654:14)
+      at web/src/app/components/Devices/DiagnosticsAggregatePage.tsx:196:21
+          at Array.map (<anonymous>)
+      at map (web/src/app/components/Devices/DiagnosticsAggregatePage.tsx:193:28)
+      at DataTable (web/node_modules/@carbon/react/lib/components/DataTable/DataTable.js:559:12)
+      at Object.react_stack_bottom_frame (node_modules/react-dom/cjs/react-dom-client.development.js:25904:20)
+      at renderWithHooks (node_modules/react-dom/cjs/react-dom-client.development.js:7662:22)
+      at updateFunctionComponent (node_modules/react-dom/cjs/react-dom-client.development.js:10166:19)
+      at beginWork (node_modules/react-dom/cjs/react-dom-client.development.js:11778:18)
+      at runWithFiberInDEV (node_modules/react-dom/cjs/react-dom-client.development.js:874:13)
+      at performUnitOfWork (node_modules/react-dom/cjs/react-dom-client.development.js:17641:22)
+      at workLoopSync (node_modules/react-dom/cjs/react-dom-client.development.js:17469:41)
+      at renderRootSync (node_modules/react-dom/cjs/react-dom-client.development.js:17450:11)
+      at performWorkOnRoot (node_modules/react-dom/cjs/react-dom-client.development.js:16504:11)
+      at performWorkOnRootViaSchedulerTask (node_modules/react-dom/cjs/react-dom-client.development.js:18957:7)
+      at performWorkUntilDeadline (node_modules/scheduler/cjs/scheduler.development.js:45:48)
+      at Timeout.task [as _onTimeout] (node_modules/jsdom/lib/jsdom/browser/Window.js:579:19)
+
+PASS web/src/app/components/Devices/PackSourcesAdminPage.test.tsx
+  ● Console
+
+    console.warn
+      ⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition.
+
+      33 | function renderPage() {
+      34 |   const client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 0 } } })
+    > 35 |   return render(
+         |                ^
+      36 |     <MemoryRouter>
+      37 |       <QueryClientProvider client={client}>
+      38 |         <PackSourcesAdminPage />
+
+      at warn (web/node_modules/react-router/lib/deprecations.ts:9:13)
+      at warnOnce (web/node_modules/react-router/lib/deprecations.ts:14:3)
+      at logDeprecation (web/node_modules/react-router/lib/deprecations.ts:26:5)
+      at logV6DeprecationWarnings (web/node_modules/react-router/lib/components.tsx:257:25)
+      at Object.react_stack_bottom_frame (node_modules/react-dom/cjs/react-dom-client.development.js:25989:20)
+      at runWithFiberInDEV (node_modules/react-dom/cjs/react-dom-client.development.js:874:13)
+      at commitHookEffectListMount (node_modules/react-dom/cjs/react-dom-client.development.js:13249:29)
+      at commitHookPassiveMountEffects (node_modules/react-dom/cjs/react-dom-client.development.js:13336:11)
+      at commitPassiveMountOnFiber (node_modules/react-dom/cjs/react-dom-client.development.js:15484:13)
+      at recursivelyTraversePassiveMountEffects (node_modules/react-dom/cjs/react-dom-client.development.js:15439:11)
+      at commitPassiveMountOnFiber (node_modules/react-dom/cjs/react-dom-client.development.js:15519:11)
+      at flushPassiveEffects (node_modules/react-dom/cjs/react-dom-client.development.js:18432:9)
+      at node_modules/react-dom/cjs/react-dom-client.development.js:17923:15
+      at flushActQueue (node_modules/react/cjs/react.development.js:590:34)
+      at process.env.NODE_ENV.exports.act (node_modules/react/cjs/react.development.js:884:10)
+      at node_modules/@testing-library/react/dist/act-compat.js:46:25
+      at renderRoot (node_modules/@testing-library/react/dist/pure.js:189:26)
+      at render (node_modules/@testing-library/react/dist/pure.js:291:10)
+      at renderPage (web/src/app/components/Devices/PackSourcesAdminPage.test.tsx:35:16)
+      at renderPage (web/src/app/components/Devices/PackSourcesAdminPage.test.tsx:66:3)
+      at Generator.call (web/src/app/components/Devices/PackSourcesAdminPage.test.tsx:2:1)
+      at Generator._invoke [as next] (web/src/app/components/Devices/PackSourcesAdminPage.test.tsx:2:1)
+      at asyncGeneratorStep (web/src/app/components/Devices/PackSourcesAdminPage.test.tsx:2:1)
+      at asyncGeneratorStep (web/src/app/components/Devices/PackSourcesAdminPage.test.tsx:2:1)
+      at _next (web/src/app/components/Devices/PackSourcesAdminPage.test.tsx:2:1)
+      at Object.<anonymous> (web/src/app/components/Devices/PackSourcesAdminPage.test.tsx:2:1)
+
+    console.warn
+      ⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath.
+
+      33 | function renderPage() {
+      34 |   const client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 0 } } })
+    > 35 |   return render(
+         |                ^
+      36 |     <MemoryRouter>
+      37 |       <QueryClientProvider client={client}>
+      38 |         <PackSourcesAdminPage />
+
+      at warn (web/node_modules/react-router/lib/deprecations.ts:9:13)
+      at warnOnce (web/node_modules/react-router/lib/deprecations.ts:14:3)
+      at logDeprecation (web/node_modules/react-router/lib/deprecations.ts:37:5)
+      at logV6DeprecationWarnings (web/node_modules/react-router/lib/components.tsx:257:25)
+      at Object.react_stack_bottom_frame (node_modules/react-dom/cjs/react-dom-client.development.js:25989:20)
+      at runWithFiberInDEV (node_modules/react-dom/cjs/react-dom-client.development.js:874:13)
+      at commitHookEffectListMount (node_modules/react-dom/cjs/react-dom-client.development.js:13249:29)
+      at commitHookPassiveMountEffects (node_modules/react-dom/cjs/react-dom-client.development.js:13336:11)
+      at commitPassiveMountOnFiber (node_modules/react-dom/cjs/react-dom-client.development.js:15484:13)
+      at recursivelyTraversePassiveMountEffects (node_modules/react-dom/cjs/react-dom-client.development.js:15439:11)
+      at commitPassiveMountOnFiber (node_modules/react-dom/cjs/react-dom-client.development.js:15519:11)
+      at flushPassiveEffects (node_modules/react-dom/cjs/react-dom-client.development.js:18432:9)
+      at node_modules/react-dom/cjs/react-dom-client.development.js:17923:15
+      at flushActQueue (node_modules/react/cjs/react.development.js:590:34)
+      at process.env.NODE_ENV.exports.act (node_modules/react/cjs/react.development.js:884:10)
+      at node_modules/@testing-library/react/dist/act-compat.js:46:25
+      at renderRoot (node_modules/@testing-library/react/dist/pure.js:189:26)
+      at render (node_modules/@testing-library/react/dist/pure.js:291:10)
+      at renderPage (web/src/app/components/Devices/PackSourcesAdminPage.test.tsx:35:16)
+      at renderPage (web/src/app/components/Devices/PackSourcesAdminPage.test.tsx:66:3)
+      at Generator.call (web/src/app/components/Devices/PackSourcesAdminPage.test.tsx:2:1)
+      at Generator._invoke [as next] (web/src/app/components/Devices/PackSourcesAdminPage.test.tsx:2:1)
+      at asyncGeneratorStep (web/src/app/components/Devices/PackSourcesAdminPage.test.tsx:2:1)
+      at asyncGeneratorStep (web/src/app/components/Devices/PackSourcesAdminPage.test.tsx:2:1)
+      at _next (web/src/app/components/Devices/PackSourcesAdminPage.test.tsx:2:1)
+      at Object.<anonymous> (web/src/app/components/Devices/PackSourcesAdminPage.test.tsx:2:1)
+
+PASS web/src/app/components/Devices/DeviceCard.test.tsx
+  ● Console
+
+    console.warn
+      ⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition.
+
+      69 |     ...overrides,
+      70 |   }
+    > 71 |   return render(
+         |                ^
+      72 |     <MemoryRouter>
+      73 |       <DeviceCard row={row} onPinChanged={jest.fn()} />
+      74 |     </MemoryRouter>,
+
+      at warn (web/node_modules/react-router/lib/deprecations.ts:9:13)
+      at warnOnce (web/node_modules/react-router/lib/deprecations.ts:14:3)
+      at logDeprecation (web/node_modules/react-router/lib/deprecations.ts:26:5)
+      at logV6DeprecationWarnings (web/node_modules/react-router/lib/components.tsx:257:25)
+      at Object.react_stack_bottom_frame (node_modules/react-dom/cjs/react-dom-client.development.js:25989:20)
+      at runWithFiberInDEV (node_modules/react-dom/cjs/react-dom-client.development.js:874:13)
+      at commitHookEffectListMount (node_modules/react-dom/cjs/react-dom-client.development.js:13249:29)
+      at commitHookPassiveMountEffects (node_modules/react-dom/cjs/react-dom-client.development.js:13336:11)
+      at commitPassiveMountOnFiber (node_modules/react-dom/cjs/react-dom-client.development.js:15484:13)
+      at recursivelyTraversePassiveMountEffects (node_modules/react-dom/cjs/react-dom-client.development.js:15439:11)
+      at commitPassiveMountOnFiber (node_modules/react-dom/cjs/react-dom-client.development.js:15519:11)
+      at flushPassiveEffects (node_modules/react-dom/cjs/react-dom-client.development.js:18432:9)
+      at node_modules/react-dom/cjs/react-dom-client.development.js:17923:15
+      at flushActQueue (node_modules/react/cjs/react.development.js:590:34)
+      at process.env.NODE_ENV.exports.act (node_modules/react/cjs/react.development.js:884:10)
+      at node_modules/@testing-library/react/dist/act-compat.js:46:25
+      at renderRoot (node_modules/@testing-library/react/dist/pure.js:189:26)
+      at render (node_modules/@testing-library/react/dist/pure.js:291:10)
+      at renderCard (web/src/app/components/Devices/DeviceCard.test.tsx:71:16)
+      at Object.renderCard (web/src/app/components/Devices/DeviceCard.test.tsx:79:3)
+
+    console.warn
+      ⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath.
+
+      69 |     ...overrides,
+      70 |   }
+    > 71 |   return render(
+         |                ^
+      72 |     <MemoryRouter>
+      73 |       <DeviceCard row={row} onPinChanged={jest.fn()} />
+      74 |     </MemoryRouter>,
+
+      at warn (web/node_modules/react-router/lib/deprecations.ts:9:13)
+      at warnOnce (web/node_modules/react-router/lib/deprecations.ts:14:3)
+      at logDeprecation (web/node_modules/react-router/lib/deprecations.ts:37:5)
+      at logV6DeprecationWarnings (web/node_modules/react-router/lib/components.tsx:257:25)
+      at Object.react_stack_bottom_frame (node_modules/react-dom/cjs/react-dom-client.development.js:25989:20)
+      at runWithFiberInDEV (node_modules/react-dom/cjs/react-dom-client.development.js:874:13)
+      at commitHookEffectListMount (node_modules/react-dom/cjs/react-dom-client.development.js:13249:29)
+      at commitHookPassiveMountEffects (node_modules/react-dom/cjs/react-dom-client.development.js:13336:11)
+      at commitPassiveMountOnFiber (node_modules/react-dom/cjs/react-dom-client.development.js:15484:13)
+      at recursivelyTraversePassiveMountEffects (node_modules/react-dom/cjs/react-dom-client.development.js:15439:11)
+      at commitPassiveMountOnFiber (node_modules/react-dom/cjs/react-dom-client.development.js:15519:11)
+      at flushPassiveEffects (node_modules/react-dom/cjs/react-dom-client.development.js:18432:9)
+      at node_modules/react-dom/cjs/react-dom-client.development.js:17923:15
+      at flushActQueue (node_modules/react/cjs/react.development.js:590:34)
+      at process.env.NODE_ENV.exports.act (node_modules/react/cjs/react.development.js:884:10)
+      at node_modules/@testing-library/react/dist/act-compat.js:46:25
+      at renderRoot (node_modules/@testing-library/react/dist/pure.js:189:26)
+      at render (node_modules/@testing-library/react/dist/pure.js:291:10)
+      at renderCard (web/src/app/components/Devices/DeviceCard.test.tsx:71:16)
+      at Object.renderCard (web/src/app/components/Devices/DeviceCard.test.tsx:79:3)
+
+PASS web/src/app/components/Devices/DeviceDetail/tabs/AudioIoTab.test.tsx
+PASS web/src/app/components/Devices/DeviceDetail/DeviceDetailRoute.test.tsx
+  ● Console
+
+    console.warn
+      ⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition.
+
+      67 | function renderRoute(path = '/devices/profile/edirol-ua/ua-1000/v2') {
+      68 |   const client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 0 } } })
+    > 69 |   return render(
+         |                ^
+      70 |     <MemoryRouter initialEntries={[path]}>
+      71 |       <QueryClientProvider client={client}>
+      72 |         <Routes>
+
+      at warn (web/node_modules/react-router/lib/deprecations.ts:9:13)
+      at warnOnce (web/node_modules/react-router/lib/deprecations.ts:14:3)
+      at logDeprecation (web/node_modules/react-router/lib/deprecations.ts:26:5)
+      at logV6DeprecationWarnings (web/node_modules/react-router/lib/components.tsx:257:25)
+      at Object.react_stack_bottom_frame (node_modules/react-dom/cjs/react-dom-client.development.js:25989:20)
+      at runWithFiberInDEV (node_modules/react-dom/cjs/react-dom-client.development.js:874:13)
+      at commitHookEffectListMount (node_modules/react-dom/cjs/react-dom-client.development.js:13249:29)
+      at commitHookPassiveMountEffects (node_modules/react-dom/cjs/react-dom-client.development.js:13336:11)
+      at commitPassiveMountOnFiber (node_modules/react-dom/cjs/react-dom-client.development.js:15484:13)
+      at recursivelyTraversePassiveMountEffects (node_modules/react-dom/cjs/react-dom-client.development.js:15439:11)
+      at commitPassiveMountOnFiber (node_modules/react-dom/cjs/react-dom-client.development.js:15519:11)
+      at flushPassiveEffects (node_modules/react-dom/cjs/react-dom-client.development.js:18432:9)
+      at node_modules/react-dom/cjs/react-dom-client.development.js:17923:15
+      at flushActQueue (node_modules/react/cjs/react.development.js:590:34)
+      at process.env.NODE_ENV.exports.act (node_modules/react/cjs/react.development.js:884:10)
+      at node_modules/@testing-library/react/dist/act-compat.js:46:25
+      at renderRoot (node_modules/@testing-library/react/dist/pure.js:189:26)
+      at render (node_modules/@testing-library/react/dist/pure.js:291:10)
+      at renderRoute (web/src/app/components/Devices/DeviceDetail/DeviceDetailRoute.test.tsx:69:16)
+      at renderRoute (web/src/app/components/Devices/DeviceDetail/DeviceDetailRoute.test.tsx:82:3)
+      at Generator.call (web/src/app/components/Devices/DeviceDetail/DeviceDetailRoute.test.tsx:2:1)
+      at Generator._invoke [as next] (web/src/app/components/Devices/DeviceDetail/DeviceDetailRoute.test.tsx:2:1)
+      at asyncGeneratorStep (web/src/app/components/Devices/DeviceDetail/DeviceDetailRoute.test.tsx:2:1)
+      at asyncGeneratorStep (web/src/app/components/Devices/DeviceDetail/DeviceDetailRoute.test.tsx:2:1)
+      at _next (web/src/app/components/Devices/DeviceDetail/DeviceDetailRoute.test.tsx:2:1)
+      at Object.<anonymous> (web/src/app/components/Devices/DeviceDetail/DeviceDetailRoute.test.tsx:2:1)
+
+    console.warn
+      ⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath.
+
+      67 | function renderRoute(path = '/devices/profile/edirol-ua/ua-1000/v2') {
+      68 |   const client = new QueryClient({ defaultOptions: { queries: { retry: false, gcTime: 0 } } })
+    > 69 |   return render(
+         |                ^
+      70 |     <MemoryRouter initialEntries={[path]}>
+      71 |       <QueryClientProvider client={client}>
+      72 |         <Routes>
+
+      at warn (web/node_modules/react-router/lib/deprecations.ts:9:13)
+      at warnOnce (web/node_modules/react-router/lib/deprecations.ts:14:3)
+      at logDeprecation (web/node_modules/react-router/lib/deprecations.ts:37:5)
+      at logV6DeprecationWarnings (web/node_modules/react-router/lib/components.tsx:257:25)
+      at Object.react_stack_bottom_frame (node_modules/react-dom/cjs/react-dom-client.development.js:25989:20)
+      at runWithFiberInDEV (node_modules/react-dom/cjs/react-dom-client.development.js:874:13)
+      at commitHookEffectListMount (node_modules/react-dom/cjs/react-dom-client.development.js:13249:29)
+      at commitHookPassiveMountEffects (node_modules/react-dom/cjs/react-dom-client.development.js:13336:11)
+      at commitPassiveMountOnFiber (node_modules/react-dom/cjs/react-dom-client.development.js:15484:13)
+      at recursivelyTraversePassiveMountEffects (node_modules/react-dom/cjs/react-dom-client.development.js:15439:11)
+      at commitPassiveMountOnFiber (node_modules/react-dom/cjs/react-dom-client.development.js:15519:11)
+      at flushPassiveEffects (node_modules/react-dom/cjs/react-dom-client.development.js:18432:9)
+      at node_modules/react-dom/cjs/react-dom-client.development.js:17923:15
+      at flushActQueue (node_modules/react/cjs/react.development.js:590:34)
+      at process.env.NODE_ENV.exports.act (node_modules/react/cjs/react.development.js:884:10)
+      at node_modules/@testing-library/react/dist/act-compat.js:46:25
+      at renderRoot (node_modules/@testing-library/react/dist/pure.js:189:26)
+      at render (node_modules/@testing-library/react/dist/pure.js:291:10)
+      at renderRoute (web/src/app/components/Devices/DeviceDetail/DeviceDetailRoute.test.tsx:69:16)
+      at renderRoute (web/src/app/components/Devices/DeviceDetail/DeviceDetailRoute.test.tsx:82:3)
+      at Generator.call (web/src/app/components/Devices/DeviceDetail/DeviceDetailRoute.test.tsx:2:1)
+      at Generator._invoke [as next] (web/src/app/components/Devices/DeviceDetail/DeviceDetailRoute.test.tsx:2:1)
+      at asyncGeneratorStep (web/src/app/components/Devices/DeviceDetail/DeviceDetailRoute.test.tsx:2:1)
+      at asyncGeneratorStep (web/src/app/components/Devices/DeviceDetail/DeviceDetailRoute.test.tsx:2:1)
+      at _next (web/src/app/components/Devices/DeviceDetail/DeviceDetailRoute.test.tsx:2:1)
+      at Object.<anonymous> (web/src/app/components/Devices/DeviceDetail/DeviceDetailRoute.test.tsx:2:1)
+
+PASS web/src/app/components/Devices/CatalogueSection.test.tsx
+  ● Console
+
+    console.warn
+      ⚠️ React Router Future Flag Warning: React Router will begin wrapping state updates in `React.startTransition` in v7. You can use the `v7_startTransition` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_starttransition.
+
+      61 |
+      62 | function renderSection(rows: DeviceCardRow[]) {
+    > 63 |   return render(
+         |                ^
+      64 |     <MemoryRouter>
+      65 |       <CatalogueSection rows={rows} />
+      66 |     </MemoryRouter>,
+
+      at warn (web/node_modules/react-router/lib/deprecations.ts:9:13)
+      at warnOnce (web/node_modules/react-router/lib/deprecations.ts:14:3)
+      at logDeprecation (web/node_modules/react-router/lib/deprecations.ts:26:5)
+      at logV6DeprecationWarnings (web/node_modules/react-router/lib/components.tsx:257:25)
+      at Object.react_stack_bottom_frame (node_modules/react-dom/cjs/react-dom-client.development.js:25989:20)
+      at runWithFiberInDEV (node_modules/react-dom/cjs/react-dom-client.development.js:874:13)
+      at commitHookEffectListMount (node_modules/react-dom/cjs/react-dom-client.development.js:13249:29)
+      at commitHookPassiveMountEffects (node_modules/react-dom/cjs/react-dom-client.development.js:13336:11)
+      at commitPassiveMountOnFiber (node_modules/react-dom/cjs/react-dom-client.development.js:15484:13)
+      at recursivelyTraversePassiveMountEffects (node_modules/react-dom/cjs/react-dom-client.development.js:15439:11)
+      at commitPassiveMountOnFiber (node_modules/react-dom/cjs/react-dom-client.development.js:15519:11)
+      at flushPassiveEffects (node_modules/react-dom/cjs/react-dom-client.development.js:18432:9)
+      at node_modules/react-dom/cjs/react-dom-client.development.js:17923:15
+      at flushActQueue (node_modules/react/cjs/react.development.js:590:34)
+      at process.env.NODE_ENV.exports.act (node_modules/react/cjs/react.development.js:884:10)
+      at node_modules/@testing-library/react/dist/act-compat.js:46:25
+      at renderRoot (node_modules/@testing-library/react/dist/pure.js:189:26)
+      at render (node_modules/@testing-library/react/dist/pure.js:291:10)
+      at renderSection (web/src/app/components/Devices/CatalogueSection.test.tsx:63:16)
+      at Object.renderSection (web/src/app/components/Devices/CatalogueSection.test.tsx:71:3)
+
+    console.warn
+      ⚠️ React Router Future Flag Warning: Relative route resolution within Splat routes is changing in v7. You can use the `v7_relativeSplatPath` future flag to opt-in early. For more information, see https://reactrouter.com/v6/upgrading/future#v7_relativesplatpath.
+
+      61 |
+      62 | function renderSection(rows: DeviceCardRow[]) {
+    > 63 |   return render(
+         |                ^
+      64 |     <MemoryRouter>
+      65 |       <CatalogueSection rows={rows} />
+      66 |     </MemoryRouter>,
+
+      at warn (web/node_modules/react-router/lib/deprecations.ts:9:13)
+      at warnOnce (web/node_modules/react-router/lib/deprecations.ts:14:3)
+      at logDeprecation (web/node_modules/react-router/lib/deprecations.ts:37:5)
+      at logV6DeprecationWarnings (web/node_modules/react-router/lib/components.tsx:257:25)
+      at Object.react_stack_bottom_frame (node_modules/react-dom/cjs/react-dom-client.development.js:25989:20)
+      at runWithFiberInDEV (node_modules/react-dom/cjs/react-dom-client.development.js:874:13)
+      at commitHookEffectListMount (node_modules/react-dom/cjs/react-dom-client.development.js:13249:29)
+      at commitHookPassiveMountEffects (node_modules/react-dom/cjs/react-dom-client.development.js:13336:11)
+      at commitPassiveMountOnFiber (node_modules/react-dom/cjs/react-dom-client.development.js:15484:13)
+      at recursivelyTraversePassiveMountEffects (node_modules/react-dom/cjs/react-dom-client.development.js:15439:11)
+      at commitPassiveMountOnFiber (node_modules/react-dom/cjs/react-dom-client.development.js:15519:11)
+      at flushPassiveEffects (node_modules/react-dom/cjs/react-dom-client.development.js:18432:9)
+      at node_modules/react-dom/cjs/react-dom-client.development.js:17923:15
+      at flushActQueue (node_modules/react/cjs/react.development.js:590:34)
+      at process.env.NODE_ENV.exports.act (node_modules/react/cjs/react.development.js:884:10)
+      at node_modules/@testing-library/react/dist/act-compat.js:46:25
+      at renderRoot (node_modules/@testing-library/react/dist/pure.js:189:26)
+      at render (node_modules/@testing-library/react/dist/pure.js:291:10)
+      at renderSection (web/src/app/components/Devices/CatalogueSection.test.tsx:63:16)
+      at Object.renderSection (web/src/app/components/Devices/CatalogueSection.test.tsx:71:3)
+
+
+Test Suites: 11 passed, 11 total
+Tests:       55 passed, 55 total
+Snapshots:   0 total
+Time:        5.175 s
+Ran all test suites matching DeviceCard|HardwareStorePage|CatalogueSection|DiagnosticsAggregatePage|PackSourcesAdminPage|useDeviceConnections|OverviewTab|LicenseTab|DeviceDetailRoute|AudioIoTab|BindingsTab.

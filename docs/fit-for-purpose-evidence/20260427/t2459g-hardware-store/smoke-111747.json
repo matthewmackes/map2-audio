@@ -1,0 +1,210 @@
+{
+  "status": "PASS",
+  "timestamp": "2026-04-27T15:17:47.817797+00:00",
+  "packs": [
+    {
+      "pack_id": "edirol-ua",
+      "vendor": "Edirol (Roland)",
+      "models": [
+        "ua-25",
+        "ua-25ex",
+        "ua-101",
+        "ua-700",
+        "ua-1000",
+        "ua-1010"
+      ],
+      "profile_count": 7,
+      "is_degraded": false,
+      "degraded_files": []
+    },
+    {
+      "pack_id": "hotone",
+      "vendor": "Hotone Audio",
+      "models": [
+        "jogg",
+        "ampero-one",
+        "ampero-ii-stage",
+        "ampero-mini",
+        "soul-press-ii"
+      ],
+      "profile_count": 6,
+      "is_degraded": false,
+      "degraded_files": []
+    },
+    {
+      "pack_id": "fixture-pack",
+      "vendor": "MAP2 Test Fixtures",
+      "models": [
+        "fixture-audio",
+        "fixture-midi",
+        "fixture-hid"
+      ],
+      "profile_count": 3,
+      "is_degraded": false,
+      "degraded_files": []
+    }
+  ],
+  "profiles": [
+    {
+      "pack_id": "edirol-ua",
+      "model": "ua-1000",
+      "kind": "audio",
+      "profile_loaded": true,
+      "profile_load_error": null,
+      "has_loopback_ports": true,
+      "loopback_method": "synthetic",
+      "mean_rtt_ms": 5.000450134277344,
+      "p95_rtt_ms": 5.000450134277344,
+      "jitter_p95_ms": 0.0,
+      "midi_profile_present": true,
+      "notes": ""
+    },
+    {
+      "pack_id": "edirol-ua",
+      "model": "ua-101",
+      "kind": "audio",
+      "profile_loaded": true,
+      "profile_load_error": null,
+      "has_loopback_ports": true,
+      "loopback_method": "synthetic",
+      "mean_rtt_ms": 5.000450134277344,
+      "p95_rtt_ms": 5.000450134277344,
+      "jitter_p95_ms": 0.0,
+      "midi_profile_present": false,
+      "notes": ""
+    },
+    {
+      "pack_id": "edirol-ua",
+      "model": "ua-1010",
+      "kind": "audio",
+      "profile_loaded": true,
+      "profile_load_error": null,
+      "has_loopback_ports": true,
+      "loopback_method": "synthetic",
+      "mean_rtt_ms": 5.000450134277344,
+      "p95_rtt_ms": 5.000450134277344,
+      "jitter_p95_ms": 0.0,
+      "midi_profile_present": false,
+      "notes": ""
+    },
+    {
+      "pack_id": "edirol-ua",
+      "model": "ua-25",
+      "kind": "audio",
+      "profile_loaded": true,
+      "profile_load_error": null,
+      "has_loopback_ports": true,
+      "loopback_method": "synthetic",
+      "mean_rtt_ms": 5.000450134277344,
+      "p95_rtt_ms": 5.000450134277344,
+      "jitter_p95_ms": 0.0,
+      "midi_profile_present": false,
+      "notes": ""
+    },
+    {
+      "pack_id": "edirol-ua",
+      "model": "ua-25ex",
+      "kind": "audio",
+      "profile_loaded": true,
+      "profile_load_error": null,
+      "has_loopback_ports": true,
+      "loopback_method": "synthetic",
+      "mean_rtt_ms": 5.000450134277344,
+      "p95_rtt_ms": 5.000450134277344,
+      "jitter_p95_ms": 0.0,
+      "midi_profile_present": false,
+      "notes": ""
+    },
+    {
+      "pack_id": "edirol-ua",
+      "model": "ua-700",
+      "kind": "audio",
+      "profile_loaded": true,
+      "profile_load_error": null,
+      "has_loopback_ports": true,
+      "loopback_method": "synthetic",
+      "mean_rtt_ms": 5.000450134277344,
+      "p95_rtt_ms": 5.000450134277344,
+      "jitter_p95_ms": 0.0,
+      "midi_profile_present": false,
+      "notes": ""
+    },
+    {
+      "pack_id": "hotone",
+      "model": "ampero-ii-stage",
+      "kind": "audio",
+      "profile_loaded": true,
+      "profile_load_error": null,
+      "has_loopback_ports": true,
+      "loopback_method": "synthetic",
+      "mean_rtt_ms": 5.000450134277344,
+      "p95_rtt_ms": 5.000450134277344,
+      "jitter_p95_ms": 0.0,
+      "midi_profile_present": false,
+      "notes": ""
+    },
+    {
+      "pack_id": "hotone",
+      "model": "ampero-mini",
+      "kind": "audio",
+      "profile_loaded": true,
+      "profile_load_error": null,
+      "has_loopback_ports": true,
+      "loopback_method": "synthetic",
+      "mean_rtt_ms": 5.000450134277344,
+      "p95_rtt_ms": 5.000450134277344,
+      "jitter_p95_ms": 0.0,
+      "midi_profile_present": false,
+      "notes": ""
+    },
+    {
+      "pack_id": "hotone",
+      "model": "ampero-one",
+      "kind": "audio",
+      "profile_loaded": true,
+      "profile_load_error": null,
+      "has_loopback_ports": true,
+      "loopback_method": "synthetic",
+      "mean_rtt_ms": 5.000450134277344,
+      "p95_rtt_ms": 5.000450134277344,
+      "jitter_p95_ms": 0.0,
+      "midi_profile_present": false,
+      "notes": ""
+    },
+    {
+      "pack_id": "hotone",
+      "model": "jogg",
+      "kind": "audio",
+      "profile_loaded": true,
+      "profile_load_error": null,
+      "has_loopback_ports": true,
+      "loopback_method": "synthetic",
+      "mean_rtt_ms": 5.000450134277344,
+      "p95_rtt_ms": 5.000450134277344,
+      "jitter_p95_ms": 0.0,
+      "midi_profile_present": true,
+      "notes": ""
+    },
+    {
+      "pack_id": "fixture-pack",
+      "model": "fixture-audio",
+      "kind": "audio",
+      "profile_loaded": true,
+      "profile_load_error": null,
+      "has_loopback_ports": true,
+      "loopback_method": "synthetic",
+      "mean_rtt_ms": 5.000450134277344,
+      "p95_rtt_ms": 5.000450134277344,
+      "jitter_p95_ms": 0.0,
+      "midi_profile_present": false,
+      "notes": ""
+    }
+  ],
+  "summary": {
+    "audio_profiles": 11,
+    "midi_profiles": 4,
+    "hid_profiles": 1,
+    "with_loopback_ports": 11,
+    "latency_measurements_completed": 11
+  }
+}
