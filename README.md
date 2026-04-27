@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1341** Python | **1326** TypeScript | **157** C++/H | **145** Docs | **2933** total commits | **3** stars | **0** forks | **0** open issues
+**1341** Python | **1328** TypeScript | **157** C++/H | **145** Docs | **2935** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`0ec70471`](https://github.com/matthewmackes/map2-audio/commit/0ec7047103b1a34b0cadbd47216dfba73f2c7e7d) | T2459-G10: Catalogue split-pane + facets + Mixxx tail + u... | Map2 Audio | 2026-04-27 |
+| [`3a303e53`](https://github.com/matthewmackes/map2-audio/commit/3a303e53510edb77df1aa1b7fef80366244966b3) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-27 |
 | [`b20328f2`](https://github.com/matthewmackes/map2-audio/commit/b20328f2d8d7a27e610de209dec480a028104cc9) | T2459-G9: Pack Sources admin tab + sync streamer + checks... | Map2 Audio | 2026-04-27 |
 | [`1945241c`](https://github.com/matthewmackes/map2-audio/commit/1945241c022869cdb082b408e3e9e96543617bd9) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-27 |
 | [`9821bc88`](https://github.com/matthewmackes/map2-audio/commit/9821bc8870570ad6204e88da0e86922ba24ceb51) | T2459-G8: bench-wide diagnostics aggregate + per-card sev... | Map2 Audio | 2026-04-27 |
 | [`ce8e3f3e`](https://github.com/matthewmackes/map2-audio/commit/ce8e3f3e05fa25d7d8e146a63d4147dac599f304) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-27 |
 | [`ad3f2ef7`](https://github.com/matthewmackes/map2-audio/commit/ad3f2ef70f1637f5640dd4780a3a914558451f31) | T2461 epic open: Device Catalog ↔ MIDI Assignments ↔ Brai... | Map2 Audio | 2026-04-27 |
 | [`8755bf40`](https://github.com/matthewmackes/map2-audio/commit/8755bf405915d6cf6b7b9a0ea4194c4956a39733) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-27 |
-| [`2190ebf8`](https://github.com/matthewmackes/map2-audio/commit/2190ebf8e39efbcc3cb1ef042ae664f7a53b1320) | T2459-G7: Bindings tab + Q13 Undo + Q16 Learn Wizard hookup | Map2 Audio | 2026-04-27 |
-| [`c0001702`](https://github.com/matthewmackes/map2-audio/commit/c0001702564fe91320858fc421fd098c6df6221f) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-27 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
