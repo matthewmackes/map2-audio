@@ -57,7 +57,7 @@ export function MidiLearnWizard({
   model,
   controllerKey,
   testCaptureSource,
-}: MidiLearnWizardProps): JSX.Element {
+}: MidiLearnWizardProps): React.JSX.Element {
   const [sessionId, setSessionId] = useState<string | null>(null)
   const [classification, setClassification] = useState<LearnClassification | null>(null)
   const [target, setTarget] = useState('')

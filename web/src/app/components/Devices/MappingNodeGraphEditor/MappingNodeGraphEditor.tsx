@@ -138,7 +138,7 @@ export function MappingNodeGraphEditor({
   descriptor,
   packId,
   model,
-}: MappingNodeGraphEditorProps): JSX.Element {
+}: MappingNodeGraphEditorProps): React.JSX.Element {
   const [importedDescriptor, setImportedDescriptor] = useState<MixxxImportResponse | null>(null)
   const [importXmlBody, setImportXmlBody] = useState('')
   const [exportedXml, setExportedXml] = useState<string | null>(null)

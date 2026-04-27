@@ -62,7 +62,7 @@ export function DeviceProfilePanel({
   initialKind = 'audio',
   vendorOverride,
   disableAutoOverride = false,
-}: DeviceProfilePanelProps): JSX.Element {
+}: DeviceProfilePanelProps): React.JSX.Element {
   const audioQuery = useQuery({
     queryKey: ['device-profile', packId, model, 'audio'],
     queryFn: () => getDeviceProfile(packId, model, 'audio'),
@@ -142,7 +142,7 @@ function DeviceLatencyMeasureSection({
   packId: string
   model: string
   profile: DeviceProfileDetail
-}): JSX.Element {
+}): React.JSX.Element {
   const doc = profile.document as Record<string, any>
   const loopback = doc.loopback_ports as { playback?: string; capture?: string } | undefined
   const hasLoopback = !!(loopback?.playback && loopback?.capture)
@@ -231,7 +231,7 @@ function DeviceLatencyMeasureSection({
 // Sub-sections
 // ---------------------------------------------------------------------------
 
-function DeviceHeroCard({ profile }: { profile: DeviceProfileDetail }): JSX.Element {
+function DeviceHeroCard({ profile }: { profile: DeviceProfileDetail }): React.JSX.Element {
   const doc = profile.document as Record<string, any>
   const identity = (doc.identity ?? {}) as Record<string, string>
   const metadata = (doc.metadata ?? {}) as Record<string, any>
@@ -318,7 +318,7 @@ function DeviceHeroCard({ profile }: { profile: DeviceProfileDetail }): JSX.Elem
   )
 }
 
-function DevicePortsSection({ profile }: { profile: DeviceProfileDetail }): JSX.Element {
+function DevicePortsSection({ profile }: { profile: DeviceProfileDetail }): React.JSX.Element {
   const ports = useMemo(() => {
     const doc = profile.document as Record<string, any>
     return Array.isArray(doc.ports) ? doc.ports : []
@@ -363,7 +363,7 @@ function DeviceMixerSurfacesSection({
   profile,
 }: {
   profile: DeviceProfileDetail
-}): JSX.Element {
+}): React.JSX.Element {
   const doc = profile.document as Record<string, any>
   const surfaces = Array.isArray(doc.mixer_surfaces) ? doc.mixer_surfaces : []
   if (surfaces.length === 0) return <></>
@@ -387,7 +387,7 @@ function DeviceOnDeviceDspSection({
   profile,
 }: {
   profile: DeviceProfileDetail
-}): JSX.Element {
+}): React.JSX.Element {
   const doc = profile.document as Record<string, any>
   const blocks = Array.isArray(doc.on_device_dsp) ? doc.on_device_dsp : []
   if (blocks.length === 0) return <></>
@@ -417,7 +417,7 @@ function DeviceUseCasesSection({
   profile,
 }: {
   profile: DeviceProfileDetail
-}): JSX.Element {
+}): React.JSX.Element {
   const doc = profile.document as Record<string, any>
   const presets = Array.isArray(doc.use_case_presets) ? doc.use_case_presets : []
   if (presets.length === 0) return <></>
@@ -450,7 +450,7 @@ function DeviceMidiBindingsSection({
   profile,
 }: {
   profile: DeviceProfileDetail
-}): JSX.Element {
+}): React.JSX.Element {
   const doc = profile.document as Record<string, any>
   const controls = Array.isArray(doc.controls) ? doc.controls : []
   if (controls.length === 0) return <></>

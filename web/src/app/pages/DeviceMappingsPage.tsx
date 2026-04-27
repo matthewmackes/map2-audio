@@ -11,7 +11,7 @@ import { useParams } from 'react-router-dom'
 
 import { MappingNodeGraphEditor } from '../components/Devices/MappingNodeGraphEditor'
 
-export function DeviceMappingsPage(): JSX.Element {
+export function DeviceMappingsPage(): React.JSX.Element {
   const { packId, model } = useParams<{ packId: string; model: string }>()
 
   if (!packId || !model) {

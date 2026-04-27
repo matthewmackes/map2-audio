@@ -11,7 +11,7 @@ import { useParams } from 'react-router-dom'
 
 import { DeviceProfilePanel } from '../components/Devices/DeviceProfilePanel'
 
-export function DevicePage(): JSX.Element {
+export function DevicePage(): React.JSX.Element {
   const { packId, model } = useParams<{ packId: string; model: string }>()
 
   if (!packId || !model) {
