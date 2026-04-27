@@ -1,5 +1,5 @@
 cmake_minimum_required(VERSION 3.22)
-project(map2_audio_engine VERSION 2.0.0 LANGUAGES CXX)
+project(map2_audio_engine VERSION 2.0.0 LANGUAGES C CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
@@ -837,3 +837,84 @@ else()
 endif()
 message(STATUS "========================================")
 message(STATUS "")
+
+# ============================================================================
+# T2459-B2 — map2-controller-host binary (separate process for QuickJS-driven
+# mapping execution). See docs/architecture/CONTROLLER_LAYER.md §3.
+# ============================================================================
+
+option(BUILD_CONTROLLER_HOST "Build map2-controller-host binary (T2459-B2)" ON)
+option(BUILD_CONTROLLER_HOST_TESTS "Build controller-host Catch2 tests" ON)
+
+if(BUILD_CONTROLLER_HOST OR BUILD_CONTROLLER_HOST_TESTS)
+    # QuickJS — Bellard's small-footprint ECMAScript engine. We vendor it via
+    # FetchContent for build reproducibility; no system package dependency.
+    FetchContent_Declare(
+        quickjs
+        GIT_REPOSITORY https://github.com/bellard/quickjs.git
+        GIT_TAG 6e2e68fd0896957f92eb6c242a2e048c1ef3cae0  # 2024-01-13
+        GIT_SHALLOW FALSE
+    )
+    FetchContent_MakeAvailable(quickjs)
+
+    # The QuickJS upstream Makefile is not CMake-aware. Build a static
+    # library directly from its source files.
+    set(QUICKJS_SOURCES
+        ${quickjs_SOURCE_DIR}/cutils.c
+        ${quickjs_SOURCE_DIR}/libregexp.c
+        ${quickjs_SOURCE_DIR}/libunicode.c
+        ${quickjs_SOURCE_DIR}/libbf.c
+        ${quickjs_SOURCE_DIR}/quickjs.c
+        ${quickjs_SOURCE_DIR}/quickjs-libc.c
+    )
+    add_library(quickjs_static STATIC ${QUICKJS_SOURCES})
+    target_include_directories(quickjs_static PUBLIC ${quickjs_SOURCE_DIR})
+    target_compile_options(quickjs_static PRIVATE
+        -Wno-array-bounds
+        -Wno-unused-but-set-variable
+        -Wno-unused-variable
+        -Wno-format-truncation
+        -Wno-implicit-fallthrough
+    )
+    target_compile_definitions(quickjs_static PRIVATE
+        _GNU_SOURCE
+        CONFIG_VERSION="2024-01-13"
+        CONFIG_BIGNUM
+    )
+    set_target_properties(quickjs_static PROPERTIES POSITION_INDEPENDENT_CODE ON)
+endif()
+
+if(BUILD_CONTROLLER_HOST)
+    add_executable(map2-controller-host
+        Source/ControllerHost/main.cpp
+        Source/ControllerHost/QuickJSEngine.cpp
+        Source/ControllerHost/EngineApiBindings.cpp
+    )
+    target_include_directories(map2-controller-host PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/Source
+    )
+    target_link_libraries(map2-controller-host PRIVATE
+        quickjs_static
+        pthread
+    )
+    set_target_properties(map2-controller-host PROPERTIES
+        RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}
+    )
+endif()
+
+if(BUILD_CONTROLLER_HOST_TESTS)
+    add_executable(controller_host_tests
+        tests/QuickJSEngineTests.cpp
+        Source/ControllerHost/QuickJSEngine.cpp
+        Source/ControllerHost/EngineApiBindings.cpp
+    )
+    target_include_directories(controller_host_tests PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/Source
+    )
+    target_link_libraries(controller_host_tests PRIVATE
+        Catch2::Catch2WithMain
+        quickjs_static
+        pthread
+    )
+    add_test(NAME controller_host_tests COMMAND controller_host_tests)
+endif()
