@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1322** Python | **1294** TypeScript | **157** C++/H | **145** Docs | **2896** total commits | **3** stars | **0** forks | **0** open issues
+**1324** Python | **1301** TypeScript | **157** C++/H | **145** Docs | **2899** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`a2bc0e53`](https://github.com/matthewmackes/map2-audio/commit/a2bc0e538e6e3929d31ab5353d9e6fcaacc0960f) | T2459-F1: schema validation CI hardening — 4 new checks | Map2 Audio | 2026-04-27 |
+| [`4f9897ff`](https://github.com/matthewmackes/map2-audio/commit/4f9897ff98eb135e983553d7734fe00150f56ac8) | T2459-E5: γ1 full Mixxx imports mirror — 397 files + immu... | Map2 Audio | 2026-04-27 |
+| [`855403f5`](https://github.com/matthewmackes/map2-audio/commit/855403f5f131b70640426e2d590ac45b172b10f2) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-27 |
 | [`83bcfecb`](https://github.com/matthewmackes/map2-audio/commit/83bcfecb6aa996fb3543a04eecc2dfa03df5a29a) | T2459-E4: Measure latency GUI button + endpoint + 3 new J... | Map2 Audio | 2026-04-27 |
 | [`300f8f7a`](https://github.com/matthewmackes/map2-audio/commit/300f8f7afd0bd7021b6feb2250c24af09e3d077a) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-27 |
 | [`2b0127e9`](https://github.com/matthewmackes/map2-audio/commit/2b0127e986c269ae09629325cf86c662f1249f19) | T2459-E3: scripts/measure_loopback_ir.py path-c IR loopba... | Map2 Audio | 2026-04-27 |
 | [`a4067489`](https://github.com/matthewmackes/map2-audio/commit/a4067489f295803156b52d3b9c69b7963329291a) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-27 |
 | [`59607069`](https://github.com/matthewmackes/map2-audio/commit/59607069739218ee66959d3df31676e7c95ec782) | T2459-E2: Hotone product range — 4 additional SKU profiles | Map2 Audio | 2026-04-27 |
-| [`b565bc28`](https://github.com/matthewmackes/map2-audio/commit/b565bc2813c7f9b1aae8a01d0f85bee1f831adf0) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-27 |
-| [`6f9a0a61`](https://github.com/matthewmackes/map2-audio/commit/6f9a0a61fa2613064e03ed84be6e13dbfadd16e1) | T2459-E1: Edirol UA range — 5 additional SKU audio profiles | Map2 Audio | 2026-04-27 |
-| [`8b141d2f`](https://github.com/matthewmackes/map2-audio/commit/8b141d2f8fd48cd77a9ddc64dd7db9638a499df3) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-27 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
