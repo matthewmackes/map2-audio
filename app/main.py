@@ -1150,6 +1150,20 @@ def create_app():
         except Exception as e:
             logger.warning(f"Failed to load Tesira routes: {e}")
 
+        # T2459 — Controller / Mapping / Device-Pack subsystem.
+        # ProfileRegistry walks device-packs/ at startup; broken packs are
+        # logged + skipped (must NOT block backend boot, per
+        # docs/architecture/CONTROLLER_LAYER.md §3.2).
+        try:
+            from app.routes import devices as devices_routes
+            from app.services.controllers import get_controller_service
+            controller_service = get_controller_service()
+            controller_service.start()
+            app.include_router(devices_routes.router)
+            logger.info("Controller / Device-Pack routes registered (T2459)")
+        except Exception as e:
+            logger.warning(f"Failed to load Controller / Device-Pack subsystem: {e}")
+
         # Static files directory - check for web/dist first (Vite build), then static
         project_root = os.path.dirname(os.path.dirname(__file__))
         web_dist_dir = os.path.join(project_root, 'web', 'dist')

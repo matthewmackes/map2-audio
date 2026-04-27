@@ -113,14 +113,16 @@ Last updated: 2026-04-26 EDT - Claude: SHIPPED.
 ---
 
 ID: T2459-A3
-Status: [ ] Todo
+Status: [✓] Done
 Parent: T2459
 Title: Python skeleton — `app/services/controllers/` (ControllerService, MappingRegistry, ProfileRegistry)
 Description:
 - Goal: Create the Python service layer that owns YAML profile loading, mapping registry, controller-host supervision integration, and FastAPI routes (`/api/devices`, `/api/devices/<id>/profile`, `/api/devices/<id>/mappings`).
 - Acceptance: `ProfileRegistry.load_packs()` walks `device-packs/` at backend startup, validates every YAML against schema, logs and skips broken packs (per CLAUDE.md gotcha "broken pack must never block backend boot"). FastAPI routes return profiles + active mappings. Pytest coverage of the loader at least 90%.
 - Required outputs: `app/services/controllers/{__init__,controller_service,mapping_registry,profile_registry,mapping_file_handler}.py`, `app/routes/devices.py`, `tests/test_controller_service.py`, `tests/test_profile_registry.py`.
+Completion note: 2026-04-27 — Claude: SHIPPED. Created `app/services/controllers/` package with `profile_registry.py` (ProfileRegistry walks `device-packs/`, validates every YAML against schema, logs+skips broken packs without raising — manifest-level failures skip the whole pack, per-profile failures degrade the pack rather than abort it; resolve-by-hardware-id, resolve-by-ALSA-card-regex, resolve-by-ALSA-client-substring; reload_pack restores previous state on failure), `mapping_file_handler.py` (parses native YAML MIDI/HID profiles into `MappingDescriptor` with `MappingControl` rows; ready for T2459-B3 to add the parallel Mixxx XML reader producing the same shape), `mapping_registry.py` (thread-safe runtime assignment of `controller_key → MappingDescriptor`), `controller_service.py` (orchestrator composing the three; lifespan-friendly `start()`/`stop()`; pack/profile read API; load+assign+clear mapping API; reload_pack via service surface). Authored `app/routes/devices.py` with 8 endpoints under `/api/devices/`: list packs, list profiles, get profile detail, reload pack, resolve, list/assign/clear mappings. Wired into `app/main.py` lifespan after Tesira routes — broken-pack-must-not-block-boot contract honored at the lifespan-exception level. Test coverage: `tests/test_profile_registry.py` (12 cases — empty root, broken-pack skip, broken-profile-degraded-but-pack-loads, resolve by hardware-id/ALSA-card/ALSA-client, kind filter, reload happy/missing/keeps-previous-on-failure, singleton lifecycle, invalid-regex graceful) + `tests/test_controller_service.py` (11 cases — service start/list/get/resolve/load-mapping/assign/clear/stop/reload). Validation: `pytest tests/test_profile_registry.py tests/test_controller_service.py -v` reports 23 passed. Smoke import: `python3 -c "from app.services.controllers import get_controller_service; s = get_controller_service(); s.start()"` succeeds and loads 1 pack / 3 profiles (the fixture pack).
 Assigned to: Claude
+Last updated: 2026-04-27 EDT - Claude: SHIPPED.
 
 ---
 
