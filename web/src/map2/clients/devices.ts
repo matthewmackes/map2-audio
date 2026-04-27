@@ -167,3 +167,65 @@ export async function exportMixxxXml(req: {
     `${API_BASE}/api/devices/mixxx/export/${encodeURIComponent(req.pack_id)}/${encodeURIComponent(req.model)}`,
   )
 }
+
+// ---------------------------------------------------------------------------
+// T2459-D4 — MIDI learn wizard
+// ---------------------------------------------------------------------------
+
+export interface LearnClassification {
+  session_id: string
+  kind: 'unknown' | 'button' | 'knob_absolute' | 'knob_relative' | 'encoder_14bit' | 'pitch_bend'
+  confidence: number
+  status: number | null
+  midino: number | null
+  channel: number | null
+  notes: string
+}
+
+export async function learnStart(req: {
+  controller_key: string
+  pack_id: string
+  model: string
+}): Promise<{ session_id: string }> {
+  return fetchJson(`${API_BASE}/api/devices/learn/start`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(req),
+  })
+}
+
+export async function learnCapture(req: {
+  session_id: string
+  bytes: number[]
+  timestamp_ns?: number
+}): Promise<LearnClassification> {
+  return fetchJson(`${API_BASE}/api/devices/learn/capture`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ ...req, timestamp_ns: req.timestamp_ns ?? 0 }),
+  })
+}
+
+export async function learnAssign(req: {
+  session_id: string
+  target?: string
+  script?: string
+  action?: string
+  fast_path?: boolean
+}): Promise<{ session_id: string; row: Record<string, unknown> }> {
+  return fetchJson(`${API_BASE}/api/devices/learn/assign`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(req),
+  })
+}
+
+export async function learnCancel(sessionId: string): Promise<{
+  session_id: string
+  cancelled: boolean
+}> {
+  return fetchJson(
+    `${API_BASE}/api/devices/learn/cancel/${encodeURIComponent(sessionId)}`,
+    { method: 'POST' },
+  )
+}

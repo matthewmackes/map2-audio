@@ -37,6 +37,7 @@ from app.services.controllers.metadata_enrichment import (
 )
 from app.services.controllers.mixxx_xml_reader import parse_mixxx_xml
 from app.services.controllers.mixxx_xml_writer import write_mixxx_xml
+from app.services.controllers.learn_session import get_learn_registry
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/devices", tags=["Devices"])
@@ -332,3 +333,67 @@ async def export_mixxx_xml(pack_id: str, model: str) -> dict[str, str]:
                       "details": None}
         }) from exc
     return {"xml_body": xml_body}
+
+
+# ---------------------------------------------------------------------------
+# T2459-D4 — MIDI learn wizard
+# ---------------------------------------------------------------------------
+
+class LearnStartRequest(BaseModel):
+    controller_key: str
+    pack_id: str
+    model: str
+
+
+class LearnCaptureRequest(BaseModel):
+    session_id: str
+    bytes: list[int]
+    timestamp_ns: int = 0
+
+
+class LearnAssignRequest(BaseModel):
+    session_id: str
+    target: str | None = None
+    script: str | None = None
+    action: str | None = None
+    fast_path: bool = False
+
+
+@router.post("/learn/start")
+async def learn_start(req: LearnStartRequest) -> dict[str, Any]:
+    sid = get_learn_registry().start(req.controller_key, req.pack_id, req.model)
+    return {"session_id": sid}
+
+
+@router.post("/learn/capture")
+async def learn_capture(req: LearnCaptureRequest) -> dict[str, Any]:
+    result = get_learn_registry().capture(req.session_id, req.bytes, req.timestamp_ns)
+    return {
+        "session_id": req.session_id,
+        "kind": result.kind,
+        "confidence": result.confidence,
+        "status": result.status,
+        "midino": result.midino,
+        "channel": result.channel,
+        "notes": result.notes,
+    }
+
+
+@router.post("/learn/assign")
+async def learn_assign(req: LearnAssignRequest) -> dict[str, Any]:
+    row = get_learn_registry().assign(
+        req.session_id, req.target, req.script, req.action, req.fast_path,
+    )
+    if row is None:
+        raise HTTPException(status_code=400, detail={
+            "error": {"code": "learn_session_not_finalisable",
+                      "message": "Session not found or classifier could not recover a status/midino.",
+                      "details": None}
+        })
+    return {"session_id": req.session_id, "row": row}
+
+
+@router.post("/learn/cancel/{session_id}")
+async def learn_cancel(session_id: str) -> dict[str, Any]:
+    cancelled = get_learn_registry().cancel(session_id)
+    return {"session_id": session_id, "cancelled": cancelled}
