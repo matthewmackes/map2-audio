@@ -855,6 +855,31 @@ async def lifespan(app):
                 "State Authority reconciliation scheduler not started: %s", exc
             )
 
+        # T2459-G15 — start the controller-host supervisor + the Hardware
+        # Store hot-plug connection bus from the async lifespan context.
+        # These were previously called from `create_app` (sync), which
+        # caused a SyntaxError on backend boot.
+        try:
+            from app.services.controller_host_service import get_controller_host_service
+            controller_host = get_controller_host_service()
+            await controller_host.start()
+            logger.info(
+                "ControllerHostService supervisor started (status=%s)",
+                controller_host.status,
+            )
+        except Exception as exc:
+            logger.warning("ControllerHostService supervisor not started: %s", exc)
+
+        try:
+            from app.services.controllers.connection_event_bus import (
+                get_connection_event_bus,
+            )
+            connection_bus = get_connection_event_bus()
+            await connection_bus.start()
+            logger.info("ConnectionEventBus started for Hardware Store /api/devices/ws")
+        except Exception as exc:
+            logger.warning("ConnectionEventBus not started: %s", exc)
+
         running = sum(1 for v in results.values() if v)
         total = len(results)
         logger.info("Startup complete: %s/%s services running", running, total)
@@ -1184,29 +1209,13 @@ def create_app():
             app.include_router(devices_routes.router)
             logger.info("Controller / Device-Pack routes registered (T2459)")
 
-            # Supervisor for the separate map2-controller-host process.
-            # Until T2459-B2 builds the binary, the supervisor enters
-            # WAITING_FOR_BINARY and the backend continues normally.
-            controller_host = get_controller_host_service()
-            await controller_host.start()
-            logger.info(
-                "ControllerHostService supervisor started (status=%s)",
-                controller_host.status,
-            )
-
-            # T2459-G2 Hardware Store hot-plug channel.
-            # NOTE: ``connection_bus.start()`` is async; it follows the same
-            # pattern as the controller-host supervisor immediately above.
-            # Both are scheduled here under the same caveat (the surrounding
-            # block currently runs from ``create_app`` which is sync;
-            # production startup goes through ``lifespan`` and these starts
-            # become awaited there — see worklist T2459-A6).
-            from app.services.controllers.connection_event_bus import (
-                get_connection_event_bus,
-            )
-            connection_bus = get_connection_event_bus()
-            await connection_bus.start()
-            logger.info("ConnectionEventBus started for Hardware Store /api/devices/ws")
+            # Supervisor for the separate map2-controller-host process +
+            # the Hardware Store connection event bus are started in the
+            # async lifespan context (see the T2459 startup block in
+            # `lifespan` above). `create_app` is a sync function, so the
+            # `await` calls were a startup-blocking syntax error.
+            #
+            # Worklist: T2459-G15 (this fix).
         except Exception as e:
             logger.warning(f"Failed to load Controller / Device-Pack subsystem: {e}")
 
