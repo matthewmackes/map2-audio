@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1349** Python | **1324** TypeScript | **157** C++/H | **145** Docs | **2945** total commits | **3** stars | **0** forks | **0** open issues
+**1351** Python | **1324** TypeScript | **157** C++/H | **145** Docs | **2947** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`4e271fa2`](https://github.com/matthewmackes/map2-audio/commit/4e271fa2cd297746685f4a3cd28efb448f855f15) | T2461 follow-ups + T2459-G11b parallel-pin section | Map2 Audio | 2026-04-27 |
+| [`f5152333`](https://github.com/matthewmackes/map2-audio/commit/f51523333b0ab6bb1616a7a42d415d556bb89a0e) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-27 |
 | [`f249c90e`](https://github.com/matthewmackes/map2-audio/commit/f249c90e5f30bf8f1220f25913afdd04b0aa4da9) | T2461 medium-lift tranche: A2 + A4 + A5 (full) + A6 (back... | Map2 Audio | 2026-04-27 |
 | [`e125e703`](https://github.com/matthewmackes/map2-audio/commit/e125e70368c5bcd760ec15d1af5a392a69bff1e6) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-27 |
 | [`2751a71d`](https://github.com/matthewmackes/map2-audio/commit/2751a71d5a2cdb59e1db2195112d0ddfff075476) | T2461-A9 backend + A10: snapshot-keys endpoint + Brain be... | Map2 Audio | 2026-04-27 |
 | [`b53f00d5`](https://github.com/matthewmackes/map2-audio/commit/b53f00d544a813218fb1b89cad53509699817b66) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-27 |
 | [`1c5c4ece`](https://github.com/matthewmackes/map2-audio/commit/1c5c4ecea16c968d37881d8f49365a2138738209) | T2461-A1+A3+A7+A8(backend): integration tranche | Map2 Audio | 2026-04-27 |
 | [`731c5fb8`](https://github.com/matthewmackes/map2-audio/commit/731c5fb8e96ecb9da9c35b613ed814b9aeb42459) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-27 |
-| [`83db8336`](https://github.com/matthewmackes/map2-audio/commit/83db8336ba5b4a49ee7cc7e1b4fa5064d4a79a49) | T2459-G12: bench validation evidence + Q1-Q20 traceabilit... | Map2 Audio | 2026-04-27 |
-| [`af6922d7`](https://github.com/matthewmackes/map2-audio/commit/af6922d76566f6e1444d5e8cc9f23900fb145e44) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-27 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
