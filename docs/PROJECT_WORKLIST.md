@@ -6,7 +6,7 @@
 - `[✗]` Blocked
 - `[~]` Cancelled
 
-Last updated: 2026-04-26 EDT - T2457 SHIPPED: AppShell section-label routing — Node Ops route presentation table. Adopted from a coherent, tested but uncommitted in-progress diff that had been sitting in the working tree across several T2454 sub-ships; pairs with the prior `35007ced` commit. New `NODE_OPS_ROUTE_PRESENTATION` lookup table maps 16 platform-workspace routes to `{sectionLabel: 'Node Ops', windowLabel: <name>}` pairs and threads a new `shellSectionLabel` field through the AppShell chrome so the workspace bar reads `Node Ops: <window>` for those routes. Backwards-compatible — non-matched routes preserve existing rendering. Validation: typecheck clean; AppShell/WorkspaceBar/useAppShellPresentation/DesktopExperience tests 3 suites / 17 tests / 3 snapshots green; production build clean. Previously: T2454 epic FULLY CLOSED. Hardening pass shipped 3 sub-tasks: T2454-E (memory-pressure-aware warm-cache cap with PSI primary + free-ratio fallback, drop-oldest eviction respecting in_flight; 14 helper tests + 3 reconcile-integration tests); T2454-B2 (engine adoption-stats round-trip — C++ extension to `Map2AudioEngine::loadGraphDocument` records `reused.size()` / `newlyLoaded.size()` per call, exposed via new `get_last_graph_load_stats()` Python binding, threaded into the activation intent extra alongside `warm_path` and `max_crossfade_ms`; 3 new FSM tests); T2454-F (continuous warm-activation soak script `scripts/preload_pin_soak.py` + 30-min evidence run). **30-min soak result: 422 activations, 0 failures, 0 leak alerts, RSS growth 84 MB (under 100 MB threshold), median warm 32ms, median activate ~2s — acceptance PASSED.** Evidence: `docs/fit-for-purpose-evidence/2026-04-26/preload_pin_soak/`. Backend service stayed live throughout; no engine restarts; no audible audio interruption beyond the per-cycle activation crossfade. Previously: T2454-B SHIPPED: warm-path delta activation in the state authority FSM + dynamic-crossfade always-spill. **Revised to Path 1' during implementation** — the existing `Map2AudioEngine::loadGraphDocument` already adopts pre-staged plugin instances via its `loadedByUri` reuse loop, so no new C++ method was needed. Python-only changes deliver the same operator outcome with zero C++ build risk. New `state_authority_dynamic_crossfade.compute_dynamic_crossfade_ms()` helper picks the longest active tail-bearing processor (delay 1500 / shoegaze 1200 / lexilove 2000 / default 500) and clamps to [500, 2000]ms, threaded into `apply_graph_document_to_engine` (replaces the hardcoded 500ms). Orchestrator extended with `claim()` + `mark_consumed()` lifecycle + `in_flight` field — `evict()` skips in-flight entries unless `force=True`, `preload()` refuses to re-stage in-flight, `reconcile()` skips in-flight from both eviction and re-warming. APPLYING phase claims the warm entry before engine apply, runs in try/finally that always pairs with `mark_consumed(success=...)` even on exception paths, records `warm_path: "adopted"|"fallback:<reason>"|"cold"` + `max_crossfade_ms` on the activation intent's runtime extra. Q4=D-noiseless fallback: silent cold-rebuild + auto-evict + WARNING log + reconciler self-heal next 30s tick; no 422, no operator toast on the happy-but-degraded path. 17 new tests (10 dynamic-crossfade + 7 warm-path lifecycle); 43 focused backend tests green; 9 pre-existing strict-VERIFY failures in `test_snapshot_service.py` confirmed unrelated. Frontend typecheck clean. Live `POST /api/snapshots/13/preload` warmed snapshot 13 (3 staged instances); live activation returned status: success. Per-slot adoption observability deferred to T2454-B2 (would require C++ engine stats round-trip). Previously: T2454-D SHIPPED: per-row Pin icon retrofit on the snapshot library / artifacts page. Audit found two surfaces: `SnapshotsBrowserPage` (Carbon DataTable at `/snapshots`) and `SnapshotArtifactsWorkspace` (card-style list under Artifacts). New shared `SnapshotPinButton` component with Carbon `Pin` / `PinFilled` icons, cyan-fill on pinned (`data-pinned='true']` + `--map2-accent-active`), disabled with "Pin set full (5/5)" tooltip when capped + not pinned (still-enabled for unpin even at cap). On a successful pin it kicks `preloadNow()` so the new pin warms within ms; silent on failure since the reconciler retries every 30s. Mounted on row actions (DataTable) and card actions (artifacts cards, wrapped in stopPropagation so card-click selection isn't swallowed). 6 new test cases; 43 SnapshotEditor + PinButton + status hook Jest suites / 193 tests green; typecheck clean; full build clean; fresh `SnapshotPinButton-D7jPPLlv.js` chunk live; both `/` and `/snapshots` serve HTTP 200. Previously: T2454-C SHIPPED: frontend wire-in for snapshot preload pinning. Mounted slice-1's SnapshotPreloadSlotsPanel inside the SnapshotEditor right rail (sibling of `SnapshotEditorSnapshotStatusPanel`); panel receives `snapshotNamesById` memo + `selectedSnapshotId={currentEditorSnapshotId}` so "Add selected" pins the loaded snapshot. Extended `useSnapshotPreloadStatus` with `preloadNow(id)` mutation + `isPreloading` state — invalidates the status query on success so warm dot flips within ms. Extended SnapshotPreloadSlotsPanel with per-cold-slot "Warm now" Flash icon button + amber `data-warming='true'` dot + "Warming…" state label; auto-warm on pin via `handlePinSelected`. Wired Go Live cold-gate inside `handleGoLive` via new pure helper `decidePreloadGate({isPinned,isWarm}) → 'passthrough' | 'warm-then-activate'`: pinned-but-cold targets await `preloadNow()` before activation; non-pinned snapshots take the existing cold rebuild path; warm-failures fall through with a 'warn' toast rather than blocking the operator (warm-path delta activation in the FSM is T2454-B). Drag-and-drop reorder dropped from scope (up/down chevrons sufficient for a 5-element operator-curated list); per-row Pin icon retrofit on the snapshot library / artifacts page split out as T2454-D. Tests: 8 new SnapshotPreloadSlotsPanel cases + 3 new decidePreloadGate cases; full 41 SnapshotEditor Jest suites / 183 tests green; typecheck clean; full build clean (21.1s); fresh `SnapshotEditorPageContent-5hnb3Mja.js` bundle live; `/snapshot-editor` serves HTTP 200. Previously: T2454 slice 1 SHIPPED: operator-curated pinned-snapshot warm cache landed end-to-end. Backend: new `SpecialSettings.snapshot_preload_pins` JSON column (Raft-replicated, max 5) + two new versioned migrations (10 adds the pin column, 11 schema-drift recovery for the historic `snapshot_editor_*` columns that had silently never landed on long-lived dev/prod DBs because the additive pattern doesn't re-run prior migration bodies). New `app/services/snapshot/preload_orchestrator.py` — process-singleton warm cache backed by `ChainService.stage_detached_chain_plugins()` / `release_detached_instance_ids()`, idempotent on same-version, re-stages on version drift, eager-loads `Snapshot.channels`/`chains.plugins` to dodge `greenlet_spawn` errors at the async-engine boundary. New `app/services/snapshot/preload_reconciler.py` — 30s background tick that walks the operator pins, evicts orphans, re-warms cold/drifted entries with capped concurrency=2; started/stopped from the FastAPI lifespan. New routes `POST /api/snapshots/{id}/preload` (idempotent warm) and `GET /api/snapshots/preload-status` (canonical 5-slot layout join of pinned set + warm cache; declared *before* the parametrized `/api/snapshots/{snapshot_id}` route so first-match wins). All 7 special-settings read/write sites threaded with pins; Raft replicate signature + payload + state-manager applied/get-state extended. Frontend: `useSpecialSettings` carries `snapshotPreloadPins` field + `normalizeSnapshotPreloadPins` mirror. New typed hooks `useSnapshotPreloadPins` (pin/unpin/reorder with cap-reached + already-pinned reasons) and `useSnapshotPreloadStatus` (5s poll over `getPreloadStatus`). New `SnapshotPreloadSlotsPanel` Carbon-conformant 5-slot panel with cyan/dim warm dots tied to T2444's `--map2-accent-active*` tokens and "Add selected" affordance; drag-reorder deferred to T2454-C. Validation: 21/21 focused backend tests green (9 new + 12 existing); 41/177 SnapshotEditor + special-settings + preload Jest suites green; typecheck + production build (21.3s) clean; backend service restarted, both `GET /api/settings/special/` (which had been silently 500ing on this dev DB pre-fix) and `GET /api/snapshots/preload-status` now serve HTTP 200; `POST /api/snapshots/13/preload` warmed snapshot 13 with 3 staged instances. Slice 2 (T2454-B FSM warm-path delta + dynamic-crossfade always-spill) and slice 3 (T2454-C frontend wire-in: per-row Pin icon, panel mount, Go Live cold-gate, drag-and-drop) opened as follow-ups. Previously: T2444 SHIPPED: world-class design-language polish sweep across live workspaces. New foundation `web/src/app/styles/design-language.css` (signature accent palette `--map2-accent-active` cyan / `--map2-accent-armed` amber / `--map2-accent-live` red, 5-step duration scale, 4 cubic-bezier eases, focus-ring vocabulary, density tokens, glass/aurora/electroluminescent material classes) and `motionPrimitives.ts` (Framer Motion durations + eases + springs + variants) wired once at AppShell so every workspace inherits. AppShell chrome polished: `WorkspaceBar` cyan-accent active state with electroluminescent glow + focus-visible cyan ring + gentle press-scale + pulsing main dot + severity-tinted glow on warn/error status dots; `ContentKicker` cinematic 560ms decel enter with 60ms-staggered children + cyan eyebrow with gradient bar/glow + Plex display weight 280 + `text-wrap: balance`. Brain Overview: `BrainOverviewShell` now uses `LayoutGroup` + `motion.span` with `layoutId` so the active tab indicator magic-moves between sections on a soft spring; tab content cross-fades via `AnimatePresence mode="wait"`; active tab icon switches to cyan signature accent with glow; clip indicator switches to live-red with breathing animation; meter wells get inset-shadow depth. MIDI Hub: tabs get the same `layoutId` magic-move treatment + cyan sub-label tint; `MidiHubHealthDrawer` upgraded to glassmorphic backdrop-blur with gradient surface, scrim radial-gradient + blur, slow rack-ease enter, cyan rim accent on open. Maschine: panels get inset highlights + cyan focus-within glow; selected pad uses signature cyan accent rim + outer glow; active pad gets green inner highlight + soft glow. `prefers-reduced-motion` respected throughout. Validation: typecheck clean; focused Jest 5 suites / 21 tests / 3 snapshots green; full build clean (21.4s); fresh bundle deployed at port 3000; design-language tokens present in App CSS; `/brain`, `/midi-hub`, `/maschine` all serve HTTP 200; user confirmed visual self-check. Previously: T2443 SHIPPED: Performance Brain ConsoleView channel strips now meter on a real engine-event-driven feed end-to-end. Backend `BrainMeteringService` subscribes to the global MidiHub, drives 16 per-slot excitation states from note-on velocity (~180ms exponential decay) modulated by per-slot fader and mute, and surfaces both `GET /api/engine/brain/metering` (polling fallback) and a new 30 fps WebSocket topic `brain_metering` via the central MeteringBroadcastService. Frontend ships `useBrainChannelMeters` (WS-first with polling fallback, rAF-coalesced flush, 2-second peak-hold computed locally) and rewires ConsoleView ChannelStrip to render peak segments with the locked green→yellow→red ramp at -12 / -3 / 0 dBFS, an RMS gradient underlay, a peak-hold dot that parks at the recent maximum then decays, and a per-strip clip indicator that lights and glows red when the slot crosses 0 dBFS. 10 new backend tests + 4 new frontend hook tests; full brain backend suite (46 tests) and PerformanceBrainPage / DesktopExperience snapshots green; typecheck + build clean. Previously: T2452 SHIPPED: VERIFY phase is strict by default — VERIFY phase is strict by default — every sub-sync (routing/loops/channel-state/morph/MIDI map/expression mappings/automation lanes) collects its error into a phase-level list, then strict mode raises `SnapshotVerificationError([{step,reason}])`, lenient mode (per-snapshot opt-in via `document.meta.verify_mode`) keeps the old behaviour with WARNING-level logs. Route surfaces a 422 `activation_verify_failed` envelope; toast extractor synthesizes a `failures` list so the UI lists every failing sub-sync at once. 10 new tests + extended toast test; backend snapshot suite 33 green; typecheck + build clean. Previously: Snapshot Editor appliance-stability priority cluster SHIPPED (T2448/T2450/T2451/T2453): PipeWire quantum drift is re-forced (or failed loud) at snapshot STAGING; the WebSocket `snapshot_loaded` broadcast is isolated from mid-activation mutations via deepcopy; the LIVE badge is now gated on engine-observed reconciliation agreement (publishing / live_confirmed / engine_desync / idle); a first-class `AudioDeviceDisconnectedBanner` surfaces on disconnect and blocks Go Live. Four deferred audit follow-ups (T2449 optimistic concurrency, T2452 strict VERIFY, T2454 preload orchestrator, T2455 generated TS types) remain open. Full release loop: backend pytest + focused frontend Jest + full `npm run build` + typecheck all clean. Previously: T2447 SHIPPED: deleted the redundant 32px blue context bar (`ContextBar.tsx`/`.css`), removed `contextBarHidden` state + session-dismiss effect from `AppShell`, simplified `WorkspaceBar` to drop the `contextBarHidden` prop, fixed `--ctx-h` at 0px so the 32px reclaims to the content frame. Typecheck + affected tests + full build clean; dual-pushed. Previously: Locked user Q1-Q5 answers into T2442-T2446 and opened T2447 (remove redundant blue context bar from top chrome globally, per user directive). Scoping Q-cycle for T2447 starting next. Previously: Opened five follow-up epics (T2442-T2446) to continue chrome + polish work. Queued for user Q&A-driven scoping: T2442 widen server-side `BrainState.active_section` so the four Brain tabs become first-class `?section=` values; T2443 real per-channel metering feed for Brain ConsoleView; T2444 world-class visual polish sweep across live workspaces; T2445 remaining pre-existing test failures (5 suites); T2446 next-workspace chrome migration (Maschine / MPX1 / LCD / IntelFX). Previously: T2441 SHIPPED: Performance Brain no longer renders a page-local section rail; Brain subsection navigation now lives in the global tree via `/brain?section=...` children for Overview, Perform, Layers, Sequence, Routing, Inputs, Library, Diagnostics, Session Media, and Practice Coach. `PerformanceBrainPage` now renders full-width content, and global-tree query matching now treats route query params as required subsets so Brain section nodes stay selected during extra params like `import_source`. Focused frontend tests, desktop snapshot refresh, and `npm run typecheck` passed. Previously: T2440 SHIPPED: the hidden `API & Webhooks` standalone panel is now a visible Node Ops destination named `Midpoint`. Canonical panel id/path changed to `midpoint` with legacy redirects from `api-webhooks`, the Node Ops tree child list now includes Midpoint, AppShell navigation coverage was added, legacy tab-state storage migrates to the new key, and focused frontend tests plus typecheck passed. Previously: T2439 SHIPPED: applied the T2438 chrome pattern to /midi-hub. Dropped the null ShellWindowProvider from MidiHubShell so AppShell chrome passes through, deleted per-page MidiHubAreaLayout hero blocks, retired MidiHubStatusBar and replaced it with workspace-bar action slots (slot cap raised 3 → 8), added a Brain-style MidiHubTabs row for the 7 sub-routes, added MidiHubHealthDrawer with real stopHub→startHub restart + /events and /network drill-through links, extended the midiHubApi client with startHub/stopHub, replaced MidiHubAreaLayout scroll-memory with a new useMidiHubScrollMemory hook + MidiHubContentFrame. All 7 MIDI Hub sub-page tests migrated and green; typecheck + build clean; commit `0c3ed913` dual-pushed; new bundle live on port 3000. Previously: T2438 SHIPPED: single atomic commit `a06a16d5` (rebased to `ba4feca5`) replaced per-page `PageHeader`/`ShellWindowTitleStrip`/`WindowTitleStrip` with a global AppShell top chrome (blue context bar + 40px workspace bar + content kicker), added an action-slot contract via `useSetShellWindow`, and rebuilt Brain Overview as a four-tab shell (Performance/Console/Step/Split) wired to real `brainApi` data. 25 pages migrated, 6 chrome files deleted, 9 new layout + view files added, typecheck clean, build clean, dual-pushed to origin + gitlab, rebuild + server restart verified live on port 3000. No stubs, no compat shims. Previously: T2436 shipped: the Global Navigation tree now renames `Control Panel` to `Node Ops`, and `Snapshot Editor` now renders as a featured row with a real-time live-status label and `Signal Editor` badge while preserving existing routing/tree structure. Focused tests, snapshot refresh, typecheck, build, and diff hygiene all passed. Previously: T2434 and T2435 shipped: Audio Engine and Management workspace routes now use theme-token-driven surfaces instead of fixed neutral palettes, with focused tests, typecheck, build, and diff hygiene all passing. Previously: T2433 shipped: theme-token audit completed for Management, Audio Engine, Chains, Adoption, and Platform Guide routes; Management and Audio Engine still carry static or white/black-mixed neutral surfaces, while Chains, Adoption, and Platform Guide are already mostly theme-token aligned. Previously: T2432 shipped: Host Machine now lives under Hardware with canonical route `/hardware/host-machine`, legacy redirects preserved, theme-token refit applied, and focused tests/snapshots/build all passing. Previously: T2431-A shipped: CONFIGURATION_STATE_AUTHORITY_AUDIT.md created (15 ranked drift risks, 10 undeclared-plane concepts, subtask links B-J). T2431 epic opened — "Configuration and State Authority plane consolidation". User locked Q2-Q10: hard migration without user compatibility shims, single-node mode can run without etcd, flow snapshots removed, user/operator preferences per node, platform-standard config-change semantics, generated projection headers required, file-backup rollback only, users may still pin/promote experimental features, and `SystemConfig` is a hard-cut retirement. Q1 remains open: whether `/etc/map2/mode.json` or `/etc/map2/environment` owns deployment mode. Previously: T2430 epic opened — LCD Displays full parity + hardening.
+Last updated: 2026-04-26 EDT - T2459 EPIC OPENED: Controller / Mapping / Device-Pack Subsystem (T800-equivalent). Native MAP2 implementation inspired by Mixxx's `src/controllers/`. Standing autonomous full-execution authorization granted by user. Locked decisions: separate `map2-controller-host` process embedding QuickJS; `device-packs/` single-repo top-level dir; GUI-2 Carbon node-graph editor as primary mapping authoring surface with hand-written QuickJS escape hatch; β1 bidirectional Mixxx XML/JS round-trip; γ1 full mirror of `mixxx/res/controllers/` under `device-packs/_mixx-imports/` with preserved GPLv2-or-later attribution (license-compatible direction: AGPLv3 imports GPLv2-or-later via the GPLv3 upward chain, no bypass). 30 subtasks T2459-A1 .. T2459-F5 spanning 6 phases (Foundation 2.5wk + MIDI/JS engine + Mixxx XML reader 6wk + Profiles + node-graph editor with import/export 6wk + HID/bulk/learn wizard 3wk + Vendor range + path-c IR loopback + Mixxx import sync 2.5wk + Hardening 2.5wk = 22.5wk). Closes path-c open from T2458 bench session (`jack_iodelay` is unreliable on UA-1000). First execution unit: T2459-A1 architecture decision doc. Previously: T2457 SHIPPED: AppShell section-label routing — Node Ops route presentation table. Adopted from a coherent, tested but uncommitted in-progress diff that had been sitting in the working tree across several T2454 sub-ships; pairs with the prior `35007ced` commit. New `NODE_OPS_ROUTE_PRESENTATION` lookup table maps 16 platform-workspace routes to `{sectionLabel: 'Node Ops', windowLabel: <name>}` pairs and threads a new `shellSectionLabel` field through the AppShell chrome so the workspace bar reads `Node Ops: <window>` for those routes. Backwards-compatible — non-matched routes preserve existing rendering. Validation: typecheck clean; AppShell/WorkspaceBar/useAppShellPresentation/DesktopExperience tests 3 suites / 17 tests / 3 snapshots green; production build clean. Previously: T2454 epic FULLY CLOSED. Hardening pass shipped 3 sub-tasks: T2454-E (memory-pressure-aware warm-cache cap with PSI primary + free-ratio fallback, drop-oldest eviction respecting in_flight; 14 helper tests + 3 reconcile-integration tests); T2454-B2 (engine adoption-stats round-trip — C++ extension to `Map2AudioEngine::loadGraphDocument` records `reused.size()` / `newlyLoaded.size()` per call, exposed via new `get_last_graph_load_stats()` Python binding, threaded into the activation intent extra alongside `warm_path` and `max_crossfade_ms`; 3 new FSM tests); T2454-F (continuous warm-activation soak script `scripts/preload_pin_soak.py` + 30-min evidence run). **30-min soak result: 422 activations, 0 failures, 0 leak alerts, RSS growth 84 MB (under 100 MB threshold), median warm 32ms, median activate ~2s — acceptance PASSED.** Evidence: `docs/fit-for-purpose-evidence/2026-04-26/preload_pin_soak/`. Backend service stayed live throughout; no engine restarts; no audible audio interruption beyond the per-cycle activation crossfade. Previously: T2454-B SHIPPED: warm-path delta activation in the state authority FSM + dynamic-crossfade always-spill. **Revised to Path 1' during implementation** — the existing `Map2AudioEngine::loadGraphDocument` already adopts pre-staged plugin instances via its `loadedByUri` reuse loop, so no new C++ method was needed. Python-only changes deliver the same operator outcome with zero C++ build risk. New `state_authority_dynamic_crossfade.compute_dynamic_crossfade_ms()` helper picks the longest active tail-bearing processor (delay 1500 / shoegaze 1200 / lexilove 2000 / default 500) and clamps to [500, 2000]ms, threaded into `apply_graph_document_to_engine` (replaces the hardcoded 500ms). Orchestrator extended with `claim()` + `mark_consumed()` lifecycle + `in_flight` field — `evict()` skips in-flight entries unless `force=True`, `preload()` refuses to re-stage in-flight, `reconcile()` skips in-flight from both eviction and re-warming. APPLYING phase claims the warm entry before engine apply, runs in try/finally that always pairs with `mark_consumed(success=...)` even on exception paths, records `warm_path: "adopted"|"fallback:<reason>"|"cold"` + `max_crossfade_ms` on the activation intent's runtime extra. Q4=D-noiseless fallback: silent cold-rebuild + auto-evict + WARNING log + reconciler self-heal next 30s tick; no 422, no operator toast on the happy-but-degraded path. 17 new tests (10 dynamic-crossfade + 7 warm-path lifecycle); 43 focused backend tests green; 9 pre-existing strict-VERIFY failures in `test_snapshot_service.py` confirmed unrelated. Frontend typecheck clean. Live `POST /api/snapshots/13/preload` warmed snapshot 13 (3 staged instances); live activation returned status: success. Per-slot adoption observability deferred to T2454-B2 (would require C++ engine stats round-trip). Previously: T2454-D SHIPPED: per-row Pin icon retrofit on the snapshot library / artifacts page. Audit found two surfaces: `SnapshotsBrowserPage` (Carbon DataTable at `/snapshots`) and `SnapshotArtifactsWorkspace` (card-style list under Artifacts). New shared `SnapshotPinButton` component with Carbon `Pin` / `PinFilled` icons, cyan-fill on pinned (`data-pinned='true']` + `--map2-accent-active`), disabled with "Pin set full (5/5)" tooltip when capped + not pinned (still-enabled for unpin even at cap). On a successful pin it kicks `preloadNow()` so the new pin warms within ms; silent on failure since the reconciler retries every 30s. Mounted on row actions (DataTable) and card actions (artifacts cards, wrapped in stopPropagation so card-click selection isn't swallowed). 6 new test cases; 43 SnapshotEditor + PinButton + status hook Jest suites / 193 tests green; typecheck clean; full build clean; fresh `SnapshotPinButton-D7jPPLlv.js` chunk live; both `/` and `/snapshots` serve HTTP 200. Previously: T2454-C SHIPPED: frontend wire-in for snapshot preload pinning. Mounted slice-1's SnapshotPreloadSlotsPanel inside the SnapshotEditor right rail (sibling of `SnapshotEditorSnapshotStatusPanel`); panel receives `snapshotNamesById` memo + `selectedSnapshotId={currentEditorSnapshotId}` so "Add selected" pins the loaded snapshot. Extended `useSnapshotPreloadStatus` with `preloadNow(id)` mutation + `isPreloading` state — invalidates the status query on success so warm dot flips within ms. Extended SnapshotPreloadSlotsPanel with per-cold-slot "Warm now" Flash icon button + amber `data-warming='true'` dot + "Warming…" state label; auto-warm on pin via `handlePinSelected`. Wired Go Live cold-gate inside `handleGoLive` via new pure helper `decidePreloadGate({isPinned,isWarm}) → 'passthrough' | 'warm-then-activate'`: pinned-but-cold targets await `preloadNow()` before activation; non-pinned snapshots take the existing cold rebuild path; warm-failures fall through with a 'warn' toast rather than blocking the operator (warm-path delta activation in the FSM is T2454-B). Drag-and-drop reorder dropped from scope (up/down chevrons sufficient for a 5-element operator-curated list); per-row Pin icon retrofit on the snapshot library / artifacts page split out as T2454-D. Tests: 8 new SnapshotPreloadSlotsPanel cases + 3 new decidePreloadGate cases; full 41 SnapshotEditor Jest suites / 183 tests green; typecheck clean; full build clean (21.1s); fresh `SnapshotEditorPageContent-5hnb3Mja.js` bundle live; `/snapshot-editor` serves HTTP 200. Previously: T2454 slice 1 SHIPPED: operator-curated pinned-snapshot warm cache landed end-to-end. Backend: new `SpecialSettings.snapshot_preload_pins` JSON column (Raft-replicated, max 5) + two new versioned migrations (10 adds the pin column, 11 schema-drift recovery for the historic `snapshot_editor_*` columns that had silently never landed on long-lived dev/prod DBs because the additive pattern doesn't re-run prior migration bodies). New `app/services/snapshot/preload_orchestrator.py` — process-singleton warm cache backed by `ChainService.stage_detached_chain_plugins()` / `release_detached_instance_ids()`, idempotent on same-version, re-stages on version drift, eager-loads `Snapshot.channels`/`chains.plugins` to dodge `greenlet_spawn` errors at the async-engine boundary. New `app/services/snapshot/preload_reconciler.py` — 30s background tick that walks the operator pins, evicts orphans, re-warms cold/drifted entries with capped concurrency=2; started/stopped from the FastAPI lifespan. New routes `POST /api/snapshots/{id}/preload` (idempotent warm) and `GET /api/snapshots/preload-status` (canonical 5-slot layout join of pinned set + warm cache; declared *before* the parametrized `/api/snapshots/{snapshot_id}` route so first-match wins). All 7 special-settings read/write sites threaded with pins; Raft replicate signature + payload + state-manager applied/get-state extended. Frontend: `useSpecialSettings` carries `snapshotPreloadPins` field + `normalizeSnapshotPreloadPins` mirror. New typed hooks `useSnapshotPreloadPins` (pin/unpin/reorder with cap-reached + already-pinned reasons) and `useSnapshotPreloadStatus` (5s poll over `getPreloadStatus`). New `SnapshotPreloadSlotsPanel` Carbon-conformant 5-slot panel with cyan/dim warm dots tied to T2444's `--map2-accent-active*` tokens and "Add selected" affordance; drag-reorder deferred to T2454-C. Validation: 21/21 focused backend tests green (9 new + 12 existing); 41/177 SnapshotEditor + special-settings + preload Jest suites green; typecheck + production build (21.3s) clean; backend service restarted, both `GET /api/settings/special/` (which had been silently 500ing on this dev DB pre-fix) and `GET /api/snapshots/preload-status` now serve HTTP 200; `POST /api/snapshots/13/preload` warmed snapshot 13 with 3 staged instances. Slice 2 (T2454-B FSM warm-path delta + dynamic-crossfade always-spill) and slice 3 (T2454-C frontend wire-in: per-row Pin icon, panel mount, Go Live cold-gate, drag-and-drop) opened as follow-ups. Previously: T2444 SHIPPED: world-class design-language polish sweep across live workspaces. New foundation `web/src/app/styles/design-language.css` (signature accent palette `--map2-accent-active` cyan / `--map2-accent-armed` amber / `--map2-accent-live` red, 5-step duration scale, 4 cubic-bezier eases, focus-ring vocabulary, density tokens, glass/aurora/electroluminescent material classes) and `motionPrimitives.ts` (Framer Motion durations + eases + springs + variants) wired once at AppShell so every workspace inherits. AppShell chrome polished: `WorkspaceBar` cyan-accent active state with electroluminescent glow + focus-visible cyan ring + gentle press-scale + pulsing main dot + severity-tinted glow on warn/error status dots; `ContentKicker` cinematic 560ms decel enter with 60ms-staggered children + cyan eyebrow with gradient bar/glow + Plex display weight 280 + `text-wrap: balance`. Brain Overview: `BrainOverviewShell` now uses `LayoutGroup` + `motion.span` with `layoutId` so the active tab indicator magic-moves between sections on a soft spring; tab content cross-fades via `AnimatePresence mode="wait"`; active tab icon switches to cyan signature accent with glow; clip indicator switches to live-red with breathing animation; meter wells get inset-shadow depth. MIDI Hub: tabs get the same `layoutId` magic-move treatment + cyan sub-label tint; `MidiHubHealthDrawer` upgraded to glassmorphic backdrop-blur with gradient surface, scrim radial-gradient + blur, slow rack-ease enter, cyan rim accent on open. Maschine: panels get inset highlights + cyan focus-within glow; selected pad uses signature cyan accent rim + outer glow; active pad gets green inner highlight + soft glow. `prefers-reduced-motion` respected throughout. Validation: typecheck clean; focused Jest 5 suites / 21 tests / 3 snapshots green; full build clean (21.4s); fresh bundle deployed at port 3000; design-language tokens present in App CSS; `/brain`, `/midi-hub`, `/maschine` all serve HTTP 200; user confirmed visual self-check. Previously: T2443 SHIPPED: Performance Brain ConsoleView channel strips now meter on a real engine-event-driven feed end-to-end. Backend `BrainMeteringService` subscribes to the global MidiHub, drives 16 per-slot excitation states from note-on velocity (~180ms exponential decay) modulated by per-slot fader and mute, and surfaces both `GET /api/engine/brain/metering` (polling fallback) and a new 30 fps WebSocket topic `brain_metering` via the central MeteringBroadcastService. Frontend ships `useBrainChannelMeters` (WS-first with polling fallback, rAF-coalesced flush, 2-second peak-hold computed locally) and rewires ConsoleView ChannelStrip to render peak segments with the locked green→yellow→red ramp at -12 / -3 / 0 dBFS, an RMS gradient underlay, a peak-hold dot that parks at the recent maximum then decays, and a per-strip clip indicator that lights and glows red when the slot crosses 0 dBFS. 10 new backend tests + 4 new frontend hook tests; full brain backend suite (46 tests) and PerformanceBrainPage / DesktopExperience snapshots green; typecheck + build clean. Previously: T2452 SHIPPED: VERIFY phase is strict by default — VERIFY phase is strict by default — every sub-sync (routing/loops/channel-state/morph/MIDI map/expression mappings/automation lanes) collects its error into a phase-level list, then strict mode raises `SnapshotVerificationError([{step,reason}])`, lenient mode (per-snapshot opt-in via `document.meta.verify_mode`) keeps the old behaviour with WARNING-level logs. Route surfaces a 422 `activation_verify_failed` envelope; toast extractor synthesizes a `failures` list so the UI lists every failing sub-sync at once. 10 new tests + extended toast test; backend snapshot suite 33 green; typecheck + build clean. Previously: Snapshot Editor appliance-stability priority cluster SHIPPED (T2448/T2450/T2451/T2453): PipeWire quantum drift is re-forced (or failed loud) at snapshot STAGING; the WebSocket `snapshot_loaded` broadcast is isolated from mid-activation mutations via deepcopy; the LIVE badge is now gated on engine-observed reconciliation agreement (publishing / live_confirmed / engine_desync / idle); a first-class `AudioDeviceDisconnectedBanner` surfaces on disconnect and blocks Go Live. Four deferred audit follow-ups (T2449 optimistic concurrency, T2452 strict VERIFY, T2454 preload orchestrator, T2455 generated TS types) remain open. Full release loop: backend pytest + focused frontend Jest + full `npm run build` + typecheck all clean. Previously: T2447 SHIPPED: deleted the redundant 32px blue context bar (`ContextBar.tsx`/`.css`), removed `contextBarHidden` state + session-dismiss effect from `AppShell`, simplified `WorkspaceBar` to drop the `contextBarHidden` prop, fixed `--ctx-h` at 0px so the 32px reclaims to the content frame. Typecheck + affected tests + full build clean; dual-pushed. Previously: Locked user Q1-Q5 answers into T2442-T2446 and opened T2447 (remove redundant blue context bar from top chrome globally, per user directive). Scoping Q-cycle for T2447 starting next. Previously: Opened five follow-up epics (T2442-T2446) to continue chrome + polish work. Queued for user Q&A-driven scoping: T2442 widen server-side `BrainState.active_section` so the four Brain tabs become first-class `?section=` values; T2443 real per-channel metering feed for Brain ConsoleView; T2444 world-class visual polish sweep across live workspaces; T2445 remaining pre-existing test failures (5 suites); T2446 next-workspace chrome migration (Maschine / MPX1 / LCD / IntelFX). Previously: T2441 SHIPPED: Performance Brain no longer renders a page-local section rail; Brain subsection navigation now lives in the global tree via `/brain?section=...` children for Overview, Perform, Layers, Sequence, Routing, Inputs, Library, Diagnostics, Session Media, and Practice Coach. `PerformanceBrainPage` now renders full-width content, and global-tree query matching now treats route query params as required subsets so Brain section nodes stay selected during extra params like `import_source`. Focused frontend tests, desktop snapshot refresh, and `npm run typecheck` passed. Previously: T2440 SHIPPED: the hidden `API & Webhooks` standalone panel is now a visible Node Ops destination named `Midpoint`. Canonical panel id/path changed to `midpoint` with legacy redirects from `api-webhooks`, the Node Ops tree child list now includes Midpoint, AppShell navigation coverage was added, legacy tab-state storage migrates to the new key, and focused frontend tests plus typecheck passed. Previously: T2439 SHIPPED: applied the T2438 chrome pattern to /midi-hub. Dropped the null ShellWindowProvider from MidiHubShell so AppShell chrome passes through, deleted per-page MidiHubAreaLayout hero blocks, retired MidiHubStatusBar and replaced it with workspace-bar action slots (slot cap raised 3 → 8), added a Brain-style MidiHubTabs row for the 7 sub-routes, added MidiHubHealthDrawer with real stopHub→startHub restart + /events and /network drill-through links, extended the midiHubApi client with startHub/stopHub, replaced MidiHubAreaLayout scroll-memory with a new useMidiHubScrollMemory hook + MidiHubContentFrame. All 7 MIDI Hub sub-page tests migrated and green; typecheck + build clean; commit `0c3ed913` dual-pushed; new bundle live on port 3000. Previously: T2438 SHIPPED: single atomic commit `a06a16d5` (rebased to `ba4feca5`) replaced per-page `PageHeader`/`ShellWindowTitleStrip`/`WindowTitleStrip` with a global AppShell top chrome (blue context bar + 40px workspace bar + content kicker), added an action-slot contract via `useSetShellWindow`, and rebuilt Brain Overview as a four-tab shell (Performance/Console/Step/Split) wired to real `brainApi` data. 25 pages migrated, 6 chrome files deleted, 9 new layout + view files added, typecheck clean, build clean, dual-pushed to origin + gitlab, rebuild + server restart verified live on port 3000. No stubs, no compat shims. Previously: T2436 shipped: the Global Navigation tree now renames `Control Panel` to `Node Ops`, and `Snapshot Editor` now renders as a featured row with a real-time live-status label and `Signal Editor` badge while preserving existing routing/tree structure. Focused tests, snapshot refresh, typecheck, build, and diff hygiene all passed. Previously: T2434 and T2435 shipped: Audio Engine and Management workspace routes now use theme-token-driven surfaces instead of fixed neutral palettes, with focused tests, typecheck, build, and diff hygiene all passing. Previously: T2433 shipped: theme-token audit completed for Management, Audio Engine, Chains, Adoption, and Platform Guide routes; Management and Audio Engine still carry static or white/black-mixed neutral surfaces, while Chains, Adoption, and Platform Guide are already mostly theme-token aligned. Previously: T2432 shipped: Host Machine now lives under Hardware with canonical route `/hardware/host-machine`, legacy redirects preserved, theme-token refit applied, and focused tests/snapshots/build all passing. Previously: T2431-A shipped: CONFIGURATION_STATE_AUTHORITY_AUDIT.md created (15 ranked drift risks, 10 undeclared-plane concepts, subtask links B-J). T2431 epic opened — "Configuration and State Authority plane consolidation". User locked Q2-Q10: hard migration without user compatibility shims, single-node mode can run without etcd, flow snapshots removed, user/operator preferences per node, platform-standard config-change semantics, generated projection headers required, file-backup rollback only, users may still pin/promote experimental features, and `SystemConfig` is a hard-cut retirement. Q1 remains open: whether `/etc/map2/mode.json` or `/etc/map2/environment` owns deployment mode. Previously: T2430 epic opened — LCD Displays full parity + hardening.
 
 ---
 
@@ -49,6 +49,388 @@ Last updated: 2026-04-26 12:03 EDT - Codex
     - 3. `T099` dynamic-response recording/evaluator session once the core audio path is proven stable.
     - 4. Blocked external-device tail: `T066-subQ` USB-to-DIN adapter qualification, `T066-subR` MIDI Hub full adapter-backed soak/qualification, `T563` Ground Control Pro hardware verification, `T203-subK` Tesira hardware integration.
   - Held the external-device tail explicitly blocked: those jobs do not move until the required third-party hardware is attached, enumerated, and confirmed reachable by the existing precheck/runbook paths.
+
+---
+
+ID: T2459
+Status: [>] In Progress
+Title: T800-equivalent Epic — Controller / Mapping / Device-Pack Subsystem (Mixxx-pattern reference, native MAP2 implementation)
+Description:
+- Goal / acceptance criteria: Build a native MAP2 controller/mapping subsystem inspired by Mixxx's mature `src/controllers/` architecture but rewritten end-to-end in MAP2's own stack (C++/JUCE for protocol I/O, separate `map2-controller-host` process for QuickJS-driven mapping execution, Python FastAPI for orchestration and metadata enrichment, React + Carbon for the GUI). The subsystem must (1) make the EDIROL UA-1000 and Hotone Jogg fully operational on the platform with auto-rendered Carbon panels driven by YAML capability profiles, (2) support a Carbon node-graph editor as the primary mapping authoring surface with hand-written QuickJS as an explicit escape hatch, (3) implement bidirectional Mixxx XML/JS round-trip compatibility so any Mixxx mapping loads and runs unchanged on MAP2 and any MAP2-authored mapping can be exported as Mixxx XML+JS, (4) ship a full mirror of upstream `mixxx/res/controllers/` under `device-packs/_mixx-imports/` with preserved GPLv2-or-later attribution, (5) implement path (c) — replace `jack_iodelay` with an in-repo numpy/JUCE impulse-response measurement (`scripts/measure_loopback_ir.py`) wired to a "Measure latency" GUI button on every device panel, (6) deliver vendor-pack coverage for the full Edirol UA range (UA-25, UA-25EX, UA-101, UA-700, UA-1000, UA-1010) and Hotone product range, (7) ship hardening: schema-validation CI, QuickJS unit tests, MIDI-driven controller integration tests, hardware-in-the-loop smoke runner, and IPC failure-injection harness.
+- Why it matters: The platform's current device-onboarding story is hand-rolled per device with no schema, no profile system, and no path to vendor-range coverage. The 2026-04-26 bench session proved this concretely — the UA-1000 has 12 capture / 10 playback channels, S/PDIF, R-BUS, hardware MIDI, and a hardware mixer that the platform exposes none of, while the Hotone Jogg has onboard amp/cab models and a headphone path that the platform also exposes none of. The Mixxx project has spent ~15 years building exactly the controller/mapping/preset architecture this platform needs (`src/controllers/` with Controller/MidiController/HidController/BulkController abstract base, QJSEngine-backed mapping JS, XML preset library covering 200+ devices, controller-learn wizard, hidapi+libusb+ALSA-seq enumerators). Rewriting those patterns natively into MAP2 (no Mixxx code copied) gives MAP2 a mature foundation without the GPLv2-or-later mapping library being tied to a wrapper. This epic also closes the open `jack_iodelay` UA-1000 latency-measurement problem from T2458's bench session.
+- Dependencies: depends on harness commit `1f079def` (T055 path-c motivation evidence); blocks T563 (Voodoo Lab Ground Control Pro can be onboarded as a vendor pack once the framework lands); supersedes ad-hoc per-device panel work for any device added after this epic ships.
+- Estimated effort: Very High — 22-25 weeks end-to-end across 6 phases (A Foundation 2.5wk + B MIDI/JS engine + Mixxx XML/JS reader 6wk + C Profiles + Carbon node-graph editor with import/export 6wk + D HID + bulk + learn wizard 3wk + E Vendor range + path-c loopback + Mixxx import sync 2.5wk + F Hardening + Mixxx mapping load CI 2.5wk).
+- Required outputs/deliverables:
+  - `device-packs/` top-level directory with `_runtime/`, `_schema/`, `_mixx-imports/` subdirs and per-vendor packs
+  - `juce-engine/Source/Controllers/` (Map2Controller abstract, MIDI/HID/Bulk subclasses, enumerators) and `juce-engine/Source/ControllerHost/` (separate `map2-controller-host` binary embedding QuickJS)
+  - `app/services/controllers/` (ControllerService, MappingRegistry, ProfileRegistry, learning_utils, mapping_file_handler) and `app/services/controller_host_service.py` supervisor
+  - `web/src/app/components/Devices/` (DeviceProfilePanel auto-renderer, MidiLearnWizard, MappingNodeGraphEditor with Mixxx XML import/export)
+  - `docs/architecture/CONTROLLER_LAYER.md` decision doc (locked decisions, IPC schema, vendor-pack format, license-compliance posture)
+  - `scripts/measure_loopback_ir.py` (path-c numpy logarithmic chirp + cross-correlation latency tool replacing `jack_iodelay`)
+  - CI tests: schema validation over every shipped YAML, QuickJS engine unit tests, MIDI-driven controller integration tests, Mixxx mapping load smoke test
+  - Worklist completion notes per subtask, dual-push to origin + gitlab, full release loop verification per CLAUDE.md §0.6
+Subtasks: T2459-A1 .. T2459-F5 (30 subtasks; see below)
+Assigned to: Claude
+Last updated: 2026-04-26 EDT - Claude: epic opened. Standing authorization for full-execution autonomous delivery per user directive 2026-04-26.
+
+Locked architectural decisions (per user Q&A 2026-04-26):
+- C: vendor profile schema drives auto-rendered Carbon scaffolding; opt-in vendor-override React components composed in for unusual UX (Hotone onboard models, UA-1000 R-BUS).
+- Metadata enrichment: background fetch of public product images, datasheets, manufacturer support URLs at onboarding, cached under `/var/lib/map2/devices/<vendor>/<model>/` with offline fallback.
+- Mixxx-pattern reference, native rewrite: study `src/controllers/` architecture; rewrite in MAP2's stack; do NOT copy Mixxx source code (Mixxx is GPLv2-or-later, MAP2 is AGPL-3.0-only — license-compatible direction is import preserved + attributed, not strip-and-rewrite).
+- Process isolation: separate `map2-controller-host` binary executes mapping QuickJS; communicates with backend over Unix-domain socket length-prefixed JSON; supervised by `app/services/controller_host_service.py` with restart-on-crash. Audio engine never links QuickJS — a buggy mapping cannot take down audio.
+- Single-repo `device-packs/`: top-level directory in `map2-audio`, ships in lockstep with platform release. CI tests: schema validation, JS sanity, override TSX compile, Carbon conformance, all gated by `npm --prefix web run build` and `pytest tests/test_device_packs_schema.py`.
+- GUI-2 maximalist: Carbon node-graph editor is the primary mapping authoring surface; hand-written QuickJS is the explicit escape hatch. Import-side reconstructs a node graph from any Mixxx XML+JS; complex stateful JS lands as a single "Custom JS" passthrough node operators can refactor incrementally.
+- β1 maximalist: bidirectional Mixxx XML/JS round-trip — import any Mixxx mapping, export any MAP2-authored mapping back to Mixxx format. Bridge layer maps Mixxx ControlObject names (`[Channel1].volume`) to MAP2 engine targets (`audio.chain.1.volume`) via a static well-known table plus a runtime alias lookup; bindings touching unmapped Mixxx features fail soft with a logged warning.
+- γ1 maximalist: full mirror of upstream `mixxx/res/controllers/` (~290 files: 144 MIDI XMLs, 18 HID XMLs, 2 bulk XMLs, 131 JS files, plus shared libraries `common-hid-packet-parser.js`, `midi-components-0.0.js`, `lodash.mixxx.js`) imported under `device-packs/_mixx-imports/` with original Mixxx copyright headers preserved verbatim, `LICENSE.MIXX` reproducing GPLv2-or-later text, `MANIFEST.yaml` recording upstream commit hash + import date. All imports default to status `untested`; promoted to `verified-on-bench` as bench testing happens.
+- License posture: MAP2 stays AGPL-3.0-only. GPLv2-or-later → GPLv3 → AGPLv3 is a clean upward chain. Mixxx imports are third-party-attributed code in a clearly-labeled directory (`_mixx-imports/` underscore-prefix sentinel). The `LICENSE` file at repo root will note that part of the work is third-party-sourced under GPLv2-or-later.
+
+---
+
+ID: T2459-A1
+Status: [ ] Todo
+Parent: T2459
+Title: Architecture decision doc — `docs/architecture/CONTROLLER_LAYER.md`
+Description:
+- Goal: Write the locked-decisions architecture doc covering: subsystem charter, Mixxx-pattern reference (with citations to `src/controllers/`), native rewrite stance, license-compliance posture, QuickJS choice rationale, separate `map2-controller-host` process design with IPC schema, vendor-pack format, single-repo policy, GUI-2 + β1 + γ1 scope, controller-host crash-isolation budget, fast-path C++ exemption for sub-millisecond MIDI bindings, build/deploy integration with `update` shorthand, CI gate definitions (Definition of Done per CLAUDE.md §0.8).
+- Acceptance: doc is comprehensive enough that any future contributor can author a vendor pack or extend the engine API without re-asking architectural questions.
+- Required outputs: `docs/architecture/CONTROLLER_LAYER.md` (~2000-3000 words), cross-link from `docs/CLAUDE.md` Critical System Rules.
+Assigned to: Claude
+
+---
+
+ID: T2459-A2
+Status: [ ] Todo
+Parent: T2459
+Title: C++ skeleton — `juce-engine/Source/Controllers/` (Map2Controller abstract + factory + lifecycle)
+Description:
+- Goal: Create the abstract C++ base classes and factory for the controller subsystem inside the existing JUCE engine. This is the in-engine half — protocol enumeration only. QuickJS execution and JS mapping logic live in the separate `map2-controller-host` process built in A6/B2; this skeleton owns lifecycle, fast-path direct bindings, and IPC origination from the audio engine side.
+- Acceptance: `Map2Controller` abstract base, `Map2ControllerFactory`, lifecycle (open/close/poll), CMake integration, smoke test that a `Map2Controller` instance can be constructed with a fake protocol backend and dispatched to a fake fast-path binding.
+- Required outputs: `juce-engine/Source/Controllers/Map2Controller.{h,cpp}`, `Map2ControllerFactory.{h,cpp}`, CMake updates, `juce-engine/build` produces clean linked binary.
+Assigned to: Claude
+
+---
+
+ID: T2459-A3
+Status: [ ] Todo
+Parent: T2459
+Title: Python skeleton — `app/services/controllers/` (ControllerService, MappingRegistry, ProfileRegistry)
+Description:
+- Goal: Create the Python service layer that owns YAML profile loading, mapping registry, controller-host supervision integration, and FastAPI routes (`/api/devices`, `/api/devices/<id>/profile`, `/api/devices/<id>/mappings`).
+- Acceptance: `ProfileRegistry.load_packs()` walks `device-packs/` at backend startup, validates every YAML against schema, logs and skips broken packs (per CLAUDE.md gotcha "broken pack must never block backend boot"). FastAPI routes return profiles + active mappings. Pytest coverage of the loader at least 90%.
+- Required outputs: `app/services/controllers/{__init__,controller_service,mapping_registry,profile_registry,mapping_file_handler}.py`, `app/routes/devices.py`, `tests/test_controller_service.py`, `tests/test_profile_registry.py`.
+Assigned to: Claude
+
+---
+
+ID: T2459-A4
+Status: [ ] Todo
+Parent: T2459
+Title: `device-packs/` skeleton with JSON Schema files
+Description:
+- Goal: Create the canonical `device-packs/` directory layout with `_runtime/`, `_schema/`, `_mixx-imports/`, `_tests/fixture-pack/` subdirs; author the four JSON Schema files (`pack.schema.yaml`, `audio-profile.schema.yaml`, `midi-profile.schema.yaml`, `hid-profile.schema.yaml`); write `device-packs/README.md` (operator + pack-author guide) and `device-packs/SCHEMA.md` (schema reference).
+- Acceptance: schemas are jsonschema-Draft-07 compliant; fixture pack validates; CI test exists that walks `device-packs/` and validates every YAML.
+- Required outputs: `device-packs/{README.md,SCHEMA.md,_schema/*.schema.yaml,_tests/fixture-pack/...}`, `tests/test_device_packs_schema.py`.
+Assigned to: Claude
+
+---
+
+ID: T2459-A5
+Status: [ ] Todo
+Parent: T2459
+Title: Controller-host IPC schema (Python TypedDicts + C++ structs, sync-tested)
+Description:
+- Goal: Define the bidirectional message schema between `map2-backend` and `map2-controller-host` over a Unix-domain socket at `/run/map2/controller-host.sock`. Inbound (backend → host): `ScriptLoadRequest`, `MappingActivate`, `MidiSendRequest`, `Shutdown`. Outbound (host → backend): `EngineCommand`, `ControllerEvent`, `LogEvent`, `ScriptError`. Length-prefixed JSON frames.
+- Acceptance: Python TypedDicts in `app/schemas/controller_host.py`, matching C++ structs in `juce-engine/Source/ControllerHost/IpcMessages.h`, schema-sync test that mirrors the existing JUCE-engine schema-sync test (CI fails if struct fields drift from TypedDict fields).
+- Required outputs: `app/schemas/controller_host.py`, `juce-engine/Source/ControllerHost/IpcMessages.h`, `tests/test_controller_host_ipc_schema.py`.
+Assigned to: Claude
+
+---
+
+ID: T2459-A6
+Status: [ ] Todo
+Parent: T2459
+Title: `app/services/controller_host_service.py` supervisor
+Description:
+- Goal: Python supervisor that launches `juce-engine/build/map2-controller-host` as a child process, manages the Unix-domain-socket connection, restarts on crash with exponential backoff, captures last-crash diagnostic to `/var/lib/map2/controller-host/last-crash.log`. CPU affinity pins the child to CPUs `0-3` (off the isolated audio cores per CLAUDE.md §5).
+- Acceptance: supervisor brings up controller-host on backend startup, surfaces `controller_host` health in `/api/health` payload, restart-storm guard (after 5 crashes in 60s, mark service `degraded` and stop auto-restarting), all paths covered by pytest.
+- Required outputs: `app/services/controller_host_service.py`, `app/main.py` lifespan integration, `tests/test_controller_host_service.py`.
+Assigned to: Claude
+
+---
+
+ID: T2459-B1
+Status: [ ] Todo
+Parent: T2459
+Title: `Map2MidiController` C++ class — ALSA seq enumeration + subscription
+Description:
+- Goal: Implement the MIDI controller subclass in the audio engine. Reuses ALSA-seq subscription logic from the existing `juce-engine/Source/MidiHandler.cpp` (per CLAUDE.md gotcha [HIGH] 2026-02-12). Per-device port subscriber, MIDI-message dispatch upstream to `Map2Controller::receive`. Includes the fast-path direct-binding mechanism (`fast_path: true` in YAML wires a control byte directly to an engine target, bypassing JS).
+- Acceptance: connecting/disconnecting a USB MIDI device fires `Map2Controller` open/close. A fast-path binding from a YAML control row to `audio.chain.1.bypass` is observable end-to-end. Existing `MidiHandler` regression tests stay green.
+- Required outputs: `juce-engine/Source/Controllers/Midi/Map2MidiController.{h,cpp}`, `juce-engine/Source/Controllers/Midi/Map2MidiEnumerator.{h,cpp}`, refactor of `MidiHandler.cpp` to share ALSA-seq subscription helper.
+Assigned to: Claude
+
+---
+
+ID: T2459-B2
+Status: [ ] Todo
+Parent: T2459
+Title: QuickJS engine integration in `map2-controller-host` (engine.* host API surface)
+Description:
+- Goal: Embed QuickJS (https://bellard.org/quickjs/) in the controller-host binary. Inject the `engine.*` global object exposing the Mixxx-compatible API surface: `getValue`, `setValue`, `getParameter`, `setParameter`, `connectControl`, `makeConnection`, `trigger`, `beginTimer`, `stopTimer`, `scratchEnable/scratchTick/scratchDisable/isScratching`, `softTakeover*`, `brake/spinback/softStart`, `log`, `getSetting`. Plus `controller.send()`, `controller.sendShortMsg()`, `controller.sendSysexMsg()`. JS calls become typed `EngineCommand` IPC messages back to backend; backend dispatches to JUCE.
+- Acceptance: a small JS mapping file evaluated in controller-host can call `engine.setValue("audio.chain.1.volume", "set", 0.7)` and the audio engine's chain-1 volume reflects 0.7. QuickJS exception in JS does not crash controller-host (caught + logged + emitted as `ScriptError`).
+- Required outputs: `juce-engine/Source/ControllerHost/QuickJSEngine.{h,cpp}`, `juce-engine/Source/ControllerHost/EngineApiBindings.{h,cpp}`, vendored QuickJS sources or fetched via CMake FetchContent.
+Assigned to: Claude
+
+---
+
+ID: T2459-B3
+Status: [ ] Todo
+Parent: T2459
+Title: YAML `<controls>`-equivalent + Mixxx XML reader (legacy schema parity)
+Description:
+- Goal: Implement two readers that produce the same in-memory `MappingDescriptor`: (1) MAP2-native YAML at `device-packs/<vendor>/profiles/<model>.midi.yaml`; (2) Mixxx XML at `device-packs/_mixx-imports/res/controllers/<file>.midi.xml`. Both feed `<controls>` rows that are either direct engine bindings (`group="audio.chain.1.volume"`, `key="set"`) or JS function calls (`script="MyMapping.crossFader"`). The bridge layer maps Mixxx ControlObject names (`[Channel1].volume`) to MAP2 engine targets via a well-known table + runtime alias lookup.
+- Acceptance: parsing a Mixxx XML preset (e.g., `Pioneer-CDJ-2000.midi.xml`) produces a usable `MappingDescriptor` with all `<control>` rows resolved. Bindings touching unmapped Mixxx features (scratch, beatgrid, EQ kill) fail soft (logged warning, binding skipped). Symmetric YAML reader works on a hand-authored `device-packs/edirol-ua/profiles/ua-1000.midi.yaml`.
+- Required outputs: `app/services/controllers/mapping_file_handler.py` (Python YAML reader), `juce-engine/Source/ControllerHost/MixxxXmlReader.{h,cpp}` (C++ XML reader; pugixml dep), `app/services/controllers/mixxx_control_object_bridge.py` (well-known ControlObject → MAP2 target table), pytest suite covering both paths.
+Assigned to: Claude
+
+---
+
+ID: T2459-B4
+Status: [ ] Todo
+Parent: T2459
+Title: Pilot — UA-1000 onboard MIDI bridge end-to-end
+Description:
+- Goal: Author `device-packs/edirol-ua/profiles/ua-1000.midi.yaml` + `device-packs/edirol-ua/scripts/ua-1000-scripts.js`. Wire one button on the UA-1000's hardware MIDI bridge (`UA-1000 MIDI` ALSA client, already visible per CLAUDE.md memory `MEMORY.md`) to one MAP2 engine action (e.g., toggle chain bypass) end-to-end. Demonstrates the full stack: ALSA seq → `Map2MidiController` → IPC → controller-host QuickJS → `engine.setValue()` IPC → audio engine.
+- Acceptance: pressing the chosen hardware button on the connected UA-1000 toggles a MAP2 chain bypass observable in the GUI. End-to-end latency under 5 ms.
+- Required outputs: pack files in `device-packs/edirol-ua/`, integration test that drives a fake MIDI input through the full pipeline.
+Assigned to: Claude
+
+---
+
+ID: T2459-B5
+Status: [ ] Todo
+Parent: T2459
+Title: Mixxx mapping load CI smoke test
+Description:
+- Goal: CI test that walks every file under `device-packs/_mixx-imports/res/controllers/` (after γ1 import lands in E5) and asserts each one parses without error in the MAP2 XML reader and each `<scriptfile>`-referenced JS file syntax-checks under QuickJS. Mirrors Mixxx's `controller_mapping_validation_test.cpp`.
+- Acceptance: the CI test runs in `pytest tests/test_mixxx_mapping_load.py` and passes for the full ~290-file Mixxx corpus. Failures report which file and which row.
+- Required outputs: `tests/test_mixxx_mapping_load.py`.
+Assigned to: Claude
+
+---
+
+ID: T2459-C1
+Status: [ ] Todo
+Parent: T2459
+Title: Auto-rendered Carbon device panel — `<DeviceProfilePanel/>`
+Description:
+- Goal: React component that consumes a YAML device profile (via `/api/devices/<id>/profile`) and renders a Carbon-conformant panel: hero card (product image / datasheet button / manufacturer support button), I/O matrix grid, channel-strip column per port, mixer surface section, on-device DSP cards, MIDI panel, use-case quick-action buttons. Fully responsive, theme-token-driven, uses `Layer` wrappers per CLAUDE.md frontend conventions.
+- Acceptance: `/devices/edirol-ua-1000` and `/devices/hotone-jogg` both render auto-generated panels with the correct controls visible. Carbon conformance review passes per `docs/design/CARBON_CONTRIBUTION_REVIEW_CHECKLIST.md`. Jest coverage of the panel renderer.
+- Required outputs: `web/src/app/components/Devices/DeviceProfilePanel/`, `web/src/app/pages/DevicePage.tsx`, route `/devices/:id` wired into `AppShell`.
+Assigned to: Claude
+
+---
+
+ID: T2459-C2
+Status: [ ] Todo
+Parent: T2459
+Title: Vendor override slot — opt-in React components from packs
+Description:
+- Goal: Lazy-import mechanism that lets vendor packs ship optional React components at `device-packs/<vendor>/overrides/<Component>.tsx` and have them composed into the auto-rendered scaffold by `<DeviceProfilePanel/>`. Pilot: `device-packs/edirol-ua/overrides/UA1000RBusRouter.tsx` (R-BUS digital I/O routing, UA-1000-specific), `device-packs/hotone/overrides/HotoneJoggExtras.tsx` (onboard amp/cab model selector via MIDI).
+- Acceptance: each pilot override mounts on its device's panel and exposes hardware-specific controls. Vite build correctly bundles all overrides without manual import statements.
+- Required outputs: override loader in `web/src/app/components/Devices/`, two pilot override components in `device-packs/`, Vite config update if needed.
+Assigned to: Claude
+
+---
+
+ID: T2459-C3
+Status: [ ] Todo
+Parent: T2459
+Title: Metadata enrichment pipeline — product imagery, datasheet URLs, manual URLs
+Description:
+- Goal: Background fetcher invoked at profile registration (`pull_device_metadata.py`). On device discovery, fetch (with caching + offline fallback): manufacturer product page URL, datasheet PDF URL, 1-3 public product images (front/back/angle), vendor support URL, public manual URL. Cache to `/var/lib/map2/devices/<vendor>/<model>/{datasheet.pdf, image_front.jpg, ...}` keyed by hardware_id.
+- Acceptance: hero card on `/devices/edirol-ua-1000` displays the actual UA-1000 product image; "Datasheet" button opens the cached PDF; "Manual" button opens the public manual link. Same on `/devices/hotone-jogg`. Offline first-launch (no network) falls back to a placeholder image without erroring.
+- Required outputs: `scripts/pull_device_metadata.py`, integration into `ProfileRegistry`, frontend hero card component, pytest coverage.
+Assigned to: Claude
+
+---
+
+ID: T2459-C4
+Status: [ ] Todo
+Parent: T2459
+Title: Carbon node-graph mapping editor — `<MappingNodeGraphEditor/>` with Mixxx XML import/export
+Description:
+- Goal: GUI-2 maximalist visual node-graph mapping authoring surface. Operators wire MIDI inputs (left node column) to MAP2 engine targets (right node column) with optional intermediate logic nodes (latch, momentary, scaling, soft-takeover, mode-switch, encoder-acceleration, LED-output, multi-mode shift layer). Capable of expressing 80% of complex Mixxx mappings visually. Imports any Mixxx XML+JS into the same node graph (complex stateful JS lands as a single "Custom JS" passthrough node operators can refactor incrementally). Exports any MAP2 node graph to Mixxx XML + generated JS. Generates YAML+JS for native packs.
+- Acceptance: round-trip test — import `Pioneer-CDJ-2000.midi.xml`, edit one binding visually, export back to Mixxx XML, confirm round-tripped XML still loads in MAP2 with the edit reflected. Importing a complex mapping (Pioneer DDJ-SX, 2334 lines of JS) produces a usable node graph with the JS inside a "Custom JS" node.
+- Required outputs: `web/src/app/components/Devices/MappingNodeGraphEditor/` (uses ReactFlow per existing platform tech stack), `app/services/controllers/mixxx_xml_writer.py` (export side), `app/services/controllers/mixxx_xml_to_node_graph.py` (import side), Jest + pytest coverage.
+Assigned to: Claude
+
+---
+
+ID: T2459-D1
+Status: [ ] Todo
+Parent: T2459
+Title: `Map2HidController` — hidapi-backed, JUCE Thread, 250 µs poll
+Description:
+- Goal: HID controller subclass in controller-host (not in the audio engine — hidapi I/O thread runs in controller-host so a buggy HID driver can't take down audio). Pattern reference: Mixxx `hidiothread.cpp:165`. Raw report → JS as `Uint8Array`.
+- Acceptance: a connected HID device (e.g., a generic HID controller for testing) enumerates and surfaces raw reports to a JS mapping. No crash on disconnect mid-session.
+- Required outputs: `juce-engine/Source/ControllerHost/Hid/Map2HidController.{h,cpp}`, `Map2HidEnumerator.{h,cpp}`, hidapi dep wired via CMake FetchContent.
+Assigned to: Claude
+
+---
+
+ID: T2459-D2
+Status: [ ] Todo
+Parent: T2459
+Title: `device-packs/_runtime/common-hid-parser.js` — HID packet parser library
+Description:
+- Goal: MAP2-authored rewrite of Mixxx's `common-hid-packet-parser.js` (2243 lines). Provides a JS API for vendor packs to register HID packet structures (offset, bit-mask, signed/unsigned, name) and dispatches per-control callbacks. The pattern is structurally similar so existing Mixxx community knowledge transfers; rewritten under MAP2's AGPL-3.0 license.
+- Acceptance: a Mixxx HID mapping that uses `common-hid-packet-parser.js` (e.g., `Traktor-Kontrol-S3-hid-scripts.js`) loads and dispatches under MAP2's runtime parser. Unit tests cover packet structure registration, dispatch, edge cases (signed integers, bit-fields).
+- Required outputs: `device-packs/_runtime/common-hid-parser.js`, `tests/test_common_hid_parser.py` (drives via QuickJS).
+Assigned to: Claude
+
+---
+
+ID: T2459-D3
+Status: [ ] Todo
+Parent: T2459
+Title: `Map2BulkController` — libusb-1.0 for legacy Hercules-class devices
+Description:
+- Goal: Bulk-transfer controller subclass for legacy USB devices that don't expose HID descriptors (some early Hercules DJ controllers, etc.). Lower priority than MIDI/HID; included for vendor-pack coverage parity with Mixxx.
+- Acceptance: a synthetic bulk endpoint (libusb test backend) round-trips packets through `Map2BulkController` to a JS mapping.
+- Required outputs: `juce-engine/Source/ControllerHost/Bulk/Map2BulkController.{h,cpp}`, libusb-1.0 dep wired via CMake.
+Assigned to: Claude
+
+---
+
+ID: T2459-D4
+Status: [ ] Todo
+Parent: T2459
+Title: `<MidiLearnWizard/>` Carbon component + backend learn endpoints
+Description:
+- Goal: Runtime UI on `/devices/<id>/learn` that lets a user wire any unknown MIDI input to any MAP2 engine target. Captures controller events while user wiggles hardware, classifies via heuristic (button vs absolute knob vs encoder vs 14-bit pair — algorithmic reference: Mixxx `learningutils.cpp` 325 lines), proposes a binding, persists to the device's pack profile YAML on confirm.
+- Acceptance: an unmapped MIDI controller can be plugged in, the learn wizard captures movement on one control, classifies it correctly (validated against ≥3 known MIDI control types), and on confirm appends a `<control>` row to the pack's YAML profile.
+- Required outputs: `web/src/app/components/Devices/MidiLearnWizard/`, `app/routes/device_learn.py` (`/api/devices/<id>/learn/{start,capture,assign}`), `app/services/controllers/learning_utils.py`, Jest + pytest coverage.
+Assigned to: Claude
+
+---
+
+ID: T2459-E1
+Status: [ ] Todo
+Parent: T2459
+Title: Edirol UA range vendor pack — full SKU coverage (UA-25 / UA-25EX / UA-101 / UA-700 / UA-1000 / UA-1010)
+Description:
+- Goal: Author `device-packs/edirol-ua/profiles/<model>.{audio,midi}.yaml` for the full Edirol UA range. Each profile derived from manufacturer datasheets cached in C3. Includes shared `device-packs/edirol-ua/shared/identifier_rules.yaml` (Roland VID 0x0582, PID per model, ALSA card-name regex) and `device-packs/edirol-ua/shared/overrides/EdirolRBusPanel.tsx` (shared override for any UA with R-BUS digital I/O).
+- Acceptance: 6 model profiles validate against schema. Each model's panel renders correctly when its hardware ID matches. UA-1000 panel (the bench device) is operator-driven verified.
+- Required outputs: 12 YAML files (6 audio + 6 MIDI), 1 shared identifier rules file, 1 shared override component, 1 vendor logo asset.
+Assigned to: Claude
+
+---
+
+ID: T2459-E2
+Status: [ ] Todo
+Parent: T2459
+Title: Hotone product range vendor pack — Jogg + Ampero family (Ampero One / Ampero II Stage / Ampero Mini / Soul Press II)
+Description:
+- Goal: Author `device-packs/hotone/profiles/<model>.{audio,midi}.yaml` for the Hotone product range. Each profile includes onboard amp/cab/effect block parameters exposed via MIDI CC. Headphone path is a first-class "use case" preset for the Jogg.
+- Acceptance: 5 model profiles validate. Jogg panel (the bench device) is operator-driven verified including the headphone use-case preset.
+- Required outputs: 10 YAML files (5 audio + 5 MIDI), 1 vendor logo, 1 shared override component for Hotone onboard model selection.
+Assigned to: Claude
+
+---
+
+ID: T2459-E3
+Status: [ ] Todo
+Parent: T2459
+Title: Path (c) — `scripts/measure_loopback_ir.py` numpy chirp + cross-correlation
+Description:
+- Goal: Replace `jack_iodelay` with a deterministic in-repo loopback latency measurement: emit a known logarithmic chirp (50 Hz → 20 kHz, 500 ms) at 48 kHz on a chosen profile-defined `loopback_ports.playback` JACK port, capture from the matching `loopback_ports.capture` for `len(chirp) + 200 ms`, compute round-trip delay via inverse-filter cross-correlation. Sub-sample resolution. Closes the open T055/T2458 UA-1000 latency-measurement problem confirmed in commit `1f079def`.
+- Acceptance: tool produces physically plausible RTT on the UA-1000 (~3-5 ms expected vs `jack_iodelay`'s 10/52/224/277/351/819/925/968/1033/1161/1247/1331 ms cluster ladder). Three back-to-back trials on AUX0 reproduce within ±0.5 ms. Same tool produces ≈25 ms on the Hotone Jogg (matching `jack_iodelay`'s clean reading on that device, validating the measurement is correct).
+- Required outputs: `scripts/measure_loopback_ir.py`, `tests/test_measure_loopback_ir.py`, evidence under `docs/fit-for-purpose-evidence/<date>/<device-id>/`.
+Assigned to: Claude
+
+---
+
+ID: T2459-E4
+Status: [ ] Todo
+Parent: T2459
+Title: "Measure latency" GUI button on every device panel
+Description:
+- Goal: Add a "Measure latency" Carbon button to `<DeviceProfilePanel/>` that invokes `scripts/measure_loopback_ir.py` against the device's profile-defined `loopback_ports`, streams progress to the operator, and writes versioned evidence under `docs/fit-for-purpose-evidence/<date>/<device-id>/` on completion. Last result is shown inline on the panel (RTT, jitter, evidence link).
+- Acceptance: clicking the button on `/devices/edirol-ua-1000` and `/devices/hotone-jogg` runs the measurement, displays the RTT, and writes evidence. Disabled with explanatory tooltip when no `loopback_ports` declared in the profile.
+- Required outputs: button component, backend `/api/devices/<id>/measure-latency` route, evidence-writer integration, frontend status display, Jest + pytest coverage.
+Assigned to: Claude
+
+---
+
+ID: T2459-E5
+Status: [ ] Todo
+Parent: T2459
+Title: γ1 — full mirror of `mixxx/res/controllers/` under `device-packs/_mixx-imports/`
+Description:
+- Goal: Pull every file from upstream `mixxx/res/controllers/` (~290 files: 144 MIDI XMLs, 18 HID XMLs, 2 bulk XMLs, 131 JS files) into `device-packs/_mixx-imports/res/controllers/` with original Mixxx copyright headers preserved verbatim. Add `device-packs/_mixx-imports/LICENSE.MIXX` reproducing the GPLv2-or-later text and Mixxx authorship credits. Add `device-packs/_mixx-imports/MANIFEST.yaml` recording upstream commit hash + import date. Update root `LICENSE` to note third-party-sourced GPLv2-or-later content. Each Mixxx-imported file gets a sidecar `<file>.MAP2.yaml` adding MAP2-side metadata: alias table (empty by default), status `untested`, MAP2 commit when imported, upstream Mixxx commit hash. Ship `scripts/sync_mixxx_imports.py` for periodic resync.
+- Acceptance: ~290 files imported with correct attribution. CI smoke test verifies no Mixxx-attributed file has been edited (only sidecar `.MAP2.yaml` files are MAP2-mutable). License-compliance audit passes — every imported file retains its original Mixxx header verbatim.
+- Required outputs: `device-packs/_mixx-imports/` populated, `LICENSE.MIXX`, `MANIFEST.yaml`, root `LICENSE` updated, `scripts/sync_mixxx_imports.py`, `tests/test_mixxx_imports_immutable.py`.
+Assigned to: Claude
+
+---
+
+ID: T2459-F1
+Status: [ ] Todo
+Parent: T2459
+Title: Hardening — schema validation CI for every shipped vendor pack YAML
+Description:
+- Goal: Pytest suite that walks `device-packs/` and validates every YAML against its corresponding JSON Schema (audio profile, MIDI profile, HID profile, pack manifest). Mirrors Mixxx's `controller_mapping_validation_test.cpp` pattern but for YAML.
+- Acceptance: CI fails if any new pack ships an invalid YAML. CI runs on every PR.
+- Required outputs: `tests/test_device_packs_schema.py` (extended from A4), CI integration.
+Assigned to: Claude
+
+---
+
+ID: T2459-F2
+Status: [ ] Todo
+Parent: T2459
+Title: Hardening — pytest suite mirroring Mixxx's `midicontrollertest.cpp` (synthesized MIDI bytes)
+Description:
+- Goal: Pure-unit pytest suite that drives `Map2MidiController` with synthesized MIDI bytes (no hardware) and asserts engine-state changes via the IPC layer. Reference: Mixxx `src/test/midicontrollertest.cpp` (692 lines).
+- Acceptance: synthesized MIDI byte streams (CC, note-on, note-off, pitch bend, 14-bit MSB/LSB pairs) drive bindings end-to-end and assert correct engine commands are emitted. ≥30 test cases.
+- Required outputs: `tests/test_map2_midi_controller.py`.
+Assigned to: Claude
+
+---
+
+ID: T2459-F3
+Status: [ ] Todo
+Parent: T2459
+Title: Hardening — QuickJS engine pytest suite (mirrors Mixxx's `controllerscriptenginelegacy_test.cpp`)
+Description:
+- Goal: Pytest suite that boots controller-host's QuickJS engine, evaluates inline mapping snippets, checks `engine.setValue`/`makeConnection`/`beginTimer` semantics. Reference: Mixxx `src/test/controllerscriptenginelegacy_test.cpp` (1634 lines).
+- Acceptance: ≥40 test cases covering each `engine.*` API method, timer semantics, connection trigger semantics, error handling, JS exception isolation.
+- Required outputs: `tests/test_controller_host_quickjs.py`.
+Assigned to: Claude
+
+---
+
+ID: T2459-F4
+Status: [ ] Todo
+Parent: T2459
+Title: Hardening — hardware-in-the-loop smoke runner for bench devices
+Description:
+- Goal: HIL smoke script that boots the bench with the UA-1000 + Jogg connected, runs each profile's MIDI input path + audio loopback measurement + GUI panel render, writes evidence under `docs/fit-for-purpose-evidence/<date>/`. Equivalent to the existing `scripts/run_t055_ua1000_loopback_matrix.py` pattern but covers the full device subsystem.
+- Acceptance: green run on the bench produces complete evidence directory; failure modes (missing device, unresponsive MIDI bridge, broken pack) report clearly without crashing the runner.
+- Required outputs: `scripts/run_t2459_device_subsystem_hil_smoke.py`, evidence schema doc.
+Assigned to: Claude
+
+---
+
+ID: T2459-F5
+Status: [ ] Todo
+Parent: T2459
+Title: Hardening — IPC failure-injection harness
+Description:
+- Goal: Pytest suite that exercises the audio engine's resilience to controller-host failure modes: kill controller-host mid-run + assert audio uninterrupted; corrupt a pack YAML + assert engine still boots in degraded mode; saturate IPC with `engine.setValue` storms + assert no audio XRUNs; QuickJS infinite loop in JS + assert supervisor restarts within 5s and audio is uninterrupted.
+- Acceptance: 4 failure-injection scenarios, all green.
+- Required outputs: `tests/test_controller_host_failure_injection.py`.
+Assigned to: Claude
 
 ---
 
