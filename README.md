@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1329** Python | **1301** TypeScript | **157** C++/H | **145** Docs | **2911** total commits | **3** stars | **0** forks | **0** open issues
+**1333** Python | **1301** TypeScript | **157** C++/H | **145** Docs | **2913** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`ba99e1cb`](https://github.com/matthewmackes/map2-audio/commit/ba99e1cb86e4e231b39bdbf5be212dad726b312e) | T2459-G1: Hardware Store backend foundation + 22 new tests | Map2 Audio | 2026-04-27 |
+| [`9fdd2800`](https://github.com/matthewmackes/map2-audio/commit/9fdd28009f31b53e89252f012b538fc2e9545376) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-27 |
 | [`2362cfd0`](https://github.com/matthewmackes/map2-audio/commit/2362cfd0eb10e320811f29dd1bc5c2b3b6aa5f96) | T2459-G epic open: Hardware Store GUI integration design ... | Map2 Audio | 2026-04-27 |
 | [`d03f4c95`](https://github.com/matthewmackes/map2-audio/commit/d03f4c9520fc73f6ce1d935f6941497eb2d32e81) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-27 |
 | [`c3ff28c0`](https://github.com/matthewmackes/map2-audio/commit/c3ff28c039c3f9c04ef76da436f71330fb79b279) | T2459 epic close: 30/30 subtasks Done, full test suite green | Map2 Audio | 2026-04-27 |
 | [`b5fd05a5`](https://github.com/matthewmackes/map2-audio/commit/b5fd05a5ee245be138e3dccb8bcfb95050b08c47) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-27 |
 | [`093f89fd`](https://github.com/matthewmackes/map2-audio/commit/093f89fd5828de99bea51837552ca81ca0c4e02b) | T2459-F5: IPC failure-injection harness + 8 cases — Phase... | Map2 Audio | 2026-04-27 |
 | [`3857abf7`](https://github.com/matthewmackes/map2-audio/commit/3857abf7f59a04311c89f5f69f59dc147af03cff) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-27 |
-| [`844b995e`](https://github.com/matthewmackes/map2-audio/commit/844b995edae413c31e913c38a477b117d664c54d) | T2459-F4: HIL smoke runner + 4 self-test cases + first PA... | Map2 Audio | 2026-04-27 |
-| [`60883669`](https://github.com/matthewmackes/map2-audio/commit/60883669425987bd40af2c387ef4bbdb1bc920c6) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-27 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
