@@ -180,6 +180,14 @@ bool ShmEventRing::push (std::uint64_t tsNanos,
                          std::size_t length,
                          std::uint16_t controllerIndex) noexcept
 {
+    return pushWithFlags (tsNanos, controllerIndex, payload, length);
+}
+
+bool ShmEventRing::pushWithFlags (std::uint64_t tsNanos,
+                                  std::uint16_t flags,
+                                  const std::uint8_t* payload,
+                                  std::size_t length) noexcept
+{
     if (mapped_ == nullptr || length == 0 || length > kMaxPayloadBytes || payload == nullptr)
         return false;
 
@@ -197,10 +205,11 @@ bool ShmEventRing::push (std::uint64_t tsNanos,
     // racy if the consumer starts reading before we publish writeIndex.
     slot.length.store (0, std::memory_order_relaxed);
     slot.tsNanos.store (tsNanos, std::memory_order_relaxed);
-    slot.controllerIndex = controllerIndex;
+    slot.controllerIndex = flags;
     std::memcpy (slot.payload, payload, length);
     // Publish length last; consumer reads length acquire and sees the
-    // payload bytes (and controllerIndex) that were stored before it.
+    // payload bytes + controllerIndex (Slice 6 routing index in bits 0..14,
+    // Slice 13 is_ump flag in bit 15) that were written before it.
     slot.length.store (static_cast<std::uint16_t> (length), std::memory_order_release);
 
     header_->writeIndex.store (write + 1, std::memory_order_release);
@@ -211,6 +220,14 @@ std::size_t ShmEventRing::pop (std::uint64_t* outTsNanos,
                                std::uint8_t*  outPayload,
                                std::size_t    outPayloadCapacity,
                                std::uint16_t* outControllerIndex) noexcept
+{
+    return popWithFlags (outTsNanos, outControllerIndex, outPayload, outPayloadCapacity);
+}
+
+std::size_t ShmEventRing::popWithFlags (std::uint64_t* outTsNanos,
+                                        std::uint16_t* outFlags,
+                                        std::uint8_t*  outPayload,
+                                        std::size_t    outPayloadCapacity) noexcept
 {
     if (mapped_ == nullptr || outPayload == nullptr || outPayloadCapacity == 0)
         return 0;
@@ -230,8 +247,8 @@ std::size_t ShmEventRing::pop (std::uint64_t* outTsNanos,
     const std::size_t copyLen = std::min (len, outPayloadCapacity);
     if (outTsNanos != nullptr)
         *outTsNanos = slot.tsNanos.load (std::memory_order_relaxed);
-    if (outControllerIndex != nullptr)
-        *outControllerIndex = slot.controllerIndex;
+    if (outFlags != nullptr)
+        *outFlags = slot.controllerIndex;
     std::memcpy (outPayload, slot.payload, copyLen);
 
     header_->readIndex.store (read + 1, std::memory_order_release);

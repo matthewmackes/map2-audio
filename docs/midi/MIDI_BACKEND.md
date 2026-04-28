@@ -203,4 +203,85 @@ The host process is GPL-clean: it embeds QuickJS (MIT) + libremidi (BSL-1.0) + n
 
 ---
 
+## 9. UMP / MIDI 2.0 (T2459-H5 Slice 13)
+
+The MIDI 2.0 / UMP foundation rides the same two-ring contract as MIDI 1.0
+without growing a third ring or changing `kSlotSizeBytes` /
+`kMaxPayloadBytes`.
+
+### Classifier
+
+`classifyUmpMessageType(mt)` in `ShmEventRing.h` buckets a UMP packet's
+4-bit message-type nibble identically to the MIDI 1.0 status-byte
+classifier:
+
+| MT | Family | Bucket |
+|----|--------|--------|
+| 0x0 | Utility (NOOP / jitter reduction) | Control |
+| 0x1 | System Real Time / Common | RT |
+| 0x2 | MIDI 1.0 Channel Voice | RT |
+| 0x3 | Data 64 (SysEx7) | Control |
+| 0x4 | MIDI 2.0 Channel Voice | RT |
+| 0x5 | Data 128 (SysEx8 / Mixed Data Set) | Control |
+| 0x6..0xF | Reserved / future | Control |
+
+Implementation is a 16-bit RT-mask shift, branchless, ~5 ns. Helper
+`umpMessageTypeFromFirstByte()` extracts the nibble from the first
+payload byte.
+
+### Slot discriminator
+
+`Slot::reserved` (uint16) bit allocation (T2459-H5 Slice 13 + Slice 6
+coordination):
+
+- **bit 15** (`kSlotFlagIsUmp`) — 0 = MIDI 1.0 byte stream, 1 = UMP packet.
+- **bits 0..14** — reserved for the upcoming Slice 6 controller_index.
+  Slice 13 leaves them zero.
+
+The wire format on disk is unchanged. Slice 13 ships
+`pushWithFlags()` / `popWithFlags()` overloads on `ShmEventRing` for
+producers / consumers that need the discriminator; the existing `push()`
+/ `pop()` continue to behave as before (flags = 0).
+
+### Producer seam
+
+`LibremidiAdapter::pushUmpMessage(bytes, length)` is the integration
+entry point. Length must be 4 / 8 / 12 / 16 (one to four 32-bit words);
+anything else is rejected. The adapter classifies via the UMP message
+type and pushes to the matching ring with `kSlotFlagIsUmp` set.
+
+The vendored libremidi v5.1.0 we build against does not yet expose a
+hardware-validated UMP input/output surface on this platform. Once a
+MIDI-2.0-capable device is on the bench, a real `openUmpInput()` lands
+next to this seam (the upstream API surface is what blocks that step,
+not engine-side plumbing).
+
+### IPC additive field
+
+`MidiSendRequest` gains an optional `format` field. Existing producers
+omit it and remain wire-compatible (`""` / absent / `"midi1"` all mean
+MIDI 1.0). `format = "ump"` flags the `bytes` array as a single UMP
+packet (4 / 8 / 12 / 16 bytes). The Python side ships
+`MidiHostClient.send_ump(controller_key, packet_bytes)` which validates
+length and emits the framed request.
+
+The schema-sync gate
+(`tests/test_controller_host_ipc_schema.py::test_python_manifest_matches_cpp`)
+verifies the `MidiSendRequest` field list matches the C++
+`CPP_FIELD_MANIFEST`.
+
+### Tests
+
+- `juce-engine/tests/ShmEventRingTests.cpp` — UMP classifier truth table,
+  `umpMessageTypeFromFirstByte` extraction, is_ump flag round-trip
+  through push / pop with controller_index bits zero.
+- `juce-engine/tests/UmpRoundTripTests.cpp` — `pushUmpMessage` routes
+  MT=4 (M2 channel voice) to RT and MT=3 (SysEx7) to control with the
+  flag set; rejects malformed lengths.
+- `tests/test_controller_host_ump_roundtrip_t2459h5.py` — schema accepts
+  `format` additively, `send_ump` constructs the right wire frame, the
+  CPP_FIELD_MANIFEST line for `MidiSendRequest` carries `format`.
+
+---
+
 **End of document.** Authoritative for T2459-H implementation work. Edits go through the standard `update` shorthand and dual-push.

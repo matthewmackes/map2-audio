@@ -248,6 +248,21 @@ void LibremidiAdapter::pushMessage (const std::uint8_t* bytes,
     onIncomingMessage (bytes, length, monotonicNanos(), controllerIndex);
 }
 
+void LibremidiAdapter::pushUmpMessage (const std::uint8_t* bytes, std::size_t length)
+{
+    if (length == 0 || bytes == nullptr) return;
+    // UMP packets are 1..4 32-bit words (4, 8, 12, or 16 bytes). Reject
+    // anything outside that range — the producer should never push a
+    // half-word fragment.
+    if (length < 4u || length > 16u || (length % 4u) != 0u) return;
+    const std::uint8_t mt = umpMessageTypeFromFirstByte (bytes[0]);
+    const RingClass cls = classifyUmpMessageType (mt);
+    ShmEventRing* target = (cls == RingClass::Rt) ? rtRing_ : controlRing_;
+    if (target == nullptr || ! target->isOpen())
+        return;
+    target->pushWithFlags (monotonicNanos(), kSlotFlagIsUmp, bytes, length);
+}
+
 void LibremidiAdapter::onIncomingMessage (const std::uint8_t* bytes,
                                           std::size_t length,
                                           std::uint64_t tsNanos,

@@ -960,6 +960,7 @@ if(BUILD_CONTROLLER_HOST_TESTS)
         tests/ControlObjectBridgeTests.cpp
         tests/Map2MappingEngineTests.cpp
         tests/ClusterGatewayScaffoldTests.cpp
+        tests/UmpRoundTripTests.cpp
         Source/ControllerHost/QuickJSEngine.cpp
         Source/ControllerHost/EngineApiBindings.cpp
         Source/ControllerHost/Hid/Map2HidController.cpp

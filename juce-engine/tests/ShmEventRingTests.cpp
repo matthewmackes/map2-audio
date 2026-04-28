@@ -23,8 +23,11 @@
 using map2::controller_host::ShmEventRing;
 using map2::controller_host::RingClass;
 using map2::controller_host::classifyMidiStatus;
+using map2::controller_host::classifyUmpMessageType;
+using map2::controller_host::umpMessageTypeFromFirstByte;
 using map2::controller_host::monotonicNanos;
 using map2::controller_host::kMaxPayloadBytes;
+using map2::controller_host::kSlotFlagIsUmp;
 
 namespace {
 
@@ -68,6 +71,67 @@ TEST_CASE ("classifyMidiStatus routes RT and control byte families correctly", "
     // Data bytes (no status bit set) → control.
     REQUIRE (classifyMidiStatus (0x00) == RingClass::Control);
     REQUIRE (classifyMidiStatus (0x7F) == RingClass::Control);
+}
+
+TEST_CASE ("classifyUmpMessageType buckets UMP message types by RT vs control", "[H5][ring][ump]")
+{
+    // RT bucket: System (0x1), MIDI 1.0 channel voice (0x2), MIDI 2.0 channel voice (0x4).
+    REQUIRE (classifyUmpMessageType (0x1) == RingClass::Rt);
+    REQUIRE (classifyUmpMessageType (0x2) == RingClass::Rt);
+    REQUIRE (classifyUmpMessageType (0x4) == RingClass::Rt);
+
+    // Control bucket: Utility (0x0), SysEx7 (0x3), SysEx8/Mixed Data Set (0x5).
+    REQUIRE (classifyUmpMessageType (0x0) == RingClass::Control);
+    REQUIRE (classifyUmpMessageType (0x3) == RingClass::Control);
+    REQUIRE (classifyUmpMessageType (0x5) == RingClass::Control);
+
+    // Reserved / future MTs default to control.
+    REQUIRE (classifyUmpMessageType (0x6) == RingClass::Control);
+    REQUIRE (classifyUmpMessageType (0x7) == RingClass::Control);
+    REQUIRE (classifyUmpMessageType (0xF) == RingClass::Control);
+}
+
+TEST_CASE ("umpMessageTypeFromFirstByte extracts the high nibble", "[H5][ring][ump]")
+{
+    REQUIRE (umpMessageTypeFromFirstByte (0x40) == 0x4);   // MT 4 (M2 ChVoice)
+    REQUIRE (umpMessageTypeFromFirstByte (0x4F) == 0x4);
+    REQUIRE (umpMessageTypeFromFirstByte (0x20) == 0x2);   // MT 2 (M1 ChVoice)
+    REQUIRE (umpMessageTypeFromFirstByte (0x10) == 0x1);   // MT 1 (System)
+    REQUIRE (umpMessageTypeFromFirstByte (0x00) == 0x0);
+}
+
+TEST_CASE ("ShmEventRing round-trips the is_ump flag through reserved bits", "[H5][ring][ump]")
+{
+    const auto name = uniqueShmName ("/map2-test.ump-flag");
+    ShmEventRing producer;
+    REQUIRE (producer.open (name, 16, ShmEventRing::Mode::CreateOwned));
+    ShmEventRing consumer;
+    REQUIRE (consumer.open (name, 0, ShmEventRing::Mode::OpenExisting));
+
+    // Push one MIDI 1.0 message (no flags) and one UMP packet (kSlotFlagIsUmp).
+    const std::uint8_t midi1[3] = { 0xB0, 0x07, 0x40 };
+    const std::uint8_t ump32[4] = { 0x40, 0x91, 0x3C, 0x40 };   // MT=4 word
+    REQUIRE (producer.push (1ull, midi1, sizeof (midi1)));
+    REQUIRE (producer.pushWithFlags (2ull, kSlotFlagIsUmp, ump32, sizeof (ump32)));
+
+    std::uint64_t ts = 0;
+    std::uint16_t flags = 0xFFFFu;
+    std::uint8_t buf[kMaxPayloadBytes] {};
+
+    const std::size_t n1 = consumer.popWithFlags (&ts, &flags, buf, sizeof (buf));
+    REQUIRE (n1 == 3);
+    REQUIRE (ts == 1ull);
+    REQUIRE ((flags & kSlotFlagIsUmp) == 0u);
+    REQUIRE (buf[0] == 0xB0);
+
+    flags = 0u;
+    const std::size_t n2 = consumer.popWithFlags (&ts, &flags, buf, sizeof (buf));
+    REQUIRE (n2 == 4);
+    REQUIRE (ts == 2ull);
+    REQUIRE ((flags & kSlotFlagIsUmp) == kSlotFlagIsUmp);
+    REQUIRE (buf[0] == 0x40);
+    // Slice 6's controller_index bits (0..14) must remain zero in this slice.
+    REQUIRE ((flags & 0x7FFFu) == 0u);
 }
 
 TEST_CASE ("ShmEventRing rejects non-power-of-two capacity in CreateOwned mode", "[H1][ring]")

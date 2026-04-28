@@ -19,8 +19,11 @@
 // Wire format (per slot):
 //   uint64_t tsNanos          — host-side monotonic timestamp at producer push time
 //   uint16_t length           — payload length in bytes (0..MAX_PAYLOAD_BYTES)
-//   uint16_t controllerIndex  — T2459-H3 Slice 6 multi-controller routing tag.
-//                                Producer sets this to the per-port controller
+//   uint16_t controllerIndex  — packed routing tag. Bit 15 = is_ump
+//                                (0 = MIDI 1.0 byte stream, 1 = UMP packet,
+//                                T2459-H5 Slice 13). Bits 0..14 = T2459-H3
+//                                Slice 6 multi-controller routing index;
+//                                producer sets this to the per-port controller
 //                                index assigned by the host on openInput; the
 //                                consumer looks it up against
 //                                `controller_keys_by_index_` to dispatch through
@@ -30,7 +33,8 @@
 //                                Was the H1 `reserved` field; the offset and
 //                                size are unchanged so the H1 slot layout stays
 //                                wire-compatible.
-//   uint8_t  payload[MAX_PAYLOAD_BYTES] — raw MIDI bytes including status
+//   uint8_t  payload[MAX_PAYLOAD_BYTES] — raw MIDI bytes including status,
+//                         OR raw UMP packet bytes (4..16) when is_ump = 1.
 //
 // Per-slot size = 8 + 2 + 2 + 256 = 268 bytes. Padded to 320 bytes to align
 // each slot to a 64-byte cache line boundary.
@@ -135,6 +139,59 @@ inline RingClass classifyMidiStatus (std::uint8_t status) noexcept
     return RingClass::Control;
 }
 
+// ────────────────────────────────────────────────────────────────────
+// UMP (MIDI 2.0) message-type classifier (T2459-H5 Slice 13).
+//
+// UMP packets begin with a 32-bit word whose high nibble is the
+// "message type" (mt). We split MT values into the same RT vs control
+// buckets used by the MIDI 1.0 path, so a single drain pump on the
+// engine side can keep its existing two-ring contract without growing
+// a third ring.
+//
+// RT bucket:
+//   0x1 — System Real Time / Common subset (clock-tick / start /
+//         continue / stop). The full mapping below uses a one-byte
+//         secondary status check on the first data byte, but the bucket
+//         decision can already happen at MT level: System packets are
+//         dropped into RT and the consumer decides at parse time.
+//         (We bucket conservatively — anything in MT=0x1 goes RT, since
+//         the clock messages dominate by traffic.)
+//   0x2 — MIDI 1.0 Channel Voice (note/CC/pitch bend high-resolution
+//         carrier). Same RT profile as the legacy classifier.
+//   0x4 — MIDI 2.0 Channel Voice (the high-resolution successor to MT
+//         0x2). Same RT profile.
+//
+// Control bucket:
+//   0x0 — Utility (NOOP, jitter-reduction).
+//   0x3 — Data 64 (SysEx7).
+//   0x5 — Data 128 (SysEx8 / Mixed Data Set).
+//   anything else → control (covers 0x6..0xF reserved/future).
+//
+// Branchless decision via a 16-bit lookup mask: bit `mt` is 1 when the
+// message type belongs in the RT bucket. mt is bounded to 4 bits so
+// the shift is well-defined.
+inline RingClass classifyUmpMessageType (std::uint8_t mt) noexcept
+{
+    constexpr std::uint16_t kRtMask =
+          (std::uint16_t{1} << 0x1)
+        | (std::uint16_t{1} << 0x2)
+        | (std::uint16_t{1} << 0x4);
+    const std::uint8_t bit = static_cast<std::uint8_t> (mt & 0x0Fu);
+    return ((kRtMask >> bit) & 0x1u) ? RingClass::Rt : RingClass::Control;
+}
+
+// Extract the UMP message-type nibble from the first byte of the first
+// 32-bit word (host endianness — UMP words are big-endian on the wire,
+// but on this platform we receive raw bytes so the high nibble of
+// byte[0] is the MT regardless of endianness).
+inline std::uint8_t umpMessageTypeFromFirstByte (std::uint8_t first) noexcept
+{
+    return static_cast<std::uint8_t> ((first >> 4) & 0x0Fu);
+}
+
+// Slot.reserved bit allocation (T2459-H5 Slice 13). See file header.
+constexpr std::uint16_t kSlotFlagIsUmp = 0x8000u;
+
 // Slot layout — exposed for the Python introspection client so it can
 // match the wire format without duplicating constants.
 struct alignas(64) Slot
@@ -210,6 +267,15 @@ public:
                std::size_t length,
                std::uint16_t controllerIndex = 0) noexcept;
 
+    // T2459-H5 Slice 13 — push with an explicit flags word stored in
+    // Slot.reserved. Bit 15 (kSlotFlagIsUmp) marks UMP packets; bits 0..14
+    // are reserved for the Slice 6 controller_index. Same RT contract as
+    // push() above.
+    bool pushWithFlags (std::uint64_t tsNanos,
+                        std::uint16_t flags,
+                        const std::uint8_t* payload,
+                        std::size_t length) noexcept;
+
     // Consumer-side pop. Copies the next slot's payload into `outPayload`
     // (which must be at least kMaxPayloadBytes large). Returns 0 if empty,
     // otherwise the number of payload bytes copied. tsNanos is written to
@@ -220,6 +286,13 @@ public:
                      std::uint8_t*  outPayload,
                      std::size_t    outPayloadCapacity,
                      std::uint16_t* outControllerIndex = nullptr) noexcept;
+
+    // T2459-H5 Slice 13 — pop with the slot's flags word returned via
+    // *outFlags. Otherwise identical to pop().
+    std::size_t popWithFlags (std::uint64_t* outTsNanos,
+                              std::uint16_t* outFlags,
+                              std::uint8_t*  outPayload,
+                              std::size_t    outPayloadCapacity) noexcept;
 
     // Number of events dropped due to a full ring. Monotonically increasing.
     std::uint64_t droppedCount() const noexcept;

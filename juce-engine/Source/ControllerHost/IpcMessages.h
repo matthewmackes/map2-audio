@@ -83,6 +83,12 @@ struct MidiSendRequest
     int schema_version = kSchemaVersion;
     std::string controller_key;
     std::vector<std::uint8_t> bytes;
+    // T2459-H5 Slice 13 — wire format discriminator. "midi1" (default,
+    // omitted-on-wire for back-compat) or "ump". When "ump", `bytes`
+    // carries a raw MIDI 2.0 UMP packet (4..16 bytes). The host's
+    // outbound surface sends MIDI 1.0 byte streams to byte-stream
+    // backends and UMP packets to UMP-capable backends.
+    std::string format;   // "" / "midi1" / "ump"
 };
 
 struct Shutdown
@@ -187,7 +193,7 @@ struct ScriptError
 // CPP_FIELD_MANIFEST_BEGIN
 // ScriptLoadRequest: type, msg_id, schema_version, controller_key, pack_id, model, script_path, script_body
 // MappingActivate: type, msg_id, schema_version, controller_key, descriptor
-// MidiSendRequest: type, msg_id, schema_version, controller_key, bytes
+// MidiSendRequest: type, msg_id, schema_version, controller_key, bytes, format
 // Shutdown: type, msg_id, schema_version
 // MidiListPortsRequest: type, msg_id, schema_version
 // MidiListPortsResponse: type, msg_id, schema_version, backend, ports, degraded

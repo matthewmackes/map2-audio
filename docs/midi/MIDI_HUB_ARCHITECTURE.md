@@ -167,3 +167,31 @@ Dedicated backend service tests exist for new protocol and integration services:
 
 - Real Tesira hardware validation remains tracked separately under `T203-subK`.
 - Documentation/conformance rollup remains under `T203-subJ`.
+
+## Recorder golden parity (T2459-H5 Slice 13)
+
+The MIDI recorder (`app/services/midi_hub/recorder.py`) writes per-session
+JSON artifacts under `Map2Paths.midi_hub_recordings_dir()`. The on-disk
+shape — `session_id` / `name` / wall-clock timestamps / per-event
+`timestamp_ns` / `source_port` / `destination_port` / `raw_hex` /
+`metadata` — is locked: callers across the platform (recorder UI, SMF
+exporter, snapshot replay) depend on it.
+
+T2459-H5 migrates the recorder's input from the pre-H1 Python hub
+subscriber path onto the host-owned path (events arrive over the IPC
+surface from `map2-controller-host`). The locked artifact format must
+survive that move byte-for-byte.
+
+Parity is enforced by `tests/test_midi_recorder_golden_parity_t2459h5.py`:
+two `MidiRecorder` instances (one driven by the legacy in-process hub
+subscriber callback, one by the same `MidiMessage` payloads relifted
+from the host-owned IPC shape) record an identical event sequence under
+a pinned wall clock; the two persisted JSON blobs are compared
+byte-for-byte. Per-event timestamps are passed through unchanged so the
+artifact bytes remain deterministic.
+
+Per-event `timestamp_ns` is preserved end-to-end: the host pushes the
+producer-side `monotonicNanos()` into the shm slot's `tsNanos` field
+(see `juce-engine/Source/ControllerHost/EventRing/ShmEventRing.h`), the
+host's IPC consumer relays it as the `MidiMessage.timestamp_ns` the
+recorder sees. No clock translation, no floating-point drift.

@@ -80,6 +80,18 @@ public:
                       std::size_t length,
                       std::uint16_t controllerIndex = 0);
 
+    // T2459-H5 Slice 13 — push a raw MIDI 2.0 UMP packet (4..16 bytes,
+    // i.e. 1..4 32-bit words) into the producer pipeline. Routes via
+    // classifyUmpMessageType() and tags the slot with kSlotFlagIsUmp so
+    // the consumer can dispatch on the correct format.
+    //
+    // libremidi v5.1.0 (vendored via FetchContent) does not expose a
+    // production UMP input/output surface that we have validated against
+    // hardware on this platform; once a MIDI-2.0-capable device is on
+    // the bench, the real `openUmpInput()` lives next to this seam.
+    // Until then, this method is the integration entry point.
+    void pushUmpMessage (const std::uint8_t* bytes, std::size_t length);
+
     // libremidi backend in use.
     MidiBackend backend() const noexcept { return backend_; }
 

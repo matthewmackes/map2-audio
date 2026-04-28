@@ -175,6 +175,37 @@ class MidiHostClient:
         self._send_only(request)
         return msg_id
 
+    def send_ump(
+        self,
+        *,
+        controller_key: str,
+        packet_bytes: bytes,
+    ) -> str:
+        """Send a MIDI 2.0 UMP packet OUT through a connected controller.
+
+        T2459-H5 Slice 13 — outbound counterpart of the ``pushUmpMessage``
+        producer seam on the C++ side. ``packet_bytes`` must be a single
+        UMP packet of 4/8/12/16 bytes (1..4 32-bit words). Fire-and-forget;
+        host-side delivery to a UMP-capable port is gated on libremidi UMP
+        support + a MIDI-2.0-capable device on the bench (HIL).
+        """
+        payload = bytes(packet_bytes)
+        if len(payload) < 4 or len(payload) > 16 or (len(payload) % 4) != 0:
+            raise MidiHostClientError(
+                f"UMP packet length must be 4/8/12/16 bytes, got {len(payload)}"
+            )
+        msg_id = uuid.uuid4().hex
+        request = {
+            "type": "midi_send_request",
+            "msg_id": msg_id,
+            "schema_version": SCHEMA_VERSION,
+            "controller_key": str(controller_key),
+            "bytes": list(payload),
+            "format": "ump",
+        }
+        self._send_only(request)
+        return msg_id
+
     def activate_mapping(
         self,
         *,

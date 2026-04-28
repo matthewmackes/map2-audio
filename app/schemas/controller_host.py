@@ -75,12 +75,21 @@ class MidiSendRequest(TypedDict):
     """Send a MIDI message OUT through a connected controller.
 
     Used for LED feedback, controller-side preset switching, etc.
+
+    ``format`` (T2459-H5 Slice 13) selects the wire interpretation of
+    ``bytes``:
+    - ``""`` / ``"midi1"`` — MIDI 1.0 byte stream (1..3 byte short
+      message or a full SysEx). Default; older clients omit the field
+      entirely and remain compatible.
+    - ``"ump"`` — raw MIDI 2.0 UMP packet (4, 8, 12, or 16 bytes,
+      i.e. 1..4 32-bit words).
     """
     type: Literal["midi_send_request"]
     msg_id: str
     schema_version: int
     controller_key: str
-    bytes: list[int]   # 1-3 byte MIDI message or full SysEx
+    bytes: list[int]   # 1-3 byte MIDI message, full SysEx, or 4-16 byte UMP packet
+    format: NotRequired[str]
 
 
 class Shutdown(TypedDict):
