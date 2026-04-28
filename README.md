@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1379** Python | **1332** TypeScript | **177** C++/H | **145** Docs | **3024** total commits | **3** stars | **0** forks | **0** open issues
+**1381** Python | **1332** TypeScript | **177** C++/H | **145** Docs | **3027** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`8630d86d`](https://github.com/matthewmackes/map2-audio/commit/8630d86dbd9f86ea98c2823d35e1d680a0f50e7a) | T2459-H6 prep: caller audit + CMake retirement gate + soa... | Map2 Audio | 2026-04-28 |
+| [`d57e5073`](https://github.com/matthewmackes/map2-audio/commit/d57e5073b3a10550556355e285eab5616ab4cad9) | chore: commit all current workspace changes | Map2 Audio | 2026-04-28 |
+| [`0d24e6cc`](https://github.com/matthewmackes/map2-audio/commit/0d24e6ccd8ca8b13dad2f09484257818c25ba7e2) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-28 |
 | [`f87e7b8c`](https://github.com/matthewmackes/map2-audio/commit/f87e7b8c0364e3a09a24a61a8bf9b06c98d545f0) | T2459-H5: host-owned UMP round-trip foundation + recorder... | Map2 Audio | 2026-04-28 |
 | [`6c2d1261`](https://github.com/matthewmackes/map2-audio/commit/6c2d1261aeb1f46d0d963aae677f9c948dcdf9a6) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-28 |
 | [`8ee60a88`](https://github.com/matthewmackes/map2-audio/commit/8ee60a888064bd1c1789287f41023325a218e1a9) | T2459-H3: multi-controller MIDI routing via Slot::control... | Map2 Audio | 2026-04-28 |
 | [`55bc5aaf`](https://github.com/matthewmackes/map2-audio/commit/55bc5aaf146053345f2bbc1310f9fe6bbca520a6) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-28 |
 | [`ece44f69`](https://github.com/matthewmackes/map2-audio/commit/ece44f690e58e469434db064af762d6167a2483f) | T2459-H4: Maschine MK1 MIDI-mode device-pack cutover (Sli... | Map2 Audio | 2026-04-28 |
-| [`c4e427c7`](https://github.com/matthewmackes/map2-audio/commit/c4e427c72929387d0be4eea5f079cd73580438e5) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-28 |
-| [`832d3b2a`](https://github.com/matthewmackes/map2-audio/commit/832d3b2a74b4d4d2be548daa8f73ed7b3cb5fa75) | T2459-H4: IntelFX SysEx parser tag-extraction via device-... | Map2 Audio | 2026-04-28 |
-| [`879b28ad`](https://github.com/matthewmackes/map2-audio/commit/879b28ad62eadf5ebfa359489429d15a948b3f66) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-28 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
