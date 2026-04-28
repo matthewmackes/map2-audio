@@ -22,10 +22,12 @@ where:
 
 from __future__ import annotations
 
-import re
 from dataclasses import dataclass, field
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Sequence, Tuple
+from typing import Any, Dict, List, Optional, Sequence
+
+from app.services.sysex_tags import auto_tag_from_name as infer_auto_tags
+from app.services.sysex_tags import compile_intelfx_tag_map
 
 # Rocktron 3-byte extended manufacturer ID in SysEx
 _ROCKTRON_ID: List[int] = [0x00, 0x01, 0x56]
@@ -41,49 +43,7 @@ _MIN_PROGRAM_DUMP_SIZE: int = 28
 # Program range for IntelFX
 _MAX_PROGRAM_NUMBER: int = 255
 
-# Auto-tag token map: substring → tag(s)
-_NAME_TAG_MAP: List[Tuple[re.Pattern[str], List[str]]] = [
-    (re.compile(r"\bhush\b", re.I), ["hush", "noise_reduction"]),
-    (re.compile(r"\bcomp(ressor)?\b", re.I), ["compressor"]),
-    (re.compile(r"\bwah\b", re.I), ["wah"]),
-    (re.compile(r"\beq\b", re.I), ["eq"]),
-    (re.compile(r"\bpitch\b", re.I), ["pitch"]),
-    (re.compile(r"\bshift\b", re.I), ["pitch"]),
-    (re.compile(r"\bwhammy\b", re.I), ["pitch"]),
-    (re.compile(r"\bdetune\b", re.I), ["pitch"]),
-    (re.compile(r"\bharmony\b", re.I), ["pitch"]),
-    (re.compile(r"\bocta(ve)?\b", re.I), ["pitch"]),
-    (re.compile(r"\bchorus\b", re.I), ["chorus"]),
-    (re.compile(r"\bflange\b", re.I), ["flanger", "chorus"]),
-    (re.compile(r"\bphase\b", re.I), ["phaser"]),
-    (re.compile(r"\brotary\b", re.I), ["rotary", "chorus"]),
-    (re.compile(r"\btremolo\b", re.I), ["tremolo"]),
-    (re.compile(r"\bvibrato\b", re.I), ["vibrato", "chorus"]),
-    (re.compile(r"\bdelay\b", re.I), ["delay"]),
-    (re.compile(r"\becho\b", re.I), ["echo", "delay"]),
-    (re.compile(r"\bslap\b", re.I), ["slap", "delay"]),
-    (re.compile(r"\bping\b", re.I), ["pingpong", "delay"]),
-    (re.compile(r"\breverb\b", re.I), ["reverb"]),
-    (re.compile(r"\bplate\b", re.I), ["plate", "reverb"]),
-    (re.compile(r"\bhall\b", re.I), ["hall", "reverb"]),
-    (re.compile(r"\broom\b", re.I), ["room", "reverb"]),
-    (re.compile(r"\bspring\b", re.I), ["spring", "reverb"]),
-    (re.compile(r"\bchamber\b", re.I), ["chamber", "reverb"]),
-    (re.compile(r"\bclean\b", re.I), ["clean"]),
-    (re.compile(r"\bcrunch\b", re.I), ["crunch"]),
-    (re.compile(r"\blead\b", re.I), ["lead"]),
-    (re.compile(r"\bacoustic\b", re.I), ["acoustic"]),
-    (re.compile(r"\bambi(ent)?\b", re.I), ["ambient"]),
-    (re.compile(r"\bshimmer\b", re.I), ["ambient"]),
-    (re.compile(r"\bglass\b", re.I), ["ambient"]),
-    (re.compile(r"\bgate\b", re.I), ["gate"]),
-    (re.compile(r"\breverse\b", re.I), ["reverse"]),
-    (re.compile(r"\bguitar\b", re.I), ["guitar"]),
-    (re.compile(r"\bbass\b", re.I), ["bass"]),
-    (re.compile(r"\bvocal\b", re.I), ["vocal"]),
-    (re.compile(r"\bdrum\b", re.I), ["drums"]),
-    (re.compile(r"\bsnare\b", re.I), ["drums"]),
-]
+_NAME_TAG_MAP = compile_intelfx_tag_map()
 
 
 @dataclass
@@ -180,15 +140,7 @@ class IntelFXSyxParser:
 
     def auto_tag_from_name(self, name: str) -> List[str]:
         """Return a deduplicated list of tags inferred from *name* tokens."""
-        tags: List[str] = []
-        seen: set[str] = set()
-        for pattern, tag_list in _NAME_TAG_MAP:
-            if pattern.search(name):
-                for tag in tag_list:
-                    if tag not in seen:
-                        tags.append(tag)
-                        seen.add(tag)
-        return tags
+        return infer_auto_tags(name, _NAME_TAG_MAP)
 
     # -------------------------------------------------------------------------
     # Frame splitting

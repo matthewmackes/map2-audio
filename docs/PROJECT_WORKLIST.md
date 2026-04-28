@@ -804,7 +804,7 @@ Description:
   - Worklist completion notes per subtask, dual-push to origin + gitlab, full release loop verification per CLAUDE.md §0.6
 Subtasks: T2459-H1 .. T2459-H7 (7 subtasks; see below)
 Assigned to: Claude
-Last updated: 2026-04-28 12:42 EDT - Codex: H3 dispatcher slice shipped (script/mapping activation now consumed in host main loop) and H5 unified-route registration slice shipped; remaining H acceptance is live inbound-MIDI dispatch path + broader device migrations + bench HIL.
+Last updated: 2026-04-28 13:05 EDT - Codex: H3 dispatcher slice, H4 shared SysEx-tag slice, and H5 unified-route registration slice shipped; remaining H acceptance is live inbound-MIDI dispatch path + broader device migrations + bench HIL.
 
 ---
 
@@ -958,7 +958,23 @@ Completion note: 2026-04-28 — Codex: **Slice 1 SHIPPED (shared MIDI curve enum
   - MPX-1 / IntelFX SysEx JS migration + shared `device-packs/_runtime/sysex-tags.js`.
   - Maschine MK1 and other device-service cuts to host-client facades.
   - Bench HIL parity evidence with migrated devices.
-Last updated: 2026-04-28 10:35 EDT - Codex: curve-consolidation slice shipped; H4 remains in progress.
+  2026-04-28 — Codex: **Slice 2 SHIPPED (shared SysEx tagging runtime for MPX-1 + IntelFX parsers).**
+  Delivered:
+  - Added `app/services/sysex_tags.py` shared helper module with common token specs plus parser-specific overlays:
+    - `compile_mpx1_tag_map()`
+    - `compile_intelfx_tag_map()`
+    - `auto_tag_from_name(...)`
+  - Replaced duplicated inline tag maps in:
+    - `app/services/mpx1_syx_parser.py`
+    - `app/services/intelfx_syx_parser.py`
+  - Added focused regression guard: `tests/test_sysex_tags_shared_t2459h4.py`.
+  Validation:
+  - `pytest -q tests/test_mpx1_syx_parser.py tests/test_intelfx_syx_parser.py tests/test_sysex_tags_shared_t2459h4.py` -> **73 passed**.
+  Remaining for full H4 acceptance:
+  - Mirror this shared tagging logic into the planned host-side/device-pack JS parser runtime (`device-packs/_runtime/sysex-tags.js`) as MPX-1/IntelFX parser migration continues.
+  - Maschine MK1 and other device-service cuts to host-client facades.
+  - Bench HIL parity evidence with migrated devices.
+Last updated: 2026-04-28 13:05 EDT - Codex: curve consolidation + shared SysEx tagging slices shipped; H4 remains in progress.
 
 ---
 

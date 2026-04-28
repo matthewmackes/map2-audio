@@ -23,10 +23,12 @@ tries two common offsets and validates printable ASCII.
 
 from __future__ import annotations
 
-import re
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Sequence, Tuple
+
+from app.services.sysex_tags import auto_tag_from_name as infer_auto_tags
+from app.services.sysex_tags import compile_mpx1_tag_map
 
 # Lexicon manufacturer ID in SysEx
 _LEXICON_ID: int = 0x06
@@ -41,40 +43,7 @@ _NAME_LENGTH: int = 12
 # Heuristic minimum program dump size (bytes incl. F0/F7)
 _MIN_PROGRAM_DUMP_SIZE: int = 20
 
-# Auto-tag token map: substring → tag(s)
-_NAME_TAG_MAP: List[Tuple[re.Pattern[str], List[str]]] = [
-    (re.compile(r"\bplate\b", re.I), ["plate", "reverb"]),
-    (re.compile(r"\bhall\b", re.I), ["hall", "reverb"]),
-    (re.compile(r"\broom\b", re.I), ["room", "reverb"]),
-    (re.compile(r"\bspring\b", re.I), ["spring", "reverb"]),
-    (re.compile(r"\bchamber\b", re.I), ["chamber", "reverb"]),
-    (re.compile(r"\becho\b", re.I), ["echo", "delay"]),
-    (re.compile(r"\bdelay\b", re.I), ["delay"]),
-    (re.compile(r"\bslap\b", re.I), ["slap", "delay"]),
-    (re.compile(r"\bping\b", re.I), ["pingpong", "delay"]),
-    (re.compile(r"\bchorus\b", re.I), ["chorus"]),
-    (re.compile(r"\bflange\b", re.I), ["flange", "chorus"]),
-    (re.compile(r"\bphase\b", re.I), ["phaser", "chorus"]),
-    (re.compile(r"\brotary\b", re.I), ["rotary", "chorus"]),
-    (re.compile(r"\bvibrato\b", re.I), ["vibrato", "chorus"]),
-    (re.compile(r"\bpitch\b", re.I), ["pitch"]),
-    (re.compile(r"\bshift\b", re.I), ["pitch"]),
-    (re.compile(r"\bwhammy\b", re.I), ["pitch"]),
-    (re.compile(r"\bdetune\b", re.I), ["pitch"]),
-    (re.compile(r"\bharmony\b", re.I), ["pitch"]),
-    (re.compile(r"\bocta(ve)?\b", re.I), ["pitch"]),
-    (re.compile(r"\beq\b", re.I), ["eq"]),
-    (re.compile(r"\bvocal\b", re.I), ["vocal"]),
-    (re.compile(r"\bguitar\b", re.I), ["guitar"]),
-    (re.compile(r"\bdrum\b", re.I), ["drums"]),
-    (re.compile(r"\bsnare\b", re.I), ["drums"]),
-    (re.compile(r"\bbass\b", re.I), ["bass"]),
-    (re.compile(r"\bambi(ent)?\b", re.I), ["ambient"]),
-    (re.compile(r"\bshimmer\b", re.I), ["ambient"]),
-    (re.compile(r"\bglass\b", re.I), ["ambient"]),
-    (re.compile(r"\bgate\b", re.I), ["gate"]),
-    (re.compile(r"\breverse\b", re.I), ["reverse"]),
-]
+_NAME_TAG_MAP = compile_mpx1_tag_map()
 
 
 @dataclass
@@ -171,15 +140,7 @@ class MPX1SyxParser:
 
     def auto_tag_from_name(self, name: str) -> List[str]:
         """Return a deduplicated list of tags inferred from *name* tokens."""
-        tags: List[str] = []
-        seen: set[str] = set()
-        for pattern, tag_list in _NAME_TAG_MAP:
-            if pattern.search(name):
-                for tag in tag_list:
-                    if tag not in seen:
-                        tags.append(tag)
-                        seen.add(tag)
-        return tags
+        return infer_auto_tags(name, _NAME_TAG_MAP)
 
     # -------------------------------------------------------------------------
     # Frame splitting
