@@ -135,6 +135,24 @@ export const brainApi = {
     fetchJson<BrainCaptureSession>(
       `${API_BASE}/engine/brain/capture/${encodeURIComponent(sessionId)}`,
     ),
+
+  // T2461-A9 — write the bench-snapshot profile_keys onto a library
+  // asset, and read the reverse cross-reference (which library assets
+  // were authored with a given device).
+  setAssetAuthoredWith: (assetId: string, profileKeys: string[]) =>
+    fetchJson<BrainAssetAuthoredWithResponse>(
+      `${API_BASE}/engine/brain/library/assets/${encodeURIComponent(assetId)}/authored-with`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ profile_keys: profileKeys }),
+      },
+    ),
+
+  getAssetsForDevice: (profileKey: string) =>
+    fetchJson<BrainAssetsForDeviceResponse>(
+      `${API_BASE}/engine/brain/library/by-device/${encodeURIComponent(profileKey)}`,
+    ),
 }
 
 // T2461-A6 — Brain capture buffer payload.
@@ -155,6 +173,20 @@ export interface BrainCaptureSession {
   finalised_at?: number | null
   frame_count?: number
   frames?: BrainCaptureFrame[]
+}
+
+// T2461-A9 — bench snapshot persistence on a library asset.
+export interface BrainAssetAuthoredWithResponse {
+  asset_id: string
+  authored_with_devices: string[]
+  saved_at: number
+}
+
+// T2461-A9 — reverse cross-reference for the Hardware Store DeviceCard.
+export interface BrainAssetsForDeviceResponse {
+  profile_key: string
+  asset_count: number
+  asset_ids: string[]
 }
 
 // T2461-A4 — Brain action descriptor surfaced in the wizard target tree.

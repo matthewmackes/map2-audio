@@ -235,3 +235,27 @@ test('DeviceCard: Q11 — pulseToken triggers --pulse class then clears', async 
     jest.useRealTimers()
   }
 })
+
+test('DeviceCard: T2461-A9 — Used in N Brain assets tag links to Brain library section', () => {
+  renderCard({ brainAssetCount: 3 })
+  const tag = screen.getByText('Used in 3 Brain assets')
+  const link = tag.closest('a')
+  expect(link).not.toBeNull()
+  expect(link?.getAttribute('href')).toContain('/brain?section=library')
+  expect(link?.getAttribute('href')).toContain('device=edirol-ua%2Fua-1000.audio')
+})
+
+test('DeviceCard: T2461-A9 — singular form when count is 1', () => {
+  renderCard({ brainAssetCount: 1 })
+  expect(screen.getByText('Used in 1 Brain asset')).toBeInTheDocument()
+})
+
+test('DeviceCard: T2461-A9 — no asset tag when count is 0', () => {
+  renderCard({ brainAssetCount: 0 })
+  expect(screen.queryByText(/Used in .* Brain asset/)).not.toBeInTheDocument()
+})
+
+test('DeviceCard: T2461-A9 — no asset tag when count is undefined', () => {
+  renderCard()
+  expect(screen.queryByText(/Used in .* Brain asset/)).not.toBeInTheDocument()
+})

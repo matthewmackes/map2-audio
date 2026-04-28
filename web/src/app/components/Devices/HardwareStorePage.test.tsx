@@ -11,6 +11,19 @@ import { render, screen, waitFor } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 
+// T2461-A9 — page now consumes brainApi.getAssetsForDevice via
+// useBrainAssetsByDevice. Stub it so jsdom queries don't try to fetch.
+jest.mock('../../../map2/clients/brain', () => ({
+  __esModule: true,
+  brainApi: {
+    getAssetsForDevice: jest.fn(async (profile_key: string) => ({
+      profile_key,
+      asset_count: 0,
+      asset_ids: [],
+    })),
+  },
+}))
+
 // Mock the WS hook (T2459-G2) — page tests don't exercise the socket.
 jest.mock('./hooks/useDeviceConnections', () => ({
   __esModule: true,

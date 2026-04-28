@@ -483,7 +483,7 @@ class PerformanceBrainService(Singleton):
     ) -> BrainLibraryStateModel:
         base_library = self._build_library_state()
         if existing_library is None:
-            return base_library
+            return self._apply_asset_overlays(base_library)
 
         existing_library = existing_library.model_copy(deep=True)
         base_collection_ids = {collection.collection_id for collection in base_library.collections}
@@ -501,7 +501,101 @@ class PerformanceBrainService(Singleton):
             if asset_id and asset_id not in merged_featured_assets:
                 merged_featured_assets.append(asset_id)
         base_library.featured_assets = merged_featured_assets
-        return base_library
+        return self._apply_asset_overlays(base_library)
+
+    # T2461-A9 — Asset overlay sidecar.
+    #
+    # The library is scanned from disk on each runtime build, so per-asset
+    # metadata that doesn't live on the filesystem (e.g. the
+    # `authored_with_devices` snapshot the operator captures from the
+    # bench at save time) needs an out-of-band store. The sidecar is a
+    # single JSON file `<root>/asset_overlays.json` mapping
+    # `asset_id -> {authored_with_devices: list[str], saved_at: float}`.
+    # Layered onto every library scan so existing read paths (route +
+    # WS broadcast) pick it up unchanged.
+    def _asset_overlays_path(self) -> Path:
+        return self._root_path / "asset_overlays.json"
+
+    def _load_asset_overlays(self) -> dict[str, dict[str, Any]]:
+        path = self._asset_overlays_path()
+        if not path.exists():
+            return {}
+        try:
+            payload = json.loads(path.read_text())
+        except (json.JSONDecodeError, OSError):
+            return {}
+        if not isinstance(payload, dict):
+            return {}
+        return {
+            asset_id: row
+            for asset_id, row in payload.items()
+            if isinstance(asset_id, str) and isinstance(row, dict)
+        }
+
+    def _save_asset_overlays(self, overlays: dict[str, dict[str, Any]]) -> None:
+        path = self._asset_overlays_path()
+        path.parent.mkdir(parents=True, exist_ok=True)
+        path.write_text(json.dumps(overlays, indent=2, sort_keys=True))
+
+    def _apply_asset_overlays(self, library: BrainLibraryStateModel) -> BrainLibraryStateModel:
+        overlays = self._load_asset_overlays()
+        if not overlays:
+            return library
+        for collection in library.collections:
+            for asset in collection.assets:
+                row = overlays.get(asset.asset_id)
+                if not row:
+                    continue
+                authored = row.get("authored_with_devices")
+                if isinstance(authored, list):
+                    asset.authored_with_devices = [
+                        key for key in authored if isinstance(key, str)
+                    ]
+        return library
+
+    def set_asset_authored_with_devices(
+        self,
+        asset_id: str,
+        profile_keys: list[str],
+    ) -> dict[str, Any]:
+        """Persist a connected_keys snapshot onto a library asset by id.
+
+        Returns the resolved overlay row (the field shape that
+        `_apply_asset_overlays` reads back). Raises `KeyError` when the
+        asset doesn't exist in any current collection — the caller
+        translates that into a 404.
+        """
+        with self._lock:
+            library = self._build_library_state()
+            known_ids = {
+                asset.asset_id
+                for collection in library.collections
+                for asset in collection.assets
+            }
+            if asset_id not in known_ids:
+                raise KeyError(asset_id)
+            cleaned = sorted({key for key in profile_keys if isinstance(key, str) and key})
+            overlays = self._load_asset_overlays()
+            overlays[asset_id] = {
+                "authored_with_devices": cleaned,
+                "saved_at": time.time(),
+            }
+            self._save_asset_overlays(overlays)
+            # Bust the library cache so the next read sees the overlay.
+            self._library_cache = None
+            return overlays[asset_id]
+
+    def find_assets_authored_with_device(self, profile_key: str) -> list[str]:
+        """Return library asset_ids whose authored_with_devices contains the key."""
+        if not profile_key:
+            return []
+        overlays = self._load_asset_overlays()
+        hits: list[str] = []
+        for asset_id, row in overlays.items():
+            authored = row.get("authored_with_devices")
+            if isinstance(authored, list) and profile_key in authored:
+                hits.append(asset_id)
+        return sorted(hits)
 
     def _build_sample_editor_state(
         self,

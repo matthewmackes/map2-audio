@@ -8,7 +8,7 @@ import {
   Reset,
   WarningAlt,
 } from '@carbon/icons-react'
-import { Button, InlineLoading, InlineNotification, Tag, Tile } from '@carbon/react'
+import { Button, Dropdown, InlineLoading, InlineNotification, Tag, Tile } from '@carbon/react'
 import { useNavigate, useSearchParams } from 'react-router-dom'
 
 import { useSetShellWindow } from '@/app/layout/useSetShellWindow'
@@ -348,17 +348,20 @@ export function PerformanceBrainPage() {
 
   // T2461-A9 — bench snapshot captured at "Tag" click time so the
   // operator sees what was on the bench when an asset was authored.
-  // The snapshot is an array of profile_keys; in production a Brain
-  // library save handler would persist these onto the asset model
-  // (BrainLibraryAssetModel.authored_with_devices already accepts the
-  // field shape — see app/services/performance_brain/models.py).
+  // The snapshot is an array of profile_keys persisted onto the asset
+  // model via POST /api/engine/brain/library/assets/{id}/authored-with.
+  // The Library scan re-applies the overlay on every read so the row
+  // surfaces the device tags after save.
   const [librarySnapshot, setLibrarySnapshot] = useState<{
     keys: string[]
     capturedAt: number
   } | null>(null)
   const [librarySnapshotPending, setLibrarySnapshotPending] = useState(false)
+  const [librarySnapshotAssetId, setLibrarySnapshotAssetId] = useState<string | null>(null)
+  const [librarySnapshotSavedAssetId, setLibrarySnapshotSavedAssetId] = useState<string | null>(null)
   const handleCaptureLibrarySnapshot = useCallback(async () => {
     setLibrarySnapshotPending(true)
+    setLibrarySnapshotSavedAssetId(null)
     try {
       const snap = await getDeviceSnapshotKeys()
       setLibrarySnapshot({
@@ -371,6 +374,15 @@ export function PerformanceBrainPage() {
       setLibrarySnapshotPending(false)
     }
   }, [])
+  const saveLibrarySnapshotMutation = useMutation({
+    mutationFn: async ({ assetId, keys }: { assetId: string; keys: string[] }) => {
+      return brainApi.setAssetAuthoredWith(assetId, keys)
+    },
+    onSuccess: (_response, vars) => {
+      setLibrarySnapshotSavedAssetId(vars.assetId)
+      void queryClient.invalidateQueries({ queryKey: ['brain', 'library'] })
+    },
+  })
 
   const handleSectionChange = useCallback((sectionId: SectionId) => {
     if (searchParams.get('section') !== sectionId) {
@@ -771,7 +783,7 @@ export function PerformanceBrainPage() {
               <Tile className="brain-page__panel">
                 <span className="brain-page__panel-title">Bench snapshot for new assets (T2461-A9)</span>
                 <p className="brain-page__panel-copy">
-                  Captures the current connected + pinned profile_keys so the next library save records which devices were on the bench. The Brain library save handler reads this snapshot off <code>BrainLibraryAssetModel.authored_with_devices</code>.
+                  Captures the current connected + pinned profile_keys, then writes the snapshot onto the chosen library asset's <code>authored_with_devices</code> field so the Library row + matching Hardware Store cards reflect which devices were on the bench at save time.
                 </p>
                 <div className="brain-page__button-row">
                   <Button
@@ -794,6 +806,56 @@ export function PerformanceBrainPage() {
                     ))}
                   </div>
                 ) : null}
+                {librarySnapshot ? (() => {
+                  const allAssets = library.collections.flatMap((c) => c.assets)
+                  const selectedAsset = allAssets.find((a) => a.asset_id === librarySnapshotAssetId) ?? null
+                  return (
+                    <div style={{ marginTop: 12, display: 'flex', flexDirection: 'column', gap: 8 }}>
+                      <Dropdown
+                        id="brain-library-snapshot-asset-picker"
+                        titleText="Save snapshot onto asset"
+                        label="Pick a library asset…"
+                        size="sm"
+                        items={allAssets}
+                        itemToString={(a) => (a ? `${a.name} · ${a.asset_type}` : '')}
+                        selectedItem={selectedAsset}
+                        onChange={({ selectedItem }) => {
+                          setLibrarySnapshotAssetId(selectedItem?.asset_id ?? null)
+                          setLibrarySnapshotSavedAssetId(null)
+                        }}
+                      />
+                      <div className="brain-page__button-row">
+                        <Button
+                          size="sm"
+                          kind="primary"
+                          data-testid="library-snapshot-save"
+                          disabled={
+                            !librarySnapshotAssetId
+                            || saveLibrarySnapshotMutation.isPending
+                          }
+                          onClick={() => {
+                            if (!librarySnapshotAssetId) return
+                            saveLibrarySnapshotMutation.mutate({
+                              assetId: librarySnapshotAssetId,
+                              keys: librarySnapshot.keys,
+                            })
+                          }}
+                        >
+                          {saveLibrarySnapshotMutation.isPending ? 'Saving…' : 'Save snapshot to asset'}
+                        </Button>
+                        {librarySnapshotSavedAssetId === librarySnapshotAssetId
+                          && librarySnapshotAssetId !== null ? (
+                          <Tag size="sm" type="green" data-testid="library-snapshot-saved">
+                            Saved
+                          </Tag>
+                        ) : null}
+                        {saveLibrarySnapshotMutation.isError ? (
+                          <Tag size="sm" type="red">Save failed</Tag>
+                        ) : null}
+                      </div>
+                    </div>
+                  )
+                })() : null}
               </Tile>
               <Tile className="brain-page__panel">
                 <span className="brain-page__panel-title">Migration & import</span>

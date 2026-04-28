@@ -10,7 +10,10 @@
  * a multi-node bench.
  */
 
-import { useQuery } from '@tanstack/react-query'
+import * as React from 'react'
+import { useQueries, useQuery } from '@tanstack/react-query'
+
+import { brainApi } from '../../../../map2/clients/brain'
 
 import {
   getMixxxChecksumStatus,
@@ -119,6 +122,39 @@ export function useMixxxChecksumStatus() {
     staleTime: 30_000,
     refetchInterval: 60_000,
   })
+}
+
+// T2461-A9 — Brain library asset counts by profile_key. Powers the
+// DeviceCard's "Used in N Brain assets" reverse cross-reference.
+// Returns a stable lookup map; missing keys read as 0.
+export function useBrainAssetsByDevice(profileKeys: readonly string[]): Record<string, number> {
+  const dedupe = React.useMemo(
+    () => Array.from(new Set(profileKeys.filter((k) => k && !k.startsWith('legacy:')))).sort(),
+    [profileKeys],
+  )
+  const queries = useQueries({
+    queries: dedupe.map((key) => ({
+      queryKey: ['brain', 'assets-by-device', key],
+      queryFn: () => brainApi.getAssetsForDevice(key),
+      staleTime: 30_000,
+      refetchInterval: 60_000,
+    })),
+  })
+  return React.useMemo(() => {
+    const out: Record<string, number> = {}
+    dedupe.forEach((key, idx) => {
+      const data = queries[idx]?.data
+      if (data && typeof data.asset_count === 'number') {
+        out[key] = data.asset_count
+      }
+    })
+    return out
+    // queries is a fresh array each render, but its data changes only
+    // when a TanStack Query fires; the dedupe list is stable via
+    // useMemo above, so memoising here keeps the returned record
+    // stable until the underlying query data actually changes.
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [dedupe, ...queries.map((q) => q.data)])
 }
 
 // T2461-A5 — connected loopback-capable devices + their latest measurement.

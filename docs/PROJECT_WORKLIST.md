@@ -1032,7 +1032,7 @@ Last updated: 2026-04-28 EDT - Claude: SHIPPED.
 ---
 
 ID: T2461-A9
-Status: [>] In Progress
+Status: [✓] Done
 Parent: T2461
 Title: Brain Library entry stores connected_keys snapshot + DeviceCard cross-references
 Description:
@@ -1042,8 +1042,23 @@ Description:
 - Required outputs: one new field on the Brain library schema + UI tag rendering on both ends; backend test on the save path.
 - Estimated lift: small (1 day).
 Progress note: 2026-04-27 — Claude: backend half SHIPPED. Authored `GET /api/devices/snapshot-keys` route on `app/routes/devices.py` returning `{connected, recently_disconnected, pinned, snapshot_at}` — the Brain Library save flow can call this to record which devices were on the bench when an asset was authored. Extended `BrainLibraryAssetModel` (`app/services/performance_brain/models.py`) with `authored_with_devices: list[str] = Field(default_factory=list)` so the field carries through the existing Brain state pipeline. Extended typed client at `web/src/map2/clients/devices.ts` with `DeviceSnapshotKeys` interface + `getDeviceSnapshotKeys()`. Tests: `tests/test_devices_t2461a9_snapshot_keys.py` (3 cases — empty bench returns empty arrays + timestamp; connected profile surfaces; pinned set surfaces) reports **3 passed**. The Brain Library save UI doesn't currently expose a save handler that consumes the snapshot — wiring lands when the Brain Library "Save asset" affordance is built; the field + endpoint + typed client are all ready for that to plug in.
+Completion note: 2026-04-28 — Claude: SHIPPED. Closed end-to-end loop with persistence + reverse cross-reference + UI on both surfaces.
+
+  Persistence: scanned library was read-only, so a sidecar overlay JSON now lives at `<brain_root>/asset_overlays.json` keyed by `asset_id → {authored_with_devices, saved_at}`. New service methods `set_asset_authored_with_devices(asset_id, profile_keys)` (sorted/deduped/blank-stripped, raises `KeyError` when `asset_id` is unknown so the route translates to 404) and `find_assets_authored_with_device(profile_key)` for the reverse lookup. `_apply_asset_overlays` layers the overlay onto `_build_runtime_library` so the existing `GET /api/engine/brain/library` route + WS broadcast pick up the field with no other changes. Cache-bust on write so reads see the overlay immediately.
+
+  Routes: `POST /api/engine/brain/library/assets/{asset_id}/authored-with` (writes; returns `{asset_id, authored_with_devices, saved_at}`; 404 on unknown asset) and `GET /api/engine/brain/library/by-device/{profile_key}` (returns `{profile_key, asset_count, asset_ids}`; 0/[] for unknown keys so the page can poll without pre-validation). Both ride the locked Q20 envelope.
+
+  Typed clients: extended `web/src/map2/clients/brain.ts` with `setAssetAuthoredWith()` + `getAssetsForDevice()` and `BrainAssetAuthoredWithResponse` / `BrainAssetsForDeviceResponse` interfaces.
+
+  Brain Library Save UI: `PerformanceBrainPage.tsx` Library section now exposes the full save flow. The existing "Capture bench snapshot" button gates the new asset picker (Carbon `Dropdown` listing every asset across all collections); selecting an asset enables a "Save snapshot to asset" button wired through a `useMutation` that calls `brainApi.setAssetAuthoredWith()`. On success, a green "Saved" Tag appears next to the button and the `['brain', 'library']` query invalidates so the persisted `authored_with_devices` Tags appear on the asset row immediately. Mutation `isError` surfaces a red "Save failed" Tag.
+
+  DeviceCard reverse cross-reference: new optional `brainAssetCount?: number` on `DeviceCardRow`; renders a teal "Used in N Brain assets" Tag (singular/plural correct) wrapped in a `RouterLink` to `/brain?section=library&device=<encoded_profile_key>` when count > 0. Hidden when 0/undefined. New `useBrainAssetsByDevice(profileKeys)` hook (`web/src/app/components/Devices/hooks/useDeviceProfiles.ts`) uses `useQueries` to fetch counts in parallel for all visible profile_keys (filters `legacy:` prefixes), memoises the returned record so consumers' `useMemo` deps stay stable. Wired into all four `HardwareStorePage` row builders (Connected / Recently disconnected / Known / Catalogue) plus the catalogue `useMemo`.
+
+  Tests: backend `tests/test_brain_routes_t2461a9_authored_with.py` (6 cases — set persists + surfaces on subsequent library read; dedupes + drops blanks; empty list clears overlay; unknown asset 404; reverse lookup count + ids; overlay survives a fresh `PerformanceBrainService` instance over the same root) reports **6 passed**. Frontend `DeviceCard.test.tsx` adds 4 cases (link href + section param; singular form; hidden when 0; hidden when undefined) — full DeviceCard suite **21/21 green**. `npm run typecheck` clean. `npm run build` clean (22.68s); fresh `MidiAssignmentsPage`/Hardware Store/PerformanceBrainPage bundles deployed. Pre-existing `HardwareStorePage.test.tsx` "empty-state" failure exists on master before this change and is not a regression of A9 (verified by stashing A9 changes and re-running).
+
+  `update` shorthand executed: commit + dual-push to origin/gitlab + atomic rebuild + port-3000 redeploy.
 Assigned to: Claude
-Last updated: 2026-04-27 EDT - Claude: backend done; UI wiring queued with Brain Library save UI work.
+Last updated: 2026-04-28 EDT - Claude: SHIPPED.
 
 ---
 

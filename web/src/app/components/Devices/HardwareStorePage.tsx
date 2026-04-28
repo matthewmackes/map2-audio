@@ -26,6 +26,7 @@ import { useDeviceConnections } from './hooks/useDeviceConnections'
 import { useHotPlugToast } from './hooks/useHotPlugToast'
 import {
   useDeviceDiagnostics,
+  useBrainAssetsByDevice,
   useKnownDevices,
   useRecentlyDisconnected,
   useConnectedDevices,
@@ -68,10 +69,12 @@ function buildProfileRows(args: {
   knownLastSeen: Record<string, number | null>
   knownLastBound: Record<string, number | null>
   diagByPack: Record<string, { count: number; worst: 'info' | 'warning' | 'error' }>
+  brainAssetCounts: Record<string, number>
 }): ProfileRow[] {
   const {
     profileKeys, profileIndex, packIndex, connectedKeys, pinnedKeys,
     recentlyDisconnectedKeys, knownLastSeen, knownLastBound, diagByPack,
+    brainAssetCounts,
   } = args
   return profileKeys
     .map<ProfileRow>((key) => {
@@ -95,6 +98,7 @@ function buildProfileRows(args: {
           lastBoundAt: knownLastBound[key] ?? null,
           diagnosticCount: dx?.count,
           diagnosticWorstSeverity: dx?.worst,
+          brainAssetCount: brainAssetCounts[key],
         }
       }
       const dx = diagByPack[p.pack_id]
@@ -114,6 +118,7 @@ function buildProfileRows(args: {
         diagnosticCount: dx?.count,
         diagnosticWorstSeverity: dx?.worst,
         capabilities: p?.capabilities,
+        brainAssetCount: brainAssetCounts[key],
       }
     })
     .sort((a, b) => a.profileKey.localeCompare(b.profileKey))
@@ -261,20 +266,33 @@ export function HardwareStorePage(): React.JSX.Element {
     return new Set((knownQuery.data?.known ?? []).map((r) => r.profile_key))
   }, [knownQuery.data])
 
+  // T2461-A9 — single fetch over every profile_key the page might
+  // render so the DeviceCard "Used in N Brain assets" tag has counts
+  // ready when the row mounts. Stable map: missing keys read as 0.
+  const allProfileKeysForBrainLookup = React.useMemo(() => {
+    return Array.from(new Set([
+      ...Array.from(connectedKeys),
+      ...Array.from(recentlyDisconnectedKeys),
+      ...Array.from(knownKeys),
+      ...Object.keys(profileIndex),
+    ]))
+  }, [connectedKeys, recentlyDisconnectedKeys, knownKeys, profileIndex])
+  const brainAssetCounts = useBrainAssetsByDevice(allProfileKeysForBrainLookup)
+
   // Section partitioning. Connected first, then recently-disconnected,
   // then known-but-not-recent (pinned or 24h-window).
   const connectedRows = buildProfileRows({
     profileKeys: Array.from(connectedKeys),
     profileIndex, packIndex,
     connectedKeys, pinnedKeys, recentlyDisconnectedKeys,
-    knownLastSeen, knownLastBound, diagByPack,
+    knownLastSeen, knownLastBound, diagByPack, brainAssetCounts,
   })
 
   const recentRows = buildProfileRows({
     profileKeys: Array.from(recentlyDisconnectedKeys).filter((k) => !connectedKeys.has(k)),
     profileIndex, packIndex,
     connectedKeys, pinnedKeys, recentlyDisconnectedKeys,
-    knownLastSeen, knownLastBound, diagByPack,
+    knownLastSeen, knownLastBound, diagByPack, brainAssetCounts,
   })
 
   const knownNotRecentRows = buildProfileRows({
@@ -283,7 +301,7 @@ export function HardwareStorePage(): React.JSX.Element {
     ),
     profileIndex, packIndex,
     connectedKeys, pinnedKeys, recentlyDisconnectedKeys,
-    knownLastSeen, knownLastBound, diagByPack,
+    knownLastSeen, knownLastBound, diagByPack, brainAssetCounts,
   })
 
   // Catalogue: all known profiles minus those already shown in
@@ -300,11 +318,11 @@ export function HardwareStorePage(): React.JSX.Element {
       profileKeys: all.filter((k) => !usedKeys.has(k)),
       profileIndex, packIndex,
       connectedKeys, pinnedKeys, recentlyDisconnectedKeys,
-      knownLastSeen, knownLastBound, diagByPack,
+      knownLastSeen, knownLastBound, diagByPack, brainAssetCounts,
     })
   }, [
     connectedKeys, recentlyDisconnectedKeys, knownKeys, profileIndex, packIndex,
-    pinnedKeys, knownLastSeen, knownLastBound, diagByPack,
+    pinnedKeys, knownLastSeen, knownLastBound, diagByPack, brainAssetCounts,
   ])
 
   // T2459-G11b — synthesize legacy hand-coded device rows so MPX-1,

@@ -55,6 +55,12 @@ export interface DeviceCardRow {
    * is `'legacy'`, Open and the title link navigate here instead of
    * the profile-registry `/devices/profile/...` route. */
   legacyRoute?: string
+  /** T2461-A9 — count of Brain library assets whose
+   * `authored_with_devices` snapshot includes this device's profile_key.
+   * The page populates this from `brainApi.getAssetsForDevice(...)`.
+   * Renders as a teal "Used in N Brain assets" Tag that deep-links to
+   * the Brain Library section filtered by device. */
+  brainAssetCount?: number
 }
 
 export interface DeviceCardProps {
@@ -276,6 +282,18 @@ export function DeviceCard({ row, onPinChanged }: DeviceCardProps): React.JSX.El
             </RouterLink>
           )
         })()}
+        {row.brainAssetCount && row.brainAssetCount > 0 ? (
+          <RouterLink
+            to={`/brain?section=library&device=${encodeURIComponent(row.profileKey)}`}
+            className="device-card__brain-tag-link"
+            aria-label={`Open Brain library filtered to ${row.model}`}
+            data-testid="device-card-brain-asset-link"
+          >
+            <Tag size="sm" type="teal">
+              Used in {row.brainAssetCount} Brain asset{row.brainAssetCount > 1 ? 's' : ''}
+            </Tag>
+          </RouterLink>
+        ) : null}
       </div>
 
       {row.lastSeenAt !== null && !row.isConnected ? (

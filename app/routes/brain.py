@@ -13,6 +13,7 @@ from datetime import datetime, timezone
 from typing import Any
 
 from fastapi import APIRouter, HTTPException, Query
+from pydantic import BaseModel, Field
 
 from app.services.brain_metering_service import get_brain_metering_service
 from app.services.drum_kit_service import get_drum_kit_service
@@ -407,6 +408,61 @@ def get_brain_library(
 ) -> dict[str, Any]:
     _restore_authority_projection_blocking(instance_id=instance_id, plugin_position=plugin_position)
     return _service().get_library(instance_id=instance_id, plugin_position=plugin_position)
+
+
+# T2461-A9 — write the bench snapshot onto a library asset.
+class BrainAssetAuthoredWithUpdate(BaseModel):
+    profile_keys: list[str] = Field(default_factory=list)
+
+
+class BrainAssetAuthoredWithResponse(BaseModel):
+    asset_id: str
+    authored_with_devices: list[str]
+    saved_at: float
+
+
+@router.post(
+    "/api/engine/brain/library/assets/{asset_id}/authored-with",
+    response_model=BrainAssetAuthoredWithResponse,
+)
+def set_brain_asset_authored_with(
+    asset_id: str,
+    patch: BrainAssetAuthoredWithUpdate,
+) -> dict[str, Any]:
+    try:
+        row = _service().set_asset_authored_with_devices(asset_id, patch.profile_keys)
+    except KeyError:
+        raise HTTPException(
+            status_code=404,
+            detail={"error": {"code": "asset_not_found", "message": f"asset_id={asset_id} is not in the Brain library", "details": None}},
+        )
+    return {
+        "asset_id": asset_id,
+        "authored_with_devices": row["authored_with_devices"],
+        "saved_at": row["saved_at"],
+    }
+
+
+# T2461-A9 — reverse cross-reference for the Hardware Store DeviceCard:
+# returns the count + list of library asset_ids whose
+# authored_with_devices snapshot includes a given profile_key.
+class BrainAssetsForDeviceResponse(BaseModel):
+    profile_key: str
+    asset_count: int
+    asset_ids: list[str]
+
+
+@router.get(
+    "/api/engine/brain/library/by-device/{profile_key:path}",
+    response_model=BrainAssetsForDeviceResponse,
+)
+def list_brain_assets_for_device(profile_key: str) -> dict[str, Any]:
+    asset_ids = _service().find_assets_authored_with_device(profile_key)
+    return {
+        "profile_key": profile_key,
+        "asset_count": len(asset_ids),
+        "asset_ids": asset_ids,
+    }
 
 
 @router.get("/api/engine/brain/sample-editor", response_model=BrainSampleEditorStateModel)
