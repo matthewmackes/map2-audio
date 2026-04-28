@@ -804,7 +804,7 @@ Description:
   - Worklist completion notes per subtask, dual-push to origin + gitlab, full release loop verification per CLAUDE.md §0.6
 Subtasks: T2459-H1 .. T2459-H7 (7 subtasks; see below)
 Assigned to: Claude
-Last updated: 2026-04-28 10:45 EDT - Codex: H3 slices 1-2 shipped (MeloAudio pack migration + legacy alias + host-client activation IPC); H4 curve-consolidation slice shipped; remaining H acceptance is host dispatcher wiring + broader device migrations + bench HIL.
+Last updated: 2026-04-28 12:01 EDT - Codex: H5 unified-route registration slice shipped (main route registry now mounts `app.routes.midi`), with H3 slices 1-2 and H4 curve-consolidation already shipped; remaining H acceptance is host dispatcher wiring + broader device migrations + bench HIL.
 
 ---
 
@@ -950,7 +950,7 @@ Last updated: 2026-04-28 10:35 EDT - Codex: curve-consolidation slice shipped; H
 ---
 
 ID: T2459-H5
-Status: [ ] Todo
+Status: [>] In Progress
 Parent: T2459-H
 Title: Absorb MIDI Hub v2 into the host — routing, clock, recorder, MIDI 2.0 UMP
 Description:
@@ -958,6 +958,18 @@ Description:
 - Acceptance: every MIDI Hub v2 surface (clock, recorder, traffic monitor, virtual GPIO, OSC namespace, Tesira, string interface, event lists) keeps working through the new host; `if MIDI_HUB_AVAILABLE` conditionals across the Python codebase are deleted (the host is mandatory once H1 lands); UMP round-trip verified end-to-end (web client → REST → host → libremidi → device → libremidi → host → WS broadcast); golden recordings preserved through the migration (recorder format unchanged); 7 MIDI route files consolidated to `app/routes/midi.py` plus deprecation shims; v1 routes formally retired with a 410 Gone after the deprecation window.
 - Required outputs: `juce-engine/Source/ControllerHost/Hub/` ported subsystems, `ni-midi2` integration, `app/routes/midi.py` consolidated router, deletion plan for `app/routes/{midi_v2,midi_hub,midi_cluster,midi_cluster_proxy,midi_learn,midi_commander_surface,enriched_midi_physical_surfaces}.py`, regression tests covering every previously-shipped MIDI Hub v2 capability under the new path, `docs/midi/MIDI_HUB_ARCHITECTURE.md` updated.
 Assigned to: Claude
+Completion note: 2026-04-28 — Codex: **Slice 2 SHIPPED (unified MIDI router mounted in app startup).**
+  Delivered:
+  - `app/main.py` now registers `app.routes.midi` as the sole runtime MIDI route module, replacing direct registration of `midi_v2`, `midi_hub`, `midi_cluster`, `midi_learn`, `midi_commander_surface`, and `enriched_midi_physical_surfaces`.
+  - Added explicit legacy-module imports in `app/main.py` to keep deprecation-window compatibility for direct module consumers/tests while routing live HTTP registration through the unified router.
+  - Retained `app/routes/midi.py` as the aggregation surface and added focused route-presence regression (`tests/test_midi_unified_routes_t2459h5.py`).
+  Validation:
+  - `pytest -q tests/test_route_registration_policy.py tests/test_midi_unified_routes_t2459h5.py tests/test_midi_v2_routes.py tests/test_midi_commander_surface_protocol.py tests/test_midi_commander_surface_service.py tests/test_enriched_midi_physical_surfaces_service.py tests/test_enriched_surface_runtime.py` -> **36 passed**.
+  Remaining for full H5 acceptance:
+  - Shrink `app/services/midi_hub/` runtime ownership to host-client facades (clock/recorder/router/message mapping still Python-owned).
+  - Land explicit deprecation shims/retirement plan for the legacy route modules and formal v1 retirement flow.
+  - Complete host-owned UMP round-trip and preserve recorder golden artifacts under the migrated path.
+Last updated: 2026-04-28 12:01 EDT - Codex: unified route-registration slice shipped; H5 remains in progress.
 
 ---
 
