@@ -575,7 +575,7 @@ Last updated: 2026-04-27 EDT - Claude: SHIPPED.
 ---
 
 ID: T2459-G
-Status: [>] In Progress
+Status: [✓] Done
 Parent: T2459
 Title: Hardware Store GUI integration — full T2459 capability surfacing
 Description:
@@ -584,8 +584,9 @@ Description:
 - Acceptance: every locked decision rendered in-product; live UA-1000 + Hotone Jogg drive every flow; bench HIL evidence captured under `docs/fit-for-purpose-evidence/<YYYYMMDD>/t2459g-hardware-store/`.
 - Required outputs: `docs/architecture/HARDWARE_STORE_INTEGRATION.md` (design brief), backend `app/routes/devices.py` + supporting services, frontend `web/src/app/components/Devices/` rebuild, deletion of `deviceRegistry.ts` + `DevicesStorePage.tsx`, full test + bench-evidence trail.
 - 12 subtasks T2459-G1 .. T2459-G12 spanning Backend foundation → WS hot-plug → Page shell → Cards → Detail tabs → Audio I/O measure → Bindings/Learn → Diagnostics → Pack Sources → Catalogue → Cleanup → Bench validation.
+Completion note: 2026-04-28 — Claude: SHIPPED. All 12 sub-tasks G1..G12 closed (plus the G11b follow-up that completed the `deviceRegistry.ts` deletion). HIL evidence captured at `docs/fit-for-purpose-evidence/20260427/t2459g-hardware-store/` (Q1–Q20 traceability matrix in the README). Backend pytest 85/85 + frontend Jest 55/55 across the G epic suite chain. Live routes (`/devices`, `/devices/diagnostics`, `/devices/pack-sources`, `/devices/profile/<pack>/<model>/v2`) all serve HTTP 200. The parent epic was stale at `[>] In Progress` after every sub-task shipped — closing it now to reflect the actual rolled-up state. Bench-side verification with live UA-1000 + Hotone Jogg attached remains owner-driven per CLAUDE.md §0.5 / §0.8 gate 5 — code-side gates are all green.
 Assigned to: Claude
-Last updated: 2026-04-27 EDT - Claude: epic opened post-Q20 lock.
+Last updated: 2026-04-28 EDT - Claude: SHIPPED. All sub-tasks G1..G12 + G11b closed.
 
 ---
 
