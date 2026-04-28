@@ -1,0 +1,101 @@
+// MAP2 Audio Platform — semantic CSS custom properties
+//
+// Emits the MAP semantic tokens defined in _tokens.scss as CSS custom
+// properties at :root, with light-shell overrides under
+// [data-carbon-theme="g10"] and [data-carbon-theme="white"].
+//
+// Plain .css files consume via var(--map2-<group>-<key>):
+//
+//   .health-dot--ok        { background: var(--map2-health-ok); }
+//   .latency--critical     { color: var(--map2-latency-critical); }
+//   .alert--blocking       { border-color: var(--map2-alert-blocking); }
+//
+// The dual-shell variants ensure tokens stay readable on both dark
+// (g100/g90, default) and light (g10/white) Carbon shells without each
+// component opting in.
+
+@use 'tokens' as t;
+
+:root {
+  // State (live vs staged vs uncommitted vs committed)
+  --map2-state-live: #{t.$map2-state-live};
+  --map2-state-staged: #{t.$map2-state-staged};
+  --map2-state-uncommitted: #{t.$map2-state-uncommitted};
+  --map2-state-committed: #{t.$map2-state-committed};
+
+  // Health
+  --map2-health-ok: #{t.$map2-health-ok};
+  --map2-health-caution: #{t.$map2-health-caution};
+  --map2-health-critical: #{t.$map2-health-critical};
+  --map2-health-offline: #{t.$map2-health-offline};
+
+  // Latency
+  --map2-latency-good: #{t.$map2-latency-good};
+  --map2-latency-caution: #{t.$map2-latency-caution};
+  --map2-latency-critical: #{t.$map2-latency-critical};
+
+  // Clock / sync
+  --map2-clock-master: #{t.$map2-clock-master};
+  --map2-clock-slave: #{t.$map2-clock-slave};
+  --map2-clock-locked: #{t.$map2-clock-locked};
+  --map2-clock-unlocked: #{t.$map2-clock-unlocked};
+
+  // AVB
+  --map2-avb-locked: #{t.$map2-avb-locked};
+  --map2-avb-unlocked: #{t.$map2-avb-unlocked};
+  --map2-avb-grandmaster: #{t.$map2-avb-grandmaster};
+
+  // Signal flow
+  --map2-flow-input: #{t.$map2-flow-input};
+  --map2-flow-output: #{t.$map2-flow-output};
+  --map2-flow-blocked: #{t.$map2-flow-blocked};
+  --map2-flow-sidechain: #{t.$map2-flow-sidechain};
+
+  // Alert severity
+  --map2-alert-blocking: #{t.$map2-alert-blocking};
+  --map2-alert-advisory: #{t.$map2-alert-advisory};
+}
+
+// Light-shell adjustments — same Carbon families, darker shades for AA
+// contrast on light surfaces. The tokens still semantically mean the same
+// thing; only the rendered hue changes per shell.
+[data-carbon-theme='g10'],
+[data-carbon-theme='white'] {
+  // State
+  --map2-state-live: #198038;          // green-60
+  --map2-state-staged: #0f62fe;        // blue-60
+  --map2-state-uncommitted: #b28600;   // yellow-50
+  --map2-state-committed: #525252;     // gray-70
+
+  // Health
+  --map2-health-ok: #198038;
+  --map2-health-caution: #b28600;
+  --map2-health-critical: #da1e28;     // red-60
+  --map2-health-offline: #525252;
+
+  // Latency
+  --map2-latency-good: #198038;
+  --map2-latency-caution: #b28600;
+  --map2-latency-critical: #da1e28;
+
+  // Clock / sync
+  --map2-clock-master: #0f62fe;
+  --map2-clock-slave: #4589ff;         // blue-50
+  --map2-clock-locked: #198038;
+  --map2-clock-unlocked: #da1e28;
+
+  // AVB
+  --map2-avb-locked: #198038;
+  --map2-avb-unlocked: #da1e28;
+  --map2-avb-grandmaster: #0f62fe;
+
+  // Signal flow
+  --map2-flow-input: #0f62fe;
+  --map2-flow-output: #4589ff;
+  --map2-flow-blocked: #da1e28;
+  --map2-flow-sidechain: #8a3ffc;      // purple-60
+
+  // Alert severity
+  --map2-alert-blocking: #da1e28;
+  --map2-alert-advisory: #b28600;
+}

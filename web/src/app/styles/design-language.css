@@ -1,56 +1,74 @@
-/* T2444 design-language.css — appliance-grade console design system.
+/* MAP2 design-language.css — Carbon-disciplined back-compat shim.
  *
- * Single source of truth for cross-workspace polish primitives:
- *   - Signature accent palette (cyan/amber/red over Carbon Gray 100)
- *   - Motion primitives (durations + cubic-bezier eases tuned for studio gear)
- *   - Focus-ring vocabulary (electroluminescent active, calm peer)
- *   - Density rhythm (8-step spacing scale)
- *   - Material classes (.map2-material-glass, .map2-material-mesh, .map2-electroluminescent)
+ * Bundle 1 of T2474 (Carbon Discipline Visual System Sweep) retired the
+ * cyan/amber/red "active/armed/live" accent palette, the .map2-material-glass
+ * and .map2-material-aurora materials, and the .map2-electroluminescent
+ * glow ring system. These violated the locked Q1=A direction (strict Carbon
+ * discipline; gray-dominant surfaces; blue primary; no glassmorphism, no
+ * decorative gradients, no glow).
+ *
+ * The tokens and class names are *kept* as compatibility shims so the ~10
+ * existing consumers continue to compile, but their values now resolve to
+ * disciplined Carbon-aligned visuals (no glow, no glass, no aurora).
+ * Consumer call sites are migrated to the new MAP semantic tokens
+ * (var(--map2-state-*), var(--map2-health-*), var(--map2-latency-*), etc.)
+ * defined in web/src/app/styles/scss/_semantic-tokens.scss in subsequent
+ * bundles.
  *
  * Imported once at AppShell level; intended to be inherited by every workspace.
- * No component-specific selectors live here — only tokens and small generic classes.
  */
 
 :root {
-  /* ---------------- Signature accent palette ---------------- */
-  /* "Active" — cyan-leaning, used for focused/selected/armed-but-not-firing UI. */
-  --map2-accent-active: #22d3ee;
-  --map2-accent-active-soft: rgba(34, 211, 238, 0.18);
-  --map2-accent-active-glow: rgba(34, 211, 238, 0.42);
-  --map2-accent-active-rim: rgba(34, 211, 238, 0.65);
+  /* ---------------- Retired accent palette (compat shims) ---------------- */
+  /* Compatibility aliases. New code must use --map2-state-* / --map2-health-*
+   * / --map2-alert-* tokens instead. These aliases resolve to Carbon palette
+   * shades aligned to the closest semantic equivalent. */
 
-  /* "Armed" — amber, for ready-to-fire transport, record-arm, pre-roll, warning. */
-  --map2-accent-armed: #f5a524;
-  --map2-accent-armed-soft: rgba(245, 165, 36, 0.18);
-  --map2-accent-armed-glow: rgba(245, 165, 36, 0.40);
-  --map2-accent-armed-rim: rgba(245, 165, 36, 0.65);
+  /* Was cyan-leaning "active/focused/selected"; now the Carbon focus color. */
+  --map2-accent-active: var(--cds-focus, #4589ff);
+  --map2-accent-active-soft: transparent;
+  --map2-accent-active-glow: transparent;
+  --map2-accent-active-rim: var(--cds-focus, #4589ff);
 
-  /* "Live" — deep red, ONLY for currently-playing/clipping/destructive states. */
-  --map2-accent-live: #ff5470;
-  --map2-accent-live-soft: rgba(255, 84, 112, 0.18);
-  --map2-accent-live-glow: rgba(255, 84, 112, 0.50);
-  --map2-accent-live-rim: rgba(255, 84, 112, 0.75);
+  /* Was amber "armed/warning"; now Carbon support-warning. */
+  --map2-accent-armed: var(--cds-support-warning, #f1c21b);
+  --map2-accent-armed-soft: transparent;
+  --map2-accent-armed-glow: transparent;
+  --map2-accent-armed-rim: var(--cds-support-warning, #f1c21b);
 
-  /* ---------------- Motion primitives ---------------- */
-  /* Durations — short fades stay snappy, longer choreographies for drawers/transitions. */
+  /* Was hot pink "live/clipping/destructive"; now Carbon support-error. */
+  --map2-accent-live: var(--cds-support-error, #fa4d56);
+  --map2-accent-live-soft: transparent;
+  --map2-accent-live-glow: transparent;
+  --map2-accent-live-rim: var(--cds-support-error, #fa4d56);
+
+  /* ---------------- Motion primitives (kept) ---------------- */
+  /* Carbon-compatible durations and Bezier curves. These remain valid
+   * because motion discipline is part of the Carbon contract, not a
+   * decorative violation. */
   --map2-dur-instant: 80ms;
   --map2-dur-fast: 140ms;
   --map2-dur-base: 220ms;
   --map2-dur-slow: 380ms;
   --map2-dur-cinematic: 560ms;
 
-  /* Eases — handpicked Bezier curves; no linear, no default ease. */
-  --map2-ease-out-snap: cubic-bezier(0.16, 1, 0.3, 1);          /* responsive UI feedback */
-  --map2-ease-in-out-rack: cubic-bezier(0.65, 0, 0.35, 1);      /* drawer/tab choreography */
-  --map2-ease-in-decel: cubic-bezier(0.22, 1, 0.36, 1);         /* enter motion */
-  --map2-ease-spring-soft: cubic-bezier(0.34, 1.36, 0.64, 1);   /* gentle bounce on layoutId moves */
+  --map2-ease-out-snap: cubic-bezier(0.16, 1, 0.3, 1);
+  --map2-ease-in-out-rack: cubic-bezier(0.65, 0, 0.35, 1);
+  --map2-ease-in-decel: cubic-bezier(0.22, 1, 0.36, 1);
+  --map2-ease-spring-soft: cubic-bezier(0.34, 1.36, 0.64, 1);
 
-  /* ---------------- Focus / interaction rings ---------------- */
-  --map2-ring-focus: 0 0 0 2px var(--map2-accent-active-rim), 0 0 12px var(--map2-accent-active-glow);
-  --map2-ring-armed: 0 0 0 1px var(--map2-accent-armed-rim), 0 0 10px var(--map2-accent-armed-glow);
-  --map2-ring-live: 0 0 0 1px var(--map2-accent-live-rim), 0 0 14px var(--map2-accent-live-glow);
+  /* ---------------- Focus / interaction rings (retired → Carbon focus) ---------------- */
+  /* All three rings now resolve to the standard Carbon focus ring — no
+   * glow, no animation, no rim shadow. The classes that consume these
+   * tokens stop being visually "armed" or "live"; status is communicated
+   * by chip color via --map2-state-*, not by a glowing border. */
+  --map2-ring-focus: 0 0 0 2px var(--cds-focus, #4589ff);
+  --map2-ring-armed: 0 0 0 2px var(--cds-focus, #4589ff);
+  --map2-ring-live: 0 0 0 2px var(--cds-focus, #4589ff);
 
-  /* ---------------- Density / rhythm ---------------- */
+  /* ---------------- Density / rhythm (kept) ---------------- */
+  /* Aligned to Carbon spacing scale. New code should prefer Carbon's
+   * own --cds-spacing-* names; these aliases remain for legacy CSS. */
   --map2-space-1: 4px;
   --map2-space-2: 8px;
   --map2-space-3: 12px;
@@ -60,7 +78,7 @@
   --map2-space-7: 48px;
   --map2-space-8: 64px;
 
-  /* ---------------- Type scale (Plex display + mono meta) ---------------- */
+  /* ---------------- Type scale (kept — Carbon-aligned families) ---------------- */
   --map2-type-mono: 'IBM Plex Mono', 'JetBrains Mono', ui-monospace, SFMono-Regular, Consolas, monospace;
   --map2-type-display: 'IBM Plex Sans', 'Inter Tight', 'Inter', system-ui, -apple-system, sans-serif;
 
@@ -71,49 +89,33 @@
   --map2-type-display-weight: 280;
 }
 
-/* ---------------- Material: subtle glass for overlays / drawers ---------------- */
+/* ---------------- Retired material classes (back-compat shims) ---------------- */
+/* The decorative materials (glass blur + aurora gradients + electroluminescent
+ * glow) violated Q1=A. These selectors are kept so existing consumers compile,
+ * but they now render as flat Carbon surfaces with no decorative effects. */
+
 .map2-material-glass {
-  background: linear-gradient(
-    180deg,
-    rgba(22, 26, 33, 0.86) 0%,
-    rgba(14, 17, 22, 0.92) 100%
-  );
-  backdrop-filter: blur(14px) saturate(140%);
-  -webkit-backdrop-filter: blur(14px) saturate(140%);
-  border: 1px solid rgba(255, 255, 255, 0.06);
-  box-shadow:
-    inset 0 1px 0 rgba(255, 255, 255, 0.04),
-    0 16px 48px rgba(0, 0, 0, 0.45);
+  background: var(--cds-layer-01, #1c1c1c);
+  border: 1px solid var(--cds-border-subtle, #393939);
+  /* No backdrop-filter, no inset highlight, no shadow. */
 }
 
-/* Aurora hero — used sparingly, hero-area only (Brain Overview Performance, MIDI Hub Connections). */
 .map2-material-aurora {
   position: relative;
   isolation: isolate;
-  background:
-    radial-gradient(120% 80% at 12% 0%, rgba(34, 211, 238, 0.10) 0%, transparent 60%),
-    radial-gradient(90% 60% at 92% 6%, rgba(245, 165, 36, 0.07) 0%, transparent 55%),
-    radial-gradient(70% 60% at 50% 100%, rgba(15, 98, 254, 0.08) 0%, transparent 60%),
-    var(--shell-chrome-bg-main, #0f0f0f);
+  background: var(--cds-background, #161616);
+  /* No radial gradients, no scanline grain. */
 }
 
 .map2-material-aurora::after {
-  /* Faint scanline grain — only appears under reduced contrast, very low opacity. */
-  content: '';
-  position: absolute;
-  inset: 0;
-  z-index: -1;
-  background-image: repeating-linear-gradient(
-    0deg,
-    rgba(255, 255, 255, 0.012) 0px,
-    rgba(255, 255, 255, 0.012) 1px,
-    transparent 1px,
-    transparent 3px
-  );
-  pointer-events: none;
+  /* Disabled — preserved selector to avoid layout collapse if a consumer
+   * relies on the ::after pseudo-element existing. */
+  content: none;
 }
 
-/* ---------------- Electroluminescent active-slot glow ---------------- */
+/* Electroluminescent class is now a no-op. The data-glow attribute is
+ * preserved as a selector hook for tests and future migrations, but the
+ * visual effect (animated glow border) is removed entirely per Q1=A. */
 .map2-electroluminescent {
   position: relative;
 }
@@ -121,44 +123,14 @@
 .map2-electroluminescent[data-glow='active']::after,
 .map2-electroluminescent[data-glow='armed']::after,
 .map2-electroluminescent[data-glow='live']::after {
-  content: '';
-  position: absolute;
-  inset: -1px;
-  border-radius: inherit;
-  pointer-events: none;
-  opacity: 0.85;
-  mix-blend-mode: screen;
-  transition: opacity var(--map2-dur-base) var(--map2-ease-out-snap);
+  content: none;
 }
 
-.map2-electroluminescent[data-glow='active']::after {
-  box-shadow: var(--map2-ring-focus);
-}
-
-.map2-electroluminescent[data-glow='armed']::after {
-  box-shadow: var(--map2-ring-armed);
-  animation: map2-armed-pulse 2.4s ease-in-out infinite;
-}
-
-.map2-electroluminescent[data-glow='live']::after {
-  box-shadow: var(--map2-ring-live);
-  animation: map2-live-breathe 1.8s ease-in-out infinite;
-}
-
-@keyframes map2-armed-pulse {
-  0%, 100% { opacity: 0.55; }
-  50% { opacity: 0.95; }
-}
-
-@keyframes map2-live-breathe {
-  0%, 100% { opacity: 0.65; filter: brightness(1.0); }
-  50% { opacity: 1.0; filter: brightness(1.18); }
-}
-
-/* ---------------- Reduced motion respect ---------------- */
+/* Reduced-motion safety preserved for any consumer that still adds the
+ * data-glow attribute. */
 @media (prefers-reduced-motion: reduce) {
   .map2-electroluminescent[data-glow='armed']::after,
   .map2-electroluminescent[data-glow='live']::after {
-    animation: none;
+    content: none;
   }
 }

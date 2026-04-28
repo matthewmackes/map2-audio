@@ -1,15 +1,97 @@
 // MAP2 Audio Platform — Carbon-disciplined design tokens (SCSS)
 //
-// Bundle 0 placeholder. Bundle 1 (T2474) replaces this with the full token
-// contract: blue-60 primary, Carbon gray surfaces, MAP semantic tokens
-// (live/staged/uncommitted/health/latency/sync/avb/blocking-vs-advisory),
-// expanded palette and shell catalogs, and validateThemeContract().
-//
-// At B0 we only re-export Carbon's theme/spacing/motion modules so downstream
-// SCSS modules can `@use` this partial without depending on Carbon's internal
-// path layout.
+// This partial is the canonical SCSS contract for the MAP2 frontend. It:
+//   1. Re-exports Carbon's theme/spacing/motion/type modules so downstream
+//      modules @use one entry rather than learning Carbon's internal layout.
+//   2. Defines MAP-specific semantic tokens for operator concepts that Carbon
+//      doesn't model directly (live-vs-staged, runtime-vs-authority,
+//      signal-flow direction, node/device health, latency bands, clock/sync,
+//      AVB, commit-pending, blocking-vs-advisory).
+//   3. The actual CSS custom properties are emitted by _semantic-tokens.scss
+//      so plain .css files can consume var(--map2-state-live) etc. without
+//      knowing about SCSS.
 
 @forward '@carbon/styles/scss/theme';
 @forward '@carbon/styles/scss/spacing';
 @forward '@carbon/styles/scss/motion';
 @forward '@carbon/styles/scss/type';
+
+// =============================================================================
+// MAP semantic colors (dark shell baseline)
+// =============================================================================
+//
+// All values are Carbon palette shades — never custom hex. The light-shell
+// variants are emitted in _semantic-tokens.scss inside the appropriate
+// [data-carbon-theme] scope.
+//
+// Authority:
+//   $map2-state-* — live (running), staged (queued for commit), uncommitted
+//                   (operator edits not yet staged), committed (matches
+//                   authority).
+//   $map2-health-* — node/device health bands (ok/caution/critical/offline).
+//   $map2-latency-* — latency bands (good/caution/critical).
+//   $map2-clock-* — clock domain status (master/slave/locked/unlocked).
+//   $map2-avb-* — AVB stream/grandmaster status.
+//   $map2-flow-* — signal-flow edge classes (input/output/blocked/sidechain).
+//   $map2-alert-* — alert severity (blocking vs advisory).
+//
+// These are *Sass* variables. Component SCSS modules (B4+) consume them via
+// @use 'tokens' as t; color: t.$map2-state-live;
+//
+// The corresponding CSS custom properties are emitted by _semantic-tokens.scss
+// at :root and follow the var(--map2-<group>-<key>) naming convention.
+
+// State (live vs staged vs uncommitted vs committed)
+$map2-state-live: #42be65;          // Carbon green-40 — running, on authority
+$map2-state-staged: #4589ff;        // Carbon blue-50 — queued for commit
+$map2-state-uncommitted: #f1c21b;   // Carbon yellow-30 — local edit only
+$map2-state-committed: #6f6f6f;     // Carbon gray-60 — settled, no diff
+
+// Health (node/device)
+$map2-health-ok: #42be65;           // Carbon green-40
+$map2-health-caution: #f1c21b;      // Carbon yellow-30
+$map2-health-critical: #fa4d56;     // Carbon red-50
+$map2-health-offline: #6f6f6f;      // Carbon gray-60
+
+// Latency bands
+$map2-latency-good: #42be65;        // Carbon green-40
+$map2-latency-caution: #f1c21b;     // Carbon yellow-30
+$map2-latency-critical: #fa4d56;    // Carbon red-50
+
+// Clock / sync
+$map2-clock-master: #4589ff;        // Carbon blue-50
+$map2-clock-slave: #78a9ff;         // Carbon blue-40
+$map2-clock-locked: #42be65;        // Carbon green-40
+$map2-clock-unlocked: #fa4d56;      // Carbon red-50
+
+// AVB
+$map2-avb-locked: #42be65;          // Carbon green-40
+$map2-avb-unlocked: #fa4d56;        // Carbon red-50
+$map2-avb-grandmaster: #4589ff;     // Carbon blue-50
+
+// Signal flow edges
+$map2-flow-input: #4589ff;          // Carbon blue-50
+$map2-flow-output: #78a9ff;         // Carbon blue-40
+$map2-flow-blocked: #fa4d56;        // Carbon red-50
+$map2-flow-sidechain: #be95ff;      // Carbon purple-40
+
+// Alert severity (blocking-vs-advisory split)
+$map2-alert-blocking: #fa4d56;      // Carbon red-50 — blocks activation
+$map2-alert-advisory: #f1c21b;      // Carbon yellow-30 — advisory only
+
+// =============================================================================
+// MAP density rhythm — aligned to Carbon spacing scale
+// =============================================================================
+// These map 1:1 onto Carbon's $spacing-* scale (0.125rem step). Component
+// SCSS modules should prefer Carbon's own $spacing-XX names; these aliases
+// exist only for legacy compatibility while we migrate consumers off the
+// non-standard --map2-space-* and --space-* CSS variables.
+
+$map2-density-1: 0.25rem;   // 4px  → Carbon $spacing-02
+$map2-density-2: 0.5rem;    // 8px  → Carbon $spacing-03
+$map2-density-3: 0.75rem;   // 12px → Carbon $spacing-04
+$map2-density-4: 1rem;      // 16px → Carbon $spacing-05
+$map2-density-5: 1.5rem;    // 24px → Carbon $spacing-06
+$map2-density-6: 2rem;      // 32px → Carbon $spacing-07
+$map2-density-7: 3rem;      // 48px → Carbon $spacing-09
+$map2-density-8: 4rem;      // 64px → Carbon $spacing-10
