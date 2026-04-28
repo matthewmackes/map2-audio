@@ -29,11 +29,10 @@ logger = logging.getLogger(__name__)
 try:
     from app.services.midi_hub.hub import get_midi_hub
     from app.services.midi_hub.ports import MidiMessage, VirtualMidiPort
-    MIDI_HUB_AVAILABLE = True
 except Exception:  # pragma: no cover - optional integration
+    get_midi_hub = None  # type: ignore[assignment]
     MidiMessage = None  # type: ignore[assignment]
     VirtualMidiPort = None  # type: ignore[assignment]
-    MIDI_HUB_AVAILABLE = False
 
 class MidiBroadcastService:
     """
@@ -112,7 +111,7 @@ class MidiBroadcastService:
 
     def _register_hub_bridge(self) -> None:
         """Attach to MidiHub traffic so all routed MIDI is broadcastable."""
-        if not MIDI_HUB_AVAILABLE:
+        if get_midi_hub is None or VirtualMidiPort is None:
             return
         try:
             hub = get_midi_hub()
