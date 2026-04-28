@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1361** Python | **1332** TypeScript | **176** C++/H | **145** Docs | **2987** total commits | **3** stars | **0** forks | **0** open issues
+**1362** Python | **1332** TypeScript | **176** C++/H | **145** Docs | **2989** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`fe9b178d`](https://github.com/matthewmackes/map2-audio/commit/fe9b178d60d490b0b71ab1dc8ad5bcb992ac8b43) | T2459-H3: add host-client mapping activation IPC slice | Map2 Audio | 2026-04-28 |
+| [`b8e29f50`](https://github.com/matthewmackes/map2-audio/commit/b8e29f50e684533dd409ec2221af61caac6218b0) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-28 |
 | [`76d743cb`](https://github.com/matthewmackes/map2-audio/commit/76d743cbbb03782a895b9461f0a701c1a6e71cea) | T2459-H4: consolidate MIDI CurveType enum slice | Map2 Audio | 2026-04-28 |
 | [`750dfc76`](https://github.com/matthewmackes/map2-audio/commit/750dfc76d56a547c0937ec3bb902a45fe71f2ecb) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-28 |
 | [`987ebcc9`](https://github.com/matthewmackes/map2-audio/commit/987ebcc936a57d756994c0c3946d240619d264f2) | T2459-H3: migrate MeloAudio profile to device-pack slice | Map2 Audio | 2026-04-28 |
 | [`60f83057`](https://github.com/matthewmackes/map2-audio/commit/60f83057b7d0f47210fa72a8d35fad77337c09c4) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-28 |
 | [`1d0e5854`](https://github.com/matthewmackes/map2-audio/commit/1d0e585492172333ecdae410609300d69342e105) | feat(cluster-midi): T2459-H7 host-to-host gateway replace... | Map2 Audio | 2026-04-28 |
 | [`6addd6de`](https://github.com/matthewmackes/map2-audio/commit/6addd6de47d235d32e994cb7f7002bc7ed9f9d71) | feat(shell): enterprise breadcrumb host navigation | Map2 Audio | 2026-04-28 |
-| [`623527e4`](https://github.com/matthewmackes/map2-audio/commit/623527e47d3b303b737087078f871171fde85aeb) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-28 |
-| [`1f259960`](https://github.com/matthewmackes/map2-audio/commit/1f25996022ce758f2f0227eadb9f2409ad0e921f) | feat(controller-host): T2459-H2 Mixxx mapping engine + Co... | Map2 Audio | 2026-04-28 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
