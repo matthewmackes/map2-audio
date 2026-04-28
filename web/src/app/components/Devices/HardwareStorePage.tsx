@@ -352,12 +352,17 @@ export function HardwareStorePage(): React.JSX.Element {
   )
 
   const isLoading = profilesQuery.isLoading || packsQuery.isLoading
+  // Empty-state gate counts only *detected* hardware (connected,
+  // recently-disconnected, known-to-bench) and the live profile-registry
+  // catalogue. `legacyCatalogueRows` is a hardcoded fallback list of
+  // hand-coded device pages and is always non-empty by construction, so
+  // including it would prevent the empty hero from ever rendering.
   const isEmpty =
     !isLoading &&
     connectedRows.length === 0 &&
     recentRows.length === 0 &&
     knownNotRecentRows.length === 0 &&
-    combinedCatalogueRows.length === 0
+    catalogueRows.length === 0
 
   return (
     <div className="hwstore-page" data-ws-status={ws.status}>
