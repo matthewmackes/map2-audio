@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1368** Python | **1332** TypeScript | **176** C++/H | **145** Docs | **2999** total commits | **3** stars | **0** forks | **0** open issues
+**1368** Python | **1332** TypeScript | **176** C++/H | **145** Docs | **3006** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -192,8 +192,8 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- GALLERY:START -->
 |  |  |  |
 | :---: | :---: | :---: |
-| <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/map2-banner.png" width="280" alt="map2 banner"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/map2-banner-3.png" width="280" alt="map2 banner 3"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 08-00-43 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 08 00 43 Mackes Audio Platform 2 FEB2025"> |
-| <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot-Cli.png" width="280" alt="Screenshot Cli"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 07-58-14 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 07 58 14 Mackes Audio Platform 2 FEB2025"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 07-57-33 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 07 57 33 Mackes Audio Platform 2 FEB2025"> |
+| <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/map2-banner.png" width="280" alt="map2 banner"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/map2-banner-3.png" width="280" alt="map2 banner 3"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot-Cli.png" width="280" alt="Screenshot Cli"> |
+| <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 08-00-43 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 08 00 43 Mackes Audio Platform 2 FEB2025"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 07-57-33 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 07 57 33 Mackes Audio Platform 2 FEB2025"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 07-58-14 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 07 58 14 Mackes Audio Platform 2 FEB2025"> |
 | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/MAP2_AUDIO-NODE_ARCH_DIAGRAM3.png" width="280" alt="MAP2 AUDIO NODE ARCH DIAGRAM3"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/MAP2_AUDIO-NODE_ARCH_DIAGRAM2-BANG.png" width="280" alt="MAP2 AUDIO NODE ARCH DIAGRAM2 BANG"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/MAP2_AUDIO-NODE_ARCH_DIAGRAM.png" width="280" alt="MAP2 AUDIO NODE ARCH DIAGRAM"> |
 <!-- GALLERY:END -->
 
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`37375ed4`](https://github.com/matthewmackes/map2-audio/commit/37375ed4a1044ac8bf93a5e6a8b922bcafc0adbb) | T2459-H5: retire MIDI_HUB_AVAILABLE from midi_v2 routes | Map2 Audio | 2026-04-28 |
+| [`9b9df8c8`](https://github.com/matthewmackes/map2-audio/commit/9b9df8c85dce1b70dddb7ee5601e379b8a4fce2c) | T2459-H5: remove sysex bridge availability boolean gating | Map2 Audio | 2026-04-28 |
+| [`9c6c2326`](https://github.com/matthewmackes/map2-audio/commit/9c6c2326d628c1f5712d2d591f92d8aa9f70a44e) | T2459-H5: remove midi_engine availability boolean gating | Map2 Audio | 2026-04-28 |
+| [`80dde2b1`](https://github.com/matthewmackes/map2-audio/commit/80dde2b16ccd0fe698a546115d47e4bb822a4047) | T2459-H5: remove midi_broadcast availability boolean gating | Map2 Audio | 2026-04-28 |
+| [`2101f425`](https://github.com/matthewmackes/map2-audio/commit/2101f4253cf8cbc1705f035080d57c78e71fcedb) | T2459-H5: remove midi_learn availability boolean gating | Map2 Audio | 2026-04-28 |
+| [`3f04f7f5`](https://github.com/matthewmackes/map2-audio/commit/3f04f7f549cf4e030ac183d9809bd4b46f48154d) | T2459-H5: remove midi_service availability boolean gating | Map2 Audio | 2026-04-28 |
+| [`4c0191fb`](https://github.com/matthewmackes/map2-audio/commit/4c0191fbbd0cb26fc03761f90ccbe620f1827c5b) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-28 |
 | [`c6cf6650`](https://github.com/matthewmackes/map2-audio/commit/c6cf66508e189e5a9a2791bb3b5e7e0f8ab284a7) | T2459-H5: remove MIDI_HUB_AVAILABLE execution gating | Map2 Audio | 2026-04-28 |
-| [`f88b41b3`](https://github.com/matthewmackes/map2-audio/commit/f88b41b359ae91ea0bc565fbdda347ffffabe9f7) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-28 |
-| [`235c4cf5`](https://github.com/matthewmackes/map2-audio/commit/235c4cf5436d0e67b15791ff8d7d5fe31134274e) | T2459-H4: add shared runtime sysex-tags JS library | Map2 Audio | 2026-04-28 |
-| [`ae2a7263`](https://github.com/matthewmackes/map2-audio/commit/ae2a7263b582790f4726b6d02f62470ad8a18dad) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-28 |
-| [`84305583`](https://github.com/matthewmackes/map2-audio/commit/84305583ea35ad0e28742ee6a8f2b3648d9dcef2) | T2459-H4: share SysEx tag maps across parsers | Map2 Audio | 2026-04-28 |
-| [`6b453df5`](https://github.com/matthewmackes/map2-audio/commit/6b453df551f8c9c5392545cb4e3583a0bdc48429) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-28 |
-| [`6cd223fc`](https://github.com/matthewmackes/map2-audio/commit/6cd223fce2ed09a9ff84c2f54305dfcc99cc8cdc) | T2459-H3: consume script/mapping activation in host loop | Map2 Audio | 2026-04-28 |
-| [`c81f79b2`](https://github.com/matthewmackes/map2-audio/commit/c81f79b2000d7d7126a488bbc54763f4a8c38d5b) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-28 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
