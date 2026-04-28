@@ -374,7 +374,6 @@ class _FakePortRouter:
 def test_engine_lifecycle_uses_midi_hub_when_available(monkeypatch):
     hub = _FakeHub()
     client, service = _build_client(monkeypatch)
-    monkeypatch.setattr(midi_v2_routes, "MIDI_HUB_AVAILABLE", True)
     monkeypatch.setattr(midi_v2_routes, "get_midi_hub", lambda: hub)
 
     started = client.post("/api/v2/midi/engine/start")
@@ -408,7 +407,6 @@ def test_engine_lifecycle_falls_back_to_juce_engine(monkeypatch):
 def test_devices_refresh_uses_shared_inventory_path(monkeypatch):
     hub = _FakeHub()
     client, _service = _build_client(monkeypatch)
-    monkeypatch.setattr(midi_v2_routes, "MIDI_HUB_AVAILABLE", True)
     monkeypatch.setattr(midi_v2_routes, "get_midi_hub", lambda: hub)
 
     response = client.post("/api/v2/midi/devices/refresh")
@@ -425,7 +423,6 @@ def test_devices_refresh_uses_shared_inventory_path(monkeypatch):
 def test_activity_clear_uses_midi_hub_traffic_monitor(monkeypatch):
     monitor = _FakeTrafficMonitor()
     client, _service = _build_client(monkeypatch)
-    monkeypatch.setattr(midi_v2_routes, "MIDI_HUB_AVAILABLE", True)
     monkeypatch.setattr(midi_v2_routes, "get_midi_traffic_monitor", lambda: monitor)
 
     response = client.post("/api/v2/midi/activity/clear")
@@ -438,7 +435,6 @@ def test_activity_clear_uses_midi_hub_traffic_monitor(monkeypatch):
 def test_clock_facade_delegates_to_midi_hub_clock_engine(monkeypatch):
     clock = _FakeClockEngine()
     client, _service = _build_client(monkeypatch)
-    monkeypatch.setattr(midi_v2_routes, "MIDI_HUB_AVAILABLE", True)
     monkeypatch.setattr(midi_v2_routes, "get_midi_clock_engine", lambda: clock)
 
     status = client.get("/api/v2/midi/clock")
@@ -472,7 +468,6 @@ def test_clock_facade_reports_unavailable_without_midi_hub(monkeypatch):
 def test_port_route_facade_uses_midi_hub_router_with_legacy_aliases(monkeypatch):
     router = _FakePortRouter()
     client, _service = _build_client(monkeypatch)
-    monkeypatch.setattr(midi_v2_routes, "MIDI_HUB_AVAILABLE", True)
     monkeypatch.setattr(midi_v2_routes, "get_midi_router", lambda: router)
 
     created = client.post(

@@ -1075,6 +1075,15 @@ Completion note: 2026-04-28 — Codex: **Slice 2 SHIPPED (unified MIDI router mo
   - Remove residual `MIDI_HUB_AVAILABLE` route/test toggles and retire the boolean from `midi_v2` fully.
   - Land explicit deprecation shims/retirement plan for the legacy route modules and formal v1 retirement flow.
   - Complete host-owned UMP round-trip and preserve recorder golden artifacts under the migrated path.
+  2026-04-28 — Codex: **Slice 9 SHIPPED (retired `MIDI_HUB_AVAILABLE` from `midi_v2` and route regressions).**
+  Delivered:
+  - Removed `MIDI_HUB_AVAILABLE` import-time flag from `app/routes/midi_v2.py`.
+  - Updated `tests/test_midi_v2_routes.py` to rely entirely on callable monkeypatching (`get_midi_hub` / `get_midi_clock_engine` / `get_midi_router` / `get_midi_traffic_monitor`) with no boolean toggles.
+  Validation:
+  - `pytest -q tests/test_midi_v2_routes.py tests/test_midi_unified_routes_t2459h5.py tests/test_route_registration_policy.py` -> **21 passed**.
+  Remaining for full H5 acceptance:
+  - Land explicit deprecation shims/retirement plan for the legacy route modules and formal v1 retirement flow.
+  - Complete host-owned UMP round-trip and preserve recorder golden artifacts under the migrated path.
 Last updated: 2026-04-28 11:26 EDT - Codex: unified route-registration + callable-gating slices shipped; H5 remains in progress.
 
 ---

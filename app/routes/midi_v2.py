@@ -37,13 +37,11 @@ try:
     from app.services.midi_hub.hub import get_midi_hub
     from app.services.midi_hub.router import get_midi_router
     from app.services.midi_hub.traffic_monitor import get_midi_traffic_monitor
-    MIDI_HUB_AVAILABLE = True
 except Exception:  # pragma: no cover - optional integration
     get_midi_clock_engine = None  # type: ignore[assignment]
     get_midi_hub = None  # type: ignore[assignment]
     get_midi_router = None  # type: ignore[assignment]
     get_midi_traffic_monitor = None  # type: ignore[assignment]
-    MIDI_HUB_AVAILABLE = False
 
 # Connect services
 device_profile_service.set_midi_service(midi_service)
