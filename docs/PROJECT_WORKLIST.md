@@ -1084,6 +1084,14 @@ Completion note: 2026-04-28 — Codex: **Slice 2 SHIPPED (unified MIDI router mo
   Remaining for full H5 acceptance:
   - Land explicit deprecation shims/retirement plan for the legacy route modules and formal v1 retirement flow.
   - Complete host-owned UMP round-trip and preserve recorder golden artifacts under the migrated path.
+  2026-04-28 — Codex: **Slice 10 SHIPPED (regression guard to keep `MIDI_HUB_AVAILABLE` retired).**
+  Delivered:
+  - Added `tests/test_midi_hub_available_guard_t2459h5.py` to assert `MIDI_HUB_AVAILABLE` does not reappear in core H5 runtime paths (`midi_v2`, `midi_service`, `midi_learn`, `midi_broadcast`, `midi_engine`, `sysex_device_bridge`).
+  Validation:
+  - `pytest -q tests/test_midi_hub_available_guard_t2459h5.py tests/test_midi_v2_routes.py tests/test_midi_unified_routes_t2459h5.py` -> **19 passed**.
+  Remaining for full H5 acceptance:
+  - Land explicit deprecation shims/retirement plan for the legacy route modules and formal v1 retirement flow.
+  - Complete host-owned UMP round-trip and preserve recorder golden artifacts under the migrated path.
 Last updated: 2026-04-28 11:26 EDT - Codex: unified route-registration + callable-gating slices shipped; H5 remains in progress.
 
 ---
