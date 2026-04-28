@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1355** Python | **1327** TypeScript | **157** C++/H | **145** Docs | **2975** total commits | **3** stars | **0** forks | **0** open issues
+**1357** Python | **1327** TypeScript | **167** C++/H | **145** Docs | **2978** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`ebda6624`](https://github.com/matthewmackes/map2-audio/commit/ebda66247add35c6f198b9bbfd67f090d1b51ef1) | feat(controller-host): T2459-H1 libremidi I/O + SPSC shm ... | Map2 Audio | 2026-04-28 |
+| [`c7d9a0e6`](https://github.com/matthewmackes/map2-audio/commit/c7d9a0e646258416fab8b24db8a8c7fd249ea685) | fix(hwstore): empty-state hero never rendered after T2459... | Map2 Audio | 2026-04-28 |
+| [`7abfe615`](https://github.com/matthewmackes/map2-audio/commit/7abfe615a1f1304c51eea131a0344b1f48b2cf77) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-28 |
 | [`7a86d336`](https://github.com/matthewmackes/map2-audio/commit/7a86d3362fd58ab3f6536615becee260d0a86547) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-28 |
 | [`502aa306`](https://github.com/matthewmackes/map2-audio/commit/502aa30623197873a1c87ed1209d36d175b7fa87) | docs(controller-layer): T2459-A1 cross-link CONTROLLER_LA... | Map2 Audio | 2026-04-28 |
 | [`de30d989`](https://github.com/matthewmackes/map2-audio/commit/de30d98957f65ca5810f21061c62bb7e3c46beac) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-28 |
 | [`03ff8cf4`](https://github.com/matthewmackes/map2-audio/commit/03ff8cf47087172c3b5544ed5c4d25459178fad3) | chore(worklist): close T2459-G epic — all 12 sub-tasks G1... | Map2 Audio | 2026-04-28 |
 | [`2a7cb0ba`](https://github.com/matthewmackes/map2-audio/commit/2a7cb0bae91659546ce898ec8678174b61eec34b) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-28 |
-| [`99533330`](https://github.com/matthewmackes/map2-audio/commit/995333306bca53616c2fa3636da9a058036a549f) | chore(worklist): close T2461 epic — all 10 sub-tasks A1..... | Map2 Audio | 2026-04-28 |
-| [`07f2184d`](https://github.com/matthewmackes/map2-audio/commit/07f2184d7230ee843f7060ac971b05178bf45dfe) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-28 |
-| [`b27094c1`](https://github.com/matthewmackes/map2-audio/commit/b27094c1adf713d4b17be38c76777760d286c970) | feat(midi-assignments): T2461-A6 paired Brain + MIDI cali... | Map2 Audio | 2026-04-28 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
