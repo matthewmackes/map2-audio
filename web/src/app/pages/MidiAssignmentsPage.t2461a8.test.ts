@@ -1,5 +1,9 @@
 /** T2461-A8 — Mixxx-shorthand parsers used by the wizard target step. */
-import { parseMixxxShorthand, parseBenchPinSurfaceId } from './MidiAssignmentsPage'
+import {
+  parseMixxxShorthand,
+  parseBenchPinSurfaceId,
+  buildMixxxAliasTarget,
+} from './MidiAssignmentsPage'
 
 describe('parseMixxxShorthand', () => {
   test('matches simple [Group].key form', () => {
@@ -58,5 +62,27 @@ describe('parseBenchPinSurfaceId', () => {
 
   test('returns null for malformed bench-pin payload', () => {
     expect(parseBenchPinSurfaceId('bench-pin:malformed-no-slash')).toBeNull()
+  })
+})
+
+describe('buildMixxxAliasTarget', () => {
+  test('lands the resolved address in the engine-performance category', () => {
+    const t = buildMixxxAliasTarget('audio.chain.1.volume')
+    expect(t.cat).toBe('engine-performance')
+    expect(t.paramId).toBe('audio.chain.1.volume')
+    expect(t.path).toBe('audio.chain.1.volume')
+    expect(t.name).toBe('audio.chain.1.volume')
+  })
+
+  test('namespaces the id so it cannot collide with a real engine-performance row', () => {
+    const t = buildMixxxAliasTarget('audio.master.crossfader')
+    expect(t.id).toBe('mixxx-alias::audio.master.crossfader')
+    expect(t.id.startsWith('mixxx-alias::')).toBe(true)
+  })
+
+  test('emits a 0..1 default range so the wizard calibrate step has bounds', () => {
+    const t = buildMixxxAliasTarget('audio.chain.2.send_a')
+    expect(t.range).toEqual([0, 1])
+    expect(t.unit).toBe('')
   })
 })

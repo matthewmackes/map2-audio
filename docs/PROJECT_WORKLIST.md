@@ -1015,7 +1015,7 @@ Last updated: 2026-04-27 EDT - Claude: SHIPPED.
 ---
 
 ID: T2461-A8
-Status: [>] In Progress
+Status: [✓] Done
 Parent: T2461
 Title: `mixxx_alias_table` resolver in MIDI Assignments wizard target step
 Description:
@@ -1025,8 +1025,9 @@ Description:
 - Required outputs: a thin `/api/devices/profiles/{...}/resolve-alias` endpoint or in-process resolver call from the wizard; UI affordance showing the resolved target; backend + frontend tests.
 - Estimated lift: small (1 day).
 Progress note: 2026-04-27 — Claude: backend half SHIPPED. Authored `POST /api/devices/profiles/{pack}/{model}/{kind}/resolve-alias` route on `app/routes/devices.py`. The route looks up the profile, reads its `mixxx_alias_table`, and calls the existing `mixxx_control_object_bridge.resolve(group, key, alias_table)` from T2459-B3 — pack-overrides take priority over `WELL_KNOWN`. Returns `{resolved, target, alias_table_used}` on hit; `{resolved: false, reason}` on a fail-soft miss. Validates `kind ∈ {midi,hid}` (400 invalid_kind for audio) and 404s on unknown profile, both via the locked Q20 envelope. Extended typed client at `web/src/map2/clients/devices.ts` with `MixxxAliasResolveResult` interface + `resolveMixxxAlias(packId, model, kind, group, key)`. Tests: `tests/test_devices_t2461a8_routes.py` (4 cases — pack alias override wins; unmapped pair fails soft; audio-kind 400; unknown profile 404) reports **4 passed**. Wizard-side wiring (live preview of resolved target as the operator types) deferred — `MidiAssignmentsPage.tsx` `StepTarget` is a 250 LoC nested component; the wiring will land alongside A4 (Brain action target source) which also extends StepTarget.
+Completion note: 2026-04-28 — Claude: SHIPPED. Wizard wiring landed end-to-end. The `StepTarget` search input already advertised the Mixxx shorthand affordance from the A4 tranche; this commit closes the loop. Added an exported `buildMixxxAliasTarget(address)` helper in `MidiAssignmentsPage.tsx` that synthesises an `EnginePerformanceTarget` from a resolved Mixxx address (id namespaced as `mixxx-alias::<address>` so it can never collide with a real engine-performance row; `paramId`/`path`/`name` all set to the resolved address; default `[0,1]` range / empty unit for the calibrate step's bounds). Extended `MixxxAliasPreview` with `selectedTargetId` + `onApply` props: when the route resolves, the preview now renders a "Use this resolved target" button below the resolved-address line; clicking it invokes the apply callback. The `StepTarget` call site threads the callback so apply (a) flips the category tab to `engine-performance` (the natural home for an engine-parameter address) and (b) writes the synthesised target into `state.target`. Once applied, the button swaps for a "✓ Applied as engine-performance target" tag so the operator sees the binding is locked in. Tests: 3 new `buildMixxxAliasTarget` cases (engine-performance landing; id namespacing; default range/unit) added to `MidiAssignmentsPage.t2461a8.test.ts`, 15/15 in the suite green. Frontend typecheck clean. `npm run build` clean (22.66s); fresh `MidiAssignmentsPage-*.js` bundle contains the new "Use this resolved target" copy. `update` shorthand executed: commit + dual-push to origin/gitlab + atomic rebuild + port-3000 restart + verify.
 Assigned to: Claude
-Last updated: 2026-04-27 EDT - Claude: backend done; wizard UI integration queued with A4.
+Last updated: 2026-04-28 EDT - Claude: SHIPPED.
 
 ---
 

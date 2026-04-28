@@ -691,9 +691,28 @@ export function buildBrainCaptureWaveformPath(
 interface MixxxAliasPreviewProps {
   query: string
   surface: AdaptedSurface | null
+  selectedTargetId: string | null
+  onApply: (target: EnginePerformanceTarget) => void
 }
 
-function MixxxAliasPreview({ query, surface }: MixxxAliasPreviewProps): React.JSX.Element | null {
+// T2461-A8 — synthesise an EnginePerformanceTarget from a resolved Mixxx
+// alias. The wizard already understands engine-parameter addresses as
+// the "engine-performance" target category, so the resolved address
+// lands in the same category and the rest of the wizard (calibrate,
+// save) treats it identically.
+export function buildMixxxAliasTarget(resolvedAddress: string): EnginePerformanceTarget {
+  return {
+    cat: 'engine-performance',
+    id: `mixxx-alias::${resolvedAddress}`,
+    name: resolvedAddress,
+    path: resolvedAddress,
+    paramId: resolvedAddress,
+    range: [0, 1],
+    unit: '',
+  }
+}
+
+function MixxxAliasPreview({ query, surface, selectedTargetId, onApply }: MixxxAliasPreviewProps): React.JSX.Element | null {
   const shorthand = parseMixxxShorthand(query)
   const benchPin = surface ? parseBenchPinSurfaceId(surface.id) : null
 
@@ -772,12 +791,29 @@ function MixxxAliasPreview({ query, surface }: MixxxAliasPreviewProps): React.JS
       </div>
       {resolved ? (
         <div>
-          <code>{shorthand.group}.{shorthand.key}</code>
-          <span style={{ margin: '0 8px' }}>→</span>
-          <code style={{ color: 'var(--mw-engine)' }}>{resolved.target}</code>
-          {resolved.aliasUsed
-            ? <span style={{ marginLeft: 8, opacity: 0.6 }}>(via pack alias_table)</span>
-            : <span style={{ marginLeft: 8, opacity: 0.6 }}>(via WELL_KNOWN bridge)</span>}
+          <div>
+            <code>{shorthand.group}.{shorthand.key}</code>
+            <span style={{ margin: '0 8px' }}>→</span>
+            <code style={{ color: 'var(--mw-engine)' }}>{resolved.target}</code>
+            {resolved.aliasUsed
+              ? <span style={{ marginLeft: 8, opacity: 0.6 }}>(via pack alias_table)</span>
+              : <span style={{ marginLeft: 8, opacity: 0.6 }}>(via WELL_KNOWN bridge)</span>}
+          </div>
+          <div style={{ marginTop: 6 }}>
+            {selectedTargetId === `mixxx-alias::${resolved.target}` ? (
+              <span data-testid="mixxx-alias-applied" style={{ color: 'var(--mw-engine)' }}>
+                ✓ Applied as engine-performance target
+              </span>
+            ) : (
+              <button
+                data-testid="mixxx-alias-apply"
+                onClick={() => onApply(buildMixxxAliasTarget(resolved.target))}
+                style={{ fontFamily: 'var(--mw-mono)', fontSize: 12 }}
+              >
+                Use this resolved target
+              </button>
+            )}
+          </div>
         </div>
       ) : reason ? (
         <div style={{ color: 'var(--mw-warn)' }}>
@@ -918,7 +954,15 @@ function StepTarget({
             onChange={(e) => setSearch(e.target.value)}
             style={{ width: '100%', background: 'var(--mw-bg)', border: '1px solid var(--mw-line-2)', padding: '8px 10px', fontFamily: 'var(--mw-mono)', marginBottom: 8 }}
           />
-          <MixxxAliasPreview query={search} surface={state.surface} />
+          <MixxxAliasPreview
+            query={search}
+            surface={state.surface}
+            selectedTargetId={state.target?.id ?? null}
+            onApply={(t) => {
+              setCat('engine-performance')
+              setState({ target: t })
+            }}
+          />
           <div className="target-list">
             {targetsForCategory.length === 0 && (
               <div style={{ padding: 16, color: 'var(--mw-text-3)', fontSize: 13 }}>
