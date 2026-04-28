@@ -804,7 +804,7 @@ Description:
   - Worklist completion notes per subtask, dual-push to origin + gitlab, full release loop verification per CLAUDE.md §0.6
 Subtasks: T2459-H1 .. T2459-H7 (7 subtasks; see below)
 Assigned to: Claude
-Last updated: 2026-04-28 12:01 EDT - Codex: H5 unified-route registration slice shipped (main route registry now mounts `app.routes.midi`), with H3 slices 1-2 and H4 curve-consolidation already shipped; remaining H acceptance is host dispatcher wiring + broader device migrations + bench HIL.
+Last updated: 2026-04-28 12:42 EDT - Codex: H3 dispatcher slice shipped (script/mapping activation now consumed in host main loop) and H5 unified-route registration slice shipped; remaining H acceptance is live inbound-MIDI dispatch path + broader device migrations + bench HIL.
 
 ---
 
@@ -918,7 +918,20 @@ Completion note: 2026-04-28 — Codex: **Slice 1 SHIPPED (pack migration + legac
   Remaining for full H3 acceptance:
   - Host C++ dispatcher still must consume `script_load_request` and `mapping_activate` in production path and emit/route resulting engine commands from live MIDI traffic.
   - Physical HIL evidence run with MeloAudio hardware.
-Last updated: 2026-04-28 10:45 EDT - Codex: slices 1-2 shipped; H3 remains in progress.
+  2026-04-28 — Codex: **Slice 3 SHIPPED (host main-loop request dispatch for script/mapping activation).**
+  Delivered:
+  - Extended `juce-engine/Source/ControllerHost/main.cpp` dispatcher to consume:
+    - `script_load_request` (controller-keyed script cache + `log_event` response),
+    - `mapping_activate` (descriptor parse, script-resolution from cache/filesystem/inline bodies, `Map2MappingEngine::loadDescriptor(...)`, `log_event` or `script_error` response).
+  - Added helper JSON-region extraction and descriptor parsing utilities in host main-loop to lift controls/outputs/alias table into `MappingDescriptorSpec` without waiting for the larger full-parser migration.
+  - Added integration coverage `tests/test_controller_host_main_loop_t2459h3.py` that runs the real `map2-controller-host` binary over a tmp UDS and asserts request consumption for both `script_load_request` and `mapping_activate`.
+  Validation:
+  - `cd juce-engine && cmake --build build --target map2-controller-host`
+  - `pytest -q tests/test_controller_host_main_loop_t2459h3.py tests/test_midi_host_client_t2459h3.py tests/test_midi_host_client_t2459h1.py tests/test_controller_host_ipc_schema.py` -> **20 passed**.
+  Remaining for full H3 acceptance:
+  - Live libremidi event ingestion still needs to route through the loaded descriptor dispatch path and emit engine commands from real inbound MIDI traffic (current slice activates mappings but does not yet wire the full runtime event loop).
+  - Physical HIL evidence run with MeloAudio hardware.
+Last updated: 2026-04-28 12:42 EDT - Codex: slices 1-3 shipped; H3 remains in progress.
 
 ---
 

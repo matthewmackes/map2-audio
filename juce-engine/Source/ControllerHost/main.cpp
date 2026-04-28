@@ -9,7 +9,7 @@
 //
 // Worklist: T2459-B2
 
-#include "QuickJSEngine.h"
+#include "MappingEngine/Map2MappingEngine.h"
 #include "Midi/Map2MidiBackend.h"
 
 #include <atomic>
@@ -19,12 +19,17 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <filesystem>
+#include <fstream>
 #include <iostream>
+#include <optional>
+#include <regex>
 #include <sstream>
 #include <string>
 #include <sys/socket.h>
 #include <sys/stat.h>
 #include <sys/un.h>
+#include <unordered_map>
 #include <unistd.h>
 #include <vector>
 
@@ -54,9 +59,36 @@ std::string extract_string_field (const std::string& frame, const std::string& k
     auto pos = frame.find (needle);
     if (pos == std::string::npos) return {};
     pos += needle.size();
-    auto end = frame.find ('"', pos);
-    if (end == std::string::npos) return {};
-    return frame.substr (pos, end - pos);
+    std::string value;
+    value.reserve (64);
+    bool escape = false;
+    for (std::size_t i = pos; i < frame.size(); ++i)
+    {
+        const char c = frame[i];
+        if (escape)
+        {
+            switch (c)
+            {
+                case 'n': value.push_back ('\n'); break;
+                case 'r': value.push_back ('\r'); break;
+                case 't': value.push_back ('\t'); break;
+                case '"': value.push_back ('"'); break;
+                case '\\': value.push_back ('\\'); break;
+                default: value.push_back (c); break;
+            }
+            escape = false;
+            continue;
+        }
+        if (c == '\\')
+        {
+            escape = true;
+            continue;
+        }
+        if (c == '"')
+            return value;
+        value.push_back (c);
+    }
+    return {};
 }
 
 // JSON-escape a string for embedding in our hand-rolled response.
@@ -113,6 +145,273 @@ std::string build_list_ports_response (const std::string& msg_id,
     }
     oss << "],\"degraded\":" << (degraded ? "true" : "false") << "}";
     return oss.str();
+}
+
+std::string build_log_event (const std::string& msg_id,
+                             const std::string& level,
+                             const std::string& message,
+                             const std::optional<std::string>& controller_key = std::nullopt)
+{
+    std::ostringstream oss;
+    oss << "{\"type\":\"log_event\","
+        << "\"msg_id\":\"" << json_escape (msg_id) << "\","
+        << "\"schema_version\":1,";
+    if (controller_key.has_value())
+        oss << "\"controller_key\":\"" << json_escape (*controller_key) << "\",";
+    oss << "\"level\":\"" << json_escape (level) << "\","
+        << "\"message\":\"" << json_escape (message) << "\"}";
+    return oss.str();
+}
+
+std::string build_script_error (const std::string& msg_id,
+                                const std::string& controller_key,
+                                const map2::controller_host::ScriptException& exc)
+{
+    std::ostringstream oss;
+    oss << "{\"type\":\"script_error\","
+        << "\"msg_id\":\"" << json_escape (msg_id) << "\","
+        << "\"schema_version\":1,"
+        << "\"controller_key\":\"" << json_escape (controller_key) << "\","
+        << "\"file\":\"" << json_escape (exc.file) << "\","
+        << "\"line\":" << exc.line << ","
+        << "\"column\":" << exc.column << ","
+        << "\"message\":\"" << json_escape (exc.message) << "\","
+        << "\"stack\":\"" << json_escape (exc.stack) << "\"}";
+    return oss.str();
+}
+
+std::optional<std::string> extract_json_region (const std::string& json,
+                                                const std::string& key,
+                                                char open_char,
+                                                char close_char)
+{
+    const std::string needle = "\"" + key + "\":";
+    auto pos = json.find (needle);
+    if (pos == std::string::npos) return std::nullopt;
+    pos = json.find (open_char, pos + needle.size());
+    if (pos == std::string::npos) return std::nullopt;
+
+    bool in_string = false;
+    bool escape = false;
+    int depth = 0;
+    for (std::size_t i = pos; i < json.size(); ++i)
+    {
+        const char c = json[i];
+        if (in_string)
+        {
+            if (escape) escape = false;
+            else if (c == '\\') escape = true;
+            else if (c == '"') in_string = false;
+            continue;
+        }
+        if (c == '"')
+        {
+            in_string = true;
+            continue;
+        }
+        if (c == open_char) ++depth;
+        else if (c == close_char)
+        {
+            --depth;
+            if (depth == 0)
+                return json.substr (pos, i - pos + 1);
+        }
+    }
+    return std::nullopt;
+}
+
+std::optional<std::string> extract_string_field_from_json (const std::string& json,
+                                                           const std::string& key)
+{
+    const std::regex re ("\"" + key + "\":\"((?:\\\\.|[^\"])*)\"");
+    std::smatch match;
+    if (! std::regex_search (json, match, re)) return std::nullopt;
+    return match[1].str();
+}
+
+std::optional<int> extract_int_field_from_json (const std::string& json, const std::string& key)
+{
+    const std::regex re ("\"" + key + "\":(-?[0-9]+)");
+    std::smatch match;
+    if (! std::regex_search (json, match, re)) return std::nullopt;
+    try
+    {
+        return std::stoi (match[1].str());
+    }
+    catch (...) { return std::nullopt; }
+}
+
+bool extract_bool_field_from_json (const std::string& json,
+                                   const std::string& key,
+                                   bool fallback = false)
+{
+    const std::regex re ("\"" + key + "\":(true|false)");
+    std::smatch match;
+    if (! std::regex_search (json, match, re)) return fallback;
+    return match[1].str() == "true";
+}
+
+std::vector<std::string> parse_string_array (const std::string& array_json)
+{
+    std::vector<std::string> out;
+    const std::regex re ("\"((?:\\\\.|[^\"])*)\"");
+    for (std::sregex_iterator it (array_json.begin(), array_json.end(), re), end; it != end; ++it)
+        out.push_back ((*it)[1].str());
+    return out;
+}
+
+std::vector<std::string> split_object_array (const std::string& array_json)
+{
+    std::vector<std::string> out;
+    bool in_string = false;
+    bool escape = false;
+    int depth = 0;
+    std::size_t object_start = std::string::npos;
+
+    for (std::size_t i = 0; i < array_json.size(); ++i)
+    {
+        const char c = array_json[i];
+        if (in_string)
+        {
+            if (escape) escape = false;
+            else if (c == '\\') escape = true;
+            else if (c == '"') in_string = false;
+            continue;
+        }
+        if (c == '"')
+        {
+            in_string = true;
+            continue;
+        }
+        if (c == '{')
+        {
+            if (depth == 0) object_start = i;
+            ++depth;
+        }
+        else if (c == '}')
+        {
+            --depth;
+            if (depth == 0 && object_start != std::string::npos)
+            {
+                out.push_back (array_json.substr (object_start, i - object_start + 1));
+                object_start = std::string::npos;
+            }
+        }
+    }
+    return out;
+}
+
+std::unordered_map<std::string, std::string> parse_alias_table (const std::string& object_json)
+{
+    std::unordered_map<std::string, std::string> out;
+    const std::regex re ("\"((?:\\\\.|[^\"])*)\":\"((?:\\\\.|[^\"])*)\"");
+    for (std::sregex_iterator it (object_json.begin(), object_json.end(), re), end; it != end; ++it)
+        out.emplace ((*it)[1].str(), (*it)[2].str());
+    return out;
+}
+
+std::optional<std::string> read_text_file (const std::filesystem::path& path)
+{
+    if (! std::filesystem::exists (path)) return std::nullopt;
+    std::ifstream in (path, std::ios::binary);
+    if (! in.good()) return std::nullopt;
+    std::ostringstream buf;
+    buf << in.rdbuf();
+    return buf.str();
+}
+
+std::optional<std::string> resolve_script_body (const std::string& ref,
+                                                const std::string& pack_id,
+                                                const std::unordered_map<std::string, std::string>& script_cache)
+{
+    if (const auto it = script_cache.find (ref); it != script_cache.end())
+        return it->second;
+
+    const std::filesystem::path ref_path (ref);
+    if (ref_path.is_absolute())
+        return read_text_file (ref_path);
+
+    const auto cwd = std::filesystem::current_path();
+    for (auto base = cwd; ! base.empty(); base = base.parent_path())
+    {
+        if (const auto body = read_text_file (base / ref_path); body.has_value())
+            return body;
+        if (! pack_id.empty())
+        {
+            if (const auto body = read_text_file (base / "device-packs" / pack_id / ref_path); body.has_value())
+                return body;
+        }
+        if (base == base.root_path()) break;
+    }
+    return std::nullopt;
+}
+
+bool parse_mapping_activate_frame (const std::string& frame,
+                                   map2::controller_host::MappingDescriptorSpec& descriptor_out,
+                                   std::string& controller_key_out)
+{
+    controller_key_out = extract_string_field (frame, "controller_key");
+    if (controller_key_out.empty()) return false;
+    const auto descriptor_json = extract_json_region (frame, "descriptor", '{', '}');
+    if (! descriptor_json.has_value()) return false;
+
+    descriptor_out.pack_id = extract_string_field_from_json (*descriptor_json, "pack_id").value_or ("");
+    descriptor_out.model = extract_string_field_from_json (*descriptor_json, "model").value_or ("");
+    descriptor_out.kind = extract_string_field_from_json (*descriptor_json, "kind").value_or ("midi");
+
+    if (const auto scripts = extract_json_region (*descriptor_json, "scripts", '[', ']'); scripts.has_value())
+        descriptor_out.scripts = parse_string_array (*scripts);
+
+    if (const auto controls = extract_json_region (*descriptor_json, "controls", '[', ']'); controls.has_value())
+    {
+        for (const auto& control_json : split_object_array (*controls))
+        {
+            map2::controller_host::MappingControlSpec control;
+            if (const auto value = extract_int_field_from_json (control_json, "status"); value.has_value())
+                control.status = *value;
+            if (const auto value = extract_int_field_from_json (control_json, "midino"); value.has_value())
+                control.midino = *value;
+            if (const auto value = extract_int_field_from_json (control_json, "channel"); value.has_value())
+                control.channel = *value;
+            if (const auto value = extract_string_field_from_json (control_json, "target"); value.has_value())
+                control.target = *value;
+            if (const auto value = extract_string_field_from_json (control_json, "action"); value.has_value())
+                control.action = *value;
+            if (const auto value = extract_string_field_from_json (control_json, "script"); value.has_value())
+                control.script = *value;
+            control.fast_path = extract_bool_field_from_json (control_json, "fast_path", false);
+            control.description = extract_string_field_from_json (control_json, "description").value_or ("");
+            descriptor_out.controls.push_back (std::move (control));
+        }
+    }
+
+    if (const auto outputs = extract_json_region (*descriptor_json, "outputs", '[', ']'); outputs.has_value())
+    {
+        for (const auto& output_json : split_object_array (*outputs))
+        {
+            map2::controller_host::MappingControlSpec output;
+            if (const auto value = extract_int_field_from_json (output_json, "status"); value.has_value())
+                output.status = *value;
+            if (const auto value = extract_int_field_from_json (output_json, "midino"); value.has_value())
+                output.midino = *value;
+            if (const auto value = extract_int_field_from_json (output_json, "channel"); value.has_value())
+                output.channel = *value;
+            if (const auto value = extract_string_field_from_json (output_json, "target"); value.has_value())
+                output.target = *value;
+            if (const auto value = extract_string_field_from_json (output_json, "action"); value.has_value())
+                output.action = *value;
+            if (const auto value = extract_string_field_from_json (output_json, "script"); value.has_value())
+                output.script = *value;
+            output.fast_path = extract_bool_field_from_json (output_json, "fast_path", false);
+            output.description = extract_string_field_from_json (output_json, "description").value_or ("");
+            descriptor_out.outputs.push_back (std::move (output));
+        }
+    }
+
+    if (const auto aliases = extract_json_region (*descriptor_json, "mixxx_alias_table", '{', '}'); aliases.has_value())
+        descriptor_out.mixxx_alias_table = parse_alias_table (*aliases);
+
+    return true;
 }
 
 bool send_frame (int fd, const std::string& payload)
@@ -186,7 +485,9 @@ int run_main_loop (const std::string& socket_path)
 
     std::cerr << "[map2-controller-host] listening on " << socket_path << "\n";
 
-    map2::controller_host::QuickJSEngine engine;
+    map2::controller_host::Map2MappingEngine mapping_engine;
+    mapping_engine.initialise();
+    std::unordered_map<std::string, std::unordered_map<std::string, std::string>> controller_script_cache;
 
     while (! g_shutdownRequested.load (std::memory_order_acquire))
     {
@@ -247,6 +548,100 @@ int run_main_loop (const std::string& socket_path)
                 const std::string msg_id = extract_string_field (frame, "msg_id");
                 const std::string response = build_list_ports_response (msg_id, midiBackend);
                 send_frame (client_fd, response);
+                continue;
+            }
+
+            // T2459-H3 — cache script sources for later mapping activation.
+            if (frame.find ("\"type\":\"script_load_request\"") != std::string::npos)
+            {
+                const std::string msg_id = extract_string_field (frame, "msg_id");
+                const std::string controller_key = extract_string_field (frame, "controller_key");
+                const std::string script_path = extract_string_field (frame, "script_path");
+                const std::string script_body = extract_string_field (frame, "script_body");
+                if (controller_key.empty() || script_path.empty())
+                {
+                    send_frame (client_fd, build_log_event (
+                        msg_id,
+                        "warning",
+                        "script_load_request missing controller_key or script_path",
+                        controller_key.empty() ? std::nullopt : std::optional<std::string> (controller_key)));
+                    continue;
+                }
+
+                controller_script_cache[controller_key][script_path] = script_body;
+                send_frame (client_fd, build_log_event (
+                    msg_id,
+                    "info",
+                    "script cached: " + script_path,
+                    controller_key));
+                continue;
+            }
+
+            // T2459-H3 — mapping activation consumed by the production
+            // host loop. Descriptor/script parsing remains intentionally
+            // conservative until the full JSON dispatcher lands.
+            if (frame.find ("\"type\":\"mapping_activate\"") != std::string::npos)
+            {
+                const std::string msg_id = extract_string_field (frame, "msg_id");
+                map2::controller_host::MappingDescriptorSpec descriptor;
+                std::string controller_key;
+                if (! parse_mapping_activate_frame (frame, descriptor, controller_key))
+                {
+                    send_frame (client_fd, build_log_event (
+                        msg_id,
+                        "error",
+                        "mapping_activate parse failed"));
+                    continue;
+                }
+
+                std::vector<std::string> resolved_scripts;
+                const auto cache_it = controller_script_cache.find (controller_key);
+                static const std::unordered_map<std::string, std::string> kEmptyCache;
+                const auto& cache_for_controller = cache_it != controller_script_cache.end()
+                    ? cache_it->second
+                    : kEmptyCache;
+
+                int missing_scripts = 0;
+                for (const auto& script_ref : descriptor.scripts)
+                {
+                    if (auto script_body = resolve_script_body (script_ref, descriptor.pack_id, cache_for_controller);
+                        script_body.has_value())
+                    {
+                        resolved_scripts.push_back (*script_body);
+                        continue;
+                    }
+                    // Fallback: allow inline script bodies.
+                    if (script_ref.find ("function") != std::string::npos
+                        || script_ref.find ("=>") != std::string::npos
+                        || script_ref.find ('\n') != std::string::npos
+                        || script_ref.find ('{') != std::string::npos
+                        || script_ref.find (';') != std::string::npos
+                        || script_ref.find ("var ") != std::string::npos
+                        || script_ref.find ("const ") != std::string::npos
+                        || script_ref.find ("let ") != std::string::npos)
+                    {
+                        resolved_scripts.push_back (script_ref);
+                        continue;
+                    }
+                    ++missing_scripts;
+                }
+                descriptor.scripts = std::move (resolved_scripts);
+
+                if (auto exc = mapping_engine.loadDescriptor (controller_key, descriptor); exc.has_value())
+                {
+                    send_frame (client_fd, build_script_error (msg_id, controller_key, *exc));
+                    continue;
+                }
+
+                std::ostringstream message;
+                message << "mapping activated: controls=" << descriptor.controls.size()
+                        << " scripts=" << descriptor.scripts.size();
+                if (missing_scripts > 0) message << " missing_scripts=" << missing_scripts;
+                send_frame (client_fd, build_log_event (
+                    msg_id,
+                    missing_scripts > 0 ? "warning" : "info",
+                    message.str(),
+                    controller_key));
                 continue;
             }
         }
