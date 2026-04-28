@@ -92,6 +92,32 @@ struct Shutdown
     int schema_version = kSchemaVersion;
 };
 
+// T2459-H1 — port enumeration over IPC.
+struct MidiListPortsRequest
+{
+    static constexpr const char* kType = "midi_list_ports_request";
+    std::string msg_id;
+    int schema_version = kSchemaVersion;
+};
+
+struct MidiPortPayload
+{
+    std::string name;
+    std::string id;
+    bool is_input  = false;
+    bool is_virtual = false;
+};
+
+struct MidiListPortsResponse
+{
+    static constexpr const char* kType = "midi_list_ports_response";
+    std::string msg_id;
+    int schema_version = kSchemaVersion;
+    std::string backend;            // "jack_midi" | "pipewire" | ...
+    std::vector<MidiPortPayload> ports;
+    bool degraded = false;
+};
+
 // ---------------------------------------------------------------------------
 // Outbound: controller-host → backend
 // ---------------------------------------------------------------------------
@@ -152,6 +178,9 @@ struct ScriptError
 // MappingActivate: type, msg_id, schema_version, controller_key, descriptor
 // MidiSendRequest: type, msg_id, schema_version, controller_key, bytes
 // Shutdown: type, msg_id, schema_version
+// MidiListPortsRequest: type, msg_id, schema_version
+// MidiListPortsResponse: type, msg_id, schema_version, backend, ports, degraded
+// MidiPortPayload: name, id, is_input, is_virtual
 // EngineCommand: type, msg_id, schema_version, controller_key, target, action, value, args
 // ControllerEvent: type, msg_id, schema_version, controller_key, timestamp_ns, bytes
 // LogEvent: type, msg_id, schema_version, controller_key, level, message

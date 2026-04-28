@@ -884,11 +884,50 @@ if(BUILD_CONTROLLER_HOST OR BUILD_CONTROLLER_HOST_TESTS)
     set_target_properties(quickjs_static PROPERTIES POSITION_INDEPENDENT_CODE ON)
 endif()
 
+# T2459-H1 — libremidi via FetchContent (locked decision Q1 = A). BSL-1.0
+# license, vendored at configure time. Provides JACK MIDI / PipeWire /
+# ALSA seq / ALSA raw I/O backends behind a single C++ surface.
+option(MAP2_FETCH_LIBREMIDI "Fetch libremidi via FetchContent for the controller host" ON)
+if(BUILD_CONTROLLER_HOST OR BUILD_CONTROLLER_HOST_TESTS)
+    if(MAP2_FETCH_LIBREMIDI)
+        set(LIBREMIDI_HEADER_ONLY OFF CACHE BOOL "" FORCE)
+        set(LIBREMIDI_NO_BOOST ON CACHE BOOL "" FORCE)
+        # Locked Q2 backend probe order — JACK MIDI preferred on this
+        # platform via the PipeWire-jack shim (Fedora: libjack.so under
+        # /usr/lib64/pipewire-0.3/jack/). pkg-config jack returns that
+        # path correctly; libremidi finds the headers via pkg-config but
+        # its add_executable doesn't propagate the -L to consumers, so we
+        # query pkg-config ourselves and add the link directory globally.
+        FetchContent_Declare(
+            libremidi
+            GIT_REPOSITORY https://github.com/jcelerier/libremidi.git
+            GIT_TAG        v5.1.0
+            GIT_SHALLOW    TRUE
+        )
+        FetchContent_MakeAvailable(libremidi)
+        if(TARGET libremidi)
+            set(MAP2_LIBREMIDI_AVAILABLE TRUE)
+            # PipeWire-jack shim path — needed when libremidi was built
+            # with JACK enabled but the host has no native JACK install.
+            find_package(PkgConfig QUIET)
+            if(PkgConfig_FOUND)
+                pkg_check_modules(MAP2_JACK_PC QUIET jack)
+                if(MAP2_JACK_PC_FOUND)
+                    target_link_directories(libremidi INTERFACE ${MAP2_JACK_PC_LIBRARY_DIRS})
+                endif()
+            endif()
+        endif()
+    endif()
+endif()
+
 if(BUILD_CONTROLLER_HOST)
     add_executable(map2-controller-host
         Source/ControllerHost/main.cpp
         Source/ControllerHost/QuickJSEngine.cpp
         Source/ControllerHost/EngineApiBindings.cpp
+        Source/ControllerHost/EventRing/ShmEventRing.cpp
+        Source/ControllerHost/Midi/Map2MidiBackend.cpp
+        Source/ControllerHost/Midi/LibremidiAdapter.cpp
     )
     target_include_directories(map2-controller-host PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/Source
@@ -896,7 +935,12 @@ if(BUILD_CONTROLLER_HOST)
     target_link_libraries(map2-controller-host PRIVATE
         quickjs_static
         pthread
+        rt    # shm_open + librt
     )
+    if(MAP2_LIBREMIDI_AVAILABLE)
+        target_compile_definitions(map2-controller-host PRIVATE MAP2_HAS_LIBREMIDI=1)
+        target_link_libraries(map2-controller-host PRIVATE libremidi)
+    endif()
     set_target_properties(map2-controller-host PROPERTIES
         RUNTIME_OUTPUT_DIRECTORY ${CMAKE_BINARY_DIR}
     )
@@ -908,10 +952,15 @@ if(BUILD_CONTROLLER_HOST_TESTS)
         tests/Map2HidControllerTests.cpp
         tests/CommonHidParserTests.cpp
         tests/Map2BulkControllerTests.cpp
+        tests/ShmEventRingTests.cpp
+        tests/Map2MidiBackendTests.cpp
         Source/ControllerHost/QuickJSEngine.cpp
         Source/ControllerHost/EngineApiBindings.cpp
         Source/ControllerHost/Hid/Map2HidController.cpp
         Source/ControllerHost/Bulk/Map2BulkController.cpp
+        Source/ControllerHost/EventRing/ShmEventRing.cpp
+        Source/ControllerHost/Midi/Map2MidiBackend.cpp
+        Source/ControllerHost/Midi/LibremidiAdapter.cpp
     )
     target_include_directories(controller_host_tests PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/Source
@@ -923,6 +972,11 @@ if(BUILD_CONTROLLER_HOST_TESTS)
         Catch2::Catch2WithMain
         quickjs_static
         pthread
+        rt
     )
+    if(MAP2_LIBREMIDI_AVAILABLE)
+        target_compile_definitions(controller_host_tests PRIVATE MAP2_HAS_LIBREMIDI=1)
+        target_link_libraries(controller_host_tests PRIVATE libremidi)
+    endif()
     add_test(NAME controller_host_tests COMMAND controller_host_tests)
 endif()

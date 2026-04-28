@@ -10,6 +10,7 @@
 // Worklist: T2459-B2
 
 #include "QuickJSEngine.h"
+#include "Midi/Map2MidiBackend.h"
 
 #include <atomic>
 #include <cerrno>
@@ -19,6 +20,7 @@
 #include <cstdlib>
 #include <cstring>
 #include <iostream>
+#include <sstream>
 #include <string>
 #include <sys/socket.h>
 #include <sys/stat.h>
@@ -40,6 +42,77 @@ void install_signal_handlers()
 {
     std::signal (SIGINT, signal_handler);
     std::signal (SIGTERM, signal_handler);
+}
+
+// T2459-H1 — naive JSON string field extractor. Looks up `"key":"value"`
+// (string field) and returns the value substring, or empty when missing.
+// This is a deliberately small surface — full JSON parsing lands with the
+// proper request dispatcher in T2459-H2.
+std::string extract_string_field (const std::string& frame, const std::string& key)
+{
+    const std::string needle = "\"" + key + "\":\"";
+    auto pos = frame.find (needle);
+    if (pos == std::string::npos) return {};
+    pos += needle.size();
+    auto end = frame.find ('"', pos);
+    if (end == std::string::npos) return {};
+    return frame.substr (pos, end - pos);
+}
+
+// JSON-escape a string for embedding in our hand-rolled response.
+std::string json_escape (const std::string& s)
+{
+    std::string out;
+    out.reserve (s.size() + 2);
+    for (char c : s)
+    {
+        switch (c)
+        {
+            case '"':  out += "\\\""; break;
+            case '\\': out += "\\\\"; break;
+            case '\n': out += "\\n";  break;
+            case '\r': out += "\\r";  break;
+            case '\t': out += "\\t";  break;
+            default:
+                if (static_cast<unsigned char> (c) < 0x20)
+                {
+                    char buf[8];
+                    std::snprintf (buf, sizeof (buf), "\\u%04x", c & 0xFF);
+                    out += buf;
+                }
+                else out += c;
+        }
+    }
+    return out;
+}
+
+// T2459-H1 — build the midi_list_ports_response payload from a backend.
+std::string build_list_ports_response (const std::string& msg_id,
+                                        map2::controller_host::Map2MidiBackend& backend)
+{
+    using map2::controller_host::MidiBackend;
+    const auto sel = backend.selectedBackend();
+    const auto ports = backend.listPorts();
+    const bool degraded = (sel != MidiBackend::JackMidi && sel != MidiBackend::None);
+
+    std::ostringstream oss;
+    oss << "{\"type\":\"midi_list_ports_response\","
+        << "\"msg_id\":\"" << json_escape (msg_id) << "\","
+        << "\"schema_version\":1,"
+        << "\"backend\":\"" << map2::controller_host::Map2MidiBackend::backendName (sel) << "\","
+        << "\"ports\":[";
+    bool first = true;
+    for (const auto& p : ports)
+    {
+        if (! first) oss << ",";
+        first = false;
+        oss << "{\"name\":\"" << json_escape (p.name) << "\","
+            << "\"id\":\"" << json_escape (p.id) << "\","
+            << "\"is_input\":" << (p.isInput ? "true" : "false") << ","
+            << "\"is_virtual\":" << (p.isVirtual ? "true" : "false") << "}";
+    }
+    oss << "],\"degraded\":" << (degraded ? "true" : "false") << "}";
+    return oss.str();
 }
 
 bool send_frame (int fd, const std::string& payload)
@@ -128,6 +201,21 @@ int run_main_loop (const std::string& socket_path)
 
         std::cerr << "[map2-controller-host] backend connected\n";
 
+        // T2459-H1 — instantiate the MIDI backend on first connection and
+        // run the locked probe order (JACK MIDI → PipeWire → ALSA seq →
+        // ALSA raw). Failure is non-fatal here: the host still serves
+        // other IPC, and a list_ports request will respond with backend
+        // = "none" + an empty port list.
+        map2::controller_host::Map2MidiBackend midiBackend;
+        if (! midiBackend.probe())
+            std::cerr << "[map2-controller-host] MIDI backend probe failed; "
+                         "all MIDI requests will return empty\n";
+        else
+            std::cerr << "[map2-controller-host] midi backend = "
+                      << map2::controller_host::Map2MidiBackend::backendName (
+                             midiBackend.selectedBackend())
+                      << "\n";
+
         while (! g_shutdownRequested.load (std::memory_order_acquire))
         {
             std::string frame;
@@ -136,13 +224,9 @@ int run_main_loop (const std::string& socket_path)
                 std::cerr << "[map2-controller-host] backend disconnected\n";
                 break;
             }
-            // Minimum-viable handler: log + echo back a noop ack. Full
-            // dispatch lands in T2459-B2-followup once the JSON parser
-            // (use existing JUCE var/JSON via juce_core, or rapidjson) is
-            // wired in. For B2 the binary launches, accepts a connection,
-            // and exits cleanly on Shutdown — that is sufficient for the
-            // controller_host_service supervisor to bring it up
-            // end-to-end.
+            // Minimum-viable handler: T2459-H1 wires midi_list_ports_request,
+            // T2459-B2-followup will replace the find()-based dispatch with
+            // a proper JSON parser. For now, the type literal is the gate.
             std::cerr << "[map2-controller-host] frame received (" << frame.size() << " bytes)\n";
 
             // Naive shutdown detection — if the payload mentions
@@ -155,6 +239,15 @@ int run_main_loop (const std::string& socket_path)
                                        "\"schema_version\":1,\"level\":\"info\","
                                        "\"message\":\"shutting down\"}");
                 break;
+            }
+
+            // T2459-H1 — list-ports request.
+            if (frame.find ("\"type\":\"midi_list_ports_request\"") != std::string::npos)
+            {
+                const std::string msg_id = extract_string_field (frame, "msg_id");
+                const std::string response = build_list_ports_response (msg_id, midiBackend);
+                send_frame (client_fd, response);
+                continue;
             }
         }
 

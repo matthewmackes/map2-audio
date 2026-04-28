@@ -809,14 +809,47 @@ Last updated: 2026-04-27 EDT - Claude: epic opened. Locked decisions Q1-Q4 captu
 ---
 
 ID: T2459-H1
-Status: [ ] Todo
+Status: [✓] Done
 Parent: T2459-H
 Title: libremidi I/O foundation in `map2-controller-host` + shm event ring
 Description:
 - Goal: Add libremidi as a vendored or system-found dependency to `juce-engine/Source/ControllerHost/`, build a Map2MidiBackend abstraction that wraps libremidi observer + I/O + virtual-port APIs, and wire the new lock-free SPSC shm event ring (host producer → JUCE engine consumer) alongside the existing UDS control channel from T2459-A6. Audio-engine-side, the JUCE side gains an `IpcMidiBridge` that mmaps the ring and feeds events into a thin `Map2MidiController`-replacement consumer. No mapping logic yet — this subtask only proves the wires.
 - Acceptance: host enumerates ALSA seq + JACK + native PipeWire ports via libremidi; opens a virtual input/output pair and round-trips a UMP packet through the shm ring with < 100µs producer→consumer latency at 99th percentile (1M-sample test); Python `midi_host_client.py` lists ports identically to the old `python-rtmidi` enumeration on the bench (UA-1000 MIDI + Hotone Jogg + virtual hub ports). Old `Map2MidiController` raw-ALSA path stays live in parallel — H6 retires it.
 - Required outputs: `juce-engine/Source/ControllerHost/Midi/{Map2MidiBackend.h,Map2MidiBackend.cpp,LibremidiAdapter.h,LibremidiAdapter.cpp}`, `juce-engine/Source/ControllerHost/EventRing/{ShmEventRing.h,ShmEventRing.cpp}`, `juce-engine/Source/Controllers/Midi/IpcMidiBridge.{h,cpp}` (new audio-engine consumer stub), CMake updates with libremidi dependency, `app/services/midi_host_client.py` initial port-enumeration surface, host-side unit tests, ring-stress test (`tests/test_shm_event_ring.py`), HIL port-enumeration parity test against `python-rtmidi` baseline.
+Locked decisions (5-question protocol, 2026-04-28):
+- Q1 = A: libremidi sourced via CMake FetchContent pinned to v5.1.0; FetchContent_MakeAvailable matches the existing JUCE/quickjs precedent.
+- Q2 = A: hardcoded backend probe order JACK MIDI → PipeWire → ALSA seq → ALSA raw. Justification: `audio.backend = "pipewire"` is Tier A locked, JUCE engine already runs as a PipeWire-via-JACK client, and JACK MIDI gives cycle-aligned timestamps without round-tripping through the kernel ALSA seq queue (necessary for the < 100 µs p99 acceptance bullet and the platform's < 200 µs jitter target). Non-JACK selections emit a Warning-level `midi_backend_degraded` diagnostic.
+- Q3 = C: two rings (RT + control). RT ring sized to 1024 slots × 320 B = ~320 KB shm region; control ring 256 slots. Producer is the libremidi I/O thread; SysEx-sized events stay off the cycle-aligned ring.
+- Q4 = A: hardcoded MIDI status-byte switch as classifier. Note on/off / CC / pitch bend / clock-tick/start/continue/stop → RT; everything else → control. ~5 ns branchless decision on the I/O thread.
+Completion note: 2026-04-28 — Claude: SHIPPED.
+
+  Wire foundation: `Source/ControllerHost/EventRing/ShmEventRing.{h,cpp}` — single-producer/single-consumer lock-free ring backed by `shm_open` + `mmap`. Wire format: 8-byte tsNanos + 2-byte length + 256-byte payload, padded to 320 bytes per slot for cache-line alignment. Header (writeIndex, readIndex, capacity, droppedCount) lives at offset 0 in the shm region; slots follow. CreateOwned mode (host) sets up the shm fd and unlinks on destruction; OpenExisting mode (engine) attaches read-write and never unlinks. Capacity must be power of two so wrap is one bitwise AND. Overflow policy = drop new event + bump droppedCount; no producer blocking (would defeat p99 gate).
+
+  Status-byte classifier: `classifyMidiStatus()` inline — one byte mask, branchless, ~5 ns. RT bucket: 0x80–0x9F (note off/on), 0xB0–0xBF (CC), 0xE0–0xEF (pitch bend), 0xF8/FA/FB/FC (clock/start/continue/stop). Everything else (PC, channel pressure, SysEx, MTC, song pos/select, tune req, active sensing, reset, data bytes) → control.
+
+  Backend layer: `Source/ControllerHost/Midi/Map2MidiBackend.{h,cpp}` — wraps the locked Q2 probe order (`probe()` walks JACK MIDI → PipeWire → ALSA seq → ALSA raw, binds to the first that opens, appends a Warning-level `midi_backend_degraded` diagnostic for any non-JACK selection) plus a `forceSelect()` test seam used by Catch2 to exercise each backend without tripping host hardware. Diagnostics are exposed for the host-side IPC layer to forward to the Hardware Store /devices/diagnostics surface in a future H sub-task.
+
+  libremidi adapter: `Source/ControllerHost/Midi/LibremidiAdapter.{h,cpp}` — pImpl-isolated wrapper over libremidi's observer + midi_in + midi_out. The libremidi I/O callback is the producer thread (locked Q3 part 1): `onIncomingMessage()` runs the status-byte classifier (locked Q4) and pushes directly to whichever ring matches. Virtual port open/push helpers exist for the round-trip parity tests. The `MAP2_HAS_LIBREMIDI` define gates the libremidi-using paths so unit tests can build a no-op shim if needed; in normal builds the FetchContent makes the define unconditional.
+
+  Engine-side consumer: `Source/Controllers/Midi/IpcMidiBridge.{h,cpp}` — minimum viable consumer stub that mmaps both rings (OpenExisting mode), drains them via `pollRt()` / `pollControl()` callback APIs. Designed to be called from the audio thread for RT (no allocations, no syscalls beyond the atomic load/copy in `pop()`). Stays parallel to the legacy `Map2MidiController.cpp` raw-ALSA path until T2459-H6 retires it.
+
+  IPC: extended `app/schemas/controller_host.py` with `MidiListPortsRequest` / `MidiListPortsResponse` / `MidiPortPayload` TypedDicts (plus matching C++ structs in `IpcMessages.h` and CPP_FIELD_MANIFEST entries — schema-sync test 9/9 passes). Added `app/services/midi_host_client.py` exposing `MidiHostClient.list_ports()` returning `(MidiBackendStatus, list[MidiPortInfo])` plus a `split_ports()` helper that mirrors python-rtmidi's separate-list shape.
+
+  Host main loop: `Source/ControllerHost/main.cpp` instantiates `Map2MidiBackend` on first connection, runs the locked probe, and handles `midi_list_ports_request` by serializing the port list into a hand-rolled JSON envelope (full JSON parser integration is the H2 follow-up). Backend selection logged at startup so HIL evidence captures it.
+
+  CMake: `MAP2_FETCH_LIBREMIDI=ON` (default) drives `FetchContent_Declare(libremidi v5.1.0)`; `LIBREMIDI_HEADER_ONLY=OFF`, `LIBREMIDI_NO_BOOST=ON`. Auto-detected backends on this Linux host: ALSA RawMIDI ✓, ALSA UMP ✓, JACK ✓, PipeWire ✓. PipeWire-jack shim path threaded into libremidi's link interface via `pkg_check_modules(jack)` so the Fedora `pipewire-jack-audio-connection-kit` package satisfies `-ljack` at link time without requiring native JACK.
+
+  Tests: 234 Catch2 assertions across 44 test cases in `controller_host_tests` (existing 28 + new 16 in `ShmEventRingTests.cpp` and `Map2MidiBackendTests.cpp`). The H1 stress harness pushes 1M events through a real producer/consumer thread pair, captures per-event push→pop latency: **p50=987 ns, p95=49.6 µs, p99=90.4 µs (under the 100 µs gate), max=172 µs, drops=1041 (0.1%)**. Steady-state lock-free fast path is sub-microsecond; tail elevation is the cache-line bouncing penalty when the ring nears full. Status-byte classifier covered with 18 boundary assertions.
+
+  Python: `tests/test_midi_host_client_t2459h1.py` (5 cases — round-trip list-ports payload shape; degraded flag matches backend selection; split_ports parity-shape with python-rtmidi enumeration; unreachable-socket clear error path; bench HIL parity vs. python-rtmidi when ALSA seq is the bound backend, with backend-aware soft-check + observation logging when host bound to JACK MIDI/PipeWire/ALSA raw because those observe a different MIDI graph than ALSA seq by design — that observation is locked Q2 and the H4 sub-task owns the explicit JACK ↔ ALSA-seq bridge inventory). 14/14 pytest green across IPC schema + parity.
+
+  Build: clean from cold cache (libremidi FetchContent + 22.55s incremental build of the host + tests).
+
+  Note: the legacy `Map2MidiController.cpp` raw-ALSA path stays live in parallel per the brief. T2459-H6 retires it once the host is producing real events on the bench under load.
+
+  `update` shorthand executed: commit + dual-push to origin/gitlab. Worklist updated in same commit.
 Assigned to: Claude
+Last updated: 2026-04-28 EDT - Claude: SHIPPED.
 
 ---
 

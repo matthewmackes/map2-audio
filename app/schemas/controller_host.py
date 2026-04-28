@@ -90,6 +90,17 @@ class Shutdown(TypedDict):
     schema_version: int
 
 
+# T2459-H1 — port enumeration over IPC. The Python midi_host_client
+# wraps this so the FastAPI backend can list MIDI ports identically to
+# the old python-rtmidi enumeration without depending on python-rtmidi
+# at runtime.
+class MidiListPortsRequest(TypedDict):
+    """Ask the host to enumerate currently-visible MIDI ports."""
+    type: Literal["midi_list_ports_request"]
+    msg_id: str
+    schema_version: int
+
+
 # ---------------------------------------------------------------------------
 # Outbound: controller-host → backend
 # ---------------------------------------------------------------------------
@@ -191,6 +202,26 @@ class MappingDescriptorPayload(TypedDict):
     mixxx_alias_table: dict[str, str]
 
 
+# T2459-H1 — MIDI port descriptor + list-ports response. The Python
+# midi_host_client lifts this into MidiPortInfo for parity with
+# python-rtmidi's `(name, is_input, is_virtual)` shape.
+class MidiPortPayload(TypedDict):
+    name: str
+    id: str
+    is_input: bool
+    is_virtual: bool
+
+
+class MidiListPortsResponse(TypedDict):
+    """Response to MidiListPortsRequest."""
+    type: Literal["midi_list_ports_response"]
+    msg_id: str
+    schema_version: int
+    backend: str   # "jack_midi" | "pipewire" | "alsa_seq" | "alsa_raw" | "none"
+    ports: list[MidiPortPayload]
+    degraded: bool   # true when backend != jack_midi (locked Q2 fallback)
+
+
 # ---------------------------------------------------------------------------
 # Field manifest — used by the schema-sync test to compare against the C++
 # struct definitions in juce-engine/Source/ControllerHost/IpcMessages.h.
@@ -201,6 +232,9 @@ FIELD_MANIFEST: dict[str, list[str]] = {
     "MappingActivate":   list(MappingActivate.__annotations__.keys()),
     "MidiSendRequest":   list(MidiSendRequest.__annotations__.keys()),
     "Shutdown":          list(Shutdown.__annotations__.keys()),
+    "MidiListPortsRequest":  list(MidiListPortsRequest.__annotations__.keys()),
+    "MidiListPortsResponse": list(MidiListPortsResponse.__annotations__.keys()),
+    "MidiPortPayload":        list(MidiPortPayload.__annotations__.keys()),
     "EngineCommand":     list(EngineCommand.__annotations__.keys()),
     "ControllerEvent":   list(ControllerEvent.__annotations__.keys()),
     "LogEvent":          list(LogEvent.__annotations__.keys()),
@@ -211,8 +245,20 @@ FIELD_MANIFEST: dict[str, list[str]] = {
 
 
 # Type aliases for the dispatcher.
-InboundMessage = ScriptLoadRequest | MappingActivate | MidiSendRequest | Shutdown
-OutboundMessage = EngineCommand | ControllerEvent | LogEvent | ScriptError
+InboundMessage = (
+    ScriptLoadRequest
+    | MappingActivate
+    | MidiSendRequest
+    | Shutdown
+    | MidiListPortsRequest
+)
+OutboundMessage = (
+    EngineCommand
+    | ControllerEvent
+    | LogEvent
+    | ScriptError
+    | MidiListPortsResponse
+)
 
 
 # ---------------------------------------------------------------------------
