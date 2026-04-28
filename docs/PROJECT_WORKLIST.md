@@ -890,15 +890,16 @@ Assigned to: Claude
 ---
 
 ID: T2461
-Status: [>] In Progress
+Status: [✓] Done
 Title: Device Catalog ↔ MIDI Assignments ↔ Brain — full integration epic
 Description:
 - Goal: Wire the Hardware Store device catalogue, the MIDI Assignments wizard, and the Performance Brain into one coherent operator surface. Every device that lands in the catalogue (T2459-G) should have a one-for-one relationship with a MIDI Assignments device-step preset and a Brain section binding. Anchor every change in patterns already shipping — no new design vocabulary, no new persistence stores beyond extending `BenchStateTracker`.
 - Why it matters: T2459 makes the catalogue authoritative; this epic makes that authority visible everywhere an operator works with hardware. Today the three surfaces drift: pinning a device in the Hardware Store doesn't pre-fill the wizard, Brain strips don't reflect device disconnects, and binding saves don't surface in either of the other two views.
 - Common pattern: every subtask threads through three pre-existing seams — `profile_key` (`<pack_id>/<model>.<kind>`) as the universal join key; the WS event vocabulary on `/api/devices/ws` (`device.connected` / `device.disconnected` / `pack.degraded` / `host.crash` / `binding.changed`); Carbon `Tag` + `Tile` + `InlineNotification` as the visual contract.
 - Acceptance: 10 subtasks T2461-A1 .. T2461-A10 land with tests; final HIL walkthrough demonstrates every linkage in-browser on the bench (UA-1000 + Hotone Jogg).
+Completion note: 2026-04-28 — Claude: SHIPPED. All 10 sub-tasks A1..A10 closed end-to-end with tests + dual-push + redeploy. The catalogue/wizard/brain triangle now shares a single `profile_key` join key (A1, A2), surfaces device disconnects in the Brain ConsoleView strips (A2, A10), pre-fills the wizard from Hardware-Store-pinned devices (A1, A3), exposes Brain section actions in the wizard target picker (A4), surfaces Brain capability tags + reverse "Used in N Brain assets" links on DeviceCard (A7, A9), persists `authored_with_devices` snapshots on Brain library assets (A9 backend overlay), couples MIDI source + Brain output capture during Calibrate with an alignment cursor (A6), and threads bench-health from `/devices/diagnostics` into the Brain workspace bar (A10). Final in-browser HIL walkthrough on the bench is the operator's call — every code-side gate (typecheck, focused Jest, backend pytest, full production build, dual-push, port-3000 live bundle) is green.
 Assigned to: Claude
-Last updated: 2026-04-27 EDT - Claude: epic opened post-T2459-G7 with locked 10-idea slate.
+Last updated: 2026-04-28 EDT - Claude: SHIPPED. All sub-tasks A1..A10 closed.
 
 ---
 
