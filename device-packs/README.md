@@ -12,7 +12,8 @@ device-packs/
 ├── SCHEMA.md                    schema reference + worked examples
 ├── _runtime/                    shared MAP2-authored JS libraries (AGPL-3.0-only)
 │   ├── map2-components.js       Button / Knob / Encoder / Deck / Component framework
-│   └── common-hid-parser.js     HID packet parser library
+│   ├── common-hid-parser.js     HID packet parser library
+│   └── sysex-tags.js            shared MPX-1 / IntelFX name-tag helpers
 ├── _schema/                     JSON Schema files (Draft-07)
 │   ├── pack.schema.yaml
 │   ├── audio-profile.schema.yaml

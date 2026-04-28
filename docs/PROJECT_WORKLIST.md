@@ -804,7 +804,7 @@ Description:
   - Worklist completion notes per subtask, dual-push to origin + gitlab, full release loop verification per CLAUDE.md §0.6
 Subtasks: T2459-H1 .. T2459-H7 (7 subtasks; see below)
 Assigned to: Claude
-Last updated: 2026-04-28 13:05 EDT - Codex: H3 dispatcher slice, H4 shared SysEx-tag slice, and H5 unified-route registration slice shipped; remaining H acceptance is live inbound-MIDI dispatch path + broader device migrations + bench HIL.
+Last updated: 2026-04-28 13:21 EDT - Codex: H3 dispatcher slice, H4 shared+runtime SysEx-tag slices, and H5 unified-route registration slice shipped; remaining H acceptance is live inbound-MIDI dispatch path + broader device migrations + bench HIL.
 
 ---
 
@@ -974,7 +974,21 @@ Completion note: 2026-04-28 — Codex: **Slice 1 SHIPPED (shared MIDI curve enum
   - Mirror this shared tagging logic into the planned host-side/device-pack JS parser runtime (`device-packs/_runtime/sysex-tags.js`) as MPX-1/IntelFX parser migration continues.
   - Maschine MK1 and other device-service cuts to host-client facades.
   - Bench HIL parity evidence with migrated devices.
-Last updated: 2026-04-28 13:05 EDT - Codex: curve consolidation + shared SysEx tagging slices shipped; H4 remains in progress.
+  2026-04-28 — Codex: **Slice 3 SHIPPED (device-pack runtime `sysex-tags.js` + parity tests).**
+  Delivered:
+  - Added `device-packs/_runtime/sysex-tags.js` exposing:
+    - `MAP2SysexTags.buildMpx1TagRules()`
+    - `MAP2SysexTags.buildIntelfxTagRules()`
+    - `MAP2SysexTags.autoTagFromName(...)`
+  - Updated `device-packs/README.md` runtime inventory to include `sysex-tags.js`.
+  - Added Node-backed regression `tests/test_sysex_tags_runtime_js_t2459h4.py` to validate MPX-1 + IntelFX semantics and dedup behavior in the shipped runtime JS surface.
+  Validation:
+  - `pytest -q tests/test_sysex_tags_runtime_js_t2459h4.py tests/test_device_packs_schema.py tests/test_sysex_tags_shared_t2459h4.py tests/test_mpx1_syx_parser.py tests/test_intelfx_syx_parser.py` -> **92 passed**.
+  Remaining for full H4 acceptance:
+  - Replace Python-side MPX-1 / IntelFX parser ownership with device-pack JS parser flows routed via host-client facades.
+  - Maschine MK1 and other device-service cuts to host-client facades.
+  - Bench HIL parity evidence with migrated devices.
+Last updated: 2026-04-28 13:21 EDT - Codex: curve consolidation + shared SysEx tagging + runtime sysex-tags.js slices shipped; H4 remains in progress.
 
 ---
 
