@@ -1,0 +1,40 @@
+/* SectionHeader — h2 section header. Lighter than PageHeader. */
+
+.map2-section-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding-bottom: 0.5rem;
+  margin-bottom: 0.75rem;
+}
+
+.map2-section-header__copy {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  min-width: 0;
+}
+
+.map2-section-header__title {
+  margin: 0;
+  font-size: var(--cds-heading-03-font-size, 1.25rem);
+  font-weight: 400;
+  letter-spacing: -0.008em;
+  color: var(--cds-text-primary, var(--text-primary));
+  line-height: 1.3;
+}
+
+.map2-section-header__description {
+  margin: 0;
+  font-size: var(--cds-body-compact-01-font-size, 0.875rem);
+  color: var(--cds-text-secondary, var(--text-secondary));
+  line-height: 1.4;
+}
+
+.map2-section-header__actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}

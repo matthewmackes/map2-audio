@@ -1,0 +1,81 @@
+/* DrawerPanel — slide-in side panel. */
+
+.map2-drawer-panel__backdrop {
+  position: fixed;
+  inset: 0;
+  z-index: 9000;
+  background: color-mix(in srgb, var(--cds-overlay, rgba(22, 22, 22, 0.5)) 100%, transparent);
+  display: flex;
+}
+
+.map2-drawer-panel {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+  width: clamp(20rem, 28vw, 32rem);
+  background: var(--cds-layer, var(--surface));
+  border: 1px solid var(--cds-border-subtle, var(--border));
+}
+
+.map2-drawer-panel--right {
+  margin-left: auto;
+  border-right: 0;
+}
+
+.map2-drawer-panel--left {
+  margin-right: auto;
+  border-left: 0;
+}
+
+.map2-drawer-panel__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.5rem;
+  padding: 1rem 1rem 0.75rem;
+  border-bottom: 1px solid var(--cds-border-subtle, var(--border));
+}
+
+.map2-drawer-panel__head-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  min-width: 0;
+}
+
+.map2-drawer-panel__eyebrow {
+  font-family: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-size: 0.6875rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--cds-text-helper, var(--text-tertiary));
+}
+
+.map2-drawer-panel__title {
+  margin: 0;
+  font-size: var(--cds-heading-03-font-size, 1.25rem);
+  font-weight: 400;
+  letter-spacing: -0.008em;
+  color: var(--cds-text-primary, var(--text-primary));
+  line-height: 1.3;
+}
+
+.map2-drawer-panel__body {
+  flex: 1;
+  overflow-y: auto;
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+.map2-drawer-panel__footer {
+  border-top: 1px solid var(--cds-border-subtle, var(--border));
+  padding: 0.75rem 1rem;
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  justify-content: flex-end;
+}

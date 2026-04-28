@@ -1,0 +1,72 @@
+/* HealthMetric — labeled metric with health-band fill. */
+
+.map2-health-metric {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 6rem;
+}
+
+.map2-health-metric__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 0.5rem;
+}
+
+.map2-health-metric__label {
+  font-family: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-size: 0.6875rem;
+  letter-spacing: 0.12em;
+  text-transform: uppercase;
+  color: var(--cds-text-helper, var(--text-tertiary));
+}
+
+.map2-health-metric__value {
+  font-size: 0.8125rem;
+  font-weight: 500;
+  color: var(--cds-text-primary, var(--text-primary));
+  font-feature-settings: 'tnum' 1;
+}
+
+.map2-health-metric__bar {
+  position: relative;
+  height: 0.25rem;
+  background: var(--cds-layer-accent, var(--surface-3));
+  border-radius: 0;
+  overflow: hidden;
+}
+
+.map2-health-metric__bar-fill {
+  height: 100%;
+  transition: width 160ms ease;
+}
+
+.map2-health-metric--ok .map2-health-metric__bar-fill {
+  background: var(--map2-health-ok);
+}
+
+.map2-health-metric--ok .map2-health-metric__value {
+  color: var(--map2-health-ok);
+}
+
+.map2-health-metric--caution .map2-health-metric__bar-fill {
+  background: var(--map2-health-caution);
+}
+
+.map2-health-metric--caution .map2-health-metric__value {
+  color: var(--map2-health-caution);
+}
+
+.map2-health-metric--critical .map2-health-metric__bar-fill {
+  background: var(--map2-health-critical);
+}
+
+.map2-health-metric--critical .map2-health-metric__value {
+  color: var(--map2-health-critical);
+}
+
+.map2-health-metric__secondary {
+  font-size: var(--cds-helper-text-01-font-size, 0.75rem);
+  color: var(--cds-text-helper, var(--text-tertiary));
+}

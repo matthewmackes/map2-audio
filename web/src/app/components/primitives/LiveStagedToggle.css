@@ -1,0 +1,70 @@
+/* LiveStagedToggle — segmented toggle between live and staged view. */
+
+.map2-live-staged-toggle {
+  display: inline-flex;
+  border: 1px solid var(--cds-border-subtle, var(--border));
+  background: var(--cds-layer, var(--surface));
+  height: 2rem;
+}
+
+.map2-live-staged-toggle__btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0 0.75rem;
+  border: 0;
+  background: transparent;
+  font-family: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-size: 0.6875rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--cds-text-secondary, var(--text-secondary));
+  cursor: pointer;
+  transition: background 120ms ease, color 120ms ease;
+}
+
+.map2-live-staged-toggle__btn:not(:last-child) {
+  border-right: 1px solid var(--cds-border-subtle, var(--border));
+}
+
+.map2-live-staged-toggle__btn:hover:not(:disabled):not(.is-active) {
+  background: var(--cds-layer-hover, var(--surface-2));
+  color: var(--cds-text-primary, var(--text-primary));
+}
+
+.map2-live-staged-toggle__btn:focus-visible {
+  outline: 2px solid var(--cds-focus);
+  outline-offset: -2px;
+}
+
+.map2-live-staged-toggle__btn:disabled {
+  cursor: not-allowed;
+  color: var(--cds-text-disabled, var(--cds-text-helper));
+}
+
+.map2-live-staged-toggle__btn.is-active {
+  color: var(--cds-text-primary, var(--text-primary));
+}
+
+.map2-live-staged-toggle__btn--live.is-active {
+  background: color-mix(in srgb, var(--map2-state-live) 10%, var(--cds-layer));
+}
+
+.map2-live-staged-toggle__btn--staged.is-active {
+  background: color-mix(in srgb, var(--map2-state-staged) 10%, var(--cds-layer));
+}
+
+.map2-live-staged-toggle__dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  background: var(--cds-text-helper, var(--text-tertiary));
+}
+
+.map2-live-staged-toggle__btn--live.is-active .map2-live-staged-toggle__dot {
+  background: var(--map2-state-live);
+}
+
+.map2-live-staged-toggle__btn--staged.is-active .map2-live-staged-toggle__dot {
+  background: var(--map2-state-staged);
+}

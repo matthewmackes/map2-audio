@@ -1,0 +1,79 @@
+/* SignalChainBlock — single block in a signal chain. */
+
+.map2-signal-chain-block {
+  position: relative;
+  display: inline-flex;
+  flex-direction: column;
+  gap: 0.375rem;
+  min-width: 8rem;
+  padding: 0.625rem 0.75rem;
+  border: 1px solid var(--cds-border-subtle, var(--border));
+  background: var(--cds-layer, var(--surface));
+  color: var(--cds-text-primary, var(--text-primary));
+  text-align: left;
+  font-family: inherit;
+  font-size: inherit;
+}
+
+.map2-signal-chain-block--interactive {
+  cursor: pointer;
+  transition: border-color 120ms ease, background 120ms ease;
+}
+
+.map2-signal-chain-block--interactive:hover {
+  border-color: var(--cds-link-primary);
+  background: var(--cds-layer-hover, var(--surface-2));
+}
+
+.map2-signal-chain-block--interactive:focus-visible {
+  outline: 2px solid var(--cds-focus);
+  outline-offset: 2px;
+}
+
+.map2-signal-chain-block--bypassed {
+  opacity: 0.55;
+  background: var(--cds-layer-disabled, var(--surface));
+}
+
+.map2-signal-chain-block__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.map2-signal-chain-block__head-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  min-width: 0;
+}
+
+.map2-signal-chain-block__eyebrow {
+  font-family: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-size: 0.625rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--cds-text-helper, var(--text-tertiary));
+}
+
+.map2-signal-chain-block__title {
+  font-size: var(--cds-body-compact-01-font-size, 0.875rem);
+  font-weight: 500;
+}
+
+.map2-signal-chain-block__body {
+  font-size: var(--cds-helper-text-01-font-size, 0.75rem);
+  color: var(--cds-text-secondary, var(--text-secondary));
+}
+
+.map2-signal-chain-block__flow-indicator {
+  position: absolute;
+  right: 0.25rem;
+  top: 50%;
+  transform: translateY(-50%);
+  color: var(--cds-text-helper, var(--text-tertiary));
+  font-size: 1rem;
+  line-height: 1;
+  pointer-events: none;
+}

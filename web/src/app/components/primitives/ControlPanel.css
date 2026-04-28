@@ -1,0 +1,26 @@
+/* ControlPanel — bordered, surface-elevated grouping primitive. */
+
+.map2-control-panel {
+  border: 1px solid var(--cds-border-subtle, var(--border));
+  background: var(--cds-layer, var(--surface));
+  padding: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+.map2-control-panel--flush {
+  padding: 0;
+}
+
+.map2-control-panel__body {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+.map2-control-panel--flush .map2-control-panel__body {
+  padding: 0;
+}

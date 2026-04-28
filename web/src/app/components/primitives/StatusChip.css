@@ -1,0 +1,112 @@
+/* MAP2 StatusChip — canonical status pill.
+ *
+ * Token-driven only — every color is a CSS custom property, no hex literals.
+ * The MAP semantic tokens are emitted by web/src/app/styles/scss/_semantic-tokens.scss
+ * (see B1 / T2474). */
+
+.map2-status-chip {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.375rem;
+  padding: 0 0.5rem;
+  height: 1.5rem;
+  border: 1px solid var(--cds-border-subtle, var(--border));
+  background: var(--cds-layer, var(--surface));
+  font-family: var(--cds-body-compact-01-font-family, 'IBM Plex Sans', sans-serif);
+  font-size: 0.75rem;
+  line-height: 1;
+  letter-spacing: 0.02em;
+  color: var(--cds-text-primary, var(--text-primary));
+  white-space: nowrap;
+}
+
+.map2-status-chip--sm {
+  height: 1.25rem;
+  padding: 0 0.375rem;
+  font-size: 0.6875rem;
+  gap: 0.25rem;
+}
+
+.map2-status-chip__dot {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 50%;
+  background: currentColor;
+  flex: 0 0 auto;
+}
+
+.map2-status-chip--sm .map2-status-chip__dot {
+  width: 0.375rem;
+  height: 0.375rem;
+}
+
+.map2-status-chip__label {
+  color: inherit;
+}
+
+.map2-status-chip__value {
+  color: var(--cds-text-secondary, var(--text-secondary));
+  font-feature-settings: 'tnum' 1;
+}
+
+/* ── Tone variants — every tone maps to a MAP semantic token ──────────── */
+
+.map2-status-chip--live {
+  color: var(--map2-state-live);
+  border-color: color-mix(in srgb, var(--map2-state-live) 32%, var(--cds-border-subtle));
+  background: color-mix(in srgb, var(--map2-state-live) 8%, var(--cds-layer));
+}
+
+.map2-status-chip--staged {
+  color: var(--map2-state-staged);
+  border-color: color-mix(in srgb, var(--map2-state-staged) 32%, var(--cds-border-subtle));
+  background: color-mix(in srgb, var(--map2-state-staged) 8%, var(--cds-layer));
+}
+
+.map2-status-chip--uncommitted {
+  color: var(--map2-state-uncommitted);
+  border-color: color-mix(in srgb, var(--map2-state-uncommitted) 32%, var(--cds-border-subtle));
+  background: color-mix(in srgb, var(--map2-state-uncommitted) 8%, var(--cds-layer));
+}
+
+.map2-status-chip--committed {
+  color: var(--map2-state-committed);
+  border-color: var(--cds-border-subtle, var(--border));
+  background: var(--cds-layer, var(--surface));
+}
+
+.map2-status-chip--ok {
+  color: var(--map2-health-ok);
+  border-color: color-mix(in srgb, var(--map2-health-ok) 32%, var(--cds-border-subtle));
+  background: color-mix(in srgb, var(--map2-health-ok) 8%, var(--cds-layer));
+}
+
+.map2-status-chip--caution {
+  color: var(--map2-health-caution);
+  border-color: color-mix(in srgb, var(--map2-health-caution) 32%, var(--cds-border-subtle));
+  background: color-mix(in srgb, var(--map2-health-caution) 8%, var(--cds-layer));
+}
+
+.map2-status-chip--critical {
+  color: var(--map2-health-critical);
+  border-color: color-mix(in srgb, var(--map2-health-critical) 32%, var(--cds-border-subtle));
+  background: color-mix(in srgb, var(--map2-health-critical) 8%, var(--cds-layer));
+}
+
+.map2-status-chip--offline {
+  color: var(--map2-health-offline);
+  border-color: var(--cds-border-subtle, var(--border));
+  background: var(--cds-layer, var(--surface));
+}
+
+.map2-status-chip--info {
+  color: var(--cds-link-primary);
+  border-color: color-mix(in srgb, var(--cds-link-primary) 32%, var(--cds-border-subtle));
+  background: color-mix(in srgb, var(--cds-link-primary) 8%, var(--cds-layer));
+}
+
+.map2-status-chip--neutral {
+  color: var(--cds-text-secondary, var(--text-secondary));
+  border-color: var(--cds-border-subtle, var(--border));
+  background: var(--cds-layer, var(--surface));
+}

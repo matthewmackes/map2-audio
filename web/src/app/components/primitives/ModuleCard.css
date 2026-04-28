@@ -1,0 +1,56 @@
+/* ModuleCard — denser tile for plugin/device modules. */
+
+.map2-module-card {
+  display: flex !important;
+  flex-direction: column;
+  gap: 0.625rem;
+  min-width: 0;
+  padding: 0.75rem !important;
+}
+
+.map2-module-card__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.map2-module-card__head-copy {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  min-width: 0;
+}
+
+.map2-module-card__eyebrow {
+  font-family: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-size: 0.625rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--cds-text-helper, var(--text-tertiary));
+}
+
+.map2-module-card__title {
+  font-size: var(--cds-body-01-font-size, 0.875rem);
+  font-weight: 500;
+  color: var(--cds-text-primary, var(--text-primary));
+  line-height: 1.2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.map2-module-card__body {
+  font-size: var(--cds-body-compact-01-font-size, 0.875rem);
+  color: var(--cds-text-secondary, var(--text-secondary));
+  min-width: 0;
+}
+
+.map2-module-card__footer {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  border-top: 1px solid var(--cds-border-subtle, var(--border));
+  padding-top: 0.5rem;
+  margin-top: auto;
+}

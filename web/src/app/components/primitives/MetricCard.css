@@ -1,0 +1,44 @@
+/* MetricCard — single technical readout in a Carbon Tile. */
+
+.map2-metric-card {
+  display: grid;
+  gap: 0.5rem;
+  min-height: 7.5rem;
+  padding: 1rem !important;
+}
+
+.map2-metric-card__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.map2-metric-card__label {
+  font-family: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-size: 0.6875rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--cds-text-helper, var(--text-tertiary));
+}
+
+.map2-metric-card__value {
+  font-size: var(--cds-heading-04-font-size, 1.75rem);
+  font-weight: 400;
+  line-height: 1.1;
+  color: var(--cds-text-primary, var(--text-primary));
+  font-feature-settings: 'tnum' 1;
+}
+
+.map2-metric-card__secondary {
+  font-size: var(--cds-body-compact-01-font-size, 0.875rem);
+  color: var(--cds-text-secondary, var(--text-secondary));
+}
+
+.map2-metric-card__footer {
+  font-size: var(--cds-helper-text-01-font-size, 0.75rem);
+  color: var(--cds-text-helper, var(--text-tertiary));
+  border-top: 1px solid var(--cds-border-subtle, var(--border));
+  padding-top: 0.5rem;
+  margin-top: auto;
+}

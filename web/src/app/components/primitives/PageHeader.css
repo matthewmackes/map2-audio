@@ -1,0 +1,49 @@
+/* PageHeader — top-of-page identity block. */
+
+.map2-page-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 0 1.25rem;
+  border-bottom: 1px solid var(--cds-border-subtle, var(--border));
+  margin-bottom: 1.25rem;
+}
+
+.map2-page-header__copy {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 0;
+}
+
+.map2-page-header__eyebrow {
+  font-family: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-size: 0.6875rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--cds-text-helper, var(--text-tertiary));
+}
+
+.map2-page-header__title {
+  margin: 0;
+  font-size: var(--cds-heading-04-font-size, 1.75rem);
+  font-weight: 400;
+  letter-spacing: -0.012em;
+  color: var(--cds-text-primary, var(--text-primary));
+  line-height: 1.2;
+}
+
+.map2-page-header__subtitle {
+  margin: 0;
+  font-size: var(--cds-body-01-font-size, 0.875rem);
+  color: var(--cds-text-secondary, var(--text-secondary));
+  line-height: 1.4;
+}
+
+.map2-page-header__actions {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+}

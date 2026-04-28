@@ -1,0 +1,74 @@
+/* DeviceNodeCard — node identity card. */
+
+.map2-device-node-card {
+  position: relative;
+  display: flex !important;
+  flex-direction: column;
+  gap: 0.625rem;
+  padding: 0.875rem 1rem !important;
+  min-width: 0;
+  border-left: 3px solid var(--cds-border-subtle, var(--border));
+}
+
+.map2-device-node-card--interactive {
+  cursor: pointer;
+}
+
+.map2-device-node-card--local {
+  border-left-color: var(--cds-link-primary);
+}
+
+.map2-device-node-card--view {
+  border-left-color: var(--map2-state-live);
+}
+
+.map2-device-node-card--peer {
+  border-left-color: var(--cds-border-subtle, var(--border));
+}
+
+.map2-device-node-card__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.map2-device-node-card__copy {
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  min-width: 0;
+}
+
+.map2-device-node-card__eyebrow {
+  font-family: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-size: 0.625rem;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--cds-text-helper, var(--text-tertiary));
+}
+
+.map2-device-node-card__hostname {
+  font-size: var(--cds-body-01-font-size, 0.875rem);
+  font-weight: 500;
+  color: var(--cds-text-primary, var(--text-primary));
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.map2-device-node-card__role {
+  font-size: var(--cds-helper-text-01-font-size, 0.75rem);
+  color: var(--cds-text-secondary, var(--text-secondary));
+}
+
+.map2-device-node-card__footer {
+  border-top: 1px solid var(--cds-border-subtle, var(--border));
+  padding-top: 0.5rem;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  font-size: var(--cds-helper-text-01-font-size, 0.75rem);
+  color: var(--cds-text-secondary, var(--text-secondary));
+}
