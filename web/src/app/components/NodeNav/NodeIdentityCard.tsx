@@ -168,13 +168,13 @@ function ResMini({ label, value, status }: { label: string; value: number; statu
 }
 
 function resourceColor(value: number, status: NodeSummary['status']): string {
-  if (value >= 85) return '#fa4d56'
-  if (value >= 70) return '#f1c21b'
+  if (value >= 85) return 'var(--support-danger)'
+  if (value >= 70) return 'var(--support-warning)'
   switch (status) {
-    case 'ok':       return '#42be65'
-    case 'warn':     return '#f1c21b'
-    case 'critical': return '#fa4d56'
-    default:         return '#525252'
+    case 'ok':       return 'var(--support-success)'
+    case 'warn':     return 'var(--support-warning)'
+    case 'critical': return 'var(--support-danger)'
+    default:         return 'var(--text-tertiary)'
   }
 }
 

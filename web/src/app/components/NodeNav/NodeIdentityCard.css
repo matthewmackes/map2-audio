@@ -3,14 +3,18 @@
    the four reserved quick-action buttons. Click anywhere opens the node selector. */
 
 .node-id-card {
-  --nic-status: var(--cds-text-secondary);
-  --nic-bg: #1c1c1c;
-  --nic-bg-deep: #0b0b0b;
-  --nic-border: #2a2a2a;
-  --nic-border-strong: #3d3d3d;
-  --nic-text: #f4f4f4;
-  --nic-text-dim: #a8a8a8;
-  --nic-text-meta: #6f6f6f;
+  /* The --nic-* token family is a thin alias layer over the platform theme
+     tokens so the card tracks the active theme. The defaults here track
+     the canonical theme tokens; the [data-status="..."] selectors below
+     supply only the live status accent (--nic-status). */
+  --nic-status: var(--text-secondary);
+  --nic-bg: var(--surface);
+  --nic-bg-deep: var(--bg);
+  --nic-border: var(--border);
+  --nic-border-strong: var(--border-strong);
+  --nic-text: var(--text-primary);
+  --nic-text-dim: var(--text-secondary);
+  --nic-text-meta: var(--text-tertiary);
   --nic-mono: ui-monospace, "IBM Plex Mono", "JetBrains Mono", monospace;
 
   appearance: none;
@@ -32,14 +36,14 @@
 }
 
 .node-id-card:focus-visible {
-  outline: 2px solid var(--focus-ring, #4589ff);
+  outline: 2px solid var(--focus-ring);
   outline-offset: 2px;
 }
 
-.node-id-card[data-status="ok"]       { --nic-status: #42be65; }
-.node-id-card[data-status="warn"]     { --nic-status: #f1c21b; }
-.node-id-card[data-status="critical"] { --nic-status: #fa4d56; }
-.node-id-card[data-status="offline"]  { --nic-status: #525252; }
+.node-id-card[data-status="ok"]       { --nic-status: var(--support-success); }
+.node-id-card[data-status="warn"]     { --nic-status: var(--support-warning); }
+.node-id-card[data-status="critical"] { --nic-status: var(--support-danger); }
+.node-id-card[data-status="offline"]  { --nic-status: color-mix(in srgb, var(--text-tertiary) 70%, var(--surface)); }
 
 /* ── Eyebrow ───────────────────────────────────────────────────────────── */
 .node-id-card__eyebrow {
@@ -47,7 +51,7 @@
   align-items: center;
   justify-content: space-between;
   padding: 8px 12px;
-  background: #161616;
+  background: var(--nic-bg-deep);
   border-bottom: 1px solid var(--nic-border);
   font-family: var(--nic-mono);
   font-size: 9px;
@@ -81,9 +85,9 @@
 }
 
 @keyframes nodeIdCardPulse {
-  0%   { box-shadow: 0 0 0 0 rgba(66, 190, 101, 0.55); }
-  70%  { box-shadow: 0 0 0 6px rgba(66, 190, 101, 0); }
-  100% { box-shadow: 0 0 0 0 rgba(66, 190, 101, 0); }
+  0%   { box-shadow: 0 0 0 0 color-mix(in srgb, var(--support-success) 55%, transparent); }
+  70%  { box-shadow: 0 0 0 6px transparent; }
+  100% { box-shadow: 0 0 0 0 transparent; }
 }
 
 /* ── Hero band ─────────────────────────────────────────────────────────── */
@@ -130,7 +134,7 @@
   left: 32px;
   padding: 2px 6px;
   border: 1px solid var(--nic-status);
-  background: rgba(0, 0, 0, 0.5);
+  background: color-mix(in srgb, var(--nic-bg-deep) 75%, transparent);
   color: var(--nic-status);
   font-family: var(--nic-mono);
   font-size: 9px;
@@ -177,7 +181,7 @@
   font-weight: 600;
   letter-spacing: 0.04em;
   color: var(--nic-text);
-  text-shadow: 0 1px 6px rgba(0, 0, 0, 0.85);
+  text-shadow: 0 1px 6px color-mix(in srgb, var(--nic-bg-deep) 85%, transparent);
   line-height: 1;
 }
 
@@ -201,7 +205,7 @@
 .node-id-card__plate {
   display: grid;
   gap: 3px;
-  background: rgba(0, 0, 0, 0.55);
+  background: color-mix(in srgb, var(--nic-bg-deep) 75%, transparent);
   padding: 6px 8px;
   backdrop-filter: blur(2px);
 }
@@ -226,16 +230,16 @@
   font-size: 10px;
   letter-spacing: 0.04em;
   text-transform: uppercase;
-  color: #e0e0e0;
+  color: var(--nic-text);
   font-variant-numeric: tabular-nums;
   text-align: right;
 }
 
-.node-id-card__kv-value--score-stable   { color: #42be65; }
-.node-id-card__kv-value--score-watch    { color: #f1c21b; }
-.node-id-card__kv-value--score-critical { color: #fa4d56; }
-.node-id-card__kv-value--score-offline  { color: #fa4d56; }
-.node-id-card__kv-value--score-waiting  { color: #6f6f6f; }
+.node-id-card__kv-value--score-stable   { color: var(--support-success); }
+.node-id-card__kv-value--score-watch    { color: var(--support-warning); }
+.node-id-card__kv-value--score-critical { color: var(--support-danger); }
+.node-id-card__kv-value--score-offline  { color: var(--support-danger); }
+.node-id-card__kv-value--score-waiting  { color: var(--nic-text-meta); }
 
 .node-id-card__kv-status {
   margin-left: 6px;
@@ -244,7 +248,7 @@
 
 /* CPU/MEM mini overlay tiles */
 .node-id-card__res-mini {
-  background: rgba(0, 0, 0, 0.6);
+  background: color-mix(in srgb, var(--nic-bg-deep) 75%, transparent);
   border: 1px solid currentColor;
   padding: 3px 6px;
   /* currentColor is overridden inline via --nic-mini-fill */
@@ -267,7 +271,7 @@
 .node-id-card__res-mini-value {
   font-family: var(--nic-mono);
   font-size: 11px;
-  color: #fff;
+  color: var(--nic-text);
   font-variant-numeric: tabular-nums;
 }
 
@@ -279,7 +283,7 @@
 
 .node-id-card__res-mini-bar {
   height: 2px;
-  background: rgba(255, 255, 255, 0.08);
+  background: color-mix(in srgb, var(--nic-text) 8%, transparent);
   margin-top: 2px;
 }
 
