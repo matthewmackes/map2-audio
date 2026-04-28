@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1355** Python | **1327** TypeScript | **157** C++/H | **145** Docs | **2968** total commits | **3** stars | **0** forks | **0** open issues
+**1355** Python | **1327** TypeScript | **157** C++/H | **145** Docs | **2970** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`99533330`](https://github.com/matthewmackes/map2-audio/commit/995333306bca53616c2fa3636da9a058036a549f) | chore(worklist): close T2461 epic — all 10 sub-tasks A1..... | Map2 Audio | 2026-04-28 |
+| [`07f2184d`](https://github.com/matthewmackes/map2-audio/commit/07f2184d7230ee843f7060ac971b05178bf45dfe) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-28 |
 | [`b27094c1`](https://github.com/matthewmackes/map2-audio/commit/b27094c1adf713d4b17be38c76777760d286c970) | feat(midi-assignments): T2461-A6 paired Brain + MIDI cali... | Map2 Audio | 2026-04-28 |
 | [`f42f541c`](https://github.com/matthewmackes/map2-audio/commit/f42f541c34f85410360983216bad55c925bbf149) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-28 |
 | [`e197ae99`](https://github.com/matthewmackes/map2-audio/commit/e197ae991ff5512f692744d0bcde51003c7d0e06) | feat(brain): T2461-A9 authored_with_devices persistence +... | Map2 Audio | 2026-04-28 |
 | [`d50cbaba`](https://github.com/matthewmackes/map2-audio/commit/d50cbabac3c3858ac6c9f4b833dbcf0eb97fc343) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-28 |
 | [`2d5b645a`](https://github.com/matthewmackes/map2-audio/commit/2d5b645a81873c0e60242fbc26e4788d6fae3ced) | feat(midi-assignments): T2461-A8 wizard apply gesture for... | Map2 Audio | 2026-04-28 |
 | [`32eeca05`](https://github.com/matthewmackes/map2-audio/commit/32eeca05fc00a38ade2fbcabe48ac9296fe6009f) | fix(theme): make WelcomeHero + NodeIdentityCard respect a... | Map2 Audio | 2026-04-28 |
-| [`abd48124`](https://github.com/matthewmackes/map2-audio/commit/abd48124e1e69fde3a7603444f87bca0ab720f0b) | fix(theme): make Performance Brain + MIDI Assignments res... | Map2 Audio | 2026-04-28 |
-| [`9bc2cb90`](https://github.com/matthewmackes/map2-audio/commit/9bc2cb90b3f6a26986597a6665be7b4389c17e37) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-27 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
