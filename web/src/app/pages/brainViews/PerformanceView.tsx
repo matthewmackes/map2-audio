@@ -116,7 +116,7 @@ export function PerformanceView({
                   className="bo-transport__waveform-bar"
                   style={{
                     height: h,
-                    background: played ? 'var(--bo-accent)' : i % 4 === 0 ? 'var(--bo-text-dim)' : '#2a3240',
+                    background: played ? 'var(--bo-accent)' : i % 4 === 0 ? 'var(--bo-text-dim)' : 'var(--bo-border)',
                     opacity: played ? 0.9 : 0.7,
                   }}
                 />
@@ -190,7 +190,7 @@ export function PerformanceView({
                   background: isActive ? color : 'var(--bo-surface-2)',
                   borderColor: isActive ? color : undefined,
                   boxShadow: isActive
-                    ? `inset 0 0 0 1px ${color}55, 0 0 14px ${color}33`
+                    ? `inset 0 0 0 1px color-mix(in srgb, ${color} 33%, transparent), 0 0 14px color-mix(in srgb, ${color} 20%, transparent)`
                     : undefined,
                 }}
                 onClick={() => onSlotSelect(slot.slot_id)}

@@ -1,22 +1,29 @@
-/* T2438 brainViews.css — dark palette scoped to .brain-overview. */
+/* T2438 brainViews.css — Brain Overview surface scoped to .brain-overview.
+ *
+ * The --bo-* token family is a thin alias layer over the platform theme tokens
+ * defined in app/theme/. Rebinding here means every Brain Overview surface
+ * (Performance / Console / Step / Split tabs and their pads, mixers, step
+ * grids, keyboards, routing matrices) inherits the active theme without
+ * needing per-component refactors. */
 
 .brain-overview {
-  --bo-bg: #0e1116;
-  --bo-surface: #161a21;
-  --bo-surface-2: #1c222b;
-  --bo-surface-3: #232a35;
-  --bo-border: #2a3240;
-  --bo-border-strong: #3a4456;
-  --bo-text: #e6ebf2;
-  --bo-text-dim: #a8b2c1;
-  --bo-text-muted: #6b7486;
-  --bo-accent: #3b82f6;
-  --bo-accent-dim: #1e3a6b;
-  --bo-ok: #22c55e;
-  --bo-warn: #f59e0b;
-  --bo-danger: #ef4444;
-  --bo-magenta: #d946ef;
-  --bo-cyan: #22d3ee;
+  --bo-bg: var(--bg);
+  --bo-surface: var(--surface);
+  --bo-surface-2: var(--surface-2);
+  --bo-surface-3: var(--surface-3);
+  --bo-border: var(--border);
+  --bo-border-strong: var(--border-strong);
+  --bo-text: var(--text-primary);
+  --bo-text-dim: var(--text-secondary);
+  --bo-text-muted: var(--text-tertiary);
+  --bo-accent: var(--interactive);
+  --bo-accent-dim: color-mix(in srgb, var(--interactive) 30%, var(--surface));
+  --bo-ok: var(--support-success);
+  --bo-warn: var(--support-warning);
+  --bo-danger: var(--support-danger);
+  --bo-magenta: var(--accent);
+  --bo-cyan: var(--support-info);
+  --bo-on-accent: var(--text-inverse);
   --bo-mono: 'IBM Plex Mono', 'JetBrains Mono', ui-monospace, monospace;
   --bo-sans: 'Inter Tight', 'Inter', system-ui, sans-serif;
 
@@ -58,7 +65,7 @@
 
 .brain-overview__tab:hover:not(.brain-overview__tab--active) {
   color: var(--bo-text);
-  background: rgba(255, 255, 255, 0.025);
+  background: color-mix(in srgb, var(--bo-text) 4%, transparent);
 }
 
 .brain-overview__tab:focus-visible {
@@ -99,7 +106,7 @@
     transparent 100%
   );
   border-radius: 2px 2px 0 0;
-  box-shadow: 0 0 8px var(--map2-accent-active-glow, rgba(34, 211, 238, 0.5));
+  box-shadow: 0 0 8px var(--map2-accent-active-glow, color-mix(in srgb, var(--bo-cyan) 50%, transparent));
 }
 
 /* The body view enter/exit cross-fade. */
@@ -128,8 +135,8 @@
 
 .brain-overview__tab--active .brain-overview__tab-icon {
   background: var(--map2-accent-active, var(--bo-accent));
-  color: #051f24;
-  box-shadow: 0 0 10px var(--map2-accent-active-glow, rgba(34, 211, 238, 0.45));
+  color: var(--bo-on-accent);
+  box-shadow: 0 0 10px var(--map2-accent-active-glow, color-mix(in srgb, var(--bo-cyan) 45%, transparent));
 }
 
 .brain-overview__tab-labels {
@@ -179,23 +186,23 @@
 }
 
 .bo-tag--ok {
-  background: rgba(34, 197, 94, 0.14);
-  color: #4ade80;
+  background: color-mix(in srgb, var(--bo-ok) 14%, transparent);
+  color: var(--bo-ok);
 }
 
 .bo-tag--warn {
-  background: rgba(245, 158, 11, 0.16);
-  color: #fbbf24;
+  background: color-mix(in srgb, var(--bo-warn) 16%, transparent);
+  color: var(--bo-warn);
 }
 
 .bo-tag--danger {
-  background: rgba(239, 68, 68, 0.18);
-  color: #f87171;
+  background: color-mix(in srgb, var(--bo-danger) 18%, transparent);
+  color: var(--bo-danger);
 }
 
 .bo-tag--accent {
-  background: rgba(59, 130, 246, 0.18);
-  color: #60a5fa;
+  background: color-mix(in srgb, var(--bo-accent) 18%, transparent);
+  color: var(--bo-accent);
 }
 
 .brain-overview__body {
@@ -262,7 +269,7 @@
    Transport hero (Performance view)
    ============================================================ */
 .bo-transport {
-  background: linear-gradient(180deg, #1a2030 0%, var(--bo-surface) 100%);
+  background: linear-gradient(180deg, var(--bo-surface-2) 0%, var(--bo-surface) 100%);
   border: 1px solid var(--bo-border);
   border-radius: 10px;
   padding: 18px;
@@ -292,8 +299,8 @@
 .bo-transport__btn--play {
   width: 56px;
   background: var(--bo-accent);
-  color: #fff;
-  box-shadow: 0 4px 14px rgba(59, 130, 246, 0.4);
+  color: var(--bo-on-accent);
+  box-shadow: 0 4px 14px color-mix(in srgb, var(--bo-accent) 40%, transparent);
 }
 
 .bo-transport__btn--rec {
@@ -327,7 +334,7 @@
 
 .bo-transport__waveform {
   height: 64px;
-  background: #0b0e13;
+  background: var(--bo-bg);
   border-radius: 6px;
   border: 1px solid var(--bo-border);
   padding: 6px 10px;
@@ -387,7 +394,7 @@
 .bo-meter__seg {
   height: 4px;
   border-radius: 1px;
-  background: rgba(255, 255, 255, 0.05);
+  background: color-mix(in srgb, var(--bo-text) 5%, transparent);
 }
 
 /* Pad matrix */
@@ -440,12 +447,12 @@
 }
 
 .bo-pad--active {
-  color: #fff;
+  color: var(--bo-on-accent);
 }
 
 .bo-pad--active .bo-pad__num,
 .bo-pad--active .bo-pad__name {
-  color: #fff;
+  color: var(--bo-on-accent);
 }
 
 /* Status strip */
@@ -588,7 +595,7 @@
 
 .bo-chstrip__wf {
   height: 26px;
-  background: #0b0e13;
+  background: var(--bo-bg);
   border-radius: 4px;
   display: flex;
   align-items: center;
@@ -612,7 +619,7 @@
 .bo-chstrip__track {
   flex: 1;
   position: relative;
-  background: #0b0e13;
+  background: var(--bo-bg);
   border-radius: 3px;
   border: 1px solid var(--bo-border);
 }
@@ -637,7 +644,7 @@
 
 .bo-chstrip__meter {
   width: 8px;
-  background: #07090d;
+  background: var(--bo-bg);
   border-radius: 2px;
   border: 1px solid var(--bo-border);
   display: flex;
@@ -647,8 +654,8 @@
   position: relative;
   overflow: hidden;
   box-shadow:
-    inset 0 1px 2px rgba(0, 0, 0, 0.6),
-    inset 0 0 0 1px rgba(255, 255, 255, 0.02);
+    inset 0 1px 2px color-mix(in srgb, var(--bo-bg) 60%, transparent),
+    inset 0 0 0 1px color-mix(in srgb, var(--bo-text) 2%, transparent);
 }
 
 .bo-chstrip__meter-seg {
@@ -693,8 +700,8 @@
   width: 8px;
   height: 8px;
   border-radius: 50%;
-  background: rgba(255, 84, 112, 0.16);
-  border: 1px solid rgba(255, 84, 112, 0.32);
+  background: color-mix(in srgb, var(--bo-danger) 16%, transparent);
+  border: 1px solid color-mix(in srgb, var(--bo-danger) 32%, transparent);
   margin-left: auto;
   transition:
     background var(--map2-dur-instant, 80ms) var(--map2-ease-out-snap, ease-out),
@@ -707,7 +714,7 @@
   border-color: var(--map2-accent-live, var(--bo-danger));
   box-shadow:
     0 0 8px var(--map2-accent-live, var(--bo-danger)),
-    0 0 14px var(--map2-accent-live-glow, rgba(255, 84, 112, 0.6));
+    0 0 14px var(--map2-accent-live-glow, color-mix(in srgb, var(--bo-danger) 60%, transparent));
   animation: bo-chstrip-clip-breathe 1.6s ease-in-out infinite;
 }
 
@@ -742,11 +749,11 @@
 }
 
 .bo-chstrip__btn--mute { --bo-chstrip-accent: var(--bo-warn); }
-.bo-chstrip__btn--solo { --bo-chstrip-accent: #fbbf24; }
+.bo-chstrip__btn--solo { --bo-chstrip-accent: var(--bo-cyan); }
 
 .bo-chstrip__btn[data-on='true'] {
   background: var(--bo-chstrip-accent, var(--bo-warn));
-  color: #111;
+  color: var(--bo-on-accent);
   border-color: var(--bo-chstrip-accent, var(--bo-warn));
 }
 
@@ -769,7 +776,7 @@
 
 .bo-chstrip__send--active {
   background: var(--bo-accent-dim);
-  color: #bfdbfe;
+  color: var(--bo-text);
 }
 
 /* Step grid (Step view) */
@@ -807,7 +814,7 @@
 
 .bo-stepgrid__cell {
   aspect-ratio: 1 / 1;
-  background: #0b0e13;
+  background: var(--bo-bg);
   border: 1px solid var(--bo-border);
   border-radius: 3px;
   position: relative;
@@ -857,14 +864,24 @@
 .bo-variation-btn--active {
   border-color: var(--bo-accent);
   background: var(--bo-accent-dim);
-  color: #bfdbfe;
+  color: var(--bo-text);
 }
 
-/* Keyboard (Split view) */
+/* Keyboard (Split view) — piano-skeuomorphic surface. White/black key colors
+ * are themeable via the --bo-key-* tokens below; defaults match real keyboard
+ * affordances (white keys = ivory, black keys = ebony). Override at theme
+ * scope to recolor the keybed without touching component CSS. */
 .bo-keyboard {
+  --bo-key-bed-bg: var(--bo-bg);
+  --bo-key-white-bg: color-mix(in srgb, var(--bo-text) 92%, var(--bo-bg));
+  --bo-key-white-shadow: color-mix(in srgb, var(--bo-bg) 15%, transparent);
+  --bo-key-white-label: color-mix(in srgb, var(--bo-text) 30%, var(--bo-bg));
+  --bo-key-black-bg: color-mix(in srgb, var(--bo-bg) 70%, var(--bo-text));
+  --bo-key-black-border: var(--bo-bg);
+
   position: relative;
   height: 110px;
-  background: #0b0e13;
+  background: var(--bo-key-bed-bg);
   border: 1px solid var(--bo-border);
   border-radius: 6px;
   padding: 4px;
@@ -878,10 +895,10 @@
 
 .bo-keyboard__white {
   flex: 1;
-  background: #e8edf4;
+  background: var(--bo-key-white-bg);
   border-radius: 0 0 3px 3px;
   position: relative;
-  box-shadow: inset 0 -3px 0 rgba(0, 0, 0, 0.15);
+  box-shadow: inset 0 -3px 0 var(--bo-key-white-shadow);
 }
 
 .bo-keyboard__white--held {
@@ -896,7 +913,7 @@
   text-align: center;
   font-family: var(--bo-mono);
   font-size: 8px;
-  color: #5b6472;
+  color: var(--bo-key-white-label);
   font-weight: 700;
 }
 
@@ -910,9 +927,9 @@
   position: absolute;
   top: 0;
   height: 62%;
-  background: #111418;
+  background: var(--bo-key-black-bg);
   border-radius: 0 0 3px 3px;
-  border: 1px solid #000;
+  border: 1px solid var(--bo-key-black-border);
 }
 
 /* Routing matrix */
@@ -962,7 +979,7 @@
 .bo-matrix__cell--dot {
   width: 6px;
   height: 6px;
-  background: #fff;
+  background: var(--bo-on-accent);
   border-radius: 50%;
 }
 

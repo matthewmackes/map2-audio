@@ -99,7 +99,7 @@ function ChannelStrip({
                 right: 0,
                 top: `${y}%`,
                 height: 1,
-                background: '#1f2838',
+                background: 'var(--bo-border)',
               }}
             />
           ))}
@@ -120,7 +120,8 @@ function ChannelStrip({
             className="bo-chstrip__meter-rms"
             style={{
               height: `${rmsFraction * 100}%`,
-              background: 'linear-gradient(to top, rgba(34,197,94,0.18), rgba(245,158,11,0.18) 70%, rgba(239,68,68,0.18))',
+              background:
+                'linear-gradient(to top, color-mix(in srgb, var(--bo-ok) 18%, transparent), color-mix(in srgb, var(--bo-warn) 18%, transparent) 70%, color-mix(in srgb, var(--bo-danger) 18%, transparent))',
             }}
           />
           {Array.from({ length: METER_SEGMENT_COUNT }).map((_, k) => {
@@ -131,7 +132,7 @@ function ChannelStrip({
               <div
                 key={k}
                 className="bo-chstrip__meter-seg"
-                style={{ background: on ? dbToColor(segDb) : 'rgba(255,255,255,0.04)' }}
+                style={{ background: on ? dbToColor(segDb) : 'color-mix(in srgb, var(--bo-text) 4%, transparent)' }}
               />
             )
           })}
@@ -250,7 +251,14 @@ export function ConsoleView({
         <div
           className="bo-panel__head"
           role="status"
-          style={{ background: 'var(--bo-warn, #f1c21b)', color: 'var(--bo-bg, #161616)', padding: '6px 12px', marginBottom: 8, borderRadius: 4 }}
+          style={{
+            background: 'color-mix(in srgb, var(--bo-warn) 22%, var(--bo-surface))',
+            color: 'var(--bo-text)',
+            border: '1px solid var(--bo-warn)',
+            padding: '6px 12px',
+            marginBottom: 8,
+            borderRadius: 4,
+          }}
         >
           Bench device disconnected: <code>{recentDisconnect.profileKey}</code>
           <span style={{ marginLeft: 8, opacity: 0.75 }}>(banner clears in ~30s)</span>
@@ -379,7 +387,9 @@ export function ConsoleView({
                   width: 16,
                   height: 16,
                   borderRadius: '50%',
-                  background: q.ready ? 'rgba(34,197,94,0.15)' : 'rgba(245,158,11,0.15)',
+                  background: q.ready
+                    ? 'color-mix(in srgb, var(--bo-ok) 15%, transparent)'
+                    : 'color-mix(in srgb, var(--bo-warn) 15%, transparent)',
                   color: q.ready ? 'var(--bo-ok)' : 'var(--bo-warn)',
                   display: 'grid',
                   placeItems: 'center',

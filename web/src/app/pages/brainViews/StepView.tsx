@@ -96,16 +96,16 @@ export function StepView({
             </div>
             {lane.steps.map((v, s) => {
               const isPlay = s === playhead
-              let bg = '#0b0e13'
+              let bg = 'var(--bo-bg)'
               let border = 'var(--bo-border)'
               let glow: string | undefined
               if (v === 1) {
-                bg = `${lane.color}55`
-                border = `${lane.color}88`
+                bg = `color-mix(in srgb, ${lane.color} 33%, transparent)`
+                border = `color-mix(in srgb, ${lane.color} 53%, transparent)`
               } else if (v === 2) {
                 bg = lane.color
                 border = lane.color
-                glow = `0 0 10px ${lane.color}88`
+                glow = `0 0 10px color-mix(in srgb, ${lane.color} 53%, transparent)`
               }
               if (isPlay) border = 'var(--bo-cyan)'
               return (
@@ -123,7 +123,7 @@ export function StepView({
                       style={{
                         position: 'absolute',
                         inset: 0,
-                        background: 'rgba(34,211,238,0.14)',
+                        background: 'color-mix(in srgb, var(--bo-cyan) 14%, transparent)',
                       }}
                     />
                   ) : null}

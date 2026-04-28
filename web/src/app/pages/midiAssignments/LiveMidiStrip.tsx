@@ -163,7 +163,7 @@ export function LiveMidiStrip({
     <div className="live">
       <div className="head">
         <span>● Live MIDI</span>
-        <span style={{ color: listening ? 'var(--accent)' : 'var(--text-3)' }}>
+        <span style={{ color: listening ? 'var(--mw-accent)' : 'var(--mw-text-3)' }}>
           {listening ? 'LISTENING' : 'monitoring'}
         </span>
         <button
@@ -188,7 +188,7 @@ export function LiveMidiStrip({
       {bindingPreview && (
         <div className="last">
           <div className="lbl">target binding</div>
-          <div className="val" style={{ fontSize: 12, fontFamily: 'var(--mono)', color: 'var(--text-2)' }}>
+          <div className="val" style={{ fontSize: 12, fontFamily: 'var(--mw-mono)', color: 'var(--mw-text-2)' }}>
             {bindingPreview}
           </div>
         </div>
@@ -197,10 +197,10 @@ export function LiveMidiStrip({
       <div className="last" style={{ flex: 1, display: 'flex', flexDirection: 'column', minHeight: 200 }}>
         <div className="lbl" style={{ marginBottom: 6 }}>
           activity feed
-          {sourceFilter && <span style={{ marginLeft: 8, color: 'var(--accent)' }}>· filtered: {activeSurfaceLabel}</span>}
+          {sourceFilter && <span style={{ marginLeft: 8, color: 'var(--mw-accent)' }}>· filtered: {activeSurfaceLabel}</span>}
         </div>
         <div className="feed">
-          {state.feed.length === 0 && <div className="row" style={{ color: 'var(--text-4)' }}>waiting for traffic…</div>}
+          {state.feed.length === 0 && <div className="row" style={{ color: 'var(--mw-text-4)' }}>waiting for traffic…</div>}
           {state.feed.slice(0, 30).map((m, i) => (
             <div key={`${m.ts}-${i}`} className={`row ${m.type === 'pc' ? 'pc' : ''}`}>
               <span className="t">{m.ts}</span>{' '}

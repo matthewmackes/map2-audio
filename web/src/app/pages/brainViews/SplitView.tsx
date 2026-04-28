@@ -26,7 +26,7 @@ function KeyboardModule({
               key={i}
               style={{
                 flex: Math.max(1, z.key_high - z.key_low),
-                background: `${z.color}33`,
+                background: `color-mix(in srgb, ${z.color} 20%, transparent)`,
                 borderLeft: `3px solid ${z.color}`,
                 fontFamily: 'var(--bo-mono)',
                 fontSize: 10,
@@ -227,7 +227,7 @@ export function SplitView({
                   background: q.ready ? 'var(--bo-ok)' : 'var(--bo-warn)',
                   display: 'grid',
                   placeItems: 'center',
-                  color: '#fff',
+                  color: 'var(--bo-on-accent)',
                   fontWeight: 700,
                   fontSize: 9,
                 }}

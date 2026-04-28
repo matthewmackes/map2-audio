@@ -320,21 +320,21 @@ function CurveSvg({ curve, invert }: { curve: CurveName; invert: boolean }) {
     <svg className="curve-svg" viewBox="0 0 400 200" preserveAspectRatio="none">
       <defs>
         <linearGradient id="midi-walk-cg" x1="0" y1="0" x2="0" y2="1">
-          <stop offset="0%" stopColor="var(--accent)" stopOpacity="0.4" />
-          <stop offset="100%" stopColor="var(--accent)" stopOpacity="0" />
+          <stop offset="0%" stopColor="var(--mw-accent)" stopOpacity="0.4" />
+          <stop offset="100%" stopColor="var(--mw-accent)" stopOpacity="0" />
         </linearGradient>
       </defs>
       {[0, 1, 2, 3, 4].map((i) => (
-        <line key={`h-${i}`} x1="10" x2="390" y1={10 + i * 45} y2={10 + i * 45} stroke="var(--line)" />
+        <line key={`h-${i}`} x1="10" x2="390" y1={10 + i * 45} y2={10 + i * 45} stroke="var(--mw-line)" />
       ))}
       {[0, 1, 2, 3, 4].map((i) => (
-        <line key={`v-${i}`} y1="10" y2="190" x1={10 + i * 95} x2={10 + i * 95} stroke="var(--line)" />
+        <line key={`v-${i}`} y1="10" y2="190" x1={10 + i * 95} x2={10 + i * 95} stroke="var(--mw-line)" />
       ))}
       <path d={d + ` L 390,190 L 10,190 Z`} fill="url(#midi-walk-cg)" />
-      <path d={d} stroke="var(--accent)" strokeWidth="2" fill="none" />
-      <text x="10" y="200" fontSize="9" fill="var(--text-4)">in 0</text>
-      <text x="370" y="200" fontSize="9" fill="var(--text-4)">127</text>
-      <text x="10" y="20" fontSize="9" fill="var(--text-4)">out</text>
+      <path d={d} stroke="var(--mw-accent)" strokeWidth="2" fill="none" />
+      <text x="10" y="200" fontSize="9" fill="var(--mw-text-4)">in 0</text>
+      <text x="370" y="200" fontSize="9" fill="var(--mw-text-4)">127</text>
+      <text x="10" y="20" fontSize="9" fill="var(--mw-text-4)">out</text>
     </svg>
   )
 }
@@ -369,9 +369,9 @@ function StepDevice({
         <div
           className="pinned-hero"
           style={{
-            ['--accent' as string]: pinned.meta?.color ?? GENERIC_SURFACE_META.color,
-            ['--accent-soft' as string]: hexToRgba(pinned.meta?.color, 0.18),
-            ['--accent-line' as string]: hexToRgba(pinned.meta?.color, 0.35),
+            ['--mw-accent' as string]: pinned.meta?.color ?? GENERIC_SURFACE_META.color,
+            ['--mw-accent-soft' as string]: hexToRgba(pinned.meta?.color, 0.18),
+            ['--mw-accent-line' as string]: hexToRgba(pinned.meta?.color, 0.35),
           } as React.CSSProperties}
         >
           <div className="iconbig" style={{ background: pinned.meta?.color ?? GENERIC_SURFACE_META.color }}>
@@ -383,7 +383,7 @@ function StepDevice({
             </div>
             <h2>{pinned.label}</h2>
             <div className="meta">
-              status <b style={{ color: 'var(--engine)' }}>{pinned.status}</b> · {pinned.capabilities.length} capabilities
+              status <b style={{ color: 'var(--mw-engine)' }}>{pinned.status}</b> · {pinned.capabilities.length} capabilities
             </div>
           </div>
           <div style={{ display: 'grid', gap: 8 }}>
@@ -572,7 +572,7 @@ function ManualSourcePicker({
           <select
             value={kind}
             onChange={(e) => setKind(e.target.value as SourceKind)}
-            style={{ background: 'var(--bg)', border: '1px solid var(--line-2)', padding: '4px 8px', fontFamily: 'var(--mono)' }}
+            style={{ background: 'var(--mw-bg)', border: '1px solid var(--mw-line-2)', padding: '4px 8px', fontFamily: 'var(--mw-mono)' }}
           >
             <option value="cc">Control Change</option>
             <option value="note">Note</option>
@@ -747,8 +747,8 @@ function MixxxAliasPreview({ query, surface }: MixxxAliasPreviewProps): React.JS
         data-testid="mixxx-alias-preview"
         style={{
           padding: '8px 10px', marginBottom: 8, fontSize: 12,
-          fontFamily: 'var(--mono)', color: 'var(--text-3)',
-          border: '1px dashed var(--line-2)',
+          fontFamily: 'var(--mw-mono)', color: 'var(--mw-text-3)',
+          border: '1px dashed var(--mw-line-2)',
         }}
       >
         ⓘ Mixxx-shorthand detected. Pick a Hardware-Store-pinned device in Step 01 to resolve through its alias table.
@@ -761,9 +761,9 @@ function MixxxAliasPreview({ query, surface }: MixxxAliasPreviewProps): React.JS
       data-testid="mixxx-alias-preview"
       style={{
         padding: '8px 10px', marginBottom: 8, fontSize: 12,
-        fontFamily: 'var(--mono)',
-        background: resolved ? 'var(--accent-soft, rgba(0,109,255,0.08))' : 'var(--bg)',
-        border: `1px solid ${resolved ? 'var(--accent-line, rgba(0,109,255,0.35))' : 'var(--line-2)'}`,
+        fontFamily: 'var(--mw-mono)',
+        background: resolved ? 'var(--mw-accent-soft)' : 'var(--mw-bg)',
+        border: `1px solid ${resolved ? 'var(--mw-accent-line)' : 'var(--mw-line-2)'}`,
       }}
     >
       <div style={{ marginBottom: 4 }}>
@@ -774,13 +774,13 @@ function MixxxAliasPreview({ query, surface }: MixxxAliasPreviewProps): React.JS
         <div>
           <code>{shorthand.group}.{shorthand.key}</code>
           <span style={{ margin: '0 8px' }}>→</span>
-          <code style={{ color: 'var(--engine, #198038)' }}>{resolved.target}</code>
+          <code style={{ color: 'var(--mw-engine)' }}>{resolved.target}</code>
           {resolved.aliasUsed
             ? <span style={{ marginLeft: 8, opacity: 0.6 }}>(via pack alias_table)</span>
             : <span style={{ marginLeft: 8, opacity: 0.6 }}>(via WELL_KNOWN bridge)</span>}
         </div>
       ) : reason ? (
-        <div style={{ color: 'var(--warn, #f1c21b)' }}>
+        <div style={{ color: 'var(--mw-warn)' }}>
           Could not resolve: {reason}
         </div>
       ) : null}
@@ -916,12 +916,12 @@ function StepTarget({
             placeholder="Search targets… (or type [Channel1].volume to resolve via Mixxx alias)"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            style={{ width: '100%', background: 'var(--bg)', border: '1px solid var(--line-2)', padding: '8px 10px', fontFamily: 'var(--mono)', marginBottom: 8 }}
+            style={{ width: '100%', background: 'var(--mw-bg)', border: '1px solid var(--mw-line-2)', padding: '8px 10px', fontFamily: 'var(--mw-mono)', marginBottom: 8 }}
           />
           <MixxxAliasPreview query={search} surface={state.surface} />
           <div className="target-list">
             {targetsForCategory.length === 0 && (
-              <div style={{ padding: 16, color: 'var(--text-3)', fontSize: 13 }}>
+              <div style={{ padding: 16, color: 'var(--mw-text-3)', fontSize: 13 }}>
                 No matches{search ? ` for "${search}"` : ''}. Load some plugins or pick another category.
               </div>
             )}
@@ -939,7 +939,7 @@ function StepTarget({
               </div>
             ))}
             {targetsForCategory.length > 200 && (
-              <div style={{ padding: 8, fontSize: 11, color: 'var(--text-3)', fontFamily: 'var(--mono)' }}>
+              <div style={{ padding: 8, fontSize: 11, color: 'var(--mw-text-3)', fontFamily: 'var(--mw-mono)' }}>
                 showing 200 of {targetsForCategory.length} · refine search to narrow
               </div>
             )}
@@ -1002,7 +1002,7 @@ function BrainCaptureWidget(): React.JSX.Element {
       data-testid="brain-capture-widget"
       style={{
         padding: '8px 10px', marginBottom: 12, fontSize: 12,
-        fontFamily: 'var(--mono)', border: '1px solid var(--line-2)',
+        fontFamily: 'var(--mw-mono)', border: '1px solid var(--mw-line-2)',
       }}
     >
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
@@ -1029,18 +1029,18 @@ function BrainCaptureWidget(): React.JSX.Element {
         ) : null}
       </div>
       {error ? (
-        <div style={{ color: 'var(--warn, #f1c21b)', marginTop: 6 }}>{error}</div>
+        <div style={{ color: 'var(--mw-warn)', marginTop: 6 }}>{error}</div>
       ) : null}
       {session && session.frames.length > 0 ? (
         <svg
           width="320" height="60"
-          style={{ marginTop: 6, background: 'var(--bg)', border: '1px solid var(--line-2)' }}
+          style={{ marginTop: 6, background: 'var(--mw-bg)', border: '1px solid var(--mw-line-2)' }}
           aria-label="Brain capture waveform"
           data-testid="brain-capture-svg"
         >
           {/* Floor reference line */}
-          <line x1={0} y1={60} x2={320} y2={60} stroke="var(--line-2)" strokeWidth={1} />
-          <path d={path} fill="none" stroke="var(--engine, #198038)" strokeWidth={1.5} />
+          <line x1={0} y1={60} x2={320} y2={60} stroke="var(--mw-line-2)" strokeWidth={1} />
+          <path d={path} fill="none" stroke="var(--mw-engine)" strokeWidth={1.5} />
         </svg>
       ) : null}
     </div>
@@ -1076,9 +1076,9 @@ function StepCalibrate({
 
       {promotedToExpression && (
         <div style={{
-          background: 'var(--accent-soft)', border: '1px solid var(--accent-line)',
-          padding: '8px 12px', fontSize: 12, fontFamily: 'var(--mono)',
-          color: 'var(--text-2)', marginBottom: 16,
+          background: 'var(--mw-accent-soft)', border: '1px solid var(--mw-accent-line)',
+          padding: '8px 12px', fontSize: 12, fontFamily: 'var(--mw-mono)',
+          color: 'var(--mw-text-2)', marginBottom: 16,
         }}>
           ⓘ This binding will save as an Expression Assignment (Custom curve / non-zero deadzone).
         </div>
@@ -1249,7 +1249,7 @@ function StepTest({
           <div className="test-input">
             <div className="v">{simulate.v}</div>
             <div className="test-bar"><div className="fill" style={{ transform: `scaleX(${norm})` }} /></div>
-            <input type="range" min="0" max="127" value={simulate.v} onChange={(e) => setSimulate({ v: Number(e.target.value) })} style={{ width: '100%', accentColor: 'var(--accent)' }} />
+            <input type="range" min="0" max="127" value={simulate.v} onChange={(e) => setSimulate({ v: Number(e.target.value) })} style={{ width: '100%', accentColor: 'var(--mw-accent)' }} />
           </div>
           <div className="test-handles">
             <button className="heel" onClick={() => setSimulate({ v: cal.minIn })}>◀ Heel · {cal.minIn}</button>
@@ -1268,7 +1268,7 @@ function StepTest({
             <div className="test-bar">
               <div
                 className="fill"
-                style={{ background: 'var(--engine)', transform: `scaleX(${(out - cal.minOut) / Math.max(1, cal.maxOut - cal.minOut)})` }}
+                style={{ background: 'var(--mw-engine)', transform: `scaleX(${(out - cal.minOut) / Math.max(1, cal.maxOut - cal.minOut)})` }}
               />
             </div>
           </div>
@@ -1322,7 +1322,7 @@ function StepSave({
 
       {conflict && (
         <div style={{
-          background: 'rgba(250, 77, 86, 0.12)', border: '1px solid var(--danger)',
+          background: 'color-mix(in srgb, var(--mw-danger) 12%, transparent)', border: '1px solid var(--mw-danger)',
           padding: '12px 16px', marginBottom: 16, fontSize: 13,
         }}>
           ⚠ <b>Conflict</b> — this CC + channel + scope is already bound to{' '}
@@ -1340,7 +1340,7 @@ function StepSave({
           <div className="summary-arrow">━▶</div>
           <div className="summary-node">
             <div className="l">Source</div>
-            <div className="v" style={{ fontFamily: 'var(--mono)' }}>{srcLabel}</div>
+            <div className="v" style={{ fontFamily: 'var(--mw-mono)' }}>{srcLabel}</div>
           </div>
           <div className="summary-arrow">━▶</div>
           <div className="summary-node">
@@ -1354,8 +1354,8 @@ function StepSave({
         <div className="grid-2">
           <div>
             <div className="section-h">Calibration</div>
-            <div style={{ fontFamily: 'var(--mono)', fontSize: 12, lineHeight: 1.9, color: 'var(--text-2)' }}>
-              <div>name &nbsp;&nbsp;&nbsp; <b style={{ color: 'var(--text)' }}>{cal.name}</b></div>
+            <div style={{ fontFamily: 'var(--mw-mono)', fontSize: 12, lineHeight: 1.9, color: 'var(--mw-text-2)' }}>
+              <div>name &nbsp;&nbsp;&nbsp; <b style={{ color: 'var(--mw-text)' }}>{cal.name}</b></div>
               <div>scope&nbsp;&nbsp;&nbsp; {cal.scope}</div>
               <div>range&nbsp;&nbsp;&nbsp;&nbsp; in {cal.minIn}–{cal.maxIn} → out {cal.minOut}–{cal.maxOut}</div>
               <div>curve&nbsp;&nbsp;&nbsp;&nbsp; {cal.curve}{cal.invert ? ' (inverted)' : ''}</div>
@@ -1366,7 +1366,7 @@ function StepSave({
           </div>
           <div>
             <div className="section-h">Target path</div>
-            <div style={{ fontFamily: 'var(--mono)', fontSize: 12, lineHeight: 1.9, color: 'var(--text-2)' }}>
+            <div style={{ fontFamily: 'var(--mw-mono)', fontSize: 12, lineHeight: 1.9, color: 'var(--mw-text-2)' }}>
               <div>category &nbsp;{tgt?.cat ?? '—'}</div>
               <div>path &nbsp;&nbsp;&nbsp;&nbsp; {tgt?.path ?? '—'}</div>
             </div>
@@ -1378,7 +1378,7 @@ function StepSave({
         <div className="row-flex">
           <button className="btn engine large" disabled={saving} onClick={() => onSave('commit')}>✓ Commit binding</button>
           <button className="btn ghost large" disabled={saving} onClick={() => onSave('andNew')}>Save &amp; bind another</button>
-          <div style={{ marginLeft: 'auto', fontFamily: 'var(--mono)', fontSize: 11, color: 'var(--text-3)' }}>
+          <div style={{ marginLeft: 'auto', fontFamily: 'var(--mw-mono)', fontSize: 11, color: 'var(--mw-text-3)' }}>
             {saving ? 'saving…' : 'sync to controller →'}
           </div>
         </div>
@@ -1824,9 +1824,9 @@ export function MidiAssignmentsPage() {
   // ─── Accent CSS variables (per-surface) ─────────────────────────────────
   const accent = state.surface?.meta?.color ?? pinnedSurface?.meta?.color ?? GENERIC_SURFACE_META.color
   const rootVars = useMemo(() => ({
-    ['--accent']: accent,
-    ['--accent-soft']: hexToRgba(accent, 0.18),
-    ['--accent-line']: hexToRgba(accent, 0.35),
+    ['--mw-accent']: accent,
+    ['--mw-accent-soft']: hexToRgba(accent, 0.18),
+    ['--mw-accent-line']: hexToRgba(accent, 0.35),
   } as React.CSSProperties), [accent])
 
   const mappings = mappingsQuery.data?.mappings ?? []
@@ -1834,7 +1834,7 @@ export function MidiAssignmentsPage() {
   const engineParams = engineParamsQuery.data?.parameters ?? []
 
   const bindingPreview = useMemo(() => {
-    if (!state.source) return <span style={{ color: 'var(--text-4)' }}>build a binding…</span>
+    if (!state.source) return <span style={{ color: 'var(--mw-text-4)' }}>build a binding…</span>
     return (
       <>
         <span className="accent">
@@ -1843,7 +1843,7 @@ export function MidiAssignmentsPage() {
           {state.source.kind === 'pc' && `PC ${state.source.pc}`}
         </span>
         {' '}ch {state.source.ch}
-        <br />→ {state.target?.name ?? <span style={{ color: 'var(--text-4)' }}>(no target yet)</span>}
+        <br />→ {state.target?.name ?? <span style={{ color: 'var(--mw-text-4)' }}>(no target yet)</span>}
       </>
     )
   }, [state.source, state.target])
@@ -1905,7 +1905,7 @@ export function MidiAssignmentsPage() {
                 <div className="row"><span>pinned</span><b>{pinnedId === state.surface?.id ? '✓' : '·'}</b></div>
                 <div className="row"><span>scope</span><b>{state.calibration?.scope ?? 'global'}</b></div>
                 <div className="row"><span>mappings</span><b>{mappings.length}</b></div>
-                <div className="row"><span>engine</span><b style={{ color: 'var(--engine)' }}>● running</b></div>
+                <div className="row"><span>engine</span><b style={{ color: 'var(--mw-engine)' }}>● running</b></div>
               </div>
             </div>
 
