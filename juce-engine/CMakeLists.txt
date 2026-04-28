@@ -928,6 +928,8 @@ if(BUILD_CONTROLLER_HOST)
         Source/ControllerHost/EventRing/ShmEventRing.cpp
         Source/ControllerHost/Midi/Map2MidiBackend.cpp
         Source/ControllerHost/Midi/LibremidiAdapter.cpp
+        Source/ControllerHost/MappingEngine/ControlObjectBridge.cpp
+        Source/ControllerHost/MappingEngine/Map2MappingEngine.cpp
     )
     target_include_directories(map2-controller-host PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/Source
@@ -954,6 +956,8 @@ if(BUILD_CONTROLLER_HOST_TESTS)
         tests/Map2BulkControllerTests.cpp
         tests/ShmEventRingTests.cpp
         tests/Map2MidiBackendTests.cpp
+        tests/ControlObjectBridgeTests.cpp
+        tests/Map2MappingEngineTests.cpp
         Source/ControllerHost/QuickJSEngine.cpp
         Source/ControllerHost/EngineApiBindings.cpp
         Source/ControllerHost/Hid/Map2HidController.cpp
@@ -961,6 +965,8 @@ if(BUILD_CONTROLLER_HOST_TESTS)
         Source/ControllerHost/EventRing/ShmEventRing.cpp
         Source/ControllerHost/Midi/Map2MidiBackend.cpp
         Source/ControllerHost/Midi/LibremidiAdapter.cpp
+        Source/ControllerHost/MappingEngine/ControlObjectBridge.cpp
+        Source/ControllerHost/MappingEngine/Map2MappingEngine.cpp
     )
     target_include_directories(controller_host_tests PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/Source
