@@ -118,7 +118,7 @@
 .app-shell__frame {
   display: grid;
   grid-template-columns: var(--global-tree-width, 0rem) 1fr;
-  min-height: calc(100vh - var(--ctx-h, 32px) - var(--ws-h, 40px));
+  min-height: calc(100vh - var(--ctx-h, 0px) - var(--ws-h, 0px));
   transition: grid-template-columns 160ms ease;
 }
 
@@ -557,15 +557,9 @@ button.window-taskbar__pill {
   font-weight: 500;
 }
 
-.window-taskbar__pill--node,
 .window-taskbar__pill--latency {
   padding: 0 0.45rem;
   cursor: default;
-}
-
-.window-taskbar__pill .node-nav-bar,
-.window-taskbar__pill .node-nav-bar__chips {
-  max-width: 100%;
 }
 
 .window-taskbar__pill .topbar-pro__latency-pressure {

@@ -9,7 +9,7 @@
  * falls back to last-known state with a stale banner on fetch error.
  */
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { Link, useNavigate } from 'react-router-dom'
 import {
   Button,
   ComposedModal,
@@ -1015,9 +1015,9 @@ export function PlatformsOverviewTopology({ layer }: Props) {
       <header className="ptop__header">
         <div>
           <div className="ptop__crumbs">
-            <span>workspace</span>
+            <Link to="/workspace">node ops</Link>
             <span className="ptop__crumbs-sep">/</span>
-            <span>platforms</span>
+            <Link to="/workspace/platforms/overview">platforms</Link>
             <span className="ptop__crumbs-sep">/</span>
             <span className="ptop__crumbs-current">overview</span>
           </div>

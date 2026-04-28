@@ -1,6 +1,6 @@
 .midi-hub-health-drawer__scrim {
   position: fixed;
-  inset: calc(var(--ctx-h, 32px) + var(--ws-h, 40px)) 0 0 0;
+  inset: calc(var(--ctx-h, 0px) + var(--ws-h, 0px)) 0 0 0;
   background:
     radial-gradient(120% 90% at 100% 0%, rgba(0, 0, 0, 0.55) 0%, rgba(0, 0, 0, 0.35) 70%);
   backdrop-filter: blur(2px) saturate(110%);
@@ -19,7 +19,7 @@
 
 .midi-hub-health-drawer {
   position: fixed;
-  top: calc(var(--ctx-h, 32px) + var(--ws-h, 40px));
+  top: calc(var(--ctx-h, 0px) + var(--ws-h, 0px));
   bottom: 0;
   right: 0;
   width: min(26rem, 92vw);

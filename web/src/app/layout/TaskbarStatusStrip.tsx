@@ -1,4 +1,3 @@
-import { NodeNavBar } from '../components/NodeNav/NodeNavBar'
 import { LatencyPressureShellReadout } from '../components/LatencyPressureShellReadout'
 import { PushConfirmationNoticePill } from './PushConfirmationNoticePill'
 import type { PushSurfacePendingConfirmation } from '../../map2/clients/pushSurface'
@@ -31,9 +30,6 @@ export function TaskbarStatusStrip({
       {pendingPushConfirmation ? (
         <PushConfirmationNoticePill pendingConfirmation={pendingPushConfirmation} />
       ) : null}
-      <div className="window-taskbar__pill window-taskbar__pill--node">
-        <NodeNavBar />
-      </div>
       <div className="window-taskbar__pill window-taskbar__pill--latency">
         <LatencyPressureShellReadout />
       </div>

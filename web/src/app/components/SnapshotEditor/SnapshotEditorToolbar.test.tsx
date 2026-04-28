@@ -1,6 +1,7 @@
 import '@testing-library/jest-dom'
 import React from 'react'
 import { fireEvent, render, screen } from '@testing-library/react'
+import { MemoryRouter } from 'react-router-dom'
 
 import { SnapshotEditorToolbar } from './SnapshotEditorToolbar'
 
@@ -60,7 +61,11 @@ function renderToolbar(overrides: Partial<React.ComponentProps<typeof SnapshotEd
     ...overrides,
   }
 
-  render(<SnapshotEditorToolbar {...props} />)
+  render(
+    <MemoryRouter>
+      <SnapshotEditorToolbar {...props} />
+    </MemoryRouter>,
+  )
   return props
 }
 
@@ -115,21 +120,25 @@ describe('SnapshotEditorToolbar', () => {
 
   it('does not animate the live chip when reduced motion is requested', () => {
     const { rerender } = render(
-      <SnapshotEditorToolbar
-        {...renderToolbarDefaults()}
-        liveStreaming
-        prefersReducedMotion={false}
-      />,
+      <MemoryRouter>
+        <SnapshotEditorToolbar
+          {...renderToolbarDefaults()}
+          liveStreaming
+          prefersReducedMotion={false}
+        />
+      </MemoryRouter>,
     )
 
     expect(screen.getByText('LIVE')).toHaveClass('is-streaming')
 
     rerender(
-      <SnapshotEditorToolbar
-        {...renderToolbarDefaults()}
-        liveStreaming
-        prefersReducedMotion
-      />,
+      <MemoryRouter>
+        <SnapshotEditorToolbar
+          {...renderToolbarDefaults()}
+          liveStreaming
+          prefersReducedMotion
+        />
+      </MemoryRouter>,
     )
 
     expect(screen.getByText('LIVE')).not.toHaveClass('is-streaming')

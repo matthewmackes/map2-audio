@@ -6,6 +6,7 @@ import { MemoryRouter, useLocation } from 'react-router-dom'
 
 import { AppShell } from './AppShell'
 import { HOST_MACHINE_ROUTE } from '../pages/hostMachineRoutes'
+import { NODE_PAGE_KEYS } from '../utils/nodeDisplay'
 
 const mockRestartBackend = jest.fn()
 const mockReloadHomeDesktopShell = jest.fn()
@@ -226,7 +227,6 @@ describe('AppShell global tree navigation', () => {
     expect(within(navTree).getByText('NAM Models')).toBeInTheDocument()
     expect(within(navTree).getAllByText('Discover').length).toBeGreaterThan(0)
     expect(within(navTree).getAllByText('Biamp Tesira').length).toBeGreaterThan(0)
-    expect(within(navTree).getAllByText('Rocktron IntelliFex').length).toBeGreaterThan(0)
     expect(screen.queryByText('Files')).toBeNull()
     // The node identity card surfaces the display name plus the host/role plate.
     const nodeCard = screen.getByRole('button', { name: /Node map2-host \(Studio\)/i })
@@ -234,7 +234,7 @@ describe('AppShell global tree navigation', () => {
     expect(nodeCard).toHaveTextContent('ALL-IN-ONE')
   })
 
-  it('renders non-landing routes with the title strip and the global tree rail', () => {
+  it('renders non-landing routes with the page header controls and the global tree rail', () => {
     // Pre-pin the IntelFX device so the nav tree exposes a pinned device row under Devices.
     window.localStorage.setItem(
       'map2.ui.settings',
@@ -251,12 +251,12 @@ describe('AppShell global tree navigation', () => {
     expect(screen.getByRole('button', { name: 'Close IntelFX Rack' })).toBeInTheDocument()
     // Blue context bar was retired in T2447 — workspace name now owns the title surface.
     expect(container.querySelector('.shell-ctx')).toBeNull()
-    expect(container.querySelector('.shell-ws__main-name')).toHaveTextContent('IntelFX Rack')
+    expect(screen.getByRole('toolbar', { name: 'Workspace actions' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'IntelFX Rack' })).toBeInTheDocument()
     const navTree = screen.getByLabelText('Global navigation')
     expect(navTree).toBeInTheDocument()
     expect(within(navTree).getAllByText('Hardware').length).toBeGreaterThan(0)
     expect(within(navTree).getAllByText('Devices').length).toBeGreaterThan(0)
-    expect(within(navTree).getAllByText('Rocktron IntelliFex').length).toBeGreaterThan(0)
   })
 
   it('closes the current app back to the desktop route', async () => {
@@ -320,6 +320,53 @@ describe('AppShell global tree navigation', () => {
 
     await waitFor(() => {
       expect(screen.getByTestId('route-probe')).toHaveTextContent('/platforms/midpoint')
+    })
+  })
+
+  it('uses the breadcrumb host root to switch viewed host across all node page scopes', async () => {
+    renderInRouter(
+      <AppShell>
+        <>
+          <div>shell content</div>
+          <LocationProbe />
+        </>
+      </AppShell>,
+      ['/workspace/platforms/overview'],
+    )
+
+    fireEvent.click(screen.getByRole('button', { name: /current host map2-host/i }))
+    const hostSwitchButtons = screen.getAllByRole('button', { name: /stage-rack/i })
+    const breadcrumbHostOption = hostSwitchButtons.find((element) => (
+      element.className.includes('shell-kicker__host-switcher-option')
+    ))
+    expect(breadcrumbHostOption).toBeDefined()
+    fireEvent.click(breadcrumbHostOption as HTMLElement)
+
+    await waitFor(() => {
+      expect(screen.getByTestId('route-probe')).toHaveTextContent('/workspace/platforms/overview?viewedHost=node-remote')
+    })
+
+    const expectedPageKeys = Array.from(new Set(Object.values(NODE_PAGE_KEYS)))
+    const remoteHostCalls = mockSetViewedNode.mock.calls.filter((call) => call[1] === 'node-remote')
+    const remoteHostPageKeys = new Set(remoteHostCalls.map((call) => call[0]))
+    expect(remoteHostCalls.length).toBeGreaterThanOrEqual(expectedPageKeys.length)
+    expect(remoteHostPageKeys).toEqual(new Set(expectedPageKeys))
+  })
+
+  it('hydrates viewed host scope from the viewedHost query parameter', async () => {
+    renderInRouter(
+      <AppShell>
+        <div>shell content</div>
+      </AppShell>,
+      ['/workspace/platforms/overview?viewedHost=node-remote'],
+    )
+
+    await waitFor(() => {
+      const expectedPageKeys = Array.from(new Set(Object.values(NODE_PAGE_KEYS)))
+      const remoteHostCalls = mockSetViewedNode.mock.calls.filter((call) => call[1] === 'node-remote')
+      const remoteHostPageKeys = new Set(remoteHostCalls.map((call) => call[0]))
+      expect(remoteHostCalls.length).toBeGreaterThanOrEqual(expectedPageKeys.length)
+      expect(remoteHostPageKeys).toEqual(new Set(expectedPageKeys))
     })
   })
 

@@ -14,6 +14,7 @@ import {
   Tag, InlineNotification, SkeletonText,
 } from '@carbon/react'
 import { useQuery } from '@tanstack/react-query'
+import { useSetShellWindow } from '../../../layout/useSetShellWindow'
 
 import {
   getDeviceProfile,
@@ -70,6 +71,26 @@ export function DeviceDetailRoute(): React.JSX.Element {
   const profile = profileQuery.data?.profile ?? null
   const packSource: PackSourceRow | undefined =
     (packSourcesQuery.data?.sources ?? []).find((s) => s.pack_id === packId)
+  const shellTitle = profile ? `${profile.model}` : 'Device Detail'
+  const shellCrumbs = React.useMemo(() => {
+    const vendorLabel = packSource?.vendor ?? packId
+    if (!profile) {
+      return [
+        { label: 'Devices', to: '/devices' },
+        { label: 'Device Detail' },
+      ]
+    }
+    return [
+      { label: 'Devices', to: '/devices' },
+      { label: vendorLabel, to: '/devices' },
+      { label: profile.model },
+    ]
+  }, [packId, packSource?.vendor, profile])
+
+  useSetShellWindow({
+    title: shellTitle,
+    crumbs: shellCrumbs,
+  }, [shellTitle, shellCrumbs])
 
   if (!packId || !model) {
     return (
@@ -104,7 +125,7 @@ export function DeviceDetailRoute(): React.JSX.Element {
           subtitle={`No audio/midi/hid profile resolved for ${packId}/${model}.`}
         />
         <p>
-          <RouterLink to="/devices/store-v2">← Back to Hardware Store</RouterLink>
+          <RouterLink to="/devices">← Back to Hardware Store</RouterLink>
         </p>
       </div>
     )
@@ -126,7 +147,7 @@ export function DeviceDetailRoute(): React.JSX.Element {
       <header className="device-detail-route__hero">
         <div className="device-detail-route__hero-text">
           <p className="device-detail-route__crumb">
-            <RouterLink to="/devices/store-v2">Hardware Store</RouterLink>
+            <RouterLink to="/devices">Hardware Store</RouterLink>
             {' / '}
             <span>{packSource?.vendor ?? packId}</span>
           </p>

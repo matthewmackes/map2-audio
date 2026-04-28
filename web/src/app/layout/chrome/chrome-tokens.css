@@ -2,7 +2,7 @@
 
 :root {
   --ctx-h: 32px;
-  --ws-h: 40px;
+  --ws-h: 0px;
 
   --shell-blue-60: var(--cds-link-primary, #0f62fe);
   --shell-blue-50: #4589ff;

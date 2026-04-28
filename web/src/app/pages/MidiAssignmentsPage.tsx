@@ -21,7 +21,7 @@
 
 import * as React from 'react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { Link, useSearchParams } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Close, Music } from '@carbon/icons-react'
 
@@ -2068,9 +2068,9 @@ export function MidiAssignmentsPage() {
     <div className="midi-walk" style={rootVars}>
       <div className="app">
         <div className="header">
-          <span className="crumb"><b>MAP2</b></span>
+          <span className="crumb"><b><Link to="/workspace">MAP2</Link></b></span>
           <span className="sep">/</span>
-          <span className="crumb">Snapshot Editor</span>
+          <span className="crumb"><Link to="/snapshot-editor">Snapshot Editor</Link></span>
           <span className="sep">/</span>
           <span className="crumb"><b>MIDI Assignments</b></span>
           <div className="grow" />

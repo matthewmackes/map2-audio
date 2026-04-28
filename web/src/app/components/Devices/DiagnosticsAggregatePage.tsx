@@ -95,7 +95,7 @@ export function DiagnosticsAggregatePage(): React.JSX.Element {
       <header className="diagnostics-aggregate-page__head">
         <div>
           <p className="diagnostics-aggregate-page__crumb">
-            <RouterLink to="/devices/store-v2">Hardware Store</RouterLink> / Diagnostics
+            <RouterLink to="/devices">Hardware Store</RouterLink> / Diagnostics
           </p>
           <h1>Bench-wide diagnostics</h1>
           <p className="diagnostics-aggregate-page__sub">

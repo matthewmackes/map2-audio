@@ -75,6 +75,10 @@ import {
 } from '../../utils/nodeDisplay'
 import { useClusterSnapshotRuntimeLiveState } from '../../hooks/useSnapshotRuntimeState'
 import { readPersisted, writePersisted, type PersistedKey } from '../../utils/persistedState'
+import {
+  applyViewedNodeScopeToAllPages,
+  writeViewedHostToSearch,
+} from '../../utils/viewedNodeScope'
 import type { SnapshotRuntimeClusterLiveStateResponse, SnapshotRuntimeLiveState } from '../../../map2/types'
 import './GlobalTreeNav.css'
 
@@ -684,12 +688,6 @@ function renderTreeItems(
   })
 }
 
-function syncNodeScope(setViewedNode: (pageKey: string, nodeId: string) => void, nodeId: string) {
-  for (const pageKey of Object.values(NODE_PAGE_KEYS)) {
-    setViewedNode(pageKey, nodeId)
-  }
-}
-
 export function GlobalTreeNav({
   onLogOut,
   onOpenRebootConfirm,
@@ -805,7 +803,11 @@ export function GlobalTreeNav({
                         node.node_id === viewedNodeId && 'is-active',
                       )}
                       onClick={() => {
-                        syncNodeScope(setViewedNode, node.node_id)
+                        applyViewedNodeScopeToAllPages(setViewedNode, node.node_id)
+                        const nextSearch = writeViewedHostToSearch(location.search, node.node_id)
+                        if (nextSearch !== location.search) {
+                          navigate({ pathname: location.pathname, search: nextSearch }, { replace: true })
+                        }
                         setNodeSelectorOpen(false)
                       }}
                     >

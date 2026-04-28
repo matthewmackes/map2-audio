@@ -116,7 +116,7 @@ export function PackSourcesAdminPage(): React.JSX.Element {
     <div className="pack-sources-admin">
       <header className="pack-sources-admin__head">
         <p className="pack-sources-admin__crumb">
-          <RouterLink to="/devices/store-v2">Hardware Store</RouterLink> / Pack Sources
+          <RouterLink to="/devices">Hardware Store</RouterLink> / Pack Sources
         </p>
         <h1>Pack Sources</h1>
         <p className="pack-sources-admin__sub">

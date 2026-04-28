@@ -71,7 +71,7 @@ function renderRoute(path = '/devices/profile/edirol-ua/ua-1000/v2') {
       <QueryClientProvider client={client}>
         <Routes>
           <Route path="/devices/profile/:packId/:model/v2" element={<DeviceDetailRoute />} />
-          <Route path="/devices/store-v2" element={<div>store-v2 stub</div>} />
+          <Route path="/devices" element={<div>devices stub</div>} />
         </Routes>
       </QueryClientProvider>
     </MemoryRouter>,
@@ -83,8 +83,8 @@ test('DeviceDetailRoute: hero card + tab strip + Overview default', async () => 
   await waitFor(() => {
     expect(screen.getByRole('heading', { name: 'ua-1000', level: 1 })).toBeInTheDocument()
   })
-  // Crumb back to store-v2.
-  expect(screen.getByText('Hardware Store')).toBeInTheDocument()
+  const crumb = screen.getByRole('link', { name: 'Hardware Store' })
+  expect(crumb).toHaveAttribute('href', '/devices')
   // All five tabs present.
   expect(screen.getByRole('tab', { name: 'Overview' })).toBeInTheDocument()
   expect(screen.getByRole('tab', { name: 'Audio I/O' })).toBeInTheDocument()

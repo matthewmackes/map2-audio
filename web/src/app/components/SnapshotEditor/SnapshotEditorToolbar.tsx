@@ -1,5 +1,6 @@
 import { Music, Redo, Router, Save, Settings, SettingsAdjust, Undo } from '@carbon/icons-react'
 import { Button } from '@carbon/react'
+import { Link } from 'react-router-dom'
 
 type MonitorSegment = 'input' | 'output' | 'clip'
 
@@ -118,7 +119,7 @@ export function SnapshotEditorToolbar({
         aria-label="Snapshot editor toolbar"
       >
         <nav className="snapshot-toolbar__breadcrumbs" aria-label="Snapshot breadcrumbs">
-          <span>Snapshots</span>
+          <Link to="/snapshots">Snapshots</Link>
           <span className="snapshot-toolbar__breadcrumb-separator">/</span>
           <span title={title}>{title}</span>
           <span className="snapshot-toolbar__breadcrumb-separator">/</span>
