@@ -19,6 +19,7 @@ from dataclasses import dataclass, field
 from enum import Enum
 from datetime import datetime, timezone
 
+from app.midi.curves import CurveType
 from app.utils.rtmidi_utils import dispose_rtmidi_client
 
 logger = logging.getLogger(__name__)
@@ -54,15 +55,6 @@ class MIDIMessageType(Enum):
     CHANNEL_AFTERTOUCH = 0xD0
     PITCH_BEND = 0xE0
     SYSTEM = 0xF0
-
-
-class CurveType(Enum):
-    """Response curve types for CC mapping."""
-    LINEAR = "linear"
-    LOGARITHMIC = "logarithmic"
-    EXPONENTIAL = "exponential"
-    S_CURVE = "s_curve"
-    REVERSE = "reverse"
 
 
 @dataclass

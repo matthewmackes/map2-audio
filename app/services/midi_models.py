@@ -6,13 +6,7 @@ from dataclasses import dataclass, field
 from enum import Enum
 from typing import Dict, Optional
 
-
-class CurveType(str, Enum):
-    """MIDI CC value curve types."""
-    LINEAR = "linear"
-    LOGARITHMIC = "logarithmic"
-    EXPONENTIAL = "exponential"
-    S_CURVE = "s_curve"
+from app.midi.curves import CurveType
 
 
 class ActionType(str, Enum):

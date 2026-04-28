@@ -911,7 +911,7 @@ Last updated: 2026-04-28 10:12 EDT - Codex: slice 1 shipped; H3 remains in progr
 ---
 
 ID: T2459-H4
-Status: [ ] Todo
+Status: [>] In Progress
 Parent: T2459-H
 Title: Migrate device services to device-packs — Maschine MK1, MPX-1, IntelFX, SysEx parsers
 Description:
@@ -919,6 +919,21 @@ Description:
 - Acceptance: every device that drove a MIDI flow before this subtask still drives it after, but through device-packs + libremidi + the mapping engine. Bench HIL run with UA-1000 + Maschine MK1 + MPX-1 (if present) + IntelFX (if present) shows: SysEx imports work, footswitch flows route through the engine, Maschine LEDs/pads are driven from the host. Python device-services slim by ≥ 70% LoC; the four CurveType duplicates collapse to one canonical `app/midi/curves.py`.
 - Required outputs: device-packs for Maschine MK1 + MPX-1 + IntelFX, JS-side SysEx parsers, shared `sysex-tags.js`, slimmed Python services, `app/midi/curves.py` consolidation with deprecation aliases for one release cycle, integration tests asserting parity with legacy paths, evidence directory.
 Assigned to: Claude
+Completion note: 2026-04-28 — Codex: **Slice 1 SHIPPED (shared MIDI curve enum consolidation).**
+  Delivered:
+  - Added canonical `app/midi/curves.py` + `app/midi/__init__.py` with one shared `CurveType` enum (`linear`, `logarithmic`, `exponential`, `s_curve`, `reverse`).
+  - Replaced duplicated curve enums in:
+    - `app/services/midi_models.py`
+    - `app/services/midi_engine.py`
+    - `app/services/midi_device_profiles.py`
+  - Added regression coverage: `tests/test_midi_curve_type_consolidation_t2459h4.py` asserting all three services now reference the same canonical type.
+  Validation:
+  - `pytest -q tests/test_midi_curve_type_consolidation_t2459h4.py tests/test_midi_v2_routes.py tests/test_midi_device_profiles_t2459h3.py tests/test_midi_commander_surface_protocol.py tests/test_midi_commander_surface_service.py tests/test_enriched_midi_physical_surfaces_service.py tests/test_enriched_surface_runtime.py tests/test_device_packs_schema.py` → **55 passed**.
+  Remaining for full H4 acceptance:
+  - MPX-1 / IntelFX SysEx JS migration + shared `device-packs/_runtime/sysex-tags.js`.
+  - Maschine MK1 and other device-service cuts to host-client facades.
+  - Bench HIL parity evidence with migrated devices.
+Last updated: 2026-04-28 10:35 EDT - Codex: curve-consolidation slice shipped; H4 remains in progress.
 
 ---
 

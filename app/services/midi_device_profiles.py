@@ -17,6 +17,7 @@ from pathlib import Path
 
 from sqlalchemy.ext.asyncio import AsyncSession
 
+from app.midi.curves import CurveType
 from app.services.midi_models import (
     ActionType,
     CommandType,
@@ -54,13 +55,6 @@ MELOAUDIO_PACK_PROFILE_PATH = (
     / "profiles"
     / "midi-commander.midi.yaml"
 )
-
-
-class CurveType(str, Enum):
-    LINEAR = "linear"
-    LOGARITHMIC = "logarithmic"
-    EXPONENTIAL = "exponential"
-    S_CURVE = "s_curve"
 
 
 class SwitchMode(str, Enum):
