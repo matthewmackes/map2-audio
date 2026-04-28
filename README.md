@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1369** Python | **1332** TypeScript | **176** C++/H | **145** Docs | **3009** total commits | **3** stars | **0** forks | **0** open issues
+**1369** Python | **1332** TypeScript | **176** C++/H | **145** Docs | **3011** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`6e990706`](https://github.com/matthewmackes/map2-audio/commit/6e9907065f20898e43791cecffff0afecf83871d) | T2459-H3: reject script-bound activations with unresolved... | Map2 Audio | 2026-04-28 |
+| [`28291dc6`](https://github.com/matthewmackes/map2-audio/commit/28291dc67d553f2d40e9bcef2170dcaa565dbd6d) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-28 |
 | [`801c4bcc`](https://github.com/matthewmackes/map2-audio/commit/801c4bcc02ee79f3ed1a302f17e51be2860514b9) | T2459-H5: mark legacy unified MIDI surfaces deprecated | Map2 Audio | 2026-04-28 |
 | [`0ad9ac47`](https://github.com/matthewmackes/map2-audio/commit/0ad9ac47cd9676947d3d55f18560406daa66a3ab) | T2459-H5: add regression guard for retired hub availabili... | Map2 Audio | 2026-04-28 |
 | [`40cfac50`](https://github.com/matthewmackes/map2-audio/commit/40cfac5085618799a2238857f216d9db80c62cb0) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-28 |
 | [`37375ed4`](https://github.com/matthewmackes/map2-audio/commit/37375ed4a1044ac8bf93a5e6a8b922bcafc0adbb) | T2459-H5: retire MIDI_HUB_AVAILABLE from midi_v2 routes | Map2 Audio | 2026-04-28 |
 | [`9b9df8c8`](https://github.com/matthewmackes/map2-audio/commit/9b9df8c85dce1b70dddb7ee5601e379b8a4fce2c) | T2459-H5: remove sysex bridge availability boolean gating | Map2 Audio | 2026-04-28 |
 | [`9c6c2326`](https://github.com/matthewmackes/map2-audio/commit/9c6c2326d628c1f5712d2d591f92d8aa9f70a44e) | T2459-H5: remove midi_engine availability boolean gating | Map2 Audio | 2026-04-28 |
-| [`80dde2b1`](https://github.com/matthewmackes/map2-audio/commit/80dde2b16ccd0fe698a546115d47e4bb822a4047) | T2459-H5: remove midi_broadcast availability boolean gating | Map2 Audio | 2026-04-28 |
-| [`2101f425`](https://github.com/matthewmackes/map2-audio/commit/2101f4253cf8cbc1705f035080d57c78e71fcedb) | T2459-H5: remove midi_learn availability boolean gating | Map2 Audio | 2026-04-28 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
