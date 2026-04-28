@@ -17,6 +17,8 @@ def _apirouter_assignments() -> dict[str, set[str]]:
     for path in ROUTES_DIR.glob("*.py"):
         if path.name == "__init__.py":
             continue
+        if path.name.startswith("_"):
+            continue
         module = ast.parse(path.read_text(encoding="utf-8"), filename=str(path))
         module_assignments: set[str] = set()
         for node in ast.walk(module):
