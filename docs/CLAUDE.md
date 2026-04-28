@@ -338,6 +338,15 @@ Never assume:
 - Transitional exception: deployment mode currently spans `/etc/guitarfx-mode.conf`, `/etc/map2/environment`, `~/.map2/deployment.json`, and systemd mode drop-ins. Treat `map2-mode.sh` as the reconciliation entrypoint and do not introduce a fourth/fifth parallel store.
 - Reference: `docs/architecture/CONFIGURATION_AUTHORITY_MODEL.md`
 
+### Controller / Mapping / Device-Pack Subsystem
+
+- The controller layer (MIDI/HID/USB device input → mapping engine → audio engine targets) runs in a **separate `map2-controller-host` process** with its own crash-isolation budget. The Python backend and JUCE audio engine consume controller events as IPC clients.
+- **Vendor packs** under `device-packs/<vendor>/<model>/` are the canonical authoring surface. Each pack carries XML mapping + JS scripts + manifest. Do not hand-code device profiles in Python (`midi_device_profiles.py` is being phased out).
+- **Mixxx interop**: imports under `device-packs/_mixx-imports/` are GPLv2-or-later — preserve attribution, never strip-and-rewrite. The MAP2-side mapping engine is a clean reimplementation of the Mixxx ControllerEngine pattern (re-uses the same XML/JS shape, runs imports as data).
+- **Sub-millisecond fast path**: only audio-rate MIDI events (clock-sync, sample-accurate triggers) ride the host→engine SPSC shm event ring. Everything else uses the UDS control plane.
+- `python-rtmidi` and the C++ `Map2MidiController` raw-ALSA path are deprecated — both retire under T2459-H. New MIDI work routes through the host (libremidi I/O on the host side; the engine consumes the shm ring exclusively).
+- Reference: `docs/architecture/CONTROLLER_LAYER.md` (locked-decisions doc — read this before authoring vendor packs or extending the controller-host IPC).
+
 ### Tier A Locked Settings (NEVER change at runtime via API)
 
 | Setting | Locked Value |

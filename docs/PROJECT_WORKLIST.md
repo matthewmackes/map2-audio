@@ -171,14 +171,16 @@ Locked architectural decisions (per user Q&A 2026-04-26):
 ---
 
 ID: T2459-A1
-Status: [ ] Todo
+Status: [✓] Done
 Parent: T2459
 Title: Architecture decision doc — `docs/architecture/CONTROLLER_LAYER.md`
 Description:
 - Goal: Write the locked-decisions architecture doc covering: subsystem charter, Mixxx-pattern reference (with citations to `src/controllers/`), native rewrite stance, license-compliance posture, QuickJS choice rationale, separate `map2-controller-host` process design with IPC schema, vendor-pack format, single-repo policy, GUI-2 + β1 + γ1 scope, controller-host crash-isolation budget, fast-path C++ exemption for sub-millisecond MIDI bindings, build/deploy integration with `update` shorthand, CI gate definitions (Definition of Done per CLAUDE.md §0.8).
 - Acceptance: doc is comprehensive enough that any future contributor can author a vendor pack or extend the engine API without re-asking architectural questions.
 - Required outputs: `docs/architecture/CONTROLLER_LAYER.md` (~2000-3000 words), cross-link from `docs/CLAUDE.md` Critical System Rules.
+Completion note: 2026-04-28 — Claude: SHIPPED. Audit confirmed `docs/architecture/CONTROLLER_LAYER.md` is already authoritative at 423 lines covering all 10 required sections — Charter (§1), Mixxx pattern reference with adopted vs. not-adopted patterns (§2), two-process model with crash-isolation budget + fast-path C++ exemption (§3), vendor-pack format with directory layout + schema excerpt + vendor-override TSX (§4), IPC contract with transport + message types + schema sync (§5), Mixxx interoperability with license posture + import/export/bridge/round-trip-test (§6), GUI authoring model + persistence + JS escape hatch (§7), build/deploy integration with `update` shorthand + CI gates per CLAUDE.md §0.8 (§8), open questions for future epics (§9), and cross-references (§10). Cross-linked from `.gemini/instructions.md` (the canonical Claude rulebook). The remaining acceptance bullet — cross-link from `docs/CLAUDE.md` Critical System Rules — landed in this turn: added a new "Controller / Mapping / Device-Pack Subsystem" rule block to `docs/CLAUDE.md` §Critical System Rules (between Configuration Authority Model and Tier A Locked Settings) summarising the host-process boundary, vendor-pack canonicality, Mixxx interop license posture, fast-path constraint, and the deprecation of `python-rtmidi` / `Map2MidiController` under T2459-H, with `Reference: docs/architecture/CONTROLLER_LAYER.md` as the load-bearing pointer.
 Assigned to: Claude
+Last updated: 2026-04-28 EDT - Claude: SHIPPED.
 
 ---
 
