@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1381** Python | **1357** TypeScript | **177** C++/H | **145** Docs | **3044** total commits | **3** stars | **0** forks | **0** open issues
+**1381** Python | **1357** TypeScript | **177** C++/H | **145** Docs | **3047** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`64176d12`](https://github.com/matthewmackes/map2-audio/commit/64176d12bec32996aafececfbaad02abf827ebe4) | Merge origin/master into B5 NodeGraph refit | Map2 Audio | 2026-04-28 |
+| [`38058230`](https://github.com/matthewmackes/map2-audio/commit/38058230adb093e53d73c9da3696425a59595a78) | T2474 B5: NodeGraph refit — first workspace migration con... | Map2 Audio | 2026-04-28 |
+| [`0fe5de1a`](https://github.com/matthewmackes/map2-audio/commit/0fe5de1af2bace4f57af0b442082a476fb67e27a) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-28 |
 | [`c7b5945c`](https://github.com/matthewmackes/map2-audio/commit/c7b5945c725b41e74de7cee0e61b6ccf69685a41) | Merge origin/master into B4 primitives library | Map2 Audio | 2026-04-28 |
 | [`1a5b6566`](https://github.com/matthewmackes/map2-audio/commit/1a5b6566b3731d62916e88ace964884165cf036b) | T2474 B4: Shared primitives library — 21 new Carbon-disci... | Map2 Audio | 2026-04-28 |
 | [`95c6bfc6`](https://github.com/matthewmackes/map2-audio/commit/95c6bfc6610233c75c8fea6c9b5453ea48615e14) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-28 |
 | [`3ee3688a`](https://github.com/matthewmackes/map2-audio/commit/3ee3688ae76e4803d7192530089e1f9f24978fcf) | Merge origin/master into B3 landing/launcher refit | Map2 Audio | 2026-04-28 |
 | [`53f5b9e7`](https://github.com/matthewmackes/map2-audio/commit/53f5b9e764da316ab0df69377732fe9bc42c081f) | T2474 B3: Landing/launcher refit — Carbon discipline appl... | Map2 Audio | 2026-04-28 |
-| [`5f8cae6a`](https://github.com/matthewmackes/map2-audio/commit/5f8cae6aecdacac2b9479892c6c0f163a3b40976) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-28 |
-| [`46c125e5`](https://github.com/matthewmackes/map2-audio/commit/46c125e50c67664524e5ed00935ad0ec22fdadde) | T2474: Worklist backfill — per-bundle audit trail for B0/... | Map2 Audio | 2026-04-28 |
-| [`361f2312`](https://github.com/matthewmackes/map2-audio/commit/361f23128a42d6fa4f003ec82e5380b23340f7aa) | T2474 B2: AppShell refit — Carbon discipline applied to t... | Map2 Audio | 2026-04-28 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
