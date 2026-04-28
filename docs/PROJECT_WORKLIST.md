@@ -1024,6 +1024,16 @@ Completion note: 2026-04-28 — Codex: **Slice 2 SHIPPED (unified MIDI router mo
   - Shrink `app/services/midi_hub/` runtime ownership to host-client facades (clock/recorder/router/message mapping still Python-owned).
   - Land explicit deprecation shims/retirement plan for the legacy route modules and formal v1 retirement flow.
   - Complete host-owned UMP round-trip and preserve recorder golden artifacts under the migrated path.
+  2026-04-28 — Codex: **Slice 4 SHIPPED (`MIDIService` hub bridge no longer gated by `MIDI_HUB_AVAILABLE`).**
+  Delivered:
+  - Refactored `app/services/midi_service.py` optional import handling to set `get_midi_hub = None` on missing integration.
+  - `_init_hub_bridge()` now checks callable/type availability (`get_midi_hub` and `VirtualMidiPort`) directly instead of a global availability boolean.
+  Validation:
+  - `pytest -q tests/midi_hub/test_consumer_migration.py tests/test_midi_service_snapshot_program_change.py` -> **9 passed**.
+  Remaining for full H5 acceptance:
+  - Remove remaining `MIDI_HUB_AVAILABLE` execution gating in other Python MIDI services (`midi_learn`, `midi_broadcast`, `midi_engine`, `sysex_device_bridge`).
+  - Land explicit deprecation shims/retirement plan for the legacy route modules and formal v1 retirement flow.
+  - Complete host-owned UMP round-trip and preserve recorder golden artifacts under the migrated path.
 Last updated: 2026-04-28 11:26 EDT - Codex: unified route-registration + callable-gating slices shipped; H5 remains in progress.
 
 ---
