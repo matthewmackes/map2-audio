@@ -1,0 +1,20 @@
+// MAP2 Audio Platform — top-level SCSS entry point
+//
+// This file is the canonical SCSS entry for the MAP2 frontend. Every shared
+// SCSS module in the codebase should `@use` this file (or one of its `@use`d
+// partials) rather than importing Carbon directly, so the token contract
+// stays single-sourced.
+//
+// Bundle 0 (T2474, this commit) establishes the SCSS pipeline:
+//   - sass is in devDependencies (Vite preprocesses *.scss transparently)
+//   - this file imports successfully and emits no rules of its own
+//   - downstream bundles add tokens, mixins, and primitives without
+//     touching the build infrastructure again.
+//
+// Bundles B1–B4 populate _tokens.scss, _mixins.scss, and a `primitives/`
+// subfolder with the canonical visual system. B5–B12 migrate every page to
+// consume those primitives. The plain CSS files under web/src/ remain valid
+// for the lifetime of those migrations and are retired page-by-page.
+
+@use 'tokens';
+@use 'mixins';

@@ -9,6 +9,10 @@ import '@fontsource/jetbrains-mono/400.css'
 import '@carbon/styles/css/styles.css'
 import './app/theme/themeBlueprint.css'
 import './index.css'
+// MAP2 Carbon-disciplined SCSS pipeline — see web/src/app/styles/scss/map2.scss.
+// B0 wires the entry point so downstream bundles (B1+) populate it without
+// touching the build infrastructure again.
+import './app/styles/scss/map2.scss'
 import ErrorBoundary from './app/components/ErrorBoundary'
 import { initializePlatformTypography, initializeTheme } from './app/theme'
 import { installDevResponsivenessDiagnostics, markShellReady } from './app/performance/devDiagnostics'

@@ -1,0 +1,13 @@
+// MAP2 Audio Platform — shared SCSS mixins
+//
+// Bundle 0 placeholder. Bundle 4 (T2474) populates this with:
+//   - panel($variant): canonical surface frame
+//   - status-chip-tone($severity): tone application for StatusChip
+//   - focus-ring($color): Carbon-aligned focus ring
+//   - dense-table-row(): dense technical-readout row spacing
+//
+// At B0 the only requirement is that this file compiles when imported, so
+// downstream `@use` statements resolve cleanly.
+
+// Reserved namespace marker — keep until B4 populates real mixins.
+$_map2-mixins-reserved: true;

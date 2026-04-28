@@ -1,0 +1,15 @@
+// MAP2 Audio Platform — Carbon-disciplined design tokens (SCSS)
+//
+// Bundle 0 placeholder. Bundle 1 (T2474) replaces this with the full token
+// contract: blue-60 primary, Carbon gray surfaces, MAP semantic tokens
+// (live/staged/uncommitted/health/latency/sync/avb/blocking-vs-advisory),
+// expanded palette and shell catalogs, and validateThemeContract().
+//
+// At B0 we only re-export Carbon's theme/spacing/motion modules so downstream
+// SCSS modules can `@use` this partial without depending on Carbon's internal
+// path layout.
+
+@forward '@carbon/styles/scss/theme';
+@forward '@carbon/styles/scss/spacing';
+@forward '@carbon/styles/scss/motion';
+@forward '@carbon/styles/scss/type';

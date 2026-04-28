@@ -33636,3 +33636,87 @@ Last updated: 2026-04-20 15:10 EDT - Codex
 - Validation:
   - `python3 scripts/validate_worklist.py docs/PROJECT_WORKLIST.md` -> PASS (no duplicate IDs)
   - `python3 -m pytest tests/test_maschine_mk1.py tests/test_maschine_fonts.py tests/test_maschine_lcd_service.py tests/test_maschine_boot_shutdown.py tests/test_maschine_led_animations.py tests/test_maschine_led_choreography.py tests/test_maschine_onboarding.py tests/test_maschine_screensaver.py tests/test_maschine_admin_console.py tests/test_maschine_incident_log.py tests/test_maschine_mk1_protocol.py tests/test_maschine_mk1_daemon.py tests/test_maschine_transport.py tests/test_maschine_routes.py tests/test_maschine_pressure_routing.py tests/test_maschine_long_op_feedback.py -q` -> PASS (120 passed)
+
+---
+
+## Epic: Carbon Discipline Visual System Sweep (opened 2026-04-28)
+
+Epic overview: Rebuild the MAP2 web frontend visual system as a strict Carbon-disciplined, appliance-grade operating environment. Replace the cyan/amber/red "active/armed/live" + glass + aurora + glow design language with blue-60 Carbon primary on Carbon gray surfaces. Multi-palette generator retained, expanded with formal discipline contract (contrast, gray-dominance, glow-bound, required-keys), expanded palette catalog, expanded shell catalog (true-black OLED, high-contrast, colorblind-safe), and MAP-specific semantic tokens (live-vs-staged, runtime-vs-authority, signal-flow, node/device health, latency bands, clock/sync, AVB, commit/apply, blocking-vs-advisory). Maximum @carbon/react alignment — migrate custom + MUI duplicates to Carbon equivalents. Full call-site migration; old component files stay on disk (no deletion this pass). 13-bundle delivery (B0–B12), one commit per bundle, autonomous dual-push + rebuild + restart per CLAUDE.md §0.6. Visual verification waived (typecheck + tests + clean build + restart only) per locked Q&A. Showcase surface: AppShell + landing/launcher (B2–B3); pages inherit. Five follow-up epics queued (T2479 MUI removal, T2480 plugin-card consolidation, T2481 graph-rendering consolidation, T2482 philosophy docs upkeep, T2483 visual regression harness).
+
+ID: T2474
+Status: [>] In Progress
+Title: Carbon Discipline Visual System Sweep — Bundles B0 through B12
+Description:
+- Goal / acceptance criteria: Execute B0 (SCSS infra), B1 (token contract + discipline + palette/shell expansion + MAP semantic tokens), B2 (AppShell refit), B3 (landing/launcher refit), B4 (~20 shared primitives: PageHeader, SectionHeader, SystemStatusBar, StatusChip, MetricCard, ControlPanel, RoutingPanel, SignalChainBlock, DeviceNodeCard, ModuleCard, ActionButton, DangerButton, EmptyState, ErrorState, LoadingState, AlertPanel with blocking-vs-advisory split, CommitPrompt, StagedChangesIndicator, LatencyChip, ClockSyncChip, AvbStatusChip, HealthMetric, DrawerPanel), B5 (NodeGraph), B6 (AudioEngine), B7 (MidiHub + AvbRouting + ApiObservatory), B8 (ClusterDashboard + ManagementWorkspace), B9 (Maschine + Devices + DeviceContext + NodeNav), B10 (remaining pages), B11 (App.tsx route loading states), B12 (final sweep + design-system docs). Each bundle commits, dual-pushes to origin + gitlab, rebuilds web/dist atomically, restarts port 3000. Typecheck + tests + clean build are the gate; visual verification waived this sweep.
+- Why it matters: User-locked direction (Q1=A strict Carbon, Q2=C full sweep, Q3=A max Carbon, Q4=D+E expanded multi-palette + discipline contract, Q5=E autonomous, Q6=E skip visual verify, Q7=B AppShell showcase, Q8=C full MAP-concept pass, Q9=C Carbon SCSS primary, Q10=C full call-site migration). The current codebase has two parallel design languages (design-language.css cyan/amber/red/glass/aurora/glow vs themeFactory Carbon-aligned) and no canonical primitives — operators get inconsistent status pills, alerts, and metric cards across 95+ component dirs. This sweep makes blue-60 + Carbon gray the only visual vocabulary and gives every MAP UX concept a first-class semantic token + primitive component.
+- Dependencies: None (foundational — gates T2479–T2483 follow-ups).
+- Estimated effort: Multi-day, 13 atomic bundles.
+- Required outputs: 13 commits to master (one per bundle, all dual-pushed), expanded `themeFactory.ts` with `validateThemeContract()`, retired decorative tokens in `design-language.css`, new `web/src/app/components/primitives/` library, every page using new primitives, design-system docs in `docs/design/CARBON_DISCIPLINE_DESIGN_SYSTEM.md`.
+Assigned to: Claude Opus 4.7
+Last updated: 2026-04-28 - Claude
+
+---
+
+## Epic: Visual System Follow-Up Work (opened 2026-04-28)
+
+Epic overview: Five discrete follow-up epics surfaced during the Carbon Discipline Visual System Sweep audit. T2475 (MUI removal) and T2478 (philosophy docs) and T2479 (visual regression harness) execute autonomously after T2474 completes. T2476 (plugin-card consolidation) and T2477 (graph-rendering consolidation) are paused — they are architectural refactors with real behavioral risk and require their own clarification round before execution.
+
+ID: T2475
+Status: [ ] Todo
+Title: MUI dependency removal — verify no transitive usage and drop @mui/material from package.json
+Description:
+- Goal / acceptance criteria: Confirm zero `@mui/material` imports under `web/src/`. Remove `@mui/material` from `web/package.json` `dependencies`. Run `npm install` (or `npm ci`) to regenerate lockfile. Run `npm run typecheck`, `npm run build`, full Jest suite. Compare `web/dist/assets/*.js` total bundle size before/after; report shrinkage. Update `docs/CLAUDE.md` Tech Stack table to remove MUI row. If any transitive dep still pulls `@mui/material`, document and resolve.
+- Why it matters: CLAUDE.md says MUI is "legacy only — do not expand" but it ships in every bundle. The visual-system audit found zero direct imports under `web/src/app/`, so removing the dep is safe and shrinks the bundle. Direct continuation of T2474 (Carbon-only direction).
+- Dependencies: T2474 (must complete first; some pages may still touch MUI before B12).
+- Estimated effort: Small.
+- Required outputs: `web/package.json` and `web/package-lock.json` without `@mui/material`; bundle-size delta noted in commit message; CLAUDE.md tech stack table updated.
+Assigned to: Claude Opus 4.7
+Last updated: 2026-04-28 - Claude
+
+ID: T2476
+Status: [ ] Todo
+Title: Plugin-card template consolidation — collapse PluginCards/{Base,Custom,Layouts,Visualizations,...} into unified schema
+Description:
+- Goal / acceptance criteria: Audit `web/src/app/components/PluginCards/` (6+ subdirectories: Base, Custom, Layouts, Visualizations, etc.). Design a single schema-driven primitive (e.g., `<PluginCard plugin={...} layout={...} />`) that replaces the template sprawl. Migrate every plugin (LV2, custom HTML, MIDI dialogs, IntelFX, MPX1) to the unified primitive. Preserve all plugin behaviors (parameter binding, MIDI assignment, bypass, preset recall, custom UI rendering). Validate with full Jest + manual operator-flow testing. PAUSED pending user clarification round (Q&A on schema shape, parameter-binding contract, custom-HTML escape hatch).
+- Why it matters: PluginCards is the largest single component dir; six subdirectories with overlapping concerns make it the heaviest maintenance burden in the frontend. Visual-system sweep can't unify plugin UI without this consolidation.
+- Dependencies: T2474 (visual system + primitives must exist first).
+- Estimated effort: Large — architectural refactor with behavioral risk.
+- Required outputs: Unified `<PluginCard>` primitive with documented schema; all plugin types migrated; Base/Custom/Layouts/Visualizations subdirectories collapsed; full Jest pass.
+Assigned to: TBD (paused — awaits clarification round)
+Last updated: 2026-04-28 - Claude
+
+ID: T2477
+Status: [ ] Todo
+Title: Graph-rendering consolidation — unify ReactFlow + custom canvas + custom builder into one signal-flow primitive
+Description:
+- Goal / acceptance criteria: Audit the three concurrent graph-rendering approaches: (1) ReactFlow in NodeGraph, (2) custom canvas in AudioEngineWorkspaceGraph, (3) custom builder logic in AvbRoutingWorkspaceGraph + ManagementWorkspaceGraph. Design a single signal-flow primitive (`<SignalFlowGraph nodes={...} edges={...} layout={...} />`) backed by ReactFlow with a unified node/edge schema. Migrate all four call sites to the primitive. Preserve all interactions: drag-rewire, zoom/pan, edge highlighting, node selection, tearsheet, clustering. Validate with Jest + manual routing-edit testing. PAUSED pending user clarification round (Q&A on whether ReactFlow stays as the substrate, custom-renderer escape hatches, performance budget for large graphs).
+- Why it matters: Three different graph builders mean three sets of bugs, three sets of perf characteristics, three sets of UX inconsistencies. Signal-flow is one of MAP2's core operator concepts (Q8=C); it deserves one canonical rendering.
+- Dependencies: T2474 (tokens + primitives), ideally after T2476 (so plugin cards inside graph nodes use the unified primitive).
+- Estimated effort: Large — architectural refactor with behavioral risk in MAP2's identity surface (NodeGraph).
+- Required outputs: Unified `<SignalFlowGraph>` primitive; all four call sites migrated; documented node/edge schema; Jest + integration-test coverage.
+Assigned to: TBD (paused — awaits clarification round)
+Last updated: 2026-04-28 - Claude
+
+ID: T2478
+Status: [ ] Todo
+Title: Philosophy docs upkeep — update docs/philosophy/*.md to reflect Carbon discipline visual system
+Description:
+- Goal / acceptance criteria: Per memory rule `feedback_philosophy_docs_upkeep.md`: when a major architectural change touches the platform's identity, the relevant philosophy docs must be updated as a Definition-of-Done gate. Identify which `docs/philosophy/*.md` files describe MAP2's visual identity, operator surface design, or design-system principles. Update them to reflect: (a) Carbon discipline as the canonical visual language, (b) blue-60 primary + Carbon gray surfaces, (c) the formal discipline contract enforced by `themeFactory.ts`, (d) the new MAP semantic tokens (live/staged/uncommitted/health/latency/sync/avb/blocking-vs-advisory), (e) the canonical primitives library, (f) deprecation of cyan/amber/red/glass/aurora/glow.
+- Why it matters: Standing rule. The visual-system sweep is exactly the kind of identity-touching change that requires philosophy upkeep.
+- Dependencies: T2474.
+- Estimated effort: Small — doc edits only.
+- Required outputs: Updated `docs/philosophy/*.md` files; commit message references T2474 + T2478.
+Assigned to: Claude Opus 4.7
+Last updated: 2026-04-28 - Claude
+
+ID: T2479
+Status: [ ] Todo
+Title: Visual regression harness — extend visual:home-smoke + visual:workspace-smoke with screenshot baselines
+Description:
+- Goal / acceptance criteria: Q6=E waived in-browser visual verification for the T2474 sweep, on the assumption that a screenshot-baseline harness would catch future drift automatically. Extend `npm run visual:home-smoke` (`scripts/run_home_visual_smoke.mjs`) and `npm run visual:workspace-smoke` (`scripts/run_workspace_visual_smoke.mjs`) with Playwright screenshot baselines for: AppShell + every showcase page (HomePage, MidiHubShell, AudioEnginePage, NodeGraph, AvbRoutingWorkspace, ClusterDashboardWorkspace, ManagementWorkspace, ApiObservatory). Store baselines under `web/test-baselines/`. Add a CI-friendly diff command (`npm run visual:diff`) that exits non-zero on visual change. Document the baseline-update workflow in `docs/design/VISUAL_REGRESSION_HARNESS.md`.
+- Why it matters: Without automated visual drift detection, the new Carbon discipline can silently regress. Locks the gains from T2474.
+- Dependencies: T2474, T2475, T2478.
+- Estimated effort: Medium.
+- Required outputs: Extended Playwright scripts; `web/test-baselines/` populated; `npm run visual:diff` script; documentation.
+Assigned to: Claude Opus 4.7
+Last updated: 2026-04-28 - Claude
