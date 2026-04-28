@@ -804,7 +804,7 @@ Description:
   - Worklist completion notes per subtask, dual-push to origin + gitlab, full release loop verification per CLAUDE.md §0.6
 Subtasks: T2459-H1 .. T2459-H7 (7 subtasks; see below)
 Assigned to: Claude
-Last updated: 2026-04-28 10:12 EDT - Codex: H3 migration slice shipped (MeloAudio pack + legacy profile shim + tests); H3 remains active for host mapping activation wire-up + bench HIL evidence.
+Last updated: 2026-04-28 10:45 EDT - Codex: H3 slices 1-2 shipped (MeloAudio pack migration + legacy alias + host-client activation IPC); H4 curve-consolidation slice shipped; remaining H acceptance is host dispatcher wiring + broader device migrations + bench HIL.
 
 ---
 
@@ -906,7 +906,19 @@ Completion note: 2026-04-28 — Codex: **Slice 1 SHIPPED (pack migration + legac
   Remaining for full H3 acceptance:
   - Host production path still needs `mapping_activate`/script-load wiring in `map2-controller-host` main-loop dispatcher so device-pack scripts execute on inbound MIDI in production (H2 unit coverage exists; production dispatcher path pending).
   - Bench HIL evidence run (`docs/fit-for-purpose-evidence/<YYYYMMDD>/t2459h3-meloaudio-commander/`) pending physical controller availability.
-Last updated: 2026-04-28 10:12 EDT - Codex: slice 1 shipped; H3 remains in progress.
+  2026-04-28 — Codex: **Slice 2 SHIPPED (Python host-client IPC activation surface).**
+  Delivered:
+  - Extended `app/services/midi_host_client.py` with fire-and-forget IPC methods:
+    - `load_script(...)` -> `script_load_request`
+    - `activate_mapping(...)` -> `mapping_activate`
+  - Added descriptor serialization helper `_descriptor_payload(...)` to convert loaded mapping descriptors into the wire payload expected by `controller_host.py` / `IpcMessages.h`.
+  - Added focused tests `tests/test_midi_host_client_t2459h3.py` for payload shape + unreachable socket behavior.
+  Validation:
+  - `pytest -q tests/test_midi_host_client_t2459h1.py tests/test_midi_host_client_t2459h3.py tests/test_midi_v2_routes.py tests/test_midi_device_profiles_t2459h3.py tests/test_midi_curve_type_consolidation_t2459h4.py tests/test_device_packs_schema.py` -> **49 passed**.
+  Remaining for full H3 acceptance:
+  - Host C++ dispatcher still must consume `script_load_request` and `mapping_activate` in production path and emit/route resulting engine commands from live MIDI traffic.
+  - Physical HIL evidence run with MeloAudio hardware.
+Last updated: 2026-04-28 10:45 EDT - Codex: slices 1-2 shipped; H3 remains in progress.
 
 ---
 

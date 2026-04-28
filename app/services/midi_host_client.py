@@ -9,10 +9,10 @@ forwarding MIDI calls over the same UDS that
 host is the single source of MIDI truth: libremidi I/O on the C++
 side, Python is a typed client.
 
-This module ships only the read-only ``list_ports()`` surface so the
-H1 acceptance bullet is met (port enumeration parity vs. python-rtmidi
-on the bench). Send-side calls and the binding/learn surface land with
-H2/H3 alongside the QJS mapping engine.
+This module ships the H1 ``list_ports()`` round-trip plus H3 fire-and-
+forget command surfaces (`script_load_request`, `mapping_activate`) so
+the Python backend can drive host mapping activation without depending
+on python-rtmidi.
 """
 from __future__ import annotations
 
@@ -21,7 +21,7 @@ import threading
 import uuid
 from dataclasses import dataclass
 from pathlib import Path
-from typing import Optional
+from typing import Any, Optional
 
 from app.schemas.controller_host import (
     SCHEMA_VERSION,
@@ -121,7 +121,119 @@ class MidiHostClient:
         ]
         return backend, ports
 
+    def load_script(
+        self,
+        *,
+        controller_key: str,
+        pack_id: str,
+        model: str,
+        script_path: str,
+        script_body: str,
+    ) -> str:
+        """Send a ``script_load_request`` to the host.
+
+        Fire-and-forget command. Returns the generated ``msg_id`` for
+        caller-side correlation/logging.
+        """
+        msg_id = uuid.uuid4().hex
+        request = {
+            "type": "script_load_request",
+            "msg_id": msg_id,
+            "schema_version": SCHEMA_VERSION,
+            "controller_key": str(controller_key),
+            "pack_id": str(pack_id),
+            "model": str(model),
+            "script_path": str(script_path),
+            "script_body": str(script_body),
+        }
+        self._send_only(request)
+        return msg_id
+
+    def activate_mapping(
+        self,
+        *,
+        controller_key: str,
+        descriptor: Any,
+    ) -> str:
+        """Send a ``mapping_activate`` command to the host.
+
+        ``descriptor`` can be either a MappingDescriptor dataclass
+        (`app.services.controllers.mapping_file_handler.MappingDescriptor`)
+        or a dict already in wire shape.
+        """
+        msg_id = uuid.uuid4().hex
+        request = {
+            "type": "mapping_activate",
+            "msg_id": msg_id,
+            "schema_version": SCHEMA_VERSION,
+            "controller_key": str(controller_key),
+            "descriptor": self._descriptor_payload(descriptor),
+        }
+        self._send_only(request)
+        return msg_id
+
     # ------------------------------------------------------------------
+    @staticmethod
+    def _descriptor_payload(descriptor: Any) -> dict[str, Any]:
+        """Normalize a mapping descriptor into IPC-wire payload shape."""
+        if isinstance(descriptor, dict):
+            return dict(descriptor)
+
+        def _control_payload(control: Any) -> dict[str, Any]:
+            payload: dict[str, Any] = {}
+            for key in (
+                "status",
+                "midino",
+                "channel",
+                "target",
+                "action",
+                "script",
+                "fast_path",
+                "description",
+            ):
+                value = getattr(control, key, None)
+                if value is not None:
+                    payload[key] = value
+            if "fast_path" not in payload:
+                payload["fast_path"] = False
+            if "description" not in payload:
+                payload["description"] = ""
+            return payload
+
+        return {
+            "pack_id": str(getattr(descriptor, "pack_id")),
+            "model": str(getattr(descriptor, "model")),
+            "kind": str(getattr(descriptor, "kind")),
+            "scripts": [str(item) for item in (getattr(descriptor, "scripts", ()) or ())],
+            "controls": [_control_payload(item) for item in (getattr(descriptor, "controls", ()) or ())],
+            "outputs": [_control_payload(item) for item in (getattr(descriptor, "outputs", ()) or ())],
+            "settings": [dict(item) for item in (getattr(descriptor, "settings", ()) or ())],
+            "mixxx_alias_table": dict(getattr(descriptor, "mixxx_alias_table", {}) or {}),
+        }
+
+    def _send_only(self, request: dict) -> None:
+        """Send a single frame without waiting for a response."""
+        with self._lock:
+            try:
+                sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+                sock.settimeout(self._timeout_s)
+                sock.connect(str(self._socket_path))
+            except OSError as exc:
+                raise MidiHostClientError(
+                    f"cannot connect to controller-host UDS at {self._socket_path}: {exc}"
+                ) from exc
+            try:
+                sock.sendall(encode_frame(request))
+            except socket.timeout as exc:
+                raise MidiHostClientError(
+                    f"controller-host send timed out after {self._timeout_s}s"
+                ) from exc
+            finally:
+                try:
+                    sock.close()
+                except OSError:
+                    pass
+
     def _roundtrip(self, request: dict) -> dict:
         with self._lock:
             try:
