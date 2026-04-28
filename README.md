@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1365** Python | **1332** TypeScript | **176** C++/H | **145** Docs | **2993** total commits | **3** stars | **0** forks | **0** open issues
+**1367** Python | **1332** TypeScript | **176** C++/H | **145** Docs | **2995** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`84305583`](https://github.com/matthewmackes/map2-audio/commit/84305583ea35ad0e28742ee6a8f2b3648d9dcef2) | T2459-H4: share SysEx tag maps across parsers | Map2 Audio | 2026-04-28 |
+| [`6b453df5`](https://github.com/matthewmackes/map2-audio/commit/6b453df551f8c9c5392545cb4e3583a0bdc48429) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-28 |
 | [`6cd223fc`](https://github.com/matthewmackes/map2-audio/commit/6cd223fce2ed09a9ff84c2f54305dfcc99cc8cdc) | T2459-H3: consume script/mapping activation in host loop | Map2 Audio | 2026-04-28 |
 | [`c81f79b2`](https://github.com/matthewmackes/map2-audio/commit/c81f79b2000d7d7126a488bbc54763f4a8c38d5b) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-28 |
 | [`bbd43ec5`](https://github.com/matthewmackes/map2-audio/commit/bbd43ec57d9a89b52df2886fd9b29302215abb01) | T2459-H5: register unified MIDI router slice | Map2 Audio | 2026-04-28 |
 | [`c0fa0b94`](https://github.com/matthewmackes/map2-audio/commit/c0fa0b94950f5e7570c2d85059675fcad65c686f) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-28 |
 | [`fe9b178d`](https://github.com/matthewmackes/map2-audio/commit/fe9b178d60d490b0b71ab1dc8ad5bcb992ac8b43) | T2459-H3: add host-client mapping activation IPC slice | Map2 Audio | 2026-04-28 |
 | [`b8e29f50`](https://github.com/matthewmackes/map2-audio/commit/b8e29f50e684533dd409ec2221af61caac6218b0) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-28 |
-| [`76d743cb`](https://github.com/matthewmackes/map2-audio/commit/76d743cbbb03782a895b9461f0a701c1a6e71cea) | T2459-H4: consolidate MIDI CurveType enum slice | Map2 Audio | 2026-04-28 |
-| [`750dfc76`](https://github.com/matthewmackes/map2-audio/commit/750dfc76d56a547c0937ec3bb902a45fe71f2ecb) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-28 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
