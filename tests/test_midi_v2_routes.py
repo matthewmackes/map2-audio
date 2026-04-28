@@ -393,7 +393,7 @@ def test_engine_lifecycle_uses_midi_hub_when_available(monkeypatch):
 def test_engine_lifecycle_falls_back_to_juce_engine(monkeypatch):
     client, service = _build_client(monkeypatch)
     service._engine = _FakeEngine()
-    monkeypatch.setattr(midi_v2_routes, "MIDI_HUB_AVAILABLE", False)
+    monkeypatch.setattr(midi_v2_routes, "get_midi_hub", None)
 
     started = client.post("/api/v2/midi/engine/start")
     stopped = client.post("/api/v2/midi/engine/stop")
@@ -461,7 +461,7 @@ def test_clock_facade_delegates_to_midi_hub_clock_engine(monkeypatch):
 
 def test_clock_facade_reports_unavailable_without_midi_hub(monkeypatch):
     client, _service = _build_client(monkeypatch)
-    monkeypatch.setattr(midi_v2_routes, "MIDI_HUB_AVAILABLE", False)
+    monkeypatch.setattr(midi_v2_routes, "get_midi_clock_engine", None)
 
     response = client.get("/api/v2/midi/clock")
 
@@ -507,7 +507,7 @@ def test_port_route_facade_uses_midi_hub_router_with_legacy_aliases(monkeypatch)
 
 def test_port_route_facade_reports_unavailable_without_midi_hub(monkeypatch):
     client, _service = _build_client(monkeypatch)
-    monkeypatch.setattr(midi_v2_routes, "MIDI_HUB_AVAILABLE", False)
+    monkeypatch.setattr(midi_v2_routes, "get_midi_router", None)
 
     response = client.get("/api/v2/midi/routes")
 

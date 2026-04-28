@@ -485,7 +485,7 @@ async def delete_routing_rule(rule_id: int):
 # ==================== Port Routes ====================
 
 def _midi_router_or_503():
-    if not MIDI_HUB_AVAILABLE or get_midi_router is None:
+    if get_midi_router is None:
         raise HTTPException(status_code=503, detail="MIDI route service not available")
     return get_midi_router()
 
@@ -809,7 +809,7 @@ async def _collect_midi_devices() -> Dict[str, Any]:
     inputs = []
     outputs = []
 
-    if MIDI_HUB_AVAILABLE:
+    if get_midi_hub is not None:
         try:
             hub = get_midi_hub()
             if not hub.running:
@@ -851,7 +851,7 @@ async def _collect_midi_devices() -> Dict[str, Any]:
 @router.post("/engine/start")
 async def start_midi_runtime():
     """Start the authoritative v2 MIDI runtime owner."""
-    if MIDI_HUB_AVAILABLE:
+    if get_midi_hub is not None:
         try:
             hub = get_midi_hub()
             if not hub.running:
@@ -874,7 +874,7 @@ async def stop_midi_runtime():
     stopped = False
     source = "none"
 
-    if MIDI_HUB_AVAILABLE:
+    if get_midi_hub is not None:
         try:
             hub = get_midi_hub()
             midi_service.detach_midi_hub()
@@ -897,7 +897,7 @@ async def stop_midi_runtime():
 
 
 def _clock_engine_or_503():
-    if not MIDI_HUB_AVAILABLE or get_midi_clock_engine is None:
+    if get_midi_clock_engine is None:
         raise HTTPException(status_code=503, detail="MIDI clock engine not available")
     return get_midi_clock_engine()
 
@@ -1002,7 +1002,7 @@ def _resolve_device_index(ports: list, device_name: str) -> Optional[int]:
 @router.post("/devices/input")
 async def open_input_device_by_name(req: DeviceOpenRequest):
     """Open a MIDI input device by name (used by JUCE-GRID GUI)."""
-    if MIDI_HUB_AVAILABLE:
+    if get_midi_hub is not None:
         try:
             hub = get_midi_hub()
             if not hub.running:
@@ -1036,7 +1036,7 @@ async def open_input_device_by_name(req: DeviceOpenRequest):
 @router.post("/devices/input/{device_index}")
 async def open_input_device(device_index: int):
     """Open a MIDI input device by index (legacy)."""
-    if MIDI_HUB_AVAILABLE:
+    if get_midi_hub is not None:
         try:
             hub = get_midi_hub()
             if not hub.running:
@@ -1060,7 +1060,7 @@ async def open_input_device(device_index: int):
 @router.post("/devices/output")
 async def open_output_device_by_name(req: DeviceOpenRequest):
     """Open a MIDI output device by name (used by JUCE-GRID GUI)."""
-    if MIDI_HUB_AVAILABLE:
+    if get_midi_hub is not None:
         try:
             hub = get_midi_hub()
             if not hub.running:
@@ -1094,7 +1094,7 @@ async def open_output_device_by_name(req: DeviceOpenRequest):
 @router.post("/devices/output/{device_index}")
 async def open_output_device(device_index: int):
     """Open a MIDI output device by index (legacy)."""
-    if MIDI_HUB_AVAILABLE:
+    if get_midi_hub is not None:
         try:
             hub = get_midi_hub()
             if not hub.running:
@@ -1118,7 +1118,7 @@ async def open_output_device(device_index: int):
 @router.delete("/devices/input")
 async def close_input_device():
     """Close the active MIDI input device."""
-    if MIDI_HUB_AVAILABLE:
+    if get_midi_hub is not None:
         try:
             hub = get_midi_hub()
             # Hub manages ports lifecycle; closing input specifically isn't typical
@@ -1136,7 +1136,7 @@ async def close_input_device():
 @router.delete("/devices/output")
 async def close_output_device():
     """Close the active MIDI output device."""
-    if MIDI_HUB_AVAILABLE:
+    if get_midi_hub is not None:
         try:
             hub = get_midi_hub()
         except Exception as e:
@@ -1152,7 +1152,7 @@ async def close_output_device():
 @router.post("/devices/close")
 async def close_all_devices():
     """Close all MIDI devices."""
-    if MIDI_HUB_AVAILABLE:
+    if get_midi_hub is not None:
         try:
             hub = get_midi_hub()
             hub.stop()
@@ -1181,7 +1181,7 @@ async def get_midi_activity(limit: int = Query(50, ge=1, le=200)):
 @router.post("/activity/clear")
 async def clear_midi_activity():
     """Clear the v2 MIDI activity/traffic monitor."""
-    if MIDI_HUB_AVAILABLE and get_midi_traffic_monitor is not None:
+    if get_midi_traffic_monitor is not None:
         monitor = get_midi_traffic_monitor()
         monitor.clear()
         return {"success": True, "source": "midi_hub"}

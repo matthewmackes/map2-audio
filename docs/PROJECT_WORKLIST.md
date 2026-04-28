@@ -804,7 +804,7 @@ Description:
   - Worklist completion notes per subtask, dual-push to origin + gitlab, full release loop verification per CLAUDE.md §0.6
 Subtasks: T2459-H1 .. T2459-H7 (7 subtasks; see below)
 Assigned to: Claude
-Last updated: 2026-04-28 13:21 EDT - Codex: H3 dispatcher slice, H4 shared+runtime SysEx-tag slices, and H5 unified-route registration slice shipped; remaining H acceptance is live inbound-MIDI dispatch path + broader device migrations + bench HIL.
+Last updated: 2026-04-28 11:26 EDT - Codex: H3 dispatcher slice, H4 shared/runtime SysEx-tag slices, and H5 route-consolidation slices shipped; remaining H acceptance is live inbound-MIDI dispatch path + broader device migrations + bench HIL.
 
 ---
 
@@ -1012,7 +1012,19 @@ Completion note: 2026-04-28 — Codex: **Slice 2 SHIPPED (unified MIDI router mo
   - Shrink `app/services/midi_hub/` runtime ownership to host-client facades (clock/recorder/router/message mapping still Python-owned).
   - Land explicit deprecation shims/retirement plan for the legacy route modules and formal v1 retirement flow.
   - Complete host-owned UMP round-trip and preserve recorder golden artifacts under the migrated path.
-Last updated: 2026-04-28 12:01 EDT - Codex: unified route-registration slice shipped; H5 remains in progress.
+  2026-04-28 — Codex: **Slice 3 SHIPPED (remove `MIDI_HUB_AVAILABLE` runtime gating from `midi_v2` execution paths).**
+  Delivered:
+  - Replaced boolean-gated service fallbacks in `app/routes/midi_v2.py` with concrete callable-availability checks:
+    - `_midi_router_or_503` and `_clock_engine_or_503` now gate only on missing accessors.
+    - device list/runtime start-stop/device open-close/activity-clear paths now check `get_midi_hub` / `get_midi_traffic_monitor` directly.
+  - Updated regressions in `tests/test_midi_v2_routes.py` to monkeypatch missing accessor callables (`None`) instead of mutating `MIDI_HUB_AVAILABLE`.
+  Validation:
+  - `pytest -q tests/test_midi_v2_routes.py tests/test_midi_unified_routes_t2459h5.py tests/test_route_registration_policy.py` -> **21 passed**.
+  Remaining for full H5 acceptance:
+  - Shrink `app/services/midi_hub/` runtime ownership to host-client facades (clock/recorder/router/message mapping still Python-owned).
+  - Land explicit deprecation shims/retirement plan for the legacy route modules and formal v1 retirement flow.
+  - Complete host-owned UMP round-trip and preserve recorder golden artifacts under the migrated path.
+Last updated: 2026-04-28 11:26 EDT - Codex: unified route-registration + callable-gating slices shipped; H5 remains in progress.
 
 ---
 
