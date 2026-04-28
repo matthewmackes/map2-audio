@@ -18,12 +18,10 @@ logger = logging.getLogger(__name__)
 try:
     from app.services.midi_hub.hub import get_midi_hub
     from app.services.midi_hub.ports import MidiMessage, VirtualMidiPort
-
-    MIDI_HUB_AVAILABLE = True
 except Exception:  # pragma: no cover - optional integration path
+    get_midi_hub = None  # type: ignore[assignment]
     MidiMessage = None  # type: ignore[assignment]
     VirtualMidiPort = None  # type: ignore[assignment]
-    MIDI_HUB_AVAILABLE = False
 
 
 class SysExDeviceBridge:
@@ -175,7 +173,7 @@ class SysExDeviceBridge:
         return any(token and token in lowered_name for token in tokens)
 
     def _init_midi_hub_bridge(self) -> None:
-        if not MIDI_HUB_AVAILABLE:
+        if get_midi_hub is None or VirtualMidiPort is None:
             return
         try:
             hub = get_midi_hub()

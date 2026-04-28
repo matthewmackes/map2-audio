@@ -1065,6 +1065,16 @@ Completion note: 2026-04-28 — Codex: **Slice 2 SHIPPED (unified MIDI router mo
   - Remove remaining `MIDI_HUB_AVAILABLE` execution gating in `sysex_device_bridge` and any residual route/tests path toggles.
   - Land explicit deprecation shims/retirement plan for the legacy route modules and formal v1 retirement flow.
   - Complete host-owned UMP round-trip and preserve recorder golden artifacts under the migrated path.
+  2026-04-28 — Codex: **Slice 8 SHIPPED (`SysExDeviceBridge` hub bridge now uses callable availability checks).**
+  Delivered:
+  - Refactored `app/services/sysex_device_bridge.py` optional hub import fallback to set `get_midi_hub = None`.
+  - `_init_midi_hub_bridge()` now checks `get_midi_hub`/`VirtualMidiPort` directly instead of `MIDI_HUB_AVAILABLE`.
+  Validation:
+  - `pytest -q tests/test_midi_sysex_bridge_base.py tests/test_mpx1.py tests/test_intelfx.py` -> **66 passed**.
+  Remaining for full H5 acceptance:
+  - Remove residual `MIDI_HUB_AVAILABLE` route/test toggles and retire the boolean from `midi_v2` fully.
+  - Land explicit deprecation shims/retirement plan for the legacy route modules and formal v1 retirement flow.
+  - Complete host-owned UMP round-trip and preserve recorder golden artifacts under the migrated path.
 Last updated: 2026-04-28 11:26 EDT - Codex: unified route-registration + callable-gating slices shipped; H5 remains in progress.
 
 ---
