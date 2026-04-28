@@ -1,0 +1,17 @@
+schema_version: 1
+pack_id: native-instruments
+vendor:
+  name: Native Instruments
+  website: https://www.native-instruments.com/
+  support_url: https://support.native-instruments.com/
+description: |
+  Native Instruments Maschine MK1 control surface. This pack covers the
+  MIDI-mode mapping surface only: 16 pressure pads, 11 rotary encoders,
+  and 41 buttons exposed as note/CC events. The proprietary HID/USB
+  control-surface daemon (LED arrays, dual displays, pad pressure
+  streaming) remains owned by app/services/maschine/maschine_mk1_daemon.py
+  per the T2459-H separate-process isolation rule.
+license: AGPL-3.0-only
+source: map2-native
+models:
+  - maschine-mk1
