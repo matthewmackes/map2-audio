@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1368** Python | **1332** TypeScript | **176** C++/H | **145** Docs | **2997** total commits | **3** stars | **0** forks | **0** open issues
+**1368** Python | **1332** TypeScript | **176** C++/H | **145** Docs | **2999** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`c6cf6650`](https://github.com/matthewmackes/map2-audio/commit/c6cf66508e189e5a9a2791bb3b5e7e0f8ab284a7) | T2459-H5: remove MIDI_HUB_AVAILABLE execution gating | Map2 Audio | 2026-04-28 |
+| [`f88b41b3`](https://github.com/matthewmackes/map2-audio/commit/f88b41b359ae91ea0bc565fbdda347ffffabe9f7) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-28 |
 | [`235c4cf5`](https://github.com/matthewmackes/map2-audio/commit/235c4cf5436d0e67b15791ff8d7d5fe31134274e) | T2459-H4: add shared runtime sysex-tags JS library | Map2 Audio | 2026-04-28 |
 | [`ae2a7263`](https://github.com/matthewmackes/map2-audio/commit/ae2a7263b582790f4726b6d02f62470ad8a18dad) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-28 |
 | [`84305583`](https://github.com/matthewmackes/map2-audio/commit/84305583ea35ad0e28742ee6a8f2b3648d9dcef2) | T2459-H4: share SysEx tag maps across parsers | Map2 Audio | 2026-04-28 |
 | [`6b453df5`](https://github.com/matthewmackes/map2-audio/commit/6b453df551f8c9c5392545cb4e3583a0bdc48429) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-28 |
 | [`6cd223fc`](https://github.com/matthewmackes/map2-audio/commit/6cd223fce2ed09a9ff84c2f54305dfcc99cc8cdc) | T2459-H3: consume script/mapping activation in host loop | Map2 Audio | 2026-04-28 |
 | [`c81f79b2`](https://github.com/matthewmackes/map2-audio/commit/c81f79b2000d7d7126a488bbc54763f4a8c38d5b) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-28 |
-| [`bbd43ec5`](https://github.com/matthewmackes/map2-audio/commit/bbd43ec57d9a89b52df2886fd9b29302215abb01) | T2459-H5: register unified MIDI router slice | Map2 Audio | 2026-04-28 |
-| [`c0fa0b94`](https://github.com/matthewmackes/map2-audio/commit/c0fa0b94950f5e7570c2d85059675fcad65c686f) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-28 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
