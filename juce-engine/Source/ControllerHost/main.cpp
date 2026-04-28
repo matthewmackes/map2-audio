@@ -522,28 +522,49 @@ bool recv_frame (int fd, std::string& out)
     return true;
 }
 
-// T2459-H3 Slice 5 — drain a shm ring up to maxEvents per call, dispatch
-// each event through the loaded mapping descriptor for the active
-// controller_key, and emit any resulting engine commands / logs / outbound
-// MIDI as IPC frames on `client_fd`. Returns false if a send to the
-// backend fails (caller should treat as disconnect).
+// T2459-H3 Slice 5/6 — drain a shm ring up to maxEvents per call, dispatch
+// each event through the loaded mapping descriptor matching the slot's
+// per-port controllerIndex, and emit any resulting engine commands / logs /
+// outbound MIDI as IPC frames on `client_fd`. Slot index 0 (or any out-of-
+// range index) falls back to `fallback_controller_key` (preserves Slice 5
+// most-recently-opened-controller behavior for any path that pushes without
+// an index). Returns false if a send to the backend fails (caller should
+// treat as disconnect).
 bool drain_ring_and_dispatch (int client_fd,
                               map2::controller_host::ShmEventRing& ring,
                               map2::controller_host::Map2MappingEngine& mapping_engine,
-                              const std::string& active_controller_key,
+                              const std::vector<std::string>& controller_keys_by_index,
+                              const std::string& fallback_controller_key,
                               std::size_t maxEvents)
 {
-    if (! ring.isOpen() || active_controller_key.empty())
-        return true;
+    if (! ring.isOpen()) return true;
 
     std::uint8_t buf[map2::controller_host::kMaxPayloadBytes];
     std::uint64_t ts = 0;
+    std::uint16_t slot_index = 0;
 
     for (std::size_t i = 0; i < maxEvents; ++i)
     {
-        const std::size_t n = ring.pop (&ts, buf, sizeof (buf));
+        const std::size_t n = ring.pop (&ts, buf, sizeof (buf), &slot_index);
         if (n == 0) break;
         if (n < 1) continue;
+
+        // Resolve the per-event controller_key. Index 0 = unknown/legacy →
+        // fall back to the most-recently-opened controller (Slice-5 behavior
+        // preserved). Any non-zero index that is in range routes through the
+        // matching loaded descriptor.
+        std::string controller_key;
+        if (slot_index != 0
+            && slot_index <= controller_keys_by_index.size()
+            && ! controller_keys_by_index[slot_index - 1].empty())
+        {
+            controller_key = controller_keys_by_index[slot_index - 1];
+        }
+        else
+        {
+            controller_key = fallback_controller_key;
+        }
+        if (controller_key.empty()) continue;
 
         const std::uint8_t status   = buf[0];
         const std::uint8_t data1    = (n > 1) ? buf[1] : 0u;
@@ -555,19 +576,19 @@ bool drain_ring_and_dispatch (int client_fd,
         // separately. Try the high-nibble+channel match first; if that
         // misses, fall back to the raw status byte for descriptors that
         // didn't split the channel out.
-        auto plan = mapping_engine.planDispatch (active_controller_key, statusHi, data1, channel);
+        auto plan = mapping_engine.planDispatch (controller_key, statusHi, data1, channel);
         if (! plan.matched)
-            plan = mapping_engine.planDispatch (active_controller_key, status, data1, channel);
+            plan = mapping_engine.planDispatch (controller_key, status, data1, channel);
         if (! plan.matched)
             continue;
         if (plan.callback_name.empty())
             continue;
 
         std::vector<std::uint8_t> bytes (buf, buf + n);
-        if (auto exc = mapping_engine.dispatch (active_controller_key, plan.callback_name, bytes);
+        if (auto exc = mapping_engine.dispatch (controller_key, plan.callback_name, bytes);
             exc.has_value())
         {
-            if (! send_frame (client_fd, build_script_error ("", active_controller_key, *exc)))
+            if (! send_frame (client_fd, build_script_error ("", controller_key, *exc)))
                 return false;
         }
     }
@@ -680,13 +701,18 @@ int run_main_loop (const std::string& socket_path)
         if (auto* adapter = midiBackend.adapter(); adapter != nullptr)
             adapter->setEventRings (rt_ok ? &rtRing : nullptr, ctl_ok ? &controlRing : nullptr);
 
-        // T2459-H3 Slice 5 — port_id → controller_key map. Today the rings
-        // carry only bytes + timestamp with no controller_key; we treat
-        // the most-recently opened input as the active controller for any
-        // event drained from the ring. The map preserves the per-port
-        // binding for the future Slice 6 multi-controller routing without
-        // requiring a ring-format change (which is locked by H1).
+        // T2459-H3 Slice 5 — port_id → controller_key map.
+        // T2459-H3 Slice 6 — controller_keys_by_index_ is a 1-based table
+        // mirrored into the libremidi adapter via per-port `openInput(port,
+        // index)`. The producer writes the index into Slot::controllerIndex
+        // and the consumer dispatches through the matching descriptor. Index
+        // 0 is reserved for "unknown" and falls back to the most-recently
+        // opened controller — preserving the Slice-5 single-active behavior
+        // for any path that pushes without an index. A second port that
+        // names the same controller_key reuses the existing index so all
+        // ports for one controller dispatch through the same descriptor.
         std::unordered_map<std::string, std::string> port_to_controller;
+        std::vector<std::string> controller_keys_by_index;
         std::string active_controller_key;
 
         while (! g_shutdownRequested.load (std::memory_order_acquire))
@@ -706,6 +732,7 @@ int run_main_loop (const std::string& socket_path)
             if (rt_ok)
             {
                 if (! drain_ring_and_dispatch (client_fd, rtRing, mapping_engine,
+                                               controller_keys_by_index,
                                                active_controller_key, 64))
                 {
                     std::cerr << "[map2-controller-host] backend disconnected during rt drain\n";
@@ -715,6 +742,7 @@ int run_main_loop (const std::string& socket_path)
             if (ctl_ok)
             {
                 if (! drain_ring_and_dispatch (client_fd, controlRing, mapping_engine,
+                                               controller_keys_by_index,
                                                active_controller_key, 16))
                 {
                     std::cerr << "[map2-controller-host] backend disconnected during control drain\n";
@@ -784,7 +812,27 @@ int run_main_loop (const std::string& socket_path)
                         controller_key));
                     continue;
                 }
-                if (! adapter->openInput (port_id))
+                // T2459-H3 Slice 6 — assign or reuse a controllerIndex for
+                // this controller_key. Same key reuses the same slot; a new
+                // key gets the next index. Index 0 is reserved for the
+                // unknown/legacy fallback so the first real controller is
+                // index 1.
+                std::uint16_t controller_index = 0;
+                for (std::size_t i = 0; i < controller_keys_by_index.size(); ++i)
+                {
+                    if (controller_keys_by_index[i] == controller_key)
+                    {
+                        controller_index = static_cast<std::uint16_t> (i + 1);
+                        break;
+                    }
+                }
+                if (controller_index == 0)
+                {
+                    controller_keys_by_index.push_back (controller_key);
+                    controller_index = static_cast<std::uint16_t> (controller_keys_by_index.size());
+                }
+
+                if (! adapter->openInput (port_id, controller_index))
                 {
                     send_frame (client_fd, build_log_event (
                         msg_id, "error",

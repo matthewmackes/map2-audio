@@ -22,7 +22,17 @@ struct LibremidiAdapter::Impl
     std::unique_ptr<libremidi::observer> observer;
     std::unique_ptr<libremidi::midi_in>  virtualIn;
     std::unique_ptr<libremidi::midi_out> virtualOut;
-    std::unique_ptr<libremidi::midi_in>  hardwareIn;
+
+    // T2459-H3 Slice 6 — per-port hardware inputs each tag their callbacks
+    // with the host-assigned controllerIndex so multi-controller routing
+    // works on the consumer side without per-controller ring proliferation.
+    struct HardwareInput
+    {
+        std::string                          port_id;
+        std::uint16_t                        controllerIndex { 0 };
+        std::unique_ptr<libremidi::midi_in>  midiIn;
+    };
+    std::vector<std::unique_ptr<HardwareInput>> hardwareIns;
 };
 
 static libremidi::API toLibremidiApi (MidiBackend backend)
@@ -126,7 +136,7 @@ bool LibremidiAdapter::openVirtualInput (const std::string& name)
         libremidi::input_configuration cfg {};
         cfg.on_message = [this] (libremidi::message&& msg) {
             this->onIncomingMessage (msg.bytes.data(), msg.bytes.size(),
-                                     monotonicNanos());
+                                     monotonicNanos(), 0);
         };
         impl_->virtualIn = std::make_unique<libremidi::midi_in> (cfg);
         impl_->virtualIn->open_virtual_port (name);
@@ -164,7 +174,8 @@ bool LibremidiAdapter::openVirtualOutput (const std::string& name)
 #endif
 }
 
-bool LibremidiAdapter::openInput (const std::string& port_id_or_name)
+bool LibremidiAdapter::openInput (const std::string& port_id_or_name,
+                                  std::uint16_t controllerIndex)
 {
 #if defined(MAP2_HAS_LIBREMIDI)
     if (impl_->observer == nullptr)
@@ -190,10 +201,19 @@ bool LibremidiAdapter::openInput (const std::string& port_id_or_name)
             return false;
         }
 
+        // Build the per-port record up-front so the on_message lambda can
+        // capture a stable pointer to it (the heap-allocated HardwareInput
+        // outlives any reallocation of the owning vector).
+        auto record = std::make_unique<Impl::HardwareInput>();
+        record->port_id         = port_id_or_name;
+        record->controllerIndex = controllerIndex;
+        Impl::HardwareInput* rec_ptr = record.get();
+
         libremidi::input_configuration cfg {};
-        cfg.on_message = [this] (libremidi::message&& msg) {
+        cfg.on_message = [this, rec_ptr] (libremidi::message&& msg) {
             this->onIncomingMessage (msg.bytes.data(), msg.bytes.size(),
-                                     monotonicNanos());
+                                     monotonicNanos(),
+                                     rec_ptr->controllerIndex);
         };
         const libremidi::API api = toLibremidiApi (backend_);
         auto in = std::make_unique<libremidi::midi_in> (
@@ -204,7 +224,8 @@ bool LibremidiAdapter::openInput (const std::string& port_id_or_name)
             errorMessage_ = "openInput: open_port failed for '" + port_id_or_name + "'";
             return false;
         }
-        impl_->hardwareIn = std::move (in);
+        record->midiIn = std::move (in);
+        impl_->hardwareIns.push_back (std::move (record));
         return true;
     }
     catch (const std::exception& e)
@@ -214,26 +235,30 @@ bool LibremidiAdapter::openInput (const std::string& port_id_or_name)
     }
 #else
     (void) port_id_or_name;
+    (void) controllerIndex;
     errorMessage_ = "MAP2_HAS_LIBREMIDI not defined; openInput is a no-op";
     return false;
 #endif
 }
 
-void LibremidiAdapter::pushMessage (const std::uint8_t* bytes, std::size_t length)
+void LibremidiAdapter::pushMessage (const std::uint8_t* bytes,
+                                    std::size_t length,
+                                    std::uint16_t controllerIndex)
 {
-    onIncomingMessage (bytes, length, monotonicNanos());
+    onIncomingMessage (bytes, length, monotonicNanos(), controllerIndex);
 }
 
 void LibremidiAdapter::onIncomingMessage (const std::uint8_t* bytes,
                                           std::size_t length,
-                                          std::uint64_t tsNanos)
+                                          std::uint64_t tsNanos,
+                                          std::uint16_t controllerIndex)
 {
     if (length == 0 || bytes == nullptr) return;
     const RingClass cls = classifyMidiStatus (bytes[0]);
     ShmEventRing* target = (cls == RingClass::Rt) ? rtRing_ : controlRing_;
     if (target == nullptr || ! target->isOpen())
         return;
-    target->push (tsNanos, bytes, length);
+    target->push (tsNanos, bytes, length, controllerIndex);
 }
 
 } // namespace map2::controller_host

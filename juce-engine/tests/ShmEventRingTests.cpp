@@ -133,6 +133,52 @@ TEST_CASE ("ShmEventRing rejects payloads larger than kMaxPayloadBytes", "[H1][r
     REQUIRE_FALSE (ring.push (1, nullptr, 4));
 }
 
+TEST_CASE ("ShmEventRing round-trips controllerIndex (Slice 6) and defaults to zero for legacy callers", "[H3][slice6][ring]")
+{
+    const auto name = uniqueShmName ("/map2-test.controller-index");
+    ShmEventRing producer;
+    REQUIRE (producer.open (name, 16, ShmEventRing::Mode::CreateOwned));
+    ShmEventRing consumer;
+    REQUIRE (consumer.open (name, 0, ShmEventRing::Mode::OpenExisting));
+
+    const std::uint8_t a[3] = { 0xB0, 0x07, 100 };
+    const std::uint8_t b[3] = { 0xB1, 0x08, 64  };
+    const std::uint8_t c[3] = { 0x90, 0x3C, 127 };
+
+    // Legacy single-arg path defaults the index to 0.
+    REQUIRE (producer.push (10, a, sizeof (a)));
+    // New explicit-index path tags index 7.
+    REQUIRE (producer.push (20, b, sizeof (b), 7));
+    // Index 65535 (boundary) round-trips through the uint16_t field.
+    REQUIRE (producer.push (30, c, sizeof (c), 65535));
+
+    std::uint64_t ts = 0;
+    std::uint8_t buf[kMaxPayloadBytes] {};
+    std::uint16_t idx = 0xAAAA;
+
+    REQUIRE (consumer.pop (&ts, buf, sizeof (buf), &idx) == 3);
+    REQUIRE (ts == 10);
+    REQUIRE (idx == 0);
+    REQUIRE (buf[0] == 0xB0);
+
+    idx = 0xAAAA;
+    REQUIRE (consumer.pop (&ts, buf, sizeof (buf), &idx) == 3);
+    REQUIRE (ts == 20);
+    REQUIRE (idx == 7);
+    REQUIRE (buf[0] == 0xB1);
+
+    idx = 0xAAAA;
+    REQUIRE (consumer.pop (&ts, buf, sizeof (buf), &idx) == 3);
+    REQUIRE (ts == 30);
+    REQUIRE (idx == 65535);
+    REQUIRE (buf[0] == 0x90);
+
+    // Legacy null-out-param consumers still work.
+    REQUIRE (producer.push (40, a, sizeof (a), 3));
+    REQUIRE (consumer.pop (&ts, buf, sizeof (buf)) == 3);
+    REQUIRE (ts == 40);
+}
+
 TEST_CASE ("ShmEventRing wraps around correctly with capacity-aligned indices", "[H1][ring]")
 {
     const auto name = uniqueShmName ("/map2-test.wrap");

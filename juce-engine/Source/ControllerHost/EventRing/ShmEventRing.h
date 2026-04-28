@@ -17,9 +17,19 @@
 //                 UMP system messages. Drained off the audio thread.
 //
 // Wire format (per slot):
-//   uint64_t tsNanos    — host-side monotonic timestamp at producer push time
-//   uint16_t length     — payload length in bytes (0..MAX_PAYLOAD_BYTES)
-//   uint16_t reserved   — alignment / future-proofing
+//   uint64_t tsNanos          — host-side monotonic timestamp at producer push time
+//   uint16_t length           — payload length in bytes (0..MAX_PAYLOAD_BYTES)
+//   uint16_t controllerIndex  — T2459-H3 Slice 6 multi-controller routing tag.
+//                                Producer sets this to the per-port controller
+//                                index assigned by the host on openInput; the
+//                                consumer looks it up against
+//                                `controller_keys_by_index_` to dispatch through
+//                                the matching loaded descriptor. Index 0 means
+//                                "unknown / legacy" (preserves Slice 5
+//                                most-recently-opened-controller fallback).
+//                                Was the H1 `reserved` field; the offset and
+//                                size are unchanged so the H1 slot layout stays
+//                                wire-compatible.
 //   uint8_t  payload[MAX_PAYLOAD_BYTES] — raw MIDI bytes including status
 //
 // Per-slot size = 8 + 2 + 2 + 256 = 268 bytes. Padded to 320 bytes to align
@@ -70,7 +80,7 @@ constexpr std::size_t kControlRingDefaultCapacity = 256;
 // libremidi adapter boundary and reassembled in the script engine.
 constexpr std::size_t kMaxPayloadBytes = 256;
 
-// Slot header is 12 bytes (8 ts + 2 length + 2 reserved). With a 256-byte
+// Slot header is 12 bytes (8 ts + 2 length + 2 controllerIndex). With a 256-byte
 // payload, total raw size is 268 bytes. Pad to 320 to land each slot on
 // a 64-byte cache line boundary so producer and consumer never share a
 // line — eliminates false sharing.
@@ -131,7 +141,7 @@ struct alignas(64) Slot
 {
     std::atomic<std::uint64_t> tsNanos { 0 };
     std::atomic<std::uint16_t> length  { 0 };
-    std::uint16_t              reserved { 0 };
+    std::uint16_t              controllerIndex { 0 };
     std::uint8_t               payload[kMaxPayloadBytes];
     std::uint8_t               _pad[kSlotSizeBytes - 12 - kMaxPayloadBytes];
 };
@@ -191,16 +201,25 @@ public:
 
     // Producer-side push. Returns false if the ring is full (event dropped,
     // droppedCount incremented). Non-blocking; safe from any thread but
-    // only one producer at a time per ring instance.
-    bool push (std::uint64_t tsNanos, const std::uint8_t* payload, std::size_t length) noexcept;
+    // only one producer at a time per ring instance. The optional
+    // `controllerIndex` (T2459-H3 Slice 6) tags the slot with the producer's
+    // per-port controller index so the consumer can route to the matching
+    // descriptor. Default 0 = unknown / legacy.
+    bool push (std::uint64_t tsNanos,
+               const std::uint8_t* payload,
+               std::size_t length,
+               std::uint16_t controllerIndex = 0) noexcept;
 
     // Consumer-side pop. Copies the next slot's payload into `outPayload`
     // (which must be at least kMaxPayloadBytes large). Returns 0 if empty,
     // otherwise the number of payload bytes copied. tsNanos is written to
-    // *outTsNanos when a slot is consumed.
+    // *outTsNanos when a slot is consumed. The optional `outControllerIndex`
+    // out-parameter receives the slot's Slice-6 controllerIndex tag (0 when
+    // the producer didn't set one).
     std::size_t pop (std::uint64_t* outTsNanos,
                      std::uint8_t*  outPayload,
-                     std::size_t    outPayloadCapacity) noexcept;
+                     std::size_t    outPayloadCapacity,
+                     std::uint16_t* outControllerIndex = nullptr) noexcept;
 
     // Number of events dropped due to a full ring. Monotonically increasing.
     std::uint64_t droppedCount() const noexcept;
