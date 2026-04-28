@@ -7,9 +7,10 @@
 
 .hp2-root--landing {
   min-height: min(100vh, 100dvh);
-  background:
-    radial-gradient(circle at top left, color-mix(in srgb, var(--interactive) 12%, transparent) 0%, transparent 34%),
-    linear-gradient(180deg, var(--surface-2) 0%, var(--bg) 100%);
+  /* T2474 B3: Replaced decorative top-left radial-gradient + vertical
+   * linear-gradient with a flat Carbon background. Per Q1=A (no decorative
+   * gradients, gray-dominant surfaces). */
+  background: var(--cds-background, var(--bg));
   overflow: hidden;
 }
 
@@ -29,27 +30,21 @@
   display: block;
 }
 
+/* T2474 B3: Wallpaper images and the decorative grid backdrop are retired
+ * (Q1=A — no decorative gradients, no decorative grids). The selectors are
+ * preserved as no-op rules so any consumer that still renders the elements
+ * does not collapse layout. The HomePage.tsx control surface for these
+ * images stays operational; they just render as transparent. */
 .hp2-root__wallpaper {
-  opacity: 0.12;
-  filter: grayscale(0.72) contrast(0.94) saturate(0.76);
-  mix-blend-mode: multiply;
+  opacity: 0;
 }
 
 .hp2-root__default-wallpaper {
-  opacity: 0.16;
-  filter: saturate(0.84) contrast(1.02);
+  opacity: 0;
 }
 
 .hp2-root__backdrop {
-  background:
-    linear-gradient(180deg, color-mix(in srgb, var(--bg) 88%, transparent) 0%, color-mix(in srgb, var(--bg) 96%, transparent) 100%),
-    linear-gradient(90deg, color-mix(in srgb, var(--interactive) 3%, transparent) 1px, transparent 1px),
-    linear-gradient(0deg, color-mix(in srgb, var(--interactive) 3%, transparent) 1px, transparent 1px);
-  background-size:
-    auto,
-    calc(var(--cds-spacing-08, 2.5rem) + var(--cds-spacing-01, 0.125rem)) calc(var(--cds-spacing-08, 2.5rem) + var(--cds-spacing-01, 0.125rem)),
-    calc(var(--cds-spacing-08, 2.5rem) + var(--cds-spacing-01, 0.125rem)) calc(var(--cds-spacing-08, 2.5rem) + var(--cds-spacing-01, 0.125rem));
-  pointer-events: none;
+  display: none;
 }
 
 .hp2-welcome-notice .cds--modal-container {
@@ -124,9 +119,11 @@
 }
 
 .hp2-home-shell__operations-table-shell {
-  border: 1px solid color-mix(in srgb, var(--border) 92%, transparent);
-  background: color-mix(in srgb, var(--surface) 92%, transparent);
-  backdrop-filter: blur(12px);
+  /* T2474 B3: Removed glassmorphism — was 12px backdrop-filter blur with
+   * a translucent surface. Per Q1=A (no glassmorphism). Now a flat Carbon
+   * layer with the standard subtle border. */
+  border: 1px solid var(--cds-border-subtle, var(--border));
+  background: var(--cds-layer, var(--surface));
 }
 
 .hp2-home-shell__operations-hero {
