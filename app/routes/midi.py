@@ -20,8 +20,8 @@ from app.routes.midi_v2 import router as midi_v2_router
 router = APIRouter(tags=["midi"])
 
 router.include_router(midi_v2_router)
-router.include_router(midi_hub_router)
-router.include_router(midi_cluster_router)
-router.include_router(midi_learn_router)
-router.include_router(midi_commander_surface_router)
-router.include_router(enriched_midi_physical_surfaces_router)
+router.include_router(midi_hub_router, deprecated=True)
+router.include_router(midi_cluster_router, deprecated=True)
+router.include_router(midi_learn_router, deprecated=True)
+router.include_router(midi_commander_surface_router, deprecated=True)
+router.include_router(enriched_midi_physical_surfaces_router, deprecated=True)

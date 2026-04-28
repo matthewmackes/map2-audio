@@ -1092,6 +1092,18 @@ Completion note: 2026-04-28 — Codex: **Slice 2 SHIPPED (unified MIDI router mo
   Remaining for full H5 acceptance:
   - Land explicit deprecation shims/retirement plan for the legacy route modules and formal v1 retirement flow.
   - Complete host-owned UMP round-trip and preserve recorder golden artifacts under the migrated path.
+  2026-04-28 — Codex: **Slice 11 SHIPPED (legacy MIDI surfaces now marked deprecated in OpenAPI via unified router).**
+  Delivered:
+  - Updated `app/routes/midi.py` to include legacy MIDI routers with `deprecated=True`:
+    - `midi_hub`, `midi_cluster`, `midi_learn`, `midi_commander_surface`, `enriched_midi_physical_surfaces`.
+  - Added regression in `tests/test_midi_unified_routes_t2459h5.py` to assert:
+    - `/api/v2/midi/*` remains non-deprecated.
+    - legacy surfaces are flagged `deprecated: true` in OpenAPI.
+  Validation:
+  - `pytest -q tests/test_midi_unified_routes_t2459h5.py tests/test_route_registration_policy.py tests/test_midi_v2_routes.py` -> **22 passed**.
+  Remaining for full H5 acceptance:
+  - Land explicit v1 retirement flow (410 Gone after deprecation window).
+  - Complete host-owned UMP round-trip and preserve recorder golden artifacts under the migrated path.
 Last updated: 2026-04-28 11:26 EDT - Codex: unified route-registration + callable-gating slices shipped; H5 remains in progress.
 
 ---
