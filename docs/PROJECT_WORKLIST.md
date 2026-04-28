@@ -931,7 +931,19 @@ Completion note: 2026-04-28 — Codex: **Slice 1 SHIPPED (pack migration + legac
   Remaining for full H3 acceptance:
   - Live libremidi event ingestion still needs to route through the loaded descriptor dispatch path and emit engine commands from real inbound MIDI traffic (current slice activates mappings but does not yet wire the full runtime event loop).
   - Physical HIL evidence run with MeloAudio hardware.
-Last updated: 2026-04-28 12:42 EDT - Codex: slices 1-3 shipped; H3 remains in progress.
+  2026-04-28 — Codex: **Slice 4 SHIPPED (mapping-activation hardening for unresolved script-bound controls).**
+  Delivered:
+  - Added a pre-activation guard in `juce-engine/Source/ControllerHost/main.cpp`:
+    - when every declared descriptor script fails resolution and the descriptor contains script-bound controls/outputs, host now returns `script_error` and skips activation.
+  - Added helper `descriptor_uses_script_callbacks(...)` to distinguish script-bound descriptors from action-only mappings.
+  - Added integration test `test_mapping_activate_rejects_missing_scripts_for_script_bound_controls` in `tests/test_controller_host_main_loop_t2459h3.py`.
+  Validation:
+  - `cd juce-engine && cmake --build build --target map2-controller-host`
+  - `pytest -q tests/test_controller_host_main_loop_t2459h3.py tests/test_midi_host_client_t2459h3.py tests/test_controller_host_ipc_schema.py` -> **16 passed**.
+  Remaining for full H3 acceptance:
+  - Live libremidi event ingestion still needs to route through the loaded descriptor dispatch path and emit engine commands from real inbound MIDI traffic (current slices activate mappings but do not yet wire the full runtime event loop).
+  - Physical HIL evidence run with MeloAudio hardware.
+Last updated: 2026-04-28 11:26 EDT - Codex: slices 1-4 shipped; H3 remains in progress.
 
 ---
 

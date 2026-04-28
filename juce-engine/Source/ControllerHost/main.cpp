@@ -12,6 +12,7 @@
 #include "MappingEngine/Map2MappingEngine.h"
 #include "Midi/Map2MidiBackend.h"
 
+#include <algorithm>
 #include <atomic>
 #include <cerrno>
 #include <csignal>
@@ -414,6 +415,16 @@ bool parse_mapping_activate_frame (const std::string& frame,
     return true;
 }
 
+bool descriptor_uses_script_callbacks (const map2::controller_host::MappingDescriptorSpec& descriptor)
+{
+    const auto has_script = [] (const map2::controller_host::MappingControlSpec& spec)
+    {
+        return spec.script.has_value() && ! spec.script->empty();
+    };
+    return std::any_of (descriptor.controls.begin(), descriptor.controls.end(), has_script)
+        || std::any_of (descriptor.outputs.begin(), descriptor.outputs.end(), has_script);
+}
+
 bool send_frame (int fd, const std::string& payload)
 {
     const std::uint32_t length = static_cast<std::uint32_t> (payload.size());
@@ -595,6 +606,7 @@ int run_main_loop (const std::string& socket_path)
                 }
 
                 std::vector<std::string> resolved_scripts;
+                const int declared_scripts = static_cast<int> (descriptor.scripts.size());
                 const auto cache_it = controller_script_cache.find (controller_key);
                 static const std::unordered_map<std::string, std::string> kEmptyCache;
                 const auto& cache_for_controller = cache_it != controller_script_cache.end()
@@ -626,6 +638,18 @@ int run_main_loop (const std::string& socket_path)
                     ++missing_scripts;
                 }
                 descriptor.scripts = std::move (resolved_scripts);
+                if (missing_scripts == declared_scripts
+                    && missing_scripts > 0
+                    && descriptor_uses_script_callbacks (descriptor))
+                {
+                    map2::controller_host::ScriptException exc;
+                    exc.file = "<mapping_activate>";
+                    exc.line = 0;
+                    exc.column = 0;
+                    exc.message = "no descriptor scripts resolved for script-bound controls";
+                    send_frame (client_fd, build_script_error (msg_id, controller_key, exc));
+                    continue;
+                }
 
                 if (auto exc = mapping_engine.loadDescriptor (controller_key, descriptor); exc.has_value())
                 {

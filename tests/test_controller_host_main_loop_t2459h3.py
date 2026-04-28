@@ -172,3 +172,41 @@ def test_mapping_activate_returns_script_error_on_invalid_inline_js(host_socket:
         assert response["type"] == "script_error"
         assert response["controller_key"] == "alsa-seq:test:1"
         assert "message" in response
+
+
+def test_mapping_activate_rejects_missing_scripts_for_script_bound_controls(host_socket: Path) -> None:
+    with socket.socket(socket.AF_UNIX, socket.SOCK_STREAM) as sock:
+        sock.settimeout(0.2)
+        sock.connect(str(host_socket))
+
+        response = _roundtrip(
+            sock,
+            {
+                "type": "mapping_activate",
+                "msg_id": "activate-missing-scripts",
+                "schema_version": 1,
+                "controller_key": "alsa-seq:test:2",
+                "descriptor": {
+                    "pack_id": "meloaudio",
+                    "model": "midi-commander",
+                    "kind": "midi",
+                    "scripts": ["scripts/not-found.js"],
+                    "controls": [
+                        {
+                            "status": 176,
+                            "midino": 81,
+                            "channel": 1,
+                            "script": "Missing.onCC",
+                            "fast_path": False,
+                            "description": "missing script callback",
+                        }
+                    ],
+                    "outputs": [],
+                    "settings": [],
+                    "mixxx_alias_table": {},
+                },
+            },
+        )
+        assert response["type"] == "script_error"
+        assert response["controller_key"] == "alsa-seq:test:2"
+        assert "no descriptor scripts resolved" in str(response["message"])
