@@ -994,11 +994,76 @@ function StepTarget({
   )
 }
 
+// T2461-A6 — MIDI source sample captured during a Brain capture
+// window. `value` is normalised 0..1 from the message's raw value
+// (CC/note velocity/PC). `relativeMs` is offset from capture start
+// so the side-by-side renderer can plot it against the Brain frames'
+// `(ts - started_at)` timeline.
+export interface MidiSourceSample {
+  relativeMs: number
+  value: number
+  type: 'cc' | 'note' | 'pc' | 'other'
+  cc?: number
+  note?: number
+  pc?: number
+  ch: number
+}
+
+// T2461-A6 — convert a wall-clock MIDI message into a normalised
+// sample relative to a capture window's start time (epoch seconds,
+// matching the Brain capture buffer's `started_at`).
+export function buildMidiSourceSample(
+  message: MidiMessage,
+  startedAtEpochS: number,
+  nowEpochS: number,
+): MidiSourceSample {
+  const relativeMs = Math.max(0, (nowEpochS - startedAtEpochS) * 1000)
+  const raw = typeof message.v === 'number' ? message.v : 0
+  // CC/note share the 0..127 range; PC has no value so we centre at 1.
+  const normalised = message.type === 'pc' ? 1 : Math.max(0, Math.min(1, raw / 127))
+  return {
+    relativeMs,
+    value: normalised,
+    type: message.type,
+    cc: message.cc,
+    note: message.note,
+    pc: message.pc,
+    ch: message.ch,
+  }
+}
+
+// T2461-A6 — render a list of MIDI source samples as an SVG path
+// over a shared timeline. Empty sample list yields an empty path so
+// the caller can decide whether to show a placeholder.
+export function buildMidiSourceWaveformPath(
+  samples: MidiSourceSample[],
+  durationS: number,
+  width: number,
+  height: number,
+): string {
+  if (samples.length === 0 || durationS <= 0 || width <= 0 || height <= 0) {
+    return ''
+  }
+  const points = samples.map((s) => {
+    const t = Math.max(0, Math.min(1, s.relativeMs / (durationS * 1000)))
+    const x = t * width
+    const y = height - s.value * height
+    return `${x.toFixed(1)},${y.toFixed(1)}`
+  })
+  return `M ${points.join(' L ')}`
+}
+
 // T2461-A6 — Brain capture widget. Operator clicks Capture; backend
-// arms the buffer for the supplied slot for `durationS`; widget polls
-// /capture/<id> after stop and renders a small SVG waveform of the
-// peak_db track over the calibrate window.
-function BrainCaptureWidget(): React.JSX.Element {
+// arms the buffer for the supplied slot for `durationS`; while the
+// window is open, every incoming MIDI source message lands in
+// `midiSamplesRef.current` keyed by relativeMs offset. After stop, the
+// widget renders Brain output (top) + MIDI source (bottom) on a shared
+// timeline with a vertical alignment cursor the operator can scrub.
+function BrainCaptureWidget({
+  midiSampleSinkRef,
+}: {
+  midiSampleSinkRef: React.MutableRefObject<((message: MidiMessage) => void) | null>
+}): React.JSX.Element {
   const [slotId, setSlotId] = useState(0)
   const [durationS, setDurationS] = useState(5)
   const [pending, setPending] = useState(false)
@@ -1008,38 +1073,94 @@ function BrainCaptureWidget(): React.JSX.Element {
     startedAt: number
     durationS: number
     frames: Array<{ ts: number; peak_db: number; rms_db: number; clipping: boolean }>
+    midiSamples: MidiSourceSample[]
   } | null>(null)
+  const [cursorRelMs, setCursorRelMs] = useState<number | null>(null)
+  const liveMidiBufferRef = useRef<MidiSourceSample[]>([])
+  const captureStartedAtRef = useRef<number | null>(null)
+
+  // Detach the sample sink whenever the widget unmounts so we don't
+  // leak the ref and accidentally record into a previous session.
+  useEffect(() => {
+    return () => {
+      midiSampleSinkRef.current = null
+    }
+  }, [midiSampleSinkRef])
 
   const handleCapture = useCallback(async () => {
     setPending(true)
     setError(null)
     setSession(null)
+    setCursorRelMs(null)
+    liveMidiBufferRef.current = []
+    captureStartedAtRef.current = null
     try {
       const start = await brainApi.startCapture(slotId, durationS)
+      // Arm the MIDI source sink — every incoming message during the
+      // capture window lands in liveMidiBufferRef.
+      const armedAtEpochS = Date.now() / 1000
+      captureStartedAtRef.current = armedAtEpochS
+      midiSampleSinkRef.current = (message: MidiMessage) => {
+        const startedAt = captureStartedAtRef.current ?? armedAtEpochS
+        liveMidiBufferRef.current.push(
+          buildMidiSourceSample(message, startedAt, Date.now() / 1000),
+        )
+      }
       // Wait for the capture to finish, then stop + fetch frames.
       await new Promise((r) => window.setTimeout(r, durationS * 1000 + 200))
       await brainApi.stopCapture()
+      midiSampleSinkRef.current = null
       const detail = await brainApi.getCapture(start.session_id)
       if (!detail.found || !detail.frames || !detail.started_at || !detail.duration_s) {
         setError('Capture session had no frames (Brain meter pipeline idle).')
         return
       }
+      // The Brain capture buffer's started_at is authoritative — use
+      // it (not the wizard's wall-clock arming time) to align the
+      // MIDI samples so any latency between startCapture() and the
+      // backend buffer arming is absorbed.
+      const authoritativeStartedAt = detail.started_at
+      const authoritativeDurationS = detail.duration_s
+      const realignedMidi = liveMidiBufferRef.current
+        .map((s) => ({
+          ...s,
+          // Re-anchor to the backend-truth started_at: relativeMs was
+          // armedAtEpochS-based, which we offset by the diff.
+          relativeMs: s.relativeMs + ((armedAtEpochS - authoritativeStartedAt) * 1000),
+        }))
+        .filter((s) => s.relativeMs >= 0 && s.relativeMs <= authoritativeDurationS * 1000)
       setSession({
         sessionId: start.session_id,
-        startedAt: detail.started_at,
-        durationS: detail.duration_s,
+        startedAt: authoritativeStartedAt,
+        durationS: authoritativeDurationS,
         frames: detail.frames as Array<{ ts: number; peak_db: number; rms_db: number; clipping: boolean }>,
+        midiSamples: realignedMidi,
       })
     } catch (err) {
+      midiSampleSinkRef.current = null
       setError((err as Error).message ?? 'capture failed')
     } finally {
       setPending(false)
     }
-  }, [slotId, durationS])
+  }, [slotId, durationS, midiSampleSinkRef])
 
-  const path = session
+  const brainPath = session
     ? buildBrainCaptureWaveformPath(session.frames, session.startedAt, session.durationS, 320, 60)
     : ''
+  const midiPath = session
+    ? buildMidiSourceWaveformPath(session.midiSamples, session.durationS, 320, 60)
+    : ''
+  const cursorX = session && cursorRelMs !== null
+    ? Math.max(0, Math.min(320, (cursorRelMs / (session.durationS * 1000)) * 320))
+    : null
+  const handleSvgMove = useCallback((evt: React.MouseEvent<SVGSVGElement>) => {
+    if (!session) return
+    const rect = (evt.currentTarget as SVGSVGElement).getBoundingClientRect()
+    const x = evt.clientX - rect.left
+    const ratio = Math.max(0, Math.min(1, x / Math.max(1, rect.width)))
+    setCursorRelMs(ratio * session.durationS * 1000)
+  }, [session])
+  const handleSvgLeave = useCallback(() => setCursorRelMs(null), [])
 
   return (
     <div
@@ -1050,7 +1171,7 @@ function BrainCaptureWidget(): React.JSX.Element {
       }}
     >
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-        <strong>Brain capture (T2461-A6)</strong>
+        <strong>Brain + MIDI capture (T2461-A6)</strong>
         <label>slot
           <input
             type="number" min={0} max={15} value={slotId}
@@ -1066,26 +1187,64 @@ function BrainCaptureWidget(): React.JSX.Element {
           />
         </label>
         <button onClick={handleCapture} disabled={pending}>
-          {pending ? 'Capturing…' : 'Capture from Brain'}
+          {pending ? 'Capturing…' : 'Calibrate (capture both)'}
         </button>
         {session ? (
-          <span style={{ opacity: 0.6 }}>{session.frames.length} frames captured</span>
+          <span style={{ opacity: 0.6 }}>
+            {session.frames.length} brain · {session.midiSamples.length} midi frames
+          </span>
         ) : null}
       </div>
       {error ? (
         <div style={{ color: 'var(--mw-warn)', marginTop: 6 }}>{error}</div>
       ) : null}
-      {session && session.frames.length > 0 ? (
-        <svg
-          width="320" height="60"
-          style={{ marginTop: 6, background: 'var(--mw-bg)', border: '1px solid var(--mw-line-2)' }}
-          aria-label="Brain capture waveform"
-          data-testid="brain-capture-svg"
-        >
-          {/* Floor reference line */}
-          <line x1={0} y1={60} x2={320} y2={60} stroke="var(--mw-line-2)" strokeWidth={1} />
-          <path d={path} fill="none" stroke="var(--mw-engine)" strokeWidth={1.5} />
-        </svg>
+      {session ? (
+        <div style={{ display: 'flex', flexDirection: 'column', gap: 4, marginTop: 6 }}>
+          <div style={{ fontSize: 10, color: 'var(--mw-text-3)' }}>
+            Brain output ({session.frames.length} frames)
+            {cursorRelMs !== null ? ` · cursor @ ${(cursorRelMs / 1000).toFixed(2)}s` : ''}
+          </div>
+          <svg
+            width="320" height="60"
+            style={{ background: 'var(--mw-bg)', border: '1px solid var(--mw-line-2)', cursor: 'crosshair' }}
+            aria-label="Brain capture waveform"
+            data-testid="brain-capture-svg"
+            onMouseMove={handleSvgMove}
+            onMouseLeave={handleSvgLeave}
+          >
+            <line x1={0} y1={60} x2={320} y2={60} stroke="var(--mw-line-2)" strokeWidth={1} />
+            <path d={brainPath} fill="none" stroke="var(--mw-engine)" strokeWidth={1.5} />
+            {cursorX !== null ? (
+              <line
+                x1={cursorX} y1={0} x2={cursorX} y2={60}
+                stroke="var(--mw-accent)" strokeWidth={1}
+                data-testid="alignment-cursor-brain"
+              />
+            ) : null}
+          </svg>
+          <div style={{ fontSize: 10, color: 'var(--mw-text-3)', marginTop: 4 }}>
+            MIDI source ({session.midiSamples.length} samples)
+            {session.midiSamples.length === 0 ? ' · move a control during the next capture' : ''}
+          </div>
+          <svg
+            width="320" height="60"
+            style={{ background: 'var(--mw-bg)', border: '1px solid var(--mw-line-2)', cursor: 'crosshair' }}
+            aria-label="MIDI source waveform"
+            data-testid="midi-source-svg"
+            onMouseMove={handleSvgMove}
+            onMouseLeave={handleSvgLeave}
+          >
+            <line x1={0} y1={60} x2={320} y2={60} stroke="var(--mw-line-2)" strokeWidth={1} />
+            <path d={midiPath} fill="none" stroke="var(--mw-source, var(--mw-accent))" strokeWidth={1.5} />
+            {cursorX !== null ? (
+              <line
+                x1={cursorX} y1={0} x2={cursorX} y2={60}
+                stroke="var(--mw-accent)" strokeWidth={1}
+                data-testid="alignment-cursor-midi"
+              />
+            ) : null}
+          </svg>
+        </div>
       ) : null}
     </div>
   )
@@ -1094,9 +1253,11 @@ function BrainCaptureWidget(): React.JSX.Element {
 function StepCalibrate({
   state,
   setState,
+  midiSampleSinkRef,
 }: {
   state: WizardState
   setState: (next: Partial<WizardState>) => void
+  midiSampleSinkRef: React.MutableRefObject<((message: MidiMessage) => void) | null>
 }) {
   const cal = state.calibration ?? DEFAULT_CALIBRATION
   const set = (patch: Partial<WizardCalibration>) => setState({ calibration: { ...cal, ...patch } })
@@ -1131,7 +1292,7 @@ function StepCalibrate({
       {/* T2461-A6 — Brain capture widget. Surfaced for any target so
           operators can capture the Brain response while dialling the
           curve, regardless of whether the target is a Brain action. */}
-      <BrainCaptureWidget />
+      <BrainCaptureWidget midiSampleSinkRef={midiSampleSinkRef} />
 
       <div className="cal">
         <div className="cal-fields">
@@ -1468,6 +1629,17 @@ export function MidiAssignmentsPage() {
   }, [searchParams])
 
   const queryClient = useQueryClient()
+
+  // T2461-A6 — page-owned MIDI sample sink. Set by BrainCaptureWidget
+  // during a capture window; LiveMidiStrip's onSample fans every
+  // ingested message through this ref so the wizard can record source
+  // samples in sync with the Brain output capture for side-by-side
+  // alignment plotting. Cleared back to null when the widget unmounts
+  // or when its capture finishes.
+  const midiSampleSinkRef = useRef<((message: MidiMessage) => void) | null>(null)
+  const handleMidiSample = useCallback((message: MidiMessage) => {
+    midiSampleSinkRef.current?.(message)
+  }, [])
 
   // ─── Data sources ────────────────────────────────────────────────────────
   const enrichedQuery = useQuery({
@@ -1975,7 +2147,13 @@ export function MidiAssignmentsPage() {
                     brainActions={brainActions}
                   />
                 )}
-                {stepIdx === 3 && <StepCalibrate state={state} setState={updateState} />}
+                {stepIdx === 3 && (
+                  <StepCalibrate
+                    state={state}
+                    setState={updateState}
+                    midiSampleSinkRef={midiSampleSinkRef}
+                  />
+                )}
                 {stepIdx === 4 && (
                   <StepTest
                     state={state}
@@ -2022,6 +2200,7 @@ export function MidiAssignmentsPage() {
             <LiveMidiStrip
               listening={state.listening}
               onCapture={onCaptureListen}
+              onSample={handleMidiSample}
               activeSurfaceLabel={state.surface?.shortLabel ?? null}
               sourceFilter={state.surface?.shortLabel ?? null}
               collapsed={stripCollapsed}

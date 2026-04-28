@@ -37,6 +37,10 @@ interface LiveMidiStripProps {
   listening: boolean
   /** Called with the captured message when listening picks one up. */
   onCapture: (message: MidiMessage) => void
+  /** T2461-A6 — fires for every ingested message (regardless of listening
+   * state) so a sibling capture buffer can record source samples in
+   * sync with the Brain capture window. Optional. */
+  onSample?: (message: MidiMessage) => void
   /** Active surface short label / id used for the source filter. */
   activeSurfaceLabel: string | null
   /** Source filter setting; null = all sources. */
@@ -53,12 +57,15 @@ const FEED_MAX = 60
 export function LiveMidiStrip({
   listening,
   onCapture,
+  onSample,
   activeSurfaceLabel,
   sourceFilter,
   collapsed,
   onToggleCollapsed,
   bindingPreview,
 }: LiveMidiStripProps) {
+  const onSampleRef = useRef(onSample)
+  onSampleRef.current = onSample
   const [state, setState] = useState<LiveMidiState>({ level: 0, last: null, feed: [], listening })
   const stateRef = useRef(state)
   stateRef.current = state
@@ -84,6 +91,7 @@ export function LiveMidiStrip({
     if (listeningRef.current) {
       onCapture(message)
     }
+    onSampleRef.current?.(message)
   }, [onCapture])
 
   // WS topic — real-time messages. Backend uses `midi_activity` topic.

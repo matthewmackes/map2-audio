@@ -983,7 +983,7 @@ Last updated: 2026-04-27 EDT - Claude: SHIPPED.
 ---
 
 ID: T2461-A6
-Status: [>] In Progress
+Status: [✓] Done
 Parent: T2461
 Title: MIDI Assignments calibrate-step replays Brain capture buffer side-by-side
 Description:
@@ -993,8 +993,19 @@ Description:
 - Required outputs: shared capture hook between wizard + Brain step view; alignment widget; one frontend test on the alignment math.
 - Estimated lift: medium (2 days).
 Progress note: 2026-04-27 — Claude: backend half SHIPPED. Authored `app/services/performance_brain/brain_capture_buffer.py` — process-singleton ring buffer with `start_capture(slot_id, duration_s)`, `record_frame(slot_id, peak_db, rms_db, clipping, ts)`, `stop_capture()`, `get_session(session_id)` API. Frames outside the active window or for a non-active slot are dropped. Sessions retain for 5 minutes after stop. New routes: `POST /api/engine/brain/capture/start` + `/stop` + `GET /api/engine/brain/capture/{session_id}` — the wizard's Calibrate step calls start/stop around the operator's calibrate gesture; `BrainMeteringService` will be wired to call `record_frame()` from its existing 30fps WS broadcast tick (queued — current path adds the buffer foundation + endpoints; the meter-pipeline call site lives in a separate service file). Extended typed client `brainApi.startCapture()`, `stopCapture()`, `getCapture()` + `BrainCaptureFrame`/`BrainCaptureSession` interfaces. Tests: `tests/test_brain_capture_buffer.py` reports **11 passed** (start returns session_id; invalid duration raises; record only appends for active slot; drops frames outside window; stop with no active returns None; get_session returns finalised; GC drops past retention; new start replaces active; route round-trip; route get returns payload; unknown session not_found). The wizard-side StepCalibrate UI (capture button + side-by-side waveform + alignment cursor) is the second half of A6; current PR ships the data-plane + contract so the UI can land in a follow-up tranche without touching the same surface twice.
+Completion note: 2026-04-28 — Claude: SHIPPED. Closed the wizard-side half of A6 — paired Brain output + MIDI source capture on a shared timeline with a scrubbing alignment cursor.
+
+  Plumbing: `LiveMidiStrip` gains an optional `onSample(message)` prop that fires for *every* ingested MIDI message regardless of listening state (the existing `onCapture` still fires only during the listening gesture). `MidiAssignmentsPage` owns a top-level `midiSampleSinkRef = useRef<((message: MidiMessage) => void) | null>` and a `handleMidiSample` callback wired to `LiveMidiStrip.onSample`. The ref is threaded through `StepCalibrate` into `BrainCaptureWidget`, which mounts/unmounts the sink across capture windows.
+
+  Capture window: when the operator clicks Calibrate, the widget calls `brainApi.startCapture(slot, duration)` AND simultaneously assigns a sink to the ref so every incoming MIDI message lands in `liveMidiBufferRef.current`. After `duration_s + 200ms`, it calls `brainApi.stopCapture()`, fetches the session frames, then re-anchors the MIDI samples against the backend's authoritative `started_at` (absorbing any latency between `startCapture()` arming and the buffer's actual start). Samples outside the window are filtered out; the rest are normalised to `(relativeMs, value 0..1)` shape.
+
+  Side-by-side rendering: two stacked SVGs (Brain output on top, MIDI source on bottom) share the same width / duration / timeline math. New exported helpers — `buildMidiSourceSample(message, startedAt, now)` (normalises raw MIDI value: CC/note → v/127, PC → 1, missing v → 0) and `buildMidiSourceWaveformPath(samples, durationS, width, height)` (mirrors `buildBrainCaptureWaveformPath`'s contract). Both SVGs share an alignment cursor: hover/move on either SVG sets `cursorRelMs` from the x-coordinate, and a vertical line at the same proportional x renders on both panels (testid `alignment-cursor-brain` + `alignment-cursor-midi`). Cursor readout displays the cursor time in seconds.
+
+  Tests: `MidiAssignmentsPage.t2461a6.test.ts` extended with 10 new cases (CC value normalisation, before-start clamp, PC centre value, missing v default, empty / zero-duration / midpoint / multi-sample / outside-window paths, plus a shared-timeline alignment proof showing Brain + MIDI samples at the same window-fraction land at the same x coordinate). Suite is **18/18 green** (8 prior + 10 new). Frontend `npm run typecheck` clean. `npm run build` clean (22.66s); fresh `MidiAssignmentsPage-*.js` bundle contains all 6 new identifiers.
+
+  `update` shorthand executed: commit + dual-push to origin/gitlab + atomic rebuild + port-3000 redeploy.
 Assigned to: Claude
-Last updated: 2026-04-27 EDT - Claude: backend done; wizard UI integration queued.
+Last updated: 2026-04-28 EDT - Claude: SHIPPED.
 
 ---
 
