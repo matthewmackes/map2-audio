@@ -9,7 +9,9 @@
 //
 // Worklist: T2459-B2
 
+#include "EventRing/ShmEventRing.h"
 #include "MappingEngine/Map2MappingEngine.h"
+#include "Midi/LibremidiAdapter.h"
 #include "Midi/Map2MidiBackend.h"
 
 #include <algorithm>
@@ -24,6 +26,7 @@
 #include <fstream>
 #include <iostream>
 #include <optional>
+#include <poll.h>
 #include <regex>
 #include <sstream>
 #include <string>
@@ -161,6 +164,62 @@ std::string build_log_event (const std::string& msg_id,
         oss << "\"controller_key\":\"" << json_escape (*controller_key) << "\",";
     oss << "\"level\":\"" << json_escape (level) << "\","
         << "\"message\":\"" << json_escape (message) << "\"}";
+    return oss.str();
+}
+
+std::string build_engine_command_frame (const map2::controller_host::PendingEngineCommand& cmd)
+{
+    std::ostringstream oss;
+    oss << "{\"type\":\"engine_command\","
+        << "\"msg_id\":\"\","
+        << "\"schema_version\":1,"
+        << "\"controller_key\":\"" << json_escape (cmd.controller_key) << "\","
+        << "\"target\":\"" << json_escape (cmd.target) << "\","
+        << "\"action\":\"" << json_escape (cmd.action) << "\"";
+    if (cmd.value.has_value())
+        oss << ",\"value\":" << *cmd.value;
+    if (! cmd.args.empty())
+    {
+        oss << ",\"args\":[";
+        for (std::size_t i = 0; i < cmd.args.size(); ++i)
+        {
+            if (i > 0) oss << ",";
+            oss << "\"" << json_escape (cmd.args[i]) << "\"";
+        }
+        oss << "]";
+    }
+    oss << "}";
+    return oss.str();
+}
+
+std::string build_log_event_from_pending (const map2::controller_host::PendingLogEvent& ev)
+{
+    std::ostringstream oss;
+    oss << "{\"type\":\"log_event\","
+        << "\"msg_id\":\"\","
+        << "\"schema_version\":1,";
+    if (! ev.controller_key.empty())
+        oss << "\"controller_key\":\"" << json_escape (ev.controller_key) << "\",";
+    oss << "\"level\":\"" << json_escape (ev.level) << "\","
+        << "\"message\":\"" << json_escape (ev.message) << "\"}";
+    return oss.str();
+}
+
+std::string build_midi_send_request_frame (const std::string& controller_key,
+                                            const std::vector<std::uint8_t>& bytes)
+{
+    std::ostringstream oss;
+    oss << "{\"type\":\"midi_send_request\","
+        << "\"msg_id\":\"\","
+        << "\"schema_version\":1,"
+        << "\"controller_key\":\"" << json_escape (controller_key) << "\","
+        << "\"bytes\":[";
+    for (std::size_t i = 0; i < bytes.size(); ++i)
+    {
+        if (i > 0) oss << ",";
+        oss << static_cast<int> (bytes[i]);
+    }
+    oss << "]}";
     return oss.str();
 }
 
@@ -463,6 +522,78 @@ bool recv_frame (int fd, std::string& out)
     return true;
 }
 
+// T2459-H3 Slice 5 — drain a shm ring up to maxEvents per call, dispatch
+// each event through the loaded mapping descriptor for the active
+// controller_key, and emit any resulting engine commands / logs / outbound
+// MIDI as IPC frames on `client_fd`. Returns false if a send to the
+// backend fails (caller should treat as disconnect).
+bool drain_ring_and_dispatch (int client_fd,
+                              map2::controller_host::ShmEventRing& ring,
+                              map2::controller_host::Map2MappingEngine& mapping_engine,
+                              const std::string& active_controller_key,
+                              std::size_t maxEvents)
+{
+    if (! ring.isOpen() || active_controller_key.empty())
+        return true;
+
+    std::uint8_t buf[map2::controller_host::kMaxPayloadBytes];
+    std::uint64_t ts = 0;
+
+    for (std::size_t i = 0; i < maxEvents; ++i)
+    {
+        const std::size_t n = ring.pop (&ts, buf, sizeof (buf));
+        if (n == 0) break;
+        if (n < 1) continue;
+
+        const std::uint8_t status   = buf[0];
+        const std::uint8_t data1    = (n > 1) ? buf[1] : 0u;
+        const std::uint8_t channel  = static_cast<std::uint8_t> (status & 0x0Fu);
+        const std::uint8_t statusHi = static_cast<std::uint8_t> (status & 0xF0u);
+
+        // Mixxx-style descriptors store (status, midino, channel) where
+        // status is the high nibble (e.g. 0xB0) and channel is split out
+        // separately. Try the high-nibble+channel match first; if that
+        // misses, fall back to the raw status byte for descriptors that
+        // didn't split the channel out.
+        auto plan = mapping_engine.planDispatch (active_controller_key, statusHi, data1, channel);
+        if (! plan.matched)
+            plan = mapping_engine.planDispatch (active_controller_key, status, data1, channel);
+        if (! plan.matched)
+            continue;
+        if (plan.callback_name.empty())
+            continue;
+
+        std::vector<std::uint8_t> bytes (buf, buf + n);
+        if (auto exc = mapping_engine.dispatch (active_controller_key, plan.callback_name, bytes);
+            exc.has_value())
+        {
+            if (! send_frame (client_fd, build_script_error ("", active_controller_key, *exc)))
+                return false;
+        }
+    }
+
+    // Drain JS-side outbound queues regardless of how many events fired —
+    // JS callbacks during dispatch may have queued engine commands / logs
+    // / MIDI sends that must reach the backend.
+    for (auto& cmd : mapping_engine.js().drainEngineCommands())
+        if (! send_frame (client_fd, build_engine_command_frame (cmd)))
+            return false;
+    for (auto& ev : mapping_engine.js().drainLogs())
+        if (! send_frame (client_fd, build_log_event_from_pending (ev)))
+            return false;
+    for (auto& sm : mapping_engine.drainShortMidi())
+    {
+        const std::vector<std::uint8_t> bytes { sm.status, sm.data1, sm.data2 };
+        if (! send_frame (client_fd, build_midi_send_request_frame (sm.controller_key, bytes)))
+            return false;
+    }
+    for (auto& sx : mapping_engine.drainSysExMidi())
+        if (! send_frame (client_fd, build_midi_send_request_frame (sx.controller_key, sx.bytes)))
+            return false;
+
+    return true;
+}
+
 int run_main_loop (const std::string& socket_path)
 {
     // Remove any leftover socket file from a prior crashed run.
@@ -528,8 +659,72 @@ int run_main_loop (const std::string& socket_path)
                              midiBackend.selectedBackend())
                       << "\n";
 
+        // T2459-H3 Slice 5 — create the per-connection shm rings and wire
+        // them to the libremidi adapter so live inbound MIDI is producer-
+        // pushed by the libremidi I/O thread and consumer-popped by this
+        // main loop. Per-connection naming keeps multiple host instances
+        // (e.g. tests) from racing on the same shm region.
+        const std::string rt_shm_name      = "/map2-controller-host.midi.rt." + std::to_string (::getpid());
+        const std::string control_shm_name = "/map2-controller-host.midi.control." + std::to_string (::getpid());
+        map2::controller_host::ShmEventRing rtRing;
+        map2::controller_host::ShmEventRing controlRing;
+        const bool rt_ok = rtRing.open (rt_shm_name,
+                                         map2::controller_host::kRtRingDefaultCapacity,
+                                         map2::controller_host::ShmEventRing::Mode::CreateOwned);
+        const bool ctl_ok = controlRing.open (control_shm_name,
+                                                map2::controller_host::kControlRingDefaultCapacity,
+                                                map2::controller_host::ShmEventRing::Mode::CreateOwned);
+        if (! rt_ok || ! ctl_ok)
+            std::cerr << "[map2-controller-host] shm ring open failed: rt="
+                      << rtRing.errorMessage() << " control=" << controlRing.errorMessage() << "\n";
+        if (auto* adapter = midiBackend.adapter(); adapter != nullptr)
+            adapter->setEventRings (rt_ok ? &rtRing : nullptr, ctl_ok ? &controlRing : nullptr);
+
+        // T2459-H3 Slice 5 — port_id → controller_key map. Today the rings
+        // carry only bytes + timestamp with no controller_key; we treat
+        // the most-recently opened input as the active controller for any
+        // event drained from the ring. The map preserves the per-port
+        // binding for the future Slice 6 multi-controller routing without
+        // requiring a ring-format change (which is locked by H1).
+        std::unordered_map<std::string, std::string> port_to_controller;
+        std::string active_controller_key;
+
         while (! g_shutdownRequested.load (std::memory_order_acquire))
         {
+            // T2459-H3 Slice 5 — non-blocking dispatch. Poll the client fd
+            // with a 1 ms timeout; on each tick, drain inbound MIDI from
+            // both rings before re-checking for an IPC frame. This is the
+            // production live-event loop.
+            struct pollfd pfd { client_fd, POLLIN, 0 };
+            const int pr = ::poll (&pfd, 1, 1);
+            if (pr > 0 && (pfd.revents & (POLLERR | POLLHUP | POLLNVAL)))
+            {
+                std::cerr << "[map2-controller-host] backend disconnected (poll hup)\n";
+                break;
+            }
+
+            if (rt_ok)
+            {
+                if (! drain_ring_and_dispatch (client_fd, rtRing, mapping_engine,
+                                               active_controller_key, 64))
+                {
+                    std::cerr << "[map2-controller-host] backend disconnected during rt drain\n";
+                    goto disconnect;
+                }
+            }
+            if (ctl_ok)
+            {
+                if (! drain_ring_and_dispatch (client_fd, controlRing, mapping_engine,
+                                               active_controller_key, 16))
+                {
+                    std::cerr << "[map2-controller-host] backend disconnected during control drain\n";
+                    goto disconnect;
+                }
+            }
+
+            if (pr <= 0 || ! (pfd.revents & POLLIN))
+                continue;
+
             std::string frame;
             if (! recv_frame (client_fd, frame))
             {
@@ -559,6 +754,50 @@ int run_main_loop (const std::string& socket_path)
                 const std::string msg_id = extract_string_field (frame, "msg_id");
                 const std::string response = build_list_ports_response (msg_id, midiBackend);
                 send_frame (client_fd, response);
+                continue;
+            }
+
+            // T2459-H3 Slice 5 — open a hardware input port and bind it
+            // to a controller_key so live MIDI traffic routes through the
+            // loaded mapping descriptor.
+            if (frame.find ("\"type\":\"midi_open_input_request\"") != std::string::npos)
+            {
+                const std::string msg_id = extract_string_field (frame, "msg_id");
+                const std::string controller_key = extract_string_field (frame, "controller_key");
+                const std::string port_id = extract_string_field (frame, "port_id");
+                if (controller_key.empty() || port_id.empty())
+                {
+                    send_frame (client_fd, build_log_event (
+                        msg_id,
+                        "error",
+                        "midi_open_input_request missing controller_key or port_id",
+                        controller_key.empty() ? std::nullopt : std::optional<std::string> (controller_key)));
+                    continue;
+                }
+
+                auto* adapter = midiBackend.adapter();
+                if (adapter == nullptr)
+                {
+                    send_frame (client_fd, build_log_event (
+                        msg_id, "error",
+                        "midi_open_input_request: no MIDI backend bound",
+                        controller_key));
+                    continue;
+                }
+                if (! adapter->openInput (port_id))
+                {
+                    send_frame (client_fd, build_log_event (
+                        msg_id, "error",
+                        "midi_open_input_request failed: " + adapter->errorMessage(),
+                        controller_key));
+                    continue;
+                }
+                port_to_controller[port_id] = controller_key;
+                active_controller_key = controller_key;
+                send_frame (client_fd, build_log_event (
+                    msg_id, "info",
+                    "midi input opened: " + port_id,
+                    controller_key));
                 continue;
             }
 
@@ -670,6 +909,7 @@ int run_main_loop (const std::string& socket_path)
             }
         }
 
+    disconnect:
         ::close (client_fd);
     }
 

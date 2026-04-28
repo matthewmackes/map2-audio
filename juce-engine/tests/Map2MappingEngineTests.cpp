@@ -7,11 +7,18 @@
 
 #include <catch2/catch_test_macros.hpp>
 
+#include "ControllerHost/EventRing/ShmEventRing.h"
 #include "ControllerHost/MappingEngine/Map2MappingEngine.h"
+#include "ControllerHost/Midi/LibremidiAdapter.h"
 
+#include <string>
+
+using map2::controller_host::LibremidiAdapter;
 using map2::controller_host::Map2MappingEngine;
 using map2::controller_host::MappingDescriptorSpec;
 using map2::controller_host::MappingControlSpec;
+using map2::controller_host::MidiBackend;
+using map2::controller_host::ShmEventRing;
 
 namespace {
 
@@ -141,6 +148,60 @@ TEST_CASE ("Map2MappingEngine midi.sendSysexMsg accepts an array and queues byte
     REQUIRE (sysex[0].bytes.size() == 6);
     REQUIRE (sysex[0].bytes.front() == 0xF0);
     REQUIRE (sysex[0].bytes.back()  == 0xF7);
+}
+
+TEST_CASE ("Slice 5: shm-ring-pushed CC event drives planDispatch + dispatch + EngineCommand emission", "[H3][slice5][live-pump]")
+{
+    Map2MappingEngine eng;
+    REQUIRE (eng.initialise());
+    REQUIRE_FALSE (eng.loadDescriptor ("ctrl-live", makeSimpleDescriptor()).has_value());
+
+    // Construct an adapter (no libremidi backend bound — we use the
+    // pushMessage test seam to inject bytes as if they came from a
+    // hardware port) and wire its rings.
+    LibremidiAdapter adapter (MidiBackend::JackMidi);
+    ShmEventRing rtRing;
+    const std::string shmName = std::string ("/map2-test-slice5-rt-") + std::to_string (::getpid());
+    REQUIRE (rtRing.open (shmName, 64, ShmEventRing::Mode::CreateOwned));
+    adapter.setEventRings (&rtRing, nullptr);
+
+    // Inject a CC #7 value=100 on channel 0; classified as RT bucket.
+    const std::uint8_t bytes[3] = { 0xB0, 0x07, 100 };
+    adapter.pushMessage (bytes, 3);
+
+    // Drain one event from the ring and dispatch it through the engine,
+    // matching the production main-loop flow at the level the slice
+    // wires up. The test is intentionally narrow to the contract:
+    // ring → planDispatch → dispatch → EngineCommand queued.
+    std::uint64_t ts = 0;
+    std::uint8_t buf[map2::controller_host::kMaxPayloadBytes];
+    const std::size_t n = rtRing.pop (&ts, buf, sizeof (buf));
+    REQUIRE (n == 3);
+    REQUIRE (buf[0] == 0xB0);
+
+    const std::uint8_t status   = buf[0];
+    const std::uint8_t data1    = buf[1];
+    const std::uint8_t channel  = static_cast<std::uint8_t> (status & 0x0Fu);
+    const std::uint8_t statusHi = static_cast<std::uint8_t> (status & 0xF0u);
+
+    auto plan = eng.planDispatch ("ctrl-live", statusHi, data1, channel);
+    REQUIRE (plan.matched);
+    REQUIRE (plan.callback_name == "TestPack.onCC7");
+
+    std::vector<std::uint8_t> payload (buf, buf + n);
+    REQUIRE_FALSE (eng.dispatch ("ctrl-live", plan.callback_name, payload).has_value());
+
+    auto commands = eng.js().drainEngineCommands();
+    REQUIRE (commands.size() == 1);
+    REQUIRE (commands[0].controller_key == "ctrl-live");
+    REQUIRE (commands[0].target == "[Channel1]");
+    REQUIRE (commands[0].action == "volume");
+    REQUIRE (commands[0].value.has_value());
+
+    auto outbound = eng.drainShortMidi();
+    REQUIRE (outbound.size() == 1);
+    REQUIRE (outbound[0].controller_key == "ctrl-live");
+    REQUIRE (outbound[0].status == 0x90);
 }
 
 TEST_CASE ("Map2MappingEngine reload swaps the descriptor's script body", "[H2][engine][reload]")

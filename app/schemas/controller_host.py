@@ -101,6 +101,19 @@ class MidiListPortsRequest(TypedDict):
     schema_version: int
 
 
+# T2459-H3 Slice 5 — open a hardware input port and bind it to a
+# controller_key. The host opens the port via libremidi's
+# observer-resolved port handle and routes inbound events through the
+# loaded mapping descriptor for that controller_key.
+class MidiOpenInputRequest(TypedDict):
+    """Open a hardware MIDI input port and bind it to a controller_key."""
+    type: Literal["midi_open_input_request"]
+    msg_id: str
+    schema_version: int
+    controller_key: str
+    port_id: str
+
+
 # ---------------------------------------------------------------------------
 # Outbound: controller-host → backend
 # ---------------------------------------------------------------------------
@@ -235,6 +248,7 @@ FIELD_MANIFEST: dict[str, list[str]] = {
     "MidiListPortsRequest":  list(MidiListPortsRequest.__annotations__.keys()),
     "MidiListPortsResponse": list(MidiListPortsResponse.__annotations__.keys()),
     "MidiPortPayload":        list(MidiPortPayload.__annotations__.keys()),
+    "MidiOpenInputRequest":   list(MidiOpenInputRequest.__annotations__.keys()),
     "EngineCommand":     list(EngineCommand.__annotations__.keys()),
     "ControllerEvent":   list(ControllerEvent.__annotations__.keys()),
     "LogEvent":          list(LogEvent.__annotations__.keys()),
@@ -251,6 +265,7 @@ InboundMessage = (
     | MidiSendRequest
     | Shutdown
     | MidiListPortsRequest
+    | MidiOpenInputRequest
 )
 OutboundMessage = (
     EngineCommand

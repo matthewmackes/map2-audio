@@ -118,6 +118,17 @@ struct MidiListPortsResponse
     bool degraded = false;
 };
 
+// T2459-H3 Slice 5 — open a hardware input port and bind it to a
+// controller_key for live event ingestion.
+struct MidiOpenInputRequest
+{
+    static constexpr const char* kType = "midi_open_input_request";
+    std::string msg_id;
+    int schema_version = kSchemaVersion;
+    std::string controller_key;
+    std::string port_id;            // name/id from MidiListPortsResponse.ports
+};
+
 // ---------------------------------------------------------------------------
 // Outbound: controller-host → backend
 // ---------------------------------------------------------------------------
@@ -181,6 +192,7 @@ struct ScriptError
 // MidiListPortsRequest: type, msg_id, schema_version
 // MidiListPortsResponse: type, msg_id, schema_version, backend, ports, degraded
 // MidiPortPayload: name, id, is_input, is_virtual
+// MidiOpenInputRequest: type, msg_id, schema_version, controller_key, port_id
 // EngineCommand: type, msg_id, schema_version, controller_key, target, action, value, args
 // ControllerEvent: type, msg_id, schema_version, controller_key, timestamp_ns, bytes
 // LogEvent: type, msg_id, schema_version, controller_key, level, message

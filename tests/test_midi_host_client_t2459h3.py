@@ -99,6 +99,26 @@ def test_activate_mapping_sends_expected_payload(monkeypatch) -> None:
     assert captured["msg_id"] == msg_id
 
 
+def test_open_midi_input_sends_expected_payload(monkeypatch) -> None:
+    client = MidiHostClient(socket_path=Path("/tmp/not-used.sock"))
+    captured: dict[str, object] = {}
+
+    def _capture(req: dict) -> None:
+        captured.update(req)
+
+    monkeypatch.setattr(client, "_send_only", _capture)
+
+    msg_id = client.open_midi_input(
+        controller_key="alsa-seq:MIDI Commander:0",
+        port_id="MIDI Commander:0",
+    )
+
+    assert captured["type"] == "midi_open_input_request"
+    assert captured["controller_key"] == "alsa-seq:MIDI Commander:0"
+    assert captured["port_id"] == "MIDI Commander:0"
+    assert captured["msg_id"] == msg_id
+
+
 def test_send_surfaces_raise_on_unreachable_socket(tmp_path: Path) -> None:
     client = MidiHostClient(socket_path=tmp_path / "missing.sock", timeout_s=0.2)
 

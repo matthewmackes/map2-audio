@@ -7,6 +7,7 @@
 #include "LibremidiAdapter.h"
 
 #include <cstring>
+#include <optional>
 
 #if defined(MAP2_HAS_LIBREMIDI)
   #include <libremidi/libremidi.hpp>
@@ -21,6 +22,7 @@ struct LibremidiAdapter::Impl
     std::unique_ptr<libremidi::observer> observer;
     std::unique_ptr<libremidi::midi_in>  virtualIn;
     std::unique_ptr<libremidi::midi_out> virtualOut;
+    std::unique_ptr<libremidi::midi_in>  hardwareIn;
 };
 
 static libremidi::API toLibremidiApi (MidiBackend backend)
@@ -159,6 +161,61 @@ bool LibremidiAdapter::openVirtualOutput (const std::string& name)
 #else
     (void) name;
     return true;
+#endif
+}
+
+bool LibremidiAdapter::openInput (const std::string& port_id_or_name)
+{
+#if defined(MAP2_HAS_LIBREMIDI)
+    if (impl_->observer == nullptr)
+    {
+        errorMessage_ = "openInput: observer not initialised";
+        return false;
+    }
+    try
+    {
+        // Resolve the requested id/name against the live input enumeration.
+        std::optional<libremidi::input_port> match;
+        for (const auto& p : impl_->observer->get_input_ports())
+        {
+            if (p.port_name == port_id_or_name)
+            {
+                match = p;
+                break;
+            }
+        }
+        if (! match.has_value())
+        {
+            errorMessage_ = "openInput: no input port matches '" + port_id_or_name + "'";
+            return false;
+        }
+
+        libremidi::input_configuration cfg {};
+        cfg.on_message = [this] (libremidi::message&& msg) {
+            this->onIncomingMessage (msg.bytes.data(), msg.bytes.size(),
+                                     monotonicNanos());
+        };
+        const libremidi::API api = toLibremidiApi (backend_);
+        auto in = std::make_unique<libremidi::midi_in> (
+            cfg,
+            libremidi::midi_in_configuration_for (api));
+        if (auto err = in->open_port (*match, "map2-controller-host input"); err != stdx::error{})
+        {
+            errorMessage_ = "openInput: open_port failed for '" + port_id_or_name + "'";
+            return false;
+        }
+        impl_->hardwareIn = std::move (in);
+        return true;
+    }
+    catch (const std::exception& e)
+    {
+        errorMessage_ = std::string ("libremidi openInput failed: ") + e.what();
+        return false;
+    }
+#else
+    (void) port_id_or_name;
+    errorMessage_ = "MAP2_HAS_LIBREMIDI not defined; openInput is a no-op";
+    return false;
 #endif
 }
 
