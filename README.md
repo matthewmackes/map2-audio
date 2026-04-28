@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1381** Python | **1333** TypeScript | **177** C++/H | **145** Docs | **3038** total commits | **3** stars | **0** forks | **0** open issues
+**1381** Python | **1333** TypeScript | **177** C++/H | **145** Docs | **3041** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -193,7 +193,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 |  |  |  |
 | :---: | :---: | :---: |
 | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/map2-banner.png" width="280" alt="map2 banner"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/map2-banner-3.png" width="280" alt="map2 banner 3"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot-Cli.png" width="280" alt="Screenshot Cli"> |
-| <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 08-00-43 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 08 00 43 Mackes Audio Platform 2 FEB2025"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 07-58-14 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 07 58 14 Mackes Audio Platform 2 FEB2025"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 07-57-33 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 07 57 33 Mackes Audio Platform 2 FEB2025"> |
+| <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 08-00-43 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 08 00 43 Mackes Audio Platform 2 FEB2025"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 07-57-33 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 07 57 33 Mackes Audio Platform 2 FEB2025"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 07-58-14 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 07 58 14 Mackes Audio Platform 2 FEB2025"> |
 | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/MAP2_AUDIO-NODE_ARCH_DIAGRAM3.png" width="280" alt="MAP2 AUDIO NODE ARCH DIAGRAM3"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/MAP2_AUDIO-NODE_ARCH_DIAGRAM2-BANG.png" width="280" alt="MAP2 AUDIO NODE ARCH DIAGRAM2 BANG"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/MAP2_AUDIO-NODE_ARCH_DIAGRAM.png" width="280" alt="MAP2 AUDIO NODE ARCH DIAGRAM"> |
 <!-- GALLERY:END -->
 
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`3ee3688a`](https://github.com/matthewmackes/map2-audio/commit/3ee3688ae76e4803d7192530089e1f9f24978fcf) | Merge origin/master into B3 landing/launcher refit | Map2 Audio | 2026-04-28 |
+| [`53f5b9e7`](https://github.com/matthewmackes/map2-audio/commit/53f5b9e764da316ab0df69377732fe9bc42c081f) | T2474 B3: Landing/launcher refit — Carbon discipline appl... | Map2 Audio | 2026-04-28 |
+| [`5f8cae6a`](https://github.com/matthewmackes/map2-audio/commit/5f8cae6aecdacac2b9479892c6c0f163a3b40976) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-28 |
 | [`46c125e5`](https://github.com/matthewmackes/map2-audio/commit/46c125e50c67664524e5ed00935ad0ec22fdadde) | T2474: Worklist backfill — per-bundle audit trail for B0/... | Map2 Audio | 2026-04-28 |
 | [`361f2312`](https://github.com/matthewmackes/map2-audio/commit/361f23128a42d6fa4f003ec82e5380b23340f7aa) | T2474 B2: AppShell refit — Carbon discipline applied to t... | Map2 Audio | 2026-04-28 |
 | [`1533190a`](https://github.com/matthewmackes/map2-audio/commit/1533190a5597d29861cb2d3ad16cadbcf3061b54) | Merge origin/master README auto-update into B1 token cont... | Map2 Audio | 2026-04-28 |
 | [`4b4d25cb`](https://github.com/matthewmackes/map2-audio/commit/4b4d25cb8c71116735d65c6027350799d97e231e) | T2474 B1: Token contract + discipline + MAP semantic toke... | Map2 Audio | 2026-04-28 |
 | [`492272e6`](https://github.com/matthewmackes/map2-audio/commit/492272e68fcf1f4d96454874683c07ff32afe448) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-28 |
-| [`bd3a4020`](https://github.com/matthewmackes/map2-audio/commit/bd3a402024f3904fc8deafa6a7d927b192a7a5a2) | Merge origin/master README auto-update into B0 SCSS infra | Map2 Audio | 2026-04-28 |
-| [`c680d006`](https://github.com/matthewmackes/map2-audio/commit/c680d006f15be24b46389b0771c97507c7639068) | T2474 B0: SCSS infrastructure for Carbon discipline visua... | Map2 Audio | 2026-04-28 |
-| [`1c155c9d`](https://github.com/matthewmackes/map2-audio/commit/1c155c9df747ae8b7b7965b736def0a55a1d1ea9) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-28 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
