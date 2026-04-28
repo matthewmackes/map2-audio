@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1381** Python | **1331** TypeScript | **177** C++/H | **145** Docs | **3030** total commits | **3** stars | **0** forks | **0** open issues
+**1381** Python | **1331** TypeScript | **177** C++/H | **145** Docs | **3033** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`bd3a4020`](https://github.com/matthewmackes/map2-audio/commit/bd3a402024f3904fc8deafa6a7d927b192a7a5a2) | Merge origin/master README auto-update into B0 SCSS infra | Map2 Audio | 2026-04-28 |
+| [`c680d006`](https://github.com/matthewmackes/map2-audio/commit/c680d006f15be24b46389b0771c97507c7639068) | T2474 B0: SCSS infrastructure for Carbon discipline visua... | Map2 Audio | 2026-04-28 |
+| [`1c155c9d`](https://github.com/matthewmackes/map2-audio/commit/1c155c9df747ae8b7b7965b736def0a55a1d1ea9) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-28 |
 | [`0d0a05f6`](https://github.com/matthewmackes/map2-audio/commit/0d0a05f6e9480e126f0c2d733c8f29621fecbe0f) | audit(web): six-round web-audit cleanup + T2467 monolith-... | Map2 Audio | 2026-04-28 |
 | [`bd6a38e4`](https://github.com/matthewmackes/map2-audio/commit/bd6a38e49b3aad3abc0da560fd404bb69aff4d42) | docs(platform-guide): add Philosophy section with 8 plain... | Map2 Audio | 2026-04-28 |
 | [`3e8e5acf`](https://github.com/matthewmackes/map2-audio/commit/3e8e5acf9be3859a54453426bcef3e0e200db3f2) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-28 |
 | [`8630d86d`](https://github.com/matthewmackes/map2-audio/commit/8630d86dbd9f86ea98c2823d35e1d680a0f50e7a) | T2459-H6 prep: caller audit + CMake retirement gate + soa... | Map2 Audio | 2026-04-28 |
 | [`d57e5073`](https://github.com/matthewmackes/map2-audio/commit/d57e5073b3a10550556355e285eab5616ab4cad9) | chore: commit all current workspace changes | Map2 Audio | 2026-04-28 |
-| [`0d24e6cc`](https://github.com/matthewmackes/map2-audio/commit/0d24e6ccd8ca8b13dad2f09484257818c25ba7e2) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-28 |
-| [`f87e7b8c`](https://github.com/matthewmackes/map2-audio/commit/f87e7b8c0364e3a09a24a61a8bf9b06c98d545f0) | T2459-H5: host-owned UMP round-trip foundation + recorder... | Map2 Audio | 2026-04-28 |
-| [`6c2d1261`](https://github.com/matthewmackes/map2-audio/commit/6c2d1261aeb1f46d0d963aae677f9c948dcdf9a6) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-28 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
