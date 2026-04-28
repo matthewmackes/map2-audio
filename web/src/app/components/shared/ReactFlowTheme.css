@@ -9,7 +9,10 @@
   --xy-controls-button-border: var(--border);
   --xy-controls-button-color: var(--text-secondary);
   --xy-minimap-background: var(--surface);
-  --xy-minimap-mask: rgba(37, 99, 235, 0.3);
+  /* T2474 B5: Was Tailwind blue-600 rgba(37,99,235,0.3); switched to Carbon
+   * link-primary (--cds-link-primary, ~blue-50/60) at 30% so the minimap
+   * mask tracks the active theme. */
+  --xy-minimap-mask: color-mix(in srgb, var(--cds-link-primary, #0f62fe) 30%, transparent);
   --xy-minimap-node: var(--surface-3);
 }
 

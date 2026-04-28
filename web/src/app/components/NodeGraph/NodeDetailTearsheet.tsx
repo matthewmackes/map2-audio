@@ -1,14 +1,34 @@
+// NodeDetailTearsheet — node inspector surface opened from NodeGraph cards.
+//
+// T2474 B5: Migrated from a hand-rolled fixed-position tearsheet to the
+// canonical DrawerPanel primitive (B4). Status indicators migrated to
+// StatusChip; CPU/Memory to HealthMetric; latency to LatencyChip;
+// label-update error to AlertPanel. Carbon Tag references kept only where
+// the chip vocabulary doesn't cover the slot (role label, last-seen
+// timestamp).
+
 import './NodeGraph.css'
 
-import { Close } from '@carbon/icons-react'
-import { Button, InlineNotification, Layer, Tag, TextInput } from '@carbon/react'
+import { Tag, TextInput } from '@carbon/react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useEffect, useState } from 'react'
 
 import { patchNodeLabel } from '../../../map2/api'
+import {
+  ActionButton,
+  AlertPanel,
+  DrawerPanel,
+  HealthMetric,
+  LatencyChip,
+  StatusChip,
+} from '../primitives'
 import { useViewedNodeStore } from '../../stores/viewedNodeStore'
 import type { NodeSummary } from '../../types/node'
-import { formatNodeDisplayName, getNodeRoleLabel, getNodeStatusTagType } from '../../utils/nodeDisplay'
+import {
+  formatNodeDisplayName,
+  getNodeRoleLabel,
+  getNodeStatusChipTone,
+} from '../../utils/nodeDisplay'
 
 interface NodeDetailTearsheetProps {
   node: NodeSummary | null
@@ -39,102 +59,105 @@ export function NodeDetailTearsheet({ node, open, pageKey, onClose }: NodeDetail
     },
   })
 
-  if (!open || !node) {
+  if (!node) {
     return null
   }
 
+  const tone = getNodeStatusChipTone(node.status)
+
   return (
-    <div className="node-tearsheet" role="dialog" aria-modal="true" aria-label={`Details for ${node.hostname}`}>
-      <div className="node-tearsheet__scrim" onClick={onClose} aria-hidden="true" />
-      <Layer className="node-tearsheet__panel">
-        <div className="node-tearsheet__header">
-          <div>
-            <h2 className="node-tearsheet__title">{formatNodeDisplayName(node)}</h2>
-            <div className="node-tearsheet__header-tags">
-              <Tag type="cool-gray">{getNodeRoleLabel(node.role)}</Tag>
-              <Tag type="gray">{new Date(node.last_seen).toLocaleString()}</Tag>
-            </div>
-          </div>
-          <button type="button" className="node-tearsheet__close" onClick={onClose} aria-label="Close node details">
-            <Close size={20} />
-          </button>
-        </div>
-
-        <section className="node-tearsheet__section">
-          <div className="node-tearsheet__metrics">
-            <Tag type={getNodeStatusTagType(node.status)}>{node.status.toUpperCase()}</Tag>
-            <span>CPU {node.cpu_percent.toFixed(1)}%</span>
-            <span>Memory {node.memory_percent.toFixed(1)}%</span>
-          </div>
-        </section>
-
-        <section className="node-tearsheet__section">
-          <h3>Services</h3>
-          <div className="node-tearsheet__tag-grid">
-            <Tag type={node.services.backend ? 'green' : 'red'}>Backend</Tag>
-            <Tag type={node.services.juce_engine ? 'green' : 'red'}>JUCE Engine</Tag>
-            <Tag type={node.services.pipewire ? 'green' : 'red'}>PipeWire</Tag>
-          </div>
-        </section>
-
-        <section className="node-tearsheet__section">
-          <h3>Audio</h3>
-          <div className="node-tearsheet__kv-list">
-            <div>
-              <span>Latency</span>
-              <strong>{node.audio_latency_ms.toFixed(2)} ms</strong>
-            </div>
-            <div className={node.xrun_count > 0 ? 'node-tearsheet__kv--warn' : ''}>
-              <span>XRuns</span>
-              <strong>{node.xrun_count}</strong>
-            </div>
-          </div>
-        </section>
-
-        <section className="node-tearsheet__section">
-          <div className="node-tearsheet__actions">
-            <Button
-              kind="primary"
-              size="sm"
-              onClick={() => {
-                setViewedNode(pageKey, node.node_id)
-                onClose()
-              }}
-            >
-              Set as This Page&apos;s Node
-            </Button>
-            <Button kind="ghost" size="sm" onClick={onClose}>
-              View on Graph
-            </Button>
-          </div>
-        </section>
-
-        <section className="node-tearsheet__section">
-          <h3>Edit label</h3>
-          <TextInput
-            id={`node-label-${node.node_id}`}
-            labelText="Display label"
-            value={labelValue}
-            onChange={(event) => setLabelValue(event.currentTarget.value)}
-            onBlur={() => {
-              if (labelValue === (node.display_label ?? '')) {
-                return
-              }
-              labelMutation.mutate(labelValue)
+    <DrawerPanel
+      open={open}
+      onClose={onClose}
+      title={formatNodeDisplayName(node)}
+      eyebrow="NODE"
+      closeLabel="Close node details"
+      footer={
+        <>
+          <ActionButton
+            intent="ghost"
+            size="sm"
+            onClick={onClose}
+          >
+            View on Graph
+          </ActionButton>
+          <ActionButton
+            intent="primary"
+            size="sm"
+            onClick={() => {
+              setViewedNode(pageKey, node.node_id)
+              onClose()
             }}
+          >
+            Set as This Page&apos;s Node
+          </ActionButton>
+        </>
+      }
+    >
+      <div className="node-tearsheet__header-tags">
+        <StatusChip tone={tone} label={node.status.toUpperCase()} size="sm" dot />
+        <Tag type="cool-gray">{getNodeRoleLabel(node.role)}</Tag>
+        <Tag type="gray">{new Date(node.last_seen).toLocaleString()}</Tag>
+      </div>
+
+      <section className="node-tearsheet__section">
+        <h3>Metrics</h3>
+        <div className="node-tearsheet__metrics">
+          <HealthMetric label="CPU" value={node.cpu_percent} />
+          <HealthMetric label="MEM" value={node.memory_percent} />
+        </div>
+      </section>
+
+      <section className="node-tearsheet__section">
+        <h3>Services</h3>
+        <div className="node-tearsheet__tag-grid">
+          <StatusChip tone={node.services.backend ? 'ok' : 'critical'} label="Backend" size="sm" dot />
+          <StatusChip tone={node.services.juce_engine ? 'ok' : 'critical'} label="JUCE Engine" size="sm" dot />
+          <StatusChip tone={node.services.pipewire ? 'ok' : 'critical'} label="PipeWire" size="sm" dot />
+        </div>
+      </section>
+
+      <section className="node-tearsheet__section">
+        <h3>Audio</h3>
+        <div className="node-tearsheet__tag-grid">
+          <LatencyChip latencyMs={node.audio_latency_ms} />
+          <StatusChip
+            tone={node.xrun_count > 0 ? 'caution' : 'ok'}
+            label="XRUNS"
+            value={String(node.xrun_count)}
+            size="sm"
+            dot
           />
-          {labelMutation.isError ? (
-            <InlineNotification
-              kind="error"
-              lowContrast
-              hideCloseButton
-              title="Label update failed"
-              subtitle={labelMutation.error instanceof Error ? labelMutation.error.message : 'Unable to update node label.'}
-            />
-          ) : null}
-        </section>
-      </Layer>
-    </div>
+        </div>
+      </section>
+
+      <section className="node-tearsheet__section">
+        <h3>Edit label</h3>
+        <TextInput
+          id={`node-label-${node.node_id}`}
+          labelText="Display label"
+          value={labelValue}
+          onChange={(event) => setLabelValue(event.currentTarget.value)}
+          onBlur={() => {
+            if (labelValue === (node.display_label ?? '')) {
+              return
+            }
+            labelMutation.mutate(labelValue)
+          }}
+        />
+        {labelMutation.isError ? (
+          <AlertPanel
+            severity="blocking"
+            title="Label update failed"
+            hideCloseButton
+            lowContrast
+          >
+            {labelMutation.error instanceof Error
+              ? labelMutation.error.message
+              : 'Unable to update node label.'}
+          </AlertPanel>
+        ) : null}
+      </section>
+    </DrawerPanel>
   )
 }
-

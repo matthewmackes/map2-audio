@@ -1,15 +1,15 @@
 import './NodeGraph.css'
 
-import { Tag } from '@carbon/react'
 import type { NodeProps } from 'reactflow'
 import { Handle, Position } from 'reactflow'
 
+import { StatusChip } from '../primitives'
 import type { NodeSummary } from '../../types/node'
 import {
   formatNodeDisplayName,
   getNodePresenceAccent,
   getNodePresence,
-  getNodeStatusTagType,
+  getNodeStatusChipTone,
   type NodeRolePresence,
 } from '../../utils/nodeDisplay'
 
@@ -33,12 +33,20 @@ export function NodeGraphCard({ data }: NodeProps<NodeGraphCardData>) {
       <Handle type="target" position={Position.Top} className="node-graph-card__handle" />
       <div className="node-graph-card__row">
         <div className="node-graph-card__title-wrap">
-          <span className="node-graph-card__dot" style={{ backgroundColor: accentColor }} aria-hidden="true" />
+          <span
+            className="node-graph-card__dot"
+            style={{ backgroundColor: accentColor }}
+            aria-hidden="true"
+          />
           <span className="node-graph-card__title">{formatNodeDisplayName(node)}</span>
         </div>
-        <Tag type={getNodeStatusTagType(node.status)} size="sm">
-          {node.status.toUpperCase()}
-        </Tag>
+        {/* T2474 B5: Migrated from Carbon Tag to canonical StatusChip primitive,
+         * using the MAP node-status tone vocabulary (ok/caution/critical/offline). */}
+        <StatusChip
+          tone={getNodeStatusChipTone(node.status)}
+          label={node.status.toUpperCase()}
+          size="sm"
+        />
       </div>
       {node.display_label ? (
         <span className="node-graph-card__label">{node.hostname}</span>
@@ -47,4 +55,3 @@ export function NodeGraphCard({ data }: NodeProps<NodeGraphCardData>) {
     </button>
   )
 }
-

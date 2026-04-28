@@ -77,6 +77,35 @@ export function getNodeStatusTagType(status: NodeStatus): 'green' | 'warm-gray' 
   }
 }
 
+/**
+ * Map NodeStatus to the MAP2 StatusChip tone vocabulary (canonical primitives,
+ * T2474 B4). Use in new code that consumes <StatusChip />; legacy call sites
+ * keep using getNodeStatusTagType() against Carbon Tag until migrated.
+ */
+export function getNodeStatusChipTone(
+  status: NodeStatus,
+): 'ok' | 'caution' | 'critical' | 'offline' {
+  switch (status) {
+    case 'ok':
+      return 'ok'
+    case 'warn':
+      return 'caution'
+    case 'critical':
+      return 'critical'
+    default:
+      return 'offline'
+  }
+}
+
+/**
+ * Map NodeStatus to the MAP2 DeviceNodeCard health vocabulary.
+ */
+export function getNodeHealthForCard(
+  status: NodeStatus,
+): 'ok' | 'caution' | 'critical' | 'offline' {
+  return getNodeStatusChipTone(status)
+}
+
 export function getNodeStatusLabel(status: NodeStatus): string {
   return status.toUpperCase()
 }

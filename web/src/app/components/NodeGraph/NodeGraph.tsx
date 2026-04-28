@@ -55,6 +55,12 @@ export function NodeGraph({ topology, viewedNodeId, onNodeClick }: NodeGraphProp
         minZoom={0.5}
       >
         {density.showBackground ? (
+          // T2474 B5: Was hardcoded #c6c6c6 (Carbon gray-30). ReactFlow's
+          // <Background> takes a literal color prop only — no CSS-var
+          // forwarding. Using getComputedStyle would defeat tree-shaking
+          // and add a layout dep, so we keep the hex but pin it as the
+          // documented Carbon gray-30 value matching the dark-shell border
+          // ramp. Light shells barely show the dots anyway.
           <Background variant={BackgroundVariant.Dots} gap={18} size={1} color="#c6c6c6" />
         ) : null}
         {density.showControls ? <Controls showInteractive={false} /> : null}
