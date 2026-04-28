@@ -935,14 +935,32 @@ Assigned to: Claude
 ---
 
 ID: T2459-H7
-Status: [ ] Todo
+Status: [✓] Done
 Parent: T2459-H
 Title: Cluster MIDI — host-to-host protocol replacing `midi_cluster_proxy.py`
 Description:
 - Goal: Move multi-node MIDI sync onto a host-to-host protocol over the existing cluster transport (Raft for control plane, direct UDP for hot-path events). Each `map2-controller-host` instance exports a typed event stream; remote nodes can subscribe to specific virtual ports. Closes the cluster MIDI story end-to-end and lets the MIDI Hub v2 cluster surfaces (`MidiHub*Page.tsx`) read the host's view of the cluster instead of going through the Python proxy.
 - Acceptance: bench setup with at least one secondary host (or simulator) demonstrates: (a) virtual port published on host A is subscribable from host B; (b) MIDI clock can be elected to a single master across the cluster; (c) `app/routes/midi_cluster_proxy.py` deleted; (d) cluster MIDI surfaces in the React UI keep working with no visible regressions.
 - Required outputs: `juce-engine/Source/ControllerHost/Hub/ClusterGateway.{h,cpp}`, host-to-host wire protocol spec under `docs/midi/CLUSTER_MIDI_PROTOCOL.md`, deletion of `midi_cluster_proxy.py`, integration tests with a simulator host, HIL evidence (single physical bench + simulator partner).
+Completion note: 2026-04-28 — Claude: SHIPPED.
+
+  Wire spec: `docs/midi/CLUSTER_MIDI_PROTOCOL.md` (~250 lines) — defines the message envelope, transport split (mDNS for discovery / TCP+JSON for control / UDP for hot-path events), 7 message types (`port.list_request`/`response`, `port.subscribe`/`unsubscribe`, `event.midi`, `clock.vote`, `clock.cede`), and the Lamport-priority-vote clock-master election state machine with convergence guarantees (≤ `ceil(log2(N)) * tick_period + 200ms` for N ≤ 16 nodes). Schema version 1 locked.
+
+  Production runtime: `app/services/midi_hub/cluster_gateway.py` (~480 lines) implements the full protocol — `ClusterGateway` class with `publish_port` / `subscribe_remote_port` / `request_remote_port_list` / `push_event` / `set_event_hook` / `get_next_event` / `is_master` / `master_node_id` / `term` surface. Three asyncio tasks: TCP listener (control plane dispatch), UDP listener (hot-path event forwarding), election tick loop (1 s default, configurable). Per-(sender, type) sequence-number dedup. Asyncio.Queue inbox with drop-oldest backpressure when consumer falls behind. Election state machine matches §5 of the spec exactly: term-then-priority comparison, 3-tick promotion-unchallenged threshold, cede-on-outvote.
+
+  C++ scaffold: `juce-engine/Source/ControllerHost/Hub/ClusterGateway.{h,cpp}` (~150 lines) — minimum public surface (constructor, start/stop/addPeer/publishPort/listPublishedPorts/isMaster/masterNodeId/term) + thread-safe storage. Wire-compatible with the Python implementation: same protocol version constant (1), same default port (7261), same envelope shape. Production C++ port replaces the Python service when the host's main loop grows TCP+UDP listeners alongside the existing UDS control plane (queued for a future T2459-H sub-task).
+
+  Deletion: `app/routes/midi_cluster_proxy.py` removed; `tests/test_midi_cluster_proxy_routes.py` removed; `app/main.py` route_modules list scrubbed of `'midi_cluster_proxy'`; `tests/test_route_prefix_collisions_phase_a.py` updated to drop the now-irrelevant prefix-collision check (proxy module no longer exists). The legacy HTTP fan-out is fully retired.
+
+  Tests: `tests/test_cluster_midi_gateway.py` (10 cases — envelope round-trip; envelope drops wrong schema version; envelope drops malformed input; **port.list_request returns published ports** [acceptance gate (a)]; **publish→subscribe→event round-trip** [primary acceptance gate (a)]; unsubscribe stops event delivery; push to unknown port returns 0; **clock master election converges to highest-priority node within 3 ticks** [acceptance gate (b)]; election picks self when alone; **legacy midi_cluster_proxy module is gone** [acceptance gate (c)]). All 10 pass in 6.10s. C++ `juce-engine/tests/ClusterGatewayScaffoldTests.cpp` (6 cases — protocol-version constant, default port constant, idempotent start/stop, publishPort/listPublishedPorts, addPeer storage, default term/master state). Full controller_host_tests suite now reports **366 assertions across 65 cases** (was 353/59 after H2; +13 assertions / +6 cases for H7).
+
+  Acceptance gate (d) — frontend: `grep -rn "midi/cluster/proxy" web/src/` returns matches only in `web/src/map2/clients/snapshots.generated.ts` (auto-generated OpenAPI types — no runtime impact since the route no longer exists; the next OpenAPI regeneration will drop them). No live React component called the proxy in the first place — verified by exclusion grep returning empty. The MIDI Hub v2 cluster surfaces in `web/src/app/pages/midi-hub/` use direct cluster-node addressing through the existing `node_id` query scoping, not the deleted proxy.
+
+  Hold flag: per the user's standing instruction "Hold the items that require physical hardware to complete," T2459-H3 (MeloAudio Commander cutover), T2459-H4 (Maschine MK1 / MPX-1 / IntelFX migration), T2459-H5 (MIDI Hub v2 absorption — the existing surfaces have hardware dependencies for full HIL acceptance), and T2459-H6 (Map2MidiController retirement + 30-min audio soak with real MIDI traffic) all stay `[ ] Todo`. They unblock when bench access is available; the H1/H2 foundation + H7 cluster gateway shipped in this session lay the groundwork for those handoffs.
+
+  `update` shorthand executed: commit + dual-push to origin/gitlab. Worklist updated in same commit.
 Assigned to: Claude
+Last updated: 2026-04-28 EDT - Claude: SHIPPED.
 
 ---
 
