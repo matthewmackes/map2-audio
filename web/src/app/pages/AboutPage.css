@@ -805,3 +805,92 @@
     padding: 1.5rem;
   }
 }
+
+/* ── Philosophy section ──────────────────────────────────────────────── */
+.about-page__philosophy {
+  padding: 4rem 0;
+  border-top: 1px solid var(--cds-border-subtle, #393939);
+}
+
+.about-page__philosophy-note {
+  margin-top: 0.75rem;
+  padding: 0.75rem 1rem;
+  border-left: 3px solid var(--cds-support-info, #4589ff);
+  background: var(--cds-layer-01, #262626);
+  color: var(--cds-text-secondary, #c6c6c6);
+  font-size: 0.875rem;
+  line-height: 1.5;
+}
+
+.about-page__philosophy-grid {
+  margin-top: 2rem;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(380px, 1fr));
+  gap: 1.5rem;
+}
+
+.about-page__philosophy-card {
+  background: var(--cds-layer-01, #262626);
+  border: 1px solid var(--cds-border-subtle, #393939);
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.about-page__philosophy-title {
+  margin: 0;
+  font-size: 1.125rem;
+  line-height: 1.4;
+  color: var(--cds-text-primary, #f4f4f4);
+}
+
+.about-page__philosophy-title strong {
+  font-weight: 600;
+}
+
+.about-page__philosophy-tagline {
+  font-weight: 400;
+  color: var(--cds-text-secondary, #c6c6c6);
+}
+
+.about-page__philosophy-copy {
+  margin: 0;
+  color: var(--cds-text-secondary, #c6c6c6);
+  font-size: 0.875rem;
+  line-height: 1.55;
+}
+
+.about-page__philosophy-list {
+  margin: 0;
+  padding-left: 1.25rem;
+  color: var(--cds-text-secondary, #c6c6c6);
+  font-size: 0.8125rem;
+  line-height: 1.5;
+}
+
+.about-page__philosophy-list li {
+  margin-bottom: 0.25rem;
+}
+
+.about-page__philosophy-list code {
+  font-family: var(--cds-code-01-font-family, 'IBM Plex Mono', monospace);
+  font-size: 0.75rem;
+  background: var(--cds-layer-02, #393939);
+  padding: 0.0625rem 0.25rem;
+  border-radius: 2px;
+}
+
+@media (max-width: 800px) {
+  .about-page__philosophy {
+    padding: 2.5rem 0;
+  }
+
+  .about-page__philosophy-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .about-page__philosophy-card {
+    padding: 1.25rem;
+  }
+}

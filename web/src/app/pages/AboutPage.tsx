@@ -383,6 +383,197 @@ export function AboutPage() {
           </div>
         </section>
 
+        {/* ── PHILOSOPHY: The thinking behind every major design choice ─── */}
+        <section className="about-page__philosophy" aria-labelledby="philosophy-title">
+          <div className="about-page__section-head">
+            <div className="about-page__kicker">
+              <Lightning size={16} />
+              <span>The thinking behind the platform</span>
+            </div>
+            <h2 id="philosophy-title" className="about-page__section-title">The Philosophy Behind the Platform</h2>
+            <p className="about-page__section-sub">
+              These eight write-ups explain the thinking behind MAP2&rsquo;s biggest design choices. They aren&rsquo;t a
+              feature list &mdash; they&rsquo;re the reasoning we come back to when we have to make a hard call. If you
+              want to know <em>why</em> the platform behaves a certain way, start here.
+            </p>
+            <p className="about-page__philosophy-note">
+              These documents are kept current. Whenever the platform&rsquo;s architecture changes in one of these areas,
+              the matching write-up is updated in the same release.
+            </p>
+          </div>
+
+          <div className="about-page__philosophy-grid">
+            <article className="about-page__philosophy-card">
+              <h3 className="about-page__philosophy-title">
+                <strong>Keeping the Sound Clean</strong>
+                <span className="about-page__philosophy-tagline"> &mdash; How we stop clicks, pops, and dropouts before they happen</span>
+              </h3>
+              <p className="about-page__philosophy-copy">
+                A musician should never hear the platform itself. That means every change &mdash; turning a knob, swapping a
+                snapshot, loading a new amp model &mdash; has to be either silent or fully muted. We hold ourselves to five
+                rules: never allocate memory while audio is running, ramp every parameter change instead of jumping, flip a
+                flag instead of rewiring the graph, stop audio cleanly before any restart, and keep a final limiter at the
+                output as a safety net. A long-running soak test proves it before any release ships.
+              </p>
+              <ul className="about-page__philosophy-list">
+                <li>Audio thread never allocates memory or waits on a lock</li>
+                <li>Every knob change becomes a smooth ramp, not a jump</li>
+                <li>Bypassing a plugin is a flag flip &mdash; the graph stays intact</li>
+                <li>Big assets (amp models, reverb files) load on a side thread, then swap atomically</li>
+                <li>A hard limiter sits at the master output as a last line of defense</li>
+              </ul>
+            </article>
+
+            <article className="about-page__philosophy-card">
+              <h3 className="about-page__philosophy-title">
+                <strong>Networked Audio Done Right</strong>
+                <span className="about-page__philosophy-tagline"> &mdash; Why MAP2 uses AVB for multi-room, multi-node sound</span>
+              </h3>
+              <p className="about-page__philosophy-copy">
+                AVB is the only open standard that delivers reliable sub-2-millisecond audio across a switched network without
+                locking you into one vendor. We commit to standards on the wire (so we interoperate with Biamp, MOTU, QSC, and
+                others), reuse a production-tested control library instead of building our own, and treat AVB as a multi-node
+                feature from day one. Hardware has to support precise timing in silicon &mdash; we don&rsquo;t pretend a stock
+                NIC will do.
+              </p>
+              <ul className="about-page__philosophy-list">
+                <li>Standards-conformant AVTP, gPTP, and credit-shaping &mdash; no proprietary tricks</li>
+                <li>Control plane uses L-Acoustics&rsquo; battle-tested AVDECC library</li>
+                <li>Streams refuse to start until the network clock is locked</li>
+                <li>Required hardware: NICs with hardware timestamping (Intel I210/I225 reference)</li>
+                <li>The network interface is set explicitly &mdash; no silent guessing</li>
+              </ul>
+            </article>
+
+            <article className="about-page__philosophy-card">
+              <h3 className="about-page__philosophy-title">
+                <strong>How MAP2 Servers Work Together</strong>
+                <span className="about-page__philosophy-tagline"> &mdash; What is shared between nodes, and what stays local</span>
+              </h3>
+              <p className="about-page__philosophy-copy">
+                A MAP2 cluster is a group of single-owner nodes with a Raft-elected management plane. The audio state &mdash;
+                what plugins are loaded, how channels are routed, every parameter &mdash; lives in one document store that
+                every node watches. Backups, log files, and cached assets stay local. There is no automatic device failover:
+                if a node goes offline, an operator re-adopts the device deliberately. We&rsquo;d rather show a clear banner
+                than silently swap ownership during a live show.
+              </p>
+              <ul className="about-page__philosophy-list">
+                <li>One node owns each device, enforced at the database level</li>
+                <li>Snapshot documents replicate cluster-wide; backups stay on each node</li>
+                <li>Two transports: HTTP/WebSocket for control, AVB for audio</li>
+                <li>Raft handles management decisions; etcd handles audio state</li>
+                <li>Drift between nodes is detected on a clock and reported, not hidden</li>
+              </ul>
+            </article>
+
+            <article className="about-page__philosophy-card">
+              <h3 className="about-page__philosophy-title">
+                <strong>How Devices Get Connected</strong>
+                <span className="about-page__philosophy-tagline"> &mdash; From plugging in a cable to seeing a panel in the browser</span>
+              </h3>
+              <p className="about-page__philosophy-copy">
+                A device in MAP2 is a YAML profile, not C++ code. Adding a new piece of hardware is a directory of YAML files,
+                not a backend release. The platform watches four sources at once (USB, ALSA MIDI, ALSA audio, PipeWire) so it
+                can be honest with you when half the audio stack is down &mdash; &ldquo;USB sees it, PipeWire doesn&rsquo;t&rdquo;
+                is a different problem from &ldquo;unplugged.&rdquo; Every device panel uses the same banner-and-dialog pattern,
+                so multi-node behavior is consistent across vendors.
+              </p>
+              <ul className="about-page__philosophy-list">
+                <li>Hardware lives in <code>device-packs/</code> as schema-validated YAML</li>
+                <li>A bad pack is logged and skipped &mdash; one vendor&rsquo;s mistake never blocks boot</li>
+                <li>USB hot-plug is a first-class event: insert a cable, the panel comes alive</li>
+                <li>Adoption is single-owner and operator-driven &mdash; no silent failover</li>
+                <li>All device panels share the same context banner and dialog components</li>
+              </ul>
+            </article>
+
+            <article className="about-page__philosophy-card">
+              <h3 className="about-page__philosophy-title">
+                <strong>What MAP2 Changes on a Stock Fedora System</strong>
+                <span className="about-page__philosophy-tagline"> &mdash; Every tweak, why we make it, and how to undo it</span>
+              </h3>
+              <p className="about-page__philosophy-copy">
+                A stock Fedora install is built for general-purpose use. MAP2 needs a deterministic real-time audio host. The
+                differences are large but well-defined &mdash; kernel boot flags, systemd services, PipeWire tuning, security
+                limits, sysctl knobs, udev rules, CPU governor settings. Every change lives in a tracked file, every change is
+                reversible, nothing is hidden. If a tweak goes wrong it should fail loudly, not quietly degrade.
+              </p>
+              <ul className="about-page__philosophy-list">
+                <li>Kernel boot flags isolate two CPU cores for audio and cap C-states</li>
+                <li>Custom systemd services for the backend, IRQ pinning, gPTP, and SRP</li>
+                <li>A single PipeWire fragment sets quantum, rate, and headroom</li>
+                <li>Real-time priority and memory locks granted via PAM limits</li>
+                <li>Every modification is in git &mdash; reverting is a documented checklist</li>
+              </ul>
+            </article>
+
+            <article className="about-page__philosophy-card">
+              <h3 className="about-page__philosophy-title">
+                <strong>Why JUCE Powers the Engine</strong>
+                <span className="about-page__philosophy-tagline"> &mdash; The C++ framework underneath every audio decision</span>
+              </h3>
+              <p className="about-page__philosophy-copy">
+                JUCE solves the four hardest problems in cross-platform audio: device I/O, plugin hosting, graph management,
+                and real-time-safe building blocks. Building any of those from scratch would be a multi-quarter project that
+                wouldn&rsquo;t make MAP2 any better. The audio thread runs at high real-time priority on isolated cores with a
+                1.33 ms budget per callback. Python talks to JUCE in-process through pybind11 &mdash; there&rsquo;s no socket,
+                no JSON, no extra latency. The exception is the controller host, which runs in a separate process so a buggy
+                script can&rsquo;t take down audio.
+              </p>
+              <ul className="about-page__philosophy-list">
+                <li>JUCE 8 handles ALSA, JACK, CoreAudio, and WASAPI behind one API</li>
+                <li>Plugin hosting (LV2, LADSPA) and graph mutation are framework-native</li>
+                <li>The audio thread is forbidden from allocating, locking, or logging</li>
+                <li>Python imports the engine as a <code>.so</code> &mdash; no IPC overhead</li>
+                <li>Release builds only &mdash; <code>-O0</code> is too slow for real-time</li>
+              </ul>
+            </article>
+
+            <article className="about-page__philosophy-card">
+              <h3 className="about-page__philosophy-title">
+                <strong>MIDI, Built for Live Shows</strong>
+                <span className="about-page__philosophy-tagline"> &mdash; How a footswitch becomes a chain change without ever blocking audio</span>
+              </h3>
+              <p className="about-page__philosophy-copy">
+                MAP2&rsquo;s MIDI stack is built around four promises: nothing it does can ever add jitter to audio, every
+                controller is reduced to a YAML profile before any code reasons about it, mappings are declarative (not code)
+                so a show that worked yesterday works tomorrow, and MIDI events fan out across a cluster as a uniform event
+                bus. The mapping engine runs in a separate process &mdash; a buggy script or stuck interpreter cannot stall
+                audio. A single fast-path flag short-circuits the slow Python round-trip for events where every microsecond
+                matters.
+              </p>
+              <ul className="about-page__philosophy-list">
+                <li>Controller logic runs in a separate, supervised process</li>
+                <li>Every controller has a YAML profile in <code>device-packs/</code></li>
+                <li>Mapping scripts run in a sandboxed QuickJS VM</li>
+                <li>Continuous controllers get pre-computed smoothing &mdash; no math on the audio thread</li>
+                <li>RTP-MIDI, OSC, and the cluster bus deliver the same event shape</li>
+              </ul>
+            </article>
+
+            <article className="about-page__philosophy-card">
+              <h3 className="about-page__philosophy-title">
+                <strong>One Source of Truth for Snapshots</strong>
+                <span className="about-page__philosophy-tagline"> &mdash; Why every audio decision lives in one document</span>
+              </h3>
+              <p className="about-page__philosophy-copy">
+                Exactly one place describes what the engine is doing: a JSON document owned by the State Authority. Every
+                other surface &mdash; the JUCE engine&rsquo;s live values, the React editor, the database row, the cluster
+                peer&rsquo;s mirror &mdash; is <em>derived</em> from that document. Nothing drifts sideways. Activation is
+                all-or-nothing: a snapshot is live everywhere in the cluster, or it isn&rsquo;t live. A reload is always safe.
+                A bug report can almost always be reproduced from the snapshot ID alone.
+              </p>
+              <ul className="about-page__philosophy-list">
+                <li>The graph document is the single canonical state &mdash; no sideband stores</li>
+                <li>Optimistic concurrency: stale edits are rejected with <code>412 Precondition Failed</code></li>
+                <li>Activation phases gate the engine &mdash; partial applies are not visible to operators</li>
+                <li>etcd backs the document store; SQLite is just a local mirror</li>
+                <li>Old snapshot versions normalize forward &mdash; no version skew can lose data</li>
+              </ul>
+            </article>
+          </div>
+        </section>
+
         {/* ── HERO LEVEL TWO: Open-Source Projects That Power MAP2 ──────── */}
         <section className="about-page__oss" aria-labelledby="oss-title">
           <div className="about-page__section-head">
