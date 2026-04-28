@@ -28,6 +28,10 @@ from typing import Any, Dict, List, Optional, Sequence
 
 from app.services.sysex_tags import auto_tag_from_name as infer_auto_tags
 from app.services.sysex_tags import compile_intelfx_tag_map
+from app.services.sysex_tags_js_runtime import (
+    compile_intelfx_tag_map_via_js,
+    is_sysex_parser_js_runtime_enabled,
+)
 
 # Rocktron 3-byte extended manufacturer ID in SysEx
 _ROCKTRON_ID: List[int] = [0x00, 0x01, 0x56]
@@ -44,6 +48,16 @@ _MIN_PROGRAM_DUMP_SIZE: int = 28
 _MAX_PROGRAM_NUMBER: int = 255
 
 _NAME_TAG_MAP = compile_intelfx_tag_map()
+
+
+def _resolve_tag_map():
+    """Return the active IntelFX tag map, honoring the JS-runtime feature flag.
+
+    Re-evaluated per call so flag flips at test time take effect immediately.
+    """
+    if is_sysex_parser_js_runtime_enabled():
+        return compile_intelfx_tag_map_via_js()
+    return _NAME_TAG_MAP
 
 
 @dataclass
@@ -140,7 +154,7 @@ class IntelFXSyxParser:
 
     def auto_tag_from_name(self, name: str) -> List[str]:
         """Return a deduplicated list of tags inferred from *name* tokens."""
-        return infer_auto_tags(name, _NAME_TAG_MAP)
+        return infer_auto_tags(name, _resolve_tag_map())
 
     # -------------------------------------------------------------------------
     # Frame splitting

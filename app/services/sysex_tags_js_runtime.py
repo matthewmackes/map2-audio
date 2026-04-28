@@ -94,6 +94,23 @@ def compile_mpx1_tag_map_via_js() -> TagMap:
     return _specs_to_tag_map(raw)
 
 
+@functools.lru_cache(maxsize=1)
+def compile_intelfx_tag_map_via_js() -> TagMap:
+    """Compile the IntelFX tag map via the device-pack JS runtime.
+
+    Returns the same `(re.Pattern, list[str])` shape as
+    `app.services.sysex_tags.compile_intelfx_tag_map()` so it is a drop-in
+    replacement.
+    """
+    raw = _run_node(
+        "sandbox.globalThis.MAP2SysexTags.buildIntelfxTagRules()"
+        ".map(function (r) { return [r.pattern.source, r.tags]; })"
+    )
+    if not isinstance(raw, list):
+        raise SysexJsRuntimeError(f"unexpected payload shape: {type(raw)!r}")
+    return _specs_to_tag_map(raw)
+
+
 def auto_tag_from_name_via_js(name: str, parser: str) -> list[str]:
     """Auto-tag *name* via the JS runtime for *parser* in {"mpx1","intelfx"}."""
     if parser == "mpx1":
