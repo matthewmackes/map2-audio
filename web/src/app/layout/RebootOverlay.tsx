@@ -6,8 +6,15 @@ import { CheckmarkFilled, WarningFilled } from '@carbon/icons-react'
 import { REBOOT_PROGRESS_STEPS, type RebootProgressStep, type RebootStage } from './useRebootSystem'
 
 // ── Waveform animation ────────────────────────────────────────────────────────
-// Draws a live low-frequency oscilloscope trace using Canvas + requestAnimationFrame.
-// Designed to look like a digital audio waveform on a dark monitor.
+// Draws a live low-frequency oscilloscope trace during a reboot to signal
+// that the UI is still responsive while the backend is unreachable. Kept
+// as a deliberate operational affordance, not decoration. T2474 B2: switched
+// from Tailwind purple-500 (rgba(139,92,246,...)) to Carbon blue-50
+// (#4589ff) to comply with Q1=A discipline (blue primary; no random brand
+// hues). Drop-shadow glow removed (Q1=A — no glow).
+const WAVE_PRIMARY = 'rgba(69,137,255,0.9)'   // Carbon blue-50 #4589ff
+const WAVE_FAINT = 'rgba(69,137,255,0.08)'
+const WAVE_GHOST = 'rgba(120,169,255,0.18)'   // Carbon blue-40 #78a9ff
 function WaveformCanvas({ active }: { active: boolean }) {
   const canvasRef = useRef<HTMLCanvasElement>(null)
   const frameRef = useRef<number>(0)
@@ -32,7 +39,7 @@ function WaveformCanvas({ active }: { active: boolean }) {
       ctx.clearRect(0, 0, W, H)
 
       // Faint grid lines
-      ctx.strokeStyle = 'rgba(139,92,246,0.08)'
+      ctx.strokeStyle = WAVE_FAINT
       ctx.lineWidth = 1
       for (let x = 0; x < W; x += 40) {
         ctx.beginPath()
@@ -47,14 +54,13 @@ function WaveformCanvas({ active }: { active: boolean }) {
 
       // Primary wave — composite of harmonics for organic feel
       const gradient = ctx.createLinearGradient(0, 0, W, 0)
-      gradient.addColorStop(0, 'rgba(139,92,246,0.0)')
-      gradient.addColorStop(0.1, 'rgba(139,92,246,0.9)')
-      gradient.addColorStop(0.9, 'rgba(139,92,246,0.9)')
-      gradient.addColorStop(1, 'rgba(139,92,246,0.0)')
+      gradient.addColorStop(0, 'rgba(69,137,255,0.0)')
+      gradient.addColorStop(0.1, WAVE_PRIMARY)
+      gradient.addColorStop(0.9, WAVE_PRIMARY)
+      gradient.addColorStop(1, 'rgba(69,137,255,0.0)')
       ctx.strokeStyle = gradient
       ctx.lineWidth = 2
-      ctx.shadowColor = 'rgba(139,92,246,0.55)'
-      ctx.shadowBlur = active ? 10 : 3
+      // No shadowBlur — Q1=A retires decorative glow.
 
       ctx.beginPath()
       for (let x = 0; x <= W; x++) {
@@ -70,10 +76,9 @@ function WaveformCanvas({ active }: { active: boolean }) {
         else ctx.lineTo(x, y)
       }
       ctx.stroke()
-      ctx.shadowBlur = 0
 
       // Secondary ghost wave
-      ctx.strokeStyle = 'rgba(167,139,250,0.18)'
+      ctx.strokeStyle = WAVE_GHOST
       ctx.lineWidth = 1
       ctx.beginPath()
       for (let x = 0; x <= W; x++) {

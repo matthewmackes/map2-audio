@@ -1,61 +1,13 @@
-import { Tag } from '@carbon/react'
-
 import { NodeNavBar } from '../components/NodeNav/NodeNavBar'
 import { LatencyPressureShellReadout } from '../components/LatencyPressureShellReadout'
 import { TaskbarClock } from '../components/TaskbarClock'
+import { DeviceInterfaceList } from './DeviceInterfaceList'
 import { PushConfirmationNoticePill } from './PushConfirmationNoticePill'
 import type { ShellSummaryData } from './useShellSummaryData'
 
 type SystemSummaryProps = {
   classNamePrefix: 'map2-launcher'
   summaryData: ShellSummaryData
-}
-
-type DeviceListProps = {
-  classNamePrefix: SystemSummaryProps['classNamePrefix']
-  items: string[]
-  isLoading: boolean
-  errorMessage: string | null
-  detectingLabel: string
-  emptyLabel: string
-  degradedLabel: string
-}
-
-function DeviceList({
-  classNamePrefix,
-  items,
-  isLoading,
-  errorMessage,
-  detectingLabel,
-  emptyLabel,
-  degradedLabel,
-}: DeviceListProps) {
-  if (isLoading && items.length === 0) {
-    return <span className={`${classNamePrefix}__device-empty`}>{detectingLabel}</span>
-  }
-
-  if (errorMessage && items.length === 0) {
-    return <span className={`${classNamePrefix}__device-empty ${classNamePrefix}__device-empty--error`}>{degradedLabel}</span>
-  }
-
-  if (items.length === 0) {
-    return <span className={`${classNamePrefix}__device-empty`}>{emptyLabel}</span>
-  }
-
-  return (
-    <>
-      {items.map((name) => (
-        <Tag key={name} className={`${classNamePrefix}__device-tag`} size="sm" type="cool-gray">
-          {name}
-        </Tag>
-      ))}
-      {errorMessage ? (
-        <span className={`${classNamePrefix}__device-empty ${classNamePrefix}__device-empty--error`}>
-          {degradedLabel}
-        </span>
-      ) : null}
-    </>
-  )
 }
 
 export function SystemSummary({
@@ -110,7 +62,7 @@ export function SystemSummary({
         <div className={`${classNamePrefix}__device-group`}>
           <span className={`${classNamePrefix}__device-heading`}>Audio Interfaces</span>
           <div className={`${classNamePrefix}__device-list`}>
-            <DeviceList
+            <DeviceInterfaceList
               classNamePrefix={classNamePrefix}
               items={launcherInterfaceSummary.audioInterfaces}
               isLoading={launcherInterfaceSummary.isLoading}
@@ -124,7 +76,7 @@ export function SystemSummary({
         <div className={`${classNamePrefix}__device-group`}>
           <span className={`${classNamePrefix}__device-heading`}>MIDI Interfaces</span>
           <div className={`${classNamePrefix}__device-list`}>
-            <DeviceList
+            <DeviceInterfaceList
               classNamePrefix={classNamePrefix}
               items={launcherInterfaceSummary.midiInterfaces}
               isLoading={launcherInterfaceSummary.isLoading}

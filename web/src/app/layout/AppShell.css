@@ -16,17 +16,14 @@
   background: color-mix(in srgb, var(--surface) 14%, var(--platform-shell-bg));
 }
 
+/* T2474 B2: Decorative blueprint-grid background removed.
+ * Per Q1=A (strict Carbon discipline; no decorative gradients, no
+ * ornamentation). The pseudo-element is preserved as an empty rule so
+ * any future override that targets `.app-shell::before` keeps working
+ * during page-by-page migration. Remove the rule entirely in B12 if no
+ * consumer relies on it. */
 .app-shell:not(:has(.hp-root))::before {
-  content: '';
-  position: fixed;
-  inset: 58px 0 0;
-  z-index: 0;
-  pointer-events: none;
-  background-image:
-    linear-gradient(color-mix(in srgb, var(--platform-shell-border) 20%, transparent) 1px, transparent 1px),
-    linear-gradient(90deg, color-mix(in srgb, var(--platform-shell-border) 20%, transparent) 1px, transparent 1px);
-  background-size: 28px 28px;
-  opacity: 0.35;
+  content: none;
 }
 
 .app-shell--audio-grid {
@@ -57,7 +54,11 @@
   position: relative;
   min-height: 100vh;
   isolation: isolate;
-  background: #000;
+  /* T2474 B2: Themed background — was hardcoded #000. Carbon's --cds-background
+   * resolves to the active shell's background (g100=#161616, g90=#262626,
+   * g10=#f4f4f4, white=#ffffff). The fallback preserves the OLED-deep look
+   * if Carbon variables aren't applied yet. */
+  background: var(--cds-background, #000);
 }
 
 .platform-brand-frame__content {
@@ -72,7 +73,8 @@
   z-index: 0;
   pointer-events: none;
   overflow: hidden;
-  background: #000;
+  /* T2474 B2: Themed background — was hardcoded #000. */
+  background: var(--cds-background, #000);
 }
 
 .platform-brand-frame:has(.app-shell--themed-workspace) .platform-brand-backdrop {
@@ -90,7 +92,10 @@
 
 .platform-brand-backdrop__mark {
   position: absolute;
-  color: #fff;
+  /* T2474 B2: Themed text color — was hardcoded #fff. The brand mark is a
+   * faint center watermark; --cds-text-on-color resolves to the right
+   * contrast against --cds-background on every shell. */
+  color: var(--cds-text-on-color, #fff);
   opacity: 0.16;
   filter: none;
 }

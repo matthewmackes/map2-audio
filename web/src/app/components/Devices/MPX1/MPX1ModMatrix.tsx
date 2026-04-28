@@ -3,7 +3,7 @@ import { Renew } from '@carbon/icons-react'
 
 import { useMPX1PageContext } from './MPX1Shell'
 import { NumberInput } from '../../ParameterControl'
-import { readPersisted, writePersisted, type PersistedKey } from '../../../utils/persistedState'
+import { usePersistedState, type PersistedKey } from '../../../utils/persistedState'
 import './MPX1ModMatrix.css'
 
 type CurveType = 'linear' | 'log' | 'exp' | 's_curve'
@@ -69,18 +69,26 @@ export function MPX1ModMatrix() {
     return list.slice(0, 14)
   }, [mpx1.registry?.modifier_matrix?.destinations])
 
-  // Hydrate cells + LFO configs from the persistedState helper on first render.
-  // The parser drops malformed payloads silently and the fallback is empty.
-  const initialState = useMemo(() => readPersisted(MATRIX_STATE_KEY), [])
-  const [cells, setCells] = useState<Record<string, MatrixCell>>(() => initialState.cells)
+  // Persisted state — cells + LFO configs round-trip together. The parser
+  // drops malformed payloads silently; the fallback is empty.
+  const [persistedState, setPersistedState] = usePersistedState(MATRIX_STATE_KEY)
+  const cells = persistedState.cells
+  const lfoConfigs = persistedState.lfoConfigs
+  const setCells = (next: Record<string, MatrixCell> | ((prev: Record<string, MatrixCell>) => Record<string, MatrixCell>)) => {
+    setPersistedState({
+      ...persistedState,
+      cells: typeof next === 'function' ? next(cells) : next,
+    })
+  }
+  const setLfoConfigs = (next: Record<string, LfoConfig> | ((prev: Record<string, LfoConfig>) => Record<string, LfoConfig>)) => {
+    setPersistedState({
+      ...persistedState,
+      lfoConfigs: typeof next === 'function' ? next(lfoConfigs) : next,
+    })
+  }
   const [selectedSource, setSelectedSource] = useState<string>('')
   const [selectedCellKey, setSelectedCellKey] = useState<string | null>(null)
-  const [lfoConfigs, setLfoConfigs] = useState<Record<string, LfoConfig>>(() => initialState.lfoConfigs)
   const [tick, setTick] = useState(0)
-
-  useEffect(() => {
-    writePersisted(MATRIX_STATE_KEY, { cells, lfoConfigs })
-  }, [cells, lfoConfigs])
 
   useEffect(() => {
     if (!selectedSource && sources.length > 0) {

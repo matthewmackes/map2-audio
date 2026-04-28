@@ -22,7 +22,7 @@ import {
   getNodeStatusLabel,
   pageKeyFromPathname,
 } from '../utils/nodeDisplay'
-import { readPersisted, writePersisted } from '../utils/persistedState'
+import { usePersistedState } from '../utils/persistedState'
 import {
   applyViewedNodeScopeToAllPages,
   readViewedHostFromSearch,
@@ -53,7 +53,7 @@ export function AppShell({ children }: { children: ReactNode }) {
   const { status: websocketStatus } = useWebSocketConnection()
   const { topologyNodes, viewedNodeId } = useNodePageContext(nodePageKey)
   const setViewedNode = useViewedNodeStore((state) => state.setViewedNode)
-  const [globalNavPinned, setGlobalNavPinned] = useState<boolean>(() => readPersisted(GLOBAL_NAV_PINNED_KEY))
+  const [globalNavPinned, setGlobalNavPinned] = usePersistedState(GLOBAL_NAV_PINNED_KEY)
   const [shellPatch, setShellPatch] = useState<ShellWindowPatch>({})
   const lastQuerySyncedHostRef = useRef<string | null>(null)
   const closeShellMenus = useCallback(() => {}, [])
@@ -205,10 +205,6 @@ export function AppShell({ children }: { children: ReactNode }) {
   useEffect(() => {
     writeHomeShellRecentRoute(`${location.pathname}${location.search}`)
   }, [location.pathname, location.search])
-
-  useEffect(() => {
-    writePersisted(GLOBAL_NAV_PINNED_KEY, globalNavPinned)
-  }, [globalNavPinned])
 
   useEffect(() => {
     const requestedNodeId = readViewedHostFromSearch(location.search)

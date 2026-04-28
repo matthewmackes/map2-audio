@@ -1,5 +1,5 @@
 import type { RefObject } from 'react'
-import { Layer, OverflowMenu, OverflowMenuItem, Tag } from '@carbon/react'
+import { Layer, OverflowMenu, OverflowMenuItem } from '@carbon/react'
 import { Power } from '@carbon/icons-react'
 
 import './LauncherPanel.css'
@@ -8,39 +8,10 @@ import {
   Map2BrandMark,
 } from '../../components/branding/map2Branding'
 import { NavigationItems, type ShellNavigationRenderItem } from '../NavigationItems'
+import { DeviceInterfaceList } from '../DeviceInterfaceList'
 import type { LauncherInterfaceSummary } from '../useLauncherInterfaceSummary'
 
 type LauncherPanelVariant = 'home' | 'workspace'
-
-type DeviceListProps = {
-  launcherInterfaceSummary: LauncherInterfaceSummary
-  kind: 'audioInterfaces' | 'midiInterfaces'
-  emptyLabel: string
-  detectingLabel: string
-}
-
-function LauncherDeviceList({
-  launcherInterfaceSummary,
-  kind,
-  emptyLabel,
-  detectingLabel,
-}: DeviceListProps) {
-  const items = launcherInterfaceSummary[kind]
-
-  if (launcherInterfaceSummary.isLoading && items.length === 0) {
-    return <span className="map2-launcher__device-empty">{detectingLabel}</span>
-  }
-
-  if (items.length === 0) {
-    return <span className="map2-launcher__device-empty">{emptyLabel}</span>
-  }
-
-  return items.map((name) => (
-    <Tag key={`${kind}-${name}`} className="map2-launcher__device-tag" size="sm" type="cool-gray">
-      {name}
-    </Tag>
-  ))
-}
 
 type LauncherPanelProps = {
   variant: LauncherPanelVariant
@@ -94,9 +65,10 @@ export function LauncherPanel({
           <div className="map2-launcher__device-group">
             <span className="map2-launcher__device-heading">Audio Interfaces</span>
             <div className="map2-launcher__device-list">
-              <LauncherDeviceList
-                launcherInterfaceSummary={launcherInterfaceSummary}
-                kind="audioInterfaces"
+              <DeviceInterfaceList
+                classNamePrefix="map2-launcher"
+                items={launcherInterfaceSummary.audioInterfaces}
+                isLoading={launcherInterfaceSummary.isLoading}
                 detectingLabel="Detecting audio interfaces..."
                 emptyLabel="No audio interfaces detected"
               />
@@ -105,9 +77,10 @@ export function LauncherPanel({
           <div className="map2-launcher__device-group">
             <span className="map2-launcher__device-heading">MIDI Interfaces</span>
             <div className="map2-launcher__device-list">
-              <LauncherDeviceList
-                launcherInterfaceSummary={launcherInterfaceSummary}
-                kind="midiInterfaces"
+              <DeviceInterfaceList
+                classNamePrefix="map2-launcher"
+                items={launcherInterfaceSummary.midiInterfaces}
+                isLoading={launcherInterfaceSummary.isLoading}
                 detectingLabel="Detecting MIDI interfaces..."
                 emptyLabel="No MIDI interfaces detected"
               />

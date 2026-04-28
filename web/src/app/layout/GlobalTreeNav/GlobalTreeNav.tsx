@@ -74,7 +74,7 @@ import {
   pageKeyFromPathname,
 } from '../../utils/nodeDisplay'
 import { useClusterSnapshotRuntimeLiveState } from '../../hooks/useSnapshotRuntimeState'
-import { readPersisted, writePersisted, type PersistedKey } from '../../utils/persistedState'
+import { usePersistedState, type PersistedKey } from '../../utils/persistedState'
 import {
   applyViewedNodeScopeToAllPages,
   writeViewedHostToSearch,
@@ -700,7 +700,7 @@ export function GlobalTreeNav({
   const pageKey = pageKeyFromPathname(location.pathname) ?? NODE_PAGE_KEYS.home
   const { topologyNodes, viewedNodeId, nodeTopologyQuery } = useNodePageContext(pageKey)
   const setViewedNode = useViewedNodeStore((state) => state.setViewedNode)
-  const [expandedIds, setExpandedIds] = useState<string[]>(() => readPersisted(GLOBAL_TREE_EXPANDED_KEY))
+  const [expandedIds, setExpandedIds] = usePersistedState(GLOBAL_TREE_EXPANDED_KEY)
   const [nodeSelectorOpen, setNodeSelectorOpen] = useState(false)
   const pinnedDeviceIds = usePinnedDevices()
   const clusterRuntimeStateQuery = useClusterSnapshotRuntimeLiveState({ refetchInterval: false })
@@ -754,10 +754,6 @@ export function GlobalTreeNav({
       return left.hostname.localeCompare(right.hostname)
     })
   }, [topologyNodes])
-
-  useEffect(() => {
-    writePersisted(GLOBAL_TREE_EXPANDED_KEY, expandedIds)
-  }, [expandedIds])
 
   useEffect(() => {
     if (!activeNodePath || activeNodePath.length < 2) {

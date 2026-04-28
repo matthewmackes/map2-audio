@@ -17,7 +17,7 @@
 import { useState, useCallback, useMemo, useRef, useEffect } from 'react'
 import { useQuery, useQueryClient } from '@tanstack/react-query'
 import { useToasts } from '../Toasts'
-import { readPersisted, writePersisted, type PersistedKey } from '../../utils/persistedState'
+import { usePersistedState, type PersistedKey } from '../../utils/persistedState'
 import { EmptyState } from '../shared/EmptyState'
 import { LoadingState } from '../shared/LoadingState'
 import {
@@ -842,11 +842,10 @@ export function AudioNodesModal({ open, onClose }: AudioNodesModalProps) {
   const queryClient = useQueryClient()
 
   // Persist last-viewed tab
-  const [tabIndex, setTabIndex] = useState<number>(() => readPersisted(TAB_STORAGE_KEY))
+  const [tabIndex, setTabIndex] = usePersistedState(TAB_STORAGE_KEY)
 
   const saveTab = (idx: number) => {
     setTabIndex(idx)
-    writePersisted(TAB_STORAGE_KEY, idx)
   }
 
   // Queries — only fetch when modal is open
