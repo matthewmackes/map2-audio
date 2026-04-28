@@ -777,7 +777,7 @@ Last updated: 2026-04-27 EDT - Claude: SHIPPED.
 ---
 
 ID: T2459-H
-Status: [ ] Todo
+Status: [>] In Progress
 Parent: T2459
 Title: MIDI Backend Unification — `map2-midi-host` daemon, libremidi I/O, Mixxx ControllerEngine for mappings
 Description:
@@ -804,7 +804,7 @@ Description:
   - Worklist completion notes per subtask, dual-push to origin + gitlab, full release loop verification per CLAUDE.md §0.6
 Subtasks: T2459-H1 .. T2459-H7 (7 subtasks; see below)
 Assigned to: Claude
-Last updated: 2026-04-27 EDT - Claude: epic opened. Locked decisions Q1-Q4 captured above.
+Last updated: 2026-04-28 10:12 EDT - Codex: H3 migration slice shipped (MeloAudio pack + legacy profile shim + tests); H3 remains active for host mapping activation wire-up + bench HIL evidence.
 
 ---
 
@@ -887,7 +887,7 @@ Last updated: 2026-04-28 EDT - Claude: SHIPPED.
 ---
 
 ID: T2459-H3
-Status: [ ] Todo
+Status: [>] In Progress
 Parent: T2459-H
 Title: First device-pack cutover — MeloAudio Commander as XML+JS instead of hardcoded profile
 Description:
@@ -895,6 +895,18 @@ Description:
 - Acceptance: physical MeloAudio Commander on the bench drives a chain bypass + a tuner-on action through the new path with bit-identical CC mappings to the legacy Python profile; legacy `MELOAUDIO_COMMANDER_PROFILE` deleted with a stub redirect for any in-flight callers; one HIL evidence run captured under `docs/fit-for-purpose-evidence/<YYYYMMDD>/t2459h3-meloaudio-commander/`.
 - Required outputs: `device-packs/meloaudio/midi-commander/{pack.yaml,profile.midi.yaml,scripts/commander.js}`, deletion of `MELOAUDIO_COMMANDER_PROFILE` constant, `app/services/midi_commander_surface/` reduced to host-client glue, schema-validation test, runtime test asserting the device-pack drives the same backend actions as the legacy profile, HIL evidence directory.
 Assigned to: Claude
+Completion note: 2026-04-28 — Codex: **Slice 1 SHIPPED (pack migration + legacy-id compatibility + regression tests).**
+  Delivered:
+  - New MeloAudio pack at `device-packs/meloaudio/` with `pack.yaml`, `profiles/midi-commander.midi.yaml`, and `scripts/commander.js` (canonical MAP2 pack shape used by `ProfileRegistry`).
+  - `app/services/midi_device_profiles.py` no longer hardcodes `MELOAUDIO_COMMANDER_PROFILE`; it now loads the Commander profile from the shipped device-pack YAML and preserves a legacy alias (`meloaudio_commander` → `meloaudio_midi_commander`) for in-flight callers.
+  - Compatibility updates in commander/enriched surfaces to treat either profile id as authoritative via `is_meloaudio_profile_id(...)`.
+  - New focused test `tests/test_midi_device_profiles_t2459h3.py` validates pack-backed profile loading, alias resolution, default command generation parity, and detection behavior.
+  Validation:
+  - `pytest -q tests/test_midi_v2_routes.py tests/test_midi_device_profiles_t2459h3.py tests/test_midi_commander_surface_protocol.py tests/test_midi_commander_surface_service.py tests/test_enriched_midi_physical_surfaces_service.py tests/test_enriched_surface_runtime.py tests/test_device_packs_schema.py` → **52 passed**.
+  Remaining for full H3 acceptance:
+  - Host production path still needs `mapping_activate`/script-load wiring in `map2-controller-host` main-loop dispatcher so device-pack scripts execute on inbound MIDI in production (H2 unit coverage exists; production dispatcher path pending).
+  - Bench HIL evidence run (`docs/fit-for-purpose-evidence/<YYYYMMDD>/t2459h3-meloaudio-commander/`) pending physical controller availability.
+Last updated: 2026-04-28 10:12 EDT - Codex: slice 1 shipped; H3 remains in progress.
 
 ---
 

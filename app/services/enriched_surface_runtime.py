@@ -5,6 +5,8 @@ from __future__ import annotations
 from copy import deepcopy
 from typing import Any
 
+from app.services.midi_device_profiles import device_profile_service
+
 
 _SHARED_OPERATOR_CONTRACT: dict[str, Any] = {
     "primary_role": "synth_control",
@@ -594,7 +596,7 @@ def _resolve_current_view(
         return "snapshots", "external-midi-program-control"
 
     if unit_id == "meloaudio-midi-commander":
-        if str(service_state.get("active_profile_id") or "") == "meloaudio_commander":
+        if device_profile_service.is_meloaudio_profile_id(str(service_state.get("active_profile_id") or "")):
             return "synth-macros", "midi-profile-service"
         return "synth-macros", "default-family-layout"
 

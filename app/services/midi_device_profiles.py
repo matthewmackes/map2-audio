@@ -1,33 +1,59 @@
-"""
-MIDI Device Profiles Service
-Manages device-specific configurations and default mappings.
+"""MIDI device profile service.
 
-Includes built-in support for MeloAudio MIDI Commander as the standard controller.
+T2459-H3 migration note:
+- The MeloAudio MIDI Commander profile is now sourced from
+  ``device-packs/meloaudio/profiles/midi-commander.midi.yaml``.
+- The legacy id ``meloaudio_commander`` remains accepted as an alias
+  for in-flight callers.
 """
 
 import asyncio
 import logging
-import subprocess
 import os
-import tempfile
 from typing import List, Dict, Any, Optional
 from dataclasses import dataclass, field
 from enum import Enum
 from pathlib import Path
-from datetime import datetime
 
 from sqlalchemy.ext.asyncio import AsyncSession
-from sqlalchemy import select, delete
 
 from app.services.midi_models import (
     ActionType,
     CommandType,
-    CurveType as ServiceCurveType,
     MIDICommandDTO,
-    MIDIMappingDTO,
 )
 
+import yaml
+
 logger = logging.getLogger(__name__)
+
+MIDI_COMMANDER_PROFILE_ID = "meloaudio_midi_commander"
+LEGACY_MIDI_COMMANDER_PROFILE_ID = "meloaudio_commander"
+BANK_UP_CC = 85
+BANK_DOWN_CC = 86
+BUTTON_CC_BY_ID: Dict[str, int] = {
+    "1": 80,
+    "2": 81,
+    "3": 82,
+    "4": 14,
+}
+BUTTON_PC_BY_ID: Dict[str, int] = {
+    "A": 0,
+    "B": 1,
+    "C": 2,
+    "D": 3,
+}
+EXPRESSION_CC_BY_ID: Dict[str, int] = {
+    "EXP1": 7,
+    "EXP2": 1,
+}
+MELOAUDIO_PACK_PROFILE_PATH = (
+    Path(__file__).resolve().parents[2]
+    / "device-packs"
+    / "meloaudio"
+    / "profiles"
+    / "midi-commander.midi.yaml"
+)
 
 
 class CurveType(str, Enum):
@@ -116,50 +142,6 @@ class DeviceProfile:
     current_firmware_version: Optional[str] = None
 
 
-# ============================================================================
-# Built-in Device Profiles
-# ============================================================================
-
-MELOAUDIO_COMMANDER_PROFILE = DeviceProfile(
-    profile_id="meloaudio_commander",
-    name="MeloAudio MIDI Commander",
-    manufacturer="MeloAudio",
-    description="10 footswitches, 2 expression pedal jacks, USB/5-pin MIDI. Recommended standard controller.",
-    icon="🎸",
-    is_recommended=True,
-
-    name_patterns=["MIDI Commander", "MeloAudio", "TSMIDI", "TS MIDI"],
-
-    footswitches=[
-        # Bottom row - Program Changes for chain switching
-        FootswitchConfig("A", "Chain 1", MessageType.PROGRAM_CHANGE, 1, 0, SwitchMode.MOMENTARY, "activate_chain"),
-        FootswitchConfig("B", "Chain 2", MessageType.PROGRAM_CHANGE, 1, 1, SwitchMode.MOMENTARY, "activate_chain"),
-        FootswitchConfig("C", "Chain 3", MessageType.PROGRAM_CHANGE, 1, 2, SwitchMode.MOMENTARY, "activate_chain"),
-        FootswitchConfig("D", "Chain 4", MessageType.PROGRAM_CHANGE, 1, 3, SwitchMode.MOMENTARY, "activate_chain"),
-        # Top row - CCs for plugin toggles
-        FootswitchConfig("1", "Slot 1 Bypass", MessageType.CONTROL_CHANGE, 1, 80, SwitchMode.TOGGLE, "toggle_plugin"),
-        FootswitchConfig("2", "Slot 2 Bypass", MessageType.CONTROL_CHANGE, 1, 81, SwitchMode.TOGGLE, "toggle_plugin"),
-        FootswitchConfig("3", "Slot 3 Bypass", MessageType.CONTROL_CHANGE, 1, 82, SwitchMode.TOGGLE, "toggle_plugin"),
-        FootswitchConfig("4", "Tap Tempo", MessageType.CONTROL_CHANGE, 1, 14, SwitchMode.MOMENTARY, "tap_tempo"),
-    ],
-
-    expression_pedals=[
-        ExpressionPedalConfig("EXP1", "Volume", cc_number=7, channel=1, default_target="volume"),
-        ExpressionPedalConfig("EXP2", "Wah/Mod", cc_number=1, channel=1, default_target="wah"),
-    ],
-
-    bank_config=BankConfig(
-        enabled=True,
-        items_per_bank=4,
-        max_banks=8,
-        bank_up_cc=85,
-        bank_down_cc=86,
-    ),
-
-    supports_firmware_update=True,
-    firmware_dfu_command="dfu-util -a 0 -D {firmware_file}",
-)
-
 GENERIC_MIDI_PROFILE = DeviceProfile(
     profile_id="generic",
     name="Generic MIDI Controller",
@@ -174,12 +156,145 @@ GENERIC_MIDI_PROFILE = DeviceProfile(
     supports_firmware_update=False,
 )
 
+def _build_meloaudio_profile_from_device_pack() -> DeviceProfile:
+    """Load the canonical MIDI Commander profile from device-packs.
 
-# All available profiles
-BUILT_IN_PROFILES: Dict[str, DeviceProfile] = {
-    "meloaudio_commander": MELOAUDIO_COMMANDER_PROFILE,
-    "generic": GENERIC_MIDI_PROFILE,
-}
+    Raises ValueError when the pack profile cannot be read or is malformed.
+    """
+    if not MELOAUDIO_PACK_PROFILE_PATH.exists():
+        raise ValueError(f"missing MeloAudio profile at {MELOAUDIO_PACK_PROFILE_PATH}")
+
+    doc = yaml.safe_load(MELOAUDIO_PACK_PROFILE_PATH.read_text(encoding="utf-8"))
+    if not isinstance(doc, dict):
+        raise ValueError("MeloAudio profile YAML did not parse to an object")
+
+    identity = doc.get("identity", {}) if isinstance(doc.get("identity"), dict) else {}
+    manufacturer = str(identity.get("manufacturer") or "MeloAudio")
+    model = str(identity.get("model") or "midi-commander")
+    description = (
+        "10 footswitches, 2 expression pedal jacks, USB/5-pin MIDI. "
+        "Recommended standard controller."
+    )
+
+    button_id_by_cc = {value: key for key, value in BUTTON_CC_BY_ID.items()}
+    button_id_by_pc = {value: key for key, value in BUTTON_PC_BY_ID.items()}
+    expression_id_by_cc = {value: key for key, value in EXPRESSION_CC_BY_ID.items()}
+
+    footswitches: list[FootswitchConfig] = []
+    expression_pedals: list[ExpressionPedalConfig] = []
+    controls = doc.get("controls", [])
+    if not isinstance(controls, list):
+        raise ValueError("MeloAudio controls must be a list")
+
+    for row in controls:
+        if not isinstance(row, dict):
+            continue
+        status_raw = row.get("status")
+        if status_raw is None:
+            continue
+        try:
+            status = int(status_raw) & 0xF0
+        except (TypeError, ValueError):
+            continue
+        channel = int(row.get("channel") or 1)
+        midino_raw = row.get("midino")
+        midino = int(midino_raw) if midino_raw is not None else None
+        action = str(row.get("action") or "").strip().lower()
+        target = str(row.get("target") or "").strip().lower()
+
+        if status == 0xC0 and midino is not None:
+            switch_id = button_id_by_pc.get(midino, f"PC{midino}")
+            footswitches.append(
+                FootswitchConfig(
+                    switch_id=switch_id,
+                    label=f"Chain {midino + 1}",
+                    midi_type=MessageType.PROGRAM_CHANGE,
+                    channel=channel,
+                    number=midino,
+                    mode=SwitchMode.MOMENTARY,
+                    default_action="activate_chain",
+                )
+            )
+            continue
+
+        if status == 0xB0 and midino is not None and midino in expression_id_by_cc:
+            pedal_id = expression_id_by_cc[midino]
+            expression_pedals.append(
+                ExpressionPedalConfig(
+                    pedal_id=pedal_id,
+                    label="Volume" if pedal_id == "EXP1" else "Wah/Mod",
+                    cc_number=midino,
+                    channel=channel,
+                    default_target="volume" if pedal_id == "EXP1" else "wah",
+                )
+            )
+            continue
+
+        if status == 0xB0 and midino is not None and midino in button_id_by_cc:
+            switch_id = button_id_by_cc[midino]
+            default_action = "toggle_plugin"
+            mode = SwitchMode.TOGGLE
+            if switch_id == "4":
+                default_action = "tap_tempo"
+                mode = SwitchMode.MOMENTARY
+            elif action != "toggle" and not target.endswith(".bypass"):
+                default_action = None
+                mode = SwitchMode.MOMENTARY
+            footswitches.append(
+                FootswitchConfig(
+                    switch_id=switch_id,
+                    label=f"Switch {switch_id}",
+                    midi_type=MessageType.CONTROL_CHANGE,
+                    channel=channel,
+                    number=midino,
+                    mode=mode,
+                    default_action=default_action,
+                )
+            )
+
+    footswitches.sort(key=lambda item: (0 if item.switch_id in {"A", "B", "C", "D"} else 1, item.number))
+    expression_pedals.sort(key=lambda item: item.pedal_id)
+
+    def _is_bank_cc(row: dict[str, Any], expected_cc: int) -> bool:
+        if not isinstance(row, dict):
+            return False
+        try:
+            status = int(row.get("status", 0)) & 0xF0
+            midino = int(row["midino"]) if row.get("midino") is not None else -1
+        except (TypeError, ValueError, KeyError):
+            return False
+        return status == 0xB0 and midino == expected_cc
+
+    has_bank_up = any(_is_bank_cc(row, BANK_UP_CC) for row in controls)
+    has_bank_down = any(_is_bank_cc(row, BANK_DOWN_CC) for row in controls)
+
+    return DeviceProfile(
+        profile_id=MIDI_COMMANDER_PROFILE_ID,
+        name="MeloAudio MIDI Commander",
+        manufacturer=manufacturer,
+        description=description,
+        icon="🎸",
+        is_recommended=True,
+        name_patterns=[
+            "MIDI Commander",
+            "MeloAudio",
+            "TSMIDI",
+            "TS MIDI",
+            manufacturer,
+            model,
+        ],
+        footswitches=footswitches,
+        expression_pedals=expression_pedals,
+        bank_config=BankConfig(
+            enabled=bool(has_bank_up or has_bank_down),
+            items_per_bank=4,
+            max_banks=8,
+            bank_up_cc=BANK_UP_CC if has_bank_up else None,
+            bank_down_cc=BANK_DOWN_CC if has_bank_down else None,
+        ),
+        supports_firmware_update=True,
+        firmware_dfu_command="dfu-util -a 0 -D {firmware_file}",
+    )
 
 
 class MIDIDeviceProfileService:
@@ -188,11 +303,37 @@ class MIDIDeviceProfileService:
     """
 
     def __init__(self):
-        self._profiles = dict(BUILT_IN_PROFILES)
+        self._profiles: Dict[str, DeviceProfile] = {"generic": GENERIC_MIDI_PROFILE}
+        self._profile_aliases: Dict[str, str] = {
+            LEGACY_MIDI_COMMANDER_PROFILE_ID: MIDI_COMMANDER_PROFILE_ID,
+        }
+        self._load_meloaudio_profile()
         self._active_profile: Optional[DeviceProfile] = None
+        self._active_profile_id: Optional[str] = None
         self._bank_state: Dict[str, int] = {}  # profile_id -> current_bank
         self._expression_calibration: Dict[str, Dict] = {}  # pedal_id -> calibration
         self._midi_service = None
+
+    def _load_meloaudio_profile(self) -> None:
+        try:
+            self._profiles[MIDI_COMMANDER_PROFILE_ID] = _build_meloaudio_profile_from_device_pack()
+        except Exception as exc:
+            logger.error(
+                "Failed to load MeloAudio profile from device-pack (%s). "
+                "MIDI Commander profile surfaces will be unavailable until fixed.",
+                exc,
+            )
+
+    def _resolve_profile_id(self, profile_id: str | None) -> str | None:
+        if profile_id is None:
+            return None
+        raw = str(profile_id).strip()
+        if not raw:
+            return None
+        return self._profile_aliases.get(raw, raw)
+
+    def is_meloaudio_profile_id(self, profile_id: str | None) -> bool:
+        return self._resolve_profile_id(profile_id) == MIDI_COMMANDER_PROFILE_ID
 
     def set_midi_service(self, midi_service):
         """Set reference to main MIDI service."""
@@ -206,12 +347,26 @@ class MIDIDeviceProfileService:
 
     def get_profile(self, profile_id: str) -> Optional[Dict[str, Any]]:
         """Get a specific profile by ID."""
-        profile = self._profiles.get(profile_id)
-        return self._profile_to_dict(profile) if profile else None
+        resolved = self._resolve_profile_id(profile_id)
+        profile = self._profiles.get(resolved) if resolved else None
+        if not profile:
+            return None
+        payload = self._profile_to_dict(profile)
+        if resolved != profile_id:
+            payload["profile_id_canonical"] = resolved
+        return payload
 
     def get_active_profile(self) -> Optional[Dict[str, Any]]:
         """Get the currently active profile."""
-        return self._profile_to_dict(self._active_profile) if self._active_profile else None
+        if not self._active_profile:
+            return None
+        payload = self._profile_to_dict(self._active_profile)
+        if self._active_profile_id:
+            payload["profile_id"] = self._active_profile_id
+            resolved = self._resolve_profile_id(self._active_profile_id)
+            if resolved and resolved != self._active_profile_id:
+                payload["profile_id_canonical"] = resolved
+        return payload
 
     def _profile_to_dict(self, profile: DeviceProfile) -> Dict[str, Any]:
         """Convert profile to dictionary for API response."""
@@ -302,14 +457,17 @@ class MIDIDeviceProfileService:
         Returns:
             Summary of what was created
         """
-        profile = self._profiles.get(profile_id)
+        resolved_profile_id = self._resolve_profile_id(profile_id)
+        profile = self._profiles.get(resolved_profile_id) if resolved_profile_id else None
         if not profile:
             raise ValueError(f"Unknown profile: {profile_id}")
 
         self._active_profile = profile
+        self._active_profile_id = profile_id
 
         results = {
             "profile_id": profile_id,
+            "profile_id_canonical": profile.profile_id,
             "profile_name": profile.name,
             "commands_created": 0,
             "mappings_created": 0,
@@ -388,14 +546,16 @@ class MIDIDeviceProfileService:
 
     def get_current_bank(self, profile_id: Optional[str] = None) -> int:
         """Get current bank number for a profile."""
-        pid = profile_id or (self._active_profile.profile_id if self._active_profile else None)
+        resolved = self._resolve_profile_id(profile_id)
+        pid = resolved or (self._active_profile.profile_id if self._active_profile else None)
         if not pid:
             return 0
         return self._bank_state.get(pid, 0)
 
     def set_bank(self, bank: int, profile_id: Optional[str] = None) -> Dict[str, Any]:
         """Set current bank number."""
-        pid = profile_id or (self._active_profile.profile_id if self._active_profile else None)
+        resolved = self._resolve_profile_id(profile_id)
+        pid = resolved or (self._active_profile.profile_id if self._active_profile else None)
         if not pid:
             return {"error": "No active profile"}
 
@@ -640,7 +800,7 @@ class MIDIDeviceProfileService:
 
     def get_dfu_instructions(self, profile_id: str) -> Dict[str, Any]:
         """Get instructions for entering DFU mode for a device."""
-        if profile_id == "meloaudio_commander":
+        if self.is_meloaudio_profile_id(profile_id):
             return {
                 "device": "MeloAudio MIDI Commander",
                 "steps": [

@@ -1,0 +1,14 @@
+schema_version: 1
+pack_id: meloaudio
+vendor:
+  name: MeloAudio
+  website: https://www.meloaudio.com/
+  support_url: https://www.meloaudio.com/pages/contact-us
+description: |
+  MeloAudio MIDI controller surfaces. The MIDI Commander profile is the
+  canonical floor-controller pack for MAP2 synth/chain switching and
+  expression workflows.
+license: AGPL-3.0-only
+source: map2-native
+models:
+  - midi-commander

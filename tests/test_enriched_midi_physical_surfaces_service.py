@@ -219,6 +219,10 @@ def test_enriched_surface_summary_promotes_ground_control_and_profile_driven_fam
             get_active_profile=lambda: {"profile_id": "meloaudio_commander", "name": "MeloAudio MIDI Commander"},
             get_current_bank=lambda profile_id=None: 2,
             get_all_expression_calibrations=lambda: {"EXP1": {"curve": "linear"}, "EXP2": {"curve": "logarithmic"}},
+            is_meloaudio_profile_id=lambda profile_id: str(profile_id or "").strip() in {
+                "meloaudio_commander",
+                "meloaudio_midi_commander",
+            },
         ),
     )
 

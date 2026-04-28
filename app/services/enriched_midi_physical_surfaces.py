@@ -594,14 +594,14 @@ class EnrichedMidiPhysicalSurfacesService(Singleton):
     @staticmethod
     def _get_meloaudio_profile_state() -> dict[str, Any]:
         try:
-            profile = device_profile_service.get_profile("meloaudio_commander")
+            profile = device_profile_service.get_profile("meloaudio_midi_commander")
             active_profile = device_profile_service.get_active_profile()
             active_profile_id = str(active_profile.get("profile_id") or "").strip() if isinstance(active_profile, dict) else ""
             return {
                 "profile": deepcopy(profile) if isinstance(profile, dict) else {},
                 "active_profile": deepcopy(active_profile) if isinstance(active_profile, dict) else {},
                 "active_profile_id": active_profile_id or None,
-                "current_bank": int(device_profile_service.get_current_bank("meloaudio_commander")),
+                "current_bank": int(device_profile_service.get_current_bank("meloaudio_midi_commander")),
                 "expression_calibrations": deepcopy(device_profile_service.get_all_expression_calibrations()),
             }
         except Exception as exc:
@@ -645,7 +645,7 @@ class EnrichedMidiPhysicalSurfacesService(Singleton):
                 return "detected"
             return "planned"
         if unit_id == "meloaudio-midi-commander":
-            if str(meloaudio_profile_state.get("active_profile_id") or "") == "meloaudio_commander":
+            if device_profile_service.is_meloaudio_profile_id(str(meloaudio_profile_state.get("active_profile_id") or "")):
                 return "online"
             return "detected" if matched_midi_devices or host_detected else "planned"
         if unit_id == "novation-launch-control":
@@ -702,7 +702,7 @@ class EnrichedMidiPhysicalSurfacesService(Singleton):
                 return f"Ground Control Pro exposes {inputs} input(s) and {outputs} output(s) for the shared SysEx branch."
             return "Ground Control Pro remains a transport-selected SysEx device path."
         if unit_id == "meloaudio-midi-commander":
-            if str(meloaudio_profile_state.get("active_profile_id") or "") == "meloaudio_commander":
+            if device_profile_service.is_meloaudio_profile_id(str(meloaudio_profile_state.get("active_profile_id") or "")):
                 calibration_count = len(meloaudio_profile_state.get("expression_calibrations") or {})
                 return (
                     "MeloAudio MIDI Commander is the active MIDI profile "
@@ -900,7 +900,7 @@ class EnrichedMidiPhysicalSurfacesService(Singleton):
             active_profile_id = str(meloaudio_profile_state.get("active_profile_id") or "")
             calibration_count = len(meloaudio_profile_state.get("expression_calibrations") or {})
             for layer in layers:
-                if active_profile_id == "meloaudio_commander":
+                if device_profile_service.is_meloaudio_profile_id(active_profile_id):
                     layer["status"] = "online"
                     layer["detail"] = (
                         "MeloAudio is the active MIDI v2 profile "

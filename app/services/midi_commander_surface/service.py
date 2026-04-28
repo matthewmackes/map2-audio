@@ -157,7 +157,7 @@ class MidiCommanderSurfaceService(Singleton):
     def _matches_source(*, source_port: str, metadata: dict[str, Any] | None = None) -> bool:
         payload = dict(metadata or {})
         profile_id = str(payload.get("profile_id") or payload.get("device_profile_id") or "").strip().lower()
-        if profile_id == MIDI_COMMANDER_PROFILE_ID:
+        if device_profile_service.is_meloaudio_profile_id(profile_id):
             return True
         if is_midi_commander_port_name(source_port):
             return True
@@ -539,7 +539,7 @@ class MidiCommanderSurfaceService(Singleton):
             "active_snapshot_mapping": dict(self._active_snapshot_mapping) if isinstance(self._active_snapshot_mapping, dict) else None,
             "last_activation_push": dict(self._last_activation_push) if isinstance(self._last_activation_push, dict) else None,
             "active_profile": dict(active_profile) if isinstance(active_profile, dict) else None,
-            "current_bank": int(device_profile_service.get_current_bank("meloaudio_commander")),
+            "current_bank": int(device_profile_service.get_current_bank(MIDI_COMMANDER_PROFILE_ID)),
             "expression_calibrations": dict(device_profile_service.get_all_expression_calibrations()),
             "daemon_status": self._daemon.snapshot(),
             "recent_events": [dict(item) for item in self._recent_events[-16:]],

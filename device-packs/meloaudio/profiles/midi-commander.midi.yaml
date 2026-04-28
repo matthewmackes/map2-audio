@@ -1,0 +1,94 @@
+schema_version: 1
+identity:
+  manufacturer: MeloAudio
+  model: midi-commander
+  alsa_client_pattern: 'MIDI Commander'
+  hardware_id: alsa-seq:MIDI Commander:0
+
+scripts:
+  - scripts/commander.js
+
+controls:
+  - status: 0xC0
+    midino: 0
+    action: send_pc
+    target: audio.snapshot.recall
+    description: 'Program Change A (PC0) -> recall snapshot / chain slot 1.'
+
+  - status: 0xC0
+    midino: 1
+    action: send_pc
+    target: audio.snapshot.recall
+    description: 'Program Change B (PC1) -> recall snapshot / chain slot 2.'
+
+  - status: 0xC0
+    midino: 2
+    action: send_pc
+    target: audio.snapshot.recall
+    description: 'Program Change C (PC2) -> recall snapshot / chain slot 3.'
+
+  - status: 0xC0
+    midino: 3
+    action: send_pc
+    target: audio.snapshot.recall
+    description: 'Program Change D (PC3) -> recall snapshot / chain slot 4.'
+
+  - status: 0xB0
+    midino: 80
+    action: toggle
+    target: audio.chain.1.bypass
+    script: MeloAudioCommander.toggle_chain_1_bypass
+    description: 'Top switch 1 -> toggle chain 1 bypass.'
+
+  - status: 0xB0
+    midino: 81
+    action: toggle
+    target: audio.chain.2.bypass
+    script: MeloAudioCommander.toggle_chain_2_bypass
+    description: 'Top switch 2 -> toggle chain 2 bypass.'
+
+  - status: 0xB0
+    midino: 82
+    action: toggle
+    target: audio.chain.3.bypass
+    script: MeloAudioCommander.toggle_chain_3_bypass
+    description: 'Top switch 3 -> toggle chain 3 bypass.'
+
+  - status: 0xB0
+    midino: 14
+    action: momentary
+    script: MeloAudioCommander.tap_tempo
+    description: 'Top switch 4 -> tap tempo.'
+
+  - status: 0xB0
+    midino: 7
+    action: set
+    target: audio.master.volume
+    script: MeloAudioCommander.expression_1
+    description: 'Expression 1 -> master volume.'
+
+  - status: 0xB0
+    midino: 1
+    action: set
+    target: audio.chain.1.mod_depth
+    script: MeloAudioCommander.expression_2
+    description: 'Expression 2 -> mod/wah depth.'
+
+  - status: 0xB0
+    midino: 85
+    action: increment
+    script: MeloAudioCommander.bank_up
+    description: 'Bank up.'
+
+  - status: 0xB0
+    midino: 86
+    action: decrement
+    script: MeloAudioCommander.bank_down
+    description: 'Bank down.'
+
+mixxx_alias_table:
+  '[Channel1]': audio.chain.1
+  '[Channel2]': audio.chain.2
+  '[Channel3]': audio.chain.3
+  '[Channel4]': audio.chain.4
+  '[Master]': audio.master
