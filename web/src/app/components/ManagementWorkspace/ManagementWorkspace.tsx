@@ -22,7 +22,6 @@ import {
 } from '@carbon/react'
 import { useSearchParams } from 'react-router-dom'
 
-import { NodeContextPicker } from '../NodeContextPicker/NodeContextPicker'
 import { PlatformGrafanaPanelDeck, type PlatformGrafanaPanelDefinition } from '../Platform/PlatformGrafanaPanel'
 import type { PlatformHealth, PlatformLayerData, PlatformTableRow } from '../../platform/model'
 import { useNodeTopology } from '../../hooks/useNodeTopology'
@@ -297,9 +296,6 @@ export function ManagementWorkspace({
             </p>
           </div>
           <div className="management-workspace__tag-row">
-            <div className="management-workspace__scope-control">
-              <NodeContextPicker pageKey={NODE_PAGE_KEYS.platform} topology={topology} />
-            </div>
             {graphModel.summaryTags.map((tag) => (
               <Tag key={tag.label} type={tag.type}>{tag.label}</Tag>
             ))}

@@ -38,7 +38,6 @@ import {
   getNodeStatusLabel,
   getNodeStatusTagType,
 } from '../../utils/nodeDisplay'
-import { NodeContextPicker } from '../NodeContextPicker/NodeContextPicker'
 import { NetworkDiscoveryWorkspaceGraph } from './NetworkDiscoveryWorkspaceGraph'
 import { EmptyState } from '../shared/EmptyState'
 import {
@@ -437,9 +436,6 @@ export function NetworkDiscoveryWorkspace({
             </p>
           </div>
           <div className="network-discovery-workspace__tag-row">
-            <div className="network-discovery-workspace__scope-control">
-              <NodeContextPicker pageKey={NODE_PAGE_KEYS.platform} topology={topology} />
-            </div>
             {graphModel.summaryTags.map((tag) => (
               <Tag key={tag.label} type={tag.type}>{tag.label}</Tag>
             ))}

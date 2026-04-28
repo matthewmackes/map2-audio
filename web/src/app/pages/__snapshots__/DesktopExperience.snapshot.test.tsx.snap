@@ -87,7 +87,7 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                   >
                     <div
                       class="node-id-card__res-mini"
-                      style="color: rgba(66, 190, 101, 0.4);"
+                      style="color: var(--support-success)66;"
                     >
                       <div
                         class="node-id-card__res-mini-row"
@@ -113,13 +113,13 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                       >
                         <div
                           class="node-id-card__res-mini-bar-fill"
-                          style="width: 18%; background: rgb(66, 190, 101);"
+                          style="width: 18%; background: var(--support-success);"
                         />
                       </div>
                     </div>
                     <div
                       class="node-id-card__res-mini"
-                      style="color: rgba(66, 190, 101, 0.4);"
+                      style="color: var(--support-success)66;"
                     >
                       <div
                         class="node-id-card__res-mini-row"
@@ -145,7 +145,7 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                       >
                         <div
                           class="node-id-card__res-mini-bar-fill"
-                          style="width: 35%; background: rgb(66, 190, 101);"
+                          style="width: 35%; background: var(--support-success);"
                         />
                       </div>
                     </div>
@@ -4671,6 +4671,211 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
           aria-hidden="true"
           class="hp2-root__backdrop"
         />
+        <div
+          aria-hidden="false"
+          class="cds--layer-one cds--modal is-visible hp2-welcome-notice"
+          role="presentation"
+        >
+          <div
+            aria-label="Welcome"
+            aria-modal="true"
+            class="cds--modal-container cds--modal-container--md"
+            role="dialog"
+          >
+            <button
+              class="cds--visually-hidden"
+              type="button"
+            >
+              Focus sentinel
+            </button>
+            <div
+              class="cds--modal-container-body"
+            >
+              <div
+                class="cds--modal-header"
+              >
+                <h2
+                  class="cds--modal-header__label cds--type-delta"
+                >
+                  Welcome
+                </h2>
+                <h2
+                  class="cds--modal-header__heading cds--type-beta"
+                >
+                  MAP GUI Welcome / Notice
+                </h2>
+                <div
+                  class="cds--modal-close-button"
+                >
+                  <span
+                    class="cds--popover-container cds--popover--caret cds--popover--high-contrast cds--popover--open cds--popover--left cds--tooltip cds--icon-tooltip"
+                  >
+                    <div
+                      class="cds--tooltip-trigger__wrapper"
+                    >
+                      <button
+                        aria-label="Close"
+                        aria-labelledby="tooltip-_r_h_"
+                        class="cds--modal-close cds--btn cds--btn--primary cds--btn--icon-only"
+                        type="button"
+                      >
+                        <svg
+                          aria-hidden="true"
+                          class="cds--modal-close__icon"
+                          fill="currentColor"
+                          focusable="false"
+                          height="20"
+                          preserveAspectRatio="xMidYMid meet"
+                          viewBox="0 0 32 32"
+                          width="20"
+                          xmlns="http://www.w3.org/2000/svg"
+                        >
+                          <path
+                            d="M17.4141 16 24 9.4141 22.5859 8 16 14.5859 9.4143 8 8 9.4141 14.5859 16 8 22.5859 9.4143 24 16 17.4141 22.5859 24 24 22.5859 17.4141 16z"
+                          />
+                        </svg>
+                      </button>
+                    </div>
+                    <span
+                      aria-hidden="false"
+                      class="cds--popover"
+                      id="tooltip-_r_h_"
+                      role="tooltip"
+                    >
+                      <span
+                        class="cds--popover-content cds--tooltip-content"
+                      >
+                        Close
+                      </span>
+                      <span
+                        class="cds--popover-caret"
+                      />
+                    </span>
+                  </span>
+                </div>
+              </div>
+              <div
+                class="cds--layer-two cds--modal-content cds--modal-scroll-content--no-fade"
+              >
+                <div
+                  class="hp2-welcome-notice__body"
+                >
+                  <section
+                    aria-labelledby="map-welcome-heading"
+                    class="hp2-welcome-notice__section"
+                  >
+                    <h2
+                      id="map-welcome-heading"
+                    >
+                      Welcome to Mackes Audio Platform (MAP)
+                    </h2>
+                    <p>
+                      MAP is a demonstration platform created to showcase my software development, systems architecture, audio infrastructure, and project management skill sets.
+                    </p>
+                    <p>
+                      My goal is to build and share a feature-complete, open platform that explores how modern audio processing, routing, control, and appliance-style design can work together in a practical environment.
+                    </p>
+                  </section>
+                  <section
+                    aria-labelledby="map-notice-heading"
+                    class="hp2-welcome-notice__section"
+                  >
+                    <h2
+                      id="map-notice-heading"
+                    >
+                      Important Notice
+                    </h2>
+                    <p>
+                      MAP should be understood as a teaching tool, research project, and technical demonstration.
+                    </p>
+                    <p>
+                      It is not production ready.
+                    </p>
+                    <p>
+                      It should not be considered a replacement for, substitute for, or competitor to any professional audio, broadcast, studio, live sound, AVB/TSN, DSP, or music infrastructure product.
+                    </p>
+                    <p>
+                      Professional music and audio infrastructure manufacturers build essential tools for working musicians, engineers, venues, studios, integrators, and production teams. Please continue to support and invest in those manufacturers.
+                    </p>
+                    <p>
+                      By continuing, you acknowledge that MAP is provided for learning, experimentation, evaluation, and demonstration purposes only.
+                    </p>
+                  </section>
+                  <section
+                    aria-labelledby="map-questions-heading"
+                    class="hp2-welcome-notice__section"
+                  >
+                    <h2
+                      id="map-questions-heading"
+                    >
+                      Five questions
+                    </h2>
+                    <ol
+                      class="hp2-welcome-notice__questions"
+                    >
+                      <li>
+                        What is MAP intended to demonstrate?
+                      </li>
+                      <li>
+                        Is MAP production ready?
+                      </li>
+                      <li>
+                        Should MAP be treated as a replacement for professional audio, broadcast, studio, live sound, AVB/TSN, DSP, or music infrastructure products?
+                      </li>
+                      <li>
+                        Why should users continue supporting professional music and audio infrastructure manufacturers?
+                      </li>
+                      <li>
+                        Do you acknowledge that MAP is provided for learning, experimentation, evaluation, and demonstration purposes only?
+                      </li>
+                    </ol>
+                  </section>
+                  <div
+                    class="cds--form-item cds--checkbox-wrapper"
+                  >
+                    <input
+                      class="cds--checkbox"
+                      id="home-welcome-notice-hide"
+                      type="checkbox"
+                    />
+                    <label
+                      class="cds--checkbox-label"
+                      for="home-welcome-notice-hide"
+                      title=""
+                    >
+                      <div
+                        class="cds--checkbox-label-text"
+                        dir="auto"
+                      >
+                        Do not show this notice again
+                      </div>
+                    </label>
+                    <div
+                      class="cds--checkbox__validation-msg"
+                    />
+                  </div>
+                </div>
+              </div>
+              <div
+                aria-busy="false"
+                class="cds--modal-footer cds--btn-set"
+              >
+                <button
+                  class="cds--btn cds--btn--primary"
+                  type="button"
+                >
+                  Continue
+                </button>
+              </div>
+            </div>
+            <button
+              class="cds--visually-hidden"
+              type="button"
+            >
+              Focus sentinel
+            </button>
+          </div>
+        </div>
         <main
           class="cds--content hp2-home-shell__content"
         >
@@ -5270,13 +5475,13 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                       >
                         <h2
                           class="cds--data-table-header__title"
-                          id="tc-_r_f_-title"
+                          id="tc-_r_m_-title"
                         >
                           Operations table
                         </h2>
                         <p
                           class="cds--data-table-header__description"
-                          id="tc-_r_f_-description"
+                          id="tc-_r_m_-description"
                         >
                           All live home telemetry collapsed into one searchable Carbon table. Select a row to open the owning workspace.
                         </p>
@@ -5317,15 +5522,15 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                           </div>
                           <label
                             class="cds--label"
-                            for="table-toolbar-search-_r_g_"
-                            id="table-toolbar-search-_r_g_-search"
+                            for="table-toolbar-search-_r_n_"
+                            id="table-toolbar-search-_r_n_-search"
                           >
                             Filter table
                           </label>
                           <input
                             autocomplete="off"
                             class="cds--search-input"
-                            id="table-toolbar-search-_r_g_"
+                            id="table-toolbar-search-_r_n_"
                             placeholder="Filter table"
                             tabindex="0"
                             type="search"
@@ -5355,7 +5560,7 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                         </div>
                         <div
                           class="cds--tag cds--tag--sm cds--layout--size-sm cds--tag--cool-gray"
-                          id="tag-id-_r_i_"
+                          id="tag-id-_r_p_"
                         >
                           <span
                             class="cds--tag__label"
@@ -5368,7 +5573,7 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                         </div>
                         <div
                           class="cds--tag cds--tag--sm cds--layout--size-sm cds--tag--cool-gray"
-                          id="tag-id-_r_j_"
+                          id="tag-id-_r_q_"
                         >
                           <span
                             class="cds--tag__label"
@@ -5381,7 +5586,7 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                         </div>
                         <div
                           class="cds--tag cds--tag--sm cds--layout--size-sm cds--tag--green"
-                          id="tag-id-_r_k_"
+                          id="tag-id-_r_r_"
                         >
                           <span
                             class="cds--tag__label"
@@ -5393,7 +5598,7 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                         </div>
                         <div
                           class="cds--tag cds--tag--sm cds--layout--size-sm cds--tag--warm-gray"
-                          id="tag-id-_r_l_"
+                          id="tag-id-_r_s_"
                         >
                           <span
                             class="cds--tag__label"
@@ -5412,9 +5617,9 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                         class="cds--data-table-content"
                       >
                         <table
-                          aria-describedby="tc-_r_f_-description"
+                          aria-describedby="tc-_r_m_-description"
                           aria-label="Home telemetry table"
-                          aria-labelledby="tc-_r_f_-title"
+                          aria-labelledby="tc-_r_m_-title"
                           class="cds--data-table hp2-home-shell__table cds--data-table--sm cds--data-table--sort cds--data-table--zebra cds--data-table--visible-overflow-menu"
                         >
                           <thead>
@@ -5426,12 +5631,12 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                               >
                                 <div
                                   class="cds--table-sort__description"
-                                  id="table-sort-_r_m_"
+                                  id="table-sort-_r_t_"
                                 >
                                   Click to sort rows by Surface header in ascending order
                                 </div>
                                 <button
-                                  aria-describedby="table-sort-_r_m_"
+                                  aria-describedby="table-sort-_r_t_"
                                   class="cds--table-sort"
                                   type="button"
                                 >
@@ -5489,12 +5694,12 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                               >
                                 <div
                                   class="cds--table-sort__description"
-                                  id="table-sort-_r_n_"
+                                  id="table-sort-_r_u_"
                                 >
                                   Click to sort rows by Signal header in ascending order
                                 </div>
                                 <button
-                                  aria-describedby="table-sort-_r_n_"
+                                  aria-describedby="table-sort-_r_u_"
                                   class="cds--table-sort"
                                   type="button"
                                 >
@@ -5552,12 +5757,12 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                               >
                                 <div
                                   class="cds--table-sort__description"
-                                  id="table-sort-_r_o_"
+                                  id="table-sort-_r_v_"
                                 >
                                   Click to sort rows by Current state header in ascending order
                                 </div>
                                 <button
-                                  aria-describedby="table-sort-_r_o_"
+                                  aria-describedby="table-sort-_r_v_"
                                   class="cds--table-sort"
                                   type="button"
                                 >
@@ -5615,12 +5820,12 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                               >
                                 <div
                                   class="cds--table-sort__description"
-                                  id="table-sort-_r_p_"
+                                  id="table-sort-_r_10_"
                                 >
                                   Click to sort rows by Scope header in ascending order
                                 </div>
                                 <button
-                                  aria-describedby="table-sort-_r_p_"
+                                  aria-describedby="table-sort-_r_10_"
                                   class="cds--table-sort"
                                   type="button"
                                 >
@@ -5678,12 +5883,12 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                               >
                                 <div
                                   class="cds--table-sort__description"
-                                  id="table-sort-_r_q_"
+                                  id="table-sort-_r_11_"
                                 >
                                   Click to sort rows by Detail header in ascending order
                                 </div>
                                 <button
-                                  aria-describedby="table-sort-_r_q_"
+                                  aria-describedby="table-sort-_r_11_"
                                   class="cds--table-sort"
                                   type="button"
                                 >
@@ -5741,12 +5946,12 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                               >
                                 <div
                                   class="cds--table-sort__description"
-                                  id="table-sort-_r_r_"
+                                  id="table-sort-_r_12_"
                                 >
                                   Click to sort rows by Workspace header in ascending order
                                 </div>
                                 <button
-                                  aria-describedby="table-sort-_r_r_"
+                                  aria-describedby="table-sort-_r_12_"
                                   class="cds--table-sort"
                                   type="button"
                                 >
@@ -5811,7 +6016,7 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                               <td>
                                 <div
                                   class="cds--tag cds--tag--sm cds--layout--size-sm cds--tag--cool-gray"
-                                  id="tag-id-_r_s_"
+                                  id="tag-id-_r_13_"
                                 >
                                   <span
                                     class="cds--tag__label"
@@ -5840,7 +6045,7 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                                   </span>
                                   <div
                                     class="cds--tag cds--tag--sm cds--layout--size-sm cds--tag--green"
-                                    id="tag-id-_r_t_"
+                                    id="tag-id-_r_14_"
                                   >
                                     <span
                                       class="cds--tag__label"
@@ -5927,7 +6132,7 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
               >
                 <button
                   aria-label="Close"
-                  aria-labelledby="tooltip-_r_10_"
+                  aria-labelledby="tooltip-_r_17_"
                   class="cds--modal-close cds--btn cds--btn--primary cds--btn--icon-only"
                   type="button"
                 >
@@ -5951,7 +6156,7 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
               <span
                 aria-hidden="true"
                 class="cds--popover"
-                id="tooltip-_r_10_"
+                id="tooltip-_r_17_"
                 role="tooltip"
               >
                 <span
@@ -6014,13 +6219,13 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
             Cancel
           </button>
           <button
-            aria-describedby="danger-description-_r_14_"
+            aria-describedby="danger-description-_r_1b_"
             class="cds--btn cds--btn--danger"
             type="button"
           >
             <span
               class="cds--visually-hidden"
-              id="danger-description-_r_14_"
+              id="danger-description-_r_1b_"
             >
               danger
             </span>
@@ -6080,7 +6285,7 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
               >
                 <button
                   aria-label="Close"
-                  aria-labelledby="tooltip-_r_17_"
+                  aria-labelledby="tooltip-_r_1e_"
                   class="cds--modal-close cds--btn cds--btn--primary cds--btn--icon-only"
                   type="button"
                 >
@@ -6104,7 +6309,7 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
               <span
                 aria-hidden="true"
                 class="cds--popover"
-                id="tooltip-_r_17_"
+                id="tooltip-_r_1e_"
                 role="tooltip"
               >
                 <span
@@ -6240,7 +6445,7 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                   >
                     <div
                       class="node-id-card__res-mini"
-                      style="color: rgba(66, 190, 101, 0.4);"
+                      style="color: var(--support-success)66;"
                     >
                       <div
                         class="node-id-card__res-mini-row"
@@ -6266,13 +6471,13 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                       >
                         <div
                           class="node-id-card__res-mini-bar-fill"
-                          style="width: 18%; background: rgb(66, 190, 101);"
+                          style="width: 18%; background: var(--support-success);"
                         />
                       </div>
                     </div>
                     <div
                       class="node-id-card__res-mini"
-                      style="color: rgba(66, 190, 101, 0.4);"
+                      style="color: var(--support-success)66;"
                     >
                       <div
                         class="node-id-card__res-mini-row"
@@ -6298,7 +6503,7 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                       >
                         <div
                           class="node-id-card__res-mini-bar-fill"
-                          style="width: 35%; background: rgb(66, 190, 101);"
+                          style="width: 35%; background: var(--support-success);"
                         />
                       </div>
                     </div>
@@ -6413,7 +6618,7 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                     </div>
                     <div
                       class="cds--tag cds--tag--cool-gray"
-                      id="tag-id-_r_1d_"
+                      id="tag-id-_r_1k_"
                     >
                       <span
                         class="cds--tag__label"
@@ -6439,7 +6644,7 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                     </span>
                     <div
                       class="cds--tag cds--tag--green"
-                      id="tag-id-_r_1e_"
+                      id="tag-id-_r_1l_"
                     >
                       <span
                         class="cds--tag__label"
@@ -6523,7 +6728,7 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
               >
                 <button
                   aria-label="Refresh"
-                  aria-labelledby="tooltip-_r_1g_"
+                  aria-labelledby="tooltip-_r_1n_"
                   class="global-tree-nav__quick-action global-tree-nav__quick-action--refresh"
                   type="button"
                 >
@@ -6549,7 +6754,7 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
               <span
                 aria-hidden="true"
                 class="cds--popover"
-                id="tooltip-_r_1g_"
+                id="tooltip-_r_1n_"
                 role="tooltip"
               >
                 <span
@@ -6570,7 +6775,7 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
               >
                 <button
                   aria-label="Restart"
-                  aria-labelledby="tooltip-_r_1i_"
+                  aria-labelledby="tooltip-_r_1p_"
                   class="global-tree-nav__quick-action global-tree-nav__quick-action--restart"
                   type="button"
                 >
@@ -6593,7 +6798,7 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
               <span
                 aria-hidden="true"
                 class="cds--popover"
-                id="tooltip-_r_1i_"
+                id="tooltip-_r_1p_"
                 role="tooltip"
               >
                 <span
@@ -6614,7 +6819,7 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
               >
                 <button
                   aria-label="Log Out"
-                  aria-labelledby="tooltip-_r_1k_"
+                  aria-labelledby="tooltip-_r_1r_"
                   class="global-tree-nav__quick-action global-tree-nav__quick-action--logout"
                   type="button"
                 >
@@ -6640,7 +6845,7 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
               <span
                 aria-hidden="true"
                 class="cds--popover"
-                id="tooltip-_r_1k_"
+                id="tooltip-_r_1r_"
                 role="tooltip"
               >
                 <span
@@ -6661,7 +6866,7 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
               >
                 <button
                   aria-label="Full system reboot"
-                  aria-labelledby="tooltip-_r_1m_"
+                  aria-labelledby="tooltip-_r_1t_"
                   class="global-tree-nav__quick-action global-tree-nav__quick-action--reboot"
                   type="button"
                 >
@@ -6687,7 +6892,7 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
               <span
                 aria-hidden="true"
                 class="cds--popover"
-                id="tooltip-_r_1m_"
+                id="tooltip-_r_1t_"
                 role="tooltip"
               >
                 <span
@@ -10772,7 +10977,7 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
             >
               <button
                 aria-label="Collapse global navigation"
-                aria-labelledby="tooltip-_r_1p_"
+                aria-labelledby="tooltip-_r_20_"
                 class="global-tree-nav__footer-button global-tree-nav__footer-button--collapse"
                 type="button"
               >
@@ -10795,7 +11000,7 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
             <span
               aria-hidden="true"
               class="cds--popover"
-              id="tooltip-_r_1p_"
+              id="tooltip-_r_20_"
               role="tooltip"
             >
               <span
@@ -10824,6 +11029,211 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
           aria-hidden="true"
           class="hp2-root__backdrop"
         />
+        <div
+          aria-hidden="false"
+          class="cds--layer-one cds--modal is-visible hp2-welcome-notice"
+          role="presentation"
+        >
+          <div
+            aria-label="Welcome"
+            aria-modal="true"
+            class="cds--modal-container cds--modal-container--md"
+            role="dialog"
+          >
+            <button
+              class="cds--visually-hidden"
+              type="button"
+            >
+              Focus sentinel
+            </button>
+            <div
+              class="cds--modal-container-body"
+            >
+              <div
+                class="cds--modal-header"
+              >
+                <h2
+                  class="cds--modal-header__label cds--type-delta"
+                >
+                  Welcome
+                </h2>
+                <h2
+                  class="cds--modal-header__heading cds--type-beta"
+                >
+                  MAP GUI Welcome / Notice
+                </h2>
+                <div
+                  class="cds--modal-close-button"
+                >
+                  <span
+                    class="cds--popover-container cds--popover--caret cds--popover--high-contrast cds--popover--open cds--popover--left cds--tooltip cds--icon-tooltip"
+                  >
+                    <div
+                      class="cds--tooltip-trigger__wrapper"
+                    >
+                      <button
+                        aria-label="Close"
+                        aria-labelledby="tooltip-_r_24_"
+                        class="cds--modal-close cds--btn cds--btn--primary cds--btn--icon-only"
+                        type="button"
+                      >
+                        <svg
+                          aria-hidden="true"
+                          class="cds--modal-close__icon"
+                          fill="currentColor"
+                          focusable="false"
+                          height="20"
+                          preserveAspectRatio="xMidYMid meet"
+                          viewBox="0 0 32 32"
+                          width="20"
+                          xmlns="http://www.w3.org/2000/svg"
+                        >
+                          <path
+                            d="M17.4141 16 24 9.4141 22.5859 8 16 14.5859 9.4143 8 8 9.4141 14.5859 16 8 22.5859 9.4143 24 16 17.4141 22.5859 24 24 22.5859 17.4141 16z"
+                          />
+                        </svg>
+                      </button>
+                    </div>
+                    <span
+                      aria-hidden="false"
+                      class="cds--popover"
+                      id="tooltip-_r_24_"
+                      role="tooltip"
+                    >
+                      <span
+                        class="cds--popover-content cds--tooltip-content"
+                      >
+                        Close
+                      </span>
+                      <span
+                        class="cds--popover-caret"
+                      />
+                    </span>
+                  </span>
+                </div>
+              </div>
+              <div
+                class="cds--layer-two cds--modal-content cds--modal-scroll-content--no-fade"
+              >
+                <div
+                  class="hp2-welcome-notice__body"
+                >
+                  <section
+                    aria-labelledby="map-welcome-heading"
+                    class="hp2-welcome-notice__section"
+                  >
+                    <h2
+                      id="map-welcome-heading"
+                    >
+                      Welcome to Mackes Audio Platform (MAP)
+                    </h2>
+                    <p>
+                      MAP is a demonstration platform created to showcase my software development, systems architecture, audio infrastructure, and project management skill sets.
+                    </p>
+                    <p>
+                      My goal is to build and share a feature-complete, open platform that explores how modern audio processing, routing, control, and appliance-style design can work together in a practical environment.
+                    </p>
+                  </section>
+                  <section
+                    aria-labelledby="map-notice-heading"
+                    class="hp2-welcome-notice__section"
+                  >
+                    <h2
+                      id="map-notice-heading"
+                    >
+                      Important Notice
+                    </h2>
+                    <p>
+                      MAP should be understood as a teaching tool, research project, and technical demonstration.
+                    </p>
+                    <p>
+                      It is not production ready.
+                    </p>
+                    <p>
+                      It should not be considered a replacement for, substitute for, or competitor to any professional audio, broadcast, studio, live sound, AVB/TSN, DSP, or music infrastructure product.
+                    </p>
+                    <p>
+                      Professional music and audio infrastructure manufacturers build essential tools for working musicians, engineers, venues, studios, integrators, and production teams. Please continue to support and invest in those manufacturers.
+                    </p>
+                    <p>
+                      By continuing, you acknowledge that MAP is provided for learning, experimentation, evaluation, and demonstration purposes only.
+                    </p>
+                  </section>
+                  <section
+                    aria-labelledby="map-questions-heading"
+                    class="hp2-welcome-notice__section"
+                  >
+                    <h2
+                      id="map-questions-heading"
+                    >
+                      Five questions
+                    </h2>
+                    <ol
+                      class="hp2-welcome-notice__questions"
+                    >
+                      <li>
+                        What is MAP intended to demonstrate?
+                      </li>
+                      <li>
+                        Is MAP production ready?
+                      </li>
+                      <li>
+                        Should MAP be treated as a replacement for professional audio, broadcast, studio, live sound, AVB/TSN, DSP, or music infrastructure products?
+                      </li>
+                      <li>
+                        Why should users continue supporting professional music and audio infrastructure manufacturers?
+                      </li>
+                      <li>
+                        Do you acknowledge that MAP is provided for learning, experimentation, evaluation, and demonstration purposes only?
+                      </li>
+                    </ol>
+                  </section>
+                  <div
+                    class="cds--form-item cds--checkbox-wrapper"
+                  >
+                    <input
+                      class="cds--checkbox"
+                      id="home-welcome-notice-hide"
+                      type="checkbox"
+                    />
+                    <label
+                      class="cds--checkbox-label"
+                      for="home-welcome-notice-hide"
+                      title=""
+                    >
+                      <div
+                        class="cds--checkbox-label-text"
+                        dir="auto"
+                      >
+                        Do not show this notice again
+                      </div>
+                    </label>
+                    <div
+                      class="cds--checkbox__validation-msg"
+                    />
+                  </div>
+                </div>
+              </div>
+              <div
+                aria-busy="false"
+                class="cds--modal-footer cds--btn-set"
+              >
+                <button
+                  class="cds--btn cds--btn--primary"
+                  type="button"
+                >
+                  Continue
+                </button>
+              </div>
+            </div>
+            <button
+              class="cds--visually-hidden"
+              type="button"
+            >
+              Focus sentinel
+            </button>
+          </div>
+        </div>
         <main
           class="cds--content hp2-home-shell__content"
         >
@@ -11423,13 +11833,13 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                       >
                         <h2
                           class="cds--data-table-header__title"
-                          id="tc-_r_1r_-title"
+                          id="tc-_r_29_-title"
                         >
                           Operations table
                         </h2>
                         <p
                           class="cds--data-table-header__description"
-                          id="tc-_r_1r_-description"
+                          id="tc-_r_29_-description"
                         >
                           All live home telemetry collapsed into one searchable Carbon table. Select a row to open the owning workspace.
                         </p>
@@ -11470,15 +11880,15 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                           </div>
                           <label
                             class="cds--label"
-                            for="table-toolbar-search-_r_1s_"
-                            id="table-toolbar-search-_r_1s_-search"
+                            for="table-toolbar-search-_r_2a_"
+                            id="table-toolbar-search-_r_2a_-search"
                           >
                             Filter table
                           </label>
                           <input
                             autocomplete="off"
                             class="cds--search-input"
-                            id="table-toolbar-search-_r_1s_"
+                            id="table-toolbar-search-_r_2a_"
                             placeholder="Filter table"
                             tabindex="0"
                             type="search"
@@ -11508,7 +11918,7 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                         </div>
                         <div
                           class="cds--tag cds--tag--sm cds--layout--size-sm cds--tag--cool-gray"
-                          id="tag-id-_r_1u_"
+                          id="tag-id-_r_2c_"
                         >
                           <span
                             class="cds--tag__label"
@@ -11521,7 +11931,7 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                         </div>
                         <div
                           class="cds--tag cds--tag--sm cds--layout--size-sm cds--tag--cool-gray"
-                          id="tag-id-_r_1v_"
+                          id="tag-id-_r_2d_"
                         >
                           <span
                             class="cds--tag__label"
@@ -11534,7 +11944,7 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                         </div>
                         <div
                           class="cds--tag cds--tag--sm cds--layout--size-sm cds--tag--green"
-                          id="tag-id-_r_20_"
+                          id="tag-id-_r_2e_"
                         >
                           <span
                             class="cds--tag__label"
@@ -11546,7 +11956,7 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                         </div>
                         <div
                           class="cds--tag cds--tag--sm cds--layout--size-sm cds--tag--warm-gray"
-                          id="tag-id-_r_21_"
+                          id="tag-id-_r_2f_"
                         >
                           <span
                             class="cds--tag__label"
@@ -11565,9 +11975,9 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                         class="cds--data-table-content"
                       >
                         <table
-                          aria-describedby="tc-_r_1r_-description"
+                          aria-describedby="tc-_r_29_-description"
                           aria-label="Home telemetry table"
-                          aria-labelledby="tc-_r_1r_-title"
+                          aria-labelledby="tc-_r_29_-title"
                           class="cds--data-table hp2-home-shell__table cds--data-table--sm cds--data-table--sort cds--data-table--zebra cds--data-table--visible-overflow-menu"
                         >
                           <thead>
@@ -11579,12 +11989,12 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                               >
                                 <div
                                   class="cds--table-sort__description"
-                                  id="table-sort-_r_22_"
+                                  id="table-sort-_r_2g_"
                                 >
                                   Click to sort rows by Surface header in ascending order
                                 </div>
                                 <button
-                                  aria-describedby="table-sort-_r_22_"
+                                  aria-describedby="table-sort-_r_2g_"
                                   class="cds--table-sort"
                                   type="button"
                                 >
@@ -11642,12 +12052,12 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                               >
                                 <div
                                   class="cds--table-sort__description"
-                                  id="table-sort-_r_23_"
+                                  id="table-sort-_r_2h_"
                                 >
                                   Click to sort rows by Signal header in ascending order
                                 </div>
                                 <button
-                                  aria-describedby="table-sort-_r_23_"
+                                  aria-describedby="table-sort-_r_2h_"
                                   class="cds--table-sort"
                                   type="button"
                                 >
@@ -11705,12 +12115,12 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                               >
                                 <div
                                   class="cds--table-sort__description"
-                                  id="table-sort-_r_24_"
+                                  id="table-sort-_r_2i_"
                                 >
                                   Click to sort rows by Current state header in ascending order
                                 </div>
                                 <button
-                                  aria-describedby="table-sort-_r_24_"
+                                  aria-describedby="table-sort-_r_2i_"
                                   class="cds--table-sort"
                                   type="button"
                                 >
@@ -11768,12 +12178,12 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                               >
                                 <div
                                   class="cds--table-sort__description"
-                                  id="table-sort-_r_25_"
+                                  id="table-sort-_r_2j_"
                                 >
                                   Click to sort rows by Scope header in ascending order
                                 </div>
                                 <button
-                                  aria-describedby="table-sort-_r_25_"
+                                  aria-describedby="table-sort-_r_2j_"
                                   class="cds--table-sort"
                                   type="button"
                                 >
@@ -11831,12 +12241,12 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                               >
                                 <div
                                   class="cds--table-sort__description"
-                                  id="table-sort-_r_26_"
+                                  id="table-sort-_r_2k_"
                                 >
                                   Click to sort rows by Detail header in ascending order
                                 </div>
                                 <button
-                                  aria-describedby="table-sort-_r_26_"
+                                  aria-describedby="table-sort-_r_2k_"
                                   class="cds--table-sort"
                                   type="button"
                                 >
@@ -11894,12 +12304,12 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                               >
                                 <div
                                   class="cds--table-sort__description"
-                                  id="table-sort-_r_27_"
+                                  id="table-sort-_r_2l_"
                                 >
                                   Click to sort rows by Workspace header in ascending order
                                 </div>
                                 <button
-                                  aria-describedby="table-sort-_r_27_"
+                                  aria-describedby="table-sort-_r_2l_"
                                   class="cds--table-sort"
                                   type="button"
                                 >
@@ -11964,7 +12374,7 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                               <td>
                                 <div
                                   class="cds--tag cds--tag--sm cds--layout--size-sm cds--tag--cool-gray"
-                                  id="tag-id-_r_28_"
+                                  id="tag-id-_r_2m_"
                                 >
                                   <span
                                     class="cds--tag__label"
@@ -11993,7 +12403,7 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                                   </span>
                                   <div
                                     class="cds--tag cds--tag--sm cds--layout--size-sm cds--tag--green"
-                                    id="tag-id-_r_29_"
+                                    id="tag-id-_r_2n_"
                                   >
                                     <span
                                       class="cds--tag__label"
@@ -12080,7 +12490,7 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
               >
                 <button
                   aria-label="Close"
-                  aria-labelledby="tooltip-_r_2c_"
+                  aria-labelledby="tooltip-_r_2q_"
                   class="cds--modal-close cds--btn cds--btn--primary cds--btn--icon-only"
                   type="button"
                 >
@@ -12104,7 +12514,7 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
               <span
                 aria-hidden="true"
                 class="cds--popover"
-                id="tooltip-_r_2c_"
+                id="tooltip-_r_2q_"
                 role="tooltip"
               >
                 <span
@@ -12167,13 +12577,13 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
             Cancel
           </button>
           <button
-            aria-describedby="danger-description-_r_2g_"
+            aria-describedby="danger-description-_r_2u_"
             class="cds--btn cds--btn--danger"
             type="button"
           >
             <span
               class="cds--visually-hidden"
-              id="danger-description-_r_2g_"
+              id="danger-description-_r_2u_"
             >
               danger
             </span>
@@ -12233,7 +12643,7 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
               >
                 <button
                   aria-label="Close"
-                  aria-labelledby="tooltip-_r_2j_"
+                  aria-labelledby="tooltip-_r_31_"
                   class="cds--modal-close cds--btn cds--btn--primary cds--btn--icon-only"
                   type="button"
                 >
@@ -12257,7 +12667,7 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
               <span
                 aria-hidden="true"
                 class="cds--popover"
-                id="tooltip-_r_2j_"
+                id="tooltip-_r_31_"
                 role="tooltip"
               >
                 <span
@@ -12309,67 +12719,8 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
 exports[`Desktop experience visual snapshots matches the global navigation shell 1`] = `
 <div
   class="app-shell app-shell--themed-workspace app-shell--windowed"
-  style="--window-shell-accent: #be95ff; --global-tree-width: 16rem; --global-tree-banner-left-offset: 16rem; --ctx-h: 0px; --ws-h: 40px;"
+  style="--window-shell-accent: #be95ff; --global-tree-width: 16rem; --global-tree-banner-left-offset: 16rem; --ctx-h: 0px; --ws-h: 0px;"
 >
-  <div
-    aria-label="Workspace toolbar"
-    class="shell-ws shell-ws--ctx-hidden"
-    role="toolbar"
-  >
-    <div
-      class="shell-ws__side"
-    >
-      <svg
-        aria-hidden="true"
-        class="shell-ws__side-glyph"
-        viewBox="0 0 24 24"
-      >
-        <path
-          d="M4 6h16M4 12h16M4 18h10"
-        />
-      </svg>
-      <span
-        class="shell-ws__side-label"
-      >
-        Global Navigation
-      </span>
-    </div>
-    <div
-      class="shell-ws__main"
-    >
-      <span
-        aria-hidden="true"
-        class="shell-ws__main-dot"
-      />
-      <span
-        class="shell-ws__main-label"
-      >
-        Platform Workspace
-      </span>
-      <span
-        class="shell-ws__main-sep"
-      >
-        ·
-      </span>
-      <strong
-        class="shell-ws__main-name"
-      >
-        Audio Artifacts
-      </strong>
-    </div>
-    <div
-      class="shell-ws__actions"
-    >
-      <button
-        aria-label="Close Audio Artifacts"
-        class="shell-ws__btn shell-ws__btn--close"
-        title="Close Audio Artifacts"
-        type="button"
-      >
-        ×
-      </button>
-    </div>
-  </div>
   <div
     class="app-shell__frame"
   >
@@ -12452,7 +12803,7 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
                   >
                     <div
                       class="node-id-card__res-mini"
-                      style="color: rgba(66, 190, 101, 0.4);"
+                      style="color: var(--support-success)66;"
                     >
                       <div
                         class="node-id-card__res-mini-row"
@@ -12478,13 +12829,13 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
                       >
                         <div
                           class="node-id-card__res-mini-bar-fill"
-                          style="width: 18%; background: rgb(66, 190, 101);"
+                          style="width: 18%; background: var(--support-success);"
                         />
                       </div>
                     </div>
                     <div
                       class="node-id-card__res-mini"
-                      style="color: rgba(66, 190, 101, 0.4);"
+                      style="color: var(--support-success)66;"
                     >
                       <div
                         class="node-id-card__res-mini-row"
@@ -12510,7 +12861,7 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
                       >
                         <div
                           class="node-id-card__res-mini-bar-fill"
-                          style="width: 35%; background: rgb(66, 190, 101);"
+                          style="width: 35%; background: var(--support-success);"
                         />
                       </div>
                     </div>
@@ -12625,7 +12976,7 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
                     </div>
                     <div
                       class="cds--tag cds--tag--cool-gray"
-                      id="tag-id-_r_2p_"
+                      id="tag-id-_r_37_"
                     >
                       <span
                         class="cds--tag__label"
@@ -12651,7 +13002,7 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
                     </span>
                     <div
                       class="cds--tag cds--tag--green"
-                      id="tag-id-_r_2q_"
+                      id="tag-id-_r_38_"
                     >
                       <span
                         class="cds--tag__label"
@@ -12735,7 +13086,7 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
               >
                 <button
                   aria-label="Refresh"
-                  aria-labelledby="tooltip-_r_2s_"
+                  aria-labelledby="tooltip-_r_3a_"
                   class="global-tree-nav__quick-action global-tree-nav__quick-action--refresh"
                   type="button"
                 >
@@ -12761,7 +13112,7 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
               <span
                 aria-hidden="true"
                 class="cds--popover"
-                id="tooltip-_r_2s_"
+                id="tooltip-_r_3a_"
                 role="tooltip"
               >
                 <span
@@ -12782,7 +13133,7 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
               >
                 <button
                   aria-label="Restart"
-                  aria-labelledby="tooltip-_r_2u_"
+                  aria-labelledby="tooltip-_r_3c_"
                   class="global-tree-nav__quick-action global-tree-nav__quick-action--restart"
                   type="button"
                 >
@@ -12805,7 +13156,7 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
               <span
                 aria-hidden="true"
                 class="cds--popover"
-                id="tooltip-_r_2u_"
+                id="tooltip-_r_3c_"
                 role="tooltip"
               >
                 <span
@@ -12826,7 +13177,7 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
               >
                 <button
                   aria-label="Log Out"
-                  aria-labelledby="tooltip-_r_30_"
+                  aria-labelledby="tooltip-_r_3e_"
                   class="global-tree-nav__quick-action global-tree-nav__quick-action--logout"
                   type="button"
                 >
@@ -12852,7 +13203,7 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
               <span
                 aria-hidden="true"
                 class="cds--popover"
-                id="tooltip-_r_30_"
+                id="tooltip-_r_3e_"
                 role="tooltip"
               >
                 <span
@@ -12873,7 +13224,7 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
               >
                 <button
                   aria-label="Full system reboot"
-                  aria-labelledby="tooltip-_r_32_"
+                  aria-labelledby="tooltip-_r_3g_"
                   class="global-tree-nav__quick-action global-tree-nav__quick-action--reboot"
                   type="button"
                 >
@@ -12899,7 +13250,7 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
               <span
                 aria-hidden="true"
                 class="cds--popover"
-                id="tooltip-_r_32_"
+                id="tooltip-_r_3g_"
                 role="tooltip"
               >
                 <span
@@ -16984,7 +17335,7 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
             >
               <button
                 aria-label="Collapse global navigation"
-                aria-labelledby="tooltip-_r_35_"
+                aria-labelledby="tooltip-_r_3j_"
                 class="global-tree-nav__footer-button global-tree-nav__footer-button--collapse"
                 type="button"
               >
@@ -17007,7 +17358,7 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
             <span
               aria-hidden="true"
               class="cds--popover"
-              id="tooltip-_r_35_"
+              id="tooltip-_r_3j_"
               role="tooltip"
             >
               <span
@@ -17030,20 +17381,86 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
         class="shell-kicker"
       >
         <div
-          class="shell-kicker__eyebrow"
+          class="shell-kicker__head"
         >
-          Platform / Artifacts
+          <div
+            class="shell-kicker__copy"
+          >
+            <nav
+              aria-label="Workspace breadcrumbs"
+              class="shell-kicker__breadcrumbs"
+            >
+              <span
+                class="shell-kicker__breadcrumb-item"
+              >
+                <span
+                  class="shell-kicker__breadcrumb-host-label"
+                >
+                  MAP2-TESTBED
+                </span>
+                <span
+                  class="shell-kicker__breadcrumb-sep"
+                >
+                  /
+                </span>
+              </span>
+              <span
+                class="shell-kicker__breadcrumb-item"
+              >
+                <a
+                  class="shell-kicker__breadcrumb-link"
+                  href="/workspace"
+                >
+                  Workspace
+                </a>
+                <span
+                  class="shell-kicker__breadcrumb-sep"
+                >
+                  /
+                </span>
+              </span>
+              <span
+                class="shell-kicker__breadcrumb-item"
+              >
+                <span
+                  aria-current="page"
+                  class="shell-kicker__breadcrumb-current"
+                >
+                  Audio Artifacts
+                </span>
+              </span>
+            </nav>
+            <div
+              class="shell-kicker__eyebrow"
+            >
+              Platform / Audio Artifacts
+            </div>
+            <h1
+              class="shell-kicker__title"
+            >
+              Audio Artifacts
+            </h1>
+            <p
+              class="shell-kicker__subtitle"
+            >
+              Browse and manage all audio artifacts — LV2 plugins, NAM models, cabinet and reverb IRs, SoundFonts, and native JUCE processors — in a unified node-aware library.
+            </p>
+          </div>
+          <div
+            aria-label="Workspace actions"
+            class="shell-kicker__actions"
+            role="toolbar"
+          >
+            <button
+              aria-label="Close Audio Artifacts"
+              class="shell-kicker__action shell-kicker__action--close"
+              title="Close Audio Artifacts"
+              type="button"
+            >
+              ×
+            </button>
+          </div>
         </div>
-        <h1
-          class="shell-kicker__title"
-        >
-          Audio Artifacts
-        </h1>
-        <p
-          class="shell-kicker__subtitle"
-        >
-          Browse and manage all audio artifacts — LV2 plugins, NAM models, cabinet and reverb IRs, SoundFonts, and native JUCE processors — in a unified node-aware library.
-        </p>
       </header>
       <div
         data-testid="artifacts-page"
@@ -17096,7 +17513,7 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
               >
                 <button
                   aria-label="Close"
-                  aria-labelledby="tooltip-_r_39_"
+                  aria-labelledby="tooltip-_r_3n_"
                   class="cds--modal-close cds--btn cds--btn--primary cds--btn--icon-only"
                   type="button"
                 >
@@ -17120,7 +17537,7 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
               <span
                 aria-hidden="true"
                 class="cds--popover"
-                id="tooltip-_r_39_"
+                id="tooltip-_r_3n_"
                 role="tooltip"
               >
                 <span
@@ -17183,13 +17600,13 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
             Cancel
           </button>
           <button
-            aria-describedby="danger-description-_r_3d_"
+            aria-describedby="danger-description-_r_3r_"
             class="cds--btn cds--btn--danger"
             type="button"
           >
             <span
               class="cds--visually-hidden"
-              id="danger-description-_r_3d_"
+              id="danger-description-_r_3r_"
             >
               danger
             </span>
@@ -17249,7 +17666,7 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
               >
                 <button
                   aria-label="Close"
-                  aria-labelledby="tooltip-_r_3g_"
+                  aria-labelledby="tooltip-_r_3u_"
                   class="cds--modal-close cds--btn cds--btn--primary cds--btn--icon-only"
                   type="button"
                 >
@@ -17273,7 +17690,7 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
               <span
                 aria-hidden="true"
                 class="cds--popover"
-                id="tooltip-_r_3g_"
+                id="tooltip-_r_3u_"
                 role="tooltip"
               >
                 <span

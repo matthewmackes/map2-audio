@@ -7,7 +7,7 @@ import {
   useState,
   type ReactNode,
 } from 'react'
-import { Outlet, useLocation } from 'react-router-dom'
+import { Outlet } from 'react-router-dom'
 
 import { IntelFXStatusBar } from './IntelFXStatusBar'
 import { formatIntelFXProgramName, formatIntelFXProgramNumber } from './programNumber'
@@ -16,6 +16,7 @@ import { EmptyState } from '../../shared/EmptyState'
 import { LoadingState } from '../../shared/LoadingState'
 import { useCluster } from '../../../contexts/useCluster'
 import { useDeviceNodeContext } from '../../../hooks/useDeviceNodeContext'
+import { useActiveSectionFromPath } from '../hooks/useActiveSectionFromPath'
 import './IntelFXPageShell.css'
 
 type SidebarSectionId = 'panel' | 'editor' | 'midi-map' | 'library' | 'perform' | 'diag' | 'flow'
@@ -72,15 +73,6 @@ function clamp01(value: number): number {
   return Math.min(1, Math.max(0, value))
 }
 
-function sectionFromPath(pathname: string): SidebarSectionId {
-  const match = pathname.match(/\/devices\/intelfx\/([^/]+)/)
-  const candidate = match?.[1]
-  if (candidate && (SIDEBAR_SECTION_IDS as string[]).includes(candidate)) {
-    return candidate as SidebarSectionId
-  }
-  return 'panel'
-}
-
 function findParamByCandidates(params: IntelFXRegistryParam[] | undefined, candidates: string[]): IntelFXRegistryParam | null {
   if (!params || params.length === 0) return null
   for (const candidate of candidates) {
@@ -91,8 +83,7 @@ function findParamByCandidates(params: IntelFXRegistryParam[] | undefined, candi
 }
 
 export function IntelFXShell(): ReactNode {
-  const location = useLocation()
-  const activeSection = sectionFromPath(location.pathname)
+  const activeSection = useActiveSectionFromPath('/devices/intelfx/', SIDEBAR_SECTION_IDS, 'panel')
   const { activeNodeId, localNodeId } = useCluster()
   const { deviceState } = useDeviceNodeContext('rocktron-intelfx')
   const selectedNodeId = activeNodeId && activeNodeId !== 'all' ? activeNodeId : localNodeId

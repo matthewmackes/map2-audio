@@ -1,5 +1,5 @@
 import React, { createContext, useCallback, useContext, useEffect, useMemo, useState } from 'react'
-import { Outlet, useLocation } from 'react-router-dom'
+import { Outlet } from 'react-router-dom'
 import { MPX1StatusBar } from './MPX1StatusBar'
 import { formatMpx1ProgramName, formatMpx1ProgramNumber } from './programNumber'
 import { useMPX1State, type MPX1RegistryParam, type UseMPX1StateResult } from '../../../../map2/mpx1Api'
@@ -7,6 +7,7 @@ import { EmptyState } from '../../shared/EmptyState'
 import { LoadingState } from '../../shared/LoadingState'
 import { useCluster } from '../../../contexts/useCluster'
 import { useDeviceNodeContext } from '../../../hooks/useDeviceNodeContext'
+import { useActiveSectionFromPath } from '../hooks/useActiveSectionFromPath'
 import './MPX1PageShell.css'
 
 type SidebarSectionId = 'panel' | 'editor' | 'midi-map' | 'matrix' | 'library' | 'perform' | 'diag' | 'flow'
@@ -57,15 +58,6 @@ function clamp01(value: number): number {
   return Math.min(1, Math.max(0, value))
 }
 
-function sectionFromPath(pathname: string): SidebarSectionId {
-  const match = pathname.match(/\/devices\/mpx1\/([^/]+)/)
-  const candidate = match?.[1]
-  if (candidate && (SIDEBAR_SECTION_IDS as string[]).includes(candidate)) {
-    return candidate as SidebarSectionId
-  }
-  return 'panel'
-}
-
 function findParamByCandidates(params: MPX1RegistryParam[] | undefined, candidates: string[]): MPX1RegistryParam | null {
   if (!params || params.length === 0) return null
   for (const candidate of candidates) {
@@ -76,8 +68,7 @@ function findParamByCandidates(params: MPX1RegistryParam[] | undefined, candidat
 }
 
 export function MPX1Shell() {
-  const location = useLocation()
-  const activeSection = sectionFromPath(location.pathname)
+  const activeSection = useActiveSectionFromPath('/devices/mpx1/', SIDEBAR_SECTION_IDS, 'panel')
   const { activeNodeId, localNodeId } = useCluster()
   const { deviceState } = useDeviceNodeContext('lexicon-mpx1')
   const selectedNodeId = activeNodeId && activeNodeId !== 'all' ? activeNodeId : localNodeId

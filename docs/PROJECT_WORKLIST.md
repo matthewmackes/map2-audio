@@ -10,6 +10,30 @@ Last updated: 2026-04-27 EDT - T2462 installer audit shipped: fresh-host rebuild
 
 ---
 
+ID: T2466
+Status: [ ] Todo
+Title: React GUI fit-and-finish — integrated feel + smooth sliding motion + collapsed taskbar
+Description:
+- Goal / acceptance criteria: Live web GUI feels cohesive and tactile across all workspaces; every animated transition uses tokens from `web/src/app/styles/design-language.css` (durations) and `web/src/app/styles/motionPrimitives.ts` (springs/variants); sliding components (drawers, sheets, splitters, canvas nodes, tab indicators) share one motion vocabulary; `prefers-reduced-motion` is honored in Framer Motion variants (not just CSS); custom controls (canvas nodes, drag handles) carry `:focus-visible` rings; magic numbers in inline styles / CSS are replaced with tokens. Taskbar/status strip is shrunk by 25% (`--window-taskbar-height` 2.6rem → 1.95rem) AND collapsed by default with a manual chevron toggle (persisted in localStorage), auto-expanding only when at least one critical-severity pill or `pendingPushConfirmation` is present.
+- Why it matters: Today the canvas-node drag, drawer enter/exit, and ad-hoc transitions feel disconnected; magic numbers leak past the design-language layer; the taskbar consumes vertical real-estate when it is mostly idle. Polishing this lifts the platform from "functional" to "appliance-grade" without expanding scope.
+- Dependencies: T2444 (design-language tokens + motion primitives — already shipped). No backend changes.
+- Estimated effort: Medium (~2–3 weeks of focused polish work executed by an AI agent against the coaching prompt).
+- Required outputs: coaching prompt deliverable (`/home/mm/.claude/plans/help-me-coach-an-mellow-marshmallow.md`); per-target diffs against the 8 prioritized targets below; updated snapshot test (`web/src/app/pages/__snapshots__/DesktopExperience.snapshot.test.tsx.snap`) reflecting the default-collapsed taskbar; `npm --prefix web run typecheck` + `npm --prefix web run build` clean per target; visual verification on port 3000.
+Subtasks:
+  - T2466-0: Broaden smooth-sliding motion across workspace shells, sidebars, modals, splitters, sliders/knobs, route transitions (apply existing springs/easings — no new motion).
+  - T2466-1: Canvas-node drag → motion-value driven (`MPX1SignalPathCanvas.tsx`, `IntelFXSignalPathCanvas.tsx` — `useMotionValue`+`useTransform`, `MAP2_SPRING.slotTap` on release).
+  - T2466-2: Drawer enter/exit symmetry (`motionPrimitives.ts::drawerVariants` — sympathetic exit curve in same family).
+  - T2466-3: Reduced-motion compliance for Framer variants (new `useReducedMotionSafe` hook; wire through drawer/tab/scrim/hero variants).
+  - T2466-4: Magic-number audit (replace inline `style={{ width:'320px', ... }}` and hardcoded px in CSS with design-language tokens; add named CSS vars where genuinely needed).
+  - T2466-5: `:focus-visible` rings on custom controls (canvas nodes, `Resizable*` splitters, taskbar elements) using `--map2-ring-focus`.
+  - T2466-6: Collapsible/expandable easing (audit `aria-expanded` consumers; apply `--map2-dur-base` + `--map2-ease-in-out-rack`).
+  - T2466-7: Taskbar/status strip — shrink 25% + collapse-by-default with critical-only auto-expand. Files: `web/src/app/layout/AppShell.css` (`.window-taskbar`), `web/src/app/layout/TaskbarStatusStrip.tsx`, `web/src/app/layout/useAppShellPresentation.ts`, `web/src/app/pages/HomePage.landing.css:100`. Persist user override in `localStorage` key `map2.taskbar.collapsed`; critical event clears override and forces expand. A11y: `<button aria-expanded aria-controls>`; `aria-live="polite"` on auto-expansions. Update Desktop snapshot test.
+Out of scope: SnapshotEditorPageContent decomposition, App-shell bundle splitting, ToastsPresenter debouncing — already tracked elsewhere. No new features; polish only.
+Assigned to: Unassigned (AI agent fed the coaching prompt at `/home/mm/.claude/plans/help-me-coach-an-mellow-marshmallow.md`)
+Last updated: 2026-04-28 EDT - opened, plan + coaching prompt drafted
+
+---
+
 ID: T2465
 Status: [✓] Done
 Title: Fix live measure-latency evidence writes under hardened backend
@@ -2211,6 +2235,166 @@ Completion note: 2026-04-24 EDT - Claude: All 8 phases executed. ~70 files chang
 - Phase 7: Updated tests — `PerformanceBrainPage.test.tsx` (BrainOverviewShell-aware + library import), `AppShell.test.tsx` (shell-ws/shell-ctx DOM), `DesktopExperience.integration.test.tsx` + `DesktopExperience.snapshot.test.tsx.snap` regenerated, `HoToneJoGGView.test.tsx` + `HostMachinePage.test.tsx` + `GroundControlProPage.test.tsx` + `MaschinePage.test.tsx` + `McuPage.test.tsx` + `AudioArtifactsPage.test.tsx` + `PushSurfacePage.test.tsx` — all asserting against `useSetShellWindow` spy rather than deleted `<PageHeader>` DOM. `PageHeader.test.tsx` deleted.
 - Phase 8: `typecheck` clean; `npm run build` exits 0 (21s); 10 failing suites → 6 failing suites (net: fixed GroundControlProPage, net-fixed PerformanceBrainPage and all 25 affected pages; remaining 6 failures are pre-existing on master). Commit `a06a16d5` dual-pushed to `origin` + `gitlab` at `ba4feca5`; atomic rebuild via `build_web_dist_atomic.py`; server restarted on port 3000 (pid 1847042); `curl -I http://localhost:3000/assets/PerformanceBrainPage-yU8rtbXY.js` returns 200 OK / 61305 bytes confirming new Brain bundle live.
 - Remaining pre-existing test failures: MidiHubPage, DevicesOverview, IntelFXLibraryView, PlatformModal, AssetSelectorCards — not regressed by this commit.
+
+---
+
+## Epic: Snapshot Editor — Decompose Monolithic `SnapshotEditorPageContent` (opened 2026-04-28)
+
+Source: web-audit `docs/audits/20260428-web-audit.md` punch-list #8 (Arch-1, Arch-10, Arch-16). The root file `web/src/app/pages/SnapshotEditorPageContent.tsx` is 9,831 lines and imports 250+ files at module scope — the largest single component in the codebase by an order of magnitude. The other punch-list items (#1, #2, #3, #4, #5, #7, #9, #10) shipped in rounds 1-5 (commit set pending dual-push). This epic is what was deferred because the L-effort decomposition does not fit a tactical round.
+
+Strategic intent: **no behavior change.** Every subtask is a mechanical extraction with the existing build, typecheck, and integration-test suites as the contract. Each PR/commit must ship green `npm --prefix web run typecheck`, `npm --prefix web run build`, and the page-level integration test (`SnapshotEditorPage.integration.test.tsx`). No feature additions, no rendering reshape, no Carbon migrations layered on top. The Carbon work is its own future epic — bundling them creates a too-large diff that masks regressions.
+
+Cross-cutting dependencies:
+- Page entry: `web/src/app/pages/SnapshotEditorPage.tsx` (loads the route — wraps Content in providers).
+- Page owner (the monolith): `web/src/app/pages/SnapshotEditorPageContent.tsx`.
+- State seam: `web/src/app/components/SnapshotEditor/snapshotEditorState.ts` (already extracted — keep additive).
+- Live path seam: `web/src/app/components/SnapshotEditor/snapshotEditorLivePath.ts` (already extracted).
+- Signal canvas: `web/src/app/components/SnapshotEditor/UnifiedChannelGrid/` (already its own subtree — do not disturb).
+- Status panel: `web/src/app/components/SnapshotEditor/SnapshotEditorSnapshotStatusPanel.tsx`.
+- Audio device banner: `web/src/app/components/SnapshotEditor/AudioDeviceDisconnectedBanner.tsx`.
+- Integration test gate: `web/src/app/pages/SnapshotEditorPage.integration.test.tsx`.
+
+Observed seams in the monolith (from a top-level grep, lines indicative — re-verify before extraction):
+- Lines 305-330: configuration constants (`API_BASE`, NOISE_GATE_*, default-input/output keys).
+- Lines 330-460: pure-function helpers (`cloneSnapshotDraftData`, `fingerprintSnapshotDraftData`, `snapshotDraftsEqual`, `resequenceChainSnapshotPlugins`, `updateDraftChain`, `mergePreviewIntoSnapshotDetail`, `describeFlowUpdate`).
+- Lines 480-545: `FlowLevelControl` sub-component.
+- Lines 543-700: routing inspector + live-path label helpers (`RoutingInspectorContent`, `getLivePathArrowTone`, `getLivePathStateLabel`, `getLivePathBranchLabel`, `formatInspectorList`, `getAudioRouteLabels`, `countAudioBindingChannels`).
+- Lines 686-820: routing/flow type definitions + `ROUTING_MODE_OPTIONS`, `MIDI_CURVE_LABELS`, `KEYBOARD_SHORTCUT_SECTIONS`.
+- Lines 866+: JUCE-grid local-storage keys + tab/scroll state.
+- Remaining ~9,000 lines: the `SnapshotEditorPageContent` component body itself — render, hooks, mutations, modals, undo/redo, keyboard shortcuts, real-time WS subscriptions.
+
+Subtasks below are ordered by dependency and risk: pure data first, sub-components second, hook extractions third, render-tree partition last. T2473 is the only one that touches the JSX render tree of the main component; everything before it is move + import.
+
+---
+
+ID: T2467
+Status: [ ] Todo
+Title: Extract `SnapshotEditorPageContent` constants + pure helpers to a sibling module
+Description:
+- Goal: Move all module-scope constants (lines ~305-330) and the pure-function helpers (lines ~330-460: `cloneSnapshotDraftData`, `fingerprintSnapshotDraftData`, `snapshotDraftsEqual`, `resequenceChainSnapshotPlugins`, `updateDraftChain`, `describeLoaderStateDraftChange`, `mergePreviewIntoSnapshotDetail`, `describeFlowUpdate`) into a new file `web/src/app/pages/snapshotEditor/snapshotEditorPageHelpers.ts`. These are zero-React, no-hook helpers with stable signatures.
+- Why: ~150 LoC out of the page file with no risk; lets every following subtask import from a small-surface module instead of the monolith.
+- Files touched: `web/src/app/pages/snapshotEditor/snapshotEditorPageHelpers.ts` (new), `web/src/app/pages/SnapshotEditorPageContent.tsx` (remove definitions, add imports).
+- Acceptance: `typecheck` clean; `build` clean; the bundle hash for `App.js` (or whichever chunk holds the monolith) changes only by the negligible amount expected from a same-chunk refactor; integration test green.
+- Tests: new `snapshotEditorPageHelpers.test.ts` exercising at least `fingerprintSnapshotDraftData` (deterministic stringification), `snapshotDraftsEqual` (positive + negative), `resequenceChainSnapshotPlugins` (re-numbering invariant), `mergePreviewIntoSnapshotDetail` (preview-overlay-on-base structural test).
+- Dependencies: none.
+- Estimated effort: Small (≤ 2 h).
+- Risk: low — pure functions, no React.
+Assigned to: TBD
+Last updated: 2026-04-28 EDT - opened from web-audit punch-list #8.
+
+---
+
+ID: T2468
+Status: [ ] Todo
+Title: Extract type definitions (`FlowSlot`, `RoutingMode`, `RoutingConfig`, `CompactTabId`, etc.) into a sibling types module
+Description:
+- Goal: Move the type-only declarations clustered around lines 480-820 (`FlowLevelControlProps`, `RoutingInspectorContent`, `LivePathArrowTone`, `LivePathGroupKind`, `FlowSlot`, `RoutingMode`, `RoutingConfig`, `CompactTabId`, `JuceGridMidiScope`, `ReorderDirection`, `MidiRangeDraft`, `ReorderPreviewState`, `PendingTabletDeletePluginState`) into `web/src/app/pages/snapshotEditor/snapshotEditorPageTypes.ts`. Also move tightly-coupled constants used only by these types (`MIN_FLOWS`, `MAX_FLOWS`, `DEFAULT_FLOW_COUNT`, `COMPACT_TAB_ORDER`, `ROUTING_MODE_OPTIONS`, `MIDI_CURVE_LABELS`, `KEYBOARD_SHORTCUT_SECTIONS`, `JUCE_GRID_*` localStorage keys).
+- Why: Lets the helper-extraction (T2467) and the sub-component extractions (T2469, T2470) import shared shapes from one place; sets up the seam for hook extractions (T2471, T2472).
+- Files touched: `web/src/app/pages/snapshotEditor/snapshotEditorPageTypes.ts` (new), `SnapshotEditorPageContent.tsx` (remove definitions, add imports).
+- Acceptance: typecheck/build clean; integration test green; no runtime change.
+- Dependencies: T2467 (so the new directory exists with one file already in it).
+- Estimated effort: Small (≤ 2 h).
+- Risk: low — type-only.
+Assigned to: TBD
+Last updated: 2026-04-28 EDT - opened from web-audit punch-list #8.
+
+---
+
+ID: T2469
+Status: [ ] Todo
+Title: Extract `FlowLevelControl` sub-component into its own file
+Description:
+- Goal: Move the `FlowLevelControl` component (lines ~480-540) to `web/src/app/pages/snapshotEditor/FlowLevelControl.tsx`. Component is small and self-contained. Its props (`FlowLevelControlProps`) move with it (they will already live in T2468's types module — re-import from there).
+- Why: First sub-component extraction. Proves the seam works before tackling larger ones.
+- Files touched: `web/src/app/pages/snapshotEditor/FlowLevelControl.tsx` (new), `SnapshotEditorPageContent.tsx` (remove definition, import from new file).
+- Acceptance: typecheck/build clean; the `<FlowLevelControl>` JSX in the parent renders identically (visual-regression-free).
+- Tests: new `FlowLevelControl.test.tsx` rendering it with mock props and asserting the basic prop-driven output.
+- Dependencies: T2467, T2468.
+- Estimated effort: Small (≤ 2 h).
+- Risk: low — leaf component.
+Assigned to: TBD
+Last updated: 2026-04-28 EDT - opened from web-audit punch-list #8.
+
+---
+
+ID: T2470
+Status: [ ] Todo
+Title: Extract live-path / routing helper functions to `liveSwitcher.ts`
+Description:
+- Goal: Move the live-path label/tone helpers (lines ~550-700: `formatInspectorList`, `formatMidiMappingValue`, `parseMidiMappingValue`, `fallbackPluginLabel`, `getSelectedPluginHeroIcon`, `getAudioRouteLabels`, `countAudioBindingChannels`, `getLivePathArrowTone`, `getLivePathStateLabel`, `getLivePathBranchLabel`, `getRoutingFocusFlowSummary`, `sanitizeTraceableNamePart`, `formatCompactTimestamp`, `buildTraceableChannelChainName`) into `web/src/app/pages/snapshotEditor/snapshotEditorLiveLabels.ts`. These are pure functions consuming chain/snapshot/MIDI mapping shapes — co-locate with the existing `snapshotEditorLivePath.ts` if it makes the import surface saner; otherwise keep separate (decision belongs to whoever picks this up).
+- Why: Another ~150-200 LoC out of the page file with no risk. Makes T2473 (the JSX-tree partition) easier because the inspector/live-path render code can pull from a single labels module.
+- Files touched: `web/src/app/pages/snapshotEditor/snapshotEditorLiveLabels.ts` (new), `SnapshotEditorPageContent.tsx` (remove definitions, add imports).
+- Acceptance: typecheck/build clean; integration test green.
+- Tests: new `snapshotEditorLiveLabels.test.ts` for at least `getLivePathArrowTone`, `getLivePathStateLabel`, `getRoutingFocusFlowSummary`, `buildTraceableChannelChainName` (covers the date/format/sanitization edge cases).
+- Dependencies: T2467, T2468 (for shared types like `LivePathArrowTone`, `LivePathGroupKind`).
+- Estimated effort: Small-Medium (3-4 h).
+- Risk: low — pure functions, but more of them than T2467; verify nothing references module-private state.
+Assigned to: TBD
+Last updated: 2026-04-28 EDT - opened from web-audit punch-list #8.
+
+---
+
+ID: T2471
+Status: [ ] Todo
+Title: Extract the JUCE-grid persistent-state hook into `useJuceGridPersistedState.ts`
+Description:
+- Goal: The monolith persists JUCE-grid local UI state to localStorage under the keys `JUCE_GRID_SELECTED_PLUGIN_KEY`, `JUCE_GRID_EFFECT_MODAL_OPEN_KEY`, `JUCE_GRID_SCROLL_TOP_KEY` (lines ~866+). Audit the actual `useState`/`useEffect` blocks that read/write these (likely several hundred lines around the JUCE-grid render section), and consolidate into one hook `useJuceGridPersistedState()` returning `{ selectedPluginUri, setSelectedPluginUri, effectModalOpen, setEffectModalOpen, scrollTop, setScrollTop }`.
+- Why: Eliminates 3+ near-identical `useState + useEffect(localStorage)` patterns; sets the precedent for the larger T2472 hook extraction.
+- Files touched: `web/src/app/pages/snapshotEditor/useJuceGridPersistedState.ts` (new), `SnapshotEditorPageContent.tsx` (replace inline state with hook call).
+- Acceptance: typecheck/build clean; integration test green; localStorage round-trip verified manually (open editor, select plugin, reload → same plugin selected).
+- Tests: hook test using `@testing-library/react`'s `renderHook` with `localStorage` mocked; assert read-back across simulated reloads.
+- Dependencies: T2468 (for `JUCE_GRID_*` constants).
+- Estimated effort: Medium (4-6 h) — needs careful audit because state may be read in many places.
+- Risk: medium — easy to miss a setter and end up with split state; integration test must pass.
+Assigned to: TBD
+Last updated: 2026-04-28 EDT - opened from web-audit punch-list #8.
+
+---
+
+ID: T2472
+Status: [ ] Todo
+Title: Extract the snapshot-editor data-fetching layer into `useSnapshotEditorData.ts`
+Description:
+- Goal: The monolith holds dozens of `useQuery` / `useMutation` calls — the snapshot detail, the live runtime state, the reconciliation report, the audio device health, the noise-gate config, the default I/O device config, the performance event stream, plus mutations for save/activate/publish-retry/morph/etc. Consolidate the read-side queries into one hook `useSnapshotEditorData(snapshotId)` returning a single shaped object `{ snapshot, runtime, reconciliation, audioHealth, perfEvents, queries: { … }, ... }`. Mutations stay separate or become a sibling `useSnapshotEditorMutations()` — author's call.
+- Why: Largest single concentration of duplication in the file; locking down the query layer makes the page body 1,000+ LoC shorter and gives every future change a clear data seam.
+- Files touched: `web/src/app/pages/snapshotEditor/useSnapshotEditorData.ts` (new, optionally `useSnapshotEditorMutations.ts` sibling), `SnapshotEditorPageContent.tsx` (replace ~50 inline hook calls with one or two).
+- Acceptance: typecheck/build clean; integration test green; React Query cache keys must be **identical** to today's (verify by snapshot-testing the `queryKey` arrays before/after, or by manual cache-inspection in dev). Live WS subscriptions must continue to fire — easy to break by accidentally moving a `useEffect` cleanup.
+- Tests: hook test using `@tanstack/react-query` `QueryClientProvider`; integration test must continue to pass without changes.
+- Dependencies: T2467, T2468, T2470.
+- Estimated effort: Medium-Large (1-2 days) — high-fanout edit; careful audit of every `useQuery` / `useMutation` call site.
+- Risk: medium-high — easy to break a cache key, a mutation onSuccess invalidation, or a WS subscription cleanup. Reviewer must check React Query Devtools cache contents before/after.
+Assigned to: TBD
+Last updated: 2026-04-28 EDT - opened from web-audit punch-list #8.
+
+---
+
+ID: T2473
+Status: [ ] Todo
+Title: Partition the `SnapshotEditorPageContent` JSX render tree into 4-6 sibling sub-components
+Description:
+- Goal: With T2467-T2472 having moved out helpers / types / one sub-component / labels / two hooks, the remaining monolith should be ~5,000-6,000 LoC of pure JSX + render-time hooks. Partition the JSX tree along the natural surface boundaries already visible to operators in the running editor: (1) `<SnapshotEditorHeader>` — the title row + status panel + audio-device banner; (2) `<SnapshotEditorFlowGrid>` — the flow/channel grid (UnifiedChannelGrid wrapper + flow-tab strip + add-flow controls); (3) `<SnapshotEditorPluginInspector>` — the routing/live-path inspector + selected-plugin parameter editor; (4) `<SnapshotEditorJuceGrid>` — the JUCE-grid presets + effect modal; (5) `<SnapshotEditorPerformancePanel>` — the perf-event chyron + reconciliation badges; (6) `<SnapshotEditorKeyboardShortcuts>` — the keyboard-shortcut help overlay.
+- Why: This is the actual punch-list-#8 outcome. Each sub-component lives in `web/src/app/pages/snapshotEditor/sections/` and consumes the hook layer (T2472) + the labels (T2470) + the types (T2468). The remaining `SnapshotEditorPageContent.tsx` becomes a ~300-500 LoC orchestrator: provider wiring + the 6 sub-component renders + the top-level keyboard handler + global undo/redo.
+- Files touched: 6 new files under `web/src/app/pages/snapshotEditor/sections/`, plus shrinking `SnapshotEditorPageContent.tsx` to its orchestrator role.
+- Acceptance: (1) typecheck/build clean; (2) `SnapshotEditorPageContent.tsx` is ≤ 500 LoC; (3) integration test green with no test-mock changes (the page's external API is unchanged); (4) snapshot-test the rendered DOM tree before vs after the entire epic — must be identical (`useId()` renumber tolerable, structural changes are not); (5) bundle size for the route chunk is at most 5% larger (some inlining lost, fine).
+- Tests: each new sub-component gets a small render test; integration test stays as the full-system gate.
+- Dependencies: T2467, T2468, T2469, T2470, T2471, T2472 — all preceding extractions must be in `master` first.
+- Estimated effort: Large (3-5 days). Single most-disruptive subtask in the epic.
+- Risk: high — this is where the monolith's hidden coupling will surface. Run the full Jest suite, the production build, and a live editor smoke test before declaring complete. Carbon directives still apply; if a sub-component would benefit from being upgraded to a Carbon `Layer` in the same diff, defer that to a follow-up — bundling Carbon migration with structural extraction defeats the no-behavior-change gate.
+Assigned to: TBD
+Last updated: 2026-04-28 EDT - opened from web-audit punch-list #8.
+
+---
+
+### Known follow-ups (not in scope)
+
+- Carbon-conformance pass on the 6 extracted sub-components (T2473) — own epic, opens after this one ships.
+- Performance audit of the JUCE-grid persistent state (`scrollTop` may be triggering layout thrash on every mutation; T2471 sets the seam, the perf fix is its own task).
+- Replace the React Query Devtools dynamic-import in `App.tsx` with a build-time conditional, so it falls out of the production bundle entirely (separate from this epic; tied to punch-list #9).
+- Audit the snapshot-editor mutations for missing `onSuccess` cache invalidations now that T2472 makes the surface scrutinizable (the audit was scoped to architecture, not to data-correctness).
+
+### Rollback plan
+
+Each subtask is its own commit; revert the most recent commit + dual-push to roll back. T2473 is the only subtask whose revert is non-trivial (it touches dozens of import paths in one diff); reviewer should confirm the revert window is short, or split T2473 itself into 2-3 commits along the section boundaries (e.g., header + grid first, inspector + JUCE-grid second, perf + keyboard third).
 
 ---
 

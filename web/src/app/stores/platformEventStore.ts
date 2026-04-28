@@ -51,8 +51,23 @@ function sortEvents(events: PlatformEvent[]): PlatformEvent[] {
 }
 
 function eventsAreEqual(left: PlatformEvent[], right: PlatformEvent[]): boolean {
-  return left.length === right.length
-    && left.every((event, index) => JSON.stringify(event) === JSON.stringify(right[index]))
+  if (left === right) {
+    return true
+  }
+  if (left.length !== right.length) {
+    return false
+  }
+  for (let index = 0; index < left.length; index += 1) {
+    const leftEvent = left[index]
+    const rightEvent = right[index]
+    if (leftEvent === rightEvent) {
+      continue
+    }
+    if (JSON.stringify(leftEvent) !== JSON.stringify(rightEvent)) {
+      return false
+    }
+  }
+  return true
 }
 
 export function platformEventMatchesFilters(event: PlatformEvent, options: PlatformEventFilterOptions = {}): boolean {

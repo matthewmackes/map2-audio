@@ -59,40 +59,39 @@ export function useVuMeters(options: UseVuMetersOptions = {}) {
 
   // Update peak hold
   useEffect(() => {
-    const newPeaks = { ...peakHold }
-    let updated = false
+    const exceedsInputLeft = levels.inputLeft > peakHold.inputLeft
+    const exceedsInputRight = levels.inputRight > peakHold.inputRight
+    const exceedsOutputLeft = levels.outputLeft > peakHold.outputLeft
+    const exceedsOutputRight = levels.outputRight > peakHold.outputRight
 
-    if (levels.inputLeft > peakHold.inputLeft) {
-      newPeaks.inputLeft = levels.inputLeft
-      updated = true
-    }
-    if (levels.inputRight > peakHold.inputRight) {
-      newPeaks.inputRight = levels.inputRight
-      updated = true
-    }
-    if (levels.outputLeft > peakHold.outputLeft) {
-      newPeaks.outputLeft = levels.outputLeft
-      updated = true
-    }
-    if (levels.outputRight > peakHold.outputRight) {
-      newPeaks.outputRight = levels.outputRight
-      updated = true
+    if (!exceedsInputLeft && !exceedsInputRight && !exceedsOutputLeft && !exceedsOutputRight) {
+      return
     }
 
-    if (updated) {
-      setPeakHold(newPeaks)
+    setPeakHold({
+      inputLeft: exceedsInputLeft ? levels.inputLeft : peakHold.inputLeft,
+      inputRight: exceedsInputRight ? levels.inputRight : peakHold.inputRight,
+      outputLeft: exceedsOutputLeft ? levels.outputLeft : peakHold.outputLeft,
+      outputRight: exceedsOutputRight ? levels.outputRight : peakHold.outputRight,
+    })
 
-      // Reset peak hold after 2 seconds
-      if (peakTimeoutRef.current) clearTimeout(peakTimeoutRef.current)
-      peakTimeoutRef.current = setTimeout(() => {
-        setPeakHold({
-          inputLeft: levels.inputLeft,
-          inputRight: levels.inputRight,
-          outputLeft: levels.outputLeft,
-          outputRight: levels.outputRight
-        })
-      }, 2000)
-    }
+    // Reset peak hold after 2 seconds, but only if the post-decay value actually differs.
+    if (peakTimeoutRef.current) clearTimeout(peakTimeoutRef.current)
+    peakTimeoutRef.current = setTimeout(() => {
+      setPeakHold((prev) => (
+        prev.inputLeft === levels.inputLeft
+          && prev.inputRight === levels.inputRight
+          && prev.outputLeft === levels.outputLeft
+          && prev.outputRight === levels.outputRight
+          ? prev
+          : {
+            inputLeft: levels.inputLeft,
+            inputRight: levels.inputRight,
+            outputLeft: levels.outputLeft,
+            outputRight: levels.outputRight,
+          }
+      ))
+    }, 2000)
 
     return () => {
       if (peakTimeoutRef.current) clearTimeout(peakTimeoutRef.current)

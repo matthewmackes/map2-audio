@@ -1,5 +1,5 @@
 import { Popover, PopoverContent } from '@carbon/react'
-import { useEffect, useMemo, useState } from 'react'
+import { useEffect, useRef, useState } from 'react'
 
 import { MAP2_PLATFORM_VERSION } from './branding/map2Branding'
 import { useHomePlatformStatus } from '../hooks/useHomePlatformStatus'
@@ -47,7 +47,7 @@ export function TaskbarClock() {
   const shellStatusCadence = useShellStatusCadence()
   const platformStatus = useHomePlatformStatus(shellStatusCadence)
   const hostname = typeof window !== 'undefined' ? window.location.hostname : 'localhost'
-  const bootedAt = useMemo(() => Date.now(), [])
+  const bootedAtRef = useRef(Date.now())
 
   useEffect(() => {
     const intervalId = window.setInterval(() => {
@@ -59,7 +59,7 @@ export function TaskbarClock() {
     }
   }, [])
 
-  const uptime = formatUptime(now.getTime() - bootedAt)
+  const uptime = formatUptime(now.getTime() - bootedAtRef.current)
 
   return (
     <Popover align="bottom-end" caret open={open} onRequestClose={() => setOpen(false)}>

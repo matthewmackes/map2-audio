@@ -1,6 +1,27 @@
-import { faker } from '@faker-js/faker'
-
 const SNAPSHOT_NAME_PATTERN = /^[A-Za-z0-9]+$/
+
+const ALPHANUMERIC_UPPERCASE = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789'
+
+function shuffleArray<T>(source: readonly T[]): T[] {
+  const result = [...source]
+  for (let index = result.length - 1; index > 0; index -= 1) {
+    const swapIndex = Math.floor(Math.random() * (index + 1))
+    ;[result[index], result[swapIndex]] = [result[swapIndex], result[index]]
+  }
+  return result
+}
+
+function pickArrayElement<T>(source: readonly T[]): T {
+  return source[Math.floor(Math.random() * source.length)]
+}
+
+function randomUppercaseAlnum(length: number): string {
+  let result = ''
+  for (let index = 0; index < length; index += 1) {
+    result += ALPHANUMERIC_UPPERCASE[Math.floor(Math.random() * ALPHANUMERIC_UPPERCASE.length)]
+  }
+  return result
+}
 const RHYMING_NAME_PAIRS = [
   ['Aiden', 'Jayden'],
   ['Ari', 'Mari'],
@@ -48,7 +69,7 @@ function buildOrderedRhymingNamePairs(options: DefaultSnapshotNameOptions): Rhym
   const preferredPair = options.pair
 
   if (!preferredPair) {
-    return faker.helpers.shuffle(source)
+    return shuffleArray(source)
   }
 
   return [
@@ -90,9 +111,9 @@ export function buildDefaultSnapshotName(
 
   let attempt = 0
   while (attempt < 256) {
-    const primaryPair = faker.helpers.arrayElement(orderedPairs)
-    const secondaryPair = faker.helpers.arrayElement(orderedPairs)
-    const nonce = sanitizeSnapshotNameSegment(faker.string.alphanumeric({ length: 4, casing: 'upper' }))
+    const primaryPair = pickArrayElement(orderedPairs)
+    const secondaryPair = pickArrayElement(orderedPairs)
+    const nonce = randomUppercaseAlnum(4)
     const candidate = `${buildRhymingNameStem(primaryPair)}${buildRhymingNameStem(secondaryPair)}${nonce}${dateSuffix}`
     if (!takenNames.has(candidate.toLowerCase())) {
       return candidate
@@ -100,7 +121,7 @@ export function buildDefaultSnapshotName(
     attempt += 1
   }
 
-  return `Snapshot${sanitizeSnapshotNameSegment(faker.string.alphanumeric({ length: 8, casing: 'upper' }))}${dateSuffix}`
+  return `Snapshot${randomUppercaseAlnum(8)}${dateSuffix}`
 }
 
 function padDateSegment(value: number): string {

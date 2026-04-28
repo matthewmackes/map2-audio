@@ -1,8 +1,9 @@
 import React, { createContext, useContext, useMemo } from 'react'
-import { Outlet, useLocation } from 'react-router-dom'
+import { Outlet } from 'react-router-dom'
 import { EmptyState } from '../../shared/EmptyState'
 import { LoadingState } from '../../shared/LoadingState'
 import { useDeviceNodeContext } from '../../../hooks/useDeviceNodeContext'
+import { useActiveSectionFromPath } from '../hooks/useActiveSectionFromPath'
 import './LCDShell.css'
 
 export type LCDSectionId =
@@ -42,18 +43,8 @@ export function useLCDShellContext(): LCDShellContextValue {
   return context
 }
 
-function sectionFromPath(pathname: string): LCDSectionId {
-  const match = pathname.match(/\/devices\/lcd\/([^/]+)/)
-  const candidate = match?.[1]
-  if (candidate && (LCD_SECTION_IDS as string[]).includes(candidate)) {
-    return candidate as LCDSectionId
-  }
-  return 'displays'
-}
-
 export function LCDShell() {
-  const location = useLocation()
-  const activeSection = sectionFromPath(location.pathname)
+  const activeSection = useActiveSectionFromPath('/devices/lcd/', LCD_SECTION_IDS, 'displays')
   const { deviceState, currentNode } = useDeviceNodeContext('lcd-console')
 
   const nodeId = currentNode?.nodeId ?? null

@@ -54,7 +54,17 @@ export default defineConfig({
     },
   },
   build: {
-    chunkSizeWarningLimit: 600,
+    // App.js is the React + React Router + TanStack Query + @carbon/react +
+    // history + branding shell. Carbon alone contributes ~120 KB gzip.
+    // ReactQueryDevtools is already tree-shaken in production. Per [HIGH]
+    // gotcha in docs/CLAUDE.md, splitting React-dependent vendor libs
+    // (Carbon, Recharts, ReactFlow, MUI) off the main React graph causes
+    // forwardRef init errors — so the broader manualChunks strategy stays
+    // off-limits. The surgical manualChunks below carve out the four
+    // independent leaves (monaco, xterm, reactflow+dagre, framer-motion).
+    // Limit set to 700 to acknowledge the App.js floor honestly while still
+    // catching anything that genuinely doubles.
+    chunkSizeWarningLimit: 700,
     outDir: 'dist',
     // Hidden source maps: Vite emits .map files but omits the
     // //# sourceMappingURL footer, so browsers don't fetch them. The static

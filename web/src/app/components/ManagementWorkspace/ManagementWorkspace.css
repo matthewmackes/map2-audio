@@ -73,10 +73,6 @@
   border-radius: 0;
 }
 
-.management-workspace__scope-control {
-  min-width: 16rem;
-}
-
 .management-workspace__graph,
 .management-workspace__graph-empty,
 .management-workspace__graph-loading {
