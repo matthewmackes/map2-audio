@@ -29,12 +29,11 @@ MIDI_ENGINE_POLL_FALLBACK_INTERVAL_S = 0.005
 try:
     from app.services.midi_hub.hub import MidiHub, get_midi_hub
     from app.services.midi_hub.ports import MidiMessage, VirtualMidiPort
-    MIDI_HUB_AVAILABLE = True
 except Exception:  # pragma: no cover - optional integration path
     MidiHub = None  # type: ignore[assignment]
+    get_midi_hub = None  # type: ignore[assignment]
     MidiMessage = None  # type: ignore[assignment]
     VirtualMidiPort = None  # type: ignore[assignment]
-    MIDI_HUB_AVAILABLE = False
 
 # Track optional rtmidi availability; MidiHub or virtual ports cover unavailable hosts.
 try:
@@ -154,7 +153,7 @@ class MIDIEngineService:
 
     def _init_midi_hub_bridge(self) -> None:
         """Initialize optional MidiHub consumer ports."""
-        if not MIDI_HUB_AVAILABLE:
+        if get_midi_hub is None or VirtualMidiPort is None:
             return
         try:
             hub = get_midi_hub()

@@ -70,7 +70,7 @@ class _FakeMidiOut:
 async def test_midi_engine_discover_devices_disposes_probe_clients(monkeypatch):
     _FakeMidiIn.instances.clear()
     _FakeMidiOut.instances.clear()
-    monkeypatch.setattr(midi_engine_module, "MIDI_HUB_AVAILABLE", False)
+    monkeypatch.setattr(midi_engine_module, "get_midi_hub", None)
     monkeypatch.setattr(midi_engine_module, "RTMIDI_AVAILABLE", True)
     monkeypatch.setattr(
         midi_engine_module,
@@ -94,7 +94,7 @@ async def test_midi_engine_discover_devices_disposes_probe_clients(monkeypatch):
 async def test_midi_engine_uses_rtmidi_callback_queue(monkeypatch):
     _FakeMidiIn.instances.clear()
     _FakeMidiOut.instances.clear()
-    monkeypatch.setattr(midi_engine_module, "MIDI_HUB_AVAILABLE", False)
+    monkeypatch.setattr(midi_engine_module, "get_midi_hub", None)
     monkeypatch.setattr(midi_engine_module, "RTMIDI_AVAILABLE", True)
     monkeypatch.setattr(
         midi_engine_module,
