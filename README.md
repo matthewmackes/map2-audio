@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1354** Python | **1327** TypeScript | **157** C++/H | **145** Docs | **2960** total commits | **3** stars | **0** forks | **0** open issues
+**1354** Python | **1327** TypeScript | **157** C++/H | **145** Docs | **2964** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -175,7 +175,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-DOCS:START -->
 | Document | Last Updated |
 |:---------|:------------|
-| [PROJECT WORKLIST](https://github.com/matthewmackes/map2-audio/blob/master/docs/PROJECT_WORKLIST.md) | 2026-04-27 |
+| [PROJECT WORKLIST](https://github.com/matthewmackes/map2-audio/blob/master/docs/PROJECT_WORKLIST.md) | 2026-04-28 |
 | [MAP2 Backend Runtime Contract](https://github.com/matthewmackes/map2-audio/blob/master/docs/backend-runtime-contract.md) | 2026-04-27 |
 | [MAP2 API Contract Standards](https://github.com/matthewmackes/map2-audio/blob/master/docs/api-contract-standards.md) | 2026-04-25 |
 | [MAP2 LCD Console — Operator Guide](https://github.com/matthewmackes/map2-audio/blob/master/docs/LCD_OPERATOR_GUIDE.md) | 2026-04-23 |
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`2d5b645a`](https://github.com/matthewmackes/map2-audio/commit/2d5b645a81873c0e60242fbc26e4788d6fae3ced) | feat(midi-assignments): T2461-A8 wizard apply gesture for... | Map2 Audio | 2026-04-28 |
+| [`32eeca05`](https://github.com/matthewmackes/map2-audio/commit/32eeca05fc00a38ade2fbcabe48ac9296fe6009f) | fix(theme): make WelcomeHero + NodeIdentityCard respect a... | Map2 Audio | 2026-04-28 |
+| [`abd48124`](https://github.com/matthewmackes/map2-audio/commit/abd48124e1e69fde3a7603444f87bca0ab720f0b) | fix(theme): make Performance Brain + MIDI Assignments res... | Map2 Audio | 2026-04-28 |
+| [`9bc2cb90`](https://github.com/matthewmackes/map2-audio/commit/9bc2cb90b3f6a26986597a6665be7b4389c17e37) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-27 |
 | [`446d8a9c`](https://github.com/matthewmackes/map2-audio/commit/446d8a9c9ab8c57216b05da6b76fffcddc14e02c) | docs(philosophy): add eight technical philosophy manuals ... | Map2 Audio | 2026-04-27 |
 | [`ff4f4edd`](https://github.com/matthewmackes/map2-audio/commit/ff4f4edde32b4b5f6f5e4a2324887dfc411dec18) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-27 |
 | [`2bca1940`](https://github.com/matthewmackes/map2-audio/commit/2bca19406f7719caec869cfc76b11887c047ea9d) | chore: working-tree sweep + open T2459-H MIDI backend uni... | Map2 Audio | 2026-04-27 |
 | [`2c8db49d`](https://github.com/matthewmackes/map2-audio/commit/2c8db49deef58dc3f586202b6ce62689a6b81ddb) | fix(chyron card): render every plugin instead of dropping... | Map2 Audio | 2026-04-27 |
-| [`9750ce1f`](https://github.com/matthewmackes/map2-audio/commit/9750ce1fa628e27ccbc1010df50d1a7a1083f344) | fix(snapshot editor): re-sync live_snapshot_payload after... | Map2 Audio | 2026-04-27 |
-| [`64bc6408`](https://github.com/matthewmackes/map2-audio/commit/64bc640828907338eda0b3a7568924b8d8706e26) | fix(state-authority client): drop doubled `/api/` prefix ... | Map2 Audio | 2026-04-27 |
-| [`a794284e`](https://github.com/matthewmackes/map2-audio/commit/a794284e35f8f1238ec9beefcd609524c9b23c0d) | Expose legacy devices in hardware catalogue | Map2 Audio | 2026-04-27 |
-| [`8536af34`](https://github.com/matthewmackes/map2-audio/commit/8536af346615711f10257c9024c23559843e752f) | fix(devices client): drop doubled `/api/` prefix on every... | Map2 Audio | 2026-04-27 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
