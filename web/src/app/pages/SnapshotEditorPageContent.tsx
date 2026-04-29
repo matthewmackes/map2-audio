@@ -380,6 +380,7 @@ import { SnapshotEditorClearFlowsConfirm } from './snapshotEditor/SnapshotEditor
 import { SnapshotEditorSavePresetModal } from './snapshotEditor/SnapshotEditorSavePresetModal'
 import { SnapshotEditorRenameChainModal } from './snapshotEditor/SnapshotEditorRenameChainModal'
 import { SnapshotEditorTabletDeleteConfirm } from './snapshotEditor/SnapshotEditorTabletDeleteConfirm'
+import { SnapshotEditorPresetDeleteConfirm } from './snapshotEditor/SnapshotEditorPresetDeleteConfirm'
 
 // API_BASE lives in ./snapshotEditor/snapshotEditorApi (T2467 follow-up).
 
@@ -8377,27 +8378,12 @@ export function SnapshotEditorPage() {
       />
 
 
-      {presetPendingDelete && (
-        <Modal
-          open
-          size="sm"
-          modalHeading="Delete preset"
-          modalLabel={presetPendingDelete.name}
-          primaryButtonText={deletePresetMutation.isPending ? 'Deleting...' : 'Delete preset'}
-          secondaryButtonText="Cancel"
-          primaryButtonDisabled={deletePresetMutation.isPending}
-          onRequestClose={() => setPresetPendingDelete(null)}
-          onSecondarySubmit={() => setPresetPendingDelete(null)}
-          onRequestSubmit={confirmDeletePreset}
-          danger
-        >
-          <div className="juce-grid-page__form-modal-body">
-            <p className="juce-grid-page__modal-copy">
-              Delete <span className="juce-grid-page__modal-copy-emphasis">{presetPendingDelete.name}</span> from the preset library. This action cannot be undone.
-            </p>
-          </div>
-        </Modal>
-      )}
+      <SnapshotEditorPresetDeleteConfirm
+        pendingPreset={presetPendingDelete}
+        isDeleting={deletePresetMutation.isPending}
+        onClose={() => setPresetPendingDelete(null)}
+        onConfirm={confirmDeletePreset}
+      />
 
       <SnapshotEditorClearFlowsConfirm
         open={showClearFlowsModal}
