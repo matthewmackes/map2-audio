@@ -97,3 +97,4 @@ The latency optimiser (`AVB_LATENCY_OPTIMIZER.md`) is an audit CLI that takes th
 - `docs/AVB_MULTI_NODE_IMPLEMENTATION_SUMMARY.md` — phase-by-phase code map.
 - `docs/AVB_LATENCY_OPTIMIZER.md` — the budget audit tool.
 - `docs/MAP2_AVB_Capabilities_and_Usecases_2026-02-14.md` — discovery/enumeration walkthrough.
+- `docs/design/CARBON_CONFORMANCE_STANDARD.md` §10 — operator-state discipline (T2474). The AVB routing UI at `web/src/app/components/AvbRouting/` consumes the canonical `--map2-avb-*` (locked / unlocked / grandmaster), `--map2-clock-*`, and `--map2-state-*` semantic tokens for stream and PTP status presentation; new AVB-side surfaces must use those tokens rather than raw Carbon support colors.

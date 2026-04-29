@@ -113,3 +113,4 @@ These are not bugs. They are deliberate scope boundaries to keep the platform pr
 - `app/services/cluster/raft_consensus.py` — the Raft layer.
 - `docs/AVB_MULTI_NODE_ARCHITECTURE.md` — audio plane.
 - `docs/ADOPTION_WORKFLOW_RUNBOOK.md` — operator procedures.
+- `docs/design/CARBON_CONFORMANCE_STANDARD.md` §10 — operator-state discipline (T2474). Cluster-facing UI surfaces (ClusterDashboardWorkspace, ManagementWorkspace, the global NodeNavChip pill) consume the canonical `--map2-state-*` (live / staged / uncommitted), `--map2-health-*` (ok / caution / critical / offline), and `--map2-clock-*` token groups; node identity is owned exclusively by the Unified Pill in the global nav bar per `docs/CLAUDE.md`.

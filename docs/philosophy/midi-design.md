@@ -102,3 +102,4 @@ RTP-MIDI is deliberately implemented in Python (`midi_hub/rtp_transport.py`) rat
 - `docs/midi/MAP2_OSC_NAMESPACE.md` — `/map2/*` namespace contract.
 - `docs/midi/MIDI_HUB_CONTENT_INVENTORY.md` — terminology and panel inventory.
 - `device-packs/SCHEMA.md` — the device-pack data model.
+- `docs/design/CARBON_CONFORMANCE_STANDARD.md` §10 — operator-state discipline (T2474). The MIDI Hub UI at `web/src/app/components/MidiHub/` and `web/src/app/pages/midi-hub/` consumes the canonical primitives library and the MAP semantic token vocabulary; the `MidiHubHealthDrawer` surface specifically was migrated from a glass-drawer pattern to a flat Carbon Layer drawer matching the canonical `DrawerPanel` primitive.

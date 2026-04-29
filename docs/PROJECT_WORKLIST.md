@@ -33723,7 +33723,7 @@ Assigned to: TBD (paused — awaits clarification round)
 Last updated: 2026-04-28 - Claude
 
 ID: T2478
-Status: [ ] Todo
+Status: [✓] Done
 Title: Philosophy docs upkeep — update docs/philosophy/*.md to reflect Carbon discipline visual system
 Description:
 - Goal / acceptance criteria: Per memory rule `feedback_philosophy_docs_upkeep.md`: when a major architectural change touches the platform's identity, the relevant philosophy docs must be updated as a Definition-of-Done gate. Identify which `docs/philosophy/*.md` files describe MAP2's visual identity, operator surface design, or design-system principles. Update them to reflect: (a) Carbon discipline as the canonical visual language, (b) blue-60 primary + Carbon gray surfaces, (c) the formal discipline contract enforced by `themeFactory.ts`, (d) the new MAP semantic tokens (live/staged/uncommitted/health/latency/sync/avb/blocking-vs-advisory), (e) the canonical primitives library, (f) deprecation of cyan/amber/red/glass/aurora/glow.
@@ -33732,7 +33732,14 @@ Description:
 - Estimated effort: Small — doc edits only.
 - Required outputs: Updated `docs/philosophy/*.md` files; commit message references T2474 + T2478.
 Assigned to: Claude Opus 4.7
-Last updated: 2026-04-28 - Claude
+Last updated: 2026-04-29 - Claude (T2478 closed)
+- Completion notes (2026-04-29):
+  - **Inventory**: 8 philosophy docs total (`audio-artifact-management.md`, `avb.md`, `cluster-management.md`, `device-management.md`, `fedora-alterations.md`, `juce.md`, `midi-design.md`, `snapshot-single-source-of-truth.md`).
+  - **Triage decision**: Each philosophy doc is scoped to a specific subsystem; none is a "visual identity" doc and rewriting one to be that would create a parallel doc, not honor the standing rule. The right move was: (a) substantive update to the doc whose topic genuinely intersects with the visual sweep, (b) cross-reference pointer to `CARBON_CONFORMANCE_STANDARD.md §10` from each doc whose subsystem touches the operator surface.
+  - **device-management.md (substantive update)**: Added new "Layer 4 — visual contract (Carbon discipline)" subsection. Documents severity vocabulary routing through MAP semantic alert tokens (`--map2-alert-blocking`/`--map2-alert-advisory`), StatusChip primitive as canonical status pill, Unified Pill Directive boundary (device panels MUST NOT render their own "this device is on node X" header), §10.5 hardware-skin exception for MPX1Panel/IntelFXPanel/Maschine LCD/VFD/LED simulations (device-pack authors MUST decide which side of the line their surface falls on), canonical primitives (DeviceNodeCard, MetricCard, HealthMetric, AlertPanel, DrawerPanel). Extended "Where to read next" with three new references.
+  - **avb.md, cluster-management.md, midi-design.md, snapshot-single-source-of-truth.md, juce.md (cross-reference)**: Each gained a single-line addition to its "Where to read next" pointing to `CARBON_CONFORMANCE_STANDARD.md §10` with subsystem-specific token-group context.
+  - **audio-artifact-management.md, fedora-alterations.md (NOT touched)**: Topics (audio thread RT discipline; OS-level alterations) do not touch the visual layer. Adding a cross-reference would be noise.
+  - Doc-only commit; no code touched. CLAUDE.md "Done means clean build" gate applies to code changes — satisfied here because nothing in `web/` or `app/` changed.
 
 ID: T2479
 Status: [ ] Todo

@@ -151,3 +151,4 @@ The cost is binding to a specific framework and version. The mitigation is keepi
 - `juce-engine/Source/JuceAudioGraph.cpp` — graph mutation and PDC.
 - `juce-engine/Source/PythonBindings.cpp` — the pybind11 surface.
 - `app/services/juce_engine_service.py` — the Python facade.
+- `docs/design/CARBON_CONFORMANCE_STANDARD.md` §10 — operator-state discipline (T2474). The JUCE engine surfaces in the React UI (`AudioEnginePage`, `JuceSourceTruthGraph`, `AudioEngineWorkspaceGraph`, `ClusterEngineGrid`, the per-plugin cards under `web/src/app/components/PluginCards/`) consume the canonical `--map2-latency-*` (good / caution / critical), `--map2-health-*`, and `--map2-state-*` semantic tokens. Per-plugin cards that *deliberately reproduce physical hardware* (MPX1Panel, IntelFXPanel, signal-path canvases) are preserved as device-graphics under §10.5's hardware-skin exception.

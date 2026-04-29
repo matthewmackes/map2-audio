@@ -114,3 +114,5 @@ The SQLite layer is the local mirror, not the truth. The truth is whatever the S
 - `app/services/state_authority_graph.py` — the schema constants.
 - `app/services/state_authority_activation_service.py` — the FSM.
 - `app/services/snapshot_runtime_state_service.py` — runtime projection and broadcast.
+- `docs/design/CARBON_CONFORMANCE_STANDARD.md` §10 — operator-state discipline (T2474). The Snapshot Editor consumes the canonical `--map2-state-*` token group (live / staged / uncommitted / committed) for the live-vs-staged distinction and the `LiveStagedToggle`, `StagedChangesIndicator`, and `CommitPrompt` primitives at `web/src/app/components/primitives/` for apply/discard affordances. The editor's previous glass-drawer toolbars were migrated to flat Carbon surfaces in T2474 B10; future editor work must consume these primitives rather than re-rolling local equivalents.
+- `docs/design/CARBON_CONFORMANCE_STANDARD.md` §8 (Unified Channel Grid) — the canonical Snapshot Editor signal-flow surface. Predates T2474 and remains the authority for plugin-block layout / category hue system / FX icon registry.
