@@ -21,7 +21,6 @@ import {
 import {
   TextField,
   InputAdornment,
-  Button,
   Popover,
   FormGroup,
   FormControlLabel,
@@ -32,6 +31,7 @@ import {
   MenuItem,
 } from '@mui/material';
 import type { SelectChangeEvent } from '@mui/material/Select';
+import { Button as CarbonButton } from '@carbon/react';
 import { StatusChip } from '../../../primitives';
 import type { StatusChipTone } from '../../../primitives';
 import { useRouting, useCanUndo, useCanRedo } from '../../context/RoutingContext';
@@ -76,20 +76,6 @@ const QUALITY_LABELS: Record<FilterQuality, string> = {
   warning: 'Warning',
   critical: 'Critical',
 };
-const SCENE_DIFF_PREVIEW_CONTROL_FOCUS_SX = {
-  '&:focus-visible': {
-    outline: '2px solid',
-    outlineColor: 'primary.main',
-    outlineOffset: 2,
-  },
-} as const;
-const SCENE_STATUS_COUNTER_FOCUS_SX = {
-  '&:focus-visible': {
-    outline: '2px solid',
-    outlineColor: 'primary.main',
-    outlineOffset: 2,
-  },
-} as const;
 const SCENE_DIFF_IMPORT_PREVIEW_STATUS_ORDER: Record<SceneDiffPresetTransferPreviewRow['status'], number> = {
   conflict: 0,
   accepted: 1,
@@ -2323,40 +2309,40 @@ export function TopBar() {
         <div className="topbar__spacer" /> {/* Spacer */}
 
         {/* Filters */}
-        <Button
+        <CarbonButton
           title="Open endpoint filter controls"
-          size="small"
-          variant="outlined"
-          startIcon={<Filter size={16} />}
+          size="sm"
+          kind="tertiary"
+          renderIcon={Filter}
           onClick={handleFiltersOpen}
           data-testid="topbar-filters-button"
         >
           Filters
-        </Button>
+        </CarbonButton>
 
         {/* Scenes */}
-        <Button
+        <CarbonButton
           title="Save, recall, and delete scene snapshots"
-          size="small"
-          variant="outlined"
-          startIcon={<Bookmark size={16} />}
+          size="sm"
+          kind="tertiary"
+          renderIcon={Bookmark}
           onClick={handleScenesOpen}
           data-testid="topbar-scenes-button"
         >
           Scenes
-        </Button>
+        </CarbonButton>
 
         {/* Scene Diff */}
-        <Button
+        <CarbonButton
           title="Select scenes for read-only diff preview"
-          size="small"
-          variant="outlined"
-          startIcon={<Compare size={16} />}
+          size="sm"
+          kind="tertiary"
+          renderIcon={Compare}
           onClick={handleSceneDiffOpen}
           data-testid="topbar-scene-diff-button"
         >
           Scene Diff
-        </Button>
+        </CarbonButton>
 
         {/* Safe Patch Mode */}
         {state.safePatchMode ? (
@@ -2371,69 +2357,69 @@ export function TopBar() {
               }
               size="sm"
             />
-            <Button
-              size="small"
-              variant="contained"
-              color="success"
-              startIcon={<Checkmark size={16} />}
+            <CarbonButton
+              size="sm"
+              kind="primary"
+              renderIcon={Checkmark}
               onClick={handleApplySafeChanges}
               disabled={pendingCount === 0 || batchPatchMutation.isPending}
             >
               {batchPatchMutation.isPending ? 'Applying...' : 'Apply'}
-            </Button>
-            <Button
-              size="small"
-              variant="outlined"
-              color="error"
-              startIcon={<Close size={16} />}
+            </CarbonButton>
+            <CarbonButton
+              size="sm"
+              kind="danger--tertiary"
+              renderIcon={Close}
               onClick={handleDiscardSafeChanges}
             >
               Discard
-            </Button>
+            </CarbonButton>
           </div>
         ) : (
-          <Button
+          <CarbonButton
             title="Enable safe patch mode to stage changes before applying"
-            size="small"
-            variant="outlined"
-            startIcon={<Security size={16} />}
+            size="sm"
+            kind="tertiary"
+            renderIcon={Security}
             onClick={handleSafePatchToggle}
           >
             Safe Patch
-          </Button>
+          </CarbonButton>
         )}
 
         {/* Network Topology */}
-        <Button
+        <CarbonButton
           title="View network topology graph"
-          size="small"
-          variant="outlined"
-          startIcon={<TreeViewAlt size={16} />}
+          size="sm"
+          kind="tertiary"
+          renderIcon={TreeViewAlt}
           onClick={() => setTopologyModalOpen(true)}
         >
           Topology
-        </Button>
+        </CarbonButton>
 
         {/* Undo/Redo */}
         <div className="topbar__row topbar__row--gap-05 topbar__row--push-right">
-          <Button
+          <CarbonButton
             title="Undo (Ctrl+Z)"
-            size="small"
+            size="sm"
+            kind="ghost"
+            hasIconOnly
+            renderIcon={Undo}
+            iconDescription="Undo (Ctrl+Z)"
             onClick={handleUndo}
             disabled={!canUndo}
-            sx={{ minWidth: 32, padding: '4px' }}
-          >
-            <Undo size={16} />
-          </Button>
-          <Button
+          />
+          <CarbonButton
             title="Redo (Ctrl+Shift+Z)"
-            size="small"
+            size="sm"
+            kind="ghost"
+            hasIconOnly
+            renderIcon={Redo}
+            iconDescription="Redo (Ctrl+Shift+Z)"
             onClick={handleRedo}
             disabled={!canRedo}
-            sx={{ minWidth: 32, padding: '4px' }}
-          >
-            <Redo size={16} />
-          </Button>
+          />
         </div>
       </div>
 
@@ -2479,14 +2465,14 @@ export function TopBar() {
           )}
 
           <div className="topbar__row topbar__row--between topbar__row--gap-1">
-            <Button
-              size="small"
-              variant="contained"
+            <CarbonButton
+              size="sm"
+              kind="primary"
               onClick={handleSaveScene}
               data-testid="topbar-scene-save"
             >
               Save Current
-            </Button>
+            </CarbonButton>
             <span data-testid="topbar-scene-live-route-count">
               <StatusChip
                 tone="neutral"
@@ -2578,15 +2564,15 @@ export function TopBar() {
             disabled={!selectedScene}
           />
 
-          <Button
-            size="small"
-            variant="outlined"
+          <CarbonButton
+            size="sm"
+            kind="tertiary"
             onClick={handleUpdateSceneMetadata}
             data-testid="topbar-scene-update"
             disabled={!selectedScene}
           >
             Apply Metadata
-          </Button>
+          </CarbonButton>
 
           <span
             className="topbar__caption topbar__caption--secondary"
@@ -2602,15 +2588,15 @@ export function TopBar() {
             {recallImpactRoutes}
           </span>
 
-          <Button
-            size="small"
-            variant="text"
+          <CarbonButton
+            size="sm"
+            kind="ghost"
             onClick={handleSceneImpactToggle}
             data-testid="topbar-scene-impact-toggle"
             disabled={!selectedScene}
           >
             {sceneImpactExpanded ? 'Hide Impact Details' : 'Show Impact Details'}
-          </Button>
+          </CarbonButton>
 
           {sceneImpactExpanded && (
             <div className="topbar__panel-bordered topbar__col topbar__col--gap-075" data-testid="topbar-scene-impact-details">
@@ -2638,14 +2624,14 @@ export function TopBar() {
 
               <div className="topbar__row topbar__row--gap-1">
                 {recallImpactHasMore && (
-                  <Button size="small" onClick={handleSceneImpactShowMore} data-testid="topbar-scene-impact-show-more">
+                  <CarbonButton size="sm" kind="ghost" onClick={handleSceneImpactShowMore} data-testid="topbar-scene-impact-show-more">
                     Show More
-                  </Button>
+                  </CarbonButton>
                 )}
                 {sceneImpactDisplayLimit > SCENE_IMPACT_PAGE_SIZE && (
-                  <Button size="small" onClick={handleSceneImpactReset} data-testid="topbar-scene-impact-reset">
+                  <CarbonButton size="sm" kind="ghost" onClick={handleSceneImpactReset} data-testid="topbar-scene-impact-reset">
                     Reset
-                  </Button>
+                  </CarbonButton>
                 )}
               </div>
             </div>
@@ -2801,34 +2787,34 @@ export function TopBar() {
 
           <div className="topbar__row topbar__row--between topbar__row--pt-05">
             <div className="topbar__row topbar__row--gap-1">
-              <Button
-                size="small"
+              <CarbonButton
+                size="sm"
                 onClick={handleRecallScene}
                 data-testid="topbar-scene-recall"
               >
                 {pendingSceneActionMatchesSelection && pendingSceneAction?.action === 'recall'
                   ? 'Recall (Confirm)'
                   : 'Recall'}
-              </Button>
-              <Button
-                size="small"
-                color="error"
+              </CarbonButton>
+              <CarbonButton
+                size="sm"
+                kind="danger"
                 onClick={handleDeleteScene}
                 data-testid="topbar-scene-delete"
               >
                 {pendingSceneActionMatchesSelection && pendingSceneAction?.action === 'delete'
                   ? 'Delete (Confirm)'
                   : 'Delete'}
-              </Button>
+              </CarbonButton>
             </div>
-            <Button
-              size="small"
-              variant="contained"
+            <CarbonButton
+              size="sm"
+              kind="primary"
               onClick={handleScenesClose}
               data-testid="topbar-scene-close"
             >
               Done
-            </Button>
+            </CarbonButton>
           </div>
         </div>
       </Popover>
@@ -3051,29 +3037,29 @@ export function TopBar() {
 
           <div className="topbar__row topbar__row--between topbar__row--pt-05">
             <div className="topbar__row topbar__row--gap-1">
-              <Button
-                size="small"
+              <CarbonButton
+                size="sm"
                 onClick={handleClearAllFilters}
                 data-testid="topbar-filters-clear-all"
               >
                 Clear All
-              </Button>
-              <Button
-                size="small"
+              </CarbonButton>
+              <CarbonButton
+                size="sm"
                 onClick={handleResetFilters}
                 data-testid="topbar-filters-reset"
               >
                 Reset Defaults
-              </Button>
+              </CarbonButton>
             </div>
-            <Button
-              size="small"
-              variant="contained"
+            <CarbonButton
+              size="sm"
+              kind="primary"
               onClick={handleFiltersClose}
               data-testid="topbar-filters-close"
             >
               Done
-            </Button>
+            </CarbonButton>
           </div>
         </div>
       </Popover>
@@ -3138,13 +3124,13 @@ export function TopBar() {
             </Select>
           </FormControl>
 
-          <Button
-            size="small"
+          <CarbonButton
+            size="sm"
             onClick={handleSwapSceneDiffSelection}
             data-testid="topbar-scene-diff-swap"
           >
             Swap Baseline/Compare
-          </Button>
+          </CarbonButton>
 
           <hr className="topbar__divider" />
 
@@ -3190,16 +3176,16 @@ export function TopBar() {
           </FormControl>
 
           <div className="topbar__row topbar__row--gap-1 topbar__row--wrap">
-            <Button
-              size="small"
-              variant="outlined"
+            <CarbonButton
+              size="sm"
+              kind="tertiary"
               onClick={handleSceneDiffPresetConflictPolicyReset}
               disabled={sceneDiffPresetConflictPolicyDraft === 'upsert'}
               aria-label="Use Default Upsert"
               data-testid="topbar-scene-diff-preset-conflict-policy-reset"
             >
               Use Default Upsert
-            </Button>
+            </CarbonButton>
             <span
               className="topbar__caption topbar__caption--secondary"
               data-testid="topbar-scene-diff-preset-conflict-policy-advisory"
@@ -3209,14 +3195,14 @@ export function TopBar() {
           </div>
 
           <div className="topbar__row topbar__row--between topbar__row--gap-1">
-            <Button
-              size="small"
-              variant="outlined"
+            <CarbonButton
+              size="sm"
+              kind="tertiary"
               onClick={handleSaveSceneDiffPreset}
               data-testid="topbar-scene-diff-preset-save"
             >
               Save Preset
-            </Button>
+            </CarbonButton>
             <span className="topbar__caption topbar__caption--secondary" data-testid="topbar-scene-diff-preset-summary">
               {sceneDiffPresetSummary}
             </span>
@@ -3306,30 +3292,30 @@ export function TopBar() {
           />
 
           <div className="topbar__row topbar__row--gap-1 topbar__row--wrap">
-            <Button
-              size="small"
-              variant="outlined"
+            <CarbonButton
+              size="sm"
+              kind="tertiary"
               onClick={handleExportSceneDiffPresets}
               data-testid="topbar-scene-diff-preset-export"
             >
               Export JSON
-            </Button>
-            <Button
-              size="small"
-              variant="outlined"
+            </CarbonButton>
+            <CarbonButton
+              size="sm"
+              kind="tertiary"
               onClick={handlePreviewSceneDiffPresets}
               data-testid="topbar-scene-diff-preset-preview"
             >
               Preview JSON
-            </Button>
-            <Button
-              size="small"
-              variant="outlined"
+            </CarbonButton>
+            <CarbonButton
+              size="sm"
+              kind="tertiary"
               onClick={handleImportSceneDiffPresets}
               data-testid="topbar-scene-diff-preset-import"
             >
               Import JSON
-            </Button>
+            </CarbonButton>
           </div>
 
           {sceneDiffPresetImportPreview ? (
@@ -3396,76 +3382,69 @@ export function TopBar() {
 
               <div className="topbar__row topbar__row--gap-075 topbar__row--wrap">
                 {sceneDiffImportPreviewRowCounts.conflict > 0 && (
-                  <Button
-                    size="small"
-                    variant="outlined"
+                  <CarbonButton
+                    size="sm"
+                    kind="tertiary"
                     onClick={() => handleSceneDiffImportPreviewToggleGroup('conflict')}
                     onKeyDown={(event) => handleKeyboardActivation(event, () => handleSceneDiffImportPreviewToggleGroup('conflict'))}
-                    sx={SCENE_DIFF_PREVIEW_CONTROL_FOCUS_SX}
                     data-testid="topbar-scene-diff-import-preview-group-toggle-conflict"
                   >
                     {sceneDiffImportPreviewCollapsedGroups.conflict ? 'Show' : 'Hide'} Conflict ({sceneDiffImportPreviewRowCounts.conflict})
-                  </Button>
+                  </CarbonButton>
                 )}
                 {sceneDiffImportPreviewRowCounts.accepted > 0 && (
-                  <Button
-                    size="small"
-                    variant="outlined"
+                  <CarbonButton
+                    size="sm"
+                    kind="tertiary"
                     onClick={() => handleSceneDiffImportPreviewToggleGroup('accepted')}
                     onKeyDown={(event) => handleKeyboardActivation(event, () => handleSceneDiffImportPreviewToggleGroup('accepted'))}
-                    sx={SCENE_DIFF_PREVIEW_CONTROL_FOCUS_SX}
                     data-testid="topbar-scene-diff-import-preview-group-toggle-accepted"
                   >
                     {sceneDiffImportPreviewCollapsedGroups.accepted ? 'Show' : 'Hide'} Accepted ({sceneDiffImportPreviewRowCounts.accepted})
-                  </Button>
+                  </CarbonButton>
                 )}
                 {sceneDiffImportPreviewRowCounts.skipped > 0 && (
-                  <Button
-                    size="small"
-                    variant="outlined"
+                  <CarbonButton
+                    size="sm"
+                    kind="tertiary"
                     onClick={() => handleSceneDiffImportPreviewToggleGroup('skipped')}
                     onKeyDown={(event) => handleKeyboardActivation(event, () => handleSceneDiffImportPreviewToggleGroup('skipped'))}
-                    sx={SCENE_DIFF_PREVIEW_CONTROL_FOCUS_SX}
                     data-testid="topbar-scene-diff-import-preview-group-toggle-skipped"
                   >
                     {sceneDiffImportPreviewCollapsedGroups.skipped ? 'Show' : 'Hide'} Skipped ({sceneDiffImportPreviewRowCounts.skipped})
-                  </Button>
+                  </CarbonButton>
                 )}
               </div>
 
               {sceneDiffImportPreviewRowCounts.conflict > 0 && (
                 <div className="topbar__row topbar__row--gap-075 topbar__row--wrap">
-                  <Button
-                    size="small"
-                    variant="outlined"
-                    color="warning"
+                  <CarbonButton
+                    size="sm"
+                    kind="danger--tertiary"
                     onClick={() => handleSceneDiffBulkConflictAction('upsert')}
                     onKeyDown={(event) => handleKeyboardActivation(event, () => handleSceneDiffBulkConflictAction('upsert'))}
-                    sx={SCENE_DIFF_PREVIEW_CONTROL_FOCUS_SX}
                     data-testid="topbar-scene-diff-import-preview-conflict-bulk-upsert"
                   >
                     All Conflicts -&gt; Upsert
-                  </Button>
-                  <Button
-                    size="small"
-                    variant="outlined"
+                  </CarbonButton>
+                  <CarbonButton
+                    size="sm"
+                    kind="tertiary"
                     onClick={() => handleSceneDiffBulkConflictAction('rename')}
                     onKeyDown={(event) => handleKeyboardActivation(event, () => handleSceneDiffBulkConflictAction('rename'))}
-                    sx={SCENE_DIFF_PREVIEW_CONTROL_FOCUS_SX}
                     data-testid="topbar-scene-diff-import-preview-conflict-bulk-rename"
                   >
                     All Conflicts -&gt; Rename
-                  </Button>
-                  <Button
-                    size="small"
-                    variant="outlined"
+                  </CarbonButton>
+                  <CarbonButton
+                    size="sm"
+                    kind="tertiary"
                     onClick={() => handleSceneDiffBulkConflictAction('skip')}
                     onKeyDown={(event) => handleKeyboardActivation(event, () => handleSceneDiffBulkConflictAction('skip'))}
-                    sx={SCENE_DIFF_PREVIEW_CONTROL_FOCUS_SX}
                     data-testid="topbar-scene-diff-import-preview-conflict-bulk-skip"
                   >
                     All Conflicts -&gt; Skip
-                  </Button>
+                  </CarbonButton>
                 </div>
               )}
 
@@ -3502,24 +3481,24 @@ export function TopBar() {
                   Showing {sceneDiffImportPreviewRangeStart}-{sceneDiffImportPreviewRangeEnd} of {sceneDiffImportPreviewVisibleRowsByGroup.length} visible rows ({sceneDiffImportPreviewRows.length} total)
                 </span>
                 <div className="topbar__row topbar__row--gap-075">
-                  <Button
-                    size="small"
-                    variant="outlined"
+                  <CarbonButton
+                    size="sm"
+                    kind="tertiary"
                     onClick={handleSceneDiffImportPreviewPreviousPage}
                     disabled={!sceneDiffImportPreviewHasPreviousPage}
                     data-testid="topbar-scene-diff-import-preview-page-prev"
                   >
                     Prev
-                  </Button>
-                  <Button
-                    size="small"
-                    variant="outlined"
+                  </CarbonButton>
+                  <CarbonButton
+                    size="sm"
+                    kind="tertiary"
                     onClick={handleSceneDiffImportPreviewNextPage}
                     disabled={!sceneDiffImportPreviewHasNextPage}
                     data-testid="topbar-scene-diff-import-preview-page-next"
                   >
                     Next
-                  </Button>
+                  </CarbonButton>
                 </div>
               </div>
 
@@ -3687,23 +3666,23 @@ export function TopBar() {
           )}
 
           <div className="topbar__row topbar__row--gap-1">
-            <Button
-              size="small"
+            <CarbonButton
+              size="sm"
               onClick={handleApplySceneDiffPreset}
               data-testid="topbar-scene-diff-preset-apply"
               disabled={!sceneDiffSelectedPresetId}
             >
               Apply Preset
-            </Button>
-            <Button
-              size="small"
-              color="error"
+            </CarbonButton>
+            <CarbonButton
+              size="sm"
+              kind="danger"
               onClick={handleDeleteSceneDiffPreset}
               data-testid="topbar-scene-diff-preset-delete"
               disabled={!sceneDiffSelectedPresetId}
             >
               Delete Preset
-            </Button>
+            </CarbonButton>
           </div>
 
           <span className="topbar__caption topbar__caption--secondary" data-testid="topbar-scene-diff-active-preset">
@@ -3714,29 +3693,29 @@ export function TopBar() {
 
           <div className="topbar__row topbar__row--between topbar__row--pt-05">
             <div className="topbar__row topbar__row--gap-1">
-              <Button
-                size="small"
+              <CarbonButton
+                size="sm"
                 onClick={handleGenerateSceneDiff}
                 data-testid="topbar-scene-diff-generate"
               >
                 Generate
-              </Button>
-              <Button
-                size="small"
+              </CarbonButton>
+              <CarbonButton
+                size="sm"
                 onClick={handleClearSceneDiff}
                 data-testid="topbar-scene-diff-clear"
               >
                 Clear
-              </Button>
+              </CarbonButton>
             </div>
-            <Button
-              size="small"
-              variant="contained"
+            <CarbonButton
+              size="sm"
+              kind="primary"
               onClick={handleSceneDiffClose}
               data-testid="topbar-scene-diff-close"
             >
               Done
-            </Button>
+            </CarbonButton>
           </div>
           {sceneDiffError && (
             <span
