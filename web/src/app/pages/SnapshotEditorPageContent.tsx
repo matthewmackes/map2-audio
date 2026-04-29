@@ -325,7 +325,6 @@ import {
 } from './snapshotEditor/snapshotEditorPageTypes'
 import type {
   CompactTabId,
-  FlowLevelControlProps,
   FlowSlot,
   JuceGridMidiScope,
   LivePathArrowTone,
@@ -338,6 +337,7 @@ import type {
   RoutingInspectorContent,
   RoutingMode,
 } from './snapshotEditor/snapshotEditorPageTypes'
+import { FlowLevelControl } from './snapshotEditor/FlowLevelControl'
 
 const API_BASE = (() => {
   const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
@@ -403,53 +403,8 @@ interface SnapshotEditorPerformanceEventsResponse {
   last_seq: number
 }
 
-// FlowLevelControlProps lives in ./snapshotEditor/snapshotEditorPageTypes (T2468).
-
-function FlowLevelControl({
-  flowId,
-  flowLabel,
-  value,
-  onChange,
-  disabled = false,
-}: FlowLevelControlProps) {
-  const clampedValue = Math.max(0, Math.min(100, Math.round(value)))
-  const levelLabel = `Signal chain ${flowLabel} level`
-
-  return (
-    <div
-      className="juce-grid-page__flow-level-shell"
-      data-testid={`juce-grid-flow-level-${flowId}`}
-      title={`${levelLabel}: ${clampedValue}%`}
-    >
-      <NumberInput
-        label={levelLabel}
-        value={clampedValue}
-        min={0}
-        max={100}
-        step={1}
-        defaultValue={100}
-        valueFormatter={(nextValue) => `${Math.round(nextValue)}%`}
-        displayOverlay={(
-          <div className="juce-grid-page__flow-level-overlay">
-            <SegmentedLedText
-              value={`${clampedValue}%`}
-              size="md"
-              color="var(--juce-grid-midi-led-color, #78a9ff)"
-              className="juce-grid-page__flow-level-readout"
-            />
-          </div>
-        )}
-        onChange={onChange}
-        size="small"
-        showLabel={false}
-        showBounds={false}
-        accentColor="var(--juce-grid-midi-led-color, #78a9ff)"
-        disabled={disabled}
-        className="juce-grid-page__flow-level-input"
-      />
-    </div>
-  )
-}
+// FlowLevelControl + FlowLevelControlProps live in
+// ./snapshotEditor/FlowLevelControl (T2469).
 
 function isTextEntryTarget(target: EventTarget | null): boolean {
   if (!(target instanceof HTMLElement)) {
