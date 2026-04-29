@@ -378,6 +378,7 @@ import { SnapshotEditorPresetBrowser } from './snapshotEditor/SnapshotEditorPres
 import { SnapshotEditorAssignmentDialog } from './snapshotEditor/SnapshotEditorAssignmentDialog'
 import { SnapshotEditorClearFlowsConfirm } from './snapshotEditor/SnapshotEditorClearFlowsConfirm'
 import { SnapshotEditorSavePresetModal } from './snapshotEditor/SnapshotEditorSavePresetModal'
+import { SnapshotEditorRenameChainModal } from './snapshotEditor/SnapshotEditorRenameChainModal'
 
 // API_BASE lives in ./snapshotEditor/snapshotEditorApi (T2467 follow-up).
 
@@ -8375,40 +8376,19 @@ export function SnapshotEditorPage() {
         onSubmit={submitSavePreset}
       />
 
-      {showRenameChainModal && (
-        <Modal
-          open
-          size="sm"
-          modalHeading="Rename chain"
-          modalLabel={currentChain?.name || 'Current chain'}
-          primaryButtonText={renameMutation.isPending ? 'Saving...' : 'Rename chain'}
-          secondaryButtonText="Cancel"
-          primaryButtonDisabled={!currentChain || renameChainName.trim().length === 0 || renameMutation.isPending}
-          onRequestClose={() => {
-            setShowRenameChainModal(false)
-            setRenameChainName('')
-          }}
-          onSecondarySubmit={() => {
-            setShowRenameChainModal(false)
-            setRenameChainName('')
-          }}
-          onRequestSubmit={submitRenameChain}
-          selectorPrimaryFocus="#juce-grid-rename-chain-name"
-        >
-          <div className="juce-grid-page__form-modal-body">
-            <p className="juce-grid-page__modal-copy">
-              Rename the active chain while preserving the current routing, plugin, and snapshot state.
-            </p>
-            <TextInput
-              id="juce-grid-rename-chain-name"
-              labelText="Chain name"
-              value={renameChainName}
-              onChange={(event) => setRenameChainName(event.target.value)}
-              placeholder="Main performance chain"
-            />
-          </div>
-        </Modal>
-      )}
+      <SnapshotEditorRenameChainModal
+        open={showRenameChainModal}
+        chainLabel={currentChain?.name || 'Current chain'}
+        chainName={renameChainName}
+        hasChain={!!currentChain}
+        isSaving={renameMutation.isPending}
+        onClose={() => {
+          setShowRenameChainModal(false)
+          setRenameChainName('')
+        }}
+        onChainNameChange={setRenameChainName}
+        onSubmit={submitRenameChain}
+      />
 
 
       {presetPendingDelete && (
