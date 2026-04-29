@@ -19,6 +19,7 @@ import {
   isPlatformWorkspaceId,
 } from './platform/routes'
 import { LoadingState } from './components/shared/LoadingState'
+import './RouteLoadingState.css'
 import { buildWorkspaceArtifactsDiscoverPath, buildWorkspaceArtifactsPath } from './pages/audioArtifactsRoutes'
 import { HOST_MACHINE_ROUTE } from './pages/hostMachineRoutes'
 // T2459-G11b — small inline whitelist replacing the deprecated
@@ -135,29 +136,34 @@ const ExpressionPage        = lazy(() => import('./pages/ExpressionPage').then(m
 const MidiAssignmentsPage   = lazy(() => import('./pages/MidiAssignmentsPage').then(m => ({ default: m.MidiAssignmentsPage })))
 const GroundControlProPage  = lazy(() => import('./pages/GroundControlProPage').then(m => ({ default: m.GroundControlProPage })))
 
+// T2474 B11: Inline `style={{...}}` magic-number pixel values
+// (24, 16, 180, 220, 280, 320, 540, 120, 240) extracted to
+// .map2-route-loader CSS classes in RouteLoadingState.css. Carbon
+// --cds-spacing-* tokens drive padding/gap; named skeleton-height
+// tokens drive each skeleton block size.
 function RouteLoadingState({ variant }: { variant: 'default' | 'snapshot' | 'midi-hub' | 'metrics' | 'audio-engine' }) {
   if (variant === 'snapshot') {
     return (
-      <div style={{ padding: 24, display: 'grid', gap: 16 }}>
+      <div className="map2-route-loader">
         <SkeletonText heading width="26%" />
         <SkeletonText paragraph lineCount={2} width="68%" />
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(220px, 1fr))', gap: 16 }}>
-          <SkeletonPlaceholder style={{ height: 180 }} />
-          <SkeletonPlaceholder style={{ height: 180 }} />
-          <SkeletonPlaceholder style={{ height: 180 }} />
+        <div className="map2-route-loader__grid map2-route-loader__grid--snapshot-tiles">
+          <SkeletonPlaceholder className="map2-route-loader__skel--tile" />
+          <SkeletonPlaceholder className="map2-route-loader__skel--tile" />
+          <SkeletonPlaceholder className="map2-route-loader__skel--tile" />
         </div>
-        <SkeletonPlaceholder style={{ height: 320 }} />
+        <SkeletonPlaceholder className="map2-route-loader__skel--canvas" />
       </div>
     )
   }
 
   if (variant === 'midi-hub') {
     return (
-      <div style={{ padding: 24, display: 'grid', gap: 16 }}>
+      <div className="map2-route-loader">
         <SkeletonText heading width="22%" />
-        <div style={{ display: 'grid', gridTemplateColumns: '280px 1fr', gap: 16 }}>
-          <SkeletonPlaceholder style={{ height: 540 }} />
-          <div style={{ display: 'grid', gap: 16 }}>
+        <div className="map2-route-loader__grid map2-route-loader__grid--midi-hub">
+          <SkeletonPlaceholder className="map2-route-loader__skel--rail" />
+          <div className="map2-route-loader__grid">
             <SkeletonText paragraph lineCount={2} width="58%" />
             <DataTableSkeleton rowCount={6} columnCount={5} zebra={false} />
           </div>
@@ -168,17 +174,17 @@ function RouteLoadingState({ variant }: { variant: 'default' | 'snapshot' | 'mid
 
   if (variant === 'metrics' || variant === 'audio-engine') {
     return (
-      <div style={{ padding: 24, display: 'grid', gap: 16 }}>
+      <div className="map2-route-loader">
         <SkeletonText heading width="24%" />
-        <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))', gap: 16 }}>
-          <SkeletonPlaceholder style={{ height: 120 }} />
-          <SkeletonPlaceholder style={{ height: 120 }} />
-          <SkeletonPlaceholder style={{ height: 120 }} />
-          <SkeletonPlaceholder style={{ height: 120 }} />
+        <div className="map2-route-loader__grid map2-route-loader__grid--metrics">
+          <SkeletonPlaceholder className="map2-route-loader__skel--card" />
+          <SkeletonPlaceholder className="map2-route-loader__skel--card" />
+          <SkeletonPlaceholder className="map2-route-loader__skel--card" />
+          <SkeletonPlaceholder className="map2-route-loader__skel--card" />
         </div>
-        <div style={{ display: 'grid', gap: 16 }}>
-          <SkeletonPlaceholder style={{ height: 240 }} />
-          <SkeletonPlaceholder style={{ height: 240 }} />
+        <div className="map2-route-loader__grid">
+          <SkeletonPlaceholder className="map2-route-loader__skel--row" />
+          <SkeletonPlaceholder className="map2-route-loader__skel--row" />
         </div>
       </div>
     )

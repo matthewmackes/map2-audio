@@ -1,0 +1,66 @@
+/* RouteLoadingState — Carbon-disciplined skeleton layouts for lazy-route
+ * loading states. T2474 B11 extracted these styles from inline `style={{...}}`
+ * objects in App.tsx (lines 141-184) where the magic-number pixel values
+ * (24, 16, 180, 220, 280, 320, 540, 120, 240) were called out by the audit.
+ *
+ * Now every dimension flows through Carbon spacing tokens
+ * (--cds-spacing-05 = 1rem = 16px, --cds-spacing-07 = 1.5rem = 24px) and
+ * the skeleton-block heights track a small named set of skeleton-height
+ * tokens defined locally below. */
+
+.map2-route-loader {
+  --map2-route-loader-pad: var(--cds-spacing-07, 1.5rem);
+  --map2-route-loader-gap: var(--cds-spacing-05, 1rem);
+  --map2-route-loader-skel-card: 7.5rem;     /* 120px — metric card */
+  --map2-route-loader-skel-tile: 11.25rem;   /* 180px — snapshot tile */
+  --map2-route-loader-skel-row: 15rem;       /* 240px — chart row */
+  --map2-route-loader-skel-canvas: 20rem;    /* 320px — large canvas */
+  --map2-route-loader-skel-rail: 33.75rem;   /* 540px — full sidebar */
+
+  display: grid;
+  gap: var(--map2-route-loader-gap);
+  padding: var(--map2-route-loader-pad);
+}
+
+.map2-route-loader__grid {
+  display: grid;
+  gap: var(--map2-route-loader-gap);
+}
+
+.map2-route-loader__grid--snapshot-tiles {
+  grid-template-columns: repeat(auto-fit, minmax(13.75rem, 1fr));  /* 220px */
+}
+
+.map2-route-loader__grid--midi-hub {
+  grid-template-columns: 17.5rem 1fr;  /* 280px sidebar + content */
+}
+
+.map2-route-loader__grid--metrics {
+  grid-template-columns: repeat(auto-fit, minmax(11.25rem, 1fr));  /* 180px */
+}
+
+.map2-route-loader__skel--card {
+  height: var(--map2-route-loader-skel-card);
+}
+
+.map2-route-loader__skel--tile {
+  height: var(--map2-route-loader-skel-tile);
+}
+
+.map2-route-loader__skel--row {
+  height: var(--map2-route-loader-skel-row);
+}
+
+.map2-route-loader__skel--canvas {
+  height: var(--map2-route-loader-skel-canvas);
+}
+
+.map2-route-loader__skel--rail {
+  height: var(--map2-route-loader-skel-rail);
+}
+
+@media (max-width: 42rem) {
+  .map2-route-loader__grid--midi-hub {
+    grid-template-columns: 1fr;
+  }
+}
