@@ -1,0 +1,17 @@
+/* TopBarPopover — replaces MUI Popover for TopBar's
+ * scenes/filters/scene-diff panels. Floats over the page with
+ * box-shadow + Carbon layer background. */
+
+.topbar-popover {
+  position: absolute;
+  z-index: 1300;
+  background: var(--cds-layer, #262626);
+  border: 1px solid var(--cds-border-subtle, #393939);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.55);
+  animation: topbar-popover-in 120ms ease-out;
+}
+
+@keyframes topbar-popover-in {
+  from { opacity: 0; transform: translateY(-4px); }
+  to { opacity: 1; transform: translateY(0); }
+}

@@ -18,10 +18,10 @@ import {
   TreeViewAlt,
   Undo,
 } from '@carbon/icons-react';
-import {
-  Popover,
-} from '@mui/material';
-import type { SelectChangeEvent } from '@mui/material/Select';
+// SelectChangeEvent shape preserved as a local synthetic type so
+// the existing handlers can keep their `(event) => event.target.value`
+// shape without dragging in MUI's Select type.
+type SelectChangeEvent<T> = { target: { value: T } };
 import {
   Button as CarbonButton,
   Checkbox as CarbonCheckbox,
@@ -58,6 +58,7 @@ import {
 } from '../../utils/sceneValidation';
 import { NodeSelector } from './NodeSelector';
 import { SceneDiffPreview } from './SceneDiffPreview';
+import { TopBarPopover } from './TopBarPopover';
 import { NetworkTopologyModal } from '../NetworkTopology/NetworkTopologyModal';
 import './TopBar.css';
 
@@ -2414,12 +2415,11 @@ export function TopBar() {
         </div>
       </div>
 
-      <Popover
+      <TopBarPopover
         open={scenesOpen}
         anchorEl={scenesAnchor}
         onClose={handleScenesClose}
-        anchorOrigin={{ vertical: 'bottom', horizontal: isMobile ? 'center' : 'left' }}
-        transformOrigin={{ vertical: 'top', horizontal: isMobile ? 'center' : 'left' }}
+        isMobile={isMobile}
       >
         <div className="topbar__popover-panel">
           <span className="topbar__subtitle">
@@ -2820,14 +2820,13 @@ export function TopBar() {
             </CarbonButton>
           </div>
         </div>
-      </Popover>
+      </TopBarPopover>
 
-      <Popover
+      <TopBarPopover
         open={filtersOpen}
         anchorEl={filtersAnchor}
         onClose={handleFiltersClose}
-        anchorOrigin={{ vertical: 'bottom', horizontal: isMobile ? 'center' : 'left' }}
-        transformOrigin={{ vertical: 'top', horizontal: isMobile ? 'center' : 'left' }}
+        isMobile={isMobile}
       >
         <div className="topbar__popover-panel">
           <span className="topbar__subtitle">
@@ -3035,14 +3034,13 @@ export function TopBar() {
             </CarbonButton>
           </div>
         </div>
-      </Popover>
+      </TopBarPopover>
 
-      <Popover
+      <TopBarPopover
         open={sceneDiffOpen}
         anchorEl={sceneDiffAnchor}
         onClose={handleSceneDiffClose}
-        anchorOrigin={{ vertical: 'bottom', horizontal: isMobile ? 'center' : 'left' }}
-        transformOrigin={{ vertical: 'top', horizontal: isMobile ? 'center' : 'left' }}
+        isMobile={isMobile}
       >
         <div className="topbar__popover-panel topbar__popover-panel--wide">
           <span className="topbar__subtitle">
@@ -3719,7 +3717,7 @@ export function TopBar() {
             </span>
           )}
         </div>
-      </Popover>
+      </TopBarPopover>
 
       <SceneDiffPreview />
 
