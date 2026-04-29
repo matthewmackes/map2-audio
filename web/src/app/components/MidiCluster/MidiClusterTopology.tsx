@@ -1,7 +1,12 @@
+// Cluster topology canvas. T2475 (E1): migrated from MUI to Carbon.
+// Container, nodes, and tooltips use semantic divs + Carbon Tooltip;
+// MUI palette literals routed through MAP semantic tokens.
+
 import { useMemo } from 'react'
-import { Box, Tooltip, Typography } from '@mui/material'
+import { Tooltip } from '@carbon/react'
 
 import type { MidiClusterConnection, MidiClusterNode } from '../../../map2/api'
+import './MidiClusterTopology.css'
 
 interface Props {
   nodes: MidiClusterNode[]
@@ -12,6 +17,17 @@ interface PositionedNode {
   node: MidiClusterNode
   x: number
   y: number
+}
+
+// Transport palette → MAP-aligned hex values. Using literal hex inside
+// the SVG <line stroke=...> attribute because SVG attributes don't
+// resolve CSS custom properties at all browsers; the values are pinned
+// to the same Carbon shades that --map2-state-live / --map2-alert-advisory /
+// --map2-clock-master resolve to under the default g100 shell.
+const TRANSPORT_COLOR: Record<string, string> = {
+  'rtp-midi': '#42be65',  // Carbon green-40 == --map2-state-live (dark shell)
+  'udp-raw': '#f1c21b',   // Carbon yellow-30 == --map2-alert-advisory
+  default: '#4589ff',     // Carbon blue-50 == --map2-clock-master
 }
 
 export function MidiClusterTopology({ nodes, connections }: Props) {
@@ -31,16 +47,18 @@ export function MidiClusterTopology({ nodes, connections }: Props) {
   const lookup = useMemo(() => new Map(positioned.map(p => [p.node.node_id, p])), [positioned])
 
   return (
-    <Box sx={{ position: 'relative', minHeight: 320, background: '#0b1224', border: '1px solid #1f2937', borderRadius: 2, overflow: 'hidden', p: 2 }}>
-      <Typography variant="subtitle2" sx={{ color: '#e5e7eb', mb: 1 }}>
-        Cluster Topology
-      </Typography>
-      <svg viewBox="0 0 100 100" preserveAspectRatio="none" style={{ position: 'absolute', inset: 0 }}>
+    <div className="midi-cluster-topology">
+      <span className="midi-cluster-topology__title">Cluster Topology</span>
+      <svg
+        className="midi-cluster-topology__svg"
+        viewBox="0 0 100 100"
+        preserveAspectRatio="none"
+      >
         {connections.map(conn => {
           const src = lookup.get(conn.source.node_id)
           const dst = lookup.get(conn.destination.node_id)
           if (!src || !dst) return null
-          const color = conn.transport === 'rtp-midi' ? '#22c55e' : conn.transport === 'udp-raw' ? '#eab308' : '#60a5fa'
+          const color = TRANSPORT_COLOR[conn.transport] ?? TRANSPORT_COLOR.default
           return (
             <line
               key={conn.connection_id}
@@ -57,31 +75,23 @@ export function MidiClusterTopology({ nodes, connections }: Props) {
         })}
       </svg>
       {positioned.map(p => (
-        <Tooltip key={p.node.node_id} title={`${p.node.hostname} (${p.node.node_id})`} arrow>
-          <Box
-            sx={{
-              position: 'absolute',
-              left: `${p.x}%`,
-              top: `${p.y}%`,
-              transform: 'translate(-50%, -50%)',
-              background: '#111827',
-              border: `2px solid ${p.node.online ? '#22c55e' : '#ef4444'}`,
-              borderRadius: '12px',
-              minWidth: 120,
-              p: 1,
-              boxShadow: '0 10px 30px rgba(0,0,0,0.35)',
-            }}
+        <Tooltip
+          key={p.node.node_id}
+          label={`${p.node.hostname} (${p.node.node_id})`}
+          align="top"
+        >
+          <div
+            className={`midi-cluster-topology__node midi-cluster-topology__node--${p.node.online ? 'online' : 'offline'}`}
+            style={{ left: `${p.x}%`, top: `${p.y}%` }}
           >
-            <Typography variant="subtitle2" sx={{ color: '#e5e7eb', fontSize: 13 }} noWrap>
-              {p.node.hostname}
-            </Typography>
-            <Typography variant="caption" sx={{ color: '#94a3b8' }}>
+            <span className="midi-cluster-topology__node-hostname">{p.node.hostname}</span>
+            <span className="midi-cluster-topology__node-stats">
               {p.node.capabilities?.input_ports.length ?? 0} in · {p.node.capabilities?.output_ports.length ?? 0} out
-            </Typography>
-          </Box>
+            </span>
+          </div>
         </Tooltip>
       ))}
-    </Box>
+    </div>
   )
 }
 

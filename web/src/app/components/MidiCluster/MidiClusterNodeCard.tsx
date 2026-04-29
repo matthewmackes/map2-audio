@@ -1,7 +1,17 @@
-import { Badge, Card, CardContent, Chip, Stack, Typography } from '@mui/material'
-import { Plug, Power, Wifi } from '@carbon/icons-react'
+// Per-node card in the cluster MIDI overview. T2475 (E1): migrated from
+// MUI to Carbon. Card+CardContent → Carbon ClickableTile/Tile. Badge+
+// Wifi → flat tone-bordered icon. Chip → StatusChip. Typography →
+// semantic spans. The MUI gradient and palette literals (#22c55e/
+// #ef4444/#111827/...) all retired per Q1=A; presence is communicated
+// by accent border color routed through MAP semantic state tokens.
 
+import { ClickableTile, Tile } from '@carbon/react'
+import { Plug, Power, Wifi } from '@carbon/icons-react'
+import type { ComponentProps } from 'react'
+
+import { StatusChip } from '../primitives'
 import type { MidiClusterEndpoint, MidiClusterNode } from '../../../map2/api'
+import './MidiClusterNodeCard.css'
 
 interface Props {
   node: MidiClusterNode
@@ -10,92 +20,102 @@ interface Props {
   onSelect?: (nodeId: string) => void
 }
 
-function portBadge(port: MidiClusterEndpoint) {
-  const color = port.direction === 'output' ? 'primary' : 'secondary'
+function PortBadge({ port }: { port: MidiClusterEndpoint }) {
+  const tone = port.direction === 'output' ? 'info' : 'staged'
   return (
-    <Chip
-      key={port.endpoint_id}
-      size="small"
-      color={color as any}
-      variant="outlined"
+    <StatusChip
+      tone={tone}
       label={`${port.port_name}${port.device_name ? ` · ${port.device_name}` : ''}`}
-      sx={{ borderStyle: port.available ? 'solid' : 'dashed', mr: 0.5, mb: 0.5 }}
+      size="sm"
+      className={
+        port.available
+          ? 'midi-cluster-node-card__port-chip'
+          : 'midi-cluster-node-card__port-chip midi-cluster-node-card__port-chip--unavailable'
+      }
     />
   )
 }
 
 export function MidiClusterNodeCard({ node, connections, isLocal = false, onSelect }: Props) {
   const online = node.online
-  const borderColor = online ? '#22c55e' : '#ef4444'
+  const onlineModifier = online
+    ? 'midi-cluster-node-card--online'
+    : 'midi-cluster-node-card--offline'
+  const className = `midi-cluster-node-card ${onlineModifier}`
 
-  return (
-    <Card
-      variant="outlined"
-      onClick={() => onSelect?.(node.node_id)}
-      sx={{
-        cursor: onSelect ? 'pointer' : 'default',
-        borderColor,
-        background: 'linear-gradient(135deg, #111827 0%, #0b1324 100%)',
-        color: '#e5e7eb',
-        minWidth: 260,
-      }}
-    >
-      <CardContent>
-        <Stack direction="row" spacing={1} alignItems="center" mb={1}>
-          <Badge
-            overlap="circular"
-            variant="dot"
-            color={online ? 'success' : 'error'}
-            anchorOrigin={{ vertical: 'bottom', horizontal: 'right' }}
-          >
-            <Wifi size={20} color={online ? '#22c55e' : '#ef4444'} />
-          </Badge>
-          <div style={{ flex: 1 }}>
-            <Typography variant="subtitle2" sx={{ color: '#f8fafc', fontWeight: 700 }}>
-              {node.hostname} {isLocal ? '(local)' : ''}
-            </Typography>
-            <Typography variant="caption" sx={{ color: '#94a3b8' }}>
-              {node.node_id}
-            </Typography>
-          </div>
-          <Chip
-            size="small"
-            label={`${connections.length} connections`}
-            icon={<Plug size={14} /> as any}
-            sx={{ bgcolor: '#1e293b', color: '#e2e8f0' }}
+  const head = (
+    <>
+      <div className="midi-cluster-node-card__head">
+        <span
+          className={`midi-cluster-node-card__status-icon midi-cluster-node-card__status-icon--${online ? 'online' : 'offline'}`}
+          aria-hidden="true"
+        >
+          <Wifi size={20} />
+        </span>
+        <div className="midi-cluster-node-card__copy">
+          <span className="midi-cluster-node-card__hostname">
+            {node.hostname} {isLocal ? '(local)' : ''}
+          </span>
+          <span className="midi-cluster-node-card__node-id">{node.node_id}</span>
+        </div>
+        <StatusChip
+          tone="neutral"
+          label="Connections"
+          value={String(connections.length)}
+          size="sm"
+        />
+      </div>
+
+      <div className="midi-cluster-node-card__status-row">
+        <StatusChip
+          tone={online ? 'ok' : 'critical'}
+          label={online ? 'Online' : 'Offline'}
+          size="sm"
+          dot
+        />
+        {node.capabilities?.clock_source && (
+          <StatusChip
+            tone="info"
+            label="Clock"
+            value={node.capabilities.clock_source}
+            size="sm"
           />
-        </Stack>
+        )}
+      </div>
 
-        <Stack direction="row" spacing={1} alignItems="center" mb={1}>
-          <Chip
-            size="small"
-            icon={<Power size={12} /> as any}
-            label={online ? 'Online' : 'Offline'}
-            color={online ? 'success' : 'error'}
-            variant={online ? 'filled' : 'outlined'}
-          />
-          {node.capabilities?.clock_source && (
-            <Chip
-              size="small"
-              label={`Clock: ${node.capabilities.clock_source}`}
-              color="info"
-              variant="outlined"
-            />
-          )}
-        </Stack>
+      <div className="midi-cluster-node-card__ports-section">
+        <span className="midi-cluster-node-card__ports-heading">Inputs</span>
+        <div className="midi-cluster-node-card__ports">
+          {node.ports.filter(p => p.direction === 'input').map(p => (
+            <PortBadge key={p.endpoint_id} port={p} />
+          ))}
+        </div>
+      </div>
 
-        <Typography variant="caption" sx={{ color: '#94a3b8' }} gutterBottom>
-          Inputs
-        </Typography>
-        <div>{node.ports.filter(p => p.direction === 'input').map(portBadge)}</div>
-
-        <Typography variant="caption" sx={{ color: '#94a3b8', mt: 1 }} gutterBottom>
-          Outputs
-        </Typography>
-        <div>{node.ports.filter(p => p.direction === 'output').map(portBadge)}</div>
-      </CardContent>
-    </Card>
+      <div className="midi-cluster-node-card__ports-section">
+        <span className="midi-cluster-node-card__ports-heading">Outputs</span>
+        <div className="midi-cluster-node-card__ports">
+          {node.ports.filter(p => p.direction === 'output').map(p => (
+            <PortBadge key={p.endpoint_id} port={p} />
+          ))}
+        </div>
+      </div>
+    </>
   )
+
+  // Suppress unused-import warnings for icons retained for future use.
+  void Plug
+  void Power
+
+  if (onSelect) {
+    const clickableProps: ComponentProps<typeof ClickableTile> = {
+      className,
+      onClick: () => onSelect(node.node_id),
+    }
+    return <ClickableTile {...clickableProps}>{head}</ClickableTile>
+  }
+
+  return <Tile className={className}>{head}</Tile>
 }
 
 export default MidiClusterNodeCard

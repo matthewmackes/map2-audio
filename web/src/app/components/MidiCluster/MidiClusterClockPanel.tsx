@@ -1,16 +1,36 @@
+// Cluster clock control panel. T2475 (E1): migrated from MUI to Carbon.
+//   <Box sx>           → flat <div> with className
+//   <Stack>            → flex <div> with gap
+//   <Typography>       → semantic <span>
+//   <FormControl>+<Select>+<InputLabel>+<MenuItem> → Carbon <Dropdown>
+//   <Button variant="contained">  → Carbon kind="primary"
+//   <Button variant="outlined">   → Carbon kind="tertiary"
+//   inline #22c55e/#60a5fa palette → Carbon support tokens
+
 import { useMemo, useState } from 'react'
-import { Box, Button, FormControl, InputLabel, MenuItem, Select, Stack, Typography } from '@mui/material'
+import { Button, Dropdown } from '@carbon/react'
 import { MeterAlt, Renew, Timer } from '@carbon/icons-react'
 
 import type { MidiClusterClock } from '../../../map2/api'
 import { useClusterClockActions } from '../../hooks/useMidiCluster'
+import './MidiClusterClockPanel.css'
 
 interface Props {
   clock?: MidiClusterClock
   nodes: Array<{ node_id: string; hostname: string }>
 }
 
-const strategies = [
+interface StrategyOption {
+  value: string
+  label: string
+}
+
+interface NodeOption {
+  value: string
+  label: string
+}
+
+const strategies: StrategyOption[] = [
   { value: 'leader-node', label: 'Leader node' },
   { value: 'lowest-latency', label: 'Lowest latency' },
   { value: 'manual', label: 'Manual' },
@@ -27,70 +47,85 @@ export function MidiClusterClockPanel({ clock, nodes }: Props) {
     return nodes.find(n => n.node_id === clock.master_node_id)?.hostname ?? clock.master_node_id
   }, [clock?.master_node_id, nodes])
 
+  const nodeOptions = useMemo<NodeOption[]>(
+    () => nodes.map(n => ({ value: n.node_id, label: n.hostname })),
+    [nodes],
+  )
+
+  const selectedStrategy =
+    strategies.find(s => s.value === strategy) ?? strategies[0]
+  const selectedNode = nodeOptions.find(n => n.value === manualNode) ?? null
+
   const handleApply = () => {
     void setStrategy.mutateAsync({ strategy, manualNodeId: strategy === 'manual' ? manualNode : undefined })
   }
 
   return (
-    <Box sx={{ p: 2, border: '1px solid #1f2937', borderRadius: 2, background: '#0b1224' }}>
-      <Stack direction="row" spacing={2} alignItems="center" mb={1}>
-        <MeterAlt size={18} color="#22c55e" />
-        <Typography variant="subtitle2" sx={{ color: '#e5e7eb' }}>Cluster Clock</Typography>
-      </Stack>
+    <div className="midi-cluster-clock-panel">
+      <div className="midi-cluster-clock-panel__head">
+        <MeterAlt size={18} className="midi-cluster-clock-panel__head-icon" aria-hidden="true" />
+        <span className="midi-cluster-clock-panel__title">Cluster Clock</span>
+      </div>
       {clock ? (
-        <Stack spacing={2}>
-          <Stack direction="row" spacing={2} alignItems="center">
-            <Timer size={16} color="#60a5fa" />
-            <Typography variant="body2" sx={{ color: '#cbd5e1' }}>
+        <div className="midi-cluster-clock-panel__body">
+          <div className="midi-cluster-clock-panel__readout">
+            <Timer size={16} className="midi-cluster-clock-panel__readout-icon" aria-hidden="true" />
+            <span className="midi-cluster-clock-panel__readout-text">
               Master: {masterHostname || 'n/a'} · BPM {clock.master_bpm.toFixed(1)} · Drift {clock.drift_ms.toFixed(2)} ms
-            </Typography>
-          </Stack>
-          <Stack direction={{ xs: 'column', md: 'row' }} spacing={2} alignItems="center">
-            <FormControl size="small" sx={{ minWidth: 180 }}>
-              <InputLabel id="strategy">Strategy</InputLabel>
-              <Select
-                labelId="strategy"
-                label="Strategy"
-                value={strategy}
-                onChange={(e) => setStrategyValue(e.target.value)}
-              >
-                {strategies.map(s => (
-                  <MenuItem key={s.value} value={s.value}>{s.label}</MenuItem>
-                ))}
-              </Select>
-            </FormControl>
+            </span>
+          </div>
+          <div className="midi-cluster-clock-panel__controls">
+            <Dropdown<StrategyOption>
+              id="midi-cluster-clock-strategy"
+              titleText="Strategy"
+              label="Strategy"
+              hideLabel
+              size="sm"
+              items={strategies}
+              itemToString={(item) => item?.label ?? ''}
+              selectedItem={selectedStrategy}
+              onChange={({ selectedItem }) => {
+                if (selectedItem) setStrategyValue(selectedItem.value)
+              }}
+            />
             {strategy === 'manual' && (
-              <FormControl size="small" sx={{ minWidth: 200 }}>
-                <InputLabel id="manual-node">Manual master</InputLabel>
-                <Select
-                  labelId="manual-node"
-                  label="Manual master"
-                  value={manualNode}
-                  onChange={(e) => setManualNode(e.target.value)}
-                >
-                  {nodes.map(n => (
-                    <MenuItem key={n.node_id} value={n.node_id}>{n.hostname}</MenuItem>
-                  ))}
-                </Select>
-              </FormControl>
+              <Dropdown<NodeOption>
+                id="midi-cluster-clock-manual-node"
+                titleText="Manual master"
+                label="Select node"
+                hideLabel
+                size="sm"
+                items={nodeOptions}
+                itemToString={(item) => item?.label ?? ''}
+                selectedItem={selectedNode}
+                onChange={({ selectedItem }) => {
+                  if (selectedItem) setManualNode(selectedItem.value)
+                }}
+              />
             )}
-            <Button variant="contained" onClick={handleApply} disabled={setStrategy.isPending}>
+            <Button
+              kind="primary"
+              size="sm"
+              onClick={handleApply}
+              disabled={setStrategy.isPending}
+            >
               Apply
             </Button>
             <Button
-              variant="outlined"
-              startIcon={<Renew size={16} /> as any}
+              kind="tertiary"
+              size="sm"
+              renderIcon={Renew}
               onClick={() => forceSync.mutate()}
               disabled={forceSync.isPending}
             >
               Force re-sync
             </Button>
-          </Stack>
-        </Stack>
+          </div>
+        </div>
       ) : (
-        <Typography variant="body2" sx={{ color: '#cbd5e1' }}>Clock data unavailable.</Typography>
+        <span className="midi-cluster-clock-panel__empty">Clock data unavailable.</span>
       )}
-    </Box>
+    </div>
   )
 }
 
