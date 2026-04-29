@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1381** Python | **1357** TypeScript | **177** C++/H | **145** Docs | **3081** total commits | **3** stars | **0** forks | **0** open issues
+**1381** Python | **1357** TypeScript | **177** C++/H | **145** Docs | **3086** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`263f8af9`](https://github.com/matthewmackes/map2-audio/commit/263f8af9923c6808b89b1aa84fb38cc8a771613d) | T2475 E1 (5-6/21): MIDICommanderSetup + MOTURMEPage migra... | Map2 Audio | 2026-04-29 |
+| [`7baaa218`](https://github.com/matthewmackes/map2-audio/commit/7baaa2183897d6d76783ae2b762ed78f73170258) | T2475 E1 (4/21): MidiCluster subsystem fully migrated fro... | Map2 Audio | 2026-04-29 |
+| [`8b7cfaaf`](https://github.com/matthewmackes/map2-audio/commit/8b7cfaafa47a8f23c381a873a07e30c31f8764e7) | Merge origin/master into E1 (1/21) MidiClusterHealthBar | Map2 Audio | 2026-04-29 |
+| [`0949dfc2`](https://github.com/matthewmackes/map2-audio/commit/0949dfc27a5f60e94be188f5283a2efe82c4f258) | T2475 E1 (1/21): MidiClusterHealthBar migrated from MUI t... | Map2 Audio | 2026-04-29 |
+| [`0bd81cf6`](https://github.com/matthewmackes/map2-audio/commit/0bd81cf671819fb51889ba7625d0185efafa8420) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-29 |
 | [`ccc58a87`](https://github.com/matthewmackes/map2-audio/commit/ccc58a8715fbe6404daf107bece3b62fc4b5ce35) | Merge origin/master into E1+E3 deferral note | Map2 Audio | 2026-04-29 |
 | [`256a2177`](https://github.com/matthewmackes/map2-audio/commit/256a21774696ae9685cc0f365df18a475c0f4e5f) | T2475 + T2477: clarification rounds complete; execution d... | Map2 Audio | 2026-04-29 |
 | [`34c32b9d`](https://github.com/matthewmackes/map2-audio/commit/34c32b9de06de6f275f50be2cfe358d17236ef6a) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-29 |
-| [`179f4d36`](https://github.com/matthewmackes/map2-audio/commit/179f4d3618e3a968eadbba4d1d88063ea879e4f8) | Merge origin/master into E5 visual regression harness | Map2 Audio | 2026-04-29 |
-| [`30ec17c5`](https://github.com/matthewmackes/map2-audio/commit/30ec17c5f1046cd2c5ca6414177942ae8867038e) | T2479 E5: Visual regression harness — pixelmatch baseline... | Map2 Audio | 2026-04-29 |
-| [`eeae9a4d`](https://github.com/matthewmackes/map2-audio/commit/eeae9a4d6966db985bc0bb5449b27771f2e76aed) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-29 |
-| [`a11e4cad`](https://github.com/matthewmackes/map2-audio/commit/a11e4cadeb189e8637be9d360bf41b2064641ba0) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-29 |
-| [`53f30622`](https://github.com/matthewmackes/map2-audio/commit/53f30622c215afdb327ddbb0b932cf0184228a17) | Merge origin/master into E4 philosophy docs upkeep | Map2 Audio | 2026-04-29 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
