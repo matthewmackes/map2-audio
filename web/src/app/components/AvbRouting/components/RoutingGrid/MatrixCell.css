@@ -1,0 +1,75 @@
+/* Matrix Cell — T2475 E1 Carbon migration. Single routing matrix
+ * cell. Background, border, and outline are inline-styled because
+ * they're computed per-cell from route state and per-node colors;
+ * the static visuals (icon position, hover scale, spinner) live
+ * here. */
+
+.matrix-cell {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  transition: all 0.2s ease;
+}
+
+.matrix-cell:hover {
+  transform: scale(1.05);
+}
+
+.matrix-cell[style*="cursor: not-allowed"]:hover {
+  transform: none;
+}
+
+.matrix-cell:active {
+  transform: scale(0.95);
+}
+
+.matrix-cell[style*="cursor: not-allowed"]:active {
+  transform: none;
+}
+
+.matrix-cell__icon {
+  color: #fff;
+}
+
+.matrix-cell__crossnode {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  color: rgba(255, 255, 255, 0.9);
+  display: inline-flex;
+}
+
+.matrix-cell__lock {
+  position: absolute;
+  top: 2px;
+  right: 2px;
+  color: rgba(255, 255, 255, 0.7);
+  display: inline-flex;
+}
+
+.matrix-cell__warning-dot {
+  position: absolute;
+  top: 2px;
+  left: 2px;
+  width: 6px;
+  height: 6px;
+  background: var(--map2-alert-advisory, #f1c21b);
+  border-radius: 50%;
+}
+
+.matrix-cell__spinner {
+  display: inline-block;
+  width: 20px;
+  height: 20px;
+  border: 2px solid rgba(255, 255, 255, 0.3);
+  border-top-color: #fff;
+  border-radius: 50%;
+  animation: matrix-cell-spin 0.7s linear infinite;
+}
+
+@keyframes matrix-cell-spin {
+  to { transform: rotate(360deg); }
+}

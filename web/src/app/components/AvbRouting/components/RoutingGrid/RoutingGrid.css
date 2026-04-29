@@ -1,0 +1,53 @@
+/* Routing Grid — T2475 E1 Carbon migration. Top-level matrix
+ * container with virtualized inner grid + info chrome. */
+
+.routing-grid {
+  flex: 1;
+  position: relative;
+  overflow: hidden;
+}
+
+.routing-grid__empty {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-direction: column;
+  gap: var(--cds-spacing-05, 1rem);
+  padding: var(--cds-spacing-07, 2rem);
+}
+
+.routing-grid__empty-title {
+  font-size: var(--cds-heading-04-font-size, 1.5rem);
+  color: var(--cds-text-secondary, #c6c6c6);
+}
+
+.routing-grid__empty-detail {
+  font-size: var(--cds-body-compact-01-font-size, 0.875rem);
+  color: var(--cds-text-helper, #8d8d8d);
+}
+
+.routing-grid__empty-caption {
+  font-size: var(--cds-helper-text-01-font-size, 0.75rem);
+  color: var(--cds-text-helper, #8d8d8d);
+}
+
+.routing-grid__virtual {
+  position: absolute;
+  right: 0;
+  bottom: 0;
+}
+
+.routing-grid__info {
+  position: absolute;
+  bottom: 16px;
+  right: 16px;
+  background: var(--cds-layer, #262626);
+  padding: var(--cds-spacing-03, 0.5rem) var(--cds-spacing-05, 1rem);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+}
+
+.routing-grid__info-text {
+  font-size: var(--cds-helper-text-01-font-size, 0.75rem);
+  color: var(--cds-text-secondary, #c6c6c6);
+}

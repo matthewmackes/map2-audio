@@ -12,8 +12,12 @@
  * - Responsive sizing
  */
 
+// Routing Grid — main matrix view with virtualization. T2475 (E1)
+// Carbon migration: Box → semantic divs, Typography → spans;
+// per-cell visuals are owned by MatrixCell. Layout/info chrome
+// styled via RoutingGrid.css.
+
 import React, { useCallback, useMemo, useState } from 'react';
-import { Box, Typography } from '@mui/material';
 import AutoSizer from 'react-virtualized-auto-sizer';
 import { FixedSizeGrid as Grid, type GridChildComponentProps } from 'react-window';
 import { useRouting, useFilteredEndpoints } from '../../context/RoutingContext';
@@ -27,6 +31,7 @@ import { ConnectionHighlight } from './ConnectionHighlight';
 import { CrosshairOverlay } from './CrosshairOverlay';
 import { SelectionOverlay } from './SelectionOverlay';
 import { BatchActionsBar } from './BatchActionsBar';
+import './RoutingGrid.css';
 
 const CELL_WIDTH = 60;
 const CELL_HEIGHT = 50;
@@ -348,34 +353,22 @@ export function RoutingGrid() {
   // Empty state
   if (talkers.length === 0 || listeners.length === 0) {
     return (
-      <Box
-        sx={{
-          flex: 1,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          flexDirection: 'column',
-          gap: 2,
-          p: 4,
-        }}
-      >
-        <Typography variant="h5" color="text.secondary">
-          No Endpoints Available
-        </Typography>
-        <Typography variant="body2" color="text.disabled">
+      <div className="routing-grid__empty">
+        <span className="routing-grid__empty-title">No Endpoints Available</span>
+        <span className="routing-grid__empty-detail">
           {talkers.length === 0 && 'No talkers discovered'}
           {listeners.length === 0 && talkers.length > 0 && 'No listeners discovered'}
-        </Typography>
-        <Typography variant="caption" color="text.disabled">
+        </span>
+        <span className="routing-grid__empty-caption">
           Waiting for AVB endpoint discovery...
-        </Typography>
-      </Box>
+        </span>
+      </div>
     );
   }
 
   // Main render
   return (
-    <Box sx={{ flex: 1, position: 'relative', overflow: 'hidden' }}>
+    <div className="routing-grid">
       {/* Crosshair overlay for hovered cell */}
       <CrosshairOverlay
         columnIndex={hoveredIndices.talkerIndex}
@@ -409,13 +402,11 @@ export function RoutingGrid() {
       />
 
       {/* Virtualized grid */}
-      <Box
-        sx={{
-          position: 'absolute',
+      <div
+        className="routing-grid__virtual"
+        style={{
           top: HEADER_HEIGHT,
           left: HEADER_WIDTH,
-          right: 0,
-          bottom: 0,
         }}
       >
         <AutoSizer>
@@ -447,25 +438,14 @@ export function RoutingGrid() {
             </>
           )}
         </AutoSizer>
-      </Box>
+      </div>
 
       {/* Grid info overlay (bottom right) */}
-      <Box
-        sx={{
-          position: 'absolute',
-          bottom: 16,
-          right: 16,
-          bgcolor: 'background.paper',
-          borderRadius: 1,
-          px: 2,
-          py: 1,
-          boxShadow: 1,
-        }}
-      >
-        <Typography variant="caption" color="text.secondary">
+      <div className="routing-grid__info">
+        <span className="routing-grid__info-text">
           {talkers.length} talkers × {listeners.length} listeners
-        </Typography>
-      </Box>
+        </span>
+      </div>
 
       {/* Batch actions bar */}
       <BatchActionsBar
@@ -475,7 +455,7 @@ export function RoutingGrid() {
         onClearSelection={dragSelection.clearSelection}
         isLoading={isBatchLoading}
       />
-    </Box>
+    </div>
   );
 }
 

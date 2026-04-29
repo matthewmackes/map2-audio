@@ -1,47 +1,47 @@
-/**
- * Matrix Cell Component
- *
- * Individual cell in the routing matrix representing a potential connection
- * between one talker and one listener.
- *
- * States:
- * - Empty (disconnected)
- * - Connecting (in progress)
- * - Connected (active route)
- * - Error (connection failed)
- * - Pending (staged in safe patch mode)
- *
- * Interactions:
- * - Click to patch/unpatch
- * - Hover for details
- * - Visual indicators for all states
- */
+// Matrix Cell — single cell in the routing matrix. T2475 (E1)
+// Carbon migration:
+//   Box → semantic <div>
+//   CircularProgress → Carbon InlineLoading (or a CSS spinner; the
+//     cell is small so a 16px CSS-only spinner keeps the DOM cheap)
+//   MUI Tooltip with rich React content → native title attribute
+//     so the matrix doesn't render thousands of off-screen tooltip
+//     bodies. Cross-node overlay role/aria-label preserved verbatim.
+// All MUI palette literals (#4caf50, #ff9800, #2196f3, #f44336,
+// #ffd43b, #1976d2, primary.main) routed through MAP semantic
+// tokens via inline style or CSS class.
 
-import React from 'react';
-import { CheckmarkFilled, ErrorFilled, Link, Locked } from '@carbon/icons-react';
-import { Box, CircularProgress, Tooltip } from '@mui/material';
-import { useRouting } from '../../context/RoutingContext';
-import { useAvbStreams } from '../../hooks/useAvbApi';
-import { getRouteStreams } from '../../utils/avbRouteStreams';
-import type { Endpoint, Route } from '../../types';
+import type { ReactNode } from 'react'
+import { CheckmarkFilled, ErrorFilled, Link, Locked } from '@carbon/icons-react'
+
+import { useRouting } from '../../context/RoutingContext'
+import { useAvbStreams } from '../../hooks/useAvbApi'
+import { getRouteStreams } from '../../utils/avbRouteStreams'
+import type { Endpoint, Route } from '../../types'
+import './MatrixCell.css'
 
 interface MatrixCellProps {
-  talker: Endpoint;
-  listener: Endpoint;
-  route: Route | null;
-  isPending: boolean;
-  isHovered: boolean;
-  isFocused: boolean;
-  isSelected?: boolean;
-  onClick: () => void;
-  onHover: (hover: boolean) => void;
-  onMouseDown?: (e: React.MouseEvent) => void;
-  onMouseMove?: () => void;
+  talker: Endpoint
+  listener: Endpoint
+  route: Route | null
+  isPending: boolean
+  isHovered: boolean
+  isFocused: boolean
+  isSelected?: boolean
+  onClick: () => void
+  onHover: (hover: boolean) => void
+  onMouseDown?: (e: React.MouseEvent) => void
+  onMouseMove?: () => void
 }
 
-/**
- * Matrix cell component
- */
+// MAP-semantic palette pinned for inline use. SVG/CSS gradient
+// strings need real hex values; these resolve to the same shades
+// as --map2-state-* / --map2-alert-* under the default g100 shell.
+const STATE_LIVE = '#42be65'        // green-40
+const STATE_STAGED = '#4589ff'      // blue-50
+const ALERT_ADVISORY = '#f1c21b'    // yellow-30
+const ALERT_CRITICAL = '#fa4d56'    // red-40
+const FOCUS_BLUE = '#78a9ff'        // blue-40
+
 export function MatrixCell({
   talker,
   listener,
@@ -55,202 +55,147 @@ export function MatrixCell({
   onMouseDown,
   onMouseMove,
 }: MatrixCellProps) {
-  const { state } = useRouting();
-  const { data: avbStreamsData } = useAvbStreams();
-  const routeFailoverStreams = route ? getRouteStreams(route, avbStreamsData?.streams || []) : [];
+  const { state } = useRouting()
+  const { data: avbStreamsData } = useAvbStreams()
+  const routeFailoverStreams = route ? getRouteStreams(route, avbStreamsData?.streams || []) : []
 
-  const isConnected = route?.state === 'connected';
-  const isConnecting = route?.state === 'connecting';
-  const isError = route?.state === 'error';
-  const isLocked = route?.locked || false;
+  const isConnected = route?.state === 'connected'
+  const isConnecting = route?.state === 'connecting'
+  const isError = route?.state === 'error'
+  const isLocked = route?.locked || false
 
-  // Cross-node routing detection
-  const isCrossNode = talker.node_id !== listener.node_id;
-  const talkerNode = state.network.nodes[talker.node_id];
-  const listenerNode = state.network.nodes[listener.node_id];
-  const talkerColor = talkerNode?.color || '#1976d2';
-  const listenerColor = listenerNode?.color || '#1976d2';
+  const isCrossNode = talker.node_id !== listener.node_id
+  const talkerNode = state.network.nodes[talker.node_id]
+  const listenerNode = state.network.nodes[listener.node_id]
+  const talkerColor = talkerNode?.color || STATE_STAGED
+  const listenerColor = listenerNode?.color || STATE_STAGED
 
-  // Validation warnings
   const hasWarning =
     talker.sample_rate !== listener.sample_rate ||
-    talker.channels !== listener.channels;
+    talker.channels !== listener.channels
 
-  // Tooltip content
-  const tooltipTitle = route ? (
-    <div>
-      <div style={{ fontWeight: 'bold', marginBottom: 4 }}>
-        {talker.device_name} → {listener.device_name}
-        {isCrossNode && ' Cross-node'}
-      </div>
-      <div>State: {route.state}</div>
-      {isCrossNode && (
-        <div style={{ color: '#90caf9' }}>
-          Cross-Node: {talkerNode?.name || 'Unknown'} → {listenerNode?.name || 'Unknown'}
-        </div>
-      )}
-      {route.established_time && (
-        <div>Connected: {new Date(route.established_time).toLocaleTimeString()}</div>
-      )}
-      {route.error_message && (
-        <div style={{ color: '#ff6b6b' }}>Error: {route.error_message}</div>
-      )}
-      {isLocked && <div style={{ color: '#ffd43b' }}>Locked</div>}
-      {route.srp_reservation_id && (
-        <div style={{ fontSize: '0.85em', opacity: 0.8 }}>
-          SRP: {route.srp_reservation_id.slice(0, 8)}...
-        </div>
-      )}
-      {routeFailoverStreams.length > 0 && (
-        <div style={{ color: '#bbf7d0', marginTop: 4 }}>
-          AVB failover streams: {routeFailoverStreams.length}
-        </div>
-      )}
-      {routeFailoverStreams.map((stream) => {
-        const policy = stream.diagnostics?.effective_config.failover_policy || 'none';
-        const candidates = stream.diagnostics?.effective_config.interface_candidates || [];
+  // Tooltip body compressed into a single-line title attribute so
+  // the DOM stays cheap on large matrices.
+  const titleParts: string[] = []
+  if (route) {
+    titleParts.push(`${talker.device_name} → ${listener.device_name}${isCrossNode ? ' (cross-node)' : ''}`)
+    titleParts.push(`State: ${route.state}`)
+    if (isCrossNode) {
+      titleParts.push(`Cross-Node: ${talkerNode?.name || 'Unknown'} → ${listenerNode?.name || 'Unknown'}`)
+    }
+    if (route.established_time) {
+      titleParts.push(`Connected: ${new Date(route.established_time).toLocaleTimeString()}`)
+    }
+    if (route.error_message) {
+      titleParts.push(`Error: ${route.error_message}`)
+    }
+    if (isLocked) titleParts.push('Locked')
+    if (route.srp_reservation_id) {
+      titleParts.push(`SRP: ${route.srp_reservation_id.slice(0, 8)}...`)
+    }
+    if (routeFailoverStreams.length > 0) {
+      titleParts.push(`AVB failover streams: ${routeFailoverStreams.length}`)
+      routeFailoverStreams.forEach((stream) => {
+        const policy = stream.diagnostics?.effective_config.failover_policy || 'none'
+        const candidates = stream.diagnostics?.effective_config.interface_candidates || []
+        titleParts.push(
+          `  ${stream.stream_id} • policy ${policy} • candidates ${candidates.length > 0 ? candidates.join(', ') : 'none'}`,
+        )
+      })
+    }
+  } else if (hasWarning) {
+    titleParts.push(`${talker.device_name} → ${listener.device_name}`)
+    titleParts.push('Warnings:')
+    if (talker.sample_rate !== listener.sample_rate) {
+      titleParts.push(`Sample rate mismatch: ${talker.sample_rate}Hz ≠ ${listener.sample_rate}Hz`)
+    }
+    if (talker.channels !== listener.channels) {
+      titleParts.push(`Channel count mismatch: ${talker.channels}ch ≠ ${listener.channels}ch`)
+    }
+  } else {
+    titleParts.push(`${talker.device_name} → ${listener.device_name}`)
+    titleParts.push('Click to connect')
+    titleParts.push(`${talker.channels}ch @ ${talker.sample_rate / 1000}kHz`)
+  }
+  const titleAttr = titleParts.join('\n')
 
-        return (
-          <div key={stream.stream_id} style={{ marginTop: 4, color: '#e2e8f0' }}>
-            <div style={{ fontSize: '0.78em', fontWeight: 600 }}>{stream.stream_id}</div>
-            <div style={{ fontSize: '0.75em', opacity: 0.85 }}>Policy: {policy}</div>
-            <div style={{ fontSize: '0.75em', opacity: 0.85 }}>
-              Candidates: {candidates.length > 0 ? candidates.join(', ') : 'none'}
-            </div>
-          </div>
-        );
-      })}
-    </div>
-  ) : hasWarning ? (
-    <div>
-      <div style={{ fontWeight: 'bold', marginBottom: 4 }}>
-        {talker.device_name} → {listener.device_name}
-      </div>
-      <div style={{ color: '#ffd43b' }}>Warnings:</div>
-      {talker.sample_rate !== listener.sample_rate && (
-        <div>Sample rate mismatch: {talker.sample_rate}Hz ≠ {listener.sample_rate}Hz</div>
-      )}
-      {talker.channels !== listener.channels && (
-        <div>Channel count mismatch: {talker.channels}ch ≠ {listener.channels}ch</div>
-      )}
-    </div>
-  ) : (
-    <div>
-      <div style={{ fontWeight: 'bold' }}>
-        {talker.device_name} → {listener.device_name}
-      </div>
-      <div>Click to connect</div>
-      <div style={{ fontSize: '0.85em', opacity: 0.7 }}>
-        {talker.channels}ch @ {talker.sample_rate / 1000}kHz
-      </div>
-    </div>
-  );
-
-  // Cell background color or gradient (for cross-node)
-  const getBgColor = () => {
+  const getBgColor = (): string => {
     if (isConnected) {
       if (isCrossNode) {
-        // Gradient from talker color to listener color
-        return `linear-gradient(135deg, ${talkerColor}AA 0%, ${listenerColor}AA 100%)`;
+        return `linear-gradient(135deg, ${talkerColor}AA 0%, ${listenerColor}AA 100%)`
       }
-      return isPending ? '#ffd43b' : '#4caf50';
+      return isPending ? ALERT_ADVISORY : STATE_LIVE
     }
-    if (isConnecting) return isCrossNode ? `linear-gradient(135deg, ${talkerColor}66 0%, ${listenerColor}66 100%)` : '#2196f3';
-    if (isError) return '#f44336';
-    if (isPending) return '#ff9800';
-    if (isHovered) return 'rgba(255, 255, 255, 0.1)';
-    return 'transparent';
-  };
+    if (isConnecting) {
+      return isCrossNode
+        ? `linear-gradient(135deg, ${talkerColor}66 0%, ${listenerColor}66 100%)`
+        : STATE_STAGED
+    }
+    if (isError) return ALERT_CRITICAL
+    if (isPending) return ALERT_ADVISORY
+    if (isHovered) return 'rgba(255, 255, 255, 0.1)'
+    return 'transparent'
+  }
 
-  // Cell border
-  const getBorder = () => {
-    if (isSelected) return '2px solid #2196f3';
-    if (isPending) return '2px solid #ff9800';
-    if (isCrossNode && (isConnected || isConnecting)) return '2px dashed rgba(255, 255, 255, 0.5)';
-    if (hasWarning && !isConnected) return '1px dashed #ffd43b';
-    return '1px solid rgba(255, 255, 255, 0.12)';
-  };
+  const getBorder = (): string => {
+    if (isSelected) return `2px solid ${STATE_STAGED}`
+    if (isPending) return `2px solid ${ALERT_ADVISORY}`
+    if (isCrossNode && (isConnected || isConnecting))
+      return '2px dashed rgba(255, 255, 255, 0.5)'
+    if (hasWarning && !isConnected) return `1px dashed ${ALERT_ADVISORY}`
+    return '1px solid rgba(255, 255, 255, 0.12)'
+  }
+
+  const cellContent: ReactNode = (
+    <>
+      {isConnecting && <span className="matrix-cell__spinner" aria-hidden="true" />}
+      {isConnected && <CheckmarkFilled size={24} className="matrix-cell__icon" />}
+      {isError && <ErrorFilled size={24} className="matrix-cell__icon" />}
+      {isCrossNode && (isConnected || isConnecting) && (
+        <span
+          role="img"
+          aria-label="Cross-node route"
+          className="matrix-cell__crossnode"
+        >
+          <Link size={12} />
+        </span>
+      )}
+      {isLocked && (
+        <span className="matrix-cell__lock" aria-label="Locked">
+          <Locked size={14} />
+        </span>
+      )}
+      {hasWarning && !isConnected && (
+        <span className="matrix-cell__warning-dot" aria-hidden="true" />
+      )}
+    </>
+  )
 
   return (
-    <Tooltip title={tooltipTitle} placement="top" arrow>
-      <Box
-        onClick={onClick}
-        onMouseEnter={() => onHover(true)}
-        onMouseLeave={() => onHover(false)}
-        onMouseDown={onMouseDown}
-        onMouseMove={onMouseMove}
-        sx={{
-          width: '100%',
-          height: '100%',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          cursor: isLocked ? 'not-allowed' : 'pointer',
-          background: getBgColor(), // Use 'background' instead of 'bgcolor' for gradient support
-          border: getBorder(),
-          outline: isFocused ? '2px solid #90caf9' : 'none',
-          outlineOffset: isFocused ? -2 : 0,
-          boxShadow: isSelected
-            ? '0 0 0 2px rgba(33, 150, 243, 0.4), inset 0 0 8px rgba(33, 150, 243, 0.2)'
-            : isFocused
-            ? '0 0 0 2px rgba(25, 118, 210, 0.3)'
+    <div
+      className="matrix-cell"
+      title={titleAttr}
+      onClick={onClick}
+      onMouseEnter={() => onHover(true)}
+      onMouseLeave={() => onHover(false)}
+      onMouseDown={onMouseDown}
+      onMouseMove={onMouseMove}
+      style={{
+        background: getBgColor(),
+        border: getBorder(),
+        cursor: isLocked ? 'not-allowed' : 'pointer',
+        outline: isFocused ? `2px solid ${FOCUS_BLUE}` : 'none',
+        outlineOffset: isFocused ? -2 : 0,
+        boxShadow: isSelected
+          ? `0 0 0 2px rgba(69, 137, 255, 0.4), inset 0 0 8px rgba(69, 137, 255, 0.2)`
+          : isFocused
+            ? '0 0 0 2px rgba(69, 137, 255, 0.3)'
             : 'none',
-          borderRadius: 0.5,
-          transition: 'all 0.2s ease',
-          position: 'relative',
-          '&:hover': {
-            background: isConnected
-              ? (isCrossNode ? getBgColor() : '#66bb6a')
-              : isLocked
-              ? getBgColor()
-              : 'rgba(255, 255, 255, 0.15)',
-            transform: isLocked ? 'none' : 'scale(1.05)',
-          },
-          '&:active': {
-            transform: isLocked ? 'none' : 'scale(0.95)',
-          },
-        }}
-      >
-        {/* Connection indicator */}
-        {isConnecting && <CircularProgress size={20} sx={{ color: 'white' }} />}
-        {isConnected && <CheckmarkFilled size={24} style={{ color: 'white' }} />}
-        {isError && <ErrorFilled size={24} style={{ color: 'white' }} />}
-
-        {/* Cross-node indicator (overlay top-left) */}
-        {isCrossNode && (isConnected || isConnecting) && (
-          <Box
-            role="img"
-            aria-label="Cross-node route"
-            sx={{ position: 'absolute', top: 2, left: 2, color: 'rgba(255, 255, 255, 0.9)' }}
-          >
-            <Link size={12} />
-          </Box>
-        )}
-
-        {/* Lock indicator (overlay top-right) */}
-        {isLocked && (
-          <Box sx={{ position: 'absolute', top: 2, right: 2, color: 'rgba(255, 255, 255, 0.7)' }}>
-            <Locked size={14} />
-          </Box>
-        )}
-
-        {/* Warning indicator (overlay) */}
-        {hasWarning && !isConnected && (
-          <Box
-            sx={{
-              position: 'absolute',
-              top: 2,
-              left: 2,
-              width: 6,
-              height: 6,
-              borderRadius: '50%',
-              bgcolor: '#ffd43b',
-            }}
-          />
-        )}
-      </Box>
-    </Tooltip>
-  );
+      }}
+    >
+      {cellContent}
+    </div>
+  )
 }
 
-export default MatrixCell;
+export default MatrixCell
