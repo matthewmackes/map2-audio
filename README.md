@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1381** Python | **1357** TypeScript | **177** C++/H | **145** Docs | **3071** total commits | **3** stars | **0** forks | **0** open issues
+**1381** Python | **1357** TypeScript | **177** C++/H | **145** Docs | **3075** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`a11e4cad`](https://github.com/matthewmackes/map2-audio/commit/a11e4cadeb189e8637be9d360bf41b2064641ba0) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-29 |
+| [`53f30622`](https://github.com/matthewmackes/map2-audio/commit/53f30622c215afdb327ddbb0b932cf0184228a17) | Merge origin/master into E4 philosophy docs upkeep | Map2 Audio | 2026-04-29 |
+| [`1ea42485`](https://github.com/matthewmackes/map2-audio/commit/1ea424850abe6d08f021fb6ca352550e60a10e4c) | T2478 E4: Philosophy docs upkeep — Carbon discipline cros... | Map2 Audio | 2026-04-29 |
+| [`1379f0ea`](https://github.com/matthewmackes/map2-audio/commit/1379f0eada60bf3bc4d8c3ad3513d304db034798) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-29 |
 | [`ae810d7d`](https://github.com/matthewmackes/map2-audio/commit/ae810d7dfeb3f5b904672f244eaf3f44f679cc95) | Merge origin/master into E2 plugin-card cleanup | Map2 Audio | 2026-04-29 |
 | [`f5ee64a1`](https://github.com/matthewmackes/map2-audio/commit/f5ee64a16d6572ecbba41a65a0d8f0b6884bb53b) | T2476 E2: Plugin-card visual cleanup + dead-registry-API ... | Map2 Audio | 2026-04-29 |
 | [`960c5786`](https://github.com/matthewmackes/map2-audio/commit/960c578654b5c4106a6ade20f2e1e1663832ecc7) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-29 |
 | [`6c56cc88`](https://github.com/matthewmackes/map2-audio/commit/6c56cc8842145425b18f271b5b76b013256287a2) | Merge origin/master into B12 final sweep + design-system ... | Map2 Audio | 2026-04-29 |
-| [`e477cbb9`](https://github.com/matthewmackes/map2-audio/commit/e477cbb9ba5edf4ff7cf6c6a21c2aa5556383a3b) | T2474 B12: Final sweep + design-system docs — visual-syst... | Map2 Audio | 2026-04-29 |
-| [`0feba572`](https://github.com/matthewmackes/map2-audio/commit/0feba572dfd15c9c8ab21561d345365f9ead0a7a) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-29 |
-| [`3998a1af`](https://github.com/matthewmackes/map2-audio/commit/3998a1af048baa6045d32bc0fffa5d94238a79e0) | Merge origin/master into B11 route loading states | Map2 Audio | 2026-04-29 |
-| [`5d5b9aa5`](https://github.com/matthewmackes/map2-audio/commit/5d5b9aa5b297b63c9ff55cffdd2cd6a4a3e7214f) | T2474 B11: App.tsx route loading states — magic-number pi... | Map2 Audio | 2026-04-29 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
