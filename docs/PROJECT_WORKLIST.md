@@ -2292,8 +2292,8 @@ Subtasks below are ordered by dependency and risk: pure data first, sub-componen
 - Iter 6 (058fdbd4): T2473 part 1 — SnapshotEditorKeyboardShortcuts overlay component extracted (~37 inline LOC removed from monolith).
 - Iter 7 (0e9677ec): T2473 part 2 — SnapshotEditorLanePicker modal extracted (~62 inline LOC removed; defines a minimal LanePickerChain prop shape so the boundary doesn't leak the editor's full chain type).
 - Iter 8 (9cdaab7d): T2473 part 3 — SnapshotEditorPerformOverlay extracted (9 inline LOC removed; framer-motion + PerformPage imports dropped from monolith).
-- Iter 9 (this commit): Worklist iteration log update.
-- Iter 10 (next commit): Closing log + cumulative LOC summary.
+- Iter 9 (a440adc0): Worklist iteration log update.
+- Iter 10 (this commit): Closing log + cumulative LOC summary captured to persistent memory at `~/.claude/projects/-home-mm-map2-audio/memory/project_snapshoteditor_decomposition.md` so future sessions resume cleanly without re-deriving state. T2472 still deferred; T2473 3/6 done.
 
 **Cumulative net LOC effect after this session**: SnapshotEditorPageContent.tsx 9325 -> 9151 (-174 this session, -680 cumulative since the original 9831 baseline). Five new sibling files added this session: snapshotEditorApi.ts, snapshotEditorBootstrap.ts, featuredNativeBrowserGroups.ts, SnapshotEditorKeyboardShortcuts.tsx, SnapshotEditorLanePicker.tsx, SnapshotEditorPerformOverlay.tsx (six total). T2473 is now partially started (3 of the planned 6 sub-components done, all small/safe slices); the harder Header / FlowsRail / GridBody / Footer slices remain on T2473.
 
