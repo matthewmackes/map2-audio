@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1381** Python | **1357** TypeScript | **177** C++/H | **145** Docs | **3078** total commits | **3** stars | **0** forks | **0** open issues
+**1381** Python | **1357** TypeScript | **177** C++/H | **145** Docs | **3081** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`ccc58a87`](https://github.com/matthewmackes/map2-audio/commit/ccc58a8715fbe6404daf107bece3b62fc4b5ce35) | Merge origin/master into E1+E3 deferral note | Map2 Audio | 2026-04-29 |
+| [`256a2177`](https://github.com/matthewmackes/map2-audio/commit/256a21774696ae9685cc0f365df18a475c0f4e5f) | T2475 + T2477: clarification rounds complete; execution d... | Map2 Audio | 2026-04-29 |
+| [`34c32b9d`](https://github.com/matthewmackes/map2-audio/commit/34c32b9de06de6f275f50be2cfe358d17236ef6a) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-29 |
 | [`179f4d36`](https://github.com/matthewmackes/map2-audio/commit/179f4d3618e3a968eadbba4d1d88063ea879e4f8) | Merge origin/master into E5 visual regression harness | Map2 Audio | 2026-04-29 |
 | [`30ec17c5`](https://github.com/matthewmackes/map2-audio/commit/30ec17c5f1046cd2c5ca6414177942ae8867038e) | T2479 E5: Visual regression harness — pixelmatch baseline... | Map2 Audio | 2026-04-29 |
 | [`eeae9a4d`](https://github.com/matthewmackes/map2-audio/commit/eeae9a4d6966db985bc0bb5449b27771f2e76aed) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-29 |
 | [`a11e4cad`](https://github.com/matthewmackes/map2-audio/commit/a11e4cadeb189e8637be9d360bf41b2064641ba0) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-29 |
 | [`53f30622`](https://github.com/matthewmackes/map2-audio/commit/53f30622c215afdb327ddbb0b932cf0184228a17) | Merge origin/master into E4 philosophy docs upkeep | Map2 Audio | 2026-04-29 |
-| [`1ea42485`](https://github.com/matthewmackes/map2-audio/commit/1ea424850abe6d08f021fb6ca352550e60a10e4c) | T2478 E4: Philosophy docs upkeep — Carbon discipline cros... | Map2 Audio | 2026-04-29 |
-| [`1379f0ea`](https://github.com/matthewmackes/map2-audio/commit/1379f0eada60bf3bc4d8c3ad3513d304db034798) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-29 |
-| [`ae810d7d`](https://github.com/matthewmackes/map2-audio/commit/ae810d7dfeb3f5b904672f244eaf3f44f679cc95) | Merge origin/master into E2 plugin-card cleanup | Map2 Audio | 2026-04-29 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
