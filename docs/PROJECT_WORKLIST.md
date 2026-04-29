@@ -33861,6 +33861,62 @@ Last updated: 2026-04-30 - Claude (10-iteration SHIP loop session: iters 1-7 ful
   - Drop @mui/material from web/package.json + root package.json
   - Force-purge 28 dead web/src/map2/components/ files
   - Update CLAUDE.md tech-stack table
+- **Iteration log (third 10-iteration SHIP loop, 2026-04-30)**:
+  - **Iter 1 (commit 5bb6587d, merged)**: TopBar Chip → StatusChip
+    (42 sites). Tone mapping success→ok, error→critical,
+    warning→caution, primary→info, default→neutral. Clickable
+    chips wrapped in native <button> for fireEvent.click.
+  - **Iter 2 (commit db823e0c)**: TopBar Typography → semantic
+    spans (48 sites). variant="h6" → .topbar__title;
+    variant="caption|body2|subtitle2" → .topbar__caption|body|
+    subtitle with secondary/disabled/warning/error/primary/bold
+    color modifiers. New TopBar.css typography classes mapped to
+    Carbon type tokens.
+  - **Iter 3 (commit c494b0ec)**: TopBar Box → semantic divs (29
+    sites). New layout primitives in TopBar.css: topbar__row[--
+    wrap|--between|--push-right|--gap-N|--pt-05], topbar__col[--
+    gap-N|--scroll], topbar__stats[--scroll|--wrap],
+    topbar__panel-bordered[--inset], topbar__popover-panel[--wide],
+    topbar__spacer (with @media 1280px trigger).
+  - **Iter 4 (commit c308113e)**: TopBar Button → Carbon Button
+    aliased as CarbonButton (37 sites). variant=contained→primary,
+    outlined→tertiary, text→ghost, color=error→danger or
+    danger--tertiary. startIcon → renderIcon. Reverted size=sm to
+    size=small on TextField/FormControl that still expect MUI's
+    sizing API. Removed two unused sx-only constants.
+  - **Iter 5 (commit bbe7826c)**: TopBar TextField + InputAdornment
+    → Carbon TextInput / TextArea (12 sites). Search field uses
+    hideLabel layout; InputAdornment dropped (visual icon prefix
+    deferred to a polish pass). Multi-line preset transfer JSON
+    → CarbonTextArea with rows={4}; handler signature updated
+    HTMLInputElement → HTMLTextAreaElement.
+  - **Iter 6 (commit c293b4a4)**: TopBar Checkbox + FormGroup +
+    FormControlLabel → Carbon Checkbox (13 checkboxes, 8
+    FormGroup wrappers). FormGroup → div.topbar__col;
+    FormControlLabel+Checkbox → CarbonCheckbox with id+labelText+
+    checked+onChange+data-testid. Carbon's
+    onChange(event, { checked }) signature wrapped inline for
+    handlers expecting (event, checked).
+  - **Iter 7 (this commit)**: Worklist update; **Select migration
+    attempted and reverted**. Carbon Dropdown's role-contract
+    differs from MUI Select — `getByRole('combobox', { name: 'Saved
+    Scene' })` resolves on both, but the `mouseDown` open + click
+    `findByRole('option', ...)` interaction pattern that the test
+    suite relies on does not work with Carbon Dropdown's combobox
+    implementation (the option list is rendered into a portal that
+    requires different keyboard/focus semantics). Migration of the
+    5 remaining Select+FormControl+InputLabel+MenuItem dropdowns
+    (Saved Scene, Outcome, Baseline Scene, Compare Scene, Conflict
+    Policy, Saved Preset) **deferred to a dedicated session that
+    can refactor the test interaction pattern alongside the source
+    migration** — that's ~600 LOC of test rewriting that exceeds
+    a single iteration's safe budget.
+- **Final session state**: Down from 21 MUI consumers to 1
+  (TopBar.tsx, partially migrated). TopBar.tsx down from 14 MUI
+  imports to 5: Popover, FormControl, InputLabel, Select, MenuItem
+  (the 5 Select form-controls block the @mui/material drop).
+  Total commits this session: 7 (5bb6587d, db823e0c, c494b0ec,
+  c308113e, bbe7826c, c293b4a4, [this commit]).
 - Clarification round (2026-04-29): D + C + A + A + A locked.
   - **D**: Full migration scope — migrate 21 live files to Carbon-native idioms, drop `@mui/material` from `package.json`, force-purge 28 dead `web/src/map2/components/` files when typecheck breaks them.
   - **C**: Per-file Carbon-native rewrite (each file read fully, understood, rewritten in Carbon idioms — not direct MUI→Carbon component swaps).
