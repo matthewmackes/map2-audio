@@ -18,12 +18,12 @@ import {
   InputLabel,
   Switch,
   FormControlLabel,
-  Chip,
 } from '@mui/material'
 import {
   InlineNotification,
   ActionableNotification,
 } from '@carbon/react'
+import { StatusChip } from '../../primitives'
 import { NumberInput } from '../../ParameterControl'
 import {
   Activity,
@@ -696,10 +696,10 @@ function JuceEngineTab({
           <div className="stack" style={{ gap: 8 }}>
             <div className="flex-between">
               <span>Status</span>
-              <Chip
+              <StatusChip
+                tone={status?.running ? 'ok' : 'critical'}
                 label={status?.running ? 'Running' : 'Stopped'}
-                size="small"
-                color={status?.running ? 'success' : 'error'}
+                size="sm"
               />
             </div>
             <div className="flex-between">
@@ -730,25 +730,25 @@ function JuceEngineTab({
             </div>
             <div className="flex-between">
               <span>Input Channels</span>
-              <Chip
+              <StatusChip
+                tone="ok"
                 label={`${juce?.input_channels ?? 10} channels`}
-                size="small"
-                color="success"
+                size="sm"
                 title="Analog 1-4, S/PDIF L/R, ADAT 1-8 (when in ADAT mode)"
               />
             </div>
             <div className="flex-between">
               <span>Output Channels</span>
-              <Chip
+              <StatusChip
+                tone="ok"
                 label={`${juce?.output_channels ?? 10} channels`}
-                size="small"
-                color="success"
+                size="sm"
                 title="Analog 1-8, S/PDIF L/R"
               />
             </div>
             <div className="flex-between">
               <span>USB Speed</span>
-              <Chip label="USB 2.0 Hi-Speed" size="small" color="info" />
+              <StatusChip tone="info" label="USB 2.0 Hi-Speed" size="sm" />
             </div>
           </div>
         </LegacyTile>
@@ -1030,11 +1030,11 @@ function LiveMetersTab({ meterData, wsConnected }: { meterData: MeterData; wsCon
             {!wsConnected && <span style={{ color: '#f59e0b' }}> (Reconnecting...)</span>}
           </p>
         </div>
-        <Chip
-          icon={wsConnected ? <CheckmarkFilled size={14} /> : <ErrorFilled size={14} />}
+        <StatusChip
+          tone={wsConnected ? 'ok' : 'neutral'}
+          dot
           label={wsConnected ? 'Live' : 'Offline'}
-          color={wsConnected ? 'success' : 'default'}
-          size="small"
+          size="sm"
         />
       </div>
 
@@ -1182,7 +1182,7 @@ function AnalogIOTab({ meterData }: { meterData: MeterData }) {
               <LegacyTile key={ch} style={{ padding: 12, background: 'var(--bg-secondary)' }}>
                 <div className="flex-between" style={{ marginBottom: 8 }}>
                   <span style={{ fontWeight: 600 }}>Input {ch}</span>
-                  {isHiZ && <Chip label="Hi-Z" size="small" color="warning" />}
+                  {isHiZ && <StatusChip tone="caution" label="Hi-Z" size="sm" />}
                 </div>
 
                 <div style={{ marginBottom: 8 }}>
@@ -1240,7 +1240,7 @@ function AnalogIOTab({ meterData }: { meterData: MeterData }) {
               <LegacyTile key={ch} style={{ padding: 12, background: 'var(--bg-secondary)' }}>
                 <div className="flex-between" style={{ marginBottom: 8 }}>
                   <span style={{ fontWeight: 600 }}>Output {ch}</span>
-                  {isMain && <Chip label="Main" size="small" color="primary" />}
+                  {isMain && <StatusChip tone="info" label="Main" size="sm" />}
                 </div>
                 <progress
                   className="edirol-ua1000__bar edirol-ua1000__bar--meter"
@@ -1306,15 +1306,15 @@ function DigitalIOTab() {
           <div className="stack" style={{ gap: 12 }}>
             <div className="flex-between">
               <span>Coaxial Input</span>
-              <Chip label="Available" size="small" />
+              <StatusChip tone="neutral" label="Available" size="sm" />
             </div>
             <div className="flex-between">
               <span>Coaxial Output</span>
-              <Chip label="Available" size="small" />
+              <StatusChip tone="neutral" label="Available" size="sm" />
             </div>
             <div className="flex-between">
               <span>Optical</span>
-              <Chip label="S/PDIF Mode" size="small" />
+              <StatusChip tone="neutral" label="S/PDIF Mode" size="sm" />
             </div>
           </div>
         </LegacyTile>
@@ -1349,11 +1349,11 @@ function DigitalIOTab() {
         <div className="grid two">
           <div className="flex-between">
             <span>Word Clock In</span>
-            <Chip label="No Signal" size="small" />
+            <StatusChip tone="neutral" label="No Signal" size="sm" />
           </div>
           <div className="flex-between">
             <span>Word Clock Out</span>
-            <Chip label="Active" size="small" color="info" />
+            <StatusChip tone="info" label="Active" size="sm" />
           </div>
         </div>
       </LegacyTile>
@@ -1382,7 +1382,7 @@ function MIDITab() {
               <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>5-pin DIN</span>
             </div>
           </div>
-          <Chip label="Available" size="small" color="success" />
+          <StatusChip tone="ok" label="Available" size="sm" />
         </LegacyTile>
 
         <LegacyTile style={{ padding: 16 }}>
@@ -1393,7 +1393,7 @@ function MIDITab() {
               <span style={{ fontSize: 12, color: 'var(--text-muted)' }}>5-pin DIN</span>
             </div>
           </div>
-          <Chip label="Available" size="small" color="success" />
+          <StatusChip tone="ok" label="Available" size="sm" />
         </LegacyTile>
       </div>
 
@@ -1767,10 +1767,10 @@ function DiagnosticsTab({ nodeId }: { nodeId?: string | null }) {
                     )}
                     <strong>{result.test_name}</strong>
                   </div>
-                  <Chip
+                  <StatusChip
+                    tone={result.success ? 'ok' : 'critical'}
                     label={result.success ? 'PASS' : 'FAIL'}
-                    size="small"
-                    color={result.success ? 'success' : 'error'}
+                    size="sm"
                   />
                 </div>
                 <div style={{ fontSize: 12, color: 'var(--text-muted)', marginTop: 4 }}>
