@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1381** Python | **1344** TypeScript | **177** C++/H | **145** Docs | **3154** total commits | **3** stars | **0** forks | **0** open issues
+**1381** Python | **1352** TypeScript | **177** C++/H | **145** Docs | **3165** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
-| [`25006a2f`](https://github.com/matthewmackes/map2-audio/commit/25006a2f3f08ec713bb1b2d1df5790e03b9b704f) | Merge branch 'master' of https://github.com/matthewmackes... | Map2 Audio | 2026-04-29 |
-| [`f83abc73`](https://github.com/matthewmackes/map2-audio/commit/f83abc730638ef7b58128e3de3f714987a178ef4) | docs(worklist): close 2026-04-29 SnapshotEditor decomposi... | Map2 Audio | 2026-04-29 |
-| [`658ac243`](https://github.com/matthewmackes/map2-audio/commit/658ac2437590e32bc88a13de117f4878e6d3003a) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-29 |
-| [`a440adc0`](https://github.com/matthewmackes/map2-audio/commit/a440adc0a435a1ab1de70a53ed2700beb79cb0e2) | docs(worklist): log 2026-04-29 SnapshotEditor decompositi... | Map2 Audio | 2026-04-29 |
-| [`9cdaab7d`](https://github.com/matthewmackes/map2-audio/commit/9cdaab7df4e2496bf26b4724cf414b15c3f70899) | T2473 (part 3): Extract SnapshotEditorPerformOverlay | Map2 Audio | 2026-04-29 |
-| [`0e9677ec`](https://github.com/matthewmackes/map2-audio/commit/0e9677ec0a56ebd92657909a87d096475058c055) | T2473 (part 2): Extract SnapshotEditorLanePicker modal | Map2 Audio | 2026-04-29 |
-| [`058fdbd4`](https://github.com/matthewmackes/map2-audio/commit/058fdbd47813f8a6881f1172fdefe05bb9124b35) | T2473 (part 1): Extract SnapshotEditorKeyboardShortcuts o... | Map2 Audio | 2026-04-29 |
-| [`59f50ff3`](https://github.com/matthewmackes/map2-audio/commit/59f50ff3547eee3e47a5b6a1838d6003339facc7) | T2467 (follow-up): Extract API_BASE to snapshotEditorApi.ts | Map2 Audio | 2026-04-29 |
+| [`24ada8a1`](https://github.com/matthewmackes/map2-audio/commit/24ada8a190831d93d2c7f105cf4823f1e801edfe) | docs(worklist): log 2026-04-29 third SnapshotEditor decom... | Map2 Audio | 2026-04-29 |
+| [`1b41c432`](https://github.com/matthewmackes/map2-audio/commit/1b41c432f4a00e7fe0d591f3030f5f768e1f3f99) | T2473 (part 11): Extract SnapshotEditorRoutingInspector | Map2 Audio | 2026-04-29 |
+| [`117b88df`](https://github.com/matthewmackes/map2-audio/commit/117b88df8736c7e56252517889d5d3ea04bc4fb5) | T2473 (part 10): Extract SnapshotEditorPresetDeleteConfirm | Map2 Audio | 2026-04-29 |
+| [`4097ef8d`](https://github.com/matthewmackes/map2-audio/commit/4097ef8dc22bbe207ffeea2e132191c38a248520) | T2473 (part 9): Extract SnapshotEditorTabletDeleteConfirm | Map2 Audio | 2026-04-29 |
+| [`2032a9ea`](https://github.com/matthewmackes/map2-audio/commit/2032a9ea3bca11603d0f15ec544107440f188583) | T2473 (part 8): Extract SnapshotEditorRenameChainModal | Map2 Audio | 2026-04-29 |
+| [`a64e190b`](https://github.com/matthewmackes/map2-audio/commit/a64e190b009a206d33ea1bef41d41641418de5b9) | T2473 (part 7): Extract SnapshotEditorSavePresetModal | Map2 Audio | 2026-04-29 |
+| [`382147a7`](https://github.com/matthewmackes/map2-audio/commit/382147a7aaec9affe72401471fcc8309e780178f) | T2473 (part 6): Extract SnapshotEditorClearFlowsConfirm | Map2 Audio | 2026-04-29 |
+| [`61376247`](https://github.com/matthewmackes/map2-audio/commit/61376247cbd6f8b44ae846ed18611bd3af47aa85) | T2473 (part 5): Extract SnapshotEditorAssignmentDialog | Map2 Audio | 2026-04-29 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
