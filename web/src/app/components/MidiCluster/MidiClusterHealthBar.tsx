@@ -1,5 +1,11 @@
-import { Chip, LinearProgress, Paper, Stack, Typography } from '@mui/material'
+// MIDI cluster health bar. T2475 (E1): migrated from MUI (Paper/Stack/
+// Typography/LinearProgress/Chip) to Carbon-native idioms. Now consumes
+// the canonical StatusChip primitive (B4) for the three counter chips.
+
+import { ProgressBar, Tile } from '@carbon/react'
+import { StatusChip } from '../primitives'
 import type { MidiClusterHealth } from '../../../map2/api'
+import './MidiClusterHealthBar.css'
 
 interface Props {
   health?: MidiClusterHealth
@@ -13,28 +19,33 @@ export function MidiClusterHealthBar({ health }: Props) {
     : 100
 
   return (
-    <Paper elevation={0} sx={{ p: 2, background: '#0f172a', border: '1px solid #1f2937' }}>
-      <Stack direction="row" spacing={2} alignItems="center" justifyContent="space-between">
-        <Stack spacing={0.5}>
-          <Typography variant="subtitle2" sx={{ color: '#e5e7eb' }}>
-            Cluster MIDI Health
-          </Typography>
-          <Typography variant="caption" sx={{ color: '#94a3b8' }}>
+    <Tile className="midi-cluster-health-bar">
+      <div className="midi-cluster-health-bar__row">
+        <div className="midi-cluster-health-bar__copy">
+          <span className="midi-cluster-health-bar__title">Cluster MIDI Health</span>
+          <span className="midi-cluster-health-bar__caption">
             {health.node_count} nodes · {health.connection_count} connections · clock {health.clock_status}
-          </Typography>
-          <LinearProgress
-            variant="determinate"
+          </span>
+          <ProgressBar
             value={healthyPercent}
-            sx={{ mt: 1, height: 8, borderRadius: 4, bgcolor: '#1f2937', '& .MuiLinearProgress-bar': { bgcolor: '#22c55e' } }}
+            max={100}
+            label="Healthy connections"
+            hideLabel
+            size="small"
           />
-        </Stack>
-        <Stack direction="row" spacing={1}>
-          <Chip size="small" label={`Healthy ${health.healthy_connection_count}`} color="success" />
-          <Chip size="small" label={`Degraded ${health.degraded_connections}`} color="warning" />
-          <Chip size="small" label={`Clock drift ${health.clock_drift_ms.toFixed(1)} ms`} color="info" variant="outlined" />
-        </Stack>
-      </Stack>
-    </Paper>
+        </div>
+        <div className="midi-cluster-health-bar__chips">
+          <StatusChip tone="ok" label={`Healthy ${health.healthy_connection_count}`} size="sm" />
+          <StatusChip tone="caution" label={`Degraded ${health.degraded_connections}`} size="sm" />
+          <StatusChip
+            tone="info"
+            label="Clock drift"
+            value={`${health.clock_drift_ms.toFixed(1)} ms`}
+            size="sm"
+          />
+        </div>
+      </div>
+    </Tile>
   )
 }
 
