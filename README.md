@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1381** Python | **1357** TypeScript | **177** C++/H | **145** Docs | **3098** total commits | **3** stars | **0** forks | **0** open issues
+**1381** Python | **1357** TypeScript | **177** C++/H | **145** Docs | **3111** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
-| [`ea14a3bf`](https://github.com/matthewmackes/map2-audio/commit/ea14a3bf6acfc28a23f137a4f4597677148917e6) | T2475 E1 (status): worklist updated with 10-iteration SHI... | Map2 Audio | 2026-04-29 |
-| [`038e6d9d`](https://github.com/matthewmackes/map2-audio/commit/038e6d9d99ee26a01e496a552dfcaf3f86df91bd) | T2475 E1 (20a/21): TopBar dropped MUI useTheme/useMediaQu... | Map2 Audio | 2026-04-29 |
-| [`6f646dcb`](https://github.com/matthewmackes/map2-audio/commit/6f646dcb43585fed6dfb3fa02821ffaf27e56ba7) | T2475 E1 (18-19/21): MatrixCell + RoutingGrid migrated fr... | Map2 Audio | 2026-04-29 |
-| [`d6ba4f10`](https://github.com/matthewmackes/map2-audio/commit/d6ba4f101ec538bd19c210edc20832657de4e8b6) | T2475 E1 (13-17/21): RoutingGrid overlays + BatchActionsB... | Map2 Audio | 2026-04-29 |
-| [`9bf987b5`](https://github.com/matthewmackes/map2-audio/commit/9bf987b59c42ad8418be8d84d78ff9c68de5a3e5) | Merge branch 'master' of https://github.com/matthewmackes... | Map2 Audio | 2026-04-29 |
-| [`ee98ed57`](https://github.com/matthewmackes/map2-audio/commit/ee98ed57b3843f01f552b89c98e0d7915ac28450) | T2475 E1 (12/21): InspectorPanel migrated from MUI to Carbon | Map2 Audio | 2026-04-29 |
-| [`7a7cda3c`](https://github.com/matthewmackes/map2-audio/commit/7a7cda3cc458292e1d2fdcfe327648658f80cfed) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-29 |
-| [`cee45d45`](https://github.com/matthewmackes/map2-audio/commit/cee45d45e363e72b538b6ab1d664eff8a2f0b851) | T2475 E1 (11/21): NetworkTopologyModal migrated from MUI ... | Map2 Audio | 2026-04-29 |
+| [`6c2fca65`](https://github.com/matthewmackes/map2-audio/commit/6c2fca65ade4e6d66d9695f295f7715f887457b5) | T2475 E1 (status): worklist updated with second 10-iterat... | Map2 Audio | 2026-04-29 |
+| [`fadbd6d0`](https://github.com/matthewmackes/map2-audio/commit/fadbd6d08af5ab1b39999be1a119e035cf735a25) | T2475 E1 (20k/21): TopBar.tsx AppBar + Toolbar -> semanti... | Map2 Audio | 2026-04-29 |
+| [`d8732a9a`](https://github.com/matthewmackes/map2-audio/commit/d8732a9aae456f11c9aa8f17e1d7b5f8dc4d7bbe) | T2475 E1 (20j/21): TopBar.tsx Tooltip + IconButton + Divi... | Map2 Audio | 2026-04-29 |
+| [`df793451`](https://github.com/matthewmackes/map2-audio/commit/df79345124fe7bd3c5d978673a250e24e78527ac) | T2475 E1 (20i/21): EdirolUA1000View Button -> Carbon, ful... | Map2 Audio | 2026-04-29 |
+| [`7c017430`](https://github.com/matthewmackes/map2-audio/commit/7c017430f5defa03766cf686947c5a020700ce4c) | T2475 E1 (20h/21): EdirolUA1000View Dialog -> Carbon Comp... | Map2 Audio | 2026-04-29 |
+| [`696d268f`](https://github.com/matthewmackes/map2-audio/commit/696d268f0a913319fa1fb9d1da3328baf7b82725) | T2475 E1 (20g/21): EdirolUA1000View Select form-controls ... | Map2 Audio | 2026-04-29 |
+| [`11599ad4`](https://github.com/matthewmackes/map2-audio/commit/11599ad4e0d92c1483a771bfd6945b76b2e58dc1) | T2475 E1 (20f/21): EdirolUA1000View Switch+FormControlLab... | Map2 Audio | 2026-04-29 |
+| [`eae65611`](https://github.com/matthewmackes/map2-audio/commit/eae65611227084c89bd27cd94109f4e9d6557cc6) | T2475 E1 (20e/21): EdirolUA1000View Chip -> StatusChip | Map2 Audio | 2026-04-29 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
