@@ -165,3 +165,95 @@ If a change cannot conform immediately:
 4. Include target milestone/date for closure.
 
 No silent exceptions are allowed.
+
+## 10. Operator State Discipline (T2474 Visual System Sweep)
+
+Status: Added 2026-04-29 under T2474. Locked Q&A: Q1=A strict Carbon discipline, Q3=A maximum @carbon/react alignment, Q4=D+E expanded multi-palette + formal discipline contract, Q8=C full MAP-concept design pass, Q9=C Carbon SCSS primary, Q10=C full call-site migration.
+
+The T2474 sweep ran across 13 atomic bundles (B0–B12) and established the canonical operator-state token vocabulary, the canonical primitives library, and the Carbon-disciplined visual rules that override any conflicting older guidance.
+
+### 10.1. Retired decoration patterns
+
+The following are removed from MAP2 product UI and must not be reintroduced:
+
+1. **Glassmorphism.** No `backdrop-filter: blur(...)` outside an explicit `none` reset against MUI defaults. Codebase-wide audit at B10 confirmed zero live blur consumers; all four prior locations (HomePage operations table-shell, MidiHubHealthDrawer, three SnapshotEditorPage surfaces) now render as flat Carbon Layers.
+2. **Decorative gradients.** No radial-gradient or multi-stop linear-gradient on operator chrome. Exempt: deliberate hardware-skin reproductions (MPX1Panel, IntelFXPanel, IntelFXSignalPathCanvas, MPX1SignalPathCanvas, MaschineLcdSimulatorPanel, MaschineLedPreviewPanel) — these are *device graphics* representing physical gear, not UI chrome.
+3. **Drop shadows / glow halos.** No `box-shadow` for hover lift, selection halo, glow ring, or atmospheric depth. Selection states use border-color or 8% accent-tint backgrounds. Exempt: focus rings via Carbon's standard `outline: 2px solid var(--cds-focus)`.
+4. **Pseudo-3D skeuomorphism.** No asymmetric light-top + dark-bottom borders simulating raised panels. No inset highlights simulating LED edges. Carbon Layer + flat `--cds-border-subtle` borders only.
+5. **Fake hardware skeuomorphism.** UI chrome must not pretend to be hardware. Distinct from rule 2's exemption: rendering a faithful Lexicon MPX-1 face-plate is allowed; making a device-list tile *look like* an LCD panel is not.
+6. **Decorative blueprint grids.** Background dot/line patterns simulating engineering blueprint paper (originally on `.app-shell::before` and `.wh-hero__grid`) are retired. Operators read content, not chrome texture.
+7. **Cyan/amber/red "active/armed/live" accent palette.** The original `--map2-accent-active/armed/live` system is shimmed to flat Carbon-disciplined replacements (B1) — accent-active → `--cds-focus`, accent-armed → `--cds-support-warning`, accent-live → `--cds-support-error`. New code consumes the MAP semantic tokens (10.2) instead of the accent palette.
+
+### 10.2. MAP semantic token vocabulary
+
+Defined in `web/src/app/styles/scss/_tokens.scss` as Sass variables and emitted as CSS custom properties at `:root` by `web/src/app/styles/scss/_semantic-tokens.scss`. Light-shell variants under `[data-carbon-theme=g10/white]`. Every token is a Carbon palette shade — never a custom hex.
+
+| Token group | Members | Use |
+|---|---|---|
+| `--map2-state-*` | live, staged, uncommitted, committed | Live vs queued vs operator-edited vs settled config |
+| `--map2-health-*` | ok, caution, critical, offline | Node/device health bands |
+| `--map2-latency-*` | good, caution, critical | Audio latency bands (≤5 / ≤12 / >12 ms per CLAUDE.md targets) |
+| `--map2-clock-*` | master, slave, locked, unlocked | Clock domain status |
+| `--map2-avb-*` | locked, unlocked, grandmaster | AVB stream status |
+| `--map2-flow-*` | input, output, blocked, sidechain | Signal-flow edge classes |
+| `--map2-alert-*` | blocking, advisory | Alert severity (blocks activation vs operator-correctable) |
+
+New code MUST consume these tokens for the operator concepts they cover, instead of routing through generic Carbon support tokens. The blocking-vs-advisory split (`--map2-alert-blocking` / `--map2-alert-advisory`) is the canonical alert vocabulary — operators must know at a glance whether an alert prevents work or merely informs.
+
+### 10.3. Theme discipline contract
+
+`validateThemeContract(theme)` in `web/src/app/theme/themeFactory.ts` enforces four rules on every generated or saved theme. Returns structured violations; non-throwing.
+
+1. **Required keys** — every key in `ThemeColors` is present and non-empty.
+2. **Contrast** — `text-primary` on `bg` meets WCAG AA (≥ 4.5:1 for normal text), when both values are concrete hex. CSS-variable-forwarding themes (e.g., `var(--cds-background)`) are exempt — Carbon already guarantees AA pairings at runtime.
+3. **Gray-dominance** — `bg`, `surface`, `surface-2`, `surface-3` saturation < 12%. Prevents themes from tinting surfaces with the brand color.
+4. **Glow-bound** — `widgets['glow-intensity'] === '0'` and `widgets['widget-shadow'] === '0'`. Carbon discipline forbids decorative glow at the theme level.
+
+Theme-management surfaces (custom theme dialog, palette mappers) must call `validateThemeContract` before save. A theme with violations may not be persisted as a default.
+
+### 10.4. Canonical primitives library
+
+`web/src/app/components/primitives/` is the canonical source for shared UI primitives. Single import path:
+
+```ts
+import { StatusChip, AlertPanel, CommitPrompt, LatencyChip } from '@/app/components/primitives'
+```
+
+21 primitives + 4 re-exports of pre-existing primitives. Highlights:
+
+- **StatusChip** — canonical status pill, 10 tones (live/staged/uncommitted/committed/ok/caution/critical/offline/info/neutral). Replaces the scattered NodeNavChip-derived, `.rtm__live-focus-chip`, ad-hoc `support-*` Tag implementations.
+- **LatencyChip / ClockSyncChip / AvbStatusChip** — specialized StatusChip wrappers that encode MAP-specific band logic.
+- **PageHeader / SectionHeader / SystemStatusBar** — operator-page layout primitives.
+- **MetricCard / HealthMetric** — token-driven readouts; HealthMetric replaces the inline-style StatCard pattern.
+- **ControlPanel / RoutingPanel / ModuleCard / SignalChainBlock / DeviceNodeCard** — bordered, surface-elevated grouping primitives.
+- **ActionButton / DangerButton** — Carbon Button wrappers with explicit intent semantics (primary/secondary/ghost; danger with confirm hook).
+- **AlertPanel** — canonical blocking-vs-advisory alert with explicit severity contract.
+- **CommitPrompt / StagedChangesIndicator / LiveStagedToggle** — uncommitted-changes affordances.
+- **ErrorState / DrawerPanel** — sibling of EmptyState/LoadingState, plus the side-panel pattern Carbon doesn't ship.
+
+New code SHOULD prefer these primitives over re-rolling equivalents. Existing call sites of pre-canonical components (Carbon `Tag` for status, hand-rolled tearsheets, inline-style StatCards) keep working unchanged but should migrate at the next significant edit.
+
+### 10.5. Hardware-skin exception
+
+Q1=A's "no fake hardware skeuomorphism" applies to **UI chrome that pretends to be hardware** (e.g., the ManagementWorkspace pseudo-3D panels retired in B8, NodeNavChip's LED-edge inset highlights retired in B9). It does **not** apply to deliberate visual reproductions of physical gear:
+
+- `web/src/app/components/Devices/MPX1/MPX1Panel.css` and the MPX1 signal-path / mega-menu / block-editor / mod-matrix / scene-panel / librarian / page-shell CSS render the Lexicon MPX-1 hardware face-plate.
+- `web/src/app/components/Devices/IntelFX/IntelFXPanel.css` and the IntelFX signal-path / page-shell / scene-panel / librarian / midi-mapper CSS render the IntelFX hardware.
+- `web/src/app/components/Maschine/MaschineLcdSimulatorPanel.tsx` paints the device's LCD; `MaschineLedPreviewPanel.tsx` simulates LED physics.
+- `web/src/app/components/Devices/Tesira/components/TesiraCarbonChrome.css` is a Carbon-flat reset against MUI defaults — already disciplined.
+
+These are *device graphics*, not UI decoration. Operators want to see their hardware represented faithfully. Future device-pack additions follow the same exception.
+
+### 10.6. Deferred follow-ups
+
+The following surfaced during T2474 but were not folded into the sweep:
+
+1. **MUI removal (T2475, paused)** — 21 files actively use `@mui/material` (concentrated in AvbRouting/ subdirs, MidiCluster/, MIDICommanderSetup, EdirolUA1000View, MOTURMEPage). Reclassified Small → Large during B7. Requires its own clarification round.
+2. **Plugin-card consolidation (T2476, paused)** — collapse `PluginCards/{Base,Custom,Layouts,Visualizations,...}` into a unified schema-driven primitive. MPX1/IntelFX CSS migration interlocks with this.
+3. **Graph-rendering consolidation (T2477, paused)** — unify ReactFlow + custom canvas + custom builder into one signal-flow primitive.
+4. **Tag → StatusChip global migration** — workspace-side Tag call sites that flow through centralized helpers (AudioEnginePage `engineStatusTag`/`nodeStateTag`, ClusterDashboardWorkspace `getNodeStatusTagType`/`platformHealthTagType`) were not migrated during B6/B7/B8/B9. Migrating helper return types touches every consumer for no visible change in Carbon-flat mode. Reserved as a future global migration decision.
+5. **Retired-token shim cleanup** — the back-compat aliases for `--map2-accent-*`, `--map2-ring-*`, `--map2-material-*`, `.map2-electroluminescent`, and the `--space-*` legacy spacing scale resolve to flat Carbon-disciplined replacements but are still referenced by ~9 consumer files (~85 references). The shim is doing its job; consumer migration is a deferred cleanup.
+
+### 10.7. Bundle audit trail
+
+T2474 progress and per-bundle completion notes live in `docs/PROJECT_WORKLIST.md` under the "Carbon Discipline Visual System Sweep" epic. Each bundle (B0–B12) records files touched, deferrals, and verification outcomes. Visual verification was waived per Q6=E for the sweep itself; T2479 (paused) extends `npm run visual:home-smoke` / `visual:workspace-smoke` with screenshot baselines to catch future drift automatically.

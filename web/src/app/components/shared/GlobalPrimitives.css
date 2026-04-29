@@ -140,7 +140,7 @@
   align-items: center;
   justify-content: center;
   min-height: 24px;
-  padding: 0 var(--space-3);
+  padding: 0 var(--cds-spacing-03, 0.5rem);
   border: 1px solid var(--border);
   border-radius: 0;
   background: var(--surface-2);
@@ -198,7 +198,7 @@
 }
 
 .mpx1-mega-menu__header {
-  padding: var(--space-5);
+  padding: var(--cds-spacing-05, 1rem);
   border-bottom: 1px solid var(--border);
   background: var(--surface);
 }
@@ -222,7 +222,7 @@
 .midi-overview,
 .midi-capability-card,
 .midi-playbook-card {
-  padding: var(--space-5);
+  padding: var(--cds-spacing-05, 1rem);
 }
 
 .card--selected {
@@ -253,7 +253,7 @@ input:not([type='range']):not([type='checkbox']):not([type='radio']),
 select,
 [role='combobox'] {
   min-height: 40px;
-  padding: 0 var(--space-3);
+  padding: 0 var(--cds-spacing-03, 0.5rem);
   border: 0;
   border-bottom: 1px solid var(--border-strong);
   border-radius: 0;
@@ -272,7 +272,7 @@ select:focus,
 
 textarea {
   min-height: 96px;
-  padding: var(--space-3);
+  padding: var(--cds-spacing-03, 0.5rem);
   border: 1px solid var(--border-strong);
   border-radius: 0;
   background: var(--surface-2);
@@ -294,7 +294,7 @@ textarea {
 .pipewire-table td,
 .midi-mapping-table th,
 .midi-mapping-table td {
-  padding: var(--space-3) var(--space-4);
+  padding: var(--cds-spacing-03, 0.5rem) var(--cds-spacing-04, 0.75rem);
   border-bottom: 1px solid var(--border);
   text-align: left;
 }

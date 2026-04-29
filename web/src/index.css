@@ -127,7 +127,7 @@ input[type="range"]:focus::-webkit-slider-thumb {
 .disclosure-actions {
   display: flex;
   gap: 8px;
-  padding: var(--space-4, 0.75rem) var(--space-4, 0.75rem);
+  padding: var(--cds-spacing-04, 0.75rem) var(--cds-spacing-04, 0.75rem);
   border-top: 1px solid var(--border);
   background: var(--surface-3);
 }
