@@ -2265,6 +2265,23 @@ Observed seams in the monolith (from a top-level grep, lines indicative — re-v
 
 Subtasks below are ordered by dependency and risk: pure data first, sub-components second, hook extractions third, render-tree partition last. T2473 is the only one that touches the JSX render tree of the main component; everything before it is move + import.
 
+**Decomposition session log (2026-04-30, 10-iteration SHIP loop)**:
+
+- Iter 1 (cb54fcd5): T2467 helpers extracted to snapshotEditorPageHelpers.ts (8 fns + 24 tests).
+- Iter 2 (b90cf158): T2468 types + 7 constants extracted to snapshotEditorPageTypes.ts.
+- Iter 3 (f59e12fb): T2469 FlowLevelControl extracted to its own file (4 render tests).
+- Iter 4 (8233b604): T2470 14 live-path label helpers + 27 tests in snapshotEditorLiveLabels.{ts,test.ts}.
+- Iter 5 (ec3ef646): T2471 JUCE-grid persisted-state hook + 8 tests.
+- Iter 6 (c2f6e4cb): T2472 prep — useSnapshotEditorCadences hook (3 cadences shared by 20 queries).
+- Iter 7 (1fe3bc2e): T2467 follow-up — isTextEntryTarget + extractActivationProgressMetrics + 8 tests.
+- Iter 8 (d86672ea): T2468 follow-up — LIVE_ACTIVATION_PHASES + DEFAULT_SYSTEM_NOISE_GATE_DEFAULTS / PARAMETERS moved to types module.
+- Iter 9 (706ed7f2): T2467-T2471 status flipped to [✓] Done; T2472 status flipped to [>] In Progress with deferral note.
+- Iter 10 (this commit): Final iteration log entry + LOC reduction summary.
+
+**Net LOC effect**: SnapshotEditorPageContent.tsx 9831 -> 9325 (-506). New sibling modules ~1,384 LOC of which ~573 is test code. Production-source delta: ~+811 net (mostly imports / module headers / JSDoc comments — the goal of this epic is structural, not LOC-budget). Test coverage: 78 new SnapshotEditor Jest tests. Monolith bundle hash refreshed on every ship.
+
+**Remaining**: T2472 read-query + mutation consolidation (deferred to a focused session — high cache-key + WS-cleanup risk surface), T2473 JSX-tree partition into 6 sibling sub-components (depends on T2472).
+
 ---
 
 ID: T2467
