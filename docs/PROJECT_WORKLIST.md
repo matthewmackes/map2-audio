@@ -2309,8 +2309,8 @@ Subtasks below are ordered by dependency and risk: pure data first, sub-componen
 - Iter 6 (4097ef8d): T2473 part 9 — SnapshotEditorTabletDeleteConfirm danger-Modal extracted (~21 inline LOC removed; pendingPlugin is the open-guard).
 - Iter 7 (117b88df): T2473 part 10 — SnapshotEditorPresetDeleteConfirm danger-Modal extracted (~21 inline LOC removed).
 - Iter 8 (1b41c432): T2473 part 11 — SnapshotEditorRoutingInspector modal extracted (~30 inline LOC removed; reuses the existing RoutingInspectorContent shape).
-- Iter 9 (this commit): Worklist iteration log update.
-- Iter 10 (next commit): Closing log + cumulative LOC summary + memory refresh.
+- Iter 9 (24ada8a1): Worklist iteration log update.
+- Iter 10 (this commit): Closing log + memory refresh — `~/.claude/projects/-home-mm-map2-audio/memory/project_snapshoteditor_decomposition.md` updated with the 8 new sibling modules and the new "biggest remaining slice = Plugin Browser modal" pointer so the next session can resume cleanly.
 
 **Cumulative net LOC effect after the 2026-04-29 third session**: SnapshotEditorPageContent.tsx 9151 -> 8894 (-257 this session, -937 cumulative since the original 9831 baseline). Eight new sibling files added this session: SnapshotEditorPresetBrowser.tsx, SnapshotEditorAssignmentDialog.tsx, SnapshotEditorClearFlowsConfirm.tsx, SnapshotEditorSavePresetModal.tsx, SnapshotEditorRenameChainModal.tsx, SnapshotEditorTabletDeleteConfirm.tsx, SnapshotEditorPresetDeleteConfirm.tsx, SnapshotEditorRoutingInspector.tsx. T2473 is now 11 sub-components in. The remaining big render-tree slices (Plugin Browser modal — ~305 LOC; MIDI mappings modal wrapper; Header zone; FlowsRail; GridBody; Footer) are now where the value-per-effort curve gets steeper — Plugin Browser will be the next big win.
 
