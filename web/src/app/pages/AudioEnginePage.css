@@ -12,16 +12,22 @@
 /* ── Root ──────────────────────────────────────────────────────────────── */
 
 .audio-engine-page {
+  /* T2474 B6: --audio-engine-page-* aliases retained as a thin Carbon-token
+   * adapter so the existing ~500 lines of selectors below don't need
+   * rewrites. The graph-node-shadow tokens are kept defined for callers
+   * but resolve to `none` because the page-level `*` reset on line 6
+   * forces box-shadow:none — they are dead style code, preserved only
+   * to avoid breaking any external page that consumed them by name. */
   --audio-engine-page-bg: var(--cds-background);
   --audio-engine-page-panel: var(--cds-layer);
   --audio-engine-page-panel-raised: var(--cds-layer-hover);
   --audio-engine-page-panel-contrast: var(--cds-layer-selected);
   --audio-engine-page-border: var(--cds-border-subtle-01);
   --audio-engine-page-border-strong: var(--cds-border-strong-01);
-  --audio-engine-graph-node-shadow: 0 8px 22px color-mix(in srgb, var(--cds-layer-selected) 34%, transparent);
-  --audio-engine-graph-node-shadow-strong: 0 10px 26px color-mix(in srgb, var(--cds-layer-selected) 38%, transparent);
-  --audio-engine-pressure-threshold: color-mix(in srgb, var(--cds-support-error) 28%, transparent);
-  --audio-engine-pressure-fill-fallback: color-mix(in srgb, var(--cds-support-info) 18%, transparent);
+  --audio-engine-graph-node-shadow: none;
+  --audio-engine-graph-node-shadow-strong: none;
+  --audio-engine-pressure-threshold: color-mix(in srgb, var(--map2-health-critical) 28%, transparent);
+  --audio-engine-pressure-fill-fallback: color-mix(in srgb, var(--map2-state-staged) 18%, transparent);
   display: flex;
   flex-direction: column;
   min-height: 100%;
@@ -130,8 +136,9 @@
 }
 
 .audio-engine-page__section-tile.is-highlighted {
+  /* T2474 B6: Selection conveyed via border-color only. The 2px box-shadow
+   * "halo" was dead code (page-level `*` reset forces box-shadow:none). */
   border-color: color-mix(in srgb, var(--cds-link-primary) 45%, var(--cds-border-subtle-01));
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--cds-link-primary) 18%, transparent);
 }
 
 .audio-engine-page__kv-grid {
@@ -194,9 +201,11 @@
   height: min(42rem, 70vh);
   min-height: 30rem;
   border: 1px solid var(--audio-engine-page-border);
-  background:
-    radial-gradient(circle at top left, color-mix(in srgb, var(--cds-link-primary) 11%, transparent), transparent 40%),
-    linear-gradient(180deg, var(--audio-engine-page-panel-raised), var(--audio-engine-page-panel));
+  /* T2474 B6: Removed dead radial+linear gradient declarations — the
+   * page-level `*` reset on line 6 already forced background-image:none,
+   * so the gradients never rendered. Replaced with a flat Carbon layer
+   * for clarity. */
+  background: var(--audio-engine-page-panel-raised);
 }
 
 .audio-engine-page__workspace-graph-empty {
@@ -220,24 +229,25 @@
 
 .audio-engine-page__source-truth-card-section--table {
   border-top: 1px solid var(--audio-engine-page-border);
-  background: linear-gradient(180deg, var(--audio-engine-page-panel), var(--audio-engine-page-panel-raised));
+  /* T2474 B6: Removed dead linear-gradient (overridden by `*` reset). */
+  background: var(--audio-engine-page-panel);
 }
 
 .audio-engine-page__source-truth-graph {
   height: min(36rem, 62vh);
   min-height: 24rem;
   border: 1px solid var(--audio-engine-page-border);
-  background:
-    radial-gradient(circle at top left, color-mix(in srgb, var(--cds-support-info) 12%, transparent), transparent 42%),
-    linear-gradient(180deg, var(--audio-engine-page-panel-raised), var(--audio-engine-page-panel));
+  /* T2474 B6: Removed dead radial+linear gradient declarations. */
+  background: var(--audio-engine-page-panel-raised);
 }
 
 .audio-engine-page__source-truth-node {
   display: flex;
   flex-direction: column;
   gap: var(--cds-spacing-02);
-  padding: 0.85rem;
-  border-radius: 0.625rem;
+  padding: var(--cds-spacing-04);
+  /* T2474 B6: Was border-radius 0.625rem — overridden by the page `*`
+   * reset on line 5 so it never rendered. Removed for clarity. */
   color: var(--cds-text-primary);
   text-align: left;
   cursor: pointer;
@@ -307,8 +317,9 @@
 }
 
 .audio-engine-page__table-tile.is-highlighted {
+  /* T2474 B6: Selection conveyed via border-color only (see comment on
+   * .audio-engine-page__section-tile.is-highlighted above). */
   border-color: color-mix(in srgb, var(--cds-link-primary) 45%, var(--cds-border-subtle-01));
-  box-shadow: 0 0 0 2px color-mix(in srgb, var(--cds-link-primary) 18%, transparent);
 }
 
 .audio-engine-page__table-container {
