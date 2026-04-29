@@ -115,7 +115,7 @@ describe('TopBar scene diff controls', () => {
 
     openSceneDiffControls()
 
-    fireEvent.mouseDown(screen.getByRole('combobox', { name: 'Baseline Scene' }))
+    fireEvent.click(screen.getByRole("combobox", { name: 'Baseline Scene' }))
     fireEvent.click(await screen.findByRole('option', { name: 'Baseline Scene' }))
 
     expect(mockDispatch).toHaveBeenCalledWith({
@@ -123,7 +123,7 @@ describe('TopBar scene diff controls', () => {
       payload: 'scene-a',
     })
 
-    fireEvent.mouseDown(screen.getByRole('combobox', { name: 'Compare Scene' }))
+    fireEvent.click(screen.getByRole("combobox", { name: 'Compare Scene' }))
     fireEvent.click(await screen.findByRole('option', { name: 'Compare Scene' }))
 
     expect(mockDispatch).toHaveBeenCalledWith({
@@ -246,7 +246,7 @@ describe('TopBar scene diff controls', () => {
     fireEvent.change(screen.getByTestId('topbar-scene-diff-preset-version-input'), {
       target: { value: '3' },
     })
-    fireEvent.mouseDown(screen.getByRole('combobox', { name: 'Conflict Policy' }))
+    fireEvent.click(screen.getByRole("combobox", { name: 'Conflict Policy' }))
     fireEvent.click(await screen.findByRole('option', { name: 'Rename' }))
     fireEvent.click(screen.getByTestId('topbar-scene-diff-preset-save'))
 
@@ -288,7 +288,7 @@ describe('TopBar scene diff controls', () => {
 
     openSceneDiffControls()
 
-    fireEvent.mouseDown(screen.getByRole('combobox', { name: 'Saved Preset' }))
+    fireEvent.click(screen.getByRole("combobox", { name: 'Saved Preset' }))
     fireEvent.click(await screen.findByRole('option', { name: 'Ops Preset A' }))
     expect(screen.getByRole('combobox', { name: 'Conflict Policy' }).textContent).toContain('Rename')
 
@@ -364,7 +364,7 @@ describe('TopBar scene diff controls', () => {
       'No preset selected. Draft conflict policy applies to next save/import defaults.'
     )
 
-    fireEvent.mouseDown(screen.getByRole('combobox', { name: 'Saved Preset' }))
+    fireEvent.click(screen.getByRole("combobox", { name: 'Saved Preset' }))
     fireEvent.click(await screen.findByRole('option', { name: 'Ops Preset A' }))
 
     expect(screen.getByTestId('topbar-scene-diff-selected-preset-policy').textContent).toContain(
@@ -399,7 +399,7 @@ describe('TopBar scene diff controls', () => {
     render(<TopBar />)
 
     openSceneDiffControls()
-    fireEvent.mouseDown(screen.getByRole('combobox', { name: 'Saved Preset' }))
+    fireEvent.click(screen.getByRole("combobox", { name: 'Saved Preset' }))
     fireEvent.click(await screen.findByRole('option', { name: 'Ops Preset A' }))
     expect(screen.getByRole('combobox', { name: 'Conflict Policy' }).textContent).toContain('Rename')
     expect(screen.getByTestId('topbar-scene-diff-selected-preset-policy-sync').textContent).toContain(
@@ -453,12 +453,12 @@ describe('TopBar scene diff controls', () => {
     render(<TopBar />)
 
     openSceneDiffControls()
-    fireEvent.mouseDown(screen.getByRole('combobox', { name: 'Saved Preset' }))
+    fireEvent.click(screen.getByRole("combobox", { name: 'Saved Preset' }))
     fireEvent.click(await screen.findByRole('option', { name: 'Ops Preset A' }))
     expect(screen.getByRole('combobox', { name: 'Conflict Policy' }).textContent).toContain('Rename')
 
     fireEvent.click(screen.getByTestId('topbar-scene-diff-preset-conflict-policy-reset'))
-    fireEvent.mouseDown(screen.getByRole('combobox', { name: 'Conflict Policy' }))
+    fireEvent.click(screen.getByRole("combobox", { name: 'Conflict Policy' }))
     fireEvent.click(await screen.findByRole('option', { name: 'Skip' }))
     expect(screen.getByRole('combobox', { name: 'Conflict Policy' }).textContent).toContain('Skip')
 

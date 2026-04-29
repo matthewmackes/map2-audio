@@ -25,3 +25,10 @@ if (typeof globalThis.IntersectionObserver === 'undefined') {
     takeRecords() { return []; }
   };
 }
+
+// Element.scrollIntoView — Carbon Dropdown's downshift integration
+// calls this on the highlighted option when the menu opens. JSDOM
+// has no implementation.
+if (typeof Element !== 'undefined' && !Element.prototype.scrollIntoView) {
+  Element.prototype.scrollIntoView = function () {};
+}

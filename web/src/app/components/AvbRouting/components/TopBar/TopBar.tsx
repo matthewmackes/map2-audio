@@ -20,15 +20,12 @@ import {
 } from '@carbon/icons-react';
 import {
   Popover,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
 } from '@mui/material';
 import type { SelectChangeEvent } from '@mui/material/Select';
 import {
   Button as CarbonButton,
   Checkbox as CarbonCheckbox,
+  Dropdown as CarbonDropdown,
   TextInput as CarbonTextInput,
   TextArea as CarbonTextArea,
 } from '@carbon/react';
@@ -2489,34 +2486,34 @@ export function TopBar() {
             {filteredSceneSummary}
           </span>
 
-          <FormControl size="small">
-            <InputLabel id="scene-action-select-label">Saved Scene</InputLabel>
-            <Select
-              labelId="scene-action-select-label"
-              label="Saved Scene"
-              value={selectedSceneIdValue}
-              onChange={handleSceneSelectionChange}
-              data-testid="topbar-scene-select"
-            >
-              <MenuItem value="" data-testid="topbar-scene-select-none">
-                <em>None</em>
-              </MenuItem>
-              {filteredSceneOptions.length === 0 && (
-                <MenuItem value="" disabled data-testid="topbar-scene-select-empty">
-                  <em>No matching scenes</em>
-                </MenuItem>
-              )}
-              {filteredSceneOptions.map((scene) => (
-                <MenuItem
-                  key={scene.id}
-                  value={scene.id}
-                  data-testid={`topbar-scene-option-${sanitizeFilterIdValue(scene.name)}-${sanitizeFilterIdValue(scene.id)}`}
-                >
-                  {renderSceneOptionLabel(scene)}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
+          {(() => {
+            const sceneItems = [
+              { id: '', name: 'None' },
+              ...filteredSceneOptions.map((scene) => ({
+                id: scene.id,
+                name: renderSceneOptionLabel(scene),
+              })),
+            ]
+            const selectedSceneItem = sceneItems.find((item) => item.id === selectedSceneIdValue) || sceneItems[0]
+            return (
+              <CarbonDropdown
+                id="topbar-scene-select"
+                titleText="Saved Scene"
+                label="Select scene"
+                size="sm"
+                items={sceneItems}
+                selectedItem={selectedSceneItem}
+                itemToString={(item: { id: string; name: string } | null) => (item ? item.name : '')}
+                onChange={({ selectedItem }) => {
+                  if (selectedItem) {
+                    handleSceneSelectionChange({
+                      target: { value: selectedItem.id },
+                    } as unknown as SelectChangeEvent<string>)
+                  }
+                }}
+              />
+            )
+          })()}
 
           <span
             className="topbar__caption topbar__caption--secondary"
@@ -2667,21 +2664,33 @@ export function TopBar() {
               onChange={(event, { checked }) => handleSceneAuditRememberFiltersToggle(event, checked)}
             />
 
-            <FormControl size="small">
-              <InputLabel id="scene-audit-outcome-filter-label">Outcome</InputLabel>
-              <Select
-                labelId="scene-audit-outcome-filter-label"
-                label="Outcome"
-                value={sceneAuditOutcomeFilter}
-                onChange={handleSceneAuditOutcomeFilterChange}
-                data-testid="topbar-scene-audit-outcome-filter"
-              >
-                <MenuItem value="all">All</MenuItem>
-                <MenuItem value="success">Success</MenuItem>
-                <MenuItem value="warning">Warning</MenuItem>
-                <MenuItem value="error">Error</MenuItem>
-              </Select>
-            </FormControl>
+            {(() => {
+              const outcomeItems = [
+                { id: 'all', label: 'All' },
+                { id: 'success', label: 'Success' },
+                { id: 'warning', label: 'Warning' },
+                { id: 'error', label: 'Error' },
+              ]
+              const selectedOutcome = outcomeItems.find((item) => item.id === sceneAuditOutcomeFilter) || outcomeItems[0]
+              return (
+                <CarbonDropdown
+                  id="topbar-scene-audit-outcome-filter"
+                  titleText="Outcome"
+                  label="Select outcome"
+                  size="sm"
+                  items={outcomeItems}
+                  selectedItem={selectedOutcome}
+                  itemToString={(item: { id: string; label: string } | null) => (item ? item.label : '')}
+                  onChange={({ selectedItem }) => {
+                    if (selectedItem) {
+                      handleSceneAuditOutcomeFilterChange({
+                        target: { value: selectedItem.id },
+                      } as unknown as SelectChangeEvent<string>)
+                    }
+                  }}
+                />
+              )
+            })()}
 
             <div className="topbar__row topbar__row--gap-075 topbar__row--wrap">
               <button
@@ -3040,53 +3049,57 @@ export function TopBar() {
             Scene Diff Controls
           </span>
 
-          <FormControl size="small">
-            <InputLabel id="scene-diff-baseline-label">Baseline Scene</InputLabel>
-            <Select
-              labelId="scene-diff-baseline-label"
-              label="Baseline Scene"
-              value={selectedBaselineScene}
-              onChange={handleSceneDiffBaselineChange}
-              data-testid="topbar-scene-diff-baseline-select"
-            >
-              <MenuItem value="" data-testid="topbar-scene-diff-baseline-none">
-                <em>None</em>
-              </MenuItem>
-              {sceneOptions.map((scene) => (
-                <MenuItem
-                  key={scene.id}
-                  value={scene.id}
-                  data-testid={`topbar-scene-diff-baseline-${sanitizeFilterIdValue(scene.name)}-${sanitizeFilterIdValue(scene.id)}`}
-                >
-                  {renderSceneOptionLabel(scene)}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
+          {(() => {
+            const baselineItems = [
+              { id: '', name: 'None' },
+              ...sceneOptions.map((scene) => ({ id: scene.id, name: renderSceneOptionLabel(scene) })),
+            ]
+            const selectedBaselineItem = baselineItems.find((item) => item.id === selectedBaselineScene) || baselineItems[0]
+            return (
+              <CarbonDropdown
+                id="topbar-scene-diff-baseline-select"
+                titleText="Baseline Scene"
+                label="Select baseline"
+                size="sm"
+                items={baselineItems}
+                selectedItem={selectedBaselineItem}
+                itemToString={(item: { id: string; name: string } | null) => (item ? item.name : '')}
+                onChange={({ selectedItem }) => {
+                  if (selectedItem) {
+                    handleSceneDiffBaselineChange({
+                      target: { value: selectedItem.id },
+                    } as unknown as SelectChangeEvent<string>)
+                  }
+                }}
+              />
+            )
+          })()}
 
-          <FormControl size="small">
-            <InputLabel id="scene-diff-compare-label">Compare Scene</InputLabel>
-            <Select
-              labelId="scene-diff-compare-label"
-              label="Compare Scene"
-              value={selectedCompareScene}
-              onChange={handleSceneDiffCompareChange}
-              data-testid="topbar-scene-diff-compare-select"
-            >
-              <MenuItem value="" data-testid="topbar-scene-diff-compare-none">
-                <em>None</em>
-              </MenuItem>
-              {sceneOptions.map((scene) => (
-                <MenuItem
-                  key={scene.id}
-                  value={scene.id}
-                  data-testid={`topbar-scene-diff-compare-${sanitizeFilterIdValue(scene.name)}-${sanitizeFilterIdValue(scene.id)}`}
-                >
-                  {renderSceneOptionLabel(scene)}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
+          {(() => {
+            const compareItems = [
+              { id: '', name: 'None' },
+              ...sceneOptions.map((scene) => ({ id: scene.id, name: renderSceneOptionLabel(scene) })),
+            ]
+            const selectedCompareItem = compareItems.find((item) => item.id === selectedCompareScene) || compareItems[0]
+            return (
+              <CarbonDropdown
+                id="topbar-scene-diff-compare-select"
+                titleText="Compare Scene"
+                label="Select compare scene"
+                size="sm"
+                items={compareItems}
+                selectedItem={selectedCompareItem}
+                itemToString={(item: { id: string; name: string } | null) => (item ? item.name : '')}
+                onChange={({ selectedItem }) => {
+                  if (selectedItem) {
+                    handleSceneDiffCompareChange({
+                      target: { value: selectedItem.id },
+                    } as unknown as SelectChangeEvent<string>)
+                  }
+                }}
+              />
+            )
+          })()}
 
           <CarbonButton
             size="sm"
@@ -3128,20 +3141,32 @@ export function TopBar() {
             data-testid="topbar-scene-diff-preset-version-input"
           />
 
-          <FormControl size="small">
-            <InputLabel id="scene-diff-preset-conflict-policy-label">Conflict Policy</InputLabel>
-            <Select
-              labelId="scene-diff-preset-conflict-policy-label"
-              label="Conflict Policy"
-              value={sceneDiffPresetConflictPolicyDraft}
-              onChange={handleSceneDiffPresetConflictPolicyDraftChange}
-              data-testid="topbar-scene-diff-preset-conflict-policy-select"
-            >
-              <MenuItem value="upsert">Upsert</MenuItem>
-              <MenuItem value="rename">Rename</MenuItem>
-              <MenuItem value="skip">Skip</MenuItem>
-            </Select>
-          </FormControl>
+          {(() => {
+            const policyItems = [
+              { id: 'upsert', label: 'Upsert' },
+              { id: 'rename', label: 'Rename' },
+              { id: 'skip', label: 'Skip' },
+            ]
+            const selectedPolicyItem = policyItems.find((item) => item.id === sceneDiffPresetConflictPolicyDraft) || policyItems[0]
+            return (
+              <CarbonDropdown
+                id="topbar-scene-diff-preset-conflict-policy-select"
+                titleText="Conflict Policy"
+                label="Select conflict policy"
+                size="sm"
+                items={policyItems}
+                selectedItem={selectedPolicyItem}
+                itemToString={(item: { id: string; label: string } | null) => (item ? item.label : '')}
+                onChange={({ selectedItem }) => {
+                  if (selectedItem) {
+                    handleSceneDiffPresetConflictPolicyDraftChange({
+                      target: { value: selectedItem.id },
+                    } as unknown as SelectChangeEvent<string>)
+                  }
+                }}
+              />
+            )
+          })()}
 
           <div className="topbar__row topbar__row--gap-1 topbar__row--wrap">
             <CarbonButton
@@ -3176,29 +3201,32 @@ export function TopBar() {
             </span>
           </div>
 
-          <FormControl size="small" disabled={sceneDiffPresets.length === 0}>
-            <InputLabel id="scene-diff-preset-select-label">Saved Preset</InputLabel>
-            <Select
-              labelId="scene-diff-preset-select-label"
-              label="Saved Preset"
-              value={sceneDiffSelectedPresetValue}
-              onChange={handleSceneDiffPresetSelectionChange}
-              data-testid="topbar-scene-diff-preset-select"
-            >
-              <MenuItem value="" data-testid="topbar-scene-diff-preset-none">
-                <em>None</em>
-              </MenuItem>
-              {sceneDiffPresets.map((preset) => (
-                <MenuItem
-                  key={preset.id}
-                  value={preset.id}
-                  data-testid={`topbar-scene-diff-preset-${sanitizeFilterIdValue(preset.name)}-${sanitizeFilterIdValue(preset.id)}`}
-                >
-                  {preset.name}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
+          {(() => {
+            const presetItems = [
+              { id: '', name: 'None' },
+              ...sceneDiffPresets.map((preset) => ({ id: preset.id, name: preset.name })),
+            ]
+            const selectedPresetItem = presetItems.find((item) => item.id === sceneDiffSelectedPresetValue) || presetItems[0]
+            return (
+              <CarbonDropdown
+                id="topbar-scene-diff-preset-select"
+                titleText="Saved Preset"
+                label="Select preset"
+                size="sm"
+                disabled={sceneDiffPresets.length === 0}
+                items={presetItems}
+                selectedItem={selectedPresetItem}
+                itemToString={(item: { id: string; name: string } | null) => (item ? item.name : '')}
+                onChange={({ selectedItem }) => {
+                  if (selectedItem) {
+                    handleSceneDiffPresetSelectionChange({
+                      target: { value: selectedItem.id },
+                    } as unknown as SelectChangeEvent<string>)
+                  }
+                }}
+              />
+            )
+          })()}
 
           {sceneDiffPresets.length > 0 ? (
             <div

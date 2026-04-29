@@ -237,7 +237,7 @@ describe('TopBar scene management controls', () => {
     })
     expect(screen.getByTestId('topbar-scene-search-summary').textContent).toContain('1 of 2 scenes')
 
-    fireEvent.mouseDown(screen.getByRole('combobox', { name: 'Saved Scene' }))
+    fireEvent.click(screen.getByRole("combobox", { name: 'Saved Scene' }))
     expect(await screen.findByRole('option', { name: 'Compare Scene' })).toBeTruthy()
     expect(screen.queryByRole('option', { name: 'Baseline Scene' })).toBeNull()
 
@@ -252,7 +252,7 @@ describe('TopBar scene management controls', () => {
 
     openSceneControls()
 
-    fireEvent.mouseDown(screen.getByRole('combobox', { name: 'Saved Scene' }))
+    fireEvent.click(screen.getByRole("combobox", { name: 'Saved Scene' }))
     fireEvent.click(await screen.findByRole('option', { name: 'Baseline Scene' }))
 
     fireEvent.change(screen.getByTestId('topbar-scene-edit-name-input'), {
@@ -359,11 +359,11 @@ describe('TopBar scene management controls', () => {
     expect(screen.getAllByTestId('topbar-scene-audit-entry')).toHaveLength(1)
     expect(screen.getByText('Deleted scene: Baseline Scene')).toBeTruthy()
 
-    fireEvent.mouseDown(screen.getByRole('combobox', { name: 'Outcome' }))
+    fireEvent.click(screen.getByRole("combobox", { name: 'Outcome' }))
     fireEvent.click(await screen.findByRole('option', { name: 'Error' }))
     expect(screen.getAllByTestId('topbar-scene-audit-entry')).toHaveLength(1)
 
-    fireEvent.mouseDown(screen.getByRole('combobox', { name: 'Outcome' }))
+    fireEvent.click(screen.getByRole("combobox", { name: 'Outcome' }))
     fireEvent.click(await screen.findByRole('option', { name: 'Success' }))
     expect(screen.queryAllByTestId('topbar-scene-audit-entry')).toHaveLength(0)
     expect(screen.getByText('No scene operations match current audit filters.')).toBeTruthy()
@@ -895,7 +895,7 @@ describe('TopBar scene management controls', () => {
     render(<TopBar />)
 
     openSceneControls()
-    fireEvent.mouseDown(screen.getByRole('combobox', { name: 'Saved Scene' }))
+    fireEvent.click(screen.getByRole("combobox", { name: 'Saved Scene' }))
     fireEvent.click(await screen.findByRole('option', { name: 'Baseline Scene' }))
 
     expect(screen.getByTestId('topbar-scene-impact-summary').textContent).toContain(
@@ -942,7 +942,7 @@ describe('TopBar scene management controls', () => {
     render(<TopBar />)
 
     openSceneControls()
-    fireEvent.mouseDown(screen.getByRole('combobox', { name: 'Saved Scene' }))
+    fireEvent.click(screen.getByRole("combobox", { name: 'Saved Scene' }))
     fireEvent.click(await screen.findByRole('option', { name: 'Baseline Scene' }))
     fireEvent.click(screen.getByTestId('topbar-scene-impact-toggle'))
 
@@ -962,7 +962,7 @@ describe('TopBar scene management controls', () => {
 
     openSceneControls()
 
-    fireEvent.mouseDown(screen.getByRole('combobox', { name: 'Saved Scene' }))
+    fireEvent.click(screen.getByRole("combobox", { name: 'Saved Scene' }))
     fireEvent.click(await screen.findByRole('option', { name: 'Baseline Scene' }))
 
     fireEvent.click(screen.getByTestId('topbar-scene-recall'))

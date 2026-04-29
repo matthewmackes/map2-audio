@@ -850,9 +850,9 @@ describe('TopBar filter controls provider integration', () => {
 
     fireEvent.click(screen.getByTestId('topbar-scene-diff-button'))
 
-    fireEvent.mouseDown(screen.getByRole('combobox', { name: 'Baseline Scene' }))
+    fireEvent.click(screen.getByRole("combobox", { name: 'Baseline Scene' }))
     fireEvent.click(await screen.findByRole('option', { name: 'Baseline Scene' }))
-    fireEvent.mouseDown(screen.getByRole('combobox', { name: 'Compare Scene' }))
+    fireEvent.click(screen.getByRole("combobox", { name: 'Compare Scene' }))
     fireEvent.click(await screen.findByRole('option', { name: 'Compare Scene' }))
     fireEvent.click(screen.getByTestId('topbar-scene-diff-generate'))
 
@@ -938,9 +938,9 @@ describe('TopBar filter controls provider integration', () => {
     )
 
     fireEvent.click(screen.getByTestId('topbar-scene-diff-button'))
-    fireEvent.mouseDown(screen.getByRole('combobox', { name: 'Baseline Scene' }))
+    fireEvent.click(screen.getByRole("combobox", { name: 'Baseline Scene' }))
     fireEvent.click(await screen.findByRole('option', { name: 'Baseline Scene' }))
-    fireEvent.mouseDown(screen.getByRole('combobox', { name: 'Compare Scene' }))
+    fireEvent.click(screen.getByRole("combobox", { name: 'Compare Scene' }))
     fireEvent.click(await screen.findByRole('option', { name: 'Compare Scene' }))
 
     fireEvent.change(screen.getByTestId('topbar-scene-diff-preset-name-input'), {
@@ -960,7 +960,7 @@ describe('TopBar filter controls provider integration', () => {
       expect(screen.getByTestId('topbar-scene-status-compare').textContent).toContain('Baseline Scene')
     })
 
-    fireEvent.mouseDown(screen.getByRole('combobox', { name: 'Saved Preset' }))
+    fireEvent.click(screen.getByRole("combobox", { name: 'Saved Preset' }))
     fireEvent.click(await screen.findByRole('option', { name: 'Ops Compare Pair' }))
     fireEvent.click(screen.getByTestId('topbar-scene-diff-preset-apply'))
 
@@ -1039,7 +1039,7 @@ describe('TopBar filter controls provider integration', () => {
       )
     })
 
-    fireEvent.mouseDown(screen.getByRole('combobox', { name: 'Saved Preset' }))
+    fireEvent.click(screen.getByRole("combobox", { name: 'Saved Preset' }))
     fireEvent.click(await screen.findByRole('option', { name: 'Imported Policy Preset' }))
     expect(screen.getByRole('combobox', { name: 'Conflict Policy' }).textContent).toContain('Rename')
     expect(screen.getByTestId('topbar-scene-diff-selected-preset-policy').textContent).toContain(
@@ -1128,14 +1128,14 @@ describe('TopBar filter controls provider integration', () => {
 
     fireEvent.click(screen.getByTestId('topbar-scene-diff-button'))
 
-    fireEvent.mouseDown(screen.getByRole('combobox', { name: 'Saved Preset' }))
+    fireEvent.click(screen.getByRole("combobox", { name: 'Saved Preset' }))
     fireEvent.click(await screen.findByRole('option', { name: 'Preset Rename' }))
     expect(screen.getByRole('combobox', { name: 'Conflict Policy' }).textContent).toContain('Rename')
     expect(screen.getByTestId('topbar-scene-diff-selected-preset-policy').textContent).toContain(
       'Selected preset policy: Rename'
     )
 
-    fireEvent.mouseDown(screen.getByRole('combobox', { name: 'Saved Preset' }))
+    fireEvent.click(screen.getByRole("combobox", { name: 'Saved Preset' }))
     fireEvent.click(await screen.findByRole('option', { name: 'Preset Skip' }))
     expect(screen.getByRole('combobox', { name: 'Conflict Policy' }).textContent).toContain('Skip')
     expect(screen.getByTestId('topbar-scene-diff-selected-preset-policy').textContent).toContain(
@@ -1173,7 +1173,7 @@ describe('TopBar filter controls provider integration', () => {
       )
     })
 
-    fireEvent.mouseDown(screen.getByRole('combobox', { name: 'Saved Preset' }))
+    fireEvent.click(screen.getByRole("combobox", { name: 'Saved Preset' }))
     fireEvent.click(await screen.findByRole('option', { name: 'Preset Skip' }))
     expect(screen.getByRole('combobox', { name: 'Conflict Policy' }).textContent).toContain('Rename')
     expect(screen.getByTestId('topbar-scene-diff-selected-preset-policy').textContent).toContain(
@@ -1796,7 +1796,7 @@ describe('TopBar filter controls provider integration', () => {
     )
 
     fireEvent.click(screen.getByTestId('topbar-scene-diff-button'))
-    fireEvent.mouseDown(screen.getByRole('combobox', { name: 'Saved Preset' }))
+    fireEvent.click(screen.getByRole("combobox", { name: 'Saved Preset' }))
     fireEvent.click(await screen.findByRole('option', { name: 'Preset A' }))
 
     expect(screen.getByTestId('topbar-scene-diff-selected-preset-policy-sync').textContent).toContain(
@@ -1971,12 +1971,12 @@ describe('TopBar filter controls provider integration', () => {
       expect(screen.getByTestId('topbar-scene-status-count').textContent).toContain('4 scenes')
     })
 
-    fireEvent.mouseDown(screen.getByRole('combobox', { name: 'Saved Scene' }))
+    fireEvent.click(screen.getByRole("combobox", { name: 'Saved Scene' }))
     fireEvent.click(await screen.findByRole('option', { name: 'Legacy Baseline v1' }))
     fireEvent.click(screen.getByTestId('topbar-scene-delete'))
     fireEvent.click(screen.getByTestId('topbar-scene-delete'))
 
-    fireEvent.mouseDown(screen.getByRole('combobox', { name: 'Saved Scene' }))
+    fireEvent.click(screen.getByRole("combobox", { name: 'Saved Scene' }))
     fireEvent.click(await screen.findByRole('option', { name: 'Legacy Compare v1' }))
     fireEvent.click(screen.getByTestId('topbar-scene-delete'))
     fireEvent.click(screen.getByTestId('topbar-scene-delete'))
@@ -1991,9 +1991,9 @@ describe('TopBar filter controls provider integration', () => {
     fireEvent.click(screen.getByTestId('topbar-scene-close'))
 
     fireEvent.click(screen.getByTestId('topbar-scene-diff-button'))
-    fireEvent.mouseDown(screen.getByRole('combobox', { name: 'Baseline Scene' }))
+    fireEvent.click(screen.getByRole("combobox", { name: 'Baseline Scene' }))
     fireEvent.click(await screen.findByRole('option', { name: 'Baseline Scene v2' }))
-    fireEvent.mouseDown(screen.getByRole('combobox', { name: 'Compare Scene' }))
+    fireEvent.click(screen.getByRole("combobox", { name: 'Compare Scene' }))
     fireEvent.click(await screen.findByRole('option', { name: 'Compare Scene v2' }))
     fireEvent.click(screen.getByTestId('topbar-scene-diff-generate'))
 
@@ -2069,7 +2069,7 @@ describe('TopBar filter controls provider integration', () => {
     )
 
     fireEvent.click(screen.getByTestId('topbar-scenes-button'))
-    fireEvent.mouseDown(screen.getByRole('combobox', { name: 'Saved Scene' }))
+    fireEvent.click(screen.getByRole("combobox", { name: 'Saved Scene' }))
 
     const duplicateSceneOptions = await screen.findAllByRole('option', {
       name: /Twin Scene \(scene-twin-[ab]\)/,
@@ -2085,9 +2085,9 @@ describe('TopBar filter controls provider integration', () => {
     fireEvent.click(screen.getByTestId('topbar-scene-close'))
 
     fireEvent.click(screen.getByTestId('topbar-scene-diff-button'))
-    fireEvent.mouseDown(screen.getByRole('combobox', { name: 'Baseline Scene' }))
+    fireEvent.click(screen.getByRole("combobox", { name: 'Baseline Scene' }))
     fireEvent.click(await screen.findByRole('option', { name: 'Twin Scene (scene-twin-a)' }))
-    fireEvent.mouseDown(screen.getByRole('combobox', { name: 'Compare Scene' }))
+    fireEvent.click(screen.getByRole("combobox", { name: 'Compare Scene' }))
     fireEvent.click(await screen.findByRole('option', { name: 'Twin Scene (scene-twin-b)' }))
     fireEvent.click(screen.getByTestId('topbar-scene-diff-generate'))
 
@@ -2244,14 +2244,14 @@ describe('TopBar filter controls provider integration', () => {
     })
     fireEvent.click(screen.getByTestId('topbar-scene-save'))
 
-    fireEvent.mouseDown(screen.getByRole('combobox', { name: 'Saved Scene' }))
+    fireEvent.click(screen.getByRole("combobox", { name: 'Saved Scene' }))
     fireEvent.click(await screen.findByRole('option', { name: 'Baseline Scene' }))
     fireEvent.change(screen.getByTestId('topbar-scene-edit-name-input'), {
       target: { value: 'Compare Scene' },
     })
     fireEvent.click(screen.getByTestId('topbar-scene-update'))
 
-    fireEvent.mouseDown(screen.getByRole('combobox', { name: 'Saved Scene' }))
+    fireEvent.click(screen.getByRole("combobox", { name: 'Saved Scene' }))
     fireEvent.click(await screen.findByRole('option', { name: 'Compare Scene (scene-b)' }))
     fireEvent.click(screen.getByTestId('topbar-scene-delete'))
     fireEvent.click(screen.getByTestId('topbar-scene-delete'))
@@ -2355,14 +2355,14 @@ describe('TopBar filter controls provider integration', () => {
     })
     fireEvent.click(screen.getByTestId('topbar-scene-save'))
 
-    fireEvent.mouseDown(screen.getByRole('combobox', { name: 'Saved Scene' }))
+    fireEvent.click(screen.getByRole("combobox", { name: 'Saved Scene' }))
     fireEvent.click(await screen.findByRole('option', { name: 'Baseline Scene' }))
     fireEvent.change(screen.getByTestId('topbar-scene-edit-name-input'), {
       target: { value: 'Compare Scene' },
     })
     fireEvent.click(screen.getByTestId('topbar-scene-update'))
 
-    fireEvent.mouseDown(screen.getByRole('combobox', { name: 'Saved Scene' }))
+    fireEvent.click(screen.getByRole("combobox", { name: 'Saved Scene' }))
     fireEvent.click(await screen.findByRole('option', { name: 'Compare Scene (scene-b)' }))
     fireEvent.click(screen.getByTestId('topbar-scene-delete'))
     fireEvent.click(screen.getByTestId('topbar-scene-delete'))
@@ -2455,7 +2455,7 @@ describe('TopBar filter controls provider integration', () => {
     expect(screen.getByTestId('topbar-scene-diff-preset-summary').textContent).toContain('1 preset')
 
     fireEvent.click(screen.getByTestId('topbar-scenes-button'))
-    fireEvent.mouseDown(screen.getByRole('combobox', { name: 'Saved Scene' }))
+    fireEvent.click(screen.getByRole("combobox", { name: 'Saved Scene' }))
     fireEvent.click(await screen.findByRole('option', { name: 'Compare Scene' }))
     fireEvent.click(screen.getByTestId('topbar-scene-delete'))
     fireEvent.click(screen.getByTestId('topbar-scene-delete'))
@@ -3938,14 +3938,14 @@ describe('TopBar filter controls provider integration', () => {
     })
     fireEvent.click(screen.getByTestId('topbar-scene-save'))
 
-    fireEvent.mouseDown(screen.getByRole('combobox', { name: 'Saved Scene' }))
+    fireEvent.click(screen.getByRole("combobox", { name: 'Saved Scene' }))
     fireEvent.click(await screen.findByRole('option', { name: 'Baseline Scene' }))
     fireEvent.change(screen.getByTestId('topbar-scene-edit-name-input'), {
       target: { value: 'Compare Scene' },
     })
     fireEvent.click(screen.getByTestId('topbar-scene-update'))
 
-    fireEvent.mouseDown(screen.getByRole('combobox', { name: 'Saved Scene' }))
+    fireEvent.click(screen.getByRole("combobox", { name: 'Saved Scene' }))
     fireEvent.click(await screen.findByRole('option', { name: 'Compare Scene (scene-b)' }))
     fireEvent.click(screen.getByTestId('topbar-scene-delete'))
     fireEvent.click(screen.getByTestId('topbar-scene-delete'))
