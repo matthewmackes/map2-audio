@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1381** Python | **1338** TypeScript | **177** C++/H | **145** Docs | **3137** total commits | **3** stars | **0** forks | **0** open issues
+**1381** Python | **1338** TypeScript | **177** C++/H | **145** Docs | **3140** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`428ba300`](https://github.com/matthewmackes/map2-audio/commit/428ba3008e91ec156c3e5f6580973da56d36b055) | Merge branch 'master' of https://github.com/matthewmackes... | Map2 Audio | 2026-04-29 |
+| [`a058ca50`](https://github.com/matthewmackes/map2-audio/commit/a058ca50afb8f3eb50974f2dd4bee2367e653667) | SnapshotEditor decomposition session log + LOC reduction ... | Map2 Audio | 2026-04-29 |
+| [`1468c7ba`](https://github.com/matthewmackes/map2-audio/commit/1468c7bac34fb0f1199814f34b4023f8a04dee30) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-29 |
 | [`706ed7f2`](https://github.com/matthewmackes/map2-audio/commit/706ed7f2a40b00792e513d4b4cdf9ff30ec47994) | T2467-T2471 marked Done; T2472 progress note + worklist u... | Map2 Audio | 2026-04-29 |
 | [`d86672ea`](https://github.com/matthewmackes/map2-audio/commit/d86672ea51770450a54808e4ec12b802e831918f) | T2468 (follow-up): Extract LIVE_ACTIVATION_PHASES + noise... | Map2 Audio | 2026-04-29 |
 | [`1fe3bc2e`](https://github.com/matthewmackes/map2-audio/commit/1fe3bc2e58a80b1b5a3722d7244a0a4722f7e69c) | T2467 (follow-up): Extract isTextEntryTarget + extractAct... | Map2 Audio | 2026-04-29 |
 | [`c2f6e4cb`](https://github.com/matthewmackes/map2-audio/commit/c2f6e4cbab2ec4869e395b9808c7e9cd4d427aba) | T2472 (prep): Extract useSnapshotEditorCadences hook for ... | Map2 Audio | 2026-04-29 |
 | [`ec3ef646`](https://github.com/matthewmackes/map2-audio/commit/ec3ef646f33a9550749eab6a416d9ea926e2edbd) | T2471: Extract useJuceGridPersistedState hook for JUCE_GR... | Map2 Audio | 2026-04-29 |
-| [`8233b604`](https://github.com/matthewmackes/map2-audio/commit/8233b60490280cf252a4c9202adea3aea326f9bb) | T2470: Extract live-path / routing label helpers to snaps... | Map2 Audio | 2026-04-29 |
-| [`f59e12fb`](https://github.com/matthewmackes/map2-audio/commit/f59e12fb19be8e78bdb97990bf9d524a996abace) | T2469: Extract FlowLevelControl sub-component into its ow... | Map2 Audio | 2026-04-29 |
-| [`b90cf158`](https://github.com/matthewmackes/map2-audio/commit/b90cf15874dd8f211a2906fbb739e865f426a89f) | T2468: Extract SnapshotEditorPageContent types + tightly-... | Map2 Audio | 2026-04-29 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
