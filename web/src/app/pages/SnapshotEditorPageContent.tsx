@@ -352,6 +352,10 @@ import {
   getSelectedPluginHeroIcon,
   parseMidiMappingValue,
 } from './snapshotEditor/snapshotEditorLiveLabels'
+import {
+  loadInitialJuceGridPluginPersistence,
+  useJuceGridPersistedState,
+} from './snapshotEditor/useJuceGridPersistedState'
 
 const API_BASE = (() => {
   const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
@@ -527,54 +531,10 @@ function loadInitialJuceGridState(): { flowSlots: FlowSlot[]; routing: RoutingCo
   )
 }
 
-function loadInitialPluginPersistence(): {
-  selectedPluginUri: string | null
-  selectedPluginPosition: number | null
-  effectModalOpen: boolean
-  scrollTop: number
-} {
-  try {
-    const rawSelectedPlugin = localStorage.getItem(JUCE_GRID_SELECTED_PLUGIN_KEY)
-    let selectedPluginUri: string | null = null
-    let selectedPluginPosition: number | null = null
-
-    if (rawSelectedPlugin) {
-      try {
-        const parsed = JSON.parse(rawSelectedPlugin)
-        if (typeof parsed === 'string') {
-          selectedPluginUri = parsed || null
-        } else if (parsed && typeof parsed === 'object') {
-          const uri = typeof parsed.uri === 'string' ? parsed.uri.trim() : ''
-          if (uri) {
-            selectedPluginUri = uri
-          }
-          const parsedPosition = Number.parseInt(String(parsed.position ?? ''), 10)
-          if (Number.isFinite(parsedPosition) && parsedPosition >= 0) {
-            selectedPluginPosition = parsedPosition
-          }
-        }
-      } catch {
-        selectedPluginUri = rawSelectedPlugin || null
-      }
-    }
-
-    const effectModalOpen = localStorage.getItem(JUCE_GRID_EFFECT_MODAL_OPEN_KEY) === 'true'
-    const rawScrollTop = Number.parseFloat(localStorage.getItem(JUCE_GRID_SCROLL_TOP_KEY) ?? '0')
-    return {
-      selectedPluginUri,
-      selectedPluginPosition,
-      effectModalOpen,
-      scrollTop: Number.isFinite(rawScrollTop) ? Math.max(0, rawScrollTop) : 0,
-    }
-  } catch {
-    return {
-      selectedPluginUri: null,
-      selectedPluginPosition: null,
-      effectModalOpen: false,
-      scrollTop: 0,
-    }
-  }
-}
+// loadInitialPluginPersistence + the JUCE_GRID_* localStorage
+// write-effect blocks live in
+// ./snapshotEditor/useJuceGridPersistedState (T2471). Renamed from
+// loadInitialPluginPersistence -> loadInitialJuceGridPluginPersistence.
 
 // ============================================================================
 // Main Component
@@ -624,7 +584,7 @@ function hydrateSnapshotEditorStoreOnce(): void {
   snapshotEditorStoreHydrated = true
 
   const initialPersistedState = loadInitialJuceGridState()
-  const initialPluginPersistence = loadInitialPluginPersistence()
+  const initialPluginPersistence = loadInitialJuceGridPluginPersistence()
 
   // Two-key reads (current + legacy) wrapped in a single safe accessor so a
   // poisoned localStorage entry can't crash the editor on mount.
@@ -973,24 +933,13 @@ export function SnapshotEditorPage() {
     localStorage.setItem('map2_juce_grid_active_v2', String(activeFlowIndex))
   }, [activeFlowIndex])
 
-  useEffect(() => {
-    try {
-      if (selectedPluginUri) {
-        localStorage.setItem(JUCE_GRID_SELECTED_PLUGIN_KEY, JSON.stringify({
-          uri: selectedPluginUri,
-          position: selectedPluginPosition,
-        }))
-      } else {
-        localStorage.removeItem(JUCE_GRID_SELECTED_PLUGIN_KEY)
-      }
-    } catch {}
-  }, [selectedPluginPosition, selectedPluginUri])
-
-  useEffect(() => {
-    try {
-      localStorage.setItem(JUCE_GRID_EFFECT_MODAL_OPEN_KEY, effectModalOpen ? 'true' : 'false')
-    } catch {}
-  }, [effectModalOpen])
+  // JUCE_GRID_* write-back effects live in
+  // ./snapshotEditor/useJuceGridPersistedState (T2471).
+  useJuceGridPersistedState({
+    selectedPluginUri,
+    selectedPluginPosition,
+    effectModalOpen,
+  })
 
   useEffect(() => {
     if (!automationTimelineExpanded) {
