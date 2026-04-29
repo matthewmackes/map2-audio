@@ -2268,8 +2268,9 @@ Subtasks below are ordered by dependency and risk: pure data first, sub-componen
 ---
 
 ID: T2467
-Status: [ ] Todo
+Status: [✓] Done
 Title: Extract `SnapshotEditorPageContent` constants + pure helpers to a sibling module
+Completion note: 2026-04-30 - Claude Opus 4.7: SHIPPED across 2 commits (cb54fcd5 + 1fe3bc2e). 10 pure helpers extracted to `web/src/app/pages/snapshotEditor/snapshotEditorPageHelpers.ts` (cloneSnapshotDraftData, fingerprintSnapshotDraftData, snapshotDraftsEqual, resequenceChainSnapshotPlugins, updateDraftChain, describeLoaderStateDraftChange, mergePreviewIntoSnapshotDetail, describeFlowUpdate, isTextEntryTarget, extractActivationProgressMetrics) plus `ActivationProgressMetrics` interface and a `FlowSlotUpdateShape` slim alias. 32 unit tests in `snapshotEditorPageHelpers.test.ts` covering deep-clone independence, deterministic fingerprint equality, plugin re-sequencing invariant, draft-chain mutation semantics, loader-state description mapping, preview-overlay merge, full describeFlowUpdate decision tree, text-entry target identification, and activation-metrics null guards + uppercase/lowercase/trim normalization + non-string coercion. Verification: typecheck + 78 SnapshotEditor Jest tests + atomic build all clean; SnapshotEditorPageContent chunk hash refreshed on each ship.
 Description:
 - Goal: Move all module-scope constants (lines ~305-330) and the pure-function helpers (lines ~330-460: `cloneSnapshotDraftData`, `fingerprintSnapshotDraftData`, `snapshotDraftsEqual`, `resequenceChainSnapshotPlugins`, `updateDraftChain`, `describeLoaderStateDraftChange`, `mergePreviewIntoSnapshotDetail`, `describeFlowUpdate`) into a new file `web/src/app/pages/snapshotEditor/snapshotEditorPageHelpers.ts`. These are zero-React, no-hook helpers with stable signatures.
 - Why: ~150 LoC out of the page file with no risk; lets every following subtask import from a small-surface module instead of the monolith.
@@ -2285,8 +2286,9 @@ Last updated: 2026-04-28 EDT - opened from web-audit punch-list #8.
 ---
 
 ID: T2468
-Status: [ ] Todo
+Status: [✓] Done
 Title: Extract type definitions (`FlowSlot`, `RoutingMode`, `RoutingConfig`, `CompactTabId`, etc.) into a sibling types module
+Completion note: 2026-04-30 - Claude Opus 4.7: SHIPPED across 2 commits (b90cf158 + d86672ea). All 13 type declarations moved to `web/src/app/pages/snapshotEditor/snapshotEditorPageTypes.ts` (FlowLevelControlProps, RoutingInspectorContent, LivePathArrowTone, LivePathGroupKind, FlowSlot, RoutingMode, RoutingConfig, CompactTabId, JuceGridMidiScope, ReorderDirection, MidiRangeDraft, ReorderPreviewState, PendingTabletDeletePluginState). 12 tightly-coupled constants moved alongside (MIN_FLOWS, MAX_FLOWS, DEFAULT_FLOW_COUNT, COMPACT_TAB_ORDER, ROUTING_MODE_OPTIONS, MIDI_CURVE_LABELS, KEYBOARD_SHORTCUT_SECTIONS, JUCE_GRID_SELECTED_PLUGIN_KEY, JUCE_GRID_EFFECT_MODAL_OPEN_KEY, JUCE_GRID_SCROLL_TOP_KEY, LIVE_ACTIVATION_PHASES + derived LiveActivationPhase type, DEFAULT_SYSTEM_NOISE_GATE_DEFAULTS, DEFAULT_SYSTEM_NOISE_GATE_PARAMETERS). Verification: typecheck + Jest + atomic build all clean.
 Description:
 - Goal: Move the type-only declarations clustered around lines 480-820 (`FlowLevelControlProps`, `RoutingInspectorContent`, `LivePathArrowTone`, `LivePathGroupKind`, `FlowSlot`, `RoutingMode`, `RoutingConfig`, `CompactTabId`, `JuceGridMidiScope`, `ReorderDirection`, `MidiRangeDraft`, `ReorderPreviewState`, `PendingTabletDeletePluginState`) into `web/src/app/pages/snapshotEditor/snapshotEditorPageTypes.ts`. Also move tightly-coupled constants used only by these types (`MIN_FLOWS`, `MAX_FLOWS`, `DEFAULT_FLOW_COUNT`, `COMPACT_TAB_ORDER`, `ROUTING_MODE_OPTIONS`, `MIDI_CURVE_LABELS`, `KEYBOARD_SHORTCUT_SECTIONS`, `JUCE_GRID_*` localStorage keys).
 - Why: Lets the helper-extraction (T2467) and the sub-component extractions (T2469, T2470) import shared shapes from one place; sets up the seam for hook extractions (T2471, T2472).
@@ -2301,8 +2303,9 @@ Last updated: 2026-04-28 EDT - opened from web-audit punch-list #8.
 ---
 
 ID: T2469
-Status: [ ] Todo
+Status: [✓] Done
 Title: Extract `FlowLevelControl` sub-component into its own file
+Completion note: 2026-04-30 - Claude Opus 4.7: SHIPPED in commit f59e12fb. FlowLevelControl moved to `web/src/app/pages/snapshotEditor/FlowLevelControl.tsx` (~50 LOC). FlowLevelControlProps consumed from snapshotEditorPageTypes; NumberInput + SegmentedLedText primitives kept in their canonical locations. 4 render tests in `FlowLevelControl.test.tsx` covering: LED readout for clamped percentage, upper/lower clamp behavior (250 -> 100, -50 -> 0), onChange propagation, and disabled prop pass-through. Verification: typecheck + Jest + atomic build all clean.
 Description:
 - Goal: Move the `FlowLevelControl` component (lines ~480-540) to `web/src/app/pages/snapshotEditor/FlowLevelControl.tsx`. Component is small and self-contained. Its props (`FlowLevelControlProps`) move with it (they will already live in T2468's types module — re-import from there).
 - Why: First sub-component extraction. Proves the seam works before tackling larger ones.
@@ -2318,8 +2321,9 @@ Last updated: 2026-04-28 EDT - opened from web-audit punch-list #8.
 ---
 
 ID: T2470
-Status: [ ] Todo
+Status: [✓] Done
 Title: Extract live-path / routing helper functions to `liveSwitcher.ts`
+Completion note: 2026-04-30 - Claude Opus 4.7: SHIPPED in commit 8233b604. All 14 pure label/formatting helpers moved to `web/src/app/pages/snapshotEditor/snapshotEditorLiveLabels.ts` (formatInspectorList, formatMidiMappingValue, parseMidiMappingValue, fallbackPluginLabel, getSelectedPluginHeroIcon, getAudioRouteLabels, countAudioBindingChannels, getLivePathArrowTone, getLivePathStateLabel, getLivePathBranchLabel, sanitizeTraceableNamePart, formatCompactTimestamp, buildTraceableChannelChainName, getRoutingFocusFlowSummary). 27 unit tests covering inspector list formatting, MIDI value format/parse round-trip, plugin URI tail humanization, full arrow-tone + state-label + branch-label decision trees, the routing-focus summary table, traceable-name sanitization, compact-timestamp zero padding, and the traceable channel-chain name composer. Note: filename ended up as `snapshotEditorLiveLabels.ts` rather than `liveSwitcher.ts` per the worklist's "decision belongs to whoever picks this up" caveat — the labels module sits next to the existing `snapshotEditorLivePath.ts` builder file in `web/src/app/components/SnapshotEditor/`. Verification: typecheck + Jest + atomic build all clean.
 Description:
 - Goal: Move the live-path label/tone helpers (lines ~550-700: `formatInspectorList`, `formatMidiMappingValue`, `parseMidiMappingValue`, `fallbackPluginLabel`, `getSelectedPluginHeroIcon`, `getAudioRouteLabels`, `countAudioBindingChannels`, `getLivePathArrowTone`, `getLivePathStateLabel`, `getLivePathBranchLabel`, `getRoutingFocusFlowSummary`, `sanitizeTraceableNamePart`, `formatCompactTimestamp`, `buildTraceableChannelChainName`) into `web/src/app/pages/snapshotEditor/snapshotEditorLiveLabels.ts`. These are pure functions consuming chain/snapshot/MIDI mapping shapes — co-locate with the existing `snapshotEditorLivePath.ts` if it makes the import surface saner; otherwise keep separate (decision belongs to whoever picks this up).
 - Why: Another ~150-200 LoC out of the page file with no risk. Makes T2473 (the JSX-tree partition) easier because the inspector/live-path render code can pull from a single labels module.
@@ -2335,8 +2339,9 @@ Last updated: 2026-04-28 EDT - opened from web-audit punch-list #8.
 ---
 
 ID: T2471
-Status: [ ] Todo
+Status: [✓] Done
 Title: Extract the JUCE-grid persistent-state hook into `useJuceGridPersistedState.ts`
+Completion note: 2026-04-30 - Claude Opus 4.7: SHIPPED in commit ec3ef646. Two pieces extracted to `web/src/app/pages/snapshotEditor/useJuceGridPersistedState.ts`: (1) `loadInitialJuceGridPluginPersistence()` reads the three JUCE_GRID_* localStorage keys at call time, returning a normalized `JuceGridPluginPersistence` shape; robust to legacy string-only payloads, missing entries, JSON corruption. (2) `useJuceGridPersistedState({selectedPluginUri, selectedPluginPosition, effectModalOpen})` hook owns the two write-back useEffect blocks for the selected-plugin payload and the effect-modal-open flag. Scroll-top write-back stays under `useRouteScrollRestoration` which already takes a storageKey. The state itself remains in the SnapshotEditor Zustand store; the hook bridges store -> localStorage. 8 hook tests covering empty defaults, structured-payload parse, legacy URI-only fallback, effect-modal-open boolean, scrollTop clamp + non-finite fallback, write-back uri set/clear, effect-modal-open string-literal write. Verification: typecheck + Jest + atomic build all clean.
 Description:
 - Goal: The monolith persists JUCE-grid local UI state to localStorage under the keys `JUCE_GRID_SELECTED_PLUGIN_KEY`, `JUCE_GRID_EFFECT_MODAL_OPEN_KEY`, `JUCE_GRID_SCROLL_TOP_KEY` (lines ~866+). Audit the actual `useState`/`useEffect` blocks that read/write these (likely several hundred lines around the JUCE-grid render section), and consolidate into one hook `useJuceGridPersistedState()` returning `{ selectedPluginUri, setSelectedPluginUri, effectModalOpen, setEffectModalOpen, scrollTop, setScrollTop }`.
 - Why: Eliminates 3+ near-identical `useState + useEffect(localStorage)` patterns; sets the precedent for the larger T2472 hook extraction.
@@ -2352,8 +2357,9 @@ Last updated: 2026-04-28 EDT - opened from web-audit punch-list #8.
 ---
 
 ID: T2472
-Status: [ ] Todo
+Status: [>] In Progress
 Title: Extract the snapshot-editor data-fetching layer into `useSnapshotEditorData.ts`
+Progress note: 2026-04-30 - Claude Opus 4.7: PREP SHIPPED in commit c2f6e4cb. The first defensive slice of T2472 lands `useSnapshotEditorCadences()` (3 polling intervals — standard / fast / meter — wrapped over the existing `useRealtimeCadence` calls) at `web/src/app/pages/snapshotEditor/useSnapshotEditorCadences.ts`. Sets up the seam for the upcoming useSnapshotEditorData read-query consolidation. **Remaining work** (intentionally deferred to a focused session): consolidate the 20 `useQuery` calls into one read-side hook returning `{ snapshot, runtime, reconciliation, audioHealth, perfEvents, queries: { ... } }`; consolidate the 31 `useMutation` calls into a sibling `useSnapshotEditorMutations()` hook; replace the ~50 inline call sites in the monolith. Risk gates from the original task brief still stand: React Query cache keys must be bit-identical before/after; mutation onSuccess invalidations + WS subscription cleanups must not regress.
 Description:
 - Goal: The monolith holds dozens of `useQuery` / `useMutation` calls — the snapshot detail, the live runtime state, the reconciliation report, the audio device health, the noise-gate config, the default I/O device config, the performance event stream, plus mutations for save/activate/publish-retry/morph/etc. Consolidate the read-side queries into one hook `useSnapshotEditorData(snapshotId)` returning a single shaped object `{ snapshot, runtime, reconciliation, audioHealth, perfEvents, queries: { … }, ... }`. Mutations stay separate or become a sibling `useSnapshotEditorMutations()` — author's call.
 - Why: Largest single concentration of duplication in the file; locking down the query layer makes the page body 1,000+ LoC shorter and gives every future change a clear data seam.
