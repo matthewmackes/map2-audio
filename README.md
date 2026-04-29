@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1381** Python | **1357** TypeScript | **177** C++/H | **145** Docs | **3059** total commits | **3** stars | **0** forks | **0** open issues
+**1381** Python | **1357** TypeScript | **177** C++/H | **145** Docs | **3062** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`133630da`](https://github.com/matthewmackes/map2-audio/commit/133630dab6af5ad685ad147e45a201cc55a0c6bd) | Merge origin/master into B10 remaining pages refit | Map2 Audio | 2026-04-28 |
+| [`bf143ac3`](https://github.com/matthewmackes/map2-audio/commit/bf143ac315e1aef60fb6bb418a0f966e49c8de8f) | T2474 B10: Remaining pages refit — codebase-wide glassmor... | Map2 Audio | 2026-04-28 |
+| [`274f9c7d`](https://github.com/matthewmackes/map2-audio/commit/274f9c7ddfa8e6ce06e9706a92ab6c9d8b666372) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-29 |
 | [`be52c725`](https://github.com/matthewmackes/map2-audio/commit/be52c7259bc6ab91c0d6e8976799d0f1074960f2) | Merge origin/master into B9 NodeNav/Devices/DeviceContext... | Map2 Audio | 2026-04-28 |
 | [`76a068a8`](https://github.com/matthewmackes/map2-audio/commit/76a068a8bb7bb3243b1812c54b991e2d67c6c266) | T2474 B9: Maschine + Devices + DeviceContext + NodeNav refit | Map2 Audio | 2026-04-28 |
 | [`5f4c077a`](https://github.com/matthewmackes/map2-audio/commit/5f4c077a34d3a53fe7d87a610b2fbed68d2337c5) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-29 |
 | [`fad25840`](https://github.com/matthewmackes/map2-audio/commit/fad258402ba680ef029a5072a33ac986ae5bb0c2) | Merge origin/master into B8 ClusterDashboard/ManagementWo... | Map2 Audio | 2026-04-28 |
 | [`3f391c29`](https://github.com/matthewmackes/map2-audio/commit/3f391c29212794b25b87529ea3ea7ce1837c0924) | T2474 B8: ClusterDashboard + ManagementWorkspace refit — ... | Map2 Audio | 2026-04-28 |
-| [`a507a486`](https://github.com/matthewmackes/map2-audio/commit/a507a4868a9745a50cc57415f395786116b62e90) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-29 |
-| [`4484beee`](https://github.com/matthewmackes/map2-audio/commit/4484beee183d911916ae6ae082a829fdc0da3736) | Merge origin/master into B7 MidiHub/AvbRouting/ApiObserva... | Map2 Audio | 2026-04-28 |
-| [`34e59ceb`](https://github.com/matthewmackes/map2-audio/commit/34e59ceb618b6cfc1d07831e4c530b0c6b24a0e3) | T2474 B7: MidiHub + AvbRouting + ApiObservatory refit | Map2 Audio | 2026-04-28 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
