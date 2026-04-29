@@ -16,12 +16,11 @@ import {
   MenuItem,
   FormControl,
   InputLabel,
-  Switch,
-  FormControlLabel,
 } from '@mui/material'
 import {
   InlineNotification,
   ActionableNotification,
+  Toggle,
 } from '@carbon/react'
 import { StatusChip } from '../../primitives'
 import { NumberInput } from '../../ParameterControl'
@@ -1206,20 +1205,22 @@ function AnalogIOTab({ meterData }: { meterData: MeterData }) {
                   </div>
                 </div>
 
-                <FormControlLabel
-                  control={
-                    <Switch
-                      size="small"
-                      checked={phantomPower[ch - 1]}
-                      onChange={(e) => {
-                        const newState = [...phantomPower]
-                        newState[ch - 1] = e.target.checked
-                        setPhantomPower(newState)
-                      }}
-                    />
-                  }
-                  label={<span style={{ fontSize: 11 }}>48V</span>}
-                />
+                <div className="edirol-ua1000__toggle-row">
+                  <Toggle
+                    id={`edirol-ua1000-phantom-${ch}`}
+                    size="sm"
+                    labelText="48V phantom"
+                    hideLabel
+                    toggled={phantomPower[ch - 1]}
+                    onToggle={(checked: boolean) => {
+                      const newState = [...phantomPower]
+                      newState[ch - 1] = checked
+                      setPhantomPower(newState)
+                    }}
+                    aria-label={`48V phantom power channel ${ch}`}
+                  />
+                  <span className="edirol-ua1000__toggle-label">48V</span>
+                </div>
               </LegacyTile>
             )
           })}
