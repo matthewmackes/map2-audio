@@ -33673,7 +33673,7 @@ Last updated: 2026-04-29 - Claude (B12 completion + T2474 epic closed)
 
 ## Epic: Visual System Follow-Up Work (opened 2026-04-28)
 
-Epic overview: Five discrete follow-up epics surfaced during the Carbon Discipline Visual System Sweep audit. T2475 (MUI removal) and T2478 (philosophy docs) and T2479 (visual regression harness) execute autonomously after T2474 completes. T2476 (plugin-card consolidation) and T2477 (graph-rendering consolidation) are paused — they are architectural refactors with real behavioral risk and require their own clarification round before execution.
+Epic overview: Five discrete follow-up epics surfaced during the Carbon Discipline Visual System Sweep audit. T2475 (MUI removal) and T2478 (philosophy docs) and T2479 (visual regression harness) execute autonomously after T2474 completes. T2476 (plugin-card consolidation) — DONE 2026-04-29. T2477 (graph-rendering consolidation) is paused — architectural refactor with real behavioral risk; requires its own clarification round before execution.
 
 ID: T2475
 Status: [ ] Todo
@@ -33692,7 +33692,7 @@ Assigned to: TBD (paused — full scope now requires its own clarification round
 Last updated: 2026-04-28 - Claude (scope corrected during B7 reconnaissance)
 
 ID: T2476
-Status: [ ] Todo
+Status: [✓] Done
 Title: Plugin-card template consolidation — collapse PluginCards/{Base,Custom,Layouts,Visualizations,...} into unified schema
 Description:
 - Goal / acceptance criteria: Audit `web/src/app/components/PluginCards/` (6+ subdirectories: Base, Custom, Layouts, Visualizations, etc.). Design a single schema-driven primitive (e.g., `<PluginCard plugin={...} layout={...} />`) that replaces the template sprawl. Migrate every plugin (LV2, custom HTML, MIDI dialogs, IntelFX, MPX1) to the unified primitive. Preserve all plugin behaviors (parameter binding, MIDI assignment, bypass, preset recall, custom UI rendering). Validate with full Jest + manual operator-flow testing. PAUSED pending user clarification round (Q&A on schema shape, parameter-binding contract, custom-HTML escape hatch).
@@ -33700,8 +33700,15 @@ Description:
 - Dependencies: T2474 (visual system + primitives must exist first).
 - Estimated effort: Large — architectural refactor with behavioral risk.
 - Required outputs: Unified `<PluginCard>` primitive with documented schema; all plugin types migrated; Base/Custom/Layouts/Visualizations subdirectories collapsed; full Jest pass.
-Assigned to: TBD (paused — awaits clarification round)
-Last updated: 2026-04-28 - Claude
+Assigned to: Claude Opus 4.7
+Last updated: 2026-04-29 - Claude (T2476 closed)
+- Completion notes (2026-04-29):
+  - **Clarification round results**: 5 questions resolved at session start. Locks: A (visual cleanup) + A (strict §10.5 hardware-skin boundary) + B (drop fluent builder; delete unused registry surface only) + A (full migration of unused parts) + A (one big commit).
+  - **Reconnaissance corrected the original framing 3 times**. The T2476 task description claimed "collapse Base/Custom/Layouts/Visualizations into unified schema-driven primitive" but reconnaissance found: (1) the system already IS schema-driven (registry + PluginCardProps + lazy loaders); (2) there are not "~50 plugin registrations" — there are 68 (45 registerPluginCard + 13 registerPluginPattern + 10 registerTemplateLazy); (3) Custom/JUCE/ has 30 distinct cards because each represents unique vendor plugin UI (TweedBassman ≠ PassionFX ≠ CelestialCompressor) — these are vendor-specific, not redundant. The "consolidation" T2476 implied was naïve.
+  - **Real dead surface eligible for deletion**: only `registerTemplate` (eager) function, the eager `TEMPLATE_REGISTRY` Map, the `getTemplateComponent` (eager-only) getter, and the `PluginCardConfig.component` + `PluginCardConfig.templateLoader` config fields. All zero-consumer.
+  - **§10.5 hardware-skin exception applied**: 8 `PluginCards/Visualizations/*.tsx` files (TransferCurve, EQCurveDisplay, ReverbDecayCurve, DelayTapGrid, PitchDisplay, DistortionCurve, LFOWaveform, etc.) use inline boxShadow but render device-graphics (signal-processing visualizations like EQ curves, transfer curves, reverb decay plots). Per Q2=A strict boundary they are device graphics, not UI chrome — preserved. `LCDDisplay.css` similarly preserved (Lexicon green / Eventide blue / H9 red / Boss orange LCD/VFD/LED display rendering).
+  - **Files updated**: `PluginCards/Base/carbonCardStyles.css` (4 hardcoded color literals migrated to MAP semantic tokens — #8d8d8d → --cds-text-helper, #f1c21b → --map2-alert-advisory in 2 sites, #fa4d56 → --map2-health-critical; removed inset bottom-edge box-shadow on `.cds--accordion__heading.--more` per Q1=A no-decorative-shadows). `PluginCards/Custom/JUCE/GateCard.tsx` (gate-state LED retired 8px boxShadow glow halo + hardcoded #fa4d56 → flat dot with --map2-health-critical). `PluginCards/Custom/TooB/LooperCard.tsx` (recording/playing LEDs retired 8px boxShadow glow halos + hardcoded #ff4444/#44ff44 → flat dots with --map2-health-critical / --map2-state-live). `PluginCards/Custom/TooB/TunerCard.tsx` (tuner-needle dot retired 10px boxShadow glow halo + hardcoded #ffaa00/#ff6b6b → flat dot with --map2-alert-advisory / --map2-health-critical). `PluginCards/registry.ts` (deleted `registerTemplate` setter + `TEMPLATE_REGISTRY` eager Map + `getTemplateComponent` eager-only getter + 6 dead eager-template-fallback branches across `getPluginCardConfig` + `getPluginCardComponent` + `getTemplateCardComponent`; `getRegisteredTemplates` now returns lazy-template loader keys). `PluginCards/index.ts` (removed `registerTemplate` and `getTemplateComponent` from public exports). `PluginCards/types.ts` (removed unused `component` and `templateLoader` fields from `PluginCardConfig`).
+  - Verification: typecheck PASS; ^web/src/app/components/PluginCards/(registry|types|PluginCardRouter|withMidiDialog|liveEditorRouting) tests PASS (5 suites, 16 tests); build PASS (22.16s); :3000 HTTP 200.
 
 ID: T2477
 Status: [ ] Todo

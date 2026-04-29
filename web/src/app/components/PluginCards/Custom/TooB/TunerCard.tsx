@@ -53,13 +53,18 @@ function TunerCardBase({
         <div style={{ flex: 1, height: 17, background: '#222', borderRadius: 6, position: 'relative', overflow: 'hidden' }}>
           <div style={{ position: 'absolute', left: '50%', top: 0, bottom: 0, width: 2, background: accentColor, transform: 'translateX(-50%)' }} />
           {frequency > 0 && (
+            // T2474 E2: Was rendering an 8px tuner-needle dot with a 10px
+            // boxShadow glow halo in #ffaa00 (sharp) / #ff6b6b (flat).
+            // Per Q1=A (no glow halos) the dot is now flat. Sharp/flat
+            // states route through MAP semantic alert tokens (advisory
+            // for sharp/flat-but-acceptable, critical for hard-flat).
+            // Position-on-bar already conveys cents-of-error precisely.
             <div style={{
               position: 'absolute', left: `${50 + (cents / 50) * 50}%`, top: '50%',
               width: 8, height: 8,
-              background: inTune ? accentColor : sharp ? '#ffaa00' : '#ff6b6b',
+              background: inTune ? accentColor : sharp ? 'var(--map2-alert-advisory, #f1c21b)' : 'var(--map2-health-critical, #fa4d56)',
               borderRadius: '50%', transform: 'translate(-50%, -50%)',
               transition: 'left 0.05s ease-out',
-              boxShadow: `0 0 10px ${inTune ? accentColor : sharp ? '#ffaa00' : '#ff6b6b'}`,
             }} />
           )}
         </div>

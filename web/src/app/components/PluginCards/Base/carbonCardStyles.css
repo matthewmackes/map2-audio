@@ -302,7 +302,8 @@
 }
 
 .carbon-asset-selector-value.empty {
-  color: #8d8d8d;
+  /* T2474 E2: Was hardcoded #8d8d8d (Carbon gray-50). */
+  color: var(--cds-text-helper, #8d8d8d);
 }
 
 .carbon-asset-selector-actions {
@@ -342,8 +343,10 @@
 }
 
 .carbon-asset-selector-status-badge--warning {
-  border-color: color-mix(in srgb, #f1c21b 45%, var(--cds-border-subtle-01, #525252));
-  color: #f1c21b;
+  /* T2474 E2: Was hardcoded #f1c21b (Carbon yellow-30). Routed through
+   * the MAP semantic alert-advisory token from B1. */
+  border-color: color-mix(in srgb, var(--map2-alert-advisory, #f1c21b) 45%, var(--cds-border-subtle-01, #525252));
+  color: var(--map2-alert-advisory, #f1c21b);
 }
 
 .carbon-asset-selector-fact-grid {
@@ -524,11 +527,15 @@
 }
 
 .carbon-card .carbon-card-accordion-item--more .cds--accordion__heading {
+  /* T2474 E2: Removed inset bottom-edge box-shadow that simulated a
+   * raised-bevel highlight on the "More" accordion variant. Per Q1=A
+   * (no decorative shadows). The strong contrast against the
+   * primary-blue background already separates the heading from the
+   * accordion body without a faux-bevel edge. */
   min-height: 48px;
   padding: var(--carbon-spacing-04) var(--carbon-spacing-05);
   color: var(--cds-text-on-color, #ffffff);
   background: var(--cds-button-primary, #0f62fe);
-  box-shadow: inset 0 -1px 0 color-mix(in srgb, var(--cds-button-primary, #0f62fe) 68%, #000);
 }
 
 .carbon-card .carbon-card-accordion-item--more .cds--accordion__heading:hover,
@@ -617,12 +624,16 @@
 }
 
 .carbon-card-footer-meter-value.clipping {
-  color: #fa4d56;
+  /* T2474 E2: Was hardcoded #fa4d56 (Carbon red-50). Routed through
+   * --map2-health-critical — clip is a critical operator condition. */
+  color: var(--map2-health-critical, #fa4d56);
   font-weight: 600;
 }
 
 .carbon-card-footer-meter-value.gain-reduction {
-  color: #f1c21b;
+  /* T2474 E2: Was hardcoded #f1c21b (Carbon yellow-30). Routed through
+   * --map2-alert-advisory — gain reduction is informational. */
+  color: var(--map2-alert-advisory, #f1c21b);
 }
 
 /* ==================== Icon Buttons ==================== */

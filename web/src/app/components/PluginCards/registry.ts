@@ -26,10 +26,12 @@ const PLUGIN_REGISTRY = new Map<string, PluginCardConfig>()
 /** Registry of URI patterns to card configurations */
 const PATTERN_REGISTRY: Array<{ pattern: RegExp; config: PluginCardConfig }> = []
 
-/** Registry of templates */
-const TEMPLATE_REGISTRY = new Map<PluginCardTemplate, ComponentType<PluginCardProps>>()
-
-/** Registry of lazy template loaders */
+/* T2474 E2: Removed TEMPLATE_REGISTRY (eager Map) and registerTemplate
+ * function — both unused. All 10 template registrations in
+ * web/src/app/components/PluginCards/index.ts use registerTemplateLazy,
+ * and no caller has used the eager path since the registry was written.
+ * Same for the unused PluginCardConfig.component (eager) field — dropped
+ * from types.ts. */
 const TEMPLATE_LOADER_REGISTRY = new Map<PluginCardTemplate, () => Promise<{ default: ComponentType<PluginCardProps> }>>()
 
 /** Cache for lazily-resolved components */
@@ -55,16 +57,6 @@ export function registerPluginPattern(
   config: PluginCardConfig
 ): void {
   PATTERN_REGISTRY.push({ pattern, config })
-}
-
-/**
- * Register a template component for a category
- */
-export function registerTemplate(
-  template: PluginCardTemplate,
-  component: ComponentType<PluginCardProps>
-): void {
-  TEMPLATE_REGISTRY.set(template, component)
 }
 
 /**
@@ -125,7 +117,7 @@ export function getPluginCardConfig(
 
   // 3. Use category template
   const template = categoryToTemplate(category)
-  if (TEMPLATE_REGISTRY.has(template) || TEMPLATE_LOADER_REGISTRY.has(template)) {
+  if (TEMPLATE_LOADER_REGISTRY.has(template)) {
     return { template }
   }
 
@@ -147,11 +139,6 @@ export function getPluginCardComponent(
     return null
   }
 
-  // Custom component takes priority (eagerly loaded)
-  if (config.component) {
-    return config.component
-  }
-
   // Lazy-loaded custom component
   if (config.loader) {
     const cacheKey = `loader:${uri}`
@@ -161,12 +148,12 @@ export function getPluginCardComponent(
     return LAZY_COMPONENT_CACHE.get(cacheKey)!
   }
 
-  // Fall back to template (eagerly loaded)
+  // Fall back to lazy-template loader.
+  // T2474 E2: Removed the eager `config.component` priority branch and
+  // the eager TEMPLATE_REGISTRY fallback — both code paths were dead
+  // (zero registrations used config.component, and registerTemplate
+  // eager was never called).
   if (config.template) {
-    const eagerly = TEMPLATE_REGISTRY.get(config.template)
-    if (eagerly) return eagerly
-
-    // Fall back to lazy template loader
     const templateLoader = TEMPLATE_LOADER_REGISTRY.get(config.template)
     if (templateLoader) {
       const cacheKey = `template:${config.template}`
@@ -181,25 +168,18 @@ export function getPluginCardComponent(
 }
 
 /**
- * Get the template component directly
- */
-export function getTemplateComponent(
-  template: PluginCardTemplate
-): ComponentType<PluginCardProps> | null {
-  return TEMPLATE_REGISTRY.get(template) || null
-}
-
-/**
- * Get the template component, resolving lazy loaders when necessary.
+ * Get the template component, resolving the lazy loader when necessary.
+ *
+ * T2474 E2: Removed the eager TEMPLATE_REGISTRY lookup that previously
+ * fronted this function. All template registrations are lazy; the eager
+ * setter (registerTemplate) was deleted as dead code. Old eager-only
+ * getTemplateComponent() function also deleted — its return-eager-or-null
+ * contract is unimplementable when no eager registry exists, and no
+ * caller depended on the eager-only behavior.
  */
 export function getTemplateCardComponent(
   template: PluginCardTemplate
 ): ComponentType<PluginCardProps> | null {
-  const eagerly = TEMPLATE_REGISTRY.get(template)
-  if (eagerly) {
-    return eagerly
-  }
-
   const templateLoader = TEMPLATE_LOADER_REGISTRY.get(template)
   if (templateLoader) {
     const cacheKey = `template:${template}`
@@ -227,10 +207,15 @@ export function getRegisteredPlugins(): string[] {
 }
 
 /**
- * Get all registered templates
+ * Get all registered templates (those with a registered lazy loader).
+ *
+ * T2474 E2: Was returning TEMPLATE_REGISTRY keys (eager Map); now returns
+ * TEMPLATE_LOADER_REGISTRY keys since the eager Map was removed. This is
+ * the natural reading of "registered templates" — the eager Map was
+ * always empty in production.
  */
 export function getRegisteredTemplates(): PluginCardTemplate[] {
-  return Array.from(TEMPLATE_REGISTRY.keys())
+  return Array.from(TEMPLATE_LOADER_REGISTRY.keys())
 }
 
 // ==================== Default Configurations ====================

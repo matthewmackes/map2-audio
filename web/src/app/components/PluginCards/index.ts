@@ -15,14 +15,17 @@
 export * from './types'
 
 // Registry
+// T2474 E2: Removed `registerTemplate` (eager) and `getTemplateComponent`
+// (eager-only) exports — both backed by an eager TEMPLATE_REGISTRY Map
+// that was never populated in production. All 10 template registrations
+// in this file use `registerTemplateLazy` and resolve through
+// `getTemplateCardComponent`, which is the canonical lazy-aware getter.
 export {
   registerPluginCard,
   registerPluginPattern,
-  registerTemplate,
   registerTemplateLazy,
   getPluginCardConfig,
   getPluginCardComponent,
-  getTemplateComponent,
   getTemplateCardComponent,
   hasCustomCard,
   getRegisteredPlugins,

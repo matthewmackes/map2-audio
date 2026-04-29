@@ -33,21 +33,27 @@ export interface PluginCardProps {
   realtimeData?: PluginRealtimeData
 }
 
-/** Configuration for a plugin card in the registry */
+/**
+ * Configuration for a plugin card in the registry.
+ *
+ * T2474 E2: Removed two unused fields:
+ *   - `component`: eager-component slot. No registration ever set it
+ *     (all 58 registrations use `loader` for lazy loading).
+ *   - `templateLoader`: lazy-template slot on the per-plugin config.
+ *     Not used; lazy templates are registered globally via
+ *     `registerTemplateLazy(template, loader)` and looked up by the
+ *     `template` field below.
+ */
 export interface PluginCardConfig {
-  /** Custom component to render (if any) */
-  component?: React.ComponentType<PluginCardProps>
-  /** Lazy loader for the component — loaded on demand */
+  /** Lazy loader for the custom component — loaded on demand. */
   loader?: () => Promise<{ default: React.ComponentType<PluginCardProps> }>
-  /** Template to use if no custom component */
+  /** Category template to use as a fallback when there is no custom loader. */
   template?: PluginCardTemplate
-  /** Lazy loader for a template component */
-  templateLoader?: () => Promise<{ default: React.ComponentType<PluginCardProps> }>
-  /** Additional visualizations to include */
+  /** Additional visualizations to include. */
   visualizations?: VisualizationType[]
-  /** Custom parameter grouping */
+  /** Custom parameter grouping. */
   parameterGroups?: ParameterGroupConfig[]
-  /** Card-specific options */
+  /** Card-specific options. */
   options?: PluginCardOptions
 }
 

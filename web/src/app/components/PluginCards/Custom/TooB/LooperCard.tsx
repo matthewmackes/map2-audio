@@ -57,9 +57,17 @@ function LooperCardBase({
               }}
             >
               <div style={{ fontSize: 16, fontWeight: 'bold', color: TRACK_COLORS[i], marginBottom: 4 }}>{i + 1}</div>
+              {/* T2474 E2: Recording / playing state LEDs flattened — were
+                  rendering 8px boxShadow glow halos around the dots in
+                  hardcoded #ff4444 / #44ff44. Per Q1=A (no glow) the LEDs
+                  are now flat, and the active-state colors route through
+                  the MAP semantic state tokens (--map2-health-critical for
+                  recording, --map2-state-live for playing). State is
+                  already disambiguated by side-by-side dot positions and
+                  by the volume% readout below. */}
               <div style={{ display: 'flex', justifyContent: 'center', gap: 4 }}>
-                <div style={{ width: 8, height: 8, borderRadius: '50%', background: isRecording ? '#ff4444' : '#333', boxShadow: isRecording ? '0 0 8px #ff4444' : 'none' }} />
-                <div style={{ width: 8, height: 8, borderRadius: '50%', background: isPlaying ? '#44ff44' : '#333', boxShadow: isPlaying ? '0 0 8px #44ff44' : 'none' }} />
+                <div style={{ width: 8, height: 8, borderRadius: '50%', background: isRecording ? 'var(--map2-health-critical, #fa4d56)' : '#333' }} />
+                <div style={{ width: 8, height: 8, borderRadius: '50%', background: isPlaying ? 'var(--map2-state-live, #42be65)' : '#333' }} />
               </div>
               <div style={{ fontSize: 9, color: '#666', marginTop: 4 }}>{volume.toFixed(0)}%</div>
             </div>

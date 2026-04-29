@@ -105,17 +105,21 @@ function GateCardBase({
           padding: 8,
           gap: 8,
         }}>
+          {/* T2474 E2: Was rendering a 12px LED dot with 8px boxShadow glow
+              halo + Carbon red-50 (#fa4d56) hardcoded. Per Q1=A (no glow
+              halos) the dot is now flat, and the closed-state color routes
+              through --map2-health-critical from B1. The PASSING/GATING
+              text alternation already conveys state without the glow. */}
           <div style={{
             width: 12, height: 12,
             borderRadius: '50%',
-            background: isOpen ? accentColor : '#fa4d56',
-            boxShadow: `0 0 8px ${isOpen ? accentColor : '#fa4d56'}80`,
-            transition: 'all 0.1s ease-out',
+            background: isOpen ? accentColor : 'var(--map2-health-critical, #fa4d56)',
+            transition: 'background 0.1s ease-out',
           }} />
           <span style={{
             fontSize: 11,
             fontWeight: 600,
-            color: isOpen ? accentColor : '#fa4d56',
+            color: isOpen ? accentColor : 'var(--map2-health-critical, #fa4d56)',
             letterSpacing: '0.32px',
           }}>
             {isOpen ? 'PASSING' : 'GATING'}
