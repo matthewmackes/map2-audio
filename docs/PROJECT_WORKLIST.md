@@ -2299,6 +2299,23 @@ Subtasks below are ordered by dependency and risk: pure data first, sub-componen
 
 **Remaining (after the 2026-04-29 session)**: T2472 read-query + mutation consolidation (still deferred), T2473 JSX-tree partition — 3 of 6 sub-components done; the harder slices (Header, FlowsRail, GridBody, Footer) remain. The first three T2473 ships chose the cleanest leaf overlays first (Keyboard help, Lane picker, Perform overlay) — each is prop-driven, parent owns state, no behavior change.
 
+**Decomposition session log (2026-04-29, third 10-iteration SHIP loop)**:
+
+- Iter 1 (5d9f45b6): T2473 part 4 — SnapshotEditorPresetBrowser modal extracted (~84 inline LOC removed; load/delete/import-jump callbacks; parent retains TanStack mutation ownership).
+- Iter 2 (61376247): T2473 part 5 — SnapshotEditorAssignmentDialog extracted (~98 inline LOC removed; defines minimal AssignmentDialogNode + AssignmentDialogAnalysis prop shapes so the cluster-API types don't leak).
+- Iter 3 (382147a7): T2473 part 6 — SnapshotEditorClearFlowsConfirm danger-Modal extracted (~19 inline LOC removed).
+- Iter 4 (a64e190b): T2473 part 7 — SnapshotEditorSavePresetModal extracted (~34 inline LOC removed; controlled TextInput).
+- Iter 5 (2032a9ea): T2473 part 8 — SnapshotEditorRenameChainModal extracted (~34 inline LOC removed; mirrors the SavePreset shape).
+- Iter 6 (4097ef8d): T2473 part 9 — SnapshotEditorTabletDeleteConfirm danger-Modal extracted (~21 inline LOC removed; pendingPlugin is the open-guard).
+- Iter 7 (117b88df): T2473 part 10 — SnapshotEditorPresetDeleteConfirm danger-Modal extracted (~21 inline LOC removed).
+- Iter 8 (1b41c432): T2473 part 11 — SnapshotEditorRoutingInspector modal extracted (~30 inline LOC removed; reuses the existing RoutingInspectorContent shape).
+- Iter 9 (this commit): Worklist iteration log update.
+- Iter 10 (next commit): Closing log + cumulative LOC summary + memory refresh.
+
+**Cumulative net LOC effect after the 2026-04-29 third session**: SnapshotEditorPageContent.tsx 9151 -> 8894 (-257 this session, -937 cumulative since the original 9831 baseline). Eight new sibling files added this session: SnapshotEditorPresetBrowser.tsx, SnapshotEditorAssignmentDialog.tsx, SnapshotEditorClearFlowsConfirm.tsx, SnapshotEditorSavePresetModal.tsx, SnapshotEditorRenameChainModal.tsx, SnapshotEditorTabletDeleteConfirm.tsx, SnapshotEditorPresetDeleteConfirm.tsx, SnapshotEditorRoutingInspector.tsx. T2473 is now 11 sub-components in. The remaining big render-tree slices (Plugin Browser modal — ~305 LOC; MIDI mappings modal wrapper; Header zone; FlowsRail; GridBody; Footer) are now where the value-per-effort curve gets steeper — Plugin Browser will be the next big win.
+
+**Remaining (after the 2026-04-29 third session)**: T2472 read-query + mutation consolidation (still deferred), T2473 JSX-tree partition — 11 components extracted; the larger surfaces remain (Plugin Browser modal at ~305 LOC, MIDI mappings modal, Header zone, FlowsRail, GridBody, Footer). All 8 ships in this session passed: typecheck + 46 SnapshotEditor Jest suites (269 tests) + atomic build + bundle-hash refresh + dual-push (origin + gitlab).
+
 ---
 
 ID: T2467
