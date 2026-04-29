@@ -40,6 +40,7 @@ import {
 } from '@carbon/react'
 import { AnimatePresence, motion } from 'framer-motion'
 import { lazy, startTransition, Suspense, useDeferredValue, useEffect, useMemo, useState } from 'react'
+import { useLocation, useNavigate } from 'react-router-dom'
 
 import './PlatformModal.css'
 import { MapOs2DrivesIcon, MapOs2HomeIcon } from '../icons/map'
@@ -49,6 +50,7 @@ import { LoadingState } from '../shared/LoadingState'
 import { PlatformGrafanaPanelDeck, type PlatformGrafanaPanelDefinition } from './PlatformGrafanaPanel'
 import { PlatformsOverviewTopology } from './PlatformsOverviewTopology'
 import {
+  isMidpointChildNavItem,
   isPlatformUtilityPanel,
   platformPanelItems,
   type StandalonePanel,
@@ -262,12 +264,30 @@ function SidebarNavigation({
   onOpenLayer: (id: PlatformLayerId) => void
   onOpenStandalone: (id: StandalonePanel) => void
 }) {
+  const location = useLocation()
+  const navigate = useNavigate()
+  const activeMidpointTab = useMemo(() => {
+    if (activeId !== 'midpoint') return null
+    const params = new URLSearchParams(location.search)
+    return params.get('tab')
+  }, [activeId, location.search])
+
   const buildNavItem = (
     item: (typeof PLATFORM_CONTROL_PANEL_ITEMS)[number],
     variant: UnifiedWorkspaceSideNavItem['variant'] = 'default',
   ): UnifiedWorkspaceSideNavItem => {
     const targetId = item.target.layer ?? item.target.panel ?? null
-    const isSelected = activeId === targetId
+    let isSelected = activeId === targetId
+
+    if (isMidpointChildNavItem(item)) {
+      // Children all target panel='midpoint'; disambiguate by ?tab so only one
+      // child highlights at a time, and de-select the parent Midpoint row when
+      // a child is active.
+      isSelected = activeMidpointTab === item.tabId
+    } else if (item.target.panel === 'midpoint' && activeMidpointTab) {
+      // The parent Midpoint row defers to whichever child is active.
+      isSelected = false
+    }
 
     return {
       key: item.to,
@@ -278,6 +298,11 @@ function SidebarNavigation({
       active: isSelected,
       variant,
       onOpen: () => {
+        if (isMidpointChildNavItem(item)) {
+          onOpenStandalone('midpoint')
+          navigate(item.to, { replace: false })
+          return
+        }
         if (item.target.layer) {
           onOpenLayer(item.target.layer)
           return

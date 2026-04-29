@@ -3,7 +3,7 @@ import { Navigate, Outlet, useLocation } from 'react-router-dom'
 import { GlobalTheme, Theme } from '@carbon/react'
 
 import { WorkspacePageTemplate } from '../components/layout/WorkspacePageTemplate'
-import { platformPanelItems } from '../data/platformMenuItems'
+import { isMidpointChildNavItem, platformPanelItems } from '../data/platformMenuItems'
 import {
   WORKSPACE_ARTIFACTS_BASE_PATH,
   buildWorkspaceArtifactsDiscoverPath,
@@ -62,15 +62,17 @@ function buildWorkspaceHubSections(): WorkspaceHubNavSection[] {
     {
       key: 'platforms',
       label: 'Control Panels',
-      items: platformPanelItems.map((item) => {
-        const workspace = item.target.panel ?? item.target.layer ?? 'overview'
-        return {
-          key: `platforms-${workspace}`,
-          label: item.label,
-          to: buildWorkspaceHubPlatformPath(workspace),
-          match: (location) => location.pathname === buildWorkspaceHubPlatformPath(workspace),
-        }
-      }),
+      items: platformPanelItems
+        .filter((item) => !isMidpointChildNavItem(item))
+        .map((item) => {
+          const workspace = item.target.panel ?? item.target.layer ?? 'overview'
+          return {
+            key: `platforms-${workspace}`,
+            label: item.label,
+            to: buildWorkspaceHubPlatformPath(workspace),
+            match: (location) => location.pathname === buildWorkspaceHubPlatformPath(workspace),
+          }
+        }),
     },
     {
       key: 'artifacts',

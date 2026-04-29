@@ -28,3 +28,25 @@
   margin: 0;
   line-height: 1.5;
 }
+
+.midpoint-shell__layout {
+  display: block;
+  min-width: 0;
+}
+
+.midpoint-shell__layout--with-topology {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  gap: 16px;
+  align-items: stretch;
+}
+
+.midpoint-shell__layout--with-topology > .cds--tab-content {
+  min-width: 0;
+}
+
+.midpoint-shell__lazy-fallback {
+  padding: 24px;
+  color: var(--cds-text-secondary);
+  font-size: 13px;
+}

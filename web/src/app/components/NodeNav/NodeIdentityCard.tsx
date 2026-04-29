@@ -11,6 +11,7 @@ import { forwardRef } from 'react'
 
 import type { NodeSummary } from '../../types/node'
 import { formatNodeDisplayName, getNodeRoleLabel, getNodeStatusLabel } from '../../utils/nodeDisplay'
+import { Map2BrandMark } from '../branding/map2Branding'
 import './NodeIdentityCard.css'
 
 interface NodeIdentityCardProps {
@@ -41,9 +42,9 @@ export const NodeIdentityCard = forwardRef<HTMLButtonElement, NodeIdentityCardPr
             </span>
             <span className="node-id-card__eyebrow-status">{loadingLabel ?? 'UNAVAILABLE'}</span>
           </div>
-          <div className="node-id-card__hero" style={{ minHeight: 130 }}>
+          <div className="node-id-card__hero">
             <div className="node-id-card__hero-mark">
-              <img src="/img/MAP2-Node-v2.png" alt="" />
+              <Map2BrandMark decorative />
             </div>
             <span className="node-id-card__caret" aria-hidden>▾</span>
           </div>
@@ -89,7 +90,7 @@ export const NodeIdentityCard = forwardRef<HTMLButtonElement, NodeIdentityCardPr
 
           {/* Hero mark */}
           <div className="node-id-card__hero-mark">
-            <img src="/img/MAP2-Node-v2.png" alt="" />
+            <Map2BrandMark decorative />
           </div>
 
           {/* Vertical node ID */}

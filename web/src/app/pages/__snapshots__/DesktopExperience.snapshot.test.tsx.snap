@@ -65,10 +65,57 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                 <div
                   class="node-id-card__hero-mark"
                 >
-                  <img
-                    alt=""
-                    src="/img/MAP2-Node-v2.png"
-                  />
+                  <svg
+                    aria-hidden="true"
+                    focusable="false"
+                    viewBox="0 0 256 256"
+                  >
+                    <rect
+                      fill="#4DA6FF"
+                      height="256"
+                      rx="56"
+                      ry="56"
+                      width="256"
+                      x="0"
+                      y="0"
+                    />
+                    <rect
+                      fill="#000000"
+                      height="95"
+                      rx="14"
+                      ry="14"
+                      width="95"
+                      x="22"
+                      y="22"
+                    />
+                    <rect
+                      fill="#000000"
+                      height="95"
+                      rx="14"
+                      ry="14"
+                      width="95"
+                      x="139"
+                      y="22"
+                    />
+                    <rect
+                      fill="#000000"
+                      height="95"
+                      rx="14"
+                      ry="14"
+                      width="95"
+                      x="22"
+                      y="139"
+                    />
+                    <rect
+                      fill="#000000"
+                      height="95"
+                      rx="14"
+                      ry="14"
+                      width="95"
+                      x="139"
+                      y="139"
+                    />
+                  </svg>
                 </div>
                 <div
                   class="node-id-card__vertical-id"
@@ -6423,10 +6470,57 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                 <div
                   class="node-id-card__hero-mark"
                 >
-                  <img
-                    alt=""
-                    src="/img/MAP2-Node-v2.png"
-                  />
+                  <svg
+                    aria-hidden="true"
+                    focusable="false"
+                    viewBox="0 0 256 256"
+                  >
+                    <rect
+                      fill="#4DA6FF"
+                      height="256"
+                      rx="56"
+                      ry="56"
+                      width="256"
+                      x="0"
+                      y="0"
+                    />
+                    <rect
+                      fill="#000000"
+                      height="95"
+                      rx="14"
+                      ry="14"
+                      width="95"
+                      x="22"
+                      y="22"
+                    />
+                    <rect
+                      fill="#000000"
+                      height="95"
+                      rx="14"
+                      ry="14"
+                      width="95"
+                      x="139"
+                      y="22"
+                    />
+                    <rect
+                      fill="#000000"
+                      height="95"
+                      rx="14"
+                      ry="14"
+                      width="95"
+                      x="22"
+                      y="139"
+                    />
+                    <rect
+                      fill="#000000"
+                      height="95"
+                      rx="14"
+                      ry="14"
+                      width="95"
+                      x="139"
+                      y="139"
+                    />
+                  </svg>
                 </div>
                 <div
                   class="node-id-card__vertical-id"
@@ -12781,10 +12875,57 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
                 <div
                   class="node-id-card__hero-mark"
                 >
-                  <img
-                    alt=""
-                    src="/img/MAP2-Node-v2.png"
-                  />
+                  <svg
+                    aria-hidden="true"
+                    focusable="false"
+                    viewBox="0 0 256 256"
+                  >
+                    <rect
+                      fill="#4DA6FF"
+                      height="256"
+                      rx="56"
+                      ry="56"
+                      width="256"
+                      x="0"
+                      y="0"
+                    />
+                    <rect
+                      fill="#000000"
+                      height="95"
+                      rx="14"
+                      ry="14"
+                      width="95"
+                      x="22"
+                      y="22"
+                    />
+                    <rect
+                      fill="#000000"
+                      height="95"
+                      rx="14"
+                      ry="14"
+                      width="95"
+                      x="139"
+                      y="22"
+                    />
+                    <rect
+                      fill="#000000"
+                      height="95"
+                      rx="14"
+                      ry="14"
+                      width="95"
+                      x="22"
+                      y="139"
+                    />
+                    <rect
+                      fill="#000000"
+                      height="95"
+                      rx="14"
+                      ry="14"
+                      width="95"
+                      x="139"
+                      y="139"
+                    />
+                  </svg>
                 </div>
                 <div
                   class="node-id-card__vertical-id"

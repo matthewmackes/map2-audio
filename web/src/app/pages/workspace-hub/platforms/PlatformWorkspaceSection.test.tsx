@@ -72,7 +72,7 @@ describe('PlatformWorkspaceSection', () => {
     expect(screen.getByTestId('route-probe')).toHaveTextContent('/workspace/platforms/overview')
   })
 
-  it('redirects legacy platform aliases into the canonical workspace path', () => {
+  it('redirects unknown workspace ids back to the overview workspace', () => {
     render(
       <MemoryRouter initialEntries={['/workspace/platforms/api-observatory']}>
         <Routes>
@@ -81,7 +81,7 @@ describe('PlatformWorkspaceSection', () => {
       </MemoryRouter>,
     )
 
-    expect(screen.getByTestId('route-probe')).toHaveTextContent('/workspace/platforms/network-discovery')
+    expect(screen.getByTestId('route-probe')).toHaveTextContent('/workspace/platforms/overview')
   })
 
   it('hard-redirects the retired workspace host-machine route into Hardware', () => {

@@ -8,7 +8,6 @@ export const WORKSPACE_HUB_PLATFORM_BASE_PATH = '/workspace/platforms'
 
 const LEGACY_PLATFORM_LAYER_REDIRECTS: Record<string, PlatformLayerId> = {
   'single-node': 'management',
-  'api-observatory': 'network-discovery',
 }
 
 const LEGACY_PLATFORM_PANEL_REDIRECTS: Record<string, StandalonePanel> = {

@@ -1,11 +1,16 @@
 import type { ComponentType } from 'react'
 import {
+  Catalog,
+  ChartLineSmooth,
+  Code,
   DataBase,
   Devices,
+  Events,
   Flash,
   Information,
   Network_3,
   PaintBrush,
+  PlugFilled,
   SettingsAdjust,
   Share,
   Terminal,
@@ -167,6 +172,107 @@ function buildStandalonePanelNavItem(panelId: StandalonePanel): PlatformPanelNav
   }
 }
 
+export type MidpointChildTabId =
+  | 'catalog'
+  | 'traffic'
+  | 'event-feed'
+  | 'websocket'
+  | 'web-ssh'
+  | 'builder'
+  | 'collections'
+
+interface MidpointChildSpec {
+  tabId: MidpointChildTabId
+  label: string
+  shortLabel: string
+  description: string
+  icon: PlatformIcon
+}
+
+const MIDPOINT_CHILD_SPECS: MidpointChildSpec[] = [
+  {
+    tabId: 'catalog',
+    label: 'Midpoint · API Catalog',
+    shortLabel: 'API Catalog',
+    description: 'OpenAPI-driven endpoint explorer with hand-authored context and schema diffs.',
+    icon: Catalog,
+  },
+  {
+    tabId: 'traffic',
+    label: 'Midpoint · Traffic Monitor',
+    shortLabel: 'Traffic',
+    description: 'Watch real-time request waterfall, statistics, and session recordings.',
+    icon: ChartLineSmooth,
+  },
+  {
+    tabId: 'event-feed',
+    label: 'Midpoint · Event Feed',
+    shortLabel: 'Events',
+    description: 'Open the platform event bus live feed and outbound webhook targets.',
+    icon: Events,
+  },
+  {
+    tabId: 'websocket',
+    label: 'Midpoint · WebSocket Inspector',
+    shortLabel: 'WebSocket',
+    description: 'Open multiple WS connections, inspect messages, record/replay, and diff payloads.',
+    icon: PlugFilled,
+  },
+  {
+    tabId: 'web-ssh',
+    label: 'Midpoint · Web SSH',
+    shortLabel: 'Web SSH',
+    description: 'Open the in-browser SSH console for discovered cluster nodes.',
+    icon: Terminal,
+  },
+  {
+    tabId: 'builder',
+    label: 'Midpoint · Request Builder',
+    shortLabel: 'Builder',
+    description: 'Send REST requests through a cluster-aware proxy with scripts, tests, and history.',
+    icon: Code,
+  },
+  {
+    tabId: 'collections',
+    label: 'Midpoint · Collections',
+    shortLabel: 'Collections',
+    description: 'Manage workspaces, environments, saved requests, and collection automation.',
+    icon: DataBase,
+  },
+]
+
+export interface MidpointChildNavItem extends PlatformPanelNavItem {
+  parentPanel: 'midpoint'
+  tabId: MidpointChildTabId
+}
+
+function buildMidpointChildNavItem(spec: MidpointChildSpec): MidpointChildNavItem {
+  return {
+    to: `/platforms/midpoint?tab=${spec.tabId}`,
+    label: spec.label,
+    shortLabel: spec.shortLabel,
+    icon: spec.icon,
+    description: spec.description,
+    color: 'var(--cds-link-primary)',
+    pinnable: false,
+    maturity: 'beta',
+    kind: 'link',
+    target: { panel: 'midpoint' },
+    parentPanel: 'midpoint',
+    tabId: spec.tabId,
+  }
+}
+
+export const midpointChildNavItems: MidpointChildNavItem[] = MIDPOINT_CHILD_SPECS.map(
+  buildMidpointChildNavItem,
+)
+
+export function isMidpointChildNavItem(
+  item: PlatformPanelNavItem,
+): item is MidpointChildNavItem {
+  return (item as MidpointChildNavItem).parentPanel === 'midpoint'
+}
+
 export const platformPanelItems: PlatformPanelNavItem[] = [
   buildPlatformLayerNavItem('overview'),
   buildStandalonePanelNavItem('audio-engine'),
@@ -175,6 +281,7 @@ export const platformPanelItems: PlatformPanelNavItem[] = [
   buildPlatformLayerNavItem('network-discovery'),
   buildPlatformLayerNavItem('cluster-dashboard'),
   buildStandalonePanelNavItem('midpoint'),
+  ...midpointChildNavItems,
   buildStandalonePanelNavItem('adoption'),
   buildStandalonePanelNavItem('theme'),
   buildStandalonePanelNavItem('about'),

@@ -1,6 +1,6 @@
 import { useMemo, useState } from 'react'
 
-import type { OpenApiCatalogEndpoint, OpenApiCatalogGroup } from '../../hooks/useOpenApiSchema'
+import { useOpenApiSchema, type OpenApiCatalogEndpoint, type OpenApiCatalogGroup } from '../../hooks/useOpenApiSchema'
 import {
   API_DEPRECATION_REGISTRY,
   API_DOMAIN_DOCS,
@@ -47,14 +47,16 @@ function renderMermaidFallback(diagramId?: string) {
 }
 
 export function CatalogTab({
-  catalog,
+  catalog: catalogProp,
   showDiffHighlights,
   onTryIt,
 }: {
-  catalog: OpenApiCatalogGroup[]
+  catalog?: OpenApiCatalogGroup[]
   showDiffHighlights: boolean
   onTryIt: (endpoint: OpenApiCatalogEndpoint) => void
 }) {
+  const { catalog: hookCatalog } = useOpenApiSchema()
+  const catalog = catalogProp ?? hookCatalog
   const [selectedId, setSelectedId] = useState<string | null>(null)
 
   const items = useMemo<CatalogListItem[]>(() => {

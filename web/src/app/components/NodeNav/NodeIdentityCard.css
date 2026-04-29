@@ -98,34 +98,36 @@
   position: relative;
   background: var(--nic-bg-deep);
   display: flex;
-  align-items: flex-start;
+  align-items: center;
   justify-content: center;
   /* Frame accent: 1px border in status color, inset 8px (matches design D3 frame). */
   border: 1px solid var(--nic-status);
   margin: 8px;
-  padding: 42px 12px 188px 36px;
-  min-height: 184px;
+  padding: 0;
+  /* Option 1: square hero band. KV plate / CPU·MEM overlay remain
+   * absolutely positioned over the bottom half (see __info below). */
+  aspect-ratio: 1 / 1;
   overflow: hidden;
 }
 
-.node-id-card[data-resources-overlay="false"] .node-id-card__hero {
-  padding-bottom: 130px;
-}
-
+/* Hero mark: small, left-anchored, hugging the right edge of the
+ * vertical title strip (which sits at left: 6px, width: 18px → ends at 24px). */
 .node-id-card__hero-mark {
+  position: absolute;
+  left: 26px;
+  top: 30px;
+  width: 24px;
+  height: 24px;
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 144px;
-  height: 144px;
-  padding: 4px;
+  padding: 0;
+  z-index: 2;
 }
 
-.node-id-card__hero-mark img {
-  width: 115%;
-  height: 115%;
-  object-fit: cover;
-  mix-blend-mode: screen;
+.node-id-card__hero-mark svg {
+  width: 100%;
+  height: 100%;
   pointer-events: none;
   user-select: none;
 }
