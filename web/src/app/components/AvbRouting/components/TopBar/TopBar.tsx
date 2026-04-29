@@ -19,8 +19,6 @@ import {
   Undo,
 } from '@carbon/icons-react';
 import {
-  AppBar,
-  Toolbar,
   Typography,
   TextField,
   InputAdornment,
@@ -2087,30 +2085,12 @@ export function TopBar() {
   ]);
 
   return (
-    <AppBar
-      position="static"
-      color="default"
-      elevation={1}
-      sx={{
-        bgcolor: 'background.paper',
-        borderBottom: '1px solid',
-        borderColor: 'divider',
-      }}
-    >
+    <header className="topbar">
       {/* Node Selector - Top Row */}
       <NodeSelector />
 
       {/* Controls - Bottom Row */}
-      <Toolbar
-        sx={{
-          gap: { xs: 1, sm: 1.5 },
-          px: { xs: 1, sm: 2 },
-          py: { xs: 0.75, sm: 1 },
-          flexWrap: 'wrap',
-          alignItems: 'center',
-          minHeight: { xs: 'auto', sm: 56 },
-        }}
-      >
+      <div className="topbar__toolbar">
         {/* Title */}
         <Typography
           variant="h6"
@@ -2466,7 +2446,7 @@ export function TopBar() {
             <Redo size={16} />
           </Button>
         </Box>
-      </Toolbar>
+      </div>
 
       <Popover
         open={scenesOpen}
@@ -3823,7 +3803,7 @@ export function TopBar() {
         open={topologyModalOpen}
         onClose={() => setTopologyModalOpen(false)}
       />
-    </AppBar>
+    </header>
   );
 }
 

@@ -1,6 +1,30 @@
 /* TopBar — T2475 E1 partial Carbon migration. Native <hr> divider
  * + space for future migrated chrome. */
 
+.topbar {
+  position: static;
+  background: var(--cds-layer, #262626);
+  border-bottom: 1px solid var(--cds-border-subtle, #393939);
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+}
+
+.topbar__toolbar {
+  display: flex;
+  gap: var(--cds-spacing-04, 0.75rem);
+  padding: var(--cds-spacing-03, 0.5rem) var(--cds-spacing-05, 1rem);
+  flex-wrap: wrap;
+  align-items: center;
+  min-height: 56px;
+}
+
+@media (max-width: 600px) {
+  .topbar__toolbar {
+    gap: var(--cds-spacing-03, 0.5rem);
+    padding: var(--cds-spacing-03, 0.5rem) var(--cds-spacing-03, 0.5rem);
+    min-height: auto;
+  }
+}
+
 .topbar__divider {
   border: 0;
   border-top: 1px solid var(--cds-border-subtle, #393939);
