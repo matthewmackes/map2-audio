@@ -22,7 +22,6 @@ import {
   TextField,
   InputAdornment,
   Button,
-  Box,
   Popover,
   FormGroup,
   FormControlLabel,
@@ -2117,21 +2116,7 @@ export function TopBar() {
         />
 
         {/* Stats */}
-        <Box
-          sx={{
-            display: 'flex',
-            gap: 1,
-            alignItems: 'center',
-            flexWrap: isMobile ? 'nowrap' : 'wrap',
-            overflowX: isMobile ? 'auto' : 'visible',
-            width: isMobile ? '100%' : 'auto',
-            maxWidth: '100%',
-            pb: isMobile ? 0.25 : 0,
-            '& .MuiChip-root': {
-              flexShrink: 0,
-            },
-          }}
-        >
+        <div className={`topbar__stats ${isMobile ? 'topbar__stats--scroll' : 'topbar__stats--wrap'}`}>
           <StatusChip tone="neutral" label={`${endpointCount} endpoints`} size="sm" />
           <StatusChip tone="ok" label={`${connectedCount} connected`} size="sm" />
           <span data-testid="topbar-filter-summary">
@@ -2247,22 +2232,10 @@ export function TopBar() {
               />
             </span>
           )}
-        </Box>
+        </div>
 
-        <Box
-          sx={{
-            display: 'flex',
-            gap: 1,
-            alignItems: 'center',
-            flexWrap: isMobile ? 'nowrap' : 'wrap',
-            overflowX: isMobile ? 'auto' : 'visible',
-            width: isMobile ? '100%' : 'auto',
-            maxWidth: '100%',
-            pb: isMobile ? 0.25 : 0,
-            '& .MuiChip-root': {
-              flexShrink: 0,
-            },
-          }}
+        <div
+          className={`topbar__stats ${isMobile ? 'topbar__stats--scroll' : 'topbar__stats--wrap'}`}
           data-testid="topbar-scene-status-strip"
         >
           <span data-testid="topbar-scene-status-count">
@@ -2345,9 +2318,9 @@ export function TopBar() {
               size="sm"
             />
           </button>
-        </Box>
+        </div>
 
-        <Box sx={{ flex: 1, display: { xs: 'none', xl: 'block' } }} /> {/* Spacer */}
+        <div className="topbar__spacer" /> {/* Spacer */}
 
         {/* Filters */}
         <Button
@@ -2387,7 +2360,7 @@ export function TopBar() {
 
         {/* Safe Patch Mode */}
         {state.safePatchMode ? (
-          <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', flexWrap: 'wrap' }}>
+          <div className="topbar__row topbar__row--gap-1 topbar__row--wrap">
             <StatusChip
               tone="caution"
               label={
@@ -2417,7 +2390,7 @@ export function TopBar() {
             >
               Discard
             </Button>
-          </Box>
+          </div>
         ) : (
           <Button
             title="Enable safe patch mode to stage changes before applying"
@@ -2442,7 +2415,7 @@ export function TopBar() {
         </Button>
 
         {/* Undo/Redo */}
-        <Box sx={{ display: 'flex', gap: 0.5, ml: { xs: 0, md: 'auto' } }}>
+        <div className="topbar__row topbar__row--gap-05 topbar__row--push-right">
           <Button
             title="Undo (Ctrl+Z)"
             size="small"
@@ -2461,7 +2434,7 @@ export function TopBar() {
           >
             <Redo size={16} />
           </Button>
-        </Box>
+        </div>
       </div>
 
       <Popover
@@ -2471,16 +2444,7 @@ export function TopBar() {
         anchorOrigin={{ vertical: 'bottom', horizontal: isMobile ? 'center' : 'left' }}
         transformOrigin={{ vertical: 'top', horizontal: isMobile ? 'center' : 'left' }}
       >
-        <Box
-          sx={{
-            p: 2,
-            width: { xs: 'min(92vw, 360px)', sm: 360 },
-            maxWidth: '92vw',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 1.5,
-          }}
-        >
+        <div className="topbar__popover-panel">
           <span className="topbar__subtitle">
             Scene Management
           </span>
@@ -2514,7 +2478,7 @@ export function TopBar() {
             </span>
           )}
 
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 1 }}>
+          <div className="topbar__row topbar__row--between topbar__row--gap-1">
             <Button
               size="small"
               variant="contained"
@@ -2530,7 +2494,7 @@ export function TopBar() {
                 size="sm"
               />
             </span>
-          </Box>
+          </div>
 
           <hr className="topbar__divider" />
 
@@ -2649,7 +2613,7 @@ export function TopBar() {
           </Button>
 
           {sceneImpactExpanded && (
-            <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1, p: 1, display: 'flex', flexDirection: 'column', gap: 0.75 }} data-testid="topbar-scene-impact-details">
+            <div className="topbar__panel-bordered topbar__col topbar__col--gap-075" data-testid="topbar-scene-impact-details">
               {visibleRecallImpactEntries.length === 0 ? (
                 <span className="topbar__caption topbar__caption--secondary">
                   No impact entries to display.
@@ -2672,7 +2636,7 @@ export function TopBar() {
                 </span>
               )}
 
-              <Box sx={{ display: 'flex', gap: 1 }}>
+              <div className="topbar__row topbar__row--gap-1">
                 {recallImpactHasMore && (
                   <Button size="small" onClick={handleSceneImpactShowMore} data-testid="topbar-scene-impact-show-more">
                     Show More
@@ -2683,8 +2647,8 @@ export function TopBar() {
                     Reset
                   </Button>
                 )}
-              </Box>
-            </Box>
+              </div>
+            </div>
           )}
 
           <span
@@ -2696,8 +2660,8 @@ export function TopBar() {
 
           <hr className="topbar__divider" />
 
-          <Box
-            sx={{ display: 'flex', flexDirection: 'column', gap: 0.75 }}
+          <div
+            className="topbar__col topbar__col--gap-075"
             data-testid="topbar-scene-audit-list"
           >
             <span className="topbar__caption topbar__caption--secondary">
@@ -2739,7 +2703,7 @@ export function TopBar() {
               </Select>
             </FormControl>
 
-            <Box sx={{ display: 'flex', gap: 0.75, flexWrap: 'wrap' }}>
+            <div className="topbar__row topbar__row--gap-075 topbar__row--wrap">
               <button
                 type="button"
                 className="topbar__chip-button"
@@ -2797,7 +2761,7 @@ export function TopBar() {
                   size="sm"
                 />
               </button>
-            </Box>
+            </div>
 
             <span className="topbar__caption topbar__caption--secondary" data-testid="topbar-scene-audit-summary">
               {sceneAuditSummary}
@@ -2809,9 +2773,9 @@ export function TopBar() {
               </span>
             ) : (
               visibleSceneAuditEntries.map((entry) => (
-                <Box
+                <div
                   key={entry.id}
-                  sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 1 }}
+                  className="topbar__row topbar__row--between topbar__row--gap-1"
                   data-testid="topbar-scene-audit-entry"
                 >
                   <span className="topbar__caption topbar__caption--secondary" style={{ flex: 1 }}>
@@ -2830,13 +2794,13 @@ export function TopBar() {
                       size="sm"
                     />
                   </span>
-                </Box>
+                </div>
               ))
             )}
-          </Box>
+          </div>
 
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', pt: 0.5 }}>
-            <Box sx={{ display: 'flex', gap: 1 }}>
+          <div className="topbar__row topbar__row--between topbar__row--pt-05">
+            <div className="topbar__row topbar__row--gap-1">
               <Button
                 size="small"
                 onClick={handleRecallScene}
@@ -2856,7 +2820,7 @@ export function TopBar() {
                   ? 'Delete (Confirm)'
                   : 'Delete'}
               </Button>
-            </Box>
+            </div>
             <Button
               size="small"
               variant="contained"
@@ -2865,8 +2829,8 @@ export function TopBar() {
             >
               Done
             </Button>
-          </Box>
-        </Box>
+          </div>
+        </div>
       </Popover>
 
       <Popover
@@ -2876,16 +2840,7 @@ export function TopBar() {
         anchorOrigin={{ vertical: 'bottom', horizontal: isMobile ? 'center' : 'left' }}
         transformOrigin={{ vertical: 'top', horizontal: isMobile ? 'center' : 'left' }}
       >
-        <Box
-          sx={{
-            p: 2,
-            width: { xs: 'min(92vw, 360px)', sm: 360 },
-            maxWidth: '92vw',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 1.5,
-          }}
-        >
+        <div className="topbar__popover-panel">
           <span className="topbar__subtitle">
             Endpoint Filters
           </span>
@@ -3094,8 +3049,8 @@ export function TopBar() {
             </FormGroup>
           )}
 
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', pt: 0.5 }}>
-            <Box sx={{ display: 'flex', gap: 1 }}>
+          <div className="topbar__row topbar__row--between topbar__row--pt-05">
+            <div className="topbar__row topbar__row--gap-1">
               <Button
                 size="small"
                 onClick={handleClearAllFilters}
@@ -3110,7 +3065,7 @@ export function TopBar() {
               >
                 Reset Defaults
               </Button>
-            </Box>
+            </div>
             <Button
               size="small"
               variant="contained"
@@ -3119,8 +3074,8 @@ export function TopBar() {
             >
               Done
             </Button>
-          </Box>
-        </Box>
+          </div>
+        </div>
       </Popover>
 
       <Popover
@@ -3130,16 +3085,7 @@ export function TopBar() {
         anchorOrigin={{ vertical: 'bottom', horizontal: isMobile ? 'center' : 'left' }}
         transformOrigin={{ vertical: 'top', horizontal: isMobile ? 'center' : 'left' }}
       >
-        <Box
-          sx={{
-            p: 2,
-            width: { xs: 'min(92vw, 380px)', sm: 380 },
-            maxWidth: '92vw',
-            display: 'flex',
-            flexDirection: 'column',
-            gap: 1.5,
-          }}
-        >
+        <div className="topbar__popover-panel topbar__popover-panel--wide">
           <span className="topbar__subtitle">
             Scene Diff Controls
           </span>
@@ -3243,7 +3189,7 @@ export function TopBar() {
             </Select>
           </FormControl>
 
-          <Box sx={{ display: 'flex', alignItems: 'center', gap: 1, flexWrap: 'wrap' }}>
+          <div className="topbar__row topbar__row--gap-1 topbar__row--wrap">
             <Button
               size="small"
               variant="outlined"
@@ -3260,9 +3206,9 @@ export function TopBar() {
             >
               Advisory default used for import-preview conflict rows.
             </span>
-          </Box>
+          </div>
 
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 1 }}>
+          <div className="topbar__row topbar__row--between topbar__row--gap-1">
             <Button
               size="small"
               variant="outlined"
@@ -3274,7 +3220,7 @@ export function TopBar() {
             <span className="topbar__caption topbar__caption--secondary" data-testid="topbar-scene-diff-preset-summary">
               {sceneDiffPresetSummary}
             </span>
-          </Box>
+          </div>
 
           <FormControl size="small" disabled={sceneDiffPresets.length === 0}>
             <InputLabel id="scene-diff-preset-select-label">Saved Preset</InputLabel>
@@ -3301,8 +3247,8 @@ export function TopBar() {
           </FormControl>
 
           {sceneDiffPresets.length > 0 ? (
-            <Box
-              sx={{ display: 'flex', flexDirection: 'column', gap: 0.75 }}
+            <div
+              className="topbar__col topbar__col--gap-075"
               data-testid="topbar-scene-diff-preset-policy-summary"
             >
               <span
@@ -3311,7 +3257,7 @@ export function TopBar() {
               >
                 Saved preset conflict policies
               </span>
-              <Box sx={{ display: 'flex', gap: 0.75, flexWrap: 'wrap' }}>
+              <div className="topbar__row topbar__row--gap-075 topbar__row--wrap">
                 {sceneDiffPresets.map((preset) => {
                   const policyLabel = formatConflictResolutionModeLabel(preset.preferred_conflict_action);
                   return (
@@ -3328,7 +3274,7 @@ export function TopBar() {
                     </span>
                   );
                 })}
-              </Box>
+              </div>
               <span
                 className="topbar__caption topbar__caption--secondary"
                 data-testid="topbar-scene-diff-selected-preset-policy"
@@ -3345,7 +3291,7 @@ export function TopBar() {
                     : 'Draft conflict policy matches persisted preset metadata.'
                   : 'No preset selected. Draft conflict policy applies to next save/import defaults.'}
               </span>
-            </Box>
+            </div>
           ) : null}
 
           <TextField
@@ -3359,7 +3305,7 @@ export function TopBar() {
             inputProps={{ 'data-testid': 'topbar-scene-diff-preset-transfer-input' }}
           />
 
-          <Box sx={{ display: 'flex', gap: 1, flexWrap: 'wrap' }}>
+          <div className="topbar__row topbar__row--gap-1 topbar__row--wrap">
             <Button
               size="small"
               variant="outlined"
@@ -3384,21 +3330,14 @@ export function TopBar() {
             >
               Import JSON
             </Button>
-          </Box>
+          </div>
 
           {sceneDiffPresetImportPreview ? (
-            <Box
-              sx={{
-                display: 'flex',
-                flexDirection: 'column',
-                gap: 0.75,
-                border: (theme) => `1px solid ${theme.palette.divider}`,
-                borderRadius: 1,
-                p: 1,
-              }}
+            <div
+              className="topbar__panel-bordered topbar__col topbar__col--gap-075"
               data-testid="topbar-scene-diff-import-preview-summary"
             >
-              <Box sx={{ display: 'flex', gap: 0.75, flexWrap: 'wrap' }}>
+              <div className="topbar__row topbar__row--gap-075 topbar__row--wrap">
                 <span data-testid="topbar-scene-diff-import-preview-source-count">
                   <StatusChip
                     tone="neutral"
@@ -3427,10 +3366,10 @@ export function TopBar() {
                     size="sm"
                   />
                 </span>
-              </Box>
+              </div>
 
               {sceneDiffImportPlanPreview && (
-                <Box sx={{ display: 'flex', gap: 0.75, flexWrap: 'wrap' }}>
+                <div className="topbar__row topbar__row--gap-075 topbar__row--wrap">
                   <span data-testid="topbar-scene-diff-import-preview-plan-upserts">
                     <StatusChip
                       tone="caution"
@@ -3452,10 +3391,10 @@ export function TopBar() {
                       size="sm"
                     />
                   </span>
-                </Box>
+                </div>
               )}
 
-              <Box sx={{ display: 'flex', gap: 0.75, flexWrap: 'wrap' }}>
+              <div className="topbar__row topbar__row--gap-075 topbar__row--wrap">
                 {sceneDiffImportPreviewRowCounts.conflict > 0 && (
                   <Button
                     size="small"
@@ -3492,10 +3431,10 @@ export function TopBar() {
                     {sceneDiffImportPreviewCollapsedGroups.skipped ? 'Show' : 'Hide'} Skipped ({sceneDiffImportPreviewRowCounts.skipped})
                   </Button>
                 )}
-              </Box>
+              </div>
 
               {sceneDiffImportPreviewRowCounts.conflict > 0 && (
-                <Box sx={{ display: 'flex', gap: 0.75, flexWrap: 'wrap' }}>
+                <div className="topbar__row topbar__row--gap-075 topbar__row--wrap">
                   <Button
                     size="small"
                     variant="outlined"
@@ -3527,7 +3466,7 @@ export function TopBar() {
                   >
                     All Conflicts -&gt; Skip
                   </Button>
-                </Box>
+                </div>
               )}
 
               <span
@@ -3555,14 +3494,14 @@ export function TopBar() {
                 </span>
               )}
 
-              <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 1 }}>
+              <div className="topbar__row topbar__row--between topbar__row--gap-1">
                 <span
                   className="topbar__caption topbar__caption--secondary"
                   data-testid="topbar-scene-diff-import-preview-page-summary"
                 >
                   Showing {sceneDiffImportPreviewRangeStart}-{sceneDiffImportPreviewRangeEnd} of {sceneDiffImportPreviewVisibleRowsByGroup.length} visible rows ({sceneDiffImportPreviewRows.length} total)
                 </span>
-                <Box sx={{ display: 'flex', gap: 0.75 }}>
+                <div className="topbar__row topbar__row--gap-075">
                   <Button
                     size="small"
                     variant="outlined"
@@ -3581,10 +3520,10 @@ export function TopBar() {
                   >
                     Next
                   </Button>
-                </Box>
-              </Box>
+                </div>
+              </div>
 
-              <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.75, maxHeight: 168, overflowY: 'auto' }}>
+              <div className="topbar__col topbar__col--gap-075 topbar__col--scroll">
                 {visibleSceneDiffImportPreviewRows.map((row, index) => {
                   const absoluteIndex = sceneDiffImportPreviewSliceStart + index;
                   const previousRowStatus = absoluteIndex > 0
@@ -3615,19 +3554,11 @@ export function TopBar() {
                     const rowConflictPolicyHint = row.incoming?.preferred_conflict_action || null;
                     const wrapperConflictPolicyHint = sceneDiffPresetImportPreview.preferred_conflict_action;
                     return (
-                  <Box
-                    sx={{
-                      display: 'flex',
-                      flexDirection: 'column',
-                      gap: 0.25,
-                      border: (theme) => `1px solid ${theme.palette.divider}`,
-                      borderRadius: 1,
-                      px: 0.75,
-                      py: 0.5,
-                    }}
+                  <div
+                    className="topbar__panel-bordered topbar__col topbar__col--gap-025 topbar__panel-bordered--inset"
                     data-testid="topbar-scene-diff-import-preview-row"
                   >
-                    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 1 }}>
+                    <div className="topbar__row topbar__row--between topbar__row--gap-1">
                       <span className="topbar__caption topbar__caption--primary topbar__caption--bold">
                         {row.name}
                       </span>
@@ -3644,7 +3575,7 @@ export function TopBar() {
                           size="sm"
                         />
                       </span>
-                    </Box>
+                    </div>
                     <span className="topbar__caption topbar__caption--secondary">
                       {row.reason}
                     </span>
@@ -3672,8 +3603,8 @@ export function TopBar() {
                       </span>
                     )}
                     {row.status === 'conflict' && row.incoming && (
-                      <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
-                        <Box sx={{ display: 'flex', gap: 0.75, flexWrap: 'wrap' }}>
+                      <div className="topbar__col topbar__col--gap-05">
+                        <div className="topbar__row topbar__row--gap-075 topbar__row--wrap">
                           <button
                             type="button"
                             className="topbar__chip-button"
@@ -3706,9 +3637,9 @@ export function TopBar() {
                           >
                             <StatusChip tone="neutral" label="Skip" size="sm" />
                           </button>
-                        </Box>
+                        </div>
                         {conflictResolution.mode === 'rename' && (
-                          <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.25 }}>
+                          <div className="topbar__col topbar__col--gap-025">
                             <TextField
                               size="small"
                               label="Rename Conflict Preset"
@@ -3734,18 +3665,18 @@ export function TopBar() {
                                 Rename target is valid.
                               </span>
                             )}
-                          </Box>
+                          </div>
                         )}
-                      </Box>
+                      </div>
                     )}
-                  </Box>
+                  </div>
                     );
                   })()}
                     </React.Fragment>
                   );
                 })}
-              </Box>
-            </Box>
+              </div>
+            </div>
           ) : (
             <span
               className="topbar__caption topbar__caption--secondary"
@@ -3755,7 +3686,7 @@ export function TopBar() {
             </span>
           )}
 
-          <Box sx={{ display: 'flex', gap: 1 }}>
+          <div className="topbar__row topbar__row--gap-1">
             <Button
               size="small"
               onClick={handleApplySceneDiffPreset}
@@ -3773,7 +3704,7 @@ export function TopBar() {
             >
               Delete Preset
             </Button>
-          </Box>
+          </div>
 
           <span className="topbar__caption topbar__caption--secondary" data-testid="topbar-scene-diff-active-preset">
             {sceneDiffActivePreset
@@ -3781,8 +3712,8 @@ export function TopBar() {
               : 'Active preset: none'}
           </span>
 
-          <Box sx={{ display: 'flex', justifyContent: 'space-between', pt: 0.5 }}>
-            <Box sx={{ display: 'flex', gap: 1 }}>
+          <div className="topbar__row topbar__row--between topbar__row--pt-05">
+            <div className="topbar__row topbar__row--gap-1">
               <Button
                 size="small"
                 onClick={handleGenerateSceneDiff}
@@ -3797,7 +3728,7 @@ export function TopBar() {
               >
                 Clear
               </Button>
-            </Box>
+            </div>
             <Button
               size="small"
               variant="contained"
@@ -3806,7 +3737,7 @@ export function TopBar() {
             >
               Done
             </Button>
-          </Box>
+          </div>
           {sceneDiffError && (
             <span
               className="topbar__caption topbar__caption--warning"
@@ -3815,7 +3746,7 @@ export function TopBar() {
               {sceneDiffError}
             </span>
           )}
-        </Box>
+        </div>
       </Popover>
 
       <SceneDiffPreview />

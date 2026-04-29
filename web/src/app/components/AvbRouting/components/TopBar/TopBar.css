@@ -123,3 +123,93 @@
 .topbar__caption--bold {
   font-weight: 600;
 }
+
+/* Layout primitives — replace MUI Box sx={{ display: 'flex', ... }}
+ * patterns. Gap modifiers map to half-step Carbon spacing. */
+.topbar__row {
+  display: flex;
+  align-items: center;
+}
+
+.topbar__row--wrap {
+  flex-wrap: wrap;
+}
+
+.topbar__row--between {
+  justify-content: space-between;
+}
+
+.topbar__row--push-right {
+  margin-left: auto;
+}
+
+.topbar__row--gap-025 { gap: 2px; }
+.topbar__row--gap-05 { gap: 4px; }
+.topbar__row--gap-075 { gap: 6px; }
+.topbar__row--gap-1 { gap: 8px; }
+.topbar__row--pt-05 { padding-top: 4px; }
+
+.topbar__col {
+  display: flex;
+  flex-direction: column;
+}
+
+.topbar__col--gap-025 { gap: 2px; }
+.topbar__col--gap-05 { gap: 4px; }
+.topbar__col--gap-075 { gap: 6px; }
+
+.topbar__col--scroll {
+  max-height: 168px;
+  overflow-y: auto;
+}
+
+.topbar__spacer {
+  flex: 1;
+  display: none;
+}
+
+@media (min-width: 1280px) {
+  .topbar__spacer {
+    display: block;
+  }
+}
+
+.topbar__stats {
+  display: flex;
+  gap: var(--cds-spacing-04, 0.75rem);
+  align-items: center;
+  max-width: 100%;
+}
+
+.topbar__stats--wrap {
+  flex-wrap: wrap;
+}
+
+.topbar__stats--scroll {
+  flex-wrap: nowrap;
+  overflow-x: auto;
+  width: 100%;
+  padding-bottom: 2px;
+}
+
+.topbar__panel-bordered {
+  border: 1px solid var(--cds-border-subtle, #393939);
+  padding: var(--cds-spacing-03, 0.5rem);
+}
+
+.topbar__panel-bordered--inset {
+  padding: 4px var(--cds-spacing-03, 0.5rem);
+}
+
+.topbar__popover-panel {
+  padding: var(--cds-spacing-05, 1rem);
+  width: min(92vw, 360px);
+  max-width: 92vw;
+  display: flex;
+  flex-direction: column;
+  gap: var(--cds-spacing-05, 1rem);
+}
+
+.topbar__popover-panel--wide {
+  width: min(92vw, 380px);
+}
