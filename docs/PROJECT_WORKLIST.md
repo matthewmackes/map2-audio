@@ -33798,6 +33798,69 @@ Last updated: 2026-04-30 - Claude (10-iteration SHIP loop session: iters 1-7 ful
     These won't fail typecheck while @mui/material remains
     installed; force-purge them after the dependency drops.
   - **CLAUDE.md tech stack table**: remove the MUI row.
+- **Iteration log (second 10-iteration SHIP loop, 2026-04-30)**:
+  - **Iter 1 (commit 40fff4ab)**: EdirolUA1000View.tsx — 11 MUI Alert
+    instances → Carbon InlineNotification + ActionableNotification.
+    Drops `Alert` from @mui/material imports.
+  - **Iter 2 (commit 0f2d4fc2)**: EdirolUA1000View — 2 LinearProgress
+    → native <progress> with WebKit + Moz pseudo-element styling
+    via .edirol-ua1000__bar tone classes (--map2-state-live /
+    --map2-alert-advisory / --map2-alert-critical / --map2-state-
+    staged). Drops `LinearProgress` from imports.
+  - **Iter 3 (commit eae65611)**: EdirolUA1000View — 13 Chip → StatusChip.
+    Tone mapping: success→ok, error→critical, warning→caution,
+    info→info, primary→info, default→neutral. Drops `Chip` from
+    @mui/material; adds `StatusChip` from primitives.
+  - **Iter 4 (commit 11599ad4)**: EdirolUA1000View — Switch +
+    FormControlLabel → Carbon Toggle (per-channel 48V phantom power
+    switches). Drops `Switch` + `FormControlLabel` from
+    @mui/material; adds `Toggle` to @carbon/react import.
+  - **Iter 5 (commit 696d268f)**: EdirolUA1000View — 3 Select +
+    FormControl + InputLabel + MenuItem dropdowns (S/PDIF mode,
+    Sample Rate, Buffer Size) → Carbon Dropdown with full
+    selectedItem/onChange controlled flows. Drops Select +
+    FormControl + InputLabel + MenuItem from @mui/material.
+  - **Iter 6 (commit 7c017430)**: EdirolUA1000View — Dialog +
+    DialogTitle + DialogContent + DialogActions → Carbon
+    ComposedModal + ModalHeader + ModalBody + ModalFooter
+    (JUCE Engine Configuration dialog).
+  - **Iter 7 (commit df793451)**: EdirolUA1000View — 10 Button
+    instances → Carbon Button. Prop translation: variant=contained
+    → kind=primary, variant=outlined → kind=tertiary, color=warning
+    → kind=danger--tertiary, size=small/large → sm/lg, startIcon →
+    renderIcon, fullWidth dropped (Carbon Buttons stretch via grid).
+    **EdirolUA1000View.tsx is now fully MUI-free.** Last
+    @mui/material consumer outside TopBar.tsx retired.
+  - **Iter 8 (commit d8732a9a)**: TopBar.tsx — 8 Tooltip wrappers
+    + 2 IconButton (Undo/Redo) + 10 Divider → native title attrs +
+    MUI Button (kept until iter 9 finishes Button) + native <hr>
+    with .topbar__divider class. Drops Tooltip + IconButton +
+    Divider from @mui/material.
+  - **Iter 9 (commit fadbd6d0)**: TopBar.tsx — AppBar + Toolbar →
+    semantic <header> + <div className="topbar__toolbar">; layout
+    breakpoints driven via CSS @media. Drops AppBar + Toolbar from
+    @mui/material.
+  - **Iter 10**: Worklist closing log update (this commit).
+- **Net session result**: Down from 21 MUI consumers to 1
+  (TopBar.tsx). EdirolUA1000View fully retired. TopBar.tsx down from
+  19 MUI imports to 14 — Box (29), Typography (48), TextField (10+),
+  InputAdornment, Button (37), Chip (42), Popover (3), FormGroup,
+  FormControlLabel, Checkbox, FormControl, InputLabel, Select,
+  MenuItem remain. Total commits this session: 10
+  (40fff4ab, 0f2d4fc2, eae65611, 11599ad4, 696d268f, 7c017430,
+  df793451, d8732a9a, fadbd6d0, [this commit]).
+- **Remaining work** to close T2475:
+  - TopBar.tsx Box (29 sites) → semantic divs with className/style
+  - TopBar.tsx Typography (48 sites) → semantic spans
+  - TopBar.tsx Chip (42 sites) → StatusChip
+  - TopBar.tsx Button (37 sites) → Carbon Button
+  - TopBar.tsx TextField + InputAdornment → Carbon TextInput / Search
+  - TopBar.tsx Popover (3 sites) → Carbon Popover
+  - TopBar.tsx FormGroup + FormControlLabel + Checkbox → Carbon Checkbox
+  - TopBar.tsx FormControl + InputLabel + Select + MenuItem → Carbon Dropdown
+  - Drop @mui/material from web/package.json + root package.json
+  - Force-purge 28 dead web/src/map2/components/ files
+  - Update CLAUDE.md tech-stack table
 - Clarification round (2026-04-29): D + C + A + A + A locked.
   - **D**: Full migration scope — migrate 21 live files to Carbon-native idioms, drop `@mui/material` from `package.json`, force-purge 28 dead `web/src/map2/components/` files when typecheck breaks them.
   - **C**: Per-file Carbon-native rewrite (each file read fully, understood, rewritten in Carbon idioms — not direct MUI→Carbon component swaps).
