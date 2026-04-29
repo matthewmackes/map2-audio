@@ -1,19 +1,23 @@
-import type { CSSProperties } from 'react'
+// HTTP status badge for the API Observatory traffic monitor.
+//
+// T2474 B7: Migrated from a hand-rolled inline-style component using
+// Tailwind palette literals (#86efac, #bfdbfe, #fdba74, #fecaca,
+// #cbd5e1) to the canonical StatusChip primitive (B4). HTTP status
+// classes map to MAP semantic tones:
+//   2xx  → 'ok'        (success)
+//   3xx  → 'info'      (redirect — neutral context)
+//   4xx  → 'caution'   (client error — operator-correctable)
+//   5xx  → 'critical'  (server error — likely blocking)
+//   else → 'neutral'   (unknown / pre-flight)
 
-function statusTone(status: number) {
-  if (status >= 200 && status < 300) {
-    return { background: 'rgba(21, 128, 61, 0.22)', border: 'rgba(34, 197, 94, 0.45)', text: '#86efac' }
-  }
-  if (status >= 300 && status < 400) {
-    return { background: 'rgba(30, 64, 175, 0.24)', border: 'rgba(96, 165, 250, 0.45)', text: '#bfdbfe' }
-  }
-  if (status >= 400 && status < 500) {
-    return { background: 'rgba(154, 52, 18, 0.22)', border: 'rgba(251, 146, 60, 0.45)', text: '#fdba74' }
-  }
-  if (status >= 500) {
-    return { background: 'rgba(127, 29, 29, 0.3)', border: 'rgba(248, 113, 113, 0.45)', text: '#fecaca' }
-  }
-  return { background: 'rgba(30, 41, 59, 0.62)', border: 'rgba(148, 163, 184, 0.35)', text: '#cbd5e1' }
+import { StatusChip } from '../../primitives'
+
+function statusTone(status: number): 'ok' | 'info' | 'caution' | 'critical' | 'neutral' {
+  if (status >= 200 && status < 300) return 'ok'
+  if (status >= 300 && status < 400) return 'info'
+  if (status >= 400 && status < 500) return 'caution'
+  if (status >= 500) return 'critical'
+  return 'neutral'
 }
 
 function statusText(status: number): string {
@@ -35,28 +39,14 @@ function statusText(status: number): string {
 export function StatusBadge({ status, compact = false }: { status: number; compact?: boolean }) {
   const tone = statusTone(status)
   const label = statusText(status)
-
+  const display = label ? `${status} ${label}` : String(status)
   return (
-    <span
-      style={
-        {
-          display: 'inline-flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          borderRadius: 999,
-          border: `1px solid ${tone.border}`,
-          background: tone.background,
-          color: tone.text,
-          fontSize: compact ? 10 : 11,
-          fontWeight: 700,
-          letterSpacing: '0.04em',
-          padding: compact ? '3px 7px' : '4px 9px',
-        } as CSSProperties
-      }
-      aria-label={`HTTP status ${status}`}
-    >
-      {status}{label ? ` ${label}` : ''}
-    </span>
+    <StatusChip
+      tone={tone}
+      label={display}
+      size={compact ? 'sm' : 'md'}
+      title={`HTTP status ${status}`}
+    />
   )
 }
 
