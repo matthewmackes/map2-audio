@@ -20,8 +20,11 @@ import {
   FormControlLabel,
   Chip,
   LinearProgress,
-  Alert,
 } from '@mui/material'
+import {
+  InlineNotification,
+  ActionableNotification,
+} from '@carbon/react'
 import { NumberInput } from '../../ParameterControl'
 import {
   Activity,
@@ -314,14 +317,22 @@ export function EdirolUA1000View() {
 
       {/* Health Alert */}
       {health?.status === 'critical' && (
-        <Alert severity="error" icon={<WarningAlt />}>
-          Audio engine is in critical state. {health.alerts?.join('. ')}
-        </Alert>
+        <InlineNotification
+          kind="error"
+          title="Audio engine is in critical state."
+          subtitle={health.alerts?.join('. ')}
+          lowContrast
+          hideCloseButton
+        />
       )}
       {health?.auto_muted && (
-        <Alert severity="warning" icon={<WarningAltFilled />}>
-          Audio has been auto-muted due to high xrun count. Check your buffer settings.
-        </Alert>
+        <InlineNotification
+          kind="warning"
+          title="Audio has been auto-muted"
+          subtitle="High xrun count detected. Check your buffer settings."
+          lowContrast
+          hideCloseButton
+        />
       )}
 
       {/* Compact Status Bar */}
@@ -1479,21 +1490,16 @@ function HealthTab({ health, xruns, nodeId }: { health?: AudioHealth; xruns?: Xr
       {/* Auto-mute control */}
       {health?.auto_muted && (
         <LegacyTile style={{ padding: 16 }}>
-          <Alert
-            severity="warning"
-            action={
-              <Button
-                color="inherit"
-                size="small"
-                onClick={() => unmuteMutation.mutate()}
-                disabled={unmuteMutation.isPending}
-              >
-                Force Unmute
-              </Button>
-            }
-          >
-            Audio has been automatically muted due to excessive XRuns. Consider increasing buffer size.
-          </Alert>
+          <ActionableNotification
+            kind="warning"
+            title="Audio automatically muted"
+            subtitle="Excessive XRuns detected. Consider increasing buffer size."
+            actionButtonLabel="Force Unmute"
+            onActionButtonClick={() => unmuteMutation.mutate()}
+            inline
+            lowContrast
+            hideCloseButton
+          />
         </LegacyTile>
       )}
 
@@ -1503,9 +1509,13 @@ function HealthTab({ health, xruns, nodeId }: { health?: AudioHealth; xruns?: Xr
           <h4 style={{ marginBottom: 12 }}>Active Alerts</h4>
           <div className="stack" style={{ gap: 8 }}>
             {health.alerts.map((alert, i) => (
-              <Alert key={i} severity="warning" icon={<WarningAltFilled size={16} />}>
-                {alert}
-              </Alert>
+              <InlineNotification
+                key={i}
+                kind="warning"
+                title={alert}
+                lowContrast
+                hideCloseButton
+              />
             ))}
           </div>
         </LegacyTile>
@@ -1621,9 +1631,14 @@ function DiagnosticsTab({ nodeId }: { nodeId?: string | null }) {
               <li style={{ marginBottom: 4 }}>While holding both switches, turn the power ON</li>
               <li>Release the switches after the unit powers up</li>
             </ol>
-            <Alert severity="warning" sx={{ mt: 2, '& .MuiAlert-message': { fontSize: 11 } }}>
-              This will reset all UA-1000 internal settings including clock source and digital I/O modes.
-            </Alert>
+            <InlineNotification
+              kind="warning"
+              title="This will reset all UA-1000 internal settings"
+              subtitle="Clock source and digital I/O modes will return to factory defaults."
+              lowContrast
+              hideCloseButton
+              style={{ marginTop: 16 }}
+            />
           </div>
         </div>
       </LegacyTile>
@@ -1793,21 +1808,41 @@ function DiagnosticsTab({ nodeId }: { nodeId?: string | null }) {
           Troubleshooting Tips
         </h4>
         <div className="stack" style={{ gap: 12 }}>
-          <Alert severity="info" icon={<Information size={16} />}>
-            <strong>XRuns / Buffer Underruns:</strong> Increase buffer size in Configure dialog. Try 512 or 1024 samples for stability.
-          </Alert>
-          <Alert severity="info" icon={<Information size={16} />}>
-            <strong>No Audio Output:</strong> Check that UA-1000 is selected as the audio device. Verify USB connection and try a different USB port.
-          </Alert>
-          <Alert severity="info" icon={<Information size={16} />}>
-            <strong>High Latency:</strong> Lower the buffer size (try 128 or 256 samples). Ensure USB 2.0 port is being used, not USB 1.1.
-          </Alert>
-          <Alert severity="info" icon={<Information size={16} />}>
-            <strong>Digital Sync Issues:</strong> If using S/PDIF or ADAT, ensure clock source matches the external device. Perform hardware factory reset if needed.
-          </Alert>
-          <Alert severity="info" icon={<Information size={16} />}>
-            <strong>Crackling/Pops:</strong> Disable USB power saving in Linux. Check with: <code style={{ fontSize: 11 }}>cat /sys/module/usbcore/parameters/autosuspend</code>
-          </Alert>
+          <InlineNotification
+            kind="info"
+            title="XRuns / Buffer Underruns"
+            subtitle="Increase buffer size in Configure dialog. Try 512 or 1024 samples for stability."
+            lowContrast
+            hideCloseButton
+          />
+          <InlineNotification
+            kind="info"
+            title="No Audio Output"
+            subtitle="Check that UA-1000 is selected as the audio device. Verify USB connection and try a different USB port."
+            lowContrast
+            hideCloseButton
+          />
+          <InlineNotification
+            kind="info"
+            title="High Latency"
+            subtitle="Lower the buffer size (try 128 or 256 samples). Ensure USB 2.0 port is being used, not USB 1.1."
+            lowContrast
+            hideCloseButton
+          />
+          <InlineNotification
+            kind="info"
+            title="Digital Sync Issues"
+            subtitle="If using S/PDIF or ADAT, ensure clock source matches the external device. Perform hardware factory reset if needed."
+            lowContrast
+            hideCloseButton
+          />
+          <InlineNotification
+            kind="info"
+            title="Crackling/Pops"
+            subtitle="Disable USB power saving in Linux. Check with: cat /sys/module/usbcore/parameters/autosuspend"
+            lowContrast
+            hideCloseButton
+          />
         </div>
       </LegacyTile>
     </div>
@@ -1908,9 +1943,13 @@ function ConfigDialog({
             </p>
           </div>
 
-          <Alert severity="info" icon={<WarningAltFilled size={16} />}>
-            Changes will restart the audio engine. Active processing will be briefly interrupted.
-          </Alert>
+          <InlineNotification
+            kind="info"
+            title="Changes will restart the audio engine"
+            subtitle="Active processing will be briefly interrupted."
+            lowContrast
+            hideCloseButton
+          />
         </div>
       </DialogContent>
       <DialogActions>
