@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1381** Python | **1357** TypeScript | **177** C++/H | **145** Docs | **3111** total commits | **3** stars | **0** forks | **0** open issues
+**1381** Python | **1357** TypeScript | **177** C++/H | **145** Docs | **3120** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
-| [`6c2fca65`](https://github.com/matthewmackes/map2-audio/commit/6c2fca65ade4e6d66d9695f295f7715f887457b5) | T2475 E1 (status): worklist updated with second 10-iterat... | Map2 Audio | 2026-04-29 |
-| [`fadbd6d0`](https://github.com/matthewmackes/map2-audio/commit/fadbd6d08af5ab1b39999be1a119e035cf735a25) | T2475 E1 (20k/21): TopBar.tsx AppBar + Toolbar -> semanti... | Map2 Audio | 2026-04-29 |
-| [`d8732a9a`](https://github.com/matthewmackes/map2-audio/commit/d8732a9aae456f11c9aa8f17e1d7b5f8dc4d7bbe) | T2475 E1 (20j/21): TopBar.tsx Tooltip + IconButton + Divi... | Map2 Audio | 2026-04-29 |
-| [`df793451`](https://github.com/matthewmackes/map2-audio/commit/df79345124fe7bd3c5d978673a250e24e78527ac) | T2475 E1 (20i/21): EdirolUA1000View Button -> Carbon, ful... | Map2 Audio | 2026-04-29 |
-| [`7c017430`](https://github.com/matthewmackes/map2-audio/commit/7c017430f5defa03766cf686947c5a020700ce4c) | T2475 E1 (20h/21): EdirolUA1000View Dialog -> Carbon Comp... | Map2 Audio | 2026-04-29 |
-| [`696d268f`](https://github.com/matthewmackes/map2-audio/commit/696d268f0a913319fa1fb9d1da3328baf7b82725) | T2475 E1 (20g/21): EdirolUA1000View Select form-controls ... | Map2 Audio | 2026-04-29 |
-| [`11599ad4`](https://github.com/matthewmackes/map2-audio/commit/11599ad4e0d92c1483a771bfd6945b76b2e58dc1) | T2475 E1 (20f/21): EdirolUA1000View Switch+FormControlLab... | Map2 Audio | 2026-04-29 |
-| [`eae65611`](https://github.com/matthewmackes/map2-audio/commit/eae65611227084c89bd27cd94109f4e9d6557cc6) | T2475 E1 (20e/21): EdirolUA1000View Chip -> StatusChip | Map2 Audio | 2026-04-29 |
+| [`1a669f32`](https://github.com/matthewmackes/map2-audio/commit/1a669f325574d7ea4f663a16095d32277aac78a4) | T2475 E1 (status): worklist updated — Select migration de... | Map2 Audio | 2026-04-29 |
+| [`c293b4a4`](https://github.com/matthewmackes/map2-audio/commit/c293b4a4cc575e4f443848a570840668d88a5cc6) | T2475 E1 (20q/21): TopBar.tsx Checkbox+FormGroup+FormCont... | Map2 Audio | 2026-04-29 |
+| [`bbe7826c`](https://github.com/matthewmackes/map2-audio/commit/bbe7826c6b3d1bad5b5db60e7d4179bc8b6662f7) | T2475 E1 (20p/21): TopBar.tsx TextField+InputAdornment ->... | Map2 Audio | 2026-04-29 |
+| [`c308113e`](https://github.com/matthewmackes/map2-audio/commit/c308113ed528cf81d94ee99ec9a0766e8fd3da87) | T2475 E1 (20o/21): TopBar.tsx Button -> Carbon Button (37... | Map2 Audio | 2026-04-29 |
+| [`c494b0ec`](https://github.com/matthewmackes/map2-audio/commit/c494b0ec848873d4ab3411eb5353a51094ec9e27) | T2475 E1 (20n/21): TopBar.tsx Box -> semantic divs (29 si... | Map2 Audio | 2026-04-29 |
+| [`db823e0c`](https://github.com/matthewmackes/map2-audio/commit/db823e0cd23b7f2b15e9987e246a674dec2bbebc) | T2475 E1 (20m/21): TopBar.tsx Typography -> semantic span... | Map2 Audio | 2026-04-29 |
+| [`5bb6587d`](https://github.com/matthewmackes/map2-audio/commit/5bb6587d2a53c32f926eecdc5da4e0e266178387) | Merge branch 'master' of https://github.com/matthewmackes... | Map2 Audio | 2026-04-29 |
+| [`de343804`](https://github.com/matthewmackes/map2-audio/commit/de343804c6603b990f42da1d482fe1e9abf99e07) | T2475 E1 (20l/21): TopBar.tsx Chip -> StatusChip (42 sites) | Map2 Audio | 2026-04-29 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
