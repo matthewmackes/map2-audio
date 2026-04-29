@@ -30,7 +30,6 @@ import {
   Headphones,
   Launch,
   Meter,
-  MachineLearningModel,
   Music,
   Pause,
   Play,
@@ -368,6 +367,7 @@ import {
   useJuceGridPersistedState,
 } from './snapshotEditor/useJuceGridPersistedState'
 import { useSnapshotEditorCadences } from './snapshotEditor/useSnapshotEditorCadences'
+import { FEATURED_NATIVE_BROWSER_GROUPS } from './snapshotEditor/featuredNativeBrowserGroups'
 
 const API_BASE = (() => {
   const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
@@ -385,28 +385,8 @@ const API_BASE = (() => {
 
 // Pure helpers extracted to ./snapshotEditor/snapshotEditorPageHelpers.ts (T2467).
 
-const FEATURED_NATIVE_BROWSER_GROUPS = [
-  {
-    key: 'linear-nonlinear-modeling',
-    title: 'Linear and Nonlinear Modeling',
-    icon: MachineLearningModel,
-    pluginUris: [
-      'map2://juce/nam',
-      'map2://juce/convolution/reverb',
-      'map2://juce/convolution/cabinet',
-    ],
-  },
-  {
-    key: 'instruments',
-    title: 'Instruments',
-    icon: Music,
-    pluginUris: [
-      'map2://juce/brain',
-      'map2://juce/drums',
-      'map2://juce/synthforge',
-    ],
-  },
-] as const
+// FEATURED_NATIVE_BROWSER_GROUPS lives in
+// ./snapshotEditor/featuredNativeBrowserGroups (T2467 follow-up).
 
 interface SnapshotEditorPerformanceEvent {
   seq: number
