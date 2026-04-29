@@ -20,9 +20,7 @@ import {
   FormControlLabel,
   Chip,
   LinearProgress,
-  Tooltip,
   Alert,
-  CircularProgress,
 } from '@mui/material'
 import { NumberInput } from '../../ParameterControl'
 import {
@@ -55,6 +53,7 @@ import {
   Play,
 } from '@carbon/icons-react'
 import { useSetShellWindow } from '../../../layout/useSetShellWindow'
+import './EdirolUA1000View.css'
 import { StatCard } from '../../StatCard'
 import { EmptyState } from '../../shared/EmptyState'
 import { LoadingState } from '../../shared/LoadingState'
@@ -1723,17 +1722,16 @@ function DiagnosticsTab({ nodeId }: { nodeId?: string | null }) {
                 <code style={{ fontSize: 12, background: 'var(--bg-tertiary)', padding: '2px 6px', borderRadius: 3 }}>{cmd}</code>
                 <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 2 }}>{desc}</div>
               </div>
-              <Tooltip title="Copy to clipboard">
-                <Button
-                  size="small"
-                  onClick={() => {
-                    navigator.clipboard.writeText(cmd)
-                    pushToast('Copied to clipboard', 'info')
-                  }}
-                >
-                  Copy
-                </Button>
-              </Tooltip>
+              <Button
+                title="Copy to clipboard"
+                size="small"
+                onClick={() => {
+                  navigator.clipboard.writeText(cmd)
+                  pushToast('Copied to clipboard', 'info')
+                }}
+              >
+                Copy
+              </Button>
             </LegacyTile>
           ))}
         </div>
@@ -1922,7 +1920,7 @@ function ConfigDialog({
           variant="contained"
           disabled={configureMutation.isPending}
         >
-          {configureMutation.isPending ? <CircularProgress size={16} /> : 'Apply'}
+          {configureMutation.isPending ? <span className="edirol-ua1000__inline-spinner" aria-hidden="true" /> : 'Apply'}
         </Button>
       </DialogActions>
     </Dialog>

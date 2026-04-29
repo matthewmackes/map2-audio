@@ -1,0 +1,17 @@
+/* EdirolUA1000View — T2475 E1 partial Carbon migration. CSS-only
+ * inline spinner replaces the MUI CircularProgress that used to
+ * appear in the Apply button on the configure dialog. */
+
+.edirol-ua1000__inline-spinner {
+  display: inline-block;
+  width: 16px;
+  height: 16px;
+  border: 2px solid currentColor;
+  border-top-color: transparent;
+  border-radius: 50%;
+  animation: edirol-ua1000-spin 0.7s linear infinite;
+}
+
+@keyframes edirol-ua1000-spin {
+  to { transform: rotate(360deg); }
+}
