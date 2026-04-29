@@ -120,6 +120,71 @@ export function mergePreviewIntoSnapshotDetail(
   }
 }
 
+// Returns true when the given DOM EventTarget is a text-entry
+// surface (input / textarea / select / contenteditable). Used to
+// guard global keyboard shortcuts so typing into the page's
+// scattered TextInput / TextArea fields doesn't trigger them.
+export function isTextEntryTarget(target: EventTarget | null): boolean {
+  if (!(target instanceof HTMLElement)) {
+    return false
+  }
+
+  const tagName = target.tagName
+  return (
+    target.isContentEditable ||
+    tagName === 'INPUT' ||
+    tagName === 'TEXTAREA' ||
+    tagName === 'SELECT'
+  )
+}
+
+export interface ActivationProgressMetrics {
+  currentPhase: string | null
+  status: string | null
+  note: string | null
+  completedPhases: string[]
+}
+
+// Reads a single activation-progress payload out of a runtime
+// metrics envelope. Returns null when the payload is missing or
+// malformed; sanitizes string fields (uppercase phase names,
+// lowercase status, trimmed note).
+export function extractActivationProgressMetrics(
+  event: { runtime_metrics?: Record<string, unknown> } | null | undefined,
+): ActivationProgressMetrics | null {
+  const runtimeMetrics = event?.runtime_metrics
+  if (!runtimeMetrics || typeof runtimeMetrics !== 'object') {
+    return null
+  }
+
+  const activationProgress = runtimeMetrics.activation_progress
+  if (
+    !activationProgress ||
+    typeof activationProgress !== 'object' ||
+    Array.isArray(activationProgress)
+  ) {
+    return null
+  }
+
+  const payload = activationProgress as Record<string, unknown>
+  const completedPhases = Array.isArray(payload.completed_phases)
+    ? payload.completed_phases
+        .map((entry) => (typeof entry === 'string' ? entry.toUpperCase() : null))
+        .filter((entry): entry is string => entry !== null)
+    : []
+
+  return {
+    currentPhase:
+      typeof payload.current_phase === 'string' ? payload.current_phase.toUpperCase() : null,
+    status: typeof payload.status === 'string' ? payload.status.toLowerCase() : null,
+    note:
+      typeof payload.note === 'string' && payload.note.trim().length > 0
+        ? payload.note.trim()
+        : null,
+    completedPhases,
+  }
+}
+
 export function describeFlowUpdate(updates: FlowSlotUpdateShape): string {
   if (typeof updates.label === 'string') {
     return 'Rename channel'

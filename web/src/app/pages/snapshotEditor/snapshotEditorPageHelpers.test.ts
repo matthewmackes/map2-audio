@@ -2,7 +2,9 @@ import {
   cloneSnapshotDraftData,
   describeFlowUpdate,
   describeLoaderStateDraftChange,
+  extractActivationProgressMetrics,
   fingerprintSnapshotDraftData,
+  isTextEntryTarget,
   mergePreviewIntoSnapshotDetail,
   resequenceChainSnapshotPlugins,
   snapshotDraftsEqual,
@@ -163,6 +165,84 @@ describe('snapshotEditorPageHelpers', () => {
       [{}, 'Edit channel'],
     ])('describes %p as %s', (updates, expected) => {
       expect(describeFlowUpdate(updates)).toBe(expected)
+    })
+  })
+
+  describe('isTextEntryTarget', () => {
+    it('returns false for null + non-HTMLElement', () => {
+      expect(isTextEntryTarget(null)).toBe(false)
+      expect(isTextEntryTarget({} as EventTarget)).toBe(false)
+    })
+    it('returns true for INPUT / TEXTAREA / SELECT', () => {
+      expect(isTextEntryTarget(document.createElement('input'))).toBe(true)
+      expect(isTextEntryTarget(document.createElement('textarea'))).toBe(true)
+      expect(isTextEntryTarget(document.createElement('select'))).toBe(true)
+    })
+    it('returns true for an element whose isContentEditable getter is true', () => {
+      // JSDOM does not propagate `contentEditable = "true"` into the
+      // isContentEditable getter without attaching the element to a
+      // document; assert the read path directly.
+      const div = document.createElement('div')
+      Object.defineProperty(div, 'isContentEditable', { value: true })
+      expect(isTextEntryTarget(div)).toBe(true)
+    })
+    it('returns false for plain non-editable elements', () => {
+      expect(isTextEntryTarget(document.createElement('div'))).toBe(false)
+      expect(isTextEntryTarget(document.createElement('button'))).toBe(false)
+    })
+  })
+
+  describe('extractActivationProgressMetrics', () => {
+    it('returns null for missing / non-object payloads', () => {
+      expect(extractActivationProgressMetrics(null)).toBeNull()
+      expect(extractActivationProgressMetrics(undefined)).toBeNull()
+      expect(extractActivationProgressMetrics({})).toBeNull()
+      expect(extractActivationProgressMetrics({ runtime_metrics: 'oops' as unknown as Record<string, unknown> })).toBeNull()
+    })
+
+    it('returns null when activation_progress is missing or invalid', () => {
+      expect(extractActivationProgressMetrics({ runtime_metrics: {} })).toBeNull()
+      expect(extractActivationProgressMetrics({
+        runtime_metrics: { activation_progress: [] },
+      })).toBeNull()
+    })
+
+    it('uppercases current_phase + completed_phases, lowercases status, trims note', () => {
+      const result = extractActivationProgressMetrics({
+        runtime_metrics: {
+          activation_progress: {
+            current_phase: 'staging',
+            status: 'IN_PROGRESS',
+            note: '   chain swap   ',
+            completed_phases: ['validating', 'STAGING'],
+          },
+        },
+      })
+      expect(result).toEqual({
+        currentPhase: 'STAGING',
+        status: 'in_progress',
+        note: 'chain swap',
+        completedPhases: ['VALIDATING', 'STAGING'],
+      })
+    })
+
+    it('coerces non-string fields to null', () => {
+      const result = extractActivationProgressMetrics({
+        runtime_metrics: {
+          activation_progress: {
+            current_phase: 42,
+            status: false,
+            note: '   ',
+            completed_phases: ['valid', 7, null],
+          },
+        },
+      })
+      expect(result).toEqual({
+        currentPhase: null,
+        status: null,
+        note: null,
+        completedPhases: ['VALID'],
+      })
     })
   })
 })

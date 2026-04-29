@@ -305,7 +305,9 @@ import {
   cloneSnapshotDraftData,
   describeFlowUpdate,
   describeLoaderStateDraftChange,
+  extractActivationProgressMetrics,
   fingerprintSnapshotDraftData,
+  isTextEntryTarget,
   mergePreviewIntoSnapshotDetail,
   resequenceChainSnapshotPlugins,
   snapshotDraftsEqual,
@@ -425,14 +427,7 @@ interface SnapshotEditorPerformanceEventsResponse {
 // FlowLevelControl + FlowLevelControlProps live in
 // ./snapshotEditor/FlowLevelControl (T2469).
 
-function isTextEntryTarget(target: EventTarget | null): boolean {
-  if (!(target instanceof HTMLElement)) {
-    return false
-  }
-
-  const tagName = target.tagName
-  return target.isContentEditable || tagName === 'INPUT' || tagName === 'TEXTAREA' || tagName === 'SELECT'
-}
+// isTextEntryTarget lives in ./snapshotEditor/snapshotEditorPageHelpers (T2467 follow-up).
 
 // RoutingInspectorContent / LivePathArrowTone / LivePathGroupKind live in
 // ./snapshotEditor/snapshotEditorPageTypes (T2468).
@@ -543,36 +538,7 @@ function loadInitialJuceGridState(): { flowSlots: FlowSlot[]; routing: RoutingCo
 
 const LIVE_ACTIVATION_PHASES = ['VALIDATING', 'STAGING', 'APPLYING', 'VERIFYING'] as const
 
-function extractActivationProgressMetrics(event: { runtime_metrics?: Record<string, unknown> } | null | undefined): {
-  currentPhase: string | null
-  status: string | null
-  note: string | null
-  completedPhases: string[]
-} | null {
-  const runtimeMetrics = event?.runtime_metrics
-  if (!runtimeMetrics || typeof runtimeMetrics !== 'object') {
-    return null
-  }
-
-  const activationProgress = runtimeMetrics.activation_progress
-  if (!activationProgress || typeof activationProgress !== 'object' || Array.isArray(activationProgress)) {
-    return null
-  }
-
-  const payload = activationProgress as Record<string, unknown>
-  const completedPhases = Array.isArray(payload.completed_phases)
-    ? payload.completed_phases
-      .map((entry) => (typeof entry === 'string' ? entry.toUpperCase() : null))
-      .filter((entry): entry is string => entry !== null)
-    : []
-
-  return {
-    currentPhase: typeof payload.current_phase === 'string' ? payload.current_phase.toUpperCase() : null,
-    status: typeof payload.status === 'string' ? payload.status.toLowerCase() : null,
-    note: typeof payload.note === 'string' && payload.note.trim().length > 0 ? payload.note.trim() : null,
-    completedPhases,
-  }
-}
+// extractActivationProgressMetrics lives in ./snapshotEditor/snapshotEditorPageHelpers (T2467 follow-up).
 
 // One-shot store hydration runs at module import, before any React render.
 // The page is lazy-loaded (App.tsx routes via React.lazy), so this fires
