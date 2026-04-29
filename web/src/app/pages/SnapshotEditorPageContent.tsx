@@ -381,6 +381,7 @@ import { SnapshotEditorSavePresetModal } from './snapshotEditor/SnapshotEditorSa
 import { SnapshotEditorRenameChainModal } from './snapshotEditor/SnapshotEditorRenameChainModal'
 import { SnapshotEditorTabletDeleteConfirm } from './snapshotEditor/SnapshotEditorTabletDeleteConfirm'
 import { SnapshotEditorPresetDeleteConfirm } from './snapshotEditor/SnapshotEditorPresetDeleteConfirm'
+import { SnapshotEditorRoutingInspector } from './snapshotEditor/SnapshotEditorRoutingInspector'
 
 // API_BASE lives in ./snapshotEditor/snapshotEditorApi (T2467 follow-up).
 
@@ -8407,36 +8408,10 @@ export function SnapshotEditorPage() {
         </Modal>
       )}
 
-      {routingInspectorContent && (
-        <Modal
-          open
-          size="sm"
-          modalHeading={routingInspectorContent.heading}
-          modalLabel="Routing inspector"
-          primaryButtonText="Close"
-          onRequestClose={() => setRoutingInspectorId(null)}
-          onRequestSubmit={() => setRoutingInspectorId(null)}
-        >
-          <div className="juce-grid-page__routing-inspector">
-            <p className="juce-grid-page__routing-inspector-copy">{routingInspectorContent.summary}</p>
-            <div className="juce-grid-page__compact-tags">
-              {routingInspectorContent.tags.map((tag) => (
-                <Tag key={tag} type="cool-gray">
-                  {tag}
-                </Tag>
-              ))}
-            </div>
-            <div className="juce-grid-page__routing-inspector-grid" role="list" aria-label="Routing details">
-              {routingInspectorContent.rows.map((row) => (
-                <Tile key={row.label} className="juce-grid-page__routing-inspector-row" role="listitem">
-                  <p className="juce-grid-page__routing-inspector-row-label">{row.label}</p>
-                  <h3 className="juce-grid-page__routing-inspector-row-value">{row.value}</h3>
-                </Tile>
-              ))}
-            </div>
-          </div>
-        </Modal>
-      )}
+      <SnapshotEditorRoutingInspector
+        content={routingInspectorContent}
+        onClose={() => setRoutingInspectorId(null)}
+      />
 
       {/* Plugin Browser Modal */}
       {showPluginBrowser && (
