@@ -379,6 +379,7 @@ import { SnapshotEditorAssignmentDialog } from './snapshotEditor/SnapshotEditorA
 import { SnapshotEditorClearFlowsConfirm } from './snapshotEditor/SnapshotEditorClearFlowsConfirm'
 import { SnapshotEditorSavePresetModal } from './snapshotEditor/SnapshotEditorSavePresetModal'
 import { SnapshotEditorRenameChainModal } from './snapshotEditor/SnapshotEditorRenameChainModal'
+import { SnapshotEditorTabletDeleteConfirm } from './snapshotEditor/SnapshotEditorTabletDeleteConfirm'
 
 // API_BASE lives in ./snapshotEditor/snapshotEditorApi (T2467 follow-up).
 
@@ -8340,27 +8341,12 @@ export function SnapshotEditorPage() {
         </>
       )}
 
-      {pendingTabletDeletePlugin && (
-        <Modal
-          open
-          size="sm"
-          modalHeading="Remove block"
-          modalLabel="Tablet block action"
-          primaryButtonText={deleteMutation.isPending ? 'Removing...' : 'Remove block'}
-          secondaryButtonText="Cancel"
-          danger
-          primaryButtonDisabled={deleteMutation.isPending}
-          onRequestClose={() => setPendingTabletDeletePlugin(null)}
-          onSecondarySubmit={() => setPendingTabletDeletePlugin(null)}
-          onRequestSubmit={confirmTabletDeleteSelectedPlugin}
-        >
-          <div className="juce-grid-page__form-modal-body">
-            <p className="juce-grid-page__modal-copy">
-              Remove "{pendingTabletDeletePlugin.name}" from the current branch?
-            </p>
-          </div>
-        </Modal>
-      )}
+      <SnapshotEditorTabletDeleteConfirm
+        pendingPlugin={pendingTabletDeletePlugin}
+        isDeleting={deleteMutation.isPending}
+        onClose={() => setPendingTabletDeletePlugin(null)}
+        onConfirm={confirmTabletDeleteSelectedPlugin}
+      />
 
       <SnapshotEditorSavePresetModal
         open={showSavePresetModal}
