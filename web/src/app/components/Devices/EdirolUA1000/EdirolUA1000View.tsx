@@ -7,16 +7,16 @@ import {
   TabProvider,
 } from '@ariakit/react'
 import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
   Button,
 } from '@mui/material'
 import {
+  ComposedModal,
   Dropdown,
   InlineNotification,
   ActionableNotification,
+  ModalBody,
+  ModalFooter,
+  ModalHeader,
   Toggle,
 } from '@carbon/react'
 import { StatusChip } from '../../primitives'
@@ -1885,9 +1885,9 @@ function ConfigDialog({
   const calculateLatency = (buffer: number, rate: number) => ((buffer / rate) * 1000).toFixed(2)
 
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="sm" fullWidth fullScreen={isMobile}>
-      <DialogTitle>UA-1000 / JUCE Engine Configuration</DialogTitle>
-      <DialogContent>
+    <ComposedModal open={open} onClose={onClose} size="sm">
+      <ModalHeader closeModal={onClose} title="UA-1000 / JUCE Engine Configuration" />
+      <ModalBody>
         <div className="stack" style={{ paddingTop: 8 }}>
           {(() => {
             const sampleRateItems = [
@@ -1961,8 +1961,8 @@ function ConfigDialog({
             hideCloseButton
           />
         </div>
-      </DialogContent>
-      <DialogActions>
+      </ModalBody>
+      <ModalFooter>
         <Button onClick={onClose}>Cancel</Button>
         <Button
           onClick={() => configureMutation.mutate()}
@@ -1971,7 +1971,7 @@ function ConfigDialog({
         >
           {configureMutation.isPending ? <span className="edirol-ua1000__inline-spinner" aria-hidden="true" /> : 'Apply'}
         </Button>
-      </DialogActions>
-    </Dialog>
+      </ModalFooter>
+    </ComposedModal>
   )
 }
