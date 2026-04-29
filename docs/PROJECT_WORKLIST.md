@@ -33676,8 +33676,9 @@ Last updated: 2026-04-29 - Claude (B12 completion + T2474 epic closed)
 Epic overview: Five discrete follow-up epics surfaced during the Carbon Discipline Visual System Sweep audit. T2475 (MUI removal) and T2478 (philosophy docs) and T2479 (visual regression harness) execute autonomously after T2474 completes. T2476 (plugin-card consolidation) — DONE 2026-04-29. T2477 (graph-rendering consolidation) is paused — architectural refactor with real behavioral risk; requires its own clarification round before execution.
 
 ID: T2475
-Status: [ ] Todo
+Status: [✓] Done
 Title: MUI dependency removal — migrate ~21 MUI consumers to Carbon, then drop @mui/material
+Completion note: 2026-04-30 - Claude Opus 4.7: SHIPPED. All 21 live MUI consumers migrated to Carbon across 4 sustained 10-iteration SHIP loops. EdirolUA1000View.tsx and TopBar.tsx (the two largest, last to land) retired; 28 dead web/src/map2/components/ files deleted; @mui/material dropped from web/package.json + root package.json devDependencies (27 packages removed from the lockfile). CLAUDE.md tech-stack table + "Don't expand MUI" line updated to reflect retirement. Verification: full AvbRouting Jest suite green (23 suites, 251 tests); full web Jest run green (328 of 330 suites; the 2 failures are unrelated `.claude/worktrees/agent-*` orphans that can't resolve `@carbon/react` from their stale node_modules). Atomic web build clean (24.66s).
 Description:
 - Goal / acceptance criteria: Migrate all 21 files under `web/src/app/` that import from `@mui/material` to Carbon equivalents, then remove `@mui/material` from `web/package.json` `dependencies`. Run `npm install` to regenerate lockfile. Run `npm run typecheck`, `npm run build`, full Jest suite. Compare `web/dist/assets/*.js` total bundle size before/after; report shrinkage. Update `docs/CLAUDE.md` Tech Stack table to remove MUI row.
 - **CORRECTED SCOPE 2026-04-28** (during T2474 B7): The original audit reported "zero MUI imports under web/src/app/" but reconnaissance during B7 found 21 files actively using MUI:

@@ -5,15 +5,7 @@
 
 // Components
 export { default as ChainFlowCanvas } from './ChainFlowCanvas';
-export { default as ChainGraphCanvas } from './ChainGraphCanvas';
-export { default as AudioPluginNode } from './nodes/AudioPluginNode';
-export { default as DeviceNode } from './nodes/DeviceNode';
-export { default as RoutingNode } from './nodes/RoutingNode';
-export { default as PluginMeterPanel } from './nodes/PluginMeterPanel';
-export { default as AudioConnectionEdge } from './edges/AudioConnectionEdge';
-export { default as SidechainConnectionEdge } from './edges/SidechainConnectionEdge';
 export { default as LatencyOverlay } from './panels/LatencyOverlay';
-export { default as SnapshotBar } from './panels/SnapshotBar';
 
 // Node Types
 export type { AudioPluginNodeData, AudioPluginNode as AudioPluginNodeType } from './nodes/AudioPluginNodeTypes';
@@ -43,6 +35,4 @@ export { useSidechainConnections } from './hooks/useSidechainConnections';
 export { usePluginMeters } from './hooks/usePluginMeters';
 export type { SidechainConnection as ChainBuilderSidechainConnection, SidechainAPI, PluginInfo } from './hooks/useSidechainConnections';
 export type { PluginMetersState, UsePluginMetersOptions, UsePluginMetersReturn } from './hooks/usePluginMeters';
-export type { PluginMeterData, PluginMeterPanelProps } from './nodes/PluginMeterPanel';
 export type { PluginLatencyInfo, LatencyOverlayProps } from './panels/LatencyOverlay';
-export type { Snapshot, SnapshotBarProps } from './panels/SnapshotBar';

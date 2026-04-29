@@ -70,7 +70,6 @@ Severity tags: `CRITICAL` · `HIGH` · `MEDIUM` · `LOW`
 | **@carbon/react** | latest | **required UI standard for all new/updated UI** |
 | @carbon/icons-react | latest | |
 | @carbon/colors | latest | |
-| MUI / @mui/material | 6.5.0 | legacy surfaces only — do not expand |
 | @phosphor-icons/react | 2.1.10 | legacy surfaces only |
 | TanStack Query | 5.59.0 | server state |
 | React Hook Form | 7.53.0 | forms |
@@ -399,7 +398,7 @@ Before marking any task complete:
 - Carbon guidance wins over any legacy styling guidance — no exceptions
 - Use `@carbon/react` components and Carbon tokens/themes for all new and refactored UI
 - Non-conforming exceptions must be documented in worklist completion notes with follow-up task IDs
-- MUI and Phosphor Icons are **legacy only** — do not expand their usage
+- MUI was retired 2026-04-30 (T2475 E1) — do not reintroduce. Phosphor Icons remains legacy-only — do not expand its usage.
 
 ### Page Design Standards
 
@@ -853,7 +852,7 @@ curl -s http://localhost:3000/ | grep 'index-' # Layer 4: correct files?
 ## Common Pitfalls to Avoid
 
 - **Don't** add coaching, wizards, tutorials, or explanatory `InlineNotification` banners to pages
-- **Don't** expand MUI or Phosphor Icons usage — Carbon only for new work
+- **Don't** reintroduce MUI (retired 2026-04-30 in T2475 E1) or expand Phosphor Icons — Carbon only for new work
 - **Don't** use `manualChunks` in Vite config
 - **Don't** use any alternate frontend serving mode — `serve_web_dist.mjs` on port 3000 is the supported path
 - **Don't** use `sleep` in scripts
