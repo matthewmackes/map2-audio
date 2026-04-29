@@ -12,12 +12,9 @@ import {
   DialogContent,
   DialogActions,
   Button,
-  Select,
-  MenuItem,
-  FormControl,
-  InputLabel,
 } from '@mui/material'
 import {
+  Dropdown,
   InlineNotification,
   ActionableNotification,
   Toggle,
@@ -1328,12 +1325,20 @@ function DigitalIOTab() {
           <div className="stack" style={{ gap: 12 }}>
             <div className="flex-between">
               <span>Mode</span>
-              <FormControl size="small" style={{ minWidth: 100 }}>
-                <Select defaultValue="spdif" size="small">
-                  <MenuItem value="spdif">S/PDIF</MenuItem>
-                  <MenuItem value="adat">ADAT</MenuItem>
-                </Select>
-              </FormControl>
+              <Dropdown
+                id="edirol-ua1000-spdif-mode"
+                titleText="S/PDIF mode"
+                hideLabel
+                label="Select mode"
+                size="sm"
+                initialSelectedItem={{ id: 'spdif', label: 'S/PDIF' }}
+                items={[
+                  { id: 'spdif', label: 'S/PDIF' },
+                  { id: 'adat', label: 'ADAT' },
+                ]}
+                itemToString={(item: { id: string; label: string } | null) => (item ? item.label : '')}
+                style={{ minWidth: 100 }}
+              />
             </div>
             <p style={{ fontSize: 12, color: 'var(--text-muted)' }}>
               ADAT mode provides 8 channels at 44.1/48kHz
@@ -1884,42 +1889,59 @@ function ConfigDialog({
       <DialogTitle>UA-1000 / JUCE Engine Configuration</DialogTitle>
       <DialogContent>
         <div className="stack" style={{ paddingTop: 8 }}>
-          <FormControl fullWidth>
-            <InputLabel>Sample Rate</InputLabel>
-            <Select
-              value={sampleRate}
-              label="Sample Rate"
-              onChange={(e) => setSampleRate(Number(e.target.value))}
-            >
-              <MenuItem value={44100}>44.1 kHz (CD Quality)</MenuItem>
-              <MenuItem value={48000}>48 kHz (Recommended)</MenuItem>
-              <MenuItem value={88200}>88.2 kHz (High Resolution)</MenuItem>
-              <MenuItem value={96000}>96 kHz (Studio Quality)</MenuItem>
-            </Select>
-          </FormControl>
+          {(() => {
+            const sampleRateItems = [
+              { id: 44100, label: '44.1 kHz (CD Quality)' },
+              { id: 48000, label: '48 kHz (Recommended)' },
+              { id: 88200, label: '88.2 kHz (High Resolution)' },
+              { id: 96000, label: '96 kHz (Studio Quality)' },
+            ]
+            const selectedSampleRateItem =
+              sampleRateItems.find((item) => item.id === sampleRate) || sampleRateItems[1]
+            return (
+              <Dropdown
+                id="edirol-ua1000-sample-rate"
+                titleText="Sample Rate"
+                label="Select sample rate"
+                items={sampleRateItems}
+                selectedItem={selectedSampleRateItem}
+                itemToString={(item: { id: number; label: string } | null) => (item ? item.label : '')}
+                onChange={({ selectedItem }) => {
+                  if (selectedItem) setSampleRate(selectedItem.id)
+                }}
+              />
+            )
+          })()}
 
-          <FormControl fullWidth>
-            <InputLabel>Buffer Size</InputLabel>
-            <Select
-              value={bufferSize}
-              label="Buffer Size"
-              onChange={(e) => setBufferSize(Number(e.target.value))}
-            >
-              {(Array.isArray(bufferPresets) ? bufferPresets : [
-                { size: 64, label: '64 samples' },
-                { size: 128, label: '128 samples' },
-                { size: 256, label: '256 samples', recommended: true },
-                { size: 512, label: '512 samples' },
-                { size: 1024, label: '1024 samples' },
-                { size: 2048, label: '2048 samples' },
-              ]).map((preset) => (
-                <MenuItem key={preset.size} value={preset.size}>
-                  {preset.size} samples ({calculateLatency(preset.size, sampleRate)} ms)
-                  {preset.recommended && ' - Recommended'}
-                </MenuItem>
-              ))}
-            </Select>
-          </FormControl>
+          {(() => {
+            const presets = Array.isArray(bufferPresets) ? bufferPresets : [
+              { size: 64, label: '64 samples' },
+              { size: 128, label: '128 samples' },
+              { size: 256, label: '256 samples', recommended: true },
+              { size: 512, label: '512 samples' },
+              { size: 1024, label: '1024 samples' },
+              { size: 2048, label: '2048 samples' },
+            ]
+            const bufferItems = presets.map((preset) => ({
+              id: preset.size,
+              label: `${preset.size} samples (${calculateLatency(preset.size, sampleRate)} ms)${preset.recommended ? ' - Recommended' : ''}`,
+            }))
+            const selectedBufferItem =
+              bufferItems.find((item) => item.id === bufferSize) || bufferItems[0]
+            return (
+              <Dropdown
+                id="edirol-ua1000-buffer-size"
+                titleText="Buffer Size"
+                label="Select buffer size"
+                items={bufferItems}
+                selectedItem={selectedBufferItem}
+                itemToString={(item: { id: number; label: string } | null) => (item ? item.label : '')}
+                onChange={({ selectedItem }) => {
+                  if (selectedItem) setBufferSize(selectedItem.id)
+                }}
+              />
+            )
+          })()}
 
           <div style={{ padding: 12, background: 'var(--bg-secondary)', borderRadius: 4 }}>
             <div className="flex-between" style={{ marginBottom: 8 }}>
