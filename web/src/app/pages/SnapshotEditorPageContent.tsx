@@ -374,6 +374,7 @@ import {
 } from './snapshotEditor/snapshotEditorBootstrap'
 import { API_BASE } from './snapshotEditor/snapshotEditorApi'
 import { SnapshotEditorKeyboardShortcuts } from './snapshotEditor/SnapshotEditorKeyboardShortcuts'
+import { SnapshotEditorLanePicker } from './snapshotEditor/SnapshotEditorLanePicker'
 
 // API_BASE lives in ./snapshotEditor/snapshotEditorApi (T2467 follow-up).
 
@@ -9065,69 +9066,13 @@ export function SnapshotEditorPage() {
       />
 
       {/* Lane Picker Modal */}
-      {lanePickerOpen && (
-        <Modal
-          open
-          size="md"
-          modalHeading="Add automation lane"
-          primaryButtonText="Close"
-          onRequestClose={() => setLanePickerOpen(false)}
-          onRequestSubmit={() => setLanePickerOpen(false)}
-        >
-          <div className="juce-grid-page__lane-picker">
-            <p className="juce-grid-page__modal-copy">Select a parameter to automate from the active flow.</p>
-            {currentChain?.plugins && currentChain.plugins.length > 0 ? (
-              <div className="juce-grid-page__lane-picker-grid">
-                {currentChain.plugins.map((plugin) => (
-                  <Tile key={plugin.uri} className="juce-grid-page__lane-picker-tile">
-                    <div className="juce-grid-page__lane-picker-header">
-                      <div className="juce-grid-page__lane-picker-copy">
-                        <p className="juce-grid-page__dense-card-kicker">Processor</p>
-                        <h3 className="juce-grid-page__dense-card-heading">{getDisplayPluginName(plugin.name, plugin.uri)}</h3>
-                      </div>
-                      <Tag type="cool-gray">{Object.keys(plugin.parameters || {}).length} params</Tag>
-                    </div>
-                    <div className="juce-grid-page__lane-picker-params">
-                      {Object.entries(plugin.parameters || {}).map(([symbol, value]) => {
-                        const param = { symbol, value }
-                        const laneColors = ['#FF6B6B', '#4ECDC4', '#45B7D1', '#96CEB4', '#FFEAA7', '#DDA0DD']
-                        return (
-                          <Button
-                            key={param.symbol}
-                            size="sm"
-                            kind="ghost"
-                            onClick={() => {
-                              const newLane: AutomationLane = {
-                                id: `${plugin.uri}:${param.symbol}`,
-                                parameterName: param.symbol,
-                                pluginName: getDisplayPluginName(plugin.name, plugin.uri),
-                                pluginUri: plugin.uri,
-                                parameterSymbol: param.symbol,
-                                points: [],
-                                enabled: true,
-                                armed: false,
-                                color: laneColors[automationLanes.length % laneColors.length],
-                              }
-                              setAutomationLanes(prev => [...prev, newLane])
-                              setLanePickerOpen(false)
-                            }}
-                          >
-                            {param.symbol}
-                          </Button>
-                        )
-                      })}
-                    </div>
-                  </Tile>
-                ))}
-              </div>
-            ) : (
-              <p className="juce-grid-page__empty-state-copy">
-                No plugins in the active flow. Add plugins first to create automation lanes.
-              </p>
-            )}
-          </div>
-        </Modal>
-      )}
+      <SnapshotEditorLanePicker
+        open={lanePickerOpen}
+        currentChain={currentChain}
+        existingLaneCount={automationLanes.length}
+        onClose={() => setLanePickerOpen(false)}
+        onAddLane={(lane) => setAutomationLanes((prev) => [...prev, lane])}
+      />
 
       {/* Automation Timeline Bottom Panel */}
       {automationTimelineExpanded && (
