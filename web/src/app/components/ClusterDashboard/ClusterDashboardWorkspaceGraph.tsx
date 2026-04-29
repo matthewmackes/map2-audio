@@ -69,15 +69,19 @@ function ClusterDashboardWorkspaceNodeCard({ data }: NodeProps<RenderNodeData>) 
     <button
       type="button"
       style={{
+        // T2474 B8: Removed borderRadius:10 (Q1=A flat corners) and the
+        // box-shadow drop+halo (was Tailwind blue rgba + accent-tinted
+        // selection halo — Q1=A retires both). Border carries selection
+        // state instead via accentColor; inline styles here only carry
+        // dynamic per-card values (width, accent color) that legitimately
+        // come from data, not literals.
         width: cardWidth(data.kind),
         minHeight: data.kind === 'fabric' ? 124 : 120,
         border: `1px solid ${data.selected ? data.accentColor : toneBorder(data.tone)}`,
-        borderInlineStart: `6px solid ${data.accentColor}`,
-        borderRadius: 10,
+        borderInlineStart: `4px solid ${data.accentColor}`,
         background: data.selected ? 'var(--cds-layer-selected)' : 'var(--cds-layer)',
         color: 'var(--cds-text-primary)',
-        padding: '0.9rem',
-        boxShadow: data.selected ? `0 0 0 2px ${data.accentColor}33` : '0 10px 24px rgba(15, 98, 254, 0.08)',
+        padding: '0.875rem',
         textAlign: 'left',
         cursor: 'pointer',
       }}

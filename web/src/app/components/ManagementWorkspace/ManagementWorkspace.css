@@ -1,14 +1,28 @@
+/* ManagementWorkspace — Carbon-disciplined operator surface.
+ *
+ * T2474 B8: Retired the pseudo-3D skeuomorphism that simulated raised
+ * panels with asymmetric light/dark borders + linear gradient fills +
+ * inset highlights + drop shadows. Per Q1=A (no fake hardware
+ * skeuomorphism, no decorative gradients, no glow). Every panel,
+ * graph node, snapshot tile, hero, table, and expanded card now
+ * renders as a flat Carbon Layer with --cds-border-subtle borders
+ * and --cds-layer surfaces. Selection / highlight cues use
+ * --cds-link-primary border + MAP semantic state tokens (B1) for
+ * is-highlighted variants instead of glow halos.
+ *
+ * The --management-shell-* token aliases below are retained for
+ * backward compatibility with any external consumer that reads them
+ * by name; they now resolve to the canonical Carbon tokens directly.
+ */
+
 .management-workspace {
   --management-shell-surface: var(--cds-layer);
-  --management-shell-surface-strong: color-mix(in srgb, var(--cds-layer-hover) 68%, var(--cds-layer) 32%);
-  --management-shell-object-surface: color-mix(in srgb, var(--cds-layer-hover) 36%, var(--cds-layer) 64%);
+  --management-shell-surface-strong: var(--cds-layer-hover);
+  --management-shell-object-surface: var(--cds-layer);
   --management-shell-border-light: var(--cds-border-subtle-01);
   --management-shell-border-strong: var(--cds-border-strong-01);
-  --management-shell-highlight: color-mix(in srgb, var(--cds-layer-selected) 54%, transparent);
-  --management-shell-shadow: color-mix(in srgb, var(--cds-layer-selected) 16%, transparent);
-  --management-shell-shadow-strong: color-mix(in srgb, var(--cds-layer-selected) 24%, transparent);
-  --management-shell-toolbar-surface: color-mix(in srgb, var(--cds-layer-hover) 74%, var(--management-shell-surface) 26%);
-  --management-shell-row-surface: color-mix(in srgb, var(--management-shell-object-surface) 82%, var(--management-shell-surface) 18%);
+  --management-shell-toolbar-surface: var(--cds-layer-hover);
+  --management-shell-row-surface: var(--cds-layer);
   display: flex;
   flex-direction: column;
   gap: 1.1rem;
@@ -19,27 +33,19 @@
   flex-direction: column;
   gap: 0.95rem;
   padding: 0.95rem 1rem;
-  border-top: 1px solid var(--management-shell-border-light);
-  border-left: 1px solid var(--management-shell-border-light);
-  border-right: 1px solid color-mix(in srgb, var(--management-shell-border-strong) 88%, transparent);
-  border-bottom: 1px solid color-mix(in srgb, var(--management-shell-border-strong) 94%, transparent);
-  background:
-    linear-gradient(180deg, var(--management-shell-surface-strong), var(--management-shell-surface));
-  box-shadow:
-    inset 0 1px 0 0 var(--management-shell-highlight),
-    0 10px 24px var(--management-shell-shadow);
+  border: 1px solid var(--cds-border-subtle-01);
+  background: var(--cds-layer);
 }
 
 .management-workspace__section.is-highlighted {
-  box-shadow:
-    inset 0 1px 0 0 var(--management-shell-highlight),
-    0 10px 24px var(--management-shell-shadow),
-    inset 0 0 0 1px color-mix(in srgb, var(--cds-support-success) 26%, transparent);
+  /* Selection conveyed by accent border on the success-tone color (this
+   * highlights "OK to proceed" rows in the management workspace). */
+  border-color: color-mix(in srgb, var(--map2-state-live) 56%, var(--cds-border-strong-01));
 }
 
 .management-workspace__section-header {
   align-items: flex-start;
-  border-bottom: 1px solid color-mix(in srgb, var(--management-shell-border-strong) 74%, transparent);
+  border-bottom: 1px solid var(--cds-border-subtle-01);
   display: flex;
   gap: 1rem;
   justify-content: space-between;
@@ -49,14 +55,14 @@
 .management-workspace__section-title {
   font-family: 'IBM Plex Sans', 'Helvetica Neue', Arial, sans-serif;
   font-size: var(--cds-heading-02-font-size, 1rem);
-  font-weight: 600;
+  font-weight: 500;
   margin: 0;
 }
 
 .management-workspace__muted {
   color: var(--cds-text-secondary);
   line-height: 1.45;
-  margin: 0.35rem 0 0;
+  margin: 0.375rem 0 0;
 }
 
 .management-workspace__tag-row {
@@ -83,15 +89,8 @@
   display: grid;
   grid-template-rows: auto minmax(0, 1fr);
   overflow: hidden;
-  border-top: 1px solid var(--management-shell-border-light);
-  border-left: 1px solid var(--management-shell-border-light);
-  border-right: 1px solid color-mix(in srgb, var(--management-shell-border-strong) 88%, transparent);
-  border-bottom: 1px solid color-mix(in srgb, var(--management-shell-border-strong) 94%, transparent);
-  background:
-    linear-gradient(180deg, var(--management-shell-surface-strong), var(--management-shell-object-surface));
-  box-shadow:
-    inset 0 1px 0 0 var(--management-shell-highlight),
-    0 10px 24px var(--management-shell-shadow);
+  border: 1px solid var(--cds-border-subtle-01);
+  background: var(--cds-layer);
 }
 
 .management-workspace__graph-toolbar {
@@ -99,13 +98,12 @@
   align-items: center;
   justify-content: space-between;
   gap: 0.75rem;
-  padding: 0.55rem 0.8rem;
-  border-bottom: 1px solid color-mix(in srgb, var(--management-shell-border-strong) 76%, transparent);
-  background:
-    linear-gradient(180deg, var(--management-shell-toolbar-surface), var(--management-shell-surface));
+  padding: 0.5rem 0.75rem;
+  border-bottom: 1px solid var(--cds-border-subtle-01);
+  background: var(--cds-layer-hover);
   color: var(--cds-text-secondary);
   font-size: var(--cds-helper-text-01-font-size, 0.75rem);
-  font-weight: 700;
+  font-weight: 500;
 }
 
 .management-workspace__graph-flow {
@@ -121,29 +119,18 @@
 }
 
 .management-workspace__graph-flow .react-flow__background {
-  background:
-    linear-gradient(
-      180deg,
-      color-mix(in srgb, var(--management-shell-surface-strong) 78%, var(--management-shell-object-surface) 22%),
-      color-mix(in srgb, var(--management-shell-object-surface) 82%, var(--management-shell-surface) 18%)
-    );
+  background: var(--cds-layer);
 }
 
 .management-workspace__graph-flow .react-flow__controls {
   overflow: hidden;
-  border-top: 1px solid var(--management-shell-border-light);
-  border-left: 1px solid var(--management-shell-border-light);
-  border-right: 1px solid color-mix(in srgb, var(--management-shell-border-strong) 86%, transparent);
-  border-bottom: 1px solid color-mix(in srgb, var(--management-shell-border-strong) 92%, transparent);
+  border: 1px solid var(--cds-border-subtle-01);
   border-radius: 0;
-  box-shadow:
-    inset 0 1px 0 0 var(--management-shell-highlight),
-    0 6px 18px var(--management-shell-shadow);
 }
 
 .management-workspace__graph-flow .react-flow__controls-button {
-  border-bottom-color: color-mix(in srgb, var(--management-shell-border-strong) 72%, transparent);
-  background: var(--management-shell-toolbar-surface);
+  border-bottom-color: var(--cds-border-subtle-01);
+  background: var(--cds-layer-hover);
   color: var(--cds-text-primary);
 }
 
@@ -161,33 +148,21 @@
   display: grid;
   gap: 0;
   align-content: start;
-  padding: 0.8rem 0.9rem 0.85rem;
-  border-top: 1px solid var(--management-shell-border-light);
-  border-left: 1px solid var(--management-shell-border-light);
-  border-right: 1px solid var(--management-graph-node-tone);
-  border-bottom: 1px solid var(--management-graph-node-tone);
-  border-inline-start: 7px solid var(--management-graph-node-accent);
-  border-radius: 0;
-  background:
-    linear-gradient(
-      180deg,
-      color-mix(in srgb, var(--management-shell-surface-strong) 72%, var(--management-shell-object-surface) 28%),
-      var(--management-shell-object-surface)
-    );
-  box-shadow:
-    inset 0 1px 0 0 var(--management-shell-highlight),
-    0 8px 18px var(--management-shell-shadow);
+  padding: 0.75rem 0.875rem;
+  border: 1px solid var(--cds-border-subtle-01);
+  border-inline-start: 4px solid var(--management-graph-node-accent);
+  background: var(--cds-layer-hover);
   color: var(--cds-text-primary);
   text-align: left;
   cursor: pointer;
 }
 
 .management-workspace__graph-node.is-selected {
-  background:
-    linear-gradient(180deg, color-mix(in srgb, var(--management-graph-node-accent) 12%, var(--cds-layer-hover)), color-mix(in srgb, var(--management-graph-node-accent) 8%, var(--management-shell-object-surface)));
-  box-shadow:
-    inset 0 1px 0 0 var(--management-shell-highlight),
-    0 10px 22px color-mix(in srgb, var(--management-graph-node-accent) 16%, transparent);
+  /* T2474 B8: Selection now flat — was a linear-gradient + box-shadow
+   * halo painted with the per-node accent. Now an accent-colored border
+   * replaces only the existing border (no shadow). */
+  border-color: var(--management-graph-node-accent);
+  background: color-mix(in srgb, var(--management-graph-node-accent) 8%, var(--cds-layer-hover));
 }
 
 .management-workspace__graph-node:focus-visible {
@@ -205,7 +180,9 @@
 .management-workspace__graph-node-eyebrow,
 .management-workspace__graph-node-tone {
   font-size: var(--cds-helper-text-01-font-size, 0.75rem);
-  font-weight: 700;
+  font-weight: 500;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
 }
 
 .management-workspace__graph-node-eyebrow {
@@ -213,13 +190,13 @@
 }
 
 .management-workspace__graph-node-tone {
-  color: color-mix(in srgb, var(--management-graph-node-accent) 88%, var(--cds-text-secondary));
+  color: var(--management-graph-node-accent);
 }
 
 .management-workspace__graph-node-label {
   font-family: 'IBM Plex Sans', 'Helvetica Neue', Arial, sans-serif;
   font-size: var(--cds-heading-02-font-size, 1rem);
-  font-weight: 600;
+  font-weight: 500;
   line-height: 1.25;
 }
 
@@ -232,15 +209,15 @@
 
 .management-workspace__graph-node-metric {
   margin-top: 0.75rem;
-  color: color-mix(in srgb, var(--management-graph-node-accent) 90%, var(--cds-text-primary));
+  color: var(--management-graph-node-accent);
   font-size: var(--cds-label-01-font-size, 0.75rem);
-  font-weight: 600;
+  font-weight: 500;
 }
 
 .management-workspace__graph-handle {
-  inline-size: 0.6rem;
-  block-size: 0.6rem;
-  border: 1px solid color-mix(in srgb, var(--management-shell-highlight) 60%, var(--management-shell-border-light));
+  inline-size: 0.5rem;
+  block-size: 0.5rem;
+  border: 1px solid var(--cds-border-strong-01);
   border-radius: 0;
 }
 
@@ -270,32 +247,24 @@
   flex-direction: column;
   gap: 0.4rem;
   min-height: 8.25rem;
-  padding: 0.9rem 1rem;
+  padding: 0.875rem 1rem;
 }
 
 .management-workspace__snapshot-tile.cds--tile,
 .management-workspace__hero.cds--tile,
 .management-workspace__table-tile.cds--tile,
 .management-workspace__expanded-card {
-  border-top: 1px solid var(--management-shell-border-light);
-  border-left: 1px solid var(--management-shell-border-light);
-  border-right: 1px solid color-mix(in srgb, var(--management-shell-border-strong) 88%, transparent);
-  border-bottom: 1px solid color-mix(in srgb, var(--management-shell-border-strong) 94%, transparent);
+  /* T2474 B8: Was the asymmetric-border + linear-gradient + inset
+   * highlight + drop shadow combo simulating raised panels. Replaced
+   * with flat Carbon Layer borders. */
+  border: 1px solid var(--cds-border-subtle-01);
   border-radius: 0;
-  background:
-    linear-gradient(
-      180deg,
-      color-mix(in srgb, var(--management-shell-surface-strong) 72%, var(--management-shell-object-surface) 28%),
-      var(--management-shell-object-surface)
-    );
-  box-shadow:
-    inset 0 1px 0 0 var(--management-shell-highlight),
-    0 10px 24px var(--management-shell-shadow);
+  background: var(--cds-layer);
 }
 
 .management-workspace__hero {
   min-height: 30rem;
-  padding: 0.85rem;
+  padding: 0.875rem;
 }
 
 .management-workspace__table-tile {
@@ -311,20 +280,20 @@
 .management-workspace__snapshot-head p {
   color: var(--cds-text-secondary);
   font-size: var(--cds-helper-text-01-font-size, 0.75rem);
-  font-weight: 700;
+  font-weight: 500;
   margin: 0;
 }
 
 .management-workspace__snapshot-tile strong {
   font-family: 'IBM Plex Sans', 'Helvetica Neue', Arial, sans-serif;
   font-size: var(--cds-heading-03-font-size, 1.25rem);
-  font-weight: 600;
+  font-weight: 400;
 }
 
 .management-workspace__snapshot-tile span {
   color: var(--cds-text-primary);
   font-size: var(--cds-body-compact-01-font-size, 0.875rem);
-  font-weight: 600;
+  font-weight: 500;
 }
 
 .management-workspace__snapshot-tile small {
@@ -341,23 +310,22 @@
 }
 
 .management-workspace__table-container .cds--data-table-header {
-  padding: 0.8rem 0.95rem 0.7rem;
-  background:
-    linear-gradient(180deg, var(--management-shell-toolbar-surface), var(--management-shell-surface));
-  border-bottom: 1px solid color-mix(in srgb, var(--management-shell-border-strong) 74%, transparent);
+  padding: 0.75rem 0.875rem;
+  background: var(--cds-layer-hover);
+  border-bottom: 1px solid var(--cds-border-subtle-01);
 }
 
 .management-workspace__table-container .cds--data-table-header__title {
   font-family: 'IBM Plex Sans', 'Helvetica Neue', Arial, sans-serif;
   font-size: var(--cds-heading-02-font-size, 1rem);
-  font-weight: 600;
+  font-weight: 500;
 }
 
 .management-workspace__table-container .cds--toolbar {
-  min-height: 2.6rem;
-  padding-inline: 0.95rem;
-  border-bottom: 1px solid color-mix(in srgb, var(--management-shell-border-strong) 72%, transparent);
-  background: color-mix(in srgb, var(--management-shell-toolbar-surface) 80%, var(--management-shell-object-surface) 20%);
+  min-height: 2.5rem;
+  padding-inline: 0.875rem;
+  border-bottom: 1px solid var(--cds-border-subtle-01);
+  background: var(--cds-layer-hover);
 }
 
 .management-workspace__table-container .cds--search,
@@ -367,20 +335,20 @@
 
 .management-workspace__table-container .cds--data-table th,
 .management-workspace__table-container .cds--data-table td {
-  border-bottom-color: color-mix(in srgb, var(--management-shell-border-strong) 56%, transparent);
+  border-bottom-color: var(--cds-border-subtle-01);
 }
 
 .management-workspace__table-container .cds--data-table td {
-  background: var(--management-shell-row-surface);
+  background: var(--cds-layer);
 }
 
 .management-workspace__table-container .cds--pagination {
-  border-top: 1px solid color-mix(in srgb, var(--management-shell-border-strong) 72%, transparent);
-  background: color-mix(in srgb, var(--management-shell-toolbar-surface) 80%, var(--management-shell-object-surface) 20%);
+  border-top: 1px solid var(--cds-border-subtle-01);
+  background: var(--cds-layer-hover);
 }
 
 .management-workspace__table-row.is-highlighted > td {
-  background: color-mix(in srgb, var(--cds-support-success) 8%, var(--cds-layer-selected));
+  background: color-mix(in srgb, var(--map2-state-live) 8%, var(--cds-layer-selected));
 }
 
 .management-workspace__expanded-row {
@@ -412,13 +380,13 @@
 
 .management-workspace__expanded-card-head h4 {
   font-size: var(--cds-heading-02-font-size, 1rem);
-  font-weight: 600;
+  font-weight: 500;
   margin: 0;
 }
 
 .management-workspace__detail-list {
   display: grid;
-  gap: 0.6rem;
+  gap: 0.625rem;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   margin: 0;
 }
@@ -430,7 +398,7 @@
 .management-workspace__detail-list dt {
   color: var(--cds-text-secondary);
   font-size: var(--cds-helper-text-01-font-size, 0.75rem);
-  margin: 0 0 0.2rem;
+  margin: 0 0 0.25rem;
 }
 
 .management-workspace__detail-list dd {
