@@ -356,6 +356,7 @@ import {
   loadInitialJuceGridPluginPersistence,
   useJuceGridPersistedState,
 } from './snapshotEditor/useJuceGridPersistedState'
+import { useSnapshotEditorCadences } from './snapshotEditor/useSnapshotEditorCadences'
 
 const API_BASE = (() => {
   const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
@@ -988,24 +989,12 @@ export function SnapshotEditorPage() {
 
   const activeFlowChainId = flowSlots[activeFlowIndex]?.chainId ?? null
   const snapshotRouteActive = useRouteActive(['/snapshot-editor'])
-  const snapshotStandardCadence = useRealtimeCadence({
+  const snapshotEditorCadences = useSnapshotEditorCadences({
     routeActive: snapshotRouteActive,
-    visibleMs: 5_000,
-    hiddenMs: 20_000,
-    inactiveMs: false,
   })
-  const snapshotFastCadence = useRealtimeCadence({
-    routeActive: snapshotRouteActive,
-    visibleMs: 2_000,
-    hiddenMs: 10_000,
-    inactiveMs: false,
-  })
-  const snapshotMeterCadence = useRealtimeCadence({
-    routeActive: snapshotRouteActive,
-    visibleMs: 1_000,
-    hiddenMs: 5_000,
-    inactiveMs: false,
-  })
+  const snapshotStandardCadence = snapshotEditorCadences.standard
+  const snapshotFastCadence = snapshotEditorCadences.fast
+  const snapshotMeterCadence = snapshotEditorCadences.meter
   const snapshotSlowCadence = useRealtimeCadence({
     routeActive: snapshotRouteActive,
     visibleMs: 10_000,
