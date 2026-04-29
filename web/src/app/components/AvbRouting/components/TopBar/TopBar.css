@@ -30,3 +30,28 @@
   border-top: 1px solid var(--cds-border-subtle, #393939);
   margin: var(--cds-spacing-04, 0.75rem) 0;
 }
+
+/* Wraps a StatusChip in a real <button> when the chip needs to be
+ * clickable. The native button keeps focus + click semantics; the
+ * chip itself is purely visual so we strip the surrounding button
+ * chrome. */
+.topbar__chip-button {
+  background: transparent;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+  display: inline-flex;
+}
+
+.topbar__chip-button:focus-visible {
+  outline: 2px solid var(--cds-focus, #0f62fe);
+  outline-offset: 2px;
+}
+
+/* Inline icon + text inside a StatusChip label. */
+.topbar__chip-with-icon {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--cds-spacing-02, 0.25rem);
+}

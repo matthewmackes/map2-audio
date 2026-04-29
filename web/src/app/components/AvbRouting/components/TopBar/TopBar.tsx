@@ -23,7 +23,6 @@ import {
   TextField,
   InputAdornment,
   Button,
-  Chip,
   Box,
   Popover,
   FormGroup,
@@ -35,6 +34,8 @@ import {
   MenuItem,
 } from '@mui/material';
 import type { SelectChangeEvent } from '@mui/material/Select';
+import { StatusChip } from '../../../primitives';
+import type { StatusChipTone } from '../../../primitives';
 import { useRouting, useCanUndo, useCanRedo } from '../../context/RoutingContext';
 import {
   useAvbDevices,
@@ -1697,12 +1698,12 @@ export function TopBar() {
   const avbStreamPayloads = avbStreamsData?.streams || [];
   const avbReadiness = avbDevicesData?.readiness;
   const avbStackState = avbReadiness?.state || 'unknown';
-  const avbStackChipColor = avbStackState === 'operational'
-    ? 'success'
+  const avbStackChipTone: StatusChipTone = avbStackState === 'operational'
+    ? 'ok'
     : avbStackState === 'degraded'
-      ? 'warning'
+      ? 'caution'
       : avbStackState === 'disabled'
-        ? 'default'
+        ? 'neutral'
         : 'info';
   const avbTalkerCapabilityCount = avbDiscoveredDevices.filter((device) => device.direction === 'talker').length;
   const avbListenerCapabilityCount = avbDiscoveredDevices.filter((device) => device.direction === 'listener').length;
@@ -2141,112 +2142,120 @@ export function TopBar() {
             },
           }}
         >
-          <Chip
-            label={`${endpointCount} endpoints`}
-            size="small"
-            variant="outlined"
-          />
-          <Chip
-            label={`${connectedCount} connected`}
-            size="small"
-            color="success"
-            variant="outlined"
-          />
-          <Chip
-            icon={<Filter size={16} />}
-            label={activeFilterCount > 0 ? `${activeFilterCount} filter${activeFilterCount === 1 ? '' : 's'}` : 'No filters'}
-            size="small"
-            color={activeFilterCount > 0 ? 'primary' : 'default'}
-            variant="outlined"
-            data-testid="topbar-filter-summary"
-          />
-          <Chip
-            label={`Endpoint Issues: ${endpointIssueCount}`}
-            size="small"
-            color={state.filters.issuesOnly ? 'primary' : endpointIssueCount > 0 ? 'warning' : 'default'}
-            variant={state.filters.issuesOnly ? 'filled' : 'outlined'}
-            clickable
+          <StatusChip tone="neutral" label={`${endpointCount} endpoints`} size="sm" />
+          <StatusChip tone="ok" label={`${connectedCount} connected`} size="sm" />
+          <span data-testid="topbar-filter-summary">
+            <StatusChip
+              tone={activeFilterCount > 0 ? 'info' : 'neutral'}
+              label={
+                <span className="topbar__chip-with-icon">
+                  <Filter size={14} aria-hidden="true" />
+                  {activeFilterCount > 0
+                    ? `${activeFilterCount} filter${activeFilterCount === 1 ? '' : 's'}`
+                    : 'No filters'}
+                </span>
+              }
+              size="sm"
+            />
+          </span>
+          <button
+            type="button"
+            className="topbar__chip-button"
             onClick={handleToggleIssuesOnlyChip}
             data-testid="topbar-endpoint-issues-filter-chip"
-          />
-          <Chip
-            label={`Engine: ${avbDeviceCount}/${avbDiscoveredCount}`}
-            size="small"
-            color={avbDeviceCount > 0 ? 'info' : 'default'}
-            variant="outlined"
-            data-testid="topbar-avb-engine-summary"
-          />
-          <Chip
-            label={`AVB Stack: ${avbStackState}`}
-            size="small"
-            color={avbStackChipColor}
-            variant="outlined"
-            data-testid="topbar-avb-stack-state"
-          />
-          <Chip
-            label={`I/O Cap: N${avbTalkerCapabilityCount}/${avbListenerCapabilityCount}`}
-            size="small"
-            color={(avbTalkerCapabilityCount + avbListenerCapabilityCount) > 0 ? 'info' : 'default'}
-            variant="outlined"
-            data-testid="topbar-avb-io-capabilities"
-          />
-          <Chip
-            label={`Cache Drift: ${avbCacheMissingCount}|${avbCacheOrphanCount}`}
-            size="small"
-            color={(avbCacheMissingCount > 0 || avbCacheOrphanCount > 0) ? 'warning' : 'success'}
-            variant="outlined"
-            data-testid="topbar-avb-cache-drift"
-          />
-          <Chip
-            label={`Transport: ${avbTransportReadyCount}/${avbStreamPayloads.length}`}
-            size="small"
-            color={avbTransportIssueCount > 0 ? 'warning' : 'success'}
-            variant="outlined"
-            data-testid="topbar-avb-transport-summary"
-          />
-          <Chip
-            label={`Issues: ${avbTransportIssueCount}`}
-            size="small"
-            color={avbTransportIssueCount > 0 ? 'error' : 'default'}
-            variant="outlined"
-            data-testid="topbar-avb-transport-issues"
-          />
-          <Chip
-            label={`Diag: ${avbDiagnosticsCoverageCount}/${avbStreamPayloads.length}`}
-            size="small"
-            color={
-              avbStreamPayloads.length === 0
-                ? 'default'
-                : avbDiagnosticsCoverageCount === avbStreamPayloads.length
-                  ? 'success'
-                  : 'warning'
-            }
-            variant="outlined"
-            data-testid="topbar-avb-diagnostics-summary"
-          />
-          <Chip
-            label={`PTP Lock: ${avbPtpLockedCount}/${avbStreamPayloads.length}`}
-            size="small"
-            color={avbPtpLockedCount === avbStreamPayloads.length && avbStreamPayloads.length > 0 ? 'success' : 'warning'}
-            variant="outlined"
-            data-testid="topbar-avb-ptp-lock-summary"
-          />
-          <Chip
-            label={`SRP: ${avbSrpBoundCount}/${avbStreamPayloads.length}`}
-            size="small"
-            color={avbSrpBoundCount > 0 ? 'info' : 'default'}
-            variant="outlined"
-            data-testid="topbar-avb-srp-summary"
-          />
-          {avbTopFailoverPolicy && (
-            <Chip
-              title={`Top interfaces: ${avbTopFailoverInterfaces}`}
-              label={`Failover: ${avbTopFailoverPolicy[0]} (${avbTopFailoverPolicy[1]})`}
-              size="small"
-              color={avbTopFailoverPolicy[0] === 'none' ? 'default' : 'info'}
-              variant="outlined"
-              data-testid="topbar-avb-failover-summary"
+          >
+            <StatusChip
+              tone={
+                state.filters.issuesOnly
+                  ? 'info'
+                  : endpointIssueCount > 0
+                    ? 'caution'
+                    : 'neutral'
+              }
+              label={`Endpoint Issues: ${endpointIssueCount}`}
+              size="sm"
             />
+          </button>
+          <span data-testid="topbar-avb-engine-summary">
+            <StatusChip
+              tone={avbDeviceCount > 0 ? 'info' : 'neutral'}
+              label={`Engine: ${avbDeviceCount}/${avbDiscoveredCount}`}
+              size="sm"
+            />
+          </span>
+          <span data-testid="topbar-avb-stack-state">
+            <StatusChip
+              tone={avbStackChipTone}
+              label={`AVB Stack: ${avbStackState}`}
+              size="sm"
+            />
+          </span>
+          <span data-testid="topbar-avb-io-capabilities">
+            <StatusChip
+              tone={(avbTalkerCapabilityCount + avbListenerCapabilityCount) > 0 ? 'info' : 'neutral'}
+              label={`I/O Cap: N${avbTalkerCapabilityCount}/${avbListenerCapabilityCount}`}
+              size="sm"
+            />
+          </span>
+          <span data-testid="topbar-avb-cache-drift">
+            <StatusChip
+              tone={(avbCacheMissingCount > 0 || avbCacheOrphanCount > 0) ? 'caution' : 'ok'}
+              label={`Cache Drift: ${avbCacheMissingCount}|${avbCacheOrphanCount}`}
+              size="sm"
+            />
+          </span>
+          <span data-testid="topbar-avb-transport-summary">
+            <StatusChip
+              tone={avbTransportIssueCount > 0 ? 'caution' : 'ok'}
+              label={`Transport: ${avbTransportReadyCount}/${avbStreamPayloads.length}`}
+              size="sm"
+            />
+          </span>
+          <span data-testid="topbar-avb-transport-issues">
+            <StatusChip
+              tone={avbTransportIssueCount > 0 ? 'critical' : 'neutral'}
+              label={`Issues: ${avbTransportIssueCount}`}
+              size="sm"
+            />
+          </span>
+          <span data-testid="topbar-avb-diagnostics-summary">
+            <StatusChip
+              tone={
+                avbStreamPayloads.length === 0
+                  ? 'neutral'
+                  : avbDiagnosticsCoverageCount === avbStreamPayloads.length
+                    ? 'ok'
+                    : 'caution'
+              }
+              label={`Diag: ${avbDiagnosticsCoverageCount}/${avbStreamPayloads.length}`}
+              size="sm"
+            />
+          </span>
+          <span data-testid="topbar-avb-ptp-lock-summary">
+            <StatusChip
+              tone={avbPtpLockedCount === avbStreamPayloads.length && avbStreamPayloads.length > 0 ? 'ok' : 'caution'}
+              label={`PTP Lock: ${avbPtpLockedCount}/${avbStreamPayloads.length}`}
+              size="sm"
+            />
+          </span>
+          <span data-testid="topbar-avb-srp-summary">
+            <StatusChip
+              tone={avbSrpBoundCount > 0 ? 'info' : 'neutral'}
+              label={`SRP: ${avbSrpBoundCount}/${avbStreamPayloads.length}`}
+              size="sm"
+            />
+          </span>
+          {avbTopFailoverPolicy && (
+            <span
+              data-testid="topbar-avb-failover-summary"
+              title={`Top interfaces: ${avbTopFailoverInterfaces}`}
+            >
+              <StatusChip
+                tone={avbTopFailoverPolicy[0] === 'none' ? 'neutral' : 'info'}
+                label={`Failover: ${avbTopFailoverPolicy[0]} (${avbTopFailoverPolicy[1]})`}
+                size="sm"
+              />
+            </span>
           )}
         </Box>
 
@@ -2266,73 +2275,86 @@ export function TopBar() {
           }}
           data-testid="topbar-scene-status-strip"
         >
-          <Chip
-            size="small"
-            variant="outlined"
-            label={`${sceneOptions.length} scene${sceneOptions.length === 1 ? '' : 's'}`}
-            data-testid="topbar-scene-status-count"
-          />
-          <Chip
-            size="small"
-            variant="outlined"
-            color={baselineSceneMissing ? 'warning' : 'default'}
-            label={`Baseline: ${baselineSceneLabel}`}
-            data-testid="topbar-scene-status-baseline"
-          />
-          <Chip
-            size="small"
-            variant="outlined"
-            color={compareSceneMissing ? 'warning' : 'default'}
-            label={`Compare: ${compareSceneLabel}`}
-            data-testid="topbar-scene-status-compare"
-          />
-          <Chip
-            size="small"
-            variant="outlined"
-            color={sceneDiffSelectionStale ? 'warning' : sceneDiffSelectionReady ? 'success' : 'default'}
-            label={sceneDiffSelectionLabel}
-            data-testid="topbar-scene-status-readiness"
-          />
-          <Chip
-            size="small"
-            variant={sceneAuditErrorCount > 0 ? 'filled' : 'outlined'}
-            color={sceneAuditErrorCount > 0 ? 'error' : 'default'}
-            label={`Errors: ${sceneAuditErrorCount}`}
+          <span data-testid="topbar-scene-status-count">
+            <StatusChip
+              tone="neutral"
+              label={`${sceneOptions.length} scene${sceneOptions.length === 1 ? '' : 's'}`}
+              size="sm"
+            />
+          </span>
+          <span data-testid="topbar-scene-status-baseline">
+            <StatusChip
+              tone={baselineSceneMissing ? 'caution' : 'neutral'}
+              label={`Baseline: ${baselineSceneLabel}`}
+              size="sm"
+            />
+          </span>
+          <span data-testid="topbar-scene-status-compare">
+            <StatusChip
+              tone={compareSceneMissing ? 'caution' : 'neutral'}
+              label={`Compare: ${compareSceneLabel}`}
+              size="sm"
+            />
+          </span>
+          <span data-testid="topbar-scene-status-readiness">
+            <StatusChip
+              tone={sceneDiffSelectionStale ? 'caution' : sceneDiffSelectionReady ? 'ok' : 'neutral'}
+              label={sceneDiffSelectionLabel}
+              size="sm"
+            />
+          </span>
+          <button
+            type="button"
+            className="topbar__chip-button"
             onClick={(event) => handleSceneAuditCounterOpen(event.currentTarget, 'errors')}
             onKeyDown={(event) => handleKeyboardActivation(event, () => handleSceneAuditCounterOpen(event.currentTarget, 'errors'))}
-            sx={SCENE_STATUS_COUNTER_FOCUS_SX}
             data-testid="topbar-scene-status-errors"
-          />
-          <Chip
-            size="small"
-            variant={sceneAuditWarningCount > 0 ? 'filled' : 'outlined'}
-            color={sceneAuditWarningCount > 0 ? 'warning' : 'default'}
-            label={`Warnings: ${sceneAuditWarningCount}`}
+          >
+            <StatusChip
+              tone={sceneAuditErrorCount > 0 ? 'critical' : 'neutral'}
+              label={`Errors: ${sceneAuditErrorCount}`}
+              size="sm"
+            />
+          </button>
+          <button
+            type="button"
+            className="topbar__chip-button"
             onClick={(event) => handleSceneAuditCounterOpen(event.currentTarget, 'warnings')}
             onKeyDown={(event) => handleKeyboardActivation(event, () => handleSceneAuditCounterOpen(event.currentTarget, 'warnings'))}
-            sx={SCENE_STATUS_COUNTER_FOCUS_SX}
             data-testid="topbar-scene-status-warnings"
-          />
-          <Chip
-            size="small"
-            variant={sceneAuditDeleteCount > 0 ? 'filled' : 'outlined'}
-            color="default"
-            label={`Deletes: ${sceneAuditDeleteCount}`}
+          >
+            <StatusChip
+              tone={sceneAuditWarningCount > 0 ? 'caution' : 'neutral'}
+              label={`Warnings: ${sceneAuditWarningCount}`}
+              size="sm"
+            />
+          </button>
+          <button
+            type="button"
+            className="topbar__chip-button"
             onClick={(event) => handleSceneAuditCounterOpen(event.currentTarget, 'deletes')}
             onKeyDown={(event) => handleKeyboardActivation(event, () => handleSceneAuditCounterOpen(event.currentTarget, 'deletes'))}
-            sx={SCENE_STATUS_COUNTER_FOCUS_SX}
             data-testid="topbar-scene-status-deletes"
-          />
-          <Chip
-            size="small"
-            variant={sceneDiffPreviewWarningCount > 0 ? 'filled' : 'outlined'}
-            color={sceneDiffPreviewWarningCount > 0 ? 'warning' : 'default'}
-            label={`Diff Preview Warnings: ${sceneDiffPreviewWarningCount}`}
+          >
+            <StatusChip
+              tone="neutral"
+              label={`Deletes: ${sceneAuditDeleteCount}`}
+              size="sm"
+            />
+          </button>
+          <button
+            type="button"
+            className="topbar__chip-button"
             onClick={(event) => handleSceneAuditCounterOpen(event.currentTarget, 'diff_preview_warnings')}
             onKeyDown={(event) => handleKeyboardActivation(event, () => handleSceneAuditCounterOpen(event.currentTarget, 'diff_preview_warnings'))}
-            sx={SCENE_STATUS_COUNTER_FOCUS_SX}
             data-testid="topbar-scene-status-diff-preview-warnings"
-          />
+          >
+            <StatusChip
+              tone={sceneDiffPreviewWarningCount > 0 ? 'caution' : 'neutral'}
+              label={`Diff Preview Warnings: ${sceneDiffPreviewWarningCount}`}
+              size="sm"
+            />
+          </button>
         </Box>
 
         <Box sx={{ flex: 1, display: { xs: 'none', xl: 'block' } }} /> {/* Spacer */}
@@ -2376,11 +2398,15 @@ export function TopBar() {
         {/* Safe Patch Mode */}
         {state.safePatchMode ? (
           <Box sx={{ display: 'flex', gap: 1, alignItems: 'center', flexWrap: 'wrap' }}>
-            <Chip
-              icon={<Security size={16} />}
-              label={`Safe Patch (${pendingCount} pending)`}
-              color="warning"
-              size="small"
+            <StatusChip
+              tone="caution"
+              label={
+                <span className="topbar__chip-with-icon">
+                  <Security size={14} aria-hidden="true" />
+                  {`Safe Patch (${pendingCount} pending)`}
+                </span>
+              }
+              size="sm"
             />
             <Button
               size="small"
@@ -2508,12 +2534,13 @@ export function TopBar() {
             >
               Save Current
             </Button>
-            <Chip
-              size="small"
-              variant="outlined"
-              label={`${Object.keys(state.liveRoutes).length} live routes`}
-              data-testid="topbar-scene-live-route-count"
-            />
+            <span data-testid="topbar-scene-live-route-count">
+              <StatusChip
+                tone="neutral"
+                label={`${Object.keys(state.liveRoutes).length} live routes`}
+                size="sm"
+              />
+            </span>
           </Box>
 
           <hr className="topbar__divider" />
@@ -2729,51 +2756,63 @@ export function TopBar() {
             </FormControl>
 
             <Box sx={{ display: 'flex', gap: 0.75, flexWrap: 'wrap' }}>
-              <Chip
-                size="small"
-                label="All"
-                variant={sceneAuditOutcomeFilter === 'all' && !sceneAuditSearchQuery && !sceneAuditDiffPreviewOnly ? 'filled' : 'outlined'}
-                color="default"
+              <button
+                type="button"
+                className="topbar__chip-button"
                 onClick={() => handleSceneAuditQuickFilter('all')}
                 onKeyDown={(event) => handleKeyboardActivation(event, () => handleSceneAuditQuickFilter('all'))}
                 data-testid="topbar-scene-audit-quick-all"
-              />
-              <Chip
-                size="small"
-                label="Errors"
-                variant={sceneAuditOutcomeFilter === 'error' ? 'filled' : 'outlined'}
-                color={sceneAuditOutcomeFilter === 'error' ? 'error' : 'default'}
+              >
+                <StatusChip tone="neutral" label="All" size="sm" />
+              </button>
+              <button
+                type="button"
+                className="topbar__chip-button"
                 onClick={() => handleSceneAuditQuickFilter('errors')}
                 onKeyDown={(event) => handleKeyboardActivation(event, () => handleSceneAuditQuickFilter('errors'))}
                 data-testid="topbar-scene-audit-quick-errors"
-              />
-              <Chip
-                size="small"
-                label="Warnings"
-                variant={sceneAuditOutcomeFilter === 'warning' ? 'filled' : 'outlined'}
-                color={sceneAuditOutcomeFilter === 'warning' ? 'warning' : 'default'}
+              >
+                <StatusChip
+                  tone={sceneAuditOutcomeFilter === 'error' ? 'critical' : 'neutral'}
+                  label="Errors"
+                  size="sm"
+                />
+              </button>
+              <button
+                type="button"
+                className="topbar__chip-button"
                 onClick={() => handleSceneAuditQuickFilter('warnings')}
                 onKeyDown={(event) => handleKeyboardActivation(event, () => handleSceneAuditQuickFilter('warnings'))}
                 data-testid="topbar-scene-audit-quick-warnings"
-              />
-              <Chip
-                size="small"
-                label="Deletes"
-                variant={sceneAuditSearchQuery.trim().toLowerCase() === 'delete' && !sceneAuditDiffPreviewOnly ? 'filled' : 'outlined'}
-                color="default"
+              >
+                <StatusChip
+                  tone={sceneAuditOutcomeFilter === 'warning' ? 'caution' : 'neutral'}
+                  label="Warnings"
+                  size="sm"
+                />
+              </button>
+              <button
+                type="button"
+                className="topbar__chip-button"
                 onClick={() => handleSceneAuditQuickFilter('deletes')}
                 onKeyDown={(event) => handleKeyboardActivation(event, () => handleSceneAuditQuickFilter('deletes'))}
                 data-testid="topbar-scene-audit-quick-deletes"
-              />
-              <Chip
-                size="small"
-                label="Diff Preview"
-                variant={sceneAuditDiffPreviewOnly ? 'filled' : 'outlined'}
-                color={sceneAuditDiffPreviewOnly ? 'primary' : 'default'}
+              >
+                <StatusChip tone="neutral" label="Deletes" size="sm" />
+              </button>
+              <button
+                type="button"
+                className="topbar__chip-button"
                 onClick={() => handleSceneAuditQuickFilter('diff_preview')}
                 onKeyDown={(event) => handleKeyboardActivation(event, () => handleSceneAuditQuickFilter('diff_preview'))}
                 data-testid="topbar-scene-audit-quick-diff-preview"
-              />
+              >
+                <StatusChip
+                  tone={sceneAuditDiffPreviewOnly ? 'info' : 'neutral'}
+                  label="Diff Preview"
+                  size="sm"
+                />
+              </button>
             </Box>
 
             <Typography variant="caption" color="text.secondary" data-testid="topbar-scene-audit-summary">
@@ -2794,19 +2833,19 @@ export function TopBar() {
                   <Typography variant="caption" color="text.secondary" sx={{ flex: 1 }}>
                     {entry.diff_summary}
                   </Typography>
-                  <Chip
-                    size="small"
-                    label={entry.validation_outcome}
-                    color={
-                      entry.validation_outcome === 'error'
-                        ? 'error'
-                        : entry.validation_outcome === 'warning'
-                          ? 'warning'
-                          : 'success'
-                    }
-                    variant="outlined"
-                    data-testid="topbar-scene-audit-outcome"
-                  />
+                  <span data-testid="topbar-scene-audit-outcome">
+                    <StatusChip
+                      tone={
+                        entry.validation_outcome === 'error'
+                          ? 'critical'
+                          : entry.validation_outcome === 'warning'
+                            ? 'caution'
+                            : 'ok'
+                      }
+                      label={entry.validation_outcome}
+                      size="sm"
+                    />
+                  </span>
                 </Box>
               ))
             )}
@@ -3294,15 +3333,17 @@ export function TopBar() {
                 {sceneDiffPresets.map((preset) => {
                   const policyLabel = formatConflictResolutionModeLabel(preset.preferred_conflict_action);
                   return (
-                    <Chip
+                    <span
                       key={preset.id}
-                      size="small"
-                      variant={sceneDiffSelectedPresetValue === preset.id ? 'filled' : 'outlined'}
-                      color={sceneDiffSelectedPresetValue === preset.id ? 'primary' : 'default'}
                       aria-label={`${preset.name} conflict policy ${policyLabel}`}
-                      label={`${preset.name}: ${policyLabel}`}
                       data-testid={`topbar-scene-diff-preset-policy-chip-${sanitizeFilterIdValue(preset.id)}`}
-                    />
+                    >
+                      <StatusChip
+                        tone={sceneDiffSelectedPresetValue === preset.id ? 'info' : 'neutral'}
+                        label={`${preset.name}: ${policyLabel}`}
+                        size="sm"
+                      />
+                    </span>
                   );
                 })}
               </Box>
@@ -3378,56 +3419,59 @@ export function TopBar() {
               data-testid="topbar-scene-diff-import-preview-summary"
             >
               <Box sx={{ display: 'flex', gap: 0.75, flexWrap: 'wrap' }}>
-                <Chip
-                  size="small"
-                  variant="outlined"
-                  label={`${sceneDiffPresetImportPreview.source_count} source`}
-                  data-testid="topbar-scene-diff-import-preview-source-count"
-                />
-                <Chip
-                  size="small"
-                  color="success"
-                  variant={sceneDiffPresetImportPreview.accepted_count > 0 ? 'filled' : 'outlined'}
-                  label={`${sceneDiffPresetImportPreview.accepted_count} accepted`}
-                  data-testid="topbar-scene-diff-import-preview-accepted-count"
-                />
-                <Chip
-                  size="small"
-                  color="warning"
-                  variant={sceneDiffPresetImportPreview.conflict_count > 0 ? 'filled' : 'outlined'}
-                  label={`${sceneDiffPresetImportPreview.conflict_count} conflict`}
-                  data-testid="topbar-scene-diff-import-preview-conflict-count"
-                />
-                <Chip
-                  size="small"
-                  variant={sceneDiffPresetImportPreview.skipped_count > 0 ? 'filled' : 'outlined'}
-                  label={`${sceneDiffPresetImportPreview.skipped_count} skipped`}
-                  data-testid="topbar-scene-diff-import-preview-skipped-count"
-                />
+                <span data-testid="topbar-scene-diff-import-preview-source-count">
+                  <StatusChip
+                    tone="neutral"
+                    label={`${sceneDiffPresetImportPreview.source_count} source`}
+                    size="sm"
+                  />
+                </span>
+                <span data-testid="topbar-scene-diff-import-preview-accepted-count">
+                  <StatusChip
+                    tone="ok"
+                    label={`${sceneDiffPresetImportPreview.accepted_count} accepted`}
+                    size="sm"
+                  />
+                </span>
+                <span data-testid="topbar-scene-diff-import-preview-conflict-count">
+                  <StatusChip
+                    tone="caution"
+                    label={`${sceneDiffPresetImportPreview.conflict_count} conflict`}
+                    size="sm"
+                  />
+                </span>
+                <span data-testid="topbar-scene-diff-import-preview-skipped-count">
+                  <StatusChip
+                    tone="neutral"
+                    label={`${sceneDiffPresetImportPreview.skipped_count} skipped`}
+                    size="sm"
+                  />
+                </span>
               </Box>
 
               {sceneDiffImportPlanPreview && (
                 <Box sx={{ display: 'flex', gap: 0.75, flexWrap: 'wrap' }}>
-                  <Chip
-                    size="small"
-                    color="warning"
-                    variant={sceneDiffImportPlanPreview.upserted_conflicts > 0 ? 'filled' : 'outlined'}
-                    label={`Planned upsert: ${sceneDiffImportPlanPreview.upserted_conflicts}`}
-                    data-testid="topbar-scene-diff-import-preview-plan-upserts"
-                  />
-                  <Chip
-                    size="small"
-                    color="primary"
-                    variant={sceneDiffImportPlanPreview.renamed_conflicts > 0 ? 'filled' : 'outlined'}
-                    label={`Planned rename: ${sceneDiffImportPlanPreview.renamed_conflicts}`}
-                    data-testid="topbar-scene-diff-import-preview-plan-renames"
-                  />
-                  <Chip
-                    size="small"
-                    variant={sceneDiffImportPlanPreview.skipped_conflicts > 0 ? 'filled' : 'outlined'}
-                    label={`Planned skip: ${sceneDiffImportPlanPreview.skipped_conflicts}`}
-                    data-testid="topbar-scene-diff-import-preview-plan-skips"
-                  />
+                  <span data-testid="topbar-scene-diff-import-preview-plan-upserts">
+                    <StatusChip
+                      tone="caution"
+                      label={`Planned upsert: ${sceneDiffImportPlanPreview.upserted_conflicts}`}
+                      size="sm"
+                    />
+                  </span>
+                  <span data-testid="topbar-scene-diff-import-preview-plan-renames">
+                    <StatusChip
+                      tone="info"
+                      label={`Planned rename: ${sceneDiffImportPlanPreview.renamed_conflicts}`}
+                      size="sm"
+                    />
+                  </span>
+                  <span data-testid="topbar-scene-diff-import-preview-plan-skips">
+                    <StatusChip
+                      tone="neutral"
+                      label={`Planned skip: ${sceneDiffImportPlanPreview.skipped_conflicts}`}
+                      size="sm"
+                    />
+                  </span>
                 </Box>
               )}
 
@@ -3612,18 +3656,19 @@ export function TopBar() {
                       <Typography variant="caption" color="text.primary" sx={{ fontWeight: 600 }}>
                         {row.name}
                       </Typography>
-                      <Chip
-                        size="small"
-                        label={row.status}
-                        color={
-                          row.status === 'accepted'
-                            ? 'success'
-                            : row.status === 'conflict'
-                              ? 'warning'
-                              : 'default'
-                        }
-                        data-testid="topbar-scene-diff-import-preview-row-status"
-                      />
+                      <span data-testid="topbar-scene-diff-import-preview-row-status">
+                        <StatusChip
+                          tone={
+                            row.status === 'accepted'
+                              ? 'ok'
+                              : row.status === 'conflict'
+                                ? 'caution'
+                                : 'neutral'
+                          }
+                          label={row.status}
+                          size="sm"
+                        />
+                      </span>
                     </Box>
                     <Typography variant="caption" color="text.secondary">
                       {row.reason}
@@ -3656,30 +3701,38 @@ export function TopBar() {
                     {row.status === 'conflict' && row.incoming && (
                       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
                         <Box sx={{ display: 'flex', gap: 0.75, flexWrap: 'wrap' }}>
-                          <Chip
-                            size="small"
-                            label="Upsert"
-                            variant={conflictResolution.mode === 'upsert' ? 'filled' : 'outlined'}
-                            color={conflictResolution.mode === 'upsert' ? 'warning' : 'default'}
+                          <button
+                            type="button"
+                            className="topbar__chip-button"
                             onClick={() => handleSceneDiffConflictResolutionModeChange(row.row_id, 'upsert')}
                             data-testid={`topbar-scene-diff-import-preview-conflict-action-upsert-${row.row_id}`}
-                          />
-                          <Chip
-                            size="small"
-                            label="Rename"
-                            variant={conflictResolution.mode === 'rename' ? 'filled' : 'outlined'}
-                            color={conflictResolution.mode === 'rename' ? 'primary' : 'default'}
+                          >
+                            <StatusChip
+                              tone={conflictResolution.mode === 'upsert' ? 'caution' : 'neutral'}
+                              label="Upsert"
+                              size="sm"
+                            />
+                          </button>
+                          <button
+                            type="button"
+                            className="topbar__chip-button"
                             onClick={() => handleSceneDiffConflictResolutionModeChange(row.row_id, 'rename')}
                             data-testid={`topbar-scene-diff-import-preview-conflict-action-rename-${row.row_id}`}
-                          />
-                          <Chip
-                            size="small"
-                            label="Skip"
-                            variant={conflictResolution.mode === 'skip' ? 'filled' : 'outlined'}
-                            color={conflictResolution.mode === 'skip' ? 'default' : 'default'}
+                          >
+                            <StatusChip
+                              tone={conflictResolution.mode === 'rename' ? 'info' : 'neutral'}
+                              label="Rename"
+                              size="sm"
+                            />
+                          </button>
+                          <button
+                            type="button"
+                            className="topbar__chip-button"
                             onClick={() => handleSceneDiffConflictResolutionModeChange(row.row_id, 'skip')}
                             data-testid={`topbar-scene-diff-import-preview-conflict-action-skip-${row.row_id}`}
-                          />
+                          >
+                            <StatusChip tone="neutral" label="Skip" size="sm" />
+                          </button>
                         </Box>
                         {conflictResolution.mode === 'rename' && (
                           <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.25 }}>
