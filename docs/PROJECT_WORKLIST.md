@@ -2280,7 +2280,24 @@ Subtasks below are ordered by dependency and risk: pure data first, sub-componen
 
 **Net LOC effect**: SnapshotEditorPageContent.tsx 9831 -> 9325 (-506). New sibling modules ~1,384 LOC of which ~573 is test code. Production-source delta: ~+811 net (mostly imports / module headers / JSDoc comments — the goal of this epic is structural, not LOC-budget). Test coverage: 78 new SnapshotEditor Jest tests. Monolith bundle hash refreshed on every ship.
 
-**Remaining**: T2472 read-query + mutation consolidation (deferred to a focused session — high cache-key + WS-cleanup risk surface), T2473 JSX-tree partition into 6 sibling sub-components (depends on T2472).
+**Remaining (after the 2026-04-30 session)**: T2472 read-query + mutation consolidation (deferred to a focused session — high cache-key + WS-cleanup risk surface), T2473 JSX-tree partition into 6 sibling sub-components (depends on T2472).
+
+**Decomposition session log (2026-04-29, continuation 10-iteration SHIP loop)**:
+
+- Iter 1 (f215fbb6): T2468 follow-up — config-key constants + LIVE_CHANGES_LEAVE_MESSAGE moved into snapshotEditorPageTypes.ts.
+- Iter 2 (f78fec8b): T2467 follow-up — FEATURED_NATIVE_BROWSER_GROUPS extracted into its own module.
+- Iter 3 (d2d30da7): T2468 follow-up — SnapshotEditorPerformanceEvent + SnapshotEditorPerformanceEventsResponse interfaces moved into snapshotEditorPageTypes.ts.
+- Iter 4 (8dbee3f6): T2467 follow-up — 7 module-init bootstrap helpers (createDefaultFlows, createDefaultRouting, FLOW_SLOT_NORMALIZATION_OPTIONS, createBlankSnapshotEditorDraft, parseStoredGridJson, normalizeRuntimeGridState, loadInitialJuceGridState) extracted into snapshotEditorBootstrap.ts; SLOT_COLORS re-exported from there.
+- Iter 5 (59f50ff3): T2467 follow-up — API_BASE resolver IIFE extracted into snapshotEditorApi.ts.
+- Iter 6 (058fdbd4): T2473 part 1 — SnapshotEditorKeyboardShortcuts overlay component extracted (~37 inline LOC removed from monolith).
+- Iter 7 (0e9677ec): T2473 part 2 — SnapshotEditorLanePicker modal extracted (~62 inline LOC removed; defines a minimal LanePickerChain prop shape so the boundary doesn't leak the editor's full chain type).
+- Iter 8 (9cdaab7d): T2473 part 3 — SnapshotEditorPerformOverlay extracted (9 inline LOC removed; framer-motion + PerformPage imports dropped from monolith).
+- Iter 9 (this commit): Worklist iteration log update.
+- Iter 10 (next commit): Closing log + cumulative LOC summary.
+
+**Cumulative net LOC effect after this session**: SnapshotEditorPageContent.tsx 9325 -> 9151 (-174 this session, -680 cumulative since the original 9831 baseline). Five new sibling files added this session: snapshotEditorApi.ts, snapshotEditorBootstrap.ts, featuredNativeBrowserGroups.ts, SnapshotEditorKeyboardShortcuts.tsx, SnapshotEditorLanePicker.tsx, SnapshotEditorPerformOverlay.tsx (six total). T2473 is now partially started (3 of the planned 6 sub-components done, all small/safe slices); the harder Header / FlowsRail / GridBody / Footer slices remain on T2473.
+
+**Remaining (after the 2026-04-29 session)**: T2472 read-query + mutation consolidation (still deferred), T2473 JSX-tree partition — 3 of 6 sub-components done; the harder slices (Header, FlowsRail, GridBody, Footer) remain. The first three T2473 ships chose the cleanest leaf overlays first (Keyboard help, Lane picker, Perform overlay) — each is prop-driven, parent owns state, no behavior change.
 
 ---
 
