@@ -38,10 +38,8 @@ import {
   InputLabel,
   Select,
   MenuItem,
-  useMediaQuery,
 } from '@mui/material';
 import type { SelectChangeEvent } from '@mui/material/Select';
-import { useTheme } from '@mui/material/styles';
 import { useRouting, useCanUndo, useCanRedo } from '../../context/RoutingContext';
 import {
   useAvbDevices,
@@ -601,8 +599,21 @@ function buildSceneDiffPresetImportPlan(
  * Top bar component
  */
 export function TopBar() {
-  const theme = useTheme();
-  const isMobile = useMediaQuery(theme.breakpoints.down('sm'));
+  // T2475 E1: useTheme/useMediaQuery dropped — `isMobile` is now
+  // computed from window.matchMedia so the component no longer
+  // depends on MUI's theme provider for layout decisions. Falls back
+  // to false on SSR/non-DOM environments. Updates on resize.
+  const [isMobile, setIsMobile] = useState(() => {
+    if (typeof window === 'undefined' || !window.matchMedia) return false
+    return window.matchMedia('(max-width: 599px)').matches
+  })
+  useEffect(() => {
+    if (typeof window === 'undefined' || !window.matchMedia) return
+    const mq = window.matchMedia('(max-width: 599px)')
+    const handler = (event: MediaQueryListEvent) => setIsMobile(event.matches)
+    mq.addEventListener('change', handler)
+    return () => mq.removeEventListener('change', handler)
+  }, [])
   const { state, dispatch } = useRouting();
   const canUndo = useCanUndo();
   const canRedo = useCanRedo();
