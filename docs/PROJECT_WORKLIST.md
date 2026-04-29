@@ -33688,8 +33688,27 @@ Description:
 - Dependencies: T2474 (must complete first; some bundles still touch MUI consumer files for limited token migration).
 - Estimated effort: Large (was Small) — reclassified after corrected scope.
 - Required outputs: 21 file migrations to Carbon; `web/package.json` and `web/package-lock.json` without `@mui/material`; bundle-size delta noted in commit message; CLAUDE.md tech stack table updated.
-Assigned to: TBD (paused — full scope now requires its own clarification round before execution)
-Last updated: 2026-04-28 - Claude (scope corrected during B7 reconnaissance)
+Assigned to: TBD (paused after pre-flight reconnaissance flagged scope-vs-session-fit risk)
+Last updated: 2026-04-29 - Claude (clarification round complete; pre-flight reconnaissance flagged scope mismatch; execution deferred)
+- Clarification round (2026-04-29): D + C + A + A + A locked.
+  - **D**: Full migration scope — migrate 21 live files to Carbon-native idioms, drop `@mui/material` from `package.json`, force-purge 28 dead `web/src/map2/components/` files when typecheck breaks them.
+  - **C**: Per-file Carbon-native rewrite (each file read fully, understood, rewritten in Carbon idioms — not direct MUI→Carbon component swaps).
+  - **A**: Tests + typecheck + build verification only. No screenshots, no per-file behavior notes.
+  - **A**: One big commit at the end.
+  - **A**: Proceed without pre-flight, accept regression risk.
+- **Pre-flight reconnaissance findings (2026-04-29) that warrant defer-and-rescope BEFORE execution**:
+  - **Real production-source LOC across the 21 files: ~12,500** (TopBar.tsx 3835, EdirolUA1000View.tsx 1930, InspectorPanel.tsx 985, MIDICommanderSetup.tsx 937, NodeTree.tsx 748, MOTURMEPage.tsx 598, NetworkTopologyModal.tsx 524, NodeSelector.tsx 517, plus 13 smaller). Plus integration-test suites totaling another ~10k LOC (TopBar.integration.test.tsx alone is 4013 lines).
+  - The pre-clarification estimate of "~2-4k LOC of TSX rewritten" was an undercount by 3-6×.
+  - Sample of MatrixCell.tsx confirmed: even small files have dense MUI-specific patterns (sx-prop conditional styling, MUI Tooltip with arbitrary JSX content via `title` prop, MUI Box composing complex `background: linear-gradient(...)` overrides for cross-node routing visualization, mouse-event handlers driving drag-rewire / hover crosshair / batch select interactions). Per-file Carbon-native rewrite of MatrixCell alone is several hours.
+  - AvbRouting/RoutingGrid is the operationally critical surface — operators wire AVB streams between nodes through the matrix. A silent behavior regression there hits real signal flow and is unlikely to surface in the existing test suite (page-level integration tests, not interaction permutations).
+  - The T2479 visual regression harness (E5, just shipped) does NOT cover AvbRoutingWorkspace's baseline — it was captured but proved non-deterministic and was deleted. Tests-only verification per Q4=A is the only behavioral gate, and it's insufficient for a rewrite of this scale.
+  - Q5=A's "one big commit at the end of the session" is operationally reckless at ~12,500 LOC across 49 files (21 rewrites + 28 dead-file deletes + dependency-manifest updates).
+- **Recommended next-session approach** (subject to a fresh clarification round):
+  - Reverse Q3 from C (per-file Carbon-native rewrite) to A (component-by-component direct swap). Still drops `@mui/material` cleanly, drops the per-file rewrite cost from architectural to mechanical. Carbon-native idioms become a follow-up.
+  - Reverse Q5 from A (one big commit) to C (split: dead-file purge as one commit, live migration as another).
+  - Add per-file behavior verification beyond tests-only: at minimum manual interaction testing of the AvbRouting matrix (drag-rewire, hover crosshair, batch select, scene compare/diff) before each AvbRouting commit lands.
+  - Consider splitting E1 across 2-3 sessions: simple files (MidiCluster, MIDICommanderSetup, EdirolUA1000View, MOTURMEPage) in session 1, AvbRouting non-RoutingGrid (Inspector, TopBar, NodeTree, NetworkTopology, AvbRoutingApp) in session 2, RoutingGrid + dependency drop + dead-file purge in session 3.
+- Required outputs: 21 file migrations to Carbon; `web/package.json` and `web/package-lock.json` without `@mui/material`; bundle-size delta noted in commit message; CLAUDE.md tech stack table updated; `@mui/material` also dropped from the **root** `package.json` devDependencies (T2479 reconnaissance during E5 found it declared at root, not just web/).
 
 ID: T2476
 Status: [✓] Done
@@ -33719,8 +33738,20 @@ Description:
 - Dependencies: T2474 (tokens + primitives), ideally after T2476 (so plugin cards inside graph nodes use the unified primitive).
 - Estimated effort: Large — architectural refactor with behavioral risk in MAP2's identity surface (NodeGraph).
 - Required outputs: Unified `<SignalFlowGraph>` primitive; all four call sites migrated; documented node/edge schema; Jest + integration-test coverage.
-Assigned to: TBD (paused — awaits clarification round)
-Last updated: 2026-04-28 - Claude
+Assigned to: TBD (paused — clarification round complete; deferred behind T2475 due to AvbRouting interlock)
+Last updated: 2026-04-29 - Claude (clarification round complete; execution deferred behind T2475)
+- Clarification round (2026-04-29): C+D + D + B + A + A locked.
+  - **C+D** (Q1): Schema-driven `<SignalFlowGraph>` primitive AND dead-code purge of 11+ `web/src/map2/components/ChainBuilder/` files (zero incoming references — parallel to E1's 28 dead MUI files).
+  - **D** (Q2): Render-prop body slot. The primitive owns Carbon Tile chrome + dagre layout + ReactFlow wiring; per-workspace `<*NodeBody>` components fill the body via `renderNodeBody` callback.
+  - **B** (Q3): Per-workspace body components live in their workspace folders (matching the existing NodeGraphCard.tsx shape that B5 already established).
+  - **A** (Q4): Lowest-risk-first migration of all 7 active workspace graphs (NodeGraph, ManagementWorkspace, ClusterDashboard, NetworkDiscovery, AudioEngineWorkspace, JuceSourceTruthGraph, AvbRouting), all in one commit.
+  - **A** (Q5): One big commit, tests-only verification.
+- **Reconnaissance corrections during clarification round**: original audit said "ReactFlow + custom canvas + custom builder." Reality:
+  - All 7 active workspace graphs *already use* ReactFlow + dagre + custom `nodeTypes`. Same architectural pattern, different per-workspace specializations.
+  - The "custom canvas" alternate path doesn't exist in the active codebase.
+  - The 11+ ChainBuilder ReactFlow consumers under `web/src/map2/components/ChainBuilder/` have zero incoming references (dead code, parallel to E1's MUI dead files).
+  - 7 active graph builders share 2,766 LOC of similar-shaped data-modeling logic. Real duplication is the dagre call + node-data shape, not whole-builder duplication.
+- **Defer execution behind T2475 (E1 MUI removal)**: AvbRouting graph is one of the 7 workspace migrations in T2477's scope, AND AvbRouting is the highest-risk surface in T2475's scope (RoutingGrid uses MUI heavily). Migrating AvbRouting graph in T2477 against a still-MUI AvbRouting subtree means doing it twice — once now, once after T2475 lands. Cleaner: T2475 first, then T2477 with its AvbRouting graph migration running against a Carbon-native AvbRouting subtree.
 
 ID: T2478
 Status: [✓] Done
