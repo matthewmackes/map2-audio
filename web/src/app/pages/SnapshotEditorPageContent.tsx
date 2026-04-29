@@ -377,6 +377,7 @@ import { SnapshotEditorPerformOverlay } from './snapshotEditor/SnapshotEditorPer
 import { SnapshotEditorPresetBrowser } from './snapshotEditor/SnapshotEditorPresetBrowser'
 import { SnapshotEditorAssignmentDialog } from './snapshotEditor/SnapshotEditorAssignmentDialog'
 import { SnapshotEditorClearFlowsConfirm } from './snapshotEditor/SnapshotEditorClearFlowsConfirm'
+import { SnapshotEditorSavePresetModal } from './snapshotEditor/SnapshotEditorSavePresetModal'
 
 // API_BASE lives in ./snapshotEditor/snapshotEditorApi (T2467 follow-up).
 
@@ -8360,40 +8361,19 @@ export function SnapshotEditorPage() {
         </Modal>
       )}
 
-      {showSavePresetModal && (
-        <Modal
-          open
-          size="sm"
-          modalHeading="Save preset"
-          modalLabel={currentChain?.name || 'Current chain'}
-          primaryButtonText={savePresetMutation.isPending ? 'Saving...' : 'Save preset'}
-          secondaryButtonText="Cancel"
-          primaryButtonDisabled={!currentChain || savePresetName.trim().length === 0 || savePresetMutation.isPending}
-          onRequestClose={() => {
-            setShowSavePresetModal(false)
-            setSavePresetName('')
-          }}
-          onSecondarySubmit={() => {
-            setShowSavePresetModal(false)
-            setSavePresetName('')
-          }}
-          onRequestSubmit={submitSavePreset}
-          selectorPrimaryFocus="#juce-grid-save-preset-name"
-        >
-          <div className="juce-grid-page__form-modal-body">
-            <p className="juce-grid-page__modal-copy">
-              Save the current chain state into the preset library without leaving the grid workflow.
-            </p>
-            <TextInput
-              id="juce-grid-save-preset-name"
-              labelText="Preset name"
-              value={savePresetName}
-              onChange={(event) => setSavePresetName(event.target.value)}
-              placeholder="My JUCE preset"
-            />
-          </div>
-        </Modal>
-      )}
+      <SnapshotEditorSavePresetModal
+        open={showSavePresetModal}
+        chainLabel={currentChain?.name || 'Current chain'}
+        presetName={savePresetName}
+        hasChain={!!currentChain}
+        isSaving={savePresetMutation.isPending}
+        onClose={() => {
+          setShowSavePresetModal(false)
+          setSavePresetName('')
+        }}
+        onPresetNameChange={setSavePresetName}
+        onSubmit={submitSavePreset}
+      />
 
       {showRenameChainModal && (
         <Modal
