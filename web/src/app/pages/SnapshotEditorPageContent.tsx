@@ -316,10 +316,13 @@ import {
 import {
   COMPACT_TAB_ORDER,
   DEFAULT_FLOW_COUNT,
+  DEFAULT_SYSTEM_NOISE_GATE_DEFAULTS,
+  DEFAULT_SYSTEM_NOISE_GATE_PARAMETERS,
   JUCE_GRID_EFFECT_MODAL_OPEN_KEY,
   JUCE_GRID_SCROLL_TOP_KEY,
   JUCE_GRID_SELECTED_PLUGIN_KEY,
   KEYBOARD_SHORTCUT_SECTIONS,
+  LIVE_ACTIVATION_PHASES,
   MAX_FLOWS,
   MIDI_CURVE_LABELS,
   MIN_FLOWS,
@@ -374,16 +377,8 @@ const SNAPSHOT_DEFAULT_INPUT_DEVICE_CONFIG_KEY = 'snapshots.default_input_device
 const SNAPSHOT_DEFAULT_OUTPUT_DEVICE_CONFIG_KEY = 'snapshots.default_output_device'
 const SNAPSHOT_DEFAULT_MONITORING_OUTPUT_INDEX_CONFIG_KEY = 'snapshots.default_monitoring_output_index'
 const LIVE_CHANGES_LEAVE_MESSAGE = 'You have unpublished live changes on this snapshot. Leaving this flow will discard them.'
-const DEFAULT_SYSTEM_NOISE_GATE_DEFAULTS = {
-  thresholdDb: -40,
-  releaseMs: 100,
-}
-const DEFAULT_SYSTEM_NOISE_GATE_PARAMETERS = {
-  threshold: DEFAULT_SYSTEM_NOISE_GATE_DEFAULTS.thresholdDb,
-  ratio: 10,
-  attack: 1,
-  release: DEFAULT_SYSTEM_NOISE_GATE_DEFAULTS.releaseMs,
-}
+// DEFAULT_SYSTEM_NOISE_GATE_DEFAULTS + DEFAULT_SYSTEM_NOISE_GATE_PARAMETERS
+// live in ./snapshotEditor/snapshotEditorPageTypes (T2468 follow-up).
 
 // Pure helpers extracted to ./snapshotEditor/snapshotEditorPageHelpers.ts (T2467).
 
@@ -536,7 +531,7 @@ function loadInitialJuceGridState(): { flowSlots: FlowSlot[]; routing: RoutingCo
 // Main Component
 // ============================================================================
 
-const LIVE_ACTIVATION_PHASES = ['VALIDATING', 'STAGING', 'APPLYING', 'VERIFYING'] as const
+// LIVE_ACTIVATION_PHASES lives in ./snapshotEditor/snapshotEditorPageTypes (T2468 follow-up).
 
 // extractActivationProgressMetrics lives in ./snapshotEditor/snapshotEditorPageHelpers (T2467 follow-up).
 

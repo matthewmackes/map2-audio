@@ -157,3 +157,23 @@ export const KEYBOARD_SHORTCUT_SECTIONS: Array<{
 export const JUCE_GRID_SELECTED_PLUGIN_KEY = 'map2_juce_grid_selected_plugin_uri'
 export const JUCE_GRID_EFFECT_MODAL_OPEN_KEY = 'map2_juce_grid_effect_modal_open'
 export const JUCE_GRID_SCROLL_TOP_KEY = 'map2_juce_grid_scroll_top'
+
+export const LIVE_ACTIVATION_PHASES = [
+  'VALIDATING',
+  'STAGING',
+  'APPLYING',
+  'VERIFYING',
+] as const
+export type LiveActivationPhase = (typeof LIVE_ACTIVATION_PHASES)[number]
+
+export const DEFAULT_SYSTEM_NOISE_GATE_DEFAULTS = {
+  thresholdDb: -40,
+  releaseMs: 100,
+}
+
+export const DEFAULT_SYSTEM_NOISE_GATE_PARAMETERS = {
+  threshold: DEFAULT_SYSTEM_NOISE_GATE_DEFAULTS.thresholdDb,
+  ratio: 10,
+  attack: 1,
+  release: DEFAULT_SYSTEM_NOISE_GATE_DEFAULTS.releaseMs,
+}
