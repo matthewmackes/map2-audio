@@ -374,6 +374,7 @@ import { API_BASE } from './snapshotEditor/snapshotEditorApi'
 import { SnapshotEditorKeyboardShortcuts } from './snapshotEditor/SnapshotEditorKeyboardShortcuts'
 import { SnapshotEditorLanePicker } from './snapshotEditor/SnapshotEditorLanePicker'
 import { SnapshotEditorPerformOverlay } from './snapshotEditor/SnapshotEditorPerformOverlay'
+import { SnapshotEditorPresetBrowser } from './snapshotEditor/SnapshotEditorPresetBrowser'
 
 // API_BASE lives in ./snapshotEditor/snapshotEditorApi (T2467 follow-up).
 
@@ -8825,89 +8826,19 @@ export function SnapshotEditorPage() {
       )}
 
       {/* Preset Browser Modal */}
-      {showPresetBrowser && (
-        <Modal
-          open
-          size="md"
-          modalHeading="Load preset"
-          primaryButtonText="Close"
-          secondaryButtonText="Import"
-          onRequestClose={() => setShowPresetBrowser(false)}
-          onRequestSubmit={() => setShowPresetBrowser(false)}
-          onSecondarySubmit={() => {
-            setShowPresetBrowser(false)
-            setShowImportDialog(true)
-          }}
-        >
-          <div className="juce-grid-page__modal-stack">
-            <div className="juce-grid-page__browser-section">
-              <div className="juce-grid-page__browser-section-header">
-                <div className="juce-grid-page__browser-section-title">
-                  <Download size={14} />
-                  <span>Saved presets</span>
-                </div>
-                <Tag type="cool-gray">{presets.length} presets</Tag>
-              </div>
-
-              {presets.length === 0 ? (
-                <EmptyState
-                  className="juce-grid-page__empty-state"
-                  title="No presets saved"
-                  description={<>Press <kbd>S</kbd> to save the current chain, or import from file.</>}
-                />
-              ) : (
-                <div className="juce-grid-page__preset-grid">
-                  {presets.map((preset) => (
-                    <Tile key={preset.id} className="juce-grid-page__browser-plugin-tile">
-                      <div className="juce-grid-page__browser-plugin-header">
-                        <div className="juce-grid-page__browser-plugin-copy">
-                          <p className="juce-grid-page__browser-plugin-kicker">Saved preset</p>
-                          <h3 className="juce-grid-page__browser-plugin-heading">{preset.name}</h3>
-                          <p>{preset.description || 'Saved chain preset ready for instant recall.'}</p>
-                        </div>
-                        <div className="juce-grid-page__browser-plugin-meta">
-                          {preset.category && <Tag type="cool-gray">{preset.category}</Tag>}
-                          {preset.is_favorite && <Tag type="cool-gray">Favorite</Tag>}
-                        </div>
-                      </div>
-
-                      <div className="juce-grid-page__compact-tags">
-                        <Tag type="warm-gray">
-                          Updated {new Date(preset.updated_at || preset.created_at).toLocaleDateString()}
-                        </Tag>
-                        {preset.tags.slice(0, 3).map((tag) => (
-                          <Tag key={`${preset.id}-${tag}`} type="cool-gray">
-                            {tag}
-                          </Tag>
-                        ))}
-                      </div>
-
-                      <div className="juce-grid-page__compact-actions">
-                        <Button
-                          size="sm"
-                          kind="primary"
-                          onClick={() => loadPresetMutation.mutate(preset.id)}
-                          disabled={loadPresetMutation.isPending}
-                        >
-                          Load
-                        </Button>
-                        <Button
-                          size="sm"
-                          kind="ghost"
-                          onClick={() => handleDeletePresetRequest(preset)}
-                          disabled={deletePresetMutation.isPending}
-                        >
-                          Delete
-                        </Button>
-                      </div>
-                    </Tile>
-                  ))}
-                </div>
-              )}
-            </div>
-          </div>
-        </Modal>
-      )}
+      <SnapshotEditorPresetBrowser
+        open={showPresetBrowser}
+        presets={presets}
+        loadPending={loadPresetMutation.isPending}
+        deletePending={deletePresetMutation.isPending}
+        onClose={() => setShowPresetBrowser(false)}
+        onOpenImport={() => {
+          setShowPresetBrowser(false)
+          setShowImportDialog(true)
+        }}
+        onLoad={(presetId) => loadPresetMutation.mutate(presetId)}
+        onDelete={(preset) => handleDeletePresetRequest(preset)}
+      />
 
       {/* Snapshot Import Dialog */}
       <SnapshotImportDialog
