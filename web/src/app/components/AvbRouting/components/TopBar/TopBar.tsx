@@ -20,9 +20,6 @@ import {
 } from '@carbon/icons-react';
 import {
   Popover,
-  FormGroup,
-  FormControlLabel,
-  Checkbox,
   FormControl,
   InputLabel,
   Select,
@@ -31,6 +28,7 @@ import {
 import type { SelectChangeEvent } from '@mui/material/Select';
 import {
   Button as CarbonButton,
+  Checkbox as CarbonCheckbox,
   TextInput as CarbonTextInput,
   TextArea as CarbonTextArea,
 } from '@carbon/react';
@@ -2441,15 +2439,12 @@ export function TopBar() {
             data-testid="topbar-scene-name-input"
           />
 
-          <FormControlLabel
-            control={(
-                <Checkbox
-                  checked={sceneAutoSuffixDuplicates}
-                  onChange={handleSceneAutoSuffixToggle}
-                  data-testid="topbar-scene-autosuffix-toggle"
-                />
-              )}
-            label="Auto-suffix duplicate names"
+          <CarbonCheckbox
+            id="topbar-scene-autosuffix-toggle"
+            data-testid="topbar-scene-autosuffix-toggle"
+            labelText="Auto-suffix duplicate names"
+            checked={sceneAutoSuffixDuplicates}
+            onChange={(event, { checked }) => handleSceneAutoSuffixToggle(event, checked)}
           />
 
           {sceneDuplicateHintText && (
@@ -2664,15 +2659,12 @@ export function TopBar() {
               data-testid="topbar-scene-audit-search-input"
             />
 
-            <FormControlLabel
-              control={(
-                <Checkbox
-                  checked={sceneAuditRememberFilters}
-                  onChange={handleSceneAuditRememberFiltersToggle}
-                  data-testid="topbar-scene-audit-remember-filters-toggle"
-                />
-              )}
-              label="Remember Audit Filters"
+            <CarbonCheckbox
+              id="topbar-scene-audit-remember-filters-toggle"
+              data-testid="topbar-scene-audit-remember-filters-toggle"
+              labelText="Remember Audit Filters"
+              checked={sceneAuditRememberFilters}
+              onChange={(event, { checked }) => handleSceneAuditRememberFiltersToggle(event, checked)}
             />
 
             <FormControl size="small">
@@ -2833,59 +2825,47 @@ export function TopBar() {
             Endpoint Filters
           </span>
 
-          <FormGroup>
-            <FormControlLabel
-              control={(
-                <Checkbox
-                  checked={state.filters.availableOnly}
-                  onChange={handleToggleAvailableOnly}
-                  data-testid="topbar-filter-available-only"
-                />
-              )}
-              label="Available only"
+          <div className="topbar__col">
+            <CarbonCheckbox
+              id="topbar-filter-available-only"
+              data-testid="topbar-filter-available-only"
+              labelText="Available only"
+              checked={state.filters.availableOnly}
+              onChange={(event, { checked }) => handleToggleAvailableOnly(event, checked)}
             />
-            <FormControlLabel
-              control={(
-                <Checkbox
-                  checked={state.filters.issuesOnly}
-                  onChange={handleToggleIssuesOnly}
-                  data-testid="topbar-filter-issues-only"
-                />
-              )}
-              label="Issues only"
+            <CarbonCheckbox
+              id="topbar-filter-issues-only"
+              data-testid="topbar-filter-issues-only"
+              labelText="Issues only"
+              checked={state.filters.issuesOnly}
+              onChange={(event, { checked }) => handleToggleIssuesOnly(event, checked)}
             />
-            <FormControlLabel
-              control={(
-                <Checkbox
-                  checked={state.filters.showLocked}
-                  onChange={handleToggleShowLocked}
-                  data-testid="topbar-filter-show-locked"
-                />
-              )}
-              label="Show locked endpoints"
+            <CarbonCheckbox
+              id="topbar-filter-show-locked"
+              data-testid="topbar-filter-show-locked"
+              labelText="Show locked endpoints"
+              checked={state.filters.showLocked}
+              onChange={(event, { checked }) => handleToggleShowLocked(event, checked)}
             />
-          </FormGroup>
+          </div>
 
           <hr className="topbar__divider" />
 
           <span className="topbar__caption topbar__caption--secondary">
             Device types
           </span>
-          <FormGroup>
+          <div className="topbar__col">
             {FILTER_DEVICE_TYPE_OPTIONS.map((deviceType) => (
-              <FormControlLabel
+              <CarbonCheckbox
                 key={deviceType}
-                control={(
-                  <Checkbox
-                    checked={state.filters.deviceTypes.includes(deviceType)}
-                    onChange={() => handleToggleDeviceType(deviceType)}
-                    data-testid={`topbar-filter-device-${deviceType}`}
-                  />
-                )}
-              label={deviceType.toUpperCase()}
-            />
-          ))}
-          </FormGroup>
+                id={`topbar-filter-device-${deviceType}`}
+                data-testid={`topbar-filter-device-${deviceType}`}
+                labelText={deviceType.toUpperCase()}
+                checked={state.filters.deviceTypes.includes(deviceType)}
+                onChange={() => handleToggleDeviceType(deviceType)}
+              />
+            ))}
+          </div>
 
           <hr className="topbar__divider" />
 
@@ -2897,21 +2877,18 @@ export function TopBar() {
               No sample rates discovered
             </span>
           ) : (
-            <FormGroup>
+            <div className="topbar__col">
               {sampleRateOptions.map((sampleRate) => (
-                <FormControlLabel
+                <CarbonCheckbox
                   key={sampleRate}
-                  control={(
-                    <Checkbox
-                      checked={state.filters.sampleRates.includes(sampleRate)}
-                      onChange={() => handleToggleSampleRate(sampleRate)}
-                      data-testid={`topbar-filter-sample-${sampleRate}`}
-                    />
-                  )}
-                  label={`${sampleRate} Hz`}
+                  id={`topbar-filter-sample-${sampleRate}`}
+                  data-testid={`topbar-filter-sample-${sampleRate}`}
+                  labelText={`${sampleRate} Hz`}
+                  checked={state.filters.sampleRates.includes(sampleRate)}
+                  onChange={() => handleToggleSampleRate(sampleRate)}
                 />
               ))}
-            </FormGroup>
+            </div>
           )}
 
           <hr className="topbar__divider" />
@@ -2924,21 +2901,18 @@ export function TopBar() {
               No channel counts discovered
             </span>
           ) : (
-            <FormGroup>
+            <div className="topbar__col">
               {channelCountOptions.map((channelCount) => (
-                <FormControlLabel
+                <CarbonCheckbox
                   key={channelCount}
-                  control={(
-                    <Checkbox
-                      checked={state.filters.channelCounts.includes(channelCount)}
-                      onChange={() => handleToggleChannelCount(channelCount)}
-                      data-testid={`topbar-filter-channels-${channelCount}`}
-                    />
-                  )}
-                  label={`${channelCount} channels`}
+                  id={`topbar-filter-channels-${channelCount}`}
+                  data-testid={`topbar-filter-channels-${channelCount}`}
+                  labelText={`${channelCount} channels`}
+                  checked={state.filters.channelCounts.includes(channelCount)}
+                  onChange={() => handleToggleChannelCount(channelCount)}
                 />
               ))}
-            </FormGroup>
+            </div>
           )}
 
           <hr className="topbar__divider" />
@@ -2946,42 +2920,36 @@ export function TopBar() {
           <span className="topbar__caption topbar__caption--secondary">
             Direction
           </span>
-          <FormGroup>
+          <div className="topbar__col">
             {FILTER_DIRECTION_OPTIONS.map((direction) => (
-              <FormControlLabel
+              <CarbonCheckbox
                 key={direction}
-                control={(
-                  <Checkbox
-                    checked={state.filters.directions.includes(direction)}
-                    onChange={() => handleToggleDirection(direction)}
-                    data-testid={`topbar-filter-direction-${direction}`}
-                  />
-                )}
-                label={DIRECTION_LABELS[direction]}
+                id={`topbar-filter-direction-${direction}`}
+                data-testid={`topbar-filter-direction-${direction}`}
+                labelText={DIRECTION_LABELS[direction]}
+                checked={state.filters.directions.includes(direction)}
+                onChange={() => handleToggleDirection(direction)}
               />
             ))}
-          </FormGroup>
+          </div>
 
           <hr className="topbar__divider" />
 
           <span className="topbar__caption topbar__caption--secondary">
             Health quality
           </span>
-          <FormGroup>
+          <div className="topbar__col">
             {FILTER_QUALITY_OPTIONS.map((quality) => (
-              <FormControlLabel
+              <CarbonCheckbox
                 key={quality}
-                control={(
-                  <Checkbox
-                    checked={state.filters.qualities.includes(quality)}
-                    onChange={() => handleToggleQuality(quality)}
-                    data-testid={`topbar-filter-quality-${quality}`}
-                  />
-                )}
-                label={QUALITY_LABELS[quality]}
+                id={`topbar-filter-quality-${quality}`}
+                data-testid={`topbar-filter-quality-${quality}`}
+                labelText={QUALITY_LABELS[quality]}
+                checked={state.filters.qualities.includes(quality)}
+                onChange={() => handleToggleQuality(quality)}
               />
             ))}
-          </FormGroup>
+          </div>
 
           <hr className="topbar__divider" />
 
@@ -2993,21 +2961,18 @@ export function TopBar() {
               No hosts discovered
             </span>
           ) : (
-            <FormGroup>
+            <div className="topbar__col">
               {hostOptions.map((hostId) => (
-                <FormControlLabel
+                <CarbonCheckbox
                   key={hostId}
-                  control={(
-                    <Checkbox
-                      checked={state.filters.hostIds.includes(hostId)}
-                      onChange={() => handleToggleHost(hostId)}
-                      data-testid={`topbar-filter-host-${sanitizeFilterIdValue(hostId)}`}
-                    />
-                  )}
-                  label={hostId}
+                  id={`topbar-filter-host-${sanitizeFilterIdValue(hostId)}`}
+                  data-testid={`topbar-filter-host-${sanitizeFilterIdValue(hostId)}`}
+                  labelText={hostId}
+                  checked={state.filters.hostIds.includes(hostId)}
+                  onChange={() => handleToggleHost(hostId)}
                 />
               ))}
-            </FormGroup>
+            </div>
           )}
 
           <hr className="topbar__divider" />
@@ -3020,21 +2985,18 @@ export function TopBar() {
               No groups discovered
             </span>
           ) : (
-            <FormGroup>
+            <div className="topbar__col">
               {groupOptions.map((group) => (
-                <FormControlLabel
+                <CarbonCheckbox
                   key={group}
-                  control={(
-                    <Checkbox
-                      checked={state.filters.groups.includes(group)}
-                      onChange={() => handleToggleGroup(group)}
-                      data-testid={`topbar-filter-group-${sanitizeFilterIdValue(group)}`}
-                    />
-                  )}
-                  label={group}
+                  id={`topbar-filter-group-${sanitizeFilterIdValue(group)}`}
+                  data-testid={`topbar-filter-group-${sanitizeFilterIdValue(group)}`}
+                  labelText={group}
+                  checked={state.filters.groups.includes(group)}
+                  onChange={() => handleToggleGroup(group)}
                 />
               ))}
-            </FormGroup>
+            </div>
           )}
 
           <div className="topbar__row topbar__row--between topbar__row--pt-05">
