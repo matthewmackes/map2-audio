@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1381** Python | **1357** TypeScript | **177** C++/H | **145** Docs | **3086** total commits | **3** stars | **0** forks | **0** open issues
+**1381** Python | **1357** TypeScript | **177** C++/H | **145** Docs | **3091** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`cee45d45`](https://github.com/matthewmackes/map2-audio/commit/cee45d45e363e72b538b6ab1d664eff8a2f0b851) | T2475 E1 (11/21): NetworkTopologyModal migrated from MUI ... | Map2 Audio | 2026-04-29 |
+| [`3102ecf1`](https://github.com/matthewmackes/map2-audio/commit/3102ecf106467c157e86212ba1713423e9efd7a4) | T2475 E1 (9-10/21): NodeTree + NodeSelector migrated from... | Map2 Audio | 2026-04-29 |
+| [`f25f2310`](https://github.com/matthewmackes/map2-audio/commit/f25f2310b99d7b3bfa4259da34ad8ddaa7f9bc4e) | Merge branch 'master' of https://github.com/matthewmackes... | Map2 Audio | 2026-04-29 |
+| [`81db43fb`](https://github.com/matthewmackes/map2-audio/commit/81db43fb2fd3e3deac808d587cc5084035286c98) | T2475 E1 (7-8/21): AvbRoutingApp + SceneDiffPreview migra... | Map2 Audio | 2026-04-29 |
+| [`ef3b5501`](https://github.com/matthewmackes/map2-audio/commit/ef3b55011abc7bbe4d2bf33f73c8cc2a32a19a9f) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-29 |
 | [`263f8af9`](https://github.com/matthewmackes/map2-audio/commit/263f8af9923c6808b89b1aa84fb38cc8a771613d) | T2475 E1 (5-6/21): MIDICommanderSetup + MOTURMEPage migra... | Map2 Audio | 2026-04-29 |
 | [`7baaa218`](https://github.com/matthewmackes/map2-audio/commit/7baaa2183897d6d76783ae2b762ed78f73170258) | T2475 E1 (4/21): MidiCluster subsystem fully migrated fro... | Map2 Audio | 2026-04-29 |
 | [`8b7cfaaf`](https://github.com/matthewmackes/map2-audio/commit/8b7cfaafa47a8f23c381a873a07e30c31f8764e7) | Merge origin/master into E1 (1/21) MidiClusterHealthBar | Map2 Audio | 2026-04-29 |
-| [`0949dfc2`](https://github.com/matthewmackes/map2-audio/commit/0949dfc27a5f60e94be188f5283a2efe82c4f258) | T2475 E1 (1/21): MidiClusterHealthBar migrated from MUI t... | Map2 Audio | 2026-04-29 |
-| [`0bd81cf6`](https://github.com/matthewmackes/map2-audio/commit/0bd81cf671819fb51889ba7625d0185efafa8420) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-29 |
-| [`ccc58a87`](https://github.com/matthewmackes/map2-audio/commit/ccc58a8715fbe6404daf107bece3b62fc4b5ce35) | Merge origin/master into E1+E3 deferral note | Map2 Audio | 2026-04-29 |
-| [`256a2177`](https://github.com/matthewmackes/map2-audio/commit/256a21774696ae9685cc0f365df18a475c0f4e5f) | T2475 + T2477: clarification rounds complete; execution d... | Map2 Audio | 2026-04-29 |
-| [`34c32b9d`](https://github.com/matthewmackes/map2-audio/commit/34c32b9de06de6f275f50be2cfe358d17236ef6a) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-29 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
