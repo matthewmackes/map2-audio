@@ -313,7 +313,6 @@ import {
   JUCE_GRID_EFFECT_MODAL_OPEN_KEY,
   JUCE_GRID_SCROLL_TOP_KEY,
   JUCE_GRID_SELECTED_PLUGIN_KEY,
-  KEYBOARD_SHORTCUT_SECTIONS,
   LIVE_ACTIVATION_PHASES,
   LIVE_CHANGES_LEAVE_MESSAGE,
   MAX_FLOWS,
@@ -374,6 +373,7 @@ import {
   SLOT_COLORS,
 } from './snapshotEditor/snapshotEditorBootstrap'
 import { API_BASE } from './snapshotEditor/snapshotEditorApi'
+import { SnapshotEditorKeyboardShortcuts } from './snapshotEditor/SnapshotEditorKeyboardShortcuts'
 
 // API_BASE lives in ./snapshotEditor/snapshotEditorApi (T2467 follow-up).
 
@@ -9028,42 +9028,14 @@ export function SnapshotEditorPage() {
       )}
 
       {/* Keyboard Shortcuts Help Modal */}
-      {showKeyboardHelp && (
-        <Modal
-          open
-          size="md"
-          modalHeading="Keyboard shortcuts"
-          primaryButtonText="Close"
-          secondaryButtonText="Open docs"
-          onRequestClose={() => setShowKeyboardHelp(false)}
-          onRequestSubmit={() => setShowKeyboardHelp(false)}
-          onSecondarySubmit={() => {
-            setShowKeyboardHelp(false)
-            openPlatformDocs('QUICK_REFERENCE.md')
-          }}
-        >
-          <div className="juce-grid-page__shortcut-grid">
-            {KEYBOARD_SHORTCUT_SECTIONS.map((section) => (
-              <Tile key={section.title} className="juce-grid-page__shortcut-tile">
-                <p className="juce-grid-page__dense-card-kicker">Shortcuts</p>
-                <h3 className="juce-grid-page__dense-card-heading">{section.title}</h3>
-                <div className="juce-grid-page__shortcut-rows">
-                  {section.rows.map((row) => (
-                    <div key={`${section.title}-${row.description}`} className="juce-grid-page__shortcut-row">
-                      <div className="juce-grid-page__shortcut-keys" aria-label={row.keys.join(' + ')}>
-                        {row.keys.map((key) => (
-                          <kbd key={`${section.title}-${row.description}-${key}`}>{key}</kbd>
-                        ))}
-                      </div>
-                      <span>{row.description}</span>
-                    </div>
-                  ))}
-                </div>
-              </Tile>
-            ))}
-          </div>
-        </Modal>
-      )}
+      <SnapshotEditorKeyboardShortcuts
+        open={showKeyboardHelp}
+        onClose={() => setShowKeyboardHelp(false)}
+        onOpenDocs={() => {
+          setShowKeyboardHelp(false)
+          openPlatformDocs('QUICK_REFERENCE.md')
+        }}
+      />
 
       <SnapshotVersionHistoryModal
         open={showVersionHistoryModal}
