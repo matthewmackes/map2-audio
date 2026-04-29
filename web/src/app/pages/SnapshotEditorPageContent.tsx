@@ -301,6 +301,16 @@ import './SnapshotEditorPage.css'
 import { PerformPage } from './PerformPage'
 import { PluginCardRouter } from '../components/PluginCards'
 import { resolveLivePluginCardStrategy } from '../components/PluginCards/liveEditorRouting'
+import {
+  cloneSnapshotDraftData,
+  describeFlowUpdate,
+  describeLoaderStateDraftChange,
+  fingerprintSnapshotDraftData,
+  mergePreviewIntoSnapshotDetail,
+  resequenceChainSnapshotPlugins,
+  snapshotDraftsEqual,
+  updateDraftChain,
+} from './snapshotEditor/snapshotEditorPageHelpers'
 
 const API_BASE = (() => {
   const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
@@ -327,118 +337,7 @@ const DEFAULT_SYSTEM_NOISE_GATE_PARAMETERS = {
   release: DEFAULT_SYSTEM_NOISE_GATE_DEFAULTS.releaseMs,
 }
 
-function cloneSnapshotDraftData(data: SnapshotDraftData): SnapshotDraftData {
-  return JSON.parse(JSON.stringify(data)) as SnapshotDraftData
-}
-
-function fingerprintSnapshotDraftData(data: SnapshotDraftData): string {
-  return JSON.stringify(data)
-}
-
-function snapshotDraftsEqual(left: SnapshotDraftData, right: SnapshotDraftData): boolean {
-  return fingerprintSnapshotDraftData(left) === fingerprintSnapshotDraftData(right)
-}
-
-function resequenceChainSnapshotPlugins(chain: ChainSnapshot): ChainSnapshot {
-  return {
-    ...chain,
-    plugins: chain.plugins.map((plugin, index) => ({
-      ...plugin,
-      position: index,
-    })),
-  }
-}
-
-function updateDraftChain(
-  draft: SnapshotDraftData,
-  chainId: number,
-  updater: (chain: ChainSnapshot) => ChainSnapshot,
-): SnapshotDraftData {
-  const chainKey = String(chainId)
-  const chain = draft.chains[chainKey]
-  if (!chain) {
-    return draft
-  }
-  draft.chains[chainKey] = updater(chain)
-  return draft
-}
-
-function describeLoaderStateDraftChange(pluginUri: string): string {
-  if (pluginUri === 'map2://juce/nam' || pluginUri === 'urn:map2:nam-player') {
-    return 'Assign NAM model'
-  }
-  if (pluginUri === 'map2://juce/convolution/cabinet' || pluginUri === 'urn:map2:ir-cabinet') {
-    return 'Assign cabinet IR'
-  }
-  if (pluginUri === 'map2://juce/convolution/reverb' || pluginUri === 'urn:map2:ir-reverb') {
-    return 'Assign reverb IR'
-  }
-  return 'Update loader state'
-}
-
-function mergePreviewIntoSnapshotDetail(
-  previewDetail: SnapshotDetail,
-  snapshot: SnapshotDetail | null,
-): SnapshotDetail {
-  if (!snapshot) {
-    return previewDetail
-  }
-
-  return {
-    ...snapshot,
-    ...previewDetail,
-    id: snapshot.id,
-    name: snapshot.name,
-    description: snapshot.description,
-    tags: snapshot.tags,
-    program_number: snapshot.program_number,
-    tempo_bpm: snapshot.tempo_bpm,
-    live_tempo_bpm: snapshot.live_tempo_bpm,
-    active_tempo_bpm: snapshot.active_tempo_bpm,
-    tempo_source: snapshot.tempo_source,
-    tempo_updated_at: snapshot.tempo_updated_at,
-    output_level_reference_dbfs: snapshot.output_level_reference_dbfs,
-    output_level_warning_threshold_db: snapshot.output_level_warning_threshold_db,
-    input_device: snapshot.input_device,
-    output_device: snapshot.output_device,
-    io_bindings: snapshot.io_bindings,
-    controls: snapshot.controls,
-    midi_map: snapshot.midi_map,
-    is_active: snapshot.is_active,
-    is_favorite: snapshot.is_favorite,
-    is_locked: snapshot.is_locked,
-    display_order: snapshot.display_order,
-    community_uuid: snapshot.community_uuid,
-    community_shared: snapshot.community_shared,
-    community_author: snapshot.community_author,
-    community_download_count: snapshot.community_download_count,
-    community_rating: snapshot.community_rating,
-    community_rating_count: snapshot.community_rating_count,
-    activated_at: snapshot.activated_at,
-    created_at: snapshot.created_at,
-    updated_at: snapshot.updated_at,
-    deployments: snapshot.deployments,
-  }
-}
-
-function describeFlowUpdate(updates: Partial<FlowSlot>): string {
-  if (typeof updates.label === 'string') {
-    return 'Rename channel'
-  }
-  if (typeof updates.chainId !== 'undefined') {
-    return 'Reassign channel'
-  }
-  if (typeof updates.solo === 'boolean') {
-    return updates.solo ? 'Enable channel solo' : 'Disable channel solo'
-  }
-  if (typeof updates.muted === 'boolean') {
-    return updates.muted ? 'Mute channel' : 'Unmute channel'
-  }
-  if (typeof updates.dryWetMix === 'number') {
-    return 'Adjust channel mix'
-  }
-  return 'Edit channel'
-}
+// Pure helpers extracted to ./snapshotEditor/snapshotEditorPageHelpers.ts (T2467).
 
 const FEATURED_NATIVE_BROWSER_GROUPS = [
   {
