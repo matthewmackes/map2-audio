@@ -1,0 +1,337 @@
+/* Network Topology Modal — T2475 E1 Carbon migration. ReactFlow
+ * canvas + a side PTP comparison panel. Status colors routed
+ * through MAP semantic tokens. The MiniMap mask color and ROC
+ * background are preserved as deliberate canvas chrome. */
+
+.topology-modal .cds--modal-container {
+  max-width: min(1400px, 96vw);
+  width: 96vw;
+  max-height: 90vh;
+}
+
+.topology-modal__header {
+  padding-bottom: var(--cds-spacing-04, 0.75rem);
+}
+
+.topology-modal__title {
+  font-size: var(--cds-heading-03-font-size, 1.25rem);
+  font-weight: 600;
+  color: var(--cds-text-primary, #f4f4f4);
+  display: block;
+}
+
+.topology-modal__chip-row {
+  display: flex;
+  gap: var(--cds-spacing-03, 0.5rem);
+  flex-wrap: wrap;
+  margin-top: var(--cds-spacing-02, 0.25rem);
+}
+
+.topology-modal__body {
+  padding: 0;
+  height: 70vh;
+  background: var(--cds-background, #161616);
+  overflow: hidden;
+}
+
+.topology-modal__layout {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+
+@media (min-width: 1056px) {
+  .topology-modal__layout {
+    flex-direction: row;
+  }
+}
+
+.topology-modal__canvas {
+  flex: 1;
+  min-height: 0;
+}
+
+.topology-modal__side {
+  width: 100%;
+  border-top: 1px solid var(--cds-border-subtle, #393939);
+  padding: var(--cds-spacing-04, 0.75rem);
+  overflow-y: auto;
+  background: var(--cds-layer, #262626);
+}
+
+@media (min-width: 1056px) {
+  .topology-modal__side {
+    width: 360px;
+    border-top: none;
+    border-left: 1px solid var(--cds-border-subtle, #393939);
+  }
+}
+
+.topology-modal__panel {
+  background: var(--cds-layer-accent, #353535);
+  padding: var(--cds-spacing-04, 0.75rem);
+  margin-bottom: var(--cds-spacing-04, 0.75rem);
+  display: flex;
+  flex-direction: column;
+  gap: var(--cds-spacing-02, 0.25rem);
+}
+
+.topology-modal__panel:last-child {
+  margin-bottom: 0;
+}
+
+.topology-modal__panel-title {
+  font-weight: 700;
+  font-size: var(--cds-body-compact-01-font-size, 0.875rem);
+  color: var(--cds-text-primary, #f4f4f4);
+}
+
+.topology-modal__panel-caption {
+  font-size: var(--cds-helper-text-01-font-size, 0.75rem);
+  color: var(--cds-text-secondary, #c6c6c6);
+}
+
+.topology-modal__grid {
+  display: grid;
+  grid-template-columns: 1.6fr 0.9fr 0.8fr 1fr;
+  gap: var(--cds-spacing-03, 0.5rem);
+  padding: var(--cds-spacing-02, 0.25rem) var(--cds-spacing-02, 0.25rem);
+  align-items: center;
+}
+
+.topology-modal__grid--header {
+  border-bottom: 1px solid var(--cds-border-subtle, #393939);
+  padding-bottom: var(--cds-spacing-03, 0.5rem);
+}
+
+.topology-modal__grid--row {
+  padding: var(--cds-spacing-03, 0.5rem) var(--cds-spacing-02, 0.25rem);
+}
+
+.topology-modal__grid--selected {
+  background: rgba(69, 137, 255, 0.16);
+}
+
+.topology-modal__grid-cell {
+  font-size: var(--cds-helper-text-01-font-size, 0.75rem);
+  color: var(--cds-text-secondary, #c6c6c6);
+}
+
+.topology-modal__capitalize {
+  text-transform: capitalize;
+}
+
+.topology-modal__rows {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cds-spacing-02, 0.25rem);
+  margin-top: var(--cds-spacing-03, 0.5rem);
+}
+
+.topology-modal__node-cell {
+  min-width: 0;
+  display: flex;
+  flex-direction: column;
+  gap: var(--cds-spacing-02, 0.25rem);
+}
+
+.topology-modal__node-name {
+  font-size: var(--cds-body-compact-01-font-size, 0.875rem);
+  font-weight: 600;
+  color: var(--cds-text-primary, #f4f4f4);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.topology-modal__node-tags {
+  display: flex;
+  gap: var(--cds-spacing-02, 0.25rem);
+  flex-wrap: wrap;
+}
+
+.topology-modal__offset--master {
+  color: var(--map2-clock-master, #f1c21b);
+}
+
+/* Fit-view button on canvas */
+.topology-modal__fit-button {
+  background: var(--cds-layer, #262626);
+  border: 1px solid var(--cds-border-subtle, #393939);
+  width: 32px;
+  height: 32px;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  color: var(--cds-icon-primary, #f4f4f4);
+  box-shadow: 0 2px 6px rgba(0, 0, 0, 0.5);
+}
+
+.topology-modal__fit-button:hover {
+  background: var(--cds-background-hover, #353535);
+}
+
+.topology-modal__fit-button:focus-visible {
+  outline: 2px solid var(--cds-focus, #0f62fe);
+  outline-offset: 2px;
+}
+
+/* Legend on canvas */
+.topology-modal__legend {
+  background: var(--cds-layer, #262626);
+  border: 1px solid var(--cds-border-subtle, #393939);
+  padding: var(--cds-spacing-04, 0.75rem);
+  max-width: 300px;
+  display: flex;
+  flex-direction: column;
+  gap: var(--cds-spacing-02, 0.25rem);
+  font-size: var(--cds-helper-text-01-font-size, 0.75rem);
+  color: var(--cds-text-secondary, #c6c6c6);
+}
+
+.topology-modal__legend-title {
+  font-weight: 600;
+  color: var(--cds-text-primary, #f4f4f4);
+}
+
+.topology-modal__legend-row {
+  display: flex;
+  gap: var(--cds-spacing-03, 0.5rem);
+  align-items: center;
+}
+
+.topology-modal__legend-line {
+  display: inline-block;
+  width: 20px;
+  height: 2px;
+}
+
+.topology-modal__legend-master {
+  display: inline-flex;
+  width: 16px;
+  height: 16px;
+  color: #000;
+  border-radius: 50%;
+  font-size: 10px;
+  align-items: center;
+  justify-content: center;
+  font-weight: bold;
+}
+
+/* Per-node card rendered inside ReactFlow */
+.topology-node {
+  background: var(--cds-layer, #262626);
+  border: 3px solid var(--cds-border-strong, #6f6f6f);
+  padding: var(--cds-spacing-04, 0.75rem);
+  min-width: 200px;
+  position: relative;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.4);
+  display: flex;
+  flex-direction: column;
+  gap: var(--cds-spacing-02, 0.25rem);
+}
+
+.topology-node--selected {
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.6);
+}
+
+.topology-node:hover {
+  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.6);
+}
+
+.topology-node__ptp-master {
+  position: absolute;
+  top: -10px;
+  right: -10px;
+  background: var(--map2-clock-master, #f1c21b);
+  color: #000;
+  border-radius: 50%;
+  width: 24px;
+  height: 24px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 12px;
+  font-weight: bold;
+  border: 2px solid var(--cds-layer, #262626);
+}
+
+.topology-node__name {
+  font-size: var(--cds-body-compact-02-font-size, 1rem);
+  font-weight: 600;
+  color: var(--cds-text-primary, #f4f4f4);
+}
+
+.topology-node__type {
+  display: inline-block;
+  padding: 0 var(--cds-spacing-03, 0.5rem);
+  height: 20px;
+  font-size: 10px;
+  font-weight: 600;
+  line-height: 20px;
+  align-self: flex-start;
+}
+
+.topology-node__status-row {
+  display: flex;
+  align-items: center;
+  gap: var(--cds-spacing-03, 0.5rem);
+}
+
+.topology-node__status-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.topology-node--ok .topology-node__status-dot,
+.topology-node__status-dot.topology-node--ok {
+  background: var(--map2-state-live, #42be65);
+}
+
+.topology-node__status-dot.topology-node--warn {
+  background: var(--map2-alert-advisory, #f1c21b);
+}
+
+.topology-node__status-dot.topology-node--offline {
+  background: var(--map2-alert-critical, #fa4d56);
+}
+
+.topology-node__status-text {
+  font-size: var(--cds-helper-text-01-font-size, 0.75rem);
+  color: var(--cds-text-secondary, #c6c6c6);
+  text-transform: capitalize;
+}
+
+.topology-node__counts,
+.topology-node__routes,
+.topology-node__ptp,
+.topology-node__health {
+  font-size: var(--cds-helper-text-01-font-size, 0.75rem);
+}
+
+.topology-node__counts {
+  color: var(--cds-text-secondary, #c6c6c6);
+}
+
+.topology-node__routes {
+  color: var(--cds-link-primary, #4589ff);
+}
+
+.topology-node__ptp {
+  color: var(--map2-state-live, #42be65);
+}
+
+.topology-node__health--ok {
+  color: var(--map2-state-live, #42be65);
+}
+
+.topology-node__health--warn {
+  color: var(--map2-alert-advisory, #f1c21b);
+}
+
+.topology-node__health--critical {
+  color: var(--map2-alert-critical, #fa4d56);
+}

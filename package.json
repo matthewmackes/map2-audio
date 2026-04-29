@@ -13,6 +13,9 @@
   },
   "jest": {
     "testEnvironment": "jsdom",
+    "setupFiles": [
+      "<rootDir>/tests/jest/setupAfterEnv.js"
+    ],
     "moduleNameMapper": {
       "\\.svg\\?react$": "<rootDir>/tests/jest/svgReactMock.js",
       "\\.(png|jpe?g|gif|webp|avif)$": "<rootDir>/tests/jest/fileMock.js",

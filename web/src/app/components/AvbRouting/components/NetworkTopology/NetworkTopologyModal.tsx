@@ -1,35 +1,27 @@
-/**
- * Network Topology Modal
- *
- * Interactive graph visualization of the AVB/TSN network topology.
- * Shows nodes as vertices, connections as edges, and PTP hierarchy.
- *
- * Features:
- * - Interactive pan/zoom with reactflow
- * - Color-coded nodes by type and status
- * - PTP master/slave hierarchy visualization
- * - Active route highlighting
- * - Node details on click
- * - Auto-layout with dagre algorithm
- */
+// Network Topology Modal — interactive AVB graph with PTP hierarchy
+// + cross-node routes. T2475 (E1) Carbon migration:
+//   Dialog/DialogTitle/DialogContent/DialogActions → Carbon
+//     ComposedModal/ModalHeader/ModalBody/ModalFooter
+//   Paper/Stack/Typography/Box → semantic divs + spans
+//   Chip → StatusChip
+//   IconButton → Carbon Button hasIconOnly
+//   Tooltip (MUI) → Carbon Tooltip
+// MUI palette literals (#4caf50, #f44336, #ff9800, #2196f3, #ffd700,
+// #9e9e9e, #1976d2, success.main, warning.main, error.main) routed
+// through MAP semantic tokens. The MiniMap mask color (#0b1220 /
+// rgba black) is preserved as deliberate canvas chrome —
+// ReactFlow's MiniMap is operationally hardware-skin-adjacent.
 
-import React, { useMemo, useCallback, useState } from 'react';
-import { Close, FitToScreen } from '@carbon/icons-react';
-import '../../../shared/ReactFlowTheme.css';
+import React, { useMemo, useCallback, useState } from 'react'
+import { Close, FitToScreen } from '@carbon/icons-react'
 import {
-  Dialog,
-  DialogTitle,
-  DialogContent,
-  DialogActions,
   Button,
-  Box,
-  Typography,
-  Paper,
-  Chip,
-  Stack,
-  IconButton,
+  ComposedModal,
+  ModalBody,
+  ModalFooter,
+  ModalHeader,
   Tooltip,
-} from '@mui/material';
+} from '@carbon/react'
 import ReactFlow, {
   Node,
   Edge,
@@ -40,196 +32,142 @@ import ReactFlow, {
   ReactFlowProvider,
   Panel,
   MarkerType,
-} from 'reactflow';
-import 'reactflow/dist/style.css';
-import dagre from 'dagre';
-import { useRouting } from '../../context/RoutingContext';
-import { useNodes, usePtpStatus } from '../../hooks/useNodeApi';
-import type { AvbNode } from '../../types';
+} from 'reactflow'
+import 'reactflow/dist/style.css'
+import dagre from 'dagre'
+
+import { StatusChip } from '../../../primitives'
+import '../../../shared/ReactFlowTheme.css'
+import { useRouting } from '../../context/RoutingContext'
+import { useNodes, usePtpStatus } from '../../hooks/useNodeApi'
+import type { AvbNode } from '../../types'
+import './NetworkTopologyModal.css'
 
 interface NetworkTopologyModalProps {
-  open: boolean;
-  onClose: () => void;
+  open: boolean
+  onClose: () => void
 }
 
-/**
- * Custom node component for AVB nodes
- */
+// Tokens — MAP semantic colors used in the SVG attributes / inline
+// styles consumed by reactflow. SVG attributes don't resolve CSS
+// custom properties everywhere, so the values are pinned to the
+// same shades --map2-clock-master / --map2-state-live /
+// --map2-alert-* resolve to under the default g100 shell.
+const PTP_GOLD = '#f1c21b'           // == --map2-clock-master / yellow-30
+const ROUTE_BLUE = '#4589ff'         // == --cds-link-primary blue-50
+const ROUTE_FAIL_RED = '#fa4d56'     // == --cds-support-error red-40
+const ROUTE_DIM_GREY = '#6f6f6f'     // == --cds-text-disabled gray-50
+
+function statusToneClass(status: string): string {
+  if (status === 'online') return 'topology-node--ok'
+  if (status === 'degraded') return 'topology-node--warn'
+  return 'topology-node--offline'
+}
+
+function healthToneClass(status?: string): string {
+  if (status === 'critical') return 'topology-node__health--critical'
+  if (status === 'degraded') return 'topology-node__health--warn'
+  return 'topology-node__health--ok'
+}
+
+// Test contract from NetworkTopologyModal.badges.test.tsx: the
+// data-health-color attribute exposes the historical MUI palette
+// label so external assertions stay stable across the Carbon
+// migration. Visual color is now driven by the className.
+function healthColorAttr(status?: string): string {
+  if (status === 'critical') return 'error.main'
+  if (status === 'degraded') return 'warning.main'
+  return 'success.main'
+}
+
 function AvbNodeComponent({ data }: { data: AvbNode & { selected: boolean } }) {
-  const statusColor = data.status === 'online' ? '#4caf50' : data.status === 'degraded' ? '#ff9800' : '#f44336';
-  const isPtpMaster = data.ptp?.is_master === true;
-  const healthColor =
-    data.health?.status === 'critical'
-      ? 'error.main'
-      : data.health?.status === 'degraded'
-        ? 'warning.main'
-        : 'success.main';
+  const isPtpMaster = data.ptp?.is_master === true
 
   return (
-    <Paper
-      elevation={data.selected ? 8 : 3}
-      sx={{
-        p: 2,
-        minWidth: 200,
-        bgcolor: 'background.paper',
-        border: `3px solid ${data.color}`,
-        borderStyle: data.selected ? 'solid' : 'solid',
-        position: 'relative',
-        '&:hover': {
-          boxShadow: 6,
-        },
-      }}
+    <div
+      className={`topology-node ${data.selected ? 'topology-node--selected' : ''}`}
+      style={{ borderColor: data.color }}
     >
-      {/* PTP Master Badge */}
       {isPtpMaster && (
-        <Box
-          sx={{
-            position: 'absolute',
-            top: -10,
-            right: -10,
-            bgcolor: '#ffd700',
-            color: '#000',
-            borderRadius: '50%',
-            width: 24,
-            height: 24,
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            fontSize: 12,
-            fontWeight: 'bold',
-            border: '2px solid rgba(255,255,255,0.85)',
-          }}
-          title="PTP Master"
-        >
+        <div className="topology-node__ptp-master" title="PTP Master">
           M
-        </Box>
+        </div>
       )}
-
-      {/* Node Name */}
-      <Typography variant="subtitle1" fontWeight={600} sx={{ mb: 0.5 }}>
-        {data.name}
-      </Typography>
-
-      {/* Node Type */}
-      <Chip
-        label={data.type.toUpperCase()}
-        size="small"
-        sx={{
-          bgcolor: `${data.color}40`,
-          color: data.color,
-          fontWeight: 600,
-          fontSize: 10,
-          height: 20,
-          mb: 1,
-        }}
-      />
-
-      {/* Status Indicator */}
-      <Stack direction="row" spacing={1} alignItems="center" sx={{ mb: 0.5 }}>
-        <Box
-          sx={{
-            width: 8,
-            height: 8,
-            borderRadius: '50%',
-            bgcolor: statusColor,
-          }}
+      <span className="topology-node__name">{data.name}</span>
+      <span
+        className="topology-node__type"
+        style={{ background: `${data.color}40`, color: data.color }}
+      >
+        {data.type.toUpperCase()}
+      </span>
+      <div className="topology-node__status-row">
+        <span
+          className={`topology-node__status-dot ${statusToneClass(data.status)}`}
+          aria-hidden="true"
         />
-        <Typography variant="caption" color="text.secondary">
-          {data.status}
-        </Typography>
-      </Stack>
-
-      {/* Endpoint Counts */}
-      <Typography variant="caption" color="text.secondary">
+        <span className="topology-node__status-text">{data.status}</span>
+      </div>
+      <span className="topology-node__counts">
         {data.talker_count} talkers · {data.listener_count} listeners
-      </Typography>
-
-      {/* Active Routes */}
+      </span>
       {data.active_routes > 0 && (
-        <Typography variant="caption" color="primary" display="block" sx={{ mt: 0.5 }}>
+        <span className="topology-node__routes">
           {data.active_routes} active route{data.active_routes !== 1 ? 's' : ''}
-        </Typography>
+        </span>
       )}
-
-      {/* PTP Sync Info */}
       {data.ptp && (data.ptp.state === 'master' || data.ptp.state === 'slave') && (
-        <Typography variant="caption" color="success.main" display="block" sx={{ mt: 0.5 }}>
-          PTP {data.ptp.offset_ns}ns offset
-        </Typography>
+        <span className="topology-node__ptp">PTP {data.ptp.offset_ns}ns offset</span>
       )}
-
-      {/* Health Metrics */}
       {data.health && (
-        <Typography
-          variant="caption"
-          color={healthColor}
+        <span
+          className={`topology-node__health ${healthToneClass(data.health.status)}`}
           data-testid={`topology-health-${data.node_id}`}
-          data-health-color={healthColor}
-          display="block"
-          sx={{ mt: 0.5 }}
+          data-health-color={healthColorAttr(data.health.status)}
         >
-          Health: {data.health.status} · CPU {data.health.cpu_usage.toFixed(1)}% · Lat {data.health.latency_ms.toFixed(1)}ms
-        </Typography>
+          Health: {data.health.status} · CPU {data.health.cpu_usage.toFixed(1)}% · Lat{' '}
+          {data.health.latency_ms.toFixed(1)}ms
+        </span>
       )}
-    </Paper>
-  );
+    </div>
+  )
 }
 
-const nodeTypes = {
-  avbNode: AvbNodeComponent,
-};
+const nodeTypes = { avbNode: AvbNodeComponent }
 
-/**
- * Auto-layout nodes using dagre
- */
 function getLayoutedElements(nodes: Node[], edges: Edge[], direction = 'TB') {
-  const dagreGraph = new dagre.graphlib.Graph();
-  dagreGraph.setDefaultEdgeLabel(() => ({}));
-  dagreGraph.setGraph({ rankdir: direction, ranksep: 100, nodesep: 80 });
+  const dagreGraph = new dagre.graphlib.Graph()
+  dagreGraph.setDefaultEdgeLabel(() => ({}))
+  dagreGraph.setGraph({ rankdir: direction, ranksep: 100, nodesep: 80 })
+
+  nodes.forEach((node) => dagreGraph.setNode(node.id, { width: 220, height: 160 }))
+  edges.forEach((edge) => dagreGraph.setEdge(edge.source, edge.target))
+  dagre.layout(dagreGraph)
 
   nodes.forEach((node) => {
-    dagreGraph.setNode(node.id, { width: 220, height: 160 });
-  });
+    const nodeWithPosition = dagreGraph.node(node.id)
+    node.position = { x: nodeWithPosition.x - 110, y: nodeWithPosition.y - 80 }
+  })
 
-  edges.forEach((edge) => {
-    dagreGraph.setEdge(edge.source, edge.target);
-  });
-
-  dagre.layout(dagreGraph);
-
-  nodes.forEach((node) => {
-    const nodeWithPosition = dagreGraph.node(node.id);
-    node.position = {
-      x: nodeWithPosition.x - 110,
-      y: nodeWithPosition.y - 80,
-    };
-  });
-
-  return { nodes, edges };
+  return { nodes, edges }
 }
 
-/**
- * Inner component with ReactFlow context
- */
 function NetworkTopologyContent({ onClose }: { onClose: () => void }) {
-  const { state } = useRouting();
-  const { data: nodesData = [] } = useNodes();
-  const { data: ptpStatus } = usePtpStatus();
-  const { fitView } = useReactFlow();
-  const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null);
+  const { state } = useRouting()
+  const { data: nodesData = [] } = useNodes()
+  const { data: ptpStatus } = usePtpStatus()
+  const { fitView } = useReactFlow()
+  const [selectedNodeId, setSelectedNodeId] = useState<string | null>(null)
 
-  // Convert AVB nodes to ReactFlow nodes
   const { nodes, edges } = useMemo(() => {
     const flowNodes: Node[] = nodesData.map((node) => ({
       id: node.node_id,
       type: 'avbNode',
       data: { ...node, selected: node.node_id === selectedNodeId },
-      position: { x: 0, y: 0 }, // Will be calculated by layout
-    }));
+      position: { x: 0, y: 0 },
+    }))
 
-    const flowEdges: Edge[] = [];
+    const flowEdges: Edge[] = []
 
-    // Add PTP hierarchy edges (master -> other synchronized nodes)
     nodesData.forEach((node) => {
       if (ptpStatus?.master_node_id && ptpStatus.master_node_id !== node.node_id && node.ptp) {
         flowEdges.push({
@@ -239,22 +177,22 @@ function NetworkTopologyContent({ onClose }: { onClose: () => void }) {
           type: 'smoothstep',
           animated: node.ptp.state === 'master' || node.ptp.state === 'slave',
           label: 'PTP',
-          style: { stroke: '#ffd700', strokeWidth: 2 },
-          markerEnd: {
-            type: MarkerType.ArrowClosed,
-            color: '#ffd700',
-          },
-          labelStyle: { fontSize: 10, fontWeight: 600, fill: '#ffd700' },
-        });
+          style: { stroke: PTP_GOLD, strokeWidth: 2 },
+          markerEnd: { type: MarkerType.ArrowClosed, color: PTP_GOLD },
+          labelStyle: { fontSize: 10, fontWeight: 600, fill: PTP_GOLD },
+        })
       }
-    });
+    })
 
-    // Add route edges (cross-node routes)
     Object.values(state.network.crossNodeRoutes).forEach((route) => {
-      const edgeId = `route-${route.route_id}`;
-
-      // Check if edge already exists
+      const edgeId = `route-${route.route_id}`
       if (!flowEdges.find((e) => e.id === edgeId)) {
+        const stroke =
+          route.status === 'active'
+            ? ROUTE_BLUE
+            : route.status === 'failed'
+              ? ROUTE_FAIL_RED
+              : ROUTE_DIM_GREY
         flowEdges.push({
           id: edgeId,
           source: route.source_node_id,
@@ -263,78 +201,75 @@ function NetworkTopologyContent({ onClose }: { onClose: () => void }) {
           animated: route.status === 'active',
           label: `${route.status} · ${route.bandwidth_mbps.toFixed(1)} Mbps`,
           style: {
-            stroke: route.status === 'active' ? '#2196f3' : route.status === 'failed' ? '#f44336' : '#9e9e9e',
+            stroke,
             strokeWidth: Math.min(2 + Math.max(0, Math.round(route.bandwidth_mbps / 10)), 6),
           },
-          markerEnd: {
-            type: MarkerType.ArrowClosed,
-            color: route.status === 'active' ? '#2196f3' : route.status === 'failed' ? '#f44336' : '#9e9e9e',
-          },
-          labelStyle: { fontSize: 10, fill: '#2196f3' },
-        });
+          markerEnd: { type: MarkerType.ArrowClosed, color: stroke },
+          labelStyle: { fontSize: 10, fill: ROUTE_BLUE },
+        })
       }
-    });
+    })
 
-    return getLayoutedElements(flowNodes, flowEdges);
-  }, [nodesData, state.network.crossNodeRoutes, selectedNodeId]);
+    return getLayoutedElements(flowNodes, flowEdges)
+  }, [nodesData, state.network.crossNodeRoutes, selectedNodeId])
 
-  const handleNodeClick = useCallback((_event: React.MouseEvent, node: Node) => {
-    setSelectedNodeId(node.id === selectedNodeId ? null : node.id);
-  }, [selectedNodeId]);
+  const handleNodeClick = useCallback(
+    (_event: React.MouseEvent, node: Node) => {
+      setSelectedNodeId(node.id === selectedNodeId ? null : node.id)
+    },
+    [selectedNodeId],
+  )
 
   const handleFitView = useCallback(() => {
-    fitView({ padding: 0.2, duration: 800 });
-  }, [fitView]);
+    fitView({ padding: 0.2, duration: 800 })
+  }, [fitView])
 
-  const onlineCount = nodesData.filter((n) => n.status === 'online').length;
-  const totalRoutes = Object.keys(state.network.crossNodeRoutes).length;
+  const onlineCount = nodesData.filter((n) => n.status === 'online').length
+  const totalRoutes = Object.keys(state.network.crossNodeRoutes).length
   const ptpRows = useMemo(
     () =>
       [...nodesData].sort((a, b) => {
-        if (a.node_id === selectedNodeId) return -1;
-        if (b.node_id === selectedNodeId) return 1;
-        if (a.ptp?.is_master && !b.ptp?.is_master) return -1;
-        if (!a.ptp?.is_master && b.ptp?.is_master) return 1;
-        return a.name.localeCompare(b.name);
+        if (a.node_id === selectedNodeId) return -1
+        if (b.node_id === selectedNodeId) return 1
+        if (a.ptp?.is_master && !b.ptp?.is_master) return -1
+        if (!a.ptp?.is_master && b.ptp?.is_master) return 1
+        return a.name.localeCompare(b.name)
       }),
-    [nodesData, selectedNodeId]
-  );
+    [nodesData, selectedNodeId],
+  )
+
+  const onlineTone = onlineCount === nodesData.length ? 'ok' : 'caution'
 
   return (
     <>
-      <DialogTitle>
-        <Stack direction="row" alignItems="center" justifyContent="space-between">
-          <Box>
-            <Typography variant="h6" component="span">
-              Network Topology
-            </Typography>
-            <Stack direction="row" spacing={1} sx={{ mt: 0.5 }}>
-              <Chip
-                label={`${onlineCount}/${nodesData.length} nodes online`}
-                size="small"
-                color={onlineCount === nodesData.length ? 'success' : 'warning'}
-              />
-              {totalRoutes > 0 && (
-                <Chip
-                  label={`${totalRoutes} cross-node route${totalRoutes !== 1 ? 's' : ''}`}
-                  size="small"
-                  color="primary"
-                />
-              )}
-              {ptpStatus?.synchronized && (
-                <Chip label="PTP Sync Active" size="small" color="info" />
-              )}
-            </Stack>
-          </Box>
-          <IconButton onClick={onClose} size="small">
-            <Close size={16} />
-          </IconButton>
-        </Stack>
-      </DialogTitle>
+      <ModalHeader
+        closeModal={onClose}
+        iconDescription="Close"
+        className="topology-modal__header"
+      >
+        <span className="topology-modal__title">Network Topology</span>
+        <div className="topology-modal__chip-row">
+          <StatusChip
+            tone={onlineTone}
+            label={`${onlineCount}/${nodesData.length} nodes online`}
+            size="sm"
+          />
+          {totalRoutes > 0 && (
+            <StatusChip
+              tone="info"
+              label={`${totalRoutes} cross-node route${totalRoutes !== 1 ? 's' : ''}`}
+              size="sm"
+            />
+          )}
+          {ptpStatus?.synchronized && (
+            <StatusChip tone="info" label="PTP Sync Active" size="sm" />
+          )}
+        </div>
+      </ModalHeader>
 
-      <DialogContent sx={{ p: 0, height: '70vh', bgcolor: 'background.default' }}>
-        <Box sx={{ display: 'flex', flexDirection: { xs: 'column', lg: 'row' }, height: '100%' }}>
-          <Box sx={{ flex: 1, minHeight: 0 }}>
+      <ModalBody className="topology-modal__body">
+        <div className="topology-modal__layout">
+          <div className="topology-modal__canvas">
             <ReactFlow
               nodes={nodes}
               edges={edges}
@@ -349,176 +284,144 @@ function NetworkTopologyContent({ onClose }: { onClose: () => void }) {
               <Controls />
               <MiniMap
                 nodeColor={(node) => {
-                  const avbNode = nodesData.find((n) => n.node_id === node.id);
-                  return avbNode?.color || '#1976d2';
+                  const avbNode = nodesData.find((n) => n.node_id === node.id)
+                  return avbNode?.color || ROUTE_BLUE
                 }}
                 nodeBorderRadius={4}
                 maskColor="rgba(2, 6, 23, 0.55)"
                 style={{ backgroundColor: '#0b1220' }}
               />
               <Panel position="top-right">
-                <Tooltip title="Fit to view">
-                  <IconButton
+                <Tooltip label="Fit to view" align="left">
+                  <button
+                    type="button"
                     onClick={handleFitView}
-                    sx={{
-                      bgcolor: 'background.paper',
-                      '&:hover': { bgcolor: 'background.paper' },
-                      boxShadow: 2,
-                    }}
-                    size="small"
+                    className="topology-modal__fit-button"
+                    aria-label="Fit to view"
                   >
                     <FitToScreen size={16} />
-                  </IconButton>
+                  </button>
                 </Tooltip>
               </Panel>
               <Panel position="bottom-left">
-                <Paper sx={{ p: 1.5, maxWidth: 300 }}>
-                  <Typography variant="caption" fontWeight={600} display="block" gutterBottom>
-                    Legend
-                  </Typography>
-                  <Stack spacing={0.5}>
-                    <Stack direction="row" spacing={1} alignItems="center">
-                      <Box sx={{ width: 20, height: 2, bgcolor: '#ffd700' }} />
-                      <Typography variant="caption">PTP Sync (gold)</Typography>
-                    </Stack>
-                    <Stack direction="row" spacing={1} alignItems="center">
-                      <Box sx={{ width: 20, height: 2, bgcolor: '#2196f3' }} />
-                      <Typography variant="caption">Active Routes (blue)</Typography>
-                    </Stack>
-                    <Stack direction="row" spacing={1} alignItems="center">
-                      <Box
-                        sx={{
-                          width: 16,
-                          height: 16,
-                          bgcolor: '#ffd700',
-                          color: '#000',
-                          borderRadius: '50%',
-                          fontSize: 10,
-                          display: 'flex',
-                          alignItems: 'center',
-                          justifyContent: 'center',
-                          fontWeight: 'bold',
-                        }}
-                      >
-                        M
-                      </Box>
-                      <Typography variant="caption">PTP Master</Typography>
-                    </Stack>
-                  </Stack>
-                </Paper>
+                <div className="topology-modal__legend">
+                  <span className="topology-modal__legend-title">Legend</span>
+                  <div className="topology-modal__legend-row">
+                    <span
+                      className="topology-modal__legend-line"
+                      style={{ background: PTP_GOLD }}
+                    />
+                    <span>PTP Sync (gold)</span>
+                  </div>
+                  <div className="topology-modal__legend-row">
+                    <span
+                      className="topology-modal__legend-line"
+                      style={{ background: ROUTE_BLUE }}
+                    />
+                    <span>Active Routes (blue)</span>
+                  </div>
+                  <div className="topology-modal__legend-row">
+                    <span
+                      className="topology-modal__legend-master"
+                      style={{ background: PTP_GOLD }}
+                    >
+                      M
+                    </span>
+                    <span>PTP Master</span>
+                  </div>
+                </div>
               </Panel>
             </ReactFlow>
-          </Box>
+          </div>
 
-          <Box
-            sx={{
-              width: { xs: '100%', lg: 360 },
-              borderTop: { xs: '1px solid rgba(255,255,255,0.08)', lg: 'none' },
-              borderLeft: { xs: 'none', lg: '1px solid rgba(255,255,255,0.08)' },
-              p: 1.5,
-              overflowY: 'auto',
-              background: 'linear-gradient(180deg, rgba(2, 6, 23, 0.92), rgba(15, 23, 42, 0.92))',
-            }}
-          >
-            <Paper sx={{ p: 1.5, mb: 1.5 }}>
-              <Typography variant="subtitle2" fontWeight={700} gutterBottom>
-                PTP Comparison
-              </Typography>
-              <Typography variant="caption" color="text.secondary">
-                Grandmaster {ptpStatus?.master_node_id || 'unknown'} · synchronized nodes {ptpStatus?.synced_nodes ?? 0}/{ptpStatus?.total_nodes ?? nodesData.length}
-              </Typography>
-            </Paper>
+          <aside className="topology-modal__side">
+            <section className="topology-modal__panel">
+              <span className="topology-modal__panel-title">PTP Comparison</span>
+              <span className="topology-modal__panel-caption">
+                Grandmaster {ptpStatus?.master_node_id || 'unknown'} · synchronized nodes{' '}
+                {ptpStatus?.synced_nodes ?? 0}/{ptpStatus?.total_nodes ?? nodesData.length}
+              </span>
+            </section>
 
-            <Paper sx={{ p: 1.25 }}>
-              <Box
-                sx={{
-                  display: 'grid',
-                  gridTemplateColumns: '1.6fr 0.9fr 0.8fr 1fr',
-                  gap: 1,
-                  px: 0.5,
-                  pb: 1,
-                  borderBottom: '1px solid rgba(148,163,184,0.16)',
-                }}
-              >
-                <Typography variant="caption" color="text.secondary">Node</Typography>
-                <Typography variant="caption" color="text.secondary">State</Typography>
-                <Typography variant="caption" color="text.secondary">Domain</Typography>
-                <Typography variant="caption" color="text.secondary">Offset</Typography>
-              </Box>
+            <section className="topology-modal__panel">
+              <div className="topology-modal__grid topology-modal__grid--header">
+                <span className="topology-modal__grid-cell">Node</span>
+                <span className="topology-modal__grid-cell">State</span>
+                <span className="topology-modal__grid-cell">Domain</span>
+                <span className="topology-modal__grid-cell">Offset</span>
+              </div>
 
-              <Stack spacing={0.75} sx={{ mt: 1 }}>
+              <div className="topology-modal__rows">
                 {ptpRows.map((node) => {
-                  const offset = typeof node.ptp?.offset_ns === 'number' ? `${node.ptp.offset_ns} ns` : '—';
-                  const stateLabel = node.ptp?.state || 'unknown';
-                  const isMaster = node.ptp?.is_master === true || ptpStatus?.master_node_id === node.node_id;
+                  const offset =
+                    typeof node.ptp?.offset_ns === 'number'
+                      ? `${node.ptp.offset_ns} ns`
+                      : '—'
+                  const stateLabel = node.ptp?.state || 'unknown'
+                  const isMaster =
+                    node.ptp?.is_master === true ||
+                    ptpStatus?.master_node_id === node.node_id
 
                   return (
-                    <Box
+                    <div
                       key={node.node_id}
-                      sx={{
-                        display: 'grid',
-                        gridTemplateColumns: '1.6fr 0.9fr 0.8fr 1fr',
-                        gap: 1,
-                        alignItems: 'center',
-                        px: 0.5,
-                        py: 0.75,
-                        borderRadius: 1,
-                        bgcolor: node.node_id === selectedNodeId ? 'rgba(59,130,246,0.14)' : 'transparent',
-                      }}
+                      className={`topology-modal__grid topology-modal__grid--row ${node.node_id === selectedNodeId ? 'topology-modal__grid--selected' : ''}`}
                     >
-                      <Box sx={{ minWidth: 0 }}>
-                        <Typography variant="body2" fontWeight={600} noWrap>
-                          {node.name}
-                        </Typography>
-                        <Stack direction="row" spacing={0.5} sx={{ mt: 0.25 }}>
-                          <Chip
+                      <div className="topology-modal__node-cell">
+                        <span className="topology-modal__node-name">{node.name}</span>
+                        <div className="topology-modal__node-tags">
+                          <StatusChip
+                            tone="neutral"
                             label={node.status}
-                            size="small"
-                            sx={{ height: 18, fontSize: 10, textTransform: 'capitalize' }}
+                            size="sm"
                           />
                           {isMaster && (
-                            <Chip label="GM" size="small" color="warning" sx={{ height: 18, fontSize: 10 }} />
+                            <StatusChip tone="caution" label="GM" size="sm" />
                           )}
-                        </Stack>
-                      </Box>
-                      <Typography variant="caption" sx={{ textTransform: 'capitalize' }}>
+                        </div>
+                      </div>
+                      <span className="topology-modal__grid-cell topology-modal__capitalize">
                         {stateLabel}
-                      </Typography>
-                      <Typography variant="caption">
+                      </span>
+                      <span className="topology-modal__grid-cell">
                         {node.ptp?.domain ?? '—'}
-                      </Typography>
-                      <Typography variant="caption" color={isMaster ? 'warning.light' : 'text.secondary'}>
+                      </span>
+                      <span
+                        className={`topology-modal__grid-cell ${isMaster ? 'topology-modal__offset--master' : ''}`}
+                      >
                         {offset}
-                      </Typography>
-                    </Box>
-                  );
+                      </span>
+                    </div>
+                  )
                 })}
-              </Stack>
-            </Paper>
-          </Box>
-        </Box>
-      </DialogContent>
+              </div>
+            </section>
+          </aside>
+        </div>
+      </ModalBody>
 
-      <DialogActions>
-        <Button onClick={onClose} variant="contained">
+      <ModalFooter>
+        <Button kind="primary" onClick={onClose} renderIcon={Close}>
           Close
         </Button>
-      </DialogActions>
+      </ModalFooter>
     </>
-  );
+  )
 }
 
-/**
- * Main modal component with ReactFlow provider
- */
 export function NetworkTopologyModal({ open, onClose }: NetworkTopologyModalProps) {
   return (
-    <Dialog open={open} onClose={onClose} maxWidth="xl" fullWidth>
+    <ComposedModal
+      open={open}
+      onClose={onClose}
+      size="lg"
+      className="topology-modal"
+    >
       <ReactFlowProvider>
         <NetworkTopologyContent onClose={onClose} />
       </ReactFlowProvider>
-    </Dialog>
-  );
+    </ComposedModal>
+  )
 }
 
-export default NetworkTopologyModal;
+export default NetworkTopologyModal
