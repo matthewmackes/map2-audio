@@ -252,7 +252,6 @@ import {
   FLOW_CARD_CLIP_HOLD_MS,
   FLOW_CARD_CLIP_LED_COLOR,
   FLOW_CARD_LED_COLOR,
-  FLOW_CARD_SLOT_COLORS,
   getFlowCardPaletteEntry,
   resolveFlowEdgeClipTimestamp,
   resolveFlowClipTimestamp,
@@ -266,15 +265,9 @@ import {
   hasCommittedAuthorityLivePaths,
   hasJuceGridLiveChainMismatch,
 } from '../components/SnapshotEditor/snapshotEditorLiveChains'
-import {
-  createDefaultJuceGridFlowSlots,
-  createDefaultJuceGridRouting,
-  normalizeJuceGridStateSources,
-} from '../components/SnapshotEditor/snapshotEditorFlowState'
 import type { JuceGridRoutingState } from '../components/SnapshotEditor/snapshotEditorFlowState'
 import {
   createBlankSnapshotEditorAddEffectDraft,
-  resolveSnapshotCreateDraft,
 } from '../components/SnapshotEditor/snapshotEditorEntryDraft'
 import {
   buildSnapshotGoLiveDiff,
@@ -370,6 +363,16 @@ import {
 } from './snapshotEditor/useJuceGridPersistedState'
 import { useSnapshotEditorCadences } from './snapshotEditor/useSnapshotEditorCadences'
 import { FEATURED_NATIVE_BROWSER_GROUPS } from './snapshotEditor/featuredNativeBrowserGroups'
+import {
+  createBlankSnapshotEditorDraft,
+  createDefaultFlows,
+  createDefaultRouting,
+  FLOW_SLOT_NORMALIZATION_OPTIONS,
+  loadInitialJuceGridState,
+  normalizeRuntimeGridState,
+  parseStoredGridJson,
+  SLOT_COLORS,
+} from './snapshotEditor/snapshotEditorBootstrap'
 
 const API_BASE = (() => {
   const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
@@ -420,7 +423,7 @@ const API_BASE = (() => {
 // Constants
 // ============================================================================
 
-const SLOT_COLORS = FLOW_CARD_SLOT_COLORS
+// SLOT_COLORS lives in ./snapshotEditor/snapshotEditorBootstrap (T2467 follow-up).
 
 // sanitizeTraceableNamePart / formatCompactTimestamp /
 // buildTraceableChannelChainName / getRoutingFocusFlowSummary live in
@@ -435,66 +438,10 @@ const SLOT_COLORS = FLOW_CARD_SLOT_COLORS
 // Helper Functions
 // ============================================================================
 
-function createDefaultFlows(count: number = DEFAULT_FLOW_COUNT): FlowSlot[] {
-  return createDefaultJuceGridFlowSlots(SLOT_COLORS, count)
-}
-
-function createDefaultRouting(): RoutingConfig {
-  return createDefaultJuceGridRouting()
-}
-
-const FLOW_SLOT_NORMALIZATION_OPTIONS = {
-  palette: SLOT_COLORS,
-  defaultCount: DEFAULT_FLOW_COUNT,
-  maxFlows: MAX_FLOWS,
-}
-
-function createBlankSnapshotEditorDraft(): SnapshotDraftData {
-  return resolveSnapshotCreateDraft(
-    {
-      flowSlots: [],
-      routing: createDefaultRouting(),
-      activeFlowIndex: 0,
-      chains: {},
-    },
-    true,
-    FLOW_SLOT_NORMALIZATION_OPTIONS,
-  )
-}
-
-function parseStoredGridJson(...keys: string[]): unknown {
-  for (const key of keys) {
-    const storedValue = localStorage.getItem(key)
-    if (!storedValue) {
-      continue
-    }
-    try {
-      return JSON.parse(storedValue)
-    } catch {}
-  }
-  return null
-}
-
-function normalizeRuntimeGridState(
-  flowSlotSource: unknown,
-  routingSource: unknown,
-  activeIndexSource: unknown,
-): { flowSlots: FlowSlot[]; routing: RoutingConfig; activeFlowIndex: number } {
-  return normalizeJuceGridStateSources(
-    flowSlotSource,
-    routingSource,
-    activeIndexSource,
-    FLOW_SLOT_NORMALIZATION_OPTIONS,
-  )
-}
-
-function loadInitialJuceGridState(): { flowSlots: FlowSlot[]; routing: RoutingConfig; activeFlowIndex: number } {
-  return normalizeRuntimeGridState(
-    parseStoredGridJson('map2_juce_grid_flows_v2', 'map2_grid_flows_v2'),
-    parseStoredGridJson('map2_juce_grid_routing_v2', 'map2_grid_routing_v2'),
-    localStorage.getItem('map2_juce_grid_active_v2') ?? localStorage.getItem('map2_grid_active_v2'),
-  )
-}
+// createDefaultFlows / createDefaultRouting / FLOW_SLOT_NORMALIZATION_OPTIONS /
+// createBlankSnapshotEditorDraft / parseStoredGridJson / normalizeRuntimeGridState /
+// loadInitialJuceGridState live in
+// ./snapshotEditor/snapshotEditorBootstrap (T2467 follow-up).
 
 // loadInitialPluginPersistence + the JUCE_GRID_* localStorage
 // write-effect blocks live in
