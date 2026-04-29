@@ -373,14 +373,9 @@ import {
   parseStoredGridJson,
   SLOT_COLORS,
 } from './snapshotEditor/snapshotEditorBootstrap'
+import { API_BASE } from './snapshotEditor/snapshotEditorApi'
 
-const API_BASE = (() => {
-  const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
-  const port = window.location.port
-  if (isLocalhost) return '/api'
-  if (port === '' || port === '80' || port === '8080') return '/api'
-  return `http://${window.location.hostname}:8080/api`
-})()
+// API_BASE lives in ./snapshotEditor/snapshotEditorApi (T2467 follow-up).
 
 // NOISE_GATE_*_CONFIG_KEY / SNAPSHOT_DEFAULT_*_CONFIG_KEY /
 // LIVE_CHANGES_LEAVE_MESSAGE live in
