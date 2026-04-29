@@ -55,3 +55,71 @@
   align-items: center;
   gap: var(--cds-spacing-02, 0.25rem);
 }
+
+/* Replaces MUI Typography variants with Carbon-token-aligned text
+ * styles. Caption ~ helper-text-01; body ~ body-compact-01;
+ * subtitle ~ body-compact-02 + 600 weight; title ~ heading-03. */
+.topbar__title {
+  display: block;
+  font-size: var(--cds-heading-03-font-size, 1.25rem);
+  font-weight: 600;
+  line-height: 1.2;
+  color: var(--cds-text-primary, #f4f4f4);
+  min-width: 180px;
+}
+
+@media (max-width: 600px) {
+  .topbar__title {
+    font-size: 1rem;
+    width: 100%;
+    min-width: 0;
+  }
+}
+
+.topbar__subtitle {
+  display: block;
+  font-size: var(--cds-body-compact-01-font-size, 0.875rem);
+  font-weight: 600;
+  color: var(--cds-text-primary, #f4f4f4);
+}
+
+.topbar__body {
+  display: block;
+  font-size: var(--cds-body-compact-01-font-size, 0.875rem);
+  color: var(--cds-text-primary, #f4f4f4);
+}
+
+.topbar__body--disabled {
+  color: var(--cds-text-helper, #8d8d8d);
+}
+
+.topbar__caption {
+  display: block;
+  font-size: var(--cds-helper-text-01-font-size, 0.75rem);
+  line-height: 1.4;
+  color: var(--cds-text-primary, #f4f4f4);
+}
+
+.topbar__caption--secondary {
+  color: var(--cds-text-secondary, #c6c6c6);
+}
+
+.topbar__caption--disabled {
+  color: var(--cds-text-helper, #8d8d8d);
+}
+
+.topbar__caption--warning {
+  color: var(--map2-alert-advisory, #f1c21b);
+}
+
+.topbar__caption--error {
+  color: var(--map2-alert-critical, #fa4d56);
+}
+
+.topbar__caption--primary {
+  color: var(--cds-text-primary, #f4f4f4);
+}
+
+.topbar__caption--bold {
+  font-weight: 600;
+}

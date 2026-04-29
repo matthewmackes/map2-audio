@@ -19,7 +19,6 @@ import {
   Undo,
 } from '@carbon/icons-react';
 import {
-  Typography,
   TextField,
   InputAdornment,
   Button,
@@ -2093,18 +2092,9 @@ export function TopBar() {
       {/* Controls - Bottom Row */}
       <div className="topbar__toolbar">
         {/* Title */}
-        <Typography
-          variant="h6"
-          sx={{
-            fontWeight: 600,
-            minWidth: { xs: 0, md: 180 },
-            width: { xs: '100%', md: 'auto' },
-            fontSize: { xs: 16, sm: 18, md: 20 },
-            lineHeight: 1.2,
-          }}
-        >
+        <span className="topbar__title">
           AVB Routing Matrix
-        </Typography>
+        </span>
 
         {/* Search */}
         <TextField
@@ -2491,9 +2481,9 @@ export function TopBar() {
             gap: 1.5,
           }}
         >
-          <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+          <span className="topbar__subtitle">
             Scene Management
-          </Typography>
+          </span>
 
           <TextField
             size="small"
@@ -2516,13 +2506,12 @@ export function TopBar() {
           />
 
           {sceneDuplicateHintText && (
-            <Typography
-              variant="caption"
-              color="warning.main"
+            <span
+              className="topbar__caption topbar__caption--warning"
               data-testid="topbar-scene-duplicate-hint"
             >
               {sceneDuplicateHintText}
-            </Typography>
+            </span>
           )}
 
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 1 }}>
@@ -2553,9 +2542,9 @@ export function TopBar() {
             inputProps={{ 'data-testid': 'topbar-scene-search-input' }}
           />
 
-          <Typography variant="caption" color="text.secondary" data-testid="topbar-scene-search-summary">
+          <span className="topbar__caption topbar__caption--secondary" data-testid="topbar-scene-search-summary">
             {filteredSceneSummary}
-          </Typography>
+          </span>
 
           <FormControl size="small">
             <InputLabel id="scene-action-select-label">Saved Scene</InputLabel>
@@ -2586,15 +2575,14 @@ export function TopBar() {
             </Select>
           </FormControl>
 
-          <Typography
-            variant="caption"
-            color="text.secondary"
+          <span
+            className="topbar__caption topbar__caption--secondary"
             data-testid="topbar-scene-selected-summary"
           >
             {selectedScene
               ? `Selected: ${selectedScene.name} (${selectedScene.routes.length} routes)`
               : 'Select a saved scene to recall or delete.'}
-          </Typography>
+          </span>
 
           <TextField
             size="small"
@@ -2636,21 +2624,19 @@ export function TopBar() {
             Apply Metadata
           </Button>
 
-          <Typography
-            variant="caption"
-            color="text.secondary"
+          <span
+            className="topbar__caption topbar__caption--secondary"
             data-testid="topbar-scene-impact-summary"
           >
             {recallImpactSummary}
-          </Typography>
+          </span>
 
-          <Typography
-            variant="caption"
-            color="text.secondary"
+          <span
+            className="topbar__caption topbar__caption--secondary"
             data-testid="topbar-scene-impact-routes"
           >
             {recallImpactRoutes}
-          </Typography>
+          </span>
 
           <Button
             size="small"
@@ -2665,26 +2651,25 @@ export function TopBar() {
           {sceneImpactExpanded && (
             <Box sx={{ border: '1px solid', borderColor: 'divider', borderRadius: 1, p: 1, display: 'flex', flexDirection: 'column', gap: 0.75 }} data-testid="topbar-scene-impact-details">
               {visibleRecallImpactEntries.length === 0 ? (
-                <Typography variant="caption" color="text.secondary">
+                <span className="topbar__caption topbar__caption--secondary">
                   No impact entries to display.
-                </Typography>
+                </span>
               ) : (
                 visibleRecallImpactEntries.map((entry, index) => (
-                  <Typography
+                  <span
                     key={`${entry.kind}-${entry.route.id}-${index}`}
-                    variant="caption"
-                    color="text.secondary"
+                    className="topbar__caption topbar__caption--secondary"
                     data-testid="topbar-scene-impact-entry"
                   >
                     {entry.kind}: {renderImpactRouteLabel(entry.route)}
-                  </Typography>
+                  </span>
                 ))
               )}
 
               {recallImpactHasMore && (
-                <Typography variant="caption" color="warning.main" data-testid="topbar-scene-impact-truncation">
+                <span className="topbar__caption topbar__caption--warning" data-testid="topbar-scene-impact-truncation">
                   Showing {visibleRecallImpactEntries.length} of {recallImpactEntries.length} impact entries.
-                </Typography>
+                </span>
               )}
 
               <Box sx={{ display: 'flex', gap: 1 }}>
@@ -2702,13 +2687,12 @@ export function TopBar() {
             </Box>
           )}
 
-          <Typography
-            variant="caption"
-            color={pendingSceneActionMatchesSelection ? 'warning.main' : 'text.secondary'}
+          <span
+            className={`topbar__caption ${pendingSceneActionMatchesSelection ? 'topbar__caption--warning' : 'topbar__caption--secondary'}`}
             data-testid="topbar-scene-impact-text"
           >
             {sceneImpactText}
-          </Typography>
+          </span>
 
           <hr className="topbar__divider" />
 
@@ -2716,9 +2700,9 @@ export function TopBar() {
             sx={{ display: 'flex', flexDirection: 'column', gap: 0.75 }}
             data-testid="topbar-scene-audit-list"
           >
-            <Typography variant="caption" color="text.secondary">
+            <span className="topbar__caption topbar__caption--secondary">
               Recent Scene Operations
-            </Typography>
+            </span>
 
             <TextField
               size="small"
@@ -2815,14 +2799,14 @@ export function TopBar() {
               </button>
             </Box>
 
-            <Typography variant="caption" color="text.secondary" data-testid="topbar-scene-audit-summary">
+            <span className="topbar__caption topbar__caption--secondary" data-testid="topbar-scene-audit-summary">
               {sceneAuditSummary}
-            </Typography>
+            </span>
 
             {visibleSceneAuditEntries.length === 0 ? (
-              <Typography variant="caption" color="text.disabled">
+              <span className="topbar__caption topbar__caption--disabled">
                 No scene operations match current audit filters.
-              </Typography>
+              </span>
             ) : (
               visibleSceneAuditEntries.map((entry) => (
                 <Box
@@ -2830,9 +2814,9 @@ export function TopBar() {
                   sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 1 }}
                   data-testid="topbar-scene-audit-entry"
                 >
-                  <Typography variant="caption" color="text.secondary" sx={{ flex: 1 }}>
+                  <span className="topbar__caption topbar__caption--secondary" style={{ flex: 1 }}>
                     {entry.diff_summary}
-                  </Typography>
+                  </span>
                   <span data-testid="topbar-scene-audit-outcome">
                     <StatusChip
                       tone={
@@ -2902,9 +2886,9 @@ export function TopBar() {
             gap: 1.5,
           }}
         >
-          <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+          <span className="topbar__subtitle">
             Endpoint Filters
-          </Typography>
+          </span>
 
           <FormGroup>
             <FormControlLabel
@@ -2941,9 +2925,9 @@ export function TopBar() {
 
           <hr className="topbar__divider" />
 
-          <Typography variant="caption" color="text.secondary">
+          <span className="topbar__caption topbar__caption--secondary">
             Device types
-          </Typography>
+          </span>
           <FormGroup>
             {FILTER_DEVICE_TYPE_OPTIONS.map((deviceType) => (
               <FormControlLabel
@@ -2962,13 +2946,13 @@ export function TopBar() {
 
           <hr className="topbar__divider" />
 
-          <Typography variant="caption" color="text.secondary">
+          <span className="topbar__caption topbar__caption--secondary">
             Sample rates
-          </Typography>
+          </span>
           {sampleRateOptions.length === 0 ? (
-            <Typography variant="body2" color="text.disabled">
+            <span className="topbar__body topbar__body--disabled">
               No sample rates discovered
-            </Typography>
+            </span>
           ) : (
             <FormGroup>
               {sampleRateOptions.map((sampleRate) => (
@@ -2989,13 +2973,13 @@ export function TopBar() {
 
           <hr className="topbar__divider" />
 
-          <Typography variant="caption" color="text.secondary">
+          <span className="topbar__caption topbar__caption--secondary">
             Channel counts
-          </Typography>
+          </span>
           {channelCountOptions.length === 0 ? (
-            <Typography variant="body2" color="text.disabled">
+            <span className="topbar__body topbar__body--disabled">
               No channel counts discovered
-            </Typography>
+            </span>
           ) : (
             <FormGroup>
               {channelCountOptions.map((channelCount) => (
@@ -3016,9 +3000,9 @@ export function TopBar() {
 
           <hr className="topbar__divider" />
 
-          <Typography variant="caption" color="text.secondary">
+          <span className="topbar__caption topbar__caption--secondary">
             Direction
-          </Typography>
+          </span>
           <FormGroup>
             {FILTER_DIRECTION_OPTIONS.map((direction) => (
               <FormControlLabel
@@ -3037,9 +3021,9 @@ export function TopBar() {
 
           <hr className="topbar__divider" />
 
-          <Typography variant="caption" color="text.secondary">
+          <span className="topbar__caption topbar__caption--secondary">
             Health quality
-          </Typography>
+          </span>
           <FormGroup>
             {FILTER_QUALITY_OPTIONS.map((quality) => (
               <FormControlLabel
@@ -3058,13 +3042,13 @@ export function TopBar() {
 
           <hr className="topbar__divider" />
 
-          <Typography variant="caption" color="text.secondary">
+          <span className="topbar__caption topbar__caption--secondary">
             Hosts
-          </Typography>
+          </span>
           {hostOptions.length === 0 ? (
-            <Typography variant="body2" color="text.disabled">
+            <span className="topbar__body topbar__body--disabled">
               No hosts discovered
-            </Typography>
+            </span>
           ) : (
             <FormGroup>
               {hostOptions.map((hostId) => (
@@ -3085,13 +3069,13 @@ export function TopBar() {
 
           <hr className="topbar__divider" />
 
-          <Typography variant="caption" color="text.secondary">
+          <span className="topbar__caption topbar__caption--secondary">
             Groups
-          </Typography>
+          </span>
           {groupOptions.length === 0 ? (
-            <Typography variant="body2" color="text.disabled">
+            <span className="topbar__body topbar__body--disabled">
               No groups discovered
-            </Typography>
+            </span>
           ) : (
             <FormGroup>
               {groupOptions.map((group) => (
@@ -3156,9 +3140,9 @@ export function TopBar() {
             gap: 1.5,
           }}
         >
-          <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
+          <span className="topbar__subtitle">
             Scene Diff Controls
-          </Typography>
+          </span>
 
           <FormControl size="small">
             <InputLabel id="scene-diff-baseline-label">Baseline Scene</InputLabel>
@@ -3270,13 +3254,12 @@ export function TopBar() {
             >
               Use Default Upsert
             </Button>
-            <Typography
-              variant="caption"
-              color="text.secondary"
+            <span
+              className="topbar__caption topbar__caption--secondary"
               data-testid="topbar-scene-diff-preset-conflict-policy-advisory"
             >
               Advisory default used for import-preview conflict rows.
-            </Typography>
+            </span>
           </Box>
 
           <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 1 }}>
@@ -3288,9 +3271,9 @@ export function TopBar() {
             >
               Save Preset
             </Button>
-            <Typography variant="caption" color="text.secondary" data-testid="topbar-scene-diff-preset-summary">
+            <span className="topbar__caption topbar__caption--secondary" data-testid="topbar-scene-diff-preset-summary">
               {sceneDiffPresetSummary}
-            </Typography>
+            </span>
           </Box>
 
           <FormControl size="small" disabled={sceneDiffPresets.length === 0}>
@@ -3322,13 +3305,12 @@ export function TopBar() {
               sx={{ display: 'flex', flexDirection: 'column', gap: 0.75 }}
               data-testid="topbar-scene-diff-preset-policy-summary"
             >
-              <Typography
-                variant="caption"
-                color="text.secondary"
+              <span
+                className="topbar__caption topbar__caption--secondary"
                 data-testid="topbar-scene-diff-preset-policy-summary-label"
               >
                 Saved preset conflict policies
-              </Typography>
+              </span>
               <Box sx={{ display: 'flex', gap: 0.75, flexWrap: 'wrap' }}>
                 {sceneDiffPresets.map((preset) => {
                   const policyLabel = formatConflictResolutionModeLabel(preset.preferred_conflict_action);
@@ -3347,16 +3329,14 @@ export function TopBar() {
                   );
                 })}
               </Box>
-              <Typography
-                variant="caption"
-                color="text.secondary"
+              <span
+                className="topbar__caption topbar__caption--secondary"
                 data-testid="topbar-scene-diff-selected-preset-policy"
               >
                 {`Selected preset policy: ${sceneDiffSelectedPresetPolicyLabel}`}
-              </Typography>
-              <Typography
-                variant="caption"
-                color={sceneDiffSelectedPresetDraftPolicyDiffers ? 'warning.main' : 'text.secondary'}
+              </span>
+              <span
+                className={`topbar__caption ${sceneDiffSelectedPresetDraftPolicyDiffers ? 'topbar__caption--warning' : 'topbar__caption--secondary'}`}
                 data-testid="topbar-scene-diff-selected-preset-policy-sync"
               >
                 {sceneDiffSelectedPreset
@@ -3364,7 +3344,7 @@ export function TopBar() {
                     ? `Draft conflict policy differs (draft: ${sceneDiffDraftPolicyLabel}). Save Preset to persist.`
                     : 'Draft conflict policy matches persisted preset metadata.'
                   : 'No preset selected. Draft conflict policy applies to next save/import defaults.'}
-              </Typography>
+              </span>
             </Box>
           ) : null}
 
@@ -3550,42 +3530,38 @@ export function TopBar() {
                 </Box>
               )}
 
-              <Typography
-                variant="caption"
-                color="text.secondary"
+              <span
+                className="topbar__caption topbar__caption--secondary"
                 data-testid="topbar-scene-diff-import-preview-schema"
               >
                 Schema: {sceneDiffPresetImportPreview.schema_version === null
                   ? 'legacy-array'
                   : `v${sceneDiffPresetImportPreview.schema_version}`}
-              </Typography>
+              </span>
               {sceneDiffPresetImportPreview.compatibility_hint && (
-                <Typography
-                  variant="caption"
-                  color="text.secondary"
+                <span
+                  className="topbar__caption topbar__caption--secondary"
                   data-testid="topbar-scene-diff-import-preview-compatibility-hint"
                 >
                   {sceneDiffPresetImportPreview.compatibility_hint}
-                </Typography>
+                </span>
               )}
               {sceneDiffPresetImportPreview.preferred_conflict_action && (
-                <Typography
-                  variant="caption"
-                  color="text.secondary"
+                <span
+                  className="topbar__caption topbar__caption--secondary"
                   data-testid="topbar-scene-diff-import-preview-conflict-policy-hint"
                 >
                   Conflict policy hint: {sceneDiffPresetImportPreview.preferred_conflict_action} (advisory)
-                </Typography>
+                </span>
               )}
 
               <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 1 }}>
-                <Typography
-                  variant="caption"
-                  color="text.secondary"
+                <span
+                  className="topbar__caption topbar__caption--secondary"
                   data-testid="topbar-scene-diff-import-preview-page-summary"
                 >
                   Showing {sceneDiffImportPreviewRangeStart}-{sceneDiffImportPreviewRangeEnd} of {sceneDiffImportPreviewVisibleRowsByGroup.length} visible rows ({sceneDiffImportPreviewRows.length} total)
-                </Typography>
+                </span>
                 <Box sx={{ display: 'flex', gap: 0.75 }}>
                   <Button
                     size="small"
@@ -3618,10 +3594,9 @@ export function TopBar() {
                   return (
                     <React.Fragment key={`${row.name}-${sceneDiffImportPreviewSliceStart + index}`}>
                       {showGroupHeader && (
-                        <Typography
-                          variant="caption"
-                          color="text.secondary"
-                          sx={{ fontWeight: 600, pt: index === 0 ? 0 : 0.5 }}
+                        <span
+                          className="topbar__caption topbar__caption--secondary topbar__caption--bold"
+                          style={{ paddingTop: index === 0 ? 0 : 4 }}
                           data-testid="topbar-scene-diff-import-preview-group-heading"
                         >
                           {row.status === 'conflict'
@@ -3629,7 +3604,7 @@ export function TopBar() {
                             : row.status === 'accepted'
                               ? 'Accepted Rows'
                               : 'Skipped Rows'}
-                        </Typography>
+                        </span>
                       )}
                       {(() => {
                     const conflictResolution = sceneDiffConflictResolutions[row.row_id] || {
@@ -3653,9 +3628,9 @@ export function TopBar() {
                     data-testid="topbar-scene-diff-import-preview-row"
                   >
                     <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', gap: 1 }}>
-                      <Typography variant="caption" color="text.primary" sx={{ fontWeight: 600 }}>
+                      <span className="topbar__caption topbar__caption--primary topbar__caption--bold">
                         {row.name}
-                      </Typography>
+                      </span>
                       <span data-testid="topbar-scene-diff-import-preview-row-status">
                         <StatusChip
                           tone={
@@ -3670,33 +3645,31 @@ export function TopBar() {
                         />
                       </span>
                     </Box>
-                    <Typography variant="caption" color="text.secondary">
+                    <span className="topbar__caption topbar__caption--secondary">
                       {row.reason}
-                    </Typography>
+                    </span>
                     {row.incoming && (
-                      <Typography variant="caption" color="text.secondary">
+                      <span className="topbar__caption topbar__caption--secondary">
                         Incoming: {row.incoming.baseline_scene_id}{' -> '}{row.incoming.compare_scene_id} (v{row.incoming.preset_version})
-                      </Typography>
+                      </span>
                     )}
                     {rowConflictPolicyHint && (
-                      <Typography
-                        variant="caption"
-                        color="text.secondary"
+                      <span
+                        className="topbar__caption topbar__caption--secondary"
                         data-testid={`topbar-scene-diff-import-preview-row-conflict-policy-hint-${row.row_id}`}
                       >
                         {wrapperConflictPolicyHint && wrapperConflictPolicyHint !== rowConflictPolicyHint
                           ? `Conflict policy hint: ${rowConflictPolicyHint} (row override; wrapper default ${wrapperConflictPolicyHint})`
                           : `Conflict policy hint: ${rowConflictPolicyHint} (row advisory)`}
-                      </Typography>
+                      </span>
                     )}
                     {row.status === 'conflict' && row.existing && (
-                      <Typography
-                        variant="caption"
-                        color="warning.main"
+                      <span
+                        className="topbar__caption topbar__caption--warning"
                         data-testid="topbar-scene-diff-import-preview-conflict-detail"
                       >
                         Existing: {row.existing.baseline_scene_id}{' -> '}{row.existing.compare_scene_id} (v{row.existing.preset_version || 1})
-                      </Typography>
+                      </span>
                     )}
                     {row.status === 'conflict' && row.incoming && (
                       <Box sx={{ display: 'flex', flexDirection: 'column', gap: 0.5 }}>
@@ -3747,21 +3720,19 @@ export function TopBar() {
                               }}
                             />
                             {conflictRenameError ? (
-                              <Typography
-                                variant="caption"
-                                color="error.main"
+                              <span
+                                className="topbar__caption topbar__caption--error"
                                 data-testid={`topbar-scene-diff-import-preview-conflict-rename-error-${row.row_id}`}
                               >
                                 {conflictRenameError}
-                              </Typography>
+                              </span>
                             ) : (
-                              <Typography
-                                variant="caption"
-                                color="text.secondary"
+                              <span
+                                className="topbar__caption topbar__caption--secondary"
                                 data-testid={`topbar-scene-diff-import-preview-conflict-rename-valid-${row.row_id}`}
                               >
                                 Rename target is valid.
-                              </Typography>
+                              </span>
                             )}
                           </Box>
                         )}
@@ -3776,13 +3747,12 @@ export function TopBar() {
               </Box>
             </Box>
           ) : (
-            <Typography
-              variant="caption"
-              color="text.secondary"
+            <span
+              className="topbar__caption topbar__caption--secondary"
               data-testid="topbar-scene-diff-import-preview-empty"
             >
               Preview import JSON to inspect accepted, conflict, and skipped rows before importing.
-            </Typography>
+            </span>
           )}
 
           <Box sx={{ display: 'flex', gap: 1 }}>
@@ -3805,11 +3775,11 @@ export function TopBar() {
             </Button>
           </Box>
 
-          <Typography variant="caption" color="text.secondary" data-testid="topbar-scene-diff-active-preset">
+          <span className="topbar__caption topbar__caption--secondary" data-testid="topbar-scene-diff-active-preset">
             {sceneDiffActivePreset
               ? `Active preset: ${sceneDiffActivePreset.name}`
               : 'Active preset: none'}
-          </Typography>
+          </span>
 
           <Box sx={{ display: 'flex', justifyContent: 'space-between', pt: 0.5 }}>
             <Box sx={{ display: 'flex', gap: 1 }}>
@@ -3838,13 +3808,12 @@ export function TopBar() {
             </Button>
           </Box>
           {sceneDiffError && (
-            <Typography
-              variant="caption"
-              color="warning.main"
+            <span
+              className="topbar__caption topbar__caption--warning"
               data-testid="topbar-scene-diff-error"
             >
               {sceneDiffError}
-            </Typography>
+            </span>
           )}
         </Box>
       </Popover>
