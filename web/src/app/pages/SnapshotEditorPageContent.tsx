@@ -375,6 +375,7 @@ import { SnapshotEditorKeyboardShortcuts } from './snapshotEditor/SnapshotEditor
 import { SnapshotEditorLanePicker } from './snapshotEditor/SnapshotEditorLanePicker'
 import { SnapshotEditorPerformOverlay } from './snapshotEditor/SnapshotEditorPerformOverlay'
 import { SnapshotEditorPresetBrowser } from './snapshotEditor/SnapshotEditorPresetBrowser'
+import { SnapshotEditorAssignmentDialog } from './snapshotEditor/SnapshotEditorAssignmentDialog'
 
 // API_BASE lives in ./snapshotEditor/snapshotEditorApi (T2467 follow-up).
 
@@ -8850,104 +8851,22 @@ export function SnapshotEditorPage() {
         }}
       />
 
-      {assignmentDialogOpen && selectedFlowForAssignment && (
-        <Modal
-          open
-          size="lg"
-          modalHeading={`Assign ${selectedFlowForAssignment.id}`}
-          modalLabel={selectedFlowForAssignment.chainId ? `Path ${selectedFlowForAssignment.chainId}` : 'No path assigned'}
-          primaryButtonText={isAssigningFlow ? 'Assigning...' : 'Assign path'}
-          secondaryButtonText="Cancel"
-          primaryButtonDisabled={!selectedFlowForAssignment.chainId || !assignmentSelectedNodeId || isAssigningFlow}
-          onRequestClose={closeAssignmentDialog}
-          onSecondarySubmit={closeAssignmentDialog}
-          onRequestSubmit={() => handleAssignFlow(assignmentSelectedNodeId, assignmentRedundancyEnabled)}
-        >
-          <div className="juce-grid-page__form-modal-body">
-            <p className="juce-grid-page__modal-copy">
-              Select a target node for the active path. Recommendations favor headroom and GPU compatibility when the underlying runtime chain analysis requires it.
-            </p>
-
-            {!selectedFlowForAssignment.chainId && (
-              <p className="juce-grid-page__modal-copy">
-                Assign a path to this slot before deploying it to a cluster node.
-              </p>
-            )}
-
-            {assignmentAnalysisQuery.isLoading && (
-              <InlineLoading description="Analyzing path requirements" status="active" />
-            )}
-
-            {recommendedAssignmentNodes.length > 0 && (
-              <div className="juce-grid-page__assignment-recommended">
-                <p className="juce-grid-page__assignment-section-kicker">Recommended</p>
-                <div className="juce-grid-page__compact-actions">
-                  {recommendedAssignmentNodes.slice(0, 3).map((node) => (
-                    <Button
-                      key={`recommended-${node.node_id}`}
-                      size="sm"
-                      kind={assignmentSelectedNodeId === node.node_id ? 'secondary' : 'ghost'}
-                      onClick={() => setAssignmentSelectedNodeId(node.node_id)}
-                    >
-                      {node.hostname}
-                    </Button>
-                  ))}
-                </div>
-              </div>
-            )}
-
-            <div className="juce-grid-page__assignment-grid">
-              {assignmentNodes.map((node) => {
-                const isSelected = assignmentSelectedNodeId === node.node_id
-                const isSuitable = isSuitableAssignmentNode(node)
-
-                return (
-                  <button
-                    key={node.node_id}
-                    type="button"
-                    className={`juce-grid-page__assignment-card ${isSelected ? 'is-selected' : ''}`}
-                    onClick={() => isSuitable && setAssignmentSelectedNodeId(node.node_id)}
-                    disabled={!isSuitable}
-                    aria-pressed={isSelected}
-                  >
-                    <div className="juce-grid-page__assignment-card-header">
-                      <h3 className="juce-grid-page__assignment-card-heading">{node.hostname}</h3>
-                      <div className="juce-grid-page__compact-tags">
-                        {node.has_gpu && <Tag type="blue">GPU</Tag>}
-                        {!isSuitable && <Tag type="red">Capacity limit</Tag>}
-                      </div>
-                    </div>
-                    <div className="juce-grid-page__assignment-card-meta">
-                      <span>CPU {node.cpu_percent ?? 0}%</span>
-                      <span>
-                        RAM {(node.memory_used_gb ?? 0).toFixed(1)}/{(node.memory_total_gb ?? 0).toFixed(1)} GB
-                      </span>
-                    </div>
-                  </button>
-                )
-              })}
-            </div>
-
-            {assignmentAnalysis && (
-              <div className="juce-grid-page__assignment-requirements">
-                <p className="juce-grid-page__assignment-section-kicker">Chain requirements</p>
-                <div className="juce-grid-page__compact-tags">
-                  <Tag type="cool-gray">CPU {assignmentAnalysis.estimated_cpu_percent ?? 0}%</Tag>
-                  <Tag type="cool-gray">Memory {assignmentAnalysis.estimated_memory_mb ?? 0} MB</Tag>
-                  {assignmentAnalysis.requires_gpu && <Tag type="purple">GPU required</Tag>}
-                </div>
-              </div>
-            )}
-
-            <Checkbox
-              id="juce-grid-assignment-redundancy"
-              labelText="Enable redundancy (standby nodes)"
-              checked={assignmentRedundancyEnabled}
-              onChange={(_, data) => setAssignmentRedundancyEnabled(Boolean(data.checked))}
-            />
-          </div>
-        </Modal>
-      )}
+      <SnapshotEditorAssignmentDialog
+        open={assignmentDialogOpen}
+        selectedFlow={selectedFlowForAssignment}
+        selectedNodeId={assignmentSelectedNodeId}
+        redundancyEnabled={assignmentRedundancyEnabled}
+        isAssigning={isAssigningFlow}
+        isAnalysisLoading={assignmentAnalysisQuery.isLoading}
+        assignmentNodes={assignmentNodes}
+        recommendedNodes={recommendedAssignmentNodes}
+        analysis={assignmentAnalysis}
+        isSuitableNode={isSuitableAssignmentNode}
+        onClose={closeAssignmentDialog}
+        onSubmit={() => handleAssignFlow(assignmentSelectedNodeId, assignmentRedundancyEnabled)}
+        onSelectNode={setAssignmentSelectedNodeId}
+        onRedundancyChange={setAssignmentRedundancyEnabled}
+      />
 
       {/* Plugin Details Modal */}
       {detailsPlugin && (
