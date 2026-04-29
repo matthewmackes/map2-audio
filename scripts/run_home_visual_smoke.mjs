@@ -3,6 +3,11 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { spawn } from 'node:child_process'
 import process from 'node:process'
+import {
+  compareToBaseline,
+  shouldUpdateBaselines,
+  writeBaseline,
+} from './visual_baseline.mjs'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -371,6 +376,7 @@ async function installBrowserMocks(page, scenario) {
 
 async function main() {
   const skipBuild = process.argv.includes('--skip-build')
+  const updateBaselines = shouldUpdateBaselines()
   await mkdir(screenshotDir, { recursive: true })
 
   if (!skipBuild) {
@@ -429,10 +435,61 @@ async function main() {
       }
 
       const screenshotPath = path.join(screenshotDir, `${scenario.key}.png`)
-      await page.screenshot({
+      const screenshotBuffer = await page.screenshot({
         path: screenshotPath,
         fullPage: true,
       })
+
+      // T2479 (E5): baseline comparison. Either capture a fresh baseline
+      // (when invoked with --update-baselines) or diff against the
+      // checked-in baseline using pixelmatch. Failure throws so the run
+      // exits non-zero — a regression signal CI can detect.
+      let baselineResult = null
+      if (updateBaselines) {
+        const baselinePath = await writeBaseline({
+          screenshotBuffer,
+          repoRoot,
+          harness: 'home',
+          scenarioKey: scenario.key,
+        })
+        baselineResult = { status: 'updated', baselinePath }
+      } else {
+        const diffOutputPath = path.join(runDir, 'diffs', `${scenario.key}.png`)
+        baselineResult = await compareToBaseline({
+          screenshotBuffer,
+          repoRoot,
+          harness: 'home',
+          scenarioKey: scenario.key,
+          diffOutputPath,
+        })
+        if (baselineResult.status === 'missing-baseline') {
+          // T2474 E5: missing-baseline is a soft warning, not a failure.
+          // Some scenarios are pending baseline capture (route is
+          // non-deterministic, or new scenario added without yet
+          // running --update-baselines). Operator runs with
+          // --update-baselines to opt-in.
+          process.stderr.write(
+            `Visual baseline missing for scenario "${scenario.key}" at ` +
+              `${baselineResult.baselinePath}. Run with --update-baselines to capture it.\n`,
+          )
+        }
+        if (baselineResult.status === 'size-mismatch') {
+          throw new Error(
+            `Screenshot dimensions changed for scenario "${scenario.key}": ` +
+              `current ${baselineResult.current.width}x${baselineResult.current.height} ` +
+              `vs baseline ${baselineResult.baseline.width}x${baselineResult.baseline.height}. ` +
+              `Investigate the layout change or update baselines.`,
+          )
+        }
+        if (baselineResult.status === 'fail') {
+          throw new Error(
+            `Visual regression in scenario "${scenario.key}": ` +
+              `${baselineResult.diffPct.toFixed(3)}% pixels differ ` +
+              `(threshold ${baselineResult.threshold}%). ` +
+              `Diff written to ${baselineResult.diffOutputPath}.`,
+          )
+        }
+      }
 
       summary.scenarios.push({
         key: scenario.key,
@@ -440,6 +497,7 @@ async function main() {
         route: scenario.route,
         screenshotPath,
         consoleErrors: [...consoleMessages, ...pageErrors],
+        baseline: baselineResult,
       })
 
       await page.close()

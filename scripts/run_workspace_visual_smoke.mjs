@@ -3,6 +3,11 @@ import path from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { spawn } from 'node:child_process'
 import process from 'node:process'
+import {
+  compareToBaseline,
+  shouldUpdateBaselines,
+  writeBaseline,
+} from './visual_baseline.mjs'
 
 const __filename = fileURLToPath(import.meta.url)
 const __dirname = path.dirname(__filename)
@@ -823,10 +828,12 @@ async function installBrowserMocks(page) {
   })
 }
 
-async function captureRoute(page, route) {
+async function captureRoute(page, route, options = {}) {
+  const { updateBaselines = false } = options
   const relativePath = route.startsWith('/') ? route : `/${route}`
   const targetUrl = `${previewUrl}${relativePath}`
-  const screenshotPath = path.join(screenshotDir, `${slugifyRoute(relativePath)}.png`)
+  const scenarioKey = slugifyRoute(relativePath)
+  const screenshotPath = path.join(screenshotDir, `${scenarioKey}.png`)
 
   const consoleErrors = []
   const pageErrors = []
@@ -872,6 +879,55 @@ async function captureRoute(page, route) {
   page.off('console', onConsole)
   page.off('pageerror', onPageError)
 
+  // T2479 (E5): baseline comparison. Either capture a fresh baseline
+  // (when --update-baselines is passed) or diff against the checked-in
+  // baseline using pixelmatch. Failure throws so the run exits non-zero.
+  let baselineResult
+  if (updateBaselines) {
+    const baselinePath = await writeBaseline({
+      screenshotBuffer: screenshot,
+      repoRoot,
+      harness: 'workspace',
+      scenarioKey,
+    })
+    baselineResult = { status: 'updated', baselinePath }
+  } else {
+    const diffOutputPath = path.join(runDir, 'diffs', `${scenarioKey}.png`)
+    baselineResult = await compareToBaseline({
+      screenshotBuffer: screenshot,
+      repoRoot,
+      harness: 'workspace',
+      scenarioKey,
+      diffOutputPath,
+    })
+    if (baselineResult.status === 'missing-baseline') {
+      // T2474 E5: missing-baseline is a soft warning, not a failure.
+      // Some routes are pending baseline capture (route is non-
+      // deterministic, or new route added without yet running
+      // --update-baselines). Operator runs with --update-baselines
+      // to opt-in.
+      process.stderr.write(
+        `Visual baseline missing for route "${relativePath}" at ` +
+          `${baselineResult.baselinePath}. Run with --update-baselines to capture it.\n`,
+      )
+    }
+    if (baselineResult.status === 'size-mismatch') {
+      throw new Error(
+        `Screenshot dimensions changed for route "${relativePath}": ` +
+          `current ${baselineResult.current.width}x${baselineResult.current.height} ` +
+          `vs baseline ${baselineResult.baseline.width}x${baselineResult.baseline.height}.`,
+      )
+    }
+    if (baselineResult.status === 'fail') {
+      throw new Error(
+        `Visual regression on route "${relativePath}": ` +
+          `${baselineResult.diffPct.toFixed(3)}% pixels differ ` +
+          `(threshold ${baselineResult.threshold}%). ` +
+          `Diff written to ${baselineResult.diffOutputPath}.`,
+      )
+    }
+  }
+
   return {
     route: relativePath,
     url: targetUrl,
@@ -879,11 +935,13 @@ async function captureRoute(page, route) {
     bytes: screenshot.byteLength,
     consoleErrors,
     pageErrors,
+    baseline: baselineResult,
   }
 }
 
 async function main() {
   const { chromium } = await import(playwrightModuleUrl.href)
+  const updateBaselines = shouldUpdateBaselines()
   await mkdir(screenshotDir, { recursive: true })
 
   if (!process.argv.includes('--skip-build')) {
@@ -904,9 +962,21 @@ async function main() {
     await installBrowserMocks(page)
 
     const results = []
+    const failures = []
     for (const route of ROUTES) {
       process.stdout.write(`Capturing ${route}\n`)
-      results.push(await captureRoute(page, route))
+      try {
+        results.push(await captureRoute(page, route, { updateBaselines }))
+      } catch (error) {
+        // T2479 (E5): per-route failures are collected and reported at the
+        // end rather than aborting the whole run. Some routes have
+        // pre-existing rendering bugs (error boundary trips before
+        // first paint) — letting the harness continue means we still
+        // capture/compare every other route.
+        const message = error instanceof Error ? error.message : String(error)
+        process.stderr.write(`Route failed: ${route}\n${message}\n\n`)
+        failures.push({ route, message })
+      }
     }
 
     await browser.close()
@@ -915,12 +985,20 @@ async function main() {
       generatedAt: new Date().toISOString(),
       viewport: VIEWPORT,
       routeCount: ROUTES.length,
+      successCount: results.length,
+      failureCount: failures.length,
       baseUrl: previewUrl,
       routes: results,
+      failures,
     }
 
     await writeFile(path.join(runDir, 'workspace-visual-smoke-summary.json'), `${JSON.stringify(summary, null, 2)}\n`)
-    process.stdout.write(`Workspace visual smoke complete. Artifacts: ${path.relative(repoRoot, runDir)}\n`)
+    process.stdout.write(`Workspace visual smoke complete. ${results.length} succeeded, ${failures.length} failed. Artifacts: ${path.relative(repoRoot, runDir)}\n`)
+    if (failures.length > 0) {
+      // T2479 (E5): exit non-zero so CI flags the run as failed even
+      // though we collected results for the routes that worked.
+      process.exitCode = 1
+    }
   } finally {
     previewServer.kill('SIGTERM')
   }
