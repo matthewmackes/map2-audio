@@ -19,8 +19,6 @@ import {
   Undo,
 } from '@carbon/icons-react';
 import {
-  TextField,
-  InputAdornment,
   Popover,
   FormGroup,
   FormControlLabel,
@@ -31,7 +29,11 @@ import {
   MenuItem,
 } from '@mui/material';
 import type { SelectChangeEvent } from '@mui/material/Select';
-import { Button as CarbonButton } from '@carbon/react';
+import {
+  Button as CarbonButton,
+  TextInput as CarbonTextInput,
+  TextArea as CarbonTextArea,
+} from '@carbon/react';
 import { StatusChip } from '../../../primitives';
 import type { StatusChipTone } from '../../../primitives';
 import { useRouting, useCanUndo, useCanRedo } from '../../context/RoutingContext';
@@ -910,7 +912,7 @@ export function TopBar() {
     setSceneDiffPresetConflictPolicyDraft('upsert');
   };
 
-  const handleSceneDiffPresetTransferDraftChange = (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleSceneDiffPresetTransferDraftChange = (event: React.ChangeEvent<HTMLTextAreaElement>) => {
     if (sceneDiffPresetImportPreview) {
       dispatch({
         type: 'LOG_SCENE_DIFF_PRESET_PREVIEW',
@@ -2082,24 +2084,18 @@ export function TopBar() {
         </span>
 
         {/* Search */}
-        <TextField
-          size="small"
-          placeholder="Search endpoints..."
-          value={state.search}
-          onChange={handleSearchChange}
-          inputProps={{ 'data-testid': 'topbar-search-input' }}
-          sx={{
-            width: { xs: '100%', sm: 260, lg: 300 },
-            flexGrow: { xs: 1, md: 0 },
-          }}
-          InputProps={{
-            startAdornment: (
-              <InputAdornment position="start">
-                <Search size={16} />
-              </InputAdornment>
-            ),
-          }}
-        />
+        <span className="topbar__search">
+          <CarbonTextInput
+            id="topbar-search-input"
+            data-testid="topbar-search-input"
+            size="sm"
+            labelText="Search endpoints"
+            hideLabel
+            placeholder="Search endpoints..."
+            value={state.search}
+            onChange={handleSearchChange}
+          />
+        </span>
 
         {/* Stats */}
         <div className={`topbar__stats ${isMobile ? 'topbar__stats--scroll' : 'topbar__stats--wrap'}`}>
@@ -2435,13 +2431,14 @@ export function TopBar() {
             Scene Management
           </span>
 
-          <TextField
-            size="small"
-            label="New Scene Name"
+          <CarbonTextInput
+            id="topbar-scene-name"
+            size="sm"
+            labelText="New Scene Name"
             value={sceneCreateNameDraft}
             onChange={handleSceneCreateNameDraftChange}
             helperText={`Max ${SCENE_NAME_MAX_LENGTH} chars`}
-            inputProps={{ 'data-testid': 'topbar-scene-name-input' }}
+            data-testid="topbar-scene-name-input"
           />
 
           <FormControlLabel
@@ -2484,12 +2481,13 @@ export function TopBar() {
 
           <hr className="topbar__divider" />
 
-          <TextField
-            size="small"
-            label="Search Saved Scenes"
+          <CarbonTextInput
+            id="topbar-scene-search"
+            size="sm"
+            labelText="Search Saved Scenes"
             value={sceneSearchQuery}
             onChange={handleSceneSearchQueryChange}
-            inputProps={{ 'data-testid': 'topbar-scene-search-input' }}
+            data-testid="topbar-scene-search-input"
           />
 
           <span className="topbar__caption topbar__caption--secondary" data-testid="topbar-scene-search-summary">
@@ -2534,33 +2532,36 @@ export function TopBar() {
               : 'Select a saved scene to recall or delete.'}
           </span>
 
-          <TextField
-            size="small"
-            label="Selected Scene Name"
+          <CarbonTextInput
+            id="topbar-scene-edit-name"
+            size="sm"
+            labelText="Selected Scene Name"
             value={sceneEditNameDraft}
             onChange={handleSceneEditNameDraftChange}
             helperText={`Max ${SCENE_NAME_MAX_LENGTH} chars`}
-            inputProps={{ 'data-testid': 'topbar-scene-edit-name-input' }}
+            data-testid="topbar-scene-edit-name-input"
             disabled={!selectedScene}
           />
 
-          <TextField
-            size="small"
-            label="Description"
+          <CarbonTextInput
+            id="topbar-scene-edit-description"
+            size="sm"
+            labelText="Description"
             value={sceneEditDescriptionDraft}
             onChange={handleSceneEditDescriptionDraftChange}
             helperText={`Max ${SCENE_DESCRIPTION_MAX_LENGTH} chars`}
-            inputProps={{ 'data-testid': 'topbar-scene-edit-description-input' }}
+            data-testid="topbar-scene-edit-description-input"
             disabled={!selectedScene}
           />
 
-          <TextField
-            size="small"
-            label="Tags (comma separated)"
+          <CarbonTextInput
+            id="topbar-scene-edit-tags"
+            size="sm"
+            labelText="Tags (comma separated)"
             value={sceneEditTagsDraft}
             onChange={handleSceneEditTagsDraftChange}
             helperText={`Up to ${SCENE_MAX_TAGS} tags, ${SCENE_TAG_MAX_LENGTH} chars each`}
-            inputProps={{ 'data-testid': 'topbar-scene-edit-tags-input' }}
+            data-testid="topbar-scene-edit-tags-input"
             disabled={!selectedScene}
           />
 
@@ -2654,12 +2655,13 @@ export function TopBar() {
               Recent Scene Operations
             </span>
 
-            <TextField
-              size="small"
-              label="Search Operations"
+            <CarbonTextInput
+              id="topbar-scene-audit-search"
+              size="sm"
+              labelText="Search Operations"
               value={sceneAuditSearchQuery}
               onChange={handleSceneAuditSearchQueryChange}
-              inputProps={{ 'data-testid': 'topbar-scene-audit-search-input' }}
+              data-testid="topbar-scene-audit-search-input"
             />
 
             <FormControlLabel
@@ -3134,30 +3136,34 @@ export function TopBar() {
 
           <hr className="topbar__divider" />
 
-          <TextField
-            size="small"
-            label="Preset Name"
+          <CarbonTextInput
+            id="topbar-scene-diff-preset-name"
+            size="sm"
+            labelText="Preset Name"
             value={sceneDiffPresetNameDraft}
             onChange={handleSceneDiffPresetNameDraftChange}
             helperText={`Max ${SCENE_NAME_MAX_LENGTH} chars`}
-            inputProps={{ 'data-testid': 'topbar-scene-diff-preset-name-input' }}
+            data-testid="topbar-scene-diff-preset-name-input"
           />
 
-          <TextField
-            size="small"
-            label="Preset Notes"
+          <CarbonTextInput
+            id="topbar-scene-diff-preset-notes"
+            size="sm"
+            labelText="Preset Notes"
             value={sceneDiffPresetNotesDraft}
             onChange={handleSceneDiffPresetNotesDraftChange}
             helperText={`Max ${SCENE_DESCRIPTION_MAX_LENGTH} chars`}
-            inputProps={{ 'data-testid': 'topbar-scene-diff-preset-notes-input' }}
+            data-testid="topbar-scene-diff-preset-notes-input"
           />
 
-          <TextField
-            size="small"
-            label="Preset Version"
+          <CarbonTextInput
+            id="topbar-scene-diff-preset-version"
+            size="sm"
+            labelText="Preset Version"
             value={sceneDiffPresetVersionDraft}
             onChange={handleSceneDiffPresetVersionDraftChange}
-            inputProps={{ 'data-testid': 'topbar-scene-diff-preset-version-input', inputMode: 'numeric' }}
+            inputMode="numeric"
+            data-testid="topbar-scene-diff-preset-version-input"
           />
 
           <FormControl size="small">
@@ -3280,15 +3286,13 @@ export function TopBar() {
             </div>
           ) : null}
 
-          <TextField
-            size="small"
-            multiline
-            minRows={4}
-            maxRows={8}
-            label="Preset Transfer JSON"
+          <CarbonTextArea
+            id="topbar-scene-diff-preset-transfer"
+            labelText="Preset Transfer JSON"
+            rows={4}
             value={sceneDiffPresetTransferDraft}
             onChange={handleSceneDiffPresetTransferDraftChange}
-            inputProps={{ 'data-testid': 'topbar-scene-diff-preset-transfer-input' }}
+            data-testid="topbar-scene-diff-preset-transfer-input"
           />
 
           <div className="topbar__row topbar__row--gap-1 topbar__row--wrap">
@@ -3619,15 +3623,14 @@ export function TopBar() {
                         </div>
                         {conflictResolution.mode === 'rename' && (
                           <div className="topbar__col topbar__col--gap-025">
-                            <TextField
-                              size="small"
-                              label="Rename Conflict Preset"
+                            <CarbonTextInput
+                              id={`topbar-scene-diff-import-preview-conflict-rename-${row.row_id}`}
+                              size="sm"
+                              labelText="Rename Conflict Preset"
                               value={conflictResolution.rename_draft}
                               onChange={(event) => handleSceneDiffConflictRenameDraftChange(row.row_id, event.target.value)}
                               helperText={`Max ${SCENE_NAME_MAX_LENGTH} chars`}
-                              inputProps={{
-                                'data-testid': `topbar-scene-diff-import-preview-conflict-rename-input-${row.row_id}`,
-                              }}
+                              data-testid={`topbar-scene-diff-import-preview-conflict-rename-input-${row.row_id}`}
                             />
                             {conflictRenameError ? (
                               <span
