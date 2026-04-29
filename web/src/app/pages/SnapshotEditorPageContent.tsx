@@ -70,7 +70,6 @@ import {
   TextInput,
   Tile,
 } from '@carbon/react'
-import { motion } from 'framer-motion'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { useFocusReturnTarget } from '../hooks/useFocusReturnTarget'
 import { isSnapshotFlowRoute, usePendingLiveChangesNavigationGuard } from '../hooks/usePendingLiveChangesNavigationGuard'
@@ -290,7 +289,6 @@ import {
   writeLiveWorkingSnapshotDraft,
 } from '../utils/liveWorkingSnapshotDraft'
 import './SnapshotEditorPage.css'
-import { PerformPage } from './PerformPage'
 import { PluginCardRouter } from '../components/PluginCards'
 import { resolveLivePluginCardStrategy } from '../components/PluginCards/liveEditorRouting'
 import {
@@ -375,6 +373,7 @@ import {
 import { API_BASE } from './snapshotEditor/snapshotEditorApi'
 import { SnapshotEditorKeyboardShortcuts } from './snapshotEditor/SnapshotEditorKeyboardShortcuts'
 import { SnapshotEditorLanePicker } from './snapshotEditor/SnapshotEditorLanePicker'
+import { SnapshotEditorPerformOverlay } from './snapshotEditor/SnapshotEditorPerformOverlay'
 
 // API_BASE lives in ./snapshotEditor/snapshotEditorApi (T2467 follow-up).
 
@@ -9116,16 +9115,10 @@ export function SnapshotEditorPage() {
       />
 
       {/* Perform Full-Screen Modal */}
-      {showPerformModal && (
-        <motion.div
-          className="juce-grid-page__perform-overlay"
-          initial={{ opacity: 0 }}
-          animate={{ opacity: 1 }}
-          transition={{ duration: 0.2 }}
-        >
-          <PerformPage onExit={closePerformWorkspace} />
-        </motion.div>
-      )}
+      <SnapshotEditorPerformOverlay
+        open={showPerformModal}
+        onExit={closePerformWorkspace}
+      />
 
       {/* Audio Nodes Modal */}
       {showAudioNodesModal && (
