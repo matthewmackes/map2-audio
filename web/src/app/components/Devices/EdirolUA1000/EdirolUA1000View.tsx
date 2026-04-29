@@ -19,7 +19,6 @@ import {
   Switch,
   FormControlLabel,
   Chip,
-  LinearProgress,
 } from '@mui/material'
 import {
   InlineNotification,
@@ -766,17 +765,11 @@ function JuceEngineTab({
                 <span>CPU Load</span>
                 <span>{(cpuLoad * 100).toFixed(1)}%</span>
               </div>
-              <LinearProgress
-                variant="determinate"
+              <progress
+                className={`edirol-ua1000__bar edirol-ua1000__bar--cpu ${cpuLoad > 0.8 ? 'edirol-ua1000__bar--cpu-critical' : cpuLoad > 0.5 ? 'edirol-ua1000__bar--cpu-warn' : 'edirol-ua1000__bar--cpu-ok'}`}
+                max={100}
                 value={cpuLoad * 100}
-                sx={{
-                  height: 6,
-                  borderRadius: 3,
-                  backgroundColor: 'var(--bg-tertiary)',
-                  '& .MuiLinearProgress-bar': {
-                    backgroundColor: cpuLoad > 0.8 ? '#ef4444' : cpuLoad > 0.5 ? '#f59e0b' : '#22c55e',
-                  },
-                }}
+                aria-label={`CPU Load ${(cpuLoad * 100).toFixed(1)}%`}
               />
             </div>
             <div className="flex-between">
@@ -1249,17 +1242,11 @@ function AnalogIOTab({ meterData }: { meterData: MeterData }) {
                   <span style={{ fontWeight: 600 }}>Output {ch}</span>
                   {isMain && <Chip label="Main" size="small" color="primary" />}
                 </div>
-                <LinearProgress
-                  variant="determinate"
+                <progress
+                  className="edirol-ua1000__bar edirol-ua1000__bar--meter"
+                  max={100}
                   value={level * 100}
-                  sx={{
-                    height: 8,
-                    borderRadius: 4,
-                    backgroundColor: 'var(--bg-tertiary)',
-                    '& .MuiLinearProgress-bar': {
-                      backgroundColor: '#3b82f6',
-                    },
-                  }}
+                  aria-label={`Channel level ${(level * 100).toFixed(1)}%`}
                 />
               </LegacyTile>
             )

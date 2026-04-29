@@ -15,3 +15,32 @@
 @keyframes edirol-ua1000-spin {
   to { transform: rotate(360deg); }
 }
+
+/* Native <progress> bars retired LinearProgress. The track and bar
+ * colors are pinned per usage: CPU bars switch tone on threshold,
+ * meter bars stay Carbon blue-50. */
+
+.edirol-ua1000__bar {
+  width: 100%;
+  appearance: none;
+  -webkit-appearance: none;
+  border: 0;
+  background: var(--bg-tertiary, #393939);
+  display: block;
+}
+
+.edirol-ua1000__bar::-webkit-progress-bar {
+  background: var(--bg-tertiary, #393939);
+}
+
+.edirol-ua1000__bar--cpu { height: 6px; }
+.edirol-ua1000__bar--meter { height: 8px; }
+
+.edirol-ua1000__bar--cpu-ok::-webkit-progress-value      { background: var(--map2-state-live, #42be65); }
+.edirol-ua1000__bar--cpu-ok::-moz-progress-bar           { background: var(--map2-state-live, #42be65); }
+.edirol-ua1000__bar--cpu-warn::-webkit-progress-value    { background: var(--map2-alert-advisory, #f1c21b); }
+.edirol-ua1000__bar--cpu-warn::-moz-progress-bar         { background: var(--map2-alert-advisory, #f1c21b); }
+.edirol-ua1000__bar--cpu-critical::-webkit-progress-value{ background: var(--map2-alert-critical, #fa4d56); }
+.edirol-ua1000__bar--cpu-critical::-moz-progress-bar     { background: var(--map2-alert-critical, #fa4d56); }
+.edirol-ua1000__bar--meter::-webkit-progress-value       { background: var(--map2-state-staged, #4589ff); }
+.edirol-ua1000__bar--meter::-moz-progress-bar            { background: var(--map2-state-staged, #4589ff); }
