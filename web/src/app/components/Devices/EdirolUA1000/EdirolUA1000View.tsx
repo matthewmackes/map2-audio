@@ -8,8 +8,6 @@ import {
 } from '@ariakit/react'
 import {
   Button,
-} from '@mui/material'
-import {
   ComposedModal,
   Dropdown,
   InlineNotification,
@@ -616,16 +614,10 @@ export function EdirolUA1000View() {
           </p>
         </div>
         <Button
-          variant="contained"
-          size="large"
+          kind="primary"
+          size="lg"
           onClick={() => setShoppingDialogOpen(true)}
-          startIcon={<ShoppingCart size={20} />}
-          style={{
-            background: 'linear-gradient(135deg, #3b82f6, #60a5fa)',
-            padding: '12px 32px',
-            fontSize: 16,
-            fontWeight: 600,
-          }}
+          renderIcon={ShoppingCart}
         >
           Help Me Find a Unit
         </Button>
@@ -1644,39 +1636,34 @@ function DiagnosticsTab({ nodeId }: { nodeId?: string | null }) {
         </h4>
         <div className="grid four">
           <Button
-            variant="outlined"
+            kind="tertiary"
             onClick={() => fullDiagnostic.mutate()}
             disabled={isRunningFullTest}
-            startIcon={isRunningFullTest ? <Renew className="spin" size={16} /> : <Notebook size={16} />}
-            fullWidth
+            renderIcon={isRunningFullTest ? Renew : Notebook}
           >
             {isRunningFullTest ? 'Running...' : 'Full Diagnostic'}
           </Button>
           <Button
-            variant="outlined"
+            kind="tertiary"
             onClick={() => loopbackTest.mutate()}
             disabled={loopbackTest.isPending}
-            startIcon={loopbackTest.isPending ? <Renew className="spin" size={16} /> : <Power size={16} />}
-            fullWidth
+            renderIcon={loopbackTest.isPending ? Renew : Power}
           >
             Loopback Test
           </Button>
           <Button
-            variant="outlined"
+            kind="tertiary"
             onClick={() => clearXruns.mutate()}
             disabled={clearXruns.isPending}
-            startIcon={<Reset size={16} />}
-            fullWidth
+            renderIcon={Reset}
           >
             Clear XRuns
           </Button>
           <Button
-            variant="outlined"
-            color="warning"
+            kind="danger--tertiary"
             onClick={() => resetAlsa.mutate()}
             disabled={resetAlsa.isPending}
-            startIcon={resetAlsa.isPending ? <Renew className="spin" size={16} /> : <DataBase size={16} />}
-            fullWidth
+            renderIcon={resetAlsa.isPending ? Renew : DataBase}
           >
             Reset ALSA
           </Button>
@@ -1696,8 +1683,8 @@ function DiagnosticsTab({ nodeId }: { nodeId?: string | null }) {
           {[64, 128, 256, 512].map(size => (
             <Button
               key={size}
-              variant="outlined"
-              size="small"
+              kind="tertiary"
+              size="sm"
               onClick={() => bufferTest.mutate({ size, duration: 5 })}
               disabled={bufferTest.isPending}
             >
@@ -1731,8 +1718,8 @@ function DiagnosticsTab({ nodeId }: { nodeId?: string | null }) {
                 <div style={{ fontSize: 11, color: 'var(--text-muted)', marginTop: 2 }}>{desc}</div>
               </div>
               <Button
-                title="Copy to clipboard"
-                size="small"
+                kind="ghost"
+                size="sm"
                 onClick={() => {
                   navigator.clipboard.writeText(cmd)
                   pushToast('Copied to clipboard', 'info')
@@ -1753,7 +1740,7 @@ function DiagnosticsTab({ nodeId }: { nodeId?: string | null }) {
               <Meter size={16} style={{ marginRight: 8 }} />
               Test Results
             </h4>
-            <Button size="small" onClick={() => setTestResults([])}>Clear</Button>
+            <Button kind="ghost" size="sm" onClick={() => setTestResults([])}>Clear</Button>
           </div>
           <div className="stack" style={{ gap: 8 }}>
             {testResults.map((result, i) => (
@@ -1963,10 +1950,10 @@ function ConfigDialog({
         </div>
       </ModalBody>
       <ModalFooter>
-        <Button onClick={onClose}>Cancel</Button>
+        <Button kind="secondary" onClick={onClose}>Cancel</Button>
         <Button
+          kind="primary"
           onClick={() => configureMutation.mutate()}
-          variant="contained"
           disabled={configureMutation.isPending}
         >
           {configureMutation.isPending ? <span className="edirol-ua1000__inline-spinner" aria-hidden="true" /> : 'Apply'}
