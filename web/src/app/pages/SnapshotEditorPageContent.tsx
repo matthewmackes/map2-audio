@@ -323,10 +323,16 @@ import {
   JUCE_GRID_SELECTED_PLUGIN_KEY,
   KEYBOARD_SHORTCUT_SECTIONS,
   LIVE_ACTIVATION_PHASES,
+  LIVE_CHANGES_LEAVE_MESSAGE,
   MAX_FLOWS,
   MIDI_CURVE_LABELS,
   MIN_FLOWS,
+  NOISE_GATE_RELEASE_CONFIG_KEY,
+  NOISE_GATE_THRESHOLD_CONFIG_KEY,
   ROUTING_MODE_OPTIONS,
+  SNAPSHOT_DEFAULT_INPUT_DEVICE_CONFIG_KEY,
+  SNAPSHOT_DEFAULT_MONITORING_OUTPUT_INDEX_CONFIG_KEY,
+  SNAPSHOT_DEFAULT_OUTPUT_DEVICE_CONFIG_KEY,
 } from './snapshotEditor/snapshotEditorPageTypes'
 import type {
   CompactTabId,
@@ -371,12 +377,9 @@ const API_BASE = (() => {
   return `http://${window.location.hostname}:8080/api`
 })()
 
-const NOISE_GATE_THRESHOLD_CONFIG_KEY = 'snapshots.global_noise_gate_threshold_db'
-const NOISE_GATE_RELEASE_CONFIG_KEY = 'snapshots.global_noise_gate_release_ms'
-const SNAPSHOT_DEFAULT_INPUT_DEVICE_CONFIG_KEY = 'snapshots.default_input_device'
-const SNAPSHOT_DEFAULT_OUTPUT_DEVICE_CONFIG_KEY = 'snapshots.default_output_device'
-const SNAPSHOT_DEFAULT_MONITORING_OUTPUT_INDEX_CONFIG_KEY = 'snapshots.default_monitoring_output_index'
-const LIVE_CHANGES_LEAVE_MESSAGE = 'You have unpublished live changes on this snapshot. Leaving this flow will discard them.'
+// NOISE_GATE_*_CONFIG_KEY / SNAPSHOT_DEFAULT_*_CONFIG_KEY /
+// LIVE_CHANGES_LEAVE_MESSAGE live in
+// ./snapshotEditor/snapshotEditorPageTypes (T2468 follow-up).
 // DEFAULT_SYSTEM_NOISE_GATE_DEFAULTS + DEFAULT_SYSTEM_NOISE_GATE_PARAMETERS
 // live in ./snapshotEditor/snapshotEditorPageTypes (T2468 follow-up).
 

@@ -177,3 +177,18 @@ export const DEFAULT_SYSTEM_NOISE_GATE_PARAMETERS = {
   attack: 1,
   release: DEFAULT_SYSTEM_NOISE_GATE_DEFAULTS.releaseMs,
 }
+
+// Special-settings config keys consumed by the snapshot editor's
+// noise-gate + default-IO mutations. These live in the snapshots
+// special-settings namespace on the server.
+export const NOISE_GATE_THRESHOLD_CONFIG_KEY = 'snapshots.global_noise_gate_threshold_db'
+export const NOISE_GATE_RELEASE_CONFIG_KEY = 'snapshots.global_noise_gate_release_ms'
+export const SNAPSHOT_DEFAULT_INPUT_DEVICE_CONFIG_KEY = 'snapshots.default_input_device'
+export const SNAPSHOT_DEFAULT_OUTPUT_DEVICE_CONFIG_KEY = 'snapshots.default_output_device'
+export const SNAPSHOT_DEFAULT_MONITORING_OUTPUT_INDEX_CONFIG_KEY =
+  'snapshots.default_monitoring_output_index'
+
+// Operator-facing copy displayed when the user tries to navigate
+// away from the editor with unsaved/unpublished live changes.
+export const LIVE_CHANGES_LEAVE_MESSAGE =
+  'You have unpublished live changes on this snapshot. Leaving this flow will discard them.'
