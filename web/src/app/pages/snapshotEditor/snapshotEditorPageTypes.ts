@@ -192,3 +192,21 @@ export const SNAPSHOT_DEFAULT_MONITORING_OUTPUT_INDEX_CONFIG_KEY =
 // away from the editor with unsaved/unpublished live changes.
 export const LIVE_CHANGES_LEAVE_MESSAGE =
   'You have unpublished live changes on this snapshot. Leaving this flow will discard them.'
+
+// Performance event payload streamed from the live runtime channel.
+// Each event represents a single performance action (e.g. preset
+// change, control move, MIDI note) that the editor's perf-event
+// chyron renders in chronological order.
+export interface SnapshotEditorPerformanceEvent {
+  seq: number
+  action: string
+  payload?: Record<string, unknown>
+  channel: number
+  timestamp_ns: number
+  source_port: string
+}
+
+export interface SnapshotEditorPerformanceEventsResponse {
+  events: SnapshotEditorPerformanceEvent[]
+  last_seq: number
+}

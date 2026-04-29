@@ -346,6 +346,8 @@ import type {
   RoutingConfig,
   RoutingInspectorContent,
   RoutingMode,
+  SnapshotEditorPerformanceEvent,
+  SnapshotEditorPerformanceEventsResponse,
 } from './snapshotEditor/snapshotEditorPageTypes'
 import { FlowLevelControl } from './snapshotEditor/FlowLevelControl'
 import {
@@ -388,19 +390,8 @@ const API_BASE = (() => {
 // FEATURED_NATIVE_BROWSER_GROUPS lives in
 // ./snapshotEditor/featuredNativeBrowserGroups (T2467 follow-up).
 
-interface SnapshotEditorPerformanceEvent {
-  seq: number
-  action: string
-  payload?: Record<string, unknown>
-  channel: number
-  timestamp_ns: number
-  source_port: string
-}
-
-interface SnapshotEditorPerformanceEventsResponse {
-  events: SnapshotEditorPerformanceEvent[]
-  last_seq: number
-}
+// SnapshotEditorPerformanceEvent + SnapshotEditorPerformanceEventsResponse
+// live in ./snapshotEditor/snapshotEditorPageTypes (T2468 follow-up).
 
 // FlowLevelControl + FlowLevelControlProps live in
 // ./snapshotEditor/FlowLevelControl (T2469).
