@@ -9,19 +9,27 @@
   flex-shrink: 0;
 }
 
+/* T2474 B9: Severity tones now use MAP semantic alert tokens (B1) for
+ * consistency with the AlertPanel primitive (B4). The MAP semantic
+ * vocabulary distinguishes blocking-vs-advisory; DeviceContextBanner
+ * keeps its three-state interface (info/warning/error) and maps:
+ *   info    → --cds-link-primary (operator context, not severity)
+ *   warning → --map2-alert-advisory
+ *   error   → --map2-alert-blocking */
+
 .device-context-banner--info {
-  border-left: 3px solid var(--cds-support-info, var(--support-info));
-  background: color-mix(in srgb, var(--cds-support-info, var(--support-info)) 8%, var(--cds-layer, var(--surface)));
+  border-left: 3px solid var(--cds-link-primary, var(--cds-support-info, var(--support-info)));
+  background: color-mix(in srgb, var(--cds-link-primary, var(--cds-support-info, var(--support-info))) 8%, var(--cds-layer, var(--surface)));
 }
 
 .device-context-banner--warning {
-  border-left: 3px solid var(--cds-support-warning, var(--support-warning));
-  background: color-mix(in srgb, var(--cds-support-warning, var(--support-warning)) 8%, var(--cds-layer, var(--surface)));
+  border-left: 3px solid var(--map2-alert-advisory, var(--cds-support-warning, var(--support-warning)));
+  background: color-mix(in srgb, var(--map2-alert-advisory, var(--cds-support-warning, var(--support-warning))) 8%, var(--cds-layer, var(--surface)));
 }
 
 .device-context-banner--error {
-  border-left: 3px solid var(--cds-support-error, var(--support-danger));
-  background: color-mix(in srgb, var(--cds-support-error, var(--support-danger)) 8%, var(--cds-layer, var(--surface)));
+  border-left: 3px solid var(--map2-alert-blocking, var(--cds-support-error, var(--support-danger)));
+  background: color-mix(in srgb, var(--map2-alert-blocking, var(--cds-support-error, var(--support-danger))) 8%, var(--cds-layer, var(--surface)));
 }
 
 .device-context-banner__icon {
@@ -32,15 +40,15 @@
 }
 
 .device-context-banner--info .device-context-banner__icon {
-  color: var(--cds-support-info, var(--support-info));
+  color: var(--cds-link-primary, var(--cds-support-info, var(--support-info)));
 }
 
 .device-context-banner--warning .device-context-banner__icon {
-  color: var(--cds-support-warning, var(--support-warning));
+  color: var(--map2-alert-advisory, var(--cds-support-warning, var(--support-warning)));
 }
 
 .device-context-banner--error .device-context-banner__icon {
-  color: var(--cds-support-error, var(--support-danger));
+  color: var(--map2-alert-blocking, var(--cds-support-error, var(--support-danger)));
 }
 
 .device-context-banner__message {

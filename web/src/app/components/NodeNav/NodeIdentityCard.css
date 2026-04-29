@@ -80,14 +80,17 @@
   flex-shrink: 0;
 }
 
+/* T2474 B9: OK-state pulse retained as a calm "alive" indicator, but
+ * switched from a radiating box-shadow ring (Q1=A retires glow halos)
+ * to a flat opacity pulse on the dot itself. The motion is preserved;
+ * the glow is removed. */
 .node-id-card[data-status="ok"] .node-id-card__dot {
-  animation: nodeIdCardPulse 2.2s infinite;
+  animation: nodeIdCardPulse 2.2s ease-in-out infinite;
 }
 
 @keyframes nodeIdCardPulse {
-  0%   { box-shadow: 0 0 0 0 color-mix(in srgb, var(--support-success) 55%, transparent); }
-  70%  { box-shadow: 0 0 0 6px transparent; }
-  100% { box-shadow: 0 0 0 0 transparent; }
+  0%, 100% { opacity: 1; }
+  50%      { opacity: 0.55; }
 }
 
 /* ── Hero band ─────────────────────────────────────────────────────────── */
@@ -205,9 +208,10 @@
 .node-id-card__plate {
   display: grid;
   gap: 3px;
-  background: color-mix(in srgb, var(--nic-bg-deep) 75%, transparent);
+  /* T2474 B9: Removed backdrop-filter blur(2px) per Q1=A
+   * (no glassmorphism). Now a flat opaque plate. */
+  background: var(--nic-bg-deep);
   padding: 6px 8px;
-  backdrop-filter: blur(2px);
 }
 
 .node-id-card__kv {

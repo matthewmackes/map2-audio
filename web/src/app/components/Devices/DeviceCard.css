@@ -9,11 +9,10 @@
   min-height: 11rem;
   padding: 1rem !important;
   position: relative;
-  transition: box-shadow 120ms ease, transform 120ms ease;
-}
-
-.device-card:hover {
-  box-shadow: 0 4px 8px rgba(0, 0, 0, 0.18);
+  /* T2474 B9: Removed hover lift drop-shadow (Q1=A — no decorative
+   * shadows). Hover is communicated by Carbon Tile's own --cds-layer-
+   * hover background and the focus ring. */
+  transition: background 120ms ease;
 }
 
 .device-card--connected {
@@ -26,15 +25,17 @@
   padding-left: calc(1rem - 3px) !important;
 }
 
-/* Q11 hot-plug pulse: brief outer glow when an event fires for this row. */
+/* T2474 B9: Hot-plug pulse retained as an operational signal (a newly
+ * connected device should briefly draw the eye), but switched from a
+ * radiating box-shadow glow to a flat border-color flash on the
+ * --map2-state-live token. The motion stays; the glow goes. */
 .device-card--pulse {
   animation: device-card-pulse 1.2s ease-out 1;
 }
 
 @keyframes device-card-pulse {
-  0%   { box-shadow: 0 0 0 0 rgba(36, 161, 72, 0.5); }
-  60%  { box-shadow: 0 0 0 8px rgba(36, 161, 72, 0); }
-  100% { box-shadow: 0 0 0 0 rgba(36, 161, 72, 0); }
+  0%   { border-color: var(--map2-state-live, var(--cds-support-success)); }
+  100% { border-color: var(--cds-border-subtle); }
 }
 
 .device-card__head {
