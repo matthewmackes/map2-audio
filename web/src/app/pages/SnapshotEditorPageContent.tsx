@@ -376,6 +376,7 @@ import { SnapshotEditorLanePicker } from './snapshotEditor/SnapshotEditorLanePic
 import { SnapshotEditorPerformOverlay } from './snapshotEditor/SnapshotEditorPerformOverlay'
 import { SnapshotEditorPresetBrowser } from './snapshotEditor/SnapshotEditorPresetBrowser'
 import { SnapshotEditorAssignmentDialog } from './snapshotEditor/SnapshotEditorAssignmentDialog'
+import { SnapshotEditorClearFlowsConfirm } from './snapshotEditor/SnapshotEditorClearFlowsConfirm'
 
 // API_BASE lives in ./snapshotEditor/snapshotEditorApi (T2467 follow-up).
 
@@ -8452,26 +8453,11 @@ export function SnapshotEditorPage() {
         </Modal>
       )}
 
-      {showClearFlowsModal && (
-        <Modal
-          open
-          size="sm"
-          modalHeading="Reset paths"
-          modalLabel="Audio Grid workspace"
-          primaryButtonText="Reset paths"
-          secondaryButtonText="Cancel"
-          onRequestClose={() => setShowClearFlowsModal(false)}
-          onSecondarySubmit={() => setShowClearFlowsModal(false)}
-          onRequestSubmit={confirmClearFlows}
-          danger
-        >
-          <div className="juce-grid-page__form-modal-body">
-            <p className="juce-grid-page__modal-copy">
-              Reset the workspace to a single empty path and discard the current multi-path layout state.
-            </p>
-          </div>
-        </Modal>
-      )}
+      <SnapshotEditorClearFlowsConfirm
+        open={showClearFlowsModal}
+        onClose={() => setShowClearFlowsModal(false)}
+        onConfirm={confirmClearFlows}
+      />
       {midiModalOpen && (
         <Modal
           open
