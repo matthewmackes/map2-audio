@@ -1,0 +1,105 @@
+/* AVB Routing main shell — T2475 E1 Carbon migration. All values
+ * routed through Carbon tokens / MAP semantic alerts. */
+
+.avb-routing-app {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  background: var(--cds-background, #161616);
+  overflow: hidden;
+}
+
+.avb-routing-app__body {
+  display: flex;
+  flex: 1;
+  overflow: hidden;
+  flex-direction: column;
+  min-height: 0;
+}
+
+@media (min-width: 1056px) {
+  .avb-routing-app__body {
+    flex-direction: row;
+  }
+}
+
+.avb-routing-app__sidebar {
+  flex: 0 0 auto;
+  min-height: 0;
+}
+
+@media (min-width: 1056px) {
+  .avb-routing-app__sidebar {
+    flex: 0 0 auto;
+  }
+}
+
+.avb-routing-app__grid {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+  position: relative;
+  min-height: 0;
+  min-width: 0;
+}
+
+.avb-routing-app__loading,
+.avb-routing-app__error {
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--cds-spacing-05, 1rem);
+  padding: var(--cds-spacing-07, 2rem);
+}
+
+.avb-routing-app__loading-title {
+  font-size: var(--cds-heading-compact-02-font-size, 1rem);
+  font-weight: 600;
+  color: var(--cds-text-secondary, #c6c6c6);
+}
+
+.avb-routing-app__loading-subtitle {
+  font-size: var(--cds-body-compact-01-font-size, 0.875rem);
+  color: var(--cds-text-helper, #8d8d8d);
+}
+
+.avb-routing-app__error {
+  align-items: stretch;
+  gap: var(--cds-spacing-04, 0.75rem);
+}
+
+.avb-routing-app__error-hint {
+  font-size: var(--cds-body-compact-01-font-size, 0.875rem);
+  color: var(--cds-text-secondary, #c6c6c6);
+}
+
+.avb-routing-app__error-list {
+  margin: 0;
+  padding-left: var(--cds-spacing-06, 1.5rem);
+  color: var(--cds-text-secondary, #c6c6c6);
+  font-size: var(--cds-body-compact-01-font-size, 0.875rem);
+  line-height: 1.5;
+}
+
+.avb-routing-app__safe-patch {
+  height: 40px;
+  background: var(--map2-alert-advisory, var(--cds-support-warning, #f1c21b));
+  color: var(--cds-text-on-color, #161616);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: var(--cds-spacing-03, 0.5rem);
+  padding: 0 var(--cds-spacing-05, 1rem);
+}
+
+.avb-routing-app__safe-patch-title {
+  font-weight: 600;
+  font-size: var(--cds-body-compact-01-font-size, 0.875rem);
+}
+
+.avb-routing-app__safe-patch-detail {
+  font-size: var(--cds-body-compact-01-font-size, 0.875rem);
+}

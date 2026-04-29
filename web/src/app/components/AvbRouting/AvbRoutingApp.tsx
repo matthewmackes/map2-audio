@@ -1,174 +1,96 @@
-/**
- * AVB Routing Matrix - Main Application Component
- *
- * Root component for the AVB routing matrix UI.
- * Provides layout structure and coordinates all sub-components.
- *
- * Usage:
- *   <RoutingProvider>
- *     <AvbRoutingApp />
- *   </RoutingProvider>
- */
+// AVB Routing Matrix - main application shell. T2475 (E1):
+// migrated from MUI to Carbon. Box → semantic divs, CircularProgress
+// → Carbon Loading, Alert+Typography → InlineNotification + spans,
+// useTheme/useMediaQuery → CSS @media via stylesheet. Safe-patch
+// banner now consumes the canonical AlertPanel-style classNames
+// driven by --map2-alert-* tokens.
 
-import React from 'react';
-import { WarningAltFilled } from '@carbon/icons-react';
-import { Box, CircularProgress, Alert, Typography } from '@mui/material';
-import { useTheme } from '@mui/material/styles';
-import useMediaQuery from '@mui/material/useMediaQuery';
-import { RoutingProvider, useRoutingState } from './context/RoutingContext';
-import { TopBar } from './components/TopBar/TopBar';
-import { NodeTree } from './components/NodeTree/NodeTree';
-import { RoutingGrid } from './components/RoutingGrid/RoutingGrid';
-import { InspectorPanel } from './components/Inspector/InspectorPanel';
+import { InlineNotification, Loading } from '@carbon/react'
+import { WarningAltFilled } from '@carbon/icons-react'
 
-/**
- * Inner app component (wrapped by provider)
- */
+import { RoutingProvider, useRoutingState } from './context/RoutingContext'
+import { TopBar } from './components/TopBar/TopBar'
+import { NodeTree } from './components/NodeTree/NodeTree'
+import { RoutingGrid } from './components/RoutingGrid/RoutingGrid'
+import { InspectorPanel } from './components/Inspector/InspectorPanel'
+import './AvbRoutingApp.css'
+
 function AvbRoutingAppInner() {
-  const state = useRoutingState();
-  const theme = useTheme();
-  const isCompactLayout = useMediaQuery(theme.breakpoints.down('lg'));
+  const state = useRoutingState()
 
-  // Loading state
   if (state.loading && Object.keys(state.endpoints).length === 0) {
     return (
-      <Box
-        sx={{
-          height: '100%',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          flexDirection: 'column',
-          gap: 2,
-        }}
-      >
-        <CircularProgress size={60} />
-        <Typography variant="h6" color="text.secondary">
+      <div className="avb-routing-app__loading">
+        <Loading withOverlay={false} description="Loading AVB routing matrix" />
+        <span className="avb-routing-app__loading-title">
           Loading AVB routing matrix...
-        </Typography>
-        <Typography variant="body2" color="text.disabled">
+        </span>
+        <span className="avb-routing-app__loading-subtitle">
           Discovering endpoints and connections
-        </Typography>
-      </Box>
-    );
+        </span>
+      </div>
+    )
   }
 
-  // Error state
   if (state.error) {
     return (
-      <Box sx={{ p: 3 }}>
-        <Alert severity="error" sx={{ mb: 2 }}>
-          <Typography variant="h6">AVB Routing Error</Typography>
-          <Typography variant="body2">{state.error}</Typography>
-        </Alert>
-        <Typography variant="body2" color="text.secondary">
-          Please check:
-        </Typography>
-        <ul style={{ marginTop: '8px' }}>
+      <div className="avb-routing-app__error">
+        <InlineNotification
+          kind="error"
+          title="AVB Routing Error"
+          subtitle={state.error}
+          lowContrast
+          hideCloseButton
+        />
+        <span className="avb-routing-app__error-hint">Please check:</span>
+        <ul className="avb-routing-app__error-list">
           <li>Backend API is running (http://localhost:8080)</li>
           <li>AVB is enabled in configuration</li>
           <li>Network interfaces are configured</li>
         </ul>
-      </Box>
-    );
+      </div>
+    )
   }
 
-  // Main layout
   return (
-    <Box
-      sx={{
-        height: '100%',
-        display: 'flex',
-        flexDirection: 'column',
-        bgcolor: 'background.default',
-        overflow: 'hidden',
-      }}
-    >
-      {/* Top toolbar */}
+    <div className="avb-routing-app">
       <TopBar />
 
-      {/* Main content area */}
-      <Box
-        sx={{
-          display: 'flex',
-          flex: 1,
-          overflow: 'hidden',
-          flexDirection: { xs: 'column', lg: 'row' },
-          minHeight: 0,
-        }}
-      >
-        {/* Node tree sidebar (left) */}
-        <Box
-          sx={{
-            flex: isCompactLayout ? '0 0 auto' : undefined,
-            minHeight: 0,
-          }}
-        >
+      <div className="avb-routing-app__body">
+        <div className="avb-routing-app__sidebar avb-routing-app__sidebar--left">
           <NodeTree />
-        </Box>
+        </div>
 
-        {/* Routing grid (center) */}
-        <Box
-          sx={{
-            flex: 1,
-            display: 'flex',
-            flexDirection: 'column',
-            overflow: 'hidden',
-            position: 'relative',
-            minHeight: 0,
-            minWidth: 0,
-          }}
-        >
+        <div className="avb-routing-app__grid">
           <RoutingGrid />
-        </Box>
+        </div>
 
-        {/* Inspector panel (right) */}
-        <Box
-          sx={{
-            flex: isCompactLayout ? '0 0 auto' : undefined,
-            minHeight: 0,
-          }}
-        >
+        <div className="avb-routing-app__sidebar avb-routing-app__sidebar--right">
           <InspectorPanel />
-        </Box>
-      </Box>
+        </div>
+      </div>
 
-      {/* Status bar (optional - can be added later) */}
       {state.safePatchMode && (
-        <Box
-          sx={{
-            height: 40,
-            bgcolor: 'warning.main',
-            color: 'warning.contrastText',
-            display: 'flex',
-            alignItems: 'center',
-            justifyContent: 'center',
-            gap: 1,
-            px: 2,
-          }}
-        >
+        <div className="avb-routing-app__safe-patch" role="status">
           <WarningAltFilled size={16} />
-          <Typography variant="body2" fontWeight="bold">
+          <span className="avb-routing-app__safe-patch-title">
             Safe patch mode active
-          </Typography>
-          <Typography variant="body2">
+          </span>
+          <span className="avb-routing-app__safe-patch-detail">
             ({Object.keys(state.pendingRoutes).length} pending changes)
-          </Typography>
-        </Box>
+          </span>
+        </div>
       )}
-    </Box>
-  );
+    </div>
+  )
 }
 
-/**
- * Main export - wraps inner component with providers
- */
 export function AvbRoutingApp() {
   return (
     <RoutingProvider>
       <AvbRoutingAppInner />
     </RoutingProvider>
-  );
+  )
 }
 
-export default AvbRoutingApp;
+export default AvbRoutingApp

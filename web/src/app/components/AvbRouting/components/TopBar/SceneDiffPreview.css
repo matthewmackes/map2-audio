@@ -1,0 +1,78 @@
+/* Scene Diff Preview — T2475 E1 Carbon migration. Operator-facing
+ * read-only summary; tone routed through MAP semantic tokens. */
+
+.scene-diff-preview {
+  padding: var(--cds-spacing-03, 0.5rem) var(--cds-spacing-05, 1rem);
+  border-top: 1px solid var(--cds-border-subtle, #393939);
+  display: flex;
+  flex-direction: column;
+  gap: var(--cds-spacing-03, 0.5rem);
+}
+
+.scene-diff-preview__header {
+  display: flex;
+  align-items: center;
+  gap: var(--cds-spacing-03, 0.5rem);
+  flex-wrap: wrap;
+}
+
+.scene-diff-preview__title {
+  font-weight: 600;
+  font-size: var(--cds-body-compact-01-font-size, 0.875rem);
+  color: var(--cds-text-primary, #f4f4f4);
+}
+
+.scene-diff-preview__scope {
+  font-size: var(--cds-helper-text-01-font-size, 0.75rem);
+  color: var(--cds-text-secondary, #c6c6c6);
+}
+
+.scene-diff-preview__presets {
+  display: flex;
+  align-items: center;
+  gap: var(--cds-spacing-03, 0.5rem);
+  flex-wrap: wrap;
+}
+
+.scene-diff-preview__presets-label {
+  font-size: var(--cds-helper-text-01-font-size, 0.75rem);
+  color: var(--cds-text-secondary, #c6c6c6);
+}
+
+.scene-diff-preview__line {
+  font-size: var(--cds-body-compact-01-font-size, 0.875rem);
+  font-family: var(--cds-code-01-font-family, monospace);
+}
+
+.scene-diff-preview__line--add {
+  color: var(--map2-state-live, var(--cds-support-success, #42be65));
+}
+
+.scene-diff-preview__line--remove {
+  color: var(--map2-alert-critical, var(--cds-support-error, #fa4d56));
+}
+
+.scene-diff-preview__total {
+  font-size: var(--cds-helper-text-01-font-size, 0.75rem);
+  color: var(--cds-text-secondary, #c6c6c6);
+}
+
+.scene-diff-preview__chip-label {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--cds-spacing-02, 0.25rem);
+}
+
+.scene-diff-preview__preset-button {
+  background: transparent;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+  display: inline-flex;
+}
+
+.scene-diff-preview__preset-button:focus-visible {
+  outline: 2px solid var(--cds-focus, #0f62fe);
+  outline-offset: 2px;
+}
