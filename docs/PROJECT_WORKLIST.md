@@ -33688,8 +33688,116 @@ Description:
 - Dependencies: T2474 (must complete first; some bundles still touch MUI consumer files for limited token migration).
 - Estimated effort: Large (was Small) — reclassified after corrected scope.
 - Required outputs: 21 file migrations to Carbon; `web/package.json` and `web/package-lock.json` without `@mui/material`; bundle-size delta noted in commit message; CLAUDE.md tech stack table updated.
-Assigned to: Claude Opus 4.7 (in-progress 2026-04-29 — Q3 revised to A direct-swap; 4 of 21 files migrated)
-Last updated: 2026-04-29 - Claude (Q3 revised C → A direct-swap mid-execution per "follow best practice" direction; 4 of 21 files migrated; remainder in flight)
+Assigned to: Claude Opus 4.7 (in-progress 2026-04-29 → 2026-04-30 — Q3 revised to A direct-swap; 19 of 21 files migrated as of iter 8 of the 10-iteration SHIP loop)
+Last updated: 2026-04-30 - Claude (10-iteration SHIP loop session: iters 1-7 fully migrated 19 files end-to-end; iter 8 partial-migrated TopBar.tsx (only useTheme/useMediaQuery dropped); 2 files remain — TopBar full chrome migration + EdirolUA1000View — plus the @mui/material package.json drop and 28 dead map2/components purge.)
+- **Iteration log (10-iteration SHIP loop, 2026-04-30 session)**:
+  - **Iter 1 (commit 263f8af9)**: MIDICommanderSetup.tsx + MOTURMEPage.tsx (files 5-6/21).
+    Stepper+Step+StepLabel+StepContent → Carbon ProgressIndicator;
+    Switch → Toggle; TextField → TextInput; Alert → InlineNotification;
+    Card → Tile; Tabs → Carbon Tabs/TabList/TabPanels; LinearProgress
+    → ProgressBar. MOTURMEPage preserved hardware-skin palette
+    literals per §10.5.
+  - **Iter 2 (commit 81db43fb)**: AvbRoutingApp.tsx + SceneDiffPreview.tsx
+    (files 7-8/21). Box/CircularProgress/Alert/Typography → semantic
+    divs + Carbon Loading + InlineNotification + spans;
+    useTheme/useMediaQuery removed; Chip → StatusChip with icons
+    inlined into the label slot.
+  - **Iter 3 (commit 3102ecf1)**: NodeTree.tsx + NodeSelector.tsx
+    (files 9-10/21). Drawer/Paper → semantic <aside>;
+    List/ListItem/ListItemButton → <ul>/<li> + role="button";
+    Tabs/Tab → role="tablist" + role="tab" buttons (Carbon Tabs
+    cannot host the dense per-tab content the operator UI needs);
+    IconButton expand-toggle → plain <button> with explicit
+    aria-label/tabIndex/aria-expanded (Carbon Button hasIconOnly
+    does not surface aria-label, breaking the test contract);
+    Menu/MenuItem → hand-rolled role="menu" with click-outside +
+    Escape handling. All test contracts (data-testid, aria-selected,
+    aria-label="Node status …", role and tabindex on menu trigger)
+    preserved verbatim.
+  - **Iter 4 (commit cee45d45)**: NetworkTopologyModal.tsx (file 11/21).
+    Dialog/DialogTitle/DialogContent/DialogActions → Carbon
+    ComposedModal/ModalHeader/ModalBody/ModalFooter; the per-node
+    card rendered inside ReactFlow rewritten as semantic divs;
+    historical data-health-color attribute preserves the MUI
+    palette label string for stable test contracts. Added
+    tests/jest/setupAfterEnv.js with ResizeObserver +
+    IntersectionObserver polyfills (Carbon hooks read these
+    eagerly at first render and JSDOM does not ship them).
+  - **Iter 5 (commit ee98ed57)**: InspectorPanel.tsx (file 12/21,
+    985 LOC). Paper → semantic <aside>; Box → divs;
+    Typography → spans/<h3>; Divider → <hr>;
+    List/ListItem → <ul>/<li> with a tiny StatRow helper that
+    preserves the historical primary/secondary text layout; Chip
+    → StatusChip. All inspector-health-* and inspector-chain-routing-*
+    test contracts preserved verbatim.
+  - **Iter 6 (commit d6ba4f10)**: Five RoutingGrid sub-components
+    (files 13-17/21): ConnectionHighlight, CrosshairOverlay,
+    SelectionOverlay, StickyHeaders, BatchActionsBar. MUI primary
+    palette literals (#2196f3, rgba(33,150,243,*), primary.main)
+    routed through --map2-state-staged. BatchActionsBar Dialog
+    → Carbon Modal (size="xs", primaryButtonText/secondaryButtonText/
+    danger props); CircularProgress → Carbon InlineLoading;
+    IconButton → Carbon Button hasIconOnly. StickyHeaders MUI
+    Tooltip on per-endpoint headers → native title attribute
+    (Carbon Tooltip eagerly renders its label content into the
+    DOM, which would explode for large matrices).
+  - **Iter 7 (commit 6f646dcb)**: MatrixCell.tsx + RoutingGrid.tsx
+    (files 18-19/21). MatrixCell: Box → div, CircularProgress →
+    CSS-only spinner so the large matrix doesn't pay the cost of
+    one Carbon InlineLoading per active connection. MUI Tooltip
+    with rich React content collapsed into a multi-line title
+    attribute. Cross-node aria-label "Cross-node route" preserved
+    verbatim per MatrixCell.crossNode test. Drag-rewire /
+    hover-crosshair / batch-select interaction surface preserved.
+    RoutingGrid: Box → div, Typography → span; per-cell visuals
+    owned by MatrixCell. Connection-state colors pinned to MAP
+    semantic palette.
+  - **Iter 8 (commit 038e6d9d)**: TopBar.tsx — partial.
+    Dropped MUI useTheme + useMediaQuery imports only; replaced
+    with native window.matchMedia + useState/useEffect so the
+    component no longer depends on MUI's ThemeProvider for the
+    isMobile layout decision. Behavior preserved: 600px breakpoint
+    matches MUI's sm threshold; isMobile updates on resize.
+    The full TopBar chrome migration (Box/Typography/Chip/Button/
+    IconButton/Tooltip/Popover/TextField/Select/Checkbox/
+    FormControl/Switch/MenuItem/AppBar/Toolbar/Divider, ~551 MUI
+    references across 3835 LOC paired with 6735 LOC of test
+    contracts in 4 test files) is **deferred to a dedicated
+    session** — the scope vs attention budget tradeoff in a
+    10-iteration shipping loop made an inline migration too
+    risky for the operationally critical TopBar (snapshots,
+    scenes, filters, undo/redo, scene diff).
+- **Remaining work** to close T2475:
+  - **EdirolUA1000View.tsx** (1930 LOC, ~137 MUI references): Dialog
+    + form-control surface (Select/MenuItem/FormControl/InputLabel,
+    Switch/FormControlLabel) + Alert + LinearProgress + Tooltip +
+    CircularProgress. Hardware-skin-adjacent (§10.5 borderline)
+    per the device-control panel framing. Dedicated session
+    recommended.
+  - **TopBar.tsx full chrome migration**: 551 remaining MUI
+    references covering AppBar/Toolbar (top-level layout chrome),
+    Box/Typography (layout + status), Chip (running counts), Button
+    + IconButton (action surface), Tooltip (hover help), Popover
+    (filters/scenes/scene-diff drawers), TextField (search +
+    inline scene editors), Select/MenuItem/FormControl/InputLabel
+    (scene diff baseline/compare/conflict-policy dropdowns),
+    Checkbox/FormControlLabel/FormGroup (filter checkboxes),
+    Divider (visual breaks). Test surface: TopBar.filters.test
+    (327 LOC), TopBar.integration.test (4013 LOC),
+    TopBar.sceneDiffControls.test (1344 LOC),
+    TopBar.sceneManagementControls.test (1051 LOC). Dedicated
+    session required.
+  - **@mui/material package.json drop**: After EdirolUA1000View
+    + TopBar fully migrated, drop the dependency from
+    web/package.json AND root package.json devDependencies. Run
+    npm install (carefully — the lockfile has previously pruned
+    14 @fontsource orphans when regenerated; verify those stay
+    declared).
+  - **28 dead map2/components/ purge**: web/src/map2/components/
+    contains 28 MUI consumers with zero incoming references.
+    These won't fail typecheck while @mui/material remains
+    installed; force-purge them after the dependency drops.
+  - **CLAUDE.md tech stack table**: remove the MUI row.
 - Clarification round (2026-04-29): D + C + A + A + A locked.
   - **D**: Full migration scope — migrate 21 live files to Carbon-native idioms, drop `@mui/material` from `package.json`, force-purge 28 dead `web/src/map2/components/` files when typecheck breaks them.
   - **C**: Per-file Carbon-native rewrite (each file read fully, understood, rewritten in Carbon idioms — not direct MUI→Carbon component swaps).
