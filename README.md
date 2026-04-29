@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1381** Python | **1357** TypeScript | **177** C++/H | **145** Docs | **3120** total commits | **3** stars | **0** forks | **0** open issues
+**1381** Python | **1328** TypeScript | **177** C++/H | **145** Docs | **3125** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -175,8 +175,8 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-DOCS:START -->
 | Document | Last Updated |
 |:---------|:------------|
+| [MAP2 Audio Platform — AI Instructions](https://github.com/matthewmackes/map2-audio/blob/master/docs/CLAUDE.md) | 2026-04-29 |
 | [PROJECT WORKLIST](https://github.com/matthewmackes/map2-audio/blob/master/docs/PROJECT_WORKLIST.md) | 2026-04-29 |
-| [MAP2 Audio Platform — AI Instructions](https://github.com/matthewmackes/map2-audio/blob/master/docs/CLAUDE.md) | 2026-04-28 |
 | [MAP2 Backend Runtime Contract](https://github.com/matthewmackes/map2-audio/blob/master/docs/backend-runtime-contract.md) | 2026-04-27 |
 | [MAP2 API Contract Standards](https://github.com/matthewmackes/map2-audio/blob/master/docs/api-contract-standards.md) | 2026-04-25 |
 | [MAP2 LCD Console — Operator Guide](https://github.com/matthewmackes/map2-audio/blob/master/docs/LCD_OPERATOR_GUIDE.md) | 2026-04-23 |
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`46cbc0fb`](https://github.com/matthewmackes/map2-audio/commit/46cbc0fb422cf22c0efacc4f878a600f464efc1a) | T2475 E1 (21/21 SHIPPED): drop @mui/material; T2475 epic ... | Map2 Audio | 2026-04-29 |
+| [`f226a3c6`](https://github.com/matthewmackes/map2-audio/commit/f226a3c694e1bfba5f22334241502ae9b9cadadb) | T2475 E1 (20s/21): TopBar.tsx Popover -> custom TopBarPop... | Map2 Audio | 2026-04-29 |
+| [`e0f05191`](https://github.com/matthewmackes/map2-audio/commit/e0f0519193fa91ec437502e5310c520756520936) | Merge branch 'master' of https://github.com/matthewmackes... | Map2 Audio | 2026-04-29 |
+| [`83083aca`](https://github.com/matthewmackes/map2-audio/commit/83083aca29218e9b46c9f2f7d5747ab00c53eb02) | T2475 E1 (20r/21): TopBar.tsx Select form-controls -> Car... | Map2 Audio | 2026-04-29 |
+| [`0bcf9ea5`](https://github.com/matthewmackes/map2-audio/commit/0bcf9ea53fc9de5e6ab9e143484d8807364dbb72) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-29 |
 | [`1a669f32`](https://github.com/matthewmackes/map2-audio/commit/1a669f325574d7ea4f663a16095d32277aac78a4) | T2475 E1 (status): worklist updated — Select migration de... | Map2 Audio | 2026-04-29 |
 | [`c293b4a4`](https://github.com/matthewmackes/map2-audio/commit/c293b4a4cc575e4f443848a570840668d88a5cc6) | T2475 E1 (20q/21): TopBar.tsx Checkbox+FormGroup+FormCont... | Map2 Audio | 2026-04-29 |
 | [`bbe7826c`](https://github.com/matthewmackes/map2-audio/commit/bbe7826c6b3d1bad5b5db60e7d4179bc8b6662f7) | T2475 E1 (20p/21): TopBar.tsx TextField+InputAdornment ->... | Map2 Audio | 2026-04-29 |
-| [`c308113e`](https://github.com/matthewmackes/map2-audio/commit/c308113ed528cf81d94ee99ec9a0766e8fd3da87) | T2475 E1 (20o/21): TopBar.tsx Button -> Carbon Button (37... | Map2 Audio | 2026-04-29 |
-| [`c494b0ec`](https://github.com/matthewmackes/map2-audio/commit/c494b0ec848873d4ab3411eb5353a51094ec9e27) | T2475 E1 (20n/21): TopBar.tsx Box -> semantic divs (29 si... | Map2 Audio | 2026-04-29 |
-| [`db823e0c`](https://github.com/matthewmackes/map2-audio/commit/db823e0cd23b7f2b15e9987e246a674dec2bbebc) | T2475 E1 (20m/21): TopBar.tsx Typography -> semantic span... | Map2 Audio | 2026-04-29 |
-| [`5bb6587d`](https://github.com/matthewmackes/map2-audio/commit/5bb6587d2a53c32f926eecdc5da4e0e266178387) | Merge branch 'master' of https://github.com/matthewmackes... | Map2 Audio | 2026-04-29 |
-| [`de343804`](https://github.com/matthewmackes/map2-audio/commit/de343804c6603b990f42da1d482fe1e9abf99e07) | T2475 E1 (20l/21): TopBar.tsx Chip -> StatusChip (42 sites) | Map2 Audio | 2026-04-29 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
@@ -232,7 +232,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 | [Neural Amp Modeler](https://github.com/sdatkinson/NeuralAmpModelerPlugin) | ML amp modeling |
 | [Textual](https://textual.textualize.io/) | Python TUI framework |
 
-...and **39** more open-source packages from PyPI and npm.
+...and **38** more open-source packages from PyPI and npm.
 <!-- CREDITS:END -->
 
 ---
