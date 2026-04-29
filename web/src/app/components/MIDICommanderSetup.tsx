@@ -3,28 +3,30 @@
  *
  * Provides device profile management, expression pedal calibration,
  * and firmware update capabilities for the MeloAudio MIDI Commander.
+ *
+ * T2475 (E1): direct-swap migration from MUI to Carbon. The MUI
+ * `Stepper` widget has no direct Carbon equivalent; replaced with
+ * Carbon's `ProgressIndicator` (step header) plus per-step content
+ * rendered conditionally on `activeStep`. All other MUI components
+ * mapped to their nearest Carbon equivalent: Button → Carbon Button,
+ * Chip → StatusChip (B4), Switch → Carbon Toggle,
+ * FormControl/Select/InputLabel/MenuItem → Carbon Dropdown,
+ * LinearProgress → Carbon ProgressBar, Alert/AlertTitle → Carbon
+ * InlineNotification, TextField → Carbon TextInput.
  */
 
 import { useCallback, useEffect, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   Button,
-  Chip,
-  Switch,
-  FormControlLabel,
-  FormControl,
-  InputLabel,
-  Select,
-  MenuItem,
-  LinearProgress,
-  Alert,
-  AlertTitle,
-  TextField,
-  Stepper,
-  Step,
-  StepLabel,
-  StepContent,
-} from '@mui/material'
+  Dropdown,
+  InlineNotification,
+  ProgressBar,
+  ProgressIndicator,
+  ProgressStep,
+  TextInput,
+  Toggle,
+} from '@carbon/react'
 import {
   ChevronDown,
   ChevronRight,
@@ -34,6 +36,7 @@ import {
   Settings,
   Upload,
 } from '@carbon/icons-react'
+
 import { midiApiV2 } from '../../map2/api'
 import type {
   MIDIDeviceProfile,
@@ -44,8 +47,21 @@ import type {
 } from '../../map2/types'
 import { createParameterDescriptor } from '../data/parameterSchema'
 import { ParameterControl } from './ParameterControl'
+import { StatusChip } from './primitives'
 import { useToasts } from './Toasts'
 import { LegacyTile } from './shared/LegacyTile'
+
+interface CurveOption {
+  value: MIDIExpressionCurve
+  label: string
+}
+
+const CURVE_OPTIONS: CurveOption[] = [
+  { value: 'linear', label: 'Linear' },
+  { value: 'logarithmic', label: 'Logarithmic (Smooth start)' },
+  { value: 'exponential', label: 'Exponential (Smooth end)' },
+  { value: 's_curve', label: 'S-Curve (Smooth both)' },
+]
 
 // ============================================================================
 // Device Profile Card
@@ -65,21 +81,14 @@ function ProfileCard({ profile, isActive, onApply, isApplying }: ProfileCardProp
       style={{ padding: 16, position: 'relative' }}
     >
       {isActive && (
-        <Chip
-          label="Active"
-          color="success"
-          size="small"
-          style={{ position: 'absolute', top: 8, right: 8 }}
-        />
+        <span style={{ position: 'absolute', top: 8, right: 8 }}>
+          <StatusChip tone="ok" label="Active" size="sm" />
+        </span>
       )}
       {profile.is_recommended && !isActive && (
-        <Chip
-          label="Recommended"
-          color="primary"
-          size="small"
-          variant="outlined"
-          style={{ position: 'absolute', top: 8, right: 8 }}
-        />
+        <span style={{ position: 'absolute', top: 8, right: 8 }}>
+          <StatusChip tone="info" label="Recommended" size="sm" />
+        </span>
       )}
 
       <div style={{ display: 'flex', alignItems: 'center', gap: 12, marginBottom: 12 }}>
@@ -94,42 +103,25 @@ function ProfileCard({ profile, isActive, onApply, isApplying }: ProfileCardProp
 
       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginBottom: 12 }}>
         {profile.footswitches.length > 0 && (
-          <Chip
-            label={`${profile.footswitches.length} Switches`}
-            size="small"
-            variant="outlined"
-          />
+          <StatusChip tone="neutral" label={`${profile.footswitches.length} Switches`} size="sm" />
         )}
         {profile.expression_pedals.length > 0 && (
-          <Chip
-            label={`${profile.expression_pedals.length} Expression`}
-            size="small"
-            variant="outlined"
-          />
+          <StatusChip tone="neutral" label={`${profile.expression_pedals.length} Expression`} size="sm" />
         )}
         {profile.bank_config?.enabled && (
-          <Chip
-            label={`${profile.bank_config.max_banks} Banks`}
-            size="small"
-            variant="outlined"
-          />
+          <StatusChip tone="neutral" label={`${profile.bank_config.max_banks} Banks`} size="sm" />
         )}
         {profile.supports_firmware_update && (
-          <Chip
-            icon={<Upload size={12} />}
-            label="DFU"
-            size="small"
-            variant="outlined"
-          />
+          <StatusChip tone="info" label="DFU" size="sm" />
         )}
       </div>
 
       {!isActive && (
         <Button
-          variant="contained"
+          kind="primary"
           onClick={onApply}
           disabled={isApplying}
-          fullWidth
+          size="sm"
         >
           {isApplying ? 'Applying...' : 'Apply Profile'}
         </Button>
@@ -153,7 +145,7 @@ function FootswitchLayout({ footswitches, expressionPedals }: FootswitchLayoutPr
   const ccSwitches = footswitches.filter(fs => fs.midi_type === 'cc')
 
   return (
-    <div style={{ background: 'var(--surface-2)', borderRadius: 8, padding: 16 }}>
+    <div style={{ background: 'var(--surface-2)', padding: 16 }}>
       <div style={{ textAlign: 'center', marginBottom: 16 }}>
         <div
           style={{
@@ -161,7 +153,6 @@ function FootswitchLayout({ footswitches, expressionPedals }: FootswitchLayoutPr
             color: '#0f0',
             fontFamily: 'var(--font-mono)',
             padding: '8px 24px',
-            borderRadius: 4,
             display: 'inline-block',
           }}
         >
@@ -240,7 +231,6 @@ function FootswitchLayout({ footswitches, expressionPedals }: FootswitchLayoutPr
                 textAlign: 'center',
                 padding: '8px 16px',
                 background: 'var(--surface-3)',
-                borderRadius: 4,
               }}
             >
               <MeterAlt size={16} style={{ marginBottom: 4 }} />
@@ -414,6 +404,8 @@ export function ExpressionCalibrationPanel({
 
   const processedValue = liveValue !== undefined ? processValue(liveValue) : null
 
+  const selectedCurve = CURVE_OPTIONS.find(c => c.value === draftCalibration.curve) ?? CURVE_OPTIONS[0]
+
   return (
     <LegacyTile style={{ padding: 16, marginBottom: 12 }}>
       <div
@@ -452,10 +444,12 @@ export function ExpressionCalibrationPanel({
           {liveValue !== undefined && (
             <div style={{ marginBottom: 16 }}>
               <div className="subtitle" style={{ marginBottom: 4 }}>Live Preview</div>
-              <LinearProgress
-                variant="determinate"
+              <ProgressBar
                 value={(processedValue || 0) * 100}
-                sx={{ height: 8, borderRadius: 4 }}
+                max={100}
+                label="Live preview"
+                hideLabel
+                size="small"
               />
             </div>
           )}
@@ -493,30 +487,28 @@ export function ExpressionCalibrationPanel({
 
           {/* Curve type */}
           <div style={{ marginBottom: 16 }}>
-            <FormControl fullWidth size="small">
-              <InputLabel>Response Curve</InputLabel>
-              <Select
-                value={draftCalibration.curve}
-                label="Response Curve"
-                onChange={(e) => commitCalibration({ curve: e.target.value as MIDIExpressionCurve })}
-              >
-                <MenuItem value="linear">Linear</MenuItem>
-                <MenuItem value="logarithmic">Logarithmic (Smooth start)</MenuItem>
-                <MenuItem value="exponential">Exponential (Smooth end)</MenuItem>
-                <MenuItem value="s_curve">S-Curve (Smooth both)</MenuItem>
-              </Select>
-            </FormControl>
+            <Dropdown<CurveOption>
+              id={`midi-commander-curve-${pedalId}`}
+              titleText="Response Curve"
+              label="Response Curve"
+              size="sm"
+              items={CURVE_OPTIONS}
+              itemToString={(item) => item?.label ?? ''}
+              selectedItem={selectedCurve}
+              onChange={({ selectedItem }) => {
+                if (selectedItem) commitCalibration({ curve: selectedItem.value })
+              }}
+            />
           </div>
 
           {/* Invert toggle */}
-          <FormControlLabel
-            control={
-              <Switch
-                checked={draftCalibration.invert}
-                onChange={(e) => commitCalibration({ invert: e.target.checked })}
-              />
-            }
-            label="Invert Direction"
+          <Toggle
+            id={`midi-commander-invert-${pedalId}`}
+            labelText="Invert Direction"
+            hideLabel={false}
+            toggled={draftCalibration.invert}
+            onToggle={(checked) => commitCalibration({ invert: checked })}
+            size="sm"
           />
         </div>
       )}
@@ -574,126 +566,143 @@ function FirmwareUpdatePanel({ profileId }: FirmwareUpdatePanelProps) {
       </h3>
 
       {!dfuStatus?.dfu_available && (
-        <Alert severity="warning" style={{ marginBottom: 16 }}>
-          <AlertTitle>dfu-util not installed</AlertTitle>
-          {dfuStatus?.install_hint && (
-            <code style={{ display: 'block', marginTop: 8 }}>
-              {dfuStatus.install_hint}
-            </code>
-          )}
-        </Alert>
+        <InlineNotification
+          kind="warning"
+          title="dfu-util not installed"
+          subtitle={dfuStatus?.install_hint}
+          hideCloseButton
+          lowContrast
+          style={{ marginBottom: 16 }}
+        />
       )}
 
-      <Stepper activeStep={activeStep} orientation="vertical">
-        <Step>
-          <StepLabel>Enter DFU Mode</StepLabel>
-          <StepContent>
-            {instructions && (
-              <div style={{ marginBottom: 16 }}>
-                <ol style={{ paddingLeft: 20, margin: 0 }}>
-                  {instructions.steps.map((step, i) => (
-                    <li key={i} style={{ marginBottom: 8 }}>{step}</li>
-                  ))}
-                </ol>
-                {instructions.notes.length > 0 && (
-                  <Alert severity="info" style={{ marginTop: 12 }}>
-                    {instructions.notes.map((note, i) => (
-                      <div key={i}>{note}</div>
-                    ))}
-                  </Alert>
-                )}
-              </div>
+      {/* T2475 (E1): MUI Stepper widget has no direct Carbon equivalent.
+       * Replaced with Carbon ProgressIndicator for the step header (shows
+       * current/complete/incomplete state of all steps) plus per-step
+       * content rendered conditionally on activeStep. Same operator UX,
+       * just rendered as Carbon idioms. */}
+      <ProgressIndicator
+        currentIndex={activeStep}
+        spaceEqually
+        style={{ marginBottom: 16 }}
+      >
+        <ProgressStep label="Enter DFU Mode" />
+        <ProgressStep label="Verify DFU" />
+        <ProgressStep label="Flash Firmware" />
+        <ProgressStep label="Complete" />
+      </ProgressIndicator>
+
+      {activeStep === 0 && (
+        <div>
+          {instructions && (
+            <div style={{ marginBottom: 16 }}>
+              <ol style={{ paddingLeft: 20, margin: 0 }}>
+                {instructions.steps.map((step, i) => (
+                  <li key={i} style={{ marginBottom: 8 }}>{step}</li>
+                ))}
+              </ol>
+              {instructions.notes.length > 0 && (
+                <InlineNotification
+                  kind="info"
+                  title="Notes"
+                  subtitle={instructions.notes.join(' · ')}
+                  hideCloseButton
+                  lowContrast
+                  style={{ marginTop: 12 }}
+                />
+              )}
+            </div>
+          )}
+          <Button
+            kind="primary"
+            onClick={() => setActiveStep(1)}
+            disabled={!dfuStatus?.dfu_available}
+          >
+            Continue
+          </Button>
+        </div>
+      )}
+
+      {activeStep === 1 && (
+        <div>
+          <div style={{ marginBottom: 16 }}>
+            {dfuStatus?.devices_in_dfu_mode.length ? (
+              <InlineNotification
+                kind="success"
+                title="Device detected in DFU mode"
+                subtitle={dfuStatus.devices_in_dfu_mode.map(d => d.raw).join(' · ')}
+                hideCloseButton
+                lowContrast
+              />
+            ) : (
+              <InlineNotification
+                kind="warning"
+                title="No device in DFU mode"
+                subtitle="Follow the steps above to enter DFU mode, then click Refresh."
+                hideCloseButton
+                lowContrast
+              />
             )}
+          </div>
+          <div style={{ display: 'flex', gap: 8 }}>
+            <Button kind="tertiary" renderIcon={Renew} onClick={() => dfuStatusQuery.refetch()}>
+              Refresh
+            </Button>
             <Button
-              variant="contained"
-              onClick={() => setActiveStep(1)}
-              disabled={!dfuStatus?.dfu_available}
+              kind="primary"
+              onClick={() => setActiveStep(2)}
+              disabled={!dfuStatus?.devices_in_dfu_mode.length}
             >
               Continue
             </Button>
-          </StepContent>
-        </Step>
+          </div>
+        </div>
+      )}
 
-        <Step>
-          <StepLabel>Verify DFU Connection</StepLabel>
-          <StepContent>
-            <div style={{ marginBottom: 16 }}>
-              {dfuStatus?.devices_in_dfu_mode.length ? (
-                <Alert severity="success">
-                  <AlertTitle>Device detected in DFU mode</AlertTitle>
-                  {dfuStatus.devices_in_dfu_mode.map((d, i) => (
-                    <div key={i} style={{ fontFamily: 'var(--font-mono)', fontSize: 12 }}>
-                      {d.raw}
-                    </div>
-                  ))}
-                </Alert>
-              ) : (
-                <Alert severity="warning">
-                  <AlertTitle>No device in DFU mode</AlertTitle>
-                  Follow the steps above to enter DFU mode, then click Refresh.
-                </Alert>
-              )}
+      {activeStep === 2 && (
+        <div>
+          <TextInput
+            id="midi-commander-firmware-path"
+            labelText="Firmware File Path"
+            value={firmwarePath}
+            onChange={(e) => setFirmwarePath(e.target.value)}
+            placeholder="/path/to/firmware.dfu"
+            helperText="Enter the full path to the .dfu firmware file"
+            style={{ marginBottom: 16 }}
+          />
+
+          <div style={{ display: 'flex', gap: 8 }}>
+            <Button kind="tertiary" onClick={() => setActiveStep(1)}>Back</Button>
+            <Button
+              kind="primary"
+              onClick={() => flashMutation.mutate()}
+              disabled={!firmwarePath || flashMutation.isPending}
+            >
+              {flashMutation.isPending ? 'Flashing...' : 'Flash Firmware'}
+            </Button>
+          </div>
+
+          {flashMutation.isPending && (
+            <div style={{ marginTop: 16 }}>
+              <ProgressBar label="Flashing firmware" hideLabel />
             </div>
-            <div style={{ display: 'flex', gap: 8 }}>
-              <Button onClick={() => dfuStatusQuery.refetch()}>
-                <Renew size={16} /> Refresh
-              </Button>
-              <Button
-                variant="contained"
-                onClick={() => setActiveStep(2)}
-                disabled={!dfuStatus?.devices_in_dfu_mode.length}
-              >
-                Continue
-              </Button>
-            </div>
-          </StepContent>
-        </Step>
+          )}
+        </div>
+      )}
 
-        <Step>
-          <StepLabel>Flash Firmware</StepLabel>
-          <StepContent>
-            <TextField
-              fullWidth
-              label="Firmware File Path"
-              value={firmwarePath}
-              onChange={(e) => setFirmwarePath(e.target.value)}
-              placeholder="/path/to/firmware.dfu"
-              style={{ marginBottom: 16 }}
-              helperText="Enter the full path to the .dfu firmware file"
-            />
-
-            <div style={{ display: 'flex', gap: 8 }}>
-              <Button onClick={() => setActiveStep(1)}>Back</Button>
-              <Button
-                variant="contained"
-                color="primary"
-                onClick={() => flashMutation.mutate()}
-                disabled={!firmwarePath || flashMutation.isPending}
-              >
-                {flashMutation.isPending ? 'Flashing...' : 'Flash Firmware'}
-              </Button>
-            </div>
-
-            {flashMutation.isPending && (
-              <LinearProgress style={{ marginTop: 16 }} />
-            )}
-          </StepContent>
-        </Step>
-
-        <Step>
-          <StepLabel>Complete</StepLabel>
-          <StepContent>
-            <Alert severity="success" style={{ marginBottom: 16 }}>
-              <AlertTitle>Firmware Updated</AlertTitle>
-              Power cycle the device to complete the update.
-              {instructions?.exit_dfu && (
-                <div style={{ marginTop: 8 }}>{instructions.exit_dfu}</div>
-              )}
-            </Alert>
-            <Button onClick={() => setActiveStep(0)}>Start Over</Button>
-          </StepContent>
-        </Step>
-      </Stepper>
+      {activeStep === 3 && (
+        <div>
+          <InlineNotification
+            kind="success"
+            title="Firmware Updated"
+            subtitle={`Power cycle the device to complete the update.${instructions?.exit_dfu ? ` ${instructions.exit_dfu}` : ''}`}
+            hideCloseButton
+            lowContrast
+            style={{ marginBottom: 16 }}
+          />
+          <Button kind="tertiary" onClick={() => setActiveStep(0)}>Start Over</Button>
+        </div>
+      )}
     </LegacyTile>
   )
 }
@@ -767,27 +776,30 @@ export function MIDICommanderSetup() {
       {/* Section tabs */}
       <div style={{ display: 'flex', gap: 8, marginBottom: 16 }}>
         <Button
-          variant={selectedSection === 'profiles' ? 'contained' : 'outlined'}
+          kind={selectedSection === 'profiles' ? 'primary' : 'tertiary'}
           onClick={() => setSelectedSection('profiles')}
-          size="small"
+          size="sm"
+          renderIcon={Settings}
         >
-          <Settings size={16} style={{ marginRight: 4 }} /> Profiles
+          Profiles
         </Button>
         <Button
-          variant={selectedSection === 'calibration' ? 'contained' : 'outlined'}
+          kind={selectedSection === 'calibration' ? 'primary' : 'tertiary'}
           onClick={() => setSelectedSection('calibration')}
-          size="small"
+          size="sm"
           disabled={!activeProfile}
+          renderIcon={MeterAlt}
         >
-          <MeterAlt size={16} style={{ marginRight: 4 }} /> Calibration
+          Calibration
         </Button>
         <Button
-          variant={selectedSection === 'firmware' ? 'contained' : 'outlined'}
+          kind={selectedSection === 'firmware' ? 'primary' : 'tertiary'}
           onClick={() => setSelectedSection('firmware')}
-          size="small"
+          size="sm"
           disabled={!activeProfile?.supports_firmware_update}
+          renderIcon={Upload}
         >
-          <Upload size={16} style={{ marginRight: 4 }} /> Firmware
+          Firmware
         </Button>
       </div>
 
@@ -833,7 +845,6 @@ export function MIDICommanderSetup() {
                     marginTop: 16,
                     padding: 16,
                     background: 'var(--surface-2)',
-                    borderRadius: 8,
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
@@ -849,14 +860,14 @@ export function MIDICommanderSetup() {
                   </div>
                   <div style={{ display: 'flex', gap: 8 }}>
                     <Button
-                      variant="outlined"
+                      kind="tertiary"
                       onClick={() => bankDownMutation.mutate()}
                       disabled={bankState.current_bank === 0}
                     >
                       Bank Down
                     </Button>
                     <Button
-                      variant="outlined"
+                      kind="tertiary"
                       onClick={() => bankUpMutation.mutate()}
                       disabled={bankState.current_bank >= bankState.max_banks - 1}
                     >
@@ -898,9 +909,13 @@ export function MIDICommanderSetup() {
           ))}
 
           {activeProfile.expression_pedals.length === 0 && (
-            <Alert severity="info">
-              This profile does not have expression pedal configurations.
-            </Alert>
+            <InlineNotification
+              kind="info"
+              title="No expression pedals"
+              subtitle="This profile does not have expression pedal configurations."
+              hideCloseButton
+              lowContrast
+            />
           )}
         </>
       )}
@@ -919,15 +934,14 @@ export function MIDICommanderSetup() {
 
           <FirmwareUpdatePanel profileId={activeProfile.profile_id} />
 
-          <Alert severity="warning" style={{ marginTop: 16 }}>
-            <AlertTitle>Firmware Update Warning</AlertTitle>
-            <ul style={{ margin: 0, paddingLeft: 20 }}>
-              <li>Only use official firmware files from trusted sources</li>
-              <li>Do not disconnect the device during flashing</li>
-              <li>Incorrect firmware may brick your device</li>
-              <li>MeloAudio no longer provides official support for this device</li>
-            </ul>
-          </Alert>
+          <InlineNotification
+            kind="warning"
+            title="Firmware Update Warning"
+            subtitle="Only use official firmware files from trusted sources. Do not disconnect the device during flashing. Incorrect firmware may brick your device. MeloAudio no longer provides official support for this device."
+            hideCloseButton
+            lowContrast
+            style={{ marginTop: 16 }}
+          />
         </>
       )}
     </div>

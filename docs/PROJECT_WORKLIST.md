@@ -33688,8 +33688,8 @@ Description:
 - Dependencies: T2474 (must complete first; some bundles still touch MUI consumer files for limited token migration).
 - Estimated effort: Large (was Small) — reclassified after corrected scope.
 - Required outputs: 21 file migrations to Carbon; `web/package.json` and `web/package-lock.json` without `@mui/material`; bundle-size delta noted in commit message; CLAUDE.md tech stack table updated.
-Assigned to: TBD (paused after pre-flight reconnaissance flagged scope-vs-session-fit risk)
-Last updated: 2026-04-29 - Claude (clarification round complete; pre-flight reconnaissance flagged scope mismatch; execution deferred)
+Assigned to: Claude Opus 4.7 (in-progress 2026-04-29 — Q3 revised to A direct-swap; 4 of 21 files migrated)
+Last updated: 2026-04-29 - Claude (Q3 revised C → A direct-swap mid-execution per "follow best practice" direction; 4 of 21 files migrated; remainder in flight)
 - Clarification round (2026-04-29): D + C + A + A + A locked.
   - **D**: Full migration scope — migrate 21 live files to Carbon-native idioms, drop `@mui/material` from `package.json`, force-purge 28 dead `web/src/map2/components/` files when typecheck breaks them.
   - **C**: Per-file Carbon-native rewrite (each file read fully, understood, rewritten in Carbon idioms — not direct MUI→Carbon component swaps).

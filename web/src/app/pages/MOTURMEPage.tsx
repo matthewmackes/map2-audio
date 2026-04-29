@@ -1,23 +1,20 @@
 import { useMemo, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
-import {
-  Card,
-  CardContent,
-  Typography,
-  Box,
-  LinearProgress,
-  Chip,
-  Tabs,
-  Tab,
-  Tooltip,
-  Alert,
-  IconButton,
-} from '@mui/material'
+import { Button, InlineNotification, ProgressBar, Tab, TabList, TabPanel, TabPanels, Tabs, Tile, Tooltip } from '@carbon/react'
 import { Activity, ChartLine, Information } from '@carbon/icons-react'
 import { audioApi } from '../../map2/api'
 import type { AudioHealth, JuceMetrics } from '../../map2/api'
 import type { AudioStatus } from '../../map2/types'
 import { useVuMeters } from '../hooks/useVuMeters'
+import { StatusChip } from '../components/primitives'
+
+// T2475 (E1): direct-swap MUI → Carbon migration. The MOTU/RME page is
+// borderline §10.5 hardware-skin (it visually represents two physical
+// audio interfaces with photorealistic colors). Hardware-aesthetic
+// palette literals (the deep-teal/amber/blue tones that mirror the
+// physical units' panel colors) are preserved as device-graphics; the
+// operational chrome (system-load tiles, latency tiles, signal-flow
+// arrows) routes through Carbon tokens.
 
 type LatencyMode = 'motu-only' | 'adat-expanded' | 'outboard-inserts'
 
@@ -42,6 +39,12 @@ function buildMeterChannels(leftDb: number, rightDb: number, count: number): Met
     return { db, percent: dbToPercent(db) }
   })
 }
+
+const LATENCY_MODES: { value: LatencyMode; label: string }[] = [
+  { value: 'motu-only', label: 'MOTU Only' },
+  { value: 'adat-expanded', label: 'ADAT Expanded' },
+  { value: 'outboard-inserts', label: 'Outboard Inserts' },
+]
 
 export default function MOTURMEPage() {
   const [latencyMode, setLatencyMode] = useState<LatencyMode>('adat-expanded')
@@ -102,11 +105,11 @@ export default function MOTURMEPage() {
     const outboardHardware = latencyMode === 'outboard-inserts' ? 60 : 0
 
     let totalSamples = dawBuffer + driverUSB + motuConverters
-    
+
     if (latencyMode === 'adat-expanded' || latencyMode === 'outboard-inserts') {
       totalSamples += adatTransmission + rmeConverters
     }
-    
+
     if (latencyMode === 'outboard-inserts') {
       totalSamples += outboardHardware
     }
@@ -137,35 +140,39 @@ export default function MOTURMEPage() {
     [levels.outputLeft, levels.outputRight]
   )
 
+  // Hardware-skin meter colors — preserved as device graphics per §10.5.
   const getMeterColor = (value: number) => {
     if (value > 85) return '#FF4444'
     if (value > 70) return '#FFAA00'
     return '#2563eb'
   }
 
+  // Hardware-skin load colors — preserved as device graphics per §10.5.
   const getLoadColor = (value: number) => {
     if (value > 75) return '#FF4444'
     if (value > 60) return '#FFAA00'
     return '#00FF9D'
   }
 
+  const latencyTabIndex = LATENCY_MODES.findIndex(m => m.value === latencyMode)
+
   return (
-    <div className="motu-rme-page" style={{ 
-      minHeight: '100vh', 
+    <div className="motu-rme-page" style={{
+      minHeight: '100vh',
       background: '#0a0a0a',
       padding: '24px',
     }}>
       {/* Page Title */}
-      <Box sx={{ mb: 4, textAlign: 'center' }}>
-        <Typography variant="h3" style={{ color: '#f3f4f6', fontWeight: 700, marginBottom: 8 }}>
+      <div style={{ marginBottom: 32, textAlign: 'center' }}>
+        <h1 style={{ color: '#f3f4f6', fontWeight: 700, marginBottom: 8, fontSize: '2rem' }}>
           MOTU UltraLite-mk5 + RME ADI-8 QS
-        </Typography>
-        <Typography variant="subtitle1" style={{ color: '#94a3b8', fontSize: 14 }}>
+        </h1>
+        <p style={{ color: '#94a3b8', fontSize: 14, margin: 0 }}>
           ADAT-Expanded Monitoring Dashboard
-        </Typography>
-        <Box sx={{ mt: 1.5 }}>
-          <Chip
-            size="small"
+        </p>
+        <div style={{ marginTop: 12 }}>
+          <StatusChip
+            tone={metersRunning ? (metersConnected ? 'live' : 'caution') : 'critical'}
             label={
               !metersRunning
                 ? 'Engine stopped'
@@ -173,342 +180,343 @@ export default function MOTURMEPage() {
                   ? 'Live metering (WebSocket)'
                   : 'Live metering (polling fallback)'
             }
-            style={{
-              background: metersRunning ? 'rgba(0, 255, 157, 0.16)' : 'rgba(239, 68, 68, 0.18)',
-              color: metersRunning ? '#00FF9D' : '#ef4444',
-              border: `1px solid ${metersRunning ? 'rgba(0, 255, 157, 0.45)' : 'rgba(239, 68, 68, 0.45)'}`,
-              fontWeight: 600,
-            }}
+            size="sm"
+            dot
           />
-        </Box>
-      </Box>
+        </div>
+      </div>
 
       {/* Hero Section - Product Photos */}
-      <Card style={{ 
+      <Tile style={{
         background: 'rgba(15, 23, 42, 0.9)',
         border: '1px solid rgba(37, 99, 235, 0.2)',
         marginBottom: 24,
       }}>
-        <CardContent>
-          <Box sx={{ display: 'flex', justifyContent: 'space-around', alignItems: 'center', gap: 4, flexWrap: 'wrap' }}>
-            {/* RME ADI-8 QS (Top) */}
-            <Box sx={{ textAlign: 'center', flex: 1, minWidth: 250 }}>
-              <div style={{
-                width: '100%',
-                height: 180,
-                background: 'rgba(42, 32, 20, 0.78)',
-                border: '1px solid rgba(37, 99, 235, 0.35)',
-                borderRadius: 12,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                marginBottom: 12,
-              }}>
-                <img
-                  src="/img/audio-output.png"
-                  alt="RME ADI-8 QS"
-                  style={{ width: '85%', height: '85%', objectFit: 'contain', opacity: 0.92 }}
-                />
-              </div>
-              <Chip label="ADAT Slave" size="small" style={{ background: '#2563eb', color: '#111', fontWeight: 600 }} />
-            </Box>
+        <div style={{ display: 'flex', justifyContent: 'space-around', alignItems: 'center', gap: 32, flexWrap: 'wrap' }}>
+          {/* RME ADI-8 QS (Top) */}
+          <div style={{ textAlign: 'center', flex: 1, minWidth: 250 }}>
+            <div style={{
+              width: '100%',
+              height: 180,
+              background: 'rgba(42, 32, 20, 0.78)',
+              border: '1px solid rgba(37, 99, 235, 0.35)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              marginBottom: 12,
+            }}>
+              <img
+                src="/img/audio-output.png"
+                alt="RME ADI-8 QS"
+                style={{ width: '85%', height: '85%', objectFit: 'contain', opacity: 0.92 }}
+              />
+            </div>
+            <span style={{ display: 'inline-block', padding: '4px 8px', background: '#2563eb', color: '#111', fontWeight: 600, fontSize: 12 }}>
+              ADAT Slave
+            </span>
+          </div>
 
-            {/* ADAT Connection Indicator */}
-            <Box sx={{ textAlign: 'center' }}>
-              <div style={{
-                width: 80,
-                height: 80,
-                borderRadius: '50%',
-                background: 'rgba(21, 42, 72, 0.92)',
-                border: '2px solid #2563eb',
-                boxShadow: '0 0 0 6px rgba(37, 99, 235, 0.12)',
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                animation: 'pulse 2s ease-in-out infinite',
-              }}>
-                <Activity size={32} style={{ color: '#2563eb' }} />
-              </div>
-              <Typography variant="caption" style={{ color: '#2563eb', marginTop: 8, display: 'block' }}>
-                ADAT Optical
-              </Typography>
-            </Box>
+          {/* ADAT Connection Indicator */}
+          <div style={{ textAlign: 'center' }}>
+            <div style={{
+              width: 80,
+              height: 80,
+              borderRadius: '50%',
+              background: 'rgba(21, 42, 72, 0.92)',
+              border: '2px solid #2563eb',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              animation: 'pulse 2s ease-in-out infinite',
+            }}>
+              <Activity size={32} style={{ color: '#2563eb' }} />
+            </div>
+            <div style={{ color: '#2563eb', marginTop: 8, fontSize: 12 }}>
+              ADAT Optical
+            </div>
+          </div>
 
-            {/* MOTU UltraLite-mk5 (Bottom) */}
-            <Box sx={{ textAlign: 'center', flex: 1, minWidth: 250 }}>
-              <div style={{
-                width: '100%',
-                height: 180,
-                background: 'rgba(12, 46, 39, 0.8)',
-                border: '1px solid rgba(0, 255, 157, 0.35)',
-                borderRadius: 12,
-                display: 'flex',
-                alignItems: 'center',
-                justifyContent: 'center',
-                marginBottom: 12,
-              }}>
-                <img
-                  src="/img/audio-input.png"
-                  alt="MOTU UltraLite-mk5"
-                  style={{ width: '85%', height: '85%', objectFit: 'contain', opacity: 0.92 }}
-                />
-              </div>
-              <Chip label="Clock Master" size="small" style={{ background: '#00FF9D', color: '#111', fontWeight: 600 }} />
-            </Box>
-          </Box>
-        </CardContent>
-      </Card>
+          {/* MOTU UltraLite-mk5 (Bottom) */}
+          <div style={{ textAlign: 'center', flex: 1, minWidth: 250 }}>
+            <div style={{
+              width: '100%',
+              height: 180,
+              background: 'rgba(12, 46, 39, 0.8)',
+              border: '1px solid rgba(0, 255, 157, 0.35)',
+              display: 'flex',
+              alignItems: 'center',
+              justifyContent: 'center',
+              marginBottom: 12,
+            }}>
+              <img
+                src="/img/audio-input.png"
+                alt="MOTU UltraLite-mk5"
+                style={{ width: '85%', height: '85%', objectFit: 'contain', opacity: 0.92 }}
+              />
+            </div>
+            <span style={{ display: 'inline-block', padding: '4px 8px', background: '#00FF9D', color: '#111', fontWeight: 600, fontSize: 12 }}>
+              Clock Master
+            </span>
+          </div>
+        </div>
+      </Tile>
 
       {/* System Load & Health */}
-      <Box sx={{ display: 'grid', gridTemplateColumns: { xs: '1fr', md: 'repeat(2, 1fr)' }, gap: 2, mb: 3 }}>
+      <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 16, marginBottom: 24 }}>
         {/* USB Load */}
-        <Card style={{ background: '#111111', border: '1px solid rgba(37, 99, 235, 0.2)' }}>
-          <CardContent>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-              <Typography variant="body2" style={{ color: '#94a3b8', fontSize: 13 }}>
-                USB Load (Estimated)
-              </Typography>
-              <Tooltip title="Calculated from active channels × sample rate × bit depth. >75% increases dropout risk. Consider larger buffer size.">
-                <IconButton size="small">
-                  <Information size={16} style={{ color: '#6b7280' }} />
-                </IconButton>
-              </Tooltip>
-            </Box>
-            <Typography variant="h3" style={{ color: getLoadColor(usbLoad), fontWeight: 700, marginBottom: 12 }}>
-              {usbLoad}%
-            </Typography>
-            <LinearProgress 
-              variant="determinate" 
-              value={usbLoad} 
-              sx={{
-                height: 8,
-                borderRadius: 4,
-                backgroundColor: 'rgba(0,0,0,0.3)',
-                '& .MuiLinearProgress-bar': {
-                  backgroundColor: getLoadColor(usbLoad),
-                }
-              }}
-            />
-            <Typography variant="caption" style={{ color: '#6b7280', marginTop: 8, display: 'block' }}>
-              {inputChannels} in / {outputChannels} out @ {(safeSampleRate / 1000).toFixed(1)}kHz
-            </Typography>
-          </CardContent>
-        </Card>
+        <Tile style={{ background: '#111111', border: '1px solid rgba(37, 99, 235, 0.2)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+            <span style={{ color: '#94a3b8', fontSize: 13 }}>
+              USB Load (Estimated)
+            </span>
+            <Tooltip
+              align="bottom"
+              label="Calculated from active channels × sample rate × bit depth. >75% increases dropout risk. Consider larger buffer size."
+            >
+              <Button
+                kind="ghost"
+                size="sm"
+                hasIconOnly
+                renderIcon={Information}
+                iconDescription="USB load explainer"
+              />
+            </Tooltip>
+          </div>
+          <div style={{ color: getLoadColor(usbLoad), fontWeight: 700, marginBottom: 12, fontSize: '2.25rem', lineHeight: 1 }}>
+            {usbLoad}%
+          </div>
+          <ProgressBar
+            value={usbLoad}
+            max={100}
+            label="USB load"
+            hideLabel
+            size="small"
+          />
+          <div style={{ color: '#6b7280', marginTop: 8, fontSize: 12 }}>
+            {inputChannels} in / {outputChannels} out @ {(safeSampleRate / 1000).toFixed(1)}kHz
+          </div>
+        </Tile>
 
         {/* Host Backplane Load */}
-        <Card style={{ background: '#111111', border: '1px solid rgba(37, 99, 235, 0.2)' }}>
-          <CardContent>
-            <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', mb: 2 }}>
-              <Typography variant="body2" style={{ color: '#94a3b8', fontSize: 13 }}>
-                Host Backplane Load (CPU)
-              </Typography>
-              <Tooltip title="Computer-side CPU/driver pressure. Based on buffer size, channel count, and sample rate. Lower buffer = higher load.">
-                <IconButton size="small">
-                  <Information size={16} style={{ color: '#6b7280' }} />
-                </IconButton>
-              </Tooltip>
-            </Box>
-            <Typography variant="h3" style={{ color: getLoadColor(hostLoad), fontWeight: 700, marginBottom: 12 }}>
-              {hostLoad}%
-            </Typography>
-            <LinearProgress 
-              variant="determinate" 
-              value={hostLoad} 
-              sx={{
-                height: 8,
-                borderRadius: 4,
-                backgroundColor: 'rgba(0,0,0,0.3)',
-                '& .MuiLinearProgress-bar': {
-                  backgroundColor: getLoadColor(hostLoad),
-                }
-              }}
-            />
-            <Typography variant="caption" style={{ color: '#6b7280', marginTop: 8, display: 'block' }}>
-              Buffer: {bufferSize} samples
-            </Typography>
-          </CardContent>
-        </Card>
-      </Box>
+        <Tile style={{ background: '#111111', border: '1px solid rgba(37, 99, 235, 0.2)' }}>
+          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
+            <span style={{ color: '#94a3b8', fontSize: 13 }}>
+              Host Backplane Load (CPU)
+            </span>
+            <Tooltip
+              align="bottom"
+              label="Computer-side CPU/driver pressure. Based on buffer size, channel count, and sample rate. Lower buffer = higher load."
+            >
+              <Button
+                kind="ghost"
+                size="sm"
+                hasIconOnly
+                renderIcon={Information}
+                iconDescription="Host load explainer"
+              />
+            </Tooltip>
+          </div>
+          <div style={{ color: getLoadColor(hostLoad), fontWeight: 700, marginBottom: 12, fontSize: '2.25rem', lineHeight: 1 }}>
+            {hostLoad}%
+          </div>
+          <ProgressBar
+            value={hostLoad}
+            max={100}
+            label="Host load"
+            hideLabel
+            size="small"
+          />
+          <div style={{ color: '#6b7280', marginTop: 8, fontSize: 12 }}>
+            Buffer: {bufferSize} samples
+          </div>
+        </Tile>
+      </div>
 
       {/* 16-Channel Metering Grid */}
-      <Card style={{ background: '#111111', border: '1px solid rgba(37, 99, 235, 0.2)', marginBottom: 24 }}>
-        <CardContent>
-          <Typography variant="h6" style={{ color: '#f3f4f6', marginBottom: 16, fontWeight: 600 }}>
-            Live Metering (Input + Output)
-          </Typography>
-          
-          {/* MOTU Channels 1-8 */}
-          <Box sx={{ mb: 3 }}>
-            <Chip label="MOTU Local (1-8)" size="small" style={{ background: '#00FF9D', color: '#111', marginBottom: 12, fontWeight: 600 }} />
-            <Box sx={{ display: 'grid', gap: 1 }}>
-              {motuMeters.map((meter, i) => (
-                <Box key={i} sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                  <Typography variant="caption" style={{ color: '#94a3b8', minWidth: 30 }}>
-                    Ch {i + 1}
-                  </Typography>
-                  <Box sx={{ flex: 1, position: 'relative', height: 24, background: 'rgba(0,0,0,0.3)', borderRadius: 2, overflow: 'hidden' }}>
-                    <div style={{
-                      position: 'absolute',
-                      left: 0,
-                      top: 0,
-                      bottom: 0,
-                      width: `${meter.percent}%`,
-                      background: `linear-gradient(90deg, ${getMeterColor(meter.percent)}, ${getMeterColor(meter.percent)}80)`,
-                      transition: 'width 0.1s ease-out',
-                    }} />
-                  </Box>
-                  <Typography variant="caption" style={{ color: getMeterColor(meter.percent), minWidth: 55, textAlign: 'right', fontWeight: 600 }}>
-                    {meter.db.toFixed(1)} dB
-                  </Typography>
-                </Box>
-              ))}
-            </Box>
-          </Box>
+      <Tile style={{ background: '#111111', border: '1px solid rgba(37, 99, 235, 0.2)', marginBottom: 24 }}>
+        <h3 style={{ color: '#f3f4f6', marginBottom: 16, fontWeight: 600, fontSize: '1.125rem' }}>
+          Live Metering (Input + Output)
+        </h3>
 
-          {/* RME Channels 9-16 */}
-          <Box>
-            <Chip label="RME ADAT (9-16)" size="small" style={{ background: '#2563eb', color: '#111', marginBottom: 12, fontWeight: 600 }} />
-            <Box sx={{ display: 'grid', gap: 1 }}>
-              {rmeMeters.map((meter, i) => (
-                <Box key={i} sx={{ display: 'flex', alignItems: 'center', gap: 2 }}>
-                  <Typography variant="caption" style={{ color: '#94a3b8', minWidth: 30 }}>
-                    Ch {i + 9}
-                  </Typography>
-                  <Box sx={{ flex: 1, position: 'relative', height: 24, background: 'rgba(0,0,0,0.3)', borderRadius: 2, overflow: 'hidden' }}>
-                    <div style={{
-                      position: 'absolute',
-                      left: 0,
-                      top: 0,
-                      bottom: 0,
-                      width: `${meter.percent}%`,
-                      background: `linear-gradient(90deg, ${getMeterColor(meter.percent)}, ${getMeterColor(meter.percent)}80)`,
-                      transition: 'width 0.1s ease-out',
-                    }} />
-                  </Box>
-                  <Typography variant="caption" style={{ color: getMeterColor(meter.percent), minWidth: 55, textAlign: 'right', fontWeight: 600 }}>
-                    {meter.db.toFixed(1)} dB
-                  </Typography>
-                </Box>
-              ))}
-            </Box>
-          </Box>
-        </CardContent>
-      </Card>
+        {/* MOTU Channels 1-8 */}
+        <div style={{ marginBottom: 24 }}>
+          <span style={{ display: 'inline-block', padding: '4px 8px', background: '#00FF9D', color: '#111', marginBottom: 12, fontWeight: 600, fontSize: 12 }}>
+            MOTU Local (1-8)
+          </span>
+          <div style={{ display: 'grid', gap: 8 }}>
+            {motuMeters.map((meter, i) => (
+              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+                <span style={{ color: '#94a3b8', minWidth: 30, fontSize: 12 }}>
+                  Ch {i + 1}
+                </span>
+                <div style={{ flex: 1, position: 'relative', height: 24, background: 'rgba(0,0,0,0.3)', overflow: 'hidden' }}>
+                  <div style={{
+                    position: 'absolute',
+                    left: 0,
+                    top: 0,
+                    bottom: 0,
+                    width: `${meter.percent}%`,
+                    background: getMeterColor(meter.percent),
+                    transition: 'width 0.1s ease-out',
+                  }} />
+                </div>
+                <span style={{ color: getMeterColor(meter.percent), minWidth: 55, textAlign: 'right', fontWeight: 600, fontSize: 12 }}>
+                  {meter.db.toFixed(1)} dB
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+
+        {/* RME Channels 9-16 */}
+        <div>
+          <span style={{ display: 'inline-block', padding: '4px 8px', background: '#2563eb', color: '#111', marginBottom: 12, fontWeight: 600, fontSize: 12 }}>
+            RME ADAT (9-16)
+          </span>
+          <div style={{ display: 'grid', gap: 8 }}>
+            {rmeMeters.map((meter, i) => (
+              <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
+                <span style={{ color: '#94a3b8', minWidth: 30, fontSize: 12 }}>
+                  Ch {i + 9}
+                </span>
+                <div style={{ flex: 1, position: 'relative', height: 24, background: 'rgba(0,0,0,0.3)', overflow: 'hidden' }}>
+                  <div style={{
+                    position: 'absolute',
+                    left: 0,
+                    top: 0,
+                    bottom: 0,
+                    width: `${meter.percent}%`,
+                    background: getMeterColor(meter.percent),
+                    transition: 'width 0.1s ease-out',
+                  }} />
+                </div>
+                <span style={{ color: getMeterColor(meter.percent), minWidth: 55, textAlign: 'right', fontWeight: 600, fontSize: 12 }}>
+                  {meter.db.toFixed(1)} dB
+                </span>
+              </div>
+            ))}
+          </div>
+        </div>
+      </Tile>
 
       {/* Latency & Audio Chain Panel */}
-      <Card style={{ background: '#111111', border: '1px solid rgba(255, 170, 0, 0.3)', marginBottom: 24 }}>
-        <CardContent>
-          <Typography variant="h6" style={{ color: '#f3f4f6', marginBottom: 16, fontWeight: 600 }}>
-            <ChartLine size={20} style={{ marginRight: 8, verticalAlign: 'middle' }} />
-            Latency & Audio Chain Analysis
-          </Typography>
+      <Tile style={{ background: '#111111', border: '1px solid rgba(255, 170, 0, 0.3)', marginBottom: 24 }}>
+        <h3 style={{ color: '#f3f4f6', marginBottom: 16, fontWeight: 600, fontSize: '1.125rem' }}>
+          <ChartLine size={20} style={{ marginRight: 8, verticalAlign: 'middle' }} />
+          Latency & Audio Chain Analysis
+        </h3>
 
-          {/* Mode Selector */}
-          <Tabs
-            value={latencyMode} 
-            onChange={(_, v) => setLatencyMode(v)} 
-            variant="scrollable"
-            allowScrollButtonsMobile
-            sx={{ mb: 3, borderBottom: 1, borderColor: 'rgba(255,255,255,0.1)' }}
-          >
-            <Tab label="MOTU Only" value="motu-only" />
-            <Tab label="ADAT Expanded" value="adat-expanded" />
-            <Tab label="Outboard Inserts" value="outboard-inserts" />
-          </Tabs>
+        {/* Mode Selector */}
+        <Tabs
+          selectedIndex={latencyTabIndex}
+          onChange={({ selectedIndex }) => {
+            const next = LATENCY_MODES[selectedIndex]
+            if (next) setLatencyMode(next.value)
+          }}
+        >
+          <TabList aria-label="Latency mode">
+            {LATENCY_MODES.map(mode => (
+              <Tab key={mode.value}>{mode.label}</Tab>
+            ))}
+          </TabList>
+          <TabPanels>
+            {LATENCY_MODES.map(mode => (
+              <TabPanel key={mode.value}>{/* tab content rendered below for shared layout */}</TabPanel>
+            ))}
+          </TabPanels>
+        </Tabs>
 
-          {/* Total RTL Display */}
-          <Box sx={{ 
-            background: 'rgba(63, 38, 20, 0.78)',
-            border: '2px solid rgba(255, 170, 0, 0.5)',
-            borderRadius: 3,
-            padding: 3,
-            mb: 3,
-            textAlign: 'center',
-          }}>
-            <Typography variant="body2" style={{ color: '#FFAA00', marginBottom: 8, fontSize: 12 }}>
-              Total Round-Trip Latency (RTL)
-            </Typography>
-            <Typography variant="h2" style={{ color: '#FFAA00', fontWeight: 700 }}>
-              {latency.total.ms.toFixed(2)} ms
-            </Typography>
-            <Typography variant="caption" style={{ color: '#94a3b8' }}>
-              ({latency.total.samples} samples @ {(safeSampleRate / 1000).toFixed(1)}kHz)
-            </Typography>
-          </Box>
+        {/* Total RTL Display */}
+        <div style={{
+          background: 'rgba(63, 38, 20, 0.78)',
+          border: '2px solid rgba(255, 170, 0, 0.5)',
+          padding: 24,
+          marginTop: 16,
+          marginBottom: 24,
+          textAlign: 'center',
+        }}>
+          <div style={{ color: '#FFAA00', marginBottom: 8, fontSize: 12 }}>
+            Total Round-Trip Latency (RTL)
+          </div>
+          <div style={{ color: '#FFAA00', fontWeight: 700, fontSize: '3rem', lineHeight: 1 }}>
+            {latency.total.ms.toFixed(2)} ms
+          </div>
+          <div style={{ color: '#94a3b8', fontSize: 12 }}>
+            ({latency.total.samples} samples @ {(safeSampleRate / 1000).toFixed(1)}kHz)
+          </div>
+        </div>
 
-          {/* Breakdown */}
-          <Box sx={{ display: 'grid', gap: 1.5 }}>
-            <LatencyRow label="DAW Buffer (2× round-trip)" samples={latency.dawBuffer.samples} ms={latency.dawBuffer.ms} />
-            <LatencyRow label="Driver + USB Transport" samples={latency.driverUSB.samples} ms={latency.driverUSB.ms} />
-            <LatencyRow label="MOTU Converters (AD+DA)" samples={latency.motuConverters.samples} ms={latency.motuConverters.ms} />
-            
-            {(latencyMode === 'adat-expanded' || latencyMode === 'outboard-inserts') && (
-              <>
-                <LatencyRow label="ADAT Transmission (round-trip)" samples={latency.adatTransmission.samples} ms={latency.adatTransmission.ms} color="#2563eb" />
-                <LatencyRow label="RME ADI-8 QS Converters (AD+DA)" samples={latency.rmeConverters.samples} ms={latency.rmeConverters.ms} color="#2563eb" />
-              </>
-            )}
-            
-            {latencyMode === 'outboard-inserts' && (
-              <LatencyRow label="Analog Outboard Hardware" samples={latency.outboardHardware.samples} ms={latency.outboardHardware.ms} color="#FF4444" />
-            )}
-          </Box>
+        {/* Breakdown */}
+        <div style={{ display: 'grid', gap: 12 }}>
+          <LatencyRow label="DAW Buffer (2× round-trip)" samples={latency.dawBuffer.samples} ms={latency.dawBuffer.ms} />
+          <LatencyRow label="Driver + USB Transport" samples={latency.driverUSB.samples} ms={latency.driverUSB.ms} />
+          <LatencyRow label="MOTU Converters (AD+DA)" samples={latency.motuConverters.samples} ms={latency.motuConverters.ms} />
 
-          {/* Educational Info */}
-          <Alert severity="info" icon={<Information size={20} />} style={{ marginTop: 16, background: 'rgba(37, 99, 235, 0.1)', border: '1px solid rgba(37, 99, 235, 0.3)' }}>
-            <Typography variant="body2" style={{ color: '#f3f4f6', fontSize: 12, lineHeight: 1.6 }}>
-              <strong>ADAT Latency:</strong> Pure ADAT Lightpipe transmission ≈6-10 samples round-trip. RME ADI-8 QS converters add ≈20-24 samples. 
-              Total ADAT path: ≈26-34 samples (≈0.54-0.71 ms @ 48kHz). ADAT transmission itself is negligible compared to converters or analog gear.
-            </Typography>
-          </Alert>
-        </CardContent>
-      </Card>
+          {(latencyMode === 'adat-expanded' || latencyMode === 'outboard-inserts') && (
+            <>
+              <LatencyRow label="ADAT Transmission (round-trip)" samples={latency.adatTransmission.samples} ms={latency.adatTransmission.ms} color="#2563eb" />
+              <LatencyRow label="RME ADI-8 QS Converters (AD+DA)" samples={latency.rmeConverters.samples} ms={latency.rmeConverters.ms} color="#2563eb" />
+            </>
+          )}
+
+          {latencyMode === 'outboard-inserts' && (
+            <LatencyRow label="Analog Outboard Hardware" samples={latency.outboardHardware.samples} ms={latency.outboardHardware.ms} color="#FF4444" />
+          )}
+        </div>
+
+        {/* Educational Info */}
+        <InlineNotification
+          kind="info"
+          title="ADAT Latency"
+          subtitle="Pure ADAT Lightpipe transmission ≈6-10 samples round-trip. RME ADI-8 QS converters add ≈20-24 samples. Total ADAT path: ≈26-34 samples (≈0.54-0.71 ms @ 48kHz). ADAT transmission itself is negligible compared to converters or analog gear."
+          hideCloseButton
+          lowContrast
+          style={{ marginTop: 16 }}
+        />
+      </Tile>
 
       {/* Signal Flow Visualizer */}
-      <Card style={{ background: '#111111', border: '1px solid rgba(96, 165, 250, 0.3)' }}>
-        <CardContent>
-          <Typography variant="h6" style={{ color: '#f3f4f6', marginBottom: 16, fontWeight: 600 }}>
-            Signal Flow Diagram
-          </Typography>
-          
-          <Box sx={{ 
-            background: 'rgba(15, 23, 42, 0.78)',
-            borderRadius: 3,
-            padding: 4,
-            display: 'flex',
-            justifyContent: 'space-around',
-            alignItems: 'center',
-            flexWrap: 'wrap',
-            gap: 3,
-          }}>
-            <SignalNode label="DAW" color="#60a5fa" />
-            <Arrow />
-            <SignalNode label="MOTU USB" color="#00FF9D" latency={`${latency.motuConverters.ms.toFixed(2)}ms`} />
-            
-            {(latencyMode === 'adat-expanded' || latencyMode === 'outboard-inserts') && (
-              <>
-                <Arrow label="ADAT" />
-                <SignalNode label="RME ADI-8" color="#2563eb" latency={`${latency.rmeConverters.ms.toFixed(2)}ms`} />
-              </>
-            )}
-            
-            {latencyMode === 'outboard-inserts' && (
-              <>
-                <Arrow label="Analog" />
-                <SignalNode label="Outboard" color="#FF4444" latency={`${latency.outboardHardware.ms.toFixed(2)}ms`} />
-              </>
-            )}
-          </Box>
-          
-          <Typography variant="caption" style={{ color: '#6b7280', display: 'block', marginTop: 16, textAlign: 'center' }}>
-            Current mode: <strong style={{ color: '#2563eb' }}>
-              {latencyMode === 'motu-only' ? 'MOTU Only (8ch direct)' : 
-               latencyMode === 'adat-expanded' ? 'ADAT Expanded (16ch total)' : 
-               'Outboard Inserts (analog processing loop)'}
-            </strong>
-          </Typography>
-        </CardContent>
-      </Card>
+      <Tile style={{ background: '#111111', border: '1px solid rgba(96, 165, 250, 0.3)' }}>
+        <h3 style={{ color: '#f3f4f6', marginBottom: 16, fontWeight: 600, fontSize: '1.125rem' }}>
+          Signal Flow Diagram
+        </h3>
+
+        <div style={{
+          background: 'rgba(15, 23, 42, 0.78)',
+          padding: 32,
+          display: 'flex',
+          justifyContent: 'space-around',
+          alignItems: 'center',
+          flexWrap: 'wrap',
+          gap: 24,
+        }}>
+          <SignalNode label="DAW" color="#60a5fa" />
+          <Arrow />
+          <SignalNode label="MOTU USB" color="#00FF9D" latency={`${latency.motuConverters.ms.toFixed(2)}ms`} />
+
+          {(latencyMode === 'adat-expanded' || latencyMode === 'outboard-inserts') && (
+            <>
+              <Arrow label="ADAT" />
+              <SignalNode label="RME ADI-8" color="#2563eb" latency={`${latency.rmeConverters.ms.toFixed(2)}ms`} />
+            </>
+          )}
+
+          {latencyMode === 'outboard-inserts' && (
+            <>
+              <Arrow label="Analog" />
+              <SignalNode label="Outboard" color="#FF4444" latency={`${latency.outboardHardware.ms.toFixed(2)}ms`} />
+            </>
+          )}
+        </div>
+
+        <div style={{ color: '#6b7280', display: 'block', marginTop: 16, textAlign: 'center', fontSize: 12 }}>
+          Current mode: <strong style={{ color: '#2563eb' }}>
+            {latencyMode === 'motu-only' ? 'MOTU Only (8ch direct)' :
+             latencyMode === 'adat-expanded' ? 'ADAT Expanded (16ch total)' :
+             'Outboard Inserts (analog processing loop)'}
+          </strong>
+        </div>
+      </Tile>
 
       <style>{`
         @keyframes pulse {
@@ -523,57 +531,56 @@ export default function MOTURMEPage() {
 // Helper Components
 function LatencyRow({ label, samples, ms, color = '#FFAA00' }: { label: string; samples: number; ms: number; color?: string }) {
   return (
-    <Box sx={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: 1.5, background: 'rgba(0,0,0,0.2)', borderRadius: 2 }}>
-      <Typography variant="body2" style={{ color: '#94a3b8', fontSize: 13 }}>
+    <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: 12, background: 'rgba(0,0,0,0.2)' }}>
+      <span style={{ color: '#94a3b8', fontSize: 13 }}>
         {label}
-      </Typography>
-      <Box sx={{ textAlign: 'right' }}>
-        <Typography variant="body2" style={{ color, fontWeight: 600, fontSize: 13 }}>
+      </span>
+      <div style={{ textAlign: 'right' }}>
+        <div style={{ color, fontWeight: 600, fontSize: 13 }}>
           {ms.toFixed(2)} ms
-        </Typography>
-        <Typography variant="caption" style={{ color: '#6b7280', fontSize: 11 }}>
+        </div>
+        <div style={{ color: '#6b7280', fontSize: 11 }}>
           ({samples} samples)
-        </Typography>
-      </Box>
-    </Box>
+        </div>
+      </div>
+    </div>
   )
 }
 
 function SignalNode({ label, color, latency }: { label: string; color: string; latency?: string }) {
   return (
-    <Box sx={{ textAlign: 'center' }}>
-      <Box sx={{
+    <div style={{ textAlign: 'center' }}>
+      <div style={{
         width: 100,
         height: 100,
-        borderRadius: 3,
         background: `${color}1f`,
         border: `2px solid ${color}`,
         display: 'flex',
         flexDirection: 'column',
         alignItems: 'center',
         justifyContent: 'center',
-        gap: 1,
+        gap: 8,
       }}>
         <Activity size={24} style={{ color }} />
-        <Typography variant="body2" style={{ color: '#f3f4f6', fontWeight: 600, fontSize: 12 }}>
+        <div style={{ color: '#f3f4f6', fontWeight: 600, fontSize: 12 }}>
           {label}
-        </Typography>
+        </div>
         {latency && (
-          <Typography variant="caption" style={{ color, fontSize: 10 }}>
+          <div style={{ color, fontSize: 10 }}>
             +{latency}
-          </Typography>
+          </div>
         )}
-      </Box>
-    </Box>
+      </div>
+    </div>
   )
 }
 
 function Arrow({ label }: { label?: string }) {
   return (
-    <Box sx={{ textAlign: 'center' }}>
-      <div style={{ 
-        width: 60, 
-        height: 2, 
+    <div style={{ textAlign: 'center' }}>
+      <div style={{
+        width: 60,
+        height: 2,
         background: '#3b82f6',
         position: 'relative',
       }}>
@@ -589,10 +596,10 @@ function Arrow({ label }: { label?: string }) {
         }} />
       </div>
       {label && (
-        <Typography variant="caption" style={{ color: '#6b7280', fontSize: 10, marginTop: 4, display: 'block' }}>
+        <div style={{ color: '#6b7280', fontSize: 10, marginTop: 4 }}>
           {label}
-        </Typography>
+        </div>
       )}
-    </Box>
+    </div>
   )
 }
