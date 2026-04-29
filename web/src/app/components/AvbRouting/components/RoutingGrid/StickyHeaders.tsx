@@ -1,35 +1,30 @@
-/**
- * Sticky Headers Component
- *
- * Displays sticky headers for talkers (top) and listeners (left) that remain
- * visible while scrolling the routing matrix.
- *
- * Features:
- * - Talker names along the top (horizontal)
- * - Listener names along the left (vertical)
- * - Status indicators (availability, device type)
- * - Click to select endpoint
- * - Color coding from endpoint metadata
- */
+// Sticky Headers — talker (top) and listener (left) headers for the
+// routing matrix. T2475 (E1) Carbon migration:
+//   Box/Stack       → semantic divs
+//   Typography      → spans
+//   Tooltip (MUI)   → native title attribute (Carbon Tooltip
+//                     eagerly renders its label and would clutter
+//                     the DOM with one tooltip body per endpoint
+//                     in large matrices)
+//   Chip/Stack      → unused, dropped from imports
+// Per-node accent color preserved as inline style — node identity
+// is the dominant visual signal in the routing grid.
 
-import React from 'react';
-import { Devices, DotMark, Pin, Router } from '@carbon/icons-react';
-import { Box, Typography, Chip, Tooltip, Stack } from '@mui/material';
-import { useRouting } from '../../context/RoutingContext';
-import type { Endpoint } from '../../types';
+import { Devices, DotMark, Pin, Router } from '@carbon/icons-react'
+
+import { useRouting } from '../../context/RoutingContext'
+import type { Endpoint } from '../../types'
+import './StickyHeaders.css'
 
 interface StickyHeadersProps {
-  talkers: Endpoint[];
-  listeners: Endpoint[];
-  cellWidth: number;
-  cellHeight: number;
-  headerWidth: number;
-  headerHeight: number;
+  talkers: Endpoint[]
+  listeners: Endpoint[]
+  cellWidth: number
+  cellHeight: number
+  headerWidth: number
+  headerHeight: number
 }
 
-/**
- * Sticky headers component
- */
 export function StickyHeaders({
   talkers,
   listeners,
@@ -38,55 +33,29 @@ export function StickyHeaders({
   headerWidth,
   headerHeight,
 }: StickyHeadersProps) {
-  const { state } = useRouting();
+  const { state } = useRouting()
 
-  // Helper function to get node color for an endpoint
   const getNodeColor = (endpoint: Endpoint): string => {
-    const node = state.network.nodes[endpoint.node_id];
-    return node?.color || '#1976d2'; // Default blue
-  };
+    const node = state.network.nodes[endpoint.node_id]
+    return node?.color || '#4589ff' // Default Carbon blue-50
+  }
 
   return (
     <>
-      {/* Top-left corner (empty spacer) */}
-      <Box
-        sx={{
-          position: 'absolute',
-          top: 0,
-          left: 0,
-          width: headerWidth,
-          height: headerHeight,
-          bgcolor: 'background.paper',
-          borderBottom: '2px solid',
-          borderRight: '2px solid',
-          borderColor: 'divider',
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          zIndex: 30,
-        }}
+      <div
+        className="sticky-headers__corner"
+        style={{ width: headerWidth, height: headerHeight }}
       >
-        <Typography variant="caption" color="text.disabled" textAlign="center">
+        <span className="sticky-headers__corner-label">
           Talkers →<br />↓ Listeners
-        </Typography>
-      </Box>
+        </span>
+      </div>
 
-      {/* Talker header (top, horizontal) */}
-      <Box
-        sx={{
-          position: 'absolute',
-          top: 0,
-          left: headerWidth,
-          height: headerHeight,
-          bgcolor: 'background.paper',
-          borderBottom: '2px solid',
-          borderColor: 'divider',
-          display: 'flex',
-          zIndex: 20,
-          overflow: 'hidden',
-        }}
+      <div
+        className="sticky-headers__top"
+        style={{ left: headerWidth, height: headerHeight }}
       >
-        {talkers.map((talker, index) => (
+        {talkers.map((talker) => (
           <TalkerHeader
             key={talker.endpoint_id}
             talker={talker}
@@ -95,23 +64,13 @@ export function StickyHeaders({
             nodeColor={getNodeColor(talker)}
           />
         ))}
-      </Box>
+      </div>
 
-      {/* Listener header (left, vertical) */}
-      <Box
-        sx={{
-          position: 'absolute',
-          top: headerHeight,
-          left: 0,
-          width: headerWidth,
-          bgcolor: 'background.paper',
-          borderRight: '2px solid',
-          borderColor: 'divider',
-          zIndex: 20,
-          overflow: 'hidden',
-        }}
+      <div
+        className="sticky-headers__left"
+        style={{ top: headerHeight, width: headerWidth }}
       >
-        {listeners.map((listener, index) => (
+        {listeners.map((listener) => (
           <ListenerHeader
             key={listener.endpoint_id}
             listener={listener}
@@ -120,177 +79,104 @@ export function StickyHeaders({
             nodeColor={getNodeColor(listener)}
           />
         ))}
-      </Box>
+      </div>
     </>
-  );
+  )
 }
 
-/**
- * Individual talker header cell
- */
+function endpointTitle(endpoint: Endpoint): string {
+  const lines = [
+    endpoint.device_name,
+    `ID: ${endpoint.endpoint_id}`,
+    `Type: ${endpoint.device_type.toUpperCase()}`,
+    `${endpoint.channels}ch @ ${endpoint.sample_rate / 1000}kHz`,
+    `Format: ${endpoint.format}`,
+    endpoint.mac_address ? `MAC: ${endpoint.mac_address}` : null,
+    `Status: ${endpoint.available ? 'Available' : 'Offline'}`,
+    endpoint.tags.length > 0 ? `Tags: ${endpoint.tags.join(', ')}` : null,
+  ].filter(Boolean)
+  return lines.join(' • ')
+}
+
 function TalkerHeader({
   talker,
   width,
   height,
-  nodeColor
+  nodeColor,
 }: {
-  talker: Endpoint;
-  width: number;
-  height: number;
-  nodeColor: string;
+  talker: Endpoint
+  width: number
+  height: number
+  nodeColor: string
 }) {
-  const DeviceIcon = talker.device_type === 'map2' ? Devices : Router;
-  const statusColor = talker.available ? '#4caf50' : '#f44336';
+  const DeviceIcon = talker.device_type === 'map2' ? Devices : Router
+  const statusToneClass = talker.available
+    ? 'sticky-headers__status-dot--ok'
+    : 'sticky-headers__status-dot--offline'
 
   return (
-    <Tooltip
-      title={
-        <div>
-          <div style={{ fontWeight: 'bold' }}>{talker.device_name}</div>
-          <div>ID: {talker.endpoint_id}</div>
-          <div>Type: {talker.device_type.toUpperCase()}</div>
-          <div>{talker.channels}ch @ {talker.sample_rate / 1000}kHz</div>
-          <div>Format: {talker.format}</div>
-          {talker.mac_address && <div>MAC: {talker.mac_address}</div>}
-          <div>Status: {talker.available ? 'Available' : 'Offline'}</div>
-          {talker.tags.length > 0 && <div>Tags: {talker.tags.join(', ')}</div>}
-        </div>
-      }
-      placement="top"
+    <div
+      className="sticky-headers__talker"
+      title={endpointTitle(talker)}
+      style={{
+        width,
+        height,
+        minWidth: width,
+        background: `${nodeColor}15`,
+        borderTop: `3px solid ${nodeColor}`,
+      }}
     >
-      <Box
-        sx={{
-          width,
-          height,
-          minWidth: width,
-          display: 'flex',
-          flexDirection: 'column',
-          alignItems: 'center',
-          justifyContent: 'center',
-          gap: 0.5,
-          px: 0.5,
-          borderRight: '1px solid',
-          borderColor: 'divider',
-          cursor: 'pointer',
-          bgcolor: `${nodeColor}15`, // Light tint of node color
-          borderTop: `3px solid ${nodeColor}`, // Bold top border with node color
-          '&:hover': {
-            bgcolor: `${nodeColor}25`,
-          },
-        }}
+      <div className="sticky-headers__icon-row">
+        <DeviceIcon size={14} />
+        <DotMark size={12} className={`sticky-headers__status-dot ${statusToneClass}`} />
+      </div>
+      <span
+        className="sticky-headers__talker-name"
+        style={{ maxHeight: height - 40 }}
       >
-        {/* Device icon + status */}
-        <Box sx={{ display: 'flex', alignItems: 'center', gap: 0.5 }}>
-          <DeviceIcon size={14} />
-          <DotMark size={12} style={{ color: statusColor }} />
-        </Box>
-
-        {/* Device name (vertical text) */}
-        <Typography
-          variant="caption"
-          sx={{
-            writingMode: 'vertical-rl',
-            textOrientation: 'mixed',
-            fontSize: 11,
-            fontWeight: 500,
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            whiteSpace: 'nowrap',
-            maxHeight: height - 40,
-          }}
-        >
-          {talker.device_name}
-        </Typography>
-
-        {/* Pinned indicator */}
-        {talker.pinned && (
-          <Pin size={10} />
-        )}
-      </Box>
-    </Tooltip>
-  );
+        {talker.device_name}
+      </span>
+      {talker.pinned && <Pin size={10} />}
+    </div>
+  )
 }
 
-/**
- * Individual listener header cell
- */
 function ListenerHeader({
   listener,
   width,
   height,
   nodeColor,
 }: {
-  listener: Endpoint;
-  width: number;
-  height: number;
-  nodeColor: string;
+  listener: Endpoint
+  width: number
+  height: number
+  nodeColor: string
 }) {
-  const DeviceIcon = listener.device_type === 'map2' ? Devices : Router;
-  const statusColor = listener.available ? '#4caf50' : '#f44336';
+  const DeviceIcon = listener.device_type === 'map2' ? Devices : Router
+  const statusToneClass = listener.available
+    ? 'sticky-headers__status-dot--ok'
+    : 'sticky-headers__status-dot--offline'
 
   return (
-    <Tooltip
-      title={
-        <div>
-          <div style={{ fontWeight: 'bold' }}>{listener.device_name}</div>
-          <div>ID: {listener.endpoint_id}</div>
-          <div>Type: {listener.device_type.toUpperCase()}</div>
-          <div>{listener.channels}ch @ {listener.sample_rate / 1000}kHz</div>
-          <div>Format: {listener.format}</div>
-          {listener.mac_address && <div>MAC: {listener.mac_address}</div>}
-          <div>Status: {listener.available ? 'Available' : 'Offline'}</div>
-          {listener.tags.length > 0 && <div>Tags: {listener.tags.join(', ')}</div>}
-        </div>
-      }
-      placement="left"
+    <div
+      className="sticky-headers__listener"
+      title={endpointTitle(listener)}
+      style={{
+        width,
+        height,
+        minHeight: height,
+        background: `${nodeColor}15`,
+        borderLeft: `3px solid ${nodeColor}`,
+      }}
     >
-      <Box
-        sx={{
-          width,
-          height,
-          minHeight: height,
-          display: 'flex',
-          alignItems: 'center',
-          gap: 1,
-          px: 1.5,
-          borderBottom: '1px solid',
-          borderColor: 'divider',
-          cursor: 'pointer',
-          bgcolor: `${nodeColor}15`, // Light tint of node color
-          borderLeft: `3px solid ${nodeColor}`, // Bold left border with node color
-          '&:hover': {
-            bgcolor: `${nodeColor}25`,
-          },
-        }}
-      >
-        {/* Device icon + status */}
-        <Box sx={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 0.25 }}>
-          <DeviceIcon size={14} />
-          <DotMark size={12} style={{ color: statusColor }} />
-        </Box>
-
-        {/* Device name */}
-        <Typography
-          variant="body2"
-          sx={{
-            fontSize: 12,
-            fontWeight: 500,
-            overflow: 'hidden',
-            textOverflow: 'ellipsis',
-            whiteSpace: 'nowrap',
-            flex: 1,
-          }}
-        >
-          {listener.device_name}
-        </Typography>
-
-        {/* Pinned indicator */}
-        {listener.pinned && (
-          <Pin size={12} />
-        )}
-      </Box>
-    </Tooltip>
-  );
+      <div className="sticky-headers__listener-icon-col">
+        <DeviceIcon size={14} />
+        <DotMark size={12} className={`sticky-headers__status-dot ${statusToneClass}`} />
+      </div>
+      <span className="sticky-headers__listener-name">{listener.device_name}</span>
+      {listener.pinned && <Pin size={12} />}
+    </div>
+  )
 }
 
-export default StickyHeaders;
+export default StickyHeaders

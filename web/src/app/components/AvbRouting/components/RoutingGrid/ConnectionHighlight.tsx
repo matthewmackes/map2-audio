@@ -1,33 +1,22 @@
-/**
- * Connection Highlight Component
- *
- * Shows visual highlights on the row and column of hovered/focused cells.
- * Helps users trace connections across large matrices.
- *
- * Features:
- * - Horizontal highlight (listener row)
- * - Vertical highlight (talker column)
- * - Crosshair effect at intersection
- * - Subtle opacity to not obstruct view
- */
-
-import React from 'react';
-import { Box } from '@mui/material';
+// Connection Highlight — row/column highlights on hovered/focused
+// matrix cells. T2475 (E1) Carbon migration: Box → semantic divs.
+// MUI primary.main color routed through --map2-state-staged
+// (== Carbon blue-50 #4589ff), which is what 'primary.main' resolved
+// to in the existing routing dark theme.
 
 interface ConnectionHighlightProps {
-  talkerIndex: number | null;
-  listenerIndex: number | null;
-  cellWidth: number;
-  cellHeight: number;
-  headerWidth: number;
-  headerHeight: number;
-  gridWidth: number;
-  gridHeight: number;
+  talkerIndex: number | null
+  listenerIndex: number | null
+  cellWidth: number
+  cellHeight: number
+  headerWidth: number
+  headerHeight: number
+  gridWidth: number
+  gridHeight: number
 }
 
-/**
- * Connection highlight overlay
- */
+const ACCENT = 'var(--map2-state-staged, #4589ff)'
+
 export function ConnectionHighlight({
   talkerIndex,
   listenerIndex,
@@ -39,23 +28,23 @@ export function ConnectionHighlight({
   gridHeight,
 }: ConnectionHighlightProps) {
   if (talkerIndex === null || listenerIndex === null) {
-    return null;
+    return null
   }
 
-  const columnLeft = talkerIndex * cellWidth;
-  const rowTop = listenerIndex * cellHeight;
+  const columnLeft = talkerIndex * cellWidth
+  const rowTop = listenerIndex * cellHeight
 
   return (
     <>
-      {/* Vertical highlight (talker column) */}
-      <Box
-        sx={{
+      <div
+        aria-hidden="true"
+        style={{
           position: 'absolute',
           top: headerHeight,
           left: headerWidth + columnLeft,
           width: cellWidth,
           height: gridHeight - headerHeight,
-          bgcolor: 'primary.main',
+          background: ACCENT,
           opacity: 0.08,
           pointerEvents: 'none',
           zIndex: 5,
@@ -63,15 +52,15 @@ export function ConnectionHighlight({
         }}
       />
 
-      {/* Horizontal highlight (listener row) */}
-      <Box
-        sx={{
+      <div
+        aria-hidden="true"
+        style={{
           position: 'absolute',
           top: headerHeight + rowTop,
           left: headerWidth,
           width: gridWidth - headerWidth,
           height: cellHeight,
-          bgcolor: 'primary.main',
+          background: ACCENT,
           opacity: 0.08,
           pointerEvents: 'none',
           zIndex: 5,
@@ -79,34 +68,32 @@ export function ConnectionHighlight({
         }}
       />
 
-      {/* Crosshair intersection (focused cell) */}
-      <Box
-        sx={{
+      <div
+        aria-hidden="true"
+        style={{
           position: 'absolute',
           top: headerHeight + rowTop,
           left: headerWidth + columnLeft,
           width: cellWidth,
           height: cellHeight,
-          border: '2px solid',
-          borderColor: 'primary.main',
+          border: `2px solid ${ACCENT}`,
           opacity: 0.5,
           pointerEvents: 'none',
           zIndex: 10,
           transition: 'top 0.1s ease-out, left 0.1s ease-out',
-          boxShadow: '0 0 8px rgba(25, 118, 210, 0.3)',
+          boxShadow: '0 0 8px rgba(69, 137, 255, 0.3)',
         }}
       />
 
-      {/* Header highlights */}
-      {/* Talker header highlight */}
-      <Box
-        sx={{
+      <div
+        aria-hidden="true"
+        style={{
           position: 'absolute',
           top: 0,
           left: headerWidth + columnLeft,
           width: cellWidth,
           height: headerHeight,
-          bgcolor: 'primary.main',
+          background: ACCENT,
           opacity: 0.12,
           pointerEvents: 'none',
           zIndex: 15,
@@ -114,15 +101,15 @@ export function ConnectionHighlight({
         }}
       />
 
-      {/* Listener header highlight */}
-      <Box
-        sx={{
+      <div
+        aria-hidden="true"
+        style={{
           position: 'absolute',
           top: headerHeight + rowTop,
           left: 0,
           width: headerWidth,
           height: cellHeight,
-          bgcolor: 'primary.main',
+          background: ACCENT,
           opacity: 0.12,
           pointerEvents: 'none',
           zIndex: 15,
@@ -130,7 +117,7 @@ export function ConnectionHighlight({
         }}
       />
     </>
-  );
+  )
 }
 
-export default ConnectionHighlight;
+export default ConnectionHighlight

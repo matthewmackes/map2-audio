@@ -1,0 +1,46 @@
+/* Crosshair Overlay — T2475 E1 Carbon migration. Hovered-cell
+ * highlight on routing matrix. Carbon blue-50 family (#4589ff). */
+
+.crosshair-overlay {
+  position: absolute;
+  top: 0;
+  left: 0;
+  pointer-events: none;
+  z-index: 10;
+}
+
+.crosshair-overlay__column,
+.crosshair-overlay__row {
+  position: absolute;
+  background: rgba(69, 137, 255, 0.08);
+  transition: all 0.15s ease-out;
+  animation: crosshair-overlay-fade-in 0.15s ease-out;
+}
+
+.crosshair-overlay__column {
+  border-left: 1px solid rgba(69, 137, 255, 0.3);
+  border-right: 1px solid rgba(69, 137, 255, 0.3);
+}
+
+.crosshair-overlay__row {
+  border-top: 1px solid rgba(69, 137, 255, 0.3);
+  border-bottom: 1px solid rgba(69, 137, 255, 0.3);
+}
+
+.crosshair-overlay__intersection {
+  position: absolute;
+  background: rgba(69, 137, 255, 0.12);
+  border: 1px solid rgba(69, 137, 255, 0.4);
+  transition: all 0.15s ease-out;
+  animation: crosshair-overlay-pop-in 0.15s ease-out;
+}
+
+@keyframes crosshair-overlay-fade-in {
+  from { opacity: 0; }
+  to { opacity: 1; }
+}
+
+@keyframes crosshair-overlay-pop-in {
+  from { opacity: 0; transform: scale(0.95); }
+  to { opacity: 1; transform: scale(1); }
+}

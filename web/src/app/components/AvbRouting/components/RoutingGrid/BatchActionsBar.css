@@ -1,0 +1,67 @@
+/* Batch Actions Bar — T2475 E1 Carbon migration. Floating bottom-
+ * centered action bar with connect/disconnect/clear actions. */
+
+.batch-actions-bar {
+  position: absolute;
+  bottom: 80px;
+  left: 50%;
+  transform: translateX(-50%);
+  background: var(--cds-layer, #262626);
+  box-shadow: 0 4px 12px rgba(0, 0, 0, 0.55);
+  padding: var(--cds-spacing-04, 0.75rem) var(--cds-spacing-05, 1rem);
+  display: flex;
+  align-items: center;
+  gap: var(--cds-spacing-05, 1rem);
+  z-index: 100;
+  animation: batch-actions-bar-slide-up 0.3s ease-out;
+}
+
+.batch-actions-bar__count {
+  display: flex;
+  align-items: center;
+  gap: var(--cds-spacing-03, 0.5rem);
+  padding: var(--cds-spacing-03, 0.5rem) var(--cds-spacing-05, 1rem);
+  background: var(--cds-button-primary, #0f62fe);
+  color: var(--cds-text-on-color, #fff);
+}
+
+.batch-actions-bar__count-label {
+  font-weight: 600;
+  font-size: var(--cds-body-compact-01-font-size, 0.875rem);
+}
+
+.batch-actions-bar__divider {
+  width: 1px;
+  height: 32px;
+  background: var(--cds-border-subtle, #393939);
+}
+
+.batch-actions-bar__actions {
+  display: flex;
+  gap: var(--cds-spacing-03, 0.5rem);
+}
+
+.batch-actions-bar__warning {
+  display: flex;
+  align-items: center;
+  gap: var(--cds-spacing-03, 0.5rem);
+  color: var(--map2-alert-advisory, #f1c21b);
+  margin: var(--cds-spacing-04, 0.75rem) 0 0 0;
+}
+
+.batch-actions-bar__danger-note {
+  margin-top: var(--cds-spacing-04, 0.75rem);
+  color: var(--map2-alert-critical, #fa4d56);
+  font-weight: 600;
+}
+
+@keyframes batch-actions-bar-slide-up {
+  from {
+    opacity: 0;
+    transform: translate(-50%, 20px);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, 0);
+  }
+}

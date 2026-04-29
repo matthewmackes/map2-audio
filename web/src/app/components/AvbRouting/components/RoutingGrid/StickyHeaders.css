@@ -1,0 +1,112 @@
+/* Sticky Headers — T2475 E1 Carbon migration. Talker/listener
+ * headers around the routing matrix; per-node accent applied via
+ * inline style (node identity is the dominant visual signal). */
+
+.sticky-headers__corner {
+  position: absolute;
+  top: 0;
+  left: 0;
+  background: var(--cds-layer, #262626);
+  border-bottom: 2px solid var(--cds-border-subtle, #393939);
+  border-right: 2px solid var(--cds-border-subtle, #393939);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 30;
+}
+
+.sticky-headers__corner-label {
+  font-size: var(--cds-helper-text-01-font-size, 0.75rem);
+  color: var(--cds-text-helper, #8d8d8d);
+  text-align: center;
+  line-height: 1.4;
+}
+
+.sticky-headers__top {
+  position: absolute;
+  top: 0;
+  background: var(--cds-layer, #262626);
+  border-bottom: 2px solid var(--cds-border-subtle, #393939);
+  display: flex;
+  z-index: 20;
+  overflow: hidden;
+}
+
+.sticky-headers__left {
+  position: absolute;
+  left: 0;
+  background: var(--cds-layer, #262626);
+  border-right: 2px solid var(--cds-border-subtle, #393939);
+  z-index: 20;
+  overflow: hidden;
+}
+
+.sticky-headers__talker {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: var(--cds-spacing-02, 0.25rem);
+  padding: 0 var(--cds-spacing-02, 0.25rem);
+  border-right: 1px solid var(--cds-border-subtle, #393939);
+  cursor: pointer;
+}
+
+.sticky-headers__talker:hover {
+  filter: brightness(1.4);
+}
+
+.sticky-headers__listener {
+  display: flex;
+  align-items: center;
+  gap: var(--cds-spacing-03, 0.5rem);
+  padding: 0 var(--cds-spacing-04, 0.75rem);
+  border-bottom: 1px solid var(--cds-border-subtle, #393939);
+  cursor: pointer;
+}
+
+.sticky-headers__listener:hover {
+  filter: brightness(1.4);
+}
+
+.sticky-headers__icon-row {
+  display: flex;
+  align-items: center;
+  gap: var(--cds-spacing-02, 0.25rem);
+}
+
+.sticky-headers__listener-icon-col {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 2px;
+}
+
+.sticky-headers__status-dot--ok {
+  color: var(--map2-state-live, #42be65);
+}
+
+.sticky-headers__status-dot--offline {
+  color: var(--map2-alert-critical, #fa4d56);
+}
+
+.sticky-headers__talker-name {
+  writing-mode: vertical-rl;
+  text-orientation: mixed;
+  font-size: 11px;
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--cds-text-primary, #f4f4f4);
+}
+
+.sticky-headers__listener-name {
+  font-size: 12px;
+  font-weight: 500;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  flex: 1;
+  color: var(--cds-text-primary, #f4f4f4);
+}
