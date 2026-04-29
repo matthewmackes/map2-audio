@@ -311,6 +311,33 @@ import {
   snapshotDraftsEqual,
   updateDraftChain,
 } from './snapshotEditor/snapshotEditorPageHelpers'
+import {
+  COMPACT_TAB_ORDER,
+  DEFAULT_FLOW_COUNT,
+  JUCE_GRID_EFFECT_MODAL_OPEN_KEY,
+  JUCE_GRID_SCROLL_TOP_KEY,
+  JUCE_GRID_SELECTED_PLUGIN_KEY,
+  KEYBOARD_SHORTCUT_SECTIONS,
+  MAX_FLOWS,
+  MIDI_CURVE_LABELS,
+  MIN_FLOWS,
+  ROUTING_MODE_OPTIONS,
+} from './snapshotEditor/snapshotEditorPageTypes'
+import type {
+  CompactTabId,
+  FlowLevelControlProps,
+  FlowSlot,
+  JuceGridMidiScope,
+  LivePathArrowTone,
+  LivePathGroupKind,
+  MidiRangeDraft,
+  PendingTabletDeletePluginState,
+  ReorderDirection,
+  ReorderPreviewState,
+  RoutingConfig,
+  RoutingInspectorContent,
+  RoutingMode,
+} from './snapshotEditor/snapshotEditorPageTypes'
 
 const API_BASE = (() => {
   const isLocalhost = window.location.hostname === 'localhost' || window.location.hostname === '127.0.0.1'
@@ -376,13 +403,7 @@ interface SnapshotEditorPerformanceEventsResponse {
   last_seq: number
 }
 
-interface FlowLevelControlProps {
-  flowId: string
-  flowLabel: string
-  value: number
-  onChange: (value: number) => void
-  disabled?: boolean
-}
+// FlowLevelControlProps lives in ./snapshotEditor/snapshotEditorPageTypes (T2468).
 
 function FlowLevelControl({
   flowId,
@@ -439,15 +460,8 @@ function isTextEntryTarget(target: EventTarget | null): boolean {
   return target.isContentEditable || tagName === 'INPUT' || tagName === 'TEXTAREA' || tagName === 'SELECT'
 }
 
-interface RoutingInspectorContent {
-  heading: string
-  summary: string
-  tags: string[]
-  rows: Array<{ label: string; value: string }>
-}
-
-type LivePathArrowTone = 'active' | 'dim' | 'sidechain'
-type LivePathGroupKind = 'series' | 'parallel' | 'ab' | 'morph' | 'sidechain' | 'inactive'
+// RoutingInspectorContent / LivePathArrowTone / LivePathGroupKind live in
+// ./snapshotEditor/snapshotEditorPageTypes (T2468).
 
 function formatInspectorList(values: string[]): string {
   if (values.length === 0) {
@@ -582,61 +596,10 @@ function getLivePathBranchLabel(
 // Types
 // ============================================================================
 
-interface FlowSlot {
-  id: string
-  chainId: number | null
-  label: string
-  color: string
-  muted: boolean
-  solo: boolean
-  dryWetMix: number
-}
-
-type RoutingMode =
-  | 'parallel_blend'
-  | 'ab_switch'
-  | 'series'
-  | 'parameter_morph'
-  | 'sidechain'
-
-interface RoutingConfig {
-  mode: RoutingMode
-  activeSlotId: string | null
-  blendPositions: Record<string, number>
-  morphProgress: number
-  morphSourceSlotId: string | null
-  morphTargetSlotId: string | null
-  seriesOrder: string[]
-}
-
-type CompactTabId =
-  | 'grid'
-  | 'editor'
-  | 'routing'
-  | 'presets'
-
-type JuceGridMidiScope = 'all' | 'active-chain' | 'selected-plugin'
-type ReorderDirection = 'left' | 'right'
-type MidiRangeDraft = {
-  min: string
-  max: string
-  sourceMin: string
-  sourceMax: string
-}
-
-type ReorderPreviewState = {
-  pluginUri: string
-  pluginPosition: number
-  targetUri: string
-  targetPosition: number
-  direction: ReorderDirection
-} | null
-
-interface PendingTabletDeletePluginState {
-  uri: string
-  position: number
-  name: string
-}
+// FlowSlot / RoutingMode / RoutingConfig / CompactTabId / JuceGridMidiScope /
+// ReorderDirection / MidiRangeDraft / ReorderPreviewState /
+// PendingTabletDeletePluginState live in
+// ./snapshotEditor/snapshotEditorPageTypes (T2468).
 
 // ============================================================================
 // Constants
@@ -695,76 +658,10 @@ function getRoutingFocusFlowSummary(
   }
 }
 
-const MIN_FLOWS = 2
-const MAX_FLOWS = 6
-const DEFAULT_FLOW_COUNT = 3
-const COMPACT_TAB_ORDER: Array<{ id: CompactTabId; label: string }> = [
-  { id: 'grid', label: 'Grid' },
-  { id: 'editor', label: 'Editor' },
-  { id: 'routing', label: 'Routing' },
-  { id: 'presets', label: 'Presets' },
-]
-
-const ROUTING_MODE_OPTIONS: Array<{
-  id: RoutingMode
-  label: string
-  summary: string
-}> = [
-  { id: 'series', label: 'Series', summary: 'Sequentially process each flow before output.' },
-  { id: 'parallel_blend', label: 'Parallel', summary: 'Run flows side-by-side and blend them together.' },
-  { id: 'ab_switch', label: 'A/B', summary: 'Only one focus flow is active at a time.' },
-  { id: 'parameter_morph', label: 'Morph', summary: 'Crossfade parameter states between two flows.' },
-  { id: 'sidechain', label: 'Sidechain', summary: 'Drive one flow with another as control input.' },
-]
-
-const MIDI_CURVE_LABELS: Record<MIDIMappingV2['curve_type'], string> = {
-  linear: 'Linear',
-  logarithmic: 'Log',
-  exponential: 'Exp',
-  s_curve: 'S-Curve',
-}
-
-const KEYBOARD_SHORTCUT_SECTIONS: Array<{
-  title: string
-  rows: Array<{ keys: string[]; description: string }>
-}> = [
-  {
-    title: 'Navigation',
-    rows: [
-      { keys: ['1-6'], description: 'Select flow slot' },
-      { keys: ['Left', 'Right'], description: 'Navigate selected blocks' },
-      { keys: ['Esc'], description: 'Close modal or clear selection' },
-    ],
-  },
-  {
-    title: 'Plugin actions',
-    rows: [
-      { keys: ['A'], description: 'Open block browser' },
-      { keys: ['B'], description: 'Toggle bypass' },
-      { keys: ['Delete'], description: 'Remove selected block' },
-      { keys: ['I'], description: 'Open block details' },
-      { keys: ['F'], description: 'Toggle favorite' },
-    ],
-  },
-  {
-    title: 'Chain actions',
-    rows: [
-      { keys: ['S'], description: 'Save preset' },
-      { keys: ['Ctrl', 'Z'], description: 'Undo' },
-      { keys: ['Ctrl', 'Y'], description: 'Redo' },
-    ],
-  },
-  {
-    title: 'General',
-    rows: [
-      { keys: ['?'], description: 'Toggle keyboard help' },
-    ],
-  },
-]
-
-const JUCE_GRID_SELECTED_PLUGIN_KEY = 'map2_juce_grid_selected_plugin_uri'
-const JUCE_GRID_EFFECT_MODAL_OPEN_KEY = 'map2_juce_grid_effect_modal_open'
-const JUCE_GRID_SCROLL_TOP_KEY = 'map2_juce_grid_scroll_top'
+// Type-coupled constants (MIN_FLOWS, MAX_FLOWS, DEFAULT_FLOW_COUNT,
+// COMPACT_TAB_ORDER, ROUTING_MODE_OPTIONS, MIDI_CURVE_LABELS,
+// KEYBOARD_SHORTCUT_SECTIONS, JUCE_GRID_*) live in
+// ./snapshotEditor/snapshotEditorPageTypes (T2468).
 
 // ============================================================================
 // Helper Functions
