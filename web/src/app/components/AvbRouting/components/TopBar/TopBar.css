@@ -1,0 +1,8 @@
+/* TopBar — T2475 E1 partial Carbon migration. Native <hr> divider
+ * + space for future migrated chrome. */
+
+.topbar__divider {
+  border: 0;
+  border-top: 1px solid var(--cds-border-subtle, #393939);
+  margin: var(--cds-spacing-04, 0.75rem) 0;
+}

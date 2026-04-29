@@ -24,16 +24,13 @@ import {
   Typography,
   TextField,
   InputAdornment,
-  IconButton,
   Button,
   Chip,
   Box,
-  Tooltip,
   Popover,
   FormGroup,
   FormControlLabel,
   Checkbox,
-  Divider,
   FormControl,
   InputLabel,
   Select,
@@ -68,6 +65,7 @@ import {
 import { NodeSelector } from './NodeSelector';
 import { SceneDiffPreview } from './SceneDiffPreview';
 import { NetworkTopologyModal } from '../NetworkTopology/NetworkTopologyModal';
+import './TopBar.css';
 
 const SCENE_IMPACT_PAGE_SIZE = 5;
 const SCENE_AUDIT_DISPLAY_LIMIT = 8;
@@ -2261,19 +2259,14 @@ export function TopBar() {
             data-testid="topbar-avb-srp-summary"
           />
           {avbTopFailoverPolicy && (
-            <Tooltip
+            <Chip
               title={`Top interfaces: ${avbTopFailoverInterfaces}`}
-              placement="bottom"
-              arrow
-            >
-              <Chip
-                label={`Failover: ${avbTopFailoverPolicy[0]} (${avbTopFailoverPolicy[1]})`}
-                size="small"
-                color={avbTopFailoverPolicy[0] === 'none' ? 'default' : 'info'}
-                variant="outlined"
-                data-testid="topbar-avb-failover-summary"
-              />
-            </Tooltip>
+              label={`Failover: ${avbTopFailoverPolicy[0]} (${avbTopFailoverPolicy[1]})`}
+              size="small"
+              color={avbTopFailoverPolicy[0] === 'none' ? 'default' : 'info'}
+              variant="outlined"
+              data-testid="topbar-avb-failover-summary"
+            />
           )}
         </Box>
 
@@ -2365,43 +2358,40 @@ export function TopBar() {
         <Box sx={{ flex: 1, display: { xs: 'none', xl: 'block' } }} /> {/* Spacer */}
 
         {/* Filters */}
-        <Tooltip title="Open endpoint filter controls">
-          <Button
-            size="small"
-            variant="outlined"
-            startIcon={<Filter size={16} />}
-            onClick={handleFiltersOpen}
-            data-testid="topbar-filters-button"
-          >
-            Filters
-          </Button>
-        </Tooltip>
+        <Button
+          title="Open endpoint filter controls"
+          size="small"
+          variant="outlined"
+          startIcon={<Filter size={16} />}
+          onClick={handleFiltersOpen}
+          data-testid="topbar-filters-button"
+        >
+          Filters
+        </Button>
 
         {/* Scenes */}
-        <Tooltip title="Save, recall, and delete scene snapshots">
-          <Button
-            size="small"
-            variant="outlined"
-            startIcon={<Bookmark size={16} />}
-            onClick={handleScenesOpen}
-            data-testid="topbar-scenes-button"
-          >
-            Scenes
-          </Button>
-        </Tooltip>
+        <Button
+          title="Save, recall, and delete scene snapshots"
+          size="small"
+          variant="outlined"
+          startIcon={<Bookmark size={16} />}
+          onClick={handleScenesOpen}
+          data-testid="topbar-scenes-button"
+        >
+          Scenes
+        </Button>
 
         {/* Scene Diff */}
-        <Tooltip title="Select scenes for read-only diff preview">
-          <Button
-            size="small"
-            variant="outlined"
-            startIcon={<Compare size={16} />}
-            onClick={handleSceneDiffOpen}
-            data-testid="topbar-scene-diff-button"
-          >
-            Scene Diff
-          </Button>
-        </Tooltip>
+        <Button
+          title="Select scenes for read-only diff preview"
+          size="small"
+          variant="outlined"
+          startIcon={<Compare size={16} />}
+          onClick={handleSceneDiffOpen}
+          data-testid="topbar-scene-diff-button"
+        >
+          Scene Diff
+        </Button>
 
         {/* Safe Patch Mode */}
         {state.safePatchMode ? (
@@ -2433,54 +2423,48 @@ export function TopBar() {
             </Button>
           </Box>
         ) : (
-          <Tooltip title="Enable safe patch mode to stage changes before applying">
-            <Button
-              size="small"
-              variant="outlined"
-              startIcon={<Security size={16} />}
-              onClick={handleSafePatchToggle}
-            >
-              Safe Patch
-            </Button>
-          </Tooltip>
+          <Button
+            title="Enable safe patch mode to stage changes before applying"
+            size="small"
+            variant="outlined"
+            startIcon={<Security size={16} />}
+            onClick={handleSafePatchToggle}
+          >
+            Safe Patch
+          </Button>
         )}
 
         {/* Network Topology */}
-        <Tooltip title="View network topology graph">
-          <Button
-            size="small"
-            variant="outlined"
-            startIcon={<TreeViewAlt size={16} />}
-            onClick={() => setTopologyModalOpen(true)}
-          >
-            Topology
-          </Button>
-        </Tooltip>
+        <Button
+          title="View network topology graph"
+          size="small"
+          variant="outlined"
+          startIcon={<TreeViewAlt size={16} />}
+          onClick={() => setTopologyModalOpen(true)}
+        >
+          Topology
+        </Button>
 
         {/* Undo/Redo */}
         <Box sx={{ display: 'flex', gap: 0.5, ml: { xs: 0, md: 'auto' } }}>
-          <Tooltip title="Undo (Ctrl+Z)">
-            <span>
-              <IconButton
-                size="small"
-                onClick={handleUndo}
-                disabled={!canUndo}
-              >
-                <Undo size={16} />
-              </IconButton>
-            </span>
-          </Tooltip>
-          <Tooltip title="Redo (Ctrl+Shift+Z)">
-            <span>
-              <IconButton
-                size="small"
-                onClick={handleRedo}
-                disabled={!canRedo}
-              >
-                <Redo size={16} />
-              </IconButton>
-            </span>
-          </Tooltip>
+          <Button
+            title="Undo (Ctrl+Z)"
+            size="small"
+            onClick={handleUndo}
+            disabled={!canUndo}
+            sx={{ minWidth: 32, padding: '4px' }}
+          >
+            <Undo size={16} />
+          </Button>
+          <Button
+            title="Redo (Ctrl+Shift+Z)"
+            size="small"
+            onClick={handleRedo}
+            disabled={!canRedo}
+            sx={{ minWidth: 32, padding: '4px' }}
+          >
+            <Redo size={16} />
+          </Button>
         </Box>
       </Toolbar>
 
@@ -2552,7 +2536,7 @@ export function TopBar() {
             />
           </Box>
 
-          <Divider />
+          <hr className="topbar__divider" />
 
           <TextField
             size="small"
@@ -2719,7 +2703,7 @@ export function TopBar() {
             {sceneImpactText}
           </Typography>
 
-          <Divider />
+          <hr className="topbar__divider" />
 
           <Box
             sx={{ display: 'flex', flexDirection: 'column', gap: 0.75 }}
@@ -2936,7 +2920,7 @@ export function TopBar() {
             />
           </FormGroup>
 
-          <Divider />
+          <hr className="topbar__divider" />
 
           <Typography variant="caption" color="text.secondary">
             Device types
@@ -2957,7 +2941,7 @@ export function TopBar() {
           ))}
           </FormGroup>
 
-          <Divider />
+          <hr className="topbar__divider" />
 
           <Typography variant="caption" color="text.secondary">
             Sample rates
@@ -2984,7 +2968,7 @@ export function TopBar() {
             </FormGroup>
           )}
 
-          <Divider />
+          <hr className="topbar__divider" />
 
           <Typography variant="caption" color="text.secondary">
             Channel counts
@@ -3011,7 +2995,7 @@ export function TopBar() {
             </FormGroup>
           )}
 
-          <Divider />
+          <hr className="topbar__divider" />
 
           <Typography variant="caption" color="text.secondary">
             Direction
@@ -3032,7 +3016,7 @@ export function TopBar() {
             ))}
           </FormGroup>
 
-          <Divider />
+          <hr className="topbar__divider" />
 
           <Typography variant="caption" color="text.secondary">
             Health quality
@@ -3053,7 +3037,7 @@ export function TopBar() {
             ))}
           </FormGroup>
 
-          <Divider />
+          <hr className="topbar__divider" />
 
           <Typography variant="caption" color="text.secondary">
             Hosts
@@ -3080,7 +3064,7 @@ export function TopBar() {
             </FormGroup>
           )}
 
-          <Divider />
+          <hr className="topbar__divider" />
 
           <Typography variant="caption" color="text.secondary">
             Groups
@@ -3213,7 +3197,7 @@ export function TopBar() {
             Swap Baseline/Compare
           </Button>
 
-          <Divider />
+          <hr className="topbar__divider" />
 
           <TextField
             size="small"
