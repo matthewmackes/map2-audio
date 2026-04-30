@@ -63,7 +63,7 @@ function ChorusCardBase({
         />
         <line x1="0" y1="30" x2="200" y2="30" stroke="rgba(255,255,255,0.1)" strokeDasharray="4 4" />
       </svg>
-      <div style={{ display: 'flex', justifyContent: 'center', gap: 16, fontSize: 10, color: '#a8a8a8' }}>
+      <div style={{ display: 'flex', justifyContent: 'center', gap: 16, fontSize: 10, color: 'var(--cds-text-helper, #a8a8a8)' }}>
         <span>Depth: {formatPercentage(parameters.depth, true)}</span>
         <span>Rate: {formatRate(parameters.rate)}</span>
       </div>

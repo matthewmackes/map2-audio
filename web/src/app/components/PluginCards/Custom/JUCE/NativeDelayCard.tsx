@@ -137,7 +137,7 @@ function NativeDelayCardBase({
     <div style={{ padding: '8px 12px' }}>
       {/* BPM + Tap */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 8 }}>
-        <span style={{ fontSize: 10, color: '#a8a8a8' }}>BPM</span>
+        <span style={{ fontSize: 10, color: 'var(--cds-text-helper, #a8a8a8)' }}>BPM</span>
         <NumberInput
           value={parameters.tempo}
           min={20} max={300} step={1} defaultValue={120}
@@ -158,7 +158,7 @@ function NativeDelayCardBase({
         <button className="carbon-toggle-btn" onClick={() => clearTaps()}>
           CLEAR
         </button>
-        {tapCount > 0 && <span style={{ fontSize: 9, color: '#a8a8a8' }}>{tapCount} taps</span>}
+        {tapCount > 0 && <span style={{ fontSize: 9, color: 'var(--cds-text-helper, #a8a8a8)' }}>{tapCount} taps</span>}
       </div>
 
       {/* Sync division chips */}
@@ -194,7 +194,7 @@ function NativeDelayCardBase({
                 OFF
               </button>
             </div>
-            <span style={{ fontSize: 9, color: '#a8a8a8', minWidth: 48, textAlign: 'right' }}>
+            <span style={{ fontSize: 9, color: 'var(--cds-text-helper, #a8a8a8)', minWidth: 48, textAlign: 'right' }}>
               {formatDelay(isL ? effectiveDelayL : effectiveDelayR)}
             </span>
           </div>
@@ -213,7 +213,7 @@ function NativeDelayCardBase({
         <select
           value={parameters.stereoMode}
           onChange={(e) => setStereoMode(parseInt(e.target.value))}
-          style={{ background: '#262626', border: '1px solid #393939', borderRadius: 4, color: '#f4f4f4', fontSize: 10, padding: '4px 8px' }}
+          style={{ background: '#262626', border: '1px solid #393939', borderRadius: 4, color: 'var(--cds-text-primary, #f4f4f4)', fontSize: 10, padding: '4px 8px' }}
         >
           {STEREO_MODES.map((m) => <option key={m.index} value={m.index}>{m.name}</option>)}
         </select>
@@ -238,11 +238,11 @@ function NativeDelayCardBase({
           <ParameterKnob label="Rate" value={parameters.modRate} min={0.01} max={10} defaultValue={0.5} unit="Hz" onChange={setModRate} isLogarithmic accentColor={accentColor} size="small" midi={{ pluginUri: DELAY_URI, paramIndex: PARAM.MOD_RATE }} />
           <ParameterKnob label="Depth" value={parameters.modDepth} min={0} max={100} defaultValue={0} unit="%" onChange={setModDepth} accentColor={accentColor} size="small" midi={{ pluginUri: DELAY_URI, paramIndex: PARAM.MOD_DEPTH }} />
           <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
-            <span style={{ fontSize: 9, color: '#a8a8a8' }}>Waveform</span>
+            <span style={{ fontSize: 9, color: 'var(--cds-text-helper, #a8a8a8)' }}>Waveform</span>
             <select
               value={parameters.modWaveform}
               onChange={(e) => setModWaveform(parseInt(e.target.value))}
-              style={{ background: '#262626', border: '1px solid #393939', borderRadius: 4, color: '#f4f4f4', fontSize: 10, padding: '4px 8px' }}
+              style={{ background: '#262626', border: '1px solid #393939', borderRadius: 4, color: 'var(--cds-text-primary, #f4f4f4)', fontSize: 10, padding: '4px 8px' }}
             >
               {MOD_WAVEFORMS.map((w) => <option key={w.index} value={w.index}>{w.name}</option>)}
             </select>
@@ -284,7 +284,7 @@ function NativeDelayCardBase({
             <ParameterKnob label="Amount" value={parameters.duckAmount} min={0} max={100} defaultValue={0} unit="%" onChange={setDuckAmount} accentColor={accentColor} size="small" midi={{ pluginUri: DELAY_URI, paramIndex: PARAM.DUCK_AMOUNT }} />
             <ParameterKnob label="Release" value={parameters.duckRelease} min={10} max={2000} defaultValue={200} unit="ms" onChange={setDuckRelease} isLogarithmic accentColor={accentColor} size="small" midi={{ pluginUri: DELAY_URI, paramIndex: PARAM.DUCK_RELEASE }} />
           </div>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8, fontSize: 10, color: '#a8a8a8' }}>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8, fontSize: 10, color: 'var(--cds-text-helper, #a8a8a8)' }}>
             <span>Ducking:</span>
             <div style={{ flex: 1, height: 4, background: '#393939', borderRadius: 2, overflow: 'hidden' }}>
               <div style={{ width: `${Math.min(100, Math.abs(metering.duckingGain) * 5)}%`, height: '100%', background: accentColor, borderRadius: 2 }} />
@@ -304,7 +304,7 @@ function NativeDelayCardBase({
             <ParameterKnob label="Spread" value={parameters.stereoSpread} min={0} max={200} defaultValue={100} unit="%" onChange={setStereoSpread} accentColor={accentColor} size="small" midi={{ pluginUri: DELAY_URI, paramIndex: PARAM.STEREO_SPREAD }} />
             <ParameterKnob label="Output" value={parameters.outputLevel} min={-12} max={12} defaultValue={0} unit="dB" onChange={setOutputLevel} accentColor={accentColor} size="small" midi={{ pluginUri: DELAY_URI, paramIndex: PARAM.OUTPUT_LEVEL }} />
           </div>
-          <div style={{ fontSize: 10, color: '#a8a8a8' }}>
+          <div style={{ fontSize: 10, color: 'var(--cds-text-helper, #a8a8a8)' }}>
             Stereo mode is selected in the sync bar. Spread and output trim stay visible here for fast balancing.
           </div>
         </div>

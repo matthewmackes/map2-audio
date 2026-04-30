@@ -153,7 +153,7 @@ function IntelliFXCardBase({
         })}
         <line x1="0" y1="30" x2="200" y2="30" stroke="rgba(255,255,255,0.1)" strokeDasharray="4 4" />
       </svg>
-      <div style={{ display: 'flex', justifyContent: 'center', gap: 16, fontSize: 10, color: '#a8a8a8' }}>
+      <div style={{ display: 'flex', justifyContent: 'center', gap: 16, fontSize: 10, color: 'var(--cds-text-helper, #a8a8a8)' }}>
         <span>Chorus: {getValue(GLOBAL_PARAMS.chorus_level, 0).toFixed(0)}dB</span>
         <span>Direct: {getValue(GLOBAL_PARAMS.direct_level_l, 0).toFixed(0)}dB</span>
         <span>Regen: {getValue(GLOBAL_PARAMS.regen_l, 30).toFixed(0)}%</span>
@@ -168,7 +168,7 @@ function IntelliFXCardBase({
         <span style={{ color: accentColor, fontSize: 11, fontWeight: 600 }}>Presets</span>
         <button
           onClick={() => setShowPresets(false)}
-          style={{ background: 'none', border: 'none', color: '#a8a8a8', cursor: 'pointer', fontSize: 12 }}
+          style={{ background: 'none', border: 'none', color: 'var(--cds-text-helper, #a8a8a8)', cursor: 'pointer', fontSize: 12 }}
         >
           x
         </button>

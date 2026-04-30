@@ -73,13 +73,13 @@ function CelestialCompressorCardBase({
         <div>
           {/* Preset Info */}
           {selectedPreset && (
-            <div style={{ marginBottom: 12, padding: '8px 12px', background: '#262626', borderRadius: 4, fontSize: 11, color: '#c6c6c6' }}>
-              <div style={{ fontWeight: 600, color: '#f4f4f4' }}>{selectedPreset.name} <span style={{ color: '#a8a8a8' }}>~{selectedPreset.year}</span></div>
-              <span style={{ display: 'inline-block', padding: '1px 6px', background: topoColor, borderRadius: 2, fontSize: 9, color: '#161616', fontWeight: 600, marginTop: 4 }}>
+            <div style={{ marginBottom: 12, padding: '8px 12px', background: '#262626', borderRadius: 4, fontSize: 11, color: 'var(--cds-text-secondary, #c6c6c6)' }}>
+              <div style={{ fontWeight: 600, color: 'var(--cds-text-primary, #f4f4f4)' }}>{selectedPreset.name} <span style={{ color: 'var(--cds-text-helper, #a8a8a8)' }}>~{selectedPreset.year}</span></div>
+              <span style={{ display: 'inline-block', padding: '1px 6px', background: topoColor, borderRadius: 2, fontSize: 9, color: 'var(--cds-background, #161616)', fontWeight: 600, marginTop: 4 }}>
                 {TOPOLOGY_LABELS[selectedPreset.topology]}
               </span>
-              <div style={{ marginTop: 4, fontSize: 10, color: '#a8a8a8' }}>{selectedPreset.description}</div>
-              <div style={{ marginTop: 2, fontSize: 9, color: '#6f6f6f' }}>{selectedPreset.referenceAlbums.join(' / ')}</div>
+              <div style={{ marginTop: 4, fontSize: 10, color: 'var(--cds-text-helper, #a8a8a8)' }}>{selectedPreset.description}</div>
+              <div style={{ marginTop: 2, fontSize: 9, color: 'var(--cds-text-disabled, #6f6f6f)' }}>{selectedPreset.referenceAlbums.join(' / ')}</div>
             </div>
           )}
           <ArtistGrid selectedPresetId={selectedPresetId} onSelectPreset={setPreset} />
