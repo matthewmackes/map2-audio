@@ -58,7 +58,7 @@
   font-size: var(--cds-body-01-font-size, 0.875rem);
   font-weight: 600;
   text-align: center;
-  transition: background 0.12s, border-color 0.12s;
+  transition: background var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease), border-color var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease);
   user-select: none;
 }
 
@@ -156,7 +156,7 @@
   border: 1px solid var(--interactive);
   background: color-mix(in srgb, var(--interactive) 12%, var(--surface));
   color: var(--interactive);
-  transition: background 0.1s;
+  transition: background var(--map2-dur-instant, 80ms) var(--map2-ease-in-out-rack, ease);
 }
 
 .mpx1-morph-strip__btn:hover {
