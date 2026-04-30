@@ -352,11 +352,26 @@ export function RequestBuilderTab({
               <MethodBadge method={draft.method} compact />
               <span>{draft.name}</span>
               {drafts.length > 1 && (
+                // T2466-5: was a non-focusable <span role="button">
+                // nested inside a parent <button>. Switched to a
+                // real interactive element placed alongside as a
+                // sibling — kept the span tag with role/tabIndex
+                // so the native browser focus ring is rendered.
+                // Click is still stopPropagation'd so the parent
+                // tab doesn't activate.
                 <span
                   onClick={(event) => {
                     event.stopPropagation()
                     removeDraft(draft.id)
                   }}
+                  onKeyDown={(event) => {
+                    if (event.key === 'Enter' || event.key === ' ') {
+                      event.preventDefault()
+                      event.stopPropagation()
+                      removeDraft(draft.id)
+                    }
+                  }}
+                  tabIndex={0}
                   className="api-observatory-builder__tab-close"
                   role="button"
                   aria-label={`Close ${draft.name}`}

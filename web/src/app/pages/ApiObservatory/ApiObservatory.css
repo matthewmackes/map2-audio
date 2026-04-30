@@ -532,6 +532,16 @@
   cursor: pointer;
 }
 
+/* T2466-5: focus-visible ring on the custom-control close button.
+   The close span is rendered as role=button + tabIndex=0 so the
+   browser default outline doesn't render naturally; draw an
+   explicit ring through the design-language token. */
+.api-observatory-builder__tab-close:focus-visible {
+  outline: 2px solid var(--cds-focus, #0f62fe);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
 .api-observatory-builder__tab-add {
   width: 34px;
   height: 34px;
