@@ -47,6 +47,12 @@ Updated 2026-04-30 EDT — cycles 21-30 layered five more reduced-motion wirings
 - T2466-5 (focus rings): ApiObservatory request-builder tab close (was a non-focusable span; now tabIndex+keyboard handler+focus-visible CSS).
 - T2466-6 (collapsible easing): UploadPrimitives, HorizontalSignalChain, PluginBrowser inline transitions → design-language tokens with prefers-reduced-motion fallbacks where CSS-driven.
 - ExpressionPage Framer wiring deferred — 15+ inline transitions warrant a focused review session.
+
+Updated 2026-04-30 EDT (cycles 31-39):
+- T2466-3 (helpers + migrations): BrainOverviewShell + MidiHubTabs migrated from hand-rolled ternary to the new useReducedMotionSafeTransition one-call hook (2a730b52). All non-deferred Framer consumers (RebootOverlay, PlatformModal, Toasts stage chrome, MidiHubHealthDrawer CSS, SnapshotEditorPerformOverlay, BrainOverviewShell, MidiHubTabs) now respect both prefers-reduced-motion and the in-app Reduced-effects toggle. GuiOptionsShowcase intentionally skipped — the page demonstrates motion options.
+- T2466-4 (magic numbers): Visualizations gray-scale text colors (IRFrequencyGraph, AudioMeter); two more PluginCards' background/border literals.
+- T2466-5 (focus rings): ApiObservatory tab-close keyboard-focusable + outline; Maschine MK1 LED-slider input outline.
+- T2466-6 (transitions): UploadPrimitives, HorizontalSignalChain, PluginBrowser inline-style tokens; Disclosure CSS animation; AudioMeteringCard inline transitions; StatusBadge inline transition; SidechainPanel + UnifiedUploadDialog inline transitions; DownloadManager progress bar; carbonCardStyles.css + AvbRouting/CrosshairOverlay.css base/grid hover transitions. AudioMeter's 0.05s metering-frame transition deliberately untouched.
 2026-04-28 EDT - opened, plan + coaching prompt drafted
 
 ---
@@ -2455,13 +2461,14 @@ Description:
 - Estimated effort: Large (3-5 days). Single most-disruptive subtask in the epic.
 - Risk: high — this is where the monolith's hidden coupling will surface. Run the full Jest suite, the production build, and a live editor smoke test before declaring complete. Carbon directives still apply; if a sub-component would benefit from being upgraded to a Carbon `Layer` in the same diff, defer that to a follow-up — bundling Carbon migration with structural extraction defeats the no-behavior-change gate.
 Assigned to: Claude
-Last updated: 2026-04-29 EDT - parts 12-16 SHIPPED. Monolith 8894 → 8496 LoC (cumulative -398) across five extractions:
-  - part 12: SnapshotEditorPluginBrowser.tsx (305-line modal, 5 tests, dropped 7 dead imports)
+Last updated: 2026-04-30 EDT - parts 12-17 SHIPPED. Monolith 8894 → 8479 LoC (cumulative -415) across six extractions:
+  - part 12: SnapshotEditorPluginBrowser.tsx (305-line modal, 5 tests)
   - part 13: SnapshotEditorCompactPanels.tsx (~155 LoC sibling, 6 tests)
   - part 14: SnapshotEditorAutomationToggle.tsx (floating toggle button, 4 tests)
-  - part 15: SnapshotEditorWorkspaceModals.tsx (aggregates 3 declarative modal mounts, 5 tests, dropped 3 dead imports)
-  - part 16: SnapshotEditorAuxModals.tsx (aggregates 5 declarative modal mounts — import / assignment / plugin-details / keyboard-shortcuts / version-history, 6 tests, dropped 5 dead imports)
-26 unit tests across the five new siblings green; typecheck + production build clean each cycle; bundle hashes refreshed. Remaining big-ticket targets are the bottom-editor section (~240 LoC) and the tablet-editor scrim/shell (~180 LoC), both deferred because they're tightly coupled to selectedPlugin state machinery and warrant dedicated sessions.
+  - part 15: SnapshotEditorWorkspaceModals.tsx (perform/audio-nodes/live-runtime aggregate, 5 tests)
+  - part 16: SnapshotEditorAuxModals.tsx (import/assignment/details/shortcuts/version-history aggregate, 6 tests)
+  - part 17: SnapshotEditorChainDialogs.tsx (tablet-delete/save-preset/rename-chain/preset-delete/clear-flows aggregate, 6 tests)
+32 unit tests across the six new siblings green; typecheck + production build clean each cycle; bundle hashes refreshed. Remaining big-ticket targets are the bottom-editor section (~240 LoC) and the tablet-editor scrim/shell (~180 LoC), both deferred because they're tightly coupled to selectedPlugin state machinery and warrant dedicated sessions.
 
 ---
 
