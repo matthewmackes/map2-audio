@@ -499,7 +499,7 @@ export function MidiMappingDialog({
           font-size: var(--cds-label-01-font-size, 0.75rem);
           font-weight: 500;
           cursor: pointer;
-          transition: all 0.15s ease;
+          transition: all var(--map2-dur-fast, 140ms) var(--map2-ease-out-snap, ease);
           margin-left: auto;
           white-space: nowrap;
         }
@@ -534,7 +534,7 @@ export function MidiMappingDialog({
           background: transparent;
           color: #6b7280;
           cursor: pointer;
-          transition: all 0.15s ease;
+          transition: all var(--map2-dur-fast, 140ms) var(--map2-ease-out-snap, ease);
         }
 
         .midi-mapping-dialog-close:hover {
@@ -692,7 +692,7 @@ export function MidiMappingDialog({
           background: transparent;
           color: #666;
           cursor: pointer;
-          transition: all 0.15s ease;
+          transition: all var(--map2-dur-fast, 140ms) var(--map2-ease-out-snap, ease);
         }
 
         .clear-btn:hover {
@@ -735,7 +735,7 @@ export function MidiMappingDialog({
           font-size: var(--cds-body-compact-01-font-size, 0.875rem);
           font-weight: 500;
           cursor: pointer;
-          transition: all 0.15s ease;
+          transition: all var(--map2-dur-fast, 140ms) var(--map2-ease-out-snap, ease);
         }
 
         .btn-cancel {

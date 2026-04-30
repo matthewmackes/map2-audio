@@ -72,7 +72,7 @@ export function ExpressionOverlay({
           font-size: var(--cds-label-01-font-size);
           line-height: var(--cds-label-01-line-height);
           cursor: pointer;
-          transition: all 0.15s ease;
+          transition: all var(--map2-dur-fast, 140ms) var(--map2-ease-out-snap, ease);
           white-space: nowrap;
         }
 
