@@ -37,12 +37,24 @@ export const MAP2_SPRING = {
     damping: 36,
     mass: 0.7,
   } satisfies Transition,
-  /** Drawer enter/exit — snappy but deliberate, no bounce. */
+  /** Drawer enter — snappy but deliberate, no bounce. */
   drawer: {
     type: 'spring',
     stiffness: 320,
     damping: 32,
     mass: 0.85,
+  } satisfies Transition,
+  /**
+   * Drawer exit — sympathetic curve in the same spring family
+   * (T2466-2). Stiffer + lower mass so the dismiss settles ~30%
+   * faster than the enter; same `damping/stiffness` ratio so the
+   * physical feel is coherent. No bounce.
+   */
+  drawerExit: {
+    type: 'spring',
+    stiffness: 480,
+    damping: 36,
+    mass: 0.6,
   } satisfies Transition,
   /** Active-slot scale tap — minimal, just enough physical feedback. */
   slotTap: {
@@ -70,7 +82,16 @@ export const tabContentVariants: Variants = {
   },
 }
 
-/** Drawer slide-in from right. Used by health drawers across workspaces. */
+/**
+ * Drawer slide-in from right. Used by health drawers across workspaces.
+ *
+ * T2466-2: enter and exit both ride a spring in the same family
+ * (MAP2_SPRING.drawer / MAP2_SPRING.drawerExit). The exit spring
+ * is stiffer so the dismiss feels quicker than the entrance —
+ * matching the operator expectation that opening reveals state and
+ * closing returns the eye to the workspace fast — but they share
+ * the same physical character.
+ */
 export const drawerVariants: Variants = {
   initial: { x: '100%', opacity: 0.6 },
   animate: {
@@ -81,7 +102,7 @@ export const drawerVariants: Variants = {
   exit: {
     x: '100%',
     opacity: 0,
-    transition: { duration: MAP2_DUR.base, ease: MAP2_EASE.inOutRack },
+    transition: MAP2_SPRING.drawerExit,
   },
 }
 

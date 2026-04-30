@@ -31,7 +31,10 @@
   border-left: 1px solid var(--cds-border-subtle, var(--border));
   z-index: 55;
   transform: translateX(100%);
-  transition: transform var(--map2-dur-slow, 380ms) var(--map2-ease-in-out-rack, ease);
+  /* T2466-2: exit timing — snappier than enter so dismiss returns
+     focus to the workspace fast. Same `inOutRack` ease family as
+     the entrance for coherent physical feel. */
+  transition: transform var(--map2-dur-base, 220ms) var(--map2-ease-out-snap, ease);
   display: flex;
   flex-direction: column;
   color: var(--cds-text-primary, #f4f4f4);
@@ -43,6 +46,9 @@
     inset 1px 0 0 rgba(255, 255, 255, 0.06),
     -10px 0 36px rgba(0, 0, 0, 0.55),
     -1px 0 0 var(--map2-accent-active-soft, rgba(34, 211, 238, 0.18));
+  /* T2466-2: enter timing — slower + cinematic in-decel ease so
+     the drawer reveals state with a deliberate physical feel. */
+  transition: transform var(--map2-dur-slow, 380ms) var(--map2-ease-in-out-rack, ease);
 }
 
 .midi-hub-health-drawer__head {
