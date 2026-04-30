@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1381** Python | **1356** TypeScript | **177** C++/H | **145** Docs | **3175** total commits | **3** stars | **0** forks | **0** open issues
+**1381** Python | **1362** TypeScript | **177** C++/H | **145** Docs | **3192** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -175,8 +175,8 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-DOCS:START -->
 | Document | Last Updated |
 |:---------|:------------|
+| [PROJECT WORKLIST](https://github.com/matthewmackes/map2-audio/blob/master/docs/PROJECT_WORKLIST.md) | 2026-04-30 |
 | [MAP2 Audio Platform — AI Instructions](https://github.com/matthewmackes/map2-audio/blob/master/docs/CLAUDE.md) | 2026-04-29 |
-| [PROJECT WORKLIST](https://github.com/matthewmackes/map2-audio/blob/master/docs/PROJECT_WORKLIST.md) | 2026-04-29 |
 | [MAP2 Backend Runtime Contract](https://github.com/matthewmackes/map2-audio/blob/master/docs/backend-runtime-contract.md) | 2026-04-27 |
 | [MAP2 API Contract Standards](https://github.com/matthewmackes/map2-audio/blob/master/docs/api-contract-standards.md) | 2026-04-25 |
 | [MAP2 LCD Console — Operator Guide](https://github.com/matthewmackes/map2-audio/blob/master/docs/LCD_OPERATOR_GUIDE.md) | 2026-04-23 |
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
-| [`5d5949c9`](https://github.com/matthewmackes/map2-audio/commit/5d5949c9dd372d3c88aec5b56f5aec71da6f2703) | T2466-5: focus-visible rings on MidiHub patchbay SVG cont... | Map2 Audio | 2026-04-29 |
-| [`d5a16ec0`](https://github.com/matthewmackes/map2-audio/commit/d5a16ec02e1d19cdc822c777336d15161f434b79) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-30 |
-| [`e92ae7a1`](https://github.com/matthewmackes/map2-audio/commit/e92ae7a1ed6f0b461a518437f4d89632fc07a32c) | T2473 (part 13): Extract SnapshotEditorCompactPanels | Map2 Audio | 2026-04-29 |
-| [`7114e519`](https://github.com/matthewmackes/map2-audio/commit/7114e5191314f894418b5130102f38dea7a27c09) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-30 |
-| [`4cd22b4b`](https://github.com/matthewmackes/map2-audio/commit/4cd22b4b321aa47f32bc794bada9c4666c9aa2cd) | T2473 (part 12): Extract SnapshotEditorPluginBrowser modal | Map2 Audio | 2026-04-29 |
-| [`45bd28ce`](https://github.com/matthewmackes/map2-audio/commit/45bd28ce9020eac6f4d8701c0ebdf1618fc03bc5) | feat(node-nav): NodeIdentityCard V4-A3 numbered-ladder la... | Map2 Audio | 2026-04-29 |
-| [`60c68fef`](https://github.com/matthewmackes/map2-audio/commit/60c68fefc46b96b882e400a3bd316c2e81adaf08) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-29 |
-| [`bb67685f`](https://github.com/matthewmackes/map2-audio/commit/bb67685f72bb322979b03b5bf6a7ed43d73479d2) | Merge branch 'master' of https://github.com/matthewmackes... | Map2 Audio | 2026-04-29 |
+| [`9fa37074`](https://github.com/matthewmackes/map2-audio/commit/9fa37074bc25c6cfe4af397bb458b00b875108f0) | worklist: roll up T2466 + T2473 progress through cycle 19 | Map2 Audio | 2026-04-30 |
+| [`04a11ddc`](https://github.com/matthewmackes/map2-audio/commit/04a11ddc17d0de6e1100eb37228f49ec13de2110) | T2466-4: replace background/border hex literals in 2 plug... | Map2 Audio | 2026-04-30 |
+| [`a30161b7`](https://github.com/matthewmackes/map2-audio/commit/a30161b7482abf7be1076a8a3c4ae639f23b1037) | T2466-3 (wiring): MidiHub tabs respect reduced motion | Map2 Audio | 2026-04-30 |
+| [`bbfa6aed`](https://github.com/matthewmackes/map2-audio/commit/bbfa6aed0534a0fed05e6083eaae2538074d874a) | T2473 (part 15): aggregate SnapshotEditorWorkspaceModals | Map2 Audio | 2026-04-30 |
+| [`0db17c6b`](https://github.com/matthewmackes/map2-audio/commit/0db17c6b2dfef952d936ed083d0aa289443f701e) | T2466-5: focus-visible ring on Maschine MK1 cells | Map2 Audio | 2026-04-30 |
+| [`bb4146dc`](https://github.com/matthewmackes/map2-audio/commit/bb4146dc99a5335fcff72183ff8dd56d91a3c404) | T2466-6: thread HorizontalSignalChain transitions through... | Map2 Audio | 2026-04-30 |
+| [`35f68f02`](https://github.com/matthewmackes/map2-audio/commit/35f68f0253984ed7c9963c42324faec222daa3b7) | T2466-6: thread UploadPrimitives transitions through tokens | Map2 Audio | 2026-04-30 |
+| [`f7eb874b`](https://github.com/matthewmackes/map2-audio/commit/f7eb874b1b77552c058fe9c8b5e9e237ea120206) | T2466-4: replace Carbon-gray hex literals with theme toke... | Map2 Audio | 2026-04-30 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
