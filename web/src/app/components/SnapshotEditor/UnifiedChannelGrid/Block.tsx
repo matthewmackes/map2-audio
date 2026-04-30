@@ -67,6 +67,12 @@ export function Block({ slot, selected = false, onClick, onRemove }: BlockProps)
   const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
     if (event.key !== 'Enter' && event.key !== ' ') return
     event.preventDefault()
+    event.stopPropagation()
+    onClick?.(slot.index)
+  }
+
+  const handleClick = (event: MouseEvent<HTMLDivElement>) => {
+    event.stopPropagation()
     onClick?.(slot.index)
   }
 
@@ -84,7 +90,7 @@ export function Block({ slot, selected = false, onClick, onRemove }: BlockProps)
       data-category={category}
       data-kind={slot.kind ?? 'none'}
       data-bypass={slot.bypass ? 'true' : 'false'}
-      onClick={() => onClick?.(slot.index)}
+      onClick={handleClick}
       onKeyDown={handleKeyDown}
       aria-label={slot.label ?? `Slot ${slot.index + 1}`}
       aria-pressed={selected}

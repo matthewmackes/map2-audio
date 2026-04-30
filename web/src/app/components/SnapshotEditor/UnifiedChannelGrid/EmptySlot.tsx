@@ -1,4 +1,4 @@
-import type { CSSProperties } from 'react'
+import type { CSSProperties, MouseEvent } from 'react'
 import { Add } from '@carbon/icons-react'
 
 import { BLOCK_DIMENSIONS } from './gridConstants'
@@ -15,13 +15,18 @@ export function EmptySlot({ slotIndex, onAdd, disabled = false }: EmptySlotProps
     height: BLOCK_DIMENSIONS.height,
   }
 
+  const handleClick = (event: MouseEvent<HTMLButtonElement>) => {
+    event.stopPropagation()
+    onAdd?.(slotIndex)
+  }
+
   return (
     <button
       type="button"
       className="ucg-empty-slot"
       style={style}
       disabled={disabled}
-      onClick={() => onAdd?.(slotIndex)}
+      onClick={handleClick}
       aria-label={`Add block to slot ${slotIndex + 1}`}
       data-slot-index={slotIndex}
     >
