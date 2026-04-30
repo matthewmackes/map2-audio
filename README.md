@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1381** Python | **1371** TypeScript | **177** C++/H | **145** Docs | **3252** total commits | **3** stars | **0** forks | **0** open issues
+**1381** Python | **1373** TypeScript | **177** C++/H | **145** Docs | **3254** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`84e387b4`](https://github.com/matthewmackes/map2-audio/commit/84e387b45459a88314e31f0d58555794330ae9fd) | T2473: extract SnapshotEditorBottomEditor + SnapshotEdito... | Map2 Audio | 2026-04-30 |
+| [`5388bbea`](https://github.com/matthewmackes/map2-audio/commit/5388bbeaf55ca102f42ec204649bf37727ebdb16) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-30 |
 | [`be54a1d4`](https://github.com/matthewmackes/map2-audio/commit/be54a1d4f9828e7cb5f29b9dbbcb532dc2c04d49) | worklist: roll up T2466-6 second 10-iteration SHIP loop | Map2 Audio | 2026-04-30 |
 | [`fbd6b9c5`](https://github.com/matthewmackes/map2-audio/commit/fbd6b9c54c7439b88f9676c1dd39594328839013) | T2466-6: residual sweep across 11 files (13 transitions) | Map2 Audio | 2026-04-30 |
 | [`c0966d3a`](https://github.com/matthewmackes/map2-audio/commit/c0966d3ae78da9bf3007d05f9a118cdf9cf3d34d) | T2466-6: IntelFX + Tesira + MaschineMidiMap + LCDView tok... | Map2 Audio | 2026-04-30 |
 | [`efb70b47`](https://github.com/matthewmackes/map2-audio/commit/efb70b47cc77b0b6bcb54350171e9720638ce6e0) | T2466-6: TSX inline-style transitions across 5 files (17) | Map2 Audio | 2026-04-30 |
 | [`746ebb1a`](https://github.com/matthewmackes/map2-audio/commit/746ebb1a32a625c999f9d325631fa17fbda33436) | T2466-6: BottomWizard + WelcomeHero + AboutPage + Maschin... | Map2 Audio | 2026-04-30 |
 | [`36a32f61`](https://github.com/matthewmackes/map2-audio/commit/36a32f61fc0dabd3abe12ebd75225619b18d043f) | T2466-6: MPX1Panel + MPX1ScenePanel easing tokens (11) | Map2 Audio | 2026-04-30 |
-| [`6e2a290f`](https://github.com/matthewmackes/map2-audio/commit/6e2a290f84640057db9d135ef33ff370eb070024) | T2466-6: ExpressionPage.module.css easing tokens (11) | Map2 Audio | 2026-04-30 |
-| [`607a4370`](https://github.com/matthewmackes/map2-audio/commit/607a43704b6e538b7ec518f813c4fd29d58bd447) | T2466-6: MPX1SignalPathCanvas.css easing tokens (12) | Map2 Audio | 2026-04-30 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
