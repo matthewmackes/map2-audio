@@ -229,7 +229,7 @@
   border: 1px solid color-mix(in srgb, var(--cds-border-subtle) 60%, transparent);
   border-radius: 3px;
   cursor: default;
-  transition: background 0.15s ease, box-shadow 0.15s ease;
+  transition: background var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease), box-shadow var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease);
   position: relative;
   overflow: hidden;
 }
@@ -404,7 +404,7 @@
   text-align: left;
   cursor: pointer;
   font: inherit;
-  transition: background 0.15s ease, border-color 0.15s ease;
+  transition: background var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease), border-color var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease);
 }
 
 .maschine-ops__admin-action:hover:not(:disabled) {

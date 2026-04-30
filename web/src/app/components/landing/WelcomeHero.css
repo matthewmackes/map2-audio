@@ -228,7 +228,7 @@
   align-items: center;
   gap: 10px;
   letter-spacing: 0.01em;
-  transition: background 0.15s ease, transform 0.1s ease, border-color 0.15s ease;
+  transition: background var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease), transform var(--map2-dur-instant, 80ms) var(--map2-ease-in-out-rack, ease), border-color var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease);
   color: inherit;
 }
 
@@ -362,7 +362,7 @@
   border-left: 2px solid var(--wh-accent, var(--wh-primary));
   background: var(--wh-bg-elev);
   position: relative;
-  transition: background 0.15s ease, border-color 0.15s ease;
+  transition: background var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease), border-color var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease);
   text-align: left;
   font: inherit;
   color: inherit;
@@ -439,7 +439,7 @@
   cursor: pointer;
   width: 100%;
   display: block;
-  transition: background 0.15s ease, border-color 0.15s ease;
+  transition: background var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease), border-color var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease);
 }
 
 .wh-hw-summary__tile:hover,
@@ -504,7 +504,7 @@
   color: inherit;
   cursor: pointer;
   width: 100%;
-  transition: background 0.15s ease, border-color 0.15s ease;
+  transition: background var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease), border-color var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease);
 }
 
 .wh-hw-row:hover,

@@ -153,7 +153,7 @@
   border: 0.5px solid transparent;
   color: var(--pw-muted);
   cursor: pointer;
-  transition: background 120ms ease, color 120ms ease, border-color 120ms ease;
+  transition: background var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease), color var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease), border-color var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease);
 }
 .pedalboard-wizard__icon-btn:hover:not(:disabled) {
   background: rgba(255, 255, 255, 0.05);
@@ -199,7 +199,7 @@
   border-right: 1px solid var(--pw-border);
   color: var(--pw-text);
   cursor: pointer;
-  transition: background 140ms ease;
+  transition: background var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease);
   font-family: inherit;
   min-width: 0;
 }
@@ -232,7 +232,7 @@
   background: rgba(0, 0, 0, 0.3);
   border: 1px solid var(--pw-border);
   color: var(--pw-muted);
-  transition: background 140ms, border-color 140ms, color 140ms;
+  transition: background var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease), border-color var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease), color var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease);
 }
 .pedalboard-wizard__step-num {
   font-family: 'IBM Plex Mono', ui-monospace, monospace;
@@ -294,7 +294,7 @@
   height: 100%;
   background: linear-gradient(90deg, var(--pw-accent), color-mix(in srgb, var(--pw-accent) 70%, white));
   border-radius: 999px;
-  transition: width 280ms cubic-bezier(.2, .7, .2, 1);
+  transition: width var(--map2-dur-base, 220ms) var(--map2-ease-in-out-rack, ease);
 }
 .pedalboard-wizard__progress-label {
   font-family: 'IBM Plex Mono', ui-monospace, monospace;
@@ -453,7 +453,7 @@
   color: var(--pw-text);
   font: 500 0.75rem 'IBM Plex Sans', ui-sans-serif, system-ui, sans-serif;
   cursor: pointer;
-  transition: background 120ms, border-color 120ms;
+  transition: background var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease), border-color var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease);
 }
 .pedalboard-wizard__routing-trigger:hover:not(:disabled) {
   background: rgba(255, 255, 255, 0.04);

@@ -387,7 +387,7 @@
   border-bottom: 1px solid var(--cds-border-subtle);
   text-decoration: none;
   color: inherit;
-  transition: background-color 120ms ease;
+  transition: background-color var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease);
   min-height: 22rem;
 }
 
@@ -560,7 +560,7 @@
   font-family: var(--about-plex-sans);
   font-weight: 500;
   border-bottom: 1px solid transparent;
-  transition: border-color 120ms ease;
+  transition: border-color var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease);
 }
 
 .about-page__link:hover,
@@ -609,7 +609,7 @@
   text-decoration: none;
   text-align: left;
   cursor: pointer;
-  transition: background-color 120ms ease;
+  transition: background-color var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease);
   min-height: 9rem;
   align-items: flex-start;
   justify-content: flex-start;
