@@ -1,4 +1,8 @@
-/* DrawerPanel — slide-in side panel. */
+/* DrawerPanel — slide-in side panel.
+   T2466-0: backdrop fades in via design-language tokens; the
+   panel slides in from its anchored edge with the same drawer
+   timing as MidiHubHealthDrawer (slow + inOutRack on enter,
+   base + outSnap on exit). prefers-reduced-motion disables. */
 
 .map2-drawer-panel__backdrop {
   position: fixed;
@@ -6,6 +10,9 @@
   z-index: 9000;
   background: color-mix(in srgb, var(--cds-overlay, rgba(22, 22, 22, 0.5)) 100%, transparent);
   display: flex;
+  animation: map2-drawer-panel-fade-in
+    var(--map2-dur-base, 220ms)
+    var(--map2-ease-out-snap, ease);
 }
 
 .map2-drawer-panel {
@@ -16,16 +23,43 @@
   width: clamp(20rem, 28vw, 32rem);
   background: var(--cds-layer, var(--surface));
   border: 1px solid var(--cds-border-subtle, var(--border));
+  animation-duration: var(--map2-dur-slow, 380ms);
+  animation-timing-function: var(--map2-ease-in-out-rack, ease);
 }
 
 .map2-drawer-panel--right {
   margin-left: auto;
   border-right: 0;
+  animation-name: map2-drawer-panel-slide-from-right;
 }
 
 .map2-drawer-panel--left {
   margin-right: auto;
   border-left: 0;
+  animation-name: map2-drawer-panel-slide-from-left;
+}
+
+@keyframes map2-drawer-panel-fade-in {
+  from { opacity: 0; }
+  to   { opacity: 1; }
+}
+
+@keyframes map2-drawer-panel-slide-from-right {
+  from { transform: translateX(100%); }
+  to   { transform: translateX(0); }
+}
+
+@keyframes map2-drawer-panel-slide-from-left {
+  from { transform: translateX(-100%); }
+  to   { transform: translateX(0); }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .map2-drawer-panel__backdrop,
+  .map2-drawer-panel--right,
+  .map2-drawer-panel--left {
+    animation: none;
+  }
 }
 
 .map2-drawer-panel__head {
