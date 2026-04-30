@@ -367,6 +367,7 @@ import { SnapshotEditorAutomationToggle } from './snapshotEditor/SnapshotEditorA
 import { SnapshotEditorWorkspaceModals } from './snapshotEditor/SnapshotEditorWorkspaceModals'
 import { SnapshotEditorAuxModals } from './snapshotEditor/SnapshotEditorAuxModals'
 import { SnapshotEditorChainDialogs } from './snapshotEditor/SnapshotEditorChainDialogs'
+import { SnapshotEditorMidiMappingsModal } from './snapshotEditor/SnapshotEditorMidiMappingsModal'
 import { SnapshotEditorRoutingInspector } from './snapshotEditor/SnapshotEditorRoutingInspector'
 
 // API_BASE lives in ./snapshotEditor/snapshotEditorApi (T2467 follow-up).
@@ -8290,22 +8291,9 @@ export function SnapshotEditorPage() {
         onCloseClearFlows={() => setShowClearFlowsModal(false)}
         onConfirmClearFlows={confirmClearFlows}
       />
-      {midiModalOpen && (
-        <Modal
-          open
-          size="lg"
-          modalHeading="Audio Grid MIDI mappings"
-          primaryButtonText="Close"
-          onRequestClose={closeMidiMappingsWorkspace}
-          onRequestSubmit={closeMidiMappingsWorkspace}
-        >
-          <div className="juce-grid-page__modal-stack juce-grid-page__midi-modal-shell" id="juce-grid-midi-modal">
-            <div className="juce-grid-page__midi-modal-panel">
-              {renderMidiMappingsWorkspace({ closable: false })}
-            </div>
-          </div>
-        </Modal>
-      )}
+      <SnapshotEditorMidiMappingsModal open={midiModalOpen} onClose={closeMidiMappingsWorkspace}>
+        {renderMidiMappingsWorkspace({ closable: false })}
+      </SnapshotEditorMidiMappingsModal>
 
       <SnapshotEditorRoutingInspector
         content={routingInspectorContent}
