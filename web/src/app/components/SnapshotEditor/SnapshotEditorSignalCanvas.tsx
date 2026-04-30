@@ -208,10 +208,13 @@ export const JuceGridSignalCanvas = memo(function JuceGridSignalCanvas({
 
   const handleAddBlock = useCallback(
     (_rowId: string, slotIndex: number) => {
-      if (readOnly) return
+      // When the canvas is read-only (snapshot locked, no editor snapshot,
+      // etc.), defer to the parent — onAddPlugin still runs so the page
+      // can surface a toast or open a sign-in / unlock flow instead of the
+      // click silently no-oping.
       onAddPlugin?.(slotIndex)
     },
-    [onAddPlugin, readOnly],
+    [onAddPlugin],
   )
 
   const handleRemoveBlock = useCallback(

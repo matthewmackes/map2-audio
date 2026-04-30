@@ -46,11 +46,16 @@ function isForbiddenStaticPath(pathname) {
 
 // Local-network audio control plane: lock script/style to same-origin and allow
 // WebSocket + HTTP backend on :8080. CSP is intentionally strict — adjust only
-// when the app truly needs another origin.
+// when the app truly needs another origin. `'unsafe-eval'` is required because
+// the bundle ships libraries that compile expressions at runtime (handler
+// codegen in some UI primitives + a couple of math/audio paths). Without it
+// those code paths abort silently — observed: clicking an empty signal-chain
+// slot did not open the plugin chooser because the synchronously-invoked
+// codegen-using helper threw before reaching setShowPluginBrowser.
 const SECURITY_HEADERS = {
   'Content-Security-Policy': [
     "default-src 'self'",
-    "script-src 'self'",
+    "script-src 'self' 'unsafe-eval'",
     "style-src 'self' 'unsafe-inline'",
     "img-src 'self' data: blob:",
     "font-src 'self' data:",

@@ -5057,10 +5057,11 @@ export function SnapshotEditorPage() {
       return
     }
     if (snapshotEditingLocked) {
+      pushToast('Snapshot is locked — unlock it before adding blocks.', 'warn')
       return
     }
     setShowPluginBrowser(true)
-  }, [createCapturedSnapshot, snapshotEditingLocked, snapshotEntryRequired])
+  }, [createCapturedSnapshot, pushToast, setShowPluginBrowser, snapshotEditingLocked, snapshotEntryRequired])
 
   const handleAddPluginToCurrentChain = useCallback(async (pluginUri: string) => {
     if (snapshotEditorMutationDisabled) {
@@ -7168,6 +7169,13 @@ export function SnapshotEditorPage() {
           })
         }}
         onAddPlugin={() => {
+          if (snapshotEditingLocked) {
+            pushToast(
+              'Snapshot is locked — unlock it from the snapshot menu before adding blocks.',
+              'warn',
+            )
+            return
+          }
           if (flow.id !== addEffectFlowId) {
             selectFlowIndex(index)
           }
