@@ -120,11 +120,9 @@ import { useCommittedAudioState } from '../hooks/useAuthoritativeAudioState'
 import { useWebSocketTopic } from '../../map2/hooks/useWebSocket'
 import { getEffectIcon } from '../components/icons/effectIcons'
 import MidiLearnButton from '../../map2/components/MIDI/MidiLearnButton'
-import { PluginDetailsModal } from '../components/PluginDetailsModal'
 import { NumberInput } from '../components/ParameterControl'
 import { SegmentedLedText } from '../components/Displays/SegmentedLedText'
 import { MapAudioGridIcon } from '../components/icons/map'
-import { SnapshotImportDialog } from '../components/snapshots/SnapshotImportDialog'
 import { LandscapePrompt } from '../components/shared/LandscapePrompt'
 import type {
   AuthoritativeAudioStateEnvelope,
@@ -229,7 +227,6 @@ import {
 import { SnapshotExpressionMappingsCard } from '../components/SnapshotEditor/SnapshotExpressionMappingsCard'
 import { SnapshotFootswitchLabelCard } from '../components/SnapshotEditor/SnapshotFootswitchLabelCard'
 import { buildSnapshotEditorSelectedPluginCard } from '../components/SnapshotEditor/snapshotEditorSelectedPluginCard'
-import { SnapshotVersionHistoryModal } from '../components/SnapshotEditor/SnapshotVersionHistoryModal'
 import { useSnapshotEditorUndoRedo } from '../components/SnapshotEditor/useSnapshotEditorUndoRedo'
 import { JuceGridParameterEditor } from '../components/SnapshotEditor/SnapshotEditorParameterEditor'
 import {
@@ -362,14 +359,13 @@ import {
   SLOT_COLORS,
 } from './snapshotEditor/snapshotEditorBootstrap'
 import { API_BASE } from './snapshotEditor/snapshotEditorApi'
-import { SnapshotEditorKeyboardShortcuts } from './snapshotEditor/SnapshotEditorKeyboardShortcuts'
 import { SnapshotEditorLanePicker } from './snapshotEditor/SnapshotEditorLanePicker'
 import { SnapshotEditorPresetBrowser } from './snapshotEditor/SnapshotEditorPresetBrowser'
 import { SnapshotEditorPluginBrowser } from './snapshotEditor/SnapshotEditorPluginBrowser'
 import { SnapshotEditorCompactPanels } from './snapshotEditor/SnapshotEditorCompactPanels'
 import { SnapshotEditorAutomationToggle } from './snapshotEditor/SnapshotEditorAutomationToggle'
 import { SnapshotEditorWorkspaceModals } from './snapshotEditor/SnapshotEditorWorkspaceModals'
-import { SnapshotEditorAssignmentDialog } from './snapshotEditor/SnapshotEditorAssignmentDialog'
+import { SnapshotEditorAuxModals } from './snapshotEditor/SnapshotEditorAuxModals'
 import { SnapshotEditorClearFlowsConfirm } from './snapshotEditor/SnapshotEditorClearFlowsConfirm'
 import { SnapshotEditorSavePresetModal } from './snapshotEditor/SnapshotEditorSavePresetModal'
 import { SnapshotEditorRenameChainModal } from './snapshotEditor/SnapshotEditorRenameChainModal'
@@ -8378,69 +8374,51 @@ export function SnapshotEditorPage() {
         onDelete={(preset) => handleDeletePresetRequest(preset)}
       />
 
-      {/* Snapshot Import Dialog */}
-      <SnapshotImportDialog
-        isOpen={showImportDialog}
-        onClose={() => setShowImportDialog(false)}
-        onImportSuccess={(presetId, name) => {
+      <SnapshotEditorAuxModals
+        showImportDialog={showImportDialog}
+        onCloseImportDialog={() => setShowImportDialog(false)}
+        onImportSuccess={(_presetId, name) => {
           queryClient.invalidateQueries({ queryKey: ['chains', 'presets'] })
           pushToast(`Imported "${name}" successfully`, 'success')
         }}
-      />
-
-      <SnapshotEditorAssignmentDialog
-        open={assignmentDialogOpen}
-        selectedFlow={selectedFlowForAssignment}
-        selectedNodeId={assignmentSelectedNodeId}
-        redundancyEnabled={assignmentRedundancyEnabled}
-        isAssigning={isAssigningFlow}
-        isAnalysisLoading={assignmentAnalysisQuery.isLoading}
+        assignmentDialogOpen={assignmentDialogOpen}
+        selectedFlowForAssignment={selectedFlowForAssignment}
+        assignmentSelectedNodeId={assignmentSelectedNodeId}
+        assignmentRedundancyEnabled={assignmentRedundancyEnabled}
+        isAssigningFlow={isAssigningFlow}
+        assignmentAnalysisLoading={assignmentAnalysisQuery.isLoading}
         assignmentNodes={assignmentNodes}
-        recommendedNodes={recommendedAssignmentNodes}
-        analysis={assignmentAnalysis}
-        isSuitableNode={isSuitableAssignmentNode}
-        onClose={closeAssignmentDialog}
-        onSubmit={() => handleAssignFlow(assignmentSelectedNodeId, assignmentRedundancyEnabled)}
-        onSelectNode={setAssignmentSelectedNodeId}
-        onRedundancyChange={setAssignmentRedundancyEnabled}
-      />
-
-      {/* Plugin Details Modal */}
-      {detailsPlugin && (
-        <PluginDetailsModal
-          plugin={detailsPlugin}
-          open={!!detailsPlugin}
-          onClose={() => setDetailsPlugin(null)}
-        />
-      )}
-
-      {/* Keyboard Shortcuts Help Modal */}
-      <SnapshotEditorKeyboardShortcuts
-        open={showKeyboardHelp}
-        onClose={() => setShowKeyboardHelp(false)}
+        recommendedAssignmentNodes={recommendedAssignmentNodes}
+        assignmentAnalysis={assignmentAnalysis}
+        isSuitableAssignmentNode={isSuitableAssignmentNode}
+        onCloseAssignmentDialog={closeAssignmentDialog}
+        onSubmitAssignment={() => handleAssignFlow(assignmentSelectedNodeId, assignmentRedundancyEnabled)}
+        onAssignmentSelectNode={setAssignmentSelectedNodeId}
+        onAssignmentRedundancyChange={setAssignmentRedundancyEnabled}
+        detailsPlugin={detailsPlugin}
+        onCloseDetails={() => setDetailsPlugin(null)}
+        showKeyboardHelp={showKeyboardHelp}
+        onCloseKeyboardHelp={() => setShowKeyboardHelp(false)}
         onOpenDocs={() => {
           setShowKeyboardHelp(false)
           openPlatformDocs('QUICK_REFERENCE.md')
         }}
-      />
-
-      <SnapshotVersionHistoryModal
-        open={showVersionHistoryModal}
-        snapshotName={activeSnapshot?.name}
-        revisions={snapshotRevisionsQuery.data?.revisions ?? []}
-        loading={snapshotRevisionsQuery.isPending}
-        errorMessage={
+        showVersionHistoryModal={showVersionHistoryModal}
+        versionHistorySnapshotName={activeSnapshot?.name}
+        versionHistoryRevisions={snapshotRevisionsQuery.data?.revisions ?? []}
+        versionHistoryLoading={snapshotRevisionsQuery.isPending}
+        versionHistoryErrorMessage={
           snapshotRevisionsQuery.error instanceof Error
             ? snapshotRevisionsQuery.error.message
             : null
         }
-        restoringRevisionNumber={
+        versionHistoryRestoringRevisionNumber={
           restoreSnapshotRevisionMutation.isPending
             ? (restoreSnapshotRevisionMutation.variables?.revisionNumber ?? null)
             : null
         }
-        onClose={closeVersionHistoryWorkspace}
-        onRestore={(revision) => {
+        onCloseVersionHistory={closeVersionHistoryWorkspace}
+        onRestoreRevision={(revision) => {
           if (!activeSnapshot) {
             return
           }
