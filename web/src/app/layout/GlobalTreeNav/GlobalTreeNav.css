@@ -39,7 +39,7 @@
   padding: 0.85rem 0.9rem;
   text-align: left;
   cursor: pointer;
-  transition: border-color 120ms ease, background 120ms ease;
+  transition: border-color var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease), background var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease);
 }
 
 .global-tree-nav__node-button:hover,
@@ -209,7 +209,7 @@
   padding: 0.2rem 0.35rem;
   border: 1px solid transparent;
   border-radius: 0.6rem;
-  transition: border-color 120ms ease, background 120ms ease, box-shadow 120ms ease;
+  transition: border-color var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease), background var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease), box-shadow var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease);
 }
 
 .global-tree-nav__node-copy--bold .global-tree-nav__node-label {
@@ -336,7 +336,7 @@
   background: color-mix(in srgb, var(--surface-2) 88%, transparent);
   color: inherit;
   cursor: pointer;
-  transition: border-color 120ms ease, background 120ms ease, color 120ms ease, opacity 120ms ease;
+  transition: border-color var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease), background var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease), color var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease), opacity var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease);
 }
 
 .global-tree-nav__quick-action:hover {
@@ -414,7 +414,7 @@
   flex: 0 0 auto;
   margin-inline-start: auto;
   opacity: 0;
-  transition: opacity 120ms ease;
+  transition: opacity var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease);
 }
 
 .global-tree-nav__tree-node:hover > .cds--tree-node__label .global-tree-nav__node-actions,

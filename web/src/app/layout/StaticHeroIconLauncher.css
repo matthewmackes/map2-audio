@@ -49,7 +49,7 @@
   font-family: inherit;
   font-size: inherit;
   color: inherit;
-  transition: opacity 120ms ease;
+  transition: opacity var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease);
 }
 
 .static-hero-icon-launcher__btn:hover {
