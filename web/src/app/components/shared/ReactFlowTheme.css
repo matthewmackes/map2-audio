@@ -17,13 +17,13 @@
 }
 
 .react-flow__node {
-  transition: opacity 0.2s ease-in-out;
+  transition: opacity var(--map2-dur-base, 220ms) var(--map2-ease-in-out-rack, ease-in-out);
   border-radius: 0;
   box-shadow: none;
 }
 
 .react-flow__edge-path {
-  transition: stroke 0.2s ease-in-out;
+  transition: stroke var(--map2-dur-base, 220ms) var(--map2-ease-in-out-rack, ease-in-out);
 }
 
 .react-flow__edge.selected .react-flow__edge-path {

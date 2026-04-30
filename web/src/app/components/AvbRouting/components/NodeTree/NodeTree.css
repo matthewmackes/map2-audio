@@ -63,7 +63,7 @@
   padding: var(--cds-spacing-03, 0.5rem) var(--cds-spacing-05, 1rem);
   border-left: 4px solid transparent;
   cursor: pointer;
-  transition: background-color 100ms ease;
+  transition: background-color var(--map2-dur-instant, 80ms) var(--map2-ease-in-out-rack, ease);
 }
 
 .node-tree__item:hover {
