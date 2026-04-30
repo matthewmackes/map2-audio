@@ -2310,6 +2310,86 @@ export function SnapshotEditorPage() {
     },
   })
 
+  // Hero sub-row: publish-readiness drives the SnapshotPublishStatus pill +
+  // contextual actions. Polled at 5s to mirror SnapshotPublishPage.
+  const heroPublishReadinessQuery = useQuery({
+    queryKey: ['snapshots', 'publish-readiness', activeSnapshot?.id ?? null],
+    queryFn: () => {
+      if (!activeSnapshot) throw new Error('No active snapshot')
+      return snapshotsApi.getPublishReadiness(activeSnapshot.id)
+    },
+    enabled: Boolean(activeSnapshot?.id),
+    refetchInterval: 5_000,
+  })
+  const heroPublishReadiness = heroPublishReadinessQuery.data ?? null
+
+  const heroConfirmPublishMutation = useMutation({
+    mutationFn: async () => {
+      if (!activeSnapshot) throw new Error('No active snapshot')
+      return snapshotsApi.activate(activeSnapshot.id)
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['snapshots', 'publish-readiness', activeSnapshot?.id ?? null] })
+      void queryClient.invalidateQueries({ queryKey: ['snapshots', 'detail', activeSnapshot?.id ?? null] })
+      pushToast('Publish confirmed', 'success')
+    },
+    onError: (error) => {
+      pushToast(error instanceof Error ? error.message : 'Failed to confirm publish', 'error')
+    },
+  })
+
+  const heroReconcilePublishMutation = useMutation({
+    mutationFn: async () => {
+      if (!activeSnapshot) throw new Error('No active snapshot')
+      return snapshotsApi.retryPublish(activeSnapshot.id)
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['snapshots', 'publish-readiness', activeSnapshot?.id ?? null] })
+      void queryClient.invalidateQueries({ queryKey: ['snapshots', 'detail', activeSnapshot?.id ?? null] })
+      pushToast('Reconcile started', 'success')
+    },
+    onError: (error) => {
+      pushToast(error instanceof Error ? error.message : 'Failed to reconcile', 'error')
+    },
+  })
+
+  const heroOverwriteLiveMutation = useMutation({
+    mutationFn: async () => {
+      if (!activeSnapshot) throw new Error('No active snapshot')
+      return snapshotsApi.activate(activeSnapshot.id)
+    },
+    onSuccess: () => {
+      void queryClient.invalidateQueries({ queryKey: ['snapshots', 'publish-readiness', activeSnapshot?.id ?? null] })
+      void queryClient.invalidateQueries({ queryKey: ['snapshots', 'detail', activeSnapshot?.id ?? null] })
+      pushToast('Live state overwritten with current draft', 'success')
+    },
+    onError: (error) => {
+      pushToast(error instanceof Error ? error.message : 'Failed to overwrite live', 'error')
+    },
+  })
+
+  const heroPublishActionPending =
+    heroConfirmPublishMutation.isPending
+    || heroReconcilePublishMutation.isPending
+    || heroOverwriteLiveMutation.isPending
+
+  const handleHeroCopyMetadataValue = useCallback((value: string) => {
+    if (!value) return
+    if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
+      void navigator.clipboard.writeText(value).then(
+        () => pushToast('Copied to clipboard', 'success'),
+        () => pushToast('Clipboard copy blocked by browser', 'warn'),
+      )
+      return
+    }
+    pushToast('Clipboard not available', 'warn')
+  }, [pushToast])
+
+  const handleHeroNavigateToPublishPage = useCallback(() => {
+    if (!activeSnapshot) return
+    navigate(`/snapshots/${activeSnapshot.id}/publish`)
+  }, [activeSnapshot, navigate])
+
   const renameActiveSnapshotMutation = useMutation({
     mutationFn: async ({ snapshotId, name }: { snapshotId: number; name: string }) =>
       snapshotsApi.update(snapshotId, { name }),
@@ -7766,6 +7846,17 @@ export function SnapshotEditorPage() {
             outputLevelWarningMessage={outputLevelWarningMessage}
             onOpenProgressModal={openGuidedProgress}
             liveBadgeState={liveBadgeState}
+            publishReadiness={heroPublishReadiness}
+            isSnapshotLocked={Boolean(activeSnapshot?.is_locked)}
+            onToggleSnapshotLock={() => toggleActiveSnapshotLockMutation.mutate()}
+            toggleSnapshotLockPending={toggleActiveSnapshotLockMutation.isPending}
+            onCopyHeroMetadataValue={handleHeroCopyMetadataValue}
+            onConfirmPublish={() => heroConfirmPublishMutation.mutate()}
+            onRejectPublish={handleHeroNavigateToPublishPage}
+            onReconcilePublish={() => heroReconcilePublishMutation.mutate()}
+            onOverwriteLive={() => heroOverwriteLiveMutation.mutate()}
+            onViewPublishErrors={handleHeroNavigateToPublishPage}
+            publishActionPending={heroPublishActionPending}
           />
           {/* T2454 slice 1C: operator-curated preload slots. Lives below the
               snapshot hero so pinning is one click away from the active

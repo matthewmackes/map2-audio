@@ -2,10 +2,16 @@ import { Add, ChartLine, Edit, Flow, Folder, Help, Launch, SettingsAdjust, Time 
 import { Button, Layer, NumberInput, Tag, Tile } from '@carbon/react'
 import { useMemo, type KeyboardEvent } from 'react'
 
-import type { AuthoritativeAudioState, SnapshotDetail, SnapshotDraftData, SnapshotRuntimeLiveState } from '../../../map2/types'
+import type { AuthoritativeAudioState, SnapshotDetail, SnapshotDraftData, SnapshotPublishReadiness, SnapshotRuntimeLiveState } from '../../../map2/types'
 import type { SnapshotGoLiveState } from '../../utils/snapshotGoLiveState'
 import type { SnapshotLiveBadgeState } from '../../hooks/useSnapshotReconciliation'
 import { formatSnapshotLastUsedValue } from '../../utils/snapshotLastUsed'
+import {
+  buildHeroMetadataRows,
+  SnapshotHeroLockButton,
+  SnapshotHeroMetadataCluster,
+  SnapshotHeroStateRow,
+} from './SnapshotHeroEnhancements'
 
 function formatRelativeTimestamp(value: string | null | undefined): string {
   if (!value) return ''
@@ -113,6 +119,18 @@ interface SnapshotEditorSnapshotStatusPanelProps {
   onOpenVersionHistory?: () => void
   versionHistoryDisabled?: boolean
   onOpenHelp?: () => void
+  // Iter 1+: hero enhancements — metadata cluster, lock toggle, state row.
+  publishReadiness?: SnapshotPublishReadiness | null
+  isSnapshotLocked?: boolean
+  onToggleSnapshotLock?: () => void
+  toggleSnapshotLockPending?: boolean
+  onCopyHeroMetadataValue?: (value: string) => void
+  onConfirmPublish?: () => void
+  onRejectPublish?: () => void
+  onReconcilePublish?: () => void
+  onOverwriteLive?: () => void
+  onViewPublishErrors?: () => void
+  publishActionPending?: boolean
 }
 
 interface SnapshotLiveHeadline {
@@ -268,13 +286,29 @@ export function SnapshotEditorSnapshotStatusPanel({
   monitoringStatusLabel = null,
   monitoringStatusWarning = false,
   liveBadgeState,
+  publishReadiness = null,
+  isSnapshotLocked = false,
+  onToggleSnapshotLock,
+  toggleSnapshotLockPending = false,
+  onCopyHeroMetadataValue,
+  onConfirmPublish,
+  onRejectPublish,
+  onReconcilePublish,
+  onOverwriteLive,
+  onViewPublishErrors,
+  publishActionPending = false,
 }: SnapshotEditorSnapshotStatusPanelProps) {
   const liveHeadline = useMemo(
     () => resolveLiveHeadline(liveSnapshot, authoritativeAudioState, liveBadgeState),
     [authoritativeAudioState, liveSnapshot, liveBadgeState],
   )
   const snapshotTitle = liveSnapshot?.name ?? 'No live snapshot'
-  const snapshotProgramControlDisabled = snapshotProgramPending || snapshotProgramDisabled || !liveSnapshot
+  const snapshotProgramControlDisabled = snapshotProgramPending || snapshotProgramDisabled || !liveSnapshot || isSnapshotLocked
+  const heroMetadataRows = useMemo(
+    () => buildHeroMetadataRows(liveSnapshot, publishReadiness),
+    [liveSnapshot, publishReadiness],
+  )
+  const publishStatus = publishReadiness?.status ?? null
 
   const handleSnapshotNameKeyDown = (event: KeyboardEvent<HTMLInputElement>) => {
     if (event.key === 'Enter') {
@@ -345,11 +379,11 @@ export function SnapshotEditorSnapshotStatusPanel({
                       {liveSnapshot && onRenameSnapshot ? (
                         <button
                           type="button"
-                          className="juce-grid-page__snapshot-status-title-button"
+                          className={`juce-grid-page__snapshot-status-title-button${isSnapshotLocked ? ' is-locked' : ''}`}
                           onClick={onRenameSnapshot}
-                          disabled={snapshotRenamePending}
+                          disabled={snapshotRenamePending || isSnapshotLocked}
                           aria-label={`Rename snapshot ${snapshotTitle}`}
-                          title="Rename snapshot"
+                          title={isSnapshotLocked ? 'Snapshot is locked — unlock to rename' : 'Rename snapshot'}
                         >
                           <span className="juce-grid-page__snapshot-status-title-text">{snapshotTitle}</span>
                           <Edit size={20} aria-hidden="true" />
@@ -375,7 +409,17 @@ export function SnapshotEditorSnapshotStatusPanel({
                 </p>
               ) : null}
             </div>
+            {liveSnapshot && heroMetadataRows.length > 0 ? (
+              <SnapshotHeroMetadataCluster rows={heroMetadataRows} onCopyValue={onCopyHeroMetadataValue} />
+            ) : null}
             <div className="juce-grid-page__snapshot-status-program" role="form" aria-label="Snapshot MIDI program">
+              {liveSnapshot && onToggleSnapshotLock ? (
+                <SnapshotHeroLockButton
+                  isLocked={isSnapshotLocked}
+                  onToggle={onToggleSnapshotLock}
+                  pending={toggleSnapshotLockPending}
+                />
+              ) : null}
               <NumberInput
                 id="snapshot-editor-midi-program"
                 label="MIDI program"
@@ -397,6 +441,20 @@ export function SnapshotEditorSnapshotStatusPanel({
               </Button>
             </div>
           </div>
+          {liveSnapshot && publishStatus ? (
+            <SnapshotHeroStateRow
+              status={publishStatus}
+              readiness={publishReadiness}
+              snapshot={liveSnapshot}
+              isLocked={isSnapshotLocked}
+              onConfirm={onConfirmPublish}
+              onReject={onRejectPublish}
+              onReconcile={onReconcilePublish}
+              onOverwriteLive={onOverwriteLive}
+              onViewErrors={onViewPublishErrors}
+              busy={publishActionPending}
+            />
+          ) : null}
         </div>
       </div>
     </Layer>
