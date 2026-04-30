@@ -370,6 +370,7 @@ import { SnapshotEditorPerformOverlay } from './snapshotEditor/SnapshotEditorPer
 import { SnapshotEditorPresetBrowser } from './snapshotEditor/SnapshotEditorPresetBrowser'
 import { SnapshotEditorPluginBrowser } from './snapshotEditor/SnapshotEditorPluginBrowser'
 import { SnapshotEditorCompactPanels } from './snapshotEditor/SnapshotEditorCompactPanels'
+import { SnapshotEditorAutomationToggle } from './snapshotEditor/SnapshotEditorAutomationToggle'
 import { SnapshotEditorAssignmentDialog } from './snapshotEditor/SnapshotEditorAssignmentDialog'
 import { SnapshotEditorClearFlowsConfirm } from './snapshotEditor/SnapshotEditorClearFlowsConfirm'
 import { SnapshotEditorSavePresetModal } from './snapshotEditor/SnapshotEditorSavePresetModal'
@@ -8472,20 +8473,13 @@ export function SnapshotEditorPage() {
         </div>
       )}
 
-      <Button
-        size="sm"
-        kind="secondary"
-        className={`juce-grid-page__automation-floating-toggle ${automationTimelineExpanded ? 'is-expanded' : ''}`}
-        style={automationFloatingToggleStyle}
-        onClick={() => setAutomationTimelineExpanded((previous) => !previous)}
+      <SnapshotEditorAutomationToggle
+        expanded={automationTimelineExpanded}
+        onToggle={() => setAutomationTimelineExpanded((previous) => !previous)}
         disabled={snapshotEntryRequired}
-        aria-controls="juce-grid-automation-panel"
-        aria-expanded={automationTimelineExpanded}
-        aria-label={automationTimelineExpanded ? 'Hide automation toolbar' : 'Show automation toolbar'}
+        style={automationFloatingToggleStyle}
         title={automationFloatingToggleTitle}
-      >
-        Automation
-      </Button>
+      />
 
       {/* Unified Audio Port Selector — per-flow or global */}
       <JuceGridAudioPortModal
