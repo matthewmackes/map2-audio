@@ -148,6 +148,17 @@
   cursor: pointer;
 }
 
+/* T2466-5: focus-visible rings on the SVG patchbay's route + node
+   custom controls. They render as <path> / <g> with role="button"
+   so the browser default outline is invisible inside an SVG; we
+   draw a clear ring through outline + a soft glow filter. */
+.midi-hub-connections-patchbay__route:focus-visible,
+.midi-hub-connections-patchbay__node:focus-visible {
+  outline: none;
+  filter: drop-shadow(0 0 0 var(--cds-focus, #4589ff))
+    drop-shadow(0 0 4px var(--cds-focus, #4589ff));
+}
+
 .midi-hub-connections-patchbay__node-label {
   font-size: var(--cds-label-01-font-size, 0.75rem);
   font-weight: 600;

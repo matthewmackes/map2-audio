@@ -11,7 +11,7 @@ Last updated: 2026-04-27 EDT - T2462 installer audit shipped: fresh-host rebuild
 ---
 
 ID: T2466
-Status: [ ] Todo
+Status: [>] In Progress
 Title: React GUI fit-and-finish — integrated feel + smooth sliding motion + collapsed taskbar
 Description:
 - Goal / acceptance criteria: Live web GUI feels cohesive and tactile across all workspaces; every animated transition uses tokens from `web/src/app/styles/design-language.css` (durations) and `web/src/app/styles/motionPrimitives.ts` (springs/variants); sliding components (drawers, sheets, splitters, canvas nodes, tab indicators) share one motion vocabulary; `prefers-reduced-motion` is honored in Framer Motion variants (not just CSS); custom controls (canvas nodes, drag handles) carry `:focus-visible` rings; magic numbers in inline styles / CSS are replaced with tokens. Taskbar/status strip is shrunk by 25% (`--window-taskbar-height` 2.6rem → 1.95rem) AND collapsed by default with a manual chevron toggle (persisted in localStorage), auto-expanding only when at least one critical-severity pill or `pendingPushConfirmation` is present.
@@ -30,7 +30,8 @@ Subtasks:
   - T2466-7: Taskbar/status strip — shrink 25% + collapse-by-default with critical-only auto-expand. Files: `web/src/app/layout/AppShell.css` (`.window-taskbar`), `web/src/app/layout/TaskbarStatusStrip.tsx`, `web/src/app/layout/useAppShellPresentation.ts`, `web/src/app/pages/HomePage.landing.css:100`. Persist user override in `localStorage` key `map2.taskbar.collapsed`; critical event clears override and forces expand. A11y: `<button aria-expanded aria-controls>`; `aria-live="polite"` on auto-expansions. Update Desktop snapshot test.
 Out of scope: SnapshotEditorPageContent decomposition, App-shell bundle splitting, ToastsPresenter debouncing — already tracked elsewhere. No new features; polish only.
 Assigned to: Unassigned (AI agent fed the coaching prompt at `/home/mm/.claude/plans/help-me-coach-an-mellow-marshmallow.md`)
-Last updated: 2026-04-28 EDT - opened, plan + coaching prompt drafted
+Last updated: 2026-04-29 EDT - T2466-5 progress: focus-visible rings landed on the MidiHub patchbay SVG route + node custom controls (web/src/app/pages/midi-hub/MidiHubConnectionsPage.css). Audit confirmed canvas-card surfaces (mpx1-flow-card, intelfx-flow-card), UnifiedChannelGrid blocks, AppShell nav-pin-toggle, NodeSelector tabs, ContentKicker actions, and the WorkspaceBar buttons already carry compliant focus-visible coverage. T2466-7 follow-up: the originally-targeted `.window-taskbar` is part of `ShellLauncherPanel`, which is no longer mounted in the live shell tree (T2438+ migration replaced it with `ContentKicker` + `WorkspaceBar` chrome). The `--window-taskbar-height` token still has fallback consumers in `HomePage.landing.css`. Acceptance criteria for T2466-7 should be re-scoped to apply to the live workspace bar instead of the dead taskbar; left as a TBD on the task.
+2026-04-28 EDT - opened, plan + coaching prompt drafted
 
 ---
 
