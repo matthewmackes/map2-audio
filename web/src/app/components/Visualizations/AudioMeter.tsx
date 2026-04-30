@@ -92,7 +92,7 @@ export function AudioMeter({
           justifyContent: 'space-between',
           alignItems: 'center',
           fontSize: 11,
-          color: '#888',
+          color: 'var(--cds-text-secondary, #888)',
           marginBottom: 4
         }}>
           <span>{label}</span>
@@ -197,7 +197,7 @@ export function AudioMeter({
           display: 'flex',
           justifyContent: 'space-between',
           fontSize: 9,
-          color: '#555',
+          color: 'var(--cds-text-helper, #555)',
           marginTop: 2,
           paddingLeft: 0,
           paddingRight: showValue ? (showPeak ? 138 : 68) : 0,

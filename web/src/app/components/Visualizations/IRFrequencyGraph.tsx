@@ -260,7 +260,7 @@ export function IRFrequencyGraph({
           background: 'rgba(16, 12, 8, 0.96)',
           borderRadius: 8,
           border: '1px solid rgba(255, 184, 77, 0.2)',
-          color: '#666'
+          color: 'var(--cds-text-helper, #666)'
         }}
       >
         <span style={{ fontSize: 12 }}>Load an IR to view frequency response</span>
