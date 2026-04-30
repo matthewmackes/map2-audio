@@ -213,7 +213,7 @@ function NativeDelayCardBase({
         <select
           value={parameters.stereoMode}
           onChange={(e) => setStereoMode(parseInt(e.target.value))}
-          style={{ background: '#262626', border: '1px solid #393939', borderRadius: 4, color: 'var(--cds-text-primary, #f4f4f4)', fontSize: 10, padding: '4px 8px' }}
+          style={{ background: 'var(--cds-layer, #262626)', border: '1px solid var(--cds-border-subtle, #393939)', borderRadius: 4, color: 'var(--cds-text-primary, #f4f4f4)', fontSize: 10, padding: '4px 8px' }}
         >
           {STEREO_MODES.map((m) => <option key={m.index} value={m.index}>{m.name}</option>)}
         </select>
@@ -242,7 +242,7 @@ function NativeDelayCardBase({
             <select
               value={parameters.modWaveform}
               onChange={(e) => setModWaveform(parseInt(e.target.value))}
-              style={{ background: '#262626', border: '1px solid #393939', borderRadius: 4, color: 'var(--cds-text-primary, #f4f4f4)', fontSize: 10, padding: '4px 8px' }}
+              style={{ background: 'var(--cds-layer, #262626)', border: '1px solid var(--cds-border-subtle, #393939)', borderRadius: 4, color: 'var(--cds-text-primary, #f4f4f4)', fontSize: 10, padding: '4px 8px' }}
             >
               {MOD_WAVEFORMS.map((w) => <option key={w.index} value={w.index}>{w.name}</option>)}
             </select>
@@ -286,7 +286,7 @@ function NativeDelayCardBase({
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginTop: 8, fontSize: 10, color: 'var(--cds-text-helper, #a8a8a8)' }}>
             <span>Ducking:</span>
-            <div style={{ flex: 1, height: 4, background: '#393939', borderRadius: 2, overflow: 'hidden' }}>
+            <div style={{ flex: 1, height: 4, background: 'var(--cds-border-strong-01, #393939)', borderRadius: 2, overflow: 'hidden' }}>
               <div style={{ width: `${Math.min(100, Math.abs(metering.duckingGain) * 5)}%`, height: '100%', background: accentColor, borderRadius: 2 }} />
             </div>
             <span>{metering.duckingGain.toFixed(1)} dB</span>
