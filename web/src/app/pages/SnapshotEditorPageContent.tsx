@@ -366,11 +366,7 @@ import { SnapshotEditorCompactPanels } from './snapshotEditor/SnapshotEditorComp
 import { SnapshotEditorAutomationToggle } from './snapshotEditor/SnapshotEditorAutomationToggle'
 import { SnapshotEditorWorkspaceModals } from './snapshotEditor/SnapshotEditorWorkspaceModals'
 import { SnapshotEditorAuxModals } from './snapshotEditor/SnapshotEditorAuxModals'
-import { SnapshotEditorClearFlowsConfirm } from './snapshotEditor/SnapshotEditorClearFlowsConfirm'
-import { SnapshotEditorSavePresetModal } from './snapshotEditor/SnapshotEditorSavePresetModal'
-import { SnapshotEditorRenameChainModal } from './snapshotEditor/SnapshotEditorRenameChainModal'
-import { SnapshotEditorTabletDeleteConfirm } from './snapshotEditor/SnapshotEditorTabletDeleteConfirm'
-import { SnapshotEditorPresetDeleteConfirm } from './snapshotEditor/SnapshotEditorPresetDeleteConfirm'
+import { SnapshotEditorChainDialogs } from './snapshotEditor/SnapshotEditorChainDialogs'
 import { SnapshotEditorRoutingInspector } from './snapshotEditor/SnapshotEditorRoutingInspector'
 
 // API_BASE lives in ./snapshotEditor/snapshotEditorApi (T2467 follow-up).
@@ -8259,53 +8255,40 @@ export function SnapshotEditorPage() {
         </>
       )}
 
-      <SnapshotEditorTabletDeleteConfirm
-        pendingPlugin={pendingTabletDeletePlugin}
-        isDeleting={deleteMutation.isPending}
-        onClose={() => setPendingTabletDeletePlugin(null)}
-        onConfirm={confirmTabletDeleteSelectedPlugin}
-      />
-
-      <SnapshotEditorSavePresetModal
-        open={showSavePresetModal}
-        chainLabel={currentChain?.name || 'Current chain'}
-        presetName={savePresetName}
-        hasChain={!!currentChain}
-        isSaving={savePresetMutation.isPending}
-        onClose={() => {
+      <SnapshotEditorChainDialogs
+        pendingTabletDeletePlugin={pendingTabletDeletePlugin}
+        isDeletePending={deleteMutation.isPending}
+        onCloseTabletDelete={() => setPendingTabletDeletePlugin(null)}
+        onConfirmTabletDelete={confirmTabletDeleteSelectedPlugin}
+        showSavePresetModal={showSavePresetModal}
+        saveChainLabel={currentChain?.name || 'Current chain'}
+        savePresetName={savePresetName}
+        saveHasChain={!!currentChain}
+        isSavingPreset={savePresetMutation.isPending}
+        onCloseSavePreset={() => {
           setShowSavePresetModal(false)
           setSavePresetName('')
         }}
-        onPresetNameChange={setSavePresetName}
-        onSubmit={submitSavePreset}
-      />
-
-      <SnapshotEditorRenameChainModal
-        open={showRenameChainModal}
-        chainLabel={currentChain?.name || 'Current chain'}
-        chainName={renameChainName}
-        hasChain={!!currentChain}
-        isSaving={renameMutation.isPending}
-        onClose={() => {
+        onSavePresetNameChange={setSavePresetName}
+        onSubmitSavePreset={submitSavePreset}
+        showRenameChainModal={showRenameChainModal}
+        renameChainLabel={currentChain?.name || 'Current chain'}
+        renameChainName={renameChainName}
+        renameHasChain={!!currentChain}
+        isRenameSaving={renameMutation.isPending}
+        onCloseRenameChain={() => {
           setShowRenameChainModal(false)
           setRenameChainName('')
         }}
-        onChainNameChange={setRenameChainName}
-        onSubmit={submitRenameChain}
-      />
-
-
-      <SnapshotEditorPresetDeleteConfirm
-        pendingPreset={presetPendingDelete}
-        isDeleting={deletePresetMutation.isPending}
-        onClose={() => setPresetPendingDelete(null)}
-        onConfirm={confirmDeletePreset}
-      />
-
-      <SnapshotEditorClearFlowsConfirm
-        open={showClearFlowsModal}
-        onClose={() => setShowClearFlowsModal(false)}
-        onConfirm={confirmClearFlows}
+        onRenameChainNameChange={setRenameChainName}
+        onSubmitRenameChain={submitRenameChain}
+        presetPendingDelete={presetPendingDelete}
+        isDeletePresetPending={deletePresetMutation.isPending}
+        onClosePresetDelete={() => setPresetPendingDelete(null)}
+        onConfirmDeletePreset={confirmDeletePreset}
+        showClearFlowsModal={showClearFlowsModal}
+        onCloseClearFlows={() => setShowClearFlowsModal(false)}
+        onConfirmClearFlows={confirmClearFlows}
       />
       {midiModalOpen && (
         <Modal
