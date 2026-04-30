@@ -378,7 +378,7 @@ export function SystemArchitectureFlow() {
 
         {healthInfo.utilization !== undefined && (
           <div style={{ marginTop: 4 }}>
-            <div style={{ fontSize: 9, color: '#888', marginBottom: 2 }}>CPU: {healthInfo.utilization.toFixed(1)}%</div>
+            <div style={{ fontSize: 9, color: 'var(--cds-text-secondary, #888)', marginBottom: 2 }}>CPU: {healthInfo.utilization.toFixed(1)}%</div>
             <div style={{ height: 4, background: 'rgba(0,0,0,0.3)', borderRadius: 2, overflow: 'hidden' }}>
               <div
                 style={{
@@ -393,7 +393,7 @@ export function SystemArchitectureFlow() {
         )}
 
         {healthInfo.loadedCount !== undefined && (
-          <div style={{ fontSize: 9, color: '#888' }}>{healthInfo.loadedCount} plugins loaded</div>
+          <div style={{ fontSize: 9, color: 'var(--cds-text-secondary, #888)' }}>{healthInfo.loadedCount} plugins loaded</div>
         )}
 
         {/* Expanded details panel */}
@@ -409,7 +409,7 @@ export function SystemArchitectureFlow() {
               {healthInfo.details.description}
             </div>
             
-            <div style={{ fontSize: 9, color: '#888', marginBottom: 4 }}>
+            <div style={{ fontSize: 9, color: 'var(--cds-text-secondary, #888)', marginBottom: 4 }}>
               <strong style={{ color: '#aaa' }}>Components:</strong>
             </div>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginBottom: 8 }}>
@@ -431,13 +431,13 @@ export function SystemArchitectureFlow() {
 
             {healthInfo.details.metrics && (
               <>
-                <div style={{ fontSize: 9, color: '#888', marginBottom: 4 }}>
+                <div style={{ fontSize: 9, color: 'var(--cds-text-secondary, #888)', marginBottom: 4 }}>
                   <strong style={{ color: '#aaa' }}>Metrics:</strong>
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4 }}>
                   {healthInfo.details.metrics.map((metric, i) => (
-                    <div key={i} style={{ fontSize: 8, color: '#888' }}>
-                      <span style={{ color: '#666' }}>{metric.label}:</span>{' '}
+                    <div key={i} style={{ fontSize: 8, color: 'var(--cds-text-secondary, #888)' }}>
+                      <span style={{ color: 'var(--cds-text-helper, #666)' }}>{metric.label}:</span>{' '}
                       <span style={{ color: '#fff' }}>{metric.value}</span>
                     </div>
                   ))}
@@ -453,7 +453,7 @@ export function SystemArchitectureFlow() {
           bottom: 4, 
           right: 8, 
           fontSize: 8, 
-          color: '#666',
+          color: 'var(--cds-text-helper, #666)',
           opacity: isExpanded ? 0 : 0.7,
         }}>
           ▼ details
@@ -627,17 +627,17 @@ export function SystemArchitectureFlow() {
           <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
               <Cpu size={14} style={{ color: '#64b5f6' }} />
-              <span style={{ fontSize: 10, color: '#888' }}>System CPU:</span>
+              <span style={{ fontSize: 10, color: 'var(--cds-text-secondary, #888)' }}>System CPU:</span>
               <span style={{ fontSize: 11, color: '#fff', fontWeight: 500 }}>{perfData.cpu_percent.toFixed(1)}%</span>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
               <HardDrive size={14} style={{ color: '#81c784' }} />
-              <span style={{ fontSize: 10, color: '#888' }}>Memory:</span>
+              <span style={{ fontSize: 10, color: 'var(--cds-text-secondary, #888)' }}>Memory:</span>
               <span style={{ fontSize: 11, color: '#fff', fontWeight: 500 }}>{perfData.memory_percent.toFixed(1)}%</span>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
               <Gauge size={14} style={{ color: pluginPerf.gpu_device ? '#ab47bc' : '#888' }} />
-              <span style={{ fontSize: 10, color: '#888' }}>GPU:</span>
+              <span style={{ fontSize: 10, color: 'var(--cds-text-secondary, #888)' }}>GPU:</span>
               <span style={{ fontSize: 11, color: pluginPerf.gpu_device ? '#ab47bc' : '#666', fontWeight: 500 }}>
                 {pluginPerf.gpu_device || 'CPU Only'}
               </span>

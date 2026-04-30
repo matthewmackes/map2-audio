@@ -367,7 +367,7 @@ export const SidechainPanel: React.FC<SidechainPanelProps> = ({
           <div style={{
             padding: 20,
             textAlign: 'center',
-            color: '#666',
+            color: 'var(--cds-text-helper, #666)',
           }}>
             <ArrowsClockwise size={18} className="animate-spin" style={{ margin: '0 auto' }} />
           </div>
@@ -375,7 +375,7 @@ export const SidechainPanel: React.FC<SidechainPanelProps> = ({
           <div style={{
             padding: 20,
             textAlign: 'center',
-            color: '#666',
+            color: 'var(--cds-text-helper, #666)',
           }}>
             <LinkBreak size={24} style={{ margin: '0 auto 8px', opacity: 0.5 }} />
             <div style={{ fontSize: 12 }}>No sidechain connections</div>

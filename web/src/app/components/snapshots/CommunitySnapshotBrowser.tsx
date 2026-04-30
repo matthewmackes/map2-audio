@@ -515,7 +515,7 @@ function SnapshotCard({
               <Star
                 key={star}
                 size={14}
-                style={{ cursor: 'pointer', color: '#666' }}
+                style={{ cursor: 'pointer', color: 'var(--cds-text-helper, #666)' }}
                 onMouseEnter={() => setHoverRating(star)}
                 onMouseLeave={() => setHoverRating(0)}
                 onClick={() => onRate(star)}
