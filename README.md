@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1381** Python | **1370** TypeScript | **177** C++/H | **145** Docs | **3225** total commits | **3** stars | **0** forks | **0** open issues
+**1381** Python | **1371** TypeScript | **177** C++/H | **145** Docs | **3240** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -193,7 +193,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 |  |  |  |
 | :---: | :---: | :---: |
 | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/map2-banner.png" width="280" alt="map2 banner"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/map2-banner-3.png" width="280" alt="map2 banner 3"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot-Cli.png" width="280" alt="Screenshot Cli"> |
-| <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 08-00-43 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 08 00 43 Mackes Audio Platform 2 FEB2025"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 07-58-14 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 07 58 14 Mackes Audio Platform 2 FEB2025"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 07-57-33 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 07 57 33 Mackes Audio Platform 2 FEB2025"> |
+| <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 08-00-43 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 08 00 43 Mackes Audio Platform 2 FEB2025"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 07-57-33 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 07 57 33 Mackes Audio Platform 2 FEB2025"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 07-58-14 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 07 58 14 Mackes Audio Platform 2 FEB2025"> |
 | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/MAP2_AUDIO-NODE_ARCH_DIAGRAM3.png" width="280" alt="MAP2 AUDIO NODE ARCH DIAGRAM3"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/MAP2_AUDIO-NODE_ARCH_DIAGRAM2-BANG.png" width="280" alt="MAP2 AUDIO NODE ARCH DIAGRAM2 BANG"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/MAP2_AUDIO-NODE_ARCH_DIAGRAM.png" width="280" alt="MAP2 AUDIO NODE ARCH DIAGRAM"> |
 <!-- GALLERY:END -->
 
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
-| [`51463ae3`](https://github.com/matthewmackes/map2-audio/commit/51463ae3353a78517595ed5d136bd710c420d5ca) | worklist: roll up T2466 + T2473 progress through cycle 49 | Map2 Audio | 2026-04-30 |
-| [`220f7de0`](https://github.com/matthewmackes/map2-audio/commit/220f7de012cc3adacf0b1bfa89a8ae4913d39f48) | T2466-4: SidechainPanel + CommunitySnapshotBrowser + Syst... | Map2 Audio | 2026-04-30 |
-| [`2f245d29`](https://github.com/matthewmackes/map2-audio/commit/2f245d29fc81d9f56046cd6b9ce2bf7a6e2d1af0) | T2466-6: 4 more CSS files threaded through design-languag... | Map2 Audio | 2026-04-30 |
-| [`78df3f71`](https://github.com/matthewmackes/map2-audio/commit/78df3f71fa101b7981b6c863b0f7f8641fbac04f) | T2466-6: BypassSwitch + TagSelector easing tokens | Map2 Audio | 2026-04-30 |
-| [`282ff1a2`](https://github.com/matthewmackes/map2-audio/commit/282ff1a27f55f778f65554675f44dd5cd73e928e) | T2466-5: HorizontalPluginNode + UCG wire overlay focus-vi... | Map2 Audio | 2026-04-30 |
-| [`213a279a`](https://github.com/matthewmackes/map2-audio/commit/213a279ad9f26151cfbf49490b6292ec4fdb8ccc) | T2466-6: EQCard easing tokens | Map2 Audio | 2026-04-30 |
-| [`13c6bc45`](https://github.com/matthewmackes/map2-audio/commit/13c6bc45c28d0360a336d71432ed130aeef9c67f) | T2466-6: Dynamics cards (Compressor/Gate/Limiter) easing ... | Map2 Audio | 2026-04-30 |
-| [`1ac72a27`](https://github.com/matthewmackes/map2-audio/commit/1ac72a279ae661b79eecc70e68e8c19bc12164d2) | T2466-6: ExpressionOverlay + MidiMappingDialog easing tokens | Map2 Audio | 2026-04-30 |
+| [`e03322d8`](https://github.com/matthewmackes/map2-audio/commit/e03322d818b0adaadf28695b1cf6ce4035e0eb55) | worklist: roll up T2466-6 10-iteration SHIP loop (post-T2... | Map2 Audio | 2026-04-30 |
+| [`58786ac0`](https://github.com/matthewmackes/map2-audio/commit/58786ac078a42987a6f4fc4d5a806a51ae2213f2) | T2466-6: HostMachine surface easing tokens | Map2 Audio | 2026-04-30 |
+| [`2568e875`](https://github.com/matthewmackes/map2-audio/commit/2568e875e48e51e3575e7eb13ac7eee248eae2fd) | T2466-6: PlatformModal + RoutingTopologyModal + UnifiedCh... | Map2 Audio | 2026-04-30 |
+| [`498e421d`](https://github.com/matthewmackes/map2-audio/commit/498e421d5bf22a093ef95732210b41ab0e54503b) | T2466-6: Snapshot publish + artifact download modal tokens | Map2 Audio | 2026-04-30 |
+| [`295d64de`](https://github.com/matthewmackes/map2-audio/commit/295d64de9177c2d07bb85c4b98c94617fc134e58) | T2466-6: GlobalTreeNav + StaticHeroIconLauncher easing to... | Map2 Audio | 2026-04-30 |
+| [`2a6dd380`](https://github.com/matthewmackes/map2-audio/commit/2a6dd38056516b93d01f9f9f53d2d3e48fda5c7e) | T2466-6: AppShell + ClusterEngineGrid easing tokens (13 t... | Map2 Audio | 2026-04-30 |
+| [`674b4762`](https://github.com/matthewmackes/map2-audio/commit/674b4762f14716f441f8e0db09d65dee6d87cce3) | T2466-6: ReactFlow theme + AvbRouting NodeTree easing tokens | Map2 Audio | 2026-04-30 |
+| [`926324ca`](https://github.com/matthewmackes/map2-audio/commit/926324ca2682919cbd9d68e79d16951bbdfe2e91) | T2466-6: NodeNav unified pill easing tokens | Map2 Audio | 2026-04-30 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
