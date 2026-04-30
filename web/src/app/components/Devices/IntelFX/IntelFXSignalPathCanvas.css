@@ -206,7 +206,7 @@
   border: 1.5px solid color-mix(in srgb, var(--block-accent) 30%, transparent 70%);
   border-radius: var(--border-radius-sm);
   cursor: pointer;
-  transition: border-color 0.15s, opacity 0.2s, filter 0.2s;
+  transition: border-color var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease), opacity var(--map2-dur-base, 220ms) var(--map2-ease-in-out-rack, ease), filter var(--map2-dur-base, 220ms) var(--map2-ease-in-out-rack, ease);
   outline: 2px solid transparent;
   outline-offset: 2px;
   animation: intelfx-flow-glow 2.8s ease-in-out infinite;
@@ -281,7 +281,7 @@
   color: var(--block-accent);
   font-size: var(--cds-helper-text-01-font-size, 0.75rem);
   opacity: 0.5;
-  transition: opacity 0.12s;
+  transition: opacity var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease);
   flex-shrink: 0;
   line-height: 1;
 }
@@ -462,7 +462,7 @@
   border-radius: var(--border-radius-sm);
   color: var(--interactive);
   cursor: pointer;
-  transition: background 0.12s;
+  transition: background var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease);
   text-align: left;
 }
 

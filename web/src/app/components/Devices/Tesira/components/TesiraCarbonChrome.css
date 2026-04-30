@@ -758,7 +758,7 @@
 .tesira-levels-tab__meter-fill {
   position: absolute;
   inset: auto 0 0;
-  transition: height 0.08s ease-out;
+  transition: height var(--map2-dur-instant, 80ms) var(--map2-ease-in-out-rack, ease);
 }
 
 .tesira-levels-tab__range,
@@ -951,7 +951,7 @@
 .tesira-loop-builder__inventory-card {
   cursor: pointer;
   border: 1px solid var(--cds-border-subtle);
-  transition: background 120ms ease, outline-color 120ms ease;
+  transition: background var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease), outline-color var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease);
 }
 
 .tesira-loop-builder__inventory-card:hover,

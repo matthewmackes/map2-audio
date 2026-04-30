@@ -855,7 +855,7 @@ export function NodeHealthBar({ label, value }: { label: string; value: number }
         <span style={{ color: '#f3f4f6', fontWeight: 600 }}>{value.toFixed(1)}%</span>
       </div>
       <div style={{ height: 6, background: '#111111', borderRadius: 3, overflow: 'hidden' }}>
-        <div style={{ height: '100%', width: `${Math.min(value, 100)}%`, background: color, borderRadius: 3, transition: 'width 0.3s' }} />
+        <div style={{ height: '100%', width: `${Math.min(value, 100)}%`, background: color, borderRadius: 3, transition: 'width var(--map2-dur-slow, 380ms) var(--map2-ease-in-out-rack, ease)' }} />
       </div>
     </div>
   )
@@ -1366,9 +1366,9 @@ export function LCDView({ forcedSection, hideChrome }: LCDViewProps = {}) {
                         <label style={{ color: '#d1d5db', fontWeight: 600 }}>Auto-scroll Long Messages</label>
                         <button
                           onClick={() => setSettings({ ...settings, autoScrollDelay: settings.autoScrollDelay > 0 ? 0 : 3 })}
-                          style={{ width: 48, height: 24, borderRadius: 12, border: 'none', cursor: 'pointer', background: settings.autoScrollDelay > 0 ? '#22c55e' : '#444', position: 'relative', transition: 'background 0.2s' }}
+                          style={{ width: 48, height: 24, borderRadius: 12, border: 'none', cursor: 'pointer', background: settings.autoScrollDelay > 0 ? '#22c55e' : '#444', position: 'relative', transition: 'background var(--map2-dur-base, 220ms) var(--map2-ease-in-out-rack, ease)' }}
                         >
-                          <div style={{ width: 20, height: 20, borderRadius: '50%', background: '#fff', position: 'absolute', top: 2, left: settings.autoScrollDelay > 0 ? 26 : 2, transition: 'left 0.2s' }} />
+                          <div style={{ width: 20, height: 20, borderRadius: '50%', background: '#fff', position: 'absolute', top: 2, left: settings.autoScrollDelay > 0 ? 26 : 2, transition: 'left var(--map2-dur-base, 220ms) var(--map2-ease-in-out-rack, ease)' }} />
                         </button>
                       </div>
                       <p className="setting-hint">Scroll text that exceeds display width</p>
@@ -1409,9 +1409,9 @@ export function LCDView({ forcedSection, hideChrome }: LCDViewProps = {}) {
                         <label style={{ color: '#d1d5db', fontWeight: 600 }}>Alert Sounds</label>
                         <button
                           onClick={() => setSettings({ ...settings, soundEnabled: !settings.soundEnabled })}
-                          style={{ width: 48, height: 24, borderRadius: 12, border: 'none', cursor: 'pointer', background: settings.soundEnabled ? '#22c55e' : '#444', position: 'relative', transition: 'background 0.2s' }}
+                          style={{ width: 48, height: 24, borderRadius: 12, border: 'none', cursor: 'pointer', background: settings.soundEnabled ? '#22c55e' : '#444', position: 'relative', transition: 'background var(--map2-dur-base, 220ms) var(--map2-ease-in-out-rack, ease)' }}
                         >
-                          <div style={{ width: 20, height: 20, borderRadius: '50%', background: '#fff', position: 'absolute', top: 2, left: settings.soundEnabled ? 26 : 2, transition: 'left 0.2s' }} />
+                          <div style={{ width: 20, height: 20, borderRadius: '50%', background: '#fff', position: 'absolute', top: 2, left: settings.soundEnabled ? 26 : 2, transition: 'left var(--map2-dur-base, 220ms) var(--map2-ease-in-out-rack, ease)' }} />
                         </button>
                       </div>
                       <p className="setting-hint">Play beep sound on critical events</p>
@@ -1444,9 +1444,9 @@ export function LCDView({ forcedSection, hideChrome }: LCDViewProps = {}) {
                             <label style={{ color: '#d1d5db', fontWeight: 600 }}>Critical Alerts Only</label>
                             <button
                               onClick={() => setSettings({ ...settings, alertSoundOnly: !settings.alertSoundOnly })}
-                              style={{ width: 48, height: 24, borderRadius: 12, border: 'none', cursor: 'pointer', background: settings.alertSoundOnly ? '#22c55e' : '#444', position: 'relative', transition: 'background 0.2s' }}
+                              style={{ width: 48, height: 24, borderRadius: 12, border: 'none', cursor: 'pointer', background: settings.alertSoundOnly ? '#22c55e' : '#444', position: 'relative', transition: 'background var(--map2-dur-base, 220ms) var(--map2-ease-in-out-rack, ease)' }}
                             >
-                              <div style={{ width: 20, height: 20, borderRadius: '50%', background: '#fff', position: 'absolute', top: 2, left: settings.alertSoundOnly ? 26 : 2, transition: 'left 0.2s' }} />
+                              <div style={{ width: 20, height: 20, borderRadius: '50%', background: '#fff', position: 'absolute', top: 2, left: settings.alertSoundOnly ? 26 : 2, transition: 'left var(--map2-dur-base, 220ms) var(--map2-ease-in-out-rack, ease)' }} />
                             </button>
                           </div>
                           <p className="setting-hint">Only play sounds for critical severity events</p>
@@ -1524,7 +1524,7 @@ export function LCDView({ forcedSection, hideChrome }: LCDViewProps = {}) {
                   {/* Brightness Preview */}
                   <div style={{ marginBottom: 16 }}>
                     <p style={{ fontSize: 12, color: '#6b7280', marginBottom: 8 }}>Brightness Level</p>
-                    <div style={{ background: '#fde68a', borderRadius: 6, padding: 16, border: '2px solid #78350f', textAlign: 'center', opacity: settings.brightness / 100, transition: 'opacity 0.2s' }}>
+                    <div style={{ background: '#fde68a', borderRadius: 6, padding: 16, border: '2px solid #78350f', textAlign: 'center', opacity: settings.brightness / 100, transition: 'opacity var(--map2-dur-base, 220ms) var(--map2-ease-in-out-rack, ease)' }}>
                       <span style={{ color: '#78350f', fontFamily: 'var(--font-ui-tight)', fontWeight: 600 }}>4×20 LCD</span>
                     </div>
                   </div>
@@ -1625,7 +1625,7 @@ export function LCDView({ forcedSection, hideChrome }: LCDViewProps = {}) {
           font-weight: 500;
           border-radius: 8px;
           cursor: pointer;
-          transition: all 0.2s;
+          transition: all var(--map2-dur-base, 220ms) var(--map2-ease-in-out-rack, ease);
         }
         .lcd-tab:hover { color: #fff; background: #333; }
         .lcd-tab.active { color: #fff; background: #22c55e; }
@@ -1687,7 +1687,7 @@ export function LCDView({ forcedSection, hideChrome }: LCDViewProps = {}) {
         .lcd-page-buttons { display: flex; gap: 4px; flex-wrap: wrap; }
         .lcd-page-btn {
           display: flex; align-items: center; justify-content: center; width: 32px; height: 32px;
-          background: #222; border: 1px solid #333; border-radius: 6px; color: #888; cursor: pointer; transition: all 0.2s;
+          background: #222; border: 1px solid #333; border-radius: 6px; color: #888; cursor: pointer; transition: all var(--map2-dur-base, 220ms) var(--map2-ease-in-out-rack, ease);
         }
         .lcd-page-btn:hover { background: #333; color: #fff; border-color: #444; }
         .lcd-page-btn.active { background: #22c55e; border-color: #22c55e; color: #fff; }
@@ -1700,7 +1700,7 @@ export function LCDView({ forcedSection, hideChrome }: LCDViewProps = {}) {
         .dpad-row { display: flex; gap: 4px; }
         .input-btn {
           display: flex; align-items: center; justify-content: center;
-          background: #2a2a2a; border: 1px solid #3a3a3a; border-radius: 8px; color: #888; cursor: pointer; transition: all 0.15s;
+          background: #2a2a2a; border: 1px solid #3a3a3a; border-radius: 8px; color: #888; cursor: pointer; transition: all var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease);
         }
         .input-btn:hover:not(:disabled) { background: #3a3a3a; color: #fff; transform: scale(1.05); }
         .input-btn:active:not(:disabled) { transform: scale(0.95); background: #22c55e; }
@@ -1711,7 +1711,7 @@ export function LCDView({ forcedSection, hideChrome }: LCDViewProps = {}) {
         .encoder-ring { display: flex; gap: 4px; }
         .encoder-btn {
           display: flex; align-items: center; justify-content: center; width: 40px; height: 40px;
-          background: #2a2a2a; border: 1px solid #3a3a3a; border-radius: 50%; color: #888; font-size: var(--cds-body-compact-01-font-size, 0.875rem); cursor: pointer; transition: all 0.15s;
+          background: #2a2a2a; border: 1px solid #3a3a3a; border-radius: 50%; color: #888; font-size: var(--cds-body-compact-01-font-size, 0.875rem); cursor: pointer; transition: all var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease);
         }
         .encoder-btn:hover { background: #3a3a3a; color: #fff; }
         .encoder-btn.press { background: #333; color: #22c55e; }
@@ -1727,7 +1727,7 @@ export function LCDView({ forcedSection, hideChrome }: LCDViewProps = {}) {
         .composer-target label { color: #888; font-size: var(--cds-body-compact-01-font-size, 0.875rem); }
         .composer-target-btns { display: flex; gap: 4px; }
         .composer-btn {
-          padding: 6px 12px; background: #222; border: 1px solid #333; border-radius: 6px; color: #888; font-size: var(--cds-body-compact-01-font-size, 0.875rem); cursor: pointer; transition: all 0.2s;
+          padding: 6px 12px; background: #222; border: 1px solid #333; border-radius: 6px; color: #888; font-size: var(--cds-body-compact-01-font-size, 0.875rem); cursor: pointer; transition: all var(--map2-dur-base, 220ms) var(--map2-ease-in-out-rack, ease);
         }
         .composer-btn:hover { background: #333; color: #fff; }
         .composer-btn.active { background: #22c55e; border-color: #22c55e; color: #fff; }
@@ -1752,7 +1752,7 @@ export function LCDView({ forcedSection, hideChrome }: LCDViewProps = {}) {
         .triggers-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 8px; }
         .trigger-btn {
           display: flex; align-items: center; gap: 8px; padding: var(--cds-spacing-04, 0.75rem) var(--cds-spacing-04, 0.75rem);
-          background: #222; border: 1px solid #333; border-radius: 8px; color: #888; font-size: var(--cds-body-compact-01-font-size, 0.875rem); cursor: pointer; transition: all 0.2s;
+          background: #222; border: 1px solid #333; border-radius: 8px; color: #888; font-size: var(--cds-body-compact-01-font-size, 0.875rem); cursor: pointer; transition: all var(--map2-dur-base, 220ms) var(--map2-ease-in-out-rack, ease);
         }
         .trigger-btn:hover { background: #333; color: #fff; border-color: #444; }
         .trigger-btn:active { background: #22c55e; border-color: #22c55e; }
@@ -1786,7 +1786,7 @@ export function LCDView({ forcedSection, hideChrome }: LCDViewProps = {}) {
         .alert-router-header { display: flex; align-items: center; gap: 8px; color: #fff; font-weight: 600; margin-bottom: 20px; }
         .alert-types-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(280px, 1fr)); gap: 12px; }
         .alert-type-card {
-          background: #222; border: 1px solid #333; border-radius: 10px; padding: 12px; cursor: pointer; transition: all 0.2s;
+          background: #222; border: 1px solid #333; border-radius: 10px; padding: 12px; cursor: pointer; transition: all var(--map2-dur-base, 220ms) var(--map2-ease-in-out-rack, ease);
         }
         .alert-type-card:hover { background: #2a2a2a; border-color: #444; }
         .alert-type-card.disabled { opacity: 0.5; }
@@ -1799,7 +1799,7 @@ export function LCDView({ forcedSection, hideChrome }: LCDViewProps = {}) {
         .alert-type-target { display: flex; align-items: center; gap: var(--cds-spacing-04, 0.75rem); color: #888; font-size: var(--cds-body-compact-01-font-size, 0.875rem); }
         .lcd-target-btns { display: flex; gap: 4px; }
         .lcd-target-btn {
-          padding: 4px 8px; background: #333; border: none; border-radius: 4px; color: #888; font-size: var(--cds-helper-text-01-font-size, 0.75rem); cursor: pointer; transition: all 0.2s;
+          padding: 4px 8px; background: #333; border: none; border-radius: 4px; color: #888; font-size: var(--cds-helper-text-01-font-size, 0.75rem); cursor: pointer; transition: all var(--map2-dur-base, 220ms) var(--map2-ease-in-out-rack, ease);
         }
         .lcd-target-btn:hover { background: #444; color: #fff; }
         .lcd-target-btn.active { background: #3b82f6; color: #fff; }
@@ -1859,7 +1859,7 @@ export function LCDView({ forcedSection, hideChrome }: LCDViewProps = {}) {
         .full-width { width: 100%; margin-top: 12px; }
         .scan-results-box { margin-top: 12px; background: #111; border: 1px solid #222; border-radius: 6px; overflow: hidden; }
         .scan-header { padding: 8px 12px; background: rgba(34,197,94,0.1); color: #22c55e; font-size: var(--cds-body-compact-01-font-size, 0.875rem); font-weight: 500; }
-        .scan-device-item { display: flex; justify-content: space-between; padding: 8px 12px; border-top: 1px solid #1a1a1a; cursor: pointer; transition: background 0.2s; }
+        .scan-device-item { display: flex; justify-content: space-between; padding: 8px 12px; border-top: 1px solid #1a1a1a; cursor: pointer; transition: background var(--map2-dur-base, 220ms) var(--map2-ease-in-out-rack, ease); }
         .scan-device-item:hover, .scan-device-item.selected { background: rgba(34,197,94,0.1); }
         .device-addr { font-family: var(--font-ui-tight); color: #22c55e; font-size: var(--cds-body-compact-01-font-size, 0.875rem); }
         .ft232h-board-container { display: flex; flex-direction: column; align-items: center; gap: 16px; }
@@ -1870,7 +1870,7 @@ export function LCDView({ forcedSection, hideChrome }: LCDViewProps = {}) {
         .pin-overlays { position: absolute; top: 0; left: 0; right: 0; bottom: 0; pointer-events: none; }
         .pin-overlay {
           position: absolute; width: 50px; height: 24px; display: flex; align-items: center; justify-content: center;
-          border-radius: 4px; cursor: pointer; pointer-events: auto; transition: all 0.2s; font-size: var(--cds-helper-text-01-font-size, 0.75rem); font-weight: 600;
+          border-radius: 4px; cursor: pointer; pointer-events: auto; transition: all var(--map2-dur-base, 220ms) var(--map2-ease-in-out-rack, ease); font-size: var(--cds-helper-text-01-font-size, 0.75rem); font-weight: 600;
         }
         .pin-overlay.i2c { background: rgba(34,197,94,0.8); border: 2px solid #22c55e; color: #fff; }
         .pin-overlay.power { background: rgba(239,68,68,0.8); border: 2px solid #ef4444; color: #fff; }

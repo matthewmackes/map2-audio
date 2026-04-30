@@ -127,7 +127,7 @@
   border-radius: 3px;
   background: #1e1e3a;
   cursor: pointer;
-  transition: background 0.12s ease, border-color 0.12s ease, box-shadow 0.12s ease;
+  transition: background var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease), border-color var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease), box-shadow var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease);
   text-align: center;
   color: #ccc;
   min-width: 3.5rem;
@@ -237,7 +237,7 @@
   height: 3px;
   border-radius: 0 0 2px 2px;
   background: transparent;
-  transition: background 0.15s ease;
+  transition: background var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease);
 }
 
 .mk1-led-bar--on {
@@ -253,7 +253,7 @@
   left: 0;
   right: 0;
   opacity: 0;
-  transition: opacity 0.15s ease;
+  transition: opacity var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease);
   display: flex;
   justify-content: center;
 }
