@@ -39,6 +39,14 @@ Last updated: 2026-04-29 EDT - T2466 progressed across 9 subtasks (0/2/3/4/5/6 +
 - T2466-6: Disclosure / UploadPrimitives / HorizontalSignalChain transitions through design-language tokens with prefers-reduced-motion fallbacks.
 - T2466-7 RE-SCOPE: original target `.window-taskbar` is part of `ShellLauncherPanel`, no longer mounted in the live shell tree (T2438+ migration replaced it with ContentKicker + WorkspaceBar). The `--window-taskbar-height` token still has fallback consumers in HomePage.landing.css. Acceptance criteria should be re-scoped to apply to the live workspace bar; left as a TBD.
 - T2466-1 (canvas-node motion-value drag): deferred — risks live MPX1/IntelFX operator surfaces, needs dedicated session.
+
+Updated 2026-04-30 EDT — cycles 21-30 layered five more reduced-motion wirings, three more magic-number sweeps, two more focus-ring fixes, and a sixth helper hook on top of the cycle-1-20 work:
+- T2466-3 (reduced-motion wiring): RebootOverlay, PlatformModal (StandaloneWorkspace + LayerWorkspace + empty-state), Toasts stage chrome (StageChyronCard, StageChyronStrap, StageMissionChrome, StageMidiPanel, StageEventTicker switched to shouldReduceEffects), MidiHubHealthDrawer (CSS @media), and SnapshotEditorPerformOverlay (first consumer of new useReducedMotionSafeTransition hook).
+- T2466-3 (helper extension): added `INSTANT_TRANSITION` constant + `useReducedMotionSafeTransition(baseTransition)` one-call hook in `web/src/app/styles/useReducedMotionSafeVariants.ts` so consumers don't have to hand-roll the read-then-ternary pattern. Test coverage now 6 cases.
+- T2466-4 (magic numbers): NativeDelayCard + CelestialCompressorCard background/border hex literals → Carbon tokens; AudioMeteringCard inline transitions + #6b7280 → tokens.
+- T2466-5 (focus rings): ApiObservatory request-builder tab close (was a non-focusable span; now tabIndex+keyboard handler+focus-visible CSS).
+- T2466-6 (collapsible easing): UploadPrimitives, HorizontalSignalChain, PluginBrowser inline transitions → design-language tokens with prefers-reduced-motion fallbacks where CSS-driven.
+- ExpressionPage Framer wiring deferred — 15+ inline transitions warrant a focused review session.
 2026-04-28 EDT - opened, plan + coaching prompt drafted
 
 ---
@@ -2447,12 +2455,13 @@ Description:
 - Estimated effort: Large (3-5 days). Single most-disruptive subtask in the epic.
 - Risk: high — this is where the monolith's hidden coupling will surface. Run the full Jest suite, the production build, and a live editor smoke test before declaring complete. Carbon directives still apply; if a sub-component would benefit from being upgraded to a Carbon `Layer` in the same diff, defer that to a follow-up — bundling Carbon migration with structural extraction defeats the no-behavior-change gate.
 Assigned to: Claude
-Last updated: 2026-04-29 EDT - parts 12-15 SHIPPED. Monolith 8894 → 8518 LoC (cumulative -376) across four extractions:
+Last updated: 2026-04-29 EDT - parts 12-16 SHIPPED. Monolith 8894 → 8496 LoC (cumulative -398) across five extractions:
   - part 12: SnapshotEditorPluginBrowser.tsx (305-line modal, 5 tests, dropped 7 dead imports)
   - part 13: SnapshotEditorCompactPanels.tsx (~155 LoC sibling, 6 tests)
   - part 14: SnapshotEditorAutomationToggle.tsx (floating toggle button, 4 tests)
   - part 15: SnapshotEditorWorkspaceModals.tsx (aggregates 3 declarative modal mounts, 5 tests, dropped 3 dead imports)
-20 unit tests across the four new siblings green; typecheck + production build clean each cycle; bundle hashes refreshed. Plugin Browser modal was the largest remaining inline JSX slice; remaining big-ticket targets are the bottom-editor section (~240 LoC) and the tablet-editor scrim/shell (~180 LoC), both deferred because they're tightly coupled to selectedPlugin state machinery and warrant dedicated sessions.
+  - part 16: SnapshotEditorAuxModals.tsx (aggregates 5 declarative modal mounts — import / assignment / plugin-details / keyboard-shortcuts / version-history, 6 tests, dropped 5 dead imports)
+26 unit tests across the five new siblings green; typecheck + production build clean each cycle; bundle hashes refreshed. Remaining big-ticket targets are the bottom-editor section (~240 LoC) and the tablet-editor scrim/shell (~180 LoC), both deferred because they're tightly coupled to selectedPlugin state machinery and warrant dedicated sessions.
 
 ---
 
