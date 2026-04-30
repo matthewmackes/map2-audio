@@ -6,7 +6,11 @@ import type { Chain, Plugin, PluginOrderRef } from '../../../map2/types'
 import type { SnapshotEditorFlowAnimation, SnapshotEditorNodeShape } from '../../hooks/useSpecialSettings'
 import useCPUMetrics from '../../hooks/useCPUMetrics'
 
-import { UnifiedChannelGrid, type SelectedBlockCoord } from './UnifiedChannelGrid/UnifiedChannelGrid'
+import {
+  UnifiedChannelGrid,
+  type ChannelStripProps,
+  type SelectedBlockCoord,
+} from './UnifiedChannelGrid/UnifiedChannelGrid'
 import { chainToUnifiedRow } from './UnifiedChannelGrid/chainToUnifiedRow'
 import { useChainMeter } from './UnifiedChannelGrid/useChainMeter'
 
@@ -73,6 +77,15 @@ export interface JuceGridSignalCanvasProps {
   flowAnimation?: SnapshotEditorFlowAnimation
   gridBackdrop?: boolean
   nodeShape?: SnapshotEditorNodeShape
+  flowLabel?: string
+  flowDryWetMix?: number
+  onFlowDryWetMixChange?: (value: number) => void
+  flowInputClipActive?: boolean
+  flowOutputClipActive?: boolean
+  flowClipActive?: boolean
+  onDeleteFlow?: () => void
+  canDeleteFlow?: boolean
+  flowControlsDisabled?: boolean
 }
 
 export interface JuceGridSignalAutomationSummary {
@@ -110,6 +123,15 @@ export const JuceGridSignalCanvas = memo(function JuceGridSignalCanvas({
   flowAnimation = 'cascade',
   gridBackdrop = true,
   nodeShape = 'square',
+  flowLabel,
+  flowDryWetMix,
+  onFlowDryWetMixChange,
+  flowInputClipActive = false,
+  flowOutputClipActive = false,
+  flowClipActive = false,
+  onDeleteFlow,
+  canDeleteFlow = false,
+  flowControlsDisabled = false,
 }: JuceGridSignalCanvasProps) {
   const rowId = resolveRowId(branchId, chain?.id)
   const routingMode = audioStatus?.routingMode ?? audioOutputStatus?.routingMode ?? 'series'
@@ -144,6 +166,37 @@ export const JuceGridSignalCanvas = memo(function JuceGridSignalCanvas({
 
   const meter = useChainMeter(chain ? rowId : null)
   const meters = useMemo(() => ({ [rowId]: meter }), [rowId, meter])
+
+  const channelStrips = useMemo<Record<string, ChannelStripProps> | undefined>(() => {
+    if (!flowLabel) return undefined
+    return {
+      [rowId]: {
+        flowLabel,
+        identitySubtitle: chain?.name ? `Chain ${flowLabel}` : `Channel ${flowLabel}`,
+        pathLabel: `Path ${flowLabel}`,
+        flowDryWetMix,
+        onFlowDryWetMixChange,
+        flowInputClipActive,
+        flowOutputClipActive,
+        flowClipActive,
+        onDeleteFlow,
+        canDeleteFlow,
+        flowControlsDisabled,
+      },
+    }
+  }, [
+    canDeleteFlow,
+    chain?.name,
+    flowClipActive,
+    flowControlsDisabled,
+    flowDryWetMix,
+    flowInputClipActive,
+    flowLabel,
+    flowOutputClipActive,
+    onDeleteFlow,
+    onFlowDryWetMixChange,
+    rowId,
+  ])
 
   const handleSelectBlock = useCallback(
     (_rowId: string, slotIndex: number) => {
@@ -222,6 +275,7 @@ export const JuceGridSignalCanvas = memo(function JuceGridSignalCanvas({
         rows={rows}
         selectedBlock={selectedBlock}
         meters={meters}
+        channelStrips={channelStrips}
         onSelectBlock={handleSelectBlock}
         onAddBlock={handleAddBlock}
         onRemoveBlock={readOnly ? undefined : handleRemoveBlock}

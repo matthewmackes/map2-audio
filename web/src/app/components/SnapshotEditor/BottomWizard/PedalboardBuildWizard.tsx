@@ -12,8 +12,11 @@ import {
   SettingsAdjust,
   Time,
 } from '@carbon/icons-react'
-import { Button, Tag } from '@carbon/react'
-import { MorphPad } from '../../StateAuthority/MorphPad'
+import { Button } from '@carbon/react'
+import {
+  SnapshotConfigurationCard,
+  type SnapshotSummaryInfo,
+} from '../SnapshotConfigurationCard/SnapshotConfigurationCard'
 import {
   useBuildStageMachine,
   type BuildStageDescriptor,
@@ -98,6 +101,9 @@ export interface PedalboardBuildWizardProps {
 
   onOpenRouting?: () => void
   onOpenDevices?: () => void
+  onOpenPublish?: () => void
+
+  snapshotSummary?: SnapshotSummaryInfo | null
 
   showMorphPad?: boolean
 }
@@ -225,7 +231,7 @@ function buildStepCopy(
   }
 }
 
-function RoutingDropdown({
+export function RoutingDropdown({
   options,
   value,
   onChange,
@@ -303,7 +309,7 @@ function RoutingDropdown({
   )
 }
 
-function SegmentedToggle({
+export function SegmentedToggle({
   options,
   value,
   ariaLabel,
@@ -391,6 +397,8 @@ export function PedalboardBuildWizard({
   routingDisabled,
   onOpenRouting,
   onOpenDevices,
+  onOpenPublish,
+  snapshotSummary,
   showMorphPad = true,
 }: PedalboardBuildWizardProps) {
   const machine = useBuildStageMachine({
@@ -501,13 +509,6 @@ export function PedalboardBuildWizard({
     { id: 'help', label: 'Help', icon: <Help size={14} />, onClick: onOpenHelp, active: activeWorkspaceActionId === 'help' },
   ]
 
-  const channelToneClass = activeChannel?.muted
-    ? 'is-muted'
-    : activeChannel?.solo
-      ? 'is-solo'
-      : activeChannel?.stateLive
-        ? 'is-live'
-        : 'is-idle'
 
   return (
     <section className="pedalboard-wizard" aria-label="Build workflow">
@@ -644,75 +645,18 @@ export function PedalboardBuildWizard({
         </div>
       </section>
 
-      {activeChannel || (routingOptions && routingOptions.length > 0) || showMorphPad ? (
-        <div className="pedalboard-wizard__secondary">
-          {activeChannel ? (
-            <article className="pedalboard-wizard__channel-card">
-              <span className="pedalboard-wizard__card-eyebrow">Active channel</span>
-              <div className="pedalboard-wizard__channel-row">
-                <div className="pedalboard-wizard__channel-id">
-                  <span
-                    className={`pedalboard-wizard__channel-letter ${channelToneClass}`}
-                    style={activeChannel.accentColor ? { '--pw-channel-accent': activeChannel.accentColor } as React.CSSProperties : undefined}
-                  >
-                    {activeChannel.channelLabel}
-                  </span>
-                  <div className="pedalboard-wizard__channel-text">
-                    <span className="pedalboard-wizard__channel-name">{activeChannel.chainLabel}</span>
-                    <span className="pedalboard-wizard__channel-sub">{activeChannel.blockSummary}</span>
-                  </div>
-                </div>
-                <div className="pedalboard-wizard__channel-tags">
-                  <Tag type={activeChannel.stateLive ? 'green' : 'cool-gray'} size="sm">{activeChannel.stateLabel}</Tag>
-                  <Tag type="blue" size="sm">{activeChannel.blendLabel}</Tag>
-                  <Tag type={activeChannel.muted ? 'red' : 'cool-gray'} size="sm">{activeChannel.muted ? 'Mute' : 'M'}</Tag>
-                  <Tag type={activeChannel.solo ? 'warm-gray' : 'cool-gray'} size="sm">{activeChannel.solo ? 'Solo' : 'S'}</Tag>
-                </div>
-                {routingOptions && routingOptions.length > 0 ? (
-                  <RoutingDropdown
-                    options={routingOptions}
-                    value={routingValue}
-                    onChange={onRoutingChange}
-                    disabled={routingDisabled}
-                  />
-                ) : null}
-                <div className="pedalboard-wizard__channel-toggles">
-                  <SegmentedToggle
-                    ariaLabel="Mute / solo"
-                    options={[
-                      { id: 'm', label: 'M', on: activeChannel.muted, tone: activeChannel.muted ? 'error' : undefined },
-                      { id: 's', label: 'S', on: activeChannel.solo, tone: activeChannel.solo ? 'warn' : undefined },
-                    ]}
-                  />
-                  <SegmentedToggle
-                    ariaLabel="Channel clip status"
-                    options={[
-                      { id: 'in', label: 'IN', on: activeChannel.inputClipActive, tone: activeChannel.inputClipActive ? 'error' : undefined },
-                      { id: 'out', label: 'OUT', on: activeChannel.outputClipActive, tone: activeChannel.outputClipActive ? 'error' : undefined },
-                      { id: 'clip', label: 'CLIP', on: activeChannel.clipActive, tone: activeChannel.clipActive ? 'error' : undefined },
-                    ]}
-                  />
-                  <Button size="sm" kind="ghost" renderIcon={Flow} onClick={onOpenRouting} disabled={!onOpenRouting}>
-                    Routing
-                  </Button>
-                  <Button size="sm" kind="ghost" renderIcon={SettingsAdjust} onClick={onOpenDevices} disabled={!onOpenDevices}>
-                    Devices
-                  </Button>
-                </div>
-              </div>
-            </article>
-          ) : null}
-
-          {showMorphPad ? (
-            <article className="pedalboard-wizard__morph-card">
-              <span className="pedalboard-wizard__card-eyebrow">Morph pad</span>
-              <div className="pedalboard-wizard__morph-host">
-                <MorphPad size={180} />
-              </div>
-            </article>
-          ) : null}
-        </div>
-      ) : null}
+      <SnapshotConfigurationCard
+        summary={snapshotSummary}
+        activeChannel={activeChannel}
+        routingOptions={routingOptions}
+        routingValue={routingValue}
+        onRoutingChange={onRoutingChange}
+        routingDisabled={routingDisabled}
+        onOpenRouting={onOpenRouting}
+        onOpenDevices={onOpenDevices}
+        onOpenPublish={onOpenPublish}
+        showMorphPad={showMorphPad}
+      />
     </section>
   )
 }

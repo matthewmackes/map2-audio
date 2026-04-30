@@ -7167,7 +7167,12 @@ export function SnapshotEditorPage() {
             undoRedoDescription: 'Reorder blocks',
           })
         }}
-        onAddPlugin={flow.id === addEffectFlowId ? handleAddPlugin : undefined}
+        onAddPlugin={() => {
+          if (flow.id !== addEffectFlowId) {
+            selectFlowIndex(index)
+          }
+          handleAddPlugin()
+        }}
         onRenameChain={isActive ? handleRenameChain : undefined}
         onDuplicateChain={isActive ? handleDuplicateChain : undefined}
         onToggleChainActive={isActive ? handleToggleChainActive : undefined}
@@ -7194,6 +7199,19 @@ export function SnapshotEditorPage() {
         flowAnimation={signalCanvasSettings.flowAnimation}
         gridBackdrop={signalCanvasSettings.gridBackdrop}
         nodeShape={signalCanvasSettings.nodeShape}
+        flowLabel={isTabletTouchLayout ? undefined : flowLabel}
+        flowDryWetMix={isTabletTouchLayout ? undefined : flow.dryWetMix}
+        onFlowDryWetMixChange={
+          isTabletTouchLayout
+            ? undefined
+            : (value) => updateFlow(flow.id, { dryWetMix: value })
+        }
+        flowInputClipActive={isTabletTouchLayout ? undefined : flowInputClipActive}
+        flowOutputClipActive={isTabletTouchLayout ? undefined : flowOutputClipActive}
+        flowClipActive={isTabletTouchLayout ? undefined : flowClipActive}
+        onDeleteFlow={isTabletTouchLayout ? undefined : () => removeFlow(flow.id)}
+        canDeleteFlow={!isTabletTouchLayout && flowSlots.length > MIN_FLOWS}
+        flowControlsDisabled={snapshotEditorMutationDisabled}
       />
     )
 
@@ -7406,101 +7424,6 @@ export function SnapshotEditorPage() {
             <>
               <div className="juce-grid-page__flow-card-body">
                 <div className="juce-grid-page__flow-card-content juce-grid-page__flow-card-content--compact">
-                  <div className="juce-grid-page__flow-card-inline-shell">
-                    <div className="juce-grid-page__flow-card-inline-main" role="group" aria-label={`${flowLabel} primary controls`}>
-                      <span className="juce-grid-page__flow-card-label" title={flowTitle}>
-                        <span className="juce-grid-page__flow-card-label-text">{flowLabel}</span>
-                      </span>
-
-                      <div className="juce-grid-page__flow-card-inline-copy">
-                        <span className="juce-grid-page__flow-card-title-heading">{flowLabel}</span>
-                        <span className="juce-grid-page__flow-card-inline-caption" title={flowCaption}>
-                          {flowCaption}
-                        </span>
-                      </div>
-                    </div>
-
-                    <div className="juce-grid-page__flow-card-inline-tools" role="toolbar" aria-label={`${flowLabel} flow actions`}>
-                      <div
-                        className="juce-grid-page__flow-card-level"
-                        onClick={(event) => event.stopPropagation()}
-                      >
-                        <FlowLevelControl
-                          flowId={flow.id}
-                          flowLabel={flowLabel}
-                          value={flow.dryWetMix}
-                          onChange={(value) => updateFlow(flow.id, { dryWetMix: value })}
-                          disabled={snapshotEditorMutationDisabled}
-                        />
-                      </div>
-
-                      <div className="juce-grid-page__flow-card-clip-bank" aria-label={`${flowLabel} clipping status`}>
-                        <div
-                          className={`juce-grid-page__flow-card-clip-readout ${flowInputClipActive ? 'is-active' : ''}`}
-                          title={flowInputClipActive ? `Flow ${flowLabel} input clipping detected` : `Flow ${flowLabel} input is clean`}
-                        >
-                          <SegmentedLedText value="IN" size="xs" color={FLOW_CARD_CLIP_LED_COLOR} />
-                        </div>
-                        <div
-                          className={`juce-grid-page__flow-card-clip-readout ${flowOutputClipActive ? 'is-active' : ''}`}
-                          title={flowOutputClipActive ? `Flow ${flowLabel} output clipping detected` : `Flow ${flowLabel} output is clean`}
-                        >
-                          <SegmentedLedText value="OUT" size="xs" color={FLOW_CARD_CLIP_LED_COLOR} />
-                        </div>
-                        <div
-                          className={`juce-grid-page__flow-card-clip-readout ${flowClipActive ? 'is-active' : ''}`}
-                          title={flowClipActive ? `Flow ${flowLabel} channel clipping detected` : `Flow ${flowLabel} channel is clean`}
-                        >
-                          <SegmentedLedText value="CLIP" size="xs" color={FLOW_CARD_CLIP_LED_COLOR} />
-                        </div>
-                      </div>
-
-                      <button
-                        type="button"
-                        className={`juce-grid-page__flow-card-state juce-grid-page__flow-card-state--mute ${flow.muted ? 'is-active' : ''}`}
-                        disabled={snapshotEditorMutationDisabled}
-                        onClick={(event) => {
-                          event.stopPropagation()
-                          updateFlow(flow.id, { muted: !flow.muted })
-                        }}
-                        aria-pressed={flow.muted}
-                        title={`${flow.muted ? 'Disable' : 'Enable'} mute for flow ${flowLabel}`}
-                      >
-                        M
-                      </button>
-
-                      <button
-                        type="button"
-                        className={`juce-grid-page__flow-card-state juce-grid-page__flow-card-state--solo ${flow.solo ? 'is-active' : ''}`}
-                        disabled={snapshotEditorMutationDisabled}
-                        onClick={(event) => {
-                          event.stopPropagation()
-                          updateFlow(flow.id, { solo: !flow.solo })
-                        }}
-                        aria-pressed={flow.solo}
-                        title={`${flow.solo ? 'Disable' : 'Enable'} solo for flow ${flowLabel}`}
-                      >
-                        S
-                      </button>
-
-                      {flowSlots.length > MIN_FLOWS && (
-                        <button
-                          type="button"
-                          className="juce-grid-page__flow-card-delete"
-                          disabled={snapshotEditorMutationDisabled}
-                          onClick={(event) => {
-                            event.stopPropagation()
-                            removeFlow(flow.id)
-                          }}
-                          title={`Delete flow ${flowLabel}`}
-                          aria-label={`Delete flow ${flowLabel}`}
-                        >
-                          <TrashCan size={16} />
-                        </button>
-                      )}
-                    </div>
-                  </div>
-
                   {signalCanvas}
                 </div>
               </div>
@@ -7686,6 +7609,61 @@ export function SnapshotEditorPage() {
     if (seconds < 86_400) return `updated ${Math.round(seconds / 3600)} hr ago`
     return `updated ${Math.round(seconds / 86_400)} d ago`
   }, [activeSnapshot?.updated_at])
+  const buildWorkflowSnapshotSummary = useMemo(() => {
+    if (!activeSnapshot) return null
+    const inputDeviceLabel = activeSnapshot.input_device || 'Default input'
+    const outputDeviceLabel = activeSnapshot.output_device || 'Default output'
+    const monitoringIndex =
+      activeSnapshot.io_bindings?.monitoring_output_index ??
+      activeSnapshot.controls?.monitoring_output_index ??
+      null
+    const monitoringDeviceLabel =
+      typeof monitoringIndex === 'number' ? `Output ${monitoringIndex + 1}` : null
+    const liveHostId = activeSnapshot.live_state?.node_id
+    const primaryHostId = activeSnapshot.deployments?.[0]?.primary_node_id
+    const hostLabel = liveHostId || primaryHostId || 'No host assigned'
+    const hostTone: 'live' | 'idle' | 'offline' = activeSnapshot.live_state?.is_live
+      ? 'live'
+      : activeSnapshot.live_state?.is_offline
+        ? 'offline'
+        : 'idle'
+    const saveTone: 'ready' | 'dirty' | 'idle' = snapshotsDirty
+      ? 'dirty'
+      : activeSnapshot.snapshot_revision
+        ? 'ready'
+        : 'idle'
+    const saveLabel = snapshotsDirty
+      ? buildWorkflowUpdatedAtLabel
+        ? `Unsaved changes — last save ${buildWorkflowUpdatedAtLabel}`
+        : 'Unsaved changes'
+      : activeSnapshot.snapshot_revision
+        ? `Revision ${activeSnapshot.snapshot_revision}`
+        : 'No revision saved'
+    const routingActiveChannel = activeChannelStatusRail?.channelLabel
+      ? `Active ${activeChannelStatusRail.channelLabel}`
+      : 'No active channel'
+    const routingDetailLabel = activeChannelStatusRail?.blendLabel
+      ? `${routingActiveChannel} · ${activeChannelStatusRail.blendLabel}`
+      : routingActiveChannel
+    return {
+      saveLabel,
+      saveTone,
+      hostLabel,
+      hostTone,
+      inputDeviceLabel,
+      outputDeviceLabel,
+      monitoringDeviceLabel,
+      routingModeLabel: routing.mode.replace(/_/g, ' '),
+      routingDetailLabel,
+    }
+  }, [
+    activeChannelStatusRail?.blendLabel,
+    activeChannelStatusRail?.channelLabel,
+    activeSnapshot,
+    buildWorkflowUpdatedAtLabel,
+    routing.mode,
+    snapshotsDirty,
+  ])
   const pedalboardBuildWizard = (
     <PedalboardBuildWizard
       hasSnapshot={Boolean(activeSnapshot)}
@@ -7725,6 +7703,8 @@ export function SnapshotEditorPage() {
       routingDisabled={snapshotEditingLocked}
       onOpenRouting={() => openSnapshotProgressModal('advanced', 'routing')}
       onOpenDevices={openSnapshotIoWorkspace}
+      onOpenPublish={() => openSnapshotProgressModal('wizard', 'overview')}
+      snapshotSummary={buildWorkflowSnapshotSummary}
       showMorphPad={Boolean(activeSnapshot)}
     />
   )

@@ -18,12 +18,34 @@ export interface SelectedBlockCoord {
   slotIndex: number
 }
 
+/**
+ * Per-row "channel strip" props consolidated into the left ChannelHeader
+ * column (T2474 / Signal Chain Update). Replaces the old flow-card toolbar
+ * that previously sat above the grid: identity badge, dry/wet fader,
+ * IN/OUT/CLIP segmented LEDs, and the delete-flow trash button now all
+ * render inside ChannelHeader itself.
+ */
+export interface ChannelStripProps {
+  flowLabel?: string
+  identitySubtitle?: string
+  pathLabel?: string
+  flowDryWetMix?: number
+  onFlowDryWetMixChange?: (value: number) => void
+  flowInputClipActive?: boolean
+  flowOutputClipActive?: boolean
+  flowClipActive?: boolean
+  onDeleteFlow?: () => void
+  canDeleteFlow?: boolean
+  flowControlsDisabled?: boolean
+}
+
 export interface UnifiedChannelGridProps {
   rows: UnifiedChannelRow[]
   selectedBlock?: SelectedBlockCoord | null
   wires?: Wire[]
   activeWireId?: string | null
   meters?: Record<string, ChainMeterReading>
+  channelStrips?: Record<string, ChannelStripProps>
   onSelectBlock?: (rowId: string, slotIndex: number) => void
   onAddBlock?: (rowId: string, slotIndex: number) => void
   onToggleMute?: (rowId: string) => void
@@ -40,6 +62,7 @@ export function UnifiedChannelGrid({
   wires,
   activeWireId = null,
   meters,
+  channelStrips,
   onSelectBlock,
   onAddBlock,
   onToggleMute,
@@ -79,6 +102,7 @@ export function UnifiedChannelGrid({
             selectedBlock?.rowId === row.id ? selectedBlock.slotIndex : null
           }
           meter={meters?.[row.id]}
+          channelStrip={channelStrips?.[row.id]}
           onSelectBlock={onSelectBlock}
           onAddBlock={onAddBlock}
           onRemoveBlock={onRemoveBlock}

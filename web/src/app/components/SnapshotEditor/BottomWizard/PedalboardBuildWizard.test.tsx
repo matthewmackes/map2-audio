@@ -98,7 +98,7 @@ describe('PedalboardBuildWizard', () => {
   it('passes the active-channel accent color to the channel letter swatch', () => {
     render(<PedalboardBuildWizard {...baseProps({ activeChannel: { ...ACTIVE_CHANNEL, accentColor: '#42be65' } })} />)
     const letter = screen.getByText('B')
-    expect(letter.getAttribute('style') ?? '').toContain('--pw-channel-accent: #42be65')
+    expect(letter.getAttribute('style') ?? '').toContain('--scc-channel-accent: #42be65')
   })
 
   it('disables the Routing/Devices buttons when their callbacks are absent', () => {

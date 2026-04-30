@@ -5,11 +5,13 @@ import { ChannelHeader } from './ChannelHeader'
 import { EmptySlot } from './EmptySlot'
 import { COLUMN_WIDTHS, ROW_HEIGHTS, type UnifiedChannelRow } from './gridConstants'
 import type { ChainMeterReading } from './useChainMeter'
+import type { ChannelStripProps } from './UnifiedChannelGrid'
 
 export interface ChannelRowProps {
   row: UnifiedChannelRow
   selectedSlotIndex?: number | null
   meter?: ChainMeterReading
+  channelStrip?: ChannelStripProps
   onToggleMute?: (rowId: string) => void
   onToggleSolo?: (rowId: string) => void
   onSelectBlock?: (rowId: string, slotIndex: number) => void
@@ -21,6 +23,7 @@ export function ChannelRow({
   row,
   selectedSlotIndex = null,
   meter,
+  channelStrip,
   onToggleMute,
   onToggleSolo,
   onSelectBlock,
@@ -45,7 +48,13 @@ export function ChannelRow({
       data-muted={row.muted ? 'true' : 'false'}
       data-solo={row.solo ? 'true' : 'false'}
     >
-      <ChannelHeader row={row} meter={meter} onToggleMute={onToggleMute} onToggleSolo={onToggleSolo} />
+      <ChannelHeader
+        row={row}
+        meter={meter}
+        strip={channelStrip}
+        onToggleMute={onToggleMute}
+        onToggleSolo={onToggleSolo}
+      />
 
       {row.slots.map((slot) => (
         <div

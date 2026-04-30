@@ -12,19 +12,19 @@ import type { MAP2Category } from '../categoryHues'
 export const SLOT_COUNT = 8 as const
 
 export const COLUMN_WIDTHS = {
-  channelHeader: 216,
+  channelHeader: 240,
   slot: 128,
   insertGap: 16,
 } as const
 
 export const ROW_HEIGHTS = {
   ruler: 28,
-  channel: 72,
+  channel: 148,
 } as const
 
 export const BLOCK_DIMENSIONS = {
   width: COLUMN_WIDTHS.slot - 12,
-  height: ROW_HEIGHTS.channel - 12,
+  height: 60,
   categoryStripWidth: 4,
 } as const
 

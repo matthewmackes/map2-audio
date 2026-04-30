@@ -76,7 +76,7 @@
 .ucg-channel-row--stereo::after {
   content: '';
   position: absolute;
-  left: calc(var(--ucg-channel-header-width, 216px));
+  left: calc(var(--ucg-channel-header-width, 240px));
   right: 0;
   height: 1px;
   background: var(--cds-border-subtle-02, #525252);
@@ -99,14 +99,30 @@
   opacity: 0.5;
 }
 
+/* Default ChannelHeader (no strip props) — three-row legacy layout. */
 .ucg-channel-header {
   display: grid;
   grid-template-rows: auto auto 1fr;
-  gap: 4px;
-  padding: 8px;
+  gap: var(--cds-spacing-02, 4px);
+  padding: var(--cds-spacing-03, 8px);
   box-sizing: border-box;
   background: var(--cds-layer-02, #262626);
   border-right: 1px solid var(--cds-border-subtle-02, #525252);
+}
+
+/* Consolidated channel-strip layout (T2474 — "Signal Chain Update"):
+   absorbs the per-flow toolbar that used to sit above the grid into the
+   left column of every chain row. Five auto rows, top-aligned. */
+.ucg-channel-header--strip {
+  grid-template-rows: auto auto auto auto auto;
+  gap: var(--cds-spacing-02, 4px);
+  padding: var(--cds-spacing-03, 8px);
+  align-content: start;
+  background: linear-gradient(
+    180deg,
+    var(--cds-layer-02, #262626) 0%,
+    var(--cds-layer-01, #161616) 100%
+  );
 }
 
 .ucg-channel-header__labels {
@@ -131,6 +147,80 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+
+.ucg-channel-header__identity {
+  display: flex;
+  align-items: center;
+  gap: var(--cds-spacing-02, 4px);
+  min-width: 0;
+}
+
+.ucg-channel-header__badge {
+  flex: 0 0 auto;
+  inline-size: 22px;
+  block-size: 22px;
+  display: inline-grid;
+  place-items: center;
+  border-radius: 3px;
+  background: var(--cds-layer-03, #393939);
+  border: 1px solid var(--cds-border-subtle-02, #525252);
+  color: var(--cds-text-primary, #f4f4f4);
+  font-family: 'IBM Plex Mono', ui-monospace, monospace;
+  font-size: 12px;
+  font-weight: 700;
+  letter-spacing: 0.02em;
+}
+
+.ucg-channel-header__ident {
+  display: inline-flex;
+  align-items: baseline;
+  gap: 4px;
+  min-width: 0;
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.ucg-channel-header__ident-name {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--cds-text-primary, #f4f4f4);
+}
+
+.ucg-channel-header__ident-sub {
+  font-size: 11px;
+  color: var(--cds-text-secondary, #c6c6c6);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.ucg-channel-header__path-label {
+  font-size: 12px;
+  font-weight: 500;
+  letter-spacing: 0.02em;
+  color: var(--cds-text-secondary, #c6c6c6);
+}
+
+.ucg-channel-header__channel-sub {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--cds-spacing-02, 4px);
+  color: var(--cds-text-helper, #8d8d8d);
+  font-size: 11px;
+}
+
+.ucg-channel-header__channel-sub-tag {
+  font-size: 11px;
+  font-weight: 600;
+  color: var(--cds-support-success, #24a148);
+  letter-spacing: 0.04em;
+}
+
+.ucg-channel-header__speaker {
+  display: inline-block;
+  width: 14px;
+  height: 14px;
 }
 
 .ucg-channel-header__controls {
@@ -180,6 +270,48 @@
   background: var(--cds-support-success, #24a148);
   box-shadow: 0 0 4px var(--cds-support-success, #24a148);
   margin-inline-start: 4px;
+}
+
+.ucg-channel-header__fader {
+  min-width: 0;
+}
+
+.ucg-channel-header__fader .juce-grid-page__flow-level-shell {
+  inline-size: 100%;
+}
+
+.ucg-channel-header__strip-controls {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: var(--cds-spacing-02, 4px);
+  margin-block-start: 2px;
+}
+
+.ucg-channel-header__pill {
+  display: inline-grid;
+  place-items: center;
+  block-size: 20px;
+  min-inline-size: 28px;
+  padding: 0 6px;
+  border: 1px solid var(--cds-border-subtle-02, #525252);
+  border-radius: 3px;
+  background: var(--cds-layer-03, #393939);
+  color: var(--cds-text-helper, #8d8d8d);
+}
+
+.ucg-channel-header__pill--clip {
+  opacity: 0.55;
+  transition: opacity 120ms ease, border-color 120ms ease;
+}
+
+.ucg-channel-header__pill--clip.is-active {
+  opacity: 1;
+  border-color: color-mix(in srgb, var(--cds-support-error, #da1e28) 55%, transparent);
+}
+
+.ucg-channel-header__trash {
+  margin-inline-start: auto;
 }
 
 .ucg-channel-row__slot-cell {

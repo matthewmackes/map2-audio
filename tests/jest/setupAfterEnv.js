@@ -32,3 +32,20 @@ if (typeof globalThis.IntersectionObserver === 'undefined') {
 if (typeof Element !== 'undefined' && !Element.prototype.scrollIntoView) {
   Element.prototype.scrollIntoView = function () {};
 }
+
+// window.matchMedia — Carbon Tabs (and any component using useMatchMedia)
+// reads this at mount to pick a layout breakpoint. JSDOM has no
+// implementation. Returns an inert MediaQueryList that always reports
+// no match; no listeners fire.
+if (typeof window !== 'undefined' && typeof window.matchMedia !== 'function') {
+  window.matchMedia = (query) => ({
+    matches: false,
+    media: query,
+    onchange: null,
+    addListener: () => {},
+    removeListener: () => {},
+    addEventListener: () => {},
+    removeEventListener: () => {},
+    dispatchEvent: () => false,
+  });
+}
