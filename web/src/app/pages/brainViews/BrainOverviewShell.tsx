@@ -14,8 +14,10 @@ import { ConsoleView } from './ConsoleView'
 import { StepView } from './StepView'
 import { SplitView } from './SplitView'
 import { MAP2_SPRING, tabContentVariants } from '../../styles/motionPrimitives'
-import { useReducedMotionSafeVariants } from '../../styles/useReducedMotionSafeVariants'
-import { useReducedEffectsPreference } from '../../hooks/useReducedEffectsPreference'
+import {
+  useReducedMotionSafeTransition,
+  useReducedMotionSafeVariants,
+} from '../../styles/useReducedMotionSafeVariants'
 import './brainViews.css'
 
 const TAB_META: Record<BrainViewId, { label: string; sub: string; Icon: typeof DataStructured }> = {
@@ -57,11 +59,11 @@ export function BrainOverviewShell(props: BrainOverviewSharedProps) {
 
   const warnCount = computeWarnCount(props.diagnostics)
   const qualification = props.diagnostics.controller_qualification
-  // T2466-3 wiring: respect prefers-reduced-motion + the in-app
+  // T2466-3: respect prefers-reduced-motion + the in-app
   // Reduced-effects toggle for the cross-fade and the tab-indicator
   // magic-move spring.
   const safeTabContentVariants = useReducedMotionSafeVariants(tabContentVariants)
-  const { shouldReduceEffects } = useReducedEffectsPreference()
+  const tabIndicatorTransition = useReducedMotionSafeTransition(MAP2_SPRING.tabIndicator)
 
   return (
     <div className="brain-overview">
@@ -84,7 +86,7 @@ export function BrainOverviewShell(props: BrainOverviewSharedProps) {
                     layoutId="brain-overview__tab-indicator"
                     className="brain-overview__tab-indicator"
                     aria-hidden="true"
-                    transition={shouldReduceEffects ? { duration: 0 } : MAP2_SPRING.tabIndicator}
+                    transition={tabIndicatorTransition}
                   />
                 ) : null}
                 <div className="brain-overview__tab-icon">
