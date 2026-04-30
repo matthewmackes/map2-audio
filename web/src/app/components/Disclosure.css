@@ -12,7 +12,11 @@
   font-size: var(--cds-body-01-font-size, 0.875rem);
   font-weight: 500;
   cursor: pointer;
-  transition: background 0.2s ease, color 0.2s ease, border-color 0.2s ease;
+  /* T2466-6: drive expand/collapse easing through design-language tokens. */
+  transition:
+    background var(--map2-dur-base, 220ms) var(--map2-ease-in-out-rack, ease),
+    color var(--map2-dur-base, 220ms) var(--map2-ease-in-out-rack, ease),
+    border-color var(--map2-dur-base, 220ms) var(--map2-ease-in-out-rack, ease);
 }
 
 .disclosure-trigger:hover {
@@ -35,7 +39,7 @@
 
 .disclosure-arrow {
   margin-left: auto;
-  transition: transform 0.2s ease;
+  transition: transform var(--map2-dur-base, 220ms) var(--map2-ease-in-out-rack, ease);
 }
 
 .disclosure-content {
@@ -47,11 +51,21 @@
 }
 
 .disclosure-content[data-enter] {
-  animation: disclosure-open 0.2s ease;
+  animation: disclosure-open var(--map2-dur-base, 220ms) var(--map2-ease-in-out-rack, ease);
 }
 
 .disclosure-content[data-leave] {
-  animation: disclosure-close 0.2s ease;
+  animation: disclosure-close var(--map2-dur-fast, 140ms) var(--map2-ease-out-snap, ease);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .disclosure-trigger,
+  .disclosure-arrow,
+  .disclosure-content[data-enter],
+  .disclosure-content[data-leave] {
+    transition: none;
+    animation: none;
+  }
 }
 
 @keyframes disclosure-open {
