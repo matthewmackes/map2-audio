@@ -2507,7 +2507,7 @@ Last updated: 2026-04-28 EDT - opened from web-audit punch-list #8.
 ---
 
 ID: T2473
-Status: [>] In Progress
+Status: [✓] Done
 Title: Partition the `SnapshotEditorPageContent` JSX render tree into 4-6 sibling sub-components
 Description:
 - Goal: With T2467-T2472 having moved out helpers / types / one sub-component / labels / two hooks, the remaining monolith should be ~5,000-6,000 LoC of pure JSX + render-time hooks. Partition the JSX tree along the natural surface boundaries already visible to operators in the running editor: (1) `<SnapshotEditorHeader>` — the title row + status panel + audio-device banner; (2) `<SnapshotEditorFlowGrid>` — the flow/channel grid (UnifiedChannelGrid wrapper + flow-tab strip + add-flow controls); (3) `<SnapshotEditorPluginInspector>` — the routing/live-path inspector + selected-plugin parameter editor; (4) `<SnapshotEditorJuceGrid>` — the JUCE-grid presets + effect modal; (5) `<SnapshotEditorPerformancePanel>` — the perf-event chyron + reconciliation badges; (6) `<SnapshotEditorKeyboardShortcuts>` — the keyboard-shortcut help overlay.
@@ -2529,6 +2529,10 @@ Last updated: 2026-04-30 EDT - parts 12-19 SHIPPED. Monolith 8894 → 8468 LoC (
   - part 18: SnapshotEditorMidiMappingsModal.tsx (audio-grid MIDI mappings Modal wrapper with render-prop children, 3 tests)
   - part 19: SnapshotEditorRoutingModals.tsx (lane picker + audio-port modal aggregate, 4 tests)
 43 unit tests across the eight new siblings green; typecheck + production build clean each cycle; bundle hashes refreshed. All inline `<Modal>` blocks are now out of the monolith. Remaining big-ticket targets are the bottom-editor section (~240 LoC) and the tablet-editor scrim/shell (~180 LoC), both deferred because they're tightly coupled to selectedPlugin state machinery and warrant dedicated sessions.
+Updated 2026-04-30 EDT — parts 20-21 SHIPPED, T2473 CLOSED. Monolith 8456 → 8246 LoC (final session −210; cumulative from 9831: −1585 lines):
+  - part 20: SnapshotEditorBottomEditor.tsx — desktop pinned bottom-editor shell (3 display states: plugin open / snapshot inspector / placeholder; includes MIDI panel wiring)
+  - part 21: SnapshotEditorTabletLayout.tsx — tablet launcher bar + tablet editor modal (tablet-mode block actions, branch pager, slide-up editor panel)
+All 21 sibling modules extracted; typecheck + production build clean; bundle live on port 3000.
 
 ---
 

@@ -368,6 +368,8 @@ import { SnapshotEditorChainDialogs } from './snapshotEditor/SnapshotEditorChain
 import { SnapshotEditorMidiMappingsModal } from './snapshotEditor/SnapshotEditorMidiMappingsModal'
 import { SnapshotEditorRoutingModals } from './snapshotEditor/SnapshotEditorRoutingModals'
 import { SnapshotEditorRoutingInspector } from './snapshotEditor/SnapshotEditorRoutingInspector'
+import { SnapshotEditorBottomEditor } from './snapshotEditor/SnapshotEditorBottomEditor'
+import { SnapshotEditorTabletLayout } from './snapshotEditor/SnapshotEditorTabletLayout'
 
 // API_BASE lives in ./snapshotEditor/snapshotEditorApi (T2467 follow-up).
 
@@ -7957,290 +7959,78 @@ export function SnapshotEditorPage() {
       />
 
 
-      {!isTabletTouchLayout && (
-        <section
-          ref={bottomEditorRef}
-          className={`juce-grid-page__bottom-editor-shell ${bottomEditorOpen ? 'is-open' : 'is-closed'}`}
-          aria-label={bottomEditorOpen ? 'Block parameter editor' : bottomEditorShowsSnapshotInspector ? 'Snapshot inspector' : undefined}
-          aria-hidden={bottomEditorOpen || bottomEditorShowsSnapshotInspector ? undefined : true}
-        >
-          <Layer className={`juce-grid-page__bottom-editor-panel ${bottomEditorOpen ? 'is-open' : 'is-closed'}`}>
-            {/* Suppress the redundant top-of-panel kicker/heading/subtitle when
-                we're showing the Snapshot Management hero — the hero now carries
-                all of that copy and pinning a second header here is duplication. */}
-            <div
-              className={`juce-grid-page__bottom-editor-header${
-                bottomEditorShowsSnapshotInspector && !bottomEditorOpen ? ' is-hero-only' : ''
-              }`}
-            >
-              <div className="juce-grid-page__bottom-editor-identity">
-                <div
-                  className={`juce-grid-page__bottom-editor-icon ${selectedPlugin?.bypassed ? 'is-bypassed' : ''}`}
-                  aria-hidden
-                  style={{ '--juce-grid-editor-accent': bottomEditorAccentColor } as CSSProperties}
-                >
-                  {selectedPlugin ? <SelectedPluginHeroIcon width={32} height={32} /> : <SettingsAdjust size={32} />}
-                </div>
-                <div className="juce-grid-page__bottom-editor-copy">
-                  <p className="juce-grid-page__bottom-editor-kicker">{bottomEditorShowsSnapshotInspector ? 'Snapshot' : 'Selected block'}</p>
-                  <h2 className="juce-grid-page__bottom-editor-heading">
-                    {bottomEditorOpen && selectedPlugin ? getDisplayPluginName(selectedPluginMeta?.name || selectedPlugin.name, selectedPlugin.uri) : bottomEditorShowsSnapshotInspector ? 'Snapshot settings' : 'Block editor'}
-                  </h2>
-                  <p className="juce-grid-page__bottom-editor-subtitle">
-                    {bottomEditorOpen && selectedPlugin
-                      ? selectedPluginMeta?.category || 'Processor'
-                      : bottomEditorShowsSnapshotInspector
-                      ? 'Publish, browse, or create snapshots from the editor inspector.'
-                      : 'Open the pinned editor to work on the current block.'}
-                  </p>
-                </div>
-              </div>
-              <div className="juce-grid-page__bottom-editor-actions">
-                {!bottomEditorShowsSnapshotInspector ? (
-                  <>
-                    {renderSelectedBlockNavBar({ disabled: !bottomEditorOpen || snapshotEditingLocked })}
-                    <Button
-                      size="sm"
-                      kind="ghost"
-                      renderIcon={bottomEditorOpen ? Close : Launch}
-                      onClick={bottomEditorOpen ? handleCloseEffectModal : openSelectedBlockEditor}
-                      disabled={!selectedPlugin}
-                      aria-label={bottomEditorOpen ? 'Close editor' : 'Open editor'}
-                      aria-controls="juce-grid-bottom-editor-panel"
-                      aria-expanded={bottomEditorOpen}
-                      className={`juce-grid-page__bottom-editor-toggle ${bottomEditorOpen ? 'is-open' : 'is-closed'}`}
-                      style={{ '--juce-grid-editor-accent': bottomEditorAccentColor } as CSSProperties}
-                    >
-                      {bottomEditorOpen ? 'Close editor' : 'Open editor'}
-                    </Button>
-                  </>
-                ) : null}
-              </div>
-            </div>
-
-            <div
-              id="juce-grid-bottom-editor-panel"
-              className={`juce-grid-page__bottom-editor-body ${selectedBlockMidiPanelEnabled ? 'has-desktop-midi-panel' : ''}`}
-            >
-              {bottomEditorOpen && selectedPlugin ? (
-                <div className="juce-grid-page__bottom-editor-parameter-stack">
-                  <div className="juce-grid-page__snapshot-inspector-row juce-grid-page__snapshot-inspector-row--parameter-editor">
-                    {pedalboardBuildWizard}
-                    {snapshotInspectorControls}
-                  </div>
-                  {selectedBlockMidiPanelEnabled && selectedPluginMeta ? (
-                    <div className="juce-grid-page__bottom-editor-desktop-layout">
-                      <div className="juce-grid-page__bottom-editor-main">
-                        {selectedPluginEditorContent}
-                      </div>
-                      <JuceGridSelectedBlockMidiPanel
-                        plugin={selectedPlugin}
-                        meta={selectedPluginMeta}
-                        chainId={currentChain?.id ?? null}
-                        lastMidiEvent={lastMidiEvent}
-                        midiLearnInProgress={midiLearnInProgress}
-                        midiLearnTarget={midiLearnStatus?.target ?? null}
-                        onStartLearn={handleStartSelectedBlockMidiLearn}
-                        onStopLearn={handleStopSelectedBlockMidiLearn}
-                      />
-                    </div>
-                  ) : (
-                    selectedPluginEditorContent
-                  )}
-                </div>
-              ) : bottomEditorShowsSnapshotInspector ? (
-                <div className="juce-grid-page__snapshot-inspector-row">
-                  {/* Build Workflow hero (2026-04-25) — single composite that
-                      replaced the old Management hero, active-channel rail,
-                      and standalone Morph tile. Engine sync, routing,
-                      channel meta, and the morph pad are all wired through
-                      this one component to their respective single sources
-                      of truth (computeLiveBadgeState, setRoutingMode,
-                      activeChannelStatusRail, <MorphPad/>). */}
-                  {activeSnapshot && snapshotsDirty ? (
-                    <PublishReadyBanner
-                      snapshotName={activeSnapshot.name}
-                      blockCount={currentChain?.plugins.length ?? 0}
-                      onDiff={openVersionHistoryWorkspace}
-                      onPublish={openGuidedProgress}
-                    />
-                  ) : null}
-                  {pedalboardBuildWizard}
-                </div>
-              ) : (
-                <Tile className="juce-grid-page__bottom-editor-placeholder">
-                  <div className="juce-grid-page__parameter-editor-copy">
-                    <p className="juce-grid-page__dense-card-kicker">Editor state</p>
-                    <h3 className="juce-grid-page__selected-block-placeholder-heading">{snapshotEntryRequired ? 'No snapshot loaded' : selectedPlugin ? 'Selected block ready' : 'No block selected'}</h3>
-                    <p>
-                      {snapshotEntryRequired
-                        ? 'Load or create a snapshot before opening the pinned block editor.'
-                        : selectedPlugin
-                        ? 'The editor shell stays pinned here. Use Open editor when you want to work on the selected block.'
-                        : 'Select a processor in the grid to load its controls here without shifting the page.'}
-                    </p>
-                  </div>
-                </Tile>
-              )}
-            </div>
-          </Layer>
-        </section>
-      )}
+      <SnapshotEditorBottomEditor
+        visible={!isTabletTouchLayout}
+        bottomEditorRef={bottomEditorRef}
+        bottomEditorOpen={bottomEditorOpen}
+        bottomEditorShowsSnapshotInspector={bottomEditorShowsSnapshotInspector}
+        bottomEditorAccentColor={bottomEditorAccentColor}
+        selectedPlugin={selectedPlugin}
+        selectedPluginMeta={selectedPluginMeta}
+        selectedPluginHeroIcon={SelectedPluginHeroIcon}
+        snapshotEditorMutationDisabled={snapshotEditorMutationDisabled}
+        snapshotEditingLocked={snapshotEditingLocked}
+        snapshotEntryRequired={snapshotEntryRequired}
+        selectedBlockMidiPanelEnabled={selectedBlockMidiPanelEnabled}
+        selectedPluginEditorContent={selectedPluginEditorContent}
+        pedalboardBuildWizard={pedalboardBuildWizard}
+        snapshotInspectorControls={snapshotInspectorControls}
+        chainId={currentChain?.id ?? null}
+        lastMidiEvent={lastMidiEvent}
+        midiLearnInProgress={midiLearnInProgress}
+        midiLearnTarget={midiLearnStatus?.target ?? null}
+        activeSnapshot={activeSnapshot}
+        snapshotsDirty={snapshotsDirty}
+        activeSnapshotBlockCount={currentChain?.plugins.length ?? 0}
+        renderSelectedBlockNavBar={renderSelectedBlockNavBar}
+        onStartMidiLearn={handleStartSelectedBlockMidiLearn}
+        onStopMidiLearn={handleStopSelectedBlockMidiLearn}
+        onCloseEditor={handleCloseEffectModal}
+        onOpenEditor={openSelectedBlockEditor}
+        onOpenVersionHistory={openVersionHistoryWorkspace}
+        onOpenGuidedProgress={openGuidedProgress}
+        getDisplayPluginName={getDisplayPluginName}
+      />
 
       {isTabletTouchLayout && (
-        <>
-          <section className="juce-grid-page__tablet-launcher" aria-label="Tablet workspace launcher">
-            <div className="juce-grid-page__tablet-launcher-section juce-grid-page__tablet-launcher-section--left">
-              <Button
-                size="md"
-                kind="primary"
-                renderIcon={Add}
-                className="juce-grid-page__tablet-launcher-utility juce-grid-page__tablet-launcher-utility--create"
-                onClick={() => createCapturedSnapshot()}
-                disabled={createSnapshotFromEditorMutation.isPending}
-              >
-                {createSnapshotFromEditorMutation.isPending ? 'Creating…' : 'New Snapshot'}
-              </Button>
-              <Button
-                size="md"
-                kind="secondary"
-                renderIcon={Renew}
-                className="juce-grid-page__tablet-launcher-utility juce-grid-page__tablet-launcher-utility--update"
-                onClick={() => updateActiveSnapshotMutation.mutate()}
-                disabled={!activeSnapshot || snapshotEditingLocked || updateActiveSnapshotMutation.isPending}
-              >
-                {updateActiveSnapshotMutation.isPending ? 'Updating…' : 'Update Snapshot'}
-              </Button>
-              <Button
-                size="md"
-                kind={snapshotSetlistMode ? 'secondary' : 'ghost'}
-                className="juce-grid-page__tablet-launcher-utility"
-                aria-pressed={snapshotSetlistMode}
-                onClick={() => { void toggleSnapshotSetlistMode() }}
-                disabled={snapshotSetlistModePending}
-                title={snapshotSetlistModeTitle}
-              >
-                {snapshotSetlistModePending ? 'Saving…' : 'Setlist'}
-              </Button>
-              {renderTabletLoadButton()}
-            </div>
-
-            <div className="juce-grid-page__tablet-launcher-section juce-grid-page__tablet-launcher-section--center">
-              <Button
-                size="md"
-                kind="primary"
-                renderIcon={selectedPlugin ? Launch : Add}
-                onClick={selectedPlugin ? openSelectedBlockEditor : handleTabletAddEffect}
-                disabled={selectedPlugin ? false : !tabletFocusedFlow || snapshotEditingLocked}
-                aria-label={selectedPlugin ? 'Open editor' : 'Add effect'}
-                aria-controls={selectedPlugin ? 'juce-grid-tablet-editor-panel' : undefined}
-                aria-expanded={selectedPlugin ? tabletEditorVisible : undefined}
-              >
-                {selectedPlugin ? 'Open editor' : 'Add effect'}
-              </Button>
-            </div>
-
-            <div className="juce-grid-page__tablet-launcher-section juce-grid-page__tablet-launcher-section--right">
-              {renderSelectedBlockNavBar({ disabled: !selectedPlugin || snapshotEditingLocked })}
-              <div className="juce-grid-page__tablet-launcher-pager" aria-label="Branch page controls">
-                <Button
-                  hasIconOnly
-                  size="sm"
-                  kind="ghost"
-                  renderIcon={ChevronLeft}
-                  iconDescription="Previous branch page"
-                  aria-label="Previous branch page"
-                  onClick={() => stepTabletFocusedBranchPage('left')}
-                  disabled={!tabletFocusedFlow || !canPageTabletFocusedBranchBackward}
-                />
-                <span className="juce-grid-page__tablet-launcher-page-readout">{tabletFocusedBranchPageLabel}</span>
-                <Button
-                  hasIconOnly
-                  size="sm"
-                  kind="ghost"
-                  renderIcon={ChevronRight}
-                  iconDescription="Next branch page"
-                  aria-label="Next branch page"
-                  onClick={() => stepTabletFocusedBranchPage('right')}
-                  disabled={!tabletFocusedFlow || !canPageTabletFocusedBranchForward}
-                />
-              </div>
-              {selectedPlugin && (
-                <OverflowMenu
-                  ariaLabel="Tablet block actions"
-                  iconDescription="Tablet block actions"
-                  size="sm"
-                  flipped
-                >
-                  <OverflowMenuItem
-                    itemText={selectedPlugin.bypassed ? 'Enable block' : 'Bypass block'}
-                    onClick={handleToggleSelectedBypass}
-                    disabled={snapshotEditorMutationDisabled}
-                  />
-                  <OverflowMenuItem
-                    itemText="Clear selection"
-                    onClick={() => {
-                      setSelectedPluginSelection(null)
-                      setTabletEditorOpen(false)
-                    }}
-                  />
-                  <OverflowMenuItem
-                    itemText="Remove block"
-                    isDelete
-                    disabled={snapshotEditorMutationDisabled || selectedPluginIsSystemNoiseGate}
-                    onClick={() => setPendingTabletDeletePlugin({
-                      uri: selectedPlugin.uri,
-                      position: selectedPlugin.position,
-                      name: getDisplayPluginName(selectedPluginMeta?.name || selectedPlugin.name, selectedPlugin.uri),
-                    })}
-                  />
-                </OverflowMenu>
-              )}
-            </div>
-          </section>
-
-          {tabletEditorVisible && (
-            <>
-              <button
-                type="button"
-                className="juce-grid-page__tablet-editor-scrim"
-                aria-label="Close editor"
-                onClick={handleCloseEffectModal}
-              />
-              <section
-                id="juce-grid-tablet-editor-panel"
-                ref={bottomEditorRef}
-                className="juce-grid-page__tablet-editor-shell"
-                aria-label="Block parameter editor"
-              >
-                <Layer className="juce-grid-page__tablet-editor-panel">
-                  <div className="juce-grid-page__tablet-editor-header">
-                    <div className="juce-grid-page__tablet-editor-identity">
-                      <div
-                        className={`juce-grid-page__bottom-editor-icon ${selectedPlugin?.bypassed ? 'is-bypassed' : ''}`}
-                        aria-hidden
-                        style={{ '--juce-grid-editor-accent': bottomEditorAccentColor } as CSSProperties}
-                      >
-                        {selectedPlugin ? <SelectedPluginHeroIcon width={28} height={28} /> : <Edit size={28} />}
-                      </div>
-                      <div className="juce-grid-page__tablet-editor-copy">
-                        <p className="juce-grid-page__dense-card-kicker">Selected block</p>
-                        <h2 className="juce-grid-page__tablet-editor-heading">{selectedPlugin ? getDisplayPluginName(selectedPluginMeta?.name || selectedPlugin.name, selectedPlugin.uri) : 'Block editor'}</h2>
-                        <p>{selectedPluginMeta?.category || 'Processor'}</p>
-                      </div>
-                    </div>
-                    <Button size="sm" kind="ghost" renderIcon={Close} onClick={handleCloseEffectModal}>
-                      Close
-                    </Button>
-                  </div>
-                  <div className="juce-grid-page__tablet-editor-body">
-                    {selectedPluginEditorContent}
-                  </div>
-                </Layer>
-              </section>
-            </>
-          )}
-        </>
+        <SnapshotEditorTabletLayout
+          createSnapshotPending={createSnapshotFromEditorMutation.isPending}
+          updateSnapshotPending={updateActiveSnapshotMutation.isPending}
+          activeSnapshot={activeSnapshot}
+          snapshotEditingLocked={snapshotEditingLocked}
+          snapshotSetlistMode={snapshotSetlistMode}
+          snapshotSetlistModePending={snapshotSetlistModePending}
+          snapshotSetlistModeTitle={snapshotSetlistModeTitle}
+          snapshotEditorMutationDisabled={snapshotEditorMutationDisabled}
+          selectedPlugin={selectedPlugin}
+          selectedPluginMeta={selectedPluginMeta}
+          selectedPluginHeroIcon={SelectedPluginHeroIcon}
+          selectedPluginIsSystemNoiseGate={selectedPluginIsSystemNoiseGate}
+          tabletFocusedFlow={tabletFocusedFlow}
+          tabletEditorVisible={tabletEditorVisible}
+          bottomEditorAccentColor={bottomEditorAccentColor}
+          canPageTabletFocusedBranchBackward={canPageTabletFocusedBranchBackward}
+          canPageTabletFocusedBranchForward={canPageTabletFocusedBranchForward}
+          tabletFocusedBranchPageLabel={tabletFocusedBranchPageLabel}
+          selectedPluginEditorContent={selectedPluginEditorContent}
+          renderSelectedBlockNavBar={renderSelectedBlockNavBar}
+          renderTabletLoadButton={renderTabletLoadButton}
+          bottomEditorRef={bottomEditorRef}
+          onCreateSnapshot={() => createCapturedSnapshot()}
+          onUpdateSnapshot={() => updateActiveSnapshotMutation.mutate()}
+          onToggleSetlistMode={() => { void toggleSnapshotSetlistMode() }}
+          onOpenEditor={openSelectedBlockEditor}
+          onAddEffect={handleTabletAddEffect}
+          onStepBranchPageLeft={() => stepTabletFocusedBranchPage('left')}
+          onStepBranchPageRight={() => stepTabletFocusedBranchPage('right')}
+          onToggleBypass={handleToggleSelectedBypass}
+          onClearSelection={() => {
+            setSelectedPluginSelection(null)
+            setTabletEditorOpen(false)
+          }}
+          onDeletePlugin={(info) => setPendingTabletDeletePlugin(info)}
+          onCloseEditor={handleCloseEffectModal}
+        />
       )}
 
       <SnapshotEditorChainDialogs
