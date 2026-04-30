@@ -51,6 +51,17 @@
   transition: transform var(--map2-dur-slow, 380ms) var(--map2-ease-in-out-rack, ease);
 }
 
+/* T2466-3: honor reduced-motion preference — drop transitions on
+   the scrim fade and the drawer slide so state changes are
+   instant for users who opted out of motion. */
+@media (prefers-reduced-motion: reduce) {
+  .midi-hub-health-drawer__scrim,
+  .midi-hub-health-drawer,
+  .midi-hub-health-drawer--open {
+    transition: none;
+  }
+}
+
 .midi-hub-health-drawer__head {
   display: flex;
   justify-content: space-between;
