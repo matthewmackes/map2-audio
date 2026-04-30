@@ -1923,7 +1923,7 @@
   border: 1px solid var(--cds-border-subtle, var(--border));
   background: color-mix(in srgb, var(--cds-layer, var(--surface)) 96%, var(--cds-background, var(--bg)));
   cursor: pointer;
-  transition: border-color 120ms ease, box-shadow 120ms ease, transform 120ms ease;
+  transition: border-color var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease), box-shadow var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease), transform var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease);
 }
 
 .juce-grid-page__chain-tile:hover,
@@ -2284,7 +2284,7 @@
 .juce-grid-page__snapshot-status-title-button svg {
   flex-shrink: 0;
   opacity: 0.68;
-  transition: opacity 120ms ease, color 120ms ease;
+  transition: opacity var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease), color var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease);
 }
 
 .juce-grid-page__snapshot-status-title-button:hover:not(:disabled),
@@ -3038,7 +3038,7 @@
 
 .juce-grid-page__routing-terminal,
 .juce-grid-page__routing-marker {
-  transition: opacity 120ms ease;
+  transition: opacity var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease);
 }
 
 .juce-grid-page__routing-terminal[role="button"],
@@ -3143,7 +3143,7 @@
 
 /* Morph progress bar — animated width transition */
 .juce-grid-page__routing-morph-progress {
-  transition: width 240ms ease;
+  transition: width var(--map2-dur-base, 220ms) var(--map2-ease-in-out-rack, ease);
 }
 
 /* ── Flow list legend (shown when showFlowList=true) ───────────────────────── */
@@ -3381,7 +3381,7 @@
   justify-content: center;
   color: var(--signal-arrow-color);
   opacity: 0.92;
-  transition: color 150ms cubic-bezier(0.2, 0, 0.38, 0.9), opacity 150ms cubic-bezier(0.2, 0, 0.38, 0.9);
+  transition: color var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease), opacity var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease);
 }
 
 .juce-grid-page__live-path-arrow.is-active {
@@ -3555,7 +3555,7 @@
   flex-direction: column;
   border: 1px solid color-mix(in srgb, var(--cds-border-subtle, var(--border)) 78%, #b8cdf3 22%);
   background: var(--juce-grid-flow-bar-bg);
-  transition: background 120ms ease, transform 120ms ease;
+  transition: background var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease), transform var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease);
   cursor: pointer;
 }
 
@@ -3603,7 +3603,7 @@
   justify-content: center;
   color: var(--cds-icon-secondary, var(--text-secondary));
   opacity: 0;
-  transition: opacity 120ms ease;
+  transition: opacity var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease);
 }
 
 .juce-grid-page__flow-card:hover .juce-grid-page__flow-card-drag-handle,
@@ -3737,7 +3737,7 @@
   position: absolute;
   inset: 0;
   background: transparent;
-  transition: background 120ms ease;
+  transition: background var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease);
 }
 
 .juce-grid-page__flow-card.is-solo .juce-grid-page__flow-card-label::after {
@@ -3825,7 +3825,7 @@
   border: 1px solid color-mix(in srgb, var(--cds-support-warning, #ff832b) 28%, var(--cds-border-subtle, var(--border)));
   background: color-mix(in srgb, var(--cds-support-warning, #ff832b) 10%, var(--juce-grid-flow-bar-chip-bg));
   opacity: 0.82;
-  transition: opacity 120ms ease, background 120ms ease, border-color 120ms ease, box-shadow 120ms ease;
+  transition: opacity var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease), background var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease), border-color var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease), box-shadow var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease);
 }
 
 .juce-grid-page__flow-card-clip-readout.is-active {
@@ -5077,7 +5077,7 @@
   color: var(--cds-text-primary, #f4f4f4);
   text-align: left;
   cursor: pointer;
-  transition: background-color 140ms ease, box-shadow 140ms ease;
+  transition: background-color var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease), box-shadow var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease);
 }
 
 .juce-grid-page__selected-midi-grid-row:hover {
@@ -5748,7 +5748,7 @@
   padding: 1rem;
   border: 1px solid var(--cds-border-subtle-01, var(--cds-border-subtle, var(--border)));
   background: var(--cds-layer, #161616);
-  transition: border-color 120ms ease, background-color 120ms ease, box-shadow 120ms ease;
+  transition: border-color var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease), background-color var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease), box-shadow var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease);
 }
 
 .juce-grid-page__browser-native-grid > .juce-grid-page__browser-plugin-tile,
@@ -6004,7 +6004,7 @@
   gap: 0.75rem;
   background: var(--juce-grid-list-stripe-bg);
   cursor: pointer;
-  transition: border-color 120ms ease, transform 120ms ease;
+  transition: border-color var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease), transform var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease);
 }
 
 .juce-grid-page__snapshot-tile[data-stripe-tone='alt'] {
@@ -6276,7 +6276,7 @@
   color: inherit;
   text-align: left;
   cursor: pointer;
-  transition: background-color 120ms ease, border-color 120ms ease, box-shadow 120ms ease;
+  transition: background-color var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease), border-color var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease), box-shadow var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease);
 }
 
 .juce-grid-page__assignment-card:hover,
@@ -6938,7 +6938,7 @@
   gap: 0;
   min-inline-size: 0;
   flex: 0 0 auto;
-  transition: opacity 160ms ease, filter 160ms ease;
+  transition: opacity var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease), filter var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease);
   scroll-snap-align: start;
 }
 
@@ -7117,7 +7117,7 @@
   border-radius: 0;
   background: var(--cds-layer, #161616);
   overflow: hidden;
-  transition: border-color 160ms ease, transform 120ms ease, opacity 160ms ease, box-shadow 160ms ease, background-color 160ms ease;
+  transition: border-color var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease), transform var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease), opacity var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease), box-shadow var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease), background-color var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease);
   cursor: pointer;
   outline: 2px solid transparent;
   outline-offset: 2px;
@@ -7231,7 +7231,7 @@
     var(--cds-layer-hover, var(--surface-2, var(--surface))) 90%,
     var(--juce-grid-signal-accent) 10%
   );
-  transition: border-color 160ms ease, background-color 160ms ease, opacity 160ms ease;
+  transition: border-color var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease), background-color var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease), opacity var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease);
 }
 
 .juce-grid-page__signal-plugin-card.is-bypassed .juce-grid-page__signal-plugin-hero-image {
@@ -7251,7 +7251,7 @@
   max-block-size: calc(100% - 0.1rem);
   color: color-mix(in srgb, var(--juce-grid-signal-accent) 74%, var(--cds-text-inverse, #161616));
   opacity: 0.94;
-  transition: opacity 160ms ease, color 160ms ease;
+  transition: opacity var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease), color var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease);
 }
 
 .juce-grid-page__signal-plugin-hero-svg.is-outline {
@@ -7373,7 +7373,7 @@
     var(--cds-layer-selected, var(--surface-3, var(--surface-2, var(--surface)))) 16%
   );
   cursor: pointer;
-  transition: background-color 120ms ease, border-color 120ms ease, color 120ms ease;
+  transition: background-color var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease), border-color var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease), color var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease);
 }
 
 .juce-grid-page__signal-plugin-bypass {
@@ -7474,7 +7474,7 @@
   background: var(--cds-layer, #161616);
   color: var(--cds-text-primary, var(--text-primary));
   cursor: pointer;
-  transition: border-color 120ms ease, background-color 120ms ease, transform 120ms ease, box-shadow 120ms ease;
+  transition: border-color var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease), background-color var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease), transform var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease), box-shadow var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease);
 }
 
 .juce-grid-page__signal-plugin-add-hero {
@@ -7608,7 +7608,7 @@
   color: var(--cds-text-primary, var(--text-primary));
   text-align: left;
   cursor: pointer;
-  transition: border-color 120ms ease, background-color 120ms ease, color 120ms ease;
+  transition: border-color var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease), background-color var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease), color var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease);
 }
 
 .juce-grid-page__port-card:hover,
@@ -8179,7 +8179,7 @@
   border: none;
   background: #9f1853;
   color: var(--cds-text-on-color, #ffffff);
-  transition: bottom 160ms ease, background-color 120ms ease;
+  transition: bottom var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease), background-color var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease);
 }
 
 .juce-grid-page__automation-floating-toggle.cds--btn:hover:not(:disabled) {
@@ -8949,7 +8949,7 @@
   gap: 0.625rem;
   padding: 0.5rem 0.75rem;
   border-radius: 2px;
-  transition: background 0.2s;
+  transition: background var(--map2-dur-base, 220ms) var(--map2-ease-in-out-rack, ease);
 }
 
 .audio-nodes-modal__progress-step.is-done {
