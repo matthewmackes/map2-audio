@@ -139,6 +139,16 @@
   background: #252550;
 }
 
+/* T2466-5: focus-visible ring on the custom-control cell. The
+   cell is rendered as a <div role="button" tabIndex={0}> so the
+   browser default outline doesn't show; draw an explicit ring
+   through the design-language token (with a literal fallback
+   matching the indigo palette). */
+.mk1-cell:focus-visible {
+  outline: 2px solid var(--cds-focus, #6366f1);
+  outline-offset: 2px;
+}
+
 .mk1-cell--selected {
   border-color: #f59e0b;
   background: #2a2540;
