@@ -231,8 +231,6 @@ import { SnapshotFootswitchLabelCard } from '../components/SnapshotEditor/Snapsh
 import { buildSnapshotEditorSelectedPluginCard } from '../components/SnapshotEditor/snapshotEditorSelectedPluginCard'
 import { SnapshotVersionHistoryModal } from '../components/SnapshotEditor/SnapshotVersionHistoryModal'
 import { useSnapshotEditorUndoRedo } from '../components/SnapshotEditor/useSnapshotEditorUndoRedo'
-import { AudioNodesModal } from '../components/modals/AudioNodesModal'
-import { LiveRuntimePathsModal } from '../components/modals/LiveRuntimePathsModal'
 import { JuceGridParameterEditor } from '../components/SnapshotEditor/SnapshotEditorParameterEditor'
 import {
   JuceGridRoutingVisualizer,
@@ -366,11 +364,11 @@ import {
 import { API_BASE } from './snapshotEditor/snapshotEditorApi'
 import { SnapshotEditorKeyboardShortcuts } from './snapshotEditor/SnapshotEditorKeyboardShortcuts'
 import { SnapshotEditorLanePicker } from './snapshotEditor/SnapshotEditorLanePicker'
-import { SnapshotEditorPerformOverlay } from './snapshotEditor/SnapshotEditorPerformOverlay'
 import { SnapshotEditorPresetBrowser } from './snapshotEditor/SnapshotEditorPresetBrowser'
 import { SnapshotEditorPluginBrowser } from './snapshotEditor/SnapshotEditorPluginBrowser'
 import { SnapshotEditorCompactPanels } from './snapshotEditor/SnapshotEditorCompactPanels'
 import { SnapshotEditorAutomationToggle } from './snapshotEditor/SnapshotEditorAutomationToggle'
+import { SnapshotEditorWorkspaceModals } from './snapshotEditor/SnapshotEditorWorkspaceModals'
 import { SnapshotEditorAssignmentDialog } from './snapshotEditor/SnapshotEditorAssignmentDialog'
 import { SnapshotEditorClearFlowsConfirm } from './snapshotEditor/SnapshotEditorClearFlowsConfirm'
 import { SnapshotEditorSavePresetModal } from './snapshotEditor/SnapshotEditorSavePresetModal'
@@ -8496,35 +8494,22 @@ export function SnapshotEditorPage() {
         }}
       />
 
-      {/* Perform Full-Screen Modal */}
-      <SnapshotEditorPerformOverlay
-        open={showPerformModal}
-        onExit={closePerformWorkspace}
+      <SnapshotEditorWorkspaceModals
+        showPerformModal={showPerformModal}
+        onClosePerformWorkspace={closePerformWorkspace}
+        showAudioNodesModal={showAudioNodesModal}
+        onCloseAudioRoutingWorkspace={closeAudioRoutingWorkspace}
+        showLiveRuntimeModal={showLiveRuntimeModal}
+        onCloseLiveRuntimeWorkspace={closeLiveRuntimeWorkspace}
+        liveChainProjection={liveChainProjection}
+        showLiveChainSummaryOnly={showLiveChainSummaryOnly}
+        liveChainMismatch={liveChainMismatch}
+        liveChainProjectionOverflow={liveChainProjectionOverflow}
+        onUpdateLiveChains={handleUpdateLiveChains}
+        onRevertEditorToLive={handleRevertEditorToLive}
+        updateAuthorityLivePending={updateAuthorityLiveChainsMutation.isPending}
+        onKillLiveChain={handleKillLiveChain}
       />
-
-      {/* Audio Nodes Modal */}
-      {showAudioNodesModal && (
-        <AudioNodesModal
-          open={showAudioNodesModal}
-          onClose={closeAudioRoutingWorkspace}
-        />
-      )}
-
-      {showLiveRuntimeModal ? (
-        <LiveRuntimePathsModal
-          open={showLiveRuntimeModal}
-          onClose={closeLiveRuntimeWorkspace}
-          projections={liveChainProjection}
-          summaryOnly={showLiveChainSummaryOnly}
-          mismatch={liveChainMismatch}
-          overflow={liveChainProjectionOverflow}
-          onUpdateLive={handleUpdateLiveChains}
-          onRevertToLive={handleRevertEditorToLive}
-          updatePending={updateAuthorityLiveChainsMutation.isPending}
-          onKillLivePath={handleKillLiveChain}
-          killPending={updateAuthorityLiveChainsMutation.isPending}
-        />
-      ) : null}
 
     </div>
   )
