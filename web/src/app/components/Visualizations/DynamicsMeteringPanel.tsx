@@ -35,7 +35,7 @@ const GainReductionMeter: React.FC<GainReductionMeterProps> = ({
       borderRadius: 6,
       padding: 10,
       opacity: bypass ? 0.4 : 1,
-      transition: 'opacity 0.2s'
+      transition: 'opacity var(--map2-dur-base, 220ms) var(--map2-ease-in-out-rack, ease)'
     }}>
       <div style={{
         display: 'flex',
