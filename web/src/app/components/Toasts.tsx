@@ -1587,7 +1587,10 @@ function StageNotificationViewport() {
   const [activeKyron, setActiveKyron] = useState<StageKyronEntry | null>(null)
   const [kyronPhase, setKyronPhase] = useState<'enter' | 'dwell' | 'exit'>('enter')
   const processedKyronKeysRef = useRef<Set<string>>(new Set())
-  const { prefersReducedMotion } = useReducedEffectsPreference()
+  // T2466-3: extend reduced-motion gating to honor the in-app
+  // Reduced-effects toggle in addition to the OS-level
+  // prefers-reduced-motion media query.
+  const { prefersReducedMotion, shouldReduceEffects } = useReducedEffectsPreference()
   const clusterLiveStateQuery = useClusterSnapshotRuntimeLiveState({
     enabled: !location.pathname.startsWith('/snapshot-editor'),
     refetchInterval: 5_000,
@@ -2075,11 +2078,11 @@ const tickerEvents: TickerEvent[] = (() => {
                   state={liveSnapshotState}
                   fallback={{ title: primaryRecord.title, sourceLabel: primaryRecord.stage?.sourceLabel }}
                   liveState={chyronLiveState}
-                  reducedMotion={prefersReducedMotion}
+                  reducedMotion={shouldReduceEffects}
                   routeAction={routeAction}
                 />
               )}
-              <StageChyronStrap items={strapItems} reducedMotion={prefersReducedMotion} />
+              <StageChyronStrap items={strapItems} reducedMotion={shouldReduceEffects} />
             </div>
             <StageVitalsCard
               cpuPercent={cpuNow}
@@ -2090,7 +2093,7 @@ const tickerEvents: TickerEvent[] = (() => {
               bufferSize={audioStatusQuery.data?.buffer_size}
               channelCount={channelCount}
               blockCount={blockCount}
-              reducedMotion={prefersReducedMotion}
+              reducedMotion={shouldReduceEffects}
             />
             <StageWarningsCard
               entries={stageWarnings}
@@ -2105,9 +2108,9 @@ const tickerEvents: TickerEvent[] = (() => {
                 </>
               }
             />
-            <StageMidiPanel events={midiEvents} reducedMotion={prefersReducedMotion} />
+            <StageMidiPanel events={midiEvents} reducedMotion={shouldReduceEffects} />
           </div>
-          <StageEventTicker events={tickerEvents} reducedMotion={prefersReducedMotion} />
+          <StageEventTicker events={tickerEvents} reducedMotion={shouldReduceEffects} />
         </div>
       ) : null}
       {activeKyron ? (
