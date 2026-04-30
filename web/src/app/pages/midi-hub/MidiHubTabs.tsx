@@ -2,6 +2,7 @@ import { NavLink, useLocation } from 'react-router-dom'
 import { LayoutGroup, motion } from 'framer-motion'
 
 import { MAP2_SPRING } from '../../styles/motionPrimitives'
+import { useReducedEffectsPreference } from '../../hooks/useReducedEffectsPreference'
 import './MidiHubTabs.css'
 
 interface MidiHubTabDef {
@@ -27,6 +28,9 @@ function isActive(pathname: string, to: string): boolean {
 
 export function MidiHubTabs() {
   const { pathname } = useLocation()
+  // T2466-3: respect prefers-reduced-motion + the in-app
+  // Reduced-effects toggle for the tab-indicator magic-move spring.
+  const { shouldReduceEffects } = useReducedEffectsPreference()
   return (
     <nav className="midi-hub-tabs" aria-label="MIDI Hub sub-route navigation">
       <LayoutGroup id="midi-hub-tabs">
@@ -45,7 +49,7 @@ export function MidiHubTabs() {
                     layoutId="midi-hub-tabs__indicator"
                     className="midi-hub-tabs__indicator"
                     aria-hidden="true"
-                    transition={MAP2_SPRING.tabIndicator}
+                    transition={shouldReduceEffects ? { duration: 0 } : MAP2_SPRING.tabIndicator}
                   />
                 ) : null}
                 <div className="midi-hub-tabs__label">{tab.label}</div>
