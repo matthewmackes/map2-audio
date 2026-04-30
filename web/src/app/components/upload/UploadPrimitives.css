@@ -13,7 +13,8 @@
   text-align: center;
   cursor: pointer;
   background: transparent;
-  transition: all 0.2s ease;
+  /* T2466-6: design-language tokens. */
+  transition: all var(--map2-dur-base, 220ms) var(--map2-ease-in-out-rack, ease);
 }
 
 .upload-dropzone:hover,
@@ -35,7 +36,8 @@
   border-radius: 8px;
   border: 1px solid var(--border);
   background: var(--surface-2, var(--surface));
-  transition: all 0.2s ease;
+  /* T2466-6: design-language tokens. */
+  transition: all var(--map2-dur-base, 220ms) var(--map2-ease-in-out-rack, ease);
 }
 
 .upload-file-item.pending {
@@ -69,7 +71,19 @@
   height: 100%;
   background: var(--surface);
   border-radius: 2px;
-  transition: width 0.15s ease-out;
+  /* T2466-6: design-language tokens. */
+  transition: width var(--map2-dur-fast, 140ms) var(--map2-ease-out-snap, ease-out);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .upload-dropzone,
+  .upload-file-item,
+  .upload-progress-bar {
+    transition: none;
+  }
+  .upload-progress-bar::after {
+    animation: none;
+  }
 }
 
 .upload-progress-bar::after {
