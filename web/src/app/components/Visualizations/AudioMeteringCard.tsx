@@ -40,7 +40,7 @@ export function AudioMeteringCard({
           padding: compact ? '10px 14px' : '14px 20px',
           background: 'rgba(55, 214, 201, 0.1)',
           cursor: 'pointer',
-          transition: 'all 0.2s ease',
+          transition: 'all var(--map2-dur-base, 220ms) var(--map2-ease-in-out-rack, ease)',
         }}
       >
         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
@@ -67,7 +67,7 @@ export function AudioMeteringCard({
             </span>
             <span style={{
               fontSize: 11,
-              color: '#6b7280',
+              color: 'var(--cds-text-secondary, #6b7280)',
             }}>
               Spectrum • Loudness • CPU • Latency • Phase
             </span>
@@ -78,7 +78,7 @@ export function AudioMeteringCard({
           style={{
             color: accentColor,
             transform: showMetering ? 'rotate(90deg)' : 'rotate(0deg)',
-            transition: 'transform 0.2s ease',
+            transition: 'transform var(--map2-dur-base, 220ms) var(--map2-ease-in-out-rack, ease)',
           }}
         />
       </div>
@@ -87,7 +87,7 @@ export function AudioMeteringCard({
       <div style={{
         display: 'grid',
         gridTemplateRows: showMetering ? '1fr' : '0fr',
-        transition: 'grid-template-rows 0.25s ease-out',
+        transition: 'grid-template-rows var(--map2-dur-base, 220ms) var(--map2-ease-out-snap, ease-out)',
       }}>
         <div style={{ overflow: 'hidden' }}>
           <div style={{
@@ -128,7 +128,7 @@ export function AudioMeteringCard({
                     borderRadius: 8,
                     color: activeTab === tab.id ? accentColor : '#6b7280',
                     cursor: 'pointer',
-                    transition: 'all 0.2s ease',
+                    transition: 'all var(--map2-dur-base, 220ms) var(--map2-ease-in-out-rack, ease)',
                   }}
                 >
                   {tab.icon}
