@@ -397,7 +397,7 @@ export function UnifiedUploadDialog({
             textAlign: 'center',
             cursor: 'pointer',
             background: isDragOver ? 'rgba(37, 99, 235, 0.05)' : 'transparent',
-            transition: 'all 0.2s ease',
+            transition: 'all var(--map2-dur-base, 220ms) var(--map2-ease-in-out-rack, ease)',
             marginBottom: 16,
           }}
         >

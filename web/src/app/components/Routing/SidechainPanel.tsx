@@ -223,7 +223,7 @@ export const SidechainPanel: React.FC<SidechainPanelProps> = ({
             borderRadius: 6,
             color: isCreating ? '#a855f7' : '#6b7280',
             cursor: 'pointer',
-            transition: 'all 0.2s ease',
+            transition: 'all var(--map2-dur-base, 220ms) var(--map2-ease-in-out-rack, ease)',
           }}
         >
           <Plus size={12} />
