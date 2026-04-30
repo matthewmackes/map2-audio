@@ -42,14 +42,14 @@ function TunerCardBase({
         color: inTune ? accentColor : '#fff',
         fontFamily: 'var(--font-mono)',
         textShadow: inTune ? `0 0 20px ${accentColor}` : 'none',
-        transition: 'all 0.2s',
+        transition: 'all var(--map2-dur-base, 220ms) var(--map2-ease-in-out-rack, ease)',
       }}>
         {frequency > 0 ? `${noteName}${octave}` : '--'}
       </div>
 
       {/* Cents Display */}
       <div style={{ display: 'flex', alignItems: 'center', gap: 20, width: '100%', maxWidth: 300 }}>
-        <div style={{ fontSize: 24, color: flat && !inTune ? '#ff6b6b' : '#333', transition: 'all 0.1s' }}>&#9837;</div>
+        <div style={{ fontSize: 24, color: flat && !inTune ? '#ff6b6b' : '#333', transition: 'all var(--map2-dur-instant, 80ms) var(--map2-ease-in-out-rack, ease)' }}>&#9837;</div>
         <div style={{ flex: 1, height: 17, background: '#222', borderRadius: 6, position: 'relative', overflow: 'hidden' }}>
           <div style={{ position: 'absolute', left: '50%', top: 0, bottom: 0, width: 2, background: accentColor, transform: 'translateX(-50%)' }} />
           {frequency > 0 && (
@@ -68,7 +68,7 @@ function TunerCardBase({
             }} />
           )}
         </div>
-        <div style={{ fontSize: 24, color: sharp && !inTune ? '#ffaa00' : '#333', transition: 'all 0.1s' }}>&#9839;</div>
+        <div style={{ fontSize: 24, color: sharp && !inTune ? '#ffaa00' : '#333', transition: 'all var(--map2-dur-instant, 80ms) var(--map2-ease-in-out-rack, ease)' }}>&#9839;</div>
       </div>
 
       {/* Frequency and cents readout */}
@@ -99,7 +99,7 @@ function TunerCardBase({
           border: `2px solid ${inTune && frequency > 0 ? accentColor : '#444'}`,
           color: inTune && frequency > 0 ? '#000' : '#666',
           fontSize: 14, fontWeight: 'bold',
-          transition: 'all 0.2s',
+          transition: 'all var(--map2-dur-base, 220ms) var(--map2-ease-in-out-rack, ease)',
         }}>
           {frequency === 0 ? 'No Signal' : inTune ? 'In Tune' : 'Tuning...'}
         </div>

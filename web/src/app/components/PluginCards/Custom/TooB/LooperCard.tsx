@@ -53,7 +53,7 @@ function LooperCardBase({
                 padding: '17px 11px', textAlign: 'center', cursor: 'pointer',
                 background: selectedTrack === i ? TRACK_COLORS[i] + '30' : '#1a1a1a',
                 border: `2px solid ${selectedTrack === i ? TRACK_COLORS[i] : '#333'}`,
-                borderRadius: 8, transition: 'all 0.2s',
+                borderRadius: 8, transition: 'all var(--map2-dur-base, 220ms) var(--map2-ease-in-out-rack, ease)',
               }}
             >
               <div style={{ fontSize: 16, fontWeight: 'bold', color: TRACK_COLORS[i], marginBottom: 4 }}>{i + 1}</div>
