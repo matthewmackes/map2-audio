@@ -36,7 +36,7 @@ export function StatusBadge({
         cursor: onClick ? 'pointer' : 'default',
         fontSize: sizeMap[size] * 0.6,
         fontWeight: 'bold',
-        transition: 'all 0.3s ease',
+        transition: 'all var(--map2-dur-slow, 380ms) var(--map2-ease-in-out-rack, ease)',
         background:
           status === 'active' ? '#10b981' :
           status === 'inactive' ? '#6b7280' :
