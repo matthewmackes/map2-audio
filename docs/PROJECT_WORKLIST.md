@@ -2426,7 +2426,7 @@ Last updated: 2026-04-28 EDT - opened from web-audit punch-list #8.
 ---
 
 ID: T2473
-Status: [ ] Todo
+Status: [>] In Progress
 Title: Partition the `SnapshotEditorPageContent` JSX render tree into 4-6 sibling sub-components
 Description:
 - Goal: With T2467-T2472 having moved out helpers / types / one sub-component / labels / two hooks, the remaining monolith should be ~5,000-6,000 LoC of pure JSX + render-time hooks. Partition the JSX tree along the natural surface boundaries already visible to operators in the running editor: (1) `<SnapshotEditorHeader>` — the title row + status panel + audio-device banner; (2) `<SnapshotEditorFlowGrid>` — the flow/channel grid (UnifiedChannelGrid wrapper + flow-tab strip + add-flow controls); (3) `<SnapshotEditorPluginInspector>` — the routing/live-path inspector + selected-plugin parameter editor; (4) `<SnapshotEditorJuceGrid>` — the JUCE-grid presets + effect modal; (5) `<SnapshotEditorPerformancePanel>` — the perf-event chyron + reconciliation badges; (6) `<SnapshotEditorKeyboardShortcuts>` — the keyboard-shortcut help overlay.
@@ -2437,8 +2437,8 @@ Description:
 - Dependencies: T2467, T2468, T2469, T2470, T2471, T2472 — all preceding extractions must be in `master` first.
 - Estimated effort: Large (3-5 days). Single most-disruptive subtask in the epic.
 - Risk: high — this is where the monolith's hidden coupling will surface. Run the full Jest suite, the production build, and a live editor smoke test before declaring complete. Carbon directives still apply; if a sub-component would benefit from being upgraded to a Carbon `Layer` in the same diff, defer that to a follow-up — bundling Carbon migration with structural extraction defeats the no-behavior-change gate.
-Assigned to: TBD
-Last updated: 2026-04-28 EDT - opened from web-audit punch-list #8.
+Assigned to: Claude
+Last updated: 2026-04-29 EDT - part 12 SHIPPED (Plugin Browser modal extraction). Monolith 8894 → 8611 LoC (-283). New sibling `web/src/app/pages/snapshotEditor/SnapshotEditorPluginBrowser.tsx` (435 LoC, fully parent-driven props surface) + 5 unit tests green. Removed dead Carbon imports (Accordion, AccordionItem, ContentSwitcher, Search, Switch, BlockPicker, Meter icon). Typecheck + production build clean (21.05s); bundle hash refreshed (SnapshotEditorPageContent-CF-A_yme.js). Plugin Browser modal was the largest remaining inline JSX slice; next biggest are the JUCE-grid presets/effect modals + bottom editor.
 
 ---
 
