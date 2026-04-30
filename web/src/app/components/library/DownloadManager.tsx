@@ -285,7 +285,7 @@ export function DownloadManager() {
                           height: '100%',
                           width: `${(task.downloaded_bytes / Math.max(task.total_size, 1)) * 100}%`,
                           background: 'var(--primary)',
-                          transition: 'width 0.3s ease',
+                          transition: 'width var(--map2-dur-slow, 380ms) var(--map2-ease-in-out-rack, ease)',
                         }} />
                       </div>
                       {task.speed_bps > 0 && (
