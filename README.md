@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1381** Python | **1366** TypeScript | **177** C++/H | **145** Docs | **3214** total commits | **3** stars | **0** forks | **0** open issues
+**1381** Python | **1370** TypeScript | **177** C++/H | **145** Docs | **3225** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
-| [`1330f2bc`](https://github.com/matthewmackes/map2-audio/commit/1330f2bca36a916e29556a57d2ae501278361205) | worklist: roll up T2466 + T2473 progress through cycle 39 | Map2 Audio | 2026-04-30 |
-| [`67f38eeb`](https://github.com/matthewmackes/map2-audio/commit/67f38eeb4d995cb1939852d16e545ed7789487ce) | T2466-6: carbonCardStyles + CrosshairOverlay easing tokens | Map2 Audio | 2026-04-30 |
-| [`cbd434d0`](https://github.com/matthewmackes/map2-audio/commit/cbd434d05238c1272b0144ded7e34af881596c45) | T2466-6: DownloadManager progress-bar transition tokens | Map2 Audio | 2026-04-30 |
-| [`66305a6d`](https://github.com/matthewmackes/map2-audio/commit/66305a6d48270f21c96b58d8c71336cbdf95a449) | T2473 (part 17): aggregate SnapshotEditorChainDialogs | Map2 Audio | 2026-04-30 |
-| [`0540588b`](https://github.com/matthewmackes/map2-audio/commit/0540588b37815044d132d70d092cf16f9da6498f) | T2466-5: focus-visible ring on Maschine LED-slider input | Map2 Audio | 2026-04-30 |
-| [`d6b56956`](https://github.com/matthewmackes/map2-audio/commit/d6b56956cc7993e121b759c330e7454401aea47a) | T2466-6: SidechainPanel + UnifiedUploadDialog inline tran... | Map2 Audio | 2026-04-30 |
-| [`5ada4d56`](https://github.com/matthewmackes/map2-audio/commit/5ada4d56608b7541504b5a2f9fb94dcdf3554db1) | T2466-6: StatusBadge transition tokens | Map2 Audio | 2026-04-30 |
-| [`15427981`](https://github.com/matthewmackes/map2-audio/commit/15427981ed361772ca0560da5ca0eb63f2558565) | T2466-4: Visualizations gray-scale literals → tokens | Map2 Audio | 2026-04-30 |
+| [`51463ae3`](https://github.com/matthewmackes/map2-audio/commit/51463ae3353a78517595ed5d136bd710c420d5ca) | worklist: roll up T2466 + T2473 progress through cycle 49 | Map2 Audio | 2026-04-30 |
+| [`220f7de0`](https://github.com/matthewmackes/map2-audio/commit/220f7de012cc3adacf0b1bfa89a8ae4913d39f48) | T2466-4: SidechainPanel + CommunitySnapshotBrowser + Syst... | Map2 Audio | 2026-04-30 |
+| [`2f245d29`](https://github.com/matthewmackes/map2-audio/commit/2f245d29fc81d9f56046cd6b9ce2bf7a6e2d1af0) | T2466-6: 4 more CSS files threaded through design-languag... | Map2 Audio | 2026-04-30 |
+| [`78df3f71`](https://github.com/matthewmackes/map2-audio/commit/78df3f71fa101b7981b6c863b0f7f8641fbac04f) | T2466-6: BypassSwitch + TagSelector easing tokens | Map2 Audio | 2026-04-30 |
+| [`282ff1a2`](https://github.com/matthewmackes/map2-audio/commit/282ff1a27f55f778f65554675f44dd5cd73e928e) | T2466-5: HorizontalPluginNode + UCG wire overlay focus-vi... | Map2 Audio | 2026-04-30 |
+| [`213a279a`](https://github.com/matthewmackes/map2-audio/commit/213a279ad9f26151cfbf49490b6292ec4fdb8ccc) | T2466-6: EQCard easing tokens | Map2 Audio | 2026-04-30 |
+| [`13c6bc45`](https://github.com/matthewmackes/map2-audio/commit/13c6bc45c28d0360a336d71432ed130aeef9c67f) | T2466-6: Dynamics cards (Compressor/Gate/Limiter) easing ... | Map2 Audio | 2026-04-30 |
+| [`1ac72a27`](https://github.com/matthewmackes/map2-audio/commit/1ac72a279ae661b79eecc70e68e8c19bc12164d2) | T2466-6: ExpressionOverlay + MidiMappingDialog easing tokens | Map2 Audio | 2026-04-30 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
