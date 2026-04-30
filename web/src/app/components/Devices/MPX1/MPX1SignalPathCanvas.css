@@ -98,7 +98,7 @@
   cursor: pointer;
   font-size: var(--cds-label-01-font-size, 0.75rem);
   line-height: 1;
-  transition: background 0.12s, color 0.12s, border-color 0.12s;
+  transition: background var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease), color var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease), border-color var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease);
 }
 
 .mpx1-flow-toolbar__btn:hover:not(:disabled) {
@@ -125,7 +125,7 @@
   font-size: var(--cds-label-01-font-size, 0.75rem);
   font-weight: 600;
   letter-spacing: 0.03em;
-  transition: background 0.12s;
+  transition: background var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease);
 }
 
 .mpx1-flow-toolbar__tap:hover {
@@ -141,7 +141,7 @@
   cursor: pointer;
   font-size: var(--cds-label-01-font-size, 0.75rem);
   font-weight: 700;
-  transition: background 0.12s;
+  transition: background var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease);
 }
 
 .mpx1-flow-toolbar__ab.is-comparing {
@@ -164,7 +164,7 @@
   border-radius: var(--border-radius-sm);
   color: var(--support-danger);
   cursor: pointer;
-  transition: background 0.12s;
+  transition: background var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease);
 }
 
 .mpx1-flow-toolbar__bypass-all:hover {
@@ -270,7 +270,7 @@
   border: 1.5px solid color-mix(in srgb, var(--block-accent) 30%, transparent 70%);
   border-radius: var(--border-radius-sm);
   cursor: pointer;
-  transition: border-color 0.15s,
+  transition: border-color var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease),
     opacity 0.2s,
     filter 0.2s;
   outline: 2px solid transparent;
@@ -347,7 +347,7 @@
   color: var(--block-accent);
   font-size: var(--cds-helper-text-01-font-size, 0.75rem);
   opacity: 0.5;
-  transition: opacity 0.12s;
+  transition: opacity var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease);
   flex-shrink: 0;
   line-height: 1;
 }
@@ -457,7 +457,7 @@
   border-radius: var(--border-radius-sm);
   color: var(--interactive);
   cursor: pointer;
-  transition: color 0.12s, background 0.12s;
+  transition: color var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease), background var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease);
   flex-shrink: 0;
 }
 
@@ -557,7 +557,7 @@
   border-radius: var(--border-radius-sm);
   color: var(--interactive);
   cursor: pointer;
-  transition: background 0.12s;
+  transition: background var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease);
   text-align: left;
 }
 
@@ -724,7 +724,7 @@
   border-radius: var(--border-radius-sm);
   padding: 3px 9px;
   cursor: pointer;
-  transition: background 0.12s, color 0.12s, border-color 0.12s;
+  transition: background var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease), color var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease), border-color var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease);
 }
 .mpx1-flow__order-btn:hover,
 .mpx1-flow__order-btn.is-active {
@@ -742,7 +742,7 @@
   border-radius: var(--border-radius-sm);
   padding: 2px 7px;
   cursor: pointer;
-  transition: color 0.12s, border-color 0.12s;
+  transition: color var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease), border-color var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease);
 }
 .mpx1-flow__order-reset-btn:hover {
   color: var(--interactive);
@@ -828,7 +828,7 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  transition: background 0.1s, color 0.1s;
+  transition: background var(--map2-dur-instant, 80ms) var(--map2-ease-in-out-rack, ease), color var(--map2-dur-instant, 80ms) var(--map2-ease-in-out-rack, ease);
   padding: 0;
 }
 .mpx1-flow__order-chip__arrows button:hover:not(:disabled) {
@@ -906,7 +906,7 @@
   border-radius: var(--border-radius-sm);
   padding: 3px 9px;
   cursor: pointer;
-  transition: background 0.1s, color 0.1s, border-color 0.1s;
+  transition: background var(--map2-dur-instant, 80ms) var(--map2-ease-in-out-rack, ease), color var(--map2-dur-instant, 80ms) var(--map2-ease-in-out-rack, ease), border-color var(--map2-dur-instant, 80ms) var(--map2-ease-in-out-rack, ease);
   white-space: nowrap;
 }
 .mpx1-flow__route-btn:hover {
