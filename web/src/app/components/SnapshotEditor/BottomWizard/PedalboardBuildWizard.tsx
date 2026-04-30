@@ -1,10 +1,9 @@
-import { useCallback, useEffect, useMemo, useRef, useState, type ReactNode } from 'react'
+import { useCallback, useEffect, useMemo, useState, type ReactNode } from 'react'
 import {
   Add,
   ArrowRight,
   ChartLine,
   Checkmark,
-  ChevronDown,
   Folder,
   Flow,
   Help,
@@ -13,10 +12,6 @@ import {
   Time,
 } from '@carbon/icons-react'
 import { Button } from '@carbon/react'
-import {
-  SnapshotConfigurationCard,
-  type SnapshotSummaryInfo,
-} from '../SnapshotConfigurationCard/SnapshotConfigurationCard'
 import {
   useBuildStageMachine,
   type BuildStageDescriptor,
@@ -28,21 +23,6 @@ export type RoutingDropdownOption = {
   id: string
   label: string
   description: string
-}
-
-export type ActiveChannelInfo = {
-  channelLabel: string
-  chainLabel: string
-  blockSummary: string
-  blendLabel: string
-  stateLabel: string
-  stateLive: boolean
-  muted: boolean
-  solo: boolean
-  inputClipActive: boolean
-  outputClipActive: boolean
-  clipActive: boolean
-  accentColor?: string
 }
 
 export type EngineSyncTone = 'live' | 'publishing' | 'desync' | 'idle'
@@ -92,20 +72,8 @@ export interface PedalboardBuildWizardProps {
   engineSyncTone?: EngineSyncTone
   engineSyncLabel?: string
 
-  activeChannel?: ActiveChannelInfo | null
-
   routingOptions?: RoutingDropdownOption[]
   routingValue?: string
-  onRoutingChange?: (id: string) => void
-  routingDisabled?: boolean
-
-  onOpenRouting?: () => void
-  onOpenDevices?: () => void
-  onOpenPublish?: () => void
-
-  snapshotSummary?: SnapshotSummaryInfo | null
-
-  showMorphPad?: boolean
 }
 
 type StepCopy = {
@@ -231,109 +199,6 @@ function buildStepCopy(
   }
 }
 
-export function RoutingDropdown({
-  options,
-  value,
-  onChange,
-  disabled,
-}: {
-  options: RoutingDropdownOption[]
-  value: string | undefined
-  onChange?: (id: string) => void
-  disabled?: boolean
-}) {
-  const [open, setOpen] = useState(false)
-  const wrapRef = useRef<HTMLDivElement | null>(null)
-
-  useEffect(() => {
-    if (!open) return
-    const onDoc = (event: MouseEvent) => {
-      if (!wrapRef.current?.contains(event.target as Node)) setOpen(false)
-    }
-    const onKey = (event: KeyboardEvent) => {
-      if (event.key === 'Escape') setOpen(false)
-    }
-    document.addEventListener('mousedown', onDoc)
-    document.addEventListener('keydown', onKey)
-    return () => {
-      document.removeEventListener('mousedown', onDoc)
-      document.removeEventListener('keydown', onKey)
-    }
-  }, [open])
-
-  const current = options.find((option) => option.id === value) ?? options[0]
-  if (!current) return null
-
-  return (
-    <div className="pedalboard-wizard__routing" ref={wrapRef}>
-      <span className="pedalboard-wizard__routing-label">Routing map</span>
-      <button
-        type="button"
-        className={`pedalboard-wizard__routing-trigger${open ? ' is-open' : ''}`}
-        onClick={() => !disabled && setOpen((next) => !next)}
-        aria-haspopup="listbox"
-        aria-expanded={open}
-        disabled={disabled}
-      >
-        <span className="pedalboard-wizard__routing-value">{current.label}</span>
-        <ChevronDown size={14} aria-hidden />
-      </button>
-      {open ? (
-        <ul className="pedalboard-wizard__routing-menu" role="listbox" aria-label="Routing map">
-          {options.map((option) => {
-            const selected = option.id === value
-            return (
-              <li key={option.id}>
-                <button
-                  type="button"
-                  role="option"
-                  aria-selected={selected}
-                  className={`pedalboard-wizard__routing-option${selected ? ' is-selected' : ''}`}
-                  onClick={() => {
-                    onChange?.(option.id)
-                    setOpen(false)
-                  }}
-                >
-                  <span className="pedalboard-wizard__routing-option-row">
-                    <span className="pedalboard-wizard__routing-option-label">{option.label}</span>
-                    {selected ? <Checkmark size={14} aria-hidden /> : null}
-                  </span>
-                  <span className="pedalboard-wizard__routing-option-desc">{option.description}</span>
-                </button>
-              </li>
-            )
-          })}
-        </ul>
-      ) : null}
-    </div>
-  )
-}
-
-export function SegmentedToggle({
-  options,
-  value,
-  ariaLabel,
-}: {
-  options: Array<{ id: string; label: string; on: boolean; tone?: 'warn' | 'error' | 'ok' }>
-  value?: string
-  ariaLabel: string
-}) {
-  return (
-    <div className="pedalboard-wizard__segmented" role="group" aria-label={ariaLabel}>
-      {options.map((option) => (
-        <span
-          key={option.id}
-          className={`pedalboard-wizard__segmented-item${option.on ? ' is-on' : ''}${option.tone ? ` is-tone-${option.tone}` : ''}`}
-          aria-pressed={option.on}
-          title={option.label}
-        >
-          {option.label}
-        </span>
-      ))}
-    </div>
-  )
-}
-
 function HeroIconRow({
   items,
 }: {
@@ -390,16 +255,8 @@ export function PedalboardBuildWizard({
   updatedAtLabel,
   engineSyncTone = 'idle',
   engineSyncLabel,
-  activeChannel,
   routingOptions,
   routingValue,
-  onRoutingChange,
-  routingDisabled,
-  onOpenRouting,
-  onOpenDevices,
-  onOpenPublish,
-  snapshotSummary,
-  showMorphPad = true,
 }: PedalboardBuildWizardProps) {
   const machine = useBuildStageMachine({
     hasSnapshot,
@@ -644,19 +501,6 @@ export function PedalboardBuildWizard({
           </Button>
         </div>
       </section>
-
-      <SnapshotConfigurationCard
-        summary={snapshotSummary}
-        activeChannel={activeChannel}
-        routingOptions={routingOptions}
-        routingValue={routingValue}
-        onRoutingChange={onRoutingChange}
-        routingDisabled={routingDisabled}
-        onOpenRouting={onOpenRouting}
-        onOpenDevices={onOpenDevices}
-        onOpenPublish={onOpenPublish}
-        showMorphPad={showMorphPad}
-      />
     </section>
   )
 }

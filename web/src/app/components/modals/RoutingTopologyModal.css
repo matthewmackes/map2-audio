@@ -110,6 +110,19 @@
   border-left: 3px solid var(--accent);
 }
 
+.rtm__morph-pad {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  align-items: center;
+  margin-top: 0.5rem;
+}
+
+.rtm__morph-pad .rtm__tile-label,
+.rtm__morph-pad .rtm__tile-copy {
+  align-self: stretch;
+}
+
 /* ── Button rows inside tiles ───────────────────────────────────────────────── */
 
 .rtm__button-row {

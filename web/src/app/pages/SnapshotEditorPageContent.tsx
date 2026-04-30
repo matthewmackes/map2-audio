@@ -7584,24 +7584,6 @@ export function SnapshotEditorPage() {
     })),
     [],
   )
-  const buildWorkflowActiveChannel = useMemo(() => {
-    if (!activeChannelStatusRail) return null
-    const accentColor = activeFlow?.color ?? getFlowCardPaletteEntry(activeFlowIndex).color
-    return {
-      channelLabel: activeChannelStatusRail.channelLabel,
-      chainLabel: activeChannelStatusRail.chainLabel,
-      blockSummary: activeChannelStatusRail.blockSummary,
-      blendLabel: activeChannelStatusRail.blendLabel,
-      stateLabel: activeChannelStatusRail.stateLabel,
-      stateLive: activeChannelStatusRail.stateLabel === 'Live',
-      muted: activeChannelStatusRail.muted,
-      solo: activeChannelStatusRail.solo,
-      inputClipActive: activeChannelStatusRail.inputClipActive,
-      outputClipActive: activeChannelStatusRail.outputClipActive,
-      clipActive: activeChannelStatusRail.clipActive,
-      accentColor,
-    }
-  }, [activeChannelStatusRail, activeFlow?.color, activeFlowIndex])
   const buildWorkflowChannelCounts = useMemo(() => {
     const active = authoritativeAudioState?.derived.active_channel_count ?? activeSnapshot?.live_state?.paths.length ?? null
     const total = authoritativeAudioState?.derived.total_channel_count ?? activeSnapshot?.channels.length ?? activeSnapshot?.paths.length ?? null
@@ -7619,61 +7601,6 @@ export function SnapshotEditorPage() {
     if (seconds < 86_400) return `updated ${Math.round(seconds / 3600)} hr ago`
     return `updated ${Math.round(seconds / 86_400)} d ago`
   }, [activeSnapshot?.updated_at])
-  const buildWorkflowSnapshotSummary = useMemo(() => {
-    if (!activeSnapshot) return null
-    const inputDeviceLabel = activeSnapshot.input_device || 'Default input'
-    const outputDeviceLabel = activeSnapshot.output_device || 'Default output'
-    const monitoringIndex =
-      activeSnapshot.io_bindings?.monitoring_output_index ??
-      activeSnapshot.controls?.monitoring_output_index ??
-      null
-    const monitoringDeviceLabel =
-      typeof monitoringIndex === 'number' ? `Output ${monitoringIndex + 1}` : null
-    const liveHostId = activeSnapshot.live_state?.node_id
-    const primaryHostId = activeSnapshot.deployments?.[0]?.primary_node_id
-    const hostLabel = liveHostId || primaryHostId || 'No host assigned'
-    const hostTone: 'live' | 'idle' | 'offline' = activeSnapshot.live_state?.is_live
-      ? 'live'
-      : activeSnapshot.live_state?.is_offline
-        ? 'offline'
-        : 'idle'
-    const saveTone: 'ready' | 'dirty' | 'idle' = snapshotsDirty
-      ? 'dirty'
-      : activeSnapshot.snapshot_revision
-        ? 'ready'
-        : 'idle'
-    const saveLabel = snapshotsDirty
-      ? buildWorkflowUpdatedAtLabel
-        ? `Unsaved changes — last save ${buildWorkflowUpdatedAtLabel}`
-        : 'Unsaved changes'
-      : activeSnapshot.snapshot_revision
-        ? `Revision ${activeSnapshot.snapshot_revision}`
-        : 'No revision saved'
-    const routingActiveChannel = activeChannelStatusRail?.channelLabel
-      ? `Active ${activeChannelStatusRail.channelLabel}`
-      : 'No active channel'
-    const routingDetailLabel = activeChannelStatusRail?.blendLabel
-      ? `${routingActiveChannel} · ${activeChannelStatusRail.blendLabel}`
-      : routingActiveChannel
-    return {
-      saveLabel,
-      saveTone,
-      hostLabel,
-      hostTone,
-      inputDeviceLabel,
-      outputDeviceLabel,
-      monitoringDeviceLabel,
-      routingModeLabel: routing.mode.replace(/_/g, ' '),
-      routingDetailLabel,
-    }
-  }, [
-    activeChannelStatusRail?.blendLabel,
-    activeChannelStatusRail?.channelLabel,
-    activeSnapshot,
-    buildWorkflowUpdatedAtLabel,
-    routing.mode,
-    snapshotsDirty,
-  ])
   const pedalboardBuildWizard = (
     <PedalboardBuildWizard
       hasSnapshot={Boolean(activeSnapshot)}
@@ -7706,16 +7633,8 @@ export function SnapshotEditorPage() {
       updatedAtLabel={buildWorkflowUpdatedAtLabel}
       engineSyncTone={buildWorkflowEngineSync.tone}
       engineSyncLabel={buildWorkflowEngineSync.label}
-      activeChannel={buildWorkflowActiveChannel}
       routingOptions={buildWorkflowRoutingOptions}
       routingValue={routing.mode}
-      onRoutingChange={(mode) => setRoutingMode(mode as RoutingMode)}
-      routingDisabled={snapshotEditingLocked}
-      onOpenRouting={() => openSnapshotProgressModal('advanced', 'routing')}
-      onOpenDevices={openSnapshotIoWorkspace}
-      onOpenPublish={() => openSnapshotProgressModal('wizard', 'overview')}
-      snapshotSummary={buildWorkflowSnapshotSummary}
-      showMorphPad={Boolean(activeSnapshot)}
     />
   )
   if (showViewportBlockScreen) {

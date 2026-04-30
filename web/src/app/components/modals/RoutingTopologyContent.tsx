@@ -32,6 +32,7 @@ import {
   JuceGridRoutingVisualizer,
   type JuceGridRoutingFlowInfo,
 } from '../SnapshotEditor/SnapshotEditorRoutingVisualizer'
+import { MorphPad } from '../StateAuthority/MorphPad'
 import './RoutingTopologyModal.css'
 
 type RoutingMode =
@@ -443,6 +444,11 @@ export function RoutingTopologyContent({
               }}
               disabled={readOnly}
             />
+            <div className="rtm__morph-pad">
+              <span className="rtm__tile-label">Morph pad</span>
+              <p className="rtm__tile-copy">Drag to morph between A/B/C/D parameter corners.</p>
+              <MorphPad readonly={readOnly} size={180} />
+            </div>
           </Tile>
         ) : null}
 
