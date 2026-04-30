@@ -184,7 +184,7 @@ export function GateCard({
           line-height: var(--cds-label-01-line-height);
           padding: 4px 8px;
           cursor: pointer;
-          transition: all 0.2s;
+          transition: all var(--map2-dur-base, 220ms) var(--map2-ease-in-out-rack, ease);
         }
 
         .bypass-btn:hover {
@@ -234,7 +234,7 @@ export function GateCard({
           line-height: var(--cds-label-01-line-height);
           font-weight: 600;
           letter-spacing: var(--cds-label-01-letter-spacing);
-          transition: all 0.1s;
+          transition: all var(--map2-dur-fast, 140ms) var(--map2-ease-out-snap, ease);
         }
 
         .gate-status.open {

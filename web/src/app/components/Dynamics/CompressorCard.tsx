@@ -215,7 +215,7 @@ export function CompressorCard({
           line-height: var(--cds-label-01-line-height);
           padding: 4px 8px;
           cursor: pointer;
-          transition: all 0.2s;
+          transition: all var(--map2-dur-base, 220ms) var(--map2-ease-in-out-rack, ease);
         }
 
         .bypass-btn:hover {
