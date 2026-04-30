@@ -107,7 +107,7 @@ export function BypassSwitch({
           background: #333;
           border: 1px solid #444;
           box-shadow: inset 0 1px 2px rgba(0, 0, 0, 0.3);
-          transition: all 0.2s ease;
+          transition: all var(--map2-dur-base, 220ms) var(--map2-ease-in-out-rack, ease);
         }
 
         .bypass-switch-button.active .bypass-switch-led {
@@ -128,7 +128,7 @@ export function BypassSwitch({
           background: #1a1a1a;
           border: 1px solid #333;
           border-radius: calc(var(--switch-height) / 2);
-          transition: all 0.2s ease;
+          transition: all var(--map2-dur-base, 220ms) var(--map2-ease-in-out-rack, ease);
         }
 
         .bypass-switch-button.active .bypass-switch-track {
@@ -142,7 +142,7 @@ export function BypassSwitch({
           background: linear-gradient(180deg, #444 0%, #333 100%);
           border-radius: 50%;
           box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
-          transition: all 0.2s ease;
+          transition: all var(--map2-dur-base, 220ms) var(--map2-ease-in-out-rack, ease);
         }
 
         .bypass-switch-button.active .bypass-switch-thumb {

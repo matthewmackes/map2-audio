@@ -332,7 +332,7 @@ export function TagSelector({
           font-size: var(--cds-helper-text-01-font-size, 0.75rem);
           padding: 4px 8px;
           cursor: pointer;
-          transition: all 0.2s;
+          transition: all var(--map2-dur-base, 220ms) var(--map2-ease-in-out-rack, ease);
         }
 
         .action-btn:hover {
@@ -502,7 +502,7 @@ export function TagSelector({
           font-size: var(--cds-helper-text-01-font-size, 0.75rem);
           color: #9ca3af;
           cursor: pointer;
-          transition: all 0.15s;
+          transition: all var(--map2-dur-fast, 140ms) var(--map2-ease-out-snap, ease);
         }
 
         .tag-chip:hover {
