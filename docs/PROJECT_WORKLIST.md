@@ -30,7 +30,15 @@ Subtasks:
   - T2466-7: Taskbar/status strip — shrink 25% + collapse-by-default with critical-only auto-expand. Files: `web/src/app/layout/AppShell.css` (`.window-taskbar`), `web/src/app/layout/TaskbarStatusStrip.tsx`, `web/src/app/layout/useAppShellPresentation.ts`, `web/src/app/pages/HomePage.landing.css:100`. Persist user override in `localStorage` key `map2.taskbar.collapsed`; critical event clears override and forces expand. A11y: `<button aria-expanded aria-controls>`; `aria-live="polite"` on auto-expansions. Update Desktop snapshot test.
 Out of scope: SnapshotEditorPageContent decomposition, App-shell bundle splitting, ToastsPresenter debouncing — already tracked elsewhere. No new features; polish only.
 Assigned to: Unassigned (AI agent fed the coaching prompt at `/home/mm/.claude/plans/help-me-coach-an-mellow-marshmallow.md`)
-Last updated: 2026-04-29 EDT - T2466-5 progress: focus-visible rings landed on the MidiHub patchbay SVG route + node custom controls (web/src/app/pages/midi-hub/MidiHubConnectionsPage.css). Audit confirmed canvas-card surfaces (mpx1-flow-card, intelfx-flow-card), UnifiedChannelGrid blocks, AppShell nav-pin-toggle, NodeSelector tabs, ContentKicker actions, and the WorkspaceBar buttons already carry compliant focus-visible coverage. T2466-7 follow-up: the originally-targeted `.window-taskbar` is part of `ShellLauncherPanel`, which is no longer mounted in the live shell tree (T2438+ migration replaced it with `ContentKicker` + `WorkspaceBar` chrome). The `--window-taskbar-height` token still has fallback consumers in `HomePage.landing.css`. Acceptance criteria for T2466-7 should be re-scoped to apply to the live workspace bar instead of the dead taskbar; left as a TBD on the task.
+Last updated: 2026-04-29 EDT - T2466 progressed across 9 subtasks (0/2/3/4/5/6 + a Brain consumer wiring + a MidiHub consumer wiring + DrawerPanel motion). Subtask snapshot:
+- T2466-0: DrawerPanel slide-in animation; broader sliding motion polish queued.
+- T2466-2: drawerVariants enter/exit symmetry — new MAP2_SPRING.drawerExit; CSS asymmetric timing on MidiHubHealthDrawer.
+- T2466-3: useReducedMotionSafeVariants hook + flattener (5 tests). Wired into BrainOverviewShell + MidiHubTabs (Framer consumers) + MidiHubHealthDrawer (CSS). Other Framer consumers (RebootOverlay, PlatformModal, GuiOptionsShowcase, StageChyronCard, StageMissionChrome, ExpressionPage, SnapshotEditorPerformOverlay) remain unwired; deferred to a focused sweep.
+- T2466-4: hex literal colors → theme tokens across 6 PluginCards (Peavey5150, TweedBassman, CelestialCompressor, Chorus, IntelliFX, NativeDelay). Effect-palette colors in PassionFXCard deliberately left as-is (config data, not theme).
+- T2466-5: focus-visible rings on MidiHub patchbay SVG route+node controls and Maschine MK1 cells. Earlier audit confirmed mpx1-flow-card, intelfx-flow-card, ucg-block, app-shell__nav-pin-toggle, node-selector__tab, shell-kicker__action, shell-ws__btn already covered.
+- T2466-6: Disclosure / UploadPrimitives / HorizontalSignalChain transitions through design-language tokens with prefers-reduced-motion fallbacks.
+- T2466-7 RE-SCOPE: original target `.window-taskbar` is part of `ShellLauncherPanel`, no longer mounted in the live shell tree (T2438+ migration replaced it with ContentKicker + WorkspaceBar). The `--window-taskbar-height` token still has fallback consumers in HomePage.landing.css. Acceptance criteria should be re-scoped to apply to the live workspace bar; left as a TBD.
+- T2466-1 (canvas-node motion-value drag): deferred — risks live MPX1/IntelFX operator surfaces, needs dedicated session.
 2026-04-28 EDT - opened, plan + coaching prompt drafted
 
 ---
@@ -2439,7 +2447,12 @@ Description:
 - Estimated effort: Large (3-5 days). Single most-disruptive subtask in the epic.
 - Risk: high — this is where the monolith's hidden coupling will surface. Run the full Jest suite, the production build, and a live editor smoke test before declaring complete. Carbon directives still apply; if a sub-component would benefit from being upgraded to a Carbon `Layer` in the same diff, defer that to a follow-up — bundling Carbon migration with structural extraction defeats the no-behavior-change gate.
 Assigned to: Claude
-Last updated: 2026-04-29 EDT - part 13 SHIPPED (Compact-layout workflow panels extraction). Monolith 8611 → 8539 LoC (-72; cumulative 8894 → 8539 = -355). New sibling `web/src/app/pages/snapshotEditor/SnapshotEditorCompactPanels.tsx` (~155 LoC) handles the four compact-layout tab bodies (grid/editor/routing/presets) on mobile/touch surfaces. 6 unit tests green covering visibility gate + each tab. Typecheck + production build clean (20.78s); bundle hash refreshed (SnapshotEditorPageContent-C1NRykSE.js). Previously: part 12 SHIPPED (Plugin Browser modal extraction). Monolith 8894 → 8611 LoC (-283). New sibling `web/src/app/pages/snapshotEditor/SnapshotEditorPluginBrowser.tsx` (435 LoC, fully parent-driven props surface) + 5 unit tests green. Removed dead Carbon imports (Accordion, AccordionItem, ContentSwitcher, Search, Switch, BlockPicker, Meter icon).
+Last updated: 2026-04-29 EDT - parts 12-15 SHIPPED. Monolith 8894 → 8518 LoC (cumulative -376) across four extractions:
+  - part 12: SnapshotEditorPluginBrowser.tsx (305-line modal, 5 tests, dropped 7 dead imports)
+  - part 13: SnapshotEditorCompactPanels.tsx (~155 LoC sibling, 6 tests)
+  - part 14: SnapshotEditorAutomationToggle.tsx (floating toggle button, 4 tests)
+  - part 15: SnapshotEditorWorkspaceModals.tsx (aggregates 3 declarative modal mounts, 5 tests, dropped 3 dead imports)
+20 unit tests across the four new siblings green; typecheck + production build clean each cycle; bundle hashes refreshed. Plugin Browser modal was the largest remaining inline JSX slice; remaining big-ticket targets are the bottom-editor section (~240 LoC) and the tablet-editor scrim/shell (~180 LoC), both deferred because they're tightly coupled to selectedPlugin state machinery and warrant dedicated sessions.
 
 ---
 
