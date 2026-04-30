@@ -13,7 +13,7 @@
 .crosshair-overlay__row {
   position: absolute;
   background: rgba(69, 137, 255, 0.08);
-  transition: all 0.15s ease-out;
+  transition: all var(--map2-dur-fast, 140ms) var(--map2-ease-out-snap, ease-out);
   animation: crosshair-overlay-fade-in 0.15s ease-out;
 }
 
@@ -31,7 +31,7 @@
   position: absolute;
   background: rgba(69, 137, 255, 0.12);
   border: 1px solid rgba(69, 137, 255, 0.4);
-  transition: all 0.15s ease-out;
+  transition: all var(--map2-dur-fast, 140ms) var(--map2-ease-out-snap, ease-out);
   animation: crosshair-overlay-pop-in 0.15s ease-out;
 }
 

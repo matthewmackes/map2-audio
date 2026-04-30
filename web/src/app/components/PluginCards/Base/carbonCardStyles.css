@@ -690,7 +690,7 @@
   line-height: var(--cds-helper-text-01-line-height, 1rem);
   font-weight: 500;
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: all var(--map2-dur-fast, 140ms) var(--map2-ease-out-snap, ease);
   white-space: nowrap;
 }
 
@@ -724,7 +724,7 @@
   font-weight: 600;
   letter-spacing: 0.01em;
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: all var(--map2-dur-fast, 140ms) var(--map2-ease-out-snap, ease);
 }
 
 .carbon-toggle-btn:hover {
