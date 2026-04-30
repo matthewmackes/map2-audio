@@ -68,7 +68,10 @@
   box-shadow: none;
 }
 
-.h-plugin-node:focus {
+/* T2466-5: prefer :focus-visible over :focus so the ring only
+   fires on keyboard focus, not on click/programmatic focus that
+   shouldn't surface the indicator. */
+.h-plugin-node:focus-visible {
   outline: 2px solid var(--cds-focus, var(--primary));
   outline-offset: 2px;
   border-color: var(--primary);

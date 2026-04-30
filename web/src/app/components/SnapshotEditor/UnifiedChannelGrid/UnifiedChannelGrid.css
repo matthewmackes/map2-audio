@@ -23,6 +23,15 @@
   cursor: pointer;
 }
 
+/* T2466-5: focus-visible ring for the keyboard-focusable wire
+   <g> elements. Uses a drop-shadow because SVG <g> doesn't
+   render the browser default outline. */
+.ucg-wire-overlay [data-wire-id]:focus-visible {
+  outline: none;
+  filter: drop-shadow(0 0 0 var(--cds-focus, #4589ff))
+    drop-shadow(0 0 4px var(--cds-focus, #4589ff));
+}
+
 .ucg-wire--active path {
   filter: drop-shadow(0 0 3px currentColor);
 }
