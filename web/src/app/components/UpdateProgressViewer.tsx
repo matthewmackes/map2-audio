@@ -315,7 +315,7 @@ export function UpdateProgressViewer({ updateId }: { updateId?: string }) {
                                 : stage.status === 'completed'
                                 ? '#00ff41'
                                 : '#2563eb',
-                            transition: 'width 0.3s',
+                            transition: 'width var(--map2-dur-slow, 380ms) var(--map2-ease-in-out-rack, ease)',
                           }}
                         />
                       </div>

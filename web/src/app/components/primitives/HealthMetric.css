@@ -39,7 +39,7 @@
 
 .map2-health-metric__bar-fill {
   height: 100%;
-  transition: width 160ms ease;
+  transition: width var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease);
 }
 
 .map2-health-metric--ok .map2-health-metric__bar-fill {

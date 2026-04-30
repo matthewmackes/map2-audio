@@ -17,7 +17,7 @@
 
 .map2-signal-chain-block--interactive {
   cursor: pointer;
-  transition: border-color 120ms ease, background 120ms ease;
+  transition: border-color var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease), background var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease);
 }
 
 .map2-signal-chain-block--interactive:hover {

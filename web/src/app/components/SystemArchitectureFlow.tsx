@@ -361,7 +361,7 @@ export function SystemArchitectureFlow() {
           position: 'relative',
           overflow: 'hidden',
           cursor: 'pointer',
-          transition: 'all 0.2s ease',
+          transition: 'all var(--map2-dur-base, 220ms) var(--map2-ease-in-out-rack, ease)',
         }}
         onClick={() => setExpandedComponent(isExpanded ? null : componentKey)}
         title="Click for details"
@@ -385,7 +385,7 @@ export function SystemArchitectureFlow() {
                   height: '100%',
                   width: `${Math.min(100, healthInfo.utilization)}%`,
                   background: color.text,
-                  transition: 'width 0.3s ease',
+                  transition: 'width var(--map2-dur-slow, 380ms) var(--map2-ease-in-out-rack, ease)',
                 }}
               />
             </div>

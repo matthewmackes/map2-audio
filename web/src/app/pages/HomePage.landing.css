@@ -248,7 +248,7 @@
 }
 
 .hp2-home-shell__table-row {
-  transition: background-color 120ms ease, border-color 120ms ease;
+  transition: background-color var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease), border-color var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease);
 }
 
 .hp2-home-shell__table-row.is-actionable {

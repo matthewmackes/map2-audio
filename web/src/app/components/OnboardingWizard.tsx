@@ -153,7 +153,7 @@ export function OnboardingWizard({ onComplete }: { onComplete?: () => void }) {
                 currentStep === step.id ? '#2563eb' : currentStep > step.id ? '#00ff41' : '#333'
               }`,
               borderRadius: 8,
-              transition: 'all 0.3s',
+              transition: 'all var(--map2-dur-slow, 380ms) var(--map2-ease-in-out-rack, ease)',
             }}
           >
             <div
@@ -232,7 +232,7 @@ export function OnboardingWizard({ onComplete }: { onComplete?: () => void }) {
                     border: `2px solid ${deploymentMode === mode.value ? '#2563eb' : '#333'}`,
                     borderRadius: 8,
                     cursor: 'pointer',
-                    transition: 'all 0.2s',
+                    transition: 'all var(--map2-dur-base, 220ms) var(--map2-ease-in-out-rack, ease)',
                   }}
                 >
                   <input

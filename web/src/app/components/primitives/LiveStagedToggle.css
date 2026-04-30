@@ -20,7 +20,7 @@
   text-transform: uppercase;
   color: var(--cds-text-secondary, var(--text-secondary));
   cursor: pointer;
-  transition: background 120ms ease, color 120ms ease;
+  transition: background var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease), color var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease);
 }
 
 .map2-live-staged-toggle__btn:not(:last-child) {
