@@ -12,7 +12,7 @@
   height: 100%;
   border: 2px solid var(--map2-state-staged, #4589ff);
   background: rgba(69, 137, 255, 0.15);
-  transition: all 0.1s ease-out;
+  transition: all var(--map2-dur-fast, 140ms) var(--map2-ease-out-snap, ease-out);
   animation: selection-overlay-pulse 1.5s ease-in-out infinite;
 }
 

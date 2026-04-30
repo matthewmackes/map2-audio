@@ -58,7 +58,7 @@
   background: var(--surface-2);
   box-shadow: none;
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: all var(--map2-dur-fast, 140ms) var(--map2-ease-out-snap, ease);
 }
 
 .chains-grid-cell:hover {
@@ -213,7 +213,7 @@
   background: transparent;
   color: var(--muted);
   cursor: pointer;
-  transition: all 0.15s ease;
+  transition: all var(--map2-dur-fast, 140ms) var(--map2-ease-out-snap, ease);
 }
 
 .chains-grid-btn:hover {

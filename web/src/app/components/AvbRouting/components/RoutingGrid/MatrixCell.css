@@ -11,7 +11,7 @@
   align-items: center;
   justify-content: center;
   position: relative;
-  transition: all 0.2s ease;
+  transition: all var(--map2-dur-base, 220ms) var(--map2-ease-in-out-rack, ease);
 }
 
 .matrix-cell:hover {

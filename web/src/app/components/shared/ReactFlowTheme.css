@@ -35,7 +35,7 @@
 }
 
 .react-flow__controls-button {
-  transition: all 0.2s ease-in-out;
+  transition: all var(--map2-dur-base, 220ms) var(--map2-ease-in-out-rack, ease-in-out);
   border-radius: 0;
   box-shadow: none;
 }
