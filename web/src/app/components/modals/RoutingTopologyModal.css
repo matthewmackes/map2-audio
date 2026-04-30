@@ -243,7 +243,7 @@
 
 .rtm__midi-row {
   border-bottom: 1px solid var(--border);
-  transition: background 80ms ease;
+  transition: background var(--map2-dur-instant, 80ms) var(--map2-ease-in-out-rack, ease);
 }
 
 .rtm__midi-row:last-child {
