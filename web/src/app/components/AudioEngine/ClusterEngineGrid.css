@@ -53,7 +53,7 @@
   color: var(--cds-text-primary);
   text-align: left;
   cursor: pointer;
-  transition: background-color 120ms ease, border-color 120ms ease;
+  transition: background-color var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease), border-color var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease);
 }
 
 .cluster-engine-grid__card:hover {

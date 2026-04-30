@@ -124,7 +124,7 @@
   display: grid;
   grid-template-columns: var(--global-tree-width, 0rem) 1fr;
   min-height: calc(100vh - var(--ctx-h, 0px) - var(--ws-h, 0px));
-  transition: grid-template-columns 160ms ease;
+  transition: grid-template-columns var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease);
 }
 
 .app-content--with-global-tree {
@@ -133,7 +133,7 @@
   min-height: 100vh;
   overflow: hidden;
   padding-bottom: var(--stage-notification-reserved-height, 0px);
-  transition: padding-bottom 160ms ease;
+  transition: padding-bottom var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease);
 }
 
 .app-shell__nav-collapsed-rail {
@@ -277,7 +277,7 @@
   background: transparent;
   cursor: pointer;
   overflow: hidden;
-  transition: border-color 120ms ease, background 120ms ease;
+  transition: border-color var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease), background var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease);
 }
 
 .shell-launcher__cube-btn:hover,
@@ -318,7 +318,7 @@
   color: var(--cds-text-primary, var(--text-primary));
   cursor: pointer;
   box-shadow: none;
-  transition: border-color 120ms ease, background 120ms ease, transform 120ms ease;
+  transition: border-color var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease), background var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease), transform var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease);
 }
 
 .shell-launcher__button:hover,
@@ -472,7 +472,7 @@
   color: var(--cds-text-primary, var(--text-primary));
   cursor: pointer;
   box-shadow: none;
-  transition: background 120ms ease, border-color 120ms ease, color 120ms ease, transform 120ms ease;
+  transition: background var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease), border-color var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease), color var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease), transform var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease);
 }
 
 .window-taskbar__start-mark {
@@ -536,7 +536,7 @@
   cursor: pointer;
   font-family: inherit;
   text-align: center;
-  transition: border-color 120ms ease, background 120ms ease, transform 120ms ease;
+  transition: border-color var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease), background var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease), transform var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease);
 }
 
 button.window-taskbar__pill {
@@ -598,7 +598,7 @@ button.window-taskbar__pill {
   color: var(--cds-text-primary, var(--text-primary));
   cursor: pointer;
   box-shadow: none;
-  transition: border-color 120ms ease, background 120ms ease, color 120ms ease, transform 120ms ease;
+  transition: border-color var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease), background var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease), color var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease), transform var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease);
 }
 
 .window-taskbar__indicator::after {
@@ -610,7 +610,7 @@ button.window-taskbar__pill {
   height: 2px;
   border-radius: 999px;
   background: transparent;
-  transition: background 120ms ease, height 120ms ease;
+  transition: background var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease), height var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease);
 }
 
 .window-taskbar__indicator:hover {
@@ -852,7 +852,7 @@ button.window-taskbar__pill {
   text-align: left;
   cursor: pointer;
   box-shadow: none;
-  transition: border-color 120ms ease, background 120ms ease, color 120ms ease, transform 120ms ease;
+  transition: border-color var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease), background var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease), color var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease), transform var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease);
 }
 
 .start-menu-card--featured,
@@ -964,7 +964,7 @@ button.window-taskbar__pill {
   text-decoration: none;
   text-align: left;
   cursor: pointer;
-  transition: border-color 120ms ease, background 120ms ease;
+  transition: border-color var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease), background var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease);
 }
 
 .start-menu-strip-item:hover,
@@ -1029,7 +1029,7 @@ button.window-taskbar__pill {
   color: var(--cds-text-secondary, var(--text-secondary, #525252));
   flex-shrink: 0;
   opacity: 0.55;
-  transition: opacity 120ms ease, transform 120ms ease;
+  transition: opacity var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease), transform var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease);
 }
 
 .start-menu-strip-item:hover .start-menu-strip-item__arrow {
@@ -1510,7 +1510,7 @@ button.topbar-pro__latency-pressure:focus-visible {
   font-size: calc(var(--cds-label-01-font-size, 0.75rem) * var(--platform-menu-scale));
   font-weight: 600;
   cursor: pointer;
-  transition: border-color 120ms ease, background 120ms ease, color 120ms ease;
+  transition: border-color var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease), background var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease), color var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease);
 }
 
 .advanced-menu-control-panel__details-btn:hover,
