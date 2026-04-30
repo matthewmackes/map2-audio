@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1381** Python | **1364** TypeScript | **177** C++/H | **145** Docs | **3203** total commits | **3** stars | **0** forks | **0** open issues
+**1381** Python | **1366** TypeScript | **177** C++/H | **145** Docs | **3214** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
-| [`b2106b7e`](https://github.com/matthewmackes/map2-audio/commit/b2106b7ee87f229d05ade8b0af56c20a34a1e032) | worklist: roll up T2466 + T2473 progress through cycle 29 | Map2 Audio | 2026-04-30 |
-| [`4db874ac`](https://github.com/matthewmackes/map2-audio/commit/4db874ac4ebdf4607976ddeb1f1d0763e3a4c771) | T2473 (part 16): aggregate SnapshotEditorAuxModals | Map2 Audio | 2026-04-30 |
-| [`d148e141`](https://github.com/matthewmackes/map2-audio/commit/d148e1415631781c69125cf140217a72120756e6) | T2466-5: keyboard-focusable + focus-visible on ApiObserva... | Map2 Audio | 2026-04-30 |
-| [`220990f3`](https://github.com/matthewmackes/map2-audio/commit/220990f3dfb2b9e3a7e0f7418e66d595bb075546) | T2466-6: PluginBrowser inline-style transition tokens | Map2 Audio | 2026-04-30 |
-| [`a3aa37bf`](https://github.com/matthewmackes/map2-audio/commit/a3aa37bf37d64ea6c6de89ae64b9d7bc196dfa18) | T2466-4 + T2466-6: AudioMeteringCard tokens | Map2 Audio | 2026-04-30 |
-| [`7760eba6`](https://github.com/matthewmackes/map2-audio/commit/7760eba6c15534fd7051cd7bfe9d0963120a6b92) | T2466-3 (wiring): SnapshotEditorPerformOverlay reduced mo... | Map2 Audio | 2026-04-30 |
-| [`2a730b52`](https://github.com/matthewmackes/map2-audio/commit/2a730b529b79d6166a526184c0f9cf0d10483cca) | T2466-3: extend reduced-motion helpers with INSTANT_TRANS... | Map2 Audio | 2026-04-30 |
-| [`a2c9d76a`](https://github.com/matthewmackes/map2-audio/commit/a2c9d76ad467e44f52fdde3bdab12169cc75de28) | T2466-3 (wiring): Toasts stage gates use shouldReduceEffects | Map2 Audio | 2026-04-30 |
+| [`1330f2bc`](https://github.com/matthewmackes/map2-audio/commit/1330f2bca36a916e29556a57d2ae501278361205) | worklist: roll up T2466 + T2473 progress through cycle 39 | Map2 Audio | 2026-04-30 |
+| [`67f38eeb`](https://github.com/matthewmackes/map2-audio/commit/67f38eeb4d995cb1939852d16e545ed7789487ce) | T2466-6: carbonCardStyles + CrosshairOverlay easing tokens | Map2 Audio | 2026-04-30 |
+| [`cbd434d0`](https://github.com/matthewmackes/map2-audio/commit/cbd434d05238c1272b0144ded7e34af881596c45) | T2466-6: DownloadManager progress-bar transition tokens | Map2 Audio | 2026-04-30 |
+| [`66305a6d`](https://github.com/matthewmackes/map2-audio/commit/66305a6d48270f21c96b58d8c71336cbdf95a449) | T2473 (part 17): aggregate SnapshotEditorChainDialogs | Map2 Audio | 2026-04-30 |
+| [`0540588b`](https://github.com/matthewmackes/map2-audio/commit/0540588b37815044d132d70d092cf16f9da6498f) | T2466-5: focus-visible ring on Maschine LED-slider input | Map2 Audio | 2026-04-30 |
+| [`d6b56956`](https://github.com/matthewmackes/map2-audio/commit/d6b56956cc7993e121b759c330e7454401aea47a) | T2466-6: SidechainPanel + UnifiedUploadDialog inline tran... | Map2 Audio | 2026-04-30 |
+| [`5ada4d56`](https://github.com/matthewmackes/map2-audio/commit/5ada4d56608b7541504b5a2f9fb94dcdf3554db1) | T2466-6: StatusBadge transition tokens | Map2 Audio | 2026-04-30 |
+| [`15427981`](https://github.com/matthewmackes/map2-audio/commit/15427981ed361772ca0560da5ca0eb63f2558565) | T2466-4: Visualizations gray-scale literals → tokens | Map2 Audio | 2026-04-30 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
