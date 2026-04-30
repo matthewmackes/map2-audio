@@ -265,7 +265,7 @@ export function PluginCardShell({
           overflow: hidden;
           position: relative;
           isolation: isolate;
-          transition: border-color 0.2s ease, opacity 0.2s ease;
+          transition: border-color var(--map2-dur-base, 220ms) var(--map2-ease-in-out-rack, ease), opacity var(--map2-dur-base, 220ms) var(--map2-ease-in-out-rack, ease);
           color: var(--cds-text-primary, #f4f4f4);
         }
 
@@ -429,7 +429,7 @@ export function PluginCardShell({
           background: var(--cds-layer-hover);
           color: var(--cds-text-secondary, #c6c6c6);
           cursor: pointer;
-          transition: background-color 0.15s ease, border-color 0.15s ease, color 0.15s ease;
+          transition: background-color var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease), border-color var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease), color var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease);
         }
 
         .plugin-card-btn:hover {

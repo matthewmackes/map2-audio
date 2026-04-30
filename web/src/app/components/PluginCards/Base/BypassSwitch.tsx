@@ -92,7 +92,7 @@ export function BypassSwitch({
           border: none;
           background: transparent;
           cursor: pointer;
-          transition: opacity 0.15s ease;
+          transition: opacity var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease);
         }
 
         .bypass-switch-button:disabled {

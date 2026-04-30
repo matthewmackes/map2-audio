@@ -101,7 +101,7 @@ export function ParameterSection({
         .parameter-section.collapsible .parameter-section-header {
           cursor: pointer;
           user-select: none;
-          transition: background 0.15s ease;
+          transition: background var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease);
         }
 
         .parameter-section.collapsible .parameter-section-header:hover {
