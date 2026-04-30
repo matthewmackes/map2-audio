@@ -1,12 +1,11 @@
-/* Node Identity Card — D3 Hero Band (replaces the prior global-tree-nav node button).
-   Sits at the top of the global navigation rail, below the eyebrow + pin and above
-   the four reserved quick-action buttons. Click anywhere opens the node selector. */
+/* Node Identity Card — V4-A3 Numbered Ladder layout.
+   Sits at the top of the global navigation rail. Click anywhere opens the node selector.
+
+   Color rule: every accent flows through the platform theme tokens
+   (--support-success/warning/danger, --text-primary/secondary/tertiary,
+   --surface, --bg, --border, --focus-ring). No hard-coded colors. */
 
 .node-id-card {
-  /* The --nic-* token family is a thin alias layer over the platform theme
-     tokens so the card tracks the active theme. The defaults here track
-     the canonical theme tokens; the [data-status="..."] selectors below
-     supply only the live status accent (--nic-status). */
   --nic-status: var(--text-secondary);
   --nic-bg: var(--surface);
   --nic-bg-deep: var(--bg);
@@ -17,6 +16,9 @@
   --nic-text-meta: var(--text-tertiary);
   --nic-mono: ui-monospace, "IBM Plex Mono", "JetBrains Mono", monospace;
 
+  /* Pressure tone resolves to one of the theme support colors. */
+  --nic-pressure: var(--text-tertiary);
+
   appearance: none;
   display: block;
   width: 100%;
@@ -24,11 +26,14 @@
   padding: 0;
   background: var(--nic-bg);
   border: 1px solid var(--nic-border);
+  border-left: 3px solid var(--nic-pressure);
   color: var(--nic-text);
   font: inherit;
   text-align: left;
   cursor: pointer;
   transition: border-color 120ms ease;
+  overflow: hidden;
+  font-family: var(--plex-sans, "IBM Plex Sans", "Helvetica Neue", Arial, sans-serif);
 }
 
 .node-id-card:hover {
@@ -43,7 +48,13 @@
 .node-id-card[data-status="ok"]       { --nic-status: var(--support-success); }
 .node-id-card[data-status="warn"]     { --nic-status: var(--support-warning); }
 .node-id-card[data-status="critical"] { --nic-status: var(--support-danger); }
-.node-id-card[data-status="offline"]  { --nic-status: color-mix(in srgb, var(--text-tertiary) 70%, var(--surface)); }
+.node-id-card[data-status="offline"]  { --nic-status: var(--text-tertiary); }
+
+.node-id-card[data-pressure-tone="stable"]   { --nic-pressure: var(--support-success); }
+.node-id-card[data-pressure-tone="watch"]    { --nic-pressure: var(--support-warning); }
+.node-id-card[data-pressure-tone="critical"] { --nic-pressure: var(--support-danger); }
+.node-id-card[data-pressure-tone="offline"]  { --nic-pressure: var(--text-tertiary); }
+.node-id-card[data-pressure-tone="waiting"]  { --nic-pressure: var(--text-tertiary); }
 
 /* ── Eyebrow ───────────────────────────────────────────────────────────── */
 .node-id-card__eyebrow {
@@ -71,7 +82,6 @@
   font-weight: 500;
 }
 
-/* ── Status dot (pulses for active states) ─────────────────────────────── */
 .node-id-card__dot {
   display: inline-block;
   width: 6px;
@@ -80,10 +90,7 @@
   flex-shrink: 0;
 }
 
-/* T2474 B9: OK-state pulse retained as a calm "alive" indicator, but
- * switched from a radiating box-shadow ring (Q1=A retires glow halos)
- * to a flat opacity pulse on the dot itself. The motion is preserved;
- * the glow is removed. */
+/* OK-state pulse retained as a calm "alive" indicator. */
 .node-id-card[data-status="ok"] .node-id-card__dot {
   animation: nodeIdCardPulse 2.2s ease-in-out infinite;
 }
@@ -93,206 +100,253 @@
   50%      { opacity: 0.55; }
 }
 
-/* ── Hero band ─────────────────────────────────────────────────────────── */
-.node-id-card__hero {
-  position: relative;
-  background: var(--nic-bg-deep);
-  display: flex;
+/* ── Header row: HOST · ROLE ──────────────────────────────────────────── */
+.node-id-card__head {
+  display: grid;
+  grid-template-columns: 1fr auto auto;
+  align-items: baseline;
+  gap: 10px;
+  padding: 10px 12px 10px 14px;
+  border-bottom: 1px solid var(--nic-border);
+  font-family: var(--nic-mono);
+}
+
+.node-id-card__host {
+  display: inline-flex;
   align-items: center;
-  justify-content: center;
-  /* Frame accent: 1px border in status color, inset 8px (matches design D3 frame). */
-  border: 1px solid var(--nic-status);
-  margin: 8px;
-  padding: 0;
-  /* Option 1: square hero band. KV plate / CPU·MEM overlay remain
-   * absolutely positioned over the bottom half (see __info below). */
-  aspect-ratio: 1 / 1;
+  gap: 6px;
+  font-size: 12px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  color: var(--nic-text);
+  min-width: 0;
+}
+
+.node-id-card__host > span:last-child {
+  white-space: nowrap;
   overflow: hidden;
+  text-overflow: ellipsis;
 }
 
-/* Hero mark: small, left-anchored, hugging the right edge of the
- * vertical title strip (which sits at left: 6px, width: 18px → ends at 24px). */
-.node-id-card__hero-mark {
-  position: absolute;
-  left: 26px;
-  top: 30px;
-  width: 24px;
-  height: 24px;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  padding: 0;
-  z-index: 2;
-}
-
-.node-id-card__hero-mark svg {
-  width: 100%;
-  height: 100%;
+.node-id-card__head-mark {
+  width: 14px;
+  height: 14px;
+  flex-shrink: 0;
+  display: inline-block;
+  vertical-align: middle;
   pointer-events: none;
   user-select: none;
 }
 
-/* Role chip (top-left of hero band) */
-.node-id-card__role-chip {
-  position: absolute;
-  top: 8px;
-  left: 32px;
-  padding: 2px 6px;
-  border: 1px solid var(--nic-status);
-  background: color-mix(in srgb, var(--nic-bg-deep) 75%, transparent);
-  color: var(--nic-status);
-  font-family: var(--nic-mono);
-  font-size: 9px;
-  letter-spacing: 0.06em;
+.node-id-card__role {
+  font-size: 10px;
+  letter-spacing: 0.08em;
+  color: var(--nic-text-meta);
   text-transform: uppercase;
-  z-index: 2;
 }
 
-/* Caret (top-right of hero band) */
 .node-id-card__caret {
-  position: absolute;
-  top: 8px;
-  right: 10px;
   font-family: var(--nic-mono);
   font-size: 10px;
   color: var(--nic-text-meta);
   transition: transform 160ms ease;
-  z-index: 2;
 }
 
 .node-id-card[aria-expanded="true"] .node-id-card__caret {
   transform: rotate(180deg);
 }
 
-/* Vertical node ID — runs up the left edge of the hero band */
-.node-id-card__vertical-id {
-  position: absolute;
-  left: 6px;
-  top: 8px;
-  bottom: 8px;
-  width: 18px;
+/* ── Pressure block ───────────────────────────────────────────────────── */
+.node-id-card__press {
+  padding: 12px 14px;
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.node-id-card__press-top {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.node-id-card__press-label {
+  font-family: var(--nic-mono);
+  font-size: 9px;
+  letter-spacing: 0.14em;
+  color: var(--nic-text-meta);
+}
+
+.node-id-card__press-tag {
+  font-family: var(--nic-mono);
+  font-size: 10px;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  color: var(--nic-pressure);
+}
+
+.node-id-card__press-bottom {
+  display: flex;
+  justify-content: space-between;
+  align-items: baseline;
+}
+
+.node-id-card__press-num {
+  font-family: var(--plex-sans, "IBM Plex Sans", "Helvetica Neue", Arial, sans-serif);
+  font-size: 28px;
+  font-weight: 300;
+  letter-spacing: -0.03em;
+  line-height: 1;
+  font-variant-numeric: tabular-nums;
+  color: var(--nic-pressure);
+}
+
+.node-id-card__press-denom {
+  font-family: var(--nic-mono);
+  font-size: 13px;
+  font-weight: 400;
+  margin-left: 1px;
+  color: var(--nic-text-meta);
+}
+
+.node-id-card__press-axis {
+  font-family: var(--nic-mono);
+  font-size: 9px;
+  letter-spacing: 0.1em;
+  color: var(--nic-text-meta);
+}
+
+/* ── Numbered ladder (10 steps, 1 worst → 10 best) ─────────────────────── */
+.node-id-card__ladder {
+  display: grid;
+  grid-template-columns: repeat(10, 1fr);
+  gap: 3px;
+}
+
+.node-id-card__ladder-step {
+  position: relative;
   display: flex;
   align-items: center;
   justify-content: center;
-  pointer-events: none;
-  overflow: hidden;
-  z-index: 2;
+  height: 28px;
+  border: 1px solid var(--nic-border);
+  background: transparent;
+  transition: background 200ms ease, border-color 200ms ease;
 }
 
-.node-id-card__vertical-id-text {
-  transform: rotate(-90deg);
-  white-space: nowrap;
-  font-size: 13px;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-  color: var(--nic-text);
-  text-shadow: 0 1px 6px color-mix(in srgb, var(--nic-bg-deep) 85%, transparent);
-  line-height: 1;
+.node-id-card__ladder-step[data-filled="true"] {
+  background: var(--nic-pressure);
+  border-color: var(--nic-pressure);
 }
 
-/* Bottom info zone — KV plate + CPU/MEM overlay, anchored to bottom */
-.node-id-card__info {
-  position: absolute;
-  left: 36px;
-  right: 12px;
-  bottom: 10px;
-  display: grid;
-  gap: 8px;
-  z-index: 2;
-}
-
-.node-id-card__overlay {
-  display: grid;
-  grid-template-columns: 1fr 1fr;
-  gap: 8px;
-}
-
-.node-id-card__plate {
-  display: grid;
-  gap: 3px;
-  /* T2474 B9: Removed backdrop-filter blur(2px) per Q1=A
-   * (no glassmorphism). Now a flat opaque plate. */
-  background: var(--nic-bg-deep);
-  padding: 6px 8px;
-}
-
-.node-id-card__kv {
-  display: flex;
-  align-items: baseline;
-  justify-content: space-between;
-  gap: 8px;
-}
-
-.node-id-card__kv-key {
+.node-id-card__ladder-num {
   font-family: var(--nic-mono);
   font-size: 9px;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
+  font-weight: 600;
   color: var(--nic-text-meta);
 }
 
-.node-id-card__kv-value {
-  font-family: var(--nic-mono);
-  font-size: 10px;
-  letter-spacing: 0.04em;
-  text-transform: uppercase;
-  color: var(--nic-text);
-  font-variant-numeric: tabular-nums;
-  text-align: right;
+.node-id-card__ladder-step[data-filled="true"] .node-id-card__ladder-num {
+  color: var(--nic-bg-deep);
 }
 
-.node-id-card__kv-value--score-stable   { color: var(--support-success); }
-.node-id-card__kv-value--score-watch    { color: var(--support-warning); }
-.node-id-card__kv-value--score-critical { color: var(--support-danger); }
-.node-id-card__kv-value--score-offline  { color: var(--support-danger); }
-.node-id-card__kv-value--score-waiting  { color: var(--nic-text-meta); }
-
-.node-id-card__kv-status {
-  margin-left: 6px;
-  color: var(--nic-text-meta);
-}
-
-/* CPU/MEM mini overlay tiles */
-.node-id-card__res-mini {
-  background: color-mix(in srgb, var(--nic-bg-deep) 75%, transparent);
-  border: 1px solid currentColor;
-  padding: 3px 6px;
-  /* currentColor is overridden inline via --nic-mini-fill */
-}
-
-.node-id-card__res-mini-row {
+/* ── XRUNS callout ─────────────────────────────────────────────────────── */
+.node-id-card__xrun {
   display: flex;
   align-items: baseline;
-  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 14px;
+  border-top: 1px solid var(--nic-border);
+  border-bottom: 1px solid var(--nic-border);
+  background: var(--nic-bg-deep);
 }
 
-.node-id-card__res-mini-label {
+.node-id-card__xrun-label {
   font-family: var(--nic-mono);
-  font-size: 8px;
-  letter-spacing: 0.06em;
-  text-transform: uppercase;
-  color: var(--nic-text-dim);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  color: var(--nic-text-meta);
 }
 
-.node-id-card__res-mini-value {
-  font-family: var(--nic-mono);
-  font-size: 11px;
-  color: var(--nic-text);
+.node-id-card__xrun-num {
+  font-family: var(--plex-sans, "IBM Plex Sans", "Helvetica Neue", Arial, sans-serif);
+  font-size: 36px;
+  font-weight: 200;
+  letter-spacing: -0.03em;
+  line-height: 0.9;
   font-variant-numeric: tabular-nums;
+  color: var(--support-success);
 }
 
-.node-id-card__res-mini-value-pct {
-  font-size: 8px;
-  color: var(--nic-text-dim);
-  margin-left: 1px;
+.node-id-card__xrun[data-clean="false"] .node-id-card__xrun-num {
+  color: var(--support-warning);
 }
 
-.node-id-card__res-mini-bar {
-  height: 2px;
-  background: color-mix(in srgb, var(--nic-text) 8%, transparent);
-  margin-top: 2px;
+.node-id-card__xrun-tag {
+  margin-left: auto;
+  font-family: var(--nic-mono);
+  font-size: 10px;
+  letter-spacing: 0.1em;
+  text-transform: uppercase;
+  color: var(--support-success);
 }
 
-.node-id-card__res-mini-bar-fill {
-  height: 100%;
+.node-id-card__xrun[data-clean="false"] .node-id-card__xrun-tag {
+  color: var(--support-warning);
 }
+
+/* When xrun count is high (≥5), escalate to danger via inline data. */
+.node-id-card[data-status="critical"] .node-id-card__xrun-num,
+.node-id-card[data-status="critical"] .node-id-card__xrun-tag {
+  color: var(--support-danger);
+}
+
+/* ── Offline / waiting placeholder strip ───────────────────────────────── */
+.node-id-card__placeholder {
+  padding: 16px 14px;
+  background: var(--nic-bg-deep);
+  border-bottom: 1px solid var(--nic-border);
+  font-family: var(--nic-mono);
+  font-size: 10px;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--nic-text-meta);
+  text-align: center;
+}
+
+/* ── Footer chips: CPU · MEM · LAT ─────────────────────────────────────── */
+.node-id-card__secondary {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+}
+
+.node-id-card__chip {
+  display: flex;
+  align-items: baseline;
+  gap: 6px;
+  padding: 8px 12px;
+  border-right: 1px solid var(--nic-border);
+  font-family: var(--nic-mono);
+}
+
+.node-id-card__chip:last-child {
+  border-right: none;
+}
+
+.node-id-card__chip-label {
+  font-size: 9px;
+  letter-spacing: 0.12em;
+  color: var(--nic-text-meta);
+}
+
+.node-id-card__chip-value {
+  font-size: 12px;
+  font-weight: 600;
+  font-variant-numeric: tabular-nums;
+  margin-left: auto;
+  color: var(--nic-text);
+}
+
+.node-id-card__chip[data-tone="warning"] .node-id-card__chip-value { color: var(--support-warning); }
+.node-id-card__chip[data-tone="danger"]  .node-id-card__chip-value { color: var(--support-danger); }
+.node-id-card__chip[data-tone="muted"]   .node-id-card__chip-value { color: var(--nic-text-meta); }

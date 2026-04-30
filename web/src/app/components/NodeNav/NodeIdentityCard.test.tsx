@@ -11,8 +11,8 @@ const baseNode: NodeSummary = {
   display_label: 'MAP2-TESTBED',
   role: 'all_in_one',
   status: 'ok',
-  cpu_percent: 12,
-  memory_percent: 22,
+  cpu_percent: 62,
+  memory_percent: 94,
   xrun_count: 0,
   audio_latency_ms: 1.33,
   services: { backend: true, juce_engine: true, pipewire: true },
@@ -24,32 +24,93 @@ const baseNode: NodeSummary = {
   is_viewed: true,
 }
 
-describe('NodeIdentityCard', () => {
-  it('renders the hero card with HOST/ROLE/LATENCY/XRUNS/LAT PRESS plate', () => {
+describe('NodeIdentityCard (V4-A3 Numbered Ladder)', () => {
+  it('renders the eyebrow, header host/role, ladder, xrun callout and footer chips', () => {
     const onToggle = jest.fn()
-    render(<NodeIdentityCard node={baseNode} isOpen={false} onToggle={onToggle} />)
+    const { container } = render(
+      <NodeIdentityCard node={baseNode} isOpen={false} onToggle={onToggle} />,
+    )
 
     const card = screen.getByRole('button', { name: /Node map2-host \(MAP2-TESTBED\)/i })
     expect(card).toHaveAttribute('aria-expanded', 'false')
     expect(card).toHaveAttribute('data-status', 'ok')
-    expect(card).toHaveTextContent('HOST')
-    expect(card).toHaveTextContent('map2-host')
-    expect(card).toHaveTextContent('ROLE')
-    expect(card).toHaveTextContent('LATENCY')
-    expect(card).toHaveTextContent('1.33 ms')
-    expect(card).toHaveTextContent('XRUNS')
+    expect(card).toHaveAttribute('data-pressure-tone', 'stable')
+
+    // Eyebrow strip retained.
+    expect(card).toHaveTextContent('Current Node in View')
+    expect(card).toHaveTextContent('OK')
+
+    // Header row: host + role.
+    expect(card).toHaveTextContent('map2-host (MAP2-TESTBED)')
+    expect(card).toHaveTextContent('ALL-IN-ONE')
+
+    // Pressure block.
     expect(card).toHaveTextContent('LAT PRESS')
-    expect(card).toHaveTextContent('10/10')
     expect(card).toHaveTextContent('STABLE')
+    expect(card).toHaveTextContent('10')
+    expect(card).toHaveTextContent('/10')
+    expect(card).toHaveTextContent('1 worst → 10 best')
+
+    // 10 ladder steps, all filled at score 10.
+    const steps = container.querySelectorAll('.node-id-card__ladder-step')
+    expect(steps.length).toBe(10)
+    expect(
+      Array.from(steps).filter((s) => s.getAttribute('data-filled') === 'true').length,
+    ).toBe(10)
+
+    // XRUNS callout.
+    expect(card).toHaveTextContent('XRUNS')
+    expect(card).toHaveTextContent('NO DROPOUTS')
+
+    // Footer chips.
+    expect(card).toHaveTextContent('CPU')
+    expect(card).toHaveTextContent('62%')
+    expect(card).toHaveTextContent('MEM')
+    expect(card).toHaveTextContent('94%')
+    expect(card).toHaveTextContent('LAT')
+    expect(card).toHaveTextContent('1.33ms')
   })
 
-  it('hides CPU/MEM resources when the node is offline (no live data)', () => {
+  it('fills the correct number of ladder steps for a watch-state score of 6', () => {
+    const watch: NodeSummary = {
+      ...baseNode,
+      status: 'warn',
+      cpu_percent: 71,
+      memory_percent: 78,
+      audio_latency_ms: 4.7,
+      xrun_count: 3,
+      latency_pressure_score: 6,
+      latency_pressure_status: 'watch',
+    }
+
+    const { container } = render(
+      <NodeIdentityCard node={watch} isOpen={false} onToggle={jest.fn()} />,
+    )
+
+    const card = container.querySelector('.node-id-card')!
+    expect(card).toHaveAttribute('data-status', 'warn')
+    expect(card).toHaveAttribute('data-pressure-tone', 'watch')
+
+    const steps = container.querySelectorAll('.node-id-card__ladder-step')
+    expect(steps.length).toBe(10)
+    expect(
+      Array.from(steps).filter((s) => s.getAttribute('data-filled') === 'true').length,
+    ).toBe(6)
+
+    expect(card).toHaveTextContent('WATCH')
+    expect(card).toHaveTextContent('3')
+    expect(card).toHaveTextContent('DROPOUTS')
+    expect(card).toHaveTextContent('4.70ms')
+  })
+
+  it('renders the offline placeholder and dashes the footer chips when status is offline', () => {
     const offline: NodeSummary = {
       ...baseNode,
       status: 'offline',
       cpu_percent: 0,
       memory_percent: 0,
       audio_latency_ms: 0,
+      xrun_count: 0,
       latency_pressure_score: 0,
       latency_pressure_percent: 100,
       latency_pressure_status: 'offline',
@@ -58,25 +119,34 @@ describe('NodeIdentityCard', () => {
     const { container } = render(
       <NodeIdentityCard node={offline} isOpen={false} onToggle={jest.fn()} />,
     )
+
     const card = container.querySelector('.node-id-card')!
     expect(card).toHaveAttribute('data-status', 'offline')
-    expect(card).toHaveAttribute('data-resources-overlay', 'false')
-    expect(container.querySelector('.node-id-card__overlay')).toBeNull()
-    expect(card).toHaveTextContent('00/10')
-    expect(card).toHaveTextContent('OFFLINE')
+    expect(card).toHaveAttribute('data-pressure-tone', 'offline')
+
+    // Ladder + xrun callout are hidden.
+    expect(container.querySelector('.node-id-card__ladder')).toBeNull()
+    expect(container.querySelector('.node-id-card__xrun')).toBeNull()
+
+    // Placeholder strip is shown.
+    expect(container.querySelector('.node-id-card__placeholder')).not.toBeNull()
+    expect(card).toHaveTextContent('NODE OFFLINE')
+
+    // Footer chips show em-dashes.
+    const chipValues = Array.from(container.querySelectorAll('.node-id-card__chip-value')).map(
+      (el) => el.textContent,
+    )
+    expect(chipValues).toEqual(['—', '—', '—'])
   })
 
   it('renders a placeholder card when no node is available', () => {
-    render(<NodeIdentityCard node={null} isOpen={false} onToggle={jest.fn()} loadingLabel="LOADING" />)
-    expect(screen.getByRole('button', { name: 'Node discovery unavailable' })).toBeInTheDocument()
-    expect(screen.getByText('LOADING')).toBeInTheDocument()
-  })
-
-  it('toggles via click', () => {
-    const onToggle = jest.fn()
-    render(<NodeIdentityCard node={baseNode} isOpen={false} onToggle={onToggle} />)
-    fireEvent.click(screen.getByRole('button', { name: /Node map2-host/i }))
-    expect(onToggle).toHaveBeenCalledTimes(1)
+    const { container } = render(
+      <NodeIdentityCard node={null} isOpen={false} onToggle={jest.fn()} loadingLabel="LOADING" />,
+    )
+    const card = screen.getByRole('button', { name: 'Node discovery unavailable' })
+    expect(card).toBeInTheDocument()
+    expect(screen.getByText('LOADING', { selector: '.node-id-card__eyebrow-status' })).toBeInTheDocument()
+    expect(container.querySelector('.node-id-card__placeholder')).not.toBeNull()
   })
 
   it('falls back to WAITING when latency pressure is missing on the payload', () => {
@@ -86,9 +156,22 @@ describe('NodeIdentityCard', () => {
       latency_pressure_percent: undefined,
       latency_pressure_status: undefined,
     }
-    render(<NodeIdentityCard node={partial} isOpen={false} onToggle={jest.fn()} />)
-    const card = screen.getByRole('button', { name: /Node map2-host/i })
-    expect(card).toHaveTextContent('--/10')
+    const { container } = render(
+      <NodeIdentityCard node={partial} isOpen={false} onToggle={jest.fn()} />,
+    )
+    const card = container.querySelector('.node-id-card')!
+    expect(card).toHaveAttribute('data-pressure-tone', 'waiting')
     expect(card).toHaveTextContent('WAITING')
+    // Ladder/xrun hidden, placeholder shown.
+    expect(container.querySelector('.node-id-card__ladder')).toBeNull()
+    expect(container.querySelector('.node-id-card__xrun')).toBeNull()
+    expect(container.querySelector('.node-id-card__placeholder')).not.toBeNull()
+  })
+
+  it('toggles via click', () => {
+    const onToggle = jest.fn()
+    render(<NodeIdentityCard node={baseNode} isOpen={false} onToggle={onToggle} />)
+    fireEvent.click(screen.getByRole('button', { name: /Node map2-host/i }))
+    expect(onToggle).toHaveBeenCalledTimes(1)
   })
 })
