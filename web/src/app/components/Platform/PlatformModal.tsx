@@ -66,6 +66,7 @@ import {
 } from '../../hooks/useNodeOperations'
 import { makePendingUpdateApplicationSteps } from '../../hooks/updateApplicationProgressModel'
 import { usePlatformShellData } from '../../hooks/usePlatformShellData'
+import { useReducedEffectsPreference } from '../../hooks/useReducedEffectsPreference'
 import { useNodeTopology } from '../../hooks/useNodeTopology'
 import { useViewedNode } from '../../stores/viewedNodeStore'
 import type {
@@ -467,10 +468,12 @@ function LayerDataTable({ layer, onRowSelect, selectedRowId }: {
 
 function StandaloneWorkspace({ panel }: { panel: StandalonePanel }) {
   const { label, eyebrow, icon: Icon } = STANDALONE_META[panel]
+  // T2466-3: respect reduced motion on the workspace fade-in.
+  const { shouldReduceEffects } = useReducedEffectsPreference()
   return (
     <motion.section key={panel} className={`platform-shell__workspace platform-shell__workspace--standalone platform-shell__workspace--${panel}`}
       initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}
-      transition={{ duration: 0.18, ease: 'easeOut' }}
+      transition={shouldReduceEffects ? { duration: 0 } : { duration: 0.18, ease: 'easeOut' }}
     >
       <div className="platform-shell__ws-header">
         <span className="platform-shell__ws-header-icon" aria-hidden><Icon size={20} /></span>
@@ -880,11 +883,13 @@ function LayerWorkspace({ layer, alerts, onDismissAlert }: {
   const isManagementLayer = layer.id === 'management'
   const isNetworkDiscoveryLayer = layer.id === 'network-discovery'
   const overviewGrafanaPanels = buildOverviewGrafanaPanels(layer)
+  // T2466-3: respect reduced motion on the layer-switch fade.
+  const { shouldReduceEffects } = useReducedEffectsPreference()
 
   return (
     <motion.section key={layer.id} className="platform-shell__workspace"
       initial={{ opacity: 0, y: 12 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: -8 }}
-      transition={{ duration: 0.18, ease: 'easeOut' }}
+      transition={shouldReduceEffects ? { duration: 0 } : { duration: 0.18, ease: 'easeOut' }}
     >
       <div className="platform-shell__ws-header">
         <span className="platform-shell__ws-header-icon" aria-hidden><Icon size={20} /></span>
@@ -955,6 +960,8 @@ export function PlatformModalContent({
   const animationState = usePlatformAnimationState()
   const { openLayer, closeLayer, clearAnimation, setAlerts, setLayerHealth, setSummaryMetrics, dismissAlert } = usePlatformActions()
   const _summaryMetrics = usePlatformSummaryMetrics()
+  // T2466-3: respect reduced motion on the empty-state fade.
+  const { shouldReduceEffects } = useReducedEffectsPreference()
 
   const [activePanel, setActivePanel] = useState<StandalonePanel | null>(initialPanel ?? null)
 
@@ -1042,7 +1049,7 @@ export function PlatformModalContent({
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
               exit={{ opacity: 0 }}
-              transition={{ duration: 0.16, ease: 'easeOut' }}
+              transition={shouldReduceEffects ? { duration: 0 } : { duration: 0.16, ease: 'easeOut' }}
             >
               <div className="platform-shell__table-state">
                 <LoadingState description="Loading platform workspace" />
