@@ -211,7 +211,6 @@ import {
   type SnapshotIoModalState,
 } from '../utils/snapshotIoBindings'
 import { applyFlowSlotUpdate } from '../utils/snapshotFlowSlots'
-import { JuceGridAudioPortModal } from '../components/modals/JuceGridAudioPortModal'
 import { JuceGridSelectedBlockMidiPanel } from '../components/SnapshotEditor/SnapshotEditorSelectedBlockMidiPanel'
 import { SnapshotPreloadSlotsPanel } from '../components/SnapshotEditor/SnapshotPreloadSlotsPanel'
 import { decidePreloadGate } from '../components/SnapshotEditor/snapshotEditorPreloadGate'
@@ -359,7 +358,6 @@ import {
   SLOT_COLORS,
 } from './snapshotEditor/snapshotEditorBootstrap'
 import { API_BASE } from './snapshotEditor/snapshotEditorApi'
-import { SnapshotEditorLanePicker } from './snapshotEditor/SnapshotEditorLanePicker'
 import { SnapshotEditorPresetBrowser } from './snapshotEditor/SnapshotEditorPresetBrowser'
 import { SnapshotEditorPluginBrowser } from './snapshotEditor/SnapshotEditorPluginBrowser'
 import { SnapshotEditorCompactPanels } from './snapshotEditor/SnapshotEditorCompactPanels'
@@ -368,6 +366,7 @@ import { SnapshotEditorWorkspaceModals } from './snapshotEditor/SnapshotEditorWo
 import { SnapshotEditorAuxModals } from './snapshotEditor/SnapshotEditorAuxModals'
 import { SnapshotEditorChainDialogs } from './snapshotEditor/SnapshotEditorChainDialogs'
 import { SnapshotEditorMidiMappingsModal } from './snapshotEditor/SnapshotEditorMidiMappingsModal'
+import { SnapshotEditorRoutingModals } from './snapshotEditor/SnapshotEditorRoutingModals'
 import { SnapshotEditorRoutingInspector } from './snapshotEditor/SnapshotEditorRoutingInspector'
 
 // API_BASE lives in ./snapshotEditor/snapshotEditorApi (T2467 follow-up).
@@ -8400,14 +8399,6 @@ export function SnapshotEditorPage() {
         }}
       />
 
-      {/* Lane Picker Modal */}
-      <SnapshotEditorLanePicker
-        open={lanePickerOpen}
-        currentChain={currentChain}
-        existingLaneCount={automationLanes.length}
-        onClose={() => setLanePickerOpen(false)}
-        onAddLane={(lane) => setAutomationLanes((prev) => [...prev, lane])}
-      />
 
       {/* Automation Timeline Bottom Panel */}
       {automationTimelineExpanded && (
@@ -8428,14 +8419,24 @@ export function SnapshotEditorPage() {
         title={automationFloatingToggleTitle}
       />
 
-      {/* Unified Audio Port Selector — per-flow or global */}
-      <JuceGridAudioPortModal
-        open={portSelectorFlowIndex !== null}
-        onClose={() => setPortSelectorFlowIndex(null)}
-        chainId={portSelectorFlowIndex !== null ? flowSlots[portSelectorFlowIndex]?.chainId : null}
-        flowLabel={portSelectorFlowIndex !== null ? (SLOT_COLORS[portSelectorFlowIndex]?.label || '') : undefined}
-        flowColor={portSelectorFlowIndex !== null ? (SLOT_COLORS[portSelectorFlowIndex]?.color || '#2563eb') : undefined}
-        readOnly={snapshotEditorMutationDisabled}
+      <SnapshotEditorRoutingModals
+        lanePickerOpen={lanePickerOpen}
+        lanePickerChain={currentChain}
+        lanePickerExistingLaneCount={automationLanes.length}
+        onCloseLanePicker={() => setLanePickerOpen(false)}
+        onAddLane={(lane) => setAutomationLanes((prev) => [...prev, lane])}
+        portSelectorOpen={portSelectorFlowIndex !== null}
+        portSelectorChainId={
+          portSelectorFlowIndex !== null ? flowSlots[portSelectorFlowIndex]?.chainId : null
+        }
+        portSelectorFlowLabel={
+          portSelectorFlowIndex !== null ? (SLOT_COLORS[portSelectorFlowIndex]?.label || '') : undefined
+        }
+        portSelectorFlowColor={
+          portSelectorFlowIndex !== null ? (SLOT_COLORS[portSelectorFlowIndex]?.color || '#2563eb') : undefined
+        }
+        portSelectorReadOnly={snapshotEditorMutationDisabled}
+        onClosePortSelector={() => setPortSelectorFlowIndex(null)}
         onPortsChange={() => {
           queryClient.invalidateQueries({ queryKey: ['audio', 'routing'] })
           const label = portSelectorFlowIndex !== null ? SLOT_COLORS[portSelectorFlowIndex]?.label : ''
