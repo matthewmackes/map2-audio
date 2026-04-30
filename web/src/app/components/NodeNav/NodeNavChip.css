@@ -69,7 +69,7 @@
   background: color-mix(in srgb, var(--cds-layer-hover) 84%, transparent);
   color: var(--cds-text-primary);
   cursor: pointer;
-  transition: border-color 120ms ease, background 120ms ease, box-shadow 120ms ease, color 120ms ease;
+  transition: border-color var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease), background var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease), box-shadow var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease), color var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease);
 }
 
 .node-nav-chip:hover,

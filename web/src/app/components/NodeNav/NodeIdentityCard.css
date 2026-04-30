@@ -31,7 +31,7 @@
   font: inherit;
   text-align: left;
   cursor: pointer;
-  transition: border-color 120ms ease;
+  transition: border-color var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease);
   overflow: hidden;
   font-family: var(--plex-sans, "IBM Plex Sans", "Helvetica Neue", Arial, sans-serif);
 }
@@ -149,7 +149,7 @@
   font-family: var(--nic-mono);
   font-size: 10px;
   color: var(--nic-text-meta);
-  transition: transform 160ms ease;
+  transition: transform var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease);
 }
 
 .node-id-card[aria-expanded="true"] .node-id-card__caret {
@@ -231,7 +231,7 @@
   height: 28px;
   border: 1px solid var(--nic-border);
   background: transparent;
-  transition: background 200ms ease, border-color 200ms ease;
+  transition: background var(--map2-dur-base, 220ms) var(--map2-ease-in-out-rack, ease), border-color var(--map2-dur-base, 220ms) var(--map2-ease-in-out-rack, ease);
 }
 
 .node-id-card__ladder-step[data-filled="true"] {
