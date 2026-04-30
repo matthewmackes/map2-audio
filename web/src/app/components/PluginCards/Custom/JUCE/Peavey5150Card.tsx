@@ -267,7 +267,12 @@ function Peavey5150CardBase({
         </select>
       </div>
       {currentPreset.description && (
-        <div style={{ fontSize: '11px', color: '#888', padding: '0 8px 4px', fontStyle: 'italic' }}>
+        <div style={{
+          fontSize: '11px',
+          color: 'var(--cds-text-secondary, #888)',
+          padding: '0 8px 4px',
+          fontStyle: 'italic',
+        }}>
           {currentPreset.description}
         </div>
       )}
@@ -288,7 +293,13 @@ function Peavey5150CardBase({
 
   // Footer with sag/CPU info as extra content
   const extraContent = (
-    <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 8px', fontSize: '10px', color: '#888' }}>
+    <div style={{
+      display: 'flex',
+      justifyContent: 'space-between',
+      padding: '4px 8px',
+      fontSize: '10px',
+      color: 'var(--cds-text-secondary, #888)',
+    }}>
       <span>SAG: {(metering.supplySag * 100).toFixed(0)}%</span>
       <span>CPU: {metering.cpuLoad.toFixed(0)}%</span>
     </div>

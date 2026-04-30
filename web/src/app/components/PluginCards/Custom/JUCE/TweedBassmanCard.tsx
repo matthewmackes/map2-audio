@@ -436,7 +436,7 @@ function TweedBassmanCardBase({
       children: (
         <div className="carbon-param-row">
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px', width: '100%' }}>
-            <label style={{ fontSize: '12px', color: '#c6c6c6', minWidth: '80px' }}>Bright Vol</label>
+            <label style={{ fontSize: '12px', color: 'var(--cds-text-primary, #c6c6c6)', minWidth: '80px' }}>Bright Vol</label>
             <NumberInput
               label="Bright Vol"
               value={brightVolumeSlot.value}
@@ -451,7 +451,7 @@ function TweedBassmanCardBase({
               style={{ flex: 1 }}
               onChange={brightVolumeSlot.onChange}
             />
-            <span style={{ fontSize: '11px', color: '#888', minWidth: '30px' }}>{brightVolumeSlot.value.toFixed(1)}</span>
+            <span style={{ fontSize: '11px', color: 'var(--cds-text-secondary, #888)', minWidth: '30px' }}>{brightVolumeSlot.value.toFixed(1)}</span>
           </div>
         </div>
       ),
@@ -477,7 +477,7 @@ function TweedBassmanCardBase({
       children: (
         <div style={{ display: 'flex', flexDirection: 'column', gap: '8px' }}>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <label style={{ fontSize: '12px', color: '#c6c6c6', minWidth: '100px' }}>V1 Tube</label>
+            <label style={{ fontSize: '12px', color: 'var(--cds-text-primary, #c6c6c6)', minWidth: '100px' }}>V1 Tube</label>
             <select
               className="carbon-select"
               value={parameters.v1TubeType}
@@ -489,7 +489,7 @@ function TweedBassmanCardBase({
             </select>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <label style={{ fontSize: '12px', color: '#c6c6c6', minWidth: '100px' }}>Power Tubes</label>
+            <label style={{ fontSize: '12px', color: 'var(--cds-text-primary, #c6c6c6)', minWidth: '100px' }}>Power Tubes</label>
             <select
               className="carbon-select"
               value={parameters.powerTubeType}
@@ -501,7 +501,7 @@ function TweedBassmanCardBase({
             </select>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <label style={{ fontSize: '12px', color: '#c6c6c6', minWidth: '100px' }}>Cathode Bias</label>
+            <label style={{ fontSize: '12px', color: 'var(--cds-text-primary, #c6c6c6)', minWidth: '100px' }}>Cathode Bias</label>
             <select
               className="carbon-select"
               value={parameters.cathodeBias}
@@ -513,7 +513,7 @@ function TweedBassmanCardBase({
             </select>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <label style={{ fontSize: '12px', color: '#c6c6c6', minWidth: '100px' }}>Rectifier</label>
+            <label style={{ fontSize: '12px', color: 'var(--cds-text-primary, #c6c6c6)', minWidth: '100px' }}>Rectifier</label>
             <select
               className="carbon-select"
               value={parameters.rectifierType}
@@ -525,7 +525,7 @@ function TweedBassmanCardBase({
             </select>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <label style={{ fontSize: '12px', color: '#c6c6c6', minWidth: '100px' }}>NFB Mode</label>
+            <label style={{ fontSize: '12px', color: 'var(--cds-text-primary, #c6c6c6)', minWidth: '100px' }}>NFB Mode</label>
             <select
               className="carbon-select"
               value={parameters.nfbMode}
@@ -537,7 +537,7 @@ function TweedBassmanCardBase({
             </select>
           </div>
           <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-            <label style={{ fontSize: '12px', color: '#c6c6c6', minWidth: '100px' }}>Bias Mode</label>
+            <label style={{ fontSize: '12px', color: 'var(--cds-text-primary, #c6c6c6)', minWidth: '100px' }}>Bias Mode</label>
             <select
               className="carbon-select"
               value={parameters.biasMode}
@@ -574,7 +574,7 @@ function TweedBassmanCardBase({
           </button>
           {parameters.cabinetEnabled && (
             <div style={{ display: 'flex', alignItems: 'center', gap: '12px' }}>
-              <label style={{ fontSize: '12px', color: '#c6c6c6', minWidth: '100px' }}>Cabinet IR</label>
+              <label style={{ fontSize: '12px', color: 'var(--cds-text-primary, #c6c6c6)', minWidth: '100px' }}>Cabinet IR</label>
               <select
                 className="carbon-select"
                 value={parameters.cabinetIR}
@@ -609,7 +609,7 @@ function TweedBassmanCardBase({
         </select>
       </div>
       {currentPreset.description && (
-        <div style={{ fontSize: '11px', color: '#888', padding: '0 8px 4px', fontStyle: 'italic' }}>
+        <div style={{ fontSize: '11px', color: 'var(--cds-text-secondary, #888)', padding: '0 8px 4px', fontStyle: 'italic' }}>
           {currentPreset.description}
         </div>
       )}
@@ -644,7 +644,7 @@ function TweedBassmanCardBase({
 
   // Footer with sag/CPU info as extra content
   const extraContent = (
-    <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 8px', fontSize: '10px', color: '#888' }}>
+    <div style={{ display: 'flex', justifyContent: 'space-between', padding: '4px 8px', fontSize: '10px', color: 'var(--cds-text-secondary, #888)' }}>
       <span>SAG: {(metering.supplySag * 100).toFixed(0)}%</span>
       <span>CPU: {metering.cpuLoad.toFixed(0)}%</span>
     </div>
