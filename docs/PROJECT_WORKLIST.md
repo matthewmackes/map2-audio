@@ -59,6 +59,27 @@ Updated 2026-04-30 EDT (cycles 41-49):
 - T2466-4: SidechainPanel + CommunitySnapshotBrowser + SystemArchitectureFlow gray-scale literals threaded through Carbon text tokens.
 - T2466-5: HorizontalPluginNode `:focus` -> `:focus-visible` and a focus-visible drop-shadow ring for the keyboard-focusable `<g>` wire elements in UnifiedChannelGrid.
 - T2466-6: Dynamics cards (Compressor/Gate/Limiter), EQCard, BypassSwitch, TagSelector, ExpressionOverlay, MidiMappingDialog, AvbRouting SelectionOverlay + MatrixCell, ReactFlowTheme, ChainManagementCard — 24 hardcoded transition declarations across these surfaces all swept to design-language tokens.
+
+Updated 2026-04-30 EDT (10-iter SHIP loop, post-T2475):
+- T2466-6 (10 commits, 1bd85d47 → 58786ac0): 50 additional hardcoded
+  transition declarations swept to `--map2-dur-*` + `--map2-ease-in-out-rack`
+  across 18 files. Surfaces touched in order: PluginCardShell.tsx +
+  ParameterSection.tsx + BypassSwitch.tsx (Plugin base UI, 4 transitions);
+  TooB LooperCard + TunerCard inline styles (5); Visualizations
+  DynamicsMeteringPanel + AudioMeter chrome (2); NodeNav NodeNavChip +
+  NodeIdentityCard (4); shared/ReactFlowTheme + AvbRouting NodeTree (3);
+  AppShell.css + AudioEngine/ClusterEngineGrid (13 — biggest single
+  commit, every page's app-shell chrome); GlobalTreeNav + StaticHeroIconLauncher (5);
+  publishPerformance + ArtifactDownloadModal (5); Platform/PlatformModal +
+  modals/RoutingTopologyModal + UnifiedChannelGrid (8);
+  HostMachine.css (4). Realtime-band motion deliberately preserved —
+  VuMeter/Cluster/DynamicsMeterPanel inner level bars (0.05s),
+  AudioMeter level bar (0.05s), GateCard state-LED (0.1s),
+  NAMCard input/output meters (0.05s), TunerCard needle-position
+  (0.05s), UnifiedChannelGrid column-resize (60ms linear) — same
+  rationale: sub-perceptual continuous feedback motion belongs below
+  dur-instant, not on the design-language scale. Each iter:
+  typecheck + atomic build + :3000 HTTP 200 + dual-push.
 2026-04-28 EDT - opened, plan + coaching prompt drafted
 
 ---
