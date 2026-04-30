@@ -80,6 +80,37 @@ Updated 2026-04-30 EDT (10-iter SHIP loop, post-T2475):
   rationale: sub-perceptual continuous feedback motion belongs below
   dur-instant, not on the design-language scale. Each iter:
   typecheck + atomic build + :3000 HTTP 200 + dual-push.
+
+Updated 2026-04-30 EDT (second 10-iter SHIP loop, post-T2475):
+- T2466-6 (10 commits, 0e4a707f → fbd6b9c5): 153 additional
+  hardcoded transition declarations swept to `--map2-dur-*` +
+  `--map2-ease-in-out-rack` across 23 files. The biggest CSS files
+  in the app (SnapshotEditorPage.css 22, Toasts.css 14, midiAssignments
+  walkthrough 15, MPX1SignalPathCanvas 12, LCDView 18) were all
+  swept in a single regex pass each via a reusable script
+  (`/tmp/token_sweep.py`) that auto-skips the realtime-feedback
+  band (10-70ms durations) per the convention established in the
+  first SHIP loop. Surfaces touched in order:
+  - SnapshotEditorPage.css (22 — single largest CSS file in the app)
+  - Toasts.css (14, 700ms stage-pedal slot animation preserved)
+  - midiAssignments/walkthrough.css (15)
+  - MPX1SignalPathCanvas.css (12)
+  - ExpressionPage.module.css (11)
+  - MPX1Panel + MPX1ScenePanel (11)
+  - pedalboardBuildWizard + WelcomeHero + AboutPage + MaschinePage (14)
+  - LV2PluginParameterEditor + ConnectionHighlight + MOTURMEPage +
+    EdirolUA1000View + PerformPage (17)
+  - IntelFX + Tesira + MaschineMidiMap + LCDView (26 — biggest
+    single commit; LCD device-pack hardware-skin §10.5 boundary
+    respected)
+  - residual primitives + pages + arch diagrams (13)
+  Realtime-band exclusions verified during sweep: brainViews.css
+  60ms height, LCDDisplay.css 50ms width, EdirolUA1000View 50ms
+  channel meters, PerformPage 40ms tap-tempo position, ExpressionPage
+  30ms meter fill, IntelFX/MPX1 40ms canvas meter bars, plus all
+  surfaces preserved in the first loop. Total transitions tokenized
+  across both loops: 203. Each iter: typecheck + atomic build +
+  :3000 HTTP 200 + dual-push.
 2026-04-28 EDT - opened, plan + coaching prompt drafted
 
 ---
