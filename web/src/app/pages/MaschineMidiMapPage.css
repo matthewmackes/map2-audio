@@ -269,6 +269,15 @@
   cursor: pointer;
 }
 
+/* T2466-5: focus-visible ring on the LED slider so keyboard
+   operators see which range input has focus. Uses --cds-focus
+   with a literal blue fallback. */
+.mk1-led-slider input[type="range"]:focus-visible {
+  outline: 2px solid var(--cds-focus, #4589ff);
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+
 /* ── Column alignment guide lines ── */
 
 .mk1-col-guide {
