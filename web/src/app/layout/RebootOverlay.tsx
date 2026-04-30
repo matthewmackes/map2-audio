@@ -4,6 +4,9 @@ import { Button, ProgressBar } from '@carbon/react'
 import { CheckmarkFilled, WarningFilled } from '@carbon/icons-react'
 
 import { REBOOT_PROGRESS_STEPS, type RebootProgressStep, type RebootStage } from './useRebootSystem'
+import { useReducedEffectsPreference } from '../hooks/useReducedEffectsPreference'
+
+const INSTANT = { duration: 0 } as const
 
 // ── Waveform animation ────────────────────────────────────────────────────────
 // Draws a live low-frequency oscilloscope trace during a reboot to signal
@@ -197,6 +200,10 @@ export function RebootOverlay({
   const isReady = rebootStage === 'ready'
   const isActive = !isError && !isTimeout && !isReady
   const progressPct = ((rebootProgressIndex + 1) / REBOOT_PROGRESS_STEPS.length) * 100
+  // T2466-3: respect prefers-reduced-motion + the in-app
+  // Reduced-effects toggle for the overlay's enter spring,
+  // panel scale-in, and heading cross-fade.
+  const { shouldReduceEffects } = useReducedEffectsPreference()
 
   return (
     <AnimatePresence>
@@ -214,13 +221,13 @@ export function RebootOverlay({
         initial={{ opacity: 0 }}
         animate={{ opacity: 1 }}
         exit={{ opacity: 0 }}
-        transition={{ duration: 0.3 }}
+        transition={shouldReduceEffects ? INSTANT : { duration: 0.3 }}
       >
         <motion.div
           className="reboot-overlay__panel"
           initial={{ scale: 0.96, y: 16 }}
           animate={{ scale: 1, y: 0 }}
-          transition={{ type: 'spring', stiffness: 240, damping: 26, delay: 0.05 }}
+          transition={shouldReduceEffects ? INSTANT : { type: 'spring', stiffness: 240, damping: 26, delay: 0.05 }}
         >
           {/* Title bar */}
           <div className="reboot-overlay__titlebar">
@@ -245,7 +252,7 @@ export function RebootOverlay({
               initial={{ opacity: 0, y: 10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -8 }}
-              transition={{ type: 'spring', stiffness: 280, damping: 26 }}
+              transition={shouldReduceEffects ? INSTANT : { type: 'spring', stiffness: 280, damping: 26 }}
             >
               {isTimeout ? (
                 <>
