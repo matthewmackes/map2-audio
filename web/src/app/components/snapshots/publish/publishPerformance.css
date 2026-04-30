@@ -100,7 +100,7 @@
   color: var(--pp-spotlight-muted);
   text-align: left;
   cursor: pointer;
-  transition: background 120ms ease, color 120ms ease, border-color 120ms ease;
+  transition: background var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease), color var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease), border-color var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease);
   font-family: inherit;
   min-width: 0;
 }
@@ -150,7 +150,7 @@
   border-radius: 6px;
   background: var(--pp-dim);
   overflow: hidden;
-  transition: border-color 160ms ease, box-shadow 160ms ease;
+  transition: border-color var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease), box-shadow var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease);
 }
 .publish-stage.is-active {
   border-color: var(--pp-amber);
@@ -226,7 +226,7 @@
   cursor: pointer;
   text-align: center;
   align-items: center;
-  transition: transform 120ms ease, box-shadow 160ms ease, border-color 160ms ease;
+  transition: transform var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease), box-shadow var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease), border-color var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease);
   min-width: 280px;
 }
 .golive-button:disabled { cursor: not-allowed; opacity: 0.65; }

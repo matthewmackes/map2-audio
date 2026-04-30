@@ -79,7 +79,7 @@
   font-size: var(--cds-body-compact-01-font-size, 0.875rem);
   font-weight: 400;
   padding: 0.875rem 1rem;
-  transition: color 110ms, border-color 110ms;
+  transition: color var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease), border-color var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease);
   white-space: nowrap;
 }
 
@@ -160,7 +160,7 @@
   height: 100%;
   background: var(--cds-border-interactive);
   border-radius: 2px;
-  transition: width 200ms ease;
+  transition: width var(--map2-dur-base, 220ms) var(--map2-ease-in-out-rack, ease);
 }
 
 .adm-progress-panel__bar-wrap {
