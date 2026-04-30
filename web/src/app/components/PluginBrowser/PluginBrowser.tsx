@@ -56,7 +56,7 @@ const PluginCard: React.FC<{
         background: isHovered ? 'rgba(255, 255, 255, 0.05)' : 'rgba(0, 0, 0, 0.2)',
         borderRadius: 8,
         border: '1px solid rgba(255, 255, 255, 0.1)',
-        transition: 'all 0.2s ease',
+        transition: 'all var(--map2-dur-base, 220ms) var(--map2-ease-in-out-rack, ease)',
         display: 'flex',
         alignItems: 'center',
         gap: 12,
@@ -152,7 +152,7 @@ const PluginCard: React.FC<{
           alignItems: 'center',
           justifyContent: 'center',
           cursor: isLoading ? 'wait' : 'pointer',
-          transition: 'all 0.2s ease',
+          transition: 'all var(--map2-dur-base, 220ms) var(--map2-ease-in-out-rack, ease)',
           flexShrink: 0,
         }}
         title="Add to chain"
@@ -289,7 +289,7 @@ export const PluginBrowser: React.FC<PluginBrowserProps> = ({
                 height: '100%',
                 width: `${scanStatus.progress * 100}%`,
                 background: '#37d6c9',
-                transition: 'width 0.3s ease',
+                transition: 'width var(--map2-dur-slow, 380ms) var(--map2-ease-in-out-rack, ease)',
               }}
             />
           </div>
@@ -348,7 +348,7 @@ export const PluginBrowser: React.FC<PluginBrowserProps> = ({
             size={14}
             style={{
               transform: showFilters ? 'rotate(180deg)' : 'rotate(0deg)',
-              transition: 'transform 0.2s ease',
+              transition: 'transform var(--map2-dur-base, 220ms) var(--map2-ease-in-out-rack, ease)',
             }}
           />
         </button>
@@ -377,7 +377,7 @@ export const PluginBrowser: React.FC<PluginBrowserProps> = ({
               color: filter.format === format ? FORMAT_COLORS[format] : '#888',
               cursor: 'pointer',
               whiteSpace: 'nowrap',
-              transition: 'all 0.2s ease',
+              transition: 'all var(--map2-dur-base, 220ms) var(--map2-ease-in-out-rack, ease)',
             }}
           >
             {format} ({formatCounts[format]})
