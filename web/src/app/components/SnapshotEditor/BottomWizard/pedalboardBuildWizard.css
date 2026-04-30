@@ -173,176 +173,34 @@
   gap: 6px;
 }
 
-/* ---------- Stepper ---------- */
-.pedalboard-wizard__stepper {
-  list-style: none;
-  margin: 0;
-  padding: 0;
-  display: grid;
-  grid-template-columns: repeat(5, minmax(0, 1fr));
-  border-top: 1px solid var(--pw-border);
-  border-bottom: 1px solid var(--pw-border);
-  background: rgba(0, 0, 0, 0.1);
-  border-radius: 6px;
-  overflow: hidden;
-}
-.pedalboard-wizard__step { position: relative; min-width: 0; }
-.pedalboard-wizard__step-button {
-  width: 100%;
-  padding: 14px 14px;
+/* ---------- Sub-bar (replaces removed build stepper) ---------- */
+.pedalboard-wizard__sub-bar {
   display: flex;
   align-items: center;
+  justify-content: space-between;
   gap: 12px;
-  text-align: left;
-  background: transparent;
-  border: 0;
-  border-right: 1px solid var(--pw-border);
-  color: var(--pw-text);
-  cursor: pointer;
-  transition: background var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease);
-  font-family: inherit;
+  padding: 8px 12px;
+  border-top: 1px solid var(--pw-border);
+  background: rgba(0, 0, 0, 0.08);
+  border-radius: 6px;
   min-width: 0;
 }
-.pedalboard-wizard__step:last-child .pedalboard-wizard__step-button { border-right: 0; }
-.pedalboard-wizard__step-button:hover:not(:disabled) { background: rgba(255, 255, 255, 0.03); }
-.pedalboard-wizard__step-button:disabled { cursor: not-allowed; opacity: 0.55; }
-.pedalboard-wizard__step-button:focus-visible { outline: 2px solid var(--pw-accent); outline-offset: -2px; }
-.pedalboard-wizard__step.is-active .pedalboard-wizard__step-button {
-  background: linear-gradient(180deg, var(--pw-accent-bg) 0%, transparent 80%);
-}
-.pedalboard-wizard__step.is-active::after {
-  content: '';
-  position: absolute;
-  left: 0;
-  right: 0;
-  bottom: -1px;
-  height: 2px;
-  background: var(--pw-accent);
-  box-shadow: 0 0 18px var(--pw-accent-ring);
-}
-
-.pedalboard-wizard__step-marker {
-  width: 32px;
-  height: 32px;
-  flex: 0 0 auto;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  border-radius: 8px;
-  background: rgba(0, 0, 0, 0.3);
-  border: 1px solid var(--pw-border);
-  color: var(--pw-muted);
-  transition: background var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease), border-color var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease), color var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease);
-}
-.pedalboard-wizard__step-num {
+.pedalboard-wizard__sub-bar-title {
   font-family: 'IBM Plex Mono', ui-monospace, monospace;
-  font-size: 0.6875rem;
-  font-weight: 600;
-  letter-spacing: 0.04em;
-}
-.pedalboard-wizard__step--done .pedalboard-wizard__step-marker {
-  background: rgba(66, 190, 101, 0.16);
-  border-color: rgba(66, 190, 101, 0.45);
-  color: var(--pw-complete);
-}
-.pedalboard-wizard__step--active .pedalboard-wizard__step-marker {
-  background: var(--pw-accent);
-  border-color: transparent;
-  color: var(--cds-text-on-color, #fff);
-  box-shadow: 0 0 0 4px var(--pw-accent-bg);
-}
-.pedalboard-wizard__step--active .pedalboard-wizard__step-num { color: var(--cds-text-on-color, #fff); }
-.pedalboard-wizard__step.is-locked .pedalboard-wizard__step-marker { color: var(--pw-lock); }
-
-.pedalboard-wizard__step-text { display: flex; flex-direction: column; gap: 2px; min-width: 0; }
-.pedalboard-wizard__step-label {
-  font-family: 'IBM Plex Mono', ui-monospace, monospace;
-  font-size: 0.6875rem;
-  font-weight: 600;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--pw-muted);
-}
-.pedalboard-wizard__step--active .pedalboard-wizard__step-label { color: var(--pw-accent); }
-.pedalboard-wizard__step--done .pedalboard-wizard__step-label { color: var(--pw-muted-strong); }
-.pedalboard-wizard__step-recap {
   font-size: 0.8125rem;
   color: var(--pw-text);
+  font-weight: 600;
+  letter-spacing: 0.02em;
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+  min-width: 0;
 }
-.pedalboard-wizard__step--ready .pedalboard-wizard__step-recap,
-.pedalboard-wizard__step--todo .pedalboard-wizard__step-recap { color: var(--pw-muted-strong); }
-
-/* ---------- Progress ---------- */
-.pedalboard-wizard__progress {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  padding: 0 4px;
-}
-.pedalboard-wizard__progress-track {
-  flex: 1;
-  height: 4px;
-  background: rgba(0, 0, 0, 0.4);
-  border-radius: 999px;
-  overflow: hidden;
-  border: 1px solid var(--pw-border);
-}
-.pedalboard-wizard__progress-fill {
-  height: 100%;
-  background: linear-gradient(90deg, var(--pw-accent), color-mix(in srgb, var(--pw-accent) 70%, white));
-  border-radius: 999px;
-  transition: width var(--map2-dur-base, 220ms) var(--map2-ease-in-out-rack, ease);
-}
-.pedalboard-wizard__progress-label {
-  font-family: 'IBM Plex Mono', ui-monospace, monospace;
-  font-size: 0.75rem;
-  color: var(--pw-muted-strong);
-}
-.pedalboard-wizard__progress-num { color: var(--pw-text); font-weight: 600; }
-.pedalboard-wizard__progress-of { color: var(--pw-text-dim); }
-
-/* ---------- Detail row ---------- */
-.pedalboard-wizard__detail {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  gap: 24px;
-  padding: 14px 16px;
-  border: 1px solid var(--pw-border);
-  border-radius: 6px;
-  background: rgba(0, 0, 0, 0.18);
-  align-items: end;
-}
-.pedalboard-wizard__detail-copy { display: flex; flex-direction: column; gap: 8px; min-width: 0; }
-.pedalboard-wizard__detail-tag {
-  font-family: 'IBM Plex Mono', ui-monospace, monospace;
-  font-size: 0.625rem;
-  letter-spacing: 0.12em;
-  text-transform: uppercase;
-  color: var(--pw-text-dim);
-}
-.pedalboard-wizard__detail-text {
-  margin: 0;
-  font-size: 0.875rem;
-  line-height: 1.45;
-  color: var(--pw-muted-strong);
-  max-width: 64ch;
-}
-.pedalboard-wizard__detail-meta { display: flex; gap: 24px; flex-wrap: wrap; }
-.pedalboard-wizard__detail-meta-cell { display: flex; flex-direction: column; gap: 2px; }
-.pedalboard-wizard__detail-meta-key {
-  font-size: 0.625rem;
-  letter-spacing: 0.1em;
-  text-transform: uppercase;
-  color: var(--pw-text-dim);
-}
-.pedalboard-wizard__detail-meta-val { font-size: 0.8125rem; color: var(--pw-text); font-weight: 500; }
-.pedalboard-wizard__detail-actions {
+.pedalboard-wizard__sub-bar-actions {
   display: inline-flex;
   align-items: center;
   gap: 6px;
+  flex: 0 0 auto;
 }
 
 /* ---------- Secondary row (Active channel + Morph) ---------- */
@@ -555,10 +413,4 @@
   .pedalboard-wizard__hero { grid-template-columns: 1fr; }
   .pedalboard-wizard__hero-actions { justify-content: flex-start; }
   .pedalboard-wizard__secondary { grid-template-columns: 1fr; }
-}
-@media (max-width: 760px) {
-  .pedalboard-wizard__stepper { grid-template-columns: repeat(2, minmax(0, 1fr)); }
-  .pedalboard-wizard__step-button { border-right: 0; border-bottom: 1px solid var(--pw-border); }
-  .pedalboard-wizard__detail { grid-template-columns: 1fr; }
-  .pedalboard-wizard__detail-actions { flex-wrap: wrap; }
 }

@@ -7656,14 +7656,6 @@ export function SnapshotEditorPage() {
       default: return { tone: 'idle', label: 'Engine idle' }
     }
   })()
-  const buildWorkflowRoutingOptions = useMemo(
-    () => ROUTING_MODE_OPTIONS.map((option) => ({
-      id: option.id,
-      label: option.label,
-      description: option.summary,
-    })),
-    [],
-  )
   const buildWorkflowChannelCounts = useMemo(() => {
     const active = authoritativeAudioState?.derived.active_channel_count ?? activeSnapshot?.live_state?.paths.length ?? null
     const total = authoritativeAudioState?.derived.total_channel_count ?? activeSnapshot?.channels.length ?? activeSnapshot?.paths.length ?? null
@@ -7683,12 +7675,6 @@ export function SnapshotEditorPage() {
   }, [activeSnapshot?.updated_at])
   const pedalboardBuildWizard = (
     <PedalboardBuildWizard
-      hasSnapshot={Boolean(activeSnapshot)}
-      pluginCount={currentChain?.plugins.length ?? 0}
-      hasSelectedBlock={Boolean(selectedPlugin)}
-      hasUnsavedChanges={Boolean(snapshotsDirty)}
-      hasLiveSnapshot={Boolean(activeSnapshot)}
-      automationActive={automationTimelineExpanded}
       activeWorkspaceActionId={snapshotInspectorWorkspaceActionId}
       onOpenSignalGrid={openSignalGridWorkspace}
       onOpenDirectory={handleAddPlugin}
@@ -7698,9 +7684,6 @@ export function SnapshotEditorPage() {
       onOpenAutomation={openAutomationWorkspace}
       onOpenVersionHistory={openVersionHistoryWorkspace}
       versionHistoryDisabled={!activeSnapshot}
-      onSaveDraft={handleSaveDraft}
-      saveDraftPending={updateActiveSnapshotMutation.isPending}
-      saveDraftDisabled={!activeSnapshot || snapshotEditingLocked || updateActiveSnapshotMutation.isPending || !snapshotsDirty}
       onOpenProgressModal={openGuidedProgress}
       onOpenSnapshots={() => navigate('/snapshots')}
       onCreateSnapshot={() => createCapturedSnapshot()}
@@ -7713,8 +7696,6 @@ export function SnapshotEditorPage() {
       updatedAtLabel={buildWorkflowUpdatedAtLabel}
       engineSyncTone={buildWorkflowEngineSync.tone}
       engineSyncLabel={buildWorkflowEngineSync.label}
-      routingOptions={buildWorkflowRoutingOptions}
-      routingValue={routing.mode}
     />
   )
   if (showViewportBlockScreen) {
