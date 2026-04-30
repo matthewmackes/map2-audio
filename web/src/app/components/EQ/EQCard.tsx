@@ -460,7 +460,7 @@ export function EQCard({
           font-size: var(--cds-body-compact-01-font-size, 0.875rem);
           padding: 4px 10px;
           cursor: pointer;
-          transition: all 0.2s;
+          transition: all var(--map2-dur-base, 220ms) var(--map2-ease-in-out-rack, ease);
         }
 
         .expand-btn:hover,
@@ -524,7 +524,7 @@ export function EQCard({
           border: 1px solid #333;
           border-radius: 6px;
           cursor: pointer;
-          transition: all 0.2s;
+          transition: all var(--map2-dur-base, 220ms) var(--map2-ease-in-out-rack, ease);
           min-width: 50px;
         }
 
