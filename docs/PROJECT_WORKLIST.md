@@ -53,6 +53,12 @@ Updated 2026-04-30 EDT (cycles 31-39):
 - T2466-4 (magic numbers): Visualizations gray-scale text colors (IRFrequencyGraph, AudioMeter); two more PluginCards' background/border literals.
 - T2466-5 (focus rings): ApiObservatory tab-close keyboard-focusable + outline; Maschine MK1 LED-slider input outline.
 - T2466-6 (transitions): UploadPrimitives, HorizontalSignalChain, PluginBrowser inline-style tokens; Disclosure CSS animation; AudioMeteringCard inline transitions; StatusBadge inline transition; SidechainPanel + UnifiedUploadDialog inline transitions; DownloadManager progress bar; carbonCardStyles.css + AvbRouting/CrosshairOverlay.css base/grid hover transitions. AudioMeter's 0.05s metering-frame transition deliberately untouched.
+
+Updated 2026-04-30 EDT (cycles 41-49):
+- T2473 extracted parts 18+19 (MIDI mappings modal + routing modals aggregate). All inline `<Modal>` blocks now out of the monolith. 7 more unit tests landed across the two siblings.
+- T2466-4: SidechainPanel + CommunitySnapshotBrowser + SystemArchitectureFlow gray-scale literals threaded through Carbon text tokens.
+- T2466-5: HorizontalPluginNode `:focus` -> `:focus-visible` and a focus-visible drop-shadow ring for the keyboard-focusable `<g>` wire elements in UnifiedChannelGrid.
+- T2466-6: Dynamics cards (Compressor/Gate/Limiter), EQCard, BypassSwitch, TagSelector, ExpressionOverlay, MidiMappingDialog, AvbRouting SelectionOverlay + MatrixCell, ReactFlowTheme, ChainManagementCard — 24 hardcoded transition declarations across these surfaces all swept to design-language tokens.
 2026-04-28 EDT - opened, plan + coaching prompt drafted
 
 ---
@@ -2461,14 +2467,16 @@ Description:
 - Estimated effort: Large (3-5 days). Single most-disruptive subtask in the epic.
 - Risk: high — this is where the monolith's hidden coupling will surface. Run the full Jest suite, the production build, and a live editor smoke test before declaring complete. Carbon directives still apply; if a sub-component would benefit from being upgraded to a Carbon `Layer` in the same diff, defer that to a follow-up — bundling Carbon migration with structural extraction defeats the no-behavior-change gate.
 Assigned to: Claude
-Last updated: 2026-04-30 EDT - parts 12-17 SHIPPED. Monolith 8894 → 8479 LoC (cumulative -415) across six extractions:
+Last updated: 2026-04-30 EDT - parts 12-19 SHIPPED. Monolith 8894 → 8468 LoC (cumulative -426) across eight extractions:
   - part 12: SnapshotEditorPluginBrowser.tsx (305-line modal, 5 tests)
   - part 13: SnapshotEditorCompactPanels.tsx (~155 LoC sibling, 6 tests)
   - part 14: SnapshotEditorAutomationToggle.tsx (floating toggle button, 4 tests)
   - part 15: SnapshotEditorWorkspaceModals.tsx (perform/audio-nodes/live-runtime aggregate, 5 tests)
   - part 16: SnapshotEditorAuxModals.tsx (import/assignment/details/shortcuts/version-history aggregate, 6 tests)
   - part 17: SnapshotEditorChainDialogs.tsx (tablet-delete/save-preset/rename-chain/preset-delete/clear-flows aggregate, 6 tests)
-32 unit tests across the six new siblings green; typecheck + production build clean each cycle; bundle hashes refreshed. Remaining big-ticket targets are the bottom-editor section (~240 LoC) and the tablet-editor scrim/shell (~180 LoC), both deferred because they're tightly coupled to selectedPlugin state machinery and warrant dedicated sessions.
+  - part 18: SnapshotEditorMidiMappingsModal.tsx (audio-grid MIDI mappings Modal wrapper with render-prop children, 3 tests)
+  - part 19: SnapshotEditorRoutingModals.tsx (lane picker + audio-port modal aggregate, 4 tests)
+43 unit tests across the eight new siblings green; typecheck + production build clean each cycle; bundle hashes refreshed. All inline `<Modal>` blocks are now out of the monolith. Remaining big-ticket targets are the bottom-editor section (~240 LoC) and the tablet-editor scrim/shell (~180 LoC), both deferred because they're tightly coupled to selectedPlugin state machinery and warrant dedicated sessions.
 
 ---
 
