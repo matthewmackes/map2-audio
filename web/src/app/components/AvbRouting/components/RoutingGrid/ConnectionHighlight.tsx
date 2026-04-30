@@ -48,7 +48,7 @@ export function ConnectionHighlight({
           opacity: 0.08,
           pointerEvents: 'none',
           zIndex: 5,
-          transition: 'left 0.1s ease-out',
+          transition: 'left var(--map2-dur-instant, 80ms) var(--map2-ease-in-out-rack, ease)',
         }}
       />
 
@@ -64,7 +64,7 @@ export function ConnectionHighlight({
           opacity: 0.08,
           pointerEvents: 'none',
           zIndex: 5,
-          transition: 'top 0.1s ease-out',
+          transition: 'top var(--map2-dur-instant, 80ms) var(--map2-ease-in-out-rack, ease)',
         }}
       />
 
@@ -80,7 +80,7 @@ export function ConnectionHighlight({
           opacity: 0.5,
           pointerEvents: 'none',
           zIndex: 10,
-          transition: 'top 0.1s ease-out, left 0.1s ease-out',
+          transition: 'top var(--map2-dur-instant, 80ms) var(--map2-ease-in-out-rack, ease), left var(--map2-dur-instant, 80ms) var(--map2-ease-in-out-rack, ease)',
           boxShadow: '0 0 8px rgba(69, 137, 255, 0.3)',
         }}
       />
@@ -97,7 +97,7 @@ export function ConnectionHighlight({
           opacity: 0.12,
           pointerEvents: 'none',
           zIndex: 15,
-          transition: 'left 0.1s ease-out',
+          transition: 'left var(--map2-dur-instant, 80ms) var(--map2-ease-in-out-rack, ease)',
         }}
       />
 
@@ -113,7 +113,7 @@ export function ConnectionHighlight({
           opacity: 0.12,
           pointerEvents: 'none',
           zIndex: 15,
-          transition: 'top 0.1s ease-out',
+          transition: 'top var(--map2-dur-instant, 80ms) var(--map2-ease-in-out-rack, ease)',
         }}
       />
     </>

@@ -147,7 +147,7 @@ function ParameterControl({
             fontSize: 11,
             fontWeight: 600,
             cursor: disabled ? 'not-allowed' : 'pointer',
-            transition: 'all 0.2s ease',
+            transition: 'all var(--map2-dur-base, 220ms) var(--map2-ease-in-out-rack, ease)',
             boxShadow: isOn ? `0 0 12px ${accentColor}40` : 'none',
             opacity: disabled ? 0.5 : 1,
           }}
@@ -296,7 +296,7 @@ function OutputMeter({
             background: `linear-gradient(90deg, #22c55e, #4ade80)`,
             boxShadow: '0 0 8px rgba(34, 197, 94, 0.5)',
             borderRadius: 4,
-            transition: 'width 0.1s ease',
+            transition: 'width var(--map2-dur-instant, 80ms) var(--map2-ease-in-out-rack, ease)',
           }} />
         ) : (
           // Standard meter
@@ -310,7 +310,7 @@ function OutputMeter({
                 : `linear-gradient(90deg, ${accentColor}80, ${accentColor})`,
             boxShadow: percentage > 90 ? '0 0 8px rgba(239, 68, 68, 0.5)' : `0 0 8px ${accentColor}40`,
             borderRadius: 4,
-            transition: 'width 0.1s ease',
+            transition: 'width var(--map2-dur-instant, 80ms) var(--map2-ease-in-out-rack, ease)',
           }} />
         )}
       </div>
@@ -350,7 +350,7 @@ function PresetCard({
         border: `1px solid ${isActive ? accentColor : 'rgba(255,255,255,0.05)'}`,
         borderRadius: 8,
         cursor: 'pointer',
-        transition: 'all 0.2s ease',
+        transition: 'all var(--map2-dur-base, 220ms) var(--map2-ease-in-out-rack, ease)',
       }}
     >
       <div style={{
@@ -904,7 +904,7 @@ export function LV2PluginParameterEditor({
             fontSize: 12,
             fontWeight: 600,
             cursor: 'pointer',
-            transition: 'all 0.2s ease',
+            transition: 'all var(--map2-dur-base, 220ms) var(--map2-ease-in-out-rack, ease)',
           }}
         >
           <FolderOpen size={14} />

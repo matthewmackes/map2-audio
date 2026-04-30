@@ -400,7 +400,7 @@ export function EdirolUA1000View() {
               width: `${cpuLoad * 100}%`,
               height: '100%',
               background: cpuLoad > 0.8 ? '#ef4444' : cpuLoad > 0.5 ? '#f59e0b' : '#22c55e',
-              transition: 'width 0.1s'
+              transition: 'width var(--map2-dur-instant, 80ms) var(--map2-ease-in-out-rack, ease)'
             }} />
           </div>
         </div>

@@ -219,7 +219,7 @@ function PresetGrid({
                 alignItems: 'flex-start',
                 padding: 0,
                 overflow: 'hidden',
-                transition: 'border-color 80ms, background 80ms',
+                transition: 'border-color var(--map2-dur-instant, 80ms) var(--map2-ease-in-out-rack, ease), background var(--map2-dur-instant, 80ms) var(--map2-ease-in-out-rack, ease)',
                 opacity: chain ? 1 : 0.3,
                 filter: flashing ? 'brightness(1.1)' : undefined,
               }}
@@ -327,7 +327,7 @@ function BypassStrip({
               justifyContent: 'center',
               gap: 2,
               opacity: bypassed ? 0.45 : 1,
-              transition: 'opacity 80ms, border-color 80ms',
+              transition: 'opacity var(--map2-dur-instant, 80ms) var(--map2-ease-in-out-rack, ease), border-color var(--map2-dur-instant, 80ms) var(--map2-ease-in-out-rack, ease)',
               filter: flashing ? 'brightness(1.1)' : undefined,
             }}
           >
@@ -501,7 +501,7 @@ function TapTempo({
             cursor: 'pointer',
             fontFamily: C.sans, fontSize: 14, fontWeight: 600,
             color: C.secondary,
-            transition: 'background 80ms',
+            transition: 'background var(--map2-dur-instant, 80ms) var(--map2-ease-in-out-rack, ease)',
             filter: flashing ? 'brightness(1.1)' : undefined,
           }}
           onMouseDown={e => { (e.currentTarget as HTMLButtonElement).style.background = C.surface2 }}
@@ -807,7 +807,7 @@ function HealthBar({ midiPulseSignal }: { midiPulseSignal: number }) {
           width: 8, height: 8, borderRadius: '50%',
           background: midiFlash ? C.green : C.surface3,
           display: 'inline-block',
-          transition: 'background 80ms',
+          transition: 'background var(--map2-dur-instant, 80ms) var(--map2-ease-in-out-rack, ease)',
         }} />
         <span style={{ color: C.muted }}>MIDI</span>
       </div>

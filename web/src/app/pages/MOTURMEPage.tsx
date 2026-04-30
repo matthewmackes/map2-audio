@@ -357,7 +357,7 @@ export default function MOTURMEPage() {
                     bottom: 0,
                     width: `${meter.percent}%`,
                     background: getMeterColor(meter.percent),
-                    transition: 'width 0.1s ease-out',
+                    transition: 'width var(--map2-dur-instant, 80ms) var(--map2-ease-in-out-rack, ease)',
                   }} />
                 </div>
                 <span style={{ color: getMeterColor(meter.percent), minWidth: 55, textAlign: 'right', fontWeight: 600, fontSize: 12 }}>
@@ -387,7 +387,7 @@ export default function MOTURMEPage() {
                     bottom: 0,
                     width: `${meter.percent}%`,
                     background: getMeterColor(meter.percent),
-                    transition: 'width 0.1s ease-out',
+                    transition: 'width var(--map2-dur-instant, 80ms) var(--map2-ease-in-out-rack, ease)',
                   }} />
                 </div>
                 <span style={{ color: getMeterColor(meter.percent), minWidth: 55, textAlign: 'right', fontWeight: 600, fontSize: 12 }}>
