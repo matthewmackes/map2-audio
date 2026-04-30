@@ -18,7 +18,9 @@ import type { Transition, Variant, Variants } from 'framer-motion'
 
 import { useReducedEffectsPreference } from '../hooks/useReducedEffectsPreference'
 
-const INSTANT_TRANSITION: Transition = { duration: 0 }
+/** Shared instant-transition constant. Exported so consumers
+ * can use it directly when wiring per-motion gates. */
+export const INSTANT_TRANSITION: Transition = { duration: 0 }
 
 function flattenVariant(variant: Variant): Variant {
   if (typeof variant === 'function') {
@@ -64,4 +66,24 @@ export function reducedMotionTransition(
   shouldReduceEffects: boolean,
 ): Transition {
   return shouldReduceEffects ? INSTANT_TRANSITION : baseTransition
+}
+
+/**
+ * One-call hook for Framer Motion `transition` props. Returns the
+ * caller's base transition, or {duration: 0} when reduced motion
+ * is preferred. Equivalent to:
+ *
+ *   const { shouldReduceEffects } = useReducedEffectsPreference()
+ *   const transition = shouldReduceEffects ? { duration: 0 } : baseTransition
+ *
+ * but condenses the two reads and the ternary into one expression.
+ */
+export function useReducedMotionSafeTransition(
+  baseTransition: Transition,
+): Transition {
+  const { shouldReduceEffects } = useReducedEffectsPreference()
+  return useMemo(
+    () => (shouldReduceEffects ? INSTANT_TRANSITION : baseTransition),
+    [shouldReduceEffects, baseTransition],
+  )
 }

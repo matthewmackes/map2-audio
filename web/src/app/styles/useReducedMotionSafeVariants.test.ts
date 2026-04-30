@@ -5,6 +5,7 @@
  */
 
 import {
+  INSTANT_TRANSITION,
   flattenVariantsForReducedMotion,
   reducedMotionTransition,
 } from './useReducedMotionSafeVariants'
@@ -53,5 +54,11 @@ describe('reducedMotionTransition', () => {
   it('returns instant transition when reduced motion is on', () => {
     const base = { duration: 0.4 }
     expect(reducedMotionTransition(base, true)).toEqual({ duration: 0 })
+  })
+})
+
+describe('INSTANT_TRANSITION', () => {
+  it('is a frozen-shape duration: 0 transition', () => {
+    expect(INSTANT_TRANSITION).toEqual({ duration: 0 })
   })
 })
