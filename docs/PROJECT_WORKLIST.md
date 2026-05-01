@@ -34407,4 +34407,20 @@ Description:
 
 - Definition of Done (Epic-level): all 27 subtasks `[✓] Done`; `MidiBinding` is the only place a binding lives on the platform (verified via grep + audit); every operator-visible MIDI surface lives at or beneath `/midi`; Snapshot Editor inline MIDI editors function unchanged; per-device DSP editors untouched; `/midi-hub/*` redirects clean; visual-regression baselines updated; `npm --prefix web run typecheck` + `npm --prefix web run build` clean; `:3000` HTTP 200; `pytest` suite green including new migration verification suite; `docs/architecture/MIDI_SERVICES.md` + `docs/architecture/MIDI_BACKEND.md` + `docs/architecture/FIRST_CLASS_SERVICES.md` all current; three follow-up epics opened with concrete scope; T2459 + T2459-H memory headers updated to point to T2482.
 Assigned to: Claude Opus 4.7 (Phases 1–2 autonomous per Q5; Phases 3–4 per-bundle gated)
-Last updated: 2026-05-01 EDT — Epic opened from 5-question clarification protocol against the four-services platform framing. Subsumes T2459 + T2459-H. Design doc at `docs/architecture/MIDI_SERVICES.md`. Awaiting user approval of plan artifact before Phase 1 begins.
+Last updated: 2026-05-01 EDT — **SHIP loop iter 1/10 (autonomous)**: Plan artifact shipped (commit 7613dd72). P1.5 audit ran against the device-packs/ tree; **gap confirmed**: H4 ship report (2026-04-28) claimed Maschine MK1 + MPX-1 + IntelFX cutovers complete, but only `device-packs/native-instruments/maschine-mk1.midi.yaml` actually exists. MPX-1 + IntelFX are still on Python SysEx parsers (`app/services/mpx1_syx_parser.py`, `intelfx_syx_parser.py`). Device-packs missing for: Lexicon MPX-1, Rocktron IntelFX, Mackie MCU Pro, Novation Launch Control, Ableton Push, Voodoo Lab Ground Control Pro, Biamp Tesira (7 devices total).
+
+**Iteration plan adjustment** based on the audit: P1.5 device-pack build work deferred from this 10-iter loop to the next 10-iter loop (iters 11–20) because each device-pack is a multi-hour effort with profile YAML + SysEx JS scripts + verification. Iters 2–10 of the current SHIP loop refocus on the foundational Phase 2 work (canonical authority + schema + critical consumer migrations) which is higher-value to ship first — once the authority exists, the Phase 2 consumer migrations can land alongside the deferred device-pack work in subsequent iterations.
+
+**Current SHIP loop schedule**:
+- Iter 1: P1.5 audit + restructure (this commit)
+- Iter 2: P1.6a — audit `app/services/midi_hub/` residuals
+- Iter 3: P1.7 — update `docs/architecture/MIDI_BACKEND.md`
+- Iter 4: P2.1 — `MidiBinding` table schema + migration script
+- Iter 5: P2.2 — `MidiBindingAuthority` service + tests
+- Iter 6: P2.3 part 1 — Snapshot consumer read-side projection
+- Iter 7: P2.3 part 2 — Snapshot consumer write-side + round-trip migration tests
+- Iter 8: P2.4 — Brain consumer migration (lifts T2480-5 bindings field into canonical authority)
+- Iter 9: P2.7 — Snapshot Editor inline MIDI editors backend rewire (UI unchanged)
+- Iter 10: SHIP loop roll-up + plan iter 11–20
+
+**Deferred to next SHIP loop** (iters 11–20): P1.5 device-pack builds (6 devices), P2.5 per-device consumer migrations (8 devices), P2.6 Tesira/GPIO/string consumer migrations, P2.8 legacy store deletion, P2.9 migration verification suite.
