@@ -442,6 +442,89 @@ async def test_device_inventory_profile_and_assignment_routes(route_env):
 
 
 @pytest.mark.asyncio
+async def test_device_binding_routes_full_lifecycle(route_env):
+    """T2480-5 / T2480-6 — exercise the four binding routes
+    (POST/DELETE/GET on a device, GET on a consumer)."""
+    from fastapi import HTTPException
+
+    hub = route_env["hub"]
+    _register_virtual_port(hub, "kbd-port-id", "Brain Test Keyboard")
+
+    # Refresh so the registry sees the port.
+    inventory = await midi_hub_routes.get_device_inventory(refresh=True)
+    assert inventory["count"] == 1
+    device_id = inventory["devices"][0]["device_id"]
+
+    # POST a binding.
+    add_resp = await midi_hub_routes.add_device_binding(
+        device_id,
+        midi_hub_routes.DeviceBindingRequest(
+            consumer_type="snapshot",
+            consumer_id="42",
+            consumer_name="Brain — Test (set up 2026-04-30)",
+            source="brain-setup-task",
+        ),
+    )
+    assert add_resp["ok"] is True
+    assert add_resp["binding"]["consumer_id"] == "42"
+    assert add_resp["binding"]["source"] == "brain-setup-task"
+    # bound_at should be a non-empty ISO-8601-looking string.
+    assert isinstance(add_resp["binding"]["bound_at"], str)
+    assert len(add_resp["binding"]["bound_at"]) > 0
+
+    # GET the binding back.
+    list_resp = await midi_hub_routes.list_device_bindings(device_id)
+    assert list_resp["count"] == 1
+    assert list_resp["bindings"][0]["consumer_id"] == "42"
+
+    # Reverse-link: GET consumer's devices.
+    consumer_resp = await midi_hub_routes.list_consumer_devices("snapshot", "42")
+    assert consumer_resp["count"] == 1
+    assert consumer_resp["device_ids"] == [device_id]
+
+    # POST again with same source replaces (replace-by-key on
+    # consumer_type+source).
+    await midi_hub_routes.add_device_binding(
+        device_id,
+        midi_hub_routes.DeviceBindingRequest(
+            consumer_type="snapshot",
+            consumer_id="99",
+            consumer_name="Brain — Replace (set up 2026-04-30)",
+            source="brain-setup-task",
+        ),
+    )
+    relist = await midi_hub_routes.list_device_bindings(device_id)
+    assert relist["count"] == 1
+    assert relist["bindings"][0]["consumer_id"] == "99"
+
+    # DELETE removes it.
+    delete_resp = await midi_hub_routes.remove_device_binding(
+        device_id, "snapshot", "99"
+    )
+    assert delete_resp["ok"] is True
+
+    final_list = await midi_hub_routes.list_device_bindings(device_id)
+    assert final_list["count"] == 0
+
+    # DELETE again is a 404.
+    with pytest.raises(HTTPException) as excinfo:
+        await midi_hub_routes.remove_device_binding(device_id, "snapshot", "99")
+    assert excinfo.value.status_code == 404
+
+    # POST against an unknown device is a 404.
+    with pytest.raises(HTTPException) as excinfo:
+        await midi_hub_routes.add_device_binding(
+            "no-such-device",
+            midi_hub_routes.DeviceBindingRequest(
+                consumer_type="snapshot",
+                consumer_id="1",
+                consumer_name="—",
+            ),
+        )
+    assert excinfo.value.status_code == 404
+
+
+@pytest.mark.asyncio
 async def test_router_routes_api(route_env):
     hub = route_env["hub"]
     _register_virtual_port(hub, "src", "Source")
