@@ -220,7 +220,6 @@ import { PublishReadyBanner } from '../components/SnapshotEditor/PublishReadyBan
 import { SnapshotAbSwitchMidiCard } from '../components/SnapshotEditor/SnapshotAbSwitchMidiCard'
 import {
   type SnapshotEditorWorkspaceActionId,
-  SnapshotEditorSnapshotInspectorControls,
   SnapshotEditorSnapshotStatusPanel,
 } from '../components/SnapshotEditor/SnapshotEditorSnapshotStatusPanel'
 import { SnapshotExpressionMappingsCard } from '../components/SnapshotEditor/SnapshotExpressionMappingsCard'
@@ -7617,30 +7616,6 @@ export function SnapshotEditorPage() {
     authoritativeAudioState,
   })
   const liveRuntimeActive = liveRuntimeDisplayState === 'live' || liveRuntimeDisplayState === 'live_warning'
-  const snapshotInspectorControls = (
-    <SnapshotEditorSnapshotInspectorControls
-      liveSnapshot={activeSnapshot}
-      authoritativeAudioState={authoritativeAudioState}
-      monitoringStatusLabel={monitoringStatusLabel}
-      monitoringStatusWarning={monitoringStatusWarning}
-      onOpenProgressModal={openGuidedProgress}
-      onOpenSnapshots={() => navigate('/snapshots')}
-      onCreateSnapshot={() => createCapturedSnapshot()}
-      createSnapshotPending={createSnapshotFromEditorMutation.isPending}
-      activeWorkspaceActionId={snapshotInspectorWorkspaceActionId}
-      onOpenSignalGrid={openSignalGridWorkspace}
-      onOpenDirectory={handleAddPlugin}
-      directoryDisabled={snapshotEditingLocked}
-      onOpenParameters={openSelectedBlockEditor}
-      parametersDisabled={!selectedPlugin || snapshotEntryRequired}
-      onOpenAutomation={openAutomationWorkspace}
-      automationActive={automationTimelineExpanded}
-      onOpenVersionHistory={openVersionHistoryWorkspace}
-      versionHistoryDisabled={!activeSnapshot}
-      onOpenHelp={openKeyboardHelpWorkspace}
-      liveBadgeState={liveBadgeState}
-    />
-  )
   // Snapshot management hero — new Build Workflow design (2026-04-25). Wires
   // every section to its single source of truth:
   //   • engine sync   → liveBadgeState (computeLiveBadgeState)
@@ -7965,7 +7940,6 @@ export function SnapshotEditorPage() {
         selectedBlockMidiPanelEnabled={selectedBlockMidiPanelEnabled}
         selectedPluginEditorContent={selectedPluginEditorContent}
         pedalboardBuildWizard={pedalboardBuildWizard}
-        snapshotInspectorControls={snapshotInspectorControls}
         chainId={currentChain?.id ?? null}
         lastMidiEvent={lastMidiEvent}
         midiLearnInProgress={midiLearnInProgress}

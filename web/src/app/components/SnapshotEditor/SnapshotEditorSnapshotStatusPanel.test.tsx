@@ -3,10 +3,7 @@ import React from 'react'
 import { fireEvent, render, screen } from '@testing-library/react'
 
 import type { AuthoritativeAudioState, SnapshotDetail } from '../../../map2/types'
-import {
-  SnapshotEditorSnapshotInspectorControls,
-  SnapshotEditorSnapshotStatusPanel,
-} from './SnapshotEditorSnapshotStatusPanel'
+import { SnapshotEditorSnapshotStatusPanel } from './SnapshotEditorSnapshotStatusPanel'
 
 function buildLiveSnapshot(overrides: Partial<SnapshotDetail> = {}): SnapshotDetail {
   return {
@@ -211,91 +208,6 @@ describe('SnapshotEditorSnapshotStatusPanel', () => {
     expect(screen.getByRole('heading', { name: 'Friday Night Drive' })).toBeInTheDocument()
     expect(screen.queryByRole('button', { name: 'Publish to live' })).not.toBeInTheDocument()
     expect(screen.queryByText('2 of 2 channels active')).not.toBeInTheDocument()
-  })
-
-  it('shows waiting-channel progress text from authoritative status reasons', () => {
-    const props = {
-      authoritativeAudioState: buildAuthoritativeAudioState({
-        derived: {
-          active_channel_count: 0,
-          total_channel_count: 2,
-          inactive_messages: ['Channel A pending apply.', 'Channel B pending apply.'],
-        },
-        paths: [
-          {
-            path_id: 'ch_a',
-            label: 'A',
-            snapshot_chain_id: 201,
-            runtime_chain_id: null,
-            status: 'pending',
-            status_reason: 'Channel A pending apply.',
-          },
-          {
-            path_id: 'ch_b',
-            label: 'B',
-            snapshot_chain_id: 202,
-            runtime_chain_id: null,
-            status: 'pending',
-            status_reason: 'Channel B pending apply.',
-          },
-        ],
-      }),
-      onOpenProgressModal: jest.fn(),
-    }
-
-    render(<SnapshotEditorSnapshotInspectorControls liveSnapshot={buildLiveSnapshot()} {...props} />)
-    expect(screen.getByRole('button', { name: 'Channel A is waiting for the engine. Channel B is waiting for the engine.' })).toBeInTheDocument()
-    expect(screen.getByText('0 of 2 channels active')).toBeInTheDocument()
-  })
-
-  it('moves snapshot publish and library actions into the inspector controls', () => {
-    const onOpenProgressModal = jest.fn()
-    const onOpenSnapshots = jest.fn()
-    const onCreateSnapshot = jest.fn()
-    const onOpenSignalGrid = jest.fn()
-    const onOpenDirectory = jest.fn()
-    const onOpenParameters = jest.fn()
-    const onOpenAutomation = jest.fn()
-    const onOpenVersionHistory = jest.fn()
-    const onOpenHelp = jest.fn()
-
-    render(
-      <SnapshotEditorSnapshotInspectorControls
-        liveSnapshot={buildLiveSnapshot()}
-        authoritativeAudioState={buildAuthoritativeAudioState()}
-        onOpenProgressModal={onOpenProgressModal}
-        onOpenSnapshots={onOpenSnapshots}
-        onCreateSnapshot={onCreateSnapshot}
-        activeWorkspaceActionId="signal-grid"
-        onOpenSignalGrid={onOpenSignalGrid}
-        onOpenDirectory={onOpenDirectory}
-        onOpenParameters={onOpenParameters}
-        onOpenAutomation={onOpenAutomation}
-        onOpenVersionHistory={onOpenVersionHistory}
-        onOpenHelp={onOpenHelp}
-      />,
-    )
-
-    expect(screen.getByLabelText('Snapshot workspace destinations')).toBeInTheDocument()
-    fireEvent.click(screen.getByRole('button', { name: 'Publish to live' }))
-    fireEvent.click(screen.getByRole('button', { name: 'Open Snapshots' }))
-    fireEvent.click(screen.getByRole('button', { name: 'New Snapshot' }))
-    fireEvent.click(screen.getByRole('button', { name: 'Signal Grid' }))
-    fireEvent.click(screen.getByRole('button', { name: 'Directory' }))
-    fireEvent.click(screen.getByRole('button', { name: 'Parameters' }))
-    fireEvent.click(screen.getByRole('button', { name: 'Automation' }))
-    fireEvent.click(screen.getByRole('button', { name: 'Version History' }))
-    fireEvent.click(screen.getByRole('button', { name: 'Help' }))
-
-    expect(onOpenProgressModal).toHaveBeenCalledTimes(1)
-    expect(onOpenSnapshots).toHaveBeenCalledTimes(1)
-    expect(onCreateSnapshot).toHaveBeenCalledTimes(1)
-    expect(onOpenSignalGrid).toHaveBeenCalledTimes(1)
-    expect(onOpenDirectory).toHaveBeenCalledTimes(1)
-    expect(onOpenParameters).toHaveBeenCalledTimes(1)
-    expect(onOpenAutomation).toHaveBeenCalledTimes(1)
-    expect(onOpenVersionHistory).toHaveBeenCalledTimes(1)
-    expect(onOpenHelp).toHaveBeenCalledTimes(1)
   })
 
   it('supports inline snapshot rename editing', () => {

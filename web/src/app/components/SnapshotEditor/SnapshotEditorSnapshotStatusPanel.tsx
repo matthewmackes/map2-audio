@@ -1,23 +1,16 @@
-import { Add, ChartLine, Edit, Flow, Folder, Help, Launch, SettingsAdjust, Time } from '@carbon/icons-react'
-import { Button, Layer, NumberInput, Tag, Tile } from '@carbon/react'
+import { Edit, Launch } from '@carbon/icons-react'
+import { Button, Layer, NumberInput, Tag } from '@carbon/react'
 import { useMemo, type KeyboardEvent } from 'react'
 
 import type { AuthoritativeAudioState, SnapshotDetail, SnapshotDraftData, SnapshotPublishReadiness, SnapshotRuntimeLiveState } from '../../../map2/types'
 import type { SnapshotGoLiveState } from '../../utils/snapshotGoLiveState'
 import type { SnapshotLiveBadgeState } from '../../hooks/useSnapshotReconciliation'
-import { formatSnapshotLastUsedValue } from '../../utils/snapshotLastUsed'
 import {
   buildHeroMetadataRows,
   SnapshotHeroLockButton,
   SnapshotHeroMetadataCluster,
   SnapshotHeroStateRow,
 } from './SnapshotHeroEnhancements'
-
-function formatRelativeTimestamp(value: string | null | undefined): string {
-  if (!value) return ''
-  const result = formatSnapshotLastUsedValue(value)
-  return result === 'Never' ? '' : result
-}
 
 interface FlowSlotRef {
   id: string
@@ -141,13 +134,6 @@ interface SnapshotLiveHeadline {
   blinking: boolean
 }
 
-interface SnapshotChannelActivityBadge {
-  label: string
-  tooltip: string
-  tagType: 'green' | 'warm-gray' | 'cool-gray'
-  warning: boolean
-}
-
 export type SnapshotEditorWorkspaceActionId =
   | 'signal-grid'
   | 'directory'
@@ -204,68 +190,6 @@ function resolveLiveHeadline(
   return { text: 'Stopped', tone: 'stopped', blinking: false }
 }
 
-function formatAuthorityPathMessage(label: string, status: AuthoritativeAudioState['paths'][number]['status']): string {
-  switch (status) {
-    case 'pending':
-      return `Channel ${label} is waiting for the engine.`
-    case 'offline':
-      return `Channel ${label} is offline.`
-    case 'degraded':
-      return `Channel ${label} is degraded.`
-    case 'not_loaded':
-      return `Channel ${label} is not loaded.`
-    default:
-      return `Channel ${label} is not loaded.`
-  }
-}
-
-function friendlyAuthorityMessage(message: string): string {
-  return message.replace(/pending apply\./gi, 'is waiting for the engine.')
-}
-
-function buildChannelActivityBadge(
-  snapshot: SnapshotDetail | null,
-  authoritativeAudioState?: AuthoritativeAudioState | null,
-): SnapshotChannelActivityBadge | null {
-  if (authoritativeAudioState) {
-    const totalCount = authoritativeAudioState.derived.total_channel_count || authoritativeAudioState.paths.length
-    if (totalCount <= 0) {
-      return null
-    }
-
-    const activeCount = authoritativeAudioState.derived.active_channel_count
-    const inactiveDescriptions = authoritativeAudioState.derived.inactive_messages.length > 0
-      ? authoritativeAudioState.derived.inactive_messages
-        .map((message) => friendlyAuthorityMessage(message))
-      : authoritativeAudioState.paths
-        .filter((path) => path.status !== 'active')
-        .map((path) => friendlyAuthorityMessage(path.status_reason?.trim() || formatAuthorityPathMessage(path.label, path.status)))
-    return {
-      label: `${activeCount} of ${totalCount} channels active`,
-      tooltip: inactiveDescriptions.length > 0
-        ? inactiveDescriptions.join(' ')
-        : `All ${totalCount} channels are active.`,
-      tagType: activeCount < totalCount ? 'warm-gray' : 'green',
-      warning: activeCount < totalCount,
-    }
-  }
-
-  if (!snapshot) {
-    return null
-  }
-
-  const totalCount = snapshot.channels.length > 0 ? snapshot.channels.length : snapshot.paths.length
-  if (totalCount <= 0) {
-    return null
-  }
-
-  return {
-    label: `${totalCount} ${totalCount === 1 ? 'channel' : 'channels'} saved`,
-    tooltip: `No control-plane snapshot is live. This snapshot defines ${totalCount} saved ${totalCount === 1 ? 'channel' : 'channels'}.`,
-    tagType: 'cool-gray',
-    warning: false,
-  }
-}
 
 export function SnapshotEditorSnapshotStatusPanel({
   liveSnapshot = null,
@@ -461,246 +385,5 @@ export function SnapshotEditorSnapshotStatusPanel({
   )
 }
 
-export function SnapshotEditorSnapshotInspectorControls({
-  liveSnapshot = null,
-  authoritativeAudioState = null,
-  monitoringStatusLabel = null,
-  monitoringStatusWarning = false,
-  onOpenProgressModal,
-  onOpenSnapshots,
-  onCreateSnapshot,
-  createSnapshotPending = false,
-  activeWorkspaceActionId = 'signal-grid',
-  onOpenSignalGrid,
-  onOpenDirectory,
-  directoryDisabled = false,
-  onOpenParameters,
-  parametersDisabled = false,
-  onOpenAutomation,
-  automationActive = false,
-  onOpenVersionHistory,
-  versionHistoryDisabled = false,
-  onOpenHelp,
-  liveBadgeState,
-}: Pick<
-  SnapshotEditorSnapshotStatusPanelProps,
-  | 'liveSnapshot'
-  | 'authoritativeAudioState'
-  | 'monitoringStatusLabel'
-  | 'monitoringStatusWarning'
-  | 'onOpenProgressModal'
-  | 'onOpenSnapshots'
-  | 'onCreateSnapshot'
-  | 'createSnapshotPending'
-  | 'activeWorkspaceActionId'
-  | 'onOpenSignalGrid'
-  | 'onOpenDirectory'
-  | 'directoryDisabled'
-  | 'onOpenParameters'
-  | 'parametersDisabled'
-  | 'onOpenAutomation'
-  | 'automationActive'
-  | 'onOpenVersionHistory'
-  | 'versionHistoryDisabled'
-  | 'onOpenHelp'
-  | 'liveBadgeState'
->) {
-  const liveHeadline = useMemo(
-    () => resolveLiveHeadline(liveSnapshot, authoritativeAudioState, liveBadgeState),
-    [authoritativeAudioState, liveSnapshot, liveBadgeState],
-  )
-  const channelActivityBadge = useMemo(
-    () => buildChannelActivityBadge(liveSnapshot, authoritativeAudioState),
-    [authoritativeAudioState, liveSnapshot],
-  )
-  const snapshotTitle = liveSnapshot?.name ?? 'No live snapshot loaded'
-  const hasLiveSnapshot = Boolean(liveSnapshot)
-  // Meta line for the management hero. Only shows tokens we actually have on
-  // the snapshot — never synthesize a SIZE / BLOCKS value when the API doesn't
-  // expose it. CHAIN_COUNT and UPDATED_AT are first-class on SnapshotDetail.
-  const metaTokens: string[] = []
-  if (liveSnapshot && typeof liveSnapshot.chain_count === 'number') {
-    metaTokens.push(`${liveSnapshot.chain_count} ${liveSnapshot.chain_count === 1 ? 'CHAIN' : 'CHAINS'}`)
-  }
-  if (liveSnapshot?.updated_at) {
-    const relative = formatRelativeTimestamp(liveSnapshot.updated_at)
-    if (relative) metaTokens.push(`UPDATED ${relative.toUpperCase()}`)
-  }
-  const idleMetaText = 'ENGINE IDLE — LOAD OR CREATE A SNAPSHOT TO BEGIN'
-  const workspaceActions = [
-    {
-      id: 'signal-grid' as const,
-      label: 'Signal Grid',
-      icon: Flow,
-      onClick: onOpenSignalGrid,
-    },
-    {
-      id: 'directory' as const,
-      label: 'Directory',
-      icon: Folder,
-      onClick: onOpenDirectory,
-      disabled: directoryDisabled,
-    },
-    {
-      id: 'parameters' as const,
-      label: 'Parameters',
-      icon: SettingsAdjust,
-      onClick: onOpenParameters,
-      disabled: parametersDisabled,
-    },
-    {
-      id: 'automation' as const,
-      label: 'Automation',
-      icon: ChartLine,
-      onClick: onOpenAutomation,
-      active: automationActive,
-    },
-    {
-      id: 'version-history' as const,
-      label: 'Version History',
-      icon: Time,
-      onClick: onOpenVersionHistory,
-      disabled: versionHistoryDisabled,
-    },
-    {
-      id: 'help' as const,
-      label: 'Help',
-      icon: Help,
-      onClick: onOpenHelp,
-    },
-  ].filter((action) => Boolean(action.onClick))
-
-  return (
-    <Tile className="juce-grid-page__snapshot-inspector-controls" aria-label="Snapshot management">
-      {/* Left column — eyebrow / live name / status row / meta line. Mirrors
-          the design's mgmt-head left block: small caps eyebrow above the
-          large snapshot title, status pill row underneath, mono meta line
-          at the bottom. Empty-state title uses italic muted copy. */}
-      <div className="juce-grid-page__snapshot-inspector-controls-copy">
-        <p className="juce-grid-page__snapshot-mgmt-eyebrow">Snapshot Management</p>
-        <h3
-          className={`juce-grid-page__snapshot-mgmt-title${
-            hasLiveSnapshot ? '' : ' is-empty'
-          }`}
-        >
-          {snapshotTitle}
-        </h3>
-        <div className="juce-grid-page__snapshot-inspector-controls-tags">
-          <Tag
-            type={
-              liveHeadline.tone === 'current'
-                ? 'green'
-                : liveHeadline.tone === 'other'
-                  ? 'purple'
-                  : liveHeadline.tone === 'desync'
-                    ? 'red'
-                    : liveHeadline.tone === 'publishing'
-                      ? 'blue'
-                      : 'cool-gray'
-            }
-            className={`juce-grid-page__snapshot-inspector-live-tag is-${liveHeadline.tone}`}
-          >
-            {liveHeadline.text}
-          </Tag>
-          {channelActivityBadge ? (
-            <button
-              type="button"
-              title={channelActivityBadge.tooltip}
-              aria-label={channelActivityBadge.tooltip}
-              className="juce-grid-page__snapshot-status-channel-badge-wrap juce-grid-page__snapshot-status-channel-badge-button"
-              onClick={onOpenProgressModal}
-              disabled={!onOpenProgressModal}
-            >
-              <Tag
-                type={channelActivityBadge.tagType}
-                className={`juce-grid-page__snapshot-status-channel-badge ${channelActivityBadge.warning ? 'is-warning' : channelActivityBadge.tagType === 'green' ? 'is-healthy' : 'is-saved'}`}
-              >
-                {channelActivityBadge.label}
-              </Tag>
-            </button>
-          ) : null}
-          {monitoringStatusLabel ? (
-            <Tag
-              type={monitoringStatusWarning ? 'warm-gray' : 'cool-gray'}
-              className={`juce-grid-page__snapshot-status-monitoring-badge ${monitoringStatusWarning ? 'is-warning' : ''}`}
-            >
-              {monitoringStatusLabel}
-            </Tag>
-          ) : null}
-        </div>
-        <p
-          className={`juce-grid-page__snapshot-mgmt-meta${
-            hasLiveSnapshot ? '' : ' is-idle'
-          }`}
-        >
-          {hasLiveSnapshot && metaTokens.length > 0 ? metaTokens.join(' · ') : idleMetaText}
-        </p>
-      </div>
-      {/* Right column — grouped icon row, divider, then three primary buttons.
-          Mirrors the design's mgmt-actions: bordered icon-row pill (six glanceable
-          workspace destinations) + divider + the canonical Publish / Open / New trio. */}
-      <div className="juce-grid-page__snapshot-inspector-controls-actions">
-        {workspaceActions.length > 0 ? (
-          <div className="juce-grid-page__snapshot-inspector-workspace-actions" aria-label="Snapshot workspace destinations">
-            {workspaceActions.map((action) => {
-              const Icon = action.icon
-              const active = activeWorkspaceActionId === action.id || Boolean(action.active)
-              return (
-                <Button
-                  key={action.id}
-                  size="sm"
-                  kind={active ? 'secondary' : 'ghost'}
-                  renderIcon={Icon}
-                  iconDescription={action.label}
-                  hasIconOnly
-                  tooltipPosition="top"
-                  onClick={action.onClick}
-                  disabled={action.disabled}
-                  aria-current={active ? 'page' : undefined}
-                />
-              )
-            })}
-          </div>
-        ) : null}
-        <span className="juce-grid-page__snapshot-mgmt-divider" aria-hidden />
-        <div className="juce-grid-page__snapshot-mgmt-primary">
-          {onOpenProgressModal ? (
-            <Button
-              size="sm"
-              kind="secondary"
-              renderIcon={Launch}
-              className="juce-grid-page__snapshot-status-config-button"
-              onClick={onOpenProgressModal}
-              disabled={!liveSnapshot}
-            >
-              Publish to live
-            </Button>
-          ) : null}
-          {onOpenSnapshots ? (
-            <Button
-              size="sm"
-              kind="secondary"
-              renderIcon={Folder}
-              onClick={onOpenSnapshots}
-            >
-              Open Snapshots
-            </Button>
-          ) : null}
-          {onCreateSnapshot ? (
-            <Button
-              size="sm"
-              kind="primary"
-              renderIcon={Add}
-              onClick={onCreateSnapshot}
-              disabled={createSnapshotPending}
-            >
-              {createSnapshotPending ? 'Creating…' : 'New Snapshot'}
-            </Button>
-          ) : null}
-        </div>
-      </div>
-    </Tile>
-  )
-}
 
 export default SnapshotEditorSnapshotStatusPanel

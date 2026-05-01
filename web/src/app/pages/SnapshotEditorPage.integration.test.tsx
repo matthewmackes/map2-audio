@@ -1,7 +1,6 @@
 import '@testing-library/jest-dom'
 import { render, screen } from '@testing-library/react'
 
-import { SnapshotEditorSnapshotInspectorControls } from '../components/SnapshotEditor/SnapshotEditorSnapshotStatusPanel'
 import { JuceGridSignalCanvas } from '../components/SnapshotEditor/SnapshotEditorSignalCanvas'
 
 jest.mock('../hooks/useVuMeters', () => ({
@@ -99,16 +98,6 @@ function SnapshotEditorPageIntegrationHarness() {
 
   return (
     <section aria-label="Snapshot editor integration harness">
-      <SnapshotEditorSnapshotInspectorControls
-        activeWorkspaceActionId="signal-grid"
-        onOpenSignalGrid={jest.fn()}
-        onOpenDirectory={jest.fn()}
-        onOpenParameters={jest.fn()}
-        onOpenAutomation={jest.fn()}
-        onOpenVersionHistory={jest.fn()}
-        onOpenHelp={jest.fn()}
-      />
-
       <main aria-label="Signal flow workspace">
         <JuceGridSignalCanvas
           chain={mockChain as any}
@@ -128,41 +117,11 @@ function SnapshotEditorPageIntegrationHarness() {
   )
 }
 
-function SnapshotEditorParameterPanelHarness() {
-  return (
-    <section aria-label="Block parameter editor">
-      <div className="juce-grid-page__bottom-editor-body">
-        <div className="juce-grid-page__bottom-editor-parameter-stack">
-          <div className="juce-grid-page__snapshot-inspector-row juce-grid-page__snapshot-inspector-row--parameter-editor">
-            <SnapshotEditorSnapshotInspectorControls
-              activeWorkspaceActionId="parameters"
-              onOpenSignalGrid={jest.fn()}
-              onOpenDirectory={jest.fn()}
-              onOpenParameters={jest.fn()}
-              onOpenAutomation={jest.fn()}
-              onOpenVersionHistory={jest.fn()}
-              onOpenHelp={jest.fn()}
-              onOpenSnapshots={jest.fn()}
-              onCreateSnapshot={jest.fn()}
-              onOpenProgressModal={jest.fn()}
-            />
-          </div>
-          <div role="region" aria-label="Drive parameters">
-            Drive parameter controls
-          </div>
-        </div>
-      </div>
-    </section>
-  )
-}
-
 describe('SnapshotEditorPage integration', () => {
-  it('assembles the snapshot inspector navigation and signal canvas with mocked Special Settings', () => {
+  it('renders the signal canvas with mocked Special Settings', () => {
     const { container } = render(<SnapshotEditorPageIntegrationHarness />)
 
     expect(screen.queryByRole('navigation', { name: 'Snapshot navigation' })).not.toBeInTheDocument()
-    expect(screen.getByLabelText('Snapshot workspace destinations')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Signal Grid' })).toHaveAttribute('aria-current', 'page')
     expect(screen.getByLabelText('Signal flow workspace')).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Drive' })).toBeInTheDocument()
 
@@ -171,21 +130,5 @@ describe('SnapshotEditorPage integration', () => {
     expect(signalCanvas).toHaveAttribute('data-grid-backdrop', 'false')
     expect(signalCanvas).toHaveAttribute('data-node-shape', 'hex')
     expect(container.querySelector('.ucg-grid')).toBeInTheDocument()
-  })
-
-  it('keeps snapshot inspector actions reachable above an open block parameter editor', () => {
-    render(<SnapshotEditorParameterPanelHarness />)
-
-    expect(screen.getByLabelText('Snapshot workspace destinations')).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Signal Grid' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Directory' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Parameters' })).toHaveAttribute('aria-current', 'page')
-    expect(screen.getByRole('button', { name: 'Automation' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Version History' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Help' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Publish to live' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'Open Snapshots' })).toBeInTheDocument()
-    expect(screen.getByRole('button', { name: 'New Snapshot' })).toBeInTheDocument()
-    expect(screen.getByRole('region', { name: 'Drive parameters' })).toBeInTheDocument()
   })
 })

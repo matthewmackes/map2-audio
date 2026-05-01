@@ -35,7 +35,6 @@ export interface SnapshotEditorBottomEditorProps {
   selectedBlockMidiPanelEnabled: boolean
   selectedPluginEditorContent: ReactNode
   pedalboardBuildWizard: ReactNode
-  snapshotInspectorControls: ReactNode
 
   // MIDI panel
   chainId: number | null
@@ -75,7 +74,6 @@ export function SnapshotEditorBottomEditor({
   selectedBlockMidiPanelEnabled,
   selectedPluginEditorContent,
   pedalboardBuildWizard,
-  snapshotInspectorControls,
   chainId,
   lastMidiEvent,
   midiLearnInProgress,
@@ -169,7 +167,6 @@ export function SnapshotEditorBottomEditor({
             <div className="juce-grid-page__bottom-editor-parameter-stack">
               <div className="juce-grid-page__snapshot-inspector-row juce-grid-page__snapshot-inspector-row--parameter-editor">
                 {pedalboardBuildWizard}
-                {snapshotInspectorControls}
               </div>
               {selectedBlockMidiPanelEnabled && selectedPluginMeta ? (
                 <div className="juce-grid-page__bottom-editor-desktop-layout">
