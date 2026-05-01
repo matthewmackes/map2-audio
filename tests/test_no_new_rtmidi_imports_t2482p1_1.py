@@ -56,11 +56,11 @@ ALLOWED_RTMIDI_PATHS = {
     # _midi_in / _midi_out for live MIDI binding were stripped.
     # Production live MIDI flows through MidiHub (host-routed via
     # iter 78) or falls to virtual placeholder when MidiHub disabled.
-    # midi_sysex_bridge_base.py — IntelFX + MPX-1 simulator path
-    # uses rtmidi for inbound MIDI events. Different surface from
-    # the iter-77 hard-stripped sysex_device_bridge enumeration;
-    # this is the live-traffic poll loop. Future refactor queued.
-    "app/services/midi_sysex_bridge_base.py",
+    # midi_sysex_bridge_base.py — REMOVED FROM ALLOW-LIST in iter 84
+    # (loop 9). build_midi_sysex_runtime no longer imports rtmidi;
+    # IntelFX + MPX-1 production MIDI routes through the
+    # controller-host (iter-77 sysex_device_bridge enumeration +
+    # iter-83 midi_engine binding). Simulator path unchanged.
 }
 
 

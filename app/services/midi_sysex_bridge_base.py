@@ -20,7 +20,16 @@ def build_midi_sysex_runtime(
     simulator_module: str,
     device_label: str,
 ) -> Dict[str, Any]:
-    """Load optional rtmidi and simulator bindings for a SysEx bridge."""
+    """Load optional simulator bindings for a SysEx bridge.
+
+    T2482 loop 9 / iter 84: rtmidi import removed. The runtime
+    surface keeps `rtmidi_available` + `rtmidi_module` keys (always
+    False / None) for backwards compatibility with subclasses that
+    introspect the dict, but the bridge no longer provides rtmidi.
+    Production MIDI I/O routes through the controller-host (per
+    iter-77 sysex_device_bridge enumeration strip + iter-83
+    midi_engine binding strip).
+    """
     runtime: Dict[str, Any] = {
         "rtmidi_available": False,
         "rtmidi_module": None,
@@ -30,16 +39,8 @@ def build_midi_sysex_runtime(
         "get_simulator": None,
     }
 
-    try:
-        import rtmidi  # type: ignore
-
-        runtime["rtmidi_available"] = True
-        runtime["rtmidi_module"] = rtmidi
-    except ImportError:
-        logger.warning("python-rtmidi not installed, %s MIDI I/O running in simulation mode", device_label)
-
     simulator_enabled = os.environ.get(simulator_env_var, "").strip() in {"1", "true", "yes"}
-    if simulator_enabled and not runtime["rtmidi_available"]:
+    if simulator_enabled:
         try:
             import sys
 
