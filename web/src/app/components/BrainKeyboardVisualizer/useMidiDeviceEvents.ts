@@ -18,6 +18,7 @@
 import { useCallback, useEffect, useRef, useState } from 'react'
 
 import { getWsUrl } from '@/map2/transport'
+import { computeBackoffMs } from './wsBackoff'
 
 export interface MidiNoteEvent {
   // Monotonic id assigned client-side so React keys stay stable.
@@ -74,6 +75,11 @@ interface UseMidiDeviceEventsResult {
   log: MidiNoteEvent[]
   isConnected: boolean
   totalReceived: number
+  /** Number of times the WS has been (re)opened during this hook's
+   * lifetime. 1 on the first successful connect, 2+ after each
+   * reconnect. The visualizer header reads this to surface
+   * "Reconnecting (attempt N)" when the connection is bouncing. */
+  connectAttempts: number
   clearLog: () => void
 }
 
@@ -82,8 +88,11 @@ export function useMidiDeviceEvents(portName: string | null): UseMidiDeviceEvent
   const [log, setLog] = useState<MidiNoteEvent[]>([])
   const [isConnected, setIsConnected] = useState(false)
   const [totalReceived, setTotalReceived] = useState(0)
+  const [connectAttempts, setConnectAttempts] = useState(0)
   const idCounterRef = useRef(0)
   const wsRef = useRef<WebSocket | null>(null)
+  const retryTimerRef = useRef<number | null>(null)
+  const reconnectAttemptRef = useRef(0)
 
   const clearLog = useCallback(() => {
     setLog([])
@@ -97,16 +106,15 @@ export function useMidiDeviceEvents(portName: string | null): UseMidiDeviceEvent
     }
 
     let cancelled = false
-    const ws = new WebSocket(getWsUrl())
-    wsRef.current = ws
 
-    ws.onopen = () => {
-      if (cancelled) return
-      setIsConnected(true)
-      ws.send(JSON.stringify({ action: 'subscribe', topic: 'midi:traffic' }))
+    const cancelPendingRetry = () => {
+      if (retryTimerRef.current !== null) {
+        window.clearTimeout(retryTimerRef.current)
+        retryTimerRef.current = null
+      }
     }
 
-    ws.onmessage = (event) => {
+    const handleMessage = (event: MessageEvent) => {
       if (cancelled) return
       try {
         const message = JSON.parse(event.data)
@@ -163,27 +171,78 @@ export function useMidiDeviceEvents(portName: string | null): UseMidiDeviceEvent
       }
     }
 
-    ws.onerror = () => {
+    const connect = () => {
       if (cancelled) return
-      setIsConnected(false)
+      const ws = new WebSocket(getWsUrl())
+      wsRef.current = ws
+
+      ws.onopen = () => {
+        if (cancelled) return
+        // Successful connect resets the backoff so the next disconnect
+        // starts at attempt 1 again. connectAttempts (the user-visible
+        // counter) keeps climbing across reconnects so the UI can show
+        // "Reconnected (attempt 4)" rather than always "attempt 1".
+        reconnectAttemptRef.current = 0
+        setConnectAttempts((prev) => prev + 1)
+        setIsConnected(true)
+        try {
+          ws.send(JSON.stringify({ action: 'subscribe', topic: 'midi:traffic' }))
+        } catch {
+          // ignore — the next onclose / onerror will trigger a reconnect.
+        }
+      }
+
+      ws.onmessage = handleMessage
+
+      const scheduleReconnect = () => {
+        if (cancelled) return
+        cancelPendingRetry()
+        reconnectAttemptRef.current += 1
+        const delay = computeBackoffMs(reconnectAttemptRef.current)
+        retryTimerRef.current = window.setTimeout(() => {
+          retryTimerRef.current = null
+          connect()
+        }, delay)
+      }
+
+      ws.onerror = () => {
+        if (cancelled) return
+        setIsConnected(false)
+        // The browser fires onerror followed by onclose for transport
+        // failures; let onclose drive the reconnect to avoid scheduling
+        // two retries for the same disconnect.
+      }
+
+      ws.onclose = () => {
+        if (cancelled) return
+        setIsConnected(false)
+        scheduleReconnect()
+      }
     }
 
-    ws.onclose = () => {
-      if (cancelled) return
-      setIsConnected(false)
-    }
+    connect()
 
     return () => {
       cancelled = true
-      if (ws.readyState === WebSocket.OPEN) {
-        try {
-          ws.send(JSON.stringify({ action: 'unsubscribe', topic: 'midi:traffic' }))
-        } catch {
-          // ignore
+      cancelPendingRetry()
+      const ws = wsRef.current
+      if (ws) {
+        if (ws.readyState === WebSocket.OPEN) {
+          try {
+            ws.send(JSON.stringify({ action: 'unsubscribe', topic: 'midi:traffic' }))
+          } catch {
+            // ignore
+          }
         }
+        // Detach handlers before close so the close-driven reconnect path
+        // we just installed doesn't fire on the teardown close event.
+        ws.onopen = null
+        ws.onmessage = null
+        ws.onerror = null
+        ws.onclose = null
+        ws.close()
+        wsRef.current = null
       }
-      ws.close()
-      wsRef.current = null
     }
   }, [portName])
 
@@ -214,6 +273,7 @@ export function useMidiDeviceEvents(portName: string | null): UseMidiDeviceEvent
     log,
     isConnected,
     totalReceived,
+    connectAttempts,
     clearLog,
   }
 }

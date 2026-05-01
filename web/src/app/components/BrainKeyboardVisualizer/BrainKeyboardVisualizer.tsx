@@ -21,6 +21,10 @@ interface BrainKeyboardVisualizerProps {
   log: MidiNoteEvent[]
   isConnected: boolean
   totalReceived: number
+  /** From useMidiDeviceEvents — counts every successful (re)connect.
+   * 0 means "never connected"; >1 means "we have reconnected at least
+   * once during this hook's lifetime". */
+  connectAttempts?: number
 }
 
 const MAX_VISIBLE_LOG_ROWS = 50
@@ -40,6 +44,7 @@ export function BrainKeyboardVisualizer({
   log,
   isConnected,
   totalReceived,
+  connectAttempts = 0,
 }: BrainKeyboardVisualizerProps) {
   const layout = useMemo(() => buildPianoLayout(), [])
   const logRef = useRef<HTMLOListElement | null>(null)
@@ -71,11 +76,26 @@ export function BrainKeyboardVisualizer({
           </div>
         </div>
         <div className="brain-keyboard-visualizer__header-status">
-          <StatusChip
-            tone={isConnected ? 'live' : 'neutral'}
-            size="sm"
-            label={isConnected ? 'WS connected' : 'WS disconnected'}
-          />
+          {(() => {
+            // Three connection states:
+            //  - never connected (connectAttempts === 0): "Connecting…"
+            //    in neutral tone; the operator hasn't seen anything yet.
+            //  - currently connected: "WS connected" in live tone, with
+            //    "(attempt N)" suffix when N > 1 so reconnects are
+            //    legible without being alarming.
+            //  - was connected, now isn't: "Reconnecting…" in caution
+            //    tone — the auto-reconnect is in flight.
+            if (connectAttempts === 0 && !isConnected) {
+              return <StatusChip tone="neutral" size="sm" label="Connecting…" />
+            }
+            if (isConnected) {
+              const label = connectAttempts > 1
+                ? `WS connected (attempt ${connectAttempts})`
+                : 'WS connected'
+              return <StatusChip tone="live" size="sm" label={label} />
+            }
+            return <StatusChip tone="caution" size="sm" label="Reconnecting…" />
+          })()}
           <StatusChip
             tone={totalReceived > 0 ? 'ok' : 'neutral'}
             size="sm"

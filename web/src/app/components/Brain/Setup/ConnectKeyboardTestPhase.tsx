@@ -7,7 +7,8 @@ interface ConnectKeyboardTestPhaseProps {
 }
 
 export function ConnectKeyboardTestPhase({ selectedPortName }: ConnectKeyboardTestPhaseProps) {
-  const { activeNotes, log, isConnected, totalReceived } = useMidiDeviceEvents(selectedPortName)
+  const { activeNotes, log, isConnected, totalReceived, connectAttempts } =
+    useMidiDeviceEvents(selectedPortName)
 
   return (
     <Tile className="connect-keyboard-task__phase-body">
@@ -17,6 +18,7 @@ export function ConnectKeyboardTestPhase({ selectedPortName }: ConnectKeyboardTe
         log={log}
         isConnected={isConnected}
         totalReceived={totalReceived}
+        connectAttempts={connectAttempts}
       />
 
       <p className="connect-keyboard-task__phase-paragraph">
