@@ -175,6 +175,49 @@ class MidiHostClient:
         self._send_only(request)
         return msg_id
 
+    def send_short_message(
+        self,
+        *,
+        controller_key: str,
+        message_bytes: bytes,
+    ) -> str:
+        """Send a MIDI 1.0 short message OUT through a connected controller.
+
+        T2482-P1.1 Gap A.1 — drop-in replacement for the rtmidi
+        ``MidiOut.send_message(bytes)`` shape. Wraps ``MidiSendRequest``
+        with ``format="midi1"``. Accepts the standard 1..3-byte short
+        message (status + 0..2 data bytes); the host validates the
+        leading status byte and routes through libremidi's output
+        path.
+
+        Fire-and-forget; the caller does not wait for an outbound
+        acknowledgement.
+        """
+        payload = bytes(message_bytes)
+        if len(payload) < 1 or len(payload) > 3:
+            raise MidiHostClientError(
+                f"MIDI 1.0 short message length must be 1..3 bytes, got {len(payload)}"
+            )
+        # Validate leading status byte (high bit set, in range 0x80..0xEF
+        # or system-realtime range 0xF1..0xFE).  System-exclusive (0xF0)
+        # is NOT a short message — callers must use send_sysex().
+        status = payload[0]
+        if status < 0x80 or status == 0xF0 or status == 0xF7:
+            raise MidiHostClientError(
+                f"first byte must be a status byte in 0x80..0xEF (got 0x{status:02X})"
+            )
+        msg_id = uuid.uuid4().hex
+        request = {
+            "type": "midi_send_request",
+            "msg_id": msg_id,
+            "schema_version": SCHEMA_VERSION,
+            "controller_key": str(controller_key),
+            "bytes": list(payload),
+            "format": "midi1",
+        }
+        self._send_only(request)
+        return msg_id
+
     def send_ump(
         self,
         *,
