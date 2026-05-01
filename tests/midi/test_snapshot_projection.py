@@ -280,6 +280,230 @@ def test_list_snapshot_midi_map_entries_returns_empty_for_unknown(tmp_path):
     asyncio.run(_run())
 
 
+# ---------- Write-side projection tests (P2.3 part 2) ----------
+
+
+def test_replace_snapshot_midi_map_entries_full_replace(tmp_path):
+    _init_temp_db(tmp_path)
+
+    from app.services.midi.projections.snapshot import (
+        replace_snapshot_midi_map_entries,
+    )
+
+    async def _run():
+        await database_module._ensure_tables_created()
+        async with database_module.get_session() as session:
+            authority = MidiBindingAuthority(session)
+            # Initial set
+            await replace_snapshot_midi_map_entries(
+                authority,
+                42,
+                [
+                    {"channel": 0, "cc": 7, "action": "ab-toggle"},
+                    {"channel": 0, "cc": 8, "action": "morph"},
+                ],
+            )
+            await session.commit()
+            # Replace with a different set; full replace, not merge.
+            recovered = await replace_snapshot_midi_map_entries(
+                authority,
+                42,
+                [{"channel": 1, "program_number": 5, "action": "load"}],
+                modified_by="operator",
+            )
+            await session.commit()
+            assert len(recovered) == 1
+            assert recovered[0]["action"] == "load"
+            assert recovered[0]["program_number"] == 5
+            # Verify the old entries are GONE.
+            from sqlalchemy import select, func
+            from app.services.midi.models import MidiBinding
+            n = await session.scalar(
+                select(func.count(MidiBinding.binding_id)).where(
+                    MidiBinding.consumer_id == "42"
+                )
+            )
+            assert n == 1
+
+    asyncio.run(_run())
+
+
+def test_replace_with_empty_list_clears_all_entries(tmp_path):
+    _init_temp_db(tmp_path)
+
+    from app.services.midi.projections.snapshot import (
+        replace_snapshot_midi_map_entries,
+    )
+
+    async def _run():
+        await database_module._ensure_tables_created()
+        async with database_module.get_session() as session:
+            authority = MidiBindingAuthority(session)
+            await replace_snapshot_midi_map_entries(
+                authority,
+                42,
+                [{"channel": 0, "cc": 7, "action": "ab-toggle"}],
+            )
+            await session.commit()
+            await replace_snapshot_midi_map_entries(authority, 42, [])
+            await session.commit()
+            recovered = await list_snapshot_midi_map_entries(authority, 42)
+            assert recovered == []
+
+    asyncio.run(_run())
+
+
+def test_replace_does_not_touch_other_snapshots(tmp_path):
+    _init_temp_db(tmp_path)
+
+    from app.services.midi.projections.snapshot import (
+        replace_snapshot_midi_map_entries,
+    )
+
+    async def _run():
+        await database_module._ensure_tables_created()
+        async with database_module.get_session() as session:
+            authority = MidiBindingAuthority(session)
+            await replace_snapshot_midi_map_entries(
+                authority, 42, [{"channel": 0, "cc": 7, "action": "for-42"}]
+            )
+            await replace_snapshot_midi_map_entries(
+                authority, 99, [{"channel": 0, "cc": 7, "action": "for-99"}]
+            )
+            await session.commit()
+            await replace_snapshot_midi_map_entries(authority, 42, [])
+            await session.commit()
+            entries_42 = await list_snapshot_midi_map_entries(authority, 42)
+            entries_99 = await list_snapshot_midi_map_entries(authority, 99)
+            assert entries_42 == []
+            assert len(entries_99) == 1
+
+    asyncio.run(_run())
+
+
+# ---------- Migration script tests (P2.3 part 2) ----------
+
+
+def test_migration_script_walks_snapshot_midi_maps_table(tmp_path):
+    """Seed two snapshots with legacy entries via raw SQL (avoids
+    SQLAlchemy ORM lazy-load greenlet issues that fire on the
+    Snapshot model's many relationship backrefs)."""
+    _init_temp_db(tmp_path)
+
+    from sqlalchemy import text
+    from app.services.midi.projections.snapshot import (
+        migrate_snapshot_midi_maps_table,
+    )
+
+    async def _run():
+        await database_module._ensure_tables_created()
+        async with database_module.get_session() as session:
+            await session.execute(
+                text("INSERT INTO snapshots (name, version) VALUES ('One', 1), ('Two', 1)")
+            )
+            await session.execute(
+                text(
+                    "INSERT INTO snapshot_midi_maps (snapshot_id, entries) "
+                    "VALUES (1, :entries1), (2, :entries2)"
+                ),
+                {
+                    "entries1": (
+                        '[{"channel":0,"cc":7,"action":"ab-toggle"},'
+                        '{"channel":1,"program_number":5,"action":"load"}]'
+                    ),
+                    "entries2": '[{"channel":0,"cc":11,"action":"morph"}]',
+                },
+            )
+            await session.commit()
+
+            authority = MidiBindingAuthority(session)
+            stats = await migrate_snapshot_midi_maps_table(authority)
+            await session.commit()
+
+            assert stats["snapshots_migrated"] == 2
+            assert stats["entries_migrated"] == 3
+            assert stats["snapshots_skipped"] == 0
+
+            entries_1 = await list_snapshot_midi_map_entries(authority, 1)
+            entries_2 = await list_snapshot_midi_map_entries(authority, 2)
+            assert len(entries_1) == 2
+            assert len(entries_2) == 1
+            assert entries_1[0]["action"] == "ab-toggle"
+            assert entries_1[1]["action"] == "load"
+            assert entries_2[0]["action"] == "morph"
+
+    asyncio.run(_run())
+
+
+def test_migration_script_is_idempotent(tmp_path):
+    _init_temp_db(tmp_path)
+
+    from sqlalchemy import text
+    from app.services.midi.projections.snapshot import (
+        migrate_snapshot_midi_maps_table,
+    )
+
+    async def _run():
+        await database_module._ensure_tables_created()
+        async with database_module.get_session() as session:
+            await session.execute(text("INSERT INTO snapshots (name, version) VALUES ('One', 1)"))
+            await session.execute(
+                text(
+                    "INSERT INTO snapshot_midi_maps (snapshot_id, entries) "
+                    "VALUES (1, :entries)"
+                ),
+                {"entries": '[{"channel":0,"cc":7,"action":"ab-toggle"}]'},
+            )
+            await session.commit()
+
+            authority = MidiBindingAuthority(session)
+            first = await migrate_snapshot_midi_maps_table(authority)
+            await session.commit()
+            second = await migrate_snapshot_midi_maps_table(authority)
+            await session.commit()
+
+            assert first["snapshots_migrated"] == 1
+            assert first["snapshots_skipped"] == 0
+            # Second run: snapshot already has migrated bindings, skip it.
+            assert second["snapshots_migrated"] == 0
+            assert second["snapshots_skipped"] == 1
+            # Total binding count stays 1 (no duplicates created).
+            assert await authority.count() == 1
+
+    asyncio.run(_run())
+
+
+def test_migration_skips_empty_entry_lists(tmp_path):
+    _init_temp_db(tmp_path)
+
+    from sqlalchemy import text
+    from app.services.midi.projections.snapshot import (
+        migrate_snapshot_midi_maps_table,
+    )
+
+    async def _run():
+        await database_module._ensure_tables_created()
+        async with database_module.get_session() as session:
+            await session.execute(text("INSERT INTO snapshots (name, version) VALUES ('Empty', 1)"))
+            await session.execute(
+                text(
+                    "INSERT INTO snapshot_midi_maps (snapshot_id, entries) "
+                    "VALUES (1, :entries)"
+                ),
+                {"entries": "[]"},
+            )
+            await session.commit()
+
+            authority = MidiBindingAuthority(session)
+            stats = await migrate_snapshot_midi_maps_table(authority)
+            await session.commit()
+            assert stats["snapshots_migrated"] == 0
+            assert stats["entries_migrated"] == 0
+            assert await authority.count() == 0
+
+    asyncio.run(_run())
+
+
 def test_full_round_trip_through_db(tmp_path):
     _init_temp_db(tmp_path)
 

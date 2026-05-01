@@ -239,3 +239,101 @@ async def list_snapshot_midi_map_entries(
 
     bindings.sort(key=_sort_key)
     return [binding_to_legacy_entry(b) for b in bindings]
+
+
+async def replace_snapshot_midi_map_entries(
+    authority: MidiBindingAuthority,
+    snapshot_id: int,
+    entries: list[dict[str, Any]],
+    *,
+    modified_by: str = "snapshot-editor",
+) -> list[dict[str, Any]]:
+    """Write-side projection: replace every binding for this snapshot
+    with the supplied entry list.
+
+    Semantics: hard delete + bulk insert. Matches the existing
+    snapshot_editor.replace_midi_map() contract — full replace, not
+    a delta merge. Caller owns commit/rollback.
+
+    This is the canonical write path for snapshot MIDI bindings after
+    P2.3 part 2 ships. The legacy snapshot_persistence.py code path
+    that wrote to SnapshotMidiMap.entries gets rewired in iter 9.
+    """
+    # Hard-delete the existing binding set, then bulk-insert the new
+    # one. Each new entry gets a fresh legacy_entry_index = position so
+    # later round-trips preserve the new order.
+    await authority.delete_for_consumer("snapshot", str(snapshot_id))
+    for index, entry in enumerate(entries):
+        payload = legacy_entry_to_create_payload(
+            entry,
+            snapshot_id=snapshot_id,
+            legacy_entry_index=index,
+            created_by=modified_by,
+            source="snapshot-editor",
+        )
+        await authority.create(payload)
+    return await list_snapshot_midi_map_entries(authority, snapshot_id)
+
+
+async def migrate_snapshot_midi_maps_table(
+    authority: MidiBindingAuthority,
+    *,
+    skip_already_migrated: bool = True,
+) -> dict[str, int]:
+    """T2482-P2.3 migration: walk the legacy snapshot_midi_maps table
+    and populate the canonical MidiBinding table.
+
+    Idempotency: if `skip_already_migrated=True` and a snapshot already
+    has any binding with metadata.legacy_table='snapshot_midi_maps',
+    the migration skips that snapshot. So this can be safely re-run.
+
+    Returns: {snapshots_migrated, entries_migrated, snapshots_skipped}.
+
+    Caller owns commit. The legacy snapshot_midi_maps table is NOT
+    dropped here — that's P2.8 (legacy store deletion) once every
+    consumer is verified to read through the canonical authority.
+    """
+    from sqlalchemy import select
+
+    from app.database import SnapshotMidiMap
+
+    snapshots_migrated = 0
+    entries_migrated = 0
+    snapshots_skipped = 0
+
+    result = await authority._session.execute(select(SnapshotMidiMap))
+    rows = result.scalars().all()
+
+    for row in rows:
+        snapshot_id = int(row.snapshot_id)
+        entries = row.entries or []
+        if not entries:
+            continue
+
+        if skip_already_migrated:
+            existing = await authority.list_for_consumer("snapshot", str(snapshot_id))
+            already = any(
+                (b.metadata or {}).get("legacy_table") == "snapshot_midi_maps"
+                for b in existing
+            )
+            if already:
+                snapshots_skipped += 1
+                continue
+
+        for index, entry in enumerate(entries):
+            if not isinstance(entry, dict):
+                continue
+            payload = legacy_entry_to_create_payload(
+                entry,
+                snapshot_id=snapshot_id,
+                legacy_entry_index=index,
+            )
+            await authority.create(payload)
+            entries_migrated += 1
+        snapshots_migrated += 1
+
+    return {
+        "snapshots_migrated": snapshots_migrated,
+        "entries_migrated": entries_migrated,
+        "snapshots_skipped": snapshots_skipped,
+    }
