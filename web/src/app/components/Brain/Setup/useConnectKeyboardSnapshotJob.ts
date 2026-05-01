@@ -31,8 +31,12 @@ import type {
   BrainSlotModel,
   BrainSlotUpdateModel,
 } from './brainSetupTypes'
+import { buildSnapshotName, pickFirstAsset } from './snapshotJobHelpers'
 import { fetchJson } from '@/map2/http'
 import { API_BASE } from '@/map2/transport'
+
+// Re-export for callers that imported from the hook module historically.
+export { buildSnapshotName, pickFirstAsset }
 
 export type JobStageId =
   | 'library_scan'
@@ -80,38 +84,6 @@ const INITIAL_RESULT: JobResult = {
   libraryEmpty: false,
 }
 
-function pickFirstAsset(library: BrainLibraryStateModel): BrainLibraryAssetModel | null {
-  // Prefer a featured asset if any are flagged.
-  if (library.featured_assets && library.featured_assets.length > 0) {
-    for (const featuredId of library.featured_assets) {
-      for (const collection of library.collections ?? []) {
-        const hit = (collection.assets ?? []).find((a) => a.asset_id === featuredId)
-        if (hit && hit.path && hit.path.trim() !== '') return hit
-      }
-    }
-  }
-  // Otherwise, first asset across all collections with a non-empty path.
-  for (const collection of library.collections ?? []) {
-    for (const asset of collection.assets ?? []) {
-      if (asset.path && asset.path.trim() !== '') return asset
-    }
-  }
-  return null
-}
-
-function todayIsoDate(): string {
-  // YYYY-MM-DD in local time. Used in snapshot names; deliberately not UTC
-  // because operators read these names and expect "today" to mean their day.
-  const now = new Date()
-  const yyyy = now.getFullYear()
-  const mm = String(now.getMonth() + 1).padStart(2, '0')
-  const dd = String(now.getDate()).padStart(2, '0')
-  return `${yyyy}-${mm}-${dd}`
-}
-
-export function buildSnapshotName(portName: string): string {
-  return `Brain — ${portName} (set up ${todayIsoDate()})`
-}
 
 interface RunArgs {
   portName: string
