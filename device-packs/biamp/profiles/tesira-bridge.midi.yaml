@@ -1,0 +1,51 @@
+schema_version: 1
+identity:
+  manufacturer: Biamp
+  model: tesira-bridge
+  alsa_client_pattern: 'Tesira'
+  hardware_id: alsa-seq:Tesira:0
+
+scripts:
+  - scripts/tesira_bridge.js
+
+# Tesira's primary control surface is TTP over TCP (port 23 for SSH,
+# 22 for telnet), NOT MIDI. This profile is the MIDI-side seam — it
+# documents that Tesira is a recognized device on the platform but
+# delegates all real binding work to the TTP↔MIDI bridge consumer
+# in MIDI Services (T2482-P2.6 part 3 tesira_ttp.py projection).
+#
+# The control rows below are placeholders so the profile validates;
+# Tesira-specific MIDI bindings (operator-authored CC → TTP attribute
+# writes) live as MidiBinding rows with consumer_type='tesira_ttp',
+# NOT as static profile rows here. The 0xF0 sentinel routes any
+# inbound SysEx to the bridge JS for diagnostic logging.
+
+controls:
+  - status: 0xF0
+    script: TesiraBridge.handle_sysex
+    description: 'Inbound SysEx — diagnostic logging only. Real TTP bindings live as MidiBinding rows (consumer_type=tesira_ttp).'
+
+  # Placeholder transport-control row so profiles[] is non-empty;
+  # Tesira hardware does not emit transport CCs — operator can rebind
+  # if needed via the canonical MidiBindingAuthority.
+  - status: 0xB0
+    midino: 80
+    channel: 1
+    action: momentary
+    target: audio.transport.tap_tempo
+    description: 'Generic transport sentinel (re-bindable). Most Tesira deployments leave this unbound.'
+
+settings:
+  - id: tesira_ttp_endpoint
+    label: TTP endpoint host
+    type: string
+    default: ''
+    description: 'IP / hostname of the TTP TCP endpoint. The TTP↔MIDI bridge connects here independently of MIDI.'
+  - id: tesira_ttp_port
+    label: TTP endpoint port
+    type: number
+    default: 23
+    min: 1
+    max: 65535
+    step: 1
+    description: 'TCP port for TTP. Default 23 (telnet); 22 for SSH.'

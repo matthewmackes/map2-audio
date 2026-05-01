@@ -1,0 +1,21 @@
+schema_version: 1
+pack_id: voodoo-lab
+vendor:
+  name: Voodoo Lab
+  website: https://voodoolab.com/
+  support_url: https://voodoolab.com/contact-us/
+description: |
+  Voodoo Lab MIDI controllers. The Ground Control Pro profile covers
+  the Voodoo Lab Ground Control Pro — 8 program-bank buttons + 4
+  effect-loop switches + tap tempo + dual expression-pedal inputs +
+  full SysEx-driven preset library editor.
+
+  Ground Control Pro uses Voodoo Lab manufacturer SysEx (00 00 32)
+  for memory bank dumps, preset name strings, and field-map writes.
+  The existing Python-side SysEx workflow lives at the GCP service +
+  routes (groundControlProApi); the JS scripts/gcp.js stub
+  documents the Phase 1.5 cutover surface.
+license: AGPL-3.0-only
+source: map2-native
+models:
+  - ground-control-pro

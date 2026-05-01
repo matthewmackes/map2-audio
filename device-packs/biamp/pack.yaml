@@ -1,0 +1,27 @@
+schema_version: 1
+pack_id: biamp
+vendor:
+  name: Biamp
+  website: https://www.biamp.com/
+  support_url: https://support.biamp.com/
+description: |
+  Biamp Tesira surfaces. Tesira is primarily an AVB DSP system; its
+  control plane uses TTP (Tesira Text Protocol) over TCP, NOT MIDI.
+  This profile exists primarily for the **MIDI-side bridge** —
+  inbound CC/Note events that drive TTP attribute writes via the
+  TTP↔MIDI bridge consumer (T2482-P2.6 part 3 tesira_ttp.py
+  projection).
+
+  The actual TTP control protocol lives in
+  app/services/midi_hub/tesira_client.py + the Tesira device panels
+  under web/src/app/components/Devices/Tesira/. This pack exposes
+  Tesira as a recognized MIDI surface so MAP2 can discover, route,
+  and bind MIDI sources to TTP attributes through the canonical
+  MIDI Services authority.
+
+  Note: Tesira will become first-class under the future AVB Services
+  epic. This pack is the MIDI-side seam, not the AVB-side authority.
+license: AGPL-3.0-only
+source: map2-native
+models:
+  - tesira-bridge

@@ -34607,3 +34607,49 @@ User directive received during the production migration: **"As an output of this
 **Folded into**: SHIP loop 3 plan B as an additional output. Specifically:
 - Iter 21 (or thereabouts): MIDI Services diagram set inside `docs/architecture/MIDI_SERVICES.md` (process topology, storage, consumer surface, migration narrative, four-services position) — finished outcome of T2482.
 - Iter ~30 (T2482 close): all 4 service-stack diagram stubs exist; MIDI Services is complete; AVB/Sampler/Audio Effects diagram stubs are written into `docs/architecture/FIRST_CLASS_SERVICES.md` as templates for the future epics to fill in.
+
+---
+
+### SHIP loop 3 (iters 21–30) closing log — 2026-05-01
+
+**Status**: 10 substantive iters shipped (21–30, dual-pushed). User-directive "create full architectural diagrams for each of the 1st class service stacks" + Plan A "device-pack builds" both fully addressed.
+
+| Iter | Subtask | Commit | Highlight |
+|---|---|---|---|
+| 21 | MIDI Services architectural diagrams | 62e5d709 | 5 Mermaid views in MIDI_SERVICES.md §8 |
+| 22 | FIRST_CLASS_SERVICES.md template doc | fd3a70d3 | Reusable pattern + 9-step playbook for next 3 epics |
+| 23 | AVB Services architecture stub + 5 diagrams | 38f3047c | Doc + critical-gap callout for Carbon migration debt |
+| 24 | Sampler Services architecture stub + 5 diagrams | 3b7df311 | Doc + RED-BOX critical-gap: SoundFont/SFZ engine missing in juce-engine |
+| 25 | Audio Effects Services architecture stub + 5 diagrams | 6c8144ef | Doc + canonical authority partially exists (State Authority graph) |
+| 26 | Lexicon MPX-1 device-pack | 3549028a | First device-pack of P1.5 cleanup (Lexicon mfr ID 0x06 SysEx cutover stub) |
+| 27 | Rocktron IntelFX device-pack | c7b4d666 | Mirror of MPX-1 (Rocktron 3-byte mfr ID 00 01 56 SysEx cutover stub) |
+| 28 | Mackie MCU Pro device-pack | 89fca79b | Different shape — control surface (faders + V-Pots + scribble + bidirectional LED echo + 14-bit pitch-bend fader decode) |
+| 29 | Novation Launch Control + Ableton Push device-packs | a695e1fe | TWO packs in one iter — Launch Control XL (24 knobs/faders/mute/solo on ch9) + Push (8x8 RGB pad grid + endless encoders + mode switching) |
+| 30 | Voodoo Lab GCP + Biamp Tesira device-packs + SHIP loop 3 roll-up | (this commit) | Two final packs — GCP (256-program library, expression pedals, SysEx mfr ID 00 00 32 cutover) + Tesira (MIDI-side bridge seam delegating to TTP↔MIDI bridge consumer) |
+
+**Total packs added in SHIP loop 3**: **7** (lexicon, rocktron, mackie, novation, ableton, voodoo-lab, biamp).
+
+**P1.5 status after SHIP loop 3**: All 7 missing device-packs identified in iter 1's audit are now shipped on disk. Schema validation green for all 11 device-packs (4 pre-existing + 7 added). The five SysEx-driven packs (lexicon MPX-1, rocktron IntelFX, voodoo-lab GCP) carry JS-stub `handle_sysex` cutover surfaces; the Python parsers remain active until the future T2459-H4 / T2482-P1.5 cutover.
+
+**Architectural diagrams output (the 2026-05-01 user directive)**: All 4 first-class service stacks have complete architecture docs with the 5 required Mermaid diagram views. The 4-doc set:
+- `docs/architecture/MIDI_SERVICES.md` (reference impl, Phase 2 SHIPPED)
+- `docs/architecture/AVB_SERVICES.md` (epic stub)
+- `docs/architecture/SAMPLER_SERVICES.md` (epic stub, with red-box critical-gap callout)
+- `docs/architecture/AUDIO_EFFECTS_SERVICES.md` (epic stub, partial unification noted)
+Plus the canonical reference `docs/architecture/FIRST_CLASS_SERVICES.md` with the 6-gate first-class-services template + 9-step process for opening a new epic.
+
+**T2482 status overall (after 3 SHIP loops)**:
+- Plan artifact + 30 iters = 31 commits dual-pushed
+- Phase 2 SHIPPED + live production migration evidence
+- 138 backend tests across 12 suites, all passing
+- 11 device-packs on disk (4 pre-existing + 7 net-new in SHIP loop 3)
+- 4 first-class service stack architecture docs with diagrams
+- `/api/midi/*` 8 endpoints live on `:8080`
+- Backend healthy, audio still running
+
+**Still deferred** (multi-week scopes — explicit user gate required):
+- Phase 3 frontend `/midi` canonical surface (per Q5/D — per-bundle gated)
+- T2459-H1/H2/H6/H7 backend completion (libremidi I/O, ControllerEngine, Map2MidiController retire, cluster MIDI host-to-host) — multi-week
+- P1.5 SysEx-parser-cutover work (move MPX-1 / IntelFX / GCP SysEx parsers from Python into the device-pack JS stubs that now exist) — depends on P1.1/P1.2
+- P2.8 legacy storage deletion (`snapshot_midi_maps` + `midi_mappings` tables — keeping for one more loop as a safety net)
+- Production migration of the 49 documented-skipped `midi_mappings` rows that lacked `chain_id` — needs operator decision on a `global_param` consumer type

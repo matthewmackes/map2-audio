@@ -1,0 +1,64 @@
+schema_version: 1
+identity:
+  manufacturer: Voodoo Lab
+  model: ground-control-pro
+  alsa_client_pattern: 'Ground Control Pro'
+  hardware_id: alsa-seq:Ground Control Pro:0
+
+scripts:
+  - scripts/gcp.js
+
+# Voodoo Lab Ground Control Pro: pedalboard MIDI controller with 8
+# program-bank buttons (PCs 0..7 on the active bank), 4 instant-access
+# loop switches (CC 64..67), tap tempo (CC 80), and 2 expression-pedal
+# inputs (CC 1, CC 7).
+#
+# Bank up/down via PCs 100/101 (default mapping; user-configurable
+# via SysEx). Preset library editing flows entirely through SysEx
+# with the Voodoo Lab manufacturer ID 00 00 32.
+
+controls:
+  # ---------- Bank-relative program buttons ----------
+  - { status: 0xC0, channel: 1, action: send_pc, target: audio.snapshot.recall, script: GCP.program_change, description: 'Program Change → recall MAP2 snapshot mapped from GCP bank+button.' }
+
+  # ---------- Instant-access loop switches ----------
+  - { status: 0xB0, midino: 64, channel: 1, action: latch, target: audio.chain.1.bypass, description: 'Loop 1 → chain 1 bypass.' }
+  - { status: 0xB0, midino: 65, channel: 1, action: latch, target: audio.chain.2.bypass, description: 'Loop 2 → chain 2 bypass.' }
+  - { status: 0xB0, midino: 66, channel: 1, action: latch, target: audio.chain.3.bypass, description: 'Loop 3 → chain 3 bypass.' }
+  - { status: 0xB0, midino: 67, channel: 1, action: latch, target: audio.chain.4.bypass, description: 'Loop 4 → chain 4 bypass.' }
+
+  # ---------- Tap tempo ----------
+  - { status: 0xB0, midino: 80, channel: 1, action: momentary, target: audio.transport.tap_tempo, description: 'TAP TEMPO.' }
+
+  # ---------- Expression pedal inputs ----------
+  - { status: 0xB0, midino: 1, channel: 1, action: set, target: audio.chain.1.expression, description: 'Expression pedal A (CC 1) → chain 1 expression.' }
+  - { status: 0xB0, midino: 7, channel: 1, action: set, target: audio.chain.2.expression, description: 'Expression pedal B (CC 7) → chain 2 expression.' }
+
+  # ---------- SysEx (preset library + field map) ----------
+  - { status: 0xF0, script: GCP.handle_sysex, description: 'Voodoo Lab SysEx (mfr ID 00 00 32) — memory bank dumps, preset names, field-map writes.' }
+
+# Outbound LED feedback for the 4 instant-access loop LEDs
+outputs:
+  - { status: 0xB0, midino: 64, channel: 1, source: audio.chain.1.bypass, description: 'Loop 1 LED echo.' }
+  - { status: 0xB0, midino: 65, channel: 1, source: audio.chain.2.bypass, description: 'Loop 2 LED echo.' }
+  - { status: 0xB0, midino: 66, channel: 1, source: audio.chain.3.bypass, description: 'Loop 3 LED echo.' }
+  - { status: 0xB0, midino: 67, channel: 1, source: audio.chain.4.bypass, description: 'Loop 4 LED echo.' }
+
+settings:
+  - id: gcp_active_bank
+    label: Active program bank
+    type: number
+    default: 0
+    min: 0
+    max: 31
+    step: 1
+    description: 'Active 8-program bank (0-31; total 256 programs across 32 banks).'
+  - id: gcp_expression_a_curve
+    label: Expression A curve
+    type: choice
+    default: linear
+    choices:
+      - linear
+      - logarithmic
+      - exponential
+    description: 'Curve applied to expression pedal A (heel→toe).'
