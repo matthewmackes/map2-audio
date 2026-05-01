@@ -236,6 +236,141 @@ def test_list_plugin_param_bindings_for_snapshot_filters_correctly(tmp_path):
     asyncio.run(_run())
 
 
+# ---------- T2482-P2.5 part 2: MIDIMapping legacy migration ----------
+
+
+def test_migrate_midi_mappings_table_basic(tmp_path):
+    _init_temp_db(tmp_path)
+
+    from sqlalchemy import text
+    from app.services.midi.projections.plugin_param import (
+        migrate_midi_mappings_table,
+    )
+
+    async def _run():
+        await database_module._ensure_tables_created()
+        async with database_module.get_session() as session:
+            # Seed a chain row (chain_id=1) so the FK is valid.
+            await session.execute(
+                text("INSERT INTO chains (id, name) VALUES (1, 'Test')")
+            )
+            # Seed two MIDIMapping rows.
+            await session.execute(
+                text(
+                    "INSERT INTO midi_mappings ("
+                    "channel, cc, chain_id, target_plugin_uri, "
+                    "target_plugin_position, target_param_index, "
+                    "target_param_symbol, min_val, max_val, "
+                    "curve_type, invert, feedback_enabled, feedback_cc, "
+                    "name, is_learned, is_enabled"
+                    ") VALUES "
+                    "(0, 7, 1, 'map2:fx:eq', 0, 0, 'low_gain', "
+                    "  -12.0, 12.0, 'linear', 0, 1, NULL, 'Low Gain', 0, 1), "
+                    "(1, 11, 1, 'map2:fx:nam', 0, 3, 'drive', "
+                    "  0.0, 1.0, 'exponential', 0, 1, 12, 'Drive', 1, 1)"
+                )
+            )
+            await session.commit()
+
+            authority = MidiBindingAuthority(session)
+            stats = await migrate_midi_mappings_table(authority)
+            await session.commit()
+
+            assert stats["mappings_migrated"] == 2
+            assert stats["mappings_skipped"] == 0
+
+            for_eq = await list_plugin_param_bindings_for_param(
+                authority, chain_id=1, plugin_uri="map2:fx:eq", param_index=0
+            )
+            for_nam = await list_plugin_param_bindings_for_param(
+                authority, chain_id=1, plugin_uri="map2:fx:nam", param_index=3
+            )
+            assert len(for_eq) == 1
+            assert len(for_nam) == 1
+            assert for_eq[0].source_descriptor["cc"] == 7
+            assert for_eq[0].source_descriptor["min"] == -12.0
+            assert for_eq[0].source_descriptor["max"] == 12.0
+            assert for_eq[0].source_descriptor["curve"] == "linear"
+            assert for_eq[0].consumer_label == "Low Gain"
+            assert for_eq[0].metadata["legacy_table"] == "midi_mappings"
+            assert for_nam[0].source_descriptor["curve"] == "exponential"
+            assert for_nam[0].metadata["learned"] is True
+            assert for_nam[0].target_descriptor["feedback_cc"] == 12
+
+    asyncio.run(_run())
+
+
+def test_migrate_midi_mappings_idempotent(tmp_path):
+    _init_temp_db(tmp_path)
+
+    from sqlalchemy import text
+    from app.services.midi.projections.plugin_param import (
+        migrate_midi_mappings_table,
+    )
+
+    async def _run():
+        await database_module._ensure_tables_created()
+        async with database_module.get_session() as session:
+            await session.execute(
+                text("INSERT INTO chains (id, name) VALUES (1, 'Test')")
+            )
+            await session.execute(
+                text(
+                    "INSERT INTO midi_mappings ("
+                    "channel, cc, chain_id, target_plugin_uri, "
+                    "target_plugin_position, target_param_index, "
+                    "is_enabled, feedback_enabled"
+                    ") VALUES (0, 7, 1, 'map2:fx:eq', 0, 0, 1, 1)"
+                )
+            )
+            await session.commit()
+
+            authority = MidiBindingAuthority(session)
+            first = await migrate_midi_mappings_table(authority)
+            await session.commit()
+            second = await migrate_midi_mappings_table(authority)
+            await session.commit()
+
+            assert first["mappings_migrated"] == 1
+            assert second["mappings_migrated"] == 0
+            assert second["mappings_skipped"] == 1
+            assert await authority.count() == 1
+
+    asyncio.run(_run())
+
+
+def test_migrate_skips_rows_with_missing_required_fields(tmp_path):
+    _init_temp_db(tmp_path)
+
+    from sqlalchemy import text
+    from app.services.midi.projections.plugin_param import (
+        migrate_midi_mappings_table,
+    )
+
+    async def _run():
+        await database_module._ensure_tables_created()
+        async with database_module.get_session() as session:
+            # Row missing target_plugin_uri — should be skipped.
+            # chain_id NULL avoids the FK requirement entirely; the
+            # migration's skip path triggers on missing target_plugin_uri.
+            await session.execute(
+                text(
+                    "INSERT INTO midi_mappings ("
+                    "channel, cc, chain_id, target_param_index, "
+                    "is_enabled, feedback_enabled"
+                    ") VALUES (0, 7, NULL, 0, 1, 1)"
+                )
+            )
+            await session.commit()
+            authority = MidiBindingAuthority(session)
+            stats = await migrate_midi_mappings_table(authority)
+            await session.commit()
+            assert stats["mappings_migrated"] == 0
+            assert stats["mappings_skipped"] == 1
+
+    asyncio.run(_run())
+
+
 def test_list_plugin_param_bindings_for_param_across_snapshots(tmp_path):
     _init_temp_db(tmp_path)
 

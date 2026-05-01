@@ -163,3 +163,128 @@ async def list_plugin_param_bindings_for_param(
         chain_id=chain_id, plugin_uri=plugin_uri, param_index=param_index
     )
     return await authority.list_for_consumer("plugin_param", consumer_id, enabled_only=False)
+
+
+async def migrate_midi_mappings_table(
+    authority: MidiBindingAuthority,
+    *,
+    skip_already_migrated: bool = True,
+) -> dict[str, int]:
+    """T2482-P2.5 part 2 migration: walk the legacy MIDIMapping table
+    and lift each row into a canonical plugin_param binding.
+
+    The legacy MIDIMapping table is a global (non-snapshot-scoped)
+    plugin-param binding store. Each row maps:
+        (channel, cc) → (chain_id, plugin_uri, param_index)
+    with min/max/curve/feedback fields.
+
+    Migrated bindings:
+      - consumer_type='plugin_param'
+      - consumer_id="<chain_id>:<plugin_uri>:<param_index>"
+      - source_type='midi_cc' (the legacy table is CC-only)
+      - scope='global' (legacy is not snapshot-scoped; new snapshot
+        bindings live as separate rows per snapshot in P2.7's
+        plugin_param projection)
+      - source='legacy-migration', metadata.legacy_table='midi_mappings'
+
+    Idempotent: skips rows already migrated when
+    `skip_already_migrated=True` (detected via metadata.legacy_table +
+    metadata.legacy_row_id).
+
+    Returns: {mappings_migrated, mappings_skipped}.
+    """
+    from sqlalchemy import select
+
+    from app.database import MIDIMapping
+
+    mappings_migrated = 0
+    mappings_skipped = 0
+
+    result = await authority._session.execute(select(MIDIMapping))
+    rows = result.scalars().all()
+
+    for row in rows:
+        legacy_id = int(row.id)
+        if not row.target_plugin_uri or row.target_param_index is None or row.chain_id is None:
+            mappings_skipped += 1
+            continue
+        consumer_id = make_consumer_id(
+            chain_id=int(row.chain_id),
+            plugin_uri=str(row.target_plugin_uri),
+            param_index=int(row.target_param_index),
+        )
+
+        if skip_already_migrated:
+            existing = await authority.list_for_consumer("plugin_param", consumer_id)
+            already = any(
+                (b.metadata or {}).get("legacy_table") == "midi_mappings"
+                and (b.metadata or {}).get("legacy_row_id") == legacy_id
+                for b in existing
+            )
+            if already:
+                mappings_skipped += 1
+                continue
+
+        source_descriptor: dict[str, Any] = {
+            "channel": int(row.channel),
+            "cc": int(row.cc),
+        }
+        if row.min_val is not None:
+            source_descriptor["min"] = float(row.min_val)
+        if row.max_val is not None:
+            source_descriptor["max"] = float(row.max_val)
+        if row.curve_type:
+            source_descriptor["curve"] = str(row.curve_type)
+        if bool(row.invert):
+            source_descriptor["invert"] = True
+
+        target_descriptor: dict[str, Any] = {
+            "chain_id": int(row.chain_id),
+            "plugin_uri": str(row.target_plugin_uri),
+            "param_index": int(row.target_param_index),
+        }
+        if row.target_param_symbol:
+            target_descriptor["parameter_symbol"] = str(row.target_param_symbol)
+        if row.feedback_cc is not None:
+            target_descriptor["feedback_cc"] = int(row.feedback_cc)
+        if row.target_plugin_position is not None:
+            target_descriptor["plugin_position"] = int(row.target_plugin_position)
+
+        metadata = {
+            "legacy_table": "midi_mappings",
+            "legacy_row_id": legacy_id,
+        }
+        if row.is_learned:
+            metadata["learned"] = True
+        if row.group_id is not None:
+            metadata["legacy_group_id"] = int(row.group_id)
+
+        label = (
+            row.name.strip()
+            if (row.name and row.name.strip())
+            else f"chain {row.chain_id} param {row.target_param_index} (legacy {legacy_id})"
+        )
+
+        payload = MidiBindingCreate(
+            consumer_type="plugin_param",
+            consumer_id=consumer_id,
+            consumer_label=label,
+            source_type="midi_cc",
+            source_descriptor=source_descriptor,
+            target_type="engine_param",
+            target_descriptor=target_descriptor,
+            device_id=None,
+            scope="global",
+            scope_id=None,
+            enabled=bool(row.is_enabled),
+            created_by="phase2-migration",
+            source="legacy-migration",
+            metadata=metadata,
+        )
+        await authority.create(payload)
+        mappings_migrated += 1
+
+    return {
+        "mappings_migrated": mappings_migrated,
+        "mappings_skipped": mappings_skipped,
+    }
