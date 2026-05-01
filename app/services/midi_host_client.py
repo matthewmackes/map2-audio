@@ -425,6 +425,183 @@ class MidiHostClient:
 
 
 # ---------------------------------------------------------------------
+# Event subscription (T2482-P1.1 Gap A.3)
+# ---------------------------------------------------------------------
+
+class MidiEventSubscription:
+    """Long-lived UDS reader that demuxes outbound host frames to callbacks.
+
+    Replaces the rtmidi ``MidiIn.set_callback(fn)`` shape. The host emits
+    four outbound frame types over the UDS (see schemas/controller_host.py):
+
+    - ``controller_event`` — raw MIDI/HID/bulk bytes captured by the host
+      that did NOT match an active mapping. Used by the MIDI Learn wizard.
+    - ``engine_command``   — a JS ``engine.setValue(...)`` call.
+    - ``log_event``        — a host-internal log line or ``engine.log()``.
+    - ``script_error``     — a QuickJS exception.
+
+    Subscribers register one callback per type; the reader thread invokes
+    callbacks under the GIL (thread-safe enough for the use cases this
+    replaces — rtmidi callbacks ran from RtMidi's reader thread which had
+    the same property).
+
+    Lifecycle: ``start()`` opens the UDS, spawns the reader thread, and
+    returns immediately. ``stop()`` shuts the reader thread down + closes
+    the socket. The subscription is single-use; create a new one to
+    reconnect after a stop.
+    """
+
+    def __init__(
+        self,
+        socket_path: Path,
+        timeout_s: float = DEFAULT_TIMEOUT_S,
+    ) -> None:
+        self._socket_path = socket_path
+        self._timeout_s = timeout_s
+        self._sock: socket.socket | None = None
+        self._thread: threading.Thread | None = None
+        self._stop_event = threading.Event()
+        # callback registry — one optional callable per outbound type.
+        self._callbacks: dict[str, Any] = {
+            "controller_event": None,
+            "engine_command":   None,
+            "log_event":        None,
+            "script_error":     None,
+        }
+
+    # ------------------------------------------------------------------
+    # Public API
+    # ------------------------------------------------------------------
+
+    def on_controller_event(self, fn: Any) -> None:
+        """Set the callback for raw ``controller_event`` frames.
+
+        Callable is invoked with the decoded TypedDict (``ControllerEvent``)
+        from a reader thread. Pass ``None`` to clear.
+        """
+        self._callbacks["controller_event"] = fn
+
+    def on_engine_command(self, fn: Any) -> None:
+        """Set the callback for ``engine_command`` frames."""
+        self._callbacks["engine_command"] = fn
+
+    def on_log_event(self, fn: Any) -> None:
+        """Set the callback for ``log_event`` frames."""
+        self._callbacks["log_event"] = fn
+
+    def on_script_error(self, fn: Any) -> None:
+        """Set the callback for ``script_error`` frames."""
+        self._callbacks["script_error"] = fn
+
+    def start(self) -> None:
+        """Open the UDS connection and spawn the reader thread.
+
+        Raises ``MidiHostClientError`` if the connect fails. After a
+        successful start, the reader thread runs until ``stop()`` or
+        the host closes the socket.
+        """
+        if self._sock is not None:
+            raise MidiHostClientError("subscription already started")
+        try:
+            sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+            sock.settimeout(self._timeout_s)
+            sock.connect(str(self._socket_path))
+            # After connect, switch to non-blocking-with-timeout for the
+            # reader loop so stop() can interrupt within ~timeout_s.
+            sock.settimeout(0.5)
+        except OSError as exc:
+            raise MidiHostClientError(
+                f"cannot connect to controller-host UDS at {self._socket_path}: {exc}"
+            ) from exc
+        self._sock = sock
+        self._stop_event.clear()
+        self._thread = threading.Thread(
+            target=self._run, name="MidiEventSubscription", daemon=True
+        )
+        self._thread.start()
+
+    def stop(self) -> None:
+        """Signal the reader thread to exit + close the socket."""
+        self._stop_event.set()
+        if self._sock is not None:
+            try:
+                self._sock.shutdown(socket.SHUT_RDWR)
+            except OSError:
+                pass
+            try:
+                self._sock.close()
+            except OSError:
+                pass
+            self._sock = None
+        if self._thread is not None:
+            self._thread.join(timeout=2.0)
+            self._thread = None
+
+    def is_running(self) -> bool:
+        return self._thread is not None and self._thread.is_alive()
+
+    # ------------------------------------------------------------------
+    # Internal reader loop
+    # ------------------------------------------------------------------
+
+    def _run(self) -> None:
+        assert self._sock is not None
+        buf = b""
+        while not self._stop_event.is_set():
+            try:
+                chunk = self._sock.recv(4096)
+            except socket.timeout:
+                continue
+            except OSError:
+                # Socket closed during stop() — bail.
+                return
+            if not chunk:
+                # Host closed — exit reader.
+                return
+            buf += chunk
+            # Drain every complete frame in the buffer; the host can
+            # batch multiple frames into one TCP segment.
+            while True:
+                msg, rest = decode_frame(buf)
+                if msg is None:
+                    break
+                buf = rest
+                self._dispatch(msg)
+
+    def _dispatch(self, msg: dict) -> None:
+        msg_type = msg.get("type")
+        cb = self._callbacks.get(str(msg_type)) if msg_type else None
+        if cb is None:
+            return
+        try:
+            cb(msg)
+        except Exception:  # pragma: no cover - callback errors must not kill the reader
+            # We deliberately swallow so a buggy subscriber doesn't take
+            # down the whole event stream. Real diagnostics belong on
+            # the subscriber's side.
+            pass
+
+
+# Subscription factory on MidiHostClient so the rtmidi-replacement
+# call sites can do `client.subscribe()` without importing the class.
+def _attach_subscribe_method() -> None:
+    def subscribe(self: "MidiHostClient") -> MidiEventSubscription:
+        """Open a long-lived event subscription on this client's socket.
+
+        T2482-P1.1 Gap A.3 — drop-in replacement for
+        ``rtmidi.MidiIn().set_callback(fn)`` that demuxes by frame type.
+        Call ``.on_controller_event(fn)`` / ``.on_engine_command(fn)`` /
+        ``.on_log_event(fn)`` / ``.on_script_error(fn)`` on the returned
+        subscription, then ``.start()`` to begin streaming.
+        """
+        return MidiEventSubscription(self._socket_path, self._timeout_s)
+    setattr(MidiHostClient, "subscribe", subscribe)
+
+
+_attach_subscribe_method()
+
+
+# ---------------------------------------------------------------------
 # Compatibility helpers — keep the python-rtmidi enumeration shape
 # available for existing call sites that look for separate input/output
 # port lists (mirrors `MidiIn().get_ports()` / `MidiOut().get_ports()`).
