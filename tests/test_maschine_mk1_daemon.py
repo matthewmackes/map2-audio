@@ -3,6 +3,8 @@ from __future__ import annotations
 from pathlib import Path
 from types import SimpleNamespace
 
+import pytest
+
 import app.services.maschine.maschine_mk1_daemon as maschine_mk1_daemon_module
 from app.services.maschine.maschine_mk1_daemon import (
     DaemonConfig,
@@ -262,6 +264,12 @@ def test_registration_payload_reports_hotplug_capability() -> None:
     assert payload["capabilities"]["hotplug_mode"] == "polling"
 
 
+@pytest.mark.skip(
+    reason="T2482 loop 9 / iter 86: rtmidi virtual-port creation removed from "
+    "VirtualMidiOutput.open(). The dispose-on-close contract no longer applies "
+    "(self._port is now always None in production). Updated coverage in "
+    "test_maschine_virtual_port_host_flip_t2482p1_2.py."
+)
 def test_virtual_midi_output_disposes_rtmidi_client(monkeypatch) -> None:
     class _FakeMidiOut:
         def __init__(self) -> None:

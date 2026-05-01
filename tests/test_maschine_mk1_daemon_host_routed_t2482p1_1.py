@@ -68,6 +68,12 @@ def _make_virtual_output(host_client_mock):
             yield vo
 
 
+@unittest.skip(
+    "T2482 loop 9 / iter 86: rtmidi fallback removed from VirtualMidiOutput.open(). "
+    "Tests that depended on the rtmidi-only path no longer apply — production "
+    "Maschine virtual ports are host-owned (iter 76 + iter 86). Maschine "
+    "consumers without a running daemon now get open()=False."
+)
 class EnvVarOffPreservesRtmidiOnlyPath(unittest.TestCase):
     def setUp(self) -> None:
         self._env_patch = mock.patch.dict(os.environ, {"MAP2_USE_MIDI_HOST": "0"})
@@ -96,6 +102,13 @@ class EnvVarOffPreservesRtmidiOnlyPath(unittest.TestCase):
                 pass
 
 
+@unittest.skip(
+    "T2482 loop 9 / iter 86: shadow-send tests assumed an rtmidi-backed local "
+    "port (self._port populated). Iter 76 + iter 86 made the virtual port "
+    "exclusively host-owned (self._port is None); the shadow-send concept "
+    "doesn't apply to a host-only port — sends go directly through the host. "
+    "Updated coverage lives in test_maschine_virtual_port_host_flip_t2482p1_2.py."
+)
 class EnvVarOnRoutesShadowSends(unittest.TestCase):
     def setUp(self) -> None:
         self._env_patch = mock.patch.dict(os.environ, {"MAP2_USE_MIDI_HOST": "1"})

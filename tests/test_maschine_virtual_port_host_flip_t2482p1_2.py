@@ -76,7 +76,9 @@ class HostPathTests(unittest.TestCase):
             name="MAP2:Maschine-MK1",
         )
 
-    def test_host_create_virtual_port_error_falls_back_to_rtmidi(self) -> None:
+    def test_host_create_virtual_port_error_returns_false(self) -> None:
+        # Iter 86 removed the rtmidi fallback. Host-error → open()
+        # returns False; the consumer is expected to handle that.
         mod, stub_rtmidi = _build_vo(None)
         host_client = mock.Mock()
         host_client.is_daemon_available.return_value = True
@@ -90,13 +92,12 @@ class HostPathTests(unittest.TestCase):
             with mock.patch.object(vo, "_get_host_client",
                                       return_value=host_client):
                 ok = vo.open()
-        self.assertTrue(ok)
-        self.assertTrue(vo._is_open)
-        # Host returned error → rtmidi fallback ran → local port set.
-        self.assertIsNotNone(vo._port)
-        self.assertEqual(vo._port.opened_virtual, "MAP2:Maschine-MK1")
+        self.assertFalse(ok)
+        self.assertFalse(vo._is_open)
+        self.assertIsNone(vo._port)
 
-    def test_daemon_down_falls_back_to_rtmidi_silently(self) -> None:
+    def test_daemon_down_returns_false(self) -> None:
+        # Iter 86: daemon down + no rtmidi fallback → open() False.
         mod, stub_rtmidi = _build_vo(None)
         host_client = mock.Mock()
         host_client.is_daemon_available.return_value = False
@@ -105,11 +106,9 @@ class HostPathTests(unittest.TestCase):
             with mock.patch.object(vo, "_get_host_client",
                                       return_value=host_client):
                 ok = vo.open()
-        self.assertTrue(ok)
-        self.assertIsNotNone(vo._port)
-        self.assertEqual(vo._port.opened_virtual, "MAP2:Maschine-MK1")
-        # create_virtual_port shouldn't have been called when daemon
-        # is unavailable — the gate skips that path.
+        self.assertFalse(ok)
+        self.assertFalse(vo._is_open)
+        self.assertIsNone(vo._port)
         host_client.create_virtual_port.assert_not_called()
 
 

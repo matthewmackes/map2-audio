@@ -104,12 +104,15 @@ from app.services.maschine_lcd_service import (
 from app.services.maschine_service import MaschineService
 from app.services.automation_engine import automation_engine
 from app.services.performance_brain_service import get_performance_brain_service
-from app.utils.rtmidi_utils import dispose_rtmidi_client
-
-try:
-    import rtmidi  # type: ignore
-except Exception:  # pragma: no cover - optional runtime dependency
-    rtmidi = None
+# T2482 loop 9 / iter 86: rtmidi import + dispose helper removed.
+# Virtual-port creation goes exclusively through the controller-host's
+# MidiCreateVirtualPortRequest IPC envelope (iter 75). The legacy
+# rtmidi fallback was retired here.
+#
+# `rtmidi = None` retained as a module-level stub so existing test
+# suites that use `mock.patch.object(maschine_mk1_daemon, "rtmidi", ...)`
+# continue to find the attribute; production code no longer reads it.
+rtmidi = None
 
 try:
     import pyudev  # type: ignore
@@ -463,25 +466,23 @@ class VirtualMidiOutput:
                     )
             except Exception as exc:  # pragma: no cover - daemon transient
                 LOGGER.debug(
-                    "controller-host create_virtual_port failed (%s); "
-                    "falling back to rtmidi", exc,
+                    "controller-host create_virtual_port failed (%s)",
+                    exc,
                 )
-        # rtmidi fallback (legacy path; will be removed in iter 79).
-        if rtmidi is None:
-            LOGGER.warning("python-rtmidi not installed; Maschine daemon running without virtual MIDI output")
-            return False
-        try:
-            self._port = rtmidi.MidiOut()
-            self._port.open_virtual_port(self.name)
-            self._is_open = True
-            LOGGER.info("Opened virtual MIDI port %s via rtmidi (legacy)", self.name)
-            return True
-        except Exception as exc:  # pragma: no cover - hardware runtime dependent
-            LOGGER.warning("Failed to open virtual MIDI port %s: %s", self.name, exc)
-            dispose_rtmidi_client(self._port)
-            self._port = None
-            self._is_open = False
-            return False
+        # T2482 loop 9 / iter 86: rtmidi fallback removed. The Maschine
+        # daemon now requires the controller-host to publish its
+        # virtual port. Daemon-down → return False (Maschine consumers
+        # already check open() return value). Tests that need a
+        # virtual port without the daemon should mock the host client
+        # path or use the iter-76 host-owned-port path.
+        LOGGER.warning(
+            "Maschine daemon: controller-host did not publish virtual "
+            "MIDI port; running without virtual output (iter 86 removed "
+            "the rtmidi fallback)."
+        )
+        self._port = None
+        self._is_open = False
+        return False
 
     def send_messages(self, messages: Iterable[bytes]) -> None:
         # Iter 76: when the virtual port is host-owned (open() succeeded
@@ -548,8 +549,8 @@ class VirtualMidiOutput:
         return self._host_routed_sends
 
     def close(self) -> None:
-        if self._port is not None:
-            dispose_rtmidi_client(self._port)
+        # iter 86: dispose_rtmidi_client removed; self._port is now
+        # always None in production (host-owned port; iter 76 + iter 86).
         self._port = None
         self._is_open = False
 

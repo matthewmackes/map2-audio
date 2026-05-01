@@ -33,13 +33,11 @@ APP_DIR = REPO_ROOT / "app"
 # below; none of these are dropable without a deeper refactor that
 # exceeds SHIP loop 8's scope.
 ALLOWED_RTMIDI_PATHS = {
-    # Maschine MK1 daemon — Iter-76 flipped the primary path to the
-    # controller-host's MidiCreateVirtualPortRequest IPC envelope.
-    # rtmidi survives only as a fallback when the host's
-    # create_virtual_port returns level=error (transitional CI / dev
-    # flows). Drop in a future loop once a "raise on host-fail" mode
-    # is acceptable for Maschine.
-    "app/services/maschine/maschine_mk1_daemon.py",
+    # Maschine MK1 daemon — REMOVED FROM ALLOW-LIST in iter 86 (loop 9).
+    # The rtmidi fallback was retired. self._port is now always None;
+    # virtual-port creation goes exclusively through the host's
+    # MidiCreateVirtualPortRequest IPC envelope. Daemon-down → open()
+    # returns False (Maschine consumers handle this).
     # GCP midi_transport — REMOVED FROM ALLOW-LIST in iter 82 (loop 9).
     # receive_sysex was refactored from rtmidi-polling to
     # MidiHostClient.subscribe()-based event-driven receive. Test
