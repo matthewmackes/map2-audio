@@ -92,6 +92,15 @@ public:
     // Until then, this method is the integration entry point.
     void pushUmpMessage (const std::uint8_t* bytes, std::size_t length);
 
+    // T2482-P1.2 Gap C (iter 72) — send raw MIDI 1.0 bytes out the
+    // host's virtual output port (created via openVirtualOutput).
+    // Returns true on success, false when no virtual output is open
+    // or libremidi rejects the send (errorMessage() carries the
+    // diagnostic). Called from drain_ring_and_dispatch's outbound
+    // loop to land JS-emitted bytes back on the controller without
+    // round-tripping through Python (which was the Gap C remainder).
+    bool sendToVirtualOutput (const std::uint8_t* bytes, std::size_t length);
+
     // libremidi backend in use.
     MidiBackend backend() const noexcept { return backend_; }
 

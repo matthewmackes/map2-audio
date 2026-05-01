@@ -174,6 +174,39 @@ bool LibremidiAdapter::openVirtualOutput (const std::string& name)
 #endif
 }
 
+bool LibremidiAdapter::sendToVirtualOutput (const std::uint8_t* bytes,
+                                             std::size_t length)
+{
+#if defined(MAP2_HAS_LIBREMIDI)
+    if (impl_->virtualOut == nullptr)
+    {
+        errorMessage_ = "sendToVirtualOutput: no virtual output open";
+        return false;
+    }
+    if (bytes == nullptr || length == 0)
+    {
+        errorMessage_ = "sendToVirtualOutput: empty payload";
+        return false;
+    }
+    try
+    {
+        // libremidi's send_message takes a span; build a small vector.
+        std::vector<unsigned char> msg (bytes, bytes + length);
+        impl_->virtualOut->send_message (msg);
+        return true;
+    }
+    catch (const std::exception& e)
+    {
+        errorMessage_ = std::string ("libremidi send_message failed: ") + e.what();
+        return false;
+    }
+#else
+    (void) bytes; (void) length;
+    errorMessage_ = "sendToVirtualOutput: built without libremidi (MAP2_HAS_LIBREMIDI=0)";
+    return false;
+#endif
+}
+
 bool LibremidiAdapter::openInput (const std::string& port_id_or_name,
                                   std::uint16_t controllerIndex)
 {
