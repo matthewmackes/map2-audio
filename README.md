@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1411** Python | **1399** TypeScript | **177** C++/H | **145** Docs | **3310** total commits | **3** stars | **0** forks | **0** open issues
+**1411** Python | **1399** TypeScript | **177** C++/H | **145** Docs | **3312** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`fd3a70d3`](https://github.com/matthewmackes/map2-audio/commit/fd3a70d3d52bfba3b57e79fd2f0a9c19ce20f43e) | T2482 iter 22: FIRST_CLASS_SERVICES.md template doc | Map2 Audio | 2026-05-01 |
+| [`9da4a539`](https://github.com/matthewmackes/map2-audio/commit/9da4a539632091e47f40643d0697cf4442a13658) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-01 |
 | [`62e5d709`](https://github.com/matthewmackes/map2-audio/commit/62e5d7093520a4c548c45d520b23b0da955d7402) | T2482 iter 21: MIDI Services architectural diagrams (5 vi... | Map2 Audio | 2026-05-01 |
 | [`80bc653d`](https://github.com/matthewmackes/map2-audio/commit/80bc653ddaac847fd6ff6f55aca445a8c8c0f2f2) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-01 |
 | [`58fa3d64`](https://github.com/matthewmackes/map2-audio/commit/58fa3d6485cf54afefc90904204d115150109a10) | T2482 Phase 2: live production migration COMPLETE + new d... | Map2 Audio | 2026-05-01 |
 | [`e62a2e89`](https://github.com/matthewmackes/map2-audio/commit/e62a2e895aef5399c2ff9db09c85680277da58b2) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-01 |
 | [`a5820272`](https://github.com/matthewmackes/map2-audio/commit/a5820272308fc9ac021d170e5371e6a99a585995) | T2482 SHIP loop 2 (iters 11-20) closing log + SHIP loop 3... | Map2 Audio | 2026-05-01 |
 | [`c8b39ca3`](https://github.com/matthewmackes/map2-audio/commit/c8b39ca307aded3937f89cb610f99781760b94ac) | T2482-P3.1 prep (iter 19): wire /api/midi/* routes into a... | Map2 Audio | 2026-05-01 |
-| [`ca840282`](https://github.com/matthewmackes/map2-audio/commit/ca840282635e3bca6c6aea9d957cdf1f9ff2a3d9) | T2482-P3.1 prep (iter 18): /api/midi/* routes scaffold | Map2 Audio | 2026-05-01 |
-| [`849561ef`](https://github.com/matthewmackes/map2-audio/commit/849561efb264ab2280bebe4882f71ddefff860a6) | T2482-P2.9 part 2 (iter 17): end-to-end Phase 2 migration... | Map2 Audio | 2026-05-01 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
