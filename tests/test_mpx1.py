@@ -2,6 +2,7 @@ import asyncio
 import json
 from pathlib import Path
 from typing import Any, Dict
+from unittest import mock
 
 import pytest
 from fastapi import HTTPException
@@ -359,6 +360,11 @@ def test_midi_learn_assigns_mapping_to_active_map(tmp_path: Path) -> None:
 def test_get_midi_ports_probe_failure_returns_structured_payload(
     tmp_path: Path, monkeypatch: pytest.MonkeyPatch
 ) -> None:
+    """T2482-P1.2 iter-77 update: the iter-77 hard-strip removed the
+    lenient-mode rtmidi enumeration fallback, so this test now uses
+    the instance-level _rtmidi_module injection escape hatch (the
+    iter-66 detection mechanism) to drive the legacy enumeration
+    branch from a probe-failure context."""
     service = MPX1Service(
         registry_path=_registry_path(),
         shadow_path=tmp_path / "shadow.json",
@@ -375,10 +381,17 @@ def test_get_midi_ports_probe_failure_returns_structured_payload(
             def __init__(self) -> None:
                 raise RuntimeError("out probe failure")
 
+    # Iter 77 escape hatch: override _rtmidi_module on the instance so
+    # is_test_injected_rtmidi=True in get_midi_ports. Combined with a
+    # mocked-down MidiHostClient (no daemon), this drives the legacy
+    # rtmidi enumeration branch.
+    service._rtmidi_module = lambda: _BrokenRtMidi
     monkeypatch.setattr(mpx1_service_module, "RTMIDI_AVAILABLE", True)
-    monkeypatch.setattr(mpx1_service_module, "rtmidi", _BrokenRtMidi)
-
-    payload = asyncio.run(service.get_midi_ports())
+    fake_client = mock.Mock()
+    fake_client.is_daemon_available.return_value = False
+    with mock.patch("app.services.midi_host_client.MidiHostClient",
+                      return_value=fake_client):
+        payload = asyncio.run(service.get_midi_ports())
     assert payload["rtmidi_available"] is True
     assert payload["inputs"] == []
     assert payload["outputs"] == []

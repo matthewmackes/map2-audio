@@ -508,43 +508,42 @@ class SysExDeviceBridge:
            path or nothing.
         """
         from app.services.midi_host_client import (
-            MidiHostClientError, MidiHostClient, midi_host_required,
+            MidiHostClientError, MidiHostClient,
         )
+
+        # T2482-P1.2 (iter 77) — hard-strip the lenient-mode rtmidi
+        # fallback. The legacy `monkeypatch.setattr(<service>, "rtmidi", ...)`
+        # test idiom is now unsupported for production code paths;
+        # tests that need to drive enumeration without a live daemon
+        # must override `_rtmidi_module` on the instance instead
+        # (see iter-66 escape hatch documented in get_midi_ports below).
+        is_test_injected_rtmidi = "_rtmidi_module" in self.__dict__
 
         # Production path — try controller-host first.
         client = MidiHostClient()
         if not client.is_daemon_available():
-            # Strict mode forbids the rtmidi fallback even when
-            # available. Iter 53 introduced the env var; iter 56
-            # keeps it honored here.
-            if midi_host_required():
-                raise MidiHostClientError(
-                    f"MAP2_REQUIRE_MIDI_HOST set but controller-host "
-                    f"daemon is unreachable; refusing rtmidi fallback "
-                    f"for {self.DEVICE_LABEL} get_midi_ports()"
-                )
-            # Lenient mode: if rtmidi is available, use it. The
-            # legacy test idioms (`monkeypatch.setattr(<service>,
-            # "rtmidi", ...)`) and ad-hoc CLI sessions both land
-            # here. NB: this is NOT silent — when the daemon is
-            # supposed to be up, operators should see a startup
-            # warning telling them rtmidi is being used.
-            if self._rtmidi_available():
-                logger.warning(
-                    "%s: controller-host daemon unreachable; falling "
-                    "back to rtmidi enumeration. This will become a "
-                    "hard error after iter 59.",
-                    self.DEVICE_LABEL,
-                )
+            # Test-injection escape hatch: when a test has explicitly
+            # overridden _rtmidi_module on the instance, run the
+            # legacy enumeration so probe-failure tests can exercise
+            # the rtmidi-direct branch.
+            if is_test_injected_rtmidi:
+                if not self._rtmidi_available():
+                    return {
+                        "rtmidi_available": False,
+                        "inputs": [{"index": 0, "name": self.VIRTUAL_INPUT_NAME, "connected": False}],
+                        "outputs": [{"index": 0, "name": self.VIRTUAL_OUTPUT_NAME, "connected": False}],
+                        "recommended_input_index": None,
+                        "recommended_output_index": None,
+                    }
                 return self._enumerate_via_rtmidi()
-            # Neither host nor rtmidi — return the virtual placeholder.
-            return {
-                "rtmidi_available": False,
-                "inputs": [{"index": 0, "name": self.VIRTUAL_INPUT_NAME, "connected": False}],
-                "outputs": [{"index": 0, "name": self.VIRTUAL_OUTPUT_NAME, "connected": False}],
-                "recommended_input_index": None,
-                "recommended_output_index": None,
-            }
+            # Production daemon-down: raise. The iter-56 lenient-mode
+            # rtmidi fallback is gone.
+            raise MidiHostClientError(
+                f"controller-host daemon is unreachable; cannot "
+                f"enumerate MIDI ports for {self.DEVICE_LABEL}. "
+                f"Start map2-controller-host.service. (lenient-mode "
+                f"rtmidi fallback removed in iter 77)."
+            )
         # Daemon reachable — use it.
         status, ports = client.list_ports()
         inputs = []

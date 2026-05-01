@@ -145,11 +145,14 @@ class EnvVarOnRoutesEnumerationThroughHost(unittest.TestCase):
         self.assertEqual(result["recommended_input_index"], 1)
         self.assertEqual(result["recommended_output_index"], 0)
 
-    def test_daemon_down_falls_back_to_rtmidi_in_lenient_mode(self) -> None:
-        # Iter 56 (revised): when daemon is down + rtmidi available
-        # + lenient mode (no MAP2_REQUIRE_MIDI_HOST), the bridge logs
-        # a warning and uses rtmidi. Strict mode raises (covered in
-        # the strict-mode test suite).
+    def test_daemon_down_uses_test_injection_when_rtmidi_module_overridden(self) -> None:
+        # Iter 77 hard-stripped the lenient-mode rtmidi fallback. The
+        # iter-66 instance-level _rtmidi_module override remains as a
+        # test-injection escape hatch — when a test has explicitly
+        # patched _rtmidi_module on the instance, daemon-down still
+        # routes through the legacy enumeration. This preserves the
+        # iter-67 test_get_midi_ports_probe_failure_returns_structured_payload
+        # idiom in test_mpx1.py.
         fake_client = mock.Mock()
         fake_client.is_daemon_available.return_value = False
         fake_rtmidi = mock.Mock()
@@ -164,9 +167,25 @@ class EnvVarOnRoutesEnumerationThroughHost(unittest.TestCase):
              mock.patch.object(self._bridge, "_rtmidi_module",
                                   return_value=fake_rtmidi):
             result = asyncio.run(self._bridge.get_midi_ports())
-        # Falls back to rtmidi enumeration; no host_routed marker.
+        # Uses the rtmidi escape hatch; no host_routed marker.
         self.assertNotIn("host_routed", result)
         self.assertTrue(result["rtmidi_available"])
+
+    def test_daemon_down_without_test_injection_raises(self) -> None:
+        # Iter 77: production path raises when daemon down + no
+        # test-injection override. This is the new hard contract;
+        # operators must run map2-controller-host.service.
+        from app.services.midi_host_client import MidiHostClientError
+        fake_client = mock.Mock()
+        fake_client.is_daemon_available.return_value = False
+        with mock.patch("app.services.midi_host_client.MidiHostClient",
+                          return_value=fake_client):
+            with self.assertRaises(MidiHostClientError) as ctx:
+                asyncio.run(self._bridge.get_midi_ports())
+        msg = str(ctx.exception)
+        self.assertIn("controller-host daemon is unreachable", msg)
+        self.assertIn("TestDev", msg)
+        self.assertIn("lenient-mode rtmidi fallback removed in iter 77", msg)
 
     def test_host_enumeration_recommended_index_matches_hint(self) -> None:
         # The bridge's DEFAULT_NAME_HINT is "testdev" — verify the
