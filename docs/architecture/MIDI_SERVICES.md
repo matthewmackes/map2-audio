@@ -332,7 +332,263 @@ Phase 2 migration script is forward-only by design (per the four-services discip
 
 ---
 
-## 8. References
+## 8. Architectural diagrams (finished outcome)
+
+Per the 2026-05-01 user directive, every first-class service stack ships with a complete architectural diagram set. Five required views: process topology, storage layout, consumer surface, migration narrative, four-services framing position. Mermaid syntax — renders inline in GitHub/GitLab and stays in version control as plain text.
+
+### 8.1 Process topology
+
+```mermaid
+flowchart LR
+    subgraph host["Host process — app/ (FastAPI on :8080)"]
+        routes["/api/midi/* routes\n(app/services/midi/routes.py)"]
+        authority["MidiBindingAuthority\n(app/services/midi/authority.py)\n— single writer"]
+        projections["Per-consumer projections\n(snapshot, brain, plugin_param,\ntransport, gpio, tesira_ttp,\ndevice_pack)"]
+        snapshot["Snapshot service\n(unified_snapshots.py)"]
+        brain["Brain service\n(performance_brain_service.py)"]
+        midihub["MIDI Hub registry\n(midi_hub/device_registry.py)"]
+        bridge["InboundMidiTrafficBridge\n(midi_hub/inbound_traffic_bridge.py)"]
+    end
+
+    subgraph controller_host["map2-controller-host (separate binary)"]
+        libremidi["libremidi I/O\n(planned — T2482-P1.1)"]
+        ctrl_engine["Mixxx ControllerEngine\n(planned — T2482-P1.2)"]
+        device_packs["Device-pack JS scripts\n(device-packs/&lt;vendor&gt;/...)"]
+    end
+
+    subgraph juce_engine["juce-engine (C++ audio)"]
+        audio_callback["audio callback\n(RT thread)"]
+        shm_consumer["SPSC shm event ring consumer\n(planned — replaces\nMap2MidiController.cpp in P1.3)"]
+    end
+
+    routes -->|reads/writes| authority
+    projections -->|reads/writes| authority
+    snapshot --> projections
+    brain --> projections
+    midihub -->|legacy bindings field\n(T2480-5 seed)| projections
+    bridge -->|inbound MIDI events| midihub
+
+    libremidi -.->|UDS control plane\n(IPC, JSON frames)| host
+    libremidi -->|SPSC shm\n(audio-rate)| shm_consumer
+    ctrl_engine --> device_packs
+    shm_consumer --> audio_callback
+
+    style authority fill:#0f62fe,color:#fff
+    style routes fill:#0f62fe,color:#fff
+    style projections fill:#a6c8ff
+```
+
+**Three processes** own MIDI today (Phase 1+2 state):
+- **Host process (`app/`)** — owns the canonical authority, routes, and per-consumer projections. Every binding read/write goes through `MidiBindingAuthority`. The MIDI Hub registry + inbound traffic bridge live here for now (P1.6 absorbs them into controller-host).
+- **map2-controller-host** — separate C++ binary for QuickJS-driven mapping execution. P1.1/P1.2 add libremidi I/O + Mixxx ControllerEngine integration here (currently routes through `Map2MidiController.cpp` in juce-engine).
+- **juce-engine** — audio callback consumer. P1.3 retires its raw-ALSA path and switches to consuming the SPSC shm event ring exclusively.
+
+### 8.2 Storage layout
+
+```mermaid
+flowchart TB
+    subgraph canonical["CANONICAL (post-T2482-P2.1)"]
+        midi_bindings[("midi_bindings table\n(SQLite, migration v12)\nUUID PK + 18 columns + 3 composite indexes")]
+    end
+
+    subgraph legacy_alive["LEGACY (still on disk, no longer authoritative)"]
+        snapshot_midi_maps[("snapshot_midi_maps\n(8 rows, all empty entries)")]
+        midi_mappings[("midi_mappings\n(50 rows, 1 migrated, 49 chain_id NULL)")]
+        device_state["MidiDeviceState.bindings\n(in-memory, T2480-5 seed)"]
+        midi_hub_state["app/services/midi_hub/\n(29 Python files, in-memory)"]
+    end
+
+    subgraph backup["BACKUP (gitignored)"]
+        backup_db[("data/backups/\nmap2-pre-T2482-migration-20260501.db\n(6.1 MB, sqlite3 .backup)")]
+    end
+
+    snapshot_midi_maps -.->|P2.3 migration\n(migrate_snapshot_midi_maps_table)| midi_bindings
+    midi_mappings -.->|P2.5 migration\n(migrate_midi_mappings_table)| midi_bindings
+    device_state -.->|P2.4 projection\n(brain.py)| midi_bindings
+
+    snapshot_midi_maps -->|preserved at backup time| backup_db
+    midi_mappings -->|preserved at backup time| backup_db
+
+    style canonical fill:#defbe6
+    style midi_bindings fill:#198038,color:#fff
+    style legacy_alive fill:#fff8e1
+    style backup fill:#e8e8e8
+```
+
+**Live state (post-2026-05-01 production migration)**:
+- `midi_bindings`: 1 row (the migrated `Drum Machine - Volume` binding from `midi_mappings.id=2`).
+- `snapshot_midi_maps`: 8 rows (all empty entries — correct skip).
+- `midi_mappings`: 50 rows (1 migrated; 49 documented-skipped due to NULL chain_id).
+- `MidiDeviceState.bindings` field: still in-memory; P2.4 projection wraps it but doesn't yet replace the in-memory storage (cutover deferred).
+- `app/services/midi_hub/` (29 files): in-memory state still active; absorbed by P1.6 once P1.1/P1.2 land.
+
+**Provenance** on every migrated binding: `source="legacy-migration"`, `metadata.legacy_table=<table>`, `metadata.legacy_row_id=<id>`. Audit trail survives indefinitely.
+
+### 8.3 Consumer surface
+
+```mermaid
+flowchart TB
+    authority["MidiBindingAuthority\n(SINGLE WRITER)"]
+
+    subgraph apis["Public API surfaces"]
+        midi_routes["/api/midi/* routes\n(routes.py — 8 endpoints,\nlive on :8080)"]
+        snapshot_api["/api/snapshots/* (legacy)\n→ rewires through projection\nin Phase 3"]
+        brain_api["/api/engine/brain/* (legacy)\n→ rewires through projection\nin Phase 3"]
+    end
+
+    subgraph projections["Per-consumer projections\n(app/services/midi/projections/)"]
+        snapshot_proj["snapshot.py"]
+        brain_proj["brain.py"]
+        plugin_param_proj["plugin_param.py"]
+        transport_proj["transport.py"]
+        gpio_proj["gpio.py"]
+        tesira_proj["tesira_ttp.py"]
+        device_pack_proj["device_pack.py"]
+    end
+
+    subgraph editor_surfaces["Editor UI surfaces (consume projections)"]
+        snapshot_editor["Snapshot Editor inline MIDI editors\n(per-effect mapping, A/B switch,\nexpression — STAY in place per Q2)"]
+        brain_setup["Brain Setup task (T2480)\n— canonical-aware via P2.4"]
+        midi_console["/midi canonical surface\n(Phase 3 — gated)"]
+    end
+
+    midi_routes -->|read/write| authority
+    snapshot_proj --> authority
+    brain_proj --> authority
+    plugin_param_proj --> authority
+    transport_proj --> authority
+    gpio_proj --> authority
+    tesira_proj --> authority
+    device_pack_proj --> authority
+
+    snapshot_api -->|read| snapshot_proj
+    snapshot_api -->|read| plugin_param_proj
+    brain_api -->|read| brain_proj
+    snapshot_editor --> snapshot_api
+    snapshot_editor -->|via plugin_param projection| plugin_param_proj
+    brain_setup --> brain_api
+    midi_console -->|every region| midi_routes
+
+    style authority fill:#0f62fe,color:#fff
+    style midi_console fill:#fff8e1
+    style midi_routes fill:#198038,color:#fff
+```
+
+**No bypass paths.** Every editor surface that authors a binding routes through a per-consumer projection, which routes through the authority, which is the only writer to the canonical table. There is no "the snapshot editor writes to its own midi_map directly" path; that's the four-services discipline applied.
+
+### 8.4 Migration narrative
+
+```mermaid
+flowchart LR
+    subgraph t2459_h["T2459-H (in flight, mid-execution)"]
+        h3["H3 dispatcher\n(SHIPPED 2026-04-28)"]
+        h4["H4 SysEx consolidation\n(SHIPPED 2026-04-28)"]
+        h5["H5 route consolidation\n(SHIPPED 2026-04-28)"]
+        h1["H1 libremidi I/O\n(open — T2482-P1.1)"]
+        h2["H2 ControllerEngine\n(open — T2482-P1.2)"]
+        h6["H6 Map2MidiController retire\n(open — T2482-P1.3)"]
+        h7["H7 cluster MIDI protocol\n(open — T2482-P1.4)"]
+    end
+
+    subgraph t2482_p2["T2482 Phase 2 (SHIPPED 2026-05-01)"]
+        p21["P2.1 schema (v12 migration)"]
+        p22["P2.2 authority"]
+        p23["P2.3 snapshot migration\n(0/0 in production)"]
+        p25["P2.5 midi_mappings migration\n(1/50 in production;\n49 documented-skipped)"]
+        p24["P2.4 brain projection"]
+        p26["P2.6 transport/gpio/tesira"]
+        p27["P2.7 plugin_param projection"]
+        p29["P2.9 verification suite +\nend-to-end test (passed)"]
+        p31_prep["P3.1 routes scaffold +\nlive on :8080"]
+    end
+
+    subgraph t2482_p3["T2482 Phase 3 (NOT STARTED — user-gated)"]
+        p31_ui["P3.1 frontend /midi mount + redirects"]
+        p32_p38["P3.2-P3.8 region surfaces"]
+        p39["P3.9 per-device legacy reframing"]
+        p310["P3.10 Brain Setup/Inputs reframing"]
+    end
+
+    subgraph t2482_p4["T2482 Phase 4 (NOT STARTED — user-gated)"]
+        p41["P4.1 FIRST_CLASS_SERVICES.md template"]
+        p42["P4.2 AVB/Sampler/Effects epic stubs"]
+        p43["P4.3 cross-service backplane note"]
+    end
+
+    h3 --> p23
+    h4 --> p25
+    h5 --> p31_prep
+    h1 -.-> p31_ui
+    p21 --> p22
+    p22 --> p23
+    p22 --> p24
+    p22 --> p25
+    p22 --> p26
+    p22 --> p27
+    p23 --> p29
+    p25 --> p29
+    p29 --> p31_prep
+    p31_prep --> p31_ui
+    p31_ui --> p32_p38
+    p32_p38 --> p39
+    p39 --> p310
+    p310 --> p41
+    p41 --> p42
+    p42 --> p43
+
+    style t2459_h fill:#fff8e1
+    style t2482_p2 fill:#defbe6
+    style t2482_p3 fill:#e8e8e8
+    style t2482_p4 fill:#e8e8e8
+    style p23 fill:#198038,color:#fff
+    style p25 fill:#198038,color:#fff
+    style p29 fill:#198038,color:#fff
+```
+
+**Where we are**: every shipping-green box (Phase 2) is done. Live production migration ran 2026-05-01. Phase 3 (frontend) and Phase 4 (template extraction) await user gating per Q5/D.
+
+### 8.5 Four-services framing position
+
+```mermaid
+flowchart TB
+    subgraph platform["MAP2 Audio Platform"]
+        midi["MIDI Services\n(T2482, Phase 2 SHIPPED)\n• MidiBinding authority\n• /midi (Phase 3)\n• 7 consumer projections\n• Live: 1 binding"]
+        avb["AVB Services\n(epic queued)\n• la_avdecc backend\n• AvbRouting workspace\n• needs canonical authority\n  + canonical surface"]
+        sampler["Sampler Services\n(epic queued)\n• Brain library scanner\n• SoundFont/SFZ/sample\n• Synthforge\n• needs canonical authority\n  + canonical surface"]
+        effects["Audio Effects Services\n(epic queued)\n• State Authority graph\n• Snapshot Editor\n• needs canonical surface\n  + parallel-store retire"]
+    end
+
+    template["docs/architecture/\nFIRST_CLASS_SERVICES.md\n(P4.1 — template extracted\nfrom MIDI Services)"]
+
+    midi -->|template lifts to| avb
+    midi -->|template lifts to| sampler
+    midi -->|template lifts to| effects
+
+    midi -.->|defines pattern| template
+    template -.->|reused by| avb
+    template -.->|reused by| sampler
+    template -.->|reused by| effects
+
+    sampler -->|consumed by| midi
+    avb -->|consumed by| effects
+
+    style midi fill:#198038,color:#fff
+    style avb fill:#fff8e1
+    style sampler fill:#fff8e1
+    style effects fill:#fff8e1
+    style template fill:#0f62fe,color:#fff
+```
+
+**Cross-service consumer relationships** (the platform's four pillars are not isolated — they consume each other):
+- **Sampler → MIDI**: a sample-based instrument loaded into a Brain slot is bound via MIDI Services bindings (e.g., a key press triggers a sample). Sampler is the asset authority; MIDI Services is the binding consumer.
+- **AVB → Audio Effects**: an AVB stream feeds the chain graph as an input or absorbs chain output. AVB is the transport authority; Audio Effects is the routing consumer.
+- **MIDI → Audio Effects**: the most common pattern — MIDI bindings drive plugin parameters in the chain graph (the `plugin_param` consumer in MIDI Services). Audio Effects is the parameter authority; MIDI is the input consumer.
+
+The four-services architecture is intentionally NOT a strict layering. Each service owns its concept canonically, and other services consume it through the authority. No service writes into another's storage. No service has a parallel implementation of another's concept.
+
+---
+
+## 9. References
 
 - **This doc** — `docs/architecture/MIDI_SERVICES.md` (canonical design reference)
 - **Worklist epic** — `docs/PROJECT_WORKLIST.md` `T2482` (canonical subtask + status)
