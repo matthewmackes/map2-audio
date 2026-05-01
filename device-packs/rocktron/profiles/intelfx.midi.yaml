@@ -1,0 +1,75 @@
+schema_version: 1
+identity:
+  manufacturer: Rocktron
+  model: intelfx
+  alsa_client_pattern: 'IntelliFex'
+  hardware_id: alsa-seq:IntelliFex:0
+
+scripts:
+  - scripts/intelfx.js
+
+# Rocktron uses a 3-byte manufacturer SysEx ID: 00 01 56. Front-panel
+# events emit standard CC + PC; preset/parameter editing flows through
+# SysEx (T2459-H4 / T2482-P1.5 cutover surface).
+#
+# Reference: Rocktron IntelliFex MIDI Implementation;
+# legacy parser at app/services/intelfx_syx_parser.py
+# (_ROCKTRON_ID = [0x00, 0x01, 0x56]).
+
+controls:
+  - status: 0xB0
+    midino: 7
+    channel: 1
+    action: set
+    target: audio.chain.1.macro.adjust
+    description: 'Front-panel data wheel → macro adjust on chain 1.'
+
+  - status: 0xB0
+    midino: 64
+    channel: 1
+    action: latch
+    target: audio.chain.1.bypass
+    script: IntelFX.bypass_toggle
+    description: 'BYPASS button → toggle chain 1 bypass.'
+
+  - status: 0xB0
+    midino: 65
+    channel: 1
+    action: momentary
+    target: audio.chain.1.macro.tap_tempo
+    script: IntelFX.tap_tempo
+    description: 'TAP button → tap-tempo input.'
+
+  - status: 0xC0
+    channel: 1
+    action: send_pc
+    target: audio.snapshot.recall
+    script: IntelFX.program_change
+    description: 'Program Change (any number) → recall MAP2 snapshot mapped from IntelFX program slot.'
+
+  - status: 0xF0
+    script: IntelFX.handle_sysex
+    description: 'Rocktron SysEx (mfr ID 00 01 56) — preset dumps, parameter writes, and bulk transfers.'
+
+outputs:
+  - status: 0xB0
+    midino: 64
+    channel: 1
+    source: audio.chain.1.bypass
+    script: IntelFX.bypass_feedback
+    description: 'Echo bypass state to BYPASS LED (CC 64) so the panel reflects MAP2-side toggles.'
+
+settings:
+  - id: intelfx_program_offset
+    label: Program slot offset
+    type: number
+    default: 0
+    min: -127
+    max: 127
+    step: 1
+    description: 'Offset added to IntelFX program-change number when mapping to MAP2 snapshot id.'
+  - id: intelfx_sysex_passthrough
+    label: SysEx passthrough
+    type: boolean
+    default: true
+    description: 'When true, raw SysEx is passed verbatim to IntelFX.handle_sysex; when false, only known parameter writes are dispatched.'

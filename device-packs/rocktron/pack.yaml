@@ -1,0 +1,22 @@
+schema_version: 1
+pack_id: rocktron
+vendor:
+  name: Rocktron
+  website: https://www.rocktron.com/
+description: |
+  Rocktron Professional MIDI surfaces. The IntelliFX (IntelFX)
+  profile covers Rocktron's IntelliFex / IntelliFex Online multi-
+  effects unit — front-panel rotary + program-up/down + bypass +
+  tap, plus full SysEx-driven preset/parameter editing using the
+  3-byte Rocktron manufacturer ID (00 01 56).
+
+  Pre-T2459-H4 the IntelFX SysEx parser lived in
+  app/services/intelfx_syx_parser.py; T2459-H4 (subsumed by T2482
+  Phase 1.5) cuts it over to JS scripts in this pack. The script
+  stub at scripts/intelfx.js documents the cutover surface; until
+  the cutover lands the Python parser remains active and the JS
+  functions are no-ops.
+license: AGPL-3.0-only
+source: map2-native
+models:
+  - intelfx
