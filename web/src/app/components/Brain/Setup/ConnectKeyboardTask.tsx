@@ -17,6 +17,7 @@ import { ConnectKeyboardTestPhase } from './ConnectKeyboardTestPhase'
 import { ConnectKeyboardSnapshotPhase } from './ConnectKeyboardSnapshotPhase'
 import { ConnectKeyboardDonePhase } from './ConnectKeyboardDonePhase'
 import { useConnectKeyboardSnapshotJob } from './useConnectKeyboardSnapshotJob'
+import { InlineNameDeviceModal } from './InlineNameDeviceModal'
 import './connectKeyboardTask.css'
 
 interface ConnectKeyboardTaskProps {
@@ -42,6 +43,10 @@ export function ConnectKeyboardTask({ onExit }: ConnectKeyboardTaskProps) {
   const [selectedPortName, setSelectedPortName] = useState<string | null>(null)
   const [selectedDeviceId, setSelectedDeviceId] = useState<string | null>(null)
   const [exitConfirmOpen, setExitConfirmOpen] = useState(false)
+  // Follow-up D (2026-05-01): inline name-and-onboard modal for "New"
+  // ports. Opens when the operator clicks Continue on Detect with a
+  // not-yet-onboarded device selected.
+  const [nameModalOpen, setNameModalOpen] = useState(false)
 
   const currentIndex = PHASE_INDEX[currentPhaseId]
   const totalPhaseCount = CONNECT_KEYBOARD_PHASES.length
@@ -90,10 +95,20 @@ export function ConnectKeyboardTask({ onExit }: ConnectKeyboardTaskProps) {
   }, [onExit])
 
   const goNext = useCallback(() => {
+    // Follow-up D: when leaving Detect with a "New" port selected,
+    // open the inline name-and-onboard modal first. The modal's
+    // success callback advances the phase after the registry write.
+    if (currentPhaseId === 'detect' && selectedPortName !== null) {
+      const match = detection.entries.find((e) => e.port_name === selectedPortName)
+      if (match && match.source === 'new') {
+        setNameModalOpen(true)
+        return
+      }
+    }
     const nextIndex = currentIndex + 1
     if (nextIndex >= totalPhaseCount) return
     setCurrentPhaseId(CONNECT_KEYBOARD_PHASES[nextIndex]!.id)
-  }, [currentIndex, totalPhaseCount])
+  }, [currentIndex, totalPhaseCount, currentPhaseId, selectedPortName, detection.entries])
 
   const goBack = useCallback(() => {
     if (isBackDisabled(currentPhaseId)) return
@@ -254,6 +269,32 @@ export function ConnectKeyboardTask({ onExit }: ConnectKeyboardTaskProps) {
           </ModalFooter>
         </ComposedModal>
       ) : null}
+
+      {(() => {
+        if (!nameModalOpen || selectedPortName === null) return null
+        const selectedEntry = detection.entries.find((e) => e.port_name === selectedPortName)
+        if (!selectedEntry || selectedEntry.source !== 'new') return null
+        return (
+          <InlineNameDeviceModal
+            open
+            portName={selectedEntry.port_name}
+            genericDeviceId={selectedEntry.generic_device_id}
+            suggestedName={selectedEntry.port_name}
+            onCancel={() => setNameModalOpen(false)}
+            onSuccess={async ({ deviceId }) => {
+              setNameModalOpen(false)
+              // Adopt the new device_id immediately so the rest of the
+              // wizard writes against the upgraded profile. Refresh the
+              // detection list so the next time the operator returns to
+              // Detect they see the device as onboarded.
+              setSelectedDeviceId(deviceId)
+              await detection.refetch()
+              const nextIndex = PHASE_INDEX.detect + 1
+              setCurrentPhaseId(CONNECT_KEYBOARD_PHASES[nextIndex]!.id)
+            }}
+          />
+        )
+      })()}
     </div>
   )
 }
