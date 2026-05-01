@@ -33,6 +33,217 @@
   color: var(--cds-text-primary);
 }
 
+/* ---------- Phase rail ---------- */
+
+.connect-keyboard-task__phase-list-rail {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+  gap: var(--cds-spacing-04);
+}
+
+.connect-keyboard-task__phase-list-item {
+  display: block;
+  min-height: 100%;
+}
+
+.connect-keyboard-task__phase-tile {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cds-spacing-03);
+  padding: var(--cds-spacing-05);
+  background: var(--cds-layer);
+  border: 1px solid var(--cds-border-subtle);
+  height: 100%;
+}
+
+.connect-keyboard-task__phase-tile--active {
+  border-left: 4px solid var(--map2-state-staged, var(--cds-link-primary));
+  padding-left: calc(var(--cds-spacing-05) - 3px);
+}
+
+.connect-keyboard-task__phase-tile--done {
+  background: var(--cds-layer-accent);
+}
+
+.connect-keyboard-task__phase-tile-head {
+  display: flex;
+  align-items: center;
+  gap: var(--cds-spacing-03);
+}
+
+.connect-keyboard-task__phase-tile-ordinal {
+  display: inline-flex;
+  width: 1.5rem;
+  height: 1.5rem;
+  align-items: center;
+  justify-content: center;
+  background: var(--cds-layer-accent);
+  color: var(--cds-text-secondary);
+  font-size: var(--cds-label-01-font-size, 0.75rem);
+  font-weight: 600;
+}
+
+.connect-keyboard-task__phase-tile-title {
+  flex: 1;
+  font-size: var(--cds-body-compact-01-font-size, 0.875rem);
+  font-weight: 600;
+  color: var(--cds-text-primary);
+}
+
+.connect-keyboard-task__phase-tile-description {
+  font-size: var(--cds-helper-text-01-font-size, 0.75rem);
+  line-height: var(--cds-helper-text-01-line-height, 1.34);
+  color: var(--cds-text-secondary);
+}
+
+/* ---------- Active phase region ---------- */
+
+.connect-keyboard-task__active-phase {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cds-spacing-04);
+  padding-top: var(--cds-spacing-04);
+  border-top: 1px solid var(--cds-border-subtle);
+}
+
+.connect-keyboard-task__phase-eyebrow {
+  font-size: var(--cds-label-01-font-size, 0.75rem);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--cds-text-secondary);
+}
+
+.connect-keyboard-task__phase-body {
+  padding: var(--cds-spacing-06);
+  background: var(--cds-layer);
+  border: 1px solid var(--cds-border-subtle);
+  display: flex;
+  flex-direction: column;
+  gap: var(--cds-spacing-05);
+}
+
+.connect-keyboard-task__phase-paragraph {
+  margin: 0;
+  font-size: var(--cds-body-01-font-size, 0.875rem);
+  line-height: var(--cds-body-01-line-height, 1.43);
+  color: var(--cds-text-primary);
+  max-width: 60ch;
+}
+
+.connect-keyboard-task__phase-list {
+  margin: 0;
+  padding-left: 1.25rem;
+  display: flex;
+  flex-direction: column;
+  gap: var(--cds-spacing-03);
+  font-size: var(--cds-body-01-font-size, 0.875rem);
+  line-height: var(--cds-body-01-line-height, 1.43);
+  color: var(--cds-text-primary);
+}
+
+/* ---------- Detect phase ---------- */
+
+.connect-keyboard-task__detect-toolbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--cds-spacing-04);
+}
+
+.connect-keyboard-task__detect-summary {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--cds-spacing-03);
+}
+
+.connect-keyboard-task__detect-summary-text {
+  font-size: var(--cds-label-01-font-size, 0.75rem);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--cds-text-secondary);
+}
+
+.connect-keyboard-task__detect-error,
+.connect-keyboard-task__detect-empty {
+  margin: 0;
+}
+
+.connect-keyboard-task__detect-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--cds-spacing-04);
+  width: 100%;
+}
+
+.connect-keyboard-task__detect-row-text {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cds-spacing-02);
+}
+
+.connect-keyboard-task__detect-row-title {
+  font-size: var(--cds-body-compact-01-font-size, 0.875rem);
+  color: var(--cds-text-primary);
+}
+
+.connect-keyboard-task__detect-row-sub {
+  font-size: var(--cds-helper-text-01-font-size, 0.75rem);
+  color: var(--cds-text-secondary);
+}
+
+.connect-keyboard-task__detect-row-tag {
+  display: inline-flex;
+}
+
+/* ---------- Test phase ---------- */
+
+.connect-keyboard-task__test-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: var(--cds-spacing-04);
+}
+
+.connect-keyboard-task__test-port-name {
+  font-size: var(--cds-productive-heading-02-font-size, 1rem);
+  font-weight: 600;
+  color: var(--cds-text-primary);
+}
+
+.connect-keyboard-task__test-piano-placeholder {
+  height: 7.5rem;
+  background: var(--cds-layer-accent);
+  border: 1px dashed var(--cds-border-subtle);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--cds-text-secondary);
+}
+
+.connect-keyboard-task__test-piano-placeholder-text {
+  font-size: var(--cds-body-01-font-size, 0.875rem);
+}
+
+/* ---------- Footer ---------- */
+
+.connect-keyboard-task__footer {
+  display: flex;
+  align-items: center;
+  gap: var(--cds-spacing-03);
+  padding-top: var(--cds-spacing-04);
+  border-top: 1px solid var(--cds-border-subtle);
+}
+
+.connect-keyboard-task__footer-spacer {
+  flex: 1;
+}
+
+/* ---------- Legacy placeholder (kept until the snapshot phase fully ships) ---------- */
+
 .connect-keyboard-task__placeholder {
   padding: var(--cds-spacing-07);
   background: var(--cds-layer);
