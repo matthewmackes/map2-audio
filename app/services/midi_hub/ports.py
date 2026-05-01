@@ -17,12 +17,10 @@ from dataclasses import dataclass, field
 from typing import Any, Dict, Iterable, List, Literal, Optional
 
 from app.services.midi_hub.ring_buffer import MidiRingBuffer
-from app.utils.rtmidi_utils import dispose_rtmidi_client
 
-try:
-    import rtmidi  # type: ignore
-except Exception:  # pragma: no cover - optional dependency
-    rtmidi = None
+# T2482 loop 9 / iter 85: rtmidi import removed. AlsaMidiPort now
+# delegates to the controller-host (MidiHostClient) per the iter-85
+# refactor. The dispose_rtmidi_client helper is no longer needed.
 
 
 # T2482-P1.1 Gap D.4 (iter 49) + Gap E phase 7 (iter 57) — controller-host
@@ -167,117 +165,150 @@ class VirtualMidiPort(MidiPort):
 
 
 class AlsaMidiPort(MidiPort):
-    """ALSA MIDI port backed by python-rtmidi when available."""
+    """ALSA MIDI port — T2482 loop 9 / iter 85: host-routed.
+
+    Originally backed by python-rtmidi (open_port + send_message +
+    get_message). Iter 85 flipped the implementation to delegate to
+    the controller-host:
+    - open() calls MidiHostClient.open_midi_input(controller_key,
+      port_id) + starts a subscription that buffers controller_event
+      frames in a per-port deque.
+    - send() calls MidiHostClient.send_short_message or send_sysex
+      depending on the byte length.
+    - receive() drains the per-port deque populated by the
+      subscription's reader thread.
+    The class name is preserved for backwards-compat with consumers
+    (build_alsa_ports, MidiHub) that import AlsaMidiPort by name.
+    """
 
     def __init__(self, *, port_id: str, name: str, direction: PortDirection = "duplex", port_index: Optional[int] = None):
         super().__init__(port_id=port_id, name=name, direction=direction, kind="alsa")
         self.port_index = port_index
+        self._open_error: Optional[str] = None
+        # iter-85: host-routed buffers + subscription handle
+        self._inbound: list[MidiMessage] = []
+        self._inbound_lock = None  # threading.Lock, lazy-init
+        self._host_client: Any = None
+        self._host_subscription: Any = None
+        # legacy hooks retained as None (no rtmidi clients now)
         self._midi_in = None
         self._midi_out = None
-        self._open_error: Optional[str] = None
 
-    def _resolve_port_index(self, client: Any) -> Optional[int]:
-        if self.port_index is not None:
-            return int(self.port_index)
-        try:
-            count = int(client.get_port_count())
-        except Exception:
-            return None
-        for idx in range(count):
-            try:
-                candidate = str(client.get_port_name(idx))
-            except Exception:
-                continue
-            if candidate == self.name:
-                return idx
-        return None
+    def _get_host_client(self) -> Any:
+        if self._host_client is None:
+            from app.services.midi_host_client import MidiHostClient
+            self._host_client = MidiHostClient()
+        return self._host_client
 
     def open(self) -> bool:
-        if rtmidi is None:
-            self._open_error = "python-rtmidi not installed"
+        # iter-85: route through controller-host. The MidiHub-resolved
+        # port name is the iter-78 host-enumerated name; we hand that
+        # name to MidiHostClient.open_midi_input as the port_id.
+        from app.services.midi_host_client import MidiHostClientError
+        client = self._get_host_client()
+        if not client.is_daemon_available():
+            self._open_error = (
+                "controller-host daemon unreachable; AlsaMidiPort "
+                "requires the host as of iter 85"
+            )
             self._is_open = False
             return False
-
         try:
+            controller_key = f"midi-hub.{self.port_id}"
             if self.can_receive():
-                self._midi_in = rtmidi.MidiIn()
-                idx = self._resolve_port_index(self._midi_in)
-                if idx is None:
-                    self._open_error = f"input port '{self.name}' not found"
-                    self._midi_in = None
-                    self._is_open = False
-                    return False
-                self._midi_in.open_port(idx)
-                self._midi_in.ignore_types(sysex=False, timing=True, active_sense=True)
-
-            if self.can_send():
-                self._midi_out = rtmidi.MidiOut()
-                idx = self._resolve_port_index(self._midi_out)
-                if idx is None:
-                    self._open_error = f"output port '{self.name}' not found"
-                    if self._midi_in is not None:
-                        dispose_rtmidi_client(self._midi_in)
-                        self._midi_in = None
-                    self._midi_out = None
-                    self._is_open = False
-                    return False
-                self._midi_out.open_port(idx)
-
+                client.open_midi_input(controller_key=controller_key, port_id=self.name)
+                # Start a subscription buffering this port's events
+                import threading
+                self._inbound_lock = threading.Lock()
+                sub = client.subscribe()
+                def _on_event(msg: dict) -> None:
+                    if msg.get("controller_key") != controller_key:
+                        return
+                    payload = bytes(int(b) & 0xFF for b in msg.get("bytes", []))
+                    if not payload:
+                        return
+                    midi_msg = MidiMessage(
+                        data=payload,
+                        timestamp_ns=time.time_ns(),
+                        source_port=self.port_id,
+                    )
+                    if self._inbound_lock is not None:
+                        with self._inbound_lock:
+                            self._inbound.append(midi_msg)
+                sub.on_controller_event(_on_event)
+                sub.start()
+                self._host_subscription = sub
             self._open_error = None
             self._is_open = True
             return True
-        except Exception as exc:  # pragma: no cover - hardware dependent
+        except MidiHostClientError as exc:
+            self._open_error = str(exc)
+            self._is_open = False
+            return False
+        except Exception as exc:  # pragma: no cover - defensive
             self._open_error = str(exc)
             self._is_open = False
             self.close()
             return False
 
     def close(self) -> None:
-        if self._midi_in is not None:
-            dispose_rtmidi_client(self._midi_in)
-        if self._midi_out is not None:
-            dispose_rtmidi_client(self._midi_out)
-        self._midi_in = None
-        self._midi_out = None
+        # iter-85: clean shutdown of the subscription if any was started.
+        if self._host_subscription is not None:
+            try:
+                self._host_subscription.stop()
+            except Exception:  # pragma: no cover - defensive
+                pass
+            self._host_subscription = None
+        self._inbound = []
+        self._inbound_lock = None
         self._is_open = False
 
     def send(self, data: bytes) -> bool:
-        if not self._is_open or not self.can_send() or self._midi_out is None:
+        # iter-85: route via the host client's appropriate helper based
+        # on whether the bytes look like a short message or a SysEx.
+        if not self._is_open or not self.can_send():
+            return False
+        client = self._get_host_client()
+        if not client.is_daemon_available():
+            return False
+        controller_key = f"midi-hub.{self.port_id}"
+        payload = bytes(data)
+        if not payload:
             return False
         try:
-            self._midi_out.send_message(list(data))
+            if payload[0] == 0xF0 and payload[-1] == 0xF7:
+                client.send_sysex(controller_key=controller_key, sysex_bytes=payload)
+            else:
+                # short message — clamp to 1..3 bytes per send_short_message contract
+                client.send_short_message(
+                    controller_key=controller_key,
+                    message_bytes=payload[:3],
+                )
             return True
-        except Exception:  # pragma: no cover - hardware dependent
+        except Exception:  # pragma: no cover - daemon transient
             return False
 
     def receive(self, *, max_messages: int = 64) -> List[MidiMessage]:
-        if not self._is_open or not self.can_receive() or self._midi_in is None:
+        # iter-85: drain from the per-port deque populated by the
+        # subscription reader thread.
+        if not self._is_open or not self.can_receive():
             return []
-        out: List[MidiMessage] = []
-        for _ in range(max(1, max_messages)):
-            try:
-                msg = self._midi_in.get_message()
-            except Exception:  # pragma: no cover - hardware dependent
-                break
-            if msg is None:
-                break
-            raw, _ = msg
-            if not raw:
-                continue
-            out.append(
-                MidiMessage(
-                    data=bytes(int(b) & 0xFF for b in raw),
-                    timestamp_ns=time.time_ns(),
-                    source_port=self.port_id,
-                )
-            )
+        if self._inbound_lock is None:
+            return []
+        with self._inbound_lock:
+            n = min(max(1, max_messages), len(self._inbound))
+            out = self._inbound[:n]
+            self._inbound = self._inbound[n:]
         return out
 
     def metadata(self) -> Dict[str, Any]:
         return {
             "port_index": self.port_index,
             "open_error": self._open_error,
-            "rtmidi_available": rtmidi is not None,
+            # iter-85: rtmidi was removed; the host's daemon
+            # availability is now the relevant readiness signal.
+            "host_routed": True,
+            "host_subscribed": self._host_subscription is not None,
         }
 
 

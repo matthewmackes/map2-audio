@@ -45,12 +45,11 @@ ALLOWED_RTMIDI_PATHS = {
     # MidiHostClient.subscribe()-based event-driven receive. Test
     # factory injection still works but no longer carries a rtmidi
     # fallback.
-    # midi_hub/ports.py AlsaMidiPort.open() — opens individual ALSA
-    # port handles for the MidiHub's per-port consumer model. Different
-    # surface from discover_alsa_ports (iter 78 hard-stripped that).
-    # AlsaMidiPort future is queued for the host-side
-    # ALSA-port-binding refactor.
-    "app/services/midi_hub/ports.py",
+    # midi_hub/ports.py — REMOVED FROM ALLOW-LIST in iter 85 (loop 9).
+    # AlsaMidiPort.open() / send / receive refactored to delegate to
+    # MidiHostClient (open_midi_input + subscribe + send_short_message
+    # / send_sysex). Per-port subscription buffers events in a deque
+    # the receive() drain reads. dispose_rtmidi_client also removed.
     # midi_engine.py — REMOVED FROM ALLOW-LIST in iter 83 (loop 9).
     # Both the rtmidi-direct discovery branch AND the persistent
     # _midi_in / _midi_out for live MIDI binding were stripped.
