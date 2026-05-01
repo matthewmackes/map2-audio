@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1411** Python | **1399** TypeScript | **177** C++/H | **145** Docs | **3314** total commits | **3** stars | **0** forks | **0** open issues
+**1411** Python | **1399** TypeScript | **177** C++/H | **145** Docs | **3316** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`3b7df311`](https://github.com/matthewmackes/map2-audio/commit/3b7df31136b81e5fe5f02eba9b0cf3dc331ae680) | T2482 iter 24: Sampler Services architecture doc + 5 Merm... | Map2 Audio | 2026-05-01 |
+| [`c4653231`](https://github.com/matthewmackes/map2-audio/commit/c4653231ccc3704d2b335d926e1a4775c4a524df) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-01 |
 | [`38f3047c`](https://github.com/matthewmackes/map2-audio/commit/38f3047cc8185346ca7c6f0a4a996ddf6981eceb) | T2482 iter 23: AVB Services architecture doc + 5 Mermaid ... | Map2 Audio | 2026-05-01 |
 | [`1a18a653`](https://github.com/matthewmackes/map2-audio/commit/1a18a653c658b13d44209b7547dafa05da745f2f) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-01 |
 | [`fd3a70d3`](https://github.com/matthewmackes/map2-audio/commit/fd3a70d3d52bfba3b57e79fd2f0a9c19ce20f43e) | T2482 iter 22: FIRST_CLASS_SERVICES.md template doc | Map2 Audio | 2026-05-01 |
 | [`9da4a539`](https://github.com/matthewmackes/map2-audio/commit/9da4a539632091e47f40643d0697cf4442a13658) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-01 |
 | [`62e5d709`](https://github.com/matthewmackes/map2-audio/commit/62e5d7093520a4c548c45d520b23b0da955d7402) | T2482 iter 21: MIDI Services architectural diagrams (5 vi... | Map2 Audio | 2026-05-01 |
 | [`80bc653d`](https://github.com/matthewmackes/map2-audio/commit/80bc653ddaac847fd6ff6f55aca445a8c8c0f2f2) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-01 |
-| [`58fa3d64`](https://github.com/matthewmackes/map2-audio/commit/58fa3d6485cf54afefc90904204d115150109a10) | T2482 Phase 2: live production migration COMPLETE + new d... | Map2 Audio | 2026-05-01 |
-| [`e62a2e89`](https://github.com/matthewmackes/map2-audio/commit/e62a2e895aef5399c2ff9db09c85680277da58b2) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-01 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
