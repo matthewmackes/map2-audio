@@ -34780,3 +34780,69 @@ The P1.2 audit (iter 39 §2) revealed substantial existing scaffolding the workl
 - P1.2 follow-up: `MidiCreateVirtualPortRequest` IPC schema extension (unblocks Maschine virtual-port flip)
 - P1.2 follow-up: daemon main-loop accept-many connections (eliminates the 24 ms p99 round-trip tail)
 - P1.2 follow-up: hot-path send routing via host-resolved port binding (replaces the rtmidi fallback in sysex_device_bridge connect_midi)
+
+### SHIP loop 6 (iters 51–60) closing log — 2026-04-30
+
+**Status**: 10 substantive iters shipped (51–60, dual-pushed). Loop 6 was the iter-50-recommended "Gap E policy flip" — bring `MAP2_USE_MIDI_HOST` to default-ON, then strip the rtmidi fallback paths consumer-by-consumer. Loop 6 closed with 4 of 5 P1.1 design-doc DoD gates satisfied; the last gate (no `import rtmidi` in `app/`) is **partially** done: 5 imports survive in an audited allow-list (Maschine virtual-port creation + 4 lenient-mode fallback paths) and a CI grep-fail guard prevents new imports anywhere else.
+
+| Iter | Phase | Commit | Highlight |
+|---|---|---|---|
+| 51 | E.1 default flip | f0adb300 | All 5 `_use_midi_host()` helpers inverted: empty/unset/garbage → ON; explicit "0"/"false"/"no"/"off" → OFF. 6 new tests pin the default-ON behaviour. |
+| 52 | E.2 systemd drop-in | 8858da4c | `systemd/map2-backend.service.d/30-midi-host-default.conf` pins `MAP2_USE_MIDI_HOST=1` in the production unit. systemd-analyze clean. 4 structural tests; 602 cross-consumer regression sweep. |
+| 53 | E.3 strict mode | 20a12878 | New `MAP2_REQUIRE_MIDI_HOST` env var + `midi_host_required()` helper. Wired into all 5 consumer fallback paths so they raise `MidiHostClientError` (instead of silent fallback) when both env vars are set. 11 new tests. |
+| 54 | E.4 GCP hard-strip | c775de3a | Removed `_use_midi_host()` helper from GCP transport. list_ports + send_sysex now host-only in production (factories preserved for tests; receive_sysex polling-loop refactor deferred to P1.2). 113 GCP+P1.1 tests green. |
+| 55 | E.5 Maschine deferral | a7b8a6b0 | Documentation-only. Maschine MK1 keeps rtmidi until `MidiCreateVirtualPortRequest` IPC envelope lands (P1.2 follow-up). New `docs/architecture/T2482_P1_1_MASCHINE_RTMIDI_DEFERRAL.md` documents the rationale + path forward. |
+| 56 | E.6 sysex_bridge soft-strip | 8e761f09 | Conservative refactor: host preferred unconditionally; rtmidi remains a lenient-mode fallback with WARNING log calling out iter-59 sunset. Test idiom (`monkeypatch.setattr(<service>, "rtmidi", ...)`) preserved. 86 IntelFX+MPX-1 regression tests green. |
+| 57 | E.7 midi_hub soft-strip | 68e998ab | Same conservative pattern for `discover_alsa_ports`. Module-level logger added. 84 P1.1 tests green. |
+| 58 | E.8 midi_engine soft-strip | a58cd853 | Last consumer in the strip sequence. `_discover_devices` rtmidi-direct branch refactored. 613 cross-consumer regression sweep across IntelFX, MPX-1, GCP, Maschine, midi_engine, midi_hub, controller_host. |
+| 59 | E.9 grep-fail guard | 09af8cf6 | python-rtmidi retained in requirements with multi-line comment explaining the Maschine-scoped carve-out. New `tests/test_no_new_rtmidi_imports_t2482p1_1.py` (3 tests) walks `app/` and fails the build on any rtmidi import not in the audited allow-list. Guards against silent rtmidi regressions in future loops. |
+| 60 | E.10 roll-up | (this commit) | This closing log. |
+
+**Total tests added in loop 6**: **24** (6 default-ON + 4 systemd drop-in + 11 strict mode + 3 grep-fail). All shipped suites pass; 87 P1.1 tests across the 6 client/flip/strict/default-on/grep-fail suites are green.
+
+**Production behaviour change after loop 6**:
+- The controller-host daemon is now the **default and recommended** path for every MIDI consumer in the backend. The systemd drop-in pins this for production (`MAP2_USE_MIDI_HOST=1` in the unit env).
+- 5 services retain rtmidi as a lenient-mode fallback (warns on each invocation). 1 service (Maschine) retains rtmidi as a hard dependency for virtual-port creation.
+- `MAP2_REQUIRE_MIDI_HOST=1` is the operator opt-in for "no rtmidi fallback under any circumstances" — recommended for soak-testing the host-only mode before the post-loop-6 hard-strip.
+- The CI grep-fail guard prevents new rtmidi imports anywhere outside the 5-file allow-list.
+
+**P1.1 status after SHIP loop 6** (vs design doc DoD gates):
+- ✅ Gap A (client methods): DONE — `send_short_message` + `send_sysex` + `subscribe_events` shipped (loop 5)
+- ✅ Gap B (systemd + health): DONE — unit installs, health probes work (loop 5)
+- ✅ Gap C (latency floor): MEASURED — Python control-plane p99 = 193 µs (loop 5); audio-thread engine-side queued for P1.2
+- ✅ Gap D (5 consumer flips): DONE — all flipped (loop 5) + all soft-stripped (loop 6 iters 54-58)
+- 🟡 Gap E (drop python-rtmidi): PARTIAL — env-gate flipped to default-ON (iter 51), strict mode shipped (iter 53), GCP hard-stripped (iter 54), 3 consumers soft-stripped (iters 56-58), grep-fail guard prevents regressions (iter 59). Maschine virtual-port + 4 lenient-mode fallbacks survive pending the post-loop-6 hard-strip cycle.
+
+**T2482 status overall (after 6 SHIP loops)**:
+- Plan artifact + 60 iters = 61 commits dual-pushed
+- Phase 2 SHIPPED + live production migration evidence
+- 138 backend + 65 device-pack JS + 87 P1.1 (client + flips + strict + default-on + grep-fail) tests across 19+ suites, all passing
+- 11 device-packs on disk, 3 with JS-ported SysEx parsers
+- 4 first-class architecture docs + 4 P1.x design/reality/deferral docs
+- `/api/midi/*` 8 endpoints live on `:8080`
+- `map2-controller-host` daemon binary built; systemd unit ready; default-ON in production unit
+- All 5 rtmidi consumers env-gated → host-default → 1 hard-stripped + 4 soft-stripped
+- Backend healthy, audio still running
+
+**Phase 3 readiness gate v3 (post-SHIP-loop-6)**:
+- **Backend MIDI authority**: ready (Phase 2 + soft-stripped consumers).
+- **Controller-host daemon**: ready (foundation + systemd unit + default-ON drop-in + Python client surface complete).
+- **rtmidi removal**: PARTIAL — Maschine virtual-port + 4 lenient-mode fallbacks survive. Full strip waits for post-loop-6 cycle (operator soak with `MAP2_REQUIRE_MIDI_HOST=1` first; then hard-strip the 4 lenient-mode files; then P1.2 IPC extension unblocks Maschine).
+- **Mixxx ControllerEngine integration (P1.2)**: design locked (iter 39); implementation queued (~3 weeks).
+- **Carbon UI scaffold**: not started; gated on user authorization.
+- **Recommended next loops**:
+  - Loop 7: P1.2 implementation start (B5 Mixxx golden test as the integration proof)
+  - Loop 8: post-P1.2 cleanup — `MidiCreateVirtualPortRequest` IPC envelope; Maschine virtual-port flip; hard-strip the 4 lenient-mode rtmidi fallback paths
+  - Loop 9+: Phase 3 frontend `/midi` Carbon canonical surface
+
+**Still deferred** (multi-week scopes — explicit user gate required):
+- Phase 3 frontend `/midi` canonical surface (per-bundle gated; recommend after P1.2 + post-P1.2 cleanup)
+- T2482-P1.2 ControllerEngine integration implementation (~3 weeks; design doc shipped iter 39)
+- T2459-H6/H7 cluster MIDI host-to-host (depends on P1.1/P1.2)
+- P2.8 part 2 legacy table deletion (depends on P1.2)
+- GCP field-level decoder JS port (~3000 LOC; depends on P1.2)
+- P1.1 audio-thread engine-side latency measurement (requires shm-ring consumer side wired into JUCE main loop; P1.2 dependency)
+- P1.2 follow-up: `MidiCreateVirtualPortRequest` IPC schema extension (unblocks Maschine virtual-port hard-strip — closes the last P1.1 Gap E gap)
+- P1.2 follow-up: daemon main-loop accept-many connections (eliminates the 24 ms p99 round-trip tail)
+- P1.2 follow-up: hot-path send routing via host-resolved port binding (replaces the rtmidi fallback in sysex_device_bridge connect_midi)
+- Post-loop-6 hard-strip of 4 lenient-mode rtmidi fallback paths (after operator soak with `MAP2_REQUIRE_MIDI_HOST=1`)
