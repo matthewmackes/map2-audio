@@ -323,20 +323,21 @@ class MIDIEngineService:
                 )
                 return
         else:
-            # Daemon down. Strict mode raises; lenient mode falls
-            # through to rtmidi (with deprecation warning below).
-            if midi_host_required():
-                raise MidiHostClientError(
-                    "MAP2_REQUIRE_MIDI_HOST set but controller-host "
-                    "daemon is unreachable; refusing rtmidi fallback "
-                    "for midi_engine _discover_devices()"
-                )
-            logger.warning(
-                "midi_engine: controller-host daemon unreachable; "
-                "falling back to rtmidi enumeration. This will become "
-                "a hard error after iter 59."
+            # Daemon down. Iter 78 hard-strip removed the lenient-mode
+            # rtmidi fallback. The host is mandatory; daemon-down
+            # raises MidiHostClientError.
+            raise MidiHostClientError(
+                "controller-host daemon is unreachable; cannot "
+                "discover MIDI devices for midi_engine. Start "
+                "map2-controller-host.service. (iter-78 hard-strip "
+                "removed the rtmidi fallback path)."
             )
 
+        # Iter-78: the rtmidi-direct enumeration branch + virtual
+        # fallback below are now unreachable in production. Kept for
+        # tests that explicitly patch RTMIDI_AVAILABLE / rtmidi at
+        # module level (legacy idiom). Remove in iter 79 once the
+        # rtmidi import is gone.
         if not RTMIDI_AVAILABLE:
             # Fallback to virtual devices
             self.input_devices = [

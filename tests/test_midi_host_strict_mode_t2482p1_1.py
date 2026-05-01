@@ -199,6 +199,11 @@ class MidiHubDiscoverStrictModeTests(unittest.TestCase):
         self._env.stop()
 
     def test_discover_alsa_ports_raises_when_daemon_down(self) -> None:
+        # Iter 78 hard-stripped the lenient-mode rtmidi fallback in
+        # midi_hub/ports.discover_alsa_ports. The function now raises
+        # unconditionally on daemon-down. Strict mode is redundant
+        # for this surface but the failure shape matches the iter-77
+        # contract.
         from app.services.midi_hub import ports as mhp
         fake_client = mock.Mock()
         fake_client.is_daemon_available.return_value = False
@@ -206,7 +211,8 @@ class MidiHubDiscoverStrictModeTests(unittest.TestCase):
                           return_value=fake_client):
             with self.assertRaises(MidiHostClientError) as ctx:
                 mhp.discover_alsa_ports()
-        self.assertIn("MAP2_REQUIRE_MIDI_HOST", str(ctx.exception))
+        self.assertIn("controller-host daemon is unreachable", str(ctx.exception))
+        self.assertIn("iter-78", str(ctx.exception))
 
 
 # ---------------------------------------------------------------------
@@ -225,6 +231,12 @@ class MidiEngineDiscoverStrictModeTests(unittest.TestCase):
         self._env.stop()
 
     def test_discover_devices_raises_when_daemon_down(self) -> None:
+        # Iter 78 hard-stripped the lenient-mode rtmidi fallback in
+        # midi_engine._discover_devices. The function now raises
+        # unconditionally on daemon-down (assuming the MidiHub-first
+        # tier didn't populate devices). Strict mode is redundant
+        # for this surface but the failure shape matches the iter-77
+        # contract.
         from app.services import midi_engine as me
 
         class _BareEngine(me.MIDIEngineService):
@@ -242,7 +254,8 @@ class MidiEngineDiscoverStrictModeTests(unittest.TestCase):
                           return_value=fake_client):
             with self.assertRaises(MidiHostClientError) as ctx:
                 engine._discover_devices()
-        self.assertIn("MAP2_REQUIRE_MIDI_HOST", str(ctx.exception))
+        self.assertIn("controller-host daemon is unreachable", str(ctx.exception))
+        self.assertIn("iter-78", str(ctx.exception))
 
 
 # ---------------------------------------------------------------------

@@ -36,20 +36,19 @@ class DiscoverAlsaPortsHostRoutedTests(unittest.TestCase):
         # tests for the other consumers that still honor the gate.
         self._env_patch_off = mock.patch.dict(os.environ, {"MAP2_USE_MIDI_HOST": "0"})
 
-    def test_lenient_mode_falls_back_to_rtmidi_when_daemon_down(self) -> None:
-        # Iter 57: env-gate removed; host is always tried first.
-        # In lenient mode, daemon-down → rtmidi fallback (warning
-        # logged, then iter-49 rtmidi path runs). Empty rtmidi gives
-        # empty port lists.
+    def test_daemon_down_raises_unconditionally_after_iter78(self) -> None:
+        # Iter 78 hard-strip: discover_alsa_ports raises on
+        # daemon-down regardless of env-flag setting. The lenient-mode
+        # rtmidi-empty-fallback that lived through iter 57-77 is gone.
         from app.services.midi_hub import ports as midi_hub_ports
+        from app.services.midi_host_client import MidiHostClientError
         fake_client = mock.Mock()
         fake_client.is_daemon_available.return_value = False
         with mock.patch("app.services.midi_host_client.MidiHostClient",
-                          return_value=fake_client), \
-             mock.patch.object(midi_hub_ports, "rtmidi", None):
-            result = midi_hub_ports.discover_alsa_ports()
-        # rtmidi=None falls through to empty lists.
-        self.assertEqual(result, {"inputs": [], "outputs": []})
+                          return_value=fake_client):
+            with self.assertRaises(MidiHostClientError) as ctx:
+                midi_hub_ports.discover_alsa_ports()
+        self.assertIn("controller-host daemon is unreachable", str(ctx.exception))
         fake_client.is_daemon_available.assert_called()
 
     def test_env_on_routes_through_host(self) -> None:
@@ -80,19 +79,23 @@ class DiscoverAlsaPortsHostRoutedTests(unittest.TestCase):
         finally:
             env_patch.stop()
 
-    def test_env_on_daemon_down_falls_through_to_rtmidi(self) -> None:
+    def test_daemon_down_raises_after_iter78_hard_strip(self) -> None:
+        # Iter 78: discover_alsa_ports raises unconditionally on
+        # daemon-down. The iter-49-era "falls through to rtmidi"
+        # behaviour was removed; this test pins the new contract.
         from app.services.midi_hub import ports as midi_hub_ports
+        from app.services.midi_host_client import MidiHostClientError
         env_patch = mock.patch.dict(os.environ, {"MAP2_USE_MIDI_HOST": "1"})
         env_patch.start()
         try:
             fake_client = mock.Mock()
-            fake_client.is_daemon_available.return_value = False  # daemon down
+            fake_client.is_daemon_available.return_value = False
             with mock.patch("app.services.midi_host_client.MidiHostClient",
-                              return_value=fake_client), \
-                 mock.patch.object(midi_hub_ports, "rtmidi", None):
-                result = midi_hub_ports.discover_alsa_ports()
-            # Falls through to rtmidi path; rtmidi=None gives empty lists.
-            self.assertEqual(result, {"inputs": [], "outputs": []})
+                              return_value=fake_client):
+                with self.assertRaises(MidiHostClientError) as ctx:
+                    midi_hub_ports.discover_alsa_ports()
+            self.assertIn("controller-host daemon is unreachable", str(ctx.exception))
+            self.assertIn("iter-78", str(ctx.exception))
             fake_client.is_daemon_available.assert_called_once()
         finally:
             env_patch.stop()
@@ -154,46 +157,25 @@ class MidiEngineDiscoverDevicesHostRoutedTests(unittest.TestCase):
         finally:
             env_patch.stop()
 
-    def test_lenient_mode_falls_to_virtual_when_daemon_down_and_no_rtmidi(self) -> None:
-        # Iter 58 removed the env-gate from midi_engine. The host
-        # client is now always tried first. With daemon down +
-        # no rtmidi available, the engine falls to its virtual
-        # placeholder fallback.
-        env_patch = mock.patch.dict(os.environ, {"MAP2_USE_MIDI_HOST": "0"})
-        env_patch.start()
-        try:
-            from app.services import midi_engine as me
-            engine = self._make_engine()
-            fake_client = mock.Mock()
-            fake_client.is_daemon_available.return_value = False
-            with mock.patch.object(me, "get_midi_hub", None), \
-                 mock.patch.object(me, "RTMIDI_AVAILABLE", False), \
-                 mock.patch("app.services.midi_host_client.MidiHostClient",
-                              return_value=fake_client):
-                engine._discover_devices()
-            self.assertEqual(len(engine.input_devices), 1)
-            self.assertEqual(engine.input_devices[0].name, "Virtual Input 1")
-            fake_client.is_daemon_available.assert_called_once()
-        finally:
-            env_patch.stop()
-
-    def test_env_on_daemon_down_falls_to_virtual(self) -> None:
+    def test_daemon_down_raises_after_iter78_hard_strip(self) -> None:
+        # Iter 78 hard-strip: midi_engine._discover_devices raises
+        # MidiHostClientError when daemon is down. The iter-58
+        # lenient-mode rtmidi/virtual fallback was removed.
+        from app.services.midi_host_client import MidiHostClientError
         env_patch = mock.patch.dict(os.environ, {"MAP2_USE_MIDI_HOST": "1"})
         env_patch.start()
         try:
             from app.services import midi_engine as me
             fake_client = mock.Mock()
-            fake_client.is_daemon_available.return_value = False  # daemon down
-
+            fake_client.is_daemon_available.return_value = False
             engine = self._make_engine()
             with mock.patch.object(me, "get_midi_hub", None), \
-                 mock.patch.object(me, "RTMIDI_AVAILABLE", False), \
                  mock.patch("app.services.midi_host_client.MidiHostClient",
                               return_value=fake_client):
-                engine._discover_devices()
-
-            # Daemon-down + rtmidi-unavailable → virtual fallback.
-            self.assertEqual(engine.input_devices[0].name, "Virtual Input 1")
+                with self.assertRaises(MidiHostClientError) as ctx:
+                    engine._discover_devices()
+            self.assertIn("controller-host daemon is unreachable", str(ctx.exception))
+            self.assertIn("iter-78", str(ctx.exception))
             fake_client.is_daemon_available.assert_called_once()
         finally:
             env_patch.stop()

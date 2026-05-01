@@ -282,15 +282,16 @@ class AlsaMidiPort(MidiPort):
 
 
 def discover_alsa_ports() -> Dict[str, List[str]]:
-    """Discover ALSA MIDI input/output names.
+    """Discover ALSA MIDI input/output names via the controller-host.
 
-    T2482-P1.1 Gap E phase 7 (iter 57): controller-host is preferred
-    unconditionally. rtmidi remains a lenient-mode fallback until
-    iter 59 strips it entirely. Strict mode
-    (MAP2_REQUIRE_MIDI_HOST=1) raises when daemon unreachable.
+    T2482-P1.2 (iter 78): the iter-57 lenient-mode rtmidi enumeration
+    fallback was removed. The controller-host is mandatory for ALSA
+    port discovery in production. When the daemon is unreachable the
+    function raises MidiHostClientError (matching the iter-77
+    sysex_device_bridge contract).
     """
     from app.services.midi_host_client import (
-        MidiHostClient, MidiHostClientError, midi_host_required,
+        MidiHostClient, MidiHostClientError,
     )
 
     client = MidiHostClient()
@@ -307,59 +308,14 @@ def discover_alsa_ports() -> Dict[str, List[str]]:
                 outputs_h.append(p.name)
         return {"inputs": inputs_h, "outputs": outputs_h}
 
-    # Daemon down — strict mode forbids the rtmidi fallback.
-    if midi_host_required():
-        raise MidiHostClientError(
-            "MAP2_REQUIRE_MIDI_HOST set but controller-host "
-            "daemon is unreachable; refusing rtmidi fallback "
-            "for discover_alsa_ports()"
-        )
-
-    # Lenient mode — fall back to rtmidi. Logged at WARNING so
-    # operators see explicit notice that the rtmidi path is on
-    # borrowed time (iter 59 hard-strips this).
-    if rtmidi is None:
-        return {"inputs": [], "outputs": []}
-    logger.warning(
-        "midi_hub/ports.discover_alsa_ports: controller-host daemon "
-        "unreachable; falling back to rtmidi enumeration. This will "
-        "become a hard error after iter 59."
+    # Daemon down. Strict mode (iter 77 unified contract) — raise.
+    # The lenient-mode rtmidi fallback that was here through iter 57-77
+    # was removed in iter 78.
+    raise MidiHostClientError(
+        "controller-host daemon is unreachable; cannot enumerate ALSA "
+        "MIDI ports for the MIDI Hub. Start map2-controller-host.service. "
+        "(iter-78 hard-strip removed the rtmidi fallback path)."
     )
-
-    inputs: List[str] = []
-    outputs: List[str] = []
-
-    midi_in = None
-    midi_out = None
-    try:
-        midi_in = rtmidi.MidiIn()
-        for idx in range(int(midi_in.get_port_count())):
-            try:
-                name = str(midi_in.get_port_name(idx))
-                if _is_discoverable_alsa_port_name(name):
-                    inputs.append(name)
-            except Exception:
-                continue
-    except Exception:
-        inputs = []
-    finally:
-        dispose_rtmidi_client(midi_in)
-
-    try:
-        midi_out = rtmidi.MidiOut()
-        for idx in range(int(midi_out.get_port_count())):
-            try:
-                name = str(midi_out.get_port_name(idx))
-                if _is_discoverable_alsa_port_name(name):
-                    outputs.append(name)
-            except Exception:
-                continue
-    except Exception:
-        outputs = []
-    finally:
-        dispose_rtmidi_client(midi_out)
-
-    return {"inputs": inputs, "outputs": outputs}
 
 
 def build_alsa_ports(*, prefix: str = "alsa") -> Iterable[AlsaMidiPort]:
