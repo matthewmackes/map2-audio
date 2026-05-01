@@ -26,12 +26,11 @@ class DefaultOnGateBehaviourTests(unittest.TestCase):
     """
 
     GATE_FNS = [
+        # Only Maschine still has an env-gate after iters 54-58. The
+        # other 4 consumers (GCP, sysex_device_bridge, midi_hub,
+        # midi_engine) were converted to host-mandatory in iters
+        # 54/56/57/58 respectively.
         ("app.services.maschine.maschine_mk1_daemon", "_maschine_use_midi_host"),
-        # _sysex_bridge_use_midi_host removed in iter 56 (host path
-        # mandatory for sysex_device_bridge enumeration in production).
-        # _midi_hub_use_midi_host removed in iter 57 (host mandatory
-        # for discover_alsa_ports too).
-        ("app.services.midi_engine", "_midi_engine_use_midi_host"),
     ]
 
     def _import_gate(self, mod_name: str, fn_name: str):

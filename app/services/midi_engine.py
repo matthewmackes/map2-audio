@@ -44,21 +44,13 @@ except ImportError:
     logger.warning("python-rtmidi not installed, MIDI functionality limited")
 
 
-# T2482-P1.1 Gap D.5 (iter 49) + Gap E phase 1 (iter 51) — controller-host
-# routing is now the default for the rtmidi-direct fallback inside
+# T2482-P1.1 Gap D.5 (iter 49) + Gap E phase 8 (iter 58) — controller-host
+# routing is now MANDATORY for the rtmidi-direct fallback inside
 # _discover_devices(). The MidiHub-based discovery path already inherits
 # host routing transparently from midi_hub/ports.py (Gap D.4 / iter 49
-# first half), so this gate only matters for the few code paths that
-# skip MidiHub and call _discover_devices() directly.
-#
-# Default ON as of iter 51 (SHIP loop 6). Set MAP2_USE_MIDI_HOST=0 to
-# force the rtmidi-direct fallback.
-import os as _os
-def _midi_engine_use_midi_host() -> bool:
-    val = _os.environ.get("MAP2_USE_MIDI_HOST", "").strip().lower()
-    if val in ("0", "false", "no", "off"):
-        return False
-    return True  # default ON
+# first half + Gap E phase 7 / iter 57), so the env-gate helper from
+# iters 49/51 was dropped in iter 58 — host is unconditionally preferred,
+# rtmidi remains a lenient-mode fallback until iter 59 strips it.
 
 
 class MIDIMessageType(Enum):
@@ -296,55 +288,54 @@ class MIDIEngineService:
             except Exception as exc:
                 logger.debug("MidiHub device discovery failed, falling back to rtmidi: %s", exc)
 
-        # Iter 49 / Gap D.5: even when MidiHub path didn't populate
-        # devices, prefer the controller-host enumeration over rtmidi
-        # if the env-gate is on AND the daemon is up.
-        if _midi_engine_use_midi_host():
-            try:
-                from app.services.midi_host_client import (
-                    MidiHostClient, MidiHostClientError, midi_host_required,
-                )
-                client = MidiHostClient()
-                if client.is_daemon_available():
-                    _, ports = client.list_ports()
-                    in_idx = 0
-                    out_idx = 0
-                    for p in ports:
-                        if p.is_input:
-                            self.input_devices.append(
-                                MIDIDevice(
-                                    index=in_idx, name=p.name,
-                                    port_type="input", is_virtual=p.is_virtual,
-                                )
-                            )
-                            in_idx += 1
-                        else:
-                            self.output_devices.append(
-                                MIDIDevice(
-                                    index=out_idx, name=p.name,
-                                    port_type="output", is_virtual=p.is_virtual,
-                                )
-                            )
-                            out_idx += 1
-                    if self.input_devices or self.output_devices:
-                        logger.info(
-                            "Discovered %s host inputs, %s outputs via controller-host",
-                            len(self.input_devices), len(self.output_devices),
+        # Iter 58 / Gap E phase 8: when the MidiHub path didn't
+        # populate devices, prefer controller-host unconditionally.
+        # rtmidi falls through only in lenient mode + daemon down.
+        from app.services.midi_host_client import (
+            MidiHostClient, MidiHostClientError, midi_host_required,
+        )
+        client = MidiHostClient()
+        if client.is_daemon_available():
+            _, ports = client.list_ports()
+            in_idx = 0
+            out_idx = 0
+            for p in ports:
+                if p.is_input:
+                    self.input_devices.append(
+                        MIDIDevice(
+                            index=in_idx, name=p.name,
+                            port_type="input", is_virtual=p.is_virtual,
                         )
-                        return
-                # Daemon down. Strict mode (Gap E phase 3 / iter 53)
-                # raises rather than falling back.
-                if midi_host_required():
-                    raise MidiHostClientError(
-                        "MAP2_REQUIRE_MIDI_HOST set but controller-host "
-                        "daemon is unreachable; refusing rtmidi fallback "
-                        "for midi_engine _discover_devices()"
                     )
-            except Exception as exc:  # pragma: no cover - defensive
-                from app.services.midi_host_client import MidiHostClientError
-                if isinstance(exc, MidiHostClientError):
-                    raise
-                logger.debug("controller-host discovery failed, falling back: %s", exc)
+                    in_idx += 1
+                else:
+                    self.output_devices.append(
+                        MIDIDevice(
+                            index=out_idx, name=p.name,
+                            port_type="output", is_virtual=p.is_virtual,
+                        )
+                    )
+                    out_idx += 1
+            if self.input_devices or self.output_devices:
+                logger.info(
+                    "Discovered %s host inputs, %s outputs via controller-host",
+                    len(self.input_devices), len(self.output_devices),
+                )
+                return
+        else:
+            # Daemon down. Strict mode raises; lenient mode falls
+            # through to rtmidi (with deprecation warning below).
+            if midi_host_required():
+                raise MidiHostClientError(
+                    "MAP2_REQUIRE_MIDI_HOST set but controller-host "
+                    "daemon is unreachable; refusing rtmidi fallback "
+                    "for midi_engine _discover_devices()"
+                )
+            logger.warning(
+                "midi_engine: controller-host daemon unreachable; "
+                "falling back to rtmidi enumeration. This will become "
+                "a hard error after iter 59."
+            )
 
         if not RTMIDI_AVAILABLE:
             # Fallback to virtual devices

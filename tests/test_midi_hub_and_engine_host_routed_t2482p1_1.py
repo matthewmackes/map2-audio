@@ -154,21 +154,26 @@ class MidiEngineDiscoverDevicesHostRoutedTests(unittest.TestCase):
         finally:
             env_patch.stop()
 
-    def test_env_off_does_not_use_host(self) -> None:
+    def test_lenient_mode_falls_to_virtual_when_daemon_down_and_no_rtmidi(self) -> None:
+        # Iter 58 removed the env-gate from midi_engine. The host
+        # client is now always tried first. With daemon down +
+        # no rtmidi available, the engine falls to its virtual
+        # placeholder fallback.
         env_patch = mock.patch.dict(os.environ, {"MAP2_USE_MIDI_HOST": "0"})
         env_patch.start()
         try:
             from app.services import midi_engine as me
             engine = self._make_engine()
+            fake_client = mock.Mock()
+            fake_client.is_daemon_available.return_value = False
             with mock.patch.object(me, "get_midi_hub", None), \
                  mock.patch.object(me, "RTMIDI_AVAILABLE", False), \
                  mock.patch("app.services.midi_host_client.MidiHostClient",
-                              side_effect=AssertionError("host client must not be constructed")):
+                              return_value=fake_client):
                 engine._discover_devices()
-            # Falls to virtual fallback path (RTMIDI_AVAILABLE=False)
-            # without touching the host client.
             self.assertEqual(len(engine.input_devices), 1)
             self.assertEqual(engine.input_devices[0].name, "Virtual Input 1")
+            fake_client.is_daemon_available.assert_called_once()
         finally:
             env_patch.stop()
 
