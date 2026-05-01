@@ -29,26 +29,28 @@ from app.services.midi_host_client import MidiBackendStatus, MidiPortInfo
 
 class DiscoverAlsaPortsHostRoutedTests(unittest.TestCase):
     def setUp(self) -> None:
-        # Iter 51 flipped default to ON; explicit "0" forces OFF.
+        # Iter 57 removed the env-gate from midi_hub/ports; the env
+        # patch is no-op now but kept for symmetry with sibling
+        # suites. Keeping it pinned to a known value also prevents
+        # MAP2_USE_MIDI_HOST in the dev shell from leaking into
+        # tests for the other consumers that still honor the gate.
         self._env_patch_off = mock.patch.dict(os.environ, {"MAP2_USE_MIDI_HOST": "0"})
 
-    def test_env_off_uses_rtmidi_path(self) -> None:
+    def test_lenient_mode_falls_back_to_rtmidi_when_daemon_down(self) -> None:
+        # Iter 57: env-gate removed; host is always tried first.
+        # In lenient mode, daemon-down → rtmidi fallback (warning
+        # logged, then iter-49 rtmidi path runs). Empty rtmidi gives
+        # empty port lists.
         from app.services.midi_hub import ports as midi_hub_ports
-        self._env_patch_off.start()
-        try:
-            # When env is OFF, no host client is constructed even if
-            # one would be available. Patch MidiHostClient so any
-            # accidental construction raises (proves we don't take
-            # the host path).
-            with mock.patch("app.services.midi_host_client.MidiHostClient",
-                              side_effect=AssertionError("host client must not be constructed")):
-                # Real rtmidi or stub — either way, host shouldn't be hit.
-                with mock.patch.object(midi_hub_ports, "rtmidi", None):
-                    result = midi_hub_ports.discover_alsa_ports()
-            # rtmidi=None falls through to empty lists.
-            self.assertEqual(result, {"inputs": [], "outputs": []})
-        finally:
-            self._env_patch_off.stop()
+        fake_client = mock.Mock()
+        fake_client.is_daemon_available.return_value = False
+        with mock.patch("app.services.midi_host_client.MidiHostClient",
+                          return_value=fake_client), \
+             mock.patch.object(midi_hub_ports, "rtmidi", None):
+            result = midi_hub_ports.discover_alsa_ports()
+        # rtmidi=None falls through to empty lists.
+        self.assertEqual(result, {"inputs": [], "outputs": []})
+        fake_client.is_daemon_available.assert_called()
 
     def test_env_on_routes_through_host(self) -> None:
         from app.services.midi_hub import ports as midi_hub_ports

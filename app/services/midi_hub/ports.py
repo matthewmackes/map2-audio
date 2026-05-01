@@ -4,10 +4,13 @@ MIDI Hub port abstraction layer.
 
 from __future__ import annotations
 
+import logging
 import os
 import time
 import re
 import subprocess
+
+logger = logging.getLogger(__name__)
 from abc import ABC, abstractmethod
 from pathlib import Path
 from dataclasses import dataclass, field
@@ -22,18 +25,15 @@ except Exception:  # pragma: no cover - optional dependency
     rtmidi = None
 
 
-# T2482-P1.1 Gap D.4 (iter 49) + Gap E phase 1 (iter 51) — controller-host
-# routing is now the default for the canonical MIDI Hub port enumeration.
+# T2482-P1.1 Gap D.4 (iter 49) + Gap E phase 7 (iter 57) — controller-host
+# routing is now MANDATORY for the canonical MIDI Hub port enumeration.
+# The env-gate helper from iters 49/51 was dropped in iter 57 — host
+# is preferred unconditionally; rtmidi remains a lenient-mode fallback
+# until iter 59 strips it entirely.
 #
-# Default ON as of iter 51 (SHIP loop 6). midi_hub/ports.py is the
-# wrapper every downstream Hub consumer (Tesira, GPIO, OSC, event
-# list, etc.) goes through, so this flip benefits the entire Hub
-# surface. Set MAP2_USE_MIDI_HOST=0 to force the rtmidi fallback.
-def _midi_hub_use_midi_host() -> bool:
-    val = os.environ.get("MAP2_USE_MIDI_HOST", "").strip().lower()
-    if val in ("0", "false", "no", "off"):
-        return False
-    return True  # default ON
+# midi_hub/ports.py is the wrapper every downstream Hub consumer
+# (Tesira, GPIO, OSC, event list, etc.) goes through, so this flip
+# benefits the entire Hub surface.
 
 
 PortDirection = Literal["input", "output", "duplex"]
@@ -282,48 +282,49 @@ class AlsaMidiPort(MidiPort):
 
 
 def discover_alsa_ports() -> Dict[str, List[str]]:
-    """Discover ALSA MIDI input/output names via rtmidi (or controller-host)."""
-    # Host-routed enumeration (env-gated). When the controller-host
-    # daemon is up, prefer its libremidi enumeration. The daemon owns
-    # the same JACK/ALSA-seq port graph rtmidi sees, so the result is
-    # equivalent — we just skip the per-call rtmidi cleanup cost and
-    # get consistent backend reporting across services.
-    if _midi_hub_use_midi_host():
-        try:
-            from app.services.midi_host_client import (
-                MidiHostClient, MidiHostClientError, midi_host_required,
-            )
-            client = MidiHostClient()
-            if client.is_daemon_available():
-                _, ports = client.list_ports()
-                inputs_h = []
-                outputs_h = []
-                for p in ports:
-                    if not _is_discoverable_alsa_port_name(p.name):
-                        continue
-                    if p.is_input:
-                        inputs_h.append(p.name)
-                    else:
-                        outputs_h.append(p.name)
-                return {"inputs": inputs_h, "outputs": outputs_h}
-            # Daemon down. Strict mode (Gap E phase 3 / iter 53)
-            # raises rather than falling back to rtmidi.
-            if midi_host_required():
-                raise MidiHostClientError(
-                    "MAP2_REQUIRE_MIDI_HOST set but controller-host "
-                    "daemon is unreachable; refusing rtmidi fallback "
-                    "for discover_alsa_ports()"
-                )
-            # else: fall through to rtmidi.
-        except Exception as exc:  # pragma: no cover - defensive
-            # Re-raise strict-mode failures so callers see them.
-            from app.services.midi_host_client import MidiHostClientError
-            if isinstance(exc, MidiHostClientError):
-                raise
-            pass  # any other host-side failure → rtmidi fallback
+    """Discover ALSA MIDI input/output names.
 
+    T2482-P1.1 Gap E phase 7 (iter 57): controller-host is preferred
+    unconditionally. rtmidi remains a lenient-mode fallback until
+    iter 59 strips it entirely. Strict mode
+    (MAP2_REQUIRE_MIDI_HOST=1) raises when daemon unreachable.
+    """
+    from app.services.midi_host_client import (
+        MidiHostClient, MidiHostClientError, midi_host_required,
+    )
+
+    client = MidiHostClient()
+    if client.is_daemon_available():
+        _, ports = client.list_ports()
+        inputs_h = []
+        outputs_h = []
+        for p in ports:
+            if not _is_discoverable_alsa_port_name(p.name):
+                continue
+            if p.is_input:
+                inputs_h.append(p.name)
+            else:
+                outputs_h.append(p.name)
+        return {"inputs": inputs_h, "outputs": outputs_h}
+
+    # Daemon down — strict mode forbids the rtmidi fallback.
+    if midi_host_required():
+        raise MidiHostClientError(
+            "MAP2_REQUIRE_MIDI_HOST set but controller-host "
+            "daemon is unreachable; refusing rtmidi fallback "
+            "for discover_alsa_ports()"
+        )
+
+    # Lenient mode — fall back to rtmidi. Logged at WARNING so
+    # operators see explicit notice that the rtmidi path is on
+    # borrowed time (iter 59 hard-strips this).
     if rtmidi is None:
         return {"inputs": [], "outputs": []}
+    logger.warning(
+        "midi_hub/ports.discover_alsa_ports: controller-host daemon "
+        "unreachable; falling back to rtmidi enumeration. This will "
+        "become a hard error after iter 59."
+    )
 
     inputs: List[str] = []
     outputs: List[str] = []
