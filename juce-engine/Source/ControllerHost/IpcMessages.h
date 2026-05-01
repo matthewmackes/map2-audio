@@ -25,7 +25,11 @@
 namespace map2::ipc::controller_host
 {
 
-inline constexpr int kSchemaVersion = 1;
+// T2482-P1.2 Gap F.2 (iter 63): bumped 1 → 2 to mirror the Python
+// SCHEMA_VERSION bump in iter 62. The new envelopes
+// (MappingDeactivate / MappingReload / EventFeedback) are additive;
+// older clients ignore them.
+inline constexpr int kSchemaVersion = 2;
 
 // ---------------------------------------------------------------------------
 // Inbound: backend → controller-host
@@ -70,6 +74,24 @@ struct MappingDescriptorPayload
 struct MappingActivate
 {
     static constexpr const char* kType = "mapping_activate";
+    std::string msg_id;
+    int schema_version = kSchemaVersion;
+    std::string controller_key;
+    MappingDescriptorPayload descriptor;
+};
+
+// T2482-P1.2 Gap F.1+F.2 (iters 62-63) — operator-facing lifecycle.
+struct MappingDeactivate
+{
+    static constexpr const char* kType = "mapping_deactivate";
+    std::string msg_id;
+    int schema_version = kSchemaVersion;
+    std::string controller_key;
+};
+
+struct MappingReload
+{
+    static constexpr const char* kType = "mapping_reload";
     std::string msg_id;
     int schema_version = kSchemaVersion;
     std::string controller_key;
@@ -184,6 +206,25 @@ struct ScriptError
     std::optional<std::string> stack;
 };
 
+// T2482-P1.2 Gap F.1+F.2 (iters 62-63) — operator-facing diagnostic
+// feedback for in-flight controller events. Surfaces in the Mapping
+// Editor as inline event-trace rows.
+struct EventFeedback
+{
+    static constexpr const char* kType = "event_feedback";
+    std::string msg_id;
+    int schema_version = kSchemaVersion;
+    std::string controller_key;
+    std::string stage;                 // "received" | "matched" | "dispatched" | "drained"
+    std::int64_t timestamp_ns = 0;
+    std::optional<std::string> detail;
+    std::vector<std::uint8_t> inbound_bytes;
+    std::optional<std::string> callback_name;
+    std::optional<int> engine_command_count;
+    std::optional<int> outbound_short_count;
+    std::optional<int> outbound_sysex_count;
+};
+
 // ---------------------------------------------------------------------------
 // Field manifest — must match app/schemas/controller_host.py FIELD_MANIFEST.
 // CI test tests/test_controller_host_ipc_schema.py reads this header
@@ -193,6 +234,8 @@ struct ScriptError
 // CPP_FIELD_MANIFEST_BEGIN
 // ScriptLoadRequest: type, msg_id, schema_version, controller_key, pack_id, model, script_path, script_body
 // MappingActivate: type, msg_id, schema_version, controller_key, descriptor
+// MappingDeactivate: type, msg_id, schema_version, controller_key
+// MappingReload: type, msg_id, schema_version, controller_key, descriptor
 // MidiSendRequest: type, msg_id, schema_version, controller_key, bytes, format
 // Shutdown: type, msg_id, schema_version
 // MidiListPortsRequest: type, msg_id, schema_version
@@ -203,6 +246,7 @@ struct ScriptError
 // ControllerEvent: type, msg_id, schema_version, controller_key, timestamp_ns, bytes
 // LogEvent: type, msg_id, schema_version, controller_key, level, message
 // ScriptError: type, msg_id, schema_version, controller_key, file, line, column, message, stack
+// EventFeedback: type, msg_id, schema_version, controller_key, stage, timestamp_ns, detail, inbound_bytes, callback_name, engine_command_count, outbound_short_count, outbound_sysex_count
 // MappingControlPayload: status, midino, channel, target, action, script, fast_path, description
 // MappingDescriptorPayload: pack_id, model, kind, scripts, controls, outputs, settings, mixxx_alias_table
 // CPP_FIELD_MANIFEST_END
