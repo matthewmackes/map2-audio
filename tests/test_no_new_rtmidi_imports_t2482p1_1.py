@@ -40,12 +40,11 @@ ALLOWED_RTMIDI_PATHS = {
     # flows). Drop in a future loop once a "raise on host-fail" mode
     # is acceptable for Maschine.
     "app/services/maschine/maschine_mk1_daemon.py",
-    # GCP midi_transport — receive_sysex polling-loop contract still
-    # requires rtmidi.MidiIn.get_message(). Refactor to subscribe_events
-    # is queued post-loop-8 (different contract: event-driven vs
-    # blocking timeout). list_ports + send_sysex were hard-stripped
-    # in iter 54.
-    "app/services/ground_control_pro/midi_transport.py",
+    # GCP midi_transport — REMOVED FROM ALLOW-LIST in iter 82 (loop 9).
+    # receive_sysex was refactored from rtmidi-polling to
+    # MidiHostClient.subscribe()-based event-driven receive. Test
+    # factory injection still works but no longer carries a rtmidi
+    # fallback.
     # midi_hub/ports.py AlsaMidiPort.open() — opens individual ALSA
     # port handles for the MidiHub's per-port consumer model. Different
     # surface from discover_alsa_ports (iter 78 hard-stripped that).

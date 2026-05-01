@@ -10,30 +10,18 @@ from app.utils.rtmidi_utils import dispose_rtmidi_client
 
 from .model import GroundControlTransportOptions
 
-# T2482-P1.1 Gap E phase 4 (iter 54) — controller-host is now mandatory.
+# T2482-P1.2 loop 9 / Surface 1 (iter 82) — rtmidi import removed.
 #
-# rtmidi-direct paths in list_ports() + send_sysex() were removed.
-# Test-injected factories (midi_in_factory / midi_out_factory) STILL
-# work — that's how the test suite mocks the surface — but they no
-# longer carry the rtmidi import. The factory shape is rtmidi-compatible
-# (get_ports / open_port / send_message / get_message / close_port);
-# tests can use any object that quacks like rtmidi.MidiIn/MidiOut.
+# Production paths (list_ports, send_sysex, receive_sysex) all route
+# through MidiHostClient. The factory-injection test mode is still
+# supported but factories now MUST be supplied — there is no rtmidi
+# fallback when factories are absent (production code never hits
+# that branch because is_daemon_available() gating short-circuits to
+# the host path or raises MidiHostClientError).
 #
-# receive_sysex() still uses the factory-shaped client because its
-# polling-loop contract requires changes that don't fit this iter
-# (P1.2 follow-up: event-driven via subscribe_events).
-#
-# rtmidi import retained for the receive_sysex polling path AND for
-# the (still-supported) factory-injection test mode that builds a real
-# rtmidi.MidiIn when no factory is supplied. The full rtmidi removal
-# happens in iter 59 once every consumer is on the host path.
-try:
-    import rtmidi  # type: ignore
-
-    RTMIDI_AVAILABLE = True
-except ImportError:  # pragma: no cover - environment dependent
-    RTMIDI_AVAILABLE = False
-    rtmidi = None
+# Tests that previously did `transport = GroundControlMidiTransport()`
+# without a factory + relied on rtmidi being available must now pass
+# fake factories OR mock the host client (the production idiom).
 
 
 # Stable controller_key for GCP. The controller-host routes outbound
@@ -58,22 +46,24 @@ class GroundControlMidiTransport:
         return self._host_client
 
     def _make_midi_in(self) -> Any:
-        # Used only by receive_sysex (polling-loop contract not yet
-        # ported to subscribe_events) + by tests via factory injection.
-        if self._midi_in_factory is not None:
-            return self._midi_in_factory()
-        if not RTMIDI_AVAILABLE:
-            raise RuntimeError("python-rtmidi is not available")
-        return rtmidi.MidiIn()
+        # Iter 82: rtmidi fallback removed. Test factory required.
+        if self._midi_in_factory is None:
+            raise RuntimeError(
+                "_make_midi_in: no factory injected; production code "
+                "should route through the host (iter 82 removed the "
+                "rtmidi fallback)"
+            )
+        return self._midi_in_factory()
 
     def _make_midi_out(self) -> Any:
-        # Used only by tests via factory injection. Production send
-        # path goes through the host (see send_sysex).
-        if self._midi_out_factory is not None:
-            return self._midi_out_factory()
-        if not RTMIDI_AVAILABLE:  # pragma: no cover - tests inject factories
-            raise RuntimeError("python-rtmidi is not available")
-        return rtmidi.MidiOut()
+        # Iter 82: rtmidi fallback removed. Test factory required.
+        if self._midi_out_factory is None:
+            raise RuntimeError(
+                "_make_midi_out: no factory injected; production code "
+                "should route through the host (iter 82 removed the "
+                "rtmidi fallback)"
+            )
+        return self._midi_out_factory()
 
     @staticmethod
     def _resolve_port_index(port_names: List[str], requested_index: Optional[int], requested_name: Optional[str]) -> int:
@@ -144,6 +134,15 @@ class GroundControlMidiTransport:
         }
 
     async def receive_sysex(self, options: GroundControlTransportOptions) -> Dict[str, Any]:
+        # Iter 82 (T2482 loop 9 / Surface 1): test-factory path
+        # preserved; production path now routes through
+        # MidiHostClient.subscribe() instead of polling rtmidi.MidiIn.
+        if self._midi_in_factory is not None:
+            return await self._receive_sysex_via_factory(options)
+        return await self._receive_sysex_via_host(options)
+
+    async def _receive_sysex_via_factory(self, options: GroundControlTransportOptions) -> Dict[str, Any]:
+        # Legacy polling path — used only by test factories.
         midi_in = self._make_midi_in()
         port_names = list(midi_in.get_ports())
         port_index = self._resolve_port_index(port_names, options.input_port_index, options.input_port_name)
@@ -184,6 +183,87 @@ class GroundControlMidiTransport:
             raise TimeoutError(f"Timed out waiting for SysEx on input port {port_index}")
         finally:
             dispose_rtmidi_client(midi_in)
+
+    async def _receive_sysex_via_host(self, options: GroundControlTransportOptions) -> Dict[str, Any]:
+        # Iter 82: production receive path — opens the input port via
+        # the controller-host (MidiHostClient.open_midi_input), then
+        # subscribes to controller_event frames and accumulates a
+        # full SysEx envelope (F0 ... F7) across one or more events.
+        # Returns the same dict shape as the legacy factory path.
+        from app.services.midi_host_client import MidiHostClient, MidiHostClientError
+        client = self._get_host_client()
+        if not client.is_daemon_available():
+            raise MidiHostClientError(
+                "controller-host daemon is unreachable; cannot "
+                "receive_sysex for GCP. Start map2-controller-host.service."
+            )
+        # Resolve the port name via the host's enumeration.
+        _, ports = client.list_ports()
+        input_names = [p.name for p in ports if p.is_input]
+        port_index = self._resolve_port_index(
+            input_names, options.input_port_index, options.input_port_name,
+        )
+        port_id = input_names[port_index]
+        # Bind the port to the GCP controller_key on the host.
+        client.open_midi_input(controller_key=_GCP_CONTROLLER_KEY, port_id=port_id)
+
+        # Subscribe to controller_event frames; accumulate the SysEx
+        # envelope. Threading: subscribe runs a daemon reader thread;
+        # we coordinate via a threading.Event + a small inbound queue.
+        import queue as _queue
+        envelope_queue: "_queue.Queue[Dict[str, Any]]" = _queue.Queue()
+        traffic: List[Dict[str, Any]] = []
+        accumulator: Dict[str, Any] = {"started": False, "payload": []}
+
+        def _on_controller_event(msg: dict) -> None:
+            if msg.get("controller_key") != _GCP_CONTROLLER_KEY:
+                return
+            chunk = [int(b) & 0xFF for b in msg.get("bytes", [])]
+            if not chunk:
+                return
+            traffic.append({
+                "timestamp": time.time(),
+                "direction": "in",
+                "delta": 0.0,  # subscribe doesn't carry delta-time today
+                "hex": " ".join(f"{value:02X}" for value in chunk),
+            })
+            payload = accumulator["payload"]
+            if not accumulator["started"] and 0xF0 in chunk:
+                accumulator["started"] = True
+                payload.extend(chunk[chunk.index(0xF0):])
+            elif accumulator["started"]:
+                payload.extend(chunk)
+            if accumulator["started"] and 0xF7 in payload:
+                end_index = payload.index(0xF7)
+                envelope_queue.put({
+                    "bytes": bytes(payload[:end_index + 1]),
+                    "port_id": port_id,
+                })
+
+        sub = client.subscribe()
+        sub.on_controller_event(_on_controller_event)
+        sub.start()
+        try:
+            deadline = time.monotonic() + max(0.1, float(options.timeout_seconds))
+            while time.monotonic() < deadline:
+                try:
+                    result = envelope_queue.get(timeout=0.05)
+                except _queue.Empty:
+                    await asyncio.sleep(0)  # yield to the event loop
+                    continue
+                return {
+                    "bytes": result["bytes"],
+                    "traffic": traffic,
+                    "port_index": port_index,
+                    "port_name": result["port_id"],
+                    "host_routed": True,
+                }
+            raise TimeoutError(
+                f"Timed out waiting for SysEx on input port {port_index} "
+                f"(host-routed, port_id={port_id})"
+            )
+        finally:
+            sub.stop()
 
     async def send_sysex(self, data: bytes, options: GroundControlTransportOptions) -> Dict[str, Any]:
         traffic: List[Dict[str, Any]] = []
