@@ -16,6 +16,7 @@ import { ConnectKeyboardDetectPhase } from './ConnectKeyboardDetectPhase'
 import { ConnectKeyboardTestPhase } from './ConnectKeyboardTestPhase'
 import { ConnectKeyboardSnapshotPhase } from './ConnectKeyboardSnapshotPhase'
 import { ConnectKeyboardDonePhase } from './ConnectKeyboardDonePhase'
+import { useConnectKeyboardSnapshotJob } from './useConnectKeyboardSnapshotJob'
 import './connectKeyboardTask.css'
 
 interface ConnectKeyboardTaskProps {
@@ -48,6 +49,14 @@ export function ConnectKeyboardTask({ onExit }: ConnectKeyboardTaskProps) {
     enabled: currentPhaseId === 'detect' || currentPhaseId === 'test',
   })
 
+  const job = useConnectKeyboardSnapshotJob()
+
+  const setupAnother = useCallback(() => {
+    setCurrentPhaseId('welcome')
+    setSelectedPortName(null)
+    job.reset()
+  }, [job])
+
   const requestExit = useCallback(() => {
     if (shouldConfirmOnExit(currentPhaseId)) {
       setExitConfirmOpen(true)
@@ -76,6 +85,7 @@ export function ConnectKeyboardTask({ onExit }: ConnectKeyboardTaskProps) {
 
   const continueDisabled = useMemo(() => {
     if (currentPhaseId === 'detect') return selectedPortName === null
+    if (currentPhaseId === 'snapshot') return true
     if (currentPhaseId === 'done') return true
     return false
   }, [currentPhaseId, selectedPortName])
@@ -161,9 +171,19 @@ export function ConnectKeyboardTask({ onExit }: ConnectKeyboardTaskProps) {
           <ConnectKeyboardTestPhase selectedPortName={selectedPortName} />
         ) : null}
         {currentPhaseId === 'snapshot' ? (
-          <ConnectKeyboardSnapshotPhase selectedPortName={selectedPortName} />
+          <ConnectKeyboardSnapshotPhase
+            selectedPortName={selectedPortName}
+            job={job}
+            onAdvance={() => setCurrentPhaseId('done')}
+          />
         ) : null}
-        {currentPhaseId === 'done' ? <ConnectKeyboardDonePhase /> : null}
+        {currentPhaseId === 'done' ? (
+          <ConnectKeyboardDonePhase
+            selectedPortName={selectedPortName}
+            result={job.result}
+            onSetupAnother={setupAnother}
+          />
+        ) : null}
       </section>
 
       <footer className="connect-keyboard-task__footer">
