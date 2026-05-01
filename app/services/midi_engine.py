@@ -44,16 +44,21 @@ except ImportError:
     logger.warning("python-rtmidi not installed, MIDI functionality limited")
 
 
-# T2482-P1.1 Gap D.5 (iter 49) — env-var-gated controller-host routing
-# for the rtmidi-direct fallback inside _discover_devices(). The
-# MidiHub-based discovery path already inherits host routing
-# transparently from midi_hub/ports.py (Gap D.4 / iter 49 first half),
-# so this gate only matters for the few code paths that skip MidiHub
-# and call _discover_devices() directly.
+# T2482-P1.1 Gap D.5 (iter 49) + Gap E phase 1 (iter 51) — controller-host
+# routing is now the default for the rtmidi-direct fallback inside
+# _discover_devices(). The MidiHub-based discovery path already inherits
+# host routing transparently from midi_hub/ports.py (Gap D.4 / iter 49
+# first half), so this gate only matters for the few code paths that
+# skip MidiHub and call _discover_devices() directly.
+#
+# Default ON as of iter 51 (SHIP loop 6). Set MAP2_USE_MIDI_HOST=0 to
+# force the rtmidi-direct fallback.
 import os as _os
 def _midi_engine_use_midi_host() -> bool:
-    val = _os.environ.get("MAP2_USE_MIDI_HOST", "")
-    return val.strip().lower() in ("1", "true", "yes", "on")
+    val = _os.environ.get("MAP2_USE_MIDI_HOST", "").strip().lower()
+    if val in ("0", "false", "no", "off"):
+        return False
+    return True  # default ON
 
 
 class MIDIMessageType(Enum):

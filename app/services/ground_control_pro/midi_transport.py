@@ -19,18 +19,18 @@ except ImportError:  # pragma: no cover - environment dependent
     rtmidi = None
 
 
-# T2482-P1.1 Gap D.1 (iter 46) — env-var-gated controller-host routing.
+# T2482-P1.1 Gap D.1 (iter 46) + Gap E phase 1 (iter 51) — controller-host
+# routing is now the default.
 #
-# Set MAP2_USE_MIDI_HOST=1 (or "true"/"yes") to route GCP SysEx I/O
-# through map2-controller-host's libremidi backend instead of opening
-# rtmidi directly. The default is OFF for the duration of the
-# transition; a follow-up commit flips the default to ON once iters
-# 46-49 have all consumers ported and the latency floor (Gap C) is
-# measured. After the rtmidi-removal commit (Gap E / iter 50) the
-# env var disappears entirely and the host path becomes mandatory.
+# Default ON as of iter 51 (SHIP loop 6): when the env var is unset
+# or empty, the host path runs. Set MAP2_USE_MIDI_HOST=0 (or "false"
+# / "no" / "off") to force the legacy rtmidi fallback. The opt-out
+# remains until iter 54 strips the rtmidi fallback path entirely.
 def _use_midi_host() -> bool:
-    val = os.environ.get("MAP2_USE_MIDI_HOST", "")
-    return val.strip().lower() in ("1", "true", "yes", "on")
+    val = os.environ.get("MAP2_USE_MIDI_HOST", "").strip().lower()
+    if val in ("0", "false", "no", "off"):
+        return False
+    return True  # default ON
 
 
 # Stable controller_key for GCP. The controller-host routes outbound

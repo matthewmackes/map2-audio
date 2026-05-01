@@ -15,21 +15,22 @@ from app.services.event_publisher import RealtimeMessagePublisher, event_publish
 from app.utils.rtmidi_utils import dispose_rtmidi_client
 
 
-# T2482-P1.1 Gap D.3 (iter 48) — env-var-gated controller-host routing.
+# T2482-P1.1 Gap D.3 (iter 48) + Gap E phase 1 (iter 51) — controller-host
+# routing is now the default for SysEx-device-bridge port enumeration.
 #
-# Iter 48 lands the enumeration-level flip: when MAP2_USE_MIDI_HOST=1
-# and the daemon is reachable, get_midi_ports() prefers
-# MidiHostClient.list_ports() over rtmidi enumeration. The connect
-# loop and per-message send still use rtmidi during iter 48 because
-# they require deeper refactors (the inbound poll → subscribe API
-# rewrite + outbound send → host-resolved port binding) that go
-# beyond an iter scope.
+# Default ON as of iter 51 (SHIP loop 6): get_midi_ports() prefers
+# MidiHostClient.list_ports() over rtmidi enumeration when the env
+# var is unset or empty. Set MAP2_USE_MIDI_HOST=0 to force rtmidi.
 #
-# Both IntelFX and MPX-1 services derive from this base class, so
-# the enumeration flip benefits both at once.
+# The connect loop and per-message send still use rtmidi (deeper
+# refactors required: inbound poll → subscribe API rewrite + outbound
+# send → host-resolved port binding). Both IntelFX and MPX-1 services
+# derive from this base class.
 def _sysex_bridge_use_midi_host() -> bool:
-    val = os.environ.get("MAP2_USE_MIDI_HOST", "")
-    return val.strip().lower() in ("1", "true", "yes", "on")
+    val = os.environ.get("MAP2_USE_MIDI_HOST", "").strip().lower()
+    if val in ("0", "false", "no", "off"):
+        return False
+    return True  # default ON
 
 logger = logging.getLogger(__name__)
 

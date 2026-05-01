@@ -29,8 +29,8 @@ from app.services.midi_host_client import MidiBackendStatus, MidiPortInfo
 
 class DiscoverAlsaPortsHostRoutedTests(unittest.TestCase):
     def setUp(self) -> None:
-        # Force-clear any inherited env state.
-        self._env_patch_off = mock.patch.dict(os.environ, {"MAP2_USE_MIDI_HOST": ""})
+        # Iter 51 flipped default to ON; explicit "0" forces OFF.
+        self._env_patch_off = mock.patch.dict(os.environ, {"MAP2_USE_MIDI_HOST": "0"})
 
     def test_env_off_uses_rtmidi_path(self) -> None:
         from app.services.midi_hub import ports as midi_hub_ports

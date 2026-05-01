@@ -352,22 +352,27 @@ class SharedRuntimeState:
 
 
 def _maschine_use_midi_host() -> bool:
-    """T2482-P1.1 Gap D.2 (iter 47) — env-var gate for the Maschine
-    daemon's virtual-output flip.
+    """T2482-P1.1 Gap D.2 (iter 47) + Gap E phase 1 (iter 51) — env-var
+    gate for the Maschine daemon's virtual-output shadow path.
 
-    Same protocol as the GCP transport gate (iter 46): MAP2_USE_MIDI_HOST
-    in (1/true/yes/on) → host path, anything else → rtmidi fallback.
+    Default ON as of iter 51 (SHIP loop 6): when the env var is unset
+    or empty, the shadow-send through the host runs alongside the
+    rtmidi virtual port. Set MAP2_USE_MIDI_HOST=0 to disable the
+    shadow.
 
     NOTE: even with the gate ON, Maschine currently still uses rtmidi
     for its virtual-port creation because the controller-host IPC
     schema does not yet expose openVirtualOutput() to Python
     (`LibremidiAdapter::openVirtualOutput` exists C++-internally but
     has no `MidiCreateVirtualPortRequest` envelope on the wire).
-    The send_messages() path WILL route through the host once that
-    IPC envelope ships — tracked as a P1.2 follow-up.
+    The send_messages() path runs the shadow through the host today;
+    the virtual-port creation flip waits for that IPC extension —
+    tracked as a P1.2 follow-up.
     """
-    val = os.environ.get("MAP2_USE_MIDI_HOST", "")
-    return val.strip().lower() in ("1", "true", "yes", "on")
+    val = os.environ.get("MAP2_USE_MIDI_HOST", "").strip().lower()
+    if val in ("0", "false", "no", "off"):
+        return False
+    return True  # default ON
 
 
 # Stable controller_key for the Maschine MK1 surface.

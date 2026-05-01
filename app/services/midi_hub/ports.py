@@ -22,14 +22,18 @@ except Exception:  # pragma: no cover - optional dependency
     rtmidi = None
 
 
-# T2482-P1.1 Gap D.4 (iter 49) — env-var-gated controller-host routing
-# for the canonical MIDI Hub port enumeration. midi_hub/ports.py is
-# the wrapper every downstream Hub consumer (Tesira, GPIO, OSC, event
-# list, etc.) goes through, so flipping discover_alsa_ports() here
-# benefits the entire Hub surface in one change.
+# T2482-P1.1 Gap D.4 (iter 49) + Gap E phase 1 (iter 51) — controller-host
+# routing is now the default for the canonical MIDI Hub port enumeration.
+#
+# Default ON as of iter 51 (SHIP loop 6). midi_hub/ports.py is the
+# wrapper every downstream Hub consumer (Tesira, GPIO, OSC, event
+# list, etc.) goes through, so this flip benefits the entire Hub
+# surface. Set MAP2_USE_MIDI_HOST=0 to force the rtmidi fallback.
 def _midi_hub_use_midi_host() -> bool:
-    val = os.environ.get("MAP2_USE_MIDI_HOST", "")
-    return val.strip().lower() in ("1", "true", "yes", "on")
+    val = os.environ.get("MAP2_USE_MIDI_HOST", "").strip().lower()
+    if val in ("0", "false", "no", "off"):
+        return False
+    return True  # default ON
 
 
 PortDirection = Literal["input", "output", "duplex"]
