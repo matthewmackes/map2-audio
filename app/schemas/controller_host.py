@@ -30,7 +30,13 @@ from typing import Literal, NotRequired, TypedDict
 # Schema version. Bump on any breaking change to a TypedDict below.
 # ---------------------------------------------------------------------------
 
-SCHEMA_VERSION = 1
+# T2482-P1.2 Gap F.1 (iter 62): bumped from 1 → 2 because the
+# MappingDeactivate / MappingReload / EventFeedback envelopes are
+# additive, not breaking. Old clients ignore the new envelope types
+# (the dispatcher silently drops unknown frames); new clients
+# receive EventFeedback frames only when the host's debug flag is
+# set, so v1-only consumers don't see them either.
+SCHEMA_VERSION = 2
 
 
 # ---------------------------------------------------------------------------
@@ -65,6 +71,38 @@ class MappingActivate(TypedDict):
     field).
     """
     type: Literal["mapping_activate"]
+    msg_id: str
+    schema_version: int
+    controller_key: str
+    descriptor: "MappingDescriptorPayload"
+
+
+# T2482-P1.2 Gap F.1 (iter 62) — operator-facing IPC envelopes that
+# extend the lifecycle of a controller mapping.
+class MappingDeactivate(TypedDict):
+    """Drop the active mapping descriptor for ``controller_key``.
+
+    Reverse of MappingActivate. After deactivation, MIDI/HID events
+    on the named controller_key flow through the host's default
+    pass-through (controller_event IPC frames) instead of routing
+    via the dropped JS handlers.
+    """
+    type: Literal["mapping_deactivate"]
+    msg_id: str
+    schema_version: int
+    controller_key: str
+
+
+class MappingReload(TypedDict):
+    """Hot-reload the mapping descriptor for ``controller_key``.
+
+    Equivalent to MappingDeactivate followed by MappingActivate but
+    runs as a single host-side operation so the controller's port
+    handles + scripts reload without dropping inbound events for
+    the duration of the swap. Used by the operator-edit flow when
+    a device-pack JS file changes on disk.
+    """
+    type: Literal["mapping_reload"]
     msg_id: str
     schema_version: int
     controller_key: str
@@ -191,6 +229,37 @@ class ScriptError(TypedDict):
     stack: NotRequired[str]
 
 
+# T2482-P1.2 Gap F.1 (iter 62) — operator-facing diagnostic feedback.
+class EventFeedback(TypedDict):
+    """Host → backend diagnostic ping for an in-flight controller event.
+
+    Sent on demand for soak / debug builds. Distinguishes from
+    LogEvent + ScriptError by carrying lifecycle metadata: how many
+    callbacks fired for this event, how many engine.setValue
+    invocations the JS made, whether outbound MIDI was emitted, etc.
+    The backend GUI surfaces these as inline event-trace rows in the
+    Mapping Editor.
+
+    ``stage`` is one of:
+    - "received"  — the host saw the inbound MIDI/HID/bulk event
+    - "matched"   — a control row matched (status/midino/channel triple)
+    - "dispatched" — the JS callback returned (success or exception)
+    - "drained"   — outbound MIDI was sent (or no outbound was queued)
+    """
+    type: Literal["event_feedback"]
+    msg_id: str
+    schema_version: int
+    controller_key: str
+    stage: Literal["received", "matched", "dispatched", "drained"]
+    timestamp_ns: int
+    detail: NotRequired[str]
+    inbound_bytes: NotRequired[list[int]]
+    callback_name: NotRequired[str]
+    engine_command_count: NotRequired[int]
+    outbound_short_count: NotRequired[int]
+    outbound_sysex_count: NotRequired[int]
+
+
 # ---------------------------------------------------------------------------
 # Shared payload types
 # ---------------------------------------------------------------------------
@@ -252,6 +321,8 @@ class MidiListPortsResponse(TypedDict):
 FIELD_MANIFEST: dict[str, list[str]] = {
     "ScriptLoadRequest": list(ScriptLoadRequest.__annotations__.keys()),
     "MappingActivate":   list(MappingActivate.__annotations__.keys()),
+    "MappingDeactivate": list(MappingDeactivate.__annotations__.keys()),
+    "MappingReload":     list(MappingReload.__annotations__.keys()),
     "MidiSendRequest":   list(MidiSendRequest.__annotations__.keys()),
     "Shutdown":          list(Shutdown.__annotations__.keys()),
     "MidiListPortsRequest":  list(MidiListPortsRequest.__annotations__.keys()),
@@ -262,6 +333,7 @@ FIELD_MANIFEST: dict[str, list[str]] = {
     "ControllerEvent":   list(ControllerEvent.__annotations__.keys()),
     "LogEvent":          list(LogEvent.__annotations__.keys()),
     "ScriptError":       list(ScriptError.__annotations__.keys()),
+    "EventFeedback":     list(EventFeedback.__annotations__.keys()),
     "MappingControlPayload":    list(MappingControlPayload.__annotations__.keys()),
     "MappingDescriptorPayload": list(MappingDescriptorPayload.__annotations__.keys()),
 }
@@ -271,6 +343,8 @@ FIELD_MANIFEST: dict[str, list[str]] = {
 InboundMessage = (
     ScriptLoadRequest
     | MappingActivate
+    | MappingDeactivate
+    | MappingReload
     | MidiSendRequest
     | Shutdown
     | MidiListPortsRequest
@@ -281,6 +355,7 @@ OutboundMessage = (
     | ControllerEvent
     | LogEvent
     | ScriptError
+    | EventFeedback
     | MidiListPortsResponse
 )
 
