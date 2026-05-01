@@ -111,7 +111,21 @@ class GroundControlMidiTransport:
                     "host_routed": True,
                     "host_backend": status.backend,
                 }
-            # else: daemon down → fall through to rtmidi fallback.
+            # Daemon down. Strict mode (Gap E phase 3 / iter 53)
+            # refuses to fall back to rtmidi — raises instead so the
+            # caller sees the failure explicitly. Default behaviour
+            # remains: fall through to rtmidi.
+            from app.services.midi_host_client import (
+                MidiHostClientError,
+                midi_host_required,
+            )
+            if midi_host_required():
+                raise MidiHostClientError(
+                    "MAP2_REQUIRE_MIDI_HOST set but controller-host "
+                    "daemon is unreachable; refusing rtmidi fallback "
+                    "for GCP list_ports()"
+                )
+            # else: fall through to rtmidi fallback.
 
         if not RTMIDI_AVAILABLE and self._midi_in_factory is None and self._midi_out_factory is None:
             return {
@@ -253,7 +267,19 @@ class GroundControlMidiTransport:
                     "host_routed": True,
                     "host_backend": status.backend,
                 }
-            # else: daemon down → fall through to rtmidi fallback below.
+            # Daemon down. Strict mode (Gap E phase 3 / iter 53)
+            # refuses rtmidi fallback.
+            from app.services.midi_host_client import (
+                MidiHostClientError,
+                midi_host_required,
+            )
+            if midi_host_required():
+                raise MidiHostClientError(
+                    "MAP2_REQUIRE_MIDI_HOST set but controller-host "
+                    "daemon is unreachable; refusing rtmidi fallback "
+                    "for GCP send_sysex()"
+                )
+            # else: fall through to rtmidi fallback below.
 
         midi_out = self._make_midi_out()
         port_names = list(midi_out.get_ports())

@@ -539,8 +539,23 @@ class SysExDeviceBridge:
                         "host_routed": True,
                         "host_backend": status.backend,
                     }
-                # else: daemon down → fall through to rtmidi.
+                # Daemon down. Strict mode (Gap E phase 3 / iter 53)
+                # raises rather than falling back to rtmidi.
+                from app.services.midi_host_client import (
+                    MidiHostClientError, midi_host_required,
+                )
+                if midi_host_required():
+                    raise MidiHostClientError(
+                        f"MAP2_REQUIRE_MIDI_HOST set but controller-host "
+                        f"daemon is unreachable; refusing rtmidi fallback "
+                        f"for {self.DEVICE_LABEL} get_midi_ports()"
+                    )
+                # else: fall through to rtmidi.
             except Exception as exc:  # pragma: no cover - defensive
+                # Re-raise strict-mode failures so the caller sees them.
+                from app.services.midi_host_client import MidiHostClientError
+                if isinstance(exc, MidiHostClientError):
+                    raise
                 logger.debug("%s host-routed enumeration failed, "
                               "falling back to rtmidi: %s",
                               self.DEVICE_LABEL, exc)

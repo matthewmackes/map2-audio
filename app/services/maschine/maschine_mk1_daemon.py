@@ -437,6 +437,21 @@ class VirtualMidiOutput:
         # below is essentially "log + skip" until P1.2 wires
         # send_short_message through to a host-resolved port.
         host_routed = _maschine_use_midi_host()
+        # Strict mode (Gap E phase 3 / iter 53): if the operator has
+        # set MAP2_REQUIRE_MIDI_HOST=1 AND the daemon is down, raise
+        # rather than silently skip the shadow path.
+        if host_routed:
+            from app.services.midi_host_client import (
+                MidiHostClientError, midi_host_required,
+            )
+            if midi_host_required():
+                client = self._get_host_client()
+                if not client.is_daemon_available():
+                    raise MidiHostClientError(
+                        "MAP2_REQUIRE_MIDI_HOST set but controller-host "
+                        "daemon is unreachable; refusing to skip "
+                        "Maschine MK1 host shadow-send"
+                    )
         for message in messages:
             try:
                 if host_routed:

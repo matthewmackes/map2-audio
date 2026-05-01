@@ -34,6 +34,32 @@ DEFAULT_SOCKET_PATH = Path("/run/map2/controller-host.sock")
 DEFAULT_TIMEOUT_S = 2.0
 
 
+# T2482-P1.1 Gap E phase 3 (iter 53) — strict mode opt-in.
+#
+# When MAP2_REQUIRE_MIDI_HOST is set to a truthy value (1/true/yes/on),
+# the rtmidi-fallback paths in the 5 consumers MUST raise instead of
+# falling through. This is the failure-mode validation surface needed
+# before iters 54-58 strip the rtmidi fallback code entirely.
+#
+# Default OFF — strict mode is opt-in (operators can run with it set
+# during a soak window to confirm the host path is rock-solid before
+# the rtmidi removal lands). Once iter 59 drops python-rtmidi, the
+# rtmidi fallback paths are gone and this env var becomes redundant.
+def midi_host_required() -> bool:
+    """Return True iff MAP2_REQUIRE_MIDI_HOST is explicitly enabled.
+
+    When True, consumers MUST NOT fall back to rtmidi when the
+    controller-host is unreachable; they must raise (or otherwise
+    surface the failure to the caller) instead.
+
+    See iter-50b T2482_P1_1_RTMIDI_REMOVAL_READINESS.md for the role
+    of this env var in the rtmidi-removal sequencing.
+    """
+    import os
+    val = os.environ.get("MAP2_REQUIRE_MIDI_HOST", "").strip().lower()
+    return val in ("1", "true", "yes", "on")
+
+
 @dataclass(frozen=True)
 class MidiPortInfo:
     """Parity-shape with python-rtmidi's port enumeration.

@@ -301,7 +301,9 @@ class MIDIEngineService:
         # if the env-gate is on AND the daemon is up.
         if _midi_engine_use_midi_host():
             try:
-                from app.services.midi_host_client import MidiHostClient
+                from app.services.midi_host_client import (
+                    MidiHostClient, MidiHostClientError, midi_host_required,
+                )
                 client = MidiHostClient()
                 if client.is_daemon_available():
                     _, ports = client.list_ports()
@@ -330,7 +332,18 @@ class MIDIEngineService:
                             len(self.input_devices), len(self.output_devices),
                         )
                         return
+                # Daemon down. Strict mode (Gap E phase 3 / iter 53)
+                # raises rather than falling back.
+                if midi_host_required():
+                    raise MidiHostClientError(
+                        "MAP2_REQUIRE_MIDI_HOST set but controller-host "
+                        "daemon is unreachable; refusing rtmidi fallback "
+                        "for midi_engine _discover_devices()"
+                    )
             except Exception as exc:  # pragma: no cover - defensive
+                from app.services.midi_host_client import MidiHostClientError
+                if isinstance(exc, MidiHostClientError):
+                    raise
                 logger.debug("controller-host discovery failed, falling back: %s", exc)
 
         if not RTMIDI_AVAILABLE:

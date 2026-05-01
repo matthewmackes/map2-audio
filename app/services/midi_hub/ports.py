@@ -290,7 +290,9 @@ def discover_alsa_ports() -> Dict[str, List[str]]:
     # get consistent backend reporting across services.
     if _midi_hub_use_midi_host():
         try:
-            from app.services.midi_host_client import MidiHostClient
+            from app.services.midi_host_client import (
+                MidiHostClient, MidiHostClientError, midi_host_required,
+            )
             client = MidiHostClient()
             if client.is_daemon_available():
                 _, ports = client.list_ports()
@@ -304,9 +306,21 @@ def discover_alsa_ports() -> Dict[str, List[str]]:
                     else:
                         outputs_h.append(p.name)
                 return {"inputs": inputs_h, "outputs": outputs_h}
-            # else: daemon down → fall through to rtmidi.
-        except Exception:  # pragma: no cover - defensive
-            pass  # any host-side failure → rtmidi fallback
+            # Daemon down. Strict mode (Gap E phase 3 / iter 53)
+            # raises rather than falling back to rtmidi.
+            if midi_host_required():
+                raise MidiHostClientError(
+                    "MAP2_REQUIRE_MIDI_HOST set but controller-host "
+                    "daemon is unreachable; refusing rtmidi fallback "
+                    "for discover_alsa_ports()"
+                )
+            # else: fall through to rtmidi.
+        except Exception as exc:  # pragma: no cover - defensive
+            # Re-raise strict-mode failures so callers see them.
+            from app.services.midi_host_client import MidiHostClientError
+            if isinstance(exc, MidiHostClientError):
+                raise
+            pass  # any other host-side failure → rtmidi fallback
 
     if rtmidi is None:
         return {"inputs": [], "outputs": []}
