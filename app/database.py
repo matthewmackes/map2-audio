@@ -618,6 +618,31 @@ def _ensure_snapshot_preload_pins_schema_sync() -> None:
             )
 
 
+def _ensure_midi_bindings_schema_sync() -> None:
+    """T2482-P2.1: create the midi_bindings table (canonical MIDI binding
+    authority). Idempotent — checks for the table before creating.
+
+    See app/services/midi/models.py for the ORM model and
+    docs/architecture/MIDI_SERVICES.md §3.1 for the design intent.
+    """
+    if _engine is None or _engine.dialect.name != "sqlite":
+        return
+
+    # Import here to avoid circular import (midi/models.py imports Base).
+    from app.services.midi.models import midi_bindings_table
+
+    with _engine.begin() as conn:
+        result = conn.execute(
+            text(
+                "SELECT name FROM sqlite_master "
+                "WHERE type='table' AND name='midi_bindings'"
+            )
+        )
+        if result.fetchone() is None:
+            midi_bindings_table.create(bind=conn)
+            logger.info("Created midi_bindings table (T2482-P2.1)")
+
+
 def _sqlite_columns(conn, table_name: str) -> set[str]:
     result = conn.execute(text(f"PRAGMA table_info({table_name})"))
     return {str(row[1]) for row in result.fetchall()}
@@ -1000,6 +1025,27 @@ async def _ensure_snapshot_preload_pins_schema_async(conn) -> None:
         )
 
 
+async def _ensure_midi_bindings_schema_async(conn) -> None:
+    """T2482-P2.1: async sibling of `_ensure_midi_bindings_schema_sync`.
+
+    Creates the midi_bindings table if it doesn't exist. Idempotent.
+    """
+    if conn.dialect.name != "sqlite":
+        return
+
+    from app.services.midi.models import midi_bindings_table
+
+    result = await conn.execute(
+        text(
+            "SELECT name FROM sqlite_master "
+            "WHERE type='table' AND name='midi_bindings'"
+        )
+    )
+    if result.fetchone() is None:
+        await conn.run_sync(midi_bindings_table.create)
+        logger.info("Created midi_bindings table (T2482-P2.1) via async path")
+
+
 async def _sqlite_columns_async(conn, table_name: str) -> set[str]:
     result = await conn.execute(text(f"PRAGMA table_info({table_name})"))
     return {str(row[1]) for row in result.fetchall()}
@@ -1318,6 +1364,10 @@ SCHEMA_MIGRATIONS: Sequence[tuple[int, str, MigrationSync, MigrationAsync]] = (
     # was already recorded as applied. Without this, GET /api/settings/special
     # 500s on long-lived DBs that never picked up T2433-era column work.
     (11, "special_settings_snapshot_editor_recovery_sync", _ensure_special_settings_snapshot_editor_columns_sync, _ensure_special_settings_snapshot_editor_columns_async),
+    # T2482-P2.1: midi_bindings canonical authority table.
+    # Foundation for the MIDI Services unification — every legacy MIDI
+    # binding store collapses into rows of this table over Phase 2.
+    (12, "midi_bindings_canonical_authority", _ensure_midi_bindings_schema_sync, _ensure_midi_bindings_schema_async),
 )
 
 
