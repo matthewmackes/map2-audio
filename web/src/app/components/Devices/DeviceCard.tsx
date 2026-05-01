@@ -61,6 +61,15 @@ export interface DeviceCardRow {
    * Renders as a teal "Used in N Brain assets" Tag that deep-links to
    * the Brain Library section filtered by device. */
   brainAssetCount?: number
+  /** T2480-6 — first-class Brain snapshot bindings on this device.
+   * Pages populate this by joining the device's MidiHubDeviceState.bindings
+   * with the snapshot list. Renders as one Tag per binding with
+   * "View in Brain →" deep-link to the active snapshot. */
+  brainSnapshotBindings?: Array<{
+    snapshot_id: string
+    snapshot_name: string
+    source: string
+  }>
 }
 
 export interface DeviceCardProps {
@@ -294,6 +303,20 @@ export function DeviceCard({ row, onPinChanged }: DeviceCardProps): React.JSX.El
             </Tag>
           </RouterLink>
         ) : null}
+        {(row.brainSnapshotBindings ?? []).map((binding) => (
+          <RouterLink
+            key={`snap-binding-${binding.snapshot_id}`}
+            to={`/snapshots/${binding.snapshot_id}`}
+            className="device-card__brain-tag-link"
+            aria-label={`Open snapshot ${binding.snapshot_name} in the editor`}
+            data-testid="device-card-brain-snapshot-binding-link"
+            title={`Bound by ${binding.source}. Click to view in Snapshot Editor.`}
+          >
+            <Tag size="sm" type="green">
+              Driving {binding.snapshot_name}
+            </Tag>
+          </RouterLink>
+        ))}
       </div>
 
       {row.lastSeenAt !== null && !row.isConnected ? (

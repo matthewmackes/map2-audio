@@ -104,6 +104,9 @@ export function ConnectKeyboardDetectPhase({
           {entries.map((entry) => {
             const value = entryKey(entry)
             const label = entryLabel(entry)
+            const onboardedBindings = entry.source === 'onboarded' ? entry.bindings : []
+            const hasExistingBindings = onboardedBindings.length > 0
+
             const tag = entry.source === 'onboarded' ? (
               <StatusChip
                 tone={entry.connected ? 'live' : 'neutral'}
@@ -114,9 +117,17 @@ export function ConnectKeyboardDetectPhase({
               <StatusChip tone="info" size="sm" label="New" />
             )
 
-            const subline = entry.source === 'onboarded'
+            const baseSubline = entry.source === 'onboarded'
               ? `Port: ${entry.port_name}${entry.vendor_id && entry.product_id ? ` · ${entry.vendor_id}:${entry.product_id}` : ''}`
               : 'Press Continue to give this device a name.'
+            // T2480-6: when we know the device already drives a snapshot,
+            // surface that fact so the operator doesn't accidentally create
+            // a duplicate binding by re-running the wizard.
+            const subline = hasExistingBindings
+              ? `${baseSubline} · Currently driving: ${onboardedBindings
+                  .map((b) => b.consumer_name)
+                  .join(', ')}`
+              : baseSubline
 
             return (
               <RadioButton

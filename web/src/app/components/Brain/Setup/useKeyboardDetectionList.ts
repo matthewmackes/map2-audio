@@ -26,6 +26,15 @@ export interface OnboardedKeyboard {
   connected: boolean
   vendor_id: string | null
   product_id: string | null
+  // T2480-6: existing bindings on this device (e.g., a Brain snapshot
+  // that was previously bound by this wizard or by the operator).
+  bindings: Array<{
+    consumer_type: string
+    consumer_id: string
+    consumer_name: string
+    bound_at: string
+    source: string
+  }>
 }
 
 export interface NewKeyboard {
@@ -60,6 +69,7 @@ function indexOnboardedPorts(
       connected: device.connected,
       vendor_id: device.vendor_id ?? null,
       product_id: device.product_id ?? null,
+      bindings: device.bindings ?? [],
     }
     for (const portName of device.port_names) {
       // First-write-wins: an onboarded device with multiple port names occupies
