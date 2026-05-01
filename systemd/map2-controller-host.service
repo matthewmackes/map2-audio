@@ -1,0 +1,99 @@
+[Unit]
+Description=MAP2 Controller Host (libremidi I/O + QuickJS dispatcher)
+Documentation=https://github.com/matthewmackes/map2-audio
+# T2482-P1.1 Gap B (iter 45) — daemon lifecycle for the libremidi I/O
+# foundation. Owns every MIDI port on the platform; map2-backend.service
+# routes inbound MIDI through this daemon's UDS at
+# /run/map2/controller-host.sock instead of opening rtmidi directly.
+#
+# Order: starts AFTER sound.target (PipeWire/JACK present) so libremidi
+# binds JACK MIDI as the preferred backend. Falls through to ALSA seq if
+# JACK is unavailable — emits a `degraded` diagnostic in that case but
+# does not refuse to start. map2-backend.service has a soft dependency
+# (Wants=) on this unit; the backend continues if controller-host fails
+# (rtmidi fallback path until iters 46-49 retire it).
+After=network.target sound.target map2-irq-affinity.service
+Wants=sound.target
+StartLimitIntervalSec=300
+StartLimitBurst=5
+
+[Service]
+Type=simple
+User=mm
+Group=mm
+
+# Audio + JACK access for libremidi.
+SupplementaryGroups=audio realtime
+
+WorkingDirectory=/home/mm/map2-audio
+Environment="PATH=/usr/local/bin:/usr/bin:/bin:/home/mm/.local/bin"
+
+# Standard XDG runtime + DBus session vars so PipeWire/JACK clients
+# can find the per-user session bus when running under systemd.
+Environment="XDG_RUNTIME_DIR=/run/user/1000"
+Environment="DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/1000/bus"
+Environment="JACK_DEFAULT_SERVER=pipewire"
+
+EnvironmentFile=-/etc/map2/environment
+
+# Daemon binary built by `cmake --build juce-engine/build`. The repo
+# checks the build artifact into juce-engine/build/ rather than
+# installing into /usr/local/bin so all four binaries (engine, host,
+# tests, AVDECC) ship together.
+ExecStart=/home/mm/map2-audio/juce-engine/build/map2-controller-host \
+  --socket /run/map2/controller-host.sock
+
+# Graceful shutdown. The daemon handles SIGTERM by closing libremidi
+# ports cleanly + flushing pending IPC frames. ~5s is enough; force-kill
+# at 15s.
+ExecStop=/bin/kill -TERM $MAINPID
+TimeoutStopSec=15
+TimeoutStartSec=30
+
+# Readiness gate — wait for the UDS socket to appear. The daemon creates
+# the socket on the first listen() call, so its presence is the cleanest
+# proof that startup completed.
+ExecStartPost=/bin/bash -c 'for i in $(seq 1 30); do test -S /run/map2/controller-host.sock && exit 0; sleep 0.5; done; exit 1'
+
+Restart=on-failure
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=map2-controller-host
+
+# RT-eligibility for the libremidi I/O callback thread. The daemon's
+# main thread runs SCHED_OTHER; the libremidi reader thread elevates
+# itself to SCHED_FIFO/70 (between audio callback at 80 and data-loop
+# at 55). Same model as map2-backend.service for the JUCE audio thread.
+LimitRTPRIO=80
+LimitMEMLOCK=infinity
+LimitNOFILE=65536
+
+# CPU affinity: stay off the isolated audio cores (4,5). The libremidi
+# I/O thread does not need to share a cache line with the JUCE callback;
+# it produces shm events and the audio thread consumes lock-free.
+CPUAffinity=0 1 2 3
+
+AmbientCapabilities=CAP_SYS_NICE
+CapabilityBoundingSet=CAP_SYS_NICE
+
+# UDS socket cleanup — make sure /run/map2/ exists with the right
+# perms before the daemon binds. systemd-tmpfiles handles persistent
+# state, but the simple `mkdir` here keeps the unit self-contained.
+ExecStartPre=/bin/mkdir -p /run/map2
+ExecStartPre=/bin/chmod 0755 /run/map2
+
+# Hardening — the daemon does not need most of the host filesystem.
+ProtectSystem=strict
+ReadWritePaths=/run/map2
+ProtectHome=read-only
+PrivateTmp=true
+NoNewPrivileges=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictRealtime=false
+RestrictNamespaces=true
+
+[Install]
+WantedBy=multi-user.target

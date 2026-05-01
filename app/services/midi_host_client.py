@@ -82,6 +82,49 @@ class MidiHostClient:
     def socket_path(self) -> Path:
         return self._socket_path
 
+    # ------------------------------------------------------------------
+    # Daemon-lifecycle health gate (T2482-P1.1 Gap B / iter 45)
+    # ------------------------------------------------------------------
+
+    def is_daemon_available(self) -> bool:
+        """Return True iff the controller-host daemon is reachable.
+
+        Cheap probe — checks that the UDS socket file exists AND that a
+        connect() succeeds. Intended for the rtmidi-fallback decision
+        in iters 46-49: if the host is up, route through it; if not,
+        fall back to rtmidi (transitional) or fail (post-Gap E).
+
+        Does NOT exchange any frames — purely a connectivity probe.
+        """
+        if not self._socket_path.exists():
+            return False
+        try:
+            sock = socket.socket(socket.AF_UNIX, socket.SOCK_STREAM)
+            sock.settimeout(0.2)
+            sock.connect(str(self._socket_path))
+            sock.close()
+            return True
+        except OSError:
+            return False
+
+    def wait_for_daemon(self, timeout_s: float = 10.0,
+                         poll_interval_s: float = 0.25) -> bool:
+        """Block until the daemon socket is available or timeout elapses.
+
+        Used during service startup when the FastAPI backend wants to
+        wait briefly for map2-controller-host.service to come up before
+        deciding whether to route through the host or fall back to the
+        legacy rtmidi path. Returns True if the daemon became available
+        within ``timeout_s``, False on timeout.
+        """
+        import time
+        deadline = time.monotonic() + timeout_s
+        while time.monotonic() < deadline:
+            if self.is_daemon_available():
+                return True
+            time.sleep(poll_interval_s)
+        return False
+
     def list_ports(self) -> tuple[MidiBackendStatus, list[MidiPortInfo]]:
         """Enumerate visible MIDI ports through the host's libremidi.
 
