@@ -83,6 +83,20 @@ struct OutboundSysExMidi
 class Map2MappingEngine
 {
 public:
+    // T2482-P1.2 Gap E (iter 68) — env-var-gated per-controller QuickJS
+    // namespace isolation. When enabled, scripts the descriptor evaluates
+    // get their newly-installed globals copied under
+    // __map2_controllers[controller_key].<name> (and removed from
+    // globalThis), so two controllers with conflicting global names
+    // (e.g., both packs declare `var MPX1 = ...`) don't trample each
+    // other. Default OFF — existing pack JS pollutes the global as
+    // before; iter-68 lands the seam, soak the flag first, flip the
+    // default after the iter-67 fixture suite + soak run prove it
+    // doesn't break Mixxx ControllerEngine semantics.
+    //
+    // Set MAP2_ISOLATED_CONTROLLER_NAMESPACES=1 to enable.
+    static bool isolatedNamespacesEnabled() noexcept;
+
     Map2MappingEngine();
     ~Map2MappingEngine();
 

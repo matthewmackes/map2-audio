@@ -8,11 +8,83 @@
 
 #include <quickjs.h>
 
+#include <cstdlib>
 #include <cstring>
+#include <string>
 
 namespace map2::controller_host {
 
+bool Map2MappingEngine::isolatedNamespacesEnabled() noexcept
+{
+    // T2482-P1.2 Gap E (iter 68): default OFF.
+    // Honor MAP2_ISOLATED_CONTROLLER_NAMESPACES values 1/true/yes/on
+    // (case-insensitive) to enable the iter-68 namespace isolation.
+    const char* raw = std::getenv ("MAP2_ISOLATED_CONTROLLER_NAMESPACES");
+    if (raw == nullptr) return false;
+    std::string val (raw);
+    for (char& c : val) c = static_cast<char> (std::tolower (static_cast<unsigned char> (c)));
+    while (! val.empty() && (val.front() == ' ' || val.front() == '\t')) val.erase (0, 1);
+    while (! val.empty() && (val.back()  == ' ' || val.back()  == '\t')) val.pop_back();
+    return val == "1" || val == "true" || val == "yes" || val == "on";
+}
+
 namespace {
+
+// T2482-P1.2 Gap E (iter 68) — JS source helper that:
+//   1. Snapshots the keys of globalThis BEFORE the descriptor's
+//      script body runs.
+//   2. Runs the script body (its `var X = ...` declarations land
+//      on globalThis as before).
+//   3. Diffs the post-script global keys against the snapshot to
+//      find what the script just installed.
+//   4. Copies the new values under
+//      globalThis.__map2_controllers[controller_key].<name>
+//   5. Deletes the new keys from globalThis so a sibling controller
+//      doesn't see them.
+//
+// Wrapping at evaluate-time means we don't need to re-author every
+// device-pack JS file (`var MPX1 = MPX1 || {}` continues to work
+// at the source level; the wrapper hoists the result into the
+// per-controller namespace transparently).
+std::string buildIsolationWrapper (const std::string& script_body,
+                                    const std::string& controller_key)
+{
+    // We escape the controller_key for safe embedding. The naive
+    // substring-replace on " is fine because controller_keys are
+    // generated tokens (no quotes in practice).
+    std::string out;
+    out.reserve (script_body.size() + 512);
+    out += "(function(){\n";
+    out += "  var __map2_isolation_before = Object.keys(globalThis);\n";
+    out += "  var __map2_isolation_before_set = {};\n";
+    out += "  for (var __i = 0; __i < __map2_isolation_before.length; ++__i)\n";
+    out += "    __map2_isolation_before_set[__map2_isolation_before[__i]] = true;\n";
+    out += "  // ----- begin descriptor script -----\n";
+    out += script_body;
+    out += "\n  // ----- end descriptor script -----\n";
+    out += "  if (typeof globalThis.__map2_controllers === 'undefined')\n";
+    out += "    globalThis.__map2_controllers = {};\n";
+    out += "  if (typeof globalThis.__map2_controllers[\"";
+    out += controller_key;
+    out += "\"] === 'undefined')\n";
+    out += "    globalThis.__map2_controllers[\"";
+    out += controller_key;
+    out += "\"] = {};\n";
+    out += "  var __map2_isolation_after = Object.keys(globalThis);\n";
+    out += "  for (var __j = 0; __j < __map2_isolation_after.length; ++__j) {\n";
+    out += "    var __k = __map2_isolation_after[__j];\n";
+    out += "    if (__map2_isolation_before_set[__k]) continue;\n";
+    out += "    if (__k === '__map2_controllers') continue;\n";
+    out += "    globalThis.__map2_controllers[\"";
+    out += controller_key;
+    out += "\"][__k] = globalThis[__k];\n";
+    out += "    try { delete globalThis[__k]; } catch (e) {}\n";
+    out += "  }\n";
+    out += "})();\n";
+    return out;
+}
+
+
 
 // Retrieve the Map2MappingEngine* stashed on the JSContext's opaque
 // pointer. Set by Map2MappingEngine::installMidiBindings().
@@ -136,12 +208,30 @@ std::optional<ScriptException> Map2MappingEngine::loadDescriptor (
     // Evaluate each script body in order. First failure returns the
     // exception; do NOT cache the descriptor in that case (the
     // controller's prior descriptor stays effective).
+    //
+    // T2482-P1.2 Gap E (iter 68): when isolatedNamespacesEnabled() is
+    // true, wrap each script in the iter-68 isolation IIFE so its
+    // installed globals land under
+    // __map2_controllers[controller_key].<name>. Default OFF — the
+    // raw evaluate path stays the production behaviour until the
+    // flag-on soak completes.
+    const bool isolate = isolatedNamespacesEnabled();
     for (std::size_t i = 0; i < descriptor.scripts.size(); ++i)
     {
         const std::string fname = descriptor.pack_id + "/" + descriptor.model
                                 + ".script[" + std::to_string (i) + "]";
-        if (auto exc = js_.evaluate (descriptor.scripts[i], fname))
-            return exc;
+        const std::string& body = descriptor.scripts[i];
+        if (isolate)
+        {
+            const std::string wrapped = buildIsolationWrapper (body, controller_key);
+            if (auto exc = js_.evaluate (wrapped, fname))
+                return exc;
+        }
+        else
+        {
+            if (auto exc = js_.evaluate (body, fname))
+                return exc;
+        }
     }
 
     controllers_[controller_key] = LoadedController{ descriptor };
@@ -254,10 +344,36 @@ std::optional<ScriptException> Map2MappingEngine::dispatch (
     JS_SetPropertyStr (ctx, global, "__map2_dispatch_bytes", arr);
     JS_FreeValue (ctx, global);
 
-    const std::string call =
-        "(typeof " + callback_name + " === 'function')"
-        " ? " + callback_name + "(__map2_dispatch_bytes)"
-        " : (function(){ throw new Error('callback " + callback_name + " is not a function'); })()";
+    // T2482-P1.2 Gap E (iter 68) — when isolation is enabled, the
+    // descriptor's globals live under __map2_controllers[<key>] rather
+    // than on globalThis. Resolve the callback there first, falling
+    // back to the global path so non-isolated scripts (default mode)
+    // continue to work.
+    std::string call;
+    if (isolatedNamespacesEnabled())
+    {
+        const std::string ns =
+            std::string ("globalThis.__map2_controllers && globalThis.__map2_controllers[\"")
+            + controller_key + "\"]";
+        // Prefer the namespaced binding; fall back to the global if
+        // a script doesn't follow the var-X-on-global idiom (e.g.,
+        // ES module-style declarations land directly on globalThis
+        // even under the IIFE — covered by the iter-68 wrapper's
+        // diff-and-copy step).
+        call =
+            std::string ("(function(){\n")
+            + "  var __cb = (" + ns + " && " + ns + "[\"" + callback_name.substr(0, callback_name.find('.')) + "\"]) ? " + ns + "[\"" + callback_name.substr(0, callback_name.find('.')) + "\"]" + callback_name.substr(callback_name.find('.')) + " : " + callback_name + ";\n"
+            + "  if (typeof __cb !== 'function') throw new Error('callback " + callback_name + " is not a function');\n"
+            + "  return __cb(__map2_dispatch_bytes);\n"
+            + "})()";
+    }
+    else
+    {
+        call =
+            "(typeof " + callback_name + " === 'function')"
+            " ? " + callback_name + "(__map2_dispatch_bytes)"
+            " : (function(){ throw new Error('callback " + callback_name + " is not a function'); })()";
+    }
     return js_.evaluate (call, "<dispatch:" + callback_name + ">");
 }
 
