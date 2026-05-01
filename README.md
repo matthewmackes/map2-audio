@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1381** Python | **1373** TypeScript | **177** C++/H | **145** Docs | **3254** total commits | **3** stars | **0** forks | **0** open issues
+**1381** Python | **1374** TypeScript | **177** C++/H | **145** Docs | **3259** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`211ad917`](https://github.com/matthewmackes/map2-audio/commit/211ad917862b71a28d8673005a432a11d3d27eef) | T2480-1: open Brain Setup Tasks epic + ship "Setup" tab f... | Map2 Audio | 2026-04-30 |
+| [`75db858c`](https://github.com/matthewmackes/map2-audio/commit/75db858c2d1e85fef799b5186361eda2ff2d70df) | snapshot-editor: remove build-stepper region; add quick-a... | Map2 Audio | 2026-04-30 |
+| [`5edbe4de`](https://github.com/matthewmackes/map2-audio/commit/5edbe4ded3c11b504fdb714775d79263853e8db4) | snapshot-editor: hero metadata cluster + lock toggle + pu... | Map2 Audio | 2026-04-30 |
+| [`27f9efa6`](https://github.com/matthewmackes/map2-audio/commit/27f9efa686d33483d99125611ec792e6c52c4d7d) | snapshot-editor: remove SnapshotConfigurationCard; reloca... | Map2 Audio | 2026-04-30 |
+| [`e479d0c7`](https://github.com/matthewmackes/map2-audio/commit/e479d0c71a9782bed7c93baa1098ad13f2cc0ab9) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-30 |
 | [`84e387b4`](https://github.com/matthewmackes/map2-audio/commit/84e387b45459a88314e31f0d58555794330ae9fd) | T2473: extract SnapshotEditorBottomEditor + SnapshotEdito... | Map2 Audio | 2026-04-30 |
 | [`5388bbea`](https://github.com/matthewmackes/map2-audio/commit/5388bbeaf55ca102f42ec204649bf37727ebdb16) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-04-30 |
 | [`be54a1d4`](https://github.com/matthewmackes/map2-audio/commit/be54a1d4f9828e7cb5f29b9dbbcb532dc2c04d49) | worklist: roll up T2466-6 second 10-iteration SHIP loop | Map2 Audio | 2026-04-30 |
-| [`fbd6b9c5`](https://github.com/matthewmackes/map2-audio/commit/fbd6b9c54c7439b88f9676c1dd39594328839013) | T2466-6: residual sweep across 11 files (13 transitions) | Map2 Audio | 2026-04-30 |
-| [`c0966d3a`](https://github.com/matthewmackes/map2-audio/commit/c0966d3ae78da9bf3007d05f9a118cdf9cf3d34d) | T2466-6: IntelFX + Tesira + MaschineMidiMap + LCDView tok... | Map2 Audio | 2026-04-30 |
-| [`efb70b47`](https://github.com/matthewmackes/map2-audio/commit/efb70b47cc77b0b6bcb54350171e9720638ce6e0) | T2466-6: TSX inline-style transitions across 5 files (17) | Map2 Audio | 2026-04-30 |
-| [`746ebb1a`](https://github.com/matthewmackes/map2-audio/commit/746ebb1a32a625c999f9d325631fa17fbda33436) | T2466-6: BottomWizard + WelcomeHero + AboutPage + Maschin... | Map2 Audio | 2026-04-30 |
-| [`36a32f61`](https://github.com/matthewmackes/map2-audio/commit/36a32f61fc0dabd3abe12ebd75225619b18d043f) | T2466-6: MPX1Panel + MPX1ScenePanel easing tokens (11) | Map2 Audio | 2026-04-30 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
