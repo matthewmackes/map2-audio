@@ -1,0 +1,38 @@
+{
+  "title": "T2482-P1.2 Gap C remainder \u2014 host-process dispatch latency",
+  "iter": 69,
+  "captured_at": "2026-05-01T20:55:51.559451+00:00",
+  "binary": "/home/mm/map2-audio/juce-engine/build/map2-controller-host",
+  "samples_per_measurement": 100,
+  "inter_call_sleep_s": 0.04,
+  "measurements": [
+    {
+      "label": "mapping_deactivate",
+      "n": 100,
+      "mean_us": 5053.57369,
+      "p50_us": 4688.591,
+      "p95_us": 6016.61,
+      "p99_us": 22486.334,
+      "p999_us": null
+    },
+    {
+      "label": "mapping_activate (empty descriptor)",
+      "n": 100,
+      "mean_us": 5219.64792,
+      "p50_us": 4747.633,
+      "p95_us": 7699.449,
+      "p99_us": 22572.489,
+      "p999_us": null
+    },
+    {
+      "label": "mapping_reload (empty descriptor)",
+      "n": 100,
+      "mean_us": 5121.58628,
+      "p50_us": 4705.052,
+      "p95_us": 8876.332,
+      "p99_us": 13402.528,
+      "p999_us": null
+    }
+  ],
+  "scope_note": "These are HOST-PROCESS IPC round-trip times \u2014 the closest proxy we can measure today for the audio-thread engine-side path. The true engine-side measurement (libremidi callback \u2192 shm event ring read inside the JUCE audio callback) waits for Gap B (libremidi \u2192 MappingEngine end-to-end loop) to land in SHIP loop 8."
+}
