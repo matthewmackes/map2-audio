@@ -44,6 +44,18 @@ except ImportError:
     logger.warning("python-rtmidi not installed, MIDI functionality limited")
 
 
+# T2482-P1.1 Gap D.5 (iter 49) — env-var-gated controller-host routing
+# for the rtmidi-direct fallback inside _discover_devices(). The
+# MidiHub-based discovery path already inherits host routing
+# transparently from midi_hub/ports.py (Gap D.4 / iter 49 first half),
+# so this gate only matters for the few code paths that skip MidiHub
+# and call _discover_devices() directly.
+import os as _os
+def _midi_engine_use_midi_host() -> bool:
+    val = _os.environ.get("MAP2_USE_MIDI_HOST", "")
+    return val.strip().lower() in ("1", "true", "yes", "on")
+
+
 class MIDIMessageType(Enum):
     """MIDI message types."""
     NOTE_OFF = 0x80
@@ -278,6 +290,43 @@ class MIDIEngineService:
                     return
             except Exception as exc:
                 logger.debug("MidiHub device discovery failed, falling back to rtmidi: %s", exc)
+
+        # Iter 49 / Gap D.5: even when MidiHub path didn't populate
+        # devices, prefer the controller-host enumeration over rtmidi
+        # if the env-gate is on AND the daemon is up.
+        if _midi_engine_use_midi_host():
+            try:
+                from app.services.midi_host_client import MidiHostClient
+                client = MidiHostClient()
+                if client.is_daemon_available():
+                    _, ports = client.list_ports()
+                    in_idx = 0
+                    out_idx = 0
+                    for p in ports:
+                        if p.is_input:
+                            self.input_devices.append(
+                                MIDIDevice(
+                                    index=in_idx, name=p.name,
+                                    port_type="input", is_virtual=p.is_virtual,
+                                )
+                            )
+                            in_idx += 1
+                        else:
+                            self.output_devices.append(
+                                MIDIDevice(
+                                    index=out_idx, name=p.name,
+                                    port_type="output", is_virtual=p.is_virtual,
+                                )
+                            )
+                            out_idx += 1
+                    if self.input_devices or self.output_devices:
+                        logger.info(
+                            "Discovered %s host inputs, %s outputs via controller-host",
+                            len(self.input_devices), len(self.output_devices),
+                        )
+                        return
+            except Exception as exc:  # pragma: no cover - defensive
+                logger.debug("controller-host discovery failed, falling back: %s", exc)
 
         if not RTMIDI_AVAILABLE:
             # Fallback to virtual devices

@@ -4,6 +4,7 @@ MIDI Hub port abstraction layer.
 
 from __future__ import annotations
 
+import os
 import time
 import re
 import subprocess
@@ -19,6 +20,16 @@ try:
     import rtmidi  # type: ignore
 except Exception:  # pragma: no cover - optional dependency
     rtmidi = None
+
+
+# T2482-P1.1 Gap D.4 (iter 49) — env-var-gated controller-host routing
+# for the canonical MIDI Hub port enumeration. midi_hub/ports.py is
+# the wrapper every downstream Hub consumer (Tesira, GPIO, OSC, event
+# list, etc.) goes through, so flipping discover_alsa_ports() here
+# benefits the entire Hub surface in one change.
+def _midi_hub_use_midi_host() -> bool:
+    val = os.environ.get("MAP2_USE_MIDI_HOST", "")
+    return val.strip().lower() in ("1", "true", "yes", "on")
 
 
 PortDirection = Literal["input", "output", "duplex"]
@@ -267,7 +278,32 @@ class AlsaMidiPort(MidiPort):
 
 
 def discover_alsa_ports() -> Dict[str, List[str]]:
-    """Discover ALSA MIDI input/output names via rtmidi."""
+    """Discover ALSA MIDI input/output names via rtmidi (or controller-host)."""
+    # Host-routed enumeration (env-gated). When the controller-host
+    # daemon is up, prefer its libremidi enumeration. The daemon owns
+    # the same JACK/ALSA-seq port graph rtmidi sees, so the result is
+    # equivalent — we just skip the per-call rtmidi cleanup cost and
+    # get consistent backend reporting across services.
+    if _midi_hub_use_midi_host():
+        try:
+            from app.services.midi_host_client import MidiHostClient
+            client = MidiHostClient()
+            if client.is_daemon_available():
+                _, ports = client.list_ports()
+                inputs_h = []
+                outputs_h = []
+                for p in ports:
+                    if not _is_discoverable_alsa_port_name(p.name):
+                        continue
+                    if p.is_input:
+                        inputs_h.append(p.name)
+                    else:
+                        outputs_h.append(p.name)
+                return {"inputs": inputs_h, "outputs": outputs_h}
+            # else: daemon down → fall through to rtmidi.
+        except Exception:  # pragma: no cover - defensive
+            pass  # any host-side failure → rtmidi fallback
+
     if rtmidi is None:
         return {"inputs": [], "outputs": []}
 
