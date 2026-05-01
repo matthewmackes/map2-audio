@@ -40,6 +40,7 @@ function phaseToneLabel(tone: PhaseTone): string {
 export function ConnectKeyboardTask({ onExit }: ConnectKeyboardTaskProps) {
   const [currentPhaseId, setCurrentPhaseId] = useState<ConnectKeyboardPhaseId>('welcome')
   const [selectedPortName, setSelectedPortName] = useState<string | null>(null)
+  const [selectedDeviceId, setSelectedDeviceId] = useState<string | null>(null)
   const [exitConfirmOpen, setExitConfirmOpen] = useState(false)
 
   const currentIndex = PHASE_INDEX[currentPhaseId]
@@ -54,8 +55,21 @@ export function ConnectKeyboardTask({ onExit }: ConnectKeyboardTaskProps) {
   const setupAnother = useCallback(() => {
     setCurrentPhaseId('welcome')
     setSelectedPortName(null)
+    setSelectedDeviceId(null)
     job.reset()
   }, [job])
+
+  const handleSelectDevice = useCallback((portName: string) => {
+    setSelectedPortName(portName)
+    // Look up the matching detection entry to capture its device_id (when
+    // the entry is onboarded; raw "New" entries leave deviceId null).
+    const match = detection.entries.find((e) => e.port_name === portName)
+    if (match && match.source === 'onboarded') {
+      setSelectedDeviceId(match.device_id)
+    } else {
+      setSelectedDeviceId(null)
+    }
+  }, [detection.entries])
 
   const requestExit = useCallback(() => {
     if (shouldConfirmOnExit(currentPhaseId)) {
@@ -164,7 +178,7 @@ export function ConnectKeyboardTask({ onExit }: ConnectKeyboardTaskProps) {
             error={detection.error}
             onRescan={detection.refetch}
             selectedPortName={selectedPortName}
-            onSelect={setSelectedPortName}
+            onSelect={handleSelectDevice}
           />
         ) : null}
         {currentPhaseId === 'test' ? (
@@ -173,6 +187,7 @@ export function ConnectKeyboardTask({ onExit }: ConnectKeyboardTaskProps) {
         {currentPhaseId === 'snapshot' ? (
           <ConnectKeyboardSnapshotPhase
             selectedPortName={selectedPortName}
+            selectedDeviceId={selectedDeviceId}
             job={job}
             onAdvance={() => setCurrentPhaseId('done')}
           />

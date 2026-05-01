@@ -79,6 +79,36 @@ class MidiDeviceProfile:
 
 
 @dataclass
+class MidiDeviceBinding:
+    """First-class link between a MIDI device and a downstream consumer
+    (snapshot, performance preset, etc.). Added in T2480-5 for the Brain
+    Setup task — the wizard writes a binding on activation and removes
+    it on deactivation, so any view of the device knows what it is
+    currently driving without round-tripping through the snapshot
+    service.
+
+    `source` describes who created the binding ("brain-setup-task",
+    "manual", "snapshot-editor", etc.) so future bidirectional UI can
+    distinguish wizard-created bindings from operator-authored ones.
+    """
+
+    consumer_type: str  # "snapshot" today; reserved for future expansion.
+    consumer_id: str    # snapshot_id (as string), preset_id, etc.
+    consumer_name: str  # human-readable display label.
+    bound_at: str       # ISO-8601 timestamp.
+    source: str = "manual"
+
+    def to_dict(self) -> Dict[str, Any]:
+        return {
+            "consumer_type": self.consumer_type,
+            "consumer_id": self.consumer_id,
+            "consumer_name": self.consumer_name,
+            "bound_at": self.bound_at,
+            "source": self.source,
+        }
+
+
+@dataclass
 class MidiDeviceState:
     device_id: str
     profile_id: str
@@ -96,6 +126,7 @@ class MidiDeviceState:
     source: str = "midi_hub"
     node_id: str = "local"
     remote: bool = False
+    bindings: List[MidiDeviceBinding] = field(default_factory=list)
 
     def to_dict(self) -> Dict[str, Any]:
         return {
@@ -115,6 +146,7 @@ class MidiDeviceState:
             "source": self.source,
             "node_id": self.node_id,
             "remote": self.remote,
+            "bindings": [b.to_dict() for b in self.bindings],
         }
 
 
@@ -431,6 +463,86 @@ class MidiDeviceRegistry:
         self._manual_assignments = remaining
         await self._persist_device_configs()
         return removed
+
+    # T2480-5: first-class device→consumer bindings.
+    #
+    # Bindings are durable links (snapshot, preset, etc.) the registry
+    # carries on each device record. The Brain Setup task writes a binding
+    # with consumer_type="snapshot" + source="brain-setup-task" after a
+    # successful snapshot activation; if the same device is re-bound to a
+    # different snapshot, the old binding is replaced (one snapshot binding
+    # per device per source — operators don't expect a device to drive two
+    # snapshots simultaneously).
+    #
+    # Bindings live in-memory + persist to the device config alongside the
+    # manual_assignments map; on registry restart they re-hydrate via
+    # _device_bindings.
+
+    def add_binding(
+        self,
+        *,
+        device_id: str,
+        binding: MidiDeviceBinding,
+    ) -> bool:
+        device = self._devices.get(device_id)
+        if device is None:
+            # Try the remote-device pool — bindings can target devices on
+            # peer nodes once cluster wiring is in place. For T2480-5 this
+            # is best-effort; if neither map has the device we no-op.
+            device = self._remote_devices.get(device_id)
+            if device is None:
+                return False
+        # Replace-by-key semantics: any prior binding matching
+        # (consumer_type, source) for the same device gets evicted before
+        # the new one is appended.
+        device.bindings = [
+            existing
+            for existing in (device.bindings or [])
+            if not (existing.consumer_type == binding.consumer_type and existing.source == binding.source)
+        ]
+        device.bindings.append(binding)
+        return True
+
+    def remove_binding(
+        self,
+        *,
+        device_id: str,
+        consumer_type: str,
+        consumer_id: str,
+    ) -> bool:
+        device = self._devices.get(device_id) or self._remote_devices.get(device_id)
+        if device is None:
+            return False
+        before = len(device.bindings or [])
+        device.bindings = [
+            existing
+            for existing in (device.bindings or [])
+            if not (existing.consumer_type == consumer_type and existing.consumer_id == consumer_id)
+        ]
+        return len(device.bindings) != before
+
+    def list_bindings_for_device(self, *, device_id: str) -> List[MidiDeviceBinding]:
+        device = self._devices.get(device_id) or self._remote_devices.get(device_id)
+        if device is None:
+            return []
+        return list(device.bindings or [])
+
+    def list_devices_for_consumer(
+        self,
+        *,
+        consumer_type: str,
+        consumer_id: str,
+    ) -> List[str]:
+        """Reverse-link: what devices are bound to this consumer? Used by
+        the bidirectional MIDI Mapping integration in T2480-6."""
+        device_ids: List[str] = []
+        for pool in (self._devices, self._remote_devices):
+            for device_id, device in pool.items():
+                for binding in device.bindings or []:
+                    if binding.consumer_type == consumer_type and binding.consumer_id == consumer_id:
+                        device_ids.append(device_id)
+                        break
+        return device_ids
 
     def _profile_for_device_id(self, device_id: str) -> MidiDeviceProfile:
         prefix = str(device_id).split(":", 1)[0]

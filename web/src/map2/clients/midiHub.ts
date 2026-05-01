@@ -1007,6 +1007,51 @@ export const midiHubApi = {
       },
     ),
 
+  // T2480-5: first-class device→consumer bindings.
+  addDeviceBinding: (
+    deviceId: string,
+    payload: {
+      consumer_type: string;
+      consumer_id: string;
+      consumer_name: string;
+      source?: string;
+    },
+    nodeId?: string | null,
+  ) =>
+    fetchJson<{ ok: boolean; device_id: string; binding: Api.MidiHubDeviceBinding }>(
+      appendNodeQuery(`${API_BASE}/midi/hub/devices/${encodeURIComponent(deviceId)}/bindings`, nodeId),
+      {
+        method: 'POST',
+        body: JSON.stringify(payload),
+      },
+    ),
+  removeDeviceBinding: (
+    deviceId: string,
+    consumerType: string,
+    consumerId: string,
+    nodeId?: string | null,
+  ) =>
+    fetchJson<{ ok: boolean; device_id: string; consumer_type: string; consumer_id: string }>(
+      appendNodeQuery(
+        `${API_BASE}/midi/hub/devices/${encodeURIComponent(deviceId)}/bindings/${encodeURIComponent(consumerType)}/${encodeURIComponent(consumerId)}`,
+        nodeId,
+      ),
+      {
+        method: 'DELETE',
+      },
+    ),
+  listDeviceBindings: (deviceId: string, nodeId?: string | null) =>
+    fetchJson<{ device_id: string; count: number; bindings: Api.MidiHubDeviceBinding[] }>(
+      appendNodeQuery(`${API_BASE}/midi/hub/devices/${encodeURIComponent(deviceId)}/bindings`, nodeId),
+    ),
+  listConsumerDevices: (consumerType: string, consumerId: string, nodeId?: string | null) =>
+    fetchJson<{ consumer_type: string; consumer_id: string; count: number; device_ids: string[] }>(
+      appendNodeQuery(
+        `${API_BASE}/midi/hub/consumers/${encodeURIComponent(consumerType)}/${encodeURIComponent(consumerId)}/devices`,
+        nodeId,
+      ),
+    ),
+
   getDeviceShadow: (limit = 200, nodeId?: string | null) =>
     fetchJson<{ count: number; events: Array<Record<string, unknown>>; shadow_state: Record<string, unknown> }>(
       appendNodeQuery(`${API_BASE}/midi/hub/devices/shadow?limit=${Math.max(1, Math.min(5000, limit))}`, nodeId),

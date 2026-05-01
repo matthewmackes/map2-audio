@@ -24,6 +24,7 @@
 import { useCallback, useState } from 'react'
 
 import { snapshotsApi } from '@/map2/clients/snapshots'
+import { midiHubApi } from '@/map2/clients/midiHub'
 import type {
   BrainLibraryAssetModel,
   BrainLibraryStateModel,
@@ -38,6 +39,7 @@ export type JobStageId =
   | 'wire_slot'
   | 'create_snapshot'
   | 'activate_snapshot'
+  | 'register_binding'
 
 export type JobStageStatus =
   | 'pending'
@@ -67,6 +69,7 @@ const INITIAL_STAGES: JobStage[] = [
   { id: 'wire_slot', label: 'Wiring keyboard to slot 1', status: 'pending' },
   { id: 'create_snapshot', label: 'Creating snapshot', status: 'pending' },
   { id: 'activate_snapshot', label: 'Activating snapshot', status: 'pending' },
+  { id: 'register_binding', label: 'Registering device binding', status: 'pending' },
 ]
 
 const INITIAL_RESULT: JobResult = {
@@ -112,6 +115,11 @@ export function buildSnapshotName(portName: string): string {
 
 interface RunArgs {
   portName: string
+  /** Onboarded-device id from the registry, when known. Null for raw
+   * "New" ports that haven't been onboarded yet — in that case the
+   * register_binding stage is skipped (T2480-6 will fold inline naming
+   * into the wizard). */
+  deviceId: string | null
 }
 
 interface UseConnectKeyboardSnapshotJobResult {
@@ -141,7 +149,7 @@ export function useConnectKeyboardSnapshotJob(): UseConnectKeyboardSnapshotJobRe
   }, [])
 
   const start = useCallback(
-    async ({ portName }: RunArgs) => {
+    async ({ portName, deviceId }: RunArgs) => {
       // Reset to a clean run, even on retry.
       setStages(INITIAL_STAGES.map((s) => ({ ...s })))
       setResult(INITIAL_RESULT)
@@ -245,6 +253,42 @@ export function useConnectKeyboardSnapshotJob(): UseConnectKeyboardSnapshotJobRe
         return
       }
 
+      // Stage 5: register binding (T2480-5 first-class device→snapshot link).
+      // We only attempt this when the wizard knows the device_id from the
+      // registry; for raw "New" ports without an onboarded device record,
+      // mark skipped — T2480-6 will collapse the inline-name + onboard
+      // path so this stage can run for those too.
+      if (deviceId) {
+        setStage('register_binding', {
+          status: 'running',
+          detail: `POST /api/midi/hub/devices/${deviceId}/bindings`,
+        })
+        try {
+          await midiHubApi.addDeviceBinding(deviceId, {
+            consumer_type: 'snapshot',
+            consumer_id: String(createdId),
+            consumer_name: snapshotName,
+            source: 'brain-setup-task',
+          })
+          setStage('register_binding', {
+            status: 'done',
+            detail: `Bound device ${deviceId} → snapshot ${createdId}`,
+          })
+        } catch (err) {
+          // Best-effort: a registry binding failure does not invalidate
+          // the snapshot — the snapshot is already live. Surface the
+          // failure in the progress card without offering Retry on the
+          // whole job.
+          const message = err instanceof Error ? err.message : String(err)
+          setStage('register_binding', { status: 'failed', error: message })
+        }
+      } else {
+        setStage('register_binding', {
+          status: 'skipped',
+          detail: 'No device_id known for raw "New" port (will be filled in by T2480-6).',
+        })
+      }
+
       setResult({
         asset: pickedAsset,
         snapshotId: createdId,
@@ -257,9 +301,17 @@ export function useConnectKeyboardSnapshotJob(): UseConnectKeyboardSnapshotJobRe
     [setStage],
   )
 
+  // register_binding failures are best-effort: the snapshot is already
+  // live by the time we attempt the binding write. Surface the failure
+  // in the stage list, but do not gate Done-screen advancement on it.
+  const blockingFailedStage = stages.find(
+    (s) => s.status === 'failed' && s.id !== 'register_binding',
+  ) ?? null
   const failedStage = stages.find((s) => s.status === 'failed') ?? null
-  const isComplete = stages.every((s) => s.status === 'done' || s.status === 'skipped')
-  const hasError = failedStage !== null
+  const isComplete = stages.every(
+    (s) => s.status === 'done' || s.status === 'skipped' || (s.status === 'failed' && s.id === 'register_binding'),
+  )
+  const hasError = blockingFailedStage !== null
 
   return { stages, result, isRunning, isComplete, hasError, failedStage, start, reset }
 }

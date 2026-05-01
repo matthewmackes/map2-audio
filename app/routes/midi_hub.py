@@ -568,6 +568,69 @@ async def clear_device_assignment(port_name: str) -> Dict[str, Any]:
     return {"ok": True, "port_name": port_name}
 
 
+# T2480-5: first-class device→consumer bindings.
+class DeviceBindingRequest(BaseModel):
+    consumer_type: str = Field(..., description="'snapshot' today; reserved for future expansion.")
+    consumer_id: str = Field(..., description="snapshot_id (as string), preset_id, etc.")
+    consumer_name: str = Field(..., description="Display label.")
+    source: str = Field(default="manual", description="Who created the binding (e.g., 'brain-setup-task').")
+
+
+@router.post("/devices/{device_id}/bindings")
+async def add_device_binding(device_id: str, req: DeviceBindingRequest) -> Dict[str, Any]:
+    from datetime import datetime, timezone
+    from app.services.midi_hub.device_registry import MidiDeviceBinding
+
+    registry = get_midi_device_registry()
+    binding = MidiDeviceBinding(
+        consumer_type=str(req.consumer_type),
+        consumer_id=str(req.consumer_id),
+        consumer_name=str(req.consumer_name),
+        bound_at=datetime.now(timezone.utc).isoformat(),
+        source=str(req.source),
+    )
+    ok = registry.add_binding(device_id=device_id, binding=binding)
+    if not ok:
+        raise HTTPException(status_code=404, detail=f"No MIDI device with id={device_id}")
+    return {"ok": True, "device_id": device_id, "binding": binding.to_dict()}
+
+
+@router.delete("/devices/{device_id}/bindings/{consumer_type}/{consumer_id}")
+async def remove_device_binding(device_id: str, consumer_type: str, consumer_id: str) -> Dict[str, Any]:
+    registry = get_midi_device_registry()
+    removed = registry.remove_binding(
+        device_id=device_id,
+        consumer_type=consumer_type,
+        consumer_id=consumer_id,
+    )
+    if not removed:
+        raise HTTPException(
+            status_code=404,
+            detail=f"No matching binding for device_id={device_id} consumer={consumer_type}:{consumer_id}",
+        )
+    return {"ok": True, "device_id": device_id, "consumer_type": consumer_type, "consumer_id": consumer_id}
+
+
+@router.get("/devices/{device_id}/bindings")
+async def list_device_bindings(device_id: str) -> Dict[str, Any]:
+    registry = get_midi_device_registry()
+    bindings = registry.list_bindings_for_device(device_id=device_id)
+    return {"device_id": device_id, "count": len(bindings), "bindings": [b.to_dict() for b in bindings]}
+
+
+@router.get("/consumers/{consumer_type}/{consumer_id}/devices")
+async def list_consumer_devices(consumer_type: str, consumer_id: str) -> Dict[str, Any]:
+    """Reverse-link: which devices are bound to this consumer?"""
+    registry = get_midi_device_registry()
+    device_ids = registry.list_devices_for_consumer(consumer_type=consumer_type, consumer_id=consumer_id)
+    return {
+        "consumer_type": consumer_type,
+        "consumer_id": consumer_id,
+        "count": len(device_ids),
+        "device_ids": device_ids,
+    }
+
+
 @router.get("/routes")
 async def list_routes() -> Dict[str, Any]:
     service = get_midi_router()

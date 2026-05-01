@@ -8,6 +8,7 @@ import type { JobStage, useConnectKeyboardSnapshotJob } from './useConnectKeyboa
 
 interface ConnectKeyboardSnapshotPhaseProps {
   selectedPortName: string | null
+  selectedDeviceId: string | null
   job: ReturnType<typeof useConnectKeyboardSnapshotJob>
   onAdvance: () => void
 }
@@ -30,6 +31,7 @@ function stageToneLabel(status: JobStage['status']): string {
 
 export function ConnectKeyboardSnapshotPhase({
   selectedPortName,
+  selectedDeviceId,
   job,
   onAdvance,
 }: ConnectKeyboardSnapshotPhaseProps) {
@@ -45,9 +47,9 @@ export function ConnectKeyboardSnapshotPhase({
       !job.hasError &&
       job.stages.every((s) => s.status === 'pending')
     ) {
-      void job.start({ portName: selectedPortName })
+      void job.start({ portName: selectedPortName, deviceId: selectedDeviceId })
     }
-  }, [selectedPortName, job])
+  }, [selectedPortName, selectedDeviceId, job])
 
   // Auto-advance to Done when the job completes successfully.
   useEffect(() => {
@@ -99,7 +101,10 @@ export function ConnectKeyboardSnapshotPhase({
             <Button
               kind="secondary"
               renderIcon={Renew}
-              onClick={() => selectedPortName && void job.start({ portName: selectedPortName })}
+              onClick={() =>
+                selectedPortName &&
+                void job.start({ portName: selectedPortName, deviceId: selectedDeviceId })
+              }
               disabled={!selectedPortName || job.isRunning}
             >
               Retry

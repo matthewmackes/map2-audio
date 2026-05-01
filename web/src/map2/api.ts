@@ -1102,6 +1102,14 @@ export interface MidiHubDeviceProfile {
   is_custom: boolean;
 }
 
+export interface MidiHubDeviceBinding {
+  consumer_type: string;
+  consumer_id: string;
+  consumer_name: string;
+  bound_at: string;
+  source: string;
+}
+
 export interface MidiHubDeviceState {
   device_id: string;
   profile_id: string;
@@ -1119,6 +1127,9 @@ export interface MidiHubDeviceState {
   source: string;
   node_id: string;
   remote: boolean;
+  // T2480-5: first-class device→consumer bindings (e.g., a snapshot
+  // that the device is bound to). Empty when no consumer claims it.
+  bindings?: MidiHubDeviceBinding[];
 }
 
 export interface MidiHubDeviceInventory {
