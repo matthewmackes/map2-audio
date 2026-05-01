@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1425** Python | **1399** TypeScript | **177** C++/H | **145** Docs | **3356** total commits | **3** stars | **0** forks | **0** open issues
+**1426** Python | **1399** TypeScript | **177** C++/H | **145** Docs | **3361** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`09af8cf6`](https://github.com/matthewmackes/map2-audio/commit/09af8cf6de7d13ad0ee8db1fcd5a8e4b3c26df35) | T2482-P1.1 Gap E phase 9 (iter 59): rtmidi allow-list + C... | Map2 Audio | 2026-05-01 |
+| [`a58cd853`](https://github.com/matthewmackes/map2-audio/commit/a58cd85349a33adecaa7f53e1438b3ee6ee8a634) | T2482-P1.1 Gap E phase 8 (iter 58): refactor midi_engine ... | Map2 Audio | 2026-05-01 |
+| [`68e998ab`](https://github.com/matthewmackes/map2-audio/commit/68e998abb0fad733f51453fce63eb393ea16ba2c) | T2482-P1.1 Gap E phase 7 (iter 57): refactor midi_hub dis... | Map2 Audio | 2026-05-01 |
+| [`8e761f09`](https://github.com/matthewmackes/map2-audio/commit/8e761f09d05c3f017af2789bae8137e436072891) | T2482-P1.1 Gap E phase 6 (iter 56): refactor sysex_device... | Map2 Audio | 2026-05-01 |
+| [`b5cc4b73`](https://github.com/matthewmackes/map2-audio/commit/b5cc4b730054866f8445f197489437dccbceb261) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-01 |
 | [`a7b8a6b0`](https://github.com/matthewmackes/map2-audio/commit/a7b8a6b0e477dbd3407d2ebce51a28d7b2cccf1d) | T2482-P1.1 Gap E phase 5 (iter 55): Maschine rtmidi defer... | Map2 Audio | 2026-05-01 |
 | [`c775de3a`](https://github.com/matthewmackes/map2-audio/commit/c775de3ade990113499aaf95ffbd7a94af94ae83) | T2482-P1.1 Gap E phase 4 (iter 54): strip rtmidi fallback... | Map2 Audio | 2026-05-01 |
 | [`20a12878`](https://github.com/matthewmackes/map2-audio/commit/20a12878c98a449e064f18e5f8613b35dd48b04c) | T2482-P1.1 Gap E phase 3 (iter 53): MAP2_REQUIRE_MIDI_HOS... | Map2 Audio | 2026-05-01 |
-| [`8858da4c`](https://github.com/matthewmackes/map2-audio/commit/8858da4cb4f3ac6360e92c3327f4f832c1c06eac) | T2482-P1.1 Gap E phase 2 (iter 52): systemd drop-in pinni... | Map2 Audio | 2026-05-01 |
-| [`f0adb300`](https://github.com/matthewmackes/map2-audio/commit/f0adb3003536cab904099eb78af397e1754e965a) | T2482-P1.1 Gap E phase 1 (iter 51): flip MAP2_USE_MIDI_HO... | Map2 Audio | 2026-05-01 |
-| [`db220faa`](https://github.com/matthewmackes/map2-audio/commit/db220faaafde2af51004bc3ea4b429c2a860d75b) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-01 |
-| [`d46231c3`](https://github.com/matthewmackes/map2-audio/commit/d46231c3110ed579360997ae00e8bf51a0a580c1) | worklist: roll up T2482 SHIP loop 5 (iters 41-50) + P1.1 ... | Map2 Audio | 2026-05-01 |
-| [`dff97368`](https://github.com/matthewmackes/map2-audio/commit/dff9736832dd26016c777536fe3a84c5329891a7) | T2482-P1.1 Gap D.4 + D.5 (iter 49): flip midi_hub + midi_... | Map2 Audio | 2026-05-01 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
