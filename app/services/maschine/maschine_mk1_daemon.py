@@ -352,22 +352,39 @@ class SharedRuntimeState:
 
 
 def _maschine_use_midi_host() -> bool:
-    """T2482-P1.1 Gap D.2 (iter 47) + Gap E phase 1 (iter 51) — env-var
-    gate for the Maschine daemon's virtual-output shadow path.
+    """T2482-P1.1 Gap D.2 (iter 47) + Gap E phase 1 (iter 51) + phase 5
+    (iter 55) — env-var gate for the Maschine daemon's host shadow path.
 
     Default ON as of iter 51 (SHIP loop 6): when the env var is unset
     or empty, the shadow-send through the host runs alongside the
     rtmidi virtual port. Set MAP2_USE_MIDI_HOST=0 to disable the
     shadow.
 
-    NOTE: even with the gate ON, Maschine currently still uses rtmidi
-    for its virtual-port creation because the controller-host IPC
-    schema does not yet expose openVirtualOutput() to Python
-    (`LibremidiAdapter::openVirtualOutput` exists C++-internally but
-    has no `MidiCreateVirtualPortRequest` envelope on the wire).
-    The send_messages() path runs the shadow through the host today;
-    the virtual-port creation flip waits for that IPC extension —
-    tracked as a P1.2 follow-up.
+    UNUSUAL CASE — iter 55 deferral:
+
+    Unlike the other 4 P1.1 consumers, Maschine cannot strip rtmidi
+    in iter 55 because the controller-host IPC schema does not yet
+    expose `openVirtualOutput()` to Python. The Maschine daemon
+    publishes a virtual MIDI port that downstream apps connect to
+    (the `MAP2:Maschine-MK1` ALSA-seq port); creating that port
+    today requires `rtmidi.MidiOut().open_virtual_port(name)`.
+
+    The C++ side has the surface (`LibremidiAdapter::openVirtualOutput`
+    in juce-engine/Source/ControllerHost/Midi/LibremidiAdapter.cpp:156)
+    but no `MidiCreateVirtualPortRequest` IPC envelope wires it to
+    Python. Adding that envelope is queued as a P1.2 follow-up.
+
+    Until then:
+    - Virtual-port creation: stays rtmidi (legacy production path).
+    - Per-message send: runs as a host SHADOW alongside the rtmidi
+      send (both paths fire concurrently when env-gate is on +
+      daemon up; counter ticks for latency-floor measurement).
+    - Strict mode (MAP2_REQUIRE_MIDI_HOST=1): host-shadow failure
+      raises (as of iter 53); rtmidi virtual-port path still required.
+
+    Iter 59 (drop python-rtmidi from requirements) WILL break Maschine
+    until the P1.2 IPC extension lands. Tracking note added to the
+    SHIP loop 6 closing log.
     """
     val = os.environ.get("MAP2_USE_MIDI_HOST", "").strip().lower()
     if val in ("0", "false", "no", "off"):
