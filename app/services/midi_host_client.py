@@ -218,6 +218,63 @@ class MidiHostClient:
         self._send_only(request)
         return msg_id
 
+    def send_sysex(
+        self,
+        *,
+        controller_key: str,
+        sysex_bytes: bytes,
+    ) -> str:
+        """Send a MIDI 1.0 SysEx message OUT through a connected controller.
+
+        T2482-P1.1 Gap A.2 — drop-in replacement for the rtmidi
+        ``MidiOut.send_message(sysex_bytes)`` shape when the bytes are a
+        full SysEx envelope. Wraps ``MidiSendRequest`` with
+        ``format="midi1"``.
+
+        ``sysex_bytes`` must be a complete envelope: starts with 0xF0
+        (SysEx start), ends with 0xF7 (SysEx end), with at least one
+        body byte in between (minimum 3 bytes total). Multi-byte
+        manufacturer IDs and arbitrary payload lengths up to the wire
+        cap (~4 GiB IPC frame) are accepted; physical MIDI cable
+        bandwidth is the real ceiling.
+
+        Fire-and-forget; the caller does not wait for an outbound
+        acknowledgement.
+        """
+        payload = bytes(sysex_bytes)
+        if len(payload) < 3:
+            raise MidiHostClientError(
+                f"SysEx envelope must be >= 3 bytes (F0 ... F7), got {len(payload)}"
+            )
+        if payload[0] != 0xF0:
+            raise MidiHostClientError(
+                f"SysEx envelope must start with 0xF0, got 0x{payload[0]:02X}"
+            )
+        if payload[-1] != 0xF7:
+            raise MidiHostClientError(
+                f"SysEx envelope must end with 0xF7, got 0x{payload[-1]:02X}"
+            )
+        # Body bytes (between F0 and F7) must all be data bytes (high
+        # bit clear) — a stray status byte mid-SysEx is a protocol
+        # violation that the host would otherwise propagate to the wire.
+        for i in range(1, len(payload) - 1):
+            if payload[i] >= 0x80:
+                raise MidiHostClientError(
+                    f"SysEx body byte at index {i} has high bit set "
+                    f"(0x{payload[i]:02X}); only F0/F7 are allowed status bytes"
+                )
+        msg_id = uuid.uuid4().hex
+        request = {
+            "type": "midi_send_request",
+            "msg_id": msg_id,
+            "schema_version": SCHEMA_VERSION,
+            "controller_key": str(controller_key),
+            "bytes": list(payload),
+            "format": "midi1",
+        }
+        self._send_only(request)
+        return msg_id
+
     def send_ump(
         self,
         *,
