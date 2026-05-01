@@ -161,6 +161,36 @@ class MidiOpenInputRequest(TypedDict):
     port_id: str
 
 
+# T2482-P1.2 Gap C completion / Maschine virtual-port unblock (iter 75)
+# — ask the host to publish a virtual MIDI output port.
+#
+# The Maschine MK1 daemon used rtmidi.MidiOut().open_virtual_port(name)
+# to publish the `MAP2:Maschine-MK1` ALSA-seq port that downstream
+# apps connect to. The iter-55 deferral note documented that this
+# couldn't move to the controller-host until an IPC envelope existed
+# to ask the host to call its (existing C++-internal)
+# LibremidiAdapter::openVirtualOutput. This envelope is that path.
+#
+# Once the host opens the virtual output, JS-callback-emitted MIDI
+# (from drainShortMidi / drainSysExMidi) lands on the virtual port
+# directly via the iter-72/73 sendToVirtualOutput wiring instead of
+# round-tripping through Python.
+class MidiCreateVirtualPortRequest(TypedDict):
+    """Ask the host to publish a virtual MIDI output port with the
+    given display name. The host calls
+    LibremidiAdapter::openVirtualOutput(name) and the resulting port
+    becomes visible to other ALSA-seq / JACK MIDI clients.
+
+    Returns a log_event with level=info on success or level=error
+    when the host fails to open the port (typically because libremidi
+    rejects it or the host wasn't built with MAP2_HAS_LIBREMIDI).
+    """
+    type: Literal["midi_create_virtual_port_request"]
+    msg_id: str
+    schema_version: int
+    name: str           # display name as it appears to ALSA-seq / JACK MIDI clients
+
+
 # ---------------------------------------------------------------------------
 # Outbound: controller-host → backend
 # ---------------------------------------------------------------------------
@@ -329,6 +359,7 @@ FIELD_MANIFEST: dict[str, list[str]] = {
     "MidiListPortsResponse": list(MidiListPortsResponse.__annotations__.keys()),
     "MidiPortPayload":        list(MidiPortPayload.__annotations__.keys()),
     "MidiOpenInputRequest":   list(MidiOpenInputRequest.__annotations__.keys()),
+    "MidiCreateVirtualPortRequest": list(MidiCreateVirtualPortRequest.__annotations__.keys()),
     "EngineCommand":     list(EngineCommand.__annotations__.keys()),
     "ControllerEvent":   list(ControllerEvent.__annotations__.keys()),
     "LogEvent":          list(LogEvent.__annotations__.keys()),
@@ -349,6 +380,7 @@ InboundMessage = (
     | Shutdown
     | MidiListPortsRequest
     | MidiOpenInputRequest
+    | MidiCreateVirtualPortRequest
 )
 OutboundMessage = (
     EngineCommand

@@ -157,6 +157,16 @@ struct MidiOpenInputRequest
     std::string port_id;            // name/id from MidiListPortsResponse.ports
 };
 
+// T2482-P1.2 Gap C completion / iter 75 — publish a virtual MIDI
+// output port. Mirrors Python MidiCreateVirtualPortRequest.
+struct MidiCreateVirtualPortRequest
+{
+    static constexpr const char* kType = "midi_create_virtual_port_request";
+    std::string msg_id;
+    int schema_version = kSchemaVersion;
+    std::string name;
+};
+
 // ---------------------------------------------------------------------------
 // Outbound: controller-host → backend
 // ---------------------------------------------------------------------------
@@ -242,6 +252,7 @@ struct EventFeedback
 // MidiListPortsResponse: type, msg_id, schema_version, backend, ports, degraded
 // MidiPortPayload: name, id, is_input, is_virtual
 // MidiOpenInputRequest: type, msg_id, schema_version, controller_key, port_id
+// MidiCreateVirtualPortRequest: type, msg_id, schema_version, name
 // EngineCommand: type, msg_id, schema_version, controller_key, target, action, value, args
 // ControllerEvent: type, msg_id, schema_version, controller_key, timestamp_ns, bytes
 // LogEvent: type, msg_id, schema_version, controller_key, level, message

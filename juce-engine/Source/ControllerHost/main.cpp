@@ -883,6 +883,44 @@ int run_main_loop (const std::string& socket_path)
                 continue;
             }
 
+            // T2482-P1.2 Gap C completion / iter 75 — publish a virtual
+            // MIDI output port. Unblocks the Maschine virtual-port flip
+            // (iter-50b/iter-55 deferral) AND closes the iter-72/73
+            // outbound back-loop (the host needs an open virtual output
+            // for sendToVirtualOutput to succeed).
+            if (frame.find ("\"type\":\"midi_create_virtual_port_request\"") != std::string::npos)
+            {
+                const std::string msg_id = extract_string_field (frame, "msg_id");
+                const std::string name = extract_string_field (frame, "name");
+                if (name.empty())
+                {
+                    send_frame (client_fd, build_log_event (
+                        msg_id, "error",
+                        "midi_create_virtual_port_request missing name"));
+                    continue;
+                }
+                auto* adapter = midiBackend.adapter();
+                if (adapter == nullptr)
+                {
+                    send_frame (client_fd, build_log_event (
+                        msg_id, "error",
+                        "midi_create_virtual_port_request: no MIDI backend bound"));
+                    continue;
+                }
+                if (! adapter->openVirtualOutput (name))
+                {
+                    send_frame (client_fd, build_log_event (
+                        msg_id, "error",
+                        "midi_create_virtual_port_request failed: "
+                        + adapter->errorMessage()));
+                    continue;
+                }
+                send_frame (client_fd, build_log_event (
+                    msg_id, "info",
+                    "virtual output published: " + name));
+                continue;
+            }
+
             // T2459-H3 — cache script sources for later mapping activation.
             if (frame.find ("\"type\":\"script_load_request\"") != std::string::npos)
             {
