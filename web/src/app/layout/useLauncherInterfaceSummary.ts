@@ -1,7 +1,7 @@
 import { useEffect, useRef, useState } from 'react'
 import { useQuery } from '@tanstack/react-query'
 
-import { audioApi, midiApi } from '../../map2/api'
+import { audioApi, midiApiV2 } from '../../map2/api'
 import { useClusterHardwareInventory } from '../hooks/useDeviceLocation'
 
 type AudioStatusLike = {
@@ -18,8 +18,8 @@ type MidiDeviceLike =
     }
 
 type MidiDevicesResponse = {
-  inputs?: MidiDeviceLike[]
-  outputs?: MidiDeviceLike[]
+  input_devices?: string[]
+  output_devices?: string[]
 } | null
 
 type ClusterHardwareInventoryResponse = {
@@ -141,7 +141,7 @@ function isPhysicalMidiDevice(device: MidiDeviceLike): boolean {
 async function fetchLauncherInterfaces(): Promise<LauncherInterfaceSummary> {
   const [audioStatus, midiDevices] = await Promise.all([
     audioApi.getStatus().catch(() => null as AudioStatusLike),
-    midiApi.getDevices().catch(() => null as MidiDevicesResponse),
+    midiApiV2.getDevices().catch(() => null as MidiDevicesResponse),
   ])
 
   const audioInterfaces = dedupeNames([
@@ -150,8 +150,8 @@ async function fetchLauncherInterfaces(): Promise<LauncherInterfaceSummary> {
   ])
 
   const midiInterfaces = dedupeNames([
-    ...((midiDevices?.inputs ?? []).filter(isPhysicalMidiDevice).map(normalizeMidiName)),
-    ...((midiDevices?.outputs ?? []).filter(isPhysicalMidiDevice).map(normalizeMidiName)),
+    ...((midiDevices?.input_devices ?? []).filter(isPhysicalMidiDevice).map(normalizeMidiName)),
+    ...((midiDevices?.output_devices ?? []).filter(isPhysicalMidiDevice).map(normalizeMidiName)),
   ])
 
   return {

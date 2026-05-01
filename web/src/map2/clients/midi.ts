@@ -22,6 +22,12 @@ import type {
 import { fetchJson } from '../http'
 import { API_BASE } from '../transport'
 
+/**
+ * @deprecated v1 MIDI client. None of these `${API_BASE}/midi/*` paths are
+ * served by the current backend (no router mounts them); every method here
+ * 404s. Kept only for the export-shape pin in `clientExports.test.ts` and
+ * the `api.ts` aggregator. Use `midiApiV2` below for live endpoints.
+ */
 export const midiApi = {
   getDevices: () => fetchJson<{ inputs: MIDIDevice[]; outputs: MIDIDevice[] }>(`${API_BASE}/midi/devices`),
 

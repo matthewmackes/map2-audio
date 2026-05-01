@@ -128,6 +128,27 @@ class ChainProgramRequest(BaseModel):
     bank_lsb: int = Field(0, ge=0, le=127, description="Bank Select LSB (CC#32)")
 
 
+class ChainConfigUpsertRequest(BaseModel):
+    """Request body for PUT /chain-configs/{chain_id} — upsert a chain's PC binding.
+
+    Optional fields default to None so a partial PUT preserves the stored value
+    on update (only fields explicitly sent are changed).
+    """
+    program_number: int = Field(..., ge=0, le=127, description="Program Change number 0-127")
+    bank_msb: Optional[int] = Field(None, ge=0, le=127, description="Bank Select MSB (CC#0); omit to preserve")
+    bank_lsb: Optional[int] = Field(None, ge=0, le=127, description="Bank Select LSB (CC#32); omit to preserve")
+    send_pc_on_activate: Optional[bool] = Field(None, description="Send PC out when this chain is activated; omit to preserve")
+
+
+class DeviceConfigUpsertRequest(BaseModel):
+    """Request body for POST /device-configs — upsert a persistent device config."""
+    device_name: str = Field(..., min_length=1, max_length=255)
+    device_type: Optional[str] = Field(None, description="input or output")
+    is_enabled: Optional[bool] = None
+    auto_connect: Optional[bool] = None
+    channel_filter: Optional[int] = Field(None, ge=0, le=16, description="0/None = all channels, 1-16 specific")
+
+
 class PresetCreateRequest(BaseModel):
     """Request body for creating a MIDI preset."""
     name: str = Field(..., min_length=1, max_length=255)
@@ -656,6 +677,147 @@ async def activate_chain(chain_id: int):
             raise HTTPException(status_code=404, detail="Chain not found")
 
         return {"status": "activated", "chain_id": chain_id}
+
+
+def _serialize_chain_midi_config(config: "ChainMIDIConfig") -> Dict[str, Any]:
+    return {
+        "id": config.id,
+        "chain_id": config.chain_id,
+        "program_number": config.program_number,
+        "bank_msb": config.bank_msb or 0,
+        "bank_lsb": config.bank_lsb or 0,
+        "send_pc_on_activate": bool(config.send_pc_on_activate),
+    }
+
+
+@router.get("/chain-configs")
+async def list_chain_configs():
+    """List all chain Program Change bindings."""
+    from app.database import ChainMIDIConfig
+
+    async with get_session() as session:
+        result = await session.execute(select(ChainMIDIConfig))
+        configs = [_serialize_chain_midi_config(c) for c in result.scalars().all()]
+        return {"configs": configs, "count": len(configs)}
+
+
+@router.put("/chain-configs/{chain_id}")
+async def upsert_chain_config(chain_id: int, request: ChainConfigUpsertRequest):
+    """Upsert the Program Change binding for a chain."""
+    from app.database import Chain, ChainMIDIConfig
+
+    async with get_session() as session:
+        chain_exists = await session.execute(select(Chain.id).filter(Chain.id == chain_id))
+        if chain_exists.scalar_one_or_none() is None:
+            raise HTTPException(status_code=404, detail=f"Chain {chain_id} not found")
+
+        result = await session.execute(
+            select(ChainMIDIConfig).filter(ChainMIDIConfig.chain_id == chain_id)
+        )
+        config = result.scalar_one_or_none()
+
+        if config is None:
+            config = ChainMIDIConfig(
+                chain_id=chain_id,
+                program_number=request.program_number,
+                bank_msb=request.bank_msb or 0,
+                bank_lsb=request.bank_lsb or 0,
+                send_pc_on_activate=True if request.send_pc_on_activate is None else request.send_pc_on_activate,
+            )
+            session.add(config)
+        else:
+            config.program_number = request.program_number
+            if request.bank_msb is not None:
+                config.bank_msb = request.bank_msb
+            if request.bank_lsb is not None:
+                config.bank_lsb = request.bank_lsb
+            if request.send_pc_on_activate is not None:
+                config.send_pc_on_activate = request.send_pc_on_activate
+
+        await session.flush()
+        await session.refresh(config)
+        return {
+            "config": _serialize_chain_midi_config(config),
+            "message": f"Saved chain {chain_id} program change binding",
+        }
+
+
+@router.delete("/chain-configs/{chain_id}")
+async def delete_chain_config(chain_id: int):
+    """Remove the Program Change binding for a chain."""
+    from app.database import ChainMIDIConfig
+
+    async with get_session() as session:
+        result = await session.execute(
+            select(ChainMIDIConfig).filter(ChainMIDIConfig.chain_id == chain_id)
+        )
+        config = result.scalar_one_or_none()
+        if config is None:
+            raise HTTPException(status_code=404, detail=f"No chain-config for chain {chain_id}")
+        await session.delete(config)
+        return {"success": True, "message": f"Deleted chain-config for chain {chain_id}"}
+
+
+# ==================== Device Configs ====================
+
+def _serialize_device_config(config: "MIDIDeviceConfig") -> Dict[str, Any]:
+    return {
+        "id": config.id,
+        "device_name": config.device_name,
+        "device_type": config.device_type,
+        "is_enabled": bool(config.is_enabled),
+        "auto_connect": bool(config.auto_connect),
+        "channel_filter": config.channel_filter,
+    }
+
+
+@router.get("/device-configs")
+async def list_device_configs():
+    """List persistent MIDI device configurations."""
+    from app.database import MIDIDeviceConfig
+
+    async with get_session() as session:
+        result = await session.execute(select(MIDIDeviceConfig))
+        configs = [_serialize_device_config(c) for c in result.scalars().all()]
+        return {"configs": configs, "count": len(configs)}
+
+
+@router.post("/device-configs")
+async def upsert_device_config(request: DeviceConfigUpsertRequest):
+    """Upsert a persistent MIDI device configuration (keyed by device_name)."""
+    from app.database import MIDIDeviceConfig
+
+    async with get_session() as session:
+        result = await session.execute(
+            select(MIDIDeviceConfig).filter(MIDIDeviceConfig.device_name == request.device_name)
+        )
+        config = result.scalar_one_or_none()
+
+        if config is None:
+            config = MIDIDeviceConfig(
+                device_name=request.device_name,
+                device_type=request.device_type,
+                is_enabled=True if request.is_enabled is None else request.is_enabled,
+                auto_connect=True if request.auto_connect is None else request.auto_connect,
+                channel_filter=request.channel_filter,
+            )
+            session.add(config)
+        else:
+            if request.device_type is not None:
+                config.device_type = request.device_type
+            if request.is_enabled is not None:
+                config.is_enabled = request.is_enabled
+            if request.auto_connect is not None:
+                config.auto_connect = request.auto_connect
+            if request.channel_filter is not None:
+                config.channel_filter = request.channel_filter
+
+        await session.flush()
+        await session.refresh(config)
+        return {
+            "config": _serialize_device_config(config),
+            "message": f"Saved device config for {request.device_name}",
+        }
 
 
 # ==================== Learn Mode ====================
