@@ -124,14 +124,19 @@ class _B5Runner:
                           descriptor: dict) -> dict:
         msg_type = entry["type"]
         msg_id = entry.get("msg_id", uuid.uuid4().hex)
+        # Iter 66: per-entry overrides let one fixture exercise multiple
+        # controllers (used by two_controllers_isolation.fixture.json).
+        # Defaults come from the top-level fixture fields.
+        ck = entry.get("controller_key_override", controller_key)
+        desc = entry.get("descriptor_override", descriptor)
         envelope: dict = {
             "type": msg_type,
             "msg_id": msg_id,
             "schema_version": SCHEMA_VERSION,
-            "controller_key": controller_key,
+            "controller_key": ck,
         }
         if msg_type in ("mapping_activate", "mapping_reload"):
-            envelope["descriptor"] = descriptor
+            envelope["descriptor"] = desc
         elif msg_type == "mapping_deactivate":
             pass  # only controller_key needed
         elif msg_type == "controller_event":
@@ -140,7 +145,8 @@ class _B5Runner:
         else:
             # Pass-through any extra fields from the fixture.
             for k, v in entry.items():
-                if k != "type":
+                if k not in ("type", "controller_key_override",
+                              "descriptor_override"):
                     envelope[k] = v
         return envelope
 

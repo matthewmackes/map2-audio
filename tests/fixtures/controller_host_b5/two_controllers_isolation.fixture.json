@@ -1,0 +1,43 @@
+{
+  "name": "Two controllers loaded back-to-back — isolation smoke test",
+  "controller_key": "b5.dev1",
+  "descriptor": {
+    "pack_id": "b5",
+    "model": "dev1",
+    "kind": "midi",
+    "scripts": [
+      "var B5Dev1 = B5Dev1 || {}; B5Dev1.cc = function(c, v) { return null; };"
+    ],
+    "controls": [
+      {"status": 176, "midino": 7, "channel": 0, "script": "B5Dev1.cc", "fast_path": false, "description": "dev1 CC handler"}
+    ],
+    "outputs": [],
+    "settings": [],
+    "mixxx_alias_table": {}
+  },
+  "input_sequence": [
+    {"type": "mapping_activate", "msg_id": "iso-act-dev1"},
+    {"type": "mapping_activate", "msg_id": "iso-act-dev2", "controller_key_override": "b5.dev2", "descriptor_override": {
+      "pack_id": "b5",
+      "model": "dev2",
+      "kind": "midi",
+      "scripts": [
+        "var B5Dev2 = B5Dev2 || {}; B5Dev2.cc = function(c, v) { return null; };"
+      ],
+      "controls": [
+        {"status": 176, "midino": 8, "channel": 0, "script": "B5Dev2.cc", "fast_path": false, "description": "dev2 CC handler"}
+      ],
+      "outputs": [],
+      "settings": [],
+      "mixxx_alias_table": {}
+    }},
+    {"type": "mapping_deactivate", "msg_id": "iso-deact-dev1"},
+    {"type": "mapping_deactivate", "msg_id": "iso-deact-dev2", "controller_key_override": "b5.dev2"}
+  ],
+  "expected_outbound": [
+    {"msg_id": "iso-act-dev1",   "type": "log_event", "level": "info",    "message_match": "mapping activated:",   "controller_key": "b5.dev1"},
+    {"msg_id": "iso-act-dev2",   "type": "log_event", "level": "info",    "message_match": "mapping activated:",   "controller_key": "b5.dev2"},
+    {"msg_id": "iso-deact-dev1", "type": "log_event", "level": "info",    "message_match": "mapping deactivated",  "controller_key": "b5.dev1"},
+    {"msg_id": "iso-deact-dev2", "type": "log_event", "level": "info",    "message_match": "mapping deactivated",  "controller_key": "b5.dev2"}
+  ]
+}

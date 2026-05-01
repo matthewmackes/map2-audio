@@ -1,0 +1,59 @@
+{
+  "name": "Inline QuickJS script — descriptor with a global JS function reference",
+  "controller_key": "b5.quickjs",
+  "descriptor": {
+    "pack_id": "b5",
+    "model": "quickjs",
+    "kind": "midi",
+    "scripts": [
+      "var B5Scratch = B5Scratch || {}; B5Scratch.handler = function(channel, value) { return null; };"
+    ],
+    "controls": [
+      {
+        "status": 176,
+        "midino": 7,
+        "channel": 0,
+        "script": "B5Scratch.handler",
+        "fast_path": false,
+        "description": "synthetic CC handler for B5 QuickJS verification"
+      }
+    ],
+    "outputs": [],
+    "settings": [],
+    "mixxx_alias_table": {}
+  },
+  "input_sequence": [
+    {
+      "type": "mapping_activate",
+      "msg_id": "qj-act-1"
+    },
+    {
+      "type": "mapping_reload",
+      "msg_id": "qj-reload-1"
+    },
+    {
+      "type": "mapping_deactivate",
+      "msg_id": "qj-deact-1"
+    }
+  ],
+  "expected_outbound": [
+    {
+      "msg_id": "qj-act-1",
+      "type": "log_event",
+      "level": "info",
+      "message_match": "mapping activated:"
+    },
+    {
+      "msg_id": "qj-reload-1",
+      "type": "log_event",
+      "level": "info",
+      "message_match": "mapping reloaded:"
+    },
+    {
+      "msg_id": "qj-deact-1",
+      "type": "log_event",
+      "level": "info",
+      "message_match": "mapping deactivated"
+    }
+  ]
+}
