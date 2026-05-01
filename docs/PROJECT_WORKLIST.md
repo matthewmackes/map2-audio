@@ -34653,3 +34653,58 @@ Plus the canonical reference `docs/architecture/FIRST_CLASS_SERVICES.md` with th
 - P1.5 SysEx-parser-cutover work (move MPX-1 / IntelFX / GCP SysEx parsers from Python into the device-pack JS stubs that now exist) — depends on P1.1/P1.2
 - P2.8 legacy storage deletion (`snapshot_midi_maps` + `midi_mappings` tables — keeping for one more loop as a safety net)
 - Production migration of the 49 documented-skipped `midi_mappings` rows that lacked `chain_id` — needs operator decision on a `global_param` consumer type
+
+### SHIP loop 4 (iters 31–40) closing log — 2026-04-30
+
+**Status**: 10 substantive iters shipped (31–40, dual-pushed). Per the standing "approved for the deferred" directive, this loop addressed two of the three "still deferred" items from SHIP loop 3 — the chain-less `midi_mappings` migration (iter 31-33) and the SysEx-parser-cutover groundwork + first three parser ports (iters 34-37). Loop 4 closed with two design-only deliverables (iters 38-39) for the multi-week T2459-H backend epics, deferring the implementations to dedicated work cycles.
+
+| Iter | Subtask | Commit | Highlight |
+|---|---|---|---|
+| 31 | P2.8 part 1 — `midi_mappings` deprecation markers + readiness gate | (loop 3) | Module-level deprecation docstring on `MIDIMappingService` + `/api/midi/legacy-table-rowcounts` gate endpoint |
+| 32 | P2.8 part 1 (cont.) — `snapshot_midi_maps` deprecation markers | (loop 3) | Same pattern; both legacy tables now have explicit deprecation markers + retirement plan in module docstrings |
+| 33 | `global_param` consumer type + chain-less migration LIVE | (loop 3) | New `BindingConsumerType.global_param`; `app/services/midi/projections/global_param.py`; `migrate_chain_less_midi_mappings()`; the 49 chain-less rows now have a canonical home |
+| 34 | SysEx cutover groundwork — JS test harness + smoke test | (loop 3) | `device-packs/_tests/js_harness.js` (Node + vm.createContext, no QuickJS dep); `device-packs/_tests/test_harness_smoke.js`; pytest wrapper `tests/test_device_pack_js.py` |
+| 35 | SysEx cutover part 1 — MPX-1 parser ported Python → JS | 3c9aff91 | `device-packs/lexicon/scripts/mpx1.js` extended with `split_frames`/`is_lexicon_frame`/`extract_name`/`extract_program_number`/`parse_bytes`/`handle_sysex`. 22 JS tests, all passing. Python parser parity guard intact (`tests/test_mpx1_syx_parser.py`). |
+| 36 | SysEx cutover part 2 — IntelFX parser ported Python → JS | d1797878 | `device-packs/rocktron/scripts/intelfx.js` extended with full Rocktron 3-byte mfr ID parser + 7-bit XOR checksum verification. 27 JS tests, all passing. Python parser parity guard intact (`tests/test_intelfx_syx_parser.py`, 49 tests). |
+| 37 | SysEx cutover part 3 — GCP bulk-dump container ported Python → JS | 6ba869b2 | `device-packs/voodoo-lab/scripts/gcp.js` extended with the 16567-byte v1.13 dump container layout (preamble + config + 200 presets + terminator) + round-trip serializer + retained Voodoo Lab live-traffic surface. 16 JS tests, all passing. Python parity guard intact (`tests/test_ground_control_pro_parser.py`, 10 tests inc real fixture round-trips). |
+| 38 | T2459-H1 prep — libremidi audit + design doc | 27ec5554 | `docs/architecture/T2482_P1_1_LIBREMIDI_FOUNDATION.md` (~9 KB): 5-phase migration plan, target architecture diagram, SPSC shm event ring layout (cache-line-aligned 64-byte slots, 4096-event ring), 8 DoD gates inc latency p99 < 100 µs + no `import rtmidi` in app/. **Design only — implementation deferred.** |
+| 39 | T2459-H2 prep — Mixxx ControllerEngine integration design | 7535a05b | `docs/architecture/T2482_P1_2_CONTROLLERENGINE_INTEGRATION.md` (~10 KB): audit of existing controller-host scaffolding (already substantial — `Map2MappingEngine` 165+241 lines, `LibremidiAdapter` already vendored, `ShmEventRing` already implemented, 8 pytest suites in place), 7 enumerated integration gaps, 5 sub-phases, 9 DoD gates inc B5 Mixxx XML golden-test pass + p99 < 200 µs inbound→engine.setValue. **Design only — implementation deferred.** |
+| 40 | SHIP loop 4 roll-up + Phase 3 readiness gate | (this commit) | This closing log + worklist roll-up. |
+
+**Total JS device-pack tests added in loop 4**: **65** (22 MPX-1 + 27 IntelFX + 16 GCP). All shipped suites pass under `pytest tests/test_device_pack_js.py`. Python parity guards on all three parsers (mpx1, intelfx, ground_control_pro) remain green — the JS ports are additive, not swaps.
+
+**SysEx cutover after loop 4**:
+- All 5 SysEx-driven device-packs identified in iter 1's audit now have JS parsers in place: lexicon (MPX-1, iter 35), rocktron (IntelFX, iter 36), voodoo-lab (GCP, iter 37). The mackie + native-instruments packs use HID/non-SysEx surfaces and need no parser port.
+- The Python parsers (`app/services/mpx1_syx_parser.py`, `app/services/intelfx_syx_parser.py`, `app/services/ground_control_pro/sysex_container.py`) remain live — they own the inbound dispatch path until P1.2 (controller-host ControllerEngine integration) ships.
+- The dispatcher cutover (P1.2) is what makes the JS parsers live — until then, the JS code is exercised exclusively through the device-pack JS test harness. **No production behavior change in loop 4.**
+- GCP field-level decoding (parser.py, serializer.py, validator.py, field_map.py) was explicitly **not** ported — that's a much bigger surface (~3000 LOC) and stays in Python until the controller-host integration is real.
+
+**Design docs added in loop 4**:
+- `docs/architecture/T2482_P1_1_LIBREMIDI_FOUNDATION.md` — libremidi I/O foundation + SPSC shm event ring (P1.1)
+- `docs/architecture/T2482_P1_2_CONTROLLERENGINE_INTEGRATION.md` — Mixxx ControllerEngine integration gap analysis (P1.2)
+
+The P1.2 audit (iter 39 §2) revealed substantial existing scaffolding the worklist had understated: `juce-engine/Source/ControllerHost/` already has 12 source files including `Map2MappingEngine.{h,cpp}` (165+241 LOC), `LibremidiAdapter.{h,cpp}` (already vendored — accelerates the P1.1 timeline), `ShmEventRing.{h,cpp}` (already implemented), `EngineApiBindings`, `QuickJSEngine`, HID + Bulk controller surfaces, `ClusterGateway` scaffold, plus 8 pytest suites exercising the host's main loop. The remaining gap is integration glue + the B5 fixture golden-test pass, not the engine itself.
+
+**T2482 status overall (after 4 SHIP loops)**:
+- Plan artifact + 40 iters = 41 commits dual-pushed
+- Phase 2 SHIPPED + live production migration evidence
+- 138 backend tests + 65 device-pack JS tests across 13 suites, all passing
+- 11 device-packs on disk, 3 with JS-ported SysEx parsers (MPX-1, IntelFX, GCP)
+- 4 first-class service stack architecture docs with diagrams
+- 2 P1.1/P1.2 design docs (libremidi foundation + ControllerEngine integration)
+- `/api/midi/*` 8 endpoints live on `:8080`
+- Backend healthy, audio still running
+
+**Phase 3 readiness gate (frontend `/midi` canonical surface)**:
+- **Backend**: ready (Phase 2 shipped, `/api/midi/*` live, all consumer types projecting through canonical authority).
+- **Device-pack JS hosting**: groundwork in place but production dispatch still on Python (depends on P1.1/P1.2 implementation).
+- **Carbon UI scaffold**: not started — the `/midi` canonical surface frontend is per-bundle work, gated on user authorization.
+- **Recommended order**: ship P1.1 + P1.2 implementations next (now that designs are locked), THEN open Phase 3. Reason: Phase 3 surfaces will display live MIDI traffic; if dispatch is still Python-side that traffic flow is the legacy path and Phase 3 has to be re-validated when P1.2 lands. Better to ship dispatch first.
+
+**Still deferred** (multi-week scopes — explicit user gate required):
+- Phase 3 frontend `/midi` canonical surface (per Q5/D — per-bundle gated; recommend after P1.1/P1.2 implementation)
+- T2482-P1.1 libremidi I/O implementation (~3-4 weeks; design doc shipped iter 38)
+- T2482-P1.2 ControllerEngine integration implementation (~3 weeks; design doc shipped iter 39)
+- T2459-H6/H7 cluster MIDI host-to-host (depends on P1.1/P1.2)
+- P2.8 part 2 legacy table deletion (`snapshot_midi_maps` + `midi_mappings` tables — readiness gate live, deletion deferred until P1.2 ships and the legacy services that read these tables are retired)
+- GCP field-level decoder JS port (~3000 LOC; explicit decision in iter 37 to defer until P1.2)
