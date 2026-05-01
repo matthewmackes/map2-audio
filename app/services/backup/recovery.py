@@ -845,7 +845,6 @@ PYTHON_PACKAGES=(
     scipy
     sounddevice
     soundfile
-    python-rtmidi
     hidapi
     pyserial
     Pillow

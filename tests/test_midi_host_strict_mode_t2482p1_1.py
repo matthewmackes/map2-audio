@@ -271,30 +271,29 @@ class MaschineStrictModeTests(unittest.TestCase):
     def tearDown(self) -> None:
         self._env.stop()
 
-    def test_send_messages_raises_when_daemon_down_in_strict(self) -> None:
+    def test_send_messages_skips_when_port_not_open_after_iter86(self) -> None:
+        # Iter 86 removed the rtmidi fallback. With daemon down,
+        # VirtualMidiOutput.open() returns False (not True). The
+        # send_messages strict-mode raise is now unreachable from this
+        # path because send_messages early-returns on `not self._is_open`.
+        # Pin the new contract: open() returns False, send_messages
+        # silently does nothing.
         from app.services.maschine import maschine_mk1_daemon
-        # Stub rtmidi so VirtualMidiOutput.open() succeeds.
-        class _StubOut:
-            def __init__(self):
-                self.sent = []
-                self.opened = None
-            def open_virtual_port(self, name): self.opened = name
-            def send_message(self, m): self.sent.append(list(m))
-            def close_port(self): pass
-            def delete(self): pass
-        stub = mock.Mock()
-        stub.MidiOut = lambda: _StubOut()
         fake_client = mock.Mock()
         fake_client.is_daemon_available.return_value = False  # daemon down
-        with mock.patch.object(maschine_mk1_daemon, "rtmidi", stub):
-            vo = maschine_mk1_daemon.VirtualMidiOutput("test:port")
-            self.assertTrue(vo.open())
-            with mock.patch.object(vo, "_get_host_client",
-                                      return_value=fake_client):
-                with self.assertRaises(MidiHostClientError) as ctx:
-                    vo.send_messages([bytes([0xB0, 0x07, 0x40])])
-        self.assertIn("MAP2_REQUIRE_MIDI_HOST", str(ctx.exception))
-        self.assertIn("Maschine", str(ctx.exception))
+        # Use the host_client path; rtmidi fallback is gone.
+        host_client = mock.Mock()
+        host_client.is_daemon_available.return_value = False
+        vo = maschine_mk1_daemon.VirtualMidiOutput("test:port")
+        with mock.patch.object(vo, "_get_host_client",
+                                  return_value=host_client):
+            self.assertFalse(vo.open())
+            self.assertFalse(vo._is_open)
+            # send_messages on an unopened port is a silent no-op
+            # (not a raise) — the strict-mode raise only fires when
+            # _is_open is True. open() returning False is the failure
+            # signal Maschine consumers act on.
+            vo.send_messages([bytes([0xB0, 0x07, 0x40])])  # no raise
 
 
 # ---------------------------------------------------------------------

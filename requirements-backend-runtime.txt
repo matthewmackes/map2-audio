@@ -44,34 +44,29 @@ sounddevice>=0.5.3,<0.6.0
 soundfile>=0.13.1,<0.14.0
 # Python JACK/PipeWire client used by hardware loopback latency measurements
 jack-client>=0.5.5,<0.6.0
-# MIDI device access — narrow set of secondary surfaces.
+# MIDI device access — REMOVED in T2482 loop 9 (iter 87).
 #
-# T2482-P1.2 (iter 79) update: after SHIP loop 8 (Maschine virtual-
-# port flip + sysex_bridge / midi_hub / midi_engine hard-strips),
-# rtmidi has moved from "production primary path" to "narrow
-# secondary surface". The 5 paths that still need it:
-#   1. Maschine MK1 daemon — fallback when controller-host's
-#      MidiCreateVirtualPortRequest fails (iter 76 flip; iter 79
-#      retains the fallback for transitional CI / dev flows)
-#   2. GCP midi_transport.py — receive_sysex polling-loop contract
-#      (rtmidi.MidiIn.get_message; subscribe_events refactor queued)
-#   3. midi_hub/ports.py — AlsaMidiPort.open() per-port handles
-#      (different surface from the iter-78-stripped discover_alsa_ports)
-#   4. midi_engine.py — persistent self._midi_in/_out for live MIDI
-#      binding (host-routed subscribe refactor queued)
-#   5. midi_sysex_bridge_base.py — IntelFX + MPX-1 simulator
-#      live-traffic poll (different from iter-77 enumeration strip)
+# Backstory: python-rtmidi was on the critical path for 5 services
+# through SHIP loops 4-8. SHIP loop 6 (iters 51-60) cut 4 of 5 to
+# lenient-mode fallbacks. SHIP loop 7-8 (iters 71-80) wired all the
+# missing controller-host surfaces. SHIP loop 9 (iters 81-86)
+# performed the 5 deep refactors that closed out the narrow
+# secondary surfaces:
+#   - iter 82: GCP receive_sysex → MidiHostClient.subscribe()
+#   - iter 83: midi_engine binding → MidiHub-routed
+#   - iter 84: midi_sysex_bridge_base simulator → no rtmidi import
+#   - iter 85: midi_hub AlsaMidiPort → host-routed
+#   - iter 86: Maschine fallback removed
 #
-# These are tracked + pinned by the iter-79 grep-fail guard in
-# tests/test_no_new_rtmidi_imports_t2482p1_1.py. Adding new rtmidi
-# imports anywhere else fails the build immediately. The full
-# python-rtmidi removal waits for the queued post-loop-8 refactors
-# (subscribe_events for receive_sysex; host-side AlsaMidiPort
-# replacement; midi_engine binding rewrite).
+# After iter 86, ZERO `import rtmidi` lines remain in app/. Iter 87
+# drops the dep from this file. The iter-88 grep-fail guard then
+# locks the empty allow-list.
 #
-# See docs/architecture/T2482_P1_1_MASCHINE_RTMIDI_DEFERRAL.md
-# for the long-form rationale.
-python-rtmidi>=1.5.8,<2.0.0
+# All MIDI I/O for the FastAPI backend routes through map2-controller-host
+# (libremidi C++ binary; map2-controller-host.service systemd unit).
+# Tests that previously injected rtmidi-shape mocks now mock the
+# MidiHostClient surface — see tests/test_no_new_rtmidi_imports_t2482p1_1.py
+# for the audited contract.
 # USB HID access for hardware control surfaces such as Maschine MK1
 hidapi>=0.14.0,<1.0.0
 # Serial-connected hardware workflows

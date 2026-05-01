@@ -104,9 +104,10 @@ class PackageManager:
     """
     
     # Realtime audio system packages
+    # T2482 loop 9 / iter 87: python-rtmidi removed. MIDI I/O routes
+    # exclusively through map2-controller-host (libremidi C++ binary).
     REALTIME_PACKAGES_PIP = [
         "jack-client",
-        "python-rtmidi",
         "numpy",
         "scipy",
         "torch",
