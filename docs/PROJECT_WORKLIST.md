@@ -34493,3 +34493,67 @@ Focus shifts to (a) the per-device consumer projections that complete Phase 2, (
 **Iter 18**: P3.1 prep (gated work, but the route scaffolding is non-UI) — `app/services/midi/routes.py` consolidated `/api/midi/*` endpoints stub: list/get/list_for_consumer/list_for_device/list_in_scope/CRUD via authority
 **Iter 19**: P3.1 prep continuation — wire `app/services/midi/routes.py` into `app/main.py` router registration; add OpenAPI tags
 **Iter 20**: SHIP loop 2 roll-up + SHIP loop 3 plan (begins to address P1.x backend work + P2.5 device-pack builds for the 6 missing devices)
+
+---
+
+### SHIP loop 2 (iters 11–20) closing log — 2026-05-01
+
+**Status**: 9 of 10 substantive iters shipped + this roll-up = 10 commits dual-pushed. Phase 2 functionally complete — every projection adapter exists, the verification suite passes end-to-end, and the canonical authority is **live on `:8080/api/midi/*`**.
+
+| Iter | Subtask | Commit | Tests | Highlight |
+|---|---|---|---|---|
+| 11 | P2.6 transport projection | 60fdeb49 | 10 | Clock + transport-control + song-position + MTC bindings; global scope |
+| 12 | P2.6 gpio projection | 384c42aa | 13 | 12in/12out virtual pins; both directions unified under one consumer_type; edge support |
+| 13 | P2.6 tesira_ttp projection | 5656159b | 14 | TTP↔MIDI bridge bindings; both directions; consumer_id="ttp:<tag>:<attr>" |
+| 14 | P2.5 part 1 device_pack projection | ee263c4b | 12 | Per-pack defaults; pack_version metadata; replace_device_pack_defaults atomic |
+| 15 | P2.5 part 2 MIDIMapping migration | c72f0f67 | 3 | Legacy MIDIMapping → canonical plugin_param; idempotent; skips malformed rows |
+| 16 | P2.9 part 1 verification suite | 72db78cb | 11 | 7 per-consumer verifiers + run_full_suite composer + SuiteResult/VerificationResult |
+| 17 | P2.9 part 2 end-to-end test | 849561ef | 1 | THE GATE: legacy seed → 2 migrations → idempotency → full suite passes |
+| 18 | P3.1 prep routes scaffold | ca840282 | 10 | /api/midi/bindings GET/POST/PATCH/DELETE/disable/enable; route shape verified |
+| 19 | P3.1 prep route registration | c8b39ca3 | — | Live on :8080: count→0, list→[]; backend healthy; audio still running |
+| 20 | SHIP loop 2 roll-up | (this commit) | — | This entry |
+
+**Backend test totals after SHIP loop 2**:
+- Schema (P2.1): 7 + Authority (P2.2): 14 + Snapshot proj (P2.3): 21 + Brain proj (P2.4): 9 + Plugin_param proj (P2.5+P2.7): 16 + Transport proj (P2.6): 10 + GPIO proj (P2.6): 13 + Tesira_TTP proj (P2.6): 14 + Device_pack proj (P2.5): 12 + Verification suite (P2.9): 11 + End-to-end (P2.9): 1 + Routes scaffold (P3.1): 10
+- **T2482 subtotal: 138 tests across 12 suites, all passing**
+- T2480-5 device bindings (pre-existing, untouched): 8 + 1 route = 9 tests
+- **MIDI domain total: 147 tests, all passing in <12s**
+
+**What landed in SHIP loop 2**:
+- Every Phase 2 projection adapter shipped (snapshot, brain, plugin_param, transport, gpio, tesira_ttp, device_pack)
+- Two legacy-data migration scripts (snapshot_midi_maps, midi_mappings) with idempotency checks
+- Cross-consumer verification suite (`app/services/midi/verification.py`) with 7 per-consumer verifiers + composer
+- End-to-end migration smoke test as the Phase 2 close gate
+- `/api/midi/*` consolidated routes (8 endpoints) wired into FastAPI
+- Live backend on `:8080`: `GET /api/midi/bindings/count` returns `0` (canonical store empty pre-migration), `GET /api/midi/bindings?scope=global` returns `[]`. **The MIDI Services authority is operational.**
+
+**What's STILL deferred (now to SHIP loop 3+)**:
+- **P2.0 + P2.8 production migration**: a one-shot script run that walks the live SQLite DB through both migration scripts and then deletes the legacy storage tables. **This is a destructive shared-state op that requires explicit user authorization** — the migration scripts are tested + idempotent, but flipping the live DB is the kind of action the project rules say to never take autonomously. Flagged for user decision.
+- **P1.1 / P1.2 / P1.3 / P1.4** (controller-host backend work — libremidi I/O, ControllerEngine, Map2MidiController retirement, cluster MIDI host-to-host) — multi-week scope; SHIP loop 3 would chip at the highest-value first slice
+- **P1.5 device-pack builds** for 6 missing devices (Lexicon MPX-1, Rocktron IntelFX, Mackie MCU Pro, Novation Launch Control, Ableton Push, Voodoo Lab Ground Control Pro, Biamp Tesira)
+- **P1.6 midi_hub/ deletion** — depends on P1.1 + P1.2 first
+- **Phase 3 frontend work** (`/midi` canonical surface, 9 regions, redirect map, per-device page reframing) — this is the per-bundle gated portion. The backend is ready (routes live); waiting on user authorization to start frontend bundles.
+- **Phase 4 first-class-services template extraction** — depends on Phase 3 completion to lift the pattern
+
+---
+
+### SHIP loop 3 (iters 21–30) plan — pending user authorization
+
+Phase 3 (frontend canonical surface) is the highest-impact next bucket but per Q5/D it requires per-bundle gating from the user. I'll surface a plan + wait for sign-off before starting iter 21.
+
+**Candidate plan A — Phase 3 frontend bundles**:
+- Iter 21: P3.1 frontend — `/midi` mount, AppShell entry, "MIDI Services" nav rename, `/midi-hub/*` redirect map
+- Iter 22: P3.2 Overview region — landing page aggregating Devices + Bindings + Routing + Transport state via the new `/api/midi/bindings` endpoints
+- Iter 23: P3.3 Devices region (list + per-device editor)
+- Iters 24-29: One region per iter (Bindings, Routing, Transport, Network, Presets+Events+Processing+Expression+Lab, per-device legacy reframing, Brain Setup/Inputs reframing)
+- Iter 30: SHIP loop 3 roll-up
+
+**Candidate plan B — Production migration + Phase 1 backend chip-away** (autonomous-friendly):
+- Iter 21: P2.0 production-migration audit (read-only) + plan
+- Iter 22: P2.8 design — exact deletion sequence + rollback procedure (no execution)
+- Iter 23-25: P1.5 device-pack builds for 3 missing devices (could be Mackie MCU + Launch Control + MIDI Commander since they're all CC/note-driven, not SysEx-heavy)
+- Iter 26-28: 3 more device-packs (Push, Ground Control Pro, Tesira)
+- Iter 29: P1.5 close — verify all 8 devices migrated to device-packs
+- Iter 30: SHIP loop 3 roll-up + Phase 3 readiness gate
+
+**My recommendation: plan B**. Reason: plan A requires user gating on every iter (per Q5/D), so it's not really autonomous. Plan B stays in the autonomous-eligible Phase 2/Phase 1 work and produces concrete shipping value. User can pivot to plan A whenever they're ready to gate frontend bundles.
