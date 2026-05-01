@@ -117,9 +117,12 @@ export function ConnectKeyboardDetectPhase({
               <StatusChip tone="info" size="sm" label="New" />
             )
 
+            const vidPid = entry.vendor_id && entry.product_id
+              ? ` · ${entry.vendor_id}:${entry.product_id}`
+              : ''
             const baseSubline = entry.source === 'onboarded'
-              ? `Port: ${entry.port_name}${entry.vendor_id && entry.product_id ? ` · ${entry.vendor_id}:${entry.product_id}` : ''}`
-              : 'Press Continue to give this device a name.'
+              ? `Port: ${entry.port_name}${vidPid}`
+              : `Port: ${entry.port_name}${vidPid} · Press Continue to give this device a name.`
             // T2480-6: when we know the device already drives a snapshot,
             // surface that fact so the operator doesn't accidentally create
             // a duplicate binding by re-running the wizard.

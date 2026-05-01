@@ -257,7 +257,7 @@ export function useConnectKeyboardSnapshotJob(): UseConnectKeyboardSnapshotJobRe
       } else {
         setStage('register_binding', {
           status: 'skipped',
-          detail: 'No device_id known for raw "New" port (will be filled in by T2480-6).',
+          detail: 'No device_id known for this port — binding cannot be written.',
         })
       }
 

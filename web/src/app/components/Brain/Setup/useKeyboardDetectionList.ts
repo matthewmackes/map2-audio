@@ -1,21 +1,38 @@
-// Two-source merged device list for the Detect phase of the
-// "Connect a new keyboard" setup task. Per T2480 locked decision Q18:
-// - Onboarded surfaces from the controller registry come first, tagged
-//   "Onboarded" with the friendly profile name.
-// - Raw MIDI input ports not matched to any registry record come second,
-//   tagged "New" — operator gives them a name in-line.
+// Single-source device list for the Detect phase of the "Connect a new
+// keyboard" setup task. Per T2480 locked decision Q18 + Follow-up B
+// (2026-05-01) refactor:
 //
-// Merge key: port_name. The registry's MidiHubDeviceState carries port_names,
-// and the raw inventory (midiApiV2.getDevices().input_devices) is a flat
-// string[] of those same ALSA port names. USB VID:PID is captured on the
-// onboarded side for tiebreaks but is not currently exposed by midiApiV2's
-// raw enumeration — VID:PID matching is a hardening pass (iter 6).
+// All devices come from midiHubApi.getDevices(). The MIDI Hub registry
+// already iterates every plugged-in ALSA port, attaches USB VID:PID
+// (via discover_alsa_port_descriptors), and matches it to a profile —
+// falling back to the 'generic_controller' profile when nothing matches.
+//
+// Distinction:
+//   - Onboarded: profile_id !== 'generic_controller' OR manual_assignment
+//     is set. The device has either been auto-matched to a curated profile
+//     (by USB VID:PID or name pattern) or explicitly bound by the
+//     operator. We can write a binding against device_id directly.
+//   - New: profile_id === 'generic_controller' AND no manual_assignment.
+//     The port is plugged in and discoverable but not yet associated with
+//     a profile pack. Wizard offers an inline name-and-onboard prompt
+//     (T2480 Follow-up D, 2026-05-01) before allowing Continue.
+//
+// VID:PID is now first-class on every entry (when known) — it shows up
+// in the Detect-phase row sub-line and is available for any future
+// downstream use.
+//
+// Old design (pre-Follow-up B): merged midiHubApi.getDevices() with
+// midiApiV2.getDevices() (flat string list of port names). The v2 path
+// added zero information beyond what the registry already had, and the
+// port_name join key made VID:PID a tiebreaker rather than a primary
+// signal. Removed in favor of registry-only.
 
 import { useQuery } from '@tanstack/react-query'
 
 import type { MidiHubDeviceState } from '@/map2/api'
-import { midiApiV2 } from '@/map2/clients/midi'
 import { midiHubApi } from '@/map2/clients/midiHub'
+
+const GENERIC_CONTROLLER_PROFILE_ID = 'generic_controller'
 
 export interface OnboardedKeyboard {
   source: 'onboarded'
@@ -26,8 +43,8 @@ export interface OnboardedKeyboard {
   connected: boolean
   vendor_id: string | null
   product_id: string | null
-  // T2480-6: existing bindings on this device (e.g., a Brain snapshot
-  // that was previously bound by this wizard or by the operator).
+  // Existing bindings on this device (e.g., a Brain snapshot that was
+  // previously bound by this wizard or by the operator).
   bindings: Array<{
     consumer_type: string
     consumer_id: string
@@ -40,6 +57,14 @@ export interface OnboardedKeyboard {
 export interface NewKeyboard {
   source: 'new'
   port_name: string
+  // Even "New" devices carry VID:PID when discovered via USB — the
+  // wizard's inline name-and-onboard step uses it as a hint.
+  vendor_id: string | null
+  product_id: string | null
+  /** The auto-generated device_id under the generic profile, e.g.
+   * "generic_controller:my_kbd". Wizard onboarding upgrades this to
+   * a real profile binding. */
+  generic_device_id: string
 }
 
 export type DetectionEntry = OnboardedKeyboard | NewKeyboard
@@ -50,73 +75,55 @@ export interface DetectionListResult {
   new_count: number
 }
 
-function dedupePortNames(names: readonly string[]): string[] {
-  return Array.from(new Set(names.filter((n) => typeof n === 'string' && n.trim() !== '')))
+function isGenericFallback(device: MidiHubDeviceState): boolean {
+  return device.profile_id === GENERIC_CONTROLLER_PROFILE_ID && !device.manual_assignment
 }
 
-function indexOnboardedPorts(
-  devices: readonly MidiHubDeviceState[],
-): Map<string, OnboardedKeyboard> {
-  const map = new Map<string, OnboardedKeyboard>()
+function toEntries(devices: readonly MidiHubDeviceState[]): DetectionEntry[] {
+  const seenPortNames = new Set<string>()
+  const onboarded: OnboardedKeyboard[] = []
+  const newOnes: NewKeyboard[] = []
+
   for (const device of devices) {
     if (!device.port_names || device.port_names.length === 0) continue
-    const onboarded: OnboardedKeyboard = {
-      source: 'onboarded',
-      port_name: device.port_names[0]!,
-      device_id: device.device_id,
-      profile_id: device.profile_id,
-      profile_name: device.profile_name,
-      connected: device.connected,
-      vendor_id: device.vendor_id ?? null,
-      product_id: device.product_id ?? null,
-      bindings: device.bindings ?? [],
+    const primaryPort = device.port_names[0]!
+    if (seenPortNames.has(primaryPort)) continue
+
+    if (isGenericFallback(device)) {
+      newOnes.push({
+        source: 'new',
+        port_name: primaryPort,
+        vendor_id: device.vendor_id ?? null,
+        product_id: device.product_id ?? null,
+        generic_device_id: device.device_id,
+      })
+    } else {
+      onboarded.push({
+        source: 'onboarded',
+        port_name: primaryPort,
+        device_id: device.device_id,
+        profile_id: device.profile_id,
+        profile_name: device.profile_name,
+        connected: device.connected,
+        vendor_id: device.vendor_id ?? null,
+        product_id: device.product_id ?? null,
+        bindings: device.bindings ?? [],
+      })
     }
-    for (const portName of device.port_names) {
-      // First-write-wins: an onboarded device with multiple port names occupies
-      // each port name only with its primary record.
-      if (!map.has(portName)) {
-        map.set(portName, { ...onboarded, port_name: portName })
-      }
-    }
+    for (const alias of device.port_names) seenPortNames.add(alias)
   }
-  return map
+
+  return [...onboarded, ...newOnes]
 }
 
+/** Pure helper kept exported for the unit-test suite. */
 export function buildDetectionEntries(
-  onboarded: readonly MidiHubDeviceState[],
-  rawInputPortNames: readonly string[],
+  devices: readonly MidiHubDeviceState[],
 ): DetectionListResult {
-  const onboardedIndex = indexOnboardedPorts(onboarded)
-  const seenPortNames = new Set<string>()
-  const onboardedEntries: OnboardedKeyboard[] = []
-  const newEntries: NewKeyboard[] = []
-
-  // Onboarded first, in registry order, deduplicated by port_name.
-  for (const device of onboarded) {
-    if (!device.port_names || device.port_names.length === 0) continue
-    const portName = device.port_names[0]!
-    if (seenPortNames.has(portName)) continue
-    const entry = onboardedIndex.get(portName)
-    if (entry) {
-      onboardedEntries.push(entry)
-      seenPortNames.add(portName)
-      // Mark every alias port as seen so raw enumeration doesn't double-list.
-      for (const alias of device.port_names) seenPortNames.add(alias)
-    }
-  }
-
-  // Raw ports that didn't match any registry record become "New".
-  for (const rawName of dedupePortNames(rawInputPortNames)) {
-    if (seenPortNames.has(rawName)) continue
-    newEntries.push({ source: 'new', port_name: rawName })
-    seenPortNames.add(rawName)
-  }
-
-  return {
-    entries: [...onboardedEntries, ...newEntries],
-    onboarded_count: onboardedEntries.length,
-    new_count: newEntries.length,
-  }
+  const entries = toEntries(devices)
+  const onboarded_count = entries.filter((e) => e.source === 'onboarded').length
+  const new_count = entries.length - onboarded_count
+  return { entries, onboarded_count, new_count }
 }
 
 interface UseKeyboardDetectionListOptions {
@@ -133,28 +140,15 @@ export function useKeyboardDetectionList({
     staleTime: 0,
   })
 
-  const rawQuery = useQuery({
-    queryKey: ['brain-setup', 'midi-raw-devices'],
-    queryFn: () => midiApiV2.getDevices(),
-    enabled,
-    staleTime: 0,
-  })
+  const isLoading = registryQuery.isLoading
+  const error = registryQuery.error
 
-  const isLoading = registryQuery.isLoading || rawQuery.isLoading
-  const error = registryQuery.error ?? rawQuery.error
-
-  const merged: DetectionListResult = (() => {
-    if (!registryQuery.data && !rawQuery.data) {
-      return { entries: [], onboarded_count: 0, new_count: 0 }
-    }
-    return buildDetectionEntries(
-      registryQuery.data?.devices ?? [],
-      rawQuery.data?.input_devices ?? [],
-    )
-  })()
+  const merged: DetectionListResult = registryQuery.data
+    ? buildDetectionEntries(registryQuery.data.devices ?? [])
+    : { entries: [], onboarded_count: 0, new_count: 0 }
 
   const refetch = async () => {
-    await Promise.all([registryQuery.refetch(), rawQuery.refetch()])
+    await registryQuery.refetch()
   }
 
   return {

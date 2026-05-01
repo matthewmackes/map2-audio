@@ -61,13 +61,18 @@ export function ConnectKeyboardTask({ onExit }: ConnectKeyboardTaskProps) {
 
   const handleSelectDevice = useCallback((portName: string) => {
     setSelectedPortName(portName)
-    // Look up the matching detection entry to capture its device_id (when
-    // the entry is onboarded; raw "New" entries leave deviceId null).
+    // Look up the matching detection entry to capture its device_id.
+    // After Follow-up B (2026-05-01) every detected device has a
+    // device_id — onboarded devices carry their curated profile id,
+    // "New" devices carry the generic_controller fallback id. Either
+    // way the registry has a row we can write a binding against.
     const match = detection.entries.find((e) => e.port_name === portName)
-    if (match && match.source === 'onboarded') {
+    if (!match) {
+      setSelectedDeviceId(null)
+    } else if (match.source === 'onboarded') {
       setSelectedDeviceId(match.device_id)
     } else {
-      setSelectedDeviceId(null)
+      setSelectedDeviceId(match.generic_device_id)
     }
   }, [detection.entries])
 
