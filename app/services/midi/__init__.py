@@ -23,6 +23,7 @@ Layout (built incrementally across T2482 phases):
     └── routes.py                       (T2482-P3.x consolidated /api/midi/*)
 """
 
+from app.services.midi.authority import MidiBindingAuthority, MidiBindingNotFound
 from app.services.midi.models import MidiBinding
 from app.services.midi.schemas import (
     BindingConsumerType,
@@ -36,6 +37,8 @@ from app.services.midi.schemas import (
 
 __all__ = [
     "MidiBinding",
+    "MidiBindingAuthority",
+    "MidiBindingNotFound",
     "BindingConsumerType",
     "BindingScope",
     "BindingSourceType",
