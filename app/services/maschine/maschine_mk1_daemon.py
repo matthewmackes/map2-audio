@@ -427,6 +427,46 @@ class VirtualMidiOutput:
         return self._host_client
 
     def open(self) -> bool:
+        # T2482-P1.2 (iter 76) — prefer the controller-host's
+        # MidiCreateVirtualPortRequest IPC envelope (iter 75) over
+        # rtmidi.MidiOut().open_virtual_port. The host owns libremidi's
+        # virtual-port surface; using its path closes the
+        # iter-50b/iter-55 deferral that left Maschine as the last
+        # rtmidi-hard consumer.
+        #
+        # Falls back to rtmidi when the host daemon is unreachable
+        # (preserves the pre-iter-76 behaviour for ad-hoc test runs +
+        # CI without a running daemon). Once iter 79 drops python-rtmidi
+        # from requirements, the rtmidi branch becomes unreachable in
+        # production.
+        if _maschine_use_midi_host():
+            try:
+                client = self._get_host_client()
+                if client.is_daemon_available():
+                    response = client.create_virtual_port(name=self.name)
+                    if response.get("level") == "info":
+                        # Mark the port as host-owned. send_messages()
+                        # already routes via the host shadow path
+                        # under the env-gate; with the port host-owned,
+                        # the rtmidi local port is no longer required.
+                        self._is_open = True
+                        self._port = None  # signal "no rtmidi local port"
+                        LOGGER.info(
+                            "Published virtual MIDI port %s via controller-host",
+                            self.name,
+                        )
+                        return True
+                    LOGGER.warning(
+                        "controller-host create_virtual_port returned %s: %s; "
+                        "falling back to rtmidi",
+                        response.get("level"), response.get("message"),
+                    )
+            except Exception as exc:  # pragma: no cover - daemon transient
+                LOGGER.debug(
+                    "controller-host create_virtual_port failed (%s); "
+                    "falling back to rtmidi", exc,
+                )
+        # rtmidi fallback (legacy path; will be removed in iter 79).
         if rtmidi is None:
             LOGGER.warning("python-rtmidi not installed; Maschine daemon running without virtual MIDI output")
             return False
@@ -434,7 +474,7 @@ class VirtualMidiOutput:
             self._port = rtmidi.MidiOut()
             self._port.open_virtual_port(self.name)
             self._is_open = True
-            LOGGER.info("Opened virtual MIDI port %s", self.name)
+            LOGGER.info("Opened virtual MIDI port %s via rtmidi (legacy)", self.name)
             return True
         except Exception as exc:  # pragma: no cover - hardware runtime dependent
             LOGGER.warning("Failed to open virtual MIDI port %s: %s", self.name, exc)
@@ -444,7 +484,11 @@ class VirtualMidiOutput:
             return False
 
     def send_messages(self, messages: Iterable[bytes]) -> None:
-        if not self._is_open or self._port is None:
+        # Iter 76: when the virtual port is host-owned (open() succeeded
+        # via create_virtual_port), self._port is None but self._is_open
+        # is True. The host shadow-send below carries the traffic; the
+        # rtmidi send is skipped (no local port to send to).
+        if not self._is_open:
             return
         # Env-gated host routing for SEND only. The virtual port itself
         # remains rtmidi-owned until the IPC schema extension lands;
@@ -489,7 +533,10 @@ class VirtualMidiOutput:
                         # send below; we want both paths active during
                         # the transition.
                         pass
-                self._port.send_message(list(message))
+                if self._port is not None:
+                    self._port.send_message(list(message))
+                # else: virtual port is host-owned (iter 76); the host
+                # shadow-send above carries the traffic.
             except Exception as exc:  # pragma: no cover - hardware runtime dependent
                 LOGGER.debug("Failed to send MIDI message on %s: %s", self.name, exc)
 

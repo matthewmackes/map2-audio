@@ -218,6 +218,28 @@ class MidiHostClient:
         self._send_only(request)
         return msg_id
 
+    def create_virtual_port(self, *, name: str) -> dict:
+        """Ask the host to publish a virtual MIDI output port.
+
+        T2482-P1.2 (iter 76) — drop-in replacement for the rtmidi
+        ``MidiOut().open_virtual_port(name)`` shape. The Maschine MK1
+        daemon (and any other consumer that needs to publish a virtual
+        ALSA-seq / JACK MIDI port) routes through this method instead
+        of opening a port directly via rtmidi.
+
+        Round-trips synchronously and returns the host's log_event
+        response dict so callers can branch on level=info vs
+        level=error. Raises MidiHostClientError on transport failure.
+        """
+        msg_id = uuid.uuid4().hex
+        request = {
+            "type": "midi_create_virtual_port_request",
+            "msg_id": msg_id,
+            "schema_version": SCHEMA_VERSION,
+            "name": str(name),
+        }
+        return self._roundtrip(request)
+
     def open_midi_input(
         self,
         *,
