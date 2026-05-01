@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1435** Python | **1399** TypeScript | **177** C++/H | **145** Docs | **3387** total commits | **3** stars | **0** forks | **0** open issues
+**1435** Python | **1399** TypeScript | **177** C++/H | **145** Docs | **3389** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`d363ca58`](https://github.com/matthewmackes/map2-audio/commit/d363ca5861d4f799f8bdf568a3baa3ed9bfc3f49) | worklist: roll up T2482 SHIP loop 8 (iters 71-80) — P1.2 ... | Map2 Audio | 2026-05-01 |
+| [`33f595b2`](https://github.com/matthewmackes/map2-audio/commit/33f595b286b4ab36bbb9ce51f3d2c2cfa2755650) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-01 |
 | [`bd4146c6`](https://github.com/matthewmackes/map2-audio/commit/bd4146c6e7795d8da2becece53fb9d3b269a69ba) | T2482-P1.2 (iter 79): rtmidi allow-list + requirements do... | Map2 Audio | 2026-05-01 |
 | [`70bf9a5e`](https://github.com/matthewmackes/map2-audio/commit/70bf9a5e30bfd52ab0d282ede2752c4213bd69d4) | T2482-P1.2 (iter 78): hard-strip rtmidi from midi_hub + m... | Map2 Audio | 2026-05-01 |
 | [`f4519eb1`](https://github.com/matthewmackes/map2-audio/commit/f4519eb14e8f042b15c0bd424ca51cacc9a6306a) | T2482-P1.2 (iter 77): hard-strip rtmidi lenient-mode from... | Map2 Audio | 2026-05-01 |
 | [`74e0632a`](https://github.com/matthewmackes/map2-audio/commit/74e0632a29bcc5d2a001c6ec35aebc6fe4f58041) | T2482-P1.2 (iter 76): Maschine virtual-port flip via new ... | Map2 Audio | 2026-05-01 |
 | [`40716226`](https://github.com/matthewmackes/map2-audio/commit/40716226c4eb888dc65e9f70a68072cf02311411) | T2482-P1.2 (iter 75): MidiCreateVirtualPortRequest IPC en... | Map2 Audio | 2026-05-01 |
 | [`dd597dca`](https://github.com/matthewmackes/map2-audio/commit/dd597dcaff7b7846f7845b3dc57cd02d1bc30110) | T2482-P1.2 Gap C (iter 74): outbound wiring verification ... | Map2 Audio | 2026-05-01 |
-| [`c5e5f0f6`](https://github.com/matthewmackes/map2-audio/commit/c5e5f0f6754f33d27b3753f050666a51d2187448) | T2482-P1.2 Gap C (iter 73): wire libremidi-direct outboun... | Map2 Audio | 2026-05-01 |
-| [`c5a8e68a`](https://github.com/matthewmackes/map2-audio/commit/c5a8e68a7705faa7e9d84cec8cc989141b36ef5a) | T2482-P1.2 Gap C (iter 72): LibremidiAdapter::sendToVirtu... | Map2 Audio | 2026-05-01 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
