@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1437** Python | **1399** TypeScript | **177** C++/H | **145** Docs | **3402** total commits | **3** stars | **0** forks | **0** open issues
+**1437** Python | **1399** TypeScript | **177** C++/H | **145** Docs | **3404** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`fbd266f8`](https://github.com/matthewmackes/map2-audio/commit/fbd266f86e3fde9949f61ee74204019d89e03dfe) | T2482 loop 10 (iter 91): Phase 3 frontend plan + audit | Map2 Audio | 2026-05-01 |
+| [`d8bfc2bd`](https://github.com/matthewmackes/map2-audio/commit/d8bfc2bd87467254a7f5583126adb73e1f6bd308) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-01 |
 | [`44e3be84`](https://github.com/matthewmackes/map2-audio/commit/44e3be8457d2e251cbe14bc79091a422366c1e09) | worklist: roll up T2482 SHIP loop 9 (iters 81-90) — P1.1 ... | Map2 Audio | 2026-05-01 |
 | [`c0629ebc`](https://github.com/matthewmackes/map2-audio/commit/c0629ebc43c32d41a847430c2e20dbfd19d15013) | T2482 loop 9 / iter 89: cross-consumer end-to-end soak suite | Map2 Audio | 2026-05-01 |
 | [`8a4d62a1`](https://github.com/matthewmackes/map2-audio/commit/8a4d62a1eea4612b1159875e033692c2b0c8033c) | T2482 loop 9 / iter 88: lock empty-allow-list contract | Map2 Audio | 2026-05-01 |
 | [`2777fae0`](https://github.com/matthewmackes/map2-audio/commit/2777fae0b1d4dfc0cb4258b373375e29f5ac7806) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-01 |
 | [`8f309b28`](https://github.com/matthewmackes/map2-audio/commit/8f309b288f7b34d405b8959c06d3a88347507ffa) | T2482 loop 9 / iter 87: python-rtmidi DROPPED from requir... | Map2 Audio | 2026-05-01 |
 | [`b8b13b24`](https://github.com/matthewmackes/map2-audio/commit/b8b13b24451a079717e212bfdb3b89ce8defbbf2) | T2482 loop 9 / iter 86: Maschine rtmidi fallback removed;... | Map2 Audio | 2026-05-01 |
-| [`82c7d9b8`](https://github.com/matthewmackes/map2-audio/commit/82c7d9b86fb31913051021e972ac24c9c70747d9) | T2482 loop 9 / iter 85: AlsaMidiPort host-routed (rtmidi ... | Map2 Audio | 2026-05-01 |
-| [`5afe457f`](https://github.com/matthewmackes/map2-audio/commit/5afe457f4dc93af88ad5852bae76b3cdbf3e04e2) | T2482 loop 9 / iter 84: midi_sysex_bridge_base rtmidi imp... | Map2 Audio | 2026-05-01 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
