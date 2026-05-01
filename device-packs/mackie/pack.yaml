@@ -1,0 +1,24 @@
+schema_version: 1
+pack_id: mackie
+vendor:
+  name: Mackie
+  website: https://mackie.com/
+  support_url: https://mackie.com/support
+description: |
+  Mackie control surfaces. The MCU Pro profile covers the canonical
+  Mackie Control Universal Pro — 8 motorized faders + 8 V-Pots
+  (rotary encoders) + bank navigation + transport + scribble-strip
+  display + per-channel solo/mute/select/rec-arm.
+
+  MCU follows the Mackie Control Protocol (MCP) over MIDI: standard
+  note + CC + pitch-bend events for every control + outbound LED
+  feedback + scribble-strip text via SysEx (Mackie mfr ID 0x00 0x00 0x66).
+  No preset/parameter library SysEx (the protocol is realtime
+  bidirectional control).
+
+  scripts/mcu.js carries the bank-navigation logic + scribble-strip
+  text encoding so faders track the MAP2 chain matrix correctly.
+license: AGPL-3.0-only
+source: map2-native
+models:
+  - mcu-pro

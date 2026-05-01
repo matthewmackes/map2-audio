@@ -1,0 +1,106 @@
+schema_version: 1
+identity:
+  manufacturer: Mackie
+  model: mcu-pro
+  alsa_client_pattern: 'Mackie Control'
+  hardware_id: alsa-seq:Mackie Control:0
+
+scripts:
+  - scripts/mcu.js
+
+# Mackie Control Universal Pro follows the Mackie Control Protocol (MCP):
+# - 8 motorized faders → pitch-bend per channel (status 0xE0..0xE7)
+# - 8 V-Pot encoders → CC 0x10..0x17 (relative encoder mode)
+# - V-Pot push (encoder click) → Note 0x20..0x27
+# - Channel select / solo / mute / rec-arm → Notes 0x18..0x3F (banked)
+# - Transport (play/stop/rec/forward/rewind) → Notes 0x5B..0x5F
+# - Scribble-strip display → SysEx (Mackie mfr ID 00 00 66)
+# - LED feedback for every button → outbound Note-on/-off
+#
+# This profile covers the most-used control rows; full MCU has 100+
+# distinct buttons (modifier keys, marker navigation, etc.) which the
+# MCU.* JS handlers can wire incrementally.
+
+controls:
+  # ---------- Faders (pitch-bend per channel; 14-bit) ----------
+  - { status: 0xE0, channel: 1, action: set, target: audio.chain.1.fader, script: MCU.fader, description: 'Fader 1 (CH 1) → chain 1 fader.' }
+  - { status: 0xE1, channel: 2, action: set, target: audio.chain.2.fader, script: MCU.fader, description: 'Fader 2 (CH 2) → chain 2 fader.' }
+  - { status: 0xE2, channel: 3, action: set, target: audio.chain.3.fader, script: MCU.fader, description: 'Fader 3 (CH 3) → chain 3 fader.' }
+  - { status: 0xE3, channel: 4, action: set, target: audio.chain.4.fader, script: MCU.fader, description: 'Fader 4 (CH 4) → chain 4 fader.' }
+  - { status: 0xE4, channel: 5, action: set, target: audio.chain.5.fader, script: MCU.fader, description: 'Fader 5 (CH 5) → chain 5 fader.' }
+  - { status: 0xE5, channel: 6, action: set, target: audio.chain.6.fader, script: MCU.fader, description: 'Fader 6 (CH 6) → chain 6 fader.' }
+  - { status: 0xE6, channel: 7, action: set, target: audio.chain.7.fader, script: MCU.fader, description: 'Fader 7 (CH 7) → chain 7 fader.' }
+  - { status: 0xE7, channel: 8, action: set, target: audio.chain.8.fader, script: MCU.fader, description: 'Fader 8 (CH 8) → chain 8 fader.' }
+
+  # ---------- V-Pot encoders (relative mode CC) ----------
+  - { status: 0xB0, midino: 0x10, channel: 1, action: increment, script: MCU.vpot, description: 'V-Pot 1 → encoder for current selected param on chain 1.' }
+  - { status: 0xB0, midino: 0x11, channel: 1, action: increment, script: MCU.vpot, description: 'V-Pot 2 → encoder for current selected param on chain 2.' }
+  - { status: 0xB0, midino: 0x12, channel: 1, action: increment, script: MCU.vpot, description: 'V-Pot 3 → encoder for current selected param on chain 3.' }
+  - { status: 0xB0, midino: 0x13, channel: 1, action: increment, script: MCU.vpot, description: 'V-Pot 4 → encoder for current selected param on chain 4.' }
+  - { status: 0xB0, midino: 0x14, channel: 1, action: increment, script: MCU.vpot, description: 'V-Pot 5 → encoder for current selected param on chain 5.' }
+  - { status: 0xB0, midino: 0x15, channel: 1, action: increment, script: MCU.vpot, description: 'V-Pot 6 → encoder for current selected param on chain 6.' }
+  - { status: 0xB0, midino: 0x16, channel: 1, action: increment, script: MCU.vpot, description: 'V-Pot 7 → encoder for current selected param on chain 7.' }
+  - { status: 0xB0, midino: 0x17, channel: 1, action: increment, script: MCU.vpot, description: 'V-Pot 8 → encoder for current selected param on chain 8.' }
+
+  # ---------- Mute / Solo / Select per channel ----------
+  - { status: 0x90, midino: 0x10, channel: 1, action: toggle, target: audio.chain.1.mute, description: 'MUTE 1 → chain 1 mute.' }
+  - { status: 0x90, midino: 0x11, channel: 1, action: toggle, target: audio.chain.2.mute, description: 'MUTE 2 → chain 2 mute.' }
+  - { status: 0x90, midino: 0x12, channel: 1, action: toggle, target: audio.chain.3.mute, description: 'MUTE 3 → chain 3 mute.' }
+  - { status: 0x90, midino: 0x13, channel: 1, action: toggle, target: audio.chain.4.mute, description: 'MUTE 4 → chain 4 mute.' }
+
+  - { status: 0x90, midino: 0x08, channel: 1, action: toggle, target: audio.chain.1.solo, description: 'SOLO 1 → chain 1 solo.' }
+  - { status: 0x90, midino: 0x09, channel: 1, action: toggle, target: audio.chain.2.solo, description: 'SOLO 2 → chain 2 solo.' }
+  - { status: 0x90, midino: 0x0A, channel: 1, action: toggle, target: audio.chain.3.solo, description: 'SOLO 3 → chain 3 solo.' }
+  - { status: 0x90, midino: 0x0B, channel: 1, action: toggle, target: audio.chain.4.solo, description: 'SOLO 4 → chain 4 solo.' }
+
+  # ---------- Bank navigation ----------
+  - { status: 0x90, midino: 0x2E, channel: 1, action: momentary, script: MCU.bank_left, description: 'BANK LEFT (- 8 channels) → shift fader bank down.' }
+  - { status: 0x90, midino: 0x2F, channel: 1, action: momentary, script: MCU.bank_right, description: 'BANK RIGHT (+ 8 channels) → shift fader bank up.' }
+
+  # ---------- Transport ----------
+  - { status: 0x90, midino: 0x5B, channel: 1, action: momentary, target: audio.transport.rewind, description: 'REWIND.' }
+  - { status: 0x90, midino: 0x5C, channel: 1, action: momentary, target: audio.transport.fast_forward, description: 'FAST FORWARD.' }
+  - { status: 0x90, midino: 0x5D, channel: 1, action: momentary, target: audio.transport.stop, description: 'STOP.' }
+  - { status: 0x90, midino: 0x5E, channel: 1, action: momentary, target: audio.transport.play, description: 'PLAY.' }
+  - { status: 0x90, midino: 0x5F, channel: 1, action: momentary, target: audio.transport.record, description: 'RECORD.' }
+
+  # ---------- Scribble-strip display (SysEx — Mackie mfr ID) ----------
+  - { status: 0xF0, script: MCU.scribble_handler, description: 'Mackie SysEx (mfr ID 00 00 66) — scribble-strip display + LCD writes.' }
+
+# Outbound LED feedback for every per-channel button (mute/solo/select)
+# + transport LEDs. The MCU is bidirectional — without LED echo the
+# panel state diverges from MAP2.
+outputs:
+  - { status: 0x90, midino: 0x10, channel: 1, source: audio.chain.1.mute, description: 'Mute 1 LED echo.' }
+  - { status: 0x90, midino: 0x11, channel: 1, source: audio.chain.2.mute, description: 'Mute 2 LED echo.' }
+  - { status: 0x90, midino: 0x12, channel: 1, source: audio.chain.3.mute, description: 'Mute 3 LED echo.' }
+  - { status: 0x90, midino: 0x13, channel: 1, source: audio.chain.4.mute, description: 'Mute 4 LED echo.' }
+  - { status: 0x90, midino: 0x08, channel: 1, source: audio.chain.1.solo, description: 'Solo 1 LED echo.' }
+  - { status: 0x90, midino: 0x09, channel: 1, source: audio.chain.2.solo, description: 'Solo 2 LED echo.' }
+  - { status: 0x90, midino: 0x0A, channel: 1, source: audio.chain.3.solo, description: 'Solo 3 LED echo.' }
+  - { status: 0x90, midino: 0x0B, channel: 1, source: audio.chain.4.solo, description: 'Solo 4 LED echo.' }
+  # Motorized fader position echo (when MAP2 changes a fader, the
+  # hardware fader moves to match).
+  - { status: 0xE0, channel: 1, source: audio.chain.1.fader, script: MCU.fader_echo, description: 'Motorized fader 1 position echo.' }
+  - { status: 0xE1, channel: 2, source: audio.chain.2.fader, script: MCU.fader_echo, description: 'Motorized fader 2 position echo.' }
+  - { status: 0xE2, channel: 3, source: audio.chain.3.fader, script: MCU.fader_echo, description: 'Motorized fader 3 position echo.' }
+  - { status: 0xE3, channel: 4, source: audio.chain.4.fader, script: MCU.fader_echo, description: 'Motorized fader 4 position echo.' }
+
+settings:
+  - id: mcu_bank_size
+    label: Bank size
+    type: number
+    default: 8
+    min: 1
+    max: 8
+    step: 1
+    description: 'Channels per bank when paging the fader strip (default = MCU hardware = 8).'
+  - id: mcu_scribble_format
+    label: Scribble strip format
+    type: choice
+    default: name+value
+    choices:
+      - name+value
+      - name-only
+      - value-only
+    description: 'What gets shown on the per-channel scribble strip.'
