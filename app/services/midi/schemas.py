@@ -23,6 +23,9 @@ BindingConsumerType = Literal[
     "snapshot",
     "brain_slot",
     "plugin_param",
+    "global_param",        # Plugin params bound at global scope (not chain-scoped).
+                           # Added in T2482-P2.8 part 1 to absorb the 49 chain-less
+                           # legacy MIDIMapping rows (rows where chain_id was NULL).
     "performance_preset",
     "device_pack",
     "transport",
