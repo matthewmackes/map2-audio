@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1411** Python | **1399** TypeScript | **177** C++/H | **145** Docs | **3318** total commits | **3** stars | **0** forks | **0** open issues
+**1411** Python | **1399** TypeScript | **177** C++/H | **145** Docs | **3324** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`38bfd58c`](https://github.com/matthewmackes/map2-audio/commit/38bfd58c300adcd434dafc744eeb3ac8f72a6bf7) | T2482-P1.5 (iter 30): Voodoo Lab GCP + Biamp Tesira devic... | Map2 Audio | 2026-05-01 |
+| [`a695e1fe`](https://github.com/matthewmackes/map2-audio/commit/a695e1fe344a625e6035dac4a6c2325df7a2bc84) | T2482-P1.5 (iter 29): Novation Launch Control + Ableton P... | Map2 Audio | 2026-05-01 |
+| [`89fca79b`](https://github.com/matthewmackes/map2-audio/commit/89fca79bf4c1c4e722a31dd53d72a1a6caf0087a) | T2482-P1.5 (iter 28): Mackie MCU Pro device-pack | Map2 Audio | 2026-05-01 |
+| [`c7b4d666`](https://github.com/matthewmackes/map2-audio/commit/c7b4d666cbc4c2b76707cb4f92e6324aa0530b10) | T2482-P1.5 (iter 27): Rocktron IntelFX device-pack | Map2 Audio | 2026-05-01 |
+| [`3549028a`](https://github.com/matthewmackes/map2-audio/commit/3549028ad072e24334d5b1b179b30ca1d91b9580) | T2482-P1.5 (iter 26): Lexicon MPX-1 device-pack | Map2 Audio | 2026-05-01 |
+| [`29451ef9`](https://github.com/matthewmackes/map2-audio/commit/29451ef9391eee81793d39fa637b33a3e34d0f4b) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-01 |
 | [`6c8144ef`](https://github.com/matthewmackes/map2-audio/commit/6c8144ef57a274009326b8542654073cc53a116d) | T2482 iter 25: Audio Effects Services architecture doc + ... | Map2 Audio | 2026-05-01 |
 | [`33152b20`](https://github.com/matthewmackes/map2-audio/commit/33152b20873f4f2eb56a1065b28b47f8045f64e6) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-01 |
-| [`3b7df311`](https://github.com/matthewmackes/map2-audio/commit/3b7df31136b81e5fe5f02eba9b0cf3dc331ae680) | T2482 iter 24: Sampler Services architecture doc + 5 Merm... | Map2 Audio | 2026-05-01 |
-| [`c4653231`](https://github.com/matthewmackes/map2-audio/commit/c4653231ccc3704d2b335d926e1a4775c4a524df) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-01 |
-| [`38f3047c`](https://github.com/matthewmackes/map2-audio/commit/38f3047cc8185346ca7c6f0a4a996ddf6981eceb) | T2482 iter 23: AVB Services architecture doc + 5 Mermaid ... | Map2 Audio | 2026-05-01 |
-| [`1a18a653`](https://github.com/matthewmackes/map2-audio/commit/1a18a653c658b13d44209b7547dafa05da745f2f) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-01 |
-| [`fd3a70d3`](https://github.com/matthewmackes/map2-audio/commit/fd3a70d3d52bfba3b57e79fd2f0a9c19ce20f43e) | T2482 iter 22: FIRST_CLASS_SERVICES.md template doc | Map2 Audio | 2026-05-01 |
-| [`9da4a539`](https://github.com/matthewmackes/map2-audio/commit/9da4a539632091e47f40643d0697cf4442a13658) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-01 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
