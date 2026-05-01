@@ -148,6 +148,53 @@ std::optional<ScriptException> Map2MappingEngine::loadDescriptor (
     return std::nullopt;
 }
 
+bool Map2MappingEngine::unloadDescriptor (const std::string& controller_key)
+{
+    // T2482-P1.2 Gap F (iter 64) — drop the cached descriptor.
+    // planDispatch() returns matched=false after this, so the host's
+    // pass-through path emits ControllerEvent IPC frames for inbound
+    // events instead of routing through JS callbacks.
+    //
+    // NB: this does NOT clear the JS globals the descriptor's scripts
+    // installed (no namespace teardown). Per-controller QuickJS
+    // namespace isolation (iter 68 / Gap E) is the right surface for
+    // that — until then, hot-swapping a descriptor for the same
+    // controller_key is the operator's responsibility (the prior
+    // controller's globals stay live until the host restarts).
+    auto it = controllers_.find (controller_key);
+    if (it == controllers_.end()) return false;
+    controllers_.erase (it);
+    return true;
+}
+
+std::optional<ScriptException> Map2MappingEngine::reloadDescriptor (
+    const std::string& controller_key,
+    const MappingDescriptorSpec& descriptor)
+{
+    // T2482-P1.2 Gap F (iter 64) — atomic unload + load. If the
+    // re-load fails (script exception), the prior descriptor stays
+    // active so the controller doesn't drop traffic mid-edit.
+    auto saved = controllers_.find (controller_key);
+    LoadedController prior;
+    bool had_prior = false;
+    if (saved != controllers_.end())
+    {
+        prior = saved->second;
+        had_prior = true;
+    }
+
+    if (auto exc = loadDescriptor (controller_key, descriptor))
+    {
+        // loadDescriptor failed mid-evaluation. Restore the prior
+        // descriptor (best-effort — JS-side state may be partially
+        // mutated; iter-68 namespace isolation makes this clean).
+        if (had_prior)
+            controllers_[controller_key] = prior;
+        return exc;
+    }
+    return std::nullopt;
+}
+
 Map2MappingEngine::DispatchPlan Map2MappingEngine::planDispatch (
     const std::string& controller_key,
     std::uint8_t status,

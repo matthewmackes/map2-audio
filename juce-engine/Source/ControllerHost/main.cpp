@@ -955,6 +955,116 @@ int run_main_loop (const std::string& socket_path)
                     controller_key));
                 continue;
             }
+
+            // T2482-P1.2 Gap A (iter 64) — operator-facing lifecycle envelopes.
+            //
+            // mapping_deactivate: drop the active descriptor for the
+            // named controller_key. Inbound MIDI/HID then flows
+            // through the host's default pass-through (controller_event
+            // IPC frames) instead of routing via JS callbacks.
+            if (frame.find ("\"type\":\"mapping_deactivate\"") != std::string::npos)
+            {
+                const std::string msg_id = extract_string_field (frame, "msg_id");
+                const std::string controller_key = extract_string_field (frame, "controller_key");
+                if (controller_key.empty())
+                {
+                    send_frame (client_fd, build_log_event (
+                        msg_id,
+                        "error",
+                        "mapping_deactivate missing controller_key"));
+                    continue;
+                }
+                const bool removed = mapping_engine.unloadDescriptor (controller_key);
+                send_frame (client_fd, build_log_event (
+                    msg_id,
+                    removed ? "info" : "warning",
+                    removed
+                        ? std::string ("mapping deactivated")
+                        : std::string ("mapping_deactivate: controller_key not loaded"),
+                    controller_key));
+                continue;
+            }
+
+            // mapping_reload: atomic unload + load. Reuses the
+            // mapping_activate parser since the wire form is identical
+            // minus the type discriminator.
+            if (frame.find ("\"type\":\"mapping_reload\"") != std::string::npos)
+            {
+                const std::string msg_id = extract_string_field (frame, "msg_id");
+                map2::controller_host::MappingDescriptorSpec descriptor;
+                std::string controller_key;
+                if (! parse_mapping_activate_frame (frame, descriptor, controller_key))
+                {
+                    send_frame (client_fd, build_log_event (
+                        msg_id,
+                        "error",
+                        "mapping_reload parse failed"));
+                    continue;
+                }
+
+                // Same script-resolution dance as mapping_activate.
+                std::vector<std::string> resolved_scripts;
+                const int declared_scripts = static_cast<int> (descriptor.scripts.size());
+                const auto cache_it = controller_script_cache.find (controller_key);
+                static const std::unordered_map<std::string, std::string> kEmptyCache;
+                const auto& cache_for_controller = cache_it != controller_script_cache.end()
+                    ? cache_it->second
+                    : kEmptyCache;
+
+                int missing_scripts = 0;
+                for (const auto& script_ref : descriptor.scripts)
+                {
+                    if (auto script_body = resolve_script_body (script_ref, descriptor.pack_id, cache_for_controller);
+                        script_body.has_value())
+                    {
+                        resolved_scripts.push_back (*script_body);
+                        continue;
+                    }
+                    if (script_ref.find ("function") != std::string::npos
+                        || script_ref.find ("=>") != std::string::npos
+                        || script_ref.find ('\n') != std::string::npos
+                        || script_ref.find ('{') != std::string::npos
+                        || script_ref.find (';') != std::string::npos
+                        || script_ref.find ("var ") != std::string::npos
+                        || script_ref.find ("const ") != std::string::npos
+                        || script_ref.find ("let ") != std::string::npos)
+                    {
+                        resolved_scripts.push_back (script_ref);
+                        continue;
+                    }
+                    ++missing_scripts;
+                }
+                descriptor.scripts = std::move (resolved_scripts);
+                if (missing_scripts == declared_scripts
+                    && missing_scripts > 0
+                    && descriptor_uses_script_callbacks (descriptor))
+                {
+                    map2::controller_host::ScriptException exc;
+                    exc.file = "<mapping_reload>";
+                    exc.line = 0;
+                    exc.column = 0;
+                    exc.message = "no descriptor scripts resolved for script-bound controls";
+                    send_frame (client_fd, build_script_error (msg_id, controller_key, exc));
+                    continue;
+                }
+
+                if (auto exc = mapping_engine.reloadDescriptor (controller_key, descriptor); exc.has_value())
+                {
+                    send_frame (client_fd, build_script_error (msg_id, controller_key, *exc));
+                    continue;
+                }
+
+                std::ostringstream message;
+                message << "mapping reloaded: controls=" << descriptor.controls.size()
+                        << " scripts=" << descriptor.scripts.size();
+                if (missing_scripts > 0) message << " missing_scripts=" << missing_scripts;
+                send_frame (client_fd, build_log_event (
+                    msg_id,
+                    missing_scripts > 0 ? "warning" : "info",
+                    message.str(),
+                    controller_key));
+                continue;
+            }
         }
 
     disconnect:

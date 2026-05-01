@@ -101,6 +101,22 @@ public:
         const std::string& controller_key,
         const MappingDescriptorSpec& descriptor);
 
+    // T2482-P1.2 Gap F (iter 64) — drop the descriptor for a controller_key.
+    // Returns true iff a descriptor was removed (false when the
+    // controller_key wasn't loaded). After unload, planDispatch()
+    // returns matched=false for that controller and the host's
+    // pass-through path emits ControllerEvent IPC frames for
+    // inbound MIDI/HID instead of routing through JS.
+    bool unloadDescriptor (const std::string& controller_key);
+
+    // Hot-reload the descriptor — atomic unload + load. The internal
+    // map is updated only on a successful re-load (parser/script
+    // exception during reload leaves the prior descriptor active so
+    // the controller doesn't drop traffic mid-edit).
+    std::optional<ScriptException> reloadDescriptor (
+        const std::string& controller_key,
+        const MappingDescriptorSpec& descriptor);
+
     // Look up the JS callback for an incoming MIDI message. The
     // mapping descriptor's controls table maps (status, midino,
     // channel) tuples to script function names; this method finds
