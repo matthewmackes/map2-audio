@@ -246,17 +246,10 @@ async def start_cluster_midi_services(
     from app.services.midi_hub.cluster_clock import get_midi_cluster_clock
     from app.services.midi_hub.cluster_router import get_midi_cluster_router
     from app.services.midi_hub.hub import get_midi_hub
-    from app.services.midi_hub.inbound_traffic_bridge import (
-        install_inbound_midi_traffic_bridge,
-    )
     from app.services.midi_hub.midi_discovery import get_midi_discovery_service
     from app.services.midi_hub.rtp_transport import get_rtp_transport
 
     midi_hub = get_midi_hub()
-    # T2480-3: bridge inbound MIDI to the midi:traffic WS topic so the Brain
-    # "Connect a new keyboard" setup task can show live note events even
-    # before any routing rule exists for the device.
-    install_inbound_midi_traffic_bridge()
     midi_discovery = get_midi_discovery_service()
     midi_discovery.broadcast_local_node(node_id, hostname, api_port)
 
@@ -661,6 +654,19 @@ async def lifespan(app):
             await safe_start_service(logger, "Failover monitor", failover.start)
         else:
             logger.info("Cluster services disabled (single-node ALL-IN-ONE mode)")
+
+        # T2480-3 + 2026-05-01 fix: install the inbound MIDI traffic bridge
+        # unconditionally (originally placed inside start_cluster_midi_services
+        # but skipped when midi.cluster.enabled=false — which is the default
+        # in single-node ALL-IN-ONE mode and meant the Brain Setup task's
+        # Test phase visualizer never received live events).
+        try:
+            from app.services.midi_hub.inbound_traffic_bridge import (
+                install_inbound_midi_traffic_bridge,
+            )
+            install_inbound_midi_traffic_bridge()
+        except Exception as e:
+            logger.warning(f"Failed to install inbound MIDI traffic bridge: {e}")
 
         cluster_midi_services = await start_cluster_midi_services(
             logger,
