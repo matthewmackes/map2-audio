@@ -1,6 +1,7 @@
 import { useCallback } from 'react'
 import { useSearchParams } from 'react-router-dom'
 import {
+  Catalog,
   Categories,
   ConnectionSignal,
   DataStructured,
@@ -13,6 +14,7 @@ import { PerformanceView } from './PerformanceView'
 import { ConsoleView } from './ConsoleView'
 import { StepView } from './StepView'
 import { SplitView } from './SplitView'
+import { SetupView } from './SetupView'
 import { MAP2_SPRING, tabContentVariants } from '../../styles/motionPrimitives'
 import {
   useReducedMotionSafeTransition,
@@ -25,6 +27,7 @@ const TAB_META: Record<BrainViewId, { label: string; sub: string; Icon: typeof D
   console: { label: 'Console', sub: 'Mixer · Faders · Routing', Icon: ConnectionSignal },
   step: { label: 'Step', sub: 'Sequencer · Pattern · Song', Icon: Flow },
   split: { label: 'Split', sub: 'Keyboard · Pads · Routing', Icon: Categories },
+  setup: { label: 'Setup', sub: 'Onboarding · Bind · Activate', Icon: Catalog },
 }
 
 function parseSection(raw: string | null): BrainViewId | null {
@@ -120,6 +123,7 @@ export function BrainOverviewShell(props: BrainOverviewSharedProps) {
             {activeView === 'console' ? <ConsoleView {...props} /> : null}
             {activeView === 'step' ? <StepView {...props} /> : null}
             {activeView === 'split' ? <SplitView {...props} /> : null}
+            {activeView === 'setup' ? <SetupView /> : null}
           </motion.div>
         </AnimatePresence>
       </div>

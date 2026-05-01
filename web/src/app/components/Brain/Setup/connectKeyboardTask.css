@@ -1,0 +1,55 @@
+.connect-keyboard-task {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cds-spacing-06);
+  padding: var(--cds-spacing-07);
+}
+
+.connect-keyboard-task__header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cds-spacing-04);
+  align-items: flex-start;
+}
+
+.connect-keyboard-task__title-block {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cds-spacing-02);
+}
+
+.connect-keyboard-task__eyebrow {
+  font-size: var(--cds-label-01-font-size, 0.75rem);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--cds-text-secondary);
+}
+
+.connect-keyboard-task__title {
+  margin: 0;
+  font-size: var(--cds-productive-heading-04-font-size, 1.75rem);
+  font-weight: var(--cds-productive-heading-04-font-weight, 400);
+  line-height: var(--cds-productive-heading-04-line-height, 1.2);
+  color: var(--cds-text-primary);
+}
+
+.connect-keyboard-task__placeholder {
+  padding: var(--cds-spacing-07);
+  background: var(--cds-layer);
+  border: 1px solid var(--cds-border-subtle);
+}
+
+.connect-keyboard-task__placeholder-title {
+  font-size: var(--cds-productive-heading-02-font-size, 1rem);
+  font-weight: var(--cds-productive-heading-02-font-weight, 600);
+  color: var(--cds-text-primary);
+  margin-bottom: var(--cds-spacing-04);
+}
+
+.connect-keyboard-task__placeholder-body {
+  margin: 0;
+  font-size: var(--cds-body-01-font-size, 0.875rem);
+  line-height: var(--cds-body-01-line-height, 1.43);
+  color: var(--cds-text-secondary);
+  max-width: 60ch;
+}

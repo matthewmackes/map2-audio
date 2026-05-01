@@ -1,0 +1,103 @@
+.brain-setup {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cds-spacing-07);
+  padding: var(--cds-spacing-07);
+}
+
+.brain-setup__header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cds-spacing-03);
+}
+
+.brain-setup__eyebrow {
+  font-size: var(--cds-label-01-font-size, 0.75rem);
+  letter-spacing: 0.16em;
+  text-transform: uppercase;
+  color: var(--cds-text-secondary);
+}
+
+.brain-setup__title {
+  margin: 0;
+  font-size: var(--cds-productive-heading-04-font-size, 1.75rem);
+  font-weight: var(--cds-productive-heading-04-font-weight, 400);
+  line-height: var(--cds-productive-heading-04-line-height, 1.2);
+  color: var(--cds-text-primary);
+}
+
+.brain-setup__subtitle {
+  margin: 0;
+  font-size: var(--cds-body-02-font-size, 1rem);
+  line-height: var(--cds-body-02-line-height, 1.5);
+  color: var(--cds-text-secondary);
+  max-width: 60ch;
+}
+
+.brain-setup__catalog {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(20rem, 1fr));
+  gap: var(--cds-spacing-05);
+}
+
+.brain-setup__tile-wrap {
+  display: block;
+  min-height: 100%;
+}
+
+.brain-setup__tile {
+  display: block;
+  height: 100%;
+  padding: var(--cds-spacing-06);
+  background: var(--cds-layer);
+  border: 1px solid var(--cds-border-subtle);
+}
+
+.brain-setup__tile--available {
+  cursor: pointer;
+}
+
+.brain-setup__tile--ghost {
+  opacity: 0.55;
+}
+
+.brain-setup__tile-body {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cds-spacing-04);
+}
+
+.brain-setup__tile-icon {
+  display: inline-flex;
+  width: 2.5rem;
+  height: 2.5rem;
+  align-items: center;
+  justify-content: center;
+  color: var(--cds-icon-primary);
+  background: var(--cds-layer-accent);
+}
+
+.brain-setup__tile-text {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cds-spacing-03);
+}
+
+.brain-setup__tile-title {
+  font-size: var(--cds-productive-heading-02-font-size, 1rem);
+  font-weight: var(--cds-productive-heading-02-font-weight, 600);
+  color: var(--cds-text-primary);
+}
+
+.brain-setup__tile-description {
+  font-size: var(--cds-body-01-font-size, 0.875rem);
+  line-height: var(--cds-body-01-line-height, 1.43);
+  color: var(--cds-text-secondary);
+}
+
+.brain-setup__tile-status {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--cds-spacing-03);
+  margin-top: var(--cds-spacing-02);
+}

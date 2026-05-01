@@ -34174,3 +34174,59 @@ Last updated: 2026-04-29 - Claude (T2479 closed)
   - **Verification**: typecheck PASS; home harness (2/2 scenarios pass at 0% diff against own baselines); workspace harness (21 routes succeed — 7 baseline-pass at <0.05% + 14 missing-baseline soft-warn — 10 fail with pre-existing route errors; ZERO visual-regression failures against the 7 deterministic baselines).
   - **Pre-existing-issue follow-ups** (filed as separate concerns): non-determinism on 12 workspace routes (timestamp/mock leakage); error-boundary failures on 10 routes; complete the route list with MidiHubShell + ApiObservatory + standalone NodeGraph routes.
   - One commit, one push. Q5=A "ship as forcing function for E1/E3" honored — E1 and E3 will trip baseline regression on the 9 working baselines if they change layout.
+
+---
+
+## Epic: Brain Setup Tasks subsystem (opened 2026-04-30)
+
+Epic overview: Add a new "Setup" tab inside Brain (5th overview tab in `BrainOverviewShell`, alongside Performance / Console / Step / Split). The tab hosts a Carbon `Tile` catalog of operator setup tasks. First live task: "Connect a new keyboard" — guides the operator through device detection, liveness verification, and creation of a default Brain snapshot bound to that keyboard, all via Carbon-styled phase tiles (NOT a wizard stepper). Three additional task tiles ship as disabled "Coming soon" placeholders tied to roadmap items: "Map a MIDI controller" (T2459), "Calibrate Maschine MK1" (T700), "Discover AVDECC devices" (la_avdecc).
+
+**Reframe note**: 20-question clarification round originally produced a "Wizards tab" + "keyboard wizard" design. During the worklist-write step, `docs/CLAUDE.md` "Page Design Standards" surfaced the standing rule: "No coaching/wizard/tutorial UI — pages must be clean operator surfaces." Per Q (clarification round 2): the design was reframed as an operator setup-task surface — same 5 phases (Welcome / Detect / Test / Snapshot / Done), same backend wiring, same Definition-of-Done criteria, but presented as Carbon `Tile` cards with a phase list rather than a `ProgressIndicator` stepper. Avoids the "no wizards" rule while delivering the same operator value: a deterministic path from "I plugged in a keyboard" to "I can play sound through Brain."
+
+**20 locked decisions** (clarification round 1):
+1. Tab placement: 5th tab in `BrainOverviewShell`
+2. Catalog UI: Carbon `Tile` grid; future tasks as disabled "Coming soon" tiles
+3. Phase UI: Carbon `Tile`-based phase list (NOT a Framer-Motion stepper — reframe per round 2)
+4. Phase count/shape: 5 phases — Welcome / Detect / Test / Snapshot / Done
+5. Detect picker: auto-select if 1 device, else `RadioButtonGroup`; Rescan always available
+6. Detect empty state: `InlineNotification` warning + 3-item checklist + manual Rescan + MIDI Hub link
+7. Test UI: SVG piano visualizer + scrolling event log (new reusable `BrainKeyboardVisualizer`)
+8. Live MIDI feed: Build new WS endpoint `/api/ws/midi/devices/{id}/events` fed from `get_midi_traffic_monitor()` (Decision A from prereq verification — confirmed no existing low-latency note-event WS)
+9. Default snapshot content: Showcase — single instrument slot + reverb + EQ + limiter (Decision B: scan Brain library for SoundFont/SFZ/sample, auto-pick first available; if library empty, Done phase surfaces "Add a SoundFont to hear sound" honestly)
+10. Snapshot naming: per-keyboard, named after device + date (e.g., "Brain — Edirol PCR-300 (set up 2026-04-30)"); renamable; new run = new snapshot
+11. Activation timing: auto-activate on creation; no replacement warning even if another snapshot is live
+12. Phase 4 UX: auto-create on entry with live progress card ("Creating ✓ · Wiring ✓ · Activating ✓"); single screen
+13. Failure handling: stop on failure, inline error, two buttons "Retry" + "Open in Snapshot Editor"; no auto-cleanup of partials
+14. Done screen: rich — confirmation + summary + Open Perform / Set up another + 3 next-step tiles
+15. Back navigation: free across phases 1–3; disabled on phases 4–5 (post-activation = point of no return)
+16. Cancel/exit: persistent Cancel button in footer + confirm modal on navigation away past phase 1
+17. Catalog ghosts: 3 roadmap-tied — "Map a MIDI controller" (T2459) / "Calibrate Maschine MK1" (T700) / "Discover AVDECC devices"
+18. Device source: two-source merged list with provenance — registry (onboarded surfaces, top, tagged with friendly name) + raw MIDI ports (bottom, tagged "New"); inline minimal "name this device" prompt for new ports; merge keyed on USB VID:PID via existing `_normalize_vid_pid()` helper
+19. Write-back: first-class `bindings` field added to `MidiDeviceState` controller registry record; wizard writes binding entry on activation, removes on deactivation; extends existing device-management patterns (DeviceContextBanner / DeviceContextDialog / `useDeviceNodeContext`) rather than inventing new abstractions
+20. Worklist: epic with ~6 atomic subtasks (this entry + T2480-1 through T2480-6)
+
+**Verified prerequisites** (5/5 mapped before any code):
+- ✅ Controller registry: canonical endpoint is `/api/midi/hub/devices` (`app/routes/midi_hub.py:503`); data model is `MidiDeviceState` (`app/services/midi_hub/device_registry.py:82`); needs new `bindings` field for decision 19.
+- ⚠️ MIDI port ID matching: registry carries `vendor_id`/`product_id` + `port_names`; `midiApiV2.getDevices()` returns flat ALSA port name strings. USB VID:PID is the stable join key; `_normalize_vid_pid()` helper at `device_registry.py:40` already handles case normalization. Port name fallback for devices missing VID:PID metadata.
+- ❌ Live MIDI WS: no existing low-latency note-event WS. All current `/ws/` paths push aggregated state. Decision A (build the endpoint) lands in T2480-3.
+- ✅ Default sound source: Brain library scanner exists (`performance_brain_service.py:326-424`), surfaces SoundFonts/SFZ/kits/samples from disk. Slot model accepts these via `asset_type` + `asset_path`. Wizard auto-picks first scan result; if library is empty, honest empty-state copy on Done phase.
+- ✅ State Authority schema: `SNAPSHOT_GRAPH_VERSION = "2026.04"` supports the 1-channel + 1-chain + N-plugins shape we need. MIDI device binding lives **out-of-band** in the controller registry (per decision 19), not in the snapshot graph — the `io_bindings` schema field is audio-only.
+
+ID: T2480
+Status: [ ] Todo
+Title: Brain Setup Tasks subsystem — "Setup" tab + "Connect a new keyboard" task end-to-end
+Description:
+- Goal / acceptance criteria: Add a 5th overview tab to `BrainOverviewShell` labeled "Setup". Tab renders a Carbon `Tile` catalog with one live task ("Connect a new keyboard") + 3 disabled ghost tiles ("Map a MIDI controller", "Calibrate Maschine MK1", "Discover AVDECC devices"). Clicking the live tile opens a 5-phase task flow: Welcome → Detect (two-source merged device list with VID:PID-keyed provenance) → Test (SVG piano + scrolling event log fed by new low-latency MIDI WS) → Snapshot (auto-create showcase snapshot with library-scanned default sound + reverb/EQ/limiter chain, auto-activate, write `bindings` entry to controller registry) → Done (summary + Open Perform / Set up another / 3 next-step tiles). 19 of 20 clarification decisions implemented as written; decision 3 (stepper UI) reframed to Carbon `Tile`-based phase list per `docs/CLAUDE.md` "no wizards" rule. Definition of Done: 6 subtasks T2480-1..6 all `[✓] Done`; typecheck + Jest + atomic build clean; `:3000` HTTP 200; the live tile produces a functional "plug keyboard → press key → hear sound" loop end-to-end.
+- Why it matters: Today, a new operator who plugs in a MIDI keyboard has to manually traverse MIDI Hub (to confirm detection) + Hardware Store (to onboard the surface) + Snapshot Editor (to author a chain) + Brain Library (to load a sound asset into a slot) + activation. Five separate surfaces, no guided path. The Setup tab collapses this to one task tile and one 5-phase flow. The reframe from "wizard" to "setup task" honors the standing operator-UX discipline (no coaching banners, no tutorial chrome on operator pages) — wizards-as-coaching is what's banned; deterministic operator setup tasks inside a dedicated Setup surface are not.
+- Dependencies: None (foundational for future setup tasks). Coordinates with T2459 controller-host (decisions 18, 19 extend the Hardware Store / device registry surface that T2459-H is consolidating).
+- Estimated effort: Multi-day; 6 atomic subtasks, each 15–60 min commit/dual-push/rebuild/verify per project rule §0.7.
+- Required outputs: 6 commits to master (one per subtask, all dual-pushed), new files under `web/src/app/components/Brain/Setup/`, new `BrainKeyboardVisualizer` reusable component under `web/src/app/components/BrainKeyboardVisualizer/`, new WS endpoint in `app/routes/midi_hub.py`, `bindings` field added to `MidiDeviceState`, integration with MIDI Mapping device cards.
+- Subtask plan:
+  - **T2480-1**: Setup tab framework + task catalog (1 live tile + 3 ghosts) inside `BrainOverviewShell`
+  - **T2480-2**: Keyboard setup task phases 1–3 (Welcome / Detect / Test) — Carbon `Tile`-based phase list, two-source merged device list, empty-state checklist
+  - **T2480-3**: `BrainKeyboardVisualizer` SVG piano + event log + new `/api/ws/midi/devices/{id}/events` WS endpoint
+  - **T2480-4**: Snapshot create + activate (phases 4–5) — library scan, auto-pick asset, snapshot create via `POST /api/snapshots`, auto-activate, progress card, failure UX (Retry + Open in Snapshot Editor), rich Done screen
+  - **T2480-5**: Controller registry `bindings` schema extension on `MidiDeviceState` + write-on-activate / remove-on-deactivate
+  - **T2480-6**: Bidirectional integration with MIDI Mapping (StatusChip badge on device cards, "View in Brain" deep-link, "Used by Brain snapshot: …" annotation in Hardware Store)
+Assigned to: Claude Opus 4.7
+Last updated: 2026-04-30 EDT - epic opened from 20-question + reframe clarification rounds; prerequisites verified, decisions locked, awaiting subtask execution.

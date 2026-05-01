@@ -12,9 +12,9 @@ import type {
   BrainInputsState,
 } from '@/map2/api'
 
-export type BrainViewId = 'performance' | 'console' | 'step' | 'split'
+export type BrainViewId = 'performance' | 'console' | 'step' | 'split' | 'setup'
 
-export const BRAIN_VIEW_IDS: readonly BrainViewId[] = ['performance', 'console', 'step', 'split'] as const
+export const BRAIN_VIEW_IDS: readonly BrainViewId[] = ['performance', 'console', 'step', 'split', 'setup'] as const
 
 export interface BrainOverviewSharedProps {
   state: BrainState

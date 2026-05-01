@@ -38,6 +38,7 @@ type SectionId =
   | 'console'
   | 'step'
   | 'split'
+  | 'setup'
   | 'perform'
   | 'layers'
   | 'sequence'
@@ -53,6 +54,7 @@ const SECTION_IDS: readonly SectionId[] = [
   'console',
   'step',
   'split',
+  'setup',
   'perform',
   'layers',
   'sequence',
@@ -65,7 +67,7 @@ const SECTION_IDS: readonly SectionId[] = [
 ] as const
 
 /** Subset of section ids that share the Brain Overview shell. */
-const OVERVIEW_SECTIONS: readonly SectionId[] = ['performance', 'console', 'step', 'split'] as const
+const OVERVIEW_SECTIONS: readonly SectionId[] = ['performance', 'console', 'step', 'split', 'setup'] as const
 
 const PRACTICE_STYLES = [
   { id: 'rock_8', label: 'Rock 8', feel: 'Straight', signature: '4/4' },
@@ -390,7 +392,9 @@ export function PerformanceBrainPage() {
       nextSearchParams.set('section', sectionId)
       setSearchParams(nextSearchParams)
     }
-    if (activeSection !== sectionId) {
+    // 'setup' is a UI-only tab (operator onboarding tasks) — do not persist it
+    // as Brain runtime state; the backend's active_section schema is Brain-only.
+    if (activeSection !== sectionId && sectionId !== 'setup') {
       stateMutation.mutate({ active_section: sectionId })
     }
   }, [activeSection, searchParams, setSearchParams, stateMutation])
