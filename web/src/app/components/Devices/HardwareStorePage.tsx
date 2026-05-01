@@ -39,7 +39,9 @@ import type {
   DeviceProfileSummary,
   PackSourceRow,
 } from '../../../map2/clients/devices'
+import type * as Api from '../../../map2/api'
 import { LEGACY_DEVICE_MANIFEST } from '../../data/legacyDeviceManifest'
+import { useDeviceBindingsByProfileKey } from './hooks/useDeviceBindingsByProfileKey'
 
 import './HardwareStorePage.css'
 
@@ -70,14 +72,33 @@ function buildProfileRows(args: {
   knownLastBound: Record<string, number | null>
   diagByPack: Record<string, { count: number; worst: 'info' | 'warning' | 'error' }>
   brainAssetCounts: Record<string, number>
+  bindingsByProfileKey?: Map<string, Api.MidiHubDeviceBinding[]>
 }): ProfileRow[] {
   const {
     profileKeys, profileIndex, packIndex, connectedKeys, pinnedKeys,
     recentlyDisconnectedKeys, knownLastSeen, knownLastBound, diagByPack,
-    brainAssetCounts,
+    brainAssetCounts, bindingsByProfileKey,
   } = args
+
+  const toBrainSnapshotBindings = (
+    rawBindings: Api.MidiHubDeviceBinding[] | undefined,
+  ): Array<{ snapshot_id: string; snapshot_name: string; source: string }> | undefined => {
+    if (!rawBindings || rawBindings.length === 0) return undefined
+    const out: Array<{ snapshot_id: string; snapshot_name: string; source: string }> = []
+    for (const b of rawBindings) {
+      if (b.consumer_type !== 'snapshot') continue
+      out.push({
+        snapshot_id: b.consumer_id,
+        snapshot_name: b.consumer_name,
+        source: b.source,
+      })
+    }
+    return out.length > 0 ? out : undefined
+  }
+
   return profileKeys
     .map<ProfileRow>((key) => {
+      const brainSnapshotBindings = toBrainSnapshotBindings(bindingsByProfileKey?.get(key))
       const p = profileIndex[key]
       if (!p) {
         const [packId, rest] = key.split('/')
@@ -99,6 +120,7 @@ function buildProfileRows(args: {
           diagnosticCount: dx?.count,
           diagnosticWorstSeverity: dx?.worst,
           brainAssetCount: brainAssetCounts[key],
+          brainSnapshotBindings,
         }
       }
       const dx = diagByPack[p.pack_id]
@@ -119,6 +141,7 @@ function buildProfileRows(args: {
         diagnosticWorstSeverity: dx?.worst,
         capabilities: p?.capabilities,
         brainAssetCount: brainAssetCounts[key],
+        brainSnapshotBindings,
       }
     })
     .sort((a, b) => a.profileKey.localeCompare(b.profileKey))
@@ -278,6 +301,11 @@ export function HardwareStorePage(): React.JSX.Element {
     ]))
   }, [connectedKeys, recentlyDisconnectedKeys, knownKeys, profileIndex])
   const brainAssetCounts = useBrainAssetsByDevice(allProfileKeysForBrainLookup)
+  // T2480 Follow-up C (2026-05-01): join MIDI Hub registry bindings to
+  // each profile_key so DeviceCards show "Driving <snapshot name>" tags
+  // for any device the Brain Setup task has bound. Best-effort join (see
+  // hook docs); false-negatives are acceptable, false-positives aren't.
+  const { bindingsByProfileKey } = useDeviceBindingsByProfileKey(allProfileKeysForBrainLookup)
 
   // Section partitioning. Connected first, then recently-disconnected,
   // then known-but-not-recent (pinned or 24h-window).
@@ -286,6 +314,7 @@ export function HardwareStorePage(): React.JSX.Element {
     profileIndex, packIndex,
     connectedKeys, pinnedKeys, recentlyDisconnectedKeys,
     knownLastSeen, knownLastBound, diagByPack, brainAssetCounts,
+    bindingsByProfileKey,
   })
 
   const recentRows = buildProfileRows({
@@ -293,6 +322,7 @@ export function HardwareStorePage(): React.JSX.Element {
     profileIndex, packIndex,
     connectedKeys, pinnedKeys, recentlyDisconnectedKeys,
     knownLastSeen, knownLastBound, diagByPack, brainAssetCounts,
+    bindingsByProfileKey,
   })
 
   const knownNotRecentRows = buildProfileRows({
@@ -302,6 +332,7 @@ export function HardwareStorePage(): React.JSX.Element {
     profileIndex, packIndex,
     connectedKeys, pinnedKeys, recentlyDisconnectedKeys,
     knownLastSeen, knownLastBound, diagByPack, brainAssetCounts,
+    bindingsByProfileKey,
   })
 
   // Catalogue: all known profiles minus those already shown in
@@ -319,10 +350,12 @@ export function HardwareStorePage(): React.JSX.Element {
       profileIndex, packIndex,
       connectedKeys, pinnedKeys, recentlyDisconnectedKeys,
       knownLastSeen, knownLastBound, diagByPack, brainAssetCounts,
+      bindingsByProfileKey,
     })
   }, [
     connectedKeys, recentlyDisconnectedKeys, knownKeys, profileIndex, packIndex,
     pinnedKeys, knownLastSeen, knownLastBound, diagByPack, brainAssetCounts,
+    bindingsByProfileKey,
   ])
 
   // T2459-G11b — synthesize legacy hand-coded device rows so MPX-1,
