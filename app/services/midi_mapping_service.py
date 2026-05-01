@@ -1,6 +1,24 @@
 """
 MIDI Mapping Service with Database Persistence
 Manages MIDI CC to parameter mappings with database storage.
+
+DEPRECATED — T2482-P2.8 (2026-05-01)
+=====================================
+This service writes/reads the legacy `midi_mappings` SQLite table.
+That table's data has been MIGRATED to the canonical MidiBinding
+table under the `plugin_param` and `global_param` consumer types
+(see app/services/midi/projections/{plugin_param,global_param}.py).
+
+This service is preserved for the duration of P2.8 because routes
+and `command_history.py` snapshot serialization still reference it.
+The service IS slated for retirement under T2482-P3.x (frontend
+canonical surface work) — every consumer should rewire to read/write
+through MidiBindingAuthority via the projections, then this service
++ the `midi_mappings` table both get deleted in a follow-up commit.
+
+DO NOT add new functionality here. New plugin-param binding work
+goes through `app.services.midi.projections.plugin_param` (snapshot-
+scoped) or `app.services.midi.projections.global_param` (chain-less).
 """
 
 import logging
@@ -12,7 +30,14 @@ logger = logging.getLogger(__name__)
 
 
 class MIDIMappingService:
-    """Service for managing MIDI mappings with database persistence."""
+    """Service for managing MIDI mappings with database persistence.
+
+    .. deprecated:: T2482-P2.8 (2026-05-01)
+        Writes/reads the legacy `midi_mappings` table. Use
+        `app.services.midi.projections.plugin_param` (snapshot-scoped)
+        or `app.services.midi.projections.global_param` (chain-less)
+        for new code. See module docstring for the retirement plan.
+    """
 
     def __init__(self, session: Optional[AsyncSession] = None):
         """Initialize MIDI mapping service with optional database session."""

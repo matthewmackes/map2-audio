@@ -54,6 +54,35 @@ async def count_bindings() -> int:
         return await authority.count()
 
 
+@router.get("/legacy-table-rowcounts")
+async def legacy_table_rowcounts() -> dict[str, int]:
+    """T2482-P2.8 readiness gate: report the row counts of every
+    legacy MIDI table that is slated for deletion. P2.8 part 2
+    requires every count here to be EITHER zero OR fully covered
+    by canonical bindings via `metadata.legacy_table` provenance
+    matching.
+
+    Used by future operator tooling + the P2.8 part 2 verification
+    script to confirm it's safe to DROP the listed tables.
+    """
+    from sqlalchemy import text
+
+    async with get_session(read_only=True) as session:
+        result: dict[str, int] = {}
+        for table_name in ("midi_mappings", "snapshot_midi_maps"):
+            try:
+                row = await session.execute(
+                    text(f"SELECT COUNT(*) FROM {table_name}")
+                )
+                count = row.scalar()
+                result[table_name] = int(count or 0)
+            except Exception:
+                # Table might already be dropped — report -1 so the
+                # caller can distinguish "not present" from "empty".
+                result[table_name] = -1
+        return result
+
+
 @router.get("/bindings", response_model=list[MidiBindingRead])
 async def list_bindings(
     consumer_type: Optional[BindingConsumerType] = Query(default=None),

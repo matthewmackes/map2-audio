@@ -69,3 +69,9 @@ def test_disable_endpoint_present():
 def test_enable_endpoint_present():
     rs = _route_set()
     assert ("POST", "/api/midi/bindings/{binding_id}/enable") in rs
+
+
+def test_legacy_table_rowcounts_endpoint_present():
+    """T2482-P2.8 readiness gate endpoint."""
+    rs = _route_set()
+    assert ("GET", "/api/midi/legacy-table-rowcounts") in rs
