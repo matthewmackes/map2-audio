@@ -4,6 +4,7 @@ import asyncio
 import gc
 import json
 import logging
+import os
 import time
 import uuid
 import zlib
@@ -12,6 +13,23 @@ from typing import Any, Dict, List, Optional, Tuple
 
 from app.services.event_publisher import RealtimeMessagePublisher, event_publisher
 from app.utils.rtmidi_utils import dispose_rtmidi_client
+
+
+# T2482-P1.1 Gap D.3 (iter 48) — env-var-gated controller-host routing.
+#
+# Iter 48 lands the enumeration-level flip: when MAP2_USE_MIDI_HOST=1
+# and the daemon is reachable, get_midi_ports() prefers
+# MidiHostClient.list_ports() over rtmidi enumeration. The connect
+# loop and per-message send still use rtmidi during iter 48 because
+# they require deeper refactors (the inbound poll → subscribe API
+# rewrite + outbound send → host-resolved port binding) that go
+# beyond an iter scope.
+#
+# Both IntelFX and MPX-1 services derive from this base class, so
+# the enumeration flip benefits both at once.
+def _sysex_bridge_use_midi_host() -> bool:
+    val = os.environ.get("MAP2_USE_MIDI_HOST", "")
+    return val.strip().lower() in ("1", "true", "yes", "on")
 
 logger = logging.getLogger(__name__)
 
@@ -469,6 +487,63 @@ class SysExDeviceBridge:
             self._traffic_log = self._traffic_log[-1000:]
 
     async def get_midi_ports(self) -> Dict[str, Any]:
+        # Host-routed enumeration (env-gated). When the controller-host
+        # is up, prefer its libremidi enumeration over rtmidi — same
+        # JACK/ALSA-seq port graph, but no per-call rtmidi cleanup
+        # cost, and consistent backend reporting across services.
+        if _sysex_bridge_use_midi_host():
+            try:
+                from app.services.midi_host_client import MidiHostClient
+                client = MidiHostClient()
+                if client.is_daemon_available():
+                    status, ports = client.list_ports()
+                    inputs = []
+                    outputs = []
+                    recommended_in: Optional[int] = None
+                    recommended_out: Optional[int] = None
+                    in_idx = 0
+                    out_idx = 0
+                    for p in ports:
+                        if p.is_input:
+                            entry = {
+                                "index": in_idx,
+                                "name": p.name,
+                                "connected": in_idx == self._connected_input_index,
+                            }
+                            inputs.append(entry)
+                            lowered = p.name.lower()
+                            if recommended_in is None and self._matches_port_name(
+                                    lowered, self.DEFAULT_NAME_HINT):
+                                recommended_in = in_idx
+                            in_idx += 1
+                        else:
+                            entry = {
+                                "index": out_idx,
+                                "name": p.name,
+                                "connected": out_idx == self._connected_output_index,
+                            }
+                            outputs.append(entry)
+                            lowered = p.name.lower()
+                            if recommended_out is None and self._matches_port_name(
+                                    lowered, self.DEFAULT_NAME_HINT):
+                                recommended_out = out_idx
+                            out_idx += 1
+                    return {
+                        "rtmidi_available": True,
+                        "inputs": inputs,
+                        "outputs": outputs,
+                        "recommended_input_index": recommended_in,
+                        "recommended_output_index": recommended_out,
+                        "probe_errors": [],
+                        "host_routed": True,
+                        "host_backend": status.backend,
+                    }
+                # else: daemon down → fall through to rtmidi.
+            except Exception as exc:  # pragma: no cover - defensive
+                logger.debug("%s host-routed enumeration failed, "
+                              "falling back to rtmidi: %s",
+                              self.DEVICE_LABEL, exc)
+
         if not self._rtmidi_available():
             return {
                 "rtmidi_available": False,
