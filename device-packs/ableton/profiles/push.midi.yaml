@@ -1,0 +1,75 @@
+schema_version: 1
+identity:
+  manufacturer: Ableton
+  model: push
+  alsa_client_pattern: 'Ableton Push'
+  hardware_id: alsa-seq:Ableton Push:0
+
+scripts:
+  - scripts/push.js
+
+# Ableton Push exposes:
+#   - 8x8 RGB pad grid → Notes 36..99 on channel 1 (User Mode)
+#   - 8 endless encoders → CCs 71..78 (relative)
+#   - Encoder push (touch) → Notes 0..7
+#   - Transport + modifier keys → CCs 85..119 + Notes 28..35
+#   - Display + LED feedback via SysEx (Ableton mfr ID 47 7F 15)
+#
+# This profile covers the most-common 8x8 pad → snapshot/scene grid
+# layout; full Push (display rendering, step sequencer, scale mode)
+# is per-row and lives in scripts/push.js.
+
+controls:
+  # ---------- 8 Encoders → chain macros (rows 1-8) ----------
+  - { status: 0xB0, midino: 71, channel: 1, action: increment, script: Push.encoder, description: 'Encoder 1 → chain 1 macro 1.' }
+  - { status: 0xB0, midino: 72, channel: 1, action: increment, script: Push.encoder, description: 'Encoder 2 → chain 2 macro 1.' }
+  - { status: 0xB0, midino: 73, channel: 1, action: increment, script: Push.encoder, description: 'Encoder 3 → chain 3 macro 1.' }
+  - { status: 0xB0, midino: 74, channel: 1, action: increment, script: Push.encoder, description: 'Encoder 4 → chain 4 macro 1.' }
+  - { status: 0xB0, midino: 75, channel: 1, action: increment, script: Push.encoder, description: 'Encoder 5 → chain 5 macro 1.' }
+  - { status: 0xB0, midino: 76, channel: 1, action: increment, script: Push.encoder, description: 'Encoder 6 → chain 6 macro 1.' }
+  - { status: 0xB0, midino: 77, channel: 1, action: increment, script: Push.encoder, description: 'Encoder 7 → chain 7 macro 1.' }
+  - { status: 0xB0, midino: 78, channel: 1, action: increment, script: Push.encoder, description: 'Encoder 8 → chain 8 macro 1.' }
+
+  # ---------- 8x8 Pad grid → snapshot/scene matrix (Notes 36..99) ----------
+  # Bottom-left pad = Note 36; top-right pad = Note 99.
+  # Push.pad_press handles row/col decode + snapshot launch.
+  - { status: 0x90, channel: 1, script: Push.pad_press, description: '8x8 RGB pad grid (Notes 36..99) → 64 snapshot/scene slots.' }
+
+  # ---------- Transport ----------
+  - { status: 0xB0, midino: 85, channel: 1, action: momentary, target: audio.transport.play, description: 'PLAY.' }
+  - { status: 0xB0, midino: 86, channel: 1, action: momentary, target: audio.transport.record, description: 'RECORD.' }
+  - { status: 0xB0, midino: 87, channel: 1, action: momentary, target: audio.transport.stop, description: 'STOP.' }
+  - { status: 0xB0, midino: 88, channel: 1, action: momentary, target: audio.transport.tap_tempo, description: 'TAP TEMPO.' }
+
+  # ---------- Mode buttons (Session/Note/User) ----------
+  - { status: 0xB0, midino: 102, channel: 1, action: momentary, script: Push.session_mode, description: 'SESSION mode.' }
+  - { status: 0xB0, midino: 103, channel: 1, action: momentary, script: Push.note_mode, description: 'NOTE mode.' }
+  - { status: 0xB0, midino: 59, channel: 1, action: momentary, script: Push.user_mode, description: 'USER mode.' }
+
+  # ---------- SysEx (display, color palette) ----------
+  - { status: 0xF0, script: Push.handle_sysex, description: 'Ableton SysEx (mfr ID 47 7F 15) — display + color palette.' }
+
+# Outbound LED color via Note-on velocity (color code per Push palette).
+outputs:
+  - { status: 0x90, channel: 1, source: audio.snapshot.active, script: Push.pad_color, description: 'Light up active snapshot pad with the active-snapshot color.' }
+
+settings:
+  - id: push_active_mode
+    label: Active mode
+    type: choice
+    default: session
+    choices:
+      - session
+      - note
+      - user
+    description: 'Push operating mode: Session (clip launcher), Note (instrument), or User (custom).'
+  - id: push_velocity_curve
+    label: Velocity curve
+    type: choice
+    default: medium
+    choices:
+      - low
+      - medium
+      - high
+      - fixed
+    description: 'Pad velocity sensitivity curve.'

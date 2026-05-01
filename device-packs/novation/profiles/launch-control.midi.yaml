@@ -1,0 +1,110 @@
+schema_version: 1
+identity:
+  manufacturer: Novation
+  model: launch-control
+  alsa_client_pattern: 'Launch Control'
+  hardware_id: alsa-seq:Launch Control:0
+
+scripts:
+  - scripts/launch_control.js
+
+# Novation Launch Control XL exposes 24 knobs (3 rows of 8) + 8 faders
+# + transport/bank buttons. Default factory template uses CCs:
+#   Row 1 knobs:  CC 13..20 (channel 9, factory template)
+#   Row 2 knobs:  CC 29..36
+#   Row 3 knobs:  CC 49..56
+#   Faders:       CC 77..84
+#   Mute buttons: Notes 41..48
+#   Solo buttons: Notes 49..56
+#   Bank L/R:     CC 104, 105
+#
+# All on channel 9 in factory mode. Operator can switch templates via
+# the bottom-row buttons; LaunchControl.template_changed handles that.
+#
+# Reference: Novation Launch Control XL Programmer's Reference.
+
+controls:
+  # ---------- Row 1 knobs (top row, channel 9) ----------
+  - { status: 0xB8, midino: 13, channel: 9, action: set, target: audio.chain.1.send.1, description: 'Knob row 1 col 1 → chain 1 send 1.' }
+  - { status: 0xB8, midino: 14, channel: 9, action: set, target: audio.chain.2.send.1, description: 'Knob row 1 col 2 → chain 2 send 1.' }
+  - { status: 0xB8, midino: 15, channel: 9, action: set, target: audio.chain.3.send.1, description: 'Knob row 1 col 3 → chain 3 send 1.' }
+  - { status: 0xB8, midino: 16, channel: 9, action: set, target: audio.chain.4.send.1, description: 'Knob row 1 col 4 → chain 4 send 1.' }
+  - { status: 0xB8, midino: 17, channel: 9, action: set, target: audio.chain.5.send.1, description: 'Knob row 1 col 5 → chain 5 send 1.' }
+  - { status: 0xB8, midino: 18, channel: 9, action: set, target: audio.chain.6.send.1, description: 'Knob row 1 col 6 → chain 6 send 1.' }
+  - { status: 0xB8, midino: 19, channel: 9, action: set, target: audio.chain.7.send.1, description: 'Knob row 1 col 7 → chain 7 send 1.' }
+  - { status: 0xB8, midino: 20, channel: 9, action: set, target: audio.chain.8.send.1, description: 'Knob row 1 col 8 → chain 8 send 1.' }
+
+  # ---------- Row 2 knobs ----------
+  - { status: 0xB8, midino: 29, channel: 9, action: set, target: audio.chain.1.send.2, description: 'Knob row 2 col 1 → chain 1 send 2.' }
+  - { status: 0xB8, midino: 30, channel: 9, action: set, target: audio.chain.2.send.2, description: 'Knob row 2 col 2.' }
+  - { status: 0xB8, midino: 31, channel: 9, action: set, target: audio.chain.3.send.2, description: 'Knob row 2 col 3.' }
+  - { status: 0xB8, midino: 32, channel: 9, action: set, target: audio.chain.4.send.2, description: 'Knob row 2 col 4.' }
+  - { status: 0xB8, midino: 33, channel: 9, action: set, target: audio.chain.5.send.2, description: 'Knob row 2 col 5.' }
+  - { status: 0xB8, midino: 34, channel: 9, action: set, target: audio.chain.6.send.2, description: 'Knob row 2 col 6.' }
+  - { status: 0xB8, midino: 35, channel: 9, action: set, target: audio.chain.7.send.2, description: 'Knob row 2 col 7.' }
+  - { status: 0xB8, midino: 36, channel: 9, action: set, target: audio.chain.8.send.2, description: 'Knob row 2 col 8.' }
+
+  # ---------- Row 3 knobs (bottom — typically pan) ----------
+  - { status: 0xB8, midino: 49, channel: 9, action: set, target: audio.chain.1.pan, description: 'Knob row 3 col 1 → chain 1 pan.' }
+  - { status: 0xB8, midino: 50, channel: 9, action: set, target: audio.chain.2.pan, description: 'Knob row 3 col 2.' }
+  - { status: 0xB8, midino: 51, channel: 9, action: set, target: audio.chain.3.pan, description: 'Knob row 3 col 3.' }
+  - { status: 0xB8, midino: 52, channel: 9, action: set, target: audio.chain.4.pan, description: 'Knob row 3 col 4.' }
+  - { status: 0xB8, midino: 53, channel: 9, action: set, target: audio.chain.5.pan, description: 'Knob row 3 col 5.' }
+  - { status: 0xB8, midino: 54, channel: 9, action: set, target: audio.chain.6.pan, description: 'Knob row 3 col 6.' }
+  - { status: 0xB8, midino: 55, channel: 9, action: set, target: audio.chain.7.pan, description: 'Knob row 3 col 7.' }
+  - { status: 0xB8, midino: 56, channel: 9, action: set, target: audio.chain.8.pan, description: 'Knob row 3 col 8.' }
+
+  # ---------- 8 Faders → chain volume ----------
+  - { status: 0xB8, midino: 77, channel: 9, action: set, target: audio.chain.1.fader, description: 'Fader 1 → chain 1 fader.' }
+  - { status: 0xB8, midino: 78, channel: 9, action: set, target: audio.chain.2.fader, description: 'Fader 2.' }
+  - { status: 0xB8, midino: 79, channel: 9, action: set, target: audio.chain.3.fader, description: 'Fader 3.' }
+  - { status: 0xB8, midino: 80, channel: 9, action: set, target: audio.chain.4.fader, description: 'Fader 4.' }
+  - { status: 0xB8, midino: 81, channel: 9, action: set, target: audio.chain.5.fader, description: 'Fader 5.' }
+  - { status: 0xB8, midino: 82, channel: 9, action: set, target: audio.chain.6.fader, description: 'Fader 6.' }
+  - { status: 0xB8, midino: 83, channel: 9, action: set, target: audio.chain.7.fader, description: 'Fader 7.' }
+  - { status: 0xB8, midino: 84, channel: 9, action: set, target: audio.chain.8.fader, description: 'Fader 8.' }
+
+  # ---------- Mute buttons (Notes 41..48 ch9) ----------
+  - { status: 0x98, midino: 41, channel: 9, action: toggle, target: audio.chain.1.mute, description: 'Mute 1.' }
+  - { status: 0x98, midino: 42, channel: 9, action: toggle, target: audio.chain.2.mute, description: 'Mute 2.' }
+  - { status: 0x98, midino: 43, channel: 9, action: toggle, target: audio.chain.3.mute, description: 'Mute 3.' }
+  - { status: 0x98, midino: 44, channel: 9, action: toggle, target: audio.chain.4.mute, description: 'Mute 4.' }
+  - { status: 0x98, midino: 45, channel: 9, action: toggle, target: audio.chain.5.mute, description: 'Mute 5.' }
+  - { status: 0x98, midino: 46, channel: 9, action: toggle, target: audio.chain.6.mute, description: 'Mute 6.' }
+  - { status: 0x98, midino: 47, channel: 9, action: toggle, target: audio.chain.7.mute, description: 'Mute 7.' }
+  - { status: 0x98, midino: 48, channel: 9, action: toggle, target: audio.chain.8.mute, description: 'Mute 8.' }
+
+  # ---------- Bank navigation ----------
+  - { status: 0xB8, midino: 104, channel: 9, action: momentary, script: LaunchControl.bank_left, description: 'Bank LEFT.' }
+  - { status: 0xB8, midino: 105, channel: 9, action: momentary, script: LaunchControl.bank_right, description: 'Bank RIGHT.' }
+
+  # ---------- Template change (SysEx) ----------
+  - status: 0xF0
+    script: LaunchControl.template_changed
+    description: 'Novation SysEx (mfr ID 00 20 29) — template change + LED color updates.'
+
+# LED feedback (Novation uses Note-on with velocity = color code)
+outputs:
+  - { status: 0x98, midino: 41, channel: 9, source: audio.chain.1.mute, script: LaunchControl.mute_led, description: 'Mute 1 LED color.' }
+  - { status: 0x98, midino: 42, channel: 9, source: audio.chain.2.mute, script: LaunchControl.mute_led, description: 'Mute 2 LED.' }
+  - { status: 0x98, midino: 43, channel: 9, source: audio.chain.3.mute, script: LaunchControl.mute_led, description: 'Mute 3 LED.' }
+  - { status: 0x98, midino: 44, channel: 9, source: audio.chain.4.mute, script: LaunchControl.mute_led, description: 'Mute 4 LED.' }
+
+settings:
+  - id: lc_active_template
+    label: Active template
+    type: number
+    default: 0
+    min: 0
+    max: 7
+    step: 1
+    description: 'Which user/factory template is active (0-7).'
+  - id: lc_color_scheme
+    label: LED color scheme
+    type: choice
+    default: green-amber-red
+    choices:
+      - green-amber-red
+      - amber-only
+      - red-only
+    description: 'Color palette for mute/solo state LEDs.'

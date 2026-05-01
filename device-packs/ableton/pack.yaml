@@ -1,0 +1,18 @@
+schema_version: 1
+pack_id: ableton
+vendor:
+  name: Ableton
+  website: https://www.ableton.com/
+  support_url: https://help.ableton.com/
+description: |
+  Ableton control surfaces. The Push profile covers the Ableton Push
+  Mk1 / Mk2 — 8x8 RGB pad grid + 8 endless encoders + transport +
+  modifier keys + clip launcher + step sequencer.
+
+  Push uses User-Mode MIDI (note-on per pad, CC for encoders +
+  buttons) on channel 1. RGB LED feedback via Note-on velocity in
+  Live mode; SysEx for color palette + brightness in User mode.
+license: AGPL-3.0-only
+source: map2-native
+models:
+  - push

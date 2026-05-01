@@ -1,0 +1,15 @@
+schema_version: 1
+pack_id: novation
+vendor:
+  name: Novation
+  website: https://novationmusic.com/
+  support_url: https://support.novationmusic.com/
+description: |
+  Novation control surfaces. The Launch Control profile covers the
+  Launch Control XL — 24 knobs (3 rows × 8) + 8 faders + 16 buttons
+  + 8 + 8 mute/solo + bank navigation. 8 user templates selectable
+  via SysEx; this profile covers the default factory template.
+license: AGPL-3.0-only
+source: map2-native
+models:
+  - launch-control
