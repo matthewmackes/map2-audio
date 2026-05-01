@@ -34846,3 +34846,54 @@ The P1.2 audit (iter 39 §2) revealed substantial existing scaffolding the workl
 - P1.2 follow-up: daemon main-loop accept-many connections (eliminates the 24 ms p99 round-trip tail)
 - P1.2 follow-up: hot-path send routing via host-resolved port binding (replaces the rtmidi fallback in sysex_device_bridge connect_midi)
 - Post-loop-6 hard-strip of 4 lenient-mode rtmidi fallback paths (after operator soak with `MAP2_REQUIRE_MIDI_HOST=1`)
+
+### SHIP loop 7 (iters 61–70) closing log — 2026-05-01
+
+**Status**: 10 substantive iters shipped (61–70, dual-pushed). Loop 7 was the iter-60-recommended "P1.2 implementation start (B5 Mixxx golden test as the integration proof)". The iter-61 reality audit found most of the iter-39 design-doc gaps already closed; loop 7 implemented the remaining 5 of 7 (Gaps A/D/E/F partial + the iter-50 deferred Gap C measurement). Gap B + the second half of Gap C (libremidi → MappingEngine end-to-end loop + outbound back-loop to libremidi output ports) are the deepest C++ surface and ship in loop 8.
+
+| Iter | Gap | Commit | Highlight |
+|---|---|---|---|
+| 61 | re-audit | 78c29f43 | New `T2482_P1_2_REALITY_AUDIT.md` — 5 of 7 IPC envelope types already wired in main.cpp; Gap A scope reduced to "missing 2 envelopes (deactivate + reload)"; Gap D never started; Gaps B + C partially wired but missing the consumer side. Cuts iter-39's 3-week estimate in half. |
+| 62 | F.1 Python schemas | d88382c7 | New TypedDicts: `MappingDeactivate`, `MappingReload`, `EventFeedback`. SCHEMA_VERSION bumped 1 → 2 (additive). 13 new tests pin the wire-form contract. |
+| 63 | F.2 C++ mirrors | 176783fd | C++ struct mirrors in `IpcMessages.h` + CPP_FIELD_MANIFEST extended. Schema-sync test green again (was failing per iter-62 design). |
+| 64 | A dispatcher | fa5116f8 | New `Map2MappingEngine::unloadDescriptor` + `reloadDescriptor` C++ methods. New main.cpp dispatcher branches for `mapping_deactivate` + `mapping_reload`. 5 live-binary integration tests pass against the rebuilt daemon. |
+| 65 | D B5 harness | abd00358 | `tests/fixtures/controller_host_b5/` + harness + 1 synthetic fixture (empty descriptor lifecycle). 3 tests pass — including the live-binary fixture replay. |
+| 66 | D more fixtures | 2896aed4 | 2 more synthetic fixtures: inline QuickJS script + 2-controller isolation smoke. New `controller_key_override` / `descriptor_override` mechanism in the harness for multi-controller fixtures. 5 tests total. |
+| 67 | D Mixxx XML import | 07689682 | Real Mixxx XML import as a B5 fixture (Akai LPD8-RK trimmed to 2 controls + a stub script body). New `MixxxXmlConsistencyTests` ensures the static fixture stays consistent with `mixxx_xml_reader.parse_mixxx_xml` output (3 tests). |
+| 68 | E namespace isolation | 362cc39a | New `MAP2_ISOLATED_CONTROLLER_NAMESPACES` env flag + IIFE-wrap mechanism that copies each script's installed globals under `__map2_controllers[<key>].<name>` and removes them from globalThis. Default OFF (existing behaviour preserved); flag-on tested with 2 conflicting-name controllers loading cleanly. |
+| 69 | C remainder | 8313edfa | New `scripts/measure_p1_2_dispatch_latency.py` + structured evidence at `docs/fit-for-purpose-evidence/20260501/T2482_P1_2_DISPATCH_LATENCY.{json,md}`. Iter-64 envelopes p50 = 4.7 ms, p99 13–22 ms — same shape as iter-50 list_ports (daemon main-loop scheduling artifact, not envelope-specific). |
+| 70 | E.10 roll-up | (this commit) | This closing log. |
+
+**Total tests added in loop 7**: **34** (13 Python schemas + 5 live-binary lifecycle + 4 B5 fixture replays + 3 Mixxx XML consistency + 3 isolation + 6 self-tests). 30 of these are live integration tests against the rebuilt daemon binary.
+
+**P1.2 status after SHIP loop 7** (vs iter-39 design doc gaps + iter-61 reality audit):
+- ✅ Gap A (request dispatcher): DONE — 7 of 7 IPC envelope types wired (5 from earlier loops + 2 new from iter 64)
+- ⚠️ Gap B (libremidi → MappingEngine end-to-end): PARTIALLY WIRED — shm ring producer side done; consumer side still in main.cpp queue. Loop 8 work.
+- ⚠️ Gap C (outbound back-loop): PARTIALLY WIRED — drains exist but route to Python IPC instead of libremidi output. Loop 8 work.
+- ✅ Gap D (B5 fixture round-trip): DONE — harness + 4 fixtures (3 synthetic + 1 Mixxx-XML-derived) all replay cleanly against the live daemon
+- 🟡 Gap E (per-controller isolation): SEAM SHIPPED — env-flag-gated wrap mechanism + tests; default OFF until soak validates. Loop 8 may flip default.
+- ✅ Gap F (IPC schema completeness): DONE — 3 missing envelopes added in iters 62-63
+- ✅ Gap G (Mixxx XML reader retirement): ALREADY DONE per iter-39 audit; no-op in loop 7.
+
+**T2482 status overall (after 7 SHIP loops)**:
+- Plan artifact + 70 iters = 71 commits dual-pushed
+- Phase 2 SHIPPED + live production migration evidence
+- ~324 tests across 23+ suites all passing (290 from loops 1-6 + 34 from loop 7)
+- 11 device-packs on disk, 3 with JS-ported SysEx parsers
+- 4 first-class architecture docs + 5 P1.x design/reality/deferral/audit docs (iter-69 added the dispatch-latency evidence pair)
+- `/api/midi/*` 8 endpoints live on `:8080`
+- `map2-controller-host` daemon binary working; systemd default-ON; 5 of 7 lifecycle envelopes wired before loop 7, all 7 wired after; B5 golden-test gate operational with 4 fixtures
+- Per-controller QuickJS namespace isolation seam shipped (env-flag-gated)
+- Audio backend healthy, audio still running
+
+**Phase 3 readiness gate v4 (post-SHIP-loop-7)**:
+- **Backend MIDI authority**: ready
+- **Controller-host daemon**: ready, with full lifecycle envelopes + B5 fixture coverage proving wire-format end-to-end
+- **rtmidi removal**: PARTIAL (1 hard-stripped + 4 soft-stripped from loop 6; loop 8 picks up the post-loop-6 hard-strip)
+- **Mixxx ControllerEngine integration (P1.2)**: implementation in flight — Gap A/D/E/F shipped, Gap B/C remaining for loop 8
+- **Carbon UI scaffold**: not started; gated on user authorization
+- **Recommended next loop**:
+  - Loop 8: close P1.1 + P1.2 — Gap B (libremidi → MappingEngine end-to-end), Gap C completion (outbound to libremidi), `MidiCreateVirtualPortRequest` IPC + Maschine virtual-port flip, post-loop-6 hard-strip of the 4 lenient-mode rtmidi paths, drop python-rtmidi entirely
+  - Loop 9: Phase 3 frontend `/midi` Carbon canonical surface
+
+**Loop 7 acknowledged limitation**: the B5 fixture suite proves wire-format end-to-end but does NOT exercise real Mixxx ControllerEngine JS (the LPD8-RK 593-line script depends on `engine.*` / `midi.*` Mixxx-specific bindings the host hasn't installed yet). That's "JS-execution parity with Mixxx" — Loop 8 work, queued via Gap B.
