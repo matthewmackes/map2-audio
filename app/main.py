@@ -1143,6 +1143,17 @@ def create_app():
                 logger.info("LCD routes registered")
         except ImportError:
             logger.debug("LCD routes not available")
+
+        # T2482-P3.1: MIDI Services canonical authority routes
+        # (/api/midi/bindings, GET/POST/PATCH/DELETE/disable/enable).
+        # Per the four-services discipline these are the only public
+        # entry points for MIDI binding CRUD post-Phase-3.
+        try:
+            from app.services.midi.routes import router as midi_services_router
+            app.include_router(midi_services_router)
+            logger.info("MIDI Services routes registered (T2482-P3.1)")
+        except Exception as e:
+            logger.warning(f"Failed to load MIDI Services routes: {e}")
         
         # HTTP GET handlers
         from fastapi.responses import HTMLResponse, JSONResponse, FileResponse
