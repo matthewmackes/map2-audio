@@ -351,11 +351,58 @@ class SharedRuntimeState:
     admin_console_state: dict[str, Any] = field(default_factory=dict)
 
 
+def _maschine_use_midi_host() -> bool:
+    """T2482-P1.1 Gap D.2 (iter 47) — env-var gate for the Maschine
+    daemon's virtual-output flip.
+
+    Same protocol as the GCP transport gate (iter 46): MAP2_USE_MIDI_HOST
+    in (1/true/yes/on) → host path, anything else → rtmidi fallback.
+
+    NOTE: even with the gate ON, Maschine currently still uses rtmidi
+    for its virtual-port creation because the controller-host IPC
+    schema does not yet expose openVirtualOutput() to Python
+    (`LibremidiAdapter::openVirtualOutput` exists C++-internally but
+    has no `MidiCreateVirtualPortRequest` envelope on the wire).
+    The send_messages() path WILL route through the host once that
+    IPC envelope ships — tracked as a P1.2 follow-up.
+    """
+    val = os.environ.get("MAP2_USE_MIDI_HOST", "")
+    return val.strip().lower() in ("1", "true", "yes", "on")
+
+
+# Stable controller_key for the Maschine MK1 surface.
+_MASCHINE_CONTROLLER_KEY = "native-instruments.maschine-mk1"
+
+
 class VirtualMidiOutput:
+    """Maschine MK1 daemon's virtual MIDI output port.
+
+    Two backends with the same surface (open / send_messages / close):
+    - rtmidi (legacy) — opens a virtual ALSA-seq port via rtmidi.MidiOut.
+    - host (T2482-P1.1) — defers virtual-port creation until the
+      controller-host IPC exposes it; in the interim the host path
+      ONLY routes the per-message send through MidiHostClient.send_short_message
+      (the virtual port itself is still rtmidi-owned).
+
+    Tracked under iter-41 reality audit Gap D.2; the full virtual-port
+    migration awaits a `MidiCreateVirtualPortRequest` IPC schema
+    extension (P1.2 follow-up).
+    """
+
     def __init__(self, name: str) -> None:
         self.name = name
         self._port = None
         self._is_open = False
+        # Lazy host client — only constructed when env-gate is on AND
+        # send is called. Tests can short-circuit by patching.
+        self._host_client: Any = None
+        self._host_routed_sends = 0
+
+    def _get_host_client(self) -> Any:
+        if self._host_client is None:
+            from app.services.midi_host_client import MidiHostClient
+            self._host_client = MidiHostClient()
+        return self._host_client
 
     def open(self) -> bool:
         if rtmidi is None:
@@ -377,11 +424,44 @@ class VirtualMidiOutput:
     def send_messages(self, messages: Iterable[bytes]) -> None:
         if not self._is_open or self._port is None:
             return
+        # Env-gated host routing for SEND only. The virtual port itself
+        # remains rtmidi-owned until the IPC schema extension lands;
+        # but each per-message send can already go through the host
+        # once a controller_key is established. Today the host can't
+        # route to a port-name that it didn't open — so the host path
+        # below is essentially "log + skip" until P1.2 wires
+        # send_short_message through to a host-resolved port.
+        host_routed = _maschine_use_midi_host()
         for message in messages:
             try:
+                if host_routed:
+                    # Host send is best-effort while the virtual-port
+                    # IPC is missing. We still attempt the call so the
+                    # host's traffic counters tick — useful for the
+                    # latency-floor measurement (Gap C / iter 50).
+                    try:
+                        client = self._get_host_client()
+                        if client.is_daemon_available() and len(message) <= 3:
+                            client.send_short_message(
+                                controller_key=_MASCHINE_CONTROLLER_KEY,
+                                message_bytes=bytes(message),
+                            )
+                            self._host_routed_sends += 1
+                    except Exception:  # pragma: no cover - daemon transient
+                        # Don't let a host-send failure block the rtmidi
+                        # send below; we want both paths active during
+                        # the transition.
+                        pass
                 self._port.send_message(list(message))
             except Exception as exc:  # pragma: no cover - hardware runtime dependent
                 LOGGER.debug("Failed to send MIDI message on %s: %s", self.name, exc)
+
+    @property
+    def host_routed_sends(self) -> int:
+        """Counter for how many sends were also routed through the host
+        in the current run. Used by tests + Gap C latency measurement
+        to confirm the host path is actually being exercised."""
+        return self._host_routed_sends
 
     def close(self) -> None:
         if self._port is not None:
