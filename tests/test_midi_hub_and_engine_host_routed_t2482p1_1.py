@@ -157,11 +157,11 @@ class MidiEngineDiscoverDevicesHostRoutedTests(unittest.TestCase):
         finally:
             env_patch.stop()
 
-    def test_daemon_down_raises_after_iter78_hard_strip(self) -> None:
-        # Iter 78 hard-strip: midi_engine._discover_devices raises
-        # MidiHostClientError when daemon is down. The iter-58
-        # lenient-mode rtmidi/virtual fallback was removed.
-        from app.services.midi_host_client import MidiHostClientError
+    def test_daemon_down_falls_to_virtual_in_lenient_mode_after_iter83(self) -> None:
+        # Iter 83 softened the iter-78 raise: when daemon is down +
+        # lenient mode (no MAP2_REQUIRE_MIDI_HOST), midi_engine falls
+        # to the virtual placeholder rather than raising. Strict mode
+        # still raises (covered separately).
         env_patch = mock.patch.dict(os.environ, {"MAP2_USE_MIDI_HOST": "1"})
         env_patch.start()
         try:
@@ -172,10 +172,10 @@ class MidiEngineDiscoverDevicesHostRoutedTests(unittest.TestCase):
             with mock.patch.object(me, "get_midi_hub", None), \
                  mock.patch("app.services.midi_host_client.MidiHostClient",
                               return_value=fake_client):
-                with self.assertRaises(MidiHostClientError) as ctx:
-                    engine._discover_devices()
-            self.assertIn("controller-host daemon is unreachable", str(ctx.exception))
-            self.assertIn("iter-78", str(ctx.exception))
+                # Should NOT raise.
+                engine._discover_devices()
+            self.assertEqual(len(engine.input_devices), 1)
+            self.assertEqual(engine.input_devices[0].name, "Virtual Input 1")
             fake_client.is_daemon_available.assert_called_once()
         finally:
             env_patch.stop()

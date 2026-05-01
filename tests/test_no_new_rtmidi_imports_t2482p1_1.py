@@ -51,11 +51,11 @@ ALLOWED_RTMIDI_PATHS = {
     # AlsaMidiPort future is queued for the host-side
     # ALSA-port-binding refactor.
     "app/services/midi_hub/ports.py",
-    # midi_engine.py — _discover_devices's rtmidi-direct branch is
-    # iter-78-unreachable but the persistent self._midi_in / _midi_out
-    # for live MIDI binding is still rtmidi. Refactor to host-routed
-    # subscribe queued post-loop-8.
-    "app/services/midi_engine.py",
+    # midi_engine.py — REMOVED FROM ALLOW-LIST in iter 83 (loop 9).
+    # Both the rtmidi-direct discovery branch AND the persistent
+    # _midi_in / _midi_out for live MIDI binding were stripped.
+    # Production live MIDI flows through MidiHub (host-routed via
+    # iter 78) or falls to virtual placeholder when MidiHub disabled.
     # midi_sysex_bridge_base.py — IntelFX + MPX-1 simulator path
     # uses rtmidi for inbound MIDI events. Different surface from
     # the iter-77 hard-stripped sysex_device_bridge enumeration;

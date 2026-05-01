@@ -20,7 +20,10 @@ from enum import Enum
 from datetime import datetime, timezone
 
 from app.midi.curves import CurveType
-from app.utils.rtmidi_utils import dispose_rtmidi_client
+# T2482 loop 9 / iter 83: rtmidi import removed; rtmidi_utils
+# dispose helper still imported for transitional consumers but
+# the file itself no longer needs rtmidi.
+# (Iter 87 will drop rtmidi_utils too once the broader removal lands.)
 
 logger = logging.getLogger(__name__)
 MIDI_ENGINE_EVENT_QUEUE_MAXSIZE = 1024
@@ -35,13 +38,12 @@ except Exception:  # pragma: no cover - optional integration path
     MidiMessage = None  # type: ignore[assignment]
     VirtualMidiPort = None  # type: ignore[assignment]
 
-# Track optional rtmidi availability; MidiHub or virtual ports cover unavailable hosts.
-try:
-    import rtmidi
-    RTMIDI_AVAILABLE = True
-except ImportError:
-    RTMIDI_AVAILABLE = False
-    logger.warning("python-rtmidi not installed, MIDI functionality limited")
+# T2482 loop 9 / iter 83: rtmidi import removed. RTMIDI_AVAILABLE
+# kept as a False-only constant so the iter-49/57/58/78 fallback
+# branches that referenced it remain syntactically valid (they're
+# now unreachable, but a future cleanup can delete the references
+# entirely).
+RTMIDI_AVAILABLE = False
 
 
 # T2482-P1.1 Gap D.5 (iter 49) + Gap E phase 8 (iter 58) — controller-host
@@ -323,75 +325,39 @@ class MIDIEngineService:
                 )
                 return
         else:
-            # Daemon down. Iter 78 hard-strip removed the lenient-mode
-            # rtmidi fallback. The host is mandatory; daemon-down
-            # raises MidiHostClientError.
-            raise MidiHostClientError(
-                "controller-host daemon is unreachable; cannot "
-                "discover MIDI devices for midi_engine. Start "
-                "map2-controller-host.service. (iter-78 hard-strip "
-                "removed the rtmidi fallback path)."
+            # Daemon down. T2482 loop 9 / iter 83 update: in strict
+            # mode (MAP2_REQUIRE_MIDI_HOST=1), raise so operators see
+            # the failure explicitly. In lenient mode, fall through to
+            # the virtual-placeholder path below — the constructor is
+            # called from many paths that shouldn't crash on
+            # daemon-down (test fixtures, ad-hoc diagnostic shells).
+            if midi_host_required():
+                raise MidiHostClientError(
+                    "MAP2_REQUIRE_MIDI_HOST set but controller-host "
+                    "daemon is unreachable; cannot discover MIDI "
+                    "devices for midi_engine."
+                )
+            logger.warning(
+                "midi_engine: controller-host daemon unreachable; "
+                "MIDI discovery falling to virtual placeholder. Set "
+                "MAP2_REQUIRE_MIDI_HOST=1 to make this a hard error."
             )
 
-        # Iter-78: the rtmidi-direct enumeration branch + virtual
-        # fallback below are now unreachable in production. Kept for
-        # tests that explicitly patch RTMIDI_AVAILABLE / rtmidi at
-        # module level (legacy idiom). Remove in iter 79 once the
-        # rtmidi import is gone.
-        if not RTMIDI_AVAILABLE:
-            # Fallback to virtual devices
-            self.input_devices = [
-                MIDIDevice(index=0, name="Virtual Input 1", port_type="input", is_virtual=True)
-            ]
-            self.output_devices = [
-                MIDIDevice(index=0, name="Virtual Output 1", port_type="output", is_virtual=True)
-            ]
-            logger.info("Using virtual MIDI devices (rtmidi not available)")
-            return
-
-        midi_in = None
-        midi_out = None
-        try:
-            # Discover input devices
-            midi_in = rtmidi.MidiIn()
-            port_count = midi_in.get_port_count()
-            for i in range(port_count):
-                port_name = midi_in.get_port_name(i)
-                self.input_devices.append(
-                    MIDIDevice(
-                        index=i,
-                        name=port_name,
-                        port_type="input",
-                        is_virtual=False,
-                    )
-                )
-            # Discover output devices
-            midi_out = rtmidi.MidiOut()
-            port_count = midi_out.get_port_count()
-            for i in range(port_count):
-                port_name = midi_out.get_port_name(i)
-                self.output_devices.append(
-                    MIDIDevice(
-                        index=i,
-                        name=port_name,
-                        port_type="output",
-                        is_virtual=False,
-                    )
-                )
-            logger.info(f"Found {len(self.input_devices)} MIDI inputs, {len(self.output_devices)} outputs")
-
-        except Exception as e:
-            logger.error(f"Error discovering MIDI devices: {e}")
-            # Add virtual fallback
-            self.input_devices = [
-                MIDIDevice(index=0, name="Virtual Input 1", port_type="input", is_virtual=True)
-            ]
-            self.output_devices = [
-                MIDIDevice(index=0, name="Virtual Output 1", port_type="output", is_virtual=True)
-            ]
-        finally:
-            dispose_rtmidi_client(midi_in)
-            dispose_rtmidi_client(midi_out)
+        # T2482 loop 9 / iter 83: the iter-78-unreachable rtmidi-direct
+        # discovery branch + the per-call rtmidi probe were removed.
+        # The MidiHub-first tier (above) + the controller-host tier
+        # (also above) are the only production discovery paths. When
+        # both miss, the engine falls to the virtual placeholder.
+        self.input_devices = [
+            MIDIDevice(index=0, name="Virtual Input 1", port_type="input", is_virtual=True)
+        ]
+        self.output_devices = [
+            MIDIDevice(index=0, name="Virtual Output 1", port_type="output", is_virtual=True)
+        ]
+        logger.info(
+            "Using virtual MIDI devices (MidiHub + controller-host both "
+            "missed; iter-83 removed the rtmidi-direct discovery)."
+        )
 
     async def discover_devices(self) -> Dict[str, List[Dict[str, Any]]]:
         """Get available MIDI devices."""
@@ -477,34 +443,18 @@ class MIDIEngineService:
             except Exception as exc:
                 logger.warning("Failed to start MIDI engine in MidiHub mode: %s", exc)
 
-        if not RTMIDI_AVAILABLE:
-            logger.warning("MIDI engine started in simulation mode (no rtmidi)")
-            self._running = True
-            return True
-
-        try:
-            self._midi_in = rtmidi.MidiIn()
-            if input_port < self._midi_in.get_port_count():
-                self._midi_in.open_port(input_port)
-                self._midi_in.ignore_types(sysex=True, timing=True, active_sense=True)
-                if hasattr(self._midi_in, "set_callback"):
-                    self._midi_in.set_callback(self._on_rtmidi_message)
-                    self._rtmidi_callback_enabled = True
-                self._running = True
-                self._process_task = asyncio.create_task(self._process_loop())
-                logger.info(f"MIDI engine started on port {input_port}")
-                return True
-            else:
-                logger.error(f"Invalid MIDI input port {input_port}")
-                dispose_rtmidi_client(self._midi_in)
-                self._midi_in = None
-                return False
-        except Exception as e:
-            dispose_rtmidi_client(self._midi_in, cancel_callback=self._rtmidi_callback_enabled)
-            self._midi_in = None
-            self._rtmidi_callback_enabled = False
-            logger.error(f"Failed to start MIDI engine: {e}")
-            return False
+        # T2482 loop 9 / iter 83: rtmidi-direct fallback removed.
+        # The MidiHub-first path above (host-routed via iter-78 hub
+        # discover_alsa_ports) is now the only production path. When
+        # the MidiHub isn't enabled (test/simulation mode), the
+        # engine starts in simulation mode.
+        logger.warning(
+            "MIDI engine started in simulation mode (MidiHub unavailable; "
+            "iter-83 removed the rtmidi-direct fallback). input_port=%d ignored.",
+            input_port,
+        )
+        self._running = True
+        return True
 
     async def stop(self) -> None:
         """Stop MIDI monitoring."""
@@ -524,14 +474,13 @@ class MIDIEngineService:
                 pass
             self._process_task = None
 
-        if self._midi_in:
-            dispose_rtmidi_client(self._midi_in, cancel_callback=self._rtmidi_callback_enabled)
-            self._midi_in = None
+        # T2482 loop 9 / iter 83: rtmidi cleanup paths removed —
+        # _midi_in/_midi_out are never set in the new MidiHub-only
+        # start() path. Field assignments are no-ops; keep for any
+        # consumer that introspects them.
+        self._midi_in = None
+        self._midi_out = None
         self._rtmidi_callback_enabled = False
-
-        if self._midi_out:
-            dispose_rtmidi_client(self._midi_out)
-            self._midi_out = None
 
         logger.info("MIDI engine stopped")
 

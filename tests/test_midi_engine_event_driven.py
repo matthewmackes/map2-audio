@@ -66,6 +66,12 @@ class _FakeMidiOut:
         self.deleted = True
 
 
+@pytest.mark.skip(
+    reason="T2482 loop 9 / iter 83: rtmidi-direct discovery branch removed "
+    "from midi_engine. The rtmidi probe-disposal contract no longer exists "
+    "in production code. Discovery now routes exclusively through MidiHub "
+    "(host-routed via iter 78) or falls to virtual placeholders."
+)
 @pytest.mark.asyncio
 async def test_midi_engine_discover_devices_disposes_probe_clients(monkeypatch):
     _FakeMidiIn.instances.clear()
@@ -90,6 +96,12 @@ async def test_midi_engine_discover_devices_disposes_probe_clients(monkeypatch):
     assert _FakeMidiOut.instances[-1].deleted is True
 
 
+@pytest.mark.skip(
+    reason="T2482 loop 9 / iter 83: rtmidi callback-queue path removed "
+    "from midi_engine.start(). Live MIDI binding now flows through MidiHub "
+    "(host-routed via iter 78); the rtmidi.MidiIn.set_callback contract "
+    "no longer exists in production code."
+)
 @pytest.mark.asyncio
 async def test_midi_engine_uses_rtmidi_callback_queue(monkeypatch):
     _FakeMidiIn.instances.clear()

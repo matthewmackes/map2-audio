@@ -231,12 +231,10 @@ class MidiEngineDiscoverStrictModeTests(unittest.TestCase):
         self._env.stop()
 
     def test_discover_devices_raises_when_daemon_down(self) -> None:
-        # Iter 78 hard-stripped the lenient-mode rtmidi fallback in
-        # midi_engine._discover_devices. The function now raises
-        # unconditionally on daemon-down (assuming the MidiHub-first
-        # tier didn't populate devices). Strict mode is redundant
-        # for this surface but the failure shape matches the iter-77
-        # contract.
+        # Iter 78 hard-stripped lenient-mode rtmidi; iter 83 then
+        # softened the daemon-down case to a warning + virtual
+        # placeholder by default. Strict mode (MAP2_REQUIRE_MIDI_HOST=1)
+        # still raises — that's the contract this test pins.
         from app.services import midi_engine as me
 
         class _BareEngine(me.MIDIEngineService):
@@ -254,8 +252,8 @@ class MidiEngineDiscoverStrictModeTests(unittest.TestCase):
                           return_value=fake_client):
             with self.assertRaises(MidiHostClientError) as ctx:
                 engine._discover_devices()
-        self.assertIn("controller-host daemon is unreachable", str(ctx.exception))
-        self.assertIn("iter-78", str(ctx.exception))
+        self.assertIn("MAP2_REQUIRE_MIDI_HOST", str(ctx.exception))
+        self.assertIn("midi_engine", str(ctx.exception))
 
 
 # ---------------------------------------------------------------------
