@@ -1,0 +1,48 @@
+{
+  "name": "Empty descriptor lifecycle (mapping_activate → mapping_deactivate → mapping_reload)",
+  "controller_key": "b5.empty",
+  "descriptor": {
+    "pack_id": "b5",
+    "model": "empty",
+    "kind": "midi",
+    "scripts": [],
+    "controls": [],
+    "outputs": [],
+    "settings": [],
+    "mixxx_alias_table": {}
+  },
+  "input_sequence": [
+    {
+      "type": "mapping_activate",
+      "msg_id": "act-1"
+    },
+    {
+      "type": "mapping_deactivate",
+      "msg_id": "deact-1"
+    },
+    {
+      "type": "mapping_reload",
+      "msg_id": "reload-1"
+    }
+  ],
+  "expected_outbound": [
+    {
+      "msg_id": "act-1",
+      "type": "log_event",
+      "level": "info",
+      "message_match": "mapping activated:"
+    },
+    {
+      "msg_id": "deact-1",
+      "type": "log_event",
+      "level": "info",
+      "message_match": "mapping deactivated"
+    },
+    {
+      "msg_id": "reload-1",
+      "type": "log_event",
+      "level": "info",
+      "message_match": "mapping reloaded:"
+    }
+  ]
+}
