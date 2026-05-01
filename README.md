@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1411** Python | **1399** TypeScript | **177** C++/H | **145** Docs | **3306** total commits | **3** stars | **0** forks | **0** open issues
+**1411** Python | **1399** TypeScript | **177** C++/H | **145** Docs | **3308** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`58fa3d64`](https://github.com/matthewmackes/map2-audio/commit/58fa3d6485cf54afefc90904204d115150109a10) | T2482 Phase 2: live production migration COMPLETE + new d... | Map2 Audio | 2026-05-01 |
+| [`e62a2e89`](https://github.com/matthewmackes/map2-audio/commit/e62a2e895aef5399c2ff9db09c85680277da58b2) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-01 |
 | [`a5820272`](https://github.com/matthewmackes/map2-audio/commit/a5820272308fc9ac021d170e5371e6a99a585995) | T2482 SHIP loop 2 (iters 11-20) closing log + SHIP loop 3... | Map2 Audio | 2026-05-01 |
 | [`c8b39ca3`](https://github.com/matthewmackes/map2-audio/commit/c8b39ca307aded3937f89cb610f99781760b94ac) | T2482-P3.1 prep (iter 19): wire /api/midi/* routes into a... | Map2 Audio | 2026-05-01 |
 | [`ca840282`](https://github.com/matthewmackes/map2-audio/commit/ca840282635e3bca6c6aea9d957cdf1f9ff2a3d9) | T2482-P3.1 prep (iter 18): /api/midi/* routes scaffold | Map2 Audio | 2026-05-01 |
 | [`849561ef`](https://github.com/matthewmackes/map2-audio/commit/849561efb264ab2280bebe4882f71ddefff860a6) | T2482-P2.9 part 2 (iter 17): end-to-end Phase 2 migration... | Map2 Audio | 2026-05-01 |
 | [`72db78cb`](https://github.com/matthewmackes/map2-audio/commit/72db78cbb98b75e2207cfe93464f7dbde05a7a70) | T2482-P2.9 part 1 (iter 16): cross-consumer verification ... | Map2 Audio | 2026-05-01 |
 | [`c72f0f67`](https://github.com/matthewmackes/map2-audio/commit/c72f0f67b6ffc4793b38499f702bf6c22af9b7fc) | T2482-P2.5 part 2 (iter 15): MIDIMapping legacy table mig... | Map2 Audio | 2026-05-01 |
-| [`ee263c4b`](https://github.com/matthewmackes/map2-audio/commit/ee263c4bcdc233c958313c1bcd5ceb707c06229a) | T2482-P2.5 part 1 (iter 14): device_pack projection (fact... | Map2 Audio | 2026-05-01 |
-| [`5656159b`](https://github.com/matthewmackes/map2-audio/commit/5656159bb276b099756cfc9d544684af8bc6c5b6) | T2482-P2.6 part 3 (iter 13): Tesira TTP bridge projection | Map2 Audio | 2026-05-01 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
