@@ -1,0 +1,22 @@
+schema_version: 1
+pack_id: lexicon
+vendor:
+  name: Lexicon
+  website: https://lexiconpro.com/
+  support_url: https://lexiconpro.com/en-US/support
+description: |
+  Lexicon Professional MIDI surfaces. The MPX-1 profile covers the
+  legendary Lexicon MPX-1 multi-effects processor — front-panel
+  rotary encoders + program-up/down buttons + bypass + tap, plus
+  full SysEx-driven preset/parameter editing.
+
+  Pre-T2459-H4 the MPX-1 SysEx parser lived in
+  app/services/mpx1_syx_parser.py; T2459-H4 (subsumed by T2482
+  Phase 1.5) cuts it over to JS scripts in this pack. The script
+  stub at scripts/mpx1.js documents the cutover surface; until the
+  cutover lands, the Python parser remains active and this pack's
+  JS functions are no-ops.
+license: AGPL-3.0-only
+source: map2-native
+models:
+  - mpx1
