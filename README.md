@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1414** Python | **1399** TypeScript | **177** C++/H | **145** Docs | **3340** total commits | **3** stars | **0** forks | **0** open issues
+**1422** Python | **1399** TypeScript | **177** C++/H | **145** Docs | **3350** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
-| [`f7817811`](https://github.com/matthewmackes/map2-audio/commit/f7817811871b3021b0d3c1c998386850ca3f654e) | T2482-P1.1 (iter 41): reality audit — foundation already ... | Map2 Audio | 2026-05-01 |
-| [`2b90d16c`](https://github.com/matthewmackes/map2-audio/commit/2b90d16cdcbd584196056a773a96361f2f71e69a) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-01 |
-| [`ed0c72d2`](https://github.com/matthewmackes/map2-audio/commit/ed0c72d2946a0dc9e0bfc32a1025ed49ce6ccc17) | worklist: roll up T2482 SHIP loop 4 (iters 31-40) | Map2 Audio | 2026-05-01 |
-| [`6c04d222`](https://github.com/matthewmackes/map2-audio/commit/6c04d2226d3526b1be649b969699be930550e10d) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-01 |
-| [`7535a05b`](https://github.com/matthewmackes/map2-audio/commit/7535a05bbeef13da0da10b231fb4180e030886e1) | T2482-P1.2 (iter 39): Mixxx ControllerEngine integration ... | Map2 Audio | 2026-05-01 |
-| [`5b57a90d`](https://github.com/matthewmackes/map2-audio/commit/5b57a90d4aac38be5946b0863dc7de78e40429ed) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-01 |
-| [`27ec5554`](https://github.com/matthewmackes/map2-audio/commit/27ec5554d735e16a0a91b9d5bfb04f52d52f8792) | T2482-P1.1 (iter 38): libremidi foundation design doc | Map2 Audio | 2026-05-01 |
-| [`6ba869b2`](https://github.com/matthewmackes/map2-audio/commit/6ba869b259e4d9e96905491d2d8c74a57249c672) | T2482-P1.5 (iter 37): GCP bulk-dump container parser port... | Map2 Audio | 2026-05-01 |
+| [`d46231c3`](https://github.com/matthewmackes/map2-audio/commit/d46231c3110ed579360997ae00e8bf51a0a580c1) | worklist: roll up T2482 SHIP loop 5 (iters 41-50) + P1.1 ... | Map2 Audio | 2026-05-01 |
+| [`dff97368`](https://github.com/matthewmackes/map2-audio/commit/dff9736832dd26016c777536fe3a84c5329891a7) | T2482-P1.1 Gap D.4 + D.5 (iter 49): flip midi_hub + midi_... | Map2 Audio | 2026-05-01 |
+| [`eec94032`](https://github.com/matthewmackes/map2-audio/commit/eec94032c9cc14bf9f08e559d5ac118bb53113e7) | T2482-P1.1 Gap D.3 (iter 48): flip sysex_device_bridge en... | Map2 Audio | 2026-05-01 |
+| [`8c908b52`](https://github.com/matthewmackes/map2-audio/commit/8c908b52c59844374b658784727dfb7c89001874) | T2482-P1.1 Gap D.2 (iter 47): flip Maschine MK1 daemon (s... | Map2 Audio | 2026-05-01 |
+| [`3d32f038`](https://github.com/matthewmackes/map2-audio/commit/3d32f03846a317b98f579099d0ef3e69634c1364) | T2482-P1.1 Gap D.1 (iter 46): flip GCP midi_transport to ... | Map2 Audio | 2026-05-01 |
+| [`2cb97c5c`](https://github.com/matthewmackes/map2-audio/commit/2cb97c5c47961ffedde230fcf1f464732a2aab0e) | T2482-P1.1 Gap B (iter 45): systemd unit + daemon-lifecyc... | Map2 Audio | 2026-05-01 |
+| [`2d303c64`](https://github.com/matthewmackes/map2-audio/commit/2d303c6408c80bde7a5f227d798c30480f0c2ad0) | T2482-P1.1 Gap A.3 (iter 44): MidiEventSubscription + cli... | Map2 Audio | 2026-05-01 |
+| [`f56eb916`](https://github.com/matthewmackes/map2-audio/commit/f56eb916d80eabf019a26eec616d449126473635) | T2482-P1.1 Gap A.2 (iter 43): MidiHostClient.send_sysex() | Map2 Audio | 2026-05-01 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
