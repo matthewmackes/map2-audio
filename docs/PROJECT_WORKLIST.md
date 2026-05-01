@@ -34331,3 +34331,80 @@ Description:
 - Definition of Done (Epic-level): T2481-A through T2481-G all `[✓] Done`; lint suite live in CI with zero unjustified suppressions; rubric audit complete with follow-ups filed; `npm --prefix web run typecheck` + `npm --prefix web run build` clean; `:3000` HTTP 200; bench-side visual verification on top-10 pages; evidence dir written; dual-pushed.
 Assigned to: Unassigned (foreground execution session-by-session; no autonomous-loop scheduled at open)
 Last updated: 2026-04-30 EDT — Epic opened from 10-question scoping protocol against Carbon Design System (https://carbondesignsystem.com/) as user-supplied inspiration source. All 10 decisions locked in the Description body. Awaiting first phase entry (T2481-A1 Plex fonts wired at AppShell root).
+
+---
+
+## Epic: MIDI Services — first-class platform service offering (opened 2026-05-01)
+
+Epic overview: Unify every MIDI surface, authority, and consumer on the platform under a single first-class service offering. Single canonical authority (`MidiBinding` table) + single canonical surface (`/midi`, "MIDI Services") + full migration of every legacy binding store. Subsumes the in-flight T2459 (Controller / Mapping / Device-Pack Subsystem — closed `[✓] Done` 2026-04-27 with H sub-phase still in flight) and T2459-H (MIDI Backend Unification — `[>] In Progress`). The epic establishes the **template for the four first-class service offerings** of MAP2 (MIDI, AVB, Sampler, Audio Effects); Phase 4 explicitly extracts the pattern into `docs/architecture/FIRST_CLASS_SERVICES.md` so the next three epics can lift verbatim.
+
+**Five locked decisions** (clarification round, 2026-05-01):
+1. **Scope**: C — single canonical surface, fully and completely. Specialized per-device UIs absorbed for MIDI editing concerns; DSP/visual concerns survive as embedded widgets or device-specific tools cross-linked from the canonical surface.
+2. **Naming + IA root**: B — surface renamed to "**MIDI Services**", mounted at `/midi`. Old `/midi-hub/*` redirects. **Refinement**: snapshot-editor inline MIDI editors (per-effect mappings, A/B switch, expression) **stay in place**; backend rewires through canonical authority.
+3. **Backend authority**: A — single `MidiBinding` table, full migration, every legacy store deleted. Single source of truth at the storage layer, not just the API layer. Establishes platform directive: MAP2 is four first-class service offerings (MIDI, AVB, Sampler, Audio Effects); MIDI Services is the template.
+4. **Relationship to T2459 + T2459-H**: A — subsumed as Phase 1. Single epic, clean lineage. T2459/T2459-H project memory becomes historical reference; this epic is the live source of truth.
+5. **Authorization mode**: D — Phases 1–2 autonomous (backend / data-layer work, machine-checkable correctness); Phases 3–4 per-bundle gated (operator-visible UI, architectural template extraction).
+
+**Canonical design reference**: `docs/architecture/MIDI_SERVICES.md` (this epic's authoritative spec — subtask plan + status live here in the worklist; design intent + schema + migration + risk register live in the doc).
+
+**Inventory** (39 items identified during 2026-05-01 audit):
+- 7 MIDI Hub sub-pages → absorbed into MIDI Services regions
+- 3 standalone MIDI surfaces (Assignments walkthrough, Expression page, legacy v1 drawer) → absorbed
+- 8 per-device MIDI editor pages → MIDI editing absorbed; DSP/visual concerns survive
+- 3 Snapshot Editor inline MIDI editors → **stay in place**, backend rewires through authority
+- 2 Brain MIDI surfaces (Setup, Inputs) → reframed as MIDI Services consumers
+- 7 cross-cutting utilities (MIDI Learn button, clock surfaces, RTP-MIDI, MIDI 2.0/UMP, Tesira TTP, virtual GPIO, string interface) → consolidated
+- 7 backend services + storage layers → migrated into single `MidiBinding` authority
+- Total absorbed: 23 fully + 8 partially + 3 stay-in-place-rewire-backend + 2 reframed-as-consumers + 6 backend consolidations
+
+ID: T2482
+Status: [ ] Todo
+Title: MIDI Services — first-class platform service offering (canonical authority + canonical surface)
+Description:
+- Goal / acceptance criteria: Every MIDI binding on the platform lives in `MidiBinding` (the canonical store). Every operator-visible MIDI editing surface either lives at `/midi` ("MIDI Services") OR consumes the canonical authority via a typed projection. Old `/midi-hub/*` URLs redirect cleanly. Snapshot Editor inline per-effect MIDI editors function unchanged from operator perspective. Per-device DSP editors (MPX-1 Panel, IntelFX Library, Maschine LCD, etc.) survive untouched. Three follow-up epics (AVB Services, Sampler Services, Audio Effects Services) opened with concrete scope + locked decisions, each ready to lift the unification template from this epic.
+- Why it matters: MAP2 is a four-pillar audio platform — MIDI, AVB, Sampler, Audio Effects. Today, MIDI is spread across 18 user surfaces, 7+ backend services, and at least 5 separate binding storage layers. Operators don't have one place to ask "what is this device bound to?" or "where do I author a new binding?" Developers don't have one place to find binding state. This epic ends the spread for MIDI, then establishes the template so AVB / Sampler / Effects can follow without re-deriving the architecture.
+- Dependencies: Subsumes T2459 (closed; F2 + G epic still queued) and T2459-H (in flight). Coordinates with State Authority epic (no schema collision; `MidiBinding` is independent of the snapshot graph). Coordinates with T2480 (Brain Setup — its `MidiDeviceState.bindings` field is the seed of `MidiBinding`).
+- Estimated effort: 10–14 weeks total. Phase 1: 2–3 weeks (absorbs T2459-H mid-execution). Phase 2: 3–4 weeks (authority + 8+ migrations). Phase 3: 4–6 weeks (canonical surface). Phase 4: 1 week (template extraction).
+- Required outputs: `MidiBinding` SQLite table + migration script + `MidiBindingAuthority` service; consolidated `app/services/midi/` directory with per-consumer projections; `/midi` route mount with 9 regions; `/midi-hub/*` redirect map; full deletion of every legacy MIDI binding storage layer; updated `docs/architecture/MIDI_BACKEND.md`; new `docs/architecture/FIRST_CLASS_SERVICES.md`; three follow-up epic stubs (AVB / Sampler / Effects).
+- Phase plan (subtask IDs T2482-P{phase}.{n}):
+
+**Phase 1 — Backend unification (autonomous; absorbs in-flight T2459-H)**:
+  - **T2482-P1.1** (was T2459-H1): libremidi I/O foundation + SPSC shm event ring (host producer → JUCE consumer, < 100µs p99 latency target)
+  - **T2482-P1.2** (was T2459-H2): Mixxx ControllerEngine integration (QJSEngine inside controller-host, XML loader, hot-reload, B5 fixture golden tests)
+  - **T2482-P1.3** (was T2459-H6): retire `juce-engine/Source/Controllers/Midi/Map2MidiController.cpp` raw-ALSA path; JUCE engine consumes shm ring exclusively; 30-min soak gate
+  - **T2482-P1.4** (was T2459-H7): cluster MIDI host-to-host protocol; replaces `app/routes/midi_cluster_proxy.py`
+  - **T2482-P1.5**: finish device-pack migration of remaining devices (verify Maschine MK1, MPX-1, IntelFX cutovers complete from H3/H4; add Mackie MCU, Novation Launch Control, Ableton Push, Voodoo Ground Control Pro)
+  - **T2482-P1.6**: confirm `app/services/midi_hub/` deletion is complete per H5; any residual files retired
+  - **T2482-P1.7**: update `docs/architecture/MIDI_BACKEND.md` to reflect MIDI Services framing
+
+**Phase 2 — Canonical authority + migration (autonomous)**:
+  - **T2482-P2.1**: `MidiBinding` table schema + migration script (table-only; no consumer rewires yet)
+  - **T2482-P2.2**: `MidiBindingAuthority` service with CRUD + write-validation + provenance (`app/services/midi/authority.py`)
+  - **T2482-P2.3**: Snapshot consumer migration (`controls.midi_map` → `MidiBinding`; `unified_snapshots.py` rewired through `projections/snapshot.py`; round-trip verification)
+  - **T2482-P2.4**: Brain consumer migration (`MidiDeviceState.bindings` → projection over canonical store; Brain Setup task wires through authority)
+  - **T2482-P2.5**: Per-device consumer migrations (Maschine MK1, MCU, Launch Control, MIDI Commander, MPX-1, IntelFX, Push, Ground Control Pro)
+  - **T2482-P2.6**: Tesira TTP bridge bindings + virtual GPIO + string interface migrations
+  - **T2482-P2.7**: Snapshot Editor inline MIDI editors backend rewire (A/B switch, Expression mappings, Block MIDI panel — UI unchanged)
+  - **T2482-P2.8**: Legacy store deletion (every per-consumer storage layer dropped)
+  - **T2482-P2.9**: Migration verification suite (full backup; 100-snapshot round-trip; integration tests)
+
+**Phase 3 — Canonical surface (per-bundle gated)**:
+  - **T2482-P3.1**: `/midi` mount + AppShell entry; rename "MIDI Hub" → "MIDI Services" in nav; `/midi-hub/*` redirect map
+  - **T2482-P3.2**: Overview region (landing page; aggregates Devices + Bindings + Routing + Transport state)
+  - **T2482-P3.3**: Devices region (list + per-device editor pane + embedded preview widgets)
+  - **T2482-P3.4**: Bindings region (global filterable list + authoring workflow + bulk ops)
+  - **T2482-P3.5**: Routing region (matrix + patchbay + cluster peers)
+  - **T2482-P3.6**: Transport region (clock + transport bindings)
+  - **T2482-P3.7**: Network region (RTP-MIDI + MIDI 2.0/UMP + Tesira TTP + GPIO + string interface)
+  - **T2482-P3.8**: Presets, Events, Processing, Expression, Lab regions (direct ports of MIDI Hub sub-pages into region containers)
+  - **T2482-P3.9**: Per-device legacy page reframing (DSP editors keep their routes; MIDI editing concerns get cross-link banners to `/midi/devices?device=<id>`)
+  - **T2482-P3.10**: Brain Setup + Brain Inputs reframed as MIDI Services consumers
+
+**Phase 4 — First-class-services template extraction (per-bundle gated)**:
+  - **T2482-P4.1**: `docs/architecture/FIRST_CLASS_SERVICES.md` — canonical reference for the unification pattern (authority + surface + migration + provenance)
+  - **T2482-P4.2**: Worklist epic stubs opened (`[ ] Todo`) for AVB Services, Sampler Services, Audio Effects Services — each with concrete scope, status, and locked decisions ready to follow the template
+  - **T2482-P4.3**: Cross-service backplane note in `FIRST_CLASS_SERVICES.md` (how the four services relate; consumer relationships)
+
+- Definition of Done (Epic-level): all 27 subtasks `[✓] Done`; `MidiBinding` is the only place a binding lives on the platform (verified via grep + audit); every operator-visible MIDI surface lives at or beneath `/midi`; Snapshot Editor inline MIDI editors function unchanged; per-device DSP editors untouched; `/midi-hub/*` redirects clean; visual-regression baselines updated; `npm --prefix web run typecheck` + `npm --prefix web run build` clean; `:3000` HTTP 200; `pytest` suite green including new migration verification suite; `docs/architecture/MIDI_SERVICES.md` + `docs/architecture/MIDI_BACKEND.md` + `docs/architecture/FIRST_CLASS_SERVICES.md` all current; three follow-up epics opened with concrete scope; T2459 + T2459-H memory headers updated to point to T2482.
+Assigned to: Claude Opus 4.7 (Phases 1–2 autonomous per Q5; Phases 3–4 per-bundle gated)
+Last updated: 2026-05-01 EDT — Epic opened from 5-question clarification protocol against the four-services platform framing. Subsumes T2459 + T2459-H. Design doc at `docs/architecture/MIDI_SERVICES.md`. Awaiting user approval of plan artifact before Phase 1 begins.
