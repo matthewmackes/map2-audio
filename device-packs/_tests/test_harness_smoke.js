@@ -36,11 +36,13 @@ run('MPX1.bypass_feedback emits CC 64 127 when bypass=true', () => {
     assert.equal(out[2], 127, 'velocity');
 });
 
-run('MPX1.handle_sysex returns null in stub state', () => {
-    // Stub state today (pre-cutover) — every inbound sysex returns null
-    // and the Python parser handles it via app/services/midi_hub/router.py
+run('MPX1.handle_sysex returns null on under-min-size frames (defensive)', () => {
+    // Frames smaller than MIN_PROGRAM_DUMP_SIZE (20 bytes) are rejected
+    // — pre-iter-35 the stub returned null for everything; post-iter-35
+    // legitimate Lexicon program dumps return parsed objects (see
+    // lexicon/scripts/__tests__/test_mpx1_parser.js for full coverage).
     const result = ctx.MPX1.handle_sysex([0xF0, 0x06, 0x02, 0x00, 0xF7]);
-    assert.isNull(result, 'pre-cutover stub');
+    assert.isNull(result, 'under-min frame');
 });
 
 run('MPX1.program_change uses default offset=0 when no setting', () => {
