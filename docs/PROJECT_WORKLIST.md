@@ -34426,3 +34426,70 @@ Last updated: 2026-05-01 EDT — **SHIP loop iter 1/10 (autonomous)**: Plan arti
 **Deferred to next SHIP loop** (iters 11–20): P1.5 device-pack builds (6 devices), P2.5 per-device consumer migrations (8 devices), P2.6 Tesira/GPIO/string consumer migrations, P2.8 legacy store deletion, P2.9 migration verification suite.
 
 **Iter 2 (P1.6a audit)**: `app/services/midi_hub/` contains 29 Python files (clock_engine, cluster_clock, cluster_gateway, cluster_router, device_registry, event_list_service, gateway, hub, inbound_traffic_bridge, macros, message_mapper, midi2, midi_discovery, network, osc_namespace, ports, preset_service, recorder, ring_buffer, router, rtp_transport, scheduler, script_engine, string_interface, tesira_client, traffic_monitor, transforms, virtual_gpio + `__init__.py`). T2459-H5's plan ("absorb 30 files into host") is **not done** — only the routes were consolidated. Plus T2480-3 added `inbound_traffic_bridge.py` to this directory two days ago, which is itself an active production dependency. **Hard ordering constraint identified**: P1.6 deletion must follow P1.1 (libremidi I/O foundation) + P1.2 (Mixxx ControllerEngine integration) so the controller-host can absorb each file's responsibilities. Confirmed P1.6 cannot run in this SHIP loop; deferred to a later loop after P1.1/P1.2 land.
+
+---
+
+### SHIP loop 1 (iters 1–10) closing log — 2026-05-01
+
+**Status**: 9 of 10 iters shipped + this roll-up = 10 commits dual-pushed. Phase 1 cleanups + Phase 2 foundation complete. Ready for SHIP loop 2 (iters 11–20).
+
+| Iter | Subtask | Commit | Tests | Highlight |
+|---|---|---|---|---|
+| 1 | P1.5 audit + restructure | 689e8fe1 | — | Confirmed 6 device-packs missing from H4 ship; restructured iter plan |
+| 2 | P1.6a midi_hub/ audit | b81ddfa7 | — | 29 files identified; ordering constraint surfaced |
+| 3 | P1.7 MIDI_BACKEND.md | 82342681 | — | New 134-line implementation-state doc; companion to MIDI_SERVICES.md |
+| 4 | P2.1 MidiBinding schema | ae142b33 | 7 | New `app/services/midi/` tree; SQLAlchemy ORM + Pydantic shapes; migration v12; index name collision bug found+fixed |
+| 5 | P2.2 MidiBindingAuthority | 071ea245 | 14 | Async CRUD service + create_many bulk + scope queries + provenance bumping |
+| 6 | P2.3 part 1 snapshot read | 787e2d10 | 15 | legacy_entry_to_create_payload + binding_to_legacy_entry round-trip; ordered read by legacy_entry_index |
+| 7 | P2.3 part 2 snapshot write | fb9c24a3 | 6 (21 cumulative) | replace_snapshot_midi_map_entries + migrate_snapshot_midi_maps_table (idempotent) |
+| 8 | P2.4 brain projection | 51e6f607 | 9 | T2480-5 MidiDeviceBinding shape ↔ canonical authority; replace-by-(consumer_type, source) preserved |
+| 9 | P2.7 plugin_param projection | 35baa86a | 13 | per-effect inline editor backend contract (snapshot-scoped, engine_param target, feedback_cc + label support) |
+| 10 | SHIP loop roll-up | (this commit) | — | This entry |
+
+**Backend test totals after SHIP loop 1**:
+- T2482 schema (P2.1): 7 tests
+- T2482 authority (P2.2): 14 tests
+- T2482 snapshot projection (P2.3): 21 tests
+- T2482 brain projection (P2.4): 9 tests
+- T2482 plugin_param projection (P2.7): 13 tests
+- **T2482 subtotal: 64 tests across 5 suites**
+- T2480-5 device bindings (pre-existing): 8 tests
+- T2480-5 device binding routes: 1 test
+- **MIDI domain total: 73 tests, all passing in <8s**
+
+**What landed**:
+- New `app/services/midi/` first-class module tree (authority + 3 projections + Pydantic schemas + ORM model)
+- Database migration v12 idempotently creates the `midi_bindings` canonical table
+- Three projection adapters give us the read/write contract for the three highest-traffic consumer types (snapshot, brain, plugin_param)
+- Snapshot legacy-data migration script is idempotent + has round-trip tests on the order-preservation guarantee
+- Documentation: `MIDI_SERVICES.md` + `MIDI_BACKEND.md` (companion implementation-state doc)
+- Two memory files (`project_t2459_controller_layer.md`, `project_t2459h_midi_unification.md`) marked subsumed-by-T2482
+
+**What did NOT land in SHIP loop 1**:
+- P1.1 libremidi I/O foundation (still in T2459-H1 territory; would have been ~2-3 weeks of work, far more than fits in one iter)
+- P1.2 Mixxx ControllerEngine integration (same scope reason)
+- P1.3 Map2MidiController.cpp retirement (depends on P1.1)
+- P1.4 cluster MIDI host-to-host protocol (depends on P1.1)
+- P1.5 device-pack builds for 6 missing devices (each multi-hour; deferred to SHIP loop 2)
+- P1.6 midi_hub/ deletion (depends on P1.1+P1.2)
+- P2.5 per-device consumer migrations (8 devices; deferred to SHIP loop 2)
+- P2.6 Tesira/GPIO/string projections (deferred to SHIP loop 2)
+- P2.8 legacy store deletion (depends on P2.5+P2.6 + production verification)
+- P2.9 migration verification suite (deferred to SHIP loop 2)
+
+---
+
+### SHIP loop 2 (iters 11–20) plan
+
+Focus shifts to (a) the per-device consumer projections that complete Phase 2, (b) the `/api/midi/*` consolidated routes scaffold so the new authority is reachable from the frontend, (c) the Phase 2 migration verification suite. Authorization mode unchanged (autonomous per Q5/D).
+
+**Iter 11**: P2.6 part 1 — `transport.py` projection (MIDI clock + transport bindings)
+**Iter 12**: P2.6 part 2 — `gpio.py` projection (virtual GPIO 12in/12out bindings)
+**Iter 13**: P2.6 part 3 — `tesira_ttp.py` projection (TTP↔MIDI bridge mappings)
+**Iter 14**: P2.5 part 1 — `device_pack.py` projection + per-device-pack default bindings (Maschine MK1 + MeloAudio Commander; the 2 device-packs that already exist on disk)
+**Iter 15**: P2.5 part 2 — Per-device consumer migration scripts: MidiDeviceConfig table → canonical bindings (the existing per-device storage layer)
+**Iter 16**: P2.9 part 1 — `app/services/midi/migrations/` Phase 2 verification suite scaffold + round-trip helpers
+**Iter 17**: P2.9 part 2 — Verification gates per consumer type: snapshot, brain, plugin_param, transport, gpio, tesira, device_pack
+**Iter 18**: P3.1 prep (gated work, but the route scaffolding is non-UI) — `app/services/midi/routes.py` consolidated `/api/midi/*` endpoints stub: list/get/list_for_consumer/list_for_device/list_in_scope/CRUD via authority
+**Iter 19**: P3.1 prep continuation — wire `app/services/midi/routes.py` into `app/main.py` router registration; add OpenAPI tags
+**Iter 20**: SHIP loop 2 roll-up + SHIP loop 3 plan (begins to address P1.x backend work + P2.5 device-pack builds for the 6 missing devices)
