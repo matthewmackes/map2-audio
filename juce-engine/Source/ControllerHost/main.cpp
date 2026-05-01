@@ -535,7 +535,8 @@ bool drain_ring_and_dispatch (int client_fd,
                               map2::controller_host::Map2MappingEngine& mapping_engine,
                               const std::vector<std::string>& controller_keys_by_index,
                               const std::string& fallback_controller_key,
-                              std::size_t maxEvents)
+                              std::size_t maxEvents,
+                              map2::controller_host::LibremidiAdapter* outbound_adapter = nullptr)
 {
     if (! ring.isOpen()) return true;
 
@@ -602,15 +603,41 @@ bool drain_ring_and_dispatch (int client_fd,
     for (auto& ev : mapping_engine.js().drainLogs())
         if (! send_frame (client_fd, build_log_event_from_pending (ev)))
             return false;
+    // T2482-P1.2 Gap C (iter 73) — prefer libremidi-direct send to
+    // the host's virtual output port over the legacy
+    // midi_send_request → Python IPC round-trip. Falls back to the
+    // IPC path when no adapter is supplied OR no virtual output is
+    // open (transitional behaviour until per-hardware-output port
+    // resolution lands in a future loop).
     for (auto& sm : mapping_engine.drainShortMidi())
     {
         const std::vector<std::uint8_t> bytes { sm.status, sm.data1, sm.data2 };
-        if (! send_frame (client_fd, build_midi_send_request_frame (sm.controller_key, bytes)))
-            return false;
+        bool sent_libremidi = false;
+        if (outbound_adapter != nullptr)
+        {
+            sent_libremidi = outbound_adapter->sendToVirtualOutput (
+                bytes.data(), bytes.size());
+        }
+        if (! sent_libremidi)
+        {
+            if (! send_frame (client_fd, build_midi_send_request_frame (sm.controller_key, bytes)))
+                return false;
+        }
     }
     for (auto& sx : mapping_engine.drainSysExMidi())
-        if (! send_frame (client_fd, build_midi_send_request_frame (sx.controller_key, sx.bytes)))
-            return false;
+    {
+        bool sent_libremidi = false;
+        if (outbound_adapter != nullptr)
+        {
+            sent_libremidi = outbound_adapter->sendToVirtualOutput (
+                sx.bytes.data(), sx.bytes.size());
+        }
+        if (! sent_libremidi)
+        {
+            if (! send_frame (client_fd, build_midi_send_request_frame (sx.controller_key, sx.bytes)))
+                return false;
+        }
+    }
 
     return true;
 }
@@ -729,11 +756,17 @@ int run_main_loop (const std::string& socket_path)
                 break;
             }
 
+            // T2482-P1.2 Gap C (iter 73) — pass the libremidi adapter
+            // through so outbound MIDI from JS callbacks lands on the
+            // host's virtual output port instead of round-tripping
+            // through Python via midi_send_request IPC frames.
+            auto* outbound_adapter = midiBackend.adapter();
             if (rt_ok)
             {
                 if (! drain_ring_and_dispatch (client_fd, rtRing, mapping_engine,
                                                controller_keys_by_index,
-                                               active_controller_key, 64))
+                                               active_controller_key, 64,
+                                               outbound_adapter))
                 {
                     std::cerr << "[map2-controller-host] backend disconnected during rt drain\n";
                     goto disconnect;
@@ -743,7 +776,8 @@ int run_main_loop (const std::string& socket_path)
             {
                 if (! drain_ring_and_dispatch (client_fd, controlRing, mapping_engine,
                                                controller_keys_by_index,
-                                               active_controller_key, 16))
+                                               active_controller_key, 16,
+                                               outbound_adapter))
                 {
                     std::cerr << "[map2-controller-host] backend disconnected during control drain\n";
                     goto disconnect;
