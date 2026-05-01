@@ -1,15 +1,20 @@
-"""T2482-P1.1 Gap E phase 9 (iter 59) — CI grep-fail guard.
+"""T2482-P1.1 Gap E phase 9 (iter 59) → loop 9 / iter 88 — CI grep-fail guard.
 
-Pins the consumer-by-consumer rtmidi-strip results from iters 54-58.
-Any new `import rtmidi` or `from rtmidi import ...` line under
-``app/`` MUST be in the Maschine carve-out
-(`app/services/maschine/`) — the only place python-rtmidi is still
-on the critical path. New imports anywhere else fail this test
-immediately so the rtmidi removal can't silently regress.
+Pins the post-loop-9 contract: ZERO `import rtmidi` lines in app/.
 
-Once the P1.2 follow-up adds `MidiCreateVirtualPortRequest` to the
-controller-host IPC schema, the Maschine carve-out can be removed
-and python-rtmidi dropped from `requirements-backend-runtime.txt`.
+Original (iter 59) shape: a 5-entry allow-list of files that still
+needed rtmidi after loop 6's lenient-mode soft-strips. SHIP loop 9
+(iters 81-86) hard-stripped each of those 5 surfaces by porting them
+to MidiHostClient; SHIP loop 9 / iter 87 then dropped python-rtmidi
+from `requirements-backend-runtime.txt` entirely. iter 88 locks the
+empty contract: no `import rtmidi` anywhere in `app/` — period. New
+imports anywhere fail this test immediately so a regression cannot
+silently bring rtmidi back.
+
+If a future surface genuinely needs rtmidi again (e.g., a
+hardware-only diagnostic CLI that doesn't fit the controller-host
+model), update this allow-list AND add a deferral note in
+docs/architecture/.
 """
 
 from __future__ import annotations
@@ -22,51 +27,32 @@ from pathlib import Path
 REPO_ROOT = Path(__file__).resolve().parents[1]
 APP_DIR = REPO_ROOT / "app"
 
-# Files in app/ that are PERMITTED to import rtmidi. Each entry must
-# have a comment explaining why. New entries require a matching
-# deferral note in docs/architecture/.
+# T2482 loop 9 / iter 88: empty allow-list. Maintained as the
+# explicit "no exceptions" contract — loop 9 (iters 81-86) ported
+# every previous entry to host-routed equivalents; iter 87 dropped
+# the python-rtmidi dep from the runtime requirements file.
 #
-# Iter 79 update: after iters 54-78 (loop 6 hard-strips + loop 8
-# Maschine-flip + sysex_bridge / midi_hub / midi_engine hard-strips),
-# rtmidi has moved from "production primary path" to "narrow secondary
-# surface". Each remaining import has a specific scope documented
-# below; none of these are dropable without a deeper refactor that
-# exceeds SHIP loop 8's scope.
-ALLOWED_RTMIDI_PATHS = {
-    # Maschine MK1 daemon — REMOVED FROM ALLOW-LIST in iter 86 (loop 9).
-    # The rtmidi fallback was retired. self._port is now always None;
-    # virtual-port creation goes exclusively through the host's
-    # MidiCreateVirtualPortRequest IPC envelope. Daemon-down → open()
-    # returns False (Maschine consumers handle this).
-    # GCP midi_transport — REMOVED FROM ALLOW-LIST in iter 82 (loop 9).
-    # receive_sysex was refactored from rtmidi-polling to
-    # MidiHostClient.subscribe()-based event-driven receive. Test
-    # factory injection still works but no longer carries a rtmidi
-    # fallback.
-    # midi_hub/ports.py — REMOVED FROM ALLOW-LIST in iter 85 (loop 9).
-    # AlsaMidiPort.open() / send / receive refactored to delegate to
-    # MidiHostClient (open_midi_input + subscribe + send_short_message
-    # / send_sysex). Per-port subscription buffers events in a deque
-    # the receive() drain reads. dispose_rtmidi_client also removed.
-    # midi_engine.py — REMOVED FROM ALLOW-LIST in iter 83 (loop 9).
-    # Both the rtmidi-direct discovery branch AND the persistent
-    # _midi_in / _midi_out for live MIDI binding were stripped.
-    # Production live MIDI flows through MidiHub (host-routed via
-    # iter 78) or falls to virtual placeholder when MidiHub disabled.
-    # midi_sysex_bridge_base.py — REMOVED FROM ALLOW-LIST in iter 84
-    # (loop 9). build_midi_sysex_runtime no longer imports rtmidi;
-    # IntelFX + MPX-1 production MIDI routes through the
-    # controller-host (iter-77 sysex_device_bridge enumeration +
-    # iter-83 midi_engine binding). Simulator path unchanged.
-}
+# Historical entries (each removed in the named iter):
+# - app/services/maschine/maschine_mk1_daemon.py  (iter 86)
+# - app/services/ground_control_pro/midi_transport.py  (iter 82)
+# - app/services/midi_hub/ports.py  (iter 85)
+# - app/services/midi_engine.py  (iter 83)
+# - app/services/midi_sysex_bridge_base.py  (iter 84)
+ALLOWED_RTMIDI_PATHS: set[str] = set()
 
 
 _RTMIDI_IMPORT_RE = re.compile(r"^\s*(import\s+rtmidi|from\s+rtmidi\s+import)", re.M)
 
 
-class NoNewRtmidiImportsTests(unittest.TestCase):
-    def test_no_unexpected_rtmidi_imports(self) -> None:
-        """Find every rtmidi import in app/ and ensure each is allow-listed."""
+class NoRtmidiImportsTests(unittest.TestCase):
+    def test_zero_rtmidi_imports_in_app(self) -> None:
+        """Locks the iter-88 contract: NO `import rtmidi` in app/.
+
+        Allow-list is empty; any match is a regression. Iter-87
+        already removed python-rtmidi from requirements, so a stray
+        new import would fail at install/runtime — this test catches
+        it earlier (at PR review).
+        """
         offenders: list[str] = []
         for py_file in APP_DIR.rglob("*.py"):
             if "__pycache__" in py_file.parts:
@@ -79,43 +65,51 @@ class NoNewRtmidiImportsTests(unittest.TestCase):
                 offenders.append(rel)
         if offenders:
             self.fail(
-                "New rtmidi imports detected outside the iter-59 allow-list. "
+                "NEW rtmidi import detected after the iter-88 hard-strip. "
                 "Files: " + ", ".join(sorted(offenders)) + ". "
-                "If a new rtmidi dependency is required, add the path to "
-                "ALLOWED_RTMIDI_PATHS in this test AND a deferral note in "
-                "docs/architecture/T2482_P1_1_RTMIDI_REMOVAL_READINESS.md."
+                "python-rtmidi was dropped from requirements in iter 87 "
+                "and the project no longer depends on it. If a new "
+                "rtmidi dependency is genuinely required, both: (a) add "
+                "the path to ALLOWED_RTMIDI_PATHS in this test with a "
+                "deferral note explaining why; and (b) restore the "
+                "python-rtmidi line in requirements-backend-runtime.txt."
             )
 
-    def test_allow_list_entries_are_real_files(self) -> None:
-        """Sanity check — every allow-list entry must point to a real file."""
-        for rel in ALLOWED_RTMIDI_PATHS:
-            path = REPO_ROOT / rel
-            self.assertTrue(
-                path.exists(),
-                f"Allow-list entry points to a non-existent file: {rel}. "
-                "Either restore the file or remove the entry.",
-            )
+    def test_allow_list_remains_empty(self) -> None:
+        """Pin the contract: ALLOWED_RTMIDI_PATHS must be empty.
 
-    def test_allow_list_entries_actually_import_rtmidi(self) -> None:
-        """No stale entries — every allow-list path must currently import rtmidi.
-
-        Catches the case where a file was rtmidi-stripped but its allow-list
-        entry was never removed. Stale allow-list entries hide future
-        regressions.
+        If a future change adds a path here, the doc-string above
+        mandates a deferral note. This test prevents the allow-list
+        from silently growing.
         """
-        stale: list[str] = []
-        for rel in ALLOWED_RTMIDI_PATHS:
-            path = REPO_ROOT / rel
-            if not path.exists():
-                continue  # caught by the previous test
-            text = path.read_text(encoding="utf-8", errors="replace")
-            if not _RTMIDI_IMPORT_RE.search(text):
-                stale.append(rel)
-        if stale:
-            self.fail(
-                "Allow-list contains paths that no longer import rtmidi: "
-                + ", ".join(sorted(stale))
-                + ". Remove these from ALLOWED_RTMIDI_PATHS to keep the guard tight."
+        self.assertEqual(
+            ALLOWED_RTMIDI_PATHS, set(),
+            "Iter 88 locked ALLOWED_RTMIDI_PATHS = set(). Adding a path "
+            "here requires explicit operator approval + a deferral note "
+            "in docs/architecture/."
+        )
+
+    def test_python_rtmidi_not_in_requirements(self) -> None:
+        """python-rtmidi was dropped from requirements in iter 87.
+
+        This test ensures it doesn't sneak back in via a future
+        regression. The line `python-rtmidi>=...` would re-introduce
+        the runtime dep that loop 9 worked to remove.
+        """
+        req_file = REPO_ROOT / "requirements-backend-runtime.txt"
+        text = req_file.read_text(encoding="utf-8")
+        # Search for the actual install spec, not historical comments.
+        # An install line starts at column 0 with the package name.
+        for line in text.splitlines():
+            stripped = line.strip()
+            if stripped.startswith("#") or not stripped:
+                continue
+            self.assertFalse(
+                stripped.startswith("python-rtmidi"),
+                f"python-rtmidi reintroduced in {req_file.name}: {line!r}. "
+                "Iter 87 removed it after the loop-9 hard-strips. If a new "
+                "rtmidi-dependent surface genuinely exists, update this "
+                "test + the iter-88 allow-list together."
             )
 
 
