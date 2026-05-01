@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1435** Python | **1399** TypeScript | **177** C++/H | **145** Docs | **3391** total commits | **3** stars | **0** forks | **0** open issues
+**1436** Python | **1399** TypeScript | **177** C++/H | **145** Docs | **3398** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`8f309b28`](https://github.com/matthewmackes/map2-audio/commit/8f309b288f7b34d405b8959c06d3a88347507ffa) | T2482 loop 9 / iter 87: python-rtmidi DROPPED from requir... | Map2 Audio | 2026-05-01 |
+| [`b8b13b24`](https://github.com/matthewmackes/map2-audio/commit/b8b13b24451a079717e212bfdb3b89ce8defbbf2) | T2482 loop 9 / iter 86: Maschine rtmidi fallback removed;... | Map2 Audio | 2026-05-01 |
+| [`82c7d9b8`](https://github.com/matthewmackes/map2-audio/commit/82c7d9b86fb31913051021e972ac24c9c70747d9) | T2482 loop 9 / iter 85: AlsaMidiPort host-routed (rtmidi ... | Map2 Audio | 2026-05-01 |
+| [`5afe457f`](https://github.com/matthewmackes/map2-audio/commit/5afe457f4dc93af88ad5852bae76b3cdbf3e04e2) | T2482 loop 9 / iter 84: midi_sysex_bridge_base rtmidi imp... | Map2 Audio | 2026-05-01 |
+| [`8442deb6`](https://github.com/matthewmackes/map2-audio/commit/8442deb6ae203ce261ad8815dbc8011c0e59f032) | T2482 loop 9 / iter 83: midi_engine rtmidi import removed | Map2 Audio | 2026-05-01 |
+| [`52429340`](https://github.com/matthewmackes/map2-audio/commit/52429340febeb1b06e2468dc3a4e95c07c89d401) | T2482 loop 9 / iter 82: GCP receive_sysex → MidiHostClien... | Map2 Audio | 2026-05-01 |
+| [`d158df1d`](https://github.com/matthewmackes/map2-audio/commit/d158df1d6e206462d10baba65f4c635de5ac82ec) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-01 |
 | [`e4dc24ac`](https://github.com/matthewmackes/map2-audio/commit/e4dc24ac4633eea8bdc1af5ab41ae303167ebe2f) | T2482 loop 9 (iter 81): rtmidi-removal plan + 5-surface a... | Map2 Audio | 2026-05-01 |
-| [`3c365699`](https://github.com/matthewmackes/map2-audio/commit/3c365699e7bc327f739484165533350933e32ab6) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-01 |
-| [`d363ca58`](https://github.com/matthewmackes/map2-audio/commit/d363ca5861d4f799f8bdf568a3baa3ed9bfc3f49) | worklist: roll up T2482 SHIP loop 8 (iters 71-80) — P1.2 ... | Map2 Audio | 2026-05-01 |
-| [`33f595b2`](https://github.com/matthewmackes/map2-audio/commit/33f595b286b4ab36bbb9ce51f3d2c2cfa2755650) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-01 |
-| [`bd4146c6`](https://github.com/matthewmackes/map2-audio/commit/bd4146c6e7795d8da2becece53fb9d3b269a69ba) | T2482-P1.2 (iter 79): rtmidi allow-list + requirements do... | Map2 Audio | 2026-05-01 |
-| [`70bf9a5e`](https://github.com/matthewmackes/map2-audio/commit/70bf9a5e30bfd52ab0d282ede2752c4213bd69d4) | T2482-P1.2 (iter 78): hard-strip rtmidi from midi_hub + m... | Map2 Audio | 2026-05-01 |
-| [`f4519eb1`](https://github.com/matthewmackes/map2-audio/commit/f4519eb14e8f042b15c0bd424ca51cacc9a6306a) | T2482-P1.2 (iter 77): hard-strip rtmidi lenient-mode from... | Map2 Audio | 2026-05-01 |
-| [`74e0632a`](https://github.com/matthewmackes/map2-audio/commit/74e0632a29bcc5d2a001c6ec35aebc6fe4f58041) | T2482-P1.2 (iter 76): Maschine virtual-port flip via new ... | Map2 Audio | 2026-05-01 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
@@ -232,7 +232,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 | [Neural Amp Modeler](https://github.com/sdatkinson/NeuralAmpModelerPlugin) | ML amp modeling |
 | [Textual](https://textual.textualize.io/) | Python TUI framework |
 
-...and **38** more open-source packages from PyPI and npm.
+...and **37** more open-source packages from PyPI and npm.
 <!-- CREDITS:END -->
 
 ---
