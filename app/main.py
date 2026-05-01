@@ -246,10 +246,17 @@ async def start_cluster_midi_services(
     from app.services.midi_hub.cluster_clock import get_midi_cluster_clock
     from app.services.midi_hub.cluster_router import get_midi_cluster_router
     from app.services.midi_hub.hub import get_midi_hub
+    from app.services.midi_hub.inbound_traffic_bridge import (
+        install_inbound_midi_traffic_bridge,
+    )
     from app.services.midi_hub.midi_discovery import get_midi_discovery_service
     from app.services.midi_hub.rtp_transport import get_rtp_transport
 
     midi_hub = get_midi_hub()
+    # T2480-3: bridge inbound MIDI to the midi:traffic WS topic so the Brain
+    # "Connect a new keyboard" setup task can show live note events even
+    # before any routing rule exists for the device.
+    install_inbound_midi_traffic_bridge()
     midi_discovery = get_midi_discovery_service()
     midi_discovery.broadcast_local_node(node_id, hostname, api_port)
 

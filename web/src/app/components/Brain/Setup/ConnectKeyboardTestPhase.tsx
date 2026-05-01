@@ -1,33 +1,23 @@
 import { Tile } from '@carbon/react'
 
-import { StatusChip } from '../../primitives'
+import { BrainKeyboardVisualizer, useMidiDeviceEvents } from '../../BrainKeyboardVisualizer'
 
 interface ConnectKeyboardTestPhaseProps {
   selectedPortName: string | null
 }
 
 export function ConnectKeyboardTestPhase({ selectedPortName }: ConnectKeyboardTestPhaseProps) {
+  const { activeNotes, log, isConnected, totalReceived } = useMidiDeviceEvents(selectedPortName)
+
   return (
     <Tile className="connect-keyboard-task__phase-body">
-      <div className="connect-keyboard-task__test-header">
-        <div>
-          <div className="connect-keyboard-task__phase-eyebrow">SELECTED DEVICE</div>
-          <div className="connect-keyboard-task__test-port-name">
-            {selectedPortName ?? '—'}
-          </div>
-        </div>
-        <StatusChip tone="neutral" size="sm" label="Awaiting visualizer (T2480-3)" />
-      </div>
-
-      <div
-        className="connect-keyboard-task__test-piano-placeholder"
-        role="img"
-        aria-label="MIDI keyboard visualizer placeholder"
-      >
-        <div className="connect-keyboard-task__test-piano-placeholder-text">
-          Live MIDI visualizer + event log land in T2480-3.
-        </div>
-      </div>
+      <BrainKeyboardVisualizer
+        portName={selectedPortName}
+        activeNotes={activeNotes}
+        log={log}
+        isConnected={isConnected}
+        totalReceived={totalReceived}
+      />
 
       <p className="connect-keyboard-task__phase-paragraph">
         Press <strong>Continue</strong> when you are satisfied the keyboard is the right one.
