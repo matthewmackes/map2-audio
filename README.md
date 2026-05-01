@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1384** Python | **1399** TypeScript | **177** C++/H | **145** Docs | **3287** total commits | **3** stars | **0** forks | **0** open issues
+**1398** Python | **1399** TypeScript | **177** C++/H | **145** Docs | **3295** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -193,7 +193,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 |  |  |  |
 | :---: | :---: | :---: |
 | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/map2-banner.png" width="280" alt="map2 banner"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/map2-banner-3.png" width="280" alt="map2 banner 3"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot-Cli.png" width="280" alt="Screenshot Cli"> |
-| <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 08-00-43 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 08 00 43 Mackes Audio Platform 2 FEB2025"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 07-57-33 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 07 57 33 Mackes Audio Platform 2 FEB2025"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 07-58-14 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 07 58 14 Mackes Audio Platform 2 FEB2025"> |
+| <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 08-00-43 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 08 00 43 Mackes Audio Platform 2 FEB2025"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 07-58-14 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 07 58 14 Mackes Audio Platform 2 FEB2025"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 07-57-33 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 07 57 33 Mackes Audio Platform 2 FEB2025"> |
 | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/MAP2_AUDIO-NODE_ARCH_DIAGRAM3.png" width="280" alt="MAP2 AUDIO NODE ARCH DIAGRAM3"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/MAP2_AUDIO-NODE_ARCH_DIAGRAM2-BANG.png" width="280" alt="MAP2 AUDIO NODE ARCH DIAGRAM2 BANG"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/MAP2_AUDIO-NODE_ARCH_DIAGRAM.png" width="280" alt="MAP2 AUDIO NODE ARCH DIAGRAM"> |
 <!-- GALLERY:END -->
 
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
-| [`82342681`](https://github.com/matthewmackes/map2-audio/commit/82342681cf1d158709ab48362a3bde00d70b05b6) | T2482-P1.7 (iter 3): create docs/architecture/MIDI_BACKEN... | Map2 Audio | 2026-05-01 |
-| [`40a2d51c`](https://github.com/matthewmackes/map2-audio/commit/40a2d51c1dbc517ab0da7a7eccf63c3d07483253) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-01 |
-| [`b81ddfa7`](https://github.com/matthewmackes/map2-audio/commit/b81ddfa75f3b2d16324e02d6c851cf73babad1cc) | T2482-P1.6a (iter 2): midi_hub/ residual audit + ordering... | Map2 Audio | 2026-05-01 |
-| [`689e8fe1`](https://github.com/matthewmackes/map2-audio/commit/689e8fe127a02effad06a92ed875746fe7f6e31f) | T2482-P1.5 (iter 1): device-pack audit + iteration plan r... | Map2 Audio | 2026-05-01 |
-| [`d7e46f93`](https://github.com/matthewmackes/map2-audio/commit/d7e46f9348a513ef60eb77c572a7b7a9956f0f02) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-01 |
-| [`7613dd72`](https://github.com/matthewmackes/map2-audio/commit/7613dd72d540d48ac3b06a759949e5ad02f658e8) | T2482: open MIDI Services epic — first-class platform ser... | Map2 Audio | 2026-05-01 |
-| [`cdda8d5e`](https://github.com/matthewmackes/map2-audio/commit/cdda8d5eff7dd6ceae1407605f6569c535681ebe) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-01 |
-| [`fc5b3c2e`](https://github.com/matthewmackes/map2-audio/commit/fc5b3c2e5243fa9d6c224589e750337cc9d16475) | T2480-3 fix: install inbound MIDI traffic bridge uncondit... | Map2 Audio | 2026-05-01 |
+| [`0d9dc4ee`](https://github.com/matthewmackes/map2-audio/commit/0d9dc4ee4a3bbcbc26d6efdd4b678f25042ad7ca) | T2482 SHIP loop 1 (iters 1-10) closing log + SHIP loop 2 ... | Map2 Audio | 2026-05-01 |
+| [`35baa86a`](https://github.com/matthewmackes/map2-audio/commit/35baa86a6cbb27f11692f60b9400c0600ce8c20c) | T2482-P2.7 (iter 9): plugin_param projection (per-effect ... | Map2 Audio | 2026-05-01 |
+| [`51e6f607`](https://github.com/matthewmackes/map2-audio/commit/51e6f607bbe7398307dbcdc54cb7d58e6434954f) | T2482-P2.4 (iter 8): Brain consumer projection | Map2 Audio | 2026-05-01 |
+| [`fb9c24a3`](https://github.com/matthewmackes/map2-audio/commit/fb9c24a3546727c302e2a4f3c51464176ad28ccf) | T2482-P2.3 part 2 (iter 7): write-side projection + migra... | Map2 Audio | 2026-05-01 |
+| [`787e2d10`](https://github.com/matthewmackes/map2-audio/commit/787e2d104df86d97778fa24673e31f3201e662a7) | T2482-P2.3 part 1 (iter 6): Snapshot consumer read-side p... | Map2 Audio | 2026-05-01 |
+| [`071ea245`](https://github.com/matthewmackes/map2-audio/commit/071ea245f5895b02e52f01fabc8808459872b21c) | T2482-P2.2 (iter 5): MidiBindingAuthority service | Map2 Audio | 2026-05-01 |
+| [`ae142b33`](https://github.com/matthewmackes/map2-audio/commit/ae142b33b22bd254884bbc71f741d4cf9445c8b8) | T2482-P2.1 (iter 4): MidiBinding canonical authority schema | Map2 Audio | 2026-05-01 |
+| [`f38f88a7`](https://github.com/matthewmackes/map2-audio/commit/f38f88a716e90490433b519955c8e5ff99361403) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-01 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
