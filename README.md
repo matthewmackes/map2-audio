@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1384** Python | **1399** TypeScript | **177** C++/H | **145** Docs | **3278** total commits | **3** stars | **0** forks | **0** open issues
+**1384** Python | **1399** TypeScript | **177** C++/H | **145** Docs | **3280** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`fc5b3c2e`](https://github.com/matthewmackes/map2-audio/commit/fc5b3c2e5243fa9d6c224589e750337cc9d16475) | T2480-3 fix: install inbound MIDI traffic bridge uncondit... | Map2 Audio | 2026-05-01 |
+| [`eb02c51b`](https://github.com/matthewmackes/map2-audio/commit/eb02c51bce17f154218a706d76ab3819427d99e5) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-01 |
 | [`ae47b8ff`](https://github.com/matthewmackes/map2-audio/commit/ae47b8ff968b940ad4a4cd7373eb401cbe87c651) | T2480 follow-ups: roll-up note in worklist | Map2 Audio | 2026-05-01 |
 | [`44ecdf39`](https://github.com/matthewmackes/map2-audio/commit/44ecdf399a586371f02be00f6f9654f0638c4865) | T2480 follow-up C: HardwareStorePage profile_key→bindings... | Map2 Audio | 2026-05-01 |
 | [`a0b90b39`](https://github.com/matthewmackes/map2-audio/commit/a0b90b396ca72c225a324bd77869a26ffbe4048c) | T2480 follow-up D: inline name-and-onboard for "New" ports | Map2 Audio | 2026-05-01 |
 | [`9731187e`](https://github.com/matthewmackes/map2-audio/commit/9731187e4adb67c57bcd36fa314a2aaf2ba97f8c) | T2480 follow-up B: collapse Detect-phase merge to single ... | Map2 Audio | 2026-05-01 |
 | [`6b1ccd46`](https://github.com/matthewmackes/map2-audio/commit/6b1ccd463d284f68ff0461116a9e7621aab128b2) | T2480 follow-up A: WS reconnection + exponential backoff | Map2 Audio | 2026-05-01 |
 | [`cae6edbd`](https://github.com/matthewmackes/map2-audio/commit/cae6edbd9ca8c84de72b81587de0e0bb1299d73c) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-01 |
-| [`7ca2cde9`](https://github.com/matthewmackes/map2-audio/commit/7ca2cde95779a15df180d3f173d7c91018676cfd) | T2480 epic: roll up to Done — 10-iteration SHIP loop clos... | Map2 Audio | 2026-04-30 |
-| [`37188b26`](https://github.com/matthewmackes/map2-audio/commit/37188b26777c27f59f387b574797355954bfe16f) | T2480-5/-6 hardening: route-level binding lifecycle test | Map2 Audio | 2026-04-30 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
