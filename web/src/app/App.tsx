@@ -70,6 +70,10 @@ const McuPage               = lazy(() => import('./pages/McuPage').then(m => ({ 
 const LaunchControlPage     = lazy(() => import('./pages/LaunchControlPage').then(m => ({ default: m.LaunchControlPage })))
 const MidiCommanderPage     = lazy(() => import('./pages/MidiCommanderPage').then(m => ({ default: m.MidiCommanderPage })))
 const MidiHubShell          = lazy(() => import('./pages/MidiHubShell').then(m => ({ default: m.MidiHubShell })))
+// T2482 loop 10 / iter 92 — MIDI Services canonical mount.
+// MidiServicesShell is a thin re-export of MidiHubShell (see
+// pages/MidiServicesShell.tsx for the iter-92 design D1 rationale).
+const MidiServicesShell     = lazy(() => import('./pages/MidiServicesShell').then(m => ({ default: m.MidiServicesShell })))
 const MidiHubConnectionsPage = lazy(() => import('./pages/midi-hub/MidiHubConnectionsPage').then(m => ({ default: m.MidiHubConnectionsPage })))
 const MidiHubPresetsPage    = lazy(() => import('./pages/midi-hub/MidiHubPresetsPage').then(m => ({ default: m.MidiHubPresetsPage })))
 const MidiHubTransportPage  = lazy(() => import('./pages/midi-hub/MidiHubTransportPage').then(m => ({ default: m.MidiHubTransportPage })))
@@ -504,6 +508,24 @@ export function App() {
                                 <Route path="/dsp" element={<Navigate to={buildWorkspaceHubPlatformPath('overview')} replace />} />
                                 <Route path="/cpu-performance" element={<Navigate to={buildWorkspaceHubPlatformPath('overview')} replace />} />
                                 <Route path="/midi-hub/*" element={<RouteBoundary title="MIDI Hub view crashed" actionLabel="Reload MIDI Hub"><MidiHubShell /></RouteBoundary>}>
+                                  <Route index element={<Navigate to="connections" replace />} />
+                                  <Route path="connections" element={<MidiHubConnectionsPage />} />
+                                  <Route path="presets" element={<MidiHubPresetsPage />} />
+                                  <Route path="transport" element={<MidiHubTransportPage />} />
+                                  <Route path="events" element={<MidiHubEventsPage />} />
+                                  <Route path="processing" element={<MidiHubProcessingPage />} />
+                                  <Route path="network" element={<MidiHubNetworkPage />} />
+                                  <Route path="lab" element={<MidiHubLabPage />} />
+                                </Route>
+                                {/* T2482 loop 10 / iter 92 — MIDI Services canonical mount.
+                                    Mirrors the /midi-hub/* mount above using the
+                                    MidiServicesShell wrapper (which re-exports MidiHubShell).
+                                    The route order matters: /midi/assignments at line ~607
+                                    predates Phase 3 and continues to win because React Router
+                                    matches in declaration order. Iter 93 adds the
+                                    /midi-hub/* → /midi/* redirect map; iter 94 renames
+                                    operator-visible labels. */}
+                                <Route path="/midi/*" element={<RouteBoundary title="MIDI Services view crashed" actionLabel="Reload MIDI Services"><MidiServicesShell /></RouteBoundary>}>
                                   <Route index element={<Navigate to="connections" replace />} />
                                   <Route path="connections" element={<MidiHubConnectionsPage />} />
                                   <Route path="presets" element={<MidiHubPresetsPage />} />
