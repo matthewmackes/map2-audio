@@ -34557,3 +34557,53 @@ Phase 3 (frontend canonical surface) is the highest-impact next bucket but per Q
 - Iter 30: SHIP loop 3 roll-up + Phase 3 readiness gate
 
 **My recommendation: plan B**. Reason: plan A requires user gating on every iter (per Q5/D), so it's not really autonomous. Plan B stays in the autonomous-eligible Phase 2/Phase 1 work and produces concrete shipping value. User can pivot to plan A whenever they're ready to gate frontend bundles.
+
+---
+
+### Live production migration — 2026-05-01 EDT
+
+**Operator authorization received**: "Full Move. No users to be concerned with."
+
+**Backup**: `data/backups/map2-pre-T2482-migration-20260501.db` (6.1 MB consistent snapshot via `sqlite3 .backup`).
+
+**Pre-migration**: 8 snapshots, 8 snapshot_midi_maps rows (all empty), 50 midi_mappings rows (49 with chain_id NULL), 0 canonical midi_bindings.
+
+**Post-migration**:
+- snapshot_midi_maps → 0 migrated, 0 skipped (every source row had empty entries — correct skip)
+- midi_mappings → 1 migrated, **49 documented-skipped** (legacy rows lacked chain_id; canonical `plugin_param` model requires it; preserved in backup for future recovery if a `global_param` consumer type ever lands)
+- canonical midi_bindings count: **1** (`Drum Machine - Volume`, ch1 cc78 → chain1 plugin map2://juce/drums param 1)
+
+**Live API verification** (post-migration):
+- `GET /api/midi/bindings/count` → `1`
+- `GET /api/midi/bindings?scope=global` → 1 binding with full provenance (source=legacy-migration, metadata.legacy_table=midi_mappings, metadata.legacy_row_id=2)
+- Verification suite (live DB, all 4 global verifiers): 4 passed, 0 failed
+- `GET /api/health`: `audio_running: true`, `plugins_loaded: 13`, no xrun damage
+
+**Full evidence**: `docs/fit-for-purpose-evidence/20260501/T2482_phase2_migration_evidence.md`
+
+**P2.8 (legacy storage deletion) deferred**: keeping `snapshot_midi_maps` + `midi_mappings` tables in place for at least one more SHIP loop. The data isn't authoritative anymore but the tables still exist as a safety net.
+
+---
+
+### NEW DIRECTIVE — 2026-05-01 EDT: architectural diagrams as a finished outcome
+
+User directive received during the production migration: **"As an output of this effort, create full architectural diagrams for each one of the 1st class service stacks as a finished outcome."**
+
+**Scope**: One full architectural diagram per first-class service offering (per `project_first_class_services.md`):
+- **MIDI Services** (T2482, in flight) — diagrams produced as the closing artifact of this epic
+- **AVB Services** (queued) — diagram produced as the closing artifact of that future epic, BUT the template + style is set here
+- **Sampler Services** (queued) — same
+- **Audio Effects Services** (queued) — same
+
+**Acceptance**: every diagram must show:
+1. Process topology (which processes own which concerns; IPC seams)
+2. Storage layout (canonical authority + legacy stores being absorbed; provenance trail)
+3. Consumer surface map (every UI/API that reads/writes through the authority)
+4. Migration narrative (where the legacy data lives + how it lifts into canonical)
+5. The four-services framing position (where this service sits relative to MIDI/AVB/Sampler/Audio Effects)
+
+**Format**: Mermaid-syntax diagrams embedded in the existing architecture docs (`docs/architecture/MIDI_SERVICES.md` for MIDI; new docs for the other three). Mermaid because it renders inline in GitHub/GitLab views without a build step + the source is grep-able + version-controlled. Optional supplemental .dot or .svg files for high-detail views, but Mermaid is the canonical primary format.
+
+**Folded into**: SHIP loop 3 plan B as an additional output. Specifically:
+- Iter 21 (or thereabouts): MIDI Services diagram set inside `docs/architecture/MIDI_SERVICES.md` (process topology, storage, consumer surface, migration narrative, four-services position) — finished outcome of T2482.
+- Iter ~30 (T2482 close): all 4 service-stack diagram stubs exist; MIDI Services is complete; AVB/Sampler/Audio Effects diagram stubs are written into `docs/architecture/FIRST_CLASS_SERVICES.md` as templates for the future epics to fill in.
