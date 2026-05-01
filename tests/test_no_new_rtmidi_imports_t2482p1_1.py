@@ -23,20 +23,44 @@ REPO_ROOT = Path(__file__).resolve().parents[1]
 APP_DIR = REPO_ROOT / "app"
 
 # Files in app/ that are PERMITTED to import rtmidi. Each entry must
-# have a comment in this file explaining why. New entries require a
-# matching deferral note in docs/architecture/.
+# have a comment explaining why. New entries require a matching
+# deferral note in docs/architecture/.
+#
+# Iter 79 update: after iters 54-78 (loop 6 hard-strips + loop 8
+# Maschine-flip + sysex_bridge / midi_hub / midi_engine hard-strips),
+# rtmidi has moved from "production primary path" to "narrow secondary
+# surface". Each remaining import has a specific scope documented
+# below; none of these are dropable without a deeper refactor that
+# exceeds SHIP loop 8's scope.
 ALLOWED_RTMIDI_PATHS = {
-    # Maschine MK1 daemon — virtual-port creation requires rtmidi
-    # until MidiCreateVirtualPortRequest IPC envelope lands (P1.2
-    # follow-up). See docs/architecture/T2482_P1_1_MASCHINE_RTMIDI_DEFERRAL.md.
+    # Maschine MK1 daemon — Iter-76 flipped the primary path to the
+    # controller-host's MidiCreateVirtualPortRequest IPC envelope.
+    # rtmidi survives only as a fallback when the host's
+    # create_virtual_port returns level=error (transitional CI / dev
+    # flows). Drop in a future loop once a "raise on host-fail" mode
+    # is acceptable for Maschine.
     "app/services/maschine/maschine_mk1_daemon.py",
-    # Per-consumer transports that retain rtmidi as a lenient-mode
-    # fallback after iters 54-58. These will lose their rtmidi
-    # imports in the post-loop-6 hard-strip cycle.
-    "app/services/ground_control_pro/midi_transport.py",  # iter 54
-    "app/services/midi_hub/ports.py",                     # iter 57
-    "app/services/midi_engine.py",                        # iter 58
-    # Bridge base used by IntelFX + MPX-1 simulator path.
+    # GCP midi_transport — receive_sysex polling-loop contract still
+    # requires rtmidi.MidiIn.get_message(). Refactor to subscribe_events
+    # is queued post-loop-8 (different contract: event-driven vs
+    # blocking timeout). list_ports + send_sysex were hard-stripped
+    # in iter 54.
+    "app/services/ground_control_pro/midi_transport.py",
+    # midi_hub/ports.py AlsaMidiPort.open() — opens individual ALSA
+    # port handles for the MidiHub's per-port consumer model. Different
+    # surface from discover_alsa_ports (iter 78 hard-stripped that).
+    # AlsaMidiPort future is queued for the host-side
+    # ALSA-port-binding refactor.
+    "app/services/midi_hub/ports.py",
+    # midi_engine.py — _discover_devices's rtmidi-direct branch is
+    # iter-78-unreachable but the persistent self._midi_in / _midi_out
+    # for live MIDI binding is still rtmidi. Refactor to host-routed
+    # subscribe queued post-loop-8.
+    "app/services/midi_engine.py",
+    # midi_sysex_bridge_base.py — IntelFX + MPX-1 simulator path
+    # uses rtmidi for inbound MIDI events. Different surface from
+    # the iter-77 hard-stripped sysex_device_bridge enumeration;
+    # this is the live-traffic poll loop. Future refactor queued.
     "app/services/midi_sysex_bridge_base.py",
 }
 

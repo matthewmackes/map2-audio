@@ -44,23 +44,33 @@ sounddevice>=0.5.3,<0.6.0
 soundfile>=0.13.1,<0.14.0
 # Python JACK/PipeWire client used by hardware loopback latency measurements
 jack-client>=0.5.5,<0.6.0
-# MIDI device access — RETAINED for Maschine MK1 daemon ONLY.
+# MIDI device access — narrow set of secondary surfaces.
 #
-# T2482-P1.1 Gap E phase 9 (iter 59): python-rtmidi was on the
-# critical path for 5 services through SHIP loops 4-5. Iters 54-58
-# removed every other consumer's dependency; only Maschine MK1's
-# `VirtualMidiOutput.open_virtual_port()` still requires rtmidi
-# because the controller-host IPC schema does not yet expose
-# `openVirtualOutput()` to Python. Adding the
-# `MidiCreateVirtualPortRequest` envelope is queued as a P1.2
-# follow-up; once it lands, this dep can be dropped entirely.
+# T2482-P1.2 (iter 79) update: after SHIP loop 8 (Maschine virtual-
+# port flip + sysex_bridge / midi_hub / midi_engine hard-strips),
+# rtmidi has moved from "production primary path" to "narrow
+# secondary surface". The 5 paths that still need it:
+#   1. Maschine MK1 daemon — fallback when controller-host's
+#      MidiCreateVirtualPortRequest fails (iter 76 flip; iter 79
+#      retains the fallback for transitional CI / dev flows)
+#   2. GCP midi_transport.py — receive_sysex polling-loop contract
+#      (rtmidi.MidiIn.get_message; subscribe_events refactor queued)
+#   3. midi_hub/ports.py — AlsaMidiPort.open() per-port handles
+#      (different surface from the iter-78-stripped discover_alsa_ports)
+#   4. midi_engine.py — persistent self._midi_in/_out for live MIDI
+#      binding (host-routed subscribe refactor queued)
+#   5. midi_sysex_bridge_base.py — IntelFX + MPX-1 simulator
+#      live-traffic poll (different from iter-77 enumeration strip)
 #
-# Until then: do NOT add new rtmidi imports. The CI grep-fail
-# guard in tests/test_no_new_rtmidi_imports_t2482p1_1.py allows
-# imports under app/services/maschine/ but fails the build on any
-# new rtmidi import elsewhere. See
-# docs/architecture/T2482_P1_1_MASCHINE_RTMIDI_DEFERRAL.md for
-# the full rationale + path forward.
+# These are tracked + pinned by the iter-79 grep-fail guard in
+# tests/test_no_new_rtmidi_imports_t2482p1_1.py. Adding new rtmidi
+# imports anywhere else fails the build immediately. The full
+# python-rtmidi removal waits for the queued post-loop-8 refactors
+# (subscribe_events for receive_sysex; host-side AlsaMidiPort
+# replacement; midi_engine binding rewrite).
+#
+# See docs/architecture/T2482_P1_1_MASCHINE_RTMIDI_DEFERRAL.md
+# for the long-form rationale.
 python-rtmidi>=1.5.8,<2.0.0
 # USB HID access for hardware control surfaces such as Maschine MK1
 hidapi>=0.14.0,<1.0.0
