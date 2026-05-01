@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1413** Python | **1399** TypeScript | **177** C++/H | **145** Docs | **3327** total commits | **3** stars | **0** forks | **0** open issues
+**1414** Python | **1399** TypeScript | **177** C++/H | **145** Docs | **3334** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`27ec5554`](https://github.com/matthewmackes/map2-audio/commit/27ec5554d735e16a0a91b9d5bfb04f52d52f8792) | T2482-P1.1 (iter 38): libremidi foundation design doc | Map2 Audio | 2026-05-01 |
+| [`6ba869b2`](https://github.com/matthewmackes/map2-audio/commit/6ba869b259e4d9e96905491d2d8c74a57249c672) | T2482-P1.5 (iter 37): GCP bulk-dump container parser port... | Map2 Audio | 2026-05-01 |
+| [`d1797878`](https://github.com/matthewmackes/map2-audio/commit/d1797878ac7392bb4a9695b2773e445cf0639111) | T2482-P1.5 (iter 36): IntelFX SysEx parser ported Python ... | Map2 Audio | 2026-05-01 |
+| [`3c9aff91`](https://github.com/matthewmackes/map2-audio/commit/3c9aff914800f117ac54ff870f9715ad7b58d15b) | T2482-P1.5 (iter 35): MPX-1 SysEx parser ported Python → JS | Map2 Audio | 2026-05-01 |
+| [`197273a2`](https://github.com/matthewmackes/map2-audio/commit/197273a2ee2d6531ed87ea5d5c0cc5541eaab347) | T2482-P1.5 (iter 34): SysEx cutover groundwork — JS test ... | Map2 Audio | 2026-05-01 |
+| [`96913022`](https://github.com/matthewmackes/map2-audio/commit/96913022de7744d280cff95dcca5ab545f409510) | T2482-P2.8 part 2 (iter 33): deprecation markers + readin... | Map2 Audio | 2026-05-01 |
+| [`657f5b70`](https://github.com/matthewmackes/map2-audio/commit/657f5b709363e58bb9d2ae9500ae516288f915d9) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-01 |
 | [`4877f5d1`](https://github.com/matthewmackes/map2-audio/commit/4877f5d13383b1a698395a581b5c3532da2bad7d) | T2482-P2.8 part 1 (iter 32): chain-less migration LIVE on... | Map2 Audio | 2026-05-01 |
-| [`7d8b56d6`](https://github.com/matthewmackes/map2-audio/commit/7d8b56d65f0f69cc3712da8b51b0da9aad9cb4b5) | T2482-P2.8 part 1 (iter 31): global_param consumer type f... | Map2 Audio | 2026-05-01 |
-| [`53e23273`](https://github.com/matthewmackes/map2-audio/commit/53e23273b2824c061aefe496eb3c828e36e62fa2) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-01 |
-| [`38bfd58c`](https://github.com/matthewmackes/map2-audio/commit/38bfd58c300adcd434dafc744eeb3ac8f72a6bf7) | T2482-P1.5 (iter 30): Voodoo Lab GCP + Biamp Tesira devic... | Map2 Audio | 2026-05-01 |
-| [`a695e1fe`](https://github.com/matthewmackes/map2-audio/commit/a695e1fe344a625e6035dac4a6c2325df7a2bc84) | T2482-P1.5 (iter 29): Novation Launch Control + Ableton P... | Map2 Audio | 2026-05-01 |
-| [`89fca79b`](https://github.com/matthewmackes/map2-audio/commit/89fca79bf4c1c4e722a31dd53d72a1a6caf0087a) | T2482-P1.5 (iter 28): Mackie MCU Pro device-pack | Map2 Audio | 2026-05-01 |
-| [`c7b4d666`](https://github.com/matthewmackes/map2-audio/commit/c7b4d666cbc4c2b76707cb4f92e6324aa0530b10) | T2482-P1.5 (iter 27): Rocktron IntelFX device-pack | Map2 Audio | 2026-05-01 |
-| [`3549028a`](https://github.com/matthewmackes/map2-audio/commit/3549028ad072e24334d5b1b179b30ca1d91b9580) | T2482-P1.5 (iter 26): Lexicon MPX-1 device-pack | Map2 Audio | 2026-05-01 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
