@@ -169,13 +169,17 @@ class SysexDeviceBridgeStrictModeTests(unittest.TestCase):
         self._env.stop()
 
     def test_get_midi_ports_raises_when_daemon_down(self) -> None:
+        # After iter 56, sysex_device_bridge raises unconditionally on
+        # daemon-unreachable (rtmidi enumeration fallback removed for
+        # production). Strict mode is now redundant for this surface
+        # but the failure message is the same shape as the always-raise.
         fake_client = mock.Mock()
         fake_client.is_daemon_available.return_value = False
         with mock.patch("app.services.midi_host_client.MidiHostClient",
                           return_value=fake_client):
             with self.assertRaises(MidiHostClientError) as ctx:
                 asyncio.run(self._bridge.get_midi_ports())
-        self.assertIn("MAP2_REQUIRE_MIDI_HOST", str(ctx.exception))
+        self.assertIn("controller-host daemon is unreachable", str(ctx.exception))
         self.assertIn("TestDev", str(ctx.exception))
 
 

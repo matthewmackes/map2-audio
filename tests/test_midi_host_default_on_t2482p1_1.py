@@ -27,7 +27,10 @@ class DefaultOnGateBehaviourTests(unittest.TestCase):
 
     GATE_FNS = [
         ("app.services.maschine.maschine_mk1_daemon", "_maschine_use_midi_host"),
-        ("app.services.sysex_device_bridge", "_sysex_bridge_use_midi_host"),
+        # _sysex_bridge_use_midi_host removed in iter 56 (host path
+        # is now mandatory in production for sysex_device_bridge
+        # enumeration; rtmidi-direct survives only as a test-injection
+        # escape hatch).
         ("app.services.midi_hub.ports", "_midi_hub_use_midi_host"),
         ("app.services.midi_engine", "_midi_engine_use_midi_host"),
     ]
