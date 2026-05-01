@@ -44,7 +44,23 @@ sounddevice>=0.5.3,<0.6.0
 soundfile>=0.13.1,<0.14.0
 # Python JACK/PipeWire client used by hardware loopback latency measurements
 jack-client>=0.5.5,<0.6.0
-# MIDI device access
+# MIDI device access — RETAINED for Maschine MK1 daemon ONLY.
+#
+# T2482-P1.1 Gap E phase 9 (iter 59): python-rtmidi was on the
+# critical path for 5 services through SHIP loops 4-5. Iters 54-58
+# removed every other consumer's dependency; only Maschine MK1's
+# `VirtualMidiOutput.open_virtual_port()` still requires rtmidi
+# because the controller-host IPC schema does not yet expose
+# `openVirtualOutput()` to Python. Adding the
+# `MidiCreateVirtualPortRequest` envelope is queued as a P1.2
+# follow-up; once it lands, this dep can be dropped entirely.
+#
+# Until then: do NOT add new rtmidi imports. The CI grep-fail
+# guard in tests/test_no_new_rtmidi_imports_t2482p1_1.py allows
+# imports under app/services/maschine/ but fails the build on any
+# new rtmidi import elsewhere. See
+# docs/architecture/T2482_P1_1_MASCHINE_RTMIDI_DEFERRAL.md for
+# the full rationale + path forward.
 python-rtmidi>=1.5.8,<2.0.0
 # USB HID access for hardware control surfaces such as Maschine MK1
 hidapi>=0.14.0,<1.0.0
