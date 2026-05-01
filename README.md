@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1384** Python | **1392** TypeScript | **177** C++/H | **145** Docs | **3272** total commits | **3** stars | **0** forks | **0** open issues
+**1384** Python | **1399** TypeScript | **177** C++/H | **145** Docs | **3278** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -175,7 +175,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-DOCS:START -->
 | Document | Last Updated |
 |:---------|:------------|
-| [PROJECT WORKLIST](https://github.com/matthewmackes/map2-audio/blob/master/docs/PROJECT_WORKLIST.md) | 2026-04-30 |
+| [PROJECT WORKLIST](https://github.com/matthewmackes/map2-audio/blob/master/docs/PROJECT_WORKLIST.md) | 2026-05-01 |
 | [MAP2 Audio Platform — AI Instructions](https://github.com/matthewmackes/map2-audio/blob/master/docs/CLAUDE.md) | 2026-04-29 |
 | [MAP2 Backend Runtime Contract](https://github.com/matthewmackes/map2-audio/blob/master/docs/backend-runtime-contract.md) | 2026-04-27 |
 | [MAP2 API Contract Standards](https://github.com/matthewmackes/map2-audio/blob/master/docs/api-contract-standards.md) | 2026-04-25 |
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`ae47b8ff`](https://github.com/matthewmackes/map2-audio/commit/ae47b8ff968b940ad4a4cd7373eb401cbe87c651) | T2480 follow-ups: roll-up note in worklist | Map2 Audio | 2026-05-01 |
+| [`44ecdf39`](https://github.com/matthewmackes/map2-audio/commit/44ecdf399a586371f02be00f6f9654f0638c4865) | T2480 follow-up C: HardwareStorePage profile_key→bindings... | Map2 Audio | 2026-05-01 |
+| [`a0b90b39`](https://github.com/matthewmackes/map2-audio/commit/a0b90b396ca72c225a324bd77869a26ffbe4048c) | T2480 follow-up D: inline name-and-onboard for "New" ports | Map2 Audio | 2026-05-01 |
+| [`9731187e`](https://github.com/matthewmackes/map2-audio/commit/9731187e4adb67c57bcd36fa314a2aaf2ba97f8c) | T2480 follow-up B: collapse Detect-phase merge to single ... | Map2 Audio | 2026-05-01 |
+| [`6b1ccd46`](https://github.com/matthewmackes/map2-audio/commit/6b1ccd463d284f68ff0461116a9e7621aab128b2) | T2480 follow-up A: WS reconnection + exponential backoff | Map2 Audio | 2026-05-01 |
+| [`cae6edbd`](https://github.com/matthewmackes/map2-audio/commit/cae6edbd9ca8c84de72b81587de0e0bb1299d73c) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-01 |
 | [`7ca2cde9`](https://github.com/matthewmackes/map2-audio/commit/7ca2cde95779a15df180d3f173d7c91018676cfd) | T2480 epic: roll up to Done — 10-iteration SHIP loop clos... | Map2 Audio | 2026-04-30 |
 | [`37188b26`](https://github.com/matthewmackes/map2-audio/commit/37188b26777c27f59f387b574797355954bfe16f) | T2480-5/-6 hardening: route-level binding lifecycle test | Map2 Audio | 2026-04-30 |
-| [`33c2dff7`](https://github.com/matthewmackes/map2-audio/commit/33c2dff7194aa824919a620d802355c9d97d2146) | T2480-4 hardening: extract pickFirstAsset / buildSnapshot... | Map2 Audio | 2026-04-30 |
-| [`3521b189`](https://github.com/matthewmackes/map2-audio/commit/3521b1890de0dd977f045d89abd744d700c4b1f4) | T2480-3 hardening: pianoGeometry unit tests | Map2 Audio | 2026-04-30 |
-| [`b546b8c2`](https://github.com/matthewmackes/map2-audio/commit/b546b8c256947940d6c07eb03cd9f3a1a8e34bf1) | T2480-2 hardening: unit tests for phases + detection-list... | Map2 Audio | 2026-04-30 |
-| [`a72d1acf`](https://github.com/matthewmackes/map2-audio/commit/a72d1acf8183557c6e14254a9596a1c0336ca937) | T2480-6: bidirectional MIDI Mapping integration (initial ... | Map2 Audio | 2026-04-30 |
-| [`0be2a3e0`](https://github.com/matthewmackes/map2-audio/commit/0be2a3e05d841044d9c1e69868d36fd14fdde684) | T2480-5: first-class device→consumer bindings on the MIDI... | Map2 Audio | 2026-04-30 |
-| [`c37f2f49`](https://github.com/matthewmackes/map2-audio/commit/c37f2f49b06fe3298646972c8198bd9a8c1b6eb3) | T2480-4: phase-4 snapshot job + phase-5 Done screen | Map2 Audio | 2026-04-30 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
