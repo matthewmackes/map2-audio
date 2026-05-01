@@ -55,6 +55,11 @@ class MidiHostRequiredHelperTests(unittest.TestCase):
 # ---------------------------------------------------------------------
 
 class GcpStrictModeTests(unittest.TestCase):
+    """After iter 54 stripped GCP's rtmidi fallback, GCP raises on
+    daemon-unreachable regardless of strict mode. These tests confirm
+    the always-raise behaviour holds whether MAP2_REQUIRE_MIDI_HOST
+    is set or not."""
+
     def setUp(self) -> None:
         # Strict mode: REQUIRE the host. Default ON (via iter 51 flip).
         self._env = mock.patch.dict(os.environ, {
@@ -77,7 +82,9 @@ class GcpStrictModeTests(unittest.TestCase):
                                   return_value=fake_client):
             with self.assertRaises(MidiHostClientError) as ctx:
                 transport.list_ports()
-        self.assertIn("MAP2_REQUIRE_MIDI_HOST", str(ctx.exception))
+        # Iter 54 message: "controller-host daemon is unreachable; cannot
+        # enumerate MIDI ports for GCP."
+        self.assertIn("controller-host daemon is unreachable", str(ctx.exception))
         self.assertIn("GCP", str(ctx.exception))
 
     def test_send_sysex_raises_when_daemon_down(self) -> None:
@@ -102,7 +109,8 @@ class GcpStrictModeTests(unittest.TestCase):
                                   return_value=fake_client):
             with self.assertRaises(MidiHostClientError) as ctx:
                 asyncio.run(go())
-        self.assertIn("MAP2_REQUIRE_MIDI_HOST", str(ctx.exception))
+        self.assertIn("controller-host daemon is unreachable", str(ctx.exception))
+        self.assertIn("GCP", str(ctx.exception))
 
 
 # ---------------------------------------------------------------------

@@ -10,6 +10,23 @@ from app.utils.rtmidi_utils import dispose_rtmidi_client
 
 from .model import GroundControlTransportOptions
 
+# T2482-P1.1 Gap E phase 4 (iter 54) — controller-host is now mandatory.
+#
+# rtmidi-direct paths in list_ports() + send_sysex() were removed.
+# Test-injected factories (midi_in_factory / midi_out_factory) STILL
+# work — that's how the test suite mocks the surface — but they no
+# longer carry the rtmidi import. The factory shape is rtmidi-compatible
+# (get_ports / open_port / send_message / get_message / close_port);
+# tests can use any object that quacks like rtmidi.MidiIn/MidiOut.
+#
+# receive_sysex() still uses the factory-shaped client because its
+# polling-loop contract requires changes that don't fit this iter
+# (P1.2 follow-up: event-driven via subscribe_events).
+#
+# rtmidi import retained for the receive_sysex polling path AND for
+# the (still-supported) factory-injection test mode that builds a real
+# rtmidi.MidiIn when no factory is supplied. The full rtmidi removal
+# happens in iter 59 once every consumer is on the host path.
 try:
     import rtmidi  # type: ignore
 
@@ -17,20 +34,6 @@ try:
 except ImportError:  # pragma: no cover - environment dependent
     RTMIDI_AVAILABLE = False
     rtmidi = None
-
-
-# T2482-P1.1 Gap D.1 (iter 46) + Gap E phase 1 (iter 51) — controller-host
-# routing is now the default.
-#
-# Default ON as of iter 51 (SHIP loop 6): when the env var is unset
-# or empty, the host path runs. Set MAP2_USE_MIDI_HOST=0 (or "false"
-# / "no" / "off") to force the legacy rtmidi fallback. The opt-out
-# remains until iter 54 strips the rtmidi fallback path entirely.
-def _use_midi_host() -> bool:
-    val = os.environ.get("MAP2_USE_MIDI_HOST", "").strip().lower()
-    if val in ("0", "false", "no", "off"):
-        return False
-    return True  # default ON
 
 
 # Stable controller_key for GCP. The controller-host routes outbound
@@ -43,9 +46,9 @@ class GroundControlMidiTransport:
     def __init__(self, midi_in_factory: Any = None, midi_out_factory: Any = None) -> None:
         self._midi_in_factory = midi_in_factory
         self._midi_out_factory = midi_out_factory
-        # Lazy MidiHostClient — only constructed when the env-var gate
-        # is on AND a real call is made. Tests can inject factories so
-        # they never hit this path.
+        # Lazy MidiHostClient — only constructed when a real call is
+        # made (no test factory). Tests can inject factories so they
+        # never hit the host path.
         self._host_client: Any = None
 
     def _get_host_client(self) -> Any:
@@ -55,6 +58,8 @@ class GroundControlMidiTransport:
         return self._host_client
 
     def _make_midi_in(self) -> Any:
+        # Used only by receive_sysex (polling-loop contract not yet
+        # ported to subscribe_events) + by tests via factory injection.
         if self._midi_in_factory is not None:
             return self._midi_in_factory()
         if not RTMIDI_AVAILABLE:
@@ -62,9 +67,11 @@ class GroundControlMidiTransport:
         return rtmidi.MidiIn()
 
     def _make_midi_out(self) -> Any:
+        # Used only by tests via factory injection. Production send
+        # path goes through the host (see send_sysex).
         if self._midi_out_factory is not None:
             return self._midi_out_factory()
-        if not RTMIDI_AVAILABLE:
+        if not RTMIDI_AVAILABLE:  # pragma: no cover - tests inject factories
             raise RuntimeError("python-rtmidi is not available")
         return rtmidi.MidiOut()
 
@@ -85,74 +92,56 @@ class GroundControlMidiTransport:
         return 0
 
     def list_ports(self) -> Dict[str, Any]:
-        # Host-routed path (env-gated). Only takes the host path when
-        # there are no test-injected factories (factories indicate a
-        # unit-test mode that wants the rtmidi shape).
-        if (_use_midi_host()
-                and self._midi_in_factory is None
-                and self._midi_out_factory is None):
-            client = self._get_host_client()
-            if client.is_daemon_available():
-                status, ports = client.list_ports()
-                input_names = [p.name for p in ports if p.is_input]
-                output_names = [p.name for p in ports if not p.is_input]
+        # Test-injected factory mode — keep the rtmidi-shape response
+        # intact for unit tests.
+        if (self._midi_in_factory is not None
+                or self._midi_out_factory is not None):
+            midi_in = None
+            midi_out = None
+            try:
+                midi_in = self._make_midi_in()
+                midi_out = self._make_midi_out()
+                input_names = list(midi_in.get_ports())
+                output_names = list(midi_out.get_ports())
                 return {
-                    "rtmidi_available": True,  # host fronts a working backend
-                    "inputs": [
-                        {"index": i, "name": n, "connected": False}
-                        for i, n in enumerate(input_names)
-                    ],
-                    "outputs": [
-                        {"index": i, "name": n, "connected": False}
-                        for i, n in enumerate(output_names)
-                    ],
+                    "rtmidi_available": True,
+                    "inputs": [{"index": index, "name": name, "connected": False} for index, name in enumerate(input_names)],
+                    "outputs": [{"index": index, "name": name, "connected": False} for index, name in enumerate(output_names)],
                     "recommended_input_index": 0 if len(input_names) == 1 else None,
                     "recommended_output_index": 0 if len(output_names) == 1 else None,
-                    "host_routed": True,
-                    "host_backend": status.backend,
                 }
-            # Daemon down. Strict mode (Gap E phase 3 / iter 53)
-            # refuses to fall back to rtmidi — raises instead so the
-            # caller sees the failure explicitly. Default behaviour
-            # remains: fall through to rtmidi.
-            from app.services.midi_host_client import (
-                MidiHostClientError,
-                midi_host_required,
+            finally:
+                dispose_rtmidi_client(midi_in)
+                dispose_rtmidi_client(midi_out)
+
+        # Production path — controller-host is the only enumeration source.
+        from app.services.midi_host_client import MidiHostClientError
+        client = self._get_host_client()
+        if not client.is_daemon_available():
+            raise MidiHostClientError(
+                "controller-host daemon is unreachable; cannot enumerate "
+                "MIDI ports for GCP. Start map2-controller-host.service "
+                "or set MAP2_USE_MIDI_HOST=0 (legacy rtmidi path was "
+                "removed in iter 54)."
             )
-            if midi_host_required():
-                raise MidiHostClientError(
-                    "MAP2_REQUIRE_MIDI_HOST set but controller-host "
-                    "daemon is unreachable; refusing rtmidi fallback "
-                    "for GCP list_ports()"
-                )
-            # else: fall through to rtmidi fallback.
-
-        if not RTMIDI_AVAILABLE and self._midi_in_factory is None and self._midi_out_factory is None:
-            return {
-                "rtmidi_available": False,
-                "inputs": [],
-                "outputs": [],
-                "recommended_input_index": None,
-                "recommended_output_index": None,
-            }
-
-        midi_in = None
-        midi_out = None
-        try:
-            midi_in = self._make_midi_in()
-            midi_out = self._make_midi_out()
-            input_names = list(midi_in.get_ports())
-            output_names = list(midi_out.get_ports())
-            return {
-                "rtmidi_available": True,
-                "inputs": [{"index": index, "name": name, "connected": False} for index, name in enumerate(input_names)],
-                "outputs": [{"index": index, "name": name, "connected": False} for index, name in enumerate(output_names)],
-                "recommended_input_index": 0 if len(input_names) == 1 else None,
-                "recommended_output_index": 0 if len(output_names) == 1 else None,
-            }
-        finally:
-            dispose_rtmidi_client(midi_in)
-            dispose_rtmidi_client(midi_out)
+        status, ports = client.list_ports()
+        input_names = [p.name for p in ports if p.is_input]
+        output_names = [p.name for p in ports if not p.is_input]
+        return {
+            "rtmidi_available": True,
+            "inputs": [
+                {"index": i, "name": n, "connected": False}
+                for i, n in enumerate(input_names)
+            ],
+            "outputs": [
+                {"index": i, "name": n, "connected": False}
+                for i, n in enumerate(output_names)
+            ],
+            "recommended_input_index": 0 if len(input_names) == 1 else None,
+            "recommended_output_index": 0 if len(output_names) == 1 else None,
+            "host_routed": True,
+            "host_backend": status.backend,
+        }
 
     async def receive_sysex(self, options: GroundControlTransportOptions) -> Dict[str, Any]:
         midi_in = self._make_midi_in()
@@ -227,32 +216,22 @@ class GroundControlMidiTransport:
                 "path": str(dry_run_path),
             }
 
-        # Host-routed send path (env-gated). The controller-host owns
-        # the libremidi output port — we just hand it the SysEx bytes.
-        # Port resolution is host-side (the host enumerates against the
-        # same JACK MIDI graph rtmidi sees), so we still resolve the
-        # port name here for the response payload + traffic log.
-        if (_use_midi_host()
-                and self._midi_out_factory is None):
-            client = self._get_host_client()
-            if client.is_daemon_available():
-                status, ports = client.list_ports()
-                output_names = [p.name for p in ports if not p.is_input]
-                port_index = self._resolve_port_index(
-                    output_names, options.output_port_index, options.output_port_name
-                )
+        # Test-injected factory mode — preserve rtmidi-shape behaviour
+        # for unit tests.
+        if self._midi_out_factory is not None:
+            midi_out = self._make_midi_out()
+            port_names = list(midi_out.get_ports())
+            port_index = self._resolve_port_index(port_names, options.output_port_index, options.output_port_name)
+            midi_out.open_port(port_index)
+            try:
                 for index, segment in enumerate(segments):
-                    client.send_sysex(
-                        controller_key=_GCP_CONTROLLER_KEY,
-                        sysex_bytes=bytes(segment),
-                    )
+                    midi_out.send_message(list(segment))
                     traffic.append(
                         {
                             "timestamp": time.time(),
                             "direction": "out",
                             "hex": " ".join(f"{value:02X}" for value in segment[:64]),
                             "segment_index": index,
-                            "host_routed": True,
                         }
                     )
                     if options.inter_message_delay_ms > 0 and index < len(segments) - 1:
@@ -263,48 +242,49 @@ class GroundControlMidiTransport:
                     "segments": segment_count,
                     "traffic": traffic,
                     "port_index": port_index,
-                    "port_name": output_names[port_index],
-                    "host_routed": True,
-                    "host_backend": status.backend,
+                    "port_name": port_names[port_index],
                 }
-            # Daemon down. Strict mode (Gap E phase 3 / iter 53)
-            # refuses rtmidi fallback.
-            from app.services.midi_host_client import (
-                MidiHostClientError,
-                midi_host_required,
-            )
-            if midi_host_required():
-                raise MidiHostClientError(
-                    "MAP2_REQUIRE_MIDI_HOST set but controller-host "
-                    "daemon is unreachable; refusing rtmidi fallback "
-                    "for GCP send_sysex()"
-                )
-            # else: fall through to rtmidi fallback below.
+            finally:
+                dispose_rtmidi_client(midi_out)
 
-        midi_out = self._make_midi_out()
-        port_names = list(midi_out.get_ports())
-        port_index = self._resolve_port_index(port_names, options.output_port_index, options.output_port_name)
-        midi_out.open_port(port_index)
-        try:
-            for index, segment in enumerate(segments):
-                midi_out.send_message(list(segment))
-                traffic.append(
-                    {
-                        "timestamp": time.time(),
-                        "direction": "out",
-                        "hex": " ".join(f"{value:02X}" for value in segment[:64]),
-                        "segment_index": index,
-                    }
-                )
-                if options.inter_message_delay_ms > 0 and index < len(segments) - 1:
-                    await asyncio.sleep(options.inter_message_delay_ms / 1000.0)
-            return {
-                "dry_run": False,
-                "bytes_sent": len(data),
-                "segments": segment_count,
-                "traffic": traffic,
-                "port_index": port_index,
-                "port_name": port_names[port_index],
-            }
-        finally:
-            dispose_rtmidi_client(midi_out)
+        # Production path — controller-host owns the libremidi output port.
+        from app.services.midi_host_client import MidiHostClientError
+        client = self._get_host_client()
+        if not client.is_daemon_available():
+            raise MidiHostClientError(
+                "controller-host daemon is unreachable; cannot send "
+                "SysEx for GCP. Start map2-controller-host.service "
+                "or set MAP2_USE_MIDI_HOST=0 (legacy rtmidi path was "
+                "removed in iter 54)."
+            )
+        status, ports = client.list_ports()
+        output_names = [p.name for p in ports if not p.is_input]
+        port_index = self._resolve_port_index(
+            output_names, options.output_port_index, options.output_port_name
+        )
+        for index, segment in enumerate(segments):
+            client.send_sysex(
+                controller_key=_GCP_CONTROLLER_KEY,
+                sysex_bytes=bytes(segment),
+            )
+            traffic.append(
+                {
+                    "timestamp": time.time(),
+                    "direction": "out",
+                    "hex": " ".join(f"{value:02X}" for value in segment[:64]),
+                    "segment_index": index,
+                    "host_routed": True,
+                }
+            )
+            if options.inter_message_delay_ms > 0 and index < len(segments) - 1:
+                await asyncio.sleep(options.inter_message_delay_ms / 1000.0)
+        return {
+            "dry_run": False,
+            "bytes_sent": len(data),
+            "segments": segment_count,
+            "traffic": traffic,
+            "port_index": port_index,
+            "port_name": output_names[port_index],
+            "host_routed": True,
+            "host_backend": status.backend,
+        }

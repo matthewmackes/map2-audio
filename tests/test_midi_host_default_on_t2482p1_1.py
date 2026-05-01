@@ -17,10 +17,15 @@ from unittest import mock
 
 
 class DefaultOnGateBehaviourTests(unittest.TestCase):
-    """All 5 _use_midi_host() helpers must return True by default."""
+    """The remaining _use_midi_host() helpers must return True by default.
+
+    NB: GCP's _use_midi_host() helper was removed in iter 54 when the
+    rtmidi fallback was stripped — GCP is now unconditionally host-routed
+    in production. The 4 helpers below still gate consumers that retain
+    a dual-mode rtmidi fallback (iters 55-58 strip those one by one).
+    """
 
     GATE_FNS = [
-        ("app.services.ground_control_pro.midi_transport", "_use_midi_host"),
         ("app.services.maschine.maschine_mk1_daemon", "_maschine_use_midi_host"),
         ("app.services.sysex_device_bridge", "_sysex_bridge_use_midi_host"),
         ("app.services.midi_hub.ports", "_midi_hub_use_midi_host"),

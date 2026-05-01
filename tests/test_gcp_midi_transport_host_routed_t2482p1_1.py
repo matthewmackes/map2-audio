@@ -227,12 +227,13 @@ class EnvVarOnDaemonDownFallsThrough(unittest.TestCase):
     def tearDown(self) -> None:
         self._env_patch.stop()
 
-    def test_send_sysex_falls_back_to_rtmidi_when_daemon_unreachable(self) -> None:
-        # The factory-injected output is NOT skipped by the env path
-        # because send_sysex's host gate also checks
-        # `self._midi_out_factory is None`. Test the inverse —
-        # transport WITHOUT factories, env ON, daemon down, no rtmidi
-        # available → graceful failure.
+    def test_send_sysex_raises_cleanly_when_daemon_unreachable(self) -> None:
+        # Iter 54: rtmidi fallback removed for non-factory mode.
+        # When daemon is down + no factory injected, send_sysex must
+        # raise MidiHostClientError with a descriptive message
+        # pointing to the systemd unit + the env-var opt-out.
+        from app.services.midi_host_client import MidiHostClientError
+
         bare = GroundControlMidiTransport()  # no factories
         fake_client = mock.Mock()
         fake_client.is_daemon_available.return_value = False  # daemon down
@@ -246,14 +247,12 @@ class EnvVarOnDaemonDownFallsThrough(unittest.TestCase):
 
         with mock.patch.object(bare, "_get_host_client",
                                   return_value=fake_client):
-            # With no factories AND no rtmidi available (in test env)
-            # the rtmidi fallback raises RuntimeError. We just assert
-            # the host path was checked + bypassed.
-            try:
+            with self.assertRaises(MidiHostClientError) as ctx:
                 asyncio.run(go())
-            except (RuntimeError, OSError):
-                pass  # expected — rtmidi unavailable in test env
-        # Critical assertion: the host availability was probed.
+        msg = str(ctx.exception)
+        self.assertIn("controller-host daemon is unreachable", msg)
+        self.assertIn("GCP", msg)
+        self.assertIn("map2-controller-host.service", msg)
         fake_client.is_daemon_available.assert_called()
 
 
