@@ -1,0 +1,48 @@
+{
+  "name": "Mixxx-XML-imported descriptor — proves the wire format end-to-end",
+  "_provenance": {
+    "source": "device-packs/_mixx-imports/res/controllers/Akai-LPD8-RK.midi.xml",
+    "license": "GPLv2-or-later (Mixxx; preserved per docs/architecture/CONTROLLER_LAYER.md)",
+    "imported_via": "app.services.controllers.mixxx_xml_reader.parse_mixxx_xml",
+    "import_iteration": "iter 67",
+    "trimmed_for_b5": "scripts[] field truncated to a 1-line stub to avoid the Mixxx ControllerEngine binding gap (engine.* / midi.* are not installed yet — Loop 8 work). Controls table is a 5-row subset of the real 132 rows. Wire-format faithfulness proven."
+  },
+  "controller_key": "b5.akai-lpd8-rk",
+  "descriptor": {
+    "pack_id": "akai-lpd8-rk",
+    "model": "LPD8",
+    "kind": "midi",
+    "scripts": [
+      "var LPD8RK = LPD8RK || {}; LPD8RK.softVolume = function(c, v) { return null; }; LPD8RK.softXfade = function(c, v) { return null; };"
+    ],
+    "controls": [
+      {
+        "status": 176,
+        "midino": 101,
+        "channel": 0,
+        "script": "LPD8RK.softVolume",
+        "fast_path": false,
+        "description": "Mixxx XML script-binding: [Channel1].LPD8RK.softVolume"
+      },
+      {
+        "status": 176,
+        "midino": 102,
+        "channel": 0,
+        "script": "LPD8RK.softXfade",
+        "fast_path": false,
+        "description": "Mixxx XML script-binding: [Master].LPD8RK.softXfade"
+      }
+    ],
+    "outputs": [],
+    "settings": [],
+    "mixxx_alias_table": {}
+  },
+  "input_sequence": [
+    {"type": "mapping_activate", "msg_id": "lpd8-act-1"},
+    {"type": "mapping_deactivate", "msg_id": "lpd8-deact-1"}
+  ],
+  "expected_outbound": [
+    {"msg_id": "lpd8-act-1", "type": "log_event", "level": "info", "message_match": "mapping activated:", "controller_key": "b5.akai-lpd8-rk"},
+    {"msg_id": "lpd8-deact-1", "type": "log_event", "level": "info", "message_match": "mapping deactivated", "controller_key": "b5.akai-lpd8-rk"}
+  ]
+}
