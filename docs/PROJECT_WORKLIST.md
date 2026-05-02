@@ -35017,3 +35017,53 @@ The P1.2 audit (iter 39 §2) revealed substantial existing scaffolding the workl
 **Loop 9 acknowledged limitations**:
 - The iter-89 soak is the IN-PR fast-CI variant (30 calls, no latency capture). A real production soak (10+ minutes, 1000+ calls, p99 latency under realistic CPU/cache load) is queued. The iter-50 + iter-69 measurement scripts are ready to extend.
 - The rtmidi-coupled tests skipped in iters 83/86 (8 tests total) are deprecated; their behaviours don't exist in production code anymore. A future cleanup pass can delete them entirely.
+
+### SHIP loop 10 (iters 91–100) closing log — 2026-05-01
+
+**Status**: 10 substantive iters shipped (91–100, dual-pushed). **User said "continue" at SHIP-loop-9 close**: interpreted as approval of the iter-90 recommendation — Loop 10 = Phase 3 frontend `/midi` Carbon canonical surface (P3.1 + P3.2 + P3.3 partial). Per the iter-91 plan, 10 iters can't deliver all 10 of P3.1–P3.10; the loop intentionally scoped to the foundational mount + redirect + Overview + Devices region and queued the rest for loop 11+.
+
+| Iter | Surface | Commit | Highlight |
+|---|---|---|---|
+| 91 | Audit + plan | (loop-10 plan) | New `T2482_LOOP10_PHASE3_PLAN.md` — current-state audit of MidiHubShell + 10 page modules, 5 design decisions locked (D1 shell wrapping not rewriting, D2 redirect direction flip, D3 Overview as new surface, D4 canonical bindings filtering, D5 Carbon-only). |
+| 92 | P3.1 mount | (mount commit) | `MidiServicesShell.tsx` thin re-export of `MidiHubShell`; new `/midi/*` route block with 7 child routes mounted under `App.tsx` (per design D1 — wrap, do not rewrite). |
+| 93 | P3.1 redirect | (redirect commit) | Flipped `/midi-hub`, `/midi-hub-2`, `/midi` to redirect to `/midi/connections` (reverse of pre-loop-10 direction). All legacy URLs preserved via React Router `<Navigate>`. |
+| 94 | P3.1 nav rename | (rename commit) | "MIDI Hub" → "MIDI Services" in `advancedMenuItems.ts`, `posterManifest.ts`, `homeCardProfiles.ts`. Cosmetic operator-facing rename. |
+| 95 | P3.2 overview scaffold | (overview commit) | New `MidiServicesOverviewPage.tsx` + `.css` — Carbon `Section`/`Layer`/`Heading`/`Tile` shell with 4 RegionCard placeholders. Mounted at `/midi/overview` (D3 — overview is a NEW surface, not a port). |
+| 96 | P3.2 live counts | 22419ebc | New `useMidiServicesCounts.ts` TanStack Query hook against `/api/midi/bindings/count` + 3 per-scope binding lists. 5s refetchInterval matches the Carbon polling baseline (D5). 4 Tile cards now show live counts (Devices / Bindings / Routing / Transport). |
+| 97 | P3.3 prep audit | 44e68e31 | New `T2482_LOOP10_ITER97_DEVICES_AUDIT.md` — enumerated 8+ existing per-device editor surfaces (Maschine, MCU, LaunchControl, MidiCommander, MaschineMidiMap, MPX-1, IntelFX, GroundControlPro). **Locked conclusion**: `/midi/devices` is an INDEX surface, not an authoring surface. Locked iter-98 column set + iter-99 detail-pane stub scope. |
+| 98 | P3.3 DataTable | 1d3b99fb | `useDevicePackBindings.ts` rolls up `consumer_type=device_pack` bindings by `consumer_id`. `devicePackEditorRoutes.ts` static rule map → first-party editor route. `MidiServicesDevicesPage.tsx` + `.css` — Carbon `DataTable` with the locked iter-97 columns (Device / Vendor / Profile / Bindings / Enabled / Editor). Mounted at `/midi/devices`. |
+| 99 | P3.3 detail stub | 5194b002 | `MidiServicesDevicePage.tsx` + `.css` — read-only audit/inspection surface with breadcrumb back to /midi/devices, header (vendor/model + Enabled/Disabled Tag + bindings count), cross-link banner (info when canonical editor exists, warning when not), bindings DataTable. NO mutation surface (per iter-97 audit §4 — that lands iter 100+). |
+| 100 | Roll-up | (this commit) | This closing log + Phase 3 readiness gate v7. |
+
+**Total new files added in loop 10**:
+- 2 architecture docs (`T2482_LOOP10_PHASE3_PLAN.md` + `T2482_LOOP10_ITER97_DEVICES_AUDIT.md`)
+- 2 frontend hook modules (`useMidiServicesCounts.ts` + `useDevicePackBindings.ts`)
+- 1 frontend utility (`devicePackEditorRoutes.ts`)
+- 1 frontend shell wrapper (`MidiServicesShell.tsx`)
+- 6 frontend page/style files (Overview + Devices + Device — `.tsx` + `.css` each)
+Plus ~50 LOC of routing wiring in `App.tsx` and 3 nav-data renames.
+
+**P3 status after SHIP loop 10 (vs the design doc P3.1–P3.10 sub-phases)**:
+- ✅ P3.1 mount + redirect + rename: DONE (iters 92–94)
+- ✅ P3.2 Overview region: DONE (iters 95–96 — scaffold + live counts)
+- 🔶 P3.3 Devices region: PARTIAL (iters 97–99 — INDEX page + read-only detail stub; mutation surface deferred to iter 100+)
+- ◯ P3.4–P3.10: not started; queued for loops 11+
+
+**Phase 3 readiness gate v7 (post-SHIP-loop-10)**:
+- **Backend MIDI authority**: ready (P1.1 + P1.2 complete)
+- **Frontend `/midi` mount**: live; `/midi/connections` is the new default landing
+- **Frontend Overview page**: live with TanStack-Query-driven Tile cards (`/midi/overview`)
+- **Frontend Devices INDEX**: live (`/midi/devices`) — Carbon DataTable backed by `/api/midi/bindings?consumer_type=device_pack`
+- **Frontend Device detail**: live (`/midi/devices/:profileKey`) — read-only stub with cross-link to first-party editors
+- **Legacy URLs**: all preserved via `<Navigate>` redirect map
+- **Per-device editors**: untouched (Maschine, MCU, LaunchControl, MidiCommander, MaschineMidiMap, MPX-1, IntelFX, GroundControlPro all live at their existing top-level routes)
+- **Recommended next loop**:
+  - **Loop 11: Phase 3 P3.4 Bindings region** (global filterable binding list + authoring workflow). The Bindings region is the highest-value next surface because Overview already aggregates it and per-device pages reference it.
+  - Then in priority order: P3.5 Routing region; P3.6 Transport region; P3.7 Network region; P3.8 misc (Presets/Events/Processing/Lab) ports; P3.9 per-device legacy reframing (cross-link banners pointing back to MIDI Services); P3.10 Brain Setup + Brain Inputs reframing.
+  - Loop 12+: post-P1.2 polish + T2482 epic close-out.
+
+**Loop 10 acknowledged limitations**:
+- No frontend tests added in loop 10 (the design D1 of "wrap, don't rewrite" means the existing MidiHubShell test suites cover most of the surface; new test suites for `MidiServicesOverviewPage`, `MidiServicesDevicesPage`, and `MidiServicesDevicePage` are queued for loop 11+).
+- The Device detail page (iter 99) does not yet expose per-row binding enable/disable toggles or override authoring. That mutation surface is deferred to loop 11+ per the iter-97 audit §4.
+- The `editor` field on `DeviceTableRow` is a typed-but-unused stub — required by Carbon DataTable's row-shape contract, removed when DataTable is replaced by a custom table in a future iter if needed.
+- Carbon DataTable's render-prop type inference is used directly (no explicit type annotations); changes to `@carbon/react`'s `DataTableRenderProps` shape could surface as inference regressions on touch.
