@@ -19,6 +19,12 @@ import React from 'react'
 const mockList = jest.fn()
 const mockCount = jest.fn(async () => 0)
 const mockMatrix = jest.fn(async () => ({ matrix: {}, total_bindings: 0 }))
+const mockGet = jest.fn()
+const mockCreate = jest.fn()
+const mockUpdate = jest.fn()
+const mockDelete = jest.fn()
+const mockEnable = jest.fn()
+const mockDisable = jest.fn()
 
 jest.mock('../../../map2/clients/midiBindings', () => {
   const actual = jest.requireActual('../../../map2/clients/midiBindings')
@@ -28,12 +34,12 @@ jest.mock('../../../map2/clients/midiBindings', () => {
       list: (...args: unknown[]) => mockList(...args),
       count: (...args: unknown[]) => mockCount(...args),
       matrix: (...args: unknown[]) => mockMatrix(...args),
-      get: jest.fn(),
-      create: jest.fn(),
-      update: jest.fn(),
-      delete: jest.fn(),
-      enable: jest.fn(),
-      disable: jest.fn(),
+      get: (...args: unknown[]) => mockGet(...args),
+      create: (...args: unknown[]) => mockCreate(...args),
+      update: (...args: unknown[]) => mockUpdate(...args),
+      delete: (...args: unknown[]) => mockDelete(...args),
+      enable: (...args: unknown[]) => mockEnable(...args),
+      disable: (...args: unknown[]) => mockDisable(...args),
     },
   }
 })
@@ -60,7 +66,34 @@ beforeEach(() => {
   mockCount.mockResolvedValue(0)
   mockMatrix.mockReset()
   mockMatrix.mockResolvedValue({ matrix: {}, total_bindings: 0 })
+  mockGet.mockReset()
+  mockCreate.mockReset()
+  mockUpdate.mockReset()
+  mockDelete.mockReset()
+  mockEnable.mockReset()
+  mockDisable.mockReset()
 })
+
+const FAKE_BINDING = {
+  binding_id: 'b1',
+  consumer_type: 'plugin_param' as const,
+  consumer_id: 'lv2:foo:0',
+  consumer_label: 'Cabinet gain',
+  source_type: 'midi_cc' as const,
+  source_descriptor: { cc: 7 },
+  target_type: 'engine_param' as const,
+  target_descriptor: { plugin_uri: 'lv2:foo', param_index: 0 },
+  device_id: null,
+  scope: 'global' as const,
+  scope_id: null,
+  enabled: true,
+  source: 'manual',
+  metadata: {},
+  created_at: '2026-05-02',
+  created_by: 'web-ui',
+  modified_at: '2026-05-02',
+  modified_by: 'web-ui',
+}
 
 describe('MidiServicesBindingsPage filter form', () => {
   it('renders the page header + filter strategy dropdown', () => {
@@ -189,4 +222,58 @@ describe('MidiServicesBindingsPage filter form', () => {
     // The midi_cc row should be filtered out client-side.
     expect(screen.queryByText('plugin_param:lv2:foo:0')).not.toBeInTheDocument()
   })
+})
+
+// T2483-10B iter 168 — mutation-flow tests.
+describe('MidiServicesBindingsPage mutation flows', () => {
+  it('Add binding button is present in the page header', () => {
+    renderPage()
+    expect(screen.getByRole('button', { name: /Add binding/i })).toBeInTheDocument()
+  })
+
+  it('clicking Add binding opens the create drawer', () => {
+    renderPage()
+    fireEvent.click(screen.getByRole('button', { name: /Add binding/i }))
+    // Carbon Modal renders 'Create binding' as the modalHeading.
+    expect(screen.getByText('Create binding')).toBeInTheDocument()
+  })
+
+  it('per-row toggle ON->OFF calls midiBindingsApi.disable', async () => {
+    mockList.mockResolvedValue([FAKE_BINDING])
+    mockDisable.mockResolvedValue({ ...FAKE_BINDING, enabled: false })
+    renderPage('/midi/bindings?consumer_type=plugin_param')
+    await waitFor(() =>
+      expect(screen.getByText('plugin_param:lv2:foo:0')).toBeInTheDocument(),
+    )
+    const toggle = screen.getByRole('switch', { name: /Enable binding/i })
+    fireEvent.click(toggle)
+    await waitFor(() => expect(mockDisable).toHaveBeenCalledWith('b1'))
+  })
+
+  it('per-row toggle OFF->ON calls midiBindingsApi.enable', async () => {
+    mockList.mockResolvedValue([{ ...FAKE_BINDING, enabled: false }])
+    mockEnable.mockResolvedValue({ ...FAKE_BINDING, enabled: true })
+    renderPage('/midi/bindings?consumer_type=plugin_param')
+    await waitFor(() =>
+      expect(screen.getByText('plugin_param:lv2:foo:0')).toBeInTheDocument(),
+    )
+    const toggle = screen.getByRole('switch', { name: /Enable binding/i })
+    fireEvent.click(toggle)
+    await waitFor(() => expect(mockEnable).toHaveBeenCalledWith('b1'))
+  })
+
+  it('per-row OverflowMenu trigger button is present', async () => {
+    mockList.mockResolvedValue([FAKE_BINDING])
+    renderPage('/midi/bindings?consumer_type=plugin_param')
+    await waitFor(() =>
+      expect(screen.getByText('plugin_param:lv2:foo:0')).toBeInTheDocument(),
+    )
+    expect(screen.getByRole('button', { name: /Row actions/i })).toBeInTheDocument()
+  })
+
+  // NOTE: testing the OverflowMenuItem click path inside jsdom requires
+  // a Carbon-portal-aware setup that jest-dom alone doesn't provide.
+  // The Edit + Delete row actions are instead covered by the iter-152/153
+  // Devices-page mutation tests + the iter-105/106 drawer tests which
+  // exercise the same iter-104 mutation surface this page uses.
 })
