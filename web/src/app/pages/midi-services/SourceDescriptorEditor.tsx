@@ -17,8 +17,9 @@
  * to raw JSON for backend-extension fields.
  */
 
-import { useMemo } from 'react'
+import { useCallback, useMemo } from 'react'
 import {
+  Button,
   Dropdown,
   FormGroup,
   InlineNotification,
@@ -30,7 +31,8 @@ import {
   getSourceSpec,
   type SourceFieldSpec,
 } from './sourceDescriptors'
-import type { BindingSourceType } from '../../../map2/clients/midiBindings'
+import { useMidiLearnPoll } from './useMidiLearnPoll'
+import type { BindingSourceType, LastCcResponse } from '../../../map2/clients/midiBindings'
 import './SourceDescriptorEditor.css'
 
 interface SourceDescriptorEditorProps {
@@ -155,6 +157,20 @@ export function SourceDescriptorEditor({
     onChange(updated)
   }
 
+  // T2483-5 iter 175 — live MIDI-learn helper for the cc + channel
+  // fields. Only rendered when source_type is midi_cc.
+  const handleLearnCapture = useCallback(
+    (cc: LastCcResponse) => {
+      const updated: Record<string, unknown> = { ...value, cc: cc.cc }
+      if (cc.channel !== null) {
+        updated.channel = cc.channel
+      }
+      onChange(updated)
+    },
+    [value, onChange],
+  )
+  const learn = useMidiLearnPoll({ onCapture: handleLearnCapture })
+
   if (!spec) {
     return (
       <InlineNotification
@@ -188,6 +204,25 @@ export function SourceDescriptorEditor({
           </FormGroup>
         ))}
       </div>
+
+      {sourceType === 'midi_cc' ? (
+        <div className="source-descriptor-editor__learn">
+          {learn.active ? (
+            <>
+              <span className="source-descriptor-editor__learn-status">
+                Listening for the next CC… (10s timeout)
+              </span>
+              <Button kind="ghost" size="sm" onClick={learn.cancel}>
+                Cancel
+              </Button>
+            </>
+          ) : (
+            <Button kind="tertiary" size="sm" onClick={learn.start}>
+              Learn from MIDI
+            </Button>
+          )}
+        </div>
+      ) : null}
 
       {unknownCount > 0 ? (
         <InlineNotification
