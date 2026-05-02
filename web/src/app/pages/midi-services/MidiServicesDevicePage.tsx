@@ -13,6 +13,7 @@
  */
 
 import { useMemo, useState } from 'react'
+import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useParams, Link as RouterLink } from 'react-router-dom'
 import {
   Breadcrumb,
@@ -22,6 +23,7 @@ import {
   InlineNotification,
   Layer,
   Link as CarbonLink,
+  Modal,
   OverflowMenu,
   OverflowMenuItem,
   Section,
@@ -33,7 +35,10 @@ import {
   TableHeader,
   TableRow,
   Tag,
+  Toggle,
 } from '@carbon/react'
+
+import { midiBindingsApi } from '../../../map2/clients/midiBindings'
 
 import {
   useDevicePackBindings,
@@ -87,6 +92,37 @@ export function MidiServicesDevicePage() {
   const profileKey = rawProfileKey ? decodeURIComponent(rawProfileKey) : ''
   const { rawBindings, isLoading, isError } = useDevicePackBindings()
   const [editId, setEditId] = useState<string | null>(null)
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null)
+  const [mutationError, setMutationError] = useState<string | null>(null)
+  const queryClient = useQueryClient()
+
+  const invalidateList = () => {
+    queryClient.invalidateQueries({ queryKey: ['midi-services-device-pack-bindings'] })
+    queryClient.invalidateQueries({ queryKey: ['midi-services-bindings-count'] })
+  }
+  const enableMutation = useMutation({
+    mutationFn: (bindingId: string) => midiBindingsApi.enable(bindingId),
+    onSuccess: invalidateList,
+    onError: (err) => setMutationError((err as Error).message),
+  })
+  const disableMutation = useMutation({
+    mutationFn: (bindingId: string) => midiBindingsApi.disable(bindingId),
+    onSuccess: invalidateList,
+    onError: (err) => setMutationError((err as Error).message),
+  })
+  const deleteMutation = useMutation({
+    mutationFn: (bindingId: string) => midiBindingsApi.delete(bindingId),
+    onSuccess: () => {
+      setPendingDeleteId(null)
+      invalidateList()
+    },
+    onError: (err) => setMutationError((err as Error).message),
+  })
+  const handleToggle = (bindingId: string, currentlyEnabled: boolean) => {
+    setMutationError(null)
+    if (currentlyEnabled) disableMutation.mutate(bindingId)
+    else enableMutation.mutate(bindingId)
+  }
 
   const tableRows = useMemo(
     () => rowsForProfile(rawBindings, profileKey),
@@ -192,11 +228,22 @@ export function MidiServicesDevicePage() {
                       {dtRow.cells.map((cell) => {
                         if (cell.info.header === 'enabled') {
                           const enabled = cell.value as boolean
+                          const pending =
+                            (enableMutation.isPending && enableMutation.variables === dtRow.id) ||
+                            (disableMutation.isPending && disableMutation.variables === dtRow.id)
                           return (
                             <TableCell key={cell.id}>
-                              <Tag type={enabled ? 'green' : 'gray'} size="sm">
-                                {enabled ? 'Enabled' : 'Disabled'}
-                              </Tag>
+                              <Toggle
+                                id={`device-binding-enable-${dtRow.id}`}
+                                size="sm"
+                                hideLabel
+                                labelText="Enable binding"
+                                labelA="Off"
+                                labelB="On"
+                                toggled={enabled}
+                                disabled={pending}
+                                onToggle={() => handleToggle(dtRow.id, enabled)}
+                              />
                             </TableCell>
                           )
                         }
@@ -211,6 +258,15 @@ export function MidiServicesDevicePage() {
                                 <OverflowMenuItem
                                   itemText="Edit"
                                   onClick={() => setEditId(dtRow.id)}
+                                />
+                                <OverflowMenuItem
+                                  itemText="Delete"
+                                  isDelete
+                                  hasDivider
+                                  onClick={() => {
+                                    setMutationError(null)
+                                    setPendingDeleteId(dtRow.id)
+                                  }}
                                 />
                               </OverflowMenu>
                             </TableCell>
@@ -227,11 +283,41 @@ export function MidiServicesDevicePage() {
         </DataTable>
       </Layer>
 
+      {mutationError ? (
+        <InlineNotification
+          kind="warning"
+          lowContrast
+          onCloseButtonClick={() => setMutationError(null)}
+          title="Mutation"
+          subtitle={mutationError}
+        />
+      ) : null}
+
       <BindingEditDrawer
         bindingId={editId}
         open={editId !== null}
         onClose={() => setEditId(null)}
       />
+
+      <Modal
+        open={pendingDeleteId !== null}
+        modalHeading="Delete this binding?"
+        modalLabel="Bindings"
+        primaryButtonText="Delete"
+        secondaryButtonText="Cancel"
+        danger
+        primaryButtonDisabled={deleteMutation.isPending}
+        onRequestClose={() => setPendingDeleteId(null)}
+        onRequestSubmit={() => {
+          if (pendingDeleteId) deleteMutation.mutate(pendingDeleteId)
+        }}
+      >
+        <p className="midi-services-device__delete-modal-body">
+          Binding <code>{pendingDeleteId ?? ''}</code> will be permanently
+          removed from the canonical authority. Active consumers will lose
+          this binding immediately.
+        </p>
+      </Modal>
     </Section>
   )
 }

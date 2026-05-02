@@ -44,6 +44,14 @@
   padding: 0;
 }
 
+.midi-services-device__delete-modal-body code {
+  font-family: var(--cds-font-family-mono, ui-monospace, monospace);
+  background: var(--cds-layer-accent);
+  padding: 0 0.25rem;
+  border-radius: 2px;
+  font-size: 0.8125rem;
+}
+
 .midi-services-device__editor-banner {
   display: flex;
   flex-direction: column;
