@@ -2152,7 +2152,7 @@
   color: var(--cds-text-helper, #8d8d8d);
   cursor: pointer;
   opacity: 0;
-  transition: opacity 120ms ease;
+  transition: opacity var(--map2-dur-fast, 120ms) ease;
 }
 
 .juce-grid-page__snapshot-hero-meta-row:hover .juce-grid-page__snapshot-hero-meta-copy,

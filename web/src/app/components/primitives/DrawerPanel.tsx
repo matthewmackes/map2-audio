@@ -11,8 +11,12 @@
 
 import type { ReactNode } from 'react'
 import { useEffect } from 'react'
+import type { Variants } from 'framer-motion'
+import { motion, AnimatePresence } from 'framer-motion'
 import { Button } from '@carbon/react'
 import { Close } from '@carbon/icons-react'
+import { drawerVariants, scrimVariants, MAP2_SPRING } from '../../styles/motionPrimitives'
+import { useReducedEffectsPreference } from '../../hooks/useReducedEffectsPreference'
 
 import './DrawerPanel.css'
 
@@ -35,6 +39,26 @@ interface DrawerPanelProps {
   closeLabel?: string
 }
 
+const leftDrawerVariants: Variants = {
+  initial: { x: '-100%', opacity: 0.6 },
+  animate: {
+    x: 0,
+    opacity: 1,
+    transition: MAP2_SPRING.drawer,
+  },
+  exit: {
+    x: '-100%',
+    opacity: 0,
+    transition: MAP2_SPRING.drawerExit,
+  },
+}
+
+const instantVariants: Variants = {
+  initial: { opacity: 1 },
+  animate: { opacity: 1 },
+  exit: { opacity: 1 },
+}
+
 function joinClasses(...parts: Array<string | false | null | undefined>) {
   return parts.filter(Boolean).join(' ')
 }
@@ -52,6 +76,12 @@ export function DrawerPanel({
   className,
   closeLabel = 'Close',
 }: DrawerPanelProps) {
+  const { shouldReduceEffects } = useReducedEffectsPreference()
+  const resolvedPanelVariants = shouldReduceEffects
+    ? instantVariants
+    : side === 'left' ? leftDrawerVariants : drawerVariants
+  const resolvedBackdropVariants = shouldReduceEffects ? instantVariants : scrimVariants
+
   useEffect(() => {
     if (!open || !dismissible) return undefined
     const handleKey = (event: KeyboardEvent) => {
@@ -61,46 +91,56 @@ export function DrawerPanel({
     return () => window.removeEventListener('keydown', handleKey)
   }, [open, dismissible, onClose])
 
-  if (!open) return null
-
   return (
-    <div
-      className="map2-drawer-panel__backdrop"
-      onClick={() => {
-        if (dismissible) onClose()
-      }}
-      role="presentation"
-    >
-      <aside
-        className={joinClasses(
-          'map2-drawer-panel',
-          `map2-drawer-panel--${side}`,
-          className,
-        )}
-        style={width ? { width } : undefined}
-        role="dialog"
-        aria-modal="true"
-        aria-label={typeof title === 'string' ? title : undefined}
-        onClick={(event) => event.stopPropagation()}
-      >
-        <header className="map2-drawer-panel__head">
-          <div className="map2-drawer-panel__head-copy">
-            {eyebrow ? <span className="map2-drawer-panel__eyebrow">{eyebrow}</span> : null}
-            <h2 className="map2-drawer-panel__title">{title}</h2>
-          </div>
-          <Button
-            kind="ghost"
-            size="sm"
-            renderIcon={Close}
-            iconDescription={closeLabel}
-            hasIconOnly
-            onClick={onClose}
-          />
-        </header>
-        <div className="map2-drawer-panel__body">{children}</div>
-        {footer ? <footer className="map2-drawer-panel__footer">{footer}</footer> : null}
-      </aside>
-    </div>
+    <AnimatePresence>
+      {open && (
+        <motion.div
+          className="map2-drawer-panel__backdrop"
+          onClick={() => {
+            if (dismissible) onClose()
+          }}
+          role="presentation"
+          variants={resolvedBackdropVariants}
+          initial="initial"
+          animate="animate"
+          exit="exit"
+        >
+          <motion.aside
+            className={joinClasses(
+              'map2-drawer-panel',
+              `map2-drawer-panel--${side}`,
+              className,
+            )}
+            style={width ? { width } : undefined}
+            role="dialog"
+            aria-modal="true"
+            aria-label={typeof title === 'string' ? title : undefined}
+            onClick={(event) => event.stopPropagation()}
+            variants={resolvedPanelVariants}
+            initial="initial"
+            animate="animate"
+            exit="exit"
+          >
+            <header className="map2-drawer-panel__head">
+              <div className="map2-drawer-panel__head-copy">
+                {eyebrow ? <span className="map2-drawer-panel__eyebrow">{eyebrow}</span> : null}
+                <h2 className="map2-drawer-panel__title">{title}</h2>
+              </div>
+              <Button
+                kind="ghost"
+                size="sm"
+                renderIcon={Close}
+                iconDescription={closeLabel}
+                hasIconOnly
+                onClick={onClose}
+              />
+            </header>
+            <div className="map2-drawer-panel__body">{children}</div>
+            {footer ? <footer className="map2-drawer-panel__footer">{footer}</footer> : null}
+          </motion.aside>
+        </motion.div>
+      )}
+    </AnimatePresence>
   )
 }
 

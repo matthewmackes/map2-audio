@@ -1,7 +1,11 @@
 .page-transition-scope {
-  --page-transition-block-duration: 160ms;
-  --page-transition-fade-duration: 140ms;
-  --page-transition-slide-duration: 160ms;
+  /* Choreography durations — intentionally distinct from --map2-dur-fast (120ms):
+     block/slide at 160ms gives the grid stagger room to breathe;
+     fade at 140ms exits slightly before the new content arrives.
+     Stagger multipliers: 6ms per cell (desktop), 16ms per cell (mobile). */
+  --page-transition-block-duration: var(--map2-dur-page-block, 160ms);
+  --page-transition-fade-duration: var(--map2-dur-page-fade, 140ms);
+  --page-transition-slide-duration: var(--map2-dur-page-slide, 160ms);
   position: relative;
   min-width: 0;
   min-height: inherit;

@@ -58,7 +58,7 @@
   padding: 0.75rem;
   border: 1px solid color-mix(in srgb, var(--intelfx-panel-accent) 52%, var(--cds-border-subtle-01));
   background: color-mix(in srgb, var(--intelfx-panel-accent) 7%, var(--cds-layer));
-  transition: border-color 150ms ease, background-color 150ms ease, opacity 150ms ease;
+  transition: border-color var(--map2-dur-fast, 120ms) ease, background-color var(--map2-dur-fast, 120ms) ease, opacity var(--map2-dur-fast, 120ms) ease;
 }
 
 .intelfx-panel-page__block.is-bypassed {
