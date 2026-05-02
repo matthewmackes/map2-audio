@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1440** Python | **1441** TypeScript | **177** C++/H | **145** Docs | **3555** total commits | **3** stars | **0** forks | **0** open issues
+**1440** Python | **1441** TypeScript | **177** C++/H | **145** Docs | **3559** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`4f27a934`](https://github.com/matthewmackes/map2-audio/commit/4f27a934f05851d78821c104db4a08d0602bc778) | docs(worklist): T2466-1 done, T2466-7 cancelled (obsolete... | Map2 Audio | 2026-05-02 |
+| [`e7cf4537`](https://github.com/matthewmackes/map2-audio/commit/e7cf4537ce9d74f5fc421f4a96376cbe1d84aad4) | feat(T2466-1): canvas pan → Framer Motion motion-value dr... | Map2 Audio | 2026-05-02 |
+| [`f80d4185`](https://github.com/matthewmackes/map2-audio/commit/f80d41859d8d3d036fa718b657f69d84b4239165) | fix(deps): bump transitive postcss to 8.5.13 (CVE-2026-41... | Map2 Audio | 2026-05-02 |
+| [`65f7ba18`](https://github.com/matthewmackes/map2-audio/commit/65f7ba18ef71c4ec4b5bae0b8df85c782e42289e) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-02 |
 | [`3c44aac0`](https://github.com/matthewmackes/map2-audio/commit/3c44aac0e67d9eb55bf5eea8e7b90b08b1bfe29a) | docs(worklist): refresh top header for closed MIDI epics ... | Map2 Audio | 2026-05-02 |
 | [`21ad87de`](https://github.com/matthewmackes/map2-audio/commit/21ad87de77f1db47f3d16a8ef5c33140364226ab) | chore: shell chrome polish + GitHub workflow action bumps | Map2 Audio | 2026-05-02 |
 | [`9d8f7726`](https://github.com/matthewmackes/map2-audio/commit/9d8f77266dbb508dccbf38dd07223e1701222ce4) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-02 |
 | [`bae5f084`](https://github.com/matthewmackes/map2-audio/commit/bae5f084a7aa9ac344e8ed4e8a6f2efccafc5803) | T2483-T2484 loop 21 / iter 203: ALL CLOSEABLE MIDI TASKS ... | Map2 Audio | 2026-05-02 |
-| [`79f08b8a`](https://github.com/matthewmackes/map2-audio/commit/79f08b8a09b90f9bec4deb017bb73e43d30e25fb) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-02 |
-| [`40d945de`](https://github.com/matthewmackes/map2-audio/commit/40d945de83273283a8b5c9e5e27841214e414b98) | T2483-T2484 loop 21 / iter 202: MIDI_SERVICES_CLOSED_OUT ... | Map2 Audio | 2026-05-02 |
-| [`d7e52a0e`](https://github.com/matthewmackes/map2-audio/commit/d7e52a0e540fe7e2841511bed66a225a0d7fcfce) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-02 |
-| [`0e6310ab`](https://github.com/matthewmackes/map2-audio/commit/0e6310abf6ab72ffd11d9732f60ae3050de6c27b) | T2483-T2484 loop 21 / iter 201: clear stale 'router not w... | Map2 Audio | 2026-05-02 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
