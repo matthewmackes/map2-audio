@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1437** Python | **1430** TypeScript | **177** C++/H | **145** Docs | **3473** total commits | **3** stars | **0** forks | **0** open issues
+**1437** Python | **1430** TypeScript | **177** C++/H | **145** Docs | **3475** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`047eca7f`](https://github.com/matthewmackes/map2-audio/commit/047eca7fb53ea8a83928b16073ab233b6d043939) | T2482 loop 15 / iter 148: open T2483 follow-up bundle | Map2 Audio | 2026-05-01 |
+| [`24ae5ccc`](https://github.com/matthewmackes/map2-audio/commit/24ae5ccc78b8bc94575d1400e42b22fbac9eddd4) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-02 |
 | [`33e11c2a`](https://github.com/matthewmackes/map2-audio/commit/33e11c2a30b4ff1da61b2418d19cff30ee5c0f5b) | T2482 loop 15 / iter 147: worklist epic update - mark T24... | Map2 Audio | 2026-05-01 |
 | [`d76652dd`](https://github.com/matthewmackes/map2-audio/commit/d76652dd705bfcd2208512993c84bc8a7b8279c0) | T2482 loop 15 / iter 146: archive sweep step 2 - LOOP9-14... | Map2 Audio | 2026-05-01 |
 | [`716b2688`](https://github.com/matthewmackes/map2-audio/commit/716b2688a24571a3b9795dba0e01aa02e3bf21e8) | T2482 loop 15 / iter 145: archive sweep step 1 - 6 P1.x docs | Map2 Audio | 2026-05-01 |
 | [`55040582`](https://github.com/matthewmackes/map2-audio/commit/550405823407570c734a8cd585ad3bc8bd16f107) | T2482 loop 15 / iter 144: philosophy doc upkeep - midi-de... | Map2 Audio | 2026-05-01 |
 | [`e2bd5d03`](https://github.com/matthewmackes/map2-audio/commit/e2bd5d03cdda45827e5f19a1cd674ad9facd2678) | T2482 loop 15 / iter 143: MIDI_SERVICES.md Phase 3 status... | Map2 Audio | 2026-05-01 |
 | [`01f7e057`](https://github.com/matthewmackes/map2-audio/commit/01f7e0579baf0120c0c6a4872b5722c777093a7e) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-02 |
-| [`4432e594`](https://github.com/matthewmackes/map2-audio/commit/4432e5947fcd19f9678c8fecb0a22191b1ceeb90) | T2482 loop 15 / iter 142: T2482_PHASE3_DONE overview doc | Map2 Audio | 2026-05-01 |
-| [`5a3aa803`](https://github.com/matthewmackes/map2-audio/commit/5a3aa8031c41e1262790452fa68a863de461d412) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-02 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
