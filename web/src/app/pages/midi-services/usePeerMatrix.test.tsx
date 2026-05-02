@@ -110,4 +110,24 @@ describe('usePeerMatrix (T2484 wired)', () => {
       '/midi/cluster/bindings/matrix',
     )
   })
+
+  it('exposes the un-aggregated peerSlices for the iter-191 drill-down drawer', async () => {
+    mockFetchResponse({
+      local: EMPTY_LOCAL,
+      peers: [
+        {
+          node_id: 'peer-a',
+          hostname: 'peer-a.local',
+          matrix: { midi_cc: { plugin_param: { count: 3, enabled_count: 3 } } },
+          total_bindings: 3,
+        },
+      ],
+      errors: {},
+    })
+    const { result } = renderHook(() => usePeerMatrix(), { wrapper })
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+    expect(result.current.peerSlices).toHaveLength(1)
+    expect(result.current.peerSlices[0].node_id).toBe('peer-a')
+    expect(result.current.peerSlices[0].matrix.midi_cc.plugin_param.count).toBe(3)
+  })
 })
