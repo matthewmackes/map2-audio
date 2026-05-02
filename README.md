@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1441** Python | **1489** TypeScript | **177** C++/H | **145** Docs | **3589** total commits | **3** stars | **0** forks | **0** open issues
+**1441** Python | **1491** TypeScript | **177** C++/H | **145** Docs | **3591** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`9c8da6bd`](https://github.com/matthewmackes/map2-audio/commit/9c8da6bd9b5a9bf2abb54244f22dea0aa22c5993) | feat(T2489): migrate Ableton Push 3 surface under unified... | Map2 Audio | 2026-05-02 |
+| [`03727a66`](https://github.com/matthewmackes/map2-audio/commit/03727a662056a956b9cfb3fa858b868fece75bbb) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-02 |
 | [`0dfa43a4`](https://github.com/matthewmackes/map2-audio/commit/0dfa43a488e03f354f1f05bece2152a7a1a517c2) | feat(T2488): migrate Voodoo Lab Ground Control Pro under ... | Map2 Audio | 2026-05-02 |
 | [`09ccb52d`](https://github.com/matthewmackes/map2-audio/commit/09ccb52d8cb958a01b829ed96a6de9f3c565035f) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-02 |
 | [`0863e4f1`](https://github.com/matthewmackes/map2-audio/commit/0863e4f18d9461bd857c1673ff4c4aef4534b432) | feat(T2487-3/4/5): mount Expression under /midi/devices/e... | Map2 Audio | 2026-05-02 |
 | [`fa8a6f09`](https://github.com/matthewmackes/map2-audio/commit/fa8a6f094b5e8891a550a0e25d538f0ccef0aa94) | refactor(T2487-2): extract ExpressionPage's 8 sub-compone... | Map2 Audio | 2026-05-02 |
 | [`300062a5`](https://github.com/matthewmackes/map2-audio/commit/300062a57e15420db8e61786b7a2c8230ed2e07f) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-02 |
 | [`e3e606c6`](https://github.com/matthewmackes/map2-audio/commit/e3e606c626fccebcd1798404992250253d610b66) | docs(T2487): revise Q2=A from view-tab split to file-leve... | Map2 Audio | 2026-05-02 |
-| [`5406ca6f`](https://github.com/matthewmackes/map2-audio/commit/5406ca6f3161c58b31a34166901ec7f83da01be1) | feat(T2486-4): test suites for cluster auto-connect onboa... | Map2 Audio | 2026-05-02 |
-| [`75c3516f`](https://github.com/matthewmackes/map2-audio/commit/75c3516f1f77dd86f20b9014d34b1e754a16af0f) | feat(T2486-3): PlatformEvent emission on operator cluster... | Map2 Audio | 2026-05-02 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
