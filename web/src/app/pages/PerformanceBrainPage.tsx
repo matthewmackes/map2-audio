@@ -29,6 +29,7 @@ import {
 import type { DrumBackingTrackSummary, DrumBackingTrackTransportState, DrumPack } from '@/map2/types'
 import { parseBrainImportSource } from './brainHandoff'
 import { BrainOverviewShell } from './brainViews/BrainOverviewShell'
+import { MidiServicesCrossLinkBanner } from './midi-services/MidiServicesCrossLinkBanner'
 import './PerformanceBrainPage.css'
 
 // T2442: Brain Overview tabs are now first-class section ids. The legacy
@@ -498,6 +499,12 @@ export function PerformanceBrainPage() {
   return (
     <section className="brain-page">
       <div className="brain-page__main">
+        <MidiServicesCrossLinkBanner
+          title="Brain inputs are MIDI Services consumers"
+          subtitle="Brain slots receive MIDI events through the canonical MIDI Services Bindings authority. Bindings authored here surface in the global Bindings list with consumer_type=brain_slot."
+          linkLabel="Open MIDI Services Bindings"
+          linkTo="/midi/bindings?consumer_type=brain_slot"
+        />
         <section className="brain-page__toolbar">
           <div className="brain-page__toolbar-block">
             <span className="brain-page__toolbar-label">Set</span>
