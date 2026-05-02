@@ -22,6 +22,7 @@ import {
   type BindingConsumerType,
   type BindingSourceType,
   type ClusterBindingsMatrixResponse,
+  type ClusterPeerMatrix,
 } from '../../../map2/clients/midiBindings'
 
 export type PeerMatrix = Partial<
@@ -37,6 +38,9 @@ export interface UsePeerMatrixResult {
   hasPeerData: boolean
   /** Per-peer error map; keys are node_ids that failed to respond. */
   errors: Record<string, string>
+  /** T2484-3 iter 191 — un-aggregated per-peer slices for the
+   *  drill-down drawer. Empty when no peers reachable. */
+  peerSlices: ClusterPeerMatrix[]
   isLoading: boolean
   isError: boolean
 }
@@ -78,6 +82,7 @@ export function usePeerMatrix(): UsePeerMatrixResult {
   return {
     ...aggregated,
     errors: query.data?.errors ?? {},
+    peerSlices: query.data?.peers ?? [],
     isLoading: query.isLoading,
     isError: query.isError,
   }
