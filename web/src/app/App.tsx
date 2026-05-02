@@ -85,6 +85,7 @@ const MidiServicesPresetsPage = lazy(() => import('./pages/midi-services/MidiSer
 const MidiServicesEventsPage = lazy(() => import('./pages/midi-services/MidiServicesEventsPage').then(m => ({ default: m.MidiServicesEventsPage })))
 const MidiServicesProcessingPage = lazy(() => import('./pages/midi-services/MidiServicesProcessingPage').then(m => ({ default: m.MidiServicesProcessingPage })))
 const MidiServicesLabPage = lazy(() => import('./pages/midi-services/MidiServicesLabPage').then(m => ({ default: m.MidiServicesLabPage })))
+const MidiServicesTransportPage = lazy(() => import('./pages/midi-services/MidiServicesTransportPage').then(m => ({ default: m.MidiServicesTransportPage })))
 const MidiHubConnectionsPage = lazy(() => import('./pages/midi-hub/MidiHubConnectionsPage').then(m => ({ default: m.MidiHubConnectionsPage })))
 const MidiHubPresetsPage    = lazy(() => import('./pages/midi-hub/MidiHubPresetsPage').then(m => ({ default: m.MidiHubPresetsPage })))
 const MidiHubTransportPage  = lazy(() => import('./pages/midi-hub/MidiHubTransportPage').then(m => ({ default: m.MidiHubTransportPage })))
@@ -546,13 +547,13 @@ export function App() {
                                     operator-visible labels. */}
                                 <Route path="/midi/*" element={<RouteBoundary title="MIDI Services view crashed" actionLabel="Reload MIDI Services"><MidiServicesShell /></RouteBoundary>}>
                                   <Route index element={<Navigate to="connections" replace />} />
-                                  {/* Connections + Transport stay on the MidiHub pages
-                                      until loop 14+ ships dedicated MidiServices siblings.
-                                      The other 5 region routes are the iter-122-126 sibling
-                                      pages per the iter-127 route flip. */}
+                                  {/* Connections still stays on the MidiHub page;
+                                      a dedicated MidiServicesConnectionsPage queues for
+                                      loop 15+. Transport flipped to MidiServicesTransportPage
+                                      in iter 132 (P3.6). */}
                                   <Route path="connections" element={<MidiHubConnectionsPage />} />
                                   <Route path="presets" element={<MidiServicesPresetsPage />} />
-                                  <Route path="transport" element={<MidiHubTransportPage />} />
+                                  <Route path="transport" element={<MidiServicesTransportPage />} />
                                   <Route path="events" element={<MidiServicesEventsPage />} />
                                   <Route path="processing" element={<MidiServicesProcessingPage />} />
                                   <Route path="network" element={<MidiServicesNetworkPage />} />
