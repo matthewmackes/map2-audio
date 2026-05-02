@@ -1,9 +1,10 @@
 """T2483 loop 17 / iter 163 — backend tests for the new
 GET /api/midi/bindings/matrix route (T2483-8).
 
-Exercises the route handler directly (the router isn't mounted in
-app/main.py per the file's iter-18 note; route-shape introspection
-covers presence, this file covers behavior).
+Exercises the route handler directly. (The router IS mounted in
+app/main.py:1153 per the loop-21 audit; calling the handler
+directly is still simpler than spinning up a TestClient for these
+behavior assertions.)
 
 Pattern: temp sqlite DB + authority writes a small fixture set +
 call get_bindings_matrix() and assert on the aggregated shape.

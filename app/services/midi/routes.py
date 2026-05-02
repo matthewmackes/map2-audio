@@ -1,18 +1,25 @@
 """Consolidated `/api/midi/*` routes for the MIDI Services canonical authority.
 
-T2482-P3.1 prep (iter 18) — backend route scaffold. The `/midi`
+T2482-P3.1 (iter 18) — backend route scaffold. The `/midi`
 canonical surface (Phase 3) consumes these endpoints exclusively.
 Per the four-services discipline, every binding read/write goes
 through MidiBindingAuthority via this single route file.
 
-This file is **not yet wired** into app/main.py — that's iter 19's
-deliverable, so the routes exist on disk for testing but aren't
-exposed publicly until P3.1 ships proper. Tests use APIRouter
-introspection to verify the route shape without needing a live mount.
+The router is mounted in `app/main.py` via
+`app.include_router(midi_services_router)` (search for
+"MIDI Services routes registered" in main.py for the live mount
+point). All endpoints declared here are publicly reachable.
 
 T2483 loop 17 / iter 162 — added GET /bindings/matrix for the
 T2483-8 server-side aggregation. Replaces the iter-117 client-side
 fan-out (10 queries / 5s poll → 1 query / 5s poll).
+
+T2483 loop 17 / iter 172 — added GET /bindings/learn/last-cc for
+the T2483-5 SourceDescriptorEditor Learn button.
+
+T2484 loop 19 / iter 182 — added GET /cluster/bindings/matrix for
+T2484-1 cluster MIDI peer wiring; iter 195 extended ClusterPeerMatrix
+with health field per T2484-4.
 """
 
 from __future__ import annotations

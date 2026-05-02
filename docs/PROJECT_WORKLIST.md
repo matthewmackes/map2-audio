@@ -35473,7 +35473,7 @@ Plus updates to: `app/services/midi/routes.py` (matrix endpoint + Pydantic shape
 
 **Loop 17 acknowledged limitations**:
 - Carbon OverflowMenuItem click path inside jsdom (per iter-168 note): the menu's portal + click-outside detection needs a more elaborate jest-dom setup than this loop took on. The Edit + Delete row actions are covered by lower-level iter-152/153 + iter-105/106 tests. If full E2E coverage is needed, loop 18+ could add a Playwright run targeting the production bundle.
-- The new `/api/midi/bindings/matrix` endpoint isn't wired into `app/main.py` (per the iter-18 file note that the entire `app/services/midi/routes.py` router is on disk for testing but not yet exposed publicly). Production frontend won't see the speedup until the router is wired — a separate small task tracked outside T2483.
+- ~~The new `/api/midi/bindings/matrix` endpoint isn't wired into `app/main.py`...~~ **Resolved 2026-05-02 (loop 21 audit): the iter-18 note in `app/services/midi/routes.py` was stale. The router IS mounted via `app.include_router(midi_services_router)` in `app/main.py:1153`. All endpoints declared in `routes.py` are publicly reachable.**
 - Banner dismissibility is opt-in (no existing call site enables it). If we want it on by default for, say, the per-device pages once operators are familiar, that's a cheap one-line flip per page in a future loop.
 
 ### SHIP loop 18 (iters 171–180) closing log — 2026-05-02
@@ -35537,7 +35537,7 @@ After 3 SHIP loops (16 + 17 + 18) totaling 30 substantive iters and 30+ commits 
 - T2483-9 is a scaffold; real cluster discovery wiring deferred until operator demand or its own multi-loop epic.
 - T2483-5 polling cadence is 250ms — fast enough for the editor UX. WebSocket-based learn (sub-100ms) was deliberately out of scope.
 - T2483-5 Learn button only renders for source_type='midi_cc'. If operators want it for midi_note too, iter-175's gate is one line to extend.
-- The new `/api/midi/bindings/learn/last-cc` and `/api/midi/bindings/matrix` routes still aren't wired into `app/main.py` (per the iter-18 file note that the entire `app/services/midi/routes.py` router is on disk for testing). Production frontend won't see the endpoints' wins until the router is mounted — a separate small task tracked outside T2483.
+- ~~The new `/api/midi/bindings/learn/last-cc` and `/api/midi/bindings/matrix` routes still aren't wired into `app/main.py`...~~ **Resolved 2026-05-02 (loop 21 audit): the iter-18 note was stale. The router IS mounted in `app/main.py:1153`. All endpoints declared in `app/services/midi/routes.py` are publicly reachable.**
 
 ---
 
@@ -35601,7 +35601,7 @@ Plus updates to: `app/services/midi/routes.py` (cluster matrix route + Pydantic 
 - N peers, M unreachable: still bounded at 2s (asyncio.gather with timeout per peer)
 
 **Loop 19 acknowledged limitations**:
-- Same as the loop-18 routing matrix limitation: this endpoint also isn't wired into `app/main.py` per the iter-18 file note. Production frontend won't see cluster peer counts until the router is mounted.
+- ~~Same as the loop-18 routing matrix limitation: this endpoint also isn't wired into `app/main.py`...~~ **Resolved 2026-05-02 (loop 21 audit): the iter-18 note was stale. The router IS mounted in `app/main.py:1153`; the cluster matrix endpoint is publicly reachable. Cluster operators see peer counts in production.**
 - The asyncio.gather fan-out is concurrent, but if 16 peers all timeout at 2s, total wall-clock is still 2s (correct — it's MAX, not SUM). Cluster operators should see fast responses on healthy clusters.
 - T2484-2 hook returns `peers: PeerMatrix` keyed by source/consumer string; the iter-178 'shape contract' test was dropped because the new live aggregation populates the map dynamically (the typed PeerMatrix interface still guarantees indexing). 4 net hook tests instead of the iter-178 4 = same count, different coverage focus.
 

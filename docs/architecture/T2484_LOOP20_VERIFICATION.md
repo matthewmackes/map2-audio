@@ -42,7 +42,7 @@ Single-node operators see no change (no peers in the cluster matrix → badge ne
 
 ## Acknowledged limitations
 
-- The new `/api/midi/cluster/bindings/matrix` route, like the iter-162 `/api/midi/bindings/matrix`, isn't wired into `app/main.py` (per the iter-18 file note that the entire `app/services/midi/routes.py` router is on disk for testing). Production frontend won't see cluster peer counts until the router is mounted.
+- ~~The new `/api/midi/cluster/bindings/matrix` route, like the iter-162 `/api/midi/bindings/matrix`, isn't wired into `app/main.py`...~~ **Resolved 2026-05-02 (loop 21 audit): the iter-18 note was stale. The router IS mounted in `app/main.py:1153` via `app.include_router(midi_services_router)`. All endpoints declared in `routes.py` are publicly reachable.**
 - Health probe per-peer wall-clock adds to the per-peer matrix wall-clock (asyncio.gather is concurrent across peers but sequential per peer). 16 peers × 2s timeout each = bounded by max(2s) total.
 - Drawer is read-only per the iter-181 D4. Operators wanting to navigate to a specific peer's full bindings page can use the existing `?node_id=X` cluster-proxy URL pattern manually; deep-link not added in T2484.
 
