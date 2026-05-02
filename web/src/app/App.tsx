@@ -76,6 +76,7 @@ const MidiHubShell          = lazy(() => import('./pages/MidiHubShell').then(m =
 const MidiServicesShell     = lazy(() => import('./pages/MidiServicesShell').then(m => ({ default: m.MidiServicesShell })))
 // T2482 loop 10 / iter 95 — overview region.
 const MidiServicesOverviewPage = lazy(() => import('./pages/midi-services/MidiServicesOverviewPage').then(m => ({ default: m.MidiServicesOverviewPage })))
+const MidiServicesDevicesPage = lazy(() => import('./pages/midi-services/MidiServicesDevicesPage').then(m => ({ default: m.MidiServicesDevicesPage })))
 const MidiHubConnectionsPage = lazy(() => import('./pages/midi-hub/MidiHubConnectionsPage').then(m => ({ default: m.MidiHubConnectionsPage })))
 const MidiHubPresetsPage    = lazy(() => import('./pages/midi-hub/MidiHubPresetsPage').then(m => ({ default: m.MidiHubPresetsPage })))
 const MidiHubTransportPage  = lazy(() => import('./pages/midi-hub/MidiHubTransportPage').then(m => ({ default: m.MidiHubTransportPage })))
@@ -549,6 +550,11 @@ export function App() {
                                       meaningful, iter 100 may flip the index redirect at
                                       `<Route index>` above to point here. */}
                                   <Route path="overview" element={<MidiServicesOverviewPage />} />
+                                  {/* T2482 loop 10 / iter 98 — Devices region.
+                                      INDEX surface (per the iter-97 audit): lists
+                                      device-pack profiles + cross-links to per-device
+                                      editors. NOT an authoring surface. */}
+                                  <Route path="devices" element={<MidiServicesDevicesPage />} />
                                 </Route>
                                 <Route path={HOST_MACHINE_ROUTE} element={<RouteBoundary title="Host Machine view crashed" actionLabel="Reload host machine"><HostMachinePage /></RouteBoundary>} />
                                 <Route path="/grid" element={<Navigate to="/snapshot-editor" replace />} />
