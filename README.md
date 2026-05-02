@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1438** Python | **1434** TypeScript | **177** C++/H | **145** Docs | **3503** total commits | **3** stars | **0** forks | **0** open issues
+**1438** Python | **1434** TypeScript | **177** C++/H | **145** Docs | **3505** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`e3b3af16`](https://github.com/matthewmackes/map2-audio/commit/e3b3af165e316efb8a3f87905ae621f4eb4d5d96) | T2483 loop 17 / iter 170: SHIP loop 17 closing roll-up | Map2 Audio | 2026-05-02 |
+| [`c0fa4e45`](https://github.com/matthewmackes/map2-audio/commit/c0fa4e45ed3d11e8c7478f9efa0522d6d7bd4986) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-02 |
 | [`eadc47c7`](https://github.com/matthewmackes/map2-audio/commit/eadc47c76f8612ba22042a241f5ad159dde1c11c) | T2483 loop 17 / iter 169: verification report | Map2 Audio | 2026-05-02 |
 | [`86f802dd`](https://github.com/matthewmackes/map2-audio/commit/86f802dd706e6df70eeea9c82449bb9c918cc883) | T2483 loop 17 / iter 168: Bindings mutation flow tests (T... | Map2 Audio | 2026-05-02 |
 | [`005d1baf`](https://github.com/matthewmackes/map2-audio/commit/005d1baf86ad22e688eeafb6f9f3beb9df740bdc) | T2483 loop 17 / iter 167: Bindings filter form interactiv... | Map2 Audio | 2026-05-02 |
 | [`651eec54`](https://github.com/matthewmackes/map2-audio/commit/651eec543f43d23461490fb875e7dc587bd85a4c) | T2483 loop 17 / iter 166: banner dismissibility + localSt... | Map2 Audio | 2026-05-02 |
 | [`fdb067d2`](https://github.com/matthewmackes/map2-audio/commit/fdb067d221edfd3ddf955414ca3966ec2428a18d) | T2483 loop 17 / iter 165: useRoutingMatrix tests for new ... | Map2 Audio | 2026-05-02 |
 | [`dbdfe32d`](https://github.com/matthewmackes/map2-audio/commit/dbdfe32d4c03ec499dd94b1ad19fc2b91d8c6386) | T2483 loop 17 / iter 164: useRoutingMatrix uses /bindings... | Map2 Audio | 2026-05-02 |
-| [`37514c46`](https://github.com/matthewmackes/map2-audio/commit/37514c46b7d7b2059cb1f88e47e527c49be0a322) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-02 |
-| [`e4f67af4`](https://github.com/matthewmackes/map2-audio/commit/e4f67af4e248d9bc5370b196db758298f00dce8f) | T2483 loop 17 / iter 163: pytest for /bindings/matrix end... | Map2 Audio | 2026-05-02 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
