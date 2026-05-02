@@ -36,3 +36,7 @@
   align-items: center;
   gap: var(--cds-spacing-04, 0.75rem);
 }
+
+.midi-cluster-enable__advisory {
+  margin-block-start: var(--cds-spacing-05, 1rem);
+}

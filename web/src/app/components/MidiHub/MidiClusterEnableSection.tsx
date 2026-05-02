@@ -14,19 +14,36 @@
  *     appears (T2486-2 handles that surface).
  */
 
-import { useState } from 'react'
-import { Heading, Layer, Section, Tag, Toggle } from '@carbon/react'
+import { useEffect, useState } from 'react'
+import { Heading, InlineNotification, Layer, Section, Tag, Toggle } from '@carbon/react'
 
 import { useMidiClusterSettings } from '../../hooks/useMidiClusterSettings'
 import { MidiClusterEnableModal } from './MidiClusterEnableModal'
 import './MidiClusterEnableSection.css'
 
+const DISMISS_KEY = 'midi-cluster-auto-connect-off-advisory-dismissed'
+
 export function MidiClusterEnableSection() {
   const { settings, isLoading, update, isUpdating } = useMidiClusterSettings()
   const [modalOpen, setModalOpen] = useState(false)
 
+  // T2486-2 — per-session dismissibility for the auto-connect-off advisory.
+  // sessionStorage (not localStorage): operator dismisses for this session
+  // only; the next session brings it back so the asymmetric state remains
+  // discoverable.
+  const [advisoryDismissed, setAdvisoryDismissed] = useState(false)
+  useEffect(() => {
+    if (typeof window === 'undefined') return
+    try {
+      setAdvisoryDismissed(window.sessionStorage.getItem(DISMISS_KEY) === '1')
+    } catch {
+      setAdvisoryDismissed(false)
+    }
+  }, [])
+
   const enabled = settings?.enabled ?? false
   const autoConnect = settings?.auto_connect ?? false
+  const advisoryActive = enabled && !autoConnect && !advisoryDismissed
 
   const handleToggle = async (next: boolean) => {
     if (next) {
@@ -98,6 +115,26 @@ export function MidiClusterEnableSection() {
             onToggle={handleToggle}
           />
         </div>
+        {advisoryActive ? (
+          <div className="midi-cluster-enable__advisory" data-testid="midi-cluster-advisory">
+            <InlineNotification
+              kind="info"
+              lowContrast
+              title="Cluster MIDI is enabled but auto-connect is off"
+              subtitle="Peer MIDI ports require manual pairing from the cluster bindings matrix. Turn the advisory off to dismiss for this session."
+              onCloseButtonClick={() => {
+                setAdvisoryDismissed(true)
+                if (typeof window !== 'undefined') {
+                  try {
+                    window.sessionStorage.setItem(DISMISS_KEY, '1')
+                  } catch {
+                    // sessionStorage full or denied — silent fallback.
+                  }
+                }
+              }}
+            />
+          </div>
+        ) : null}
       </Layer>
 
       <MidiClusterEnableModal
