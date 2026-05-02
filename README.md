@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1448** Python | **1498** TypeScript | **177** C++/H | **145** Docs | **3605** total commits | **3** stars | **0** forks | **0** open issues
+**1448** Python | **1498** TypeScript | **177** C++/H | **145** Docs | **3607** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`31c56f6e`](https://github.com/matthewmackes/map2-audio/commit/31c56f6e6181a8431b31f827941edbb3effd55cd) | feat(T2490-2b): GET /api/avb/bindings/matrix server-side ... | Map2 Audio | 2026-05-02 |
+| [`6994a288`](https://github.com/matthewmackes/map2-audio/commit/6994a2884ac1f1289c437b6c662b224ffb60ba6b) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-02 |
 | [`cc17204d`](https://github.com/matthewmackes/map2-audio/commit/cc17204ded4b730992cefa4b301a3c7bc7b36d1e) | feat(T2490-4): wire Connections page to canonical AvbBind... | Map2 Audio | 2026-05-02 |
 | [`cbe561cb`](https://github.com/matthewmackes/map2-audio/commit/cbe561cb79fe094407dbc7f55fc7c33aeb2f57ad) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-02 |
 | [`fffc5e2a`](https://github.com/matthewmackes/map2-audio/commit/fffc5e2a576346bd77097bcd5269c9f022468cba) | feat(T2490-2): AvbBindingAuthority data model + /api/avb/... | Map2 Audio | 2026-05-02 |
 | [`d00d3e0e`](https://github.com/matthewmackes/map2-audio/commit/d00d3e0e7c4fd2cbb9f153c34a3b44b2949cf56b) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-02 |
 | [`cf9dc1a7`](https://github.com/matthewmackes/map2-audio/commit/cf9dc1a7753de0c461f4b5050f5b4391b6a670f6) | feat(T2490-1): scaffold /avb/* operator mount | Map2 Audio | 2026-05-02 |
 | [`9143d5f2`](https://github.com/matthewmackes/map2-audio/commit/9143d5f2862f12df26ff723303a2e97f05384248) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-02 |
-| [`f28e2ae5`](https://github.com/matthewmackes/map2-audio/commit/f28e2ae5fc64b70c6c096f7f23c47a1433cd4026) | docs(T2490): open AVB Services Unification epic + upgrade... | Map2 Audio | 2026-05-02 |
-| [`1302fe98`](https://github.com/matthewmackes/map2-audio/commit/1302fe9892ef33ba01f9efdc1b9334c4164adeee) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-02 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
