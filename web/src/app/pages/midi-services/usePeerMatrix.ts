@@ -1,23 +1,28 @@
 /**
- * T2483 loop 18 / iter 177 — usePeerMatrix scaffold (T2483-9).
+ * T2483 loop 18 / iter 177 — usePeerMatrix scaffold (original).
+ * T2484 loop 19 / iter 185 — wired to real backend
+ *   GET /api/midi/cluster/bindings/matrix (T2484-2). Aggregates
+ *   per-cell peer counts SUMMED across every reachable peer.
  *
- * Per the iter-171 plan D4: scaffolds the peer overlay surface
- * but defers the cluster discovery wiring. Today returns an empty
- * peer-counts map; the iter-118 RoutingPage cells render a `+N`
- * badge when peers > 0 (i.e. never, today). Future loops can wire
- * real per-peer matrix data into this hook without touching the
- * RoutingPage UI.
+ * The hook return shape (PeerMatrix + totalPeerBindings + hasPeerData)
+ * is unchanged from the iter-177 contract so the iter-178 RoutingPage
+ * tests + the iter-118 RoutingPage badge logic stay valid without
+ * changes.
  *
- * Hook return shape:
- *   peers: Record<sourceType, Record<consumerType, number>> — peer
- *     binding count per cell, OVER AND ABOVE the local-node count.
- *
- * Today's empty map means RoutingPage cells render no peer badge.
- * Operators with single-node deployments see no change. Cluster
- * operators see the placeholder until a future loop wires data.
+ * Per the iter-181 plan D2: the cluster response excludes the local
+ * node from `peers` (local is in the `local` slot) so the aggregation
+ * here doesn't double-count what useRoutingMatrix already shows.
  */
 
-import type { BindingConsumerType, BindingSourceType } from '../../../map2/clients/midiBindings'
+import { useMemo } from 'react'
+import { useQuery } from '@tanstack/react-query'
+
+import {
+  midiBindingsApi,
+  type BindingConsumerType,
+  type BindingSourceType,
+  type ClusterBindingsMatrixResponse,
+} from '../../../map2/clients/midiBindings'
 
 export type PeerMatrix = Partial<
   Record<BindingSourceType, Partial<Record<BindingConsumerType, number>>>
@@ -25,20 +30,55 @@ export type PeerMatrix = Partial<
 
 export interface UsePeerMatrixResult {
   peers: PeerMatrix
-  /** Sum of peer-side bindings across all cells. 0 today. */
+  /** Sum of peer-side bindings across all cells. */
   totalPeerBindings: number
-  /** True when the hook has live cluster data (always false today). */
+  /** True when the hook has live cluster data. False when no peers
+   *  reachable or query is loading. */
   hasPeerData: boolean
+  /** Per-peer error map; keys are node_ids that failed to respond. */
+  errors: Record<string, string>
+  isLoading: boolean
+  isError: boolean
+}
+
+function aggregate(
+  data: ClusterBindingsMatrixResponse | undefined,
+): { peers: PeerMatrix; totalPeerBindings: number; hasPeerData: boolean } {
+  const peers: PeerMatrix = {}
+  let totalPeerBindings = 0
+  if (!data || data.peers.length === 0) {
+    return { peers, totalPeerBindings, hasPeerData: false }
+  }
+  for (const peer of data.peers) {
+    for (const [sourceType, row] of Object.entries(peer.matrix)) {
+      const src = sourceType as BindingSourceType
+      const peerRow = peers[src] ?? {}
+      for (const [consumerType, cell] of Object.entries(row)) {
+        const cons = consumerType as BindingConsumerType
+        const prev = peerRow[cons] ?? 0
+        peerRow[cons] = prev + cell.count
+        totalPeerBindings += cell.count
+      }
+      peers[src] = peerRow
+    }
+  }
+  return { peers, totalPeerBindings, hasPeerData: true }
 }
 
 export function usePeerMatrix(): UsePeerMatrixResult {
-  // T2483-9 iter 177 — placeholder. Future loops swap this for a
-  // TanStack Query against /api/midi/cluster/bindings/matrix or
-  // similar. Until then, return empty + hasPeerData=false so the
-  // RoutingPage knows not to render any peer affordance.
+  const query = useQuery({
+    queryKey: ['midi-cluster-bindings-matrix'],
+    queryFn: () => midiBindingsApi.clusterMatrix(),
+    refetchInterval: 5000,
+    staleTime: 0,
+  })
+
+  const aggregated = useMemo(() => aggregate(query.data), [query.data])
+
   return {
-    peers: {},
-    totalPeerBindings: 0,
-    hasPeerData: false,
+    ...aggregated,
+    errors: query.data?.errors ?? {},
+    isLoading: query.isLoading,
+    isError: query.isError,
   }
 }
