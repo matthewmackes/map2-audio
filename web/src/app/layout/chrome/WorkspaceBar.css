@@ -6,7 +6,7 @@
   z-index: 55;
   height: var(--ws-h, 40px);
   display: grid;
-  grid-template-columns: var(--global-tree-width, 16rem) 1fr auto;
+  grid-template-columns: var(--global-tree-width, 18rem) 1fr auto;
   align-items: stretch;
   background:
     linear-gradient(180deg, rgba(255, 255, 255, 0.015) 0%, transparent 60%),

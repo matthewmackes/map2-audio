@@ -200,7 +200,7 @@
 
 .mobile-connection-banner {
   position: fixed;
-  left: calc(var(--global-tree-banner-left-offset, 16rem) + var(--cds-spacing-04, 0.75rem));
+  left: calc(var(--global-tree-banner-left-offset, 18rem) + var(--cds-spacing-04, 0.75rem));
   right: var(--cds-spacing-04, 0.75rem);
   bottom: var(--cds-spacing-04, 0.75rem);
   bottom: calc(var(--cds-spacing-04, 0.75rem) + var(--stage-notification-reserved-height, 0px));

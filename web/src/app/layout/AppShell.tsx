@@ -233,8 +233,8 @@ export function AppShell({ children }: { children: ReactNode }) {
       className={shellClassName}
       style={{
         '--window-shell-accent': shellAccentColor,
-        '--global-tree-width': globalNavPinned ? '16rem' : '3.5rem',
-        '--global-tree-banner-left-offset': globalNavPinned ? '16rem' : '3.5rem',
+        '--global-tree-width': globalNavPinned ? '18rem' : '3.5rem',
+        '--global-tree-banner-left-offset': globalNavPinned ? '18rem' : '3.5rem',
         '--ctx-h': '0px',
         '--ws-h': '0px',
       } as CSSProperties}

@@ -22,12 +22,12 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v4
+        uses: actions/checkout@v5
         with:
           fetch-depth: 0  # Full history for git log and doc dates
 
       - name: Set up Python
-        uses: actions/setup-python@v5
+        uses: actions/setup-python@v6
         with:
           python-version: '3.12'
 
@@ -38,23 +38,10 @@ jobs:
           GITHUB_REPOSITORY: ${{ github.repository }}
 
       - name: Auto-commit updated README
-        uses: stefanzweifel/git-auto-commit-action@v5
+        uses: stefanzweifel/git-auto-commit-action@v7
         id: auto-commit
         with:
           commit_message: 'chore: auto-update README with latest docs & activity'
           file_pattern: README.md
           commit_user_name: 'github-actions[bot]'
           commit_user_email: 'github-actions[bot]@users.noreply.github.com'
-
-      - name: Push to GitLab mirror
-        if: steps.auto-commit.outputs.changes_detected == 'true'
-        run: |
-          mkdir -p ~/.ssh
-          echo "${{ secrets.GITLAB_DEPLOY_KEY }}" > ~/.ssh/gitlab_key
-          chmod 600 ~/.ssh/gitlab_key
-          ssh-keyscan -t ed25519 gitlab.com >> ~/.ssh/known_hosts 2>/dev/null
-          git remote add gitlab git@gitlab.com:matthewmackes-group/matthewmackes-project.git || true
-          GIT_SSH_COMMAND="ssh -i ~/.ssh/gitlab_key -o StrictHostKeyChecking=accept-new" \
-            git push gitlab master
-        env:
-          GIT_SSH_COMMAND: "ssh -i ~/.ssh/gitlab_key"
