@@ -35067,3 +35067,58 @@ Plus ~50 LOC of routing wiring in `App.tsx` and 3 nav-data renames.
 - The Device detail page (iter 99) does not yet expose per-row binding enable/disable toggles or override authoring. That mutation surface is deferred to loop 11+ per the iter-97 audit §4.
 - The `editor` field on `DeviceTableRow` is a typed-but-unused stub — required by Carbon DataTable's row-shape contract, removed when DataTable is replaced by a custom table in a future iter if needed.
 - Carbon DataTable's render-prop type inference is used directly (no explicit type annotations); changes to `@carbon/react`'s `DataTableRenderProps` shape could surface as inference regressions on touch.
+
+### SHIP loop 11 (iters 101–110) closing log — 2026-05-01
+
+**Status**: 10 substantive iters shipped (101-110, dual-pushed). **Continuing the autonomous loop pattern** (user's standing "Continue this logic ten times. then, pick another 10, and restart the procedure" directive). Per the iter-100 closing log recommendation, loop 11 = Phase 3 **P3.4 Bindings region** (global filterable binding list + authoring workflow + read/edit/create/delete + tests + Overview deep-links + iter-107 routing scaffold).
+
+| Iter | Surface | Commit | Highlight |
+|---|---|---|---|
+| 101 | Audit + plan | 93967b5f | New `T2482_LOOP11_BINDINGS_PLAN.md` — confirmed backend ships everything needed (8 endpoints, no new routes). Locked 6 design decisions (D1 filter-required hard, D2 JSON descriptor textareas, D3 dedicated /enable+/disable, D4 Modal not route, D5 routing as 30-line scaffold, D6 Carbon-only). |
+| 102 | API client | a2c1264f | New `web/src/map2/clients/midiBindings.ts` — wraps all 8 endpoints. Types are a mechanical port of `app/services/midi/schemas.py` (BindingConsumerType etc. + MidiBindingRead/Create/Update). Exports vocab arrays for UI dropdowns. |
+| 103 | List page | cbdbdfa6 | New `MidiServicesBindingsPage.tsx` + `.css` — filter-first UX (consumer / device / scope strategy + value inputs). URL-sync so filter state persists across reloads + supports deep-links. Carbon DataTable with 6 columns (Consumer / Source / Target / Scope / Device / Enabled). 5s polling. Empty state guides operator. |
+| 104 | DataTable polish | e012515d | Inline Carbon Toggle in Enabled column (calls /enable or /disable). Per-row OverflowMenu with Edit (stub) + Delete (danger-style confirm Modal). Mutation errors surface in dismissible InlineNotification. TanStack Query invalidates list + Overview count on success. |
+| 105 | Edit modal | 2e5e1b72 | New `BindingEditDrawer.tsx` + `.css` — Carbon Modal that loads binding via GET, surfaces editor for PATCH-able fields. Editable: consumer_label, device_id, scope, scope_id, enabled, source/target/metadata descriptors (JSON textareas with on-input parse validation). Save disabled until all JSON valid. |
+| 106 | Create modal | 4f5a89d7 | New `BindingCreateDrawer.tsx` — sister to edit drawer, every field editable, required-on-create vocabulary fields (consumer_type, source_type, target_type) are dropdowns. POST on Save; same JSON validation discipline. "Add binding" button in page header. |
+| 107 | Routing scaffold | 7bae016c | New `MidiServicesRoutingPage.tsx` — 30-line Carbon placeholder per the iter-101 plan D5. Surfaces info notification + cross-links to /midi/bindings (per-binding routing) and /midi/overview. Mounted at /midi/routing. |
+| 108 | Tests | 5db05b51 | Two new jest suites: `devicePackEditorRoutes.test.tsx` (10 tests covering the canonical first-party editor route map + generic stub fallback) + `useDevicePackBindings.test.tsx` (4 tests against rollUpByProfile via the rendered hook with mocked fetch). 14/14 pass. Discovered `.test.ts` extension doesn't match jest's testMatch under web/ rootDir — files MUST be `.test.tsx`. |
+| 109 | Overview deep-links | 16e0abdb | RegionCard now uses Carbon ClickableTile when `to` prop is provided. All 4 Overview Tiles wired: Devices→/midi/devices, Bindings→/midi/bindings?consumer_type=plugin_param, Routing→/midi/routing, Transport→/midi/bindings?consumer_type=transport. The Bindings + Transport links use the iter-103 URL-sync layer for instant filter pre-selection. |
+| 110 | Roll-up | (this commit) | This closing log + Phase 3 readiness gate v8. |
+
+**Total new files in loop 11**:
+- 1 architecture doc (`T2482_LOOP11_BINDINGS_PLAN.md`)
+- 1 API client (`midiBindings.ts`)
+- 5 frontend modules (`MidiServicesBindingsPage.tsx` + `.css`, `BindingEditDrawer.tsx` + `.css`, `BindingCreateDrawer.tsx`, `MidiServicesRoutingPage.tsx`)
+- 2 jest test suites
+Plus updates to `App.tsx` (3 new lazy-loaded routes) and `MidiServicesOverviewPage.tsx` + `.css` (Tile→ClickableTile flip).
+
+**P3 status after SHIP loop 11 (vs the design doc P3.1–P3.10 sub-phases)**:
+- ✅ P3.1 mount + redirect + rename: DONE (loop 10)
+- ✅ P3.2 Overview region: DONE (loop 10) + Tile deep-links wired (loop 11 iter 109)
+- ✅ P3.3 Devices region: DONE for INDEX surface (loop 10); per-row authoring deferred
+- ✅ **P3.4 Bindings region: DONE for read + create + edit + delete + filter-first list (loop 11)**
+- 🔶 P3.5 Routing region: SCAFFOLD shipped (iter 107 placeholder); matrix UI deferred to loop 12+
+- ◯ P3.6 Transport region: not started (Transport bindings are accessible today via /midi/bindings?consumer_type=transport from the Overview deep-link)
+- ◯ P3.7 Network region: not started; queued for loops 12+
+- ◯ P3.8 misc ports (Presets/Events/Processing/Lab): not started; queued for loops 12+
+- ◯ P3.9 per-device legacy reframing (cross-link banners): not started; queued for loops 12+
+- ◯ P3.10 Brain Setup + Brain Inputs reframing: not started; queued for loops 12+
+
+**Phase 3 readiness gate v8 (post-SHIP-loop-11)**:
+- **Backend MIDI authority**: ready (P1.1 + P1.2 complete, all 8 endpoints exposed)
+- **Frontend Bindings authority surface**: read + filter + create + edit + delete + enable/disable all live at /midi/bindings
+- **Frontend Overview**: live, all 4 cards click-through to their region
+- **Frontend Devices INDEX + detail stub**: live (loop 10) + cross-links to first-party editors
+- **Frontend Routing**: scaffold live; matrix UI queued
+- **Test coverage**: 14 new midi-services jest tests passing in loop 11; bindings page interactive tests deferred to loop 12+ (would need Carbon Modal portal + TanStack QueryClient setup)
+- **Recommended next loop**:
+  - **Loop 12: P3.5 Routing matrix UI + per-source-type structured descriptor editors**. The structured editors retire the iter-105/106 JSON textareas, which per iter-101 D2 are an acknowledged loop-11 limitation.
+  - Loop 13: P3.7 Network region + P3.8 misc ports
+  - Loop 14: P3.9 per-device legacy reframing
+  - Loop 15+: post-P1.2 polish + T2482 epic close-out
+
+**Loop 11 acknowledged limitations**:
+- Source/target/metadata descriptors are edited as raw JSON in iter 105/106 per the locked D2. Per-source-type structured editors (e.g., a CC-number picker for `midi_cc`) queue for loop 12+.
+- The Bindings page interactive tests (filter-form, mutation flows, modal-open) are deferred to loop 12+. Loop 11 ships the smaller pure-logic tests as a foundation; full interactive coverage would require more elaborate Carbon Modal portal + QueryClientProvider mocking patterns.
+- The `actions` field on `BindingTableRow` is a typed-but-unused stub (same pattern as `editor` on the iter-98 DeviceTableRow). Required by Carbon DataTable's row-shape contract.
+- Tests for jest TS files MUST use `.test.tsx` extension under the web/ rootDir, not `.test.ts`. Discovered live in iter 108.
