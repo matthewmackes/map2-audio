@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1437** Python | **1430** TypeScript | **177** C++/H | **145** Docs | **3479** total commits | **3** stars | **0** forks | **0** open issues
+**1437** Python | **1430** TypeScript | **177** C++/H | **145** Docs | **3481** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`5212b439`](https://github.com/matthewmackes/map2-audio/commit/5212b439ad3a7752d93905078760ce138e926657) | T2483 loop 16 / iter 151: T2482 follow-up bundle plan | Map2 Audio | 2026-05-02 |
+| [`3adde724`](https://github.com/matthewmackes/map2-audio/commit/3adde724ffafdb669f7972c111183105d03049af) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-02 |
 | [`026e8314`](https://github.com/matthewmackes/map2-audio/commit/026e8314229d91f43e6242681a69e9446b622c35) | T2482 loop 15 / iter 150: SHIP loop 15 closing roll-up + ... | Map2 Audio | 2026-05-01 |
 | [`21410fc0`](https://github.com/matthewmackes/map2-audio/commit/21410fc0c319c62f5b222e67e603b284a41c7c62) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-02 |
 | [`8a80c8b1`](https://github.com/matthewmackes/map2-audio/commit/8a80c8b122851374627cc1131a1bce40457f4141) | T2482 loop 15 / iter 149: verification report | Map2 Audio | 2026-05-01 |
 | [`f3b30449`](https://github.com/matthewmackes/map2-audio/commit/f3b30449c01d5a9cad44136526ad82c76e396087) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-02 |
 | [`047eca7f`](https://github.com/matthewmackes/map2-audio/commit/047eca7fb53ea8a83928b16073ab233b6d043939) | T2482 loop 15 / iter 148: open T2483 follow-up bundle | Map2 Audio | 2026-05-01 |
 | [`24ae5ccc`](https://github.com/matthewmackes/map2-audio/commit/24ae5ccc78b8bc94575d1400e42b22fbac9eddd4) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-02 |
-| [`33e11c2a`](https://github.com/matthewmackes/map2-audio/commit/33e11c2a30b4ff1da61b2418d19cff30ee5c0f5b) | T2482 loop 15 / iter 147: worklist epic update - mark T24... | Map2 Audio | 2026-05-01 |
-| [`d76652dd`](https://github.com/matthewmackes/map2-audio/commit/d76652dd705bfcd2208512993c84bc8a7b8279c0) | T2482 loop 15 / iter 146: archive sweep step 2 - LOOP9-14... | Map2 Audio | 2026-05-01 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
