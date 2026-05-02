@@ -1,9 +1,9 @@
 /**
- * T2482 loop 12 / iter 119 — useRoutingMatrix aggregation tests.
- *
- * Mocks globalThis.fetch the same way iter-108 useDevicePackBindings.test
- * does. The hook fans out one fetch per consumer_type so the mock
- * inspects the URL and returns the appropriate slice.
+ * T2482 loop 12 / iter 119 — useRoutingMatrix aggregation tests (original).
+ * T2483 loop 17 / iter 165 — refactored to mock the new
+ *   GET /api/midi/bindings/matrix endpoint shape (T2483-8). The
+ *   hook is now a single-query consumer; the test mock returns
+ *   one BindingsMatrixResponse blob.
  */
 
 import { renderHook, waitFor } from '@testing-library/react'
@@ -12,44 +12,20 @@ import React from 'react'
 
 import { useRoutingMatrix } from './useRoutingMatrix'
 
-interface Binding {
-  binding_id: string
-  consumer_type: string
-  consumer_id: string
-  source_type: string
-  target_type: string
-  device_id: string | null
-  scope: string
-  scope_id: string | null
-  enabled: boolean
-}
-
-function makeBinding(overrides: Partial<Binding>): Binding {
-  return {
-    binding_id: overrides.binding_id ?? 'b',
-    consumer_type: overrides.consumer_type ?? 'plugin_param',
-    consumer_id: overrides.consumer_id ?? 'lv2:foo:0',
-    source_type: overrides.source_type ?? 'midi_cc',
-    target_type: overrides.target_type ?? 'engine_param',
-    device_id: overrides.device_id ?? null,
-    scope: overrides.scope ?? 'global',
-    scope_id: overrides.scope_id ?? null,
-    enabled: overrides.enabled ?? true,
-  }
-}
-
-const FAKE_BINDINGS: Record<string, Binding[]> = {
-  plugin_param: [
-    makeBinding({ binding_id: 'p1', source_type: 'midi_cc', enabled: true }),
-    makeBinding({ binding_id: 'p2', source_type: 'midi_cc', enabled: false }),
-    makeBinding({ binding_id: 'p3', source_type: 'midi_note', enabled: true }),
-  ],
-  transport: [
-    makeBinding({ binding_id: 't1', consumer_type: 'transport', source_type: 'midi_clock', enabled: true }),
-  ],
-  device_pack: [
-    makeBinding({ binding_id: 'd1', consumer_type: 'device_pack', source_type: 'midi_cc', enabled: true }),
-  ],
+const FAKE_MATRIX = {
+  matrix: {
+    midi_cc: {
+      plugin_param: { count: 2, enabled_count: 1 },
+      device_pack: { count: 1, enabled_count: 1 },
+    },
+    midi_note: {
+      plugin_param: { count: 1, enabled_count: 1 },
+    },
+    midi_clock: {
+      transport: { count: 1, enabled_count: 1 },
+    },
+  },
+  total_bindings: 5,
 }
 
 function wrapper({ children }: { children: React.ReactNode }) {
@@ -64,17 +40,13 @@ describe('useRoutingMatrix', () => {
 
   beforeEach(() => {
     originalFetch = globalThis.fetch
-    globalThis.fetch = jest.fn((input: RequestInfo | URL) => {
-      const url = typeof input === 'string' ? input : input.toString()
-      const params = new URLSearchParams(url.split('?')[1] ?? '')
-      const consumerType = params.get('consumer_type') ?? ''
-      const data = FAKE_BINDINGS[consumerType] ?? []
-      return Promise.resolve({
+    globalThis.fetch = jest.fn(() =>
+      Promise.resolve({
         ok: true,
         status: 200,
-        json: async () => data,
-      } as Response)
-    }) as unknown as typeof globalThis.fetch
+        json: async () => FAKE_MATRIX,
+      } as Response),
+    ) as unknown as typeof globalThis.fetch
   })
 
   afterEach(() => {
@@ -122,10 +94,21 @@ describe('useRoutingMatrix', () => {
     expect(result.current.colTotals.device_pack).toBe(1)
   })
 
-  it('initializes empty cells for vocab pairs with no bindings', async () => {
+  it('initializes empty cells for vocab pairs not in the response', async () => {
     const { result } = renderHook(() => useRoutingMatrix(), { wrapper })
     await waitFor(() => expect(result.current.isLoading).toBe(false))
+    // Backend's iter-163 test_omits_empty_groups confirms unknown
+    // (source, consumer) pairs are not in the dict; the hook
+    // initializes them as count=0 / enabledCount=0.
     expect(result.current.matrix.midi_pc.snapshot.count).toBe(0)
     expect(result.current.matrix.midi_pc.snapshot.enabledCount).toBe(0)
+  })
+
+  it('issues exactly one fetch (no fan-out)', async () => {
+    const { result } = renderHook(() => useRoutingMatrix(), { wrapper })
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+    // T2483-8 win: one query, not 10. Confirms the iter-164 refactor.
+    expect((globalThis.fetch as jest.Mock).mock.calls.length).toBe(1)
+    expect((globalThis.fetch as jest.Mock).mock.calls[0][0]).toContain('/midi/bindings/matrix')
   })
 })
