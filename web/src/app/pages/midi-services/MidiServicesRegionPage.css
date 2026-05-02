@@ -1,0 +1,44 @@
+/*
+ * T2482 loop 13 / iter 122 — shared MidiServices region-page styles.
+ *
+ * One CSS file is reused across MidiServicesNetworkPage,
+ * MidiServicesPresetsPage, MidiServicesEventsPage,
+ * MidiServicesProcessingPage, and MidiServicesLabPage. Per the
+ * iter-121 plan D2 they all share the Section + Layer + Heading
+ * chrome from the iter-95 OverviewPage visual language.
+ *
+ * Carbon-conformant. No hardcoded colors.
+ */
+
+.midi-services-region {
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.midi-services-region__header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.midi-services-region__title {
+  font-size: 2rem;
+  font-weight: 300;
+  color: var(--cds-text-primary);
+  margin: 0;
+}
+
+.midi-services-region__subtitle {
+  font-size: 0.875rem;
+  color: var(--cds-text-secondary);
+  margin: 0;
+  max-width: 56rem;
+}
+
+.midi-services-region__grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(20rem, 1fr));
+  gap: 1rem;
+}
