@@ -194,7 +194,7 @@
   display: flex;
   gap: 2px;
   opacity: 0;
-  transition: opacity 0.15s ease;
+  transition: opacity var(--map2-dur-fast, var(--map2-dur-fast, 120ms)) ease;
 }
 
 .chains-grid-cell:hover .chains-grid-cell-actions {

@@ -53,7 +53,7 @@ input[type="range"]::-webkit-slider-thumb {
   border: 2px solid color-mix(in srgb, var(--text-primary) 30%, transparent);
   margin-top: -6px;
   box-shadow: none;
-  transition: all 0.15s ease;
+  transition: all var(--map2-dur-fast, var(--map2-dur-fast, 120ms)) ease;
 }
 
 input[type="range"]::-webkit-slider-thumb:hover {
@@ -75,7 +75,7 @@ input[type="range"]::-moz-range-thumb {
   background: var(--surface);
   border: 2px solid color-mix(in srgb, var(--text-primary) 30%, transparent);
   box-shadow: none;
-  transition: all 0.15s ease;
+  transition: all var(--map2-dur-fast, var(--map2-dur-fast, 120ms)) ease;
 }
 
 input[type="range"]::-moz-range-thumb:hover {

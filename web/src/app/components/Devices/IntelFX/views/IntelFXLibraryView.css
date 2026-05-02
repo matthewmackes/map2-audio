@@ -88,7 +88,7 @@
   cursor: pointer;
   padding: 0.625rem;
   text-align: left;
-  transition: border-color 120ms ease, background-color 120ms ease;
+  transition: border-color var(--map2-dur-fast, 120ms) ease, background-color var(--map2-dur-fast, 120ms) ease;
 }
 
 .intelfx-library-page__card:hover {

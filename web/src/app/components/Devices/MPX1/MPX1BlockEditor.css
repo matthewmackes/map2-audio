@@ -25,7 +25,7 @@
   justify-content: center;
   gap: var(--cds-spacing-03, 0.5rem);
   cursor: pointer;
-  transition: border-color 120ms ease, background 120ms ease, color 120ms ease;
+  transition: border-color var(--map2-dur-fast, 120ms) ease, background var(--map2-dur-fast, 120ms) ease, color var(--map2-dur-fast, 120ms) ease;
 }
 
 .mpx1-editor__block-dot {

@@ -386,7 +386,7 @@
   grid-template-columns: 24px minmax(0, 1fr);
   gap: 8px;
   align-items: flex-start;
-  transition: border-color 120ms ease, background 120ms ease, transform 120ms ease;
+  transition: border-color var(--map2-dur-fast, 120ms) ease, background var(--map2-dur-fast, 120ms) ease, transform var(--map2-dur-fast, 120ms) ease;
 }
 
 .mpx1-mega-menu__tile:hover,

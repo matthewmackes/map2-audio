@@ -12,7 +12,7 @@
   /* T2474 B9: Removed hover lift drop-shadow (Q1=A — no decorative
    * shadows). Hover is communicated by Carbon Tile's own --cds-layer-
    * hover background and the focus ring. */
-  transition: background 120ms ease;
+  transition: background var(--map2-dur-fast, 120ms) ease;
 }
 
 .device-card--connected {

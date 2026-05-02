@@ -130,7 +130,7 @@
   padding: 1rem !important;
   /* T2474 B9: Removed hover lift drop-shadow per Q1=A. Hover communicated
    * by Carbon Tile's --cds-layer-hover background. */
-  transition: background 120ms ease;
+  transition: background var(--map2-dur-fast, 120ms) ease;
 }
 
 .hwstore-tile__head {

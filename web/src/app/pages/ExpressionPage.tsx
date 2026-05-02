@@ -7,6 +7,8 @@
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { motion, AnimatePresence } from 'framer-motion'
+import { INSTANT_TRANSITION } from '../styles/useReducedMotionSafeVariants'
+import { useReducedEffectsPreference } from '../hooks/useReducedEffectsPreference'
 import { NumberInput } from '../components/ParameterControl'
 import { EmptyState } from '../components/shared/EmptyState'
 import styles from './ExpressionPage.module.css'
@@ -190,6 +192,11 @@ function curvePath(curve: Curve, customCurve: CurvePoint[], width: number, heigh
 // ============================================================================
 
 function CurvePreview({ curve, customCurve }: { curve: Curve; customCurve: CurvePoint[] }) {
+  const { shouldReduceEffects } = useReducedEffectsPreference()
+  const t = useCallback(
+    (trans: Record<string, unknown>) => shouldReduceEffects ? INSTANT_TRANSITION : trans,
+    [shouldReduceEffects],
+  )
   return (
     <motion.svg
       className={styles.curveSVG}
@@ -197,7 +204,7 @@ function CurvePreview({ curve, customCurve }: { curve: Curve; customCurve: Curve
       height={120}
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      transition={{ duration: 0.3 }}
+      transition={t({ duration: 0.3 })}
     >
       <line x1={0} y1={60} x2={120} y2={60} stroke={expressionTokens.colors.borderSubtle} strokeWidth={1} />
       <line x1={60} y1={0} x2={60} y2={120} stroke={expressionTokens.colors.borderSubtle} strokeWidth={1} />
@@ -225,6 +232,11 @@ function CustomCurveEditor({
   const svgRef = useRef<SVGSVGElement | null>(null)
   const dragging = useRef<number | null>(null)
   const safePoints = points.length === 2 ? points : [{ x: 0.25, y: 0.25 }, { x: 0.75, y: 0.75 }]
+  const { shouldReduceEffects } = useReducedEffectsPreference()
+  const t = useCallback(
+    (trans: Record<string, unknown>) => shouldReduceEffects ? INSTANT_TRANSITION : trans,
+    [shouldReduceEffects],
+  )
 
   const applyPointer = useCallback((clientX: number, clientY: number) => {
     if (dragging.current == null || !svgRef.current) return
@@ -259,7 +271,7 @@ function CustomCurveEditor({
       height={200}
       initial={{ opacity: 0, scale: 0.95 }}
       animate={{ opacity: 1, scale: 1 }}
-      transition={{ duration: 0.3 }}
+      transition={t({ duration: 0.3 })}
       style={{ touchAction: 'none' }}
       onMouseLeave={() => { dragging.current = null }}
     >
@@ -355,6 +367,11 @@ function LiveDualGraphic({
   const [paramDisplay, setParamDisplay] = useState('--')
   const [history, setHistory] = useState<Array<{ pedal: number; param: number }>>([])
   const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null)
+  const { shouldReduceEffects } = useReducedEffectsPreference()
+  const t = useCallback(
+    (trans: Record<string, unknown>) => shouldReduceEffects ? INSTANT_TRANSITION : trans,
+    [shouldReduceEffects],
+  )
 
   useEffect(() => {
     if (!assignment) return undefined
@@ -437,13 +454,13 @@ function LiveDualGraphic({
         className={styles.meterContainer}
         initial={{ opacity: 0, y: 10 }}
         animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.3 }}
+        transition={t({ duration: 0.3 })}
       >
         <motion.div
           className={styles.meterFill}
           style={{ background: props.color, height: '0%' }}
           animate={{ height: `${Math.round(clamp01(props.value) * 100)}%` }}
-          transition={{ duration: 0.03, ease: 'linear' }}
+          transition={t({ duration: 0.03, ease: 'linear' })}
         />
       </motion.div>
       <span className={styles.meterLabel}>{props.label}</span>
@@ -455,7 +472,7 @@ function LiveDualGraphic({
       className={styles.monitorContent}
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      transition={{ duration: 0.4 }}
+      transition={t({ duration: 0.4 })}
     >
       <div className={styles.meterRow}>
         <Meter
@@ -480,7 +497,7 @@ function LiveDualGraphic({
           height={chartH}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ duration: 0.3, delay: 0.1 }}
+          transition={t({ duration: 0.3, delay: 0.1 })}
         >
           <line x1={0} y1={chartH * 0.25} x2={chartW} y2={chartH * 0.25} stroke={expressionTokens.colors.borderSubtle} strokeDasharray="2,2" strokeWidth={1} />
           <line x1={0} y1={chartH * 0.75} x2={chartW} y2={chartH * 0.75} stroke={expressionTokens.colors.borderSubtle} strokeDasharray="2,2" strokeWidth={1} />
@@ -534,6 +551,11 @@ function AssignmentForm({
   const [listening, setListening] = useState<boolean>(false)
   const [listenerId, setListenerId] = useState<string | null>(null)
   const [detectMessage, setDetectMessage] = useState<string>('')
+  const { shouldReduceEffects } = useReducedEffectsPreference()
+  const t = useCallback(
+    (trans: Record<string, unknown>) => shouldReduceEffects ? INSTANT_TRANSITION : trans,
+    [shouldReduceEffects],
+  )
 
   useEffect(() => {
     setCc(initial?.cc ?? 0)
@@ -617,13 +639,13 @@ function AssignmentForm({
       className={styles.formSection}
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      transition={{ duration: 0.3 }}
+      transition={t({ duration: 0.3 })}
     >
       {/* CC Detection Panel */}
       <motion.div
         className={`${styles.detectCCPanel} ${listening ? styles.detectCCPanelListening : ''}`}
         animate={{ borderColor: listening ? expressionTokens.colors.primary : expressionTokens.colors.border }}
-        transition={{ duration: 0.2 }}
+        transition={t({ duration: 0.2 })}
       >
         <div className={styles.detectCCMessage}>
           {detectMessage || 'Auto-detect MIDI CC by moving your pedal.'}
@@ -658,7 +680,7 @@ function AssignmentForm({
         className={styles.fieldGrid}
         initial={{ y: 10, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: 0.3, delay: 0.1 }}
+        transition={t({ duration: 0.3, delay: 0.1 })}
       >
         <div>
           <label className={styles.fieldLabel}>CC</label>
@@ -726,7 +748,7 @@ function AssignmentForm({
       <motion.div
         initial={{ y: 10, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: 0.3, delay: 0.15 }}
+        transition={t({ duration: 0.3, delay: 0.15 })}
       >
         <label className={styles.fieldLabel}>Target Parameter</label>
         <input
@@ -744,7 +766,7 @@ function AssignmentForm({
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
               exit={{ opacity: 0, y: -10 }}
-              transition={{ duration: 0.2 }}
+              transition={t({ duration: 0.2 })}
             >
               {filteredParams.length === 0 && (
                 <div className={styles.parameterEmptyMessage}>No matching parameter.</div>
@@ -770,7 +792,7 @@ function AssignmentForm({
         className={styles.fieldGridThreeCol}
         initial={{ y: 10, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: 0.3, delay: 0.2 }}
+        transition={t({ duration: 0.3, delay: 0.2 })}
       >
         <div>
           <label className={styles.fieldLabel}>Output Min</label>
@@ -837,7 +859,7 @@ function AssignmentForm({
       <motion.div
         initial={{ y: 10, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: 0.3, delay: 0.25 }}
+        transition={t({ duration: 0.3, delay: 0.25 })}
       >
         <label className={styles.fieldLabel}>Response Curve</label>
         <div className={styles.curveSection}>
@@ -894,7 +916,7 @@ function AssignmentForm({
         className={styles.buttonGroup}
         initial={{ y: 10, opacity: 0 }}
         animate={{ y: 0, opacity: 1 }}
-        transition={{ duration: 0.3, delay: 0.3 }}
+        transition={t({ duration: 0.3, delay: 0.3 })}
       >
         <motion.button
           className={styles.buttonPrimary}
@@ -958,6 +980,11 @@ function AssignmentRow({
   onSelect: () => void
   isHighlighted?: boolean
 }) {
+  const { shouldReduceEffects } = useReducedEffectsPreference()
+  const t = useCallback(
+    (trans: Record<string, unknown>) => shouldReduceEffects ? INSTANT_TRANSITION : trans,
+    [shouldReduceEffects],
+  )
   return (
     <motion.button
       className={`${styles.assignmentRow} ${selected ? styles.assignmentRowSelected : ''} ${isHighlighted && !selected ? styles.assignmentRowHighlighted : ''} ${selected && isHighlighted ? styles.assignmentRowSelectedHighlighted : ''}`}
@@ -966,7 +993,7 @@ function AssignmentRow({
       whileTap={{ scale: 0.99 }}
       initial={{ opacity: 0, x: -10 }}
       animate={{ opacity: 1, x: 0 }}
-      transition={{ duration: 0.2 }}
+      transition={t({ duration: 0.2 })}
     >
       <span className={styles.assignmentCCLabel}>CC{assignment.cc}</span>
       <div className={styles.assignmentContent}>
@@ -982,7 +1009,7 @@ function AssignmentRow({
           className={styles.assignmentMidiLabel}
           initial={{ opacity: 0, scale: 0.8 }}
           animate={{ opacity: 1, scale: 1 }}
-          transition={{ duration: 0.2 }}
+          transition={t({ duration: 0.2 })}
         >
           MIDI
         </motion.span>
@@ -994,7 +1021,7 @@ function AssignmentRow({
             ? '0 0 8px color-mix(in srgb, var(--support-success) 30%, transparent)'
             : 'none',
         }}
-        transition={{ duration: 0.3 }}
+        transition={t({ duration: 0.3 })}
       />
     </motion.button>
   )
@@ -1018,6 +1045,12 @@ export function ExpressionView({
   const [creating, setCreating] = useState<boolean>(false)
   const [isMobile, setIsMobile] = useState<boolean>(() => window.innerWidth < 1024)
   const [activeTab, setActiveTab] = useState<ConstrainedTab>('assignments')
+  const { shouldReduceEffects } = useReducedEffectsPreference()
+  // t() maps raw Framer transition objects through the reduced-motion preference
+  const t = useCallback(
+    (trans: Record<string, unknown>) => shouldReduceEffects ? INSTANT_TRANSITION : trans,
+    [shouldReduceEffects],
+  )
 
   useEffect(() => {
     const onResize = () => setIsMobile(window.innerWidth < 1024)
@@ -1149,7 +1182,7 @@ export function ExpressionView({
       className={styles.container}
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
-      transition={{ duration: 0.4 }}
+      transition={t({ duration: 0.4 })}
     >
       <div className={styles.header}>
         <h1 className={styles.title}>Expression Pedal Control</h1>
@@ -1165,7 +1198,7 @@ export function ExpressionView({
           className={styles.assignmentColumn}
           initial={{ opacity: 0, x: -20 }}
           animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.4, delay: 0.1 }}
+          transition={t({ duration: 0.4, delay: 0.1 })}
         >
           <motion.button
             className={styles.newAssignmentButton}
@@ -1182,7 +1215,7 @@ export function ExpressionView({
               className={`${styles.assignmentGroupLabel} ${styles.assignmentGroupLabelHighlighted}`}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              transition={{ duration: 0.2 }}
+              transition={t({ duration: 0.2 })}
             >
               Linked to this plugin
             </motion.div>
@@ -1205,7 +1238,7 @@ export function ExpressionView({
               className={styles.assignmentGroupLabel}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              transition={{ duration: 0.2 }}
+              transition={t({ duration: 0.2 })}
               style={{
                 marginTop: highlightedCount > 0 ? 10 : 6,
               }}
@@ -1231,7 +1264,7 @@ export function ExpressionView({
               className={styles.assignmentGroupLabel}
               initial={{ opacity: 0 }}
               animate={{ opacity: 1 }}
-              transition={{ duration: 0.2 }}
+              transition={t({ duration: 0.2 })}
             >
               Performance mode defaults
             </motion.div>
@@ -1255,7 +1288,7 @@ export function ExpressionView({
           className={styles.formColumn}
           initial={{ opacity: 0 }}
           animate={{ opacity: 1 }}
-          transition={{ duration: 0.4, delay: 0.15 }}
+          transition={t({ duration: 0.4, delay: 0.15 })}
         >
           <AnimatePresence mode="wait">
             {creating || selected ? (
@@ -1264,7 +1297,7 @@ export function ExpressionView({
                 initial={{ opacity: 0, y: 10 }}
                 animate={{ opacity: 1, y: 0 }}
                 exit={{ opacity: 0, y: -10 }}
-                transition={{ duration: 0.3 }}
+                transition={t({ duration: 0.3 })}
               >
                 <AssignmentForm
                   initial={creating ? (newAssignmentSeed ?? null) : selected}
@@ -1287,7 +1320,7 @@ export function ExpressionView({
                 initial={{ opacity: 0 }}
                 animate={{ opacity: 1 }}
                 exit={{ opacity: 0 }}
-                transition={{ duration: 0.3 }}
+                transition={t({ duration: 0.3 })}
               >
                 <span>Select an assignment to edit, or create a new one.</span>
               </motion.div>
@@ -1300,7 +1333,7 @@ export function ExpressionView({
           className={styles.monitorColumn}
           initial={{ opacity: 0, x: 20 }}
           animate={{ opacity: 1, x: 0 }}
-          transition={{ duration: 0.4, delay: 0.2 }}
+          transition={t({ duration: 0.4, delay: 0.2 })}
         >
           <div className={styles.monitorHeader}>Live Signal</div>
           <LiveDualGraphic

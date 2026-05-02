@@ -130,7 +130,7 @@
   max-height: 85%;
   object-fit: contain;
   filter: drop-shadow(0 10px 30px rgba(0, 0, 0, 0.5));
-  transition: transform 0.3s ease;
+  transition: transform var(--map2-dur-base, 220ms) ease;
   position: relative;
   z-index: 1;
 }
@@ -251,7 +251,7 @@
   background: rgba(255, 255, 255, 0.02);
   border-radius: 8px;
   border: 1px solid rgba(77, 158, 255, 0.1);
-  transition: all 0.2s;
+  transition: all var(--map2-dur-fast, var(--map2-dur-fast, 120ms));
 }
 
 .audio-spec-row:hover {
@@ -299,7 +299,7 @@
   font-size: var(--cds-body-compact-01-font-size, 0.875rem);
   line-height: var(--cds-body-compact-01-line-height, 1.285);
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all var(--map2-dur-fast, var(--map2-dur-fast, 120ms));
 }
 
 .audio-select:hover {
@@ -358,7 +358,7 @@
   line-height: var(--cds-label-01-line-height, 1rem);
   font-weight: 600;
   cursor: pointer;
-  transition: all 0.2s;
+  transition: all var(--map2-dur-fast, var(--map2-dur-fast, 120ms));
 }
 
 .audio-control-btn:hover {
