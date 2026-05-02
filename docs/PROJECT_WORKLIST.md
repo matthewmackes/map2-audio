@@ -35683,4 +35683,126 @@ Remaining T2459-H sub-tasks (H3 / H4 / H5 / H6) are intentionally hardware-block
 
 **Total iters across the MIDI arc** (loops 10 through 21, since the resumed conversation began): 113 substantive iters dual-pushed; 4 epics closed; test coverage went from 0 midi-services jest tests to 116 jest + 169 backend pytest cases.
 
+---
+
+## Epic: T2485 — MIDI GUI Unification under device-pack shell (opened 2026-05-02)
+
+**Why it matters.** `T2482` closed the canonical `/midi` services surface, but the per-device MIDI GUIs (`/devices/mpx1`, `/devices/intelfx`, `/maschine`, `/mcu`, `/launch-control`, `/midi-commander`, `/ground-control-pro`, `/expression`, `/labs/push-surface`) still live as 9 parallel top-level routes, each with its own shell, status bar, and partly its own API client. The shared primitives needed to fold them all under `/midi/devices/:profileKey` already exist (`DeviceContextBanner`, `useDeviceNodeContext()`, `device-packs/` registry, `PlatformEventProvider`); this epic completes the unification so MIDI-flavored hardware appears as one surface to the operator.
+
+**Locked decisions (2026-05-02).**
+1. Canonical mount: `/midi/devices/:profileKey/<view>`. Every MIDI-controlling device GUI lives here. `/devices/mpx1/*`, `/devices/intelfx/*`, `/maschine`, `/mcu`, `/launch-control`, `/midi-commander`, `/ground-control-pro`, `/expression`, `/labs/push-surface` retire as top-level routes (kept as redirects only).
+2. One shell: `<DeviceShell>` replaces `MPX1Shell` + `IntelFXShell` + the minimal page wrappers. Composes `<DeviceContextBanner>`, a new generic `<DeviceStatusBar>`, and `<Outlet>`.
+3. One status bar: extract a generic `<DeviceStatusBar>` driven by `useDeviceNodeContext()` + a per-pack adapter (LCD preview, bypass, HID traffic). Retire `MPX1StatusBar` and `IntelFXStatusBar`.
+4. One signal-flow canvas: `<DeviceFlowCanvas>` reads block topology from each device-pack manifest. `MPX1FlowCanvas` and `IntelFXFlowCanvas` retire — they're 80% identical today.
+5. Per-device API clients **stay separate**. MPX1's WebSocket parameter registry and Maschine's HID daemon are genuinely device-specific transports. Only the **shell** unifies — not the data layer.
+6. Sidebar collapses from 9 MIDI entries to 1 (`MIDI`) with a device sub-list driven by the device-pack manifest. The MPX1 mega-menu variant retires.
+7. Cross-link banner (`MidiServicesCrossLinkBanner`) stays — it bridges per-device pages back to `/midi/bindings` and `/midi/connections` for global MIDI state.
+8. Maschine MK1 retains its dedicated route as a controller surface (T700 made it the primary headless console) — its MIDI views move under `/midi/devices/native-instruments-maschine-mk1` but `/maschine` keeps its hardware-console identity.
+
+**Subtasks.**
+
+- ID: T2485-1 — Audit + scaffold
+  - Goal / acceptance criteria: enumerate every per-device MIDI GUI today, map each view (`panel | editor | midi-map | library | perform | monitor | flow`) onto the unified taxonomy, scaffold `/midi/devices/:profileKey` route, build `<DeviceShell>` skeleton.
+  - Estimated effort: Medium
+  - Required outputs: `web/src/app/pages/midi-services/MidiServicesDeviceShell.tsx`, audit table in this entry's completion notes, route registration in `App.tsx`.
+
+- ID: T2485-2 — Generic `<DeviceStatusBar>`
+  - Goal / acceptance criteria: extract status-bar primitive from `MPX1StatusBar` + `IntelFXStatusBar`, drive it from `useDeviceNodeContext()`, expose a slot for per-pack adapters (LCD preview, bypass, HID traffic).
+  - Estimated effort: Medium
+  - Required outputs: `web/src/app/components/Devices/Shared/DeviceStatusBar.tsx`, `web/src/app/components/Devices/Shared/DeviceStatusBar.test.tsx`.
+
+- ID: T2485-3 — Generic `<DeviceFlowCanvas>`
+  - Goal / acceptance criteria: hoist signal-flow canvas (animated SVG patch cords, block cards, undo/redo, A/B compare, tap tempo) into one component reading topology from the device-pack manifest. Retire `MPX1FlowCanvas` + `IntelFXFlowCanvas` infinite-loop trap fix should be preserved (functional updater in `useLayoutEffect`).
+  - Estimated effort: High
+  - Required outputs: `web/src/app/components/Devices/Shared/DeviceFlowCanvas.tsx`, `mpx1FlowRouting.ts` generalized to `deviceFlowRouting.ts`, retired components.
+
+- ID: T2485-4 — Migrate MPX1 (proof of concept)
+  - Goal / acceptance criteria: `/devices/mpx1/*` redirects to `/midi/devices/lexicon-mpx1/*`. All 8 MPX1 views render under the new shell. Existing 87 MPX1 tests pass against the new mount points. Bundle hash changes for affected pages.
+  - Estimated effort: Medium-High
+  - Required outputs: redirect rules in `App.tsx`, MPX1 view components moved/renamed under `web/src/app/components/Devices/MPX1/views/`, test path updates.
+
+- ID: T2485-5 — Migrate IntelFX
+  - Goal / acceptance criteria: same as T2485-4 for IntelFX (7 views).
+  - Estimated effort: Medium
+
+- ID: T2485-6 — Migrate Maschine MIDI surfaces
+  - Goal / acceptance criteria: Maschine MIDI-map / HID-traffic views move under `/midi/devices/native-instruments-maschine-mk1/*`. `/maschine` itself stays as the hardware-console primary surface (per T700). Cross-link banner from console → MIDI device shell.
+  - Estimated effort: Medium
+
+- ID: T2485-7 — Migrate MCU, Launch Control, MIDI Commander, Ground Control Pro, Expression, Push Surface
+  - Goal / acceptance criteria: each becomes a thin device-pack view under `/midi/devices/:profileKey`. The minimal page components are deleted; redirects preserve external bookmarks.
+  - Estimated effort: Medium
+
+- ID: T2485-8 — Sidebar collapse + mega-menu retire
+  - Goal / acceptance criteria: `advancedMenuItems.ts` shows one `MIDI` entry; clicking it opens `/midi/overview`. The MPX1 mega-menu kind retires. The MIDI Services landing page surfaces a "Devices" tile linking to `/midi/devices`.
+  - Estimated effort: Low-Medium
+  - Required outputs: updated `advancedMenuItems.ts`, retired `MPX1MegaMenu` if no longer referenced, updated `MidiServicesOverviewPage` tile.
+
+- ID: T2485-9 — Documentation + closeout
+  - Goal / acceptance criteria: update `docs/architecture/MIDI_SERVICES_CLOSED_OUT.md` with the unified-shell entry; update `docs/CLAUDE.md` Key File Locations table; mark T2485 done in worklist; add Definition-of-Done notes (typecheck/build/jest counts pre/post; bundle hash deltas; live `/midi/devices/lexicon-mpx1/panel` 200 verification).
+  - Estimated effort: Low
+
+**Estimated total effort:** 4–6 SHIP loops based on T2482/83/84 cadence.
+
+**Status:** [ ] Open. Subtasks T2485-1 through T2485-9 unscheduled.
+
+---
+
+## T2486 — MIDI cluster auto-connect onboarding UX (opened 2026-05-02)
+
+**Why it matters.** The cluster MIDI router already supports automatic peer-port pairing on `midi.node.discovered` ([cluster_router.py:430-528](../app/services/midi_hub/cluster_router.py#L430-L528)). It is gated by `midi.cluster.auto_connect`, schema default `False`. The default was deliberately flipped from `true → false` (archive `PROJECT_WORKLIST_ARCHIVE_20260316.md:8292`) so a vanilla single-node backend restart does not enter cluster routing implicitly — this is a load-bearing **fail-closed** posture asserted by `tests/test_cluster_midi_foundation.py::test_cluster_midi_defaults_fail_closed`. **Do not silently flip the schema default.**
+
+The right shape is an onboarding-flow opt-in: when an operator turns on `midi.cluster.enabled` (the master gate), surface a one-click prompt to also enable `midi.cluster.auto_connect`. This preserves the fail-closed posture for fresh nodes while making peer-MIDI auto-wiring effectively automatic from the operator's point of view once they've explicitly admitted a node into a cluster.
+
+**Locked decisions (2026-05-02).**
+1. Schema defaults stay: `midi.cluster.enabled = False`, `midi.cluster.auto_connect = False`. The fail-closed test stays green.
+2. Single coupled prompt: when an operator enables `midi.cluster.enabled` from the UI, show a Carbon Modal asking whether to also enable `midi.cluster.auto_connect` (default-checked). Operator can uncheck to keep ports manually-paired.
+3. Surface placement: inside `/midi/network` (existing `MidiServicesNetworkPage`), not in a global onboarding wizard. Cluster admit is already authored there.
+4. Status visibility: when `midi.cluster.enabled=True ∧ midi.cluster.auto_connect=False`, render a Carbon `InlineNotification` (kind="info") on `/midi/network` and `/midi/cluster/bindings/matrix` reading "Cluster MIDI is enabled but auto-connect is off — peer MIDI ports require manual pairing." Dismissible per-session, not persistent.
+5. Telemetry: emit `midi.cluster.auto_connect.changed` PlatformEvent on toggle (operator-initiated only; not on programmatic config writes during onboarding).
+
+**Subtasks.**
+
+- ID: T2486-1 — UX prompt + persistence
+  - Goal: Carbon Modal coupled to the existing `midi.cluster.enabled` toggle. Default checkbox = on. Persists both flags via `useSpecialSettings`.
+  - Files: `web/src/app/pages/midi-services/MidiServicesNetworkPage.tsx`, `web/src/app/components/MidiHub/MidiClusterEnableModal.tsx`.
+  - Effort: Low.
+
+- ID: T2486-2 — Inline notification + status badge
+  - Goal: render the "auto-connect off" advisory on `/midi/network` and `/midi/cluster/bindings/matrix` whenever the asymmetric state holds.
+  - Effort: Low.
+
+- ID: T2486-3 — Backend PlatformEvent + audit log
+  - Goal: on toggle, emit `midi.cluster.auto_connect.changed` with `{by: operator_id, prev_value, new_value}`. Adds to the existing platform-event taxonomy.
+  - Files: `app/services/platform_event/kind.py`, `app/routes/special_settings.py` (or wherever the config write lands).
+  - Effort: Low.
+
+- ID: T2486-4 — Tests
+  - Goal: jest test for modal flow (enable cluster → modal opens → both flags set), pytest test that the fail-closed default is preserved unless the modal flow fires, regression test for `test_cluster_midi_defaults_fail_closed` continuing to pass.
+  - Effort: Low.
+
+**Estimated total effort:** 1–2 SHIP loops.
+
+**Status:** [ ] Open. Subtasks T2486-1 through T2486-4 unscheduled.
+
+**Explicit non-goal:** flipping `midi.cluster.auto_connect` schema default to `True`. That decision is owned by the fail-closed posture documented in `tests/test_cluster_midi_foundation.py` and the 2026-03 archive entry. If a future epic wants to revisit it, that's a separate proposal with security review, not part of T2486.
+
+---
+
+## T2459-H bench-validation reminder (opened 2026-05-02)
+
+**Status:** All software work for T2459-H (MIDI Backend Unification — controller-host) is complete. Sub-tasks **H3 / H4 / H5 / H6** are intentionally hardware-blocked pending bench HIL validation:
+
+- **H3** — controller-host crash-isolation soak under live MPX1 + IntelFX + Maschine SysEx traffic.
+- **H4** — shm event-ring sample-accuracy proof against UA-1000 audio clock at 64 samples / 48 kHz.
+- **H5** — full Mixxx ControllerEngine round-trip with a Mixxx-imported device-pack (β1 milestone).
+- **H6** — `python-rtmidi` and `Map2MidiController.cpp` deletion gated on H3-H5 closing.
+
+**No code action this iter.** This entry is a forward-looking reminder so the next time bench hardware is available the H-tail closes in one HIL session rather than re-discovering scope. Until then, do not attempt to silently retire `python-rtmidi` or `Map2MidiController.cpp` — the bench gate is intentional, not stale.
+
+**Cross-references.**
+- T2459 controller-layer locked decisions: `docs/architecture/CONTROLLER_LAYER.md`.
+- Hardware-blocked pattern reference: PROJECT_WORKLIST.md line 1324.
+- Current MIDI surface inventory: `docs/architecture/MIDI_SERVICES_CLOSED_OUT.md`.
+
 The standing autonomous-loop directive is now free to pivot to AVB / Sampler / Audio Effects unification (Phase 4 template extraction from T2482) or post-P1.2 polish, depending on operator priority.
