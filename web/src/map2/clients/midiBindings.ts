@@ -143,6 +143,21 @@ export interface LastCcResponse {
   observed_at: number
 }
 
+// ---------- Cluster matrix shape (T2484-1 iter 184) ----------
+
+export interface ClusterPeerMatrix {
+  node_id: string
+  hostname: string
+  matrix: Record<string, Record<string, MatrixCell>>
+  total_bindings: number
+}
+
+export interface ClusterBindingsMatrixResponse {
+  local: BindingsMatrixResponse
+  peers: ClusterPeerMatrix[]
+  errors: Record<string, string>
+}
+
 // ---------- Client ----------
 
 function buildListUrl(filter: BindingListFilter): string {
@@ -168,6 +183,14 @@ export const midiBindingsApi = {
   lastCc: () =>
     fetchJson<LastCcResponse | null>(
       `${API_BASE}/midi/bindings/learn/last-cc`,
+      { cache: 'no-store' },
+    ),
+
+  // T2484-1 iter 184 — cluster-wide source × consumer matrix
+  // aggregation; peers + per-peer error map.
+  clusterMatrix: () =>
+    fetchJson<ClusterBindingsMatrixResponse>(
+      `${API_BASE}/midi/cluster/bindings/matrix`,
       { cache: 'no-store' },
     ),
 
