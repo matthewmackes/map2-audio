@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1437** Python | **1406** TypeScript | **177** C++/H | **145** Docs | **3415** total commits | **3** stars | **0** forks | **0** open issues
+**1437** Python | **1406** TypeScript | **177** C++/H | **145** Docs | **3417** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`93967b5f`](https://github.com/matthewmackes/map2-audio/commit/93967b5f669f633481c27d41c288cb3af48b7249) | T2482 loop 11 / iter 101: P3.4 Bindings region audit + plan | Map2 Audio | 2026-05-01 |
+| [`79cc18f2`](https://github.com/matthewmackes/map2-audio/commit/79cc18f28ffb65aa142bc8a3c40f071ba48d40bd) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-02 |
 | [`d17f14b5`](https://github.com/matthewmackes/map2-audio/commit/d17f14b5b9f4f265df19ec41ff4ea70f5dcecb3b) | T2482 loop 10 / iter 100: SHIP loop 10 closing roll-up | Map2 Audio | 2026-05-01 |
 | [`5194b002`](https://github.com/matthewmackes/map2-audio/commit/5194b0027bd38a258a878ff7d3eb24cc2b32d579) | T2482 loop 10 / iter 99: /midi/devices/:profileKey detail... | Map2 Audio | 2026-05-01 |
 | [`1d3b99fb`](https://github.com/matthewmackes/map2-audio/commit/1d3b99fb31db6cf637e31141b63a258fe60462e5) | T2482 loop 10 / iter 98: /midi/devices Carbon DataTable | Map2 Audio | 2026-05-01 |
 | [`1843ced7`](https://github.com/matthewmackes/map2-audio/commit/1843ced72466480a2375422866f4a6f5e359e00e) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-02 |
 | [`44e68e31`](https://github.com/matthewmackes/map2-audio/commit/44e68e31031259a6d29dc67255161f2051d9bf1a) | T2482 loop 10 / iter 97: /midi/devices region audit | Map2 Audio | 2026-05-01 |
 | [`22419ebc`](https://github.com/matthewmackes/map2-audio/commit/22419ebcfa4a5733d08175134fd8b0e5c57f6a49) | T2482 loop 10 / iter 96: P3.2 — wire OverviewPage Tile ca... | Map2 Audio | 2026-05-01 |
-| [`d6e23196`](https://github.com/matthewmackes/map2-audio/commit/d6e23196ba4e4c096bcacb704a799dcd16892b17) | T2482 loop 10 / iter 95: P3.2 — MidiServicesOverviewPage ... | Map2 Audio | 2026-05-01 |
-| [`c7237091`](https://github.com/matthewmackes/map2-audio/commit/c723709181aa4e12e85a64747b9677428f2d06f7) | T2482 loop 10 / iter 94: P3.1 — rename "MIDI Hub" → "MIDI... | Map2 Audio | 2026-05-01 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
