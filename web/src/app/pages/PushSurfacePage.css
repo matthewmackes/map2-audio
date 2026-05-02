@@ -18,7 +18,7 @@
   background: var(--cds-layer);
   box-shadow:
     0 1px 0 rgba(22, 22, 22, 0.04),
-    0 12px 32px rgba(15, 98, 254, 0.04);
+    0 12px 32px color-mix(in srgb, var(--cds-focus, #0f62fe) 4%, transparent);
 }
 
 .push-surface-page__refresh-rail {
@@ -143,7 +143,7 @@
 .push-surface-page .labs-page__quick-assignment:hover {
   transform: translateY(-1px);
   border-color: var(--cds-border-strong-01);
-  box-shadow: 0 8px 24px rgba(15, 98, 254, 0.08);
+  box-shadow: 0 8px 24px color-mix(in srgb, var(--cds-focus, #0f62fe) 8%, transparent);
 }
 
 .push-surface-page .labs-page__quick-assignment-copy {
@@ -175,7 +175,7 @@
   border: 1px solid var(--cds-border-subtle-01);
   background:
     linear-gradient(180deg, rgba(15, 23, 42, 0.86), rgba(15, 23, 42, 0.98)),
-    radial-gradient(circle at top, rgba(15, 98, 254, 0.18), transparent 52%);
+    radial-gradient(circle at top, color-mix(in srgb, var(--cds-focus, #0f62fe) 18%, transparent), transparent 52%);
   overflow: hidden;
 }
 
@@ -261,8 +261,8 @@
 
 .push-surface-page .labs-page__hotspot {
   position: absolute;
-  border: 1px solid rgba(15, 98, 254, 0.16);
-  background: rgba(15, 98, 254, 0.04);
+  border: 1px solid color-mix(in srgb, var(--cds-focus, #0f62fe) 16%, transparent);
+  background: color-mix(in srgb, var(--cds-focus, #0f62fe) 4%, transparent);
   color: transparent;
   cursor: pointer;
   transition:
@@ -285,14 +285,14 @@
 }
 
 .push-surface-page .labs-page__hotspot.has-assignments {
-  border-color: rgba(15, 98, 254, 0.45);
+  border-color: color-mix(in srgb, var(--cds-focus, #0f62fe) 45%, transparent);
 }
 
 .push-surface-page .labs-page__hotspot.is-selected,
 .push-surface-page .labs-page__hotspot:hover {
-  border-color: rgba(15, 98, 254, 0.8);
-  background: rgba(15, 98, 254, 0.1);
-  box-shadow: 0 0 0 2px rgba(15, 98, 254, 0.12);
+  border-color: color-mix(in srgb, var(--cds-focus, #0f62fe) 80%, transparent);
+  background: color-mix(in srgb, var(--cds-focus, #0f62fe) 10%, transparent);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--cds-focus, #0f62fe) 12%, transparent);
 }
 
 .push-surface-page .labs-page__hotspot.is-routine:hover {
@@ -360,7 +360,7 @@
 .push-surface-page .labs-page__assignment-pill.is-active,
 .push-surface-page .labs-page__step-chip.is-selected {
   border-color: var(--cds-link-primary);
-  box-shadow: inset 0 0 0 1px rgba(15, 98, 254, 0.12);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--cds-focus, #0f62fe) 12%, transparent);
 }
 
 .push-surface-page .labs-page__assignment-pill:hover,
@@ -399,7 +399,7 @@
 
 .push-surface-page code {
   padding: 0 0.25rem;
-  background: rgba(15, 98, 254, 0.08);
+  background: color-mix(in srgb, var(--cds-focus, #0f62fe) 8%, transparent);
   font-family: var(--cds-code-01-font-family, var(--font-mono));
 }
 
