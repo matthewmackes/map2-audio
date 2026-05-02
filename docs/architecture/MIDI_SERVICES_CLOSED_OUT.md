@@ -14,7 +14,10 @@ This doc is the single read for "what is the MIDI surface today + what is left."
 | **T2482** | ✅ Done 2026-05-01 | iter 150 | MIDI Services unification — single canonical authority + `/midi` surface, 10 of 10 P3 sub-phases. See `T2482_PHASE3_DONE.md`. |
 | **T2483** | ✅ Done 2026-05-02 | iter 180 | T2482 follow-up polish — 10 of 10 sub-items including server-side matrix endpoint, live MIDI-learn helper, structured descriptor editors. |
 | **T2484** | ✅ Done 2026-05-02 | iter 200 | Cluster MIDI peer surface — 4 of 4 sub-items wiring T2483-9's scaffold to real backend with drill-down drawer + per-peer health. |
-| **T2485** | ✅ Done 2026-05-02 | 11 atomic iters | MIDI GUI Unification under device-pack shell. All 9 MIDI-controlling devices now have unified `/midi/devices/<profile-key>` entries; sidebar collapsed from 9 MIDI device entries to 1; MPX1 + IntelFX migrate to the unified mount with hard redirects from legacy URLs; deviceManifest schema with title + 3-line purpose block (Q3=A, Q4=B locked) renders on the landing view of every device; generic `<DeviceStatusBar>`, `<DeviceFlowCanvasShell>`, `useFlowUndoRedo` shared primitives shipped. Three console-shaped monoliths (Expression / GroundControlPro / PushSurface) keep their legacy operator routes intact pending dedicated decomposition epics T2487, T2488, T2489. |
+| **T2485** | ✅ Done 2026-05-02 | 11 atomic iters | MIDI GUI Unification under device-pack shell. All 9 MIDI-controlling devices now have unified `/midi/devices/<profile-key>` entries; sidebar collapsed from 9 MIDI device entries to 1; MPX1 + IntelFX migrate to the unified mount with hard redirects from legacy URLs; deviceManifest schema with title + 3-line purpose block (Q3=A, Q4=B locked) renders on the landing view of every device; generic `<DeviceStatusBar>`, `<DeviceFlowCanvasShell>`, `useFlowUndoRedo` shared primitives shipped. |
+| **T2487** | ✅ Done 2026-05-02 | 3 atomic iters (e3e606c6 / fa8a6f09 / 0863e4f1) | Expression decomposition + unified-shell migration. Path A revision: audit confirmed ExpressionPage was a 3-column integrated workflow (Assignment List ↔ Form ↔ Live Monitor), not a multi-tab device. File-level decomposition (1361 LoC → 11 modules under `web/src/app/components/Devices/Expression/`) preserves modularity without breaking workflow. Mounted at `/midi/devices/expression/console`; legacy `/expression` hard-redirects. |
+| **T2488** | ✅ Done 2026-05-02 | 1 atomic iter (0dfa43a4) | Voodoo Lab Ground Control Pro unified-shell migration. Path A: GCP is internally tabbed via Carbon Tabs but the 5 tabs share extensive state; helpers extracted into `groundControlProUtils.tsx`, the integrated body stays in `GroundControlProPage.tsx`. Mounted at `/midi/devices/voodoo-lab-ground-control-pro/console`; legacy `/ground-control-pro` hard-redirects. |
+| **T2489** | ✅ Done 2026-05-02 | 1 atomic iter (9c8da6bd) | Ableton Push 3 unified-shell migration. Path A: heavy in-page interactivity (hotspot grid, color editing, routine builder, drag/drop) is the largest of the three monoliths (1625 LoC) but most tightly-coupled state-wise; only the unified-shell wrapper added. Mounted at `/midi/devices/ableton-push-3/console`; legacy `/labs/push-surface` hard-redirects. Helper extraction queued as future internal cleanup if maintenance burden demands it. |
 
 ## Production status (loop-21 audit)
 
@@ -66,9 +69,9 @@ T2485 (MIDI GUI Unification) shipped end-to-end across 11 atomic iters:
 
 **Deferred follow-ups**: the three monolithic device pages (Expression 1361 LoC, GroundControlPro 1338 LoC, PushSurface 1625 LoC) keep their legacy operator routes intact. Per the locked Q2=A decision, decomposing them into multi-view shells before unification is the right design — but each is a multi-loop SHIP epic in its own right. They're tracked as standalone epics:
 
-- **T2487** — Decompose ExpressionPage into multi-view shell + migrate to `/midi/devices/expression/*`
-- **T2488** — Decompose GroundControlProPage + migrate to `/midi/devices/voodoo-lab-ground-control-pro/*`
-- **T2489** — Decompose PushSurfacePage + migrate to `/midi/devices/ableton-push-3/*`
+- ~~**T2487** — Decompose ExpressionPage into multi-view shell + migrate to `/midi/devices/expression/*`~~ — ✅ CLOSED 2026-05-02 via Path A revision (file-level decomposition + single-view migration; 3-column integrated workflow does not split into route tabs).
+- ~~**T2488** — Decompose GroundControlProPage + migrate to `/midi/devices/voodoo-lab-ground-control-pro/*`~~ — ✅ CLOSED 2026-05-02 via Path A revision (helpers extracted; tabbed body stays in-page).
+- ~~**T2489** — Decompose PushSurfacePage + migrate to `/midi/devices/ableton-push-3/*`~~ — ✅ CLOSED 2026-05-02 via Path A revision (unified-shell wrapper only; helper extraction queued as future internal cleanup).
 
 Each follows the T2485-4 (MPX1) template but adds the upstream decomposition step.
 
