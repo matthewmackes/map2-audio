@@ -1,5 +1,5 @@
 import React, { lazy, Suspense, useEffect } from 'react'
-import { Navigate, Route, Routes, unstable_HistoryRouter as HistoryRouter, useLocation, useParams } from 'react-router-dom'
+import { Navigate, Outlet, Route, Routes, unstable_HistoryRouter as HistoryRouter, useLocation, useParams } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { BrandingProvider } from './branding/BrandingContext'
 import { DataTableSkeleton, SkeletonPlaceholder, SkeletonText } from '@carbon/react'
@@ -84,8 +84,9 @@ const MidiDeviceMaschineLanding = lazy(() => import('./pages/midi-services/MidiD
 const MidiDeviceMcuLanding = lazy(() => import('./pages/midi-services/MidiDeviceMcuLanding').then(m => ({ default: m.MidiDeviceMcuLanding })))
 const MidiDeviceLaunchControlLanding = lazy(() => import('./pages/midi-services/MidiDeviceLaunchControlLanding').then(m => ({ default: m.MidiDeviceLaunchControlLanding })))
 const MidiDeviceMidiCommanderLanding = lazy(() => import('./pages/midi-services/MidiDeviceMidiCommanderLanding').then(m => ({ default: m.MidiDeviceMidiCommanderLanding })))
-// T2485-7b — Expression pedalboard landing.
-const MidiDeviceExpressionLanding = lazy(() => import('./pages/midi-services/MidiDeviceExpressionLanding').then(m => ({ default: m.MidiDeviceExpressionLanding })))
+// T2487-3 — Expression unified-shell console (replaces the iter-8
+// MidiDeviceExpressionLanding cross-link, which is now retired).
+const ExpressionConsoleView = lazy(() => import('./components/Devices/Expression/ExpressionConsoleView').then(m => ({ default: m.ExpressionConsoleView })))
 // T2485-7c — Voodoo Lab Ground Control Pro landing.
 const MidiDeviceGroundControlProLanding = lazy(() => import('./pages/midi-services/MidiDeviceGroundControlProLanding').then(m => ({ default: m.MidiDeviceGroundControlProLanding })))
 // T2485-7d — Ableton Push 3 landing.
@@ -161,7 +162,10 @@ const PerformanceBrainPage  = lazy(() => import('./pages/PerformanceBrainPage').
 const MeteringPage          = lazy(() => import('./pages/MeteringPage').then(m => ({ default: m.MeteringPage })))
 const PipeWirePage          = lazy(() => import('./pages/PipeWirePage').then(m => ({ default: m.PipeWirePage })))
 const PerformPage           = lazy(() => import('./pages/PerformPage').then(m => ({ default: m.PerformPage })))
-const ExpressionPage        = lazy(() => import('./pages/ExpressionPage').then(m => ({ default: m.ExpressionPage })))
+// T2487-4 — ExpressionPage shim is no longer route-rendered; /expression
+// redirects to the unified /midi/devices/expression/console mount. The
+// shim file still exists at pages/ExpressionPage.tsx and re-exports
+// ExpressionView for the ExpressionOverlay consumer.
 const MidiAssignmentsPage   = lazy(() => import('./pages/MidiAssignmentsPage').then(m => ({ default: m.MidiAssignmentsPage })))
 const GroundControlProPage  = lazy(() => import('./pages/GroundControlProPage').then(m => ({ default: m.GroundControlProPage })))
 
@@ -615,6 +619,21 @@ export function App() {
                                     }
                                   />
                                 </Route>
+                                {/* T2487-3 — Expression unified mount.
+                                    Path A: ExpressionView is a 3-column integrated
+                                    workflow (Assignment List ↔ Form ↔ Live Monitor),
+                                    not a multi-tab device. The single `console`
+                                    child renders DeviceLandingHeader + the
+                                    integrated body. Legacy /expression hard-
+                                    redirects here. */}
+                                <Route path="/midi/devices/expression/*" element={
+                                  <RouteBoundary title="Expression view crashed" actionLabel="Reload Expression">
+                                    <Outlet />
+                                  </RouteBoundary>
+                                }>
+                                  <Route index element={<Navigate to="console" replace />} />
+                                  <Route path="console" element={<ExpressionConsoleView />} />
+                                </Route>
                                 {/* T2482 loop 10 / iter 92 — MIDI Services canonical mount.
                                     Mirrors the /midi-hub/* mount above using the
                                     MidiServicesShell wrapper (which re-exports MidiHubShell).
@@ -657,7 +676,11 @@ export function App() {
                                   <Route path="devices/mackie-mcu-pro" element={<MidiDeviceMcuLanding />} />
                                   <Route path="devices/novation-launch-control-xl" element={<MidiDeviceLaunchControlLanding />} />
                                   <Route path="devices/meloaudio-midi-commander" element={<MidiDeviceMidiCommanderLanding />} />
-                                  <Route path="devices/expression" element={<MidiDeviceExpressionLanding />} />
+                                  {/* T2487-3 — devices/expression no longer renders the
+                                      iter-8 cross-link landing; the unified shell mount
+                                      at /midi/devices/expression/* (declared above the
+                                      /midi/* catch-all) takes the bare path via its
+                                      index→Navigate redirect to /console. */}
                                   <Route path="devices/voodoo-lab-ground-control-pro" element={<MidiDeviceGroundControlProLanding />} />
                                   <Route path="devices/ableton-push-3" element={<MidiDevicePushSurfaceLanding />} />
                                   {/* T2482 loop 10 / iter 99 — Device detail stub.
@@ -743,7 +766,11 @@ export function App() {
                                 <Route path="/pipewire" element={<RouteBoundary title="PipeWire view crashed" actionLabel="Reload PipeWire"><PipeWirePage /></RouteBoundary>} />
                                 <Route path="/welcome" element={<WelcomePage />} />
                                 <Route path="/brain" element={<PerformanceBrainPage />} />
-                                <Route path="/expression" element={<ExpressionPage />} />
+                                {/* T2487-4 — /expression hard-redirects to the unified
+                                    /midi/devices/expression/console mount (Q1=A locked
+                                    decision). ExpressionPage shim still exports
+                                    ExpressionView for the ExpressionOverlay consumer. */}
+                                <Route path="/expression" element={<Navigate to="/midi/devices/expression/console" replace />} />
                                 <Route path="/midi/assignments" element={<RouteBoundary title="MIDI Assignments crashed" actionLabel="Reload MIDI Assignments"><MidiAssignmentsPage /></RouteBoundary>} />
                                 <Route path="/midi-assignments" element={<Navigate to="/midi/assignments" replace />} />
                                 <Route path="/midi-hub/assignments" element={<Navigate to="/midi/assignments" replace />} />

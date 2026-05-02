@@ -35840,7 +35840,11 @@ This revision **preserves the spirit of Q2=A** (decomposition for maintainabilit
 
 **Estimated effort:** 3–4 SHIP iters (revised down from 4–5 since no view-tab plumbing).
 
-**Status:** [>] In Progress 2026-05-02 (Path A locked).
+**Status:** [✓] DONE 2026-05-02. Shipped as 4 commits (Path A revision + extraction + unified-shell mount + tests). Closing notes:
+- T2487-2 (commit `fa8a6f09`): extracted 11 modules under `web/src/app/components/Devices/Expression/`. ExpressionPage shrank from 1361 LoC to 33 LoC.
+- T2487-3: `ExpressionConsoleView.tsx` mounts under `/midi/devices/expression/*` with one `console` child. DeviceLandingHeader renders the manifest title + 3 purpose lines.
+- T2487-4: `/expression` hard-redirects to `/midi/devices/expression/console`. `routePrefetch.ts` updated to pre-warm the new mount. Smoke test (3 cases) covers the unified-shell entry point. The orphaned `MidiDeviceExpressionLanding` cross-link (iter-8 T2485-7b) is no longer routed but the file remains for rollback safety.
+- T2487-5: this closeout. Bundle hash changed (`App-DYFrmhN-` then `App-B2QKcIU_`); typecheck + atomic build clean; 4 routes (`/`, `/expression`, `/midi/devices/expression`, `/midi/devices/expression/console`) all return HTTP 200.
 
 ---
 

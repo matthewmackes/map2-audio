@@ -171,8 +171,22 @@ const PREFETCH_RULES: PrefetchRule[] = [
     loaders: [() => import('./pages/PipeWirePage')],
   },
   {
+    // T2487 — /expression redirects to /midi/devices/expression/console;
+    // prefetch the new canonical mount + the integrated view so the redirect
+    // lands instantly (the shim ExpressionPage.tsx is no longer the working
+    // module).
     prefix: '/expression',
-    loaders: [() => import('./pages/ExpressionPage')],
+    loaders: [
+      () => import('./components/Devices/Expression/ExpressionConsoleView'),
+      () => import('./components/Devices/Expression/ExpressionView'),
+    ],
+  },
+  {
+    prefix: '/midi/devices/expression',
+    loaders: [
+      () => import('./components/Devices/Expression/ExpressionConsoleView'),
+      () => import('./components/Devices/Expression/ExpressionView'),
+    ],
   },
   {
     prefix: '/brain',
