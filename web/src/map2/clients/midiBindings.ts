@@ -122,6 +122,18 @@ export interface BindingListFilter {
   enabled_only?: boolean
 }
 
+// ---------- Matrix shape (T2483-8 iter 162) ----------
+
+export interface MatrixCell {
+  count: number
+  enabled_count: number
+}
+
+export interface BindingsMatrixResponse {
+  matrix: Record<string, Record<string, MatrixCell>>
+  total_bindings: number
+}
+
 // ---------- Client ----------
 
 function buildListUrl(filter: BindingListFilter): string {
@@ -138,6 +150,9 @@ function buildListUrl(filter: BindingListFilter): string {
 export const midiBindingsApi = {
   count: () =>
     fetchJson<number>(`${API_BASE}/midi/bindings/count`, { cache: 'no-store' }),
+
+  matrix: () =>
+    fetchJson<BindingsMatrixResponse>(`${API_BASE}/midi/bindings/matrix`, { cache: 'no-store' }),
 
   list: (filter: BindingListFilter) =>
     fetchJson<MidiBindingRead[]>(buildListUrl(filter), { cache: 'no-store' }),

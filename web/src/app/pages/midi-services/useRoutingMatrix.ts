@@ -1,21 +1,16 @@
 /**
- * T2482 loop 12 / iter 117 — useRoutingMatrix hook.
+ * T2482 loop 12 / iter 117 — useRoutingMatrix data hook (original).
+ * T2483 loop 17 / iter 164 — refactored from a 10-query fan-out to
+ *   a single query against the new GET /api/midi/bindings/matrix
+ *   endpoint (T2483-8). Hook return shape unchanged so
+ *   MidiServicesRoutingPage is untouched.
  *
- * Aggregates /api/midi/bindings across multiple consumer_types into
- * a source_type × consumer_type matrix shape. Backed by TanStack
- * Query — invalidations from the iter-104/105/106 mutations cascade
- * here automatically (queryKey shares the 'midi-bindings-list' root).
- *
- * Per the iter-111 plan §1, GET /bindings rejects unfiltered queries;
- * we fan out one query per consumer_type with consumer_id='*' and
- * stitch the results together client-side. This is acceptable because:
- *   - the count endpoint already pre-confirms how many bindings exist
- *   - per-consumer-type queries hit the same SQL index path
- *   - 5s polling cadence amortizes the fan-out cost
+ * Per the iter-161 plan D2: the hook normalizes the wire shape so
+ * downstream consumers don't need to change.
  */
 
 import { useMemo } from 'react'
-import { useQueries } from '@tanstack/react-query'
+import { useQuery } from '@tanstack/react-query'
 
 import {
   midiBindingsApi,
@@ -23,7 +18,6 @@ import {
   BINDING_SOURCE_TYPES,
   type BindingConsumerType,
   type BindingSourceType,
-  type MidiBindingRead,
 } from '../../../map2/clients/midiBindings'
 
 /**
@@ -62,14 +56,11 @@ function emptyMatrix(): RoutingMatrix {
 }
 
 export function useRoutingMatrix(): UseRoutingMatrixResult {
-  const queries = useQueries({
-    queries: BINDING_CONSUMER_TYPES.map((consumerType) => ({
-      queryKey: ['midi-bindings-list', { consumer_type: consumerType, consumer_id: '*' }],
-      queryFn: () =>
-        midiBindingsApi.list({ consumer_type: consumerType, consumer_id: '*' }),
-      refetchInterval: 5000,
-      staleTime: 0,
-    })),
+  const query = useQuery({
+    queryKey: ['midi-bindings-matrix'],
+    queryFn: () => midiBindingsApi.matrix(),
+    refetchInterval: 5000,
+    staleTime: 0,
   })
 
   const aggregated = useMemo(() => {
@@ -80,37 +71,36 @@ export function useRoutingMatrix(): UseRoutingMatrixResult {
     for (const cons of BINDING_CONSUMER_TYPES) colTotals[cons] = 0
     let totalBindings = 0
 
-    queries.forEach((q, idx) => {
-      const consumerType = BINDING_CONSUMER_TYPES[idx]
-      if (!q.data) return
-      for (const binding of q.data as MidiBindingRead[]) {
-        // Defensive: a binding's consumer_type could differ from the
-        // query filter under race conditions or backend extensions.
-        const cons = binding.consumer_type as BindingConsumerType
-        const src = binding.source_type as BindingSourceType
-        const row = matrix[src]
-        if (!row) continue  // unknown source_type — skip rather than crash
-        const cell = row[cons]
-        if (!cell) continue
-        cell.count += 1
-        if (binding.enabled) cell.enabledCount += 1
-        rowTotals[src] = (rowTotals[src] ?? 0) + 1
-        if (cons === consumerType) {
-          colTotals[cons] = (colTotals[cons] ?? 0) + 1
-        }
-        totalBindings += 1
+    if (!query.data) {
+      return { matrix, rowTotals, colTotals, totalBindings }
+    }
+
+    // Defensive: backend's matrix dict only carries non-empty groups
+    // (per the iter-163 test_omits_empty_groups). The full vocab
+    // grid is initialized above; we only fill the populated cells.
+    // Unknown vocab values from backend extensions are skipped.
+    for (const [sourceType, row] of Object.entries(query.data.matrix)) {
+      const src = sourceType as BindingSourceType
+      const matrixRow = matrix[src]
+      if (!matrixRow) continue
+      for (const [consumerType, cell] of Object.entries(row)) {
+        const cons = consumerType as BindingConsumerType
+        const matrixCell = matrixRow[cons]
+        if (!matrixCell) continue
+        matrixCell.count = cell.count
+        matrixCell.enabledCount = cell.enabled_count
+        rowTotals[src] = (rowTotals[src] ?? 0) + cell.count
+        colTotals[cons] = (colTotals[cons] ?? 0) + cell.count
       }
-    })
+    }
+    totalBindings = query.data.total_bindings
 
     return { matrix, rowTotals, colTotals, totalBindings }
-  }, [queries])
-
-  const isLoading = queries.some((q) => q.isLoading)
-  const isError = queries.some((q) => q.isError)
+  }, [query.data])
 
   return {
     ...aggregated,
-    isLoading,
-    isError,
+    isLoading: query.isLoading,
+    isError: query.isError,
   }
 }
