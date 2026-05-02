@@ -79,6 +79,7 @@ const MidiServicesOverviewPage = lazy(() => import('./pages/midi-services/MidiSe
 const MidiServicesDevicesPage = lazy(() => import('./pages/midi-services/MidiServicesDevicesPage').then(m => ({ default: m.MidiServicesDevicesPage })))
 const MidiServicesDevicePage = lazy(() => import('./pages/midi-services/MidiServicesDevicePage').then(m => ({ default: m.MidiServicesDevicePage })))
 const MidiServicesBindingsPage = lazy(() => import('./pages/midi-services/MidiServicesBindingsPage').then(m => ({ default: m.MidiServicesBindingsPage })))
+const MidiServicesRoutingPage = lazy(() => import('./pages/midi-services/MidiServicesRoutingPage').then(m => ({ default: m.MidiServicesRoutingPage })))
 const MidiHubConnectionsPage = lazy(() => import('./pages/midi-hub/MidiHubConnectionsPage').then(m => ({ default: m.MidiHubConnectionsPage })))
 const MidiHubPresetsPage    = lazy(() => import('./pages/midi-hub/MidiHubPresetsPage').then(m => ({ default: m.MidiHubPresetsPage })))
 const MidiHubTransportPage  = lazy(() => import('./pages/midi-hub/MidiHubTransportPage').then(m => ({ default: m.MidiHubTransportPage })))
@@ -566,6 +567,11 @@ export function App() {
                                       unfiltered queries). Iter 104+ adds toggle +
                                       OverflowMenu + edit/create modals. */}
                                   <Route path="bindings" element={<MidiServicesBindingsPage />} />
+                                  {/* T2482 loop 11 / iter 107 — Routing region scaffold.
+                                      Placeholder so /midi/routing mounts cleanly + the
+                                      Overview Tile deep-link has a destination.
+                                      Matrix UI ships loop 12+. */}
+                                  <Route path="routing" element={<MidiServicesRoutingPage />} />
                                 </Route>
                                 <Route path={HOST_MACHINE_ROUTE} element={<RouteBoundary title="Host Machine view crashed" actionLabel="Reload host machine"><HostMachinePage /></RouteBoundary>} />
                                 <Route path="/grid" element={<Navigate to="/snapshot-editor" replace />} />

@@ -33,6 +33,10 @@
   max-width: 56rem;
 }
 
+.midi-services-overview__subtitle--spaced {
+  margin-top: 1rem;
+}
+
 .midi-services-overview__regions {
   display: grid;
   grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
