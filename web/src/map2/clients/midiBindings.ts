@@ -134,6 +134,15 @@ export interface BindingsMatrixResponse {
   total_bindings: number
 }
 
+// ---------- Live MIDI-learn shape (T2483-5 iter 174) ----------
+
+export interface LastCcResponse {
+  cc: number
+  channel: number | null
+  value: number
+  observed_at: number
+}
+
 // ---------- Client ----------
 
 function buildListUrl(filter: BindingListFilter): string {
@@ -153,6 +162,14 @@ export const midiBindingsApi = {
 
   matrix: () =>
     fetchJson<BindingsMatrixResponse>(`${API_BASE}/midi/bindings/matrix`, { cache: 'no-store' }),
+
+  // T2483-5 iter 174 — most-recently-observed CC for the
+  // SourceDescriptorEditor Learn button.
+  lastCc: () =>
+    fetchJson<LastCcResponse | null>(
+      `${API_BASE}/midi/bindings/learn/last-cc`,
+      { cache: 'no-store' },
+    ),
 
   list: (filter: BindingListFilter) =>
     fetchJson<MidiBindingRead[]>(buildListUrl(filter), { cache: 'no-store' }),
