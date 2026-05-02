@@ -83,8 +83,18 @@ function findParamByCandidates(params: IntelFXRegistryParam[] | undefined, candi
   return null
 }
 
-export function IntelFXShell(): ReactNode {
-  const activeSection = useActiveSectionFromPath('/devices/intelfx/', SIDEBAR_SECTION_IDS, 'panel')
+export interface IntelFXShellProps {
+  /**
+   * T2485-5 — route prefix the shell is mounted at. Defaults to the
+   * legacy /devices/intelfx/ path; the unified /midi/devices/rocktron-intelfx/
+   * mount passes its own prefix so useActiveSectionFromPath resolves
+   * the active sidebar section correctly under the new URL.
+   */
+  routePrefix?: string
+}
+
+export function IntelFXShell({ routePrefix = '/devices/intelfx/' }: IntelFXShellProps = {}): ReactNode {
+  const activeSection = useActiveSectionFromPath(routePrefix, SIDEBAR_SECTION_IDS, 'panel')
   const { activeNodeId, localNodeId } = useCluster()
   const { deviceState } = useDeviceNodeContext('rocktron-intelfx')
   const selectedNodeId = activeNodeId && activeNodeId !== 'all' ? activeNodeId : localNodeId

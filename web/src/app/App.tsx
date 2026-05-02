@@ -335,8 +335,15 @@ function DevicesMpx1ViewRedirect() {
 }
 
 function IntelFXLegacyRedirect() {
+  // T2485-5 — /intelfx/:view → /midi/devices/rocktron-intelfx/:view (Q1=A hard redirect).
   const params = useParams<{ view?: string }>()
-  return <Navigate to={`/devices/intelfx/${params.view ?? 'panel'}`} replace />
+  return <Navigate to={`/midi/devices/rocktron-intelfx/${params.view ?? 'panel'}`} replace />
+}
+
+function DevicesIntelFXViewRedirect() {
+  // T2485-5 — /devices/intelfx/:view → /midi/devices/rocktron-intelfx/:view.
+  const params = useParams<{ view?: string }>()
+  return <Navigate to={`/midi/devices/rocktron-intelfx/${params.view ?? 'panel'}`} replace />
 }
 
 // Default queries to "fetch once, cache for the session." Live data flows
@@ -574,6 +581,28 @@ export function App() {
                                     }
                                   />
                                 </Route>
+                                {/* T2485-5 — IntelFX unified mount. Same pattern as MPX1. */}
+                                <Route path="/midi/devices/rocktron-intelfx/*" element={
+                                  <RouteBoundary title="IntelFX view crashed" actionLabel="Reload IntelFX">
+                                    <IntelFXShell routePrefix="/midi/devices/rocktron-intelfx/" />
+                                  </RouteBoundary>
+                                }>
+                                  <Route index element={<Navigate to="panel" replace />} />
+                                  <Route path="panel" element={<IntelFXPanelView />} />
+                                  <Route path="editor" element={<IntelFXEditorView />} />
+                                  <Route path="midi-map" element={<IntelFXMidiMapView />} />
+                                  <Route path="library" element={<IntelFXLibraryView />} />
+                                  <Route path="perform" element={<IntelFXPerformView />} />
+                                  <Route path="diag" element={<IntelFXMonitorView />} />
+                                  <Route
+                                    path="flow"
+                                    element={
+                                      <ErrorBoundary title="IntelFX signal path view crashed" actionLabel="Reload signal path">
+                                        <IntelFXFlowView />
+                                      </ErrorBoundary>
+                                    }
+                                  />
+                                </Route>
                                 {/* T2482 loop 10 / iter 92 — MIDI Services canonical mount.
                                     Mirrors the /midi-hub/* mount above using the
                                     MidiServicesShell wrapper (which re-exports MidiHubShell).
@@ -664,23 +693,10 @@ export function App() {
                                       path (declared above the /midi/* mount). */}
                                   <Route path="mpx1" element={<Navigate to="/midi/devices/lexicon-mpx1/panel" replace />} />
                                   <Route path="mpx1/:view" element={<DevicesMpx1ViewRedirect />} />
-                                  <Route path="intelfx/*" element={<IntelFXShell />}>
-                                    <Route index element={<Navigate to="panel" replace />} />
-                                    <Route path="panel" element={<IntelFXPanelView />} />
-                                    <Route path="editor" element={<IntelFXEditorView />} />
-                                    <Route path="midi-map" element={<IntelFXMidiMapView />} />
-                                    <Route path="library" element={<IntelFXLibraryView />} />
-                                    <Route path="perform" element={<IntelFXPerformView />} />
-                                    <Route path="diag" element={<IntelFXMonitorView />} />
-                                    <Route
-                                      path="flow"
-                                      element={
-                                        <ErrorBoundary title="IntelFX signal path view crashed" actionLabel="Reload signal path">
-                                          <IntelFXFlowView />
-                                        </ErrorBoundary>
-                                      }
-                                    />
-                                  </Route>
+                                  {/* T2485-5 — legacy /devices/intelfx/* hard-redirects to
+                                      the unified /midi/devices/rocktron-intelfx/* mount. */}
+                                  <Route path="intelfx" element={<Navigate to="/midi/devices/rocktron-intelfx/panel" replace />} />
+                                  <Route path="intelfx/:view" element={<DevicesIntelFXViewRedirect />} />
                                 </Route>
                                 <Route path="/edirol-ua1000" element={<Navigate to="/devices/edirol-ua1000" replace />} />
                                 <Route path="/hotone-jogg" element={<Navigate to="/devices/hotone-jogg" replace />} />
@@ -690,7 +706,8 @@ export function App() {
                                     unified canonical /midi/devices/lexicon-mpx1/* (Q1=A). */}
                                 <Route path="/mpx1" element={<Navigate to="/midi/devices/lexicon-mpx1/panel" replace />} />
                                 <Route path="/mpx1/:view" element={<MPX1LegacyRedirect />} />
-                                <Route path="/intelfx" element={<Navigate to="/devices/intelfx/panel" replace />} />
+                                {/* T2485-5 — /intelfx* legacy URLs redirect to the unified canonical (Q1=A). */}
+                                <Route path="/intelfx" element={<Navigate to="/midi/devices/rocktron-intelfx/panel" replace />} />
                                 <Route path="/intelfx/:view" element={<IntelFXLegacyRedirect />} />
                                 <Route path="/motu-rme" element={<MOTURMEPage />} />
                                 <Route path="/host-machine" element={<LegacyStandalonePanelRedirect panel="host-machine" />} />
