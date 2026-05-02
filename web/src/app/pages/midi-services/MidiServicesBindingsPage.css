@@ -1,0 +1,54 @@
+/*
+ * T2482 loop 11 / iter 103 — /midi/bindings list page styles.
+ *
+ * Carbon-conformant. No hardcoded colors; tokens via CSS variables.
+ */
+
+.midi-services-bindings {
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.midi-services-bindings__header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.midi-services-bindings__title {
+  font-size: 2rem;
+  font-weight: 300;
+  color: var(--cds-text-primary);
+  margin: 0;
+}
+
+.midi-services-bindings__subtitle {
+  font-size: 0.875rem;
+  color: var(--cds-text-secondary);
+  margin: 0;
+  max-width: 56rem;
+}
+
+.midi-services-bindings__filters {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+  gap: 1rem;
+  align-items: end;
+}
+
+.midi-services-bindings__empty {
+  padding: 2rem;
+  background: var(--cds-layer);
+  border: 1px dashed var(--cds-border-subtle);
+  border-radius: 4px;
+  color: var(--cds-text-secondary);
+  font-size: 0.875rem;
+}
+
+.midi-services-bindings__empty-row {
+  font-size: 0.8125rem;
+  color: var(--cds-text-secondary);
+  font-style: italic;
+}

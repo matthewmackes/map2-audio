@@ -78,6 +78,7 @@ const MidiServicesShell     = lazy(() => import('./pages/MidiServicesShell').the
 const MidiServicesOverviewPage = lazy(() => import('./pages/midi-services/MidiServicesOverviewPage').then(m => ({ default: m.MidiServicesOverviewPage })))
 const MidiServicesDevicesPage = lazy(() => import('./pages/midi-services/MidiServicesDevicesPage').then(m => ({ default: m.MidiServicesDevicesPage })))
 const MidiServicesDevicePage = lazy(() => import('./pages/midi-services/MidiServicesDevicePage').then(m => ({ default: m.MidiServicesDevicePage })))
+const MidiServicesBindingsPage = lazy(() => import('./pages/midi-services/MidiServicesBindingsPage').then(m => ({ default: m.MidiServicesBindingsPage })))
 const MidiHubConnectionsPage = lazy(() => import('./pages/midi-hub/MidiHubConnectionsPage').then(m => ({ default: m.MidiHubConnectionsPage })))
 const MidiHubPresetsPage    = lazy(() => import('./pages/midi-hub/MidiHubPresetsPage').then(m => ({ default: m.MidiHubPresetsPage })))
 const MidiHubTransportPage  = lazy(() => import('./pages/midi-hub/MidiHubTransportPage').then(m => ({ default: m.MidiHubTransportPage })))
@@ -560,6 +561,11 @@ export function App() {
                                       Read-only audit/inspection of one device-pack
                                       profile. Mutation lands in iter 100+. */}
                                   <Route path="devices/:profileKey" element={<MidiServicesDevicePage />} />
+                                  {/* T2482 loop 11 / iter 103 — Bindings region.
+                                      Filter-first list page (the backend rejects
+                                      unfiltered queries). Iter 104+ adds toggle +
+                                      OverflowMenu + edit/create modals. */}
+                                  <Route path="bindings" element={<MidiServicesBindingsPage />} />
                                 </Route>
                                 <Route path={HOST_MACHINE_ROUTE} element={<RouteBoundary title="Host Machine view crashed" actionLabel="Reload host machine"><HostMachinePage /></RouteBoundary>} />
                                 <Route path="/grid" element={<Navigate to="/snapshot-editor" replace />} />
