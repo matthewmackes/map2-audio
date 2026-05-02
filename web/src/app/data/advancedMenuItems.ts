@@ -363,6 +363,23 @@ const baseNavigationCatalog: ShellNavigationItem[] = [
     deviceType: 'ground-control-pro',
   },
   {
+    // T2490-1 — AVB Services canonical mount scaffold.
+    // Sibling of /midi (MIDI Services). Second of MAP2's four
+    // standing first-class platform services (MIDI, AVB, Sampler,
+    // Audio Effects). T2490-6 will fold /tesira under /avb/devices/tesira.
+    to: '/avb',
+    label: 'AVB Services',
+    icon: MapMatrixProcessorIcon as ComponentType<any>,
+    description: 'Canonical AVB Services surface — unified authority for IEEE 1722.1 talker / listener bindings, AVDECC entities, Tesira fleet, routing matrix, PTP / SRP / TSN network state, and cluster reconciliation.',
+    color: 'var(--cds-support-error)',
+    homeSection: 'AVB',
+    includeInAdvancedMenu: true,
+    pinnable: true,
+    maturity: 'beta',
+    kind: 'link',
+    showOnHome: true,
+  },
+  {
     to: '/tesira',
     label: 'Tesira AVB',
     icon: MapMatrixProcessorIcon as ComponentType<any>,

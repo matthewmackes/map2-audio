@@ -105,6 +105,14 @@ const MidiServicesProcessingPage = lazy(() => import('./pages/midi-services/Midi
 const MidiServicesLabPage = lazy(() => import('./pages/midi-services/MidiServicesLabPage').then(m => ({ default: m.MidiServicesLabPage })))
 const MidiServicesTransportPage = lazy(() => import('./pages/midi-services/MidiServicesTransportPage').then(m => ({ default: m.MidiServicesTransportPage })))
 const MidiServicesConnectionsPage = lazy(() => import('./pages/midi-services/MidiServicesConnectionsPage').then(m => ({ default: m.MidiServicesConnectionsPage })))
+// T2490-1 — AVB Services canonical mount scaffold.
+const AvbServicesShell           = lazy(() => import('./pages/AvbServicesShell').then(m => ({ default: m.AvbServicesShell })))
+const AvbServicesOverviewPage    = lazy(() => import('./pages/avb-services/AvbServicesOverviewPage').then(m => ({ default: m.AvbServicesOverviewPage })))
+const AvbServicesConnectionsPage = lazy(() => import('./pages/avb-services/AvbServicesConnectionsPage').then(m => ({ default: m.AvbServicesConnectionsPage })))
+const AvbServicesBindingsPage    = lazy(() => import('./pages/avb-services/AvbServicesBindingsPage').then(m => ({ default: m.AvbServicesBindingsPage })))
+const AvbServicesDevicesPage     = lazy(() => import('./pages/avb-services/AvbServicesDevicesPage').then(m => ({ default: m.AvbServicesDevicesPage })))
+const AvbServicesRoutingPage     = lazy(() => import('./pages/avb-services/AvbServicesRoutingPage').then(m => ({ default: m.AvbServicesRoutingPage })))
+const AvbServicesNetworkPage     = lazy(() => import('./pages/avb-services/AvbServicesNetworkPage').then(m => ({ default: m.AvbServicesNetworkPage })))
 const MidiHubConnectionsPage = lazy(() => import('./pages/midi-hub/MidiHubConnectionsPage').then(m => ({ default: m.MidiHubConnectionsPage })))
 const MidiHubPresetsPage    = lazy(() => import('./pages/midi-hub/MidiHubPresetsPage').then(m => ({ default: m.MidiHubPresetsPage })))
 const MidiHubTransportPage  = lazy(() => import('./pages/midi-hub/MidiHubTransportPage').then(m => ({ default: m.MidiHubTransportPage })))
@@ -745,6 +753,23 @@ export function App() {
                                       Overview Tile deep-link has a destination.
                                       Matrix UI ships loop 12+. */}
                                   <Route path="routing" element={<MidiServicesRoutingPage />} />
+                                </Route>
+                                {/* T2490-1 — AVB Services canonical mount.
+                                    Sibling of /midi/*; second of MAP2's four
+                                    standing first-class platform services
+                                    (MIDI, AVB, Sampler, Audio Effects).
+                                    All sub-pages are scaffolds in T2490-1;
+                                    T2490-2..T2490-9 fill content. The
+                                    Tesira fold-in (T2490-6) hard-redirects
+                                    /devices/tesira/* under here. */}
+                                <Route path="/avb/*" element={<RouteBoundary title="AVB Services view crashed" actionLabel="Reload AVB Services"><AvbServicesShell /></RouteBoundary>}>
+                                  <Route index element={<Navigate to="connections" replace />} />
+                                  <Route path="overview" element={<AvbServicesOverviewPage />} />
+                                  <Route path="connections" element={<AvbServicesConnectionsPage />} />
+                                  <Route path="bindings" element={<AvbServicesBindingsPage />} />
+                                  <Route path="devices" element={<AvbServicesDevicesPage />} />
+                                  <Route path="routing" element={<AvbServicesRoutingPage />} />
+                                  <Route path="network" element={<AvbServicesNetworkPage />} />
                                 </Route>
                                 <Route path={HOST_MACHINE_ROUTE} element={<RouteBoundary title="Host Machine view crashed" actionLabel="Reload host machine"><HostMachinePage /></RouteBoundary>} />
                                 <Route path="/grid" element={<Navigate to="/snapshot-editor" replace />} />

@@ -35911,7 +35911,7 @@ This revision **preserves the spirit of Q2=A** (decomposition for maintainabilit
 
 **Subtasks (initial outline; will expand as design doc finalizes).**
 
-- **T2490-1** — Operator mount scaffold. Create `web/src/app/pages/AvbServicesShell.tsx` (re-exports a future shell), add `/avb/*` route in App.tsx with placeholder index → connections, add `AvbServicesShell` placeholder under MidiServicesShell pattern. Add menu entry. No backend yet. ~1 SHIP iter.
+- **T2490-1** — Operator mount scaffold. Create `web/src/app/pages/AvbServicesShell.tsx` (re-exports a future shell), add `/avb/*` route in App.tsx with placeholder index → connections, add `AvbServicesShell` placeholder under MidiServicesShell pattern. Add menu entry. No backend yet. ~1 SHIP iter. **[✓] DONE 2026-05-02.** Shipped: AvbServicesShell + AvbServicesShell.css; AvbServicesTabs + .css (6 regions: Overview / Connections / Bindings / Devices / Routing / Network); useAvbServicesShellWindow helper; AvbServicesRegionPage.css; six placeholder sub-pages (Overview / Connections / Bindings / Devices / Routing / Network); /avb/* route registered in App.tsx (index → /avb/connections); AVB Services menu entry added at /avb (sibling of /tesira, both under homeSection 'AVB'). Build clean (21.0s); /avb, /avb/connections both serve HTTP 200.
 
 - **T2490-2** — `AvbBindingAuthority` data model + REST surface. New `app/services/avb/binding_authority.py` with the canonical `AvbBinding` model (talker_node_id, listener_node_id, stream_id, format, srp_class, scope, source_type, target_type, etc.), `app/routes/avb/bindings.py` with `GET/POST/PATCH/DELETE /api/avb/bindings` (mirroring `/api/midi/bindings`). Migrations. Tests. ~2-3 SHIP iters.
 
