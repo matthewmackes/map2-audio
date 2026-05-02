@@ -1,22 +1,49 @@
 /**
  * T2482 loop 14 / iter 133 — MidiServicesCrossLinkBanner.
+ * T2483 loop 17 / iter 166 — added optional dismissibility (T2483-7)
+ *   with localStorage persistence. Banner state is per-profileKey;
+ *   the Brain banner uses linkTo so it's keyed by linkTo when no
+ *   profileKey is set.
  *
  * Single source of truth for the cross-link banner that appears on
  * each per-device editor page (P3.9) and on the Brain pages (P3.10).
- * Per the iter-131 plan D1: one component, not 9 copies. Iters 134-138
- * each add 1 import + 1 JSX line per page.
- *
- * Per D2: profile_key → MidiServices Devices INDEX route is computed
- * directly (no dependency on the iter-98 inverted map).
- *
- * Per D3: Brain banner copy is bespoke; iter 138 passes its own
- * `kind`, `title`, and `subtitle` props.
  */
 
+import { useCallback, useEffect, useState } from 'react'
 import { Link as RouterLink } from 'react-router-dom'
 import { InlineNotification, Link as CarbonLink } from '@carbon/react'
 
 import './MidiServicesCrossLinkBanner.css'
+
+const DISMISSED_STORAGE_KEY = 'midi-services.banner-dismissed'
+
+interface DismissedMap {
+  [key: string]: number  // dismissed_at unix ms
+}
+
+function loadDismissed(): DismissedMap {
+  if (typeof window === 'undefined') return {}
+  try {
+    const raw = window.localStorage.getItem(DISMISSED_STORAGE_KEY)
+    if (!raw) return {}
+    const parsed = JSON.parse(raw) as unknown
+    if (typeof parsed === 'object' && parsed !== null) {
+      return parsed as DismissedMap
+    }
+    return {}
+  } catch {
+    return {}
+  }
+}
+
+function persistDismissed(map: DismissedMap): void {
+  if (typeof window === 'undefined') return
+  try {
+    window.localStorage.setItem(DISMISSED_STORAGE_KEY, JSON.stringify(map))
+  } catch {
+    // localStorage full or denied — silent fallback (banner just stays visible).
+  }
+}
 
 interface MidiServicesCrossLinkBannerProps {
   /**
@@ -34,6 +61,13 @@ interface MidiServicesCrossLinkBannerProps {
   linkLabel?: string
   linkTo?: string
   kind?: 'info' | 'low-contrast'
+
+  /**
+   * T2483-7 iter 166 — when true, banner shows a Carbon close button.
+   * Dismissal persists in localStorage keyed by profileKey (or linkTo
+   * if no profileKey). Banner stays hidden on subsequent renders.
+   */
+  dismissible?: boolean
 }
 
 const DEFAULT_TITLE = 'Bound to the canonical MIDI Services authority'
@@ -47,6 +81,7 @@ export function MidiServicesCrossLinkBanner({
   subtitle,
   linkLabel,
   linkTo,
+  dismissible,
 }: MidiServicesCrossLinkBannerProps) {
   const computedLinkTo =
     linkTo ??
@@ -54,12 +89,34 @@ export function MidiServicesCrossLinkBanner({
       ? `/midi/devices/${encodeURIComponent(profileKey)}`
       : '/midi/devices')
 
+  // T2483-7 iter 166 — dismissibility key uses profileKey first then
+  // linkTo so both the per-device pages and the Brain banner persist
+  // independently.
+  const dismissKey = profileKey ?? linkTo ?? '__default__'
+  const [dismissed, setDismissed] = useState(false)
+
+  useEffect(() => {
+    if (!dismissible) return
+    const map = loadDismissed()
+    setDismissed(Boolean(map[dismissKey]))
+  }, [dismissible, dismissKey])
+
+  const handleClose = useCallback(() => {
+    setDismissed(true)
+    const map = loadDismissed()
+    map[dismissKey] = Date.now()
+    persistDismissed(map)
+  }, [dismissKey])
+
+  if (dismissible && dismissed) return null
+
   return (
     <div className="midi-services-crosslink-banner">
       <InlineNotification
         kind="info"
         lowContrast
-        hideCloseButton
+        hideCloseButton={!dismissible}
+        onCloseButtonClick={dismissible ? handleClose : undefined}
         title={title ?? DEFAULT_TITLE}
         subtitle={subtitle ?? DEFAULT_SUBTITLE}
       />
