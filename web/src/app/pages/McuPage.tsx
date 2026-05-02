@@ -8,6 +8,7 @@ import { useSetShellWindow } from '../layout/useSetShellWindow'
 import { EmptyState } from '../components/shared/EmptyState'
 import { useToasts } from '../components/Toasts'
 import mcuApi from '../../map2/clients/mcu'
+import { MidiServicesCrossLinkBanner } from './midi-services/MidiServicesCrossLinkBanner'
 
 function statusTagType(connected: boolean): 'green' | 'red' {
   return connected ? 'green' : 'red'
@@ -86,6 +87,7 @@ export function McuPage() {
 
   return (
     <div className="mcu-page">
+      <MidiServicesCrossLinkBanner profileKey="mackie/mcu.midi" />
       {(statusQuery.isError || projectionQuery.isError) ? (
         <InlineNotification
           kind="error"

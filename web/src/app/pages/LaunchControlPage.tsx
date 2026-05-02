@@ -8,6 +8,7 @@ import { useSetShellWindow } from '../layout/useSetShellWindow'
 import { EmptyState } from '../components/shared/EmptyState'
 import { useToasts } from '../components/Toasts'
 import launchControlApi, { type LaunchControlProjectionControl } from '../../map2/clients/launchControl'
+import { MidiServicesCrossLinkBanner } from './midi-services/MidiServicesCrossLinkBanner'
 
 const LED_OPTIONS = [
   { value: '', label: 'Effect default' },
@@ -98,6 +99,7 @@ export function LaunchControlPage() {
 
   return (
     <div className="launch-control-page">
+      <MidiServicesCrossLinkBanner profileKey="novation/launch-control-xl.midi" />
       {(statusQuery.isError || projectionQuery.isError) ? (
         <InlineNotification
           kind="error"
