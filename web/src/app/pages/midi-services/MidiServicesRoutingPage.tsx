@@ -11,6 +11,7 @@
  * Per D6: Carbon-only.
  */
 
+import { useState } from 'react'
 import { useNavigate } from 'react-router-dom'
 import {
   Heading,
@@ -35,6 +36,7 @@ import {
 } from '../../../map2/clients/midiBindings'
 import { useRoutingMatrix, type RoutingMatrixCell } from './useRoutingMatrix'
 import { usePeerMatrix } from './usePeerMatrix'
+import { PeerCellDrillDownDrawer } from './PeerCellDrillDownDrawer'
 import './MidiServicesRoutingPage.css'
 
 function cellTone(cell: RoutingMatrixCell): 'green' | 'cool-gray' | 'warm-gray' {
@@ -53,6 +55,11 @@ export function MidiServicesRoutingPage() {
   const { matrix, rowTotals, colTotals, totalBindings, isLoading, isError } = useRoutingMatrix()
   const peerMatrix = usePeerMatrix()
   const navigate = useNavigate()
+  // T2484-3 iter 192 — drill-down drawer state.
+  const [drillDown, setDrillDown] = useState<{
+    sourceType: BindingSourceType
+    consumerType: BindingConsumerType
+  } | null>(null)
 
   const goToCell = (sourceType: BindingSourceType, consumerType: BindingConsumerType) => {
     // T2483-4B iter 157 — preserve source_type so the iter-103 list page
@@ -148,13 +155,23 @@ export function MidiServicesRoutingPage() {
                           {cellLabel(cell)}
                         </Tag>
                         {peerCount > 0 ? (
-                          <Tag
-                            type="purple"
-                            size="sm"
-                            className="midi-services-routing__peer-badge"
+                          <button
+                            type="button"
+                            className="midi-services-routing__peer-badge-button"
+                            onClick={(e) => {
+                              e.stopPropagation()
+                              setDrillDown({ sourceType: src, consumerType: cons })
+                            }}
+                            aria-label={`Show peer breakdown for ${src} → ${cons}`}
                           >
-                            +{peerCount}
-                          </Tag>
+                            <Tag
+                              type="purple"
+                              size="sm"
+                              className="midi-services-routing__peer-badge"
+                            >
+                              +{peerCount}
+                            </Tag>
+                          </button>
                         ) : null}
                       </TableCell>
                     )
@@ -168,6 +185,14 @@ export function MidiServicesRoutingPage() {
           </Table>
         </TableContainer>
       </Layer>
+
+      <PeerCellDrillDownDrawer
+        open={drillDown !== null}
+        onClose={() => setDrillDown(null)}
+        sourceType={drillDown?.sourceType ?? null}
+        consumerType={drillDown?.consumerType ?? null}
+        peerSlices={peerMatrix.peerSlices}
+      />
     </Section>
   )
 }

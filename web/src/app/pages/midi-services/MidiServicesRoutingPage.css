@@ -83,3 +83,58 @@
   margin-left: 0.25rem;
   font-size: 0.6875rem;
 }
+
+.midi-services-routing__peer-badge-button {
+  background: none;
+  border: none;
+  padding: 0;
+  cursor: pointer;
+  display: inline;
+}
+
+.midi-services-routing__peer-badge-button:hover .midi-services-routing__peer-badge {
+  filter: brightness(1.1);
+}
+
+.midi-services-routing__peer-drawer {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.midi-services-routing__peer-drawer-empty {
+  font-size: 0.875rem;
+  color: var(--cds-text-secondary);
+  font-style: italic;
+  margin: 0;
+}
+
+.midi-services-routing__peer-drawer-table {
+  width: 100%;
+  border-collapse: collapse;
+  font-size: 0.8125rem;
+}
+
+.midi-services-routing__peer-drawer-table th {
+  text-align: left;
+  padding: 0.25rem 0.5rem;
+  border-bottom: 1px solid var(--cds-border-subtle);
+  color: var(--cds-text-secondary);
+  font-weight: 500;
+}
+
+.midi-services-routing__peer-drawer-table td {
+  padding: 0.5rem;
+  border-bottom: 1px solid var(--cds-border-subtle);
+}
+
+.midi-services-routing__peer-name {
+  font-weight: 500;
+  color: var(--cds-text-primary);
+}
+
+.midi-services-routing__peer-id {
+  font-size: 0.6875rem;
+  color: var(--cds-text-secondary);
+  font-family: var(--cds-font-family-mono, ui-monospace, monospace);
+}
