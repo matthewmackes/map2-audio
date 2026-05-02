@@ -176,6 +176,115 @@ def test_unreachable_peer_populates_errors(tmp_path, monkeypatch):
     assert "network down" in response.errors["peer-a"]
 
 
+def test_peer_health_field_propagates(tmp_path, monkeypatch):
+    """T2484-4 iter 196 — health from NodeHealthService surfaces on
+    each peer entry."""
+    _init_temp_db(tmp_path)
+
+    async def _one_peer(self):
+        return [_make_peer("peer-a")]
+
+    class _MockResponse:
+        status_code = 200
+
+        @staticmethod
+        def json():
+            return {"matrix": {}, "total_bindings": 0}
+
+    class _MockAsyncClient:
+        def __init__(self, *args, **kwargs):
+            pass
+
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, *args):
+            return False
+
+        async def get(self, url):
+            return _MockResponse()
+
+    import httpx
+
+    monkeypatch.setattr(httpx, "AsyncClient", _MockAsyncClient)
+
+    from app.services.node_discovery_service import NodeDiscoveryService
+
+    monkeypatch.setattr(NodeDiscoveryService, "_load_peer_records", _one_peer)
+
+    # Mock NodeHealthService.get_remote_health to return 'warn' for the peer.
+    class _MockHealth:
+        status = "warn"
+
+    from app.services.node_health_service import NodeHealthService
+
+    async def _mock_remote(self, host):
+        return _MockHealth()
+
+    monkeypatch.setattr(NodeHealthService, "get_remote_health", _mock_remote)
+
+    async def _run():
+        await database_module._ensure_tables_created()
+        return await get_cluster_bindings_matrix()
+
+    response = asyncio.run(_run())
+    assert len(response.peers) == 1
+    assert response.peers[0].health == "warn"
+
+
+def test_peer_health_falls_back_to_offline_on_exception(tmp_path, monkeypatch):
+    """T2484-4 iter 196 — health fetch failure degrades silently."""
+    _init_temp_db(tmp_path)
+
+    async def _one_peer(self):
+        return [_make_peer("peer-a")]
+
+    class _MockResponse:
+        status_code = 200
+
+        @staticmethod
+        def json():
+            return {"matrix": {}, "total_bindings": 0}
+
+    class _MockAsyncClient:
+        def __init__(self, *args, **kwargs):
+            pass
+
+        async def __aenter__(self):
+            return self
+
+        async def __aexit__(self, *args):
+            return False
+
+        async def get(self, url):
+            return _MockResponse()
+
+    import httpx
+
+    monkeypatch.setattr(httpx, "AsyncClient", _MockAsyncClient)
+
+    from app.services.node_discovery_service import NodeDiscoveryService
+
+    monkeypatch.setattr(NodeDiscoveryService, "_load_peer_records", _one_peer)
+
+    from app.services.node_health_service import NodeHealthService
+
+    async def _blowup_remote(self, host):
+        raise RuntimeError("health probe down")
+
+    monkeypatch.setattr(NodeHealthService, "get_remote_health", _blowup_remote)
+
+    async def _run():
+        await database_module._ensure_tables_created()
+        return await get_cluster_bindings_matrix()
+
+    response = asyncio.run(_run())
+    assert len(response.peers) == 1
+    # Health probe blew up but matrix succeeded → health='offline',
+    # peer still in the list.
+    assert response.peers[0].health == "offline"
+
+
 def test_peer_returning_non_200_populates_errors(tmp_path, monkeypatch):
     """HTTP 500 from a peer surfaces in the errors map."""
     _init_temp_db(tmp_path)
