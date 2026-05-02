@@ -1,0 +1,168 @@
+/* T2485-2 — generic device status bar styles.
+ * Ported from the MPX1/IntelFX status-bar CSS (which were 95% identical).
+ * Uses design tokens throughout per CLAUDE.md Carbon-conformance rules.
+ */
+
+.device-statusbar {
+  height: 36px;
+  border-top: 1px solid var(--cds-border-subtle, #e0e0e0);
+  background: var(--cds-layer, #ffffff);
+  display: grid;
+  grid-template-columns: minmax(120px, auto) auto minmax(0, 1fr) auto auto auto;
+  align-items: center;
+  gap: var(--cds-spacing-04, 0.75rem);
+  padding-inline: var(--cds-spacing-04, 0.75rem);
+  font-size: var(--cds-label-01-font-size, 0.75rem);
+  color: var(--cds-text-primary, #161616);
+}
+
+.device-statusbar__left {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--cds-spacing-03, 0.5rem);
+}
+
+.device-statusbar__dot {
+  width: 7px;
+  height: 7px;
+  border-radius: 50%;
+  background: var(--cds-icon-disabled, #c6c6c6);
+  flex: 0 0 auto;
+}
+
+.device-statusbar__dot.is-online {
+  background: var(--cds-support-success, #198038);
+}
+
+.device-statusbar__device {
+  font-size: var(--cds-label-01-font-size, 0.75rem);
+  line-height: var(--cds-label-01-line-height, 1.33333);
+  letter-spacing: 0.01em;
+  color: var(--cds-text-primary, #161616);
+  font-weight: 600;
+}
+
+.device-statusbar__program {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--cds-spacing-02, 0.25rem);
+  min-width: 210px;
+}
+
+.device-statusbar__prog-btn {
+  width: 20px;
+  height: 20px;
+  border-radius: 0;
+  border: 1px solid var(--cds-border-strong, #8d8d8d);
+  background: var(--cds-layer, #ffffff);
+  color: var(--cds-text-primary, #161616);
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+  flex: 0 0 auto;
+}
+
+.device-statusbar__prog-btn:hover {
+  border-color: var(--cds-interactive, #0f62fe);
+  color: var(--cds-interactive, #0f62fe);
+}
+
+.device-statusbar__prog-number {
+  font-size: var(--cds-label-01-font-size, 0.75rem);
+  color: var(--cds-interactive, #0f62fe);
+  font-weight: 700;
+  min-width: 30px;
+  text-align: center;
+}
+
+.device-statusbar__prog-name {
+  font-size: var(--cds-label-01-font-size, 0.75rem);
+  color: var(--cds-text-primary, #161616);
+  max-width: 132px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.device-statusbar__lcd {
+  min-width: 0;
+  border: 1px solid var(--cds-support-warning, #f1c21b);
+  border-radius: 0;
+  background: var(--cds-layer, #ffffff);
+  height: 24px;
+  padding-inline: var(--cds-spacing-03, 0.5rem);
+  display: flex;
+  align-items: center;
+  overflow: hidden;
+}
+
+.device-statusbar__lcd-track {
+  display: inline-block;
+  white-space: nowrap;
+  color: var(--cds-support-warning, #f1c21b);
+  font-family: var(--cds-code-01-font-family, monospace);
+  letter-spacing: 0.04em;
+}
+
+.device-statusbar__mix {
+  display: inline-flex;
+  align-items: center;
+  gap: var(--cds-spacing-02, 0.25rem);
+  min-width: 132px;
+}
+
+.device-statusbar__mix-label {
+  color: var(--cds-text-primary, #161616);
+  font-size: var(--cds-label-01-font-size, 0.75rem);
+  line-height: var(--cds-label-01-line-height, 1.33333);
+  font-weight: 700;
+}
+
+.device-statusbar__tap {
+  height: 24px;
+  border-radius: 0;
+  border: 1px solid var(--cds-support-warning, #f1c21b);
+  background: var(--cds-layer, #ffffff);
+  color: var(--cds-support-warning, #f1c21b);
+  padding-inline: var(--cds-spacing-03, 0.5rem);
+  font-weight: 700;
+  cursor: pointer;
+  display: inline-flex;
+  align-items: center;
+  gap: var(--cds-spacing-02, 0.25rem);
+}
+
+.device-statusbar__tap:hover {
+  border-color: var(--cds-support-warning, #f1c21b);
+  background: var(--cds-layer-hover, #e8e8e8);
+}
+
+.device-statusbar__bypass {
+  display: inline-flex;
+  gap: var(--cds-spacing-02, 0.25rem);
+}
+
+.device-statusbar__pill {
+  height: 24px;
+  min-width: 36px;
+  padding-inline: var(--cds-spacing-03, 0.5rem);
+  border: 1px solid var(--cds-border-strong, #8d8d8d);
+  border-radius: 0;
+  background: var(--cds-layer, #ffffff);
+  color: var(--cds-text-primary, #161616);
+  font-size: var(--cds-label-01-font-size, 0.75rem);
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.device-statusbar__pill.is-bypassed {
+  background: var(--cds-layer-disabled, #f4f4f4);
+  color: var(--cds-text-disabled, #c6c6c6);
+  border-color: var(--cds-border-subtle, #e0e0e0);
+}
+
+.device-statusbar__pill:hover {
+  border-color: var(--cds-interactive, #0f62fe);
+  color: var(--cds-interactive, #0f62fe);
+}
