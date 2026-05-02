@@ -34358,7 +34358,7 @@ Epic overview: Unify every MIDI surface, authority, and consumer on the platform
 - Total absorbed: 23 fully + 8 partially + 3 stay-in-place-rewire-backend + 2 reframed-as-consumers + 6 backend consolidations
 
 ID: T2482
-Status: [ ] Todo
+Status: [✓] Done — 2026-05-01 (Phase 3 closed iter 140; epic close-out shipped iter 150). See `docs/architecture/T2482_PHASE3_DONE.md` for the overview.
 Title: MIDI Services — first-class platform service offering (canonical authority + canonical surface)
 Description:
 - Goal / acceptance criteria: Every MIDI binding on the platform lives in `MidiBinding` (the canonical store). Every operator-visible MIDI editing surface either lives at `/midi` ("MIDI Services") OR consumes the canonical authority via a typed projection. Old `/midi-hub/*` URLs redirect cleanly. Snapshot Editor inline per-effect MIDI editors function unchanged from operator perspective. Per-device DSP editors (MPX-1 Panel, IntelFX Library, Maschine LCD, etc.) survive untouched. Three follow-up epics (AVB Services, Sampler Services, Audio Effects Services) opened with concrete scope + locked decisions, each ready to lift the unification template from this epic.
@@ -34388,17 +34388,17 @@ Description:
   - **T2482-P2.8**: Legacy store deletion (every per-consumer storage layer dropped)
   - **T2482-P2.9**: Migration verification suite (full backup; 100-snapshot round-trip; integration tests)
 
-**Phase 3 — Canonical surface (per-bundle gated)**:
-  - **T2482-P3.1**: `/midi` mount + AppShell entry; rename "MIDI Hub" → "MIDI Services" in nav; `/midi-hub/*` redirect map
-  - **T2482-P3.2**: Overview region (landing page; aggregates Devices + Bindings + Routing + Transport state)
-  - **T2482-P3.3**: Devices region (list + per-device editor pane + embedded preview widgets)
-  - **T2482-P3.4**: Bindings region (global filterable list + authoring workflow + bulk ops)
-  - **T2482-P3.5**: Routing region (matrix + patchbay + cluster peers)
-  - **T2482-P3.6**: Transport region (clock + transport bindings)
-  - **T2482-P3.7**: Network region (RTP-MIDI + MIDI 2.0/UMP + Tesira TTP + GPIO + string interface)
-  - **T2482-P3.8**: Presets, Events, Processing, Expression, Lab regions (direct ports of MIDI Hub sub-pages into region containers)
-  - **T2482-P3.9**: Per-device legacy page reframing (DSP editors keep their routes; MIDI editing concerns get cross-link banners to `/midi/devices?device=<id>`)
-  - **T2482-P3.10**: Brain Setup + Brain Inputs reframed as MIDI Services consumers
+**Phase 3 — Canonical surface (✅ DONE 2026-05-01 — see `docs/architecture/T2482_PHASE3_DONE.md`)**:
+  - **T2482-P3.1**: ✅ Done (Loop 10 iters 92–94) — `/midi` mount + AppShell entry; rename + `/midi-hub/*` redirect map
+  - **T2482-P3.2**: ✅ Done (Loop 10 iters 95–96 + Loop 11 iter 109 + Loop 13 iter 128) — Overview region with 5 ClickableTile cards
+  - **T2482-P3.3**: ✅ Done (Loop 10 iters 97–99) — Devices region INDEX + read-only detail stub; per-row mutation deferred to follow-up
+  - **T2482-P3.4**: ✅ Done (Loop 11 iters 102–106 + Loop 12 iters 112–116) — Bindings region: filter-first list + CRUD + structured per-source-type/per-target-type descriptor editors
+  - **T2482-P3.5**: ✅ Done (Loop 12 iters 117–118) — Routing region: source × consumer matrix UI with click-through; cluster peer matrix deferred
+  - **T2482-P3.6**: ✅ Done (Loop 14 iter 132) — Transport region dedicated `/midi/transport` sibling page
+  - **T2482-P3.7**: ✅ Done (Loop 13 iter 122) — Network region
+  - **T2482-P3.8**: ✅ Done (Loop 13 iters 123–126) — Presets / Events / Processing / Lab regions (Expression panel pre-existing absence)
+  - **T2482-P3.9**: ✅ Done (Loop 14 iters 134–137) — 8 of 8 first-party per-device editor pages carry `MidiServicesCrossLinkBanner`
+  - **T2482-P3.10**: ✅ Done (Loop 14 iter 138) — Brain Setup + Brain Inputs reframed via banner with bespoke "Brain inputs are MIDI Services consumers" copy
 
 **Phase 4 — First-class-services template extraction (per-bundle gated)**:
   - **T2482-P4.1**: `docs/architecture/FIRST_CLASS_SERVICES.md` — canonical reference for the unification pattern (authority + surface + migration + provenance)
