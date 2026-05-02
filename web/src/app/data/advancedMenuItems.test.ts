@@ -146,11 +146,15 @@ describe('navigation catalog', () => {
     // includeInAdvancedMenu=false (sidebar collapse 9→1). The single
     // MIDI Services entry at /midi remains. Iter-94 also renamed
     // /midi-hub → /midi.
+    // T2490-1: added /avb entry (AVB Services canonical mount).
+    // T2490-6a: /tesira entry's `to` flipped to /avb/devices/tesira
+    // (canonical Tesira mount under AVB Services).
     expect(advancedItems.map((item) => item.to)).toEqual([
       '/midi',
+      '/avb',
       '/devices',
       '/state-authority',
-      '/tesira',
+      '/avb/devices/tesira',
       '/edirol-ua1000',
       '/hotone-jogg',
     ])
@@ -195,7 +199,8 @@ describe('navigation catalog', () => {
     const routeChecks: Array<{ route: string; expectInAdvanced: boolean; tesira?: boolean }> = [
       { route: '/midi/devices/lexicon-mpx1/panel', expectInAdvanced: false },
       { route: '/midi/devices/rocktron-intelfx/panel', expectInAdvanced: false },
-      { route: '/tesira', expectInAdvanced: true, tesira: true },
+      // T2490-6a: Tesira fleet now lives at /avb/devices/tesira.
+      { route: '/avb/devices/tesira', expectInAdvanced: true, tesira: true },
     ]
     for (const { route, expectInAdvanced, tesira } of routeChecks) {
       const item = navigationCatalogItems.find((candidate) => candidate.to === route)

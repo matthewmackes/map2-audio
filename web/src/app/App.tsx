@@ -754,14 +754,27 @@ export function App() {
                                       Matrix UI ships loop 12+. */}
                                   <Route path="routing" element={<MidiServicesRoutingPage />} />
                                 </Route>
+                                {/* T2490-6a — canonical Tesira fleet mount under
+                                    the AVB Services umbrella. Declared BEFORE the
+                                    /avb/* shell so React Router matches the more
+                                    specific path first; TesiraView owns its own
+                                    nav and so must NOT be wrapped in the
+                                    AvbServicesShell tabs (those would clash with
+                                    Tesira's internal navigation). */}
+                                <Route path="/avb/devices/tesira/*" element={
+                                  <RouteBoundary title="Tesira fleet view crashed" actionLabel="Reload Tesira">
+                                    <TesiraView />
+                                  </RouteBoundary>
+                                } />
                                 {/* T2490-1 — AVB Services canonical mount.
                                     Sibling of /midi/*; second of MAP2's four
                                     standing first-class platform services
                                     (MIDI, AVB, Sampler, Audio Effects).
                                     All sub-pages are scaffolds in T2490-1;
                                     T2490-2..T2490-9 fill content. The
-                                    Tesira fold-in (T2490-6) hard-redirects
-                                    /devices/tesira/* under here. */}
+                                    Tesira fold-in (T2490-6a) hard-redirects
+                                    /devices/tesira/* + /tesira/* to
+                                    /avb/devices/tesira/*. */}
                                 <Route path="/avb/*" element={<RouteBoundary title="AVB Services view crashed" actionLabel="Reload AVB Services"><AvbServicesShell /></RouteBoundary>}>
                                   <Route index element={<Navigate to="connections" replace />} />
                                   <Route path="overview" element={<AvbServicesOverviewPage />} />
@@ -809,7 +822,10 @@ export function App() {
                                     <Route path="presets" element={<LCDPresetsView />} />
                                     <Route path="snapshots" element={<LCDSnapshotsView />} />
                                   </Route>
-                                  <Route path="tesira/*" element={<TesiraView />} />
+                                  {/* T2490-6a — legacy /devices/tesira/* hard-redirects to
+                                      the unified /avb/devices/tesira/* mount above. */}
+                                  <Route path="tesira" element={<Navigate to="/avb/devices/tesira" replace />} />
+                                  <Route path="tesira/*" element={<Navigate to="/avb/devices/tesira" replace />} />
                                   {/* T2485-4 — legacy /devices/mpx1/* hard-redirects to
                                       the unified /midi/devices/lexicon-mpx1/* mount.
                                       The actual shell + view tree now lives under that
@@ -824,7 +840,9 @@ export function App() {
                                 <Route path="/edirol-ua1000" element={<Navigate to="/devices/edirol-ua1000" replace />} />
                                 <Route path="/hotone-jogg" element={<Navigate to="/devices/hotone-jogg" replace />} />
                                 <Route path="/lcd" element={<Navigate to="/devices/lcd" replace />} />
-                                <Route path="/tesira/*" element={<Navigate to="/devices/tesira" replace />} />
+                                {/* T2490-6a — legacy bare /tesira/* hard-redirects to the
+                                    canonical /avb/devices/tesira/* mount. */}
+                                <Route path="/tesira/*" element={<Navigate to="/avb/devices/tesira" replace />} />
                                 {/* T2485-4 — /mpx1* legacy URLs all redirect to the
                                     unified canonical /midi/devices/lexicon-mpx1/* (Q1=A). */}
                                 <Route path="/mpx1" element={<Navigate to="/midi/devices/lexicon-mpx1/panel" replace />} />

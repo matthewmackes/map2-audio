@@ -118,9 +118,10 @@ export function AvbServicesDevicesPage() {
         <header className="avb-services-region__header">
           <Heading className="avb-services-region__title">Devices</Heading>
           <p className="avb-services-region__subtitle">
-            Discovered AVB nodes and AVDECC entities. Tesira fleet members
-            will appear here after T2490-6 folds <code>/devices/tesira/*</code>
-            under <code>/avb/devices/tesira/*</code>.
+            Discovered AVB nodes and AVDECC entities. The Tesira fleet
+            workspace lives at <code>/avb/devices/tesira</code> (legacy
+            <code>/devices/tesira</code> + <code>/tesira</code> hard-redirect
+            there).
           </p>
           <div>
             <Tag type="cool-gray">

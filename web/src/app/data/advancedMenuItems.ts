@@ -380,7 +380,10 @@ const baseNavigationCatalog: ShellNavigationItem[] = [
     showOnHome: true,
   },
   {
-    to: '/tesira',
+    // T2490-6a — Tesira fleet now lives at /avb/devices/tesira/* under
+    // the canonical AVB Services mount. Legacy /tesira/* and
+    // /devices/tesira/* hard-redirect here so old bookmarks keep working.
+    to: '/avb/devices/tesira',
     label: 'Tesira AVB',
     icon: MapMatrixProcessorIcon as ComponentType<any>,
     description: 'Work with Biamp Tesira AVB devices for fleet views, device pages, DSP surfaces, AVB context, and multi-device operational control.',
