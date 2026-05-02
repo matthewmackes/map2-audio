@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1437** Python | **1421** TypeScript | **177** C++/H | **145** Docs | **3439** total commits | **3** stars | **0** forks | **0** open issues
+**1437** Python | **1421** TypeScript | **177** C++/H | **145** Docs | **3441** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`40b84f2f`](https://github.com/matthewmackes/map2-audio/commit/40b84f2f270b5225ae5f3fccc79707de497219b5) | T2482 loop 13 / iter 121: P3.7+P3.8 Network/Presets/Event... | Map2 Audio | 2026-05-01 |
+| [`28c68ed1`](https://github.com/matthewmackes/map2-audio/commit/28c68ed198e0c8414f05ed31d6bd74b49329ebb7) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-02 |
 | [`31ca8745`](https://github.com/matthewmackes/map2-audio/commit/31ca874533b37e671df5816a77c9c775374ccc5d) | T2482 loop 12 / iter 120: SHIP loop 12 closing roll-up | Map2 Audio | 2026-05-01 |
 | [`bb8f70b1`](https://github.com/matthewmackes/map2-audio/commit/bb8f70b1cc6d2fc2087071af80f0d19759f91251) | T2482 loop 12 / iter 119: descriptor + routing matrix jes... | Map2 Audio | 2026-05-01 |
 | [`1e7d5647`](https://github.com/matthewmackes/map2-audio/commit/1e7d5647d7cf242e69264d97eca63096701a9453) | T2482 loop 12 / iter 118: /midi/routing matrix UI | Map2 Audio | 2026-05-01 |
 | [`3c004c01`](https://github.com/matthewmackes/map2-audio/commit/3c004c013cd73e57d5fc9a473f162d379606fd3d) | T2482 loop 12 / iter 117: useRoutingMatrix data hook | Map2 Audio | 2026-05-01 |
 | [`fd7d404a`](https://github.com/matthewmackes/map2-audio/commit/fd7d404a83ebc0f8e6971c2c44841e33539273bf) | T2482 loop 12 / iter 116: BindingCreateDrawer structured ... | Map2 Audio | 2026-05-01 |
 | [`aed3e8f2`](https://github.com/matthewmackes/map2-audio/commit/aed3e8f28e2ace77548219366c3ff6ff8aba37d8) | T2482 loop 12 / iter 115: BindingEditDrawer structured de... | Map2 Audio | 2026-05-01 |
-| [`289dffd9`](https://github.com/matthewmackes/map2-audio/commit/289dffd923c9c7f6bc4c7e763df2e853c38fe7a1) | T2482 loop 12 / iter 114: target descriptor metadata + ed... | Map2 Audio | 2026-05-01 |
-| [`9a0f2d47`](https://github.com/matthewmackes/map2-audio/commit/9a0f2d47539708b6a300fbbfc562cd297afd0488) | T2482 loop 12 / iter 113: SourceDescriptorEditor component | Map2 Audio | 2026-05-01 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
