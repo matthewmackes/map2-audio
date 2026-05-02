@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1450** Python | **1499** TypeScript | **177** C++/H | **145** Docs | **3617** total commits | **3** stars | **0** forks | **0** open issues
+**1450** Python | **1500** TypeScript | **177** C++/H | **145** Docs | **3619** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`66b46f7d`](https://github.com/matthewmackes/map2-audio/commit/66b46f7d91b2d2312e8b5ecfcdd7f091817dda53) | feat(T2490-9): /avb/network PTP / SRP / TSN status tiles | Map2 Audio | 2026-05-02 |
+| [`91ce0965`](https://github.com/matthewmackes/map2-audio/commit/91ce0965a46c6bf4ba31a73bede7274e50f1fb23) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-02 |
 | [`33d04671`](https://github.com/matthewmackes/map2-audio/commit/33d046714d4de6982d7c44ec508e4f5f4bd2358b) | feat(T2490-8): /avb/routing source × consumer matrix UI | Map2 Audio | 2026-05-02 |
 | [`755554d0`](https://github.com/matthewmackes/map2-audio/commit/755554d0f7fcf3e042ab01ec82288396cf26afe6) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-02 |
 | [`0c215758`](https://github.com/matthewmackes/map2-audio/commit/0c2157588258e71ac36bada18cf6c04e5d25c5f6) | feat(T2490-6a): fold Tesira fleet into /avb/devices/tesir... | Map2 Audio | 2026-05-02 |
 | [`5633dfb1`](https://github.com/matthewmackes/map2-audio/commit/5633dfb1cdf3d23527cb1b18f3e253fed902026c) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-02 |
 | [`f98d16c5`](https://github.com/matthewmackes/map2-audio/commit/f98d16c566f343e800ede2f10843184c41ec2ecf) | feat(T2490-5): operator-visible Devices index page | Map2 Audio | 2026-05-02 |
 | [`8c77f7c6`](https://github.com/matthewmackes/map2-audio/commit/8c77f7c6641deae531d220645a892fbdc5ab2b04) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-02 |
-| [`acce5f4c`](https://github.com/matthewmackes/map2-audio/commit/acce5f4c45feddba930cf22831a79346eee1aae3) | feat(T2490-3a): read-side projection of AvbRouter into Av... | Map2 Audio | 2026-05-02 |
-| [`cf1a6853`](https://github.com/matthewmackes/map2-audio/commit/cf1a68536b00d5b893a2ed4453f43488f0151af8) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-02 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
