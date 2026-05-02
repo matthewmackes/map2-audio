@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1437** Python | **1430** TypeScript | **177** C++/H | **145** Docs | **3481** total commits | **3** stars | **0** forks | **0** open issues
+**1437** Python | **1433** TypeScript | **177** C++/H | **145** Docs | **3491** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -175,7 +175,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-DOCS:START -->
 | Document | Last Updated |
 |:---------|:------------|
-| [PROJECT WORKLIST](https://github.com/matthewmackes/map2-audio/blob/master/docs/PROJECT_WORKLIST.md) | 2026-05-01 |
+| [PROJECT WORKLIST](https://github.com/matthewmackes/map2-audio/blob/master/docs/PROJECT_WORKLIST.md) | 2026-05-02 |
 | [MAP2 Audio Platform — AI Instructions](https://github.com/matthewmackes/map2-audio/blob/master/docs/CLAUDE.md) | 2026-04-29 |
 | [MAP2 Backend Runtime Contract](https://github.com/matthewmackes/map2-audio/blob/master/docs/backend-runtime-contract.md) | 2026-04-27 |
 | [MAP2 API Contract Standards](https://github.com/matthewmackes/map2-audio/blob/master/docs/api-contract-standards.md) | 2026-04-25 |
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
-| [`5212b439`](https://github.com/matthewmackes/map2-audio/commit/5212b439ad3a7752d93905078760ce138e926657) | T2483 loop 16 / iter 151: T2482 follow-up bundle plan | Map2 Audio | 2026-05-02 |
-| [`3adde724`](https://github.com/matthewmackes/map2-audio/commit/3adde724ffafdb669f7972c111183105d03049af) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-02 |
-| [`026e8314`](https://github.com/matthewmackes/map2-audio/commit/026e8314229d91f43e6242681a69e9446b622c35) | T2482 loop 15 / iter 150: SHIP loop 15 closing roll-up + ... | Map2 Audio | 2026-05-01 |
-| [`21410fc0`](https://github.com/matthewmackes/map2-audio/commit/21410fc0c319c62f5b222e67e603b284a41c7c62) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-02 |
-| [`8a80c8b1`](https://github.com/matthewmackes/map2-audio/commit/8a80c8b122851374627cc1131a1bce40457f4141) | T2482 loop 15 / iter 149: verification report | Map2 Audio | 2026-05-01 |
-| [`f3b30449`](https://github.com/matthewmackes/map2-audio/commit/f3b30449c01d5a9cad44136526ad82c76e396087) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-02 |
-| [`047eca7f`](https://github.com/matthewmackes/map2-audio/commit/047eca7fb53ea8a83928b16073ab233b6d043939) | T2482 loop 15 / iter 148: open T2483 follow-up bundle | Map2 Audio | 2026-05-01 |
-| [`24ae5ccc`](https://github.com/matthewmackes/map2-audio/commit/24ae5ccc78b8bc94575d1400e42b22fbac9eddd4) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-02 |
+| [`ec1fe4f9`](https://github.com/matthewmackes/map2-audio/commit/ec1fe4f997140b7b2d090cf00c0c583a913dfdd0) | T2483 loop 16 / iter 160: SHIP loop 16 closing roll-up | Map2 Audio | 2026-05-02 |
+| [`51d9454c`](https://github.com/matthewmackes/map2-audio/commit/51d9454c33af05536447651024feebb65ad80fa3) | T2483 loop 16 / iter 159: tests for the loop-16 sub-items | Map2 Audio | 2026-05-02 |
+| [`a072d80b`](https://github.com/matthewmackes/map2-audio/commit/a072d80ba7c203d6127005e42cef4febdf41e904) | T2483 loop 16 / iter 158: EventsPage selectedEventListId ... | Map2 Audio | 2026-05-02 |
+| [`04af8b85`](https://github.com/matthewmackes/map2-audio/commit/04af8b859e12c316adc5799ce5d8dfcd54086ed1) | T2483 loop 16 / iter 157: routing matrix preserves source... | Map2 Audio | 2026-05-02 |
+| [`27399999`](https://github.com/matthewmackes/map2-audio/commit/2739999983e6bc07639dd291e9e5805ee98d073c) | T2483 loop 16 / iter 156: source-type filter on Bindings ... | Map2 Audio | 2026-05-02 |
+| [`497ca51a`](https://github.com/matthewmackes/map2-audio/commit/497ca51a98d4905f2fbae2448c9f7e0ebe97b66e) | T2483 loop 16 / iter 155: shell-window kicker fix (T2483-3) | Map2 Audio | 2026-05-02 |
+| [`dfd25509`](https://github.com/matthewmackes/map2-audio/commit/dfd2550913e1c167b072f3d7d1fed3df497a15a1) | T2483 loop 16 / iter 154: MidiServicesConnectionsPage (T2... | Map2 Audio | 2026-05-02 |
+| [`bd06c99b`](https://github.com/matthewmackes/map2-audio/commit/bd06c99b4d4463484dbaed42b2e51d67c09ff321) | T2483 loop 16 / iter 153: DevicePage Toggle + Delete row ... | Map2 Audio | 2026-05-02 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
