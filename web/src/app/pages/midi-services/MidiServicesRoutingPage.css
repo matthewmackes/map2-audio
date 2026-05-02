@@ -1,0 +1,80 @@
+/*
+ * T2482 loop 12 / iter 118 — /midi/routing matrix styles.
+ * Carbon-conformant. No hardcoded colors.
+ */
+
+.midi-services-routing {
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.midi-services-routing__header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.midi-services-routing__title {
+  font-size: 2rem;
+  font-weight: 300;
+  color: var(--cds-text-primary);
+  margin: 0;
+}
+
+.midi-services-routing__subtitle {
+  font-size: 0.875rem;
+  color: var(--cds-text-secondary);
+  margin: 0;
+  max-width: 56rem;
+}
+
+.midi-services-routing__subtitle strong {
+  color: var(--cds-text-primary);
+  font-weight: 600;
+}
+
+.midi-services-routing__corner {
+  font-size: 0.6875rem;
+  color: var(--cds-text-secondary);
+  font-style: italic;
+  white-space: nowrap;
+}
+
+.midi-services-routing__col-header {
+  font-family: var(--cds-font-family-mono, ui-monospace, monospace);
+  font-size: 0.6875rem;
+  cursor: pointer;
+  white-space: nowrap;
+}
+
+.midi-services-routing__col-header:hover {
+  background: var(--cds-layer-hover);
+}
+
+.midi-services-routing__row-header {
+  font-family: var(--cds-font-family-mono, ui-monospace, monospace);
+  font-size: 0.75rem;
+  font-weight: 500;
+  color: var(--cds-text-primary);
+  white-space: nowrap;
+}
+
+.midi-services-routing__cell {
+  text-align: center;
+  padding: 0.25rem 0.5rem;
+}
+
+.midi-services-routing__cell--clickable {
+  cursor: pointer;
+}
+
+.midi-services-routing__cell--clickable:hover {
+  background: var(--cds-layer-hover);
+}
+
+.midi-services-routing__row-total {
+  text-align: center;
+  background: var(--cds-layer-accent);
+}

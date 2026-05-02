@@ -1,53 +1,156 @@
 /**
- * T2482 loop 11 / iter 107 — /midi/routing scaffold.
+ * T2482 loop 12 / iter 118 — /midi/routing matrix page.
  *
- * Per the iter-101 plan D5: this is a 30-line placeholder so the
- * /midi/routing route mounts cleanly + the iter-109 Overview Tile
- * deep-link has a destination. The actual routing matrix UI
- * (cluster peers, source→consumer routing) is loop 12+ scope.
+ * Replaces the iter-107 30-line scaffold. Real source_type ×
+ * consumer_type matrix rendering bound to useRoutingMatrix (iter 117).
  *
- * Carbon-conformant; no MUI / Phosphor; no hardcoded colors.
+ * Per the iter-111 plan D5: cells click through to
+ * /midi/bindings?consumer_type=X (the iter-103 list page URL-syncs
+ * this and pre-selects the consumer-strategy filter automatically).
+ *
+ * Per D6: Carbon-only.
  */
 
-import { Link as RouterLink } from 'react-router-dom'
+import { useNavigate } from 'react-router-dom'
 import {
   Heading,
   InlineNotification,
   Layer,
-  Link as CarbonLink,
   Section,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableHeader,
+  TableRow,
+  Tag,
 } from '@carbon/react'
 
-import './MidiServicesOverviewPage.css'  // share the simple layout styles
+import {
+  BINDING_CONSUMER_TYPES,
+  BINDING_SOURCE_TYPES,
+  type BindingConsumerType,
+  type BindingSourceType,
+} from '../../../map2/clients/midiBindings'
+import { useRoutingMatrix, type RoutingMatrixCell } from './useRoutingMatrix'
+import './MidiServicesRoutingPage.css'
+
+function cellTone(cell: RoutingMatrixCell): 'green' | 'cool-gray' | 'warm-gray' {
+  if (cell.count === 0) return 'warm-gray'
+  if (cell.enabledCount === cell.count) return 'green'
+  return 'cool-gray'
+}
+
+function cellLabel(cell: RoutingMatrixCell): string {
+  if (cell.count === 0) return '·'
+  if (cell.enabledCount === cell.count) return String(cell.count)
+  return `${cell.enabledCount}/${cell.count}`
+}
 
 export function MidiServicesRoutingPage() {
+  const { matrix, rowTotals, colTotals, totalBindings, isLoading, isError } = useRoutingMatrix()
+  const navigate = useNavigate()
+
+  const goToCell = (sourceType: BindingSourceType, consumerType: BindingConsumerType) => {
+    navigate(`/midi/bindings?consumer_type=${encodeURIComponent(consumerType)}`)
+  }
+
+  const goToColumn = (consumerType: BindingConsumerType) => {
+    navigate(`/midi/bindings?consumer_type=${encodeURIComponent(consumerType)}`)
+  }
+
   return (
-    <Section className="midi-services-overview">
+    <Section className="midi-services-routing">
       <Layer level={0}>
-        <header className="midi-services-overview__header">
-          <Heading className="midi-services-overview__title">Routing</Heading>
-          <p className="midi-services-overview__subtitle">
-            Source → consumer routing matrix and cluster peer routing for
-            MIDI events. The full matrix UI (per the iter-91 design D3)
-            ships in a future loop. For now, source/target authoring is
-            done per-binding via the Bindings page.
+        <header className="midi-services-routing__header">
+          <Heading className="midi-services-routing__title">Routing</Heading>
+          <p className="midi-services-routing__subtitle">
+            Source type × consumer type matrix of every MIDI binding in the
+            canonical authority. Click a cell to filter the Bindings page by
+            that consumer type. Cell counts are <strong>enabled / total</strong>{' '}
+            when a row mixes states, just <strong>count</strong> when all
+            bindings in the cell are enabled.
           </p>
         </header>
       </Layer>
-      <Layer level={1}>
+
+      {isError ? (
         <InlineNotification
-          kind="info"
+          kind="error"
           lowContrast
           hideCloseButton
-          title="Region under construction"
-          subtitle="Routing matrix authoring lands in a future SHIP loop. Per-binding routing is editable today via the Bindings page."
+          title="Failed to load routing matrix"
+          subtitle="One or more /api/midi/bindings consumer-type queries returned an error. The matrix may be partially populated."
         />
-        <p className="midi-services-overview__subtitle midi-services-overview__subtitle--spaced">
-          Continue to <CarbonLink as={RouterLink} to="/midi/bindings">Bindings</CarbonLink>{' '}
-          to edit existing routing per-binding, or to{' '}
-          <CarbonLink as={RouterLink} to="/midi/overview">Overview</CarbonLink>{' '}
-          for region-level counts.
-        </p>
+      ) : null}
+
+      <Layer level={1}>
+        <TableContainer
+          title=""
+          description={
+            isLoading
+              ? 'Loading routing matrix…'
+              : `${totalBindings} binding${totalBindings === 1 ? '' : 's'} across ${BINDING_SOURCE_TYPES.length} source types and ${BINDING_CONSUMER_TYPES.length} consumer types`
+          }
+        >
+          <Table size="md" useStaticWidth>
+            <TableHead>
+              <TableRow>
+                <TableHeader className="midi-services-routing__corner">
+                  source ↓ / consumer →
+                </TableHeader>
+                {BINDING_CONSUMER_TYPES.map((cons) => (
+                  <TableHeader
+                    key={cons}
+                    className="midi-services-routing__col-header"
+                    onClick={() => goToColumn(cons)}
+                    title={`Open Bindings filtered by ${cons} (${colTotals[cons] ?? 0} bindings)`}
+                  >
+                    {cons}
+                  </TableHeader>
+                ))}
+                <TableHeader className="midi-services-routing__row-total">
+                  Σ
+                </TableHeader>
+              </TableRow>
+            </TableHead>
+            <TableBody>
+              {BINDING_SOURCE_TYPES.map((src) => (
+                <TableRow key={src}>
+                  <TableCell className="midi-services-routing__row-header">
+                    {src}
+                  </TableCell>
+                  {BINDING_CONSUMER_TYPES.map((cons) => {
+                    const cell = matrix[src]?.[cons] ?? { count: 0, enabledCount: 0 }
+                    const isClickable = cell.count > 0
+                    return (
+                      <TableCell
+                        key={cons}
+                        className={`midi-services-routing__cell${isClickable ? ' midi-services-routing__cell--clickable' : ''}`}
+                        onClick={() => {
+                          if (isClickable) goToCell(src, cons)
+                        }}
+                        title={
+                          isClickable
+                            ? `${cell.enabledCount}/${cell.count} enabled. Open Bindings filtered by ${cons}.`
+                            : 'No bindings'
+                        }
+                      >
+                        <Tag type={cellTone(cell)} size="sm">
+                          {cellLabel(cell)}
+                        </Tag>
+                      </TableCell>
+                    )
+                  })}
+                  <TableCell className="midi-services-routing__row-total">
+                    <Tag type="cool-gray" size="sm">{rowTotals[src] ?? 0}</Tag>
+                  </TableCell>
+                </TableRow>
+              ))}
+            </TableBody>
+          </Table>
+        </TableContainer>
       </Layer>
     </Section>
   )
