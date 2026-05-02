@@ -52,6 +52,31 @@ class AvbBindingsMatrixResponse(BaseModel):
     bindings: list[AvbBindingRead]
 
 
+class AvbClusterPeerMatrix(BaseModel):
+    """T2490-7 — one peer's matrix slice in the cluster response.
+
+    Mirrors `ClusterPeerMatrix` in app/services/midi/routes.py.
+    `health` is sourced from NodeHealthService and baked in so the
+    frontend doesn't need a second fetch.
+    """
+
+    node_id: str
+    hostname: str
+    matrix: dict[str, dict[str, AvbMatrixCell]]
+    total_bindings: int
+    health: str = "offline"
+
+
+class AvbClusterBindingsMatrixResponse(BaseModel):
+    """T2490-7 — cluster-wide aggregation. Local matrix kept under
+    `local`; per-peer matrices under `peers`; failed peers populate
+    `errors` keyed by node_id."""
+
+    local: AvbBindingsMatrixResponse
+    peers: list[AvbClusterPeerMatrix]
+    errors: dict[str, str]
+
+
 # IMPORTANT: route ordering matters in FastAPI. /bindings/count MUST
 # come before /bindings/{binding_id} so a literal "count" doesn't
 # accidentally match the parameterized binding_id slot.
@@ -108,6 +133,102 @@ async def get_bindings_matrix() -> AvbBindingsMatrixResponse:
             total_bindings=total,
             bindings=bindings,
         )
+
+
+async def _fetch_peer_avb_matrix(
+    *,
+    node_id: str,
+    hostname: str,
+    api_url: str,
+    timeout_s: float,
+    health: str = "offline",
+) -> tuple[Optional[AvbClusterPeerMatrix], Optional[str]]:
+    """Single-peer fetch helper. Returns (matrix_or_none, error_or_none).
+
+    Mirrors `_fetch_peer_matrix` in app/services/midi/routes.py.
+    """
+    import httpx
+
+    try:
+        async with httpx.AsyncClient(timeout=timeout_s) as client:
+            response = await client.get(f"{api_url}/api/avb/bindings/matrix")
+            if response.status_code != 200:
+                return None, f"http {response.status_code}"
+            payload = response.json()
+            return (
+                AvbClusterPeerMatrix(
+                    node_id=node_id,
+                    hostname=hostname,
+                    matrix=payload.get("matrix", {}),
+                    total_bindings=int(payload.get("total_bindings", 0)),
+                    health=health,
+                ),
+                None,
+            )
+    except Exception as exc:
+        return None, str(exc)
+
+
+@router.get(
+    "/cluster/bindings/matrix", response_model=AvbClusterBindingsMatrixResponse
+)
+async def get_cluster_bindings_matrix() -> AvbClusterBindingsMatrixResponse:
+    """T2490-7 — cluster-wide aggregation of every peer's
+    GET /api/avb/bindings/matrix. Mirrors the MIDI cluster-matrix
+    endpoint shipped in T2484-1.
+
+    All peer requests are issued concurrently via asyncio.gather with
+    a 2s per-peer timeout. Failed peers populate `errors` but don't
+    fail the whole request.
+    """
+    import asyncio
+
+    # Local matrix.
+    local = await get_bindings_matrix()
+
+    # Peer fan-out.
+    from app.services.node_discovery_service import get_node_discovery_service
+
+    discovery = get_node_discovery_service()
+    peer_records = await discovery._load_peer_records()
+    if not peer_records:
+        return AvbClusterBindingsMatrixResponse(local=local, peers=[], errors={})
+
+    from app.services.node_health_service import get_node_health_service
+
+    health_service = get_node_health_service()
+
+    async def _peer_health(peer):
+        try:
+            health = await health_service.get_remote_health(peer.host)
+            return getattr(health, "status", "offline")
+        except Exception:
+            return "offline"
+
+    health_tasks = [_peer_health(peer) for peer in peer_records]
+    healths = await asyncio.gather(*health_tasks, return_exceptions=False)
+
+    tasks = [
+        _fetch_peer_avb_matrix(
+            node_id=peer.node_id,
+            hostname=peer.hostname,
+            api_url=peer.api_url or f"http://{peer.host}:8080",
+            timeout_s=2.0,
+            health=health,
+        )
+        for peer, health in zip(peer_records, healths)
+    ]
+    results = await asyncio.gather(*tasks, return_exceptions=False)
+
+    peers: list[AvbClusterPeerMatrix] = []
+    errors: dict[str, str] = {}
+    for peer, (matrix_or_none, err_or_none) in zip(peer_records, results):
+        if matrix_or_none is not None:
+            peers.append(matrix_or_none)
+        if err_or_none is not None:
+            errors[peer.node_id] = err_or_none
+
+    return AvbClusterBindingsMatrixResponse(local=local, peers=peers, errors=errors)
 
 
 @router.get("/bindings", response_model=list[AvbBindingRead])

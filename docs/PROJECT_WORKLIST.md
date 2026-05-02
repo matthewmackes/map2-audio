@@ -35925,7 +35925,7 @@ This revision **preserves the spirit of Q2=A** (decomposition for maintainabilit
 
 - **T2490-6** — Tesira fold-in. Migrate `/devices/tesira/*` to `/avb/devices/tesira/*` with hard redirect. TesiraFleet adapter registers with AvbBindingAuthority. ~3-4 SHIP iters (the biggest single sub-task).
 
-- **T2490-7** — Cluster matrix endpoint + frontend. `GET /api/avb/cluster/bindings/matrix` with peer fan-out, frontend `usePeerMatrix` hook flipped from placeholder, drill-down drawer. ~2 SHIP iters.
+- **T2490-7** — Cluster matrix endpoint + frontend. `GET /api/avb/cluster/bindings/matrix` with peer fan-out, frontend `usePeerMatrix` hook flipped from placeholder, drill-down drawer. ~2 SHIP iters. **[✓] DONE 2026-05-02 (backend + hook).** Backend: `GET /api/avb/cluster/bindings/matrix` returns `{local, peers[], errors{}}`; concurrent peer fan-out with 2s per-peer timeout via `asyncio.gather`; per-peer health sourced from `NodeHealthService.get_remote_health` and baked into each `AvbClusterPeerMatrix.health` field; failed peers populate `errors` keyed by node_id but don't fail the whole request. Mirrors T2484-1's MIDI cluster matrix shape-for-shape. Frontend: `useAvbClusterMatrix()` TanStack Query hook in useAvbBindings.ts (5s poll). Tests: 25 cases all green. Live solo-node probe returns `{local:{matrix:{},total_bindings:0,bindings:[]},peers:[],errors:{}}`. Drill-down drawer + Connections-page peer column deferred to a follow-up iter once T2490-3 puts non-empty rows on the wire.
 
 - **T2490-8** — Routing region. `/avb/routing` matrix UI (talker × listener cross-reference). ~1 SHIP iter.
 

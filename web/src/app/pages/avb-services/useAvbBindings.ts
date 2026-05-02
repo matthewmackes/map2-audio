@@ -59,6 +59,43 @@ async function fetchAvbBindingsMatrix(): Promise<AvbBindingsMatrixResponse> {
   return (await response.json()) as AvbBindingsMatrixResponse
 }
 
+export interface AvbClusterPeerMatrix {
+  node_id: string
+  hostname: string
+  matrix: Record<string, Record<string, AvbMatrixCell>>
+  total_bindings: number
+  health: 'ok' | 'warn' | 'critical' | 'offline' | 'unreachable' | string
+}
+
+export interface AvbClusterBindingsMatrixResponse {
+  local: AvbBindingsMatrixResponse
+  peers: AvbClusterPeerMatrix[]
+  errors: Record<string, string>
+}
+
+async function fetchAvbClusterMatrix(): Promise<AvbClusterBindingsMatrixResponse> {
+  const response = await fetch('/api/avb/cluster/bindings/matrix')
+  if (!response.ok) {
+    throw new Error(`avb cluster matrix failed: ${response.status}`)
+  }
+  return (await response.json()) as AvbClusterBindingsMatrixResponse
+}
+
+/**
+ * T2490-7 — cluster-wide AVB matrix with per-peer health tags.
+ * Polls every 5s. The local node's matrix is in `data.local`; peer
+ * slices in `data.peers`. Failed peers populate `data.errors` keyed
+ * by node_id.
+ */
+export function useAvbClusterMatrix() {
+  return useQuery({
+    queryKey: ['avb-cluster-matrix'],
+    queryFn: fetchAvbClusterMatrix,
+    refetchInterval: 5000,
+    staleTime: 0,
+  })
+}
+
 export function useAvbBindingsCount() {
   return useQuery({
     queryKey: ['avb-bindings-count'],
