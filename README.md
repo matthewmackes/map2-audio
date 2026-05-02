@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1448** Python | **1497** TypeScript | **177** C++/H | **145** Docs | **3603** total commits | **3** stars | **0** forks | **0** open issues
+**1448** Python | **1498** TypeScript | **177** C++/H | **145** Docs | **3605** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -193,7 +193,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 |  |  |  |
 | :---: | :---: | :---: |
 | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/map2-banner.png" width="280" alt="map2 banner"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/map2-banner-3.png" width="280" alt="map2 banner 3"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot-Cli.png" width="280" alt="Screenshot Cli"> |
-| <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 08-00-43 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 08 00 43 Mackes Audio Platform 2 FEB2025"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 07-57-33 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 07 57 33 Mackes Audio Platform 2 FEB2025"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 07-58-14 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 07 58 14 Mackes Audio Platform 2 FEB2025"> |
+| <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 08-00-43 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 08 00 43 Mackes Audio Platform 2 FEB2025"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 07-58-14 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 07 58 14 Mackes Audio Platform 2 FEB2025"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 07-57-33 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 07 57 33 Mackes Audio Platform 2 FEB2025"> |
 | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/MAP2_AUDIO-NODE_ARCH_DIAGRAM3.png" width="280" alt="MAP2 AUDIO NODE ARCH DIAGRAM3"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/MAP2_AUDIO-NODE_ARCH_DIAGRAM2-BANG.png" width="280" alt="MAP2 AUDIO NODE ARCH DIAGRAM2 BANG"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/MAP2_AUDIO-NODE_ARCH_DIAGRAM.png" width="280" alt="MAP2 AUDIO NODE ARCH DIAGRAM"> |
 <!-- GALLERY:END -->
 
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`cc17204d`](https://github.com/matthewmackes/map2-audio/commit/cc17204ded4b730992cefa4b301a3c7bc7b36d1e) | feat(T2490-4): wire Connections page to canonical AvbBind... | Map2 Audio | 2026-05-02 |
+| [`cbe561cb`](https://github.com/matthewmackes/map2-audio/commit/cbe561cb79fe094407dbc7f55fc7c33aeb2f57ad) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-02 |
 | [`fffc5e2a`](https://github.com/matthewmackes/map2-audio/commit/fffc5e2a576346bd77097bcd5269c9f022468cba) | feat(T2490-2): AvbBindingAuthority data model + /api/avb/... | Map2 Audio | 2026-05-02 |
 | [`d00d3e0e`](https://github.com/matthewmackes/map2-audio/commit/d00d3e0e7c4fd2cbb9f153c34a3b44b2949cf56b) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-02 |
 | [`cf9dc1a7`](https://github.com/matthewmackes/map2-audio/commit/cf9dc1a7753de0c461f4b5050f5b4391b6a670f6) | feat(T2490-1): scaffold /avb/* operator mount | Map2 Audio | 2026-05-02 |
 | [`9143d5f2`](https://github.com/matthewmackes/map2-audio/commit/9143d5f2862f12df26ff723303a2e97f05384248) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-02 |
 | [`f28e2ae5`](https://github.com/matthewmackes/map2-audio/commit/f28e2ae5fc64b70c6c096f7f23c47a1433cd4026) | docs(T2490): open AVB Services Unification epic + upgrade... | Map2 Audio | 2026-05-02 |
 | [`1302fe98`](https://github.com/matthewmackes/map2-audio/commit/1302fe9892ef33ba01f9efdc1b9334c4164adeee) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-02 |
-| [`fc94554e`](https://github.com/matthewmackes/map2-audio/commit/fc94554eb5f101999921a3f6a2dfee246de256ef) | docs(MIDI_SERVICES_CLOSED_OUT): record T2487/T2488/T2489 ... | Map2 Audio | 2026-05-02 |
-| [`e55a5824`](https://github.com/matthewmackes/map2-audio/commit/e55a58241bab9166774ce8721c3578e1c3b4a48b) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-02 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
