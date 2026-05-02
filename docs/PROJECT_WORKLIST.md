@@ -35604,3 +35604,58 @@ Plus updates to: `app/services/midi/routes.py` (cluster matrix route + Pydantic 
 - Same as the loop-18 routing matrix limitation: this endpoint also isn't wired into `app/main.py` per the iter-18 file note. Production frontend won't see cluster peer counts until the router is mounted.
 - The asyncio.gather fan-out is concurrent, but if 16 peers all timeout at 2s, total wall-clock is still 2s (correct — it's MAX, not SUM). Cluster operators should see fast responses on healthy clusters.
 - T2484-2 hook returns `peers: PeerMatrix` keyed by source/consumer string; the iter-178 'shape contract' test was dropped because the new live aggregation populates the map dynamically (the typed PeerMatrix interface still guarantees indexing). 4 net hook tests instead of the iter-178 4 = same count, different coverage focus.
+
+### SHIP loop 20 (iters 191–200) closing log — 2026-05-02
+
+**Status**: 10 substantive iters shipped (191-200, dual-pushed). **T2484 close-out loop.** Per the iter-181 plan, shipped both remaining sub-items (T2484-3 + T2484-4) so T2484 closes at **4 of 4 sub-items DONE**.
+
+| Iter | Sub-item | Commit | Highlight |
+|---|---|---|---|
+| 191 | T2484-3 drawer + hook extension | 7851678c | New `PeerCellDrillDownDrawer.tsx` (Carbon Modal listing per-peer counts); `usePeerMatrix` extended with `peerSlices` field for the un-aggregated cluster response. |
+| 192 | RoutingPage drill-down wiring | fc34c708 | `+N` peer badge wrapped in transparent button; click opens drawer with cell's (sourceType, consumerType). e.stopPropagation prevents cell-click navigation. |
+| 193 | Drawer tests | c4b25948 | 6 tests: closed-state, heading, empty, sort, count format, isolation. Carbon Modal portal quirk documented. |
+| 194 | Hook peerSlices test | 67b4d726 | +1 test confirming peerSlices field round-trips correctly. |
+| 195 | Backend peer-health field | 21e13c88 | `ClusterPeerMatrix` Pydantic shape extended with `health: str`. Concurrent `NodeHealthService.get_remote_health` fetch alongside the matrix fetch via asyncio.gather. |
+| 196 | Backend health pytest | b11f0e0e | +2 cases: health field propagates ('warn' surfaces); fallback to 'offline' on probe exception. |
+| 197 | Frontend health visualization | 55c6821b | Drawer adds Health column with Carbon Tag using healthTone() mapping (ok/warn/critical/offline → green/magenta/red/gray). |
+| 198 | Drawer health tests | 1cd74358 | +6 tests: per-peer health string renders, fallback to offline, parameterized over the 4 statuses. |
+| 199 | Verification + worklist | 63c20658 | New `T2484_LOOP20_VERIFICATION.md`. Build clean, 13 jest suites/116 tests green, 27 backend pytest cases passing. T2484 worklist status flipped to `[✓] Done`. |
+| 200 | Roll-up + **T2484 EPIC DONE** | (this commit) | This closing log. |
+
+**Total new files in loop 20**:
+- 1 architecture doc (`T2484_LOOP20_VERIFICATION.md`)
+- 1 frontend component (`PeerCellDrillDownDrawer.tsx`)
+- 1 frontend test suite (`PeerCellDrillDownDrawer.test.tsx`)
+
+Plus updates to: `app/services/midi/routes.py` (health field on ClusterPeerMatrix + concurrent health fetch), `tests/midi/test_cluster_matrix_endpoint.py` (+2 health pytest cases), `web/src/map2/clients/midiBindings.ts` (health field on type), `web/src/app/pages/midi-services/usePeerMatrix.ts` (peerSlices field exposed), `web/src/app/pages/midi-services/usePeerMatrix.test.tsx` (+1 peerSlices test), `web/src/app/pages/midi-services/MidiServicesRoutingPage.tsx` (drawer wiring), `web/src/app/pages/midi-services/MidiServicesRoutingPage.css` (peer-badge button + drawer table styles), `docs/PROJECT_WORKLIST.md` (T2484 sub-item check + status flip).
+
+## **🏁 T2484 EPIC — DONE 🏁**
+
+After 2 SHIP loops (19 + 20) totaling 20 substantive iters and 20+ commits dual-pushed, the T2484 cluster MIDI peer epic is **closed**. **All 4 sub-items shipped:**
+
+- ✅ T2484-1: backend `GET /api/midi/cluster/bindings/matrix` (concurrent peer fan-out, 2s timeout per peer, errors map for partial-availability)
+- ✅ T2484-2: frontend client + types + `usePeerMatrix` hook flip from placeholder to real query (4 hook tests including no-fan-out assertion)
+- ✅ T2484-3: per-cell drill-down drawer (Carbon Modal, sorted peer rows, count format, hostname + node_id display)
+- ✅ T2484-4: peer-health surface (concurrent backend probe + Carbon Tag mapping in drawer)
+
+**Operational delivery**:
+- Routing matrix's `+N` purple badge — shipped as a placeholder by T2483-9 — is now fully live for cluster operators
+- One-click drill-down: click badge → see which peers carry bindings + their health status
+- Single-node operators see no change (no peers in the cluster matrix → badge never appears)
+
+**Test coverage trajectory across the full 20-loop arc since loop 10**:
+- Pre-T2482 (loop 10 start): 0 midi-services jest tests
+- T2482 close (loop 15): 64 / 7
+- T2483 close (loop 18): 103 / 12 + 20 backend pytest
+- **T2484 close (loop 20): 116 / 13 + 27 backend pytest**
+
+**Recommended next loop — Loop 21**: 3 candidate directions:
+- **Wire all the new midi/* routes into `app/main.py`**: T2483-5/-8, T2484-1, T2484-4 backend endpoints have all been shipped + tested but not exposed publicly. A single-iter loop could mount the router and frontend automatically picks up the speed-ups.
+- **Post-P1.2 polish** (Mixxx ControllerEngine JS, audio-thread latency measurement, namespace-isolation default-flip)
+- **AVB Services unification** (Phase 4 template extraction → first AVB epic following the T2482 pattern)
+
+**Loop 20 acknowledged limitations**:
+- Same router-mount limitation as the prior loops (see Recommended next loop bullet 1).
+- Health probe per-peer adds wall-clock to the cluster fetch. Bounded at 2s × max(peer health timeout) per peer; with asyncio.gather, total wall-clock = max(per-peer) not sum.
+- T2484-3 drawer doesn't include a deep-link to the per-peer Bindings page (operators can hand-type `?node_id=X`). Could be added in a future loop.
+- Health Tag tones use Carbon's standard semantic colors (green/magenta/red/gray). 'magenta' for warn isn't the most intuitive — Carbon's amber Tag tone doesn't exist; magenta is the closest visual signal. Future loops could custom-style the Tag if operators find it confusing.
