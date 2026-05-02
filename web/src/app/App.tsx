@@ -74,6 +74,8 @@ const MidiHubShell          = lazy(() => import('./pages/MidiHubShell').then(m =
 // MidiServicesShell is a thin re-export of MidiHubShell (see
 // pages/MidiServicesShell.tsx for the iter-92 design D1 rationale).
 const MidiServicesShell     = lazy(() => import('./pages/MidiServicesShell').then(m => ({ default: m.MidiServicesShell })))
+// T2482 loop 10 / iter 95 — overview region.
+const MidiServicesOverviewPage = lazy(() => import('./pages/midi-services/MidiServicesOverviewPage').then(m => ({ default: m.MidiServicesOverviewPage })))
 const MidiHubConnectionsPage = lazy(() => import('./pages/midi-hub/MidiHubConnectionsPage').then(m => ({ default: m.MidiHubConnectionsPage })))
 const MidiHubPresetsPage    = lazy(() => import('./pages/midi-hub/MidiHubPresetsPage').then(m => ({ default: m.MidiHubPresetsPage })))
 const MidiHubTransportPage  = lazy(() => import('./pages/midi-hub/MidiHubTransportPage').then(m => ({ default: m.MidiHubTransportPage })))
@@ -542,6 +544,11 @@ export function App() {
                                   <Route path="processing" element={<MidiHubProcessingPage />} />
                                   <Route path="network" element={<MidiHubNetworkPage />} />
                                   <Route path="lab" element={<MidiHubLabPage />} />
+                                  {/* T2482 loop 10 / iter 95 — Overview region scaffold.
+                                      Iter 96 fills the Tile cards with live counts; once
+                                      meaningful, iter 100 may flip the index redirect at
+                                      `<Route index>` above to point here. */}
+                                  <Route path="overview" element={<MidiServicesOverviewPage />} />
                                 </Route>
                                 <Route path={HOST_MACHINE_ROUTE} element={<RouteBoundary title="Host Machine view crashed" actionLabel="Reload host machine"><HostMachinePage /></RouteBoundary>} />
                                 <Route path="/grid" element={<Navigate to="/snapshot-editor" replace />} />

@@ -1,0 +1,60 @@
+/*
+ * T2482 loop 10 / iter 95 — MidiServicesOverviewPage styles.
+ *
+ * Carbon-conformant per the iter-91 design D5. Uses @carbon/react
+ * tokens for spacing + colors via CSS variables. No hardcoded colors;
+ * no inline styles; no MUI / Phosphor.
+ */
+
+.midi-services-overview {
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.midi-services-overview__header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.midi-services-overview__title {
+  font-size: 2rem;
+  font-weight: 300;
+  color: var(--cds-text-primary);
+  margin: 0;
+}
+
+.midi-services-overview__subtitle {
+  font-size: 0.875rem;
+  color: var(--cds-text-secondary);
+  margin: 0;
+  max-width: 56rem;
+}
+
+.midi-services-overview__regions {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(14rem, 1fr));
+  gap: 1rem;
+}
+
+.midi-services-overview__tile {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  min-height: 8rem;
+}
+
+.midi-services-overview__tile-title {
+  font-size: 1rem;
+  font-weight: 600;
+  color: var(--cds-text-primary);
+  margin: 0;
+}
+
+.midi-services-overview__tile-body {
+  font-size: 0.8125rem;
+  color: var(--cds-text-secondary);
+  margin: 0;
+}
