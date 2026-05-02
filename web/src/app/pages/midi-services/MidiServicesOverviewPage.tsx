@@ -110,6 +110,14 @@ export function MidiServicesOverviewPage() {
             isError={counts.isError}
             to="/midi/bindings?consumer_type=transport"
           />
+          <RegionCard
+            title="Network"
+            body="Tesira TTP + GPIO + RTP-MIDI + MIDI 2.0 transports."
+            count={counts.networkBindings}
+            isLoading={counts.isLoading}
+            isError={counts.isError}
+            to="/midi/network"
+          />
         </div>
       </Layer>
     </Section>

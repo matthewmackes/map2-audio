@@ -57,6 +57,7 @@ export interface MidiServicesCounts {
   deviceBindings: number
   routingBindings: number  // sum of brain_slot + plugin_param + global_param scopes
   transportBindings: number
+  networkBindings: number  // T2482 loop 13 / iter 128 - tesira_ttp + gpio
   isLoading: boolean
   isError: boolean
 }
@@ -102,14 +103,38 @@ export function useMidiServicesCounts(): MidiServicesCounts {
     staleTime: 0,
   })
 
+  // T2482 loop 13 / iter 128 — Network region count.
+  // Sum tesira_ttp + gpio bindings via two parallel queries.
+  const tesiraQuery = useQuery({
+    queryKey: ['midi-services-bindings', 'tesira_ttp'],
+    queryFn: () => fetchBindingsForFilter(new URLSearchParams({
+      consumer_type: 'tesira_ttp',
+      consumer_id: '*',
+    })),
+    refetchInterval: 5000,
+    staleTime: 0,
+  })
+  const gpioQuery = useQuery({
+    queryKey: ['midi-services-bindings', 'gpio'],
+    queryFn: () => fetchBindingsForFilter(new URLSearchParams({
+      consumer_type: 'gpio',
+      consumer_id: '*',
+    })),
+    refetchInterval: 5000,
+    staleTime: 0,
+  })
+
   return {
     totalBindings: totalQuery.data ?? 0,
     deviceBindings: deviceQuery.data?.length ?? 0,
     routingBindings: routingQuery.data?.length ?? 0,
     transportBindings: transportQuery.data?.length ?? 0,
+    networkBindings: (tesiraQuery.data?.length ?? 0) + (gpioQuery.data?.length ?? 0),
     isLoading: totalQuery.isLoading || deviceQuery.isLoading
-      || routingQuery.isLoading || transportQuery.isLoading,
+      || routingQuery.isLoading || transportQuery.isLoading
+      || tesiraQuery.isLoading || gpioQuery.isLoading,
     isError: totalQuery.isError || deviceQuery.isError
-      || routingQuery.isError || transportQuery.isError,
+      || routingQuery.isError || transportQuery.isError
+      || tesiraQuery.isError || gpioQuery.isError,
   }
 }
