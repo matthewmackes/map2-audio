@@ -68,8 +68,18 @@ function findParamByCandidates(params: MPX1RegistryParam[] | undefined, candidat
   return null
 }
 
-export function MPX1Shell() {
-  const activeSection = useActiveSectionFromPath('/devices/mpx1/', SIDEBAR_SECTION_IDS, 'panel')
+export interface MPX1ShellProps {
+  /**
+   * T2485-4 — route prefix the shell is mounted at. Defaults to the
+   * legacy /devices/mpx1/ path; the unified /midi/devices/lexicon-mpx1/
+   * mount passes its own prefix so useActiveSectionFromPath resolves
+   * the active sidebar section correctly under the new URL.
+   */
+  routePrefix?: string
+}
+
+export function MPX1Shell({ routePrefix = '/devices/mpx1/' }: MPX1ShellProps = {}) {
+  const activeSection = useActiveSectionFromPath(routePrefix, SIDEBAR_SECTION_IDS, 'panel')
   const { activeNodeId, localNodeId } = useCluster()
   const { deviceState } = useDeviceNodeContext('lexicon-mpx1')
   const selectedNodeId = activeNodeId && activeNodeId !== 'all' ? activeNodeId : localNodeId

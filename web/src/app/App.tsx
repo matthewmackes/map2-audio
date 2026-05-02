@@ -323,8 +323,15 @@ function LegacyOutboardHardwareRedirect() {
 }
 
 function MPX1LegacyRedirect() {
+  // T2485-4 — /mpx1/:view → /midi/devices/lexicon-mpx1/:view (Q1=A hard redirect).
   const params = useParams<{ view?: string }>()
-  return <Navigate to={`/devices/mpx1/${params.view ?? 'panel'}`} replace />
+  return <Navigate to={`/midi/devices/lexicon-mpx1/${params.view ?? 'panel'}`} replace />
+}
+
+function DevicesMpx1ViewRedirect() {
+  // T2485-4 — /devices/mpx1/:view → /midi/devices/lexicon-mpx1/:view (Q1=A hard redirect).
+  const params = useParams<{ view?: string }>()
+  return <Navigate to={`/midi/devices/lexicon-mpx1/${params.view ?? 'panel'}`} replace />
 }
 
 function IntelFXLegacyRedirect() {
@@ -538,6 +545,35 @@ export function App() {
                                   <Route path="network" element={<MidiHubNetworkPage />} />
                                   <Route path="lab" element={<MidiHubLabPage />} />
                                 </Route>
+                                {/* T2485-4 — Unified MIDI device shell mount.
+                                    /midi/devices/lexicon-mpx1/* is the new canonical
+                                    location for the MPX1 GUI; legacy /devices/mpx1/*
+                                    hard-redirects here (Q1=A locked decision in
+                                    PROJECT_WORKLIST.md T2485 entry). Declared BEFORE
+                                    /midi/* so React Router matches the more-specific
+                                    prefix first. */}
+                                <Route path="/midi/devices/lexicon-mpx1/*" element={
+                                  <RouteBoundary title="MPX1 view crashed" actionLabel="Reload MPX1">
+                                    <MPX1Shell routePrefix="/midi/devices/lexicon-mpx1/" />
+                                  </RouteBoundary>
+                                }>
+                                  <Route index element={<Navigate to="panel" replace />} />
+                                  <Route path="panel" element={<MPX1PanelView />} />
+                                  <Route path="editor" element={<MPX1EditorView />} />
+                                  <Route path="midi-map" element={<MPX1MidiMapView />} />
+                                  <Route path="matrix" element={<MPX1MatrixView />} />
+                                  <Route path="library" element={<MPX1LibraryView />} />
+                                  <Route path="perform" element={<MPX1PerformView />} />
+                                  <Route path="diag" element={<MPX1DiagView />} />
+                                  <Route
+                                    path="flow"
+                                    element={
+                                      <ErrorBoundary title="MPX1 signal path view crashed" actionLabel="Reload signal path">
+                                        <MPX1FlowView />
+                                      </ErrorBoundary>
+                                    }
+                                  />
+                                </Route>
                                 {/* T2482 loop 10 / iter 92 — MIDI Services canonical mount.
                                     Mirrors the /midi-hub/* mount above using the
                                     MidiServicesShell wrapper (which re-exports MidiHubShell).
@@ -622,24 +658,12 @@ export function App() {
                                     <Route path="snapshots" element={<LCDSnapshotsView />} />
                                   </Route>
                                   <Route path="tesira/*" element={<TesiraView />} />
-                                  <Route path="mpx1/*" element={<MPX1Shell />}>
-                                    <Route index element={<Navigate to="panel" replace />} />
-                                    <Route path="panel" element={<MPX1PanelView />} />
-                                    <Route path="editor" element={<MPX1EditorView />} />
-                                    <Route path="midi-map" element={<MPX1MidiMapView />} />
-                                    <Route path="matrix" element={<MPX1MatrixView />} />
-                                    <Route path="library" element={<MPX1LibraryView />} />
-                                    <Route path="perform" element={<MPX1PerformView />} />
-                                    <Route path="diag" element={<MPX1DiagView />} />
-                                    <Route
-                                      path="flow"
-                                      element={
-                                        <ErrorBoundary title="MPX1 signal path view crashed" actionLabel="Reload signal path">
-                                          <MPX1FlowView />
-                                        </ErrorBoundary>
-                                      }
-                                    />
-                                  </Route>
+                                  {/* T2485-4 — legacy /devices/mpx1/* hard-redirects to
+                                      the unified /midi/devices/lexicon-mpx1/* mount.
+                                      The actual shell + view tree now lives under that
+                                      path (declared above the /midi/* mount). */}
+                                  <Route path="mpx1" element={<Navigate to="/midi/devices/lexicon-mpx1/panel" replace />} />
+                                  <Route path="mpx1/:view" element={<DevicesMpx1ViewRedirect />} />
                                   <Route path="intelfx/*" element={<IntelFXShell />}>
                                     <Route index element={<Navigate to="panel" replace />} />
                                     <Route path="panel" element={<IntelFXPanelView />} />
@@ -662,7 +686,9 @@ export function App() {
                                 <Route path="/hotone-jogg" element={<Navigate to="/devices/hotone-jogg" replace />} />
                                 <Route path="/lcd" element={<Navigate to="/devices/lcd" replace />} />
                                 <Route path="/tesira/*" element={<Navigate to="/devices/tesira" replace />} />
-                                <Route path="/mpx1" element={<Navigate to="/devices/mpx1/panel" replace />} />
+                                {/* T2485-4 — /mpx1* legacy URLs all redirect to the
+                                    unified canonical /midi/devices/lexicon-mpx1/* (Q1=A). */}
+                                <Route path="/mpx1" element={<Navigate to="/midi/devices/lexicon-mpx1/panel" replace />} />
                                 <Route path="/mpx1/:view" element={<MPX1LegacyRedirect />} />
                                 <Route path="/intelfx" element={<Navigate to="/devices/intelfx/panel" replace />} />
                                 <Route path="/intelfx/:view" element={<IntelFXLegacyRedirect />} />
