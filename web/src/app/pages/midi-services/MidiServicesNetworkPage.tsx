@@ -19,6 +19,7 @@ import { MidiNetworkPanel } from '../../components/MidiHub/MidiNetworkPanel'
 import { StringInterfacePanel } from '../../components/MidiHub/StringInterfacePanel'
 import { TesiraPanel } from '../../components/MidiHub/TesiraPanel'
 import { VirtualGpioPanel } from '../../components/MidiHub/VirtualGpioPanel'
+import { MidiClusterEnableSection } from '../../components/MidiHub/MidiClusterEnableSection'
 import { useMidiServicesShellWindow } from './useMidiServicesShellWindow'
 import './MidiServicesRegionPage.css'
 
@@ -39,6 +40,9 @@ export function MidiServicesNetworkPage() {
           </p>
         </header>
       </Layer>
+      {/* T2486-1 — cluster MIDI enable section. Coupled-flip modal opens
+          on Off→On transition; auto-connect default-checked. */}
+      <MidiClusterEnableSection />
       <Layer level={1}>
         <div className="midi-services-region__grid">
           <MidiHubPanelShell panelId="network" actionTag={<Tag type="blue">Stage links</Tag>}>

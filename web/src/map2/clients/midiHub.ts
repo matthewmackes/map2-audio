@@ -83,6 +83,18 @@ export const midiClusterApi = {
   forceClockSync: () => fetchJson(`${API_BASE}/midi/cluster/clock/sync`, { method: 'POST' }),
 
   getHealth: () => fetchJson<MidiClusterHealth>(`${API_BASE}/midi/cluster/health`),
+
+  // T2486-1 — cluster MIDI settings (enabled + auto_connect).
+  getSettings: () =>
+    fetchJson<{ enabled: boolean; auto_connect: boolean }>(
+      `${API_BASE}/midi/cluster/settings`,
+    ),
+
+  updateSettings: (payload: { enabled?: boolean; auto_connect?: boolean }) =>
+    fetchJson<{ enabled: boolean; auto_connect: boolean }>(
+      `${API_BASE}/midi/cluster/settings`,
+      { method: 'PATCH', body: JSON.stringify(payload) },
+    ),
 }
 
 export const midiHubApi = {

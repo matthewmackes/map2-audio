@@ -8,7 +8,7 @@ from typing import Any, Dict, List, Optional
 from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel, Field
 
-from app.config import config_get
+from app.config import config_get, config_set
 from app.services.midi_hub.cluster_clock import get_midi_cluster_clock
 from app.services.midi_hub.cluster_router import MidiClusterConnection, MidiEndpoint, get_midi_cluster_router
 from app.services.midi_hub.device_registry import get_midi_device_registry
@@ -588,4 +588,57 @@ async def get_cluster_health() -> MidiClusterHealthResponse:
         clock_drift_ms=float(clock_state.drift_ms),
         per_node=per_node,
         recent_events=[_event_response(event) for event in recent_events],
+    )
+
+
+# T2486-1 — cluster MIDI settings (enabled + auto_connect) read/write surface.
+
+class MidiClusterSettingsResponse(BaseModel):
+    enabled: bool
+    auto_connect: bool
+
+
+class MidiClusterSettingsUpdate(BaseModel):
+    enabled: Optional[bool] = None
+    auto_connect: Optional[bool] = None
+
+
+@router.get("/settings", response_model=MidiClusterSettingsResponse)
+def get_cluster_settings() -> MidiClusterSettingsResponse:
+    """
+    Read the current values of the two cluster MIDI gates.
+
+    `midi.cluster.enabled` is the master switch — when False, the
+    cluster MIDI router is fully disabled. `midi.cluster.auto_connect`
+    is the per-peer auto-pair switch — when True (and enabled is also
+    True), discovered peer ports are automatically paired with local
+    ports on `midi.node.discovered`. Both default to False per the
+    fail-closed posture asserted in
+    `tests/test_cluster_midi_foundation.py::test_cluster_midi_defaults_fail_closed`.
+    """
+    return MidiClusterSettingsResponse(
+        enabled=bool(config_get("midi.cluster.enabled", False)),
+        auto_connect=bool(config_get("midi.cluster.auto_connect", False)),
+    )
+
+
+@router.patch("/settings", response_model=MidiClusterSettingsResponse)
+def update_cluster_settings(payload: MidiClusterSettingsUpdate) -> MidiClusterSettingsResponse:
+    """
+    T2486-1 — partial update of the cluster MIDI gates.
+
+    Only the fields explicitly set on the payload are written. Schema
+    defaults (False/False) remain the on-disk default unless the
+    operator explicitly opts in here. The Carbon Modal in
+    MidiServicesNetworkPage uses the coupled-flip flow: enabling
+    `enabled` prompts the operator to also enable `auto_connect` (Q2
+    locked decision in PROJECT_WORKLIST.md T2486 entry).
+    """
+    if payload.enabled is not None:
+        config_set("midi.cluster.enabled", bool(payload.enabled))
+    if payload.auto_connect is not None:
+        config_set("midi.cluster.auto_connect", bool(payload.auto_connect))
+    return MidiClusterSettingsResponse(
+        enabled=bool(config_get("midi.cluster.enabled", False)),
+        auto_connect=bool(config_get("midi.cluster.auto_connect", False)),
     )
