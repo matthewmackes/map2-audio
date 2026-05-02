@@ -52,6 +52,7 @@ import {
   type BindingListFilter,
   type MidiBindingRead,
 } from '../../../map2/clients/midiBindings'
+import { BindingEditDrawer } from './BindingEditDrawer'
 import './MidiServicesBindingsPage.css'
 
 // ---------- Filter strategy + URL sync ----------
@@ -168,6 +169,7 @@ export function MidiServicesBindingsPage() {
   const [filter, setFilter] = useState<FilterState>(() => filterFromSearchParams(searchParams))
   const queryClient = useQueryClient()
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null)
+  const [editId, setEditId] = useState<string | null>(null)
   const [mutationError, setMutationError] = useState<string | null>(null)
 
   const invalidateList = () => {
@@ -205,10 +207,9 @@ export function MidiServicesBindingsPage() {
     }
   }
 
-  const handleEdit = (_bindingId: string) => {
-    // iter 105 will hook in the BindingEditDrawer modal — for now, surface
-    // a placeholder so the OverflowMenu item is interactive.
-    setMutationError('Edit modal lands in iter 105.')
+  const handleEdit = (bindingId: string) => {
+    setMutationError(null)
+    setEditId(bindingId)
   }
 
   const handleDeleteConfirm = (bindingId: string) => {
@@ -481,6 +482,12 @@ export function MidiServicesBindingsPage() {
           </DataTable>
         )}
       </Layer>
+
+      <BindingEditDrawer
+        bindingId={editId}
+        open={editId !== null}
+        onClose={() => setEditId(null)}
+      />
 
       <Modal
         open={pendingDeleteId !== null}
