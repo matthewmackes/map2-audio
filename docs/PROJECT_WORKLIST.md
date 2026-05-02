@@ -35817,20 +35817,30 @@ The standing autonomous-loop directive is now free to pivot to AVB / Sampler / A
 
 ---
 
-## T2487 — Decompose ExpressionPage + migrate to /midi/devices/expression/* (opened 2026-05-02)
+## T2487 — Decompose ExpressionPage + migrate to /midi/devices/expression/* (opened 2026-05-02; Path A revision 2026-05-02)
 
-**Why:** `web/src/app/pages/ExpressionPage.tsx` is a 1361-LoC monolith. T2485-7b shipped a unified-directory landing for it but kept the legacy `/expression` console intact. This epic does the genuine multi-view decomposition + unified-shell migration the locked T2485 Q2=A decision called for.
+**Why:** `web/src/app/pages/ExpressionPage.tsx` is a 1361-LoC monolith. T2485-7b shipped a unified-directory landing for it but kept the legacy `/expression` console intact. This epic does the genuine decomposition + unified-shell migration.
 
-**Subtasks** (each its own SHIP iter):
-- **T2487-1** — Audit ExpressionPage. Identify natural seams: per-pedal config, calibration, mapping table, live monitor. Define view-tab list (panel / editor / midi-map / monitor / diag).
-- **T2487-2** — Build `ExpressionShell` (uses `<DeviceShell>` + manifest + `routePrefix`). Mount under `/midi/devices/expression/*` with each view as a separate route child.
-- **T2487-3** — Decompose the monolith into per-view components. ExpressionPage becomes a thin shell composing the views.
-- **T2487-4** — Add hard redirect `/expression` → `/midi/devices/expression/panel`. Tests for every view-tab.
+**Path A revision (2026-05-02).** The locked T2485 Q2=A decision read literally as "split monoliths into view-tabs (panel/editor/midi-map/library/perform/monitor) before unification." Audit of ExpressionPage revealed the file is **not** a multi-section device editor — it is a **3-column integrated workflow**: Assignment List ↔ Assignment Form ↔ Live Monitor, where selecting a row in column 1 drives column 2's form state and column 3's live monitor. Forcing it into separate route tabs would break the operator workflow (route navigation mid-edit, lost form state, the live monitor would have to poll independently to find what's selected).
+
+**Revised T2487 path (Path A — file-level decomposition + single-view migration):**
+1. Extract the 8 well-bounded sub-components inline today (CurvePreview, CustomCurveEditor, RetimeFooter, LiveDualGraphic, AssignmentForm, AssignmentRow, plus types and utilities) into separate files under `web/src/app/components/Devices/Expression/`. The 3-column body (`ExpressionView`) stays as one integrated component.
+2. Migrate `/expression` → `/midi/devices/expression/console` (single-view shell, NOT multi-tab). The DeviceLandingHeader from T2485-1 renders on the console view.
+3. Hard-redirect `/expression` → `/midi/devices/expression/console` per the locked Q1=A.
+4. The same file-level-decomposition reasoning likely applies to T2488 (GroundControlPro) and T2489 (PushSurface) — each will be re-audited and revised separately if applicable.
+
+This revision **preserves the spirit of Q2=A** (decomposition for maintainability) while not breaking the operator workflow. The literal "split into view-tabs" wording was authored before any of the three monoliths' actual structure was audited.
+
+**Subtasks** (revised):
+- **T2487-1** — ✅ Audit complete. ExpressionPage has no natural multi-view seams; it is a 3-column integrated workflow. Path A locked.
+- **T2487-2** — File-level extraction of 8 inline sub-components into `web/src/app/components/Devices/Expression/` (one file per component). The page file shrinks from 1361 LoC to ~350 LoC (the integrated `ExpressionView` body + the lazy-page wrapper).
+- **T2487-3** — Build `ExpressionShell` mounted at `/midi/devices/expression/*`, with one route child `console` rendering the integrated `ExpressionView` + DeviceLandingHeader.
+- **T2487-4** — Add hard redirect `/expression` → `/midi/devices/expression/console`. Tests cover (a) the redirect, (b) each extracted sub-component renders standalone, (c) the integrated ExpressionView still renders end-to-end after extraction.
 - **T2487-5** — Closeout: bundle hash verification, redirect coverage, doc update.
 
-**Estimated effort:** 4–5 SHIP iters.
+**Estimated effort:** 3–4 SHIP iters (revised down from 4–5 since no view-tab plumbing).
 
-**Status:** [ ] Open. Unscheduled.
+**Status:** [>] In Progress 2026-05-02 (Path A locked).
 
 ---
 
