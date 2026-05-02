@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1438** Python | **1434** TypeScript | **177** C++/H | **145** Docs | **3507** total commits | **3** stars | **0** forks | **0** open issues
+**1439** Python | **1439** TypeScript | **177** C++/H | **145** Docs | **3516** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
-| [`47e53d70`](https://github.com/matthewmackes/map2-audio/commit/47e53d70559a78eefbb60614e0ac4f26cf360974) | T2483 loop 18 / iter 171: final two sub-items + epic clos... | Map2 Audio | 2026-05-02 |
-| [`a1df4929`](https://github.com/matthewmackes/map2-audio/commit/a1df4929f8684194cdc9779ca71b02ae7a5a2af4) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-02 |
-| [`e3b3af16`](https://github.com/matthewmackes/map2-audio/commit/e3b3af165e316efb8a3f87905ae621f4eb4d5d96) | T2483 loop 17 / iter 170: SHIP loop 17 closing roll-up | Map2 Audio | 2026-05-02 |
-| [`c0fa4e45`](https://github.com/matthewmackes/map2-audio/commit/c0fa4e45ed3d11e8c7478f9efa0522d6d7bd4986) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-02 |
-| [`eadc47c7`](https://github.com/matthewmackes/map2-audio/commit/eadc47c76f8612ba22042a241f5ad159dde1c11c) | T2483 loop 17 / iter 169: verification report | Map2 Audio | 2026-05-02 |
-| [`86f802dd`](https://github.com/matthewmackes/map2-audio/commit/86f802dd706e6df70eeea9c82449bb9c918cc883) | T2483 loop 17 / iter 168: Bindings mutation flow tests (T... | Map2 Audio | 2026-05-02 |
-| [`005d1baf`](https://github.com/matthewmackes/map2-audio/commit/005d1baf86ad22e688eeafb6f9f3beb9df740bdc) | T2483 loop 17 / iter 167: Bindings filter form interactiv... | Map2 Audio | 2026-05-02 |
-| [`651eec54`](https://github.com/matthewmackes/map2-audio/commit/651eec543f43d23461490fb875e7dc587bd85a4c) | T2483 loop 17 / iter 166: banner dismissibility + localSt... | Map2 Audio | 2026-05-02 |
+| [`400b5271`](https://github.com/matthewmackes/map2-audio/commit/400b5271bc623ea5c4d4b3f02da3c93c9ea7519d) | T2483 loop 18 / iter 179: verification report + worklist ... | Map2 Audio | 2026-05-02 |
+| [`43594d1f`](https://github.com/matthewmackes/map2-audio/commit/43594d1fb9f9d069da1ec555be6eb1edf5abd81f) | T2483 loop 18 / iter 178: peer overlay tests (T2483-9) | Map2 Audio | 2026-05-02 |
+| [`be3ae8a2`](https://github.com/matthewmackes/map2-audio/commit/be3ae8a2184a5fc94c66b2216f4d59f09bce42bf) | T2483 loop 18 / iter 177: peer overlay scaffold (T2483-9) | Map2 Audio | 2026-05-02 |
+| [`a9b85bf5`](https://github.com/matthewmackes/map2-audio/commit/a9b85bf5f2b50f8db10603560e0913f2598d4d0f) | T2483 loop 18 / iter 176: useMidiLearnPoll tests (T2483-5) | Map2 Audio | 2026-05-02 |
+| [`ddaa7ab5`](https://github.com/matthewmackes/map2-audio/commit/ddaa7ab55fb43d0b340037eb6122c5c348453e74) | T2483 loop 18 / iter 175: SourceDescriptorEditor Learn bu... | Map2 Audio | 2026-05-02 |
+| [`20be9322`](https://github.com/matthewmackes/map2-audio/commit/20be9322beafddf4ad92baaa5345c2b602008906) | T2483 loop 18 / iter 174: midiBindingsApi.lastCc + useMid... | Map2 Audio | 2026-05-02 |
+| [`a906a61c`](https://github.com/matthewmackes/map2-audio/commit/a906a61c4549bfc3e1b678fccc1c9ee97d123348) | T2483 loop 18 / iter 173: pytest for /bindings/learn/last-cc | Map2 Audio | 2026-05-02 |
+| [`2f11f353`](https://github.com/matthewmackes/map2-audio/commit/2f11f3538a2171dd036931b232792f61f32ed73e) | T2483 loop 18 / iter 172: backend learn/last-cc endpoint ... | Map2 Audio | 2026-05-02 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
