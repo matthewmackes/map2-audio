@@ -80,6 +80,11 @@ const MidiServicesDevicesPage = lazy(() => import('./pages/midi-services/MidiSer
 const MidiServicesDevicePage = lazy(() => import('./pages/midi-services/MidiServicesDevicePage').then(m => ({ default: m.MidiServicesDevicePage })))
 const MidiServicesBindingsPage = lazy(() => import('./pages/midi-services/MidiServicesBindingsPage').then(m => ({ default: m.MidiServicesBindingsPage })))
 const MidiServicesRoutingPage = lazy(() => import('./pages/midi-services/MidiServicesRoutingPage').then(m => ({ default: m.MidiServicesRoutingPage })))
+const MidiServicesNetworkPage = lazy(() => import('./pages/midi-services/MidiServicesNetworkPage').then(m => ({ default: m.MidiServicesNetworkPage })))
+const MidiServicesPresetsPage = lazy(() => import('./pages/midi-services/MidiServicesPresetsPage').then(m => ({ default: m.MidiServicesPresetsPage })))
+const MidiServicesEventsPage = lazy(() => import('./pages/midi-services/MidiServicesEventsPage').then(m => ({ default: m.MidiServicesEventsPage })))
+const MidiServicesProcessingPage = lazy(() => import('./pages/midi-services/MidiServicesProcessingPage').then(m => ({ default: m.MidiServicesProcessingPage })))
+const MidiServicesLabPage = lazy(() => import('./pages/midi-services/MidiServicesLabPage').then(m => ({ default: m.MidiServicesLabPage })))
 const MidiHubConnectionsPage = lazy(() => import('./pages/midi-hub/MidiHubConnectionsPage').then(m => ({ default: m.MidiHubConnectionsPage })))
 const MidiHubPresetsPage    = lazy(() => import('./pages/midi-hub/MidiHubPresetsPage').then(m => ({ default: m.MidiHubPresetsPage })))
 const MidiHubTransportPage  = lazy(() => import('./pages/midi-hub/MidiHubTransportPage').then(m => ({ default: m.MidiHubTransportPage })))
@@ -541,13 +546,17 @@ export function App() {
                                     operator-visible labels. */}
                                 <Route path="/midi/*" element={<RouteBoundary title="MIDI Services view crashed" actionLabel="Reload MIDI Services"><MidiServicesShell /></RouteBoundary>}>
                                   <Route index element={<Navigate to="connections" replace />} />
+                                  {/* Connections + Transport stay on the MidiHub pages
+                                      until loop 14+ ships dedicated MidiServices siblings.
+                                      The other 5 region routes are the iter-122-126 sibling
+                                      pages per the iter-127 route flip. */}
                                   <Route path="connections" element={<MidiHubConnectionsPage />} />
-                                  <Route path="presets" element={<MidiHubPresetsPage />} />
+                                  <Route path="presets" element={<MidiServicesPresetsPage />} />
                                   <Route path="transport" element={<MidiHubTransportPage />} />
-                                  <Route path="events" element={<MidiHubEventsPage />} />
-                                  <Route path="processing" element={<MidiHubProcessingPage />} />
-                                  <Route path="network" element={<MidiHubNetworkPage />} />
-                                  <Route path="lab" element={<MidiHubLabPage />} />
+                                  <Route path="events" element={<MidiServicesEventsPage />} />
+                                  <Route path="processing" element={<MidiServicesProcessingPage />} />
+                                  <Route path="network" element={<MidiServicesNetworkPage />} />
+                                  <Route path="lab" element={<MidiServicesLabPage />} />
                                   {/* T2482 loop 10 / iter 95 — Overview region scaffold.
                                       Iter 96 fills the Tile cards with live counts; once
                                       meaningful, iter 100 may flip the index redirect at
