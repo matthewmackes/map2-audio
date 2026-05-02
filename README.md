@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1437** Python | **1433** TypeScript | **177** C++/H | **145** Docs | **3493** total commits | **3** stars | **0** forks | **0** open issues
+**1438** Python | **1433** TypeScript | **177** C++/H | **145** Docs | **3496** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`e4f67af4`](https://github.com/matthewmackes/map2-audio/commit/e4f67af4e248d9bc5370b196db758298f00dce8f) | T2483 loop 17 / iter 163: pytest for /bindings/matrix end... | Map2 Audio | 2026-05-02 |
+| [`9534c9d5`](https://github.com/matthewmackes/map2-audio/commit/9534c9d5fc95a6b0933832b4ecce58532203e041) | T2483 loop 17 / iter 162: backend /bindings/matrix endpoi... | Map2 Audio | 2026-05-02 |
+| [`dfa7cec1`](https://github.com/matthewmackes/map2-audio/commit/dfa7cec129a5d912c99bb8c03425d4f6cec765c9) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-02 |
 | [`ba741f73`](https://github.com/matthewmackes/map2-audio/commit/ba741f734fe35562deeb8990311c11e5d916dadd) | T2483 loop 17 / iter 161: deferred items pick + plan | Map2 Audio | 2026-05-02 |
 | [`1457da3f`](https://github.com/matthewmackes/map2-audio/commit/1457da3fcecf05bad653bced429624d89f1bcfcc) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-02 |
 | [`ec1fe4f9`](https://github.com/matthewmackes/map2-audio/commit/ec1fe4f997140b7b2d090cf00c0c583a913dfdd0) | T2483 loop 16 / iter 160: SHIP loop 16 closing roll-up | Map2 Audio | 2026-05-02 |
 | [`51d9454c`](https://github.com/matthewmackes/map2-audio/commit/51d9454c33af05536447651024feebb65ad80fa3) | T2483 loop 16 / iter 159: tests for the loop-16 sub-items | Map2 Audio | 2026-05-02 |
 | [`a072d80b`](https://github.com/matthewmackes/map2-audio/commit/a072d80ba7c203d6127005e42cef4febdf41e904) | T2483 loop 16 / iter 158: EventsPage selectedEventListId ... | Map2 Audio | 2026-05-02 |
-| [`04af8b85`](https://github.com/matthewmackes/map2-audio/commit/04af8b859e12c316adc5799ce5d8dfcd54086ed1) | T2483 loop 16 / iter 157: routing matrix preserves source... | Map2 Audio | 2026-05-02 |
-| [`27399999`](https://github.com/matthewmackes/map2-audio/commit/2739999983e6bc07639dd291e9e5805ee98d073c) | T2483 loop 16 / iter 156: source-type filter on Bindings ... | Map2 Audio | 2026-05-02 |
-| [`497ca51a`](https://github.com/matthewmackes/map2-audio/commit/497ca51a98d4905f2fbae2448c9f7e0ebe97b66e) | T2483 loop 16 / iter 155: shell-window kicker fix (T2483-3) | Map2 Audio | 2026-05-02 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
