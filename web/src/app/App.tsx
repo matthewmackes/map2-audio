@@ -88,6 +88,8 @@ const MidiDeviceMidiCommanderLanding = lazy(() => import('./pages/midi-services/
 const MidiDeviceExpressionLanding = lazy(() => import('./pages/midi-services/MidiDeviceExpressionLanding').then(m => ({ default: m.MidiDeviceExpressionLanding })))
 // T2485-7c — Voodoo Lab Ground Control Pro landing.
 const MidiDeviceGroundControlProLanding = lazy(() => import('./pages/midi-services/MidiDeviceGroundControlProLanding').then(m => ({ default: m.MidiDeviceGroundControlProLanding })))
+// T2485-7d — Ableton Push 3 landing.
+const MidiDevicePushSurfaceLanding = lazy(() => import('./pages/midi-services/MidiDevicePushSurfaceLanding').then(m => ({ default: m.MidiDevicePushSurfaceLanding })))
 const MidiServicesBindingsPage = lazy(() => import('./pages/midi-services/MidiServicesBindingsPage').then(m => ({ default: m.MidiServicesBindingsPage })))
 const MidiServicesRoutingPage = lazy(() => import('./pages/midi-services/MidiServicesRoutingPage').then(m => ({ default: m.MidiServicesRoutingPage })))
 const MidiServicesNetworkPage = lazy(() => import('./pages/midi-services/MidiServicesNetworkPage').then(m => ({ default: m.MidiServicesNetworkPage })))
@@ -657,6 +659,7 @@ export function App() {
                                   <Route path="devices/meloaudio-midi-commander" element={<MidiDeviceMidiCommanderLanding />} />
                                   <Route path="devices/expression" element={<MidiDeviceExpressionLanding />} />
                                   <Route path="devices/voodoo-lab-ground-control-pro" element={<MidiDeviceGroundControlProLanding />} />
+                                  <Route path="devices/ableton-push-3" element={<MidiDevicePushSurfaceLanding />} />
                                   {/* T2482 loop 10 / iter 99 — Device detail stub.
                                       Read-only audit/inspection of one device-pack
                                       profile. Mutation lands in iter 100+. */}
