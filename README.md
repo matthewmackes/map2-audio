@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1440** Python | **1441** TypeScript | **177** C++/H | **145** Docs | **3550** total commits | **3** stars | **0** forks | **0** open issues
+**1440** Python | **1441** TypeScript | **177** C++/H | **145** Docs | **3552** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`bae5f084`](https://github.com/matthewmackes/map2-audio/commit/bae5f084a7aa9ac344e8ed4e8a6f2efccafc5803) | T2483-T2484 loop 21 / iter 203: ALL CLOSEABLE MIDI TASKS ... | Map2 Audio | 2026-05-02 |
+| [`79f08b8a`](https://github.com/matthewmackes/map2-audio/commit/79f08b8a09b90f9bec4deb017bb73e43d30e25fb) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-02 |
 | [`40d945de`](https://github.com/matthewmackes/map2-audio/commit/40d945de83273283a8b5c9e5e27841214e414b98) | T2483-T2484 loop 21 / iter 202: MIDI_SERVICES_CLOSED_OUT ... | Map2 Audio | 2026-05-02 |
 | [`d7e52a0e`](https://github.com/matthewmackes/map2-audio/commit/d7e52a0e540fe7e2841511bed66a225a0d7fcfce) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-02 |
 | [`0e6310ab`](https://github.com/matthewmackes/map2-audio/commit/0e6310abf6ab72ffd11d9732f60ae3050de6c27b) | T2483-T2484 loop 21 / iter 201: clear stale 'router not w... | Map2 Audio | 2026-05-02 |
 | [`90062d03`](https://github.com/matthewmackes/map2-audio/commit/90062d03b053cb096f92ec8a6c91d2cd3736f8b5) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-02 |
 | [`f45afdac`](https://github.com/matthewmackes/map2-audio/commit/f45afdac559f72a8c03d45777da60b98fc8182fd) | T2484 loop 20 / iter 200: SHIP loop 20 closing roll-up + ... | Map2 Audio | 2026-05-02 |
 | [`5a41d011`](https://github.com/matthewmackes/map2-audio/commit/5a41d01119ddfb51d8e3ff9e0f392c3a7c20047c) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-02 |
-| [`63c20658`](https://github.com/matthewmackes/map2-audio/commit/63c20658eddb4cacd9734d8a2af71313141e324c) | T2484 loop 20 / iter 199: verification + worklist DONE ma... | Map2 Audio | 2026-05-02 |
-| [`8c347f52`](https://github.com/matthewmackes/map2-audio/commit/8c347f5250bb1d974b84cc3a3b8df1d8b48cfb09) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-02 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
