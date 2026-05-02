@@ -21,7 +21,7 @@ export const pushSurfaceDeviceManifest: DeviceManifest = {
     'Authored end-to-end through MIDI Services bindings; controller-host daemon owns aftertouch + clock with sub-millisecond fast-path latency.',
   ],
   views: [
-    { id: 'overview', label: 'Overview', landing: true },
+    { id: 'console', label: 'Console', landing: true },
   ],
 }
 

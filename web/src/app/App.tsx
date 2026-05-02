@@ -64,7 +64,10 @@ const WorkspaceArtifactsDiscoverPage = lazy(() => import('./pages/workspace-hub/
 const WorkspaceHubShell = lazy(() => import('./pages/WorkspaceHubShell').then(m => ({ default: m.WorkspaceHubShell })))
 const WorkspaceHubIndexRedirect = lazy(() => import('./pages/WorkspaceHubShell').then(m => ({ default: m.WorkspaceHubIndexRedirect })))
 const HostMachinePage       = lazy(() => import('./pages/HostMachinePage').then(m => ({ default: m.HostMachinePage })))
-const PushSurfacePage       = lazy(() => import('./pages/PushSurfacePage').then(m => ({ default: m.PushSurfacePage })))
+// T2489 — PushSurfacePage is no longer route-rendered directly;
+// /labs/push-surface redirects to the unified
+// /midi/devices/ableton-push-3/console mount, which composes
+// DeviceLandingHeader + PushSurfacePage via PushSurfaceConsoleView.
 const MaschinePage          = lazy(() => import('./pages/MaschinePage').then(m => ({ default: m.MaschinePage })))
 const McuPage               = lazy(() => import('./pages/McuPage').then(m => ({ default: m.McuPage })))
 const LaunchControlPage     = lazy(() => import('./pages/LaunchControlPage').then(m => ({ default: m.LaunchControlPage })))
@@ -90,8 +93,9 @@ const ExpressionConsoleView = lazy(() => import('./components/Devices/Expression
 // T2488 — Voodoo Lab Ground Control Pro unified console (supersedes
 // the iter-9 MidiDeviceGroundControlProLanding cross-link).
 const GroundControlProConsoleView = lazy(() => import('./components/Devices/GroundControlPro/GroundControlProConsoleView').then(m => ({ default: m.GroundControlProConsoleView })))
-// T2485-7d — Ableton Push 3 landing.
-const MidiDevicePushSurfaceLanding = lazy(() => import('./pages/midi-services/MidiDevicePushSurfaceLanding').then(m => ({ default: m.MidiDevicePushSurfaceLanding })))
+// T2489 — Ableton Push 3 unified console (supersedes the iter-10
+// MidiDevicePushSurfaceLanding cross-link).
+const PushSurfaceConsoleView = lazy(() => import('./components/Devices/PushSurface/PushSurfaceConsoleView').then(m => ({ default: m.PushSurfaceConsoleView })))
 const MidiServicesBindingsPage = lazy(() => import('./pages/midi-services/MidiServicesBindingsPage').then(m => ({ default: m.MidiServicesBindingsPage })))
 const MidiServicesRoutingPage = lazy(() => import('./pages/midi-services/MidiServicesRoutingPage').then(m => ({ default: m.MidiServicesRoutingPage })))
 const MidiServicesNetworkPage = lazy(() => import('./pages/midi-services/MidiServicesNetworkPage').then(m => ({ default: m.MidiServicesNetworkPage })))
@@ -531,7 +535,9 @@ export function App() {
                                     element={<LegacyOutboardHardwareRedirect />}
                                   />
                                 </Route>
-                                <Route path="/labs/push-surface" element={<PushSurfacePage />} />
+                                {/* T2489 — /labs/push-surface hard-redirects to the unified
+                                    /midi/devices/ableton-push-3/console mount (Q1=A). */}
+                                <Route path="/labs/push-surface" element={<Navigate to="/midi/devices/ableton-push-3/console" replace />} />
                                 <Route path="/maschine" element={<MaschinePage />} />
                                 <Route path="/maschine/midi-map" element={<Navigate to="/maschine#hardware-layout" replace />} />
                                 <Route path="/mcu" element={<McuPage />} />
@@ -655,6 +661,21 @@ export function App() {
                                   <Route index element={<Navigate to="console" replace />} />
                                   <Route path="console" element={<GroundControlProConsoleView />} />
                                 </Route>
+                                {/* T2489 — Ableton Push 3 unified mount.
+                                    Path A: the page is a heavily interactive
+                                    single-view surface (hotspot grid, color editing,
+                                    routine builder, drag/drop); the integrated body
+                                    moves into the unified shell as a single
+                                    `console` view. Legacy /labs/push-surface
+                                    hard-redirects here. */}
+                                <Route path="/midi/devices/ableton-push-3/*" element={
+                                  <RouteBoundary title="Push 3 view crashed" actionLabel="Reload Push 3">
+                                    <Outlet />
+                                  </RouteBoundary>
+                                }>
+                                  <Route index element={<Navigate to="console" replace />} />
+                                  <Route path="console" element={<PushSurfaceConsoleView />} />
+                                </Route>
                                 {/* T2482 loop 10 / iter 92 — MIDI Services canonical mount.
                                     Mirrors the /midi-hub/* mount above using the
                                     MidiServicesShell wrapper (which re-exports MidiHubShell).
@@ -706,7 +727,10 @@ export function App() {
                                       no longer renders the iter-9 cross-link landing;
                                       the unified shell mount above takes the bare
                                       path via its index→Navigate redirect to /console. */}
-                                  <Route path="devices/ableton-push-3" element={<MidiDevicePushSurfaceLanding />} />
+                                  {/* T2489 — devices/ableton-push-3 no longer renders
+                                      the iter-10 cross-link landing; the unified shell
+                                      mount above takes the bare path via its
+                                      index→Navigate redirect to /console. */}
                                   {/* T2482 loop 10 / iter 99 — Device detail stub.
                                       Read-only audit/inspection of one device-pack
                                       profile. Mutation lands in iter 100+. */}

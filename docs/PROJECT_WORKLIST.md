@@ -35867,13 +35867,19 @@ This revision **preserves the spirit of Q2=A** (decomposition for maintainabilit
 
 ---
 
-## T2489 — Decompose PushSurfacePage + migrate to /midi/devices/ableton-push-3/* (opened 2026-05-02)
+## T2489 — Decompose PushSurfacePage + migrate to /midi/devices/ableton-push-3/* (opened 2026-05-02; CLOSED 2026-05-02)
 
-**Why:** Same as T2487 but for `web/src/app/pages/PushSurfacePage.tsx` (1625 LoC). The largest of the three monoliths.
+**Path A revision (2026-05-02).** PushSurfacePage is the largest of the three monoliths (1625 LoC) but is the most tightly-coupled internal-state-wise: hotspot grid, color editing, routine builder, drag-and-drop all share extensive page-local state. Helper extraction is feasible (constants tables, draft builders, color value lookups) but each helper currently references inline types like `ControlAssignmentDraft` declared inside the page; cleanly extracting them means moving 200+ LoC of intertwined helpers + types in one go. That is the kind of work a future "PushSurface internal cleanup" task should do once the unified-mount move is in place.
 
-**Subtasks** (template mirrors T2487):
-- T2489-1 audit, T2489-2 shell mount, T2489-3 view decomposition, T2489-4 redirects + tests, T2489-5 closeout.
+**What shipped (single SHIP iter, 1 commit):**
+1. `PushSurfaceConsoleView.tsx` composes `DeviceLandingHeader` + the existing `PushSurfacePage` body.
+2. New mount `/midi/devices/ableton-push-3/*` with single `console` child.
+3. Hard redirect `/labs/push-surface` → `/midi/devices/ableton-push-3/console` (Q1=A).
+4. Manifest view id flipped `overview` → `console`.
+5. Iter-10 `MidiDevicePushSurfaceLanding` cross-link no longer routed.
+6. Smoke test for the unified-shell entry point.
+7. Outer `PushSurfacePage` lazy import removed; the page is now reached only through the unified shell.
 
-**Estimated effort:** 5–6 SHIP iters (size-adjusted from the T2487 template).
+**Helper / sub-component extraction queued as a separate follow-up** (T2489-followup) only if maintenance burden actually demands it. The unified-mount move is the operator-visible win; internal refactors are cosmetic until they have a concrete maintainability problem to solve.
 
-**Status:** [ ] Open. Unscheduled.
+**Status:** [✓] DONE 2026-05-02.
