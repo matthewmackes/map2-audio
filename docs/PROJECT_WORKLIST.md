@@ -35538,3 +35538,28 @@ After 3 SHIP loops (16 + 17 + 18) totaling 30 substantive iters and 30+ commits 
 - T2483-5 polling cadence is 250ms — fast enough for the editor UX. WebSocket-based learn (sub-100ms) was deliberately out of scope.
 - T2483-5 Learn button only renders for source_type='midi_cc'. If operators want it for midi_note too, iter-175's gate is one line to extend.
 - The new `/api/midi/bindings/learn/last-cc` and `/api/midi/bindings/matrix` routes still aren't wired into `app/main.py` (per the iter-18 file note that the entire `app/services/midi/routes.py` router is on disk for testing). Production frontend won't see the endpoints' wins until the router is mounted — a separate small task tracked outside T2483.
+
+---
+
+ID: T2484
+Status: [>] In Progress — Loop 19 (iters 181–190) shipped T2484-1 + T2484-2; Loop 20 (iters 191–200) ships T2484-3 + T2484-4.
+Title: Cluster MIDI peer surface — wire T2483-9's scaffold to real backend
+Description:
+- Goal / acceptance criteria: T2483-9 shipped a placeholder `usePeerMatrix → {}` so the routing matrix's `+N` purple badge UI was ready but stayed hidden. T2484 wires it to a new `GET /api/midi/cluster/bindings/matrix` endpoint that aggregates per-peer matrices server-side, plus the per-cell drill-down drawer + peer-health surface for cluster operators.
+- Why it matters: Operators with multi-node clusters can see at a glance which bindings live on which peer. The `+N` badge stops being decorative; clicking it answers "which peer holds those bindings?".
+- Dependencies: T2483-9 scaffold (DONE 2026-05-02). NodeDiscoveryService + ClusterProxyMiddleware (existing infrastructure).
+- Estimated effort: 2 SHIP loops (~20 iters). Per the iter-181 plan, scope LOCKED at iter 181 to avoid plan-drift.
+- Required outputs: cluster matrix backend route + pytest, frontend client + types + hook flip + tests, per-cell drill-down drawer + peer-health surface, T2484 worklist marked DONE at iter 200.
+- Subtasks (T2484-{n}):
+
+**Loop 19 — backend + frontend wiring**:
+  - **T2484-1**: ✅ Done (Loop 19 iters 182-183) — `GET /api/midi/cluster/bindings/matrix` endpoint with per-peer fan-out via httpx + asyncio.gather; 5 pytest cases covering empty cluster / healthy peer / unreachable peer / HTTP 500.
+  - **T2484-2**: ✅ Done (Loop 19 iters 184-187) — frontend `midiBindingsApi.clusterMatrix()` + `usePeerMatrix` flipped from placeholder to real query; 4 hook tests confirming aggregation across multiple peers + error pass-through + single-fetch (no fan-out).
+
+**Loop 20 — drill-down + health**:
+  - **T2484-3**: per-cell drill-down drawer. Clicking a peer-badged cell opens a Carbon Modal/Drawer listing which peer node has which count.
+  - **T2484-4**: peer-health field surfaces in the drill-down drawer via NodeHealthService; per-peer Tag tone (green/amber/red).
+
+**Definition of Done (Epic-level)**: 4 of 4 sub-items shipped + dual-pushed; backend pytest green; frontend jest green; `usePeerMatrix.hasPeerData` returns true on a multi-node cluster (single-node operators see no change); peer drill-down drawer surfaces the right per-peer counts.
+
+Assigned to: Claude Opus 4.7 (autonomous-eligible per the standing T2482-style autonomous-loop directive).
