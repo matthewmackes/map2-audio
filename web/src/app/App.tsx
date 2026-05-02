@@ -498,9 +498,17 @@ export function App() {
                                 <Route path="/audio-artifacts" element={<LegacyArtifactsRedirect />} />
                                 <Route path="/artifacts" element={<LegacyArtifactsRedirect />} />
                                 <Route path="/artifacts/discover" element={<LegacyArtifactsDiscoverRedirect />} />
-                                <Route path="/midi" element={<Navigate to="/midi-hub/connections" replace />} />
-                                <Route path="/midi-hub-2" element={<Navigate to="/midi-hub/connections" replace />} />
-                                <Route path="/midi-hub" element={<Navigate to="/midi-hub/connections" replace />} />
+                                {/* T2482 loop 10 / iter 93 — redirect direction flip.
+                                    Pre-iter-93: bare /midi redirected to /midi-hub/connections.
+                                    Post-iter-93: bare /midi-hub + /midi-hub-2 redirect to
+                                    /midi/connections (the new canonical root). The bare /midi
+                                    redirect to its child landing is now /midi → /midi/connections.
+                                    Deep /midi-hub/connections etc. still work via the mount at
+                                    line 510 (kept for operator continuity; iter 100 roll-up
+                                    documents the deprecation timeline). */}
+                                <Route path="/midi" element={<Navigate to="/midi/connections" replace />} />
+                                <Route path="/midi-hub-2" element={<Navigate to="/midi/connections" replace />} />
+                                <Route path="/midi-hub" element={<Navigate to="/midi/connections" replace />} />
                                 <Route path="/physical-surfaces" element={<LegacyPhysicalSurfacesRedirect />} />
                                 <Route path="/physical-surfaces/:surfaceId" element={<LegacyPhysicalSurfacesRedirect />} />
                                 <Route path="/outboard-hardware" element={<LegacyOutboardHardwareRedirect />} />
