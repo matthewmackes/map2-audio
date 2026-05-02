@@ -46,6 +46,7 @@ import { ArrowRight, Code, Download, Save, Send, Upload } from '@carbon/icons-re
 import { EmptyState } from '../components/shared/EmptyState'
 import { useSetShellWindow } from '../layout/useSetShellWindow'
 import { DeviceContextBanner } from '../components/DeviceContext'
+import { MidiServicesCrossLinkBanner } from './midi-services/MidiServicesCrossLinkBanner'
 import { useDeviceLocation } from '../hooks/useDeviceLocation'
 import groundControlProApi, {
   type GroundControlArtifact,
@@ -573,6 +574,7 @@ export function GroundControlProPage() {
       <Layer className="ground-control-pro-page__surface">
         <div className="ground-control-pro-page__content">
           <DeviceContextBanner deviceName="Ground Control Pro" deviceKey="ground-control-pro" />
+          <MidiServicesCrossLinkBanner profileKey="ground-control-pro/v2.midi" />
 
           {notice ? (
             <InlineNotification

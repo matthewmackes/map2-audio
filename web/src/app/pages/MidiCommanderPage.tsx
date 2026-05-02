@@ -8,6 +8,7 @@ import { useSetShellWindow } from '../layout/useSetShellWindow'
 import { EmptyState } from '../components/shared/EmptyState'
 import { useToasts } from '../components/Toasts'
 import midiCommanderApi, { type MidiCommanderProjectionControl } from '../../map2/clients/midiCommander'
+import { MidiServicesCrossLinkBanner } from './midi-services/MidiServicesCrossLinkBanner'
 
 function statusTagType(connected: boolean): 'green' | 'red' {
   return connected ? 'green' : 'red'
@@ -83,6 +84,7 @@ export function MidiCommanderPage() {
 
   return (
     <div className="midi-commander-page">
+      <MidiServicesCrossLinkBanner profileKey="midi-commander/v1.midi" />
       {(statusQuery.isError || projectionQuery.isError) ? (
         <InlineNotification
           kind="error"
