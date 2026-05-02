@@ -16,9 +16,14 @@ import { MidiHubMessageMapper } from '../../components/MidiHub/MidiHubMessageMap
 import { MidiMacroPanel } from '../../components/MidiHub/MidiMacroPanel'
 import { MidiSchedulerPanel } from '../../components/MidiHub/MidiSchedulerPanel'
 import { MidiScriptEditor } from '../../components/MidiHub/MidiScriptEditor'
+import { useMidiServicesShellWindow } from './useMidiServicesShellWindow'
 import './MidiServicesRegionPage.css'
 
 export function MidiServicesProcessingPage() {
+  useMidiServicesShellWindow(
+    'Processing',
+    'Filtering, mapping, scripting, macros, and scheduled automation between authority and engine.',
+  )
   return (
     <Section className="midi-services-region">
       <Layer level={0}>

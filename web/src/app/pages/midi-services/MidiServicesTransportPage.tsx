@@ -12,9 +12,14 @@ import { Heading, Layer, Section, Tag } from '@carbon/react'
 import { MidiClockPanel } from '../../components/MidiHub/MidiClockPanel'
 import { MidiHubPanelShell } from '../../components/MidiHub/MidiHubHelpPrimitives'
 import { MidiRecorderPanel } from '../../components/MidiHub/MidiRecorderPanel'
+import { useMidiServicesShellWindow } from './useMidiServicesShellWindow'
 import './MidiServicesRegionPage.css'
 
 export function MidiServicesTransportPage() {
+  useMidiServicesShellWindow(
+    'Transport',
+    'Clock engine, recorder, tempo provenance bound to the canonical authority.',
+  )
   return (
     <Section className="midi-services-region">
       <Layer level={0}>

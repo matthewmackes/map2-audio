@@ -13,9 +13,14 @@ import { MidiClockPanel } from '../../components/MidiHub/MidiClockPanel'
 import { MidiHubPanelShell } from '../../components/MidiHub/MidiHubHelpPrimitives'
 import { MidiHubPresetManager } from '../../components/MidiHub/MidiHubPresetManager'
 import { MidiRecorderPanel } from '../../components/MidiHub/MidiRecorderPanel'
+import { useMidiServicesShellWindow } from './useMidiServicesShellWindow'
 import './MidiServicesRegionPage.css'
 
 export function MidiServicesPresetsPage() {
+  useMidiServicesShellWindow(
+    'Presets',
+    'Lock in repeatable canonical-authority states; recall, clock, and capture.',
+  )
   return (
     <Section className="midi-services-region">
       <Layer level={0}>

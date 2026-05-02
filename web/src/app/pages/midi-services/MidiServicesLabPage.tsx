@@ -13,9 +13,14 @@ import { AiLearnPanel } from '../../components/MidiHub/AiLearnPanel'
 import { DeviceShadowPanel } from '../../components/MidiHub/DeviceShadowPanel'
 import { MeshNetworkPanel } from '../../components/MidiHub/MeshNetworkPanel'
 import { MidiHubPanelShell } from '../../components/MidiHub/MidiHubHelpPrimitives'
+import { useMidiServicesShellWindow } from './useMidiServicesShellWindow'
 import './MidiServicesRegionPage.css'
 
 export function MidiServicesLabPage() {
+  useMidiServicesShellWindow(
+    'Lab',
+    'AI mapping suggestions, mesh peers, and device-shadow drift. Experimental surfaces only.',
+  )
   return (
     <Section className="midi-services-region">
       <Layer level={0}>

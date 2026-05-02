@@ -19,9 +19,14 @@ import { MidiNetworkPanel } from '../../components/MidiHub/MidiNetworkPanel'
 import { StringInterfacePanel } from '../../components/MidiHub/StringInterfacePanel'
 import { TesiraPanel } from '../../components/MidiHub/TesiraPanel'
 import { VirtualGpioPanel } from '../../components/MidiHub/VirtualGpioPanel'
+import { useMidiServicesShellWindow } from './useMidiServicesShellWindow'
 import './MidiServicesRegionPage.css'
 
 export function MidiServicesNetworkPage() {
+  useMidiServicesShellWindow(
+    'Network',
+    'RTP-MIDI, OSC, MIDI 2.0, Tesira TTP, virtual GPIO, and string-command transports.',
+  )
   return (
     <Section className="midi-services-region">
       <Layer level={0}>

@@ -25,11 +25,16 @@ import { MidiRoutingMatrix } from '../../components/MidiHub/MidiRoutingMatrix'
 import { MidiTrafficMonitor } from '../../components/MidiHub/MidiTrafficMonitor'
 import { useMidiHubOverview } from '../../components/MidiHub/useMidiHubOverview'
 import { useMidiHubNodeScope } from '../../components/MidiHub/MidiHubNodeScope'
+import { useMidiServicesShellWindow } from './useMidiServicesShellWindow'
 import './MidiServicesRegionPage.css'
 
 type RoutingWorkspaceMode = 'matrix' | 'patchbay'
 
 export function MidiServicesConnectionsPage() {
+  useMidiServicesShellWindow(
+    'Connections',
+    'MIDI port inventory, routing matrix or patchbay topology, live traffic, connected devices.',
+  )
   const [mode, setMode] = useState<RoutingWorkspaceMode>('matrix')
   const { nodeId, scopeKey } = useMidiHubNodeScope()
   const { ports, routes, clockStatus } = useMidiHubOverview(nodeId, scopeKey)

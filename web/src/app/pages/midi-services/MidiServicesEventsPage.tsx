@@ -19,9 +19,14 @@ import { EventListStatus } from '../../components/MidiHub/EventListStatus'
 import { LearnModeControl } from '../../components/MidiHub/LearnModeControl'
 import { MidiHubPanelShell } from '../../components/MidiHub/MidiHubHelpPrimitives'
 import { MscCommandBuilder } from '../../components/MidiHub/MscCommandBuilder'
+import { useMidiServicesShellWindow } from './useMidiServicesShellWindow'
 import './MidiServicesRegionPage.css'
 
 export function MidiServicesEventsPage() {
+  useMidiServicesShellWindow(
+    'Events',
+    'Net3-style event lists, cue learning, MSC sends, timecode-driven recall.',
+  )
   const [selectedEventListId, setSelectedEventListId] = useState('')
 
   return (
