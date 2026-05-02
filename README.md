@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1440** Python | **1441** TypeScript | **177** C++/H | **145** Docs | **3565** total commits | **3** stars | **0** forks | **0** open issues
+**1440** Python | **1468** TypeScript | **177** C++/H | **145** Docs | **3578** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -175,8 +175,8 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-DOCS:START -->
 | Document | Last Updated |
 |:---------|:------------|
+| [MAP2 Audio Platform — AI Instructions](https://github.com/matthewmackes/map2-audio/blob/master/docs/CLAUDE.md) | 2026-05-02 |
 | [PROJECT WORKLIST](https://github.com/matthewmackes/map2-audio/blob/master/docs/PROJECT_WORKLIST.md) | 2026-05-02 |
-| [MAP2 Audio Platform — AI Instructions](https://github.com/matthewmackes/map2-audio/blob/master/docs/CLAUDE.md) | 2026-04-29 |
 | [MAP2 Backend Runtime Contract](https://github.com/matthewmackes/map2-audio/blob/master/docs/backend-runtime-contract.md) | 2026-04-27 |
 | [MAP2 API Contract Standards](https://github.com/matthewmackes/map2-audio/blob/master/docs/api-contract-standards.md) | 2026-04-25 |
 | [MAP2 LCD Console — Operator Guide](https://github.com/matthewmackes/map2-audio/blob/master/docs/LCD_OPERATOR_GUIDE.md) | 2026-04-23 |
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
-| [`b691aae1`](https://github.com/matthewmackes/map2-audio/commit/b691aae10b5cc83288186cf6626875a853be69c8) | docs(worklist): open T2485 (MIDI GUI unification) + T2486... | Map2 Audio | 2026-05-02 |
-| [`947a52d6`](https://github.com/matthewmackes/map2-audio/commit/947a52d63b03a460faa6cb68d7ecf53d2d710866) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-02 |
-| [`ee363a3f`](https://github.com/matthewmackes/map2-audio/commit/ee363a3f3461956c615cbdb56e6bda8d4e66dab4) | chore(T2466): close epic — all subtasks done | Map2 Audio | 2026-05-02 |
-| [`a4427904`](https://github.com/matthewmackes/map2-audio/commit/a4427904f841cc9fb1fa998bcd02a88d475f825c) | feat(T2466-0/T2466-4): DrawerPanel exit animation + final... | Map2 Audio | 2026-05-02 |
-| [`dad287ab`](https://github.com/matthewmackes/map2-audio/commit/dad287ab5ccf848d822c4b58340ab2d724dfb8b5) | feat(T2466-3/T2466-4): reduced-motion wiring + CSS design... | Map2 Audio | 2026-05-02 |
-| [`95cca0c0`](https://github.com/matthewmackes/map2-audio/commit/95cca0c0ecc034ac42c67e8dd43e199aefabe188) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-02 |
-| [`4f27a934`](https://github.com/matthewmackes/map2-audio/commit/4f27a934f05851d78821c104db4a08d0602bc778) | docs(worklist): T2466-1 done, T2466-7 cancelled (obsolete... | Map2 Audio | 2026-05-02 |
-| [`e7cf4537`](https://github.com/matthewmackes/map2-audio/commit/e7cf4537ce9d74f5fc421f4a96376cbe1d84aad4) | feat(T2466-1): canvas pan → Framer Motion motion-value dr... | Map2 Audio | 2026-05-02 |
+| [`b4fae37f`](https://github.com/matthewmackes/map2-audio/commit/b4fae37f9c3e149b805a70bbde4815299c1fbaf9) | docs(T2485-9): T2485 close-out — closeout doc + worklist ... | Map2 Audio | 2026-05-02 |
+| [`3e1a5d7f`](https://github.com/matthewmackes/map2-audio/commit/3e1a5d7f0fd723d1776a88fee64b8bdf7b230217) | feat(T2485-8): collapse 9 sidebar MIDI entries to 1 + ret... | Map2 Audio | 2026-05-02 |
+| [`a0543c73`](https://github.com/matthewmackes/map2-audio/commit/a0543c735f96f8f066eb36da1dbf0d39607b7c5f) | feat(T2485-7d): Ableton Push 3 surface MIDI landing | Map2 Audio | 2026-05-02 |
+| [`48d51f9b`](https://github.com/matthewmackes/map2-audio/commit/48d51f9bf674152f601a1f1f5079ee7a764a731f) | feat(T2485-7c): Voodoo Lab Ground Control Pro MIDI landing | Map2 Audio | 2026-05-02 |
+| [`901a8fd5`](https://github.com/matthewmackes/map2-audio/commit/901a8fd5354e266ae31c47712f0f471c9c838e1a) | feat(T2485-7b): Expression pedalboard MIDI landing | Map2 Audio | 2026-05-02 |
+| [`3fc5daed`](https://github.com/matthewmackes/map2-audio/commit/3fc5daedd6a03d1876da69c78d8d6781deb43ba9) | feat(T2485-7a): MCU + LaunchControl + MidiCommander unifi... | Map2 Audio | 2026-05-02 |
+| [`60abc413`](https://github.com/matthewmackes/map2-audio/commit/60abc413d591ac49dfcce297d5df1adade694c23) | feat(T2485-6): Maschine MK1 MIDI landing under /midi/devi... | Map2 Audio | 2026-05-02 |
+| [`52cfa4a9`](https://github.com/matthewmackes/map2-audio/commit/52cfa4a96f58991439208f2c7bdee3c26d6fef92) | feat(T2485-5): migrate IntelFX under unified /midi/device... | Map2 Audio | 2026-05-02 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
