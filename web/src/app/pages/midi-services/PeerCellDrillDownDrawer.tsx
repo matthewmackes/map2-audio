@@ -12,13 +12,27 @@
  * Iter 197 (T2484-4) extends each peer row with a health Tag.
  */
 
-import { Modal } from '@carbon/react'
+import { Modal, Tag } from '@carbon/react'
 
 import type {
   BindingConsumerType,
   BindingSourceType,
   ClusterPeerMatrix,
 } from '../../../map2/clients/midiBindings'
+
+function healthTone(health: string): 'green' | 'magenta' | 'red' | 'gray' {
+  switch (health) {
+    case 'ok':
+      return 'green'
+    case 'warn':
+      return 'magenta'
+    case 'critical':
+      return 'red'
+    case 'offline':
+    default:
+      return 'gray'
+  }
+}
 
 interface PeerCellDrillDownDrawerProps {
   open: boolean
@@ -38,6 +52,7 @@ interface PeerRow {
   hostname: string
   count: number
   enabled_count: number
+  health: string
 }
 
 function rowsForCell(
@@ -55,6 +70,7 @@ function rowsForCell(
         hostname: peer.hostname,
         count: cell.count,
         enabled_count: cell.enabled_count,
+        health: peer.health ?? 'offline',
       })
     }
   }
@@ -94,6 +110,7 @@ export function PeerCellDrillDownDrawer({
             <thead>
               <tr>
                 <th>Peer</th>
+                <th>Health</th>
                 <th>Bindings</th>
               </tr>
             </thead>
@@ -107,6 +124,11 @@ export function PeerCellDrillDownDrawer({
                     <div className="midi-services-routing__peer-id">
                       {row.node_id}
                     </div>
+                  </td>
+                  <td>
+                    <Tag type={healthTone(row.health)} size="sm">
+                      {row.health}
+                    </Tag>
                   </td>
                   <td>
                     {row.count === row.enabled_count

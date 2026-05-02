@@ -150,6 +150,9 @@ export interface ClusterPeerMatrix {
   hostname: string
   matrix: Record<string, Record<string, MatrixCell>>
   total_bindings: number
+  // T2484-4 iter 197 — peer health from NodeHealthService.
+  // 'ok' | 'warn' | 'critical' | 'offline'.
+  health: string
 }
 
 export interface ClusterBindingsMatrixResponse {
