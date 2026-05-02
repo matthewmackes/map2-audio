@@ -1,22 +1,51 @@
 /**
  * T2482 loop 10 / iter 95 — MidiServicesOverviewPage scaffold.
+ * T2482 loop 10 / iter 96 — Tile cards now wired to live counts via
+ * useMidiServicesCounts (TanStack Query against /api/midi/bindings/count
+ * + per-scope filtered binding lists).
  *
  * Per the iter-91 design D3 (Overview is a NEW Carbon surface, not a
- * port). Iter 95 ships the page scaffold with header + region
- * placeholders. Iter 96 fills the Tile cards with live counts via
- * `/api/midi/bindings/count` + sibling endpoints.
- *
- * Mounted at `/midi/overview` (the parent /midi route's index
- * redirects to `/midi/connections` per iter 92; iter 96+ may flip
- * the index to point at this overview once the cards render meaningful
- * content).
+ * port). Mounted at `/midi/overview` per iter 92.
  */
 
-import { Layer, Heading, Section, Tile } from '@carbon/react'
+import { Layer, Heading, Section, Tag, Tile } from '@carbon/react'
 
+import { useMidiServicesCounts } from './useMidiServicesCounts'
 import './MidiServicesOverviewPage.css'
 
+interface RegionCardProps {
+  title: string
+  body: string
+  count: number
+  isLoading: boolean
+  isError: boolean
+}
+
+function RegionCard({ title, body, count, isLoading, isError }: RegionCardProps) {
+  let countLabel: string
+  let countTone: 'gray' | 'red' | 'green' = 'gray'
+  if (isError) {
+    countLabel = '—'
+    countTone = 'red'
+  } else if (isLoading) {
+    countLabel = '…'
+  } else {
+    countLabel = String(count)
+    countTone = count > 0 ? 'green' : 'gray'
+  }
+  return (
+    <Tile className="midi-services-overview__tile">
+      <header className="midi-services-overview__tile-header">
+        <h3 className="midi-services-overview__tile-title">{title}</h3>
+        <Tag type={countTone} size="sm">{countLabel}</Tag>
+      </header>
+      <p className="midi-services-overview__tile-body">{body}</p>
+    </Tile>
+  )
+}
+
 export function MidiServicesOverviewPage() {
+  const counts = useMidiServicesCounts()
   return (
     <Section className="midi-services-overview">
       <Layer level={0}>
@@ -33,30 +62,34 @@ export function MidiServicesOverviewPage() {
       </Layer>
       <Layer level={1}>
         <div className="midi-services-overview__regions">
-          <Tile className="midi-services-overview__tile">
-            <h3 className="midi-services-overview__tile-title">Devices</h3>
-            <p className="midi-services-overview__tile-body">
-              Connected MIDI devices + per-device editor surfaces.
-            </p>
-          </Tile>
-          <Tile className="midi-services-overview__tile">
-            <h3 className="midi-services-overview__tile-title">Bindings</h3>
-            <p className="midi-services-overview__tile-body">
-              Global filterable binding list + authoring workflow.
-            </p>
-          </Tile>
-          <Tile className="midi-services-overview__tile">
-            <h3 className="midi-services-overview__tile-title">Routing</h3>
-            <p className="midi-services-overview__tile-body">
-              Source → consumer routing matrix + cluster peers.
-            </p>
-          </Tile>
-          <Tile className="midi-services-overview__tile">
-            <h3 className="midi-services-overview__tile-title">Transport</h3>
-            <p className="midi-services-overview__tile-body">
-              Clock + transport bindings + tempo provenance.
-            </p>
-          </Tile>
+          <RegionCard
+            title="Devices"
+            body="Connected MIDI devices + per-device editor surfaces."
+            count={counts.deviceBindings}
+            isLoading={counts.isLoading}
+            isError={counts.isError}
+          />
+          <RegionCard
+            title="Bindings"
+            body="Global filterable binding list + authoring workflow."
+            count={counts.totalBindings}
+            isLoading={counts.isLoading}
+            isError={counts.isError}
+          />
+          <RegionCard
+            title="Routing"
+            body="Source → consumer routing matrix + cluster peers."
+            count={counts.routingBindings}
+            isLoading={counts.isLoading}
+            isError={counts.isError}
+          />
+          <RegionCard
+            title="Transport"
+            body="Clock + transport bindings + tempo provenance."
+            count={counts.transportBindings}
+            isLoading={counts.isLoading}
+            isError={counts.isError}
+          />
         </div>
       </Layer>
     </Section>

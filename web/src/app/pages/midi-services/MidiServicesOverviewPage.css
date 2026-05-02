@@ -46,6 +46,13 @@
   min-height: 8rem;
 }
 
+.midi-services-overview__tile-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
 .midi-services-overview__tile-title {
   font-size: 1rem;
   font-weight: 600;
