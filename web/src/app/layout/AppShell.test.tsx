@@ -204,6 +204,8 @@ describe('AppShell global tree navigation', () => {
       'Drums&Synth',
       'Audio Artifacts',
       'MIDI Advanced',
+      // T2490 — AVB tree section, sibling of MIDI Advanced and above Node Ops.
+      'AVB',
       'Node Ops',
       'Hardware',
       'Platform Guide',
@@ -219,7 +221,10 @@ describe('AppShell global tree navigation', () => {
     expect(screen.getByText('Platform Guide')).toBeInTheDocument()
     expect(screen.getAllByText('Hardware').length).toBeGreaterThan(0)
     expect(screen.getAllByText('Devices').length).toBeGreaterThan(0)
-    expect(within(navTree).getByText('Connections')).toBeInTheDocument()
+    // T2490 (AVB) + T2491 (MIDI cleanup) — both AVB Services and MIDI
+    // Advanced parent sections expose a "Connections" child, so the
+    // assertion uses getAllByText now.
+    expect(within(navTree).getAllByText('Connections').length).toBeGreaterThan(0)
     expect(within(navTree).getAllByText('Presets').length).toBeGreaterThan(0)
     expect(within(navTree).getAllByText('Overview').length).toBeGreaterThan(1)
     expect(within(navTree).getByText('Midpoint')).toBeInTheDocument()
@@ -245,7 +250,10 @@ describe('AppShell global tree navigation', () => {
       <AppShell>
         <ShellAwareContent />
       </AppShell>,
-      ['/intelfx/panel'],
+      // T2491 — render at the unified canonical /midi/devices/rocktron-intelfx/panel
+      // mount (T2485-5 Q1=A) since /intelfx/panel hard-redirects there but the
+      // redirect lives in App.tsx and this unit test only mounts AppShell.
+      ['/midi/devices/rocktron-intelfx/panel'],
     )
 
     expect(screen.getByRole('button', { name: 'Close IntelFX Rack' })).toBeInTheDocument()
@@ -266,7 +274,10 @@ describe('AppShell global tree navigation', () => {
           <LocationProbe />
         </>
       </AppShell>,
-      ['/intelfx/panel'],
+      // T2491 — render at the unified canonical /midi/devices/rocktron-intelfx/panel
+      // mount (T2485-5 Q1=A) since /intelfx/panel hard-redirects there but the
+      // redirect lives in App.tsx and this unit test only mounts AppShell.
+      ['/midi/devices/rocktron-intelfx/panel'],
     )
 
     fireEvent.click(screen.getByRole('button', { name: 'Close IntelFX Rack' }))

@@ -82,6 +82,9 @@ const HUMAN_INTERFACE_DEVICE_TYPES = new Set(['ableton-push', 'ground-control-pr
 const WORKSPACE_CATALOG_EXCLUDED_ROUTE_SET = new Set([
   '/juce-grid',
   '/midi-hub',
+  // T2490 — AVB Services has its own dedicated /avb/* shell + tree
+  // section; keep it out of the generic workspace catalog tiles.
+  '/avb',
   '/hardware-interfaces',
   '/labs/push-surface',
   '/ground-control-pro',
@@ -216,38 +219,70 @@ const LAUNCHER_STOREFRONT_OVERRIDES: Record<string, StorefrontOverride> = {
       { route: '/brain?section=practice_coach', label: 'Practice Coach' },
     ],
   },
-  '/midi-hub': {
+  '/avb': {
+    // T2490 — AVB Services tree section. Sibling of MIDI Advanced;
+    // sits above Node Ops in the global navigation tree. The 6
+    // sub-routes match the AvbServicesTabs in the /avb/* shell.
     treeChildren: [
-      { route: '/midi-hub/connections', label: 'Connections' },
-      { route: '/midi-hub/presets', label: 'Presets' },
-      { route: '/midi-hub/transport', label: 'Transport' },
-      { route: '/midi-hub/events', label: 'Events' },
-      { route: '/midi-hub/processing', label: 'Processing' },
-      { route: '/midi-hub/network', label: 'Network' },
-      { route: '/midi-hub/lab', label: 'Lab' },
+      { route: '/avb/overview', label: 'Overview' },
+      { route: '/avb/connections', label: 'Connections' },
+      { route: '/avb/bindings', label: 'Bindings' },
+      { route: '/avb/devices', label: 'Devices' },
+      { route: '/avb/routing', label: 'Routing' },
+      { route: '/avb/network', label: 'Network' },
+    ],
+  },
+  '/midi-hub': {
+    // T2491 (2026-05-02 cleanup) — re-pointed all 7 existing children
+    // from the legacy /midi-hub/* paths to the canonical /midi/* mount
+    // that T2482-T2486 unified to. The '/midi-hub' object key stays
+    // because GlobalTreeNav.tsx uses it as the parent node id; only
+    // the children's `route` fields move to the canonical surface.
+    // Added 3 previously-invisible siblings: Devices (T2485 unified
+    // device-pack mount), Bindings (T2483 canonical binding authority
+    // surface), and Routing (T2484 cluster matrix region). Operators
+    // clicking any of these now land on the canonical /midi/* surface,
+    // not the legacy MidiHub*Page bodies.
+    treeChildren: [
+      { route: '/midi/connections', label: 'Connections' },
+      { route: '/midi/devices', label: 'Devices' },
+      { route: '/midi/bindings', label: 'Bindings' },
+      { route: '/midi/routing', label: 'Routing' },
+      { route: '/midi/presets', label: 'Presets' },
+      { route: '/midi/transport', label: 'Transport' },
+      { route: '/midi/events', label: 'Events' },
+      { route: '/midi/processing', label: 'Processing' },
+      { route: '/midi/network', label: 'Network' },
+      { route: '/midi/lab', label: 'Lab' },
     ],
   },
   '/mpx1': {
+    // T2491 cleanup — children re-pointed to the canonical
+    // /midi/devices/lexicon-mpx1/* mount (T2485-4). The '/mpx1'
+    // storefront-override key remains for backward compatibility with
+    // any /mpx1 launcher tile.
     treeChildren: [
-      { route: '/mpx1/panel', label: 'Panel' },
-      { route: '/mpx1/editor', label: 'Editor' },
-      { route: '/mpx1/midi-map', label: 'MIDI Map' },
-      { route: '/mpx1/matrix', label: 'Matrix' },
-      { route: '/mpx1/library', label: 'Library' },
-      { route: '/mpx1/perform', label: 'Perform' },
-      { route: '/mpx1/diag', label: 'Diagnostics' },
-      { route: '/mpx1/flow', label: 'Signal Flow' },
+      { route: '/midi/devices/lexicon-mpx1/panel', label: 'Panel' },
+      { route: '/midi/devices/lexicon-mpx1/editor', label: 'Editor' },
+      { route: '/midi/devices/lexicon-mpx1/midi-map', label: 'MIDI Map' },
+      { route: '/midi/devices/lexicon-mpx1/matrix', label: 'Matrix' },
+      { route: '/midi/devices/lexicon-mpx1/library', label: 'Library' },
+      { route: '/midi/devices/lexicon-mpx1/perform', label: 'Perform' },
+      { route: '/midi/devices/lexicon-mpx1/diag', label: 'Diagnostics' },
+      { route: '/midi/devices/lexicon-mpx1/flow', label: 'Signal Flow' },
     ],
   },
   '/intelfx': {
+    // T2491 cleanup — children re-pointed to the canonical
+    // /midi/devices/rocktron-intelfx/* mount (T2485-5).
     treeChildren: [
-      { route: '/intelfx/panel', label: 'Panel' },
-      { route: '/intelfx/editor', label: 'Editor' },
-      { route: '/intelfx/midi-map', label: 'MIDI Map' },
-      { route: '/intelfx/library', label: 'Library' },
-      { route: '/intelfx/perform', label: 'Perform' },
-      { route: '/intelfx/diag', label: 'Diagnostics' },
-      { route: '/intelfx/flow', label: 'Signal Flow' },
+      { route: '/midi/devices/rocktron-intelfx/panel', label: 'Panel' },
+      { route: '/midi/devices/rocktron-intelfx/editor', label: 'Editor' },
+      { route: '/midi/devices/rocktron-intelfx/midi-map', label: 'MIDI Map' },
+      { route: '/midi/devices/rocktron-intelfx/library', label: 'Library' },
+      { route: '/midi/devices/rocktron-intelfx/perform', label: 'Perform' },
+      { route: '/midi/devices/rocktron-intelfx/diag', label: 'Diagnostics' },
+      { route: '/midi/devices/rocktron-intelfx/flow', label: 'Signal Flow' },
     ],
   },
   '/lcd': {

@@ -130,7 +130,7 @@ const BROWSE_DEVICES_TREE_ID = '/hardware::devices::browse'
 const PRIMARY_SEPARATOR_ONE_ID = '__separator-primary-1__'
 const PRIMARY_SEPARATOR_TWO_ID = '__separator-primary-2__'
 
-const DEFAULT_EXPANDED_IDS: readonly string[] = ['/workspace', '/midi-hub', '/hardware', '/hardware::devices']
+const DEFAULT_EXPANDED_IDS: readonly string[] = ['/workspace', '/midi-hub', '/avb', '/hardware', '/hardware::devices']
 const GLOBAL_TREE_EXPANDED_KEY: PersistedKey<string[]> = {
   storageKey: 'map2:global-tree:expanded',
   fallback: [...DEFAULT_EXPANDED_IDS],
@@ -152,6 +152,10 @@ const TOP_LEVEL_ROUTE_ORDER = [
   '/workspace/artifacts',
   PRIMARY_SEPARATOR_ONE_ID,
   '/midi-hub',
+  // T2490 — AVB Services tree section, sibling of MIDI Advanced and
+  // sitting above Node Ops. Expandable, with the 6 /avb/* sub-routes
+  // exposed via LAUNCHER_STOREFRONT_OVERRIDES['/avb'] in launcherCatalog.tsx.
+  '/avb',
   '/workspace',
   '/hardware',
   PRIMARY_SEPARATOR_TWO_ID,
@@ -173,6 +177,7 @@ const TREE_ICON_OVERRIDES: Record<string, TreeIconComponent> = {
   '/snapshot-editor': ScreenMap,
   '/brain': Music,
   '/midi-hub': Music,
+  '/avb': ChartNetwork,
   '/tesira': Settings,
   '/mpx1': MapRackDeviceIcon,
   '/intelfx': MapRackDeviceIcon,
@@ -201,14 +206,29 @@ const TREE_ICON_OVERRIDES: Record<string, TreeIconComponent> = {
   [HOST_MACHINE_ROUTE]: BareMetalServer,
   '/workspace/platforms/theme': ColorPalette,
   '/workspace/platforms/about': Information,
-  // MIDI Advanced (/midi-hub) sub-items
-  '/midi-hub/connections': Plug,
-  '/midi-hub/presets': Document,
-  '/midi-hub/transport': PlayFilled,
-  '/midi-hub/events': EventSchedule,
-  '/midi-hub/processing': Settings,
-  '/midi-hub/network': Network_3,
-  '/midi-hub/lab': Chemistry,
+  // MIDI Advanced (parent id stays '/midi-hub' for tree-state
+  // continuity — the children are the canonical /midi/* mount).
+  // T2491 (2026-05-02 cleanup): re-pointed all 7 prior entries to
+  // /midi/* and added 3 previously-invisible children — Devices,
+  // Bindings, Routing — that the T2485-T2486 unification shipped
+  // but the tree-nav never surfaced.
+  '/midi/connections': Plug,
+  '/midi/devices': Devices,
+  '/midi/bindings': Connect,
+  '/midi/routing': ChartNetwork,
+  '/midi/presets': Document,
+  '/midi/transport': PlayFilled,
+  '/midi/events': EventSchedule,
+  '/midi/processing': Settings,
+  '/midi/network': Network_3,
+  '/midi/lab': Chemistry,
+  // AVB (/avb) sub-items — T2490
+  '/avb/overview': Dashboard,
+  '/avb/connections': Plug,
+  '/avb/bindings': Connect,
+  '/avb/devices': Devices,
+  '/avb/routing': ChartNetwork,
+  '/avb/network': Network_3,
 }
 
 const TREE_LABEL_OVERRIDES: Record<string, string> = {
@@ -216,6 +236,7 @@ const TREE_LABEL_OVERRIDES: Record<string, string> = {
   '/snapshot-editor': 'Snapshot Editor',
   '/brain': 'Drums&Synth',
   '/midi-hub': 'MIDI Advanced',
+  '/avb': 'AVB',
   '/midi/assignments': 'MIDI Assignments',
   '/workspace/artifacts': 'Audio Artifacts',
   '/platforms/about': 'Platform Guide',
@@ -579,6 +600,7 @@ const BOLD_TOP_LEVEL_ROUTES = new Set([
   '/brain',
   '/workspace',
   '/midi-hub',
+  '/avb',
   '/workspace/artifacts',
   '/platforms/about',
   '/hardware',

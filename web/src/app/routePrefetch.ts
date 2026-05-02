@@ -73,12 +73,20 @@ const PREFETCH_RULES: PrefetchRule[] = [
     loaders: [() => import('./pages/PushSurfacePage')],
   },
 
-  // MIDI Hub — shell + most-likely first sub-view.
+  // MIDI Services (canonical /midi/* mount; T2491 cleanup re-pointed
+  // the legacy /midi-hub prefetch to the canonical sub-views).
   {
     prefix: '/midi-hub',
     loaders: [
       () => import('./pages/MidiHubShell'),
-      () => import('./pages/midi-hub/MidiHubConnectionsPage'),
+      () => import('./pages/midi-services/MidiServicesConnectionsPage'),
+    ],
+  },
+  {
+    prefix: '/midi',
+    loaders: [
+      () => import('./pages/MidiHubShell'),
+      () => import('./pages/midi-services/MidiServicesConnectionsPage'),
     ],
   },
   {

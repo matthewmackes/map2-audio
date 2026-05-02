@@ -154,14 +154,21 @@ describe('launcherCatalog', () => {
     expect(getLauncherCatalogTreeChildren('/workspace/physical-surfaces')).toEqual([])
     expect(getLauncherCatalogTreeChildren('/workspace/outboard-hardware')).toEqual([])
 
+    // T2491 (2026-05-02 cleanup) — re-pointed all 7 prior children
+    // from the legacy /midi-hub/* paths to the canonical /midi/* mount
+    // that T2482-T2486 unified to. Added 3 previously-invisible
+    // siblings: Devices (T2485), Bindings (T2483), Routing (T2484).
     expect(getLauncherCatalogTreeChildren('/midi-hub')).toEqual([
-      { route: '/midi-hub/connections', label: 'Connections' },
-      { route: '/midi-hub/presets', label: 'Presets' },
-      { route: '/midi-hub/transport', label: 'Transport' },
-      { route: '/midi-hub/events', label: 'Events' },
-      { route: '/midi-hub/processing', label: 'Processing' },
-      { route: '/midi-hub/network', label: 'Network' },
-      { route: '/midi-hub/lab', label: 'Lab' },
+      { route: '/midi/connections', label: 'Connections' },
+      { route: '/midi/devices', label: 'Devices' },
+      { route: '/midi/bindings', label: 'Bindings' },
+      { route: '/midi/routing', label: 'Routing' },
+      { route: '/midi/presets', label: 'Presets' },
+      { route: '/midi/transport', label: 'Transport' },
+      { route: '/midi/events', label: 'Events' },
+      { route: '/midi/processing', label: 'Processing' },
+      { route: '/midi/network', label: 'Network' },
+      { route: '/midi/lab', label: 'Lab' },
     ])
 
     expect(getLauncherCatalogTreeChildren('/brain')).toEqual([

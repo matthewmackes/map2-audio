@@ -72,7 +72,9 @@ const MaschinePage          = lazy(() => import('./pages/MaschinePage').then(m =
 const McuPage               = lazy(() => import('./pages/McuPage').then(m => ({ default: m.McuPage })))
 const LaunchControlPage     = lazy(() => import('./pages/LaunchControlPage').then(m => ({ default: m.LaunchControlPage })))
 const MidiCommanderPage     = lazy(() => import('./pages/MidiCommanderPage').then(m => ({ default: m.MidiCommanderPage })))
-const MidiHubShell          = lazy(() => import('./pages/MidiHubShell').then(m => ({ default: m.MidiHubShell })))
+// T2491 cleanup — MidiHubShell is no longer imported directly here.
+// MidiServicesShell (pages/MidiServicesShell.tsx) re-exports it for
+// the canonical /midi/* mount; that re-export is the only consumer.
 // T2482 loop 10 / iter 92 — MIDI Services canonical mount.
 // MidiServicesShell is a thin re-export of MidiHubShell (see
 // pages/MidiServicesShell.tsx for the iter-92 design D1 rationale).
@@ -113,13 +115,12 @@ const AvbServicesBindingsPage    = lazy(() => import('./pages/avb-services/AvbSe
 const AvbServicesDevicesPage     = lazy(() => import('./pages/avb-services/AvbServicesDevicesPage').then(m => ({ default: m.AvbServicesDevicesPage })))
 const AvbServicesRoutingPage     = lazy(() => import('./pages/avb-services/AvbServicesRoutingPage').then(m => ({ default: m.AvbServicesRoutingPage })))
 const AvbServicesNetworkPage     = lazy(() => import('./pages/avb-services/AvbServicesNetworkPage').then(m => ({ default: m.AvbServicesNetworkPage })))
-const MidiHubConnectionsPage = lazy(() => import('./pages/midi-hub/MidiHubConnectionsPage').then(m => ({ default: m.MidiHubConnectionsPage })))
-const MidiHubPresetsPage    = lazy(() => import('./pages/midi-hub/MidiHubPresetsPage').then(m => ({ default: m.MidiHubPresetsPage })))
-const MidiHubTransportPage  = lazy(() => import('./pages/midi-hub/MidiHubTransportPage').then(m => ({ default: m.MidiHubTransportPage })))
-const MidiHubEventsPage     = lazy(() => import('./pages/midi-hub/MidiHubEventsPage').then(m => ({ default: m.MidiHubEventsPage })))
-const MidiHubProcessingPage = lazy(() => import('./pages/midi-hub/MidiHubProcessingPage').then(m => ({ default: m.MidiHubProcessingPage })))
-const MidiHubNetworkPage    = lazy(() => import('./pages/midi-hub/MidiHubNetworkPage').then(m => ({ default: m.MidiHubNetworkPage })))
-const MidiHubLabPage        = lazy(() => import('./pages/midi-hub/MidiHubLabPage').then(m => ({ default: m.MidiHubLabPage })))
+// T2491 (2026-05-02 cleanup) — the 7 MidiHub*Page lazy imports
+// retired with the /midi-hub/* mount. Canonical /midi/* mount uses
+// MidiServicesConnectionsPage / MidiServicesPresetsPage / etc. The
+// old MidiHubConnectionsPage / MidiHubPresetsPage / etc. are deleted
+// in this commit; the redirects at /midi-hub and /midi-hub/* are
+// kept so stale operator bookmarks land on the canonical surface.
 const SnapshotEditorPage    = lazy(() => import('./pages/SnapshotEditorPageContent').then(m => ({ default: m.SnapshotEditorPage })))
 const SnapshotsBrowserPage  = lazy(() => import('./pages/SnapshotsBrowserPage').then(m => ({ default: m.SnapshotsBrowserPage })))
 const StateAuthorityPage    = lazy(() => import('./pages/StateAuthorityPage').then(m => ({ default: m.StateAuthorityPage })))
@@ -355,6 +356,17 @@ function LegacyOutboardHardwareRedirect() {
   return <Navigate to={`${target}${location.search || ''}`} replace />
 }
 
+function MidiHubLegacySubrouteRedirect() {
+  // T2491 (2026-05-02 cleanup) — every deeper /midi-hub/<sub> URL
+  // hard-redirects to /midi/<sub>. Keeps stale operator bookmarks
+  // working after the legacy /midi-hub/* mount and its 7 MidiHub*Page
+  // implementations were retired.
+  const location = useLocation()
+  const subpath = location.pathname.replace(/^\/midi-hub\/?/, '')
+  const target = subpath ? `/midi/${subpath}${location.search}${location.hash}` : `/midi${location.search}${location.hash}`
+  return <Navigate to={target} replace />
+}
+
 function MPX1LegacyRedirect() {
   // T2485-4 — /mpx1/:view → /midi/devices/lexicon-mpx1/:view (Q1=A hard redirect).
   const params = useParams<{ view?: string }>()
@@ -577,16 +589,14 @@ export function App() {
                                 <Route path="/outboard-hardware/:deviceId" element={<LegacyOutboardHardwareRedirect />} />
                                 <Route path="/dsp" element={<Navigate to={buildWorkspaceHubPlatformPath('overview')} replace />} />
                                 <Route path="/cpu-performance" element={<Navigate to={buildWorkspaceHubPlatformPath('overview')} replace />} />
-                                <Route path="/midi-hub/*" element={<RouteBoundary title="MIDI Hub view crashed" actionLabel="Reload MIDI Hub"><MidiHubShell /></RouteBoundary>}>
-                                  <Route index element={<Navigate to="connections" replace />} />
-                                  <Route path="connections" element={<MidiHubConnectionsPage />} />
-                                  <Route path="presets" element={<MidiHubPresetsPage />} />
-                                  <Route path="transport" element={<MidiHubTransportPage />} />
-                                  <Route path="events" element={<MidiHubEventsPage />} />
-                                  <Route path="processing" element={<MidiHubProcessingPage />} />
-                                  <Route path="network" element={<MidiHubNetworkPage />} />
-                                  <Route path="lab" element={<MidiHubLabPage />} />
-                                </Route>
+                                {/* T2491 (2026-05-02 cleanup) — the legacy /midi-hub/*
+                                    mount is retired. The 7 MidiHub*Page implementations
+                                    were superseded by their MidiServices* counterparts at
+                                    /midi/* per T2482-T2486. Bare /midi-hub and /midi-hub-2
+                                    redirects above this line catch stale bookmarks; the
+                                    catch-all below covers any deeper /midi-hub/<sub>
+                                    URL by routing to the matching /midi/<sub>. */}
+                                <Route path="/midi-hub/*" element={<MidiHubLegacySubrouteRedirect />} />
                                 {/* T2485-4 — Unified MIDI device shell mount.
                                     /midi/devices/lexicon-mpx1/* is the new canonical
                                     location for the MPX1 GUI; legacy /devices/mpx1/*

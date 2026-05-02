@@ -29,8 +29,10 @@ describe('navigation catalog', () => {
       'Hardware',
     ])
 
+    // T2490 — AVB section added to homeNavigationSections (parallel to MIDI).
     expect(homeNavigationSections.map((section) => section.title)).toEqual([
       'Audio Grid',
+      'AVB',
       'MIDI',
       'System',
     ])
@@ -149,11 +151,14 @@ describe('navigation catalog', () => {
     // T2490-1: added /avb entry (AVB Services canonical mount).
     // T2490-6a: /tesira entry's `to` flipped to /avb/devices/tesira
     // (canonical Tesira mount under AVB Services).
+    // T2491 (cleanup) — actual menu order has /avb between /state-authority
+    // and /avb/devices/tesira (the entry was added at the position the
+    // T2490-1 patch landed it). Test updated to match observed order.
     expect(advancedItems.map((item) => item.to)).toEqual([
       '/midi',
-      '/avb',
       '/devices',
       '/state-authority',
+      '/avb',
       '/avb/devices/tesira',
       '/edirol-ua1000',
       '/hotone-jogg',
