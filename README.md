@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1437** Python | **1427** TypeScript | **177** C++/H | **145** Docs | **3453** total commits | **3** stars | **0** forks | **0** open issues
+**1437** Python | **1430** TypeScript | **177** C++/H | **145** Docs | **3463** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
-| [`2e8b6dd7`](https://github.com/matthewmackes/map2-audio/commit/2e8b6dd75b07a10416595302290ec5409d6b0984) | T2482 loop 14 / iter 131: P3.6+P3.9+P3.10 reframing plan | Map2 Audio | 2026-05-01 |
-| [`bf455962`](https://github.com/matthewmackes/map2-audio/commit/bf455962fa9bea3e714947f0539d9f7651575769) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-02 |
-| [`5b3cefa5`](https://github.com/matthewmackes/map2-audio/commit/5b3cefa5b34607dcb7902de484bcc89fc02335ff) | T2482 loop 13 / iter 130: SHIP loop 13 closing roll-up | Map2 Audio | 2026-05-01 |
-| [`6bfe65bb`](https://github.com/matthewmackes/map2-audio/commit/6bfe65bb71fe37a6018a458c77922495fd854e2a) | T2482 loop 13 / iter 129: smoke tests for the 5 region si... | Map2 Audio | 2026-05-01 |
-| [`43a0c299`](https://github.com/matthewmackes/map2-audio/commit/43a0c2998e77eba6fcbb195a4a4cc721fcc5e327) | T2482 loop 13 / iter 128: Overview 5th Tile - Network | Map2 Audio | 2026-05-01 |
-| [`92788b48`](https://github.com/matthewmackes/map2-audio/commit/92788b48c4322fd5feed60d4e9207f0bc028d6b1) | T2482 loop 13 / iter 127: App.tsx route flip - /midi/* us... | Map2 Audio | 2026-05-01 |
-| [`3747baa8`](https://github.com/matthewmackes/map2-audio/commit/3747baa8131ab6e94b63fe0cac9368d29c938e8b) | T2482 loop 13 / iter 126: MidiServicesLabPage | Map2 Audio | 2026-05-01 |
-| [`6e70c10a`](https://github.com/matthewmackes/map2-audio/commit/6e70c10ac770b115eaa3a3376f39cef08b505eb2) | T2482 loop 13 / iter 125: MidiServicesProcessingPage | Map2 Audio | 2026-05-01 |
+| [`dd5530ef`](https://github.com/matthewmackes/map2-audio/commit/dd5530efc57ea1e268f36b378a9bdd2a3554d283) | T2482 loop 14 / iter 140: SHIP loop 14 closing roll-up + ... | Map2 Audio | 2026-05-01 |
+| [`2e3c44ae`](https://github.com/matthewmackes/map2-audio/commit/2e3c44aebb9b4fa37f677d71c1e390dd647f743f) | T2482 loop 14 / iter 139: smoke tests for cross-link bann... | Map2 Audio | 2026-05-01 |
+| [`1c2dd56b`](https://github.com/matthewmackes/map2-audio/commit/1c2dd56badf16450e643eef7f991306b88b2641f) | T2482 loop 14 / iter 138: PerformanceBrain cross-link ban... | Map2 Audio | 2026-05-01 |
+| [`9cb85650`](https://github.com/matthewmackes/map2-audio/commit/9cb8565079bd4940121fe976c7f217fc41fa9a5e) | T2482 loop 14 / iter 137: MPX1 + IntelFX cross-link banners | Map2 Audio | 2026-05-01 |
+| [`c3120272`](https://github.com/matthewmackes/map2-audio/commit/c3120272b8423281f3329d7f8e6c7703517e8b69) | T2482 loop 14 / iter 136: MidiCommander + GroundControlPr... | Map2 Audio | 2026-05-01 |
+| [`4835ea82`](https://github.com/matthewmackes/map2-audio/commit/4835ea82c361552af027ff0048366580045fadf4) | T2482 loop 14 / iter 135: Mcu + LaunchControl cross-link ... | Map2 Audio | 2026-05-01 |
+| [`1c152660`](https://github.com/matthewmackes/map2-audio/commit/1c1526600f9764979328b52b14bbce35113acbc1) | T2482 loop 14 / iter 134: Maschine + MaschineMidiMap cros... | Map2 Audio | 2026-05-01 |
+| [`6231436a`](https://github.com/matthewmackes/map2-audio/commit/6231436a6f5e035c8d045b7a620fe73d97efc0a9) | T2482 loop 14 / iter 133: MidiServicesCrossLinkBanner com... | Map2 Audio | 2026-05-01 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
