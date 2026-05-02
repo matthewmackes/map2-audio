@@ -24,6 +24,7 @@ const TWO_PEERS: ClusterPeerMatrix[] = [
       midi_cc: { plugin_param: { count: 5, enabled_count: 3 } },
     },
     total_bindings: 5,
+    health: 'ok',
   },
   {
     node_id: 'peer-b',
@@ -33,6 +34,7 @@ const TWO_PEERS: ClusterPeerMatrix[] = [
       midi_note: { transport: { count: 1, enabled_count: 1 } },
     },
     total_bindings: 3,
+    health: 'warn',
   },
 ]
 
@@ -137,5 +139,62 @@ describe('PeerCellDrillDownDrawer', () => {
     // both render. This test confirms peer-b's midi_note slice doesn't
     // pollute the midi_cc/plugin_param view.
     expect(screen.queryByText(/midi_note/i)).not.toBeInTheDocument()
+  })
+
+  // T2484-4 iter 198 — health Tag tests.
+  it("renders the per-peer health string in the Health column", () => {
+    render(
+      <PeerCellDrillDownDrawer
+        open
+        onClose={() => undefined}
+        sourceType="midi_cc"
+        consumerType="plugin_param"
+        peerSlices={TWO_PEERS}
+      />,
+    )
+    // peer-a is 'ok'; peer-b is 'warn'.
+    const peerARow = screen.getByTestId('peer-row-peer-a')
+    expect(peerARow.textContent).toContain('ok')
+    const peerBRow = screen.getByTestId('peer-row-peer-b')
+    expect(peerBRow.textContent).toContain('warn')
+  })
+
+  it('falls back to offline for missing health field', () => {
+    const peersNoHealth = [
+      {
+        ...TWO_PEERS[0],
+        health: undefined as unknown as string,
+      },
+    ]
+    render(
+      <PeerCellDrillDownDrawer
+        open
+        onClose={() => undefined}
+        sourceType="midi_cc"
+        consumerType="plugin_param"
+        peerSlices={peersNoHealth}
+      />,
+    )
+    const peerARow = screen.getByTestId('peer-row-peer-a')
+    expect(peerARow.textContent).toContain('offline')
+  })
+
+  it.each([
+    ['ok', 'green'],
+    ['warn', 'magenta'],
+    ['critical', 'red'],
+    ['offline', 'gray'],
+  ])('maps health=%s to Carbon Tag tone', (health, _expectedTone) => {
+    render(
+      <PeerCellDrillDownDrawer
+        open
+        onClose={() => undefined}
+        sourceType="midi_cc"
+        consumerType="plugin_param"
+        peerSlices={[{ ...TWO_PEERS[0], health }]}
+      />,
+    )
+    const peerARow = screen.getByTestId('peer-row-peer-a')
+    expect(peerARow.textContent).toContain(health)
   })
 })
