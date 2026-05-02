@@ -35178,3 +35178,54 @@ Plus structural rewrites of `BindingEditDrawer.tsx`, `BindingCreateDrawer.tsx`, 
 - Routing matrix fans out 10 separate TanStack Query requests on every poll cycle (5s). For high-cardinality clusters this could become a load concern; a future optimization is a single backend `/api/midi/bindings/matrix` endpoint that does the aggregation server-side.
 - Routing matrix cells navigate via `consumer_type` only — they don't preserve `source_type` in the URL filter. The iter-103 list page doesn't have a source-type filter strategy yet (filter is consumer / device / scope). Adding source_type would require extending the iter-103 filter form; deferred to a future loop.
 - TargetDescriptorEditor's 'json' field uses local component state for the textarea + parse-error display. This means parsing happens on every keystroke; for large JSON payloads this could feel sluggish. Acceptable for the typical args slot which is small.
+
+### SHIP loop 13 (iters 121–130) closing log — 2026-05-01
+
+**Status**: 10 substantive iters shipped (121-130, dual-pushed). **Continuing the autonomous loop pattern**. Per the iter-120 closing log recommendation, loop 13 = Phase 3 **P3.7 Network region + P3.8 misc ports** (Presets/Events/Processing/Lab).
+
+| Iter | Surface | Commit | Highlight |
+|---|---|---|---|
+| 121 | Audit + plan | 40b84f2f | New `T2482_LOOP13_NETWORK_PORTS_PLAN.md`. Audit confirmed the 5 unported MidiHub region pages are 36-49 LOC thin wrappers around `components/MidiHub/*Panel` components — total 214 LOC of compositional glue with no operator-facing logic. Locked 6 design decisions (D1 reuse panels not fork, D2 page chrome is Carbon Section/Layer not MidiHubContentFrame, D3 smoke tests only, D4 Overview's 5th Tile counts tesira_ttp+gpio, D5 MidiHub legacy untouched, D6 Carbon-only). |
+| 122 | Network sibling page | 26f411b8 | `MidiServicesNetworkPage.tsx` + new shared `MidiServicesRegionPage.css`. Mounts MidiNetworkPanel + Midi2Panel + TesiraPanel + VirtualGpioPanel + StringInterfacePanel. |
+| 123 | Presets sibling page | 7947e1c5 | `MidiServicesPresetsPage.tsx`. Mounts MidiHubPresetManager + MidiClockPanel + MidiRecorderPanel. |
+| 124 | Events sibling page | b682f2f5 | `MidiServicesEventsPage.tsx`. Mounts EventListManager + EventListStatus + LearnModeControl + MscCommandBuilder + EventEditor with the local selectedEventListId state shared across them. |
+| 125 | Processing sibling page | 6e70c10a | `MidiServicesProcessingPage.tsx`. Mounts MidiHubFilterPlanner + MidiHubMessageMapper + MidiScriptEditor + MidiMacroPanel + MidiSchedulerPanel. |
+| 126 | Lab sibling page | 3747baa8 | `MidiServicesLabPage.tsx`. Mounts AiLearnPanel + MeshNetworkPanel + DeviceShadowPanel. |
+| 127 | App.tsx route flip | 92788b48 | `/midi/presets`, `/midi/events`, `/midi/processing`, `/midi/network`, `/midi/lab` flipped to point at the new MidiServices* pages. `/midi/connections` and `/midi/transport` deliberately retained on the MidiHub pages with an inline comment — dedicated MidiServices siblings queue for loop 14+. The `/midi-hub/*` mount is fully untouched per iter-121 D5. |
+| 128 | Overview 5th Tile | 43a0c299 | Extended useMidiServicesCounts with networkBindings = tesira_ttp count + gpio count (two parallel queries on the same /api/midi/bindings endpoint, no new backend route). 5th RegionCard "Network" added to MidiServicesOverviewPage with deep-link to /midi/network. The auto-fit grid wraps automatically per the iter-95 CSS. |
+| 129 | Smoke tests | 6bfe65bb | New `MidiServicesRegionPages.smoke.test.tsx` — mocks every panel component, renders each of the 5 pages, asserts panels appear + heading renders. 10 tests pass. Total midi-services jest coverage now 56 tests across 6 suites. Discovered that `tests/jest/setupAfterEnv.js` doesn't auto-load `@testing-library/jest-dom`; the test file imports it explicitly and documents the pattern inline. |
+| 130 | Roll-up | (this commit) | This closing log + Phase 3 readiness gate v10. |
+
+**Total new files in loop 13**:
+- 1 architecture doc (`T2482_LOOP13_NETWORK_PORTS_PLAN.md`)
+- 5 sibling page modules (`MidiServicesNetworkPage.tsx`, `MidiServicesPresetsPage.tsx`, `MidiServicesEventsPage.tsx`, `MidiServicesProcessingPage.tsx`, `MidiServicesLabPage.tsx`)
+- 1 shared CSS (`MidiServicesRegionPage.css`)
+- 1 jest test suite (`MidiServicesRegionPages.smoke.test.tsx`)
+Plus updates to `App.tsx` (route flip + 5 new lazy imports), `useMidiServicesCounts.ts` (2 new TanStack Query slots + networkBindings field), `MidiServicesOverviewPage.tsx` (5th RegionCard).
+
+**P3 status after SHIP loop 13 (vs the design doc P3.1–P3.10 sub-phases)**:
+- ✅ P3.1 mount + redirect + rename: DONE (loop 10)
+- ✅ P3.2 Overview region + Tile deep-links: DONE (loop 10 + 11 iter 109 + loop 13 iter 128 5th Tile)
+- ✅ P3.3 Devices region: DONE for INDEX surface (loop 10); per-row authoring deferred
+- ✅ P3.4 Bindings region: DONE for read+create+edit+delete+filter+structured descriptors (loops 11 + 12)
+- ✅ P3.5 Routing region: DONE for matrix UI (loop 12)
+- 🔶 P3.6 Transport region: NOT started; today's path = /midi/bindings?consumer_type=transport (Overview deep-link). A dedicated /midi/transport sibling page queues for loop 14+.
+- ✅ **P3.7 Network region: DONE (loop 13 iter 122/127)**
+- ✅ **P3.8 misc ports (Presets/Events/Processing/Lab): DONE (loop 13 iters 123-126/127)**
+- ◯ P3.9 per-device legacy reframing (cross-link banners): queued for loop 14+
+- ◯ P3.10 Brain Setup + Brain Inputs reframing: queued for loop 14+
+
+**Phase 3 readiness gate v10 (post-SHIP-loop-13)**:
+- 8 of 10 P3 sub-phases DONE — only P3.6 Transport (small) and P3.9 + P3.10 (per-device reframing) remain
+- All 5 unported MidiHub regions now have first-party MidiServices sibling pages
+- Overview surfaces 5 ClickableTile cards: Devices / Bindings / Routing / Transport / Network — all deep-link into their region
+- Test coverage: 56 midi-services jest tests across 6 suites
+- **Recommended next loop**:
+  - **Loop 14: P3.9 per-device legacy reframing + P3.6 dedicated Transport page + P3.10 Brain Setup reframing**. Per-device reframing is the highest-value next surface because the existing per-device editors (Maschine, MCU, LaunchControl, MidiCommander, MaschineMidiMap, MPX-1, IntelFX, GroundControlPro) all live at top-level routes and have no cross-link back to the MidiServices canonical authority surface yet.
+  - Loop 15+: T2482 epic close-out — `T2482_PHASE3_DONE` doc; final Phase 3 status fold; per-loop closing-log archive sweep; close the parent epic.
+
+**Loop 13 acknowledged limitations**:
+- `/midi/connections` and `/midi/transport` still route to the original MidiHub pages — these are the 2 of 7 MidiHub region pages without first-party MidiServices siblings yet. Loop 14+ closes the gap.
+- `MidiServicesEventsPage` carries selectedEventListId in local component state. Operators navigating away and back lose the selection. Acceptable for the smoke-port pass; if users complain, we can lift to a Zustand slot or URL query.
+- The `kicker: 'Platform / MIDI Hub / ...'` shell-window subtitle from the original MidiHub pages was NOT propagated to the sibling pages (sibling pages don't call useSetShellWindow). The shell-window header therefore shows the previous page's kicker until the operator navigates again. Cosmetic; deferred.
+- Smoke tests confirm composition, not interactive behavior. Real interactive coverage for each panel lives with each panel's own test file (most have one in `web/src/app/components/MidiHub/*.test.tsx`).
