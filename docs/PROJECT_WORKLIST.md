@@ -35542,7 +35542,7 @@ After 3 SHIP loops (16 + 17 + 18) totaling 30 substantive iters and 30+ commits 
 ---
 
 ID: T2484
-Status: [>] In Progress — Loop 19 (iters 181–190) shipped T2484-1 + T2484-2; Loop 20 (iters 191–200) ships T2484-3 + T2484-4.
+Status: [✓] Done — 2026-05-02 (4 of 4 sub-items shipped across loops 19+20). See PROJECT_WORKLIST closing logs for per-iter detail.
 Title: Cluster MIDI peer surface — wire T2483-9's scaffold to real backend
 Description:
 - Goal / acceptance criteria: T2483-9 shipped a placeholder `usePeerMatrix → {}` so the routing matrix's `+N` purple badge UI was ready but stayed hidden. T2484 wires it to a new `GET /api/midi/cluster/bindings/matrix` endpoint that aggregates per-peer matrices server-side, plus the per-cell drill-down drawer + peer-health surface for cluster operators.
@@ -35557,8 +35557,8 @@ Description:
   - **T2484-2**: ✅ Done (Loop 19 iters 184-187) — frontend `midiBindingsApi.clusterMatrix()` + `usePeerMatrix` flipped from placeholder to real query; 4 hook tests confirming aggregation across multiple peers + error pass-through + single-fetch (no fan-out).
 
 **Loop 20 — drill-down + health**:
-  - **T2484-3**: per-cell drill-down drawer. Clicking a peer-badged cell opens a Carbon Modal/Drawer listing which peer node has which count.
-  - **T2484-4**: peer-health field surfaces in the drill-down drawer via NodeHealthService; per-peer Tag tone (green/amber/red).
+  - **T2484-3**: ✅ Done (Loop 20 iters 191-194) — `PeerCellDrillDownDrawer` Carbon Modal opens when an operator clicks the iter-187 +N peer badge; lists per-peer counts sorted desc; 6 jest tests cover heading/empty/sort/format/filter behavior.
+  - **T2484-4**: ✅ Done (Loop 20 iters 195-198) — backend `health` field on `ClusterPeerMatrix` sourced from `NodeHealthService.get_remote_health` (concurrent fetch alongside the matrix); drawer renders Carbon Tag with health-tone mapping (ok/warn/critical/offline → green/magenta/red/gray); 2 backend pytest + 6 frontend jest cases.
 
 **Definition of Done (Epic-level)**: 4 of 4 sub-items shipped + dual-pushed; backend pytest green; frontend jest green; `usePeerMatrix.hasPeerData` returns true on a multi-node cluster (single-node operators see no change); peer drill-down drawer surfaces the right per-peer counts.
 
