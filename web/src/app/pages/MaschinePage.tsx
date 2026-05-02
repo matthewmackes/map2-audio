@@ -14,6 +14,7 @@ import { MaschineLedPreviewPanel } from '../components/Maschine/MaschineLedPrevi
 import { MaschineOperationsConsolePanel } from '../components/Maschine/MaschineOperationsConsolePanel'
 import { MaschineTransportPanel } from '../components/Maschine/MaschineTransportPanel'
 import { MaschineMidiMapEditor } from './MaschineMidiMapPage'
+import { MidiServicesCrossLinkBanner } from './midi-services/MidiServicesCrossLinkBanner'
 import {
   maschineApi,
   type MaschineTransportConfig,
@@ -162,6 +163,7 @@ export function MaschinePage() {
 
   return (
     <div className="maschine-page">
+      <MidiServicesCrossLinkBanner profileKey="native-instruments/maschine-mk1.midi" />
 
       {statusQuery.isError ? (
         <InlineNotification

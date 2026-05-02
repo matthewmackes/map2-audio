@@ -22,6 +22,7 @@ import {
 } from '../../map2/clients/maschine'
 import { getWsBaseUrl } from '../../map2/transport'
 import type { MaschineDaemonStatus, MaschineHidEvent } from '../../map2/types'
+import { MidiServicesCrossLinkBanner } from './midi-services/MidiServicesCrossLinkBanner'
 
 // ---------------------------------------------------------------------------
 // MIDI helpers
@@ -564,6 +565,9 @@ export function MaschineMidiMapEditor({ embedded = false }: { embedded?: boolean
 
   return (
     <div className={embedded ? 'midi-map-page midi-map-page--embedded' : 'midi-map-page'}>
+      {!embedded ? (
+        <MidiServicesCrossLinkBanner profileKey="native-instruments/maschine-mk1.midi-map" />
+      ) : null}
       {statusQuery.isError && (
         <InlineNotification kind="error" lowContrast hideCloseButton title="Cannot reach backend" />
       )}
