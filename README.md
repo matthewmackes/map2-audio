@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1441** Python | **1488** TypeScript | **177** C++/H | **145** Docs | **3595** total commits | **3** stars | **0** forks | **0** open issues
+**1441** Python | **1488** TypeScript | **177** C++/H | **145** Docs | **3597** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`fc94554e`](https://github.com/matthewmackes/map2-audio/commit/fc94554eb5f101999921a3f6a2dfee246de256ef) | docs(MIDI_SERVICES_CLOSED_OUT): record T2487/T2488/T2489 ... | Map2 Audio | 2026-05-02 |
+| [`e55a5824`](https://github.com/matthewmackes/map2-audio/commit/e55a58241bab9166774ce8721c3578e1c3b4a48b) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-02 |
 | [`4eea75b6`](https://github.com/matthewmackes/map2-audio/commit/4eea75b6445957c3303bc48610d890f39cde7130) | chore(T2481/T2487-9): delete orphaned cross-link landings... | Map2 Audio | 2026-05-02 |
 | [`669f4686`](https://github.com/matthewmackes/map2-audio/commit/669f46866483c8146eea58df5db5d63cd5456f9c) | style(T2481): Carbon-deepening Iter 2 — PushSurfacePage.c... | Map2 Audio | 2026-05-02 |
 | [`507c0832`](https://github.com/matthewmackes/map2-audio/commit/507c0832e680f0c1fe6cfbefd5c5d344cc6cc139) | style(T2481): Carbon-deepening pass on ExpressionPage.mod... | Map2 Audio | 2026-05-02 |
 | [`6b1ada1a`](https://github.com/matthewmackes/map2-audio/commit/6b1ada1a6b734107a4e2a002446bae9c4c0f500a) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-02 |
 | [`9c8da6bd`](https://github.com/matthewmackes/map2-audio/commit/9c8da6bd9b5a9bf2abb54244f22dea0aa22c5993) | feat(T2489): migrate Ableton Push 3 surface under unified... | Map2 Audio | 2026-05-02 |
 | [`03727a66`](https://github.com/matthewmackes/map2-audio/commit/03727a662056a956b9cfb3fa858b868fece75bbb) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-02 |
-| [`0dfa43a4`](https://github.com/matthewmackes/map2-audio/commit/0dfa43a488e03f354f1f05bece2152a7a1a517c2) | feat(T2488): migrate Voodoo Lab Ground Control Pro under ... | Map2 Audio | 2026-05-02 |
-| [`09ccb52d`](https://github.com/matthewmackes/map2-audio/commit/09ccb52d8cb958a01b829ed96a6de9f3c565035f) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-02 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
