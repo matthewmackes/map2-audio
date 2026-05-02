@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1440** Python | **1468** TypeScript | **177** C++/H | **145** Docs | **3578** total commits | **3** stars | **0** forks | **0** open issues
+**1441** Python | **1473** TypeScript | **177** C++/H | **145** Docs | **3584** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`e3e606c6`](https://github.com/matthewmackes/map2-audio/commit/e3e606c626fccebcd1798404992250253d610b66) | docs(T2487): revise Q2=A from view-tab split to file-leve... | Map2 Audio | 2026-05-02 |
+| [`5406ca6f`](https://github.com/matthewmackes/map2-audio/commit/5406ca6f3161c58b31a34166901ec7f83da01be1) | feat(T2486-4): test suites for cluster auto-connect onboa... | Map2 Audio | 2026-05-02 |
+| [`75c3516f`](https://github.com/matthewmackes/map2-audio/commit/75c3516f1f77dd86f20b9014d34b1e754a16af0f) | feat(T2486-3): PlatformEvent emission on operator cluster... | Map2 Audio | 2026-05-02 |
+| [`c9e96bae`](https://github.com/matthewmackes/map2-audio/commit/c9e96bae6c75f7fe02722dbf62f9465fcd0147a8) | feat(T2486-2): auto-connect-off advisory inline notification | Map2 Audio | 2026-05-02 |
+| [`bfe70479`](https://github.com/matthewmackes/map2-audio/commit/bfe70479563be3ef98a1b311a76a8e8eee3b4c27) | feat(T2486-1): MIDI cluster auto-connect onboarding modal | Map2 Audio | 2026-05-02 |
+| [`f16dd11a`](https://github.com/matthewmackes/map2-audio/commit/f16dd11ae8175bdb210e268b3c0a000adbfec7bd) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-02 |
 | [`b4fae37f`](https://github.com/matthewmackes/map2-audio/commit/b4fae37f9c3e149b805a70bbde4815299c1fbaf9) | docs(T2485-9): T2485 close-out — closeout doc + worklist ... | Map2 Audio | 2026-05-02 |
 | [`3e1a5d7f`](https://github.com/matthewmackes/map2-audio/commit/3e1a5d7f0fd723d1776a88fee64b8bdf7b230217) | feat(T2485-8): collapse 9 sidebar MIDI entries to 1 + ret... | Map2 Audio | 2026-05-02 |
-| [`a0543c73`](https://github.com/matthewmackes/map2-audio/commit/a0543c735f96f8f066eb36da1dbf0d39607b7c5f) | feat(T2485-7d): Ableton Push 3 surface MIDI landing | Map2 Audio | 2026-05-02 |
-| [`48d51f9b`](https://github.com/matthewmackes/map2-audio/commit/48d51f9bf674152f601a1f1f5079ee7a764a731f) | feat(T2485-7c): Voodoo Lab Ground Control Pro MIDI landing | Map2 Audio | 2026-05-02 |
-| [`901a8fd5`](https://github.com/matthewmackes/map2-audio/commit/901a8fd5354e266ae31c47712f0f471c9c838e1a) | feat(T2485-7b): Expression pedalboard MIDI landing | Map2 Audio | 2026-05-02 |
-| [`3fc5daed`](https://github.com/matthewmackes/map2-audio/commit/3fc5daedd6a03d1876da69c78d8d6781deb43ba9) | feat(T2485-7a): MCU + LaunchControl + MidiCommander unifi... | Map2 Audio | 2026-05-02 |
-| [`60abc413`](https://github.com/matthewmackes/map2-audio/commit/60abc413d591ac49dfcce297d5df1adade694c23) | feat(T2485-6): Maschine MK1 MIDI landing under /midi/devi... | Map2 Audio | 2026-05-02 |
-| [`52cfa4a9`](https://github.com/matthewmackes/map2-audio/commit/52cfa4a96f58991439208f2c7bdee3c26d6fef92) | feat(T2485-5): migrate IntelFX under unified /midi/device... | Map2 Audio | 2026-05-02 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
