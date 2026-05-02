@@ -1,6 +1,6 @@
 # MIDI Services — All closeable epics shipped
 
-**Date:** 2026-05-02 (loop 21 iter 202).
+**Date:** 2026-05-02 (loop 21 iter 202; updated 2026-05-02 for T2485 close).
 **Scope:** All MIDI epics that can be closed in pure-software loops are DONE. Hardware-blocked items remain open under T2459-H pending bench HIL access.
 
 This doc is the single read for "what is the MIDI surface today + what is left."
@@ -14,6 +14,7 @@ This doc is the single read for "what is the MIDI surface today + what is left."
 | **T2482** | ✅ Done 2026-05-01 | iter 150 | MIDI Services unification — single canonical authority + `/midi` surface, 10 of 10 P3 sub-phases. See `T2482_PHASE3_DONE.md`. |
 | **T2483** | ✅ Done 2026-05-02 | iter 180 | T2482 follow-up polish — 10 of 10 sub-items including server-side matrix endpoint, live MIDI-learn helper, structured descriptor editors. |
 | **T2484** | ✅ Done 2026-05-02 | iter 200 | Cluster MIDI peer surface — 4 of 4 sub-items wiring T2483-9's scaffold to real backend with drill-down drawer + per-peer health. |
+| **T2485** | ✅ Done 2026-05-02 | 11 atomic iters | MIDI GUI Unification under device-pack shell. All 9 MIDI-controlling devices now have unified `/midi/devices/<profile-key>` entries; sidebar collapsed from 9 MIDI device entries to 1; MPX1 + IntelFX migrate to the unified mount with hard redirects from legacy URLs; deviceManifest schema with title + 3-line purpose block (Q3=A, Q4=B locked) renders on the landing view of every device; generic `<DeviceStatusBar>`, `<DeviceFlowCanvasShell>`, `useFlowUndoRedo` shared primitives shipped. Three console-shaped monoliths (Expression / GroundControlPro / PushSurface) keep their legacy operator routes intact pending dedicated decomposition epics T2487, T2488, T2489. |
 
 ## Production status (loop-21 audit)
 
@@ -33,6 +34,43 @@ This doc is the single read for "what is the MIDI surface today + what is left."
   - `POST /api/midi/bindings/{binding_id}/enable`
 - **Frontend surface**: `/midi/{overview,devices,devices/:profileKey,bindings,routing,transport,network,presets,events,processing,lab,connections}` all live via the `MidiServicesShell` mount. Per-device editor pages carry the iter-133 cross-link banner.
 - **Test coverage**: 13 jest suites / 116 tests for the midi-services frontend + 169 backend pytest cases under `tests/midi/`.
+
+## T2485 close-out (2026-05-02)
+
+T2485 (MIDI GUI Unification) shipped end-to-end across 11 atomic iters:
+
+| Iter | Slice | Commit |
+|---|---|---|
+| 1 | T2485-1: deviceManifest schema + DeviceLandingHeader (foundation) | b877b93c |
+| 2 | T2485-2: generic `<DeviceStatusBar>` (consolidates MPX1/IntelFX status bars) | 15d177c5 |
+| 3 | T2485-3: `<DeviceFlowCanvasShell>` + shared `useFlowUndoRedo` hook | f2250acb |
+| 4 | T2485-4: MPX1 migrated to `/midi/devices/lexicon-mpx1/*` (hard redirect from `/devices/mpx1/*`, `/mpx1/*`) | acf28581 |
+| 5 | T2485-5: IntelFX migrated to `/midi/devices/rocktron-intelfx/*` | 52cfa4a9 |
+| 6 | T2485-6: Maschine landing at `/midi/devices/native-instruments-maschine-mk1` (cross-link into `/maschine` console) | 60abc413 |
+| 7 | T2485-7a: MCU + LaunchControl + MidiCommander console-style landings | 3fc5daed |
+| 8 | T2485-7b: Expression landing | 901a8fd5 |
+| 9 | T2485-7c: GroundControlPro landing | 48d51f9b |
+| 10 | T2485-7d: PushSurface landing | a0543c73 |
+| 11 | T2485-8: sidebar 9 MIDI entries → 1; MPX1 mega-menu retired | 3e1a5d7f |
+
+**What shipped end-to-end**: every MIDI-controlling device now has a unified `/midi/devices/<profile-key>` entry with a Carbon-styled landing header showing the device title and a 3-line purpose description (manifest-authored per Q3=A, rendered on landing view only per Q4=B). MPX1 and IntelFX are fully relocated; the shells accept a `routePrefix` prop so the same component renders correctly under both the unified mount and (for tests) the legacy mount. Legacy URLs (`/devices/mpx1/*`, `/mpx1/*`, `/devices/intelfx/*`, `/intelfx/*`) hard-redirect to the unified canonical mount per the locked Q1=A decision.
+
+**Sidebar**: was 11 advanced-menu entries (`/midi-hub`, `/devices`, `/state-authority`, `/mcu`, `/launch-control`, `/midi-commander`, `/mpx1`, `/intelfx`, `/tesira`, `/edirol-ua1000`, `/hotone-jogg`); now 6 (`/midi`, `/devices`, `/state-authority`, `/tesira`, `/edirol-ua1000`, `/hotone-jogg`). The five retired MIDI device entries remain reachable via `/midi/devices` and the homepage MIDI section.
+
+**Shared primitives now available**:
+- `web/src/app/components/Devices/Shared/deviceManifest.ts` — schema + `validateDeviceManifest()`
+- `web/src/app/components/Devices/Shared/DeviceLandingHeader.tsx` — title + 3-line purpose render
+- `web/src/app/components/Devices/Shared/DeviceStatusBar.tsx` — generic status bar (replaces MPX1StatusBar + IntelFXStatusBar; legacy status bars not yet retired — pending shell-side wiring)
+- `web/src/app/components/Devices/Shared/DeviceFlowCanvasShell.tsx` — flow-canvas frame with toolbar/sidebar/canvas slots + keyboard shortcut dispatcher
+- `web/src/app/components/Devices/Shared/useFlowUndoRedo.ts` — undo/redo stack with maxDepth ring buffer
+
+**Deferred follow-ups**: the three monolithic device pages (Expression 1361 LoC, GroundControlPro 1338 LoC, PushSurface 1625 LoC) keep their legacy operator routes intact. Per the locked Q2=A decision, decomposing them into multi-view shells before unification is the right design — but each is a multi-loop SHIP epic in its own right. They're tracked as standalone epics:
+
+- **T2487** — Decompose ExpressionPage into multi-view shell + migrate to `/midi/devices/expression/*`
+- **T2488** — Decompose GroundControlProPage + migrate to `/midi/devices/voodoo-lab-ground-control-pro/*`
+- **T2489** — Decompose PushSurfacePage + migrate to `/midi/devices/ableton-push-3/*`
+
+Each follows the T2485-4 (MPX1) template but adds the upstream decomposition step.
 
 ## Stale-note correction (loop 21 iter 201)
 

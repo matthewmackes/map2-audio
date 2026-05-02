@@ -226,6 +226,13 @@ All planned and in-progress work is tracked in:
 | MIDI Hub v2 area pages | `web/src/app/pages/midi-hub/MidiHub*Page.tsx` |
 | MIDI Hub nav store | `web/src/app/stores/midiHubNavStore.ts` |
 | MIDI Hub status bar | `web/src/app/components/MidiHub/MidiHubStatusBar.tsx` |
+| Unified MIDI device shell foundation (T2485) | `web/src/app/components/Devices/Shared/` |
+| Device manifest schema (T2485-1) | `web/src/app/components/Devices/Shared/deviceManifest.ts` |
+| Device landing header (T2485-1) | `web/src/app/components/Devices/Shared/DeviceLandingHeader.tsx` |
+| Generic device status bar (T2485-2) | `web/src/app/components/Devices/Shared/DeviceStatusBar.tsx` |
+| Generic device flow-canvas shell (T2485-3) | `web/src/app/components/Devices/Shared/DeviceFlowCanvasShell.tsx` |
+| Shared flow undo/redo hook (T2485-3) | `web/src/app/components/Devices/Shared/useFlowUndoRedo.ts` |
+| Console-style device landing (T2485-7a) | `web/src/app/pages/midi-services/MidiDeviceConsoleLanding.tsx` |
 | Event list service | `app/services/midi_hub/event_list_service.py` |
 | Tesira TTP client | `app/services/midi_hub/tesira_client.py` |
 | Virtual GPIO service | `app/services/midi_hub/virtual_gpio.py` |

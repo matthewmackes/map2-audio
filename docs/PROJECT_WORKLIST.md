@@ -35685,7 +35685,15 @@ Remaining T2459-H sub-tasks (H3 / H4 / H5 / H6) are intentionally hardware-block
 
 ---
 
-## Epic: T2485 — MIDI GUI Unification under device-pack shell (opened 2026-05-02)
+## Epic: T2485 — MIDI GUI Unification under device-pack shell (CLOSED 2026-05-02)
+
+**Status:** ✅ DONE 2026-05-02. All 9 device profiles unified under `/midi/devices/<profile-key>`; sidebar collapsed from 9 MIDI device entries to 1; MPX1 + IntelFX migrated with hard redirects from legacy URLs. Three console-shaped monoliths (Expression, GroundControlPro, PushSurface) keep their legacy routes intact pending T2487 / T2488 / T2489 decomposition epics.
+
+**Closing iters:** 11 atomic SHIP iters (b877b93c → 3e1a5d7f). Full close-out in `docs/architecture/MIDI_SERVICES_CLOSED_OUT.md`.
+
+**Original opening notes follow:**
+
+
 
 **Why it matters.** `T2482` closed the canonical `/midi` services surface, but the per-device MIDI GUIs (`/devices/mpx1`, `/devices/intelfx`, `/maschine`, `/mcu`, `/launch-control`, `/midi-commander`, `/ground-control-pro`, `/expression`, `/labs/push-surface`) still live as 9 parallel top-level routes, each with its own shell, status bar, and partly its own API client. The shared primitives needed to fold them all under `/midi/devices/:profileKey` already exist (`DeviceContextBanner`, `useDeviceNodeContext()`, `device-packs/` registry, `PlatformEventProvider`); this epic completes the unification so MIDI-flavored hardware appears as one surface to the operator.
 
@@ -35806,3 +35814,46 @@ The right shape is an onboarding-flow opt-in: when an operator turns on `midi.cl
 - Current MIDI surface inventory: `docs/architecture/MIDI_SERVICES_CLOSED_OUT.md`.
 
 The standing autonomous-loop directive is now free to pivot to AVB / Sampler / Audio Effects unification (Phase 4 template extraction from T2482) or post-P1.2 polish, depending on operator priority.
+
+---
+
+## T2487 — Decompose ExpressionPage + migrate to /midi/devices/expression/* (opened 2026-05-02)
+
+**Why:** `web/src/app/pages/ExpressionPage.tsx` is a 1361-LoC monolith. T2485-7b shipped a unified-directory landing for it but kept the legacy `/expression` console intact. This epic does the genuine multi-view decomposition + unified-shell migration the locked T2485 Q2=A decision called for.
+
+**Subtasks** (each its own SHIP iter):
+- **T2487-1** — Audit ExpressionPage. Identify natural seams: per-pedal config, calibration, mapping table, live monitor. Define view-tab list (panel / editor / midi-map / monitor / diag).
+- **T2487-2** — Build `ExpressionShell` (uses `<DeviceShell>` + manifest + `routePrefix`). Mount under `/midi/devices/expression/*` with each view as a separate route child.
+- **T2487-3** — Decompose the monolith into per-view components. ExpressionPage becomes a thin shell composing the views.
+- **T2487-4** — Add hard redirect `/expression` → `/midi/devices/expression/panel`. Tests for every view-tab.
+- **T2487-5** — Closeout: bundle hash verification, redirect coverage, doc update.
+
+**Estimated effort:** 4–5 SHIP iters.
+
+**Status:** [ ] Open. Unscheduled.
+
+---
+
+## T2488 — Decompose GroundControlProPage + migrate to /midi/devices/voodoo-lab-ground-control-pro/* (opened 2026-05-02)
+
+**Why:** Same as T2487 but for `web/src/app/pages/GroundControlProPage.tsx` (1338 LoC).
+
+**Subtasks** (template mirrors T2487):
+- T2488-1 audit, T2488-2 shell mount, T2488-3 view decomposition, T2488-4 redirects + tests, T2488-5 closeout.
+
+**Estimated effort:** 4–5 SHIP iters.
+
+**Status:** [ ] Open. Unscheduled.
+
+---
+
+## T2489 — Decompose PushSurfacePage + migrate to /midi/devices/ableton-push-3/* (opened 2026-05-02)
+
+**Why:** Same as T2487 but for `web/src/app/pages/PushSurfacePage.tsx` (1625 LoC). The largest of the three monoliths.
+
+**Subtasks** (template mirrors T2487):
+- T2489-1 audit, T2489-2 shell mount, T2489-3 view decomposition, T2489-4 redirects + tests, T2489-5 closeout.
+
+**Estimated effort:** 5–6 SHIP iters (size-adjusted from the T2487 template).
+
+**Status:** [ ] Open. Unscheduled.
