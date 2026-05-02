@@ -1,0 +1,70 @@
+/*
+ * T2490-8 — AvbServicesRoutingPage matrix grid styles.
+ *
+ * Carbon-conformant: tokens only, no hardcoded colors.
+ */
+
+.avb-routing-matrix {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.avb-routing-matrix__row {
+  display: grid;
+  grid-template-columns: minmax(10rem, 12rem) 1fr;
+  gap: 0.5rem;
+  align-items: stretch;
+}
+
+.avb-routing-matrix__row-label {
+  font-family: var(--shell-f-mono, var(--cds-code-01-font-family));
+  font-size: 0.8125rem;
+  color: var(--cds-text-primary);
+  background: var(--cds-layer);
+  border: 1px solid var(--cds-border-subtle, #393939);
+  padding: 0.5rem 0.75rem;
+  display: flex;
+  align-items: center;
+}
+
+.avb-routing-matrix__row-cells {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(9rem, 1fr));
+  gap: 0.25rem;
+}
+
+.avb-routing-matrix__cell {
+  border: 1px solid var(--cds-border-subtle, #393939);
+  background: var(--cds-layer);
+  padding: 0.5rem 0.75rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.125rem;
+  font-family: var(--shell-f-sans);
+  color: var(--cds-text-primary);
+  cursor: default;
+}
+
+.avb-routing-matrix__cell--empty {
+  color: var(--cds-text-helper);
+  background: transparent;
+}
+
+.avb-routing-matrix__cell-target {
+  font-size: 0.6875rem;
+  letter-spacing: 0.3px;
+  color: var(--cds-text-helper);
+  font-family: var(--shell-f-mono, var(--cds-code-01-font-family));
+}
+
+.avb-routing-matrix__cell-count {
+  font-size: 1.25rem;
+  font-weight: 600;
+  line-height: 1.1;
+}
+
+.avb-routing-matrix__cell-meta {
+  font-size: 0.6875rem;
+  color: var(--cds-support-success, #42be65);
+}
