@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1440** Python | **1439** TypeScript | **177** C++/H | **145** Docs | **3528** total commits | **3** stars | **0** forks | **0** open issues
+**1440** Python | **1439** TypeScript | **177** C++/H | **145** Docs | **3530** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`d4bf4fb3`](https://github.com/matthewmackes/map2-audio/commit/d4bf4fb35541291667d33b8f8f7fc5c54ec834db) | T2484 loop 19 / iter 189: verification report | Map2 Audio | 2026-05-02 |
+| [`549d99c6`](https://github.com/matthewmackes/map2-audio/commit/549d99c6129991da43ea7a36051d2dde3aac29f9) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-02 |
 | [`b1db8f24`](https://github.com/matthewmackes/map2-audio/commit/b1db8f24704458e0f2629c7ebd6795dd8aeddaa3) | T2484 loop 19 / iter 188: open T2484 worklist entry | Map2 Audio | 2026-05-02 |
 | [`f8fc760c`](https://github.com/matthewmackes/map2-audio/commit/f8fc760c9fc6c5abeae853936aa087c9db0d9ad4) | T2484 loop 19 / iter 187: RoutingPage clusterMatrix mock ... | Map2 Audio | 2026-05-02 |
 | [`8ab43a2e`](https://github.com/matthewmackes/map2-audio/commit/8ab43a2e3547c3ad2936b777f383777dc5b73655) | T2484 loop 19 / iter 186: usePeerMatrix tests for cluster... | Map2 Audio | 2026-05-02 |
 | [`e31be876`](https://github.com/matthewmackes/map2-audio/commit/e31be876be2a8afa1d81515f84e6db33fd307fae) | T2484 loop 19 / iter 185: usePeerMatrix wired to /cluster... | Map2 Audio | 2026-05-02 |
 | [`c5ac792f`](https://github.com/matthewmackes/map2-audio/commit/c5ac792f75e2698a8a194971abde65af4d991e62) | T2484 loop 19 / iter 184: frontend cluster matrix client ... | Map2 Audio | 2026-05-02 |
 | [`4a54764a`](https://github.com/matthewmackes/map2-audio/commit/4a54764a3a510bf76e9014888428788d775b376a) | T2484 loop 19 / iter 183: pytest for /cluster/bindings/ma... | Map2 Audio | 2026-05-02 |
-| [`e283215c`](https://github.com/matthewmackes/map2-audio/commit/e283215cde5afc52b2defcfa45ad1f512d60d68d) | T2484 loop 19 / iter 182: cluster matrix backend route (T... | Map2 Audio | 2026-05-02 |
-| [`b28fe185`](https://github.com/matthewmackes/map2-audio/commit/b28fe185ea7313a67a764b8a4400bf396013ccf0) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-02 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
