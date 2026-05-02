@@ -35475,3 +35475,66 @@ Plus updates to: `app/services/midi/routes.py` (matrix endpoint + Pydantic shape
 - Carbon OverflowMenuItem click path inside jsdom (per iter-168 note): the menu's portal + click-outside detection needs a more elaborate jest-dom setup than this loop took on. The Edit + Delete row actions are covered by lower-level iter-152/153 + iter-105/106 tests. If full E2E coverage is needed, loop 18+ could add a Playwright run targeting the production bundle.
 - The new `/api/midi/bindings/matrix` endpoint isn't wired into `app/main.py` (per the iter-18 file note that the entire `app/services/midi/routes.py` router is on disk for testing but not yet exposed publicly). Production frontend won't see the speedup until the router is wired — a separate small task tracked outside T2483.
 - Banner dismissibility is opt-in (no existing call site enables it). If we want it on by default for, say, the per-device pages once operators are familiar, that's a cheap one-line flip per page in a future loop.
+
+### SHIP loop 18 (iters 171–180) closing log — 2026-05-02
+
+**Status**: 10 substantive iters shipped (171-180, dual-pushed). **T2483 close-out loop.** Per the iter-171 plan: shipped both remaining sub-items (T2483-5 + T2483-9) so T2483 closes at **10 of 10 sub-items DONE**.
+
+| Iter | Sub-item | Commit | Highlight |
+|---|---|---|---|
+| 171 | Audit + plan | 47e53d70 | New `T2483_LOOP18_PLAN.md`. T2483-5: polling, not WebSocket, reuses existing MIDILearnManager. T2483-9: scaffolds the surface, defers cluster discovery wiring. |
+| 172 | T2483-5 backend | 2f11f353 | New `GET /api/midi/bindings/learn/last-cc`. `MIDILearnManager._last_cc` extension + `get_last_cc()` accessor. Pydantic `LastCcResponse` shape. |
+| 173 | T2483-5 backend pytest | a906a61c | 5 new pytest cases: route response_model, returns null when fresh, captures latest CC, overwrites with each new CC, omni channel serializes as null. |
+| 174 | T2483-5 frontend client + hook | 20be9322 | `midiBindingsApi.lastCc()` + new `useMidiLearnPoll` hook (250ms × 10s polling, observed_at filter, cleanup on unmount). |
+| 175 | T2483-5 SourceDescriptorEditor Learn button | ddaa7ab5 | Carbon Button next to cc field, only renders for source_type='midi_cc'. Idle/Active states with Cancel. |
+| 176 | T2483-5 frontend tests | a9b85bf5 | 7 jest tests for the polling hook (start/cancel/null/stale/fresh/timeout/error). |
+| 177 | T2483-9 peer overlay scaffold | be3ae8a2 | New `usePeerMatrix` hook (placeholder returns empty); RoutingPage cells render `+N` purple Tag badge when peer count > 0. Future loops swap the hook for real cluster data without touching the UI. |
+| 178 | T2483-9 frontend tests | 43594d1f | 4 hook contract tests + 3 RoutingPage badge tests (hidden when 0, shown when N>0, multiple cells). |
+| 179 | Verification + worklist | 400b5271 | New `T2483_LOOP18_VERIFICATION.md`. Gates: build clean, jest 12 suites/103 tests green, pytest 20 passed. T2483 worklist status flipped to `[✓] Done`. |
+| 180 | Roll-up + **T2483 EPIC DONE** | (this commit) | This closing log. |
+
+**Total new files in loop 18**:
+- 2 architecture docs (`T2483_LOOP18_PLAN.md`, `T2483_LOOP18_VERIFICATION.md`)
+- 1 backend pytest suite (`tests/midi/test_learn_last_cc_endpoint.py`)
+- 2 frontend hooks (`useMidiLearnPoll.ts`, `usePeerMatrix.ts`)
+- 3 frontend test suites (`useMidiLearnPoll.test.tsx`, `usePeerMatrix.test.tsx`, `MidiServicesRoutingPage.test.tsx`)
+
+Plus updates to: `app/services/midi_learn.py` (`_last_cc` field + `get_last_cc()` accessor), `app/services/midi/routes.py` (matrix + learn-last-cc routes), `web/src/map2/clients/midiBindings.ts` (lastCc() method + types), `web/src/app/pages/midi-services/SourceDescriptorEditor.tsx` (Learn button + handler), `web/src/app/pages/midi-services/MidiServicesRoutingPage.tsx` (peer badge), `web/src/app/pages/midi-services/SourceDescriptorEditor.css` (learn-row), `web/src/app/pages/midi-services/MidiServicesRoutingPage.css` (peer-badge).
+
+## **🏁 T2483 EPIC — DONE 🏁**
+
+After 3 SHIP loops (16 + 17 + 18) totaling 30 substantive iters and 30+ commits dual-pushed, the T2483 follow-up bundle is **closed**. **All 10 sub-items shipped:**
+
+- ✅ T2483-1: per-row mutation surface on `/midi/devices/:profileKey` (loop 16)
+- ✅ T2483-2: dedicated `MidiServicesConnectionsPage` (loop 16) — closed the last MidiHub-routed entry under `/midi/*`
+- ✅ T2483-3: `useMidiServicesShellWindow` shared helper (loop 16) — closed the loop-13/14 shell-kicker limitation
+- ✅ T2483-4: source-type filter strategy + matrix click-through preserves source_type (loop 16)
+- ✅ T2483-5: live MIDI-learn helper for `SourceDescriptorEditor` (loop 18)
+- ✅ T2483-6: `EventsPage.selectedEventListId` URL-synced (loop 16)
+- ✅ T2483-7: banner dismissibility flag + localStorage (loop 17)
+- ✅ T2483-8: server-side `/api/midi/bindings/matrix` endpoint (loop 17) — 90% query-volume reduction
+- ✅ T2483-9: cluster peer matrix overlay scaffold (loop 18)
+- ✅ T2483-10: interactive Bindings page jest tests (loop 17)
+
+**Test coverage trajectory** (across the full 18-loop arc since loop 10):
+- Pre-T2482 (loop 10 start): 0 midi-services jest tests
+- T2482 close (loop 15): 64 tests / 7 suites
+- T2483 close (loop 18): **103 tests / 12 suites + 20 backend pytest cases**
+
+**Performance + UX wins shipped in T2483**:
+- Routing matrix poll cycle: 10 fetches → 1 fetch per 5s (90% query reduction)
+- DevicePage detail surface gained full edit/toggle/delete instead of read-only
+- Connections region: closed the only remaining MidiHub-routed entry
+- Source descriptor editor gained live MIDI-learn (250ms cadence, 10s timeout)
+- Routing matrix cells now click-through preserving source_type AND have a future-ready peer overlay slot
+
+**Recommended next loop — Loop 19**: pivot to a new direction. T2482 + T2483 are both DONE. Candidate next epics:
+- **Post-P1.2 polish** (real Mixxx ControllerEngine JS execution, audio-thread engine-side latency measurement, namespace-isolation default-flip)
+- **AVB Services unification** (T2482 Phase 4 template extraction → first AVB epic)
+- **Cluster MIDI peer wiring** (the real backend that T2483-9's iter-177 scaffold expects)
+
+**Loop 18 acknowledged limitations**:
+- T2483-9 is a scaffold; real cluster discovery wiring deferred until operator demand or its own multi-loop epic.
+- T2483-5 polling cadence is 250ms — fast enough for the editor UX. WebSocket-based learn (sub-100ms) was deliberately out of scope.
+- T2483-5 Learn button only renders for source_type='midi_cc'. If operators want it for midi_note too, iter-175's gate is one line to extend.
+- The new `/api/midi/bindings/learn/last-cc` and `/api/midi/bindings/matrix` routes still aren't wired into `app/main.py` (per the iter-18 file note that the entire `app/services/midi/routes.py` router is on disk for testing). Production frontend won't see the endpoints' wins until the router is mounted — a separate small task tracked outside T2483.
