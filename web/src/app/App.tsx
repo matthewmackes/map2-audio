@@ -88,13 +88,13 @@ const MidiDeviceMcuLanding = lazy(() => import('./pages/midi-services/MidiDevice
 const MidiDeviceLaunchControlLanding = lazy(() => import('./pages/midi-services/MidiDeviceLaunchControlLanding').then(m => ({ default: m.MidiDeviceLaunchControlLanding })))
 const MidiDeviceMidiCommanderLanding = lazy(() => import('./pages/midi-services/MidiDeviceMidiCommanderLanding').then(m => ({ default: m.MidiDeviceMidiCommanderLanding })))
 // T2487-3 — Expression unified-shell console (replaces the iter-8
-// MidiDeviceExpressionLanding cross-link, which is now retired).
+// MidiDeviceExpressionLanding cross-link; deleted Loop 6 as dead code).
 const ExpressionConsoleView = lazy(() => import('./components/Devices/Expression/ExpressionConsoleView').then(m => ({ default: m.ExpressionConsoleView })))
 // T2488 — Voodoo Lab Ground Control Pro unified console (supersedes
-// the iter-9 MidiDeviceGroundControlProLanding cross-link).
+// the iter-9 MidiDeviceGroundControlProLanding cross-link; deleted Loop 6).
 const GroundControlProConsoleView = lazy(() => import('./components/Devices/GroundControlPro/GroundControlProConsoleView').then(m => ({ default: m.GroundControlProConsoleView })))
 // T2489 — Ableton Push 3 unified console (supersedes the iter-10
-// MidiDevicePushSurfaceLanding cross-link).
+// MidiDevicePushSurfaceLanding cross-link; deleted Loop 6).
 const PushSurfaceConsoleView = lazy(() => import('./components/Devices/PushSurface/PushSurfaceConsoleView').then(m => ({ default: m.PushSurfaceConsoleView })))
 const MidiServicesBindingsPage = lazy(() => import('./pages/midi-services/MidiServicesBindingsPage').then(m => ({ default: m.MidiServicesBindingsPage })))
 const MidiServicesRoutingPage = lazy(() => import('./pages/midi-services/MidiServicesRoutingPage').then(m => ({ default: m.MidiServicesRoutingPage })))
