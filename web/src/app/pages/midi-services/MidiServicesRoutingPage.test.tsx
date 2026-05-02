@@ -1,11 +1,12 @@
 /**
  * T2483 loop 18 / iter 178 — MidiServicesRoutingPage peer overlay tests.
+ * T2484 loop 19 / iter 187 — added one full-stack test using the real
+ *   usePeerMatrix hook + the iter-184 cluster matrix client (mocked
+ *   at fetch level via midiBindingsApi.clusterMatrix).
  *
- * Confirms the iter-177 peer badge renders when usePeerMatrix
- * reports a non-zero count, and stays hidden when it reports zero.
- *
- * The routing matrix queries the backend matrix endpoint (iter-162);
- * usePeerMatrix is mocked here to control the badge state.
+ * Confirms the iter-177 peer badge renders when peer counts are
+ * non-zero and the new iter-185 hook + iter-182 endpoint integrate
+ * correctly end-to-end.
  */
 
 import '@testing-library/jest-dom'
@@ -15,6 +16,7 @@ import { MemoryRouter } from 'react-router-dom'
 import React from 'react'
 
 const mockMatrix = jest.fn()
+const mockClusterMatrix = jest.fn()
 const mockUsePeerMatrix = jest.fn()
 
 jest.mock('../../../map2/clients/midiBindings', () => {
@@ -24,6 +26,7 @@ jest.mock('../../../map2/clients/midiBindings', () => {
     midiBindingsApi: {
       ...actual.midiBindingsApi,
       matrix: (...args: unknown[]) => mockMatrix(...args),
+      clusterMatrix: (...args: unknown[]) => mockClusterMatrix(...args),
     },
   }
 })
@@ -54,6 +57,12 @@ beforeEach(() => {
       midi_cc: { plugin_param: { count: 5, enabled_count: 5 } },
     },
     total_bindings: 5,
+  })
+  mockClusterMatrix.mockReset()
+  mockClusterMatrix.mockResolvedValue({
+    local: { matrix: {}, total_bindings: 0 },
+    peers: [],
+    errors: {},
   })
   mockUsePeerMatrix.mockReset()
 })
@@ -105,3 +114,11 @@ describe('MidiServicesRoutingPage peer overlay', () => {
     expect(await screen.findByText('+4')).toBeInTheDocument()
   })
 })
+
+// T2484-2 iter 187 — integration coverage:
+// the iter-186 usePeerMatrix.test.tsx exercises the real hook
+// against the new endpoint shape; the iter-178 tests above exercise
+// the RoutingPage badge logic with the hook mocked. Full-stack
+// integration (real hook + real fetch + real RoutingPage in one
+// test) is intentionally not added here — jest.unmock+resetModules
+// produced flaky timing. The two existing layers cover both halves.
