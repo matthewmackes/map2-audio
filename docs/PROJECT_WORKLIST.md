@@ -35659,3 +35659,28 @@ After 2 SHIP loops (19 + 20) totaling 20 substantive iters and 20+ commits dual-
 - Health probe per-peer adds wall-clock to the cluster fetch. Bounded at 2s × max(peer health timeout) per peer; with asyncio.gather, total wall-clock = max(per-peer) not sum.
 - T2484-3 drawer doesn't include a deep-link to the per-peer Bindings page (operators can hand-type `?node_id=X`). Could be added in a future loop.
 - Health Tag tones use Carbon's standard semantic colors (green/magenta/red/gray). 'magenta' for warn isn't the most intuitive — Carbon's amber Tag tone doesn't exist; magenta is the closest visual signal. Future loops could custom-style the Tag if operators find it confusing.
+
+### SHIP loop 21 (iters 201–203) close-out — 2026-05-02
+
+**Status**: 3-iter close-out loop (not the standing 10-iter pattern). User asked "Finish all MIDI tasks"; loop-21 audit revealed the only outstanding software-closeable MIDI work was correcting stale 'router not yet wired' notes carried forward from iter 18 across 4 documents. The router has actually been mounted in `app/main.py:1153` since well before T2482 closed.
+
+| Iter | Action | Commit | Highlight |
+|---|---|---|---|
+| 201 | Stale-note sweep | 0e6310ab | Cleared 4 false 'router not wired' acknowledged-limitation entries across `app/services/midi/routes.py` docstring, `tests/midi/test_matrix_endpoint.py`, and 3 spots in `PROJECT_WORKLIST.md` SHIP loop closing logs + 1 in `T2484_LOOP20_VERIFICATION.md`. No code change; the endpoints had been live this whole time. 27/27 backend pytest cases pass. |
+| 202 | Closed-out summary doc | 40d945de | New `docs/architecture/MIDI_SERVICES_CLOSED_OUT.md` — single read for "what is the MIDI surface today + what is left." Closed epics table, production status (11 routes + 12 frontend routes + 13 jest suites/116 tests + 169 backend pytest cases), stale-note correction note, hardware-blocked T2459-H sub-items inventory, recommended next direction. |
+| 203 | Roll-up | (this commit) | This entry. |
+
+## **🏁 ALL CLOSEABLE MIDI TASKS — DONE 🏁**
+
+Per the loop-21 audit, **every MIDI epic that can close in software is closed**:
+
+- ✅ T2482 (loop 15)
+- ✅ T2483 (loop 18)
+- ✅ T2484 (loop 20)
+- ✅ Stale-note sweep + production-status doc (loop 21)
+
+Remaining T2459-H sub-tasks (H3 / H4 / H5 / H6) are intentionally hardware-blocked per the worklist line-1324 pattern; **all software work is done**, only bench HIL validation remains. They're tracked under T2459-H, not under any of the closed epics above.
+
+**Total iters across the MIDI arc** (loops 10 through 21, since the resumed conversation began): 113 substantive iters dual-pushed; 4 epics closed; test coverage went from 0 midi-services jest tests to 116 jest + 169 backend pytest cases.
+
+The standing autonomous-loop directive is now free to pivot to AVB / Sampler / Audio Effects unification (Phase 4 template extraction from T2482) or post-P1.2 polish, depending on operator priority.
