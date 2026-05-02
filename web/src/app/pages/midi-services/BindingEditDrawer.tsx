@@ -1,21 +1,28 @@
 /**
  * T2482 loop 11 / iter 105 — BindingEditDrawer.
+ * T2482 loop 12 / iter 115 — replaced raw source/target JSON textareas
+ *   with structured SourceDescriptorEditor + TargetDescriptorEditor
+ *   per the iter-111 plan D1/D2/D3. The metadata field stays JSON
+ *   (unlike source/target it has no spec catalogue).
  *
  * Carbon Modal that loads a single binding via GET /api/midi/bindings/{id}
  * and surfaces an editor for the PATCH-able fields.
  *
- * Per the iter-101 plan D2: source/target descriptors are edited as raw
- * JSON in this iter. Per-source-type structured editors queue for loop 12+.
+ * Per the iter-111 plan D2: unknown descriptor keys are preserved via
+ * extractKnownAndUnknown / mergeForSave so round-trip edits don't
+ * lose backend extensions.
  *
- * Per D4: lives in a Modal so the operator stays in the list context.
+ * Per D3: each structured editor surfaces an Advanced (JSON) disclosure
+ * for forward-compat backend-extension authoring.
  *
  * Read-only fields (audit metadata):
  *   binding_id, consumer_type, consumer_id, source_type, target_type,
  *   created_at, created_by, modified_at, modified_by, source
  *
  * Editable (PATCH-able) fields per the Pydantic MidiBindingUpdate schema:
- *   consumer_label, source_descriptor (JSON), target_descriptor (JSON),
- *   device_id, scope, scope_id, enabled, metadata (JSON), modified_by
+ *   consumer_label, source_descriptor (structured), target_descriptor
+ *   (structured), device_id, scope, scope_id, enabled, metadata (JSON),
+ *   modified_by
  */
 
 import { useEffect, useMemo, useState } from 'react'
@@ -38,6 +45,10 @@ import {
   type MidiBindingRead,
   type MidiBindingUpdate,
 } from '../../../map2/clients/midiBindings'
+import { SourceDescriptorEditor } from './SourceDescriptorEditor'
+import { TargetDescriptorEditor } from './TargetDescriptorEditor'
+import { extractKnownAndUnknown, mergeForSave } from './sourceDescriptors'
+import { extractTargetKnownAndUnknown, mergeTargetForSave } from './targetDescriptors'
 import './BindingEditDrawer.css'
 
 interface BindingEditDrawerProps {
@@ -48,8 +59,12 @@ interface BindingEditDrawerProps {
 
 interface FormState {
   consumer_label: string
-  source_descriptor_json: string
-  target_descriptor_json: string
+  // structured source descriptor (known fields only)
+  source_known: Record<string, unknown>
+  source_unknown: Record<string, unknown>
+  // structured target descriptor (known fields only)
+  target_known: Record<string, unknown>
+  target_unknown: Record<string, unknown>
   device_id: string
   scope: BindingScope
   scope_id: string
@@ -59,10 +74,14 @@ interface FormState {
 }
 
 function stateFromBinding(b: MidiBindingRead): FormState {
+  const src = extractKnownAndUnknown(b.source_descriptor, b.source_type)
+  const tgt = extractTargetKnownAndUnknown(b.target_descriptor, b.target_type)
   return {
     consumer_label: b.consumer_label,
-    source_descriptor_json: JSON.stringify(b.source_descriptor, null, 2),
-    target_descriptor_json: JSON.stringify(b.target_descriptor, null, 2),
+    source_known: src.known,
+    source_unknown: src.unknown,
+    target_known: tgt.known,
+    target_unknown: tgt.unknown,
     device_id: b.device_id ?? '',
     scope: b.scope,
     scope_id: b.scope_id ?? '',
@@ -98,13 +117,13 @@ function patchFromState(state: FormState, original: MidiBindingRead): MidiBindin
   if (state.consumer_label !== original.consumer_label) {
     patch.consumer_label = state.consumer_label
   }
-  const srcVal = validateJson(state.source_descriptor_json)
-  if (srcVal.ok && JSON.stringify(srcVal.value) !== JSON.stringify(original.source_descriptor)) {
-    patch.source_descriptor = srcVal.value ?? {}
+  const mergedSource = mergeForSave(state.source_known, state.source_unknown)
+  if (JSON.stringify(mergedSource) !== JSON.stringify(original.source_descriptor)) {
+    patch.source_descriptor = mergedSource
   }
-  const tgtVal = validateJson(state.target_descriptor_json)
-  if (tgtVal.ok && JSON.stringify(tgtVal.value) !== JSON.stringify(original.target_descriptor)) {
-    patch.target_descriptor = tgtVal.value ?? {}
+  const mergedTarget = mergeTargetForSave(state.target_known, state.target_unknown)
+  if (JSON.stringify(mergedTarget) !== JSON.stringify(original.target_descriptor)) {
+    patch.target_descriptor = mergedTarget
   }
   const deviceFromState = state.device_id || null
   if (deviceFromState !== (original.device_id ?? null)) {
@@ -151,21 +170,12 @@ export function BindingEditDrawer({ bindingId, open, onClose }: BindingEditDrawe
     }
   }, [open])
 
-  const sourceJsonValidation = useMemo(
-    () => (state ? validateJson(state.source_descriptor_json) : { ok: true, error: null, value: null }),
-    [state],
-  )
-  const targetJsonValidation = useMemo(
-    () => (state ? validateJson(state.target_descriptor_json) : { ok: true, error: null, value: null }),
-    [state],
-  )
   const metadataJsonValidation = useMemo(
     () => (state ? validateJson(state.metadata_json) : { ok: true, error: null, value: null }),
     [state],
   )
 
-  const allJsonValid =
-    sourceJsonValidation.ok && targetJsonValidation.ok && metadataJsonValidation.ok
+  const allJsonValid = metadataJsonValidation.ok
 
   const updateMutation = useMutation({
     mutationFn: (patch: MidiBindingUpdate) => midiBindingsApi.update(bindingId!, patch),
@@ -282,33 +292,30 @@ export function BindingEditDrawer({ bindingId, open, onClose }: BindingEditDrawe
               />
             </FormGroup>
 
-            <FormGroup legendText="Source descriptor (JSON object)">
-              <TextArea
-                id="binding-edit-source-descriptor"
-                labelText=""
-                rows={6}
-                invalid={!sourceJsonValidation.ok}
-                invalidText={sourceJsonValidation.error ?? ''}
-                value={state.source_descriptor_json}
-                onChange={(e) =>
-                  setState({ ...state, source_descriptor_json: e.target.value })
-                }
-              />
-            </FormGroup>
+          </section>
 
-            <FormGroup legendText="Target descriptor (JSON object)">
-              <TextArea
-                id="binding-edit-target-descriptor"
-                labelText=""
-                rows={6}
-                invalid={!targetJsonValidation.ok}
-                invalidText={targetJsonValidation.error ?? ''}
-                value={state.target_descriptor_json}
-                onChange={(e) =>
-                  setState({ ...state, target_descriptor_json: e.target.value })
-                }
-              />
-            </FormGroup>
+          <section className="bindings-edit-drawer__section">
+            <h4>Source descriptor ({query.data.source_type})</h4>
+            <SourceDescriptorEditor
+              sourceType={query.data.source_type}
+              value={state.source_known}
+              onChange={(next) => setState({ ...state, source_known: next })}
+              unknownExtras={state.source_unknown}
+            />
+          </section>
+
+          <section className="bindings-edit-drawer__section">
+            <h4>Target descriptor ({query.data.target_type})</h4>
+            <TargetDescriptorEditor
+              targetType={query.data.target_type}
+              value={state.target_known}
+              onChange={(next) => setState({ ...state, target_known: next })}
+              unknownExtras={state.target_unknown}
+            />
+          </section>
+
+          <section className="bindings-edit-drawer__section">
+            <h4>Metadata + audit</h4>
 
             <FormGroup legendText="Metadata (JSON object)">
               <TextArea
