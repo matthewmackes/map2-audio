@@ -622,8 +622,44 @@ def get_cluster_settings() -> MidiClusterSettingsResponse:
     )
 
 
+async def _emit_cluster_setting_changed(
+    kind: str, prev_value: bool, new_value: bool,
+) -> None:
+    """
+    T2486-3 — emit a PlatformEvent on operator-initiated cluster MIDI
+    gate flip. Failures are best-effort — config writes succeed
+    regardless of the audit-event path. Routed through the same
+    `make_cluster_platform_event` factory used by config_api.
+    """
+    if prev_value == new_value:
+        return
+    try:
+        from app.services.cluster.enhanced_node_identity import get_enhanced_node_identity
+        from app.services.platform_event.bus import get_platform_event_bus
+        from app.services.platform_event.factories import make_cluster_platform_event
+        from app.services.platform_event.severity import Severity
+
+        identity = get_enhanced_node_identity()
+        label = "Cluster MIDI" if kind.endswith(".enabled.changed") else "Cluster MIDI auto-connect"
+        message = f"{label} flipped from {'on' if prev_value else 'off'} to {'on' if new_value else 'off'}"
+        await get_platform_event_bus().emit(
+            make_cluster_platform_event(
+                kind=kind,
+                severity=Severity.INFO,
+                source_node=identity.get_node_id(),
+                source_service="midi_cluster",
+                title=label,
+                message=message,
+                context={"prev_value": prev_value, "new_value": new_value},
+            )
+        )
+    except Exception:
+        # Best-effort audit emission; never block the config write.
+        return
+
+
 @router.patch("/settings", response_model=MidiClusterSettingsResponse)
-def update_cluster_settings(payload: MidiClusterSettingsUpdate) -> MidiClusterSettingsResponse:
+async def update_cluster_settings(payload: MidiClusterSettingsUpdate) -> MidiClusterSettingsResponse:
     """
     T2486-1 — partial update of the cluster MIDI gates.
 
@@ -633,12 +669,30 @@ def update_cluster_settings(payload: MidiClusterSettingsUpdate) -> MidiClusterSe
     MidiServicesNetworkPage uses the coupled-flip flow: enabling
     `enabled` prompts the operator to also enable `auto_connect` (Q2
     locked decision in PROJECT_WORKLIST.md T2486 entry).
+
+    T2486-3 — emits midi.cluster.enabled.changed and
+    midi.cluster.auto_connect.changed PlatformEvents on operator
+    flips. Programmatic config writes that don't hit this route are
+    NOT audited — only operator-initiated changes via the UI flow.
     """
+    prev_enabled = bool(config_get("midi.cluster.enabled", False))
+    prev_auto = bool(config_get("midi.cluster.auto_connect", False))
+
     if payload.enabled is not None:
         config_set("midi.cluster.enabled", bool(payload.enabled))
     if payload.auto_connect is not None:
         config_set("midi.cluster.auto_connect", bool(payload.auto_connect))
-    return MidiClusterSettingsResponse(
-        enabled=bool(config_get("midi.cluster.enabled", False)),
-        auto_connect=bool(config_get("midi.cluster.auto_connect", False)),
-    )
+
+    new_enabled = bool(config_get("midi.cluster.enabled", False))
+    new_auto = bool(config_get("midi.cluster.auto_connect", False))
+
+    if payload.enabled is not None:
+        await _emit_cluster_setting_changed(
+            "midi.cluster.enabled.changed", prev_enabled, new_enabled
+        )
+    if payload.auto_connect is not None:
+        await _emit_cluster_setting_changed(
+            "midi.cluster.auto_connect.changed", prev_auto, new_auto
+        )
+
+    return MidiClusterSettingsResponse(enabled=new_enabled, auto_connect=new_auto)
