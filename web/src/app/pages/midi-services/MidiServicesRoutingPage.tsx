@@ -53,7 +53,11 @@ export function MidiServicesRoutingPage() {
   const navigate = useNavigate()
 
   const goToCell = (sourceType: BindingSourceType, consumerType: BindingConsumerType) => {
-    navigate(`/midi/bindings?consumer_type=${encodeURIComponent(consumerType)}`)
+    // T2483-4B iter 157 — preserve source_type so the iter-103 list page
+    // pre-narrows by the matrix-cell's source.
+    navigate(
+      `/midi/bindings?consumer_type=${encodeURIComponent(consumerType)}&source_type=${encodeURIComponent(sourceType)}`,
+    )
   }
 
   const goToColumn = (consumerType: BindingConsumerType) => {
