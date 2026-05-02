@@ -3,6 +3,8 @@
  */
 
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { motion, useMotionValue, useTransform, animate } from 'framer-motion'
+import { MAP2_SPRING } from '../../../styles/motionPrimitives'
 
 import type { UseIntelFXStateResult } from '../../../../map2/intelfxApi'
 import {
@@ -20,12 +22,6 @@ import { IntelFXFlowSidebar } from './IntelFXFlowSidebar'
 import { IntelFXFlowToolbar } from './IntelFXFlowToolbar'
 import './IntelFXSignalPathCanvas.css'
 
-interface ViewTransform {
-  zoom: number
-  panX: number
-  panY: number
-}
-
 const MIN_ZOOM = 0.35
 const MAX_ZOOM = 2.5
 const ZOOM_STEP = 0.15
@@ -39,11 +35,14 @@ export function IntelFXSignalPathCanvas({ intelfx, setStatusText: setStatusTextP
   const setStatusText = setStatusTextProp ?? (() => {})
 
   const [selectedEffectId, setSelectedEffectId] = useState<IntelFXEffectBlockId | null>(null)
-  const [viewTransform, setViewTransform] = useState<ViewTransform>({
-    zoom: 1,
-    panX: 0,
-    panY: 0,
-  })
+  const [zoom, setZoom] = useState(1)
+  const panX = useMotionValue(0)
+  const panY = useMotionValue(0)
+  const canvasTransform = useTransform(
+    [panX, panY],
+    ([x, y]: number[]) =>
+      `scale(${zoom}) translate(${x / zoom}px, ${y / zoom}px)`,
+  )
 
   const undoRedo = useFlowUndoRedo(50)
 
@@ -137,34 +136,26 @@ export function IntelFXSignalPathCanvas({ intelfx, setStatusText: setStatusTextP
   }, [intelfx, setStatusText, undoRedo])
 
   const handleZoomIn = useCallback(() => {
-    setViewTransform((prev) => ({
-      ...prev,
-      zoom: Math.min(MAX_ZOOM, Math.round((prev.zoom + ZOOM_STEP) * 100) / 100),
-    }))
+    setZoom((prev) => Math.min(MAX_ZOOM, Math.round((prev + ZOOM_STEP) * 100) / 100))
   }, [])
 
   const handleZoomOut = useCallback(() => {
-    setViewTransform((prev) => ({
-      ...prev,
-      zoom: Math.max(MIN_ZOOM, Math.round((prev.zoom - ZOOM_STEP) * 100) / 100),
-    }))
+    setZoom((prev) => Math.max(MIN_ZOOM, Math.round((prev - ZOOM_STEP) * 100) / 100))
   }, [])
 
   const handleZoomReset = useCallback(() => {
-    setViewTransform({ zoom: 1, panX: 0, panY: 0 })
-  }, [])
+    setZoom(1)
+    panX.set(0)
+    panY.set(0)
+  }, [panX, panY])
 
   const handleWheel = useCallback((e: React.WheelEvent<HTMLDivElement>) => {
     if (!e.ctrlKey) return
     e.preventDefault()
     const delta = e.deltaY > 0 ? -ZOOM_STEP : ZOOM_STEP
-    setViewTransform((prev) => ({
-      ...prev,
-      zoom: Math.min(
-        MAX_ZOOM,
-        Math.max(MIN_ZOOM, Math.round((prev.zoom + delta) * 100) / 100),
-      ),
-    }))
+    setZoom((prev) =>
+      Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, Math.round((prev + delta) * 100) / 100)),
+    )
   }, [])
 
   const handleMouseDown = useCallback(
@@ -175,26 +166,29 @@ export function IntelFXSignalPathCanvas({ intelfx, setStatusText: setStatusTextP
         panStartRef.current = {
           x: e.clientX,
           y: e.clientY,
-          panX: viewTransform.panX,
-          panY: viewTransform.panY,
+          panX: panX.get(),
+          panY: panY.get(),
         }
       }
     },
-    [viewTransform.panX, viewTransform.panY],
+    [panX, panY],
   )
 
-  const handleMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
-    if (!isPanningRef.current) return
-    setViewTransform((prev) => ({
-      ...prev,
-      panX: panStartRef.current.panX + (e.clientX - panStartRef.current.x),
-      panY: panStartRef.current.panY + (e.clientY - panStartRef.current.y),
-    }))
-  }, [])
+  const handleMouseMove = useCallback(
+    (e: React.MouseEvent<HTMLDivElement>) => {
+      if (!isPanningRef.current) return
+      panX.set(panStartRef.current.panX + (e.clientX - panStartRef.current.x))
+      panY.set(panStartRef.current.panY + (e.clientY - panStartRef.current.y))
+    },
+    [panX, panY],
+  )
 
   const stopPan = useCallback(() => {
+    if (!isPanningRef.current) return
     isPanningRef.current = false
-  }, [])
+    void animate(panX, panX.get(), { ...MAP2_SPRING.slotTap })
+    void animate(panY, panY.get(), { ...MAP2_SPRING.slotTap })
+  }, [panX, panY])
 
   const handleBypassToggle = useCallback(
     (blockIndex: number, shouldBypass: boolean) => {
@@ -259,7 +253,7 @@ export function IntelFXSignalPathCanvas({ intelfx, setStatusText: setStatusTextP
         onRedo={handleRedo}
         canUndo={undoRedo.canUndo}
         canRedo={undoRedo.canRedo}
-        zoom={viewTransform.zoom}
+        zoom={zoom}
         onZoomIn={handleZoomIn}
         onZoomOut={handleZoomOut}
         onZoomReset={handleZoomReset}
@@ -282,12 +276,10 @@ export function IntelFXSignalPathCanvas({ intelfx, setStatusText: setStatusTextP
           onMouseUp={stopPan}
           onMouseLeave={stopPan}
         >
-          <div
+          <motion.div
             ref={canvasInnerRef}
             className="intelfx-flow__canvas-inner"
-            style={{
-              transform: `scale(${viewTransform.zoom}) translate(${viewTransform.panX / viewTransform.zoom}px, ${viewTransform.panY / viewTransform.zoom}px)`,
-            }}
+            style={{ transform: canvasTransform }}
           >
             <div className="intelfx-flow__path-row intelfx-flow__path-row--top">
               <div className="intelfx-flow__lane-label">Signal Path</div>
@@ -326,7 +318,7 @@ export function IntelFXSignalPathCanvas({ intelfx, setStatusText: setStatusTextP
             </div>
 
             <IntelFXSignalPathPatchCords cords={patchCords} nodeRefs={nodeRefs} canvasRef={canvasInnerRef} />
-          </div>
+          </motion.div>
         </div>
 
         <div className="intelfx-flow__editor-dock">

@@ -20,6 +20,8 @@ import React, {
   useRef,
   useState,
 } from 'react'
+import { motion, useMotionValue, useTransform, animate } from 'framer-motion'
+import { MAP2_SPRING } from '../../../styles/motionPrimitives'
 
 import { useMPX1PageContext } from './MPX1Shell'
 import { MPX1FlowBlockCard } from './MPX1FlowBlockCard'
@@ -47,12 +49,6 @@ const ROUTING_MODES = [
 ]
 import './MPX1SignalPathCanvas.css'
 
-interface ViewTransform {
-  zoom: number
-  panX: number
-  panY: number
-}
-
 const MIN_ZOOM = 0.35
 const MAX_ZOOM = 2.5
 const ZOOM_STEP = 0.15
@@ -62,11 +58,15 @@ export function MPX1SignalPathCanvas() {
 
   // Selection tracked by effectType so it survives block reordering
   const [selectedEffectId, setSelectedEffectId] = useState<EffectBlockId | null>(null)
-  const [viewTransform, setViewTransform] = useState<ViewTransform>({
-    zoom: 1,
-    panX: 0,
-    panY: 0,
-  })
+  const [zoom, setZoom] = useState(1)
+  const panX = useMotionValue(0)
+  const panY = useMotionValue(0)
+  // Derived transform string for the canvas-inner div
+  const canvasTransform = useTransform(
+    [panX, panY],
+    ([x, y]: number[]) =>
+      `scale(${zoom}) translate(${x / zoom}px, ${y / zoom}px)`,
+  )
   const [blockLevels, setBlockLevels] = useState<Record<number, number>>({})
   // Effect order — user can reorder the 6 blocks; defaults to factory order
   const [effectOrder, setEffectOrder] = useState<EffectBlockId[]>([...DEFAULT_EFFECT_ORDER])
@@ -76,7 +76,7 @@ export function MPX1SignalPathCanvas() {
   const [showOrderPanel, setShowOrderPanel] = useState(false)
   const undoRedo = useFlowUndoRedo(50)
 
-  // Panning state
+  // Panning state — refs avoid re-renders during drag
   const isPanningRef = useRef(false)
   const panStartRef = useRef({ x: 0, y: 0, panX: 0, panY: 0 })
 
@@ -197,37 +197,29 @@ export function MPX1SignalPathCanvas() {
   // ── Zoom handlers ─────────────────────────────────────────────────────────
 
   const handleZoomIn = useCallback(() => {
-    setViewTransform((prev) => ({
-      ...prev,
-      zoom: Math.min(MAX_ZOOM, Math.round((prev.zoom + ZOOM_STEP) * 100) / 100),
-    }))
+    setZoom((prev) => Math.min(MAX_ZOOM, Math.round((prev + ZOOM_STEP) * 100) / 100))
   }, [])
 
   const handleZoomOut = useCallback(() => {
-    setViewTransform((prev) => ({
-      ...prev,
-      zoom: Math.max(MIN_ZOOM, Math.round((prev.zoom - ZOOM_STEP) * 100) / 100),
-    }))
+    setZoom((prev) => Math.max(MIN_ZOOM, Math.round((prev - ZOOM_STEP) * 100) / 100))
   }, [])
 
   const handleZoomReset = useCallback(() => {
-    setViewTransform({ zoom: 1, panX: 0, panY: 0 })
-  }, [])
+    setZoom(1)
+    panX.set(0)
+    panY.set(0)
+  }, [panX, panY])
 
   const handleWheel = useCallback((e: React.WheelEvent<HTMLDivElement>) => {
     if (!e.ctrlKey) return
     e.preventDefault()
     const delta = e.deltaY > 0 ? -ZOOM_STEP : ZOOM_STEP
-    setViewTransform((prev) => ({
-      ...prev,
-      zoom: Math.min(
-        MAX_ZOOM,
-        Math.max(MIN_ZOOM, Math.round((prev.zoom + delta) * 100) / 100),
-      ),
-    }))
+    setZoom((prev) =>
+      Math.min(MAX_ZOOM, Math.max(MIN_ZOOM, Math.round((prev + delta) * 100) / 100)),
+    )
   }, [])
 
-  // ── Pan handlers (middle-click or Ctrl+drag) ───────────────────────────────
+  // ── Pan handlers (middle-click or Ctrl+drag) — motion-value driven ────────
 
   const handleMouseDown = useCallback(
     (e: React.MouseEvent<HTMLDivElement>) => {
@@ -237,26 +229,30 @@ export function MPX1SignalPathCanvas() {
         panStartRef.current = {
           x: e.clientX,
           y: e.clientY,
-          panX: viewTransform.panX,
-          panY: viewTransform.panY,
+          panX: panX.get(),
+          panY: panY.get(),
         }
       }
     },
-    [viewTransform.panX, viewTransform.panY],
+    [panX, panY],
   )
 
-  const handleMouseMove = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
-    if (!isPanningRef.current) return
-    setViewTransform((prev) => ({
-      ...prev,
-      panX: panStartRef.current.panX + (e.clientX - panStartRef.current.x),
-      panY: panStartRef.current.panY + (e.clientY - panStartRef.current.y),
-    }))
-  }, [])
+  const handleMouseMove = useCallback(
+    (e: React.MouseEvent<HTMLDivElement>) => {
+      if (!isPanningRef.current) return
+      panX.set(panStartRef.current.panX + (e.clientX - panStartRef.current.x))
+      panY.set(panStartRef.current.panY + (e.clientY - panStartRef.current.y))
+    },
+    [panX, panY],
+  )
 
   const stopPan = useCallback(() => {
+    if (!isPanningRef.current) return
     isPanningRef.current = false
-  }, [])
+    // Spring settle on release — gives pan a physical snap-to-rest feel
+    void animate(panX, panX.get(), { ...MAP2_SPRING.slotTap })
+    void animate(panY, panY.get(), { ...MAP2_SPRING.slotTap })
+  }, [panX, panY])
 
   // ── Block interactions ────────────────────────────────────────────────────
 
@@ -347,7 +343,7 @@ export function MPX1SignalPathCanvas() {
     <div className="mpx1-flow">
       <MPX1FlowToolbar
         mpx1={mpx1}
-        zoom={viewTransform.zoom}
+        zoom={zoom}
         canUndo={undoRedo.canUndo}
         canRedo={undoRedo.canRedo}
         onUndo={handleUndo}
@@ -444,12 +440,10 @@ export function MPX1SignalPathCanvas() {
           onMouseUp={stopPan}
           onMouseLeave={stopPan}
         >
-          <div
+          <motion.div
             ref={canvasInnerRef}
             className="mpx1-flow__canvas-inner"
-            style={{
-              transform: `scale(${viewTransform.zoom}) translate(${viewTransform.panX / viewTransform.zoom}px, ${viewTransform.panY / viewTransform.zoom}px)`,
-            }}
+            style={{ transform: canvasTransform }}
           >
             {/* Upper path row */}
             <div className="mpx1-flow__path-row mpx1-flow__path-row--upper">
@@ -526,7 +520,7 @@ export function MPX1SignalPathCanvas() {
               nodeRefs={nodeRefs}
               canvasRef={canvasInnerRef}
             />
-          </div>
+          </motion.div>
         </div>
 
         {/* ── Docked editor panel below canvas ─────────────────────────── */}
