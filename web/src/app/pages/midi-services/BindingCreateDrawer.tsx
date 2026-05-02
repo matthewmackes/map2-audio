@@ -1,13 +1,14 @@
 /**
  * T2482 loop 11 / iter 106 — BindingCreateDrawer.
+ * T2482 loop 12 / iter 116 — replaced raw source/target JSON
+ *   textareas with the iter-113/114 structured editors. When the
+ *   operator picks a source_type or target_type, the descriptor
+ *   slot resets to defaultDescriptorFor / defaultTargetDescriptorFor.
+ *   Metadata stays JSON.
  *
  * Sister to BindingEditDrawer (iter 105). Same Carbon Modal shape,
  * but every field is editable and the required-on-create vocabulary
  * fields (consumer_type, source_type, target_type) are dropdowns.
- *
- * Per the iter-101 plan D2: source/target descriptors are JSON
- * textareas in this iter. Per-source-type structured editors queue
- * for loop 12+.
  */
 
 import { useEffect, useMemo, useState } from 'react'
@@ -34,6 +35,10 @@ import {
   type BindingTargetType,
   type MidiBindingCreate,
 } from '../../../map2/clients/midiBindings'
+import { SourceDescriptorEditor } from './SourceDescriptorEditor'
+import { TargetDescriptorEditor } from './TargetDescriptorEditor'
+import { defaultDescriptorFor } from './sourceDescriptors'
+import { defaultTargetDescriptorFor } from './targetDescriptors'
 import './BindingEditDrawer.css'  // share the styles — same field shape
 
 interface BindingCreateDrawerProps {
@@ -46,9 +51,9 @@ interface FormState {
   consumer_id: string
   consumer_label: string
   source_type: BindingSourceType | ''
-  source_descriptor_json: string
+  source_descriptor: Record<string, unknown>
   target_type: BindingTargetType | ''
-  target_descriptor_json: string
+  target_descriptor: Record<string, unknown>
   device_id: string
   scope: BindingScope
   scope_id: string
@@ -63,9 +68,9 @@ const EMPTY_FORM: FormState = {
   consumer_id: '',
   consumer_label: '',
   source_type: '',
-  source_descriptor_json: '{}',
+  source_descriptor: {},
   target_type: '',
-  target_descriptor_json: '{}',
+  target_descriptor: {},
   device_id: '',
   scope: 'global',
   scope_id: '',
@@ -101,18 +106,16 @@ function payloadFromState(state: FormState): MidiBindingCreate | null {
     return null
   }
   if (state.consumer_id.trim() === '') return null
-  const src = validateJson(state.source_descriptor_json)
-  const tgt = validateJson(state.target_descriptor_json)
   const meta = validateJson(state.metadata_json)
-  if (!src.ok || !tgt.ok || !meta.ok) return null
+  if (!meta.ok) return null
   return {
     consumer_type: state.consumer_type,
     consumer_id: state.consumer_id.trim(),
     consumer_label: state.consumer_label,
     source_type: state.source_type,
-    source_descriptor: src.value ?? {},
+    source_descriptor: state.source_descriptor,
     target_type: state.target_type,
-    target_descriptor: tgt.value ?? {},
+    target_descriptor: state.target_descriptor,
     device_id: state.device_id || null,
     scope: state.scope,
     scope_id: state.scope_id || null,
@@ -136,8 +139,6 @@ export function BindingCreateDrawer({ open, onClose }: BindingCreateDrawerProps)
     }
   }, [open])
 
-  const sourceJsonValidation = useMemo(() => validateJson(state.source_descriptor_json), [state.source_descriptor_json])
-  const targetJsonValidation = useMemo(() => validateJson(state.target_descriptor_json), [state.target_descriptor_json])
   const metadataJsonValidation = useMemo(() => validateJson(state.metadata_json), [state.metadata_json])
 
   const payload = useMemo(() => payloadFromState(state), [state])
@@ -216,23 +217,28 @@ export function BindingCreateDrawer({ open, onClose }: BindingCreateDrawerProps)
               label="Pick a source type"
               items={[...BINDING_SOURCE_TYPES]}
               selectedItem={state.source_type || undefined}
-              onChange={({ selectedItem }) =>
-                setState({ ...state, source_type: (selectedItem ?? '') as BindingSourceType | '' })
-              }
+              onChange={({ selectedItem }) => {
+                const nextType = (selectedItem ?? '') as BindingSourceType | ''
+                setState({
+                  ...state,
+                  source_type: nextType,
+                  source_descriptor: nextType ? defaultDescriptorFor(nextType) : {},
+                })
+              }}
             />
           </FormGroup>
 
-          <FormGroup legendText="Source descriptor (JSON object)">
-            <TextArea
-              id="binding-create-source-descriptor"
-              labelText=""
-              rows={6}
-              invalid={!sourceJsonValidation.ok}
-              invalidText={sourceJsonValidation.error ?? ''}
-              value={state.source_descriptor_json}
-              onChange={(e) => setState({ ...state, source_descriptor_json: e.target.value })}
+          {state.source_type ? (
+            <SourceDescriptorEditor
+              sourceType={state.source_type}
+              value={state.source_descriptor}
+              onChange={(next) => setState({ ...state, source_descriptor: next })}
             />
-          </FormGroup>
+          ) : (
+            <p className="midi-services-bindings__empty-row">
+              Pick a source type above to author the descriptor.
+            </p>
+          )}
         </section>
 
         <section className="bindings-edit-drawer__section">
@@ -245,23 +251,28 @@ export function BindingCreateDrawer({ open, onClose }: BindingCreateDrawerProps)
               label="Pick a target type"
               items={[...BINDING_TARGET_TYPES]}
               selectedItem={state.target_type || undefined}
-              onChange={({ selectedItem }) =>
-                setState({ ...state, target_type: (selectedItem ?? '') as BindingTargetType | '' })
-              }
+              onChange={({ selectedItem }) => {
+                const nextType = (selectedItem ?? '') as BindingTargetType | ''
+                setState({
+                  ...state,
+                  target_type: nextType,
+                  target_descriptor: nextType ? defaultTargetDescriptorFor(nextType) : {},
+                })
+              }}
             />
           </FormGroup>
 
-          <FormGroup legendText="Target descriptor (JSON object)">
-            <TextArea
-              id="binding-create-target-descriptor"
-              labelText=""
-              rows={6}
-              invalid={!targetJsonValidation.ok}
-              invalidText={targetJsonValidation.error ?? ''}
-              value={state.target_descriptor_json}
-              onChange={(e) => setState({ ...state, target_descriptor_json: e.target.value })}
+          {state.target_type ? (
+            <TargetDescriptorEditor
+              targetType={state.target_type}
+              value={state.target_descriptor}
+              onChange={(next) => setState({ ...state, target_descriptor: next })}
             />
-          </FormGroup>
+          ) : (
+            <p className="midi-services-bindings__empty-row">
+              Pick a target type above to author the descriptor.
+            </p>
+          )}
         </section>
 
         <section className="bindings-edit-drawer__section">
