@@ -99,6 +99,7 @@ import { MidiServicesPresetsPage } from './MidiServicesPresetsPage'
 import { MidiServicesEventsPage } from './MidiServicesEventsPage'
 import { MidiServicesProcessingPage } from './MidiServicesProcessingPage'
 import { MidiServicesLabPage } from './MidiServicesLabPage'
+import { MidiServicesTransportPage } from './MidiServicesTransportPage'
 
 describe('MidiServicesNetworkPage', () => {
   it('mounts the 5 network panels', () => {
@@ -173,5 +174,18 @@ describe('MidiServicesLabPage', () => {
   it('renders a Lab heading', () => {
     render(<MidiServicesLabPage />)
     expect(screen.getByText('Lab')).toBeInTheDocument()
+  })
+})
+
+describe('MidiServicesTransportPage', () => {
+  it('mounts the 2 transport panels', () => {
+    render(<MidiServicesTransportPage />)
+    expect(screen.getByTestId('midi-clock-panel')).toBeInTheDocument()
+    expect(screen.getByTestId('midi-recorder-panel')).toBeInTheDocument()
+  })
+
+  it('renders a Transport heading', () => {
+    render(<MidiServicesTransportPage />)
+    expect(screen.getByText('Transport')).toBeInTheDocument()
   })
 })
