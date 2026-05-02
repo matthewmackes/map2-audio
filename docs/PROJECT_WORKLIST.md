@@ -35373,3 +35373,54 @@ After 6 SHIP loops (10 + 11 + 12 + 13 + 14 + 15) totaling 60 substantive iters a
 - The `T2482_LOOP15_VERIFICATION.md` gates do NOT include a production `npm run build`. Loop 15 added zero code lines so the existing dist/ from prior loops remains valid; deferring to next regular build cadence.
 - Visual-regression baselines were never run as part of T2482; per MIDI_SERVICES.md exit criteria, that gate was deferred to standing visual-regression cadence.
 - The T2483 follow-up bundle's 10 items are catalogued but not all individually worked through — the bundle's DoD allows shipping any 3 of 10 + explicitly deferring the rest with rationale.
+
+### SHIP loop 16 (iters 151–160) closing log — 2026-05-02
+
+**Status**: 10 substantive iters shipped (151-160, dual-pushed). **First T2483 polish loop.** Per the iter-151 plan, loop 16 picked 5 of the 10 T2483 sub-items (low/medium cost, atomic) and shipped them all.
+
+| Iter | Sub-item | Commit | Highlight |
+|---|---|---|---|
+| 151 | Audit + plan | 5212b439 | New `T2483_LOOP16_PLAN.md`. Triage: 5 picked (T2483-1, 2, 3, 4, 6), 5 deferred (T2483-5, 7, 8, 9, 10) — high-cost or no-operator-complaint items. |
+| 152 | T2483-1A — DevicePage Edit row action | f2262a0c | OverflowMenu Edit per row in `MidiServicesDevicePage`'s bindings DataTable. Wired to iter-105 `BindingEditDrawer`. |
+| 153 | T2483-1B — DevicePage Toggle + Delete | bd06c99b | Toggle (calls /enable, /disable) + Delete (danger-confirm Modal). Mutation-error InlineNotification. Closes T2483-1. |
+| 154 | T2483-2 — `MidiServicesConnectionsPage` | dfd25509 | Sibling page mounting MidiRoutingMatrix + MidiPatchbay + MidiHubQuickRouter + MidiTrafficMonitor + MidiHubConnectedDevicesReport in Carbon Section/Layer chrome. App.tsx route flipped. **Zero remaining MidiHub-routed entries under /midi/*.** |
+| 155 | T2483-3 — `useMidiServicesShellWindow` helper + 7 sibling pages | 497ca51a | Shared helper produces `Platform / MIDI Services / {region}` kicker. Wired into Network/Presets/Events/Processing/Lab/Transport/Connections (each is one new line). Closes the loop-13/14 acknowledged limitation. |
+| 156 | T2483-4A — source-type filter on Bindings page | 27399999 | Client-side post-filter (backend `list_bindings` only accepts consumer/device/scope strategies; verified in iter-156 from routes.py). URL-syncs `?source_type=midi_cc`. |
+| 157 | T2483-4B — Routing matrix preserves source_type in click-through | 04af8b85 | Cell click navigates to `/midi/bindings?consumer_type=X&source_type=Y`. Column header still consumer-only. Closes T2483-4. |
+| 158 | T2483-6 — EventsPage selectedEventListId URL-synced | a072d80b | Lifted from local state to React Router `useSearchParams`. `?event_list_id=…` round-trips. Closes the loop-13 acknowledged limitation. |
+| 159 | Tests | 51d9454c | New `useMidiServicesShellWindow.test.tsx` (9 tests). Extended `MidiServicesRegionPages.smoke.test.tsx` with Connections smoke + Router wrap for EventsPage. **Total midi-services jest coverage: 8 suites / 75 tests** (was 7/64 in iter 139). |
+| 160 | Roll-up | (this commit) | This closing log + T2483 status update (5 of 10 DONE, 5 deferred). |
+
+**Total new files in loop 16**:
+- 1 architecture doc (`T2483_LOOP16_PLAN.md`)
+- 1 sibling page (`MidiServicesConnectionsPage.tsx`)
+- 1 shared helper (`useMidiServicesShellWindow.ts`)
+- 1 jest test suite (`useMidiServicesShellWindow.test.tsx`)
+Plus updates to: `App.tsx` (Connections route flip + lazy import), `MidiServicesDevicePage.tsx` + `.css` (Edit + Toggle + Delete row actions), `MidiServicesBindingsPage.tsx` (source-type filter strategy), `MidiServicesRoutingPage.tsx` (matrix click-through preserves source_type), `MidiServicesEventsPage.tsx` (URL-sync), 7 sibling pages got the shell-window helper one-liner, `MidiServicesRegionPages.smoke.test.tsx` (Connections + EventsPage Router wrap).
+
+**T2483 status after SHIP loop 16**:
+- ✅ T2483-1: per-row mutation surface on `/midi/devices/:profileKey` (iters 152-153)
+- ✅ T2483-2: dedicated `MidiServicesConnectionsPage` (iter 154)
+- ✅ T2483-3: `useSetShellWindow` in 7 sibling pages (iter 155)
+- ✅ T2483-4: source-type filter strategy + matrix click-through preserves source_type (iters 156-157)
+- ◯ T2483-5: per-source-type structured-editor extensions (deferred — high cost, needs WebSocket + UI redesign)
+- ✅ T2483-6: EventsPage selectedEventListId URL-synced (iter 158)
+- ◯ T2483-7: banner dismissibility (deferred — no operator complaint yet)
+- ◯ T2483-8: server-side `/api/midi/bindings/matrix` endpoint (deferred — high cost, needs backend route + pytest)
+- ◯ T2483-9: cluster peer matrix overlay (deferred — high cost, needs cluster discovery wiring)
+- ◯ T2483-10: full interactive Bindings page tests (deferred — high cost, needs Carbon Modal + QueryClient mocking)
+
+**5 of 10 DONE — T2483 bundle satisfies its DoD ("at least 3 of 10 shipped").** The remaining 5 are explicitly deferred with rationale; future loops can pick them up.
+
+**Recommended next loop — Loop 17**: pick from the 5 deferred items, prioritized by impact:
+- **T2483-8** (server-side matrix endpoint, high impact: 10× fewer queries on every poll)
+- **T2483-10** (full interactive Bindings tests, high impact: closes a long-standing test-coverage gap)
+- **T2483-5** (live MIDI-learn helper, high impact for operator UX)
+
+OR pivot to the post-T2482 polish items (real Mixxx ControllerEngine JS execution, audio-thread engine-side latency measurement, namespace-isolation default-flip) tracked separately.
+
+**Loop 16 acknowledged limitations**:
+- T2483-1B's Toggle replaces the iter-99 status Tag in the enabled column. Operators no longer see an "Enabled / Disabled" text label, only a Toggle position. Acceptable: the Toggle's switch position is itself the state indicator.
+- The iter-156 source-type filter is client-side, so the row count always shows the post-narrow count not the underlying-list count. If operators want both, the table description string could add "(N of M after source-type narrow)" — not done in iter 156 (cosmetic).
+- The iter-158 EventsPage URL-sync uses `replace: true` so the back button doesn't get cluttered with selection-change history. Acceptable per iter-103 BindingsPage pattern.
+- T2483 sub-item completion is recorded in this closing log only — the iter-148 T2483 worklist entry's bullet list still shows all 10 items as unchecked. Loop 17+ can either tick them in the worklist entry or let this closing log + T2482_PHASE3_DONE.md serve as the canonical status (consistent with how iter-147 handled the T2482 sub-phase status update).
