@@ -35229,3 +35229,62 @@ Plus updates to `App.tsx` (route flip + 5 new lazy imports), `useMidiServicesCou
 - `MidiServicesEventsPage` carries selectedEventListId in local component state. Operators navigating away and back lose the selection. Acceptable for the smoke-port pass; if users complain, we can lift to a Zustand slot or URL query.
 - The `kicker: 'Platform / MIDI Hub / ...'` shell-window subtitle from the original MidiHub pages was NOT propagated to the sibling pages (sibling pages don't call useSetShellWindow). The shell-window header therefore shows the previous page's kicker until the operator navigates again. Cosmetic; deferred.
 - Smoke tests confirm composition, not interactive behavior. Real interactive coverage for each panel lives with each panel's own test file (most have one in `web/src/app/components/MidiHub/*.test.tsx`).
+
+### SHIP loop 14 (iters 131–140) closing log — 2026-05-01
+
+**Status**: 10 substantive iters shipped (131-140, dual-pushed). The **final substantive Phase 3 loop**. Per the iter-130 closing log + iter-131 plan D6: after iter 140, **Phase 3 of T2482 is DONE** and the epic enters close-out (loop 15+).
+
+| Iter | Surface | Commit | Highlight |
+|---|---|---|---|
+| 131 | Audit + plan | 2e8b6dd7 | New `T2482_LOOP14_REFRAMING_PLAN.md`. Audit catalogued 8 per-device editor pages + the Brain page. Locked 7 design decisions (D1 single banner not 9 copies, D2 reverse the iter-98 map, D3 Brain banner is bespoke copy, D4 smoke tests only, D5 Transport sibling minimal port, D6 LAST substantive Phase 3 loop, D7 Carbon-only). |
+| 132 | Transport sibling page | 0483f8c6 | New `MidiServicesTransportPage.tsx`. Closes the iter-127 fallback that still routed /midi/transport to MidiHubTransportPage. App.tsx route flipped. P3.6 substantively complete. |
+| 133 | Banner component | 6231436a | New `MidiServicesCrossLinkBanner.tsx` + `.css`. Single source of truth: InlineNotification + Carbon Link. Override props (title/subtitle/linkLabel/linkTo) let iter 138 swap to bespoke Brain copy. |
+| 134 | Maschine + MaschineMidiMap banners | 1c152660 | First 2 of 8 per-device editor pages get the banner. MaschineMidiMap suppresses banner when embedded in MaschinePage. |
+| 135 | Mcu + LaunchControl banners | 4835ea82 | Next 2 of 8. |
+| 136 | MidiCommander + GroundControlPro banners | c3120272 | Next 2 of 8. GroundControlPro mounts the banner under the existing DeviceContextBanner. |
+| 137 | MPX1 + IntelFX banners | 9cb85650 | Last 2 of 8. Both are shells — banner mounts above the Outlet so all sub-views inherit. |
+| 138 | Brain banner (P3.10) | 1c2dd56b | PerformanceBrainPage gets the banner with bespoke copy: "Brain inputs are MIDI Services consumers" + link to /midi/bindings?consumer_type=brain_slot. P3.10 substantively complete. |
+| 139 | Smoke tests | 2e3c44ae | New `MidiServicesCrossLinkBanner.test.tsx` (6 tests: default copy, profileKey URI encoding, fallback target, bespoke override). Extended `MidiServicesRegionPages.smoke.test.tsx` (+2 tests for Transport). Total midi-services coverage: 64 tests across 7 suites. |
+| 140 | Roll-up + **PHASE 3 DONE** marker | (this commit) | This closing log + Phase 3 readiness gate v11. |
+
+**Total new files in loop 14**:
+- 1 architecture doc (`T2482_LOOP14_REFRAMING_PLAN.md`)
+- 1 sibling page (`MidiServicesTransportPage.tsx`)
+- 1 banner component (`MidiServicesCrossLinkBanner.tsx` + `.css`)
+- 1 jest test suite (`MidiServicesCrossLinkBanner.test.tsx`)
+Plus updates to `App.tsx` (Transport route flip + lazy import), `MidiServicesRegionPages.smoke.test.tsx` (+2 Transport tests), and 1-line banner additions to 9 surfaces (MaschinePage, MaschineMidiMapPage, McuPage, LaunchControlPage, MidiCommanderPage, GroundControlProPage, MPX1Shell, IntelFXShell, PerformanceBrainPage).
+
+## **🏁 T2482 PHASE 3 — DONE 🏁**
+
+After 4 SHIP loops (10–14) totaling 50 substantive iters and 50+ commits dual-pushed to both remotes, every P3 sub-phase from the design doc is now DONE:
+
+- ✅ P3.1 mount + redirect + rename (loop 10)
+- ✅ P3.2 Overview region + ClickableTile deep-links (loop 10 + 11 + 13)
+- ✅ P3.3 Devices region INDEX + detail stub (loop 10)
+- ✅ P3.4 Bindings region — read+create+edit+delete+filter+structured descriptors (loops 11 + 12)
+- ✅ P3.5 Routing region matrix UI (loop 12)
+- ✅ P3.6 Transport region dedicated sibling page (loop 14)
+- ✅ P3.7 Network region (loop 13)
+- ✅ P3.8 misc ports — Presets/Events/Processing/Lab (loop 13)
+- ✅ P3.9 per-device legacy reframing — 8 of 8 editor pages carry the cross-link banner (loop 14)
+- ✅ P3.10 Brain Setup + Brain Inputs reframing (loop 14)
+
+**Phase 3 readiness gate v11 — final**:
+- Backend MIDI authority: ready (P1.1 + P1.2 complete from earlier loops)
+- Every operator-visible MIDI surface lives at or beneath `/midi`, OR carries a cross-link banner pointing back to `/midi/devices/{profileKey}` if it's a per-device editor that pre-existed Phase 3
+- Per-device editor exit criteria from the design doc satisfied: "per-device DSP editors untouched" — confirmed (8 pages got 1-line banner additions only; no functional logic changed)
+- Test coverage: 64 midi-services jest tests across 7 suites, all green
+
+**Recommended next loop — Loop 15+: T2482 epic close-out**:
+- Ship a `T2482_PHASE3_DONE.md` overview doc that links the 4 loop plans + 4 closing logs + design doc
+- Update `docs/architecture/MIDI_SERVICES.md` Phase 3 section to mark all sub-phases DONE with commit references
+- Update `docs/philosophy/*.md` if any topic touches MIDI Services unification (per the standing feedback rule about philosophy upkeep)
+- Sweep the per-loop architecture docs in `docs/architecture/T2482_LOOP*.md` into a `docs/architecture/archive/` subfolder
+- Mark T2482 epic itself as DONE in the worklist when satisfied
+- Optionally ship post-P1.2 polish (real Mixxx ControllerEngine JS execution, audio-thread engine-side latency measurement, namespace-isolation default-flip)
+
+**Loop 14 acknowledged limitations**:
+- The 8 per-device banners use the SAME default copy. If operator feedback indicates per-device customization helps, iter 134-137's banner calls accept bespoke title/subtitle props (the iter-138 Brain pattern).
+- The banner is non-dismissible. If operators tire of the persistent banner once they're familiar with the canonical authority, a dismissibility flag + localStorage persistence is a small addition (deferred to loop 15+).
+- `/midi/connections` still routes to `MidiHubConnectionsPage` — the only remaining MidiHub-routed entry under `/midi/*`. A dedicated `MidiServicesConnectionsPage` would close that gap. Not a Phase 3 sub-phase per the design doc; deferred to loop 15+.
+- The `kicker: 'Platform / MIDI Hub / ...'` shell-window subtitle limitation noted in the loop-13 closing log persists for the iter-132 Transport page; the same fix would apply to all sibling pages if pursued.
