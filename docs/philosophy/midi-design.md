@@ -96,10 +96,24 @@ RTP-MIDI is deliberately implemented in Python (`midi_hub/rtp_transport.py`) rat
 - A misbehaving controller cannot drop audio.
 - A live show that worked yesterday will work tomorrow because the contract is the device pack, not the code that interprets it.
 
-## 7. Where to read next
+## 7. The MIDI Services unification (T2482, completed 2026-05-01)
 
-- `docs/midi/MIDI_HUB_ARCHITECTURE.md` — Hub v2 topology and protocol surfaces.
+T2482 unified every operator-visible MIDI surface under a single canonical authority + canonical surface:
+
+- **Authority** — `app/services/midi/` exposes 8 endpoints rooted at `/api/midi/bindings`. Every binding (snapshot, brain_slot, plugin_param, global_param, performance_preset, device_pack, transport, tesira_ttp, gpio, macro) is one row in one table. Per-device legacy storage was migrated and removed in Phase 2; legacy per-device routes survive only as projection adapters.
+- **Surface** — `web/src/app/pages/midi-services/` mounts `/midi/{overview,devices,bindings,routing,transport,network,presets,events,processing,lab}` with React Router lazy loading. `/midi-hub/*` legacy paths redirect via `<Navigate>`.
+- **Per-device editors** — `MaschinePage`, `McuPage`, `LaunchControlPage`, `MidiCommanderPage`, `MaschineMidiMapPage`, `GroundControlProPage`, `MPX1Shell`, `IntelFXShell` are unchanged in functionality. Each carries a single-line `MidiServicesCrossLinkBanner` pointing back to `/midi/devices/{profileKey}`. The DSP / device-state surfaces these pages own remain untouched.
+- **Brain reframing** — `PerformanceBrainPage` carries the same banner with bespoke "Brain inputs are MIDI Services consumers" copy + link to `/midi/bindings?consumer_type=brain_slot`.
+- **Coverage** — 64 jest tests across 7 suites in `web/src/app/pages/midi-services/`.
+
+Read `docs/architecture/T2482_PHASE3_DONE.md` for the full overview, sub-phase status table, and links to per-loop history.
+
+## 8. Where to read next
+
+- `docs/architecture/T2482_PHASE3_DONE.md` — MIDI Services unification overview.
+- `docs/architecture/MIDI_SERVICES.md` — original T2482 design doc (Phase 3 §4 marks each sub-phase DONE).
+- `docs/midi/MIDI_HUB_ARCHITECTURE.md` — Hub v2 topology and protocol surfaces (legacy MidiHub layout; superseded by `/midi/*` for operator-facing UI).
 - `docs/midi/MAP2_OSC_NAMESPACE.md` — `/map2/*` namespace contract.
 - `docs/midi/MIDI_HUB_CONTENT_INVENTORY.md` — terminology and panel inventory.
 - `device-packs/SCHEMA.md` — the device-pack data model.
-- `docs/design/CARBON_CONFORMANCE_STANDARD.md` §10 — operator-state discipline (T2474). The MIDI Hub UI at `web/src/app/components/MidiHub/` and `web/src/app/pages/midi-hub/` consumes the canonical primitives library and the MAP semantic token vocabulary; the `MidiHubHealthDrawer` surface specifically was migrated from a glass-drawer pattern to a flat Carbon Layer drawer matching the canonical `DrawerPanel` primitive.
+- `docs/design/CARBON_CONFORMANCE_STANDARD.md` §10 — operator-state discipline (T2474). The MidiServices UI at `web/src/app/pages/midi-services/` and the legacy `web/src/app/components/MidiHub/` panels (still imported by the new sibling pages per T2482 Phase 3 D1 "wrap, don't rewrite") consume the canonical primitives library and the MAP semantic token vocabulary.
