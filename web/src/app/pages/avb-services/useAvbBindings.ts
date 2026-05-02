@@ -35,6 +35,17 @@ export interface AvbBindingRecord {
   modified_by: string
 }
 
+export interface AvbMatrixCell {
+  count: number
+  enabled_count: number
+}
+
+export interface AvbBindingsMatrixResponse {
+  matrix: Record<string, Record<string, AvbMatrixCell>>
+  total_bindings: number
+  bindings: AvbBindingRecord[]
+}
+
 async function fetchAvbBindingsCount(): Promise<number> {
   const response = await fetch('/api/avb/bindings/count')
   if (!response.ok) throw new Error(`avb bindings count failed: ${response.status}`)
@@ -42,15 +53,10 @@ async function fetchAvbBindingsCount(): Promise<number> {
   return typeof value === 'number' ? value : 0
 }
 
-async function fetchAvbBindingsByScope(scope: string): Promise<AvbBindingRecord[]> {
-  // Use the scope filter so we can pull every row without a 400. Calling
-  // the route with `scope=global` returns all global-scoped bindings;
-  // T2490-3 will replace this with a dedicated /matrix endpoint that
-  // also covers snapshot- and node-scoped rows.
-  const params = new URLSearchParams({ scope })
-  const response = await fetch(`/api/avb/bindings?${params.toString()}`)
-  if (!response.ok) return []
-  return (await response.json()) as AvbBindingRecord[]
+async function fetchAvbBindingsMatrix(): Promise<AvbBindingsMatrixResponse> {
+  const response = await fetch('/api/avb/bindings/matrix')
+  if (!response.ok) throw new Error(`avb bindings matrix failed: ${response.status}`)
+  return (await response.json()) as AvbBindingsMatrixResponse
 }
 
 export function useAvbBindingsCount() {
@@ -63,47 +69,28 @@ export function useAvbBindingsCount() {
 }
 
 /**
- * Returns every binding the canonical authority knows about, summed
- * across global / snapshot / node / cluster scopes via four parallel
- * queries. T2490-3 will replace this with a server-side aggregation
- * (analogous to MIDI's /api/midi/bindings/matrix).
+ * T2490-2b — single round-trip aggregation. Replaces the iter-3
+ * 4-query fan-out (one query per scope) with one server-side
+ * aggregation. Mirrors MIDI's `/api/midi/bindings/matrix`.
+ */
+export function useAvbBindingsMatrix() {
+  return useQuery({
+    queryKey: ['avb-bindings-matrix'],
+    queryFn: fetchAvbBindingsMatrix,
+    refetchInterval: 5000,
+    staleTime: 0,
+  })
+}
+
+/**
+ * Backwards-compatible name; returns just the binding rows from the
+ * matrix endpoint so existing call sites keep working.
  */
 export function useAvbBindingsAllScopes() {
-  const globals = useQuery({
-    queryKey: ['avb-bindings', 'global'],
-    queryFn: () => fetchAvbBindingsByScope('global'),
-    refetchInterval: 5000,
-    staleTime: 0,
-  })
-  const snapshots = useQuery({
-    queryKey: ['avb-bindings', 'snapshot'],
-    queryFn: () => fetchAvbBindingsByScope('snapshot'),
-    refetchInterval: 5000,
-    staleTime: 0,
-  })
-  const nodes = useQuery({
-    queryKey: ['avb-bindings', 'node'],
-    queryFn: () => fetchAvbBindingsByScope('node'),
-    refetchInterval: 5000,
-    staleTime: 0,
-  })
-  const clusters = useQuery({
-    queryKey: ['avb-bindings', 'cluster'],
-    queryFn: () => fetchAvbBindingsByScope('cluster'),
-    refetchInterval: 5000,
-    staleTime: 0,
-  })
-
-  const data: AvbBindingRecord[] = [
-    ...(globals.data ?? []),
-    ...(snapshots.data ?? []),
-    ...(nodes.data ?? []),
-    ...(clusters.data ?? []),
-  ]
-
+  const matrix = useAvbBindingsMatrix()
   return {
-    data,
-    isLoading: globals.isLoading || snapshots.isLoading || nodes.isLoading || clusters.isLoading,
-    isError: globals.isError || snapshots.isError || nodes.isError || clusters.isError,
+    data: matrix.data?.bindings ?? [],
+    isLoading: matrix.isLoading,
+    isError: matrix.isError,
   }
 }

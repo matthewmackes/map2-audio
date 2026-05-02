@@ -13,9 +13,12 @@ from __future__ import annotations
 from typing import Optional
 
 from fastapi import APIRouter, HTTPException, Query
+from pydantic import BaseModel
+from sqlalchemy import Integer, cast, func, select
 
 from app.database import get_session
 from app.services.avb.binding_authority import AvbBindingAuthority, AvbBindingNotFound
+from app.services.avb.binding_models import AvbBinding
 from app.services.avb.binding_schemas import (
     AvbBindingConsumerType,
     AvbBindingCreate,
@@ -28,6 +31,27 @@ from app.services.avb.binding_schemas import (
 router = APIRouter(prefix="/api/avb", tags=["AVB Services"])
 
 
+class AvbMatrixCell(BaseModel):
+    """T2490-2b — one cell of the source × consumer routing matrix."""
+
+    count: int
+    enabled_count: int
+
+
+class AvbBindingsMatrixResponse(BaseModel):
+    """T2490-2b — full source × consumer aggregation, plus the rows
+    themselves so the frontend can populate the Connections DataTable
+    in a single round-trip (replaces the iter-3 4-query fan-out across
+    global / snapshot / node / cluster scopes).
+
+    Mirrors `BindingsMatrixResponse` in app/services/midi/routes.py.
+    """
+
+    matrix: dict[str, dict[str, AvbMatrixCell]]
+    total_bindings: int
+    bindings: list[AvbBindingRead]
+
+
 # IMPORTANT: route ordering matters in FastAPI. /bindings/count MUST
 # come before /bindings/{binding_id} so a literal "count" doesn't
 # accidentally match the parameterized binding_id slot.
@@ -38,6 +62,52 @@ async def count_bindings() -> int:
     async with get_session(read_only=True) as session:
         authority = AvbBindingAuthority(session)
         return await authority.count()
+
+
+@router.get("/bindings/matrix", response_model=AvbBindingsMatrixResponse)
+async def get_bindings_matrix() -> AvbBindingsMatrixResponse:
+    """T2490-2b — server-side aggregation of every AvbBinding.
+
+    Returns the source_type × consumer_type cell counts AND the full
+    binding list in one round-trip, so the Connections DataTable
+    (T2490-4) can stop fan-out across scope filters. Mirrors
+    `/api/midi/bindings/matrix`.
+    """
+    async with get_session(read_only=True) as session:
+        # Aggregate cell counts.
+        agg_rows = await session.execute(
+            select(
+                AvbBinding.source_type,
+                AvbBinding.consumer_type,
+                func.count(AvbBinding.binding_id).label("count"),
+                func.sum(cast(AvbBinding.enabled, Integer)).label("enabled_count"),
+            ).group_by(AvbBinding.source_type, AvbBinding.consumer_type)
+        )
+        matrix: dict[str, dict[str, AvbMatrixCell]] = {}
+        total = 0
+        for source_type, consumer_type, count, enabled_count in agg_rows.all():
+            row = matrix.setdefault(str(source_type), {})
+            cell_count = int(count or 0)
+            cell_enabled = int(enabled_count or 0)
+            row[str(consumer_type)] = AvbMatrixCell(
+                count=cell_count, enabled_count=cell_enabled
+            )
+            total += cell_count
+
+        # Pull every binding in a single query so the frontend can render
+        # the DataTable + the matrix from one response. This is fine at
+        # the table sizes T2490 expects (low thousands at most).
+        authority = AvbBindingAuthority(session)
+        # The authority's per-scope listers cover the same ground but
+        # require 4 queries; here we go straight to the table.
+        all_rows = await session.execute(select(AvbBinding))
+        bindings = [authority._row_to_read(r) for r in all_rows.scalars().all()]
+
+        return AvbBindingsMatrixResponse(
+            matrix=matrix,
+            total_bindings=total,
+            bindings=bindings,
+        )
 
 
 @router.get("/bindings", response_model=list[AvbBindingRead])

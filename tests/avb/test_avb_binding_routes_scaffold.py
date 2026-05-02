@@ -58,3 +58,8 @@ def test_disable_endpoint_present():
 
 def test_enable_endpoint_present():
     assert ("POST", "/api/avb/bindings/{binding_id}/enable") in _route_set()
+
+
+def test_matrix_endpoint_present():
+    """T2490-2b — server-side aggregation endpoint."""
+    assert ("GET", "/api/avb/bindings/matrix") in _route_set()
