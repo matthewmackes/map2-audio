@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1440** Python | **1441** TypeScript | **177** C++/H | **145** Docs | **3563** total commits | **3** stars | **0** forks | **0** open issues
+**1440** Python | **1441** TypeScript | **177** C++/H | **145** Docs | **3565** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`b691aae1`](https://github.com/matthewmackes/map2-audio/commit/b691aae10b5cc83288186cf6626875a853be69c8) | docs(worklist): open T2485 (MIDI GUI unification) + T2486... | Map2 Audio | 2026-05-02 |
+| [`947a52d6`](https://github.com/matthewmackes/map2-audio/commit/947a52d63b03a460faa6cb68d7ecf53d2d710866) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-02 |
 | [`ee363a3f`](https://github.com/matthewmackes/map2-audio/commit/ee363a3f3461956c615cbdb56e6bda8d4e66dab4) | chore(T2466): close epic — all subtasks done | Map2 Audio | 2026-05-02 |
 | [`a4427904`](https://github.com/matthewmackes/map2-audio/commit/a4427904f841cc9fb1fa998bcd02a88d475f825c) | feat(T2466-0/T2466-4): DrawerPanel exit animation + final... | Map2 Audio | 2026-05-02 |
 | [`dad287ab`](https://github.com/matthewmackes/map2-audio/commit/dad287ab5ccf848d822c4b58340ab2d724dfb8b5) | feat(T2466-3/T2466-4): reduced-motion wiring + CSS design... | Map2 Audio | 2026-05-02 |
 | [`95cca0c0`](https://github.com/matthewmackes/map2-audio/commit/95cca0c0ecc034ac42c67e8dd43e199aefabe188) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-02 |
 | [`4f27a934`](https://github.com/matthewmackes/map2-audio/commit/4f27a934f05851d78821c104db4a08d0602bc778) | docs(worklist): T2466-1 done, T2466-7 cancelled (obsolete... | Map2 Audio | 2026-05-02 |
 | [`e7cf4537`](https://github.com/matthewmackes/map2-audio/commit/e7cf4537ce9d74f5fc421f4a96376cbe1d84aad4) | feat(T2466-1): canvas pan → Framer Motion motion-value dr... | Map2 Audio | 2026-05-02 |
-| [`f80d4185`](https://github.com/matthewmackes/map2-audio/commit/f80d41859d8d3d036fa718b657f69d84b4239165) | fix(deps): bump transitive postcss to 8.5.13 (CVE-2026-41... | Map2 Audio | 2026-05-02 |
-| [`65f7ba18`](https://github.com/matthewmackes/map2-audio/commit/65f7ba18ef71c4ec4b5bae0b8df85c782e42289e) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-02 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
