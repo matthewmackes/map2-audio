@@ -52,3 +52,16 @@
   color: var(--cds-text-secondary);
   font-style: italic;
 }
+
+.midi-services-bindings__actions-cell {
+  width: 3rem;
+  padding: 0;
+}
+
+.midi-services-bindings__delete-modal-body code {
+  font-family: var(--cds-font-family-mono, ui-monospace, monospace);
+  background: var(--cds-layer-accent);
+  padding: 0 0.25rem;
+  border-radius: 2px;
+  font-size: 0.8125rem;
+}

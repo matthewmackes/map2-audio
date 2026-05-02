@@ -1,5 +1,9 @@
 /**
  * T2482 loop 11 / iter 103 — /midi/bindings filter-first list page.
+ * T2482 loop 11 / iter 104 — inline Toggle + per-row OverflowMenu
+ *   (Edit / Delete) wired to /enable, /disable, DELETE. Edit handler
+ *   is a stub until iter 105 hooks in the edit modal; delete confirms
+ *   via a Carbon Modal.
  *
  * Per the iter-101 plan D1: GET /api/midi/bindings is filter-required
  * (returns 400 if unfiltered). The list page therefore commits to a
@@ -11,15 +15,11 @@
  *   ?consumer_type=plugin_param        -> consumer-strategy + that type
  *   ?device_id=xyz                     -> device-strategy + that device
  *   ?scope=node                        -> scope-strategy + that scope
- *
- * Iter 103 ships the read view + filter form. Iter 104 adds inline
- * toggles + per-row OverflowMenu. Iter 105 + 106 add edit + create
- * modals.
  */
 
 import { useEffect, useMemo, useState } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { useQuery } from '@tanstack/react-query'
+import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   DataTable,
   Dropdown,
@@ -27,6 +27,9 @@ import {
   Heading,
   InlineNotification,
   Layer,
+  Modal,
+  OverflowMenu,
+  OverflowMenuItem,
   Section,
   Table,
   TableBody,
@@ -131,6 +134,7 @@ const HEADERS = [
   { key: 'scope', header: 'Scope' },
   { key: 'device_id', header: 'Device' },
   { key: 'enabled', header: 'Enabled' },
+  { key: 'actions', header: '' },  // iter 104 — overflow menu column
 ]
 
 interface BindingTableRow {
@@ -141,6 +145,7 @@ interface BindingTableRow {
   scope: string
   device_id: string
   enabled: boolean
+  actions: string  // unused — Carbon DataTable requires a property per header key
 }
 
 function rowsFromBindings(bindings: MidiBindingRead[]): BindingTableRow[] {
@@ -152,6 +157,7 @@ function rowsFromBindings(bindings: MidiBindingRead[]): BindingTableRow[] {
     scope: b.scope_id ? `${b.scope}/${b.scope_id}` : b.scope,
     device_id: b.device_id ?? '—',
     enabled: b.enabled,
+    actions: '',
   }))
 }
 
@@ -160,6 +166,55 @@ function rowsFromBindings(bindings: MidiBindingRead[]): BindingTableRow[] {
 export function MidiServicesBindingsPage() {
   const [searchParams, setSearchParams] = useSearchParams()
   const [filter, setFilter] = useState<FilterState>(() => filterFromSearchParams(searchParams))
+  const queryClient = useQueryClient()
+  const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null)
+  const [mutationError, setMutationError] = useState<string | null>(null)
+
+  const invalidateList = () => {
+    queryClient.invalidateQueries({ queryKey: ['midi-bindings-list'] })
+    queryClient.invalidateQueries({ queryKey: ['midi-services-bindings-count'] })
+  }
+
+  const enableMutation = useMutation({
+    mutationFn: (bindingId: string) => midiBindingsApi.enable(bindingId),
+    onSuccess: invalidateList,
+    onError: (err) => setMutationError((err as Error).message),
+  })
+
+  const disableMutation = useMutation({
+    mutationFn: (bindingId: string) => midiBindingsApi.disable(bindingId),
+    onSuccess: invalidateList,
+    onError: (err) => setMutationError((err as Error).message),
+  })
+
+  const deleteMutation = useMutation({
+    mutationFn: (bindingId: string) => midiBindingsApi.delete(bindingId),
+    onSuccess: () => {
+      setPendingDeleteId(null)
+      invalidateList()
+    },
+    onError: (err) => setMutationError((err as Error).message),
+  })
+
+  const handleToggle = (bindingId: string, currentlyEnabled: boolean) => {
+    setMutationError(null)
+    if (currentlyEnabled) {
+      disableMutation.mutate(bindingId)
+    } else {
+      enableMutation.mutate(bindingId)
+    }
+  }
+
+  const handleEdit = (_bindingId: string) => {
+    // iter 105 will hook in the BindingEditDrawer modal — for now, surface
+    // a placeholder so the OverflowMenu item is interactive.
+    setMutationError('Edit modal lands in iter 105.')
+  }
+
+  const handleDeleteConfirm = (bindingId: string) => {
+    setMutationError(null)
+    setPendingDeleteId(bindingId)
+  }
 
   // Sync filter strategy + value back to URL so deep-links + reloads survive.
   useEffect(() => {
@@ -322,6 +377,16 @@ export function MidiServicesBindingsPage() {
         />
       ) : null}
 
+      {mutationError ? (
+        <InlineNotification
+          kind="warning"
+          lowContrast
+          onCloseButtonClick={() => setMutationError(null)}
+          title="Mutation"
+          subtitle={mutationError}
+        />
+      ) : null}
+
       <Layer level={1}>
         {apiFilter === null ? (
           <div className="midi-services-bindings__empty">
@@ -363,11 +428,44 @@ export function MidiServicesBindingsPage() {
                           {dtRow.cells.map((cell) => {
                             if (cell.info.header === 'enabled') {
                               const enabled = cell.value as boolean
+                              const pending =
+                                (enableMutation.isPending && enableMutation.variables === dtRow.id) ||
+                                (disableMutation.isPending && disableMutation.variables === dtRow.id)
                               return (
                                 <TableCell key={cell.id}>
-                                  <Tag type={enabled ? 'green' : 'gray'} size="sm">
-                                    {enabled ? 'Enabled' : 'Disabled'}
-                                  </Tag>
+                                  <Toggle
+                                    id={`bindings-enable-${dtRow.id}`}
+                                    size="sm"
+                                    hideLabel
+                                    labelText="Enable binding"
+                                    labelA="Off"
+                                    labelB="On"
+                                    toggled={enabled}
+                                    disabled={pending}
+                                    onToggle={() => handleToggle(dtRow.id, enabled)}
+                                  />
+                                </TableCell>
+                              )
+                            }
+                            if (cell.info.header === 'actions') {
+                              return (
+                                <TableCell key={cell.id} className="midi-services-bindings__actions-cell">
+                                  <OverflowMenu
+                                    iconDescription="Row actions"
+                                    size="sm"
+                                    flipped
+                                  >
+                                    <OverflowMenuItem
+                                      itemText="Edit"
+                                      onClick={() => handleEdit(dtRow.id)}
+                                    />
+                                    <OverflowMenuItem
+                                      itemText="Delete"
+                                      isDelete
+                                      hasDivider
+                                      onClick={() => handleDeleteConfirm(dtRow.id)}
+                                    />
+                                  </OverflowMenu>
                                 </TableCell>
                               )
                             }
@@ -383,6 +481,26 @@ export function MidiServicesBindingsPage() {
           </DataTable>
         )}
       </Layer>
+
+      <Modal
+        open={pendingDeleteId !== null}
+        modalHeading="Delete this binding?"
+        modalLabel="Bindings"
+        primaryButtonText="Delete"
+        secondaryButtonText="Cancel"
+        danger
+        primaryButtonDisabled={deleteMutation.isPending}
+        onRequestClose={() => setPendingDeleteId(null)}
+        onRequestSubmit={() => {
+          if (pendingDeleteId) deleteMutation.mutate(pendingDeleteId)
+        }}
+      >
+        <p className="midi-services-bindings__delete-modal-body">
+          Binding <code>{pendingDeleteId ?? ''}</code> will be permanently
+          removed from the canonical authority. Active consumers will lose
+          this binding immediately.
+        </p>
+      </Modal>
     </Section>
   )
 }
