@@ -17,6 +17,7 @@ import { LoadingState } from '../../shared/LoadingState'
 import { useCluster } from '../../../contexts/useCluster'
 import { useDeviceNodeContext } from '../../../hooks/useDeviceNodeContext'
 import { useActiveSectionFromPath } from '../hooks/useActiveSectionFromPath'
+import { MidiServicesCrossLinkBanner } from '../../../pages/midi-services/MidiServicesCrossLinkBanner'
 import './IntelFXPageShell.css'
 
 type SidebarSectionId = 'panel' | 'editor' | 'midi-map' | 'library' | 'perform' | 'diag' | 'flow'
@@ -208,6 +209,7 @@ export function IntelFXShell(): ReactNode {
       <div className="intelfx-shell intelfx-shell--embedded">
         <div className="intelfx-shell__main">
           <div className="intelfx-shell__content">
+            <MidiServicesCrossLinkBanner profileKey="intel-fx/intel-fx.midi" />
             <Outlet />
           </div>
 

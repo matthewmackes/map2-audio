@@ -8,6 +8,7 @@ import { LoadingState } from '../../shared/LoadingState'
 import { useCluster } from '../../../contexts/useCluster'
 import { useDeviceNodeContext } from '../../../hooks/useDeviceNodeContext'
 import { useActiveSectionFromPath } from '../hooks/useActiveSectionFromPath'
+import { MidiServicesCrossLinkBanner } from '../../../pages/midi-services/MidiServicesCrossLinkBanner'
 import './MPX1PageShell.css'
 
 type SidebarSectionId = 'panel' | 'editor' | 'midi-map' | 'matrix' | 'library' | 'perform' | 'diag' | 'flow'
@@ -199,6 +200,7 @@ export function MPX1Shell() {
       <div className="mpx1-shell mpx1-shell--embedded">
         <div className="mpx1-shell__main">
           <div className="mpx1-shell__content">
+            <MidiServicesCrossLinkBanner profileKey="lexicon/mpx-1.midi" />
             <Outlet />
           </div>
 
