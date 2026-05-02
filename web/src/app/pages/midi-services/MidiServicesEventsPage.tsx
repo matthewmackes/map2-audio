@@ -10,7 +10,8 @@
  *   MscCommandBuilder, EventEditor.
  */
 
-import { useState } from 'react'
+import { useCallback } from 'react'
+import { useSearchParams } from 'react-router-dom'
 import { Heading, Layer, Section, Tag } from '@carbon/react'
 
 import { EventEditor } from '../../components/MidiHub/EventEditor'
@@ -27,7 +28,22 @@ export function MidiServicesEventsPage() {
     'Events',
     'Net3-style event lists, cue learning, MSC sends, timecode-driven recall.',
   )
-  const [selectedEventListId, setSelectedEventListId] = useState('')
+  // T2483-6 iter 158 — selectedEventListId URL-synced so navigation away
+  // and back preserves the selection.
+  const [searchParams, setSearchParams] = useSearchParams()
+  const selectedEventListId = searchParams.get('event_list_id') ?? ''
+  const setSelectedEventListId = useCallback(
+    (next: string) => {
+      const params = new URLSearchParams(searchParams)
+      if (next) {
+        params.set('event_list_id', next)
+      } else {
+        params.delete('event_list_id')
+      }
+      setSearchParams(params, { replace: true })
+    },
+    [searchParams, setSearchParams],
+  )
 
   return (
     <Section className="midi-services-region">
