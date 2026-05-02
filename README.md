@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1440** Python | **1441** TypeScript | **177** C++/H | **145** Docs | **3537** total commits | **3** stars | **0** forks | **0** open issues
+**1440** Python | **1441** TypeScript | **177** C++/H | **145** Docs | **3542** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`1cd74358`](https://github.com/matthewmackes/map2-audio/commit/1cd7435881bb1c7c231a689ec0dc694b74c6912f) | T2484 loop 20 / iter 198: drawer health Tag tests (T2484-4) | Map2 Audio | 2026-05-02 |
+| [`55c6821b`](https://github.com/matthewmackes/map2-audio/commit/55c6821bd8ab55ffa355f0fb38a216e72757ef29) | T2484 loop 20 / iter 197: drawer health Tag (T2484-4) | Map2 Audio | 2026-05-02 |
+| [`b11f0e0e`](https://github.com/matthewmackes/map2-audio/commit/b11f0e0e4b88813a80bd5494ee638721df252913) | T2484 loop 20 / iter 196: peer-health pytest cases | Map2 Audio | 2026-05-02 |
+| [`21e13c88`](https://github.com/matthewmackes/map2-audio/commit/21e13c882933ec7d4d76870cb5558e158d1da9e0) | T2484 loop 20 / iter 195: backend peer-health field on cl... | Map2 Audio | 2026-05-02 |
+| [`823e3082`](https://github.com/matthewmackes/map2-audio/commit/823e3082d8e873977528bf102620310332c51ccc) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-02 |
 | [`67b4d726`](https://github.com/matthewmackes/map2-audio/commit/67b4d726c01553c54b9e5a6abe2dee69baff2a62) | T2484 loop 20 / iter 194: usePeerMatrix peerSlices test | Map2 Audio | 2026-05-02 |
 | [`c4b25948`](https://github.com/matthewmackes/map2-audio/commit/c4b259489bdaccfd00ca9b26bce406dceb619f1f) | T2484 loop 20 / iter 193: PeerCellDrillDownDrawer tests (... | Map2 Audio | 2026-05-02 |
 | [`fc34c708`](https://github.com/matthewmackes/map2-audio/commit/fc34c708f7a798dd337189abf0410e79c6bc34ed) | T2484 loop 20 / iter 192: RoutingPage drill-down drawer w... | Map2 Audio | 2026-05-02 |
-| [`7851678c`](https://github.com/matthewmackes/map2-audio/commit/7851678cd2b6b82e46a227531d5911f850b59f10) | T2484 loop 20 / iter 191: PeerCellDrillDownDrawer (T2484-3) | Map2 Audio | 2026-05-02 |
-| [`5fcd71ce`](https://github.com/matthewmackes/map2-audio/commit/5fcd71ced48d27f511a646edd938cded5aa1cf4c) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-02 |
-| [`1b9dc509`](https://github.com/matthewmackes/map2-audio/commit/1b9dc509436021565ff76de17ef606463fe87986) | T2484 loop 19 / iter 190: SHIP loop 19 closing roll-up | Map2 Audio | 2026-05-02 |
-| [`b2ece26b`](https://github.com/matthewmackes/map2-audio/commit/b2ece26bc58d7d69cbb5aa5ae4d2a3ec4f190241) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-02 |
-| [`d4bf4fb3`](https://github.com/matthewmackes/map2-audio/commit/d4bf4fb35541291667d33b8f8f7fc5c54ec834db) | T2484 loop 19 / iter 189: verification report | Map2 Audio | 2026-05-02 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
