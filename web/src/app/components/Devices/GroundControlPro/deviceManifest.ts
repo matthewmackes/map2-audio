@@ -22,7 +22,7 @@ export const groundControlProDeviceManifest: DeviceManifest = {
     'Built-in tuner mute, tap-tempo, and expression-jack support; every workflow flows through MIDI Services bindings authority.',
   ],
   views: [
-    { id: 'overview', label: 'Overview', landing: true },
+    { id: 'console', label: 'Console', landing: true },
   ],
 }
 

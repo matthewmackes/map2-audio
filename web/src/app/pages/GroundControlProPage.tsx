@@ -58,55 +58,15 @@ import groundControlProApi, {
   type GroundControlSessionResponse,
   type GroundControlValidationReport,
 } from '../../map2/groundControlProApi'
+import {
+  PRESET_AREA_OFFSET,
+  boolToByte,
+  cloneModel,
+  downloadBlob,
+  renderConfidenceTag,
+  validationIsClean,
+} from '../components/Devices/GroundControlPro/groundControlProUtils'
 import './GroundControlProPage.css'
-
-const PRESET_AREA_OFFSET = 166
-
-function cloneModel(model: GroundControlModel): GroundControlModel {
-  return JSON.parse(JSON.stringify(model)) as GroundControlModel
-}
-
-function validationIsClean(validation: GroundControlValidationReport | null): boolean {
-  if (!validation) return false
-  return (
-    validation.errors.length === 0
-    && validation.exact_size_ok
-    && validation.preamble_ok
-    && validation.terminator_ok
-    && validation.offsets_ok
-    && validation.field_ranges_ok
-    && validation.unknown_bytes_preserved
-    && validation.round_trip_identity
-  )
-}
-
-function confidenceTagType(confidence: string): 'green' | 'warm-gray' | 'red' | 'cool-gray' {
-  if (confidence === 'confirmed') return 'green'
-  if (confidence === 'unknown_reserved') return 'red'
-  return 'warm-gray'
-}
-
-function boolToByte(value: boolean): number {
-  return value ? 1 : 0
-}
-
-function downloadBlob(content: BlobPart, filename: string, mimeType: string) {
-  const blob = new Blob([content], { type: mimeType })
-  const url = URL.createObjectURL(blob)
-  const anchor = document.createElement('a')
-  anchor.href = url
-  anchor.download = filename
-  anchor.click()
-  URL.revokeObjectURL(url)
-}
-
-function renderConfidenceTag(confidence: string) {
-  return (
-    <Tag type={confidenceTagType(confidence)} size="sm">
-      {confidence}
-    </Tag>
-  )
-}
 
 type EditablePresetArrayKey =
   | 'device_program_banks_raw'

@@ -35848,16 +35848,22 @@ This revision **preserves the spirit of Q2=A** (decomposition for maintainabilit
 
 ---
 
-## T2488 — Decompose GroundControlProPage + migrate to /midi/devices/voodoo-lab-ground-control-pro/* (opened 2026-05-02)
+## T2488 — Decompose GroundControlProPage + migrate to /midi/devices/voodoo-lab-ground-control-pro/* (opened 2026-05-02; CLOSED 2026-05-02)
 
-**Why:** Same as T2487 but for `web/src/app/pages/GroundControlProPage.tsx` (1338 LoC).
+**Path A revision (2026-05-02).** Same audit reasoning as T2487. GroundControlProPage's body is already cleanly tabbed via Carbon Tabs (5 tabs: Overview / Configuration / Presets / Validation & Transfer / Forensics) but those tabs share extensive state (GroundControlModel, validation reports, ports, jobs, sessions). Converting to route children would require ~25-prop pass-throughs per panel without operator-visible benefit. Operators don't deep-link to internal tabs.
 
-**Subtasks** (template mirrors T2487):
-- T2488-1 audit, T2488-2 shell mount, T2488-3 view decomposition, T2488-4 redirects + tests, T2488-5 closeout.
+**What shipped (single SHIP iter, ~1 commit):**
+1. Extract pure helpers (`PRESET_AREA_OFFSET`, `cloneModel`, `validationIsClean`, `confidenceTagType`, `boolToByte`, `downloadBlob`, `renderConfidenceTag`) into `web/src/app/components/Devices/GroundControlPro/groundControlProUtils.tsx`.
+2. `GroundControlProConsoleView.tsx` composes `DeviceLandingHeader` + `GroundControlProPage`.
+3. Mount `/midi/devices/voodoo-lab-ground-control-pro/*` with single `console` child.
+4. Hard-redirect `/ground-control-pro` → `/midi/devices/voodoo-lab-ground-control-pro/console` (Q1=A).
+5. Manifest view id flipped `overview` → `console`.
+6. Iter-9 `MidiDeviceGroundControlProLanding` cross-link no longer routed.
+7. Smoke test for the unified-shell entry point.
 
-**Estimated effort:** 4–5 SHIP iters.
+**Tab-body extraction queued as a separate follow-up** (T2488-followup) only if the maintenance burden actually demands it. The page is ~1338 LoC of well-organized state-shared code; splitting it without a concrete maintainability problem to solve is speculative.
 
-**Status:** [ ] Open. Unscheduled.
+**Status:** [✓] DONE 2026-05-02.
 
 ---
 

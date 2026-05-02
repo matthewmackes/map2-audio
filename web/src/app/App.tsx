@@ -87,8 +87,9 @@ const MidiDeviceMidiCommanderLanding = lazy(() => import('./pages/midi-services/
 // T2487-3 — Expression unified-shell console (replaces the iter-8
 // MidiDeviceExpressionLanding cross-link, which is now retired).
 const ExpressionConsoleView = lazy(() => import('./components/Devices/Expression/ExpressionConsoleView').then(m => ({ default: m.ExpressionConsoleView })))
-// T2485-7c — Voodoo Lab Ground Control Pro landing.
-const MidiDeviceGroundControlProLanding = lazy(() => import('./pages/midi-services/MidiDeviceGroundControlProLanding').then(m => ({ default: m.MidiDeviceGroundControlProLanding })))
+// T2488 — Voodoo Lab Ground Control Pro unified console (supersedes
+// the iter-9 MidiDeviceGroundControlProLanding cross-link).
+const GroundControlProConsoleView = lazy(() => import('./components/Devices/GroundControlPro/GroundControlProConsoleView').then(m => ({ default: m.GroundControlProConsoleView })))
 // T2485-7d — Ableton Push 3 landing.
 const MidiDevicePushSurfaceLanding = lazy(() => import('./pages/midi-services/MidiDevicePushSurfaceLanding').then(m => ({ default: m.MidiDevicePushSurfaceLanding })))
 const MidiServicesBindingsPage = lazy(() => import('./pages/midi-services/MidiServicesBindingsPage').then(m => ({ default: m.MidiServicesBindingsPage })))
@@ -167,7 +168,11 @@ const PerformPage           = lazy(() => import('./pages/PerformPage').then(m =>
 // shim file still exists at pages/ExpressionPage.tsx and re-exports
 // ExpressionView for the ExpressionOverlay consumer.
 const MidiAssignmentsPage   = lazy(() => import('./pages/MidiAssignmentsPage').then(m => ({ default: m.MidiAssignmentsPage })))
-const GroundControlProPage  = lazy(() => import('./pages/GroundControlProPage').then(m => ({ default: m.GroundControlProPage })))
+// T2488 — GroundControlProPage is no longer route-rendered directly;
+// /ground-control-pro redirects to the unified
+// /midi/devices/voodoo-lab-ground-control-pro/console mount, which
+// composes DeviceLandingHeader + GroundControlProPage via
+// GroundControlProConsoleView.
 
 // T2474 B11: Inline `style={{...}}` magic-number pixel values
 // (24, 16, 180, 220, 280, 320, 540, 120, 240) extracted to
@@ -634,6 +639,22 @@ export function App() {
                                   <Route index element={<Navigate to="console" replace />} />
                                   <Route path="console" element={<ExpressionConsoleView />} />
                                 </Route>
+                                {/* T2488 — Voodoo Lab Ground Control Pro unified mount.
+                                    Path A: the page already has 5 internal Carbon Tabs
+                                    (Overview / Configuration / Presets / Validation &
+                                    Transfer / Forensics) sharing extensive state; we
+                                    keep them as in-page tabs and migrate the whole
+                                    page to the unified shell as a single console
+                                    view. Legacy /ground-control-pro hard-redirects
+                                    here. */}
+                                <Route path="/midi/devices/voodoo-lab-ground-control-pro/*" element={
+                                  <RouteBoundary title="Ground Control Pro view crashed" actionLabel="Reload Ground Control Pro">
+                                    <Outlet />
+                                  </RouteBoundary>
+                                }>
+                                  <Route index element={<Navigate to="console" replace />} />
+                                  <Route path="console" element={<GroundControlProConsoleView />} />
+                                </Route>
                                 {/* T2482 loop 10 / iter 92 — MIDI Services canonical mount.
                                     Mirrors the /midi-hub/* mount above using the
                                     MidiServicesShell wrapper (which re-exports MidiHubShell).
@@ -681,7 +702,10 @@ export function App() {
                                       at /midi/devices/expression/* (declared above the
                                       /midi/* catch-all) takes the bare path via its
                                       index→Navigate redirect to /console. */}
-                                  <Route path="devices/voodoo-lab-ground-control-pro" element={<MidiDeviceGroundControlProLanding />} />
+                                  {/* T2488 — devices/voodoo-lab-ground-control-pro
+                                      no longer renders the iter-9 cross-link landing;
+                                      the unified shell mount above takes the bare
+                                      path via its index→Navigate redirect to /console. */}
                                   <Route path="devices/ableton-push-3" element={<MidiDevicePushSurfaceLanding />} />
                                   {/* T2482 loop 10 / iter 99 — Device detail stub.
                                       Read-only audit/inspection of one device-pack
@@ -774,7 +798,10 @@ export function App() {
                                 <Route path="/midi/assignments" element={<RouteBoundary title="MIDI Assignments crashed" actionLabel="Reload MIDI Assignments"><MidiAssignmentsPage /></RouteBoundary>} />
                                 <Route path="/midi-assignments" element={<Navigate to="/midi/assignments" replace />} />
                                 <Route path="/midi-hub/assignments" element={<Navigate to="/midi/assignments" replace />} />
-                                <Route path="/ground-control-pro" element={<GroundControlProPage />} />
+                                {/* T2488 — /ground-control-pro hard-redirects to the
+                                    unified /midi/devices/voodoo-lab-ground-control-pro/console
+                                    mount (Q1=A locked decision). */}
+                                <Route path="/ground-control-pro" element={<Navigate to="/midi/devices/voodoo-lab-ground-control-pro/console" replace />} />
                                 <Route path="*" element={<Navigate to="/" replace />} />
                             </Routes>
                           </Suspense>
