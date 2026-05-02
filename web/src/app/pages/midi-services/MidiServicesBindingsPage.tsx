@@ -48,6 +48,7 @@ import {
   midiBindingsApi,
   BINDING_CONSUMER_TYPES,
   BINDING_SCOPES,
+  BINDING_SOURCE_TYPES,
   type BindingConsumerType,
   type BindingScope,
   type BindingListFilter,
@@ -69,6 +70,10 @@ interface FilterState {
   scope: BindingScope | ''
   scope_id: string
   enabled_only: boolean
+  // T2483-4A iter 156 — client-side post-filter narrowing.
+  // Backend `list_bindings` only filters by consumer/device/scope.
+  // source_type narrowing happens after the response lands.
+  source_type: string  // '' = all
 }
 
 const EMPTY_FILTER: FilterState = {
@@ -79,22 +84,25 @@ const EMPTY_FILTER: FilterState = {
   scope: '',
   scope_id: '',
   enabled_only: false,
+  source_type: '',
 }
 
 function filterFromSearchParams(params: URLSearchParams): FilterState {
   const consumerType = params.get('consumer_type') as BindingConsumerType | null
   const deviceId = params.get('device_id')
   const scope = params.get('scope') as BindingScope | null
+  const sourceType = params.get('source_type') ?? ''
   if (consumerType) {
     return {
       ...EMPTY_FILTER,
       strategy: 'consumer',
       consumer_type: consumerType,
       consumer_id: params.get('consumer_id') ?? '*',
+      source_type: sourceType,
     }
   }
   if (deviceId) {
-    return { ...EMPTY_FILTER, strategy: 'device', device_id: deviceId }
+    return { ...EMPTY_FILTER, strategy: 'device', device_id: deviceId, source_type: sourceType }
   }
   if (scope) {
     return {
@@ -102,6 +110,7 @@ function filterFromSearchParams(params: URLSearchParams): FilterState {
       strategy: 'scope',
       scope,
       scope_id: params.get('scope_id') ?? '',
+      source_type: sourceType,
     }
   }
   return EMPTY_FILTER
@@ -235,6 +244,7 @@ export function MidiServicesBindingsPage() {
       if (filter.scope_id) next.set('scope_id', filter.scope_id)
     }
     if (filter.enabled_only) next.set('enabled_only', 'true')
+    if (filter.source_type) next.set('source_type', filter.source_type)
     if (next.toString() !== searchParams.toString()) {
       setSearchParams(next, { replace: true })
     }
@@ -253,7 +263,13 @@ export function MidiServicesBindingsPage() {
     staleTime: 0,
   })
 
-  const tableRows = useMemo(() => rowsFromBindings(query.data ?? []), [query.data])
+  const tableRows = useMemo(() => {
+    const rows = rowsFromBindings(query.data ?? [])
+    if (filter.source_type) {
+      return rows.filter((r) => r.source_type === filter.source_type)
+    }
+    return rows
+  }, [query.data, filter.source_type])
 
   return (
     <Section className="midi-services-bindings">
@@ -363,15 +379,30 @@ export function MidiServicesBindingsPage() {
           ) : null}
 
           {filter.strategy !== 'none' ? (
-            <FormGroup legendText="Show only enabled">
-              <Toggle
-                id="bindings-enabled-only"
-                labelA="No"
-                labelB="Yes"
-                toggled={filter.enabled_only}
-                onToggle={(toggled) => setFilter((prev) => ({ ...prev, enabled_only: toggled }))}
-              />
-            </FormGroup>
+            <>
+              <FormGroup legendText="Show only enabled">
+                <Toggle
+                  id="bindings-enabled-only"
+                  labelA="No"
+                  labelB="Yes"
+                  toggled={filter.enabled_only}
+                  onToggle={(toggled) => setFilter((prev) => ({ ...prev, enabled_only: toggled }))}
+                />
+              </FormGroup>
+              <FormGroup legendText="Source type (client-side narrow)">
+                <Dropdown
+                  id="bindings-source-type"
+                  titleText=""
+                  label="Any source type"
+                  items={['', ...BINDING_SOURCE_TYPES]}
+                  selectedItem={filter.source_type || ''}
+                  itemToString={(item) => (item === '' ? 'Any source type' : (item as string))}
+                  onChange={({ selectedItem }) =>
+                    setFilter((prev) => ({ ...prev, source_type: (selectedItem ?? '') as string }))
+                  }
+                />
+              </FormGroup>
+            </>
           ) : null}
         </div>
       </Layer>
