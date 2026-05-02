@@ -84,6 +84,8 @@ const MidiDeviceMaschineLanding = lazy(() => import('./pages/midi-services/MidiD
 const MidiDeviceMcuLanding = lazy(() => import('./pages/midi-services/MidiDeviceMcuLanding').then(m => ({ default: m.MidiDeviceMcuLanding })))
 const MidiDeviceLaunchControlLanding = lazy(() => import('./pages/midi-services/MidiDeviceLaunchControlLanding').then(m => ({ default: m.MidiDeviceLaunchControlLanding })))
 const MidiDeviceMidiCommanderLanding = lazy(() => import('./pages/midi-services/MidiDeviceMidiCommanderLanding').then(m => ({ default: m.MidiDeviceMidiCommanderLanding })))
+// T2485-7b — Expression pedalboard landing.
+const MidiDeviceExpressionLanding = lazy(() => import('./pages/midi-services/MidiDeviceExpressionLanding').then(m => ({ default: m.MidiDeviceExpressionLanding })))
 const MidiServicesBindingsPage = lazy(() => import('./pages/midi-services/MidiServicesBindingsPage').then(m => ({ default: m.MidiServicesBindingsPage })))
 const MidiServicesRoutingPage = lazy(() => import('./pages/midi-services/MidiServicesRoutingPage').then(m => ({ default: m.MidiServicesRoutingPage })))
 const MidiServicesNetworkPage = lazy(() => import('./pages/midi-services/MidiServicesNetworkPage').then(m => ({ default: m.MidiServicesNetworkPage })))
@@ -651,6 +653,7 @@ export function App() {
                                   <Route path="devices/mackie-mcu-pro" element={<MidiDeviceMcuLanding />} />
                                   <Route path="devices/novation-launch-control-xl" element={<MidiDeviceLaunchControlLanding />} />
                                   <Route path="devices/meloaudio-midi-commander" element={<MidiDeviceMidiCommanderLanding />} />
+                                  <Route path="devices/expression" element={<MidiDeviceExpressionLanding />} />
                                   {/* T2482 loop 10 / iter 99 — Device detail stub.
                                       Read-only audit/inspection of one device-pack
                                       profile. Mutation lands in iter 100+. */}
