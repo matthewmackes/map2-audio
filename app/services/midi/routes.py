@@ -9,6 +9,10 @@ This file is **not yet wired** into app/main.py — that's iter 19's
 deliverable, so the routes exist on disk for testing but aren't
 exposed publicly until P3.1 ships proper. Tests use APIRouter
 introspection to verify the route shape without needing a live mount.
+
+T2483 loop 17 / iter 162 — added GET /bindings/matrix for the
+T2483-8 server-side aggregation. Replaces the iter-117 client-side
+fan-out (10 queries / 5s poll → 1 query / 5s poll).
 """
 
 from __future__ import annotations
@@ -16,9 +20,12 @@ from __future__ import annotations
 from typing import Optional
 
 from fastapi import APIRouter, HTTPException, Query
+from pydantic import BaseModel
+from sqlalchemy import Integer, cast, func, select
 
 from app.database import get_session
 from app.services.midi.authority import MidiBindingAuthority, MidiBindingNotFound
+from app.services.midi.models import MidiBinding
 from app.services.midi.schemas import (
     BindingConsumerType,
     BindingScope,
@@ -26,6 +33,24 @@ from app.services.midi.schemas import (
     MidiBindingRead,
     MidiBindingUpdate,
 )
+
+
+class MatrixCell(BaseModel):
+    """T2483-8 iter 162 — one cell of the source × consumer routing matrix."""
+
+    count: int
+    enabled_count: int
+
+
+class BindingsMatrixResponse(BaseModel):
+    """T2483-8 iter 162 — full source × consumer aggregation.
+
+    Shape: matrix[source_type][consumer_type] = MatrixCell.
+    Frontend `useRoutingMatrix` (iter 164) consumes this directly.
+    """
+
+    matrix: dict[str, dict[str, MatrixCell]]
+    total_bindings: int
 
 
 router = APIRouter(prefix="/api/midi", tags=["MIDI Services"])
@@ -52,6 +77,37 @@ async def count_bindings() -> int:
     async with get_session(read_only=True) as session:
         authority = MidiBindingAuthority(session)
         return await authority.count()
+
+
+@router.get("/bindings/matrix", response_model=BindingsMatrixResponse)
+async def get_bindings_matrix() -> BindingsMatrixResponse:
+    """T2483-8 iter 162 — server-side source_type × consumer_type
+    aggregation for the iter-118 routing matrix UI.
+
+    Replaces the iter-117 client-side fan-out (which issued one query
+    per BindingConsumerType every 5s poll, 10 queries total). One
+    SQL aggregation here returns the same shape.
+    """
+    async with get_session(read_only=True) as session:
+        rows = await session.execute(
+            select(
+                MidiBinding.source_type,
+                MidiBinding.consumer_type,
+                func.count(MidiBinding.binding_id).label("count"),
+                func.sum(cast(MidiBinding.enabled, Integer)).label("enabled_count"),
+            ).group_by(MidiBinding.source_type, MidiBinding.consumer_type)
+        )
+        matrix: dict[str, dict[str, MatrixCell]] = {}
+        total = 0
+        for source_type, consumer_type, count, enabled_count in rows.all():
+            row = matrix.setdefault(str(source_type), {})
+            cell_count = int(count or 0)
+            cell_enabled = int(enabled_count or 0)
+            row[str(consumer_type)] = MatrixCell(
+                count=cell_count, enabled_count=cell_enabled
+            )
+            total += cell_count
+        return BindingsMatrixResponse(matrix=matrix, total_bindings=total)
 
 
 @router.get("/legacy-table-rowcounts")
