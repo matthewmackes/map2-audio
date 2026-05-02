@@ -35883,3 +35883,60 @@ This revision **preserves the spirit of Q2=A** (decomposition for maintainabilit
 **Helper / sub-component extraction queued as a separate follow-up** (T2489-followup) only if maintenance burden actually demands it. The unified-mount move is the operator-visible win; internal refactors are cosmetic until they have a concrete maintainability problem to solve.
 
 **Status:** [✓] DONE 2026-05-02.
+
+---
+
+## Epic: T2490 — AVB Services Unification (opened 2026-05-02)
+
+**Why it matters.** AVB (IEEE 1722.1 / AVDECC) is the second of MAP2's four standing first-class platform services (MIDI, AVB, Sampler, Audio Effects per the standing platform directive). MIDI Services unification (T2482 + T2483 + T2484) established the template: single canonical operator mount, single canonical binding authority, full legacy-store migration, no parallel implementations. AVB is currently scattered: `/devices/tesira` is the only operator-visible AVB UI; generic AVB streaming is API-only with no operator route; `app/services/avb/avb_router.py` (2,630 LoC routing-matrix orchestrator) and `app/services/tesira/` (~6,238 LoC Biamp DSP fleet) are entirely separate authorities; cluster fields are present in the data model but have no `/api/avb/cluster/*` reconciliation surface. T2490 brings AVB to the same canonical-surface discipline MIDI achieved.
+
+**Audit (2026-05-02 pre-kickoff).**
+- **GUI today:** only `/devices/tesira/*` (TesiraView, ~8 components). No `/avb` route exists.
+- **Backend routes:** `/api/avb/*` (4,104 LoC across `routing.py / discovery.py / metrics.py / common.py`) + `/api/tesira/*` (1,789 LoC). Two top-level prefixes.
+- **Backend services:** `app/services/avb/` (10 files, 7,172 LoC) + `app/services/tesira/` (20 files, 6,238 LoC). Two separate authorities.
+- **AVDECC controller:** la_avdecc-backed, already canonical (T376 retired the custom AvdeccEntity stack). The pre-audit "custom AVDECC controller still present" note in MIDI_SERVICES_CLOSED_OUT.md was a misread; `avb_router.py` is a Python routing-matrix orchestrator that consumes the JUCE engine's la_avdecc-backed AvdeccController, not a competing controller. **No stack-choice question for T2490.**
+- **Cluster data model:** `AvbStreamConfig` has `owner_node_id`, `talker_node_id`, `listener_node_id` fields; no reconciliation service.
+
+**Locked decisions (5-question protocol, 2026-05-02).**
+
+1. **Q1=A — Canonical mount: `/avb/*`** (parallel to `/midi/*`). AVB gets equal-citizen status as a top-level service. Legacy `/devices/tesira/*` and `/tesira` hard-redirect (Q1=A locked decision from T2485 carried forward as the redirect default for service-unification epics).
+
+2. **Q2=B — AvbBindingAuthority pattern.** Refactor `avb_router.py`'s 2,630-LoC routing-matrix logic around a canonical "binding" data model analogous to T2482's `MidiBinding` table. The authority owns talker/listener pairings, AVDECC stream connections, and Tesira preset/design recall as canonical bindings. Operator-visible UI reads/writes through one authority. This is the biggest scope item — bigger than the operator mount itself.
+
+3. **Q3=A — Tesira folds entirely under `/avb/*`.** `/avb/devices/tesira/*` becomes the canonical mount; legacy `/devices/tesira/*` and `/tesira` hard-redirect. The TesiraFleet authority refactors to register with `AvbBindingAuthority` so DSP block presets, SageVue designs, and AVDECC-stream targets share one binding surface. SageVue design workspace stays as the design-time surface but registers its outputs as bindings under the unified authority.
+
+4. **Q4=A — Full cluster parity with MIDI.** Ship `/api/avb/cluster/bindings/matrix` (concurrent peer fan-out + 2s timeout, mirroring T2484's MIDI matrix), `/avb/network` UI page mirroring `/midi/network`, mDNS-driven peer discovery for AVB streams, peer-health surface with per-peer Carbon Tag tones. AVB cluster reconciliation joins the state-authority pattern.
+
+5. **Q5=A — Kickoff commit ships worklist + design doc only.** No code in this kickoff. Subsequent T2490 sub-tasks pick up implementation slices.
+
+**Subtasks (initial outline; will expand as design doc finalizes).**
+
+- **T2490-1** — Operator mount scaffold. Create `web/src/app/pages/AvbServicesShell.tsx` (re-exports a future shell), add `/avb/*` route in App.tsx with placeholder index → connections, add `AvbServicesShell` placeholder under MidiServicesShell pattern. Add menu entry. No backend yet. ~1 SHIP iter.
+
+- **T2490-2** — `AvbBindingAuthority` data model + REST surface. New `app/services/avb/binding_authority.py` with the canonical `AvbBinding` model (talker_node_id, listener_node_id, stream_id, format, srp_class, scope, source_type, target_type, etc.), `app/routes/avb/bindings.py` with `GET/POST/PATCH/DELETE /api/avb/bindings` (mirroring `/api/midi/bindings`). Migrations. Tests. ~2-3 SHIP iters.
+
+- **T2490-3** — Refactor `avb_router.py` to consume `AvbBindingAuthority`. The routing matrix becomes a *projection* of the binding authority rather than a separate state store. ~3 SHIP iters.
+
+- **T2490-4** — Operator-visible Connections page. Carbon DataTable mirroring `MidiServicesConnectionsPage`, with per-row mutation surface. ~1 SHIP iter.
+
+- **T2490-5** — Devices region. `/avb/devices/:profileKey` index + per-device landing pattern matching T2485's MIDI devices index. ~1-2 SHIP iters.
+
+- **T2490-6** — Tesira fold-in. Migrate `/devices/tesira/*` to `/avb/devices/tesira/*` with hard redirect. TesiraFleet adapter registers with AvbBindingAuthority. ~3-4 SHIP iters (the biggest single sub-task).
+
+- **T2490-7** — Cluster matrix endpoint + frontend. `GET /api/avb/cluster/bindings/matrix` with peer fan-out, frontend `usePeerMatrix` hook flipped from placeholder, drill-down drawer. ~2 SHIP iters.
+
+- **T2490-8** — Routing region. `/avb/routing` matrix UI (talker × listener cross-reference). ~1 SHIP iter.
+
+- **T2490-9** — Network region. `/avb/network` with PTP status, SRP admission, TSN qdisc surfaces. Cluster auto-connect onboarding modal mirroring T2486's MIDI cluster modal. ~2 SHIP iters.
+
+- **T2490-10** — Closeout. Legacy route deletion, evidence run under `docs/fit-for-purpose-evidence/<YYYYMMDD>/t2490-avb-services/`, doc updates (`AVB_SERVICES.md` final state, `MIDI_SERVICES_CLOSED_OUT.md` companion), test totals, dual-push. ~1 SHIP iter.
+
+**Estimated total effort:** 17–20 SHIP iters across 10 sub-tasks. Largest single slice is T2490-6 (Tesira fold-in) at 3-4 iters; T2490-3 (avb_router refactor) at 3 iters is second-largest.
+
+**Cross-references.**
+- Design doc: `docs/architecture/AVB_SERVICES.md` (created in this kickoff)
+- T2482 template precedent: `docs/architecture/MIDI_SERVICES.md`, `docs/architecture/MIDI_SERVICES_CLOSED_OUT.md`
+- la_avdecc-backed AVDECC controller: `juce-engine/Source/AvdeccController.{h,cpp}`
+- Standing platform directive: PROJECT_WORKLIST.md / standing four-services rule (MIDI, AVB, Sampler, Audio Effects)
+
+**Status:** [>] In Progress 2026-05-02 (Kickoff: locked decisions + design doc shipped; sub-tasks T2490-1 through T2490-10 unscheduled).
