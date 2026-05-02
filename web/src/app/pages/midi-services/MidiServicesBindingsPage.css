@@ -24,6 +24,14 @@
   margin: 0;
 }
 
+.midi-services-bindings__title-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
 .midi-services-bindings__subtitle {
   font-size: 0.875rem;
   color: var(--cds-text-secondary);

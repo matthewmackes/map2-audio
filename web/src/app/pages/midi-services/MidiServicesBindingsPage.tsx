@@ -27,6 +27,7 @@ import {
   Heading,
   InlineNotification,
   Layer,
+  Button,
   Modal,
   OverflowMenu,
   OverflowMenuItem,
@@ -53,6 +54,7 @@ import {
   type MidiBindingRead,
 } from '../../../map2/clients/midiBindings'
 import { BindingEditDrawer } from './BindingEditDrawer'
+import { BindingCreateDrawer } from './BindingCreateDrawer'
 import './MidiServicesBindingsPage.css'
 
 // ---------- Filter strategy + URL sync ----------
@@ -170,6 +172,7 @@ export function MidiServicesBindingsPage() {
   const queryClient = useQueryClient()
   const [pendingDeleteId, setPendingDeleteId] = useState<string | null>(null)
   const [editId, setEditId] = useState<string | null>(null)
+  const [createOpen, setCreateOpen] = useState(false)
   const [mutationError, setMutationError] = useState<string | null>(null)
 
   const invalidateList = () => {
@@ -256,7 +259,12 @@ export function MidiServicesBindingsPage() {
     <Section className="midi-services-bindings">
       <Layer level={0}>
         <header className="midi-services-bindings__header">
-          <Heading className="midi-services-bindings__title">Bindings</Heading>
+          <div className="midi-services-bindings__title-row">
+            <Heading className="midi-services-bindings__title">Bindings</Heading>
+            <Button kind="primary" size="md" onClick={() => setCreateOpen(true)}>
+              Add binding
+            </Button>
+          </div>
           <p className="midi-services-bindings__subtitle">
             Global filterable view of every MIDI binding in the canonical
             authority. Pick a filter strategy below to narrow the result set —
@@ -488,6 +496,8 @@ export function MidiServicesBindingsPage() {
         open={editId !== null}
         onClose={() => setEditId(null)}
       />
+
+      <BindingCreateDrawer open={createOpen} onClose={() => setCreateOpen(false)} />
 
       <Modal
         open={pendingDeleteId !== null}
