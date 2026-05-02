@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1441** Python | **1491** TypeScript | **177** C++/H | **145** Docs | **3591** total commits | **3** stars | **0** forks | **0** open issues
+**1441** Python | **1488** TypeScript | **177** C++/H | **145** Docs | **3595** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`4eea75b6`](https://github.com/matthewmackes/map2-audio/commit/4eea75b6445957c3303bc48610d890f39cde7130) | chore(T2481/T2487-9): delete orphaned cross-link landings... | Map2 Audio | 2026-05-02 |
+| [`669f4686`](https://github.com/matthewmackes/map2-audio/commit/669f46866483c8146eea58df5db5d63cd5456f9c) | style(T2481): Carbon-deepening Iter 2 — PushSurfacePage.c... | Map2 Audio | 2026-05-02 |
+| [`507c0832`](https://github.com/matthewmackes/map2-audio/commit/507c0832e680f0c1fe6cfbefd5c5d344cc6cc139) | style(T2481): Carbon-deepening pass on ExpressionPage.mod... | Map2 Audio | 2026-05-02 |
+| [`6b1ada1a`](https://github.com/matthewmackes/map2-audio/commit/6b1ada1a6b734107a4e2a002446bae9c4c0f500a) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-02 |
 | [`9c8da6bd`](https://github.com/matthewmackes/map2-audio/commit/9c8da6bd9b5a9bf2abb54244f22dea0aa22c5993) | feat(T2489): migrate Ableton Push 3 surface under unified... | Map2 Audio | 2026-05-02 |
 | [`03727a66`](https://github.com/matthewmackes/map2-audio/commit/03727a662056a956b9cfb3fa858b868fece75bbb) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-02 |
 | [`0dfa43a4`](https://github.com/matthewmackes/map2-audio/commit/0dfa43a488e03f354f1f05bece2152a7a1a517c2) | feat(T2488): migrate Voodoo Lab Ground Control Pro under ... | Map2 Audio | 2026-05-02 |
 | [`09ccb52d`](https://github.com/matthewmackes/map2-audio/commit/09ccb52d8cb958a01b829ed96a6de9f3c565035f) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-02 |
-| [`0863e4f1`](https://github.com/matthewmackes/map2-audio/commit/0863e4f18d9461bd857c1673ff4c4aef4534b432) | feat(T2487-3/4/5): mount Expression under /midi/devices/e... | Map2 Audio | 2026-05-02 |
-| [`fa8a6f09`](https://github.com/matthewmackes/map2-audio/commit/fa8a6f094b5e8891a550a0e25d538f0ccef0aa94) | refactor(T2487-2): extract ExpressionPage's 8 sub-compone... | Map2 Audio | 2026-05-02 |
-| [`300062a5`](https://github.com/matthewmackes/map2-audio/commit/300062a57e15420db8e61786b7a2c8230ed2e07f) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-02 |
-| [`e3e606c6`](https://github.com/matthewmackes/map2-audio/commit/e3e606c626fccebcd1798404992250253d610b66) | docs(T2487): revise Q2=A from view-tab split to file-leve... | Map2 Audio | 2026-05-02 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
