@@ -216,7 +216,8 @@ const PROFILE_BY_KEY: Record<string, HomeCardProfile> = {
       'Check MIDI status and problems',
       'Connect devices, automation, and engine actions',
     ],
-    learnMore: 'Open MIDI Hub for everyday MIDI setup, routing, controller changes, and troubleshooting.',
+    // T2482 loop 10 / iter 94 — "MIDI Hub" → "MIDI Services" rename.
+    learnMore: 'Open MIDI Services for everyday MIDI setup, routing, controller changes, and troubleshooting.',
     bestFor: 'MIDI setup and control',
   },
   '/ground-control-pro': {

@@ -188,10 +188,15 @@ const baseNavigationCatalog: ShellNavigationItem[] = [
     showOnHome: true,
   },
   {
-    to: '/midi-hub',
-    label: 'MIDI Hub',
+    // T2482 loop 10 / iter 94 — "MIDI Hub" → "MIDI Services" rename.
+    // The route still points at /midi-hub for now; iter 95+ deep-link
+    // /midi/connections directly. Iter 100 roll-up documents the
+    // operator-facing renames so the change can be flagged in release
+    // notes.
+    to: '/midi',
+    label: 'MIDI Services',
     icon: MusicNotes,
-    description: 'Run the unified MIDI surface for controller setup, core command workflows, routing, scripts, presets, clock, diagnostics, and advanced controller orchestration.',
+    description: 'Canonical MIDI Services surface — unified authority for MIDI bindings, routing, devices, transport/clock, processing, presets, network, and advanced controller orchestration. Replaces the legacy MIDI Hub mount.',
     color: 'var(--cds-support-success)',
     homeSection: 'MIDI',
     includeInAdvancedMenu: true,

@@ -15,7 +15,8 @@ export const POSTER_MANIFEST: PosterManifestEntry[] = [
   { route: '/platforms/about', label: 'Platform Guide', slug: 'platform-guide', temperature: 'cool' },
   { route: '/expression', label: 'Expression', slug: 'expression', temperature: 'cool' },
   { route: '/workspace/artifacts', label: 'LV2 Plugins', slug: 'lv2-plugins', temperature: 'cool' },
-  { route: '/midi-hub', label: 'MIDI Hub', slug: 'midi-hub', temperature: 'cool' },
+  // T2482 loop 10 / iter 94 — "MIDI Hub" → "MIDI Services" rename.
+  { route: '/midi', label: 'MIDI Services', slug: 'midi-services', temperature: 'cool' },
   { route: '/mpx1', label: 'MPX1 Rack', slug: 'mpx1-rack', temperature: 'cool' },
   { route: '/tesira', label: 'Tesira AVB', slug: 'tesira-avb', temperature: 'neutral' },
   { route: '/workspace/artifacts/discover', label: 'IR & NAM Library', slug: 'ir-nam-library', temperature: 'cool' },
