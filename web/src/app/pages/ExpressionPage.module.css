@@ -89,7 +89,7 @@
 .newAssignmentButton {
   background: var(--interactive);
   border: none;
-  border-radius: 4px;
+  border-radius: var(--cds-spacing-02, 0.25rem);
   color: var(--text-inverse);
   font-family: var(--font-ui);
   font-size: 13px;
@@ -136,7 +136,7 @@
   text-align: left;
   border: 1px solid var(--border);
   background: var(--surface);
-  border-radius: 4px;
+  border-radius: var(--cds-spacing-02, 0.25rem);
   padding: 8px 10px;
   display: flex;
   align-items: center;
@@ -226,7 +226,7 @@
   color: var(--accent);
   background: color-mix(in srgb, var(--accent) 20%, transparent);
   border: 1px solid color-mix(in srgb, var(--accent) 40%, transparent);
-  border-radius: 3px;
+  border-radius: 3px; /* Carbon does not have a 3px token */
   padding: 1px 4px;
   letter-spacing: 0.02em;
   flex-shrink: 0;
@@ -304,7 +304,7 @@
   background: var(--surface);
   color: var(--text-primary);
   border: 1px solid var(--border);
-  border-radius: 4px;
+  border-radius: var(--cds-spacing-02, 0.25rem);
   font-family: var(--font-mono);
   font-size: 13px;
   padding: 6px 8px;
@@ -315,7 +315,7 @@
 
 .inputField:focus {
   border-color: var(--interactive);
-  box-shadow: 0 0 0 2px rgba(15, 98, 254, 0.1);
+  box-shadow: 0 0 0 2px color-mix(in srgb, var(--cds-focus, var(--interactive)) 10%, transparent);
 }
 
 .inputField:hover {
@@ -348,7 +348,7 @@
 
 .parameterDropdown {
   border: 1px solid var(--border);
-  border-radius: 4px;
+  border-radius: var(--cds-spacing-02, 0.25rem);
   overflow: hidden;
   max-height: 180px;
   overflow-y: auto;
@@ -404,7 +404,7 @@
 .detectCCPanel {
   border: 1px solid var(--border);
   background: var(--surface);
-  border-radius: 4px;
+  border-radius: var(--cds-spacing-02, 0.25rem);
   padding: 10px 12px;
 }
 
@@ -444,7 +444,7 @@
 .curveButton {
   background: transparent;
   border: 1px solid var(--border);
-  border-radius: 4px;
+  border-radius: var(--cds-spacing-02, 0.25rem);
   color: var(--text-secondary);
   font-family: var(--font-ui);
   font-size: 12px;
@@ -476,7 +476,7 @@
 .curveSVG {
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 4px;
+  border-radius: var(--cds-spacing-02, 0.25rem);
 }
 
 /* ============================================================================
@@ -526,7 +526,7 @@
   height: 200px;
   border: 1px solid var(--border);
   background: var(--surface);
-  border-radius: 3px;
+  border-radius: 3px; /* Carbon does not have a 3px token */
   position: relative;
   overflow: hidden;
 }
@@ -565,7 +565,7 @@
 .waveformSVG {
   background: var(--surface);
   border: 1px solid var(--border);
-  border-radius: 3px;
+  border-radius: 3px; /* Carbon does not have a 3px token */
 }
 
 /* ============================================================================
@@ -595,7 +595,7 @@
 .refreshButton {
   background: transparent;
   border: 1px solid var(--border);
-  border-radius: 4px;
+  border-radius: var(--cds-spacing-02, 0.25rem);
   color: var(--text-secondary);
   font-family: var(--font-ui);
   font-size: 11px;
@@ -623,7 +623,7 @@
   flex: 1;
   background: var(--interactive);
   border: none;
-  border-radius: 4px;
+  border-radius: var(--cds-spacing-02, 0.25rem);
   color: var(--text-inverse);
   font-family: var(--font-ui);
   font-size: 13px;
@@ -651,7 +651,7 @@
 .buttonSecondary {
   background: transparent;
   border: 1px solid var(--border);
-  border-radius: 4px;
+  border-radius: var(--cds-spacing-02, 0.25rem);
   color: var(--text-secondary);
   font-family: var(--font-ui);
   font-size: 13px;
@@ -669,7 +669,7 @@
 .buttonDanger {
   background: transparent;
   border: 1px solid var(--support-danger);
-  border-radius: 4px;
+  border-radius: var(--cds-spacing-02, 0.25rem);
   color: var(--support-danger);
   font-family: var(--font-ui);
   font-size: 13px;
