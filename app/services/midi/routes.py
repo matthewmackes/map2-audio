@@ -108,6 +108,110 @@ async def get_last_observed_cc() -> Optional[LastCcResponse]:
     return LastCcResponse(**last)
 
 
+class ClusterPeerMatrix(BaseModel):
+    """T2484-1 iter 182 — one peer's matrix slice in the cluster response."""
+
+    node_id: str
+    hostname: str
+    matrix: dict[str, dict[str, MatrixCell]]
+    total_bindings: int
+
+
+class ClusterBindingsMatrixResponse(BaseModel):
+    """T2484-1 iter 182 — cluster-wide aggregation for the iter-177
+    usePeerMatrix scaffold to consume.
+
+    Shape:
+      local: BindingsMatrixResponse  (the local node's matrix; unchanged
+        from the iter-162 endpoint shape so existing consumers keep working)
+      peers: list[ClusterPeerMatrix]  (per-peer matrix, EXCLUDES local
+        per the iter-181 plan D2)
+      errors: dict[node_id, error_message]  (peers that failed to respond
+        or returned malformed payloads — still listed so the UI can surface
+        partial-availability state)
+    """
+
+    local: BindingsMatrixResponse
+    peers: list[ClusterPeerMatrix]
+    errors: dict[str, str]
+
+
+async def _fetch_peer_matrix(
+    *,
+    node_id: str,
+    hostname: str,
+    api_url: str,
+    timeout_s: float,
+) -> tuple[Optional[ClusterPeerMatrix], Optional[str]]:
+    """Single-peer fetch helper. Returns (matrix_or_none, error_or_none)."""
+    import httpx
+
+    try:
+        async with httpx.AsyncClient(timeout=timeout_s) as client:
+            response = await client.get(f"{api_url}/api/midi/bindings/matrix")
+            if response.status_code != 200:
+                return None, f"http {response.status_code}"
+            payload = response.json()
+            return (
+                ClusterPeerMatrix(
+                    node_id=node_id,
+                    hostname=hostname,
+                    matrix=payload.get("matrix", {}),
+                    total_bindings=int(payload.get("total_bindings", 0)),
+                ),
+                None,
+            )
+    except Exception as exc:
+        return None, str(exc)
+
+
+@router.get(
+    "/cluster/bindings/matrix", response_model=ClusterBindingsMatrixResponse
+)
+async def get_cluster_bindings_matrix() -> ClusterBindingsMatrixResponse:
+    """T2484-1 iter 182 — cluster-wide aggregation of every peer's
+    GET /api/midi/bindings/matrix. Frontend usePeerMatrix (iter 185)
+    consumes this directly.
+
+    Per the iter-181 plan D3: all peer requests are issued
+    concurrently via asyncio.gather with a 2s per-peer timeout. Failed
+    peers populate the errors map but don't fail the whole request.
+    """
+    import asyncio
+
+    # Local matrix.
+    local = await get_bindings_matrix()
+
+    # Peer fan-out.
+    from app.services.node_discovery_service import get_node_discovery_service
+
+    discovery = get_node_discovery_service()
+    peer_records = await discovery._load_peer_records()
+    if not peer_records:
+        return ClusterBindingsMatrixResponse(local=local, peers=[], errors={})
+
+    tasks = [
+        _fetch_peer_matrix(
+            node_id=peer.node_id,
+            hostname=peer.hostname,
+            api_url=peer.api_url or f"http://{peer.host}:8080",
+            timeout_s=2.0,
+        )
+        for peer in peer_records
+    ]
+    results = await asyncio.gather(*tasks, return_exceptions=False)
+
+    peers: list[ClusterPeerMatrix] = []
+    errors: dict[str, str] = {}
+    for peer, (matrix_or_none, err_or_none) in zip(peer_records, results):
+        if matrix_or_none is not None:
+            peers.append(matrix_or_none)
+        if err_or_none is not None:
+            errors[peer.node_id] = err_or_none
+
+    return ClusterBindingsMatrixResponse(local=local, peers=peers, errors=errors)
+
+
 @router.get("/bindings/matrix", response_model=BindingsMatrixResponse)
 async def get_bindings_matrix() -> BindingsMatrixResponse:
     """T2483-8 iter 162 — server-side source_type × consumer_type
