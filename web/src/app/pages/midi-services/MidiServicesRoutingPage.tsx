@@ -34,6 +34,7 @@ import {
   type BindingSourceType,
 } from '../../../map2/clients/midiBindings'
 import { useRoutingMatrix, type RoutingMatrixCell } from './useRoutingMatrix'
+import { usePeerMatrix } from './usePeerMatrix'
 import './MidiServicesRoutingPage.css'
 
 function cellTone(cell: RoutingMatrixCell): 'green' | 'cool-gray' | 'warm-gray' {
@@ -50,6 +51,7 @@ function cellLabel(cell: RoutingMatrixCell): string {
 
 export function MidiServicesRoutingPage() {
   const { matrix, rowTotals, colTotals, totalBindings, isLoading, isError } = useRoutingMatrix()
+  const peerMatrix = usePeerMatrix()
   const navigate = useNavigate()
 
   const goToCell = (sourceType: BindingSourceType, consumerType: BindingConsumerType) => {
@@ -128,6 +130,7 @@ export function MidiServicesRoutingPage() {
                   {BINDING_CONSUMER_TYPES.map((cons) => {
                     const cell = matrix[src]?.[cons] ?? { count: 0, enabledCount: 0 }
                     const isClickable = cell.count > 0
+                    const peerCount = peerMatrix.peers[src]?.[cons] ?? 0
                     return (
                       <TableCell
                         key={cons}
@@ -137,13 +140,22 @@ export function MidiServicesRoutingPage() {
                         }}
                         title={
                           isClickable
-                            ? `${cell.enabledCount}/${cell.count} enabled. Open Bindings filtered by ${cons}.`
+                            ? `${cell.enabledCount}/${cell.count} enabled${peerCount > 0 ? ` + ${peerCount} on peers` : ''}. Open Bindings filtered by ${cons}.`
                             : 'No bindings'
                         }
                       >
                         <Tag type={cellTone(cell)} size="sm">
                           {cellLabel(cell)}
                         </Tag>
+                        {peerCount > 0 ? (
+                          <Tag
+                            type="purple"
+                            size="sm"
+                            className="midi-services-routing__peer-badge"
+                          >
+                            +{peerCount}
+                          </Tag>
+                        ) : null}
                       </TableCell>
                     )
                   })}

@@ -78,3 +78,8 @@
   text-align: center;
   background: var(--cds-layer-accent);
 }
+
+.midi-services-routing__peer-badge {
+  margin-left: 0.25rem;
+  font-size: 0.6875rem;
+}
