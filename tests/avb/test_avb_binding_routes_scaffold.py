@@ -68,3 +68,8 @@ def test_matrix_endpoint_present():
 def test_cluster_matrix_endpoint_present():
     """T2490-7 — cluster-wide aggregation endpoint."""
     assert ("GET", "/api/avb/cluster/bindings/matrix") in _route_set()
+
+
+def test_router_projection_endpoint_present():
+    """T2490-3a — read-side projection of live AvbRouter state."""
+    assert ("GET", "/api/avb/router/projection") in _route_set()

@@ -27,6 +27,7 @@ import {
 } from '@carbon/react'
 
 import {
+  isProjectedAvbBinding,
   useAvbBindingsAllScopes,
   useAvbBindingsCount,
   type AvbBindingRecord,
@@ -65,18 +66,21 @@ function describeNode(nodeId: string | null | undefined): string {
 }
 
 function bindingsToRows(bindings: AvbBindingRecord[]): ConnectionRow[] {
-  return bindings.map((b) => ({
-    id: b.binding_id,
-    consumer: `${b.consumer_type}:${b.consumer_id}`,
-    source: `${b.source_type}${b.talker_node_id ? ` @ ${describeNode(b.talker_node_id)}` : ''}`,
-    target: `${b.target_type}${b.listener_node_id ? ` @ ${describeNode(b.listener_node_id)}` : ''}`,
-    stream: b.stream_id ?? '—',
-    format: b.stream_format ?? '—',
-    srp: b.srp_class ?? '—',
-    scope: b.scope_id ? `${b.scope}:${b.scope_id}` : b.scope,
-    enabled: b.enabled ? 'yes' : 'no',
-    source_provenance: b.source,
-  }))
+  return bindings.map((b) => {
+    const live = isProjectedAvbBinding(b)
+    return {
+      id: b.binding_id,
+      consumer: `${b.consumer_type}:${b.consumer_id}`,
+      source: `${b.source_type}${b.talker_node_id ? ` @ ${describeNode(b.talker_node_id)}` : ''}`,
+      target: `${b.target_type}${b.listener_node_id ? ` @ ${describeNode(b.listener_node_id)}` : ''}`,
+      stream: b.stream_id ?? '—',
+      format: b.stream_format ?? '—',
+      srp: b.srp_class ?? '—',
+      scope: b.scope_id ? `${b.scope}:${b.scope_id}` : b.scope,
+      enabled: b.enabled ? 'yes' : 'no',
+      source_provenance: live ? `${b.source} (live)` : b.source,
+    }
+  })
 }
 
 export function AvbServicesConnectionsPage() {

@@ -89,14 +89,48 @@ async def count_bindings() -> int:
         return await authority.count()
 
 
+@router.get("/router/projection", response_model=list[AvbBindingRead])
+async def get_router_projection() -> list[AvbBindingRead]:
+    """T2490-3a — read-side projection of the live AvbRouter state.
+
+    Renders every `StreamConnection` in the running `AvbRouter`
+    singleton as a synthetic AvbBindingRead. Synthetic rows carry
+    `metadata.projection_source = "avb_router"` and a deterministic
+    `proj-<hash>` binding_id (so they never collide with real UUID4
+    rows in the avb_bindings table).
+
+    The full T2490-3 refactor will turn avb_router.py into a writer
+    through `AvbBindingAuthority`; this endpoint is the read-side
+    seam that lets the operator surface (T2490-4) show real router
+    state today before the writer side flips.
+    """
+    from app.services.avb.router_projection import project_router_connections
+
+    return project_router_connections()
+
+
 @router.get("/bindings/matrix", response_model=AvbBindingsMatrixResponse)
-async def get_bindings_matrix() -> AvbBindingsMatrixResponse:
+async def get_bindings_matrix(
+    include_router: bool = Query(
+        default=False,
+        description=(
+            "T2490-3a — when true, fold the live AvbRouter projection "
+            "into the bindings list so the Connections DataTable shows "
+            "active router state alongside durable authority rows."
+        ),
+    ),
+) -> AvbBindingsMatrixResponse:
     """T2490-2b — server-side aggregation of every AvbBinding.
 
     Returns the source_type × consumer_type cell counts AND the full
     binding list in one round-trip, so the Connections DataTable
     (T2490-4) can stop fan-out across scope filters. Mirrors
     `/api/midi/bindings/matrix`.
+
+    T2490-3a — pass `?include_router=true` to additionally fold the
+    live AvbRouter projection into the response. Synthetic rows are
+    tagged via `metadata.projection_source` so the frontend can render
+    them differently (e.g., with a "live" tag).
     """
     async with get_session(read_only=True) as session:
         # Aggregate cell counts.
@@ -127,6 +161,23 @@ async def get_bindings_matrix() -> AvbBindingsMatrixResponse:
         # require 4 queries; here we go straight to the table.
         all_rows = await session.execute(select(AvbBinding))
         bindings = [authority._row_to_read(r) for r in all_rows.scalars().all()]
+
+        if include_router:
+            # T2490-3a — fold synthetic projection rows into both the
+            # bindings list and the cell aggregation.
+            from app.services.avb.router_projection import project_router_connections
+
+            for projected in project_router_connections():
+                bindings.append(projected)
+                row = matrix.setdefault(str(projected.source_type), {})
+                cell = row.setdefault(
+                    str(projected.consumer_type),
+                    AvbMatrixCell(count=0, enabled_count=0),
+                )
+                cell.count += 1
+                if projected.enabled:
+                    cell.enabled_count += 1
+                total += 1
 
         return AvbBindingsMatrixResponse(
             matrix=matrix,

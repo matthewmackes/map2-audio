@@ -53,8 +53,11 @@ async function fetchAvbBindingsCount(): Promise<number> {
   return typeof value === 'number' ? value : 0
 }
 
-async function fetchAvbBindingsMatrix(): Promise<AvbBindingsMatrixResponse> {
-  const response = await fetch('/api/avb/bindings/matrix')
+async function fetchAvbBindingsMatrix(includeRouter = false): Promise<AvbBindingsMatrixResponse> {
+  const url = includeRouter
+    ? '/api/avb/bindings/matrix?include_router=true'
+    : '/api/avb/bindings/matrix'
+  const response = await fetch(url)
   if (!response.ok) throw new Error(`avb bindings matrix failed: ${response.status}`)
   return (await response.json()) as AvbBindingsMatrixResponse
 }
@@ -109,11 +112,16 @@ export function useAvbBindingsCount() {
  * T2490-2b — single round-trip aggregation. Replaces the iter-3
  * 4-query fan-out (one query per scope) with one server-side
  * aggregation. Mirrors MIDI's `/api/midi/bindings/matrix`.
+ *
+ * T2490-3a — pass `includeRouter: true` to additionally fold the
+ * live `AvbRouter` projection into the response so the Connections
+ * DataTable shows real router state alongside durable authority rows.
  */
-export function useAvbBindingsMatrix() {
+export function useAvbBindingsMatrix(opts: { includeRouter?: boolean } = {}) {
+  const includeRouter = opts.includeRouter ?? false
   return useQuery({
-    queryKey: ['avb-bindings-matrix'],
-    queryFn: fetchAvbBindingsMatrix,
+    queryKey: ['avb-bindings-matrix', includeRouter ? 'with-router' : 'authority-only'],
+    queryFn: () => fetchAvbBindingsMatrix(includeRouter),
     refetchInterval: 5000,
     staleTime: 0,
   })
@@ -121,13 +129,25 @@ export function useAvbBindingsMatrix() {
 
 /**
  * Backwards-compatible name; returns just the binding rows from the
- * matrix endpoint so existing call sites keep working.
+ * matrix endpoint. T2490-3a — opts into router projection so the
+ * Connections DataTable shows real live router state alongside
+ * durable authority rows.
  */
 export function useAvbBindingsAllScopes() {
-  const matrix = useAvbBindingsMatrix()
+  const matrix = useAvbBindingsMatrix({ includeRouter: true })
   return {
     data: matrix.data?.bindings ?? [],
     isLoading: matrix.isLoading,
     isError: matrix.isError,
   }
+}
+
+/**
+ * T2490-3a — true iff the binding is a router-projection synthetic row
+ * (carries the deterministic `proj-` binding_id prefix or the
+ * `metadata.projection_source` flag).
+ */
+export function isProjectedAvbBinding(b: AvbBindingRecord): boolean {
+  if (b.binding_id.startsWith('proj-')) return true
+  return b.metadata?.projection_source === 'avb_router'
 }

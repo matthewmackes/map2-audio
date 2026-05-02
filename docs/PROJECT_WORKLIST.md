@@ -35918,6 +35918,7 @@ This revision **preserves the spirit of Q2=A** (decomposition for maintainabilit
 - **T2490-2b** — `/api/avb/bindings/matrix` server-side aggregation. **[✓] DONE 2026-05-02.** Adds `GET /api/avb/bindings/matrix` returning `{matrix, total_bindings, bindings}` in one round-trip. SQL aggregates source_type × consumer_type cell counts; the `bindings` array carries every row so the Connections DataTable can drop its 4-query scope fan-out. Frontend `useAvbBindings.ts` rewritten — `useAvbBindingsMatrix()` is the new primary hook; `useAvbBindingsAllScopes()` kept as a thin compat wrapper. Tests now 24 (added matrix-endpoint scaffold case). Live verified through both backend (port 8080) and web proxy (port 3000): `{"matrix":{},"total_bindings":0,"bindings":[]}`. Shipped: `app/services/avb/binding_models.py` (`AvbBinding` ORM with first-class talker_node_id / listener_node_id / stream_id / stream_format / srp_class columns + 5 composite indexes); `binding_schemas.py` (Pydantic Create/Update/Read + constrained vocab: AvbBindingConsumerType / SourceType / TargetType / Scope / SrpClass); `binding_authority.py` (async authority with create / get / list_for_consumer / list_for_stream / list_for_cluster_pair / list_in_scope / count / update / disable / enable / delete / delete_for_consumer); `binding_routes.py` (`/api/avb/bindings` GET/POST/PATCH/DELETE + count + disable/enable, filter-first list with consumer / stream_id / cluster pair / scope filters). Migration v13 `avb_bindings_canonical_authority` registered in app/database.py (sync + async); router mounted in app/main.py adjacent to MIDI Services. Tests: `tests/avb/test_avb_binding_authority.py` (13 cases) + `tests/avb/test_avb_binding_routes_scaffold.py` (10 cases) → **23 new pytest cases all green**; MIDI authority tests still 25/25 green. Live verified: backend restarted, `GET /api/avb/bindings/count` returns 200/0, full POST→GET(stream filter)→DELETE roundtrip works end-to-end.
 
 - **T2490-3** — Refactor `avb_router.py` to consume `AvbBindingAuthority`. The routing matrix becomes a *projection* of the binding authority rather than a separate state store. ~3 SHIP iters.
+  - **T2490-3a** — **[✓] DONE 2026-05-02 (read-side seam).** Shipped: `app/services/avb/router_projection.py` (`project_router_connections()` + `_project_one_connection()` + `_projected_binding_id()` + `is_projected_binding_id()`). Translates every live `StreamConnection` from the running `AvbRouter` singleton into a synthetic `AvbBindingRead` row. Synthetic rows carry `metadata.projection_source="avb_router"` and a deterministic `proj-` prefixed 36-char binding_id (UUID-shape compatible, never collides with real UUID4). Connected→enabled=True, cluster scope when either endpoint has node_id else global. New endpoints: `GET /api/avb/router/projection` (raw projection list) + `GET /api/avb/bindings/matrix?include_router=true` (folds projected rows into the matrix + bindings response). Frontend: `useAvbBindingsAllScopes()` flipped to `includeRouter:true` so the Connections DataTable shows live router state today; new helper `isProjectedAvbBinding()` + DataTable provenance now reads "avb_router_projection (live)" for synthetic rows. Tests: 32 cases all green (added 6 projection unit tests + 1 routes-scaffold case). Live verified through both backend and proxy: empty arrays today (no active streams), but the seam is in place and ready for non-empty rows. T2490-3b (writer-side: avb_router writes through AvbBindingAuthority on connect/disconnect) and T2490-3c (replace internal connections dict with binding-table projection) deferred to future iters.
 
 - **T2490-4** — Operator-visible Connections page. Carbon DataTable mirroring `MidiServicesConnectionsPage`, with per-row mutation surface. ~1 SHIP iter. **[✓] DONE 2026-05-02 (read-only first cut).** Shipped: `useAvbBindings.ts` hook (`useAvbBindingsCount` + `useAvbBindingsAllScopes` — 4 parallel queries fanning across global / snapshot / node / cluster scopes, 5s poll); `AvbServicesConnectionsPage.tsx` upgraded from scaffold to a real Carbon DataTable with 9 columns (Consumer / Source / Target / Stream / Format / SRP / Scope / Enabled / Authored by). Empty-state placeholder when no bindings exist. Per-row mutation surface deferred to T2490-3 (avb_router refactor); the matrix endpoint (~`/api/avb/bindings/matrix`) folded into T2490-2b in the next ship cycle to replace the 4-query fan-out with a single server-side aggregation. Build clean (21.8s); /avb/connections serves HTTP 200; live count endpoint reports 0.
 
@@ -35942,3 +35943,100 @@ This revision **preserves the spirit of Q2=A** (decomposition for maintainabilit
 - Standing platform directive: PROJECT_WORKLIST.md / standing four-services rule (MIDI, AVB, Sampler, Audio Effects)
 
 **Status:** [>] In Progress 2026-05-02 (Kickoff: locked decisions + design doc shipped; sub-tasks T2490-1 through T2490-10 unscheduled).
+
+---
+
+## Epic: T2491 — AVB / Milan / TSN Spec Compliance (opened 2026-05-02)
+
+**Why it matters.** T2490 unifies MAP2's AVB *operator surface* under `/avb/*`; this epic closes the *protocol* gap so we can credibly claim IEEE 802.1BA AVB compliance, then Milan v1.2 certification, then post-AVB TSN. Today the data-plane is real (gPTP via `ptp4l`, IEEE 1722 AAF over `AF_PACKET`/`ETH_P_TSN` in `juce-engine/Source/AvbStream.{h,cpp}`, JUCE integration via `AvbAudioIODevice` + `AvbRingBuffer`, AVDECC via la_avdecc v4.3.1.1, Class A CBS via `scripts/setup_avb_qdiscs.sh`) but the reservation lifecycle (SRP), redundancy (FRER + paired streams), deterministic shapers (Qbv/Qbu), and the Milan-specific control surface (CRF + MVU + per-stream counters) are absent or partial. Live hardware has never been validated — `ptp4l` is `INITIALIZING`, no peer discovered. **Estimated coverage today: ~50% of IEEE 802.1BA AVB, ~20% of Milan v1.2.** This epic moves both to ≥90%.
+
+**Audit (2026-05-02).** Detailed gap analysis lives in `/home/mm/.claude/plans/does-the-map2-have-deep-stonebraker.md`. Per-spec verdicts:
+
+| Spec | Verdict | Evidence |
+|---|---|---|
+| IEEE 802.1AS-2020 gPTP (basic) | Real | `app/services/avb/ptp_monitor.py:39-306` (ptp4l + pmc + phc2sys); engine reads `CLOCK_TAI` |
+| IEEE 1722 AVTP / AAF | Real | `juce-engine/Source/AvbStream.{h,cpp}` (~970 LOC), `AvbAudioIODevice.{h,cpp}`, `AvbRingBuffer.h` (SPSC, lock-free) |
+| IEEE 1722.1 AVDECC (basic) | Real | `juce-engine/Source/AvdeccController.{h,cpp}` (la_avdecc v4.3.1.1) |
+| 802.1Qav CBS (Class A) | Real | `scripts/setup_avb_qdiscs.sh` (mqprio + cbs + etf) |
+| 802.1Qat MSRP/SRP | Partial | `app/services/avb/srp_admission.py` wraps external `mrpd`; no native C++; no leave/re-advertise; no latency accumulation |
+| 802.1Qbv TAS | Absent | No `taprio` config; no GCL generation |
+| 802.1Qbu Frame Preemption | Absent | No `ethtool --set-preem-params` |
+| 802.1CB FRER | Absent | No R-tag, no sequence recovery, no stream pairing |
+| Milan CRF (Clock Reference Format) | Absent | AvbStream emits AAF only |
+| Milan MVU command set | Absent | `GET_MILAN_INFO`, `GET_SYSTEM_UNIQUE_ID`, `GET_MEDIA_CLOCK_REFERENCE_INFO` not exposed |
+| Milan saved-connection / fast-connect | Partial | `established_time` field exists in `avb_router.py` but no persistence/replay |
+| Milan presentation-time enforcement | Partial | Latency counters exist; no late-frame drop |
+| 1722.1-2021 §7.4.46 statistics counters | Absent | Not exposed via AvdeccController |
+| 802.1AS hot-standby / multi-domain | Absent | Single-domain ptp4l only |
+| Hardware validation | Blocked | `ptp4l` INITIALIZING, no peer NIC; no AVB switch on testbed |
+
+**Locked decisions (5-question protocol, 2026-05-02).**
+
+1. **Q1=A — Compliance target is the IEEE 802.1BA-2021 AVB profile + Milan v1.2.** TSN extensions beyond AVB (Qbv, Qbu, FRER, multi-domain gPTP) are P2/P3 unless a customer use-case demands them. We do not chase carrier-grade YANG/NETCONF (802.1Qcw) — out of scope.
+
+2. **Q2=A — Software-first; hardware procurement is a parallel P0 track.** All software gaps that can be implemented and dry-tested without certified hardware (CRF, MVU, presentation-time enforcement, statistics counters, fast-connect persistence, native SRP improvements) ship before hardware arrives. Hardware-dependent gaps (Qbv, Qbu, FRER, live MSRP propagation) are scaffolded in code but gated on the AVB-certified switch + Intel i210/i225 NIC arriving on the testbed.
+
+3. **Q3=A — Extend existing files, don't rewrite.** `app/services/avb/srp_admission.py`, `app/services/avb/avb_router.py`, `juce-engine/Source/AvbStream.{h,cpp}`, `juce-engine/Source/AvdeccController.{h,cpp}` are all in the right shape — this epic adds capabilities to them, not replaces them. New files only for genuinely new concepts (CRF talker, FRER R-tag handler, presentation-time gate).
+
+4. **Q4=A — Milan certification is the success bar, not just AVnu plugfest.** Milan v1.2 is the dominant pro-audio interop profile (Avid, Meyer, L-Acoustics, d&b, Yamaha, Biamp); certification gives us interop with the entire fleet of devices customers actually own. Plugfest attendance is the dry-run for certification, not the end goal.
+
+5. **Q5=A — Land alongside T2490, not after.** T2490-9 (Network region UI at `/avb/network`) becomes the operator surface for everything T2491 ships: PTP grandmaster status, SRP reservations, Milan capabilities, statistics counters, FRER pair health. The two epics interlock — T2491 produces the data, T2490-9 surfaces it. Schedule them concurrently rather than sequentially.
+
+**Subtasks.**
+
+### Phase 1 — P0 ship-blockers (parallel software + hardware tracks)
+
+- **T2491-1** — Hardware procurement + testbed validation. Acquire AVB-certified NIC (Intel i210/i225 — both expose PHC + launchtime + hardware CBS) and an AVB-certified switch (e.g. Extreme Networks Summit X440-G2 or Cisco Catalyst with MSRP firmware). Wire to testbed. Validate `ptp4l` reaches `MASTER`/`SLAVE` state with a peer; validate `ethtool --show-features` reports launchtime + HW timestamping. Document NIC + switch matrix in `docs/architecture/AVB_HARDWARE_MATRIX.md`. **Hardware-bound, software-light.** ~1 SHIP iter once hardware lands.
+
+- **T2491-2** — Native MSRP/SRP lifecycle in C++. Extend `app/services/avb/srp_admission.py` with full talker declaration including `latency_accumulation` field (per IEEE 1722.1-2021 §7.4.3), listener leave/rejoin state machine, bridge MMRP relay (port_state propagation), and SRP withdraw on stream stop. Verify `mrpd` is actually linked and configured (current code only does UDP control probe). Add C++ side: AvbStream emits SRP requests via the daemon socket on `start()` and withdraws on `stop()`. ~3 SHIP iters. Software only.
+
+### Phase 2 — IEEE 802.1BA + Milan baseline
+
+- **T2491-3** — Clock Reference Format (CRF) talker + listener. Add CRF stream type to `juce-engine/Source/AvbStream.cpp` (IEEE 1722-2016 §7.5 — distinct AVTP subtype 0x04, header per §7.5.3, payload is timestamp series, not audio). New `juce-engine/Source/AvbCrfStream.{h,cpp}` for the CRF-specific encode/decode. Add CRF-talker selection in `AvdeccController` STREAM_FORMAT commands. Listener side: AvbAudioIODevice locks media clock to received CRF stream, falls back to PTP if no CRF. ~4 SHIP iters.
+
+- **T2491-4** — 802.1CB FRER + Milan redundant stream pairs. Add R-tag insertion in AVTP frame serialization (`AvbStream::sendFrame` writes 6-byte R-tag with sequence_number after the AVTP header for the redundant pair). Sequence-recovery state machine on listener (drop duplicate frames within 100 ms window, count missing). Extend `app/services/avb/avb_router.py` connection logic to: when listener has `failover_interfaces`, force talker to emit dual streams over both NICs with `redundant_stream_id` paired in AVDECC. Persist pair identity to AvbBindingAuthority (T2490-2). Hardware-gated on dual-port endpoints. ~5 SHIP iters (XL).
+
+- **T2491-5** — Milan MVU command set in AVDECC. Wire la_avdecc's vendor-specific AECP command handlers in `juce-engine/Source/AvdeccController.cpp` for the Milan v1.2 §5 MVU set: `GET_MILAN_INFO`, `GET_SYSTEM_UNIQUE_ID`, `SET_SYSTEM_UNIQUE_ID`, `GET_MEDIA_CLOCK_REFERENCE_INFO`. Surface results through Python `get_milan_capabilities()` for `/avb/network` UI. ~2 SHIP iters.
+
+- **T2491-6** — IEEE 1722.1-2021 §7.4.46 statistics counters. Expose `STREAM_INPUT_COUNTERS`, `STREAM_OUTPUT_COUNTERS`, `AVB_INTERFACE_COUNTERS` via `AvdeccController::getStreamCounters()` / `getInterfaceCounters()`. Already-tracked metrics in `AvbStream` (frames sent/received, sequence gaps, late frames) project into these counters. New REST surface `GET /api/avb/streams/{id}/counters` and `GET /api/avb/interfaces/{name}/counters`. Operator surface in T2490-9. ~2 SHIP iters.
+
+- **T2491-7** — Presentation-time enforcement on listener. In `AvbStream::receiveFrame`, compare frame AVTP timestamp to local `CLOCK_TAI` + presentation offset; drop frame if late, increment late-frame counter (feeds T2491-6). Configurable per-stream tolerance window (default 1 ms). ~1 SHIP iter.
+
+- **T2491-8** — Saved-connection / fast-connect persistence. Persist established AVDECC ACMP connections to SQLite via AvbBindingAuthority (T2490-2 already has the table); on engine startup, replay saved connections via la_avdecc's `register_saved_connection` API for sub-2-second re-establishment after power cycle. New REST: `POST /api/avb/connections/persist` and `GET /api/avb/connections/saved`. ~2 SHIP iters.
+
+### Phase 3 — TSN extensions (hardware-gated)
+
+- **T2491-9** — 802.1Qbv Time-Aware Shaper (TAS). Extend `scripts/setup_avb_qdiscs.sh` to add `taprio` qdisc with gate control list (GCL) generation derived from SRP-admitted streams — Class A traffic gets a guaranteed gate window every 125 µs (8 kHz observation interval per Milan). Python service `app/services/avb/tsn_qdisc.py` extended to compute GCL from active reservations and apply via `tc-taprio`. Hardware-gated on NIC + switch with GCL support. ~4 SHIP iters.
+
+- **T2491-10** — 802.1Qbu Frame Preemption. Extend `setup_avb_qdiscs.sh` with `ethtool --set-preem-params` flags to mark Class A as express, Class B as preemptable. Verify with `ethtool --show-preem-params`. Hardware-gated. ~2 SHIP iters.
+
+- **T2491-11** — 802.1AS-2020 hot-standby + multi-domain gPTP. Generate `ptp4l.conf` from a YAML template in `app/services/avb/ptp_config.py`; support multiple `[domain]` sections; add grandmaster failover logic in `ptp_monitor.py` (poll `pmc GET PARENT_DATA_SET`, detect GM loss, trigger BMCA re-election). ~3 SHIP iters.
+
+### Phase 4 — Certification
+
+- **T2491-12** — AVnu plugfest dry-run. Stand up the testbed against AVnu's Conformance Test Suite (CTS) on a borrowed/loaner setup if no plugfest scheduled. Capture pass/fail per spec section into `docs/fit-for-purpose-evidence/<YYYYMMDD>/avb-cts/`. Iterate on findings. ~2 SHIP iters + lab time.
+
+- **T2491-13** — Milan v1.2 certification submission. Run AVnu Milan Test Suite (MTS) against testbed; submit results to AVnu. Certification fee + lab review window measured in months, not weeks — track as P2 once CTS passes. Output: certified Milan device entry on the AVnu registry. **External dependency-bound; effort estimate excludes AVnu review time.** ~3 SHIP iters MAP2-side work.
+
+- **T2491-14** — Closeout. Spec-coverage scorecard final state in `docs/architecture/AVB_SPEC_COMPLIANCE.md` (created in Phase 1), evidence run under `docs/fit-for-purpose-evidence/<YYYYMMDD>/t2491-spec-compliance/`, doc updates, `/avb/network` operator surface walkthrough, dual-push. ~1 SHIP iter.
+
+**Estimated total effort:** 35–40 SHIP iters across 14 sub-tasks. Largest single slice is T2491-4 (FRER + redundant pairs) at 5 iters; T2491-3 (CRF) at 4 iters and T2491-9 (TAS) at 4 iters tie for second. Phase 1+2 (T2491-1 through T2491-8) is the IEEE 802.1BA + Milan baseline — ~22 iters and gets us to ≥90% AVB / ≥85% Milan coverage. Phase 3 (TSN extensions) and Phase 4 (certification) add roughly the same again.
+
+**Hardware budget (T2491-1 procurement).**
+- 1× Intel i210-T1 or i225-V NIC for the MAP2 host (~$50)
+- 1× AVB-certified switch (Extreme X440-G2 used ~$300, or Biamp TesiraFORTÉ AVB if dual-purposing as test peer)
+- 1× AVB endpoint for interop (Biamp Tesira already on inventory; PreSonus StudioLive III, MOTU AVB device, or borrowed AVnu plugfest device for second peer)
+- Cabling + dedicated VLAN-2 switch port + measured-jitter test point
+
+**Cross-references.**
+- Audit document: `/home/mm/.claude/plans/does-the-map2-have-deep-stonebraker.md`
+- T2490 (services unification) — sibling epic; T2490-9 surfaces this epic's outputs at `/avb/network`
+- AVDECC controller (la_avdecc v4.3.1.1): `juce-engine/Source/AvdeccController.{h,cpp}`
+- AVB streaming primitives: `juce-engine/Source/AvbStream.{h,cpp}`, `AvbAudioIODevice.{h,cpp}`, `AvbRingBuffer.h`
+- gPTP service: `app/services/avb/ptp_monitor.py`
+- SRP admission: `app/services/avb/srp_admission.py`
+- TSN qdisc setup: `scripts/setup_avb_qdiscs.sh`, `app/services/avb/tsn_qdisc.py`
+- Standing platform directive: AVB is one of the four first-class platform services (MIDI, AVB, Sampler, Audio Effects)
+- Spec references: IEEE 802.1BA-2021, IEEE 802.1AS-2020, IEEE 1722-2016, IEEE 1722.1-2021, IEEE 802.1Qav-2009, IEEE 802.1Qat-2010, IEEE 802.1Qbv-2015, IEEE 802.1Qbu-2016, IEEE 802.1CB-2017, AVnu Milan Specification v1.2
+
+**Status:** [ ] Todo 2026-05-02 (Kickoff: locked decisions + worklist entry shipped; sub-tasks T2491-1 through T2491-14 unscheduled. Hardware procurement (T2491-1) and software-only Phase 2 work can run in parallel.)
