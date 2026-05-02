@@ -31,9 +31,13 @@ describe('resolveShellRouteMeta', () => {
   })
 
   it('resolves midi hub wildcard with dynamic segment label', () => {
+    // T2491 (2026-05-02 cleanup) — operator-visible label aligned to
+    // T2482 iter-94 rename "MIDI Hub" → "MIDI Services". The legacy
+    // /midi-hub/* path stays as a fallback for stale bookmarks but
+    // the breadcrumb says "MIDI Services".
     const meta = resolveShellRouteMeta('/midi-hub/custom-workbench')
     expect(meta?.windowLabel).toBe('MIDI Custom Workbench')
-    expect(meta?.breadcrumbs.map((crumb) => crumb.label)).toEqual(['MIDI Hub', 'Custom Workbench'])
+    expect(meta?.breadcrumbs.map((crumb) => crumb.label)).toEqual(['MIDI Services', 'Custom Workbench'])
   })
 
   it('covers critical app routes', () => {

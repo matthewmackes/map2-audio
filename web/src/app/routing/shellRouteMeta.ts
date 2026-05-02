@@ -161,8 +161,8 @@ const RULES: ShellRouteRule[] = [
   staticMeta('/metering', { windowLabel: 'Metering', breadcrumbs: [{ label: 'Workspace', to: '/workspace' }, { label: 'Metering' }] }),
   staticMeta('/pipewire', { windowLabel: 'PipeWire', breadcrumbs: [{ label: 'Workspace', to: '/workspace' }, { label: 'PipeWire' }] }),
   staticMeta('/state-authority', { windowLabel: 'State Authority', breadcrumbs: [{ label: 'Workspace', to: '/workspace' }, { label: 'State Authority' }] }),
-  staticMeta('/ground-control-pro', { windowLabel: 'Ground Control Pro', breadcrumbs: [{ label: 'MIDI Hub', to: '/midi-hub/connections' }, { label: 'Ground Control Pro' }] }),
-  staticMeta('/expression', { windowLabel: 'Expression', breadcrumbs: [{ label: 'MIDI Hub', to: '/midi-hub/connections' }, { label: 'Expression' }] }),
+  staticMeta('/ground-control-pro', { windowLabel: 'Ground Control Pro', breadcrumbs: [{ label: 'MIDI Services', to: '/midi/connections' }, { label: 'Ground Control Pro' }] }),
+  staticMeta('/expression', { windowLabel: 'Expression', breadcrumbs: [{ label: 'MIDI Services', to: '/midi/connections' }, { label: 'Expression' }] }),
   staticMeta('/snapshots', { windowLabel: 'Snapshots', breadcrumbs: [{ label: 'Snapshots' }] }),
   {
     path: '/snapshots/:snapshotId/publish',
@@ -176,24 +176,30 @@ const RULES: ShellRouteRule[] = [
     }),
   },
   staticMeta('/snapshot-editor', { windowLabel: 'Snapshot Editor', breadcrumbs: [{ label: 'Snapshots', to: '/snapshots' }, { label: 'Snapshot Editor' }] }),
-  staticMeta('/midi/assignments', { windowLabel: 'MIDI Assignments', breadcrumbs: [{ label: 'MIDI Hub', to: '/midi-hub/connections' }, { label: 'Assignments' }] }),
-  staticMeta('/midi-hub/connections', { windowLabel: 'MIDI Connections', breadcrumbs: [{ label: 'MIDI Hub', to: '/midi-hub/connections' }, { label: 'Connections' }] }),
-  staticMeta('/midi-hub/presets', { windowLabel: 'MIDI Presets', breadcrumbs: [{ label: 'MIDI Hub', to: '/midi-hub/connections' }, { label: 'Presets' }] }),
-  staticMeta('/midi-hub/transport', { windowLabel: 'MIDI Transport', breadcrumbs: [{ label: 'MIDI Hub', to: '/midi-hub/connections' }, { label: 'Transport' }] }),
-  staticMeta('/midi-hub/events', { windowLabel: 'MIDI Events', breadcrumbs: [{ label: 'MIDI Hub', to: '/midi-hub/connections' }, { label: 'Events' }] }),
-  staticMeta('/midi-hub/processing', { windowLabel: 'MIDI Processing', breadcrumbs: [{ label: 'MIDI Hub', to: '/midi-hub/connections' }, { label: 'Processing' }] }),
-  staticMeta('/midi-hub/network', { windowLabel: 'MIDI Network', breadcrumbs: [{ label: 'MIDI Hub', to: '/midi-hub/connections' }, { label: 'Network' }] }),
-  staticMeta('/midi-hub/lab', { windowLabel: 'MIDI Lab', breadcrumbs: [{ label: 'MIDI Hub', to: '/midi-hub/connections' }, { label: 'Lab' }] }),
-  {
-    path: '/midi-hub/*',
-    resolve: (_params, pathname) => {
-      const segment = pathname.split('/').filter(Boolean)[1]
-      return {
-        windowLabel: segment ? `MIDI ${startCase(segment)}` : 'MIDI Hub',
-        breadcrumbs: [{ label: 'MIDI Hub', to: '/midi-hub/connections' }, ...(segment ? [{ label: startCase(segment) }] : [])],
-      }
-    },
-  },
+  staticMeta('/midi/assignments', { windowLabel: 'MIDI Assignments', breadcrumbs: [{ label: 'MIDI Services', to: '/midi/connections' }, { label: 'Assignments' }] }),
+  // T2491 (2026-05-02 cleanup) — canonical /midi/* breadcrumb meta.
+  // The /midi-hub/* legacy paths still appear below as low-priority
+  // fallbacks for stale bookmarks that haven't been redirected yet,
+  // but the operator-visible labels all point at the canonical
+  // /midi/* surface ("MIDI Services" + "/midi/connections").
+  staticMeta('/midi/connections', { windowLabel: 'MIDI Connections', breadcrumbs: [{ label: 'MIDI Services', to: '/midi/connections' }, { label: 'Connections' }] }),
+  staticMeta('/midi/devices', { windowLabel: 'MIDI Devices', breadcrumbs: [{ label: 'MIDI Services', to: '/midi/connections' }, { label: 'Devices' }] }),
+  staticMeta('/midi/bindings', { windowLabel: 'MIDI Bindings', breadcrumbs: [{ label: 'MIDI Services', to: '/midi/connections' }, { label: 'Bindings' }] }),
+  staticMeta('/midi/routing', { windowLabel: 'MIDI Routing', breadcrumbs: [{ label: 'MIDI Services', to: '/midi/connections' }, { label: 'Routing' }] }),
+  staticMeta('/midi/presets', { windowLabel: 'MIDI Presets', breadcrumbs: [{ label: 'MIDI Services', to: '/midi/connections' }, { label: 'Presets' }] }),
+  staticMeta('/midi/transport', { windowLabel: 'MIDI Transport', breadcrumbs: [{ label: 'MIDI Services', to: '/midi/connections' }, { label: 'Transport' }] }),
+  staticMeta('/midi/events', { windowLabel: 'MIDI Events', breadcrumbs: [{ label: 'MIDI Services', to: '/midi/connections' }, { label: 'Events' }] }),
+  staticMeta('/midi/processing', { windowLabel: 'MIDI Processing', breadcrumbs: [{ label: 'MIDI Services', to: '/midi/connections' }, { label: 'Processing' }] }),
+  staticMeta('/midi/network', { windowLabel: 'MIDI Network', breadcrumbs: [{ label: 'MIDI Services', to: '/midi/connections' }, { label: 'Network' }] }),
+  staticMeta('/midi/lab', { windowLabel: 'MIDI Lab', breadcrumbs: [{ label: 'MIDI Services', to: '/midi/connections' }, { label: 'Lab' }] }),
+  staticMeta('/midi/overview', { windowLabel: 'MIDI Overview', breadcrumbs: [{ label: 'MIDI Services', to: '/midi/connections' }, { label: 'Overview' }] }),
+  // T2491 — /midi/* wildcard moved to AFTER the deeper /midi/devices/<profile>/*
+  // entries below (lines ~252+). matchPath{end:true} matches deepest-first
+  // would have been ideal, but the resolver iterates in order and returns
+  // first match, so deeper rules must precede the catch-all wildcard.
+  // T2491 — /midi/* and /midi-hub/* wildcards moved to AFTER all
+  // /midi/devices/<profile>/* entries below so the deeper rules
+  // resolve first.
   staticMeta('/devices', { windowLabel: 'Hardware Store', breadcrumbs: [{ label: 'Devices' }, { label: 'Hardware Store' }] }),
   staticMeta('/devices/diagnostics', { windowLabel: 'Diagnostics', breadcrumbs: [{ label: 'Devices', to: '/devices' }, { label: 'Diagnostics' }] }),
   staticMeta('/devices/pack-sources', { windowLabel: 'Pack Sources', breadcrumbs: [{ label: 'Devices', to: '/devices' }, { label: 'Pack Sources' }] }),
@@ -219,11 +225,53 @@ const RULES: ShellRouteRule[] = [
   staticMeta('/devices/tesira/*', { windowLabel: 'Tesira', breadcrumbs: [{ label: 'Devices', to: '/devices' }, { label: 'Tesira' }] }),
   staticMeta('/devices/mpx1/*', { windowLabel: 'MPX1', breadcrumbs: [{ label: 'Devices', to: '/devices' }, { label: 'MPX1' }] }),
   staticMeta('/devices/intelfx/*', { windowLabel: 'IntelFX Rack', breadcrumbs: [{ label: 'Devices', to: '/devices' }, { label: 'IntelFX Rack' }] }),
-  staticMeta('/maschine', { windowLabel: 'Maschine', breadcrumbs: [{ label: 'MIDI Hub', to: '/midi-hub/connections' }, { label: 'Maschine' }] }),
-  staticMeta('/mcu', { windowLabel: 'MCU Pro', breadcrumbs: [{ label: 'MIDI Hub', to: '/midi-hub/connections' }, { label: 'MCU Pro' }] }),
-  staticMeta('/launch-control', { windowLabel: 'Launch Control', breadcrumbs: [{ label: 'MIDI Hub', to: '/midi-hub/connections' }, { label: 'Launch Control' }] }),
-  staticMeta('/midi-commander', { windowLabel: 'MIDI Commander', breadcrumbs: [{ label: 'MIDI Hub', to: '/midi-hub/connections' }, { label: 'MIDI Commander' }] }),
-  staticMeta('/labs/push-surface', { windowLabel: 'Push Surface', breadcrumbs: [{ label: 'MIDI Hub', to: '/midi-hub/connections' }, { label: 'Push Surface' }] }),
+  // T2491 (2026-05-02 cleanup) — canonical /midi/devices/* shellRouteMeta
+  // entries for the unified mounts shipped under T2485-4 (MPX1) and
+  // T2485-5 (IntelFX). Required so Close-button + breadcrumb labels
+  // resolve correctly when the operator lands on the unified path
+  // directly. The legacy /devices/{mpx1,intelfx}/* entries above stay
+  // for stale bookmarks; the canonical entries here take precedence
+  // for the current operator workflow.
+  staticMeta('/midi/devices/lexicon-mpx1/*', { windowLabel: 'MPX1 Rack', breadcrumbs: [{ label: 'MIDI Services', to: '/midi/connections' }, { label: 'Devices', to: '/midi/devices' }, { label: 'MPX1 Rack' }] }),
+  staticMeta('/midi/devices/rocktron-intelfx/*', { windowLabel: 'IntelFX Rack', breadcrumbs: [{ label: 'MIDI Services', to: '/midi/connections' }, { label: 'Devices', to: '/midi/devices' }, { label: 'IntelFX Rack' }] }),
+  staticMeta('/midi/devices/expression/*', { windowLabel: 'Expression', breadcrumbs: [{ label: 'MIDI Services', to: '/midi/connections' }, { label: 'Devices', to: '/midi/devices' }, { label: 'Expression' }] }),
+  staticMeta('/midi/devices/voodoo-lab-ground-control-pro/*', { windowLabel: 'Ground Control Pro', breadcrumbs: [{ label: 'MIDI Services', to: '/midi/connections' }, { label: 'Devices', to: '/midi/devices' }, { label: 'Ground Control Pro' }] }),
+  staticMeta('/midi/devices/ableton-push-3/*', { windowLabel: 'Push 3', breadcrumbs: [{ label: 'MIDI Services', to: '/midi/connections' }, { label: 'Devices', to: '/midi/devices' }, { label: 'Push 3' }] }),
+  staticMeta('/midi/devices/native-instruments-maschine-mk1', { windowLabel: 'Maschine MK1', breadcrumbs: [{ label: 'MIDI Services', to: '/midi/connections' }, { label: 'Devices', to: '/midi/devices' }, { label: 'Maschine MK1' }] }),
+  staticMeta('/midi/devices/mackie-mcu-pro', { windowLabel: 'MCU Pro', breadcrumbs: [{ label: 'MIDI Services', to: '/midi/connections' }, { label: 'Devices', to: '/midi/devices' }, { label: 'MCU Pro' }] }),
+  staticMeta('/midi/devices/novation-launch-control-xl', { windowLabel: 'Launch Control', breadcrumbs: [{ label: 'MIDI Services', to: '/midi/connections' }, { label: 'Devices', to: '/midi/devices' }, { label: 'Launch Control' }] }),
+  staticMeta('/midi/devices/meloaudio-midi-commander', { windowLabel: 'MIDI Commander', breadcrumbs: [{ label: 'MIDI Services', to: '/midi/connections' }, { label: 'Devices', to: '/midi/devices' }, { label: 'MIDI Commander' }] }),
+  staticMeta('/maschine', { windowLabel: 'Maschine', breadcrumbs: [{ label: 'MIDI Services', to: '/midi/connections' }, { label: 'Maschine' }] }),
+  staticMeta('/mcu', { windowLabel: 'MCU Pro', breadcrumbs: [{ label: 'MIDI Services', to: '/midi/connections' }, { label: 'MCU Pro' }] }),
+  staticMeta('/launch-control', { windowLabel: 'Launch Control', breadcrumbs: [{ label: 'MIDI Services', to: '/midi/connections' }, { label: 'Launch Control' }] }),
+  staticMeta('/midi-commander', { windowLabel: 'MIDI Commander', breadcrumbs: [{ label: 'MIDI Services', to: '/midi/connections' }, { label: 'MIDI Commander' }] }),
+  staticMeta('/labs/push-surface', { windowLabel: 'Push Surface', breadcrumbs: [{ label: 'MIDI Services', to: '/midi/connections' }, { label: 'Push Surface' }] }),
+  // T2491 (2026-05-02 cleanup) — /midi/* and /midi-hub/* wildcards
+  // live AFTER all the deeper /midi/devices/<profile>/* rules above
+  // so the resolver returns the most-specific match. resolveShellRouteMeta
+  // iterates in array order and returns the first matched rule.
+  {
+    path: '/midi/*',
+    resolve: (_params, pathname) => {
+      const segment = pathname.split('/').filter(Boolean)[1]
+      return {
+        windowLabel: segment ? `MIDI ${startCase(segment)}` : 'MIDI Services',
+        breadcrumbs: [{ label: 'MIDI Services', to: '/midi/connections' }, ...(segment ? [{ label: startCase(segment) }] : [])],
+      }
+    },
+  },
+  // Legacy /midi-hub/* fallback for stale operator bookmarks. The
+  // breadcrumbs already point at canonical /midi/connections.
+  {
+    path: '/midi-hub/*',
+    resolve: (_params, pathname) => {
+      const segment = pathname.split('/').filter(Boolean)[1]
+      return {
+        windowLabel: segment ? `MIDI ${startCase(segment)}` : 'MIDI Services',
+        breadcrumbs: [{ label: 'MIDI Services', to: '/midi/connections' }, ...(segment ? [{ label: startCase(segment) }] : [])],
+      }
+    },
+  },
 ]
 
 export function resolveShellRouteMeta(pathname: string): ShellRouteMeta | null {

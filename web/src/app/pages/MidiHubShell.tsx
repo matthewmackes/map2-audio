@@ -93,9 +93,13 @@ export function MidiHubShell() {
   ], [health, running, bpm, activePresetName, eventListLabel, routesCount, connectedDeviceCount, sessionsCount])
 
   useSetShellWindow({
-    title: 'MIDI Hub',
-    subtitle: 'Routing, presets, transport, events, processing, network, and lab workflows.',
-    kicker: 'Platform / MIDI Hub',
+    // T2491 (2026-05-02 cleanup) — operator-visible "MIDI Hub" labels
+    // aligned to the T2482 iter-94 rename. The component file name
+    // (MidiHubShell.tsx) stays for git history / re-export continuity;
+    // MidiServicesShell.tsx re-exports it as the canonical name.
+    title: 'MIDI Services',
+    subtitle: 'Routing, devices, bindings, presets, transport, events, processing, network, and lab workflows.',
+    kicker: 'Platform / MIDI Services',
     actions,
   }, [actions])
 

@@ -203,8 +203,11 @@ describe('AppShell global tree navigation', () => {
       'MIDI Assignments',
       'Drums&Synth',
       'Audio Artifacts',
-      'MIDI Advanced',
-      // T2490 — AVB tree section, sibling of MIDI Advanced and above Node Ops.
+      // T2491 (2026-05-02 cleanup) — sidebar parent label aligned to
+      // T2482 iter-94 rename "MIDI Hub" → "MIDI Services". The tree-id
+      // stays '/midi-hub' for tree-state continuity.
+      'MIDI Services',
+      // T2490 — AVB tree section, sibling of MIDI Services and above Node Ops.
       'AVB',
       'Node Ops',
       'Hardware',

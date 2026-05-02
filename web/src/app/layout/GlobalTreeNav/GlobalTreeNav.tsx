@@ -235,7 +235,12 @@ const TREE_LABEL_OVERRIDES: Record<string, string> = {
   '/workspace': 'Node Ops',
   '/snapshot-editor': 'Snapshot Editor',
   '/brain': 'Drums&Synth',
-  '/midi-hub': 'MIDI Advanced',
+  // T2491 (2026-05-02 cleanup) — sidebar parent label aligned to the
+  // T2482 iter-94 rename "MIDI Hub" → "MIDI Services". The tree-id
+  // stays '/midi-hub' for tree-state continuity (children re-pointed
+  // to /midi/* in launcherCatalog.tsx); only the operator-visible
+  // label changes here.
+  '/midi-hub': 'MIDI Services',
   '/avb': 'AVB',
   '/midi/assignments': 'MIDI Assignments',
   '/workspace/artifacts': 'Audio Artifacts',
