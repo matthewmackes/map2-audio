@@ -79,6 +79,35 @@ async def count_bindings() -> int:
         return await authority.count()
 
 
+class LastCcResponse(BaseModel):
+    """T2483-5 iter 172 — most-recently-observed CC for the
+    SourceDescriptorEditor Learn button. None if no CC has been
+    observed since service start.
+    """
+
+    cc: int
+    channel: Optional[int]
+    value: int
+    observed_at: float
+
+
+@router.get("/bindings/learn/last-cc", response_model=Optional[LastCcResponse])
+async def get_last_observed_cc() -> Optional[LastCcResponse]:
+    """T2483-5 iter 172 — return the most-recently-observed MIDI CC
+    captured by MIDILearnManager's existing MidiHub bridge.
+
+    The frontend SourceDescriptorEditor Learn button polls this
+    every 250ms for up to 10s; on first non-null response it writes
+    the cc + channel into the descriptor.
+    """
+    from app.services.midi_learn import midi_learn_manager
+
+    last = midi_learn_manager.get_last_cc()
+    if last is None:
+        return None
+    return LastCcResponse(**last)
+
+
 @router.get("/bindings/matrix", response_model=BindingsMatrixResponse)
 async def get_bindings_matrix() -> BindingsMatrixResponse:
     """T2483-8 iter 162 — server-side source_type × consumer_type

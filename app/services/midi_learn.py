@@ -117,6 +117,11 @@ class MIDILearnManager:
         
         # Last received CC values for display
         self.last_cc_values: Dict[Tuple[int, Optional[int]], int] = {}
+        # T2483-5 iter 172 — most-recently-observed CC across all (cc, channel)
+        # pairs. Frontend SourceDescriptorEditor's Learn button polls this
+        # to auto-fill the cc + channel fields.
+        # Shape: {cc, channel, value, observed_at} or None.
+        self._last_cc: Optional[Dict[str, Any]] = None
         self._hub = None
         self._hub_subscriber_id = f"midi_learn_manager:{id(self)}"
         self._hub_port_id = "consumer:midi_learn"
@@ -201,6 +206,14 @@ class MIDILearnManager:
         with self._lock:
             # Store last CC value
             self.last_cc_values[(cc_number, channel)] = cc_value
+            # T2483-5 iter 172 — track the most-recently-observed CC for the
+            # canonical-surface SourceDescriptorEditor Learn button.
+            self._last_cc = {
+                "cc": int(cc_number),
+                "channel": int(channel) if channel is not None else None,
+                "value": int(cc_value),
+                "observed_at": datetime.now(tz=timezone.utc).timestamp(),
+            }
             
             # Handle learn mode
             if self.learn_mode_active and self.learn_target_param:
@@ -417,6 +430,22 @@ class MIDILearnManager:
             Last CC value or None
         """
         return self.last_cc_values.get((cc_number, channel))
+
+    def get_last_cc(self) -> Optional[Dict[str, Any]]:
+        """T2483-5 iter 172 — most-recently-observed CC across all
+        (cc, channel) pairs.
+
+        Returned shape (or None if no CC has been observed yet):
+            {"cc": int, "channel": int|None, "value": int, "observed_at": float}
+
+        Frontend SourceDescriptorEditor's Learn button polls this every
+        250ms for up to 10s; on first non-null response it writes the cc
+        + channel into the descriptor.
+        """
+        with self._lock:
+            if self._last_cc is None:
+                return None
+            return dict(self._last_cc)
     
     def create_template(self, name: str, description: str = "") -> Dict[str, Any]:
         """
