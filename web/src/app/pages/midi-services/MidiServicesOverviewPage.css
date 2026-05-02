@@ -50,6 +50,10 @@
   min-height: 8rem;
 }
 
+.midi-services-overview__tile--clickable {
+  cursor: pointer;
+}
+
 .midi-services-overview__tile-header {
   display: flex;
   align-items: center;

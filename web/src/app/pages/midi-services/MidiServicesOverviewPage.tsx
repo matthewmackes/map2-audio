@@ -3,12 +3,15 @@
  * T2482 loop 10 / iter 96 — Tile cards now wired to live counts via
  * useMidiServicesCounts (TanStack Query against /api/midi/bindings/count
  * + per-scope filtered binding lists).
+ * T2482 loop 11 / iter 109 — Tile cards are now ClickableTile when a
+ * `to` prop is provided, navigating to the corresponding region.
  *
  * Per the iter-91 design D3 (Overview is a NEW Carbon surface, not a
  * port). Mounted at `/midi/overview` per iter 92.
  */
 
-import { Layer, Heading, Section, Tag, Tile } from '@carbon/react'
+import { useNavigate } from 'react-router-dom'
+import { ClickableTile, Layer, Heading, Section, Tag, Tile } from '@carbon/react'
 
 import { useMidiServicesCounts } from './useMidiServicesCounts'
 import './MidiServicesOverviewPage.css'
@@ -19,9 +22,11 @@ interface RegionCardProps {
   count: number
   isLoading: boolean
   isError: boolean
+  to?: string
 }
 
-function RegionCard({ title, body, count, isLoading, isError }: RegionCardProps) {
+function RegionCard({ title, body, count, isLoading, isError, to }: RegionCardProps) {
+  const navigate = useNavigate()
   let countLabel: string
   let countTone: 'gray' | 'red' | 'green' = 'gray'
   if (isError) {
@@ -33,15 +38,26 @@ function RegionCard({ title, body, count, isLoading, isError }: RegionCardProps)
     countLabel = String(count)
     countTone = count > 0 ? 'green' : 'gray'
   }
-  return (
-    <Tile className="midi-services-overview__tile">
+  const inner = (
+    <>
       <header className="midi-services-overview__tile-header">
         <h3 className="midi-services-overview__tile-title">{title}</h3>
         <Tag type={countTone} size="sm">{countLabel}</Tag>
       </header>
       <p className="midi-services-overview__tile-body">{body}</p>
-    </Tile>
+    </>
   )
+  if (to) {
+    return (
+      <ClickableTile
+        className="midi-services-overview__tile midi-services-overview__tile--clickable"
+        onClick={() => navigate(to)}
+      >
+        {inner}
+      </ClickableTile>
+    )
+  }
+  return <Tile className="midi-services-overview__tile">{inner}</Tile>
 }
 
 export function MidiServicesOverviewPage() {
@@ -68,6 +84,7 @@ export function MidiServicesOverviewPage() {
             count={counts.deviceBindings}
             isLoading={counts.isLoading}
             isError={counts.isError}
+            to="/midi/devices"
           />
           <RegionCard
             title="Bindings"
@@ -75,6 +92,7 @@ export function MidiServicesOverviewPage() {
             count={counts.totalBindings}
             isLoading={counts.isLoading}
             isError={counts.isError}
+            to="/midi/bindings?consumer_type=plugin_param"
           />
           <RegionCard
             title="Routing"
@@ -82,6 +100,7 @@ export function MidiServicesOverviewPage() {
             count={counts.routingBindings}
             isLoading={counts.isLoading}
             isError={counts.isError}
+            to="/midi/routing"
           />
           <RegionCard
             title="Transport"
@@ -89,6 +108,7 @@ export function MidiServicesOverviewPage() {
             count={counts.transportBindings}
             isLoading={counts.isLoading}
             isError={counts.isError}
+            to="/midi/bindings?consumer_type=transport"
           />
         </div>
       </Layer>
