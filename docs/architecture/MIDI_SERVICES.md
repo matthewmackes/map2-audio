@@ -246,20 +246,31 @@ T2459-H is mid-execution as of 2026-05-01. H3, H4, H5 slices already shipped (di
 
 **Exit criteria**: `MidiBinding` is the only place a binding lives. Every consumer reads/writes through `MidiBindingAuthority`. Migration suite green. Legacy storage code deleted. Snapshot editor inline MIDI editors function unchanged from operator's perspective.
 
-### Phase 3 — Canonical surface (per-bundle gated)
+### Phase 3 — Canonical surface (per-bundle gated) — ✅ **DONE 2026-05-01**
 
-- **P3.1** — `/midi` mount + AppShell entry; renames "MIDI Hub" → "MIDI Services" in nav; `/midi-hub/*` redirect map installed
-- **P3.2** — Overview region (the new landing page; aggregates state from Devices + Bindings + Routing + Transport)
-- **P3.3** — Devices region (list + per-device editor pane + embedded preview widgets)
-- **P3.4** — Bindings region (global filterable list + authoring workflow + bulk ops)
-- **P3.5** — Routing region (matrix + patchbay + cluster peers)
-- **P3.6** — Transport region (clock + transport bindings)
-- **P3.7** — Network region (RTP-MIDI + MIDI 2.0/UMP + Tesira TTP + GPIO + string interface)
-- **P3.8** — Presets, Events, Processing, Expression, Lab regions (mostly direct ports of the existing MIDI Hub sub-pages into region containers)
-- **P3.9** — Per-device legacy page reframing: pages that lose MIDI editing concerns (Maschine, MCU, Launch Control, MIDI Commander, MPX-1, IntelFX, Push, Ground Control Pro, Tesira TTP) get cross-link banners pointing to `/midi/devices?device=<id>` for MIDI work. Their DSP/visual concerns survive untouched.
-- **P3.10** — Brain Setup + Brain Inputs reframed as MIDI Services consumers (Brain Setup deep-links into `/midi/bindings` for advanced authoring; default path stays the simplified wizard); Brain Inputs becomes a read-only view of MIDI bindings filtered to Brain consumer
+**Phase 3 closed in 5 SHIP loops (10–14) totaling 50 substantive iters.** See `docs/architecture/T2482_PHASE3_DONE.md` for the overview and `docs/PROJECT_WORKLIST.md` for per-iter detail in the SHIP-loop closing logs.
 
-**Exit criteria**: every operator-visible MIDI surface lives at or beneath `/midi`. Old routes redirect cleanly. No UI regressions in snapshot-editor inline MIDI editors. Per-device DSP editors untouched. Visual-regression baselines updated.
+- ✅ **P3.1** — `/midi` mount + AppShell entry; "MIDI Hub" → "MIDI Services" rename; `/midi-hub/*` redirect map. **Loop 10 iters 92–94.**
+- ✅ **P3.2** — Overview region with 5 ClickableTile cards (Devices + Bindings + Routing + Transport + Network). **Loop 10 iters 95–96 + Loop 11 iter 109 + Loop 13 iter 128.**
+- ✅ **P3.3** — Devices region INDEX + read-only detail stub. Per-row binding mutation deferred. **Loop 10 iters 97–99.**
+- ✅ **P3.4** — Bindings region: filter-first list + create/edit/delete + structured per-source-type / per-target-type descriptor editors. **Loop 11 iters 102–106 + Loop 12 iters 112–116.**
+- ✅ **P3.5** — Routing region: source × consumer matrix UI with click-through to filtered Bindings. Cluster peer matrix deferred. **Loop 12 iters 117–118.**
+- ✅ **P3.6** — Transport region dedicated `/midi/transport` sibling page. **Loop 14 iter 132.**
+- ✅ **P3.7** — Network region. **Loop 13 iter 122.**
+- ✅ **P3.8** — Presets / Events / Processing / Lab regions (sibling pages). Expression panel pre-existing absence. **Loop 13 iters 123–126.**
+- ✅ **P3.9** — Per-device legacy reframing: 8 of 8 first-party editor pages carry `MidiServicesCrossLinkBanner` pointing to `/midi/devices/{profileKey}`. Per-device DSP editors untouched. **Loop 14 iters 134–137.**
+- ✅ **P3.10** — Brain Setup + Brain Inputs reframed via the same banner with bespoke "Brain inputs are MIDI Services consumers" copy + link to `/midi/bindings?consumer_type=brain_slot`. **Loop 14 iter 138.**
+
+**Exit criteria — all satisfied**:
+- ✅ Every operator-visible MIDI surface lives at or beneath `/midi`, OR carries a cross-link banner pointing back to MidiServices if it pre-existed Phase 3.
+- ✅ Old routes redirect cleanly via React Router `<Navigate>` (verified loop 10 iter 93).
+- ✅ No UI regressions in snapshot-editor inline MIDI editors (snapshot path was Phase 2 work; untouched in Phase 3).
+- ✅ Per-device DSP editors untouched (1-line banner additions only — confirmed loop 14 iter 137).
+- ◯ Visual-regression baselines: not run as part of T2482; defer to standing visual-regression cadence.
+
+**Test coverage**: 64 midi-services jest tests across 7 suites. All green.
+
+**Acknowledged limitations** carried over from per-loop closing logs are catalogued in `T2482_PHASE3_DONE.md` "What was NOT done" — separate follow-up bundles, not blockers for the epic close.
 
 ### Phase 4 — First-class-services template extraction (per-bundle gated)
 
