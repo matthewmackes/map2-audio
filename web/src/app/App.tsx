@@ -80,6 +80,10 @@ const MidiServicesDevicesPage = lazy(() => import('./pages/midi-services/MidiSer
 const MidiServicesDevicePage = lazy(() => import('./pages/midi-services/MidiServicesDevicePage').then(m => ({ default: m.MidiServicesDevicePage })))
 // T2485-6 — Maschine MIDI landing (cross-links into /maschine console).
 const MidiDeviceMaschineLanding = lazy(() => import('./pages/midi-services/MidiDeviceMaschineLanding').then(m => ({ default: m.MidiDeviceMaschineLanding })))
+// T2485-7a — additional console-style device landings.
+const MidiDeviceMcuLanding = lazy(() => import('./pages/midi-services/MidiDeviceMcuLanding').then(m => ({ default: m.MidiDeviceMcuLanding })))
+const MidiDeviceLaunchControlLanding = lazy(() => import('./pages/midi-services/MidiDeviceLaunchControlLanding').then(m => ({ default: m.MidiDeviceLaunchControlLanding })))
+const MidiDeviceMidiCommanderLanding = lazy(() => import('./pages/midi-services/MidiDeviceMidiCommanderLanding').then(m => ({ default: m.MidiDeviceMidiCommanderLanding })))
 const MidiServicesBindingsPage = lazy(() => import('./pages/midi-services/MidiServicesBindingsPage').then(m => ({ default: m.MidiServicesBindingsPage })))
 const MidiServicesRoutingPage = lazy(() => import('./pages/midi-services/MidiServicesRoutingPage').then(m => ({ default: m.MidiServicesRoutingPage })))
 const MidiServicesNetworkPage = lazy(() => import('./pages/midi-services/MidiServicesNetworkPage').then(m => ({ default: m.MidiServicesNetworkPage })))
@@ -635,12 +639,18 @@ export function App() {
                                       device-pack profiles + cross-links to per-device
                                       editors. NOT an authoring surface. */}
                                   <Route path="devices" element={<MidiServicesDevicesPage />} />
-                                  {/* T2485-6 — Maschine MIDI landing. Per locked
-                                      decision /maschine stays the primary console;
-                                      this route presents the unified manifest entry +
-                                      cross-link into the console. Declared BEFORE the
-                                      parametric :profileKey so it wins. */}
+                                  {/* T2485-6 / T2485-7a — Console-backed MIDI device
+                                      landings. Each profile renders a small landing
+                                      page with title + 3-line purpose + a cross-link
+                                      Button to its existing operator console. /maschine,
+                                      /mcu, /launch-control, /midi-commander remain the
+                                      primary workflow surfaces. Declared BEFORE the
+                                      parametric :profileKey so React Router matches
+                                      these specific paths first. */}
                                   <Route path="devices/native-instruments-maschine-mk1" element={<MidiDeviceMaschineLanding />} />
+                                  <Route path="devices/mackie-mcu-pro" element={<MidiDeviceMcuLanding />} />
+                                  <Route path="devices/novation-launch-control-xl" element={<MidiDeviceLaunchControlLanding />} />
+                                  <Route path="devices/meloaudio-midi-commander" element={<MidiDeviceMidiCommanderLanding />} />
                                   {/* T2482 loop 10 / iter 99 — Device detail stub.
                                       Read-only audit/inspection of one device-pack
                                       profile. Mutation lands in iter 100+. */}
