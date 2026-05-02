@@ -11,8 +11,9 @@
  */
 
 import { useMemo } from 'react'
-import { Link as RouterLink } from 'react-router-dom'
+import { Link as RouterLink, useNavigate } from 'react-router-dom'
 import {
+  Button,
   DataTable,
   Heading,
   InlineNotification,
@@ -28,6 +29,7 @@ import {
   TableRow,
   Tag,
 } from '@carbon/react'
+import { ArrowRight } from '@carbon/icons-react'
 
 import { useDevicePackBindings, type DevicePackProfileRow } from './useDevicePackBindings'
 import { resolveDevicePackEditor } from './devicePackEditorRoutes'
@@ -74,6 +76,7 @@ function rowsFromProfiles(rows: DevicePackProfileRow[]): DeviceTableRow[] {
 export function MidiServicesDevicesPage() {
   const { rows, isLoading, isError } = useDevicePackBindings()
   const tableRows = useMemo(() => rowsFromProfiles(rows), [rows])
+  const navigate = useNavigate()
 
   return (
     <Section className="midi-services-devices">
@@ -88,6 +91,31 @@ export function MidiServicesDevicesPage() {
           </p>
         </header>
       </Layer>
+
+      {/* T2491 — clarification banner. The empty state on this page
+          confused operators who expected to see their physical MIDI
+          adapters here. This page is a *profile registry*; live
+          adapter discovery (USB/DIN/network/virtual ports) is the
+          Connections page's job. */}
+      <div className="midi-services-devices__clarification">
+        <InlineNotification
+          kind="info"
+          lowContrast
+          hideCloseButton
+          title="Looking for connected MIDI adapters?"
+          subtitle="This page lists device-pack profiles registered with the binding authority — vendor-curated YAML manifests, not live ports. Live USB/DIN/network/virtual MIDI adapter inventory lives on the Connections page."
+        />
+        <Button
+          kind="ghost"
+          size="sm"
+          renderIcon={() => <ArrowRight aria-hidden />}
+          iconDescription="Open Connections"
+          onClick={() => navigate('/midi/connections')}
+          className="midi-services-devices__clarification-cta"
+        >
+          Open Connections
+        </Button>
+      </div>
 
       {isError ? (
         <InlineNotification
@@ -131,7 +159,12 @@ export function MidiServicesDevicesPage() {
                     <TableRow>
                       <TableCell colSpan={dtHeaders.length}>
                         <span className="midi-services-devices__empty">
-                          No device-pack bindings registered yet.
+                          No device-pack profiles registered yet. Profiles are
+                          authored under <code>device-packs/&lt;vendor&gt;/&lt;model&gt;/</code>{' '}
+                          (XML mapping + JS scripts + <code>.MAP2.yaml</code> manifest)
+                          and registered automatically on backend boot. To see
+                          which physical MIDI ports the system has discovered,
+                          open <CarbonLink as={RouterLink} to="/midi/connections">Connections</CarbonLink>.
                         </span>
                       </TableCell>
                     </TableRow>
