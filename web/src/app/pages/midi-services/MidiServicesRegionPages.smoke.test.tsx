@@ -13,7 +13,12 @@
 
 import '@testing-library/jest-dom'
 import { render, screen } from '@testing-library/react'
+import { MemoryRouter } from 'react-router-dom'
 import React from 'react'
+
+function withRouter(node: React.ReactElement) {
+  return <MemoryRouter>{node}</MemoryRouter>
+}
 
 // ---------- Panel mocks (per the iter-101 D1 wrap-not-rewrite pattern) ----------
 
@@ -82,6 +87,28 @@ jest.mock('../../components/MidiHub/MidiSchedulerPanel', () => ({
   MidiSchedulerPanel: () => <div data-testid="scheduler-panel" />,
 }))
 
+jest.mock('../../components/MidiHub/MidiRoutingMatrix', () => ({
+  MidiRoutingMatrix: () => <div data-testid="routing-matrix-panel" />,
+}))
+jest.mock('../../components/MidiHub/MidiPatchbay', () => ({
+  MidiPatchbay: () => <div data-testid="patchbay-panel" />,
+}))
+jest.mock('../../components/MidiHub/MidiHubQuickRouter', () => ({
+  MidiHubQuickRouter: () => <div data-testid="quick-router-panel" />,
+}))
+jest.mock('../../components/MidiHub/MidiTrafficMonitor', () => ({
+  MidiTrafficMonitor: () => <div data-testid="traffic-monitor-panel" />,
+}))
+jest.mock('../../components/MidiHub/MidiHubConnectedDevicesReport', () => ({
+  MidiHubConnectedDevicesReport: () => <div data-testid="connected-devices-report" />,
+}))
+jest.mock('../../components/MidiHub/useMidiHubOverview', () => ({
+  useMidiHubOverview: () => ({ ports: [{ id: 'p1' }], routes: [], clockStatus: { output_ports: [] } }),
+}))
+jest.mock('../../components/MidiHub/MidiHubNodeScope', () => ({
+  useMidiHubNodeScope: () => ({ nodeId: null, scopeKey: 'local' }),
+}))
+
 jest.mock('../../components/MidiHub/AiLearnPanel', () => ({
   AiLearnPanel: () => <div data-testid="ai-learn-panel" />,
 }))
@@ -100,6 +127,7 @@ import { MidiServicesEventsPage } from './MidiServicesEventsPage'
 import { MidiServicesProcessingPage } from './MidiServicesProcessingPage'
 import { MidiServicesLabPage } from './MidiServicesLabPage'
 import { MidiServicesTransportPage } from './MidiServicesTransportPage'
+import { MidiServicesConnectionsPage } from './MidiServicesConnectionsPage'
 
 describe('MidiServicesNetworkPage', () => {
   it('mounts the 5 network panels', () => {
@@ -132,8 +160,9 @@ describe('MidiServicesPresetsPage', () => {
 })
 
 describe('MidiServicesEventsPage', () => {
+  // T2483-6 iter 158 added useSearchParams; tests need a Router context.
   it('mounts the 5 events panels', () => {
-    render(<MidiServicesEventsPage />)
+    render(withRouter(<MidiServicesEventsPage />))
     expect(screen.getByTestId('event-list-manager')).toBeInTheDocument()
     expect(screen.getByTestId('event-list-status')).toBeInTheDocument()
     expect(screen.getByTestId('learn-mode-control')).toBeInTheDocument()
@@ -142,7 +171,7 @@ describe('MidiServicesEventsPage', () => {
   })
 
   it('renders an Events heading', () => {
-    render(<MidiServicesEventsPage />)
+    render(withRouter(<MidiServicesEventsPage />))
     expect(screen.getByText('Events')).toBeInTheDocument()
   })
 })
@@ -187,5 +216,20 @@ describe('MidiServicesTransportPage', () => {
   it('renders a Transport heading', () => {
     render(<MidiServicesTransportPage />)
     expect(screen.getByText('Transport')).toBeInTheDocument()
+  })
+})
+
+describe('MidiServicesConnectionsPage', () => {
+  it('mounts the 4 connection panels', () => {
+    render(<MidiServicesConnectionsPage />)
+    expect(screen.getByTestId('routing-matrix-panel')).toBeInTheDocument()
+    expect(screen.getByTestId('quick-router-panel')).toBeInTheDocument()
+    expect(screen.getByTestId('traffic-monitor-panel')).toBeInTheDocument()
+    expect(screen.getByTestId('connected-devices-report')).toBeInTheDocument()
+  })
+
+  it('renders a Connections heading', () => {
+    render(<MidiServicesConnectionsPage />)
+    expect(screen.getByText('Connections')).toBeInTheDocument()
   })
 })
