@@ -1,0 +1,51 @@
+/*
+ * T2482 loop 10 / iter 99 — /midi/devices/:profileKey detail stub styles.
+ *
+ * Carbon-conformant per the iter-91 design D5. No hardcoded colors;
+ * no inline styles; no MUI / Phosphor.
+ */
+
+.midi-services-device {
+  padding: 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.midi-services-device__crumbs {
+  margin-bottom: 0.25rem;
+}
+
+.midi-services-device__header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.midi-services-device__title {
+  font-size: 2rem;
+  font-weight: 300;
+  color: var(--cds-text-primary);
+  margin: 0;
+}
+
+.midi-services-device__tags {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.midi-services-device__editor-link {
+  font-size: 0.8125rem;
+}
+
+.midi-services-device__editor-banner {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.midi-services-device__editor-banner .midi-services-device__editor-link {
+  align-self: flex-start;
+  padding-left: 1rem;
+}
