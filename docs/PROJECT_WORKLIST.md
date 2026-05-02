@@ -35917,7 +35917,7 @@ This revision **preserves the spirit of Q2=A** (decomposition for maintainabilit
 
 - **T2490-3** — Refactor `avb_router.py` to consume `AvbBindingAuthority`. The routing matrix becomes a *projection* of the binding authority rather than a separate state store. ~3 SHIP iters.
 
-- **T2490-4** — Operator-visible Connections page. Carbon DataTable mirroring `MidiServicesConnectionsPage`, with per-row mutation surface. ~1 SHIP iter.
+- **T2490-4** — Operator-visible Connections page. Carbon DataTable mirroring `MidiServicesConnectionsPage`, with per-row mutation surface. ~1 SHIP iter. **[✓] DONE 2026-05-02 (read-only first cut).** Shipped: `useAvbBindings.ts` hook (`useAvbBindingsCount` + `useAvbBindingsAllScopes` — 4 parallel queries fanning across global / snapshot / node / cluster scopes, 5s poll); `AvbServicesConnectionsPage.tsx` upgraded from scaffold to a real Carbon DataTable with 9 columns (Consumer / Source / Target / Stream / Format / SRP / Scope / Enabled / Authored by). Empty-state placeholder when no bindings exist. Per-row mutation surface deferred to T2490-3 (avb_router refactor); the matrix endpoint (~`/api/avb/bindings/matrix`) folded into T2490-2b in the next ship cycle to replace the 4-query fan-out with a single server-side aggregation. Build clean (21.8s); /avb/connections serves HTTP 200; live count endpoint reports 0.
 
 - **T2490-5** — Devices region. `/avb/devices/:profileKey` index + per-device landing pattern matching T2485's MIDI devices index. ~1-2 SHIP iters.
 
