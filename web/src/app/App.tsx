@@ -78,6 +78,8 @@ const MidiServicesShell     = lazy(() => import('./pages/MidiServicesShell').the
 const MidiServicesOverviewPage = lazy(() => import('./pages/midi-services/MidiServicesOverviewPage').then(m => ({ default: m.MidiServicesOverviewPage })))
 const MidiServicesDevicesPage = lazy(() => import('./pages/midi-services/MidiServicesDevicesPage').then(m => ({ default: m.MidiServicesDevicesPage })))
 const MidiServicesDevicePage = lazy(() => import('./pages/midi-services/MidiServicesDevicePage').then(m => ({ default: m.MidiServicesDevicePage })))
+// T2485-6 — Maschine MIDI landing (cross-links into /maschine console).
+const MidiDeviceMaschineLanding = lazy(() => import('./pages/midi-services/MidiDeviceMaschineLanding').then(m => ({ default: m.MidiDeviceMaschineLanding })))
 const MidiServicesBindingsPage = lazy(() => import('./pages/midi-services/MidiServicesBindingsPage').then(m => ({ default: m.MidiServicesBindingsPage })))
 const MidiServicesRoutingPage = lazy(() => import('./pages/midi-services/MidiServicesRoutingPage').then(m => ({ default: m.MidiServicesRoutingPage })))
 const MidiServicesNetworkPage = lazy(() => import('./pages/midi-services/MidiServicesNetworkPage').then(m => ({ default: m.MidiServicesNetworkPage })))
@@ -633,6 +635,12 @@ export function App() {
                                       device-pack profiles + cross-links to per-device
                                       editors. NOT an authoring surface. */}
                                   <Route path="devices" element={<MidiServicesDevicesPage />} />
+                                  {/* T2485-6 — Maschine MIDI landing. Per locked
+                                      decision /maschine stays the primary console;
+                                      this route presents the unified manifest entry +
+                                      cross-link into the console. Declared BEFORE the
+                                      parametric :profileKey so it wins. */}
+                                  <Route path="devices/native-instruments-maschine-mk1" element={<MidiDeviceMaschineLanding />} />
                                   {/* T2482 loop 10 / iter 99 — Device detail stub.
                                       Read-only audit/inspection of one device-pack
                                       profile. Mutation lands in iter 100+. */}
