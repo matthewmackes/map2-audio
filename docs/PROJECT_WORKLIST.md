@@ -35288,3 +35288,40 @@ After 4 SHIP loops (10–14) totaling 50 substantive iters and 50+ commits dual-
 - The banner is non-dismissible. If operators tire of the persistent banner once they're familiar with the canonical authority, a dismissibility flag + localStorage persistence is a small addition (deferred to loop 15+).
 - `/midi/connections` still routes to `MidiHubConnectionsPage` — the only remaining MidiHub-routed entry under `/midi/*`. A dedicated `MidiServicesConnectionsPage` would close that gap. Not a Phase 3 sub-phase per the design doc; deferred to loop 15+.
 - The `kicker: 'Platform / MIDI Hub / ...'` shell-window subtitle limitation noted in the loop-13 closing log persists for the iter-132 Transport page; the same fix would apply to all sibling pages if pursued.
+
+---
+
+ID: T2483
+Status: [ ] Todo
+Title: T2482 follow-up bundle — MidiServices polish + deferred items
+Description:
+- Goal / acceptance criteria: Close the small backlog of polish items + deferred features that the T2482 epic acknowledged but did not block on. None of these are required for MIDI Services to function correctly; they each individually improve operator UX or developer ergonomics.
+- Why it matters: The T2482 epic deliberately drew a line at "every operator-visible MIDI surface lives at or beneath /midi or carries a cross-link banner" + "every binding lives in MidiBinding". With that line crossed (2026-05-01), the remaining items are quality-of-life rather than architectural debt. Bundling them in one follow-up keeps the worklist clean and lets a future loop pick them up coherently.
+- Dependencies: T2482 (DONE 2026-05-01).
+- Estimated effort: 2–3 SHIP loops (20–30 iters), depending on which items are prioritized.
+- Required outputs: same DoD as T2482's per-iter pattern (Carbon-only; dual-pushed; tests where the change has logic).
+- Subtasks (T2483-{n}; pick-and-choose, no fixed order):
+
+**Per-device editor polish**:
+  - **T2483-1**: per-row binding mutation surface on `/midi/devices/:profileKey` (today's read-only stub becomes a mutating editor; complements the iter-105 BindingEditDrawer).
+  - **T2483-2**: dedicated `MidiServicesConnectionsPage` sibling page (closes the only remaining MidiHub-routed entry under `/midi/*`).
+  - **T2483-3**: `useSetShellWindow` calls in the loop-13/14 sibling pages (Network/Presets/Events/Processing/Lab/Transport) so the shell kicker shows the right context instead of the previous page's.
+
+**Bindings region polish**:
+  - **T2483-4**: source-type filter strategy added to the iter-103 list page filter form (so /midi/routing matrix cells can deep-link with source_type preselected).
+  - **T2483-5**: per-source-type structured-editor field set extended (e.g., a live MIDI-learn helper for the cc field; today operators type the CC number).
+  - **T2483-6**: lift `MidiServicesEventsPage.selectedEventListId` from local state to URL query so the selection survives navigation.
+
+**Cross-link banner polish**:
+  - **T2483-7**: dismissibility flag + localStorage persistence on `MidiServicesCrossLinkBanner` (operators can hide it once familiar).
+
+**Routing matrix polish**:
+  - **T2483-8**: optional backend `/api/midi/bindings/matrix` endpoint that does the source × consumer aggregation server-side (replaces the iter-117 10-query fan-out for high-cardinality clusters).
+  - **T2483-9**: cluster peer matrix overlay (the iter-91 design doc D5 referenced this; deferred for loop 12+).
+
+**Test coverage polish**:
+  - **T2483-10**: full interactive jest tests for the MidiServicesBindingsPage filter form + mutation flows + modal-open paths (loop 11/12 deferred this; would need elaborate Carbon Modal portal + QueryClientProvider mocking patterns).
+
+**Definition of Done (Bundle-level)**: at least 3 of the 10 sub-items shipped + dual-pushed; remaining items either explicitly deferred to a future bundle (with rationale) or marked obsolete (with rationale). No partial shipping — each sub-item is either DONE or untouched.
+
+Assigned to: open / autonomous-eligible per the standing T2482-style autonomous-loop directive.
