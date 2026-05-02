@@ -35325,3 +35325,51 @@ Description:
 **Definition of Done (Bundle-level)**: at least 3 of the 10 sub-items shipped + dual-pushed; remaining items either explicitly deferred to a future bundle (with rationale) or marked obsolete (with rationale). No partial shipping — each sub-item is either DONE or untouched.
 
 Assigned to: open / autonomous-eligible per the standing T2482-style autonomous-loop directive.
+
+### SHIP loop 15 (iters 141–150) closing log — 2026-05-01
+
+**Status**: 10 substantive iters shipped (141-150, dual-pushed). The **T2482 epic close-out loop**. Per the iter-141 plan D1 + iter-131 D6: doc-only loop, no code. Loop 15 ships the overview + status updates + archive sweep + worklist marking.
+
+| Iter | Surface | Commit | Highlight |
+|---|---|---|---|
+| 141 | Plan | 72deed99 | New `T2482_LOOP15_CLOSEOUT_PLAN.md`. Locked 6 design decisions (D1 doc-only, D2 archive not delete, D3 one overview not 14, D4 cross-references not duplication, D5 mark DONE only after iter 149 pass, D6 standing rules continue). |
+| 142 | Phase 3 overview doc | 4432e594 | New `docs/architecture/T2482_PHASE3_DONE.md` — single overview with sub-phase status table, full /midi/* surface map, per-device banner table, test coverage summary, "what was NOT done" + reader's guide. |
+| 143 | MIDI_SERVICES.md status | e2bd5d03 | Marked each P3.1-P3.10 DONE in §4 Phase 3 with loop+iter refs + exit-criteria checklist. |
+| 144 | Philosophy doc upkeep | 55040582 | `docs/philosophy/midi-design.md` got a new section 7 "The MIDI Services unification (T2482, completed 2026-05-01)". Reviewed 4 other philosophy docs that grep-matched MIDI; no edits needed. |
+| 145 | Archive sweep step 1 | 716b2688 | `mkdir docs/architecture/archive/t2482/` + git mv 6 P1.x design + reality-audit docs. git mv preserves history. |
+| 146 | Archive sweep step 2 | d76652dd | git mv 7 LOOP9-14 plan docs + new `archive/t2482/README.md` cataloguing what's there + redirects to canonical entry points. |
+| 147 | Worklist epic update | 33e11c2a | Marked T2482 header DONE; each P3.x sub-phase entry got its DONE checkmark + loop+iter ref. |
+| 148 | T2483 follow-up bundle | 047eca7f | Opened T2483 "T2482 follow-up bundle - MidiServices polish + deferred items" with 10 sub-items grouped into 5 buckets (per-device polish, Bindings polish, banner polish, Routing polish, test polish). Pick-and-choose; autonomous-eligible. |
+| 149 | Verification | 8a80c8b1 | New `T2482_LOOP15_VERIFICATION.md`. Confirmed gates: typecheck clean, jest midi-services 7 suites/64 tests green, archive moves didn't break navigational links from active reader docs. |
+| 150 | Roll-up + **T2482 EPIC DONE** marker | (this commit) | This closing log. |
+
+**Total new files in loop 15**:
+- 4 architecture docs (`T2482_LOOP15_CLOSEOUT_PLAN.md`, `T2482_PHASE3_DONE.md`, `T2482_LOOP15_VERIFICATION.md`, `archive/t2482/README.md`)
+- 0 code files (loop 15 was doc-only by design)
+
+Plus updates to `docs/architecture/MIDI_SERVICES.md` (Phase 3 §4 status table), `docs/philosophy/midi-design.md` (new section 7), `docs/PROJECT_WORKLIST.md` (T2482 marked DONE + T2483 opened).
+
+Plus 13 git renames moving the per-loop plan + reality-audit docs into `docs/architecture/archive/t2482/`.
+
+## **🏁 T2482 EPIC — DONE 🏁**
+
+After 6 SHIP loops (10 + 11 + 12 + 13 + 14 + 15) totaling 60 substantive iters and 60+ commits dual-pushed to both remotes (origin + gitlab), the T2482 MIDI Services Unification epic is **closed**.
+
+**What "done" means here**:
+- Every Phase 3 sub-phase from the design doc satisfied (P3.1-P3.10 all green).
+- Every operator-visible MIDI surface lives at or beneath `/midi`, OR carries a cross-link banner pointing back to MidiServices.
+- Every binding lives in the `MidiBinding` canonical authority (Phase 1 + Phase 2 work, completed pre-loop-10).
+- 64 jest tests across 7 suites cover the new midi-services frontend.
+- Per-loop architecture docs archived to `docs/architecture/archive/t2482/`. Single-page overview at `docs/architecture/T2482_PHASE3_DONE.md`.
+- Philosophy doc (`docs/philosophy/midi-design.md`) updated per the standing upkeep rule.
+- Follow-up worklist entry T2483 opened for the polish items that were deliberately out of scope for the epic itself.
+
+**What's next** (from the iter-148 T2483 follow-up bundle):
+- T2483 follow-up bundle is autonomous-eligible. The standing "Continue this logic ten times. then, pick another 10, and restart the procedure" directive can pick this up as Loop 16 if/when desired.
+- Independently: post-P1.2 polish (real Mixxx ControllerEngine JS execution, audio-thread engine-side latency measurement, namespace-isolation default-flip) remains queued — not part of T2482's close, but valuable next work.
+- Phase 4 of T2482 (T2482-P4.1/P4.2/P4.3 — first-class-services template extraction for AVB / Sampler / Audio Effects) was originally part of the epic's scope; that work is now its own multi-epic surface and is left for a future planning round.
+
+**Loop 15 acknowledged limitations**:
+- The `T2482_LOOP15_VERIFICATION.md` gates do NOT include a production `npm run build`. Loop 15 added zero code lines so the existing dist/ from prior loops remains valid; deferring to next regular build cadence.
+- Visual-regression baselines were never run as part of T2482; per MIDI_SERVICES.md exit criteria, that gate was deferred to standing visual-regression cadence.
+- The T2483 follow-up bundle's 10 items are catalogued but not all individually worked through — the bundle's DoD allows shipping any 3 of 10 + explicitly deferring the rest with rationale.
