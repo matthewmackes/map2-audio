@@ -86,6 +86,7 @@ const MidiServicesEventsPage = lazy(() => import('./pages/midi-services/MidiServ
 const MidiServicesProcessingPage = lazy(() => import('./pages/midi-services/MidiServicesProcessingPage').then(m => ({ default: m.MidiServicesProcessingPage })))
 const MidiServicesLabPage = lazy(() => import('./pages/midi-services/MidiServicesLabPage').then(m => ({ default: m.MidiServicesLabPage })))
 const MidiServicesTransportPage = lazy(() => import('./pages/midi-services/MidiServicesTransportPage').then(m => ({ default: m.MidiServicesTransportPage })))
+const MidiServicesConnectionsPage = lazy(() => import('./pages/midi-services/MidiServicesConnectionsPage').then(m => ({ default: m.MidiServicesConnectionsPage })))
 const MidiHubConnectionsPage = lazy(() => import('./pages/midi-hub/MidiHubConnectionsPage').then(m => ({ default: m.MidiHubConnectionsPage })))
 const MidiHubPresetsPage    = lazy(() => import('./pages/midi-hub/MidiHubPresetsPage').then(m => ({ default: m.MidiHubPresetsPage })))
 const MidiHubTransportPage  = lazy(() => import('./pages/midi-hub/MidiHubTransportPage').then(m => ({ default: m.MidiHubTransportPage })))
@@ -547,11 +548,10 @@ export function App() {
                                     operator-visible labels. */}
                                 <Route path="/midi/*" element={<RouteBoundary title="MIDI Services view crashed" actionLabel="Reload MIDI Services"><MidiServicesShell /></RouteBoundary>}>
                                   <Route index element={<Navigate to="connections" replace />} />
-                                  {/* Connections still stays on the MidiHub page;
-                                      a dedicated MidiServicesConnectionsPage queues for
-                                      loop 15+. Transport flipped to MidiServicesTransportPage
-                                      in iter 132 (P3.6). */}
-                                  <Route path="connections" element={<MidiHubConnectionsPage />} />
+                                  {/* Connections flipped to MidiServicesConnectionsPage
+                                      in iter 154 (T2483-2). Transport flipped to
+                                      MidiServicesTransportPage in iter 132 (P3.6). */}
+                                  <Route path="connections" element={<MidiServicesConnectionsPage />} />
                                   <Route path="presets" element={<MidiServicesPresetsPage />} />
                                   <Route path="transport" element={<MidiServicesTransportPage />} />
                                   <Route path="events" element={<MidiServicesEventsPage />} />
