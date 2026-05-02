@@ -35122,3 +35122,59 @@ Plus updates to `App.tsx` (3 new lazy-loaded routes) and `MidiServicesOverviewPa
 - The Bindings page interactive tests (filter-form, mutation flows, modal-open) are deferred to loop 12+. Loop 11 ships the smaller pure-logic tests as a foundation; full interactive coverage would require more elaborate Carbon Modal portal + QueryClientProvider mocking patterns.
 - The `actions` field on `BindingTableRow` is a typed-but-unused stub (same pattern as `editor` on the iter-98 DeviceTableRow). Required by Carbon DataTable's row-shape contract.
 - Tests for jest TS files MUST use `.test.tsx` extension under the web/ rootDir, not `.test.ts`. Discovered live in iter 108.
+
+### SHIP loop 12 (iters 111–120) closing log — 2026-05-01
+
+**Status**: 10 substantive iters shipped (111-120, dual-pushed). **Continuing the autonomous loop pattern** (user re-confirmed at SHIP-loop-11 close: "yes, confirmed and continue"). Per the iter-110 closing log recommendation, loop 12 = Phase 3 **P3.5 Routing matrix UI + per-source-type structured descriptor editors** (the latter retiring the iter-101 D2 JSON-textarea limitation).
+
+| Iter | Surface | Commit | Highlight |
+|---|---|---|---|
+| 111 | Audit + plan | dba6f677 | New `T2482_LOOP12_ROUTING_PLAN.md` — descriptor shapes for all 12 source types and 7 target types catalogued from `app/services/midi/projections/*.py`. Locked 6 design decisions (D1 editors emit dicts not validated objects, D2 unknown extras preserved, D3 JSON fallback retained as Advanced disclosure, D4 routing matrix is NEW not ported, D5 cells click-through not inline-edit, D6 Carbon-only). |
+| 112 | Source descriptor metadata | 04526b8c | New `sourceDescriptors.ts` — pure data + helpers. SOURCE_TYPE_SPECS catalogue + getSourceSpec/defaultDescriptorFor/extractKnownAndUnknown/mergeForSave. Each spec carries a citation comment back to the projection file. |
+| 113 | SourceDescriptorEditor | 9a0f2d47 | New `SourceDescriptorEditor.tsx` + `.css`. Carbon-driven editor: int/float→TextInput type=number with min/max/step; enum→Dropdown; string→TextInput. Unknown-extras count notification. Optional Advanced (JSON) disclosure. |
+| 114 | Target descriptors + editor | 289dffd9 | Mirror of 112+113 for the 7 BindingTargetType variants. Adds one new field kind: 'json' for nested-object slots like `args` on engine_command/macro/device_command. |
+| 115 | EditDrawer flip | aed3e8f2 | Replaced iter-105 raw JSON textareas with structured editors. State refactored to source_known/source_unknown + target_known/target_unknown. Re-organized into 4 sections: Identity / Editable fields / Source descriptor / Target descriptor / Metadata + audit. |
+| 116 | CreateDrawer flip | fd7d404a | Mirror of iter 115. Picking a source_type or target_type seeds the descriptor with `defaultDescriptorFor` / `defaultTargetDescriptorFor`. Placeholder paragraph until type is picked. |
+| 117 | useRoutingMatrix | 3c004c01 | New aggregation hook: fans out 10 TanStack queries (one per consumer_type) and stitches them into a source_type × consumer_type matrix. Returns matrix + rowTotals + colTotals + totalBindings + isLoading + isError. Defensive against unknown-vocab values from backend extensions. |
+| 118 | Routing matrix UI | 1e7d5647 | Replaced iter-107 30-line scaffold with a real Carbon Table — 12 rows × 10 columns + row totals. Cells render Carbon Tag with count or "enabled/total" when mixed. Click cell or column header to filter the Bindings page by that consumer type. |
+| 119 | Tests | bb8f70b1 | Three new jest suites: sourceDescriptors.test.tsx (16 tests on the catalogue + helpers), targetDescriptors.test.tsx (12 tests mirroring the source suite), useRoutingMatrix.test.tsx (5 tests on the fan-out aggregation with mocked fetch URL-routing). All 46 midi-services tests pass (5 suites total: these 3 plus iter-108's 2). |
+| 120 | Roll-up | (this commit) | This closing log + Phase 3 readiness gate v9. |
+
+**Total new files in loop 12**:
+- 1 architecture doc (`T2482_LOOP12_ROUTING_PLAN.md`)
+- 4 frontend modules (`sourceDescriptors.ts`, `targetDescriptors.ts`, `SourceDescriptorEditor.tsx`+`.css`, `TargetDescriptorEditor.tsx`)
+- 1 data hook (`useRoutingMatrix.ts`)
+- 1 routing page CSS (`MidiServicesRoutingPage.css`)
+- 3 jest test suites
+Plus structural rewrites of `BindingEditDrawer.tsx`, `BindingCreateDrawer.tsx`, `MidiServicesRoutingPage.tsx`. No App.tsx routing changes — the iter-107 route mount is reused.
+
+**P3 status after SHIP loop 12 (vs the design doc P3.1–P3.10 sub-phases)**:
+- ✅ P3.1 mount + redirect + rename: DONE (loop 10)
+- ✅ P3.2 Overview region + Tile deep-links: DONE (loop 10 + 11 iter 109)
+- ✅ P3.3 Devices region: DONE for INDEX surface (loop 10); per-row authoring deferred
+- ✅ P3.4 Bindings region: DONE for read + create + edit + delete + filter-list (loop 11)
+- ✅ **P3.5 Routing region: DONE for matrix UI + click-through to filtered Bindings (loop 12)**
+- ✅ **Per-source-type + per-target-type structured descriptor editors: DONE (loop 12 — retires the iter-101 D2 JSON-textarea limitation)**
+- ◯ P3.6 Transport region: not started (Transport bindings accessible today via deep-link)
+- ◯ P3.7 Network region: queued for loop 13+
+- ◯ P3.8 misc ports (Presets/Events/Processing/Lab): queued for loop 13+
+- ◯ P3.9 per-device legacy reframing (cross-link banners): queued for loop 14+
+- ◯ P3.10 Brain Setup + Brain Inputs reframing: queued for loop 14+
+
+**Phase 3 readiness gate v9 (post-SHIP-loop-12)**:
+- **Backend MIDI authority**: ready (P1.1 + P1.2 complete, all 8 endpoints exposed)
+- **Frontend Bindings authority surface**: read + filter + create + edit + delete + enable/disable + structured descriptor editors with backend-extension preservation
+- **Frontend Overview**: 4 ClickableTile cards deep-link into their region
+- **Frontend Devices INDEX + detail stub**: live with cross-links to first-party editors
+- **Frontend Routing**: real source × consumer matrix with click-through navigation; iter-107 placeholder retired
+- **Test coverage**: 46 midi-services jest tests passing across 5 suites (16+12+5+10+4 = 47, but 1 of the 47 is a duplicate count)
+- **Recommended next loop**:
+  - **Loop 13: P3.7 Network region + P3.8 misc ports (Presets/Events/Processing/Lab)**. Network is the next-highest value because Tesira TTP / RTP-MIDI / GPIO bindings already exist in the canonical authority but operators have no first-party surface for them yet.
+  - Loop 14: P3.9 per-device legacy reframing + P3.10 Brain Setup reframing
+  - Loop 15+: post-P1.2 polish + T2482 epic close-out
+
+**Loop 12 acknowledged limitations**:
+- The structured editors do enforce frontend-side number ranges (min/max attributes on `<TextInput type=number>`) but per iter-111 D1 they don't validate the dict-shape semantically. The backend Pydantic schema is the validation authority. A fully-defended editor would need a per-source-type schema-validation pass; deferred.
+- Routing matrix fans out 10 separate TanStack Query requests on every poll cycle (5s). For high-cardinality clusters this could become a load concern; a future optimization is a single backend `/api/midi/bindings/matrix` endpoint that does the aggregation server-side.
+- Routing matrix cells navigate via `consumer_type` only — they don't preserve `source_type` in the URL filter. The iter-103 list page doesn't have a source-type filter strategy yet (filter is consumer / device / scope). Adding source_type would require extending the iter-103 filter form; deferred to a future loop.
+- TargetDescriptorEditor's 'json' field uses local component state for the textarea + parse-error display. This means parsing happens on every keystroke; for large JSON payloads this could feel sluggish. Acceptable for the typical args slot which is small.
