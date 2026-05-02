@@ -1,0 +1,44 @@
+/* T2485-3 — generic flow-canvas shell layout. */
+
+.device-flow-canvas-shell {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cds-spacing-03, 0.5rem);
+  height: 100%;
+  min-height: 0;
+}
+
+.device-flow-canvas-shell__toolbar {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: var(--cds-spacing-03, 0.5rem);
+  padding-block: var(--cds-spacing-02, 0.25rem);
+  border-block-end: 1px solid var(--cds-border-subtle, #e0e0e0);
+}
+
+.device-flow-canvas-shell__body {
+  flex: 1 1 auto;
+  display: flex;
+  min-height: 0;
+  gap: var(--cds-spacing-04, 0.75rem);
+}
+
+.device-flow-canvas-shell__sidebar {
+  flex: 0 0 auto;
+  width: 320px;
+  min-width: 240px;
+  max-width: 420px;
+  overflow-y: auto;
+  border-inline: 1px solid var(--cds-border-subtle, #e0e0e0);
+  background: var(--cds-layer, #ffffff);
+}
+
+.device-flow-canvas-shell__canvas {
+  flex: 1 1 auto;
+  min-width: 0;
+  min-height: 0;
+  position: relative;
+  overflow: auto;
+  background: var(--cds-background, #f4f4f4);
+}
