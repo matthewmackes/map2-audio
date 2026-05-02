@@ -109,12 +109,18 @@ async def get_last_observed_cc() -> Optional[LastCcResponse]:
 
 
 class ClusterPeerMatrix(BaseModel):
-    """T2484-1 iter 182 — one peer's matrix slice in the cluster response."""
+    """T2484-1 iter 182 — one peer's matrix slice in the cluster response.
+    T2484-4 iter 195 — added `health` field sourced from NodeHealthService.
+    """
 
     node_id: str
     hostname: str
     matrix: dict[str, dict[str, MatrixCell]]
     total_bindings: int
+    # 'ok' | 'warn' | 'critical' | 'offline' | 'unreachable' (last is
+    # set when the matrix fetch failed but discovery still listed the
+    # peer)
+    health: str = "offline"
 
 
 class ClusterBindingsMatrixResponse(BaseModel):
@@ -142,8 +148,15 @@ async def _fetch_peer_matrix(
     hostname: str,
     api_url: str,
     timeout_s: float,
+    health: str = "offline",
 ) -> tuple[Optional[ClusterPeerMatrix], Optional[str]]:
-    """Single-peer fetch helper. Returns (matrix_or_none, error_or_none)."""
+    """Single-peer fetch helper. Returns (matrix_or_none, error_or_none).
+
+    T2484-4 iter 195 — `health` is passed in from the route handler
+    after a NodeHealthService.get_remote_health call; baked into the
+    returned ClusterPeerMatrix so the frontend doesn't need a second
+    fetch.
+    """
     import httpx
 
     try:
@@ -158,6 +171,7 @@ async def _fetch_peer_matrix(
                     hostname=hostname,
                     matrix=payload.get("matrix", {}),
                     total_bindings=int(payload.get("total_bindings", 0)),
+                    health=health,
                 ),
                 None,
             )
@@ -190,14 +204,32 @@ async def get_cluster_bindings_matrix() -> ClusterBindingsMatrixResponse:
     if not peer_records:
         return ClusterBindingsMatrixResponse(local=local, peers=[], errors={})
 
+    # T2484-4 iter 195 — fetch per-peer health alongside the matrix
+    # so the frontend gets it in one round-trip. Health failures degrade
+    # to 'offline' silently; matrix failures still populate `errors`.
+    from app.services.node_health_service import get_node_health_service
+
+    health_service = get_node_health_service()
+
+    async def _peer_health(peer):
+        try:
+            health = await health_service.get_remote_health(peer.host)
+            return getattr(health, "status", "offline")
+        except Exception:
+            return "offline"
+
+    health_tasks = [_peer_health(peer) for peer in peer_records]
+    healths = await asyncio.gather(*health_tasks, return_exceptions=False)
+
     tasks = [
         _fetch_peer_matrix(
             node_id=peer.node_id,
             hostname=peer.hostname,
             api_url=peer.api_url or f"http://{peer.host}:8080",
             timeout_s=2.0,
+            health=health,
         )
-        for peer in peer_records
+        for peer, health in zip(peer_records, healths)
     ]
     results = await asyncio.gather(*tasks, return_exceptions=False)
 
