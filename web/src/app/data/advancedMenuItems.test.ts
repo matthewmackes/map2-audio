@@ -141,15 +141,15 @@ describe('navigation catalog', () => {
 
   it('keeps the advanced menu limited to explicitly designated routes', () => {
     const advancedItems = advancedMenuItems
+    // T2485-8 — 7 MIDI device entries (Push, MCU, LaunchControl,
+    // MidiCommander, MPX1, IntelFX, GroundControlPro) flipped to
+    // includeInAdvancedMenu=false (sidebar collapse 9→1). The single
+    // MIDI Services entry at /midi remains. Iter-94 also renamed
+    // /midi-hub → /midi.
     expect(advancedItems.map((item) => item.to)).toEqual([
-      '/midi-hub',
+      '/midi',
       '/devices',
       '/state-authority',
-      '/mcu',
-      '/launch-control',
-      '/midi-commander',
-      '/mpx1',
-      '/intelfx',
       '/tesira',
       '/edirol-ua1000',
       '/hotone-jogg',
@@ -174,22 +174,35 @@ describe('navigation catalog', () => {
   it('does not expose removed Nodes or Multi-System navigation cards', () => {
     const nodes = navigationCatalogItems.find((item) => item.label === 'Nodes')
     const multiSystem = navigationCatalogItems.find((item) => item.label === 'Multi-System')
-    const midi = navigationCatalogItems.find((item) => item.to === '/midi')
+    // T2482 iter 94 — /midi is now the canonical MIDI Services entry
+    // (renamed from /midi-hub). It IS expected to be in the catalog.
+    const midiServicesEntry = navigationCatalogItems.find((item) => item.to === '/midi')
     const audioTable = navigationCatalogItems.find((item) => item.to === '/audio-table')
 
     expect(nodes).toBeUndefined()
     expect(multiSystem).toBeUndefined()
-    expect(midi).toBeUndefined()
+    expect(midiServicesEntry).toBeDefined()
+    expect(midiServicesEntry?.label).toBe('MIDI Services')
     expect(audioTable).toBeUndefined()
   })
 
-  it('keeps MPX1 Rack, IntelFX Rack, and Tesira AVB in advanced navigation only', () => {
-    for (const route of ['/mpx1', '/intelfx', '/tesira']) {
+  it('keeps MPX1 Rack, IntelFX Rack, and Tesira AVB in the navigation catalog', () => {
+    // T2485-8 — MPX1/IntelFX entries flipped to includeInAdvancedMenu=false
+    // (sidebar collapse 9→1) and the `to` route flipped to the unified
+    // /midi/devices/<profile-key>/panel mount. The launcher catalog keeps
+    // them so operators can still find them; only the sidebar entry is
+    // retired. Tesira AVB stays in advanced nav unchanged.
+    const routeChecks: Array<{ route: string; expectInAdvanced: boolean; tesira?: boolean }> = [
+      { route: '/midi/devices/lexicon-mpx1/panel', expectInAdvanced: false },
+      { route: '/midi/devices/rocktron-intelfx/panel', expectInAdvanced: false },
+      { route: '/tesira', expectInAdvanced: true, tesira: true },
+    ]
+    for (const { route, expectInAdvanced, tesira } of routeChecks) {
       const item = navigationCatalogItems.find((candidate) => candidate.to === route)
       expect(item).toBeDefined()
-      expect(item?.includeInAdvancedMenu).toBe(true)
+      expect(item?.includeInAdvancedMenu).toBe(expectInAdvanced)
       expect(item?.showOnHome).toBe(false)
-      if (route === '/tesira') {
+      if (tesira) {
         expect(item?.pinnable).toBe(false)
       }
 

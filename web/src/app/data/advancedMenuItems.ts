@@ -249,6 +249,7 @@ const baseNavigationCatalog: ShellNavigationItem[] = [
     showOnHome: false,
   },
   {
+    // T2485-8 — Push Surface; sidebar entry retired (operator finds it via /midi/devices/ableton-push-3 or homepage MIDI section).
     to: '/labs/push-surface',
     label: 'Push Surface',
     shortLabel: 'Push',
@@ -264,6 +265,7 @@ const baseNavigationCatalog: ShellNavigationItem[] = [
     deviceType: 'ableton-push',
   },
   {
+    // T2485-8 — MCU; sidebar entry retired.
     to: '/mcu',
     label: 'MCU Pro',
     shortLabel: 'MCU',
@@ -271,7 +273,7 @@ const baseNavigationCatalog: ShellNavigationItem[] = [
     description: 'Open the dedicated Mackie MCU Pro editor for connection posture, fader-bank preview, scribble strips, parameter-page browsing, and transport status.',
     color: 'var(--cds-support-info)',
     homeSection: 'MIDI',
-    includeInAdvancedMenu: true,
+    includeInAdvancedMenu: false,
     pinnable: false,
     maturity: 'beta',
     kind: 'link',
@@ -279,6 +281,7 @@ const baseNavigationCatalog: ShellNavigationItem[] = [
     deviceType: 'mackie-mcu-pro',
   },
   {
+    // T2485-8 — Launch Control; sidebar entry retired.
     to: '/launch-control',
     label: 'Launch Control',
     shortLabel: 'Launch',
@@ -286,7 +289,7 @@ const baseNavigationCatalog: ShellNavigationItem[] = [
     description: 'Open the dedicated Novation Launch Control editor for connection posture, template status, live mapping review, and LED override editing.',
     color: 'var(--cds-support-success)',
     homeSection: 'MIDI',
-    includeInAdvancedMenu: true,
+    includeInAdvancedMenu: false,
     pinnable: false,
     maturity: 'beta',
     kind: 'link',
@@ -294,6 +297,7 @@ const baseNavigationCatalog: ShellNavigationItem[] = [
     deviceType: 'novation-launch-control',
   },
   {
+    // T2485-8 — MIDI Commander; sidebar entry retired.
     to: '/midi-commander',
     label: 'MIDI Commander',
     shortLabel: 'Commander',
@@ -301,7 +305,7 @@ const baseNavigationCatalog: ShellNavigationItem[] = [
     description: 'Open the dedicated MeloAudio MIDI Commander editor for connection posture, manual setup guidance, and per-button or expression assignment editing.',
     color: 'var(--cds-support-warning)',
     homeSection: 'MIDI',
-    includeInAdvancedMenu: true,
+    includeInAdvancedMenu: false,
     pinnable: false,
     maturity: 'beta',
     kind: 'link',
@@ -309,27 +313,34 @@ const baseNavigationCatalog: ShellNavigationItem[] = [
     deviceType: 'meloaudio-midi-commander',
   },
   {
-    to: '/mpx1',
+    // T2485-8 — MPX1; sidebar entry retired AND mega-menu kind retired
+    // (kind: 'mpx1-mega-menu' → 'link'). The unified /midi/devices/lexicon-mpx1
+    // mount is the canonical authoring path now.
+    // Route flipped to the new canonical /midi/devices/lexicon-mpx1/panel
+    // so launcher / homepage cards point at the unified mount; the legacy
+    // /mpx1 path still hard-redirects there from App.tsx.
+    to: '/midi/devices/lexicon-mpx1/panel',
     label: 'MPX1 Rack',
     icon: MapRackDeviceIcon,
     description: 'Control the Lexicon MPX-1 from MAP2, including editor access, live program changes, diagnostics, library tasks, and MIDI mapping tools.',
     color: 'var(--cds-link-primary)',
     homeSection: 'MIDI',
-    includeInAdvancedMenu: true,
+    includeInAdvancedMenu: false,
     pinnable: true,
     maturity: 'beta',
-    kind: 'mpx1-mega-menu',
+    kind: 'link',
     showOnHome: false,
     deviceType: 'lexicon-mpx1',
   },
   {
-    to: '/intelfx',
+    // T2485-8 — IntelFX; sidebar entry retired. Route flipped to unified mount.
+    to: '/midi/devices/rocktron-intelfx/panel',
     label: 'IntelFX Rack',
     icon: MapRackDeviceIcon,
     description: 'Control the Rocktron Intellifex from MAP2, including signal flow editing, preset library, MIDI mapping, scenes, and real-time parameter control.',
     color: '#e53935',
     homeSection: 'MIDI',
-    includeInAdvancedMenu: true,
+    includeInAdvancedMenu: false,
     pinnable: true,
     maturity: 'beta',
     kind: 'link',
