@@ -643,6 +643,31 @@ def _ensure_midi_bindings_schema_sync() -> None:
             logger.info("Created midi_bindings table (T2482-P2.1)")
 
 
+def _ensure_avb_bindings_schema_sync() -> None:
+    """T2490-2: create the avb_bindings table (canonical AVB binding
+    authority). Idempotent — checks for the table before creating.
+
+    Sister of `_ensure_midi_bindings_schema_sync`. See
+    app/services/avb/binding_models.py for the ORM model and the T2490
+    epic in docs/PROJECT_WORKLIST.md for design intent.
+    """
+    if _engine is None or _engine.dialect.name != "sqlite":
+        return
+
+    from app.services.avb.binding_models import avb_bindings_table
+
+    with _engine.begin() as conn:
+        result = conn.execute(
+            text(
+                "SELECT name FROM sqlite_master "
+                "WHERE type='table' AND name='avb_bindings'"
+            )
+        )
+        if result.fetchone() is None:
+            avb_bindings_table.create(bind=conn)
+            logger.info("Created avb_bindings table (T2490-2)")
+
+
 def _sqlite_columns(conn, table_name: str) -> set[str]:
     result = conn.execute(text(f"PRAGMA table_info({table_name})"))
     return {str(row[1]) for row in result.fetchall()}
@@ -1046,6 +1071,27 @@ async def _ensure_midi_bindings_schema_async(conn) -> None:
         logger.info("Created midi_bindings table (T2482-P2.1) via async path")
 
 
+async def _ensure_avb_bindings_schema_async(conn) -> None:
+    """T2490-2: async sibling of `_ensure_avb_bindings_schema_sync`.
+
+    Creates the avb_bindings table if it doesn't exist. Idempotent.
+    """
+    if conn.dialect.name != "sqlite":
+        return
+
+    from app.services.avb.binding_models import avb_bindings_table
+
+    result = await conn.execute(
+        text(
+            "SELECT name FROM sqlite_master "
+            "WHERE type='table' AND name='avb_bindings'"
+        )
+    )
+    if result.fetchone() is None:
+        await conn.run_sync(avb_bindings_table.create)
+        logger.info("Created avb_bindings table (T2490-2) via async path")
+
+
 async def _sqlite_columns_async(conn, table_name: str) -> set[str]:
     result = await conn.execute(text(f"PRAGMA table_info({table_name})"))
     return {str(row[1]) for row in result.fetchall()}
@@ -1368,6 +1414,12 @@ SCHEMA_MIGRATIONS: Sequence[tuple[int, str, MigrationSync, MigrationAsync]] = (
     # Foundation for the MIDI Services unification — every legacy MIDI
     # binding store collapses into rows of this table over Phase 2.
     (12, "midi_bindings_canonical_authority", _ensure_midi_bindings_schema_sync, _ensure_midi_bindings_schema_async),
+    # T2490-2: avb_bindings canonical authority table.
+    # Foundation for the AVB Services unification — every operator-visible
+    # AVB authority (AVDECC stream pair, Tesira preset/block, cluster
+    # routing decision, SRP reservation) collapses into rows of this
+    # table. T2490-3 refactors avb_router.py to consume this authority.
+    (13, "avb_bindings_canonical_authority", _ensure_avb_bindings_schema_sync, _ensure_avb_bindings_schema_async),
 )
 
 

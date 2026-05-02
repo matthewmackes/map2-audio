@@ -1154,6 +1154,18 @@ def create_app():
             logger.info("MIDI Services routes registered (T2482-P3.1)")
         except Exception as e:
             logger.warning(f"Failed to load MIDI Services routes: {e}")
+
+        # T2490-2: AVB Services canonical authority routes
+        # (/api/avb/bindings, GET/POST/PATCH/DELETE/disable/enable).
+        # Sister of /api/midi/bindings; second of the four standing
+        # first-class platform services (MIDI, AVB, Sampler, Audio
+        # Effects). T2490-3 refactors avb_router.py to consume this.
+        try:
+            from app.services.avb.binding_routes import router as avb_services_router
+            app.include_router(avb_services_router)
+            logger.info("AVB Services routes registered (T2490-2)")
+        except Exception as e:
+            logger.warning(f"Failed to load AVB Services routes: {e}")
         
         # HTTP GET handlers
         from fastapi.responses import HTMLResponse, JSONResponse, FileResponse

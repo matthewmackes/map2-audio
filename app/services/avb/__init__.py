@@ -36,10 +36,41 @@ def is_avb_available() -> bool:
         return False
 
 
+# T2490-2 — re-export the canonical AvbBinding authority surface so
+# tests + projection adapters can `from app.services.avb import ...`.
+from app.services.avb.binding_authority import (
+    AvbBindingAuthority,
+    AvbBindingNotFound,
+)
+from app.services.avb.binding_models import AvbBinding
+from app.services.avb.binding_schemas import (
+    AvbBindingConsumerType,
+    AvbBindingCreate,
+    AvbBindingRead,
+    AvbBindingScope,
+    AvbBindingSourceType,
+    AvbBindingTargetType,
+    AvbBindingUpdate,
+    AvbSrpClass,
+)
+
+
 __all__ = [
     "is_avb_available",
     "get_avb_readiness",
     "get_srp_admission_service",
+    # T2490-2 canonical AvbBinding surface
+    "AvbBinding",
+    "AvbBindingAuthority",
+    "AvbBindingNotFound",
+    "AvbBindingConsumerType",
+    "AvbBindingScope",
+    "AvbBindingSourceType",
+    "AvbBindingTargetType",
+    "AvbSrpClass",
+    "AvbBindingCreate",
+    "AvbBindingRead",
+    "AvbBindingUpdate",
 ]
 
 
