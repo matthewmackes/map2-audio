@@ -1,19 +1,18 @@
 /**
  * T2482 loop 10 / iter 99 — /midi/devices/:profileKey detail stub.
+ * T2483 loop 16 / iter 152 — added Edit row action via OverflowMenu
+ *   wired to the iter-105 BindingEditDrawer (closes the loop-10
+ *   limitation that the detail page was read-only).
  *
- * Read-only audit/inspection surface for a single device-pack profile.
  * Per the iter-97 audit §4:
  *   - Header: vendor + model + Enabled/Disabled Tag.
  *   - Bindings list: every binding row matching the profile_key.
  *   - Cross-link banner: if a per-device editor route is known
  *     (resolveDevicePackEditor), render an InlineNotification linking
  *     to the canonical editor.
- *
- * NO mutation surface in iter 99. Per-row enable/disable toggles +
- * override authoring land in iter 100+ (out of loop-10 scope).
  */
 
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { useParams, Link as RouterLink } from 'react-router-dom'
 import {
   Breadcrumb,
@@ -23,6 +22,8 @@ import {
   InlineNotification,
   Layer,
   Link as CarbonLink,
+  OverflowMenu,
+  OverflowMenuItem,
   Section,
   Table,
   TableBody,
@@ -39,6 +40,7 @@ import {
   type DevicePackBindingRecord,
 } from './useDevicePackBindings'
 import { resolveDevicePackEditor } from './devicePackEditorRoutes'
+import { BindingEditDrawer } from './BindingEditDrawer'
 import './MidiServicesDevicePage.css'
 
 const HEADERS = [
@@ -48,6 +50,7 @@ const HEADERS = [
   { key: 'scope', header: 'Scope' },
   { key: 'device_id', header: 'Device' },
   { key: 'enabled', header: 'Enabled' },
+  { key: 'actions', header: '' },  // T2483-1A iter 152
 ]
 
 interface BindingTableRow {
@@ -58,6 +61,7 @@ interface BindingTableRow {
   scope: string
   device_id: string
   enabled: boolean
+  actions: string  // T2483-1A unused, Carbon DataTable contract
 }
 
 function rowsForProfile(
@@ -74,6 +78,7 @@ function rowsForProfile(
       scope: b.scope_id ? `${b.scope}/${b.scope_id}` : b.scope,
       device_id: b.device_id ?? '—',
       enabled: b.enabled,
+      actions: '',
     }))
 }
 
@@ -81,6 +86,7 @@ export function MidiServicesDevicePage() {
   const { profileKey: rawProfileKey } = useParams<{ profileKey: string }>()
   const profileKey = rawProfileKey ? decodeURIComponent(rawProfileKey) : ''
   const { rawBindings, isLoading, isError } = useDevicePackBindings()
+  const [editId, setEditId] = useState<string | null>(null)
 
   const tableRows = useMemo(
     () => rowsForProfile(rawBindings, profileKey),
@@ -194,6 +200,22 @@ export function MidiServicesDevicePage() {
                             </TableCell>
                           )
                         }
+                        if (cell.info.header === 'actions') {
+                          return (
+                            <TableCell key={cell.id} className="midi-services-device__actions-cell">
+                              <OverflowMenu
+                                iconDescription="Row actions"
+                                size="sm"
+                                flipped
+                              >
+                                <OverflowMenuItem
+                                  itemText="Edit"
+                                  onClick={() => setEditId(dtRow.id)}
+                                />
+                              </OverflowMenu>
+                            </TableCell>
+                          )
+                        }
                         return <TableCell key={cell.id}>{String(cell.value)}</TableCell>
                       })}
                     </TableRow>
@@ -204,6 +226,12 @@ export function MidiServicesDevicePage() {
           )}
         </DataTable>
       </Layer>
+
+      <BindingEditDrawer
+        bindingId={editId}
+        open={editId !== null}
+        onClose={() => setEditId(null)}
+      />
     </Section>
   )
 }

@@ -39,6 +39,11 @@
   font-size: 0.8125rem;
 }
 
+.midi-services-device__actions-cell {
+  width: 3rem;
+  padding: 0;
+}
+
 .midi-services-device__editor-banner {
   display: flex;
   flex-direction: column;
