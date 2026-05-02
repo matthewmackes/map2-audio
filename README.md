@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1441** Python | **1473** TypeScript | **177** C++/H | **145** Docs | **3584** total commits | **3** stars | **0** forks | **0** open issues
+**1441** Python | **1486** TypeScript | **177** C++/H | **145** Docs | **3587** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`0863e4f1`](https://github.com/matthewmackes/map2-audio/commit/0863e4f18d9461bd857c1673ff4c4aef4534b432) | feat(T2487-3/4/5): mount Expression under /midi/devices/e... | Map2 Audio | 2026-05-02 |
+| [`fa8a6f09`](https://github.com/matthewmackes/map2-audio/commit/fa8a6f094b5e8891a550a0e25d538f0ccef0aa94) | refactor(T2487-2): extract ExpressionPage's 8 sub-compone... | Map2 Audio | 2026-05-02 |
+| [`300062a5`](https://github.com/matthewmackes/map2-audio/commit/300062a57e15420db8e61786b7a2c8230ed2e07f) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-02 |
 | [`e3e606c6`](https://github.com/matthewmackes/map2-audio/commit/e3e606c626fccebcd1798404992250253d610b66) | docs(T2487): revise Q2=A from view-tab split to file-leve... | Map2 Audio | 2026-05-02 |
 | [`5406ca6f`](https://github.com/matthewmackes/map2-audio/commit/5406ca6f3161c58b31a34166901ec7f83da01be1) | feat(T2486-4): test suites for cluster auto-connect onboa... | Map2 Audio | 2026-05-02 |
 | [`75c3516f`](https://github.com/matthewmackes/map2-audio/commit/75c3516f1f77dd86f20b9014d34b1e754a16af0f) | feat(T2486-3): PlatformEvent emission on operator cluster... | Map2 Audio | 2026-05-02 |
 | [`c9e96bae`](https://github.com/matthewmackes/map2-audio/commit/c9e96bae6c75f7fe02722dbf62f9465fcd0147a8) | feat(T2486-2): auto-connect-off advisory inline notification | Map2 Audio | 2026-05-02 |
 | [`bfe70479`](https://github.com/matthewmackes/map2-audio/commit/bfe70479563be3ef98a1b311a76a8e8eee3b4c27) | feat(T2486-1): MIDI cluster auto-connect onboarding modal | Map2 Audio | 2026-05-02 |
-| [`f16dd11a`](https://github.com/matthewmackes/map2-audio/commit/f16dd11ae8175bdb210e268b3c0a000adbfec7bd) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-02 |
-| [`b4fae37f`](https://github.com/matthewmackes/map2-audio/commit/b4fae37f9c3e149b805a70bbde4815299c1fbaf9) | docs(T2485-9): T2485 close-out — closeout doc + worklist ... | Map2 Audio | 2026-05-02 |
-| [`3e1a5d7f`](https://github.com/matthewmackes/map2-audio/commit/3e1a5d7f0fd723d1776a88fee64b8bdf7b230217) | feat(T2485-8): collapse 9 sidebar MIDI entries to 1 + ret... | Map2 Audio | 2026-05-02 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
