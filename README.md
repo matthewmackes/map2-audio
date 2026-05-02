@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1441** Python | **1488** TypeScript | **177** C++/H | **145** Docs | **3599** total commits | **3** stars | **0** forks | **0** open issues
+**1441** Python | **1497** TypeScript | **177** C++/H | **145** Docs | **3601** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`cf9dc1a7`](https://github.com/matthewmackes/map2-audio/commit/cf9dc1a7753de0c461f4b5050f5b4391b6a670f6) | feat(T2490-1): scaffold /avb/* operator mount | Map2 Audio | 2026-05-02 |
+| [`9143d5f2`](https://github.com/matthewmackes/map2-audio/commit/9143d5f2862f12df26ff723303a2e97f05384248) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-02 |
 | [`f28e2ae5`](https://github.com/matthewmackes/map2-audio/commit/f28e2ae5fc64b70c6c096f7f23c47a1433cd4026) | docs(T2490): open AVB Services Unification epic + upgrade... | Map2 Audio | 2026-05-02 |
 | [`1302fe98`](https://github.com/matthewmackes/map2-audio/commit/1302fe9892ef33ba01f9efdc1b9334c4164adeee) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-02 |
 | [`fc94554e`](https://github.com/matthewmackes/map2-audio/commit/fc94554eb5f101999921a3f6a2dfee246de256ef) | docs(MIDI_SERVICES_CLOSED_OUT): record T2487/T2488/T2489 ... | Map2 Audio | 2026-05-02 |
 | [`e55a5824`](https://github.com/matthewmackes/map2-audio/commit/e55a58241bab9166774ce8721c3578e1c3b4a48b) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-02 |
 | [`4eea75b6`](https://github.com/matthewmackes/map2-audio/commit/4eea75b6445957c3303bc48610d890f39cde7130) | chore(T2481/T2487-9): delete orphaned cross-link landings... | Map2 Audio | 2026-05-02 |
 | [`669f4686`](https://github.com/matthewmackes/map2-audio/commit/669f46866483c8146eea58df5db5d63cd5456f9c) | style(T2481): Carbon-deepening Iter 2 — PushSurfacePage.c... | Map2 Audio | 2026-05-02 |
-| [`507c0832`](https://github.com/matthewmackes/map2-audio/commit/507c0832e680f0c1fe6cfbefd5c5d344cc6cc139) | style(T2481): Carbon-deepening pass on ExpressionPage.mod... | Map2 Audio | 2026-05-02 |
-| [`6b1ada1a`](https://github.com/matthewmackes/map2-audio/commit/6b1ada1a6b734107a4e2a002446bae9c4c0f500a) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-02 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
