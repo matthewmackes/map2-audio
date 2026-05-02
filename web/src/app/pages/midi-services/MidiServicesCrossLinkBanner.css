@@ -1,0 +1,17 @@
+/*
+ * T2482 loop 14 / iter 133 — MidiServicesCrossLinkBanner styles.
+ * Carbon-conformant. No hardcoded colors.
+ */
+
+.midi-services-crosslink-banner {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.midi-services-crosslink-banner__link {
+  align-self: flex-start;
+  padding-left: 1rem;
+  font-size: 0.8125rem;
+}
