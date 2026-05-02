@@ -35292,7 +35292,7 @@ After 4 SHIP loops (10–14) totaling 50 substantive iters and 50+ commits dual-
 ---
 
 ID: T2483
-Status: [ ] Todo
+Status: [✓] Done — 2026-05-02 (10 of 10 sub-items shipped across loops 16+17+18). See PROJECT_WORKLIST closing logs for per-iter detail.
 Title: T2482 follow-up bundle — MidiServices polish + deferred items
 Description:
 - Goal / acceptance criteria: Close the small backlog of polish items + deferred features that the T2482 epic acknowledged but did not block on. None of these are required for MIDI Services to function correctly; they each individually improve operator UX or developer ergonomics.
