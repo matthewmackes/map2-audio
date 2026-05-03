@@ -133,7 +133,7 @@ Forbidden on the audio thread:
 
 LV2 is the production surface. Search paths: `/usr/lib64/lv2:/usr/lib/lv2:/usr/local/lib/lv2`. Plugin metadata is cached at `/tmp/map2_plugin_cache.xml` to avoid re-scanning on every restart.
 
-Native processors live alongside hosted plugins under engine-internal URIs: `map2://juce/nam`, `map2://juce/convolution/cabinet`, `map2://juce/convolution/reverb`, `map2://juce/brain`, `map2://juce/drums`, `map2://juce/synthforge`. From the graph's perspective they are just `AudioProcessor` subclasses; from the snapshot's perspective they are nodes with plugin URIs. The dual identity keeps native and third-party plugins interchangeable in the graph.
+Native processors live alongside hosted plugins under engine-internal URIs: `map2://juce/nam`, `map2://juce/convolution/cabinet`, `map2://juce/convolution/reverb`, `map2://juce/sequencer`, `map2://juce/drums`, `map2://juce/synthforge`. From the graph's perspective they are just `AudioProcessor` subclasses; from the snapshot's perspective they are nodes with plugin URIs. The dual identity keeps native and third-party plugins interchangeable in the graph. (Per T_RENAME 2026-05-02 the URI formerly known as `map2://juce/brain` was hard-cut to `map2://juce/sequencer`; existing snapshots referencing the legacy URI lose their plugin slot and the operator re-adds.)
 
 ## 9. Why JUCE was chosen over alternatives
 
