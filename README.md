@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1466** Python | **1486** TypeScript | **177** C++/H | **145** Docs | **3650** total commits | **3** stars | **0** forks | **0** open issues
+**1467** Python | **1486** TypeScript | **177** C++/H | **145** Docs | **3652** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -175,8 +175,8 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-DOCS:START -->
 | Document | Last Updated |
 |:---------|:------------|
+| [PROJECT WORKLIST](https://github.com/matthewmackes/map2-audio/blob/master/docs/PROJECT_WORKLIST.md) | 2026-05-03 |
 | [MAP2 Audio Platform — AI Instructions](https://github.com/matthewmackes/map2-audio/blob/master/docs/CLAUDE.md) | 2026-05-02 |
-| [PROJECT WORKLIST](https://github.com/matthewmackes/map2-audio/blob/master/docs/PROJECT_WORKLIST.md) | 2026-05-02 |
 | [MAP2 Backend Runtime Contract](https://github.com/matthewmackes/map2-audio/blob/master/docs/backend-runtime-contract.md) | 2026-04-27 |
 | [MAP2 API Contract Standards](https://github.com/matthewmackes/map2-audio/blob/master/docs/api-contract-standards.md) | 2026-04-25 |
 | [MAP2 LCD Console — Operator Guide](https://github.com/matthewmackes/map2-audio/blob/master/docs/LCD_OPERATOR_GUIDE.md) | 2026-04-23 |
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`93ce43a3`](https://github.com/matthewmackes/map2-audio/commit/93ce43a35a534ab6616b3a97ff99d5424f86a097) | feat(T2459-H4 slice 7): wire Lexicon MPX-1 device-pack in... | Map2 Audio | 2026-05-03 |
+| [`aa6a5636`](https://github.com/matthewmackes/map2-audio/commit/aa6a5636750d17c6ad349de09532d87865e41402) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-03 |
 | [`37f9ac44`](https://github.com/matthewmackes/map2-audio/commit/37f9ac4403e8e40ee13388d66f9d8391409252b1) | chore(T2490-10): closeout evidence + epic status flip to ... | Map2 Audio | 2026-05-02 |
 | [`57a79390`](https://github.com/matthewmackes/map2-audio/commit/57a7939086a734517dfd2f72441415d0e34fa537) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-03 |
 | [`4922daa2`](https://github.com/matthewmackes/map2-audio/commit/4922daa2c143a5d05b808a011c6aa99dd87d6104) | feat(T2491-5): Milan v1.2 §5 MVU Python projection + REST... | Map2 Audio | 2026-05-02 |
 | [`70db2590`](https://github.com/matthewmackes/map2-audio/commit/70db2590ef4b401865ab08cf14667b850b964da9) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-03 |
 | [`d2510d99`](https://github.com/matthewmackes/map2-audio/commit/d2510d99e5a676e060c933fa12410a7670f43a2c) | feat(T2491-8): saved-connection persistence + replay surface | Map2 Audio | 2026-05-02 |
 | [`be2cd515`](https://github.com/matthewmackes/map2-audio/commit/be2cd5155c5127cd8eec57bbe6124830e2bff925) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-03 |
-| [`379817a1`](https://github.com/matthewmackes/map2-audio/commit/379817a1106e12700930001614d79d51292f360a) | feat(T2491-11 slice 1): BMCA grandmaster reselection obse... | Map2 Audio | 2026-05-02 |
-| [`25396a91`](https://github.com/matthewmackes/map2-audio/commit/25396a917c1ac36023b9ea8ba75d4bda5aa5c719) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-03 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
