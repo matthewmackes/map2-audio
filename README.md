@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1458** Python | **1486** TypeScript | **177** C++/H | **145** Docs | **3628** total commits | **3** stars | **0** forks | **0** open issues
+**1458** Python | **1486** TypeScript | **177** C++/H | **145** Docs | **3634** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`4427c494`](https://github.com/matthewmackes/map2-audio/commit/4427c4944762da0d90e0f0530230360ba2f087ba) | feat(T2492-3): Mixxx-schema-faithful skeleton + verbatim ... | Map2 Audio | 2026-05-02 |
+| [`55263786`](https://github.com/matthewmackes/map2-audio/commit/55263786f31554e1872f254f36b92223e7d42bd0) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-05-02 |
+| [`fa0a412d`](https://github.com/matthewmackes/map2-audio/commit/fa0a412d450fdef610a2b99610c00a4ac587faef) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-05-02 |
+| [`af3fbfba`](https://github.com/matthewmackes/map2-audio/commit/af3fbfbab01639412be45d52fb0c03987b2809b5) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-03 |
+| [`6ffa42c2`](https://github.com/matthewmackes/map2-audio/commit/6ffa42c24b2639af653620c712c40333a0980cb8) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-03 |
 | [`64512538`](https://github.com/matthewmackes/map2-audio/commit/64512538020dce0d7a5a3592b026c7e40f34a3f5) | feat(T2492-2): /midi/connections "Unknown device" Tag + w... | Map2 Audio | 2026-05-02 |
+| [`430e212e`](https://github.com/matthewmackes/map2-audio/commit/430e212eee005593e73af17a12589711fb64c692) | feat(T2492-2): /midi/connections "Unknown device" Tag + w... | Map2 Audio | 2026-05-02 |
 | [`992245a9`](https://github.com/matthewmackes/map2-audio/commit/992245a98b43834b77ab4efa75b245b497a28dcd) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-03 |
-| [`8e6b28e2`](https://github.com/matthewmackes/map2-audio/commit/8e6b28e20d8d518ab6f896f19306d7af66145be8) | fix(T2492-1a): commit pack to runtime state dir, not read... | Map2 Audio | 2026-05-02 |
-| [`1950a9e0`](https://github.com/matthewmackes/map2-audio/commit/1950a9e0c038790d5e006bfa47967d9ea806695a) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-03 |
-| [`d88ecef4`](https://github.com/matthewmackes/map2-audio/commit/d88ecef46bf21f97e6911ad83af0bd8c9c3806d0) | feat(T2492-1): device-pack auto-generation from discovery... | Map2 Audio | 2026-05-02 |
-| [`5cd00e0c`](https://github.com/matthewmackes/map2-audio/commit/5cd00e0ca5af528e8bfde29ce57220ca65db2284) | feat(T2491): clarify /midi/devices is a profile registry,... | Map2 Audio | 2026-05-02 |
-| [`e7e0ac34`](https://github.com/matthewmackes/map2-audio/commit/e7e0ac34b93d7fdb1c249630677d2b5936be2b51) | chore(T2491): rename "MIDI Hub" → "MIDI Services" everywh... | Map2 Audio | 2026-05-02 |
-| [`f89f12bb`](https://github.com/matthewmackes/map2-audio/commit/f89f12bb9e578e16dca5b50f0d6eaf002a3b311e) | chore(T2491): MIDI tree-nav cleanup — re-point /midi-hub/... | Map2 Audio | 2026-05-02 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
