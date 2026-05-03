@@ -116,13 +116,21 @@ def test_writer_rejects_reserved_vendor_name() -> None:
             )
 
 
+_VALID_MANIFEST = (
+    "schemaVersion: 1\n"
+    "name: 'Test Model'\n"
+    "runtime_extra:\n"
+    "  created_via: auto-generator\n"
+)
+
+
 def test_writer_writes_files_to_disk() -> None:
     with tempfile.TemporaryDirectory() as tmp:
         writer = PackWriter(packs_dir=Path(tmp))
         result = writer.commit(
             vendor="testvendor",
             model="testmodel",
-            manifest_yaml="schemaVersion: 1\nname: 'Test Model'\n",
+            manifest_yaml=_VALID_MANIFEST,
             mapping_xml="<?xml version='1.0'?><MAP2ControllerPreset/>",
             scripts_js="// empty",
         )
@@ -140,7 +148,7 @@ def test_writer_rejects_overwrite_without_flag() -> None:
         kwargs = dict(
             vendor="testvendor",
             model="testmodel",
-            manifest_yaml="schemaVersion: 1\nname: 'x'\n",
+            manifest_yaml=_VALID_MANIFEST,
             mapping_xml="<?xml version='1.0'?><x/>",
             scripts_js="",
         )
@@ -188,7 +196,7 @@ def test_writer_translates_oserror_to_packwrite_error() -> None:
                 writer.commit(
                     vendor="testvendor",
                     model="testmodel",
-                    manifest_yaml="schemaVersion: 1\nname: 'x'\n",
+                    manifest_yaml=_VALID_MANIFEST,
                     mapping_xml="<?xml version='1.0'?><x/>",
                     scripts_js="",
                 )
@@ -203,7 +211,7 @@ def test_writer_result_carries_runtime_packs_dir() -> None:
         result = writer.commit(
             vendor="testvendor",
             model="testmodel",
-            manifest_yaml="schemaVersion: 1\nname: 'x'\n",
+            manifest_yaml=_VALID_MANIFEST,
             mapping_xml="<?xml version='1.0'?><x/>",
             scripts_js="",
         )
@@ -285,6 +293,93 @@ def test_synthesis_xml_attribution_lands_after_xml_decl() -> None:
     attribution_idx = synth.mapping_xml.find("T2492 auto-generated device-pack import")
     assert decl_idx == 0
     assert attribution_idx > decl_idx
+
+
+def test_writer_blocks_commit_without_provenance() -> None:
+    """T2492-4: an operator cannot silently strip the provenance
+    block from a manifest before commit; the writer re-asserts the
+    `runtime_extra.created_via: auto-generator` gate."""
+    with tempfile.TemporaryDirectory() as tmp:
+        writer = PackWriter(packs_dir=Path(tmp))
+        with pytest.raises(PackWriteError, match="created_via"):
+            writer.commit(
+                vendor="testvendor",
+                model="testmodel",
+                manifest_yaml="schemaVersion: 1\nname: 'NoProv'\n",
+                mapping_xml="<?xml version='1.0'?><x/>",
+                scripts_js="",
+            )
+
+
+def test_writer_blocks_commit_with_wrong_created_via() -> None:
+    """T2492-4: even if `created_via` is present, the value must
+    declare `auto-generator` so audit logs can rely on it as a
+    classifier."""
+    with tempfile.TemporaryDirectory() as tmp:
+        writer = PackWriter(packs_dir=Path(tmp))
+        with pytest.raises(PackWriteError, match="auto-generator"):
+            writer.commit(
+                vendor="testvendor",
+                model="testmodel",
+                manifest_yaml=(
+                    "schemaVersion: 1\nname: 'X'\n"
+                    "runtime_extra:\n  created_via: hand-edited\n"
+                ),
+                mapping_xml="<?xml version='1.0'?><x/>",
+                scripts_js="",
+            )
+
+
+def test_synthesizer_emits_full_provenance_for_from_scratch_packs() -> None:
+    """T2492-4: every auto-generator manifest must carry the
+    full audit-trail block — including source VID/PID and ALSA
+    name — even when no Mixxx template was used."""
+    result = perform_lookup("0xffff", "0xffff")
+    synth = ManifestSynthesizer().synthesize(
+        result,
+        SynthesisInput(
+            vid="0xffff",
+            pid="0xffff",
+            alsa_name="Synthetic ALSA",
+            usb_manufacturer="TestVendor",
+            usb_product="WidgetCtl",
+            operator_choice="from-scratch",
+        ),
+    )
+    yaml = synth.manifest_yaml
+    assert "created_via: auto-generator" in yaml
+    assert "source_vid: '0xffff'" in yaml
+    assert "source_pid: '0xffff'" in yaml
+    assert "source_alsa_name:" in yaml
+    assert "source_usb_manufacturer:" in yaml
+    assert "source_usb_product:" in yaml
+    assert "mixxx_template: null" in yaml
+    assert "mixxx_script: null" in yaml
+
+
+def test_synthesizer_emits_mixxx_script_provenance_when_template_used() -> None:
+    """T2492-4: when a Mixxx template + JS script seed the pack,
+    the manifest's `runtime_extra.mixxx_script` carries the upstream
+    JS path so audits can trace the full template lineage."""
+    result = perform_lookup("0x054c", "0x0268")  # Sony SixxAxis
+    assert result.mixxx_match is not None
+    synth = ManifestSynthesizer().synthesize(
+        result,
+        SynthesisInput(
+            vid="0x054c",
+            pid="0x0268",
+            alsa_name="SixxAxis",
+            operator_choice="auto",
+        ),
+    )
+    yaml = synth.manifest_yaml
+    assert "mixxx_template:" in yaml
+    assert "Sony SixxAxis.hid.xml" in yaml
+    assert "mixxx_upstream_commit:" in yaml
+    assert "template_license: 'GPL-2.0-or-later (Mixxx)'" in yaml
+    assert synth.mixxx_script_path is not None
+    assert "mixxx_script:" in yaml
+    assert synth.mixxx_script_path in yaml
 
 
 def test_writer_default_target_is_runtime_state_not_repo(monkeypatch) -> None:

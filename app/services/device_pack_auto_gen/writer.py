@@ -123,6 +123,31 @@ def _validate_yaml(content: str) -> None:
         raise PackWriteError("Manifest YAML missing schemaVersion field")
 
 
+def _enforce_provenance(content: str) -> str:
+    """T2492-4: every auto-generator pack must declare the
+    provenance fields under `runtime_extra`. Operators can edit the
+    manifest in step 3 of the wizard before commit, but can't silently
+    strip the provenance trail — the writer re-asserts the minimum
+    audit fields and raises if `created_via` was wiped.
+
+    The MUST-have field is `created_via: auto-generator`. We do not
+    impose a strict YAML parser here (the manifest is operator-edit
+    text); the gate is a substring assertion that survives the
+    canonical formats produced by the synthesizer.
+    """
+    if "created_via:" not in content:
+        raise PackWriteError(
+            "Manifest YAML missing runtime_extra.created_via field "
+            "(provenance trail required for auto-generator packs)"
+        )
+    if "auto-generator" not in content:
+        raise PackWriteError(
+            "Manifest YAML must declare runtime_extra.created_via "
+            "as 'auto-generator' for auto-generator packs"
+        )
+    return content
+
+
 def _validate_xml(content: str) -> None:
     if not content.strip():
         raise PackWriteError("Mapping XML is empty")
@@ -155,6 +180,7 @@ class PackWriter:
         vendor_slug = _validate_directory_name(vendor, "vendor")
         model_slug = _validate_directory_name(model, "model")
         _validate_yaml(manifest_yaml)
+        _enforce_provenance(manifest_yaml)
         _validate_xml(mapping_xml)
         # scripts_js is allowed to be empty for devices with no JS.
 

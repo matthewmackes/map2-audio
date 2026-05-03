@@ -207,42 +207,11 @@ class ManifestSynthesizer:
 
         suggested_vendor = _slug(vendor_name)
         suggested_model = _slug(model_name)
-
-        # Manifest YAML.
-        now = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
-        manifest_lines = [
-            "# T2492 auto-generated device-pack manifest.",
-            "# Edit before live use; bindings author through MIDI Services.",
-            "schemaVersion: 1",
-            f"name: {model_name!r}",
-            f"vendor: {vendor_name!r}",
-            "transport: midi",
-            "usb:",
-            f"  vid: '{lookup.vid}'",
-            f"  pid: '{lookup.pid}'",
-            "alsa:",
-            "  match_patterns:",
-        ]
-        if inp.alsa_name:
-            manifest_lines.append(f"    - {inp.alsa_name!r}")
-        manifest_lines.extend([
-            "runtime_extra:",
-            "  created_via: auto-generator",
-            f"  created_at: '{now}'",
-        ])
-        if use_template and lookup.mixxx_match is not None:
-            manifest_lines.extend([
-                f"  mixxx_template: {lookup.mixxx_match.mapping_file!r}",
-                f"  mixxx_upstream_commit: {lookup.mixxx_match.upstream_commit!r}",
-                "  template_license: 'GPL-2.0-or-later (Mixxx)'",
-            ])
-        else:
-            manifest_lines.append("  mixxx_template: null")
-        manifest_yaml = "\n".join(manifest_lines) + "\n"
-
         prefix = re.sub(r"[^A-Za-z0-9]", "", model_name) or "Controller"
 
-        # Mapping XML + scripts JS.
+        # Mapping XML + scripts JS — built first so the manifest's
+        # provenance block (T2492-4) can reference the actual JS
+        # template path that was applied (if any).
         mapping_xml: Optional[str] = None
         scripts_js: Optional[str] = None
         scripts_js_template_path: Optional[str] = None
@@ -293,6 +262,55 @@ class ManifestSynthesizer:
             )
         if scripts_js is None:
             scripts_js = _DEFAULT_JS.format(prefix=prefix)
+
+        # T2492-4 — provenance manifest. Built AFTER XML/JS so we can
+        # surface the actual JS template path that was applied. Every
+        # auto-generator pack carries the same audit-trail block under
+        # `runtime_extra`; the writer (writer.py::_enforce_provenance)
+        # re-asserts the gate so an operator can't silently strip it
+        # before commit.
+        now = datetime.now(timezone.utc).isoformat().replace("+00:00", "Z")
+        manifest_lines = [
+            "# T2492 auto-generated device-pack manifest.",
+            "# Edit before live use; bindings author through MIDI Services.",
+            "schemaVersion: 1",
+            f"name: {model_name!r}",
+            f"vendor: {vendor_name!r}",
+            "transport: midi",
+            "usb:",
+            f"  vid: '{lookup.vid}'",
+            f"  pid: '{lookup.pid}'",
+            "alsa:",
+            "  match_patterns:",
+        ]
+        if inp.alsa_name:
+            manifest_lines.append(f"    - {inp.alsa_name!r}")
+        manifest_lines.extend([
+            "runtime_extra:",
+            "  created_via: auto-generator",
+            f"  created_at: '{now}'",
+            f"  source_vid: '{lookup.vid}'",
+            f"  source_pid: '{lookup.pid}'",
+        ])
+        if inp.alsa_name:
+            manifest_lines.append(f"  source_alsa_name: {inp.alsa_name!r}")
+        if inp.usb_manufacturer:
+            manifest_lines.append(f"  source_usb_manufacturer: {inp.usb_manufacturer!r}")
+        if inp.usb_product:
+            manifest_lines.append(f"  source_usb_product: {inp.usb_product!r}")
+        if use_template and lookup.mixxx_match is not None:
+            manifest_lines.extend([
+                f"  mixxx_template: {lookup.mixxx_match.mapping_file!r}",
+                f"  mixxx_upstream_commit: {lookup.mixxx_match.upstream_commit!r}",
+                "  template_license: 'GPL-2.0-or-later (Mixxx)'",
+            ])
+        else:
+            manifest_lines.append("  mixxx_template: null")
+        if scripts_js_template_path:
+            manifest_lines.append(f"  mixxx_script: {scripts_js_template_path!r}")
+        else:
+            manifest_lines.append("  mixxx_script: null")
+        manifest_yaml = "\n".join(manifest_lines) + "\n"
 
         return SynthesisResult(
             manifest_yaml=manifest_yaml,
