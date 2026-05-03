@@ -2,6 +2,7 @@ import React from 'react'
 import '@testing-library/jest-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { MemoryRouter } from 'react-router-dom'
 
 import { LaunchControlPage } from './LaunchControlPage'
 
@@ -36,9 +37,11 @@ function renderPage() {
   })
 
   return render(
-    <QueryClientProvider client={queryClient}>
-      <LaunchControlPage />
-    </QueryClientProvider>,
+    <MemoryRouter>
+      <QueryClientProvider client={queryClient}>
+        <LaunchControlPage />
+      </QueryClientProvider>
+    </MemoryRouter>,
   )
 }
 

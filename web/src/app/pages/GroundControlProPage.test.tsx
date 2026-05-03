@@ -1,6 +1,10 @@
 import React from 'react'
 import '@testing-library/jest-dom'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { MemoryRouter } from 'react-router-dom'
+
+const renderWithRouter = (ui: React.ReactElement) =>
+  render(<MemoryRouter>{ui}</MemoryRouter>)
 
 const mockUseDeviceLocation = jest.fn()
 const mockGroundControlProApi = {
@@ -189,7 +193,7 @@ describe('GroundControlProPage', () => {
   })
 
   it('renders the full tabbed workspace and keeps push gated before import', async () => {
-    render(<GroundControlProPage />)
+    renderWithRouter(<GroundControlProPage />)
 
     await waitFor(() => expect(mockGroundControlProApi.getPorts).toHaveBeenCalled())
     await waitFor(() => expect(mockGroundControlProApi.getFieldMap).toHaveBeenCalled())
@@ -239,7 +243,7 @@ describe('GroundControlProPage', () => {
       artifacts: [],
     })
 
-    render(<GroundControlProPage />)
+    renderWithRouter(<GroundControlProPage />)
 
     fireEvent.click(screen.getByRole('button', { name: 'Drop a Ground Control Pro .syx dump here or click to browse' }))
 
@@ -313,7 +317,7 @@ describe('GroundControlProPage', () => {
       model,
     }))
 
-    render(<GroundControlProPage />)
+    renderWithRouter(<GroundControlProPage />)
 
     fireEvent.click(screen.getByRole('button', { name: 'Drop a Ground Control Pro .syx dump here or click to browse' }))
     await waitFor(() => expect(mockGroundControlProApi.importDump).toHaveBeenCalled())
@@ -359,7 +363,7 @@ describe('GroundControlProPage', () => {
       },
     })
 
-    render(<GroundControlProPage />)
+    renderWithRouter(<GroundControlProPage />)
 
     await waitFor(() => expect(mockGroundControlProApi.getPorts).toHaveBeenCalled())
 
