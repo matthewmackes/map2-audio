@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1475** Python | **1485** TypeScript | **179** C++/H | **146** Docs | **3686** total commits | **3** stars | **0** forks | **0** open issues
+**1476** Python | **1485** TypeScript | **179** C++/H | **146** Docs | **3698** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
-| [`a45e2a7b`](https://github.com/matthewmackes/map2-audio/commit/a45e2a7bd492194ccb76ecd5b4560519eb6b1d4e) | test(jest): full green suite — 375/375 + 2066/2066 | Map2 Audio | 2026-05-03 |
-| [`caef97fd`](https://github.com/matthewmackes/map2-audio/commit/caef97fdbf14d99c4480749148fff00cedd1af0f) | fix(tests): mock MidiClusterEnableSection + update useSpe... | Map2 Audio | 2026-05-03 |
-| [`c3b558e4`](https://github.com/matthewmackes/map2-audio/commit/c3b558e45a05a3078f50d19419f1a6f01f389ebb) | fix(tests): wrap MidiServicesCrossLinkBanner consumers in... | Map2 Audio | 2026-05-03 |
-| [`797cd27c`](https://github.com/matthewmackes/map2-audio/commit/797cd27c8cae4095a41d9ab082bcef7f9edebd50) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-03 |
-| [`13a2f2ae`](https://github.com/matthewmackes/map2-audio/commit/13a2f2ae3f09e444b8fa6b407dc295aad9925e70) | fix(jest): exclude .claude/worktrees from test discovery ... | Map2 Audio | 2026-05-03 |
-| [`ff26494f`](https://github.com/matthewmackes/map2-audio/commit/ff26494fd7d0caac12b06700e722c05e5c6e2e49) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-03 |
-| [`74c6a059`](https://github.com/matthewmackes/map2-audio/commit/74c6a059aa97798d170938a5ab267a092edb6e26) | chore(worklist): close out T_RENAME — all 7 slices shippe... | Map2 Audio | 2026-05-03 |
-| [`86413067`](https://github.com/matthewmackes/map2-audio/commit/86413067ba595cc6f9e9208ca83bc31e4c8e3d45) | fix(sequencer): align query keys with runtime hook + rest... | Map2 Audio | 2026-05-03 |
+| [`94a3bc81`](https://github.com/matthewmackes/map2-audio/commit/94a3bc811bd154e238cc4a67c7d93ebdb23db46d) | docs(worklist): record 2026-05-03 T_RENAME followup sweep... | Map2 Audio | 2026-05-03 |
+| [`693e4123`](https://github.com/matthewmackes/map2-audio/commit/693e41236db73a3f28950fd6553015b834bff737) | docs(philosophy): catch up juce + midi-design with T_RENA... | Map2 Audio | 2026-05-03 |
+| [`f0315f0e`](https://github.com/matthewmackes/map2-audio/commit/f0315f0e6eb5a814be7fe9b1578b6d20479f9df3) | fix(tests,manifest): catch up DB migration list + TS even... | Map2 Audio | 2026-05-03 |
+| [`d57715ec`](https://github.com/matthewmackes/map2-audio/commit/d57715ec6c4b65e2dd3fcccf44a21c6ffa5a193c) | test(quickjs): mark hoist-completeness check xfail with t... | Map2 Audio | 2026-05-03 |
+| [`3e04293b`](https://github.com/matthewmackes/map2-audio/commit/3e04293bb639e8831a93e7cdb4d68dd79d2a6145) | test(rt-policy): exempt asyncio.sleep(0) from the sub-5ms... | Map2 Audio | 2026-05-03 |
+| [`acff7376`](https://github.com/matthewmackes/map2-audio/commit/acff7376de74d5a95dfe77ef436b394e0e0bea94) | fix(routes,maschine): two stale-rename followups discover... | Map2 Audio | 2026-05-03 |
+| [`19be44ac`](https://github.com/matthewmackes/map2-audio/commit/19be44ac3ae6e0101bdc7764907ba03340abaa75) | test(midi_hub): rewrite test_ports for the post iter-78 c... | Map2 Audio | 2026-05-03 |
+| [`959a9dc7`](https://github.com/matthewmackes/map2-audio/commit/959a9dc733c335fffcd66b415bf2d4d14e7459eb) | test(midi_hub): add conftest stub so device-binding tests... | Map2 Audio | 2026-05-03 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
