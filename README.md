@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1450** Python | **1500** TypeScript | **177** C++/H | **145** Docs | **3619** total commits | **3** stars | **0** forks | **0** open issues
+**1457** Python | **1485** TypeScript | **177** C++/H | **145** Docs | **3624** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`d88ecef4`](https://github.com/matthewmackes/map2-audio/commit/d88ecef46bf21f97e6911ad83af0bd8c9c3806d0) | feat(T2492-1): device-pack auto-generation from discovery... | Map2 Audio | 2026-05-02 |
+| [`5cd00e0c`](https://github.com/matthewmackes/map2-audio/commit/5cd00e0ca5af528e8bfde29ce57220ca65db2284) | feat(T2491): clarify /midi/devices is a profile registry,... | Map2 Audio | 2026-05-02 |
+| [`e7e0ac34`](https://github.com/matthewmackes/map2-audio/commit/e7e0ac34b93d7fdb1c249630677d2b5936be2b51) | chore(T2491): rename "MIDI Hub" → "MIDI Services" everywh... | Map2 Audio | 2026-05-02 |
+| [`f89f12bb`](https://github.com/matthewmackes/map2-audio/commit/f89f12bb9e578e16dca5b50f0d6eaf002a3b311e) | chore(T2491): MIDI tree-nav cleanup — re-point /midi-hub/... | Map2 Audio | 2026-05-02 |
+| [`1c18f036`](https://github.com/matthewmackes/map2-audio/commit/1c18f0369ea298351677526c59554a0e003de607) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-02 |
 | [`66b46f7d`](https://github.com/matthewmackes/map2-audio/commit/66b46f7d91b2d2312e8b5ecfcdd7f091817dda53) | feat(T2490-9): /avb/network PTP / SRP / TSN status tiles | Map2 Audio | 2026-05-02 |
 | [`91ce0965`](https://github.com/matthewmackes/map2-audio/commit/91ce0965a46c6bf4ba31a73bede7274e50f1fb23) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-02 |
 | [`33d04671`](https://github.com/matthewmackes/map2-audio/commit/33d046714d4de6982d7c44ec508e4f5f4bd2358b) | feat(T2490-8): /avb/routing source × consumer matrix UI | Map2 Audio | 2026-05-02 |
-| [`755554d0`](https://github.com/matthewmackes/map2-audio/commit/755554d0f7fcf3e042ab01ec82288396cf26afe6) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-02 |
-| [`0c215758`](https://github.com/matthewmackes/map2-audio/commit/0c2157588258e71ac36bada18cf6c04e5d25c5f6) | feat(T2490-6a): fold Tesira fleet into /avb/devices/tesir... | Map2 Audio | 2026-05-02 |
-| [`5633dfb1`](https://github.com/matthewmackes/map2-audio/commit/5633dfb1cdf3d23527cb1b18f3e253fed902026c) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-02 |
-| [`f98d16c5`](https://github.com/matthewmackes/map2-audio/commit/f98d16c566f343e800ede2f10843184c41ec2ecf) | feat(T2490-5): operator-visible Devices index page | Map2 Audio | 2026-05-02 |
-| [`8c77f7c6`](https://github.com/matthewmackes/map2-audio/commit/8c77f7c6641deae531d220645a892fbdc5ab2b04) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-02 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
