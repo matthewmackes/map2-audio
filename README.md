@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1460** Python | **1486** TypeScript | **177** C++/H | **145** Docs | **3642** total commits | **3** stars | **0** forks | **0** open issues
+**1461** Python | **1486** TypeScript | **177** C++/H | **145** Docs | **3644** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`379817a1`](https://github.com/matthewmackes/map2-audio/commit/379817a1106e12700930001614d79d51292f360a) | feat(T2491-11 slice 1): BMCA grandmaster reselection obse... | Map2 Audio | 2026-05-02 |
+| [`25396a91`](https://github.com/matthewmackes/map2-audio/commit/25396a917c1ac36023b9ea8ba75d4bda5aa5c719) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-03 |
 | [`504f398f`](https://github.com/matthewmackes/map2-audio/commit/504f398f0cf8ee93496d2a5eba1f3472dc5355ec) | feat(T2491-6): IEEE 1722.1-2021 §7.4.46 statistics counte... | Map2 Audio | 2026-05-02 |
 | [`12ed9197`](https://github.com/matthewmackes/map2-audio/commit/12ed919738592006b2293a424ba2db6a7bbf0f30) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-03 |
 | [`474298b9`](https://github.com/matthewmackes/map2-audio/commit/474298b9997847cf1b0f3e12761343945950d403) | feat(T2491-7): listener presentation-time enforcement wit... | Map2 Audio | 2026-05-02 |
 | [`cbb95298`](https://github.com/matthewmackes/map2-audio/commit/cbb952984254c6c8b5468c47b1399f88902a9018) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-03 |
 | [`2541959c`](https://github.com/matthewmackes/map2-audio/commit/2541959ce1e81ce92272cdecee954e8b36960fc7) | chore(T2492-5): closeout evidence + epic status flip to Done | Map2 Audio | 2026-05-02 |
 | [`3c30e4a2`](https://github.com/matthewmackes/map2-audio/commit/3c30e4a2d3e33082abbf7dd8d648de04532eb53a) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-03 |
-| [`18abcd34`](https://github.com/matthewmackes/map2-audio/commit/18abcd348292e721a370e4fc44cc88c1243e1b8a) | feat(T2492-4): enforced provenance trail on auto-generate... | Map2 Audio | 2026-05-02 |
-| [`983d2d0f`](https://github.com/matthewmackes/map2-audio/commit/983d2d0f3daf6d68dce1a05fbd4fe58255d1f19f) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-03 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
