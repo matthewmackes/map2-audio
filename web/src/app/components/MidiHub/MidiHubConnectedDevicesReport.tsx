@@ -1,3 +1,4 @@
+import { useState } from 'react'
 import {
   DataTable,
   InlineNotification,
@@ -12,7 +13,12 @@ import {
 } from '@carbon/react'
 import type { MidiHubRoute } from '../../../map2/api'
 import type { HubPort } from './portUtils'
+import { isUnknownDevicePort } from './portUtils'
 import { MidiHubSurface } from './MidiHubHelpPrimitives'
+import {
+  DevicePackGeneratorModal,
+  type DevicePackGeneratorTriggerDevice,
+} from '../DevicePackGenerator/DevicePackGeneratorModal'
 
 type MidiHubConnectedDevicesReportProps = {
   ports: HubPort[]
@@ -27,6 +33,9 @@ type DeviceReportRow = {
   kind: string
   status: string
   application: string
+  unknown: boolean
+  vendor_id?: string
+  product_id?: string
 }
 
 const HEADERS = [
@@ -66,6 +75,19 @@ export function MidiHubConnectedDevicesReport({
   routes,
   clockOutputPorts = [],
 }: MidiHubConnectedDevicesReportProps) {
+  // T2492-2 — wizard pre-population state for "Unknown device" Tag
+  // clicks. The Tag renders inline next to the device name; clicking
+  // opens DevicePackGeneratorModal with the port's USB descriptor.
+  const [wizardDevice, setWizardDevice] = useState<DevicePackGeneratorTriggerDevice | null>(null)
+  const handleUnknownDeviceClick = (port: HubPort) => {
+    if (!port.vendor_id || !port.product_id) return
+    setWizardDevice({
+      vid: port.vendor_id,
+      pid: port.product_id,
+      alsa_name: port.name,
+    })
+  }
+
   if (ports.length === 0) {
     return (
       <InlineNotification
@@ -128,8 +150,12 @@ export function MidiHubConnectedDevicesReport({
       kind: titleCase(port.kind),
       status,
       application: applicationParts.join('. '),
+      unknown: isUnknownDevicePort(port),
+      vendor_id: port.vendor_id,
+      product_id: port.product_id,
     }
   })
+  const rowsById = new Map(rows.map((row) => [row.id, row]))
 
   return (
     <MidiHubSurface className="midi-hub-connections-surface" tone="raised">
@@ -157,9 +183,40 @@ export function MidiHubConnectedDevicesReport({
               <TableBody>
                 {rows.map((row) => {
                   const { key: _key, ...rowProps } = getRowProps({ row })
+                  const meta = rowsById.get(row.id)
+                  const matchingPort = meta?.unknown
+                    ? ports.find((port) => port.port_id === row.id)
+                    : undefined
                   return (
                     <TableRow key={row.id} {...rowProps}>
                       {row.cells.map((cell) => {
+                        if (cell.info.header === 'device' && matchingPort) {
+                          return (
+                            <TableCell key={cell.id}>
+                              <span
+                                className="midi-hub-connections__device-cell"
+                                style={{ display: 'inline-flex', alignItems: 'center' }}
+                              >
+                                {String(cell.value)}
+                                <button
+                                  type="button"
+                                  className="midi-hub-connections__unknown-trigger"
+                                  onClick={() => handleUnknownDeviceClick(matchingPort)}
+                                  aria-label={`Generate device-pack for ${matchingPort.name}`}
+                                  style={{
+                                    background: 'none',
+                                    border: 0,
+                                    padding: 0,
+                                    marginLeft: '0.5rem',
+                                    cursor: 'pointer',
+                                  }}
+                                >
+                                  <Tag type="warm-gray">Unknown device</Tag>
+                                </button>
+                              </span>
+                            </TableCell>
+                          )
+                        }
                         if (cell.info.header === 'direction') {
                           return (
                             <TableCell key={cell.id}>
@@ -191,6 +248,11 @@ export function MidiHubConnectedDevicesReport({
           </TableContainer>
         )}
       </DataTable>
+      <DevicePackGeneratorModal
+        open={wizardDevice !== null}
+        device={wizardDevice}
+        onClose={() => setWizardDevice(null)}
+      />
     </MidiHubSurface>
   )
 }
