@@ -59,8 +59,12 @@ describe('useSpecialSettings', () => {
           enabled: true,
           hidden_plugins: [],
           menu_location: 'hidden',
-          promoted_advanced_routes: ['/intelfx'],
-          landing_tiles: [{ route: '/platforms/workspace-catalog', size: 'large' }],
+          // Nav reorg 2026-05-03: /intelfx no longer pinnable (T2485-8); use
+          // /hardware/host-machine which is the canonical alias for /host-machine.
+          promoted_advanced_routes: ['/hardware/host-machine'],
+          // /platforms/workspace-catalog is invalid post-reorg → normalizes to
+          // empty, then ensureRequiredHomeLauncher seeds /node-ops.
+          landing_tiles: [{ route: '/node-ops', size: 'medium' }],
           snapshot_setlist_mode: false,
           snapshot_setlist_order: [5],
           'snapshot_editor.flow_animation': 'scan',
@@ -87,7 +91,7 @@ describe('useSpecialSettings', () => {
 
     await act(async () => {
       await result.current.updateSettings({
-        pinnedRoutes: ['/intelfx'],
+        pinnedRoutes: ['/host-machine'],
         landingTiles: [{ route: '/platforms/workspace-catalog', size: 'large' }],
         snapshotSetlistMode: false,
         snapshotSetlistOrder: [5],
@@ -104,19 +108,22 @@ describe('useSpecialSettings', () => {
 
     const payload = JSON.parse(String(postCall?.[1]?.body))
     expect(payload.menu_location).toBe('hidden')
-    expect(payload.pinned_routes).toEqual(['/intelfx'])
+    // Nav reorg 2026-05-03 — /intelfx no longer pinnable (T2485-8 sidebar
+    // collapse 9→1); /host-machine is the canonical pinnable example. The
+    // required home launcher is now /node-ops (was /workspace).
+    expect(payload.pinned_routes).toEqual(['/hardware/host-machine'])
     expect(payload.landing_tiles).toEqual([
-      { route: '/workspace', size: 'medium' },
+      { route: '/node-ops', size: 'medium' },
     ])
     expect(payload.snapshot_setlist_mode).toBe(false)
     expect(payload.snapshot_setlist_order).toEqual([5])
     expect(payload['snapshot_editor.flow_animation']).toBe('scan')
     expect(payload['snapshot_editor.grid_backdrop']).toBe(true)
     expect(payload['snapshot_editor.node_shape']).toBe('rounded')
-    expect(payload.promoted_advanced_routes).toEqual(['/intelfx'])
+    expect(payload.promoted_advanced_routes).toEqual(['/hardware/host-machine'])
 
-    await waitFor(() => expect(result.current.settings?.pinnedRoutes).toEqual(['/intelfx']))
-    expect(result.current.settings?.landingTiles).toEqual([{ route: '/workspace', size: 'medium' }])
+    await waitFor(() => expect(result.current.settings?.pinnedRoutes).toEqual(['/hardware/host-machine']))
+    expect(result.current.settings?.landingTiles).toEqual([{ route: '/node-ops', size: 'medium' }])
     expect(result.current.settings?.snapshotSetlistMode).toBe(false)
     expect(result.current.settings?.snapshotSetlistOrder).toEqual([5])
     expect(result.current.settings?.['snapshot_editor.flow_animation']).toBe('scan')

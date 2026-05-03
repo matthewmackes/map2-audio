@@ -44,6 +44,9 @@ jest.mock('../../components/MidiHub/VirtualGpioPanel', () => ({
 jest.mock('../../components/MidiHub/StringInterfacePanel', () => ({
   StringInterfacePanel: () => <div data-testid="string-interface-panel" />,
 }))
+jest.mock('../../components/MidiHub/MidiClusterEnableSection', () => ({
+  MidiClusterEnableSection: () => <div data-testid="midi-cluster-enable-section" />,
+}))
 
 jest.mock('../../components/MidiHub/MidiClockPanel', () => ({
   MidiClockPanel: () => <div data-testid="midi-clock-panel" />,
