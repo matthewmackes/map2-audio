@@ -44,10 +44,10 @@ def test_sync_init_applies_tracked_schema_migrations_once(tmp_path):
         assert "snapshot_editor_flow_animation" in special_settings_columns
         assert "snapshot_editor_grid_backdrop" in special_settings_columns
         assert "snapshot_editor_node_shape" in special_settings_columns
-        assert _migration_versions(db_path) == [1, 2, 3, 4, 5, 6, 8]
+        assert _migration_versions(db_path) == [1, 2, 3, 4, 5, 6, 8, 9, 10, 11, 12, 13]
 
         database_module.apply_pending_schema_migrations_sync()
-        assert _migration_versions(db_path) == [1, 2, 3, 4, 5, 6, 8]
+        assert _migration_versions(db_path) == [1, 2, 3, 4, 5, 6, 8, 9, 10, 11, 12, 13]
     finally:
         if database_module._engine is not None:
             database_module._engine.dispose()

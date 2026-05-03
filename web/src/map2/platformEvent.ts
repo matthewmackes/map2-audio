@@ -96,6 +96,9 @@ export const PLATFORM_EVENT_KINDS = [
   'midi.profile.shared',
   'midi.failover.triggered',
   'midi.failover.completed',
+  // T2486-3 — operator-initiated cluster MIDI gate flips.
+  'midi.cluster.enabled.changed',
+  'midi.cluster.auto_connect.changed',
   'ir.download.progress',
   'soundfont.download.progress',
   'api.openapi.out_of_sync',
