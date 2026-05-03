@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1475** Python | **1486** TypeScript | **179** C++/H | **145** Docs | **3671** total commits | **3** stars | **0** forks | **0** open issues
+**1475** Python | **1485** TypeScript | **179** C++/H | **145** Docs | **3674** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`ed189b70`](https://github.com/matthewmackes/map2-audio/commit/ed189b70699d92521b2e7f048328cc1aebd42215) | refactor(nav): merge /chains into /node-ops/audio-engine ... | Map2 Audio | 2026-05-03 |
+| [`51f606db`](https://github.com/matthewmackes/map2-audio/commit/51f606dbf842340872308cbf52e1e96d9ab3ee2a) | refactor(nav): canonical /node-ops + /artifacts + /about ... | Map2 Audio | 2026-05-03 |
+| [`2e6c0898`](https://github.com/matthewmackes/map2-audio/commit/2e6c08980e1b91ba90703261d1a94ed7d717f71f) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-03 |
 | [`4612dfaf`](https://github.com/matthewmackes/map2-audio/commit/4612dfaf8d889d4540cbde6a789e53bda1419125) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-03 |
 | [`8626d7a9`](https://github.com/matthewmackes/map2-audio/commit/8626d7a959974d1098866c5161c5db44b0e1e33f) | chore(T2459-H slice 19): 10-loop MIDI campaign closeout e... | Map2 Audio | 2026-05-03 |
 | [`a751e97d`](https://github.com/matthewmackes/map2-audio/commit/a751e97d0fbe9b33b246e44e3692883dc49dc5cf) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-03 |
 | [`1d9fa576`](https://github.com/matthewmackes/map2-audio/commit/1d9fa576e62b0c641b1389230a36863ad850f189) | docs(T2459-H slice 18): T2459-H closeout doc with HIL gat... | Map2 Audio | 2026-05-03 |
 | [`daf4523b`](https://github.com/matthewmackes/map2-audio/commit/daf4523b449d950f4cadea4a84934fff5edad77c) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-03 |
-| [`c6874254`](https://github.com/matthewmackes/map2-audio/commit/c68742541dfaea8074a715c389a6270867e74765) | feat(T2459-H5 slice 17): legacy MIDI routes carry depreca... | Map2 Audio | 2026-05-03 |
-| [`d7fed406`](https://github.com/matthewmackes/map2-audio/commit/d7fed4067c58a483c6a5f804d8dbcfac91b73442) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-03 |
-| [`7838db40`](https://github.com/matthewmackes/map2-audio/commit/7838db40dc3f4f2d0fa05c99ea3a7d1673904951) | feat(T2459-H5 slice 16): UMP / MIDI 2.0 capabilities surface | Map2 Audio | 2026-05-03 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
