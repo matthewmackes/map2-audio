@@ -35933,7 +35933,7 @@ This revision **preserves the spirit of Q2=A** (decomposition for maintainabilit
 
 - **T2490-9** — Network region. `/avb/network` with PTP status, SRP admission, TSN qdisc surfaces. Cluster auto-connect onboarding modal mirroring T2486's MIDI cluster modal. ~2 SHIP iters. **[✓] DONE 2026-05-02 (status tiles).** Shipped: `useAvbNetwork.ts` (5 hooks: `useAvbStatus` / `useAvbPtpStatus` / `useAvbSrpStatus` / `useAvbSrpAdmissions` / `useAvbTsnStatus`, all 5s poll); `AvbServicesNetworkPage.tsx` upgraded from scaffold to a 3-tile grid (PTP / gPTP, SRP / MSRP, TSN qdisc). Header carries the overall AVB state Tag (green when operational, red when degraded, warm-gray when only-configured-but-not-operational, cool-gray unknown) + the network-iface Tag. Each tile has its own header status Tag tone-mapped from the upstream payload (PTP: SLAVE/MASTER/PASSIVE→green / FAULTY→red / UNCALIBRATED→warm-gray / else cool-gray; SRP: running→green / stopped→red; TSN: available→green / else cool-gray) and a Carbon `<dl>` of 6 key/value rows. SRP tile shows the live admission count from `/api/avb/srp/admissions?limit=25`. Cluster auto-connect onboarding modal (mirroring T2486 for MIDI) deferred to a follow-up iter once T2490-3b puts live router state through the binding authority. Build clean (21.2s); /avb/network serves HTTP 200; live PTP shows state=LISTENING.
 
-- **T2490-10** — Closeout. Legacy route deletion, evidence run under `docs/fit-for-purpose-evidence/<YYYYMMDD>/t2490-avb-services/`, doc updates (`AVB_SERVICES.md` final state, `MIDI_SERVICES_CLOSED_OUT.md` companion), test totals, dual-push. ~1 SHIP iter.
+- **T2490-10** — ✅ SHIPPED 2026-05-02 (loop 10). Closeout. Evidence directory: `docs/fit-for-purpose-evidence/20260502/T2490_avb_services_unification_closeout.md` covers the deliverable matrix (10 sub-tasks; 7 fully shipped + 3 first-cut shipped + 3 deferred deeper refactors), the T2491 sibling-epic overlay (5 T2491 sub-tasks shipped today plug into `/avb/network`), and the full hardware-gated validation list. Combined AVB test surface: ~73 pytest cases + 23 Catch2 cases / 857 assertions. Epic status flipped to `[✓] Done`. Deferred follow-ups: T2490-3b (avb_router writer-side coupling), T2490-3c (dict→table swap), T2490-6b (TesiraFleet adapter through AvbBindingAuthority), T2490-6c (Tesira presets/designs as canonical bindings).
 
 **Estimated total effort:** 17–20 SHIP iters across 10 sub-tasks. Largest single slice is T2490-6 (Tesira fold-in) at 3-4 iters; T2490-3 (avb_router refactor) at 3 iters is second-largest.
 
@@ -35943,7 +35943,7 @@ This revision **preserves the spirit of Q2=A** (decomposition for maintainabilit
 - la_avdecc-backed AVDECC controller: `juce-engine/Source/AvdeccController.{h,cpp}`
 - Standing platform directive: PROJECT_WORKLIST.md / standing four-services rule (MIDI, AVB, Sampler, Audio Effects)
 
-**Status:** [>] In Progress 2026-05-02 (Kickoff: locked decisions + design doc shipped; sub-tasks T2490-1 through T2490-10 unscheduled).
+**Status:** [✓] Done 2026-05-02 (operator-surface slice closed across 10 sub-tasks shipped; deeper refactors T2490-3b/3c and T2490-6b/6c tracked as follow-ups. Combined AVB test surface: ~73 pytest cases + 23 Catch2 cases / 857 assertions. Bench-side validation with live AVB switch + AVDECC peer remains owner-driven per CLAUDE.md §0.8 gate 5).
 
 ---
 
