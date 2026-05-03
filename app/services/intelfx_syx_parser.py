@@ -22,6 +22,7 @@ where:
 
 from __future__ import annotations
 
+import logging
 from dataclasses import dataclass, field
 from pathlib import Path
 from typing import Any, Dict, List, Optional, Sequence
@@ -32,6 +33,8 @@ from app.services.sysex_tags_js_runtime import (
     compile_intelfx_tag_map_via_js,
     is_sysex_parser_js_runtime_enabled,
 )
+
+logger = logging.getLogger(__name__)
 
 # Rocktron 3-byte extended manufacturer ID in SysEx
 _ROCKTRON_ID: List[int] = [0x00, 0x01, 0x56]
@@ -50,14 +53,41 @@ _MAX_PROGRAM_NUMBER: int = 255
 _NAME_TAG_MAP = compile_intelfx_tag_map()
 
 
+_JS_RUNTIME_FALLBACK_WARNED = False
+
+
 def _resolve_tag_map():
     """Return the active IntelFX tag map, honoring the JS-runtime feature flag.
 
-    Re-evaluated per call so flag flips at test time take effect immediately.
+    T2459-H4 Slice 9 (silent fallback): when the flag is on but the
+    Node-backed JS runtime is unavailable on this host (Node not on
+    PATH, runtime JS file missing, malformed sandbox), fall back to
+    the Python tag map silently after one warning log per process.
+    The compiled output is bit-identical (parity gates in
+    `tests/test_sysex_tags_runtime_js_t2459h4.py`).
     """
-    if is_sysex_parser_js_runtime_enabled():
+    if not is_sysex_parser_js_runtime_enabled():
+        return _NAME_TAG_MAP
+    try:
+        from app.services.sysex_tags_js_runtime import SysexJsRuntimeError
+    except Exception:
+        return _NAME_TAG_MAP
+    try:
         return compile_intelfx_tag_map_via_js()
-    return _NAME_TAG_MAP
+    except SysexJsRuntimeError as exc:
+        global _JS_RUNTIME_FALLBACK_WARNED
+        if not _JS_RUNTIME_FALLBACK_WARNED:
+            _JS_RUNTIME_FALLBACK_WARNED = True
+            logger.warning(
+                "IntelFX SysEx parser: MAP2_SYSEX_PARSER_USE_JS_RUNTIME is on "
+                "but the Node-backed JS runtime is unavailable (%s). "
+                "Falling back to the Python tag map. The two paths produce "
+                "bit-identical output; install Node and ensure "
+                "device-packs/_runtime/sysex-tags.js is readable to silence "
+                "this warning.",
+                exc,
+            )
+        return _NAME_TAG_MAP
 
 
 @dataclass

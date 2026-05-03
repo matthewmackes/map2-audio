@@ -1190,7 +1190,13 @@ Completion note: 2026-04-28 — Codex: **Slice 1 SHIPPED (shared MIDI curve enum
   - 8 new pytest cases in `tests/test_rocktron_intelfx_pack_t2459h4.py` covering pack files, canonical id, legacy alias, identity, front-panel control rows (Adjust / Bypass / Tap / PC / SysEx sentinel), script reference, pack manifest metadata, settings.
   - Out of scope (stays Python-owned): `app/services/intelfx_service.py` (database-backed librarian + preset registry), `app/services/intelfx_syx_parser.py` (SysEx parser; tag-extraction routes through device-pack JS runtime per Slice 5), `app/services/intelfx_simulator.py`. The MPX-1 + IntelFX pattern now mirrors exactly across two devices: front-panel CC/PC + SysEx sentinel in YAML; Python keeps SysEx body parsing + DB-backed preset management.
   Validation: `pytest -q tests/test_rocktron_intelfx_pack_t2459h4.py tests/test_lexicon_mpx1_pack_t2459h4.py tests/test_maschine_mk1_pack_t2459h4.py tests/test_midi_device_profiles_t2459h3.py` → **31 passed**.
-Last updated: 2026-05-03 EDT - Claude: slice 8 (Rocktron IntelFX device-pack registry wiring) shipped; H4 remains in progress pending Maschine MK1 HID/USB control surface migration + bench HIL parity.
+  2026-05-03 — Claude: **Slice 9 SHIPPED (SysEx parser JS-runtime silent fallback).**
+  Delivered:
+  - When `MAP2_SYSEX_PARSER_USE_JS_RUNTIME=1` is set on a host without Node (or a missing/broken `device-packs/_runtime/sysex-tags.js`), both `mpx1_syx_parser._resolve_tag_map()` and `intelfx_syx_parser._resolve_tag_map()` now catch `SysexJsRuntimeError`, log ONE warning per process, and silently fall back to the Python tag map. The two paths are bit-identical (parity proven in Slice 3), so callers see no behavior delta.
+  - Module-level `_JS_RUNTIME_FALLBACK_WARNED` flag dedups the warning so production logs aren't flooded by every parser invocation.
+  - 5 new pytest cases in `tests/test_sysex_parser_js_runtime_fallback_t2459h4.py`: MPX-1 fallback when JS raises; MPX-1 warns once across multiple calls; same pair for IntelFX; flag-off path preserved (no fallback machinery triggers when flag absent).
+  Validation: `pytest -q tests/test_sysex_parser_js_runtime_fallback_t2459h4.py tests/test_mpx1_syx_parser.py tests/test_intelfx_syx_parser.py` → **75 passed**.
+Last updated: 2026-05-03 EDT - Claude: slice 9 (SysEx parser JS-runtime silent fallback) shipped; H4 remains in progress pending Maschine MK1 HID/USB control surface migration + bench HIL parity.
 
 ---
 
