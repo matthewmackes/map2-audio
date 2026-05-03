@@ -1348,7 +1348,13 @@ Completion note: 2026-04-28 — Codex: **Slice 2 SHIPPED (unified MIDI router mo
   - 4 new pytest cases in `tests/test_midi_hub_absorption_audit_t2459h5.py`: doc exists; doc enumerates every module under `app/services/midi_hub/`; doc keeps the Summary section + classification labels; doc cross-references the canonical artifacts (worklist, MIDI_BACKEND.md, CLUSTER_MIDI_PROTOCOL.md, MAP2MIDICONTROLLER_RETIREMENT.md).
   - The coverage gate guards against silent drift — any new file added to `app/services/midi_hub/` will fail the audit-doc test until it's classified.
   Validation: `pytest -q tests/test_midi_hub_absorption_audit_t2459h5.py` → **4 passed**.
-Last updated: 2026-05-03 EDT - Claude: slice 14 (MIDI Hub absorption audit doc + coverage gate) shipped; H5 stays [>] In Progress with bench HIL + per-slice C++ ports remaining.
+  2026-05-03 — Claude: **Slice 15 SHIPPED (operator-visible v1 retirement schedule).**
+  Delivered:
+  - `GET /api/v2/midi/legacy_retirement_status` (lives under v2 so it survives the 410-Gone flip) returns `{retired, sunset, sunset_iso, successor_prefix, now, days_remaining, flag_env_var}` so operator UIs can render a Carbon `InlineNotification` ("MIDI v1 retires in N days") on relevant pages.
+  - Days-remaining is computed against the system clock; goes to `None` once `MAP2_MIDI_LEGACY_RETIRED` is flipped (no countdown after retirement). Sunset header parser tolerates garbage gracefully.
+  - 6 new pytest cases: full envelope shape; flag reflected; falsy values stay-not-retired; sunset_iso parses to 2026-07-01; sunset header parser round-trips; parser rejects garbage.
+  Validation: `pytest -q tests/test_midi_legacy_retirement_status_t2459h5.py tests/test_midi_v1_retirement_t2459h5.py` → **11 passed**.
+Last updated: 2026-05-03 EDT - Claude: slice 15 (operator-visible v1 retirement schedule) shipped; H5 stays [>] In Progress with bench HIL + per-slice C++ ports remaining.
 
 ---
 

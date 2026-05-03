@@ -82,3 +82,77 @@ def include_legacy_midi_router(parent: APIRouter, legacy_router: APIRouter) -> N
         parent.include_router(_build_retired_router(legacy_router))
     else:
         parent.include_router(legacy_router, deprecated=True)
+
+
+# ---------------------------------------------------------------------------
+# T2459-H5 Slice 15 — operator-visible retirement schedule.
+# ---------------------------------------------------------------------------
+#
+# When the legacy MIDI v1 routers are still mounted in deprecation mode
+# (`MAP2_MIDI_LEGACY_RETIRED` unset / falsy), operators have no in-band
+# signal for *when* the 410-Gone flip will land. The schedule endpoint
+# below surfaces the deprecation window state — flag value, sunset
+# date, replacement prefix, and a "days remaining" hint computed
+# against the system clock — so the operator UI can render a Carbon
+# `InlineNotification` ("MIDI v1 retires in N days") on the relevant
+# pages.
+
+import datetime as _dt
+import email.utils as _email_utils
+from fastapi import APIRouter as _APIRouter
+
+retirement_status_router = _APIRouter(tags=["MIDI"])
+
+
+def _parse_sunset_header(header: str) -> _dt.datetime | None:
+    """Parse the IETF HTTP date format used in the Sunset header.
+
+    Returns a UTC-aware datetime or None on parse failure.
+    """
+    try:
+        parsed = _email_utils.parsedate_to_datetime(header)
+    except (TypeError, ValueError):
+        return None
+    if parsed is None:
+        return None
+    if parsed.tzinfo is None:
+        parsed = parsed.replace(tzinfo=_dt.timezone.utc)
+    return parsed.astimezone(_dt.timezone.utc)
+
+
+def _retirement_status_payload() -> dict:
+    """Build the retirement-status envelope returned by the REST endpoint."""
+    retired = is_legacy_midi_retired()
+    sunset_dt = _parse_sunset_header(SUNSET_HEADER)
+    now = _dt.datetime.now(_dt.timezone.utc)
+    days_remaining: int | None = None
+    if sunset_dt is not None and not retired:
+        delta = sunset_dt - now
+        # Negative delta = sunset has passed but the flag hasn't been
+        # flipped yet; the operator surface should treat that as
+        # "0 days, retirement overdue".
+        days_remaining = max(0, delta.days)
+    return {
+        "retired": retired,
+        "sunset": SUNSET_HEADER,
+        "sunset_iso": sunset_dt.isoformat() if sunset_dt else None,
+        "successor_prefix": SUCCESSOR_PREFIX,
+        "now": now.isoformat(),
+        "days_remaining": days_remaining,
+        "flag_env_var": "MAP2_MIDI_LEGACY_RETIRED",
+    }
+
+
+@retirement_status_router.get(
+    "/api/v2/midi/legacy_retirement_status",
+    summary="MIDI v1 legacy-route retirement schedule + flag state",
+)
+async def get_midi_legacy_retirement_status() -> dict:
+    """T2459-H5 Slice 15 — surface the retirement window state.
+
+    Returns the deprecation-window metadata operators need to schedule
+    their migration off the legacy `/api/v1/midi/...` mounts. The
+    endpoint lives under the v2 prefix so it survives the 410-Gone
+    flip.
+    """
+    return _retirement_status_payload()
