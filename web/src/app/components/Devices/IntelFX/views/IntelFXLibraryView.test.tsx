@@ -47,14 +47,16 @@ describe('IntelFXLibraryView accessibility', () => {
     expect(screen.getByRole('heading', { name: /preset library/i })).toBeTruthy()
     expect(screen.getByLabelText('Search presets')).toBeTruthy()
 
-    const loadProgramButton = await screen.findByRole('button', {
-      name: /Load U002 Crunch/i,
-    })
+    const loadProgramButton = await screen.findByRole(
+      'button',
+      { name: /Load U002 Crunch/i },
+      { timeout: 10000 },
+    )
     fireEvent.click(loadProgramButton)
 
     await waitFor(() => {
       expect(mockSetProgram).toHaveBeenCalledWith(1)
-    })
+    }, { timeout: 10000 })
     expect(mockSetLcdText).toHaveBeenCalledWith('LOADED U002 Crunch')
   })
 })

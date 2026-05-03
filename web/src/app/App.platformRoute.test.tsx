@@ -431,19 +431,23 @@ describe('App routing', () => {
   })
 
   it('keeps Ground Control Pro as a first-class routed surface', async () => {
+    // T2487/T2488/T2489 (Path A revision, 2026-05-02): legacy /ground-control-pro
+    // hard-redirects to the unified /midi/devices/<profile-key>/console mount.
     navigateTo('/ground-control-pro')
 
     render(<App />)
 
-    expect(await screen.findByTestId('ground-control-pro-route')).toHaveTextContent('/ground-control-pro')
+    expect(await screen.findByTestId('ground-control-pro-route')).toHaveTextContent('/midi/devices/voodoo-lab-ground-control-pro/console')
   })
 
   it('keeps IntelFX as a dedicated routed surface inside AppShell', async () => {
+    // T2487/T2488/T2489 (Path A revision, 2026-05-02): legacy /intelfx and
+    // /devices/intelfx/panel hard-redirect to the unified /midi/devices/<profile-key>/panel mount.
     navigateTo('/intelfx')
 
     render(<App />)
 
-    expect(await screen.findByTestId('intelfx-route')).toHaveTextContent('/devices/intelfx/panel')
+    expect(await screen.findByTestId('intelfx-route')).toHaveTextContent('/midi/devices/rocktron-intelfx/panel')
     expect(screen.getByTestId('app-shell')).toBeTruthy()
   })
 })

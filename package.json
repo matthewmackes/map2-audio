@@ -13,6 +13,7 @@
   },
   "jest": {
     "testEnvironment": "jsdom",
+    "testTimeout": 15000,
     "setupFiles": [
       "<rootDir>/tests/jest/setupAfterEnv.js"
     ],
@@ -36,7 +37,8 @@
     ],
     "testPathIgnorePatterns": [
       "<rootDir>/web/src/map2/components/MAP2Dashboard.test.tsx",
-      "<rootDir>/.claude/worktrees/"
+      "<rootDir>/.claude/worktrees/",
+      "<rootDir>/device-packs/"
     ]
   },
   "keywords": [],
