@@ -1265,7 +1265,7 @@ class StateAuthorityActivationService:
             # and we continue to mark VERIFYING completed.
             if verify_mode == "strict" and verify_errors:
                 raise SnapshotVerificationError(verify_errors)
-            brain_runtime_reconcile_result = await self.owner._reconcile_snapshot_brain_runtime_extensions(
+            sequencer_runtime_reconcile_result = await self.owner._reconcile_snapshot_brain_runtime_extensions(
                 current_extensions=pre_activation_extensions,
                 snapshot_extensions=(
                     refreshed_detail.get("extensions")
@@ -1296,7 +1296,7 @@ class StateAuthorityActivationService:
                 "snapshot_midi_map": midi_map_sync_result or {},
                 "expression_mappings": expression_mapping_sync_result or {},
                 "automation_lanes": automation_lane_sync_result or {},
-                "performance_brain_runtime": brain_runtime_reconcile_result or {},
+                "sequencer_runtime": sequencer_runtime_reconcile_result or {},
                 "topology_mutation": activation_topology_metrics,
             }
             preload_plan = await self.owner.plan_preload_candidates_for_snapshot(snapshot.id, limit=3)
@@ -1334,8 +1334,8 @@ class StateAuthorityActivationService:
                 runtime_live_state=live_runtime_state,
             )
             runtime_metrics["authority_publication"] = authority_publication_result or {}
-            brain_runtime_reconcile_result["broadcast_count"] = await self.owner._broadcast_snapshot_brain_runtime_updates(
-                brain_runtime_reconcile_result
+            sequencer_runtime_reconcile_result["broadcast_count"] = await self.owner._broadcast_snapshot_brain_runtime_updates(
+                sequencer_runtime_reconcile_result
             )
             try:
                 from app.services.snapshot_runtime_state_service import schedule_post_activation_health_check

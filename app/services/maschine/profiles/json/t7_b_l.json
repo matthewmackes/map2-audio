@@ -1,7 +1,7 @@
 {
   "id": "t7_b_l",
   "name": "T7 B-L",
-  "description": "Observer-backed Brain left-bank slot roster.",
+  "description": "Observer-backed Sequencer left-bank slot roster.",
   "bars": {
     "left": {
       "top_left": "T7 B-L",

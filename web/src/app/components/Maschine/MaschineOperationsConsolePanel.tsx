@@ -24,7 +24,7 @@ import type { MaschineAudioGridProjection, MaschineDaemonStatus } from '../../..
 const PROFILE_CATEGORIES = [
   { id: 'Control', label: 'Control', detail: 't1_ctrl, t2_macro, t3_perform — chain mixers + macros' },
   { id: 'Chain', label: 'Chain', detail: 't9_chain_editor — pad-per-block effect chain editor' },
-  { id: 'Brain', label: 'Brain', detail: 'Brain step / sequence / overview profiles' },
+  { id: 'Sequencer', label: 'Sequencer', detail: 'Brain step / sequence / overview profiles' },
   { id: 'Sampler', label: 'Sampler', detail: 'Pad sampler & loop record' },
   { id: 'Monitor', label: 'Monitor', detail: 't16_monitor — live stats LCD page' },
   { id: 'Admin', label: 'Admin', detail: 't18_admin_console — sudo restart / reboot' },

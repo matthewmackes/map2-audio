@@ -15,9 +15,9 @@ describe('homeShellNavigation recent routes', () => {
   // and `/workspace/artifacts*` inputs onto the post-reorg canonical
   // URLs (/node-ops/<id>, /artifacts, /about) before storage.
   it('stores the newest recent routes first, dedupes, and keeps the list bounded', () => {
-    writeHomeShellRecentRoute('/brain')
+    writeHomeShellRecentRoute('/sequencer')
     writeHomeShellRecentRoute('/platforms/theme')
-    writeHomeShellRecentRoute('/brain')
+    writeHomeShellRecentRoute('/sequencer')
     writeHomeShellRecentRoute('/midi-hub/connections')
     writeHomeShellRecentRoute('/workspace/platforms/overview')
     writeHomeShellRecentRoute('/snapshot-editor')
@@ -26,7 +26,7 @@ describe('homeShellNavigation recent routes', () => {
       '/snapshot-editor',
       '/node-ops/overview',
       '/midi-hub/connections',
-      '/brain',
+      '/sequencer',
     ])
     expect(readHomeShellRecentRoute()).toBe('/snapshot-editor')
   })

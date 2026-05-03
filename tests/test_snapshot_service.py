@@ -16,9 +16,9 @@ import app.services.midi_commander_surface as midi_commander_surface_module
 import app.services.mcu_surface as mcu_surface_module
 import app.services.push_surface as push_surface_module
 from app.services import audio_state_authority as audio_state_authority_module
-from app.services import performance_brain_authority_sync as performance_brain_authority_sync_module
+from app.services import sequencer_authority_sync as sequencer_authority_sync_module
 from app.services import performance_metrics as performance_metrics_module
-from app.services import performance_brain_service as performance_brain_service_module
+from app.services import sequencer_service as sequencer_service_module
 from app.services import snapshot_runtime_service
 from app.services import snapshot as snapshot_service_module
 from app.services import snapshot_runtime_state_service as runtime_state_service_module
@@ -2763,7 +2763,7 @@ def test_activate_snapshot_preserves_existing_authority_extensions_when_publishi
                 value=SimpleNamespace(
                     desired=SimpleNamespace(
                         extensions={
-                            "performance_brain": {
+                            "sequencer": {
                                 "instances": {
                                     "instance-17__position-3": {
                                         "runtime_instance_id": "instance-17__position-3",
@@ -2817,8 +2817,8 @@ def test_activate_snapshot_preserves_existing_authority_extensions_when_publishi
 
     assert len(published_desired) == 1
     desired = published_desired[0]
-    assert desired.extensions["performance_brain"]["instances"]["instance-17__position-3"]["instance_id"] == "17"
-    assert desired.extensions["performance_brain"]["instances"]["instance-17__position-3"]["plugin_position"] == 3
+    assert desired.extensions["sequencer"]["instances"]["instance-17__position-3"]["instance_id"] == "17"
+    assert desired.extensions["sequencer"]["instances"]["instance-17__position-3"]["plugin_position"] == 3
 
 
 def test_create_snapshot_captures_current_authority_extensions_when_detail_omits_them(tmp_path, monkeypatch):
@@ -2833,7 +2833,7 @@ def test_create_snapshot_captures_current_authority_extensions_when_detail_omits
                 value=SimpleNamespace(
                     desired=SimpleNamespace(
                         extensions={
-                            "performance_brain": {
+                            "sequencer": {
                                 "instances": {
                                     "instance-17__position-3": {
                                         "runtime_instance_id": "instance-17__position-3",
@@ -2863,7 +2863,7 @@ def test_create_snapshot_captures_current_authority_extensions_when_detail_omits
         async with database_module.get_session() as session:
             service = SnapshotService(session)
             created = await service.create_snapshot(
-                name="CapturedBrainSnapshot",
+                name="CapturedSequencerSnapshot",
                 program_number=14,
                 detail_payload={
                     "channels": [{"channel_key": "channel-a", "label": "A", "chain_id": 1}],
@@ -2875,8 +2875,8 @@ def test_create_snapshot_captures_current_authority_extensions_when_detail_omits
 
             fetched = await service.get_snapshot(created["id"])
             assert fetched is not None
-            assert created["extensions"]["performance_brain"]["instances"]["instance-17__position-3"]["instance_id"] == "17"
-            assert fetched["extensions"]["performance_brain"]["instances"]["instance-17__position-3"]["plugin_position"] == 3
+            assert created["extensions"]["sequencer"]["instances"]["instance-17__position-3"]["instance_id"] == "17"
+            assert fetched["extensions"]["sequencer"]["instances"]["instance-17__position-3"]["plugin_position"] == 3
 
     asyncio.run(_run())
 
@@ -2894,14 +2894,14 @@ def test_snapshot_revision_round_trips_snapshot_owned_extensions(tmp_path, monke
         async with database_module.get_session() as session:
             service = SnapshotService(session)
             created = await service.create_snapshot(
-                name="RevisionBrainSnapshot",
+                name="RevisionSequencerSnapshot",
                 program_number=15,
                 detail_payload={
                     "channels": [{"channel_key": "channel-a", "label": "A", "chain_id": 1}],
                     "chains": [{"id": 1, "name": "Chain A", "plugins": [{"uri": "urn:test:plugin", "position": 0}]}],
                     "routing": {"mode": "series", "active_channel_key": "channel-a", "series_order": ["channel-a"]},
                     "extensions": {
-                        "performance_brain": {
+                        "sequencer": {
                             "instances": {
                                 "instance-17__position-3": {
                                     "runtime_instance_id": "instance-17__position-3",
@@ -2923,7 +2923,7 @@ def test_snapshot_revision_round_trips_snapshot_owned_extensions(tmp_path, monke
                     "routing": created["routing"],
                     "midi_map": created["midi_map"],
                     "extensions": {
-                        "performance_brain": {
+                        "sequencer": {
                             "instances": {
                                 "instance-18__position-4": {
                                     "runtime_instance_id": "instance-18__position-4",
@@ -2940,12 +2940,12 @@ def test_snapshot_revision_round_trips_snapshot_owned_extensions(tmp_path, monke
 
             assert updated is not None
             assert updated["snapshot_revision"] != created["snapshot_revision"]
-            assert updated["extensions"]["performance_brain"]["instances"]["instance-18__position-4"]["instance_id"] == "18"
+            assert updated["extensions"]["sequencer"]["instances"]["instance-18__position-4"]["instance_id"] == "18"
 
             restored = await service.restore_revision(created["id"], 1)
             assert restored is not None
-            assert restored["extensions"]["performance_brain"]["instances"]["instance-17__position-3"]["plugin_position"] == 3
-            assert "instance-18__position-4" not in restored["extensions"]["performance_brain"]["instances"]
+            assert restored["extensions"]["sequencer"]["instances"]["instance-17__position-3"]["plugin_position"] == 3
+            assert "instance-18__position-4" not in restored["extensions"]["sequencer"]["instances"]
 
     asyncio.run(_run())
 
@@ -2962,14 +2962,14 @@ def test_activate_snapshot_rehydrates_local_brain_runtime_and_broadcasts_runtime
             self.messages.append({"topic": topic, "message": data})
 
     fake_ws_manager = _FakeWsManager()
-    brain_service = performance_brain_service_module.PerformanceBrainService(root_path=tmp_path / "brain-runtime")
-    brain_service.update_state(
-        performance_brain_service_module.BrainStateUpdateModel(set_name="Locally Drifted Brain", active_slot=1),
+    sequencer_service = sequencer_service_module.SequencerService(root_path=tmp_path / "brain-runtime")
+    sequencer_service.update_state(
+        sequencer_service_module.SequencerStateUpdateModel(set_name="Locally Drifted Brain", active_slot=1),
         instance_id="17",
         plugin_position=3,
     )
-    brain_service.update_state(
-        performance_brain_service_module.BrainStateUpdateModel(set_name="Stale Previous Snapshot Brain", active_slot=5),
+    sequencer_service.update_state(
+        sequencer_service_module.SequencerStateUpdateModel(set_name="Stale Previous Snapshot Brain", active_slot=5),
         instance_id="22",
         plugin_position=5,
     )
@@ -2993,13 +2993,13 @@ def test_activate_snapshot_rehydrates_local_brain_runtime_and_broadcasts_runtime
                 value=SimpleNamespace(
                     desired=SimpleNamespace(
                         extensions={
-                            "performance_brain": {
+                            "sequencer": {
                                 "instances": {
                                     "instance-22__position-5": {
                                         "runtime_instance_id": "instance-22__position-5",
                                         "instance_id": "22",
                                         "plugin_position": 5,
-                                        "state": brain_service.get_state(instance_id="22", plugin_position=5),
+                                        "state": sequencer_service.get_state(instance_id="22", plugin_position=5),
                                     }
                                 }
                             }
@@ -3026,29 +3026,29 @@ def test_activate_snapshot_rehydrates_local_brain_runtime_and_broadcasts_runtime
         "AudioStateAuthorityService",
         lambda *args, **kwargs: _AuthorityCapture(),
     )
-    monkeypatch.setattr(performance_brain_service_module, "get_performance_brain_service", lambda: brain_service)
-    monkeypatch.setattr(performance_brain_authority_sync_module, "get_performance_brain_service", lambda: brain_service)
+    monkeypatch.setattr(sequencer_service_module, "get_sequencer_service", lambda: sequencer_service)
+    monkeypatch.setattr(sequencer_authority_sync_module, "get_sequencer_service", lambda: sequencer_service)
     monkeypatch.setattr(websocket_manager_module, "ws_manager", fake_ws_manager)
 
     async def _run():
         async with database_module.get_session() as session:
             service = SnapshotService(session)
             created = await service.create_snapshot(
-                name="BrainRuntimeSnapshot",
+                name="SequencerRuntimeSnapshot",
                 program_number=16,
                 detail_payload={
                     "channels": [{"channel_key": "channel-a", "label": "A", "chain_id": 1}],
                     "chains": [{"id": 1, "name": "Chain A", "plugins": [{"uri": "urn:test:plugin", "position": 0}]}],
                     "routing": {"mode": "series", "active_channel_key": "channel-a", "series_order": ["channel-a"]},
                     "extensions": {
-                        "performance_brain": {
+                        "sequencer": {
                             "instances": {
                                 "instance-17__position-3": {
                                     "runtime_instance_id": "instance-17__position-3",
                                     "instance_id": "17",
                                     "plugin_position": 3,
                                     "state": {
-                                        **brain_service.get_state(instance_id="17", plugin_position=3),
+                                        **sequencer_service.get_state(instance_id="17", plugin_position=3),
                                         "set_name": "Snapshot Runtime Brain",
                                         "active_slot": 7,
                                     },
@@ -3062,15 +3062,15 @@ def test_activate_snapshot_rehydrates_local_brain_runtime_and_broadcasts_runtime
 
             activated = await service.activate_snapshot(created["id"])
             assert activated is not None
-            assert activated["runtime_live_state"]["runtime_metrics"]["performance_brain_runtime"]["reconciled"] is True
-            assert activated["runtime_live_state"]["runtime_metrics"]["performance_brain_runtime"]["restored"] == [
+            assert activated["runtime_live_state"]["runtime_metrics"]["sequencer_runtime"]["reconciled"] is True
+            assert activated["runtime_live_state"]["runtime_metrics"]["sequencer_runtime"]["restored"] == [
                 {
                     "runtime_instance_id": "instance-17__position-3",
                     "instance_id": "17",
                     "plugin_position": 3,
                 }
             ]
-            assert activated["runtime_live_state"]["runtime_metrics"]["performance_brain_runtime"]["reset"] == [
+            assert activated["runtime_live_state"]["runtime_metrics"]["sequencer_runtime"]["reset"] == [
                 {
                     "runtime_instance_id": "instance-22__position-5",
                     "instance_id": "22",
@@ -3081,16 +3081,16 @@ def test_activate_snapshot_rehydrates_local_brain_runtime_and_broadcasts_runtime
     asyncio.run(_run())
 
     assert published_desired
-    desired_instances = published_desired[-1].extensions["performance_brain"]["instances"]
+    desired_instances = published_desired[-1].extensions["sequencer"]["instances"]
     assert set(desired_instances) == {"instance-17__position-3"}
-    assert brain_service.get_state(instance_id="17", plugin_position=3)["set_name"] == "Snapshot Runtime Brain"
-    assert brain_service.get_state(instance_id="17", plugin_position=3)["active_slot"] == 7
-    assert brain_service.get_state(instance_id="22", plugin_position=5)["set_name"] == "Init Performance Brain"
+    assert sequencer_service.get_state(instance_id="17", plugin_position=3)["set_name"] == "Snapshot Runtime Brain"
+    assert sequencer_service.get_state(instance_id="17", plugin_position=3)["active_slot"] == 7
+    assert sequencer_service.get_state(instance_id="22", plugin_position=5)["set_name"] == "Init Sequencer"
 
     brain_runtime_messages = [
         message
         for message in fake_ws_manager.messages
-        if message["topic"] == performance_brain_service_module.BRAIN_RUNTIME_TOPIC
+        if message["topic"] == sequencer_service_module.BRAIN_RUNTIME_TOPIC
     ]
     assert len(brain_runtime_messages) == 2
     assert {

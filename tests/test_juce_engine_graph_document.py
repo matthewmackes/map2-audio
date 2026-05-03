@@ -77,7 +77,7 @@ def test_graph_document_load_can_arm_independent_crossfade_transition():
                     {
                         "id": "main-chain:0",
                         "uri": "map2:fx:brain",
-                        "engine_uri": "map2://juce/brain",
+                        "engine_uri": "map2://juce/sequencer",
                         "name": "Brain",
                         "bypass": False,
                         "parameters": {},
@@ -93,7 +93,7 @@ def test_graph_document_load_can_arm_independent_crossfade_transition():
                         "plugins": [
                             {
                                 "position": 0,
-                                "uri": "map2://juce/brain",
+                                "uri": "map2://juce/sequencer",
                                 "canonical_uri": "map2:fx:brain",
                                 "name": "Brain",
                                 "bypass": False,
@@ -114,7 +114,7 @@ def test_graph_document_load_can_arm_independent_crossfade_transition():
         assert engine.get_independent_graph_crossfade_count() >= 1
 
         reloaded = engine.save_graph_document(next_document)
-        assert reloaded["graph"]["chains"][0]["plugins"][0]["uri"] == "map2://juce/brain"
+        assert reloaded["graph"]["chains"][0]["plugins"][0]["uri"] == "map2://juce/sequencer"
     finally:
         engine.shutdown()
 

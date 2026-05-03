@@ -1294,7 +1294,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/audio/state/brain/sync": {
+    "/api/audio/state/sequencer/sync": {
         parameters: {
             query?: never;
             header?: never;
@@ -24138,7 +24138,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/engine/brain/state": {
+    "/api/engine/sequencer/state": {
         parameters: {
             query?: never;
             header?: never;
@@ -24156,7 +24156,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/engine/brain/transport": {
+    "/api/engine/sequencer/transport": {
         parameters: {
             query?: never;
             header?: never;
@@ -24174,7 +24174,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/engine/brain/slots": {
+    "/api/engine/sequencer/slots": {
         parameters: {
             query?: never;
             header?: never;
@@ -24191,7 +24191,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/engine/brain/slots/{slot_id}": {
+    "/api/engine/sequencer/slots/{slot_id}": {
         parameters: {
             query?: never;
             header?: never;
@@ -24208,7 +24208,7 @@ export interface paths {
         patch: operations["brain_update_brain_slot_patch_api_engine_brain_slots_slot_id"];
         trace?: never;
     };
-    "/api/engine/brain/layers": {
+    "/api/engine/sequencer/layers": {
         parameters: {
             query?: never;
             header?: never;
@@ -24226,7 +24226,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/engine/brain/sequence": {
+    "/api/engine/sequencer/sequence": {
         parameters: {
             query?: never;
             header?: never;
@@ -24244,7 +24244,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/engine/brain/song": {
+    "/api/engine/sequencer/song": {
         parameters: {
             query?: never;
             header?: never;
@@ -24262,7 +24262,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/engine/brain/mixer": {
+    "/api/engine/sequencer/mixer": {
         parameters: {
             query?: never;
             header?: never;
@@ -24280,7 +24280,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/engine/brain/inputs": {
+    "/api/engine/sequencer/inputs": {
         parameters: {
             query?: never;
             header?: never;
@@ -24298,7 +24298,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/engine/brain/library": {
+    "/api/engine/sequencer/library": {
         parameters: {
             query?: never;
             header?: never;
@@ -24315,7 +24315,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/engine/brain/sample-editor": {
+    "/api/engine/sequencer/sample-editor": {
         parameters: {
             query?: never;
             header?: never;
@@ -24333,7 +24333,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/engine/brain/diagnostics": {
+    "/api/engine/sequencer/diagnostics": {
         parameters: {
             query?: never;
             header?: never;
@@ -24350,7 +24350,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/engine/brain/import/drums": {
+    "/api/engine/sequencer/import/drums": {
         parameters: {
             query?: never;
             header?: never;
@@ -24367,7 +24367,7 @@ export interface paths {
         patch?: never;
         trace?: never;
     };
-    "/api/engine/brain/import/synthforge": {
+    "/api/engine/sequencer/import/synthforge": {
         parameters: {
             query?: never;
             header?: never;
@@ -33367,8 +33367,8 @@ export interface components {
             /** Bpm */
             bpm: number;
         };
-        /** BrainControllerAssignmentModel */
-        BrainControllerAssignmentModel: {
+        /** SequencerControllerAssignmentModel */
+        SequencerControllerAssignmentModel: {
             /** Source */
             source: string;
             /** Target */
@@ -33384,8 +33384,8 @@ export interface components {
              */
             enabled: boolean;
         };
-        /** BrainControllerQualificationModel */
-        BrainControllerQualificationModel: {
+        /** SequencerControllerQualificationModel */
+        SequencerControllerQualificationModel: {
             /**
              * Scoped Instance Key
              * @default workspace-default
@@ -33411,10 +33411,10 @@ export interface components {
              * @default 0
              */
             ready_surface_count: number;
-            keyboard?: components["schemas"]["BrainKeyboardQualificationModel"];
-            triggers?: components["schemas"]["BrainTriggerQualificationModel"];
-            sequence?: components["schemas"]["BrainSequenceQualificationModel"];
-            routing?: components["schemas"]["BrainRoutingQualificationModel"];
+            keyboard?: components["schemas"]["SequencerKeyboardQualificationModel"];
+            triggers?: components["schemas"]["SequencerTriggerQualificationModel"];
+            sequence?: components["schemas"]["SequencerSequenceQualificationModel"];
+            routing?: components["schemas"]["SequencerRoutingQualificationModel"];
             /**
              * Summary
              * @default
@@ -33423,8 +33423,8 @@ export interface components {
             /** Issues */
             issues?: string[];
         };
-        /** BrainDiagnosticsModel */
-        BrainDiagnosticsModel: {
+        /** SequencerDiagnosticsModel */
+        SequencerDiagnosticsModel: {
             /**
              * Sample Rate Hz
              * @default 48000
@@ -33479,25 +33479,25 @@ export interface components {
             warnings?: string[];
             /** Last Import Source */
             last_import_source?: string | null;
-            controller_qualification?: components["schemas"]["BrainControllerQualificationModel"];
+            controller_qualification?: components["schemas"]["SequencerControllerQualificationModel"];
             /** Updated At Iso */
             updated_at_iso?: string;
         };
-        /** BrainInputsStateModel */
-        BrainInputsStateModel: {
+        /** SequencerInputsStateModel */
+        SequencerInputsStateModel: {
             /** Keyboard Zones */
-            keyboard_zones?: components["schemas"]["BrainKeyboardZoneModel"][];
+            keyboard_zones?: components["schemas"]["SequencerKeyboardZoneModel"][];
             /** Trigger Profiles */
-            trigger_profiles?: components["schemas"]["BrainTriggerProfileModel"][];
+            trigger_profiles?: components["schemas"]["SequencerTriggerProfileModel"][];
             /** Controller Assignments */
-            controller_assignments?: components["schemas"]["BrainControllerAssignmentModel"][];
+            controller_assignments?: components["schemas"]["SequencerControllerAssignmentModel"][];
         };
-        /** BrainInputsUpdateModel */
-        BrainInputsUpdateModel: {
-            inputs: components["schemas"]["BrainInputsStateModel"];
+        /** SequencerInputsModel */
+        SequencerInputsModel: {
+            inputs: components["schemas"]["SequencerInputsStateModel"];
         };
-        /** BrainKeyboardQualificationModel */
-        BrainKeyboardQualificationModel: {
+        /** SequencerKeyboardQualificationModel */
+        SequencerKeyboardQualificationModel: {
             /**
              * Ready
              * @default false
@@ -33538,8 +33538,8 @@ export interface components {
             /** Issues */
             issues?: string[];
         };
-        /** BrainKeyboardZoneModel */
-        BrainKeyboardZoneModel: {
+        /** SequencerKeyboardZoneModel */
+        SequencerKeyboardZoneModel: {
             /** Zone Id */
             zone_id: string;
             /** Name */
@@ -33575,8 +33575,8 @@ export interface components {
              */
             aftertouch_mode: string;
         };
-        /** BrainLayerModel */
-        BrainLayerModel: {
+        /** SequencerLayerModel */
+        SequencerLayerModel: {
             /** Layer Id */
             layer_id: string;
             /** Name */
@@ -33624,13 +33624,13 @@ export interface components {
              */
             purpose: string;
         };
-        /** BrainLayersUpdateModel */
-        BrainLayersUpdateModel: {
+        /** SequencerLayersUpdateModel */
+        SequencerLayersUpdateModel: {
             /** Layers */
-            layers?: components["schemas"]["BrainLayerModel"][];
+            layers?: components["schemas"]["SequencerLayerModel"][];
         };
-        /** BrainLibraryAssetModel */
-        BrainLibraryAssetModel: {
+        /** SequencerLibraryAssetModel */
+        SequencerLibraryAssetModel: {
             /** Asset Id */
             asset_id: string;
             /** Name */
@@ -33661,8 +33661,8 @@ export interface components {
             /** Tags */
             tags?: string[];
         };
-        /** BrainLibraryCollectionModel */
-        BrainLibraryCollectionModel: {
+        /** SequencerLibraryCollectionModel */
+        SequencerLibraryCollectionModel: {
             /** Collection Id */
             collection_id: string;
             /** Label */
@@ -33673,12 +33673,12 @@ export interface components {
              */
             asset_count: number;
             /** Assets */
-            assets?: components["schemas"]["BrainLibraryAssetModel"][];
+            assets?: components["schemas"]["SequencerLibraryAssetModel"][];
         };
-        /** BrainLibraryStateModel */
-        BrainLibraryStateModel: {
+        /** SequencerLibraryStateModel */
+        SequencerLibraryStateModel: {
             /** Collections */
-            collections?: components["schemas"]["BrainLibraryCollectionModel"][];
+            collections?: components["schemas"]["SequencerLibraryCollectionModel"][];
             /** Featured Assets */
             featured_assets?: string[];
             /**
@@ -33687,8 +33687,8 @@ export interface components {
              */
             last_scan_iso: string;
         };
-        /** BrainMasterSectionModel */
-        BrainMasterSectionModel: {
+        /** SequencerMasterSectionModel */
+        SequencerMasterSectionModel: {
             /**
              * Master Volume
              * @default 0.82
@@ -33715,8 +33715,8 @@ export interface components {
              */
             limiter_ceiling_db: number;
         };
-        /** BrainMixerBusModel */
-        BrainMixerBusModel: {
+        /** SequencerMixerBusModel */
+        SequencerMixerBusModel: {
             /** Bus Id */
             bus_id: number;
             /** Name */
@@ -33752,18 +33752,18 @@ export interface components {
              */
             reverb_send: number;
         };
-        /** BrainMixerStateModel */
-        BrainMixerStateModel: {
+        /** SequencerMixerStateModel */
+        SequencerMixerStateModel: {
             /** Buses */
-            buses?: components["schemas"]["BrainMixerBusModel"][];
-            master?: components["schemas"]["BrainMasterSectionModel"];
+            buses?: components["schemas"]["SequencerMixerBusModel"][];
+            master?: components["schemas"]["SequencerMasterSectionModel"];
         };
-        /** BrainMixerUpdateModel */
-        BrainMixerUpdateModel: {
-            mixer: components["schemas"]["BrainMixerStateModel"];
+        /** SequencerInputsModel */
+        SequencerInputsModel: {
+            mixer: components["schemas"]["SequencerMixerStateModel"];
         };
-        /** BrainPatternSummaryModel */
-        BrainPatternSummaryModel: {
+        /** SequencerPatternSummaryModel */
+        SequencerPatternSummaryModel: {
             /** Pattern Id */
             pattern_id: number;
             /** Name */
@@ -33794,8 +33794,8 @@ export interface components {
              */
             summary: string;
         };
-        /** BrainRoutingQualificationModel */
-        BrainRoutingQualificationModel: {
+        /** SequencerRoutingQualificationModel */
+        SequencerRoutingQualificationModel: {
             /**
              * Ready
              * @default false
@@ -33829,8 +33829,8 @@ export interface components {
             /** Issues */
             issues?: string[];
         };
-        /** BrainSampleEditorStateModel */
-        BrainSampleEditorStateModel: {
+        /** SequencerSampleEditorStateModel */
+        SequencerSampleEditorStateModel: {
             /**
              * Slot Id
              * @default 0
@@ -33877,8 +33877,8 @@ export interface components {
              */
             record_target_path: string;
         };
-        /** BrainSampleEditorUpdateModel */
-        BrainSampleEditorUpdateModel: {
+        /** SequencerSampleEditorUpdateModel */
+        SequencerSampleEditorUpdateModel: {
             /** Slot Id */
             slot_id: number;
             /** Start Sample */
@@ -33888,8 +33888,8 @@ export interface components {
             /** Normalize Target */
             normalize_target?: number | null;
         };
-        /** BrainSequenceLaneSummaryModel */
-        BrainSequenceLaneSummaryModel: {
+        /** SequencerSequenceLaneSummaryModel */
+        SequencerSequenceLaneSummaryModel: {
             /** Slot Id */
             slot_id: number;
             /** Name */
@@ -33912,8 +33912,8 @@ export interface components {
             /** Step Lock Targets */
             step_lock_targets?: string[];
         };
-        /** BrainSequenceModel */
-        BrainSequenceModel: {
+        /** SequencerSequenceModel */
+        SequencerSequenceModel: {
             /**
              * Pattern Bank Size
              * @default 128
@@ -33935,9 +33935,9 @@ export interface components {
              */
             current_variation: number;
             /** Patterns */
-            patterns?: components["schemas"]["BrainPatternSummaryModel"][];
+            patterns?: components["schemas"]["SequencerPatternSummaryModel"][];
             /** Lanes */
-            lanes?: components["schemas"]["BrainSequenceLaneSummaryModel"][];
+            lanes?: components["schemas"]["SequencerSequenceLaneSummaryModel"][];
             /**
              * Fill Mode
              * @default manual
@@ -33949,8 +33949,8 @@ export interface components {
              */
             song_entry_count: number;
         };
-        /** BrainSequenceQualificationModel */
-        BrainSequenceQualificationModel: {
+        /** SequencerSequenceQualificationModel */
+        SequencerSequenceQualificationModel: {
             /**
              * Ready
              * @default false
@@ -33994,12 +33994,12 @@ export interface components {
             /** Issues */
             issues?: string[];
         };
-        /** BrainSequenceUpdateModel */
-        BrainSequenceUpdateModel: {
-            sequence: components["schemas"]["BrainSequenceModel"];
+        /** SequencerSequenceUpdateModel */
+        SequencerSequenceUpdateModel: {
+            sequence: components["schemas"]["SequencerSequenceModel"];
         };
-        /** BrainSlotModel */
-        BrainSlotModel: {
+        /** SequencerSlotModel */
+        SequencerSlotModel: {
             /** Slot Id */
             slot_id: number;
             /** Name */
@@ -34119,8 +34119,8 @@ export interface components {
              */
             status: string;
         };
-        /** BrainSlotUpdateModel */
-        BrainSlotUpdateModel: {
+        /** SequencerSlotUpdateModel */
+        SequencerSlotUpdateModel: {
             /** Name */
             name?: string | null;
             /** Mode */
@@ -34170,8 +34170,8 @@ export interface components {
             /** Status */
             status?: string | null;
         };
-        /** BrainSnapshotIntegrationModel */
-        BrainSnapshotIntegrationModel: {
+        /** SequencerSnapshotIntegrationModel */
+        SequencerSnapshotIntegrationModel: {
             /**
              * Authority Model
              * @default snapshot-first
@@ -34198,8 +34198,8 @@ export interface components {
              */
             observed_state_id: string;
         };
-        /** BrainSongEntryModel */
-        BrainSongEntryModel: {
+        /** SequencerSongEntryModel */
+        SequencerSongEntryModel: {
             /** Pattern Id */
             pattern_id: number;
             /**
@@ -34218,32 +34218,32 @@ export interface components {
              */
             label: string;
         };
-        /** BrainSongStateModel */
-        BrainSongStateModel: {
+        /** SequencerSongStateModel */
+        SequencerSongStateModel: {
             /** Entries */
-            entries?: components["schemas"]["BrainSongEntryModel"][];
+            entries?: components["schemas"]["SequencerSongEntryModel"][];
             /**
              * Loop
              * @default false
              */
             loop: boolean;
         };
-        /** BrainSongUpdateModel */
-        BrainSongUpdateModel: {
-            song: components["schemas"]["BrainSongStateModel"];
+        /** SequencerInputsModel */
+        SequencerInputsModel: {
+            song: components["schemas"]["SequencerSongStateModel"];
         };
-        /** BrainStateModel */
-        BrainStateModel: {
+        /** SequencerStateModel */
+        SequencerStateModel: {
             /** Instance Id */
             instance_id: string;
             /**
              * Product Name
-             * @default Performance Brain
+             * @default Sequencer
              */
             product_name: string;
             /**
              * Set Name
-             * @default Init Performance Brain
+             * @default Init Sequencer
              */
             set_name: string;
             /**
@@ -34262,22 +34262,22 @@ export interface components {
              * @enum {string}
              */
             active_section: "performance" | "console" | "step" | "split" | "perform" | "layers" | "sequence" | "routing" | "inputs" | "library" | "session_media" | "practice_coach" | "diagnostics";
-            transport?: components["schemas"]["BrainTransportStateModel"];
+            transport?: components["schemas"]["SequencerTransportStateModel"];
             /** Slots */
-            slots?: components["schemas"]["BrainSlotModel"][];
+            slots?: components["schemas"]["SequencerSlotModel"][];
             /** Layers */
-            layers?: components["schemas"]["BrainLayerModel"][];
-            sequence?: components["schemas"]["BrainSequenceModel"];
-            song?: components["schemas"]["BrainSongStateModel"];
-            mixer?: components["schemas"]["BrainMixerStateModel"];
-            inputs?: components["schemas"]["BrainInputsStateModel"];
-            library?: components["schemas"]["BrainLibraryStateModel"];
-            sample_editor?: components["schemas"]["BrainSampleEditorStateModel"];
-            diagnostics?: components["schemas"]["BrainDiagnosticsModel"];
-            snapshot_integration?: components["schemas"]["BrainSnapshotIntegrationModel"];
+            layers?: components["schemas"]["SequencerLayerModel"][];
+            sequence?: components["schemas"]["SequencerSequenceModel"];
+            song?: components["schemas"]["SequencerSongStateModel"];
+            mixer?: components["schemas"]["SequencerMixerStateModel"];
+            inputs?: components["schemas"]["SequencerInputsStateModel"];
+            library?: components["schemas"]["SequencerLibraryStateModel"];
+            sample_editor?: components["schemas"]["SequencerSampleEditorStateModel"];
+            diagnostics?: components["schemas"]["SequencerDiagnosticsModel"];
+            snapshot_integration?: components["schemas"]["SequencerSnapshotIntegrationModel"];
         };
-        /** BrainStateUpdateModel */
-        BrainStateUpdateModel: {
+        /** SequencerStateUpdateModel */
+        SequencerStateUpdateModel: {
             /** Set Name */
             set_name?: string | null;
             /** Active Slot */
@@ -34287,8 +34287,8 @@ export interface components {
             /** Active Section */
             active_section?: ("performance" | "console" | "step" | "split" | "perform" | "layers" | "sequence" | "routing" | "inputs" | "library" | "session_media" | "practice_coach" | "diagnostics") | null;
         };
-        /** BrainTransportStateModel */
-        BrainTransportStateModel: {
+        /** SequencerTransportStateModel */
+        SequencerTransportStateModel: {
             /**
              * Is Playing
              * @default false
@@ -34340,8 +34340,8 @@ export interface components {
              */
             switch_quantization_beats: number;
         };
-        /** BrainTransportUpdateModel */
-        BrainTransportUpdateModel: {
+        /** SequencerTransportUpdateModel */
+        SequencerTransportUpdateModel: {
             /** Is Playing */
             is_playing?: boolean | null;
             /** Bpm */
@@ -34357,8 +34357,8 @@ export interface components {
             /** Switch Quantization Beats */
             switch_quantization_beats?: number | null;
         };
-        /** BrainTriggerProfileModel */
-        BrainTriggerProfileModel: {
+        /** SequencerTriggerProfileModel */
+        SequencerTriggerProfileModel: {
             /** Profile Id */
             profile_id: string;
             /** Name */
@@ -34409,8 +34409,8 @@ export interface components {
              */
             velocity_ceiling: number;
         };
-        /** BrainTriggerQualificationModel */
-        BrainTriggerQualificationModel: {
+        /** SequencerTriggerQualificationModel */
+        SequencerTriggerQualificationModel: {
             /**
              * Ready
              * @default false
@@ -103440,7 +103440,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["BrainStateModel"];
+                    "application/json": components["schemas"]["SequencerStateModel"];
                 };
             };
             /** @description Validation Error */
@@ -103484,7 +103484,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["BrainStateUpdateModel"];
+                "application/json": components["schemas"]["SequencerStateUpdateModel"];
             };
         };
         responses: {
@@ -103494,7 +103494,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["BrainStateModel"];
+                    "application/json": components["schemas"]["SequencerStateModel"];
                 };
             };
             /** @description Validation Error */
@@ -103544,7 +103544,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["BrainTransportStateModel"];
+                    "application/json": components["schemas"]["SequencerTransportStateModel"];
                 };
             };
             /** @description Validation Error */
@@ -103588,7 +103588,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["BrainTransportUpdateModel"];
+                "application/json": components["schemas"]["SequencerTransportUpdateModel"];
             };
         };
         responses: {
@@ -103598,7 +103598,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["BrainTransportStateModel"];
+                    "application/json": components["schemas"]["SequencerTransportStateModel"];
                 };
             };
             /** @description Validation Error */
@@ -103648,7 +103648,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["BrainSlotModel"][];
+                    "application/json": components["schemas"]["SequencerSlotModel"][];
                 };
             };
             /** @description Validation Error */
@@ -103694,7 +103694,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["BrainSlotUpdateModel"];
+                "application/json": components["schemas"]["SequencerSlotUpdateModel"];
             };
         };
         responses: {
@@ -103704,7 +103704,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["BrainSlotModel"];
+                    "application/json": components["schemas"]["SequencerSlotModel"];
                 };
             };
             /** @description Validation Error */
@@ -103800,7 +103800,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["BrainLayersUpdateModel"];
+                "application/json": components["schemas"]["SequencerLayersUpdateModel"];
             };
         };
         responses: {
@@ -103862,7 +103862,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["BrainSequenceModel"];
+                    "application/json": components["schemas"]["SequencerSequenceModel"];
                 };
             };
             /** @description Validation Error */
@@ -103906,7 +103906,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["BrainSequenceUpdateModel"];
+                "application/json": components["schemas"]["SequencerSequenceUpdateModel"];
             };
         };
         responses: {
@@ -103916,7 +103916,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["BrainSequenceModel"];
+                    "application/json": components["schemas"]["SequencerSequenceModel"];
                 };
             };
             /** @description Validation Error */
@@ -103966,7 +103966,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["BrainSongStateModel"];
+                    "application/json": components["schemas"]["SequencerSongStateModel"];
                 };
             };
             /** @description Validation Error */
@@ -104010,7 +104010,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["BrainSongUpdateModel"];
+                "application/json": components["schemas"]["SequencerInputsModel"];
             };
         };
         responses: {
@@ -104020,7 +104020,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["BrainSongStateModel"];
+                    "application/json": components["schemas"]["SequencerSongStateModel"];
                 };
             };
             /** @description Validation Error */
@@ -104070,7 +104070,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["BrainMixerStateModel"];
+                    "application/json": components["schemas"]["SequencerMixerStateModel"];
                 };
             };
             /** @description Validation Error */
@@ -104114,7 +104114,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["BrainMixerUpdateModel"];
+                "application/json": components["schemas"]["SequencerInputsModel"];
             };
         };
         responses: {
@@ -104124,7 +104124,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["BrainMixerStateModel"];
+                    "application/json": components["schemas"]["SequencerMixerStateModel"];
                 };
             };
             /** @description Validation Error */
@@ -104174,7 +104174,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["BrainInputsStateModel"];
+                    "application/json": components["schemas"]["SequencerInputsStateModel"];
                 };
             };
             /** @description Validation Error */
@@ -104218,7 +104218,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["BrainInputsUpdateModel"];
+                "application/json": components["schemas"]["SequencerInputsModel"];
             };
         };
         responses: {
@@ -104228,7 +104228,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["BrainInputsStateModel"];
+                    "application/json": components["schemas"]["SequencerInputsStateModel"];
                 };
             };
             /** @description Validation Error */
@@ -104278,7 +104278,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["BrainLibraryStateModel"];
+                    "application/json": components["schemas"]["SequencerLibraryStateModel"];
                 };
             };
             /** @description Validation Error */
@@ -104329,7 +104329,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["BrainSampleEditorStateModel"];
+                    "application/json": components["schemas"]["SequencerSampleEditorStateModel"];
                 };
             };
             /** @description Validation Error */
@@ -104373,7 +104373,7 @@ export interface operations {
         };
         requestBody: {
             content: {
-                "application/json": components["schemas"]["BrainSampleEditorUpdateModel"];
+                "application/json": components["schemas"]["SequencerSampleEditorUpdateModel"];
             };
         };
         responses: {
@@ -104383,7 +104383,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["BrainSampleEditorStateModel"];
+                    "application/json": components["schemas"]["SequencerSampleEditorStateModel"];
                 };
             };
             /** @description Validation Error */
@@ -104433,7 +104433,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["BrainDiagnosticsModel"];
+                    "application/json": components["schemas"]["SequencerDiagnosticsModel"];
                 };
             };
             /** @description Validation Error */
@@ -104483,7 +104483,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["BrainStateModel"];
+                    "application/json": components["schemas"]["SequencerStateModel"];
                 };
             };
             /** @description Validation Error */
@@ -104533,7 +104533,7 @@ export interface operations {
                     [name: string]: unknown;
                 };
                 content: {
-                    "application/json": components["schemas"]["BrainStateModel"];
+                    "application/json": components["schemas"]["SequencerStateModel"];
                 };
             };
             /** @description Validation Error */

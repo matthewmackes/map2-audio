@@ -67,7 +67,7 @@ async def _handle_websocket_connection(websocket: WebSocket, version: str = "1.0
                 "drums:position",
                 "drums:metering",
                 "brain:runtime",
-                "brain_metering",   # Performance Brain per-slot ConsoleView meters (30fps)
+                "sequencer_metering",   # Performance Sequencer per-slot ConsoleView meters (30fps)
                 "avb:router:connection_state", # AVB per-route connection state updates
                 "avb:router:endpoints", # AVB endpoint discovery snapshots
                 "avb:router:connections", # AVB routing connection snapshots

@@ -467,7 +467,7 @@ class MidiDeviceRegistry:
     # T2480-5: first-class device→consumer bindings.
     #
     # Bindings are durable links (snapshot, preset, etc.) the registry
-    # carries on each device record. The Brain Setup task writes a binding
+    # carries on each device record. The Sequencer Setup task writes a binding
     # with consumer_type="snapshot" + source="brain-setup-task" after a
     # successful snapshot activation; if the same device is re-bound to a
     # different snapshot, the old binding is replaced (one snapshot binding

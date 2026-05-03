@@ -562,9 +562,9 @@ class SnapshotRuntimeMixin:
         snapshot_extensions: dict[str, Any] | None,
     ) -> dict[str, Any]:
         try:
-            from app.services.performance_brain_authority_sync import PerformanceBrainAuthoritySyncService
+            from app.services.sequencer_authority_sync import SequencerAuthoritySyncService
 
-            reconcile_result = PerformanceBrainAuthoritySyncService().reconcile_runtime_with_extensions(
+            reconcile_result = SequencerAuthoritySyncService().reconcile_runtime_with_extensions(
                 current_extensions=current_extensions,
                 next_extensions=snapshot_extensions,
             )
@@ -576,7 +576,7 @@ class SnapshotRuntimeMixin:
                 "broadcast_count": 0,
             }
         except Exception as exc:
-            logger.debug("Snapshot Brain runtime reconcile skipped: %s", exc)
+            logger.debug("Snapshot Sequencer runtime reconcile skipped: %s", exc)
             return {
                 "reconciled": False,
                 "reason": f"reconcile_failed:{exc}",
@@ -590,17 +590,17 @@ class SnapshotRuntimeMixin:
             return 0
 
         try:
-            from app.services.performance_brain_service import BRAIN_RUNTIME_TOPIC, get_performance_brain_service
+            from app.services.sequencer_service import BRAIN_RUNTIME_TOPIC, get_sequencer_service
             from app.services.websocket_manager import ws_manager
 
-            brain_service = get_performance_brain_service()
+            sequencer_service = get_sequencer_service()
             timestamp = _utcnow().isoformat()
             broadcast_count = 0
             for entry in [
                 *[item for item in reconcile_result.get("restored", []) if isinstance(item, dict)],
                 *[item for item in reconcile_result.get("reset", []) if isinstance(item, dict)],
             ]:
-                payload = brain_service.get_runtime_event(
+                payload = sequencer_service.get_runtime_event(
                     "state",
                     instance_id=entry.get("instance_id"),
                     plugin_position=entry.get("plugin_position"),
@@ -617,7 +617,7 @@ class SnapshotRuntimeMixin:
                 broadcast_count += 1
             return broadcast_count
         except Exception as exc:
-            logger.debug("Snapshot Brain runtime broadcast skipped: %s", exc)
+            logger.debug("Snapshot Sequencer runtime broadcast skipped: %s", exc)
             return 0
 
     async def _resolve_next_preload_snapshot(

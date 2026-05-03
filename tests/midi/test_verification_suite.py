@@ -14,7 +14,7 @@ import pytest
 
 from app import database as database_module
 from app.services.midi import MidiBindingAuthority
-from app.services.midi.projections.brain import write_brain_device_binding
+from app.services.midi.projections.sequencer import write_brain_device_binding
 from app.services.midi.projections.gpio import (
     make_gpio_to_midi_payload,
     make_midi_to_gpio_payload,
@@ -134,7 +134,7 @@ def test_verify_brain_consumer_ok(tmp_path):
                 device_id="kbd:abc",
                 consumer_type="snapshot",
                 consumer_id="42",
-                consumer_name="Brain — KBD",
+                consumer_name="Sequencer — KBD",
             )
             await session.commit()
             r = await verify_brain_consumer(authority, device_id="kbd:abc")
@@ -254,7 +254,7 @@ def test_run_full_suite_aggregates_results(tmp_path):
                 device_id="kbd:abc",
                 consumer_type="snapshot",
                 consumer_id="42",
-                consumer_name="Brain — KBD",
+                consumer_name="Sequencer — KBD",
             )
             await session.commit()
             suite = await run_full_suite(

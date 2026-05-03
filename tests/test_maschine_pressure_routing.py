@@ -3,7 +3,7 @@ from __future__ import annotations
 from app.services.automation_engine import AutomationEngine, ModulationSource
 from app.services.maschine.maschine_mk1_daemon import DaemonConfig, MaschineMK1Daemon
 from app.services.maschine.mk1_protocol import PadEvent
-from app.services.performance_brain_service import PerformanceBrainService
+from app.services.sequencer_service import SequencerService
 
 
 def test_automation_engine_midi_source_uses_latest_external_value() -> None:
@@ -32,11 +32,11 @@ def test_daemon_pad_dispatch_fans_out_pressure_to_automation_and_brain(monkeypat
         def post(self, *_args, **_kwargs):
             raise AssertionError("pad selection should not post without audio-grid blocks")
 
-    brain = PerformanceBrainService(root_path=None)
+    brain = SequencerService(root_path=None)
     brain._pad_pressure_observers.clear()
 
     monkeypatch.setattr("app.services.maschine.maschine_mk1_daemon.automation_engine", _FakeAutomationEngine())
-    monkeypatch.setattr("app.services.maschine.maschine_mk1_daemon.get_performance_brain_service", lambda: brain)
+    monkeypatch.setattr("app.services.maschine.maschine_mk1_daemon.get_sequencer_service", lambda: brain)
 
     daemon._dispatch_pad_event(_FakeClient(), PadEvent(pad=2, pressure=2048, pressed=True), {}, {})
 

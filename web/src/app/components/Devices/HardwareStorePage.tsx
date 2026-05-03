@@ -26,7 +26,7 @@ import { useDeviceConnections } from './hooks/useDeviceConnections'
 import { useHotPlugToast } from './hooks/useHotPlugToast'
 import {
   useDeviceDiagnostics,
-  useBrainAssetsByDevice,
+  useSequencerAssetsByDevice,
   useKnownDevices,
   useRecentlyDisconnected,
   useConnectedDevices,
@@ -71,16 +71,16 @@ function buildProfileRows(args: {
   knownLastSeen: Record<string, number | null>
   knownLastBound: Record<string, number | null>
   diagByPack: Record<string, { count: number; worst: 'info' | 'warning' | 'error' }>
-  brainAssetCounts: Record<string, number>
+  sequencerAssetCounts: Record<string, number>
   bindingsByProfileKey?: Map<string, Api.MidiHubDeviceBinding[]>
 }): ProfileRow[] {
   const {
     profileKeys, profileIndex, packIndex, connectedKeys, pinnedKeys,
     recentlyDisconnectedKeys, knownLastSeen, knownLastBound, diagByPack,
-    brainAssetCounts, bindingsByProfileKey,
+    sequencerAssetCounts, bindingsByProfileKey,
   } = args
 
-  const toBrainSnapshotBindings = (
+  const toSequencerSnapshotBindings = (
     rawBindings: Api.MidiHubDeviceBinding[] | undefined,
   ): Array<{ snapshot_id: string; snapshot_name: string; source: string }> | undefined => {
     if (!rawBindings || rawBindings.length === 0) return undefined
@@ -98,7 +98,7 @@ function buildProfileRows(args: {
 
   return profileKeys
     .map<ProfileRow>((key) => {
-      const brainSnapshotBindings = toBrainSnapshotBindings(bindingsByProfileKey?.get(key))
+      const sequencerSnapshotBindings = toSequencerSnapshotBindings(bindingsByProfileKey?.get(key))
       const p = profileIndex[key]
       if (!p) {
         const [packId, rest] = key.split('/')
@@ -119,8 +119,8 @@ function buildProfileRows(args: {
           lastBoundAt: knownLastBound[key] ?? null,
           diagnosticCount: dx?.count,
           diagnosticWorstSeverity: dx?.worst,
-          brainAssetCount: brainAssetCounts[key],
-          brainSnapshotBindings,
+          sequencerAssetCount: sequencerAssetCounts[key],
+          sequencerSnapshotBindings,
         }
       }
       const dx = diagByPack[p.pack_id]
@@ -140,8 +140,8 @@ function buildProfileRows(args: {
         diagnosticCount: dx?.count,
         diagnosticWorstSeverity: dx?.worst,
         capabilities: p?.capabilities,
-        brainAssetCount: brainAssetCounts[key],
-        brainSnapshotBindings,
+        sequencerAssetCount: sequencerAssetCounts[key],
+        sequencerSnapshotBindings,
       }
     })
     .sort((a, b) => a.profileKey.localeCompare(b.profileKey))
@@ -292,7 +292,7 @@ export function HardwareStorePage(): React.JSX.Element {
   // T2461-A9 — single fetch over every profile_key the page might
   // render so the DeviceCard "Used in N Brain assets" tag has counts
   // ready when the row mounts. Stable map: missing keys read as 0.
-  const allProfileKeysForBrainLookup = React.useMemo(() => {
+  const allProfileKeysForSequencerLookup = React.useMemo(() => {
     return Array.from(new Set([
       ...Array.from(connectedKeys),
       ...Array.from(recentlyDisconnectedKeys),
@@ -300,12 +300,12 @@ export function HardwareStorePage(): React.JSX.Element {
       ...Object.keys(profileIndex),
     ]))
   }, [connectedKeys, recentlyDisconnectedKeys, knownKeys, profileIndex])
-  const brainAssetCounts = useBrainAssetsByDevice(allProfileKeysForBrainLookup)
+  const sequencerAssetCounts = useSequencerAssetsByDevice(allProfileKeysForSequencerLookup)
   // T2480 Follow-up C (2026-05-01): join MIDI Hub registry bindings to
   // each profile_key so DeviceCards show "Driving <snapshot name>" tags
   // for any device the Brain Setup task has bound. Best-effort join (see
   // hook docs); false-negatives are acceptable, false-positives aren't.
-  const { bindingsByProfileKey } = useDeviceBindingsByProfileKey(allProfileKeysForBrainLookup)
+  const { bindingsByProfileKey } = useDeviceBindingsByProfileKey(allProfileKeysForSequencerLookup)
 
   // Section partitioning. Connected first, then recently-disconnected,
   // then known-but-not-recent (pinned or 24h-window).
@@ -313,7 +313,7 @@ export function HardwareStorePage(): React.JSX.Element {
     profileKeys: Array.from(connectedKeys),
     profileIndex, packIndex,
     connectedKeys, pinnedKeys, recentlyDisconnectedKeys,
-    knownLastSeen, knownLastBound, diagByPack, brainAssetCounts,
+    knownLastSeen, knownLastBound, diagByPack, sequencerAssetCounts,
     bindingsByProfileKey,
   })
 
@@ -321,7 +321,7 @@ export function HardwareStorePage(): React.JSX.Element {
     profileKeys: Array.from(recentlyDisconnectedKeys).filter((k) => !connectedKeys.has(k)),
     profileIndex, packIndex,
     connectedKeys, pinnedKeys, recentlyDisconnectedKeys,
-    knownLastSeen, knownLastBound, diagByPack, brainAssetCounts,
+    knownLastSeen, knownLastBound, diagByPack, sequencerAssetCounts,
     bindingsByProfileKey,
   })
 
@@ -331,7 +331,7 @@ export function HardwareStorePage(): React.JSX.Element {
     ),
     profileIndex, packIndex,
     connectedKeys, pinnedKeys, recentlyDisconnectedKeys,
-    knownLastSeen, knownLastBound, diagByPack, brainAssetCounts,
+    knownLastSeen, knownLastBound, diagByPack, sequencerAssetCounts,
     bindingsByProfileKey,
   })
 
@@ -349,12 +349,12 @@ export function HardwareStorePage(): React.JSX.Element {
       profileKeys: all.filter((k) => !usedKeys.has(k)),
       profileIndex, packIndex,
       connectedKeys, pinnedKeys, recentlyDisconnectedKeys,
-      knownLastSeen, knownLastBound, diagByPack, brainAssetCounts,
+      knownLastSeen, knownLastBound, diagByPack, sequencerAssetCounts,
       bindingsByProfileKey,
     })
   }, [
     connectedKeys, recentlyDisconnectedKeys, knownKeys, profileIndex, packIndex,
-    pinnedKeys, knownLastSeen, knownLastBound, diagByPack, brainAssetCounts,
+    pinnedKeys, knownLastSeen, knownLastBound, diagByPack, sequencerAssetCounts,
     bindingsByProfileKey,
   ])
 

@@ -13,11 +13,11 @@
 import * as React from 'react'
 import { useQueries, useQuery } from '@tanstack/react-query'
 
-import { brainApi } from '../../../../map2/clients/brain'
+import { sequencerApi } from '../../../../map2/clients/sequencer'
 
 import {
   getMixxxChecksumStatus,
-  listBrainMonitorCandidates,
+  listSequencerMonitorCandidates,
   listConnectedDevices,
   listDeviceDiagnostics,
   listDeviceProfiles,
@@ -25,7 +25,7 @@ import {
   listMeasureLatencyHistory,
   listPackSources,
   listRecentlyDisconnected,
-  type BrainMonitorCandidate,
+  type SequencerMonitorCandidate,
   type DeviceProfileSummary,
   type ConnectedResponse,
   type DiagnosticsResponse,
@@ -127,7 +127,7 @@ export function useMixxxChecksumStatus() {
 // T2461-A9 — Brain library asset counts by profile_key. Powers the
 // DeviceCard's "Used in N Brain assets" reverse cross-reference.
 // Returns a stable lookup map; missing keys read as 0.
-export function useBrainAssetsByDevice(profileKeys: readonly string[]): Record<string, number> {
+export function useSequencerAssetsByDevice(profileKeys: readonly string[]): Record<string, number> {
   const dedupe = React.useMemo(
     () => Array.from(new Set(profileKeys.filter((k) => k && !k.startsWith('legacy:')))).sort(),
     [profileKeys],
@@ -135,7 +135,7 @@ export function useBrainAssetsByDevice(profileKeys: readonly string[]): Record<s
   const queries = useQueries({
     queries: dedupe.map((key) => ({
       queryKey: ['brain', 'assets-by-device', key],
-      queryFn: () => brainApi.getAssetsForDevice(key),
+      queryFn: () => sequencerApi.getAssetsForDevice(key),
       staleTime: 30_000,
       refetchInterval: 60_000,
     })),
@@ -158,10 +158,10 @@ export function useBrainAssetsByDevice(profileKeys: readonly string[]): Record<s
 }
 
 // T2461-A5 — connected loopback-capable devices + their latest measurement.
-export function useBrainMonitorCandidates() {
-  return useQuery<{ candidates: BrainMonitorCandidate[]; count: number }>({
-    queryKey: ['devices', 'brain-monitor-candidates'],
-    queryFn: () => listBrainMonitorCandidates(),
+export function useSequencerMonitorCandidates() {
+  return useQuery<{ candidates: SequencerMonitorCandidate[]; count: number }>({
+    queryKey: ['devices', 'sequencer-monitor-candidates'],
+    queryFn: () => listSequencerMonitorCandidates(),
     staleTime: 10_000,
     refetchInterval: 30_000,
   })

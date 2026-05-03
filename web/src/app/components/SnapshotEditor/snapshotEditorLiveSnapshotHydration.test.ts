@@ -642,16 +642,16 @@ describe('snapshotEditorLiveSnapshotHydration', () => {
           plugins: [
             {
               snapshot_plugin_id: 5001,
-              uri: 'map2://juce/brain',
-              name: 'Performance Brain',
+              uri: 'map2://juce/sequencer',
+              name: 'Sequencer',
               position: 1,
               bypassed: false,
               parameters: {},
             },
             {
               snapshot_plugin_id: 5002,
-              uri: 'map2://juce/brain',
-              name: 'Performance Brain',
+              uri: 'map2://juce/sequencer',
+              name: 'Sequencer',
               position: 2,
               bypassed: false,
               parameters: {},
@@ -690,14 +690,14 @@ describe('snapshotEditorLiveSnapshotHydration', () => {
           plugins: [
             {
               snapshot_plugin_id: 5001,
-              uri: 'map2://juce/brain',
+              uri: 'map2://juce/sequencer',
               position: 0,
               bypass: false,
               parameters: {},
             },
             {
               snapshot_plugin_id: 5002,
-              uri: 'map2://juce/brain',
+              uri: 'map2://juce/sequencer',
               position: 1,
               bypass: false,
               parameters: {},
@@ -714,12 +714,12 @@ describe('snapshotEditorLiveSnapshotHydration', () => {
         id: 301,
         plugins: [
           expect.objectContaining({
-            uri: 'map2://juce/brain',
+            uri: 'map2://juce/sequencer',
             position: 0,
             snapshot_plugin_id: 5001,
           }),
           expect.objectContaining({
-            uri: 'map2://juce/brain',
+            uri: 'map2://juce/sequencer',
             position: 1,
             snapshot_plugin_id: 5002,
           }),

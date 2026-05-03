@@ -3805,10 +3805,10 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
             </li>
             <li
               aria-expanded="false"
-              aria-owns="/brain-subtree"
+              aria-owns="/sequencer-subtree"
               aria-selected="false"
               class="global-tree-nav__tree-node cds--tree-node cds--tree-node--with-icon cds--tree-parent-node"
-              id="/brain"
+              id="/sequencer"
               role="treeitem"
               tabindex="-1"
             >
@@ -3850,12 +3850,21 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                     xmlns="http://www.w3.org/2000/svg"
                   >
                     <path
-                      d="M19,19h-2v-6h2v6ZM4,10h-2v12h2v-12ZM14,10h-2v12h2v-12ZM24,10h-2v12h2v-12ZM9,6h-2v20h2V6ZM29,6h-2v20h2V6Z"
+                      d="M12,4H6A2,2,0,0,0,4,6v6a2,2,0,0,0,2,2h6a2,2,0,0,0,2-2V6A2,2,0,0,0,12,4Zm0,8H6V6h6Z"
+                    />
+                    <path
+                      d="M26,4H20a2,2,0,0,0-2,2v6a2,2,0,0,0,2,2h6a2,2,0,0,0,2-2V6A2,2,0,0,0,26,4Zm0,8H20V6h6Z"
+                    />
+                    <path
+                      d="M12,18H6a2,2,0,0,0-2,2v6a2,2,0,0,0,2,2h6a2,2,0,0,0,2-2V20A2,2,0,0,0,12,18Zm0,8H6V20h6Z"
+                    />
+                    <path
+                      d="M26,18H20a2,2,0,0,0-2,2v6a2,2,0,0,0,2,2h6a2,2,0,0,0,2-2V20A2,2,0,0,0,26,18Zm0,8H20V20h6Z"
                     />
                   </svg>
                   <span
                     class="cds--tree-node__label__text"
-                    id="/brain__label"
+                    id="/sequencer__label"
                   >
                     <span
                       class="global-tree-nav__node-copy global-tree-nav__node-copy--bold"
@@ -3872,7 +3881,7 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                             <span
                               class="global-tree-nav__node-label"
                             >
-                              Drums&Synth
+                              Sequencer
                             </span>
                           </span>
                         </span>
@@ -3882,15 +3891,15 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                 </span>
               </div>
               <ul
-                aria-labelledby="/brain__label"
+                aria-labelledby="/sequencer__label"
                 class="cds--tree-node__children cds--tree-node--hidden"
-                id="/brain-subtree"
+                id="/sequencer-subtree"
                 role="group"
               >
                 <li
                   aria-selected="false"
                   class="global-tree-nav__tree-node cds--tree-node cds--tree-node--with-icon cds--tree-leaf-node"
-                  id="/brain::/brain?section=performance"
+                  id="/sequencer::/sequencer?section=performance"
                   role="treeitem"
                   tabindex="-1"
                 >
@@ -3913,12 +3922,21 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                         xmlns="http://www.w3.org/2000/svg"
                       >
                         <path
-                          d="M19,19h-2v-6h2v6ZM4,10h-2v12h2v-12ZM14,10h-2v12h2v-12ZM24,10h-2v12h2v-12ZM9,6h-2v20h2V6ZM29,6h-2v20h2V6Z"
+                          d="M12,4H6A2,2,0,0,0,4,6v6a2,2,0,0,0,2,2h6a2,2,0,0,0,2-2V6A2,2,0,0,0,12,4Zm0,8H6V6h6Z"
+                        />
+                        <path
+                          d="M26,4H20a2,2,0,0,0-2,2v6a2,2,0,0,0,2,2h6a2,2,0,0,0,2-2V6A2,2,0,0,0,26,4Zm0,8H20V6h6Z"
+                        />
+                        <path
+                          d="M12,18H6a2,2,0,0,0-2,2v6a2,2,0,0,0,2,2h6a2,2,0,0,0,2-2V20A2,2,0,0,0,12,18Zm0,8H6V20h6Z"
+                        />
+                        <path
+                          d="M26,18H20a2,2,0,0,0-2,2v6a2,2,0,0,0,2,2h6a2,2,0,0,0,2-2V20A2,2,0,0,0,26,18Zm0,8H20V20h6Z"
                         />
                       </svg>
                       <span
                         class="cds--tree-node__label__text"
-                        id="/brain::/brain?section=performance__label"
+                        id="/sequencer::/sequencer?section=performance__label"
                       >
                         <span
                           class="global-tree-nav__node-copy"
@@ -3948,7 +3966,7 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                 <li
                   aria-selected="false"
                   class="global-tree-nav__tree-node cds--tree-node cds--tree-node--with-icon cds--tree-leaf-node"
-                  id="/brain::/brain?section=console"
+                  id="/sequencer::/sequencer?section=console"
                   role="treeitem"
                   tabindex="-1"
                 >
@@ -3971,12 +3989,21 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                         xmlns="http://www.w3.org/2000/svg"
                       >
                         <path
-                          d="M19,19h-2v-6h2v6ZM4,10h-2v12h2v-12ZM14,10h-2v12h2v-12ZM24,10h-2v12h2v-12ZM9,6h-2v20h2V6ZM29,6h-2v20h2V6Z"
+                          d="M12,4H6A2,2,0,0,0,4,6v6a2,2,0,0,0,2,2h6a2,2,0,0,0,2-2V6A2,2,0,0,0,12,4Zm0,8H6V6h6Z"
+                        />
+                        <path
+                          d="M26,4H20a2,2,0,0,0-2,2v6a2,2,0,0,0,2,2h6a2,2,0,0,0,2-2V6A2,2,0,0,0,26,4Zm0,8H20V6h6Z"
+                        />
+                        <path
+                          d="M12,18H6a2,2,0,0,0-2,2v6a2,2,0,0,0,2,2h6a2,2,0,0,0,2-2V20A2,2,0,0,0,12,18Zm0,8H6V20h6Z"
+                        />
+                        <path
+                          d="M26,18H20a2,2,0,0,0-2,2v6a2,2,0,0,0,2,2h6a2,2,0,0,0,2-2V20A2,2,0,0,0,26,18Zm0,8H20V20h6Z"
                         />
                       </svg>
                       <span
                         class="cds--tree-node__label__text"
-                        id="/brain::/brain?section=console__label"
+                        id="/sequencer::/sequencer?section=console__label"
                       >
                         <span
                           class="global-tree-nav__node-copy"
@@ -4006,7 +4033,7 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                 <li
                   aria-selected="false"
                   class="global-tree-nav__tree-node cds--tree-node cds--tree-node--with-icon cds--tree-leaf-node"
-                  id="/brain::/brain?section=step"
+                  id="/sequencer::/sequencer?section=step"
                   role="treeitem"
                   tabindex="-1"
                 >
@@ -4029,12 +4056,21 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                         xmlns="http://www.w3.org/2000/svg"
                       >
                         <path
-                          d="M19,19h-2v-6h2v6ZM4,10h-2v12h2v-12ZM14,10h-2v12h2v-12ZM24,10h-2v12h2v-12ZM9,6h-2v20h2V6ZM29,6h-2v20h2V6Z"
+                          d="M12,4H6A2,2,0,0,0,4,6v6a2,2,0,0,0,2,2h6a2,2,0,0,0,2-2V6A2,2,0,0,0,12,4Zm0,8H6V6h6Z"
+                        />
+                        <path
+                          d="M26,4H20a2,2,0,0,0-2,2v6a2,2,0,0,0,2,2h6a2,2,0,0,0,2-2V6A2,2,0,0,0,26,4Zm0,8H20V6h6Z"
+                        />
+                        <path
+                          d="M12,18H6a2,2,0,0,0-2,2v6a2,2,0,0,0,2,2h6a2,2,0,0,0,2-2V20A2,2,0,0,0,12,18Zm0,8H6V20h6Z"
+                        />
+                        <path
+                          d="M26,18H20a2,2,0,0,0-2,2v6a2,2,0,0,0,2,2h6a2,2,0,0,0,2-2V20A2,2,0,0,0,26,18Zm0,8H20V20h6Z"
                         />
                       </svg>
                       <span
                         class="cds--tree-node__label__text"
-                        id="/brain::/brain?section=step__label"
+                        id="/sequencer::/sequencer?section=step__label"
                       >
                         <span
                           class="global-tree-nav__node-copy"
@@ -4064,7 +4100,7 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                 <li
                   aria-selected="false"
                   class="global-tree-nav__tree-node cds--tree-node cds--tree-node--with-icon cds--tree-leaf-node"
-                  id="/brain::/brain?section=split"
+                  id="/sequencer::/sequencer?section=split"
                   role="treeitem"
                   tabindex="-1"
                 >
@@ -4087,12 +4123,21 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                         xmlns="http://www.w3.org/2000/svg"
                       >
                         <path
-                          d="M19,19h-2v-6h2v6ZM4,10h-2v12h2v-12ZM14,10h-2v12h2v-12ZM24,10h-2v12h2v-12ZM9,6h-2v20h2V6ZM29,6h-2v20h2V6Z"
+                          d="M12,4H6A2,2,0,0,0,4,6v6a2,2,0,0,0,2,2h6a2,2,0,0,0,2-2V6A2,2,0,0,0,12,4Zm0,8H6V6h6Z"
+                        />
+                        <path
+                          d="M26,4H20a2,2,0,0,0-2,2v6a2,2,0,0,0,2,2h6a2,2,0,0,0,2-2V6A2,2,0,0,0,26,4Zm0,8H20V6h6Z"
+                        />
+                        <path
+                          d="M12,18H6a2,2,0,0,0-2,2v6a2,2,0,0,0,2,2h6a2,2,0,0,0,2-2V20A2,2,0,0,0,12,18Zm0,8H6V20h6Z"
+                        />
+                        <path
+                          d="M26,18H20a2,2,0,0,0-2,2v6a2,2,0,0,0,2,2h6a2,2,0,0,0,2-2V20A2,2,0,0,0,26,18Zm0,8H20V20h6Z"
                         />
                       </svg>
                       <span
                         class="cds--tree-node__label__text"
-                        id="/brain::/brain?section=split__label"
+                        id="/sequencer::/sequencer?section=split__label"
                       >
                         <span
                           class="global-tree-nav__node-copy"
@@ -4122,7 +4167,7 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                 <li
                   aria-selected="false"
                   class="global-tree-nav__tree-node cds--tree-node cds--tree-node--with-icon cds--tree-leaf-node"
-                  id="/brain::/brain?section=perform"
+                  id="/sequencer::/sequencer?section=perform"
                   role="treeitem"
                   tabindex="-1"
                 >
@@ -4145,12 +4190,21 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                         xmlns="http://www.w3.org/2000/svg"
                       >
                         <path
-                          d="M19,19h-2v-6h2v6ZM4,10h-2v12h2v-12ZM14,10h-2v12h2v-12ZM24,10h-2v12h2v-12ZM9,6h-2v20h2V6ZM29,6h-2v20h2V6Z"
+                          d="M12,4H6A2,2,0,0,0,4,6v6a2,2,0,0,0,2,2h6a2,2,0,0,0,2-2V6A2,2,0,0,0,12,4Zm0,8H6V6h6Z"
+                        />
+                        <path
+                          d="M26,4H20a2,2,0,0,0-2,2v6a2,2,0,0,0,2,2h6a2,2,0,0,0,2-2V6A2,2,0,0,0,26,4Zm0,8H20V6h6Z"
+                        />
+                        <path
+                          d="M12,18H6a2,2,0,0,0-2,2v6a2,2,0,0,0,2,2h6a2,2,0,0,0,2-2V20A2,2,0,0,0,12,18Zm0,8H6V20h6Z"
+                        />
+                        <path
+                          d="M26,18H20a2,2,0,0,0-2,2v6a2,2,0,0,0,2,2h6a2,2,0,0,0,2-2V20A2,2,0,0,0,26,18Zm0,8H20V20h6Z"
                         />
                       </svg>
                       <span
                         class="cds--tree-node__label__text"
-                        id="/brain::/brain?section=perform__label"
+                        id="/sequencer::/sequencer?section=perform__label"
                       >
                         <span
                           class="global-tree-nav__node-copy"
@@ -4180,7 +4234,7 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                 <li
                   aria-selected="false"
                   class="global-tree-nav__tree-node cds--tree-node cds--tree-node--with-icon cds--tree-leaf-node"
-                  id="/brain::/brain?section=layers"
+                  id="/sequencer::/sequencer?section=layers"
                   role="treeitem"
                   tabindex="-1"
                 >
@@ -4203,12 +4257,21 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                         xmlns="http://www.w3.org/2000/svg"
                       >
                         <path
-                          d="M19,19h-2v-6h2v6ZM4,10h-2v12h2v-12ZM14,10h-2v12h2v-12ZM24,10h-2v12h2v-12ZM9,6h-2v20h2V6ZM29,6h-2v20h2V6Z"
+                          d="M12,4H6A2,2,0,0,0,4,6v6a2,2,0,0,0,2,2h6a2,2,0,0,0,2-2V6A2,2,0,0,0,12,4Zm0,8H6V6h6Z"
+                        />
+                        <path
+                          d="M26,4H20a2,2,0,0,0-2,2v6a2,2,0,0,0,2,2h6a2,2,0,0,0,2-2V6A2,2,0,0,0,26,4Zm0,8H20V6h6Z"
+                        />
+                        <path
+                          d="M12,18H6a2,2,0,0,0-2,2v6a2,2,0,0,0,2,2h6a2,2,0,0,0,2-2V20A2,2,0,0,0,12,18Zm0,8H6V20h6Z"
+                        />
+                        <path
+                          d="M26,18H20a2,2,0,0,0-2,2v6a2,2,0,0,0,2,2h6a2,2,0,0,0,2-2V20A2,2,0,0,0,26,18Zm0,8H20V20h6Z"
                         />
                       </svg>
                       <span
                         class="cds--tree-node__label__text"
-                        id="/brain::/brain?section=layers__label"
+                        id="/sequencer::/sequencer?section=layers__label"
                       >
                         <span
                           class="global-tree-nav__node-copy"
@@ -4238,7 +4301,7 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                 <li
                   aria-selected="false"
                   class="global-tree-nav__tree-node cds--tree-node cds--tree-node--with-icon cds--tree-leaf-node"
-                  id="/brain::/brain?section=sequence"
+                  id="/sequencer::/sequencer?section=sequence"
                   role="treeitem"
                   tabindex="-1"
                 >
@@ -4261,12 +4324,21 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                         xmlns="http://www.w3.org/2000/svg"
                       >
                         <path
-                          d="M19,19h-2v-6h2v6ZM4,10h-2v12h2v-12ZM14,10h-2v12h2v-12ZM24,10h-2v12h2v-12ZM9,6h-2v20h2V6ZM29,6h-2v20h2V6Z"
+                          d="M12,4H6A2,2,0,0,0,4,6v6a2,2,0,0,0,2,2h6a2,2,0,0,0,2-2V6A2,2,0,0,0,12,4Zm0,8H6V6h6Z"
+                        />
+                        <path
+                          d="M26,4H20a2,2,0,0,0-2,2v6a2,2,0,0,0,2,2h6a2,2,0,0,0,2-2V6A2,2,0,0,0,26,4Zm0,8H20V6h6Z"
+                        />
+                        <path
+                          d="M12,18H6a2,2,0,0,0-2,2v6a2,2,0,0,0,2,2h6a2,2,0,0,0,2-2V20A2,2,0,0,0,12,18Zm0,8H6V20h6Z"
+                        />
+                        <path
+                          d="M26,18H20a2,2,0,0,0-2,2v6a2,2,0,0,0,2,2h6a2,2,0,0,0,2-2V20A2,2,0,0,0,26,18Zm0,8H20V20h6Z"
                         />
                       </svg>
                       <span
                         class="cds--tree-node__label__text"
-                        id="/brain::/brain?section=sequence__label"
+                        id="/sequencer::/sequencer?section=sequence__label"
                       >
                         <span
                           class="global-tree-nav__node-copy"
@@ -4296,7 +4368,7 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                 <li
                   aria-selected="false"
                   class="global-tree-nav__tree-node cds--tree-node cds--tree-node--with-icon cds--tree-leaf-node"
-                  id="/brain::/brain?section=routing"
+                  id="/sequencer::/sequencer?section=routing"
                   role="treeitem"
                   tabindex="-1"
                 >
@@ -4319,12 +4391,21 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                         xmlns="http://www.w3.org/2000/svg"
                       >
                         <path
-                          d="M19,19h-2v-6h2v6ZM4,10h-2v12h2v-12ZM14,10h-2v12h2v-12ZM24,10h-2v12h2v-12ZM9,6h-2v20h2V6ZM29,6h-2v20h2V6Z"
+                          d="M12,4H6A2,2,0,0,0,4,6v6a2,2,0,0,0,2,2h6a2,2,0,0,0,2-2V6A2,2,0,0,0,12,4Zm0,8H6V6h6Z"
+                        />
+                        <path
+                          d="M26,4H20a2,2,0,0,0-2,2v6a2,2,0,0,0,2,2h6a2,2,0,0,0,2-2V6A2,2,0,0,0,26,4Zm0,8H20V6h6Z"
+                        />
+                        <path
+                          d="M12,18H6a2,2,0,0,0-2,2v6a2,2,0,0,0,2,2h6a2,2,0,0,0,2-2V20A2,2,0,0,0,12,18Zm0,8H6V20h6Z"
+                        />
+                        <path
+                          d="M26,18H20a2,2,0,0,0-2,2v6a2,2,0,0,0,2,2h6a2,2,0,0,0,2-2V20A2,2,0,0,0,26,18Zm0,8H20V20h6Z"
                         />
                       </svg>
                       <span
                         class="cds--tree-node__label__text"
-                        id="/brain::/brain?section=routing__label"
+                        id="/sequencer::/sequencer?section=routing__label"
                       >
                         <span
                           class="global-tree-nav__node-copy"
@@ -4354,7 +4435,7 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                 <li
                   aria-selected="false"
                   class="global-tree-nav__tree-node cds--tree-node cds--tree-node--with-icon cds--tree-leaf-node"
-                  id="/brain::/brain?section=inputs"
+                  id="/sequencer::/sequencer?section=inputs"
                   role="treeitem"
                   tabindex="-1"
                 >
@@ -4377,12 +4458,21 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                         xmlns="http://www.w3.org/2000/svg"
                       >
                         <path
-                          d="M19,19h-2v-6h2v6ZM4,10h-2v12h2v-12ZM14,10h-2v12h2v-12ZM24,10h-2v12h2v-12ZM9,6h-2v20h2V6ZM29,6h-2v20h2V6Z"
+                          d="M12,4H6A2,2,0,0,0,4,6v6a2,2,0,0,0,2,2h6a2,2,0,0,0,2-2V6A2,2,0,0,0,12,4Zm0,8H6V6h6Z"
+                        />
+                        <path
+                          d="M26,4H20a2,2,0,0,0-2,2v6a2,2,0,0,0,2,2h6a2,2,0,0,0,2-2V6A2,2,0,0,0,26,4Zm0,8H20V6h6Z"
+                        />
+                        <path
+                          d="M12,18H6a2,2,0,0,0-2,2v6a2,2,0,0,0,2,2h6a2,2,0,0,0,2-2V20A2,2,0,0,0,12,18Zm0,8H6V20h6Z"
+                        />
+                        <path
+                          d="M26,18H20a2,2,0,0,0-2,2v6a2,2,0,0,0,2,2h6a2,2,0,0,0,2-2V20A2,2,0,0,0,26,18Zm0,8H20V20h6Z"
                         />
                       </svg>
                       <span
                         class="cds--tree-node__label__text"
-                        id="/brain::/brain?section=inputs__label"
+                        id="/sequencer::/sequencer?section=inputs__label"
                       >
                         <span
                           class="global-tree-nav__node-copy"
@@ -4412,7 +4502,7 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                 <li
                   aria-selected="false"
                   class="global-tree-nav__tree-node cds--tree-node cds--tree-node--with-icon cds--tree-leaf-node"
-                  id="/brain::/brain?section=library"
+                  id="/sequencer::/sequencer?section=library"
                   role="treeitem"
                   tabindex="-1"
                 >
@@ -4435,12 +4525,21 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                         xmlns="http://www.w3.org/2000/svg"
                       >
                         <path
-                          d="M19,19h-2v-6h2v6ZM4,10h-2v12h2v-12ZM14,10h-2v12h2v-12ZM24,10h-2v12h2v-12ZM9,6h-2v20h2V6ZM29,6h-2v20h2V6Z"
+                          d="M12,4H6A2,2,0,0,0,4,6v6a2,2,0,0,0,2,2h6a2,2,0,0,0,2-2V6A2,2,0,0,0,12,4Zm0,8H6V6h6Z"
+                        />
+                        <path
+                          d="M26,4H20a2,2,0,0,0-2,2v6a2,2,0,0,0,2,2h6a2,2,0,0,0,2-2V6A2,2,0,0,0,26,4Zm0,8H20V6h6Z"
+                        />
+                        <path
+                          d="M12,18H6a2,2,0,0,0-2,2v6a2,2,0,0,0,2,2h6a2,2,0,0,0,2-2V20A2,2,0,0,0,12,18Zm0,8H6V20h6Z"
+                        />
+                        <path
+                          d="M26,18H20a2,2,0,0,0-2,2v6a2,2,0,0,0,2,2h6a2,2,0,0,0,2-2V20A2,2,0,0,0,26,18Zm0,8H20V20h6Z"
                         />
                       </svg>
                       <span
                         class="cds--tree-node__label__text"
-                        id="/brain::/brain?section=library__label"
+                        id="/sequencer::/sequencer?section=library__label"
                       >
                         <span
                           class="global-tree-nav__node-copy"
@@ -4470,7 +4569,7 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                 <li
                   aria-selected="false"
                   class="global-tree-nav__tree-node cds--tree-node cds--tree-node--with-icon cds--tree-leaf-node"
-                  id="/brain::/brain?section=diagnostics"
+                  id="/sequencer::/sequencer?section=diagnostics"
                   role="treeitem"
                   tabindex="-1"
                 >
@@ -4493,12 +4592,21 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                         xmlns="http://www.w3.org/2000/svg"
                       >
                         <path
-                          d="M19,19h-2v-6h2v6ZM4,10h-2v12h2v-12ZM14,10h-2v12h2v-12ZM24,10h-2v12h2v-12ZM9,6h-2v20h2V6ZM29,6h-2v20h2V6Z"
+                          d="M12,4H6A2,2,0,0,0,4,6v6a2,2,0,0,0,2,2h6a2,2,0,0,0,2-2V6A2,2,0,0,0,12,4Zm0,8H6V6h6Z"
+                        />
+                        <path
+                          d="M26,4H20a2,2,0,0,0-2,2v6a2,2,0,0,0,2,2h6a2,2,0,0,0,2-2V6A2,2,0,0,0,26,4Zm0,8H20V6h6Z"
+                        />
+                        <path
+                          d="M12,18H6a2,2,0,0,0-2,2v6a2,2,0,0,0,2,2h6a2,2,0,0,0,2-2V20A2,2,0,0,0,12,18Zm0,8H6V20h6Z"
+                        />
+                        <path
+                          d="M26,18H20a2,2,0,0,0-2,2v6a2,2,0,0,0,2,2h6a2,2,0,0,0,2-2V20A2,2,0,0,0,26,18Zm0,8H20V20h6Z"
                         />
                       </svg>
                       <span
                         class="cds--tree-node__label__text"
-                        id="/brain::/brain?section=diagnostics__label"
+                        id="/sequencer::/sequencer?section=diagnostics__label"
                       >
                         <span
                           class="global-tree-nav__node-copy"
@@ -4528,7 +4636,7 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                 <li
                   aria-selected="false"
                   class="global-tree-nav__tree-node cds--tree-node cds--tree-node--with-icon cds--tree-leaf-node"
-                  id="/brain::/brain?section=session_media"
+                  id="/sequencer::/sequencer?section=session_media"
                   role="treeitem"
                   tabindex="-1"
                 >
@@ -4551,12 +4659,21 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                         xmlns="http://www.w3.org/2000/svg"
                       >
                         <path
-                          d="M19,19h-2v-6h2v6ZM4,10h-2v12h2v-12ZM14,10h-2v12h2v-12ZM24,10h-2v12h2v-12ZM9,6h-2v20h2V6ZM29,6h-2v20h2V6Z"
+                          d="M12,4H6A2,2,0,0,0,4,6v6a2,2,0,0,0,2,2h6a2,2,0,0,0,2-2V6A2,2,0,0,0,12,4Zm0,8H6V6h6Z"
+                        />
+                        <path
+                          d="M26,4H20a2,2,0,0,0-2,2v6a2,2,0,0,0,2,2h6a2,2,0,0,0,2-2V6A2,2,0,0,0,26,4Zm0,8H20V6h6Z"
+                        />
+                        <path
+                          d="M12,18H6a2,2,0,0,0-2,2v6a2,2,0,0,0,2,2h6a2,2,0,0,0,2-2V20A2,2,0,0,0,12,18Zm0,8H6V20h6Z"
+                        />
+                        <path
+                          d="M26,18H20a2,2,0,0,0-2,2v6a2,2,0,0,0,2,2h6a2,2,0,0,0,2-2V20A2,2,0,0,0,26,18Zm0,8H20V20h6Z"
                         />
                       </svg>
                       <span
                         class="cds--tree-node__label__text"
-                        id="/brain::/brain?section=session_media__label"
+                        id="/sequencer::/sequencer?section=session_media__label"
                       >
                         <span
                           class="global-tree-nav__node-copy"
@@ -4586,7 +4703,7 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                 <li
                   aria-selected="false"
                   class="global-tree-nav__tree-node cds--tree-node cds--tree-node--with-icon cds--tree-leaf-node"
-                  id="/brain::/brain?section=practice_coach"
+                  id="/sequencer::/sequencer?section=practice_coach"
                   role="treeitem"
                   tabindex="-1"
                 >
@@ -4609,12 +4726,21 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                         xmlns="http://www.w3.org/2000/svg"
                       >
                         <path
-                          d="M19,19h-2v-6h2v6ZM4,10h-2v12h2v-12ZM14,10h-2v12h2v-12ZM24,10h-2v12h2v-12ZM9,6h-2v20h2V6ZM29,6h-2v20h2V6Z"
+                          d="M12,4H6A2,2,0,0,0,4,6v6a2,2,0,0,0,2,2h6a2,2,0,0,0,2-2V6A2,2,0,0,0,12,4Zm0,8H6V6h6Z"
+                        />
+                        <path
+                          d="M26,4H20a2,2,0,0,0-2,2v6a2,2,0,0,0,2,2h6a2,2,0,0,0,2-2V6A2,2,0,0,0,26,4Zm0,8H20V6h6Z"
+                        />
+                        <path
+                          d="M12,18H6a2,2,0,0,0-2,2v6a2,2,0,0,0,2,2h6a2,2,0,0,0,2-2V20A2,2,0,0,0,12,18Zm0,8H6V20h6Z"
+                        />
+                        <path
+                          d="M26,18H20a2,2,0,0,0-2,2v6a2,2,0,0,0,2,2h6a2,2,0,0,0,2-2V20A2,2,0,0,0,26,18Zm0,8H20V20h6Z"
                         />
                       </svg>
                       <span
                         class="cds--tree-node__label__text"
-                        id="/brain::/brain?section=practice_coach__label"
+                        id="/sequencer::/sequencer?section=practice_coach__label"
                       >
                         <span
                           class="global-tree-nav__node-copy"
@@ -10812,10 +10938,10 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
             </li>
             <li
               aria-expanded="false"
-              aria-owns="/brain-subtree"
+              aria-owns="/sequencer-subtree"
               aria-selected="false"
               class="global-tree-nav__tree-node cds--tree-node cds--tree-node--with-icon cds--tree-parent-node"
-              id="/brain"
+              id="/sequencer"
               role="treeitem"
               tabindex="-1"
             >
@@ -10857,12 +10983,21 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                     xmlns="http://www.w3.org/2000/svg"
                   >
                     <path
-                      d="M19,19h-2v-6h2v6ZM4,10h-2v12h2v-12ZM14,10h-2v12h2v-12ZM24,10h-2v12h2v-12ZM9,6h-2v20h2V6ZM29,6h-2v20h2V6Z"
+                      d="M12,4H6A2,2,0,0,0,4,6v6a2,2,0,0,0,2,2h6a2,2,0,0,0,2-2V6A2,2,0,0,0,12,4Zm0,8H6V6h6Z"
+                    />
+                    <path
+                      d="M26,4H20a2,2,0,0,0-2,2v6a2,2,0,0,0,2,2h6a2,2,0,0,0,2-2V6A2,2,0,0,0,26,4Zm0,8H20V6h6Z"
+                    />
+                    <path
+                      d="M12,18H6a2,2,0,0,0-2,2v6a2,2,0,0,0,2,2h6a2,2,0,0,0,2-2V20A2,2,0,0,0,12,18Zm0,8H6V20h6Z"
+                    />
+                    <path
+                      d="M26,18H20a2,2,0,0,0-2,2v6a2,2,0,0,0,2,2h6a2,2,0,0,0,2-2V20A2,2,0,0,0,26,18Zm0,8H20V20h6Z"
                     />
                   </svg>
                   <span
                     class="cds--tree-node__label__text"
-                    id="/brain__label"
+                    id="/sequencer__label"
                   >
                     <span
                       class="global-tree-nav__node-copy global-tree-nav__node-copy--bold"
@@ -10879,7 +11014,7 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                             <span
                               class="global-tree-nav__node-label"
                             >
-                              Drums&Synth
+                              Sequencer
                             </span>
                           </span>
                         </span>
@@ -10889,15 +11024,15 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                 </span>
               </div>
               <ul
-                aria-labelledby="/brain__label"
+                aria-labelledby="/sequencer__label"
                 class="cds--tree-node__children cds--tree-node--hidden"
-                id="/brain-subtree"
+                id="/sequencer-subtree"
                 role="group"
               >
                 <li
                   aria-selected="false"
                   class="global-tree-nav__tree-node cds--tree-node cds--tree-node--with-icon cds--tree-leaf-node"
-                  id="/brain::/brain?section=performance"
+                  id="/sequencer::/sequencer?section=performance"
                   role="treeitem"
                   tabindex="-1"
                 >
@@ -10920,12 +11055,21 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                         xmlns="http://www.w3.org/2000/svg"
                       >
                         <path
-                          d="M19,19h-2v-6h2v6ZM4,10h-2v12h2v-12ZM14,10h-2v12h2v-12ZM24,10h-2v12h2v-12ZM9,6h-2v20h2V6ZM29,6h-2v20h2V6Z"
+                          d="M12,4H6A2,2,0,0,0,4,6v6a2,2,0,0,0,2,2h6a2,2,0,0,0,2-2V6A2,2,0,0,0,12,4Zm0,8H6V6h6Z"
+                        />
+                        <path
+                          d="M26,4H20a2,2,0,0,0-2,2v6a2,2,0,0,0,2,2h6a2,2,0,0,0,2-2V6A2,2,0,0,0,26,4Zm0,8H20V6h6Z"
+                        />
+                        <path
+                          d="M12,18H6a2,2,0,0,0-2,2v6a2,2,0,0,0,2,2h6a2,2,0,0,0,2-2V20A2,2,0,0,0,12,18Zm0,8H6V20h6Z"
+                        />
+                        <path
+                          d="M26,18H20a2,2,0,0,0-2,2v6a2,2,0,0,0,2,2h6a2,2,0,0,0,2-2V20A2,2,0,0,0,26,18Zm0,8H20V20h6Z"
                         />
                       </svg>
                       <span
                         class="cds--tree-node__label__text"
-                        id="/brain::/brain?section=performance__label"
+                        id="/sequencer::/sequencer?section=performance__label"
                       >
                         <span
                           class="global-tree-nav__node-copy"
@@ -10955,7 +11099,7 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                 <li
                   aria-selected="false"
                   class="global-tree-nav__tree-node cds--tree-node cds--tree-node--with-icon cds--tree-leaf-node"
-                  id="/brain::/brain?section=console"
+                  id="/sequencer::/sequencer?section=console"
                   role="treeitem"
                   tabindex="-1"
                 >
@@ -10978,12 +11122,21 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                         xmlns="http://www.w3.org/2000/svg"
                       >
                         <path
-                          d="M19,19h-2v-6h2v6ZM4,10h-2v12h2v-12ZM14,10h-2v12h2v-12ZM24,10h-2v12h2v-12ZM9,6h-2v20h2V6ZM29,6h-2v20h2V6Z"
+                          d="M12,4H6A2,2,0,0,0,4,6v6a2,2,0,0,0,2,2h6a2,2,0,0,0,2-2V6A2,2,0,0,0,12,4Zm0,8H6V6h6Z"
+                        />
+                        <path
+                          d="M26,4H20a2,2,0,0,0-2,2v6a2,2,0,0,0,2,2h6a2,2,0,0,0,2-2V6A2,2,0,0,0,26,4Zm0,8H20V6h6Z"
+                        />
+                        <path
+                          d="M12,18H6a2,2,0,0,0-2,2v6a2,2,0,0,0,2,2h6a2,2,0,0,0,2-2V20A2,2,0,0,0,12,18Zm0,8H6V20h6Z"
+                        />
+                        <path
+                          d="M26,18H20a2,2,0,0,0-2,2v6a2,2,0,0,0,2,2h6a2,2,0,0,0,2-2V20A2,2,0,0,0,26,18Zm0,8H20V20h6Z"
                         />
                       </svg>
                       <span
                         class="cds--tree-node__label__text"
-                        id="/brain::/brain?section=console__label"
+                        id="/sequencer::/sequencer?section=console__label"
                       >
                         <span
                           class="global-tree-nav__node-copy"
@@ -11013,7 +11166,7 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                 <li
                   aria-selected="false"
                   class="global-tree-nav__tree-node cds--tree-node cds--tree-node--with-icon cds--tree-leaf-node"
-                  id="/brain::/brain?section=step"
+                  id="/sequencer::/sequencer?section=step"
                   role="treeitem"
                   tabindex="-1"
                 >
@@ -11036,12 +11189,21 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                         xmlns="http://www.w3.org/2000/svg"
                       >
                         <path
-                          d="M19,19h-2v-6h2v6ZM4,10h-2v12h2v-12ZM14,10h-2v12h2v-12ZM24,10h-2v12h2v-12ZM9,6h-2v20h2V6ZM29,6h-2v20h2V6Z"
+                          d="M12,4H6A2,2,0,0,0,4,6v6a2,2,0,0,0,2,2h6a2,2,0,0,0,2-2V6A2,2,0,0,0,12,4Zm0,8H6V6h6Z"
+                        />
+                        <path
+                          d="M26,4H20a2,2,0,0,0-2,2v6a2,2,0,0,0,2,2h6a2,2,0,0,0,2-2V6A2,2,0,0,0,26,4Zm0,8H20V6h6Z"
+                        />
+                        <path
+                          d="M12,18H6a2,2,0,0,0-2,2v6a2,2,0,0,0,2,2h6a2,2,0,0,0,2-2V20A2,2,0,0,0,12,18Zm0,8H6V20h6Z"
+                        />
+                        <path
+                          d="M26,18H20a2,2,0,0,0-2,2v6a2,2,0,0,0,2,2h6a2,2,0,0,0,2-2V20A2,2,0,0,0,26,18Zm0,8H20V20h6Z"
                         />
                       </svg>
                       <span
                         class="cds--tree-node__label__text"
-                        id="/brain::/brain?section=step__label"
+                        id="/sequencer::/sequencer?section=step__label"
                       >
                         <span
                           class="global-tree-nav__node-copy"
@@ -11071,7 +11233,7 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                 <li
                   aria-selected="false"
                   class="global-tree-nav__tree-node cds--tree-node cds--tree-node--with-icon cds--tree-leaf-node"
-                  id="/brain::/brain?section=split"
+                  id="/sequencer::/sequencer?section=split"
                   role="treeitem"
                   tabindex="-1"
                 >
@@ -11094,12 +11256,21 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                         xmlns="http://www.w3.org/2000/svg"
                       >
                         <path
-                          d="M19,19h-2v-6h2v6ZM4,10h-2v12h2v-12ZM14,10h-2v12h2v-12ZM24,10h-2v12h2v-12ZM9,6h-2v20h2V6ZM29,6h-2v20h2V6Z"
+                          d="M12,4H6A2,2,0,0,0,4,6v6a2,2,0,0,0,2,2h6a2,2,0,0,0,2-2V6A2,2,0,0,0,12,4Zm0,8H6V6h6Z"
+                        />
+                        <path
+                          d="M26,4H20a2,2,0,0,0-2,2v6a2,2,0,0,0,2,2h6a2,2,0,0,0,2-2V6A2,2,0,0,0,26,4Zm0,8H20V6h6Z"
+                        />
+                        <path
+                          d="M12,18H6a2,2,0,0,0-2,2v6a2,2,0,0,0,2,2h6a2,2,0,0,0,2-2V20A2,2,0,0,0,12,18Zm0,8H6V20h6Z"
+                        />
+                        <path
+                          d="M26,18H20a2,2,0,0,0-2,2v6a2,2,0,0,0,2,2h6a2,2,0,0,0,2-2V20A2,2,0,0,0,26,18Zm0,8H20V20h6Z"
                         />
                       </svg>
                       <span
                         class="cds--tree-node__label__text"
-                        id="/brain::/brain?section=split__label"
+                        id="/sequencer::/sequencer?section=split__label"
                       >
                         <span
                           class="global-tree-nav__node-copy"
@@ -11129,7 +11300,7 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                 <li
                   aria-selected="false"
                   class="global-tree-nav__tree-node cds--tree-node cds--tree-node--with-icon cds--tree-leaf-node"
-                  id="/brain::/brain?section=perform"
+                  id="/sequencer::/sequencer?section=perform"
                   role="treeitem"
                   tabindex="-1"
                 >
@@ -11152,12 +11323,21 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                         xmlns="http://www.w3.org/2000/svg"
                       >
                         <path
-                          d="M19,19h-2v-6h2v6ZM4,10h-2v12h2v-12ZM14,10h-2v12h2v-12ZM24,10h-2v12h2v-12ZM9,6h-2v20h2V6ZM29,6h-2v20h2V6Z"
+                          d="M12,4H6A2,2,0,0,0,4,6v6a2,2,0,0,0,2,2h6a2,2,0,0,0,2-2V6A2,2,0,0,0,12,4Zm0,8H6V6h6Z"
+                        />
+                        <path
+                          d="M26,4H20a2,2,0,0,0-2,2v6a2,2,0,0,0,2,2h6a2,2,0,0,0,2-2V6A2,2,0,0,0,26,4Zm0,8H20V6h6Z"
+                        />
+                        <path
+                          d="M12,18H6a2,2,0,0,0-2,2v6a2,2,0,0,0,2,2h6a2,2,0,0,0,2-2V20A2,2,0,0,0,12,18Zm0,8H6V20h6Z"
+                        />
+                        <path
+                          d="M26,18H20a2,2,0,0,0-2,2v6a2,2,0,0,0,2,2h6a2,2,0,0,0,2-2V20A2,2,0,0,0,26,18Zm0,8H20V20h6Z"
                         />
                       </svg>
                       <span
                         class="cds--tree-node__label__text"
-                        id="/brain::/brain?section=perform__label"
+                        id="/sequencer::/sequencer?section=perform__label"
                       >
                         <span
                           class="global-tree-nav__node-copy"
@@ -11187,7 +11367,7 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                 <li
                   aria-selected="false"
                   class="global-tree-nav__tree-node cds--tree-node cds--tree-node--with-icon cds--tree-leaf-node"
-                  id="/brain::/brain?section=layers"
+                  id="/sequencer::/sequencer?section=layers"
                   role="treeitem"
                   tabindex="-1"
                 >
@@ -11210,12 +11390,21 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                         xmlns="http://www.w3.org/2000/svg"
                       >
                         <path
-                          d="M19,19h-2v-6h2v6ZM4,10h-2v12h2v-12ZM14,10h-2v12h2v-12ZM24,10h-2v12h2v-12ZM9,6h-2v20h2V6ZM29,6h-2v20h2V6Z"
+                          d="M12,4H6A2,2,0,0,0,4,6v6a2,2,0,0,0,2,2h6a2,2,0,0,0,2-2V6A2,2,0,0,0,12,4Zm0,8H6V6h6Z"
+                        />
+                        <path
+                          d="M26,4H20a2,2,0,0,0-2,2v6a2,2,0,0,0,2,2h6a2,2,0,0,0,2-2V6A2,2,0,0,0,26,4Zm0,8H20V6h6Z"
+                        />
+                        <path
+                          d="M12,18H6a2,2,0,0,0-2,2v6a2,2,0,0,0,2,2h6a2,2,0,0,0,2-2V20A2,2,0,0,0,12,18Zm0,8H6V20h6Z"
+                        />
+                        <path
+                          d="M26,18H20a2,2,0,0,0-2,2v6a2,2,0,0,0,2,2h6a2,2,0,0,0,2-2V20A2,2,0,0,0,26,18Zm0,8H20V20h6Z"
                         />
                       </svg>
                       <span
                         class="cds--tree-node__label__text"
-                        id="/brain::/brain?section=layers__label"
+                        id="/sequencer::/sequencer?section=layers__label"
                       >
                         <span
                           class="global-tree-nav__node-copy"
@@ -11245,7 +11434,7 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                 <li
                   aria-selected="false"
                   class="global-tree-nav__tree-node cds--tree-node cds--tree-node--with-icon cds--tree-leaf-node"
-                  id="/brain::/brain?section=sequence"
+                  id="/sequencer::/sequencer?section=sequence"
                   role="treeitem"
                   tabindex="-1"
                 >
@@ -11268,12 +11457,21 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                         xmlns="http://www.w3.org/2000/svg"
                       >
                         <path
-                          d="M19,19h-2v-6h2v6ZM4,10h-2v12h2v-12ZM14,10h-2v12h2v-12ZM24,10h-2v12h2v-12ZM9,6h-2v20h2V6ZM29,6h-2v20h2V6Z"
+                          d="M12,4H6A2,2,0,0,0,4,6v6a2,2,0,0,0,2,2h6a2,2,0,0,0,2-2V6A2,2,0,0,0,12,4Zm0,8H6V6h6Z"
+                        />
+                        <path
+                          d="M26,4H20a2,2,0,0,0-2,2v6a2,2,0,0,0,2,2h6a2,2,0,0,0,2-2V6A2,2,0,0,0,26,4Zm0,8H20V6h6Z"
+                        />
+                        <path
+                          d="M12,18H6a2,2,0,0,0-2,2v6a2,2,0,0,0,2,2h6a2,2,0,0,0,2-2V20A2,2,0,0,0,12,18Zm0,8H6V20h6Z"
+                        />
+                        <path
+                          d="M26,18H20a2,2,0,0,0-2,2v6a2,2,0,0,0,2,2h6a2,2,0,0,0,2-2V20A2,2,0,0,0,26,18Zm0,8H20V20h6Z"
                         />
                       </svg>
                       <span
                         class="cds--tree-node__label__text"
-                        id="/brain::/brain?section=sequence__label"
+                        id="/sequencer::/sequencer?section=sequence__label"
                       >
                         <span
                           class="global-tree-nav__node-copy"
@@ -11303,7 +11501,7 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                 <li
                   aria-selected="false"
                   class="global-tree-nav__tree-node cds--tree-node cds--tree-node--with-icon cds--tree-leaf-node"
-                  id="/brain::/brain?section=routing"
+                  id="/sequencer::/sequencer?section=routing"
                   role="treeitem"
                   tabindex="-1"
                 >
@@ -11326,12 +11524,21 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                         xmlns="http://www.w3.org/2000/svg"
                       >
                         <path
-                          d="M19,19h-2v-6h2v6ZM4,10h-2v12h2v-12ZM14,10h-2v12h2v-12ZM24,10h-2v12h2v-12ZM9,6h-2v20h2V6ZM29,6h-2v20h2V6Z"
+                          d="M12,4H6A2,2,0,0,0,4,6v6a2,2,0,0,0,2,2h6a2,2,0,0,0,2-2V6A2,2,0,0,0,12,4Zm0,8H6V6h6Z"
+                        />
+                        <path
+                          d="M26,4H20a2,2,0,0,0-2,2v6a2,2,0,0,0,2,2h6a2,2,0,0,0,2-2V6A2,2,0,0,0,26,4Zm0,8H20V6h6Z"
+                        />
+                        <path
+                          d="M12,18H6a2,2,0,0,0-2,2v6a2,2,0,0,0,2,2h6a2,2,0,0,0,2-2V20A2,2,0,0,0,12,18Zm0,8H6V20h6Z"
+                        />
+                        <path
+                          d="M26,18H20a2,2,0,0,0-2,2v6a2,2,0,0,0,2,2h6a2,2,0,0,0,2-2V20A2,2,0,0,0,26,18Zm0,8H20V20h6Z"
                         />
                       </svg>
                       <span
                         class="cds--tree-node__label__text"
-                        id="/brain::/brain?section=routing__label"
+                        id="/sequencer::/sequencer?section=routing__label"
                       >
                         <span
                           class="global-tree-nav__node-copy"
@@ -11361,7 +11568,7 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                 <li
                   aria-selected="false"
                   class="global-tree-nav__tree-node cds--tree-node cds--tree-node--with-icon cds--tree-leaf-node"
-                  id="/brain::/brain?section=inputs"
+                  id="/sequencer::/sequencer?section=inputs"
                   role="treeitem"
                   tabindex="-1"
                 >
@@ -11384,12 +11591,21 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                         xmlns="http://www.w3.org/2000/svg"
                       >
                         <path
-                          d="M19,19h-2v-6h2v6ZM4,10h-2v12h2v-12ZM14,10h-2v12h2v-12ZM24,10h-2v12h2v-12ZM9,6h-2v20h2V6ZM29,6h-2v20h2V6Z"
+                          d="M12,4H6A2,2,0,0,0,4,6v6a2,2,0,0,0,2,2h6a2,2,0,0,0,2-2V6A2,2,0,0,0,12,4Zm0,8H6V6h6Z"
+                        />
+                        <path
+                          d="M26,4H20a2,2,0,0,0-2,2v6a2,2,0,0,0,2,2h6a2,2,0,0,0,2-2V6A2,2,0,0,0,26,4Zm0,8H20V6h6Z"
+                        />
+                        <path
+                          d="M12,18H6a2,2,0,0,0-2,2v6a2,2,0,0,0,2,2h6a2,2,0,0,0,2-2V20A2,2,0,0,0,12,18Zm0,8H6V20h6Z"
+                        />
+                        <path
+                          d="M26,18H20a2,2,0,0,0-2,2v6a2,2,0,0,0,2,2h6a2,2,0,0,0,2-2V20A2,2,0,0,0,26,18Zm0,8H20V20h6Z"
                         />
                       </svg>
                       <span
                         class="cds--tree-node__label__text"
-                        id="/brain::/brain?section=inputs__label"
+                        id="/sequencer::/sequencer?section=inputs__label"
                       >
                         <span
                           class="global-tree-nav__node-copy"
@@ -11419,7 +11635,7 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                 <li
                   aria-selected="false"
                   class="global-tree-nav__tree-node cds--tree-node cds--tree-node--with-icon cds--tree-leaf-node"
-                  id="/brain::/brain?section=library"
+                  id="/sequencer::/sequencer?section=library"
                   role="treeitem"
                   tabindex="-1"
                 >
@@ -11442,12 +11658,21 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                         xmlns="http://www.w3.org/2000/svg"
                       >
                         <path
-                          d="M19,19h-2v-6h2v6ZM4,10h-2v12h2v-12ZM14,10h-2v12h2v-12ZM24,10h-2v12h2v-12ZM9,6h-2v20h2V6ZM29,6h-2v20h2V6Z"
+                          d="M12,4H6A2,2,0,0,0,4,6v6a2,2,0,0,0,2,2h6a2,2,0,0,0,2-2V6A2,2,0,0,0,12,4Zm0,8H6V6h6Z"
+                        />
+                        <path
+                          d="M26,4H20a2,2,0,0,0-2,2v6a2,2,0,0,0,2,2h6a2,2,0,0,0,2-2V6A2,2,0,0,0,26,4Zm0,8H20V6h6Z"
+                        />
+                        <path
+                          d="M12,18H6a2,2,0,0,0-2,2v6a2,2,0,0,0,2,2h6a2,2,0,0,0,2-2V20A2,2,0,0,0,12,18Zm0,8H6V20h6Z"
+                        />
+                        <path
+                          d="M26,18H20a2,2,0,0,0-2,2v6a2,2,0,0,0,2,2h6a2,2,0,0,0,2-2V20A2,2,0,0,0,26,18Zm0,8H20V20h6Z"
                         />
                       </svg>
                       <span
                         class="cds--tree-node__label__text"
-                        id="/brain::/brain?section=library__label"
+                        id="/sequencer::/sequencer?section=library__label"
                       >
                         <span
                           class="global-tree-nav__node-copy"
@@ -11477,7 +11702,7 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                 <li
                   aria-selected="false"
                   class="global-tree-nav__tree-node cds--tree-node cds--tree-node--with-icon cds--tree-leaf-node"
-                  id="/brain::/brain?section=diagnostics"
+                  id="/sequencer::/sequencer?section=diagnostics"
                   role="treeitem"
                   tabindex="-1"
                 >
@@ -11500,12 +11725,21 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                         xmlns="http://www.w3.org/2000/svg"
                       >
                         <path
-                          d="M19,19h-2v-6h2v6ZM4,10h-2v12h2v-12ZM14,10h-2v12h2v-12ZM24,10h-2v12h2v-12ZM9,6h-2v20h2V6ZM29,6h-2v20h2V6Z"
+                          d="M12,4H6A2,2,0,0,0,4,6v6a2,2,0,0,0,2,2h6a2,2,0,0,0,2-2V6A2,2,0,0,0,12,4Zm0,8H6V6h6Z"
+                        />
+                        <path
+                          d="M26,4H20a2,2,0,0,0-2,2v6a2,2,0,0,0,2,2h6a2,2,0,0,0,2-2V6A2,2,0,0,0,26,4Zm0,8H20V6h6Z"
+                        />
+                        <path
+                          d="M12,18H6a2,2,0,0,0-2,2v6a2,2,0,0,0,2,2h6a2,2,0,0,0,2-2V20A2,2,0,0,0,12,18Zm0,8H6V20h6Z"
+                        />
+                        <path
+                          d="M26,18H20a2,2,0,0,0-2,2v6a2,2,0,0,0,2,2h6a2,2,0,0,0,2-2V20A2,2,0,0,0,26,18Zm0,8H20V20h6Z"
                         />
                       </svg>
                       <span
                         class="cds--tree-node__label__text"
-                        id="/brain::/brain?section=diagnostics__label"
+                        id="/sequencer::/sequencer?section=diagnostics__label"
                       >
                         <span
                           class="global-tree-nav__node-copy"
@@ -11535,7 +11769,7 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                 <li
                   aria-selected="false"
                   class="global-tree-nav__tree-node cds--tree-node cds--tree-node--with-icon cds--tree-leaf-node"
-                  id="/brain::/brain?section=session_media"
+                  id="/sequencer::/sequencer?section=session_media"
                   role="treeitem"
                   tabindex="-1"
                 >
@@ -11558,12 +11792,21 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                         xmlns="http://www.w3.org/2000/svg"
                       >
                         <path
-                          d="M19,19h-2v-6h2v6ZM4,10h-2v12h2v-12ZM14,10h-2v12h2v-12ZM24,10h-2v12h2v-12ZM9,6h-2v20h2V6ZM29,6h-2v20h2V6Z"
+                          d="M12,4H6A2,2,0,0,0,4,6v6a2,2,0,0,0,2,2h6a2,2,0,0,0,2-2V6A2,2,0,0,0,12,4Zm0,8H6V6h6Z"
+                        />
+                        <path
+                          d="M26,4H20a2,2,0,0,0-2,2v6a2,2,0,0,0,2,2h6a2,2,0,0,0,2-2V6A2,2,0,0,0,26,4Zm0,8H20V6h6Z"
+                        />
+                        <path
+                          d="M12,18H6a2,2,0,0,0-2,2v6a2,2,0,0,0,2,2h6a2,2,0,0,0,2-2V20A2,2,0,0,0,12,18Zm0,8H6V20h6Z"
+                        />
+                        <path
+                          d="M26,18H20a2,2,0,0,0-2,2v6a2,2,0,0,0,2,2h6a2,2,0,0,0,2-2V20A2,2,0,0,0,26,18Zm0,8H20V20h6Z"
                         />
                       </svg>
                       <span
                         class="cds--tree-node__label__text"
-                        id="/brain::/brain?section=session_media__label"
+                        id="/sequencer::/sequencer?section=session_media__label"
                       >
                         <span
                           class="global-tree-nav__node-copy"
@@ -11593,7 +11836,7 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                 <li
                   aria-selected="false"
                   class="global-tree-nav__tree-node cds--tree-node cds--tree-node--with-icon cds--tree-leaf-node"
-                  id="/brain::/brain?section=practice_coach"
+                  id="/sequencer::/sequencer?section=practice_coach"
                   role="treeitem"
                   tabindex="-1"
                 >
@@ -11616,12 +11859,21 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                         xmlns="http://www.w3.org/2000/svg"
                       >
                         <path
-                          d="M19,19h-2v-6h2v6ZM4,10h-2v12h2v-12ZM14,10h-2v12h2v-12ZM24,10h-2v12h2v-12ZM9,6h-2v20h2V6ZM29,6h-2v20h2V6Z"
+                          d="M12,4H6A2,2,0,0,0,4,6v6a2,2,0,0,0,2,2h6a2,2,0,0,0,2-2V6A2,2,0,0,0,12,4Zm0,8H6V6h6Z"
+                        />
+                        <path
+                          d="M26,4H20a2,2,0,0,0-2,2v6a2,2,0,0,0,2,2h6a2,2,0,0,0,2-2V6A2,2,0,0,0,26,4Zm0,8H20V6h6Z"
+                        />
+                        <path
+                          d="M12,18H6a2,2,0,0,0-2,2v6a2,2,0,0,0,2,2h6a2,2,0,0,0,2-2V20A2,2,0,0,0,12,18Zm0,8H6V20h6Z"
+                        />
+                        <path
+                          d="M26,18H20a2,2,0,0,0-2,2v6a2,2,0,0,0,2,2h6a2,2,0,0,0,2-2V20A2,2,0,0,0,26,18Zm0,8H20V20h6Z"
                         />
                       </svg>
                       <span
                         class="cds--tree-node__label__text"
-                        id="/brain::/brain?section=practice_coach__label"
+                        id="/sequencer::/sequencer?section=practice_coach__label"
                       >
                         <span
                           class="global-tree-nav__node-copy"
@@ -17819,10 +18071,10 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
             </li>
             <li
               aria-expanded="false"
-              aria-owns="/brain-subtree"
+              aria-owns="/sequencer-subtree"
               aria-selected="false"
               class="global-tree-nav__tree-node cds--tree-node cds--tree-node--with-icon cds--tree-parent-node"
-              id="/brain"
+              id="/sequencer"
               role="treeitem"
               tabindex="-1"
             >
@@ -17864,12 +18116,21 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
                     xmlns="http://www.w3.org/2000/svg"
                   >
                     <path
-                      d="M19,19h-2v-6h2v6ZM4,10h-2v12h2v-12ZM14,10h-2v12h2v-12ZM24,10h-2v12h2v-12ZM9,6h-2v20h2V6ZM29,6h-2v20h2V6Z"
+                      d="M12,4H6A2,2,0,0,0,4,6v6a2,2,0,0,0,2,2h6a2,2,0,0,0,2-2V6A2,2,0,0,0,12,4Zm0,8H6V6h6Z"
+                    />
+                    <path
+                      d="M26,4H20a2,2,0,0,0-2,2v6a2,2,0,0,0,2,2h6a2,2,0,0,0,2-2V6A2,2,0,0,0,26,4Zm0,8H20V6h6Z"
+                    />
+                    <path
+                      d="M12,18H6a2,2,0,0,0-2,2v6a2,2,0,0,0,2,2h6a2,2,0,0,0,2-2V20A2,2,0,0,0,12,18Zm0,8H6V20h6Z"
+                    />
+                    <path
+                      d="M26,18H20a2,2,0,0,0-2,2v6a2,2,0,0,0,2,2h6a2,2,0,0,0,2-2V20A2,2,0,0,0,26,18Zm0,8H20V20h6Z"
                     />
                   </svg>
                   <span
                     class="cds--tree-node__label__text"
-                    id="/brain__label"
+                    id="/sequencer__label"
                   >
                     <span
                       class="global-tree-nav__node-copy global-tree-nav__node-copy--bold"
@@ -17886,7 +18147,7 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
                             <span
                               class="global-tree-nav__node-label"
                             >
-                              Drums&Synth
+                              Sequencer
                             </span>
                           </span>
                         </span>
@@ -17896,15 +18157,15 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
                 </span>
               </div>
               <ul
-                aria-labelledby="/brain__label"
+                aria-labelledby="/sequencer__label"
                 class="cds--tree-node__children cds--tree-node--hidden"
-                id="/brain-subtree"
+                id="/sequencer-subtree"
                 role="group"
               >
                 <li
                   aria-selected="false"
                   class="global-tree-nav__tree-node cds--tree-node cds--tree-node--with-icon cds--tree-leaf-node"
-                  id="/brain::/brain?section=performance"
+                  id="/sequencer::/sequencer?section=performance"
                   role="treeitem"
                   tabindex="-1"
                 >
@@ -17927,12 +18188,21 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
                         xmlns="http://www.w3.org/2000/svg"
                       >
                         <path
-                          d="M19,19h-2v-6h2v6ZM4,10h-2v12h2v-12ZM14,10h-2v12h2v-12ZM24,10h-2v12h2v-12ZM9,6h-2v20h2V6ZM29,6h-2v20h2V6Z"
+                          d="M12,4H6A2,2,0,0,0,4,6v6a2,2,0,0,0,2,2h6a2,2,0,0,0,2-2V6A2,2,0,0,0,12,4Zm0,8H6V6h6Z"
+                        />
+                        <path
+                          d="M26,4H20a2,2,0,0,0-2,2v6a2,2,0,0,0,2,2h6a2,2,0,0,0,2-2V6A2,2,0,0,0,26,4Zm0,8H20V6h6Z"
+                        />
+                        <path
+                          d="M12,18H6a2,2,0,0,0-2,2v6a2,2,0,0,0,2,2h6a2,2,0,0,0,2-2V20A2,2,0,0,0,12,18Zm0,8H6V20h6Z"
+                        />
+                        <path
+                          d="M26,18H20a2,2,0,0,0-2,2v6a2,2,0,0,0,2,2h6a2,2,0,0,0,2-2V20A2,2,0,0,0,26,18Zm0,8H20V20h6Z"
                         />
                       </svg>
                       <span
                         class="cds--tree-node__label__text"
-                        id="/brain::/brain?section=performance__label"
+                        id="/sequencer::/sequencer?section=performance__label"
                       >
                         <span
                           class="global-tree-nav__node-copy"
@@ -17962,7 +18232,7 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
                 <li
                   aria-selected="false"
                   class="global-tree-nav__tree-node cds--tree-node cds--tree-node--with-icon cds--tree-leaf-node"
-                  id="/brain::/brain?section=console"
+                  id="/sequencer::/sequencer?section=console"
                   role="treeitem"
                   tabindex="-1"
                 >
@@ -17985,12 +18255,21 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
                         xmlns="http://www.w3.org/2000/svg"
                       >
                         <path
-                          d="M19,19h-2v-6h2v6ZM4,10h-2v12h2v-12ZM14,10h-2v12h2v-12ZM24,10h-2v12h2v-12ZM9,6h-2v20h2V6ZM29,6h-2v20h2V6Z"
+                          d="M12,4H6A2,2,0,0,0,4,6v6a2,2,0,0,0,2,2h6a2,2,0,0,0,2-2V6A2,2,0,0,0,12,4Zm0,8H6V6h6Z"
+                        />
+                        <path
+                          d="M26,4H20a2,2,0,0,0-2,2v6a2,2,0,0,0,2,2h6a2,2,0,0,0,2-2V6A2,2,0,0,0,26,4Zm0,8H20V6h6Z"
+                        />
+                        <path
+                          d="M12,18H6a2,2,0,0,0-2,2v6a2,2,0,0,0,2,2h6a2,2,0,0,0,2-2V20A2,2,0,0,0,12,18Zm0,8H6V20h6Z"
+                        />
+                        <path
+                          d="M26,18H20a2,2,0,0,0-2,2v6a2,2,0,0,0,2,2h6a2,2,0,0,0,2-2V20A2,2,0,0,0,26,18Zm0,8H20V20h6Z"
                         />
                       </svg>
                       <span
                         class="cds--tree-node__label__text"
-                        id="/brain::/brain?section=console__label"
+                        id="/sequencer::/sequencer?section=console__label"
                       >
                         <span
                           class="global-tree-nav__node-copy"
@@ -18020,7 +18299,7 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
                 <li
                   aria-selected="false"
                   class="global-tree-nav__tree-node cds--tree-node cds--tree-node--with-icon cds--tree-leaf-node"
-                  id="/brain::/brain?section=step"
+                  id="/sequencer::/sequencer?section=step"
                   role="treeitem"
                   tabindex="-1"
                 >
@@ -18043,12 +18322,21 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
                         xmlns="http://www.w3.org/2000/svg"
                       >
                         <path
-                          d="M19,19h-2v-6h2v6ZM4,10h-2v12h2v-12ZM14,10h-2v12h2v-12ZM24,10h-2v12h2v-12ZM9,6h-2v20h2V6ZM29,6h-2v20h2V6Z"
+                          d="M12,4H6A2,2,0,0,0,4,6v6a2,2,0,0,0,2,2h6a2,2,0,0,0,2-2V6A2,2,0,0,0,12,4Zm0,8H6V6h6Z"
+                        />
+                        <path
+                          d="M26,4H20a2,2,0,0,0-2,2v6a2,2,0,0,0,2,2h6a2,2,0,0,0,2-2V6A2,2,0,0,0,26,4Zm0,8H20V6h6Z"
+                        />
+                        <path
+                          d="M12,18H6a2,2,0,0,0-2,2v6a2,2,0,0,0,2,2h6a2,2,0,0,0,2-2V20A2,2,0,0,0,12,18Zm0,8H6V20h6Z"
+                        />
+                        <path
+                          d="M26,18H20a2,2,0,0,0-2,2v6a2,2,0,0,0,2,2h6a2,2,0,0,0,2-2V20A2,2,0,0,0,26,18Zm0,8H20V20h6Z"
                         />
                       </svg>
                       <span
                         class="cds--tree-node__label__text"
-                        id="/brain::/brain?section=step__label"
+                        id="/sequencer::/sequencer?section=step__label"
                       >
                         <span
                           class="global-tree-nav__node-copy"
@@ -18078,7 +18366,7 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
                 <li
                   aria-selected="false"
                   class="global-tree-nav__tree-node cds--tree-node cds--tree-node--with-icon cds--tree-leaf-node"
-                  id="/brain::/brain?section=split"
+                  id="/sequencer::/sequencer?section=split"
                   role="treeitem"
                   tabindex="-1"
                 >
@@ -18101,12 +18389,21 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
                         xmlns="http://www.w3.org/2000/svg"
                       >
                         <path
-                          d="M19,19h-2v-6h2v6ZM4,10h-2v12h2v-12ZM14,10h-2v12h2v-12ZM24,10h-2v12h2v-12ZM9,6h-2v20h2V6ZM29,6h-2v20h2V6Z"
+                          d="M12,4H6A2,2,0,0,0,4,6v6a2,2,0,0,0,2,2h6a2,2,0,0,0,2-2V6A2,2,0,0,0,12,4Zm0,8H6V6h6Z"
+                        />
+                        <path
+                          d="M26,4H20a2,2,0,0,0-2,2v6a2,2,0,0,0,2,2h6a2,2,0,0,0,2-2V6A2,2,0,0,0,26,4Zm0,8H20V6h6Z"
+                        />
+                        <path
+                          d="M12,18H6a2,2,0,0,0-2,2v6a2,2,0,0,0,2,2h6a2,2,0,0,0,2-2V20A2,2,0,0,0,12,18Zm0,8H6V20h6Z"
+                        />
+                        <path
+                          d="M26,18H20a2,2,0,0,0-2,2v6a2,2,0,0,0,2,2h6a2,2,0,0,0,2-2V20A2,2,0,0,0,26,18Zm0,8H20V20h6Z"
                         />
                       </svg>
                       <span
                         class="cds--tree-node__label__text"
-                        id="/brain::/brain?section=split__label"
+                        id="/sequencer::/sequencer?section=split__label"
                       >
                         <span
                           class="global-tree-nav__node-copy"
@@ -18136,7 +18433,7 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
                 <li
                   aria-selected="false"
                   class="global-tree-nav__tree-node cds--tree-node cds--tree-node--with-icon cds--tree-leaf-node"
-                  id="/brain::/brain?section=perform"
+                  id="/sequencer::/sequencer?section=perform"
                   role="treeitem"
                   tabindex="-1"
                 >
@@ -18159,12 +18456,21 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
                         xmlns="http://www.w3.org/2000/svg"
                       >
                         <path
-                          d="M19,19h-2v-6h2v6ZM4,10h-2v12h2v-12ZM14,10h-2v12h2v-12ZM24,10h-2v12h2v-12ZM9,6h-2v20h2V6ZM29,6h-2v20h2V6Z"
+                          d="M12,4H6A2,2,0,0,0,4,6v6a2,2,0,0,0,2,2h6a2,2,0,0,0,2-2V6A2,2,0,0,0,12,4Zm0,8H6V6h6Z"
+                        />
+                        <path
+                          d="M26,4H20a2,2,0,0,0-2,2v6a2,2,0,0,0,2,2h6a2,2,0,0,0,2-2V6A2,2,0,0,0,26,4Zm0,8H20V6h6Z"
+                        />
+                        <path
+                          d="M12,18H6a2,2,0,0,0-2,2v6a2,2,0,0,0,2,2h6a2,2,0,0,0,2-2V20A2,2,0,0,0,12,18Zm0,8H6V20h6Z"
+                        />
+                        <path
+                          d="M26,18H20a2,2,0,0,0-2,2v6a2,2,0,0,0,2,2h6a2,2,0,0,0,2-2V20A2,2,0,0,0,26,18Zm0,8H20V20h6Z"
                         />
                       </svg>
                       <span
                         class="cds--tree-node__label__text"
-                        id="/brain::/brain?section=perform__label"
+                        id="/sequencer::/sequencer?section=perform__label"
                       >
                         <span
                           class="global-tree-nav__node-copy"
@@ -18194,7 +18500,7 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
                 <li
                   aria-selected="false"
                   class="global-tree-nav__tree-node cds--tree-node cds--tree-node--with-icon cds--tree-leaf-node"
-                  id="/brain::/brain?section=layers"
+                  id="/sequencer::/sequencer?section=layers"
                   role="treeitem"
                   tabindex="-1"
                 >
@@ -18217,12 +18523,21 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
                         xmlns="http://www.w3.org/2000/svg"
                       >
                         <path
-                          d="M19,19h-2v-6h2v6ZM4,10h-2v12h2v-12ZM14,10h-2v12h2v-12ZM24,10h-2v12h2v-12ZM9,6h-2v20h2V6ZM29,6h-2v20h2V6Z"
+                          d="M12,4H6A2,2,0,0,0,4,6v6a2,2,0,0,0,2,2h6a2,2,0,0,0,2-2V6A2,2,0,0,0,12,4Zm0,8H6V6h6Z"
+                        />
+                        <path
+                          d="M26,4H20a2,2,0,0,0-2,2v6a2,2,0,0,0,2,2h6a2,2,0,0,0,2-2V6A2,2,0,0,0,26,4Zm0,8H20V6h6Z"
+                        />
+                        <path
+                          d="M12,18H6a2,2,0,0,0-2,2v6a2,2,0,0,0,2,2h6a2,2,0,0,0,2-2V20A2,2,0,0,0,12,18Zm0,8H6V20h6Z"
+                        />
+                        <path
+                          d="M26,18H20a2,2,0,0,0-2,2v6a2,2,0,0,0,2,2h6a2,2,0,0,0,2-2V20A2,2,0,0,0,26,18Zm0,8H20V20h6Z"
                         />
                       </svg>
                       <span
                         class="cds--tree-node__label__text"
-                        id="/brain::/brain?section=layers__label"
+                        id="/sequencer::/sequencer?section=layers__label"
                       >
                         <span
                           class="global-tree-nav__node-copy"
@@ -18252,7 +18567,7 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
                 <li
                   aria-selected="false"
                   class="global-tree-nav__tree-node cds--tree-node cds--tree-node--with-icon cds--tree-leaf-node"
-                  id="/brain::/brain?section=sequence"
+                  id="/sequencer::/sequencer?section=sequence"
                   role="treeitem"
                   tabindex="-1"
                 >
@@ -18275,12 +18590,21 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
                         xmlns="http://www.w3.org/2000/svg"
                       >
                         <path
-                          d="M19,19h-2v-6h2v6ZM4,10h-2v12h2v-12ZM14,10h-2v12h2v-12ZM24,10h-2v12h2v-12ZM9,6h-2v20h2V6ZM29,6h-2v20h2V6Z"
+                          d="M12,4H6A2,2,0,0,0,4,6v6a2,2,0,0,0,2,2h6a2,2,0,0,0,2-2V6A2,2,0,0,0,12,4Zm0,8H6V6h6Z"
+                        />
+                        <path
+                          d="M26,4H20a2,2,0,0,0-2,2v6a2,2,0,0,0,2,2h6a2,2,0,0,0,2-2V6A2,2,0,0,0,26,4Zm0,8H20V6h6Z"
+                        />
+                        <path
+                          d="M12,18H6a2,2,0,0,0-2,2v6a2,2,0,0,0,2,2h6a2,2,0,0,0,2-2V20A2,2,0,0,0,12,18Zm0,8H6V20h6Z"
+                        />
+                        <path
+                          d="M26,18H20a2,2,0,0,0-2,2v6a2,2,0,0,0,2,2h6a2,2,0,0,0,2-2V20A2,2,0,0,0,26,18Zm0,8H20V20h6Z"
                         />
                       </svg>
                       <span
                         class="cds--tree-node__label__text"
-                        id="/brain::/brain?section=sequence__label"
+                        id="/sequencer::/sequencer?section=sequence__label"
                       >
                         <span
                           class="global-tree-nav__node-copy"
@@ -18310,7 +18634,7 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
                 <li
                   aria-selected="false"
                   class="global-tree-nav__tree-node cds--tree-node cds--tree-node--with-icon cds--tree-leaf-node"
-                  id="/brain::/brain?section=routing"
+                  id="/sequencer::/sequencer?section=routing"
                   role="treeitem"
                   tabindex="-1"
                 >
@@ -18333,12 +18657,21 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
                         xmlns="http://www.w3.org/2000/svg"
                       >
                         <path
-                          d="M19,19h-2v-6h2v6ZM4,10h-2v12h2v-12ZM14,10h-2v12h2v-12ZM24,10h-2v12h2v-12ZM9,6h-2v20h2V6ZM29,6h-2v20h2V6Z"
+                          d="M12,4H6A2,2,0,0,0,4,6v6a2,2,0,0,0,2,2h6a2,2,0,0,0,2-2V6A2,2,0,0,0,12,4Zm0,8H6V6h6Z"
+                        />
+                        <path
+                          d="M26,4H20a2,2,0,0,0-2,2v6a2,2,0,0,0,2,2h6a2,2,0,0,0,2-2V6A2,2,0,0,0,26,4Zm0,8H20V6h6Z"
+                        />
+                        <path
+                          d="M12,18H6a2,2,0,0,0-2,2v6a2,2,0,0,0,2,2h6a2,2,0,0,0,2-2V20A2,2,0,0,0,12,18Zm0,8H6V20h6Z"
+                        />
+                        <path
+                          d="M26,18H20a2,2,0,0,0-2,2v6a2,2,0,0,0,2,2h6a2,2,0,0,0,2-2V20A2,2,0,0,0,26,18Zm0,8H20V20h6Z"
                         />
                       </svg>
                       <span
                         class="cds--tree-node__label__text"
-                        id="/brain::/brain?section=routing__label"
+                        id="/sequencer::/sequencer?section=routing__label"
                       >
                         <span
                           class="global-tree-nav__node-copy"
@@ -18368,7 +18701,7 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
                 <li
                   aria-selected="false"
                   class="global-tree-nav__tree-node cds--tree-node cds--tree-node--with-icon cds--tree-leaf-node"
-                  id="/brain::/brain?section=inputs"
+                  id="/sequencer::/sequencer?section=inputs"
                   role="treeitem"
                   tabindex="-1"
                 >
@@ -18391,12 +18724,21 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
                         xmlns="http://www.w3.org/2000/svg"
                       >
                         <path
-                          d="M19,19h-2v-6h2v6ZM4,10h-2v12h2v-12ZM14,10h-2v12h2v-12ZM24,10h-2v12h2v-12ZM9,6h-2v20h2V6ZM29,6h-2v20h2V6Z"
+                          d="M12,4H6A2,2,0,0,0,4,6v6a2,2,0,0,0,2,2h6a2,2,0,0,0,2-2V6A2,2,0,0,0,12,4Zm0,8H6V6h6Z"
+                        />
+                        <path
+                          d="M26,4H20a2,2,0,0,0-2,2v6a2,2,0,0,0,2,2h6a2,2,0,0,0,2-2V6A2,2,0,0,0,26,4Zm0,8H20V6h6Z"
+                        />
+                        <path
+                          d="M12,18H6a2,2,0,0,0-2,2v6a2,2,0,0,0,2,2h6a2,2,0,0,0,2-2V20A2,2,0,0,0,12,18Zm0,8H6V20h6Z"
+                        />
+                        <path
+                          d="M26,18H20a2,2,0,0,0-2,2v6a2,2,0,0,0,2,2h6a2,2,0,0,0,2-2V20A2,2,0,0,0,26,18Zm0,8H20V20h6Z"
                         />
                       </svg>
                       <span
                         class="cds--tree-node__label__text"
-                        id="/brain::/brain?section=inputs__label"
+                        id="/sequencer::/sequencer?section=inputs__label"
                       >
                         <span
                           class="global-tree-nav__node-copy"
@@ -18426,7 +18768,7 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
                 <li
                   aria-selected="false"
                   class="global-tree-nav__tree-node cds--tree-node cds--tree-node--with-icon cds--tree-leaf-node"
-                  id="/brain::/brain?section=library"
+                  id="/sequencer::/sequencer?section=library"
                   role="treeitem"
                   tabindex="-1"
                 >
@@ -18449,12 +18791,21 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
                         xmlns="http://www.w3.org/2000/svg"
                       >
                         <path
-                          d="M19,19h-2v-6h2v6ZM4,10h-2v12h2v-12ZM14,10h-2v12h2v-12ZM24,10h-2v12h2v-12ZM9,6h-2v20h2V6ZM29,6h-2v20h2V6Z"
+                          d="M12,4H6A2,2,0,0,0,4,6v6a2,2,0,0,0,2,2h6a2,2,0,0,0,2-2V6A2,2,0,0,0,12,4Zm0,8H6V6h6Z"
+                        />
+                        <path
+                          d="M26,4H20a2,2,0,0,0-2,2v6a2,2,0,0,0,2,2h6a2,2,0,0,0,2-2V6A2,2,0,0,0,26,4Zm0,8H20V6h6Z"
+                        />
+                        <path
+                          d="M12,18H6a2,2,0,0,0-2,2v6a2,2,0,0,0,2,2h6a2,2,0,0,0,2-2V20A2,2,0,0,0,12,18Zm0,8H6V20h6Z"
+                        />
+                        <path
+                          d="M26,18H20a2,2,0,0,0-2,2v6a2,2,0,0,0,2,2h6a2,2,0,0,0,2-2V20A2,2,0,0,0,26,18Zm0,8H20V20h6Z"
                         />
                       </svg>
                       <span
                         class="cds--tree-node__label__text"
-                        id="/brain::/brain?section=library__label"
+                        id="/sequencer::/sequencer?section=library__label"
                       >
                         <span
                           class="global-tree-nav__node-copy"
@@ -18484,7 +18835,7 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
                 <li
                   aria-selected="false"
                   class="global-tree-nav__tree-node cds--tree-node cds--tree-node--with-icon cds--tree-leaf-node"
-                  id="/brain::/brain?section=diagnostics"
+                  id="/sequencer::/sequencer?section=diagnostics"
                   role="treeitem"
                   tabindex="-1"
                 >
@@ -18507,12 +18858,21 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
                         xmlns="http://www.w3.org/2000/svg"
                       >
                         <path
-                          d="M19,19h-2v-6h2v6ZM4,10h-2v12h2v-12ZM14,10h-2v12h2v-12ZM24,10h-2v12h2v-12ZM9,6h-2v20h2V6ZM29,6h-2v20h2V6Z"
+                          d="M12,4H6A2,2,0,0,0,4,6v6a2,2,0,0,0,2,2h6a2,2,0,0,0,2-2V6A2,2,0,0,0,12,4Zm0,8H6V6h6Z"
+                        />
+                        <path
+                          d="M26,4H20a2,2,0,0,0-2,2v6a2,2,0,0,0,2,2h6a2,2,0,0,0,2-2V6A2,2,0,0,0,26,4Zm0,8H20V6h6Z"
+                        />
+                        <path
+                          d="M12,18H6a2,2,0,0,0-2,2v6a2,2,0,0,0,2,2h6a2,2,0,0,0,2-2V20A2,2,0,0,0,12,18Zm0,8H6V20h6Z"
+                        />
+                        <path
+                          d="M26,18H20a2,2,0,0,0-2,2v6a2,2,0,0,0,2,2h6a2,2,0,0,0,2-2V20A2,2,0,0,0,26,18Zm0,8H20V20h6Z"
                         />
                       </svg>
                       <span
                         class="cds--tree-node__label__text"
-                        id="/brain::/brain?section=diagnostics__label"
+                        id="/sequencer::/sequencer?section=diagnostics__label"
                       >
                         <span
                           class="global-tree-nav__node-copy"
@@ -18542,7 +18902,7 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
                 <li
                   aria-selected="false"
                   class="global-tree-nav__tree-node cds--tree-node cds--tree-node--with-icon cds--tree-leaf-node"
-                  id="/brain::/brain?section=session_media"
+                  id="/sequencer::/sequencer?section=session_media"
                   role="treeitem"
                   tabindex="-1"
                 >
@@ -18565,12 +18925,21 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
                         xmlns="http://www.w3.org/2000/svg"
                       >
                         <path
-                          d="M19,19h-2v-6h2v6ZM4,10h-2v12h2v-12ZM14,10h-2v12h2v-12ZM24,10h-2v12h2v-12ZM9,6h-2v20h2V6ZM29,6h-2v20h2V6Z"
+                          d="M12,4H6A2,2,0,0,0,4,6v6a2,2,0,0,0,2,2h6a2,2,0,0,0,2-2V6A2,2,0,0,0,12,4Zm0,8H6V6h6Z"
+                        />
+                        <path
+                          d="M26,4H20a2,2,0,0,0-2,2v6a2,2,0,0,0,2,2h6a2,2,0,0,0,2-2V6A2,2,0,0,0,26,4Zm0,8H20V6h6Z"
+                        />
+                        <path
+                          d="M12,18H6a2,2,0,0,0-2,2v6a2,2,0,0,0,2,2h6a2,2,0,0,0,2-2V20A2,2,0,0,0,12,18Zm0,8H6V20h6Z"
+                        />
+                        <path
+                          d="M26,18H20a2,2,0,0,0-2,2v6a2,2,0,0,0,2,2h6a2,2,0,0,0,2-2V20A2,2,0,0,0,26,18Zm0,8H20V20h6Z"
                         />
                       </svg>
                       <span
                         class="cds--tree-node__label__text"
-                        id="/brain::/brain?section=session_media__label"
+                        id="/sequencer::/sequencer?section=session_media__label"
                       >
                         <span
                           class="global-tree-nav__node-copy"
@@ -18600,7 +18969,7 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
                 <li
                   aria-selected="false"
                   class="global-tree-nav__tree-node cds--tree-node cds--tree-node--with-icon cds--tree-leaf-node"
-                  id="/brain::/brain?section=practice_coach"
+                  id="/sequencer::/sequencer?section=practice_coach"
                   role="treeitem"
                   tabindex="-1"
                 >
@@ -18623,12 +18992,21 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
                         xmlns="http://www.w3.org/2000/svg"
                       >
                         <path
-                          d="M19,19h-2v-6h2v6ZM4,10h-2v12h2v-12ZM14,10h-2v12h2v-12ZM24,10h-2v12h2v-12ZM9,6h-2v20h2V6ZM29,6h-2v20h2V6Z"
+                          d="M12,4H6A2,2,0,0,0,4,6v6a2,2,0,0,0,2,2h6a2,2,0,0,0,2-2V6A2,2,0,0,0,12,4Zm0,8H6V6h6Z"
+                        />
+                        <path
+                          d="M26,4H20a2,2,0,0,0-2,2v6a2,2,0,0,0,2,2h6a2,2,0,0,0,2-2V6A2,2,0,0,0,26,4Zm0,8H20V6h6Z"
+                        />
+                        <path
+                          d="M12,18H6a2,2,0,0,0-2,2v6a2,2,0,0,0,2,2h6a2,2,0,0,0,2-2V20A2,2,0,0,0,12,18Zm0,8H6V20h6Z"
+                        />
+                        <path
+                          d="M26,18H20a2,2,0,0,0-2,2v6a2,2,0,0,0,2,2h6a2,2,0,0,0,2-2V20A2,2,0,0,0,26,18Zm0,8H20V20h6Z"
                         />
                       </svg>
                       <span
                         class="cds--tree-node__label__text"
-                        id="/brain::/brain?section=practice_coach__label"
+                        id="/sequencer::/sequencer?section=practice_coach__label"
                       >
                         <span
                           class="global-tree-nav__node-copy"

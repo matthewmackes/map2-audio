@@ -22,7 +22,7 @@ from app.services.maschine.profiles import MaschineProfileRuntime, PROFILE_ALIAS
 from app.services.maschine.render import GrayFramebuffer
 from app.services.maschine.render.framebuffer import DamageRect
 from app.services.midi_hub.clock_engine import get_midi_clock_engine
-from app.services.performance_brain_service import get_performance_brain_service
+from app.services.sequencer_service import get_sequencer_service
 from app.services.snapshot import SnapshotService
 from app.services.snapshot_tempo_service import get_snapshot_tempo_service
 from app.services.transport_service import get_transport_service
@@ -308,11 +308,11 @@ class MaschineLCDRenderService(Singleton):
 
     def _collect_browser_state(self) -> dict[str, Any]:
         try:
-            library = get_performance_brain_service().get_library()
+            library = get_sequencer_service().get_library()
         except Exception:
             library = {}
         try:
-            sample_editor = get_performance_brain_service().get_sample_editor()
+            sample_editor = get_sequencer_service().get_sample_editor()
         except Exception:
             sample_editor = {}
         try:
@@ -338,21 +338,21 @@ class MaschineLCDRenderService(Singleton):
         }
 
     async def _collect_brain_morph_state(self, snapshot_state: dict[str, Any]) -> dict[str, Any]:
-        brain_service = get_performance_brain_service()
+        sequencer_service = get_sequencer_service()
         try:
-            brain_state = brain_service.get_state()
+            brain_state = sequencer_service.get_state()
         except Exception:
             brain_state = {}
         try:
-            brain_transport = brain_service.get_transport()
+            brain_transport = sequencer_service.get_transport()
         except Exception:
             brain_transport = {}
         try:
-            brain_sequence = brain_service.get_sequence()
+            brain_sequence = sequencer_service.get_sequence()
         except Exception:
             brain_sequence = {}
         try:
-            brain_diagnostics = brain_service.get_diagnostics()
+            brain_diagnostics = sequencer_service.get_diagnostics()
         except Exception:
             brain_diagnostics = {}
         try:

@@ -19,7 +19,7 @@ const mockSpecialSettingsState = {
     pinnedRoutes: [],
     landingTiles: [
       { route: '/workspace', size: 'large' as const },
-      { route: '/brain', size: 'medium' as const },
+      { route: '/sequencer', size: 'medium' as const },
       { route: '/midi-hub', size: 'medium' as const },
       { route: '/perform', size: 'small' as const },
     ],
@@ -429,7 +429,7 @@ describe('HomePage landing', () => {
       pinnedRoutes: [],
       landingTiles: [
         { route: '/workspace', size: 'large' },
-        { route: '/brain', size: 'medium' },
+        { route: '/sequencer', size: 'medium' },
         { route: '/midi-hub', size: 'medium' },
         { route: '/perform', size: 'small' },
       ],
@@ -655,7 +655,7 @@ describe('HomePage landing', () => {
       'map2:home-shell-recent-routes',
       JSON.stringify([
         '/platforms/theme',
-        '/brain',
+        '/sequencer',
         '/midi-hub/connections',
       ]),
     )

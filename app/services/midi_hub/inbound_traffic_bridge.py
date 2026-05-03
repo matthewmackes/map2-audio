@@ -7,7 +7,7 @@ any router rule matches the source port.
 Why this exists: the MidiRouter only emits to midi:traffic when a routing
 rule matches an inbound message (see MidiRouter._on_message in router.py).
 That makes routing the gate for visibility, which breaks setup-time
-workflows like the Brain "Connect a new keyboard" task — operators need
+workflows like the Sequencer "Connect a new keyboard" task — operators need
 to see MIDI events arriving from a freshly-plugged-in keyboard *before*
 they author any route.
 

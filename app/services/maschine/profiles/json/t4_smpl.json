@@ -1,7 +1,7 @@
 {
   "id": "t4_smpl",
   "name": "T4 SMPL",
-  "description": "Observer-backed sample editor summary for the current Brain slot.",
+  "description": "Observer-backed sample editor summary for the current Sequencer slot.",
   "bars": {
     "left": {
       "top_left": "T4 SMPL",

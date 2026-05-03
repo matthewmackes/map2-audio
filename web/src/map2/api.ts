@@ -151,7 +151,7 @@ import {
 } from './runtime';
 import { audioApi, diagnosticsApi, usbApi } from './clients/audio';
 import { avbApi } from './clients/avb';
-import { brainApi } from './clients/brain';
+import { sequencerApi } from './clients/sequencer';
 import {
   foldersApi,
   irApi,
@@ -214,7 +214,7 @@ import type { PluginRuntimeScopeOptions } from './http';
 export { API_BASE, getWsBaseUrl, getWsUrl } from './transport';
 export { audioApi, diagnosticsApi, usbApi } from './clients/audio';
 export { avbApi } from './clients/avb';
-export { brainApi } from './clients/brain';
+export { sequencerApi } from './clients/sequencer';
 export { chainsApi } from './clients/chains';
 export { drumsApi } from './clients/drums';
 export { midiApi, midiApiV2 } from './clients/midi';
@@ -1438,7 +1438,7 @@ export interface SynthForgeBackendStatus {
 
 // ==================== Performance Brain API ====================
 
-export interface BrainTransportState {
+export interface SequencerTransportState {
   is_playing: boolean
   bpm: number
   swing: number
@@ -1451,7 +1451,7 @@ export interface BrainTransportState {
   switch_quantization_beats: number
 }
 
-export interface BrainSlot {
+export interface SequencerSlot {
   slot_id: number
   name: string
   mode: 'chromatic' | 'drum' | 'hybrid'
@@ -1479,7 +1479,7 @@ export interface BrainSlot {
   status: string
 }
 
-export interface BrainLayer {
+export interface SequencerLayer {
   layer_id: string
   name: string
   slot_indices: number[]
@@ -1493,7 +1493,7 @@ export interface BrainLayer {
   purpose: string
 }
 
-export interface BrainPatternSummary {
+export interface SequencerPatternSummary {
   pattern_id: number
   name: string
   length: number
@@ -1503,7 +1503,7 @@ export interface BrainPatternSummary {
   summary: string
 }
 
-export interface BrainSequenceLaneSummary {
+export interface SequencerSequenceLaneSummary {
   slot_id: number
   name: string
   length: number
@@ -1512,30 +1512,30 @@ export interface BrainSequenceLaneSummary {
   step_lock_targets: string[]
 }
 
-export interface BrainSequence {
+export interface SequencerSequence {
   pattern_bank_size: number
   max_steps: number
   current_pattern: number
   current_variation: number
-  patterns: BrainPatternSummary[]
-  lanes: BrainSequenceLaneSummary[]
+  patterns: SequencerPatternSummary[]
+  lanes: SequencerSequenceLaneSummary[]
   fill_mode: string
   song_entry_count: number
 }
 
-export interface BrainSongEntry {
+export interface SequencerSongEntry {
   pattern_id: number
   variation: number
   repeat_count: number
   label: string
 }
 
-export interface BrainSongState {
-  entries: BrainSongEntry[]
+export interface SequencerSongState {
+  entries: SequencerSongEntry[]
   loop: boolean
 }
 
-export interface BrainMixerBus {
+export interface SequencerMixerBus {
   bus_id: number
   name: string
   level: number
@@ -1546,7 +1546,7 @@ export interface BrainMixerBus {
   reverb_send: number
 }
 
-export interface BrainMasterSection {
+export interface SequencerMasterSection {
   master_volume: number
   drive_db: number
   compressor_amount: number
@@ -1554,12 +1554,12 @@ export interface BrainMasterSection {
   limiter_ceiling_db: number
 }
 
-export interface BrainMixerState {
-  buses: BrainMixerBus[]
-  master: BrainMasterSection
+export interface SequencerMixerState {
+  buses: SequencerMixerBus[]
+  master: SequencerMasterSection
 }
 
-export interface BrainKeyboardZone {
+export interface SequencerKeyboardZone {
   zone_id: string
   name: string
   midi_channel: number
@@ -1570,7 +1570,7 @@ export interface BrainKeyboardZone {
   aftertouch_mode: string
 }
 
-export interface BrainTriggerProfile {
+export interface SequencerTriggerProfile {
   profile_id: string
   name: string
   pad_range_start: number
@@ -1584,20 +1584,20 @@ export interface BrainTriggerProfile {
   velocity_ceiling: number
 }
 
-export interface BrainControllerAssignment {
+export interface SequencerControllerAssignment {
   source: string
   target: string
   mode: string
   enabled: boolean
 }
 
-export interface BrainInputsState {
-  keyboard_zones: BrainKeyboardZone[]
-  trigger_profiles: BrainTriggerProfile[]
-  controller_assignments: BrainControllerAssignment[]
+export interface SequencerInputsState {
+  keyboard_zones: SequencerKeyboardZone[]
+  trigger_profiles: SequencerTriggerProfile[]
+  controller_assignments: SequencerControllerAssignment[]
 }
 
-export interface BrainLibraryAsset {
+export interface SequencerLibraryAsset {
   asset_id: string
   name: string
   asset_type: 'soundfont' | 'sfz' | 'sample' | 'kit' | 'patch'
@@ -1608,20 +1608,20 @@ export interface BrainLibraryAsset {
   tags: string[]
 }
 
-export interface BrainLibraryCollection {
+export interface SequencerLibraryCollection {
   collection_id: string
   label: string
   asset_count: number
-  assets: BrainLibraryAsset[]
+  assets: SequencerLibraryAsset[]
 }
 
-export interface BrainLibraryState {
-  collections: BrainLibraryCollection[]
+export interface SequencerLibraryState {
+  collections: SequencerLibraryCollection[]
   featured_assets: string[]
   last_scan_iso: string
 }
 
-export interface BrainSampleEditorState {
+export interface SequencerSampleEditorState {
   slot_id: number
   asset_path: string
   waveform_available: boolean
@@ -1633,7 +1633,7 @@ export interface BrainSampleEditorState {
   record_target_path: string
 }
 
-export interface BrainSnapshotIntegration {
+export interface SequencerSnapshotIntegration {
   authority_model: 'snapshot-first'
   snapshot_id: number | null
   snapshot_name: string | null
@@ -1642,7 +1642,7 @@ export interface BrainSnapshotIntegration {
   observed_state_id: string
 }
 
-export interface BrainKeyboardQualification {
+export interface SequencerKeyboardQualification {
   ready: boolean
   zone_count: number
   channel_count: number
@@ -1654,7 +1654,7 @@ export interface BrainKeyboardQualification {
   issues: string[]
 }
 
-export interface BrainTriggerQualification {
+export interface SequencerTriggerQualification {
   ready: boolean
   profile_count: number
   covered_pad_count: number
@@ -1666,7 +1666,7 @@ export interface BrainTriggerQualification {
   issues: string[]
 }
 
-export interface BrainSequenceQualification {
+export interface SequencerSequenceQualification {
   ready: boolean
   pattern_count: number
   populated_pattern_count: number
@@ -1678,7 +1678,7 @@ export interface BrainSequenceQualification {
   issues: string[]
 }
 
-export interface BrainRoutingQualification {
+export interface SequencerRoutingQualification {
   ready: boolean
   used_bus_count: number
   output_pair_count: number
@@ -1688,21 +1688,21 @@ export interface BrainRoutingQualification {
   issues: string[]
 }
 
-export interface BrainControllerQualification {
+export interface SequencerControllerQualification {
   scoped_instance_key: string
   scope_binding_ready: boolean
   tier_a_runtime_locked: boolean
   controller_ready: boolean
   ready_surface_count: number
-  keyboard: BrainKeyboardQualification
-  triggers: BrainTriggerQualification
-  sequence: BrainSequenceQualification
-  routing: BrainRoutingQualification
+  keyboard: SequencerKeyboardQualification
+  triggers: SequencerTriggerQualification
+  sequence: SequencerSequenceQualification
+  routing: SequencerRoutingQualification
   summary: string
   issues: string[]
 }
 
-export interface BrainDiagnostics {
+export interface SequencerDiagnostics {
   sample_rate_hz: number
   buffer_size_samples: number
   cpu_load_percent: number
@@ -1715,11 +1715,11 @@ export interface BrainDiagnostics {
   backend_mode: string
   warnings: string[]
   last_import_source: string | null
-  controller_qualification: BrainControllerQualification
+  controller_qualification: SequencerControllerQualification
   updated_at_iso: string
 }
 
-export interface BrainState {
+export interface SequencerState {
   instance_id: string
   product_name: string
   set_name: string
@@ -1728,20 +1728,20 @@ export interface BrainState {
   // T2442: Brain Overview subviews (performance/console/step/split) promoted to
   // first-class section ids; the legacy `overview` aggregate is gone.
   active_section: 'performance' | 'console' | 'step' | 'split' | 'perform' | 'layers' | 'sequence' | 'routing' | 'inputs' | 'library' | 'session_media' | 'practice_coach' | 'diagnostics'
-  transport: BrainTransportState
-  slots: BrainSlot[]
-  layers: BrainLayer[]
-  sequence: BrainSequence
-  song: BrainSongState
-  mixer: BrainMixerState
-  inputs: BrainInputsState
-  library: BrainLibraryState
-  sample_editor: BrainSampleEditorState
-  diagnostics: BrainDiagnostics
-  snapshot_integration: BrainSnapshotIntegration
+  transport: SequencerTransportState
+  slots: SequencerSlot[]
+  layers: SequencerLayer[]
+  sequence: SequencerSequence
+  song: SequencerSongState
+  mixer: SequencerMixerState
+  inputs: SequencerInputsState
+  library: SequencerLibraryState
+  sample_editor: SequencerSampleEditorState
+  diagnostics: SequencerDiagnostics
+  snapshot_integration: SequencerSnapshotIntegration
 }
 
-export type BrainRuntimeResource =
+export type SequencerRuntimeResource =
   | 'state'
   | 'transport'
   | 'slot'
@@ -1752,26 +1752,26 @@ export type BrainRuntimeResource =
   | 'inputs'
   | 'sample_editor'
 
-export interface BrainRuntimeScope {
+export interface SequencerRuntimeScope {
   runtime_instance_id: string
   instance_id: string | null
   plugin_position: number | null
 }
 
-export interface BrainRuntimeUpdate {
-  resource: BrainRuntimeResource
-  scope: BrainRuntimeScope
-  state: BrainState
+export interface SequencerRuntimeUpdate {
+  resource: SequencerRuntimeResource
+  scope: SequencerRuntimeScope
+  state: SequencerState
 }
 
-export interface BrainStateUpdate {
+export interface SequencerStateUpdate {
   set_name?: string
   active_slot?: number
   active_layer_id?: string
-  active_section?: BrainState['active_section']
+  active_section?: SequencerState['active_section']
 }
 
-export interface BrainTransportUpdate {
+export interface SequencerTransportUpdate {
   is_playing?: boolean
   bpm?: number
   swing?: number
@@ -1781,10 +1781,10 @@ export interface BrainTransportUpdate {
   switch_quantization_beats?: number
 }
 
-export interface BrainSlotUpdate {
+export interface SequencerSlotUpdate {
   name?: string
-  mode?: BrainSlot['mode']
-  asset_type?: BrainSlot['asset_type']
+  mode?: SequencerSlot['mode']
+  asset_type?: SequencerSlot['asset_type']
   asset_path?: string
   source_label?: string
   level?: number
@@ -1808,7 +1808,7 @@ export interface BrainSlotUpdate {
   status?: string
 }
 
-export interface BrainSampleEditorUpdate {
+export interface SequencerSampleEditorUpdate {
   slot_id: number
   start_sample?: number
   end_sample?: number
@@ -2627,7 +2627,7 @@ export const map2Api = {
   ir: irApi,
   irLibrary: irLibraryApi,
   nam: namApi,
-  brain: brainApi,
+  sequencer: sequencerApi,
   soundfont: soundfontApi,
   synthforge: synthforgeApi,
   automation: automationApi,

@@ -286,7 +286,7 @@ function renderDesktopExperience(initialEntries: string[] = ['/']) {
             <Route path="/workspace/artifacts" element={<ShellStubPage testId="artifacts-page">Audio Artifacts Workspace</ShellStubPage>} />
             <Route path="/workspace/platforms/management" element={<ShellStubPage testId="platform-management-page">Device(s) Manager</ShellStubPage>} />
             <Route path="/snapshot-editor" element={<ShellStubPage testId="snapshot-editor-page">Snapshot Editor</ShellStubPage>} />
-            <Route path="/brain" element={<ShellStubPage testId="brain-page">Brain</ShellStubPage>} />
+            <Route path="/sequencer" element={<ShellStubPage testId="brain-page">Brain</ShellStubPage>} />
             <Route path="/perform" element={<div data-testid="perform-page">Stage Mode</div>} />
             <Route path="/devices" element={<ShellStubPage testId="devices-page">Devices Workspace</ShellStubPage>} />
             <Route path="/platforms/theme" element={<ShellStubPage testId="theme-page">Theme Settings</ShellStubPage>} />

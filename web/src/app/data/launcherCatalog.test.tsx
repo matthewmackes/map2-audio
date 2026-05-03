@@ -41,13 +41,13 @@ describe('launcherCatalog', () => {
         expect.objectContaining({ label: 'Launch path', value: '/artifacts' }),
       ]),
     })
-    expect(getLauncherCatalogItem('/brain')).toMatchObject({
-      heroTitle: 'Brain',
+    expect(getLauncherCatalogItem('/sequencer')).toMatchObject({
+      heroTitle: 'Sequencer',
       landingEligible: true,
       navEligible: false,
       directory: 'core',
       technicalSpecs: expect.arrayContaining([
-        expect.objectContaining({ label: 'Launch path', value: '/brain' }),
+        expect.objectContaining({ label: 'Launch path', value: '/sequencer' }),
       ]),
     })
     for (const legacyDevicesRoute of [
@@ -99,7 +99,7 @@ describe('launcherCatalog', () => {
 
   it('normalizes landing tiles to canonical route-backed launchers only and drops removed fixed-tile/catalog routes', () => {
     expect(normalizeLandingTiles([
-      { route: '/brain', size: 'large' },
+      { route: '/sequencer', size: 'large' },
       { route: '/juce-grid', size: 'small' },
       { route: '/midi-hub', size: 'medium' },
       { route: '/drums', size: 'small' },
@@ -114,7 +114,7 @@ describe('launcherCatalog', () => {
       { route: '/platforms/workspace-catalog', size: 'medium' },
       { route: '/platforms/about', size: 'large' },
     ])).toEqual([
-      { route: '/brain', size: 'large' },
+      { route: '/sequencer', size: 'large' },
       // `/platform` resolves via PINNED_ROUTE_ALIASES to `/node-ops`.
       { route: '/node-ops', size: 'medium' },
       { route: '/artifacts', size: 'large' },
@@ -214,21 +214,21 @@ describe('launcherCatalog', () => {
       { route: '/midi/lab', label: 'Lab' },
     ])
 
-    expect(getLauncherCatalogTreeChildren('/brain')).toEqual([
+    expect(getLauncherCatalogTreeChildren('/sequencer')).toEqual([
       // T2442: Brain Overview tabs are now first-class
-      { route: '/brain?section=performance', label: 'Performance' },
-      { route: '/brain?section=console', label: 'Console' },
-      { route: '/brain?section=step', label: 'Step' },
-      { route: '/brain?section=split', label: 'Split' },
-      { route: '/brain?section=perform', label: 'Perform' },
-      { route: '/brain?section=layers', label: 'Layers' },
-      { route: '/brain?section=sequence', label: 'Sequence' },
-      { route: '/brain?section=routing', label: 'Routing' },
-      { route: '/brain?section=inputs', label: 'Inputs' },
-      { route: '/brain?section=library', label: 'Library' },
-      { route: '/brain?section=diagnostics', label: 'Diagnostics' },
-      { route: '/brain?section=session_media', label: 'Session Media' },
-      { route: '/brain?section=practice_coach', label: 'Practice Coach' },
+      { route: '/sequencer?section=performance', label: 'Performance' },
+      { route: '/sequencer?section=console', label: 'Console' },
+      { route: '/sequencer?section=step', label: 'Step' },
+      { route: '/sequencer?section=split', label: 'Split' },
+      { route: '/sequencer?section=perform', label: 'Perform' },
+      { route: '/sequencer?section=layers', label: 'Layers' },
+      { route: '/sequencer?section=sequence', label: 'Sequence' },
+      { route: '/sequencer?section=routing', label: 'Routing' },
+      { route: '/sequencer?section=inputs', label: 'Inputs' },
+      { route: '/sequencer?section=library', label: 'Library' },
+      { route: '/sequencer?section=diagnostics', label: 'Diagnostics' },
+      { route: '/sequencer?section=session_media', label: 'Session Media' },
+      { route: '/sequencer?section=practice_coach', label: 'Practice Coach' },
     ])
   })
 })

@@ -13,7 +13,7 @@ import aiohttp
 
 from app.utils.singleton import Singleton
 
-DRUM_PLUGIN_URIS = {"map2://juce/drums", "map2://juce/brain"}
+DRUM_PLUGIN_URIS = {"map2://juce/drums", "map2://juce/sequencer"}
 
 
 def _utcnow_iso() -> str:

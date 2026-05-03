@@ -79,7 +79,7 @@ def test_build_initial_authoritative_audio_state_marks_paths_pending_until_nodes
 def test_build_initial_authoritative_audio_state_preserves_existing_extensions():
     detail = {
         "id": 9,
-        "name": "Brain Snapshot",
+        "name": "Sequencer Snapshot",
         "routing": {"mode": "series", "series_order": ["ch_a"]},
         "paths": [
             {"id": "ch_a", "label": "A", "snapshot_chain_id": 301},
@@ -93,7 +93,7 @@ def test_build_initial_authoritative_audio_state_preserves_existing_extensions()
         state_version=4,
         leader_epoch=7,
         extensions={
-            "performance_brain": {
+            "sequencer": {
                 "instances": {
                     "instance-17__position-3": {
                         "runtime_instance_id": "instance-17__position-3",
@@ -105,14 +105,14 @@ def test_build_initial_authoritative_audio_state_preserves_existing_extensions()
         },
     )
 
-    assert state.extensions["performance_brain"]["instances"]["instance-17__position-3"]["instance_id"] == "17"
-    assert state.desired.extensions["performance_brain"]["instances"]["instance-17__position-3"]["plugin_position"] == 3
+    assert state.extensions["sequencer"]["instances"]["instance-17__position-3"]["instance_id"] == "17"
+    assert state.desired.extensions["sequencer"]["instances"]["instance-17__position-3"]["plugin_position"] == 3
 
 
 def test_overlay_audio_state_extensions_replaces_snapshot_owned_namespace():
     merged = overlay_audio_state_extensions(
         {
-            "performance_brain": {
+            "sequencer": {
                 "instances": {
                     "instance-17__position-3": {
                         "runtime_instance_id": "instance-17__position-3",
@@ -126,7 +126,7 @@ def test_overlay_audio_state_extensions_replaces_snapshot_owned_namespace():
             },
         },
         {
-            "performance_brain": {
+            "sequencer": {
                 "instances": {
                     "instance-18__position-4": {
                         "runtime_instance_id": "instance-18__position-4",
@@ -138,6 +138,6 @@ def test_overlay_audio_state_extensions_replaces_snapshot_owned_namespace():
         },
     )
 
-    assert "instance-17__position-3" not in merged["performance_brain"]["instances"]
-    assert merged["performance_brain"]["instances"]["instance-18__position-4"]["instance_id"] == "18"
+    assert "instance-17__position-3" not in merged["sequencer"]["instances"]
+    assert merged["sequencer"]["instances"]["instance-18__position-4"]["instance_id"] == "18"
     assert merged["transport"]["tempo"] == 128.0

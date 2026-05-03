@@ -1,14 +1,14 @@
-"""Brain slot ↔ Hardware Store profile_key binding map.
+"""Sequencer slot ↔ Hardware Store profile_key binding map.
 
 T2461-A2. A thin process-singleton holding the operator's
-"this Brain slot is wired to this device" assertion. Both the
-Brain ConsoleView and the Hardware Store DeviceCard read this
+"this Sequencer slot is wired to this device" assertion. Both the
+Sequencer ConsoleView and the Hardware Store DeviceCard read this
 map to scope pulse animations and clip-warning chips to the
 right partner.
 
 The binding is purely a *display* hint — runtime audio routing
 is unchanged. Persistence is in-memory only for now; the eventual
-Brain library save flow can promote bindings into the saved
+Sequencer library save flow can promote bindings into the saved
 performance entry (T2461-A9 already added the connected_keys
 snapshot field).
 

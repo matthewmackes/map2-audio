@@ -30,7 +30,7 @@ import {
   midiApiV2,
   pluginsApi,
 } from '../../map2/api'
-import { brainApi } from '../../map2/clients/brain'
+import { sequencerApi } from '../../map2/clients/sequencer'
 import { fetchJson } from '../../map2/http'
 import { API_BASE } from '../../map2/transport'
 import type {
@@ -234,7 +234,7 @@ interface EnginePerformanceTarget {
 
 // T2461-A4 — Brain action target. Each row carries the dotted action
 // id the binding writer accepts directly (e.g. `brain.transport.play`).
-interface BrainActionTarget {
+interface SequencerActionTarget {
   cat: 'brain-action'
   id: string
   name: string
@@ -243,7 +243,7 @@ interface BrainActionTarget {
   valueType: 'trigger' | 'toggle' | 'continuous'
 }
 
-type WizardTarget = PluginParamTarget | SnapshotTriggerTarget | RoutingTarget | EnginePerformanceTarget | BrainActionTarget
+type WizardTarget = PluginParamTarget | SnapshotTriggerTarget | RoutingTarget | EnginePerformanceTarget | SequencerActionTarget
 
 type CurveName = 'Linear' | 'Exp' | 'Log' | 'S-curve' | 'Custom'
 
@@ -664,7 +664,7 @@ export function parseBenchPinSurfaceId(
 // T2461-A6 — render a Brain capture frame stream into a small SVG
 // waveform. Uses the peak_db track only (rms is similar shape, so
 // the second polyline would be visually redundant at this size).
-export function buildBrainCaptureWaveformPath(
+export function buildSequencerCaptureWaveformPath(
   frames: Array<{ peak_db: number; ts: number }>,
   startedAt: number,
   durationS: number,
@@ -882,7 +882,7 @@ function StepTarget({
       return items.filter((t) => t.name.toLowerCase().includes(search.toLowerCase()))
     }
     if (cat === 'brain-action') {
-      const items: BrainActionTarget[] = brainActions.map((a) => ({
+      const items: SequencerActionTarget[] = brainActions.map((a) => ({
         cat: 'brain-action',
         id: a.id,
         name: a.label,
@@ -1059,7 +1059,7 @@ export function buildMidiSourceWaveformPath(
 // `midiSamplesRef.current` keyed by relativeMs offset. After stop, the
 // widget renders Brain output (top) + MIDI source (bottom) on a shared
 // timeline with a vertical alignment cursor the operator can scrub.
-function BrainCaptureWidget({
+function SequencerCaptureWidget({
   midiSampleSinkRef,
 }: {
   midiSampleSinkRef: React.MutableRefObject<((message: MidiMessage) => void) | null>
@@ -1095,7 +1095,7 @@ function BrainCaptureWidget({
     liveMidiBufferRef.current = []
     captureStartedAtRef.current = null
     try {
-      const start = await brainApi.startCapture(slotId, durationS)
+      const start = await sequencerApi.startCapture(slotId, durationS)
       // Arm the MIDI source sink — every incoming message during the
       // capture window lands in liveMidiBufferRef.
       const armedAtEpochS = Date.now() / 1000
@@ -1108,9 +1108,9 @@ function BrainCaptureWidget({
       }
       // Wait for the capture to finish, then stop + fetch frames.
       await new Promise((r) => window.setTimeout(r, durationS * 1000 + 200))
-      await brainApi.stopCapture()
+      await sequencerApi.stopCapture()
       midiSampleSinkRef.current = null
-      const detail = await brainApi.getCapture(start.session_id)
+      const detail = await sequencerApi.getCapture(start.session_id)
       if (!detail.found || !detail.frames || !detail.started_at || !detail.duration_s) {
         setError('Capture session had no frames (Brain meter pipeline idle).')
         return
@@ -1145,7 +1145,7 @@ function BrainCaptureWidget({
   }, [slotId, durationS, midiSampleSinkRef])
 
   const brainPath = session
-    ? buildBrainCaptureWaveformPath(session.frames, session.startedAt, session.durationS, 320, 60)
+    ? buildSequencerCaptureWaveformPath(session.frames, session.startedAt, session.durationS, 320, 60)
     : ''
   const midiPath = session
     ? buildMidiSourceWaveformPath(session.midiSamples, session.durationS, 320, 60)
@@ -1292,7 +1292,7 @@ function StepCalibrate({
       {/* T2461-A6 — Brain capture widget. Surfaced for any target so
           operators can capture the Brain response while dialling the
           curve, regardless of whether the target is a Brain action. */}
-      <BrainCaptureWidget midiSampleSinkRef={midiSampleSinkRef} />
+      <SequencerCaptureWidget midiSampleSinkRef={midiSampleSinkRef} />
 
       <div className="cal">
         <div className="cal-fields">
@@ -1630,7 +1630,7 @@ export function MidiAssignmentsPage() {
 
   const queryClient = useQueryClient()
 
-  // T2461-A6 — page-owned MIDI sample sink. Set by BrainCaptureWidget
+  // T2461-A6 — page-owned MIDI sample sink. Set by SequencerCaptureWidget
   // during a capture window; LiveMidiStrip's onSample fans every
   // ingested message through this ref so the wizard can record source
   // samples in sync with the Brain output capture for side-by-side
@@ -1684,7 +1684,7 @@ export function MidiAssignmentsPage() {
   // is the only consumer.
   const brainActionsQuery = useQuery({
     queryKey: ['brain', 'actions'],
-    queryFn: () => brainApi.listActions(),
+    queryFn: () => sequencerApi.listActions(),
     retry: false,
     staleTime: 5 * 60 * 1000,   // 5 min
   })

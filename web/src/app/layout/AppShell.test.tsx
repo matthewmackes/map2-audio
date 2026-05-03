@@ -209,7 +209,7 @@ describe('AppShell global tree navigation', () => {
       'AVB',
       'Node Ops',
       'Audio Artifacts',
-      'Drums&Synth',
+      'Sequencer',
       'Hardware',
       // Nav reorg 2026-05-03 — /chains removed from top-level; folded
       // into /node-ops/audio-engine.
@@ -221,7 +221,7 @@ describe('AppShell global tree navigation', () => {
     expect(screen.getByText('Snapshot Editor')).toBeInTheDocument()
     expect(within(navTree).getByText('Signal Editor')).toBeInTheDocument()
     expect(within(navTree).getByText('Live')).toBeInTheDocument()
-    expect(screen.getByText('Drums&Synth')).toBeInTheDocument()
+    expect(screen.getByText('Sequencer')).toBeInTheDocument()
     expect(screen.getByText('Audio Artifacts')).toBeInTheDocument()
     expect(screen.getByText('Platform Guide')).toBeInTheDocument()
     expect(screen.getByText('Settings')).toBeInTheDocument()
@@ -394,7 +394,7 @@ describe('AppShell global tree navigation', () => {
       <AppShell>
         <div>shell content</div>
       </AppShell>,
-      ['/brain'],
+      ['/sequencer'],
     )
 
     fireEvent.click(screen.getByRole('button', { name: 'Refresh' }))
@@ -412,7 +412,7 @@ describe('AppShell global tree navigation', () => {
       <AppShell>
         <div>shell content</div>
       </AppShell>,
-      ['/brain'],
+      ['/sequencer'],
     )
 
     fireEvent.click(screen.getByRole('button', { name: 'Collapse global navigation' }))

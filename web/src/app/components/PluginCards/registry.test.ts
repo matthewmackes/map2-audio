@@ -31,8 +31,8 @@ describe('Plugin card registry fallbacks', () => {
     })
   })
 
-  it('registers Performance Brain as a dedicated custom card', () => {
-    expect(getPluginCardConfig('map2://juce/brain', 'Instrument')).toMatchObject({
+  it('registers Sequencer as a dedicated custom card', () => {
+    expect(getPluginCardConfig('map2://juce/sequencer', 'Instrument')).toMatchObject({
       loader: expect.any(Function),
     })
   })

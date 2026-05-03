@@ -103,7 +103,7 @@ from app.services.maschine_lcd_service import (
 )
 from app.services.maschine_service import MaschineService
 from app.services.automation_engine import automation_engine
-from app.services.performance_brain_service import get_performance_brain_service
+from app.services.sequencer_service import get_sequencer_service
 # T2482 loop 9 / iter 86: rtmidi import + dispose helper removed.
 # Virtual-port creation goes exclusively through the controller-host's
 # MidiCreateVirtualPortRequest IPC envelope (iter 75). The legacy
@@ -1144,7 +1144,7 @@ class MaschineMK1Daemon:
         except Exception as exc:
             LOGGER.debug("Maschine pad pressure automation fanout failed: %s", exc)
         try:
-            get_performance_brain_service().record_pad_pressure(
+            get_sequencer_service().record_pad_pressure(
                 pad=pad_index,
                 pressure=raw_pressure,
                 normalized=normalized,
@@ -2081,20 +2081,20 @@ class MaschineMK1Daemon:
 
     def _poll_brain_state(self, client: httpx.Client) -> dict[str, Any]:
         try:
-            response = client.get("/api/engine/brain/state")
+            response = client.get("/api/engine/sequencer/state")
             response.raise_for_status()
             return dict(response.json() or {})
         except Exception as exc:
-            LOGGER.debug("Brain state poll failed: %s", exc)
+            LOGGER.debug("Sequencer state poll failed: %s", exc)
             return {}
 
     def _poll_brain_sequence_state(self, client: httpx.Client) -> dict[str, Any]:
         try:
-            response = client.get("/api/engine/brain/sequence")
+            response = client.get("/api/engine/sequencer/sequence")
             response.raise_for_status()
             return dict(response.json() or {})
         except Exception as exc:
-            LOGGER.debug("Brain sequence poll failed: %s", exc)
+            LOGGER.debug("Sequencer sequence poll failed: %s", exc)
             return {}
 
     def _update_polled_state(

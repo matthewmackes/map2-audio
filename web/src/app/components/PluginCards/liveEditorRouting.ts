@@ -20,7 +20,7 @@ const LIVE_SAFE_CUSTOM_URIS = new Set([
 ])
 
 const LIVE_COMPACT_WORKSPACE_CARD_URIS = new Set([
-  'map2://juce/brain',
+  'map2://juce/sequencer',
   'map2://juce/drums',
 ])
 

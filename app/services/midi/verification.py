@@ -19,7 +19,7 @@ from app.services.midi.authority import MidiBindingAuthority
 from app.services.midi.projections.snapshot import (
     list_snapshot_midi_map_entries,
 )
-from app.services.midi.projections.brain import list_brain_device_bindings
+from app.services.midi.projections.sequencer import list_brain_device_bindings
 from app.services.midi.projections.plugin_param import (
     list_plugin_param_bindings_for_param,
     list_plugin_param_bindings_for_snapshot,
@@ -127,7 +127,7 @@ async def verify_brain_consumer(
     device_id: str,
     expected_consumer_ids: Optional[list[str]] = None,
 ) -> VerificationResult:
-    """Verify Brain device bindings round-trip cleanly."""
+    """Verify Sequencer device bindings round-trip cleanly."""
     bindings = await list_brain_device_bindings(authority, device_id)
     counts = {"bindings": len(bindings)}
     if not bindings:
@@ -296,7 +296,7 @@ async def run_full_suite(
         for sid in snapshot_ids:
             suite.results.append(await verify_snapshot_consumer(authority, snapshot_id=sid))
 
-    # Brain device bindings
+    # Sequencer device bindings
     if brain_device_ids:
         for did in brain_device_ids:
             suite.results.append(await verify_brain_consumer(authority, device_id=did))

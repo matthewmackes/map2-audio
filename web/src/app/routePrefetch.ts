@@ -215,8 +215,8 @@ const PREFETCH_RULES: PrefetchRule[] = [
     ],
   },
   {
-    prefix: '/brain',
-    loaders: [() => import('./pages/PerformanceBrainPage')],
+    prefix: '/sequencer',
+    loaders: [() => import('./pages/SequencerPage')],
   },
   {
     prefix: '/state-authority',

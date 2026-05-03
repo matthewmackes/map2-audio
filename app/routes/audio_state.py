@@ -15,7 +15,7 @@ from app.models.audio_state import (
     SubmitDesiredAudioStateRequest,
 )
 from app.services.audio_state_authority import AudioStateAuthorityError, AudioStateAuthorityService
-from app.services.performance_brain_authority_sync import PerformanceBrainAuthoritySyncService
+from app.services.sequencer_authority_sync import SequencerAuthoritySyncService
 from app.services.snapshot import SnapshotService
 
 router = APIRouter(prefix="/api/audio/state", tags=["audio-state"])
@@ -32,8 +32,8 @@ def _http_error(exc: AudioStateAuthorityError) -> HTTPException:
     return HTTPException(status_code=503, detail=detail)
 
 
-def _brain_authority_service() -> PerformanceBrainAuthoritySyncService:
-    return PerformanceBrainAuthoritySyncService()
+def _brain_authority_service() -> SequencerAuthoritySyncService:
+    return SequencerAuthoritySyncService()
 
 
 @router.get("/status", response_model=AudioStateRouteStatus)

@@ -834,7 +834,7 @@ async def list_brain_monitor_candidates() -> dict[str, Any]:
     """T2461-A5 — return connected devices that declare loopback_ports
     plus their latest measure-latency mean/p95/jitter (if any).
 
-    The Brain ConsoleView's "Bench monitor" affordance reads this to
+    The Sequencer ConsoleView's "Bench monitor" affordance reads this to
     populate the strip-routing menu and surface a yellow jitter chip
     when the most-recent loopback exceeds the strip's threshold.
 
@@ -881,7 +881,7 @@ async def list_brain_monitor_candidates() -> dict[str, Any]:
 
 
 # ---------------------------------------------------------------------------
-# T2461-A2 — Brain slot ↔ device profile_key binding map.
+# T2461-A2 — Sequencer slot ↔ device profile_key binding map.
 # ---------------------------------------------------------------------------
 
 from app.services.controllers.slot_device_bindings import (   # noqa: E402
@@ -914,7 +914,7 @@ async def list_slot_bindings() -> dict[str, Any]:
 
 @router.post("/slot-bindings")
 async def bind_slot_to_profile(req: _SlotBindingRequest) -> dict[str, Any]:
-    """Bind one Brain slot to one device profile_key. Replaces any
+    """Bind one Sequencer slot to one device profile_key. Replaces any
     prior binding on either side."""
     try:
         binding = get_slot_device_bindings().bind(req.slot_id, req.profile_key)
@@ -947,7 +947,7 @@ async def unbind_profile(profile_key: str = Query(...)) -> dict[str, Any]:
 @router.get("/snapshot-keys")
 async def snapshot_keys() -> dict[str, Any]:
     """T2461-A9 — return the current connected + recently-disconnected
-    profile_keys plus a timestamp so callers (e.g. Brain Library save
+    profile_keys plus a timestamp so callers (e.g. Sequencer Library save
     flow) can record which devices were on the bench when an asset
     was authored. Non-blocking; reads from the BenchStateTracker that
     G1 + G2 already keep up to date.

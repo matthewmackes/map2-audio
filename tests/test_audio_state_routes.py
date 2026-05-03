@@ -84,7 +84,7 @@ class _CommittedAuthorityService:
         )()
 
 
-class _BrainAuthoritySyncService:
+class _SequencerAuthoritySyncService:
     def __init__(self) -> None:
         self.calls = []
 
@@ -110,7 +110,7 @@ class _BrainAuthoritySyncService:
                 chains=[],
             ),
             extensions={
-                "performance_brain": {
+                "sequencer": {
                     "instances": {
                         "instance-17__position-3": {
                             "instance_id": "17",
@@ -294,7 +294,7 @@ def test_activate_snapshot_route_fails_when_authority_does_not_confirm_same_snap
 
 def test_sync_brain_into_audio_state_route_forwards_scope(monkeypatch) -> None:
     client = _build_client(monkeypatch)
-    fake_service = _BrainAuthoritySyncService()
+    fake_service = _SequencerAuthoritySyncService()
     monkeypatch.setattr(audio_state_routes, "_brain_authority_service", lambda: fake_service)
 
     response = client.post("/api/audio/state/brain/sync?instance_id=17&plugin_position=3&triggered_by=ui-test")
@@ -302,7 +302,7 @@ def test_sync_brain_into_audio_state_route_forwards_scope(monkeypatch) -> None:
     assert response.status_code == 200
     payload = response.json()
     assert payload["revision"] == 33
-    assert payload["value"]["extensions"]["performance_brain"]["instances"]["instance-17__position-3"]["instance_id"] == "17"
+    assert payload["value"]["extensions"]["sequencer"]["instances"]["instance-17__position-3"]["instance_id"] == "17"
     assert fake_service.calls == [
         {
             "instance_id": "17",

@@ -305,7 +305,7 @@ const RULES: ShellRouteRule[] = [
     windowLabel: 'Discover',
     breadcrumbs: [ARTIFACTS_PARENT_CRUMB, { label: 'Discover' }],
   }),
-  staticMeta('/brain', { windowLabel: 'Brain', breadcrumbs: [{ label: 'Brain' }] }),
+  staticMeta('/sequencer', { windowLabel: 'Sequencer', breadcrumbs: [{ label: 'Sequencer' }] }),
   // Nav reorg 2026-05-03 — /chains route deleted; folded into
   // /node-ops/audio-engine (AudioEngineChainsSection).
   staticMeta('/metering', { windowLabel: 'Metering', breadcrumbs: [NODE_OPS_PARENT_CRUMB, { label: 'Metering' }] }),

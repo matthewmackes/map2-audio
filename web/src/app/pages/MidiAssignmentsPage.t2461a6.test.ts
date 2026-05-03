@@ -1,6 +1,6 @@
 /** T2461-A6 — Brain capture waveform + MIDI source pairing on shared timeline. */
 import {
-  buildBrainCaptureWaveformPath,
+  buildSequencerCaptureWaveformPath,
   buildMidiSourceSample,
   buildMidiSourceWaveformPath,
 } from './MidiAssignmentsPage'
@@ -9,17 +9,17 @@ import type { MidiMessage } from './midiAssignments/LiveMidiStrip'
 const STARTED_AT = 1000
 const DURATION = 10
 
-test('buildBrainCaptureWaveformPath: returns empty string for no frames', () => {
-  expect(buildBrainCaptureWaveformPath([], STARTED_AT, DURATION, 100, 50)).toBe('')
+test('buildSequencerCaptureWaveformPath: returns empty string for no frames', () => {
+  expect(buildSequencerCaptureWaveformPath([], STARTED_AT, DURATION, 100, 50)).toBe('')
 })
 
-test('buildBrainCaptureWaveformPath: zero-duration returns empty string', () => {
+test('buildSequencerCaptureWaveformPath: zero-duration returns empty string', () => {
   const frames = [{ peak_db: 0, ts: 1000 }, { peak_db: 0, ts: 1001 }]
-  expect(buildBrainCaptureWaveformPath(frames, STARTED_AT, 0, 100, 50)).toBe('')
+  expect(buildSequencerCaptureWaveformPath(frames, STARTED_AT, 0, 100, 50)).toBe('')
 })
 
-test('buildBrainCaptureWaveformPath: single frame at start renders one point', () => {
-  const path = buildBrainCaptureWaveformPath(
+test('buildSequencerCaptureWaveformPath: single frame at start renders one point', () => {
+  const path = buildSequencerCaptureWaveformPath(
     [{ peak_db: 0, ts: STARTED_AT }],
     STARTED_AT, DURATION, 100, 50,
   )
@@ -27,28 +27,28 @@ test('buildBrainCaptureWaveformPath: single frame at start renders one point', (
   expect(path).toBe('M 0.0,0.0')
 })
 
-test('buildBrainCaptureWaveformPath: floor-db frame renders at chart bottom', () => {
+test('buildSequencerCaptureWaveformPath: floor-db frame renders at chart bottom', () => {
   // -60 dB is the floor; t=0; expect x=0, y=height.
-  const path = buildBrainCaptureWaveformPath(
+  const path = buildSequencerCaptureWaveformPath(
     [{ peak_db: -60, ts: STARTED_AT }],
     STARTED_AT, DURATION, 100, 50,
   )
   expect(path).toBe('M 0.0,50.0')
 })
 
-test('buildBrainCaptureWaveformPath: clamps frames outside the time window to edges', () => {
+test('buildSequencerCaptureWaveformPath: clamps frames outside the time window to edges', () => {
   // First frame is before startedAt → t clamped to 0.
   // Last frame is way after duration → t clamped to 1.
   const frames = [
     { peak_db: 0, ts: STARTED_AT - 100 },
     { peak_db: 0, ts: STARTED_AT + DURATION + 100 },
   ]
-  const path = buildBrainCaptureWaveformPath(frames, STARTED_AT, DURATION, 100, 50)
+  const path = buildSequencerCaptureWaveformPath(frames, STARTED_AT, DURATION, 100, 50)
   expect(path).toBe('M 0.0,0.0 L 100.0,0.0')
 })
 
-test('buildBrainCaptureWaveformPath: clamps peak_db above ceiling to 0 dB', () => {
-  const path = buildBrainCaptureWaveformPath(
+test('buildSequencerCaptureWaveformPath: clamps peak_db above ceiling to 0 dB', () => {
+  const path = buildSequencerCaptureWaveformPath(
     [{ peak_db: 12.0, ts: STARTED_AT }],
     STARTED_AT, DURATION, 100, 50,
   )
@@ -56,9 +56,9 @@ test('buildBrainCaptureWaveformPath: clamps peak_db above ceiling to 0 dB', () =
   expect(path).toBe('M 0.0,0.0')
 })
 
-test('buildBrainCaptureWaveformPath: midpoint frame at -30 dB → mid x, mid y', () => {
+test('buildSequencerCaptureWaveformPath: midpoint frame at -30 dB → mid x, mid y', () => {
   // Midway through the window with a midway dB value.
-  const path = buildBrainCaptureWaveformPath(
+  const path = buildSequencerCaptureWaveformPath(
     [{ peak_db: -30, ts: STARTED_AT + DURATION / 2 }],
     STARTED_AT, DURATION, 100, 50,
   )
@@ -66,12 +66,12 @@ test('buildBrainCaptureWaveformPath: midpoint frame at -30 dB → mid x, mid y',
   expect(path).toBe('M 50.0,25.0')
 })
 
-test('buildBrainCaptureWaveformPath: multi-frame path joins points with L', () => {
+test('buildSequencerCaptureWaveformPath: multi-frame path joins points with L', () => {
   const frames = [
     { peak_db: 0, ts: STARTED_AT },
     { peak_db: -60, ts: STARTED_AT + DURATION },
   ]
-  const path = buildBrainCaptureWaveformPath(frames, STARTED_AT, DURATION, 100, 50)
+  const path = buildSequencerCaptureWaveformPath(frames, STARTED_AT, DURATION, 100, 50)
   expect(path).toBe('M 0.0,0.0 L 100.0,50.0')
 })
 
@@ -155,7 +155,7 @@ test('Brain + MIDI samples share the same timeline (alignment math)', () => {
   const midiSamples = [
     { relativeMs: (DURATION / 2) * 1000, value: 0.5, type: 'cc' as const, ch: 1 },
   ]
-  const brain = buildBrainCaptureWaveformPath(brainFrames, STARTED_AT, DURATION, 100, 50)
+  const brain = buildSequencerCaptureWaveformPath(brainFrames, STARTED_AT, DURATION, 100, 50)
   const midi = buildMidiSourceWaveformPath(midiSamples, DURATION, 100, 50)
   // Both paths land at x=50.0 on a 100-wide canvas — proves the
   // shared-timeline contract the alignment cursor relies on.

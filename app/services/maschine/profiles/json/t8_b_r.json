@@ -1,7 +1,7 @@
 {
   "id": "t8_b_r",
   "name": "T8 B-R",
-  "description": "Observer-backed Brain right-bank slot roster.",
+  "description": "Observer-backed Sequencer right-bank slot roster.",
   "bars": {
     "left": {
       "top_left": "T8 B-R",

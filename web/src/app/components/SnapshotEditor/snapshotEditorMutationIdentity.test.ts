@@ -34,8 +34,8 @@ function buildSnapshotDetail(): SnapshotDetail {
         plugins: [
           {
             id: 5001,
-            uri: 'map2://juce/brain',
-            name: 'Performance Brain',
+            uri: 'map2://juce/sequencer',
+            name: 'Sequencer',
             position: 1,
             bypass: false,
             parameters: {},
@@ -70,8 +70,8 @@ function buildSnapshotDetail(): SnapshotDetail {
         plugins: [
           {
             id: 5001,
-            uri: 'map2://juce/brain',
-            name: 'Performance Brain',
+            uri: 'map2://juce/sequencer',
+            name: 'Sequencer',
             position: 1,
             bypass: false,
             parameters: {},
@@ -171,8 +171,8 @@ describe('snapshotEditorMutationIdentity', () => {
       updated_at: '2026-04-17T10:00:00Z',
       plugins: [
         {
-          uri: 'map2://juce/brain',
-          name: 'Performance Brain',
+          uri: 'map2://juce/sequencer',
+          name: 'Sequencer',
           position: 1,
           bypassed: false,
           parameters: {},
@@ -187,7 +187,7 @@ describe('snapshotEditorMutationIdentity', () => {
       detail: buildSnapshotDetail(),
       effectiveChain: effectiveRuntimeChain,
       chainId: 301,
-      pluginUri: 'map2://juce/brain',
+      pluginUri: 'map2://juce/sequencer',
       pluginPosition: 1,
     })).toEqual({
       snapshotChainId: 201,

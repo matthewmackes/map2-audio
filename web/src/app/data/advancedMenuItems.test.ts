@@ -110,10 +110,10 @@ describe('navigation catalog', () => {
 
   it('keeps the fixed Start Menu routes out of user-managed pins and removes legacy Grid entries from navigation', () => {
     expect(defaultPinnedRoutes).toEqual([])
-    expect(FIXED_START_MENU_TILE_ROUTES).toEqual(['/brain', '/juce-grid', '/midi-hub', '/hardware-interfaces'])
+    expect(FIXED_START_MENU_TILE_ROUTES).toEqual(['/sequencer', '/juce-grid', '/midi-hub', '/hardware-interfaces'])
 
     const juceGrid = navigationCatalogItems.find((item) => item.to === '/juce-grid')
-    const brain = navigationCatalogItems.find((item) => item.to === '/brain')
+    const brain = navigationCatalogItems.find((item) => item.to === '/sequencer')
     const legacyGrid = navigationCatalogItems.find((item) => item.to === '/grid')
     const legacyGrid3d = navigationCatalogItems.find((item) => item.to === '/grid-3d')
 

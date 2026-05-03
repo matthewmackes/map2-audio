@@ -1,7 +1,7 @@
 {
   "id": "t3_brws",
   "name": "T3 BRWS",
-  "description": "Observer-backed browser over the live Brain library collections.",
+  "description": "Observer-backed browser over the live Sequencer library collections.",
   "bars": {
     "left": {
       "top_left": "T3 BRWS",

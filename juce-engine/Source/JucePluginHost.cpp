@@ -3,7 +3,7 @@
  */
 
 #include "JucePluginHost.h"
-#include "Brain/PerformanceBrainProcessor.h"
+#include "Sequencer/SequencerProcessor.h"
 #include "NativeConvolutionPluginProcessor.h"
 #include "NativeNAMPluginProcessor.h"
 #include <sstream>
@@ -33,8 +33,8 @@ std::unique_ptr<juce::AudioProcessor> createMap2NativeProcessor(const std::strin
     if (pluginId == "map2://juce/convolution/reverb") {
         return std::make_unique<map2::NativeConvolutionPluginProcessor>("Reverb IR", 30.0f);
     }
-    if (pluginId == "map2://juce/brain") {
-        return std::make_unique<map2::brain::PerformanceBrainProcessor>();
+    if (pluginId == "map2://juce/sequencer") {
+        return std::make_unique<map2::brain::SequencerProcessor>();
     }
     return nullptr;
 }

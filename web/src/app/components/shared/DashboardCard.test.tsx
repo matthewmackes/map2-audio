@@ -20,7 +20,7 @@ describe('DashboardCard', () => {
     const handleClick = jest.fn()
 
     render(
-      <DashboardCard interactive href="/brain" onClick={handleClick}>
+      <DashboardCard interactive href="/sequencer" onClick={handleClick}>
         <span>Interactive content</span>
       </DashboardCard>,
     )

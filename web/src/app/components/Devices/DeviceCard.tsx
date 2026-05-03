@@ -57,15 +57,15 @@ export interface DeviceCardRow {
   legacyRoute?: string
   /** T2461-A9 — count of Brain library assets whose
    * `authored_with_devices` snapshot includes this device's profile_key.
-   * The page populates this from `brainApi.getAssetsForDevice(...)`.
+   * The page populates this from `sequencerApi.getAssetsForDevice(...)`.
    * Renders as a teal "Used in N Brain assets" Tag that deep-links to
    * the Brain Library section filtered by device. */
-  brainAssetCount?: number
+  sequencerAssetCount?: number
   /** T2480-6 — first-class Brain snapshot bindings on this device.
    * Pages populate this by joining the device's MidiHubDeviceState.bindings
    * with the snapshot list. Renders as one Tag per binding with
    * "View in Brain →" deep-link to the active snapshot. */
-  brainSnapshotBindings?: Array<{
+  sequencerSnapshotBindings?: Array<{
     snapshot_id: string
     snapshot_name: string
     source: string
@@ -98,7 +98,7 @@ const SOURCE_TAG_LABEL: Record<NonNullable<DeviceCardSourceLabel>, string> = {
  * T2461-A7 — capability → Brain section deep-link map.
  * The first matching capability wins (priority by spec order).
  */
-const BRAIN_CAPABILITY_MAP: Array<{
+const SEQUENCER_CAPABILITY_MAP: Array<{
   capability: string
   section: 'console' | 'step' | 'perform' | 'split' | 'routing'
   label: string
@@ -113,7 +113,7 @@ const BRAIN_CAPABILITY_MAP: Array<{
 function brainTagFor(capabilities: string[] | undefined):
   { label: string; section: string } | null {
   if (!capabilities || capabilities.length === 0) return null
-  for (const m of BRAIN_CAPABILITY_MAP) {
+  for (const m of SEQUENCER_CAPABILITY_MAP) {
     if (capabilities.includes(m.capability)) {
       return { label: m.label, section: m.section }
     }
@@ -283,7 +283,7 @@ export function DeviceCard({ row, onPinChanged }: DeviceCardProps): React.JSX.El
           if (!brain) return null
           return (
             <RouterLink
-              to={`/brain?section=${brain.section}&device=${encodeURIComponent(row.profileKey)}`}
+              to={`/sequencer?section=${brain.section}&device=${encodeURIComponent(row.profileKey)}`}
               className="device-card__brain-tag-link"
               aria-label={`Open ${brain.label}`}
             >
@@ -291,19 +291,19 @@ export function DeviceCard({ row, onPinChanged }: DeviceCardProps): React.JSX.El
             </RouterLink>
           )
         })()}
-        {row.brainAssetCount && row.brainAssetCount > 0 ? (
+        {row.sequencerAssetCount && row.sequencerAssetCount > 0 ? (
           <RouterLink
-            to={`/brain?section=library&device=${encodeURIComponent(row.profileKey)}`}
+            to={`/sequencer?section=library&device=${encodeURIComponent(row.profileKey)}`}
             className="device-card__brain-tag-link"
             aria-label={`Open Brain library filtered to ${row.model}`}
             data-testid="device-card-brain-asset-link"
           >
             <Tag size="sm" type="teal">
-              Used in {row.brainAssetCount} Brain asset{row.brainAssetCount > 1 ? 's' : ''}
+              Used in {row.sequencerAssetCount} Brain asset{row.sequencerAssetCount > 1 ? 's' : ''}
             </Tag>
           </RouterLink>
         ) : null}
-        {(row.brainSnapshotBindings ?? []).map((binding) => (
+        {(row.sequencerSnapshotBindings ?? []).map((binding) => (
           <RouterLink
             key={`snap-binding-${binding.snapshot_id}`}
             to={`/snapshots/${binding.snapshot_id}`}

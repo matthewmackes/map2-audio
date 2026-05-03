@@ -448,7 +448,7 @@ async def test_device_binding_routes_full_lifecycle(route_env):
     from fastapi import HTTPException
 
     hub = route_env["hub"]
-    _register_virtual_port(hub, "kbd-port-id", "Brain Test Keyboard")
+    _register_virtual_port(hub, "kbd-port-id", "Sequencer Test Keyboard")
 
     # Refresh so the registry sees the port.
     inventory = await midi_hub_routes.get_device_inventory(refresh=True)
@@ -461,7 +461,7 @@ async def test_device_binding_routes_full_lifecycle(route_env):
         midi_hub_routes.DeviceBindingRequest(
             consumer_type="snapshot",
             consumer_id="42",
-            consumer_name="Brain — Test (set up 2026-04-30)",
+            consumer_name="Sequencer — Test (set up 2026-04-30)",
             source="brain-setup-task",
         ),
     )
@@ -489,7 +489,7 @@ async def test_device_binding_routes_full_lifecycle(route_env):
         midi_hub_routes.DeviceBindingRequest(
             consumer_type="snapshot",
             consumer_id="99",
-            consumer_name="Brain — Replace (set up 2026-04-30)",
+            consumer_name="Sequencer — Replace (set up 2026-04-30)",
             source="brain-setup-task",
         ),
     )

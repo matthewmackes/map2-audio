@@ -20,7 +20,7 @@ REVERB_IR_PLUGIN_URI = "map2://juce/convolution/reverb"
 REVERB_IR_CONFIG_PLUGIN_URIS = (REVERB_IR_PLUGIN_URI, "urn:map2:ir-reverb")
 REVERB_IR_FAMILY_URIS = frozenset(REVERB_IR_CONFIG_PLUGIN_URIS)
 
-BRAIN_PLUGIN_URI = "map2://juce/brain"
+SEQUENCER_PLUGIN_URI = "map2://juce/sequencer"
 DRUMS_PLUGIN_URI = "map2://juce/drums"
 SYNTHFORGE_PLUGIN_URI = "map2://juce/synthforge"
 

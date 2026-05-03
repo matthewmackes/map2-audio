@@ -60,7 +60,7 @@ describe('useUnifiedWorkspaceData', () => {
 
     mockDiscover.mockResolvedValue({
       plugins: [
-        { uri: 'map2://juce/brain', format: 'JUCE' },
+        { uri: 'map2://juce/sequencer', format: 'JUCE' },
         { uri: 'https://example.com/lv2', format: 'LV2' },
       ],
     })

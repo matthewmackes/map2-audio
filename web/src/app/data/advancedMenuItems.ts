@@ -25,7 +25,7 @@ export type NavigationHomeSection = 'Audio Grid' | 'AVB' | 'MIDI' | 'System' | '
 export const DEFAULT_NAVIGATION_ALLOWED_STATES: NavigationMaturityState[] = ['production', 'qualified-with-waiver']
 export const ADVANCED_NAVIGATION_ALLOWED_STATES: NavigationMaturityState[] = ['beta', 'experimental', 'hardware-blocked']
 export const MAX_PINNED_NAV_ITEMS = 4
-export const FIXED_START_MENU_TILE_ROUTES = ['/brain', '/juce-grid', '/midi-hub', '/hardware-interfaces'] as const
+export const FIXED_START_MENU_TILE_ROUTES = ['/sequencer', '/juce-grid', '/midi-hub', '/hardware-interfaces'] as const
 const FIXED_START_MENU_TILE_ROUTE_SET = new Set<string>(FIXED_START_MENU_TILE_ROUTES)
 export const defaultPinnedRoutes: string[] = []
 
@@ -146,11 +146,11 @@ const baseNavigationCatalog: ShellNavigationItem[] = [
     showOnHome: true,
   },
   {
-    to: '/brain',
-    label: 'Brain',
-    shortLabel: 'Brain',
+    to: '/sequencer',
+    label: 'Sequencer',
+    shortLabel: 'Sequencer',
     icon: MusicNotes,
-    description: 'Open the Performance Brain workspace for unified triggering, sequencing, routing, input control, library work, and diagnostics.',
+    description: 'Open the Sequencer workspace for unified triggering, sequencing, routing, input control, library work, and diagnostics.',
     color: 'var(--cds-link-primary)',
     homeSection: 'Audio Grid',
     showOnHome: false,

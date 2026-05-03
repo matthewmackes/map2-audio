@@ -11,11 +11,11 @@ import { render, screen, waitFor } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 
-// T2461-A9 — page now consumes brainApi.getAssetsForDevice via
-// useBrainAssetsByDevice. Stub it so jsdom queries don't try to fetch.
-jest.mock('../../../map2/clients/brain', () => ({
+// T2461-A9 — page now consumes sequencerApi.getAssetsForDevice via
+// useSequencerAssetsByDevice. Stub it so jsdom queries don't try to fetch.
+jest.mock('../../../map2/clients/sequencer', () => ({
   __esModule: true,
-  brainApi: {
+  sequencerApi: {
     getAssetsForDevice: jest.fn(async (profile_key: string) => ({
       profile_key,
       asset_count: 0,

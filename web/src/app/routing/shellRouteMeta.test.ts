@@ -73,7 +73,7 @@ describe('resolveShellRouteMeta', () => {
       '/workspace/artifacts',
       '/workspace/artifacts/discover',
       // Other unchanged routes
-      '/brain',
+      '/sequencer',
       '/snapshot-editor',
       '/snapshots',
       '/snapshots/id-1/publish',

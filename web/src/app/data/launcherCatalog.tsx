@@ -249,23 +249,23 @@ const LAUNCHER_STOREFRONT_OVERRIDES: Record<string, StorefrontOverride> = {
     // tree node renders as a leaf.
     treeChildren: [],
   },
-  '/brain': {
+  '/sequencer': {
     // T2442: Brain Overview tabs (Performance / Console / Step / Split) are now
     // first-class `?section=` values, alongside the other Brain sections.
     treeChildren: [
-      { route: '/brain?section=performance', label: 'Performance' },
-      { route: '/brain?section=console', label: 'Console' },
-      { route: '/brain?section=step', label: 'Step' },
-      { route: '/brain?section=split', label: 'Split' },
-      { route: '/brain?section=perform', label: 'Perform' },
-      { route: '/brain?section=layers', label: 'Layers' },
-      { route: '/brain?section=sequence', label: 'Sequence' },
-      { route: '/brain?section=routing', label: 'Routing' },
-      { route: '/brain?section=inputs', label: 'Inputs' },
-      { route: '/brain?section=library', label: 'Library' },
-      { route: '/brain?section=diagnostics', label: 'Diagnostics' },
-      { route: '/brain?section=session_media', label: 'Session Media' },
-      { route: '/brain?section=practice_coach', label: 'Practice Coach' },
+      { route: '/sequencer?section=performance', label: 'Performance' },
+      { route: '/sequencer?section=console', label: 'Console' },
+      { route: '/sequencer?section=step', label: 'Step' },
+      { route: '/sequencer?section=split', label: 'Split' },
+      { route: '/sequencer?section=perform', label: 'Perform' },
+      { route: '/sequencer?section=layers', label: 'Layers' },
+      { route: '/sequencer?section=sequence', label: 'Sequence' },
+      { route: '/sequencer?section=routing', label: 'Routing' },
+      { route: '/sequencer?section=inputs', label: 'Inputs' },
+      { route: '/sequencer?section=library', label: 'Library' },
+      { route: '/sequencer?section=diagnostics', label: 'Diagnostics' },
+      { route: '/sequencer?section=session_media', label: 'Session Media' },
+      { route: '/sequencer?section=practice_coach', label: 'Practice Coach' },
     ],
   },
   '/avb': {

@@ -422,9 +422,9 @@ registerPluginCard('map2://juce/multieffect/passionfx', {
   loader: () => import('./Custom/JUCE/PassionFXCard'),
 })
 
-// JUCE Instrument - Performance Brain unified drum/keyboard workstation
-registerPluginCard('map2://juce/brain', {
-  loader: () => import('./Custom/JUCE/PerformanceBrainCard'),
+// JUCE Instrument - Sequencer unified drum/keyboard workstation
+registerPluginCard('map2://juce/sequencer', {
+  loader: () => import('./Custom/JUCE/SequencerCard'),
 })
 
 

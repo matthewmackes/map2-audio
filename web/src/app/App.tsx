@@ -171,7 +171,7 @@ const IntelFXMonitorView    = lazy(() => import('./components/Devices/IntelFX/vi
 const IntelFXFlowView       = lazy(() => import('./components/Devices/IntelFX/views/IntelFXFlowView').then(m => ({ default: m.IntelFXFlowView })))
 const MOTURMEPage           = lazy(() => import('./pages/MOTURMEPage'))
 const WelcomePage           = lazy(() => import('./pages/WelcomePage').then(m => ({ default: m.WelcomePage })))
-const PerformanceBrainPage  = lazy(() => import('./pages/PerformanceBrainPage').then(m => ({ default: m.PerformanceBrainPage })))
+const SequencerPage  = lazy(() => import('./pages/SequencerPage').then(m => ({ default: m.SequencerPage })))
 const MeteringPage          = lazy(() => import('./pages/MeteringPage').then(m => ({ default: m.MeteringPage })))
 const PipeWirePage          = lazy(() => import('./pages/PipeWirePage').then(m => ({ default: m.PipeWirePage })))
 const PerformPage           = lazy(() => import('./pages/PerformPage').then(m => ({ default: m.PerformPage })))
@@ -957,7 +957,7 @@ export function App() {
                                 <Route path="/metering" element={<RouteBoundary title="Metering view crashed" actionLabel="Reload metering"><MeteringPage /></RouteBoundary>} />
                                 <Route path="/pipewire" element={<RouteBoundary title="PipeWire view crashed" actionLabel="Reload PipeWire"><PipeWirePage /></RouteBoundary>} />
                                 <Route path="/welcome" element={<WelcomePage />} />
-                                <Route path="/brain" element={<PerformanceBrainPage />} />
+                                <Route path="/sequencer" element={<SequencerPage />} />
                                 {/* T2487-4 — /expression hard-redirects to the unified
                                     /midi/devices/expression/console mount (Q1=A locked
                                     decision). ExpressionPage shim still exports

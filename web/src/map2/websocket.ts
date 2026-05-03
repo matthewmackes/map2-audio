@@ -63,7 +63,7 @@ export type WebSocketTopic =
   | 'effects_loop_calibration_progress'
   | 'download:progress'
   | 'soundfont:download:progress'
-  | 'brain:runtime'
+  | 'sequencer:runtime'
   | 'brain_metering'
   | 'snapshot_runtime_live_state'
   | 'snapshot_activation_events'

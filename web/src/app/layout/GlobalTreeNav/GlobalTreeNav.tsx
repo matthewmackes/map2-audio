@@ -41,7 +41,7 @@ import {
   ScreenMap,
   Settings,
   SettingsAdjust,
-  Waveform,
+  Grid,
 } from '@carbon/icons-react'
 
 import { MapArtifactsLibraryIcon, MapRackDeviceIcon } from '../../components/icons/map'
@@ -152,12 +152,12 @@ const GLOBAL_TREE_EXPANDED_KEY: PersistedKey<string[]> = {
 }
 // Nav reorg 2026-05-03 — pure canonical service-grouping hierarchy.
 // The pre-reorg layout had a "shortcut row" above a separator (Home,
-// Snapshot Editor, MIDI Assignments, Drums&Synth, Audio Artifacts) and
+// Snapshot Editor, MIDI Assignments, Sequencer, Audio Artifacts) and
 // canonical service groups below it (MIDI Services, AVB, Node Ops,
 // Hardware). The shortcut row has been removed; every operator-visible
 // surface now lives under its canonical service parent. MIDI
 // Assignments folds into MIDI Services, Audio Artifacts folds into
-// Node Ops, Drums&Synth stays top-level (large enough to be its own
+// Node Ops, Sequencer stays top-level (large enough to be its own
 // service), Snapshot Editor stays top-level (a single-page authoring
 // tool — no good service parent). Chains is promoted to top-level
 // (was a Node Ops child but its route was already top-level), and a
@@ -176,7 +176,7 @@ const TOP_LEVEL_ROUTE_ORDER = [
   '/avb',
   '/node-ops',
   '/artifacts',
-  '/brain',
+  '/sequencer',
   '/hardware',
   // Nav reorg 2026-05-03 — /chains was absorbed into the Audio
   // Engine page (AudioEngineChainsSection at the top). The
@@ -197,10 +197,10 @@ const HARDWARE_HOST_MACHINE_ID = '/hardware::host-machine'
 const TREE_ICON_OVERRIDES: Record<string, TreeIconComponent> = {
   '/': Home,
   '/snapshot-editor': ScreenMap,
-  // Nav reorg 2026-05-03 — Drums&Synth was visually colliding with
-  // MIDI Services (both Music). Waveform is the closest "sound shape /
-  // instrument output" semantic in @carbon/icons-react.
-  '/brain': Waveform,
+  // T_RENAME 2026-05-02 — Sequencer (formerly Drums&Synth / Brain).
+  // `Grid` is the canonical step-sequencer / piano-roll mental model
+  // in audio software (Maschine, Push, Logic, MPC).
+  '/sequencer': Grid,
   '/midi-hub': Music,
   '/avb': ChartNetwork,
   // Nav reorg 2026-05-03 — /settings is the new operator/UI
@@ -234,7 +234,7 @@ const TREE_ICON_OVERRIDES: Record<string, TreeIconComponent> = {
   // Nav reorg 2026-05-03 — distinct icons per service (was: Audio
   // Artifacts shared `MapRackDeviceIcon` with the device-rack pins
   // below it; Device Manager shared `Devices` with the Devices
-  // parent in Hardware; Drums&Synth shared `Music` with MIDI
+  // parent in Hardware; Sequencer shared `Music` with MIDI
   // Services. The MAP-native `MapArtifactsLibraryIcon` was already
   // designed for this surface but never wired in.
   '/artifacts': MapArtifactsLibraryIcon,
@@ -280,7 +280,7 @@ const TREE_LABEL_OVERRIDES: Record<string, string> = {
   '/artifacts': 'Audio Artifacts',
   '/about': 'Platform Guide',
   '/snapshot-editor': 'Snapshot Editor',
-  '/brain': 'Drums&Synth',
+  '/sequencer': 'Sequencer',
   // T2491 (2026-05-02 cleanup) — sidebar parent label aligned to the
   // T2482 iter-94 rename "MIDI Hub" → "MIDI Services".
   '/midi-hub': 'MIDI Services',
@@ -648,7 +648,7 @@ function TreeNodeLabel({
 const BOLD_TOP_LEVEL_ROUTES = new Set([
   '/',
   '/snapshot-editor',
-  '/brain',
+  '/sequencer',
   '/midi-hub',
   '/avb',
   '/hardware',

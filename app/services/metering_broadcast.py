@@ -25,7 +25,7 @@ DEFAULT_BROADCAST_FPS = {
     "latency": 1.0,
     "dynamics": 15.0,
     "timing_jitter": 10.0,
-    "brain_metering": 30.0,
+    "sequencer_metering": 30.0,
 }
 
 
@@ -83,7 +83,7 @@ class MeteringBroadcastService:
             asyncio.create_task(self._broadcast_loop("latency", self._get_latency)),
             asyncio.create_task(self._broadcast_loop("dynamics", self._get_dynamics)),
             asyncio.create_task(self._broadcast_loop("timing_jitter", self._get_timing_jitter)),
-            asyncio.create_task(self._broadcast_loop("brain_metering", self._get_brain_metering)),
+            asyncio.create_task(self._broadcast_loop("sequencer_metering", self._get_sequencer_metering)),
         ]
 
         logger.info("Metering broadcast service started")
@@ -323,18 +323,18 @@ class MeteringBroadcastService:
             "running": True,
         }
 
-    async def _get_brain_metering(self) -> Optional[dict]:
+    async def _get_sequencer_metering(self) -> Optional[dict]:
         """Per-slot ConsoleView meter snapshot.
 
         Lazy-imported to avoid circular imports during module load (the
-        brain metering service depends on performance_brain_service which
+        brain metering service depends on sequencer_service which
         imports app.config which we already have in this module).
         """
-        from app.services.brain_metering_service import get_brain_metering_service
+        from app.services.sequencer_metering_service import get_sequencer_metering_service
         try:
-            return get_brain_metering_service().read_payload()
+            return get_sequencer_metering_service().read_payload()
         except Exception as exc:
-            logger.error("Brain metering broadcast failed: %s", exc)
+            logger.error("Sequencer metering broadcast failed: %s", exc)
             return None
 
     def set_interval(self, topic: str, fps: float):

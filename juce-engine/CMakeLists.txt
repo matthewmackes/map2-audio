@@ -299,7 +299,7 @@ set(SOURCES
     Source/PassionFXProcessor.cpp
 
     # SynthForge (Phase 1 scaffold)
-    Source/Brain/PerformanceBrainProcessor.cpp
+    Source/Sequencer/SequencerProcessor.cpp
     Source/SynthForge/SynthForgeProcessor.cpp
     Source/SynthForge/Core/Part.cpp
     Source/SynthForge/Core/VoiceAllocator.cpp
@@ -405,7 +405,7 @@ set(HEADERS
     Source/PassionFXProcessor.h
 
     # SynthForge (Phase 1 scaffold)
-    Source/Brain/PerformanceBrainProcessor.h
+    Source/Sequencer/SequencerProcessor.h
     Source/SynthForge/SynthForgeProcessor.h
     Source/SynthForge/Core/Part.h
     Source/SynthForge/Core/VoiceAllocator.h
@@ -752,7 +752,7 @@ if(BUILD_SYNTHFORGE_TESTS)
     FetchContent_MakeAvailable(catch2)
 
     add_executable(synthforge_tests
-        tests/PerformanceBrainProcessorTests.cpp
+        tests/SequencerProcessorTests.cpp
         tests/DrumMachineProcessorTests.cpp
         tests/DrumMachineMixerTests.cpp
         tests/DrumSequencerTests.cpp
@@ -760,7 +760,7 @@ if(BUILD_SYNTHFORGE_TESTS)
         tests/ParallelMixerProcessorTests.cpp
         tests/SynthForgeSfzTests.cpp
         Source/ConvolutionProcessor.cpp
-        Source/Brain/PerformanceBrainProcessor.cpp
+        Source/Sequencer/SequencerProcessor.cpp
         Source/DrumMachine/DrumMachineMixer.cpp
         Source/DrumMachine/DrumMasterFx.cpp
         Source/DrumMachine/DrumMachineProcessor.cpp

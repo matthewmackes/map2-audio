@@ -185,7 +185,7 @@ class ControllerService:
             identity = profile.document.get("identity", {}) or {}
             out["alsa_client_pattern"] = identity.get("alsa_client_pattern")
         # T2461-A7 — surface capabilities so the GUI can map them to
-        # Brain section deep-links and other catalogue affordances.
+        # Sequencer section deep-links and other catalogue affordances.
         caps = profile.document.get("capabilities")
         if isinstance(caps, list):
             out["capabilities"] = [str(c) for c in caps if isinstance(c, str)]

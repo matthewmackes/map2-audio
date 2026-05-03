@@ -132,8 +132,8 @@ jest.mock('./pages/WorkspaceHubShell', () => ({
   },
 }))
 
-jest.mock('./pages/PerformanceBrainPage', () => ({
-  PerformanceBrainPage: () => {
+jest.mock('./pages/SequencerPage', () => ({
+  SequencerPage: () => {
     const { useLocation: mockUseLocation } = jest.requireActual('react-router-dom') as typeof import('react-router-dom')
     const location = mockUseLocation()
     return <div data-testid="brain-route">{`${location.pathname}${location.search}`}</div>
@@ -422,12 +422,12 @@ describe('App routing', () => {
     expect(await screen.findByTestId('home-route')).toHaveTextContent('Home Route')
   })
 
-  it('keeps Performance Brain as a first-class routed surface', async () => {
-    navigateTo('/brain?instance_id=17')
+  it('keeps Sequencer as a first-class routed surface', async () => {
+    navigateTo('/sequencer?instance_id=17')
 
     render(<App />)
 
-    expect(await screen.findByTestId('brain-route')).toHaveTextContent('/brain?instance_id=17')
+    expect(await screen.findByTestId('brain-route')).toHaveTextContent('/sequencer?instance_id=17')
   })
 
   it('keeps Ground Control Pro as a first-class routed surface', async () => {

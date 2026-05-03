@@ -138,14 +138,14 @@ test('DeviceCard: T2461-A3 — last-bound row hidden when lastBoundAt is null', 
 test('DeviceCard: T2461-A7 — step-pads capability renders Brain Step deep-link', () => {
   renderCard({ capabilities: ['step-pads', 'midi'] })
   const link = screen.getByText('Brain Step').closest('a')
-  expect(link?.getAttribute('href')).toContain('/brain?section=step')
+  expect(link?.getAttribute('href')).toContain('/sequencer?section=step')
   expect(link?.getAttribute('href')).toContain('device=edirol-ua%2Fua-1000.audio')
 })
 
 test('DeviceCard: T2461-A7 — monitor-mixer capability renders Brain Console deep-link', () => {
   renderCard({ capabilities: ['monitor-mixer'] })
   const link = screen.getByText('Brain Console').closest('a')
-  expect(link?.getAttribute('href')).toContain('/brain?section=console')
+  expect(link?.getAttribute('href')).toContain('/sequencer?section=console')
 })
 
 test('DeviceCard: T2461-A7 — no Brain tag when no matching capability', () => {
@@ -237,21 +237,21 @@ test('DeviceCard: Q11 — pulseToken triggers --pulse class then clears', async 
 })
 
 test('DeviceCard: T2461-A9 — Used in N Brain assets tag links to Brain library section', () => {
-  renderCard({ brainAssetCount: 3 })
+  renderCard({ sequencerAssetCount: 3 })
   const tag = screen.getByText('Used in 3 Brain assets')
   const link = tag.closest('a')
   expect(link).not.toBeNull()
-  expect(link?.getAttribute('href')).toContain('/brain?section=library')
+  expect(link?.getAttribute('href')).toContain('/sequencer?section=library')
   expect(link?.getAttribute('href')).toContain('device=edirol-ua%2Fua-1000.audio')
 })
 
 test('DeviceCard: T2461-A9 — singular form when count is 1', () => {
-  renderCard({ brainAssetCount: 1 })
+  renderCard({ sequencerAssetCount: 1 })
   expect(screen.getByText('Used in 1 Brain asset')).toBeInTheDocument()
 })
 
 test('DeviceCard: T2461-A9 — no asset tag when count is 0', () => {
-  renderCard({ brainAssetCount: 0 })
+  renderCard({ sequencerAssetCount: 0 })
   expect(screen.queryByText(/Used in .* Brain asset/)).not.toBeInTheDocument()
 })
 

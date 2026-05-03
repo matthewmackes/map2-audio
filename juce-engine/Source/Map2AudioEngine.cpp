@@ -606,7 +606,7 @@ std::string loadableEngineUri(const juce::var& pluginVar) {
         return "map2://juce/synthforge";
     }
     if (uri == "map2:fx:brain") {
-        return "map2://juce/brain";
+        return "map2://juce/sequencer";
     }
     return uri;
 }
