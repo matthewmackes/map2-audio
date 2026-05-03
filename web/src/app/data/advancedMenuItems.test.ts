@@ -123,7 +123,8 @@ describe('navigation catalog', () => {
     expect(juceGrid?.label).toBe('Audio Grid')
     expect(juceGrid?.icon).toBe(MapAudioGridIcon)
     expect(brain).toBeDefined()
-    expect(brain?.label).toBe('Brain')
+    // T_RENAME 2026-05-02 — label flipped from 'Brain' → 'Sequencer'.
+    expect(brain?.label).toBe('Sequencer')
     expect(brain?.pinnable).toBe(false)
     expect(brain?.showOnHome).toBe(false)
     expect(legacyGrid).toBeUndefined()

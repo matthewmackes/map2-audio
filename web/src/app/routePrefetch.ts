@@ -93,6 +93,20 @@ const PREFETCH_RULES: PrefetchRule[] = [
     loaders: [() => import('./pages/PushSurfacePage')],
   },
 
+  // AVB Services (T2490 canonical /avb/* mount). Per-device prefixes
+  // (Tesira) declared first so longest-prefix matching wins.
+  {
+    prefix: '/avb/devices/tesira',
+    loaders: [() => import('./components/Devices/Tesira/TesiraView')],
+  },
+  {
+    prefix: '/avb',
+    loaders: [
+      () => import('./pages/AvbServicesShell'),
+      () => import('./pages/avb-services/AvbServicesOverviewPage'),
+    ],
+  },
+
   // MIDI Services (canonical /midi/* mount; T2491 cleanup re-pointed
   // the legacy /midi-hub prefetch to the canonical sub-views).
   {
