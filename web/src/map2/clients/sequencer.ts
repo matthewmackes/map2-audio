@@ -3,7 +3,7 @@ import { appendPluginRuntimeQuery, fetchJson, type PluginRuntimeScopeOptions } f
 import { API_BASE } from '../transport'
 
 function scopedPath(path: string, options?: PluginRuntimeScopeOptions) {
-  return appendPluginRuntimeQuery(`${API_BASE}/engine/brain${path}`, options)
+  return appendPluginRuntimeQuery(`${API_BASE}/engine/sequencer${path}`, options)
 }
 
 export const sequencerApi = {
@@ -111,13 +111,13 @@ export const sequencerApi = {
   // the existing transport / state endpoints.
   listActions: () =>
     fetchJson<{ actions: SequencerActionDescriptor[]; count: number }>(
-      `${API_BASE}/engine/brain/actions`,
+      `${API_BASE}/engine/sequencer/actions`,
     ),
 
   // T2461-A6 — Brain capture buffer for the wizard's Calibrate step.
   startCapture: (slotId: number, durationS = 5.0) =>
     fetchJson<{ session_id: string; duration_s: number; slot_id: number }>(
-      `${API_BASE}/engine/brain/capture/start`,
+      `${API_BASE}/engine/sequencer/capture/start`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -127,13 +127,13 @@ export const sequencerApi = {
 
   stopCapture: () =>
     fetchJson<{ finalised: boolean; session_id?: string; frame_count?: number }>(
-      `${API_BASE}/engine/brain/capture/stop`,
+      `${API_BASE}/engine/sequencer/capture/stop`,
       { method: 'POST' },
     ),
 
   getCapture: (sessionId: string) =>
     fetchJson<SequencerCaptureSession>(
-      `${API_BASE}/engine/brain/capture/${encodeURIComponent(sessionId)}`,
+      `${API_BASE}/engine/sequencer/capture/${encodeURIComponent(sessionId)}`,
     ),
 
   // T2461-A9 — write the bench-snapshot profile_keys onto a library
@@ -141,7 +141,7 @@ export const sequencerApi = {
   // were authored with a given device).
   setAssetAuthoredWith: (assetId: string, profileKeys: string[]) =>
     fetchJson<SequencerAssetAuthoredWithResponse>(
-      `${API_BASE}/engine/brain/library/assets/${encodeURIComponent(assetId)}/authored-with`,
+      `${API_BASE}/engine/sequencer/library/assets/${encodeURIComponent(assetId)}/authored-with`,
       {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
@@ -151,7 +151,7 @@ export const sequencerApi = {
 
   getAssetsForDevice: (profileKey: string) =>
     fetchJson<SequencerAssetsForDeviceResponse>(
-      `${API_BASE}/engine/brain/library/by-device/${encodeURIComponent(profileKey)}`,
+      `${API_BASE}/engine/sequencer/library/by-device/${encodeURIComponent(profileKey)}`,
     ),
 }
 

@@ -21,7 +21,7 @@ describe('sequencerApi runtime scoping', () => {
     await sequencerApi.getState({ instanceId: 17, pluginPosition: 3, nodeId: 'node-a' })
 
     expect(fetchMock.mock.calls[0]?.[0]).toBe(
-      `${API_BASE}/engine/brain/state?instance_id=17&plugin_position=3&node_id=node-a`,
+      `${API_BASE}/engine/sequencer/state?instance_id=17&plugin_position=3&node_id=node-a`,
     )
   })
 
@@ -29,7 +29,7 @@ describe('sequencerApi runtime scoping', () => {
     await sequencerApi.getSampleEditor(2, { pluginPosition: 4 })
 
     expect(fetchMock.mock.calls[0]?.[0]).toBe(
-      `${API_BASE}/engine/brain/sample-editor?slot_id=2&plugin_position=4`,
+      `${API_BASE}/engine/sequencer/sample-editor?slot_id=2&plugin_position=4`,
     )
   })
 })

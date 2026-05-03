@@ -127,7 +127,7 @@ export function useSequencerChannelMeters(
   useQuery<SequencerMeteringPayload>({
     queryKey: ['sequencer', 'metering'],
     queryFn: async () => {
-      const res = await fetch(`${API_BASE}/engine/brain/metering`)
+      const res = await fetch(`${API_BASE}/engine/sequencer/metering`)
       if (!res.ok) throw new Error(`brain/metering ${res.status}`)
       const data = (await res.json()) as SequencerMeteringPayload
       enqueue(data)

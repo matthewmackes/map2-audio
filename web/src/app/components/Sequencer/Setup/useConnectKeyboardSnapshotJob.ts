@@ -132,7 +132,7 @@ export function useConnectKeyboardSnapshotJob(): UseConnectKeyboardSnapshotJobRe
       let pickedAsset: SequencerLibraryAssetModel | null = null
       let libraryEmpty = false
       try {
-        const library = await fetchJson<SequencerLibraryStateModel>(`${API_BASE}/engine/brain/library`)
+        const library = await fetchJson<SequencerLibraryStateModel>(`${API_BASE}/engine/sequencer/library`)
         pickedAsset = pickFirstAsset(library)
         if (pickedAsset === null) {
           libraryEmpty = true
@@ -168,7 +168,7 @@ export function useConnectKeyboardSnapshotJob(): UseConnectKeyboardSnapshotJobRe
             // something recognizable in the Brain UI after wizard exit.
             name: pickedAsset.name,
           }
-          await fetchJson<SequencerSlotModel>(`${API_BASE}/engine/brain/slots/0`, {
+          await fetchJson<SequencerSlotModel>(`${API_BASE}/engine/sequencer/slots/0`, {
             method: 'PATCH',
             body: JSON.stringify(patch),
           })
