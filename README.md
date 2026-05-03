@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1475** Python | **1485** TypeScript | **179** C++/H | **145** Docs | **3674** total commits | **3** stars | **0** forks | **0** open issues
+**1475** Python | **1485** TypeScript | **179** C++/H | **146** Docs | **3676** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -176,11 +176,11 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 | Document | Last Updated |
 |:---------|:------------|
 | [PROJECT WORKLIST](https://github.com/matthewmackes/map2-audio/blob/master/docs/PROJECT_WORKLIST.md) | 2026-05-03 |
+| [MAP2 Renames — Migration Notes](https://github.com/matthewmackes/map2-audio/blob/master/docs/RENAMES.md) | 2026-05-03 |
 | [MAP2 Audio Platform — AI Instructions](https://github.com/matthewmackes/map2-audio/blob/master/docs/CLAUDE.md) | 2026-05-02 |
 | [MAP2 Backend Runtime Contract](https://github.com/matthewmackes/map2-audio/blob/master/docs/backend-runtime-contract.md) | 2026-04-27 |
 | [MAP2 API Contract Standards](https://github.com/matthewmackes/map2-audio/blob/master/docs/api-contract-standards.md) | 2026-04-25 |
 | [MAP2 LCD Console — Operator Guide](https://github.com/matthewmackes/map2-audio/blob/master/docs/LCD_OPERATOR_GUIDE.md) | 2026-04-23 |
-| [AVDECC Future Implementation Guide](https://github.com/matthewmackes/map2-audio/blob/master/docs/AVDECC_FUTURE_IMPLEMENTATION_GUIDE.md) | 2026-04-20 |
 <!-- RECENT-DOCS:END -->
 
 <p align="right"><a href="https://github.com/matthewmackes/map2-audio/tree/master/docs">Browse all docs &rarr;</a></p>
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`b2e4bfbc`](https://github.com/matthewmackes/map2-audio/commit/b2e4bfbcb06b89262282aa41cda03e81d184f67d) | refactor(rename): Brain / Drums&Synth / Performance Brain... | Map2 Audio | 2026-05-03 |
+| [`6a6f4cd5`](https://github.com/matthewmackes/map2-audio/commit/6a6f4cd53f2d16f300d4d9e716b4780580401108) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-03 |
 | [`ed189b70`](https://github.com/matthewmackes/map2-audio/commit/ed189b70699d92521b2e7f048328cc1aebd42215) | refactor(nav): merge /chains into /node-ops/audio-engine ... | Map2 Audio | 2026-05-03 |
 | [`51f606db`](https://github.com/matthewmackes/map2-audio/commit/51f606dbf842340872308cbf52e1e96d9ab3ee2a) | refactor(nav): canonical /node-ops + /artifacts + /about ... | Map2 Audio | 2026-05-03 |
 | [`2e6c0898`](https://github.com/matthewmackes/map2-audio/commit/2e6c08980e1b91ba90703261d1a94ed7d717f71f) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-03 |
 | [`4612dfaf`](https://github.com/matthewmackes/map2-audio/commit/4612dfaf8d889d4540cbde6a789e53bda1419125) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-03 |
 | [`8626d7a9`](https://github.com/matthewmackes/map2-audio/commit/8626d7a959974d1098866c5161c5db44b0e1e33f) | chore(T2459-H slice 19): 10-loop MIDI campaign closeout e... | Map2 Audio | 2026-05-03 |
 | [`a751e97d`](https://github.com/matthewmackes/map2-audio/commit/a751e97d0fbe9b33b246e44e3692883dc49dc5cf) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-03 |
-| [`1d9fa576`](https://github.com/matthewmackes/map2-audio/commit/1d9fa576e62b0c641b1389230a36863ad850f189) | docs(T2459-H slice 18): T2459-H closeout doc with HIL gat... | Map2 Audio | 2026-05-03 |
-| [`daf4523b`](https://github.com/matthewmackes/map2-audio/commit/daf4523b449d950f4cadea4a84934fff5edad77c) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-03 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
