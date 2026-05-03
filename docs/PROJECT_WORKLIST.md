@@ -1176,7 +1176,14 @@ Completion note: 2026-04-28 — Codex: **Slice 1 SHIPPED (shared MIDI curve enum
   Remaining for full H4 acceptance:
   - Maschine MK1 HID/USB control surface migration (Slice 7+) — daemon → host-client facade, LED choreography to device-pack runtime.
   - Bench HIL parity evidence with migrated devices.
-Last updated: 2026-04-28 EDT - Claude: slice 6 (Maschine MK1 MIDI-mode device-pack cutover) shipped; H4 remains in progress pending Maschine MK1 HID/USB control surface migration + bench HIL parity.
+  2026-05-03 — Claude: **Slice 7 SHIPPED (Lexicon MPX-1 device-pack registry wiring).**
+  Delivered:
+  - Pre-existing pack `device-packs/lexicon/{pack.yaml,profiles/mpx1.midi.yaml,scripts/mpx1.js}` (the pack files have been on disk for a while; until this slice they were unwired) is now loaded by `MIDIDeviceProfileService` under canonical id `lexicon_mpx1` with legacy alias `mpx1`.
+  - `app/services/midi_device_profiles.py` gains `LEXICON_MPX1_PROFILE_ID`, `LEGACY_LEXICON_MPX1_PROFILE_ID`, `LEXICON_MPX1_PACK_PROFILE_PATH`, `_build_lexicon_mpx1_profile_from_device_pack()`, `_load_lexicon_mpx1_profile()`, and `is_lexicon_mpx1_profile_id()` helpers — all mirroring the Maschine MK1 + MeloAudio loader pattern.
+  - 7 new pytest cases in `tests/test_lexicon_mpx1_pack_t2459h4.py` cover: pack files exist; canonical id loads through the registry; legacy alias resolves with `profile_id_canonical`; identity matches pack YAML; front-panel control rows present (CC 7 Adjust, CC 64 Bypass, CC 65 Tap, status-0xC0 program-change, 0xF0 SysEx sentinel); script reference resolves; pack manifest declares canonical metadata; settings include `mpx1_program_offset` + `mpx1_sysex_passthrough`.
+  - Out of scope (stays Python-owned): `app/services/mpx1_service.py` (database-backed librarian + preset registry), `app/services/mpx1_syx_parser.py` (SysEx parser; tag-extraction already routes through device-pack JS runtime per Slice 4), `app/services/mpx1_simulator.py`. The new device-pack profile is the controller-host-side authoring surface; the Python services keep the SysEx-heavy + DB-heavy responsibilities.
+  Validation: `pytest -q tests/test_lexicon_mpx1_pack_t2459h4.py tests/test_maschine_mk1_pack_t2459h4.py tests/test_midi_device_profiles_t2459h3.py` → **23 passed**.
+Last updated: 2026-05-03 EDT - Claude: slice 7 (Lexicon MPX-1 device-pack registry wiring) shipped; H4 remains in progress pending IntelFX (Slice 8 next), Maschine MK1 HID/USB control surface migration, and bench HIL parity.
 
 ---
 

@@ -32,6 +32,8 @@ MIDI_COMMANDER_PROFILE_ID = "meloaudio_midi_commander"
 LEGACY_MIDI_COMMANDER_PROFILE_ID = "meloaudio_commander"
 MASCHINE_MK1_PROFILE_ID = "native_instruments_maschine_mk1"
 LEGACY_MASCHINE_MK1_PROFILE_ID = "maschine_mk1"
+LEXICON_MPX1_PROFILE_ID = "lexicon_mpx1"
+LEGACY_LEXICON_MPX1_PROFILE_ID = "mpx1"
 BANK_UP_CC = 85
 BANK_DOWN_CC = 86
 BUTTON_CC_BY_ID: Dict[str, int] = {
@@ -63,6 +65,13 @@ MASCHINE_MK1_PACK_PROFILE_PATH = (
     / "native-instruments"
     / "profiles"
     / "maschine-mk1.midi.yaml"
+)
+LEXICON_MPX1_PACK_PROFILE_PATH = (
+    Path(__file__).resolve().parents[2]
+    / "device-packs"
+    / "lexicon"
+    / "profiles"
+    / "mpx1.midi.yaml"
 )
 
 
@@ -300,6 +309,67 @@ def _build_meloaudio_profile_from_device_pack() -> DeviceProfile:
     )
 
 
+def _build_lexicon_mpx1_profile_from_device_pack() -> DeviceProfile:
+    """Load the Lexicon MPX-1 MIDI profile from device-packs.
+
+    The MPX-1 has a small CC/PC surface (Adjust knob, Bypass, Tap,
+    program-change) plus a heavy SysEx parameter / preset surface.
+    The DeviceProfile here exposes identity + detection patterns; the
+    detailed control inventory lives in the YAML and is consumed by
+    the controller-host mapping engine. The SysEx parser at
+    `app/services/mpx1_syx_parser.py` stays Python-owned (T2459-H4
+    Slice 4 wired its tag-extraction through the device-pack JS
+    runtime; the parser body itself is part of `mpx1_service.py`'s
+    librarian / registry surface and is not a controller-mapping
+    concern).
+
+    Raises ValueError when the pack profile cannot be read or is malformed.
+    """
+    if not LEXICON_MPX1_PACK_PROFILE_PATH.exists():
+        raise ValueError(f"missing Lexicon MPX-1 profile at {LEXICON_MPX1_PACK_PROFILE_PATH}")
+
+    doc = yaml.safe_load(LEXICON_MPX1_PACK_PROFILE_PATH.read_text(encoding="utf-8"))
+    if not isinstance(doc, dict):
+        raise ValueError("Lexicon MPX-1 profile YAML did not parse to an object")
+
+    identity = doc.get("identity", {}) if isinstance(doc.get("identity"), dict) else {}
+    manufacturer = str(identity.get("manufacturer") or "Lexicon")
+    model = str(identity.get("model") or "mpx1")
+    alsa_pattern = str(identity.get("alsa_client_pattern") or "MPX")
+
+    return DeviceProfile(
+        profile_id=LEXICON_MPX1_PROFILE_ID,
+        name="Lexicon MPX-1 Multi-Effects Processor",
+        manufacturer=manufacturer,
+        description=(
+            "Lexicon MPX-1 multi-effects processor: front-panel "
+            "Adjust knob (CC 7), Bypass (CC 64), Tap (CC 65), and "
+            "program-change for the 250-program catalog. SysEx "
+            "preset / parameter operations stay Python-owned in "
+            "mpx1_service.py + mpx1_syx_parser.py; this profile "
+            "covers the front-panel MIDI surface only."
+        ),
+        icon="🌀",
+        is_recommended=False,
+        usb_vendor_id=None,  # MPX-1 connects via 5-pin DIN through a USB-MIDI bridge
+        usb_product_id=None,
+        name_patterns=[
+            alsa_pattern,
+            "MPX",
+            "MPX-1",
+            "MPX1",
+            "Lexicon MPX-1",
+            "lexicon-mpx1",
+            manufacturer,
+            model,
+        ],
+        footswitches=[],
+        expression_pedals=[],
+        bank_config=None,
+        supports_firmware_update=False,
+    )
+
+
 def _build_maschine_mk1_profile_from_device_pack() -> DeviceProfile:
     """Load the Maschine MK1 MIDI-mode profile from device-packs.
 
@@ -362,9 +432,11 @@ class MIDIDeviceProfileService:
         self._profile_aliases: Dict[str, str] = {
             LEGACY_MIDI_COMMANDER_PROFILE_ID: MIDI_COMMANDER_PROFILE_ID,
             LEGACY_MASCHINE_MK1_PROFILE_ID: MASCHINE_MK1_PROFILE_ID,
+            LEGACY_LEXICON_MPX1_PROFILE_ID: LEXICON_MPX1_PROFILE_ID,
         }
         self._load_meloaudio_profile()
         self._load_maschine_mk1_profile()
+        self._load_lexicon_mpx1_profile()
         self._active_profile: Optional[DeviceProfile] = None
         self._active_profile_id: Optional[str] = None
         self._bank_state: Dict[str, int] = {}  # profile_id -> current_bank
@@ -391,8 +463,21 @@ class MIDIDeviceProfileService:
                 exc,
             )
 
+    def _load_lexicon_mpx1_profile(self) -> None:
+        try:
+            self._profiles[LEXICON_MPX1_PROFILE_ID] = _build_lexicon_mpx1_profile_from_device_pack()
+        except Exception as exc:
+            logger.error(
+                "Failed to load Lexicon MPX-1 profile from device-pack (%s). "
+                "Lexicon MPX-1 profile surfaces will be unavailable until fixed.",
+                exc,
+            )
+
     def is_maschine_mk1_profile_id(self, profile_id: str | None) -> bool:
         return self._resolve_profile_id(profile_id) == MASCHINE_MK1_PROFILE_ID
+
+    def is_lexicon_mpx1_profile_id(self, profile_id: str | None) -> bool:
+        return self._resolve_profile_id(profile_id) == LEXICON_MPX1_PROFILE_ID
 
     def _resolve_profile_id(self, profile_id: str | None) -> str | None:
         if profile_id is None:
