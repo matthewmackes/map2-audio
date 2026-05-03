@@ -59,6 +59,18 @@ class PTPMonitor(Singleton):
         self.last_status: Optional[PTPStatus] = None
         self._monitoring = False
         self._monitor_task: Optional[asyncio.Task] = None
+        # T2491-2 — BMCA observability. Every time `_query_pmc` /
+        # `_parse_journal` reports a different grandmasterIdentity
+        # than the previously-seen one, increment this counter and
+        # append (timestamp, old_id, new_id) to the history.
+        # `AVB_INTERFACE_COUNTERS::gptp_gm_changed` (T2491-6) reads
+        # this counter via `getattr(monitor, 'grandmaster_change_count')`.
+        self.grandmaster_change_count: int = 0
+        # Bounded history (last 32 changes); cumulative count is the
+        # canonical signal but the recent-change list is useful for
+        # the operator surface to render a "GM swapped at HH:MM" log.
+        self._gm_change_history: list[dict] = []
+        self._last_seen_gm_id: Optional[str] = None
 
     def _reserve_pmc_client_socket_path(self) -> Optional[Path]:
         try:
@@ -125,12 +137,14 @@ class PTPMonitor(Singleton):
             # Try to get status via pmc (PTP management client)
             status = await self._query_pmc()
             if status:
+                self._track_grandmaster_changes(status)
                 self.last_status = status
                 return status
 
             # Fallback: parse recent journalctl logs
             status = await self._parse_journal()
             if status:
+                self._track_grandmaster_changes(status)
                 self.last_status = status
                 return status
 
@@ -304,6 +318,59 @@ class PTPMonitor(Singleton):
             self._monitor_task = None
 
         logger.info("PTP monitoring stopped")
+
+    def _track_grandmaster_changes(self, status: PTPStatus) -> None:
+        """T2491-2 — bump `grandmaster_change_count` on BMCA reselection.
+
+        The BMCA (Best Master Clock Algorithm) is allowed to swap
+        grandmasters at any time when a higher-priority candidate
+        appears or the active GM goes silent. Each transition is a
+        meaningful network-stability event: it can briefly stall the
+        AVB media clock (until the new GM offset converges) and
+        invalidate any presentation-time math the listeners had
+        cached. Surface every transition as a counter bump + a
+        history entry so the operator surface can expose
+        "GM swapped at HH:MM (old → new)" without polling pmc itself.
+
+        Only count transitions where both old and new GM IDs are
+        known and different; the first observation seeds the field
+        without bumping.
+        """
+        new_gm_id = status.grandmaster_id
+        if not new_gm_id:
+            return
+        if self._last_seen_gm_id is None:
+            self._last_seen_gm_id = new_gm_id
+            return
+        if new_gm_id == self._last_seen_gm_id:
+            return
+        # Reselection happened.
+        old_gm_id = self._last_seen_gm_id
+        self._last_seen_gm_id = new_gm_id
+        self.grandmaster_change_count += 1
+        self._gm_change_history.append(
+            {
+                "timestamp": _utcnow_iso(),
+                "old_grandmaster_id": old_gm_id,
+                "new_grandmaster_id": new_gm_id,
+            }
+        )
+        # Bound history to the most recent 32 entries.
+        if len(self._gm_change_history) > 32:
+            self._gm_change_history = self._gm_change_history[-32:]
+        logger.info(
+            "PTP BMCA reselection: grandmaster %s → %s (change #%d)",
+            old_gm_id,
+            new_gm_id,
+            self.grandmaster_change_count,
+        )
+
+    def grandmaster_change_log(self) -> list[dict]:
+        """Return a copy of the bounded GM-change history (most
+        recent 32 entries). Used by the operator surface and by
+        AVnu CTS evidence runs to demonstrate BMCA observability."""
+        return list(self._gm_change_history)
+
 
 def get_ptp_monitor() -> PTPMonitor:
     """Get singleton PTP monitor instance"""

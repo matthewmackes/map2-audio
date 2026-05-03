@@ -173,6 +173,40 @@ def _read_sys_operstate(ifname: str) -> str:
         return "unknown"
 
 
+@router.get("/ptp/grandmaster_changes")
+async def get_grandmaster_change_log() -> Dict[str, Any]:
+    """T2491-2 — surface the BMCA reselection log.
+
+    Returns the cumulative `change_count` (matches
+    `AVB_INTERFACE_COUNTERS::gptp_gm_changed`) plus a bounded
+    history of the most recent 32 grandmaster transitions. Each
+    entry carries the wall-clock timestamp + old/new clock-identity
+    strings. The operator surface (T2490-9 `/avb/network`) renders
+    this as a "GM stability" timeline.
+    """
+    try:
+        from app.services.avb.ptp_monitor import get_ptp_monitor
+
+        monitor = get_ptp_monitor()
+        if monitor is None:
+            return {
+                "available": False,
+                "change_count": 0,
+                "history": [],
+                "error": "PTP monitor not initialised",
+            }
+        return {
+            "available": True,
+            "change_count": int(getattr(monitor, "grandmaster_change_count", 0) or 0),
+            "current_grandmaster_id": getattr(monitor, "_last_seen_gm_id", None),
+            "history": monitor.grandmaster_change_log()
+                if hasattr(monitor, "grandmaster_change_log") else [],
+        }
+    except Exception as e:
+        logger.error("Error reading grandmaster change log: %s", e, exc_info=True)
+        raise HTTPException(status_code=500, detail=str(e))
+
+
 @router.get("/interfaces/{ifname}/counters")
 async def get_interface_counters(ifname: str) -> Dict[str, Any]:
     """
