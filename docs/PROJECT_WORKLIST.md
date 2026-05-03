@@ -1354,7 +1354,14 @@ Completion note: 2026-04-28 — Codex: **Slice 2 SHIPPED (unified MIDI router mo
   - Days-remaining is computed against the system clock; goes to `None` once `MAP2_MIDI_LEGACY_RETIRED` is flipped (no countdown after retirement). Sunset header parser tolerates garbage gracefully.
   - 6 new pytest cases: full envelope shape; flag reflected; falsy values stay-not-retired; sunset_iso parses to 2026-07-01; sunset header parser round-trips; parser rejects garbage.
   Validation: `pytest -q tests/test_midi_legacy_retirement_status_t2459h5.py tests/test_midi_v1_retirement_t2459h5.py` → **11 passed**.
-Last updated: 2026-05-03 EDT - Claude: slice 15 (operator-visible v1 retirement schedule) shipped; H5 stays [>] In Progress with bench HIL + per-slice C++ ports remaining.
+  2026-05-03 — Claude: **Slice 16 SHIPPED (UMP / MIDI 2.0 capabilities surface).**
+  Delivered:
+  - `GET /api/v2/midi/ump/capabilities` returns the honest-state envelope describing what's wired today: engine-side classifier (MT 0x1/0x2/0x4 → RT, MT 0x0/0x3/0x5 → control), slot discriminator (bit 15 = `kSlotFlagIsUmp`, bits 0..14 = controller index), IPC additive `format` field (`""` / `"midi1"` / `"ump"`), UMP packet lengths `[4, 8, 12, 16]`, and the `MidiHostClient.send_ump()` client helper.
+  - Honest-state surface: `validated_io: false` with explicit `validated_io_blocker` text — operator UI doesn't pretend bench UMP works just because the engine-side plumbing is in place. Validation gate is libremidi v5.1.0 → next-version bump + bench validation against a MIDI-2.0-capable device (T2491-13).
+  - When the controller-host daemon is reachable, `data.host_side` carries the live backend selection (jack / pipewire / alsa_seq / alsa_raw) + `degraded` flag so the operator UI can render "UMP capable: yes (PipeWire)" or "UMP capable: degraded (alsa_seq — production needs PipeWire/JACK)". Resolver tolerates client construction / `is_daemon_available` failures gracefully (returns None instead of raising).
+  - 6 new pytest cases: engine-side block always present; unavailable when daemon down; available when daemon returns backend; resolver handles client construction failure; resolver handles is-daemon-available failure; classifier buckets match Slice 13's lock.
+  Validation: `pytest -q tests/test_midi_ump_capabilities_t2459h5.py` → **6 passed**.
+Last updated: 2026-05-03 EDT - Claude: slice 16 (UMP capabilities surface) shipped; H5 stays [>] In Progress with bench HIL + per-slice C++ ports remaining.
 
 ---
 

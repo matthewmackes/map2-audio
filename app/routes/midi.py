@@ -16,6 +16,7 @@ from app.routes._midi_v1_retirement import (
     include_legacy_midi_router,
     retirement_status_router,
 )
+from app.routes.midi_ump_capabilities import router as midi_ump_capabilities_router
 from app.routes.enriched_midi_physical_surfaces import router as enriched_midi_physical_surfaces_router
 from app.routes.midi_cluster import router as midi_cluster_router
 from app.routes.midi_commander_surface import router as midi_commander_surface_router
@@ -30,6 +31,8 @@ router.include_router(midi_v2_router)
 # under /api/v2/midi/legacy_retirement_status so it survives the
 # 410-Gone flip on the legacy v1 mounts.
 router.include_router(retirement_status_router)
+# T2459-H5 Slice 16 — UMP / MIDI 2.0 capabilities surface, also under v2.
+router.include_router(midi_ump_capabilities_router)
 include_legacy_midi_router(router, midi_hub_router)
 include_legacy_midi_router(router, midi_cluster_router)
 include_legacy_midi_router(router, midi_learn_router)
