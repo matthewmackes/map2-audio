@@ -1655,6 +1655,9 @@ def test_snapshot_service_io_defaults_are_inherited_and_applied_on_activation(tm
             applied_devices.append(device_name)
             return True
 
+        async def set_all_midi_commands(self, commands):
+            return True
+
         async def get_topology_mutation_stats(self):
             return None
 
@@ -3511,6 +3514,9 @@ def test_activate_snapshot_consumes_preloaded_instances_on_preload_hit(tmp_path,
         is_available = True
         is_running = True
 
+        async def set_all_midi_commands(self, commands):
+            return True
+
         async def get_topology_mutation_stats(self):
             return {
                 "mutation_count": 0,
@@ -3645,6 +3651,9 @@ def test_activate_snapshot_releases_stale_preloaded_instances_when_target_differ
     class _PreloadRuntimeEngineStub:
         is_available = True
         is_running = True
+
+        async def set_all_midi_commands(self, commands):
+            return True
 
         async def get_topology_mutation_stats(self):
             return {
@@ -3999,6 +4008,9 @@ def test_snapshot_service_activation_records_topology_mutation_metrics(tmp_path,
         is_available = True
         is_running = True
 
+        async def set_all_midi_commands(self, commands):
+            return True
+
         def __init__(self):
             self._responses = [
                 {
@@ -4151,6 +4163,9 @@ def test_activate_snapshot_applies_output_safety_settings(tmp_path, monkeypatch)
         async def set_limiter_threshold(self, db: float) -> None:
             self.limiter_threshold_calls.append(db)
 
+        async def set_all_midi_commands(self, commands):
+            return True
+
         async def get_topology_mutation_stats(self):
             return {
                 "mutation_count": 0,
@@ -4273,6 +4288,9 @@ def test_update_snapshot_reapplies_audio_device_bindings_for_live_snapshot(tmp_p
             self.monitoring_output_calls.append(index)
             return True
 
+        async def set_all_midi_commands(self, commands):
+            return True
+
         async def get_topology_mutation_stats(self):
             return {
                 "mutation_count": 0,
@@ -4384,6 +4402,9 @@ def test_activate_snapshot_applies_monitoring_output_binding(tmp_path, monkeypat
             self.monitoring_output_calls.append(index)
             return True
 
+        async def set_all_midi_commands(self, commands):
+            return True
+
         async def get_topology_mutation_stats(self):
             return {
                 "mutation_count": 0,
@@ -4493,6 +4514,9 @@ def test_update_snapshot_reapplies_monitoring_output_for_live_snapshot(tmp_path,
 
         async def set_monitoring_output_index(self, index: int) -> bool:
             self.monitoring_output_calls.append(index)
+            return True
+
+        async def set_all_midi_commands(self, commands):
             return True
 
         async def get_topology_mutation_stats(self):
