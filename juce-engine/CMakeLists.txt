@@ -438,11 +438,32 @@ endif()
 # T2459-H6 retirement gate. When MAP2_USE_LEGACY_MIDI_CONTROLLER=ON (default)
 # the legacy raw-ALSA Map2MidiController source/header join the engine
 # translation units. When OFF the engine builds without them and the
-# factory short-circuits "midi" identities to nullptr.
+# factory returns IpcMidiBridgeController instead.
 if(MAP2_USE_LEGACY_MIDI_CONTROLLER)
     list(APPEND SOURCES Source/Controllers/Midi/Map2MidiController.cpp)
     list(APPEND HEADERS Source/Controllers/Midi/Map2MidiController.h)
 endif()
+
+# T2459-H6 Slice 2: IpcMidiBridge + IpcMidiBridgeController are unconditional
+# — they're the canonical MIDI ingestion path under OFF and stay parallel-
+# available under ON so the factory's OFF arm has a real Map2Controller
+# to return instead of nullptr. The bridge itself is the H1-shipped shm
+# event-ring consumer; the controller wraps it in the Map2Controller
+# contract used by the engine's controller layer.
+list(APPEND SOURCES
+    Source/Controllers/Midi/IpcMidiBridge.cpp
+    Source/Controllers/Midi/IpcMidiBridgeController.cpp
+    # IpcMidiBridge consumes the shm event ring shipped under
+    # ControllerHost/EventRing. Pull the ring's translation unit so
+    # the engine library's link is self-contained whether the legacy
+    # raw-ALSA path is in or out.
+    Source/ControllerHost/EventRing/ShmEventRing.cpp
+)
+list(APPEND HEADERS
+    Source/Controllers/Midi/IpcMidiBridge.h
+    Source/Controllers/Midi/IpcMidiBridgeController.h
+    Source/ControllerHost/EventRing/ShmEventRing.h
+)
 
 # Add AVB headers if available
 if(AVB_AVAILABLE)
@@ -788,6 +809,12 @@ if(BUILD_CONTROLLERS_TESTS)
         tests/Map2ControllerTests.cpp
         Source/Controllers/Map2Controller.cpp
         Source/Controllers/Map2ControllerFactory.cpp
+        Source/Controllers/Midi/IpcMidiBridge.cpp
+        Source/Controllers/Midi/IpcMidiBridgeController.cpp
+        # IpcMidiBridge consumes the shm event ring shipped under
+        # ControllerHost/EventRing — pull its translation unit so the
+        # bridge symbols resolve when the legacy path is excluded.
+        Source/ControllerHost/EventRing/ShmEventRing.cpp
     )
     if(MAP2_USE_LEGACY_MIDI_CONTROLLER)
         list(APPEND CONTROLLERS_TESTS_SOURCES

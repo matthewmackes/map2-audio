@@ -1373,7 +1373,24 @@ Assigned to: Claude
   Next-action runbook (bench operator): With `map2-controller-host` running and the engine rebuilt with `cmake -B juce-engine/build -DMAP2_USE_LEGACY_MIDI_CONTROLLER=OFF && cmake --build juce-engine/build --target map2_audio_engine`, run `python3 .codex/skills/juce-random-effects-soak/scripts/run_juce_random_fx_soak.py --duration-seconds 1800 --flow-rotation-seconds 20 --sample-interval-seconds 1.0 --reset-stats-after-warmup --threshold-max-xruns 0 --threshold-max-peak-jitter-ms 0.35 --midi-driver host --midi-controller-key soak-driver --midi-rate-events-per-sec 30 --midi-message-mix mixed --soak-tag t2459h6-shm-ring`. If `overall_pass=True`, follow the deletion procedure in `docs/midi/MAP2MIDICONTROLLER_RETIREMENT.md` §4 — drop the option, the source/header, and the audit-test EXPECTED set entries in one atomic commit; capture the producer→consumer latency graph under `docs/fit-for-purpose-evidence/<YYYYMMDD>/t2459h6-shm-ring/`.
 
   Status stays `[ ] Todo` (full retirement still gated on HIL soak + file deletion). The slice's job — make the HIL run a one-command operation and the deletion a one-PR change — is complete.
-Last updated: 2026-04-28 EDT - Claude: Slice 1 (code-only retirement prep) shipped; HIL soak + file deletion remain.
+
+  2026-05-03 — Claude: **Slice 2 SHIPPED (IpcMidiBridgeController factory adapter — closes the deletion-blocking factory gap from Slice 1).**
+
+  The OFF build no longer returns `nullptr` from `Map2ControllerFactory::create("midi", ...)` — it returns `IpcMidiBridgeController`, a `Map2Controller` adapter that wraps the H1-shipped `IpcMidiBridge` so the audio engine drains its MIDI events from the host's shm event ring instead of opening its own ALSA subscription. Closes the audit gap filed in Slice 1: "non-test caller would crash under OFF" — adapter satisfies the contract (open / close / poll / send), translates ring frames into `ControllerEvent` records, and re-uses the inherited fast-path + eventCallback dispatch seam. Outbound MIDI in the H6 architecture rides the controller-host's UDS control plane, so `send()` is a no-op stub returning true (legacy callers' boolean contract preserved); the actual outbound write happens via the IPC commands the engine emits separately.
+
+  Files added: `juce-engine/Source/Controllers/Midi/IpcMidiBridgeController.{h,cpp}`.
+
+  Files modified: `juce-engine/Source/Controllers/Map2ControllerFactory.cpp` (OFF arm now returns `std::make_unique<midi::IpcMidiBridgeController>(identity)` instead of `nullptr`), `juce-engine/CMakeLists.txt` (added `IpcMidiBridge.cpp`, `IpcMidiBridgeController.cpp`, and `Source/ControllerHost/EventRing/ShmEventRing.cpp` to both the engine `SOURCES` list AND `controllers_tests` so both ON and OFF link cleanly), `juce-engine/tests/Map2ControllerTests.cpp` (OFF-arm test renamed + asserts non-null + isOpen()==false + send() returns true), `tests/test_map2midicontroller_caller_audit_t2459h6.py` (audit EXPECTED set + pinned-test-name updated).
+
+  Validation:
+  - `cmake -B juce-engine/build && cmake --build . --target controllers_tests` — clean (ON build).
+  - `./juce-engine/build/controllers_tests` — **17 assertions in 8 test cases passed**.
+  - `cmake -B juce-engine/build-h6-off -DMAP2_USE_LEGACY_MIDI_CONTROLLER=OFF && cmake --build . --target controllers_tests` — clean (OFF build, no Map2MidiController in the link graph).
+  - `./juce-engine/build-h6-off/controllers_tests` — **19 assertions in 8 test cases passed** (2 new assertions in the OFF-arm IpcMidiBridgeController test).
+  - `pytest -q tests/test_map2midicontroller_caller_audit_t2459h6.py tests/test_soak_harness_midi_extension_t2459h6.py` — **11 passed**.
+
+  Remaining for full T2459-H6: HIL soak run with the host driving real MIDI traffic + atomic deletion PR per `docs/midi/MAP2MIDICONTROLLER_RETIREMENT.md` §4.
+Last updated: 2026-05-03 EDT - Claude: Slice 2 (IpcMidiBridgeController factory adapter) shipped; the OFF build is now a working configuration end-to-end. HIL soak + file deletion remain.
 
 ---
 

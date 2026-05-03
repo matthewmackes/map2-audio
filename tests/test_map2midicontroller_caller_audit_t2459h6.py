@@ -39,6 +39,9 @@ EXPECTED_COMMENT_ONLY = {
     REPO_ROOT / "juce-engine" / "Source" / "Controllers" / "Map2Controller.cpp",
     REPO_ROOT / "juce-engine" / "Source" / "Controllers" / "Map2ControllerFactory.h",
     REPO_ROOT / "juce-engine" / "Source" / "Controllers" / "Midi" / "IpcMidiBridge.h",
+    # T2459-H6 Slice 2: IpcMidiBridgeController.h docstring mentions
+    # Map2MidiController as the legacy path it replaces under OFF.
+    REPO_ROOT / "juce-engine" / "Source" / "Controllers" / "Midi" / "IpcMidiBridgeController.h",
 }
 
 EXPECTED_ALL = EXPECTED_LOAD_BEARING | EXPECTED_COMMENT_ONLY
@@ -118,5 +121,7 @@ def test_cmakelists_exposes_retirement_option() -> None:
 def test_catch2_test_has_both_on_and_off_arms() -> None:
     test_cpp = (ENGINE_TESTS / "Map2ControllerTests.cpp").read_text(encoding="utf-8")
     assert "Factory returns a Map2MidiController for MIDI identities" in test_cpp
-    assert "Factory returns nullptr for MIDI identities under retirement gate" in test_cpp
+    # T2459-H6 Slice 2: the OFF arm now returns IpcMidiBridgeController
+    # instead of nullptr (closes the deletion-blocking factory gap).
+    assert "Factory returns IpcMidiBridgeController under retirement gate" in test_cpp
     assert "MAP2_HAS_LEGACY_MIDI_CONTROLLER" in test_cpp

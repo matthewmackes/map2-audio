@@ -213,11 +213,25 @@ TEST_CASE ("Factory returns a Map2MidiController for MIDI identities", "[T2459-B
     REQUIRE (controller != nullptr);
 }
 #else
-TEST_CASE ("Factory returns nullptr for MIDI identities under retirement gate", "[T2459-H6]")
+TEST_CASE ("Factory returns IpcMidiBridgeController under retirement gate", "[T2459-H6]")
 {
-    // T2459-H6 OFF build: legacy raw-ALSA path is excluded; the factory
-    // short-circuits to nullptr and ingestion is owned by IpcMidiBridge.
+    // T2459-H6 Slice 2 OFF build: the legacy raw-ALSA path is excluded
+    // from the build, but the factory now returns IpcMidiBridgeController
+    // — a Map2Controller adapter that drains its events from the host's
+    // shm event ring instead of opening its own ALSA subscription.
+    // Closes the deletion-blocking factory gap from Slice 1.
     auto controller = Map2ControllerFactory::create (makeIdentity ("midi"));
-    REQUIRE (controller == nullptr);
+    REQUIRE (controller != nullptr);
+    // The controller starts closed; opening attempts to attach to the
+    // shm rings (which won't exist in the test process unless the
+    // host owner has created them). We don't open here — the bench
+    // soak owns that gate.
+    REQUIRE_FALSE (controller->isOpen());
+    // send() is a no-op stub returning true so legacy callers keep
+    // their boolean contract; outbound MIDI rides the host's UDS
+    // control plane in the H6 architecture.
+    ControllerOutbound out;
+    out.bytes = {0xB0, 0x07, 0x40};
+    REQUIRE (controller->send (out));
 }
 #endif

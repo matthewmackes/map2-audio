@@ -16,6 +16,12 @@
   #include "Midi/Map2MidiController.h"
 #endif
 
+// T2459-H6 Slice 2: IpcMidiBridgeController is the OFF-build replacement.
+// Closes the deletion-blocking factory gap so Map2ControllerFactory::create
+// returns a working Map2Controller instead of nullptr when the legacy
+// raw-ALSA path is excluded from the build.
+#include "Midi/IpcMidiBridgeController.h"
+
 namespace map2::controllers
 {
 
@@ -52,10 +58,13 @@ std::unique_ptr<Map2Controller> Map2ControllerFactory::create (
         }
         return std::make_unique<midi::Map2MidiController> (identity, target);
 #else
-        // Legacy path retired (T2459-H6 OFF build). MIDI ingestion is
-        // owned by map2-controller-host via libremidi; the engine drains
-        // events through IpcMidiBridge.
-        return nullptr;
+        // T2459-H6 OFF build: the legacy raw-ALSA path is excluded from
+        // the build. MIDI ingestion is owned by map2-controller-host via
+        // libremidi; the engine drains events through the shm event ring
+        // into IpcMidiBridgeController, which satisfies the Map2Controller
+        // contract by translating ring frames into ControllerEvents and
+        // re-using the inherited fast-path + eventCallback dispatch seam.
+        return std::make_unique<midi::IpcMidiBridgeController> (identity);
 #endif
     }
 
