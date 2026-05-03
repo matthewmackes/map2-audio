@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1458** Python | **1486** TypeScript | **177** C++/H | **145** Docs | **3636** total commits | **3** stars | **0** forks | **0** open issues
+**1458** Python | **1486** TypeScript | **177** C++/H | **145** Docs | **3638** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`2541959c`](https://github.com/matthewmackes/map2-audio/commit/2541959ce1e81ce92272cdecee954e8b36960fc7) | chore(T2492-5): closeout evidence + epic status flip to Done | Map2 Audio | 2026-05-02 |
+| [`3c30e4a2`](https://github.com/matthewmackes/map2-audio/commit/3c30e4a2d3e33082abbf7dd8d648de04532eb53a) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-03 |
 | [`18abcd34`](https://github.com/matthewmackes/map2-audio/commit/18abcd348292e721a370e4fc44cc88c1243e1b8a) | feat(T2492-4): enforced provenance trail on auto-generate... | Map2 Audio | 2026-05-02 |
 | [`983d2d0f`](https://github.com/matthewmackes/map2-audio/commit/983d2d0f3daf6d68dce1a05fbd4fe58255d1f19f) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-03 |
 | [`4427c494`](https://github.com/matthewmackes/map2-audio/commit/4427c4944762da0d90e0f0530230360ba2f087ba) | feat(T2492-3): Mixxx-schema-faithful skeleton + verbatim ... | Map2 Audio | 2026-05-02 |
 | [`55263786`](https://github.com/matthewmackes/map2-audio/commit/55263786f31554e1872f254f36b92223e7d42bd0) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-05-02 |
 | [`fa0a412d`](https://github.com/matthewmackes/map2-audio/commit/fa0a412d450fdef610a2b99610c00a4ac587faef) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-05-02 |
 | [`af3fbfba`](https://github.com/matthewmackes/map2-audio/commit/af3fbfbab01639412be45d52fb0c03987b2809b5) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-03 |
-| [`6ffa42c2`](https://github.com/matthewmackes/map2-audio/commit/6ffa42c24b2639af653620c712c40333a0980cb8) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-03 |
-| [`64512538`](https://github.com/matthewmackes/map2-audio/commit/64512538020dce0d7a5a3592b026c7e40f34a3f5) | feat(T2492-2): /midi/connections "Unknown device" Tag + w... | Map2 Audio | 2026-05-02 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
