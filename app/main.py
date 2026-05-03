@@ -1166,6 +1166,18 @@ def create_app():
             logger.info("AVB Services routes registered (T2490-2)")
         except Exception as e:
             logger.warning(f"Failed to load AVB Services routes: {e}")
+
+        # T2492-1: Device-pack auto-generation routes
+        # (POST /api/midi/devices/auto-generate/{lookup,synthesize,commit}).
+        # The wizard frontend (DevicePackGeneratorModal) walks the
+        # operator through each step. See
+        # docs/architecture/DEVICE_PACK_AUTO_GENERATION.md.
+        try:
+            from app.routes.device_pack_auto_gen import router as auto_gen_router
+            app.include_router(auto_gen_router)
+            logger.info("Device-pack auto-gen routes registered (T2492-1)")
+        except Exception as e:
+            logger.warning(f"Failed to load device-pack auto-gen routes: {e}")
         
         # HTTP GET handlers
         from fastapi.responses import HTMLResponse, JSONResponse, FileResponse

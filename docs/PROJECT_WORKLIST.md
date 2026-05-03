@@ -36041,3 +36041,46 @@ This revision **preserves the spirit of Q2=A** (decomposition for maintainabilit
 - Spec references: IEEE 802.1BA-2021, IEEE 802.1AS-2020, IEEE 1722-2016, IEEE 1722.1-2021, IEEE 802.1Qav-2009, IEEE 802.1Qat-2010, IEEE 802.1Qbv-2015, IEEE 802.1Qbu-2016, IEEE 802.1CB-2017, AVnu Milan Specification v1.2
 
 **Status:** [ ] Todo 2026-05-02 (Kickoff: locked decisions + worklist entry shipped; sub-tasks T2491-1 through T2491-14 unscheduled. Hardware procurement (T2491-1) and software-only Phase 2 work can run in parallel.)
+
+---
+
+## Epic: T2492 — Device-Pack Auto-Generation from Discovery + Public Info (opened 2026-05-02)
+
+**Why it matters.** The MAP2 device-pack model (T2459-locked) presumes vendor or operator-curated `.MAP2.yaml` profiles under `device-packs/<vendor>/<model>/`. In practice vendors do not write packs for niche audio platforms; operators have to. When an unknown USB MIDI device is plugged in, the system today shows it as a generic ALSA port with no first-party editor — every binding has to be authored from scratch. This epic adds a wizard that detects unknown adapters and synthesizes a draft device-pack from in-tree Mixxx mappings + USB-IF vendor data.
+
+**Audit (2026-05-02 pre-kickoff).**
+- **Existing Mixxx import**: `device-packs/_mixx-imports/res/controllers/` (398 files, 14 MB, 144 `.midi.xml` mapping files, GPL-2.0-or-later, mirrored from upstream commit `9d5df54b7a81c949a40b53c5ace60c6c4f78aa3f` on 2026-04-27 per T2459-E5). MANIFEST.yaml + IMPORT_CHECKSUMS.txt + LICENSE.MIXX preserve attribution.
+- **No lookup index today** — the XMLs sit on disk but no service builds a VID:PID-keyed index for fast lookup.
+- **No USB-IF table** — no offline vendor-name fallback when Mixxx has no match.
+- **No discovery surface** — `/midi/connections` shows live ports via `MidiHubConnectedDevicesReport` but does not flag "unknown device" status or offer pack generation.
+- **Backend gap**: `/api/midi/hub/devices` 500s when the controller-host daemon is unreachable (the iter-78 hard-strip removed the rtmidi fallback). Daemon must be running for any of this to function in production; a dev-mode fallback for the lookup-index path is in scope.
+
+**Locked decisions (5-question protocol, 2026-05-02).**
+
+1. **Q1=D — Hybrid (Mixxx imports + USB-IF), no live API calls.** Primary lookup is the in-tree Mixxx mapping corpus already mirrored under `device-packs/_mixx-imports/res/controllers/`. Secondary lookup is USB-IF's `usb.ids` (vendor-name-only fallback). No runtime network calls — all enrichment data is staged in the repo or cached at boot. Mixxx mirror refreshed at upstream HEAD as part of this kickoff.
+
+2. **Q2=B-via-Modal — Multi-step wizard rendered as a Carbon Modal.** Operator stays on `/midi/devices` (or `/midi/connections`); modal opens with a Carbon `ProgressIndicator` showing 5 steps: (1) detected device summary, (2) enrichment lookup results, (3) review synthesized manifest, (4) edit XML/JS scaffolding, (5) commit. Modal-based, not a separate `/midi/devices/discovery` route.
+
+3. **Q3=D — Dual entry: Carbon Tag + InlineNotification.** `/midi/connections` adds a yellow "Unknown device" Carbon Tag next to each unrecognized adapter; clicking it opens the wizard pre-populated with that device. `/midi/devices` shows a top-of-page Carbon `InlineNotification` ("N adapters have no device-pack — generate one?") when the system detects unrecognized adapters; clicking opens the wizard with a list-picker. Both entry points lead to the same modal flow.
+
+4. **Q4=A — VID:PID exact-match only against the Mixxx index.** Index is keyed by USB VID:PID where the Mixxx XML's `<info>` block declares it. Devices without a matching VID:PID in the corpus fall through to "no template found, generate from scratch" — operator edits the synthesized empty manifest manually. Honest tradeoff: many Mixxx mappings are identified only by name string, not VID:PID, so the lookup is conservatively narrow. Future T2492-followup may add fuzzy-name matching.
+
+5. **Q5=D — Big-bang kickoff: full T2492-1 vertical slice in one commit.** No worklist-only kickoff; this commit lands the worklist entry, design doc, refreshed Mixxx mirror, lookup index, USB-IF table, backend service + route, frontend modal + entry points, and tests. Subsequent loops handle T2492-2 (operator-curated edits inside the wizard), T2492-3 (XML/JS scaffolding sophistication), T2492-4 (commit-to-disk auditability), T2492-5+ (closeout).
+
+**Subtasks.**
+
+- **T2492-1** — ✅ This kickoff commit. End-to-end thin slice across the 7 surfaces below. **One Q3=D deliverable deliberately deferred**: the per-row Carbon Tag on `/midi/connections` requires modifying `MidiHubConnectedDevicesReport.tsx` to render an "Unknown device" tag when a USB descriptor doesn't match an existing device-pack. The backend's live MIDI inventory requires the `map2-controller-host` daemon (currently not running on this development host), so the entry-point cannot be validated end-to-end without bench access. Operator-initiated entry on `/midi/devices` (the "Generate device-pack from connected adapter…" Carbon Button) lands today; the Connections-page Tag lands in T2492-2.
+- **T2492-2** — Connections-page entry point + auto-detection. Hook `useDeviceConnections` to flag adapters where no profile_key resolves; render the Carbon Tag per row; auto-open the wizard pre-populated with the device's USB descriptor on click. Includes operator-curated edits inside steps 3-4 of the wizard (currently text-area scaffolding; future iter adds Carbon SyntaxHighlighter + per-block edit inline).
+- **T2492-3** — XML/JS scaffolding sophistication: when the Mixxx lookup hits, copy the matched XML/JS as the seed (preserving GPL-2.0-or-later attribution per the T2459 license posture); when no Mixxx match, generate skeleton XML matching the Mixxx schema.
+- **T2492-4** — Commit-to-disk auditability: every committed pack carries `runtime_extra.created_via = "auto-generator"` + `runtime_extra.mixxx_template = "<upstream filename>"` for provenance.
+- **T2492-5** — Closeout: evidence run, doc updates, test totals.
+
+**Cross-references.**
+- Design doc (this kickoff): `docs/architecture/DEVICE_PACK_AUTO_GENERATION.md`
+- Mixxx imports: `device-packs/_mixx-imports/` (T2459-E5)
+- Lookup index (new in this kickoff): `device-packs/_lookup-index/`
+- T2459 controller-layer locked decisions: `docs/architecture/CONTROLLER_LAYER.md` (sets the device-pack format)
+- T2485 unified MIDI surface: `docs/architecture/MIDI_SERVICES_CLOSED_OUT.md` (where the entry points live)
+- License posture: AGPLv3 imports GPL-2.0-or-later via the GPLv3 upward chain; pack output retains Mixxx attribution where templates were used.
+
+**Status:** [>] In Progress 2026-05-02 (T2492-1 vertical slice in flight).

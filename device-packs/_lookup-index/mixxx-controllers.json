@@ -1,0 +1,291 @@
+{
+  "schema_version": 1,
+  "generated_at": "2026-05-02T23:47:30.390345Z",
+  "mixxx_upstream_commit": "9d5df54b7a81c949a40b53c5ace60c6c4f78aa3f",
+  "stats": {
+    "midi_xml_skipped": 144,
+    "hid_bulk_xml_parsed": 20,
+    "vid_pid_entries": 20
+  },
+  "entries": [
+    {
+      "vid": "0x054c",
+      "pid": "0x0268",
+      "device_name": "Sony SixxAxis",
+      "mapping_file": "device-packs/_mixx-imports/res/controllers/Sony SixxAxis.hid.xml",
+      "script_files": [
+        "common-hid-packet-parser.js",
+        "Sony-SixxAxis.js"
+      ],
+      "protocol": "hid",
+      "interface_number": "0x1",
+      "usage_page": "0x1",
+      "usage": "0x4"
+    },
+    {
+      "vid": "0x057e",
+      "pid": "0x0306",
+      "device_name": "Nintendo Wii Remote",
+      "mapping_file": "device-packs/_mixx-imports/res/controllers/Nintendo Wiimote.hid.xml",
+      "script_files": [
+        "common-hid-packet-parser.js",
+        "Nintendo-Wiimote.js"
+      ],
+      "protocol": "hid",
+      "interface_number": "0x1",
+      "usage_page": "0x1",
+      "usage": "0x5"
+    },
+    {
+      "vid": "0x057e",
+      "pid": "0x0330",
+      "device_name": "Nintendo Wii Remote",
+      "mapping_file": "device-packs/_mixx-imports/res/controllers/Nintendo Wiimote.hid.xml",
+      "script_files": [
+        "common-hid-packet-parser.js",
+        "Nintendo-Wiimote.js"
+      ],
+      "protocol": "hid",
+      "interface_number": "0x1",
+      "usage_page": "0x1",
+      "usage": "0x5"
+    },
+    {
+      "vid": "0x06f8",
+      "pid": "0xb105",
+      "device_name": "Hercules DJ Control MP3 e2 / MP3 LE / Glow",
+      "mapping_file": "device-packs/_mixx-imports/res/controllers/Hercules DJ Control MP3 e2.bulk.xml",
+      "script_files": [
+        "common-bulk-midi.js",
+        "Hercules DJ Control MP3 e2-scripts.js",
+        "Hercules-mp3e2-compat.js"
+      ],
+      "protocol": "bulk",
+      "interface_number": null,
+      "usage_page": null,
+      "usage": null
+    },
+    {
+      "vid": "0x06f8",
+      "pid": "0xb120",
+      "device_name": "Hercules DJ Control MP3 e2 / MP3 LE / Glow",
+      "mapping_file": "device-packs/_mixx-imports/res/controllers/Hercules DJ Control MP3 e2.bulk.xml",
+      "script_files": [
+        "common-bulk-midi.js",
+        "Hercules DJ Control MP3 e2-scripts.js",
+        "Hercules-mp3e2-compat.js"
+      ],
+      "protocol": "bulk",
+      "interface_number": null,
+      "usage_page": null,
+      "usage": null
+    },
+    {
+      "vid": "0x08e4",
+      "pid": "0x014a",
+      "device_name": "Pioneer CDJ HID",
+      "mapping_file": "device-packs/_mixx-imports/res/controllers/Pioneer CDJ HID.hid.xml",
+      "script_files": [
+        "common-hid-packet-parser.js",
+        "Pioneer-CDJ-HID.js"
+      ],
+      "protocol": "hid",
+      "interface_number": "0x1",
+      "usage_page": "0xffa0",
+      "usage": "0x1"
+    },
+    {
+      "vid": "0x08e4",
+      "pid": "0x014b",
+      "device_name": "Pioneer CDJ HID",
+      "mapping_file": "device-packs/_mixx-imports/res/controllers/Pioneer CDJ HID.hid.xml",
+      "script_files": [
+        "common-hid-packet-parser.js",
+        "Pioneer-CDJ-HID.js"
+      ],
+      "protocol": "hid",
+      "interface_number": "0x1",
+      "usage_page": "0xffa0",
+      "usage": "0x1"
+    },
+    {
+      "vid": "0x08e4",
+      "pid": "0x0157",
+      "device_name": "Pioneer CDJ HID",
+      "mapping_file": "device-packs/_mixx-imports/res/controllers/Pioneer CDJ HID.hid.xml",
+      "script_files": [
+        "common-hid-packet-parser.js",
+        "Pioneer-CDJ-HID.js"
+      ],
+      "protocol": "hid",
+      "interface_number": "0x1",
+      "usage_page": "0xffa0",
+      "usage": "0x1"
+    },
+    {
+      "vid": "0x1157",
+      "pid": "0x0300",
+      "device_name": "EKS Otus HID",
+      "mapping_file": "device-packs/_mixx-imports/res/controllers/EKS Otus.hid.xml",
+      "script_files": [
+        "common-hid-packet-parser.js",
+        "EKS-Otus.js"
+      ],
+      "protocol": "hid",
+      "interface_number": "0x3",
+      "usage_page": "0xffa0",
+      "usage": "0x1"
+    },
+    {
+      "vid": "0x17cc",
+      "pid": "0x1101",
+      "device_name": "Native Instruments Traktor Kontrol S2 Mk1",
+      "mapping_file": "device-packs/_mixx-imports/res/controllers/Traktor Kontrol S2 Mk1.hid.xml",
+      "script_files": [
+        "common-hid-packet-parser.js",
+        "Traktor-Kontrol-S2-MK1-hid-scripts.js"
+      ],
+      "protocol": "hid",
+      "interface_number": null,
+      "usage_page": null,
+      "usage": null
+    },
+    {
+      "vid": "0x17cc",
+      "pid": "0x1120",
+      "device_name": "Native Instruments Traktor Kontrol F1",
+      "mapping_file": "device-packs/_mixx-imports/res/controllers/Traktor Kontrol F1.hid.xml",
+      "script_files": [
+        "common-hid-packet-parser.js",
+        "Traktor-Kontrol-F1-scripts.js"
+      ],
+      "protocol": "hid",
+      "interface_number": "0x1",
+      "usage_page": "0x1ff",
+      "usage": "0x1"
+    },
+    {
+      "vid": "0x17cc",
+      "pid": "0x1210",
+      "device_name": "Native Instruments Traktor Kontrol Z1",
+      "mapping_file": "device-packs/_mixx-imports/res/controllers/Traktor Kontrol Z1.hid.xml",
+      "script_files": [
+        "common-hid-packet-parser.js",
+        "Traktor-Kontrol-Z1-scripts.js"
+      ],
+      "protocol": "hid",
+      "interface_number": null,
+      "usage_page": null,
+      "usage": null
+    },
+    {
+      "vid": "0x17cc",
+      "pid": "0x1310",
+      "device_name": "Traktor Kontrol S4 MK2",
+      "mapping_file": "device-packs/_mixx-imports/res/controllers/Traktor Kontrol S4 MK2.hid.xml",
+      "script_files": [
+        "common-hid-packet-parser.js",
+        "Traktor-Kontrol-S4-MK2-hid-scripts.js"
+      ],
+      "protocol": "hid",
+      "interface_number": "0x4",
+      "usage_page": "0xff01",
+      "usage": "0x1"
+    },
+    {
+      "vid": "0x17cc",
+      "pid": "0x1320",
+      "device_name": "Native Instruments Traktor Kontrol S2 MK2",
+      "mapping_file": "device-packs/_mixx-imports/res/controllers/Traktor Kontrol S2 Mk2.hid.xml",
+      "script_files": [
+        "common-hid-packet-parser.js",
+        "Traktor-Kontrol-S2-MK2-hid-scripts.js"
+      ],
+      "protocol": "hid",
+      "interface_number": "0x3",
+      "usage_page": "0x0",
+      "usage": "0x0"
+    },
+    {
+      "vid": "0x17cc",
+      "pid": "0x1710",
+      "device_name": "Traktor Kontrol S2 MK3",
+      "mapping_file": "device-packs/_mixx-imports/res/controllers/Traktor Kontrol S2 MK3.hid.xml",
+      "script_files": [
+        "common-hid-packet-parser.js",
+        "Traktor-Kontrol-S2-MK3-hid-scripts.js"
+      ],
+      "protocol": "hid",
+      "interface_number": "0x3",
+      "usage_page": "0xff01",
+      "usage": "0x1"
+    },
+    {
+      "vid": "0x17cc",
+      "pid": "0x1720",
+      "device_name": "Traktor Kontrol S4 MK3",
+      "mapping_file": "device-packs/_mixx-imports/res/controllers/Traktor Kontrol S4 MK3.hid.xml",
+      "script_files": [
+        "Traktor-Kontrol-S4-MK3.js"
+      ],
+      "protocol": "hid",
+      "interface_number": "0x3",
+      "usage_page": "0xff01",
+      "usage": "0x0"
+    },
+    {
+      "vid": "0x17cc",
+      "pid": "0x1720",
+      "device_name": "Traktor Kontrol S4 MK3 (Screens)",
+      "mapping_file": "device-packs/_mixx-imports/res/controllers/Traktor Kontrol S4 MK3.bulk.xml",
+      "script_files": [
+        "TraktorKontrolS4MK3Screens.qml"
+      ],
+      "protocol": "bulk",
+      "interface_number": "0x04",
+      "usage_page": null,
+      "usage": null
+    },
+    {
+      "vid": "0x17cc",
+      "pid": "0x1900",
+      "device_name": "Traktor Kontrol S3",
+      "mapping_file": "device-packs/_mixx-imports/res/controllers/Traktor Kontrol S3.hid.xml",
+      "script_files": [
+        "common-hid-packet-parser.js",
+        "Traktor-Kontrol-S3-hid-scripts.js"
+      ],
+      "protocol": "hid",
+      "interface_number": "0x3",
+      "usage_page": "0xff01",
+      "usage": "0x1"
+    },
+    {
+      "vid": "0x17cc",
+      "pid": "0x2420",
+      "device_name": "Traktor MX2",
+      "mapping_file": "device-packs/_mixx-imports/res/controllers/Traktor MX2.hid.xml",
+      "script_files": [
+        "common-hid-packet-parser.js",
+        "Traktor-MX2-hid-scripts.js"
+      ],
+      "protocol": "hid",
+      "interface_number": "0x3",
+      "usage_page": "0xff01",
+      "usage": "0x1"
+    },
+    {
+      "vid": "0xdead",
+      "pid": "0xbeaf",
+      "device_name": "Dummy Device (Screens)",
+      "mapping_file": "device-packs/_mixx-imports/res/controllers/Dummy Device Screen.hid.xml",
+      "script_files": [
+        "DummyDeviceDefaultScreen.qml"
+      ],
+      "protocol": "hid",
+      "interface_number": null,
+      "usage_page": null,
+      "usage": null
+    }
+  ]
+}

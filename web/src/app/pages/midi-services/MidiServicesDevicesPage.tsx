@@ -10,7 +10,7 @@
  *   Device | Vendor | Profile | Bindings | Enabled | Editor
  */
 
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import { Link as RouterLink, useNavigate } from 'react-router-dom'
 import {
   Button,
@@ -29,10 +29,14 @@ import {
   TableRow,
   Tag,
 } from '@carbon/react'
-import { ArrowRight } from '@carbon/icons-react'
+import { ArrowRight, AddAlt } from '@carbon/icons-react'
 
 import { useDevicePackBindings, type DevicePackProfileRow } from './useDevicePackBindings'
 import { resolveDevicePackEditor } from './devicePackEditorRoutes'
+import {
+  DevicePackGeneratorModal,
+  type DevicePackGeneratorTriggerDevice,
+} from '../../components/DevicePackGenerator/DevicePackGeneratorModal'
 import './MidiServicesDevicesPage.css'
 
 interface DeviceTableRow {
@@ -77,6 +81,16 @@ export function MidiServicesDevicesPage() {
   const { rows, isLoading, isError } = useDevicePackBindings()
   const tableRows = useMemo(() => rowsFromProfiles(rows), [rows])
   const navigate = useNavigate()
+  // T2492-1 — wizard modal state. Auto-detection of unknown adapters
+  // via useDeviceConnections is queued as T2492-2; for now the entry
+  // is operator-initiated.
+  const [generatorOpen, setGeneratorOpen] = useState(false)
+  const [generatorDevice, setGeneratorDevice] =
+    useState<DevicePackGeneratorTriggerDevice | null>(null)
+  const openGenerator = (device: DevicePackGeneratorTriggerDevice) => {
+    setGeneratorDevice(device)
+    setGeneratorOpen(true)
+  }
 
   return (
     <Section className="midi-services-devices">
@@ -116,6 +130,40 @@ export function MidiServicesDevicesPage() {
           Open Connections
         </Button>
       </div>
+
+      {/* T2492-1 — operator-initiated device-pack generator entry point.
+          Auto-detection of unknown adapters via useDeviceConnections
+          (T2492-2 follow-up) will eventually prompt operators on hot-
+          plug; for now operators open the wizard manually with a
+          placeholder VID:PID they can edit on Step 1. */}
+      <div
+        className="midi-services-devices__generator-cta"
+        style={{ marginBlock: 'var(--cds-spacing-04, 0.75rem)' }}
+      >
+        <Button
+          kind="tertiary"
+          size="sm"
+          renderIcon={() => <AddAlt aria-hidden />}
+          iconDescription="Generate device-pack"
+          onClick={() =>
+            openGenerator({
+              vid: '0x0000',
+              pid: '0x0000',
+              alsa_name: '',
+              usb_manufacturer: '',
+              usb_product: '',
+            })
+          }
+        >
+          Generate device-pack from connected adapter…
+        </Button>
+      </div>
+
+      <DevicePackGeneratorModal
+        open={generatorOpen}
+        device={generatorDevice}
+        onClose={() => setGeneratorOpen(false)}
+      />
 
       {isError ? (
         <InlineNotification
