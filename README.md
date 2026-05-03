@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1475** Python | **1485** TypeScript | **179** C++/H | **146** Docs | **3676** total commits | **3** stars | **0** forks | **0** open issues
+**1475** Python | **1485** TypeScript | **179** C++/H | **146** Docs | **3680** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`74c6a059`](https://github.com/matthewmackes/map2-audio/commit/74c6a059aa97798d170938a5ab267a092edb6e26) | chore(worklist): close out T_RENAME — all 7 slices shippe... | Map2 Audio | 2026-05-03 |
+| [`86413067`](https://github.com/matthewmackes/map2-audio/commit/86413067ba595cc6f9e9208ca83bc31e4c8e3d45) | fix(sequencer): align query keys with runtime hook + rest... | Map2 Audio | 2026-05-03 |
+| [`63217a40`](https://github.com/matthewmackes/map2-audio/commit/63217a40b2689886de9f10cd14bd40cedbd538ec) | test(rename+prefetch): T_RENAME label fix + AVB prefetch ... | Map2 Audio | 2026-05-03 |
+| [`0106ac2a`](https://github.com/matthewmackes/map2-audio/commit/0106ac2a14590d3e00f7a382904518ae7cef099b) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-03 |
 | [`b2e4bfbc`](https://github.com/matthewmackes/map2-audio/commit/b2e4bfbcb06b89262282aa41cda03e81d184f67d) | refactor(rename): Brain / Drums&Synth / Performance Brain... | Map2 Audio | 2026-05-03 |
 | [`6a6f4cd5`](https://github.com/matthewmackes/map2-audio/commit/6a6f4cd53f2d16f300d4d9e716b4780580401108) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-03 |
 | [`ed189b70`](https://github.com/matthewmackes/map2-audio/commit/ed189b70699d92521b2e7f048328cc1aebd42215) | refactor(nav): merge /chains into /node-ops/audio-engine ... | Map2 Audio | 2026-05-03 |
 | [`51f606db`](https://github.com/matthewmackes/map2-audio/commit/51f606dbf842340872308cbf52e1e96d9ab3ee2a) | refactor(nav): canonical /node-ops + /artifacts + /about ... | Map2 Audio | 2026-05-03 |
-| [`2e6c0898`](https://github.com/matthewmackes/map2-audio/commit/2e6c08980e1b91ba90703261d1a94ed7d717f71f) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-03 |
-| [`4612dfaf`](https://github.com/matthewmackes/map2-audio/commit/4612dfaf8d889d4540cbde6a789e53bda1419125) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-03 |
-| [`8626d7a9`](https://github.com/matthewmackes/map2-audio/commit/8626d7a959974d1098866c5161c5db44b0e1e33f) | chore(T2459-H slice 19): 10-loop MIDI campaign closeout e... | Map2 Audio | 2026-05-03 |
-| [`a751e97d`](https://github.com/matthewmackes/map2-audio/commit/a751e97d0fbe9b33b246e44e3692883dc49dc5cf) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-03 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
