@@ -1183,7 +1183,14 @@ Completion note: 2026-04-28 — Codex: **Slice 1 SHIPPED (shared MIDI curve enum
   - 7 new pytest cases in `tests/test_lexicon_mpx1_pack_t2459h4.py` cover: pack files exist; canonical id loads through the registry; legacy alias resolves with `profile_id_canonical`; identity matches pack YAML; front-panel control rows present (CC 7 Adjust, CC 64 Bypass, CC 65 Tap, status-0xC0 program-change, 0xF0 SysEx sentinel); script reference resolves; pack manifest declares canonical metadata; settings include `mpx1_program_offset` + `mpx1_sysex_passthrough`.
   - Out of scope (stays Python-owned): `app/services/mpx1_service.py` (database-backed librarian + preset registry), `app/services/mpx1_syx_parser.py` (SysEx parser; tag-extraction already routes through device-pack JS runtime per Slice 4), `app/services/mpx1_simulator.py`. The new device-pack profile is the controller-host-side authoring surface; the Python services keep the SysEx-heavy + DB-heavy responsibilities.
   Validation: `pytest -q tests/test_lexicon_mpx1_pack_t2459h4.py tests/test_maschine_mk1_pack_t2459h4.py tests/test_midi_device_profiles_t2459h3.py` → **23 passed**.
-Last updated: 2026-05-03 EDT - Claude: slice 7 (Lexicon MPX-1 device-pack registry wiring) shipped; H4 remains in progress pending IntelFX (Slice 8 next), Maschine MK1 HID/USB control surface migration, and bench HIL parity.
+  2026-05-03 — Claude: **Slice 8 SHIPPED (Rocktron IntelFX device-pack registry wiring).**
+  Delivered:
+  - Pre-existing pack `device-packs/rocktron/{pack.yaml,profiles/intelfx.midi.yaml,scripts/intelfx.js}` is now loaded by `MIDIDeviceProfileService` under canonical id `rocktron_intelfx` with legacy alias `intelfx`.
+  - `app/services/midi_device_profiles.py` gains `ROCKTRON_INTELFX_PROFILE_ID`, `LEGACY_ROCKTRON_INTELFX_PROFILE_ID`, `ROCKTRON_INTELFX_PACK_PROFILE_PATH`, `_build_rocktron_intelfx_profile_from_device_pack()`, `_load_rocktron_intelfx_profile()`, and `is_rocktron_intelfx_profile_id()` helpers — same loader pattern as MPX-1 / Maschine MK1 / MeloAudio.
+  - 8 new pytest cases in `tests/test_rocktron_intelfx_pack_t2459h4.py` covering pack files, canonical id, legacy alias, identity, front-panel control rows (Adjust / Bypass / Tap / PC / SysEx sentinel), script reference, pack manifest metadata, settings.
+  - Out of scope (stays Python-owned): `app/services/intelfx_service.py` (database-backed librarian + preset registry), `app/services/intelfx_syx_parser.py` (SysEx parser; tag-extraction routes through device-pack JS runtime per Slice 5), `app/services/intelfx_simulator.py`. The MPX-1 + IntelFX pattern now mirrors exactly across two devices: front-panel CC/PC + SysEx sentinel in YAML; Python keeps SysEx body parsing + DB-backed preset management.
+  Validation: `pytest -q tests/test_rocktron_intelfx_pack_t2459h4.py tests/test_lexicon_mpx1_pack_t2459h4.py tests/test_maschine_mk1_pack_t2459h4.py tests/test_midi_device_profiles_t2459h3.py` → **31 passed**.
+Last updated: 2026-05-03 EDT - Claude: slice 8 (Rocktron IntelFX device-pack registry wiring) shipped; H4 remains in progress pending Maschine MK1 HID/USB control surface migration + bench HIL parity.
 
 ---
 

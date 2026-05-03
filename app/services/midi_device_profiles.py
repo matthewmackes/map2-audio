@@ -34,6 +34,8 @@ MASCHINE_MK1_PROFILE_ID = "native_instruments_maschine_mk1"
 LEGACY_MASCHINE_MK1_PROFILE_ID = "maschine_mk1"
 LEXICON_MPX1_PROFILE_ID = "lexicon_mpx1"
 LEGACY_LEXICON_MPX1_PROFILE_ID = "mpx1"
+ROCKTRON_INTELFX_PROFILE_ID = "rocktron_intelfx"
+LEGACY_ROCKTRON_INTELFX_PROFILE_ID = "intelfx"
 BANK_UP_CC = 85
 BANK_DOWN_CC = 86
 BUTTON_CC_BY_ID: Dict[str, int] = {
@@ -72,6 +74,13 @@ LEXICON_MPX1_PACK_PROFILE_PATH = (
     / "lexicon"
     / "profiles"
     / "mpx1.midi.yaml"
+)
+ROCKTRON_INTELFX_PACK_PROFILE_PATH = (
+    Path(__file__).resolve().parents[2]
+    / "device-packs"
+    / "rocktron"
+    / "profiles"
+    / "intelfx.midi.yaml"
 )
 
 
@@ -370,6 +379,66 @@ def _build_lexicon_mpx1_profile_from_device_pack() -> DeviceProfile:
     )
 
 
+def _build_rocktron_intelfx_profile_from_device_pack() -> DeviceProfile:
+    """Load the Rocktron IntelFX MIDI profile from device-packs.
+
+    The IntelliFex (IntelFX) front-panel exposes a small CC/PC
+    surface (Adjust knob CC 7, Bypass CC 64, Tap CC 65, program-
+    change). The bulk of operator interaction rides Rocktron's
+    3-byte SysEx manufacturer ID (00 01 56) via
+    `app/services/intelfx_syx_parser.py` (T2459-H4 Slice 5
+    migrated tag-extraction to the device-pack JS runtime; the
+    parser body itself remains Python-owned).
+
+    Raises ValueError when the pack profile cannot be read or is malformed.
+    """
+    if not ROCKTRON_INTELFX_PACK_PROFILE_PATH.exists():
+        raise ValueError(
+            f"missing Rocktron IntelFX profile at {ROCKTRON_INTELFX_PACK_PROFILE_PATH}"
+        )
+
+    doc = yaml.safe_load(ROCKTRON_INTELFX_PACK_PROFILE_PATH.read_text(encoding="utf-8"))
+    if not isinstance(doc, dict):
+        raise ValueError("Rocktron IntelFX profile YAML did not parse to an object")
+
+    identity = doc.get("identity", {}) if isinstance(doc.get("identity"), dict) else {}
+    manufacturer = str(identity.get("manufacturer") or "Rocktron")
+    model = str(identity.get("model") or "intelfx")
+    alsa_pattern = str(identity.get("alsa_client_pattern") or "IntelliFex")
+
+    return DeviceProfile(
+        profile_id=ROCKTRON_INTELFX_PROFILE_ID,
+        name="Rocktron IntelliFex Multi-Effects Processor",
+        manufacturer=manufacturer,
+        description=(
+            "Rocktron IntelliFex (IntelFX) multi-effects processor: "
+            "front-panel Adjust (CC 7), Bypass (CC 64), Tap (CC 65), "
+            "and program-change for the preset catalog. SysEx "
+            "preset / parameter operations stay Python-owned in "
+            "intelfx_service.py + intelfx_syx_parser.py (Rocktron "
+            "manufacturer ID 00 01 56); this profile covers the "
+            "front-panel MIDI surface only."
+        ),
+        icon="🎛️",
+        is_recommended=False,
+        usb_vendor_id=None,  # Connects via 5-pin DIN through a USB-MIDI bridge
+        usb_product_id=None,
+        name_patterns=[
+            alsa_pattern,
+            "IntelliFex",
+            "IntelFX",
+            "Rocktron IntelliFex",
+            "rocktron-intelfx",
+            manufacturer,
+            model,
+        ],
+        footswitches=[],
+        expression_pedals=[],
+        bank_config=None,
+        supports_firmware_update=False,
+    )
+
+
 def _build_maschine_mk1_profile_from_device_pack() -> DeviceProfile:
     """Load the Maschine MK1 MIDI-mode profile from device-packs.
 
@@ -433,10 +502,12 @@ class MIDIDeviceProfileService:
             LEGACY_MIDI_COMMANDER_PROFILE_ID: MIDI_COMMANDER_PROFILE_ID,
             LEGACY_MASCHINE_MK1_PROFILE_ID: MASCHINE_MK1_PROFILE_ID,
             LEGACY_LEXICON_MPX1_PROFILE_ID: LEXICON_MPX1_PROFILE_ID,
+            LEGACY_ROCKTRON_INTELFX_PROFILE_ID: ROCKTRON_INTELFX_PROFILE_ID,
         }
         self._load_meloaudio_profile()
         self._load_maschine_mk1_profile()
         self._load_lexicon_mpx1_profile()
+        self._load_rocktron_intelfx_profile()
         self._active_profile: Optional[DeviceProfile] = None
         self._active_profile_id: Optional[str] = None
         self._bank_state: Dict[str, int] = {}  # profile_id -> current_bank
@@ -473,11 +544,26 @@ class MIDIDeviceProfileService:
                 exc,
             )
 
+    def _load_rocktron_intelfx_profile(self) -> None:
+        try:
+            self._profiles[ROCKTRON_INTELFX_PROFILE_ID] = (
+                _build_rocktron_intelfx_profile_from_device_pack()
+            )
+        except Exception as exc:
+            logger.error(
+                "Failed to load Rocktron IntelFX profile from device-pack (%s). "
+                "Rocktron IntelFX profile surfaces will be unavailable until fixed.",
+                exc,
+            )
+
     def is_maschine_mk1_profile_id(self, profile_id: str | None) -> bool:
         return self._resolve_profile_id(profile_id) == MASCHINE_MK1_PROFILE_ID
 
     def is_lexicon_mpx1_profile_id(self, profile_id: str | None) -> bool:
         return self._resolve_profile_id(profile_id) == LEXICON_MPX1_PROFILE_ID
+
+    def is_rocktron_intelfx_profile_id(self, profile_id: str | None) -> bool:
+        return self._resolve_profile_id(profile_id) == ROCKTRON_INTELFX_PROFILE_ID
 
     def _resolve_profile_id(self, profile_id: str | None) -> str | None:
         if profile_id is None:
