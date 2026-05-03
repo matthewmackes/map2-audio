@@ -215,7 +215,16 @@ export function WorkspaceCatalogArtwork({ item }: { item: LauncherCatalogItem })
     width: 10 + ((seed + (index * 7)) % 6),
   }))
   const title = truncateLabel(item.shortLabel ?? item.heroTitle, 18)
-  const routeLabel = truncateLabel(item.route.replace('/platforms/', 'platforms/').replace(/^\//, ''), 18)
+  // Nav reorg 2026-05-03 (second pass) — strip both legacy `/platforms/`
+  // and canonical `/node-ops/` leading-slash patterns so artwork
+  // captions stay clean for both legacy and post-reorg saved routes.
+  const routeLabel = truncateLabel(
+    item.route
+      .replace('/platforms/', 'platforms/')
+      .replace('/node-ops/', 'node-ops/')
+      .replace(/^\//, ''),
+    18,
+  )
 
   return (
     <div className={`platform-launchers-art ${toneClass(item)}`} aria-hidden="true">

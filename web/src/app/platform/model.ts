@@ -1,7 +1,6 @@
 export const PLATFORM_LAYER_IDS = [
   'overview',
   'management',
-  'avb-routing',
   'network-discovery',
   'cluster-dashboard',
 ] as const
@@ -95,13 +94,6 @@ export const PLATFORM_LAYER_META: PlatformLayerMeta[] = [
     accent: 'var(--cds-support-success)',
   },
   {
-    id: 'avb-routing',
-    label: 'AVB Routing',
-    shortLabel: 'AVB',
-    description: 'AVB and TSN stream availability, timing health, and route pressure.',
-    accent: 'var(--cds-support-info)',
-  },
-  {
     id: 'network-discovery',
     label: 'Network Discovery',
     shortLabel: 'Discovery',
@@ -121,12 +113,14 @@ export function isPlatformLayerId(value: string | null | undefined): value is Pl
   return typeof value === 'string' && PLATFORM_LAYER_IDS.includes(value as PlatformLayerId)
 }
 
+// Nav reorg 2026-05-03 (second pass) — canonical platform layer
+// hrefs live under `/node-ops/<id>` (was `/platforms/<id>`).
 export function buildPlatformHref(layerId?: PlatformLayerId | null): string {
-  return layerId ? `/platforms/${encodeURIComponent(layerId)}` : '/platforms/overview'
+  return layerId ? `/node-ops/${encodeURIComponent(layerId)}` : '/node-ops/overview'
 }
 
 export function buildClusterDashboardHref(): string {
-  return '/platforms/cluster-dashboard'
+  return '/node-ops/cluster-dashboard'
 }
 
 export function makePlatformHealthRecord<T>(valueFactory: (layerId: PlatformLayerId) => T): Record<PlatformLayerId, T> {

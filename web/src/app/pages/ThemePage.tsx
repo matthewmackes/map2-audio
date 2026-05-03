@@ -592,7 +592,7 @@ export function ThemePage() {
     const nextSearchParams = new URLSearchParams(searchParams)
     nextSearchParams.delete('themeModal')
     const nextQuery = nextSearchParams.toString()
-    navigate(`/platforms/theme${nextQuery ? `?${nextQuery}` : ''}`, { replace: true })
+    navigate(`/node-ops/theme${nextQuery ? `?${nextQuery}` : ''}`, { replace: true })
   }, [navigate, searchParams])
 
   useEffect(() => {

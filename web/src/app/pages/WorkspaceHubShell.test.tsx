@@ -71,20 +71,24 @@ describe('WorkspaceHubShell', () => {
     mockUseUnifiedWorkspaceData.mockImplementation(buildWorkspaceData)
   })
 
-  it('redirects the bare /workspace route into the platforms overview scaffold', async () => {
+  // Nav reorg 2026-05-03 (second pass) — `WorkspaceHubShell` is now
+  // mounted at `/node-ops/*` (was `/workspace/*`). The index redirect
+  // points at `/node-ops/overview`. Audio Artifacts has its own
+  // top-level `/artifacts/*` mount that also uses this same shell.
+  it('redirects the bare /node-ops route into the canonical overview', async () => {
     render(
       <MemoryRouter
-        initialEntries={['/workspace']}
+        initialEntries={['/node-ops']}
         future={{
           v7_startTransition: true,
           v7_relativeSplatPath: true,
         }}
       >
         <Routes>
-          <Route path="/workspace/*" element={<WorkspaceHubShell />}>
+          <Route path="/node-ops/*" element={<WorkspaceHubShell />}>
             <Route index element={<WorkspaceHubIndexRedirect />} />
             <Route
-              path="platforms/overview"
+              path="overview"
               element={<WorkspaceStubSection title="Platforms" summaryLabel="4 layers · 1 alert" />}
             />
           </Route>
@@ -99,19 +103,19 @@ describe('WorkspaceHubShell', () => {
     expect(screen.getByLabelText('Platforms summary')).toHaveTextContent('4 layers · 1 alert')
   })
 
-  it('renders routed workspace content without the legacy title strip chrome', async () => {
+  it('renders routed artifacts content without the legacy title strip chrome', async () => {
     render(
       <MemoryRouter
-        initialEntries={['/workspace/artifacts?category=snapshots']}
+        initialEntries={['/artifacts?category=snapshots']}
         future={{
           v7_startTransition: true,
           v7_relativeSplatPath: true,
         }}
       >
         <Routes>
-          <Route path="/workspace/*" element={<WorkspaceHubShell />}>
+          <Route path="/artifacts/*" element={<WorkspaceHubShell />}>
             <Route
-              path="artifacts"
+              index
               element={<WorkspaceStubSection title="Audio Artifacts" summaryLabel="2 native plugins · 4 soundfonts" />}
             />
           </Route>

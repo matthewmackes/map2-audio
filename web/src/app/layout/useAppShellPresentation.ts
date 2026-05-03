@@ -58,7 +58,12 @@ export function useAppShellPresentation({
   }, [canonicalPathname])
 
   const isDesktopRoute = pathname === '/'
-  const isPlatformWorkspaceRoute = canonicalPathname === '/workspace' || canonicalPathname.startsWith('/workspace/')
+  // Nav reorg 2026-05-03 (second pass) — match the canonical
+  // `/node-ops` mount as well as the legacy `/workspace`.
+  const isPlatformWorkspaceRoute = canonicalPathname === '/workspace'
+    || canonicalPathname.startsWith('/workspace/')
+    || canonicalPathname === '/node-ops'
+    || canonicalPathname.startsWith('/node-ops/')
   const isIntegratedWorkspaceRoute =
     isPlatformWorkspaceRoute
     || canonicalPathname.startsWith('/midi-hub')

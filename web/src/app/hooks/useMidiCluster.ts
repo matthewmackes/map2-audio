@@ -18,6 +18,8 @@ function useMidiClusterCadence(visibleMs: number, hiddenMs: number, inactiveMs: 
       || canonicalPathname.startsWith('/midi-hub/')
       || canonicalPathname === '/workspace'
       || canonicalPathname.startsWith('/workspace/')
+      || canonicalPathname === '/node-ops'
+      || canonicalPathname.startsWith('/node-ops/')
       || canonicalPathname === PLATFORM_WORKSPACE_BASE_PATH
       || canonicalPathname.startsWith(`${PLATFORM_WORKSPACE_BASE_PATH}/`)
     )

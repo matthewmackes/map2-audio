@@ -165,7 +165,14 @@ export function pageKeyFromPathname(pathname: string): string | null {
   if (canonicalPathname.startsWith('/engine')) {
     return NODE_PAGE_KEYS.audioEngine
   }
-  if (canonicalPathname === '/workspace' || canonicalPathname.startsWith('/workspace/')) {
+  // Nav reorg 2026-05-03 (second pass) — both legacy `/workspace` and
+  // canonical `/node-ops` map to the platform page key.
+  if (
+    canonicalPathname === '/workspace'
+    || canonicalPathname.startsWith('/workspace/')
+    || canonicalPathname === '/node-ops'
+    || canonicalPathname.startsWith('/node-ops/')
+  ) {
     return NODE_PAGE_KEYS.platform
   }
   if (canonicalPathname.startsWith('/plugins')) {

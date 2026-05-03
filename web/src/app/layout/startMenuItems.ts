@@ -14,6 +14,10 @@ type StartMenuDefinition = {
 
 const START_MENU_DEFINITIONS: StartMenuDefinition[] = [
   {
+    // Nav reorg 2026-05-03 (second pass) — canonical mount is now
+    // `/node-ops/management`. The lookup route below is retained as
+    // the legacy id (matched against PINNED_ROUTE_ALIASES) so any
+    // saved Start Menu pin still resolves correctly via the alias map.
     lookupRoute: '/platforms/management',
     route: buildWorkspaceHubPlatformPath('management'),
     label: 'Device(s) Manager',

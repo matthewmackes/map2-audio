@@ -75,8 +75,10 @@ describe('useSpecialSettings', () => {
 
     await waitFor(() => expect(result.current.isLoading).toBe(false))
     expect(result.current.settings?.menuLocation).toBe('hidden')
-    expect(result.current.settings?.pinnedRoutes).toEqual(['/platforms/about'])
-    expect(result.current.settings?.landingTiles).toEqual([{ route: '/workspace', size: 'medium' }])
+    // Nav reorg 2026-05-03 (second pass) — `/welcome` aliases to
+    // `/about`; the required home launcher is now `/node-ops`.
+    expect(result.current.settings?.pinnedRoutes).toEqual(['/about'])
+    expect(result.current.settings?.landingTiles).toEqual([{ route: '/node-ops', size: 'medium' }])
     expect(result.current.settings?.snapshotSetlistMode).toBe(true)
     expect(result.current.settings?.snapshotSetlistOrder).toEqual([9, 12])
     expect(result.current.settings?.['snapshot_editor.flow_animation']).toBe('packet')

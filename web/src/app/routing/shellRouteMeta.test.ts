@@ -2,9 +2,17 @@ import { resolveShellRouteMeta } from './shellRouteMeta'
 
 describe('resolveShellRouteMeta', () => {
   it('resolves Node Ops platform routes with canonical labels', () => {
+    // Nav reorg 2026-05-03 (second pass) — canonical mount is now
+    // `/node-ops/<id>` (no `Platforms` middle breadcrumb level).
+    // The legacy `/platforms/api-webhooks` path still resolves but
+    // with the new clean breadcrumb shape.
     const meta = resolveShellRouteMeta('/platforms/api-webhooks')
     expect(meta?.windowLabel).toBe('API Webhooks')
-    expect(meta?.breadcrumbs.map((crumb) => crumb.label)).toEqual(['Node Ops', 'Platforms', 'API Webhooks'])
+    expect(meta?.breadcrumbs.map((crumb) => crumb.label)).toEqual(['Node Ops', 'API Webhooks'])
+
+    const canonical = resolveShellRouteMeta('/node-ops/api-webhooks')
+    expect(canonical?.windowLabel).toBe('API Webhooks')
+    expect(canonical?.breadcrumbs.map((crumb) => crumb.label)).toEqual(['Node Ops', 'API Webhooks'])
   })
 
   it('resolves dynamic device detail routes', () => {
@@ -41,11 +49,30 @@ describe('resolveShellRouteMeta', () => {
   })
 
   it('covers critical app routes', () => {
+    // Nav reorg 2026-05-03 (second pass) — critical-route list now
+    // includes the canonical `/node-ops/*` mounts and the new
+    // `/artifacts` and `/about` top-level mounts. Legacy paths are
+    // retained for one transition cycle.
     const criticalRoutes = [
+      // Canonical post-reorg mounts
+      '/node-ops',
+      '/node-ops/overview',
+      '/node-ops/audio-engine',
+      '/node-ops/network-discovery',
+      '/node-ops/cluster-dashboard',
+      '/node-ops/midpoint',
+      '/node-ops/adoption',
+      '/node-ops/management',
+      '/node-ops/theme',
+      '/artifacts',
+      '/artifacts/discover',
+      '/about',
+      // Legacy fallback routes (still resolve via redirects)
       '/workspace/platforms/overview',
       '/workspace/platforms/audio-engine',
       '/workspace/artifacts',
       '/workspace/artifacts/discover',
+      // Other unchanged routes
       '/brain',
       '/snapshot-editor',
       '/snapshots',

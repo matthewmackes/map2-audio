@@ -628,7 +628,7 @@ export function SnapshotEditorPage() {
     if (doc) {
       params.set('doc', doc)
     }
-    navigate(`/platforms/about?${params.toString()}`)
+    navigate(`/about?${params.toString()}`)
   }, [navigate])
   const closeAudioRoutingWorkspace = useCallback(() => {
     setShowAudioNodesModal(false)

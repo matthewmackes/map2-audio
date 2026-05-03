@@ -8,26 +8,37 @@ import {
 } from './launcherCatalog'
 import { HOST_MACHINE_ROUTE } from '../pages/hostMachineRoutes'
 
+// Nav reorg 2026-05-03 (second pass) — canonical post-reorg URLs:
+//   /node-ops, /node-ops/<id>            (was /workspace, /platforms/<id>,
+//                                          /workspace/platforms/<id>)
+//   /artifacts, /artifacts/?category=<>  (was /workspace/artifacts)
+//   /about                                (was /platforms/about)
+// Audio Artifacts is now its own top-level service group; About is no
+// longer a Node Ops child; AVB Routing is on /avb/routing; Device
+// Manager is a Hardware nav child (URL stays under /node-ops/management);
+// Theme is a Settings nav child (URL stays under /node-ops/theme); Chains
+// is a top-level leaf.
+
 describe('launcherCatalog', () => {
   it('keeps standalone routed workspaces in the catalog and removes the migrated fixed Start Menu routes', () => {
     expect(getLauncherCatalogItem('/platforms/launchers')).toBeNull()
-    expect(getLauncherCatalogItem('/workspace')).toMatchObject({
+    expect(getLauncherCatalogItem('/node-ops')).toMatchObject({
       heroTitle: 'Workspaces',
       landingEligible: true,
       navEligible: false,
       directory: 'core',
       storefrontCollections: expect.arrayContaining(['featured', 'platform-essentials']),
       technicalSpecs: expect.arrayContaining([
-        expect.objectContaining({ label: 'Launch path', value: '/workspace' }),
+        expect.objectContaining({ label: 'Launch path', value: '/node-ops' }),
       ]),
     })
-    expect(getLauncherCatalogItem('/workspace/artifacts')).toMatchObject({
+    expect(getLauncherCatalogItem('/artifacts')).toMatchObject({
       heroTitle: 'Audio Artifacts',
       landingEligible: true,
       navEligible: true,
       directory: 'core',
       technicalSpecs: expect.arrayContaining([
-        expect.objectContaining({ label: 'Launch path', value: '/workspace/artifacts' }),
+        expect.objectContaining({ label: 'Launch path', value: '/artifacts' }),
       ]),
     })
     expect(getLauncherCatalogItem('/brain')).toMatchObject({
@@ -53,6 +64,9 @@ describe('launcherCatalog', () => {
     expect(getLauncherCatalogItem('/audio-table')).toBeNull()
     expect(getLauncherCatalogItem('/drums')).toBeNull()
     expect(getLauncherCatalogItem('/synth-forge')).toBeNull()
+    // Both legacy `/platforms/<id>` and post-reorg `/node-ops/<id>`
+    // sub-routes are excluded from the catalog (they're sections
+    // inside the Node Ops hub, not standalone tiles).
     for (const route of [
       '/juce-grid',
       '/midi-hub',
@@ -71,6 +85,13 @@ describe('launcherCatalog', () => {
       '/platforms/host-machine',
       '/platforms/theme',
       '/platforms/about',
+      '/node-ops/audio-engine',
+      '/node-ops/management',
+      '/node-ops/network-discovery',
+      '/node-ops/cluster-dashboard',
+      '/node-ops/adoption',
+      '/node-ops/theme',
+      '/about',
     ]) {
       expect(getLauncherCatalogItem(route)).toBeNull()
     }
@@ -86,6 +107,7 @@ describe('launcherCatalog', () => {
       { route: '/audio-table', size: 'large' },
       { route: '/platform', size: 'medium' },
       { route: '/hardware-interfaces', size: 'large' },
+      // `/artifacts` is now a real top-level catalog entry.
       { route: '/artifacts', size: 'large' },
       { route: '/platforms/workspace-catalog', size: 'giant' },
       { route: '/platforms/workspace-catalog', size: 'small' },
@@ -93,31 +115,32 @@ describe('launcherCatalog', () => {
       { route: '/platforms/about', size: 'large' },
     ])).toEqual([
       { route: '/brain', size: 'large' },
-      { route: '/workspace', size: 'medium' },
-      { route: '/workspace/artifacts', size: 'large' },
+      // `/platform` resolves via PINNED_ROUTE_ALIASES to `/node-ops`.
+      { route: '/node-ops', size: 'medium' },
+      { route: '/artifacts', size: 'large' },
     ])
   })
 
-  it('keeps the required Workspaces launcher first when present', () => {
+  it('keeps the required Node Ops launcher first when present', () => {
     expect(prioritizeRequiredHomeLauncher([
       { route: '/perform', size: 'small' },
-      { route: '/workspace', size: 'medium' },
-      { route: '/workspace/artifacts', size: 'large' },
+      { route: '/node-ops', size: 'medium' },
+      { route: '/artifacts', size: 'large' },
     ])).toEqual([
-      { route: '/workspace', size: 'medium' },
+      { route: '/node-ops', size: 'medium' },
       { route: '/perform', size: 'small' },
-      { route: '/workspace/artifacts', size: 'large' },
+      { route: '/artifacts', size: 'large' },
     ])
   })
 
-  it('injects the required Workspaces launcher when missing', () => {
+  it('injects the required Node Ops launcher when missing', () => {
     expect(ensureRequiredHomeLauncher([
       { route: '/perform', size: 'small' },
-      { route: '/workspace/artifacts', size: 'large' },
+      { route: '/artifacts', size: 'large' },
     ])).toEqual([
-      { route: '/workspace', size: 'medium' },
+      { route: '/node-ops', size: 'medium' },
       { route: '/perform', size: 'small' },
-      { route: '/workspace/artifacts', size: 'large' },
+      { route: '/artifacts', size: 'large' },
     ])
   })
 
@@ -126,38 +149,58 @@ describe('launcherCatalog', () => {
   })
 
   it('exports tree-child navigation metadata for catalog and nav-only parent routes', () => {
-    expect(getLauncherCatalogTreeChildren('/workspace')).toEqual(
+    // Node Ops children — pure platform infrastructure only.
+    expect(getLauncherCatalogTreeChildren('/node-ops')).toEqual([
+      { route: '/node-ops/overview', label: 'Overview' },
+      { route: '/node-ops/audio-engine', label: 'Audio Engine' },
+      { route: '/node-ops/network-discovery', label: 'Network Discovery' },
+      { route: '/node-ops/cluster-dashboard', label: 'Cluster Dashboard' },
+      { route: '/node-ops/midpoint', label: 'Midpoint' },
+      { route: '/node-ops/adoption', label: 'Adoption' },
+    ])
+
+    // Promoted out of Node Ops:
+    expect(getLauncherCatalogTreeChildren('/node-ops')).not.toEqual(
       expect.arrayContaining([
-        expect.objectContaining({ route: '/workspace/platforms/overview', label: 'Overview' }),
-        expect.objectContaining({ route: '/chains', label: 'Chains' }),
-      ]),
-    )
-    expect(getLauncherCatalogTreeChildren('/workspace')).not.toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({ route: '/workspace/artifacts', label: 'Audio Artifacts' }),
-      ]),
-    )
-    expect(getLauncherCatalogTreeChildren('/workspace')).not.toEqual(
-      expect.arrayContaining([
-        expect.objectContaining({ route: '/workspace/platforms/host-machine', label: 'Host Machine' }),
+        expect.objectContaining({ route: '/chains' }),
+        expect.objectContaining({ route: '/artifacts' }),
+        expect.objectContaining({ route: '/workspace/artifacts' }),
+        expect.objectContaining({ route: '/about' }),
+        expect.objectContaining({ route: '/node-ops/management' }),
+        expect.objectContaining({ route: '/node-ops/theme' }),
+        expect.objectContaining({ route: '/node-ops/avb-routing' }),
       ]),
     )
 
-    expect(getLauncherCatalogTreeChildren('/workspace/artifacts')).toEqual(
+    // Settings group exposes Theme as its sole child.
+    expect(getLauncherCatalogTreeChildren('/settings')).toEqual([
+      { route: '/node-ops/theme', label: 'Theme' },
+    ])
+
+    // Audio Artifacts is its own top-level service group.
+    expect(getLauncherCatalogTreeChildren('/artifacts')).toEqual(
       expect.arrayContaining([
-        { route: '/workspace/artifacts', label: 'Overview' },
-        { route: '/workspace/artifacts?category=lv2-plugins', label: 'LV2 Plugins' },
-        { route: '/workspace/artifacts?category=native-juce', label: 'Native JUCE' },
+        { route: '/artifacts', label: 'Overview' },
+        { route: '/artifacts?category=lv2-plugins', label: 'LV2 Plugins' },
+        { route: '/artifacts?category=native-juce', label: 'Native JUCE' },
       ]),
     )
+
+    // Legacy /workspace key still resolves to the same Node Ops
+    // children object via the alias in LAUNCHER_STOREFRONT_OVERRIDES.
+    expect(getLauncherCatalogTreeChildren('/workspace')).toEqual([
+      { route: '/node-ops/overview', label: 'Overview' },
+      { route: '/node-ops/audio-engine', label: 'Audio Engine' },
+      { route: '/node-ops/network-discovery', label: 'Network Discovery' },
+      { route: '/node-ops/cluster-dashboard', label: 'Cluster Dashboard' },
+      { route: '/node-ops/midpoint', label: 'Midpoint' },
+      { route: '/node-ops/adoption', label: 'Adoption' },
+    ])
 
     expect(getLauncherCatalogTreeChildren('/workspace/physical-surfaces')).toEqual([])
     expect(getLauncherCatalogTreeChildren('/workspace/outboard-hardware')).toEqual([])
 
-    // T2491 (2026-05-02 cleanup) — re-pointed all 7 prior children
-    // from the legacy /midi-hub/* paths to the canonical /midi/* mount
-    // that T2482-T2486 unified to. Added 3 previously-invisible
-    // siblings: Devices (T2485), Bindings (T2483), Routing (T2484).
+    // T2491 (2026-05-02 cleanup) — re-pointed children to canonical /midi/*.
     expect(getLauncherCatalogTreeChildren('/midi-hub')).toEqual([
       { route: '/midi/connections', label: 'Connections' },
       { route: '/midi/devices', label: 'Devices' },

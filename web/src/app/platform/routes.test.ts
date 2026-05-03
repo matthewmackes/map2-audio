@@ -6,8 +6,12 @@ import {
 import { HOST_MACHINE_ROUTE } from '../pages/hostMachineRoutes'
 
 describe('platform routes', () => {
+  // Nav reorg 2026-05-03 (second pass) — canonical platform/panel
+  // mounts moved from `/platforms/<id>` to `/node-ops/<id>`. The
+  // about panel is now `/about` (no `/node-ops/about`); host-machine
+  // keeps its dedicated route.
   it('builds node-aware workspace hrefs when a focus node is supplied', () => {
-    expect(buildPlatformNodeWorkspaceHref('management', 'node-b')).toBe('/platforms/management?focusNodeId=node-b')
+    expect(buildPlatformNodeWorkspaceHref('management', 'node-b')).toBe('/node-ops/management?focusNodeId=node-b')
   })
 
   it('falls back to the plain workspace path when the node id is blank', () => {
@@ -17,7 +21,7 @@ describe('platform routes', () => {
   it('preserves focusNodeId when legacy layer aliases redirect into active platform routes', () => {
     const searchParams = new URLSearchParams('layer=single-node&focusNodeId=node-b')
 
-    expect(buildLegacyPlatformRedirectPath(searchParams)).toBe('/platforms/management?focusNodeId=node-b')
+    expect(buildLegacyPlatformRedirectPath(searchParams)).toBe('/node-ops/management?focusNodeId=node-b')
   })
 
   it('resolves the retired host-machine platform panel to the hardware-owned route', () => {
@@ -28,8 +32,14 @@ describe('platform routes', () => {
   })
 
   it('redirects the retired api-webhooks panel to the Midpoint workspace', () => {
-    expect(buildPlatformWorkspacePath('midpoint')).toBe('/platforms/midpoint')
+    expect(buildPlatformWorkspacePath('midpoint')).toBe('/node-ops/midpoint')
 
-    expect(buildLegacyPlatformRedirectPath(new URLSearchParams('panel=api-webhooks'))).toBe('/platforms/midpoint')
+    expect(buildLegacyPlatformRedirectPath(new URLSearchParams('panel=api-webhooks'))).toBe('/node-ops/midpoint')
+  })
+
+  it('promotes the about panel to its dedicated /about root URL', () => {
+    expect(buildPlatformWorkspacePath('about')).toBe('/about')
+
+    expect(buildLegacyPlatformRedirectPath(new URLSearchParams('panel=about'))).toBe('/about')
   })
 })

@@ -103,7 +103,8 @@ function resolveLandingTiles(data: Record<string, unknown>): LandingTilePlacemen
     return prioritizeRequiredHomeLauncher(ensureRequiredHomeLauncher(normalizedTiles))
   }
 
-  return [{ route: '/workspace', size: 'medium' }]
+  // Nav reorg 2026-05-03 (second pass) — canonical Node Ops base.
+  return [{ route: '/node-ops', size: 'medium' }]
 }
 
 function resolveSnapshotSetlistMode(data: Record<string, unknown>): boolean {

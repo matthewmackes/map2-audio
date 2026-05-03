@@ -37,11 +37,11 @@ describe('TesiraAvbTab', () => {
     })
   })
 
-  it('routes Tesira stream focus into the Platforms AVB workspace', () => {
+  it('routes Tesira stream focus into the canonical /avb/routing workspace', () => {
     render(<TesiraAvbTab deviceId="tesira-1" />)
 
     fireEvent.click(screen.getByRole('button', { name: 'Route' }))
 
-    expect(mockNavigate).toHaveBeenCalledWith('/platforms/avb-routing?focusTesiraDevice=tesira-1&focusEntity=0011aa22bb33cc44')
+    expect(mockNavigate).toHaveBeenCalledWith('/avb/routing?focusTesiraDevice=tesira-1&focusEntity=0011aa22bb33cc44')
   })
 })

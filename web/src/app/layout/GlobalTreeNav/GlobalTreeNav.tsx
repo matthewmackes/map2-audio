@@ -127,10 +127,14 @@ type SnapshotEditorTreeStatus = {
 // want richer grouping now get it on the Hardware Store catalogue.
 
 const BROWSE_DEVICES_TREE_ID = '/hardware::devices::browse'
-const PRIMARY_SEPARATOR_ONE_ID = '__separator-primary-1__'
-const PRIMARY_SEPARATOR_TWO_ID = '__separator-primary-2__'
+// Nav reorg 2026-05-03 — primary separators removed from the top-level
+// tree. The shortcut row above the first separator was demoted into
+// canonical service parents (see TOP_LEVEL_ROUTE_ORDER below); the
+// second separator delimited Platform Guide which is now just another
+// canonical leaf. The buildTreeItems separator branch is kept in case
+// future layouts re-introduce dividers.
 
-const DEFAULT_EXPANDED_IDS: readonly string[] = ['/workspace', '/midi-hub', '/avb', '/hardware', '/hardware::devices']
+const DEFAULT_EXPANDED_IDS: readonly string[] = ['/node-ops', '/artifacts', '/midi-hub', '/avb', '/hardware', '/hardware::devices', '/settings']
 const GLOBAL_TREE_EXPANDED_KEY: PersistedKey<string[]> = {
   storageKey: 'map2:global-tree:expanded',
   fallback: [...DEFAULT_EXPANDED_IDS],
@@ -144,29 +148,44 @@ const GLOBAL_TREE_EXPANDED_KEY: PersistedKey<string[]> = {
     }
   },
 }
+// Nav reorg 2026-05-03 — pure canonical service-grouping hierarchy.
+// The pre-reorg layout had a "shortcut row" above a separator (Home,
+// Snapshot Editor, MIDI Assignments, Drums&Synth, Audio Artifacts) and
+// canonical service groups below it (MIDI Services, AVB, Node Ops,
+// Hardware). The shortcut row has been removed; every operator-visible
+// surface now lives under its canonical service parent. MIDI
+// Assignments folds into MIDI Services, Audio Artifacts folds into
+// Node Ops, Drums&Synth stays top-level (large enough to be its own
+// service), Snapshot Editor stays top-level (a single-page authoring
+// tool — no good service parent). Chains is promoted to top-level
+// (was a Node Ops child but its route was already top-level), and a
+// new Settings group surfaces operator/UI preferences (currently just
+// Theme, demoted from Node Ops).
+// Nav reorg 2026-05-03 (second pass) — `/workspace` is no longer
+// the canonical Node Ops base; `/node-ops` is. Audio Artifacts is
+// now its own top-level service group at `/artifacts` (was a Node
+// Ops child in the first-pass reorg). Platform Guide moves from
+// `/platforms/about` to `/about`.
 const TOP_LEVEL_ROUTE_ORDER = [
   '/',
   '/snapshot-editor',
-  '/midi/assignments',
-  '/brain',
-  '/workspace/artifacts',
-  PRIMARY_SEPARATOR_ONE_ID,
   '/midi-hub',
-  // T2490 — AVB Services tree section, sibling of MIDI Advanced and
-  // sitting above Node Ops. Expandable, with the 6 /avb/* sub-routes
-  // exposed via LAUNCHER_STOREFRONT_OVERRIDES['/avb'] in launcherCatalog.tsx.
+  // T2490 — AVB Services tree section, sibling of MIDI Advanced.
   '/avb',
-  '/workspace',
+  '/node-ops',
+  '/artifacts',
+  '/brain',
   '/hardware',
-  PRIMARY_SEPARATOR_TWO_ID,
-  '/platforms/about',
+  '/chains',
+  '/settings',
+  '/about',
 ] as const
 
 const FLAT_TOP_LEVEL_ROUTES = new Set([
   '/',
   '/snapshot-editor',
-  '/midi/assignments',
-  '/platforms/about',
+  '/chains',
+  '/about',
 ])
 const HARDWARE_TREE_ID = '/hardware'
 const HARDWARE_DEVICES_ID = '/hardware::devices'
@@ -178,6 +197,9 @@ const TREE_ICON_OVERRIDES: Record<string, TreeIconComponent> = {
   '/brain': Music,
   '/midi-hub': Music,
   '/avb': ChartNetwork,
+  // Nav reorg 2026-05-03 — /settings is the new operator/UI
+  // preferences group (currently houses Theme).
+  '/settings': Settings,
   '/tesira': Settings,
   '/mpx1': MapRackDeviceIcon,
   '/intelfx': MapRackDeviceIcon,
@@ -193,19 +215,25 @@ const TREE_ICON_OVERRIDES: Record<string, TreeIconComponent> = {
   '/expression': ChartLine,
   '/midi/assignments': Music,
   '/lcd': ScreenMap,
-  // Control Panel (/workspace) sub-items
-  '/workspace/platforms/overview': Dashboard,
-  '/workspace/platforms/management': Devices,
-  '/workspace/platforms/audio-engine': AudioConsole,
+  // Nav reorg 2026-05-03 (second pass) — Node Ops sub-items live at
+  // `/node-ops/*` (not `/workspace/platforms/*`). Audio Artifacts is
+  // its own top-level group at `/artifacts`. Theme is a Settings
+  // child but its underlying route is `/node-ops/theme`. About is a
+  // top-level leaf at `/about`. Legacy `/workspace/platforms/*` keys
+  // are intentionally NOT included here — those URLs only exist as
+  // redirects, never as nav targets.
+  '/node-ops': Dashboard,
+  '/node-ops/overview': Dashboard,
+  '/node-ops/audio-engine': AudioConsole,
+  '/artifacts': MapRackDeviceIcon,
   '/chains': Connect,
-  '/workspace/platforms/avb-routing': ChartNetwork,
-  '/workspace/platforms/network-discovery': ScanAlt,
-  '/workspace/platforms/cluster-dashboard': Dashboard,
-  '/workspace/platforms/midpoint': Flash,
-  '/workspace/platforms/adoption': AddAlt,
+  '/node-ops/network-discovery': ScanAlt,
+  '/node-ops/cluster-dashboard': Dashboard,
+  '/node-ops/midpoint': Flash,
+  '/node-ops/adoption': AddAlt,
   [HOST_MACHINE_ROUTE]: BareMetalServer,
-  '/workspace/platforms/theme': ColorPalette,
-  '/workspace/platforms/about': Information,
+  '/node-ops/theme': ColorPalette,
+  '/about': Information,
   // MIDI Advanced (parent id stays '/midi-hub' for tree-state
   // continuity — the children are the canonical /midi/* mount).
   // T2491 (2026-05-02 cleanup): re-pointed all 7 prior entries to
@@ -232,19 +260,20 @@ const TREE_ICON_OVERRIDES: Record<string, TreeIconComponent> = {
 }
 
 const TREE_LABEL_OVERRIDES: Record<string, string> = {
-  '/workspace': 'Node Ops',
+  // Nav reorg 2026-05-03 (second pass) — canonical Node Ops base is
+  // now `/node-ops`. Audio Artifacts is `/artifacts`. About is `/about`.
+  '/node-ops': 'Node Ops',
+  '/artifacts': 'Audio Artifacts',
+  '/about': 'Platform Guide',
   '/snapshot-editor': 'Snapshot Editor',
   '/brain': 'Drums&Synth',
   // T2491 (2026-05-02 cleanup) — sidebar parent label aligned to the
-  // T2482 iter-94 rename "MIDI Hub" → "MIDI Services". The tree-id
-  // stays '/midi-hub' for tree-state continuity (children re-pointed
-  // to /midi/* in launcherCatalog.tsx); only the operator-visible
-  // label changes here.
+  // T2482 iter-94 rename "MIDI Hub" → "MIDI Services".
   '/midi-hub': 'MIDI Services',
   '/avb': 'AVB',
+  '/settings': 'Settings',
+  '/chains': 'Chains',
   '/midi/assignments': 'MIDI Assignments',
-  '/workspace/artifacts': 'Audio Artifacts',
-  '/platforms/about': 'Platform Guide',
   '/hardware': 'Hardware',
   '/labs/push-surface': 'Push Surface',
   '/ground-control-pro': 'Ground Control Pro',
@@ -444,6 +473,13 @@ export function buildDevicesSubtree(
   ]
 }
 
+// Nav reorg 2026-05-03 — Device Manager (Node Ops platform layer)
+// surfaces here as a Hardware child so all device-touching surfaces
+// (host machine, device store, platform management) live under one
+// canonical Hardware parent instead of being split across Hardware
+// and Node Ops.
+const HARDWARE_DEVICE_MANAGER_ID = '/hardware::device-manager'
+
 function buildHardwareTree(
   pinnedIds: string[],
   navigateTo: (route: string) => void,
@@ -460,6 +496,12 @@ function buildHardwareTree(
         label: 'Host Machine',
         route: HOST_MACHINE_ROUTE,
         icon: TREE_ICON_OVERRIDES[HOST_MACHINE_ROUTE] ?? BareMetalServer,
+      },
+      {
+        id: HARDWARE_DEVICE_MANAGER_ID,
+        label: 'Device Manager',
+        route: '/workspace/platforms/management',
+        icon: Devices,
       },
       {
         id: HARDWARE_DEVICES_ID,
@@ -480,14 +522,6 @@ function buildTreeItems(
   benchStorePins: string[] = [],
 ): TreeItemDefinition[] {
   return TOP_LEVEL_ROUTE_ORDER.flatMap((route) => {
-    if (route === PRIMARY_SEPARATOR_ONE_ID || route === PRIMARY_SEPARATOR_TWO_ID) {
-      return [{
-        id: route,
-        label: '',
-        separator: true,
-      }]
-    }
-
     if (route === HARDWARE_TREE_ID) {
       return [buildHardwareTree(pinnedIds, navigateTo, onRequestUnpin, benchStorePins)]
     }
@@ -601,14 +635,16 @@ function TreeNodeLabel({
 const BOLD_TOP_LEVEL_ROUTES = new Set([
   '/',
   '/snapshot-editor',
-  '/midi/assignments',
   '/brain',
-  '/workspace',
   '/midi-hub',
   '/avb',
-  '/workspace/artifacts',
-  '/platforms/about',
   '/hardware',
+  '/chains',
+  '/settings',
+  // Nav reorg 2026-05-03 (second pass)
+  '/node-ops',
+  '/artifacts',
+  '/about',
 ])
 
 function renderTreeItems(

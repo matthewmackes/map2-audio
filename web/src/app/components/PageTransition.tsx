@@ -49,7 +49,15 @@ export function getLandingTransitionScope(pathname: string): TransitionScope | n
     return { id: 'home' }
   }
 
-  if (canonicalPathname === '/workspace/artifacts' || canonicalPathname.startsWith('/workspace/artifacts/')) {
+  // Nav reorg 2026-05-03 (second pass) — Audio Artifacts canonical
+  // mount is `/artifacts`; legacy `/workspace/artifacts` paths still
+  // resolve via redirect but we match both for transition semantics.
+  if (
+    canonicalPathname === '/artifacts'
+    || canonicalPathname.startsWith('/artifacts/')
+    || canonicalPathname === '/workspace/artifacts'
+    || canonicalPathname.startsWith('/workspace/artifacts/')
+  ) {
     return { id: 'audio-artifacts' }
   }
 

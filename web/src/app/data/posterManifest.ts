@@ -7,19 +7,22 @@ export interface PosterManifestEntry {
   temperature: 'warm' | 'cool' | 'neutral'
 }
 
+// Nav reorg 2026-05-03 (second pass) — manifest routes rewritten
+// to canonical post-reorg URLs (/node-ops, /node-ops/*, /artifacts,
+// /about) so poster art lookups match the actual visited paths.
 export const POSTER_MANIFEST: PosterManifestEntry[] = [
-  { route: '/workspace', label: 'Workspaces', slug: 'workspaces', temperature: 'warm' },
-  { route: '/platforms/audio-engine', label: 'Audio Engine', slug: 'audio-engine', temperature: 'cool' },
+  { route: '/node-ops', label: 'Node Ops', slug: 'workspaces', temperature: 'warm' },
+  { route: '/node-ops/audio-engine', label: 'Audio Engine', slug: 'audio-engine', temperature: 'cool' },
   { route: HOST_MACHINE_ROUTE, label: 'Host Machine', slug: 'host-machine', temperature: 'warm' },
   { route: '/perform', label: 'Stage Mode', slug: 'stage-mode', temperature: 'warm' },
-  { route: '/platforms/about', label: 'Platform Guide', slug: 'platform-guide', temperature: 'cool' },
+  { route: '/about', label: 'Platform Guide', slug: 'platform-guide', temperature: 'cool' },
   { route: '/expression', label: 'Expression', slug: 'expression', temperature: 'cool' },
-  { route: '/workspace/artifacts', label: 'LV2 Plugins', slug: 'lv2-plugins', temperature: 'cool' },
+  { route: '/artifacts', label: 'LV2 Plugins', slug: 'lv2-plugins', temperature: 'cool' },
   // T2482 loop 10 / iter 94 — "MIDI Hub" → "MIDI Services" rename.
   { route: '/midi', label: 'MIDI Services', slug: 'midi-services', temperature: 'cool' },
   { route: '/mpx1', label: 'MPX1 Rack', slug: 'mpx1-rack', temperature: 'cool' },
   { route: '/tesira', label: 'Tesira AVB', slug: 'tesira-avb', temperature: 'neutral' },
-  { route: '/workspace/artifacts/discover', label: 'IR & NAM Library', slug: 'ir-nam-library', temperature: 'cool' },
+  { route: '/artifacts/discover', label: 'IR & NAM Library', slug: 'ir-nam-library', temperature: 'cool' },
   { route: '/lcd', label: 'LCD Console', slug: 'lcd-console', temperature: 'warm' },
   { route: '/edirol-ua1000', label: 'Edirol UA-1000', slug: 'edirol-ua1000', temperature: 'cool' },
   { route: '/hotone-jogg', label: 'HoTone JoGG', slug: 'hotone-jogg', temperature: 'warm' },

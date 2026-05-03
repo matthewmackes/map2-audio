@@ -1,11 +1,13 @@
 /**
- * T2490-8 — AvbServicesRoutingPage.
+ * T2490-8 / nav-reorg — AvbServicesRoutingPage.
  *
- * Operator-visible routing matrix. Pulls the canonical
- * `/api/avb/bindings/matrix?include_router=true` aggregation (T2490-2b
- * + T2490-3a) and renders source_type × consumer_type as a Carbon
- * Tile grid (small enough that a full HTML table is overkill;
- * highlights the live cell counts at a glance).
+ * Canonical AVB routing surface. Hosts the rich AvbRoutingWorkspace
+ * (transport-node fabric graph, expandable node table, Tesira detail
+ * inspector, deep-link footer) that previously lived under
+ * `/workspace/platforms/avb-routing`. The Source × Consumer matrix tile
+ * sourced from `/api/avb/bindings/matrix?include_router=true` is kept
+ * below as a secondary section so the binding-authority cross-reference
+ * is still one click away.
  */
 
 import { useMemo } from 'react'
@@ -17,6 +19,7 @@ import {
   Tag,
 } from '@carbon/react'
 
+import { AvbRoutingWorkspace } from '../../components/AvbRouting/AvbRoutingWorkspace'
 import {
   useAvbBindingsMatrix,
   type AvbMatrixCell,
@@ -50,10 +53,6 @@ interface MatrixGridCell {
 function flattenMatrix(
   matrix: Record<string, Record<string, AvbMatrixCell>>,
 ): MatrixGridCell[] {
-  // Compose the row × column ordering deterministically: known types
-  // first (in the canonical order), then any unexpected types after,
-  // alphabetically. This keeps the grid stable as new vocabularies are
-  // added in T2490-3b+ without breaking existing layouts.
   const observedSources = new Set(Object.keys(matrix))
   const knownSources = SOURCE_TYPES_ORDER.filter((s) => observedSources.has(s))
   const extraSources = [...observedSources]
@@ -88,19 +87,13 @@ function flattenMatrix(
   return cells
 }
 
-export function AvbServicesRoutingPage() {
-  useAvbServicesShellWindow(
-    'Routing',
-    'Talker × Listener cross-reference matrix sourced from the canonical AvbBindingAuthority.',
-  )
-
+function BindingsMatrixSection() {
   const matrixQuery = useAvbBindingsMatrix({ includeRouter: true })
 
   const matrix = matrixQuery.data?.matrix ?? {}
   const total = matrixQuery.data?.total_bindings ?? 0
   const cells = useMemo(() => flattenMatrix(matrix), [matrix])
 
-  // Group cells back into rows (sourceType) for the visual grid.
   const rows = useMemo(() => {
     const grouped: Record<string, MatrixGridCell[]> = {}
     for (const c of cells) {
@@ -110,13 +103,13 @@ export function AvbServicesRoutingPage() {
   }, [cells])
 
   return (
-    <Section className="avb-services-region" data-testid="avb-services-routing-page">
+    <Section className="avb-services-region" data-testid="avb-services-routing-bindings-matrix">
       <Layer level={0}>
         <header className="avb-services-region__header">
-          <Heading className="avb-services-region__title">Routing</Heading>
+          <Heading className="avb-services-region__title">Bindings cross-reference</Heading>
           <p className="avb-services-region__subtitle">
-            Source × consumer cross-reference matrix, aggregated server-side
-            from the canonical <code>AvbBindingAuthority</code> via
+            Source × consumer matrix aggregated server-side from the canonical
+            <code> AvbBindingAuthority</code> via
             <code> /api/avb/bindings/matrix?include_router=true</code>.
           </p>
           <div>
@@ -179,6 +172,20 @@ export function AvbServicesRoutingPage() {
         )}
       </Layer>
     </Section>
+  )
+}
+
+export function AvbServicesRoutingPage() {
+  useAvbServicesShellWindow(
+    'Routing',
+    'Transport-node fabric, expandable node table, Tesira detail inspector, and bindings cross-reference matrix.',
+  )
+
+  return (
+    <div data-testid="avb-services-routing-page">
+      <AvbRoutingWorkspace />
+      <BindingsMatrixSection />
+    </div>
   )
 }
 

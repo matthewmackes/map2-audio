@@ -10,7 +10,6 @@ import {
   Devices,
   Flash,
   Information,
-  Network_3,
   PaintBrush,
   Share,
   Terminal,
@@ -56,7 +55,6 @@ import {
   type StandalonePanel,
 } from '../../data/platformMenuItems'
 import { UnifiedWorkspaceSideNav, type UnifiedWorkspaceSideNavItem } from '../navigation/UnifiedWorkspaceSideNav'
-import { AvbRoutingWorkspace } from '../AvbRouting/AvbRoutingWorkspace'
 import { ClusterDashboardWorkspace } from '../ClusterDashboard/ClusterDashboardWorkspace'
 import { ManagementWorkspace } from '../ManagementWorkspace/ManagementWorkspace'
 import { NetworkDiscoveryWorkspace } from '../NetworkDiscovery/NetworkDiscoveryWorkspace'
@@ -104,7 +102,6 @@ type PlatformIcon = ComponentType<any>
 const LAYER_ICONS: Record<PlatformLayerId, PlatformIcon> = {
   overview: MapOs2DrivesIcon,
   management: Devices,
-  'avb-routing': Network_3,
   'network-discovery': Share,
   'cluster-dashboard': DataBase,
 }
@@ -879,7 +876,6 @@ function LayerWorkspace({ layer, alerts, onDismissAlert }: {
 }) {
   const Icon = LAYER_ICONS[layer.id]
   const isClusterLayer = layer.id === 'cluster-dashboard'
-  const isAvbLayer = layer.id === 'avb-routing'
   const isManagementLayer = layer.id === 'management'
   const isNetworkDiscoveryLayer = layer.id === 'network-discovery'
   const overviewGrafanaPanels = buildOverviewGrafanaPanels(layer)
@@ -905,8 +901,6 @@ function LayerWorkspace({ layer, alerts, onDismissAlert }: {
       )}
       {isClusterLayer ? (
         <ClusterDashboardWorkspace layer={layer} />
-      ) : isAvbLayer ? (
-        <AvbRoutingWorkspace layer={layer} />
       ) : isManagementLayer ? (
         <>
           <ManagementWorkspace layer={layer} />

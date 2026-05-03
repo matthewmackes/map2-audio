@@ -4,7 +4,6 @@ import { render, screen, waitFor } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 
 import { AvbRoutingWorkspace } from './AvbRoutingWorkspace'
-import type { PlatformLayerData } from '../../platform/model'
 
 const mockUseCluster = jest.fn()
 const mockUseNodes = jest.fn()
@@ -56,34 +55,10 @@ jest.mock('./AvbRoutingWorkspaceGraph', () => ({
   ),
 }))
 
-const layer: PlatformLayerData = {
-  id: 'avb-routing',
-  label: 'AVB Routing',
-  shortLabel: 'AVB',
-  description: 'AVB routing',
-  accent: 'var(--cds-support-info)',
-  health: 'healthy',
-  activityLevel: 80,
-  alertCount: 0,
-  isLoading: false,
-  error: null,
-  summaryMetrics: [],
-  gridItems: [
-    {
-      id: 'streams',
-      title: 'Streams',
-      eyebrow: 'AVB',
-      metric: '2',
-      helper: '1 ready',
-      status: 'healthy',
-    },
-  ],
-  tableColumns: [],
-  tableRows: [],
-  tableTitle: 'AVB table',
-  tableDescription: 'AVB table',
-  notifications: [],
-}
+// Nav reorg 2026-05-03 — AvbRoutingWorkspace is now mounted directly
+// at /avb/routing without a PlatformLayerData wrapper. The legacy
+// layer prop remains optional for backwards compatibility but the
+// component renders the same fabric/table content without it.
 
 describe('AvbRoutingWorkspace', () => {
   beforeEach(() => {
@@ -334,13 +309,13 @@ describe('AvbRoutingWorkspace', () => {
   it('preloads the focused Tesira node context and renders Tesira-aware row detail', async () => {
     render(
       <MemoryRouter
-        initialEntries={['/platforms/avb-routing?focusTesiraDevice=tesira-1&focusEntity=ent-remote']}
+        initialEntries={['/avb/routing?focusTesiraDevice=tesira-1&focusEntity=ent-remote']}
         future={{
           v7_startTransition: true,
           v7_relativeSplatPath: true,
         }}
       >
-        <AvbRoutingWorkspace layer={layer} />
+        <AvbRoutingWorkspace />
       </MemoryRouter>,
     )
 

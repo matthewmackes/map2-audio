@@ -120,7 +120,11 @@ function mapEventToLayerId(event: PlatformEvent): PlatformLayerId {
     return 'cluster-dashboard'
   }
   if (event.kind.startsWith('avb.') || event.kind.startsWith('device.avb.')) {
-    return 'avb-routing'
+    // AVB Routing was promoted out of the platform layer set into its
+    // own /avb/* shell (nav reorg 2026-05-03). Surface AVB events on
+    // the platform overview row so operators still get the alert; deep
+    // links into the AVB shell live in the alert payload.
+    return 'overview'
   }
   if (event.kind.startsWith('midi.') || event.kind.includes('midihub')) {
     return 'network-discovery'

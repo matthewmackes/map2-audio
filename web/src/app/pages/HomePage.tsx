@@ -41,6 +41,7 @@ import { useShellSummaryData } from '../layout/useShellSummaryData'
 import { navigateHomeShellRoute, prefetchHomeShellRoute } from './homeShellNavigation'
 import { useCluster } from '../contexts/useCluster'
 import { buildPlatformNodeWorkspaceHref } from '../platform/routes'
+import { buildAvbRoutingWorkspaceHref } from '../components/AvbRouting/avbRoutingWorkspaceHref'
 import { useClusterHardwareInventory } from '../hooks/useDeviceLocation'
 import { useClusterSnapshotRuntimeLiveState } from '../hooks/useSnapshotRuntimeState'
 import { useAVBDiscovery, useAVBStreams } from '../hooks/useAvbStatus'
@@ -538,7 +539,7 @@ export function HomePage() {
       scope: `${discovery?.total_discovered ?? 0} endpoints`,
       detail: `${discovery?.talker_nodes ?? 0} talkers · ${discovery?.listener_nodes ?? 0} listeners · ${runningStreams} running streams`,
       workspace: 'AVB routing',
-      route: buildPlatformNodeWorkspaceHref('avb-routing'),
+      route: buildAvbRoutingWorkspaceHref(),
       tone: shellSummaryData.platformStatus.avb.state === 'ok' ? 'healthy' : 'warning',
     }
 
@@ -552,7 +553,7 @@ export function HomePage() {
         scope: capabilities?.interface ?? 'AVB fabric',
         detail: `${capabilities?.ptp_synced ? 'PTP synced' : 'PTP pending'} · ${capabilities?.sample_rate ?? 'n/a'} Hz · ${capabilities?.channels ?? 'n/a'} ch`,
         workspace: 'AVB routing',
-        route: buildPlatformNodeWorkspaceHref('avb-routing', node.node_id),
+        route: buildAvbRoutingWorkspaceHref({ nodeId: node.node_id }),
         tone: capabilities?.ptp_synced ? 'healthy' as const : 'warning' as const,
       } satisfies HomeTelemetryRow
     })
@@ -745,7 +746,7 @@ export function HomePage() {
         label: 'Presets',
         sub: 'Plugin presets across the library',
         accent: 'var(--wh-primary)',
-        route: '/workspace/artifacts?category=plugin-presets',
+        route: '/artifacts?category=plugin-presets',
       },
       {
         key: 'irs',
@@ -753,7 +754,7 @@ export function HomePage() {
         label: 'Impulse Responses',
         sub: `${cabinetCount} cabinets · ${reverbCount} reverbs`,
         accent: 'var(--wh-accent-teal)',
-        route: '/workspace/artifacts?category=cabinet-irs',
+        route: '/artifacts?category=cabinet-irs',
       },
       {
         key: 'plugins',
@@ -761,7 +762,7 @@ export function HomePage() {
         label: 'LV2 & CLAP Plugins',
         sub: 'Indexed & parameter-mapped',
         accent: 'var(--wh-accent-green)',
-        route: '/workspace/artifacts?category=plugin-packs',
+        route: '/artifacts?category=plugin-packs',
       },
       {
         key: 'snapshots',
@@ -786,7 +787,7 @@ export function HomePage() {
         label: 'Sample Pool',
         sub: 'Drum hits, loops, one-shots',
         accent: 'var(--wh-primary-soft)',
-        route: '/workspace/artifacts?category=soundfonts',
+        route: '/artifacts?category=soundfonts',
       },
     ]
   }, [
@@ -839,14 +840,14 @@ export function HomePage() {
         label: 'AVB',
         value: avbState === 'ok' ? 'operational' : avbState === 'warn' ? 'degraded' : avbState === 'off' ? 'disabled' : '…',
         tone: avbState === 'ok' ? 'ok' : avbState === 'warn' ? 'warn' : 'neutral',
-        route: buildPlatformNodeWorkspaceHref('avb-routing'),
+        route: buildAvbRoutingWorkspaceHref(),
       },
       {
         id: 'avdecc',
         label: 'AVDECC',
         value: `${avdeccMatch} entities`,
         tone: shellSummaryData.platformStatus.avdecc.state === 'ok' ? 'ok' : 'neutral',
-        route: buildPlatformNodeWorkspaceHref('avb-routing'),
+        route: buildAvbRoutingWorkspaceHref(),
       },
       {
         id: 'cluster',
@@ -914,7 +915,7 @@ export function HomePage() {
     navigateHomeShellRoute(navigate, buildPlatformNodeWorkspaceHref('audio-engine'))
   }, [navigate])
   const handleBrowseLibrary = useCallback(() => {
-    navigateHomeShellRoute(navigate, '/workspace/artifacts')
+    navigateHomeShellRoute(navigate, '/artifacts')
   }, [navigate])
   const handleArtifactClick = useCallback((artifact: WelcomeHeroArtifact) => {
     if (artifact.route) {

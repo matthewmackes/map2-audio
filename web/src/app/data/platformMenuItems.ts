@@ -8,7 +8,6 @@ import {
   Events,
   Flash,
   Information,
-  Network_3,
   PaintBrush,
   PlugFilled,
   SettingsAdjust,
@@ -64,7 +63,6 @@ export type PlatformPinnedNavItem = PlatformPanelNavItem & { pinnable: true }
 const PLATFORM_LAYER_ICONS: Record<PlatformLayerId, PlatformIcon> = {
   overview: MapOs2DrivesIcon,
   management: Devices,
-  'avb-routing': Network_3,
   'network-discovery': Share,
   'cluster-dashboard': DataBase,
 }
@@ -127,12 +125,26 @@ const STANDALONE_PANEL_ITEMS: Record<StandalonePanel, {
   },
 }
 
+// Nav reorg 2026-05-03 (second pass) — legacy `/platforms/<id>`
+// pinned routes are now `/node-ops/<id>` (canonical) — except for
+// the `about` panel which has its own root URL `/about`. The host
+// machine panel keeps its dedicated host-machine route.
+import { buildHostMachinePath } from '../pages/hostMachineRoutes'
+
+const NODE_OPS_PIN_BASE = '/node-ops'
+
 function buildPlatformLayerPinnedRoute(layerId: PlatformLayerId): string {
-  return `/platforms/${layerId}`
+  return `${NODE_OPS_PIN_BASE}/${layerId}`
 }
 
 function buildPlatformPanelPinnedRoute(panel: StandalonePanel): string {
-  return `/platforms/${panel}`
+  if (panel === 'about') {
+    return '/about'
+  }
+  if (panel === 'host-machine') {
+    return buildHostMachinePath()
+  }
+  return `${NODE_OPS_PIN_BASE}/${panel}`
 }
 
 function buildPlatformLayerNavItem(layerId: PlatformLayerId): PlatformPanelNavItem {
@@ -277,7 +289,6 @@ export const platformPanelItems: PlatformPanelNavItem[] = [
   buildPlatformLayerNavItem('overview'),
   buildStandalonePanelNavItem('audio-engine'),
   buildPlatformLayerNavItem('management'),
-  buildPlatformLayerNavItem('avb-routing'),
   buildPlatformLayerNavItem('network-discovery'),
   buildPlatformLayerNavItem('cluster-dashboard'),
   buildStandalonePanelNavItem('midpoint'),

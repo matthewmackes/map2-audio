@@ -245,6 +245,8 @@ export function useNodeOperations(): NodeOperationsData {
     return (
       canonicalPathname === '/workspace'
       || canonicalPathname.startsWith('/workspace/')
+      || canonicalPathname === '/node-ops'
+      || canonicalPathname.startsWith('/node-ops/')
       || canonicalPathname === PLATFORM_WORKSPACE_BASE_PATH
       || canonicalPathname.startsWith(`${PLATFORM_WORKSPACE_BASE_PATH}/`)
     )

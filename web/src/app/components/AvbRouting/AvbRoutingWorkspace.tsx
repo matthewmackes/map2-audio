@@ -487,7 +487,7 @@ function NodeDetailPanel({
   )
 }
 
-export function AvbRoutingWorkspace({ layer }: { layer: PlatformLayerData }) {
+export function AvbRoutingWorkspace({ layer }: { layer?: PlatformLayerData }) {
   const navigate = useNavigate()
   const [searchParams] = useSearchParams()
   const { activeNodeId, nodes: clusterNodes, isClusterMode, localNodeId, setActiveNode } = useCluster()
@@ -893,7 +893,7 @@ export function AvbRoutingWorkspace({ layer }: { layer: PlatformLayerData }) {
       </section>
 
       <section className="avb-routing-workspace__snapshot-grid" aria-label="AVB telemetry snapshots">
-        {layer.gridItems.map((item) => (
+        {(layer?.gridItems ?? []).map((item) => (
           <Tile key={item.id} className="avb-routing-workspace__snapshot-tile">
             <div className="avb-routing-workspace__snapshot-head">
               <p>{item.eyebrow}</p>

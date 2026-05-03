@@ -17,7 +17,11 @@ export type LandingTileSize = 'small' | 'medium' | 'large'
 export type LauncherDirectory = 'core' | 'labs' | 'platforms' | 'nav-only'
 export type LauncherCatalogCategory = 'Audio Interface' | 'Human Interface' | 'Platform'
 export type LauncherStorefrontCollection = 'featured' | 'platform-essentials' | 'recently-added'
-export const REQUIRED_HOME_LAUNCHER_ROUTE = '/workspace'
+// Nav reorg 2026-05-03 (second pass) — required home launcher is
+// now `/node-ops` (was `/workspace`). The `/workspace` value stays
+// resolvable via the LegacyWorkspaceRedirect in App.tsx, so any
+// stale persisted home tile pointing at the old path still works.
+export const REQUIRED_HOME_LAUNCHER_ROUTE = '/node-ops'
 export const WORKSPACE_CATALOG_REFERENCE_DOC = 'WORKSPACE_CATALOG_STOREFRONT_REFERENCE.md'
 
 export interface LandingTilePlacement {
@@ -90,6 +94,10 @@ const WORKSPACE_CATALOG_EXCLUDED_ROUTE_SET = new Set([
   '/ground-control-pro',
   '/maschine',
   '/mcu',
+  // Nav reorg 2026-05-03 (second pass) — node-ops sub-pages are not
+  // standalone catalog tiles; they're sections inside the Node Ops
+  // hub. Both the new canonical `/node-ops/*` paths and the legacy
+  // `/platforms/*` paths are excluded so neither shape leaks tiles.
   '/platforms/workspace-catalog',
   '/platforms/audio-engine',
   '/platforms/management',
@@ -98,16 +106,29 @@ const WORKSPACE_CATALOG_EXCLUDED_ROUTE_SET = new Set([
   '/platforms/cluster-dashboard',
   '/platforms/adoption',
   '/platforms/host-machine',
-  HOST_MACHINE_ROUTE,
   '/platforms/theme',
   '/platforms/about',
+  '/node-ops/audio-engine',
+  '/node-ops/management',
+  '/node-ops/network-discovery',
+  '/node-ops/cluster-dashboard',
+  '/node-ops/adoption',
+  '/node-ops/theme',
+  HOST_MACHINE_ROUTE,
+  '/about',
 ])
+// Nav reorg 2026-05-03 (second pass) — `/workspace` is no longer
+// the canonical Node Ops base; `/node-ops` is. Keep both keys in
+// FEATURED/ESSENTIALS for one transition cycle so anything that
+// looks up by either path resolves correctly.
 const FEATURED_ROUTE_SET = new Set([
+  '/node-ops',
   '/workspace',
   '/tesira',
   '/perform',
 ])
 const PLATFORM_ESSENTIALS_ROUTE_SET = new Set([
+  '/node-ops',
   '/workspace',
 ])
 const RECENTLY_ADDED_ROUTE_SET = new Set([
@@ -115,41 +136,67 @@ const RECENTLY_ADDED_ROUTE_SET = new Set([
 
 const HOME_ONLY_LAUNCHERS: LauncherCatalogCoreItem[] = []
 
+// Nav reorg 2026-05-03 (second pass) — extracted as a const so the
+// legacy `/workspace` and the canonical `/node-ops` keys can share
+// the same override object below without duplication.
+const NODE_OPS_STOREFRONT_OVERRIDE: StorefrontOverride = {
+  storefrontCollections: ['featured', 'platform-essentials'],
+  featureBullets: [
+    'Unified node-ops hub for platform posture, audio engine telemetry, network discovery, cluster dashboard, and operator midpoint.',
+    'Connects operators to the canonical `/node-ops/*` sections from one Carbon shell instead of legacy route roots.',
+    'Designed as the flagship starting surface for cluster-aware MAP2 deployments.',
+  ],
+  technicalSpecs: [
+    { label: 'Primary audience', value: 'Operators and prospective platform evaluators' },
+    { label: 'Surface mode', value: 'Node Ops hub shell with section-level routed content' },
+    { label: 'Home placement', value: 'Required first launcher tile' },
+    { label: 'Launch path', value: '/node-ops' },
+  ],
+  availabilityNote: 'Always available as the canonical node-ops destination, even when individual sections have limited readiness.',
+  documentLinks: [
+    { label: 'Storefront brief', name: WORKSPACE_CATALOG_REFERENCE_DOC },
+    { label: 'Operator navigation model', name: 'OPERATOR_NAVIGATION_MODEL.md' },
+    { label: 'Subsystem maturity matrix', name: 'subsystem-maturity-matrix.md' },
+  ],
+}
+
 const LAUNCHER_STOREFRONT_OVERRIDES: Record<string, StorefrontOverride> = {
-  '/workspace': {
-    storefrontCollections: ['featured', 'platform-essentials'],
-    featureBullets: [
-      'Unified workspace hub for platform posture, physical surfaces, audio artifacts, and outboard hardware.',
-      'Connects operators to the canonical `/workspace/*` sections from one Carbon shell instead of legacy route roots.',
-      'Designed as the flagship starting surface for cluster-aware MAP2 deployments after the workspace migration.',
-    ],
-    technicalSpecs: [
-      { label: 'Primary audience', value: 'Operators and prospective platform evaluators' },
-      { label: 'Surface mode', value: 'Workspace hub shell with section-level routed content' },
-      { label: 'Home placement', value: 'Required first launcher tile' },
-      { label: 'Launch path', value: '/workspace' },
-    ],
-    availabilityNote: 'Always available as the canonical workspace destination, even when individual sections have limited readiness.',
+  // Canonical Node Ops key (used by all post-reorg launcher lookups).
+  '/node-ops': {
+    ...NODE_OPS_STOREFRONT_OVERRIDE,
     documentLinks: [
       { label: 'Storefront brief', name: WORKSPACE_CATALOG_REFERENCE_DOC },
       { label: 'Operator navigation model', name: 'OPERATOR_NAVIGATION_MODEL.md' },
       { label: 'Subsystem maturity matrix', name: 'subsystem-maturity-matrix.md' },
     ],
+    // Nav reorg 2026-05-03 (second pass) — Node Ops is now a true
+    // canonical group: every child page lives one level below the
+    // group and uses the new `/node-ops/*` URL space (no more
+    // `/workspace/platforms/` middle segment). Audio Artifacts has
+    // been promoted back to its own top-level service group (under
+    // `/artifacts`); About has been removed from the Node Ops tree
+    // because it's already a top-level Platform Guide entry; AVB
+    // Routing is on its own /avb shell; Device Manager moved to
+    // Hardware nav (URL stays under /node-ops/management); Theme
+    // moved to Settings nav (URL stays under /node-ops/theme); Chains
+    // is its own top-level leaf. What remains here is just the platform
+    // infrastructure operators consume from the Node Ops parent.
     treeChildren: [
-      { route: '/workspace/platforms/overview', label: 'Overview' },
-      { route: '/workspace/platforms/management', label: 'Device Manager' },
-      { route: '/workspace/platforms/audio-engine', label: 'Audio Engine' },
-      { route: '/chains', label: 'Chains' },
-      { route: '/workspace/platforms/avb-routing', label: 'AVB Routing' },
-      { route: '/workspace/platforms/network-discovery', label: 'Network Discovery' },
-      { route: '/workspace/platforms/cluster-dashboard', label: 'Cluster Dashboard' },
-      { route: '/workspace/platforms/midpoint', label: 'Midpoint' },
-      { route: '/workspace/platforms/adoption', label: 'Adoption' },
-      { route: '/workspace/platforms/theme', label: 'Theme' },
-      { route: '/workspace/platforms/about', label: 'About' },
+      { route: '/node-ops/overview', label: 'Overview' },
+      { route: '/node-ops/audio-engine', label: 'Audio Engine' },
+      { route: '/node-ops/network-discovery', label: 'Network Discovery' },
+      { route: '/node-ops/cluster-dashboard', label: 'Cluster Dashboard' },
+      { route: '/node-ops/midpoint', label: 'Midpoint' },
+      { route: '/node-ops/adoption', label: 'Adoption' },
     ],
   },
-  '/workspace/artifacts': {
+  // Nav reorg 2026-05-03 (second pass) — Audio Artifacts promoted
+  // back to its own top-level service group at the canonical
+  // `/artifacts` URL (was `/workspace/artifacts`). The legacy
+  // `/workspace/artifacts` storefront key is retained as an alias
+  // below pointing at the same overrides so any inbound launcher
+  // tile still resolves.
+  '/artifacts': {
     featureBullets: [
       'Unified library for plugins, NAM captures, IRs, SoundFonts, and native JUCE processors.',
       'Presents node-aware asset coverage and remediation from a single Carbon-managed inventory.',
@@ -158,20 +205,20 @@ const LAUNCHER_STOREFRONT_OVERRIDES: Record<string, StorefrontOverride> = {
     technicalSpecs: [
       { label: 'Library scope', value: 'Plugins, presets, NAM, IR, SoundFont, and native processors' },
       { label: 'Node awareness', value: 'Local and cluster-aware inventory' },
-      { label: 'Launch path', value: '/workspace/artifacts' },
+      { label: 'Launch path', value: '/artifacts' },
       { label: 'Home placement', value: 'Eligible' },
     ],
     availabilityNote: 'Available without payment or catalog checkout; inventory visibility follows the selected node and installed asset set.',
     treeChildren: [
-      { route: '/workspace/artifacts', label: 'Overview' },
-      { route: '/workspace/artifacts?category=lv2-plugins', label: 'LV2 Plugins' },
-      { route: '/workspace/artifacts?category=nam-models', label: 'NAM Models' },
-      { route: '/workspace/artifacts?category=cabinet-irs', label: 'Cabinet IRs' },
-      { route: '/workspace/artifacts?category=reverb-irs', label: 'Reverb IRs' },
-      { route: '/workspace/artifacts?category=soundfonts', label: 'SoundFonts' },
-      { route: '/workspace/artifacts?category=native-juce', label: 'Native JUCE' },
-      { route: '/workspace/artifacts?category=snapshots', label: 'Snapshots' },
-      { route: '/workspace/artifacts/discover', label: 'Discover' },
+      { route: '/artifacts', label: 'Overview' },
+      { route: '/artifacts?category=lv2-plugins', label: 'LV2 Plugins' },
+      { route: '/artifacts?category=nam-models', label: 'NAM Models' },
+      { route: '/artifacts?category=cabinet-irs', label: 'Cabinet IRs' },
+      { route: '/artifacts?category=reverb-irs', label: 'Reverb IRs' },
+      { route: '/artifacts?category=soundfonts', label: 'SoundFonts' },
+      { route: '/artifacts?category=native-juce', label: 'Native JUCE' },
+      { route: '/artifacts?category=snapshots', label: 'Snapshots' },
+      { route: '/artifacts/discover', label: 'Discover' },
     ],
   },
   '/tesira': {
@@ -195,10 +242,12 @@ const LAUNCHER_STOREFRONT_OVERRIDES: Record<string, StorefrontOverride> = {
     ],
   },
   '/snapshot-editor': {
-    treeChildren: [
-      { route: '/workspace', label: 'Control Panel' },
-      { route: '/platforms/about', label: 'Platform Guide' },
-    ],
+    // Nav reorg 2026-05-03 — Snapshot Editor is a flat top-level
+    // entry. Its prior pseudo-children (Control Panel, Platform Guide)
+    // were navigation crutches from the old shortcut-row layout and
+    // had no semantic relationship to snapshot editing. Removed so the
+    // tree node renders as a leaf.
+    treeChildren: [],
   },
   '/brain': {
     // T2442: Brain Overview tabs (Performance / Console / Step / Split) are now
@@ -285,6 +334,17 @@ const LAUNCHER_STOREFRONT_OVERRIDES: Record<string, StorefrontOverride> = {
       { route: '/midi/devices/rocktron-intelfx/flow', label: 'Signal Flow' },
     ],
   },
+  '/settings': {
+    // Nav reorg 2026-05-03 (second pass) — Settings is a virtual
+    // top-level group for operator/UI preferences. Theme is its sole
+    // child; the underlying route is `/node-ops/theme` (a node-ops
+    // standalone panel). The Settings group does not have its own
+    // canonical URL; clicking the Settings parent in the tree opens
+    // the first child.
+    treeChildren: [
+      { route: '/node-ops/theme', label: 'Theme' },
+    ],
+  },
   '/lcd': {
     featureBullets: [
       'Presents an external display and hardware-panel workflow as part of the MAP2 storefront story.',
@@ -304,6 +364,12 @@ const LAUNCHER_STOREFRONT_OVERRIDES: Record<string, StorefrontOverride> = {
       { label: 'Subsystem maturity matrix', name: 'subsystem-maturity-matrix.md' },
     ],
   },
+  // Nav reorg 2026-05-03 (second pass) — legacy `/workspace` key
+  // shares the canonical Node Ops override so any storefront tile or
+  // launcher lookup that still arrives via the old route resolves
+  // identically. The `/workspace/artifacts` legacy key shares the
+  // canonical `/artifacts` override for the same reason.
+  '/workspace': NODE_OPS_STOREFRONT_OVERRIDE,
 }
 
 function routeItemKey(item: ShellNavigationItem | HardwareInterfaceMenuItem): string {

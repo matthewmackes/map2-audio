@@ -214,21 +214,23 @@ describe('App routing', () => {
     expect(screen.queryByTestId('app-shell')).toBeNull()
   })
 
-  it('redirects legacy /platform query routes into the canonical /workspace/platforms workspace path', async () => {
+  // Nav reorg 2026-05-03 (second pass) — canonical Node Ops mount is
+  // `/node-ops/<id>`; canonical Audio Artifacts mount is `/artifacts`.
+  it('redirects legacy /platform query routes into the canonical /node-ops workspace path', async () => {
     navigateTo('/platform?layer=overview')
 
     render(<App />)
 
-    expect(await screen.findByTestId('workspace-platform-route')).toHaveTextContent('/workspace/platforms/overview')
+    expect(await screen.findByTestId('workspace-platform-route')).toHaveTextContent('/node-ops/overview')
     expect(screen.getByTestId('app-shell')).toBeTruthy()
   })
 
-  it('redirects legacy /audio-artifacts into the canonical /workspace/artifacts route', async () => {
+  it('redirects legacy /audio-artifacts into the canonical /artifacts route', async () => {
     navigateTo('/audio-artifacts?category=lv2-plugins')
 
     render(<App />)
 
-    expect(await screen.findByTestId('workspace-artifacts-route')).toHaveTextContent('/workspace/artifacts?category=lv2-plugins')
+    expect(await screen.findByTestId('workspace-artifacts-route')).toHaveTextContent('/artifacts?category=lv2-plugins')
   })
 
   it('does not keep /audio-table as a routed surface after the platforms hard cut', async () => {
@@ -239,20 +241,20 @@ describe('App routing', () => {
     expect(await screen.findByTestId('home-route')).toHaveTextContent('Home Route')
   })
 
-  it('redirects the retired /dsp route into the canonical workspace hub overview', async () => {
+  it('redirects the retired /dsp route into the canonical Node Ops overview', async () => {
     navigateTo('/dsp')
 
     render(<App />)
 
-    expect(await screen.findByTestId('workspace-platform-route')).toHaveTextContent('/workspace/platforms/overview')
+    expect(await screen.findByTestId('workspace-platform-route')).toHaveTextContent('/node-ops/overview')
   })
 
-  it('redirects the retired /cpu-performance route into the canonical workspace hub overview', async () => {
+  it('redirects the retired /cpu-performance route into the canonical Node Ops overview', async () => {
     navigateTo('/cpu-performance')
 
     render(<App />)
 
-    expect(await screen.findByTestId('workspace-platform-route')).toHaveTextContent('/workspace/platforms/overview')
+    expect(await screen.findByTestId('workspace-platform-route')).toHaveTextContent('/node-ops/overview')
   })
 
   it('keeps the dedicated /launch-control route available inside AppShell', async () => {
@@ -273,20 +275,20 @@ describe('App routing', () => {
     expect(screen.getByTestId('app-shell')).toBeTruthy()
   })
 
-  it('redirects the bare /platforms route into the canonical workspace hub overview', async () => {
+  it('redirects the bare /platforms route into the canonical Node Ops overview', async () => {
     navigateTo('/platforms')
 
     render(<App />)
 
-    expect(await screen.findByTestId('workspace-platform-route')).toHaveTextContent('/workspace/platforms/overview')
+    expect(await screen.findByTestId('workspace-platform-route')).toHaveTextContent('/node-ops/overview')
   })
 
-  it('redirects the legacy Platforms adoption route into the workspace hub path', async () => {
+  it('redirects the legacy Platforms adoption route into the canonical Node Ops adoption path', async () => {
     navigateTo('/platforms/adoption?state=claimable')
 
     render(<App />)
 
-    expect(await screen.findByTestId('workspace-platform-route')).toHaveTextContent('/workspace/platforms/adoption?state=claimable')
+    expect(await screen.findByTestId('workspace-platform-route')).toHaveTextContent('/node-ops/adoption?state=claimable')
   })
 
   it('mounts Host Machine on the hardware-owned route', async () => {
@@ -323,12 +325,15 @@ describe('App routing', () => {
     expect(screen.queryByTestId('workspace-hub-shell')).toBeNull()
   })
 
-  it('redirects the bare /workspace route into the workspace hub platforms overview scaffold', async () => {
+  it('redirects the bare /workspace route into the canonical /node-ops mount', async () => {
     navigateTo('/workspace')
 
     render(<App />)
 
-    expect(await screen.findByTestId('workspace-platform-route')).toHaveTextContent('/workspace/platforms/overview')
+    // The bare /workspace path now lands on /node-ops; the workspace
+    // hub shell scaffolding still renders the platform-route mock
+    // because /node-ops mounts WorkspaceHubShell.
+    expect(await screen.findByTestId('workspace-platform-route')).toHaveTextContent('/node-ops/overview')
     expect(screen.getByTestId('workspace-hub-shell')).toBeTruthy()
   })
 
@@ -366,30 +371,30 @@ describe('App routing', () => {
     expect(await screen.findByTestId('devices-store-route')).toHaveTextContent('/devices')
   })
 
-  it('mounts the migrated audio-artifacts overview inside the workspace hub', async () => {
+  it('redirects the legacy /workspace/artifacts overview into the canonical /artifacts mount', async () => {
     navigateTo('/workspace/artifacts?category=lv2-plugins')
 
     render(<App />)
 
-    expect(await screen.findByTestId('workspace-artifacts-route')).toHaveTextContent('/workspace/artifacts?category=lv2-plugins')
+    expect(await screen.findByTestId('workspace-artifacts-route')).toHaveTextContent('/artifacts?category=lv2-plugins')
     expect(screen.getByTestId('workspace-hub-shell')).toBeTruthy()
   })
 
-  it('mounts the migrated audio-artifacts discover route inside the workspace hub', async () => {
+  it('redirects the legacy /workspace/artifacts/discover route into the canonical /artifacts/discover mount', async () => {
     navigateTo('/workspace/artifacts/discover?category=nam-models')
 
     render(<App />)
 
-    expect(await screen.findByTestId('workspace-artifacts-discover-route')).toHaveTextContent('/workspace/artifacts/discover?category=nam-models')
+    expect(await screen.findByTestId('workspace-artifacts-discover-route')).toHaveTextContent('/artifacts/discover?category=nam-models')
     expect(screen.getByTestId('workspace-hub-shell')).toBeTruthy()
   })
 
-  it('redirects the legacy artifacts discover route into the workspace hub path', async () => {
+  it('mounts the canonical /artifacts/discover route directly inside the artifacts hub shell', async () => {
     navigateTo('/artifacts/discover?category=nam-models')
 
     render(<App />)
 
-    expect(await screen.findByTestId('workspace-artifacts-discover-route')).toHaveTextContent('/workspace/artifacts/discover?category=nam-models')
+    expect(await screen.findByTestId('workspace-artifacts-discover-route')).toHaveTextContent('/artifacts/discover?category=nam-models')
     expect(screen.getByTestId('workspace-hub-shell')).toBeTruthy()
   })
 
@@ -401,12 +406,12 @@ describe('App routing', () => {
     expect(await screen.findByTestId('devices-store-route')).toHaveTextContent('/devices')
   })
 
-  it('redirects the retired Workspace Catalog route into the canonical workspace hub overview', async () => {
+  it('redirects the retired Workspace Catalog route into the canonical Node Ops overview', async () => {
     navigateTo('/platforms/workspace-catalog')
 
     render(<App />)
 
-    expect(await screen.findByTestId('workspace-platform-route')).toHaveTextContent('/workspace/platforms/overview')
+    expect(await screen.findByTestId('workspace-platform-route')).toHaveTextContent('/node-ops/overview')
   })
 
   it('retires the legacy SynthForge route back to the desktop landing page', async () => {

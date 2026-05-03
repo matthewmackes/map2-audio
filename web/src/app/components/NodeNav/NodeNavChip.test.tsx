@@ -141,7 +141,8 @@ describe('NodeNavChip', () => {
     fireEvent.click(screen.getByText('View details'))
 
     expect(useViewedNodeStore.getState().pageNodeMap.nodes).toBe('node-b')
-    expect(screen.getByTestId('location-probe')).toHaveTextContent('/platforms/management?focusNodeId=node-b')
+    // Nav reorg 2026-05-03 (second pass) — canonical Device Manager mount.
+    expect(screen.getByTestId('location-probe')).toHaveTextContent('/node-ops/management?focusNodeId=node-b')
   })
 
   it('renders a single chip for n=1 mode and shows a skeleton while loading', () => {

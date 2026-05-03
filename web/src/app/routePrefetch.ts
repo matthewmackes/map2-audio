@@ -49,7 +49,27 @@ const PREFETCH_RULES: PrefetchRule[] = [
     loaders: [() => import('./pages/SnapshotEditorPageContent')],
   },
 
-  // Workspace hub.
+  // Nav reorg 2026-05-03 (second pass) — canonical Node Ops mount
+  // is `/node-ops`. Audio Artifacts is its own top-level mount at
+  // `/artifacts`. Legacy `/workspace` and `/platforms` prefixes are
+  // retained so prefetch still triggers when an operator follows a
+  // legacy bookmark (the redirect to canonical happens after the
+  // prefetch fires).
+  {
+    prefix: '/node-ops',
+    loaders: [
+      () => import('./pages/WorkspaceHubShell'),
+      () => import('./pages/workspace-hub/platforms/PlatformWorkspaceSection'),
+      () => import('./components/Platform/PlatformModal'),
+    ],
+  },
+  {
+    prefix: '/artifacts',
+    loaders: [
+      () => import('./pages/WorkspaceHubShell'),
+      () => import('./pages/workspace-hub/artifacts/WorkspaceArtifactsOverviewPage'),
+    ],
+  },
   {
     prefix: '/workspace',
     loaders: [

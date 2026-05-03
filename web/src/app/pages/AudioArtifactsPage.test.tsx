@@ -150,6 +150,10 @@ function renderArtifacts(initialEntry: string) {
   )
 }
 
+// Nav reorg 2026-05-03 (second pass) — `buildWorkspaceArtifactsPath`
+// now aliases `buildArtifactsPath` and returns `/artifacts`. The
+// helper mounts the page at the canonical `/artifacts` mount so the
+// builder + Routes definitions stay consistent.
 function renderWorkspaceArtifacts(initialEntry: string, shellWindowValue?: ShellWindowContextValue) {
   const queryClient = new QueryClient({
     defaultOptions: {
@@ -173,21 +177,21 @@ function renderWorkspaceArtifacts(initialEntry: string, shellWindowValue?: Shell
       >
         <Routes>
           <Route
-            path="/workspace/artifacts"
+            path="/artifacts"
             element={wrapWithShell(
               <>
                 <AudioArtifactsPage
                   renderShell={false}
                   buildLibraryPath={buildWorkspaceArtifactsPath}
                   buildDiscoverPath={buildWorkspaceArtifactsDiscoverPath}
-                  routeActivePaths={[WORKSPACE_ARTIFACTS_BASE_PATH]}
+                  routeActivePaths={[WORKSPACE_ARTIFACTS_BASE_PATH, '/artifacts']}
                 />
                 <LocationProbe />
               </>
             )}
           />
           <Route
-            path="/workspace/artifacts/discover"
+            path="/artifacts/discover"
             element={wrapWithShell(
               <>
                 <AudioArtifactsPage
@@ -195,7 +199,7 @@ function renderWorkspaceArtifacts(initialEntry: string, shellWindowValue?: Shell
                   renderShell={false}
                   buildLibraryPath={buildWorkspaceArtifactsPath}
                   buildDiscoverPath={buildWorkspaceArtifactsDiscoverPath}
-                  routeActivePaths={[WORKSPACE_ARTIFACTS_BASE_PATH]}
+                  routeActivePaths={[WORKSPACE_ARTIFACTS_BASE_PATH, '/artifacts']}
                 />
                 <LocationProbe />
               </>
@@ -343,21 +347,27 @@ describe('AudioArtifactsPage routed workspace', () => {
   })
 
   it('preserves canonical workspace paths when toggling between library and discover mode', async () => {
-    renderWorkspaceArtifacts('/workspace/artifacts?category=lv2-plugins')
+    // Nav reorg 2026-05-03 (second pass) — `buildWorkspaceArtifactsPath`
+    // is now an alias for `buildArtifactsPath` and returns the
+    // canonical `/artifacts` URL. The legacy /workspace/artifacts
+    // mount in this helper would never receive the post-toggle nav
+    // (which now goes to /artifacts), so the helper itself needs to
+    // mount on /artifacts to match the new builder behavior.
+    renderWorkspaceArtifacts('/artifacts?category=lv2-plugins')
 
     expect(await screen.findByRole('heading', { name: 'Audio Artifacts' })).toBeInTheDocument()
 
     fireEvent.click(screen.getAllByRole('button', { name: 'Download & Discover' })[0])
 
-    expect(await screen.findByTestId('location-probe')).toHaveTextContent('/workspace/artifacts/discover?category=lv2-plugins')
+    expect(await screen.findByTestId('location-probe')).toHaveTextContent('/artifacts/discover?category=lv2-plugins')
 
     fireEvent.click(screen.getAllByRole('button', { name: 'Return to library' })[0])
 
-    expect(await screen.findByTestId('location-probe')).toHaveTextContent('/workspace/artifacts?category=lv2-plugins')
+    expect(await screen.findByTestId('location-probe')).toHaveTextContent('/artifacts?category=lv2-plugins')
   })
 
   it('renders workspace artifact routes inside the shell context when provided', async () => {
-    renderWorkspaceArtifacts('/workspace/artifacts?category=snapshots', {
+    renderWorkspaceArtifacts('/artifacts?category=snapshots', {
       title: 'Audio Artifacts',
       titleIcon: Package,
       routeHint: 'workspaces / artifacts',

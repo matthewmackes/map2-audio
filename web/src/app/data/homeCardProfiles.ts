@@ -12,8 +12,9 @@ export interface HomeCardProfile {
 }
 
 const PROFILE_BY_KEY: Record<string, HomeCardProfile> = {
-  '/workspace': {
-    summary: 'Unified Workspace Hub for platform posture, physical surfaces, audio artifacts, and outboard hardware from one routed shell.',
+  // Nav reorg 2026-05-03 (second pass) — canonical key is `/node-ops`.
+  '/node-ops': {
+    summary: 'Unified Node Ops Hub for platform posture, audio engine telemetry, network discovery, cluster dashboard, and operator midpoint from one routed shell.',
     capabilities: [
       'One canonical hub for the main MAP2 workspace families',
       'Direct access to platform, surfaces, artifacts, and outboard sections',
@@ -115,19 +116,11 @@ const PROFILE_BY_KEY: Record<string, HomeCardProfile> = {
     learnMore: 'Use Platform Guide whenever you need a single place for first-run orientation, document lookup, release provenance, or support escalation context.',
     bestFor: 'Onboarding and support traceability',
   },
-  '/platforms/about': {
-    summary: 'Canonical platform guide that combines MAP2 operating concepts, documentation access, build identity, and support context.',
-    capabilities: [
-      'Workflow onboarding and operator orientation',
-      'Documentation-library access from the shell',
-      'Build and version identity details',
-      'Runtime and deployment verification context',
-      'Support-grade system metadata and credits',
-      'Legal and licensing reference points',
-    ],
-    learnMore: 'Use Platform Guide whenever you need a single place for first-run orientation, document lookup, release provenance, or support escalation context.',
-    bestFor: 'Onboarding and support traceability',
-  },
+  // Nav reorg 2026-05-03 (second pass) — `/about` is the canonical
+  // Platform Guide mount; the entry above already covers it. The old
+  // `/platforms/about` key (this slot before the reorg) was just a
+  // duplicate of the same profile; removed to silence the duplicate-
+  // key TypeScript error.
   'platform:panel:theme': {
     summary: 'Platform appearance workspace for Carbon presets, typography selection, motion reduction, and shared category accent control.',
     capabilities: [
@@ -141,7 +134,10 @@ const PROFILE_BY_KEY: Record<string, HomeCardProfile> = {
     learnMore: 'Use Theme when you want to tune the shell’s visual language without hunting through documentation or unrelated support screens.',
     bestFor: 'Platform appearance and operator comfort tuning',
   },
-  '/platforms/theme': {
+  // Nav reorg 2026-05-03 (second pass) — canonical Theme mount is
+  // `/node-ops/theme`. Theme is a Settings nav child but its
+  // underlying route lives under node-ops.
+  '/node-ops/theme': {
     summary: 'Platform appearance workspace for Carbon presets, typography selection, motion reduction, and shared category accent control.',
     capabilities: [
       'Carbon theme preset and custom palette access',
@@ -154,7 +150,9 @@ const PROFILE_BY_KEY: Record<string, HomeCardProfile> = {
     learnMore: 'Use Theme when you want to tune the shell’s visual language without hunting through documentation or unrelated support screens.',
     bestFor: 'Platform appearance and operator comfort tuning',
   },
-  '/platforms/audio-engine': {
+  // Nav reorg 2026-05-03 (second pass) — canonical Audio Engine
+  // mount is `/node-ops/audio-engine`.
+  '/node-ops/audio-engine': {
     summary: 'Realtime engine command surface for core audio runtime state, metering, and processing-path confidence checks.',
     capabilities: [
       'Realtime engine running-state monitoring',
@@ -180,7 +178,8 @@ const PROFILE_BY_KEY: Record<string, HomeCardProfile> = {
     learnMore: 'Use LV2 Plugins when curating your processing toolbox, validating plugin footprint, or planning chain revisions.',
     bestFor: 'Plugin catalog operations',
   },
-  '/workspace/artifacts': {
+  // Nav reorg 2026-05-03 (second pass) — canonical key is `/artifacts`.
+  '/artifacts': {
     summary: 'Shared library for plugins, models, impulse responses, SoundFonts, and other audio files used by MAP2.',
     capabilities: [
       'Browse installed LV2 plugins',

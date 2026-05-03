@@ -204,6 +204,8 @@ export function usePlatformShellData(): PlatformShellData {
     return (
       canonicalPathname === '/workspace'
       || canonicalPathname.startsWith('/workspace/')
+      || canonicalPathname === '/node-ops'
+      || canonicalPathname.startsWith('/node-ops/')
       || canonicalPathname === PLATFORM_WORKSPACE_BASE_PATH
       || canonicalPathname.startsWith(`${PLATFORM_WORKSPACE_BASE_PATH}/`)
     )
@@ -1034,97 +1036,16 @@ export function usePlatformShellData(): PlatformShellData {
       notifications: nodeNotifications,
     } satisfies PlatformLayerData
 
-    const avbLayer = {
-      ...PLATFORM_LAYER_META[2],
-      health: avbHealth,
-      activityLevel: clampPercent((runningAvbStreams.length * 15) + ((avbDiscoveryQuery.data?.total_discovered ?? 0) * 5)),
-      alertCount: avbNotifications.length,
-      isLoading: avbStatusQuery.isLoading && !avbStatusQuery.data,
-      error: avbStatusQuery.error instanceof Error ? avbStatusQuery.error.message : null,
-      summaryMetrics: [
-        {
-          id: 'avb-state',
-          label: 'AVB state',
-          value: avbStatusQuery.data?.state ?? (avbStatusQuery.data?.available ? 'operational' : 'offline'),
-          helper: avbStatusQuery.data?.interface || 'Interface pending',
-          tone: avbHealth,
-        },
-        {
-          id: 'avb-ptp',
-          label: 'PTP',
-          value: ptpStatusQuery.data?.state ?? 'pending',
-          helper: `Offset ${formatNumber(ptpStatusQuery.data?.offset_ns, 0)} ns`,
-          tone: stringToHealth(ptpStatusQuery.data?.state),
-        },
-        {
-          id: 'avb-streams',
-          label: 'Running streams',
-          value: String(runningAvbStreams.length),
-          helper: `${avbStreamErrors} errors`,
-          tone: avbStreamErrors > 0 ? 'critical' : 'healthy',
-        },
-      ],
-      gridItems: [
-        {
-          id: 'avb-stream-groups',
-          title: 'Stream Groups',
-          eyebrow: 'AVB Routing',
-          metric: String(avbStreams.length),
-          helper: `${runningAvbStreams.length} running · ${avbStreamErrors} errors`,
-          status: avbStreamErrors > 0 ? 'critical' : avbHealth,
-          alertCount: avbNotifications.length,
-        },
-        {
-          id: 'avb-routing-endpoints',
-          title: 'Routing Endpoints',
-          eyebrow: 'Discovery',
-          metric: String(avbDiscoveredNodes.length),
-          helper: `${avbDiscoveryQuery.data?.talker_nodes ?? 0} talkers · ${avbDiscoveryQuery.data?.listener_nodes ?? 0} listeners`,
-          status: avbDiscoveredNodes.length > 0 ? 'healthy' : 'warning',
-        },
-        {
-          id: 'avb-ptp-lock',
-          title: 'PTP Lock',
-          eyebrow: 'Timing',
-          metric: ptpStatusQuery.data?.state ?? 'pending',
-          helper: `Path delay ${formatNumber(ptpStatusQuery.data?.mean_path_delay_ns, 0)} ns`,
-          status: stringToHealth(ptpStatusQuery.data?.state),
-        },
-        {
-          id: 'avb-tsn',
-          title: 'TSN Queueing',
-          eyebrow: 'Traffic Class',
-          metric: tsnStatusQuery.data?.available ? 'Configured' : 'Unavailable',
-          helper: tsnStatusQuery.data?.interface ?? 'No TSN interface',
-          status: tsnStatusQuery.data?.available ? 'healthy' : 'warning',
-        },
-      ],
-      tableColumns: [
-        { key: 'name', header: 'Stream Name' },
-        { key: 'source', header: 'Source' },
-        { key: 'sink', header: 'Sink' },
-        { key: 'latency', header: 'Latency' },
-        { key: 'bandwidth', header: 'Bandwidth' },
-        { key: 'status', header: 'Status' },
-      ] satisfies PlatformTableColumn[],
-      tableRows: avbStreams.map((stream) => ({
-        id: stream.stream_id,
-        name: stream.stream_id,
-        source: stream.interface ?? 'unknown',
-        sink: stream.dest_mac ?? 'multicast',
-        latency: formatLatencyMs((stream.health?.ptp.mean_path_delay_ns ?? ptpStatusQuery.data?.mean_path_delay_ns ?? null) ? Number(stream.health?.ptp.mean_path_delay_ns ?? ptpStatusQuery.data?.mean_path_delay_ns) / 1_000_000 : null),
-        bandwidth: formatBandwidthMbps(stream.channels, stream.sample_rate),
-        status: stream.state,
-      })),
-      tableTitle: 'AVB stream inventory',
-      tableDescription: 'Discovered and active AVB stream rows with timing and bandwidth context.',
-      notifications: avbNotifications,
-    } satisfies PlatformLayerData
+    // AVB Routing was promoted out of the platform layer set into its
+    // own /avb/* shell (nav reorg 2026-05-03). The avbLayer / avb-status
+    // hooks remain valid; they are now consumed directly by the AVB
+    // shell (AvbServicesRoutingPage / AvbRoutingWorkspace) instead of
+    // being assembled into a PlatformLayerData here.
 
     const discoveryReadyPeers = discoveryPeers.filter((peer) => peer.routing_ready).length
     const discoverySourceLabel = platformNodeDisplayName
     const networkDiscoveryLayer = {
-      ...PLATFORM_LAYER_META[3],
+      ...PLATFORM_LAYER_META[2],
       health: discoveryHealth,
       activityLevel: clampPercent(
         (discoveryReadyPeers * 18) +
@@ -1219,7 +1140,7 @@ export function usePlatformShellData(): PlatformShellData {
     } satisfies PlatformLayerData
 
     const clusterLayer = {
-      ...PLATFORM_LAYER_META[4],
+      ...PLATFORM_LAYER_META[3],
       health: clusterHealth,
       activityLevel: clampPercent(((clusterStatusQuery.data?.aggregate_health_score ?? 0) * 0.55) + (activeNetworkEdges * 9)),
       alertCount: clusterNotifications.length,
@@ -1308,7 +1229,6 @@ export function usePlatformShellData(): PlatformShellData {
     return [
       overviewLayer,
       nodeLayer,
-      avbLayer,
       networkDiscoveryLayer,
       clusterLayer,
     ]

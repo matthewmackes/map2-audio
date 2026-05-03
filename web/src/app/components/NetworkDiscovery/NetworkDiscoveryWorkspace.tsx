@@ -391,6 +391,10 @@ export function NetworkDiscoveryWorkspace({
   const openWorkspace = useCallback((workspace: 'management' | 'cluster-dashboard' | 'avb-routing', nodeId: string) => {
     setViewedNode(NODE_PAGE_KEYS.platform, nodeId)
     setActiveNode(localNode && nodeId === localNode.node_id ? null : nodeId)
+    if (workspace === 'avb-routing') {
+      navigate(`/avb/routing?focusNodeId=${encodeURIComponent(nodeId)}`)
+      return
+    }
     navigate(buildPlatformNodeWorkspaceHref(workspace, nodeId))
   }, [localNode, navigate, setActiveNode, setViewedNode])
 

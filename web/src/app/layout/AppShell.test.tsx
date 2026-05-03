@@ -197,31 +197,34 @@ describe('AppShell global tree navigation', () => {
     expect(container.querySelector('.window-title-strip')).toBeNull()
     const navTree = screen.getByLabelText('Global navigation')
     expect(navTree).toBeInTheDocument()
+    // Nav reorg 2026-05-03 (second pass) — top-level order is the
+    // pure canonical service hierarchy with no shortcut row and no
+    // separators. MIDI Assignments folded into MIDI Services. Audio
+    // Artifacts is its own top-level service group. Chains and
+    // Settings are top-level leaves. Platform Guide is at /about.
     expectInDocumentOrder([
       'Home',
       'Snapshot Editor',
-      'MIDI Assignments',
-      'Drums&Synth',
-      'Audio Artifacts',
-      // T2491 (2026-05-02 cleanup) — sidebar parent label aligned to
-      // T2482 iter-94 rename "MIDI Hub" → "MIDI Services". The tree-id
-      // stays '/midi-hub' for tree-state continuity.
       'MIDI Services',
-      // T2490 — AVB tree section, sibling of MIDI Services and above Node Ops.
       'AVB',
       'Node Ops',
+      'Audio Artifacts',
+      'Drums&Synth',
       'Hardware',
+      'Chains',
+      'Settings',
       'Platform Guide',
     ])
-    expect(container.querySelectorAll('.global-tree-nav__separator-line')).toHaveLength(2)
+    expect(container.querySelectorAll('.global-tree-nav__separator-line')).toHaveLength(0)
     expect(screen.getAllByText('Node Ops')).toHaveLength(1)
     expect(screen.getByText('Snapshot Editor')).toBeInTheDocument()
     expect(within(navTree).getByText('Signal Editor')).toBeInTheDocument()
     expect(within(navTree).getByText('Live')).toBeInTheDocument()
-    expect(screen.getByText('MIDI Assignments')).toBeInTheDocument()
     expect(screen.getByText('Drums&Synth')).toBeInTheDocument()
     expect(screen.getByText('Audio Artifacts')).toBeInTheDocument()
     expect(screen.getByText('Platform Guide')).toBeInTheDocument()
+    expect(screen.getByText('Chains')).toBeInTheDocument()
+    expect(screen.getByText('Settings')).toBeInTheDocument()
     expect(screen.getAllByText('Hardware').length).toBeGreaterThan(0)
     expect(screen.getAllByText('Devices').length).toBeGreaterThan(0)
     // T2490 (AVB) + T2491 (MIDI cleanup) — both AVB Services and MIDI
@@ -322,7 +325,7 @@ describe('AppShell global tree navigation', () => {
     })
   })
 
-  it('routes the Midpoint entry from Node Ops to the canonical platform workspace path', async () => {
+  it('routes the Midpoint entry from Node Ops to the canonical /node-ops path', async () => {
     renderInRouter(
       <AppShell>
         <LocationProbe />
@@ -333,7 +336,8 @@ describe('AppShell global tree navigation', () => {
     fireEvent.click(screen.getByText('Midpoint'))
 
     await waitFor(() => {
-      expect(screen.getByTestId('route-probe')).toHaveTextContent('/platforms/midpoint')
+      // Nav reorg 2026-05-03 (second pass) — canonical mount is /node-ops/midpoint.
+      expect(screen.getByTestId('route-probe')).toHaveTextContent('/node-ops/midpoint')
     })
   })
 
@@ -345,7 +349,7 @@ describe('AppShell global tree navigation', () => {
           <LocationProbe />
         </>
       </AppShell>,
-      ['/workspace/platforms/overview'],
+      ['/node-ops/overview'],
     )
 
     fireEvent.click(screen.getByRole('button', { name: /current host map2-host/i }))
@@ -357,7 +361,8 @@ describe('AppShell global tree navigation', () => {
     fireEvent.click(breadcrumbHostOption as HTMLElement)
 
     await waitFor(() => {
-      expect(screen.getByTestId('route-probe')).toHaveTextContent('/workspace/platforms/overview?viewedHost=node-remote')
+      // Nav reorg 2026-05-03 (second pass) — canonical Node Ops Overview mount.
+      expect(screen.getByTestId('route-probe')).toHaveTextContent('/node-ops/overview?viewedHost=node-remote')
     })
 
     const expectedPageKeys = Array.from(new Set(Object.values(NODE_PAGE_KEYS)))
@@ -372,7 +377,7 @@ describe('AppShell global tree navigation', () => {
       <AppShell>
         <div>shell content</div>
       </AppShell>,
-      ['/workspace/platforms/overview?viewedHost=node-remote'],
+      ['/node-ops/overview?viewedHost=node-remote'],
     )
 
     await waitFor(() => {

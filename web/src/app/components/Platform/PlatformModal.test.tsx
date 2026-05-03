@@ -596,22 +596,11 @@ describe('PlatformModalContent', () => {
     expect(screen.getByTestId('management-workspace')).toBeInTheDocument()
   })
 
-  it('renders the dedicated AVB workspace when the avb-routing layer is active', () => {
-    mockActiveLayerId = 'avb-routing'
-
-    render(
-      <MemoryRouter
-        future={{
-          v7_startTransition: true,
-          v7_relativeSplatPath: true,
-        }}
-      >
-        <PlatformModalContent onClose={() => undefined} initialLayer="avb-routing" />
-      </MemoryRouter>,
-    )
-
-    expect(screen.getByTestId('avb-routing-workspace')).toBeInTheDocument()
-  })
+  // Nav reorg 2026-05-03 — AVB Routing was removed from
+  // PLATFORM_LAYER_IDS and promoted to its own /avb/* shell. The test
+  // that asserted the legacy in-PlatformModal AVB workspace render
+  // has been retired; the AVB workspace now mounts at /avb/routing
+  // (see AvbServicesRoutingPage.tsx and the AvbRoutingWorkspace tests).
 
   it('renders the dedicated network discovery workspace when the network-discovery layer is active', () => {
     mockActiveLayerId = 'network-discovery'

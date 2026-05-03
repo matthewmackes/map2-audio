@@ -961,7 +961,7 @@ export function PlatformsOverviewTopology({ layer }: Props) {
   }, [navigate])
 
   const handleOpenAvb = useCallback(() => {
-    navigate(buildPlatformHref('avb-routing'))
+    navigate('/avb/routing')
   }, [navigate])
 
   const handleRestartConfirm = useCallback(async () => {
@@ -1015,9 +1015,9 @@ export function PlatformsOverviewTopology({ layer }: Props) {
       <header className="ptop__header">
         <div>
           <div className="ptop__crumbs">
-            <Link to="/workspace">node ops</Link>
+            <Link to="/node-ops">node ops</Link>
             <span className="ptop__crumbs-sep">/</span>
-            <Link to="/workspace/platforms/overview">platforms</Link>
+            <Link to="/node-ops/overview">platforms</Link>
             <span className="ptop__crumbs-sep">/</span>
             <span className="ptop__crumbs-current">overview</span>
           </div>

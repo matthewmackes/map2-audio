@@ -10,6 +10,10 @@ describe('homeShellNavigation recent routes', () => {
     window.sessionStorage.clear()
   })
 
+  // Nav reorg 2026-05-03 (second pass) — canonicalizeNavigationRoute
+  // collapses legacy `/platforms/<id>`, `/workspace/platforms/<id>`,
+  // and `/workspace/artifacts*` inputs onto the post-reorg canonical
+  // URLs (/node-ops/<id>, /artifacts, /about) before storage.
   it('stores the newest recent routes first, dedupes, and keeps the list bounded', () => {
     writeHomeShellRecentRoute('/brain')
     writeHomeShellRecentRoute('/platforms/theme')
@@ -20,7 +24,7 @@ describe('homeShellNavigation recent routes', () => {
 
     expect(readHomeShellRecentRoutes()).toEqual([
       '/snapshot-editor',
-      '/workspace/platforms/overview',
+      '/node-ops/overview',
       '/midi-hub/connections',
       '/brain',
     ])
@@ -28,12 +32,13 @@ describe('homeShellNavigation recent routes', () => {
   })
 
   it('falls back to the legacy single-route entry and resolves operator-facing metadata', () => {
-    window.sessionStorage.setItem('map2:home-shell-recent-route', '/workspace/artifacts?category=snapshots')
+    // Legacy /workspace/artifacts inputs canonicalize to /artifacts.
+    window.sessionStorage.setItem('map2:home-shell-recent-route', '/artifacts?category=snapshots')
 
-    expect(readHomeShellRecentRoutes()).toEqual(['/workspace/artifacts?category=snapshots'])
+    expect(readHomeShellRecentRoutes()).toEqual(['/artifacts?category=snapshots'])
     expect(readHomeShellRecentDestinations()).toEqual([
       {
-        route: '/workspace/artifacts?category=snapshots',
+        route: '/artifacts?category=snapshots',
         label: 'Snapshots',
         description: 'Return to Audio Artifacts.',
         group: 'Audio Artifacts',

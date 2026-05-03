@@ -520,7 +520,8 @@ describe('HomePage landing', () => {
     expect(await screen.findByTestId('home-shell')).toBeInTheDocument()
 
     fireEvent.click(await screen.findByRole('link', { name: /Audio interface Roland Edirol UA-1000/i }))
-    expect(screen.getByTestId('location-probe')).toHaveTextContent('/platforms/audio-engine?focusNodeId=STAGE-NODE-2')
+    // Nav reorg 2026-05-03 (second pass) — canonical Audio Engine path.
+    expect(screen.getByTestId('location-probe')).toHaveTextContent('/node-ops/audio-engine?focusNodeId=STAGE-NODE-2')
 
     fireEvent.click(await screen.findByRole('link', { name: /Snapshot Main Show Snapshot/i }))
     expect(screen.getByTestId('location-probe')).toHaveTextContent('/snapshot-editor')

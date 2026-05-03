@@ -5,9 +5,9 @@ import { GlobalTheme, Theme } from '@carbon/react'
 import { WorkspacePageTemplate } from '../components/layout/WorkspacePageTemplate'
 import { isMidpointChildNavItem, platformPanelItems } from '../data/platformMenuItems'
 import {
-  WORKSPACE_ARTIFACTS_BASE_PATH,
-  buildWorkspaceArtifactsDiscoverPath,
-  buildWorkspaceArtifactsPath,
+  ARTIFACTS_BASE_PATH,
+  buildArtifactsDiscoverPath,
+  buildArtifactsPath,
 } from './audioArtifactsRoutes'
 import { toCarbonBaseTheme, useTheme } from '../theme'
 import { buildWorkspaceHubPlatformPath } from '../platform/routes'
@@ -32,21 +32,25 @@ const ARTIFACT_CATEGORY_ITEMS: Array<{ key: string; label: string; category: str
   { key: 'artifacts-snapshots', label: 'Snapshots', category: 'snapshots' },
 ]
 
+// Nav reorg 2026-05-03 (second pass) — Audio Artifacts is now its
+// own top-level service group at `/artifacts`. The shell sidebar
+// items below match against that canonical pathname instead of the
+// old `/workspace/artifacts` mount.
 function buildWorkspaceArtifactsNavItem(
   key: string,
   label: string,
   category: string | null,
 ): WorkspaceHubNavItem {
   const to = category
-    ? buildWorkspaceArtifactsPath(new URLSearchParams({ category }))
-    : buildWorkspaceArtifactsPath()
+    ? buildArtifactsPath(new URLSearchParams({ category }))
+    : buildArtifactsPath()
 
   return {
     key,
     label,
     to,
     match: (location) => {
-      if (location.pathname !== WORKSPACE_ARTIFACTS_BASE_PATH) {
+      if (location.pathname !== ARTIFACTS_BASE_PATH) {
         return false
       }
 
@@ -82,8 +86,8 @@ function buildWorkspaceHubSections(): WorkspaceHubNavSection[] {
         {
           key: 'artifacts-discover',
           label: 'Discover',
-          to: buildWorkspaceArtifactsDiscoverPath(),
-          match: (location) => location.pathname === buildWorkspaceArtifactsDiscoverPath(),
+          to: buildArtifactsDiscoverPath(),
+          match: (location) => location.pathname === buildArtifactsDiscoverPath(),
         },
       ],
     },
@@ -91,7 +95,10 @@ function buildWorkspaceHubSections(): WorkspaceHubNavSection[] {
 }
 
 export function WorkspaceHubIndexRedirect() {
-  return <Navigate to="/workspace/platforms/overview" replace />
+  // Nav reorg 2026-05-03 (second pass) — `/node-ops` (the canonical
+  // base) lands on the Overview platform section. Pre-reorg this
+  // redirected to `/workspace/platforms/overview`.
+  return <Navigate to="/node-ops/overview" replace />
 }
 
 export function WorkspaceHubShell() {

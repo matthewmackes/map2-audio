@@ -191,6 +191,7 @@ describe('ClusterDashboardWorkspace', () => {
 
     expect(mockSetViewedNode).toHaveBeenCalledWith('nodes', 'node-remote')
     expect(mockSetActiveNode).toHaveBeenCalledWith('node-remote')
-    expect(mockNavigate).toHaveBeenCalledWith('/platforms/management?focusNodeId=node-remote')
+    // Nav reorg 2026-05-03 (second pass) — canonical Device Manager mount.
+    expect(mockNavigate).toHaveBeenCalledWith('/node-ops/management?focusNodeId=node-remote')
   })
 })

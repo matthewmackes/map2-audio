@@ -2068,7 +2068,7 @@ export function MidiAssignmentsPage() {
     <div className="midi-walk" style={rootVars}>
       <div className="app">
         <div className="header">
-          <span className="crumb"><b><Link to="/workspace">MAP2</Link></b></span>
+          <span className="crumb"><b><Link to="/node-ops">MAP2</Link></b></span>
           <span className="sep">/</span>
           <span className="crumb"><Link to="/snapshot-editor">Snapshot Editor</Link></span>
           <span className="sep">/</span>

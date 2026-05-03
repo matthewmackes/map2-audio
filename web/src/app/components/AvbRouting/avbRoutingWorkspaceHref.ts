@@ -1,5 +1,3 @@
-import { buildPlatformWorkspacePath } from '../../platform/routes'
-
 type BuildAvbRoutingWorkspaceHrefArgs = {
   tesiraDeviceId?: string | null
   entityId?: string | null
@@ -14,6 +12,8 @@ function normalizeValue(value: string | null | undefined): string | null {
   const trimmed = value.trim()
   return trimmed ? trimmed : null
 }
+
+export const AVB_ROUTING_WORKSPACE_PATH = '/avb/routing'
 
 export function buildAvbRoutingWorkspaceHref({
   tesiraDeviceId,
@@ -37,9 +37,8 @@ export function buildAvbRoutingWorkspaceHref({
     searchParams.set('focusNodeId', normalizedNodeId)
   }
 
-  const basePath = buildPlatformWorkspacePath('avb-routing')
   const search = searchParams.toString()
-  return search ? `${basePath}?${search}` : basePath
+  return search ? `${AVB_ROUTING_WORKSPACE_PATH}?${search}` : AVB_ROUTING_WORKSPACE_PATH
 }
 
 export default buildAvbRoutingWorkspaceHref

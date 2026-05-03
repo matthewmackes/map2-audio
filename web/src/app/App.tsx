@@ -323,9 +323,71 @@ function LegacyStandalonePanelRedirect({ panel }: { panel: 'host-machine' | 'aud
   return <Navigate to={`${buildPlatformWorkspacePath(panel)}${search}`} replace />
 }
 
+/**
+ * Nav reorg 2026-05-03 (second pass) — every legacy `/workspace/...`
+ * URL hard-redirects to its canonical post-reorg target:
+ *   /workspace                          → /node-ops
+ *   /workspace/platforms/<workspace>    → /node-ops/<workspace>
+ *                                          (or /about for the about panel)
+ *   /workspace/artifacts                → /artifacts
+ *   /workspace/artifacts/discover       → /artifacts/discover
+ *   /workspace/physical-surfaces*       → /devices
+ *   /workspace/outboard-hardware*       → /devices
+ * Anything else under /workspace/ falls through to /node-ops/overview.
+ */
+function LegacyWorkspaceRedirect() {
+  const location = useLocation()
+  const search = location.search || ''
+  const segments = location.pathname.split('/').filter(Boolean)
+  // segments[0] === 'workspace'
+
+  if (segments.length <= 1) {
+    return <Navigate to={`/node-ops${search}`} replace />
+  }
+
+  const second = segments[1]
+
+  if (second === 'platforms') {
+    const workspace = segments[2]
+    if (!workspace) {
+      return <Navigate to={`/node-ops${search}`} replace />
+    }
+
+    if (workspace === 'avb-routing') {
+      return <Navigate to={`/avb/routing${search}`} replace />
+    }
+
+    if (isPlatformWorkspaceId(workspace)) {
+      return <Navigate to={`${buildPlatformWorkspacePath(workspace)}${search}`} replace />
+    }
+
+    return <Navigate to={`/node-ops${search}`} replace />
+  }
+
+  if (second === 'artifacts') {
+    const tail = segments.slice(2).join('/')
+    const target = tail ? `/artifacts/${tail}` : '/artifacts'
+    return <Navigate to={`${target}${search}`} replace />
+  }
+
+  if (second === 'physical-surfaces' || second === 'outboard-hardware') {
+    return <Navigate to={`/devices${search}`} replace />
+  }
+
+  return <Navigate to={`/node-ops${search}`} replace />
+}
+
 function LegacyPlatformWorkspaceRedirect() {
   const location = useLocation()
   const params = useParams<{ workspace?: string }>()
+
+  // Nav reorg 2026-05-03 — AVB Routing was promoted out of the
+  // platform layer set into its own /avb/* shell. Hard-redirect both
+  // /platforms/avb-routing and /workspace/platforms/avb-routing.
+  if (params.workspace === 'avb-routing') {
+    return <Navigate to={`/avb/routing${location.search || ''}`} replace />
+  }
+
   const redirectedTarget = buildLegacyPlatformRedirectPath(
     new URLSearchParams(location.search),
     buildWorkspaceHubPlatformPath,
@@ -521,40 +583,60 @@ export function App() {
                             <Routes>
                                 <Route path="/" element={<HomeEntryRoute />} />
                                 <Route path="/platform" element={<LegacyPlatformRedirect />} />
-                                <Route path="/platforms" element={<Navigate to={buildWorkspaceHubPlatformPath('overview')} replace />} />
-                                <Route path="/platforms/workspace-catalog" element={<Navigate to={buildWorkspaceHubPlatformPath('overview')} replace />} />
+                                {/* Nav reorg 2026-05-03 (second pass) — `/platforms` and
+                                    `/workspace/platforms` are no longer canonical. They
+                                    now redirect to `/node-ops/*`. The bare `/platforms`
+                                    and the `/platforms/:workspace` legacy mounts hand
+                                    off to LegacyPlatformWorkspaceRedirect, which
+                                    resolves the canonical target via the helpers in
+                                    platform/routes.ts. The `/workspace/*` block below
+                                    still mounts WorkspaceHubShell for backward-compat —
+                                    but its only real responsibility now is to redirect
+                                    inbound legacy URLs into the new `/node-ops/*` and
+                                    `/artifacts/*` mounts further down. */}
+                                <Route path="/platforms" element={<Navigate to={buildPlatformWorkspacePath('overview')} replace />} />
+                                <Route path="/platforms/workspace-catalog" element={<Navigate to={buildPlatformWorkspacePath('overview')} replace />} />
                                 <Route path="/platforms/:workspace" element={<LegacyPlatformWorkspaceRedirect />} />
-                                <Route path="/workspace/*" element={<WorkspaceHubShell />}>
+                                {/* Canonical /node-ops/* mount. Hosts the platform
+                                    sections (Overview, Audio Engine, Network Discovery,
+                                    Cluster Dashboard, Midpoint, Adoption, plus the
+                                    Hardware-nav-grouped Device Manager and the
+                                    Settings-nav-grouped Theme — those live here because
+                                    they're implementation-wise platform layers/panels;
+                                    only their nav grouping moved). */}
+                                <Route path="/node-ops/*" element={<WorkspaceHubShell />}>
                                   <Route index element={<WorkspaceHubIndexRedirect />} />
                                   <Route
-                                    path="platforms/:workspace"
+                                    path=":workspace"
                                     element={<PlatformWorkspaceSection />}
                                   />
-                                  <Route
-                                    path="physical-surfaces"
-                                    element={<Navigate to="/devices" replace />}
-                                  />
-                                  <Route
-                                    path="physical-surfaces/:surfaceId"
-                                    element={<LegacyPhysicalSurfacesRedirect />}
-                                  />
-                                  <Route
-                                    path="artifacts"
-                                    element={<WorkspaceArtifactsOverviewPage />}
-                                  />
-                                  <Route
-                                    path="artifacts/discover"
-                                    element={<WorkspaceArtifactsDiscoverPage />}
-                                  />
-                                  <Route
-                                    path="outboard-hardware"
-                                    element={<Navigate to="/devices" replace />}
-                                  />
-                                  <Route
-                                    path="outboard-hardware/:deviceId"
-                                    element={<LegacyOutboardHardwareRedirect />}
-                                  />
                                 </Route>
+                                {/* Canonical /artifacts/* mount — Audio Artifacts is
+                                    now its own top-level service group (was a
+                                    Node Ops child / shortcut row item). Same
+                                    WorkspaceHubShell chrome. */}
+                                <Route path="/artifacts/*" element={<WorkspaceHubShell />}>
+                                  <Route index element={<WorkspaceArtifactsOverviewPage />} />
+                                  <Route path="discover" element={<WorkspaceArtifactsDiscoverPage />} />
+                                </Route>
+                                {/* Canonical /about mount — promoted from
+                                    /platforms/about so the URL matches its top-level
+                                    nav position. Reuses LegacyStandalonePanelRedirect
+                                    indirectly: the about panel is a standalone panel,
+                                    so the route resolves through the standard
+                                    PlatformWorkspaceSection. */}
+                                <Route path="/about" element={
+                                  <RouteBoundary title="About view crashed" actionLabel="Reload about">
+                                    <WorkspaceHubShell />
+                                  </RouteBoundary>
+                                }>
+                                  <Route index element={<PlatformWorkspaceSection />} />
+                                </Route>
+                                {/* Legacy /workspace/* mount kept for backward-compat
+                                    redirect resolution. All sub-paths hard-redirect to
+                                    their canonical /node-ops/* (or /artifacts/* or
+                                    /about) counterparts. */}
+                                <Route path="/workspace/*" element={<LegacyWorkspaceRedirect />} />
                                 {/* T2489 — /labs/push-surface hard-redirects to the unified
                                     /midi/devices/ableton-push-3/console mount (Q1=A). */}
                                 <Route path="/labs/push-surface" element={<Navigate to="/midi/devices/ableton-push-3/console" replace />} />
@@ -565,13 +647,20 @@ export function App() {
                                 <Route path="/midi-commander" element={<MidiCommanderPage />} />
                                 <Route path="/chains" element={<ChainsPage />} />
                                 <Route path="/legacy" element={<LegacyPage />} />
-                                <Route path="/about" element={<LegacyStandalonePanelRedirect panel="about" />} />
+                                {/* Nav reorg 2026-05-03 (second pass) — `/about`
+                                    is now the canonical mount further up; the duplicate
+                                    legacy redirect that lived here has been removed.
+                                    `/theme` continues to redirect into the canonical
+                                    /node-ops/theme mount (theme is a Settings nav child
+                                    but its underlying route is a node-ops standalone
+                                    panel). `/artifacts` is now the canonical mount
+                                    further up; the `LegacyArtifactsRedirect` aliases
+                                    below keep older shorthand URLs (/plugins,
+                                    /library, /audio-artifacts) pointing at it. */}
                                 <Route path="/theme" element={<LegacyStandalonePanelRedirect panel="theme" />} />
                                 <Route path="/plugins" element={<LegacyArtifactsRedirect defaultCategory="lv2-plugins" />} />
                                 <Route path="/library" element={<LegacyArtifactsRedirect />} />
                                 <Route path="/audio-artifacts" element={<LegacyArtifactsRedirect />} />
-                                <Route path="/artifacts" element={<LegacyArtifactsRedirect />} />
-                                <Route path="/artifacts/discover" element={<LegacyArtifactsDiscoverRedirect />} />
                                 {/* T2482 loop 10 / iter 93 — redirect direction flip.
                                     Pre-iter-93: bare /midi redirected to /midi-hub/connections.
                                     Post-iter-93: bare /midi-hub + /midi-hub-2 redirect to

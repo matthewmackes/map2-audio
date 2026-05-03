@@ -63,11 +63,11 @@ describe('TesiraDeviceDashboard', () => {
     })
   })
 
-  it('launches the routed Platforms AVB workspace with node-aware focus', () => {
+  it('launches the canonical /avb/routing workspace with node-aware focus', () => {
     render(<TesiraDeviceDashboard deviceId="tesira-1" />)
 
     fireEvent.click(screen.getByRole('button', { name: 'AVB Routing' }))
 
-    expect(mockNavigate).toHaveBeenCalledWith('/platforms/avb-routing?focusTesiraDevice=tesira-1&focusNodeId=node-remote')
+    expect(mockNavigate).toHaveBeenCalledWith('/avb/routing?focusTesiraDevice=tesira-1&focusNodeId=node-remote')
   })
 })

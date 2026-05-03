@@ -223,7 +223,8 @@ describe('NetworkDiscoveryWorkspace', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Open Management' }))
 
     expect(mockSetActiveNode).toHaveBeenCalledWith('node-b')
-    expect(mockNavigate).toHaveBeenCalledWith('/platforms/management?focusNodeId=node-b')
+    // Nav reorg 2026-05-03 (second pass) — canonical Device Manager mount.
+    expect(mockNavigate).toHaveBeenCalledWith('/node-ops/management?focusNodeId=node-b')
   })
 
   it('hydrates the source-node context from focusNodeId query params', () => {

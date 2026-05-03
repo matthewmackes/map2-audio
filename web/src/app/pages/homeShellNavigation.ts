@@ -135,8 +135,13 @@ export function isHomeShellTileRecent(recentPathname: string | null, route: stri
     return false
   }
 
-  if (route === '/workspace/platforms/overview') {
-    return recentPathname.startsWith('/workspace/')
+  // Nav reorg 2026-05-03 (second pass) — both legacy `/workspace/*`
+  // and canonical `/node-ops/*` count as recent for the Node Ops
+  // home tile.
+  if (route === '/node-ops/overview' || route === '/node-ops' || route === '/workspace/platforms/overview') {
+    return recentPathname.startsWith('/node-ops/')
+      || recentPathname === '/node-ops'
+      || recentPathname.startsWith('/workspace/')
   }
 
   return isRouteMatch(recentPathname, route)

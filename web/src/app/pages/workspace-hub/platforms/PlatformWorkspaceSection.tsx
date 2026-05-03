@@ -1,4 +1,4 @@
-import { Navigate, useNavigate, useParams } from 'react-router-dom'
+import { Navigate, useLocation, useNavigate, useParams } from 'react-router-dom'
 
 import { PlatformModalContent } from '../../../components/Platform/PlatformModal'
 import {
@@ -9,11 +9,17 @@ import {
 
 export function PlatformWorkspaceSection() {
   const navigate = useNavigate()
+  const location = useLocation()
   const { workspace } = useParams<{ workspace: string }>()
+  // Nav reorg 2026-05-03 (second pass) — `buildLegacyPlatformWorkspaceRedirectPath`
+  // now returns the canonical `/node-ops/<id>` path for any known
+  // workspace id, including ids we're already mounted at. Only honor
+  // the redirect when it points somewhere different from the current
+  // pathname; otherwise we'd infinite-redirect onto ourselves.
   const legacyRedirect = buildLegacyPlatformWorkspaceRedirectPath(workspace, buildWorkspaceHubPlatformPath)
   const target = resolvePlatformWorkspaceTarget(workspace)
 
-  if (legacyRedirect) {
+  if (legacyRedirect && legacyRedirect !== `${location.pathname}${location.search}` && legacyRedirect !== location.pathname) {
     return <Navigate to={legacyRedirect} replace />
   }
 
@@ -35,7 +41,7 @@ export function PlatformWorkspaceSection() {
 
         navigate(buildWorkspaceHubPlatformPath((params.panel ?? params.layer) ?? 'overview'))
       }}
-      onClose={() => navigate('/workspace')}
+      onClose={() => navigate('/node-ops')}
     />
   )
 }

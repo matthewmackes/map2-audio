@@ -10,7 +10,13 @@ import { NODE_PAGE_KEYS, pageKeyFromPathname } from '../utils/nodeDisplay'
 const LATENCY_PRESSURE_WARNING = '#f1c21b'
 
 function resolveShellLatencyPageKey(pathname: string, panel: string | null): string {
-  if (pathname.startsWith('/platforms/audio-engine')) {
+  // Nav reorg 2026-05-03 (second pass) — canonical Audio Engine
+  // mount is `/node-ops/audio-engine`. Retain `/platforms/audio-engine`
+  // for legacy redirect-in-flight URLs.
+  if (
+    pathname.startsWith('/node-ops/audio-engine')
+    || pathname.startsWith('/platforms/audio-engine')
+  ) {
     return NODE_PAGE_KEYS.audioEngine
   }
 
