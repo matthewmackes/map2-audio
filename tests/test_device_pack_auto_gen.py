@@ -210,6 +210,83 @@ def test_writer_result_carries_runtime_packs_dir() -> None:
         assert result.runtime_packs_dir == tmp
 
 
+def test_synthesis_skeleton_xml_follows_mixxx_schema() -> None:
+    """T2492-3: when no Mixxx template matches, the generated skeleton
+    uses Mixxx's MixxxMIDIPreset schema (not a MAP2-only tag) so the
+    same ControllerEngine reimplementation parses it identically."""
+    result = perform_lookup("0xffff", "0xffff")  # guaranteed miss
+    synth = ManifestSynthesizer().synthesize(
+        result,
+        SynthesisInput(
+            vid="0xffff",
+            pid="0xffff",
+            alsa_name="Synthetic",
+            usb_product="WidgetCtl",
+            operator_choice="from-scratch",
+        ),
+    )
+    assert "<MixxxMIDIPreset" in synth.mapping_xml
+    assert "<scriptfiles>" in synth.mapping_xml
+    assert "<controls>" in synth.mapping_xml
+    assert "WidgetCtl" in synth.mapping_xml
+    # The JS skeleton must follow Mixxx's "function Prefix() {}" form,
+    # not the older `var Prefix = {}` shape.
+    assert "function WidgetCtl()" in synth.scripts_js
+
+
+def test_synthesis_with_mixxx_template_preserves_attribution() -> None:
+    """T2492-3: when a Mixxx template seeds the pack, the generated
+    XML / JS retain the upstream Mixxx <info> block verbatim AND
+    carry an explicit MAP2 attribution comment block declaring the
+    GPL-2.0-or-later license + provenance commit."""
+    # Sony SixxAxis is in the shipped Mixxx index.
+    result = perform_lookup("0x054c", "0x0268")
+    assert result.mixxx_match is not None
+    synth = ManifestSynthesizer().synthesize(
+        result,
+        SynthesisInput(
+            vid="0x054c",
+            pid="0x0268",
+            alsa_name="SixxAxis",
+            operator_choice="auto",
+        ),
+    )
+    assert synth.used_mixxx_template is True
+    assert synth.mixxx_template_path == result.mixxx_match.mapping_file
+    # XML retains its declaration as the first non-empty line.
+    assert synth.mapping_xml.lstrip().startswith("<?xml")
+    # MAP2 attribution block is present.
+    assert "License: GPL-2.0-or-later (Mixxx)" in synth.mapping_xml
+    assert result.mixxx_match.upstream_commit in synth.mapping_xml
+    # The original Mixxx <info> block is preserved verbatim — must
+    # contain the upstream root element.
+    assert "<MixxxControllerPreset" in synth.mapping_xml
+    # Manifest must also carry the provenance fields.
+    assert "mixxx_template:" in synth.manifest_yaml
+    assert "GPL-2.0-or-later" in synth.manifest_yaml
+
+
+def test_synthesis_xml_attribution_lands_after_xml_decl() -> None:
+    """T2492-3: per XML 1.0 §2.8, the prolog declaration must be the
+    first thing in the document — the MAP2 attribution comment must
+    therefore land AFTER the <?xml ... ?> declaration."""
+    result = perform_lookup("0x054c", "0x0268")
+    assert result.mixxx_match is not None
+    synth = ManifestSynthesizer().synthesize(
+        result,
+        SynthesisInput(
+            vid="0x054c",
+            pid="0x0268",
+            alsa_name="SixxAxis",
+            operator_choice="use-mixxx-template",
+        ),
+    )
+    decl_idx = synth.mapping_xml.find("<?xml")
+    attribution_idx = synth.mapping_xml.find("T2492 auto-generated device-pack import")
+    assert decl_idx == 0
+    assert attribution_idx > decl_idx
+
+
 def test_writer_default_target_is_runtime_state_not_repo(monkeypatch) -> None:
     """T2492-1a: PackWriter() with no args picks the runtime state dir,
     NOT the in-tree device-packs/ mirror."""

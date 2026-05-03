@@ -48,6 +48,7 @@ class SynthesisResult:
     used_mixxx_template: bool
     mixxx_template_path: Optional[str]
     mixxx_upstream_commit: Optional[str]
+    mixxx_script_path: Optional[str] = None
 
 
 _INVALID_PATH_CHARS = re.compile(r"[^a-zA-Z0-9._-]+")
@@ -78,45 +79,100 @@ def _read_template_file(rel_path: str) -> Optional[str]:
 _DEFAULT_XML = """<?xml version="1.0" encoding="utf-8"?>
 <!--
   T2492 auto-generated controller mapping skeleton.
-  No Mixxx template matched the device's USB VID:PID; this is a blank
-  starting point. Add control rows for each MIDI CC / note your
-  device emits, then commit through the wizard.
+  No Mixxx template matched the device's USB VID:PID; this skeleton
+  follows the Mixxx MIDI preset schema (re-used as data by MAP2's
+  ControllerEngine reimplementation per CONTROLLER_LAYER.md). Add
+  <control> rows for each MIDI CC / note your device emits, then
+  commit through the wizard.
 -->
-<MAP2ControllerPreset schemaVersion="1">
-  <info>
-    <name>{name}</name>
-    <author>auto-generator</author>
-    <description>Auto-generated skeleton; edit before binding to live audio.</description>
-    <devices>
-      <product protocol="midi" vendor_id="{vid}" product_id="{pid}" />
-    </devices>
-  </info>
-  <controller id="{name}">
-    <controls>
-      <!-- TODO: add per-control mappings -->
-    </controls>
-    <outputs>
-      <!-- TODO: add per-LED / per-display outputs -->
-    </outputs>
-  </controller>
-</MAP2ControllerPreset>
+<MixxxMIDIPreset mixxxVersion="2.5.0+" schemaVersion="1">
+    <info>
+        <name>{name}</name>
+        <author>auto-generator</author>
+        <description>Auto-generated skeleton — edit before binding to live audio. USB {vid}:{pid}.</description>
+    </info>
+    <controller id="{prefix}">
+        <scriptfiles>
+            <file functionprefix="{prefix}" filename="{prefix}-scripts.js"/>
+        </scriptfiles>
+        <controls>
+            <!-- TODO: add per-control mappings:
+            <control>
+                <group>[Channel1]</group>
+                <key>{prefix}.someKnob</key>
+                <status>0xB0</status>
+                <midino>0x07</midino>
+                <options><script-binding/></options>
+            </control>
+            -->
+        </controls>
+        <outputs>
+            <!-- TODO: add per-LED / per-display outputs -->
+        </outputs>
+    </controller>
+</MixxxMIDIPreset>
 """
 
 _DEFAULT_JS = """// T2492 auto-generated controller script skeleton.
 // No Mixxx template matched this device's USB VID:PID; this is a
 // blank starting point. Hook MIDI events in the init() callback
 // and dispatch them to MAP2 actions via the controller-host bridge.
+// Function names follow Mixxx's ControllerEngine conventions because
+// MAP2 reuses the same dispatch surface.
 
-var {prefix} = {{}};
+function {prefix}() {{}}
+{prefix}.debug = false;
 
 {prefix}.init = function (id, debug) {{
-  // TODO: configure the controller; emit init SysEx if needed
+    // TODO: configure the controller; emit init SysEx if needed
 }};
 
 {prefix}.shutdown = function () {{
-  // TODO: clean up before disconnect
+    // TODO: clean up before disconnect
 }};
 """
+
+
+_TEMPLATE_XML_HEADER = """<?xml version="1.0" encoding="utf-8"?>
+<!--
+  T2492 auto-generated device-pack import.
+  Source: Mixxx mapping {template_path} (upstream commit {commit}).
+  License: GPL-2.0-or-later (Mixxx). Preserved verbatim — do not
+  strip the original Mixxx <info> block; downstream attribution
+  audits depend on it. See device-packs/_mixx-imports/MANIFEST.yaml
+  for the import provenance chain.
+-->
+"""
+
+
+_TEMPLATE_JS_HEADER = """// T2492 auto-generated device-pack import.
+// Source: Mixxx script {script_path} (upstream commit {commit}).
+// License: GPL-2.0-or-later (Mixxx). Preserved verbatim. See
+// device-packs/_mixx-imports/MANIFEST.yaml for provenance chain.
+"""
+
+
+def _splice_template_xml_header(raw: str, *, template_path: str, commit: str) -> str:
+    """Prepend the MAP2 attribution block while keeping the XML
+    declaration as the first line (XML 1.0 §2.8 — the prolog must
+    be the very first thing in the file). The Mixxx upstream files
+    almost always start with `<?xml version="1.0" encoding="utf-8"?>`;
+    we move our attribution comment block to land immediately after
+    that declaration.
+    """
+    stripped = raw.lstrip()
+    header = _TEMPLATE_XML_HEADER.format(template_path=template_path, commit=commit)
+    if stripped.startswith("<?xml"):
+        end = stripped.find("?>")
+        if end != -1:
+            decl = stripped[: end + 2]
+            rest = stripped[end + 2 :].lstrip("\r\n")
+            return f"{decl}\n{header}{rest}"
+    return f"{header}{raw}"
+
+
+def _splice_template_js_header(raw: str, *, script_path: str, commit: str) -> str:
+    return _TEMPLATE_JS_HEADER.format(script_path=script_path, commit=commit) + raw
 
 
 class ManifestSynthesizer:
@@ -184,11 +240,20 @@ class ManifestSynthesizer:
             manifest_lines.append("  mixxx_template: null")
         manifest_yaml = "\n".join(manifest_lines) + "\n"
 
+        prefix = re.sub(r"[^A-Za-z0-9]", "", model_name) or "Controller"
+
         # Mapping XML + scripts JS.
         mapping_xml: Optional[str] = None
         scripts_js: Optional[str] = None
+        scripts_js_template_path: Optional[str] = None
         if use_template and lookup.mixxx_match is not None:
-            mapping_xml = _read_template_file(lookup.mixxx_match.mapping_file)
+            raw_xml = _read_template_file(lookup.mixxx_match.mapping_file)
+            if raw_xml is not None:
+                mapping_xml = _splice_template_xml_header(
+                    raw_xml,
+                    template_path=lookup.mixxx_match.mapping_file,
+                    commit=lookup.mixxx_match.upstream_commit,
+                )
             for script_rel in lookup.mixxx_match.script_files:
                 # script_files in the index store filenames relative to
                 # the Mixxx controllers/ dir (the upstream XML schema).
@@ -202,12 +267,21 @@ class ManifestSynthesizer:
                 )
                 if candidate.is_file():
                     try:
-                        scripts_js = candidate.read_text(
+                        raw_js = candidate.read_text(
                             encoding="utf-8",
                             errors="replace",
                         )
                     except OSError:
-                        scripts_js = None
+                        raw_js = None
+                    if raw_js is not None:
+                        scripts_js_template_path = (
+                            f"device-packs/_mixx-imports/res/controllers/{script_rel}"
+                        )
+                        scripts_js = _splice_template_js_header(
+                            raw_js,
+                            script_path=script_rel,
+                            commit=lookup.mixxx_match.upstream_commit,
+                        )
                     break
 
         if mapping_xml is None:
@@ -215,9 +289,9 @@ class ManifestSynthesizer:
                 name=model_name,
                 vid=lookup.vid,
                 pid=lookup.pid,
+                prefix=prefix,
             )
         if scripts_js is None:
-            prefix = re.sub(r"[^A-Za-z0-9]", "", model_name) or "Controller"
             scripts_js = _DEFAULT_JS.format(prefix=prefix)
 
         return SynthesisResult(
@@ -233,4 +307,5 @@ class ManifestSynthesizer:
             mixxx_upstream_commit=(
                 lookup.mixxx_match.upstream_commit if use_template and lookup.mixxx_match else None
             ),
+            mixxx_script_path=scripts_js_template_path,
         )
