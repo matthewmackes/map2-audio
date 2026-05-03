@@ -100,6 +100,7 @@ class CommitResponse(BaseModel):
     manifest_path: str
     mapping_path: str
     scripts_path: str
+    runtime_packs_dir: str  # T2492-1a: surface which target dir was used.
 
 
 def _lookup_to_response(result: LookupResult) -> LookupResponse:
@@ -162,6 +163,10 @@ async def auto_generate_synthesize(payload: SynthesizeRequest) -> SynthesizeResp
 
 @router.post("/commit", response_model=CommitResponse, status_code=status.HTTP_201_CREATED)
 async def auto_generate_commit(payload: CommitRequest) -> CommitResponse:
+    # T2492-1a: PackWriteError → 400 with operator-actionable detail.
+    # Anything else (unexpected exceptions in best-effort registry
+    # reload, etc.) is logged and surfaced as a 500 with a clean
+    # message instead of bubbling a raw stack trace.
     try:
         result = PackWriter().commit(
             vendor=payload.vendor,
@@ -172,20 +177,43 @@ async def auto_generate_commit(payload: CommitRequest) -> CommitResponse:
             overwrite=payload.overwrite,
         )
     except PackWriteError as exc:
-        raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST, detail=str(exc)) from exc
+        raise HTTPException(
+            status_code=status.HTTP_400_BAD_REQUEST,
+            detail=str(exc),
+        ) from exc
+    except Exception as exc:  # noqa: BLE001 — clean envelope for the operator
+        import logging
+        logging.getLogger(__name__).exception("Unexpected device-pack commit failure")
+        raise HTTPException(
+            status_code=status.HTTP_500_INTERNAL_SERVER_ERROR,
+            detail=f"Unexpected commit failure: {exc.__class__.__name__}: {exc}",
+        ) from exc
     return CommitResponse(
         profile_key=result.profile_key,
         pack_dir=result.pack_dir,
         manifest_path=result.manifest_path,
         mapping_path=result.mapping_path,
         scripts_path=result.scripts_path,
+        runtime_packs_dir=result.runtime_packs_dir,
     )
 
 
 @router.get("/diagnostics")
 async def auto_generate_diagnostics() -> dict[str, object]:
-    """Quick health check: how many entries in each lookup table."""
+    """Quick health check: lookup-table sizes + the resolved write target."""
+    import os
+    from app.services.device_pack_auto_gen.writer import _resolve_runtime_packs_dir
+
+    target = _resolve_runtime_packs_dir()
+    target_writable = False
+    try:
+        target.mkdir(parents=True, exist_ok=True)
+        target_writable = os.access(target, os.W_OK)
+    except OSError:
+        target_writable = False
     return {
         "mixxx_lookup_entries": MixxxLookup().entry_count,
         "usbif_lookup_vendors": UsbIfLookup().vendor_count,
+        "runtime_packs_dir": str(target),
+        "runtime_packs_dir_writable": target_writable,
     }

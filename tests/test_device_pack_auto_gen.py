@@ -173,3 +173,53 @@ def test_writer_rejects_yaml_without_schema_version() -> None:
                 mapping_xml="<?xml version='1.0'?><x/>",
                 scripts_js="",
             )
+
+
+def test_writer_translates_oserror_to_packwrite_error() -> None:
+    """T2492-1a: read-only target → PackWriteError, not raw OSError."""
+    import os
+    with tempfile.TemporaryDirectory() as tmp:
+        readonly = Path(tmp) / "readonly"
+        readonly.mkdir()
+        os.chmod(readonly, 0o500)  # r-x for owner; no write
+        try:
+            writer = PackWriter(packs_dir=readonly)
+            with pytest.raises(PackWriteError, match="Failed to write"):
+                writer.commit(
+                    vendor="testvendor",
+                    model="testmodel",
+                    manifest_yaml="schemaVersion: 1\nname: 'x'\n",
+                    mapping_xml="<?xml version='1.0'?><x/>",
+                    scripts_js="",
+                )
+        finally:
+            os.chmod(readonly, 0o700)  # restore so cleanup can remove the tmp
+
+
+def test_writer_result_carries_runtime_packs_dir() -> None:
+    """T2492-1a: PackWriteResult.runtime_packs_dir surfaces the target."""
+    with tempfile.TemporaryDirectory() as tmp:
+        writer = PackWriter(packs_dir=Path(tmp))
+        result = writer.commit(
+            vendor="testvendor",
+            model="testmodel",
+            manifest_yaml="schemaVersion: 1\nname: 'x'\n",
+            mapping_xml="<?xml version='1.0'?><x/>",
+            scripts_js="",
+        )
+        assert result.runtime_packs_dir == tmp
+
+
+def test_writer_default_target_is_runtime_state_not_repo(monkeypatch) -> None:
+    """T2492-1a: PackWriter() with no args picks the runtime state dir,
+    NOT the in-tree device-packs/ mirror."""
+    import tempfile as _tf
+    with _tf.TemporaryDirectory() as tmp:
+        monkeypatch.setenv("MAP2_DEVICE_PACKS_RUNTIME_DIR", tmp)
+        # Re-import to pick up the env var-resolved DEFAULT_RUNTIME_PACKS_DIR.
+        # Actual writer instances re-resolve per __init__, so we don't
+        # need to reimport — just construct.
+        writer = PackWriter()
+        from app.services.device_pack_auto_gen.lookup import REPO_ROOT
+        assert str(writer._packs_dir).startswith(tmp)
+        assert REPO_ROOT not in writer._packs_dir.parents

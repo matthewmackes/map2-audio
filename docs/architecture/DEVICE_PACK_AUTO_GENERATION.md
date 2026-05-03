@@ -176,6 +176,44 @@ T2492-1 (this kickoff) ships an end-to-end thin slice across all 7 surfaces. T24
 
 ---
 
+## 8.5 Runtime state directory (T2492-1a fix, 2026-05-02)
+
+**Bug surfaced post-kickoff**: the original PackWriter wrote to the
+in-tree `device-packs/` directory, which is read-only on production
+backends (the systemd unit mounts the repo r/o for isolation).
+Operator-generated packs need a writable, durable target that's
+distinct from the version-controlled vendor catalog.
+
+**Fix**: per CLAUDE.md's Configuration Authority Model, operator-state
+that survives reinstalls lives under `/var/lib/map2/`. PackWriter
+now resolves its target dir in this order:
+
+1. `MAP2_DEVICE_PACKS_RUNTIME_DIR` env var — explicit override; used
+   by tests + advanced operators who want a custom path.
+2. `/var/lib/map2/device-packs/` if writable.
+3. `~/.map2/device-packs/` as the user-state fallback. Always
+   creatable from the backend's process user.
+
+The in-tree `device-packs/` mirror stays for vendor-curated profiles
+(read-only catalog). The runtime ProfileRegistry needs to load packs
+from BOTH directories — in-tree for the vendor catalog, runtime-state
+for operator-generated packs. The registry-merge wiring is queued as
+**T2492-2** because it requires changes to `MidiDeviceRegistry` that
+need bench validation with the controller-host daemon.
+
+The commit response carries `runtime_packs_dir` so operators can see
+where their pack landed; `GET /api/midi/devices/auto-generate/diagnostics`
+also reports the resolved target + writable status as a quick health
+check.
+
+The route also wraps `OSError` into `HTTPException(400, detail=…)`
+with operator-actionable text (the previous version bubbled a raw
+500 + `Internal Server Error`, which surfaced the bug to operators
+as an opaque generic message instead of a "set this env var or grant
+write access to that path" instruction).
+
+---
+
 ## 9. Honest scope notes
 
 - **No fuzzy name matching in T2492-1.** Mixxx mappings without VID:PID are invisible to the lookup. Operator can still go through the wizard with "Generate from scratch" path. Future T2492-followup may add name-string fuzzy matching.

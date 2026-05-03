@@ -41,6 +41,32 @@ import {
   type DevicePackSynthesizeResponse,
   type DevicePackCommitResponse,
 } from '../../../map2/clients/devicePackAutoGen'
+import { ApiError } from '../../../map2/http'
+
+/**
+ * T2492-1a — extract a human-readable error message from an ApiError.
+ *
+ * The backend returns FastAPI's standard `{detail: "..."}` envelope on
+ * 4xx/5xx; ApiError stashes that in `body`. The default ApiError
+ * .message is just "API Error 500: Internal Server Error" which
+ * hides the actual reason from the operator (the bug surfaced when a
+ * commit failed with a read-only filesystem and operators saw the
+ * generic message instead of the actionable target-dir reason).
+ */
+function describeError(err: unknown): string {
+  if (err instanceof ApiError) {
+    const body = err.body
+    if (body && typeof body === 'object' && 'detail' in body) {
+      const detail = (body as { detail: unknown }).detail
+      if (typeof detail === 'string' && detail.length > 0) {
+        return detail
+      }
+    }
+    return `${err.statusText || 'Error'} (${err.status})`
+  }
+  if (err instanceof Error) return err.message
+  return String(err)
+}
 
 export interface DevicePackGeneratorTriggerDevice {
   vid: string
@@ -116,7 +142,7 @@ export function DevicePackGeneratorModal({
     devicePackAutoGenApi
       .lookup({ vid: device.vid, pid: device.pid })
       .then((res) => setLookup(res))
-      .catch((err) => setLookupError(err instanceof Error ? err.message : String(err)))
+      .catch((err) => setLookupError(describeError(err)))
       .finally(() => setLookupLoading(false))
   }, [open, step, device, lookup, lookupLoading])
 
@@ -143,7 +169,7 @@ export function DevicePackGeneratorModal({
         setVendorOverride(res.suggested_vendor)
         setModelOverride(res.suggested_model)
       })
-      .catch((err) => setSynthError(err instanceof Error ? err.message : String(err)))
+      .catch((err) => setSynthError(describeError(err)))
       .finally(() => setSynthLoading(false))
   }, [open, step, device, synth, synthLoading, operatorChoice])
 
@@ -184,7 +210,7 @@ export function DevicePackGeneratorModal({
       setCommitResult(result)
       onCommitted?.(result)
     } catch (err) {
-      setCommitError(err instanceof Error ? err.message : String(err))
+      setCommitError(describeError(err))
     } finally {
       setCommitLoading(false)
     }
