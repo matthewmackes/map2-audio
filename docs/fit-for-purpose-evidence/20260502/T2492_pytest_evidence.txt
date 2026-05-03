@@ -1,0 +1,36 @@
+============================= test session starts ==============================
+platform linux -- Python 3.14.2, pytest-9.0.2, pluggy-1.6.0 -- /usr/bin/python3
+cachedir: .pytest_cache
+rootdir: /home/mm/map2-audio
+configfile: pytest.ini
+plugins: asyncio-1.3.0, locust-2.43.3, anyio-4.12.1
+asyncio: mode=Mode.AUTO, debug=False, asyncio_default_fixture_loop_scope=None, asyncio_default_test_loop_scope=function
+collecting ... collected 25 items
+
+tests/test_device_pack_auto_gen.py::test_mixxx_lookup_loads_at_least_one_entry PASSED [  4%]
+tests/test_device_pack_auto_gen.py::test_usbif_lookup_loads_thousands_of_vendors PASSED [  8%]
+tests/test_device_pack_auto_gen.py::test_mixxx_lookup_miss_returns_none PASSED [ 12%]
+tests/test_device_pack_auto_gen.py::test_usbif_lookup_known_vendor_native_instruments PASSED [ 16%]
+tests/test_device_pack_auto_gen.py::test_perform_lookup_returns_combined_result PASSED [ 20%]
+tests/test_device_pack_auto_gen.py::test_synthesis_from_scratch_produces_valid_manifest PASSED [ 24%]
+tests/test_device_pack_auto_gen.py::test_synthesis_uses_usbif_vendor_when_no_mixxx_match PASSED [ 28%]
+tests/test_device_pack_auto_gen.py::test_writer_rejects_reserved_vendor_name PASSED [ 32%]
+tests/test_device_pack_auto_gen.py::test_writer_writes_files_to_disk PASSED [ 36%]
+tests/test_device_pack_auto_gen.py::test_writer_rejects_overwrite_without_flag PASSED [ 40%]
+tests/test_device_pack_auto_gen.py::test_writer_rejects_empty_yaml PASSED [ 44%]
+tests/test_device_pack_auto_gen.py::test_writer_rejects_yaml_without_schema_version PASSED [ 48%]
+tests/test_device_pack_auto_gen.py::test_writer_translates_oserror_to_packwrite_error PASSED [ 52%]
+tests/test_device_pack_auto_gen.py::test_writer_result_carries_runtime_packs_dir PASSED [ 56%]
+tests/test_device_pack_auto_gen.py::test_synthesis_skeleton_xml_follows_mixxx_schema PASSED [ 60%]
+tests/test_device_pack_auto_gen.py::test_synthesis_with_mixxx_template_preserves_attribution PASSED [ 64%]
+tests/test_device_pack_auto_gen.py::test_synthesis_xml_attribution_lands_after_xml_decl PASSED [ 68%]
+tests/test_device_pack_auto_gen.py::test_writer_blocks_commit_without_provenance PASSED [ 72%]
+tests/test_device_pack_auto_gen.py::test_writer_blocks_commit_with_wrong_created_via PASSED [ 76%]
+tests/test_device_pack_auto_gen.py::test_synthesizer_emits_full_provenance_for_from_scratch_packs PASSED [ 80%]
+tests/test_device_pack_auto_gen.py::test_synthesizer_emits_mixxx_script_provenance_when_template_used PASSED [ 84%]
+tests/test_device_pack_auto_gen.py::test_writer_default_target_is_runtime_state_not_repo PASSED [ 88%]
+tests/test_midi_hub_status_enrichment_t2492_2.py::test_curated_alsa_port_carries_resolved_profile_id PASSED [ 92%]
+tests/test_midi_hub_status_enrichment_t2492_2.py::test_unrecognized_alsa_port_resolves_to_generic_controller PASSED [ 96%]
+tests/test_midi_hub_status_enrichment_t2492_2.py::test_virtual_port_has_no_descriptor_or_profile PASSED [100%]
+
+============================== 25 passed in 4.23s ==============================
