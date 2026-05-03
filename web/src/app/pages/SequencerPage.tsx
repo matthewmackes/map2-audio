@@ -151,73 +151,73 @@ export function SequencerPage() {
   useSequencerRuntimeStateSync(scope, scopeKey)
 
   const stateQuery = useQuery({
-    queryKey: ['brain', 'state', scopeKey],
+    queryKey: ['sequencer', 'state', scopeKey],
     queryFn: () => sequencerApi.getState(scope),
     staleTime: 500,
   })
   const transportQuery = useQuery({
-    queryKey: ['brain', 'transport', scopeKey],
+    queryKey: ['sequencer', 'transport', scopeKey],
     queryFn: () => sequencerApi.getTransport(scope),
     staleTime: 500,
   })
   const slotsQuery = useQuery({
-    queryKey: ['brain', 'slots', scopeKey],
+    queryKey: ['sequencer', 'slots', scopeKey],
     queryFn: () => sequencerApi.getSlots(scope),
     staleTime: 2_000,
   })
   const layersQuery = useQuery({
-    queryKey: ['brain', 'layers', scopeKey],
+    queryKey: ['sequencer', 'layers', scopeKey],
     queryFn: () => sequencerApi.getLayers(scope),
     staleTime: 2_000,
   })
   const sequenceQuery = useQuery({
-    queryKey: ['brain', 'sequence', scopeKey],
+    queryKey: ['sequencer', 'sequence', scopeKey],
     queryFn: () => sequencerApi.getSequence(scope),
     staleTime: 2_000,
   })
   const mixerQuery = useQuery({
-    queryKey: ['brain', 'mixer', scopeKey],
+    queryKey: ['sequencer', 'mixer', scopeKey],
     queryFn: () => sequencerApi.getMixer(scope),
     staleTime: 2_000,
   })
   const inputsQuery = useQuery({
-    queryKey: ['brain', 'inputs', scopeKey],
+    queryKey: ['sequencer', 'inputs', scopeKey],
     queryFn: () => sequencerApi.getInputs(scope),
     staleTime: 2_000,
   })
   const libraryQuery = useQuery({
-    queryKey: ['brain', 'library', scopeKey],
+    queryKey: ['sequencer', 'library', scopeKey],
     queryFn: () => sequencerApi.getLibrary(scope),
     staleTime: 5_000,
   })
   const diagnosticsQuery = useQuery({
-    queryKey: ['brain', 'diagnostics', scopeKey],
+    queryKey: ['sequencer', 'diagnostics', scopeKey],
     queryFn: () => sequencerApi.getDiagnostics(scope),
     staleTime: 1_000,
   })
   const backingTracksQuery = useQuery({
-    queryKey: ['brain', 'session-media', 'backing-tracks'],
+    queryKey: ['sequencer', 'session-media', 'backing-tracks'],
     queryFn: () => drumsApi.getBackingTracks(),
     staleTime: 60_000,
   })
   const backingTrackTransportQuery = useQuery({
-    queryKey: ['brain', 'session-media', 'backing-tracks', 'transport'],
+    queryKey: ['sequencer', 'session-media', 'backing-tracks', 'transport'],
     queryFn: () => drumsApi.getBackingTrackTransport(),
     refetchInterval: (query) => (query.state.data?.is_playing ? 500 : 2_000),
     staleTime: 250,
   })
   const drumPracticeStateQuery = useQuery({
-    queryKey: ['brain', 'practice-coach', 'drum-state'],
+    queryKey: ['sequencer', 'practice-coach', 'drum-state'],
     queryFn: () => drumsApi.getState(),
     staleTime: 2_000,
   })
   const factoryPracticePacksQuery = useQuery({
-    queryKey: ['brain', 'practice-coach', 'packs', 'factory'],
+    queryKey: ['sequencer', 'practice-coach', 'packs', 'factory'],
     queryFn: () => drumsApi.getFactoryPacks(),
     staleTime: 60_000,
   })
   const generatedPracticePacksQuery = useQuery({
-    queryKey: ['brain', 'practice-coach', 'packs', 'generated'],
+    queryKey: ['sequencer', 'practice-coach', 'packs', 'generated'],
     queryFn: () => drumsApi.getGeneratedPacks(),
     staleTime: 60_000,
   })
@@ -227,51 +227,51 @@ export function SequencerPage() {
   const stateMutation = useMutation({
     mutationFn: (patch: Parameters<typeof sequencerApi.updateState>[0]) => sequencerApi.updateState(patch, scope),
     onSuccess: (state) => {
-      queryClient.setQueryData(['brain', 'state', scopeKey], state)
+      queryClient.setQueryData(['sequencer', 'state', scopeKey], state)
       setSetNameDraft(state.set_name)
     },
   })
   const transportMutation = useMutation({
     mutationFn: (patch: Parameters<typeof sequencerApi.setTransport>[0]) => sequencerApi.setTransport(patch, scope),
     onSuccess: (transport) => {
-      queryClient.setQueryData(['brain', 'transport', scopeKey], transport)
-      void queryClient.invalidateQueries({ queryKey: ['brain', 'state', scopeKey] })
-      void queryClient.invalidateQueries({ queryKey: ['brain', 'diagnostics', scopeKey] })
+      queryClient.setQueryData(['sequencer', 'transport', scopeKey], transport)
+      void queryClient.invalidateQueries({ queryKey: ['sequencer', 'state', scopeKey] })
+      void queryClient.invalidateQueries({ queryKey: ['sequencer', 'diagnostics', scopeKey] })
     },
   })
   const slotMutation = useMutation({
     mutationFn: ({ slotId, patch }: { slotId: number; patch: Parameters<typeof sequencerApi.updateSlot>[1] }) =>
       sequencerApi.updateSlot(slotId, patch, scope),
     onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ['brain', 'slots', scopeKey] })
-      void queryClient.invalidateQueries({ queryKey: ['brain', 'state', scopeKey] })
-      void queryClient.invalidateQueries({ queryKey: ['brain', 'sample-editor', scopeKey] })
+      void queryClient.invalidateQueries({ queryKey: ['sequencer', 'slots', scopeKey] })
+      void queryClient.invalidateQueries({ queryKey: ['sequencer', 'state', scopeKey] })
+      void queryClient.invalidateQueries({ queryKey: ['sequencer', 'sample-editor', scopeKey] })
     },
   })
   const importDrumsMutation = useMutation({
     mutationFn: () => sequencerApi.importFromDrums(scope),
     onSuccess: (state) => {
-      queryClient.setQueryData(['brain', 'state', scopeKey], state)
-      void queryClient.invalidateQueries({ queryKey: ['brain'] })
+      queryClient.setQueryData(['sequencer', 'state', scopeKey], state)
+      void queryClient.invalidateQueries({ queryKey: ['sequencer'] })
     },
   })
   const importSynthForgeMutation = useMutation({
     mutationFn: () => sequencerApi.importFromSynthForge(scope),
     onSuccess: (state) => {
-      queryClient.setQueryData(['brain', 'state', scopeKey], state)
-      void queryClient.invalidateQueries({ queryKey: ['brain'] })
+      queryClient.setQueryData(['sequencer', 'state', scopeKey], state)
+      void queryClient.invalidateQueries({ queryKey: ['sequencer'] })
     },
   })
   const backingTrackTransportMutation = useMutation({
     mutationFn: (patch: Parameters<typeof drumsApi.setBackingTrackTransport>[0]) => drumsApi.setBackingTrackTransport(patch),
     onSuccess: (transportState) => {
-      queryClient.setQueryData(['brain', 'session-media', 'backing-tracks', 'transport'], transportState)
+      queryClient.setQueryData(['sequencer', 'session-media', 'backing-tracks', 'transport'], transportState)
     },
   })
   const drumPracticeStateMutation = useMutation({
     mutationFn: (patch: Parameters<typeof drumsApi.updateState>[0]) => drumsApi.updateState(patch),
     onSuccess: (nextState) => {
-      queryClient.setQueryData(['brain', 'practice-coach', 'drum-state'], nextState)
+      queryClient.setQueryData(['sequencer', 'practice-coach', 'drum-state'], nextState)
     },
   })
 
@@ -383,7 +383,7 @@ export function SequencerPage() {
     },
     onSuccess: (_response, vars) => {
       setLibrarySnapshotSavedAssetId(vars.assetId)
-      void queryClient.invalidateQueries({ queryKey: ['brain', 'library'] })
+      void queryClient.invalidateQueries({ queryKey: ['sequencer', 'library'] })
     },
   })
 

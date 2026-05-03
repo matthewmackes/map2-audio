@@ -245,8 +245,8 @@ describe('SequencerCard', () => {
 
     expect(screen.getByLabelText('Master')).toBeInTheDocument()
     expect(screen.getByLabelText('Active slot level')).toBeInTheDocument()
-    expect(screen.getByLabelText('Brain BPM')).toBeInTheDocument()
-    expect(screen.getByLabelText('Brain pattern')).toBeInTheDocument()
+    expect(screen.getByLabelText('Sequencer BPM')).toBeInTheDocument()
+    expect(screen.getByLabelText('Sequencer pattern')).toBeInTheDocument()
   })
 
   it('toggles transport from the compact card and updates the scoped button state', async () => {
@@ -287,7 +287,7 @@ describe('SequencerCard', () => {
 
     await waitFor(() => expect(screen.getByLabelText('Active slot level')).toBeInTheDocument())
 
-    fireEvent.change(screen.getByLabelText('Brain pattern'), { target: { value: '8' } })
+    fireEvent.change(screen.getByLabelText('Sequencer pattern'), { target: { value: '8' } })
 
     await waitFor(() =>
       expect(mockSetTransport).toHaveBeenCalledWith({ pattern: 7 }, { instanceId: 17, pluginPosition: 3 }),
@@ -330,7 +330,7 @@ describe('SequencerCard', () => {
 
     await waitFor(() => expect(screen.getByRole('button', { name: 'Stop Sequencer transport' })).toBeInTheDocument())
 
-    mockTopicHandlers.get('brain:runtime')?.(
+    mockTopicHandlers.get('sequencer:runtime')?.(
       {
         resource: 'transport',
         scope: {
@@ -354,12 +354,12 @@ describe('SequencerCard', () => {
           },
         }),
       },
-      { type: 'brain_runtime_update', topic: 'brain:runtime' },
+      { type: 'brain_runtime_update', topic: 'sequencer:runtime' },
     )
 
     await waitFor(() => expect(screen.getByRole('button', { name: 'Start Sequencer transport' })).toBeInTheDocument())
     expect(screen.getByText('Runtime Synced')).toBeInTheDocument()
-    expect(screen.getByLabelText('Brain BPM')).toHaveValue('132')
-    expect(screen.getByLabelText('Brain pattern')).toHaveValue('9')
+    expect(screen.getByLabelText('Sequencer BPM')).toHaveValue('132')
+    expect(screen.getByLabelText('Sequencer pattern')).toHaveValue('9')
   })
 })

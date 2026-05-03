@@ -49,6 +49,9 @@ jest.mock('@carbon/react', () => {
   const InlineLoading = ({ description }: { description?: string }) => <div>{description}</div>
   const InlineNotification = ({ title, subtitle }: { title: string; subtitle?: string }) => <div>{title}{subtitle ? ` ${subtitle}` : ''}</div>
   const Layer = ({ children, className }: { children: React.ReactNode; className?: string }) => <div className={className}>{children}</div>
+  const Link = ({ children, href, onClick, ...props }: any) => (
+    <a href={href} onClick={onClick} {...props}>{children}</a>
+  )
   const Tag = ({ children }: { children: React.ReactNode }) => <span>{children}</span>
   const Tile = ({ children, className }: { children: React.ReactNode; className?: string }) => <section className={className}>{children}</section>
   const TreeView = Object.assign(
@@ -79,6 +82,7 @@ jest.mock('@carbon/react', () => {
     InlineLoading,
     InlineNotification,
     Layer,
+    Link,
     Tag,
     Tile,
     TreeView,

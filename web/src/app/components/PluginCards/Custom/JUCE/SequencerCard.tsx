@@ -79,17 +79,17 @@ function SequencerCardBase({
   useSequencerRuntimeStateSync(scope, scopeKey)
 
   const stateQuery = useQuery({
-    queryKey: ['brain', 'state', scopeKey],
+    queryKey: ['sequencer', 'state', scopeKey],
     queryFn: () => sequencerApi.getState(scope),
     staleTime: 500,
   })
   const transportQuery = useQuery({
-    queryKey: ['brain', 'transport', scopeKey],
+    queryKey: ['sequencer', 'transport', scopeKey],
     queryFn: () => sequencerApi.getTransport(scope),
     staleTime: 500,
   })
   const mixerQuery = useQuery({
-    queryKey: ['brain', 'mixer', scopeKey],
+    queryKey: ['sequencer', 'mixer', scopeKey],
     queryFn: () => sequencerApi.getMixer(scope),
     staleTime: 2_000,
   })
@@ -102,20 +102,20 @@ function SequencerCardBase({
   const transportMutation = useMutation({
     mutationFn: (patch: Parameters<typeof sequencerApi.setTransport>[0]) => sequencerApi.setTransport(patch, scope),
     onSuccess: (nextTransport) => {
-      queryClient.setQueryData(['brain', 'transport', scopeKey], nextTransport)
+      queryClient.setQueryData(['sequencer', 'transport', scopeKey], nextTransport)
     },
   })
   const mixerMutation = useMutation({
     mutationFn: (nextMixer: SequencerMixerState) => sequencerApi.setMixer(nextMixer, scope),
     onSuccess: (nextMixer) => {
-      queryClient.setQueryData(['brain', 'mixer', scopeKey], nextMixer)
+      queryClient.setQueryData(['sequencer', 'mixer', scopeKey], nextMixer)
     },
   })
   const slotMutation = useMutation({
     mutationFn: ({ slotId, patch }: { slotId: number; patch: Parameters<typeof sequencerApi.updateSlot>[1] }) =>
       sequencerApi.updateSlot(slotId, patch, scope),
     onSuccess: (nextSlot) => {
-      queryClient.setQueryData<SequencerState | undefined>(['brain', 'state', scopeKey], (previousState) => {
+      queryClient.setQueryData<SequencerState | undefined>(['sequencer', 'state', scopeKey], (previousState) => {
         if (!previousState?.slots?.length) {
           return previousState
         }
@@ -251,7 +251,7 @@ function SequencerCardBase({
           <div style={{ display: 'grid', gap: 12, alignContent: 'start' }}>
             <NumberInput
               label="BPM"
-              ariaLabel="Brain BPM"
+              ariaLabel="Sequencer BPM"
               value={bpm}
               min={40}
               max={300}
@@ -265,7 +265,7 @@ function SequencerCardBase({
           <div style={{ display: 'grid', gap: 12, alignContent: 'start' }}>
             <NumberInput
               label="Pattern"
-              ariaLabel="Brain pattern"
+              ariaLabel="Sequencer pattern"
               value={pattern}
               min={1}
               max={128}

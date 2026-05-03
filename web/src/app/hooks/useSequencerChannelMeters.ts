@@ -125,7 +125,7 @@ export function useSequencerChannelMeters(
   // Polling fallback — only fires before the WS connects (or when WS is off).
   const shouldPoll = !useWebSocket || !isConnected
   useQuery<SequencerMeteringPayload>({
-    queryKey: ['brain', 'metering'],
+    queryKey: ['sequencer', 'metering'],
     queryFn: async () => {
       const res = await fetch(`${API_BASE}/engine/brain/metering`)
       if (!res.ok) throw new Error(`brain/metering ${res.status}`)

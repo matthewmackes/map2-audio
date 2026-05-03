@@ -1683,7 +1683,7 @@ export function MidiAssignmentsPage() {
   // Static data; the fetch is lightweight and the wizard's StepTarget
   // is the only consumer.
   const brainActionsQuery = useQuery({
-    queryKey: ['brain', 'actions'],
+    queryKey: ['sequencer', 'actions'],
     queryFn: () => sequencerApi.listActions(),
     retry: false,
     staleTime: 5 * 60 * 1000,   // 5 min

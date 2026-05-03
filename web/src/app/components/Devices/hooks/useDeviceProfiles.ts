@@ -134,7 +134,7 @@ export function useSequencerAssetsByDevice(profileKeys: readonly string[]): Reco
   )
   const queries = useQueries({
     queries: dedupe.map((key) => ({
-      queryKey: ['brain', 'assets-by-device', key],
+      queryKey: ['sequencer', 'assets-by-device', key],
       queryFn: () => sequencerApi.getAssetsForDevice(key),
       staleTime: 30_000,
       refetchInterval: 60_000,
