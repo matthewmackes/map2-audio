@@ -37,6 +37,12 @@ AvbStreamConfig makeTestConfig(AvbDirection direction,
     config.presentationOffsetUs = 2000;
     config.priority = 3;
     config.enableTimestamping = true;
+    // T2491-7: tests in this helper exercise encode/decode mechanics
+    // with synthetic ancient timestamps; opt OUT of late-frame
+    // enforcement here so the legacy test cases keep passing
+    // without rewriting their timestamp generation. Tests that
+    // specifically exercise enforcement set the field explicitly.
+    config.lateFrameToleranceUs = 0;
     return config;
 }
 
@@ -143,6 +149,7 @@ TEST_CASE("AVTP packet encode/decode preserves metadata", "[avb][avtp]") {
     config.presentationOffsetUs = 2000;
     config.priority = 3;
     config.enableTimestamping = true;
+    config.lateFrameToleranceUs = 0;  // T2491-7: encode/decode mechanics test
 
     AvbStream stream(config, 1);
 
@@ -322,6 +329,7 @@ TEST_CASE("AVTP sequence mismatch increments sequence error counter", "[avb][avt
     config.presentationOffsetUs = 1000;
     config.priority = 3;
     config.enableTimestamping = true;
+    config.lateFrameToleranceUs = 0;  // T2491-7: sequence/encode mechanics test
 
     AvbStream stream(config, 1);
     const std::array<float, 4> inputSamples = {0.0f, 0.25f, -0.25f, 0.5f};
@@ -681,4 +689,118 @@ TEST_CASE("AVTP fault-injection stress updates counters and recovers determinist
     REQUIRE(stream.getMutableStats().timestampErrors.load() == modeledTimestampErrors);
     REQUIRE(stream.getMutableStats().decodeErrors.load() == modeledDecodeErrors);
     REQUIRE(modeledSuccessPackets == 63);
+}
+
+// T2491-7 — listener presentation-time enforcement.
+
+TEST_CASE("AvbStreamConfig defaults lateFrameToleranceUs to 1000us", "[avb][t2491-7]") {
+    AvbStreamConfig config{};
+    // The default in the struct's in-class init ensures production
+    // listeners enforce by default; tests + advanced operators
+    // explicitly set 0 to opt out.
+    REQUIRE(config.lateFrameToleranceUs == 1000);
+}
+
+TEST_CASE("AvbStream stats reset clears lateFrameDrops", "[avb][t2491-7][stats]") {
+    AvbStreamStats stats;
+    stats.lateFrameDrops.store(7);
+    REQUIRE(stats.snapshot().lateFrameDrops == 7);
+    stats.reset();
+    REQUIRE(stats.snapshot().lateFrameDrops == 0);
+}
+
+TEST_CASE("AvbStream drops listener frames whose AVTP timestamp is past deadline", "[avb][t2491-7]") {
+    // Listener stream with an aggressive 100us tolerance so even a
+    // small clock skew triggers the drop. The packet's timestamp is
+    // set to 1ns (effectively 1970), so `now - timestamp` is ~56
+    // years' worth of nanoseconds — guaranteed past deadline.
+    AvbStreamConfig config{};
+    config.interface = "lo";
+    config.streamId = 0xABCDEF0102030405ULL;
+    config.direction = AvbDirection::Listener;
+    config.sampleRate = 48000;
+    config.channels = 2;
+    config.bitDepth = 16;
+    config.samplesPerFrame = 2;
+    config.presentationOffsetUs = 1000;
+    config.lateFrameToleranceUs = 100;
+    config.priority = 3;
+    config.enableTimestamping = true;
+
+    AvbStream stream(config, 1);
+    const std::array<float, 2> inputSamples = {0.5f, -0.5f};
+    std::array<uint8_t, 256> packet{};
+    std::array<float, 2> decoded{};
+
+    // Build a packet with an ancient timestamp (1ns since epoch).
+    // The timestamp is non-zero so the timestampErrors path doesn't
+    // fire; lateness is computed from the value.
+    const size_t packedSize = stream.buildAvtpPacketForTest(
+        inputSamples.data(),
+        inputSamples.size(),
+        /*presentationTimeNs=*/1ULL,
+        /*sequenceNum=*/0,
+        packet.data(),
+        packet.size());
+    REQUIRE(packedSize > 0);
+
+    uint64_t decodeTimestamp = 0;
+    const size_t decodedCount = stream.decodeAvtpPacketForTest(
+        packet.data(),
+        packedSize,
+        decoded.data(),
+        decoded.size(),
+        &decodeTimestamp);
+
+    REQUIRE(decodedCount == 0);
+    REQUIRE(stream.getMutableStats().lateFrameDrops.load() == 1);
+    // The timestamp-out parameter is still populated before the drop
+    // so the caller sees what was rejected.
+    REQUIRE(decodeTimestamp == 1ULL);
+}
+
+TEST_CASE("AvbStream lateFrameToleranceUs=0 disables enforcement", "[avb][t2491-7]") {
+    // With tolerance=0, the legacy soft-skew policy applies: the
+    // ancient timestamp still increments timestampSkewEvents (because
+    // its absolute latency exceeds 2x presentationOffsetUs) but does
+    // NOT bump lateFrameDrops, and the conversion succeeds.
+    AvbStreamConfig config{};
+    config.interface = "lo";
+    config.streamId = 0xABCDEF0102030406ULL;
+    config.direction = AvbDirection::Listener;
+    config.sampleRate = 48000;
+    config.channels = 2;
+    config.bitDepth = 16;
+    config.samplesPerFrame = 2;
+    config.presentationOffsetUs = 1000;
+    config.lateFrameToleranceUs = 0;
+    config.priority = 3;
+    config.enableTimestamping = true;
+
+    AvbStream stream(config, 1);
+    const std::array<float, 2> inputSamples = {0.25f, -0.25f};
+    std::array<uint8_t, 256> packet{};
+    std::array<float, 2> decoded{};
+
+    const size_t packedSize = stream.buildAvtpPacketForTest(
+        inputSamples.data(),
+        inputSamples.size(),
+        /*presentationTimeNs=*/1ULL,
+        /*sequenceNum=*/0,
+        packet.data(),
+        packet.size());
+    REQUIRE(packedSize > 0);
+
+    const size_t decodedCount = stream.decodeAvtpPacketForTest(
+        packet.data(),
+        packedSize,
+        decoded.data(),
+        decoded.size(),
+        nullptr);
+
+    REQUIRE(decodedCount == inputSamples.size());
+    REQUIRE(stream.getMutableStats().lateFrameDrops.load() == 0);
+    // The legacy soft-skew counter still fires because the latency
+    // is well past 2x the configured presentation offset.
+    REQUIRE(stream.getMutableStats().timestampSkewEvents.load() == 1);
 }

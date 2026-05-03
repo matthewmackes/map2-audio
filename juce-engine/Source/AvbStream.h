@@ -50,6 +50,16 @@ struct AvbStreamConfig {
     uint8_t priority;                 // 802.1Q priority (3 for AVB Class A)
 
     bool enableTimestamping;          // Use hardware timestamping
+
+    // T2491-7 — listener-side late-frame enforcement. If a received
+    // frame's AVTP timestamp is older than (now - presentationOffset
+    // - lateFrameTolerance), the frame is dropped instead of decoded.
+    // A `lateFrameTolerance` of 0 disables enforcement and falls back
+    // to the legacy soft-skew policy (no drops, only the
+    // timestampSkewEvents counter); production listeners default to
+    // 1000us per IEEE 1722-2016 §8.5 recommendation for low-latency
+    // listeners. Tests + advanced operators set 0 to opt out.
+    uint32_t lateFrameToleranceUs{1000};
 };
 
 /**
@@ -71,6 +81,11 @@ struct AvbStreamStatsSnapshot {
     uint64_t bytesTransferred{0};
     int64_t maxLatencyNs{0};
     int64_t minLatencyNs{INT64_MAX};
+    // T2491-7 — frames dropped because their AVTP timestamp was
+    // older than (now - presentationOffset - lateFrameTolerance).
+    // Surfaced as part of the per-stream counter table consumed by
+    // T2491-6 / IEEE 1722.1 §7.4.46 STREAM_INPUT_COUNTERS.
+    uint64_t lateFrameDrops{0};
 };
 
 /**
@@ -92,6 +107,7 @@ struct AvbStreamStats {
     std::atomic<uint64_t> bytesTransferred{0};
     std::atomic<int64_t> maxLatencyNs{0};      // Maximum observed latency
     std::atomic<int64_t> minLatencyNs{INT64_MAX};
+    std::atomic<uint64_t> lateFrameDrops{0};   // T2491-7
 
     AvbStreamStatsSnapshot snapshot() const {
         return {
@@ -109,7 +125,8 @@ struct AvbStreamStats {
             maxTimestampSkewNs.load(std::memory_order_relaxed),
             bytesTransferred.load(std::memory_order_relaxed),
             maxLatencyNs.load(std::memory_order_relaxed),
-            minLatencyNs.load(std::memory_order_relaxed)
+            minLatencyNs.load(std::memory_order_relaxed),
+            lateFrameDrops.load(std::memory_order_relaxed)
         };
     }
 
@@ -129,6 +146,7 @@ struct AvbStreamStats {
         bytesTransferred.store(0, std::memory_order_relaxed);
         maxLatencyNs.store(0, std::memory_order_relaxed);
         minLatencyNs.store(INT64_MAX, std::memory_order_relaxed);
+        lateFrameDrops.store(0, std::memory_order_relaxed);
     }
 };
 

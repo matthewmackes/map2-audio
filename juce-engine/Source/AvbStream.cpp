@@ -545,6 +545,35 @@ size_t AvbStream::convertFromAvtp(const uint8_t* pdu, size_t pduSize,
                 stats_.maxTimestampSkewNs.store(std::llabs(packetLatencyNs), std::memory_order_relaxed);
             }
         }
+
+        // T2491-7 — listener presentation-time enforcement.
+        // Drop the frame if its AVTP timestamp is OLDER than
+        // (now - presentationOffset - lateFrameTolerance). Per IEEE
+        // 1722-2016 §8.5, listeners SHOULD NOT play frames that
+        // missed their presentation deadline; passing them through
+        // smears the program timeline and corrupts cross-stream
+        // alignment downstream of the AVB I/O.
+        //
+        // `lateFrameToleranceUs == 0` keeps the legacy soft-skew
+        // policy (no drop, only counter); a non-zero tolerance opts
+        // in to hard enforcement. Default in the ctor is 1000us so
+        // production listeners enforce by default; tests + advanced
+        // operators can disable by passing 0.
+        if (config_.lateFrameToleranceUs > 0) {
+            const int64_t presentationOffsetNs =
+                static_cast<int64_t>(config_.presentationOffsetUs) * 1000LL;
+            const int64_t toleranceNs =
+                static_cast<int64_t>(config_.lateFrameToleranceUs) * 1000LL;
+            const int64_t lateThresholdNs = presentationOffsetNs + toleranceNs;
+            if (packetLatencyNs > lateThresholdNs) {
+                stats_.lateFrameDrops.fetch_add(1, std::memory_order_relaxed);
+                // Bump receiveErrors so existing alarms light up, but
+                // return 0 so receiveFrame surfaces the drop as a
+                // conversion failure (return code -3) rather than a
+                // partial decode.
+                return 0;
+            }
+        }
     }
 
     const uint8_t* payload = pdu + avtpHeaderSize;
