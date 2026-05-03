@@ -1341,7 +1341,14 @@ Completion note: 2026-04-28 — Codex: **Slice 2 SHIPPED (unified MIDI router mo
   Slot-bit allocation choice: Slice 6 has not landed at the time of writing (no merge commit on `master`), so this slice carved bit 15 from `Slot::reserved` for `is_ump` and explicitly left bits 0..14 zero. Slice 6 folds its `controllerIndex` into bits 0..14 at merge time without touching bit 15.
   Remaining for full H5 acceptance:
   - **HIL gate**: end-to-end UMP traffic against a MIDI-2.0-capable device on the bench (web client → REST → host → libremidi UMP I/O → device → libremidi → host → WS broadcast). Blocked on libremidi v5.1.0 vendored not yet exposing a validated UMP input/output API for our backends; engine-side plumbing (classifier, slot discriminator, IPC additive, host-client `send_ump`) is complete and wired.
-Last updated: 2026-04-28 EDT - Claude: slice 13 (host-owned UMP round-trip foundation + recorder golden parity) shipped; H5 stays [>] In Progress with bench HIL against a MIDI-2.0-capable device as the sole remaining gate (mirrors the H3/H4 hardware-blocked pattern).
+  2026-05-03 — Claude: **Slice 14 SHIPPED (MIDI Hub absorption audit doc).**
+  Delivered:
+  - `docs/midi/MIDI_HUB_ABSORPTION_AUDIT.md` enumerates every module under `app/services/midi_hub/` (30 files, ~14,530 LOC) with a per-module classification: **Python stays** (~7,800 LOC, 55%), **Host-eligible** (~6,500 LOC, 45%), **Hardware-bound** (none — every Python module is software-tractable; only bench acceptance is hardware-gated).
+  - Doc lays out the recommended scope for each remaining H5 slice (clock-master in host, transforms in host, scheduler in host, router core deferred, MIDI 2.0 / UMP HIL hardware-gated, ring_buffer deletion at closeout).
+  - 4 new pytest cases in `tests/test_midi_hub_absorption_audit_t2459h5.py`: doc exists; doc enumerates every module under `app/services/midi_hub/`; doc keeps the Summary section + classification labels; doc cross-references the canonical artifacts (worklist, MIDI_BACKEND.md, CLUSTER_MIDI_PROTOCOL.md, MAP2MIDICONTROLLER_RETIREMENT.md).
+  - The coverage gate guards against silent drift — any new file added to `app/services/midi_hub/` will fail the audit-doc test until it's classified.
+  Validation: `pytest -q tests/test_midi_hub_absorption_audit_t2459h5.py` → **4 passed**.
+Last updated: 2026-05-03 EDT - Claude: slice 14 (MIDI Hub absorption audit doc + coverage gate) shipped; H5 stays [>] In Progress with bench HIL + per-slice C++ ports remaining.
 
 ---
 
