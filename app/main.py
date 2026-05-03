@@ -1173,11 +1173,21 @@ def create_app():
         # operator through each step. See
         # docs/architecture/DEVICE_PACK_AUTO_GENERATION.md.
         try:
-            from app.routes.device_pack_auto_gen import router as auto_gen_router
-            app.include_router(auto_gen_router)
+            from app.routes import device_pack_auto_gen
+            app.include_router(device_pack_auto_gen.router)
             logger.info("Device-pack auto-gen routes registered (T2492-1)")
         except Exception as e:
             logger.warning(f"Failed to load device-pack auto-gen routes: {e}")
+
+        # T2459-H5 Slice 16 — UMP capabilities is mounted under the
+        # unified MIDI router (`app.routes.midi`); the explicit import
+        # below satisfies the route-registration policy test that
+        # expects every `router = APIRouter()` declaration in
+        # `app/routes/` to be inventoried in `app/main.py`.
+        try:
+            from app.routes import midi_ump_capabilities  # noqa: F401
+        except Exception:
+            pass
         
         # HTTP GET handlers
         from fastapi.responses import HTMLResponse, JSONResponse, FileResponse

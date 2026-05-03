@@ -1361,7 +1361,16 @@ Completion note: 2026-04-28 — Codex: **Slice 2 SHIPPED (unified MIDI router mo
   - When the controller-host daemon is reachable, `data.host_side` carries the live backend selection (jack / pipewire / alsa_seq / alsa_raw) + `degraded` flag so the operator UI can render "UMP capable: yes (PipeWire)" or "UMP capable: degraded (alsa_seq — production needs PipeWire/JACK)". Resolver tolerates client construction / `is_daemon_available` failures gracefully (returns None instead of raising).
   - 6 new pytest cases: engine-side block always present; unavailable when daemon down; available when daemon returns backend; resolver handles client construction failure; resolver handles is-daemon-available failure; classifier buckets match Slice 13's lock.
   Validation: `pytest -q tests/test_midi_ump_capabilities_t2459h5.py` → **6 passed**.
-Last updated: 2026-05-03 EDT - Claude: slice 16 (UMP capabilities surface) shipped; H5 stays [>] In Progress with bench HIL + per-slice C++ ports remaining.
+  2026-05-03 — Claude: **Slice 17 SHIPPED (legacy MIDI routes carry deprecation advisory headers at runtime + route registration policy fix).**
+  Delivered:
+  - During the deprecation window (default state, `MAP2_MIDI_LEGACY_RETIRED` unset/falsy) every legacy MIDI route response now carries `Sunset: Wed, 01 Jul 2026 00:00:00 GMT`, `Link: </api/v2/midi>; rel="successor-version"`, and `Deprecation: true`. Operators' HTTP clients (curl, internal automation, dashboards) log RFC 8594 / RFC 8288 headers automatically — without this slice, the only signal of impending retirement was the OpenAPI `deprecated: true` flag.
+  - Headers match the 410-Gone path verbatim (same `SUNSET_HEADER` constant + same successor-version `Link`) so a client transitioning from the deprecated phase into the retired phase sees the same advisory set.
+  - v2 surfaces are NOT wrapped (test pins this) — the wrapper applies only to legacy mounts.
+  - Implementation note caught: FastAPI dependency injection requires `Response` imported from `fastapi`, not `starlette.responses`; the latter is treated as a query parameter and the request fails with 422. Pinned in the helper's docstring.
+  - Side-fix: `app/main.py` explicit-import of `device_pack_auto_gen` and `midi_ump_capabilities` re-classified through the canonical `from app.routes import X` form so `tests/test_route_registration_policy.py::test_every_apirouter_file_is_registered` (already failing on master before this slice) goes back to green.
+  - 3 new pytest cases in `tests/test_midi_legacy_deprecation_headers_t2459h5.py`: legacy response carries the advisory header trio; post-flip 410 response still carries them; v2 routes don't.
+  Validation: `pytest -q tests/test_midi_legacy_deprecation_headers_t2459h5.py tests/test_midi_v1_retirement_t2459h5.py tests/test_midi_legacy_retirement_status_t2459h5.py tests/test_midi_unified_routes_t2459h5.py tests/test_midi_v2_routes.py tests/test_route_registration_policy.py` → **36 passed**.
+Last updated: 2026-05-03 EDT - Claude: slice 17 (legacy MIDI deprecation advisory headers + route policy fix) shipped; H5 stays [>] In Progress with bench HIL + per-slice C++ ports remaining.
 
 ---
 

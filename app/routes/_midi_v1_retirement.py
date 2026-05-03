@@ -14,7 +14,7 @@ from __future__ import annotations
 import os
 from typing import Iterable
 
-from fastapi import APIRouter, Request
+from fastapi import APIRouter, Depends, Request, Response
 from fastapi.responses import JSONResponse
 
 
@@ -76,12 +76,48 @@ def _build_retired_router(
     return router
 
 
+def _wrap_legacy_with_runtime_headers(legacy_router: APIRouter) -> APIRouter:
+    """Wrap a legacy router so every response carries the deprecation
+    advisory headers at runtime.
+
+    FastAPI dependency injection delivers the underlying ``Response``
+    object via ``response: Response`` parameter (the import must come
+    from ``fastapi``, not ``starlette.responses``; FastAPI's runtime
+    type-introspection treats the starlette type as a query
+    parameter and rejects the request with 422). Mutating
+    ``response.headers`` in the dep's body propagates to the final
+    response that FastAPI builds for the route.
+    """
+    wrapper = APIRouter()
+
+    async def _inject_deprecation_headers(response: Response) -> None:
+        response.headers["Sunset"] = SUNSET_HEADER
+        response.headers["Link"] = f"<{SUCCESSOR_PREFIX}>; rel=\"successor-version\""
+        response.headers["Deprecation"] = "true"
+
+    wrapper.include_router(
+        legacy_router,
+        deprecated=True,
+        dependencies=[Depends(_inject_deprecation_headers)],
+    )
+    return wrapper
+
+
 def include_legacy_midi_router(parent: APIRouter, legacy_router: APIRouter) -> None:
-    """Mount ``legacy_router`` on ``parent`` honoring the retirement flag."""
+    """Mount ``legacy_router`` on ``parent`` honoring the retirement flag.
+
+    Pre-retirement (default): the legacy router stays mounted with
+    `deprecated=True`, AND every response carries the runtime
+    deprecation advisory headers (Sunset / Link / Deprecation).
+
+    Post-retirement (`MAP2_MIDI_LEGACY_RETIRED=1`): the legacy router
+    is replaced with a 410-Gone shim that responds on every path
+    with the same advisory headers + the canonical error envelope.
+    """
     if is_legacy_midi_retired():
         parent.include_router(_build_retired_router(legacy_router))
     else:
-        parent.include_router(legacy_router, deprecated=True)
+        parent.include_router(_wrap_legacy_with_runtime_headers(legacy_router))
 
 
 # ---------------------------------------------------------------------------
