@@ -81,6 +81,8 @@ class AvbStreamStats:
     bytes_transferred: int = 0
     max_latency_ns: int = 0
     min_latency_ns: int = 0
+    # T2491-7 — listener presentation-time enforcement counter.
+    late_frame_drops: int = 0
 
 
 @dataclass
@@ -337,6 +339,7 @@ class AvbService:
             "bytes_transferred": ("bytes_transferred", "bytesTransferred"),
             "max_latency_ns": ("max_latency_ns", "maxLatencyNs"),
             "min_latency_ns": ("min_latency_ns", "minLatencyNs"),
+            "late_frame_drops": ("late_frame_drops", "lateFrameDrops"),
         }
 
         for field_name, candidate_keys in aliases.items():
