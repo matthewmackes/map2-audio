@@ -326,8 +326,13 @@ def _parse_if_match_header(value: Optional[str]) -> Optional[int]:
     last-write-wins behavior. When present we accept either a bare integer
     (`If-Match: 4`) or a quoted ETag-style value (`If-Match: "4"`). Anything
     else returns 400 so misuse is loud rather than silent.
+
+    Tests that call the route function directly (rather than through the
+    ASGI stack) pass the FastAPI `Header()` sentinel as the default — treat
+    any non-string value as "header absent" so unit tests stay simple without
+    weakening the runtime contract.
     """
-    if value is None:
+    if not isinstance(value, str):
         return None
     cleaned = value.strip()
     if cleaned.startswith('"') and cleaned.endswith('"'):

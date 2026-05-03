@@ -73,7 +73,7 @@ class MaschineProfileRuntime:
             RegisteredProfile(JsonMaschineProfile(base_path / "t23_preferences.json"), category="Admin", order=23),
             RegisteredProfile(JsonMaschineProfile(base_path / "t24_help_manual.json"), category="Help", order=24),
             RegisteredProfile(JsonMaschineProfile(base_path / "t25_reference_card.json"), category="Help", order=25),
-            RegisteredProfile(JsonMaschineProfile(base_path / "t10_brain_seq.json"), category="Brain", order=10),
+            RegisteredProfile(JsonMaschineProfile(base_path / "t10_sequencer_seq.json"), category="Brain", order=10),
             RegisteredProfile(T9EffectChainEditorProfile(), category="Chain", order=9),
         ]
         profiles = [registration.profile for registration in registrations]
