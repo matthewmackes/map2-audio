@@ -460,6 +460,7 @@ async def get_hub_status() -> Dict[str, Any]:
     hub = get_midi_hub()
     router_service = get_midi_router()
     monitor = get_midi_traffic_monitor()
+    registry = get_midi_device_registry()
 
     payload = hub.to_dict()
     payload["route_count"] = len(router_service.list_routes())
@@ -469,6 +470,34 @@ async def get_hub_status() -> Dict[str, Any]:
         "capacity": monitor.snapshot(limit=1).get("capacity", 0),
     }
     payload["routes"] = router_service.list_routes()
+
+    # T2492-2: enrich each port with USB descriptor + resolved profile_key
+    # so the /midi/connections UI can render an "Unknown device" Tag and
+    # open the device-pack auto-generator wizard pre-populated.
+    snapshot = registry.snapshot()
+    by_port: Dict[str, Dict[str, Any]] = {}
+    for device in snapshot.get("devices", []):
+        vid = device.get("vendor_id")
+        pid = device.get("product_id")
+        profile_id = device.get("profile_id")
+        for port_id in device.get("port_ids", []) or []:
+            by_port[str(port_id)] = {"vid": vid, "pid": pid, "profile_id": profile_id}
+        for port_name in device.get("port_names", []) or []:
+            by_port[str(port_name)] = {"vid": vid, "pid": pid, "profile_id": profile_id}
+
+    enriched_ports: List[Dict[str, Any]] = []
+    for port in payload.get("ports", []) or []:
+        port_record = dict(port)
+        info = by_port.get(str(port_record.get("port_id"))) or by_port.get(str(port_record.get("name"))) or {}
+        if info.get("vid"):
+            port_record["vendor_id"] = info["vid"]
+        if info.get("pid"):
+            port_record["product_id"] = info["pid"]
+        if info.get("profile_id"):
+            port_record["profile_id"] = info["profile_id"]
+        enriched_ports.append(port_record)
+    payload["ports"] = enriched_ports
+
     return payload
 
 
