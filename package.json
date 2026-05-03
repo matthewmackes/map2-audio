@@ -28,13 +28,15 @@
       "<rootDir>/build/",
       "<rootDir>/juce-engine/build/",
       "<rootDir>/juce-engine/build-check/",
-      "<rootDir>/juce-engine/build-.*?/"
+      "<rootDir>/juce-engine/build-.*?/",
+      "<rootDir>/.claude/worktrees/"
     ],
     "transformIgnorePatterns": [
       "/node_modules/(?!@faker-js/faker/)"
     ],
     "testPathIgnorePatterns": [
-      "<rootDir>/web/src/map2/components/MAP2Dashboard.test.tsx"
+      "<rootDir>/web/src/map2/components/MAP2Dashboard.test.tsx",
+      "<rootDir>/.claude/worktrees/"
     ]
   },
   "keywords": [],
