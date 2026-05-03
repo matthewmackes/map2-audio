@@ -89,7 +89,7 @@ def test_brain_monitor_candidates_only_includes_connected(monkeypatch, client):
     monkeypatch.setattr(cd, "_read_alsa_card_names", lambda: [])
     monkeypatch.setattr(cd, "_read_pipewire_nodes", lambda: [])
 
-    r = client.get("/api/devices/brain-monitor-candidates")
+    r = client.get("/api/devices/sequencer-monitor-candidates")
     assert r.status_code == 200
     body = r.json()
     assert body["candidates"] == []
@@ -106,7 +106,7 @@ def test_brain_monitor_candidates_only_includes_loopback_ports(monkeypatch, clie
     monkeypatch.setattr(cd, "_read_alsa_card_names", lambda: [])
     monkeypatch.setattr(cd, "_read_pipewire_nodes", lambda: [])
 
-    r = client.get("/api/devices/brain-monitor-candidates")
+    r = client.get("/api/devices/sequencer-monitor-candidates")
     body = r.json()
     assert body["count"] == 1
     assert body["candidates"][0]["profile_key"] == "edirol-ua/ua-1000.audio"
@@ -149,7 +149,7 @@ def test_brain_monitor_candidates_carries_latest_measurement(monkeypatch, client
         "jitter_p95_ms": 0.2,
     }), encoding="utf-8")
 
-    r = client.get("/api/devices/brain-monitor-candidates")
+    r = client.get("/api/devices/sequencer-monitor-candidates")
     body = r.json()
     assert body["count"] == 1
     cand = body["candidates"][0]

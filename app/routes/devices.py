@@ -829,8 +829,8 @@ async def list_diagnostics(
     }
 
 
-@router.get("/brain-monitor-candidates")
-async def list_brain_monitor_candidates() -> dict[str, Any]:
+@router.get("/sequencer-monitor-candidates")
+async def list_sequencer_monitor_candidates() -> dict[str, Any]:
     """T2461-A5 — return connected devices that declare loopback_ports
     plus their latest measure-latency mean/p95/jitter (if any).
 

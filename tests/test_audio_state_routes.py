@@ -292,12 +292,12 @@ def test_activate_snapshot_route_fails_when_authority_does_not_confirm_same_snap
     assert "did not confirm" in response.json()["detail"]
 
 
-def test_sync_brain_into_audio_state_route_forwards_scope(monkeypatch) -> None:
+def test_sync_sequencer_into_audio_state_route_forwards_scope(monkeypatch) -> None:
     client = _build_client(monkeypatch)
     fake_service = _SequencerAuthoritySyncService()
     monkeypatch.setattr(audio_state_routes, "_brain_authority_service", lambda: fake_service)
 
-    response = client.post("/api/audio/state/brain/sync?instance_id=17&plugin_position=3&triggered_by=ui-test")
+    response = client.post("/api/audio/state/sequencer/sync?instance_id=17&plugin_position=3&triggered_by=ui-test")
 
     assert response.status_code == 200
     payload = response.json()

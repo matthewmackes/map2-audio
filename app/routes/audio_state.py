@@ -136,8 +136,8 @@ async def activate_snapshot_into_audio_state(
         raise _http_error(exc)
 
 
-@router.post("/brain/sync", response_model=AudioStateEnvelope)
-async def sync_brain_into_audio_state(
+@router.post("/sequencer/sync", response_model=AudioStateEnvelope)
+async def sync_sequencer_into_audio_state(
     instance_id: str | None = Query(default=None),
     plugin_position: int | None = Query(default=None, ge=0),
     triggered_by: str = Query(default="ui"),
