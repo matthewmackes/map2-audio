@@ -56,7 +56,6 @@ const ReactQueryDevtools = process.env.NODE_ENV !== 'production' && process.env.
 // Only the code for the current route is downloaded; the rest load on demand.
 // ============================================================================
 const HomePage              = lazy(() => import('./pages/HomePage').then(m => ({ default: m.HomePage })))
-const ChainsPage            = lazy(() => import('./pages/ChainsPage').then(m => ({ default: m.ChainsPage })))
 const LegacyPage            = lazy(() => import('./pages/LegacyPage').then(m => ({ default: m.LegacyPage })))
 const PlatformWorkspaceSection = lazy(() => import('./pages/workspace-hub/platforms/PlatformWorkspaceSection').then(m => ({ default: m.PlatformWorkspaceSection })))
 const WorkspaceArtifactsOverviewPage = lazy(() => import('./pages/workspace-hub/artifacts/WorkspaceArtifactsOverviewPage').then(m => ({ default: m.WorkspaceArtifactsOverviewPage })))
@@ -645,7 +644,10 @@ export function App() {
                                 <Route path="/mcu" element={<McuPage />} />
                                 <Route path="/launch-control" element={<LaunchControlPage />} />
                                 <Route path="/midi-commander" element={<MidiCommanderPage />} />
-                                <Route path="/chains" element={<ChainsPage />} />
+                                {/* Nav reorg 2026-05-03 — /chains route deleted.
+                                    Content folded into /node-ops/audio-engine as
+                                    AudioEngineChainsSection at the top. No
+                                    redirect (per the no-bookmarks decision). */}
                                 <Route path="/legacy" element={<LegacyPage />} />
                                 {/* Nav reorg 2026-05-03 (second pass) — `/about`
                                     is now the canonical mount further up; the duplicate

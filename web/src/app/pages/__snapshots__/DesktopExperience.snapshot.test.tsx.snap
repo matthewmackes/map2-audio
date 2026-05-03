@@ -2334,21 +2334,8 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                     viewBox="0 0 32 32"
                     width="24"
                   >
-                    <rect
-                      fill="none"
-                      height="20"
-                      rx="4"
-                      stroke="currentColor"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="1.8"
-                      vector-effect="non-scaling-stroke"
-                      width="22"
-                      x="5"
-                      y="6"
-                    />
                     <path
-                      d="M9 11h14"
+                      d="M7 11h18v13H7z"
                       fill="none"
                       stroke="currentColor"
                       stroke-linecap="round"
@@ -2357,7 +2344,7 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                       vector-effect="non-scaling-stroke"
                     />
                     <path
-                      d="M9 16h14"
+                      d="M10 8h12l2 3H8z"
                       fill="none"
                       stroke="currentColor"
                       stroke-linecap="round"
@@ -2366,7 +2353,7 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                       vector-effect="non-scaling-stroke"
                     />
                     <path
-                      d="M9 21h14"
+                      d="M14 15h4"
                       fill="none"
                       stroke="currentColor"
                       stroke-linecap="round"
@@ -2374,23 +2361,23 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                       stroke-width="1.8"
                       vector-effect="non-scaling-stroke"
                     />
-                    <circle
-                      cx="11"
-                      cy="11"
-                      fill="currentColor"
-                      r="1.2"
+                    <path
+                      d="M12 19h8"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="1.8"
+                      vector-effect="non-scaling-stroke"
                     />
-                    <circle
-                      cx="21"
-                      cy="16"
-                      fill="currentColor"
-                      r="1.2"
-                    />
-                    <circle
-                      cx="15"
-                      cy="21"
-                      fill="currentColor"
-                      r="1.2"
+                    <path
+                      d="M9 11v-1.5A1.5 1.5 0 0 1 10.5 8"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="1.8"
+                      vector-effect="non-scaling-stroke"
                     />
                   </svg>
                   <span
@@ -2470,21 +2457,8 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                         viewBox="0 0 32 32"
                         width="24"
                       >
-                        <rect
-                          fill="none"
-                          height="20"
-                          rx="4"
-                          stroke="currentColor"
-                          stroke-linecap="round"
-                          stroke-linejoin="round"
-                          stroke-width="1.8"
-                          vector-effect="non-scaling-stroke"
-                          width="22"
-                          x="5"
-                          y="6"
-                        />
                         <path
-                          d="M9 11h14"
+                          d="M7 11h18v13H7z"
                           fill="none"
                           stroke="currentColor"
                           stroke-linecap="round"
@@ -2493,7 +2467,7 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                           vector-effect="non-scaling-stroke"
                         />
                         <path
-                          d="M9 16h14"
+                          d="M10 8h12l2 3H8z"
                           fill="none"
                           stroke="currentColor"
                           stroke-linecap="round"
@@ -2502,7 +2476,7 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                           vector-effect="non-scaling-stroke"
                         />
                         <path
-                          d="M9 21h14"
+                          d="M14 15h4"
                           fill="none"
                           stroke="currentColor"
                           stroke-linecap="round"
@@ -2510,23 +2484,23 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                           stroke-width="1.8"
                           vector-effect="non-scaling-stroke"
                         />
-                        <circle
-                          cx="11"
-                          cy="11"
-                          fill="currentColor"
-                          r="1.2"
+                        <path
+                          d="M12 19h8"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="1.8"
+                          vector-effect="non-scaling-stroke"
                         />
-                        <circle
-                          cx="21"
-                          cy="16"
-                          fill="currentColor"
-                          r="1.2"
-                        />
-                        <circle
-                          cx="15"
-                          cy="21"
-                          fill="currentColor"
-                          r="1.2"
+                        <path
+                          d="M9 11v-1.5A1.5 1.5 0 0 1 10.5 8"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="1.8"
+                          vector-effect="non-scaling-stroke"
                         />
                       </svg>
                       <span
@@ -2651,21 +2625,8 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                         viewBox="0 0 32 32"
                         width="24"
                       >
-                        <rect
-                          fill="none"
-                          height="20"
-                          rx="4"
-                          stroke="currentColor"
-                          stroke-linecap="round"
-                          stroke-linejoin="round"
-                          stroke-width="1.8"
-                          vector-effect="non-scaling-stroke"
-                          width="22"
-                          x="5"
-                          y="6"
-                        />
                         <path
-                          d="M9 11h14"
+                          d="M7 11h18v13H7z"
                           fill="none"
                           stroke="currentColor"
                           stroke-linecap="round"
@@ -2674,7 +2635,7 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                           vector-effect="non-scaling-stroke"
                         />
                         <path
-                          d="M9 16h14"
+                          d="M10 8h12l2 3H8z"
                           fill="none"
                           stroke="currentColor"
                           stroke-linecap="round"
@@ -2683,7 +2644,7 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                           vector-effect="non-scaling-stroke"
                         />
                         <path
-                          d="M9 21h14"
+                          d="M14 15h4"
                           fill="none"
                           stroke="currentColor"
                           stroke-linecap="round"
@@ -2691,23 +2652,23 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                           stroke-width="1.8"
                           vector-effect="non-scaling-stroke"
                         />
-                        <circle
-                          cx="11"
-                          cy="11"
-                          fill="currentColor"
-                          r="1.2"
+                        <path
+                          d="M12 19h8"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="1.8"
+                          vector-effect="non-scaling-stroke"
                         />
-                        <circle
-                          cx="21"
-                          cy="16"
-                          fill="currentColor"
-                          r="1.2"
-                        />
-                        <circle
-                          cx="15"
-                          cy="21"
-                          fill="currentColor"
-                          r="1.2"
+                        <path
+                          d="M9 11v-1.5A1.5 1.5 0 0 1 10.5 8"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="1.8"
+                          vector-effect="non-scaling-stroke"
                         />
                       </svg>
                       <span
@@ -2832,21 +2793,8 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                         viewBox="0 0 32 32"
                         width="24"
                       >
-                        <rect
-                          fill="none"
-                          height="20"
-                          rx="4"
-                          stroke="currentColor"
-                          stroke-linecap="round"
-                          stroke-linejoin="round"
-                          stroke-width="1.8"
-                          vector-effect="non-scaling-stroke"
-                          width="22"
-                          x="5"
-                          y="6"
-                        />
                         <path
-                          d="M9 11h14"
+                          d="M7 11h18v13H7z"
                           fill="none"
                           stroke="currentColor"
                           stroke-linecap="round"
@@ -2855,7 +2803,7 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                           vector-effect="non-scaling-stroke"
                         />
                         <path
-                          d="M9 16h14"
+                          d="M10 8h12l2 3H8z"
                           fill="none"
                           stroke="currentColor"
                           stroke-linecap="round"
@@ -2864,7 +2812,7 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                           vector-effect="non-scaling-stroke"
                         />
                         <path
-                          d="M9 21h14"
+                          d="M14 15h4"
                           fill="none"
                           stroke="currentColor"
                           stroke-linecap="round"
@@ -2872,23 +2820,23 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                           stroke-width="1.8"
                           vector-effect="non-scaling-stroke"
                         />
-                        <circle
-                          cx="11"
-                          cy="11"
-                          fill="currentColor"
-                          r="1.2"
+                        <path
+                          d="M12 19h8"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="1.8"
+                          vector-effect="non-scaling-stroke"
                         />
-                        <circle
-                          cx="21"
-                          cy="16"
-                          fill="currentColor"
-                          r="1.2"
-                        />
-                        <circle
-                          cx="15"
-                          cy="21"
-                          fill="currentColor"
-                          r="1.2"
+                        <path
+                          d="M9 11v-1.5A1.5 1.5 0 0 1 10.5 8"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="1.8"
+                          vector-effect="non-scaling-stroke"
                         />
                       </svg>
                       <span
@@ -3013,21 +2961,8 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                         viewBox="0 0 32 32"
                         width="24"
                       >
-                        <rect
-                          fill="none"
-                          height="20"
-                          rx="4"
-                          stroke="currentColor"
-                          stroke-linecap="round"
-                          stroke-linejoin="round"
-                          stroke-width="1.8"
-                          vector-effect="non-scaling-stroke"
-                          width="22"
-                          x="5"
-                          y="6"
-                        />
                         <path
-                          d="M9 11h14"
+                          d="M7 11h18v13H7z"
                           fill="none"
                           stroke="currentColor"
                           stroke-linecap="round"
@@ -3036,7 +2971,7 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                           vector-effect="non-scaling-stroke"
                         />
                         <path
-                          d="M9 16h14"
+                          d="M10 8h12l2 3H8z"
                           fill="none"
                           stroke="currentColor"
                           stroke-linecap="round"
@@ -3045,7 +2980,7 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                           vector-effect="non-scaling-stroke"
                         />
                         <path
-                          d="M9 21h14"
+                          d="M14 15h4"
                           fill="none"
                           stroke="currentColor"
                           stroke-linecap="round"
@@ -3053,23 +2988,23 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                           stroke-width="1.8"
                           vector-effect="non-scaling-stroke"
                         />
-                        <circle
-                          cx="11"
-                          cy="11"
-                          fill="currentColor"
-                          r="1.2"
+                        <path
+                          d="M12 19h8"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="1.8"
+                          vector-effect="non-scaling-stroke"
                         />
-                        <circle
-                          cx="21"
-                          cy="16"
-                          fill="currentColor"
-                          r="1.2"
-                        />
-                        <circle
-                          cx="15"
-                          cy="21"
-                          fill="currentColor"
-                          r="1.2"
+                        <path
+                          d="M9 11v-1.5A1.5 1.5 0 0 1 10.5 8"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="1.8"
+                          vector-effect="non-scaling-stroke"
                         />
                       </svg>
                       <span
@@ -3194,21 +3129,8 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                         viewBox="0 0 32 32"
                         width="24"
                       >
-                        <rect
-                          fill="none"
-                          height="20"
-                          rx="4"
-                          stroke="currentColor"
-                          stroke-linecap="round"
-                          stroke-linejoin="round"
-                          stroke-width="1.8"
-                          vector-effect="non-scaling-stroke"
-                          width="22"
-                          x="5"
-                          y="6"
-                        />
                         <path
-                          d="M9 11h14"
+                          d="M7 11h18v13H7z"
                           fill="none"
                           stroke="currentColor"
                           stroke-linecap="round"
@@ -3217,7 +3139,7 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                           vector-effect="non-scaling-stroke"
                         />
                         <path
-                          d="M9 16h14"
+                          d="M10 8h12l2 3H8z"
                           fill="none"
                           stroke="currentColor"
                           stroke-linecap="round"
@@ -3226,7 +3148,7 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                           vector-effect="non-scaling-stroke"
                         />
                         <path
-                          d="M9 21h14"
+                          d="M14 15h4"
                           fill="none"
                           stroke="currentColor"
                           stroke-linecap="round"
@@ -3234,23 +3156,23 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                           stroke-width="1.8"
                           vector-effect="non-scaling-stroke"
                         />
-                        <circle
-                          cx="11"
-                          cy="11"
-                          fill="currentColor"
-                          r="1.2"
+                        <path
+                          d="M12 19h8"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="1.8"
+                          vector-effect="non-scaling-stroke"
                         />
-                        <circle
-                          cx="21"
-                          cy="16"
-                          fill="currentColor"
-                          r="1.2"
-                        />
-                        <circle
-                          cx="15"
-                          cy="21"
-                          fill="currentColor"
-                          r="1.2"
+                        <path
+                          d="M9 11v-1.5A1.5 1.5 0 0 1 10.5 8"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="1.8"
+                          vector-effect="non-scaling-stroke"
                         />
                       </svg>
                       <span
@@ -3375,21 +3297,8 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                         viewBox="0 0 32 32"
                         width="24"
                       >
-                        <rect
-                          fill="none"
-                          height="20"
-                          rx="4"
-                          stroke="currentColor"
-                          stroke-linecap="round"
-                          stroke-linejoin="round"
-                          stroke-width="1.8"
-                          vector-effect="non-scaling-stroke"
-                          width="22"
-                          x="5"
-                          y="6"
-                        />
                         <path
-                          d="M9 11h14"
+                          d="M7 11h18v13H7z"
                           fill="none"
                           stroke="currentColor"
                           stroke-linecap="round"
@@ -3398,7 +3307,7 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                           vector-effect="non-scaling-stroke"
                         />
                         <path
-                          d="M9 16h14"
+                          d="M10 8h12l2 3H8z"
                           fill="none"
                           stroke="currentColor"
                           stroke-linecap="round"
@@ -3407,7 +3316,7 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                           vector-effect="non-scaling-stroke"
                         />
                         <path
-                          d="M9 21h14"
+                          d="M14 15h4"
                           fill="none"
                           stroke="currentColor"
                           stroke-linecap="round"
@@ -3415,23 +3324,23 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                           stroke-width="1.8"
                           vector-effect="non-scaling-stroke"
                         />
-                        <circle
-                          cx="11"
-                          cy="11"
-                          fill="currentColor"
-                          r="1.2"
+                        <path
+                          d="M12 19h8"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="1.8"
+                          vector-effect="non-scaling-stroke"
                         />
-                        <circle
-                          cx="21"
-                          cy="16"
-                          fill="currentColor"
-                          r="1.2"
-                        />
-                        <circle
-                          cx="15"
-                          cy="21"
-                          fill="currentColor"
-                          r="1.2"
+                        <path
+                          d="M9 11v-1.5A1.5 1.5 0 0 1 10.5 8"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="1.8"
+                          vector-effect="non-scaling-stroke"
                         />
                       </svg>
                       <span
@@ -3556,21 +3465,8 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                         viewBox="0 0 32 32"
                         width="24"
                       >
-                        <rect
-                          fill="none"
-                          height="20"
-                          rx="4"
-                          stroke="currentColor"
-                          stroke-linecap="round"
-                          stroke-linejoin="round"
-                          stroke-width="1.8"
-                          vector-effect="non-scaling-stroke"
-                          width="22"
-                          x="5"
-                          y="6"
-                        />
                         <path
-                          d="M9 11h14"
+                          d="M7 11h18v13H7z"
                           fill="none"
                           stroke="currentColor"
                           stroke-linecap="round"
@@ -3579,7 +3475,7 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                           vector-effect="non-scaling-stroke"
                         />
                         <path
-                          d="M9 16h14"
+                          d="M10 8h12l2 3H8z"
                           fill="none"
                           stroke="currentColor"
                           stroke-linecap="round"
@@ -3588,7 +3484,7 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                           vector-effect="non-scaling-stroke"
                         />
                         <path
-                          d="M9 21h14"
+                          d="M14 15h4"
                           fill="none"
                           stroke="currentColor"
                           stroke-linecap="round"
@@ -3596,23 +3492,23 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                           stroke-width="1.8"
                           vector-effect="non-scaling-stroke"
                         />
-                        <circle
-                          cx="11"
-                          cy="11"
-                          fill="currentColor"
-                          r="1.2"
+                        <path
+                          d="M12 19h8"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="1.8"
+                          vector-effect="non-scaling-stroke"
                         />
-                        <circle
-                          cx="21"
-                          cy="16"
-                          fill="currentColor"
-                          r="1.2"
-                        />
-                        <circle
-                          cx="15"
-                          cy="21"
-                          fill="currentColor"
-                          r="1.2"
+                        <path
+                          d="M9 11v-1.5A1.5 1.5 0 0 1 10.5 8"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="1.8"
+                          vector-effect="non-scaling-stroke"
                         />
                       </svg>
                       <span
@@ -3737,21 +3633,8 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                         viewBox="0 0 32 32"
                         width="24"
                       >
-                        <rect
-                          fill="none"
-                          height="20"
-                          rx="4"
-                          stroke="currentColor"
-                          stroke-linecap="round"
-                          stroke-linejoin="round"
-                          stroke-width="1.8"
-                          vector-effect="non-scaling-stroke"
-                          width="22"
-                          x="5"
-                          y="6"
-                        />
                         <path
-                          d="M9 11h14"
+                          d="M7 11h18v13H7z"
                           fill="none"
                           stroke="currentColor"
                           stroke-linecap="round"
@@ -3760,7 +3643,7 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                           vector-effect="non-scaling-stroke"
                         />
                         <path
-                          d="M9 16h14"
+                          d="M10 8h12l2 3H8z"
                           fill="none"
                           stroke="currentColor"
                           stroke-linecap="round"
@@ -3769,7 +3652,7 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                           vector-effect="non-scaling-stroke"
                         />
                         <path
-                          d="M9 21h14"
+                          d="M14 15h4"
                           fill="none"
                           stroke="currentColor"
                           stroke-linecap="round"
@@ -3777,23 +3660,23 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                           stroke-width="1.8"
                           vector-effect="non-scaling-stroke"
                         />
-                        <circle
-                          cx="11"
-                          cy="11"
-                          fill="currentColor"
-                          r="1.2"
+                        <path
+                          d="M12 19h8"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="1.8"
+                          vector-effect="non-scaling-stroke"
                         />
-                        <circle
-                          cx="21"
-                          cy="16"
-                          fill="currentColor"
-                          r="1.2"
-                        />
-                        <circle
-                          cx="15"
-                          cy="21"
-                          fill="currentColor"
-                          r="1.2"
+                        <path
+                          d="M9 11v-1.5A1.5 1.5 0 0 1 10.5 8"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="1.8"
+                          vector-effect="non-scaling-stroke"
                         />
                       </svg>
                       <span
@@ -3967,7 +3850,7 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                     xmlns="http://www.w3.org/2000/svg"
                   >
                     <path
-                      d="M25,4H10A2.002,2.002,0,0,0,8,6V20.5563A3.9551,3.9551,0,0,0,6,20a4,4,0,1,0,4,4V12H25v8.5562A3.9545,3.9545,0,0,0,23,20a4,4,0,1,0,4,4V6A2.0023,2.0023,0,0,0,25,4ZM6,26a2,2,0,1,1,2-2A2.0023,2.0023,0,0,1,6,26Zm17,0a2,2,0,1,1,2-2A2.0027,2.0027,0,0,1,23,26ZM10,6H25v4H10Z"
+                      d="M19,19h-2v-6h2v6ZM4,10h-2v12h2v-12ZM14,10h-2v12h2v-12ZM24,10h-2v12h2v-12ZM9,6h-2v20h2V6ZM29,6h-2v20h2V6Z"
                     />
                   </svg>
                   <span
@@ -4030,7 +3913,7 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                         xmlns="http://www.w3.org/2000/svg"
                       >
                         <path
-                          d="M25,4H10A2.002,2.002,0,0,0,8,6V20.5563A3.9551,3.9551,0,0,0,6,20a4,4,0,1,0,4,4V12H25v8.5562A3.9545,3.9545,0,0,0,23,20a4,4,0,1,0,4,4V6A2.0023,2.0023,0,0,0,25,4ZM6,26a2,2,0,1,1,2-2A2.0023,2.0023,0,0,1,6,26Zm17,0a2,2,0,1,1,2-2A2.0027,2.0027,0,0,1,23,26ZM10,6H25v4H10Z"
+                          d="M19,19h-2v-6h2v6ZM4,10h-2v12h2v-12ZM14,10h-2v12h2v-12ZM24,10h-2v12h2v-12ZM9,6h-2v20h2V6ZM29,6h-2v20h2V6Z"
                         />
                       </svg>
                       <span
@@ -4088,7 +3971,7 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                         xmlns="http://www.w3.org/2000/svg"
                       >
                         <path
-                          d="M25,4H10A2.002,2.002,0,0,0,8,6V20.5563A3.9551,3.9551,0,0,0,6,20a4,4,0,1,0,4,4V12H25v8.5562A3.9545,3.9545,0,0,0,23,20a4,4,0,1,0,4,4V6A2.0023,2.0023,0,0,0,25,4ZM6,26a2,2,0,1,1,2-2A2.0023,2.0023,0,0,1,6,26Zm17,0a2,2,0,1,1,2-2A2.0027,2.0027,0,0,1,23,26ZM10,6H25v4H10Z"
+                          d="M19,19h-2v-6h2v6ZM4,10h-2v12h2v-12ZM14,10h-2v12h2v-12ZM24,10h-2v12h2v-12ZM9,6h-2v20h2V6ZM29,6h-2v20h2V6Z"
                         />
                       </svg>
                       <span
@@ -4146,7 +4029,7 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                         xmlns="http://www.w3.org/2000/svg"
                       >
                         <path
-                          d="M25,4H10A2.002,2.002,0,0,0,8,6V20.5563A3.9551,3.9551,0,0,0,6,20a4,4,0,1,0,4,4V12H25v8.5562A3.9545,3.9545,0,0,0,23,20a4,4,0,1,0,4,4V6A2.0023,2.0023,0,0,0,25,4ZM6,26a2,2,0,1,1,2-2A2.0023,2.0023,0,0,1,6,26Zm17,0a2,2,0,1,1,2-2A2.0027,2.0027,0,0,1,23,26ZM10,6H25v4H10Z"
+                          d="M19,19h-2v-6h2v6ZM4,10h-2v12h2v-12ZM14,10h-2v12h2v-12ZM24,10h-2v12h2v-12ZM9,6h-2v20h2V6ZM29,6h-2v20h2V6Z"
                         />
                       </svg>
                       <span
@@ -4204,7 +4087,7 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                         xmlns="http://www.w3.org/2000/svg"
                       >
                         <path
-                          d="M25,4H10A2.002,2.002,0,0,0,8,6V20.5563A3.9551,3.9551,0,0,0,6,20a4,4,0,1,0,4,4V12H25v8.5562A3.9545,3.9545,0,0,0,23,20a4,4,0,1,0,4,4V6A2.0023,2.0023,0,0,0,25,4ZM6,26a2,2,0,1,1,2-2A2.0023,2.0023,0,0,1,6,26Zm17,0a2,2,0,1,1,2-2A2.0027,2.0027,0,0,1,23,26ZM10,6H25v4H10Z"
+                          d="M19,19h-2v-6h2v6ZM4,10h-2v12h2v-12ZM14,10h-2v12h2v-12ZM24,10h-2v12h2v-12ZM9,6h-2v20h2V6ZM29,6h-2v20h2V6Z"
                         />
                       </svg>
                       <span
@@ -4262,7 +4145,7 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                         xmlns="http://www.w3.org/2000/svg"
                       >
                         <path
-                          d="M25,4H10A2.002,2.002,0,0,0,8,6V20.5563A3.9551,3.9551,0,0,0,6,20a4,4,0,1,0,4,4V12H25v8.5562A3.9545,3.9545,0,0,0,23,20a4,4,0,1,0,4,4V6A2.0023,2.0023,0,0,0,25,4ZM6,26a2,2,0,1,1,2-2A2.0023,2.0023,0,0,1,6,26Zm17,0a2,2,0,1,1,2-2A2.0027,2.0027,0,0,1,23,26ZM10,6H25v4H10Z"
+                          d="M19,19h-2v-6h2v6ZM4,10h-2v12h2v-12ZM14,10h-2v12h2v-12ZM24,10h-2v12h2v-12ZM9,6h-2v20h2V6ZM29,6h-2v20h2V6Z"
                         />
                       </svg>
                       <span
@@ -4320,7 +4203,7 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                         xmlns="http://www.w3.org/2000/svg"
                       >
                         <path
-                          d="M25,4H10A2.002,2.002,0,0,0,8,6V20.5563A3.9551,3.9551,0,0,0,6,20a4,4,0,1,0,4,4V12H25v8.5562A3.9545,3.9545,0,0,0,23,20a4,4,0,1,0,4,4V6A2.0023,2.0023,0,0,0,25,4ZM6,26a2,2,0,1,1,2-2A2.0023,2.0023,0,0,1,6,26Zm17,0a2,2,0,1,1,2-2A2.0027,2.0027,0,0,1,23,26ZM10,6H25v4H10Z"
+                          d="M19,19h-2v-6h2v6ZM4,10h-2v12h2v-12ZM14,10h-2v12h2v-12ZM24,10h-2v12h2v-12ZM9,6h-2v20h2V6ZM29,6h-2v20h2V6Z"
                         />
                       </svg>
                       <span
@@ -4378,7 +4261,7 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                         xmlns="http://www.w3.org/2000/svg"
                       >
                         <path
-                          d="M25,4H10A2.002,2.002,0,0,0,8,6V20.5563A3.9551,3.9551,0,0,0,6,20a4,4,0,1,0,4,4V12H25v8.5562A3.9545,3.9545,0,0,0,23,20a4,4,0,1,0,4,4V6A2.0023,2.0023,0,0,0,25,4ZM6,26a2,2,0,1,1,2-2A2.0023,2.0023,0,0,1,6,26Zm17,0a2,2,0,1,1,2-2A2.0027,2.0027,0,0,1,23,26ZM10,6H25v4H10Z"
+                          d="M19,19h-2v-6h2v6ZM4,10h-2v12h2v-12ZM14,10h-2v12h2v-12ZM24,10h-2v12h2v-12ZM9,6h-2v20h2V6ZM29,6h-2v20h2V6Z"
                         />
                       </svg>
                       <span
@@ -4436,7 +4319,7 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                         xmlns="http://www.w3.org/2000/svg"
                       >
                         <path
-                          d="M25,4H10A2.002,2.002,0,0,0,8,6V20.5563A3.9551,3.9551,0,0,0,6,20a4,4,0,1,0,4,4V12H25v8.5562A3.9545,3.9545,0,0,0,23,20a4,4,0,1,0,4,4V6A2.0023,2.0023,0,0,0,25,4ZM6,26a2,2,0,1,1,2-2A2.0023,2.0023,0,0,1,6,26Zm17,0a2,2,0,1,1,2-2A2.0027,2.0027,0,0,1,23,26ZM10,6H25v4H10Z"
+                          d="M19,19h-2v-6h2v6ZM4,10h-2v12h2v-12ZM14,10h-2v12h2v-12ZM24,10h-2v12h2v-12ZM9,6h-2v20h2V6ZM29,6h-2v20h2V6Z"
                         />
                       </svg>
                       <span
@@ -4494,7 +4377,7 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                         xmlns="http://www.w3.org/2000/svg"
                       >
                         <path
-                          d="M25,4H10A2.002,2.002,0,0,0,8,6V20.5563A3.9551,3.9551,0,0,0,6,20a4,4,0,1,0,4,4V12H25v8.5562A3.9545,3.9545,0,0,0,23,20a4,4,0,1,0,4,4V6A2.0023,2.0023,0,0,0,25,4ZM6,26a2,2,0,1,1,2-2A2.0023,2.0023,0,0,1,6,26Zm17,0a2,2,0,1,1,2-2A2.0027,2.0027,0,0,1,23,26ZM10,6H25v4H10Z"
+                          d="M19,19h-2v-6h2v6ZM4,10h-2v12h2v-12ZM14,10h-2v12h2v-12ZM24,10h-2v12h2v-12ZM9,6h-2v20h2V6ZM29,6h-2v20h2V6Z"
                         />
                       </svg>
                       <span
@@ -4552,7 +4435,7 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                         xmlns="http://www.w3.org/2000/svg"
                       >
                         <path
-                          d="M25,4H10A2.002,2.002,0,0,0,8,6V20.5563A3.9551,3.9551,0,0,0,6,20a4,4,0,1,0,4,4V12H25v8.5562A3.9545,3.9545,0,0,0,23,20a4,4,0,1,0,4,4V6A2.0023,2.0023,0,0,0,25,4ZM6,26a2,2,0,1,1,2-2A2.0023,2.0023,0,0,1,6,26Zm17,0a2,2,0,1,1,2-2A2.0027,2.0027,0,0,1,23,26ZM10,6H25v4H10Z"
+                          d="M19,19h-2v-6h2v6ZM4,10h-2v12h2v-12ZM14,10h-2v12h2v-12ZM24,10h-2v12h2v-12ZM9,6h-2v20h2V6ZM29,6h-2v20h2V6Z"
                         />
                       </svg>
                       <span
@@ -4610,7 +4493,7 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                         xmlns="http://www.w3.org/2000/svg"
                       >
                         <path
-                          d="M25,4H10A2.002,2.002,0,0,0,8,6V20.5563A3.9551,3.9551,0,0,0,6,20a4,4,0,1,0,4,4V12H25v8.5562A3.9545,3.9545,0,0,0,23,20a4,4,0,1,0,4,4V6A2.0023,2.0023,0,0,0,25,4ZM6,26a2,2,0,1,1,2-2A2.0023,2.0023,0,0,1,6,26Zm17,0a2,2,0,1,1,2-2A2.0027,2.0027,0,0,1,23,26ZM10,6H25v4H10Z"
+                          d="M19,19h-2v-6h2v6ZM4,10h-2v12h2v-12ZM14,10h-2v12h2v-12ZM24,10h-2v12h2v-12ZM9,6h-2v20h2V6ZM29,6h-2v20h2V6Z"
                         />
                       </svg>
                       <span
@@ -4668,7 +4551,7 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                         xmlns="http://www.w3.org/2000/svg"
                       >
                         <path
-                          d="M25,4H10A2.002,2.002,0,0,0,8,6V20.5563A3.9551,3.9551,0,0,0,6,20a4,4,0,1,0,4,4V12H25v8.5562A3.9545,3.9545,0,0,0,23,20a4,4,0,1,0,4,4V6A2.0023,2.0023,0,0,0,25,4ZM6,26a2,2,0,1,1,2-2A2.0023,2.0023,0,0,1,6,26Zm17,0a2,2,0,1,1,2-2A2.0027,2.0027,0,0,1,23,26ZM10,6H25v4H10Z"
+                          d="M19,19h-2v-6h2v6ZM4,10h-2v12h2v-12ZM14,10h-2v12h2v-12ZM24,10h-2v12h2v-12ZM9,6h-2v20h2V6ZM29,6h-2v20h2V6Z"
                         />
                       </svg>
                       <span
@@ -4726,7 +4609,7 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                         xmlns="http://www.w3.org/2000/svg"
                       >
                         <path
-                          d="M25,4H10A2.002,2.002,0,0,0,8,6V20.5563A3.9551,3.9551,0,0,0,6,20a4,4,0,1,0,4,4V12H25v8.5562A3.9545,3.9545,0,0,0,23,20a4,4,0,1,0,4,4V6A2.0023,2.0023,0,0,0,25,4ZM6,26a2,2,0,1,1,2-2A2.0023,2.0023,0,0,1,6,26Zm17,0a2,2,0,1,1,2-2A2.0027,2.0027,0,0,1,23,26ZM10,6H25v4H10Z"
+                          d="M19,19h-2v-6h2v6ZM4,10h-2v12h2v-12ZM14,10h-2v12h2v-12ZM24,10h-2v12h2v-12ZM9,6h-2v20h2V6ZM29,6h-2v20h2V6Z"
                         />
                       </svg>
                       <span
@@ -5135,65 +5018,6 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                   </ul>
                 </li>
               </ul>
-            </li>
-            <li
-              aria-selected="false"
-              class="global-tree-nav__tree-node cds--tree-node cds--tree-node--with-icon cds--tree-leaf-node"
-              id="/chains"
-              role="treeitem"
-              tabindex="-1"
-            >
-              <div
-                class="cds--tree-node__label"
-                style="margin-inline-start: -2rem; padding-inline-start: 2rem;"
-              >
-                <span
-                  class="cds--tree-node__label__details"
-                >
-                  <svg
-                    aria-hidden="true"
-                    class="cds--tree-node__icon"
-                    fill="currentColor"
-                    focusable="false"
-                    height="16"
-                    preserveAspectRatio="xMidYMid meet"
-                    viewBox="0 0 32 32"
-                    width="16"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path
-                      d="M23,16a7,7,0,0,0-4.18,1.39L14.6,13.17A6.86,6.86,0,0,0,16,9a7,7,0,1,0-2.81,5.59l4.21,4.22A7,7,0,1,0,23,16ZM4,9a5,5,0,1,1,5,5A5,5,0,0,1,4,9Z"
-                      transform="translate(0 .01)"
-                    />
-                  </svg>
-                  <span
-                    class="cds--tree-node__label__text"
-                    id="/chains__label"
-                  >
-                    <span
-                      class="global-tree-nav__node-copy global-tree-nav__node-copy--bold"
-                    >
-                      <span
-                        class="global-tree-nav__node-main"
-                      >
-                        <span
-                          class="global-tree-nav__node-main-copy"
-                        >
-                          <span
-                            class="global-tree-nav__node-label-row"
-                          >
-                            <span
-                              class="global-tree-nav__node-label"
-                            >
-                              Chains
-                            </span>
-                          </span>
-                        </span>
-                      </span>
-                    </span>
-                  </span>
-                </span>
-              </div>
             </li>
             <li
               aria-expanded="true"
@@ -9517,21 +9341,8 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                     viewBox="0 0 32 32"
                     width="24"
                   >
-                    <rect
-                      fill="none"
-                      height="20"
-                      rx="4"
-                      stroke="currentColor"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="1.8"
-                      vector-effect="non-scaling-stroke"
-                      width="22"
-                      x="5"
-                      y="6"
-                    />
                     <path
-                      d="M9 11h14"
+                      d="M7 11h18v13H7z"
                       fill="none"
                       stroke="currentColor"
                       stroke-linecap="round"
@@ -9540,7 +9351,7 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                       vector-effect="non-scaling-stroke"
                     />
                     <path
-                      d="M9 16h14"
+                      d="M10 8h12l2 3H8z"
                       fill="none"
                       stroke="currentColor"
                       stroke-linecap="round"
@@ -9549,7 +9360,7 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                       vector-effect="non-scaling-stroke"
                     />
                     <path
-                      d="M9 21h14"
+                      d="M14 15h4"
                       fill="none"
                       stroke="currentColor"
                       stroke-linecap="round"
@@ -9557,23 +9368,23 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                       stroke-width="1.8"
                       vector-effect="non-scaling-stroke"
                     />
-                    <circle
-                      cx="11"
-                      cy="11"
-                      fill="currentColor"
-                      r="1.2"
+                    <path
+                      d="M12 19h8"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="1.8"
+                      vector-effect="non-scaling-stroke"
                     />
-                    <circle
-                      cx="21"
-                      cy="16"
-                      fill="currentColor"
-                      r="1.2"
-                    />
-                    <circle
-                      cx="15"
-                      cy="21"
-                      fill="currentColor"
-                      r="1.2"
+                    <path
+                      d="M9 11v-1.5A1.5 1.5 0 0 1 10.5 8"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="1.8"
+                      vector-effect="non-scaling-stroke"
                     />
                   </svg>
                   <span
@@ -9653,21 +9464,8 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                         viewBox="0 0 32 32"
                         width="24"
                       >
-                        <rect
-                          fill="none"
-                          height="20"
-                          rx="4"
-                          stroke="currentColor"
-                          stroke-linecap="round"
-                          stroke-linejoin="round"
-                          stroke-width="1.8"
-                          vector-effect="non-scaling-stroke"
-                          width="22"
-                          x="5"
-                          y="6"
-                        />
                         <path
-                          d="M9 11h14"
+                          d="M7 11h18v13H7z"
                           fill="none"
                           stroke="currentColor"
                           stroke-linecap="round"
@@ -9676,7 +9474,7 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                           vector-effect="non-scaling-stroke"
                         />
                         <path
-                          d="M9 16h14"
+                          d="M10 8h12l2 3H8z"
                           fill="none"
                           stroke="currentColor"
                           stroke-linecap="round"
@@ -9685,7 +9483,7 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                           vector-effect="non-scaling-stroke"
                         />
                         <path
-                          d="M9 21h14"
+                          d="M14 15h4"
                           fill="none"
                           stroke="currentColor"
                           stroke-linecap="round"
@@ -9693,23 +9491,23 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                           stroke-width="1.8"
                           vector-effect="non-scaling-stroke"
                         />
-                        <circle
-                          cx="11"
-                          cy="11"
-                          fill="currentColor"
-                          r="1.2"
+                        <path
+                          d="M12 19h8"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="1.8"
+                          vector-effect="non-scaling-stroke"
                         />
-                        <circle
-                          cx="21"
-                          cy="16"
-                          fill="currentColor"
-                          r="1.2"
-                        />
-                        <circle
-                          cx="15"
-                          cy="21"
-                          fill="currentColor"
-                          r="1.2"
+                        <path
+                          d="M9 11v-1.5A1.5 1.5 0 0 1 10.5 8"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="1.8"
+                          vector-effect="non-scaling-stroke"
                         />
                       </svg>
                       <span
@@ -9834,21 +9632,8 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                         viewBox="0 0 32 32"
                         width="24"
                       >
-                        <rect
-                          fill="none"
-                          height="20"
-                          rx="4"
-                          stroke="currentColor"
-                          stroke-linecap="round"
-                          stroke-linejoin="round"
-                          stroke-width="1.8"
-                          vector-effect="non-scaling-stroke"
-                          width="22"
-                          x="5"
-                          y="6"
-                        />
                         <path
-                          d="M9 11h14"
+                          d="M7 11h18v13H7z"
                           fill="none"
                           stroke="currentColor"
                           stroke-linecap="round"
@@ -9857,7 +9642,7 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                           vector-effect="non-scaling-stroke"
                         />
                         <path
-                          d="M9 16h14"
+                          d="M10 8h12l2 3H8z"
                           fill="none"
                           stroke="currentColor"
                           stroke-linecap="round"
@@ -9866,7 +9651,7 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                           vector-effect="non-scaling-stroke"
                         />
                         <path
-                          d="M9 21h14"
+                          d="M14 15h4"
                           fill="none"
                           stroke="currentColor"
                           stroke-linecap="round"
@@ -9874,23 +9659,23 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                           stroke-width="1.8"
                           vector-effect="non-scaling-stroke"
                         />
-                        <circle
-                          cx="11"
-                          cy="11"
-                          fill="currentColor"
-                          r="1.2"
+                        <path
+                          d="M12 19h8"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="1.8"
+                          vector-effect="non-scaling-stroke"
                         />
-                        <circle
-                          cx="21"
-                          cy="16"
-                          fill="currentColor"
-                          r="1.2"
-                        />
-                        <circle
-                          cx="15"
-                          cy="21"
-                          fill="currentColor"
-                          r="1.2"
+                        <path
+                          d="M9 11v-1.5A1.5 1.5 0 0 1 10.5 8"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="1.8"
+                          vector-effect="non-scaling-stroke"
                         />
                       </svg>
                       <span
@@ -10015,21 +9800,8 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                         viewBox="0 0 32 32"
                         width="24"
                       >
-                        <rect
-                          fill="none"
-                          height="20"
-                          rx="4"
-                          stroke="currentColor"
-                          stroke-linecap="round"
-                          stroke-linejoin="round"
-                          stroke-width="1.8"
-                          vector-effect="non-scaling-stroke"
-                          width="22"
-                          x="5"
-                          y="6"
-                        />
                         <path
-                          d="M9 11h14"
+                          d="M7 11h18v13H7z"
                           fill="none"
                           stroke="currentColor"
                           stroke-linecap="round"
@@ -10038,7 +9810,7 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                           vector-effect="non-scaling-stroke"
                         />
                         <path
-                          d="M9 16h14"
+                          d="M10 8h12l2 3H8z"
                           fill="none"
                           stroke="currentColor"
                           stroke-linecap="round"
@@ -10047,7 +9819,7 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                           vector-effect="non-scaling-stroke"
                         />
                         <path
-                          d="M9 21h14"
+                          d="M14 15h4"
                           fill="none"
                           stroke="currentColor"
                           stroke-linecap="round"
@@ -10055,23 +9827,23 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                           stroke-width="1.8"
                           vector-effect="non-scaling-stroke"
                         />
-                        <circle
-                          cx="11"
-                          cy="11"
-                          fill="currentColor"
-                          r="1.2"
+                        <path
+                          d="M12 19h8"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="1.8"
+                          vector-effect="non-scaling-stroke"
                         />
-                        <circle
-                          cx="21"
-                          cy="16"
-                          fill="currentColor"
-                          r="1.2"
-                        />
-                        <circle
-                          cx="15"
-                          cy="21"
-                          fill="currentColor"
-                          r="1.2"
+                        <path
+                          d="M9 11v-1.5A1.5 1.5 0 0 1 10.5 8"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="1.8"
+                          vector-effect="non-scaling-stroke"
                         />
                       </svg>
                       <span
@@ -10196,21 +9968,8 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                         viewBox="0 0 32 32"
                         width="24"
                       >
-                        <rect
-                          fill="none"
-                          height="20"
-                          rx="4"
-                          stroke="currentColor"
-                          stroke-linecap="round"
-                          stroke-linejoin="round"
-                          stroke-width="1.8"
-                          vector-effect="non-scaling-stroke"
-                          width="22"
-                          x="5"
-                          y="6"
-                        />
                         <path
-                          d="M9 11h14"
+                          d="M7 11h18v13H7z"
                           fill="none"
                           stroke="currentColor"
                           stroke-linecap="round"
@@ -10219,7 +9978,7 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                           vector-effect="non-scaling-stroke"
                         />
                         <path
-                          d="M9 16h14"
+                          d="M10 8h12l2 3H8z"
                           fill="none"
                           stroke="currentColor"
                           stroke-linecap="round"
@@ -10228,7 +9987,7 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                           vector-effect="non-scaling-stroke"
                         />
                         <path
-                          d="M9 21h14"
+                          d="M14 15h4"
                           fill="none"
                           stroke="currentColor"
                           stroke-linecap="round"
@@ -10236,23 +9995,23 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                           stroke-width="1.8"
                           vector-effect="non-scaling-stroke"
                         />
-                        <circle
-                          cx="11"
-                          cy="11"
-                          fill="currentColor"
-                          r="1.2"
+                        <path
+                          d="M12 19h8"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="1.8"
+                          vector-effect="non-scaling-stroke"
                         />
-                        <circle
-                          cx="21"
-                          cy="16"
-                          fill="currentColor"
-                          r="1.2"
-                        />
-                        <circle
-                          cx="15"
-                          cy="21"
-                          fill="currentColor"
-                          r="1.2"
+                        <path
+                          d="M9 11v-1.5A1.5 1.5 0 0 1 10.5 8"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="1.8"
+                          vector-effect="non-scaling-stroke"
                         />
                       </svg>
                       <span
@@ -10377,21 +10136,8 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                         viewBox="0 0 32 32"
                         width="24"
                       >
-                        <rect
-                          fill="none"
-                          height="20"
-                          rx="4"
-                          stroke="currentColor"
-                          stroke-linecap="round"
-                          stroke-linejoin="round"
-                          stroke-width="1.8"
-                          vector-effect="non-scaling-stroke"
-                          width="22"
-                          x="5"
-                          y="6"
-                        />
                         <path
-                          d="M9 11h14"
+                          d="M7 11h18v13H7z"
                           fill="none"
                           stroke="currentColor"
                           stroke-linecap="round"
@@ -10400,7 +10146,7 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                           vector-effect="non-scaling-stroke"
                         />
                         <path
-                          d="M9 16h14"
+                          d="M10 8h12l2 3H8z"
                           fill="none"
                           stroke="currentColor"
                           stroke-linecap="round"
@@ -10409,7 +10155,7 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                           vector-effect="non-scaling-stroke"
                         />
                         <path
-                          d="M9 21h14"
+                          d="M14 15h4"
                           fill="none"
                           stroke="currentColor"
                           stroke-linecap="round"
@@ -10417,23 +10163,23 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                           stroke-width="1.8"
                           vector-effect="non-scaling-stroke"
                         />
-                        <circle
-                          cx="11"
-                          cy="11"
-                          fill="currentColor"
-                          r="1.2"
+                        <path
+                          d="M12 19h8"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="1.8"
+                          vector-effect="non-scaling-stroke"
                         />
-                        <circle
-                          cx="21"
-                          cy="16"
-                          fill="currentColor"
-                          r="1.2"
-                        />
-                        <circle
-                          cx="15"
-                          cy="21"
-                          fill="currentColor"
-                          r="1.2"
+                        <path
+                          d="M9 11v-1.5A1.5 1.5 0 0 1 10.5 8"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="1.8"
+                          vector-effect="non-scaling-stroke"
                         />
                       </svg>
                       <span
@@ -10558,21 +10304,8 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                         viewBox="0 0 32 32"
                         width="24"
                       >
-                        <rect
-                          fill="none"
-                          height="20"
-                          rx="4"
-                          stroke="currentColor"
-                          stroke-linecap="round"
-                          stroke-linejoin="round"
-                          stroke-width="1.8"
-                          vector-effect="non-scaling-stroke"
-                          width="22"
-                          x="5"
-                          y="6"
-                        />
                         <path
-                          d="M9 11h14"
+                          d="M7 11h18v13H7z"
                           fill="none"
                           stroke="currentColor"
                           stroke-linecap="round"
@@ -10581,7 +10314,7 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                           vector-effect="non-scaling-stroke"
                         />
                         <path
-                          d="M9 16h14"
+                          d="M10 8h12l2 3H8z"
                           fill="none"
                           stroke="currentColor"
                           stroke-linecap="round"
@@ -10590,7 +10323,7 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                           vector-effect="non-scaling-stroke"
                         />
                         <path
-                          d="M9 21h14"
+                          d="M14 15h4"
                           fill="none"
                           stroke="currentColor"
                           stroke-linecap="round"
@@ -10598,23 +10331,23 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                           stroke-width="1.8"
                           vector-effect="non-scaling-stroke"
                         />
-                        <circle
-                          cx="11"
-                          cy="11"
-                          fill="currentColor"
-                          r="1.2"
+                        <path
+                          d="M12 19h8"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="1.8"
+                          vector-effect="non-scaling-stroke"
                         />
-                        <circle
-                          cx="21"
-                          cy="16"
-                          fill="currentColor"
-                          r="1.2"
-                        />
-                        <circle
-                          cx="15"
-                          cy="21"
-                          fill="currentColor"
-                          r="1.2"
+                        <path
+                          d="M9 11v-1.5A1.5 1.5 0 0 1 10.5 8"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="1.8"
+                          vector-effect="non-scaling-stroke"
                         />
                       </svg>
                       <span
@@ -10739,21 +10472,8 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                         viewBox="0 0 32 32"
                         width="24"
                       >
-                        <rect
-                          fill="none"
-                          height="20"
-                          rx="4"
-                          stroke="currentColor"
-                          stroke-linecap="round"
-                          stroke-linejoin="round"
-                          stroke-width="1.8"
-                          vector-effect="non-scaling-stroke"
-                          width="22"
-                          x="5"
-                          y="6"
-                        />
                         <path
-                          d="M9 11h14"
+                          d="M7 11h18v13H7z"
                           fill="none"
                           stroke="currentColor"
                           stroke-linecap="round"
@@ -10762,7 +10482,7 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                           vector-effect="non-scaling-stroke"
                         />
                         <path
-                          d="M9 16h14"
+                          d="M10 8h12l2 3H8z"
                           fill="none"
                           stroke="currentColor"
                           stroke-linecap="round"
@@ -10771,7 +10491,7 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                           vector-effect="non-scaling-stroke"
                         />
                         <path
-                          d="M9 21h14"
+                          d="M14 15h4"
                           fill="none"
                           stroke="currentColor"
                           stroke-linecap="round"
@@ -10779,23 +10499,23 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                           stroke-width="1.8"
                           vector-effect="non-scaling-stroke"
                         />
-                        <circle
-                          cx="11"
-                          cy="11"
-                          fill="currentColor"
-                          r="1.2"
+                        <path
+                          d="M12 19h8"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="1.8"
+                          vector-effect="non-scaling-stroke"
                         />
-                        <circle
-                          cx="21"
-                          cy="16"
-                          fill="currentColor"
-                          r="1.2"
-                        />
-                        <circle
-                          cx="15"
-                          cy="21"
-                          fill="currentColor"
-                          r="1.2"
+                        <path
+                          d="M9 11v-1.5A1.5 1.5 0 0 1 10.5 8"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="1.8"
+                          vector-effect="non-scaling-stroke"
                         />
                       </svg>
                       <span
@@ -10920,21 +10640,8 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                         viewBox="0 0 32 32"
                         width="24"
                       >
-                        <rect
-                          fill="none"
-                          height="20"
-                          rx="4"
-                          stroke="currentColor"
-                          stroke-linecap="round"
-                          stroke-linejoin="round"
-                          stroke-width="1.8"
-                          vector-effect="non-scaling-stroke"
-                          width="22"
-                          x="5"
-                          y="6"
-                        />
                         <path
-                          d="M9 11h14"
+                          d="M7 11h18v13H7z"
                           fill="none"
                           stroke="currentColor"
                           stroke-linecap="round"
@@ -10943,7 +10650,7 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                           vector-effect="non-scaling-stroke"
                         />
                         <path
-                          d="M9 16h14"
+                          d="M10 8h12l2 3H8z"
                           fill="none"
                           stroke="currentColor"
                           stroke-linecap="round"
@@ -10952,7 +10659,7 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                           vector-effect="non-scaling-stroke"
                         />
                         <path
-                          d="M9 21h14"
+                          d="M14 15h4"
                           fill="none"
                           stroke="currentColor"
                           stroke-linecap="round"
@@ -10960,23 +10667,23 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                           stroke-width="1.8"
                           vector-effect="non-scaling-stroke"
                         />
-                        <circle
-                          cx="11"
-                          cy="11"
-                          fill="currentColor"
-                          r="1.2"
+                        <path
+                          d="M12 19h8"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="1.8"
+                          vector-effect="non-scaling-stroke"
                         />
-                        <circle
-                          cx="21"
-                          cy="16"
-                          fill="currentColor"
-                          r="1.2"
-                        />
-                        <circle
-                          cx="15"
-                          cy="21"
-                          fill="currentColor"
-                          r="1.2"
+                        <path
+                          d="M9 11v-1.5A1.5 1.5 0 0 1 10.5 8"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="1.8"
+                          vector-effect="non-scaling-stroke"
                         />
                       </svg>
                       <span
@@ -11150,7 +10857,7 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                     xmlns="http://www.w3.org/2000/svg"
                   >
                     <path
-                      d="M25,4H10A2.002,2.002,0,0,0,8,6V20.5563A3.9551,3.9551,0,0,0,6,20a4,4,0,1,0,4,4V12H25v8.5562A3.9545,3.9545,0,0,0,23,20a4,4,0,1,0,4,4V6A2.0023,2.0023,0,0,0,25,4ZM6,26a2,2,0,1,1,2-2A2.0023,2.0023,0,0,1,6,26Zm17,0a2,2,0,1,1,2-2A2.0027,2.0027,0,0,1,23,26ZM10,6H25v4H10Z"
+                      d="M19,19h-2v-6h2v6ZM4,10h-2v12h2v-12ZM14,10h-2v12h2v-12ZM24,10h-2v12h2v-12ZM9,6h-2v20h2V6ZM29,6h-2v20h2V6Z"
                     />
                   </svg>
                   <span
@@ -11213,7 +10920,7 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                         xmlns="http://www.w3.org/2000/svg"
                       >
                         <path
-                          d="M25,4H10A2.002,2.002,0,0,0,8,6V20.5563A3.9551,3.9551,0,0,0,6,20a4,4,0,1,0,4,4V12H25v8.5562A3.9545,3.9545,0,0,0,23,20a4,4,0,1,0,4,4V6A2.0023,2.0023,0,0,0,25,4ZM6,26a2,2,0,1,1,2-2A2.0023,2.0023,0,0,1,6,26Zm17,0a2,2,0,1,1,2-2A2.0027,2.0027,0,0,1,23,26ZM10,6H25v4H10Z"
+                          d="M19,19h-2v-6h2v6ZM4,10h-2v12h2v-12ZM14,10h-2v12h2v-12ZM24,10h-2v12h2v-12ZM9,6h-2v20h2V6ZM29,6h-2v20h2V6Z"
                         />
                       </svg>
                       <span
@@ -11271,7 +10978,7 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                         xmlns="http://www.w3.org/2000/svg"
                       >
                         <path
-                          d="M25,4H10A2.002,2.002,0,0,0,8,6V20.5563A3.9551,3.9551,0,0,0,6,20a4,4,0,1,0,4,4V12H25v8.5562A3.9545,3.9545,0,0,0,23,20a4,4,0,1,0,4,4V6A2.0023,2.0023,0,0,0,25,4ZM6,26a2,2,0,1,1,2-2A2.0023,2.0023,0,0,1,6,26Zm17,0a2,2,0,1,1,2-2A2.0027,2.0027,0,0,1,23,26ZM10,6H25v4H10Z"
+                          d="M19,19h-2v-6h2v6ZM4,10h-2v12h2v-12ZM14,10h-2v12h2v-12ZM24,10h-2v12h2v-12ZM9,6h-2v20h2V6ZM29,6h-2v20h2V6Z"
                         />
                       </svg>
                       <span
@@ -11329,7 +11036,7 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                         xmlns="http://www.w3.org/2000/svg"
                       >
                         <path
-                          d="M25,4H10A2.002,2.002,0,0,0,8,6V20.5563A3.9551,3.9551,0,0,0,6,20a4,4,0,1,0,4,4V12H25v8.5562A3.9545,3.9545,0,0,0,23,20a4,4,0,1,0,4,4V6A2.0023,2.0023,0,0,0,25,4ZM6,26a2,2,0,1,1,2-2A2.0023,2.0023,0,0,1,6,26Zm17,0a2,2,0,1,1,2-2A2.0027,2.0027,0,0,1,23,26ZM10,6H25v4H10Z"
+                          d="M19,19h-2v-6h2v6ZM4,10h-2v12h2v-12ZM14,10h-2v12h2v-12ZM24,10h-2v12h2v-12ZM9,6h-2v20h2V6ZM29,6h-2v20h2V6Z"
                         />
                       </svg>
                       <span
@@ -11387,7 +11094,7 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                         xmlns="http://www.w3.org/2000/svg"
                       >
                         <path
-                          d="M25,4H10A2.002,2.002,0,0,0,8,6V20.5563A3.9551,3.9551,0,0,0,6,20a4,4,0,1,0,4,4V12H25v8.5562A3.9545,3.9545,0,0,0,23,20a4,4,0,1,0,4,4V6A2.0023,2.0023,0,0,0,25,4ZM6,26a2,2,0,1,1,2-2A2.0023,2.0023,0,0,1,6,26Zm17,0a2,2,0,1,1,2-2A2.0027,2.0027,0,0,1,23,26ZM10,6H25v4H10Z"
+                          d="M19,19h-2v-6h2v6ZM4,10h-2v12h2v-12ZM14,10h-2v12h2v-12ZM24,10h-2v12h2v-12ZM9,6h-2v20h2V6ZM29,6h-2v20h2V6Z"
                         />
                       </svg>
                       <span
@@ -11445,7 +11152,7 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                         xmlns="http://www.w3.org/2000/svg"
                       >
                         <path
-                          d="M25,4H10A2.002,2.002,0,0,0,8,6V20.5563A3.9551,3.9551,0,0,0,6,20a4,4,0,1,0,4,4V12H25v8.5562A3.9545,3.9545,0,0,0,23,20a4,4,0,1,0,4,4V6A2.0023,2.0023,0,0,0,25,4ZM6,26a2,2,0,1,1,2-2A2.0023,2.0023,0,0,1,6,26Zm17,0a2,2,0,1,1,2-2A2.0027,2.0027,0,0,1,23,26ZM10,6H25v4H10Z"
+                          d="M19,19h-2v-6h2v6ZM4,10h-2v12h2v-12ZM14,10h-2v12h2v-12ZM24,10h-2v12h2v-12ZM9,6h-2v20h2V6ZM29,6h-2v20h2V6Z"
                         />
                       </svg>
                       <span
@@ -11503,7 +11210,7 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                         xmlns="http://www.w3.org/2000/svg"
                       >
                         <path
-                          d="M25,4H10A2.002,2.002,0,0,0,8,6V20.5563A3.9551,3.9551,0,0,0,6,20a4,4,0,1,0,4,4V12H25v8.5562A3.9545,3.9545,0,0,0,23,20a4,4,0,1,0,4,4V6A2.0023,2.0023,0,0,0,25,4ZM6,26a2,2,0,1,1,2-2A2.0023,2.0023,0,0,1,6,26Zm17,0a2,2,0,1,1,2-2A2.0027,2.0027,0,0,1,23,26ZM10,6H25v4H10Z"
+                          d="M19,19h-2v-6h2v6ZM4,10h-2v12h2v-12ZM14,10h-2v12h2v-12ZM24,10h-2v12h2v-12ZM9,6h-2v20h2V6ZM29,6h-2v20h2V6Z"
                         />
                       </svg>
                       <span
@@ -11561,7 +11268,7 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                         xmlns="http://www.w3.org/2000/svg"
                       >
                         <path
-                          d="M25,4H10A2.002,2.002,0,0,0,8,6V20.5563A3.9551,3.9551,0,0,0,6,20a4,4,0,1,0,4,4V12H25v8.5562A3.9545,3.9545,0,0,0,23,20a4,4,0,1,0,4,4V6A2.0023,2.0023,0,0,0,25,4ZM6,26a2,2,0,1,1,2-2A2.0023,2.0023,0,0,1,6,26Zm17,0a2,2,0,1,1,2-2A2.0027,2.0027,0,0,1,23,26ZM10,6H25v4H10Z"
+                          d="M19,19h-2v-6h2v6ZM4,10h-2v12h2v-12ZM14,10h-2v12h2v-12ZM24,10h-2v12h2v-12ZM9,6h-2v20h2V6ZM29,6h-2v20h2V6Z"
                         />
                       </svg>
                       <span
@@ -11619,7 +11326,7 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                         xmlns="http://www.w3.org/2000/svg"
                       >
                         <path
-                          d="M25,4H10A2.002,2.002,0,0,0,8,6V20.5563A3.9551,3.9551,0,0,0,6,20a4,4,0,1,0,4,4V12H25v8.5562A3.9545,3.9545,0,0,0,23,20a4,4,0,1,0,4,4V6A2.0023,2.0023,0,0,0,25,4ZM6,26a2,2,0,1,1,2-2A2.0023,2.0023,0,0,1,6,26Zm17,0a2,2,0,1,1,2-2A2.0027,2.0027,0,0,1,23,26ZM10,6H25v4H10Z"
+                          d="M19,19h-2v-6h2v6ZM4,10h-2v12h2v-12ZM14,10h-2v12h2v-12ZM24,10h-2v12h2v-12ZM9,6h-2v20h2V6ZM29,6h-2v20h2V6Z"
                         />
                       </svg>
                       <span
@@ -11677,7 +11384,7 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                         xmlns="http://www.w3.org/2000/svg"
                       >
                         <path
-                          d="M25,4H10A2.002,2.002,0,0,0,8,6V20.5563A3.9551,3.9551,0,0,0,6,20a4,4,0,1,0,4,4V12H25v8.5562A3.9545,3.9545,0,0,0,23,20a4,4,0,1,0,4,4V6A2.0023,2.0023,0,0,0,25,4ZM6,26a2,2,0,1,1,2-2A2.0023,2.0023,0,0,1,6,26Zm17,0a2,2,0,1,1,2-2A2.0027,2.0027,0,0,1,23,26ZM10,6H25v4H10Z"
+                          d="M19,19h-2v-6h2v6ZM4,10h-2v12h2v-12ZM14,10h-2v12h2v-12ZM24,10h-2v12h2v-12ZM9,6h-2v20h2V6ZM29,6h-2v20h2V6Z"
                         />
                       </svg>
                       <span
@@ -11735,7 +11442,7 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                         xmlns="http://www.w3.org/2000/svg"
                       >
                         <path
-                          d="M25,4H10A2.002,2.002,0,0,0,8,6V20.5563A3.9551,3.9551,0,0,0,6,20a4,4,0,1,0,4,4V12H25v8.5562A3.9545,3.9545,0,0,0,23,20a4,4,0,1,0,4,4V6A2.0023,2.0023,0,0,0,25,4ZM6,26a2,2,0,1,1,2-2A2.0023,2.0023,0,0,1,6,26Zm17,0a2,2,0,1,1,2-2A2.0027,2.0027,0,0,1,23,26ZM10,6H25v4H10Z"
+                          d="M19,19h-2v-6h2v6ZM4,10h-2v12h2v-12ZM14,10h-2v12h2v-12ZM24,10h-2v12h2v-12ZM9,6h-2v20h2V6ZM29,6h-2v20h2V6Z"
                         />
                       </svg>
                       <span
@@ -11793,7 +11500,7 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                         xmlns="http://www.w3.org/2000/svg"
                       >
                         <path
-                          d="M25,4H10A2.002,2.002,0,0,0,8,6V20.5563A3.9551,3.9551,0,0,0,6,20a4,4,0,1,0,4,4V12H25v8.5562A3.9545,3.9545,0,0,0,23,20a4,4,0,1,0,4,4V6A2.0023,2.0023,0,0,0,25,4ZM6,26a2,2,0,1,1,2-2A2.0023,2.0023,0,0,1,6,26Zm17,0a2,2,0,1,1,2-2A2.0027,2.0027,0,0,1,23,26ZM10,6H25v4H10Z"
+                          d="M19,19h-2v-6h2v6ZM4,10h-2v12h2v-12ZM14,10h-2v12h2v-12ZM24,10h-2v12h2v-12ZM9,6h-2v20h2V6ZM29,6h-2v20h2V6Z"
                         />
                       </svg>
                       <span
@@ -11851,7 +11558,7 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                         xmlns="http://www.w3.org/2000/svg"
                       >
                         <path
-                          d="M25,4H10A2.002,2.002,0,0,0,8,6V20.5563A3.9551,3.9551,0,0,0,6,20a4,4,0,1,0,4,4V12H25v8.5562A3.9545,3.9545,0,0,0,23,20a4,4,0,1,0,4,4V6A2.0023,2.0023,0,0,0,25,4ZM6,26a2,2,0,1,1,2-2A2.0023,2.0023,0,0,1,6,26Zm17,0a2,2,0,1,1,2-2A2.0027,2.0027,0,0,1,23,26ZM10,6H25v4H10Z"
+                          d="M19,19h-2v-6h2v6ZM4,10h-2v12h2v-12ZM14,10h-2v12h2v-12ZM24,10h-2v12h2v-12ZM9,6h-2v20h2V6ZM29,6h-2v20h2V6Z"
                         />
                       </svg>
                       <span
@@ -11909,7 +11616,7 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                         xmlns="http://www.w3.org/2000/svg"
                       >
                         <path
-                          d="M25,4H10A2.002,2.002,0,0,0,8,6V20.5563A3.9551,3.9551,0,0,0,6,20a4,4,0,1,0,4,4V12H25v8.5562A3.9545,3.9545,0,0,0,23,20a4,4,0,1,0,4,4V6A2.0023,2.0023,0,0,0,25,4ZM6,26a2,2,0,1,1,2-2A2.0023,2.0023,0,0,1,6,26Zm17,0a2,2,0,1,1,2-2A2.0027,2.0027,0,0,1,23,26ZM10,6H25v4H10Z"
+                          d="M19,19h-2v-6h2v6ZM4,10h-2v12h2v-12ZM14,10h-2v12h2v-12ZM24,10h-2v12h2v-12ZM9,6h-2v20h2V6ZM29,6h-2v20h2V6Z"
                         />
                       </svg>
                       <span
@@ -12318,65 +12025,6 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                   </ul>
                 </li>
               </ul>
-            </li>
-            <li
-              aria-selected="false"
-              class="global-tree-nav__tree-node cds--tree-node cds--tree-node--with-icon cds--tree-leaf-node"
-              id="/chains"
-              role="treeitem"
-              tabindex="-1"
-            >
-              <div
-                class="cds--tree-node__label"
-                style="margin-inline-start: -2rem; padding-inline-start: 2rem;"
-              >
-                <span
-                  class="cds--tree-node__label__details"
-                >
-                  <svg
-                    aria-hidden="true"
-                    class="cds--tree-node__icon"
-                    fill="currentColor"
-                    focusable="false"
-                    height="16"
-                    preserveAspectRatio="xMidYMid meet"
-                    viewBox="0 0 32 32"
-                    width="16"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path
-                      d="M23,16a7,7,0,0,0-4.18,1.39L14.6,13.17A6.86,6.86,0,0,0,16,9a7,7,0,1,0-2.81,5.59l4.21,4.22A7,7,0,1,0,23,16ZM4,9a5,5,0,1,1,5,5A5,5,0,0,1,4,9Z"
-                      transform="translate(0 .01)"
-                    />
-                  </svg>
-                  <span
-                    class="cds--tree-node__label__text"
-                    id="/chains__label"
-                  >
-                    <span
-                      class="global-tree-nav__node-copy global-tree-nav__node-copy--bold"
-                    >
-                      <span
-                        class="global-tree-nav__node-main"
-                      >
-                        <span
-                          class="global-tree-nav__node-main-copy"
-                        >
-                          <span
-                            class="global-tree-nav__node-label-row"
-                          >
-                            <span
-                              class="global-tree-nav__node-label"
-                            >
-                              Chains
-                            </span>
-                          </span>
-                        </span>
-                      </span>
-                    </span>
-                  </span>
-                </span>
-              </div>
             </li>
             <li
               aria-expanded="true"
@@ -16699,21 +16347,8 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
                     viewBox="0 0 32 32"
                     width="24"
                   >
-                    <rect
-                      fill="none"
-                      height="20"
-                      rx="4"
-                      stroke="currentColor"
-                      stroke-linecap="round"
-                      stroke-linejoin="round"
-                      stroke-width="1.8"
-                      vector-effect="non-scaling-stroke"
-                      width="22"
-                      x="5"
-                      y="6"
-                    />
                     <path
-                      d="M9 11h14"
+                      d="M7 11h18v13H7z"
                       fill="none"
                       stroke="currentColor"
                       stroke-linecap="round"
@@ -16722,7 +16357,7 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
                       vector-effect="non-scaling-stroke"
                     />
                     <path
-                      d="M9 16h14"
+                      d="M10 8h12l2 3H8z"
                       fill="none"
                       stroke="currentColor"
                       stroke-linecap="round"
@@ -16731,7 +16366,7 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
                       vector-effect="non-scaling-stroke"
                     />
                     <path
-                      d="M9 21h14"
+                      d="M14 15h4"
                       fill="none"
                       stroke="currentColor"
                       stroke-linecap="round"
@@ -16739,23 +16374,23 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
                       stroke-width="1.8"
                       vector-effect="non-scaling-stroke"
                     />
-                    <circle
-                      cx="11"
-                      cy="11"
-                      fill="currentColor"
-                      r="1.2"
+                    <path
+                      d="M12 19h8"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="1.8"
+                      vector-effect="non-scaling-stroke"
                     />
-                    <circle
-                      cx="21"
-                      cy="16"
-                      fill="currentColor"
-                      r="1.2"
-                    />
-                    <circle
-                      cx="15"
-                      cy="21"
-                      fill="currentColor"
-                      r="1.2"
+                    <path
+                      d="M9 11v-1.5A1.5 1.5 0 0 1 10.5 8"
+                      fill="none"
+                      stroke="currentColor"
+                      stroke-linecap="round"
+                      stroke-linejoin="round"
+                      stroke-width="1.8"
+                      vector-effect="non-scaling-stroke"
                     />
                   </svg>
                   <span
@@ -16836,21 +16471,8 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
                         viewBox="0 0 32 32"
                         width="24"
                       >
-                        <rect
-                          fill="none"
-                          height="20"
-                          rx="4"
-                          stroke="currentColor"
-                          stroke-linecap="round"
-                          stroke-linejoin="round"
-                          stroke-width="1.8"
-                          vector-effect="non-scaling-stroke"
-                          width="22"
-                          x="5"
-                          y="6"
-                        />
                         <path
-                          d="M9 11h14"
+                          d="M7 11h18v13H7z"
                           fill="none"
                           stroke="currentColor"
                           stroke-linecap="round"
@@ -16859,7 +16481,7 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
                           vector-effect="non-scaling-stroke"
                         />
                         <path
-                          d="M9 16h14"
+                          d="M10 8h12l2 3H8z"
                           fill="none"
                           stroke="currentColor"
                           stroke-linecap="round"
@@ -16868,7 +16490,7 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
                           vector-effect="non-scaling-stroke"
                         />
                         <path
-                          d="M9 21h14"
+                          d="M14 15h4"
                           fill="none"
                           stroke="currentColor"
                           stroke-linecap="round"
@@ -16876,23 +16498,23 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
                           stroke-width="1.8"
                           vector-effect="non-scaling-stroke"
                         />
-                        <circle
-                          cx="11"
-                          cy="11"
-                          fill="currentColor"
-                          r="1.2"
+                        <path
+                          d="M12 19h8"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="1.8"
+                          vector-effect="non-scaling-stroke"
                         />
-                        <circle
-                          cx="21"
-                          cy="16"
-                          fill="currentColor"
-                          r="1.2"
-                        />
-                        <circle
-                          cx="15"
-                          cy="21"
-                          fill="currentColor"
-                          r="1.2"
+                        <path
+                          d="M9 11v-1.5A1.5 1.5 0 0 1 10.5 8"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="1.8"
+                          vector-effect="non-scaling-stroke"
                         />
                       </svg>
                       <span
@@ -17017,21 +16639,8 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
                         viewBox="0 0 32 32"
                         width="24"
                       >
-                        <rect
-                          fill="none"
-                          height="20"
-                          rx="4"
-                          stroke="currentColor"
-                          stroke-linecap="round"
-                          stroke-linejoin="round"
-                          stroke-width="1.8"
-                          vector-effect="non-scaling-stroke"
-                          width="22"
-                          x="5"
-                          y="6"
-                        />
                         <path
-                          d="M9 11h14"
+                          d="M7 11h18v13H7z"
                           fill="none"
                           stroke="currentColor"
                           stroke-linecap="round"
@@ -17040,7 +16649,7 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
                           vector-effect="non-scaling-stroke"
                         />
                         <path
-                          d="M9 16h14"
+                          d="M10 8h12l2 3H8z"
                           fill="none"
                           stroke="currentColor"
                           stroke-linecap="round"
@@ -17049,7 +16658,7 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
                           vector-effect="non-scaling-stroke"
                         />
                         <path
-                          d="M9 21h14"
+                          d="M14 15h4"
                           fill="none"
                           stroke="currentColor"
                           stroke-linecap="round"
@@ -17057,23 +16666,23 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
                           stroke-width="1.8"
                           vector-effect="non-scaling-stroke"
                         />
-                        <circle
-                          cx="11"
-                          cy="11"
-                          fill="currentColor"
-                          r="1.2"
+                        <path
+                          d="M12 19h8"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="1.8"
+                          vector-effect="non-scaling-stroke"
                         />
-                        <circle
-                          cx="21"
-                          cy="16"
-                          fill="currentColor"
-                          r="1.2"
-                        />
-                        <circle
-                          cx="15"
-                          cy="21"
-                          fill="currentColor"
-                          r="1.2"
+                        <path
+                          d="M9 11v-1.5A1.5 1.5 0 0 1 10.5 8"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="1.8"
+                          vector-effect="non-scaling-stroke"
                         />
                       </svg>
                       <span
@@ -17198,21 +16807,8 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
                         viewBox="0 0 32 32"
                         width="24"
                       >
-                        <rect
-                          fill="none"
-                          height="20"
-                          rx="4"
-                          stroke="currentColor"
-                          stroke-linecap="round"
-                          stroke-linejoin="round"
-                          stroke-width="1.8"
-                          vector-effect="non-scaling-stroke"
-                          width="22"
-                          x="5"
-                          y="6"
-                        />
                         <path
-                          d="M9 11h14"
+                          d="M7 11h18v13H7z"
                           fill="none"
                           stroke="currentColor"
                           stroke-linecap="round"
@@ -17221,7 +16817,7 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
                           vector-effect="non-scaling-stroke"
                         />
                         <path
-                          d="M9 16h14"
+                          d="M10 8h12l2 3H8z"
                           fill="none"
                           stroke="currentColor"
                           stroke-linecap="round"
@@ -17230,7 +16826,7 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
                           vector-effect="non-scaling-stroke"
                         />
                         <path
-                          d="M9 21h14"
+                          d="M14 15h4"
                           fill="none"
                           stroke="currentColor"
                           stroke-linecap="round"
@@ -17238,23 +16834,23 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
                           stroke-width="1.8"
                           vector-effect="non-scaling-stroke"
                         />
-                        <circle
-                          cx="11"
-                          cy="11"
-                          fill="currentColor"
-                          r="1.2"
+                        <path
+                          d="M12 19h8"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="1.8"
+                          vector-effect="non-scaling-stroke"
                         />
-                        <circle
-                          cx="21"
-                          cy="16"
-                          fill="currentColor"
-                          r="1.2"
-                        />
-                        <circle
-                          cx="15"
-                          cy="21"
-                          fill="currentColor"
-                          r="1.2"
+                        <path
+                          d="M9 11v-1.5A1.5 1.5 0 0 1 10.5 8"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="1.8"
+                          vector-effect="non-scaling-stroke"
                         />
                       </svg>
                       <span
@@ -17379,21 +16975,8 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
                         viewBox="0 0 32 32"
                         width="24"
                       >
-                        <rect
-                          fill="none"
-                          height="20"
-                          rx="4"
-                          stroke="currentColor"
-                          stroke-linecap="round"
-                          stroke-linejoin="round"
-                          stroke-width="1.8"
-                          vector-effect="non-scaling-stroke"
-                          width="22"
-                          x="5"
-                          y="6"
-                        />
                         <path
-                          d="M9 11h14"
+                          d="M7 11h18v13H7z"
                           fill="none"
                           stroke="currentColor"
                           stroke-linecap="round"
@@ -17402,7 +16985,7 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
                           vector-effect="non-scaling-stroke"
                         />
                         <path
-                          d="M9 16h14"
+                          d="M10 8h12l2 3H8z"
                           fill="none"
                           stroke="currentColor"
                           stroke-linecap="round"
@@ -17411,7 +16994,7 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
                           vector-effect="non-scaling-stroke"
                         />
                         <path
-                          d="M9 21h14"
+                          d="M14 15h4"
                           fill="none"
                           stroke="currentColor"
                           stroke-linecap="round"
@@ -17419,23 +17002,23 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
                           stroke-width="1.8"
                           vector-effect="non-scaling-stroke"
                         />
-                        <circle
-                          cx="11"
-                          cy="11"
-                          fill="currentColor"
-                          r="1.2"
+                        <path
+                          d="M12 19h8"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="1.8"
+                          vector-effect="non-scaling-stroke"
                         />
-                        <circle
-                          cx="21"
-                          cy="16"
-                          fill="currentColor"
-                          r="1.2"
-                        />
-                        <circle
-                          cx="15"
-                          cy="21"
-                          fill="currentColor"
-                          r="1.2"
+                        <path
+                          d="M9 11v-1.5A1.5 1.5 0 0 1 10.5 8"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="1.8"
+                          vector-effect="non-scaling-stroke"
                         />
                       </svg>
                       <span
@@ -17560,21 +17143,8 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
                         viewBox="0 0 32 32"
                         width="24"
                       >
-                        <rect
-                          fill="none"
-                          height="20"
-                          rx="4"
-                          stroke="currentColor"
-                          stroke-linecap="round"
-                          stroke-linejoin="round"
-                          stroke-width="1.8"
-                          vector-effect="non-scaling-stroke"
-                          width="22"
-                          x="5"
-                          y="6"
-                        />
                         <path
-                          d="M9 11h14"
+                          d="M7 11h18v13H7z"
                           fill="none"
                           stroke="currentColor"
                           stroke-linecap="round"
@@ -17583,7 +17153,7 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
                           vector-effect="non-scaling-stroke"
                         />
                         <path
-                          d="M9 16h14"
+                          d="M10 8h12l2 3H8z"
                           fill="none"
                           stroke="currentColor"
                           stroke-linecap="round"
@@ -17592,7 +17162,7 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
                           vector-effect="non-scaling-stroke"
                         />
                         <path
-                          d="M9 21h14"
+                          d="M14 15h4"
                           fill="none"
                           stroke="currentColor"
                           stroke-linecap="round"
@@ -17600,23 +17170,23 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
                           stroke-width="1.8"
                           vector-effect="non-scaling-stroke"
                         />
-                        <circle
-                          cx="11"
-                          cy="11"
-                          fill="currentColor"
-                          r="1.2"
+                        <path
+                          d="M12 19h8"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="1.8"
+                          vector-effect="non-scaling-stroke"
                         />
-                        <circle
-                          cx="21"
-                          cy="16"
-                          fill="currentColor"
-                          r="1.2"
-                        />
-                        <circle
-                          cx="15"
-                          cy="21"
-                          fill="currentColor"
-                          r="1.2"
+                        <path
+                          d="M9 11v-1.5A1.5 1.5 0 0 1 10.5 8"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="1.8"
+                          vector-effect="non-scaling-stroke"
                         />
                       </svg>
                       <span
@@ -17741,21 +17311,8 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
                         viewBox="0 0 32 32"
                         width="24"
                       >
-                        <rect
-                          fill="none"
-                          height="20"
-                          rx="4"
-                          stroke="currentColor"
-                          stroke-linecap="round"
-                          stroke-linejoin="round"
-                          stroke-width="1.8"
-                          vector-effect="non-scaling-stroke"
-                          width="22"
-                          x="5"
-                          y="6"
-                        />
                         <path
-                          d="M9 11h14"
+                          d="M7 11h18v13H7z"
                           fill="none"
                           stroke="currentColor"
                           stroke-linecap="round"
@@ -17764,7 +17321,7 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
                           vector-effect="non-scaling-stroke"
                         />
                         <path
-                          d="M9 16h14"
+                          d="M10 8h12l2 3H8z"
                           fill="none"
                           stroke="currentColor"
                           stroke-linecap="round"
@@ -17773,7 +17330,7 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
                           vector-effect="non-scaling-stroke"
                         />
                         <path
-                          d="M9 21h14"
+                          d="M14 15h4"
                           fill="none"
                           stroke="currentColor"
                           stroke-linecap="round"
@@ -17781,23 +17338,23 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
                           stroke-width="1.8"
                           vector-effect="non-scaling-stroke"
                         />
-                        <circle
-                          cx="11"
-                          cy="11"
-                          fill="currentColor"
-                          r="1.2"
+                        <path
+                          d="M12 19h8"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="1.8"
+                          vector-effect="non-scaling-stroke"
                         />
-                        <circle
-                          cx="21"
-                          cy="16"
-                          fill="currentColor"
-                          r="1.2"
-                        />
-                        <circle
-                          cx="15"
-                          cy="21"
-                          fill="currentColor"
-                          r="1.2"
+                        <path
+                          d="M9 11v-1.5A1.5 1.5 0 0 1 10.5 8"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="1.8"
+                          vector-effect="non-scaling-stroke"
                         />
                       </svg>
                       <span
@@ -17922,21 +17479,8 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
                         viewBox="0 0 32 32"
                         width="24"
                       >
-                        <rect
-                          fill="none"
-                          height="20"
-                          rx="4"
-                          stroke="currentColor"
-                          stroke-linecap="round"
-                          stroke-linejoin="round"
-                          stroke-width="1.8"
-                          vector-effect="non-scaling-stroke"
-                          width="22"
-                          x="5"
-                          y="6"
-                        />
                         <path
-                          d="M9 11h14"
+                          d="M7 11h18v13H7z"
                           fill="none"
                           stroke="currentColor"
                           stroke-linecap="round"
@@ -17945,7 +17489,7 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
                           vector-effect="non-scaling-stroke"
                         />
                         <path
-                          d="M9 16h14"
+                          d="M10 8h12l2 3H8z"
                           fill="none"
                           stroke="currentColor"
                           stroke-linecap="round"
@@ -17954,7 +17498,7 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
                           vector-effect="non-scaling-stroke"
                         />
                         <path
-                          d="M9 21h14"
+                          d="M14 15h4"
                           fill="none"
                           stroke="currentColor"
                           stroke-linecap="round"
@@ -17962,23 +17506,23 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
                           stroke-width="1.8"
                           vector-effect="non-scaling-stroke"
                         />
-                        <circle
-                          cx="11"
-                          cy="11"
-                          fill="currentColor"
-                          r="1.2"
+                        <path
+                          d="M12 19h8"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="1.8"
+                          vector-effect="non-scaling-stroke"
                         />
-                        <circle
-                          cx="21"
-                          cy="16"
-                          fill="currentColor"
-                          r="1.2"
-                        />
-                        <circle
-                          cx="15"
-                          cy="21"
-                          fill="currentColor"
-                          r="1.2"
+                        <path
+                          d="M9 11v-1.5A1.5 1.5 0 0 1 10.5 8"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="1.8"
+                          vector-effect="non-scaling-stroke"
                         />
                       </svg>
                       <span
@@ -18103,21 +17647,8 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
                         viewBox="0 0 32 32"
                         width="24"
                       >
-                        <rect
-                          fill="none"
-                          height="20"
-                          rx="4"
-                          stroke="currentColor"
-                          stroke-linecap="round"
-                          stroke-linejoin="round"
-                          stroke-width="1.8"
-                          vector-effect="non-scaling-stroke"
-                          width="22"
-                          x="5"
-                          y="6"
-                        />
                         <path
-                          d="M9 11h14"
+                          d="M7 11h18v13H7z"
                           fill="none"
                           stroke="currentColor"
                           stroke-linecap="round"
@@ -18126,7 +17657,7 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
                           vector-effect="non-scaling-stroke"
                         />
                         <path
-                          d="M9 16h14"
+                          d="M10 8h12l2 3H8z"
                           fill="none"
                           stroke="currentColor"
                           stroke-linecap="round"
@@ -18135,7 +17666,7 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
                           vector-effect="non-scaling-stroke"
                         />
                         <path
-                          d="M9 21h14"
+                          d="M14 15h4"
                           fill="none"
                           stroke="currentColor"
                           stroke-linecap="round"
@@ -18143,23 +17674,23 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
                           stroke-width="1.8"
                           vector-effect="non-scaling-stroke"
                         />
-                        <circle
-                          cx="11"
-                          cy="11"
-                          fill="currentColor"
-                          r="1.2"
+                        <path
+                          d="M12 19h8"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="1.8"
+                          vector-effect="non-scaling-stroke"
                         />
-                        <circle
-                          cx="21"
-                          cy="16"
-                          fill="currentColor"
-                          r="1.2"
-                        />
-                        <circle
-                          cx="15"
-                          cy="21"
-                          fill="currentColor"
-                          r="1.2"
+                        <path
+                          d="M9 11v-1.5A1.5 1.5 0 0 1 10.5 8"
+                          fill="none"
+                          stroke="currentColor"
+                          stroke-linecap="round"
+                          stroke-linejoin="round"
+                          stroke-width="1.8"
+                          vector-effect="non-scaling-stroke"
                         />
                       </svg>
                       <span
@@ -18333,7 +17864,7 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
                     xmlns="http://www.w3.org/2000/svg"
                   >
                     <path
-                      d="M25,4H10A2.002,2.002,0,0,0,8,6V20.5563A3.9551,3.9551,0,0,0,6,20a4,4,0,1,0,4,4V12H25v8.5562A3.9545,3.9545,0,0,0,23,20a4,4,0,1,0,4,4V6A2.0023,2.0023,0,0,0,25,4ZM6,26a2,2,0,1,1,2-2A2.0023,2.0023,0,0,1,6,26Zm17,0a2,2,0,1,1,2-2A2.0027,2.0027,0,0,1,23,26ZM10,6H25v4H10Z"
+                      d="M19,19h-2v-6h2v6ZM4,10h-2v12h2v-12ZM14,10h-2v12h2v-12ZM24,10h-2v12h2v-12ZM9,6h-2v20h2V6ZM29,6h-2v20h2V6Z"
                     />
                   </svg>
                   <span
@@ -18396,7 +17927,7 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
                         xmlns="http://www.w3.org/2000/svg"
                       >
                         <path
-                          d="M25,4H10A2.002,2.002,0,0,0,8,6V20.5563A3.9551,3.9551,0,0,0,6,20a4,4,0,1,0,4,4V12H25v8.5562A3.9545,3.9545,0,0,0,23,20a4,4,0,1,0,4,4V6A2.0023,2.0023,0,0,0,25,4ZM6,26a2,2,0,1,1,2-2A2.0023,2.0023,0,0,1,6,26Zm17,0a2,2,0,1,1,2-2A2.0027,2.0027,0,0,1,23,26ZM10,6H25v4H10Z"
+                          d="M19,19h-2v-6h2v6ZM4,10h-2v12h2v-12ZM14,10h-2v12h2v-12ZM24,10h-2v12h2v-12ZM9,6h-2v20h2V6ZM29,6h-2v20h2V6Z"
                         />
                       </svg>
                       <span
@@ -18454,7 +17985,7 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
                         xmlns="http://www.w3.org/2000/svg"
                       >
                         <path
-                          d="M25,4H10A2.002,2.002,0,0,0,8,6V20.5563A3.9551,3.9551,0,0,0,6,20a4,4,0,1,0,4,4V12H25v8.5562A3.9545,3.9545,0,0,0,23,20a4,4,0,1,0,4,4V6A2.0023,2.0023,0,0,0,25,4ZM6,26a2,2,0,1,1,2-2A2.0023,2.0023,0,0,1,6,26Zm17,0a2,2,0,1,1,2-2A2.0027,2.0027,0,0,1,23,26ZM10,6H25v4H10Z"
+                          d="M19,19h-2v-6h2v6ZM4,10h-2v12h2v-12ZM14,10h-2v12h2v-12ZM24,10h-2v12h2v-12ZM9,6h-2v20h2V6ZM29,6h-2v20h2V6Z"
                         />
                       </svg>
                       <span
@@ -18512,7 +18043,7 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
                         xmlns="http://www.w3.org/2000/svg"
                       >
                         <path
-                          d="M25,4H10A2.002,2.002,0,0,0,8,6V20.5563A3.9551,3.9551,0,0,0,6,20a4,4,0,1,0,4,4V12H25v8.5562A3.9545,3.9545,0,0,0,23,20a4,4,0,1,0,4,4V6A2.0023,2.0023,0,0,0,25,4ZM6,26a2,2,0,1,1,2-2A2.0023,2.0023,0,0,1,6,26Zm17,0a2,2,0,1,1,2-2A2.0027,2.0027,0,0,1,23,26ZM10,6H25v4H10Z"
+                          d="M19,19h-2v-6h2v6ZM4,10h-2v12h2v-12ZM14,10h-2v12h2v-12ZM24,10h-2v12h2v-12ZM9,6h-2v20h2V6ZM29,6h-2v20h2V6Z"
                         />
                       </svg>
                       <span
@@ -18570,7 +18101,7 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
                         xmlns="http://www.w3.org/2000/svg"
                       >
                         <path
-                          d="M25,4H10A2.002,2.002,0,0,0,8,6V20.5563A3.9551,3.9551,0,0,0,6,20a4,4,0,1,0,4,4V12H25v8.5562A3.9545,3.9545,0,0,0,23,20a4,4,0,1,0,4,4V6A2.0023,2.0023,0,0,0,25,4ZM6,26a2,2,0,1,1,2-2A2.0023,2.0023,0,0,1,6,26Zm17,0a2,2,0,1,1,2-2A2.0027,2.0027,0,0,1,23,26ZM10,6H25v4H10Z"
+                          d="M19,19h-2v-6h2v6ZM4,10h-2v12h2v-12ZM14,10h-2v12h2v-12ZM24,10h-2v12h2v-12ZM9,6h-2v20h2V6ZM29,6h-2v20h2V6Z"
                         />
                       </svg>
                       <span
@@ -18628,7 +18159,7 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
                         xmlns="http://www.w3.org/2000/svg"
                       >
                         <path
-                          d="M25,4H10A2.002,2.002,0,0,0,8,6V20.5563A3.9551,3.9551,0,0,0,6,20a4,4,0,1,0,4,4V12H25v8.5562A3.9545,3.9545,0,0,0,23,20a4,4,0,1,0,4,4V6A2.0023,2.0023,0,0,0,25,4ZM6,26a2,2,0,1,1,2-2A2.0023,2.0023,0,0,1,6,26Zm17,0a2,2,0,1,1,2-2A2.0027,2.0027,0,0,1,23,26ZM10,6H25v4H10Z"
+                          d="M19,19h-2v-6h2v6ZM4,10h-2v12h2v-12ZM14,10h-2v12h2v-12ZM24,10h-2v12h2v-12ZM9,6h-2v20h2V6ZM29,6h-2v20h2V6Z"
                         />
                       </svg>
                       <span
@@ -18686,7 +18217,7 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
                         xmlns="http://www.w3.org/2000/svg"
                       >
                         <path
-                          d="M25,4H10A2.002,2.002,0,0,0,8,6V20.5563A3.9551,3.9551,0,0,0,6,20a4,4,0,1,0,4,4V12H25v8.5562A3.9545,3.9545,0,0,0,23,20a4,4,0,1,0,4,4V6A2.0023,2.0023,0,0,0,25,4ZM6,26a2,2,0,1,1,2-2A2.0023,2.0023,0,0,1,6,26Zm17,0a2,2,0,1,1,2-2A2.0027,2.0027,0,0,1,23,26ZM10,6H25v4H10Z"
+                          d="M19,19h-2v-6h2v6ZM4,10h-2v12h2v-12ZM14,10h-2v12h2v-12ZM24,10h-2v12h2v-12ZM9,6h-2v20h2V6ZM29,6h-2v20h2V6Z"
                         />
                       </svg>
                       <span
@@ -18744,7 +18275,7 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
                         xmlns="http://www.w3.org/2000/svg"
                       >
                         <path
-                          d="M25,4H10A2.002,2.002,0,0,0,8,6V20.5563A3.9551,3.9551,0,0,0,6,20a4,4,0,1,0,4,4V12H25v8.5562A3.9545,3.9545,0,0,0,23,20a4,4,0,1,0,4,4V6A2.0023,2.0023,0,0,0,25,4ZM6,26a2,2,0,1,1,2-2A2.0023,2.0023,0,0,1,6,26Zm17,0a2,2,0,1,1,2-2A2.0027,2.0027,0,0,1,23,26ZM10,6H25v4H10Z"
+                          d="M19,19h-2v-6h2v6ZM4,10h-2v12h2v-12ZM14,10h-2v12h2v-12ZM24,10h-2v12h2v-12ZM9,6h-2v20h2V6ZM29,6h-2v20h2V6Z"
                         />
                       </svg>
                       <span
@@ -18802,7 +18333,7 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
                         xmlns="http://www.w3.org/2000/svg"
                       >
                         <path
-                          d="M25,4H10A2.002,2.002,0,0,0,8,6V20.5563A3.9551,3.9551,0,0,0,6,20a4,4,0,1,0,4,4V12H25v8.5562A3.9545,3.9545,0,0,0,23,20a4,4,0,1,0,4,4V6A2.0023,2.0023,0,0,0,25,4ZM6,26a2,2,0,1,1,2-2A2.0023,2.0023,0,0,1,6,26Zm17,0a2,2,0,1,1,2-2A2.0027,2.0027,0,0,1,23,26ZM10,6H25v4H10Z"
+                          d="M19,19h-2v-6h2v6ZM4,10h-2v12h2v-12ZM14,10h-2v12h2v-12ZM24,10h-2v12h2v-12ZM9,6h-2v20h2V6ZM29,6h-2v20h2V6Z"
                         />
                       </svg>
                       <span
@@ -18860,7 +18391,7 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
                         xmlns="http://www.w3.org/2000/svg"
                       >
                         <path
-                          d="M25,4H10A2.002,2.002,0,0,0,8,6V20.5563A3.9551,3.9551,0,0,0,6,20a4,4,0,1,0,4,4V12H25v8.5562A3.9545,3.9545,0,0,0,23,20a4,4,0,1,0,4,4V6A2.0023,2.0023,0,0,0,25,4ZM6,26a2,2,0,1,1,2-2A2.0023,2.0023,0,0,1,6,26Zm17,0a2,2,0,1,1,2-2A2.0027,2.0027,0,0,1,23,26ZM10,6H25v4H10Z"
+                          d="M19,19h-2v-6h2v6ZM4,10h-2v12h2v-12ZM14,10h-2v12h2v-12ZM24,10h-2v12h2v-12ZM9,6h-2v20h2V6ZM29,6h-2v20h2V6Z"
                         />
                       </svg>
                       <span
@@ -18918,7 +18449,7 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
                         xmlns="http://www.w3.org/2000/svg"
                       >
                         <path
-                          d="M25,4H10A2.002,2.002,0,0,0,8,6V20.5563A3.9551,3.9551,0,0,0,6,20a4,4,0,1,0,4,4V12H25v8.5562A3.9545,3.9545,0,0,0,23,20a4,4,0,1,0,4,4V6A2.0023,2.0023,0,0,0,25,4ZM6,26a2,2,0,1,1,2-2A2.0023,2.0023,0,0,1,6,26Zm17,0a2,2,0,1,1,2-2A2.0027,2.0027,0,0,1,23,26ZM10,6H25v4H10Z"
+                          d="M19,19h-2v-6h2v6ZM4,10h-2v12h2v-12ZM14,10h-2v12h2v-12ZM24,10h-2v12h2v-12ZM9,6h-2v20h2V6ZM29,6h-2v20h2V6Z"
                         />
                       </svg>
                       <span
@@ -18976,7 +18507,7 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
                         xmlns="http://www.w3.org/2000/svg"
                       >
                         <path
-                          d="M25,4H10A2.002,2.002,0,0,0,8,6V20.5563A3.9551,3.9551,0,0,0,6,20a4,4,0,1,0,4,4V12H25v8.5562A3.9545,3.9545,0,0,0,23,20a4,4,0,1,0,4,4V6A2.0023,2.0023,0,0,0,25,4ZM6,26a2,2,0,1,1,2-2A2.0023,2.0023,0,0,1,6,26Zm17,0a2,2,0,1,1,2-2A2.0027,2.0027,0,0,1,23,26ZM10,6H25v4H10Z"
+                          d="M19,19h-2v-6h2v6ZM4,10h-2v12h2v-12ZM14,10h-2v12h2v-12ZM24,10h-2v12h2v-12ZM9,6h-2v20h2V6ZM29,6h-2v20h2V6Z"
                         />
                       </svg>
                       <span
@@ -19034,7 +18565,7 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
                         xmlns="http://www.w3.org/2000/svg"
                       >
                         <path
-                          d="M25,4H10A2.002,2.002,0,0,0,8,6V20.5563A3.9551,3.9551,0,0,0,6,20a4,4,0,1,0,4,4V12H25v8.5562A3.9545,3.9545,0,0,0,23,20a4,4,0,1,0,4,4V6A2.0023,2.0023,0,0,0,25,4ZM6,26a2,2,0,1,1,2-2A2.0023,2.0023,0,0,1,6,26Zm17,0a2,2,0,1,1,2-2A2.0027,2.0027,0,0,1,23,26ZM10,6H25v4H10Z"
+                          d="M19,19h-2v-6h2v6ZM4,10h-2v12h2v-12ZM14,10h-2v12h2v-12ZM24,10h-2v12h2v-12ZM9,6h-2v20h2V6ZM29,6h-2v20h2V6Z"
                         />
                       </svg>
                       <span
@@ -19092,7 +18623,7 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
                         xmlns="http://www.w3.org/2000/svg"
                       >
                         <path
-                          d="M25,4H10A2.002,2.002,0,0,0,8,6V20.5563A3.9551,3.9551,0,0,0,6,20a4,4,0,1,0,4,4V12H25v8.5562A3.9545,3.9545,0,0,0,23,20a4,4,0,1,0,4,4V6A2.0023,2.0023,0,0,0,25,4ZM6,26a2,2,0,1,1,2-2A2.0023,2.0023,0,0,1,6,26Zm17,0a2,2,0,1,1,2-2A2.0027,2.0027,0,0,1,23,26ZM10,6H25v4H10Z"
+                          d="M19,19h-2v-6h2v6ZM4,10h-2v12h2v-12ZM14,10h-2v12h2v-12ZM24,10h-2v12h2v-12ZM9,6h-2v20h2V6ZM29,6h-2v20h2V6Z"
                         />
                       </svg>
                       <span
@@ -19501,65 +19032,6 @@ exports[`Desktop experience visual snapshots matches the global navigation shell
                   </ul>
                 </li>
               </ul>
-            </li>
-            <li
-              aria-selected="false"
-              class="global-tree-nav__tree-node cds--tree-node cds--tree-node--with-icon cds--tree-leaf-node"
-              id="/chains"
-              role="treeitem"
-              tabindex="-1"
-            >
-              <div
-                class="cds--tree-node__label"
-                style="margin-inline-start: -2rem; padding-inline-start: 2rem;"
-              >
-                <span
-                  class="cds--tree-node__label__details"
-                >
-                  <svg
-                    aria-hidden="true"
-                    class="cds--tree-node__icon"
-                    fill="currentColor"
-                    focusable="false"
-                    height="16"
-                    preserveAspectRatio="xMidYMid meet"
-                    viewBox="0 0 32 32"
-                    width="16"
-                    xmlns="http://www.w3.org/2000/svg"
-                  >
-                    <path
-                      d="M23,16a7,7,0,0,0-4.18,1.39L14.6,13.17A6.86,6.86,0,0,0,16,9a7,7,0,1,0-2.81,5.59l4.21,4.22A7,7,0,1,0,23,16ZM4,9a5,5,0,1,1,5,5A5,5,0,0,1,4,9Z"
-                      transform="translate(0 .01)"
-                    />
-                  </svg>
-                  <span
-                    class="cds--tree-node__label__text"
-                    id="/chains__label"
-                  >
-                    <span
-                      class="global-tree-nav__node-copy global-tree-nav__node-copy--bold"
-                    >
-                      <span
-                        class="global-tree-nav__node-main"
-                      >
-                        <span
-                          class="global-tree-nav__node-main-copy"
-                        >
-                          <span
-                            class="global-tree-nav__node-label-row"
-                          >
-                            <span
-                              class="global-tree-nav__node-label"
-                            >
-                              Chains
-                            </span>
-                          </span>
-                        </span>
-                      </span>
-                    </span>
-                  </span>
-                </span>
-              </div>
             </li>
             <li
               aria-expanded="true"

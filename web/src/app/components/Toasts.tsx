@@ -1536,12 +1536,12 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
 // work everywhere via NotificationContext + react-toastify.
 const STAGE_VIEWPORT_ROUTE_PREFIXES: readonly string[] = [
   '/about',
-  '/chains',
   '/legacy',
   '/theme',
   '/welcome',
   // Nav reorg 2026-05-03 (second pass) — canonical Node Ops base
   // path; legacy `/workspace` retained for in-flight redirects.
+  // /chains was absorbed into /node-ops/audio-engine.
   '/node-ops',
   '/artifacts',
   '/workspace',

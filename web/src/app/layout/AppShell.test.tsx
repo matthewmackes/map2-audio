@@ -211,7 +211,8 @@ describe('AppShell global tree navigation', () => {
       'Audio Artifacts',
       'Drums&Synth',
       'Hardware',
-      'Chains',
+      // Nav reorg 2026-05-03 — /chains removed from top-level; folded
+      // into /node-ops/audio-engine.
       'Settings',
       'Platform Guide',
     ])
@@ -223,7 +224,6 @@ describe('AppShell global tree navigation', () => {
     expect(screen.getByText('Drums&Synth')).toBeInTheDocument()
     expect(screen.getByText('Audio Artifacts')).toBeInTheDocument()
     expect(screen.getByText('Platform Guide')).toBeInTheDocument()
-    expect(screen.getByText('Chains')).toBeInTheDocument()
     expect(screen.getByText('Settings')).toBeInTheDocument()
     expect(screen.getAllByText('Hardware').length).toBeGreaterThan(0)
     expect(screen.getAllByText('Devices').length).toBeGreaterThan(0)

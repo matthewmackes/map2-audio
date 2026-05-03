@@ -96,7 +96,8 @@ describe('resolveShellRouteMeta', () => {
       '/pipewire',
       '/ground-control-pro',
       '/expression',
-      '/chains',
+      // Nav reorg 2026-05-03 — /chains route deleted; folded into
+      // /node-ops/audio-engine.
     ]
     for (const route of criticalRoutes) {
       expect(resolveShellRouteMeta(route)).not.toBeNull()

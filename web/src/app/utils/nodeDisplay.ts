@@ -3,11 +3,13 @@ import type { NodeIdentity, NodeRole, NodeStatus, NodeSummary } from '../types/n
 
 export type NodeRolePresence = 'LOCAL' | 'VIEW' | 'PEER'
 
+// Nav reorg 2026-05-03 — `chains` page-key removed; the standalone
+// /chains route was absorbed into Audio Engine and now uses the
+// `audioEngine` scope.
 export const NODE_PAGE_KEYS = {
   home: 'home',
   audioEngine: 'audio-engine',
   lv2Plugins: 'lv2-plugins',
-  chains: 'chains',
   midiHub: 'midi-hub',
   labs: 'labs',
   platform: 'nodes',
@@ -178,9 +180,8 @@ export function pageKeyFromPathname(pathname: string): string | null {
   if (canonicalPathname.startsWith('/plugins')) {
     return NODE_PAGE_KEYS.lv2Plugins
   }
-  if (canonicalPathname.startsWith('/chains')) {
-    return NODE_PAGE_KEYS.chains
-  }
+  // /chains was absorbed into /node-ops/audio-engine (nav reorg
+  // 2026-05-03); no separate page key needed.
   if (canonicalPathname.startsWith('/midi-hub')) {
     return NODE_PAGE_KEYS.midiHub
   }

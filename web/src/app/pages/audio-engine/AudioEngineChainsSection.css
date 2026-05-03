@@ -1,0 +1,126 @@
+/* AudioEngineChainsSection — section-scaled treatment of the
+ * legacy /chains page. Heading + warning + 2 metric tiles + table.
+ * No hero block, no large title; sized to live alongside the rest
+ * of the Audio Engine sections. */
+
+.audio-engine-chains {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cds-spacing-05);
+}
+
+.audio-engine-chains__header {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cds-spacing-04);
+}
+
+.audio-engine-chains__heading-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--cds-spacing-04);
+  flex-wrap: wrap;
+}
+
+.audio-engine-chains__heading {
+  margin: 0;
+  color: var(--cds-text-primary);
+  font-size: var(--cds-heading-03-font-size, 1.25rem);
+  font-weight: var(--cds-heading-03-font-weight, 600);
+  line-height: var(--cds-heading-03-line-height, 1.35);
+}
+
+.audio-engine-chains__actions {
+  display: flex;
+  align-items: center;
+  gap: var(--cds-spacing-03);
+  flex-wrap: wrap;
+}
+
+.audio-engine-chains__metrics-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(13rem, 1fr));
+  gap: var(--cds-spacing-04);
+}
+
+.audio-engine-chains__metric-card {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cds-spacing-03);
+  border: 1px solid var(--cds-border-subtle-01);
+  background: var(--cds-layer);
+  padding: var(--cds-spacing-05);
+}
+
+.audio-engine-chains__metric-label {
+  color: var(--cds-text-secondary);
+  font-size: var(--cds-label-01-font-size, 0.75rem);
+}
+
+.audio-engine-chains__metric-value {
+  color: var(--cds-text-primary);
+  font-size: var(--cds-productive-heading-04-font-size, 1.75rem);
+  font-weight: var(--cds-productive-heading-04-font-weight, 400);
+  line-height: var(--cds-productive-heading-04-line-height, 1.2);
+}
+
+.audio-engine-chains__panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cds-spacing-04);
+  border: 1px solid var(--cds-border-subtle-01);
+  background: var(--cds-layer);
+  padding: var(--cds-spacing-05);
+}
+
+.audio-engine-chains__panel-header {
+  display: flex;
+  align-items: flex-end;
+  justify-content: flex-end;
+  gap: var(--cds-spacing-04);
+  flex-wrap: wrap;
+}
+
+.audio-engine-chains__search {
+  min-width: 16rem;
+}
+
+.audio-engine-chains__table-wrap {
+  border: 1px solid var(--cds-border-subtle-01);
+  overflow-x: auto;
+}
+
+.audio-engine-chains__table {
+  min-width: 44rem;
+}
+
+.audio-engine-chains__table-cell--actions {
+  text-align: right;
+}
+
+.audio-engine-chains__row-primary {
+  color: var(--cds-text-primary);
+  font-weight: 600;
+}
+
+.audio-engine-chains__row-secondary {
+  color: var(--cds-text-secondary);
+  font-size: var(--cds-helper-text-01-font-size, 0.75rem);
+}
+
+@media (max-width: 48rem) {
+  .audio-engine-chains__panel {
+    padding: var(--cds-spacing-04);
+  }
+
+  .audio-engine-chains__panel-header {
+    width: 100%;
+    justify-content: flex-start;
+  }
+
+  .audio-engine-chains__search {
+    width: 100%;
+    min-width: 0;
+  }
+}

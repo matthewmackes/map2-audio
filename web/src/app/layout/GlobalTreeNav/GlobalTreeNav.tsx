@@ -40,9 +40,11 @@ import {
   ScanAlt,
   ScreenMap,
   Settings,
+  SettingsAdjust,
+  Waveform,
 } from '@carbon/icons-react'
 
-import { MapRackDeviceIcon } from '../../components/icons/map'
+import { MapArtifactsLibraryIcon, MapRackDeviceIcon } from '../../components/icons/map'
 import { NodeIdentityCard } from '../../components/NodeNav/NodeIdentityCard'
 import { NodeMiniCard } from '../../components/NodeNav/NodeMiniCard'
 import {
@@ -176,7 +178,9 @@ const TOP_LEVEL_ROUTE_ORDER = [
   '/artifacts',
   '/brain',
   '/hardware',
-  '/chains',
+  // Nav reorg 2026-05-03 — /chains was absorbed into the Audio
+  // Engine page (AudioEngineChainsSection at the top). The
+  // standalone top-level entry is removed.
   '/settings',
   '/about',
 ] as const
@@ -184,7 +188,6 @@ const TOP_LEVEL_ROUTE_ORDER = [
 const FLAT_TOP_LEVEL_ROUTES = new Set([
   '/',
   '/snapshot-editor',
-  '/chains',
   '/about',
 ])
 const HARDWARE_TREE_ID = '/hardware'
@@ -194,7 +197,10 @@ const HARDWARE_HOST_MACHINE_ID = '/hardware::host-machine'
 const TREE_ICON_OVERRIDES: Record<string, TreeIconComponent> = {
   '/': Home,
   '/snapshot-editor': ScreenMap,
-  '/brain': Music,
+  // Nav reorg 2026-05-03 — Drums&Synth was visually colliding with
+  // MIDI Services (both Music). Waveform is the closest "sound shape /
+  // instrument output" semantic in @carbon/icons-react.
+  '/brain': Waveform,
   '/midi-hub': Music,
   '/avb': ChartNetwork,
   // Nav reorg 2026-05-03 — /settings is the new operator/UI
@@ -225,8 +231,16 @@ const TREE_ICON_OVERRIDES: Record<string, TreeIconComponent> = {
   '/node-ops': Dashboard,
   '/node-ops/overview': Dashboard,
   '/node-ops/audio-engine': AudioConsole,
-  '/artifacts': MapRackDeviceIcon,
-  '/chains': Connect,
+  // Nav reorg 2026-05-03 — distinct icons per service (was: Audio
+  // Artifacts shared `MapRackDeviceIcon` with the device-rack pins
+  // below it; Device Manager shared `Devices` with the Devices
+  // parent in Hardware; Drums&Synth shared `Music` with MIDI
+  // Services. The MAP-native `MapArtifactsLibraryIcon` was already
+  // designed for this surface but never wired in.
+  '/artifacts': MapArtifactsLibraryIcon,
+  '/node-ops/management': SettingsAdjust,
+  // Nav reorg 2026-05-03 — /chains was absorbed into the Audio
+  // Engine page; the standalone tree-icon override is removed.
   '/node-ops/network-discovery': ScanAlt,
   '/node-ops/cluster-dashboard': Dashboard,
   '/node-ops/midpoint': Flash,
@@ -272,7 +286,6 @@ const TREE_LABEL_OVERRIDES: Record<string, string> = {
   '/midi-hub': 'MIDI Services',
   '/avb': 'AVB',
   '/settings': 'Settings',
-  '/chains': 'Chains',
   '/midi/assignments': 'MIDI Assignments',
   '/hardware': 'Hardware',
   '/labs/push-surface': 'Push Surface',
@@ -639,7 +652,6 @@ const BOLD_TOP_LEVEL_ROUTES = new Set([
   '/midi-hub',
   '/avb',
   '/hardware',
-  '/chains',
   '/settings',
   // Nav reorg 2026-05-03 (second pass)
   '/node-ops',

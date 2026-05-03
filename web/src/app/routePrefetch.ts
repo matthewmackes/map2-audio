@@ -174,10 +174,8 @@ const PREFETCH_RULES: PrefetchRule[] = [
     prefix: '/midi-commander',
     loaders: [() => import('./pages/MidiCommanderPage')],
   },
-  {
-    prefix: '/chains',
-    loaders: [() => import('./pages/ChainsPage')],
-  },
+  // Nav reorg 2026-05-03 — /chains route deleted; folded into
+  // /node-ops/audio-engine.
   {
     prefix: '/host-machine',
     loaders: [() => import('./pages/HostMachinePage')],

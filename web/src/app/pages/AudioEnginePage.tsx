@@ -89,6 +89,9 @@ import { SegmentedLedText } from '../components/Displays/SegmentedLedText'
 import { useLatencyPressure } from '../hooks/useLatencyPressure'
 import { AudioEngineWorkspaceGraph } from '../components/AudioEngine/AudioEngineWorkspaceGraph'
 import { JuceSourceTruthGraph } from '../components/AudioEngine/JuceSourceTruthGraph'
+// Nav reorg 2026-05-03 — absorbed the standalone /chains page as a
+// section at the top of the Audio Engine content area.
+import { AudioEngineChainsSection } from './audio-engine/AudioEngineChainsSection'
 import {
   buildAudioEngineWorkspaceGraphModel,
   type AudioEngineWorkspaceAnchorId,
@@ -1054,6 +1057,12 @@ export function AudioEnginePage() {
             </div>
           )}
         </div>
+
+        {/* Nav reorg 2026-05-03 — the standalone /chains route was
+            absorbed into Audio Engine. Section sits at the top of the
+            content area, right after the header band, slaved to the
+            Audio Engine node selector. */}
+        <AudioEngineChainsSection />
 
         {isClusterMode ? (
           <Accordion align="start" className="audio-engine-page__cluster-accordion">

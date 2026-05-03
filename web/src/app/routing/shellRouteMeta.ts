@@ -306,7 +306,8 @@ const RULES: ShellRouteRule[] = [
     breadcrumbs: [ARTIFACTS_PARENT_CRUMB, { label: 'Discover' }],
   }),
   staticMeta('/brain', { windowLabel: 'Brain', breadcrumbs: [{ label: 'Brain' }] }),
-  staticMeta('/chains', { windowLabel: 'Chains', breadcrumbs: [{ label: 'Chains' }] }),
+  // Nav reorg 2026-05-03 — /chains route deleted; folded into
+  // /node-ops/audio-engine (AudioEngineChainsSection).
   staticMeta('/metering', { windowLabel: 'Metering', breadcrumbs: [NODE_OPS_PARENT_CRUMB, { label: 'Metering' }] }),
   staticMeta('/pipewire', { windowLabel: 'PipeWire', breadcrumbs: [NODE_OPS_PARENT_CRUMB, { label: 'PipeWire' }] }),
   staticMeta('/state-authority', { windowLabel: 'State Authority', breadcrumbs: [NODE_OPS_PARENT_CRUMB, { label: 'State Authority' }] }),
