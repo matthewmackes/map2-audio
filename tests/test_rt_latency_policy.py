@@ -36,6 +36,13 @@ def _sub_5ms_sleep_violations() -> list[str]:
                 continue
             if float(literal.value) >= 0.005:
                 continue
+            # asyncio.sleep(0) is the canonical event-loop yield idiom — it
+            # parks the current coroutine and lets other tasks run, but it
+            # does not constitute a polling loop. The "no sub-5ms sleeps"
+            # rule is about preventing busy-poll cadences that compete with
+            # the audio thread; bare yields are fine and ubiquitous.
+            if float(literal.value) == 0.0:
+                continue
             if relative_path in SUB_5MS_ALLOWLIST:
                 continue
             violations.append(
