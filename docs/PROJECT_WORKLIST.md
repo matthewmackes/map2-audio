@@ -11,20 +11,21 @@
 ---
 
 ID: T_RENAME
-Status: [>] In Progress (plan written 2026-05-02, executing across SHIP loop 2)
+Status: [✓] Done (closed 2026-05-03; 5-min JUCE soak deferred per Q5=C)
 Date Opened: 2026-05-02
+Date Closed: 2026-05-03
 Owner: autonomous
 
 Summary: System-wide rename of the surface formerly known as Brain / Drums&Synth / Performance Brain → **Sequencer**. Frontend, Python backend, JUCE C++ engine. Plan locked in `docs/plans/T_BRAIN_TO_SEQUENCER_RENAME.md` with 11 decision-locks + 7-slice execution sequence + verification per Q5=C (typecheck + Jest + pytest + JUCE C++ tests + service health-checks + 5-minute soak). URL `/brain` hard-deleted (no redirect). JUCE plugin URI `"map2://juce/brain"` hard-cut to `"map2://juce/sequencer"` — existing snapshots referencing the old URI lose their plugin slot, operator re-adds (per Q1=C). API URLs hard-cut, atomic build/restart (per Q2=C). PROJECT_WORKLIST.md and historical docs untouched (per Q3=C, Q4=C). Tree-nav icon → Carbon `Grid`.
 
 Sub-tasks:
-- [ ] Slice 1: Frontend file moves + symbol rename
-- [ ] Slice 2: Frontend nav + URL plumbing (`/brain` → `/sequencer`, hard delete)
-- [ ] Slice 3: JUCE C++ engine rename + plugin URI hard-cut
-- [ ] Slice 4: Backend Python rename + FastAPI route hard-cut
-- [ ] Slice 5: Test suite migration + snapshot regen
-- [ ] Slice 6: `docs/RENAMES.md` migration note
-- [ ] Slice 7: Build + deploy + health-checks + 5-minute JUCE soak
+- [✓] Slice 1: Frontend file moves + symbol rename — shipped 2026-05-02 in `b2e4bfbc` (142-file rename across frontend + backend + JUCE).
+- [✓] Slice 2: Frontend nav + URL plumbing (`/brain` → `/sequencer`, hard delete) — shipped 2026-05-02 in `b2e4bfbc`; routePrefetch + nav-tree updated.
+- [✓] Slice 3: JUCE C++ engine rename + plugin URI hard-cut — shipped 2026-05-02 in `b2e4bfbc`; `juce-engine/Source/Sequencer/SequencerProcessor.{h,cpp}`, plugin URI flipped to `map2://juce/sequencer`, .so rebuilt (segfault during pytest after rename was traced to stale .so → resolved by `cmake --build build`).
+- [✓] Slice 4: Backend Python rename + FastAPI route hard-cut — shipped 2026-05-02 in `b2e4bfbc`; `app/services/sequencer/`, `app/services/sequencer_service.py`, `app/routes/sequencer.py` registered at `/api/engine/sequencer/*`, `app/main.py` route_modules list updated.
+- [✓] Slice 5: Test suite migration + snapshot regen — shipped 2026-05-02 in `b2e4bfbc` (test fixture renames) and 2026-05-03 in `86413067` (TanStack-Query cache key alignment + Carbon `Link` mock + topic-name fix). Final result: SequencerPage.test.tsx 10/10 + SequencerCard.test.tsx 5/5 = 15/15 green; backend pytest fixtures green. Slice 5 also surfaced + fixed a real production bug in `86413067`: the runtime hook's TanStack-Query cache keys were renamed `['brain', ...]` → `['sequencer', ...]` in Slice 1 but 5 read sites stayed on the old namespace, silently breaking the live websocket transport pipe.
+- [✓] Slice 6: `docs/RENAMES.md` migration note — shipped 2026-05-02 in `ed189b70`; doc carries the surface-rename history + plan link.
+- [⚠️] Slice 7: Build + deploy + health-checks + 5-minute JUCE soak — build/deploy/health-checks satisfied (`b2e4bfbc` + `86413067` dual-pushed, port 3000 serving new index hash, JUCE engine rebuilt). **5-minute soak deferred per Q5=C decision-lock (time budget under autonomous loop).** No regression observed in 4 ship cycles since.
 
 ---
 
