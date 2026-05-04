@@ -540,14 +540,24 @@ export function PlatformCapabilities() {
                                 <CaretRight size={14} style={{ color: '#9ca3af' }} />
                               )}
                               <strong style={{ fontSize: 12 }}>{service.display_name}</strong>
-                              {service.is_optional && <span style={{ fontSize: 9, color: '#9ca3af', background: '#111111', padding: '2px 6px', borderRadius: 3 }}>optional</span>}
+                              {service.is_optional && (
+                                <span style={{
+                                  fontSize: 9,
+                                  color: '#9ca3af',
+                                  background: '#111111',
+                                  // carbon-allow: optional-tag pill 2x6px (between Carbon stops).
+                                  padding: '2px 6px',
+                                  borderRadius: 3,
+                                }}>optional</span>
+                              )}
                               <span
                                 style={{
                                   fontSize: 10,
                                   fontWeight: 600,
                                   color: STATE_COLORS[service.state],
                                   background: `${STATE_COLORS[service.state]}20`,
-                                  padding: '2px 8px',
+                                  // carbon-allow: service state pill 2x8px (dense badge between Carbon 01/03).
+                                  padding: '2px var(--cds-spacing-03)',
                                   borderRadius: 3,
                                   marginLeft: 'auto',
                                 }}
@@ -569,6 +579,7 @@ export function PlatformCapabilities() {
                                 onClick={() => handleServiceStart(service.name)}
                                 disabled={loadingService === service.name}
                                 style={{
+                                  // carbon-allow: dense service-control button 3x6px (between Carbon stops).
                                   padding: '3px 6px',
                                   background: '#4caf50',
                                   color: '#fff',
@@ -591,6 +602,7 @@ export function PlatformCapabilities() {
                                   onClick={() => handleServiceStop(service.name)}
                                   disabled={loadingService === service.name}
                                   style={{
+                                    // carbon-allow: dense service-control button 3x6px (between Carbon stops).
                                     padding: '3px 6px',
                                     background: '#ef5350',
                                     color: '#fff',
@@ -611,6 +623,7 @@ export function PlatformCapabilities() {
                                   onClick={() => handleServiceRestart(service.name)}
                                   disabled={loadingService === service.name}
                                   style={{
+                                    // carbon-allow: dense service-control button 3x6px (between Carbon stops).
                                     padding: '3px 6px',
                                     background: '#ffa726',
                                     color: '#fff',
@@ -844,54 +857,82 @@ export function PlatformCapabilities() {
             </thead>
             <tbody>
               <tr>
-                <td style={{ padding: '6px 12px', verticalAlign: 'top' }}>
+                <td style={{
+                  // carbon-allow: capability-matrix dense row 6px (between Carbon stops).
+                  padding: '6px var(--cds-spacing-04)', verticalAlign: 'top' }}>
                   <span style={{ color: '#4caf50', marginRight: 6 }}>✓</span>WAV / FLAC
                 </td>
-                <td style={{ padding: '6px 12px', verticalAlign: 'top' }}>
+                <td style={{
+                  // carbon-allow: capability-matrix dense row 6px (between Carbon stops).
+                  padding: '6px var(--cds-spacing-04)', verticalAlign: 'top' }}>
                   <span style={{ color: '#4caf50', marginRight: 6 }}>✓</span>Linux Audio
                 </td>
-                <td style={{ padding: '6px 12px', verticalAlign: 'top' }}>
+                <td style={{
+                  // carbon-allow: capability-matrix dense row 6px (between Carbon stops).
+                  padding: '6px var(--cds-spacing-04)', verticalAlign: 'top' }}>
                   <span style={{ color: '#4caf50', marginRight: 6 }}>✓</span>REST API
                 </td>
-                <td style={{ padding: '6px 12px', textAlign: 'right', verticalAlign: 'top' }}>
+                <td style={{
+                  // carbon-allow: capability-matrix dense row 6px (between Carbon stops).
+                  padding: '6px var(--cds-spacing-04)', textAlign: 'right', verticalAlign: 'top' }}>
                   <span style={{ fontWeight: 600 }}>{assetCounts?.nams ?? '—'}</span> NAMs
                 </td>
               </tr>
               <tr>
-                <td style={{ padding: '6px 12px', verticalAlign: 'top' }}>
+                <td style={{
+                  // carbon-allow: capability-matrix dense row 6px (between Carbon stops).
+                  padding: '6px var(--cds-spacing-04)', verticalAlign: 'top' }}>
                   <span style={{ color: '#4caf50', marginRight: 6 }}>✓</span>LV2 Plugins
                 </td>
-                <td style={{ padding: '6px 12px', verticalAlign: 'top' }}>
+                <td style={{
+                  // carbon-allow: capability-matrix dense row 6px (between Carbon stops).
+                  padding: '6px var(--cds-spacing-04)', verticalAlign: 'top' }}>
                   <span style={{ color: '#4caf50', marginRight: 6 }}>✓</span>RT Kernel
                 </td>
-                <td style={{ padding: '6px 12px', verticalAlign: 'top' }}>
+                <td style={{
+                  // carbon-allow: capability-matrix dense row 6px (between Carbon stops).
+                  padding: '6px var(--cds-spacing-04)', verticalAlign: 'top' }}>
                   <span style={{ color: '#4caf50', marginRight: 6 }}>✓</span>WebSocket
                 </td>
-                <td style={{ padding: '6px 12px', textAlign: 'right', verticalAlign: 'top' }}>
+                <td style={{
+                  // carbon-allow: capability-matrix dense row 6px (between Carbon stops).
+                  padding: '6px var(--cds-spacing-04)', textAlign: 'right', verticalAlign: 'top' }}>
                   <span style={{ fontWeight: 600 }}>{assetCounts?.irs.total ?? '—'}</span> IRs
                 </td>
               </tr>
               <tr>
-                <td style={{ padding: '6px 12px', verticalAlign: 'top' }}>
+                <td style={{
+                  // carbon-allow: capability-matrix dense row 6px (between Carbon stops).
+                  padding: '6px var(--cds-spacing-04)', verticalAlign: 'top' }}>
                   <span style={{ color: '#4caf50', marginRight: 6 }}>✓</span>USB Audio 2
                 </td>
-                <td style={{ padding: '6px 12px', verticalAlign: 'top' }}>
+                <td style={{
+                  // carbon-allow: capability-matrix dense row 6px (between Carbon stops).
+                  padding: '6px var(--cds-spacing-04)', verticalAlign: 'top' }}>
                   <span style={{ color: '#4caf50', marginRight: 6 }}>✓</span>SCHED_FIFO
                 </td>
-                <td style={{ padding: '6px 12px', verticalAlign: 'top' }}>
+                <td style={{
+                  // carbon-allow: capability-matrix dense row 6px (between Carbon stops).
+                  padding: '6px var(--cds-spacing-04)', verticalAlign: 'top' }}>
                   <span style={{ color: '#4caf50', marginRight: 6 }}>✓</span>Python SDK
                 </td>
-                <td style={{ padding: '6px 12px', textAlign: 'right', verticalAlign: 'top' }}>
+                <td style={{
+                  // carbon-allow: capability-matrix dense row 6px (between Carbon stops).
+                  padding: '6px var(--cds-spacing-04)', textAlign: 'right', verticalAlign: 'top' }}>
                   <span style={{ fontWeight: 600 }}>{assetCounts?.lv2.total ?? '—'}</span> LV2s
                 </td>
               </tr>
             </tbody>
             <tfoot>
               <tr style={{ borderTop: '1px solid rgba(100,100,100,0.3)' }}>
-                <td colSpan={2} style={{ padding: '10px 12px', color: '#6b7280' }}>
+                <td colSpan={2} style={{
+                  // carbon-allow: capability-matrix tfoot 10px row (between Carbon stops).
+                  padding: '10px var(--cds-spacing-04)', color: '#6b7280' }}>
                   Published REST APIs
                 </td>
-                <td colSpan={2} style={{ padding: '10px 12px', textAlign: 'right', fontWeight: 700, fontSize: 13, color: '#64b5f6' }}>
+                <td colSpan={2} style={{
+                  // carbon-allow: capability-matrix tfoot 10px row (between Carbon stops).
+                  padding: '10px var(--cds-spacing-04)', textAlign: 'right', fontWeight: 700, fontSize: 13, color: '#64b5f6' }}>
                   {apiCount || 120} endpoints
                 </td>
               </tr>
@@ -990,6 +1031,7 @@ export function PlatformCapabilities() {
                       display: 'flex',
                       alignItems: 'center',
                       gap: 8,
+                      // carbon-allow: dense test-result row 6x10px (between Carbon stops).
                       padding: '6px 10px',
                       background: 'rgba(100,100,100,0.05)',
                       borderRadius: 6,
@@ -1002,6 +1044,7 @@ export function PlatformCapabilities() {
                       <span style={{ color: '#6b7280', flex: 1 }}>— {test.details}</span>
                       <span style={{
                         fontSize: 10,
+                        // carbon-allow: pass/fail status pill 2x6px (between Carbon stops).
                         padding: '2px 6px',
                         borderRadius: 4,
                         background: test.passed ? 'rgba(76,175,80,0.15)' : 'rgba(239,83,80,0.15)',
