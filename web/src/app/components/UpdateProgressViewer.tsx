@@ -227,7 +227,7 @@ export function UpdateProgressViewer({ updateId }: { updateId?: string }) {
               padding: 40,
               textAlign: 'center',
               background: 'var(--cds-background)',
-              border: '1px solid #222222',
+              border: '1px solid var(--cds-border-subtle)',
               borderRadius: 8,
               color: 'var(--cds-text-helper)',
             }}
@@ -290,7 +290,7 @@ export function UpdateProgressViewer({ updateId }: { updateId?: string }) {
                       padding: 10,
                       background: 'rgba(255, 255, 255, 0.02)',
                       borderRadius: 6,
-                      border: '1px solid #1e293b',
+                      border: '1px solid var(--cds-border-subtle)',
                     }}
                   >
                     <span style={{ fontSize: 16, display: 'inline-flex' }}>{getStageIcon(stage.status)}</span>
@@ -362,7 +362,7 @@ export function UpdateProgressViewer({ updateId }: { updateId?: string }) {
           style={{
             padding: 16,
             background: 'var(--cds-layer)',
-            border: '1px solid #222222',
+            border: '1px solid var(--cds-border-subtle)',
             borderRadius: 8,
             maxHeight: 300,
             overflowY: 'auto',

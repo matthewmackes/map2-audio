@@ -432,7 +432,7 @@ export function PlatformCapabilities() {
             {/* REST API Engine */}
             <div className="stack" style={{ gap: 10, padding: 12, background: 'var(--cds-background)', borderRadius: 6, border: '1px solid var(--cds-border-subtle)' }}>
               <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--cds-support-info)', marginBottom: 4, letterSpacing: '0.02em' }}>REST API engine</div>
-              <div style={{ padding: 8, background: '#64b5f615', borderRadius: 4, border: '1px solid #64b5f6' }}>
+              <div style={{ padding: 8, background: 'rgba(100, 181, 246, 0.08)', borderRadius: 4, border: '1px solid var(--cds-support-info)' }}>
                 <div style={{ fontSize: 9, color: 'var(--cds-text-secondary)', marginBottom: 2 }}>Available Endpoints</div>
                 <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--cds-support-info)' }}>{apiCount || '120'}+</div>
                 <div style={{ fontSize: 9, color: 'var(--cds-text-helper)', marginTop: 2 }}>HTTP/JSON APIs for all functions</div>
@@ -484,7 +484,7 @@ export function PlatformCapabilities() {
           {servicesStatus.isLoading ? (
             <LoadingState description="Loading services" />
           ) : servicesStatus.error ? (
-            <div style={{ padding: 12, background: '#ef535015', border: '1px solid #ef5350', borderRadius: 6, color: 'var(--cds-support-error)', fontSize: 12 }}>
+            <div style={{ padding: 12, background: 'rgba(239, 83, 80, 0.08)', border: '1px solid var(--cds-support-error)', borderRadius: 6, color: 'var(--cds-support-error)', fontSize: 12 }}>
               Failed to load services
             </div>
           ) : (
@@ -683,7 +683,7 @@ export function PlatformCapabilities() {
                       )}
                     </div>
                     {service.last_error && (
-                      <div style={{ marginTop: 8, padding: 6, background: '#ef535015', border: '1px solid #ef5350', borderRadius: 3, color: 'var(--cds-support-error)', fontSize: 9 }}>
+                      <div style={{ marginTop: 8, padding: 6, background: 'rgba(239, 83, 80, 0.08)', border: '1px solid var(--cds-support-error)', borderRadius: 3, color: 'var(--cds-support-error)', fontSize: 9 }}>
                         <strong>Last Error:</strong> {service.last_error}
                       </div>
                     )}
@@ -823,7 +823,7 @@ export function PlatformCapabilities() {
 
           {/* Error State */}
           {metricsCurrentQuery.error && (
-            <div style={{ padding: 12, background: '#ef535015', border: '1px solid #ef5350', borderRadius: 6, color: 'var(--cds-support-error)', fontSize: 12 }}>
+            <div style={{ padding: 12, background: 'rgba(239, 83, 80, 0.08)', border: '1px solid var(--cds-support-error)', borderRadius: 6, color: 'var(--cds-support-error)', fontSize: 12 }}>
               Failed to load metrics
             </div>
           )}

@@ -207,7 +207,7 @@ export function OnboardingWizard({ onComplete }: { onComplete?: () => void }) {
         style={{
           padding: 24,
           background: 'var(--cds-layer)',
-          border: '1px solid #333',
+          border: '1px solid var(--cds-border-subtle)',
           borderRadius: 12,
           minHeight: 400,
         }}
@@ -289,7 +289,7 @@ export function OnboardingWizard({ onComplete }: { onComplete?: () => void }) {
               style={{
                 padding: 16,
                 background: 'var(--cds-layer)',
-                border: '1px solid #333',
+                border: '1px solid var(--cds-border-subtle)',
                 borderRadius: 8,
                 minHeight: 200,
                 maxHeight: 300,
@@ -372,7 +372,7 @@ export function OnboardingWizard({ onComplete }: { onComplete?: () => void }) {
                     // carbon-allow: dense surface; off-grid between Carbon stops.
                     padding: '10px 12px',
                     background: 'var(--cds-layer)',
-                    border: '1px solid #333',
+                    border: '1px solid var(--cds-border-subtle)',
                     borderRadius: 6,
                     color: 'var(--cds-text-primary)',
                   }}
@@ -393,7 +393,7 @@ export function OnboardingWizard({ onComplete }: { onComplete?: () => void }) {
                     // carbon-allow: dense surface; off-grid between Carbon stops.
                     padding: '10px 12px',
                     background: 'var(--cds-layer)',
-                    border: '1px solid #333',
+                    border: '1px solid var(--cds-border-subtle)',
                     borderRadius: 6,
                     color: 'var(--cds-text-primary)',
                   }}
@@ -412,7 +412,7 @@ export function OnboardingWizard({ onComplete }: { onComplete?: () => void }) {
                     // carbon-allow: dense surface; off-grid between Carbon stops.
                     padding: '10px 12px',
                     background: 'var(--cds-layer)',
-                    border: '1px solid #333',
+                    border: '1px solid var(--cds-border-subtle)',
                     borderRadius: 6,
                     color: 'var(--cds-text-primary)',
                   }}
@@ -611,7 +611,7 @@ export function OnboardingWizard({ onComplete }: { onComplete?: () => void }) {
               style={{
                 padding: 16,
                 background: 'rgba(255, 170, 0, 0.1)',
-                border: '1px solid #ffaa00',
+                border: '1px solid var(--cds-support-warning)',
                 borderRadius: 8,
               }}
             >
