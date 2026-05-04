@@ -985,14 +985,14 @@ button.window-taskbar__pill {
 
 .shell-power-modal .cds--modal-header__label {
   color: var(--window-shell-titlebar-contrast-muted, var(--window-shell-titlebar-contrast));
-  font-family: 'IBM Plex Sans', 'Helvetica Neue', Arial, sans-serif;
+  font-family: var(--font-ui, 'IBM Plex Sans', 'Helvetica Neue', Arial, sans-serif);
   font-size: var(--cds-label-01-font-size, 0.75rem);
   font-weight: 700;
 }
 
 .shell-power-modal .cds--modal-header__heading {
   color: var(--window-shell-titlebar-contrast);
-  font-family: 'IBM Plex Sans', 'Helvetica Neue', Arial, sans-serif;
+  font-family: var(--font-ui, 'IBM Plex Sans', 'Helvetica Neue', Arial, sans-serif);
   font-size: var(--cds-body-01-font-size, 1rem);
   font-weight: 600;
 }
@@ -1577,14 +1577,14 @@ button.topbar-pro__latency-pressure:focus-visible {
 
 .shell-reboot-modal .cds--modal-header__label {
   color: var(--window-shell-titlebar-contrast-muted, var(--window-shell-titlebar-contrast));
-  font-family: 'IBM Plex Sans', 'Helvetica Neue', Arial, sans-serif;
+  font-family: var(--font-ui, 'IBM Plex Sans', 'Helvetica Neue', Arial, sans-serif);
   font-size: var(--cds-label-01-font-size, 0.75rem);
   font-weight: 700;
 }
 
 .shell-reboot-modal .cds--modal-header__heading {
   color: var(--window-shell-titlebar-contrast);
-  font-family: 'IBM Plex Sans', 'Helvetica Neue', Arial, sans-serif;
+  font-family: var(--font-ui, 'IBM Plex Sans', 'Helvetica Neue', Arial, sans-serif);
   font-size: var(--cds-body-01-font-size, 1rem);
   font-weight: 600;
 }

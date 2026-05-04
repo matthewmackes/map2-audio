@@ -2,7 +2,7 @@
   position: relative;
   min-height: 100%;
   color: var(--text-primary);
-  font-family: 'IBM Plex Sans', 'Helvetica Neue', Arial, sans-serif;
+  font-family: var(--font-ui, 'IBM Plex Sans', 'Helvetica Neue', Arial, sans-serif);
 }
 
 .hp2-root--landing {

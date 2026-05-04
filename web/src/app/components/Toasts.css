@@ -2130,7 +2130,7 @@
 
 .stage-midi-panel__label {
   color: var(--cds-text-secondary, #c6c6c6);
-  font-family: 'IBM Plex Sans', -apple-system, system-ui, sans-serif;
+  font-family: var(--font-ui, 'IBM Plex Sans', -apple-system, system-ui, sans-serif);
   font-size: 0.66rem;
   overflow: hidden;
   text-overflow: ellipsis;
@@ -2266,7 +2266,7 @@
 }
 
 .stage-midi-hero__label {
-  font-family: 'IBM Plex Sans', -apple-system, system-ui, sans-serif;
+  font-family: var(--font-ui, 'IBM Plex Sans', -apple-system, system-ui, sans-serif);
   font-size: 0.74rem;
   font-weight: 600;
   color: var(--cds-text-primary);
@@ -2358,7 +2358,7 @@
 }
 
 .stage-midi-archive__label {
-  font-family: 'IBM Plex Sans', -apple-system, system-ui, sans-serif;
+  font-family: var(--font-ui, 'IBM Plex Sans', -apple-system, system-ui, sans-serif);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;

@@ -28,7 +28,7 @@
 }
 
 .graph-doc-inspector__kicker {
-  font-family: 'IBM Plex Sans', sans-serif;
+  font-family: var(--font-ui, 'IBM Plex Sans', sans-serif);
   font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.05em;
@@ -38,7 +38,7 @@
 }
 
 .graph-doc-inspector__summary-header h3 {
-  font-family: 'IBM Plex Sans', sans-serif;
+  font-family: var(--font-ui, 'IBM Plex Sans', sans-serif);
   font-size: 16px;
   font-weight: 500;
   margin: 0;
@@ -68,7 +68,7 @@
 }
 
 .graph-doc-inspector__metric-label {
-  font-family: 'IBM Plex Sans', sans-serif;
+  font-family: var(--font-ui, 'IBM Plex Sans', sans-serif);
   font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.05em;

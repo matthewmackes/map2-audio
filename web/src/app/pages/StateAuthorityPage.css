@@ -9,7 +9,7 @@
 }
 
 .state-authority-page__header h1 {
-  font-family: 'IBM Plex Sans', sans-serif;
+  font-family: var(--font-ui, 'IBM Plex Sans', sans-serif);
   font-size: 28px;
   font-weight: 300;
   letter-spacing: 0;
@@ -18,7 +18,7 @@
 }
 
 .state-authority-page__header p {
-  font-family: 'IBM Plex Sans', sans-serif;
+  font-family: var(--font-ui, 'IBM Plex Sans', sans-serif);
   font-size: 14px;
   line-height: 1.5;
   color: var(--cds-text-secondary);
@@ -31,7 +31,7 @@
 }
 
 .state-authority-page__section h2 {
-  font-family: 'IBM Plex Sans', sans-serif;
+  font-family: var(--font-ui, 'IBM Plex Sans', sans-serif);
   font-size: 18px;
   font-weight: 400;
   color: var(--cds-text-primary);
@@ -39,7 +39,7 @@
 }
 
 .state-authority-page__help {
-  font-family: 'IBM Plex Sans', sans-serif;
+  font-family: var(--font-ui, 'IBM Plex Sans', sans-serif);
   font-size: 13px;
   line-height: 1.5;
   color: var(--cds-text-helper);
@@ -68,7 +68,7 @@
 }
 
 .state-authority-page__last-pick-label {
-  font-family: 'IBM Plex Sans', sans-serif;
+  font-family: var(--font-ui, 'IBM Plex Sans', sans-serif);
   font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.05em;
@@ -94,7 +94,7 @@
 }
 
 .state-authority-page__last-pick-body p {
-  font-family: 'IBM Plex Sans', sans-serif;
+  font-family: var(--font-ui, 'IBM Plex Sans', sans-serif);
   font-size: 13px;
   color: var(--cds-text-secondary);
   margin: 0;

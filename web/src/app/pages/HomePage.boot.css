@@ -8,7 +8,7 @@
    * (no decorative gradients). */
   background: var(--cds-background, var(--bg));
   color: var(--text-primary);
-  font-family: 'IBM Plex Sans', 'Helvetica Neue', Arial, sans-serif;
+  font-family: var(--font-ui, 'IBM Plex Sans', 'Helvetica Neue', Arial, sans-serif);
 }
 
 .hp2-boot__center {

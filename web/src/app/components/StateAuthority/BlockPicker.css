@@ -21,7 +21,7 @@
   padding: 2rem;
   text-align: center;
   color: var(--cds-text-helper);
-  font-family: 'IBM Plex Sans', sans-serif;
+  font-family: var(--font-ui, 'IBM Plex Sans', sans-serif);
   border: 1px dashed var(--cds-border-subtle-02);
   border-radius: 2px;
 }
@@ -33,7 +33,7 @@
 }
 
 .block-picker__group-title {
-  font-family: 'IBM Plex Sans', sans-serif;
+  font-family: var(--font-ui, 'IBM Plex Sans', sans-serif);
   font-size: 11px;
   font-weight: 600;
   letter-spacing: 0.05em;
@@ -59,7 +59,7 @@
 }
 
 .block-picker__tile-label {
-  font-family: 'IBM Plex Sans', sans-serif;
+  font-family: var(--font-ui, 'IBM Plex Sans', sans-serif);
   font-size: 14px;
   font-weight: 600;
   color: var(--cds-text-primary);
@@ -73,7 +73,7 @@
 }
 
 .block-picker__tile-description {
-  font-family: 'IBM Plex Sans', sans-serif;
+  font-family: var(--font-ui, 'IBM Plex Sans', sans-serif);
   font-size: 12px;
   line-height: 1.4;
   color: var(--cds-text-secondary);

@@ -773,7 +773,7 @@
 }
 
 .platform-shell__summary-tile strong {
-  font-family: 'IBM Plex Sans', 'Helvetica Neue', Arial, sans-serif;
+  font-family: var(--font-ui, 'IBM Plex Sans', 'Helvetica Neue', Arial, sans-serif);
   font-size: var(--cds-heading-04-font-size, 1.75rem);
   line-height: var(--cds-heading-04-line-height, 2.25rem);
 }
@@ -823,7 +823,7 @@
 }
 
 .platform-shell__table-container .cds--data-table-header__title {
-  font-family: 'IBM Plex Sans', 'Helvetica Neue', Arial, sans-serif;
+  font-family: var(--font-ui, 'IBM Plex Sans', 'Helvetica Neue', Arial, sans-serif);
   font-size: var(--cds-heading-02-font-size, 1rem);
   font-weight: 600;
   letter-spacing: 0.01em;
@@ -1113,7 +1113,7 @@
 
 .platform-shell__update-progress-shell .cds--modal-header__label {
   color: var(--cds-text-secondary);
-  font-family: 'IBM Plex Sans', 'Helvetica Neue', Arial, sans-serif;
+  font-family: var(--font-ui, 'IBM Plex Sans', 'Helvetica Neue', Arial, sans-serif);
   font-size: var(--cds-label-01-font-size, 0.75rem);
   line-height: var(--cds-label-01-line-height, 1rem);
   font-weight: 700;
@@ -1122,7 +1122,7 @@
 
 .platform-shell__update-progress-shell .cds--modal-header__heading {
   color: var(--cds-text-primary);
-  font-family: 'IBM Plex Sans', 'Helvetica Neue', Arial, sans-serif;
+  font-family: var(--font-ui, 'IBM Plex Sans', 'Helvetica Neue', Arial, sans-serif);
   font-size: var(--cds-heading-02-font-size, 1rem);
   font-weight: 600;
 }

@@ -54,7 +54,7 @@
 }
 
 .platform-launchers-art text {
-  font-family: 'IBM Plex Sans', 'Segoe UI', sans-serif;
+  font-family: var(--font-ui, 'IBM Plex Sans', 'Segoe UI', sans-serif);
 }
 
 .platform-launchers-art__shadow {
