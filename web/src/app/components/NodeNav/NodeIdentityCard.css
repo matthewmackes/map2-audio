@@ -193,7 +193,7 @@
 
 .node-id-card__press-num {
   font-family: var(--plex-sans, "IBM Plex Sans", "Helvetica Neue", Arial, sans-serif);
-  font-size: 28px;
+  font-size: var(--cds-productive-heading-04-font-size, 1.75rem);
   font-weight: 300;
   letter-spacing: -0.03em;
   line-height: 1;

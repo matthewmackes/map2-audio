@@ -39,7 +39,7 @@
 
 .graph-doc-inspector__summary-header h3 {
   font-family: var(--font-ui, 'IBM Plex Sans', sans-serif);
-  font-size: 16px;
+  font-size: var(--cds-body-02-font-size, 1rem);
   font-weight: 500;
   margin: 0;
   color: var(--cds-text-primary);
@@ -78,7 +78,7 @@
 
 .graph-doc-inspector__metric-value {
   font-family: var(--font-mono, 'IBM Plex Mono', monospace);
-  font-size: 16px;
+  font-size: var(--cds-body-02-font-size, 1rem);
   color: var(--cds-text-primary);
 }
 
