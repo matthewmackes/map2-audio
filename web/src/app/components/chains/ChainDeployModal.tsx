@@ -177,9 +177,9 @@ export function ChainDeployModal({
       <ModalBody>
         <p style={{
           // carbon-allow: legacy intro paragraph 20px bottom-margin (between Carbon stops).
-          margin: '0 0 20px', color: '#94a3b8', lineHeight: 1.6,
+          margin: '0 0 20px', color: 'var(--cds-text-secondary)', lineHeight: 1.6,
         }}>
-          Source node <strong style={{ color: '#e2e8f0' }}>{nodeLabelById.get(sourceNodeId) ?? sourceNodeId}</strong>. Targets missing non-builtin plugins are blocked before deployment.
+          Source node <strong style={{ color: 'var(--cds-text-primary)' }}>{nodeLabelById.get(sourceNodeId) ?? sourceNodeId}</strong>. Targets missing non-builtin plugins are blocked before deployment.
         </p>
 
         <div
@@ -204,7 +204,7 @@ export function ChainDeployModal({
             gap: 10,
             marginBottom: 16,
             fontSize: 14,
-            color: '#e2e8f0',
+            color: 'var(--cds-text-primary)',
           }}
         >
           <Checkbox
@@ -291,7 +291,7 @@ export function ChainDeployModal({
               borderRadius: 10,
               background: 'rgba(245, 158, 11, 0.12)',
               border: '1px solid rgba(245, 158, 11, 0.22)',
-              color: '#fde68a',
+              color: 'var(--cds-support-warning)',
               display: 'flex',
               gap: 10,
               alignItems: 'center',

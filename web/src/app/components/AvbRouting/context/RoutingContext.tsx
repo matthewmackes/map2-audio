@@ -117,7 +117,7 @@ function buildEndpointPayloadState(
         ...endpoint,
         // Add default UI metadata (will be overlaid with localStorage later)
         tags: [],
-        color: '#ffffff',
+        color: 'var(--cds-text-primary)',
         group: 'Default',
         bank: 0,
         pinned: false,
