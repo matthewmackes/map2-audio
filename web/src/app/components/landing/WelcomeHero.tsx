@@ -334,8 +334,16 @@ function WelcomeHeroImpl({
               <span className="map2x-dot map2x-dot--live" />
               Live
             </span>
-            <span className="map2x-tag">Snapshot 30</span>
-            <span className="map2x-tag">Rev cb6a04…</span>
+            {session.openPatchLabel ? (
+              <span className="map2x-tag" title="Open patch / snapshot">
+                {session.openPatchLabel}
+              </span>
+            ) : null}
+            {session.lastSessionLabel && session.lastSessionLabel !== session.openPatchLabel ? (
+              <span className="map2x-tag" title="Last session revision">
+                {session.lastSessionLabel}
+              </span>
+            ) : null}
           </div>
         </div>
 
