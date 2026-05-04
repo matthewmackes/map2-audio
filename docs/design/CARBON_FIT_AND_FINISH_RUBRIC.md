@@ -193,14 +193,37 @@ This is the example page used to prove the rubric runs. Scores reflect repositor
 
 Pages already retokened during the B3 sweep cycles (rubric pages where `grep "color: '#"` and `grep "font-size: NNpx"` both report 0 on operational chrome; §10.5 hardware-skin literals retained):
 
+**Pages (top-25 walk list):**
+
 - **HomePage / WelcomeHero / PlatformGuideSections** (cycle 11 — slice 1) — display-tier scale tokens added; 4 hardcoded font sizes routed through `--map2x-heading-*`.
 - **MOTURMEPage** (cycles 12, 13, 17 — slices 2, 3, 7) — page header + 3 panel headings + secondary/helper text + spacing + residual chrome (latency mode, audio routing flow, MOTU/RME pills) all retokened. Only device-skin palette literals (`getMeterColor` / `getLoadColor` returns, MOTU `#2563eb`, RME `#00FF9D`, `#FFAA00` warnings) remain per §10.5.
 - **MaschineMidiMapPage** (cycle 14 — slice 4) — pad/button/encoder configuration row chrome retokened.
 - **MeteringPage** (cycles 15, 18 — slices 5, 8) — page header + status tile colors + accordion + chevron icons retokened. Operational chrome at 0 hex literals.
-- **ApiObservatoryTabPanel** (cycle 16 — slice 6) — shared panel chrome retokened (surface-fixes every Observatory tab).
-- **SystemArchitectureFlow** (cycle 19 — slice 9) — shared topology component retokened across 23 hex literals (annotation cards + status legend + signal-flow strong text + metric labels).
 
-Pages still ahead in the audit walk (per the priority list above): SnapshotEditor, Sequencer, PerformPage, MPX-1, IntelFX, MIDI Hub shells, MIDI Assignments, Maschine top-level, HardwareStorePage, AudioEnginePage, AudioArtifactsPage, AvbServicesRouting, Tesira, PlatformsOverviewTopology, PlatformCapabilities, Community Snapshot Browser, SnapshotPublishPage, ApiObservatoryPage internals, DiagnosticsPage, AdoptionPage, ThemePage, StateAuthorityPage, ExpressionPage.
+**Shared chrome components (fix the page shape across all pages that use them):**
+
+- **ApiObservatoryTabPanel** (cycle 16 — slice 6) — shared panel chrome retokened. Surface-fixes every Observatory tab in one shot.
+- **SystemArchitectureFlow** (cycle 19 — slice 9) — shared topology component, 23 hex literals retokened. Renders on multiple platform-overview pages.
+- **OnboardingWizard** (cycle 21 — slice 10) — 39 hex literals retokened. The first-deployment cluster setup flow.
+- **UpdateProgressViewer** (cycle 22 — slice 11) — 28 hex literals retokened. The cluster-update progress dashboard.
+- **PlatformCapabilities** (cycle 22 — slice 11) — 99 hex literals retokenized (largest single sweep). The capability matrix renders on PlatformsOverviewTopology + Adoption.
+- **MIDICommanderSetup + ParallelRoutingPanel** (cycle 23 — slice 12) — 4 hex literals retokened.
+- **ApiObservatory primitives layer** (cycle 24 — slice 13) — 5 sub-components retokened (`SearchableList`, `JsonDiffViewer`, `JsonTreeViewer`, `TimingBreakdownChart`, `CodeSnippetGenerator`). Surfaces fix every Observatory tab via the primitives layer.
+- **EffectsLoopSummaryPanel + SidechainPanel + CommunitySnapshotBrowser** (cycle 25 — slice 14) — 25 hex literals → 22 retokened (3 documented panel-identity / tier-accent literals retained).
+- **SnapshotArtifactsWorkspace + ChainDeployModal + AvbRouting RoutingContext** (cycle 26 — slice 15) — 7 hex literals retokened.
+- **NodeGraph layout + SnapshotModalContent + GuiOptionsShowcase + ChainBuilder LatencyOverlay + MidiLearnButton** (cycle 27 — slice 16) — 17 hex literals → 15 retokened (2 category accents retained).
+- **ApiObservatory.css** (cycle 28 — slice 17) — page-stylesheet retoken; 28 → 8 (purple/indigo Observatory visual identity preserved).
+- **Toasts.css MIDI message-type accents** (cycle 29 — slice 18) — 7 hex literals routed to Carbon swatches (`--cds-blue-40`, `--cds-green-40`, `--cds-purple-40` — exact-match swatches, no visual change but theme-swap-aware).
+
+**Rolling totals across the B3 burndown sweep (slices 1-18, cycles 11-29):**
+
+- **~370 hex-color literals retokenized** through Carbon `--cds-text-*` / `--cds-support-*` / `--cds-interactive` / `--cds-blue-40` etc.
+- **~30 documented category-accent literals retained** (per-kind color identities like NAM yellow, VST3 purple, Maschine pink, GCP orange, Sidechain panel purple, Observatory indigo) where Carbon has no analogous token and the literal is part of the kind's visual identity.
+- **5 hardcoded font-size declarations retokenized** to Carbon heading tokens (`--cds-{expressive,productive}-heading-*-font-size`).
+- **8 documented density carve-out font-sizes** (sub-Carbon stops on dense rows / suffix labels).
+- **0 lint regressions** across the sweep — `map2/no-mui-import`, `map2/no-ad-hoc-transition`, `map2/no-hardcoded-px-spacing`, `map2/no-hardcoded-font-family` all at `'error'`, suite reports 0 errors and 0 warnings.
+
+**Pages still ahead in the audit walk (per the priority list above):** SnapshotEditor, Sequencer, PerformPage, MPX-1, IntelFX, MIDI Hub shells, MIDI Assignments, Maschine top-level, HardwareStorePage, AudioEnginePage, AudioArtifactsPage, AvbServicesRouting, Tesira, PlatformsOverviewTopology, Community Snapshot Browser, SnapshotPublishPage, ApiObservatoryPage internals, DiagnosticsPage, AdoptionPage, ThemePage, StateAuthorityPage, ExpressionPage.
 
 ---
 
