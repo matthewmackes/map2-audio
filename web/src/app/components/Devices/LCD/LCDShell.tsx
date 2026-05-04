@@ -34,7 +34,6 @@ export interface LCDShellContextValue {
 
 const LCDShellContext = createContext<LCDShellContextValue | null>(null)
 
-// eslint-disable-next-line react-refresh/only-export-components
 export function useLCDShellContext(): LCDShellContextValue {
   const context = useContext(LCDShellContext)
   if (!context) {

@@ -60,7 +60,6 @@ export interface IntelFXPageContextValue {
 
 const IntelFXPageContext = createContext<IntelFXPageContextValue | null>(null)
 
-// eslint-disable-next-line react-refresh/only-export-components
 export function useIntelFXPageContext(): IntelFXPageContextValue {
   const context = useContext(IntelFXPageContext)
   if (!context) {
