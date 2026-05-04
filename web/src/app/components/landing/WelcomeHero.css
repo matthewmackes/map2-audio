@@ -48,6 +48,32 @@
   --map2x-gutter: 28px;
   --map2x-max: 1320px;
 
+  /* T2481-B3 — typography scale layered above Carbon's productive/expressive
+     ceiling for the hero / display surfaces on the unified Home page.
+     Carbon's productive-heading-07 tops out at 3.375rem (54px); the hero
+     title is intentionally larger as platform polish. The body / sub /
+     eyebrow surfaces fall back to the Carbon scale via the productive
+     token aliases below so the surface participates in any future theme
+     swap. */
+  --map2x-heading-hero-size: 76px;
+  --map2x-heading-hero-weight: 300;
+  --map2x-heading-hero-line: 1.02;
+  /* 36px lives above expressive-heading-06 (32px) and below productive-
+     heading-06 (42px); kept as a deliberate platform-display size so
+     section titles read as a step below the hero. */
+  --map2x-heading-section-size: 36px;
+  --map2x-heading-section-weight: 300;
+  --map2x-heading-section-line: 1.1;
+  --map2x-heading-card-size: var(--cds-expressive-heading-04-font-size, 1.75rem);
+  --map2x-heading-card-weight: 300;
+  --map2x-heading-display-size: 38px;
+  --map2x-heading-display-weight: 300;
+  --map2x-heading-tile-size: 22px;
+  --map2x-heading-tile-weight: 400;
+  --map2x-heading-eyebrow-size: var(--cds-helper-text-01-font-size, 0.75rem);
+  --map2x-body-default-size: var(--cds-body-compact-01-font-size, 0.875rem);
+  --map2x-body-prose-size: var(--cds-body-01-font-size, 0.875rem);
+
   background: var(--map2x-bg-0);
   color: var(--map2x-text);
   font-family: var(--map2x-font-sans);
@@ -158,9 +184,9 @@
 
 .map2x-hero__title {
   font-family: var(--map2x-font-sans);
-  font-weight: 300;
-  font-size: 76px;
-  line-height: 1.02;
+  font-weight: var(--map2x-heading-hero-weight);
+  font-size: var(--map2x-heading-hero-size);
+  line-height: var(--map2x-heading-hero-line);
   letter-spacing: -0.025em;
   color: var(--map2x-text-hi);
   margin: 0;
@@ -301,8 +327,8 @@
 }
 
 .map2x-section__title {
-  font-size: 36px;
-  font-weight: 300;
+  font-size: var(--map2x-heading-section-size);
+  font-weight: var(--map2x-heading-section-weight);
   color: var(--map2x-text-hi);
   letter-spacing: -0.02em;
   margin: 0;
@@ -475,8 +501,8 @@
 .map2x-stat-cell__value {
   font-family: var(--map2x-font-mono);
   font-feature-settings: 'tnum';
-  font-size: 38px;
-  font-weight: 300;
+  font-size: var(--map2x-heading-display-size);
+  font-weight: var(--map2x-heading-display-weight);
   color: var(--map2x-text-hi);
   line-height: 1.05;
   letter-spacing: -0.02em;
@@ -667,7 +693,7 @@
 }
 
 .map2x-guide-card__title {
-  font-size: 22px;
+  font-size: var(--map2x-heading-tile-size);
   line-height: 1.2;
   color: var(--map2x-text-hi);
   font-weight: 500;
