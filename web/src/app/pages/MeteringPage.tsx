@@ -234,7 +234,7 @@ export function MeteringPage() {
             <div style={{
               fontSize: 14,
               fontWeight: 700,
-              color: '#2563eb',
+              color: 'var(--cds-interactive)',
               marginBottom: 16,
               letterSpacing: '0.02em'
             }}>
@@ -249,7 +249,7 @@ export function MeteringPage() {
             borderRadius: 12,
             padding: 20,
             backdropFilter: 'blur(8px)',
-            color: '#94a3b8',
+            color: 'var(--cds-text-secondary)',
             fontSize: 13,
             lineHeight: 1.6,
           }}>
@@ -278,7 +278,7 @@ export function MeteringPage() {
             <div style={{
               fontSize: 14,
               fontWeight: 700,
-              color: '#2563eb',
+              color: 'var(--cds-interactive)',
               marginBottom: 16,
               letterSpacing: '0.02em'
             }}>
@@ -331,7 +331,7 @@ export function MeteringPage() {
             <div style={{
               fontSize: 14,
               fontWeight: 700,
-              color: '#2563eb',
+              color: 'var(--cds-interactive)',
               marginBottom: 16,
               letterSpacing: '0.02em'
             }}>
@@ -469,11 +469,11 @@ export function MeteringPage() {
           gridTemplateColumns: '1fr 1fr',
           gap: 20,
           fontSize: 12,
-          color: '#6b7280'
+          color: 'var(--cds-text-helper)'
           }}
         >
           <div>
-            <span style={{ color: '#2563eb', fontWeight: 600 }}>Engine Specifications</span>
+            <span style={{ color: 'var(--cds-interactive)', fontWeight: 600 }}>Engine Specifications</span>
             <br />
             ITU-R BS.1770-4 LUFS | 2048-point FFT @ 30fps | True Peak with 4x oversampling
           </div>
@@ -517,14 +517,14 @@ export function MeteringPage() {
             <span style={{
               fontSize: 14,
               fontWeight: 700,
-              color: '#64748b',
+              color: 'var(--cds-text-secondary)',
               letterSpacing: '0.02em'
             }}>
               <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><Link size={16} /> API Reference</span>
             </span>
             <span style={{
               fontSize: 11,
-              color: '#475569',
+              color: 'var(--cds-text-helper)',
               fontWeight: 500,
               background: 'rgba(100, 116, 139, 0.2)',
               padding: 'var(--cds-spacing-02) var(--cds-spacing-03)',
@@ -534,9 +534,9 @@ export function MeteringPage() {
             </span>
           </div>
           {showApiReference ? (
-            <ChevronUp size={20} style={{ color: '#64748b' }} />
+            <ChevronUp size={20} style={{ color: 'var(--cds-text-secondary)' }} />
           ) : (
-            <ChevronDown size={20} style={{ color: '#64748b' }} />
+            <ChevronDown size={20} style={{ color: 'var(--cds-text-secondary)' }} />
           )}
         </button>
 
@@ -564,7 +564,7 @@ export function MeteringPage() {
                   }}
                 >
                   <div style={{
-                    color: '#2563eb',
+                    color: 'var(--cds-interactive)',
                     fontFamily: 'var(--font-ui-tight)',
                     fontWeight: 600,
                     marginBottom: 4,
@@ -574,7 +574,7 @@ export function MeteringPage() {
                     {api.endpoint}
                   </div>
                   <div style={{
-                    color: '#94a3b8',
+                    color: 'var(--cds-text-secondary)',
                     fontSize: 11,
                     lineHeight: '1.4'
                   }}>
@@ -590,12 +590,12 @@ export function MeteringPage() {
               borderRadius: 8,
               border: '1px solid rgba(59, 130, 246, 0.15)',
               fontSize: 11,
-              color: '#64748b',
+              color: 'var(--cds-text-secondary)',
               lineHeight: '1.5'
             }}>
-              <strong style={{ color: '#2563eb' }}>Base URL:</strong> {window.location.origin}/api
+              <strong style={{ color: 'var(--cds-interactive)' }}>Base URL:</strong> {window.location.origin}/api
               <br />
-              <strong style={{ color: '#2563eb' }}>WebSocket:</strong> {window.location.origin.replace(/^http/, 'ws')}/ws/metering (real-time updates)
+              <strong style={{ color: 'var(--cds-interactive)' }}>WebSocket:</strong> {window.location.origin.replace(/^http/, 'ws')}/ws/metering (real-time updates)
             </div>
           </div>
         )}
