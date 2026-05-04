@@ -80,6 +80,9 @@
 
 .midi-hub-health-drawer__title {
   margin: 4px 0 0;
+  /* 18px sits between Carbon body-02 (16px) and productive-heading-03
+     (20px); kept literal as a deliberate sub-heading drawer-title step
+     per CARBON_FIT_AND_FINISH_RUBRIC §1 density carve-out. */
   font-size: 18px;
   font-weight: 600;
 }

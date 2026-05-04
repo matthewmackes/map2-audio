@@ -219,7 +219,7 @@
 }
 .midi-walk .stage .crumb .step-n { color: var(--mw-accent); }
 .midi-walk .stage h1 {
-  font-size: 42px; font-weight: 300; line-height: 1.1;
+  font-size: var(--cds-productive-heading-06-font-size, 2.625rem); font-weight: 300; line-height: 1.1;
   letter-spacing: -0.5px;
   margin: 0 0 12px;
   text-wrap: pretty;
@@ -389,7 +389,7 @@
   margin-bottom: 6px;
 }
 .midi-walk .pinned-hero h2 {
-  font-size: 28px; font-weight: 300; margin: 0;
+  font-size: var(--cds-productive-heading-04-font-size, 1.75rem); font-weight: 300; margin: 0;
   letter-spacing: -0.3px;
 }
 .midi-walk .pinned-hero .meta {
@@ -639,7 +639,7 @@
   text-transform: uppercase; letter-spacing: 1px;
 }
 .midi-walk .learn-box .captured {
-  font-family: var(--mw-mono); font-size: 32px; font-weight: 300;
+  font-family: var(--mw-mono); font-size: var(--cds-productive-heading-05-font-size, 2rem); font-weight: 300;
   color: var(--mw-text);
   letter-spacing: -0.5px;
 }
@@ -1021,7 +1021,7 @@
   color: var(--mw-text-3);
   font-family: var(--mw-mono);
 }
-.midi-walk .placeholder h2 { color: var(--mw-text); font-family: var(--mw-sans); font-weight: 300; font-size: 32px; margin: 0 0 12px; }
+.midi-walk .placeholder h2 { color: var(--mw-text); font-family: var(--mw-sans); font-weight: 300; font-size: var(--cds-productive-heading-05-font-size, 2rem); margin: 0 0 12px; }
 
 /* Switch */
 .switch {
