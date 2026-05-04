@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1476** Python | **1487** TypeScript | **179** C++/H | **146** Docs | **3713** total commits | **3** stars | **0** forks | **0** open issues
+**1476** Python | **1487** TypeScript | **179** C++/H | **146** Docs | **3715** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -193,7 +193,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 |  |  |  |
 | :---: | :---: | :---: |
 | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/map2-banner.png" width="280" alt="map2 banner"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/map2-banner-3.png" width="280" alt="map2 banner 3"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot-Cli.png" width="280" alt="Screenshot Cli"> |
-| <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 08-00-43 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 08 00 43 Mackes Audio Platform 2 FEB2025"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 07-58-14 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 07 58 14 Mackes Audio Platform 2 FEB2025"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 07-57-33 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 07 57 33 Mackes Audio Platform 2 FEB2025"> |
+| <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 08-00-43 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 08 00 43 Mackes Audio Platform 2 FEB2025"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 07-57-33 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 07 57 33 Mackes Audio Platform 2 FEB2025"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 07-58-14 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 07 58 14 Mackes Audio Platform 2 FEB2025"> |
 | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/MAP2_AUDIO-NODE_ARCH_DIAGRAM3.png" width="280" alt="MAP2 AUDIO NODE ARCH DIAGRAM3"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/MAP2_AUDIO-NODE_ARCH_DIAGRAM2-BANG.png" width="280" alt="MAP2 AUDIO NODE ARCH DIAGRAM2 BANG"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/MAP2_AUDIO-NODE_ARCH_DIAGRAM.png" width="280" alt="MAP2 AUDIO NODE ARCH DIAGRAM"> |
 <!-- GALLERY:END -->
 
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`93da11d5`](https://github.com/matthewmackes/map2-audio/commit/93da11d5f517653acf43afcf63b6a726c25ba6ba) | ui(t2481-d1): ratchet map2/no-ad-hoc-transition from warn... | Map2 Audio | 2026-05-03 |
+| [`807743cd`](https://github.com/matthewmackes/map2-audio/commit/807743cdf41d2d701f2be3d4d4ccb097734006b4) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-04 |
 | [`858e949a`](https://github.com/matthewmackes/map2-audio/commit/858e949aab55c1a01305f24e95d2c765c837a2f3) | ui(t2481-d1): clear remaining ad-hoc transition warnings ... | Map2 Audio | 2026-05-03 |
 | [`90ab3530`](https://github.com/matthewmackes/map2-audio/commit/90ab35304f5817528ae48ef18d4b008b86717cbd) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-04 |
 | [`f2856fa7`](https://github.com/matthewmackes/map2-audio/commit/f2856fa78ebceebe544ba3d52b53c5530cc91edd) | ui(t2481-d1): retire ad-hoc transitions in MidiLearnButto... | Map2 Audio | 2026-05-03 |
 | [`9d1c0f52`](https://github.com/matthewmackes/map2-audio/commit/9d1c0f522dd9e9613e9da2ccfeaaaa422fe674d8) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-04 |
 | [`3f78ca29`](https://github.com/matthewmackes/map2-audio/commit/3f78ca29ff05bff74befdca16846b0658d8ec3d4) | ui(t2481-b1): retire hardcoded font-family + 12px font-si... | Map2 Audio | 2026-05-03 |
 | [`db8d329b`](https://github.com/matthewmackes/map2-audio/commit/db8d329b5b5c4c6111f7c234639db9ad833cb1bc) | fix(lint): drop unloaded react/display-name disable in us... | Map2 Audio | 2026-05-03 |
-| [`04f79c15`](https://github.com/matthewmackes/map2-audio/commit/04f79c15ce3deb4a90974fb1c938e8ccfc72f32f) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-04 |
-| [`4954b904`](https://github.com/matthewmackes/map2-audio/commit/4954b904d4528f83d7ea4e201c52e199500a45fd) | ui(t2481-a3): scaffold MAP2 ESLint plugin with 3 Carbon-d... | Map2 Audio | 2026-05-03 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
