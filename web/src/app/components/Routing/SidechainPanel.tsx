@@ -175,6 +175,7 @@ export const SidechainPanel: React.FC<SidechainPanelProps> = ({
           </span>
           <span style={{
             fontSize: 10,
+            // carbon-allow: dense status pill 2x6px (between Carbon stops).
             padding: '2px 6px',
             background: 'rgba(168, 85, 247, 0.15)',
             border: '1px solid rgba(168, 85, 247, 0.3)',
@@ -186,6 +187,7 @@ export const SidechainPanel: React.FC<SidechainPanelProps> = ({
           {remoteLabel && (
             <span style={{
               fontSize: 10,
+              // carbon-allow: dense status pill 2x6px (between Carbon stops).
               padding: '2px 6px',
               background: 'rgba(16, 185, 129, 0.15)',
               border: '1px solid rgba(16, 185, 129, 0.3)',
@@ -198,6 +200,7 @@ export const SidechainPanel: React.FC<SidechainPanelProps> = ({
           {remoteLabel && typeof latencyMs === 'number' && latencyMs > 10 && (
             <span style={{
               fontSize: 10,
+              // carbon-allow: dense status pill 2x6px (between Carbon stops).
               padding: '2px 6px',
               background: 'rgba(245, 158, 11, 0.15)',
               border: '1px solid rgba(245, 158, 11, 0.3)',
@@ -215,6 +218,7 @@ export const SidechainPanel: React.FC<SidechainPanelProps> = ({
             display: 'flex',
             alignItems: 'center',
             gap: 4,
+            // carbon-allow: New-connection button 6x10px (between Carbon stops).
             padding: '6px 10px',
             fontSize: 11,
             fontWeight: 500,
@@ -257,6 +261,7 @@ export const SidechainPanel: React.FC<SidechainPanelProps> = ({
                 }))}
                 style={{
                   width: '100%',
+                  // carbon-allow: dense select-input 6x8px (between Carbon stops).
                   padding: '6px 8px',
                   fontSize: 11,
                   background: 'rgba(0, 0, 0, 0.3)',
@@ -287,6 +292,7 @@ export const SidechainPanel: React.FC<SidechainPanelProps> = ({
                 }))}
                 style={{
                   width: '100%',
+                  // carbon-allow: dense select-input 6x8px (between Carbon stops).
                   padding: '6px 8px',
                   fontSize: 11,
                   background: 'rgba(0, 0, 0, 0.3)',
@@ -315,6 +321,7 @@ export const SidechainPanel: React.FC<SidechainPanelProps> = ({
                 }))}
                 style={{
                   width: '100%',
+                  // carbon-allow: dense select-input 6x8px (between Carbon stops).
                   padding: '6px 8px',
                   fontSize: 11,
                   background: 'rgba(0, 0, 0, 0.3)',
@@ -377,7 +384,7 @@ export const SidechainPanel: React.FC<SidechainPanelProps> = ({
             textAlign: 'center',
             color: 'var(--cds-text-helper, #666)',
           }}>
-            <LinkBreak size={24} style={{ margin: '0 auto 8px', opacity: 0.5 }} />
+            <LinkBreak size={24} style={{ margin: '0 auto var(--cds-spacing-03)', opacity: 0.5 }} />
             <div style={{ fontSize: 12 }}>No sidechain connections</div>
             <div style={{ fontSize: 11, marginTop: 4 }}>
               Click "New" to create a sidechain route

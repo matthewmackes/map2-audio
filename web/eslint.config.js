@@ -118,6 +118,12 @@ export default tseslint.config(
       // dynamics displays, cluster strips) — pixel-exact geometry per
       // §10.5; meter motion already carries `// carbon-allow:` annotations.
       'src/app/components/Visualizations/**/*.{ts,tsx}',
+      // Plugin parameter editor + plugin browser — render dynamic LV2
+      // plugin UI per parameter. Same §10.5 logic as the Custom plugin
+      // cards: dense per-parameter rows are part of the plugin chrome,
+      // not platform chrome.
+      'src/app/components/LV2PluginParameterEditor.tsx',
+      'src/app/components/PluginBrowser/**/*.{ts,tsx}',
     ],
     rules: {
       'map2/no-hardcoded-px-spacing': 'off',
