@@ -175,17 +175,32 @@ Pages outside the top-25 that ship after this rubric is authored go through the 
 
 ## Worked example — HomePage / WelcomeHero (auto-scored against current state)
 
-This is the example page used to prove the rubric runs. Scores reflect repository state at commit `9ec87c16` (2026-05-04).
+This is the example page used to prove the rubric runs. Scores reflect repository state at commit `33b7d3d1` (2026-05-04, post-T2481-B3 burndown).
 
 | Axis | Score | Rationale |
 |---|---|---|
-| Typography | 4 | Plex Sans on prose, Plex Mono on the version-tag row (post-cycle 1, 2026-05-04). 76px hero title and 36px section title still hardcoded; not below threshold but a follow-up `T2481-B3-home` should retoken those to `$expressive-heading-04` / `$expressive-heading-03`. |
-| Spacing | 5 | All `padding` / `margin` / `gap` resolve through `--cds-spacing-*` (post-T2481-C1 sweep + bulk migration). Page-internal `--map2x-gutter` uses a single source of truth. Lint at 0 violations. |
-| Motion | 5 | Every CSS transition resolves through `--map2-dur-*` + `--map2-ease-productive-standard` (post-cycle 8, 2026-05-04). `:root:has(.map2x){scroll-behavior:smooth}` carries the `prefers-reduced-motion` override. |
+| Typography | 5 | Plex Sans on prose, Plex Mono on the version-tag row. Every display-tier `font-size` resolves through a token — hero (76px) and the four other display-tier headings flow through `--map2x-heading-{hero,section,display,tile}-*` (literal-but-tokened for the hero, Carbon-fallback for the section/card/display). The 28px `.map2x-repo-cell__value` and the long tail of fractional density sizes (8.5/9.5/10.5/11.5/12.5/13.5px on dense rows) carry the standing density carve-out. |
+| Spacing | 5 | All `padding` / `margin` / `gap` resolve through `--cds-spacing-*`. Page-internal `--map2x-gutter` uses a single source of truth. Lint at 0 violations. |
+| Motion | 5 | Every CSS transition resolves through `--map2-dur-*` + `--map2-ease-productive-standard`. `:root:has(.map2x){scroll-behavior:smooth}` carries the `prefers-reduced-motion` override. |
 | Primitives | 4 | Carbon `<Button>` / `<Tag>` for the CTA row + version pills. The `.map2x-btn` link element is a styled `<a>` anchor (not a Carbon `<Link>`); acceptable for navigation links per Carbon's own pattern. No hand-rolled modals, dropdowns, or forms on this surface. |
-| Chrome | 5 | Single-column hero + sectioned guide rows. No coaching/wizard/tutorial UI. No `<InlineNotification>` for explanatory text. Live version metadata reflects the running build (post-cycle 1). |
+| Chrome | 5 | Single-column hero + sectioned guide rows. No coaching/wizard/tutorial UI. No `<InlineNotification>` for explanatory text. Live version metadata reflects the running build. |
 
-**Action:** File `T2481-B3-home` follow-up under the Landing Epic for the two hardcoded heading sizes. No <4 axes; this page passes the audit gate.
+**Action:** No <4 axes; this page passes the audit gate. The Typography 4 → 5 lift was shipped under T2481-B3 slice 1 (HomePage display headings tokenized via `--map2x` scale).
+
+---
+
+## Audit progress (T2481-B3 burndown — 2026-05-04 sweep)
+
+Pages already retokened during the B3 sweep cycles (rubric pages where `grep "color: '#"` and `grep "font-size: NNpx"` both report 0 on operational chrome; §10.5 hardware-skin literals retained):
+
+- **HomePage / WelcomeHero / PlatformGuideSections** (cycle 11 — slice 1) — display-tier scale tokens added; 4 hardcoded font sizes routed through `--map2x-heading-*`.
+- **MOTURMEPage** (cycles 12, 13, 17 — slices 2, 3, 7) — page header + 3 panel headings + secondary/helper text + spacing + residual chrome (latency mode, audio routing flow, MOTU/RME pills) all retokened. Only device-skin palette literals (`getMeterColor` / `getLoadColor` returns, MOTU `#2563eb`, RME `#00FF9D`, `#FFAA00` warnings) remain per §10.5.
+- **MaschineMidiMapPage** (cycle 14 — slice 4) — pad/button/encoder configuration row chrome retokened.
+- **MeteringPage** (cycles 15, 18 — slices 5, 8) — page header + status tile colors + accordion + chevron icons retokened. Operational chrome at 0 hex literals.
+- **ApiObservatoryTabPanel** (cycle 16 — slice 6) — shared panel chrome retokened (surface-fixes every Observatory tab).
+- **SystemArchitectureFlow** (cycle 19 — slice 9) — shared topology component retokened across 23 hex literals (annotation cards + status legend + signal-flow strong text + metric labels).
+
+Pages still ahead in the audit walk (per the priority list above): SnapshotEditor, Sequencer, PerformPage, MPX-1, IntelFX, MIDI Hub shells, MIDI Assignments, Maschine top-level, HardwareStorePage, AudioEnginePage, AudioArtifactsPage, AvbServicesRouting, Tesira, PlatformsOverviewTopology, PlatformCapabilities, Community Snapshot Browser, SnapshotPublishPage, ApiObservatoryPage internals, DiagnosticsPage, AdoptionPage, ThemePage, StateAuthorityPage, ExpressionPage.
 
 ---
 
