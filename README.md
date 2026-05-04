@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1476** Python | **1487** TypeScript | **179** C++/H | **146** Docs | **3717** total commits | **3** stars | **0** forks | **0** open issues
+**1476** Python | **1487** TypeScript | **179** C++/H | **146** Docs | **3719** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`b8aa8469`](https://github.com/matthewmackes/map2-audio/commit/b8aa8469bea94f637c48f37f7975543616aceca4) | ui(t2481-c1): bulk Carbon-stop spacing migration across 2... | Map2 Audio | 2026-05-03 |
+| [`237c5643`](https://github.com/matthewmackes/map2-audio/commit/237c5643c7a49b55d3575e60e19b6d324fd868c6) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-04 |
 | [`3b679f37`](https://github.com/matthewmackes/map2-audio/commit/3b679f3731b8bca730422a214407f6cc7f2ece45) | ui(t2481-c1): scope §10.5 hardware-skin carve-out for spa... | Map2 Audio | 2026-05-03 |
 | [`d90cb6bf`](https://github.com/matthewmackes/map2-audio/commit/d90cb6bf5ee6c65506958c4d5d9702423212025e) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-04 |
 | [`93da11d5`](https://github.com/matthewmackes/map2-audio/commit/93da11d5f517653acf43afcf63b6a726c25ba6ba) | ui(t2481-d1): ratchet map2/no-ad-hoc-transition from warn... | Map2 Audio | 2026-05-03 |
 | [`807743cd`](https://github.com/matthewmackes/map2-audio/commit/807743cdf41d2d701f2be3d4d4ccb097734006b4) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-04 |
 | [`858e949a`](https://github.com/matthewmackes/map2-audio/commit/858e949aab55c1a01305f24e95d2c765c837a2f3) | ui(t2481-d1): clear remaining ad-hoc transition warnings ... | Map2 Audio | 2026-05-03 |
 | [`90ab3530`](https://github.com/matthewmackes/map2-audio/commit/90ab35304f5817528ae48ef18d4b008b86717cbd) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-04 |
-| [`f2856fa7`](https://github.com/matthewmackes/map2-audio/commit/f2856fa78ebceebe544ba3d52b53c5530cc91edd) | ui(t2481-d1): retire ad-hoc transitions in MidiLearnButto... | Map2 Audio | 2026-05-03 |
-| [`9d1c0f52`](https://github.com/matthewmackes/map2-audio/commit/9d1c0f522dd9e9613e9da2ccfeaaaa422fe674d8) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-04 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
