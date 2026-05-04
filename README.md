@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1476** Python | **1492** TypeScript | **179** C++/H | **146** Docs | **3787** total commits | **3** stars | **0** forks | **0** open issues
+**1476** Python | **1492** TypeScript | **179** C++/H | **146** Docs | **3789** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`86a1b52a`](https://github.com/matthewmackes/map2-audio/commit/86a1b52adbcaa5459ccdbacd36e3b3ae91ebdac9) | ui(t2481-b3): retoken OnboardingWizard cluster-setup chrome | Map2 Audio | 2026-05-04 |
+| [`ccbd59ce`](https://github.com/matthewmackes/map2-audio/commit/ccbd59ce7a50b69c58e3ea3c179c6e12e9686bad) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-04 |
 | [`cd43a0e5`](https://github.com/matthewmackes/map2-audio/commit/cd43a0e5424f8b74274ea32db9eed4514fb59db0) | docs(t2481-g2): update Carbon Fit-and-Finish Rubric with ... | Map2 Audio | 2026-05-04 |
 | [`857fece0`](https://github.com/matthewmackes/map2-audio/commit/857fece04edbe53ae737ad4e7baf014ebb450195) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-04 |
 | [`33b7d3d1`](https://github.com/matthewmackes/map2-audio/commit/33b7d3d1fbb51d801eb14a5514ee2a13984c9b62) | ui(t2481-b3): retoken SystemArchitectureFlow annotation c... | Map2 Audio | 2026-05-04 |
 | [`94b079a6`](https://github.com/matthewmackes/map2-audio/commit/94b079a60a595dad4ae6a0d0aef11b9fa8b14f4c) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-04 |
 | [`c75d1a62`](https://github.com/matthewmackes/map2-audio/commit/c75d1a62f95378e701dfe509320bd6e1870e19bd) | ui(t2481-b3): MeteringPage residual chrome cleanup | Map2 Audio | 2026-05-04 |
 | [`c81730e4`](https://github.com/matthewmackes/map2-audio/commit/c81730e4153077dbea885e5f4726ca9a0fdb30a8) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-04 |
-| [`e7c4cca9`](https://github.com/matthewmackes/map2-audio/commit/e7c4cca94f1f3e3a3bd99cc357a051bc1290222d) | ui(t2481-b3): MOTURMEPage residual chrome cleanup | Map2 Audio | 2026-05-04 |
-| [`fc122111`](https://github.com/matthewmackes/map2-audio/commit/fc12211131905ac7e24250f6afbdbbd3b8d8331a) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-04 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
