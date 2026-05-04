@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1476** Python | **1492** TypeScript | **179** C++/H | **146** Docs | **3759** total commits | **3** stars | **0** forks | **0** open issues
+**1476** Python | **1492** TypeScript | **179** C++/H | **146** Docs | **3761** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`c164414f`](https://github.com/matthewmackes/map2-audio/commit/c164414fef244212b9e83da068b34040a77030a4) | ui(t2481-b4): add no-hardcoded-font-family lint rule + ra... | Map2 Audio | 2026-05-04 |
+| [`88e5e1d6`](https://github.com/matthewmackes/map2-audio/commit/88e5e1d61bb7362d451b28aa7301009b3cd8252b) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-04 |
 | [`5adbfde0`](https://github.com/matthewmackes/map2-audio/commit/5adbfde0d106518352943145df2f8b8cfce1a3bb) | ui(t2481-b2): xterm terminal reads --font-mono via getCom... | Map2 Audio | 2026-05-04 |
 | [`31223246`](https://github.com/matthewmackes/map2-audio/commit/3122324666ba32d8b3df3d60ce5e8e856f0d361a) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-04 |
 | [`24ec63fa`](https://github.com/matthewmackes/map2-audio/commit/24ec63fab75390f75a2e5012e73049217ad10cab) | ui(t2481-b2): route remaining JSX/SVG fontFamily sites th... | Map2 Audio | 2026-05-04 |
 | [`75b7bf90`](https://github.com/matthewmackes/map2-audio/commit/75b7bf90156ef441ce68f96756b706de89fe6376) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-04 |
 | [`9b759c03`](https://github.com/matthewmackes/map2-audio/commit/9b759c035dfec8432c9d61819856bd06f7bb0b79) | ui(t2481-b1): wrap raw 'IBM Plex Sans' CSS sites in var(-... | Map2 Audio | 2026-05-04 |
 | [`a976242a`](https://github.com/matthewmackes/map2-audio/commit/a976242a2d3457d14f7c00edf4c26155ba89b471) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-04 |
-| [`ed38ecd0`](https://github.com/matthewmackes/map2-audio/commit/ed38ecd00e18103a85df7ea81290aebf7e4533f1) | ui(t2481-b2): wrap remaining raw 'IBM Plex Mono' CSS site... | Map2 Audio | 2026-05-04 |
-| [`714f64eb`](https://github.com/matthewmackes/map2-audio/commit/714f64ebd2b19e98c873f273044be095edb2ea44) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-04 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
