@@ -366,7 +366,7 @@ export function PlatformCapabilities() {
                 disabled={startAllMutation.isPending}
                 style={{
                   padding: 'var(--cds-spacing-02) var(--cds-spacing-03)',
-                  background: '#4caf50',
+                  background: 'var(--cds-support-success)',
                   color: 'var(--cds-text-primary)',
                   border: 'none',
                   borderRadius: 4,
@@ -386,7 +386,7 @@ export function PlatformCapabilities() {
                 disabled={stopAllMutation.isPending}
                 style={{
                   padding: 'var(--cds-spacing-02) var(--cds-spacing-03)',
-                  background: '#ef5350',
+                  background: 'var(--cds-support-error)',
                   color: 'var(--cds-text-primary)',
                   border: 'none',
                   borderRadius: 4,
@@ -407,7 +407,7 @@ export function PlatformCapabilities() {
           {/* Connectivity Info & Service Stats Grid */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(280px, 1fr))', gap: 16, marginBottom: 20 }}>
             {/* Audio Connectivity Layer */}
-            <div className="stack" style={{ gap: 10, padding: 12, background: '#0a0a0a', borderRadius: 6, border: '1px solid #1e293b' }}>
+            <div className="stack" style={{ gap: 10, padding: 12, background: 'var(--cds-background)', borderRadius: 6, border: '1px solid var(--cds-border-subtle)' }}>
               <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--cds-support-success)', marginBottom: 4, letterSpacing: '0.02em' }}>🔊 Audio connectivity</div>
               <div className="stack" style={{ gap: 6, fontSize: 11 }}>
                 <div className="flex" style={{ gap: 8, alignItems: 'flex-start' }}>
@@ -430,7 +430,7 @@ export function PlatformCapabilities() {
             </div>
 
             {/* REST API Engine */}
-            <div className="stack" style={{ gap: 10, padding: 12, background: '#0a0a0a', borderRadius: 6, border: '1px solid #1e293b' }}>
+            <div className="stack" style={{ gap: 10, padding: 12, background: 'var(--cds-background)', borderRadius: 6, border: '1px solid var(--cds-border-subtle)' }}>
               <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--cds-support-info)', marginBottom: 4, letterSpacing: '0.02em' }}>REST API engine</div>
               <div style={{ padding: 8, background: '#64b5f615', borderRadius: 4, border: '1px solid #64b5f6' }}>
                 <div style={{ fontSize: 9, color: 'var(--cds-text-secondary)', marginBottom: 2 }}>Available Endpoints</div>
@@ -440,7 +440,7 @@ export function PlatformCapabilities() {
             </div>
 
             {/* Web Services & WebSocket */}
-            <div className="stack" style={{ gap: 10, padding: 12, background: '#0a0a0a', borderRadius: 6, border: '1px solid #1e293b' }}>
+            <div className="stack" style={{ gap: 10, padding: 12, background: 'var(--cds-background)', borderRadius: 6, border: '1px solid var(--cds-border-subtle)' }}>
               <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--cds-support-success)', marginBottom: 4, letterSpacing: '0.02em' }}>Real-time services</div>
               <div className="stack" style={{ gap: 5, fontSize: 10 }}>
                 <div><strong>WebSocket Server</strong> - Live updates</div>
@@ -452,7 +452,7 @@ export function PlatformCapabilities() {
 
           {/* Service Statistics Header */}
           {servicesStatus.data && (
-            <div style={{ marginBottom: 16, padding: 12, background: '#0a0a0a', borderRadius: 6, border: '1px solid #1e293b' }}>
+            <div style={{ marginBottom: 16, padding: 12, background: 'var(--cds-background)', borderRadius: 6, border: '1px solid var(--cds-border-subtle)' }}>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(120px, 1fr))', gap: 10, marginBottom: 0 }}>
                 <div style={{ textAlign: 'center' }}>
                   <div style={{ fontSize: 18, fontWeight: 700, color: 'var(--cds-support-info)' }}>{Object.keys(servicesStatus.data.services || {}).length}</div>
@@ -498,8 +498,8 @@ export function PlatformCapabilities() {
                 if (servicesInGroup.length === 0) return null
 
                 return (
-                  <div key={priority} style={{ borderRadius: 6, border: '1px solid #1e293b', overflow: 'hidden' }}>
-                    <div style={{ padding: 10, background: '#0a0a0a', fontSize: 11, fontWeight: 600, color: 'var(--cds-support-warning)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div key={priority} style={{ borderRadius: 6, border: '1px solid var(--cds-border-subtle)', overflow: 'hidden' }}>
+                    <div style={{ padding: 10, background: 'var(--cds-background)', fontSize: 11, fontWeight: 600, color: 'var(--cds-support-warning)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
                       <span>{PRIORITY_LABELS[priority]} services</span>
                       <span style={{ fontSize: 10, color: 'var(--cds-text-secondary)' }}>{servicesInGroup.length} services</span>
                     </div>
@@ -544,7 +544,7 @@ export function PlatformCapabilities() {
                                 <span style={{
                                   fontSize: 9,
                                   color: 'var(--cds-text-secondary)',
-                                  background: '#111111',
+                                  background: 'var(--cds-layer)',
                                   // carbon-allow: optional-tag pill 2x6px (between Carbon stops).
                                   padding: '2px 6px',
                                   borderRadius: 3,
@@ -581,7 +581,7 @@ export function PlatformCapabilities() {
                                 style={{
                                   // carbon-allow: dense service-control button 3x6px (between Carbon stops).
                                   padding: '3px 6px',
-                                  background: '#4caf50',
+                                  background: 'var(--cds-support-success)',
                                   color: 'var(--cds-text-primary)',
                                   border: 'none',
                                   borderRadius: 3,
@@ -604,7 +604,7 @@ export function PlatformCapabilities() {
                                   style={{
                                     // carbon-allow: dense service-control button 3x6px (between Carbon stops).
                                     padding: '3px 6px',
-                                    background: '#ef5350',
+                                    background: 'var(--cds-support-error)',
                                     color: 'var(--cds-text-primary)',
                                     border: 'none',
                                     borderRadius: 3,
@@ -659,7 +659,7 @@ export function PlatformCapabilities() {
                 if (!expandedServices.has(service.name)) return null
 
                 return (
-                  <div key={service.name} style={{ marginBottom: 12, padding: 10, background: '#0a0a0a', borderRadius: 6, border: `1px solid ${STATE_COLORS[service.state]}40` }}>
+                  <div key={service.name} style={{ marginBottom: 12, padding: 10, background: 'var(--cds-background)', borderRadius: 6, border: `1px solid ${STATE_COLORS[service.state]}40` }}>
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 10, fontSize: 10 }}>
                       {service.started_at && (
                         <div>
@@ -711,7 +711,7 @@ export function PlatformCapabilities() {
                 <p style={{ margin: 0, fontSize: 11, color: 'var(--cds-text-secondary)' }}>Real-time CPU, memory, disk, and audio metrics</p>
               </div>
             </div>
-            <span style={{ fontSize: 10, color: 'var(--cds-text-secondary)', background: '#111111', padding: 'var(--cds-spacing-02) var(--cds-spacing-03)', borderRadius: 4 }}>
+            <span style={{ fontSize: 10, color: 'var(--cds-text-secondary)', background: 'var(--cds-layer)', padding: 'var(--cds-spacing-02) var(--cds-spacing-03)', borderRadius: 4 }}>
               {metricsCurrentQuery.isFetching ? 'Refreshing 4s' : 'Live'}
             </span>
           </div>
@@ -719,7 +719,7 @@ export function PlatformCapabilities() {
           {/* Current Metrics Grid */}
           <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(140px, 1fr))', gap: 12, marginBottom: 20 }}>
             {/* CPU */}
-            <div style={{ padding: 12, background: '#0a0a0a', borderRadius: 6, border: '1px solid #1e293b' }}>
+            <div style={{ padding: 12, background: 'var(--cds-background)', borderRadius: 6, border: '1px solid var(--cds-border-subtle)' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
                 <Cpu size={14} style={{ color: 'var(--cds-support-info)' }} />
                 <div style={{ fontSize: 10, color: 'var(--cds-text-secondary)', fontWeight: 600 }}>CPU Load</div>
@@ -730,7 +730,7 @@ export function PlatformCapabilities() {
             </div>
 
             {/* Memory */}
-            <div style={{ padding: 12, background: '#0a0a0a', borderRadius: 6, border: '1px solid #1e293b' }}>
+            <div style={{ padding: 12, background: 'var(--cds-background)', borderRadius: 6, border: '1px solid var(--cds-border-subtle)' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
                 <HardDrive size={14} style={{ color: 'var(--cds-support-success)' }} />
                 <div style={{ fontSize: 10, color: 'var(--cds-text-secondary)', fontWeight: 600 }}>Memory</div>
@@ -744,7 +744,7 @@ export function PlatformCapabilities() {
             </div>
 
             {/* Disk */}
-            <div style={{ padding: 12, background: '#0a0a0a', borderRadius: 6, border: '1px solid #1e293b' }}>
+            <div style={{ padding: 12, background: 'var(--cds-background)', borderRadius: 6, border: '1px solid var(--cds-border-subtle)' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
                 <HardDrive size={14} style={{ color: 'var(--cds-support-warning)' }} />
                 <div style={{ fontSize: 10, color: 'var(--cds-text-secondary)', fontWeight: 600 }}>Disk</div>
@@ -755,7 +755,7 @@ export function PlatformCapabilities() {
             </div>
 
             {/* Audio Latency */}
-            <div style={{ padding: 12, background: '#0a0a0a', borderRadius: 6, border: '1px solid #1e293b' }}>
+            <div style={{ padding: 12, background: 'var(--cds-background)', borderRadius: 6, border: '1px solid var(--cds-border-subtle)' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
                 <Clock size={14} style={{ color: 'var(--cds-support-success)' }} />
                 <div style={{ fontSize: 10, color: 'var(--cds-text-secondary)', fontWeight: 600 }}>Latency</div>
@@ -766,7 +766,7 @@ export function PlatformCapabilities() {
             </div>
 
             {/* XRuns */}
-            <div style={{ padding: 12, background: '#0a0a0a', borderRadius: 6, border: '1px solid #1e293b' }}>
+            <div style={{ padding: 12, background: 'var(--cds-background)', borderRadius: 6, border: '1px solid var(--cds-border-subtle)' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
                 <WarningCircle size={14} style={{ color: typeof metricsCurrentQuery.data?.audio_xruns === 'number' && metricsCurrentQuery.data.audio_xruns === 0 ? '#4caf50' : '#ef5350' }} />
                 <div style={{ fontSize: 10, color: 'var(--cds-text-secondary)', fontWeight: 600 }}>XRuns</div>
@@ -778,7 +778,7 @@ export function PlatformCapabilities() {
             </div>
 
             {/* Uptime */}
-            <div style={{ padding: 12, background: '#0a0a0a', borderRadius: 6, border: '1px solid #1e293b' }}>
+            <div style={{ padding: 12, background: 'var(--cds-background)', borderRadius: 6, border: '1px solid var(--cds-border-subtle)' }}>
               <div style={{ display: 'flex', alignItems: 'center', gap: 6, marginBottom: 8 }}>
                 <Clock size={14} style={{ color: 'var(--cds-support-info)' }} />
                 <div style={{ fontSize: 10, color: 'var(--cds-text-secondary)', fontWeight: 600 }}>Uptime</div>
@@ -791,7 +791,7 @@ export function PlatformCapabilities() {
 
           {/* Summary Statistics */}
           {metricsSummaryQuery.data && (
-            <div style={{ marginBottom: 16, padding: 12, background: '#0a0a0a', borderRadius: 6, border: '1px solid #1e293b' }}>
+            <div style={{ marginBottom: 16, padding: 12, background: 'var(--cds-background)', borderRadius: 6, border: '1px solid var(--cds-border-subtle)' }}>
               <div style={{ fontSize: 11, fontWeight: 600, color: 'var(--cds-support-warning)', marginBottom: 10, letterSpacing: '0.02em' }}>Min / avg / max statistics</div>
               <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(150px, 1fr))', gap: 10 }}>
                 <div>

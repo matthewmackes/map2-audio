@@ -206,7 +206,7 @@ export function OnboardingWizard({ onComplete }: { onComplete?: () => void }) {
       <div
         style={{
           padding: 24,
-          background: '#1a1a1a',
+          background: 'var(--cds-layer)',
           border: '1px solid #333',
           borderRadius: 12,
           minHeight: 400,

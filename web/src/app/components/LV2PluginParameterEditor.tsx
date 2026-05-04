@@ -1318,7 +1318,7 @@ export function LV2PluginParameterEditor({
                     width: 6,
                     height: 6,
                     borderRadius: '50%',
-                    background: '#22c55e',
+                    background: 'var(--cds-support-success)',
                     boxShadow: '0 0 6px #22c55e',
                   }} />
                 )}
