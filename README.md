@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1476** Python | **1491** TypeScript | **179** C++/H | **146** Docs | **3737** total commits | **3** stars | **0** forks | **0** open issues
+**1476** Python | **1492** TypeScript | **179** C++/H | **146** Docs | **3739** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`ffdb6ab5`](https://github.com/matthewmackes/map2-audio/commit/ffdb6ab53b7598b3956400676eb24f09e535b2cc) | test(t2495): jest regression guard locking the T2493 view... | Map2 Audio | 2026-05-04 |
+| [`157e477f`](https://github.com/matthewmackes/map2-audio/commit/157e477f6ea4e97d3bf5bd39e020b514c4056116) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-04 |
 | [`9454006a`](https://github.com/matthewmackes/map2-audio/commit/9454006a4173b808c9b93d330910045d82aa02a7) | ui(t2494): retire 171 dead `@media (max-width: <1366px)` ... | Map2 Audio | 2026-05-04 |
 | [`a353a7fe`](https://github.com/matthewmackes/map2-audio/commit/a353a7fea8441d62a12a137ee929ac299c37d6dd) | ui(cutover): retire /about — Platform Guide inlined on Home | Map2 Audio | 2026-05-04 |
 | [`f069014d`](https://github.com/matthewmackes/map2-audio/commit/f069014d8b6e63107bb2d7460a5c05036825876f) | ui: replace Home + Platform Guide with unified MAP2 design | Map2 Audio | 2026-05-04 |
 | [`41d9c79b`](https://github.com/matthewmackes/map2-audio/commit/41d9c79bdd3eeb852d1ad99ed4b778afb33703d4) | ui(t2473-iter5): rip out 6 unreachable workspace modals (... | Map2 Audio | 2026-05-04 |
 | [`8fbebe93`](https://github.com/matthewmackes/map2-audio/commit/8fbebe93c6b37190cc5ca59118ad0e93ea660345) | ui(t2473-iter4): deeper dead-code sweep (Zustand reads + ... | Map2 Audio | 2026-05-04 |
 | [`6c33999a`](https://github.com/matthewmackes/map2-audio/commit/6c33999a2997781abeb678ca558d5f8587a9506d) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-04 |
-| [`b1fd5a4a`](https://github.com/matthewmackes/map2-audio/commit/b1fd5a4acb0322f3e774f5164bc7e82fbb74ec0f) | ui(t2473-iter3): dead-code sweep across SnapshotEditorPag... | Map2 Audio | 2026-05-04 |
-| [`173b6733`](https://github.com/matthewmackes/map2-audio/commit/173b67335b45365945eea095c071ba52d902808c) | ui(t2473-iter2): extract MIDI binding drafts hook (AB swi... | Map2 Audio | 2026-05-04 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
