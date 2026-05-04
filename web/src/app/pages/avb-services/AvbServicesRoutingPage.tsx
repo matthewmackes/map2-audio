@@ -56,7 +56,7 @@ function flattenMatrix(
   const observedSources = new Set(Object.keys(matrix))
   const knownSources = SOURCE_TYPES_ORDER.filter((s) => observedSources.has(s))
   const extraSources = [...observedSources]
-    .filter((s) => !SOURCE_TYPES_ORDER.includes(s as any))
+    .filter((s) => !(SOURCE_TYPES_ORDER as readonly string[]).includes(s))
     .sort()
   const sourceOrder = [...knownSources, ...extraSources]
 
@@ -68,7 +68,7 @@ function flattenMatrix(
     observedConsumers.has(c),
   )
   const extraConsumers = [...observedConsumers]
-    .filter((c) => !CONSUMER_TYPES_ORDER.includes(c as any))
+    .filter((c) => !(CONSUMER_TYPES_ORDER as readonly string[]).includes(c))
     .sort()
   const consumerOrder = [...knownConsumers, ...extraConsumers]
 
