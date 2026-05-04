@@ -1,18 +1,17 @@
 /**
- * T2482 loop 13 / iter 123 — MidiServicesPresetsPage.
+ * MidiServicesPresetsPage.
  *
- * MidiServices-branded sibling of MidiHubPresetsPage. Per the
- * iter-121 plan D1: imports the same component panels directly.
- *
- * Panels mounted: MidiHubPresetManager, MidiClockPanel, MidiRecorderPanel.
+ * Reuses MidiHubPresetManager + MidiClockPanel + MidiRecorderPanel inside
+ * the locked MidiServicesSection primitive.
  */
 
-import { Heading, Layer, Section } from '@carbon/react'
+import { Heading, InlineNotification, Layer, Section } from '@carbon/react'
+import { Music, RecordingFilled, Time } from '@carbon/icons-react'
 
 import { MidiClockPanel } from '../../components/MidiHub/MidiClockPanel'
-import { MidiHubPanelShell } from '../../components/MidiHub/MidiHubHelpPrimitives'
 import { MidiHubPresetManager } from '../../components/MidiHub/MidiHubPresetManager'
 import { MidiRecorderPanel } from '../../components/MidiHub/MidiRecorderPanel'
+import { MidiServicesSection } from './MidiServicesSection'
 import { useMidiServicesShellWindow } from './useMidiServicesShellWindow'
 import './MidiServicesRegionPage.css'
 
@@ -31,18 +30,55 @@ export function MidiServicesPresetsPage() {
             capture once the route is stable.
           </p>
         </header>
+        <InlineNotification
+          className="midi-services-region__about"
+          kind="info"
+          lowContrast
+          hideCloseButton
+          title="What this page does"
+          subtitle="Save and recall preset slots that snapshot the current routing and processing state, drive the master MIDI clock, and capture sessions for later playback or analysis."
+        />
       </Layer>
       <Layer level={1}>
         <div className="midi-services-region__grid">
-          <MidiHubPanelShell panelId="presets">
-            <MidiHubPresetManager />
-          </MidiHubPanelShell>
-          <MidiHubPanelShell panelId="clock">
-            <MidiClockPanel />
-          </MidiHubPanelShell>
-          <MidiHubPanelShell panelId="recorder">
-            <MidiRecorderPanel />
-          </MidiHubPanelShell>
+          <div className="midi-services-region__section-band">
+            <MidiServicesSection
+              panelId="presets"
+              index={1}
+              icon={<Music />}
+              title="Preset manager"
+              subtitle="Capture, recall, and reorder named slots that snapshot the bindings authority for show-control."
+              status={{ tone: 'idle', label: 'READY' }}
+            >
+              <MidiHubPresetManager />
+            </MidiServicesSection>
+          </div>
+
+          <div className="midi-services-region__section-band">
+            <MidiServicesSection
+              panelId="clock"
+              index={2}
+              icon={<Time />}
+              title="Master clock"
+              subtitle="Drive 24 PPQN MIDI clock to selected output ports — local internal source, external sync, or follow MTC."
+              status={{ tone: 'live', label: 'LIVE', detail: '120 BPM', active: true }}
+            >
+              <MidiClockPanel />
+            </MidiServicesSection>
+          </div>
+
+          <div className="midi-services-region__section-band">
+            <MidiServicesSection
+              panelId="recorder"
+              index={3}
+              icon={<RecordingFilled />}
+              title="Session recorder"
+              subtitle="Capture every event the authority sees and dump to .mid / .syx for offline review."
+              status={{ tone: 'idle', label: 'IDLE' }}
+            >
+              <MidiRecorderPanel />
+            </MidiServicesSection>
+          </div>
         </div>
       </Layer>
     </Section>

@@ -1,0 +1,317 @@
+/*
+ * MidiServicesSection — locked design (2026-05-03).
+ *
+ * Carbon-conformant: every colour goes through a --cds-* token. No hardcoded
+ * hex. Alternating bands on the page rely on the parent grid applying the
+ * `:nth-child(even)` rule; we keep the surface neutral by default so other
+ * containers (e.g. MidiClusterEnableSection) render without alternation.
+ */
+
+.midi-services-section {
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1.75rem 1.5rem 2rem;
+  border-radius: 0.25rem;
+  background-color: var(--cds-layer-01);
+  /* Alternating-band tone is controlled by the parent grid's :nth-child rule
+     on .midi-services-region__section-band so the wrapper itself doesn't
+     fight overrides. */
+}
+
+/* Alternating bands inside the region grid. The grid passes
+   .midi-services-region__section-band so we can set the band tone without
+   touching every section call site. */
+.midi-services-region__section-band:nth-child(even) .midi-services-section,
+.midi-services-region__section-band--alt .midi-services-section {
+  background-color: var(--cds-layer-02);
+}
+
+.midi-services-section--has-banner {
+  padding-top: 0.5rem;
+}
+
+.midi-services-section__banner {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.5rem 0.75rem;
+  margin: -1.75rem -1.5rem 0;
+  border-top-left-radius: 0.25rem;
+  border-top-right-radius: 0.25rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--cds-text-on-color);
+  background-color: var(--cds-support-info);
+}
+
+.midi-services-section__banner--live {
+  background-color: var(--cds-support-success);
+}
+
+.midi-services-section__banner--armed {
+  background-color: var(--cds-support-warning);
+  color: var(--cds-text-on-color-inverse);
+}
+
+.midi-services-section__banner--error {
+  background-color: var(--cds-support-error);
+}
+
+.midi-services-section__banner--idle,
+.midi-services-section__banner--neutral {
+  background-color: var(--cds-layer-accent-01);
+  color: var(--cds-text-primary);
+}
+
+.midi-services-section__banner-text {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+/* Header ---------------------------------------------------------------- */
+
+.midi-services-section__header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.midi-services-section__heading-row {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: flex-start;
+  justify-content: space-between;
+}
+
+.midi-services-section__title-block {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+  min-width: 0;
+}
+
+.midi-services-section__kicker {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+  color: var(--cds-text-secondary);
+}
+
+.midi-services-section__number {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 1.75rem;
+  padding: 0.125rem 0.375rem;
+  border: 1px solid var(--cds-border-subtle);
+  border-radius: 999px;
+  font-variant-numeric: tabular-nums;
+  font-weight: 600;
+  color: var(--cds-text-primary);
+  background-color: var(--cds-layer-accent-01);
+}
+
+.midi-services-section__kicker-label {
+  white-space: nowrap;
+}
+
+.midi-services-section__title {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.625rem;
+  margin: 0;
+  font-size: 1.375rem;
+  font-weight: 600;
+  line-height: 1.25;
+  color: var(--cds-text-primary);
+}
+
+.midi-services-section__icon {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 1.75rem;
+  height: 1.75rem;
+  border-radius: 0.25rem;
+  background-color: var(--cds-layer-accent-01);
+  color: var(--cds-icon-primary);
+}
+
+.midi-services-section__icon svg {
+  width: 1.125rem;
+  height: 1.125rem;
+}
+
+.midi-services-section__title-text {
+  min-width: 0;
+}
+
+/* Status pill ----------------------------------------------------------- */
+
+.midi-services-section__status {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-shrink: 0;
+  padding: 0.25rem 0.5rem;
+  border-radius: 999px;
+  background-color: var(--cds-layer-accent-01);
+}
+
+.midi-services-section__led {
+  width: 0.5rem;
+  height: 0.5rem;
+  border-radius: 999px;
+  background-color: var(--cds-icon-secondary);
+}
+
+.midi-services-section__led--live {
+  background-color: var(--cds-support-success);
+  box-shadow: 0 0 0 0 var(--cds-support-success);
+}
+
+.midi-services-section__led--armed {
+  background-color: var(--cds-support-warning);
+}
+
+.midi-services-section__led--error {
+  background-color: var(--cds-support-error);
+}
+
+.midi-services-section__led--idle {
+  background-color: var(--cds-icon-secondary);
+}
+
+@keyframes midi-services-section__pulse {
+  0% {
+    box-shadow: 0 0 0 0 currentColor;
+    opacity: 1;
+  }
+  70% {
+    box-shadow: 0 0 0 0.5rem transparent;
+    opacity: 0.85;
+  }
+  100% {
+    box-shadow: 0 0 0 0 transparent;
+    opacity: 1;
+  }
+}
+
+.midi-services-section__led--pulse {
+  animation: midi-services-section__pulse 1.6s ease-out infinite;
+  color: var(--cds-support-success);
+}
+
+.midi-services-section__led--pulse.midi-services-section__led--armed {
+  color: var(--cds-support-warning);
+}
+
+.midi-services-section__led--pulse.midi-services-section__led--error {
+  color: var(--cds-support-error);
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .midi-services-section__led--pulse {
+    animation: none;
+  }
+}
+
+.midi-services-section__status-detail {
+  font-size: 0.8125rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--cds-text-secondary);
+}
+
+/* Subtitle + rule ------------------------------------------------------- */
+
+.midi-services-section__subtitle {
+  margin: 0;
+  font-size: 0.875rem;
+  line-height: 1.4;
+  color: var(--cds-text-secondary);
+  max-width: 60rem;
+}
+
+.midi-services-section__rule {
+  display: block;
+  height: 1px;
+  margin-top: 0.5rem;
+  background-color: var(--cds-border-subtle);
+}
+
+/* Content --------------------------------------------------------------- */
+
+.midi-services-section__content {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+/* Error block ----------------------------------------------------------- */
+
+.midi-services-section__error {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 1rem;
+  align-items: center;
+  justify-content: space-between;
+  padding: 1rem 1.25rem;
+  border: 1px solid var(--cds-support-error);
+  border-left-width: 4px;
+  border-radius: 0.25rem;
+  background-color: var(--cds-notification-background-error,
+    var(--cds-layer-01));
+}
+
+.midi-services-section__error-body {
+  display: flex;
+  align-items: flex-start;
+  gap: 0.75rem;
+  min-width: 0;
+}
+
+.midi-services-section__error-icon {
+  flex-shrink: 0;
+  margin-top: 0.125rem;
+  color: var(--cds-support-error);
+}
+
+.midi-services-section__error-title {
+  font-weight: 600;
+  color: var(--cds-text-primary);
+}
+
+.midi-services-section__error-description {
+  margin-top: 0.25rem;
+  font-size: 0.875rem;
+  color: var(--cds-text-secondary);
+}
+
+/* Timecode hint chip used by Transport recorder section. */
+.midi-services-section__timecode-hint {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.5rem;
+  padding: 0.25rem 0.5rem;
+  border-radius: 999px;
+  font-size: 0.75rem;
+  font-variant-numeric: tabular-nums;
+  color: var(--cds-text-secondary);
+  background-color: var(--cds-layer-accent-01);
+  align-self: flex-start;
+}
+
+.midi-services-section__timecode-hint svg {
+  width: 1rem;
+  height: 1rem;
+}

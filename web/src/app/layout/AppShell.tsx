@@ -1,7 +1,6 @@
 import type { ReactNode } from 'react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { CSSProperties } from 'react'
-import { ChevronUp } from '@carbon/icons-react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { PageTransition } from '../components/PageTransition'
 import { RebootConfirmModal } from './RebootConfirmModal'
@@ -22,7 +21,6 @@ import {
   getNodeStatusLabel,
   pageKeyFromPathname,
 } from '../utils/nodeDisplay'
-import { usePersistedState } from '../utils/persistedState'
 import {
   applyViewedNodeScopeToAllPages,
   readViewedHostFromSearch,
@@ -38,13 +36,10 @@ import '../styles/design-language.css'
 import '../components/shared/GlobalPrimitives.css'
 import './AppShell.css'
 
-const GLOBAL_NAV_PINNED_KEY = {
-  storageKey: 'map2:global-nav:pinned',
-  fallback: true,
-  // Pinned by default — only the explicit string "false" unpins.
-  parse: (raw: string) => (raw === 'false' ? false : true),
-  serialize: (value: boolean) => (value ? 'true' : 'false'),
-} as const
+// 2026-05-03 nav reskin — sidebar is fixed-width 280 px, no
+// collapse/resize. Width lives in CSS (.global-tree-nav) and is
+// surfaced to the rest of the shell via --global-tree-width below.
+const GLOBAL_NAV_WIDTH = '280px'
 
 export function AppShell({ children }: { children: ReactNode }) {
   const location = useLocation()
@@ -53,7 +48,6 @@ export function AppShell({ children }: { children: ReactNode }) {
   const { status: websocketStatus } = useWebSocketConnection()
   const { topologyNodes, viewedNodeId } = useNodePageContext(nodePageKey)
   const setViewedNode = useViewedNodeStore((state) => state.setViewedNode)
-  const [globalNavPinned, setGlobalNavPinned] = usePersistedState(GLOBAL_NAV_PINNED_KEY)
   const [shellPatch, setShellPatch] = useState<ShellWindowPatch>({})
   const lastQuerySyncedHostRef = useRef<string | null>(null)
   const closeShellMenus = useCallback(() => {}, [])
@@ -233,33 +227,19 @@ export function AppShell({ children }: { children: ReactNode }) {
       className={shellClassName}
       style={{
         '--window-shell-accent': shellAccentColor,
-        '--global-tree-width': globalNavPinned ? '18rem' : '3.5rem',
-        '--global-tree-banner-left-offset': globalNavPinned ? '18rem' : '3.5rem',
+        '--global-tree-width': GLOBAL_NAV_WIDTH,
+        '--global-tree-banner-left-offset': GLOBAL_NAV_WIDTH,
         '--ctx-h': '0px',
         '--ws-h': '0px',
       } as CSSProperties}
     >
       <div className="app-shell__frame">
-        {globalNavPinned ? (
-          <GlobalTreeNav
-            onLogOut={() => returnHomeDesktopToBoot()}
-            onOpenRebootConfirm={() => void handleOpenRebootConfirm()}
-            onOpenRestartConfirm={() => setRestartConfirmOpen(true)}
-            onRefreshPage={() => reloadHomeDesktopShell()}
-            onTogglePinned={() => setGlobalNavPinned(false)}
-          />
-        ) : (
-          <aside className="app-shell__nav-collapsed-rail" aria-label="Collapsed navigation rail">
-            <button
-              type="button"
-              className="app-shell__nav-pin-toggle"
-              aria-label="Expand global navigation"
-              onClick={() => setGlobalNavPinned(true)}
-            >
-              <ChevronUp size={18} aria-hidden="true" />
-            </button>
-          </aside>
-        )}
+        <GlobalTreeNav
+          onLogOut={() => returnHomeDesktopToBoot()}
+          onOpenRebootConfirm={() => void handleOpenRebootConfirm()}
+          onOpenRestartConfirm={() => setRestartConfirmOpen(true)}
+          onRefreshPage={() => reloadHomeDesktopShell()}
+        />
         <main className="app-content app-content--with-global-tree">
           <ShellWindowProvider value={shellWindowContext}>
             <ShellWindowMutatorProvider value={mutator}>

@@ -197,29 +197,29 @@ describe('AppShell global tree navigation', () => {
     expect(container.querySelector('.window-title-strip')).toBeNull()
     const navTree = screen.getByLabelText('Global navigation')
     expect(navTree).toBeInTheDocument()
-    // Nav reorg 2026-05-03 (second pass) — top-level order is the
-    // pure canonical service hierarchy with no shortcut row and no
-    // separators. MIDI Assignments folded into MIDI Services. Audio
-    // Artifacts is its own top-level service group. Chains and
-    // Settings are top-level leaves. Platform Guide is at /about.
+    // Nav reskin 2026-05-03 — the IA now reads:
+    //   Home → hero cards (Snapshot Editor, Sequencer)
+    //   → Services (MIDI Services, AVB, Audio Artifacts, Settings,
+    //     Hardware, Node Ops) → Platform Guide.
+    // The "Pinned" and "System" SectionBars were removed; System items
+    // were folded into the Services tree.
     expectInDocumentOrder([
       'Home',
       'Snapshot Editor',
+      'Sequencer',
       'MIDI Services',
       'AVB',
-      'Node Ops',
       'Audio Artifacts',
-      'Sequencer',
-      'Hardware',
-      // Nav reorg 2026-05-03 — /chains removed from top-level; folded
-      // into /node-ops/audio-engine.
       'Settings',
+      'Hardware',
+      'Node Ops',
       'Platform Guide',
     ])
     expect(container.querySelectorAll('.global-tree-nav__separator-line')).toHaveLength(0)
     expect(screen.getAllByText('Node Ops')).toHaveLength(1)
     expect(screen.getByText('Snapshot Editor')).toBeInTheDocument()
-    expect(within(navTree).getByText('Signal Editor')).toBeInTheDocument()
+    // Hero card badge copy is "Signal Flow" per the Variant 6 spec.
+    expect(within(navTree).getByText('Signal Flow')).toBeInTheDocument()
     expect(within(navTree).getByText('Live')).toBeInTheDocument()
     expect(screen.getByText('Sequencer')).toBeInTheDocument()
     expect(screen.getByText('Audio Artifacts')).toBeInTheDocument()
@@ -227,18 +227,17 @@ describe('AppShell global tree navigation', () => {
     expect(screen.getByText('Settings')).toBeInTheDocument()
     expect(screen.getAllByText('Hardware').length).toBeGreaterThan(0)
     expect(screen.getAllByText('Devices').length).toBeGreaterThan(0)
-    // T2490 (AVB) + T2491 (MIDI cleanup) — both AVB Services and MIDI
-    // Advanced parent sections expose a "Connections" child, so the
-    // assertion uses getAllByText now.
+    // T2490 (AVB) + T2491 (MIDI cleanup) — MIDI Advanced exposes a
+    // "Connections" child once the parent is expanded.
     expect(within(navTree).getAllByText('Connections').length).toBeGreaterThan(0)
     expect(within(navTree).getAllByText('Presets').length).toBeGreaterThan(0)
-    expect(within(navTree).getAllByText('Overview').length).toBeGreaterThan(1)
-    expect(within(navTree).getByText('Midpoint')).toBeInTheDocument()
-    expect(within(navTree).getByText('LV2 Plugins')).toBeInTheDocument()
-    expect(within(navTree).getByText('NAM Models')).toBeInTheDocument()
-    expect(within(navTree).getAllByText('Discover').length).toBeGreaterThan(0)
-    expect(within(navTree).getAllByText('Biamp Tesira').length).toBeGreaterThan(0)
-    expect(screen.queryByText('Files')).toBeNull()
+    // Node Ops + AVB are dense-row groups under System/Services and
+    // are NOT auto-expanded on first load (only Snapshot Editor,
+    // Sequencer, MIDI Services, Hardware, Devices are expanded by
+    // default). Their child entries (Midpoint, LV2 Plugins, NAM
+    // Models, Overview, etc.) are exercised in the navigation tests
+    // below where the parent is opened first.
+
     // The node identity card surfaces the display name plus the host/role plate.
     const nodeCard = screen.getByRole('button', { name: /Node map2-host \(Studio\)/i })
     expect(nodeCard).toHaveTextContent('map2-host')
@@ -333,6 +332,10 @@ describe('AppShell global tree navigation', () => {
       ['/'],
     )
 
+    // Nav reskin 2026-05-03 — Node Ops is a System dense-tree group
+    // and is collapsed on first load; expand it before its Midpoint
+    // child becomes visible.
+    fireEvent.click(screen.getByText('Node Ops'))
     fireEvent.click(screen.getByText('Midpoint'))
 
     await waitFor(() => {
@@ -407,29 +410,9 @@ describe('AppShell global tree navigation', () => {
     expect(screen.getByText('Restart backend')).toBeInTheDocument()
   })
 
-  it('lets the operator unpin and re-pin the global navigation rail', async () => {
-    const { container } = renderInRouter(
-      <AppShell>
-        <div>shell content</div>
-      </AppShell>,
-      ['/sequencer'],
-    )
-
-    fireEvent.click(screen.getByRole('button', { name: 'Collapse global navigation' }))
-
-    await waitFor(() => {
-      expect(screen.queryByLabelText('Global navigation')).toBeNull()
-      expect(screen.getByLabelText('Collapsed navigation rail')).toBeInTheDocument()
-      expect(screen.getByRole('button', { name: 'Expand global navigation' })).toBeInTheDocument()
-    })
-
-    fireEvent.click(screen.getByRole('button', { name: 'Expand global navigation' }))
-
-    await waitFor(() => {
-      expect(screen.getByLabelText('Global navigation')).toBeInTheDocument()
-      expect(container.querySelector('.global-tree-nav')).toBeTruthy()
-    })
-  })
+  // Removed 2026-05-03 with the nav reskin — the global tree rail
+  // is now fixed-width 280 px with no collapse/pin affordance, per
+  // the Variant 6 design handoff (locked answer to Q5: "drop them").
 
   it('uses the explicit Snapshot Editor shell naming on the snapshot editor route', () => {
     renderInRouter(

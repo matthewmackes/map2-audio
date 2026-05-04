@@ -10,7 +10,11 @@ import {
 export function PlatformWorkspaceSection() {
   const navigate = useNavigate()
   const location = useLocation()
-  const { workspace } = useParams<{ workspace: string }>()
+  const { workspace: workspaceParam } = useParams<{ workspace: string }>()
+  // `/about` is a dedicated top-level route (no `:workspace` param),
+  // but it still renders this shared section component. Normalize that
+  // mount to the standalone `about` panel id so Platform Guide opens.
+  const workspace = workspaceParam ?? (location.pathname === '/about' ? 'about' : undefined)
   // Nav reorg 2026-05-03 (second pass) — `buildLegacyPlatformWorkspaceRedirectPath`
   // now returns the canonical `/node-ops/<id>` path for any known
   // workspace id, including ids we're already mounted at. Only honor

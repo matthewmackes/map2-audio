@@ -1,25 +1,22 @@
 /**
- * T2482 loop 13 / iter 122 — MidiServicesNetworkPage.
+ * MidiServicesNetworkPage.
  *
- * MidiServices-branded sibling of MidiHubNetworkPage. Per the
- * iter-121 plan D1: imports the same 5 component panels directly
- * (no panel logic duplicated). Per D2: page chrome is Carbon
- * Section + Layer + Heading, matching the iter-95 OverviewPage
- * visual language.
- *
- * Panels mounted: MidiNetworkPanel, Midi2Panel, TesiraPanel,
- *   VirtualGpioPanel, StringInterfacePanel.
+ * Reuses MidiNetworkPanel + Midi2Panel + TesiraPanel + VirtualGpioPanel +
+ * StringInterfacePanel + MidiClusterEnableSection inside the locked
+ * MidiServicesSection primitive.
  */
 
-import { Heading, Layer, Section, Tag } from '@carbon/react'
+import { Heading, InlineNotification, Layer, Section } from '@carbon/react'
+import { CharacterPatterns, GatewayApi, NetworkOverlay, NotebookReference } from '@carbon/icons-react'
 
-import { MidiHubPanelShell } from '../../components/MidiHub/MidiHubHelpPrimitives'
 import { Midi2Panel } from '../../components/MidiHub/Midi2Panel'
+import { MidiClusterEnableSection } from '../../components/MidiHub/MidiClusterEnableSection'
 import { MidiNetworkPanel } from '../../components/MidiHub/MidiNetworkPanel'
 import { StringInterfacePanel } from '../../components/MidiHub/StringInterfacePanel'
 import { TesiraPanel } from '../../components/MidiHub/TesiraPanel'
 import { VirtualGpioPanel } from '../../components/MidiHub/VirtualGpioPanel'
-import { MidiClusterEnableSection } from '../../components/MidiHub/MidiClusterEnableSection'
+import { UmpGlyph } from './MidiServicesGlyphs'
+import { MidiServicesSection } from './MidiServicesSection'
 import { useMidiServicesShellWindow } from './useMidiServicesShellWindow'
 import './MidiServicesRegionPage.css'
 
@@ -39,27 +36,86 @@ export function MidiServicesNetworkPage() {
             or out of.
           </p>
         </header>
+        <InlineNotification
+          className="midi-services-region__about"
+          kind="info"
+          lowContrast
+          hideCloseButton
+          title="What this page does"
+          subtitle="Configure off-host MIDI transports: cluster MIDI fan-out, RTP-MIDI / OSC stage links, MIDI 2.0 UMP translation, Biamp Tesira TTP, virtual GPIO contact closures, and the UDP string-command interface."
+        />
       </Layer>
-      {/* T2486-1 — cluster MIDI enable section. Coupled-flip modal opens
-          on Off→On transition; auto-connect default-checked. */}
-      <MidiClusterEnableSection />
+      {/* Cluster enable is its own block (modal-driven flip) — sits above the
+          numbered grid and is not banded. */}
+      <div className="midi-services-region__plain-block">
+        <MidiClusterEnableSection />
+      </div>
       <Layer level={1}>
         <div className="midi-services-region__grid">
-          <MidiHubPanelShell panelId="network" actionTag={<Tag type="blue">Stage links</Tag>}>
-            <MidiNetworkPanel />
-          </MidiHubPanelShell>
-          <MidiHubPanelShell panelId="midi2" title="MIDI 2.0 and UMP" actionTag={<Tag type="green">Translation</Tag>}>
-            <Midi2Panel />
-          </MidiHubPanelShell>
-          <MidiHubPanelShell panelId="tesira" title="Tesira TTP Integration" actionTag={<Tag type="cool-gray">Bidirectional</Tag>}>
-            <TesiraPanel />
-          </MidiHubPanelShell>
-          <MidiHubPanelShell panelId="gpio" actionTag={<Tag type="blue">12 in / 12 out</Tag>}>
-            <VirtualGpioPanel />
-          </MidiHubPanelShell>
-          <MidiHubPanelShell panelId="string-interface" title="String Interface" actionTag={<Tag type="cool-gray">UDP text</Tag>}>
-            <StringInterfacePanel />
-          </MidiHubPanelShell>
+          <div className="midi-services-region__section-band">
+            <MidiServicesSection
+              panelId="network"
+              index={1}
+              icon={<NetworkOverlay />}
+              title="RTP-MIDI & OSC bridge"
+              subtitle="Discover and pair stage links over the network. Each session is its own pair of virtual ports inside the authority."
+              status={{ tone: 'live', label: 'STAGE LINKS', active: true }}
+            >
+              <MidiNetworkPanel />
+            </MidiServicesSection>
+          </div>
+
+          <div className="midi-services-region__section-band">
+            <MidiServicesSection
+              panelId="midi2"
+              index={2}
+              icon={<UmpGlyph />}
+              title="MIDI 2.0 & UMP"
+              subtitle="Translate Universal MIDI Packets to/from MIDI 1.0 surfaces. MIDI-CI handshake, profile negotiation, and per-session log."
+              status={{ tone: 'idle', label: 'TRANSLATION' }}
+            >
+              <Midi2Panel />
+            </MidiServicesSection>
+          </div>
+
+          <div className="midi-services-region__section-band">
+            <MidiServicesSection
+              panelId="tesira"
+              index={3}
+              icon={<GatewayApi />}
+              title="Tesira TTP integration"
+              subtitle="Bidirectional bridge to Biamp Tesira DSPs over TTP. Subscribes to attributes and exposes them as authority bindings."
+              status={{ tone: 'idle', label: 'BIDIRECTIONAL' }}
+            >
+              <TesiraPanel />
+            </MidiServicesSection>
+          </div>
+
+          <div className="midi-services-region__section-band">
+            <MidiServicesSection
+              panelId="gpio"
+              index={4}
+              icon={<NotebookReference />}
+              title="Virtual GPIO"
+              subtitle="12 in / 12 out logical contact closures the authority can route as if they were MIDI events."
+              status={{ tone: 'idle', label: '12 IN / 12 OUT' }}
+            >
+              <VirtualGpioPanel />
+            </MidiServicesSection>
+          </div>
+
+          <div className="midi-services-region__section-band">
+            <MidiServicesSection
+              panelId="string-interface"
+              index={5}
+              icon={<CharacterPatterns />}
+              title="String interface"
+              subtitle="UDP text protocol for cue triggers from third-party show systems. Listens on the configured port; line-delimited."
+              status={{ tone: 'idle', label: 'UDP TEXT' }}
+            >
+              <StringInterfacePanel />
+            </MidiServicesSection>
+          </div>
         </div>
       </Layer>
     </Section>

@@ -1,20 +1,23 @@
 /*
- * T2482 loop 13 / iter 122 — shared MidiServices region-page styles.
+ * Shared MIDI Services region-page chrome.
  *
- * One CSS file is reused across MidiServicesNetworkPage,
- * MidiServicesPresetsPage, MidiServicesEventsPage,
- * MidiServicesProcessingPage, and MidiServicesLabPage. Per the
- * iter-121 plan D2 they all share the Section + Layer + Heading
- * chrome from the iter-95 OverviewPage visual language.
+ * 2026-05-03 — locked design pass:
+ *   - single-column layout (kept)
+ *   - generous whitespace between sections (3rem)
+ *   - alternating band tones via .midi-services-region__section-band
+ *   - comfortable inner density (Carbon md sizing inherited from primitives)
+ *   - page-header callout (InlineNotification) is pages' responsibility;
+ *     this file only sizes the surrounding chrome.
  *
- * Carbon-conformant. No hardcoded colors.
+ * Carbon-conformant. No hardcoded colours.
  */
 
 .midi-services-region {
-  padding: 1.5rem;
+  padding: 1.5rem 1.5rem 3rem;
   display: flex;
   flex-direction: column;
   gap: 1.5rem;
+  background-color: var(--cds-background);
 }
 
 .midi-services-region__header {
@@ -37,8 +40,26 @@
   max-width: 56rem;
 }
 
+/* Page-header InlineNotification "what this page does" callout. */
+.midi-services-region__about {
+  margin: 0;
+  max-width: 64rem;
+}
+
+/* Grid wrapper — single column, generous whitespace between sections. */
 .midi-services-region__grid {
   display: flex;
   flex-direction: column;
-  gap: 1rem;
+  gap: 3rem;
+}
+
+/* Each section sits inside a band wrapper so :nth-child rules can alternate
+   tones without the section primitive having to know its position. */
+.midi-services-region__section-band {
+  display: block;
+}
+
+/* Pages can opt out of banding for non-section blocks (cluster enable, etc.) */
+.midi-services-region__plain-block {
+  display: block;
 }

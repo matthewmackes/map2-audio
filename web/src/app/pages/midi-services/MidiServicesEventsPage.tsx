@@ -1,25 +1,23 @@
 /**
- * T2482 loop 13 / iter 124 — MidiServicesEventsPage.
+ * MidiServicesEventsPage.
  *
- * MidiServices-branded sibling of MidiHubEventsPage. Per the iter-121
- * plan D1: imports the same component panels directly. Carries
- * the local selectedEventListId state that EventListManager +
- * EventListStatus + LearnModeControl + EventEditor all share.
- *
- * Panels mounted: EventListManager, EventListStatus, LearnModeControl,
- *   MscCommandBuilder, EventEditor.
+ * Reuses EventListManager + EventListStatus + LearnModeControl +
+ * MscCommandBuilder + EventEditor inside the locked MidiServicesSection
+ * primitive. selectedEventListId is URL-synced.
  */
 
 import { useCallback } from 'react'
 import { useSearchParams } from 'react-router-dom'
-import { Heading, Layer, Section, Tag } from '@carbon/react'
+import { Heading, InlineNotification, Layer, Section } from '@carbon/react'
+import { Bullhorn, Course, Edit } from '@carbon/icons-react'
 
 import { EventEditor } from '../../components/MidiHub/EventEditor'
 import { EventListManager } from '../../components/MidiHub/EventListManager'
 import { EventListStatus } from '../../components/MidiHub/EventListStatus'
 import { LearnModeControl } from '../../components/MidiHub/LearnModeControl'
-import { MidiHubPanelShell } from '../../components/MidiHub/MidiHubHelpPrimitives'
 import { MscCommandBuilder } from '../../components/MidiHub/MscCommandBuilder'
+import { MscGlyph } from './MidiServicesGlyphs'
+import { MidiServicesSection } from './MidiServicesSection'
 import { useMidiServicesShellWindow } from './useMidiServicesShellWindow'
 import './MidiServicesRegionPage.css'
 
@@ -28,8 +26,6 @@ export function MidiServicesEventsPage() {
     'Events',
     'Net3-style event lists, cue learning, MSC sends, timecode-driven recall.',
   )
-  // T2483-6 iter 158 — selectedEventListId URL-synced so navigation away
-  // and back preserves the selection.
   const [searchParams, setSearchParams] = useSearchParams()
   const selectedEventListId = searchParams.get('event_list_id') ?? ''
   const setSelectedEventListId = useCallback(
@@ -45,6 +41,8 @@ export function MidiServicesEventsPage() {
     [searchParams, setSearchParams],
   )
 
+  const hasSelection = Boolean(selectedEventListId)
+
   return (
     <Section className="midi-services-region">
       <Layer level={0}>
@@ -56,26 +54,88 @@ export function MidiServicesEventsPage() {
             canonical MIDI authority.
           </p>
         </header>
+        <InlineNotification
+          className="midi-services-region__about"
+          kind="info"
+          lowContrast
+          hideCloseButton
+          title="What this page does"
+          subtitle="Author and run cue lists in the Net3 / MSC tradition: pick or create a list, watch its live execution status, capture cues by physical input (Learn), build and send MSC commands, and edit individual cue timing."
+        />
       </Layer>
       <Layer level={1}>
         <div className="midi-services-region__grid">
-          <MidiHubPanelShell panelId="event-lists" actionTag={<Tag type="green">Live</Tag>}>
-            <EventListManager
-              selectedEventListId={selectedEventListId}
-              onSelectEventList={setSelectedEventListId}
-            />
-          </MidiHubPanelShell>
-          <MidiHubPanelShell
-            panelId="event-status"
-            actionTag={<Tag type="cool-gray">{selectedEventListId || 'No selection'}</Tag>}
-          >
-            <EventListStatus selectedEventListId={selectedEventListId} />
-            <LearnModeControl selectedEventListId={selectedEventListId} />
-            <MscCommandBuilder />
-          </MidiHubPanelShell>
-          <MidiHubPanelShell panelId="event-editor" actionTag={<Tag type="blue">MTC / RTC</Tag>}>
-            <EventEditor selectedEventListId={selectedEventListId} />
-          </MidiHubPanelShell>
+          <div className="midi-services-region__section-band">
+            <MidiServicesSection
+              panelId="event-lists"
+              index={1}
+              icon={<Course />}
+              title="Event lists"
+              subtitle="Pick the working cue list. New lists, duplicates, exports, and reorder live here — selection persists in the URL."
+              status={{ tone: 'live', label: 'LIVE', detail: 'Authority-backed', active: true }}
+            >
+              <EventListManager
+                selectedEventListId={selectedEventListId}
+                onSelectEventList={setSelectedEventListId}
+              />
+            </MidiServicesSection>
+          </div>
+
+          <div className="midi-services-region__section-band">
+            <MidiServicesSection
+              panelId="event-status"
+              index={2}
+              icon={<Bullhorn />}
+              title="Status, learn & MSC"
+              kicker="Show control"
+              subtitle="Watch the executor, capture cues from a physical surface, and build MIDI Show Control sends."
+              status={{
+                tone: hasSelection ? 'live' : 'idle',
+                label: hasSelection ? 'WATCHING' : 'NO SELECTION',
+                detail: hasSelection ? selectedEventListId : '—',
+                active: hasSelection,
+              }}
+              empty={
+                hasSelection
+                  ? undefined
+                  : {
+                      title: 'Select an event list to see live status',
+                      description:
+                        'Pick a list above to watch its current cue, follow learn mode, or send MSC commands targeted at it.',
+                      icon: <MscGlyph />,
+                    }
+              }
+            >
+              <EventListStatus selectedEventListId={selectedEventListId} />
+              <LearnModeControl selectedEventListId={selectedEventListId} />
+              <MscCommandBuilder />
+            </MidiServicesSection>
+          </div>
+
+          <div className="midi-services-region__section-band">
+            <MidiServicesSection
+              panelId="event-editor"
+              index={3}
+              icon={<Edit />}
+              title="Event editor"
+              subtitle="Edit cue timing, MTC follow points, and per-cue MSC payload. Changes write back to the canonical authority."
+              status={{
+                tone: hasSelection ? 'idle' : 'neutral',
+                label: hasSelection ? 'EDITING' : 'PICK A LIST',
+                detail: hasSelection ? 'MTC / RTC' : undefined,
+              }}
+              empty={
+                hasSelection
+                  ? undefined
+                  : {
+                      title: 'No event list selected',
+                      description: 'Select a list from the manager above to edit its cues.',
+                    }
+              }
+            >
+              <EventEditor selectedEventListId={selectedEventListId} />
+            </MidiServicesSection>
+          </div>
         </div>
       </Layer>
     </Section>

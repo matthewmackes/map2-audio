@@ -1,24 +1,19 @@
 import {
-  FeatureFlags,
-  Layer,
-  OverflowMenu,
-  OverflowMenuItem,
   Popover,
   PopoverContent,
   Tooltip,
-  TreeView,
 } from '@carbon/react'
-import { useEffect, useMemo, useState, type ComponentProps, type ReactNode } from 'react'
+import { useEffect, useMemo, useState, type ComponentType, type ReactNode } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import {
   Add,
   AddAlt,
   AudioConsole,
   BareMetalServer,
+  CaretRight,
   ChartLine,
   ChartNetwork,
   Chemistry,
-  ChevronDown,
   ColorPalette,
   Connect,
   Dashboard,
@@ -89,10 +84,18 @@ type GlobalTreeNavProps = {
   onOpenRebootConfirm: () => void
   onOpenRestartConfirm: () => void
   onRefreshPage: () => void
-  onTogglePinned: () => void
 }
 
-type TreeIconComponent = NonNullable<ComponentProps<typeof TreeView.TreeNode>['renderIcon']>
+// Permissive icon component type — accepts both Carbon icons (size:
+// number | string, optional className/aria-hidden) and the MAP custom
+// icons (size: number, SVG props). All consumers in this file pass
+// only `size` and `className`/`aria-hidden`, so the loose shape is
+// sufficient and keeps both icon families assignable.
+type CarbonIconComponent = ComponentType<{
+  size?: number | string
+  className?: string
+  'aria-hidden'?: boolean | 'true' | 'false'
+}>
 
 export type TreeNodeAction = {
   label: string
@@ -103,7 +106,7 @@ export type TreeItemDefinition = {
   id: string
   label: string
   route?: string
-  icon?: TreeIconComponent
+  icon?: CarbonIconComponent
   children?: TreeItemDefinition[]
   actions?: TreeNodeAction[]
   secondary?: string
@@ -121,22 +124,15 @@ type SnapshotEditorTreeStatus = {
   tone: TreeNodeSecondaryTone
 }
 
-// T2459-G11b — legacy registry was previously grouped by `kind`
-// (processor / console / control-surface / audio-interface). With the
-// registry retired in favour of LEGACY_DEVICE_MANIFEST + the
-// profile-registry-driven Hardware Store, the left rail renders all
-// legacy pins as a single flat group sorted by label. Operators who
-// want richer grouping now get it on the Hardware Store catalogue.
-
 const BROWSE_DEVICES_TREE_ID = '/hardware::devices::browse'
-// Nav reorg 2026-05-03 — primary separators removed from the top-level
-// tree. The shortcut row above the first separator was demoted into
-// canonical service parents (see TOP_LEVEL_ROUTE_ORDER below); the
-// second separator delimited Platform Guide which is now just another
-// canonical leaf. The buildTreeItems separator branch is kept in case
-// future layouts re-introduce dividers.
 
-const DEFAULT_EXPANDED_IDS: readonly string[] = ['/node-ops', '/artifacts', '/midi-hub', '/avb', '/hardware', '/hardware::devices', '/settings']
+const DEFAULT_EXPANDED_IDS: readonly string[] = [
+  '/snapshot-editor',
+  '/sequencer',
+  '/midi-hub',
+  '/hardware',
+  '/hardware::devices',
+]
 const GLOBAL_TREE_EXPANDED_KEY: PersistedKey<string[]> = {
   storageKey: 'map2:global-tree:expanded',
   fallback: [...DEFAULT_EXPANDED_IDS],
@@ -150,61 +146,26 @@ const GLOBAL_TREE_EXPANDED_KEY: PersistedKey<string[]> = {
     }
   },
 }
-// Nav reorg 2026-05-03 — pure canonical service-grouping hierarchy.
-// The pre-reorg layout had a "shortcut row" above a separator (Home,
-// Snapshot Editor, MIDI Assignments, Sequencer, Audio Artifacts) and
-// canonical service groups below it (MIDI Services, AVB, Node Ops,
-// Hardware). The shortcut row has been removed; every operator-visible
-// surface now lives under its canonical service parent. MIDI
-// Assignments folds into MIDI Services, Audio Artifacts folds into
-// Node Ops, Sequencer stays top-level (large enough to be its own
-// service), Snapshot Editor stays top-level (a single-page authoring
-// tool — no good service parent). Chains is promoted to top-level
-// (was a Node Ops child but its route was already top-level), and a
-// new Settings group surfaces operator/UI preferences (currently just
-// Theme, demoted from Node Ops).
-// Nav reorg 2026-05-03 (second pass) — `/workspace` is no longer
-// the canonical Node Ops base; `/node-ops` is. Audio Artifacts is
-// now its own top-level service group at `/artifacts` (was a Node
-// Ops child in the first-pass reorg). Platform Guide moves from
-// `/platforms/about` to `/about`.
-const TOP_LEVEL_ROUTE_ORDER = [
-  '/',
-  '/snapshot-editor',
-  '/midi-hub',
-  // T2490 — AVB Services tree section, sibling of MIDI Advanced.
-  '/avb',
-  '/node-ops',
-  '/artifacts',
-  '/sequencer',
-  '/hardware',
-  // Nav reorg 2026-05-03 — /chains was absorbed into the Audio
-  // Engine page (AudioEngineChainsSection at the top). The
-  // standalone top-level entry is removed.
-  '/settings',
-  '/about',
-] as const
 
-const FLAT_TOP_LEVEL_ROUTES = new Set([
-  '/',
-  '/snapshot-editor',
-  '/about',
-])
+// Pinned (hero cards) — always Snapshot Editor + Sequencer per the
+// 2026-05-03 design handoff. Hard-coded order, no user reorder.
+const PINNED_HERO_ROUTES = ['/snapshot-editor', '/sequencer'] as const
+// Services section — MIDI, AVB, Audio Artifacts.
+const SERVICES_ROUTES = ['/midi-hub', '/avb', '/artifacts'] as const
+// System section — Settings, Hardware, Node Ops. Hardware bucket folds
+// in the launcher catalog + dynamic device pins per the design Q4.
+const SYSTEM_ROUTES = ['/settings', '/hardware', '/node-ops'] as const
+const FLAT_TOP_LEVEL_ROUTES = new Set(['/', '/about'])
 const HARDWARE_TREE_ID = '/hardware'
 const HARDWARE_DEVICES_ID = '/hardware::devices'
 const HARDWARE_HOST_MACHINE_ID = '/hardware::host-machine'
 
-const TREE_ICON_OVERRIDES: Record<string, TreeIconComponent> = {
+const TREE_ICON_OVERRIDES: Record<string, CarbonIconComponent> = {
   '/': Home,
   '/snapshot-editor': ScreenMap,
-  // T_RENAME 2026-05-02 — Sequencer (formerly Drums&Synth / Brain).
-  // `Grid` is the canonical step-sequencer / piano-roll mental model
-  // in audio software (Maschine, Push, Logic, MPC).
   '/sequencer': Grid,
   '/midi-hub': Music,
   '/avb': ChartNetwork,
-  // Nav reorg 2026-05-03 — /settings is the new operator/UI
-  // preferences group (currently houses Theme).
   '/settings': Settings,
   '/tesira': Settings,
   '/mpx1': MapRackDeviceIcon,
@@ -221,26 +182,11 @@ const TREE_ICON_OVERRIDES: Record<string, TreeIconComponent> = {
   '/expression': ChartLine,
   '/midi/assignments': Music,
   '/lcd': ScreenMap,
-  // Nav reorg 2026-05-03 (second pass) — Node Ops sub-items live at
-  // `/node-ops/*` (not `/workspace/platforms/*`). Audio Artifacts is
-  // its own top-level group at `/artifacts`. Theme is a Settings
-  // child but its underlying route is `/node-ops/theme`. About is a
-  // top-level leaf at `/about`. Legacy `/workspace/platforms/*` keys
-  // are intentionally NOT included here — those URLs only exist as
-  // redirects, never as nav targets.
   '/node-ops': Dashboard,
   '/node-ops/overview': Dashboard,
   '/node-ops/audio-engine': AudioConsole,
-  // Nav reorg 2026-05-03 — distinct icons per service (was: Audio
-  // Artifacts shared `MapRackDeviceIcon` with the device-rack pins
-  // below it; Device Manager shared `Devices` with the Devices
-  // parent in Hardware; Sequencer shared `Music` with MIDI
-  // Services. The MAP-native `MapArtifactsLibraryIcon` was already
-  // designed for this surface but never wired in.
   '/artifacts': MapArtifactsLibraryIcon,
   '/node-ops/management': SettingsAdjust,
-  // Nav reorg 2026-05-03 — /chains was absorbed into the Audio
-  // Engine page; the standalone tree-icon override is removed.
   '/node-ops/network-discovery': ScanAlt,
   '/node-ops/cluster-dashboard': Dashboard,
   '/node-ops/midpoint': Flash,
@@ -248,12 +194,6 @@ const TREE_ICON_OVERRIDES: Record<string, TreeIconComponent> = {
   [HOST_MACHINE_ROUTE]: BareMetalServer,
   '/node-ops/theme': ColorPalette,
   '/about': Information,
-  // MIDI Advanced (parent id stays '/midi-hub' for tree-state
-  // continuity — the children are the canonical /midi/* mount).
-  // T2491 (2026-05-02 cleanup): re-pointed all 7 prior entries to
-  // /midi/* and added 3 previously-invisible children — Devices,
-  // Bindings, Routing — that the T2485-T2486 unification shipped
-  // but the tree-nav never surfaced.
   '/midi/connections': Plug,
   '/midi/devices': Devices,
   '/midi/bindings': Connect,
@@ -264,7 +204,6 @@ const TREE_ICON_OVERRIDES: Record<string, TreeIconComponent> = {
   '/midi/processing': Settings,
   '/midi/network': Network_3,
   '/midi/lab': Chemistry,
-  // AVB (/avb) sub-items — T2490
   '/avb/overview': Dashboard,
   '/avb/connections': Plug,
   '/avb/bindings': Connect,
@@ -274,15 +213,11 @@ const TREE_ICON_OVERRIDES: Record<string, TreeIconComponent> = {
 }
 
 const TREE_LABEL_OVERRIDES: Record<string, string> = {
-  // Nav reorg 2026-05-03 (second pass) — canonical Node Ops base is
-  // now `/node-ops`. Audio Artifacts is `/artifacts`. About is `/about`.
   '/node-ops': 'Node Ops',
   '/artifacts': 'Audio Artifacts',
   '/about': 'Platform Guide',
   '/snapshot-editor': 'Snapshot Editor',
   '/sequencer': 'Sequencer',
-  // T2491 (2026-05-02 cleanup) — sidebar parent label aligned to the
-  // T2482 iter-94 rename "MIDI Hub" → "MIDI Services".
   '/midi-hub': 'MIDI Services',
   '/avb': 'AVB',
   '/settings': 'Settings',
@@ -402,7 +337,7 @@ function buildChildTreeItem(parentId: string, child: LauncherCatalogTreeChild): 
     id: `${parentId}::${normalizedRoute}`,
     label: child.label,
     route: normalizedRoute,
-    icon: TREE_ICON_OVERRIDES[childRoutePath] ?? childNavigationItem?.icon,
+    icon: TREE_ICON_OVERRIDES[childRoutePath] ?? (childNavigationItem?.icon as CarbonIconComponent | undefined),
     children: nestedChildren,
   }
 }
@@ -416,10 +351,6 @@ export function buildDevicesSubtree(
   const pinnedSet = new Set(pinnedIds)
   const pinnedEntries = LEGACY_DEVICE_MANIFEST.filter((entry) => pinnedSet.has(entry.id))
 
-  // T2459-G11b — append Hardware Store BenchStateTracker pins as a
-  // parallel section. Each entry routes to the v2 device detail strip.
-  // The tree node label is the model name extracted from the
-  // profile_key (`<pack_id>/<model>.<kind>`).
   const benchStoreNodes: TreeItemDefinition[] = benchStorePins.map((profileKey) => {
     const slash = profileKey.indexOf('/')
     if (slash < 0) return null
@@ -447,7 +378,6 @@ export function buildDevicesSubtree(
   }
 
   if (pinnedEntries.length === 0) {
-    // Only bench-store pins; no legacy registry entries.
     return [
       {
         id: BROWSE_DEVICES_TREE_ID,
@@ -459,9 +389,6 @@ export function buildDevicesSubtree(
     ]
   }
 
-  // Single flat group sorted by label (the registry's per-kind grouping
-  // is gone with T2459-G11b; richer grouping now lives in the Hardware
-  // Store catalogue at /devices).
   const sorted = [...pinnedEntries].sort((left, right) => left.label.localeCompare(right.label))
   const nodes: TreeItemDefinition[] = sorted.map((entry) => {
     const routePath = `/devices/${entry.id}`
@@ -469,7 +396,7 @@ export function buildDevicesSubtree(
       id: `${HARDWARE_DEVICES_ID}::${routePath}`,
       label: entry.label,
       route: entry.legacyRoute,
-      icon: TREE_ICON_OVERRIDES[routePath] ?? entry.icon,
+      icon: TREE_ICON_OVERRIDES[routePath] ?? (entry.icon as CarbonIconComponent | undefined),
       actions: [
         { label: 'Unpin', onClick: () => onRequestUnpin(entry) },
         { label: 'Open in store', onClick: () => navigateTo('/devices') },
@@ -478,19 +405,12 @@ export function buildDevicesSubtree(
     }
   })
 
-  // T2459-G11b — append bench-store pins after the legacy nodes with
-  // a groupBoundary divider so operators see them as a distinct group.
   return [
     ...nodes,
     ...benchStoreNodes.map((n, i) => ({ ...n, groupBoundary: i === 0 })),
   ]
 }
 
-// Nav reorg 2026-05-03 — Device Manager (Node Ops platform layer)
-// surfaces here as a Hardware child so all device-touching surfaces
-// (host machine, device store, platform management) live under one
-// canonical Hardware parent instead of being split across Hardware
-// and Node Ops.
 const HARDWARE_DEVICE_MANAGER_ID = '/hardware::device-manager'
 
 function buildHardwareTree(
@@ -499,6 +419,12 @@ function buildHardwareTree(
   onRequestUnpin: (entry: LegacyDeviceManifestEntry) => void,
   benchStorePins: string[] = [],
 ): TreeItemDefinition {
+  // Per the 2026-05-03 design Q4: launcher catalog children for the
+  // legacy `/hardware` route fold in here too, so the System →
+  // Hardware bucket holds every device-touching surface.
+  const launcherChildren = getLauncherCatalogTreeChildren(HARDWARE_TREE_ID)
+    .map((child) => buildChildTreeItem(HARDWARE_TREE_ID, child))
+
   return {
     id: HARDWARE_TREE_ID,
     label: 'Hardware',
@@ -523,18 +449,22 @@ function buildHardwareTree(
         icon: Devices,
         children: buildDevicesSubtree(pinnedIds, navigateTo, onRequestUnpin, benchStorePins),
       },
+      ...launcherChildren,
     ],
   }
 }
 
-function buildTreeItems(
+type SectionTier = 'pinned' | 'services' | 'system'
+
+function buildSectionItems(
+  routes: readonly string[],
   pinnedIds: string[],
   navigateTo: (route: string) => void,
   onRequestUnpin: (entry: LegacyDeviceManifestEntry) => void,
   snapshotEditorStatus: SnapshotEditorTreeStatus,
-  benchStorePins: string[] = [],
+  benchStorePins: string[],
 ): TreeItemDefinition[] {
-  return TOP_LEVEL_ROUTE_ORDER.flatMap((route) => {
+  return routes.flatMap((route) => {
     if (route === HARDWARE_TREE_ID) {
       return [buildHardwareTree(pinnedIds, navigateTo, onRequestUnpin, benchStorePins)]
     }
@@ -550,15 +480,16 @@ function buildTreeItems(
     const children = FLAT_TOP_LEVEL_ROUTES.has(route)
       ? []
       : getLauncherCatalogTreeChildren(route).map((child) => buildChildTreeItem(route, child))
+
     return [{
       id: route,
       label,
       route: children.length > 0 ? children[0]?.route ?? route : normalizeTarget(route),
-      icon: TREE_ICON_OVERRIDES[route] ?? launcherItem?.icon ?? navigationItem?.icon,
+      icon: TREE_ICON_OVERRIDES[route] ?? (launcherItem?.icon as CarbonIconComponent | undefined) ?? (navigationItem?.icon as CarbonIconComponent | undefined),
       children,
       secondary: route === '/snapshot-editor' ? snapshotEditorStatus.label : undefined,
       secondaryTone: route === '/snapshot-editor' ? snapshotEditorStatus.tone : undefined,
-      badge: route === '/snapshot-editor' ? 'Signal Editor' : undefined,
+      badge: route === '/snapshot-editor' ? 'Signal Flow' : undefined,
       featured: route === '/snapshot-editor',
     }]
   })
@@ -585,182 +516,189 @@ function joinClasses(...parts: Array<string | false | null | undefined>) {
   return parts.filter(Boolean).join(' ')
 }
 
-function TreeNodeLabel({
-  label,
-  secondary,
-  isBold = false,
-  actions,
-  secondaryTone = 'neutral',
-  badge,
-  featured = false,
+function isItemOrDescendantActive(item: TreeItemDefinition, activeId: string | null): boolean {
+  if (!activeId) return false
+  if (item.id === activeId) return true
+  if (!item.children) return false
+  return item.children.some((child) => isItemOrDescendantActive(child, activeId))
+}
+
+function HeroCard({
+  item,
+  isOpen,
+  activeId,
+  onToggle,
+  onNavigate,
 }: {
-  label: string
-  secondary?: ReactNode
-  isBold?: boolean
-  actions?: TreeNodeAction[]
-  secondaryTone?: TreeNodeSecondaryTone
-  badge?: string
-  featured?: boolean
+  item: TreeItemDefinition
+  isOpen: boolean
+  activeId: string | null
+  onToggle: () => void
+  onNavigate: (route: string) => void
 }) {
+  const Icon = item.icon
+  const childCount = item.children?.length ?? 0
+  const isActive = isItemOrDescendantActive(item, activeId)
+
   return (
-    <span
-      className={joinClasses(
-        'global-tree-nav__node-copy',
-        isBold && 'global-tree-nav__node-copy--bold',
-        featured && 'global-tree-nav__node-copy--featured',
-      )}
-    >
-      <span className="global-tree-nav__node-main">
-        <span className="global-tree-nav__node-main-copy">
-          <span className="global-tree-nav__node-label-row">
-            <span className="global-tree-nav__node-label">{label}</span>
-            {badge ? <span className="global-tree-nav__node-badge">{badge}</span> : null}
+    <div className={joinClasses('global-tree-nav__hero', isActive && 'is-active')}>
+      <button
+        type="button"
+        className="global-tree-nav__hero-header"
+        onClick={() => {
+          onToggle()
+          if (item.route) onNavigate(item.route)
+        }}
+        aria-expanded={isOpen}
+      >
+        <span className="global-tree-nav__hero-icon-tile" aria-hidden="true">
+          {Icon ? <Icon size={16} /> : null}
+        </span>
+        <span className="global-tree-nav__hero-text">
+          <span className="global-tree-nav__hero-title-row">
+            <span className="global-tree-nav__hero-title">{item.label}</span>
+            {item.badge ? (
+              <span className="global-tree-nav__hero-badge">{item.badge}</span>
+            ) : null}
           </span>
-          {secondary ? (
-            <span className={joinClasses('global-tree-nav__node-secondary', `is-${secondaryTone}`)} aria-live="polite">
-              <span className="global-tree-nav__node-secondary-dot" aria-hidden="true" />
-              <span>{secondary}</span>
+          {item.secondary ? (
+            <span
+              className={joinClasses(
+                'global-tree-nav__hero-status',
+                `is-${item.secondaryTone ?? 'neutral'}`,
+              )}
+            >
+              <span className="global-tree-nav__hero-status-dot" aria-hidden="true" />
+              {item.secondary}
+            </span>
+          ) : childCount > 0 ? (
+            <span className="global-tree-nav__hero-subtitle">
+              {childCount} {childCount === 1 ? 'section' : 'sections'}
             </span>
           ) : null}
         </span>
-        {actions && actions.length > 0 ? (
-          <span
-            className="global-tree-nav__node-actions"
-            onClick={(event) => event.stopPropagation()}
-            onKeyDown={(event) => event.stopPropagation()}
-          >
-            <OverflowMenu size="sm" flipped aria-label={`Actions for ${label}`} menuOptionsClass="global-tree-nav__node-actions-menu">
-              {actions.map((action) => (
-                <OverflowMenuItem
-                  key={action.label}
-                  itemText={action.label}
-                  onClick={() => action.onClick()}
-                />
-              ))}
-            </OverflowMenu>
-          </span>
-        ) : null}
-      </span>
-    </span>
+        <CaretRight
+          size={12}
+          className={joinClasses(
+            'global-tree-nav__hero-caret',
+            isOpen && 'is-open',
+          )}
+          aria-hidden="true"
+        />
+      </button>
+      {isOpen && childCount > 0 ? (
+        <div className="global-tree-nav__hero-body">
+          {item.children!.map((child) => {
+            const childActive = child.id === activeId
+            return (
+              <button
+                key={child.id}
+                type="button"
+                className={joinClasses(
+                  'global-tree-nav__hero-child',
+                  childActive && 'is-active',
+                )}
+                onClick={() => child.route && onNavigate(child.route)}
+              >
+                {child.label}
+              </button>
+            )
+          })}
+        </div>
+      ) : null}
+    </div>
   )
 }
 
-const BOLD_TOP_LEVEL_ROUTES = new Set([
-  '/',
-  '/snapshot-editor',
-  '/sequencer',
-  '/midi-hub',
-  '/avb',
-  '/hardware',
-  '/settings',
-  // Nav reorg 2026-05-03 (second pass)
-  '/node-ops',
-  '/artifacts',
-  '/about',
-])
+function DenseRow({
+  item,
+  depth,
+  activeId,
+  expandedIds,
+  toggleExpanded,
+  onNavigate,
+}: {
+  item: TreeItemDefinition
+  depth: number
+  activeId: string | null
+  expandedIds: string[]
+  toggleExpanded: (id: string) => void
+  onNavigate: (route: string) => void
+}) {
+  const Icon = item.icon
+  const hasChildren = (item.children?.length ?? 0) > 0
+  const isOpen = expandedIds.includes(item.id)
+  const isActive = item.id === activeId
+  const padLeft = 16 + depth * 16
 
-function renderTreeItems(
-  items: TreeItemDefinition[],
-  activeNodeId: string | null,
-  expandedIds: string[],
-  setExpandedIds: React.Dispatch<React.SetStateAction<string[]>>,
-  navigate: (route: string) => void,
-): ReactNode[] {
-  const setExpanded = (itemId: string, nextExpanded: boolean) => {
-    setExpandedIds((previous) => {
-      const next = new Set(previous)
-      if (nextExpanded) {
-        next.add(itemId)
-      } else {
-        next.delete(itemId)
-      }
-      return Array.from(next)
-    })
+  if (item.separator) {
+    return <div className="global-tree-nav__dense-separator" aria-hidden="true" />
   }
 
-  return items.map((item) => {
-    const selected = item.id === activeNodeId
-    const isBold = BOLD_TOP_LEVEL_ROUTES.has(item.id)
-    const nodeClass = joinClasses(
-      'global-tree-nav__tree-node',
-      selected && 'is-selected',
-      item.featured && 'is-featured',
-      item.groupBoundary && 'is-group-boundary',
-      item.separator && 'is-separator',
-    )
-
-    if (item.separator) {
-      return (
-        <TreeView.TreeNode
-          key={item.id}
-          id={item.id}
-          className={nodeClass}
-          label={<span className="global-tree-nav__separator-line" aria-hidden="true" />}
-          onSelect={(event) => {
-            event.preventDefault()
-          }}
-        />
-      )
-    }
-
-    if (item.children?.length) {
-      return (
-        <TreeView.TreeNode
-          key={item.id}
-          id={item.id}
-          className={nodeClass}
-          isExpanded={expandedIds.includes(item.id)}
-          label={(
-            <TreeNodeLabel
-              label={item.label}
-              secondary={item.secondary}
-              secondaryTone={item.secondaryTone}
-              isBold={isBold}
-              badge={item.badge}
-              featured={item.featured}
-              actions={item.actions}
-            />
-          )}
-          onSelect={(event) => {
-            event.preventDefault()
-            if (item.route) {
-              navigate(item.route)
-            }
-          }}
-          onToggle={(nextExpanded) => setExpanded(item.id, Boolean(nextExpanded))}
-          renderIcon={item.icon}
-        >
-          {renderTreeItems(item.children, activeNodeId, expandedIds, setExpandedIds, navigate)}
-        </TreeView.TreeNode>
-      )
-    }
-
-    return (
-      <TreeView.TreeNode
-        key={item.id}
-        id={item.id}
-        className={nodeClass}
-        label={(
-          <TreeNodeLabel
-            label={item.label}
-            secondary={item.secondary}
-            secondaryTone={item.secondaryTone}
-            isBold={isBold}
-            badge={item.badge}
-            featured={item.featured}
-            actions={item.actions}
-          />
+  return (
+    <>
+      <button
+        type="button"
+        className={joinClasses(
+          'global-tree-nav__dense-row',
+          isActive && 'is-active',
+          item.groupBoundary && 'is-group-boundary',
         )}
-        onSelect={(event) => {
-          event.preventDefault()
-          if (item.route) {
-            navigate(item.route)
-          }
+        style={{ paddingLeft: padLeft }}
+        onClick={() => {
+          if (hasChildren) toggleExpanded(item.id)
+          if (item.route) onNavigate(item.route)
         }}
-        renderIcon={item.icon}
-      />
-    )
-  })
+        aria-expanded={hasChildren ? isOpen : undefined}
+      >
+        {hasChildren ? (
+          <CaretRight
+            size={9}
+            className={joinClasses(
+              'global-tree-nav__dense-caret',
+              isOpen && 'is-open',
+            )}
+            aria-hidden="true"
+          />
+        ) : (
+          <span className="global-tree-nav__dense-spacer" aria-hidden="true" />
+        )}
+        {depth === 0 && Icon ? (
+          <Icon size={14} className="global-tree-nav__dense-icon" aria-hidden="true" />
+        ) : null}
+        <span className="global-tree-nav__dense-label">{item.label}</span>
+      </button>
+      {isOpen && hasChildren ? (
+        <div
+          className="global-tree-nav__dense-children"
+          style={{ paddingLeft: padLeft + 4 }}
+        >
+          <div className="global-tree-nav__dense-indent-guide" aria-hidden="true" />
+          {item.children!.map((child) => (
+            <DenseRow
+              key={child.id}
+              item={child}
+              depth={depth + 1}
+              activeId={activeId}
+              expandedIds={expandedIds}
+              toggleExpanded={toggleExpanded}
+              onNavigate={onNavigate}
+            />
+          ))}
+        </div>
+      ) : null}
+    </>
+  )
+}
+
+function SectionBar({ tier, label }: { tier: SectionTier; label: string }) {
+  return (
+    <div className={joinClasses('global-tree-nav__section-bar', `is-${tier}`)}>
+      <span className="global-tree-nav__section-marker" aria-hidden="true" />
+      <span className="global-tree-nav__section-label">{label}</span>
+      <span className="global-tree-nav__section-rule" aria-hidden="true" />
+    </div>
+  )
 }
 
 export function GlobalTreeNav({
@@ -768,7 +706,6 @@ export function GlobalTreeNav({
   onOpenRebootConfirm,
   onOpenRestartConfirm,
   onRefreshPage,
-  onTogglePinned,
 }: GlobalTreeNavProps) {
   const location = useLocation()
   const navigate = useNavigate()
@@ -801,8 +738,6 @@ export function GlobalTreeNav({
     [clusterRuntimeStateQuery.data],
   )
 
-  // T2459-G11b — read Hardware Store BenchStateTracker pins so the
-  // left-rail mirrors the new pin path alongside the legacy registry one.
   const knownDevicesQuery = useKnownDevices()
   const benchStorePins = useMemo(() => {
     return (knownDevicesQuery.data?.known ?? [])
@@ -810,15 +745,54 @@ export function GlobalTreeNav({
       .map((row) => row.profile_key)
   }, [knownDevicesQuery.data])
 
-  const treeItems = useMemo(
-    () => buildTreeItems(pinnedDeviceIds, (route) => navigate(route), handleRequestUnpin, snapshotEditorStatus, benchStorePins),
-    [pinnedDeviceIds, navigate, handleRequestUnpin, snapshotEditorStatus, benchStorePins],
+  const navigateTo = (route: string) => navigate(route)
+
+  const pinnedItems = useMemo(
+    () => buildSectionItems(
+      PINNED_HERO_ROUTES,
+      pinnedDeviceIds,
+      navigateTo,
+      handleRequestUnpin,
+      snapshotEditorStatus,
+      benchStorePins,
+    ),
+    [pinnedDeviceIds, handleRequestUnpin, snapshotEditorStatus, benchStorePins],
   )
+  const servicesItems = useMemo(
+    () => buildSectionItems(
+      SERVICES_ROUTES,
+      pinnedDeviceIds,
+      navigateTo,
+      handleRequestUnpin,
+      snapshotEditorStatus,
+      benchStorePins,
+    ),
+    [pinnedDeviceIds, handleRequestUnpin, snapshotEditorStatus, benchStorePins],
+  )
+  const systemItems = useMemo(
+    () => buildSectionItems(
+      SYSTEM_ROUTES,
+      pinnedDeviceIds,
+      navigateTo,
+      handleRequestUnpin,
+      snapshotEditorStatus,
+      benchStorePins,
+    ),
+    [pinnedDeviceIds, handleRequestUnpin, snapshotEditorStatus, benchStorePins],
+  )
+  const allItems = useMemo(
+    () => [...pinnedItems, ...servicesItems, ...systemItems],
+    [pinnedItems, servicesItems, systemItems],
+  )
+
   const activeNodePath = useMemo(
-    () => findActiveNodePath(treeItems, location.pathname, location.search),
-    [location.pathname, location.search, treeItems],
+    () => findActiveNodePath(allItems, location.pathname, location.search),
+    [location.pathname, location.search, allItems],
   )
   const activeNodeId = activeNodePath?.[activeNodePath.length - 1] ?? null
+  const homeActive = routeMatchesLocation('/', location.pathname, location.search)
+  const guideActive = routeMatchesLocation('/about', location.pathname, location.search)
+
   const displayedNode = topologyNodes.find((node) => node.node_id === viewedNodeId)
     ?? topologyNodes.find((node) => node.is_local)
     ?? null
@@ -844,126 +818,165 @@ export function GlobalTreeNav({
     })
   }, [activeNodePath])
 
+  const toggleExpanded = (id: string) => {
+    setExpandedIds((previous) => {
+      const next = new Set(previous)
+      if (next.has(id)) {
+        next.delete(id)
+      } else {
+        next.add(id)
+      }
+      return Array.from(next)
+    })
+  }
+
+  const renderDenseGroup = (items: TreeItemDefinition[]): ReactNode => (
+    <div className="global-tree-nav__dense-group">
+      {items.map((item) => (
+        <DenseRow
+          key={item.id}
+          item={item}
+          depth={0}
+          activeId={activeNodeId}
+          expandedIds={expandedIds}
+          toggleExpanded={toggleExpanded}
+          onNavigate={navigateTo}
+        />
+      ))}
+    </div>
+  )
+
   return (
-    <Layer className="global-tree-nav__layer">
-      <nav className="global-tree-nav" aria-label="Global navigation">
-        <div className="global-tree-nav__header">
-          <Popover
-            align="bottom-start"
-            caret
-            open={nodeSelectorOpen}
-            onRequestClose={() => setNodeSelectorOpen(false)}
-          >
-            <NodeIdentityCard
-              node={displayedNode ?? null}
-              isOpen={nodeSelectorOpen}
-              onToggle={() => setNodeSelectorOpen((current) => !current)}
-              loadingLabel={nodeTopologyQuery.isLoading ? 'LOADING' : 'UNAVAILABLE'}
-            />
-            <PopoverContent className="global-tree-nav__node-popover">
-              {displayedNode ? <NodeMiniCard node={displayedNode} pageKey={pageKey} onClose={() => setNodeSelectorOpen(false)} /> : null}
-              <div className="global-tree-nav__node-switcher">
-                <p className="global-tree-nav__node-switcher-title">Switch all pages to</p>
-                <div className="global-tree-nav__node-switcher-list">
-                  {sortedNodes.map((node) => (
-                    <button
-                      key={node.node_id}
-                      type="button"
-                      className={joinClasses(
-                        'global-tree-nav__node-switcher-button',
-                        node.node_id === viewedNodeId && 'is-active',
-                      )}
-                      onClick={() => {
-                        applyViewedNodeScopeToAllPages(setViewedNode, node.node_id)
-                        const nextSearch = writeViewedHostToSearch(location.search, node.node_id)
-                        if (nextSearch !== location.search) {
-                          navigate({ pathname: location.pathname, search: nextSearch }, { replace: true })
-                        }
-                        setNodeSelectorOpen(false)
-                      }}
-                    >
-                      <span>{formatNodeDisplayName(node)}</span>
-                      <span>{getNodeStatusLabel(node.status)}</span>
-                    </button>
-                  ))}
-                </div>
+    <nav className="global-tree-nav" aria-label="Global navigation">
+      <div className="global-tree-nav__header">
+        <Popover
+          align="bottom-start"
+          caret
+          open={nodeSelectorOpen}
+          onRequestClose={() => setNodeSelectorOpen(false)}
+        >
+          <NodeIdentityCard
+            node={displayedNode ?? null}
+            isOpen={nodeSelectorOpen}
+            onToggle={() => setNodeSelectorOpen((current) => !current)}
+            loadingLabel={nodeTopologyQuery.isLoading ? 'LOADING' : 'UNAVAILABLE'}
+          />
+          <PopoverContent className="global-tree-nav__node-popover">
+            {displayedNode ? <NodeMiniCard node={displayedNode} pageKey={pageKey} onClose={() => setNodeSelectorOpen(false)} /> : null}
+            <div className="global-tree-nav__node-switcher">
+              <p className="global-tree-nav__node-switcher-title">Switch all pages to</p>
+              <div className="global-tree-nav__node-switcher-list">
+                {sortedNodes.map((node) => (
+                  <button
+                    key={node.node_id}
+                    type="button"
+                    className={joinClasses(
+                      'global-tree-nav__node-switcher-button',
+                      node.node_id === viewedNodeId && 'is-active',
+                    )}
+                    onClick={() => {
+                      applyViewedNodeScopeToAllPages(setViewedNode, node.node_id)
+                      const nextSearch = writeViewedHostToSearch(location.search, node.node_id)
+                      if (nextSearch !== location.search) {
+                        navigate({ pathname: location.pathname, search: nextSearch }, { replace: true })
+                      }
+                      setNodeSelectorOpen(false)
+                    }}
+                  >
+                    <span>{formatNodeDisplayName(node)}</span>
+                    <span>{getNodeStatusLabel(node.status)}</span>
+                  </button>
+                ))}
               </div>
-            </PopoverContent>
-          </Popover>
+            </div>
+          </PopoverContent>
+        </Popover>
 
-          <div className="global-tree-nav__quick-actions" role="group" aria-label="System actions">
-            <Tooltip label="Refresh" align="bottom" enterDelayMs={300}>
-              <button
-                type="button"
-                className="global-tree-nav__quick-action global-tree-nav__quick-action--refresh"
-                aria-label="Refresh"
-                onClick={onRefreshPage}
-              >
-                <Renew size={18} aria-hidden />
-              </button>
-            </Tooltip>
-            <Tooltip label="Restart" align="bottom" enterDelayMs={300}>
-              <button
-                type="button"
-                className="global-tree-nav__quick-action global-tree-nav__quick-action--restart"
-                aria-label="Restart"
-                onClick={onOpenRestartConfirm}
-              >
-                <Restart size={18} aria-hidden />
-              </button>
-            </Tooltip>
-            <Tooltip label="Log Out" align="bottom" enterDelayMs={300}>
-              <button
-                type="button"
-                className="global-tree-nav__quick-action global-tree-nav__quick-action--logout"
-                aria-label="Log Out"
-                onClick={onLogOut}
-              >
-                <Logout size={18} aria-hidden />
-              </button>
-            </Tooltip>
-            <Tooltip label="Full system reboot" align="bottom" enterDelayMs={300}>
-              <button
-                type="button"
-                className="global-tree-nav__quick-action global-tree-nav__quick-action--reboot"
-                aria-label="Full system reboot"
-                onClick={onOpenRebootConfirm}
-              >
-                <Power size={18} aria-hidden />
-              </button>
-            </Tooltip>
-          </div>
-        </div>
-
-        <div className="global-tree-nav__body">
-          <FeatureFlags enableTreeviewControllable>
-            <TreeView
-              active={activeNodeId ?? undefined}
-              className="global-tree-nav__tree"
-              hideLabel
-              label="All MAP2 pages"
-              selected={activeNodeId ? [activeNodeId] : []}
-              size="sm"
-            >
-              {renderTreeItems(treeItems, activeNodeId, expandedIds, setExpandedIds, (route) => navigate(route))}
-            </TreeView>
-          </FeatureFlags>
-        </div>
-        <div className="global-tree-nav__footer">
-          <Tooltip label="Collapse global navigation" align="top" enterDelayMs={300}>
+        <div className="global-tree-nav__quick-actions" role="group" aria-label="System actions">
+          <Tooltip label="Refresh" align="bottom" enterDelayMs={300}>
             <button
               type="button"
-              className="global-tree-nav__footer-button global-tree-nav__footer-button--collapse"
-              aria-label="Collapse global navigation"
-              onClick={onTogglePinned}
+              className="global-tree-nav__quick-action global-tree-nav__quick-action--refresh"
+              aria-label="Refresh"
+              onClick={onRefreshPage}
             >
-              <ChevronDown size={16} aria-hidden />
+              <Renew size={18} aria-hidden />
+            </button>
+          </Tooltip>
+          <Tooltip label="Restart" align="bottom" enterDelayMs={300}>
+            <button
+              type="button"
+              className="global-tree-nav__quick-action global-tree-nav__quick-action--restart"
+              aria-label="Restart"
+              onClick={onOpenRestartConfirm}
+            >
+              <Restart size={18} aria-hidden />
+            </button>
+          </Tooltip>
+          <Tooltip label="Log Out" align="bottom" enterDelayMs={300}>
+            <button
+              type="button"
+              className="global-tree-nav__quick-action global-tree-nav__quick-action--logout"
+              aria-label="Log Out"
+              onClick={onLogOut}
+            >
+              <Logout size={18} aria-hidden />
+            </button>
+          </Tooltip>
+          <Tooltip label="Full system reboot" align="bottom" enterDelayMs={300}>
+            <button
+              type="button"
+              className="global-tree-nav__quick-action global-tree-nav__quick-action--reboot"
+              aria-label="Full system reboot"
+              onClick={onOpenRebootConfirm}
+            >
+              <Power size={18} aria-hidden />
             </button>
           </Tooltip>
         </div>
+      </div>
 
-      </nav>
-    </Layer>
+      <div className="global-tree-nav__scroll">
+        <button
+          type="button"
+          className={joinClasses('global-tree-nav__home-row', homeActive && 'is-active')}
+          onClick={() => navigateTo('/')}
+        >
+          <span className="global-tree-nav__dense-spacer" aria-hidden="true" />
+          <Home size={14} className="global-tree-nav__dense-icon" aria-hidden="true" />
+          <span className="global-tree-nav__dense-label">Home</span>
+        </button>
+
+        <div className="global-tree-nav__hero-stack">
+          {pinnedItems.map((item) => (
+            <HeroCard
+              key={item.id}
+              item={item}
+              isOpen={expandedIds.includes(item.id)}
+              activeId={activeNodeId}
+              onToggle={() => toggleExpanded(item.id)}
+              onNavigate={navigateTo}
+            />
+          ))}
+        </div>
+
+        <SectionBar tier="services" label="Services" />
+        {renderDenseGroup(servicesItems)}
+        {renderDenseGroup(systemItems)}
+      </div>
+
+      <div className="global-tree-nav__footer">
+        <button
+          type="button"
+          className={joinClasses('global-tree-nav__guide-row', guideActive && 'is-active')}
+          onClick={() => navigateTo('/about')}
+        >
+          <span className="global-tree-nav__dense-spacer" aria-hidden="true" />
+          <Information size={13} className="global-tree-nav__dense-icon" aria-hidden="true" />
+          <span className="global-tree-nav__dense-label">Platform Guide</span>
+        </button>
+      </div>
+    </nav>
   )
 }
 

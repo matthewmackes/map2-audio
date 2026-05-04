@@ -13,7 +13,6 @@ import { useSetShellWindow } from '../layout/useSetShellWindow'
 import type { ShellActionSlot } from '../layout/ShellWindowContext'
 import { toCarbonBaseTheme, useTheme } from '../theme'
 import { NODE_PAGE_KEYS } from '../utils/nodeDisplay'
-import { MidiHubTabs } from './midi-hub/MidiHubTabs'
 import { MidiHubHealthDrawer } from './midi-hub/MidiHubHealthDrawer'
 import './MidiHubShell.css'
 
@@ -114,7 +113,6 @@ export function MidiHubShell() {
             sidebar={null}
             content={(
               <section className="midi-hub-shell__content-body" aria-label="MIDI Hub content" key={location.pathname}>
-                <MidiHubTabs />
                 <Outlet />
               </section>
             )}

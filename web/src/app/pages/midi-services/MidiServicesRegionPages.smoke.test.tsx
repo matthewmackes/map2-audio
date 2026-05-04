@@ -27,6 +27,37 @@ jest.mock('../../components/MidiHub/MidiHubHelpPrimitives', () => ({
   MidiHubPanelShell: ({ children, panelId, title }: { children: React.ReactNode; panelId: string; title?: string }) => (
     <section data-testid={`panel-shell-${panelId}`} data-title={title ?? ''}>{children}</section>
   ),
+  MIDI_HUB_PANEL_META: new Proxy(
+    {},
+    {
+      get: (_target, prop: string) => ({
+        title: prop,
+        family: 'family',
+        shortLabel: prop,
+        advanced: false,
+      }),
+    },
+  ),
+}))
+
+jest.mock('./MidiServicesSection', () => ({
+  __esModule: true,
+  MidiServicesSection: ({
+    children,
+    panelId,
+    title,
+  }: {
+    children?: React.ReactNode
+    panelId?: string
+    title?: React.ReactNode
+  }) => (
+    <section
+      data-testid={`panel-shell-${panelId ?? 'unknown'}`}
+      data-title={typeof title === 'string' ? title : ''}
+    >
+      {children}
+    </section>
+  ),
 }))
 
 jest.mock('../../components/MidiHub/MidiNetworkPanel', () => ({
