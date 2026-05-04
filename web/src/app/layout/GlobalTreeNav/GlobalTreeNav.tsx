@@ -816,7 +816,7 @@ export function GlobalTreeNav({
       }
       return Array.from(next)
     })
-  }, [activeNodePath])
+  }, [activeNodePath, setExpandedIds])
 
   const toggleExpanded = (id: string) => {
     setExpandedIds((previous) => {
