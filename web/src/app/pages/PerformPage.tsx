@@ -752,7 +752,7 @@ function HealthBar({ midiPulseSignal }: { midiPulseSignal: number }) {
   return (
     <div style={{
       height: 32,
-      background: '#111111',
+      background: 'var(--cds-layer)',
       borderTop: `1px solid ${C.border}`,
       display: 'flex',
       alignItems: 'center',

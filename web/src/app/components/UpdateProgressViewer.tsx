@@ -226,7 +226,7 @@ export function UpdateProgressViewer({ updateId }: { updateId?: string }) {
             style={{
               padding: 40,
               textAlign: 'center',
-              background: '#0a0a0a',
+              background: 'var(--cds-background)',
               border: '1px solid #222222',
               borderRadius: 8,
               color: 'var(--cds-text-helper)',
@@ -240,7 +240,7 @@ export function UpdateProgressViewer({ updateId }: { updateId?: string }) {
               key={node.node_id}
               style={{
                 padding: 20,
-                background: '#0a0a0a',
+                background: 'var(--cds-background)',
                 border: `2px solid ${
                   node.status === 'failed'
                     ? '#ff3333'
@@ -300,7 +300,7 @@ export function UpdateProgressViewer({ updateId }: { updateId?: string }) {
                         style={{
                           marginTop: 6,
                           height: 6,
-                          background: '#111',
+                          background: 'var(--cds-layer)',
                           borderRadius: 3,
                           overflow: 'hidden',
                         }}
@@ -361,7 +361,7 @@ export function UpdateProgressViewer({ updateId }: { updateId?: string }) {
         <div
           style={{
             padding: 16,
-            background: '#111111',
+            background: 'var(--cds-layer)',
             border: '1px solid #222222',
             borderRadius: 8,
             maxHeight: 300,

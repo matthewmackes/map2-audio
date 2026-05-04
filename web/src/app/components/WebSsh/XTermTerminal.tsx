@@ -54,15 +54,20 @@ export function XTermTerminal({
 
   useEffect(() => {
     if (!hostRef.current) return
-    // Resolve the platform mono token at mount time. xterm.js reads its
-    // own fontFamily option directly and cannot read CSS variables, so
-    // we pull the computed --font-mono off the document root and fall
-    // back to the same Plex / Menlo / Consolas chain if it is unset.
+    // Resolve the platform tokens at mount time. xterm.js reads its
+    // theme + fontFamily options directly (canvas rendering) and
+    // cannot resolve CSS variables, so we pull the computed values
+    // off the document root and fall back to the historical literals
+    // if they're unset (e.g. in non-browser test environments).
     const rootStyle =
       typeof window !== 'undefined' ? window.getComputedStyle(document.documentElement) : null
-    const fontFamily =
-      (rootStyle?.getPropertyValue('--font-mono').trim() || '') ||
-      '"IBM Plex Mono", "Menlo", "Consolas", monospace'
+    const resolveVar = (name: string, fallback: string) =>
+      (rootStyle?.getPropertyValue(name).trim() || '') || fallback
+    const fontFamily = resolveVar('--font-mono', '"IBM Plex Mono", "Menlo", "Consolas", monospace')
+    const themeBackground = resolveVar('--cds-background', '#161616')
+    const themeForeground = resolveVar('--cds-text-primary', '#f4f4f4')
+    const themeCursor = resolveVar('--cds-interactive', '#78a9ff')
+    const themeSelection = resolveVar('--cds-selected-ui', '#393939')
     const term = new Terminal({
       fontFamily,
       fontSize: 13,
@@ -70,10 +75,10 @@ export function XTermTerminal({
       convertEol: true,
       scrollback: 5000,
       theme: {
-        background: '#161616',
-        foreground: '#f4f4f4',
-        cursor: '#78a9ff',
-        selectionBackground: '#393939',
+        background: themeBackground,
+        foreground: themeForeground,
+        cursor: themeCursor,
+        selectionBackground: themeSelection,
       },
     })
     const fit = new FitAddon()
