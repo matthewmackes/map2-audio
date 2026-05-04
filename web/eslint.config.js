@@ -30,7 +30,10 @@ export default tseslint.config(
     rules: {
       ...reactHooks.configs.recommended.rules,
       'map2/no-mui-import': 'warn',
-      'map2/no-ad-hoc-transition': 'warn',
+      // T2481-D1 closed 2026-05-03: 0 violations across web/src; ratchet to
+      // `error` so future drift is a hard CI fail. Carbon-allow escape
+      // hatch covers audio-domain carve-outs.
+      'map2/no-ad-hoc-transition': 'error',
       'map2/no-hardcoded-px-spacing': 'warn',
       'react-refresh/only-export-components': [
         'warn',
