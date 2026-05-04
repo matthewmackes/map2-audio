@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1476** Python | **1492** TypeScript | **179** C++/H | **146** Docs | **3837** total commits | **3** stars | **0** forks | **0** open issues
+**1476** Python | **1492** TypeScript | **179** C++/H | **146** Docs | **3839** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`38a528ef`](https://github.com/matthewmackes/map2-audio/commit/38a528ef7dede6f1f101a7ae5280926fdf4eb71f) | docs(t2481-g2): declare Phase B3 substantively closed; re... | Map2 Audio | 2026-05-04 |
+| [`6ebc3069`](https://github.com/matthewmackes/map2-audio/commit/6ebc3069a41eaf96488c84f3d54d0f66d454a018) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-04 |
 | [`5ebfac6c`](https://github.com/matthewmackes/map2-audio/commit/5ebfac6ccaf8987da1aacadb17695f038491cd33) | ui(t2481-b3): retoken WelcomeHero residual display headings | Map2 Audio | 2026-05-04 |
 | [`121463e4`](https://github.com/matthewmackes/map2-audio/commit/121463e47d867242d05f4923ac0c98d3a52848ff) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-04 |
 | [`dfbfd402`](https://github.com/matthewmackes/map2-audio/commit/dfbfd402cb59cd1f04aa4524e2501e18fbb0917d) | ui(t2481-b3): retoken GraphDocumentInspector + NodeIdenti... | Map2 Audio | 2026-05-04 |
 | [`31657e20`](https://github.com/matthewmackes/map2-audio/commit/31657e2030b265616d1cf55de6498650d0a1e572) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-04 |
 | [`c4f75d7b`](https://github.com/matthewmackes/map2-audio/commit/c4f75d7b9b239c3787b516904b61172fe8a0e34d) | ui(t2481-b3): retoken display-tier font sizes across Stat... | Map2 Audio | 2026-05-04 |
 | [`d8c58c0c`](https://github.com/matthewmackes/map2-audio/commit/d8c58c0cc90f64e13801ef0b3e3cc62820fe7ee9) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-04 |
-| [`3c651075`](https://github.com/matthewmackes/map2-audio/commit/3c6510754540328b2aa39bfdc3482d40d0717ba6) | ui(t2481-b3): retoken 2px-solid JSX borders + preserve MO... | Map2 Audio | 2026-05-04 |
-| [`4d0bfbcb`](https://github.com/matthewmackes/map2-audio/commit/4d0bfbcb8af97df7811b73978bf5284322b1eba9) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-04 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
