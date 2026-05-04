@@ -374,7 +374,7 @@ export function SystemArchitectureFlow() {
           <StatusIcon size={14} style={{ color: color.text, flexShrink: 0 }} />
         </div>
 
-        <div style={{ fontSize: 10, color: '#aaa', lineHeight: 1.4 }}>{healthInfo.message}</div>
+        <div style={{ fontSize: 10, color: 'var(--cds-text-secondary)', lineHeight: 1.4 }}>{healthInfo.message}</div>
 
         {healthInfo.utilization !== undefined && (
           <div style={{ marginTop: 4 }}>
@@ -405,12 +405,12 @@ export function SystemArchitectureFlow() {
             borderRadius: 4,
             borderTop: `1px solid ${color.border}`,
           }}>
-            <div style={{ fontSize: 9, color: '#ccc', marginBottom: 6, fontStyle: 'italic' }}>
+            <div style={{ fontSize: 9, color: 'var(--cds-text-secondary)', marginBottom: 6, fontStyle: 'italic' }}>
               {healthInfo.details.description}
             </div>
             
             <div style={{ fontSize: 9, color: 'var(--cds-text-secondary, #888)', marginBottom: 4 }}>
-              <strong style={{ color: '#aaa' }}>Components:</strong>
+              <strong style={{ color: 'var(--cds-text-secondary)' }}>Components:</strong>
             </div>
             <div style={{ display: 'flex', flexWrap: 'wrap', gap: 4, marginBottom: 8 }}>
               {healthInfo.details.components.map((comp, i) => (
@@ -422,7 +422,7 @@ export function SystemArchitectureFlow() {
                     padding: '2px 6px', 
                     background: 'rgba(100,181,246,0.2)', 
                     borderRadius: 3,
-                    color: '#64b5f6',
+                    color: 'var(--cds-support-info)',
                   }}
                 >
                   {comp}
@@ -433,13 +433,13 @@ export function SystemArchitectureFlow() {
             {healthInfo.details.metrics && (
               <>
                 <div style={{ fontSize: 9, color: 'var(--cds-text-secondary, #888)', marginBottom: 4 }}>
-                  <strong style={{ color: '#aaa' }}>Metrics:</strong>
+                  <strong style={{ color: 'var(--cds-text-secondary)' }}>Metrics:</strong>
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 4 }}>
                   {healthInfo.details.metrics.map((metric, i) => (
                     <div key={i} style={{ fontSize: 8, color: 'var(--cds-text-secondary, #888)' }}>
                       <span style={{ color: 'var(--cds-text-helper, #666)' }}>{metric.label}:</span>{' '}
-                      <span style={{ color: '#fff' }}>{metric.value}</span>
+                      <span style={{ color: 'var(--cds-text-primary)' }}>{metric.value}</span>
                     </div>
                   ))}
                 </div>
@@ -474,10 +474,10 @@ export function SystemArchitectureFlow() {
     <LegacyTile className="system-architecture-flow">
       <div style={{ marginBottom: 16 }}>
         <div className="flex" style={{ gap: 8, alignItems: 'center', marginBottom: 8 }}>
-          <FlowArrow size={22} style={{ color: '#64b5f6' }} />
+          <FlowArrow size={22} style={{ color: 'var(--cds-support-info)' }} />
           <h3 style={{ margin: 0, fontSize: 16, fontWeight: 600 }}>System Architecture & Health</h3>
         </div>
-        <p style={{ margin: 0, fontSize: 12, color: '#aaa', lineHeight: 1.5 }}>
+        <p style={{ margin: 0, fontSize: 12, color: 'var(--cds-text-secondary)', lineHeight: 1.5 }}>
           MAP2 Audio Platform operates as a tightly integrated, real-time audio processing stack. Audio signals flow through multiple specialized subsystems,
           each pinned to dedicated CPU cores for consistent, predictable performance. The system continuously monitors each component's health status,
           ensuring stable operation and alerting when intervention may be needed.
@@ -499,7 +499,7 @@ export function SystemArchitectureFlow() {
             alignItems: 'center',
             justifyContent: 'center',
             fontSize: 10,
-            color: '#64b5f6',
+            color: 'var(--cds-support-info)',
             textAlign: 'center',
             padding: 4,
             fontWeight: 500,
@@ -594,7 +594,7 @@ export function SystemArchitectureFlow() {
             alignItems: 'center',
             justifyContent: 'center',
             fontSize: 10,
-            color: '#81c784',
+            color: 'var(--cds-support-success)',
             textAlign: 'center',
             padding: 4,
             fontWeight: 500,
@@ -627,14 +627,14 @@ export function SystemArchitectureFlow() {
         <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', alignItems: 'center', justifyContent: 'space-between' }}>
           <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <Cpu size={14} style={{ color: '#64b5f6' }} />
+              <Cpu size={14} style={{ color: 'var(--cds-support-info)' }} />
               <span style={{ fontSize: 10, color: 'var(--cds-text-secondary, #888)' }}>System CPU:</span>
-              <span style={{ fontSize: 11, color: '#fff', fontWeight: 500 }}>{perfData.cpu_percent.toFixed(1)}%</span>
+              <span style={{ fontSize: 11, color: 'var(--cds-text-primary)', fontWeight: 500 }}>{perfData.cpu_percent.toFixed(1)}%</span>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
-              <HardDrive size={14} style={{ color: '#81c784' }} />
+              <HardDrive size={14} style={{ color: 'var(--cds-support-success)' }} />
               <span style={{ fontSize: 10, color: 'var(--cds-text-secondary, #888)' }}>Memory:</span>
-              <span style={{ fontSize: 11, color: '#fff', fontWeight: 500 }}>{perfData.memory_percent.toFixed(1)}%</span>
+              <span style={{ fontSize: 11, color: 'var(--cds-text-primary)', fontWeight: 500 }}>{perfData.memory_percent.toFixed(1)}%</span>
             </div>
             <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
               <Gauge size={14} style={{ color: pluginPerf.gpu_device ? '#ab47bc' : '#888' }} />
@@ -657,31 +657,31 @@ export function SystemArchitectureFlow() {
 
       {/* Architecture Description */}
       <div style={{ marginTop: 16, padding: 12, background: 'rgba(0,0,0,0.2)', borderRadius: 8 }}>
-        <div style={{ fontSize: 11, color: '#aaa', lineHeight: 1.6 }}>
-          <strong style={{ color: '#fff' }}>Signal Flow:</strong> Audio enters through PipeWire, the primary audio server managing device routing,
+        <div style={{ fontSize: 11, color: 'var(--cds-text-secondary)', lineHeight: 1.6 }}>
+          <strong style={{ color: 'var(--cds-text-primary)' }}>Signal Flow:</strong> Audio enters through PipeWire, the primary audio server managing device routing,
           buffer quantums, and sample rate negotiation. PipeWire feeds the JUCE Audio Engine running on dedicated CPU cores with SCHED_FIFO priority.
           Audio flows through the DSP Graph with A/B chain morphing for smooth preset transitions via real-time parameter interpolation.
           <br />
           <br />
-          <strong style={{ color: '#fff' }}>Audio Server:</strong> PipeWire provides the audio graph infrastructure — device enumeration, port linking,
+          <strong style={{ color: 'var(--cds-text-primary)' }}>Audio Server:</strong> PipeWire provides the audio graph infrastructure — device enumeration, port linking,
           latency management, and XRun detection. The quantum (buffer period) and sample rate are adjustable in real-time via the PipeWire dashboard.
           WirePlumber handles session policy and automatic device routing.
           <br />
           <br />
-          <strong style={{ color: '#fff' }}>Plugin Processing:</strong> The Plugin Host supports LV2 plugins via lilv, Neural Amp Models (NAM) with optional 
+          <strong style={{ color: 'var(--cds-text-primary)' }}>Plugin Processing:</strong> The Plugin Host supports LV2 plugins via lilv, Neural Amp Models (NAM) with optional 
           GPU acceleration (CUDA/MPS), and Impulse Response processing using RT-safe partitioned FFT convolution. Each plugin's CPU usage is tracked 
           individually for performance optimization.
           <br />
           <br />
-          <strong style={{ color: '#fff' }}>Monitoring:</strong> The Performance Monitor maintains up to 1 hour of historical metrics with configurable 
+          <strong style={{ color: 'var(--cds-text-primary)' }}>Monitoring:</strong> The Performance Monitor maintains up to 1 hour of historical metrics with configurable 
           resolution. PipeWire metrics (latency, XRuns, graph topology) are broadcast in real-time via WebSocket. Click any component above to view 
           its internal subsystems and real-time metrics.
           <br />
           <br />
-          <strong style={{ color: '#fff' }}>Status Legend:</strong>{' '}
-          <span style={{ color: '#4caf50' }}>● Green</span> = Healthy ·{' '}
-          <span style={{ color: '#ffa726' }}>● Orange</span> = Warning ·{' '}
-          <span style={{ color: '#ef4444' }}>● Red</span> = Critical
+          <strong style={{ color: 'var(--cds-text-primary)' }}>Status Legend:</strong>{' '}
+          <span style={{ color: 'var(--cds-support-success)' }}>● Green</span> = Healthy ·{' '}
+          <span style={{ color: 'var(--cds-support-warning)' }}>● Orange</span> = Warning ·{' '}
+          <span style={{ color: 'var(--cds-support-error)' }}>● Red</span> = Critical
         </div>
       </div>
     </LegacyTile>
