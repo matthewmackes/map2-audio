@@ -86,6 +86,20 @@ export default tseslint.config(
     },
   },
   {
+    // T2481-C1: hardware-skin / device-graphics carve-out per
+    // CARBON_CONFORMANCE_STANDARD §10.5. The custom JUCE / TooB / etc.
+    // plugin cards render vendor device-skins (Lexicon/Eventide/Boss
+    // LCD displays, knob geometry, LED arrays) where spacing is
+    // pixel-exact part of the visual identity, not platform chrome.
+    // Motion (`no-ad-hoc-transition`) stays at `error` because meter
+    // ballistics still need explicit `// carbon-allow:` annotations
+    // documenting why each timing is below the design-language scale.
+    files: ['src/app/components/PluginCards/Custom/**/*.{ts,tsx}'],
+    rules: {
+      'map2/no-hardcoded-px-spacing': 'off',
+    },
+  },
+  {
     files: ['src/app/components/AvbRouting/**/*.{ts,tsx}'],
     rules: {
       // AVB routing module has ongoing refactors; keep strict runtime checks
