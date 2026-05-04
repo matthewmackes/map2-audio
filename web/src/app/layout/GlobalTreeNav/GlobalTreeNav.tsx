@@ -3,7 +3,7 @@ import {
   PopoverContent,
   Tooltip,
 } from '@carbon/react'
-import { useEffect, useMemo, useState, type ComponentType, type ReactNode } from 'react'
+import { useCallback, useEffect, useMemo, useState, type ComponentType, type ReactNode } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import {
   Add,
@@ -745,7 +745,11 @@ export function GlobalTreeNav({
       .map((row) => row.profile_key)
   }, [knownDevicesQuery.data])
 
-  const navigateTo = (route: string) => navigate(route)
+  // `navigate` from React Router is stable, so wrapping `navigateTo`
+  // in useCallback gives the three useMemo blocks below a stable
+  // reference and lets the exhaustive-deps lint pass without
+  // re-running on every render.
+  const navigateTo = useCallback((route: string) => navigate(route), [navigate])
 
   const pinnedItems = useMemo(
     () => buildSectionItems(
@@ -756,7 +760,7 @@ export function GlobalTreeNav({
       snapshotEditorStatus,
       benchStorePins,
     ),
-    [pinnedDeviceIds, handleRequestUnpin, snapshotEditorStatus, benchStorePins],
+    [pinnedDeviceIds, navigateTo, handleRequestUnpin, snapshotEditorStatus, benchStorePins],
   )
   const servicesItems = useMemo(
     () => buildSectionItems(
@@ -767,7 +771,7 @@ export function GlobalTreeNav({
       snapshotEditorStatus,
       benchStorePins,
     ),
-    [pinnedDeviceIds, handleRequestUnpin, snapshotEditorStatus, benchStorePins],
+    [pinnedDeviceIds, navigateTo, handleRequestUnpin, snapshotEditorStatus, benchStorePins],
   )
   const systemItems = useMemo(
     () => buildSectionItems(
@@ -778,7 +782,7 @@ export function GlobalTreeNav({
       snapshotEditorStatus,
       benchStorePins,
     ),
-    [pinnedDeviceIds, handleRequestUnpin, snapshotEditorStatus, benchStorePins],
+    [pinnedDeviceIds, navigateTo, handleRequestUnpin, snapshotEditorStatus, benchStorePins],
   )
   const allItems = useMemo(
     () => [...pinnedItems, ...servicesItems, ...systemItems],
