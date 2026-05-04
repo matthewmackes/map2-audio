@@ -14,7 +14,7 @@
     radial-gradient(circle at top right, rgba(139, 92, 246, 0.25), transparent 34%),
     radial-gradient(circle at bottom left, rgba(6, 182, 212, 0.12), transparent 36%),
     linear-gradient(180deg, rgba(2, 6, 23, 0.98), rgba(3, 7, 18, 1));
-  color: #e2e8f0;
+  color: var(--cds-text-primary);
   display: flex;
   flex-direction: column;
   gap: 14px;
@@ -57,7 +57,7 @@
 
 .api-observatory-page__heading p {
   margin: 0;
-  color: #cbd5f5;
+  color: var(--cds-text-primary);
   max-width: 78ch;
   line-height: 1.6;
 }
@@ -107,7 +107,7 @@
   border: 1px solid rgba(109, 40, 217, 0.45);
   border-radius: 10px;
   background: rgba(15, 23, 42, 0.7);
-  color: #cbd5e1;
+  color: var(--cds-text-primary);
   display: inline-flex;
   align-items: center;
   gap: 8px;
@@ -119,7 +119,7 @@
 
 .api-observatory-page__tab.is-active {
   background: rgba(109, 40, 217, 0.28);
-  color: #f5f3ff;
+  color: var(--cds-text-primary);
   border-color: rgba(196, 181, 253, 0.6);
 }
 
@@ -148,7 +148,7 @@
   border-radius: 10px;
   border: 1px solid rgba(71, 85, 105, 0.6);
   background: rgba(15, 23, 42, 0.88);
-  color: #e2e8f0;
+  color: var(--cds-text-primary);
   font-size: 12px;
   padding: 8px 10px;
 }
@@ -176,7 +176,7 @@
   border-radius: 10px;
   border: 1px solid rgba(167, 139, 250, 0.66);
   background: rgba(109, 40, 217, 0.32);
-  color: #f5f3ff;
+  color: var(--cds-text-primary);
   font-weight: 700;
   padding: 8px 12px;
 }
@@ -208,7 +208,7 @@
   border-radius: 12px;
   border: 1px solid rgba(239, 68, 68, 0.55);
   background: rgba(127, 29, 29, 0.25);
-  color: #fecaca;
+  color: var(--cds-support-error);
   padding: 10px 12px;
 }
 
@@ -289,7 +289,7 @@
 .api-observatory-topology__header p {
   margin: 4px 0 0;
   font-size: 12px;
-  color: #94a3b8;
+  color: var(--cds-text-secondary);
 }
 
 .api-observatory-topology__actions {
@@ -334,7 +334,7 @@
 .api-observatory-topology__node-meta {
   margin-top: 3px;
   font-size: 11px;
-  color: #94a3b8;
+  color: var(--cds-text-secondary);
 }
 
 .api-observatory-topology__state,
@@ -344,7 +344,7 @@
 }
 
 .api-observatory-topology__error {
-  color: #fca5a5;
+  color: var(--cds-support-error);
 }
 
 /* Catalog */
@@ -381,7 +381,7 @@
 
 .api-observatory-catalog__method-row code {
   font-size: 13px;
-  color: #f8fafc;
+  color: var(--cds-text-primary);
 }
 
 .api-observatory-catalog__header h2 {
@@ -391,7 +391,7 @@
 
 .api-observatory-catalog__header p {
   margin: 0;
-  color: #cbd5f5;
+  color: var(--cds-text-primary);
   line-height: 1.6;
 }
 
@@ -409,12 +409,12 @@
 
 .api-observatory-catalog__diff--added {
   background: rgba(22, 163, 74, 0.25);
-  color: #86efac;
+  color: var(--cds-support-success);
 }
 
 .api-observatory-catalog__diff--modified {
   background: rgba(249, 115, 22, 0.25);
-  color: #fdba74;
+  color: var(--cds-support-warning);
 }
 
 .api-observatory-catalog__meta,
@@ -616,7 +616,7 @@
   border: 1px dashed rgba(71, 85, 105, 0.7);
   border-radius: 10px;
   padding: 12px;
-  color: #94a3b8;
+  color: var(--cds-text-secondary);
   font-size: 12px;
 }
 
@@ -666,11 +666,11 @@
 }
 
 .api-observatory-builder__response-grid li.is-pass {
-  color: #86efac;
+  color: var(--cds-support-success);
 }
 
 .api-observatory-builder__response-grid li.is-fail {
-  color: #fca5a5;
+  color: var(--cds-support-error);
 }
 
 .api-observatory-builder__history {
@@ -770,7 +770,7 @@
 .api-observatory-websocket__connection p {
   margin: 2px 0;
   font-size: 11px;
-  color: #94a3b8;
+  color: var(--cds-text-secondary);
 }
 
 .api-observatory-websocket__connection--open {
@@ -798,7 +798,7 @@
 }
 
 .api-observatory-websocket__message header span {
-  color: #94a3b8;
+  color: var(--cds-text-secondary);
 }
 
 .api-observatory-websocket__message--sent {
@@ -843,7 +843,7 @@
 .api-observatory-traffic__stats-grid span {
   display: block;
   font-size: 11px;
-  color: #94a3b8;
+  color: var(--cds-text-secondary);
 }
 
 .api-observatory-traffic__stats-grid strong {
@@ -873,7 +873,7 @@
   border-radius: 8px;
   border: 1px solid rgba(71, 85, 105, 0.4);
   background: rgba(30, 41, 59, 0.84);
-  color: #e2e8f0;
+  color: var(--cds-text-primary);
   padding: 4px 8px;
   min-width: 180px;
 }
@@ -934,7 +934,7 @@
 .api-observatory-traffic__import {
   display: block;
   font-size: 12px;
-  color: #cbd5e1;
+  color: var(--cds-text-primary);
 }
 
 .api-observatory-traffic__import input {
@@ -1007,11 +1007,11 @@
 }
 
 .api-observatory-collections__results li.is-pass {
-  color: #86efac;
+  color: var(--cds-support-success);
 }
 
 .api-observatory-collections__results li.is-fail {
-  color: #fecaca;
+  color: var(--cds-support-error);
 }
 
 /* Responsive */
