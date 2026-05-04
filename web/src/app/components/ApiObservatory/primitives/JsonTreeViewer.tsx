@@ -45,7 +45,7 @@ function JsonNode({
     return (
       <div style={{ paddingLeft: indent, display: 'flex', alignItems: 'center', gap: 8 }}>
         <code style={{ color: '#93c5fd' }}>{formatValue(value)}</code>
-        <span style={{ color: '#64748b', fontSize: 11 }}>{valueType(value)}</span>
+        <span style={{ color: 'var(--cds-text-secondary)', fontSize: 11 }}>{valueType(value)}</span>
       </div>
     )
   }
@@ -67,7 +67,7 @@ function JsonNode({
           marginLeft: indent,
           border: 'none',
           background: 'transparent',
-          color: '#cbd5f5',
+          color: 'var(--cds-text-primary)',
           cursor: 'pointer',
           // carbon-allow: tree-node toggle dense vertical 2px (between Carbon stops).
           padding: '2px 0',
@@ -106,8 +106,8 @@ function JsonNode({
                   </button>
                   {primitive && (
                     <>
-                      <code style={{ color: '#e2e8f0' }}>{formatValue(item)}</code>
-                      <span style={{ color: '#64748b', fontSize: 11 }}>{valueType(item)}</span>
+                      <code style={{ color: 'var(--cds-text-primary)' }}>{formatValue(item)}</code>
+                      <span style={{ color: 'var(--cds-text-secondary)', fontSize: 11 }}>{valueType(item)}</span>
                     </>
                   )}
                 </div>
@@ -168,7 +168,7 @@ export function JsonTreeViewer({
             borderRadius: 8,
             border: '1px solid rgba(71, 85, 105, 0.65)',
             background: 'rgba(15, 23, 42, 0.85)',
-            color: '#e2e8f0',
+            color: 'var(--cds-text-primary)',
             // carbon-allow: dense JSON-search input 6x9px (between Carbon stops).
             padding: '6px 9px',
             fontSize: 12,
@@ -181,7 +181,7 @@ export function JsonTreeViewer({
             borderRadius: 8,
             border: '1px solid rgba(71, 85, 105, 0.65)',
             background: 'rgba(15, 23, 42, 0.85)',
-            color: '#cbd5e1',
+            color: 'var(--cds-text-primary)',
             // carbon-allow: dense expand/collapse button 6x8px (between Carbon stops).
             padding: '6px 8px',
             fontSize: 11,
@@ -197,7 +197,7 @@ export function JsonTreeViewer({
             borderRadius: 8,
             border: '1px solid rgba(71, 85, 105, 0.65)',
             background: 'rgba(15, 23, 42, 0.85)',
-            color: '#cbd5e1',
+            color: 'var(--cds-text-primary)',
             // carbon-allow: dense expand/collapse button 6x8px (between Carbon stops).
             padding: '6px 8px',
             fontSize: 11,

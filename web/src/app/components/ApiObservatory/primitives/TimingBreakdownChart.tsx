@@ -13,10 +13,10 @@ export function TimingBreakdownChart({ timing }: { timing: TimingBreakdown }) {
   const segments = useMemo(
     () => [
       { key: 'dns', label: 'DNS', value: Number(timing.dns_ms ?? 0), color: '#14b8a6' },
-      { key: 'connect', label: 'Connect', value: Number(timing.connect_ms ?? 0), color: '#3b82f6' },
+      { key: 'connect', label: 'Connect', value: Number(timing.connect_ms ?? 0), color: 'var(--cds-support-info)' },
       { key: 'tls', label: 'TLS', value: Number(timing.tls_ms ?? 0), color: '#8b5cf6' },
-      { key: 'ttfb', label: 'TTFB', value: Number(timing.ttfb_ms ?? 0), color: '#f59e0b' },
-      { key: 'download', label: 'Download', value: Number(timing.download_ms ?? 0), color: '#22c55e' },
+      { key: 'ttfb', label: 'TTFB', value: Number(timing.ttfb_ms ?? 0), color: 'var(--cds-support-warning)' },
+      { key: 'download', label: 'Download', value: Number(timing.download_ms ?? 0), color: 'var(--cds-support-success)' },
     ],
     [timing.connect_ms, timing.dns_ms, timing.download_ms, timing.tls_ms, timing.ttfb_ms],
   )
@@ -48,7 +48,7 @@ export function TimingBreakdownChart({ timing }: { timing: TimingBreakdown }) {
           />
         ))}
       </div>
-      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, color: '#cbd5e1', fontSize: 11 }}>
+      <div style={{ display: 'flex', flexWrap: 'wrap', gap: 8, color: 'var(--cds-text-primary)', fontSize: 11 }}>
         {segments.map((segment) => (
           <span
             key={segment.key}

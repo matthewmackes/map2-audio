@@ -86,8 +86,8 @@ export function JsonDiffViewer({
           background: 'rgba(15, 23, 42, 0.9)',
         }}
       >
-        <strong style={{ color: '#e2e8f0', fontSize: 13 }}>JSON Diff</strong>
-        <label style={{ color: '#94a3b8', fontSize: 12, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+        <strong style={{ color: 'var(--cds-text-primary)', fontSize: 13 }}>JSON Diff</strong>
+        <label style={{ color: 'var(--cds-text-secondary)', fontSize: 12, display: 'inline-flex', alignItems: 'center', gap: 6 }}>
           <input
             type="checkbox"
             checked={hideUnchanged}
@@ -101,9 +101,9 @@ export function JsonDiffViewer({
         <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 12 }}>
           <thead>
             <tr>
-              <th style={{ textAlign: 'left', padding: 8, color: '#94a3b8' }}>Path</th>
-              <th style={{ textAlign: 'left', padding: 8, color: '#94a3b8' }}>Left</th>
-              <th style={{ textAlign: 'left', padding: 8, color: '#94a3b8' }}>Right</th>
+              <th style={{ textAlign: 'left', padding: 8, color: 'var(--cds-text-secondary)' }}>Path</th>
+              <th style={{ textAlign: 'left', padding: 8, color: 'var(--cds-text-secondary)' }}>Left</th>
+              <th style={{ textAlign: 'left', padding: 8, color: 'var(--cds-text-secondary)' }}>Right</th>
             </tr>
           </thead>
           <tbody>
@@ -117,7 +117,7 @@ export function JsonDiffViewer({
                     : 'transparent'
               return (
                 <tr key={row.path} style={{ background: tone, borderTop: '1px solid rgba(30, 41, 59, 0.6)' }}>
-                  <td style={{ padding: 8, color: '#cbd5e1', whiteSpace: 'nowrap' }}>{row.path}</td>
+                  <td style={{ padding: 8, color: 'var(--cds-text-primary)', whiteSpace: 'nowrap' }}>{row.path}</td>
                   <td style={{ padding: 8, color: '#bfdbfe' }}><code>{safeStringify(row.leftValue)}</code></td>
                   <td style={{ padding: 8, color: '#fde68a' }}><code>{safeStringify(row.rightValue)}</code></td>
                 </tr>
@@ -125,7 +125,7 @@ export function JsonDiffViewer({
             })}
             {rows.length === 0 && (
               <tr>
-                <td colSpan={3} style={{ padding: 16, color: '#94a3b8', textAlign: 'center' }}>
+                <td colSpan={3} style={{ padding: 16, color: 'var(--cds-text-secondary)', textAlign: 'center' }}>
                   No differences.
                 </td>
               </tr>

@@ -93,7 +93,7 @@ export function CodeSnippetGenerator({ request }: { request: RequestSnippetModel
             borderRadius: 8,
             border: '1px solid rgba(148, 163, 184, 0.45)',
             background: 'rgba(15, 23, 42, 0.92)',
-            color: '#cbd5e1',
+            color: 'var(--cds-text-primary)',
             fontSize: 11,
             fontWeight: 700,
             padding: 'var(--cds-spacing-02) var(--cds-spacing-03)',
@@ -102,7 +102,7 @@ export function CodeSnippetGenerator({ request }: { request: RequestSnippetModel
         >
           Copy
         </button>
-        <pre style={{ margin: 0, padding: 14, overflowX: 'auto', background: 'rgba(2, 6, 23, 0.94)', color: '#e2e8f0', fontSize: 12 }}>
+        <pre style={{ margin: 0, padding: 14, overflowX: 'auto', background: 'rgba(2, 6, 23, 0.94)', color: 'var(--cds-text-primary)', fontSize: 12 }}>
           <code>{snippets[activeKey]}</code>
         </pre>
       </div>

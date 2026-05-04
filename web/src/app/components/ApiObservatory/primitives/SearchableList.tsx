@@ -66,7 +66,7 @@ export function SearchableList<T extends SearchableListItem>({
           borderRadius: 10,
           border: '1px solid rgba(71, 85, 105, 0.65)',
           background: 'rgba(15, 23, 42, 0.86)',
-          color: '#e2e8f0',
+          color: 'var(--cds-text-primary)',
           // carbon-allow: dense surface; off-grid between Carbon stops.
           padding: '8px 10px',
           fontSize: 12,
@@ -109,7 +109,7 @@ export function SearchableList<T extends SearchableListItem>({
             >
               <div style={{ fontWeight: 600, fontSize: 12 }}>{item.label}</div>
               {(item.category || item.description) && (
-                <div style={{ marginTop: 3, color: '#94a3b8', fontSize: 11 }}>
+                <div style={{ marginTop: 3, color: 'var(--cds-text-secondary)', fontSize: 11 }}>
                   {[item.category, item.description].filter(Boolean).join(' · ')}
                 </div>
               )}
@@ -117,7 +117,7 @@ export function SearchableList<T extends SearchableListItem>({
           )
         })}
         {filtered.length === 0 && (
-          <div style={{ padding: 12, color: '#64748b', fontSize: 12 }}>No matching items.</div>
+          <div style={{ padding: 12, color: 'var(--cds-text-secondary)', fontSize: 12 }}>No matching items.</div>
         )}
       </div>
     </div>
