@@ -87,14 +87,38 @@ export default tseslint.config(
   },
   {
     // T2481-C1: hardware-skin / device-graphics carve-out per
-    // CARBON_CONFORMANCE_STANDARD §10.5. The custom JUCE / TooB / etc.
-    // plugin cards render vendor device-skins (Lexicon/Eventide/Boss
-    // LCD displays, knob geometry, LED arrays) where spacing is
-    // pixel-exact part of the visual identity, not platform chrome.
+    // CARBON_CONFORMANCE_STANDARD §10.5. Plugin cards render vendor
+    // device-skins (Lexicon/Eventide/Boss LCD displays, knob geometry,
+    // LED arrays) and device viewers under `Devices/<vendor>/` render
+    // the corresponding hardware front panels (Edirol UA-1000 channel
+    // strips, MPX-1 / IntelFX SVG panels, Maschine pad grid, LCD VFD
+    // simulations, Tesira mixer rack, push surfaces). Spacing on these
+    // surfaces is pixel-exact part of the visual identity, not platform
+    // chrome.
+    //
     // Motion (`no-ad-hoc-transition`) stays at `error` because meter
     // ballistics still need explicit `// carbon-allow:` annotations
     // documenting why each timing is below the design-language scale.
-    files: ['src/app/components/PluginCards/Custom/**/*.{ts,tsx}'],
+    files: [
+      'src/app/components/PluginCards/Custom/**/*.{ts,tsx}',
+      'src/app/components/Devices/EdirolUA1000/**/*.{ts,tsx}',
+      'src/app/components/Devices/MPX1/**/*.{ts,tsx}',
+      'src/app/components/Devices/IntelFX/**/*.{ts,tsx}',
+      'src/app/components/Devices/Maschine/**/*.{ts,tsx}',
+      'src/app/components/Devices/LCD/**/*.{ts,tsx}',
+      'src/app/components/Devices/Tesira/**/*.{ts,tsx}',
+      'src/app/components/Devices/Expression/**/*.{ts,tsx}',
+      'src/app/components/Devices/GroundControlPro/**/*.{ts,tsx}',
+      'src/app/components/Devices/HoToneJoGG/**/*.{ts,tsx}',
+      'src/app/components/Devices/MidiCommander/**/*.{ts,tsx}',
+      'src/app/components/Devices/LaunchControl/**/*.{ts,tsx}',
+      'src/app/components/Devices/Mcu/**/*.{ts,tsx}',
+      'src/app/components/Devices/PushSurface/**/*.{ts,tsx}',
+      // Audio-domain visualizations (meters, EQ curves, transfer curves,
+      // dynamics displays, cluster strips) — pixel-exact geometry per
+      // §10.5; meter motion already carries `// carbon-allow:` annotations.
+      'src/app/components/Visualizations/**/*.{ts,tsx}',
+    ],
     rules: {
       'map2/no-hardcoded-px-spacing': 'off',
     },

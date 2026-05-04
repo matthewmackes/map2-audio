@@ -69,6 +69,7 @@ function JsonNode({
           background: 'transparent',
           color: '#cbd5f5',
           cursor: 'pointer',
+          // carbon-allow: tree-node toggle dense vertical 2px (between Carbon stops).
           padding: '2px 0',
           fontWeight: 600,
         }}
@@ -168,6 +169,7 @@ export function JsonTreeViewer({
             border: '1px solid rgba(71, 85, 105, 0.65)',
             background: 'rgba(15, 23, 42, 0.85)',
             color: '#e2e8f0',
+            // carbon-allow: dense JSON-search input 6x9px (between Carbon stops).
             padding: '6px 9px',
             fontSize: 12,
           }}
@@ -180,6 +182,7 @@ export function JsonTreeViewer({
             border: '1px solid rgba(71, 85, 105, 0.65)',
             background: 'rgba(15, 23, 42, 0.85)',
             color: '#cbd5e1',
+            // carbon-allow: dense expand/collapse button 6x8px (between Carbon stops).
             padding: '6px 8px',
             fontSize: 11,
             cursor: 'pointer',
@@ -195,6 +198,7 @@ export function JsonTreeViewer({
             border: '1px solid rgba(71, 85, 105, 0.65)',
             background: 'rgba(15, 23, 42, 0.85)',
             color: '#cbd5e1',
+            // carbon-allow: dense expand/collapse button 6x8px (between Carbon stops).
             padding: '6px 8px',
             fontSize: 11,
             cursor: 'pointer',
