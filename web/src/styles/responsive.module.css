@@ -31,45 +31,4 @@
 
 /* ── Tablet Portrait (820px–960px) ────────────────────────── */
 
-@media (max-width: 960px) {
-  .touchTarget {
-    min-height: 44px;
-    min-width: 44px;
-  }
 
-  .tabletStack {
-    flex-direction: column !important;
-    align-items: stretch !important;
-  }
-
-  .tabletFullWidth {
-    width: 100% !important;
-    max-width: 100% !important;
-  }
-
-  .tabletHide {
-    display: none !important;
-  }
-
-  .tabletSingleCol {
-    grid-template-columns: 1fr !important;
-  }
-
-  .tabletCompactGap {
-    gap: 0.75rem !important;
-  }
-
-  .tabletCompactPad {
-    padding: 1rem !important;
-  }
-}
-
-@media (max-width: 820px) {
-  .narrowHide {
-    display: none !important;
-  }
-
-  .narrowSingleCol {
-    grid-template-columns: 1fr !important;
-  }
-}

@@ -109,18 +109,3 @@
   font-size: var(--cds-helper-text-01-font-size, 0.75rem);
 }
 
-@media (max-width: 48rem) {
-  .audio-engine-chains__panel {
-    padding: var(--cds-spacing-04);
-  }
-
-  .audio-engine-chains__panel-header {
-    width: 100%;
-    justify-content: flex-start;
-  }
-
-  .audio-engine-chains__search {
-    width: 100%;
-    min-width: 0;
-  }
-}

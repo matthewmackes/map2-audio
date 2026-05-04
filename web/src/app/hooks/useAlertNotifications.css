@@ -86,10 +86,3 @@
   }
 }
 
-@media (max-width: 768px) {
-  .alert-notification-stack {
-    right: 0.75rem;
-    bottom: 0.75rem;
-    width: calc(100vw - 1.5rem);
-  }
-}

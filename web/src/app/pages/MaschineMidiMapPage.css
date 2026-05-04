@@ -339,16 +339,3 @@
 
 /* ── Responsive ── */
 
-@media (max-width: 1100px) {
-  .mk1-row-encoders {
-    grid-template-columns: 1fr;
-  }
-  .mk1-row-main {
-    grid-template-columns: 1fr;
-  }
-  .mk1-left-btns {
-    display: flex;
-    flex-wrap: wrap;
-    width: auto;
-  }
-}

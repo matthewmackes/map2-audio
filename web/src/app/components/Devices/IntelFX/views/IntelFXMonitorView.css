@@ -207,20 +207,3 @@
   font-size: var(--cds-body-compact-01-font-size, 0.875rem);
 }
 
-@media (max-width: 56rem) {
-  .intelfx-monitor-page {
-    padding: var(--cds-spacing-05);
-  }
-
-  .intelfx-monitor-page__stats-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .intelfx-monitor-page__traffic-table {
-    min-width: 34rem;
-  }
-
-  .intelfx-monitor-page__log-list li {
-    grid-template-columns: 1fr;
-  }
-}

@@ -395,30 +395,3 @@
   font-size: var(--cds-helper-text-01-font-size, 0.75rem);
 }
 
-@media (max-width: 48rem) {
-  .pipewire-page {
-    padding: var(--cds-spacing-05);
-  }
-
-  .pipewire-page__title {
-    font-size: var(--cds-heading-04-font-size, 1.5rem);
-  }
-
-  .pipewire-page__section,
-  .pipewire-page__clock-panel {
-    padding: var(--cds-spacing-04);
-  }
-
-  .pipewire-page__table {
-    min-width: 0;
-  }
-
-  .pipewire-page__topology-link-row {
-    grid-template-columns: 1fr;
-    gap: var(--cds-spacing-02);
-  }
-
-  .pipewire-page__topology-arrow {
-    display: none;
-  }
-}

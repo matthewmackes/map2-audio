@@ -86,17 +86,3 @@
   margin: 10px 0 0;
 }
 
-@media (max-width: 768px) {
-  .compact-vu-strip {
-    padding: 16px;
-  }
-
-  .compact-vu-strip__header {
-    align-items: flex-start;
-    flex-direction: column;
-  }
-
-  .compact-vu-strip__meters {
-    grid-template-columns: 1fr;
-  }
-}

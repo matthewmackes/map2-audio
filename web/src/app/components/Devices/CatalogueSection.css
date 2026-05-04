@@ -68,11 +68,6 @@
   align-items: end;
 }
 
-@media (max-width: 900px) {
-  .catalogue-section__facets {
-    grid-template-columns: 1fr;
-  }
-}
 
 .catalogue-section__pane--bottom {
   display: flex;

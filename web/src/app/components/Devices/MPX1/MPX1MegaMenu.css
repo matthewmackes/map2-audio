@@ -462,35 +462,4 @@
   color: var(--cds-text-primary);
 }
 
-@media (max-width: 860px) {
-  .mpx1-mega-menu {
-    width: min(740px, 95vw);
-  }
 
-  .mpx1-mega-menu__body {
-    grid-template-columns: 1fr;
-    min-height: unset;
-  }
-
-  .mpx1-mega-menu__sidebar {
-    border-right: 0;
-    border-bottom: 1px solid var(--mpx1-border);
-  }
-}
-
-@media (max-width: 640px) {
-  .mpx1-mega-menu {
-    left: -8px;
-    width: min(96vw, 540px);
-  }
-
-  .mpx1-mega-menu__tiles,
-  .mpx1-mega-menu__quick-strip {
-    grid-template-columns: 1fr;
-  }
-
-  .mpx1-program-meta {
-    min-width: 130px;
-    max-width: 180px;
-  }
-}

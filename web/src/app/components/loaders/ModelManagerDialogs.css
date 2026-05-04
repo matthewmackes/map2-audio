@@ -121,8 +121,3 @@
   color: var(--text-secondary);
 }
 
-@media (max-width: 48rem) {
-  .model-manager-dialog__toolbar {
-    grid-template-columns: 1fr;
-  }
-}

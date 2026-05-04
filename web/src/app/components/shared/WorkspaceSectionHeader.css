@@ -61,12 +61,3 @@
   flex: 0 0 auto;
 }
 
-@media (max-width: 768px) {
-  .workspace-section-header {
-    flex-direction: column;
-  }
-
-  .workspace-section-header__actions {
-    justify-content: flex-start;
-  }
-}

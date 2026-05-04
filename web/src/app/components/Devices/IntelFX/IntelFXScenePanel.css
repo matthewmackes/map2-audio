@@ -170,19 +170,3 @@
   font: var(--cds-body-compact-01-font);
 }
 
-@media (max-width: 1024px) {
-  .intelfx-scene {
-    padding: 0.5rem;
-  }
-
-  .intelfx-scene__capture,
-  .intelfx-scene__setlist-create,
-  .intelfx-scene__setlist-select {
-    grid-template-columns: 1fr;
-  }
-
-  .intelfx-scene__setlist-row {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-}

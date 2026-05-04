@@ -399,43 +399,6 @@
   border-color: var(--cds-support-warning);
 }
 
-@media (max-width: 1055px) {
-  .snapshot-publish-page__hero-bar,
-  .snapshot-publish-page__hero-copy,
-  .snapshot-publish-page__panel-header,
-  .snapshot-publish-page__diff-header,
-  .snapshot-publish-page__diff-row {
-    grid-template-columns: 1fr;
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .snapshot-publish-page__checklist-row {
-    grid-template-columns: auto 1fr;
-  }
-
-  .snapshot-publish-page__checklist-row .cds--tag {
-    grid-column: 2;
-  }
-
-  .snapshot-publish-page__confirmation-row {
-    grid-template-columns: 1fr;
-  }
-
-  .snapshot-publish-page__workspace-actions,
-  .snapshot-publish-page__workspace-actions--spread,
-  .snapshot-publish-page__wizard-actions {
-    justify-content: flex-start;
-  }
-
-  .snapshot-publish-page__wizard-step {
-    grid-template-columns: auto minmax(0, 1fr);
-  }
-
-  .snapshot-publish-page__wizard-step .cds--tag {
-    grid-column: 2;
-  }
-}
 
 .snapshot-publish-page__perf-body {
   display: flex;

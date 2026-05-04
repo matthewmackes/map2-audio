@@ -231,8 +231,3 @@
   line-height: 1.5;
 }
 
-@media (max-width: 672px) {
-  .snapshot-schematic-revision-item {
-    grid-template-columns: minmax(0, 1fr);
-  }
-}

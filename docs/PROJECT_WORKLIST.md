@@ -36225,7 +36225,7 @@ Last updated: 2026-05-04 EDT - Claude: SHIPPED.
 ---
 
 ID: T2494
-Status: [ ] Todo
+Status: [✓] Done
 Title: Retire dead `@media (max-width: <1366px)` rules across web/src
 Description:
 - Goal / acceptance criteria: With the 1366x768 minimum viewport contract (T2493), any `@media (max-width: ...)` query whose threshold is below 1366px is dead — the layout never reaches those widths in a supported window. Audit and remove (or carbon-allow if the rule is intentionally testing a sub-minimum case for accessibility / print). Estimated 30+ rule sites across `audio control`, `ContentKicker`, `AppShell`, `ShoppingSearchDialog`, `ProductDetailDialog`, `PageTransition`, `Toasts`, `InstalledAssetsTable`, `HostMachine`, `CompactVuStrip`, etc.
@@ -36233,5 +36233,6 @@ Description:
 - Dependencies: T2493 (already shipped).
 - Estimated effort: Medium — 30+ rule removals + test/snapshot regen.
 - Required outputs: clean `git grep` for `@media \\(max-width: [0-9]+\\(px\\|rem\\)\\)` showing only rules ≥1366px (or carbon-allow annotation explaining why a sub-min rule survives, e.g. print stylesheet); regenerated visual baselines if any home/workspace harness routes shifted.
-Assigned to: Unassigned (queued for future SHIP loop)
-Last updated: 2026-05-04 EDT - Claude: filed alongside T2493.
+Assigned to: Claude
+Completion note: 2026-05-04 — Claude: SHIPPED. Audit found **171** `@media (max-width: ...)` blocks across **86** files (CSS + 2 TSX with embedded `<style>`); every threshold was below 1366px (largest was 1320px / 82rem≈1312px), so all 171 are dead under the T2493 contract. `@container` queries (CSS Container Queries — 6 sites in `PluginCardShell.tsx` + `SnapshotEditorPage.css`) were preserved untouched since they relate to container size, not viewport. Implemented strip via Python script (`/tmp/strip_media.py`) with proper brace-depth matching: removes a query block iff every `max-width:` threshold in the prelude is <1366px. Result: -2810 source lines, -598 bytes minified CSS bundle (`index-AV0TPkml.css` 844999 → `index-DU0rdFgX.css` 844401). `npm --prefix web run typecheck` clean; full jest 374/375 suites + 2063/2064 tests green (only pre-existing flaky `SequencerPage › auto-runs a scoped drum handoff import` left, passes in isolation, known test-isolation issue not introduced here); 3/3 DesktopExperience snapshots pass; atomic web build clean (19.14s); App bundle 630.89 KB unchanged structurally; new build live on port 3000. Verified zero `@media (max-width: ...)` queries remain in `web/src` after the sweep.
+Last updated: 2026-05-04 EDT - Claude: SHIPPED.

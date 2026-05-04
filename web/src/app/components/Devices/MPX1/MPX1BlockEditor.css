@@ -290,18 +290,4 @@
   opacity: 0.6;
 }
 
-@media (max-width: 1080px) {
-  .mpx1-editor__workspace {
-    grid-template-columns: 1fr;
-  }
 
-  .mpx1-editor__algorithms {
-    max-height: 220px;
-  }
-}
-
-@media (max-width: 780px) {
-  .mpx1-editor__block-strip {
-    grid-template-columns: repeat(3, minmax(0, 1fr));
-  }
-}

@@ -378,14 +378,3 @@
   display: none;
 }
 
-@media (max-width: 880px) {
-  .shell-kicker__head {
-    flex-direction: column;
-  }
-
-  .shell-kicker__actions {
-    justify-content: flex-start;
-    max-width: none;
-    margin-left: 0;
-  }
-}

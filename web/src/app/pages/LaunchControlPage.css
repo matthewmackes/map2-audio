@@ -100,10 +100,3 @@
   min-height: 9rem;
 }
 
-@media (max-width: 640px) {
-  .launch-control-page__panel-head,
-  .launch-control-page__list-item {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-}

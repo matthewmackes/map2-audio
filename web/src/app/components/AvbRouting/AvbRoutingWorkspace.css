@@ -231,29 +231,4 @@
   min-height: 2.5rem;
 }
 
-@media (max-width: 1055px) {
-  .avb-routing-workspace__section-header {
-    flex-direction: column;
-  }
 
-  .avb-routing-workspace__tag-row {
-    justify-content: flex-start;
-  }
-}
-
-@media (max-width: 671px) {
-  .avb-routing-workspace__hero {
-    min-height: 24rem;
-    padding: 0.5rem;
-  }
-
-  .avb-routing-workspace__graph,
-  .avb-routing-workspace__graph-empty,
-  .avb-routing-workspace__graph-loading {
-    height: 22rem;
-  }
-
-  .avb-routing-workspace__detail-list {
-    grid-template-columns: 1fr;
-  }
-}

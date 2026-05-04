@@ -483,40 +483,5 @@
   }
 }
 
-@media (max-width: 1312px) {
-  .push-surface-page .labs-page__status-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
 
-  .push-surface-page .labs-page__workspace,
-  .push-surface-page__refresh-rail {
-    grid-template-columns: 1fr;
-  }
-}
 
-@media (max-width: 960px) {
-  .push-surface-page {
-    padding: var(--cds-spacing-05);
-  }
-
-  .push-surface-page .labs-page__quick-assignment-list,
-  .push-surface-page .labs-page__example-grid,
-  .push-surface-page .labs-page__form-grid {
-    grid-template-columns: 1fr;
-  }
-}
-
-@media (max-width: 672px) {
-  .push-surface-page {
-    padding: var(--cds-spacing-04);
-  }
-
-  .push-surface-page .labs-page__status-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .push-surface-page .labs-page__section-heading {
-    align-items: start;
-    flex-direction: column;
-  }
-}

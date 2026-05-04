@@ -191,8 +191,3 @@
   font-size: var(--cds-heading-compact-01-font-size, 0.875rem);
 }
 
-@media (max-width: 768px) {
-  .numeric-input--responsive {
-    min-width: 100%;
-  }
-}

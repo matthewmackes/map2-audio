@@ -88,22 +88,3 @@
   line-height: 1.4;
 }
 
-@media (max-width: 640px) {
-  .special-settings-control-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .special-settings-segmented {
-    display: grid;
-    grid-auto-flow: row;
-  }
-
-  .special-settings-segment {
-    border-inline-end: 0;
-    border-block-end: 1px solid var(--cds-border-subtle-01);
-  }
-
-  .special-settings-segment:last-child {
-    border-block-end: 0;
-  }
-}

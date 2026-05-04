@@ -2598,105 +2598,10 @@
  * Responsive
  * ========================================================================= */
 
-@media (max-width: 1280px) {
-  .stage-notification-surface__grid--mission {
-    grid-template-columns: minmax(0, 1.1fr) minmax(0, 2.6fr) minmax(0, 1.1fr) minmax(0, 1.1fr);
-  }
-  .stage-midi-panel {
-    display: none;
-  }
-}
 
-@media (max-width: 1100px) {
-  .stage-notification-surface__grid--mission {
-    grid-template-columns: minmax(0, 1.1fr) minmax(0, 2.6fr) minmax(0, 1.1fr);
-  }
-}
 
-@media (max-width: 960px) {
-  .stage-notification-surface__grid--mission {
-    grid-template-columns: 1fr;
-  }
-  .stage-chyron__rig { font-size: 2.1rem; }
-  .stage-chyron__brand { display: none; }
-}
 
-@media (max-width: 720px) {
-  .stage-notification-surface {
-    left: 0.5rem;
-    right: 0.5rem;
-    bottom: 0.5rem;
-  }
-  .stage-notification-rail {
-    right: 0.75rem;
-    left: 0.75rem;
-    inline-size: auto;
-  }
-  .stage-notification-mini-kyron {
-    grid-template-columns: minmax(0, 1fr) auto;
-  }
-  .stage-notification-mini-kyron__headline {
-    font-size: 1.02rem;
-  }
-  .stage-notification-mini-kyron__actions {
-    grid-auto-flow: column;
-    grid-auto-columns: 2.9rem;
-    border-left: 0;
-    border-top: 1px solid color-mix(in srgb, var(--stage-mini-kyron-accent) 34%, transparent);
-  }
-  .stage-notification-mini-kyron__action {
-    inline-size: auto;
-    border-bottom: 0;
-    border-left: 1px solid color-mix(in srgb, var(--stage-mini-kyron-accent) 30%, transparent);
-  }
-  .stage-notification-mini-kyron__action:first-child {
-    border-left: 0;
-  }
-  .stage-notification-kyron {
-    grid-template-columns: minmax(0, 1fr);
-    min-height: auto;
-  }
-  .stage-notification-kyron__strap {
-    min-inline-size: 0;
-    justify-content: flex-start;
-  }
-  .stage-notification-kyron__body {
-    grid-template-columns: minmax(0, 1fr);
-    gap: 0.55rem;
-  }
-  .stage-notification-kyron__label {
-    justify-content: flex-start;
-    padding: 0.45rem 0.7rem;
-  }
-  .stage-mission-strap {
-    grid-template-columns: auto minmax(0, 1fr);
-  }
-  .stage-mission-strap__clock {
-    display: none;
-  }
-}
 
-@media (max-width: 540px) {
-  .stage-notification-surface__grid--mission {
-    grid-template-columns: minmax(0, 1fr);
-  }
-  .stage-notification-mini-kyron__broadcast {
-    align-items: flex-start;
-    flex-direction: column;
-  }
-  .stage-notification-idle-rail {
-    right: 0.75rem;
-    left: 0.75rem;
-    justify-content: center;
-  }
-  .stage-mission-strap {
-    gap: 0.5rem;
-    padding-inline: 0.65rem;
-  }
-  .stage-mission-strap__scroll {
-    animation-duration: 18s;
-  }
-}
 
 @media (prefers-reduced-motion: reduce) {
   .stage-notification-sparkline__path,

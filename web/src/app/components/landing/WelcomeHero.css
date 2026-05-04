@@ -680,68 +680,7 @@
 }
 
 /* ───────── Responsive ───────── */
-@media (max-width: 1100px) {
-  .map2x-live-grid {
-    grid-template-columns: 1fr;
-  }
-  .map2x-guide-grid {
-    grid-template-columns: repeat(2, 1fr);
-  }
-  .map2x-system-row {
-    grid-template-columns: repeat(2, 1fr);
-  }
-  .map2x-system-row__cell {
-    border-right: 1px solid var(--map2x-line);
-    border-bottom: 1px solid var(--map2x-line);
-  }
-  .map2x-system-row__cell:nth-child(2n) {
-    border-right: none;
-  }
-  .map2x-hero__title {
-    font-size: 56px;
-  }
-}
 
-@media (max-width: 700px) {
-  .map2x-hero__inner {
-    padding: 64px 20px 48px;
-  }
-  .map2x-hero__title {
-    font-size: 40px;
-  }
-  .map2x-hero__footer {
-    grid-template-columns: 1fr 1fr;
-    row-gap: 18px;
-  }
-  .map2x-hero__footer-cell {
-    border-right: none;
-    padding-left: 0;
-    padding-right: 0;
-  }
-  .map2x-section {
-    padding: 48px 20px 0;
-  }
-  .map2x-section__head {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-  .map2x-section__sub-right {
-    text-align: left;
-  }
-  .map2x-stat-grid {
-    grid-template-columns: 1fr 1fr;
-  }
-  .map2x-stat-cell {
-    border-right: 1px solid var(--map2x-line);
-    border-bottom: 1px solid var(--map2x-line);
-  }
-  .map2x-stat-cell:nth-child(2n) {
-    border-right: none;
-  }
-  .map2x-guide-grid {
-    grid-template-columns: 1fr;
-  }
-}
 
 /* ═════════════════ Platform-guide section styles ═════════════════
    Inlined below the live-status / guide-cards on the unified Home page. */
@@ -1042,38 +981,4 @@
 }
 
 /* Guide-section responsive overrides */
-@media (max-width: 1100px) {
-  .map2x-code-grid {
-    grid-template-columns: 1fr;
-  }
-}
 
-@media (max-width: 800px) {
-  .map2x-guide-section__inner {
-    padding: 40px 20px;
-  }
-  .map2x-kv-head,
-  .map2x-kv-row {
-    grid-template-columns: 1fr;
-  }
-  .map2x-kv-head__cell,
-  .map2x-kv-row__cell {
-    border-right: none;
-    border-bottom: 1px solid var(--map2x-line);
-  }
-  .map2x-bw-head,
-  .map2x-bw-row {
-    grid-template-columns: 1fr;
-  }
-  .map2x-bw-head__cell,
-  .map2x-bw-row__cell {
-    border-right: none;
-    border-bottom: 1px solid var(--map2x-line);
-  }
-  .map2x-bw-row__cell--right {
-    text-align: left;
-  }
-  .map2x-repo-grid {
-    grid-template-columns: 1fr 1fr;
-  }
-}

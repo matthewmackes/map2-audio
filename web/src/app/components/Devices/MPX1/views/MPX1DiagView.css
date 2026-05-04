@@ -139,8 +139,3 @@
   line-height: var(--cds-body-compact-01-line-height, 1.28572);
 }
 
-@media (max-width: 1200px) {
-  .mpx1-diag__metrics {
-    grid-template-columns: 1fr;
-  }
-}

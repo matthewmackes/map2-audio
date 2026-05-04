@@ -145,12 +145,6 @@
   opacity: 0.7;
 }
 
-@media (max-width: 600px) {
-  .node-selector__tab-name {
-    font-size: 12px;
-    max-width: 76px;
-  }
-}
 
 .node-selector__hidden {
   display: none;
@@ -231,16 +225,6 @@
   }
 }
 
-@media (max-width: 600px) {
-  .node-selector__network-stats {
-    visibility: hidden;
-    height: 0;
-    width: 0;
-    margin: 0;
-    padding: 0;
-    overflow: hidden;
-  }
-}
 
 .node-selector__tooltip {
   font-size: var(--cds-body-compact-01-font-size, 0.875rem);

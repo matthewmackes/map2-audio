@@ -164,12 +164,3 @@
   width: fit-content;
 }
 
-@media (max-width: 1024px) {
-  .intelfx-panel {
-    padding: 0.5rem;
-  }
-
-  .intelfx-panel__grid {
-    grid-template-columns: minmax(0, 1fr);
-  }
-}

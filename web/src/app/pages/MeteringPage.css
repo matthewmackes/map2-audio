@@ -20,20 +20,4 @@
   gap: var(--cds-spacing-06, 1.5rem);
 }
 
-@media (max-width: 960px) {
-  .metering-page {
-    max-width: 100%;
-    gap: var(--cds-spacing-05, 1rem);
-    padding: var(--cds-spacing-05, 1rem);
-  }
-}
 
-@media (max-width: 820px) {
-  .metering-page {
-    padding: var(--cds-spacing-04, 0.75rem);
-  }
-
-  .metering-status-grid {
-    grid-template-columns: 1fr;
-  }
-}

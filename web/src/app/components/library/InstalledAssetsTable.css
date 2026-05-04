@@ -312,32 +312,4 @@
   font-size: var(--cds-label-01-font-size, 0.75rem);
 }
 
-@media (max-width: 1056px) {
-  .installed-assets-table {
-    min-width: 58rem;
-  }
-}
 
-@media (max-width: 768px) {
-  .installed-assets-table-toolbar,
-  .installed-assets-table-footer {
-    padding: 0.75rem;
-  }
-
-  .installed-assets-table-toolbar__actions,
-  .installed-assets-table__filter-row,
-  .installed-assets-table__cluster-switcher {
-    width: 100%;
-  }
-
-  .installed-assets-table-toolbar__actions .cds--btn,
-  .installed-assets-table__filter-row .cds--btn,
-  .installed-assets-actions .cds--btn {
-    flex: 1;
-    min-width: 0;
-  }
-
-  .installed-assets-table {
-    min-width: 44rem;
-  }
-}

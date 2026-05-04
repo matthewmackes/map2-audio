@@ -704,42 +704,4 @@
    RESPONSIVE: MOBILE / TABLET
    ============================================================================ */
 
-@media (max-width: 1024px) {
-  .mainGrid {
-    grid-template-columns: 1fr;
-  }
 
-  .assignmentColumn {
-    border-right: none;
-    border-bottom: 1px solid var(--border);
-    min-height: 220px;
-  }
-
-  .monitorColumn {
-    border-left: none;
-    border-bottom: 1px solid var(--border);
-    min-height: 300px;
-  }
-
-  .formColumn {
-    padding: 0 14px;
-  }
-}
-
-@media (max-width: 672px) {
-  .fieldGrid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .meterRow {
-    gap: 16px;
-  }
-
-  .header {
-    padding: 16px 14px 0;
-  }
-
-  .title {
-    font-size: 22px;
-  }
-}

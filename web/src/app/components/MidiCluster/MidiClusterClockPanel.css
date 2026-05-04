@@ -65,13 +65,3 @@
   color: var(--cds-text-secondary, var(--text-secondary));
 }
 
-@media (max-width: 42rem) {
-  .midi-cluster-clock-panel__controls {
-    flex-direction: column;
-    align-items: stretch;
-  }
-
-  .midi-cluster-clock-panel__controls .cds--dropdown__wrapper {
-    min-width: 0;
-  }
-}

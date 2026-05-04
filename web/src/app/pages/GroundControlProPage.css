@@ -112,8 +112,3 @@
   padding-left: var(--cds-spacing-05);
 }
 
-@media (max-width: 1056px) {
-  .ground-control-pro-page__content {
-    padding: var(--cds-spacing-05);
-  }
-}

@@ -77,9 +77,3 @@
   font-size: var(--cds-label-01-font-size, 0.75rem);
 }
 
-@media (max-width: 48rem) {
-  .snapshot-deploy-modal__selection-status {
-    align-items: flex-start;
-    flex-direction: column;
-  }
-}

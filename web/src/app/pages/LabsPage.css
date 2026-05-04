@@ -333,39 +333,5 @@
   font-family: var(--cds-code-01-font-family, var(--font-mono));
 }
 
-@media (max-width: 1312px) {
-  .labs-page__status-grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
 
-  .labs-page__workspace {
-    grid-template-columns: 1fr;
-  }
-}
 
-@media (max-width: 960px) {
-  .labs-page {
-    padding: var(--cds-spacing-05);
-  }
-
-  .labs-page__quick-assignment-list,
-  .labs-page__example-grid,
-  .labs-page__form-grid {
-    grid-template-columns: 1fr;
-  }
-}
-
-@media (max-width: 672px) {
-  .labs-page {
-    padding: var(--cds-spacing-04);
-  }
-
-  .labs-page__status-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .labs-page__section-heading {
-    align-items: start;
-    flex-direction: column;
-  }
-}

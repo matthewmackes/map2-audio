@@ -188,29 +188,4 @@
   margin: 0;
 }
 
-@media (max-width: 1055px) {
-  .network-discovery-workspace__section-header {
-    flex-direction: column;
-  }
 
-  .network-discovery-workspace__tag-row {
-    justify-content: flex-start;
-  }
-}
-
-@media (max-width: 671px) {
-  .network-discovery-workspace__hero {
-    min-height: 24rem;
-    padding: 0.5rem;
-  }
-
-  .network-discovery-workspace__graph,
-  .network-discovery-workspace__graph-empty,
-  .network-discovery-workspace__graph-loading {
-    height: 22rem;
-  }
-
-  .network-discovery-workspace__detail-list {
-    grid-template-columns: 1fr;
-  }
-}

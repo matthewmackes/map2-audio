@@ -227,29 +227,4 @@
   margin: 0;
 }
 
-@media (max-width: 1055px) {
-  .cluster-dashboard-workspace__section-header {
-    flex-direction: column;
-  }
 
-  .cluster-dashboard-workspace__tag-row {
-    justify-content: flex-start;
-  }
-}
-
-@media (max-width: 671px) {
-  .cluster-dashboard-workspace__hero {
-    min-height: 24rem;
-    padding: 0.5rem;
-  }
-
-  .cluster-dashboard-workspace__graph,
-  .cluster-dashboard-workspace__graph-empty,
-  .cluster-dashboard-workspace__graph-loading {
-    height: 22rem;
-  }
-
-  .cluster-dashboard-workspace__detail-list {
-    grid-template-columns: 1fr;
-  }
-}

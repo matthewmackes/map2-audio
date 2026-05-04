@@ -580,11 +580,6 @@
   margin-left: auto;
 }
 
-@media (max-width: 42rem) {
-  .platform-shell__catalog-intro-card {
-    flex-direction: column;
-  }
-}
 
 /* ── Notification strip ──────────────────────────────────── */
 .platform-shell__notification-strip {
@@ -723,12 +718,6 @@
   color: var(--cds-text-primary);
 }
 
-@media (max-width: 42rem) {
-  .platform-shell__authority-intro,
-  .platform-shell__authority-card-head {
-    flex-direction: column;
-  }
-}
 
 /* ── Summary tiles ───────────────────────────────────────── */
 .platform-shell__summary-tile-head {
@@ -1019,48 +1008,8 @@
 }
 
 /* ── Responsive ──────────────────────────────────────────── */
-@media (max-width: 1080px) {
-  .platform-shell-page {
-    --platform-menu-scale: 1.2;
-  }
 
-  .platform-shell-page .workspace-page-template__window {
-    grid-template-columns: 1fr;
-  }
 
-  .platform-shell__sidebar {
-    order: -1;
-  }
-
-}
-
-@media (max-width: 960px) {
-  .platform-shell__cp-grid {
-    grid-template-columns: repeat(4, 1fr);
-  }
-
-  .platform-shell__sidebar .workspace-side-nav__tree .cds--tree-node__label {
-    padding-block: 0.72rem;
-    padding-inline-end: 0.75rem;
-  }
-}
-
-@media (max-width: 720px) {
-  .platform-shell-page {
-    --platform-menu-scale: 1.08;
-    --workspace-page-template-padding-block: 1.25rem;
-    --workspace-page-template-padding-inline: 1rem;
-  }
-
-  .platform-shell__cp-grid {
-    grid-template-columns: repeat(3, 1fr);
-  }
-
-  .platform-shell__detail-row {
-    flex-direction: column;
-    align-items: stretch;
-  }
-}
 
 @media (prefers-reduced-motion: reduce) {
   .platform-shell__cp-item {
@@ -1345,19 +1294,7 @@
   line-height: 1.45;
 }
 
-@media (max-width: 671px) {
-  .platform-modal__body,
-  .platform-modal__body--expanded {
-    border-radius: 8px;
-  }
-}
 
-@media (max-width: 960px) {
-  .platform-modal__body,
-  .platform-modal__body--expanded {
-    max-width: calc(100vw - 2rem);
-  }
-}
 
 /* ── Platforms Overview Topology (Option 5 design) ─────────────────────── */
 
@@ -2016,18 +1953,4 @@
 }
 
 /* Responsive: collapse sidebar below 1200px; allow horizontal scroll-ish fallback */
-@media (max-width: 1199px) {
-  .ptop__body {
-    grid-template-columns: 1fr 300px;
-  }
-}
 
-@media (max-width: 1023px) {
-  .ptop__body {
-    grid-template-columns: 1fr;
-  }
-  .ptop__sidebar {
-    border-left: 0;
-    border-top: 1px solid var(--ptop-border);
-  }
-}

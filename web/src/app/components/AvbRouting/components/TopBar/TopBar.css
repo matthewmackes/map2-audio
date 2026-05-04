@@ -17,13 +17,6 @@
   min-height: 56px;
 }
 
-@media (max-width: 600px) {
-  .topbar__toolbar {
-    gap: var(--cds-spacing-03, 0.5rem);
-    padding: var(--cds-spacing-03, 0.5rem) var(--cds-spacing-03, 0.5rem);
-    min-height: auto;
-  }
-}
 
 .topbar__divider {
   border: 0;
@@ -68,13 +61,6 @@
   min-width: 180px;
 }
 
-@media (max-width: 600px) {
-  .topbar__title {
-    font-size: 1rem;
-    width: 100%;
-    min-width: 0;
-  }
-}
 
 .topbar__subtitle {
   display: block;

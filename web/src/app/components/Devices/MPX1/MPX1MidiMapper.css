@@ -262,8 +262,3 @@
   font-size: var(--cds-label-01-font-size, 0.75rem);
 }
 
-@media (max-width: 1320px) {
-  .mpx1-midi-map__workspace {
-    grid-template-columns: 1fr;
-  }
-}

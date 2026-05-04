@@ -651,36 +651,8 @@
 
 /* ── Responsive ───────────────────────────────────────────────────────────── */
 
-@media (max-width: 1200px) {
-  .mpx1-flow-sidebar__param-grid {
-    grid-template-columns: repeat(auto-fit, minmax(84px, 1fr));
-  }
-}
 
-@media (max-width: 980px) {
-  .mpx1-flow__workspace {
-    grid-template-rows: minmax(190px, 1fr) auto;
-    gap: 8px;
-    padding: 8px;
-  }
 
-  .mpx1-flow__canvas-inner {
-    min-width: 760px;
-    padding: var(--cds-spacing-07, 2rem) var(--cds-spacing-07, 2rem) var(--cds-spacing-07, 2rem);
-    gap: var(--cds-spacing-05, 1rem);
-  }
-
-  .mpx1-flow-sidebar__algo-section {
-    grid-template-columns: 1fr;
-    gap: 6px;
-  }
-}
-
-@media (max-width: 760px) {
-  .mpx1-flow-sidebar__param-grid {
-    grid-template-columns: repeat(auto-fit, minmax(78px, 1fr));
-  }
-}
 
 /* ═══════════════════════════════════════════════════════════════════════════
    Effect Order Bar + Panel

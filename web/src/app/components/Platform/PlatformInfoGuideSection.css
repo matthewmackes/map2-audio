@@ -229,29 +229,4 @@
   line-height: var(--cds-helper-text-01-line-height, 1rem);
 }
 
-@media (max-width: 66rem) {
-  .platform-guide-library {
-    max-height: none;
-  }
 
-  .platform-guide-library__controls {
-    grid-template-columns: 1fr;
-  }
-
-  .platform-guide-library__sort-group {
-    justify-content: flex-start;
-  }
-}
-
-@media (max-width: 42rem) {
-  .platform-guide-library__header,
-  .platform-guide-library__body {
-    padding-inline: 1rem;
-  }
-
-  .platform-guide-library__card-top,
-  .platform-guide-library__card-footer {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-}

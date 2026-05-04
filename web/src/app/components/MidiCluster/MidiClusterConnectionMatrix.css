@@ -52,8 +52,3 @@
   line-height: var(--cds-body-short-01-line-height);
 }
 
-@media (max-width: 42rem) {
-  .midi-cluster-connection-matrix__selection-action {
-    min-inline-size: 100%;
-  }
-}

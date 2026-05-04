@@ -409,8 +409,3 @@
 }
 
 /* ---------- Responsive ---------- */
-@media (max-width: 1100px) {
-  .pedalboard-wizard__hero { grid-template-columns: 1fr; }
-  .pedalboard-wizard__hero-actions { justify-content: flex-start; }
-  .pedalboard-wizard__secondary { grid-template-columns: 1fr; }
-}

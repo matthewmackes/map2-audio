@@ -82,13 +82,3 @@
   padding: 0.625rem 0.75rem;
 }
 
-@media (max-width: 799px) {
-  .platform-remediation__mode-tiles,
-  .platform-remediation__split {
-    grid-template-columns: 1fr;
-  }
-
-  .platform-remediation__selector-row {
-    grid-template-columns: auto 1fr;
-  }
-}

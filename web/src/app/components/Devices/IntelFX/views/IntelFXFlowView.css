@@ -50,8 +50,3 @@
   overflow: hidden;
 }
 
-@media (max-width: 1024px) {
-  .intelfx-flow-view {
-    padding: 0.5rem;
-  }
-}

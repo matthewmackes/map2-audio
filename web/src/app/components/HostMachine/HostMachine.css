@@ -293,12 +293,6 @@
     inset -1px -1px 0 color-mix(in srgb, black 12%, transparent);
 }
 
-@media (max-width: 800px) {
-  .hm-kpi-row { grid-template-columns: repeat(2, 1fr); }
-}
-@media (max-width: 480px) {
-  .hm-kpi-row { grid-template-columns: 1fr; }
-}
 
 .hm-kpi-card {
   background: color-mix(in srgb, var(--cds-layer, var(--surface)) 94%, transparent);
@@ -681,9 +675,6 @@
   gap: 12px;
 }
 
-@media (max-width: 640px) {
-  .hm-health-monitor { grid-template-columns: 1fr; }
-}
 
 /* ── Disk grid ────────────────────────────────────────────────── */
 
@@ -779,9 +770,6 @@
   gap: 12px;
 }
 
-@media (max-width: 680px) {
-  .hm-specs-grid { grid-template-columns: 1fr; }
-}
 
 /* ── Branding panel ───────────────────────────────────────────── */
 
@@ -805,17 +793,6 @@
     inset -1px -1px 0 color-mix(in srgb, black 14%, transparent);
 }
 
-@media (max-width: 720px) {
-  .hm-branding {
-    grid-template-columns: 1fr;
-    text-align: center;
-  }
-  .hm-branding__logo-wrap,
-  .hm-branding__image-wrap {
-    display: flex;
-    justify-content: center;
-  }
-}
 
 .hm-branding__logo-wrap {
   display: flex;
@@ -912,9 +889,6 @@
   align-items: start;
 }
 
-@media (max-width: 680px) {
-  .hm-service-grid { grid-template-columns: 1fr; }
-}
 
 /* ── Audio features ───────────────────────────────────────────── */
 
@@ -959,8 +933,6 @@
   gap: var(--cds-spacing-04, 0.75rem);
 }
 
-@media (max-width: 900px) { .hm-feature-grid { grid-template-columns: repeat(2, 1fr); } }
-@media (max-width: 560px) { .hm-feature-grid { grid-template-columns: 1fr; } }
 
 .hm-feature-card {
   background:
@@ -1028,7 +1000,6 @@
   gap: 12px;
 }
 
-@media (max-width: 680px) { .hm-workloads { grid-template-columns: 1fr; } }
 
 .hm-check-list,
 .hm-info-list {
@@ -1077,7 +1048,6 @@
   gap: 8px;
 }
 
-@media (max-width: 560px) { .hm-guidelines__grid { grid-template-columns: 1fr; } }
 
 .hm-guideline-item {
   background: color-mix(in srgb, var(--cds-layer-hover, var(--surface-3)) 94%, transparent);
@@ -1153,7 +1123,6 @@
     inset -1px -1px 0 color-mix(in srgb, black 10%, transparent);
 }
 
-@media (max-width: 700px) { .hm-perf__kpis { grid-template-columns: repeat(2, 1fr); } }
 
 .hm-perf-tile {
   background: color-mix(in srgb, var(--cds-layer, var(--surface-2)) 96%, transparent);

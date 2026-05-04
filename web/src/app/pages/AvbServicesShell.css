@@ -36,11 +36,3 @@
   min-height: calc(100vh - 10rem);
 }
 
-@media (max-width: 1056px) {
-  .avb-services-shell {
-    --workspace-page-template-padding-block: var(--cds-spacing-04);
-    --workspace-page-template-padding-inline: var(--cds-spacing-05);
-    --workspace-page-template-content-only-padding-block: var(--cds-spacing-04);
-    --workspace-page-template-content-only-padding-inline: 0.75rem;
-  }
-}

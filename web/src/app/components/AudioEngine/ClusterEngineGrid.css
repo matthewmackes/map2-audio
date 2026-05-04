@@ -241,9 +241,3 @@
   color: var(--cds-support-error);
 }
 
-@media (max-width: 42rem) {
-  .cluster-engine-grid__pair-grid,
-  .cluster-engine-grid__triple-grid {
-    grid-template-columns: 1fr;
-  }
-}

@@ -313,9 +313,3 @@
   background: transparent;
 }
 
-@media (max-width: 720px) {
-  .adm-embedded__header {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-}

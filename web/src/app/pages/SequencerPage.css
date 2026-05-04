@@ -161,21 +161,6 @@
   vertical-align: top;
 }
 
-@media (max-width: 1100px) {
-  .brain-page__overview-grid,
-  .brain-page__section-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .brain-page__qualification-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .brain-page__slot-strip,
-  .brain-page__slot-grid {
-    grid-template-columns: repeat(4, minmax(0, 1fr));
-  }
-}
 
 .brain-page__divider {
   grid-column: 1 / -1;

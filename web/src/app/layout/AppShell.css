@@ -184,16 +184,6 @@
   letter-spacing: 0.01em;
 }
 
-@media (max-width: 880px) {
-  .app-shell__frame {
-    grid-template-columns: minmax(0, 1fr);
-    grid-template-rows: auto minmax(0, 1fr);
-  }
-
-  .mobile-connection-banner {
-    left: var(--cds-spacing-04, 0.75rem);
-  }
-}
 
 .shell-launcher {
   position: fixed;
@@ -1138,31 +1128,7 @@ button.window-taskbar__pill {
   border-radius: 0;
 }
 
-@media (max-width: 66rem) {
-  .shell-launcher__panel,
-  .start-menu-panel {
-    width: min(24rem, calc(100vw - 0.75rem));
-  }
 
-  .window-taskbar {
-    gap: 0.5rem;
-  }
-
-  .window-taskbar__left {
-    gap: 0.25rem;
-  }
-
-  .window-taskbar__start-system {
-    display: none;
-  }
-}
-
-@media (max-width: 640px) {
-  .start-menu-panel {
-    width: min(22rem, calc(100vw - 0.5rem));
-    height: calc(100vh - var(--window-taskbar-height) - 0.2rem);
-  }
-}
 
 .topbar-pro__latency-pressure {
   display: inline-flex;
@@ -1288,24 +1254,6 @@ button.topbar-pro__latency-pressure:focus-visible {
 }
 
 
-@media (max-width: 42rem) {
-  .window-taskbar__indicator {
-    padding-inline: 0.42rem;
-  }
-
-  .topbar-pro__latency-pressure {
-    min-width: 4.15rem;
-    padding-inline: 0.55rem;
-  }
-
-  .topbar-pro__latency-pressure-label {
-    display: none;
-  }
-
-  .topbar-pro__latency-pressure-digits {
-    font-size: var(--cds-body-01-font-size, 1rem);
-  }
-}
 
 @keyframes start-menu-panel-enter {
   0% {
@@ -1591,56 +1539,9 @@ button.topbar-pro__latency-pressure:focus-visible {
   font-weight: 600;
 }
 
-@media (max-width: 82rem) {
-  .advanced-menu-panel--control-panel {
-    --platform-menu-scale: 1;
-  }
-}
 
 /* 42rem and 35rem remain intentional shell-specific deviations for dense operator menus. */
-@media (max-width: 42rem) {
-  .advanced-menu-panel--control-panel {
-    --platform-menu-scale: 1;
-    width: min(96vw, var(--topbar-dropdown-width));
-  }
 
-  .advanced-menu-panel--control-panel .platform-shell__content {
-    padding: 1rem;
-  }
-
-  .advanced-menu-control-panel__grid {
-    grid-template-columns: repeat(2, minmax(0, 1fr));
-  }
-
-  .advanced-menu-control-panel__item-footer,
-  .advanced-menu-control-panel__details-header {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .advanced-menu-control-panel__details-tags {
-    justify-content: flex-start;
-  }
-
-  .advanced-menu-control-panel__details-grid {
-    grid-template-columns: 1fr;
-  }
-}
-
-@media (max-width: 35rem) {
-  .advanced-menu-control-panel__section-heading {
-    flex-direction: column;
-    align-items: flex-start;
-  }
-
-  .advanced-menu-control-panel__grid {
-    grid-template-columns: 1fr;
-  }
-
-  .advanced-menu-control-panel__item-state {
-    white-space: normal;
-  }
-}
 
 @media (prefers-reduced-motion: reduce) {
   .advanced-menu-control-panel__details-btn {

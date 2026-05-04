@@ -415,29 +415,4 @@
   margin: 0;
 }
 
-@media (max-width: 1055px) {
-  .management-workspace__section-header {
-    flex-direction: column;
-  }
 
-  .management-workspace__tag-row {
-    justify-content: flex-start;
-  }
-}
-
-@media (max-width: 671px) {
-  .management-workspace__hero {
-    min-height: 24rem;
-    padding: 0.5rem;
-  }
-
-  .management-workspace__graph,
-  .management-workspace__graph-empty,
-  .management-workspace__graph-loading {
-    height: 22rem;
-  }
-
-  .management-workspace__detail-list {
-    grid-template-columns: 1fr;
-  }
-}

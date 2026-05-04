@@ -375,16 +375,6 @@
   }
 }
 
-@media (max-width: 720px) {
-  .landing-route-transition__grid {
-    grid-template-columns: repeat(5, minmax(0, 1fr));
-    grid-template-rows: repeat(8, minmax(0, 1fr));
-  }
-
-  .landing-route-transition__block {
-    animation-delay: calc(((7 - var(--landing-route-transition-mobile-row)) + var(--landing-route-transition-mobile-column)) * 16ms);
-  }
-}
 
 @media (prefers-reduced-motion: reduce) {
   .page-transition-scope__content--pager,

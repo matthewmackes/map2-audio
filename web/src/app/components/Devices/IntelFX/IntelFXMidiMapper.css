@@ -138,13 +138,3 @@
   font: var(--cds-body-compact-01-font);
 }
 
-@media (max-width: 1024px) {
-  .intelfx-midi-mapper {
-    padding: 0.5rem;
-  }
-
-  .intelfx-midi-mapper__toolbar-left,
-  .intelfx-midi-mapper__toolbar-right {
-    align-items: stretch;
-  }
-}

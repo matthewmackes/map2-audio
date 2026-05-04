@@ -603,65 +603,6 @@
   font-weight: 600;
 }
 
-@media (max-width: 600px) {
-  .horizontal-chain {
-    flex-direction: column;
-    overflow-x: visible;
-    overflow-y: auto;
-    max-height: 400px;
-  }
-
-  .h-plugin-wrapper {
-    flex-direction: column;
-  }
-
-  .h-connector {
-    width: 2px;
-    height: 16px;
-  }
-
-  .h-connector::after {
-    right: auto;
-    bottom: -3px;
-    top: auto;
-    left: -3px;
-    border-left: 4px solid transparent;
-    border-right: 4px solid transparent;
-    border-top: 5px solid var(--muted-2);
-    border-bottom: none;
-  }
-
-  .h-connector.active::after {
-    border-top-color: var(--primary);
-    border-left-color: transparent;
-  }
-
-  .h-drop-indicator {
-    left: 50%;
-    top: -4px;
-    transform: translateX(-50%);
-    width: 40px;
-    height: 4px;
-  }
-
-  .h-plugin-tooltip-wrapper {
-    bottom: auto;
-    left: calc(100% + 12px);
-    top: 50%;
-    transform: translateY(-50%);
-  }
-
-  .plugin-tooltip::after {
-    bottom: auto;
-    left: -6px;
-    top: 50%;
-    transform: translateY(-50%);
-    border-top: 6px solid transparent;
-    border-bottom: 6px solid transparent;
-    border-right: 6px solid var(--primary);
-    border-left: none;
-  }
-}
 
 /* T2466-6: respect prefers-reduced-motion across all chain transitions. */
 @media (prefers-reduced-motion: reduce) {

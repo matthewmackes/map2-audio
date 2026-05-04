@@ -59,8 +59,3 @@
   height: var(--map2-route-loader-skel-rail);
 }
 
-@media (max-width: 42rem) {
-  .map2-route-loader__grid--midi-hub {
-    grid-template-columns: 1fr;
-  }
-}

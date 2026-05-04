@@ -120,12 +120,3 @@
   font: var(--cds-body-compact-01-font);
 }
 
-@media (max-width: 1024px) {
-  .intelfx-midi-map-page {
-    padding: 0.5rem;
-  }
-
-  .intelfx-midi-map-page__create {
-    grid-template-columns: minmax(0, 1fr);
-  }
-}

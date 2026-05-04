@@ -212,41 +212,4 @@
   color: var(--text-primary);
 }
 
-@media (max-width: 1180px) {
-  .intelfx-statusbar {
-    grid-template-columns: auto auto 1fr;
-    grid-auto-flow: row;
-    grid-auto-rows: minmax(24px, auto);
-    height: auto;
-    padding: 6px 8px;
-    gap: 6px;
-  }
 
-  .intelfx-shell__main {
-    grid-template-rows: minmax(0, 1fr) auto;
-  }
-
-  .intelfx-statusbar__mix,
-  .intelfx-statusbar__tap,
-  .intelfx-statusbar__bypass {
-    grid-column: 1 / -1;
-  }
-}
-
-@media (max-width: 760px) {
-  .intelfx-shell {
-    grid-template-columns: 1fr;
-    grid-template-rows: auto minmax(0, 1fr);
-  }
-
-  .intelfx-shell__sidebar {
-    border-right: 0;
-    border-bottom: 1px solid var(--intelfx-shell-border);
-    position: static;
-    min-height: 0;
-  }
-
-  .intelfx-shell__content {
-    padding: var(--cds-spacing-04, 0.75rem);
-  }
-}

@@ -64,12 +64,3 @@
   }
 }
 
-@media (max-width: 720px) {
-  .workspace-hub-shell__template {
-    --workspace-page-template-padding-block: var(--cds-spacing-05);
-    --workspace-page-template-padding-inline: 0.85rem;
-    --workspace-page-template-gap: var(--cds-spacing-05);
-    --workspace-page-template-content-only-padding-block: var(--cds-spacing-04);
-    --workspace-page-template-content-only-padding-inline: 0.75rem;
-  }
-}

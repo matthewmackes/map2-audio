@@ -148,9 +148,3 @@
   color: var(--cds-text-secondary);
 }
 
-@media (max-width: 800px) {
-  .product-detail-dialog__stats-grid,
-  .product-detail-dialog__gallery-grid {
-    grid-template-columns: 1fr;
-  }
-}

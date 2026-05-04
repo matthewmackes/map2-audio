@@ -567,32 +567,5 @@
 
 /* -- Responsive ------------------------------------------------------------- */
 
-@media (max-width: 1200px) {
-  .intelfx-flow-sidebar__param-grid {
-    grid-template-columns: repeat(auto-fit, minmax(84px, 1fr));
-  }
-}
 
-@media (max-width: 980px) {
-  .intelfx-flow__workspace {
-    grid-template-rows: minmax(200px, 1fr) auto;
-    gap: 8px;
-    padding: 8px;
-  }
 
-  .intelfx-flow__canvas-inner {
-    min-width: 780px;
-    padding: var(--cds-spacing-07, 2rem) var(--cds-spacing-07, 2rem) var(--cds-spacing-07, 2rem);
-    gap: var(--cds-spacing-05, 1rem);
-  }
-}
-
-@media (max-width: 760px) {
-  .intelfx-flow-sidebar__param-grid {
-    grid-template-columns: repeat(auto-fit, minmax(78px, 1fr));
-  }
-
-  .intelfx-flow-card {
-    width: 96px;
-  }
-}

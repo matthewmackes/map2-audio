@@ -189,11 +189,6 @@
   line-height: 1.55;
 }
 
-@media (max-width: 900px) {
-  .hp2-home-shell__operations-hero {
-    grid-template-columns: minmax(0, 1fr);
-  }
-}
 
 .hp2-home-shell__table-container {
   background: transparent;
@@ -345,39 +340,4 @@
   }
 }
 
-@media (max-width: 66rem) {
-  .hp2-home-shell__operations-hero {
-    grid-template-columns: 1fr;
-  }
 
-  .hp2-home-shell__guitar-entry-steps {
-    grid-template-columns: 1fr;
-  }
-}
-
-@media (max-width: 42rem) {
-  .hp2-home-shell__content.cds--content {
-    padding:
-      var(--cds-spacing-05, 1rem)
-      var(--cds-spacing-05, 1rem)
-      calc(var(--window-taskbar-height, 2.6rem) + var(--cds-spacing-05, 1rem))
-      var(--cds-spacing-05, 1rem);
-  }
-
-  .hp2-home-shell__operations-title {
-    max-width: 100%;
-  }
-
-  .hp2-home-shell__title-brand-image {
-    max-width: 100%;
-    max-height: clamp(3.25rem, 15vw, 4.5rem);
-  }
-
-  .hp2-home-shell__table-toolbar {
-    align-items: stretch;
-  }
-
-  .hp2-home-shell__table.cds--data-table {
-    min-width: 58rem;
-  }
-}

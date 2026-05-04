@@ -187,12 +187,3 @@
   font: var(--cds-body-compact-01-font);
 }
 
-@media (max-width: 1024px) {
-  .intelfx-librarian {
-    padding: 0.5rem;
-  }
-
-  .intelfx-librarian__version-create {
-    grid-template-columns: 1fr;
-  }
-}

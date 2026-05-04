@@ -59,11 +59,3 @@
   flex-shrink: 0;
 }
 
-@media (max-width: 720px) {
-  .publish-ready-banner {
-    flex-wrap: wrap;
-  }
-  .publish-ready-banner__actions {
-    margin-inline-start: auto;
-  }
-}

@@ -172,29 +172,3 @@
   flex-wrap: wrap;
 }
 
-@media (max-width: 56rem) {
-  .intelfx-perform-page {
-    padding: var(--cds-spacing-05);
-  }
-
-  .intelfx-perform-page__morph-grid,
-  .intelfx-perform-page__morph-controls {
-    grid-template-columns: 1fr;
-  }
-
-  .intelfx-perform-page__morph-arrow {
-    display: none;
-  }
-
-  .intelfx-perform-page__morph-action {
-    justify-content: flex-start;
-  }
-
-  .intelfx-perform-page__scene-card {
-    flex-direction: column;
-  }
-
-  .intelfx-perform-page__capture-input {
-    min-width: 100%;
-  }
-}

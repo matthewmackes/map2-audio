@@ -495,40 +495,6 @@
 
 /* ── Responsive: tablet (≤1056px) ──────────────────────────────────────── */
 
-@media (max-width: 66rem) {
-  .audio-engine-page__surface {
-    padding: var(--cds-spacing-05);
-  }
-
-  .audio-engine-page__source-truth-graph {
-    min-height: 22rem;
-  }
-
-  .audio-engine-page__latency-grid {
-    grid-template-columns: 1fr 1fr;
-  }
-}
 
 /* ── Responsive: mobile (≤672px) ───────────────────────────────────────── */
 
-@media (max-width: 42rem) {
-  .audio-engine-page__surface {
-    padding: var(--cds-spacing-04);
-  }
-
-  .audio-engine-page__header-summary {
-    flex-direction: column;
-  }
-
-  .audio-engine-page__section {
-    padding: var(--cds-spacing-05) 0;
-  }
-
-  .audio-engine-page__kv-grid {
-    grid-template-columns: 1fr 1fr;
-  }
-
-  .audio-engine-page__latency-grid {
-    grid-template-columns: 1fr;
-  }
-}

@@ -1576,14 +1576,7 @@ export function LCDView({ forcedSection, hideChrome }: LCDViewProps = {}) {
           gap: 16px;
           margin-bottom: 24px;
         }
-        @media (max-width: 1200px) {
-          .grid.four { grid-template-columns: repeat(2, 1fr); }
-          .grid.five { grid-template-columns: repeat(3, 1fr); }
-        }
-        @media (max-width: 600px) {
-          .grid.four, .grid.five { grid-template-columns: 1fr; }
-        }
-
+                
         /* ── Educational Banner ── */
         .lcd-edu-banner {
           --lcd-edu-banner-copy-size: 13px;
@@ -1644,9 +1637,7 @@ export function LCDView({ forcedSection, hideChrome }: LCDViewProps = {}) {
         .displays-tab { display: flex; flex-direction: column; gap: 24px; }
         .lcd-simulators-row { display: grid; grid-template-columns: repeat(2, 1fr); gap: 24px; }
         .lcd-controls-row { display: grid; grid-template-columns: repeat(3, 1fr); gap: 24px; }
-        @media (max-width: 900px) { .lcd-simulators-row { grid-template-columns: 1fr; } }
-        @media (max-width: 1100px) { .lcd-controls-row { grid-template-columns: 1fr; } }
-
+                
         /* LCD Simulator Card */
         .lcd-simulator-card {
           background: linear-gradient(145deg, #1a1a1a 0%, #111 100%);
@@ -1835,8 +1826,7 @@ export function LCDView({ forcedSection, hideChrome }: LCDViewProps = {}) {
         .hardware-info { background: #1a1a1a; border: 1px solid #2a2a2a; border-radius: 16px; padding: var(--cds-spacing-06, 1.5rem); margin-top: 24px; }
         .info-header { display: flex; align-items: center; gap: 8px; color: #fff; font-weight: 600; margin-bottom: 16px; }
         .info-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; }
-        @media (max-width: 800px) { .info-grid { grid-template-columns: repeat(2, 1fr); } }
-        .info-item { display: flex; flex-direction: column; gap: 4px; }
+                .info-item { display: flex; flex-direction: column; gap: 4px; }
         .info-label { color: #666; font-size: var(--cds-body-compact-01-font-size, 0.875rem); }
         .info-value { color: #fff; font-size: var(--cds-heading-01-font-size, 1rem); font-weight: 500; }
 
@@ -1846,8 +1836,7 @@ export function LCDView({ forcedSection, hideChrome }: LCDViewProps = {}) {
         .ft232h-docs-link { margin-left: auto; display: flex; align-items: center; gap: 6px; font-size: var(--cds-body-compact-01-font-size, 0.875rem); color: #22c55e; text-decoration: none; }
         .ft232h-docs-link:hover { text-decoration: underline; }
         .ft232h-layout { display: grid; grid-template-columns: 250px 1fr 280px; gap: var(--cds-spacing-06, 1.5rem); }
-        @media (max-width: 1200px) { .ft232h-layout { grid-template-columns: 1fr; } }
-        .ft232h-status-panel, .ft232h-wiring-panel { background: #0a0a0a; border: 1px solid #222; border-radius: 8px; padding: 16px; }
+                .ft232h-status-panel, .ft232h-wiring-panel { background: #0a0a0a; border: 1px solid #222; border-radius: 8px; padding: 16px; }
         .panel-header { display: flex; align-items: center; gap: 8px; font-size: var(--cds-body-compact-01-font-size, 0.875rem); font-weight: 600; color: #888; margin-bottom: 12px; padding-bottom: 8px; border-bottom: 1px solid #222; }
         .status-item { display: flex; justify-content: space-between; align-items: center; padding: 8px 0; border-bottom: 1px solid #1a1a1a; }
         .status-label { color: #666; font-size: var(--cds-body-compact-01-font-size, 0.875rem); }

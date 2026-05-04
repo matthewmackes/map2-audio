@@ -696,12 +696,7 @@ export function EQCard({
           font-family: var(--font-ui-tight);
         }
 
-        @media (max-width: 600px) {
-          .eq-expanded-bands {
-            grid-template-columns: repeat(2, 1fr);
-          }
-        }
-      `}</style>
+              `}</style>
     </div>
   )
 }

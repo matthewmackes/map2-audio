@@ -212,8 +212,3 @@
   cursor: pointer;
 }
 
-@media (max-width: 1300px) {
-  .mpx1-matrix__workspace {
-    grid-template-columns: 1fr;
-  }
-}

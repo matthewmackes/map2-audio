@@ -359,17 +359,3 @@
 
 /* ── Responsive: collapse sidebar on narrow modal ───────────────────────────── */
 
-@media (max-width: 720px) {
-  .rtm__panel-grid {
-    grid-template-columns: 1fr;
-  }
-
-  .rtm__visual {
-    min-block-size: clamp(8rem, 40vw, 16rem);
-  }
-
-  .rtm__midi-table-head,
-  .rtm__midi-row {
-    grid-template-columns: minmax(8rem, 1fr) 9rem 5rem 5rem 4rem 6rem 9rem;
-  }
-}
