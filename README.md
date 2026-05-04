@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1476** Python | **1492** TypeScript | **179** C++/H | **146** Docs | **3847** total commits | **3** stars | **0** forks | **0** open issues
+**1476** Python | **1492** TypeScript | **179** C++/H | **146** Docs | **3849** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`5c4e5491`](https://github.com/matthewmackes/map2-audio/commit/5c4e5491e50fa7a93ab7ae6b85d749e173522c47) | docs(t2481-g4): closing audit walk — 25-page rubric scoring | Map2 Audio | 2026-05-04 |
+| [`d120ba92`](https://github.com/matthewmackes/map2-audio/commit/d120ba92b6fca296d6c18054cc16c32225b6db3a) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-04 |
 | [`abee5e17`](https://github.com/matthewmackes/map2-audio/commit/abee5e17dd65566d2fc6ba36273962bc4efddf40) | docs(t2481-g3): refresh suppression audit post Z-cleanup | Map2 Audio | 2026-05-04 |
 | [`a7a6b2ca`](https://github.com/matthewmackes/map2-audio/commit/a7a6b2caba642a486716b4022a2c84b6200e9614) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-04 |
 | [`e359ccbb`](https://github.com/matthewmackes/map2-audio/commit/e359ccbbce6937e751c38a3057ae166508369d6f) | chore(t2481-z): delete 3 dead react-refresh per-line supp... | Map2 Audio | 2026-05-04 |
 | [`2b9e47d8`](https://github.com/matthewmackes/map2-audio/commit/2b9e47d88ba3d96fd72d6a03c1c182c5e666d104) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-04 |
 | [`036a0894`](https://github.com/matthewmackes/map2-audio/commit/036a08942422ad35e5a2940c84312120d4cff00c) | docs(t2481-g3): author lint suppression audit; close T248... | Map2 Audio | 2026-05-04 |
 | [`9acf090c`](https://github.com/matthewmackes/map2-audio/commit/9acf090c5e401288bab463c9e112d6673223e99c) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-04 |
-| [`fdc7dd5b`](https://github.com/matthewmackes/map2-audio/commit/fdc7dd5bcb7c01ca856211fb4e39fa3051115618) | docs(t2481): refresh T2481 epic Last-updated line with Ph... | Map2 Audio | 2026-05-04 |
-| [`4697080f`](https://github.com/matthewmackes/map2-audio/commit/4697080f7a469aebf047048f78e7d5b2c789f259) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-04 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
