@@ -624,7 +624,7 @@
 .snapshot-preload-slots__recall-btn:hover:not(:disabled) {
   background: var(--map2-accent-active, #22d3ee);
   border-color: var(--map2-accent-active, #22d3ee);
-  color: #000;
+  color: var(--cds-text-inverse);
 }
 
 .snapshot-preload-slots__recall-btn:focus-visible {

@@ -1808,7 +1808,7 @@
 
 .ptop__label-btn--save:hover:not(:disabled) {
   background: var(--cds-support-success);
-  color: #fff;
+  color: var(--cds-text-primary);
   border-color: var(--cds-support-success);
 }
 
@@ -1914,10 +1914,10 @@
   white-space: nowrap;
 }
 
-.ptop__tag--green { background: #044317; color: #6fdc8c; }
-.ptop__tag--red { background: #520408; color: #ff8389; }
-.ptop__tag--yellow { background: #483700; color: #fddc69; }
-.ptop__tag--blue { background: #002d9c; color: #a6c8ff; }
+.ptop__tag--green { background: var(--cds-green-80, #044317); color: var(--cds-green-30, #6fdc8c); }
+.ptop__tag--red { background: var(--cds-red-90, #520408); color: var(--cds-red-40, #ff8389); }
+.ptop__tag--yellow { background: var(--cds-yellow-80, #483700); color: var(--cds-yellow-20, #fddc69); }
+.ptop__tag--blue { background: var(--cds-blue-80, #002d9c); color: var(--cds-blue-30, #a6c8ff); }
 .ptop__tag--gray { background: #393939; color: var(--cds-text-secondary); }
 .ptop__tag--subtle { background: transparent; border: 1px solid var(--ptop-border-2); color: var(--ptop-text-2); }
 

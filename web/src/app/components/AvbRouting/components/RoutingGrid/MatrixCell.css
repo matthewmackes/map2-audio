@@ -31,7 +31,7 @@
 }
 
 .matrix-cell__icon {
-  color: #fff;
+  color: var(--cds-text-primary);
 }
 
 .matrix-cell__crossnode {
@@ -65,7 +65,7 @@
   width: 20px;
   height: 20px;
   border: 2px solid rgba(255, 255, 255, 0.3);
-  border-top-color: #fff;
+  border-top-color: var(--cds-text-primary);
   border-radius: 50%;
   animation: matrix-cell-spin 0.7s linear infinite;
 }
