@@ -126,7 +126,7 @@ export function OnboardingWizard({ onComplete }: { onComplete?: () => void }) {
         }}
       >
         <h2 style={{ margin: 0, fontSize: 24, fontWeight: 700 }}>🧙 Cluster Onboarding Wizard</h2>
-        <p style={{ margin: 'var(--cds-spacing-03) 0 0', color: '#a0a0a0' }}>
+        <p style={{ margin: 'var(--cds-spacing-03) 0 0', color: 'var(--cds-text-secondary)' }}>
           Step-by-step setup for your MAP2 Audio Cluster
         </p>
       </div>
@@ -176,7 +176,7 @@ export function OnboardingWizard({ onComplete }: { onComplete?: () => void }) {
               {currentStep > step.id ? <Checkmark size={16} /> : step.icon}
             </div>
             <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 11, color: '#888' }}>Step {step.id}</div>
+              <div style={{ fontSize: 11, color: 'var(--cds-text-helper)' }}>Step {step.id}</div>
               <div style={{ fontSize: 12, fontWeight: 600 }}>{step.title}</div>
             </div>
           </div>
@@ -196,7 +196,7 @@ export function OnboardingWizard({ onComplete }: { onComplete?: () => void }) {
           {errors.map((err, idx) => (
             <div key={idx} style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 8 }}>
               <WarningAlt size={16} color="#ff3333" />
-              <span style={{ color: '#ff3333' }}>{err}</span>
+              <span style={{ color: 'var(--cds-support-error)' }}>{err}</span>
             </div>
           ))}
         </div>
@@ -214,8 +214,8 @@ export function OnboardingWizard({ onComplete }: { onComplete?: () => void }) {
       >
         {currentStep === 1 && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-            <h3 style={{ margin: 0, color: '#2563eb' }}>Step 1: Choose Deployment Mode</h3>
-            <p style={{ color: '#a0a0a0' }}>Select how you want to deploy your MAP2 Audio cluster:</p>
+            <h3 style={{ margin: 0, color: 'var(--cds-interactive)' }}>Step 1: Choose Deployment Mode</h3>
+            <p style={{ color: 'var(--cds-text-secondary)' }}>Select how you want to deploy your MAP2 Audio cluster:</p>
 
             <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
               {[
@@ -244,7 +244,7 @@ export function OnboardingWizard({ onComplete }: { onComplete?: () => void }) {
                     style={{ marginRight: 12 }}
                   />
                   <strong>{mode.label}</strong>
-                  <div style={{ marginLeft: 28, marginTop: 6, fontSize: 13, color: '#888' }}>{mode.desc}</div>
+                  <div style={{ marginLeft: 28, marginTop: 6, fontSize: 13, color: 'var(--cds-text-helper)' }}>{mode.desc}</div>
                 </label>
               ))}
             </div>
@@ -258,8 +258,8 @@ export function OnboardingWizard({ onComplete }: { onComplete?: () => void }) {
                 borderRadius: 8,
               }}
             >
-              <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 8, color: '#2563eb' }}>Mode Details:</div>
-              <div style={{ fontSize: 12, color: '#a0a0a0', lineHeight: 1.6 }}>
+              <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 8, color: 'var(--cds-interactive)' }}>Mode Details:</div>
+              <div style={{ fontSize: 12, color: 'var(--cds-text-secondary)', lineHeight: 1.6 }}>
                 • <strong>ALL-IN-ONE:</strong> Fastest setup, no network required, limited scalability
                 <br />
                 • <strong>DISTRIBUTED:</strong> High availability, load balancing, requires 2+ nodes
@@ -272,8 +272,8 @@ export function OnboardingWizard({ onComplete }: { onComplete?: () => void }) {
 
         {currentStep === 2 && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-            <h3 style={{ margin: 0, color: '#2563eb' }}>Step 2: Node Discovery</h3>
-            <p style={{ color: '#a0a0a0' }}>Discover nodes on your network or manually add them:</p>
+            <h3 style={{ margin: 0, color: 'var(--cds-interactive)' }}>Step 2: Node Discovery</h3>
+            <p style={{ color: 'var(--cds-text-secondary)' }}>Discover nodes on your network or manually add them:</p>
 
             <div style={{ display: 'flex', gap: 12, flexWrap: 'wrap' }}>
               <LegacyButton variant="primary" onClick={handleAutoDiscover}>
@@ -304,7 +304,7 @@ export function OnboardingWizard({ onComplete }: { onComplete?: () => void }) {
                 />
               ) : (
                 <div>
-                  <div style={{ marginBottom: 12, color: '#00ff41', display: 'flex', alignItems: 'center', gap: 6 }}>
+                  <div style={{ marginBottom: 12, color: 'var(--cds-support-success)', display: 'flex', alignItems: 'center', gap: 6 }}>
                     <CheckmarkFilled size={14} /> Found {discoveredNodes.length} node(s):
                   </div>
                   {discoveredNodes.map((node, idx) => (
@@ -321,7 +321,7 @@ export function OnboardingWizard({ onComplete }: { onComplete?: () => void }) {
                       <div style={{ fontWeight: 600 }}>
                         {node.hostname || 'Unknown'} - {node.ip_address || 'N/A'}
                       </div>
-                      <div style={{ fontSize: 12, color: '#888', marginTop: 4 }}>
+                      <div style={{ fontSize: 12, color: 'var(--cds-text-helper)', marginTop: 4 }}>
                         Role: {node.role || 'Unknown'}
                       </div>
                     </div>
@@ -338,10 +338,10 @@ export function OnboardingWizard({ onComplete }: { onComplete?: () => void }) {
                 borderRadius: 8,
               }}
             >
-              <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 8, color: '#2563eb' }}>
+              <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 8, color: 'var(--cds-interactive)' }}>
                 Discovery Methods:
               </div>
-              <div style={{ fontSize: 12, color: '#a0a0a0', lineHeight: 1.6 }}>
+              <div style={{ fontSize: 12, color: 'var(--cds-text-secondary)', lineHeight: 1.6 }}>
                 • <strong>Auto-Discovery:</strong> mDNS/DNS-SD scan for MAP2 nodes on local network
                 <br />
                 • <strong>Manual Add:</strong> Specify IP address and credentials for remote nodes
@@ -354,8 +354,8 @@ export function OnboardingWizard({ onComplete }: { onComplete?: () => void }) {
 
         {currentStep === 3 && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-            <h3 style={{ margin: 0, color: '#2563eb' }}>Step 3: Network Configuration</h3>
-            <p style={{ color: '#a0a0a0' }}>Configure cluster networking and communication:</p>
+            <h3 style={{ margin: 0, color: 'var(--cds-interactive)' }}>Step 3: Network Configuration</h3>
+            <p style={{ color: 'var(--cds-text-secondary)' }}>Configure cluster networking and communication:</p>
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: 16 }}>
               <div>
@@ -374,7 +374,7 @@ export function OnboardingWizard({ onComplete }: { onComplete?: () => void }) {
                     background: '#111',
                     border: '1px solid #333',
                     borderRadius: 6,
-                    color: '#fff',
+                    color: 'var(--cds-text-primary)',
                   }}
                 />
               </div>
@@ -395,7 +395,7 @@ export function OnboardingWizard({ onComplete }: { onComplete?: () => void }) {
                     background: '#111',
                     border: '1px solid #333',
                     borderRadius: 6,
-                    color: '#fff',
+                    color: 'var(--cds-text-primary)',
                   }}
                 />
               </div>
@@ -414,7 +414,7 @@ export function OnboardingWizard({ onComplete }: { onComplete?: () => void }) {
                     background: '#111',
                     border: '1px solid #333',
                     borderRadius: 6,
-                    color: '#fff',
+                    color: 'var(--cds-text-primary)',
                   }}
                 >
                   <option value="eth0">eth0</option>
@@ -466,10 +466,10 @@ export function OnboardingWizard({ onComplete }: { onComplete?: () => void }) {
                 borderRadius: 8,
               }}
             >
-              <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 8, color: '#2563eb' }}>
+              <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 8, color: 'var(--cds-interactive)' }}>
                 Configuration Tips:
               </div>
-              <div style={{ fontSize: 12, color: '#a0a0a0', lineHeight: 1.6 }}>
+              <div style={{ fontSize: 12, color: 'var(--cds-text-secondary)', lineHeight: 1.6 }}>
                 • <strong>Cluster Name:</strong> Unique identifier for your cluster
                 <br />
                 • <strong>Management IP:</strong> IP of the primary management/control node
@@ -484,8 +484,8 @@ export function OnboardingWizard({ onComplete }: { onComplete?: () => void }) {
 
         {currentStep === 4 && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-            <h3 style={{ margin: 0, color: '#2563eb' }}>Step 4: Certificate Setup</h3>
-            <p style={{ color: '#a0a0a0' }}>
+            <h3 style={{ margin: 0, color: 'var(--cds-interactive)' }}>Step 4: Certificate Setup</h3>
+            <p style={{ color: 'var(--cds-text-secondary)' }}>
               Configure SSL/TLS certificates for secure communication:
             </p>
 
@@ -527,10 +527,10 @@ export function OnboardingWizard({ onComplete }: { onComplete?: () => void }) {
                 borderRadius: 8,
               }}
             >
-              <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 8, color: '#2563eb' }}>
+              <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 8, color: 'var(--cds-interactive)' }}>
                 Certificate Options:
               </div>
-              <div style={{ fontSize: 12, color: '#a0a0a0', lineHeight: 1.6 }}>
+              <div style={{ fontSize: 12, color: 'var(--cds-text-secondary)', lineHeight: 1.6 }}>
                 • <strong>Self-signed:</strong> Quick setup, browser warnings, good for testing
                 <br />
                 • <strong>Existing CA:</strong> Production-ready, requires CA cert/key files
@@ -543,8 +543,8 @@ export function OnboardingWizard({ onComplete }: { onComplete?: () => void }) {
 
         {currentStep === 5 && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 20 }}>
-            <h3 style={{ margin: 0, color: '#2563eb' }}>Step 5: Review Configuration</h3>
-            <p style={{ color: '#a0a0a0' }}>Review your cluster configuration before applying:</p>
+            <h3 style={{ margin: 0, color: 'var(--cds-interactive)' }}>Step 5: Review Configuration</h3>
+            <p style={{ color: 'var(--cds-text-secondary)' }}>Review your cluster configuration before applying:</p>
 
             <div
               style={{
@@ -554,46 +554,46 @@ export function OnboardingWizard({ onComplete }: { onComplete?: () => void }) {
                 borderRadius: 8,
               }}
             >
-              <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 16, color: '#2563eb' }}>
+              <div style={{ fontSize: 15, fontWeight: 700, marginBottom: 16, color: 'var(--cds-interactive)' }}>
                 Configuration Summary:
               </div>
 
               <div style={{ display: 'grid', gap: 12, fontSize: 13, lineHeight: 1.8 }}>
                 <div>
-                  <span style={{ color: '#888' }}>Deployment Mode:</span>{' '}
+                  <span style={{ color: 'var(--cds-text-helper)' }}>Deployment Mode:</span>{' '}
                   <strong>{wizardData.deployment_mode || 'N/A'}</strong>
                 </div>
                 <div>
-                  <span style={{ color: '#888' }}>Cluster Name:</span>{' '}
+                  <span style={{ color: 'var(--cds-text-helper)' }}>Cluster Name:</span>{' '}
                   <strong>{wizardData.cluster_name || 'N/A'}</strong>
                 </div>
                 <div>
-                  <span style={{ color: '#888' }}>Management IP:</span>{' '}
+                  <span style={{ color: 'var(--cds-text-helper)' }}>Management IP:</span>{' '}
                   <strong>{wizardData.management_ip || 'N/A'}</strong>
                 </div>
                 <div>
-                  <span style={{ color: '#888' }}>Network Interface:</span>{' '}
+                  <span style={{ color: 'var(--cds-text-helper)' }}>Network Interface:</span>{' '}
                   <strong>{wizardData.network_interface || 'N/A'}</strong>
                 </div>
                 <div>
-                  <span style={{ color: '#888' }}>API Port:</span>{' '}
+                  <span style={{ color: 'var(--cds-text-helper)' }}>API Port:</span>{' '}
                   <strong>{wizardData.api_port || 'N/A'}</strong>
                 </div>
                 <div>
-                  <span style={{ color: '#888' }}>mDNS Enabled:</span>{' '}
+                  <span style={{ color: 'var(--cds-text-helper)' }}>mDNS Enabled:</span>{' '}
                   <strong>{wizardData.enable_mdns ? 'Yes' : 'No'}</strong>
                 </div>
                 <div>
-                  <span style={{ color: '#888' }}>TLS Enabled:</span>{' '}
+                  <span style={{ color: 'var(--cds-text-helper)' }}>TLS Enabled:</span>{' '}
                   <strong>{wizardData.enable_tls ? 'Yes' : 'No'}</strong>
                 </div>
                 <div>
-                  <span style={{ color: '#888' }}>Certificate Mode:</span>{' '}
+                  <span style={{ color: 'var(--cds-text-helper)' }}>Certificate Mode:</span>{' '}
                   <strong>{certMode}</strong>
                 </div>
 
                 <div style={{ marginTop: 8 }}>
-                  <span style={{ color: '#888' }}>
+                  <span style={{ color: 'var(--cds-text-helper)' }}>
                     Discovered Nodes ({wizardData.discovered_nodes?.length || 0}):
                   </span>
                   <div style={{ marginLeft: 16, marginTop: 8 }}>
@@ -615,10 +615,10 @@ export function OnboardingWizard({ onComplete }: { onComplete?: () => void }) {
                 borderRadius: 8,
               }}
             >
-              <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 8, color: '#ffaa00' }}>
+              <div style={{ fontSize: 13, fontWeight: 600, marginBottom: 8, color: 'var(--cds-support-warning)' }}>
                 <span style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}><WarningAlt size={14} /> Important:</span>
               </div>
-              <div style={{ fontSize: 12, color: '#ffaa00', lineHeight: 1.6 }}>
+              <div style={{ fontSize: 12, color: 'var(--cds-support-warning)', lineHeight: 1.6 }}>
                 • Review all settings carefully before proceeding
                 <br />
                 • Changes will be applied to all discovered nodes
