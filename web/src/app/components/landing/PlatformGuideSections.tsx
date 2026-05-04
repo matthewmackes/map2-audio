@@ -1,5 +1,16 @@
 // Platform Guide content sections — inlined into the unified Home page
 // below the live status. No hero of its own; the Home hero is the entry.
+import { useEffect, useState } from 'react'
+import {
+  MAP2_PLATFORM_BUILD_DATE,
+  MAP2_PLATFORM_VERSION,
+} from '../branding/map2Branding'
+
+interface VersionInfo {
+  version?: string
+  build_date?: string
+  commit?: string
+}
 
 const MODES: Array<{ mode: string; latency: string; description: string }> = [
   {
@@ -67,6 +78,32 @@ function LaunchIcon() {
 }
 
 export function PlatformGuideSections() {
+  // Cycle 4 — pull live version metadata so the guide reflects the
+  // actual running build instead of hard-coded placeholders. Failures
+  // fall back to the bundle constants.
+  const [versionInfo, setVersionInfo] = useState<VersionInfo | null>(null)
+
+  useEffect(() => {
+    let cancelled = false
+    fetch('/api/version')
+      .then((r) => (r.ok ? r.json() : null))
+      .then((data) => {
+        if (!cancelled && data && typeof data === 'object') {
+          setVersionInfo(data as VersionInfo)
+        }
+      })
+      .catch(() => {
+        // Bundle constants are fine when the API is unreachable.
+      })
+    return () => {
+      cancelled = true
+    }
+  }, [])
+
+  const versionLabel = versionInfo?.version ?? MAP2_PLATFORM_VERSION
+  const buildLabel = versionInfo?.build_date ?? MAP2_PLATFORM_BUILD_DATE
+  const commitLabel = versionInfo?.commit ? versionInfo.commit.slice(0, 7) : '—'
+
   return (
     <>
       {/* anchor target for the hero CTA + the guide cards */}
@@ -278,6 +315,12 @@ python -m tui.node_console
         <div className="map2x-guide-section__inner">
           <div className="map2x-eyebrow map2x-eyebrow--accent map2x-guide-section__eyebrow">— Repository snapshot</div>
           <h2 className="map2x-guide-section__title">Where the code lives.</h2>
+          <div className="map2x-guide-section__meta">
+            <span className="map2x-tag">v{versionLabel}</span>
+            <span className="map2x-tag">{buildLabel}</span>
+            <span className="map2x-tag map2x-tag--accent">AGPL-3.0-only</span>
+            <span className="map2x-tag" title="Currently deployed git commit">commit {commitLabel}</span>
+          </div>
 
           <div className="map2x-panel">
             <div className="map2x-repo-grid">

@@ -1,3 +1,16 @@
+/* Cycle 2 — smooth scroll for the unified Home page's in-page guide
+   anchors. Scoped via :has() so it activates only on routes that mount
+   the .map2x surface. Cycle 8 honours prefers-reduced-motion at the
+   root scroll level here too. */
+:root:has(.map2x) {
+  scroll-behavior: smooth;
+}
+@media (prefers-reduced-motion: reduce) {
+  :root:has(.map2x) {
+    scroll-behavior: auto;
+  }
+}
+
 /* MAP2 unified design tokens — scoped to the new home surface */
 .map2x {
   --map2x-bg-0: #07090d;
@@ -254,6 +267,14 @@
   font-size: 11px;
   margin-top: 4px;
   letter-spacing: 0.02em;
+}
+
+/* Cycle 3 — when an anchor like #architecture lands on the page, leave
+   room for the AppShell's titlebar / window chrome above the section.
+   The shell's --window-titlebar-height token is set elsewhere; we fall
+   back to a reasonable default. */
+.map2x [id]:not([id='']) {
+  scroll-margin-top: calc(var(--window-titlebar-height, 56px) + 16px);
 }
 
 /* ───────── Section ───────── */
@@ -757,6 +778,13 @@
   gap: 12px;
   margin-top: 24px;
   flex-wrap: wrap;
+}
+
+.map2x-guide-section__meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0 0 24px;
 }
 
 .map2x-prose {
