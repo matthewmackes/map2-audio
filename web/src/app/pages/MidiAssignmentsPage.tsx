@@ -426,7 +426,11 @@ function StepDevice({
               {state.surface?.id === s.id && pinnedId !== s.id && (
                 <button
                   className="btn ghost"
-                  style={{ padding: '6px 10px', fontSize: 11 }}
+                  style={{
+                    // carbon-allow: dense pin button 6x10px (between Carbon stops).
+                    padding: '6px 10px',
+                    fontSize: 11,
+                  }}
                   onClick={(e) => { e.stopPropagation(); onPin(s.id) }}
                 >
                   Pin as default
@@ -765,6 +769,7 @@ function MixxxAliasPreview({ query, surface, selectedTargetId, onApply }: MixxxA
       <div
         data-testid="mixxx-alias-preview"
         style={{
+          // carbon-allow: dense surface; off-grid between Carbon stops.
           padding: '8px 10px', marginBottom: 8, fontSize: 12,
           fontFamily: 'var(--mw-mono)', color: 'var(--mw-text-3)',
           border: '1px dashed var(--mw-line-2)',
@@ -779,6 +784,7 @@ function MixxxAliasPreview({ query, surface, selectedTargetId, onApply }: MixxxA
     <div
       data-testid="mixxx-alias-preview"
       style={{
+        // carbon-allow: dense surface; off-grid between Carbon stops.
         padding: '8px 10px', marginBottom: 8, fontSize: 12,
         fontFamily: 'var(--mw-mono)',
         background: resolved ? 'var(--mw-accent-soft)' : 'var(--mw-bg)',
@@ -952,7 +958,15 @@ function StepTarget({
             placeholder="Search targets… (or type [Channel1].volume to resolve via Mixxx alias)"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
-            style={{ width: '100%', background: 'var(--mw-bg)', border: '1px solid var(--mw-line-2)', padding: '8px 10px', fontFamily: 'var(--mw-mono)', marginBottom: 8 }}
+            style={{
+              width: '100%',
+              background: 'var(--mw-bg)',
+              border: '1px solid var(--mw-line-2)',
+              // carbon-allow: dense search input 8x10px (between Carbon stops).
+              padding: '8px 10px',
+              fontFamily: 'var(--mw-mono)',
+              marginBottom: 8,
+            }}
           />
           <MixxxAliasPreview
             query={search}
@@ -1166,6 +1180,7 @@ function SequencerCaptureWidget({
     <div
       data-testid="brain-capture-widget"
       style={{
+        // carbon-allow: dense surface; off-grid between Carbon stops.
         padding: '8px 10px', marginBottom: 12, fontSize: 12,
         fontFamily: 'var(--mw-mono)', border: '1px solid var(--mw-line-2)',
       }}

@@ -175,7 +175,10 @@ export function ChainDeployModal({
         closeModal={onClose}
       />
       <ModalBody>
-        <p style={{ margin: '0 0 20px', color: '#94a3b8', lineHeight: 1.6 }}>
+        <p style={{
+          // carbon-allow: legacy intro paragraph 20px bottom-margin (between Carbon stops).
+          margin: '0 0 20px', color: '#94a3b8', lineHeight: 1.6,
+        }}>
           Source node <strong style={{ color: '#e2e8f0' }}>{nodeLabelById.get(sourceNodeId) ?? sourceNodeId}</strong>. Targets missing non-builtin plugins are blocked before deployment.
         </p>
 

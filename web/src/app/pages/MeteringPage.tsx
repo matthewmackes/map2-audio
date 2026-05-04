@@ -203,6 +203,7 @@ export function MeteringPage() {
       {(allNodesSelected || remoteSelected) && (
         <div style={{
           marginBottom: 20,
+          // carbon-allow: dense surface; off-grid between Carbon stops.
           padding: '12px 14px',
           borderRadius: 12,
           border: '1px solid rgba(96, 165, 250, 0.2)',
@@ -537,6 +538,7 @@ export function MeteringPage() {
         {/* Expanded Content */}
         {showApiReference && (
           <div style={{
+            // carbon-allow: dense surface; off-grid between Carbon stops.
             padding: '0 20px 20px',
             borderTop: '1px solid rgba(100, 116, 139, 0.2)'
           }}>

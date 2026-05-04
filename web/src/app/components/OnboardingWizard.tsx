@@ -369,6 +369,7 @@ export function OnboardingWizard({ onComplete }: { onComplete?: () => void }) {
                   placeholder="my-audio-cluster"
                   style={{
                     width: '100%',
+                    // carbon-allow: dense surface; off-grid between Carbon stops.
                     padding: '10px 12px',
                     background: '#111',
                     border: '1px solid #333',
@@ -389,6 +390,7 @@ export function OnboardingWizard({ onComplete }: { onComplete?: () => void }) {
                   placeholder="192.168.1.100"
                   style={{
                     width: '100%',
+                    // carbon-allow: dense surface; off-grid between Carbon stops.
                     padding: '10px 12px',
                     background: '#111',
                     border: '1px solid #333',
@@ -407,6 +409,7 @@ export function OnboardingWizard({ onComplete }: { onComplete?: () => void }) {
                   onChange={e => setNetworkInterface(e.target.value)}
                   style={{
                     width: '100%',
+                    // carbon-allow: dense surface; off-grid between Carbon stops.
                     padding: '10px 12px',
                     background: '#111',
                     border: '1px solid #333',

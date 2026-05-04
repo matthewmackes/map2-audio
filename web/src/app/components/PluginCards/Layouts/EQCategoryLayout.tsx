@@ -121,6 +121,7 @@ export function EQCategoryLayout({
                   onClick={band.onToggleEnabled}
                   style={{
                     fontSize: 9,
+                    // carbon-allow: dense surface; off-grid between Carbon stops.
                     padding: '2px 8px',
                     ...(band.enabled ? { background: accentColor, borderColor: accentColor } : {}),
                   }}
@@ -139,6 +140,7 @@ export function EQCategoryLayout({
                         onClick={() => band.type!.onChange(opt)}
                         style={{
                           fontSize: 8,
+                          // carbon-allow: dense surface; off-grid between Carbon stops.
                           padding: '1px 4px',
                           ...(band.type!.value === opt ? { background: accentColor, borderColor: accentColor } : {}),
                         }}

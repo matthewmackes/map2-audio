@@ -57,6 +57,7 @@ export function TimingBreakdownChart({ timing }: { timing: TimingBreakdown }) {
               alignItems: 'center',
               gap: 5,
               borderRadius: 999,
+              // carbon-allow: dense surface; off-grid between Carbon stops.
               padding: '3px 8px',
               border: '1px solid rgba(71, 85, 105, 0.4)',
               background: 'rgba(15, 23, 42, 0.78)',

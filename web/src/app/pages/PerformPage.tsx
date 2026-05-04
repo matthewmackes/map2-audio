@@ -650,6 +650,7 @@ function Tuner({
       <button
         onClick={toggleMute}
         style={{
+          // carbon-allow: dense surface; off-grid between Carbon stops.
           padding: '6px 16px',
           background: muted ? `${C.amber}22` : C.surface,
           border: muted ? `1px solid ${C.amber}` : `1px solid ${C.border}`,
@@ -1302,13 +1303,23 @@ export function PerformPage({ onExit }: { onExit?: () => void } = {}) {
         </span>
         <button
           onClick={() => window.open('/expression', '_blank')}
-          style={{ ...ghostBtn(false), fontSize: 11, padding: '4px 10px' }}
+          style={{
+            ...ghostBtn(false),
+            fontSize: 11,
+            // carbon-allow: dense ghost button 4x10px (between Carbon stops).
+            padding: '4px 10px',
+          }}
         >
           MIDI FOOTSWITCH SETUP
         </button>
         <button
           onClick={() => onExit ? onExit() : navigate(-1)}
-          style={{ ...ghostBtn(false), fontSize: 11, padding: '4px 10px' }}
+          style={{
+            ...ghostBtn(false),
+            fontSize: 11,
+            // carbon-allow: dense ghost button 4x10px (between Carbon stops).
+            padding: '4px 10px',
+          }}
           title="Exit Performance Mode (F11)"
         >
           EXIT (F11)
@@ -1316,6 +1327,7 @@ export function PerformPage({ onExit }: { onExit?: () => void } = {}) {
       </div>
 
       <div style={{
+        // carbon-allow: dense surface; off-grid between Carbon stops.
         padding: '6px 16px',
         borderBottom: `1px solid ${C.border}`,
         background: C.surface2,

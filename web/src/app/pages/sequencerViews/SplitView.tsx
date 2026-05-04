@@ -32,6 +32,7 @@ function KeyboardModule({
                 fontSize: 10,
                 color: 'var(--bo-text)',
                 fontWeight: 600,
+                // carbon-allow: dense surface; off-grid between Carbon stops.
                 padding: '2px 8px',
                 display: 'flex',
                 alignItems: 'center',

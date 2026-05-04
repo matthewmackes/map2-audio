@@ -182,6 +182,7 @@ export function ParallelRoutingPanel({
                       display: 'flex',
                       justifyContent: 'space-between',
                       gap: 12,
+                      // carbon-allow: dense surface; off-grid between Carbon stops.
                       padding: '10px 12px',
                       borderRadius: 8,
                       background: 'rgba(30, 41, 59, 0.55)',

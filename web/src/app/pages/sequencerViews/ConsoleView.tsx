@@ -255,6 +255,7 @@ export function ConsoleView({
             background: 'color-mix(in srgb, var(--bo-warn) 22%, var(--bo-surface))',
             color: 'var(--bo-text)',
             border: '1px solid var(--bo-warn)',
+            // carbon-allow: dense surface; off-grid between Carbon stops.
             padding: '6px 12px',
             marginBottom: 8,
             borderRadius: 4,
@@ -378,6 +379,7 @@ export function ConsoleView({
                 display: 'flex',
                 alignItems: 'center',
                 gap: 10,
+                // carbon-allow: dense surface; off-grid between Carbon stops.
                 padding: '7px 0',
                 borderBottom: i < 3 ? '1px solid var(--bo-border)' : 'none',
               }}

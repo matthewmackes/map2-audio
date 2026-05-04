@@ -106,6 +106,7 @@ export function EffectsLoopSummaryPanel({
             onChange={(event) => setSelectedChainId(event.target.value ? Number(event.target.value) : null)}
             style={{
               width: '100%',
+              // carbon-allow: dense surface; off-grid between Carbon stops.
               padding: '8px 10px',
               borderRadius: 8,
               background: '#0f172a',
@@ -148,6 +149,7 @@ export function EffectsLoopSummaryPanel({
               <div
                 key={loop.loop_id}
                 style={{
+                  // carbon-allow: dense surface; off-grid between Carbon stops.
                   padding: '12px 14px',
                   borderRadius: 10,
                   background: 'rgba(30, 41, 59, 0.55)',

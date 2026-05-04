@@ -67,6 +67,7 @@ export function SearchableList<T extends SearchableListItem>({
           border: '1px solid rgba(71, 85, 105, 0.65)',
           background: 'rgba(15, 23, 42, 0.86)',
           color: '#e2e8f0',
+          // carbon-allow: dense surface; off-grid between Carbon stops.
           padding: '8px 10px',
           fontSize: 12,
         }}
@@ -100,6 +101,7 @@ export function SearchableList<T extends SearchableListItem>({
                   : focused
                     ? 'rgba(30, 41, 59, 0.82)'
                     : 'transparent',
+                // carbon-allow: dense surface; off-grid between Carbon stops.
                 padding: '9px 10px',
                 color: selected ? '#ede9fe' : '#cbd5e1',
                 cursor: 'pointer',

@@ -159,6 +159,7 @@ export function StepView({
                     display: 'flex',
                     alignItems: 'center',
                     gap: 8,
+                    // carbon-allow: dense surface; off-grid between Carbon stops.
                     padding: '6px 8px',
                     background: 'var(--bo-surface-2)',
                     borderLeft: '3px solid var(--bo-accent)',

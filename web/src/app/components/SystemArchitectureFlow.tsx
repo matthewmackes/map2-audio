@@ -418,6 +418,7 @@ export function SystemArchitectureFlow() {
                   key={i}
                   style={{ 
                     fontSize: 8, 
+                    // carbon-allow: dense surface; off-grid between Carbon stops.
                     padding: '2px 6px', 
                     background: 'rgba(100,181,246,0.2)', 
                     borderRadius: 3,

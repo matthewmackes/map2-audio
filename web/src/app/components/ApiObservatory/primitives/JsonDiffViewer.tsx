@@ -80,6 +80,7 @@ export function JsonDiffViewer({
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
+          // carbon-allow: dense surface; off-grid between Carbon stops.
           padding: '10px 12px',
           borderBottom: '1px solid rgba(71, 85, 105, 0.35)',
           background: 'rgba(15, 23, 42, 0.9)',

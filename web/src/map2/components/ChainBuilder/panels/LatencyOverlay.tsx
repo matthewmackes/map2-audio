@@ -147,6 +147,7 @@ const LatencyOverlay = memo(({
           style={{
             fontSize: 11,
             fontWeight: 600,
+            // carbon-allow: dense surface; off-grid between Carbon stops.
             padding: '2px 8px',
             borderRadius: 4,
             backgroundColor: `${totalColor}33`,
@@ -163,6 +164,7 @@ const LatencyOverlay = memo(({
           <span
             style={{
               fontSize: 9,
+              // carbon-allow: dense surface; off-grid between Carbon stops.
               padding: '1px 6px',
               borderRadius: 4,
               backgroundColor: 'rgba(76, 175, 80, 0.15)',
@@ -237,6 +239,7 @@ const LatencyOverlay = memo(({
                     alignItems: 'center',
                     gap: 8,
                     fontSize: 10,
+                    // carbon-allow: dense surface; off-grid between Carbon stops.
                     padding: '2px 0',
                   }}
                 >

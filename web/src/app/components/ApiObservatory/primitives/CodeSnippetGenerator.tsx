@@ -68,6 +68,7 @@ export function CodeSnippetGenerator({ request }: { request: RequestSnippetModel
               color: item.key === activeKey ? '#ede9fe' : '#cbd5e1',
               fontSize: 11,
               fontWeight: 700,
+              // carbon-allow: dense surface; off-grid between Carbon stops.
               padding: '5px 9px',
               cursor: 'pointer',
             }}

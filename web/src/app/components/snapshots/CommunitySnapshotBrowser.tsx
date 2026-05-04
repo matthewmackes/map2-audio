@@ -194,6 +194,7 @@ export function CommunitySnapshotBrowser({
               cursor: loading ? 'not-allowed' : 'pointer',
               display: 'flex',
               alignItems: 'center',
+              // carbon-allow: dense surface; off-grid between Carbon stops.
               gap: '6px',
               color: 'var(--text-primary, #fff)',
             }}
@@ -212,6 +213,7 @@ export function CommunitySnapshotBrowser({
                 cursor: 'pointer',
                 display: 'flex',
                 alignItems: 'center',
+                // carbon-allow: dense surface; off-grid between Carbon stops.
                 gap: '6px',
                 color: 'white',
                 fontWeight: 500,
@@ -255,6 +257,7 @@ export function CommunitySnapshotBrowser({
             }}
             style={{
               width: '100%',
+              // carbon-allow: dense surface; off-grid between Carbon stops.
               padding: '8px 12px 8px 36px',
               borderRadius: '6px',
               border: '1px solid var(--border, #444)',
@@ -471,6 +474,7 @@ function SnapshotCard({
             <span
               key={tag}
               style={{
+                // carbon-allow: dense surface; off-grid between Carbon stops.
                 padding: '2px 6px',
                 borderRadius: '4px',
                 fontSize: '0.7rem',
@@ -541,6 +545,7 @@ function SnapshotCard({
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
+          // carbon-allow: dense surface; off-grid between Carbon stops.
           gap: '6px',
         }}
       >
