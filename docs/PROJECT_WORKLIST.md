@@ -34431,7 +34431,10 @@ Description:
   - **Soak audit reveals dozens of <4 scores** — by design. The audit's job is to surface the long tail; follow-up tasks are filed and parked, this Epic is not held open by them.
 - Definition of Done (Epic-level): T2481-A through T2481-G all `[✓] Done`; lint suite live in CI with zero unjustified suppressions; rubric audit complete with follow-ups filed; `npm --prefix web run typecheck` + `npm --prefix web run build` clean; `:3000` HTTP 200; bench-side visual verification on top-10 pages; evidence dir written; dual-pushed.
 Assigned to: Unassigned (foreground execution session-by-session; no autonomous-loop scheduled at open)
-Last updated: 2026-04-30 EDT — Epic opened from 10-question scoping protocol against Carbon Design System (https://carbondesignsystem.com/) as user-supplied inspiration source. All 10 decisions locked in the Description body. Awaiting first phase entry (T2481-A1 Plex fonts wired at AppShell root).
+Last updated: 2026-05-03 EDT — Phase A entered. T2481-A1 SHIPPED (commit landing in this push).
+
+Phase progress:
+- 2026-05-03 — T2481-A1 SHIPPED (Claude). Installed `@fontsource/ibm-plex-mono@^5.2.7` (5.2.8 not yet published; 5.2.7 latest); added eager `400.css` + `600.css` imports in `web/src/main.tsx` next to the existing Plex Sans imports. Fixed `--font-mono` token in `web/src/index.css`: it was aliasing `--font-ui` (Plex Sans) which silently downgraded every numeric/code readout site (`--cds-code-01-font-family`, `--cds-code-02-font-family`, monospaced rules at `:255`) to a non-monospaced family. Now points at `'IBM Plex Mono', 'JetBrains Mono', 'SFMono-Regular', Menlo, Consolas, monospace` so dB readouts, sample rates, ms, hex CCs, MIDI values, and timecodes finally land on the proper monospaced grid. Eager JetBrains Mono `400.css` import retired (the family stays available in `usePlatformTypography.ts` as a user-pickable preset; just no longer eager-loaded as the platform default mono). `npm --prefix web run typecheck` clean; atomic build clean (19.47s). Next: T2481-A2 (extend `design-language.css` with `--map2-spacing-01..13` + Carbon motion durations/easings), then T2481-A3 (ESLint plugin scaffold).
 
 ---
 

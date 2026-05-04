@@ -1,11 +1,13 @@
 import { createRoot } from 'react-dom/client'
-// IBM Plex Sans is the default Carbon-aligned typography and the JetBrains
-// Mono mono preset is used for diagnostic readouts; both are eager because
-// they're nearly always on screen. Every other family is lazy-loaded on
-// demand via loadPlatformFontFamily() when the user picks it.
+// IBM Plex Sans (UI prose) + IBM Plex Mono (numeric/code readouts) are the
+// canonical Carbon-aligned families per T2481-A1 (Q5 lock). Both are eager
+// because they're nearly always on screen — Plex Mono drives every meter,
+// sample-rate, latency, MIDI-value, and timecode site. Every other family
+// is lazy-loaded on demand via loadPlatformFontFamily() when the user picks it.
 import '@fontsource/ibm-plex-sans/400.css'
 import '@fontsource/ibm-plex-sans/600.css'
-import '@fontsource/jetbrains-mono/400.css'
+import '@fontsource/ibm-plex-mono/400.css'
+import '@fontsource/ibm-plex-mono/600.css'
 import '@carbon/styles/css/styles.css'
 import './app/theme/themeBlueprint.css'
 import './index.css'

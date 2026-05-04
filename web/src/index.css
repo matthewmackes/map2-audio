@@ -138,7 +138,10 @@ input[type="range"]:focus::-webkit-slider-thumb {
   --font-ui-tight: 'IBM Plex Sans', 'Helvetica Neue', Arial, sans-serif;
   --font-display: 'IBM Plex Sans', 'Helvetica Neue', Arial, sans-serif;
   --font-sans: var(--font-ui);
-  --font-mono: var(--font-ui);
+  /* T2481-A1: Plex Mono is the canonical numeric/code typeface (Q5 lock).
+     Replaces the prior Plex-Sans alias so dB readouts, sample rates, ms,
+     hex CCs, MIDI values, and timecodes get the proper monospaced grid. */
+  --font-mono: 'IBM Plex Mono', 'JetBrains Mono', 'SFMono-Regular', Menlo, Consolas, monospace;
   --cds-body-01-font-family: var(--font-ui);
   --cds-body-02-font-family: var(--font-ui);
   --cds-heading-01-font-family: var(--font-display);

@@ -30,6 +30,7 @@
     "@carbon/react": "^1.103.0",
     "@fontsource/dm-sans": "^5.2.8",
     "@fontsource/fira-sans": "^5.2.7",
+    "@fontsource/ibm-plex-mono": "^5.2.7",
     "@fontsource/ibm-plex-sans": "^5.2.8",
     "@fontsource/inter": "^5.2.8",
     "@fontsource/jetbrains-mono": "^5.2.8",
