@@ -117,7 +117,7 @@
 
 .demo-layout-morph__card {
   min-height: 110px;
-  color: #fff;
+  color: var(--cds-text-primary);
   font-weight: 600;
   font-size: 0.95rem;
   border: none;
@@ -139,7 +139,7 @@
   width: min(420px, 90%);
   min-height: 220px;
   padding: 1.25rem;
-  color: #fff;
+  color: var(--cds-text-primary);
   display: grid;
   place-content: center;
   gap: 0.5rem;
@@ -406,7 +406,7 @@
   display: grid;
   place-content: center;
   gap: 0.3rem;
-  color: #fff;
+  color: var(--cds-text-primary);
   text-align: center;
   font-size: 1.25rem;
 }

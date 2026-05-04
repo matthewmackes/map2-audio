@@ -41,7 +41,7 @@
   place-items: center;
   font-family: var(--cds-code-02-font-family, monospace);
   font-size: 0.65rem;
-  color: #42be65;
+  color: var(--cds-green-40, #42be65);
 }
 
 /* Row 3: Display buttons (D1-D8, 4 under each LCD) */
@@ -129,13 +129,13 @@
   cursor: pointer;
   transition: background var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease), border-color var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease), box-shadow var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease);
   text-align: center;
-  color: #ccc;
+  color: var(--cds-text-secondary);
   min-width: 3.5rem;
   position: relative;
 }
 
 .mk1-cell:hover {
-  border-color: #6366f1;
+  border-color: var(--cds-interactive);
   background: #252550;
 }
 
@@ -150,13 +150,13 @@
 }
 
 .mk1-cell--selected {
-  border-color: #f59e0b;
+  border-color: var(--cds-support-warning);
   background: #2a2540;
   box-shadow: 0 0 8px rgba(245, 158, 11, 0.3);
 }
 
 .mk1-cell--active {
-  border-color: #22c55e;
+  border-color: var(--cds-support-success);
   background: #1a2e1a;
   box-shadow: 0 0 6px rgba(34, 197, 94, 0.4);
 }
@@ -213,18 +213,18 @@
   font-size: 0.65rem;
   letter-spacing: 0.04em;
   line-height: 1.1;
-  color: #e0e0e0;
+  color: var(--cds-text-primary);
 }
 
 .mk1-midi {
   font-size: 0.55rem;
   font-family: var(--cds-code-02-font-family, monospace);
-  color: #888;
+  color: var(--cds-text-helper);
 }
 
 .mk1-curve {
   font-size: 0.5rem;
-  color: #666;
+  color: var(--cds-text-helper);
 }
 
 /* ── LED indicator bar ── */
@@ -265,7 +265,7 @@
 .mk1-led-slider input[type="range"] {
   width: 90%;
   height: 0.5rem;
-  accent-color: #dc2626;
+  accent-color: var(--cds-support-error);
   cursor: pointer;
 }
 
@@ -291,7 +291,7 @@
   font-size: 0.55rem;
   text-transform: uppercase;
   letter-spacing: 0.1em;
-  color: #555;
+  color: var(--cds-text-disabled);
   padding: 0.4rem 0.5rem 0.15rem;
 }
 
@@ -304,7 +304,7 @@
   border: 1px solid #333;
   background: #1a1a2e;
   border-radius: 6px;
-  color: #ccc;
+  color: var(--cds-text-secondary);
   align-content: start;
 }
 
@@ -317,7 +317,7 @@
 
 .mk1-detail-form label {
   font-size: 0.75rem;
-  color: #888;
+  color: var(--cds-text-helper);
   font-weight: 500;
 }
 
