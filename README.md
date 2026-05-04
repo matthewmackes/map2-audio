@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1476** Python | **1492** TypeScript | **179** C++/H | **146** Docs | **3749** total commits | **3** stars | **0** forks | **0** open issues
+**1476** Python | **1492** TypeScript | **179** C++/H | **146** Docs | **3751** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`e3b38d41`](https://github.com/matthewmackes/map2-audio/commit/e3b38d412f0c49ebd4c0d4e372a85b85d6b7f48e) | ui(t2481-b2): route platform numeric readouts through var... | Map2 Audio | 2026-05-04 |
+| [`b98cc441`](https://github.com/matthewmackes/map2-audio/commit/b98cc441a83fe067201d6331bc835086acde7002) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-04 |
 | [`d640bc71`](https://github.com/matthewmackes/map2-audio/commit/d640bc7106fa21a12d2a5f4c3ba1e05d6b140ab6) | ui(home): wire live version metadata + smooth-scroll poli... | Map2 Audio | 2026-05-04 |
 | [`ccd6bf8b`](https://github.com/matthewmackes/map2-audio/commit/ccd6bf8bf6a539e65f30469adf62003d328affd9) | chore(eslint): disable react-refresh/only-export-componen... | Map2 Audio | 2026-05-04 |
 | [`0c22629c`](https://github.com/matthewmackes/map2-audio/commit/0c22629c601d3f881efd56c485cc32cc8250e66f) | fix(global-tree-nav): memoize navigateTo so the 3 section... | Map2 Audio | 2026-05-04 |
 | [`00b35367`](https://github.com/matthewmackes/map2-audio/commit/00b353675cbe6c80463f9bc0e69f2d42e4130e29) | chore(global-tree-nav): include setExpandedIds in expand-... | Map2 Audio | 2026-05-04 |
 | [`f516eae5`](https://github.com/matthewmackes/map2-audio/commit/f516eae51cfef6a9f5dc8126c4ef8f13e96a4c29) | ui(welcome-hero): replace hardcoded "Snapshot 30 / Rev cb... | Map2 Audio | 2026-05-04 |
 | [`de349824`](https://github.com/matthewmackes/map2-audio/commit/de34982437ea343d556ae1d81bbbcd1c305a07c8) | fix(app-shell): memoize mergedActions fallback to stop bu... | Map2 Audio | 2026-05-04 |
-| [`fe436dfb`](https://github.com/matthewmackes/map2-audio/commit/fe436dfbc7883fca2ec647fcc9addd0659c51a8a) | chore: replace `as any` casts on includes() in AvbService... | Map2 Audio | 2026-05-04 |
-| [`ebf304ad`](https://github.com/matthewmackes/map2-audio/commit/ebf304adcc2430b52edc287e9dab2c2912b1cb5b) | chore: delete unused LegacyArtifactsDiscoverRedirect from... | Map2 Audio | 2026-05-04 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
