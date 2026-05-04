@@ -280,7 +280,7 @@ export default function MOTURMEPage() {
         {/* USB Load */}
         <Tile style={{ background: '#111111', border: '1px solid rgba(37, 99, 235, 0.2)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-            <span style={{ color: '#94a3b8', fontSize: 13 }}>
+            <span style={{ color: 'var(--cds-text-secondary)', fontSize: 'var(--cds-body-compact-01-font-size, 0.8125rem)' }}>
               USB Load (Estimated)
             </span>
             <Tooltip
@@ -306,7 +306,7 @@ export default function MOTURMEPage() {
             hideLabel
             size="small"
           />
-          <div style={{ color: '#6b7280', marginTop: 8, fontSize: 12 }}>
+          <div style={{ color: 'var(--cds-text-helper)', marginTop: 'var(--cds-spacing-03)', fontSize: 'var(--cds-helper-text-01-font-size, 0.75rem)' }}>
             {inputChannels} in / {outputChannels} out @ {(safeSampleRate / 1000).toFixed(1)}kHz
           </div>
         </Tile>
@@ -314,7 +314,7 @@ export default function MOTURMEPage() {
         {/* Host Backplane Load */}
         <Tile style={{ background: '#111111', border: '1px solid rgba(37, 99, 235, 0.2)' }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 16 }}>
-            <span style={{ color: '#94a3b8', fontSize: 13 }}>
+            <span style={{ color: 'var(--cds-text-secondary)', fontSize: 'var(--cds-body-compact-01-font-size, 0.8125rem)' }}>
               Host Backplane Load (CPU)
             </span>
             <Tooltip
@@ -340,7 +340,7 @@ export default function MOTURMEPage() {
             hideLabel
             size="small"
           />
-          <div style={{ color: '#6b7280', marginTop: 8, fontSize: 12 }}>
+          <div style={{ color: 'var(--cds-text-helper)', marginTop: 'var(--cds-spacing-03)', fontSize: 'var(--cds-helper-text-01-font-size, 0.75rem)' }}>
             Buffer: {bufferSize} samples
           </div>
         </Tile>
@@ -360,7 +360,7 @@ export default function MOTURMEPage() {
           <div style={{ display: 'grid', gap: 8 }}>
             {motuMeters.map((meter, i) => (
               <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-                <span style={{ color: '#94a3b8', minWidth: 30, fontSize: 12 }}>
+                <span style={{ color: 'var(--cds-text-secondary)', minWidth: 30, fontSize: 'var(--cds-helper-text-01-font-size, 0.75rem)' }}>
                   Ch {i + 1}
                 </span>
                 <div style={{ flex: 1, position: 'relative', height: 24, background: 'rgba(0,0,0,0.3)', overflow: 'hidden' }}>
@@ -390,7 +390,7 @@ export default function MOTURMEPage() {
           <div style={{ display: 'grid', gap: 8 }}>
             {rmeMeters.map((meter, i) => (
               <div key={i} style={{ display: 'flex', alignItems: 'center', gap: 16 }}>
-                <span style={{ color: '#94a3b8', minWidth: 30, fontSize: 12 }}>
+                <span style={{ color: 'var(--cds-text-secondary)', minWidth: 30, fontSize: 'var(--cds-helper-text-01-font-size, 0.75rem)' }}>
                   Ch {i + 9}
                 </span>
                 <div style={{ flex: 1, position: 'relative', height: 24, background: 'rgba(0,0,0,0.3)', overflow: 'hidden' }}>
@@ -455,7 +455,7 @@ export default function MOTURMEPage() {
           <div style={{ color: '#FFAA00', fontWeight: 700, fontSize: '3rem', lineHeight: 1 }}>
             {latency.total.ms.toFixed(2)} ms
           </div>
-          <div style={{ color: '#94a3b8', fontSize: 12 }}>
+          <div style={{ color: 'var(--cds-text-secondary)', fontSize: 'var(--cds-helper-text-01-font-size, 0.75rem)' }}>
             ({latency.total.samples} samples @ {(safeSampleRate / 1000).toFixed(1)}kHz)
           </div>
         </div>
@@ -523,7 +523,7 @@ export default function MOTURMEPage() {
           )}
         </div>
 
-        <div style={{ color: '#6b7280', display: 'block', marginTop: 16, textAlign: 'center', fontSize: 12 }}>
+        <div style={{ color: 'var(--cds-text-helper)', display: 'block', marginTop: 'var(--cds-spacing-05)', textAlign: 'center', fontSize: 'var(--cds-helper-text-01-font-size, 0.75rem)' }}>
           Current mode: <strong style={{ color: '#2563eb' }}>
             {latencyMode === 'motu-only' ? 'MOTU Only (8ch direct)' :
              latencyMode === 'adat-expanded' ? 'ADAT Expanded (16ch total)' :
@@ -546,14 +546,14 @@ export default function MOTURMEPage() {
 function LatencyRow({ label, samples, ms, color = '#FFAA00' }: { label: string; samples: number; ms: number; color?: string }) {
   return (
     <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: 12, background: 'rgba(0,0,0,0.2)' }}>
-      <span style={{ color: '#94a3b8', fontSize: 13 }}>
+      <span style={{ color: 'var(--cds-text-secondary)', fontSize: 'var(--cds-body-compact-01-font-size, 0.8125rem)' }}>
         {label}
       </span>
       <div style={{ textAlign: 'right' }}>
         <div style={{ color, fontWeight: 600, fontSize: 13 }}>
           {ms.toFixed(2)} ms
         </div>
-        <div style={{ color: '#6b7280', fontSize: 11 }}>
+        <div style={{ color: 'var(--cds-text-helper)', fontSize: 'var(--cds-helper-text-01-font-size, 0.75rem)' }}>
           ({samples} samples)
         </div>
       </div>
@@ -610,7 +610,7 @@ function Arrow({ label }: { label?: string }) {
         }} />
       </div>
       {label && (
-        <div style={{ color: '#6b7280', fontSize: 10, marginTop: 4 }}>
+        <div style={{ color: 'var(--cds-text-helper)', fontSize: 10, marginTop: 'var(--cds-spacing-02)' }}>
           {label}
         </div>
       )}
