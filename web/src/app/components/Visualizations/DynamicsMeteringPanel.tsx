@@ -81,6 +81,7 @@ const GainReductionMeter: React.FC<GainReductionMeterProps> = ({
             bottom: 0,
             width: `${grPercent}%`,
             background: `linear-gradient(to left, ${color}, ${color}88)`,
+            // carbon-allow: gain-reduction meter ballistics 50ms — explicit T2466 carve-out (audio-domain motion).
             transition: 'width 0.05s ease-out'
           }} />
         </div>
@@ -114,6 +115,7 @@ const GainReductionMeter: React.FC<GainReductionMeterProps> = ({
               height: '100%',
               width: `${Math.max(0, Math.min(100, (metering.inputLevel + 60) / 60 * 100))}%`,
               background: '#3b82f6',
+              // carbon-allow: input-level meter ballistics 50ms — explicit T2466 carve-out (audio-domain motion).
               transition: 'width 0.05s ease-out'
             }} />
           </div>
@@ -133,6 +135,7 @@ const GainReductionMeter: React.FC<GainReductionMeterProps> = ({
               height: '100%',
               width: `${Math.max(0, Math.min(100, (metering.outputLevel + 60) / 60 * 100))}%`,
               background: '#22c55e',
+              // carbon-allow: output-level meter ballistics 50ms — explicit T2466 carve-out (audio-domain motion).
               transition: 'width 0.05s ease-out'
             }} />
           </div>

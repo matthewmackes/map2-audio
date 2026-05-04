@@ -128,6 +128,7 @@ export function AudioMeter({
               height: '100%',
               width: `${percentage}%`,
               background: barGradient,
+              // carbon-allow: audio-meter ballistics 50ms — explicit T2466 carve-out (audio-domain motion).
               transition: 'width 0.05s ease-out',
               boxShadow: isClipping ? '0 0 8px rgba(239, 68, 68, 0.5)' : 'none',
             }}

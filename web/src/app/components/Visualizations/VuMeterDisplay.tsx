@@ -64,6 +64,7 @@ const VuMeterBar: React.FC<VuMeterBarProps> = ({
             right: 0,
             height: `${dbToPercent(leftDb)}%`,
             background: getBarColor(leftDb),
+            // carbon-allow: meter ballistics 50ms — explicit T2466 carve-out (audio-domain motion below the design-language scale).
             transition: 'height 0.05s ease-out'
           }} />
           {/* Peak marker */}
@@ -102,6 +103,7 @@ const VuMeterBar: React.FC<VuMeterBarProps> = ({
             right: 0,
             height: `${dbToPercent(rightDb)}%`,
             background: getBarColor(rightDb),
+            // carbon-allow: meter ballistics 50ms — explicit T2466 carve-out (audio-domain motion below the design-language scale).
             transition: 'height 0.05s ease-out'
           }} />
           <div style={{

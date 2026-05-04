@@ -114,6 +114,7 @@ function GateCardBase({
             width: 12, height: 12,
             borderRadius: '50%',
             background: isOpen ? accentColor : 'var(--map2-health-critical, #fa4d56)',
+            // carbon-allow: gate state-LED 100ms — explicit T2466 carve-out (audio-domain motion).
             transition: 'background 0.1s ease-out',
           }} />
           <span style={{

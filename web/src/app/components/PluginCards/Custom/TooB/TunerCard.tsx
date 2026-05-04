@@ -64,6 +64,7 @@ function TunerCardBase({
               width: 8, height: 8,
               background: inTune ? accentColor : sharp ? 'var(--map2-alert-advisory, #f1c21b)' : 'var(--map2-health-critical, #fa4d56)',
               borderRadius: '50%', transform: 'translate(-50%, -50%)',
+              // carbon-allow: tuner-needle ballistics 50ms — explicit T2466 carve-out (audio-domain motion).
               transition: 'left 0.05s ease-out',
             }} />
           )}

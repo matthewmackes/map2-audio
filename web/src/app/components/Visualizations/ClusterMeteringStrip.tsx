@@ -40,6 +40,7 @@ function CompactMeterBar({ value, peak }: { value: number; peak: number }) {
           bottom: 0,
           height: `${dbToPercent(value)}%`,
           background: getMeterColor(value),
+          // carbon-allow: meter ballistics 50ms — explicit T2466 carve-out (audio-domain motion below the design-language scale).
           transition: 'height 0.05s ease-out',
         }}
       />

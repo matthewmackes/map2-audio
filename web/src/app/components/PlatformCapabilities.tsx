@@ -955,7 +955,7 @@ export function PlatformCapabilities() {
                     height: '100%',
                     background: getStatusColor(testResult.overall_status, testResult.score),
                     borderRadius: 3,
-                    transition: 'width 0.3s ease'
+                    transition: 'width var(--map2-dur-slow-01) var(--map2-ease-productive-standard)'
                   }} />
                 </div>
                 <span style={{ fontSize: 12, fontWeight: 600, color: getStatusColor(testResult.overall_status, testResult.score), minWidth: 45 }}>

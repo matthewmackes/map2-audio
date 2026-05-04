@@ -318,6 +318,7 @@ function NAMCardBase({
             style={{
               height: `${levelToPercent(status?.inputLevel ?? -60)}%`,
               background: `linear-gradient(to top, ${accentColor}, #ffaa00)`,
+              // carbon-allow: NAM input/output meter ballistics 50ms — explicit T2466 carve-out (audio-domain motion).
               transition: 'height 0.05s ease-out',
             }}
           />
@@ -375,6 +376,7 @@ function NAMCardBase({
             style={{
               height: `${levelToPercent(status?.outputLevel ?? -60)}%`,
               background: `linear-gradient(to top, ${accentColor}, #ffaa00)`,
+              // carbon-allow: NAM input/output meter ballistics 50ms — explicit T2466 carve-out (audio-domain motion).
               transition: 'height 0.05s ease-out',
             }}
           />
