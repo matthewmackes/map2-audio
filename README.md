@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1476** Python | **1492** TypeScript | **179** C++/H | **146** Docs | **3813** total commits | **3** stars | **0** forks | **0** open issues
+**1476** Python | **1492** TypeScript | **179** C++/H | **146** Docs | **3815** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`4c6e1afd`](https://github.com/matthewmackes/map2-audio/commit/4c6e1afdb9d77588a40e315e58db4e2935ba7680) | ui(t2481-b3): retoken Maschine + GuiOptionsShowcase CSS c... | Map2 Audio | 2026-05-04 |
+| [`95128110`](https://github.com/matthewmackes/map2-audio/commit/9512811007fe1ad23934772b3760f97f5b82c510) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-04 |
 | [`98fa52a2`](https://github.com/matthewmackes/map2-audio/commit/98fa52a2de7a7abc61c780dbc1f39dd3c4372e53) | ui(t2481-b3): retoken SnapshotEditorPage.css Carbon swatches | Map2 Audio | 2026-05-04 |
 | [`8eaa22b5`](https://github.com/matthewmackes/map2-audio/commit/8eaa22b5e18d7dc138397f8c2d8d73babadbc996) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-04 |
 | [`7ba4f52f`](https://github.com/matthewmackes/map2-audio/commit/7ba4f52f66a0b0ba1260dea6b4e1a112e891c855) | ui(t2481-b3): retoken PlatformModal status-tag pills + 4 ... | Map2 Audio | 2026-05-04 |
 | [`2916e42a`](https://github.com/matthewmackes/map2-audio/commit/2916e42add8ec35d45a12d52193f6587951d20e5) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-04 |
 | [`483aec1d`](https://github.com/matthewmackes/map2-audio/commit/483aec1d9944422b10c70cdc60dfe4674ec3693a) | ui(t2481-b3): retoken AppShell + publishPerformance + Avb... | Map2 Audio | 2026-05-04 |
 | [`407ec447`](https://github.com/matthewmackes/map2-audio/commit/407ec4477f16cc4412bae4679ddb6a9ebea85c4e) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-04 |
-| [`bd00b773`](https://github.com/matthewmackes/map2-audio/commit/bd00b7739ac249edb36ab8876ece9b3c329c028b) | docs(t2481-g2): update Fit-and-Finish Rubric with B3 burn... | Map2 Audio | 2026-05-04 |
-| [`176fd480`](https://github.com/matthewmackes/map2-audio/commit/176fd480b0a4a3fa9b4a4a6d25f0d6b39628c9e7) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-04 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
