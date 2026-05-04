@@ -149,7 +149,7 @@ function FootswitchLayout({ footswitches, expressionPedals }: FootswitchLayoutPr
       <div style={{ textAlign: 'center', marginBottom: 16 }}>
         <div
           style={{
-            background: '#111',
+            background: 'var(--cds-layer)',
             color: 'var(--cds-support-success)',
             fontFamily: 'var(--font-mono)',
             padding: 'var(--cds-spacing-03) var(--cds-spacing-06)',

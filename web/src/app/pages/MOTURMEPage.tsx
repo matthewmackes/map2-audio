@@ -595,7 +595,7 @@ function Arrow({ label }: { label?: string }) {
       <div style={{
         width: 60,
         height: 2,
-        background: '#3b82f6',
+        background: 'var(--cds-support-info)',
         position: 'relative',
       }}>
         <div style={{
