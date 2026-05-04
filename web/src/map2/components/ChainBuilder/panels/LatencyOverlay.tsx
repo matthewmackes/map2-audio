@@ -169,7 +169,7 @@ const LatencyOverlay = memo(({
               borderRadius: 4,
               backgroundColor: 'rgba(76, 175, 80, 0.15)',
               color: 'var(--cds-support-success)',
-              border: '1px solid #4caf50',
+              border: '1px solid var(--cds-support-success)',
               display: 'flex',
               alignItems: 'center',
               gap: 4,

@@ -33,7 +33,7 @@
 
 .mk1-lcd-panel {
   background: #0a0a1a;
-  border: 1px solid #333;
+  border: 1px solid var(--cds-border-subtle);
   border-radius: 3px;
   padding: 0.35rem;
   min-height: 2.5rem;
@@ -123,7 +123,7 @@
   place-items: center;
   gap: 0.1rem;
   padding: 0.3rem 0.2rem;
-  border: 1px solid #333;
+  border: 1px solid var(--cds-border-subtle);
   border-radius: 3px;
   background: #1e1e3a;
   cursor: pointer;
@@ -203,7 +203,7 @@
   width: 3rem;
   height: 3rem;
   background: #2a2a44;
-  border: 2px solid #444;
+  border: 2px solid var(--cds-border-strong);
 }
 
 /* ── Cell content ── */
@@ -301,7 +301,7 @@
   display: grid;
   gap: 0.75rem;
   padding: 1rem;
-  border: 1px solid #333;
+  border: 1px solid var(--cds-border-subtle);
   background: #1a1a2e;
   border-radius: 6px;
   color: var(--cds-text-secondary);
