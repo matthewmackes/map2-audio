@@ -45,7 +45,7 @@ export function ParallelRoutingPanel({
     >
       <div style={{ display: 'flex', justifyContent: 'space-between', gap: 12, alignItems: 'center', marginBottom: 16 }}>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10, flexWrap: 'wrap' }}>
-          <GitBranch size={18} style={{ color: '#818cf8' }} />
+          <GitBranch size={18} style={{ color: 'var(--cds-interactive)' }} />
           <strong>Parallel Routing</strong>
           <Tag type="cool-gray" size="sm">{groups.length} groups</Tag>
           {remoteLabel && <Tag type="green" size="sm">Remote control · {remoteLabel}</Tag>}
@@ -151,7 +151,7 @@ export function ParallelRoutingPanel({
               </div>
 
               <label style={{ display: 'block', marginBottom: 12 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6, fontSize: 12, color: '#94a3b8' }}>
+                <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 6, fontSize: 12, color: 'var(--cds-text-secondary)' }}>
                   <span>A/B Blend</span>
                   <span>{Math.round(group.abBlend * 100)}%</span>
                 </div>
@@ -212,7 +212,7 @@ export function ParallelRoutingPanel({
             display: 'flex',
             gap: 8,
             alignItems: 'center',
-            color: '#fbbf24',
+            color: 'var(--cds-support-warning)',
             fontSize: 12,
           }}
         >

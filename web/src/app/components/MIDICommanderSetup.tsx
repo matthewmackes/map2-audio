@@ -150,7 +150,7 @@ function FootswitchLayout({ footswitches, expressionPedals }: FootswitchLayoutPr
         <div
           style={{
             background: '#111',
-            color: '#0f0',
+            color: 'var(--cds-support-success)',
             fontFamily: 'var(--font-mono)',
             padding: 'var(--cds-spacing-03) var(--cds-spacing-06)',
             display: 'inline-block',
