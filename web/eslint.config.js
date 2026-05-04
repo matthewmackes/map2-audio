@@ -3,6 +3,7 @@ import globals from 'globals'
 import reactHooks from 'eslint-plugin-react-hooks'
 import reactRefresh from 'eslint-plugin-react-refresh'
 import tseslint from 'typescript-eslint'
+import map2 from './eslint-rules/index.js'
 
 export default tseslint.config(
   { ignores: ['dist', 'build', '.dist-backup-*', '.dist-staging-*'] },
@@ -19,9 +20,18 @@ export default tseslint.config(
     plugins: {
       'react-hooks': reactHooks,
       'react-refresh': reactRefresh,
+      // T2481-A3: MAP2 Carbon-discipline rule pack. Lives in-tree under
+      // `web/eslint-rules/`. All three rules ship as `warn` initially so
+      // they don't break CI on the existing snapshot of violations; the
+      // T2481-B/C/D sweeps burn down the warnings, then the rules ratchet
+      // up to `error` per the per-phase close.
+      map2,
     },
     rules: {
       ...reactHooks.configs.recommended.rules,
+      'map2/no-mui-import': 'warn',
+      'map2/no-ad-hoc-transition': 'warn',
+      'map2/no-hardcoded-px-spacing': 'warn',
       'react-refresh/only-export-components': [
         'warn',
         { allowConstantExport: true },
