@@ -49,7 +49,7 @@
 }
 
 .state-authority-event-feed__kind {
-  font-family: 'IBM Plex Mono', monospace;
+  font-family: var(--font-mono, 'IBM Plex Mono', monospace);
   font-size: 11px;
   color: var(--cds-text-primary);
   flex: 1;
@@ -60,7 +60,7 @@
 }
 
 .state-authority-event-feed__timestamp {
-  font-family: 'IBM Plex Mono', monospace;
+  font-family: var(--font-mono, 'IBM Plex Mono', monospace);
   font-size: 11px;
   color: var(--cds-text-helper);
 }
@@ -73,7 +73,7 @@
 }
 
 .state-authority-event-feed__summary {
-  font-family: 'IBM Plex Mono', monospace;
+  font-family: var(--font-mono, 'IBM Plex Mono', monospace);
   font-size: 11px;
   color: var(--cds-text-helper);
   margin-top: 0.25rem;

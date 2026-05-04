@@ -51,7 +51,7 @@
   background: var(--cds-layer-02);
   padding: 0.125rem 0.25rem;
   border-radius: 2px;
-  font-family: 'IBM Plex Mono', monospace;
+  font-family: var(--font-mono, 'IBM Plex Mono', monospace);
   font-size: 11px;
 }
 
@@ -88,7 +88,7 @@
 }
 
 .state-authority-page__last-pick-body code {
-  font-family: 'IBM Plex Mono', monospace;
+  font-family: var(--font-mono, 'IBM Plex Mono', monospace);
   font-size: 11px;
   color: var(--cds-text-helper);
 }
@@ -115,7 +115,7 @@
   background: var(--cds-layer-01);
   border: 1px solid var(--cds-border-subtle-01);
   border-radius: 2px;
-  font-family: 'IBM Plex Mono', monospace;
+  font-family: var(--font-mono, 'IBM Plex Mono', monospace);
   font-size: 13px;
 }
 

@@ -50,7 +50,7 @@
 }
 
 .map2-signal-chain-block__eyebrow {
-  font-family: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-family: var(--font-mono, 'IBM Plex Mono', ui-monospace, SFMono-Regular, Consolas, monospace);
   font-size: 0.625rem;
   letter-spacing: 0.14em;
   text-transform: uppercase;

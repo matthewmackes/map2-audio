@@ -58,7 +58,7 @@
 .midi-cluster-node-card__node-id {
   font-size: var(--cds-helper-text-01-font-size, 0.75rem);
   color: var(--cds-text-helper, var(--text-tertiary));
-  font-family: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-family: var(--font-mono, 'IBM Plex Mono', ui-monospace, SFMono-Regular, Consolas, monospace);
   overflow: hidden;
   text-overflow: ellipsis;
   white-space: nowrap;
@@ -80,7 +80,7 @@
 .midi-cluster-node-card__ports-heading {
   font-size: var(--cds-helper-text-01-font-size, 0.75rem);
   color: var(--cds-text-helper, var(--text-tertiary));
-  font-family: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-family: var(--font-mono, 'IBM Plex Mono', ui-monospace, SFMono-Regular, Consolas, monospace);
   letter-spacing: 0.08em;
   text-transform: uppercase;
 }

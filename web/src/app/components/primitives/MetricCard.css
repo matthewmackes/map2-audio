@@ -15,7 +15,7 @@
 }
 
 .map2-metric-card__label {
-  font-family: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-family: var(--font-mono, 'IBM Plex Mono', ui-monospace, SFMono-Regular, Consolas, monospace);
   font-size: 0.6875rem;
   letter-spacing: 0.14em;
   text-transform: uppercase;

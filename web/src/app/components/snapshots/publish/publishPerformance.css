@@ -31,7 +31,7 @@
   border-radius: 6px;
   border: 1px solid var(--pp-dim-border);
   background: linear-gradient(180deg, #1d1d24 0%, #17171c 100%);
-  font-family: 'IBM Plex Mono', ui-monospace, monospace;
+  font-family: var(--font-mono, 'IBM Plex Mono', ui-monospace, monospace);
   font-size: 0.875rem;
   letter-spacing: 0.06em;
 }
@@ -128,7 +128,7 @@
   line-height: 1;
 }
 .publish-stepper__label {
-  font-family: 'IBM Plex Mono', ui-monospace, monospace;
+  font-family: var(--font-mono, 'IBM Plex Mono', ui-monospace, monospace);
   font-size: 0.75rem;
   letter-spacing: 0.12em;
   font-weight: 700;
@@ -180,7 +180,7 @@
 .publish-stage__header:disabled { cursor: not-allowed; }
 .publish-stage__label-col { display: flex; flex-direction: column; gap: 0.125rem; }
 .publish-stage__label {
-  font-family: 'IBM Plex Mono', ui-monospace, monospace;
+  font-family: var(--font-mono, 'IBM Plex Mono', ui-monospace, monospace);
   font-weight: 700;
   letter-spacing: 0.12em;
   color: var(--pp-spotlight);
@@ -222,7 +222,7 @@
   border-radius: 6px;
   background: linear-gradient(180deg, #2a2a32 0%, #1a1a20 100%);
   color: var(--pp-spotlight-muted);
-  font-family: 'IBM Plex Mono', ui-monospace, monospace;
+  font-family: var(--font-mono, 'IBM Plex Mono', ui-monospace, monospace);
   cursor: pointer;
   text-align: center;
   align-items: center;
@@ -316,7 +316,7 @@
   background: transparent;
   color: var(--pp-spotlight-muted);
   cursor: pointer;
-  font-family: 'IBM Plex Mono', ui-monospace, monospace;
+  font-family: var(--font-mono, 'IBM Plex Mono', ui-monospace, monospace);
   font-size: 0.8125rem;
   letter-spacing: 0.06em;
   text-transform: uppercase;
@@ -351,7 +351,7 @@
 .publish-performance__diff-drawer summary {
   cursor: pointer;
   color: var(--pp-spotlight);
-  font-family: 'IBM Plex Mono', ui-monospace, monospace;
+  font-family: var(--font-mono, 'IBM Plex Mono', ui-monospace, monospace);
   font-size: 0.8125rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;

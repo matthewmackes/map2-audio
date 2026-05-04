@@ -47,7 +47,7 @@
   display: inline-flex;
   align-items: center;
   gap: 8px;
-  font-family: 'IBM Plex Mono', ui-monospace, monospace;
+  font-family: var(--font-mono, 'IBM Plex Mono', ui-monospace, monospace);
   font-size: 0.6875rem;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -99,7 +99,7 @@
   font-weight: 500;
 }
 .pedalboard-wizard__hero-sub-meta {
-  font-family: 'IBM Plex Mono', ui-monospace, monospace;
+  font-family: var(--font-mono, 'IBM Plex Mono', ui-monospace, monospace);
   font-size: 0.6875rem;
   letter-spacing: 0.04em;
   color: var(--pw-text-dim);
@@ -186,7 +186,7 @@
   min-width: 0;
 }
 .pedalboard-wizard__sub-bar-title {
-  font-family: 'IBM Plex Mono', ui-monospace, monospace;
+  font-family: var(--font-mono, 'IBM Plex Mono', ui-monospace, monospace);
   font-size: 0.8125rem;
   color: var(--pw-text);
   font-weight: 600;
@@ -225,7 +225,7 @@
   letter-spacing: 0.12em;
   text-transform: uppercase;
   color: var(--pw-text-dim);
-  font-family: 'IBM Plex Mono', ui-monospace, monospace;
+  font-family: var(--font-mono, 'IBM Plex Mono', ui-monospace, monospace);
 }
 
 .pedalboard-wizard__channel-row {
@@ -248,7 +248,7 @@
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  font-family: 'IBM Plex Mono', ui-monospace, monospace;
+  font-family: var(--font-mono, 'IBM Plex Mono', ui-monospace, monospace);
   font-weight: 700;
   font-size: 0.875rem;
   background: color-mix(in srgb, var(--pw-channel-accent) 16%, transparent);
@@ -292,7 +292,7 @@
   min-width: 140px;
 }
 .pedalboard-wizard__routing-label {
-  font-family: 'IBM Plex Mono', ui-monospace, monospace;
+  font-family: var(--font-mono, 'IBM Plex Mono', ui-monospace, monospace);
   font-size: 0.625rem;
   letter-spacing: 0.1em;
   text-transform: uppercase;
@@ -381,7 +381,7 @@
   border-radius: 6px;
 }
 .pedalboard-wizard__segmented-item {
-  font-family: 'IBM Plex Mono', ui-monospace, monospace;
+  font-family: var(--font-mono, 'IBM Plex Mono', ui-monospace, monospace);
   font-size: 0.6875rem;
   font-weight: 600;
   padding: 4px 8px;

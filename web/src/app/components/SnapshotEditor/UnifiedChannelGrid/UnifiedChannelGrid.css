@@ -166,7 +166,7 @@
   background: var(--cds-layer-03, #393939);
   border: 1px solid var(--cds-border-subtle-02, #525252);
   color: var(--cds-text-primary, #f4f4f4);
-  font-family: 'IBM Plex Mono', ui-monospace, monospace;
+  font-family: var(--font-mono, 'IBM Plex Mono', ui-monospace, monospace);
   font-size: 12px;
   font-weight: 700;
   letter-spacing: 0.02em;
@@ -396,7 +396,7 @@
   padding: 0 0.35rem;
   border-top: 1px solid color-mix(in srgb, var(--cds-border-strong-01, #6f6f6f) 45%, transparent);
   background: color-mix(in srgb, var(--cds-layer-01, #262626) 88%, transparent);
-  font-family: 'IBM Plex Mono', ui-monospace, monospace;
+  font-family: var(--font-mono, 'IBM Plex Mono', ui-monospace, monospace);
   font-size: 0.58rem;
   font-weight: 700;
   line-height: 1;
@@ -419,7 +419,7 @@
   border-radius: 0;
   background: transparent;
   color: var(--cds-support-error, #da1e28);
-  font-family: 'IBM Plex Mono', ui-monospace, monospace;
+  font-family: var(--font-mono, 'IBM Plex Mono', ui-monospace, monospace);
   font-size: 0.72rem;
   font-weight: 800;
   line-height: 1;

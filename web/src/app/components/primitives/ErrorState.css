@@ -48,7 +48,7 @@
   padding: 0.5rem 0.75rem;
   background: var(--cds-layer-accent, var(--surface-3));
   border: 1px solid var(--cds-border-subtle, var(--border));
-  font-family: 'IBM Plex Mono', ui-monospace, SFMono-Regular, Consolas, monospace;
+  font-family: var(--font-mono, 'IBM Plex Mono', ui-monospace, SFMono-Regular, Consolas, monospace);
   font-size: var(--cds-helper-text-01-font-size, 0.75rem);
   color: var(--cds-text-secondary, var(--text-secondary));
   white-space: pre-wrap;

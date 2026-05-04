@@ -593,7 +593,7 @@
 .api-observatory-collections input {
   width: 100%;
   box-sizing: border-box;
-  font-family: 'IBM Plex Mono', ui-monospace, monospace;
+  font-family: var(--font-mono, 'IBM Plex Mono', ui-monospace, monospace);
 }
 
 .api-observatory-builder__auth-row {

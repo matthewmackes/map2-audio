@@ -5029,7 +5029,7 @@
 /* SNAPSHOT MANAGEMENT eyebrow — small caps mono label above the title. */
 .juce-grid-page__snapshot-mgmt-eyebrow {
   margin: 0;
-  font-family: 'IBM Plex Mono', ui-monospace, monospace;
+  font-family: var(--font-mono, 'IBM Plex Mono', ui-monospace, monospace);
   font-size: 0.625rem;
   letter-spacing: 0.14em;
   text-transform: uppercase;
@@ -5057,7 +5057,7 @@
    or the idle copy when the engine is empty. */
 .juce-grid-page__snapshot-mgmt-meta {
   margin: 0.125rem 0 0;
-  font-family: 'IBM Plex Mono', ui-monospace, monospace;
+  font-family: var(--font-mono, 'IBM Plex Mono', ui-monospace, monospace);
   font-size: 0.6875rem;
   letter-spacing: 0.06em;
   color: var(--cds-text-secondary, #7c8593);
@@ -6664,7 +6664,7 @@
 
 .juce-grid-page__midi-block-focus-preview-note {
   color: var(--cds-support-success, #24a148);
-  font-family: 'IBM Plex Mono', monospace;
+  font-family: var(--font-mono, 'IBM Plex Mono', monospace);
   font-size: var(--cds-body-compact-01-font-size, 0.875rem);
   font-weight: 600;
   letter-spacing: 0.02em;

@@ -77,7 +77,7 @@
 }
 
 .graph-doc-inspector__metric-value {
-  font-family: 'IBM Plex Mono', monospace;
+  font-family: var(--font-mono, 'IBM Plex Mono', monospace);
   font-size: 16px;
   color: var(--cds-text-primary);
 }
@@ -85,7 +85,7 @@
 .graph-doc-inspector__json {
   margin: 0;
   padding: 1rem;
-  font-family: 'IBM Plex Mono', monospace;
+  font-family: var(--font-mono, 'IBM Plex Mono', monospace);
   font-size: 12px;
   line-height: 1.5;
   color: var(--cds-text-primary);
