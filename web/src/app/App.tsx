@@ -20,7 +20,7 @@ import {
 } from './platform/routes'
 import { LoadingState } from './components/shared/LoadingState'
 import './RouteLoadingState.css'
-import { buildWorkspaceArtifactsDiscoverPath, buildWorkspaceArtifactsPath } from './pages/audioArtifactsRoutes'
+import { buildWorkspaceArtifactsPath } from './pages/audioArtifactsRoutes'
 import { HOST_MACHINE_ROUTE } from './pages/hostMachineRoutes'
 // T2459-G11b — small inline whitelist replacing the deprecated
 // `deviceRegistry` lookups for the legacy redirect resolvers.
@@ -309,11 +309,6 @@ function LegacyArtifactsRedirect({ defaultCategory }: { defaultCategory?: string
     searchParams.set('category', defaultCategory)
   }
   return <Navigate to={buildWorkspaceArtifactsPath(searchParams)} replace />
-}
-
-function LegacyArtifactsDiscoverRedirect() {
-  const location = useLocation()
-  return <Navigate to={buildWorkspaceArtifactsDiscoverPath(location.search)} replace />
 }
 
 function LegacyStandalonePanelRedirect({ panel }: { panel: 'host-machine' | 'audio-engine' | 'theme' | 'about' }) {
