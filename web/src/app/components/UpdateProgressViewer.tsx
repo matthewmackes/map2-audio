@@ -127,7 +127,7 @@ export function UpdateProgressViewer({ updateId }: { updateId?: string }) {
       <div
         style={{
           background: 'linear-gradient(135deg, #0a0a0a, #111111)',
-          border: '2px solid #2563eb',
+          border: '2px solid var(--cds-interactive)',
           borderRadius: 12,
           padding: 20,
         }}
@@ -192,7 +192,7 @@ export function UpdateProgressViewer({ updateId }: { updateId?: string }) {
           style={{
             padding: 16,
             background: 'rgba(255, 255, 255, 0.05)',
-            border: '2px solid #222222',
+            border: '2px solid var(--cds-border-subtle)',
             borderRadius: 8,
             textAlign: 'center',
           }}
@@ -334,7 +334,7 @@ export function UpdateProgressViewer({ updateId }: { updateId?: string }) {
                     marginTop: 12,
                     padding: 12,
                     background: 'rgba(255, 51, 51, 0.1)',
-                    border: '2px solid #ff3333',
+                    border: '2px solid var(--cds-support-error)',
                     borderRadius: 8,
                   }}
                 >

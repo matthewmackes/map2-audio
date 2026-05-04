@@ -119,7 +119,7 @@ export function OnboardingWizard({ onComplete }: { onComplete?: () => void }) {
       <div
         style={{
           background: 'linear-gradient(135deg, #1a1a1a, #2a2a2a)',
-          border: '2px solid #2563eb',
+          border: '2px solid var(--cds-interactive)',
           borderRadius: 12,
           padding: 24,
           textAlign: 'center',
@@ -189,7 +189,7 @@ export function OnboardingWizard({ onComplete }: { onComplete?: () => void }) {
           style={{
             padding: 16,
             background: 'rgba(255, 51, 51, 0.1)',
-            border: '2px solid #ff3333',
+            border: '2px solid var(--cds-support-error)',
             borderRadius: 8,
           }}
         >
@@ -550,7 +550,7 @@ export function OnboardingWizard({ onComplete }: { onComplete?: () => void }) {
               style={{
                 padding: 20,
                 background: 'var(--cds-layer)',
-                border: '2px solid #2563eb',
+                border: '2px solid var(--cds-interactive)',
                 borderRadius: 8,
               }}
             >

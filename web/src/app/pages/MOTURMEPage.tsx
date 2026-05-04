@@ -237,6 +237,8 @@ export default function MOTURMEPage() {
               height: 80,
               borderRadius: '50%',
               background: 'rgba(21, 42, 72, 0.92)',
+              // §10.5 carve-out: MOTU device-skin icon border preserves the
+              // photorealistic panel-blue tint of the physical unit.
               border: '2px solid #2563eb',
               display: 'flex',
               alignItems: 'center',
