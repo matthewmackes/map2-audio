@@ -70,6 +70,11 @@
   --map2x-heading-display-weight: 300;
   --map2x-heading-tile-size: 22px;
   --map2x-heading-tile-weight: 400;
+  /* 30px sits between productive-heading-04 (28px) and productive-heading-05
+     (32px) — kept as a deliberate guide-section step on the unified Home
+     page, sized down from the section title (36px). */
+  --map2x-heading-guide-section-size: 30px;
+  --map2x-heading-guide-section-weight: 400;
   --map2x-heading-eyebrow-size: var(--cds-helper-text-01-font-size, 0.75rem);
   --map2x-body-default-size: var(--cds-body-compact-01-font-size, 0.875rem);
   --map2x-body-prose-size: var(--cds-body-01-font-size, 0.875rem);
@@ -783,8 +788,8 @@
 }
 
 .map2x-guide-section__title {
-  font-size: 30px;
-  font-weight: 400;
+  font-size: var(--map2x-heading-guide-section-size);
+  font-weight: var(--map2x-heading-guide-section-weight);
   color: var(--map2x-text-hi);
   letter-spacing: -0.015em;
   margin: 0 0 12px;
@@ -1027,7 +1032,7 @@
 .map2x-repo-cell__value {
   font-family: var(--map2x-font-mono);
   font-feature-settings: 'tnum';
-  font-size: 28px;
+  font-size: var(--cds-productive-heading-04-font-size, 1.75rem);
   font-weight: 300;
   color: var(--map2x-text-hi);
   letter-spacing: -0.01em;
