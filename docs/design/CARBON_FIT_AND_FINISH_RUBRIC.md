@@ -214,16 +214,28 @@ Pages already retokened during the B3 sweep cycles (rubric pages where `grep "co
 - **NodeGraph layout + SnapshotModalContent + GuiOptionsShowcase + ChainBuilder LatencyOverlay + MidiLearnButton** (cycle 27 — slice 16) — 17 hex literals → 15 retokened (2 category accents retained).
 - **ApiObservatory.css** (cycle 28 — slice 17) — page-stylesheet retoken; 28 → 8 (purple/indigo Observatory visual identity preserved).
 - **Toasts.css MIDI message-type accents** (cycle 29 — slice 18) — 7 hex literals routed to Carbon swatches (`--cds-blue-40`, `--cds-green-40`, `--cds-purple-40` — exact-match swatches, no visual change but theme-swap-aware).
+- **AppShell.css + publishPerformance.css + AvbRouting CSS** (cycle 31 — slice 19) — 6 hex literals retokenized; 11 reboot-overlay identity-purple literals retained as documented platform chrome.
+- **PlatformModal status-tag pills + 4 small CSS files** (cycle 32 — slice 20) — 13 hex literals → 0; the four `.ptop__tag--{green,red,yellow,blue}` pill bg/fg pairs all map to **exact** Carbon swatch tokens (`--cds-{green-80/30, red-90/40, yellow-80/20, blue-80/30}`).
+- **SnapshotEditorPage.css** (cycle 33 — slice 21) — rubric page #1: 27 of 40 hex literals retokenized to Carbon swatches; 13 documented dark-tag-foreground category accents retained.
+- **MaschineMidiMapPage.css + GuiOptionsShowcase.css** (cycle 34 — slice 22) — 15 hex literals → 0 (text greys + state borders + accent-color).
+- **PlatformCapabilities + LV2 + OnboardingWizard JSX backgrounds** (cycle 35 — slice 23) — JSX `background:` literals routed through Carbon `--cds-layer` / `--cds-background` / `--cds-support-*` tokens.
+- **UpdateProgressViewer + PerformPage + xterm theme follow-up** (cycle 36 — slice 24) — 5 hex bgs + 4 xterm theme literals now flow through `getComputedStyle(document.documentElement)` for the canvas-rendering case.
+- **MOTURMEPage signal-flow connector + MIDICommanderSetup status pill** (cycle 37 — slice 25) — `#3b82f6` signal-flow info bar → `--cds-support-info`; status pill bg → `--cds-layer`.
+- **SystemArchitectureFlow + EffectsLoop + OnboardingWizard backgrounds** (cycle 38 — slice 26) — 10 hex backgrounds → 0 (signal-flow connectors + tile bodies + step cards).
+- **JSX `border:` hex literals across UpdateProgressViewer + PlatformCapabilities + OnboardingWizard** (cycle 39 — slice 27) — 14 hex border literals retokenized (subtle-greys → `--cds-border-subtle`, status borders → `--cds-support-{error,info,warning}`).
 
-**Rolling totals across the B3 burndown sweep (slices 1-18, cycles 11-29):**
+**Rolling totals across the B3 burndown sweep (slices 1-27, cycles 11-39):**
 
-- **~370 hex-color literals retokenized** through Carbon `--cds-text-*` / `--cds-support-*` / `--cds-interactive` / `--cds-blue-40` etc.
-- **~30 documented category-accent literals retained** (per-kind color identities like NAM yellow, VST3 purple, Maschine pink, GCP orange, Sidechain panel purple, Observatory indigo) where Carbon has no analogous token and the literal is part of the kind's visual identity.
+- **~470 hex-color literals retokenized** through Carbon `--cds-text-*` / `--cds-support-*` / `--cds-interactive` / `--cds-{blue-40,green-40,purple-40,green-80/30,red-90/40,yellow-80/20,blue-80/30,teal-60,gray-100/70,blue-30,green-20,magenta-60/70,orange-40/70,yellow-30}` swatches.
+- **~50 documented category-accent literals retained** (per-kind color identities like NAM yellow, VST3 purple, Maschine pink, GCP orange, Sidechain panel purple, Observatory indigo, AppShell reboot-overlay purple, SnapshotEditor publish-tag dark-foreground tones, NodeGraph cyan, GuiOptions preset purple, EffectsLoop tier purple) where Carbon has no analogous token and the literal is part of the kind's visual identity.
 - **5 hardcoded font-size declarations retokenized** to Carbon heading tokens (`--cds-{expressive,productive}-heading-*-font-size`).
 - **8 documented density carve-out font-sizes** (sub-Carbon stops on dense rows / suffix labels).
+- **~25 JSX inline `background:` literals retokenized** through Carbon layer / background / support tokens.
+- **14 JSX inline `border:` literals retokenized** (subtle / status / interactive families).
+- **9 xterm theme literals + fontFamily** routed through `getComputedStyle()` for the canvas-rendering case.
 - **0 lint regressions** across the sweep — `map2/no-mui-import`, `map2/no-ad-hoc-transition`, `map2/no-hardcoded-px-spacing`, `map2/no-hardcoded-font-family` all at `'error'`, suite reports 0 errors and 0 warnings.
 
-**Pages still ahead in the audit walk (per the priority list above):** SnapshotEditor, Sequencer, PerformPage, MPX-1, IntelFX, MIDI Hub shells, MIDI Assignments, Maschine top-level, HardwareStorePage, AudioEnginePage, AudioArtifactsPage, AvbServicesRouting, Tesira, PlatformsOverviewTopology, Community Snapshot Browser, SnapshotPublishPage, ApiObservatoryPage internals, DiagnosticsPage, AdoptionPage, ThemePage, StateAuthorityPage, ExpressionPage.
+**Pages still ahead in the audit walk (per the priority list above):** Sequencer, PerformPage, MPX-1, IntelFX, MIDI Hub shells, MIDI Assignments, Maschine top-level, HardwareStorePage, AudioEnginePage, AudioArtifactsPage, AvbServicesRouting, Tesira, PlatformsOverviewTopology, Community Snapshot Browser, SnapshotPublishPage, ApiObservatoryPage internals, DiagnosticsPage, AdoptionPage, ThemePage, StateAuthorityPage, ExpressionPage. Note: SnapshotEditorPage chrome retokenized in slice 21 (cycle 33) — moves it from "ahead" to "swept" in the next rubric refresh.
 
 ---
 
