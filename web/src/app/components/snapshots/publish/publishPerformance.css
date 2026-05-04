@@ -121,7 +121,7 @@
 .publish-stepper__item--active .publish-stepper__glyph { color: var(--pp-amber); }
 .publish-stepper__item--armed .publish-stepper__glyph { color: var(--pp-armed); animation: pp-pulse 1.4s ease-in-out infinite; }
 .publish-stepper__item--live .publish-stepper__glyph { color: var(--pp-live); }
-.publish-stepper__item--locked .publish-stepper__glyph { color: #4a4a55; }
+.publish-stepper__item--locked .publish-stepper__glyph { color: var(--cds-text-disabled); }
 
 .publish-stepper__glyph {
   font-size: 1rem;
@@ -231,7 +231,7 @@
 }
 .golive-button:disabled { cursor: not-allowed; opacity: 0.65; }
 
-.golive-button--locked { color: #5a5a66; }
+.golive-button--locked { color: var(--cds-text-disabled); }
 
 .golive-button--armed {
   border-color: var(--pp-armed);

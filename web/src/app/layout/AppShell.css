@@ -1861,7 +1861,7 @@ button.topbar-pro__latency-pressure:focus-visible {
   padding: 0.45rem 0.65rem;
   border-left: 3px solid var(--cds-support-danger, #da1e28);
   background: rgba(218,30,40,0.09);
-  color: #fca5a5;
+  color: var(--cds-support-error);
   font-size: 0.82rem;
   font-weight: 500;
 }
@@ -1912,7 +1912,7 @@ button.topbar-pro__latency-pressure:focus-visible {
 .reboot-overlay__step.is-complete {
   border-color: rgba(52,211,153,0.28);
   background: rgba(52,211,153,0.06);
-  color: #6ee7b7;
+  color: var(--cds-support-success);
 }
 
 .reboot-overlay__step-dot {
