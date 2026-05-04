@@ -202,7 +202,7 @@
   border: 1px solid color-mix(in srgb, var(--bp-grid, var(--cds-border-strong)) 50%, transparent);
   background: color-mix(in srgb, var(--bp-field, var(--cds-layer-01)) 80%, transparent);
   color: var(--bp-grid, var(--cds-text-secondary));
-  font-family: 'IBM Plex Mono', ui-monospace, monospace;
+  font-family: var(--font-mono, 'IBM Plex Mono', ui-monospace, monospace);
   font-size: 0.68rem;
   line-height: 1;
   cursor: pointer;
@@ -380,7 +380,7 @@
   transform: translateY(-50%) rotate(-90deg);
   transform-origin: center center;
   z-index: 2;
-  font-family: 'IBM Plex Mono', 'SF Mono', ui-monospace, monospace;
+  font-family: var(--font-mono, 'IBM Plex Mono', 'SF Mono', ui-monospace, monospace);
   font-size: 0.6rem;
   font-weight: 800;
   letter-spacing: 0.22em;
@@ -774,7 +774,7 @@
 }
 
 .stage-notification-warnings__progress-label {
-  font-family: 'IBM Plex Mono', ui-monospace, monospace;
+  font-family: var(--font-mono, 'IBM Plex Mono', ui-monospace, monospace);
   font-size: 0.68rem;
   font-weight: 700;
   letter-spacing: 0.06em;
@@ -808,7 +808,7 @@
 }
 
 .stage-notification-warnings__row-time {
-  font-family: 'IBM Plex Mono', ui-monospace, monospace;
+  font-family: var(--font-mono, 'IBM Plex Mono', ui-monospace, monospace);
   font-size: 0.62rem;
   color: var(--card-muted);
   text-align: right;
@@ -838,7 +838,7 @@
 }
 
 .stage-notification-audio__peak-value {
-  font-family: 'IBM Plex Mono', ui-monospace, monospace;
+  font-family: var(--font-mono, 'IBM Plex Mono', ui-monospace, monospace);
   font-size: clamp(2rem, 3.5vw, 3.2rem);
   font-weight: 700;
   font-variant-numeric: tabular-nums;
@@ -847,7 +847,7 @@
 }
 
 .stage-notification-audio__peak-label {
-  font-family: 'IBM Plex Mono', ui-monospace, monospace;
+  font-family: var(--font-mono, 'IBM Plex Mono', ui-monospace, monospace);
   font-size: 0.62rem;
   font-weight: 700;
   letter-spacing: 0.14em;
@@ -870,7 +870,7 @@
 }
 
 .stage-notification-audio__channel-label {
-  font-family: 'IBM Plex Mono', ui-monospace, monospace;
+  font-family: var(--font-mono, 'IBM Plex Mono', ui-monospace, monospace);
   font-size: 0.6rem;
   font-weight: 700;
   letter-spacing: 0.12em;
@@ -879,7 +879,7 @@
 }
 
 .stage-notification-audio__channel-value {
-  font-family: 'IBM Plex Mono', ui-monospace, monospace;
+  font-family: var(--font-mono, 'IBM Plex Mono', ui-monospace, monospace);
   font-size: 0.88rem;
   font-weight: 700;
   font-variant-numeric: tabular-nums;
@@ -937,7 +937,7 @@
 }
 
 .stage-notification-vitals__hero-value {
-  font-family: 'IBM Plex Mono', ui-monospace, monospace;
+  font-family: var(--font-mono, 'IBM Plex Mono', ui-monospace, monospace);
   font-size: clamp(1.8rem, 3vw, 2.8rem);
   font-weight: 700;
   font-variant-numeric: tabular-nums;
@@ -946,7 +946,7 @@
 }
 
 .stage-notification-vitals__hero-label {
-  font-family: 'IBM Plex Mono', ui-monospace, monospace;
+  font-family: var(--font-mono, 'IBM Plex Mono', ui-monospace, monospace);
   font-size: 0.58rem;
   font-weight: 700;
   letter-spacing: 0.14em;
@@ -1469,7 +1469,7 @@
 .stage-chyron--rec .stage-chyron__strap     { animation: stage-chyron-strap-pulse 1.2s ease-in-out infinite; }
 
 .stage-chyron__strap-text {
-  font-family: 'IBM Plex Mono', ui-monospace, monospace;
+  font-family: var(--font-mono, 'IBM Plex Mono', ui-monospace, monospace);
   font-size: 0.6rem;
   font-weight: 800;
   letter-spacing: 0.22em;
@@ -1511,7 +1511,7 @@
 .stage-chyron__label {
   padding: 0 0.7rem;
   display: flex; align-items: center; gap: 0.35rem;
-  font-family: 'IBM Plex Mono', 'SF Mono', Menlo, monospace;
+  font-family: var(--font-mono, 'IBM Plex Mono', 'SF Mono', Menlo, monospace);
   font-size: 0.66rem;
   letter-spacing: 0.12em;
   text-transform: uppercase;
@@ -1523,7 +1523,7 @@
   flex: 1;
   padding: 0 0.8rem;
   display: flex; align-items: center; gap: 0.85rem;
-  font-family: 'IBM Plex Mono', 'SF Mono', Menlo, monospace;
+  font-family: var(--font-mono, 'IBM Plex Mono', 'SF Mono', Menlo, monospace);
   font-size: 0.66rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -1568,7 +1568,7 @@
 }
 
 .stage-chyron__kicker {
-  font-family: 'IBM Plex Mono', 'SF Mono', Menlo, monospace;
+  font-family: var(--font-mono, 'IBM Plex Mono', 'SF Mono', Menlo, monospace);
   font-size: 0.62rem;
   letter-spacing: 0.14em;
   text-transform: uppercase;
@@ -1664,7 +1664,7 @@
 }
 
 .stage-chyron__chain-label {
-  font-family: 'IBM Plex Mono', ui-monospace, monospace;
+  font-family: var(--font-mono, 'IBM Plex Mono', ui-monospace, monospace);
   font-size: 0.6rem;
   font-weight: 700;
   letter-spacing: 0.12em;
@@ -1689,7 +1689,7 @@
   align-items: center;
   gap: 0.6rem;
   padding: 0.2rem 1rem;
-  font-family: 'IBM Plex Mono', 'SF Mono', Menlo, monospace;
+  font-family: var(--font-mono, 'IBM Plex Mono', 'SF Mono', Menlo, monospace);
   font-size: 0.68rem;
   color: var(--cds-text-helper);
   letter-spacing: 0.04em;
@@ -1703,7 +1703,7 @@
   border: 1px solid var(--cds-border-strong);
   color: var(--cds-link-primary);
   padding: 0.25rem 0.55rem;
-  font-family: 'IBM Plex Mono', 'SF Mono', Menlo, monospace;
+  font-family: var(--font-mono, 'IBM Plex Mono', 'SF Mono', Menlo, monospace);
   font-size: 0.68rem;
   letter-spacing: 0.08em;
   text-transform: uppercase;
@@ -1743,7 +1743,7 @@
   bottom: -16px;
   left: 0; right: 0;
   text-align: center;
-  font-family: 'IBM Plex Mono', 'SF Mono', Menlo, monospace;
+  font-family: var(--font-mono, 'IBM Plex Mono', 'SF Mono', Menlo, monospace);
   font-size: 9px;
   letter-spacing: 0.08em;
   color: var(--cds-text-secondary);
@@ -1798,7 +1798,7 @@
 }
 
 .stage-blueprint-tile__label {
-  font-family: 'IBM Plex Mono', 'Courier New', monospace;
+  font-family: var(--font-mono, 'IBM Plex Mono', 'Courier New', monospace);
   font-size: 8px;
   font-weight: 600;
   color: var(--cds-text-primary, #f4f4f4);
@@ -1809,7 +1809,7 @@
 }
 
 .stage-blueprint-tile__sub {
-  font-family: 'IBM Plex Mono', 'Courier New', monospace;
+  font-family: var(--font-mono, 'IBM Plex Mono', 'Courier New', monospace);
   font-size: 7px;
   color: var(--cds-text-placeholder, #8d8d8d);
   text-transform: uppercase;
@@ -1829,7 +1829,7 @@
   padding: 0.35rem 0.9rem;
   background: color-mix(in srgb, var(--cds-layer-02) 88%, var(--cds-background));
   border-bottom: 1px solid var(--cds-border-strong);
-  font-family: 'IBM Plex Mono', 'SF Mono', Menlo, monospace;
+  font-family: var(--font-mono, 'IBM Plex Mono', 'SF Mono', Menlo, monospace);
   font-size: 0.68rem;
   color: var(--cds-text-secondary);
   letter-spacing: 0.04em;
@@ -1903,7 +1903,7 @@
   border-top: 1px solid var(--cds-border-strong);
   background: color-mix(in srgb, var(--cds-layer-01) 92%, var(--cds-background));
   color: var(--cds-text-secondary);
-  font-family: 'IBM Plex Mono', 'SF Mono', Menlo, monospace;
+  font-family: var(--font-mono, 'IBM Plex Mono', 'SF Mono', Menlo, monospace);
   font-size: 0.68rem;
   letter-spacing: 0.06em;
   overflow: hidden;
@@ -1973,7 +1973,7 @@
   padding: 0.35rem 0.9rem;
   background: var(--cds-layer-01);
   border-top: 1px solid var(--cds-border-strong);
-  font-family: 'IBM Plex Mono', 'SF Mono', Menlo, monospace;
+  font-family: var(--font-mono, 'IBM Plex Mono', 'SF Mono', Menlo, monospace);
   font-size: 0.7rem;
   color: var(--cds-text-helper);
   overflow: hidden;
@@ -2039,7 +2039,7 @@
   padding: 0.7rem 0.75rem;
   background: var(--cds-layer-02, #393939);
   color: var(--cds-text-primary, #f4f4f4);
-  font-family: 'IBM Plex Mono', 'SF Mono', ui-monospace, monospace;
+  font-family: var(--font-mono, 'IBM Plex Mono', 'SF Mono', ui-monospace, monospace);
   min-width: 0;
   overflow: hidden;
 }
@@ -2201,7 +2201,7 @@
   padding: 0.35rem 0.5rem 0.35rem 0.95rem;
   border: 1px solid var(--bp-card-stroke);
   background: color-mix(in srgb, var(--bp-card-fill) 95%, var(--bp-grid));
-  font-family: 'IBM Plex Mono', ui-monospace, monospace;
+  font-family: var(--font-mono, 'IBM Plex Mono', ui-monospace, monospace);
   font-size: 0.7rem;
   line-height: 1.15;
 }
@@ -2333,7 +2333,7 @@
   align-items: center;
   gap: 0.25rem;
   padding: 1px 0;
-  font-family: 'IBM Plex Mono', ui-monospace, monospace;
+  font-family: var(--font-mono, 'IBM Plex Mono', ui-monospace, monospace);
   font-size: 0.62rem;
   line-height: 1.1;
   color: var(--cds-text-secondary);

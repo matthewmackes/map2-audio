@@ -223,7 +223,7 @@ export function LFOWaveform({
         fill={accentColor}
         fontSize={9}
         fontWeight="bold"
-        fontFamily="monospace"
+        fontFamily="var(--font-mono, monospace)"
       >
         {rate >= 1 ? `${rate.toFixed(1)}Hz` : `${(rate * 1000).toFixed(0)}mHz`}
       </text>

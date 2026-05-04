@@ -301,7 +301,7 @@ export function TransferCurve({
         fill={accentColor}
         fontSize={10}
         fontWeight="bold"
-        fontFamily="monospace"
+        fontFamily="var(--font-mono, monospace)"
       >
         {ratio >= 20 ? '∞:1' : `${ratio.toFixed(1)}:1`}
       </text>

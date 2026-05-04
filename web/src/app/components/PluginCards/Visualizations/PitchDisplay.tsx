@@ -182,7 +182,7 @@ export function PitchDisplay({
         fill={accentColor}
         fontSize={14}
         fontWeight="bold"
-        fontFamily="monospace"
+        fontFamily="var(--font-mono, monospace)"
       >
         {semitones >= 0 ? '+' : ''}{semitones.toFixed(0)}
         {cents !== 0 && (

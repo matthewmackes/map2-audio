@@ -256,7 +256,7 @@ export function DelayTapGrid({
         fill={accentColor}
         fontSize={9}
         fontWeight="bold"
-        fontFamily="monospace"
+        fontFamily="var(--font-mono, monospace)"
       >
         {(feedbackNorm * 100).toFixed(0)}%
       </text>
