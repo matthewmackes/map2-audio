@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1476** Python | **1492** TypeScript | **179** C++/H | **146** Docs | **3769** total commits | **3** stars | **0** forks | **0** open issues
+**1476** Python | **1492** TypeScript | **179** C++/H | **146** Docs | **3771** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`758700f2`](https://github.com/matthewmackes/map2-audio/commit/758700f232c97ee0e103bf9b3491804843071e65) | ui(t2481-b3): tokenize MOTURMEPage page header + panel he... | Map2 Audio | 2026-05-04 |
+| [`027d89fc`](https://github.com/matthewmackes/map2-audio/commit/027d89fc55522557a25e50396a80625cb1fd7e48) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-04 |
 | [`5b906cde`](https://github.com/matthewmackes/map2-audio/commit/5b906cde485df6adbb627545c9a63ce79f8c7887) | ui(t2481-b3): tokenize HomePage display-tier font sizes v... | Map2 Audio | 2026-05-04 |
 | [`a771d457`](https://github.com/matthewmackes/map2-audio/commit/a771d457694b0cede0b1ab832dca5fe9dc8b3633) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-04 |
 | [`902054cd`](https://github.com/matthewmackes/map2-audio/commit/902054cdbe4ff2186a3770c9c61f0e15f80927f5) | docs(t2481-g2): author the Carbon Fit-and-Finish Rubric | Map2 Audio | 2026-05-04 |
 | [`c849b339`](https://github.com/matthewmackes/map2-audio/commit/c849b3398c9069b7b7e4d7659044dfced449a2ed) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-04 |
 | [`9ec87c16`](https://github.com/matthewmackes/map2-audio/commit/9ec87c167282dc03a753d05b8208bd2767131d14) | chore(t2481-g3): clear final 3 lint warnings via scoped p... | Map2 Audio | 2026-05-04 |
 | [`c6743471`](https://github.com/matthewmackes/map2-audio/commit/c67434711f26ef0ac0f60f074114bf82d6b7077b) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-04 |
-| [`6703cf4c`](https://github.com/matthewmackes/map2-audio/commit/6703cf4c6feae8a7ae524acca95239a6c3ff6025) | ui(t2481-d1): route platform-chrome CSS transitions throu... | Map2 Audio | 2026-05-04 |
-| [`83f11305`](https://github.com/matthewmackes/map2-audio/commit/83f113055d295b3cf5e358d395a5cb54794c6e7d) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-04 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
