@@ -28,10 +28,11 @@ function createWrapper() {
   const client = new QueryClient({
     defaultOptions: { queries: { retry: false, gcTime: 0 } },
   })
-  // eslint-disable-next-line react/display-name
-  return ({ children }: { children: React.ReactNode }) => (
+  const Wrapper = ({ children }: { children: React.ReactNode }) => (
     <QueryClientProvider client={client}>{children}</QueryClientProvider>
   )
+  Wrapper.displayName = 'SequencerChannelMetersTestWrapper'
+  return Wrapper
 }
 
 function Probe(): JSX.Element {
