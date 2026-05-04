@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1476** Python | **1492** TypeScript | **179** C++/H | **146** Docs | **3791** total commits | **3** stars | **0** forks | **0** open issues
+**1476** Python | **1492** TypeScript | **179** C++/H | **146** Docs | **3793** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`677e901e`](https://github.com/matthewmackes/map2-audio/commit/677e901efeff1b54acbc24789dcaf29152a2aad4) | ui(t2481-b3): retoken MIDICommanderSetup + ParallelRoutin... | Map2 Audio | 2026-05-04 |
+| [`246d76df`](https://github.com/matthewmackes/map2-audio/commit/246d76dfe1438a48d3076539bd8ef5145ddaae8d) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-04 |
 | [`63beb344`](https://github.com/matthewmackes/map2-audio/commit/63beb344ebf356e67e13b64e0afa9bb8cbab60c1) | ui(t2481-b3): retoken UpdateProgressViewer + PlatformCapa... | Map2 Audio | 2026-05-04 |
 | [`3f608832`](https://github.com/matthewmackes/map2-audio/commit/3f6088320b93e297355ff730a04c1cb4eaee593b) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-04 |
 | [`86a1b52a`](https://github.com/matthewmackes/map2-audio/commit/86a1b52adbcaa5459ccdbacd36e3b3ae91ebdac9) | ui(t2481-b3): retoken OnboardingWizard cluster-setup chrome | Map2 Audio | 2026-05-04 |
 | [`ccbd59ce`](https://github.com/matthewmackes/map2-audio/commit/ccbd59ce7a50b69c58e3ea3c179c6e12e9686bad) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-04 |
 | [`cd43a0e5`](https://github.com/matthewmackes/map2-audio/commit/cd43a0e5424f8b74274ea32db9eed4514fb59db0) | docs(t2481-g2): update Carbon Fit-and-Finish Rubric with ... | Map2 Audio | 2026-05-04 |
 | [`857fece0`](https://github.com/matthewmackes/map2-audio/commit/857fece04edbe53ae737ad4e7baf014ebb450195) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-04 |
-| [`33b7d3d1`](https://github.com/matthewmackes/map2-audio/commit/33b7d3d1fbb51d801eb14a5514ee2a13984c9b62) | ui(t2481-b3): retoken SystemArchitectureFlow annotation c... | Map2 Audio | 2026-05-04 |
-| [`94b079a6`](https://github.com/matthewmackes/map2-audio/commit/94b079a60a595dad4ae6a0d0aef11b9fa8b14f4c) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-04 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
