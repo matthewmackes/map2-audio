@@ -321,11 +321,11 @@ import type {
   ReorderPreviewState,
   RoutingConfig,
   RoutingInspectorContent,
-  RoutingMode,
   SnapshotEditorPerformanceEvent,
   SnapshotEditorPerformanceEventsResponse,
 } from './snapshotEditor/snapshotEditorPageTypes'
 import { FlowLevelControl } from './snapshotEditor/FlowLevelControl'
+import { useSnapshotEditorRoutingHandlers } from './snapshotEditor/useSnapshotEditorRoutingHandlers'
 import {
   buildTraceableChannelChainName,
   countAudioBindingChannels,
@@ -4698,112 +4698,18 @@ export function SnapshotEditorPage() {
     }
   }, [selectedFlowForAssignment, closeAssignmentDialog, pushToast, queryClient, snapshotEditorMutationDisabled])
 
-  // Routing
-  const queueLiveRoutingDraftUpdate = useCallback((nextDraft: SnapshotDraftData) => {
-    if (!isAuthorityLiveSnapshot || !activeSnapshot) {
-      return
-    }
-    setRoutingLiveApplyState('idle')
-    updateLiveSnapshotRoutingMutation.mutate({
-      snapshotId: activeSnapshot.id,
-      nextDraft,
-    })
-  }, [activeSnapshot, isAuthorityLiveSnapshot, updateLiveSnapshotRoutingMutation])
-
-  const toggleAbSwitch = useCallback(() => {
-    if (snapshotEditorMutationDisabled || !abSwitchEnabled || !abSwitchAlternateFlow) {
-      return
-    }
-
-    const nextDraft = cloneSnapshotDraftData(captureCurrentState())
-    nextDraft.routing = {
-      ...nextDraft.routing,
-      mode: 'ab_switch',
-      activeSlotId: abSwitchAlternateFlow.id,
-    }
-    setEditorSnapshotState(nextDraft)
-    recordSnapshotUndoRedoStep(nextDraft, `Switch A/B path to ${abSwitchAlternateFlow.label}`)
-    queueLiveRoutingDraftUpdate(nextDraft)
-  }, [
-    abSwitchAlternateFlow,
+  const { queueLiveRoutingDraftUpdate, toggleAbSwitch } = useSnapshotEditorRoutingHandlers({
+    activeSnapshot,
+    isAuthorityLiveSnapshot,
     abSwitchEnabled,
-    captureCurrentState,
-    queueLiveRoutingDraftUpdate,
-    recordSnapshotUndoRedoStep,
-    setEditorSnapshotState,
+    abSwitchAlternateFlow,
     snapshotEditorMutationDisabled,
-  ])
-
-  const setRoutingMode = useCallback((mode: RoutingMode) => {
-    if (snapshotEditorMutationDisabled) {
-      return
-    }
-    const beforeDraft = captureCurrentState()
-    const nextDraft = cloneSnapshotDraftData(beforeDraft)
-    const fallbackActiveId = nextDraft.routing.activeSlotId ?? activeFlow?.id ?? nextDraft.flowSlots[0]?.id ?? null
-    if (mode === 'parameter_morph') {
-      const morphSourceId = nextDraft.routing.morphSourceSlotId ?? fallbackActiveId
-      const morphTargetId = nextDraft.routing.morphTargetSlotId
-        ?? nextDraft.flowSlots.find((slot) => slot.id !== morphSourceId)?.id
-        ?? null
-      nextDraft.routing = {
-        ...nextDraft.routing,
-        mode,
-        activeSlotId: fallbackActiveId,
-        morphSourceSlotId: morphSourceId,
-        morphTargetSlotId: morphTargetId,
-      }
-    } else {
-      nextDraft.routing = {
-        ...nextDraft.routing,
-        mode,
-        activeSlotId: fallbackActiveId,
-      }
-    }
-    setEditorSnapshotState(nextDraft)
-    recordSnapshotUndoRedoStep(nextDraft, 'Change routing mode')
-    queueLiveRoutingDraftUpdate(nextDraft)
-  }, [
-    activeFlow?.id,
     captureCurrentState,
-    queueLiveRoutingDraftUpdate,
-    recordSnapshotUndoRedoStep,
     setEditorSnapshotState,
-    snapshotEditorMutationDisabled,
-  ])
-
-  const setBlendPosition = useCallback((slotId: string, position: number) => {
-    if (snapshotEditorMutationDisabled) {
-      return
-    }
-    const nextDraft = cloneSnapshotDraftData(captureCurrentState())
-    nextDraft.routing = {
-      ...nextDraft.routing,
-      blendPositions: { ...nextDraft.routing.blendPositions, [slotId]: position },
-    }
-    setEditorSnapshotState(nextDraft)
-    recordSnapshotUndoRedoStep(nextDraft, 'Adjust blend position')
-  }, [captureCurrentState, recordSnapshotUndoRedoStep, setEditorSnapshotState, snapshotEditorMutationDisabled])
-
-  const setMorphProgress = useCallback((progress: number) => {
-    if (snapshotEditorMutationDisabled) {
-      return
-    }
-    const nextDraft = cloneSnapshotDraftData(captureCurrentState())
-    nextDraft.routing = {
-      ...nextDraft.routing,
-      morphProgress: progress,
-    }
-    setEditorSnapshotState(nextDraft)
-    recordSnapshotUndoRedoStep(nextDraft, 'Adjust morph position')
-    queueLiveRoutingDraftUpdate(nextDraft)
-  }, [
-    captureCurrentState,
-    queueLiveRoutingDraftUpdate,
     recordSnapshotUndoRedoStep,
-    setEditorSnapshotState,
-    snapshotEditorMutationDisabled,
-  ])
+    setRoutingLiveApplyState,
+    updateLiveSnapshotRoutingMutation,
+  })
 
   // Plugin operations
   const openSelectedBlockEditor = useCallback(() => {
@@ -7619,7 +7525,7 @@ export function SnapshotEditorPage() {
   // Snapshot management hero — new Build Workflow design (2026-04-25). Wires
   // every section to its single source of truth:
   //   • engine sync   → liveBadgeState (computeLiveBadgeState)
-  //   • routing map   → routing.mode + setRoutingMode + ROUTING_MODE_OPTIONS
+  //   • routing map   → routing.mode + ROUTING_MODE_OPTIONS
   //   • active channel→ activeChannelStatusRail memo
   //   • morph pad     → <MorphPad/> (state-authority API)
   const buildWorkflowEngineSync: { tone: 'live' | 'publishing' | 'desync' | 'idle'; label: string } = (() => {
