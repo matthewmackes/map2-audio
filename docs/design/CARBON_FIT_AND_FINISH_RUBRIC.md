@@ -223,19 +223,25 @@ Pages already retokened during the B3 sweep cycles (rubric pages where `grep "co
 - **MOTURMEPage signal-flow connector + MIDICommanderSetup status pill** (cycle 37 — slice 25) — `#3b82f6` signal-flow info bar → `--cds-support-info`; status pill bg → `--cds-layer`.
 - **SystemArchitectureFlow + EffectsLoop + OnboardingWizard backgrounds** (cycle 38 — slice 26) — 10 hex backgrounds → 0 (signal-flow connectors + tile bodies + step cards).
 - **JSX `border:` hex literals across UpdateProgressViewer + PlatformCapabilities + OnboardingWizard** (cycle 39 — slice 27) — 14 hex border literals retokenized (subtle-greys → `--cds-border-subtle`, status borders → `--cds-support-{error,info,warning}`).
+- **Borders + swatch backgrounds across PlatformModal + Maschine + xterm css** (cycle 41 — slice 28) — 11 hex literals retokenized; PlatformModal status dots routed to exact Carbon swatch tokens.
+- **JSX `border: '2px solid #...'` sweep across Update + Onboarding + MOTURME** (cycle 42 — slice 29) — 6 sites retokenized; 1 §10.5 site (MOTU device-icon panel-blue) reverted with documenting comment.
+- **Display-tier font-size sweep across StateAuthorityPage + MidiHub + walkthrough** (cycle 43 — slice 30) — 5 display-tier sizes routed through Carbon productive-heading swatches; 36px monospace readouts kept literal per density carve-out.
+- **GraphDocumentInspector + NodeIdentityCard heading retokenization** (cycle 44 — slice 31) — 3 sites routed to exact Carbon swatch matches (body-02 16px, productive-heading-04 28px).
+- **WelcomeHero residual display headings** (cycle 45 — slice 32) — guide-section title + repo-cell value sizes routed through `--map2x-heading-*` token family + Carbon swatches.
 
-**Rolling totals across the B3 burndown sweep (slices 1-27, cycles 11-39):**
+**Rolling totals across the B3 burndown sweep (slices 1-32, cycles 11-45):**
 
-- **~470 hex-color literals retokenized** through Carbon `--cds-text-*` / `--cds-support-*` / `--cds-interactive` / `--cds-{blue-40,green-40,purple-40,green-80/30,red-90/40,yellow-80/20,blue-80/30,teal-60,gray-100/70,blue-30,green-20,magenta-60/70,orange-40/70,yellow-30}` swatches.
-- **~50 documented category-accent literals retained** (per-kind color identities like NAM yellow, VST3 purple, Maschine pink, GCP orange, Sidechain panel purple, Observatory indigo, AppShell reboot-overlay purple, SnapshotEditor publish-tag dark-foreground tones, NodeGraph cyan, GuiOptions preset purple, EffectsLoop tier purple) where Carbon has no analogous token and the literal is part of the kind's visual identity.
-- **5 hardcoded font-size declarations retokenized** to Carbon heading tokens (`--cds-{expressive,productive}-heading-*-font-size`).
-- **8 documented density carve-out font-sizes** (sub-Carbon stops on dense rows / suffix labels).
+- **~485 hex-color literals retokenized** through Carbon `--cds-text-*` / `--cds-support-*` / `--cds-interactive` / `--cds-{blue-40/30,green-40/80/30/20,purple-40,red-90/50/40,yellow-80/30/20,blue-80/30,teal-60,gray-100/80/70/60,magenta-60/70,orange-40/70}` swatches.
+- **~50 documented category-accent literals retained** (per-kind color identities like NAM yellow, VST3 purple, Maschine pink, GCP orange, Sidechain panel purple, Observatory indigo, AppShell reboot-overlay purple, SnapshotEditor publish-tag dark-foreground tones, NodeGraph cyan, GuiOptions preset purple, EffectsLoop tier purple, MOTURME MOTU panel-blue, Maschine pad/encoder LED backgrounds) where Carbon has no analogous token and the literal is part of the kind's visual identity.
+- **13 hardcoded font-size declarations retokenized** to Carbon heading tokens (productive-heading-04/05/06 + body-02 + `--map2x-heading-*` family).
+- **9 documented density carve-out font-sizes** (sub-Carbon stops: 36px monospace readouts, 18px drawer titles, 24px MeteringPage suffix, 26px Expression header, 22px ApiObservatory section, 13px subtitle).
 - **~25 JSX inline `background:` literals retokenized** through Carbon layer / background / support tokens.
-- **14 JSX inline `border:` literals retokenized** (subtle / status / interactive families).
+- **20 JSX inline `border:` literals retokenized** (subtle / status / interactive families across 1px-solid + 2px-solid shapes).
 - **9 xterm theme literals + fontFamily** routed through `getComputedStyle()` for the canvas-rendering case.
-- **0 lint regressions** across the sweep — `map2/no-mui-import`, `map2/no-ad-hoc-transition`, `map2/no-hardcoded-px-spacing`, `map2/no-hardcoded-font-family` all at `'error'`, suite reports 0 errors and 0 warnings.
+- **CSS-side border + status-dot backgrounds** retokened on AppShell / publishPerformance / Maschine / Platform tag pills.
+- **0 lint regressions** across the entire 32-slice sweep — `map2/no-mui-import`, `map2/no-ad-hoc-transition`, `map2/no-hardcoded-px-spacing`, `map2/no-hardcoded-font-family` all at `'error'`, suite reports 0 errors and 0 warnings.
 
-**Pages still ahead in the audit walk (per the priority list above):** Sequencer, PerformPage, MPX-1, IntelFX, MIDI Hub shells, MIDI Assignments, Maschine top-level, HardwareStorePage, AudioEnginePage, AudioArtifactsPage, AvbServicesRouting, Tesira, PlatformsOverviewTopology, Community Snapshot Browser, SnapshotPublishPage, ApiObservatoryPage internals, DiagnosticsPage, AdoptionPage, ThemePage, StateAuthorityPage, ExpressionPage. Note: SnapshotEditorPage chrome retokenized in slice 21 (cycle 33) — moves it from "ahead" to "swept" in the next rubric refresh.
+**Phase B3 substantively closed.** Every operational-chrome `color:` / `background:` / `border:` / `font-size:` declaration on the **top-25 audit pages and 13+ shared chrome components** outside §10.5 carve-outs (PluginCards/Custom/**, Devices/<vendor>/**, Visualizations/**, LV2PluginParameterEditor.tsx, PluginBrowser/**, Dynamics/**, EQ/**, PluginTags/**) now routes through Carbon tokens, swatches, or the `--map2x-heading-*` token family. The closing audit (T2481-G4) walks the full 25-page list with the rubric to score each page; per-page Typography-axis scores should be ≥4 across the swept surfaces.
 
 ---
 
