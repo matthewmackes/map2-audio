@@ -225,7 +225,7 @@ export default function MOTURMEPage() {
                 style={{ width: '85%', height: '85%', objectFit: 'contain', opacity: 0.92 }}
               />
             </div>
-            <span style={{ display: 'inline-block', padding: 'var(--cds-spacing-02) var(--cds-spacing-03)', background: '#2563eb', color: '#111', fontWeight: 600, fontSize: 12 }}>
+            <span style={{ display: 'inline-block', padding: 'var(--cds-spacing-02) var(--cds-spacing-03)', background: 'var(--cds-interactive)', color: 'var(--cds-text-on-color)', fontWeight: 600, fontSize: 12 }}>
               ADAT Slave
             </span>
           </div>
@@ -268,7 +268,7 @@ export default function MOTURMEPage() {
                 style={{ width: '85%', height: '85%', objectFit: 'contain', opacity: 0.92 }}
               />
             </div>
-            <span style={{ display: 'inline-block', padding: 'var(--cds-spacing-02) var(--cds-spacing-03)', background: '#00FF9D', color: '#111', fontWeight: 600, fontSize: 12 }}>
+            <span style={{ display: 'inline-block', padding: 'var(--cds-spacing-02) var(--cds-spacing-03)', background: '#00FF9D', color: 'var(--cds-text-inverse)', fontWeight: 600, fontSize: 12 }}>
               Clock Master
             </span>
           </div>
@@ -354,7 +354,7 @@ export default function MOTURMEPage() {
 
         {/* MOTU Channels 1-8 */}
         <div style={{ marginBottom: 24 }}>
-          <span style={{ display: 'inline-block', padding: 'var(--cds-spacing-02) var(--cds-spacing-03)', background: '#00FF9D', color: '#111', marginBottom: 12, fontWeight: 600, fontSize: 12 }}>
+          <span style={{ display: 'inline-block', padding: 'var(--cds-spacing-02) var(--cds-spacing-03)', background: '#00FF9D', color: 'var(--cds-text-inverse)', marginBottom: 12, fontWeight: 600, fontSize: 12 }}>
             MOTU Local (1-8)
           </span>
           <div style={{ display: 'grid', gap: 8 }}>
@@ -384,7 +384,7 @@ export default function MOTURMEPage() {
 
         {/* RME Channels 9-16 */}
         <div>
-          <span style={{ display: 'inline-block', padding: 'var(--cds-spacing-02) var(--cds-spacing-03)', background: '#2563eb', color: '#111', marginBottom: 12, fontWeight: 600, fontSize: 12 }}>
+          <span style={{ display: 'inline-block', padding: 'var(--cds-spacing-02) var(--cds-spacing-03)', background: 'var(--cds-interactive)', color: 'var(--cds-text-on-color)', marginBottom: 12, fontWeight: 600, fontSize: 12 }}>
             RME ADAT (9-16)
           </span>
           <div style={{ display: 'grid', gap: 8 }}>
@@ -524,7 +524,7 @@ export default function MOTURMEPage() {
         </div>
 
         <div style={{ color: 'var(--cds-text-helper)', display: 'block', marginTop: 'var(--cds-spacing-05)', textAlign: 'center', fontSize: 'var(--cds-helper-text-01-font-size, 0.75rem)' }}>
-          Current mode: <strong style={{ color: '#2563eb' }}>
+          Current mode: <strong style={{ color: 'var(--cds-interactive)' }}>
             {latencyMode === 'motu-only' ? 'MOTU Only (8ch direct)' :
              latencyMode === 'adat-expanded' ? 'ADAT Expanded (16ch total)' :
              'Outboard Inserts (analog processing loop)'}
@@ -576,7 +576,7 @@ function SignalNode({ label, color, latency }: { label: string; color: string; l
         gap: 8,
       }}>
         <Activity size={24} style={{ color }} />
-        <div style={{ color: '#f3f4f6', fontWeight: 600, fontSize: 12 }}>
+        <div style={{ color: 'var(--cds-text-primary)', fontWeight: 600, fontSize: 'var(--cds-helper-text-01-font-size, 0.75rem)' }}>
           {label}
         </div>
         {latency && (
