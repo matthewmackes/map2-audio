@@ -59,13 +59,13 @@ const MidiLearnButton = memo(({
   const activeStyles: React.CSSProperties = isActive
     ? {
         backgroundColor: '#9c27b0',
-        color: '#ffffff',
+        color: 'var(--cds-text-primary)',
         boxShadow: '0 0 12px rgba(156, 39, 176, 0.5)',
         animation: 'midiLearnPulse 1.5s ease-in-out infinite',
       }
     : {
         backgroundColor: 'rgba(30, 30, 30, 0.9)',
-        color: '#9ca3af',
+        color: 'var(--cds-text-secondary)',
         border: '1px solid rgba(255, 255, 255, 0.1)',
       };
 
@@ -114,7 +114,7 @@ const MidiLearnButton = memo(({
               top: -4,
               right: -4,
               backgroundColor: '#9c27b0',
-              color: '#ffffff',
+              color: 'var(--cds-text-primary)',
               fontSize: dimensions.badge * 0.7,
               fontWeight: 600,
               minWidth: dimensions.badge,

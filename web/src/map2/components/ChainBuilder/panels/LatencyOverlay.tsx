@@ -142,7 +142,7 @@ const LatencyOverlay = memo(({
           <circle cx="12" cy="12" r="10" />
           <polyline points="12 6 12 12 16 14" />
         </svg>
-        <span style={{ fontSize: 11, color: '#9ca3af' }}>Total Latency:</span>
+        <span style={{ fontSize: 11, color: 'var(--cds-text-secondary)' }}>Total Latency:</span>
         <span
           style={{
             fontSize: 11,
@@ -157,7 +157,7 @@ const LatencyOverlay = memo(({
         >
           {formatLatency(totalSamples, sampleRate)}
         </span>
-        <span style={{ fontSize: 10, color: '#6b7280' }}>
+        <span style={{ fontSize: 10, color: 'var(--cds-text-helper)' }}>
           ({totalSamples} samples @ {sampleRate / 1000}kHz)
         </span>
         {pdcEnabled && (
@@ -168,7 +168,7 @@ const LatencyOverlay = memo(({
               padding: '1px 6px',
               borderRadius: 4,
               backgroundColor: 'rgba(76, 175, 80, 0.15)',
-              color: '#4caf50',
+              color: 'var(--cds-support-success)',
               border: '1px solid #4caf50',
               display: 'flex',
               alignItems: 'center',
@@ -214,7 +214,7 @@ const LatencyOverlay = memo(({
               justifyContent: 'center',
             }}
           >
-            <span style={{ fontSize: 10, color: '#6b7280' }}>
+            <span style={{ fontSize: 10, color: 'var(--cds-text-helper)' }}>
               No latency-inducing plugins
             </span>
           </div>
@@ -252,13 +252,13 @@ const LatencyOverlay = memo(({
                       flexShrink: 0,
                     }}
                   />
-                  <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: '#e5e7eb' }}>
+                  <span style={{ flex: 1, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap', color: 'var(--cds-text-primary)' }}>
                     {getDisplayPluginName(plugin.name, plugin.uri)}
                   </span>
-                  <span style={{ color: '#9ca3af', flexShrink: 0 }}>
+                  <span style={{ color: 'var(--cds-text-secondary)', flexShrink: 0 }}>
                     {formatLatency(plugin.latencySamples, sampleRate)}
                   </span>
-                  <span style={{ color: '#6b7280', flexShrink: 0, width: 35, textAlign: 'right' }}>
+                  <span style={{ color: 'var(--cds-text-helper)', flexShrink: 0, width: 35, textAlign: 'right' }}>
                     {percentage.toFixed(0)}%
                   </span>
                   {plugin.isCompensated && (

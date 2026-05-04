@@ -132,10 +132,10 @@ function DemoRenderer({ id }: { id: DemoId }) {
 function LayoutMorphDemo() {
   const [expanded, setExpanded] = useState<number | null>(null)
   const items = [
-    { id: 1, label: 'Scenes', color: '#3b82f6' },
+    { id: 1, label: 'Scenes', color: 'var(--cds-support-info)' },
     { id: 2, label: 'Mix', color: '#8b5cf6' },
     { id: 3, label: 'Routing', color: '#06b6d4' },
-    { id: 4, label: 'Meters', color: '#10b981' },
+    { id: 4, label: 'Meters', color: 'var(--cds-support-success)' },
   ]
 
   return (

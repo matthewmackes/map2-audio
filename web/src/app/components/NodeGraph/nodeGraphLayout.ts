@@ -22,7 +22,7 @@ function buildEdgeData(topology: NodeTopology | undefined): Edge[] {
       type: 'smoothstep',
       animated: edge.active,
       label: edge.stream_type.toUpperCase(),
-      markerEnd: { type: MarkerType.ArrowClosed, color: '#0f62fe' },
+      markerEnd: { type: MarkerType.ArrowClosed, color: 'var(--cds-interactive)' },
       style: { stroke: '#0f62fe', strokeWidth: 2 },
       labelStyle: { fill: '#0f62fe', fontWeight: 600 },
     })),
