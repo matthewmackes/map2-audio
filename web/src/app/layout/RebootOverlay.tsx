@@ -193,6 +193,12 @@ export function RebootOverlay({
   rebootCurrentStep: RebootProgressStep | null
   onDismiss: () => void
 }) {
+  // T2466-3: respect prefers-reduced-motion + the in-app
+  // Reduced-effects toggle for the overlay's enter spring,
+  // panel scale-in, and heading cross-fade. Must run on every
+  // render before any early return per Rules of Hooks.
+  const { shouldReduceEffects } = useReducedEffectsPreference()
+
   if (rebootStage === 'idle' || rebootStage === 'preflight') return null
 
   const isError = rebootStage === 'error'
@@ -200,10 +206,6 @@ export function RebootOverlay({
   const isReady = rebootStage === 'ready'
   const isActive = !isError && !isTimeout && !isReady
   const progressPct = ((rebootProgressIndex + 1) / REBOOT_PROGRESS_STEPS.length) * 100
-  // T2466-3: respect prefers-reduced-motion + the in-app
-  // Reduced-effects toggle for the overlay's enter spring,
-  // panel scale-in, and heading cross-fade.
-  const { shouldReduceEffects } = useReducedEffectsPreference()
 
   return (
     <AnimatePresence>
