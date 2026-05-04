@@ -1796,7 +1796,7 @@
 }
 
 .stage-blueprint-tile--active .stage-blueprint-tile__icon {
-  color: #78a9ff;
+  color: var(--cds-blue-40, #78a9ff);
 }
 
 .stage-blueprint-tile__label {
@@ -2112,9 +2112,9 @@
   flex-shrink: 0;
 }
 
-.stage-midi-panel__type--cc   { color: #78a9ff; }
-.stage-midi-panel__type--pc   { color: #be95ff; }
-.stage-midi-panel__type--note { color: #42be65; }
+.stage-midi-panel__type--cc   { color: var(--cds-blue-40, #78a9ff); }
+.stage-midi-panel__type--pc   { color: var(--cds-purple-40, #be95ff); }
+.stage-midi-panel__type--note { color: var(--cds-green-40, #42be65); }
 
 .stage-midi-panel__ch {
   color: var(--cds-text-placeholder, #8d8d8d);
@@ -2346,9 +2346,9 @@
   font-size: 0.56rem;
   letter-spacing: 0.04em;
 }
-.stage-midi-archive__type--cc   { color: #78a9ff; }
-.stage-midi-archive__type--pc   { color: #be95ff; }
-.stage-midi-archive__type--note { color: #42be65; }
+.stage-midi-archive__type--cc   { color: var(--cds-blue-40, #78a9ff); }
+.stage-midi-archive__type--pc   { color: var(--cds-purple-40, #be95ff); }
+.stage-midi-archive__type--note { color: var(--cds-green-40, #42be65); }
 
 .stage-midi-archive__ch {
   color: var(--cds-text-placeholder);
