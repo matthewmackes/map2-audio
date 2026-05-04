@@ -100,7 +100,7 @@ export function EffectsLoopSummaryPanel({
 
       {chains.length > 0 && (
         <label style={{ display: 'block', marginBottom: 14 }}>
-          <div style={{ marginBottom: 6, fontSize: 12, color: '#94a3b8' }}>Inspect chain insertions</div>
+          <div style={{ marginBottom: 6, fontSize: 12, color: 'var(--cds-text-secondary)' }}>Inspect chain insertions</div>
           <select
             value={selectedChainId ?? ''}
             onChange={(event) => setSelectedChainId(event.target.value ? Number(event.target.value) : null)}
@@ -111,7 +111,7 @@ export function EffectsLoopSummaryPanel({
               borderRadius: 8,
               background: '#0f172a',
               border: '1px solid rgba(148, 163, 184, 0.16)',
-              color: '#e2e8f0',
+              color: 'var(--cds-text-primary)',
             }}
           >
             {chains.map((chain) => (
@@ -236,7 +236,7 @@ export function EffectsLoopSummaryPanel({
             display: 'flex',
             gap: 8,
             alignItems: 'center',
-            color: '#fbbf24',
+            color: 'var(--cds-support-warning)',
             fontSize: 12,
           }}
         >

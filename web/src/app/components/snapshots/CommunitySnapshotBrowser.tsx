@@ -330,8 +330,8 @@ export function CommunitySnapshotBrowser({
             marginBottom: 'var(--cds-spacing-05)',
           }}
         >
-          <WarningCircle size={18} style={{ color: '#ef4444' }} />
-          <span style={{ color: '#ef4444' }}>{error}</span>
+          <WarningCircle size={18} style={{ color: 'var(--cds-support-error)' }} />
+          <span style={{ color: 'var(--cds-support-error)' }}>{error}</span>
         </div>
       )}
 
@@ -510,7 +510,7 @@ function SnapshotCard({
               <StarFilled
                 key={star}
                 size={14}
-                style={{ cursor: 'pointer', color: '#fbbf24' }}
+                style={{ cursor: 'pointer', color: 'var(--cds-support-warning)' }}
                 onMouseEnter={() => setHoverRating(star)}
                 onMouseLeave={() => setHoverRating(0)}
                 onClick={() => onRate(star)}

@@ -169,7 +169,7 @@ export const SidechainPanel: React.FC<SidechainPanelProps> = ({
           <span style={{
             fontSize: 14,
             fontWeight: 600,
-            color: '#f2f6ff',
+            color: 'var(--cds-text-primary)',
           }}>
             Sidechain Routing
           </span>
@@ -192,7 +192,7 @@ export const SidechainPanel: React.FC<SidechainPanelProps> = ({
               background: 'rgba(16, 185, 129, 0.15)',
               border: '1px solid rgba(16, 185, 129, 0.3)',
               borderRadius: 10,
-              color: '#34d399',
+              color: 'var(--cds-support-success)',
             }}>
               Remote Control · {remoteLabel}
             </span>
@@ -205,7 +205,7 @@ export const SidechainPanel: React.FC<SidechainPanelProps> = ({
               background: 'rgba(245, 158, 11, 0.15)',
               border: '1px solid rgba(245, 158, 11, 0.3)',
               borderRadius: 10,
-              color: '#fbbf24',
+              color: 'var(--cds-support-warning)',
             }}>
               {latencyMs.toFixed(1)} ms
             </span>
@@ -252,7 +252,7 @@ export const SidechainPanel: React.FC<SidechainPanelProps> = ({
           }}>
             {/* Source plugin */}
             <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 10, color: '#6b7280', marginBottom: 4 }}>Source</div>
+              <div style={{ fontSize: 10, color: 'var(--cds-text-helper)', marginBottom: 4 }}>Source</div>
               <select
                 value={newConnection.sourceId ?? ''}
                 onChange={(e) => setNewConnection(prev => ({
@@ -267,7 +267,7 @@ export const SidechainPanel: React.FC<SidechainPanelProps> = ({
                   background: 'rgba(0, 0, 0, 0.3)',
                   border: '1px solid rgba(255, 255, 255, 0.1)',
                   borderRadius: 4,
-                  color: '#fff',
+                  color: 'var(--cds-text-primary)',
                 }}
               >
                 <option value="">Select source...</option>
@@ -279,11 +279,11 @@ export const SidechainPanel: React.FC<SidechainPanelProps> = ({
               </select>
             </div>
 
-            <ArrowRight size={16} style={{ color: '#6b7280', flexShrink: 0, marginTop: 16 }} />
+            <ArrowRight size={16} style={{ color: 'var(--cds-text-helper)', flexShrink: 0, marginTop: 16 }} />
 
             {/* Destination plugin */}
             <div style={{ flex: 1 }}>
-              <div style={{ fontSize: 10, color: '#6b7280', marginBottom: 4 }}>Destination</div>
+              <div style={{ fontSize: 10, color: 'var(--cds-text-helper)', marginBottom: 4 }}>Destination</div>
               <select
                 value={newConnection.destId ?? ''}
                 onChange={(e) => setNewConnection(prev => ({
@@ -298,7 +298,7 @@ export const SidechainPanel: React.FC<SidechainPanelProps> = ({
                   background: 'rgba(0, 0, 0, 0.3)',
                   border: '1px solid rgba(255, 255, 255, 0.1)',
                   borderRadius: 4,
-                  color: '#fff',
+                  color: 'var(--cds-text-primary)',
                 }}
               >
                 <option value="">Select destination...</option>
@@ -312,7 +312,7 @@ export const SidechainPanel: React.FC<SidechainPanelProps> = ({
 
             {/* Destination bus */}
             <div style={{ width: 70 }}>
-              <div style={{ fontSize: 10, color: '#6b7280', marginBottom: 4 }}>Bus</div>
+              <div style={{ fontSize: 10, color: 'var(--cds-text-helper)', marginBottom: 4 }}>Bus</div>
               <select
                 value={newConnection.destBus}
                 onChange={(e) => setNewConnection(prev => ({
@@ -327,7 +327,7 @@ export const SidechainPanel: React.FC<SidechainPanelProps> = ({
                   background: 'rgba(0, 0, 0, 0.3)',
                   border: '1px solid rgba(255, 255, 255, 0.1)',
                   borderRadius: 4,
-                  color: '#fff',
+                  color: 'var(--cds-text-primary)',
                 }}
               >
                 {[1, 2, 3, 4].map(bus => (
@@ -410,7 +410,7 @@ export const SidechainPanel: React.FC<SidechainPanelProps> = ({
                 flex: 1,
                 minWidth: 0,
                 fontSize: compact ? 11 : 12,
-                color: '#fff',
+                color: 'var(--cds-text-primary)',
                 whiteSpace: 'nowrap',
                 overflow: 'hidden',
                 textOverflow: 'ellipsis',
@@ -426,13 +426,13 @@ export const SidechainPanel: React.FC<SidechainPanelProps> = ({
                 flex: 1,
                 minWidth: 0,
                 fontSize: compact ? 11 : 12,
-                color: '#fff',
+                color: 'var(--cds-text-primary)',
                 whiteSpace: 'nowrap',
                 overflow: 'hidden',
                 textOverflow: 'ellipsis',
               }}>
                 {conn.destPluginName}
-                <span style={{ color: '#6b7280', marginLeft: 4 }}>SC{conn.destBus}</span>
+                <span style={{ color: 'var(--cds-text-helper)', marginLeft: 4 }}>SC{conn.destBus}</span>
               </div>
 
               {/* Toggle button */}
@@ -465,7 +465,7 @@ export const SidechainPanel: React.FC<SidechainPanelProps> = ({
                   borderRadius: 4,
                   border: '1px solid rgba(239, 68, 68, 0.2)',
                   background: 'transparent',
-                  color: '#ef4444',
+                  color: 'var(--cds-support-error)',
                   display: 'flex',
                   alignItems: 'center',
                   justifyContent: 'center',
@@ -493,7 +493,7 @@ export const SidechainPanel: React.FC<SidechainPanelProps> = ({
           border: '1px solid rgba(234, 179, 8, 0.2)',
           borderRadius: 6,
           fontSize: 11,
-          color: '#eab308',
+          color: 'var(--cds-support-warning)',
         }}>
           <WarningCircle size={14} />
           No plugins with sidechain inputs loaded
