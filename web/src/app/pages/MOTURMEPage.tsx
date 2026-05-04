@@ -163,11 +163,25 @@ export default function MOTURMEPage() {
       padding: 'var(--cds-spacing-06)',
     }}>
       {/* Page Title */}
-      <div style={{ marginBottom: 32, textAlign: 'center' }}>
-        <h1 style={{ color: '#f3f4f6', fontWeight: 700, marginBottom: 8, fontSize: '2rem' }}>
+      <div style={{ marginBottom: 'var(--cds-spacing-07)', textAlign: 'center' }}>
+        <h1
+          style={{
+            color: 'var(--cds-text-primary)',
+            fontWeight: 700,
+            marginBottom: 'var(--cds-spacing-03)',
+            fontSize: 'var(--cds-expressive-heading-06-font-size, 2rem)',
+            lineHeight: 'var(--cds-expressive-heading-06-line-height, 1.25)',
+          }}
+        >
           MOTU UltraLite-mk5 + RME ADI-8 QS
         </h1>
-        <p style={{ color: '#94a3b8', fontSize: 14, margin: 0 }}>
+        <p
+          style={{
+            color: 'var(--cds-text-secondary)',
+            fontSize: 'var(--cds-body-compact-01-font-size, 0.875rem)',
+            margin: 0,
+          }}
+        >
           ADAT-Expanded Monitoring Dashboard
         </p>
         <div style={{ marginTop: 12 }}>
@@ -334,7 +348,7 @@ export default function MOTURMEPage() {
 
       {/* 16-Channel Metering Grid */}
       <Tile style={{ background: '#111111', border: '1px solid rgba(37, 99, 235, 0.2)', marginBottom: 24 }}>
-        <h3 style={{ color: '#f3f4f6', marginBottom: 16, fontWeight: 600, fontSize: '1.125rem' }}>
+        <h3 style={{ color: 'var(--cds-text-primary)', marginBottom: 'var(--cds-spacing-05)', fontWeight: 600, fontSize: 'var(--cds-productive-heading-03-font-size, 1.25rem)', lineHeight: 'var(--cds-productive-heading-03-line-height, 1.4)' }}>
           Live Metering (Input + Output)
         </h3>
 
@@ -401,7 +415,7 @@ export default function MOTURMEPage() {
 
       {/* Latency & Audio Chain Panel */}
       <Tile style={{ background: '#111111', border: '1px solid rgba(255, 170, 0, 0.3)', marginBottom: 24 }}>
-        <h3 style={{ color: '#f3f4f6', marginBottom: 16, fontWeight: 600, fontSize: '1.125rem' }}>
+        <h3 style={{ color: 'var(--cds-text-primary)', marginBottom: 'var(--cds-spacing-05)', fontWeight: 600, fontSize: 'var(--cds-productive-heading-03-font-size, 1.25rem)', lineHeight: 'var(--cds-productive-heading-03-line-height, 1.4)' }}>
           <ChartLine size={20} style={{ marginRight: 8, verticalAlign: 'middle' }} />
           Latency & Audio Chain Analysis
         </h3>
@@ -477,7 +491,7 @@ export default function MOTURMEPage() {
 
       {/* Signal Flow Visualizer */}
       <Tile style={{ background: '#111111', border: '1px solid rgba(96, 165, 250, 0.3)' }}>
-        <h3 style={{ color: '#f3f4f6', marginBottom: 16, fontWeight: 600, fontSize: '1.125rem' }}>
+        <h3 style={{ color: 'var(--cds-text-primary)', marginBottom: 'var(--cds-spacing-05)', fontWeight: 600, fontSize: 'var(--cds-productive-heading-03-font-size, 1.25rem)', lineHeight: 'var(--cds-productive-heading-03-line-height, 1.4)' }}>
           Signal Flow Diagram
         </h3>
 
