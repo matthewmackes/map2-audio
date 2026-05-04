@@ -166,6 +166,24 @@ export default tseslint.config(
     },
   },
   {
+    // Jest test files: jest.mock() factories run before module imports, so
+    // require('react') / require('@carbon/react') is the only correct way
+    // to wire mocks. Treat tests as Node-style modules for that rule.
+    files: ['src/**/*.test.{ts,tsx}', 'src/**/*.spec.{ts,tsx}'],
+    rules: {
+      '@typescript-eslint/no-require-imports': 'off',
+    },
+  },
+  {
+    // Auto-generated OpenAPI / contract-bundle artifacts. The whole-file
+    // `@ts-nocheck` is intentional and documented in the file header
+    // (T2455 — duplicate operation IDs from cluster-proxy methods).
+    files: ['src/map2/clients/*.generated.ts'],
+    rules: {
+      '@typescript-eslint/ban-ts-comment': 'off',
+    },
+  },
+  {
     files: [
       'src/app/components/**/*.{ts,tsx}',
       'src/app/hooks/**/*.{ts,tsx}',
