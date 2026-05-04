@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1476** Python | **1487** TypeScript | **179** C++/H | **146** Docs | **3719** total commits | **3** stars | **0** forks | **0** open issues
+**1476** Python | **1487** TypeScript | **179** C++/H | **146** Docs | **3725** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -175,7 +175,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-DOCS:START -->
 | Document | Last Updated |
 |:---------|:------------|
-| [PROJECT WORKLIST](https://github.com/matthewmackes/map2-audio/blob/master/docs/PROJECT_WORKLIST.md) | 2026-05-03 |
+| [PROJECT WORKLIST](https://github.com/matthewmackes/map2-audio/blob/master/docs/PROJECT_WORKLIST.md) | 2026-05-04 |
 | [MAP2 Renames — Migration Notes](https://github.com/matthewmackes/map2-audio/blob/master/docs/RENAMES.md) | 2026-05-03 |
 | [MAP2 Audio Platform — AI Instructions](https://github.com/matthewmackes/map2-audio/blob/master/docs/CLAUDE.md) | 2026-05-02 |
 | [MAP2 Backend Runtime Contract](https://github.com/matthewmackes/map2-audio/blob/master/docs/backend-runtime-contract.md) | 2026-04-27 |
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`2fe906a9`](https://github.com/matthewmackes/map2-audio/commit/2fe906a91820498c7fd068accea66bae0d919dd4) | ui(t2481): ratchet no-hardcoded-px-spacing + no-mui-impor... | Map2 Audio | 2026-05-04 |
+| [`93f8fd60`](https://github.com/matthewmackes/map2-audio/commit/93f8fd601017593ca53ec6dbd45d662cb5762ce1) | ui(t2481-c1): close spacing burndown — 0 no-hardcoded-px-... | Map2 Audio | 2026-05-04 |
+| [`527787ad`](https://github.com/matthewmackes/map2-audio/commit/527787ad455b12dd047674ed4d81e72816de9fb4) | ui(t2481-c1): annotate Sidechain off-grid + extend carve-... | Map2 Audio | 2026-05-04 |
+| [`b9b1b192`](https://github.com/matthewmackes/map2-audio/commit/b9b1b1923f195a56cda143185619b241d09a81a9) | ui(t2481-c1): extend §10.5 carve-out to device viewers + ... | Map2 Audio | 2026-05-04 |
+| [`a46880bd`](https://github.com/matthewmackes/map2-audio/commit/a46880bd346ee7d360c5bc328b83b2cba89247e9) | ui(t2481-c1): annotate PlatformCapabilities off-grid spac... | Map2 Audio | 2026-05-04 |
+| [`b5e158ea`](https://github.com/matthewmackes/map2-audio/commit/b5e158ea3093f202b43ac52b0ea1760c150ef8e7) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-04 |
 | [`b8aa8469`](https://github.com/matthewmackes/map2-audio/commit/b8aa8469bea94f637c48f37f7975543616aceca4) | ui(t2481-c1): bulk Carbon-stop spacing migration across 2... | Map2 Audio | 2026-05-03 |
 | [`237c5643`](https://github.com/matthewmackes/map2-audio/commit/237c5643c7a49b55d3575e60e19b6d324fd868c6) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-04 |
-| [`3b679f37`](https://github.com/matthewmackes/map2-audio/commit/3b679f3731b8bca730422a214407f6cc7f2ece45) | ui(t2481-c1): scope §10.5 hardware-skin carve-out for spa... | Map2 Audio | 2026-05-03 |
-| [`d90cb6bf`](https://github.com/matthewmackes/map2-audio/commit/d90cb6bf5ee6c65506958c4d5d9702423212025e) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-04 |
-| [`93da11d5`](https://github.com/matthewmackes/map2-audio/commit/93da11d5f517653acf43afcf63b6a726c25ba6ba) | ui(t2481-d1): ratchet map2/no-ad-hoc-transition from warn... | Map2 Audio | 2026-05-03 |
-| [`807743cd`](https://github.com/matthewmackes/map2-audio/commit/807743cdf41d2d701f2be3d4d4ccb097734006b4) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-04 |
-| [`858e949a`](https://github.com/matthewmackes/map2-audio/commit/858e949aab55c1a01305f24e95d2c765c837a2f3) | ui(t2481-d1): clear remaining ad-hoc transition warnings ... | Map2 Audio | 2026-05-03 |
-| [`90ab3530`](https://github.com/matthewmackes/map2-audio/commit/90ab35304f5817528ae48ef18d4b008b86717cbd) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-04 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
