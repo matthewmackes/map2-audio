@@ -29,12 +29,18 @@ export default tseslint.config(
     },
     rules: {
       ...reactHooks.configs.recommended.rules,
-      'map2/no-mui-import': 'warn',
+      // T2475-E1 retired MUI 2026-04-30; 0 imports remain. Ratchet straight
+      // to `error` so future re-introduction is a hard CI fail.
+      'map2/no-mui-import': 'error',
       // T2481-D1 closed 2026-05-03: 0 violations across web/src; ratchet to
       // `error` so future drift is a hard CI fail. Carbon-allow escape
       // hatch covers audio-domain carve-outs.
       'map2/no-ad-hoc-transition': 'error',
-      'map2/no-hardcoded-px-spacing': 'warn',
+      // T2481-C1 closed 2026-05-04: 0 violations across web/src after the
+      // §10.5 device-skin / Visualizations / LV2 / PluginBrowser carve-outs
+      // and the per-property `// carbon-allow:` annotations; ratchet to
+      // `error` so future ad-hoc px values are a hard CI fail.
+      'map2/no-hardcoded-px-spacing': 'error',
       'react-refresh/only-export-components': [
         'warn',
         { allowConstantExport: true },
