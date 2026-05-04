@@ -41,10 +41,13 @@ export default tseslint.config(
       // and the per-property `// carbon-allow:` annotations; ratchet to
       // `error` so future ad-hoc px values are a hard CI fail.
       'map2/no-hardcoded-px-spacing': 'error',
-      'react-refresh/only-export-components': [
-        'warn',
-        { allowConstantExport: true },
-      ],
+      // The codebase has retired the Vite dev server and HMR entirely
+      // (see CLAUDE.md §6 #1: "NO Vite dev server. NO HMR. Atomic builds
+      // only — `npm run build` then `npm run preview` on port 3000."),
+      // so the only-export-components Fast-Refresh rule has no signal
+      // value here. Files that mix component + helper exports are
+      // idiomatic in this codebase; the rule would only generate noise.
+      'react-refresh/only-export-components': 'off',
       '@typescript-eslint/no-unused-vars': [
         'warn',
         {
