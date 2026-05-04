@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1476** Python | **1492** TypeScript | **179** C++/H | **146** Docs | **3731** total commits | **3** stars | **0** forks | **0** open issues
+**1476** Python | **1491** TypeScript | **179** C++/H | **146** Docs | **3737** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`9454006a`](https://github.com/matthewmackes/map2-audio/commit/9454006a4173b808c9b93d330910045d82aa02a7) | ui(t2494): retire 171 dead `@media (max-width: <1366px)` ... | Map2 Audio | 2026-05-04 |
+| [`a353a7fe`](https://github.com/matthewmackes/map2-audio/commit/a353a7fea8441d62a12a137ee929ac299c37d6dd) | ui(cutover): retire /about — Platform Guide inlined on Home | Map2 Audio | 2026-05-04 |
+| [`f069014d`](https://github.com/matthewmackes/map2-audio/commit/f069014d8b6e63107bb2d7460a5c05036825876f) | ui: replace Home + Platform Guide with unified MAP2 design | Map2 Audio | 2026-05-04 |
+| [`41d9c79b`](https://github.com/matthewmackes/map2-audio/commit/41d9c79bdd3eeb852d1ad99ed4b778afb33703d4) | ui(t2473-iter5): rip out 6 unreachable workspace modals (... | Map2 Audio | 2026-05-04 |
+| [`8fbebe93`](https://github.com/matthewmackes/map2-audio/commit/8fbebe93c6b37190cc5ca59118ad0e93ea660345) | ui(t2473-iter4): deeper dead-code sweep (Zustand reads + ... | Map2 Audio | 2026-05-04 |
+| [`6c33999a`](https://github.com/matthewmackes/map2-audio/commit/6c33999a2997781abeb678ca558d5f8587a9506d) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-04 |
 | [`b1fd5a4a`](https://github.com/matthewmackes/map2-audio/commit/b1fd5a4acb0322f3e774f5164bc7e82fbb74ec0f) | ui(t2473-iter3): dead-code sweep across SnapshotEditorPag... | Map2 Audio | 2026-05-04 |
 | [`173b6733`](https://github.com/matthewmackes/map2-audio/commit/173b67335b45365945eea095c071ba52d902808c) | ui(t2473-iter2): extract MIDI binding drafts hook (AB swi... | Map2 Audio | 2026-05-04 |
-| [`285b7085`](https://github.com/matthewmackes/map2-audio/commit/285b70855170780c7502c7b17f36799e9774d89c) | ui(t2473-iter1): extract routing handlers + delete dead r... | Map2 Audio | 2026-05-04 |
-| [`8362cb57`](https://github.com/matthewmackes/map2-audio/commit/8362cb57ec934b91b21d27d1a6e1f0d31baa2965) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-04 |
-| [`4f46cc81`](https://github.com/matthewmackes/map2-audio/commit/4f46cc81144daad048b9be756b6fa5f4e5a3710a) | ui(t2493): set minimum viable GUI viewport to 1366x768 | Map2 Audio | 2026-05-04 |
-| [`ec26cbb1`](https://github.com/matthewmackes/map2-audio/commit/ec26cbb19da1e5ca486cc25a79f7e5125434766d) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-04 |
-| [`2fe906a9`](https://github.com/matthewmackes/map2-audio/commit/2fe906a91820498c7fd068accea66bae0d919dd4) | ui(t2481): ratchet no-hardcoded-px-spacing + no-mui-impor... | Map2 Audio | 2026-05-04 |
-| [`93f8fd60`](https://github.com/matthewmackes/map2-audio/commit/93f8fd601017593ca53ec6dbd45d662cb5762ce1) | ui(t2481-c1): close spacing burndown — 0 no-hardcoded-px-... | Map2 Audio | 2026-05-04 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
