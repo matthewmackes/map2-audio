@@ -174,9 +174,9 @@ export function Pedal({ kind, on = true, width = 50, label, reducedMotion = fals
         )}
 
         <rect x={width * 0.08} y={plateY} width={width * 0.84} height={plateH} fill={spec.plate} stroke="rgba(0,0,0,0.3)" strokeWidth="0.5" />
-        <text x={width / 2} y={plateY + plateH * 0.32} fontFamily="'IBM Plex Sans', sans-serif" fontSize={width * 0.11} fontWeight="700" fill={spec.ink} textAnchor="middle" letterSpacing="0.5">BOSS</text>
-        <text x={width / 2} y={plateY + plateH * 0.58} fontFamily="'IBM Plex Sans', sans-serif" fontSize={width * 0.095} fontWeight="600" fill={spec.ink} textAnchor="middle" letterSpacing="0.4">{spec.model}</text>
-        <text x={width / 2} y={plateY + plateH * 0.86} fontFamily="'IBM Plex Mono', monospace" fontSize={width * 0.075} fill={spec.ink} textAnchor="middle" letterSpacing="0.4" opacity="0.78">{spec.name}</text>
+        <text x={width / 2} y={plateY + plateH * 0.32} fontFamily="var(--font-ui, 'IBM Plex Sans', sans-serif)" fontSize={width * 0.11} fontWeight="700" fill={spec.ink} textAnchor="middle" letterSpacing="0.5">BOSS</text>
+        <text x={width / 2} y={plateY + plateH * 0.58} fontFamily="var(--font-ui, 'IBM Plex Sans', sans-serif)" fontSize={width * 0.095} fontWeight="600" fill={spec.ink} textAnchor="middle" letterSpacing="0.4">{spec.model}</text>
+        <text x={width / 2} y={plateY + plateH * 0.86} fontFamily="var(--font-mono, 'IBM Plex Mono', monospace)" fontSize={width * 0.075} fill={spec.ink} textAnchor="middle" letterSpacing="0.4" opacity="0.78">{spec.name}</text>
 
         <circle cx={width / 2} cy={ledY} r={width * 0.055} fill={on ? led : '#2a2a2a'} stroke="rgba(0,0,0,0.6)" strokeWidth="0.5" />
         {on && !reducedMotion && (

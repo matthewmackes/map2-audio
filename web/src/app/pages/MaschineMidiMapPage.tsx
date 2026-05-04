@@ -253,7 +253,7 @@ function DetailEditor({
           </Select>
 
           <label>MIDI Output</label>
-          <span style={{ fontFamily: 'monospace', fontSize: '0.8rem', color: '#aaa' }}>{midiLabel(pad.message_type, pad.note)}</span>
+          <span style={{ fontFamily: 'var(--font-mono, monospace)', fontSize: '0.8rem', color: '#aaa' }}>{midiLabel(pad.message_type, pad.note)}</span>
         </div>
         <CarbonButton
           kind="primary"
@@ -312,7 +312,7 @@ function DetailEditor({
           />
 
           <label>MIDI Output</label>
-          <span style={{ fontFamily: 'monospace', fontSize: '0.8rem', color: '#aaa' }}>{midiLabel(btn.message_type, btn.number)}</span>
+          <span style={{ fontFamily: 'var(--font-mono, monospace)', fontSize: '0.8rem', color: '#aaa' }}>{midiLabel(btn.message_type, btn.number)}</span>
         </div>
         <CarbonButton
           kind="primary"
@@ -370,7 +370,7 @@ function DetailEditor({
           </Select>
 
           <label>MIDI Output</label>
-          <span style={{ fontFamily: 'monospace', fontSize: '0.8rem', color: '#aaa' }}>CC {enc.cc} ({enc.mode})</span>
+          <span style={{ fontFamily: 'var(--font-mono, monospace)', fontSize: '0.8rem', color: '#aaa' }}>CC {enc.cc} ({enc.mode})</span>
         </div>
         <CarbonButton
           kind="primary"
