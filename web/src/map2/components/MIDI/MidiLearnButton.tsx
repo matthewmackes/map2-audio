@@ -51,7 +51,7 @@ const MidiLearnButton = memo(({
     display: 'flex',
     alignItems: 'center',
     justifyContent: 'center',
-    transition: 'all 0.2s ease',
+    transition: 'all var(--map2-dur-moderate-02) var(--map2-ease-productive-standard)',
     position: position === 'fixed' ? 'fixed' : 'relative',
     ...(position === 'fixed' ? { bottom: 80, right: 24, zIndex: 1000 } : {}),
   };

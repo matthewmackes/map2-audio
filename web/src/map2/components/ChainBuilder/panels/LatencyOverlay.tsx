@@ -79,7 +79,7 @@ const LatencySegment = memo(({ plugin, percentage, sampleRate, isLast }: Latency
         height: '100%',
         backgroundColor: color,
         borderRight: isLast ? 'none' : '1px solid rgba(0,0,0,0.2)',
-        transition: 'width 0.3s ease',
+        transition: 'width var(--map2-dur-slow-01) var(--map2-ease-productive-standard)',
         cursor: 'pointer',
       }}
       onMouseEnter={(e) => {
