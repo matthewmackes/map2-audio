@@ -183,7 +183,7 @@ function DetailEditor({
   if (!selected) {
     return (
       <div className="mk1-detail-panel">
-        <p style={{ color: '#888', fontSize: '0.8rem' }}>
+        <p style={{ color: 'var(--cds-text-secondary)', fontSize: 'var(--cds-helper-text-01-font-size, 0.75rem)' }}>
           Select a pad, button, or encoder to edit its MIDI assignment.
         </p>
       </div>
@@ -196,7 +196,7 @@ function DetailEditor({
     return (
       <div className="mk1-detail-panel">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <h3 style={{ margin: 0, fontSize: '1rem', color: '#eee' }}>{pad.label || `PAD ${selected.index + 1}`}</h3>
+          <h3 style={{ margin: 0, fontSize: 'var(--cds-productive-heading-02-font-size, 1rem)', color: 'var(--cds-text-primary)' }}>{pad.label || `PAD ${selected.index + 1}`}</h3>
           <Tag type="teal">Pad {selected.index + 1}</Tag>
         </div>
         <div className="mk1-detail-form">
@@ -253,7 +253,7 @@ function DetailEditor({
           </Select>
 
           <label>MIDI Output</label>
-          <span style={{ fontFamily: 'var(--font-mono, monospace)', fontSize: '0.8rem', color: '#aaa' }}>{midiLabel(pad.message_type, pad.note)}</span>
+          <span style={{ fontFamily: 'var(--font-mono, monospace)', fontSize: 'var(--cds-helper-text-01-font-size, 0.75rem)', color: 'var(--cds-text-secondary)' }}>{midiLabel(pad.message_type, pad.note)}</span>
         </div>
         <CarbonButton
           kind="primary"
@@ -273,7 +273,7 @@ function DetailEditor({
     return (
       <div className="mk1-detail-panel">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <h3 style={{ margin: 0, fontSize: '1rem', color: '#eee' }}>{btn.label}</h3>
+          <h3 style={{ margin: 0, fontSize: 'var(--cds-productive-heading-02-font-size, 1rem)', color: 'var(--cds-text-primary)' }}>{btn.label}</h3>
           <Tag type="purple">Button</Tag>
         </div>
         <div className="mk1-detail-form">
@@ -312,7 +312,7 @@ function DetailEditor({
           />
 
           <label>MIDI Output</label>
-          <span style={{ fontFamily: 'var(--font-mono, monospace)', fontSize: '0.8rem', color: '#aaa' }}>{midiLabel(btn.message_type, btn.number)}</span>
+          <span style={{ fontFamily: 'var(--font-mono, monospace)', fontSize: 'var(--cds-helper-text-01-font-size, 0.75rem)', color: 'var(--cds-text-secondary)' }}>{midiLabel(btn.message_type, btn.number)}</span>
         </div>
         <CarbonButton
           kind="primary"
@@ -332,7 +332,7 @@ function DetailEditor({
     return (
       <div className="mk1-detail-panel">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
-          <h3 style={{ margin: 0, fontSize: '1rem', color: '#eee' }}>{enc.label}</h3>
+          <h3 style={{ margin: 0, fontSize: 'var(--cds-productive-heading-02-font-size, 1rem)', color: 'var(--cds-text-primary)' }}>{enc.label}</h3>
           <Tag type="magenta">Encoder {selected.index}</Tag>
         </div>
         <div className="mk1-detail-form">
@@ -370,7 +370,7 @@ function DetailEditor({
           </Select>
 
           <label>MIDI Output</label>
-          <span style={{ fontFamily: 'var(--font-mono, monospace)', fontSize: '0.8rem', color: '#aaa' }}>CC {enc.cc} ({enc.mode})</span>
+          <span style={{ fontFamily: 'var(--font-mono, monospace)', fontSize: 'var(--cds-helper-text-01-font-size, 0.75rem)', color: 'var(--cds-text-secondary)' }}>CC {enc.cc} ({enc.mode})</span>
         </div>
         <CarbonButton
           kind="primary"
