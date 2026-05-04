@@ -199,7 +199,10 @@
   font-size: 13px;
   font-weight: 500;
   cursor: pointer;
-  transition: background 0.12s, border-color 0.12s, transform 0.08s;
+  transition:
+    background var(--map2-dur-fast-02) var(--map2-ease-productive-standard),
+    border-color var(--map2-dur-fast-02) var(--map2-ease-productive-standard),
+    transform var(--map2-dur-fast-01) var(--map2-ease-productive-standard);
   text-decoration: none;
 }
 
@@ -225,7 +228,7 @@
 }
 
 .map2x-btn svg {
-  transition: transform 0.15s;
+  transition: transform var(--map2-dur-moderate-01) var(--map2-ease-productive-standard);
 }
 
 .map2x-btn:hover svg {
@@ -453,7 +456,7 @@
   text-align: left;
   background: transparent;
   cursor: pointer;
-  transition: background 0.1s;
+  transition: background var(--map2-dur-fast-02) var(--map2-ease-productive-standard);
   min-width: 0;
 }
 
@@ -511,7 +514,7 @@
   text-align: left;
   background: transparent;
   cursor: pointer;
-  transition: background 0.1s;
+  transition: background var(--map2-dur-fast-02) var(--map2-ease-productive-standard);
 }
 
 .map2x-hw-summary__cell:hover {
@@ -593,7 +596,7 @@
   text-align: left;
   background: transparent;
   cursor: pointer;
-  transition: background 0.1s;
+  transition: background var(--map2-dur-fast-02) var(--map2-ease-productive-standard);
   min-width: 0;
 }
 
@@ -646,7 +649,9 @@
   background: var(--map2x-panel);
   border: 1px solid var(--map2x-line);
   border-radius: var(--map2x-r-md);
-  transition: border-color 0.15s, transform 0.15s;
+  transition:
+    border-color var(--map2-dur-moderate-01) var(--map2-ease-productive-standard),
+    transform var(--map2-dur-moderate-01) var(--map2-ease-productive-standard);
   cursor: pointer;
   color: inherit;
   text-decoration: none;

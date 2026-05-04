@@ -1757,7 +1757,9 @@
 
 .stage-pedal-chain__slot {
   position: relative;
-  transition: filter 0.7s ease, transform 0.7s ease;
+  transition:
+    filter var(--map2-dur-slow-02) var(--map2-ease-expressive-entrance),
+    transform var(--map2-dur-slow-02) var(--map2-ease-expressive-entrance);
 }
 
 .stage-pedal-chain__slot--active {

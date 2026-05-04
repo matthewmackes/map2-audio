@@ -94,7 +94,10 @@
   background: var(--cds-layer);
   color: var(--cds-text-secondary);
   cursor: pointer;
-  transition: background 140ms ease, border-color 140ms ease, color 140ms ease;
+  transition:
+    background var(--map2-dur-fast-02) var(--map2-ease-productive-standard),
+    border-color var(--map2-dur-fast-02) var(--map2-ease-productive-standard),
+    color var(--map2-dur-fast-02) var(--map2-ease-productive-standard);
 }
 
 .global-tree-nav__quick-action:hover {
@@ -237,7 +240,9 @@
   border-radius: 10px;
   background: var(--cds-layer);
   overflow: hidden;
-  transition: border-color 140ms ease, background 140ms ease;
+  transition:
+    border-color var(--map2-dur-fast-02) var(--map2-ease-productive-standard),
+    background var(--map2-dur-fast-02) var(--map2-ease-productive-standard);
 }
 
 .global-tree-nav__hero.is-active {
@@ -362,7 +367,7 @@
 .global-tree-nav__hero-caret {
   flex: 0 0 auto;
   color: var(--cds-icon-secondary);
-  transition: transform 0.15s ease;
+  transition: transform var(--map2-dur-moderate-01) var(--map2-ease-productive-standard);
 }
 
 .global-tree-nav__hero-caret.is-open {
@@ -445,7 +450,7 @@
 .global-tree-nav__dense-caret {
   flex: 0 0 9px;
   color: var(--cds-icon-secondary);
-  transition: transform 0.15s ease;
+  transition: transform var(--map2-dur-moderate-01) var(--map2-ease-productive-standard);
 }
 
 .global-tree-nav__dense-caret.is-open {
