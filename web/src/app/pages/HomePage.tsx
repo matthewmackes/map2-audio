@@ -4,11 +4,9 @@ import { useNavigate } from 'react-router-dom'
 import {
   Button,
   Checkbox,
-  Column,
   ComposedModal,
   Content,
   DataTable,
-  Grid,
   InlineLoading,
   ModalBody,
   ModalFooter,
@@ -1023,34 +1021,33 @@ export function HomePage() {
       <div className="hp2-root__backdrop" aria-hidden="true" />
       <HomeWelcomeNoticeModal />
 
-      <Content className="hp2-home-shell__content">
-        <Grid className="hp2-home-shell__grid" condensed>
-          <Column lg={16} md={8} sm={4}>
-            <section className="hp2-home-shell__operations-shell" aria-label="MAP2 home telemetry">
-              <WelcomeHero
-                topbar={welcomeTopbar}
-                artifacts={welcomeArtifacts}
-                midiDevices={welcomeMidiDevices}
-                audioDevices={welcomeAudioDevices}
-                hardwareCounts={hardwareCounts}
-                session={welcomeSession}
-                ribbon={welcomeRibbon}
-                librarianScanLabel={librarianScanLabel}
-                onEnterLiveSurface={handleEnterLiveSurface}
-                onBrowseLibrary={handleBrowseLibrary}
-                onArtifactClick={handleArtifactClick}
-                onHardwareClick={handleHardwareClick}
-                onHardwareSummaryClick={handleHardwareSummaryClick}
-                onRibbonClick={handleRibbonClick}
-              />
-
-              <h1 className="hp2-home-shell__operations-title hp2-home-shell__operations-title--visually-hidden">
-                <img
-                  src={landingHeroBrandImage}
-                  alt="MAP: Mackes Audio Platform"
-                  className="hp2-home-shell__title-brand-image"
-                />
-              </h1>
+      <Content className="hp2-home-shell__content hp2-home-shell__content--bleed">
+        <h1 className="hp2-home-shell__operations-title hp2-home-shell__operations-title--visually-hidden">
+          <img
+            src={landingHeroBrandImage}
+            alt="MAP: Mackes Audio Platform"
+            className="hp2-home-shell__title-brand-image"
+          />
+        </h1>
+        <section className="hp2-home-shell__operations-shell" aria-label="MAP2 home telemetry">
+          <WelcomeHero
+            topbar={welcomeTopbar}
+            artifacts={welcomeArtifacts}
+            midiDevices={welcomeMidiDevices}
+            audioDevices={welcomeAudioDevices}
+            hardwareCounts={hardwareCounts}
+            session={welcomeSession}
+            ribbon={welcomeRibbon}
+            librarianScanLabel={librarianScanLabel}
+            onEnterLiveSurface={handleEnterLiveSurface}
+            onBrowseLibrary={handleBrowseLibrary}
+            onArtifactClick={handleArtifactClick}
+            onHardwareClick={handleHardwareClick}
+            onHardwareSummaryClick={handleHardwareSummaryClick}
+            onRibbonClick={handleRibbonClick}
+          />
+          <div className="hp2-home-shell__legacy-table" hidden>
+            {/* legacy operations table preserved for accessibility/search; visually hidden */}
 
               <div className="hp2-home-shell__operations-table-shell">
                 <DataTable
@@ -1190,9 +1187,8 @@ export function HomePage() {
                   )}
                 </DataTable>
               </div>
-            </section>
-          </Column>
-        </Grid>
+          </div>
+        </section>
       </Content>
     </div>
   )

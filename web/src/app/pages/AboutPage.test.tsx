@@ -1,13 +1,9 @@
 import React from 'react'
 import '@testing-library/jest-dom'
-import { render, screen, waitFor } from '@testing-library/react'
+import { render, screen } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 
 import { AboutPage } from './AboutPage'
-
-jest.mock('../components/ShoppingSearchDialog', () => ({
-  ShoppingSearchDialog: () => null,
-}))
 
 describe('AboutPage', () => {
   beforeEach(() => {
@@ -15,16 +11,7 @@ describe('AboutPage', () => {
     ;(globalThis as { fetch?: typeof fetch }).fetch = jest.fn(async (input: RequestInfo | URL) => {
       const url = String(input)
       if (url.includes('/api/version')) {
-        return { ok: true, json: async () => ({ version: '0.0.0-test' }) } as Response
-      }
-      if (url.includes('/api/system/welcome-banner')) {
-        return { ok: true, json: async () => ({ installed: false }) } as Response
-      }
-      if (url.includes('/api/system/boot-splash')) {
-        return { ok: true, json: async () => ({ installed: false }) } as Response
-      }
-      if (url.includes('/api/system/docs/list')) {
-        return { ok: true, json: async () => [] } as Response
+        return { ok: true, json: async () => ({ version: '0.0.0-test', build_date: '2026-05-04', commit: 'abcdef1' }) } as Response
       }
       return { ok: true, json: async () => ({}) } as Response
     }) as unknown as typeof fetch
@@ -34,7 +21,7 @@ describe('AboutPage', () => {
     delete (globalThis as { fetch?: typeof fetch }).fetch
   })
 
-  it('renders Carbon route shell and page heading', async () => {
+  it('renders the platform overview hero and accent title', async () => {
     render(
       <MemoryRouter
         future={{
@@ -46,15 +33,12 @@ describe('AboutPage', () => {
       </MemoryRouter>,
     )
 
-    await screen.findByRole('heading', { name: /an open, educational/i })
-    expect((globalThis.fetch as jest.Mock).mock.calls.length).toBeGreaterThanOrEqual(2)
-    expect(screen.getByText(/map2 · platform guide/i)).toBeTruthy()
-    expect(screen.getByRole('heading', { name: /research library/i })).toBeTruthy()
-    expect(document.querySelector('.about-page')).toBeTruthy()
-    expect(document.querySelector('.about-page__surface')).toBeTruthy()
+    await screen.findByRole('heading', { name: /an open, educational platform for/i })
+    expect(screen.getByText(/01 · Platform overview/i)).toBeTruthy()
+    expect(screen.getByText(/Mackes Audio Platform 2/i)).toBeTruthy()
   })
 
-  it('renders version and hardware helper sections without theme controls', async () => {
+  it('renders the operating modes, signal chain and architecture sections', async () => {
     render(
       <MemoryRouter
         future={{
@@ -66,15 +50,13 @@ describe('AboutPage', () => {
       </MemoryRouter>,
     )
 
-    await screen.findByRole('heading', { name: /an open, educational/i })
-
-    expect(screen.getByText('Version')).toBeTruthy()
-    expect(screen.getAllByText('License').length).toBeGreaterThan(0)
-    expect(screen.getByRole('heading', { name: /the open-source projects that make map2 possible\./i })).toBeTruthy()
-    expect(screen.queryByRole('button', { name: /choose theme/i })).toBeNull()
+    await screen.findByRole('heading', { name: /three modes, one platform/i })
+    expect(screen.getByRole('heading', { name: /input to archive, in nine stages/i })).toBeTruthy()
+    expect(screen.getByRole('heading', { name: /the stack, end to end/i })).toBeTruthy()
+    expect(screen.getByRole('heading', { name: /open-source roots/i })).toBeTruthy()
   })
 
-  it('shows the legal disclaimer first with the AGPL section visible', async () => {
+  it('renders the legal section with AGPLv3 disclaimer', async () => {
     render(
       <MemoryRouter
         future={{
@@ -86,14 +68,8 @@ describe('AboutPage', () => {
       </MemoryRouter>,
     )
 
-    await screen.findByRole('heading', { name: /an open, educational/i })
-
-    const legalHeading = screen.getByRole('heading', { name: /legal notice · agpl-3\.0-only · not affiliated/i })
-    const missionHeading = screen.getByRole('heading', { name: /research & education/i })
-    const agplHeading = screen.getByRole('button', { name: /gnu affero general public license v3\.0 \(agpl-3\.0-only\)/i })
-
-    expect(legalHeading.compareDocumentPosition(missionHeading) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
-    expect(legalHeading.compareDocumentPosition(agplHeading) & Node.DOCUMENT_POSITION_FOLLOWING).toBeTruthy()
-    expect(screen.queryByRole('button', { name: /legal disclaimer/i })).toBeNull()
+    await screen.findByRole('heading', { name: /agpl-3\.0/i })
+    expect(screen.getByText(/Not affiliated/i)).toBeTruthy()
+    expect(screen.getByRole('link', { name: /Read AGPLv3/i })).toBeTruthy()
   })
 })

@@ -96,6 +96,12 @@
     clamp(1rem, 2vw, 1.5rem);
 }
 
+/* Full-bleed mode for the new MAP2 home hero — hero owns its own gutters */
+.hp2-home-shell__content--bleed.cds--content {
+  padding: 0 0 calc(var(--window-taskbar-height, 2.6rem)) 0;
+  max-width: 100%;
+}
+
 .hp2-home-shell__grid {
   max-width: 106rem;
   margin: 0 auto;
