@@ -1,6 +1,6 @@
 .juce-grid-page {
-  --juce-grid-midi-led-color: #78a9ff;
-  --juce-grid-midi-led-idle-color: #525252;
+  --juce-grid-midi-led-color: var(--cds-blue-40, #78a9ff);
+  --juce-grid-midi-led-idle-color: var(--cds-gray-70, #525252);
   --juce-grid-led-panel-bg: color-mix(in srgb, var(--cds-layer, var(--surface-secondary, #f4f4f4)) 92%, #eef5ff 8%);
   --juce-grid-led-panel-bg-hover: color-mix(in srgb, var(--cds-layer, var(--surface-secondary, #f4f4f4)) 86%, #e3efff 14%);
   --juce-grid-led-panel-border: color-mix(in srgb, var(--cds-border-subtle, var(--border, #c6c6c6)) 72%, var(--juce-grid-midi-led-color) 28%);
@@ -741,7 +741,7 @@
 
 .snapshot-toolbar__toggle.cds--btn:not(:disabled) {
   background: color-mix(in srgb, var(--snapshot-toolbar-spring-bluebell) 78%, white);
-  color: #161616;
+  color: var(--cds-gray-100, #161616);
 }
 
 .snapshot-toolbar__toggle.cds--btn:hover:not(:disabled) {
@@ -750,7 +750,7 @@
 
 .snapshot-toolbar__toggle.cds--btn.is-collapsed:not(:disabled) {
   background: color-mix(in srgb, var(--snapshot-toolbar-spring-lilac) 72%, white);
-  color: #161616;
+  color: var(--cds-gray-100, #161616);
 }
 
 .snapshot-toolbar__toggle.cds--btn.is-collapsed:hover:not(:disabled) {
@@ -792,48 +792,48 @@
 
 .snapshot-toolbar__button--new.cds--btn:not(:disabled) {
   background: var(--snapshot-toolbar-spring-mint);
-  color: #161616;
+  color: var(--cds-gray-100, #161616);
   box-shadow: inset 0 0 0 1px color-mix(in srgb, #24a148 18%, transparent);
 }
 
 .snapshot-toolbar__button--new.cds--btn:hover:not(:disabled) {
   background: color-mix(in srgb, var(--snapshot-toolbar-spring-mint) 88%, white);
-  color: #161616;
+  color: var(--cds-gray-100, #161616);
 }
 
 .snapshot-toolbar__button--update.cds--btn:not(:disabled),
 .snapshot-toolbar__button--save.cds--btn:not(:disabled) {
   background: var(--snapshot-toolbar-spring-lilac);
-  color: #161616;
+  color: var(--cds-gray-100, #161616);
   box-shadow: inset 0 0 0 1px color-mix(in srgb, #8a3ffc 20%, transparent);
 }
 
 .snapshot-toolbar__button--update.cds--btn:hover:not(:disabled),
 .snapshot-toolbar__button--save.cds--btn:hover:not(:disabled) {
   background: color-mix(in srgb, var(--snapshot-toolbar-spring-lilac) 88%, white);
-  color: #161616;
+  color: var(--cds-gray-100, #161616);
 }
 
 .snapshot-toolbar__button--load.cds--btn:not(:disabled) {
   background: var(--snapshot-toolbar-spring-sky);
-  color: #161616;
+  color: var(--cds-gray-100, #161616);
   box-shadow: inset 0 0 0 1px color-mix(in srgb, #0f62fe 20%, transparent);
 }
 
 .snapshot-toolbar__button--load.cds--btn:hover:not(:disabled) {
   background: color-mix(in srgb, var(--snapshot-toolbar-spring-sky) 88%, white);
-  color: #161616;
+  color: var(--cds-gray-100, #161616);
 }
 
 .snapshot-toolbar__button--duplicate.cds--btn:not(:disabled) {
   background: var(--snapshot-toolbar-spring-aqua);
-  color: #161616;
+  color: var(--cds-gray-100, #161616);
   box-shadow: inset 0 0 0 1px color-mix(in srgb, #08bdba 20%, transparent);
 }
 
 .snapshot-toolbar__button--duplicate.cds--btn:hover:not(:disabled) {
   background: color-mix(in srgb, var(--snapshot-toolbar-spring-aqua) 88%, white);
-  color: #161616;
+  color: var(--cds-gray-100, #161616);
 }
 
 .snapshot-toolbar__button--history.cds--btn:not(:disabled) {
@@ -878,7 +878,7 @@
 
 .snapshot-toolbar__button--back.cds--btn:not(:disabled) {
   background: var(--snapshot-toolbar-spring-bluebell);
-  color: #161616;
+  color: var(--cds-gray-100, #161616);
   box-shadow: inset 0 0 0 1px color-mix(in srgb, #4589ff 18%, transparent);
 }
 
@@ -898,13 +898,13 @@
 
 .snapshot-toolbar__button--lock.cds--btn:not(:disabled) {
   background: color-mix(in srgb, var(--snapshot-toolbar-spring-aqua) 24%, var(--cds-layer, #161616));
-  color: #007d79;
+  color: var(--cds-teal-60, #007d79);
   box-shadow: inset 0 0 0 1px color-mix(in srgb, #08bdba 22%, transparent);
 }
 
 .snapshot-toolbar__button--lock.cds--btn.is-locked:not(:disabled) {
   background: color-mix(in srgb, var(--snapshot-toolbar-spring-peach) 78%, white);
-  color: #8a3800;
+  color: var(--cds-orange-70, #8a3800);
   box-shadow: inset 0 0 0 1px color-mix(in srgb, #ff832b 22%, transparent);
 }
 
@@ -918,13 +918,13 @@
 
 .snapshot-toolbar__button--favorite.cds--btn:not(:disabled) {
   background: color-mix(in srgb, var(--snapshot-toolbar-spring-rose) 16%, var(--cds-layer, #161616));
-  color: #d02670;
+  color: var(--cds-magenta-60, #d02670);
   box-shadow: inset 0 0 0 1px color-mix(in srgb, #ee5396 22%, transparent);
 }
 
 .snapshot-toolbar__button--favorite.cds--btn.is-active:not(:disabled) {
   background: color-mix(in srgb, var(--snapshot-toolbar-spring-rose) 72%, white);
-  color: #9f1853;
+  color: var(--cds-magenta-70, #9f1853);
   box-shadow: inset 0 0 0 1px color-mix(in srgb, #ee5396 28%, transparent);
 }
 
@@ -947,7 +947,7 @@
 
 .snapshot-toolbar__toggle--options.cds--btn:not(:disabled) {
   background: color-mix(in srgb, var(--snapshot-toolbar-options-ocean) 74%, white);
-  color: #161616;
+  color: var(--cds-gray-100, #161616);
 }
 
 .snapshot-toolbar__toggle--options.cds--btn:hover:not(:disabled) {
@@ -1090,7 +1090,7 @@
   padding-inline: 0.625rem;
   border: 1px solid color-mix(in srgb, #4589ff 18%, transparent);
   background: color-mix(in srgb, var(--snapshot-toolbar-spring-bluebell) 24%, transparent);
-  color: #a6c8ff;
+  color: var(--cds-blue-30, #a6c8ff);
   font-size: var(--cds-label-01-font-size, 0.75rem);
   font-weight: var(--cds-label-01-font-weight, 400);
   line-height: var(--cds-label-01-line-height, 1.33333);
@@ -1100,7 +1100,7 @@
 .snapshot-toolbar__setlist-mode-badge.is-active {
   border-color: color-mix(in srgb, #24a148 26%, transparent);
   background: color-mix(in srgb, var(--snapshot-toolbar-spring-mint) 24%, transparent);
-  color: #a7f0ba;
+  color: var(--cds-green-20, #a7f0ba);
 }
 
 .snapshot-toolbar__setlist-menu-divider {
@@ -2402,7 +2402,7 @@
 
 .juce-grid-page__snapshot-status-channel-badge.is-warning.cds--tag {
   background: color-mix(in srgb, #f1c21b 18%, var(--cds-layer, #262626));
-  color: #f1c21b;
+  color: var(--cds-yellow-30, #f1c21b);
   box-shadow: inset 0 0 0 1px color-mix(in srgb, #f1c21b 35%, transparent);
 }
 
@@ -2413,13 +2413,13 @@
   font-weight: 600;
   letter-spacing: 0.02em;
   background: color-mix(in srgb, #78a9ff 14%, var(--cds-layer, #262626));
-  color: #78a9ff;
+  color: var(--cds-blue-40, #78a9ff);
   box-shadow: inset 0 0 0 1px color-mix(in srgb, #78a9ff 26%, transparent);
 }
 
 .juce-grid-page__snapshot-status-monitoring-badge.is-warning.cds--tag {
   background: color-mix(in srgb, #f1c21b 18%, var(--cds-layer, #262626));
-  color: #f1c21b;
+  color: var(--cds-yellow-30, #f1c21b);
   box-shadow: inset 0 0 0 1px color-mix(in srgb, #f1c21b 35%, transparent);
 }
 
@@ -3026,15 +3026,15 @@
 }
 
 .juce-grid-page__snapshot-status-details-item--perform > .cds--menu-item__icon {
-  color: #ff832b;
+  color: var(--cds-orange-40, #ff832b);
 }
 
 .juce-grid-page__snapshot-status-details-item--midi > .cds--menu-item__icon {
-  color: #78a9ff;
+  color: var(--cds-blue-40, #78a9ff);
 }
 
 .juce-grid-page__snapshot-status-details-item--midi.is-learning > .cds--menu-item__icon {
-  color: #a6c8ff;
+  color: var(--cds-blue-30, #a6c8ff);
 }
 
 .juce-grid-page__snapshot-status-midi {
@@ -7804,7 +7804,7 @@
 
 .juce-grid-page__port-card.is-selected .juce-grid-page__port-card-index {
   background: var(--juce-grid-port-accent);
-  color: #ffffff;
+  color: var(--cds-text-primary);
 }
 
 .juce-grid-page__port-card-copy {
