@@ -54,8 +54,17 @@ export function XTermTerminal({
 
   useEffect(() => {
     if (!hostRef.current) return
+    // Resolve the platform mono token at mount time. xterm.js reads its
+    // own fontFamily option directly and cannot read CSS variables, so
+    // we pull the computed --font-mono off the document root and fall
+    // back to the same Plex / Menlo / Consolas chain if it is unset.
+    const rootStyle =
+      typeof window !== 'undefined' ? window.getComputedStyle(document.documentElement) : null
+    const fontFamily =
+      (rootStyle?.getPropertyValue('--font-mono').trim() || '') ||
+      '"IBM Plex Mono", "Menlo", "Consolas", monospace'
     const term = new Terminal({
-      fontFamily: '"IBM Plex Mono", "Menlo", "Consolas", monospace',
+      fontFamily,
       fontSize: 13,
       cursorBlink: true,
       convertEol: true,
