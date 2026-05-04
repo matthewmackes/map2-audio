@@ -4,7 +4,7 @@
 
 **Scope:** Every `// eslint-disable-line`, `// eslint-disable-next-line`, `/* eslint-disable */`, `// @ts-nocheck`, `// @ts-ignore`, `// @ts-expect-error`, and `// carbon-allow:` annotation in `web/src/`. Excludes `__snapshots__/**` and test files (which inherit per-files overrides).
 
-**Result:** Every active suppression in `web/src/` is either (a) a §10.5 hardware-skin / device-graphics / audio-domain density carve-out (`// carbon-allow:`, ~84 sites), or (b) a narrowly-scoped per-line ESLint suppression for an unrelated rule (`react-hooks/exhaustive-deps`, `no-console`, `no-new-func`, `no-alert`, `react-refresh/only-export-components`, ~15 sites), or (c) a documented whole-file `@ts-nocheck` on the auto-generated OpenAPI artifact (1 site, header explains: T2455 cluster-proxy duplicate operation IDs).
+**Result:** Every active suppression in `web/src/` is either (a) a §10.5 hardware-skin / device-graphics / audio-domain density carve-out (`// carbon-allow:`, ~84 sites), or (b) a narrowly-scoped per-line ESLint suppression for an unrelated rule (`react-hooks/exhaustive-deps`, `no-console`, `no-new-func`, `no-alert`, ~12 sites — down from 15 after the T2481-Z cleanup retired the 3 dead `react-refresh/only-export-components` per-line suppressions on 2026-05-04), or (c) a documented whole-file `@ts-nocheck` on the auto-generated OpenAPI artifact (1 site, header explains: T2455 cluster-proxy duplicate operation IDs).
 
 **No active suppression references the four MAP2 lint rules** (`map2/no-mui-import`, `map2/no-ad-hoc-transition`, `map2/no-hardcoded-px-spacing`, `map2/no-hardcoded-font-family`). The lint suite at `'error'` runs clean: `npm --prefix web run lint` reports **0 errors / 0 warnings**.
 
@@ -27,17 +27,16 @@ The full per-file list is too long to enumerate here; `grep -rn "carbon-allow" w
 
 ---
 
-## Category 2 — narrowly-scoped per-line ESLint suppressions (~15 sites)
+## Category 2 — narrowly-scoped per-line ESLint suppressions (~12 sites)
+
+> **Update 2026-05-04:** the original audit listed 15 sites including 3 `react-refresh/only-export-components` per-line annotations on `MPX1Shell.tsx:48`, `IntelFXShell.tsx:63`, `LCDShell.tsx:37`. Those were retired in cycle 49 (commit `e359ccbb`) because the rule is globally `'off'` in 6 different blocks of `web/eslint.config.js` (root + 5 per-files overrides) — the suppressions were dead code. The table below reflects the current 12-site state.
 
 | File | Line | Rule | Rationale |
 |---|---|---|---|
 | `app/layout/useSetShellWindow.ts` | 17 | `react-hooks/exhaustive-deps` | Intentional deps stabilization on a one-shot mount effect. |
 | `components/MidiHub/MidiClusterEnableSection.tsx` | 59, 79 | `no-console` | Operator-facing console diagnostics for cluster-enable failures. |
-| `components/Devices/MPX1/MPX1Shell.tsx` | 48 | `react-refresh/only-export-components` | Pre-Vite-no-HMR (ban `react-refresh/only-export-components` rule disabled globally — see eslint.config.js note); this inline suppression is a remnant and could be cleaned up in a future sweep. |
 | `components/Devices/MPX1/MPX1SignalPathCanvas.tsx` | 123 | `react-hooks/exhaustive-deps` | Canvas redraw effect intentionally fires only on layout changes, not on every prop tick. |
 | `components/Devices/IntelFX/IntelFXSignalPathCanvas.tsx` | 105 | `react-hooks/exhaustive-deps` | Same canvas-redraw pattern as MPX1. |
-| `components/Devices/IntelFX/IntelFXShell.tsx` | 63 | `react-refresh/only-export-components` | Same pre-Vite-no-HMR remnant as MPX1Shell. |
-| `components/Devices/LCD/LCDShell.tsx` | 37 | `react-refresh/only-export-components` | Same. |
 | `components/Devices/DeviceProfilePanel/overrideLoader.ts` | 44 | `no-new-func` | The override loader compiles user-authored JS for device-pack overrides; `new Function` is the documented JS-eval mechanism (sandboxed by the calling context). |
 | `components/Devices/hooks/useDeviceProfiles.ts` | 156 | `react-hooks/exhaustive-deps` | Intentional once-per-mount fetch. |
 | `components/primitives/DangerButton.tsx` | 33 | `no-alert` | Confirmation dialog for destructive actions; intentional `window.confirm()` pending Carbon `<Modal>` migration in T2481-E3. |
@@ -67,7 +66,6 @@ The full per-file list is too long to enumerate here; `grep -rn "carbon-allow" w
 - **`no-console` (3 sites):** operator-facing diagnostics; Carbon doesn't model a console-replacement primitive.
 - **`no-new-func` (1 site):** sandboxed device-pack override loader.
 - **`no-alert` (1 site):** pending `T2481-E3` Carbon `<Modal>` migration.
-- **`react-refresh/only-export-components` per-line (3 sites):** remnants from before the rule was globally disabled; `T2481-Z-cleanup-react-refresh-suppressions` filed.
 - **`@ts-nocheck` (1 site):** documented OpenAPI generated artifact; tracked under T2455.
 
-T2481-G3 closes with a clean lint-suppression contract: every active suppression is either justified inline or covered by a per-files override with rationale.
+T2481-G3 closes with a clean lint-suppression contract: every active suppression is either justified inline or covered by a per-files override with rationale. The 3 `react-refresh/only-export-components` per-line suppressions called out in the original audit were retired in cycle 49 (T2481-Z follow-up).
