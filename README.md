@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1476** Python | **1487** TypeScript | **179** C++/H | **146** Docs | **3709** total commits | **3** stars | **0** forks | **0** open issues
+**1476** Python | **1487** TypeScript | **179** C++/H | **146** Docs | **3711** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`f2856fa7`](https://github.com/matthewmackes/map2-audio/commit/f2856fa78ebceebe544ba3d52b53c5530cc91edd) | ui(t2481-d1): retire ad-hoc transitions in MidiLearnButto... | Map2 Audio | 2026-05-03 |
+| [`9d1c0f52`](https://github.com/matthewmackes/map2-audio/commit/9d1c0f522dd9e9613e9da2ccfeaaaa422fe674d8) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-04 |
 | [`3f78ca29`](https://github.com/matthewmackes/map2-audio/commit/3f78ca29ff05bff74befdca16846b0658d8ec3d4) | ui(t2481-b1): retire hardcoded font-family + 12px font-si... | Map2 Audio | 2026-05-03 |
 | [`db8d329b`](https://github.com/matthewmackes/map2-audio/commit/db8d329b5b5c4c6111f7c234639db9ad833cb1bc) | fix(lint): drop unloaded react/display-name disable in us... | Map2 Audio | 2026-05-03 |
 | [`04f79c15`](https://github.com/matthewmackes/map2-audio/commit/04f79c15ce3deb4a90974fb1c938e8ccfc72f32f) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-04 |
 | [`4954b904`](https://github.com/matthewmackes/map2-audio/commit/4954b904d4528f83d7ea4e201c52e199500a45fd) | ui(t2481-a3): scaffold MAP2 ESLint plugin with 3 Carbon-d... | Map2 Audio | 2026-05-03 |
 | [`509b4dd3`](https://github.com/matthewmackes/map2-audio/commit/509b4dd375f2f2d8dfd0494ee1b82a1c1b7107dc) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-04 |
 | [`2ea4d4fd`](https://github.com/matthewmackes/map2-audio/commit/2ea4d4fd6538b6eb08d0fa58f6b1ebd8c1f89f50) | ui(t2481-a2): add Carbon spacing-01..13 + motion-fast/mod... | Map2 Audio | 2026-05-03 |
-| [`e680228d`](https://github.com/matthewmackes/map2-audio/commit/e680228d4adc964ee23578f5cb04d424c08b5d13) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-04 |
-| [`250c401c`](https://github.com/matthewmackes/map2-audio/commit/250c401c0b7d2fc8c35541a7503e6affa605e187) | ui(t2481-a1): wire IBM Plex Mono and fix --font-mono alias | Map2 Audio | 2026-05-03 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
