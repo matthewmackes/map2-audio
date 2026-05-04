@@ -138,11 +138,11 @@ export function MeteringPage() {
       }}>
         <div style={{ display: 'flex', alignItems: 'flex-start', justifyContent: 'space-between', gap: 12, flexWrap: 'wrap' }}>
           <div style={{ display: 'flex', alignItems: 'baseline', gap: 12 }}>
-            <ChartBar size={36} style={{ color: '#2563eb', marginRight: 8, flexShrink: 0 }} />
+            <ChartBar size={36} style={{ color: 'var(--cds-interactive)', marginRight: 'var(--cds-spacing-03)', flexShrink: 0 }} />
             <h1 style={{
-              fontSize: 32,
+              fontSize: 'var(--cds-expressive-heading-06-font-size, 2rem)',
               fontWeight: 800,
-              color: '#f3f4f6',
+              color: 'var(--cds-text-primary)',
               margin: 0,
               letterSpacing: '-0.5px'
             }}>
@@ -153,9 +153,13 @@ export function MeteringPage() {
                   : 'JUCE Core Engine'}
             </h1>
             <span style={{
+              // 24px sits between Carbon's productive-heading-04 (28px) and
+              // expressive-heading-03 (20px); kept literal as a deliberate
+              // sub-heading-04 step. Density carve-out per CARBON_FIT_AND
+              // _FINISH_RUBRIC §1.
               fontSize: 24,
               fontWeight: 700,
-              color: '#2563eb',
+              color: 'var(--cds-interactive)',
               margin: 0
             }}>
               {allNodesSelected ? ': Cluster Meters' : ': Meters'}
@@ -175,7 +179,7 @@ export function MeteringPage() {
         </div>
         <p style={{
           fontSize: 13,
-          color: '#6b7280',
+          color: 'var(--cds-text-helper)',
           margin: 'var(--cds-spacing-04) 0 0',
           fontWeight: 500
         }}>
@@ -185,12 +189,13 @@ export function MeteringPage() {
         </p>
         {!allNodesSelected && (
           <div style={{
-            marginTop: 8,
+            marginTop: 'var(--cds-spacing-03)',
             display: 'flex',
             flexWrap: 'wrap',
+            // carbon-allow: dense surface; off-grid between Carbon stops.
             gap: 10,
-            fontSize: 12,
-            color: '#94a3b8',
+            fontSize: 'var(--cds-helper-text-01-font-size, 0.75rem)',
+            color: 'var(--cds-text-secondary)',
             letterSpacing: '0.02em'
           }}>
             <span>meters: {topicActivity.meters ? 'live' : 'waiting'}</span>
@@ -208,7 +213,7 @@ export function MeteringPage() {
           borderRadius: 12,
           border: '1px solid rgba(96, 165, 250, 0.2)',
           background: 'rgba(15, 23, 42, 0.7)',
-          color: '#dbeafe',
+          color: 'var(--cds-text-on-color)',
           fontSize: 13,
         }}>
           {allNodesSelected
@@ -304,7 +309,7 @@ export function MeteringPage() {
             <div style={{
               fontSize: 14,
               fontWeight: 700,
-              color: '#22c55e',
+              color: 'var(--cds-support-success)',
               marginBottom: 16,
               letterSpacing: '0.02em'
             }}>
@@ -353,7 +358,7 @@ export function MeteringPage() {
             <div style={{
               fontSize: 14,
               fontWeight: 700,
-              color: '#60a5fa',
+              color: 'var(--cds-support-info)',
               marginBottom: 16,
               letterSpacing: '0.02em'
             }}>
@@ -379,7 +384,7 @@ export function MeteringPage() {
             <div style={{
               fontSize: 14,
               fontWeight: 700,
-              color: '#f59e0b',
+              color: 'var(--cds-support-warning)',
               marginBottom: 16,
               letterSpacing: '0.02em'
             }}>
@@ -406,7 +411,7 @@ export function MeteringPage() {
             <div style={{
               fontSize: 14,
               fontWeight: 700,
-              color: '#22c55e',
+              color: 'var(--cds-support-success)',
               marginBottom: 16,
               letterSpacing: '0.02em'
             }}>
@@ -432,7 +437,7 @@ export function MeteringPage() {
             <div style={{
               fontSize: 14,
               fontWeight: 700,
-              color: '#f59e0b',
+              color: 'var(--cds-support-warning)',
               marginBottom: 16,
               letterSpacing: '0.02em'
             }}>
@@ -473,13 +478,13 @@ export function MeteringPage() {
             ITU-R BS.1770-4 LUFS | 2048-point FFT @ 30fps | True Peak with 4x oversampling
           </div>
           <div style={{ textAlign: 'right' }}>
-            <span style={{ color: '#60a5fa', fontWeight: 600 }}>Status</span>
+            <span style={{ color: 'var(--cds-support-info)', fontWeight: 600 }}>Status</span>
             <br />
             {allNodesSelected
               ? 'Cluster strip via per-node meter streams'
               : remoteSelected
                 ? `Remote node ${selectedNode?.hostname ?? activeNodeId}`
-                : 'Real-time updates via WebSocket'} | <span style={{ color: '#22c55e' }}>● Active</span>
+                : 'Real-time updates via WebSocket'} | <span style={{ color: 'var(--cds-support-success)' }}>● Active</span>
           </div>
         </div>
       </div>
