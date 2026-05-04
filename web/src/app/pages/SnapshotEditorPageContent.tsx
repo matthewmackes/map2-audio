@@ -326,6 +326,7 @@ import type {
 } from './snapshotEditor/snapshotEditorPageTypes'
 import { FlowLevelControl } from './snapshotEditor/FlowLevelControl'
 import { useSnapshotEditorRoutingHandlers } from './snapshotEditor/useSnapshotEditorRoutingHandlers'
+import { useSnapshotEditorMidiBindingDrafts } from './snapshotEditor/useSnapshotEditorMidiBindingDrafts'
 import {
   buildTraceableChannelChainName,
   countAudioBindingChannels,
@@ -3035,45 +3036,34 @@ export function SnapshotEditorPage() {
     return activeFlow.chainId !== null ? effectiveChainById.get(activeFlow.chainId) ?? null : null
   }, [activeFlow, effectiveChainById])
   const currentChainAuthorityActive = currentChain ? authorityLiveChainIdSet.has(currentChain.id) : false
-  const blockFocusPlugins = currentChain?.plugins ?? []
-  const maxBlockFocusStartNote = Math.max(0, 127 - Math.max(0, blockFocusPlugins.length - 1))
-  const blockFocusStartNote = Math.max(0, Math.min(127, Math.trunc(blockFocusStartNoteDraft)))
-  const blockFocusStartNoteOverflow = blockFocusPlugins.length > 0 && blockFocusStartNote > maxBlockFocusStartNote
-  const blockFocusSaveDisabled = (
-    snapshotEditingLocked
-    || !activeSnapshot
-    || blockFocusPlugins.length === 0
-    || blockFocusStartNoteOverflow
-  )
-  const abSwitchMidiSaveDisabled = (
-    snapshotEditingLocked
-    || !activeSnapshot
-    || (
-      snapshotAbSwitchMidiBinding?.messageType === abSwitchMidiMessageTypeDraft
-      && (snapshotAbSwitchMidiBinding?.midiChannel ?? null) === (abSwitchMidiChannelDraft === 'omni' ? null : Number.parseInt(abSwitchMidiChannelDraft, 10))
-      && (snapshotAbSwitchMidiBinding?.number ?? null) === abSwitchMidiNumberDraft
-    )
-  )
-  const footswitchLabelsSaveDisabled = (
-    snapshotEditingLocked
-    || !activeSnapshot
-    || JSON.stringify(footswitchLabelDrafts) === JSON.stringify(snapshotFootswitchLabelMap)
-  )
-
-  useEffect(() => {
-    setAbSwitchMidiMessageTypeDraft(snapshotAbSwitchMidiBinding?.messageType ?? 'cc_toggle')
-    setAbSwitchMidiChannelDraft(snapshotAbSwitchMidiBinding?.midiChannel == null ? 'omni' : String(snapshotAbSwitchMidiBinding.midiChannel))
-    setAbSwitchMidiNumberDraft(snapshotAbSwitchMidiBinding?.number ?? 80)
-  }, [activeSnapshot?.id, snapshotAbSwitchMidiBinding])
-
-  useEffect(() => {
-    setBlockFocusMidiChannelDraft(snapshotBlockFocusRange?.midiChannel == null ? 'omni' : String(snapshotBlockFocusRange.midiChannel))
-    setBlockFocusStartNoteDraft(snapshotBlockFocusRange?.startNote ?? 60)
-  }, [snapshotBlockFocusRange?.midiChannel, snapshotBlockFocusRange?.startNote, activeSnapshot?.id])
-
-  useEffect(() => {
-    setFootswitchLabelDrafts(snapshotFootswitchLabelMap)
-  }, [activeSnapshot?.id, snapshotFootswitchLabelMap])
+  const {
+    blockFocusPlugins,
+    maxBlockFocusStartNote,
+    blockFocusStartNote,
+    blockFocusStartNoteOverflow,
+    blockFocusSaveDisabled,
+    abSwitchMidiSaveDisabled,
+    footswitchLabelsSaveDisabled,
+  } = useSnapshotEditorMidiBindingDrafts({
+    activeSnapshotId: activeSnapshot?.id ?? null,
+    snapshotEditingLocked,
+    currentChainPlugins: currentChain?.plugins,
+    snapshotAbSwitchMidiBinding,
+    snapshotBlockFocusRange,
+    snapshotFootswitchLabelMap,
+    abSwitchMidiMessageTypeDraft,
+    abSwitchMidiChannelDraft,
+    abSwitchMidiNumberDraft,
+    blockFocusMidiChannelDraft,
+    blockFocusStartNoteDraft,
+    footswitchLabelDrafts,
+    setAbSwitchMidiMessageTypeDraft,
+    setAbSwitchMidiChannelDraft,
+    setAbSwitchMidiNumberDraft,
+    setBlockFocusMidiChannelDraft,
+    setBlockFocusStartNoteDraft,
+    setFootswitchLabelDrafts,
+  })
 
   useEffect(() => {
     if (!isTabletTouchLayout) {
