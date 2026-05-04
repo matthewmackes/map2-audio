@@ -263,11 +263,96 @@ const noHardcodedPxSpacing = {
   },
 }
 
+const FONT_FAMILY_LITERAL_BANS = /\b(?:IBM Plex (?:Sans|Mono)|Helvetica Neue|Arial|Georgia|Menlo|Consolas|SFMono-Regular|SF Mono|Segoe UI|Courier New|monospace|sans-serif|serif|system-ui|ui-monospace)\b/i
+const FONT_FAMILY_TOKEN_REF = /var\(\s*--(?:font-ui|font-mono|map2-type|cds-(?:body|heading|code|label|helper|productive|expressive|legal)|shell-f-)/
+
+function reportIfHardcodedFontFamily(context, node, valueText) {
+  if (typeof valueText !== 'string') return
+  if (!FONT_FAMILY_LITERAL_BANS.test(valueText)) return
+  if (FONT_FAMILY_TOKEN_REF.test(valueText)) return
+  context.report({
+    node,
+    messageId: 'hardcoded',
+    data: { value: valueText.trim() },
+  })
+}
+
+const noHardcodedFontFamily = {
+  meta: {
+    type: 'suggestion',
+    docs: {
+      description:
+        'Use platform font tokens (--font-ui, --font-mono) or Carbon type tokens (--cds-body-*, --cds-heading-*, --cds-code-*) for fontFamily instead of literal font-stack strings.',
+    },
+    schema: [],
+    messages: {
+      hardcoded:
+        'Hardcoded fontFamily `{{value}}`. Use the platform token surface — ' +
+        '`var(--font-ui, ...)` for UI prose, `var(--font-mono, ...)` for numeric readouts, ' +
+        'or a Carbon type token `var(--cds-{body,heading,code,label}-*-font-family, ...)`. ' +
+        'Hardware-skin / device-graphics renderings (CARBON_CONFORMANCE_STANDARD §10.5) ' +
+        'are exempt — annotate with `// carbon-allow: <reason>`.',
+    },
+  },
+  create(context) {
+    const sourceCode = context.sourceCode ?? context.getSourceCode()
+    function hasCarbonAllowOnPrecedingLine(node) {
+      const comments = sourceCode.getCommentsBefore(node)
+      return comments.some((c) => /carbon-allow\s*:/i.test(c.value))
+    }
+    return {
+      // JSX style={{ fontFamily: '...' }}
+      Property(node) {
+        if (!node.key) return
+        const propName =
+          node.key.type === 'Identifier'
+            ? node.key.name
+            : node.key.type === 'Literal' && typeof node.key.value === 'string'
+            ? node.key.value
+            : null
+        if (propName !== 'fontFamily') return
+        if (
+          node.value &&
+          node.value.type === 'Literal' &&
+          typeof node.value.value === 'string'
+        ) {
+          if (hasCarbonAllowOnPrecedingLine(node)) return
+          reportIfHardcodedFontFamily(context, node, node.value.value)
+        } else if (
+          node.value &&
+          node.value.type === 'TemplateLiteral' &&
+          node.value.quasis.length === 1
+        ) {
+          if (hasCarbonAllowOnPrecedingLine(node)) return
+          reportIfHardcodedFontFamily(
+            context,
+            node,
+            node.value.quasis[0].value.cooked,
+          )
+        }
+      },
+      // SVG <text fontFamily="..."> attribute
+      JSXAttribute(node) {
+        if (!node.name || node.name.name !== 'fontFamily') return
+        if (
+          node.value &&
+          node.value.type === 'Literal' &&
+          typeof node.value.value === 'string'
+        ) {
+          if (hasCarbonAllowOnPrecedingLine(node)) return
+          reportIfHardcodedFontFamily(context, node, node.value.value)
+        }
+      },
+    }
+  },
+}
+
 const plugin = {
   rules: {
     'no-mui-import': noMuiImport,
     'no-ad-hoc-transition': noAdHocTransition,
     'no-hardcoded-px-spacing': noHardcodedPxSpacing,
+    'no-hardcoded-font-family': noHardcodedFontFamily,
   },
 }
 

@@ -82,7 +82,7 @@ export function SysExGlyph(props: GlyphProps) {
         y="14"
         textAnchor="middle"
         fontSize="6"
-        fontFamily="ui-monospace, monospace"
+        fontFamily="var(--font-mono, ui-monospace, monospace)"
         fill="currentColor"
         stroke="none"
       >
@@ -119,7 +119,7 @@ export function MtcGlyph(props: GlyphProps) {
         y="14.5"
         textAnchor="middle"
         fontSize="5.5"
-        fontFamily="ui-monospace, monospace"
+        fontFamily="var(--font-mono, ui-monospace, monospace)"
         fill="currentColor"
         stroke="none"
       >

@@ -41,6 +41,14 @@ export default tseslint.config(
       // and the per-property `// carbon-allow:` annotations; ratchet to
       // `error` so future ad-hoc px values are a hard CI fail.
       'map2/no-hardcoded-px-spacing': 'error',
+      // T2481-B2 closed 2026-05-04: every fontFamily declaration under
+      // web/src/ resolves through a platform token (--font-ui /
+      // --font-mono) or a Carbon --cds-*-font-family token; the §10.5
+      // hardware-skin / device-graphics surfaces (Custom plugin cards,
+      // device viewers, Visualizations, LV2 / PluginBrowser) are exempt
+      // via the per-files override below. Ratchet straight to `error`
+      // so future drift is a hard CI fail.
+      'map2/no-hardcoded-font-family': 'error',
       // The codebase has retired the Vite dev server and HMR entirely
       // (see CLAUDE.md §6 #1: "NO Vite dev server. NO HMR. Atomic builds
       // only — `npm run build` then `npm run preview` on port 3000."),
@@ -136,6 +144,14 @@ export default tseslint.config(
     ],
     rules: {
       'map2/no-hardcoded-px-spacing': 'off',
+      // The same hardware-skin / device-graphics surfaces are exempt from
+      // `no-hardcoded-font-family`: vendor faceplates carry literal Arial /
+      // Georgia / "monospace" labels as part of pixel-exact visual identity
+      // (1176LN / LA-2A / dbx 160 / 670 vintage-VFD readouts on the
+      // CelestialCompressor gear images, etc.). Platform chrome reaches
+      // these surfaces only through props, never through the literal
+      // fontFamily strings on the rendered hardware artwork.
+      'map2/no-hardcoded-font-family': 'off',
     },
   },
   {
