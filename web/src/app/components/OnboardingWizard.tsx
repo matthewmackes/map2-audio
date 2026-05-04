@@ -288,7 +288,7 @@ export function OnboardingWizard({ onComplete }: { onComplete?: () => void }) {
             <div
               style={{
                 padding: 16,
-                background: '#111',
+                background: 'var(--cds-layer)',
                 border: '1px solid #333',
                 borderRadius: 8,
                 minHeight: 200,
@@ -371,7 +371,7 @@ export function OnboardingWizard({ onComplete }: { onComplete?: () => void }) {
                     width: '100%',
                     // carbon-allow: dense surface; off-grid between Carbon stops.
                     padding: '10px 12px',
-                    background: '#111',
+                    background: 'var(--cds-layer)',
                     border: '1px solid #333',
                     borderRadius: 6,
                     color: 'var(--cds-text-primary)',
@@ -392,7 +392,7 @@ export function OnboardingWizard({ onComplete }: { onComplete?: () => void }) {
                     width: '100%',
                     // carbon-allow: dense surface; off-grid between Carbon stops.
                     padding: '10px 12px',
-                    background: '#111',
+                    background: 'var(--cds-layer)',
                     border: '1px solid #333',
                     borderRadius: 6,
                     color: 'var(--cds-text-primary)',
@@ -411,7 +411,7 @@ export function OnboardingWizard({ onComplete }: { onComplete?: () => void }) {
                     width: '100%',
                     // carbon-allow: dense surface; off-grid between Carbon stops.
                     padding: '10px 12px',
-                    background: '#111',
+                    background: 'var(--cds-layer)',
                     border: '1px solid #333',
                     borderRadius: 6,
                     color: 'var(--cds-text-primary)',
@@ -549,7 +549,7 @@ export function OnboardingWizard({ onComplete }: { onComplete?: () => void }) {
             <div
               style={{
                 padding: 20,
-                background: '#111',
+                background: 'var(--cds-layer)',
                 border: '2px solid #2563eb',
                 borderRadius: 8,
               }}

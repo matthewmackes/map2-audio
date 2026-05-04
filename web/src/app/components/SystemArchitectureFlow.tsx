@@ -509,7 +509,7 @@ export function SystemArchitectureFlow() {
         </div>
 
         {/* Arrow */}
-        <div style={{ flex: '0 0 24px', height: 2, background: '#888', position: 'relative' }}>
+        <div style={{ flex: '0 0 24px', height: 2, background: 'var(--cds-border-strong)', position: 'relative' }}>
           <div
             style={{
               position: 'absolute',
@@ -528,7 +528,7 @@ export function SystemArchitectureFlow() {
         {renderHealthBlock(Pulse, 'Audio Engine', health.audioEngine, audioEngineColor, 'audioEngine')}
 
         {/* Arrow */}
-        <div style={{ flex: '0 0 24px', height: 2, background: '#888', position: 'relative' }}>
+        <div style={{ flex: '0 0 24px', height: 2, background: 'var(--cds-border-strong)', position: 'relative' }}>
           <div
             style={{
               position: 'absolute',
@@ -547,7 +547,7 @@ export function SystemArchitectureFlow() {
         {renderHealthBlock(Lightning, 'DSP Graph', health.dspGraph, dspGraphColor, 'dspGraph')}
 
         {/* Arrow */}
-        <div style={{ flex: '0 0 24px', height: 2, background: '#888', position: 'relative' }}>
+        <div style={{ flex: '0 0 24px', height: 2, background: 'var(--cds-border-strong)', position: 'relative' }}>
           <div
             style={{
               position: 'absolute',
@@ -566,7 +566,7 @@ export function SystemArchitectureFlow() {
         {renderHealthBlock(Broadcast, 'Plugin Host', health.pluginHost, pluginHostColor, 'pluginHost')}
 
         {/* Arrow */}
-        <div style={{ flex: '0 0 24px', height: 2, background: '#888', position: 'relative' }}>
+        <div style={{ flex: '0 0 24px', height: 2, background: 'var(--cds-border-strong)', position: 'relative' }}>
           <div
             style={{
               position: 'absolute',

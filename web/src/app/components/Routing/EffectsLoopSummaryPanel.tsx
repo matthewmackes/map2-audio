@@ -109,7 +109,7 @@ export function EffectsLoopSummaryPanel({
               // carbon-allow: dense surface; off-grid between Carbon stops.
               padding: '8px 10px',
               borderRadius: 8,
-              background: '#0f172a',
+              background: 'var(--cds-layer)',
               border: '1px solid rgba(148, 163, 184, 0.16)',
               color: 'var(--cds-text-primary)',
             }}
