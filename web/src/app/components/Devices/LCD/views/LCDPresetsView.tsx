@@ -155,7 +155,7 @@ function PresetSection({ title, presets, onApply, onDuplicate, onDelete, onRenam
                 <h4 style={{ fontSize: 14, fontWeight: 600, color: '#f3f4f6', margin: 0 }}>{p.name}</h4>
                 {p.builtin && <Tag type="teal">built-in</Tag>}
               </div>
-              <p style={{ fontSize: 12, color: 'var(--cds-text-secondary)', margin: '0 0 12px' }}>{p.description || '—'}</p>
+              <p style={{ fontSize: 12, color: 'var(--cds-text-secondary)', margin: '0 0 var(--cds-spacing-04)' }}>{p.description || '—'}</p>
               <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
                 <LegacyButton variant="primary" size="sm" onClick={() => onApply(p)}>
                   <Play size={14} /> Apply

@@ -263,7 +263,7 @@ export const PluginBrowser: React.FC<PluginBrowserProps> = ({
       {/* Scan progress */}
       {isScanning && scanStatus && (
         <div style={{
-          padding: '8px 12px',
+          padding: 'var(--cds-spacing-03) var(--cds-spacing-04)',
           background: 'rgba(55, 214, 201, 0.1)',
           borderRadius: 6,
           marginBottom: 12,
@@ -307,7 +307,7 @@ export const PluginBrowser: React.FC<PluginBrowserProps> = ({
           display: 'flex',
           alignItems: 'center',
           gap: 8,
-          padding: '8px 12px',
+          padding: 'var(--cds-spacing-03) var(--cds-spacing-04)',
           background: 'rgba(0, 0, 0, 0.3)',
           border: '1px solid rgba(255, 255, 255, 0.1)',
           borderRadius: 6,
@@ -335,7 +335,7 @@ export const PluginBrowser: React.FC<PluginBrowserProps> = ({
             display: 'flex',
             alignItems: 'center',
             gap: 4,
-            padding: '8px 12px',
+            padding: 'var(--cds-spacing-03) var(--cds-spacing-04)',
             background: showFilters ? 'rgba(55, 214, 201, 0.2)' : 'rgba(0, 0, 0, 0.3)',
             border: `1px solid ${showFilters ? 'rgba(55, 214, 201, 0.3)' : 'rgba(255, 255, 255, 0.1)'}`,
             borderRadius: 6,
@@ -408,7 +408,7 @@ export const PluginBrowser: React.FC<PluginBrowserProps> = ({
             <button
               onClick={() => setCategoryFilter(undefined)}
               style={{
-                padding: '4px 8px',
+                padding: 'var(--cds-spacing-02) var(--cds-spacing-03)',
                 fontSize: 10,
                 background: !filter.category ? 'rgba(55, 214, 201, 0.2)' : 'rgba(255, 255, 255, 0.05)',
                 border: `1px solid ${!filter.category ? 'rgba(55, 214, 201, 0.3)' : 'rgba(255, 255, 255, 0.1)'}`,
@@ -424,7 +424,7 @@ export const PluginBrowser: React.FC<PluginBrowserProps> = ({
                 key={cat}
                 onClick={() => setCategoryFilter(cat)}
                 style={{
-                  padding: '4px 8px',
+                  padding: 'var(--cds-spacing-02) var(--cds-spacing-03)',
                   fontSize: 10,
                   background: filter.category === cat ? 'rgba(55, 214, 201, 0.2)' : 'rgba(255, 255, 255, 0.05)',
                   border: `1px solid ${filter.category === cat ? 'rgba(55, 214, 201, 0.3)' : 'rgba(255, 255, 255, 0.1)'}`,

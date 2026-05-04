@@ -152,7 +152,7 @@ function FootswitchLayout({ footswitches, expressionPedals }: FootswitchLayoutPr
             background: '#111',
             color: '#0f0',
             fontFamily: 'var(--font-mono)',
-            padding: '8px 24px',
+            padding: 'var(--cds-spacing-03) var(--cds-spacing-06)',
             display: 'inline-block',
           }}
         >
@@ -229,7 +229,7 @@ function FootswitchLayout({ footswitches, expressionPedals }: FootswitchLayoutPr
               key={ep.pedal_id}
               style={{
                 textAlign: 'center',
-                padding: '8px 16px',
+                padding: 'var(--cds-spacing-03) var(--cds-spacing-05)',
                 background: 'var(--surface-3)',
               }}
             >

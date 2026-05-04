@@ -336,7 +336,7 @@ export const SidechainPanel: React.FC<SidechainPanelProps> = ({
             disabled={newConnection.sourceId === null || newConnection.destId === null || createMutation.isPending}
             style={{
               width: '100%',
-              padding: '8px 12px',
+              padding: 'var(--cds-spacing-03) var(--cds-spacing-04)',
               fontSize: 12,
               fontWeight: 600,
               background: 'rgba(168, 85, 247, 0.2)',
@@ -480,7 +480,7 @@ export const SidechainPanel: React.FC<SidechainPanelProps> = ({
           display: 'flex',
           alignItems: 'center',
           gap: 8,
-          padding: '8px 12px',
+          padding: 'var(--cds-spacing-03) var(--cds-spacing-04)',
           marginTop: 12,
           background: 'rgba(234, 179, 8, 0.1)',
           border: '1px solid rgba(234, 179, 8, 0.2)',

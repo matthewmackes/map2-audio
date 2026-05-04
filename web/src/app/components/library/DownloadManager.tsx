@@ -259,7 +259,7 @@ export function DownloadManager() {
                     <div
                       key={task.filename}
                       style={{
-                        padding: '8px 12px',
+                        padding: 'var(--cds-spacing-03) var(--cds-spacing-04)',
                         borderRadius: 6,
                         background: 'var(--bg-secondary)',
                         marginBottom: 4,
@@ -323,7 +323,7 @@ export function DownloadManager() {
                     display: 'flex',
                     alignItems: 'center',
                     justifyContent: 'space-between',
-                    padding: '8px 12px',
+                    padding: 'var(--cds-spacing-03) var(--cds-spacing-04)',
                     borderRadius: 6,
                     background: 'var(--bg-secondary)',
                     marginBottom: 4,

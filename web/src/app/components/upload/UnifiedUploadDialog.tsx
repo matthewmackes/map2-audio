@@ -349,7 +349,7 @@ export function UnifiedUploadDialog({
           <UploadSimple size={22} style={{ color: 'var(--primary)' }} />
         </div>
 
-        <p style={{ margin: '0 0 16px', color: 'var(--muted)' }}>
+        <p style={{ margin: '0 0 var(--cds-spacing-05)', color: 'var(--muted)' }}>
           Drag & drop files or click to browse. Supports NAM models, IRs, and VST3 plugins.
         </p>
 
@@ -402,7 +402,7 @@ export function UnifiedUploadDialog({
           }}
         >
           <FolderOpen size={40} style={{ color: 'var(--muted)', marginBottom: 12 }} />
-          <p style={{ margin: '0 0 8px', fontWeight: 500 }}>
+          <p style={{ margin: '0 0 var(--cds-spacing-03)', fontWeight: 500 }}>
             {isDragOver ? 'Drop files here...' : 'Drag & drop files here'}
           </p>
           <p style={{ margin: 0, fontSize: 13, color: 'var(--muted)' }}>

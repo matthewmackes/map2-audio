@@ -95,7 +95,7 @@ export function CodeSnippetGenerator({ request }: { request: RequestSnippetModel
             color: '#cbd5e1',
             fontSize: 11,
             fontWeight: 700,
-            padding: '4px 8px',
+            padding: 'var(--cds-spacing-02) var(--cds-spacing-03)',
             cursor: 'pointer',
           }}
         >

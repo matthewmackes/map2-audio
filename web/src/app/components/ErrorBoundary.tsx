@@ -75,7 +75,7 @@ export class ErrorBoundary extends React.Component<ErrorBoundaryProps, ErrorBoun
               {this.state.errorMessage && (
                 <p
                   style={{
-                    margin: '12px 0 0 0',
+                    margin: 'var(--cds-spacing-04) 0 0 0',
                     color: 'var(--cds-text-secondary)',
                     fontSize: 13,
                     fontFamily: 'var(--font-mono)',

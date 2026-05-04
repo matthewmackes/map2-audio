@@ -85,7 +85,7 @@ export function LibraryPaths() {
           justifyContent: 'space-between',
           background: 'none',
           border: 'none',
-          padding: '16px',
+          padding: 'var(--cds-spacing-05)',
           cursor: 'pointer',
           color: 'inherit',
         }}
@@ -114,7 +114,7 @@ export function LibraryPaths() {
       </button>
 
       {expanded && (
-        <div style={{ padding: '0 16px 16px' }}>
+        <div style={{ padding: '0 var(--cds-spacing-05) var(--cds-spacing-05)' }}>
           <p className="muted" style={{ fontSize: 13, marginBottom: 16 }}>
             Place your files in these directories to use them in MAP2. Files are automatically detected.
           </p>
@@ -133,7 +133,7 @@ export function LibraryPaths() {
                 <LegacyTile
                   key={label}
                   style={{
-                    padding: '12px 16px',
+                    padding: 'var(--cds-spacing-04) var(--cds-spacing-05)',
                     background: 'var(--bg-secondary)',
                     display: 'flex',
                     alignItems: 'center',
@@ -154,7 +154,7 @@ export function LibraryPaths() {
                           fontSize: 12,
                           color: 'var(--text-secondary)',
                           background: 'var(--bg-tertiary)',
-                          padding: '4px 8px',
+                          padding: 'var(--cds-spacing-02) var(--cds-spacing-03)',
                           borderRadius: 4,
                           marginTop: 4,
                           overflow: 'hidden',

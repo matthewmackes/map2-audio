@@ -572,7 +572,7 @@ function ManualSourcePicker({
           <select
             value={kind}
             onChange={(e) => setKind(e.target.value as SourceKind)}
-            style={{ background: 'var(--mw-bg)', border: '1px solid var(--mw-line-2)', padding: '4px 8px', fontFamily: 'var(--mw-mono)' }}
+            style={{ background: 'var(--mw-bg)', border: '1px solid var(--mw-line-2)', padding: 'var(--cds-spacing-02) var(--cds-spacing-03)', fontFamily: 'var(--mw-mono)' }}
           >
             <option value="cc">Control Change</option>
             <option value="note">Note</option>
@@ -793,7 +793,7 @@ function MixxxAliasPreview({ query, surface, selectedTargetId, onApply }: MixxxA
         <div>
           <div>
             <code>{shorthand.group}.{shorthand.key}</code>
-            <span style={{ margin: '0 8px' }}>→</span>
+            <span style={{ margin: '0 var(--cds-spacing-03)' }}>→</span>
             <code style={{ color: 'var(--mw-engine)' }}>{resolved.target}</code>
             {resolved.aliasUsed
               ? <span style={{ marginLeft: 8, opacity: 0.6 }}>(via pack alias_table)</span>
@@ -1282,7 +1282,7 @@ function StepCalibrate({
       {promotedToExpression && (
         <div style={{
           background: 'var(--mw-accent-soft)', border: '1px solid var(--mw-accent-line)',
-          padding: '8px 12px', fontSize: 12, fontFamily: 'var(--mw-mono)',
+          padding: 'var(--cds-spacing-03) var(--cds-spacing-04)', fontSize: 12, fontFamily: 'var(--mw-mono)',
           color: 'var(--mw-text-2)', marginBottom: 16,
         }}>
           ⓘ This binding will save as an Expression Assignment (Custom curve / non-zero deadzone).
@@ -1528,7 +1528,7 @@ function StepSave({
       {conflict && (
         <div style={{
           background: 'color-mix(in srgb, var(--mw-danger) 12%, transparent)', border: '1px solid var(--mw-danger)',
-          padding: '12px 16px', marginBottom: 16, fontSize: 13,
+          padding: 'var(--cds-spacing-04) var(--cds-spacing-05)', marginBottom: 16, fontSize: 13,
         }}>
           ⚠ <b>Conflict</b> — this CC + channel + scope is already bound to{' '}
           <b>{('name' in conflict ? conflict.name : null) ?? 'an existing mapping'}</b>.

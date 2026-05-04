@@ -75,7 +75,7 @@ export function LCDNodesView() {
                 <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginBottom: 16 }}>
                   <div>
                     <span style={{ fontSize: 11, color: '#6b7280' }}>Node ID</span>
-                    <p style={{ fontFamily: 'var(--font-ui-tight)', fontSize: 12, margin: '4px 0 0', color: '#f3f4f6' }}>
+                    <p style={{ fontFamily: 'var(--font-ui-tight)', fontSize: 12, margin: 'var(--cds-spacing-02) 0 0', color: '#f3f4f6' }}>
                       {selectedNodeData.nodeId}
                     </p>
                   </div>
@@ -84,7 +84,7 @@ export function LCDNodesView() {
                     <p
                       style={{
                         fontWeight: 700,
-                        margin: '4px 0 0',
+                        margin: 'var(--cds-spacing-02) 0 0',
                         color:
                           selectedNodeData.status === 'online'
                             ? '#22c55e'
@@ -98,13 +98,13 @@ export function LCDNodesView() {
                   </div>
                   <div>
                     <span style={{ fontSize: 11, color: '#6b7280' }}>Last Event</span>
-                    <p style={{ fontFamily: 'var(--font-ui-tight)', fontSize: 12, margin: '4px 0 0', color: '#f3f4f6' }}>
+                    <p style={{ fontFamily: 'var(--font-ui-tight)', fontSize: 12, margin: 'var(--cds-spacing-02) 0 0', color: '#f3f4f6' }}>
                       {selectedNodeData.lastEvent || '—'}
                     </p>
                   </div>
                   <div>
                     <span style={{ fontSize: 11, color: '#6b7280' }}>Event Count</span>
-                    <p style={{ fontWeight: 700, margin: '4px 0 0', color: '#60a5fa' }}>
+                    <p style={{ fontWeight: 700, margin: 'var(--cds-spacing-02) 0 0', color: '#60a5fa' }}>
                       {selectedNodeData.eventCount}
                     </p>
                   </div>

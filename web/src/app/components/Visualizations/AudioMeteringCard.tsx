@@ -118,7 +118,7 @@ export function AudioMeteringCard({
                     display: 'flex',
                     alignItems: 'center',
                     gap: 6,
-                    padding: '8px 16px',
+                    padding: 'var(--cds-spacing-03) var(--cds-spacing-05)',
                     fontSize: 12,
                     fontWeight: 500,
                     background: activeTab === tab.id

@@ -160,7 +160,7 @@ export default function MOTURMEPage() {
     <div className="motu-rme-page" style={{
       minHeight: '100vh',
       background: '#0a0a0a',
-      padding: '24px',
+      padding: 'var(--cds-spacing-06)',
     }}>
       {/* Page Title */}
       <div style={{ marginBottom: 32, textAlign: 'center' }}>
@@ -211,7 +211,7 @@ export default function MOTURMEPage() {
                 style={{ width: '85%', height: '85%', objectFit: 'contain', opacity: 0.92 }}
               />
             </div>
-            <span style={{ display: 'inline-block', padding: '4px 8px', background: '#2563eb', color: '#111', fontWeight: 600, fontSize: 12 }}>
+            <span style={{ display: 'inline-block', padding: 'var(--cds-spacing-02) var(--cds-spacing-03)', background: '#2563eb', color: '#111', fontWeight: 600, fontSize: 12 }}>
               ADAT Slave
             </span>
           </div>
@@ -254,7 +254,7 @@ export default function MOTURMEPage() {
                 style={{ width: '85%', height: '85%', objectFit: 'contain', opacity: 0.92 }}
               />
             </div>
-            <span style={{ display: 'inline-block', padding: '4px 8px', background: '#00FF9D', color: '#111', fontWeight: 600, fontSize: 12 }}>
+            <span style={{ display: 'inline-block', padding: 'var(--cds-spacing-02) var(--cds-spacing-03)', background: '#00FF9D', color: '#111', fontWeight: 600, fontSize: 12 }}>
               Clock Master
             </span>
           </div>
@@ -340,7 +340,7 @@ export default function MOTURMEPage() {
 
         {/* MOTU Channels 1-8 */}
         <div style={{ marginBottom: 24 }}>
-          <span style={{ display: 'inline-block', padding: '4px 8px', background: '#00FF9D', color: '#111', marginBottom: 12, fontWeight: 600, fontSize: 12 }}>
+          <span style={{ display: 'inline-block', padding: 'var(--cds-spacing-02) var(--cds-spacing-03)', background: '#00FF9D', color: '#111', marginBottom: 12, fontWeight: 600, fontSize: 12 }}>
             MOTU Local (1-8)
           </span>
           <div style={{ display: 'grid', gap: 8 }}>
@@ -370,7 +370,7 @@ export default function MOTURMEPage() {
 
         {/* RME Channels 9-16 */}
         <div>
-          <span style={{ display: 'inline-block', padding: '4px 8px', background: '#2563eb', color: '#111', marginBottom: 12, fontWeight: 600, fontSize: 12 }}>
+          <span style={{ display: 'inline-block', padding: 'var(--cds-spacing-02) var(--cds-spacing-03)', background: '#2563eb', color: '#111', marginBottom: 12, fontWeight: 600, fontSize: 12 }}>
             RME ADAT (9-16)
           </span>
           <div style={{ display: 'grid', gap: 8 }}>

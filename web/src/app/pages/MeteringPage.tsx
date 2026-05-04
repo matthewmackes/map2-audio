@@ -126,7 +126,7 @@ export function MeteringPage() {
       ref={pageRef}
       className="metering-page"
       style={{
-      padding: '32px',
+      padding: 'var(--cds-spacing-07)',
       background: 'rgba(12, 18, 28, 0.46)'
       }}
     >
@@ -176,7 +176,7 @@ export function MeteringPage() {
         <p style={{
           fontSize: 13,
           color: '#6b7280',
-          margin: '12px 0 0',
+          margin: 'var(--cds-spacing-04) 0 0',
           fontWeight: 500
         }}>
           {allNodesSelected
@@ -521,7 +521,7 @@ export function MeteringPage() {
               color: '#475569',
               fontWeight: 500,
               background: 'rgba(100, 116, 139, 0.2)',
-              padding: '4px 8px',
+              padding: 'var(--cds-spacing-02) var(--cds-spacing-03)',
               borderRadius: 4
             }}>
               {meteringApis.length} endpoints

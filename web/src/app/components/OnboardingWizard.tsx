@@ -126,13 +126,13 @@ export function OnboardingWizard({ onComplete }: { onComplete?: () => void }) {
         }}
       >
         <h2 style={{ margin: 0, fontSize: 24, fontWeight: 700 }}>🧙 Cluster Onboarding Wizard</h2>
-        <p style={{ margin: '8px 0 0', color: '#a0a0a0' }}>
+        <p style={{ margin: 'var(--cds-spacing-03) 0 0', color: '#a0a0a0' }}>
           Step-by-step setup for your MAP2 Audio Cluster
         </p>
       </div>
 
       {/* Progress Indicator */}
-      <div style={{ display: 'flex', gap: 12, overflowX: 'auto', padding: '12px 0' }}>
+      <div style={{ display: 'flex', gap: 12, overflowX: 'auto', padding: 'var(--cds-spacing-04) 0' }}>
         {WIZARD_STEPS.map((step, idx) => (
           <div
             key={step.id}
@@ -595,7 +595,7 @@ export function OnboardingWizard({ onComplete }: { onComplete?: () => void }) {
                   </span>
                   <div style={{ marginLeft: 16, marginTop: 8 }}>
                     {(wizardData.discovered_nodes || []).map((node: any, idx: number) => (
-                      <div key={idx} style={{ padding: '4px 0' }}>
+                      <div key={idx} style={{ padding: 'var(--cds-spacing-02) 0' }}>
                         {idx + 1}. {node.hostname || 'Unknown'} - {node.ip_address || 'N/A'}
                       </div>
                     ))}

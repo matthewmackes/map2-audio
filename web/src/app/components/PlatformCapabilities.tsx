@@ -341,7 +341,7 @@ export function PlatformCapabilities() {
     <div className="stack platform-capabilities" style={{ gap: 20 }}>
       {/* Header */}
       <div>
-        <h3 style={{ margin: '0 0 8px' }}>Platform Capabilities</h3>
+        <h3 style={{ margin: '0 0 var(--cds-spacing-03)' }}>Platform Capabilities</h3>
         <p className="muted" style={{ margin: 0, fontSize: 12 }}>
           Discover the power and flexibility of MAP2 Audio
         </p>
@@ -355,7 +355,7 @@ export function PlatformCapabilities() {
             <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
               <Graph size={20} style={{ color: '#4caf50', flexShrink: 0, marginTop: 2 }} />
               <div>
-                <h4 style={{ margin: '0 0 4px', fontSize: 14, fontWeight: 600 }}>Connectivity & Integration - Service Management</h4>
+                <h4 style={{ margin: '0 0 var(--cds-spacing-02)', fontSize: 14, fontWeight: 600 }}>Connectivity & Integration - Service Management</h4>
                 <p style={{ margin: 0, fontSize: 11, color: '#9ca3af' }}>Audio protocols, APIs, services, and real-time control</p>
               </div>
             </div>
@@ -365,7 +365,7 @@ export function PlatformCapabilities() {
                 onClick={() => startAllMutation.mutate()}
                 disabled={startAllMutation.isPending}
                 style={{
-                  padding: '4px 8px',
+                  padding: 'var(--cds-spacing-02) var(--cds-spacing-03)',
                   background: '#4caf50',
                   color: '#fff',
                   border: 'none',
@@ -385,7 +385,7 @@ export function PlatformCapabilities() {
                 onClick={() => stopAllMutation.mutate()}
                 disabled={stopAllMutation.isPending}
                 style={{
-                  padding: '4px 8px',
+                  padding: 'var(--cds-spacing-02) var(--cds-spacing-03)',
                   background: '#ef5350',
                   color: '#fff',
                   border: 'none',
@@ -694,11 +694,11 @@ export function PlatformCapabilities() {
             <div style={{ display: 'flex', gap: 10, alignItems: 'flex-start' }}>
               <TrendUp size={20} style={{ color: '#64b5f6', flexShrink: 0, marginTop: 2 }} />
               <div>
-                <h4 style={{ margin: '0 0 4px', fontSize: 14, fontWeight: 600 }}>System Metrics - Live Performance</h4>
+                <h4 style={{ margin: '0 0 var(--cds-spacing-02)', fontSize: 14, fontWeight: 600 }}>System Metrics - Live Performance</h4>
                 <p style={{ margin: 0, fontSize: 11, color: '#9ca3af' }}>Real-time CPU, memory, disk, and audio metrics</p>
               </div>
             </div>
-            <span style={{ fontSize: 10, color: '#9ca3af', background: '#111111', padding: '4px 8px', borderRadius: 4 }}>
+            <span style={{ fontSize: 10, color: '#9ca3af', background: '#111111', padding: 'var(--cds-spacing-02) var(--cds-spacing-03)', borderRadius: 4 }}>
               {metricsCurrentQuery.isFetching ? 'Refreshing 4s' : 'Live'}
             </span>
           </div>
@@ -828,7 +828,7 @@ export function PlatformCapabilities() {
           <div className="flex" style={{ gap: 10, marginBottom: 16, alignItems: 'flex-start' }}>
             <Lightning size={20} style={{ color: '#ffa726', flexShrink: 0, marginTop: 2 }} />
             <div>
-              <h4 style={{ margin: '0 0 4px', fontSize: 14, fontWeight: 600 }}>Platform Standards & Tools</h4>
+              <h4 style={{ margin: '0 0 var(--cds-spacing-02)', fontSize: 14, fontWeight: 600 }}>Platform Standards & Tools</h4>
               <p style={{ margin: 0, fontSize: 11, color: '#9ca3af' }}>Supported formats, protocols, and development tools</p>
             </div>
           </div>
@@ -836,10 +836,10 @@ export function PlatformCapabilities() {
           <table style={{ width: '100%', borderCollapse: 'collapse', fontSize: 11 }}>
             <thead>
               <tr style={{ borderBottom: '1px solid rgba(100,100,100,0.3)' }}>
-                <th style={{ padding: '8px 12px', textAlign: 'left', fontSize: 10, fontWeight: 600, color: '#81c784', letterSpacing: '0.02em' }}>Formats</th>
-                <th style={{ padding: '8px 12px', textAlign: 'left', fontSize: 10, fontWeight: 600, color: '#64b5f6', letterSpacing: '0.02em' }}>System</th>
-                <th style={{ padding: '8px 12px', textAlign: 'left', fontSize: 10, fontWeight: 600, color: '#ffa726', letterSpacing: '0.02em' }}>Dev tools</th>
-                <th style={{ padding: '8px 12px', textAlign: 'right', fontSize: 10, fontWeight: 600, color: '#ce93d8', letterSpacing: '0.02em' }}>Assets</th>
+                <th style={{ padding: 'var(--cds-spacing-03) var(--cds-spacing-04)', textAlign: 'left', fontSize: 10, fontWeight: 600, color: '#81c784', letterSpacing: '0.02em' }}>Formats</th>
+                <th style={{ padding: 'var(--cds-spacing-03) var(--cds-spacing-04)', textAlign: 'left', fontSize: 10, fontWeight: 600, color: '#64b5f6', letterSpacing: '0.02em' }}>System</th>
+                <th style={{ padding: 'var(--cds-spacing-03) var(--cds-spacing-04)', textAlign: 'left', fontSize: 10, fontWeight: 600, color: '#ffa726', letterSpacing: '0.02em' }}>Dev tools</th>
+                <th style={{ padding: 'var(--cds-spacing-03) var(--cds-spacing-04)', textAlign: 'right', fontSize: 10, fontWeight: 600, color: '#ce93d8', letterSpacing: '0.02em' }}>Assets</th>
               </tr>
             </thead>
             <tbody>
@@ -906,7 +906,7 @@ export function PlatformCapabilities() {
               <div className="flex" style={{ gap: 10, alignItems: 'flex-start' }}>
                 {getStatusIcon(testResult.overall_status, testResult.score)}
                 <div>
-                  <h4 style={{ margin: '0 0 4px', fontSize: 14, fontWeight: 600 }}>JUCE Engine Health & Performance</h4>
+                  <h4 style={{ margin: '0 0 var(--cds-spacing-02)', fontSize: 14, fontWeight: 600 }}>JUCE Engine Health & Performance</h4>
                   <p style={{ margin: 0, fontSize: 11, color: '#9ca3af' }}>Real-time audio engine testing & metrics</p>
                 </div>
               </div>
@@ -916,7 +916,7 @@ export function PlatformCapabilities() {
                 iconDescription="Rerun performance test"
                 onClick={runNewTest}
                 disabled={runningTest}
-                style={{ padding: '4px 8px', flexShrink: 0 }}
+                style={{ padding: 'var(--cds-spacing-02) var(--cds-spacing-03)', flexShrink: 0 }}
               >
                 <ArrowsClockwise size={14} className={runningTest ? 'animate-spin' : ''} style={{ color: runningTest ? '#ffa726' : undefined }} />
               </LegacyButton>
@@ -966,7 +966,7 @@ export function PlatformCapabilities() {
 
             {/* Test Results */}
             <div style={{ marginBottom: 16 }}>
-              <h5 style={{ margin: '0 0 8px', fontSize: 12, fontWeight: 600, color: '#d1d5db' }}>Test Results</h5>
+              <h5 style={{ margin: '0 0 var(--cds-spacing-03)', fontSize: 12, fontWeight: 600, color: '#d1d5db' }}>Test Results</h5>
               <div style={{ display: 'flex', flexDirection: 'column', gap: 6 }}>
                 {(() => {
                   // Get key tests from categories or use fallback

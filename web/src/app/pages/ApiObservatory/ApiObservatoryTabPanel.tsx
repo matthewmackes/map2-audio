@@ -24,7 +24,7 @@ export function ApiObservatoryTabPanel({
     >
       <div>
         <h2 style={{ margin: 0, color: '#f5f3ff', fontSize: 22, fontWeight: 700 }}>{title}</h2>
-        <p style={{ margin: '8px 0 0', color: '#a78bfa', lineHeight: 1.6 }}>{description}</p>
+        <p style={{ margin: 'var(--cds-spacing-03) 0 0', color: '#a78bfa', lineHeight: 1.6 }}>{description}</p>
       </div>
       <div
         style={{

@@ -123,7 +123,7 @@ const MidiLearnButton = memo(({
               display: 'flex',
               alignItems: 'center',
               justifyContent: 'center',
-              padding: '0 4px',
+              padding: '0 var(--cds-spacing-02)',
             }}
           >
             {mappingCount}

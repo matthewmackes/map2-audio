@@ -375,7 +375,7 @@ export function UpdateProgressViewer({ updateId }: { updateId?: string }) {
               <div
                 key={idx}
                 style={{
-                  padding: '8px 0',
+                  padding: 'var(--cds-spacing-03) 0',
                   borderBottom: idx < logs.length - 1 ? '1px solid #1e293b' : 'none',
                   fontSize: 12,
                   fontFamily: 'var(--font-mono)',

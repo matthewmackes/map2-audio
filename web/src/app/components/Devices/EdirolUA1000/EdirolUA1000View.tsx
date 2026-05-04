@@ -465,7 +465,7 @@ export function EdirolUA1000View() {
               alignItems: 'center',
               gap: 6,
               background: 'rgba(0,0,0,0.7)',
-              padding: '4px 8px',
+              padding: 'var(--cds-spacing-02) var(--cds-spacing-03)',
               borderRadius: 4,
               fontSize: 11,
             }}>
@@ -885,7 +885,7 @@ function JuceEngineTab({
               <div style={{
                 background: 'linear-gradient(135deg, #60a5fa, #60a5fa)',
                 color: '#fff',
-                padding: '12px 16px',
+                padding: 'var(--cds-spacing-04) var(--cds-spacing-05)',
                 borderRadius: 4,
                 marginBottom: 8,
                 fontWeight: 600,

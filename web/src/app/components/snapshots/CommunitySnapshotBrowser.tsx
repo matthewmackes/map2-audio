@@ -171,23 +171,23 @@ export function CommunitySnapshotBrowser({
   const totalPages = Math.ceil(total / pageSize)
 
   return (
-    <div style={{ padding: '16px' }}>
+    <div style={{ padding: 'var(--cds-spacing-05)' }}>
       {/* Header */}
       <div
         style={{
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'space-between',
-          marginBottom: '16px',
+          marginBottom: 'var(--cds-spacing-05)',
         }}
       >
         <h2 style={{ margin: 0, fontSize: '1.25rem', fontWeight: 600 }}>Community Snapshots</h2>
-        <div style={{ display: 'flex', gap: '8px' }}>
+        <div style={{ display: 'flex', gap: 'var(--cds-spacing-03)' }}>
           <button
             onClick={fetchSnapshots}
             disabled={loading}
             style={{
-              padding: '8px 12px',
+              padding: 'var(--cds-spacing-03) var(--cds-spacing-04)',
               borderRadius: '6px',
               border: '1px solid var(--border, #444)',
               background: 'transparent',
@@ -205,7 +205,7 @@ export function CommunitySnapshotBrowser({
             <button
               onClick={onUploadClick}
               style={{
-                padding: '8px 16px',
+                padding: 'var(--cds-spacing-03) var(--cds-spacing-05)',
                 borderRadius: '6px',
                 border: 'none',
                 background: 'var(--accent, #7c3aed)',
@@ -228,8 +228,8 @@ export function CommunitySnapshotBrowser({
       <div
         style={{
           display: 'flex',
-          gap: '12px',
-          marginBottom: '16px',
+          gap: 'var(--cds-spacing-04)',
+          marginBottom: 'var(--cds-spacing-05)',
           flexWrap: 'wrap',
         }}
       >
@@ -239,7 +239,7 @@ export function CommunitySnapshotBrowser({
             size={16}
             style={{
               position: 'absolute',
-              left: '12px',
+              left: 'var(--cds-spacing-04)',
               top: '50%',
               transform: 'translateY(-50%)',
               color: 'var(--text-secondary, #888)',
@@ -273,7 +273,7 @@ export function CommunitySnapshotBrowser({
             setPage(1)
           }}
           style={{
-            padding: '8px 12px',
+            padding: 'var(--cds-spacing-03) var(--cds-spacing-04)',
             borderRadius: '6px',
             border: '1px solid var(--border, #444)',
             background: 'var(--bg-tertiary, #2a2a3e)',
@@ -298,7 +298,7 @@ export function CommunitySnapshotBrowser({
             setPage(1)
           }}
           style={{
-            padding: '8px 12px',
+            padding: 'var(--cds-spacing-03) var(--cds-spacing-04)',
             borderRadius: '6px',
             border: '1px solid var(--border, #444)',
             background: 'var(--bg-tertiary, #2a2a3e)',
@@ -317,14 +317,14 @@ export function CommunitySnapshotBrowser({
       {error && (
         <div
           style={{
-            padding: '12px',
+            padding: 'var(--cds-spacing-04)',
             borderRadius: '8px',
             background: 'rgba(239, 68, 68, 0.1)',
             border: '1px solid rgba(239, 68, 68, 0.3)',
             display: 'flex',
             alignItems: 'center',
-            gap: '8px',
-            marginBottom: '16px',
+            gap: 'var(--cds-spacing-03)',
+            marginBottom: 'var(--cds-spacing-05)',
           }}
         >
           <WarningCircle size={18} style={{ color: '#ef4444' }} />
@@ -343,7 +343,7 @@ export function CommunitySnapshotBrowser({
           style={{
             display: 'grid',
             gridTemplateColumns: 'repeat(auto-fill, minmax(280px, 1fr))',
-            gap: '16px',
+            gap: 'var(--cds-spacing-05)',
           }}
         >
           {visibleSnapshots.map((snapshot) => (
@@ -372,15 +372,15 @@ export function CommunitySnapshotBrowser({
             display: 'flex',
             alignItems: 'center',
             justifyContent: 'center',
-            gap: '12px',
-            marginTop: '24px',
+            gap: 'var(--cds-spacing-04)',
+            marginTop: 'var(--cds-spacing-06)',
           }}
         >
           <button
             onClick={() => setPage((p) => Math.max(1, p - 1))}
             disabled={page === 1}
             style={{
-              padding: '8px 12px',
+              padding: 'var(--cds-spacing-03) var(--cds-spacing-04)',
               borderRadius: '6px',
               border: '1px solid var(--border, #444)',
               background: 'transparent',
@@ -401,7 +401,7 @@ export function CommunitySnapshotBrowser({
             onClick={() => setPage((p) => Math.min(totalPages, p + 1))}
             disabled={page === totalPages}
             style={{
-              padding: '8px 12px',
+              padding: 'var(--cds-spacing-03) var(--cds-spacing-04)',
               borderRadius: '6px',
               border: '1px solid var(--border, #444)',
               background: 'transparent',
@@ -438,15 +438,15 @@ function SnapshotCard({
       style={{
         background: 'var(--bg-secondary, #1e1e2e)',
         borderRadius: '8px',
-        padding: '16px',
+        padding: 'var(--cds-spacing-05)',
         border: '1px solid var(--border, #333)',
       }}
     >
       {/* Header */}
-      <div style={{ marginBottom: '8px' }}>
+      <div style={{ marginBottom: 'var(--cds-spacing-03)' }}>
         <h3
           style={{
-            margin: '0 0 4px 0',
+            margin: '0 0 var(--cds-spacing-02) 0',
             fontSize: '1rem',
             fontWeight: 600,
             whiteSpace: 'nowrap',
@@ -466,7 +466,7 @@ function SnapshotCard({
 
       {/* Tags */}
       {snapshot.tags.length > 0 && (
-        <div style={{ display: 'flex', flexWrap: 'wrap', gap: '4px', marginBottom: '12px' }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', gap: 'var(--cds-spacing-02)', marginBottom: 'var(--cds-spacing-04)' }}>
           {snapshot.tags.slice(0, 3).map((tag) => (
             <span
               key={tag}
@@ -489,17 +489,17 @@ function SnapshotCard({
         style={{
           display: 'flex',
           alignItems: 'center',
-          gap: '16px',
-          marginBottom: '12px',
+          gap: 'var(--cds-spacing-05)',
+          marginBottom: 'var(--cds-spacing-04)',
           fontSize: '0.85rem',
           color: 'var(--text-secondary, #888)',
         }}
       >
-        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--cds-spacing-02)' }}>
           <CloudArrowDown size={14} />
           {snapshot.community_download_count}
         </div>
-        <div style={{ display: 'flex', alignItems: 'center', gap: '4px' }}>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 'var(--cds-spacing-02)' }}>
           {/* Rating stars */}
           {[1, 2, 3, 4, 5].map((star) => (
             star <= (hoverRating || snapshot.community_rating || 0) ? (
@@ -522,7 +522,7 @@ function SnapshotCard({
               />
             )
           ))}
-          <span style={{ marginLeft: '4px' }}>({snapshot.community_rating_count})</span>
+          <span style={{ marginLeft: 'var(--cds-spacing-02)' }}>({snapshot.community_rating_count})</span>
         </div>
       </div>
 
@@ -531,7 +531,7 @@ function SnapshotCard({
         onClick={onDownload}
         style={{
           width: '100%',
-          padding: '8px',
+          padding: 'var(--cds-spacing-03)',
           borderRadius: '6px',
           border: 'none',
           background: 'var(--accent, #7c3aed)',

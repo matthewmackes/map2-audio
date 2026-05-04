@@ -105,7 +105,7 @@ function SnapshotList({ snapshots, hooks, selectedId, onSelect }: SnapshotListPr
               onClick={() => onSelect(s.id)}
               style={{
                 textAlign: 'left',
-                padding: '8px 12px',
+                padding: 'var(--cds-spacing-03) var(--cds-spacing-04)',
                 borderRadius: 4,
                 border: '1px solid var(--cds-border-subtle)',
                 background: selectedId === s.id ? 'var(--cds-layer-selected)' : 'var(--cds-layer)',

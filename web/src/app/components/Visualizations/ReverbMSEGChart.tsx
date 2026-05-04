@@ -69,7 +69,7 @@ export function ReverbMSEGChart({
               background: 'rgba(20, 20, 30, 0.95)',
               border: '1px solid rgba(168, 85, 247, 0.3)',
               borderRadius: 6,
-              padding: '8px 12px'
+              padding: 'var(--cds-spacing-03) var(--cds-spacing-04)'
             }}
             labelStyle={{ color: '#a855f7', fontSize: 12, fontWeight: 600 }}
             itemStyle={{ color: '#a855f7', fontSize: 11 }}

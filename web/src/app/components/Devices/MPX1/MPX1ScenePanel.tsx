@@ -323,7 +323,7 @@ export function MPX1ScenePanel() {
   return (
     <div className="mpx1-scene-panel">
       {error && (
-        <div style={{ fontSize: 11, color: '#f87171', padding: '4px 8px', background: 'rgba(248,113,113,0.08)', borderRadius: 4 }}>
+        <div style={{ fontSize: 11, color: '#f87171', padding: 'var(--cds-spacing-02) var(--cds-spacing-03)', background: 'rgba(248,113,113,0.08)', borderRadius: 4 }}>
           {error}
         </div>
       )}

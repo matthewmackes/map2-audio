@@ -232,7 +232,7 @@ function PresetGrid({
                 alignItems: 'center',
                 justifyContent: 'center',
                 width: '100%',
-                padding: '0 8px',
+                padding: '0 var(--cds-spacing-03)',
               }}>
                 <span style={{
                   fontFamily: C.sans,
@@ -295,7 +295,7 @@ function BypassStrip({
 }) {
   if (!chain || chain.plugins.length === 0) {
     return (
-      <div style={{ color: C.muted, fontFamily: C.sans, fontSize: 12, textAlign: 'center', padding: '8px 0' }}>
+      <div style={{ color: C.muted, fontFamily: C.sans, fontSize: 12, textAlign: 'center', padding: 'var(--cds-spacing-03) 0' }}>
         No active chain or no plugins loaded
       </div>
     )
@@ -744,7 +744,7 @@ function HealthBar({ midiPulseSignal }: { midiPulseSignal: number }) {
 
   const seg: React.CSSProperties = {
     display: 'flex', alignItems: 'center', gap: 6,
-    borderRight: `1px solid ${C.border}`, padding: '0 12px',
+    borderRight: `1px solid ${C.border}`, padding: '0 var(--cds-spacing-04)',
     fontFamily: C.mono, fontSize: 11,
   }
 
@@ -829,7 +829,7 @@ function ghostBtn(disabled: boolean): React.CSSProperties {
     color: disabled ? C.muted : C.secondary,
     fontFamily: C.sans,
     fontSize: 14,
-    padding: '4px 12px',
+    padding: 'var(--cds-spacing-02) var(--cds-spacing-04)',
     opacity: disabled ? 0.4 : 1,
   }
 }
@@ -1289,7 +1289,7 @@ export function PerformPage({ onExit }: { onExit?: () => void } = {}) {
         borderBottom: `1px solid ${C.border}`,
         display: 'flex',
         alignItems: 'center',
-        padding: '0 16px',
+        padding: '0 var(--cds-spacing-05)',
         gap: 12,
         flexShrink: 0,
       }}>
@@ -1332,7 +1332,7 @@ export function PerformPage({ onExit }: { onExit?: () => void } = {}) {
       <div style={{ flex: 1, display: 'flex', flexDirection: 'column', gap: 0, overflow: 'hidden' }}>
 
         {/* Preset grid */}
-        <div style={{ padding: '12px 16px 8px', flexShrink: 0 }}>
+        <div style={{ padding: 'var(--cds-spacing-04) var(--cds-spacing-05) var(--cds-spacing-03)', flexShrink: 0 }}>
           <PresetGrid
             chains={stageChains}
             activeChainId={activeChain?.id ?? null}
@@ -1353,7 +1353,7 @@ export function PerformPage({ onExit }: { onExit?: () => void } = {}) {
         <div style={{ height: 1, background: C.border, flexShrink: 0 }} />
 
         {/* Bypass strip */}
-        <div style={{ padding: '8px 16px', flexShrink: 0 }}>
+        <div style={{ padding: 'var(--cds-spacing-03) var(--cds-spacing-05)', flexShrink: 0 }}>
           <div style={{ fontFamily: C.mono, fontSize: 10, color: C.muted, letterSpacing: '0.02em', marginBottom: 6 }}>
             Effect Blocks
           </div>

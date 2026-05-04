@@ -786,7 +786,7 @@ export function EventDetailsModal({ event, onClose, onPin, onUnpin, isPinned }: 
             <span style={{ fontSize: 32 }}>{event.icon}</span>
             <div>
               <h2 style={{ fontSize: 20, fontWeight: 700, color: '#60a5fa', margin: 0 }}>{event.title}</h2>
-              <p style={{ fontSize: 12, color: '#6b7280', margin: '4px 0 0' }}>{event.source_node}</p>
+              <p style={{ fontSize: 12, color: '#6b7280', margin: 'var(--cds-spacing-02) 0 0' }}>{event.source_node}</p>
             </div>
           </div>
           <LegacyButton variant="ghost" size="sm" iconDescription="Close event details" onClick={onClose}><Close size={18} /></LegacyButton>
@@ -795,14 +795,14 @@ export function EventDetailsModal({ event, onClose, onPin, onUnpin, isPinned }: 
         <div className="event-modal-body">
           <div style={{ marginBottom: 16 }}>
             <label style={{ fontSize: 12, color: '#6b7280' }}>Message</label>
-            <p style={{ fontSize: 16, color: '#f3f4f6', margin: '4px 0 0' }}>{event.message}</p>
+            <p style={{ fontSize: 16, color: '#f3f4f6', margin: 'var(--cds-spacing-02) 0 0' }}>{event.message}</p>
           </div>
 
           <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 16, marginBottom: 16 }}>
-            <div><label style={{ fontSize: 12, color: '#6b7280' }}>Severity</label><p style={{ color: '#f3f4f6', fontWeight: 600, margin: '4px 0 0' }}>{event.severity.toUpperCase()}</p></div>
-            <div><label style={{ fontSize: 12, color: '#6b7280' }}>Category</label><p style={{ color: '#f3f4f6', fontWeight: 600, margin: '4px 0 0' }}>{event.category.toUpperCase()}</p></div>
-            <div><label style={{ fontSize: 12, color: '#6b7280' }}>Time</label><p style={{ color: '#f3f4f6', fontFamily: 'var(--font-ui-tight)', fontSize: 13, margin: '4px 0 0' }}>{new Date(event.timestamp).toLocaleString()}</p></div>
-            <div><label style={{ fontSize: 12, color: '#6b7280' }}>Event ID</label><p style={{ color: '#f3f4f6', fontFamily: 'var(--font-ui-tight)', fontSize: 13, margin: '4px 0 0' }}>{event.event_id.substring(0, 12)}…</p></div>
+            <div><label style={{ fontSize: 12, color: '#6b7280' }}>Severity</label><p style={{ color: '#f3f4f6', fontWeight: 600, margin: 'var(--cds-spacing-02) 0 0' }}>{event.severity.toUpperCase()}</p></div>
+            <div><label style={{ fontSize: 12, color: '#6b7280' }}>Category</label><p style={{ color: '#f3f4f6', fontWeight: 600, margin: 'var(--cds-spacing-02) 0 0' }}>{event.category.toUpperCase()}</p></div>
+            <div><label style={{ fontSize: 12, color: '#6b7280' }}>Time</label><p style={{ color: '#f3f4f6', fontFamily: 'var(--font-ui-tight)', fontSize: 13, margin: 'var(--cds-spacing-02) 0 0' }}>{new Date(event.timestamp).toLocaleString()}</p></div>
+            <div><label style={{ fontSize: 12, color: '#6b7280' }}>Event ID</label><p style={{ color: '#f3f4f6', fontFamily: 'var(--font-ui-tight)', fontSize: 13, margin: 'var(--cds-spacing-02) 0 0' }}>{event.event_id.substring(0, 12)}…</p></div>
           </div>
 
           {Object.keys(event.context).length > 0 && (
@@ -868,8 +868,8 @@ export function NodeOverviewCard({ node }: { node: MockNodeStatus }) {
   return (
     <div style={{ border: `2px solid ${borderColor}`, borderRadius: 8, padding: 12, background: 'rgba(0,0,0,0.3)' }}>
       <h4 style={{ fontSize: 13, fontWeight: 600, whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis', margin: 0 }}>{node.nodeId}</h4>
-      <p style={{ fontSize: 11, color: '#6b7280', margin: '4px 0 0' }}>{statusLabel}</p>
-      <p style={{ fontSize: 11, margin: '8px 0 0' }}><span style={{ color: '#60a5fa' }}>{node.eventCount}</span> events</p>
+      <p style={{ fontSize: 11, color: '#6b7280', margin: 'var(--cds-spacing-02) 0 0' }}>{statusLabel}</p>
+      <p style={{ fontSize: 11, margin: 'var(--cds-spacing-03) 0 0' }}><span style={{ color: '#60a5fa' }}>{node.eventCount}</span> events</p>
       {node.cpu !== undefined && <p style={{ fontSize: 11, color: '#f59e0b', margin: '2px 0 0' }}>CPU: {node.cpu.toFixed(0)}%</p>}
     </div>
   )
@@ -1215,20 +1215,20 @@ export function LCDView({ forcedSection, hideChrome }: LCDViewProps = {}) {
                   <div className="lcd-section-card">
                     <h4 style={{ fontSize: 14, fontWeight: 600, color: '#60a5fa', marginBottom: 16 }}>Node Status</h4>
                     <div style={{ display: 'grid', gridTemplateColumns: 'repeat(3, 1fr)', gap: 16, marginBottom: 16 }}>
-                      <div><span style={{ fontSize: 11, color: '#6b7280' }}>Node ID</span><p style={{ fontFamily: 'var(--font-ui-tight)', fontSize: 12, margin: '4px 0 0', color: '#f3f4f6' }}>{selectedNodeData.nodeId}</p></div>
+                      <div><span style={{ fontSize: 11, color: '#6b7280' }}>Node ID</span><p style={{ fontFamily: 'var(--font-ui-tight)', fontSize: 12, margin: 'var(--cds-spacing-02) 0 0', color: '#f3f4f6' }}>{selectedNodeData.nodeId}</p></div>
                       <div>
                         <span style={{ fontSize: 11, color: '#6b7280' }}>Status</span>
-                        <p style={{ fontWeight: 700, margin: '4px 0 0', color: selectedNodeData.status === 'online' ? '#22c55e' : selectedNodeData.status === 'local' ? '#3b82f6' : '#ef4444' }}>
+                        <p style={{ fontWeight: 700, margin: 'var(--cds-spacing-02) 0 0', color: selectedNodeData.status === 'online' ? '#22c55e' : selectedNodeData.status === 'local' ? '#3b82f6' : '#ef4444' }}>
                           {selectedNodeData.status.toUpperCase()}
                         </p>
                       </div>
-                      <div><span style={{ fontSize: 11, color: '#6b7280' }}>Last Event</span><p style={{ fontFamily: 'var(--font-ui-tight)', fontSize: 12, margin: '4px 0 0', color: '#f3f4f6' }}>{selectedNodeData.lastEvent || '—'}</p></div>
-                      <div><span style={{ fontSize: 11, color: '#6b7280' }}>Event Count</span><p style={{ fontWeight: 700, margin: '4px 0 0', color: '#60a5fa' }}>{selectedNodeData.eventCount}</p></div>
+                      <div><span style={{ fontSize: 11, color: '#6b7280' }}>Last Event</span><p style={{ fontFamily: 'var(--font-ui-tight)', fontSize: 12, margin: 'var(--cds-spacing-02) 0 0', color: '#f3f4f6' }}>{selectedNodeData.lastEvent || '—'}</p></div>
+                      <div><span style={{ fontSize: 11, color: '#6b7280' }}>Event Count</span><p style={{ fontWeight: 700, margin: 'var(--cds-spacing-02) 0 0', color: '#60a5fa' }}>{selectedNodeData.eventCount}</p></div>
                       {selectedNodeData.cpu !== undefined && (
-                        <div><span style={{ fontSize: 11, color: '#6b7280' }}>CPU Usage</span><p style={{ margin: '4px 0 0', color: selectedNodeData.cpu > 80 ? '#ef4444' : selectedNodeData.cpu > 50 ? '#f59e0b' : '#22c55e' }}>{selectedNodeData.cpu.toFixed(1)}%</p></div>
+                        <div><span style={{ fontSize: 11, color: '#6b7280' }}>CPU Usage</span><p style={{ margin: 'var(--cds-spacing-02) 0 0', color: selectedNodeData.cpu > 80 ? '#ef4444' : selectedNodeData.cpu > 50 ? '#f59e0b' : '#22c55e' }}>{selectedNodeData.cpu.toFixed(1)}%</p></div>
                       )}
                       {selectedNodeData.memory !== undefined && (
-                        <div><span style={{ fontSize: 11, color: '#6b7280' }}>Memory Usage</span><p style={{ margin: '4px 0 0', color: selectedNodeData.memory > 80 ? '#ef4444' : selectedNodeData.memory > 50 ? '#f59e0b' : '#22c55e' }}>{selectedNodeData.memory.toFixed(1)}%</p></div>
+                        <div><span style={{ fontSize: 11, color: '#6b7280' }}>Memory Usage</span><p style={{ margin: 'var(--cds-spacing-02) 0 0', color: selectedNodeData.memory > 80 ? '#ef4444' : selectedNodeData.memory > 50 ? '#f59e0b' : '#22c55e' }}>{selectedNodeData.memory.toFixed(1)}%</p></div>
                       )}
                     </div>
                     {selectedNodeData.cpu !== undefined && <NodeHealthBar label="CPU Load" value={selectedNodeData.cpu} />}
@@ -1503,7 +1503,7 @@ export function LCDView({ forcedSection, hideChrome }: LCDViewProps = {}) {
                 <div style={{ display: 'flex', gap: 12 }}>
                   <LegacyButton
                     variant="primary"
-                    style={{ flex: 1, padding: '12px 24px', fontSize: 15 }}
+                    style={{ flex: 1, padding: 'var(--cds-spacing-04) var(--cds-spacing-06)', fontSize: 15 }}
                     onClick={handleSaveSettings}
                     disabled={saveStatus !== 'idle'}
                   >
@@ -1512,7 +1512,7 @@ export function LCDView({ forcedSection, hideChrome }: LCDViewProps = {}) {
                     {saveStatus === 'error' && '✗ Error'}
                     {saveStatus === 'idle' && 'Save Settings'}
                   </LegacyButton>
-                  <LegacyButton variant="ghost" style={{ padding: '12px 24px', fontSize: 15 }}>Reset</LegacyButton>
+                  <LegacyButton variant="ghost" style={{ padding: 'var(--cds-spacing-04) var(--cds-spacing-06)', fontSize: 15 }}>Reset</LegacyButton>
                 </div>
               </div>
 
