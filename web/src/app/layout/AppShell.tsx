@@ -113,7 +113,13 @@ export function AppShell({ children }: { children: ReactNode }) {
     clear: () => setShellPatch({}),
   }), [])
 
-  const mergedActions: ShellActionSlot[] = shellPatch.actions ?? []
+  // Memoize the fallback so the empty-array branch keeps a stable
+  // reference and doesn't bust `shellWindowContext`'s useMemo cache
+  // every render.
+  const mergedActions = useMemo<ShellActionSlot[]>(
+    () => shellPatch.actions ?? [],
+    [shellPatch.actions],
+  )
 
   const mergedTitle = shellPatch.title ?? shellTitle
   const mergedSubtitle = shellPatch.subtitle ?? shellSubtitle
