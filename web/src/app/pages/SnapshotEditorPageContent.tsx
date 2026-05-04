@@ -196,17 +196,12 @@ import {
   resolveSnapshotGoLiveState,
 } from '../utils/snapshotGoLiveState'
 import {
-  resolveSnapshotRoutingLiveStatus,
-  type SnapshotRoutingLiveApplyState,
-} from '../utils/snapshotRoutingLiveState'
-import {
   buildSnapshotIoControlsUpdate,
   SNAPSHOT_IO_USE_DEFAULT_OPTION,
   buildSnapshotIoDefaultsUpdate,
   buildSnapshotIoModalState,
   buildSnapshotIoUpdateRequest,
   collectMonitoringOutputPairOptions,
-  collectSnapshotIoDeviceOptions,
   type SnapshotIoDefaults,
   type SnapshotIoModalState,
 } from '../utils/snapshotIoBindings'
@@ -229,7 +224,6 @@ import { useSnapshotEditorUndoRedo } from '../components/SnapshotEditor/useSnaps
 import { JuceGridParameterEditor } from '../components/SnapshotEditor/SnapshotEditorParameterEditor'
 import {
   JuceGridRoutingVisualizer,
-  getJuceGridRoutingInspectorItems,
   type JuceGridRoutingMarkerId,
 } from '../components/SnapshotEditor/SnapshotEditorRoutingVisualizer'
 import { JuceGridSignalCanvas, type JuceGridAudioInterfaceStatus } from '../components/SnapshotEditor/SnapshotEditorSignalCanvas'
@@ -589,8 +583,6 @@ export function SnapshotEditorPage() {
   const setFavoritePlugins = useSnapshotEditorStore((s) => s.setFavoritePlugins)
   const pluginLevels = useSnapshotEditorStore((s) => s.pluginLevels)
   const setPluginLevels = useSnapshotEditorStore((s) => s.setPluginLevels)
-  const wetDryMixes = useSnapshotEditorStore((s) => s.wetDryMixes)
-  const setWetDryMixes = useSnapshotEditorStore((s) => s.setWetDryMixes)
   const reorderPreview = useSnapshotEditorStore((s) => s.reorderPreview)
   const setReorderPreview = useSnapshotEditorStore((s) => s.setReorderPreview)
   const showKeyboardHelp = useSnapshotEditorStore((s) => s.showKeyboardHelp)
@@ -1885,28 +1877,6 @@ export function SnapshotEditorPage() {
     ? editorSnapshotSequence[activeSnapshotSequenceIndex + 1]
     : null
   const jackMetrics = jackQuery.data
-  const snapshotIoDeviceOptions = useMemo(() => collectSnapshotIoDeviceOptions(audioQuery.data, {
-    input: [
-      activeSnapshot?.io_bindings?.input_device ?? activeSnapshot?.input_device ?? null,
-      snapshotIoDefaultsQuery.data?.input_device ?? null,
-      snapshotIoModalState.defaultInputValue,
-    ],
-    output: [
-      activeSnapshot?.io_bindings?.output_device ?? activeSnapshot?.output_device ?? null,
-      snapshotIoDefaultsQuery.data?.output_device ?? null,
-      snapshotIoModalState.defaultOutputValue,
-    ],
-  }), [
-    activeSnapshot?.input_device,
-    activeSnapshot?.io_bindings?.input_device,
-    activeSnapshot?.io_bindings?.output_device,
-    activeSnapshot?.output_device,
-    audioQuery.data,
-    snapshotIoDefaultsQuery.data?.input_device,
-    snapshotIoDefaultsQuery.data?.output_device,
-    snapshotIoModalState.defaultInputValue,
-    snapshotIoModalState.defaultOutputValue,
-  ])
   const snapshotIoDefaultInputSelectValue = snapshotIoModalState.defaultInputValue || SNAPSHOT_IO_USE_DEFAULT_OPTION
   const snapshotIoDefaultOutputSelectValue = snapshotIoModalState.defaultOutputValue || SNAPSHOT_IO_USE_DEFAULT_OPTION
   const snapshotIoDefaultMonitoringOutputSelectValue = (
@@ -2829,15 +2799,6 @@ export function SnapshotEditorPage() {
     },
   })
 
-  const routingLiveStatus = useMemo(
-    () => resolveSnapshotRoutingLiveStatus({
-      isAuthorityLive: isAuthorityLiveSnapshot,
-      isApplying: updateLiveSnapshotRoutingMutation.isPending,
-      applyState: routingLiveApplyState,
-    }),
-    [isAuthorityLiveSnapshot, routingLiveApplyState, updateLiveSnapshotRoutingMutation.isPending],
-  )
-
   const hydrateEditorFromSnapshot = useCallback((
     detail: SnapshotDetail,
     options?: {
@@ -3728,11 +3689,6 @@ export function SnapshotEditorPage() {
     routing.blendPositions,
   ])
 
-  const compactRoutingInspectorItems = useMemo(
-    () => getJuceGridRoutingInspectorItems(routing.mode, true),
-    [routing.mode],
-  )
-
   const routingInspectorContent = useMemo<RoutingInspectorContent | null>(() => {
     if (!routingInspectorId) {
       return null
@@ -4473,63 +4429,6 @@ export function SnapshotEditorPage() {
   // ============================================================================
 
   // Flow management
-  const addFlow = useCallback(async () => {
-    if (snapshotEditorMutationDisabled || flowSlots.length >= MAX_FLOWS) return
-
-    const nextIndex = flowSlots.length
-    const colorConfig = getFlowCardPaletteEntry(nextIndex)
-      const chainName = buildTraceableChannelChainName(activeSnapshot?.name ?? null, colorConfig.label)
-      const beforeDraft = captureCurrentState()
-
-      try {
-      const newChain = await createEditorChain(chainName)
-      const newSlot: FlowSlot = {
-        id: `flow-${Date.now()}`,
-        chainId: newChain.id,
-        label: colorConfig.label,
-        color: colorConfig.color,
-        muted: false,
-        solo: false,
-        dryWetMix: 100,
-      }
-
-      queryClient.setQueryData<ChainsResponse>(['chains'], (current) => {
-        if (!current) {
-          return current
-        }
-        const alreadyPresent = current.chains.some((chain) => chain.id === newChain.id)
-        if (alreadyPresent) {
-          return current
-        }
-        return {
-          ...current,
-          chains: [...current.chains, newChain],
-          count: current.count + 1,
-        }
-      })
-
-      const nextDraft = cloneSnapshotDraftData(beforeDraft)
-      nextDraft.flowSlots.push(newSlot)
-      nextDraft.routing.seriesOrder = [...nextDraft.routing.seriesOrder, newSlot.id]
-      setEditorSnapshotState(nextDraft)
-      recordSnapshotUndoRedoStep(nextDraft, `Add channel ${colorConfig.label}`)
-      pushToast(`Channel ${colorConfig.label} created with ${chainName}`, 'success')
-      queryClient.invalidateQueries({ queryKey: ['chains'] })
-    } catch (error) {
-      pushToast(`Failed to add channel: ${error}`, 'error')
-    }
-  }, [
-    activeSnapshot?.name,
-    captureCurrentState,
-    createEditorChain,
-    flowSlots.length,
-    pushToast,
-    queryClient,
-    recordSnapshotUndoRedoStep,
-    setEditorSnapshotState,
-    snapshotEditorMutationDisabled,
-  ])
-
   const removeFlow = useCallback((flowId: string) => {
     if (snapshotEditorMutationDisabled || flowSlots.length <= MIN_FLOWS) return
     const beforeDraft = captureCurrentState()
@@ -4641,16 +4540,6 @@ export function SnapshotEditorPage() {
     setAssignmentRedundancyEnabled(false)
     setIsAssigningFlow(false)
   }, [])
-
-  const openAssignmentDialog = useCallback((flow: FlowSlot) => {
-    if (snapshotEditorMutationDisabled) {
-      return
-    }
-    setSelectedFlowForAssignment(flow)
-    setAssignmentSelectedNodeId('')
-    setAssignmentRedundancyEnabled(false)
-    setAssignmentDialogOpen(true)
-  }, [snapshotEditorMutationDisabled])
 
   const handleAssignFlow = useCallback(async (nodeId: string, redundancyEnabled: boolean) => {
     if (snapshotEditorMutationDisabled) return
@@ -4928,42 +4817,6 @@ export function SnapshotEditorPage() {
     setTabletEditorOpen(false)
   }, [handleDeletePlugin, pendingTabletDeletePlugin])
 
-  const handleReorderPlugins = useCallback((pluginOrder: PluginOrderRef[]) => {
-    if (snapshotEditorMutationDisabled) return
-    if (!currentChain) return
-    const reorderedPlugins = pluginOrder.reduce<ChainSnapshot['plugins']>((accumulator, ref, index) => {
-        const match = currentChain.plugins.find((plugin) => (
-          plugin.uri === ref.uri
-          && plugin.position === ref.position
-        ))
-        if (!match) {
-          return accumulator
-        }
-        accumulator.push({
-          uri: match.uri,
-          position: index,
-          bypass: match.bypassed || false,
-          parameters: match.parameters || {},
-          loader_state: match.loader_state,
-        })
-        return accumulator
-      }, [])
-    const nextDraft = updateDraftChain(
-      cloneSnapshotDraftData(captureCurrentState()),
-      currentChain.id,
-      (chain) => ({
-        ...chain,
-        plugins: reorderedPlugins,
-      }),
-    )
-    reorderMutation.mutate({
-      chainId: currentChain.id,
-      pluginOrder,
-      undoRedoDraft: nextDraft,
-      undoRedoDescription: 'Reorder blocks',
-    })
-  }, [captureCurrentState, currentChain, reorderMutation, snapshotEditorMutationDisabled])
-
   const moveSelectedPlugin = useCallback((direction: ReorderDirection) => {
     if (snapshotEditorMutationDisabled) {
       return
@@ -5134,34 +4987,6 @@ export function SnapshotEditorPage() {
     setEditorSnapshotState,
     snapshotEditorMutationDisabled,
   ])
-
-  const handleAddPluginDirect = useCallback((uri: string) => {
-    if (snapshotEditorMutationDisabled) return
-    if (!currentChain) return
-    const nextDraft = updateDraftChain(
-      cloneSnapshotDraftData(captureCurrentState()),
-      currentChain.id,
-      (chain) => ({
-        ...chain,
-        plugins: [
-          ...chain.plugins,
-          {
-            uri,
-            position: chain.plugins.length,
-            bypass: false,
-            parameters: {},
-            loader_state: {},
-          },
-        ],
-      }),
-    )
-    addPluginMutation.mutate({
-      chainId: currentChain.id,
-      pluginUri: uri,
-      undoRedoDraft: nextDraft,
-      undoRedoDescription: 'Add block',
-    })
-  }, [captureCurrentState, currentChain, addPluginMutation, snapshotEditorMutationDisabled])
 
   const handleMidiLearnToggle = useCallback(() => {
     if (midiLearnInProgress) {
@@ -5844,10 +5669,6 @@ export function SnapshotEditorPage() {
   }, [])
 
   // Wet/dry mix handler for per-plugin mixing
-  const handleWetDryChange = useCallback((uri: string, value: number) => {
-    setWetDryMixes(prev => ({ ...prev, [uri]: value }))
-  }, [])
-
   // Show plugin details
   const handleShowDetails = useCallback((plugin: Plugin) => {
     setDetailsPlugin(plugin)
@@ -5999,29 +5820,9 @@ export function SnapshotEditorPage() {
     params.set('section', section)
     navigate(`/snapshots/${activeSnapshot.id}/publish?${params.toString()}`)
   }, [activeSnapshot?.id, navigate, pushToast])
-  const openAudioRoutingWorkspace = useCallback(() => {
-    captureWorkspaceModalLauncher()
-    setShowProgressModal(false)
-    setShowAudioNodesModal(true)
-  }, [captureWorkspaceModalLauncher])
   const openSnapshotIoWorkspace = useCallback(() => {
     openSnapshotProgressModal('advanced', 'devices')
   }, [openSnapshotProgressModal])
-  const openMidiMappingsWorkspace = useCallback(() => {
-    captureWorkspaceModalLauncher()
-    setShowProgressModal(false)
-    setMidiModalOpen(true)
-  }, [captureWorkspaceModalLauncher])
-  const openLiveRuntimeWorkspace = useCallback(() => {
-    captureWorkspaceModalLauncher()
-    setShowProgressModal(false)
-    setShowLiveRuntimeModal(true)
-  }, [captureWorkspaceModalLauncher])
-  const openPerformWorkspace = useCallback(() => {
-    captureWorkspaceModalLauncher()
-    setShowProgressModal(false)
-    setShowPerformModal(true)
-  }, [captureWorkspaceModalLauncher])
   const openVersionHistoryWorkspace = useCallback(() => {
     captureWorkspaceModalLauncher()
     setShowVersionHistoryModal(true)
@@ -6106,7 +5907,6 @@ export function SnapshotEditorPage() {
     return actions
   }, [goLiveFailureDetail, openArtifactsCategory, openSnapshotIoWorkspace])
   const midiLearning = midiLearnActive || midiLearnInProgress
-  const addFlowDisabled = snapshotEditingLocked || flowSlots.length >= MAX_FLOWS
   const clearFlowsDisabled = snapshotEditingLocked || flowSlots.length <= 1
   const midiMappingsTitle = midiLearning ? 'MIDI Learn armed' : `${midiMappingCountLabel} MIDI mappings`
 
