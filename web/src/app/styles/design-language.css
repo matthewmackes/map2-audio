@@ -42,7 +42,7 @@
   --map2-accent-live-glow: transparent;
   --map2-accent-live-rim: var(--cds-support-error, #fa4d56);
 
-  /* ---------------- Motion primitives (kept) ---------------- */
+  /* ---------------- Motion primitives (kept; Carbon-named tokens added T2481-A2) ---------------- */
   /* Carbon-compatible durations and Bezier curves. These remain valid
    * because motion discipline is part of the Carbon contract, not a
    * decorative violation. */
@@ -57,6 +57,28 @@
   --map2-ease-in-decel: cubic-bezier(0.22, 1, 0.36, 1);
   --map2-ease-spring-soft: cubic-bezier(0.34, 1.36, 0.64, 1);
 
+  /* T2481-A2: Carbon motion contract — exact values from
+   * https://carbondesignsystem.com/guidelines/motion/overview. New code
+   * (T2481-D motion sweep) targets these names; the legacy names above
+   * stay for back-compat through one migration cycle.
+   *
+   * Productive (controls / hovers / toggles / tabs / dropdowns):
+   */
+  --map2-dur-fast-01: 70ms;
+  --map2-dur-fast-02: 110ms;
+  --map2-dur-moderate-01: 150ms;
+  --map2-dur-moderate-02: 240ms;
+  /* Expressive (modals / page transitions / hero reveals / Flow Canvas patch cords): */
+  --map2-dur-slow-01: 400ms;
+  --map2-dur-slow-02: 700ms;
+
+  --map2-ease-productive-entrance: cubic-bezier(0, 0, 0.38, 0.9);
+  --map2-ease-productive-exit: cubic-bezier(0.2, 0, 1, 0.9);
+  --map2-ease-productive-standard: cubic-bezier(0.5, 0, 0.1, 1);
+  --map2-ease-expressive-entrance: cubic-bezier(0, 0, 0.3, 1);
+  --map2-ease-expressive-exit: cubic-bezier(0.4, 0.14, 1, 1);
+  --map2-ease-expressive-standard: cubic-bezier(0.4, 0.14, 0.3, 1);
+
   /* ---------------- Focus / interaction rings (retired → Carbon focus) ---------------- */
   /* All three rings now resolve to the standard Carbon focus ring — no
    * glow, no animation, no rim shadow. The classes that consume these
@@ -66,7 +88,7 @@
   --map2-ring-armed: 0 0 0 2px var(--cds-focus, #4589ff);
   --map2-ring-live: 0 0 0 2px var(--cds-focus, #4589ff);
 
-  /* ---------------- Density / rhythm (kept) ---------------- */
+  /* ---------------- Density / rhythm (kept; Carbon-named scale added T2481-A2) ---------------- */
   /* Aligned to Carbon spacing scale. New code should prefer Carbon's
    * own --cds-spacing-* names; these aliases remain for legacy CSS. */
   --map2-space-1: 4px;
@@ -77,6 +99,26 @@
   --map2-space-6: 32px;
   --map2-space-7: 48px;
   --map2-space-8: 64px;
+
+  /* T2481-A2: full Carbon spacing scale `$spacing-01..13` exposed as
+   * --map2-spacing-* tokens. Source of truth:
+   * https://carbondesignsystem.com/elements/spacing/overview. The lint
+   * rule `no-hardcoded-px-spacing` (T2481-A3) will require migrating
+   * raw `padding|margin|gap|inset` values to these tokens. The legacy
+   * `--map2-space-1..8` names stay for back-compat through one cycle. */
+  --map2-spacing-01: 0.125rem; /* 2px */
+  --map2-spacing-02: 0.25rem;  /* 4px */
+  --map2-spacing-03: 0.5rem;   /* 8px */
+  --map2-spacing-04: 0.75rem;  /* 12px */
+  --map2-spacing-05: 1rem;     /* 16px */
+  --map2-spacing-06: 1.5rem;   /* 24px */
+  --map2-spacing-07: 2rem;     /* 32px */
+  --map2-spacing-08: 2.5rem;   /* 40px */
+  --map2-spacing-09: 3rem;     /* 48px */
+  --map2-spacing-10: 4rem;     /* 64px */
+  --map2-spacing-11: 5rem;     /* 80px */
+  --map2-spacing-12: 6rem;     /* 96px */
+  --map2-spacing-13: 10rem;    /* 160px */
 
   /* ---------------- Type scale (kept — Carbon-aligned families) ---------------- */
   --map2-type-mono: 'IBM Plex Mono', 'JetBrains Mono', ui-monospace, SFMono-Regular, Consolas, monospace;
