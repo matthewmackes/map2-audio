@@ -31,6 +31,7 @@ import { reloadHomeDesktopShell, returnHomeDesktopToBoot } from '../pages/homeDe
 import { writeHomeShellRecentRoute } from '../pages/homeShellNavigation'
 import { GlobalTreeNav } from './GlobalTreeNav/GlobalTreeNav'
 import { ContentKicker } from './chrome/ContentKicker'
+import { WindowTooSmallOverlay } from './WindowTooSmallOverlay'
 import './chrome/chrome-tokens.css'
 import '../styles/design-language.css'
 import '../components/shared/GlobalPrimitives.css'
@@ -233,6 +234,7 @@ export function AppShell({ children }: { children: ReactNode }) {
         '--ws-h': '0px',
       } as CSSProperties}
     >
+      <WindowTooSmallOverlay />
       <div className="app-shell__frame">
         <GlobalTreeNav
           onLogOut={() => returnHomeDesktopToBoot()}

@@ -1,0 +1,37 @@
+/* Sub-minimum viewport advisory banner. Pinned to top of viewport so
+ * it's visible whether the operator is at the top of the GUI or has
+ * scrolled into the body. */
+.window-too-small {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  z-index: 9999;
+  display: flex;
+  align-items: center;
+  gap: var(--cds-spacing-04);
+  padding: var(--cds-spacing-03) var(--cds-spacing-05);
+  background: var(--map2-alert-blocking, var(--cds-support-error, #fa4d56));
+  color: var(--cds-text-on-color, #ffffff);
+  font-family: var(--font-ui);
+  font-size: var(--cds-body-compact-01-font-size, 0.875rem);
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  pointer-events: none;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.4);
+}
+
+.window-too-small__icon {
+  font-size: 1.25rem;
+  line-height: 1;
+  flex-shrink: 0;
+}
+
+.window-too-small__copy {
+  flex: 1;
+  min-width: 0;
+}
+
+.window-too-small__copy strong {
+  font-weight: 600;
+}

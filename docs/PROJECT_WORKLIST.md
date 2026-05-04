@@ -36206,3 +36206,32 @@ This revision **preserves the spirit of Q2=A** (decomposition for maintainabilit
 - License posture: AGPLv3 imports GPL-2.0-or-later via the GPLv3 upward chain; pack output retains Mixxx attribution where templates were used.
 
 **Status:** [✓] Done 2026-05-02 (all sub-tasks T2492-1 through T2492-5 shipped across 4 SHIP loops on 2026-05-02. Code-side gates green; bench-side validation with live unknown USB MIDI adapter remains owner-driven per CLAUDE.md §0.8 gate 5).
+
+---
+
+ID: T2493
+Status: [✓] Done
+Title: Minimum viable GUI viewport — 1366x768 contract + advisory banner
+Description:
+- Goal / acceptance criteria: Establish 1366x768 as the platform's supported minimum viewport. Below that size the layout stays at full pixel size (browser scrolls to reveal off-screen content) and an operator-facing advisory banner mounts to surface the situation. The platform is not designed for mobile/tablet viewports — there is no responsive collapse below this threshold.
+- Why it matters: every workspace assumes at least 1366x768 of usable pixels; without an explicit contract operators on under-sized windows silently lose access to controls. A hard minimum + advisory makes the assumption visible and enforces the design space.
+- Dependencies: none. Constants live in `web/src/app/layout/viewportConstants.ts`; CSS minimums live in `web/src/index.css`; advisory banner component is `web/src/app/layout/WindowTooSmallOverlay.{tsx,css}` mounted in `AppShell.tsx`.
+- Required outputs: `viewportConstants.ts` exposing `MIN_VIEWPORT_WIDTH = 1366` + `MIN_VIEWPORT_HEIGHT = 768`; CSS `min-width: 1366px` on `html, body, #root` and `min-height: 768px` on `html, body`; `WindowTooSmallOverlay` listens to `resize` (rAF-coalesced) and renders an `aria-live="polite"` banner with the current vs minimum viewport when below threshold; AppShell mounts the overlay before the shell frame; Jest test pinning the threshold semantics.
+Assigned to: Claude
+Completion note: 2026-05-04 — Claude: SHIPPED. New module `web/src/app/layout/viewportConstants.ts` (MIN_VIEWPORT_WIDTH=1366, MIN_VIEWPORT_HEIGHT=768). `web/src/index.css` now sets `min-width: 1366px` on `html, body, #root` and `min-height: 768px` on `html, body` so the GUI never reflows below the supported size — browser scrolls instead. New `WindowTooSmallOverlay.tsx`/`.css` mounts a fixed-position alert banner (red `--map2-alert-blocking` background, white text, 9999 z-index, pointer-events: none so it doesn't block clicks) when `window.innerWidth < 1366 || window.innerHeight < 768`; copy reads "Window below supported minimum. MAP2 is designed for 1366×768 or larger. Current viewport is X×Y. Resize the window or scroll to view the full operator surface." rAF-coalesced resize listener for cheap updates. AppShell.tsx renders the overlay as the first child of the shell root. New Jest test `WindowTooSmallOverlay.test.tsx` pins threshold semantics (above-threshold renders nothing; below-width and below-height each render an alert with the live numbers). DesktopExperience.snapshot.test.tsx is unaffected because it pre-sets `innerWidth=1440` (≥1366) — overlay correctly returns null. `npm --prefix web run typecheck` clean; `AppShell.test.tsx` 10/10 + `WindowTooSmallOverlay.test.tsx` 3/3 + `DesktopExperience.snapshot.test.tsx` 3/3 green; atomic web build clean (19.62s); App bundle grew 632.27 → 633.20 KB (+1 KB) for the new overlay.
+- Follow-up T2494 filed for the responsive-CSS audit: 30+ `@media (max-width: ...)` queries across `audio control`, `ContentKicker` 880, `AppShell` 880 + 82rem, `ShoppingSearchDialog` 1100/720, `ProductDetailDialog` 800, `PageTransition` 720, `Toasts` 1280/1100/960/720, `InstalledAssetsTable` 1056/768, `HostMachine` 800, `CompactVuStrip` 768, etc. With the 1366 floor, every breakpoint targeting a max-width below 1366px is now dead code (the layout never reaches those widths in a supported window). Retiring them is a separate sweep — kept as T2494 so this task ships clean.
+Last updated: 2026-05-04 EDT - Claude: SHIPPED.
+
+---
+
+ID: T2494
+Status: [ ] Todo
+Title: Retire dead `@media (max-width: <1366px)` rules across web/src
+Description:
+- Goal / acceptance criteria: With the 1366x768 minimum viewport contract (T2493), any `@media (max-width: ...)` query whose threshold is below 1366px is dead — the layout never reaches those widths in a supported window. Audit and remove (or carbon-allow if the rule is intentionally testing a sub-minimum case for accessibility / print). Estimated 30+ rule sites across `audio control`, `ContentKicker`, `AppShell`, `ShoppingSearchDialog`, `ProductDetailDialog`, `PageTransition`, `Toasts`, `InstalledAssetsTable`, `HostMachine`, `CompactVuStrip`, etc.
+- Why it matters: dead media queries are noise that future contributors have to interpret as "still relevant". Removing them tightens the design surface and matches the new contract.
+- Dependencies: T2493 (already shipped).
+- Estimated effort: Medium — 30+ rule removals + test/snapshot regen.
+- Required outputs: clean `git grep` for `@media \\(max-width: [0-9]+\\(px\\|rem\\)\\)` showing only rules ≥1366px (or carbon-allow annotation explaining why a sub-min rule survives, e.g. print stylesheet); regenerated visual baselines if any home/workspace harness routes shifted.
+Assigned to: Unassigned (queued for future SHIP loop)
+Last updated: 2026-05-04 EDT - Claude: filed alongside T2493.

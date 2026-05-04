@@ -229,6 +229,21 @@ html,
 body,
 #root {
   min-height: 100%;
+  /* Minimum viable GUI viewport (1366x768).  Below this size the layout
+   * remains rendered at full size and the browser shows scrollbars; the
+   * `.window-too-small` overlay (rendered by AppShell) surfaces a clear
+   * operator-facing message so the user knows the window is below the
+   * supported minimum. The platform is not designed for mobile/tablet
+   * viewports — there is no responsive collapse below this threshold. */
+  min-width: 1366px;
+}
+
+html,
+body {
+  /* Keep the 768 floor on the document so vertical content also scrolls
+   * cleanly when the operator window is undersized. `#root` is already
+   * `min-height: 100%` so it follows. */
+  min-height: 768px;
 }
 
 body {
