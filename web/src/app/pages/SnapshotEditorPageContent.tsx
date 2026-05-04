@@ -594,9 +594,7 @@ export function SnapshotEditorPage() {
   const showProgressModal = useSnapshotEditorStore((s) => s.showProgressModal)
   const setShowProgressModal = useSnapshotEditorStore((s) => s.setShowProgressModal)
   const progressModalInitialTab = useSnapshotEditorStore((s) => s.progressModalInitialTab)
-  const setProgressModalInitialTab = useSnapshotEditorStore((s) => s.setProgressModalInitialTab)
   const progressModalInitialSection = useSnapshotEditorStore((s) => s.progressModalInitialSection)
-  const setProgressModalInitialSection = useSnapshotEditorStore((s) => s.setProgressModalInitialSection)
   const showLiveRuntimeModal = useSnapshotEditorStore((s) => s.showLiveRuntimeModal)
   const setShowLiveRuntimeModal = useSnapshotEditorStore((s) => s.setShowLiveRuntimeModal)
   const showVersionHistoryModal = useSnapshotEditorStore((s) => s.showVersionHistoryModal)
@@ -666,8 +664,6 @@ export function SnapshotEditorPage() {
   const setMidiModalOpen = useSnapshotEditorStore((s) => s.setMidiModalOpen)
   const snapshotIoModalState = useSnapshotEditorStore((s) => s.snapshotIoModalState)
   const setSnapshotIoModalState = useSnapshotEditorStore((s) => s.setSnapshotIoModalState)
-  const outputReferenceThresholdDraft = useSnapshotEditorStore((s) => s.outputReferenceThresholdDraft)
-  const setOutputReferenceThresholdDraft = useSnapshotEditorStore((s) => s.setOutputReferenceThresholdDraft)
   const noiseGateThresholdDraft = useSnapshotEditorStore((s) => s.noiseGateThresholdDraft)
   const setNoiseGateThresholdDraft = useSnapshotEditorStore((s) => s.setNoiseGateThresholdDraft)
   const noiseGateReleaseDraft = useSnapshotEditorStore((s) => s.noiseGateReleaseDraft)
@@ -711,7 +707,6 @@ export function SnapshotEditorPage() {
   const setFlowOutputClipTimestamps = useSnapshotEditorStore((s) => s.setFlowOutputClipTimestamps)
   const routingInspectorId = useSnapshotEditorStore((s) => s.routingInspectorId)
   const setRoutingInspectorId = useSnapshotEditorStore((s) => s.setRoutingInspectorId)
-  const routingLiveApplyState = useSnapshotEditorStore((s) => s.routingLiveApplyState)
   const setRoutingLiveApplyState = useSnapshotEditorStore((s) => s.setRoutingLiveApplyState)
   const signalFlowShellRef = useRef<HTMLElement | null>(null)
   const bottomEditorRef = useRef<HTMLElement | null>(null)
@@ -741,7 +736,6 @@ export function SnapshotEditorPage() {
   const automationCurrentTime = useSnapshotEditorStore((s) => s.automationCurrentTime)
   const setAutomationCurrentTime = useSnapshotEditorStore((s) => s.setAutomationCurrentTime)
   const automationDuration = useSnapshotEditorStore((s) => s.automationDuration)
-  const setAutomationDuration = useSnapshotEditorStore((s) => s.setAutomationDuration)
   const automationLanes = useSnapshotEditorStore((s) => s.automationLanes)
   const setAutomationLanes = useSnapshotEditorStore((s) => s.setAutomationLanes)
   const lanePickerOpen = useSnapshotEditorStore((s) => s.lanePickerOpen)
@@ -1903,10 +1897,6 @@ export function SnapshotEditorPage() {
     ? `Monitoring: ${activeSoloFlow.label} -> ${monitoringOutputLabel}`
     : null
   const monitoringStatusWarning = Boolean(activeSoloFlow && resolvedMonitoringOutputIndex == null)
-
-  useEffect(() => {
-    setOutputReferenceThresholdDraft(activeSnapshot?.output_level_warning_threshold_db ?? 3)
-  }, [activeSnapshot?.output_level_warning_threshold_db])
 
   useEffect(() => {
     if (!systemNoiseGateDefaultsQuery.data) {
