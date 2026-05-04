@@ -7,7 +7,6 @@ import {
   Devices,
   Events,
   Flash,
-  Information,
   PaintBrush,
   PlugFilled,
   SettingsAdjust,
@@ -24,16 +23,14 @@ export type StandalonePanel =
   | 'host-machine'
   | 'audio-engine'
   | 'theme'
-  | 'about'
   | 'adoption'
   | 'midpoint'
-export const PLATFORM_UTILITY_PANEL_IDS = ['theme', 'about'] as const
+export const PLATFORM_UTILITY_PANEL_IDS = ['theme'] as const
 
 export function isStandalonePanel(value: string | null | undefined): value is StandalonePanel {
   return value === 'host-machine'
     || value === 'audio-engine'
     || value === 'theme'
-    || value === 'about'
     || value === 'adoption'
     || value === 'midpoint'
 }
@@ -115,20 +112,12 @@ const STANDALONE_PANEL_ITEMS: Record<StandalonePanel, {
     icon: PaintBrush,
     pinnable: true,
   },
-  'about': {
-    label: 'Platform Guide',
-    shortLabel: 'Guide',
-    description: 'Open the platform guide, version context, and operational documentation surface.',
-    color: 'var(--cds-support-info)',
-    icon: Information,
-    pinnable: true,
-  },
 }
 
 // Nav reorg 2026-05-03 (second pass) — legacy `/platforms/<id>`
-// pinned routes are now `/node-ops/<id>` (canonical) — except for
-// the `about` panel which has its own root URL `/about`. The host
-// machine panel keeps its dedicated host-machine route.
+// pinned routes are now `/node-ops/<id>` (canonical). The host
+// machine panel keeps its dedicated host-machine route. The Platform
+// Guide is no longer a panel — it lives inline on Home (`/#platform-guide`).
 import { buildHostMachinePath } from '../pages/hostMachineRoutes'
 
 const NODE_OPS_PIN_BASE = '/node-ops'
@@ -138,9 +127,6 @@ function buildPlatformLayerPinnedRoute(layerId: PlatformLayerId): string {
 }
 
 function buildPlatformPanelPinnedRoute(panel: StandalonePanel): string {
-  if (panel === 'about') {
-    return '/about'
-  }
   if (panel === 'host-machine') {
     return buildHostMachinePath()
   }
@@ -295,7 +281,6 @@ export const platformPanelItems: PlatformPanelNavItem[] = [
   ...midpointChildNavItems,
   buildStandalonePanelNavItem('adoption'),
   buildStandalonePanelNavItem('theme'),
-  buildStandalonePanelNavItem('about'),
 ]
 
 export const platformPinnedItems: PlatformPinnedNavItem[] = platformPanelItems.filter(

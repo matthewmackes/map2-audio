@@ -51,8 +51,8 @@ describe('resolveShellRouteMeta', () => {
   it('covers critical app routes', () => {
     // Nav reorg 2026-05-03 (second pass) — critical-route list now
     // includes the canonical `/node-ops/*` mounts and the new
-    // `/artifacts` and `/about` top-level mounts. Legacy paths are
-    // retained for one transition cycle.
+    // `/artifacts` top-level mount. Legacy paths are retained for one
+    // transition cycle. /about retired 2026-05-04 (inlined on Home).
     const criticalRoutes = [
       // Canonical post-reorg mounts
       '/node-ops',
@@ -66,7 +66,6 @@ describe('resolveShellRouteMeta', () => {
       '/node-ops/theme',
       '/artifacts',
       '/artifacts/discover',
-      '/about',
       // Legacy fallback routes (still resolve via redirects)
       '/workspace/platforms/overview',
       '/workspace/platforms/audio-engine',

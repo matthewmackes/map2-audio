@@ -1535,7 +1535,6 @@ export function NotificationProvider({ children }: { children: ReactNode }) {
 // etc.) where the chyron has nothing to show anyway. Toast pushes still
 // work everywhere via NotificationContext + react-toastify.
 const STAGE_VIEWPORT_ROUTE_PREFIXES: readonly string[] = [
-  '/about',
   '/legacy',
   '/theme',
   '/welcome',

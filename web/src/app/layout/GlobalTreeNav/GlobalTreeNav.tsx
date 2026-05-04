@@ -969,7 +969,7 @@ export function GlobalTreeNav({
         <button
           type="button"
           className={joinClasses('global-tree-nav__guide-row', guideActive && 'is-active')}
-          onClick={() => navigateTo('/about')}
+          onClick={() => navigateTo('/#platform-guide')}
         >
           <span className="global-tree-nav__dense-spacer" aria-hidden="true" />
           <Information size={13} className="global-tree-nav__dense-icon" aria-hidden="true" />

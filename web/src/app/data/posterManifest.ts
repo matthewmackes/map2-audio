@@ -15,7 +15,6 @@ export const POSTER_MANIFEST: PosterManifestEntry[] = [
   { route: '/node-ops/audio-engine', label: 'Audio Engine', slug: 'audio-engine', temperature: 'cool' },
   { route: HOST_MACHINE_ROUTE, label: 'Host Machine', slug: 'host-machine', temperature: 'warm' },
   { route: '/perform', label: 'Stage Mode', slug: 'stage-mode', temperature: 'warm' },
-  { route: '/about', label: 'Platform Guide', slug: 'platform-guide', temperature: 'cool' },
   { route: '/expression', label: 'Expression', slug: 'expression', temperature: 'cool' },
   { route: '/artifacts', label: 'LV2 Plugins', slug: 'lv2-plugins', temperature: 'cool' },
   // T2482 loop 10 / iter 94 — "MIDI Hub" → "MIDI Services" rename.

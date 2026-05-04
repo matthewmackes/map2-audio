@@ -1,5 +1,6 @@
 import { memo, useMemo, type CSSProperties, type MouseEvent, type ReactElement } from 'react'
 import mapGridHorizon from '../../../../../branding/MAP-GRID-HORIZON-2026.png'
+import { PlatformGuideSections } from './PlatformGuideSections'
 import './WelcomeHero.css'
 
 export type WelcomeHeroArtifact = {
@@ -130,7 +131,7 @@ const GUIDE_CARDS: GuideCard[] = [
     title: 'What is MAP2?',
     body:
       'The why and how — modes (Audio · All-in-One · Management), signal chain, real-time latency targets, and how to set up a node.',
-    href: '/about',
+    href: '#platform-guide',
     meta: '6 min read',
   },
   {
@@ -138,7 +139,7 @@ const GUIDE_CARDS: GuideCard[] = [
     title: 'The stack, end to end.',
     body:
       'C++ JUCE engine, FastAPI backend, React 19 dashboard, PipeWire / JACK transport, AVB clustering. The exact technologies and how they fit.',
-    href: '/about#architecture',
+    href: '#architecture',
     meta: '8 min read',
   },
   {
@@ -146,7 +147,7 @@ const GUIDE_CARDS: GuideCard[] = [
     title: 'Open-source roots.',
     body:
       'JUCE, PipeWire, JACK, FastAPI, React, Material UI, Neural Amp Modeler, Textual, plus 37 more PyPI and npm packages standing on shoulders.',
-    href: '/about#built-with',
+    href: '#built-with',
     meta: 'Credits',
   },
   {
@@ -154,7 +155,7 @@ const GUIDE_CARDS: GuideCard[] = [
     title: 'AGPL-3.0 & disclaimer.',
     body:
       'MAP2 is licensed under AGPLv3. Educational and research use only — not production-ready, not a substitute for any commercial product.',
-    href: '/about#legal',
+    href: '#legal',
     meta: 'Important',
   },
 ]
@@ -287,10 +288,10 @@ function WelcomeHeroImpl({
           </p>
 
           <div className="map2x-hero__cta-row">
-            <button type="button" className="map2x-btn map2x-btn--primary" onClick={onEnterLiveSurface}>
+            <a className="map2x-btn map2x-btn--primary" href="#platform-guide">
               Read the Platform Guide
               <ArrowIcon />
-            </button>
+            </a>
             <button type="button" className="map2x-btn" onClick={onBrowseLibrary}>
               Browse library
               <BookIcon />
@@ -492,8 +493,8 @@ function WelcomeHeroImpl({
             </h2>
           </div>
           <div className="map2x-section__sub-right">
-            Four entry points into the deeper documentation. Each opens its own page; everything else remains a scroll
-            away below.
+            Four jump-points into the guide that follows. Tap a card to scroll to its section; the full overview is
+            below.
           </div>
         </div>
 
@@ -514,6 +515,9 @@ function WelcomeHeroImpl({
           ))}
         </div>
       </section>
+
+      {/* ---------- INLINED PLATFORM GUIDE ---------- */}
+      <PlatformGuideSections />
     </div>
   )
 }

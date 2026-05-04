@@ -84,14 +84,12 @@ describe('launcherCatalog', () => {
       '/platforms/adoption',
       '/platforms/host-machine',
       '/platforms/theme',
-      '/platforms/about',
       '/node-ops/audio-engine',
       '/node-ops/management',
       '/node-ops/network-discovery',
       '/node-ops/cluster-dashboard',
       '/node-ops/adoption',
       '/node-ops/theme',
-      '/about',
     ]) {
       expect(getLauncherCatalogItem(route)).toBeNull()
     }
@@ -112,7 +110,6 @@ describe('launcherCatalog', () => {
       { route: '/platforms/workspace-catalog', size: 'giant' },
       { route: '/platforms/workspace-catalog', size: 'small' },
       { route: '/platforms/workspace-catalog', size: 'medium' },
-      { route: '/platforms/about', size: 'large' },
     ])).toEqual([
       { route: '/sequencer', size: 'large' },
       // `/platform` resolves via PINNED_ROUTE_ALIASES to `/node-ops`.
@@ -165,7 +162,6 @@ describe('launcherCatalog', () => {
         expect.objectContaining({ route: '/chains' }),
         expect.objectContaining({ route: '/artifacts' }),
         expect.objectContaining({ route: '/workspace/artifacts' }),
-        expect.objectContaining({ route: '/about' }),
         expect.objectContaining({ route: '/node-ops/management' }),
         expect.objectContaining({ route: '/node-ops/theme' }),
         expect.objectContaining({ route: '/node-ops/avb-routing' }),

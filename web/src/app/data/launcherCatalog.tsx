@@ -107,7 +107,6 @@ const WORKSPACE_CATALOG_EXCLUDED_ROUTE_SET = new Set([
   '/platforms/adoption',
   '/platforms/host-machine',
   '/platforms/theme',
-  '/platforms/about',
   '/node-ops/audio-engine',
   '/node-ops/management',
   '/node-ops/network-discovery',
@@ -115,7 +114,6 @@ const WORKSPACE_CATALOG_EXCLUDED_ROUTE_SET = new Set([
   '/node-ops/adoption',
   '/node-ops/theme',
   HOST_MACHINE_ROUTE,
-  '/about',
 ])
 // Nav reorg 2026-05-03 (second pass) — `/workspace` is no longer
 // the canonical Node Ops base; `/node-ops` is. Keep both keys in

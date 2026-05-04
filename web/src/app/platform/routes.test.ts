@@ -37,9 +37,7 @@ describe('platform routes', () => {
     expect(buildLegacyPlatformRedirectPath(new URLSearchParams('panel=api-webhooks'))).toBe('/node-ops/midpoint')
   })
 
-  it('promotes the about panel to its dedicated /about root URL', () => {
-    expect(buildPlatformWorkspacePath('about')).toBe('/about')
-
-    expect(buildLegacyPlatformRedirectPath(new URLSearchParams('panel=about'))).toBe('/about')
-  })
+  // The `about` standalone panel was retired 2026-05-04 — the Platform Guide
+  // now lives inline on Home (`/#platform-guide`), so there is no panel route
+  // to promote. Test removed; the redirect itself is exercised in App.tsx.
 })

@@ -265,22 +265,9 @@ const RULES: ShellRouteRule[] = [
     windowLabel: 'Theme',
     breadcrumbs: [SETTINGS_PARENT_CRUMB, { label: 'Theme' }],
   }),
-  // Nav reorg 2026-05-03 (second pass) — About is its own top-level
-  // leaf at `/about` (was `/platforms/about`). Standalone breadcrumb,
-  // no parent kicker. Legacy `/workspace/platforms/about` and
-  // `/platforms/about` keep the standalone shape too.
-  staticMeta('/about', {
-    windowLabel: 'Platform Guide',
-    breadcrumbs: [{ label: 'Platform Guide' }],
-  }),
-  staticMeta('/workspace/platforms/about', {
-    windowLabel: 'Platform Guide',
-    breadcrumbs: [{ label: 'Platform Guide' }],
-  }),
-  staticMeta('/platforms/about', {
-    windowLabel: 'Platform Guide',
-    breadcrumbs: [{ label: 'Platform Guide' }],
-  }),
+  // /about and its legacy /workspace/platforms/about / /platforms/about siblings
+  // are retired 2026-05-04. The Platform Guide is inlined on Home; the App-level
+  // route redirects them to `/#platform-guide`, so no shell breadcrumb is needed.
   // Nav reorg 2026-05-03 (second pass) — Audio Artifacts is its own
   // top-level service group at the canonical `/artifacts` URL.
   staticMeta('/artifacts', {

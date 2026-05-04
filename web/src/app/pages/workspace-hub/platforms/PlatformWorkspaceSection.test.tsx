@@ -102,16 +102,6 @@ describe('PlatformWorkspaceSection', () => {
     expect(screen.getByTestId('route-probe')).toHaveTextContent(HOST_MACHINE_ROUTE)
   })
 
-  it('maps the dedicated /about route to the Platform Guide panel', () => {
-    render(
-      <MemoryRouter initialEntries={['/about']}>
-        <Routes>
-          <Route path="/about" element={<PlatformWorkspaceSection />} />
-        </Routes>
-      </MemoryRouter>,
-    )
-
-    expect(screen.getByTestId('platform-content')).toHaveTextContent('none|about')
-    expect(screen.getByTestId('route-probe')).toHaveTextContent('/about')
-  })
+  // /about no longer renders this section — the route hard-redirects to
+  // `/#platform-guide` (the inlined guide on Home). Test removed 2026-05-04.
 })

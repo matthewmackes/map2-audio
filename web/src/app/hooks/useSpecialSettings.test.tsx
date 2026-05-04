@@ -79,9 +79,9 @@ describe('useSpecialSettings', () => {
 
     await waitFor(() => expect(result.current.isLoading).toBe(false))
     expect(result.current.settings?.menuLocation).toBe('hidden')
-    // Nav reorg 2026-05-03 (second pass) — `/welcome` aliases to
-    // `/about`; the required home launcher is now `/node-ops`.
-    expect(result.current.settings?.pinnedRoutes).toEqual(['/about'])
+    // Hard cutover 2026-05-04 — `/welcome` and the legacy `/about`
+    // aliases now resolve to the inlined Platform Guide anchor on Home.
+    expect(result.current.settings?.pinnedRoutes).toEqual(['/#platform-guide'])
     expect(result.current.settings?.landingTiles).toEqual([{ route: '/node-ops', size: 'medium' }])
     expect(result.current.settings?.snapshotSetlistMode).toBe(true)
     expect(result.current.settings?.snapshotSetlistOrder).toEqual([9, 12])

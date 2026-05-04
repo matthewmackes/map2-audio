@@ -319,6 +319,11 @@ function LegacyArtifactsDiscoverRedirect() {
 function LegacyStandalonePanelRedirect({ panel }: { panel: 'host-machine' | 'audio-engine' | 'theme' | 'about' }) {
   const location = useLocation()
   const search = location.search || ''
+  // The Platform Guide panel was retired 2026-05-04 and inlined on Home.
+  // Any legacy panel URL targeting it lands at `/#platform-guide`.
+  if (panel === 'about') {
+    return <Navigate to="/#platform-guide" replace />
+  }
   return <Navigate to={`${buildPlatformWorkspacePath(panel)}${search}`} replace />
 }
 
@@ -618,19 +623,11 @@ export function App() {
                                   <Route index element={<WorkspaceArtifactsOverviewPage />} />
                                   <Route path="discover" element={<WorkspaceArtifactsDiscoverPage />} />
                                 </Route>
-                                {/* Canonical /about mount — promoted from
-                                    /platforms/about so the URL matches its top-level
-                                    nav position. Reuses LegacyStandalonePanelRedirect
-                                    indirectly: the about panel is a standalone panel,
-                                    so the route resolves through the standard
-                                    PlatformWorkspaceSection. */}
-                                <Route path="/about" element={
-                                  <RouteBoundary title="About view crashed" actionLabel="Reload about">
-                                    <WorkspaceHubShell />
-                                  </RouteBoundary>
-                                }>
-                                  <Route index element={<PlatformWorkspaceSection />} />
-                                </Route>
+                                {/* /about retired 2026-05-04 — Platform Guide is now inlined into the
+                                    unified Home page (`/#platform-guide`). Hard-redirect for any
+                                    cached external links and bookmarks. */}
+                                <Route path="/about" element={<Navigate to="/#platform-guide" replace />} />
+                                <Route path="/about/*" element={<Navigate to="/#platform-guide" replace />} />
                                 {/* Legacy /workspace/* mount kept for backward-compat
                                     redirect resolution. All sub-paths hard-redirect to
                                     their canonical /node-ops/* (or /artifacts/* or

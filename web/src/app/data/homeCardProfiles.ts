@@ -103,24 +103,8 @@ const PROFILE_BY_KEY: Record<string, HomeCardProfile> = {
     learnMore: 'This interface prioritizes decision speed and visual clarity in live contexts where error-free control is more important than edit depth.',
     bestFor: 'Live performance execution',
   },
-  '/about': {
-    summary: 'Canonical platform guide that combines MAP2 operating concepts, documentation access, build identity, and support context.',
-    capabilities: [
-      'Workflow onboarding and operator orientation',
-      'Documentation-library access from the shell',
-      'Build and version identity details',
-      'Runtime and deployment verification context',
-      'Support-grade system metadata and credits',
-      'Legal and licensing reference points',
-    ],
-    learnMore: 'Use Platform Guide whenever you need a single place for first-run orientation, document lookup, release provenance, or support escalation context.',
-    bestFor: 'Onboarding and support traceability',
-  },
-  // Nav reorg 2026-05-03 (second pass) — `/about` is the canonical
-  // Platform Guide mount; the entry above already covers it. The old
-  // `/platforms/about` key (this slot before the reorg) was just a
-  // duplicate of the same profile; removed to silence the duplicate-
-  // key TypeScript error.
+  // /about retired 2026-05-04 — the Platform Guide is now inlined on Home
+  // (`/#platform-guide`), so no separate card profile is needed.
   'platform:panel:theme': {
     summary: 'Platform appearance workspace for Carbon presets, typography selection, motion reduction, and shared category accent control.',
     capabilities: [

@@ -1,11 +1,16 @@
 import React from 'react'
 import { render, screen } from '@testing-library/react'
-import { MemoryRouter, Route, Routes } from 'react-router-dom'
+import { MemoryRouter, Route, Routes, useLocation } from 'react-router-dom'
 
 import { WelcomePage } from './WelcomePage'
 
+function LocationProbe() {
+  const loc = useLocation()
+  return <div data-testid="probe">{loc.pathname}{loc.hash}</div>
+}
+
 describe('WelcomePage', () => {
-  it('redirects legacy /welcome traffic to /about', () => {
+  it('redirects legacy /welcome traffic to the unified Home guide anchor', () => {
     render(
       <MemoryRouter
         initialEntries={['/welcome']}
@@ -16,11 +21,11 @@ describe('WelcomePage', () => {
       >
         <Routes>
           <Route path="/welcome" element={<WelcomePage />} />
-          <Route path="/about" element={<div>About target</div>} />
+          <Route path="/" element={<LocationProbe />} />
         </Routes>
       </MemoryRouter>,
     )
 
-    expect(screen.getByText('About target')).toBeTruthy()
+    expect(screen.getByTestId('probe').textContent).toBe('/#platform-guide')
   })
 })

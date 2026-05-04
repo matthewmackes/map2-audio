@@ -117,7 +117,7 @@ describe('PageTransition', () => {
   })
 
   it('skips the transition for unrelated route changes', () => {
-    renderHarness('/about')
+    renderHarness('/node-ops')
 
     fireEvent.click(screen.getByRole('button', { name: 'Go Expression' }))
 

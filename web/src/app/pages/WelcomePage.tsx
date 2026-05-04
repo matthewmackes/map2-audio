@@ -1,7 +1,7 @@
 import { Navigate } from 'react-router-dom'
 
 export function WelcomePage() {
-  return <Navigate to="/about" replace />
+  return <Navigate to="/#platform-guide" replace />
 }
 
 export default WelcomePage

@@ -1,16 +1,5 @@
-import { useEffect, useState } from 'react'
-import {
-  MAP2_PLATFORM_BUILD_DATE,
-  MAP2_PLATFORM_BUILD_TIME,
-  MAP2_PLATFORM_VERSION,
-} from '../components/branding/map2Branding'
-import './AboutPage.css'
-
-interface VersionInfo {
-  version?: string
-  build_date?: string
-  commit?: string
-}
+// Platform Guide content sections — inlined into the unified Home page
+// below the live status. No hero of its own; the Home hero is the entry.
 
 const MODES: Array<{ mode: string; latency: string; description: string }> = [
   {
@@ -77,51 +66,11 @@ function LaunchIcon() {
   )
 }
 
-export function AboutPage() {
-  const [versionInfo, setVersionInfo] = useState<VersionInfo | null>(null)
-
-  useEffect(() => {
-    fetch('/api/version')
-      .then((r) => r.json())
-      .then(setVersionInfo)
-      .catch(() =>
-        setVersionInfo({
-          version: MAP2_PLATFORM_VERSION,
-          build_date: `${MAP2_PLATFORM_BUILD_DATE}${MAP2_PLATFORM_BUILD_TIME ? ` ${MAP2_PLATFORM_BUILD_TIME}` : ''}`.trim(),
-        }),
-      )
-  }, [])
-
-  const versionLabel = versionInfo?.version ?? MAP2_PLATFORM_VERSION
-  const buildLabel = versionInfo?.build_date ?? MAP2_PLATFORM_BUILD_DATE
-  const commitLabel = versionInfo?.commit ? versionInfo.commit.slice(0, 7) : '—'
-
+export function PlatformGuideSections() {
   return (
-    <div className="map2x">
-      {/* ── HERO ─────────────────────────────────────────────────────── */}
-      <section className="map2x-guide-hero">
-        <div className="map2x-guide-hero__grid" aria-hidden />
-        <div className="map2x-guide-hero__inner">
-          <div className="map2x-eyebrow map2x-eyebrow--accent">— 01 · Platform overview</div>
-          <h1 className="map2x-guide-hero__title">
-            An open, educational platform for{' '}
-            <span className="map2x-guide-hero__title-accent">real-time audio</span>.
-          </h1>
-          <p className="map2x-guide-hero__lede">
-            MAP2 (Mackes Audio Platform 2) is a real-time audio processing system that turns commodity Linux hardware
-            into a professional-grade processor. A C++ JUCE engine, FastAPI backend and React 19 dashboard, unified
-            into one appliance.
-          </p>
-          <div className="map2x-guide-hero__meta">
-            <span className="map2x-tag">v{versionLabel}</span>
-            <span className="map2x-tag">{buildLabel}</span>
-            <span className="map2x-tag map2x-tag--accent">AGPL-3.0-only</span>
-            <span className="map2x-tag">commit {commitLabel}</span>
-            <span className="map2x-tag">6 min read</span>
-            <span className="map2x-tag">Educational use only</span>
-          </div>
-        </div>
-      </section>
+    <>
+      {/* anchor target for the hero CTA + the guide cards */}
+      <div id="platform-guide" />
 
       {/* ── WHY ─────────────────────────────────────────────────────── */}
       <section className="map2x-guide-section">
@@ -389,8 +338,6 @@ python -m tui.node_console
           </div>
         </div>
       </section>
-    </div>
+    </>
   )
 }
-
-export default AboutPage

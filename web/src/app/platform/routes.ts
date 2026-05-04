@@ -25,12 +25,10 @@ export const LEGACY_WORKSPACE_HUB_PLATFORM_BASE_PATH = '/workspace/platforms'
 // `LEGACY_PLATFORM_WORKSPACE_BASE_PATH` or `NODE_OPS_BASE_PATH`.
 export const PLATFORM_WORKSPACE_BASE_PATH = LEGACY_PLATFORM_WORKSPACE_BASE_PATH
 
-// About has its own root URL (it's a top-level nav item, not a
-// Node Ops sub-page anymore). Keep the helper so callers don't have
-// to know which target each panel maps to.
-const ROOT_PANEL_ROUTES: Partial<Record<StandalonePanel, string>> = {
-  about: '/about',
-}
+// Root-level panel URLs. The Platform Guide (formerly `about`) is no longer
+// a panel — it's inlined on Home (`/#platform-guide`). The map is kept for
+// future panels that need to escape the `/node-ops/` namespace.
+const ROOT_PANEL_ROUTES: Partial<Record<StandalonePanel, string>> = {}
 
 const LEGACY_PLATFORM_LAYER_REDIRECTS: Record<string, PlatformLayerId> = {
   'single-node': 'management',

@@ -99,11 +99,10 @@ describe('navigation catalog', () => {
   })
 
   it('normalizes pinned routes by trimming, aliasing legacy paths, filtering invalid values, and deduplicating', () => {
-    // Nav reorg 2026-05-03 (second pass) — `/welcome` now aliases to
-    // `/about` (was `/platforms/about`) since About is a top-level
-    // root URL.
+    // Hard cutover 2026-05-04 — `/welcome` and `/about` both alias to the
+    // inlined Platform Guide anchor on Home (`/#platform-guide`).
     expect(normalizePinnedRoutes(['/grid', ' /grid ', '/welcome', '', '#oops', 'grid', '/midi', '/midi-hub', '/host-machine', '/about', '/platform'])).toEqual([
-      '/about',
+      '/#platform-guide',
       HOST_MACHINE_ROUTE,
     ])
   })

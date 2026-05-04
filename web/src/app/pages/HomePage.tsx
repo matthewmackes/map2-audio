@@ -1046,8 +1046,10 @@ export function HomePage() {
             onHardwareSummaryClick={handleHardwareSummaryClick}
             onRibbonClick={handleRibbonClick}
           />
-          <div className="hp2-home-shell__legacy-table" hidden>
-            {/* legacy operations table preserved for accessibility/search; visually hidden */}
+          <div className="hp2-home-shell__legacy-table">
+            {/* Carbon operations table — kept below the unified WelcomeHero so
+                operators retain the searchable, sortable telemetry surface
+                alongside the editorial guide. */}
 
               <div className="hp2-home-shell__operations-table-shell">
                 <DataTable

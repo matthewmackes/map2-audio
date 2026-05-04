@@ -575,18 +575,26 @@ export const allPinnableNavigationItems: Array<ShellNavigationItem | HardwareInt
   ...platformPinnedItems,
 ]
 
-const PINNABLE_ROUTE_SET = new Set(allPinnableNavigationItems.map((item) => item.to))
+const PINNABLE_ROUTE_SET = new Set([
+  ...allPinnableNavigationItems.map((item) => item.to),
+  // 2026-05-04: the Platform Guide is now an in-page anchor on Home
+  // rather than a standalone route. Whitelist the anchor URL so it can
+  // be pinned, normalized, and resolved like any other route.
+  '/#platform-guide',
+])
 
 // Nav reorg 2026-05-03 (second pass) — every alias rewritten to
 // point at the new canonical post-reorg URLs:
 //   /node-ops, /node-ops/<id>      (was /workspace, /platforms/<id>,
 //                                    /workspace/platforms/<id>)
 //   /artifacts                     (was /workspace/artifacts)
-//   /about                         (was /platforms/about)
+// 2026-05-04: /about retired; the Platform Guide is inlined on Home
+// (`/#platform-guide`). All legacy /about-style aliases now resolve
+// to that anchor on the unified Home page.
 // Old shorthand inputs are preserved as keys so saved operator
 // state and external links keep resolving.
 export const PINNED_ROUTE_ALIASES: Record<string, string> = {
-  '/welcome': '/about',
+  '/welcome': '/#platform-guide',
   '/grid': '/juce-grid',
   '/grid-3d': '/juce-grid',
   '/nodes': '/node-ops',
@@ -619,8 +627,9 @@ export const PINNED_ROUTE_ALIASES: Record<string, string> = {
   '/workspace/platforms/adoption': '/node-ops/adoption',
   '/platforms/theme': '/node-ops/theme',
   '/workspace/platforms/theme': '/node-ops/theme',
-  '/platforms/about': '/about',
-  '/workspace/platforms/about': '/about',
+  '/about': '/#platform-guide',
+  '/platforms/about': '/#platform-guide',
+  '/workspace/platforms/about': '/#platform-guide',
   '/plugins': '/artifacts',
   '/library': '/artifacts',
   '/audio-artifacts': '/artifacts',
@@ -642,7 +651,7 @@ export const PINNED_ROUTE_ALIASES: Record<string, string> = {
   'platform:panel:api-webhooks': '/node-ops/midpoint',
   'platform:panel:midpoint': '/node-ops/midpoint',
   'platform:panel:theme': '/node-ops/theme',
-  'platform:panel:about': '/about',
+  'platform:panel:about': '/#platform-guide',
   '/platforms/api-webhooks': '/node-ops/midpoint',
   '/workspace/platforms/api-webhooks': '/node-ops/midpoint',
 }

@@ -89,7 +89,6 @@ import {
 const HostMachinePage = lazy(() => import('../../pages/HostMachinePage').then(m => ({ default: m.HostMachinePage })))
 const AudioEnginePage = lazy(() => import('../../pages/AudioEnginePage').then(m => ({ default: m.AudioEnginePage })))
 const ThemePage       = lazy(() => import('../../pages/ThemePage').then(m => ({ default: m.ThemePage })))
-const AboutPage       = lazy(() => import('../../pages/AboutPage').then(m => ({ default: m.AboutPage })))
 const PlatformAdoptionPage = lazy(() => import('../../pages/PlatformAdoptionPage').then(m => ({ default: m.PlatformAdoptionPage })))
 const ApiWebhooksPage = lazy(() => import('../../pages/ApiWebhooksPage/ApiWebhooksPage').then(m => ({ default: m.ApiWebhooksPage })))
 
@@ -112,7 +111,6 @@ const STANDALONE_META: Record<StandalonePanel, { label: string; eyebrow: string;
   'host-machine':  { label: 'Host Machine',   eyebrow: 'Hardware', icon: MapOs2HomeIcon },
   'audio-engine':  { label: 'Audio Engine',   eyebrow: 'System',   icon: Terminal },
   'theme':         { label: 'Theme',          eyebrow: 'Platform', icon: PaintBrush },
-  'about':         { label: 'Platform Guide', eyebrow: 'System',   icon: Information },
   'adoption':      { label: 'Adoption',       eyebrow: 'Platform', icon: Information },
   'midpoint':      { label: 'Midpoint', eyebrow: 'Platform', icon: Flash },
 }
@@ -484,7 +482,6 @@ function StandaloneWorkspace({ panel }: { panel: StandalonePanel }) {
           {panel === 'host-machine'  && <HostMachinePage />}
           {panel === 'audio-engine'  && <AudioEnginePage />}
           {panel === 'theme'         && <ThemePage />}
-          {panel === 'about'         && <AboutPage />}
           {panel === 'adoption'      && <PlatformAdoptionPage />}
           {panel === 'midpoint'      && <ApiWebhooksPage />}
         </Suspense>

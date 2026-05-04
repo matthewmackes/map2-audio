@@ -464,17 +464,15 @@ describe('PlatformModalContent', () => {
       .filter((label): label is string => Boolean(label?.startsWith('Open ')))
 
     // T2445-C: Host Machine moved to /hardware/host-machine in T2432 and is no
-    // longer in the Platforms rail. Adoption is now the third-to-last entry.
+    // longer in the Platforms rail. 2026-05-04: Platform Guide retired — now
+    // inlined on Home — so Theme is the sole utility-tier entry.
     expect(navLabels.slice(0, 2)).toEqual(['Open Overview', 'Open Audio Engine'])
-    expect(navLabels.slice(-3)).toEqual([
+    expect(navLabels.slice(-2)).toEqual([
       'Open Adoption',
       'Open Theme',
-      'Open Platform Guide',
     ])
 
-    for (const label of ['Open Theme', 'Open Platform Guide']) {
-      expect(screen.getByRole('treeitem', { name: label })).toHaveClass('is-utility')
-    }
+    expect(screen.getByRole('treeitem', { name: 'Open Theme' })).toHaveClass('is-utility')
     expect(screen.getByRole('treeitem', { name: 'Open Audio Engine' })).not.toHaveClass('is-utility')
   })
 
