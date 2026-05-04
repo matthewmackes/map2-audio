@@ -119,7 +119,6 @@ import { AudioDeviceDisconnectedBanner } from '../components/SnapshotEditor/Audi
 import { useCommittedAudioState } from '../hooks/useAuthoritativeAudioState'
 import { useWebSocketTopic } from '../../map2/hooks/useWebSocket'
 import { getEffectIcon } from '../components/icons/effectIcons'
-import MidiLearnButton from '../../map2/components/MIDI/MidiLearnButton'
 import { NumberInput } from '../components/ParameterControl'
 import { SegmentedLedText } from '../components/Displays/SegmentedLedText'
 import { MapAudioGridIcon } from '../components/icons/map'
@@ -136,11 +135,8 @@ import type {
   Snapshot,
   SnapshotDetail,
   SnapshotSummary,
-  SnapshotMidiMapEntry,
-  MIDIMappingV2,
   MIDIStatus,
   PluginParameter,
-  SnapshotExpressionMapping,
 } from '../../map2/types'
 import { getDisplayPluginName, sanitizeRestrictedDisplayText } from '../../map2/displayNames'
 import { buildPluginOrderRef } from '../../map2/utils/pluginIdentity'
@@ -167,43 +163,29 @@ import {
 } from '../utils/snapshotActivationToast'
 import {
   collectSnapshotMidiMapEntries,
-  formatMidiNoteLabel,
   getSnapshotBlockFocusRange,
-  normalizeSnapshotBlockFocusSnapshot,
   parseMidiActivityNoteOn,
-  replaceSnapshotBlockFocusRange,
   resolveSnapshotBlockFocusIndex,
 } from '../utils/snapshotBlockFocus'
 import {
   createEmptyFootswitchLabelDrafts,
   getSnapshotFootswitchLabelMap,
-  normalizeSnapshotFootswitchLabelSnapshot,
-  replaceSnapshotFootswitchLabelMap,
-  sanitizeFootswitchLabel,
 } from '../utils/snapshotFootswitchLabels'
 import {
   getSnapshotAbSwitchMidiBinding,
-  normalizeSnapshotAbSwitchMidiSnapshot,
-  replaceSnapshotAbSwitchMidiBinding,
-  type SnapshotAbSwitchMidiMessageType,
 } from '../utils/snapshotAbSwitchMidi'
 import {
   normalizeSnapshotExpressionMappings,
-  normalizeSnapshotExpressionMappingsSnapshot,
 } from '../utils/snapshotExpressionMappings'
 import {
   isSnapshotCurrentAuthorityLive,
   resolveSnapshotGoLiveState,
 } from '../utils/snapshotGoLiveState'
 import {
-  buildSnapshotIoControlsUpdate,
   SNAPSHOT_IO_USE_DEFAULT_OPTION,
-  buildSnapshotIoDefaultsUpdate,
   buildSnapshotIoModalState,
-  buildSnapshotIoUpdateRequest,
   collectMonitoringOutputPairOptions,
   type SnapshotIoDefaults,
-  type SnapshotIoModalState,
 } from '../utils/snapshotIoBindings'
 import { applyFlowSlotUpdate } from '../utils/snapshotFlowSlots'
 import { JuceGridSelectedBlockMidiPanel } from '../components/SnapshotEditor/SnapshotEditorSelectedBlockMidiPanel'
@@ -294,14 +276,8 @@ import {
   LIVE_ACTIVATION_PHASES,
   LIVE_CHANGES_LEAVE_MESSAGE,
   MAX_FLOWS,
-  MIDI_CURVE_LABELS,
   MIN_FLOWS,
-  NOISE_GATE_RELEASE_CONFIG_KEY,
-  NOISE_GATE_THRESHOLD_CONFIG_KEY,
   ROUTING_MODE_OPTIONS,
-  SNAPSHOT_DEFAULT_INPUT_DEVICE_CONFIG_KEY,
-  SNAPSHOT_DEFAULT_MONITORING_OUTPUT_INDEX_CONFIG_KEY,
-  SNAPSHOT_DEFAULT_OUTPUT_DEVICE_CONFIG_KEY,
 } from './snapshotEditor/snapshotEditorPageTypes'
 import type {
   CompactTabId,
@@ -356,10 +332,8 @@ import { SnapshotEditorPresetBrowser } from './snapshotEditor/SnapshotEditorPres
 import { SnapshotEditorPluginBrowser } from './snapshotEditor/SnapshotEditorPluginBrowser'
 import { SnapshotEditorCompactPanels } from './snapshotEditor/SnapshotEditorCompactPanels'
 import { SnapshotEditorAutomationToggle } from './snapshotEditor/SnapshotEditorAutomationToggle'
-import { SnapshotEditorWorkspaceModals } from './snapshotEditor/SnapshotEditorWorkspaceModals'
 import { SnapshotEditorAuxModals } from './snapshotEditor/SnapshotEditorAuxModals'
 import { SnapshotEditorChainDialogs } from './snapshotEditor/SnapshotEditorChainDialogs'
-import { SnapshotEditorMidiMappingsModal } from './snapshotEditor/SnapshotEditorMidiMappingsModal'
 import { SnapshotEditorRoutingModals } from './snapshotEditor/SnapshotEditorRoutingModals'
 import { SnapshotEditorRoutingInspector } from './snapshotEditor/SnapshotEditorRoutingInspector'
 import { SnapshotEditorBottomEditor } from './snapshotEditor/SnapshotEditorBottomEditor'
@@ -555,8 +529,6 @@ export function SnapshotEditorPage() {
   const setRenameChainName = useSnapshotEditorStore((s) => s.setRenameChainName)
   const presetPendingDelete = useSnapshotEditorStore((s) => s.presetPendingDelete)
   const setPresetPendingDelete = useSnapshotEditorStore((s) => s.setPresetPendingDelete)
-  const showClearFlowsModal = useSnapshotEditorStore((s) => s.showClearFlowsModal)
-  const setShowClearFlowsModal = useSnapshotEditorStore((s) => s.setShowClearFlowsModal)
   const assignmentDialogOpen = useSnapshotEditorStore((s) => s.assignmentDialogOpen)
   const setAssignmentDialogOpen = useSnapshotEditorStore((s) => s.setAssignmentDialogOpen)
   const selectedFlowForAssignment = useSnapshotEditorStore((s) => s.selectedFlowForAssignment) as FlowSlot | null
@@ -573,8 +545,6 @@ export function SnapshotEditorPage() {
   const setMidiLearnActive = useSnapshotEditorStore((s) => s.setMidiLearnActive)
   const midiScope = useSnapshotEditorStore((s) => s.midiScope)
   const setMidiScope = useSnapshotEditorStore((s) => s.setMidiScope)
-  const midiRangeDrafts = useSnapshotEditorStore((s) => s.midiRangeDrafts)
-  const setMidiRangeDrafts = useSnapshotEditorStore((s) => s.setMidiRangeDrafts)
   const isRefreshingPlugins = useSnapshotEditorStore((s) => s.isRefreshingPlugins)
   const setIsRefreshingPlugins = useSnapshotEditorStore((s) => s.setIsRefreshingPlugins)
   const detailsPlugin = useSnapshotEditorStore((s) => s.detailsPlugin)
@@ -587,16 +557,6 @@ export function SnapshotEditorPage() {
   const setReorderPreview = useSnapshotEditorStore((s) => s.setReorderPreview)
   const showKeyboardHelp = useSnapshotEditorStore((s) => s.showKeyboardHelp)
   const setShowKeyboardHelp = useSnapshotEditorStore((s) => s.setShowKeyboardHelp)
-  const showPerformModal = useSnapshotEditorStore((s) => s.showPerformModal)
-  const setShowPerformModal = useSnapshotEditorStore((s) => s.setShowPerformModal)
-  const showAudioNodesModal = useSnapshotEditorStore((s) => s.showAudioNodesModal)
-  const setShowAudioNodesModal = useSnapshotEditorStore((s) => s.setShowAudioNodesModal)
-  const showProgressModal = useSnapshotEditorStore((s) => s.showProgressModal)
-  const setShowProgressModal = useSnapshotEditorStore((s) => s.setShowProgressModal)
-  const progressModalInitialTab = useSnapshotEditorStore((s) => s.progressModalInitialTab)
-  const progressModalInitialSection = useSnapshotEditorStore((s) => s.progressModalInitialSection)
-  const showLiveRuntimeModal = useSnapshotEditorStore((s) => s.showLiveRuntimeModal)
-  const setShowLiveRuntimeModal = useSnapshotEditorStore((s) => s.setShowLiveRuntimeModal)
   const showVersionHistoryModal = useSnapshotEditorStore((s) => s.showVersionHistoryModal)
   const setShowVersionHistoryModal = useSnapshotEditorStore((s) => s.setShowVersionHistoryModal)
   const focusedBranchId = useSnapshotEditorStore((s) => s.focusedBranchId)
@@ -621,22 +581,6 @@ export function SnapshotEditorPage() {
     }
     navigate(`/about?${params.toString()}`)
   }, [navigate])
-  const closeAudioRoutingWorkspace = useCallback(() => {
-    setShowAudioNodesModal(false)
-    restoreWorkspaceModalLauncher()
-  }, [restoreWorkspaceModalLauncher])
-  const closeMidiMappingsWorkspace = useCallback(() => {
-    setMidiModalOpen(false)
-    restoreWorkspaceModalLauncher()
-  }, [restoreWorkspaceModalLauncher])
-  const closeLiveRuntimeWorkspace = useCallback(() => {
-    setShowLiveRuntimeModal(false)
-    restoreWorkspaceModalLauncher()
-  }, [restoreWorkspaceModalLauncher])
-  const closePerformWorkspace = useCallback(() => {
-    setShowPerformModal(false)
-    restoreWorkspaceModalLauncher()
-  }, [restoreWorkspaceModalLauncher])
   const closeVersionHistoryWorkspace = useCallback(() => {
     setShowVersionHistoryModal(false)
     restoreWorkspaceModalLauncher()
@@ -660,8 +604,6 @@ export function SnapshotEditorPage() {
   const setAutomationPanelHeight = useSnapshotEditorStore((s) => s.setAutomationPanelHeight)
   const automationPanelRef = useRef<HTMLDivElement | null>(null)
 
-  const midiModalOpen = useSnapshotEditorStore((s) => s.midiModalOpen)
-  const setMidiModalOpen = useSnapshotEditorStore((s) => s.setMidiModalOpen)
   const snapshotIoModalState = useSnapshotEditorStore((s) => s.snapshotIoModalState)
   const setSnapshotIoModalState = useSnapshotEditorStore((s) => s.setSnapshotIoModalState)
   const noiseGateThresholdDraft = useSnapshotEditorStore((s) => s.noiseGateThresholdDraft)
@@ -1910,15 +1852,9 @@ export function SnapshotEditorPage() {
   ])
 
   useEffect(() => {
-    if (showProgressModal && progressModalInitialTab === 'advanced' && progressModalInitialSection === 'devices') {
-      return
-    }
     setSnapshotIoModalState(buildSnapshotIoModalState(activeSnapshot, snapshotIoDefaultsQuery.data))
   }, [
     activeSnapshot,
-    progressModalInitialSection,
-    progressModalInitialTab,
-    showProgressModal,
     snapshotIoDefaultsQuery.data,
   ])
 
@@ -2071,7 +2007,7 @@ export function SnapshotEditorPage() {
 
   useEffect(() => {
     setRoutingLiveApplyState('idle')
-  }, [activeSnapshot?.id, isAuthorityLiveSnapshot, showProgressModal])
+  }, [activeSnapshot?.id, isAuthorityLiveSnapshot])
 
   const createSnapshotFromEditorMutation = useMutation({
     mutationFn: async ({
@@ -2385,42 +2321,6 @@ export function SnapshotEditorPage() {
     },
   })
 
-  const toggleActiveSnapshotFavoriteMutation = useMutation({
-    mutationFn: async ({ snapshotId, isFavorite }: { snapshotId: number; isFavorite: boolean }) =>
-      snapshotsApi.update(snapshotId, { is_favorite: isFavorite }),
-    onSuccess: (response) => {
-      syncSnapshotDetailCaches(response.snapshot)
-      queryClient.invalidateQueries({ queryKey: ['snapshots'] })
-      pushToast(response.snapshot.is_favorite ? 'Snapshot marked as favorite' : 'Snapshot removed from favorites', 'success')
-    },
-    onError: (error) => {
-      pushToast(error instanceof Error ? error.message : 'Failed to update snapshot favorite', 'error')
-    },
-  })
-
-  const duplicateActiveSnapshotMutation = useMutation({
-    mutationFn: async () => {
-      if (!activeSnapshot) {
-        throw new Error('No active snapshot to duplicate')
-      }
-      return {
-        sourceName: activeSnapshot.name,
-        response: await snapshotsApi.duplicate(activeSnapshot.id),
-      }
-    },
-    onSuccess: ({ sourceName, response }) => {
-      setEditorSnapshotOverride(response.snapshot)
-      hydrateEditorFromSnapshot(response.snapshot, {
-        toastMessage: `Duplicated: ${sourceName} → ${response.snapshot.name}`,
-        resetSelectedBlock: true,
-        invalidateSnapshots: true,
-      })
-    },
-    onError: (error) => {
-      pushToast(error instanceof Error ? error.message : 'Failed to duplicate snapshot', 'error')
-    },
-  })
-
   const updateActiveSnapshotDescriptionMutation = useMutation({
     mutationFn: async ({ snapshotId, description }: { snapshotId: number; description: string }) =>
       snapshotsApi.update(snapshotId, { description }),
@@ -2431,141 +2331,6 @@ export function SnapshotEditorPage() {
     },
     onError: (error) => {
       pushToast(error instanceof Error ? error.message : 'Failed to update snapshot notes', 'error')
-    },
-  })
-
-  const updateActiveSnapshotOutputReferenceMutation = useMutation({
-    mutationFn: async ({
-      snapshotId,
-      outputLevelReferenceDbfs,
-      outputLevelWarningThresholdDb,
-    }: {
-      snapshotId: number
-      outputLevelReferenceDbfs?: number | null
-      outputLevelWarningThresholdDb?: number | null
-    }) => snapshotsApi.update(snapshotId, {
-      output_level_reference_dbfs: outputLevelReferenceDbfs,
-      output_level_warning_threshold_db: outputLevelWarningThresholdDb,
-    }),
-    onSuccess: (response) => {
-      syncSnapshotDetailCaches(response.snapshot)
-      queryClient.invalidateQueries({ queryKey: ['snapshots'] })
-      pushToast('Snapshot output reference updated', 'success')
-    },
-    onError: (error) => {
-      pushToast(error instanceof Error ? error.message : 'Failed to update output reference', 'error')
-    },
-  })
-
-  const updateSystemNoiseGateDefaultsMutation = useMutation({
-    mutationFn: async ({
-      thresholdDb,
-      releaseMs,
-    }: {
-      thresholdDb: number
-      releaseMs: number
-    }) => {
-      await fetchJson('/api/cluster/config/runtime', {
-        method: 'PUT',
-        body: JSON.stringify({
-          key: NOISE_GATE_THRESHOLD_CONFIG_KEY,
-          value: thresholdDb,
-          scope: 'cluster',
-        }),
-      })
-      await fetchJson('/api/cluster/config/runtime', {
-        method: 'PUT',
-        body: JSON.stringify({
-          key: NOISE_GATE_RELEASE_CONFIG_KEY,
-          value: releaseMs,
-          scope: 'cluster',
-        }),
-      })
-      return { thresholdDb, releaseMs }
-    },
-    onSuccess: ({ thresholdDb, releaseMs }) => {
-      queryClient.setQueryData(['config', 'snapshot-noise-gate-defaults'], {
-        thresholdDb,
-        releaseMs,
-      })
-      queryClient.invalidateQueries({ queryKey: ['config', 'snapshot-noise-gate-defaults'] })
-      pushToast('Noise gate defaults updated', 'success')
-    },
-    onError: (error) => {
-      pushToast(error instanceof Error ? error.message : 'Failed to update noise gate defaults', 'error')
-    },
-  })
-
-  const updateSnapshotIoBindingsMutation = useMutation({
-    mutationFn: async ({
-      snapshotId,
-      state,
-      currentDefaults,
-    }: {
-      snapshotId: number | null
-      state: SnapshotIoModalState
-      currentDefaults: SnapshotIoDefaults | null | undefined
-    }) => {
-      const nextDefaults = buildSnapshotIoDefaultsUpdate(state)
-      const previousDefaults = {
-        input_device: currentDefaults?.input_device ?? null,
-        output_device: currentDefaults?.output_device ?? null,
-        monitoring_output_index: currentDefaults?.monitoring_output_index ?? null,
-      }
-
-      if (nextDefaults.input_device !== previousDefaults.input_device) {
-        await fetchJson('/api/cluster/config/runtime', {
-          method: 'PUT',
-          body: JSON.stringify({
-            key: SNAPSHOT_DEFAULT_INPUT_DEVICE_CONFIG_KEY,
-            value: nextDefaults.input_device,
-            scope: 'cluster',
-          }),
-        })
-      }
-
-      if (nextDefaults.output_device !== previousDefaults.output_device) {
-        await fetchJson('/api/cluster/config/runtime', {
-          method: 'PUT',
-          body: JSON.stringify({
-            key: SNAPSHOT_DEFAULT_OUTPUT_DEVICE_CONFIG_KEY,
-            value: nextDefaults.output_device,
-            scope: 'cluster',
-          }),
-        })
-      }
-
-      if (nextDefaults.monitoring_output_index !== previousDefaults.monitoring_output_index) {
-        await fetchJson('/api/cluster/config/runtime', {
-          method: 'PUT',
-          body: JSON.stringify({
-            key: SNAPSHOT_DEFAULT_MONITORING_OUTPUT_INDEX_CONFIG_KEY,
-            value: nextDefaults.monitoring_output_index,
-            scope: 'cluster',
-          }),
-        })
-      }
-
-      const snapshot = snapshotId != null
-        ? (await snapshotsApi.update(snapshotId, {
-          ...buildSnapshotIoUpdateRequest(state),
-          controls: buildSnapshotIoControlsUpdate(state, activeSnapshot?.controls),
-        })).snapshot
-        : null
-
-      return { defaults: nextDefaults, snapshot }
-    },
-    onSuccess: ({ defaults, snapshot }) => {
-      queryClient.setQueryData(['config', 'snapshot-io-defaults'], defaults)
-      queryClient.invalidateQueries({ queryKey: ['config', 'snapshot-io-defaults'] })
-      if (snapshot) {
-        syncSnapshotDetailCaches(snapshot)
-        queryClient.invalidateQueries({ queryKey: ['snapshots'] })
-      }
-      pushToast(snapshot ? 'Snapshot I/O devices updated' : 'Default I/O devices updated', 'success')
-    },
-    onError: (error) => {
-      pushToast(error instanceof Error ? error.message : 'Failed to update I/O devices', 'error')
     },
   })
 
@@ -2905,9 +2670,7 @@ export function SnapshotEditorPage() {
       setEffectModalOpen(false)
       setShowPluginBrowser(false)
       setPendingTabletDeletePlugin(null)
-      setShowProgressModal(false)
       setPortSelectorFlowIndex(null)
-      setShowAudioNodesModal(false)
       setLanePickerOpen(false)
       setAutomationTimelineExpanded(false)
       return
@@ -3276,66 +3039,6 @@ export function SnapshotEditorPage() {
       channel: midiStatus.last_channel,
     }
   }, [lastMidiActivityWs, midiStatus])
-  const blockFocusPreview = useMemo(() => (
-    blockFocusPlugins.map((plugin, index) => ({
-      key: `${plugin.uri}-${plugin.position ?? index}`,
-      blockLabel: getDisplayPluginName(plugin.name, plugin.uri),
-      note: blockFocusStartNote + index,
-      position: plugin.position,
-    }))
-  ), [blockFocusPlugins, blockFocusStartNote])
-
-  const midiScopeLabel = useMemo(() => {
-    switch (midiScope) {
-      case 'selected-plugin':
-        return selectedPlugin
-          ? `Selected block: ${getDisplayPluginName(selectedPlugin.name, selectedPlugin.uri)}`
-          : 'Selected block'
-      case 'active-chain':
-        return currentChain ? `Active chain: ${activeChainDisplayName}` : 'Active chain'
-      case 'all':
-      default:
-        return 'All mappings'
-    }
-  }, [activeChainDisplayName, currentChain, midiScope, selectedPlugin])
-
-  const midiPluginNameByUri = useMemo(() => {
-    const names = new Map<string, string>()
-
-    chains.forEach((chain) => {
-      chain.plugins.forEach((plugin) => {
-        if (!names.has(plugin.uri)) {
-          names.set(plugin.uri, getDisplayPluginName(plugin.name, plugin.uri))
-        }
-      })
-    })
-
-    Object.values(pluginMeta).forEach((plugin) => {
-      if (!names.has(plugin.uri)) {
-        names.set(plugin.uri, getDisplayPluginName(plugin.name, plugin.uri))
-      }
-    })
-
-    return names
-  }, [chains, pluginMeta])
-
-  const getMidiMappingPluginName = useCallback((pluginUri: string | null) => {
-    if (!pluginUri) {
-      return 'Processor'
-    }
-    return midiPluginNameByUri.get(pluginUri) ?? fallbackPluginLabel(pluginUri)
-  }, [midiPluginNameByUri])
-
-  const getMidiMappingParameterName = useCallback((mapping: MIDIMappingV2) => {
-    if (!mapping.target_plugin_uri) {
-      return mapping.target_param_symbol ?? `Parameter #${mapping.target_param_index ?? 0}`
-    }
-
-    const meta = pluginMeta[mapping.target_plugin_uri]
-    const parameter = meta?.parameters?.find((entry) => entry.index === mapping.target_param_index)
-    return parameter?.name ?? mapping.target_param_symbol ?? `Parameter #${mapping.target_param_index ?? 0}`
-  }, [pluginMeta])
-
   const handleMidiBlockFocusActivity = useCallback((data: Record<string, unknown>) => {
     if (snapshotEntryRequired) {
       return
@@ -3381,48 +3084,6 @@ export function SnapshotEditorPage() {
     }
   }, [activeFlowChainId, midiScope, selectedPluginUri])
 
-  useEffect(() => {
-    setMidiRangeDrafts((previous) => {
-      const next: Record<number, MidiRangeDraft> = {}
-      let changed = Object.keys(previous).length !== midiMappings.length
-
-      midiMappings.forEach((mapping) => {
-        const sourceMin = formatMidiMappingValue(mapping.min_val)
-        const sourceMax = formatMidiMappingValue(mapping.max_val)
-        const current = previous[mapping.id]
-        const nextDraft: MidiRangeDraft = current
-          ? {
-              min: current.min === current.sourceMin ? sourceMin : current.min,
-              max: current.max === current.sourceMax ? sourceMax : current.max,
-              sourceMin,
-              sourceMax,
-            }
-          : {
-              min: sourceMin,
-              max: sourceMax,
-              sourceMin,
-              sourceMax,
-            }
-        next[mapping.id] = nextDraft
-
-        if (!current) {
-          changed = true
-          return
-        }
-
-        if (
-          current.min !== nextDraft.min
-          || current.max !== nextDraft.max
-          || current.sourceMin !== nextDraft.sourceMin
-          || current.sourceMax !== nextDraft.sourceMax
-        ) {
-          changed = true
-        }
-      })
-
-      return changed ? next : previous
-    })
-  }, [midiMappings])
 
   // Primary: WebSocket-driven instant learn completion
   useWebSocketTopic('midi_learn', useCallback((_data: { channel: number; cc: number }, message) => {
@@ -3876,80 +3537,6 @@ export function SnapshotEditorPage() {
     void queryClient.invalidateQueries({ queryKey: ['midi'] })
     void queryClient.invalidateQueries({ queryKey: ['midi', 'mappings', 'juce-grid'] })
   }, [queryClient])
-
-  const replaceSnapshotMidiMapMutation = useMutation({
-    mutationFn: async ({
-      snapshotId,
-      entries,
-    }: {
-      snapshotId: number
-      entries: SnapshotMidiMapEntry[]
-    }) => {
-      const response = await snapshotsApi.replaceMidiMap(snapshotId, entries)
-      return normalizeSnapshotAbSwitchMidiSnapshot(
-        normalizeSnapshotFootswitchLabelSnapshot(
-          normalizeSnapshotBlockFocusSnapshot(response, entries),
-          entries,
-        ),
-        entries,
-      )
-    },
-    onSuccess: (snapshot) => {
-      syncSnapshotDetailCaches(snapshot)
-      queryClient.invalidateQueries({ queryKey: ['snapshots'] })
-      pushToast('Snapshot MIDI map updated', 'success')
-    },
-    onError: (error) => {
-      pushToast(error instanceof Error ? error.message : 'Failed to update snapshot MIDI map', 'error')
-    },
-  })
-
-  const updateSnapshotExpressionMappingsMutation = useMutation({
-    mutationFn: async ({
-      snapshotId,
-      mappings,
-    }: {
-      snapshotId: number
-      mappings: SnapshotExpressionMapping[]
-    }) => {
-      const response = await snapshotsApi.update(snapshotId, {
-        controls: {
-          expression_mappings: mappings,
-        },
-      })
-      return normalizeSnapshotExpressionMappingsSnapshot(response.snapshot, mappings)
-    },
-    onSuccess: (snapshot) => {
-      syncSnapshotDetailCaches(snapshot)
-      queryClient.invalidateQueries({ queryKey: ['snapshots'] })
-      pushToast('Snapshot expression mappings updated', 'success')
-    },
-    onError: (error) => {
-      pushToast(error instanceof Error ? error.message : 'Failed to update snapshot expression mappings', 'error')
-    },
-  })
-
-  const updateMidiMappingMutation = useMutation({
-    mutationFn: ({ id, updates }: { id: number; updates: Partial<MIDIMappingV2> }) =>
-      midiApiV2.updateMapping(id, updates),
-    onSuccess: () => {
-      invalidateMidiQueries()
-    },
-    onError: (error) => {
-      pushToast(error instanceof Error ? error.message : 'Failed to update MIDI mapping', 'error')
-    },
-  })
-
-  const deleteMidiMappingMutation = useMutation({
-    mutationFn: (id: number) => midiApiV2.deleteMapping(id),
-    onSuccess: () => {
-      invalidateMidiQueries()
-      pushToast('MIDI mapping deleted', 'info')
-    },
-    onError: (error) => {
-      pushToast(error instanceof Error ? error.message : 'Failed to delete MIDI mapping', 'error')
-    },
-  })
 
   const startMidiLearnMutation = useMutation({
     mutationFn: (params: {
@@ -4436,36 +4023,6 @@ export function SnapshotEditorPage() {
     recordSnapshotUndoRedoStep(nextDraft, 'Remove channel')
   }, [captureCurrentState, flowSlots.length, recordSnapshotUndoRedoStep, setEditorSnapshotState, snapshotEditorMutationDisabled])
 
-  const clearFlows = useCallback(() => {
-    if (snapshotEditorMutationDisabled) {
-      return
-    }
-    // Reset to a single flow (Flow A) with no chain assigned
-    const initialSlot: FlowSlot = {
-      id: `flow-${Date.now()}`,
-      chainId: null,
-      label: SLOT_COLORS[0].label,
-      color: SLOT_COLORS[0].color,
-      muted: false,
-      solo: false,
-      dryWetMix: 100,
-    }
-    const nextDraft = {
-      ...captureCurrentState(),
-      flowSlots: [initialSlot],
-      activeFlowIndex: 0,
-      routing: {
-        ...routing,
-        activeSlotId: initialSlot.id,
-        seriesOrder: [initialSlot.id],
-        blendPositions: { [initialSlot.id]: 100 },
-      },
-    }
-    setEditorSnapshotState(nextDraft)
-    recordSnapshotUndoRedoStep(nextDraft, 'Clear channels')
-    pushToast('Flows cleared', 'info')
-  }, [captureCurrentState, pushToast, recordSnapshotUndoRedoStep, routing, setEditorSnapshotState, snapshotEditorMutationDisabled])
-
   const handleDeletePresetRequest = useCallback((preset: Snapshot) => {
     setPresetPendingDelete(preset)
   }, [])
@@ -4476,11 +4033,6 @@ export function SnapshotEditorPage() {
     }
     deletePresetMutation.mutate(presetPendingDelete.id)
   }, [deletePresetMutation, presetPendingDelete])
-
-  const confirmClearFlows = useCallback(() => {
-    clearFlows()
-    setShowClearFlowsModal(false)
-  }, [clearFlows])
 
   const updateFlow = useCallback((flowId: string, updates: Partial<FlowSlot>) => {
     if (snapshotEditorMutationDisabled) {
@@ -4978,34 +4530,6 @@ export function SnapshotEditorPage() {
     snapshotEditorMutationDisabled,
   ])
 
-  const handleMidiLearnToggle = useCallback(() => {
-    if (midiLearnInProgress) {
-      stopMidiLearnMutation.mutate()
-      return
-    }
-
-    if (midiLearnActive) {
-      setMidiLearnActive(false)
-      return
-    }
-
-    if (!selectedPlugin || !selectedPluginMeta || !currentChain) {
-      pushToast('Select a block before arming MIDI learn', 'warn')
-      return
-    }
-
-    setMidiLearnActive(true)
-    pushToast('MIDI learn armed. Touch a block parameter to bind the next controller message.', 'info')
-  }, [
-    currentChain,
-    midiLearnActive,
-    midiLearnInProgress,
-    pushToast,
-    selectedPlugin,
-    selectedPluginMeta,
-    stopMidiLearnMutation,
-  ])
-
   const handleStartSelectedBlockMidiLearn = useCallback((parameter: PluginParameter) => {
     if (!currentChain || !selectedPlugin) {
       pushToast('Select a block before starting MIDI learn', 'warn')
@@ -5030,51 +4554,6 @@ export function SnapshotEditorPage() {
   const handleStopSelectedBlockMidiLearn = useCallback(() => {
     stopMidiLearnMutation.mutate()
   }, [stopMidiLearnMutation])
-
-  const updateMidiMappingRangeDraft = useCallback((mappingId: number, field: 'min' | 'max', value: string) => {
-    setMidiRangeDrafts((previous) => ({
-      ...previous,
-      [mappingId]: {
-        sourceMin: previous[mappingId]?.sourceMin ?? '',
-        sourceMax: previous[mappingId]?.sourceMax ?? '',
-        min: field === 'min' ? value : previous[mappingId]?.min ?? '',
-        max: field === 'max' ? value : previous[mappingId]?.max ?? '',
-      },
-    }))
-  }, [])
-
-  const commitMidiMappingRange = useCallback((mapping: MIDIMappingV2) => {
-    const draft = midiRangeDrafts[mapping.id]
-    if (!draft) {
-      return
-    }
-
-    const nextMin = parseMidiMappingValue(draft.min, mapping.min_val)
-    const nextMax = parseMidiMappingValue(draft.max, mapping.max_val)
-    const hasChanged = nextMin !== mapping.min_val || nextMax !== mapping.max_val
-
-    setMidiRangeDrafts((previous) => ({
-      ...previous,
-      [mapping.id]: {
-        min: formatMidiMappingValue(nextMin),
-        max: formatMidiMappingValue(nextMax),
-        sourceMin: formatMidiMappingValue(nextMin),
-        sourceMax: formatMidiMappingValue(nextMax),
-      },
-    }))
-
-    if (!hasChanged) {
-      return
-    }
-
-    updateMidiMappingMutation.mutate({
-      id: mapping.id,
-      updates: {
-        min_val: nextMin,
-        max_val: nextMax,
-      },
-    })
-  }, [midiRangeDrafts, updateMidiMappingMutation])
 
   // Parameter handling
   const handleParameterChange = useCallback((symbol: string, value: number) => {
@@ -5308,63 +4787,6 @@ export function SnapshotEditorPage() {
   ])
 
   // Chain operations
-  const handleUpdateLiveChains = useCallback(() => {
-    if (!liveChainMismatch) {
-      pushToast('Live chains already match the editor', 'info')
-      return
-    }
-    submitAuthorityLiveChainSelection({
-      nextActiveChainIds: desiredLiveChainIds,
-      pruneChainIds: authorityLiveChainIds.filter((chainId) => !desiredLiveChainIds.includes(chainId)),
-      requestedBy: 'snapshot_editor_live_paths',
-      successMessage: 'Live chains updated from the editor',
-      successKind: 'success',
-      errorMessage: 'Failed to update live chains',
-    })
-  }, [authorityLiveChainIds, desiredLiveChainIds, liveChainMismatch, pushToast, submitAuthorityLiveChainSelection])
-
-  const handleRevertEditorToLive = useCallback(() => {
-    if (liveChainProjectionOverflow) {
-      pushToast('Live chain count exceeds the editor flow capacity', 'warn')
-      return
-    }
-
-    const revertedState = buildJuceGridRevertedStateFromLiveProjection(
-      liveChainProjection,
-      flowSlots,
-      routing,
-      activeFlowIndex,
-      SLOT_COLORS,
-      MAX_FLOWS,
-    )
-    setFlowSlots(revertedState.flowSlots)
-    setRouting(revertedState.routing)
-    setActiveFlowIndex(revertedState.activeFlowIndex)
-    markSnapshotsDirty()
-    pushToast('Editor reverted to backend live truth', 'success')
-  }, [
-    activeFlowIndex,
-    flowSlots,
-    liveChainProjection,
-    liveChainProjectionOverflow,
-    markSnapshotsDirty,
-    pushToast,
-    routing,
-  ])
-
-  const handleKillLiveChain = useCallback((chainId: number) => {
-    const killedChainName = chains.find((chain) => chain.id === chainId)?.name
-    submitAuthorityLiveChainSelection({
-      nextActiveChainIds: orderChainIdsAgainstEditor(authorityLiveChainIds.filter((currentChainId) => currentChainId !== chainId)),
-      pruneChainIds: [chainId],
-      requestedBy: 'snapshot_editor_kill_live_path',
-      successMessage: killedChainName ? `Killed live path: ${killedChainName}` : 'Killed live path',
-      successKind: 'info',
-      errorMessage: 'Failed to kill live path',
-      markDirty: true,
-    })
-  }, [authorityLiveChainIds, chains, orderChainIdsAgainstEditor, submitAuthorityLiveChainSelection])
-
   const handleToggleChainActive = useCallback(() => {
     if (snapshotEditorMutationDisabled) return
     if (!currentChain) return
@@ -5507,133 +4929,6 @@ export function SnapshotEditorPage() {
     snapshotProgramValue,
     updateActiveSnapshotProgramMutation,
   ])
-
-  const saveSnapshotBlockFocusRange = useCallback(() => {
-    if (!activeSnapshot || blockFocusSaveDisabled) {
-      return
-    }
-
-    const nextRange = {
-      midiChannel: blockFocusMidiChannelDraft === 'omni' ? null : Number.parseInt(blockFocusMidiChannelDraft, 10),
-      startNote: blockFocusStartNote,
-    }
-
-    replaceSnapshotMidiMapMutation.mutate({
-      snapshotId: activeSnapshot.id,
-      entries: replaceSnapshotBlockFocusRange(snapshotMidiEntries, nextRange),
-    })
-  }, [
-    activeSnapshot,
-    blockFocusMidiChannelDraft,
-    blockFocusSaveDisabled,
-    blockFocusStartNote,
-    replaceSnapshotMidiMapMutation,
-    snapshotMidiEntries,
-  ])
-
-  const saveSnapshotAbSwitchMidiBinding = useCallback(() => {
-    if (!activeSnapshot || abSwitchMidiSaveDisabled) {
-      return
-    }
-
-    replaceSnapshotMidiMapMutation.mutate({
-      snapshotId: activeSnapshot.id,
-      entries: replaceSnapshotAbSwitchMidiBinding(snapshotMidiEntries, {
-        messageType: abSwitchMidiMessageTypeDraft,
-        midiChannel: abSwitchMidiChannelDraft === 'omni' ? null : Number.parseInt(abSwitchMidiChannelDraft, 10),
-        number: abSwitchMidiNumberDraft,
-      }),
-    })
-  }, [
-    abSwitchMidiChannelDraft,
-    abSwitchMidiMessageTypeDraft,
-    abSwitchMidiNumberDraft,
-    abSwitchMidiSaveDisabled,
-    activeSnapshot,
-    replaceSnapshotMidiMapMutation,
-    snapshotMidiEntries,
-  ])
-
-  const clearSnapshotAbSwitchMidiBinding = useCallback(() => {
-    if (!activeSnapshot) {
-      return
-    }
-
-    replaceSnapshotMidiMapMutation.mutate({
-      snapshotId: activeSnapshot.id,
-      entries: replaceSnapshotAbSwitchMidiBinding(snapshotMidiEntries, null),
-    })
-  }, [activeSnapshot, replaceSnapshotMidiMapMutation, snapshotMidiEntries])
-
-  const clearSnapshotBlockFocusRange = useCallback(() => {
-    if (!activeSnapshot) {
-      return
-    }
-
-    replaceSnapshotMidiMapMutation.mutate({
-      snapshotId: activeSnapshot.id,
-      entries: replaceSnapshotBlockFocusRange(snapshotMidiEntries, null),
-    })
-  }, [activeSnapshot, replaceSnapshotMidiMapMutation, snapshotMidiEntries])
-
-  const updateFootswitchLabelDraft = useCallback((switchNumber: number, value: string) => {
-    setFootswitchLabelDrafts((current) => ({
-      ...current,
-      [String(switchNumber)]: sanitizeFootswitchLabel(value),
-    }))
-  }, [])
-
-  const saveSnapshotFootswitchLabels = useCallback(() => {
-    if (!activeSnapshot || footswitchLabelsSaveDisabled) {
-      return
-    }
-
-    replaceSnapshotMidiMapMutation.mutate({
-      snapshotId: activeSnapshot.id,
-      entries: replaceSnapshotFootswitchLabelMap(snapshotMidiEntries, footswitchLabelDrafts),
-    })
-  }, [
-    activeSnapshot,
-    footswitchLabelDrafts,
-    footswitchLabelsSaveDisabled,
-    replaceSnapshotMidiMapMutation,
-    snapshotMidiEntries,
-  ])
-
-  const clearSnapshotFootswitchLabels = useCallback(() => {
-    if (!activeSnapshot) {
-      return
-    }
-
-    const emptyDrafts = createEmptyFootswitchLabelDrafts()
-    setFootswitchLabelDrafts(emptyDrafts)
-    replaceSnapshotMidiMapMutation.mutate({
-      snapshotId: activeSnapshot.id,
-      entries: replaceSnapshotFootswitchLabelMap(snapshotMidiEntries, emptyDrafts),
-    })
-  }, [activeSnapshot, replaceSnapshotMidiMapMutation, snapshotMidiEntries])
-
-  const saveSnapshotExpressionMappings = useCallback((mappings: SnapshotExpressionMapping[]) => {
-    if (!activeSnapshot || snapshotEditingLocked) {
-      return
-    }
-
-    updateSnapshotExpressionMappingsMutation.mutate({
-      snapshotId: activeSnapshot.id,
-      mappings: normalizeSnapshotExpressionMappings(mappings),
-    })
-  }, [activeSnapshot, snapshotEditingLocked, updateSnapshotExpressionMappingsMutation])
-
-  const clearSnapshotExpressionMappings = useCallback(() => {
-    if (!activeSnapshot) {
-      return
-    }
-
-    updateSnapshotExpressionMappingsMutation.mutate({
-      snapshotId: activeSnapshot.id,
-      mappings: [],
-    })
-  }, [activeSnapshot, updateSnapshotExpressionMappingsMutation])
 
   // Favorites handling
   const toggleFavorite = useCallback((uri: string) => {
@@ -5988,355 +5283,6 @@ export function SnapshotEditorPage() {
     )
   }
 
-  const renderMidiMappingsWorkspace = (options: { closable: boolean; onClose?: () => void }) => (
-    <div className="juce-grid-page__midi-workspace">
-      <div className="juce-grid-page__midi-header">
-        <div className="juce-grid-page__midi-copy">
-          <div className="juce-grid-page__browser-section-title">
-            <Music size={16} />
-            <span>MIDI mappings</span>
-          </div>
-          <p>Review canonical platform mappings, filter by scope, and arm backend MIDI learn from the grid.</p>
-        </div>
-        <div className="juce-grid-page__compact-actions">
-          <MidiLearnButton
-            isActive={midiLearnActive || midiLearnInProgress}
-            onToggle={handleMidiLearnToggle}
-            position="relative"
-            size="small"
-            mappingCount={midiMappings.length}
-          />
-          <Tag type={midiLearnActive || midiLearnInProgress ? 'green' : 'cool-gray'}>
-            {midiLearnInProgress
-              ? `Learning${lastMidiEvent ? ` · CC ${lastMidiEvent.cc}` : ''}`
-              : midiLearnActive
-                ? 'Learn armed'
-                : 'Learn idle'}
-          </Tag>
-          <Tag type="cool-gray">
-            {midiMappings.length} shown
-            {midiStatus?.mappings_count !== undefined ? ` / ${midiStatus.mappings_count} total` : ''}
-          </Tag>
-          <Button
-            size="sm"
-            kind="tertiary"
-            renderIcon={Launch}
-            onClick={() => {
-              const params = new URLSearchParams()
-              if (activeSnapshot?.id != null) {
-                params.set('snapshotId', String(activeSnapshot.id))
-              }
-              const query = params.toString()
-              navigate(`/midi/assignments${query ? `?${query}` : ''}`)
-            }}
-            title="Open the unified MIDI Assignments page (parameters, snapshot triggers, routing rules, expression pedals, devices)"
-          >
-            MIDI Assignments
-          </Button>
-          {options.closable && options.onClose && (
-            <Button size="sm" kind="ghost" onClick={options.onClose}>
-              Close
-            </Button>
-          )}
-        </div>
-      </div>
-
-      <div className="juce-grid-page__toolbar-buttons">
-        <Button
-          size="sm"
-          kind={midiScope === 'all' ? 'secondary' : 'ghost'}
-          onClick={() => setMidiScope('all')}
-        >
-          All
-        </Button>
-        <Button
-          size="sm"
-          kind={midiScope === 'active-chain' ? 'secondary' : 'ghost'}
-          onClick={() => setMidiScope('active-chain')}
-          disabled={activeFlowChainId === null}
-        >
-          Active chain
-        </Button>
-        <Button
-          size="sm"
-          kind={midiScope === 'selected-plugin' ? 'secondary' : 'ghost'}
-          onClick={() => setMidiScope('selected-plugin')}
-          disabled={!selectedPluginUri}
-        >
-          Selected block
-        </Button>
-      </div>
-
-      <div className="juce-grid-page__compact-actions">
-        <Tag type="cool-gray">{midiScopeLabel}</Tag>
-        {midiLearnInProgress && midiLearnStatus?.target && (
-          <Tag type="green">
-            Target {midiLearnStatus.target.parameter_symbol || `#${midiLearnStatus.target.parameter_index}`}
-          </Tag>
-        )}
-      </div>
-
-      {routing.mode === 'ab_switch' ? (
-        <SnapshotAbSwitchMidiCard
-          hasActiveSnapshot={Boolean(activeSnapshot)}
-          disabled={!activeSnapshot || snapshotEditingLocked}
-          isPending={replaceSnapshotMidiMapMutation.isPending}
-          binding={snapshotAbSwitchMidiBinding}
-          draftMessageType={abSwitchMidiMessageTypeDraft}
-          draftMidiChannel={abSwitchMidiChannelDraft}
-          draftNumber={abSwitchMidiNumberDraft}
-          onDraftMessageTypeChange={setAbSwitchMidiMessageTypeDraft}
-          onDraftMidiChannelChange={setAbSwitchMidiChannelDraft}
-          onDraftNumberChange={setAbSwitchMidiNumberDraft}
-          onSave={saveSnapshotAbSwitchMidiBinding}
-          onClear={clearSnapshotAbSwitchMidiBinding}
-          saveDisabled={abSwitchMidiSaveDisabled}
-        />
-      ) : null}
-
-      <Tile className="juce-grid-page__midi-block-focus-card">
-        <div className="juce-grid-page__midi-tile-header">
-          <div className="juce-grid-page__midi-tile-copy">
-            <h3 className="juce-grid-page__dense-card-heading">Block focus</h3>
-            <p>Map incoming MIDI notes to block positions in the active chain and open the parameter editor on receipt.</p>
-          </div>
-          <div className="juce-grid-page__compact-tags">
-            <Tag type={snapshotBlockFocusRange ? 'green' : 'cool-gray'}>
-              {snapshotBlockFocusRange ? 'Configured' : 'Not configured'}
-            </Tag>
-            <Tag type="cool-gray">
-              {currentChain ? `${activeChainDisplayName} - ${blockFocusPlugins.length} blocks` : 'No active chain'}
-            </Tag>
-          </div>
-        </div>
-
-        <div className="juce-grid-page__midi-block-focus-grid">
-          <Select
-            id="juce-grid-block-focus-channel"
-            labelText="MIDI channel"
-            value={blockFocusMidiChannelDraft}
-            onChange={(event) => setBlockFocusMidiChannelDraft(event.target.value)}
-            disabled={!activeSnapshot || snapshotEditingLocked}
-          >
-            <SelectItem value="omni" text="Omni" />
-            {Array.from({ length: 16 }, (_, index) => (
-              <SelectItem
-                key={`juce-grid-block-focus-channel-${index + 1}`}
-                value={String(index + 1)}
-                text={`Channel ${index + 1}`}
-              />
-            ))}
-          </Select>
-          <NumberInput
-            label="Start note"
-            value={blockFocusStartNote}
-            min={0}
-            max={127}
-            step={1}
-            precision={0}
-            showBounds={false}
-            disabled={!activeSnapshot || snapshotEditingLocked}
-            onChange={(nextValue) => setBlockFocusStartNoteDraft(Math.max(0, Math.min(127, Math.round(nextValue))))}
-          />
-        </div>
-
-        <div className="juce-grid-page__midi-actions">
-          <div className="juce-grid-page__compact-tags">
-            <Tag type="cool-gray">
-              {blockFocusMidiChannelDraft === 'omni' ? 'Omni' : `Ch ${blockFocusMidiChannelDraft}`}
-            </Tag>
-            {blockFocusPlugins.length > 0 && (
-              <Tag type={blockFocusStartNoteOverflow ? 'red' : 'green'}>
-                {formatMidiNoteLabel(blockFocusStartNote)} - {formatMidiNoteLabel(Math.min(127, blockFocusStartNote + blockFocusPlugins.length - 1))}
-              </Tag>
-            )}
-          </div>
-          <div className="juce-grid-page__compact-actions">
-            <Button
-              size="sm"
-              kind="ghost"
-              onClick={clearSnapshotBlockFocusRange}
-              disabled={!activeSnapshot || replaceSnapshotMidiMapMutation.isPending || !snapshotBlockFocusRange}
-            >
-              Clear
-            </Button>
-            <Button
-              size="sm"
-              kind="secondary"
-              onClick={saveSnapshotBlockFocusRange}
-              disabled={blockFocusSaveDisabled || replaceSnapshotMidiMapMutation.isPending}
-            >
-              {replaceSnapshotMidiMapMutation.isPending ? 'Saving...' : 'Save'}
-            </Button>
-          </div>
-        </div>
-
-        {!activeSnapshot ? (
-          <p className="juce-grid-page__empty-state-copy">
-            Load a snapshot to configure block-focus note mapping.
-          </p>
-        ) : blockFocusPlugins.length === 0 ? (
-          <p className="juce-grid-page__empty-state-copy">
-            Select a chain with blocks before assigning block-focus notes.
-          </p>
-        ) : blockFocusStartNoteOverflow ? (
-          <p className="juce-grid-page__flow-card-error">
-            Start note must be {maxBlockFocusStartNote} or lower for the current chain length.
-          </p>
-        ) : (
-          <div className="juce-grid-page__midi-block-focus-preview" role="list" aria-label="Block focus preview">
-            {blockFocusPreview.map((item, index) => (
-              <div key={item.key} className="juce-grid-page__midi-block-focus-preview-item" role="listitem">
-                <span className="juce-grid-page__midi-block-focus-preview-note">
-                  {formatMidiNoteLabel(item.note)}
-                </span>
-                <span className="juce-grid-page__midi-block-focus-preview-label">
-                  Block {index + 1} - {item.blockLabel}
-                </span>
-              </div>
-            ))}
-          </div>
-        )}
-      </Tile>
-
-      <SnapshotFootswitchLabelCard
-        hasActiveSnapshot={Boolean(activeSnapshot)}
-        disabled={!activeSnapshot || snapshotEditingLocked}
-        isPending={replaceSnapshotMidiMapMutation.isPending}
-        labelMap={footswitchLabelDrafts}
-        onChange={updateFootswitchLabelDraft}
-        onSave={saveSnapshotFootswitchLabels}
-        onClear={clearSnapshotFootswitchLabels}
-        saveDisabled={footswitchLabelsSaveDisabled}
-      />
-
-      <SnapshotExpressionMappingsCard
-        hasActiveSnapshot={Boolean(activeSnapshot)}
-        disabled={!activeSnapshot || snapshotEditingLocked}
-        isPending={updateSnapshotExpressionMappingsMutation.isPending}
-        mappings={snapshotExpressionMappings}
-        availableParameters={expressionEngineParametersQuery.data?.parameters ?? []}
-        onSave={saveSnapshotExpressionMappings}
-        onClear={clearSnapshotExpressionMappings}
-      />
-
-      {midiMappingsQuery.isLoading ? (
-        <LoadingState className="juce-grid-page__empty-state" description="Loading MIDI mappings" />
-      ) : midiMappingsQuery.isError ? (
-        <EmptyState
-          className="juce-grid-page__empty-state"
-          title="Unable to load MIDI mappings"
-          description={midiMappingsQuery.error instanceof Error ? midiMappingsQuery.error.message : 'The MIDI API did not return a mapping list.'}
-        />
-      ) : midiMappings.length === 0 ? (
-        <EmptyState
-          className="juce-grid-page__empty-state"
-          title="No MIDI mappings in this scope"
-          description={midiLearnActive
-            ? 'Touch a block parameter to start canonical MIDI learn for the selected processor.'
-            : 'Arm MIDI Learn, then touch a block parameter, or use the MIDI window for full mapping authoring.'}
-        />
-      ) : (
-        <div className="juce-grid-page__midi-list">
-          {midiMappings.map((mapping, index) => (
-            <Tile
-              key={mapping.id}
-              className="juce-grid-page__midi-tile"
-              data-stripe-tone={index % 2 === 0 ? 'base' : 'alt'}
-            >
-              <div className="juce-grid-page__midi-tile-header">
-                <div className="juce-grid-page__midi-tile-copy">
-                  <h3 className="juce-grid-page__dense-card-heading">{getMidiMappingParameterName(mapping)}</h3>
-                  <p>{sanitizeRestrictedDisplayText(getMidiMappingPluginName(mapping.target_plugin_uri)) || 'Processor'}</p>
-                </div>
-                <div className="juce-grid-page__compact-tags">
-                  <Tag type="purple">CC {mapping.cc}</Tag>
-                  <Tag type="cool-gray">Ch {mapping.channel}</Tag>
-                  <Tag type={mapping.chain_id === null ? 'cool-gray' : 'blue'}>
-                    {mapping.chain_id === null ? 'Global' : `Chain ${mapping.chain_id}`}
-                  </Tag>
-                  <Tag type={mapping.is_enabled ? 'green' : 'warm-gray'}>
-                    {mapping.is_enabled ? 'Enabled' : 'Disabled'}
-                  </Tag>
-                  <Tag type="cool-gray">{MIDI_CURVE_LABELS[mapping.curve_type]}</Tag>
-                  {mapping.invert && <Tag type="warm-gray">Inverted</Tag>}
-                </div>
-              </div>
-
-              <div className="juce-grid-page__midi-range-grid">
-                <NumberInput
-                  label="Min"
-                  value={Number(midiRangeDrafts[mapping.id]?.min ?? mapping.min_val)}
-                  min={-100000}
-                  max={100000}
-                  step={0.01}
-                  precision={2}
-                  showBounds={false}
-                  onChange={(nextValue) => updateMidiMappingRangeDraft(mapping.id, 'min', String(nextValue))}
-                  onChangeEnd={() => commitMidiMappingRange(mapping)}
-                />
-                <NumberInput
-                  label="Max"
-                  value={Number(midiRangeDrafts[mapping.id]?.max ?? mapping.max_val)}
-                  min={-100000}
-                  max={100000}
-                  step={0.01}
-                  precision={2}
-                  showBounds={false}
-                  onChange={(nextValue) => updateMidiMappingRangeDraft(mapping.id, 'max', String(nextValue))}
-                  onChangeEnd={() => commitMidiMappingRange(mapping)}
-                />
-              </div>
-
-              <Select
-                id={`juce-grid-midi-curve-${mapping.id}`}
-                labelText="Curve"
-                value={mapping.curve_type}
-                onChange={(event) => updateMidiMappingMutation.mutate({
-                  id: mapping.id,
-                  updates: { curve_type: event.target.value as MIDIMappingV2['curve_type'] },
-                })}
-              >
-                <SelectItem value="linear" text="Linear" />
-                <SelectItem value="logarithmic" text="Logarithmic" />
-                <SelectItem value="exponential" text="Exponential" />
-                <SelectItem value="s_curve" text="S-Curve" />
-              </Select>
-
-              <div className="juce-grid-page__midi-actions">
-                <Checkbox
-                  id={`juce-grid-midi-enabled-${mapping.id}`}
-                  labelText="Enabled"
-                  checked={mapping.is_enabled}
-                  onChange={(_, data) => updateMidiMappingMutation.mutate({
-                    id: mapping.id,
-                    updates: { is_enabled: Boolean(data.checked) },
-                  })}
-                />
-                <Checkbox
-                  id={`juce-grid-midi-invert-${mapping.id}`}
-                  labelText="Invert response"
-                  checked={mapping.invert}
-                  onChange={(_, data) => updateMidiMappingMutation.mutate({
-                    id: mapping.id,
-                    updates: { invert: Boolean(data.checked) },
-                  })}
-                />
-                <Button
-                  size="sm"
-                  kind="danger--tertiary"
-                  onClick={() => deleteMidiMappingMutation.mutate(mapping.id)}
-                >
-                  Delete
-                </Button>
-              </div>
-            </Tile>
-          ))}
-        </div>
-      )}
-    </div>
-  )
-
   const formatAutomationTime = useCallback((seconds: number) => {
     const minutes = Math.floor(seconds / 60)
     const wholeSeconds = Math.floor(seconds % 60)
@@ -6602,13 +5548,7 @@ export function SnapshotEditorPage() {
             else if (showRenameChainModal) setShowRenameChainModal(false)
             else if (pendingTabletDeletePlugin) setPendingTabletDeletePlugin(null)
             else if (presetPendingDelete) setPresetPendingDelete(null)
-            else if (showClearFlowsModal) setShowClearFlowsModal(false)
-            else if (showPerformModal) closePerformWorkspace()
-            else if (showAudioNodesModal) closeAudioRoutingWorkspace()
-            else if (showProgressModal) setShowProgressModal(false)
-            else if (showLiveRuntimeModal) closeLiveRuntimeWorkspace()
             else if (showVersionHistoryModal) closeVersionHistoryWorkspace()
-            else if (midiModalOpen) closeMidiMappingsWorkspace()
             else if (routingInspectorId) setRoutingInspectorId(null)
           }
         return
@@ -6761,13 +5701,7 @@ export function SnapshotEditorPage() {
         else if (showRenameChainModal) setShowRenameChainModal(false)
         else if (pendingTabletDeletePlugin) setPendingTabletDeletePlugin(null)
         else if (presetPendingDelete) setPresetPendingDelete(null)
-        else if (showClearFlowsModal) setShowClearFlowsModal(false)
-        else if (showPerformModal) closePerformWorkspace()
-        else if (showAudioNodesModal) closeAudioRoutingWorkspace()
-        else if (showProgressModal) setShowProgressModal(false)
-        else if (showLiveRuntimeModal) closeLiveRuntimeWorkspace()
         else if (showVersionHistoryModal) closeVersionHistoryWorkspace()
-        else if (midiModalOpen) closeMidiMappingsWorkspace()
         else if (routingInspectorId) setRoutingInspectorId(null)
         else if (showPluginBrowser) setShowPluginBrowser(false)
         else if (showPresetBrowser) setShowPresetBrowser(false)
@@ -6786,11 +5720,11 @@ export function SnapshotEditorPage() {
     snapshotUndoRedo.canUndo, snapshotUndoRedo.canRedo, undoMutation, redoMutation, selectedPlugin, currentChain,
     deleteMutation, selectedPluginUri, selectedPluginMeta,
     flowSlots, showSavePresetModal, editingSnapshotName, showRenameChainModal, pendingTabletDeletePlugin, presetPendingDelete,
-    showClearFlowsModal, showPerformModal, showAudioNodesModal, showProgressModal, showLiveRuntimeModal, showVersionHistoryModal, midiModalOpen, routingInspectorId, showPluginBrowser,
+    showVersionHistoryModal, routingInspectorId, showPluginBrowser,
     showPresetBrowser, showKeyboardHelp, detailsPlugin, effectModalOpen, isTabletTouchLayout, tabletEditorOpen,
     handleDeletePlugin, handleSavePreset, handleToggleBypass, toggleFavorite, selectFlowIndex, openSelectedBlockEditor, moveSelectedPlugin, pushToast, setSelectedPluginSelection,
     goToPreviousSnapshot, goToNextSnapshot, cancelRenameSnapshot, createCapturedSnapshot,
-    closeAudioRoutingWorkspace, closePerformWorkspace, closeLiveRuntimeWorkspace, closeVersionHistoryWorkspace, closeMidiMappingsWorkspace,
+    closeVersionHistoryWorkspace,
     snapshotEditingLocked, snapshotEntryRequired,
   ])
 
@@ -7715,14 +6649,7 @@ export function SnapshotEditorPage() {
         isDeletePresetPending={deletePresetMutation.isPending}
         onClosePresetDelete={() => setPresetPendingDelete(null)}
         onConfirmDeletePreset={confirmDeletePreset}
-        showClearFlowsModal={showClearFlowsModal}
-        onCloseClearFlows={() => setShowClearFlowsModal(false)}
-        onConfirmClearFlows={confirmClearFlows}
       />
-      <SnapshotEditorMidiMappingsModal open={midiModalOpen} onClose={closeMidiMappingsWorkspace}>
-        {renderMidiMappingsWorkspace({ closable: false })}
-      </SnapshotEditorMidiMappingsModal>
-
       <SnapshotEditorRoutingInspector
         content={routingInspectorContent}
         onClose={() => setRoutingInspectorId(null)}
@@ -7871,23 +6798,6 @@ export function SnapshotEditorPage() {
           const label = portSelectorFlowIndex !== null ? SLOT_COLORS[portSelectorFlowIndex]?.label : ''
           pushToast(`Flow ${label} port routing updated`, 'success')
         }}
-      />
-
-      <SnapshotEditorWorkspaceModals
-        showPerformModal={showPerformModal}
-        onClosePerformWorkspace={closePerformWorkspace}
-        showAudioNodesModal={showAudioNodesModal}
-        onCloseAudioRoutingWorkspace={closeAudioRoutingWorkspace}
-        showLiveRuntimeModal={showLiveRuntimeModal}
-        onCloseLiveRuntimeWorkspace={closeLiveRuntimeWorkspace}
-        liveChainProjection={liveChainProjection}
-        showLiveChainSummaryOnly={showLiveChainSummaryOnly}
-        liveChainMismatch={liveChainMismatch}
-        liveChainProjectionOverflow={liveChainProjectionOverflow}
-        onUpdateLiveChains={handleUpdateLiveChains}
-        onRevertEditorToLive={handleRevertEditorToLive}
-        updateAuthorityLivePending={updateAuthorityLiveChainsMutation.isPending}
-        onKillLiveChain={handleKillLiveChain}
       />
 
     </div>

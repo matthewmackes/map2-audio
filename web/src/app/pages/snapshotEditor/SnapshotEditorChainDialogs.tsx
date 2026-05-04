@@ -47,9 +47,9 @@ export interface SnapshotEditorChainDialogsProps {
   onConfirmDeletePreset: () => void
 
   // Clear flows confirm
-  showClearFlowsModal: boolean
-  onCloseClearFlows: () => void
-  onConfirmClearFlows: () => void
+  showClearFlowsModal?: boolean
+  onCloseClearFlows?: () => void
+  onConfirmClearFlows?: () => void
 }
 
 export function SnapshotEditorChainDialogs({
@@ -77,7 +77,7 @@ export function SnapshotEditorChainDialogs({
   isDeletePresetPending,
   onClosePresetDelete,
   onConfirmDeletePreset,
-  showClearFlowsModal,
+  showClearFlowsModal = false,
   onCloseClearFlows,
   onConfirmClearFlows,
 }: SnapshotEditorChainDialogsProps) {
@@ -117,8 +117,8 @@ export function SnapshotEditorChainDialogs({
       />
       <SnapshotEditorClearFlowsConfirm
         open={showClearFlowsModal}
-        onClose={onCloseClearFlows}
-        onConfirm={onConfirmClearFlows}
+        onClose={onCloseClearFlows ?? (() => {})}
+        onConfirm={onConfirmClearFlows ?? (() => {})}
       />
     </>
   )
