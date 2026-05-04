@@ -98,26 +98,26 @@ export function UpdateProgressViewer({ updateId }: { updateId?: string }) {
   const getStatusIcon = (status: string) => {
     switch (status) {
       case 'success':
-        return <CheckCircle size={16} style={{ color: '#00ff41' }} />
+        return <CheckCircle size={16} style={{ color: 'var(--cds-support-success)' }} />
       case 'failed':
-        return <XCircle size={16} style={{ color: '#ff3333' }} />
+        return <XCircle size={16} style={{ color: 'var(--cds-support-error)' }} />
       case 'running':
-        return <ArrowsClockwise size={16} style={{ color: '#2563eb' }} className="animate-spin" />
+        return <ArrowsClockwise size={16} style={{ color: 'var(--cds-interactive)' }} className="animate-spin" />
       default:
-        return <Pause size={16} style={{ color: '#6b7280' }} />
+        return <Pause size={16} style={{ color: 'var(--cds-text-helper)' }} />
     }
   }
 
   const getStageIcon = (status: string) => {
     switch (status) {
       case 'completed':
-        return <CheckCircle size={16} style={{ color: '#00ff41' }} />
+        return <CheckCircle size={16} style={{ color: 'var(--cds-support-success)' }} />
       case 'failed':
-        return <XCircle size={16} style={{ color: '#ff3333' }} />
+        return <XCircle size={16} style={{ color: 'var(--cds-support-error)' }} />
       case 'running':
-        return <ArrowsClockwise size={16} style={{ color: '#2563eb' }} className="animate-spin" />
+        return <ArrowsClockwise size={16} style={{ color: 'var(--cds-interactive)' }} className="animate-spin" />
       default:
-        return <Pause size={16} style={{ color: '#6b7280' }} />
+        return <Pause size={16} style={{ color: 'var(--cds-text-helper)' }} />
     }
   }
 
@@ -133,10 +133,10 @@ export function UpdateProgressViewer({ updateId }: { updateId?: string }) {
         }}
       >
         <h2 style={{ margin: 0, fontSize: 20, fontWeight: 700 }}>Cluster Update Progress Monitor</h2>
-        <div style={{ marginTop: 8, fontSize: 13, color: '#9ca3af' }}>
+        <div style={{ marginTop: 8, fontSize: 13, color: 'var(--cds-text-secondary)' }}>
           Update ID: {updateId || 'N/A'}
         </div>
-        <div style={{ marginTop: 8, fontSize: 12, color: '#6b7280' }}>
+        <div style={{ marginTop: 8, fontSize: 12, color: 'var(--cds-text-helper)' }}>
           Auto-refresh: {autoRefresh ? 'ON' : 'OFF'}
         </div>
       </div>
@@ -158,8 +158,8 @@ export function UpdateProgressViewer({ updateId }: { updateId?: string }) {
             textAlign: 'center',
           }}
         >
-          <div style={{ fontSize: 24, fontWeight: 700, color: '#2563eb' }}>{stats.total}</div>
-          <div style={{ fontSize: 12, color: '#9ca3af', marginTop: 4 }}>Total Nodes</div>
+          <div style={{ fontSize: 24, fontWeight: 700, color: 'var(--cds-interactive)' }}>{stats.total}</div>
+          <div style={{ fontSize: 12, color: 'var(--cds-text-secondary)', marginTop: 4 }}>Total Nodes</div>
         </div>
 
         <div
@@ -171,8 +171,8 @@ export function UpdateProgressViewer({ updateId }: { updateId?: string }) {
             textAlign: 'center',
           }}
         >
-          <div style={{ fontSize: 24, fontWeight: 700, color: '#00ff41' }}>{stats.completed}</div>
-          <div style={{ fontSize: 12, color: '#9ca3af', marginTop: 4 }}>Completed</div>
+          <div style={{ fontSize: 24, fontWeight: 700, color: 'var(--cds-support-success)' }}>{stats.completed}</div>
+          <div style={{ fontSize: 12, color: 'var(--cds-text-secondary)', marginTop: 4 }}>Completed</div>
         </div>
 
         <div
@@ -184,8 +184,8 @@ export function UpdateProgressViewer({ updateId }: { updateId?: string }) {
             textAlign: 'center',
           }}
         >
-          <div style={{ fontSize: 24, fontWeight: 700, color: '#ff3333' }}>{stats.failed}</div>
-          <div style={{ fontSize: 12, color: '#9ca3af', marginTop: 4 }}>Failed</div>
+          <div style={{ fontSize: 24, fontWeight: 700, color: 'var(--cds-support-error)' }}>{stats.failed}</div>
+          <div style={{ fontSize: 12, color: 'var(--cds-text-secondary)', marginTop: 4 }}>Failed</div>
         </div>
 
         <div
@@ -200,7 +200,7 @@ export function UpdateProgressViewer({ updateId }: { updateId?: string }) {
           <div style={{ fontSize: 24, fontWeight: 700 }}>
             {stats.total > 0 ? Math.round((stats.completed / stats.total) * 100) : 0}%
           </div>
-          <div style={{ fontSize: 12, color: '#9ca3af', marginTop: 4 }}>Overall Progress</div>
+          <div style={{ fontSize: 12, color: 'var(--cds-text-secondary)', marginTop: 4 }}>Overall Progress</div>
         </div>
       </div>
 
@@ -229,7 +229,7 @@ export function UpdateProgressViewer({ updateId }: { updateId?: string }) {
               background: '#0a0a0a',
               border: '1px solid #222222',
               borderRadius: 8,
-              color: '#6b7280',
+              color: 'var(--cds-text-helper)',
             }}
           >
             No update in progress
@@ -257,23 +257,23 @@ export function UpdateProgressViewer({ updateId }: { updateId?: string }) {
                   {getStatusIcon(node.status)}
                   <div>
                     <div style={{ fontSize: 15, fontWeight: 700 }}>{node.node_id}</div>
-                    <div style={{ fontSize: 12, color: '#6b7280', marginTop: 2 }}>
+                    <div style={{ fontSize: 12, color: 'var(--cds-text-helper)', marginTop: 2 }}>
                       Status: {node.status.toUpperCase()}
                     </div>
                   </div>
                 </div>
 
                 <div style={{ textAlign: 'right' }}>
-                  <div style={{ fontSize: 20, fontWeight: 700, color: '#2563eb' }}>
+                  <div style={{ fontSize: 20, fontWeight: 700, color: 'var(--cds-interactive)' }}>
                     {node.progress_percent}%
                   </div>
-                  <div style={{ fontSize: 11, color: '#6b7280' }}>Overall</div>
+                  <div style={{ fontSize: 11, color: 'var(--cds-text-helper)' }}>Overall</div>
                 </div>
               </div>
 
               {/* Current Stage */}
               <div style={{ marginBottom: 12, padding: 12, background: 'rgba(37, 99, 235, 0.05)', borderRadius: 6 }}>
-                <div style={{ fontSize: 12, color: '#2563eb', fontWeight: 600 }}>
+                <div style={{ fontSize: 12, color: 'var(--cds-interactive)', fontWeight: 600 }}>
                   Current Stage: {node.current_stage || 'N/A'}
                 </div>
               </div>
@@ -320,7 +320,7 @@ export function UpdateProgressViewer({ updateId }: { updateId?: string }) {
                         />
                       </div>
                     </div>
-                    <div style={{ fontSize: 12, color: '#6b7280', minWidth: 40, textAlign: 'right' }}>
+                    <div style={{ fontSize: 12, color: 'var(--cds-text-helper)', minWidth: 40, textAlign: 'right' }}>
                       {stage.progress}%
                     </div>
                   </div>
@@ -339,12 +339,12 @@ export function UpdateProgressViewer({ updateId }: { updateId?: string }) {
                   }}
                 >
                   <div style={{ display: 'flex', gap: 8, alignItems: 'flex-start' }}>
-                    <Warning size={16} style={{ color: '#ff3333', marginTop: 2 }} />
+                    <Warning size={16} style={{ color: 'var(--cds-support-error)', marginTop: 2 }} />
                     <div>
-                      <div style={{ fontSize: 12, fontWeight: 600, color: '#ff3333', marginBottom: 4 }}>
+                      <div style={{ fontSize: 12, fontWeight: 600, color: 'var(--cds-support-error)', marginBottom: 4 }}>
                         ERROR
                       </div>
-                      <div style={{ fontSize: 12, color: '#ff9999' }}>{node.error}</div>
+                      <div style={{ fontSize: 12, color: 'var(--cds-support-error)' }}>{node.error}</div>
                     </div>
                   </div>
                 </div>
@@ -369,7 +369,7 @@ export function UpdateProgressViewer({ updateId }: { updateId?: string }) {
           }}
         >
           {logs.length === 0 ? (
-            <div style={{ color: '#6b7280', textAlign: 'center', padding: 20 }}>No events yet</div>
+            <div style={{ color: 'var(--cds-text-helper)', textAlign: 'center', padding: 20 }}>No events yet</div>
           ) : (
             logs.map((log, idx) => (
               <div
@@ -381,7 +381,7 @@ export function UpdateProgressViewer({ updateId }: { updateId?: string }) {
                   fontFamily: 'var(--font-mono)',
                 }}
               >
-                <span style={{ color: '#6b7280' }}>[{log.time}]</span>{' '}
+                <span style={{ color: 'var(--cds-text-helper)' }}>[{log.time}]</span>{' '}
                 <span
                   style={{
                     color:
