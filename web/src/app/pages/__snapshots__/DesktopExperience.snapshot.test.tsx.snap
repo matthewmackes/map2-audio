@@ -1873,13 +1873,15 @@ exports[`Desktop experience visual snapshots matches the boot splash shell 1`] =
                     </span>
                     <span
                       class="map2x-tag"
+                      title="Open patch / snapshot"
                     >
-                      Snapshot 30
+                      0 nodes online
                     </span>
                     <span
                       class="map2x-tag"
+                      title="Last session revision"
                     >
-                      Rev cb6a04…
+                      No live snapshot
                     </span>
                   </div>
                 </div>
@@ -6431,13 +6433,15 @@ exports[`Desktop experience visual snapshots matches the desktop shell after boo
                     </span>
                     <span
                       class="map2x-tag"
+                      title="Open patch / snapshot"
                     >
-                      Snapshot 30
+                      0 nodes online
                     </span>
                     <span
                       class="map2x-tag"
+                      title="Last session revision"
                     >
-                      Rev cb6a04…
+                      No live snapshot
                     </span>
                   </div>
                 </div>
