@@ -210,6 +210,19 @@ class AvbRouter:
 
         self._running = True
 
+        # T2496-3 — hydrate the in-memory connections cache from the
+        # canonical AvbBindingAuthority before any discovery/auto-connect
+        # work runs. The authority is the source of truth for which
+        # talker→listener pairings are durable; the dict is a transient
+        # cache that this method rebuilds.
+        try:
+            await self._reconcile_connections_from_authority()
+        except Exception as exc:  # noqa: BLE001 — defensive
+            logger.warning(
+                "AvbRouter: authority reconciliation failed at start: %s",
+                exc,
+            )
+
         # Start discovery
         self._discovery_task = asyncio.create_task(self._discovery_loop())
 
@@ -220,6 +233,130 @@ class AvbRouter:
             self._auto_connect_task = asyncio.create_task(self._auto_connect_startup())
 
         logger.info("AVB Router started")
+
+    async def _reconcile_connections_from_authority(self) -> int:
+        """T2496-3 — rebuild `self.connections` from durable
+        `AvbBindingAuthority` rows tagged `source="avb_router"`.
+
+        Returns the number of connections hydrated. Any binding whose
+        descriptor cannot be mapped back to talker/listener endpoints
+        is logged and skipped so a single bad row doesn't poison the
+        whole reconciliation.
+
+        Defensive: if the DB is unreachable, the method logs and returns
+        0 — the router stays operational with whatever is already in
+        the in-memory dict.
+        """
+        from app.database import get_session
+        from app.services.avb.binding_authority import AvbBindingAuthority
+        from app.services.avb.router_authority_writer import (
+            ROUTER_WRITER_SOURCE,
+        )
+
+        hydrated = 0
+        try:
+            async with get_session(read_only=True) as session:
+                authority = AvbBindingAuthority(session)
+                rows = await authority.list_in_scope(
+                    "global",
+                    None,
+                    enabled_only=False,
+                )
+                rows.extend(
+                    await authority.list_for_cluster_pair(
+                        None,
+                        None,
+                        enabled_only=False,
+                    )
+                )
+        except Exception as exc:  # noqa: BLE001 — defensive
+            logger.warning(
+                "AvbRouter: could not load authority rows for reconcile: %s",
+                exc,
+            )
+            return 0
+
+        seen: set[str] = set()
+        for row in rows:
+            if row.consumer_type != "avdecc_stream":
+                continue
+            if row.source not in (ROUTER_WRITER_SOURCE, "acmp_persisted"):
+                continue
+            consumer_id = row.consumer_id
+            if consumer_id in seen:
+                continue
+            seen.add(consumer_id)
+
+            try:
+                connection = self._connection_from_authority_row(row)
+            except Exception as exc:  # noqa: BLE001 — defensive
+                logger.warning(
+                    "AvbRouter: skipping authority row %s during reconcile: %s",
+                    row.binding_id,
+                    exc,
+                )
+                continue
+
+            self.connections[connection.connection_id()] = connection
+            hydrated += 1
+
+        if hydrated:
+            logger.info(
+                "AvbRouter: reconciled %d connection(s) from AvbBindingAuthority",
+                hydrated,
+            )
+        return hydrated
+
+    @staticmethod
+    def _connection_from_authority_row(row) -> "StreamConnection":
+        """Translate an `AvbBindingRead` back into a `StreamConnection`.
+
+        Inverse of `router_authority_writer._build_create_payload`.
+        Used during T2496-3 reconciliation to repopulate the in-memory
+        cache from durable rows.
+        """
+        src = row.source_descriptor or {}
+        tgt = row.target_descriptor or {}
+
+        talker = AudioEndpoint(
+            entity_id=str(src.get("talker_entity_id", "")),
+            unique_id=int(src.get("talker_unique_id", 0)),
+            direction=StreamDirection.TALKER,
+            device_type=str(src.get("device_type", "avdecc")),
+            device_name=row.consumer_label.split(" → ")[0]
+            if " → " in row.consumer_label
+            else row.consumer_label,
+            channels=int(src.get("channels", 0) or 0),
+            sample_rate=int(src.get("sample_rate", 0) or 0),
+            format=row.stream_format or "24-bit PCM",
+            node_id=row.talker_node_id,
+        )
+        listener = AudioEndpoint(
+            entity_id=str(tgt.get("listener_entity_id", "")),
+            unique_id=int(tgt.get("listener_unique_id", 0)),
+            direction=StreamDirection.LISTENER,
+            device_type=str(tgt.get("device_type", "avdecc")),
+            device_name=row.consumer_label.split(" → ")[1]
+            if " → " in row.consumer_label
+            else row.consumer_label,
+            channels=int(tgt.get("channels", 0) or 0),
+            sample_rate=int(tgt.get("sample_rate", 0) or 0),
+            format=row.stream_format or "24-bit PCM",
+            node_id=row.listener_node_id,
+        )
+
+        meta = row.metadata or {}
+        return StreamConnection(
+            talker=talker,
+            listener=listener,
+            state=ConnectionState.CONNECTED if row.enabled else ConnectionState.DISCONNECTED,
+            established_time=row.created_at,
+            connection_role=str(meta.get("connection_role") or "general_route"),
+            loop_id=meta.get("loop_id"),
+            srp_admission_id=meta.get("srp_admission_id"),
+            srp_reservation_id=meta.get("srp_reservation_id"),
+            authority_binding_id=row.binding_id,
+        )
 
     async def stop(self):
         """Stop router services"""
