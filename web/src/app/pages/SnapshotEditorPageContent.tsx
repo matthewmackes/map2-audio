@@ -326,6 +326,7 @@ import {
 import { useSnapshotEditorMidiMutations } from './snapshotEditor/useSnapshotEditorMidiMutations'
 import { useSnapshotEditorPresetMutations } from './snapshotEditor/useSnapshotEditorPresetMutations'
 import { useSnapshotEditorUndoRedoMutations } from './snapshotEditor/useSnapshotEditorUndoRedoMutations'
+import { useSnapshotEditorHeroPublishMutations } from './snapshotEditor/useSnapshotEditorHeroPublishMutations'
 import { FEATURED_NATIVE_BROWSER_GROUPS } from './snapshotEditor/featuredNativeBrowserGroups'
 import {
   createBlankSnapshotEditorDraft,
@@ -2110,55 +2111,12 @@ export function SnapshotEditorPage() {
   })
   const heroPublishReadiness = heroPublishReadinessQuery.data ?? null
 
-  const heroConfirmPublishMutation = useMutation({
-    mutationFn: async () => {
-      if (!activeSnapshot) throw new Error('No active snapshot')
-      return snapshotsApi.activate(activeSnapshot.id)
-    },
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ['snapshots', 'publish-readiness', activeSnapshot?.id ?? null] })
-      void queryClient.invalidateQueries({ queryKey: ['snapshots', 'detail', activeSnapshot?.id ?? null] })
-      pushToast('Publish confirmed', 'success')
-    },
-    onError: (error) => {
-      pushToast(error instanceof Error ? error.message : 'Failed to confirm publish', 'error')
-    },
-  })
-
-  const heroReconcilePublishMutation = useMutation({
-    mutationFn: async () => {
-      if (!activeSnapshot) throw new Error('No active snapshot')
-      return snapshotsApi.retryPublish(activeSnapshot.id)
-    },
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ['snapshots', 'publish-readiness', activeSnapshot?.id ?? null] })
-      void queryClient.invalidateQueries({ queryKey: ['snapshots', 'detail', activeSnapshot?.id ?? null] })
-      pushToast('Reconcile started', 'success')
-    },
-    onError: (error) => {
-      pushToast(error instanceof Error ? error.message : 'Failed to reconcile', 'error')
-    },
-  })
-
-  const heroOverwriteLiveMutation = useMutation({
-    mutationFn: async () => {
-      if (!activeSnapshot) throw new Error('No active snapshot')
-      return snapshotsApi.activate(activeSnapshot.id)
-    },
-    onSuccess: () => {
-      void queryClient.invalidateQueries({ queryKey: ['snapshots', 'publish-readiness', activeSnapshot?.id ?? null] })
-      void queryClient.invalidateQueries({ queryKey: ['snapshots', 'detail', activeSnapshot?.id ?? null] })
-      pushToast('Live state overwritten with current draft', 'success')
-    },
-    onError: (error) => {
-      pushToast(error instanceof Error ? error.message : 'Failed to overwrite live', 'error')
-    },
-  })
-
-  const heroPublishActionPending =
-    heroConfirmPublishMutation.isPending
-    || heroReconcilePublishMutation.isPending
-    || heroOverwriteLiveMutation.isPending
+  const {
+    heroConfirmPublishMutation,
+    heroReconcilePublishMutation,
+    heroOverwriteLiveMutation,
+    heroPublishActionPending,
+  } = useSnapshotEditorHeroPublishMutations({ activeSnapshot, pushToast })
 
   const handleHeroCopyMetadataValue = useCallback((value: string) => {
     if (!value) return
