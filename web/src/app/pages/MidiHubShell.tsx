@@ -14,6 +14,7 @@ import type { ShellActionSlot } from '../layout/ShellWindowContext'
 import { toCarbonBaseTheme, useTheme } from '../theme'
 import { NODE_PAGE_KEYS } from '../utils/nodeDisplay'
 import { MidiHubHealthDrawer } from './midi-hub/MidiHubHealthDrawer'
+import { MidiLegacyRetirementBanner } from './midi-services/MidiLegacyRetirementBanner'
 import './MidiHubShell.css'
 
 function toneForHealth(health: string): 'ok' | 'warn' | 'error' | 'info' {
@@ -113,6 +114,7 @@ export function MidiHubShell() {
             sidebar={null}
             content={(
               <section className="midi-hub-shell__content-body" aria-label="MIDI Hub content" key={location.pathname}>
+                <MidiLegacyRetirementBanner />
                 <Outlet />
               </section>
             )}
