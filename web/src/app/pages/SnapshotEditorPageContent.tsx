@@ -327,6 +327,7 @@ import { useSnapshotEditorMidiMutations } from './snapshotEditor/useSnapshotEdit
 import { useSnapshotEditorPresetMutations } from './snapshotEditor/useSnapshotEditorPresetMutations'
 import { useSnapshotEditorUndoRedoMutations } from './snapshotEditor/useSnapshotEditorUndoRedoMutations'
 import { useSnapshotEditorHeroPublishMutations } from './snapshotEditor/useSnapshotEditorHeroPublishMutations'
+import { useSnapshotEditorMetadataMutations } from './snapshotEditor/useSnapshotEditorMetadataMutations'
 import { FEATURED_NATIVE_BROWSER_GROUPS } from './snapshotEditor/featuredNativeBrowserGroups'
 import {
   createBlankSnapshotEditorDraft,
@@ -2135,66 +2136,10 @@ export function SnapshotEditorPage() {
     navigate(`/snapshots/${activeSnapshot.id}/publish`)
   }, [activeSnapshot, navigate])
 
-  const renameActiveSnapshotMutation = useMutation({
-    mutationFn: async ({ snapshotId, name }: { snapshotId: number; name: string }) =>
-      snapshotsApi.update(snapshotId, { name }),
-    onSuccess: (response) => {
-      syncSnapshotDetailCaches(response.snapshot)
-      queryClient.invalidateQueries({ queryKey: ['snapshots'] })
-      void queryClient.invalidateQueries({ queryKey: ['snapshots', 'runtime', 'live-state', 'local'] })
-      void queryClient.invalidateQueries({ queryKey: ['snapshots', 'runtime', 'cluster-live-state'] })
-      setEditingSnapshotName(false)
-      setRenameSnapshotName('')
-      pushToast(`Snapshot renamed to "${response.snapshot.name}"`, 'success')
-    },
-    onError: (error) => {
-      pushToast(error instanceof Error ? error.message : 'Failed to rename snapshot', 'error')
-    },
-  })
-
-  const updateActiveSnapshotProgramMutation = useMutation({
-    mutationFn: async ({ snapshotId, programNumber }: { snapshotId: number; programNumber: number | null }) => {
-      const result = await snapshotsApi.setProgram(snapshotId, programNumber)
-      const snapshot = await snapshotsApi.get(snapshotId)
-      return { result, snapshot }
-    },
-    onSuccess: ({ result, snapshot }) => {
-      syncSnapshotDetailCaches(snapshot)
-      queryClient.invalidateQueries({ queryKey: ['snapshots'] })
-      queryClient.invalidateQueries({ queryKey: ['snapshots', 'runtime', 'activation-events', 'local'] })
-      setSnapshotProgramValue(result.program_number == null ? '' : String(result.program_number))
-      pushToast('MIDI program updated', 'success')
-    },
-    onError: (error) => {
-      pushToast(error instanceof Error ? error.message : 'Failed to update MIDI program', 'error')
-    },
-  })
-
-  const updateActiveSnapshotDescriptionMutation = useMutation({
-    mutationFn: async ({ snapshotId, description }: { snapshotId: number; description: string }) =>
-      snapshotsApi.update(snapshotId, { description }),
-    onSuccess: (response) => {
-      syncSnapshotDetailCaches(response.snapshot)
-      queryClient.invalidateQueries({ queryKey: ['snapshots'] })
-      pushToast('Snapshot notes updated', 'success')
-    },
-    onError: (error) => {
-      pushToast(error instanceof Error ? error.message : 'Failed to update snapshot notes', 'error')
-    },
-  })
-
-  const updateActiveSnapshotTempoMutation = useMutation({
-    mutationFn: async ({ snapshotId, tempoBpm }: { snapshotId: number; tempoBpm: number }) =>
-      snapshotsApi.update(snapshotId, { tempo_bpm: tempoBpm }),
-    onSuccess: (response) => {
-      syncSnapshotDetailCaches(response.snapshot)
-      queryClient.invalidateQueries({ queryKey: ['snapshots'] })
-      pushToast('Snapshot tempo updated', 'success')
-    },
-    onError: (error) => {
-      pushToast(error instanceof Error ? error.message : 'Failed to update snapshot tempo', 'error')
-    },
-  })
+  // Active-snapshot metadata mutations (rename / program / description / tempo)
+  // are extracted into useSnapshotEditorMetadataMutations and called below
+  // (after `syncSnapshotDetailCaches` is defined to satisfy TDZ) — see
+  // T2472 mutation extraction slice 5.
 
   const restoreSnapshotRevisionMutation = useMutation({
     mutationFn: async ({ snapshotId, revisionNumber }: { snapshotId: number; revisionNumber: number }) =>
@@ -2291,6 +2236,22 @@ export function SnapshotEditorPage() {
     queryClient,
     setControlPlaneSnapshotCaches,
   ])
+
+  // T2472 mutation extraction slice 5 — metadata mutations relocated here
+  // (after syncSnapshotDetailCaches definition) so the hook call doesn't
+  // hit a TDZ on the syncSnapshotDetailCaches reference.
+  const {
+    renameActiveSnapshotMutation,
+    updateActiveSnapshotProgramMutation,
+    updateActiveSnapshotDescriptionMutation,
+    updateActiveSnapshotTempoMutation,
+  } = useSnapshotEditorMetadataMutations({
+    syncSnapshotDetailCaches,
+    setEditingSnapshotName,
+    setRenameSnapshotName,
+    setSnapshotProgramValue,
+    pushToast,
+  })
 
   const syncSnapshotMutationResult = useCallback((snapshot: SnapshotDetail) => {
     syncSnapshotDetailCaches(snapshot, {
