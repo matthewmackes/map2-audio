@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1489** Python | **1535** TypeScript | **179** C++/H | **147** Docs | **3938** total commits | **4** stars | **0** forks | **0** open issues
+**1489** Python | **1535** TypeScript | **179** C++/H | **147** Docs | **3940** total commits | **4** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`69b98f64`](https://github.com/matthewmackes/map2-audio/commit/69b98f644ef7a1c480d99b145746373261a449c1) | test(avb-connections): replace skipped modal-DELETE test ... | Map2 Audio | 2026-05-05 |
+| [`01f1f512`](https://github.com/matthewmackes/map2-audio/commit/01f1f512135e11e9826e9fee905cebbbaa7a931c) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-05 |
 | [`bfcf4e82`](https://github.com/matthewmackes/map2-audio/commit/bfcf4e82b2de987d530b28cc29e54584899dcbb9) | feat(tesira-routes): wire preset recall through AvbBindin... | Map2 Audio | 2026-05-05 |
 | [`5281724d`](https://github.com/matthewmackes/map2-audio/commit/5281724d31d4d576795ed29bb1ef2362522f08c6) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-05 |
 | [`dbd804f2`](https://github.com/matthewmackes/map2-audio/commit/dbd804f2d7438893dc6d32106a3a3838c25353ef) | feat(tesira): wire binding_adapter into TesiraFleet subsc... | Map2 Audio | 2026-05-05 |
 | [`95573476`](https://github.com/matthewmackes/map2-audio/commit/955734769490d2641b9d10c8d890e039344ea853) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-05 |
 | [`935c870f`](https://github.com/matthewmackes/map2-audio/commit/935c870f5e8013cb52c0f74705b4389c2352f4c7) | docs(philosophy): update avb.md with T2496 canonical auth... | Map2 Audio | 2026-05-05 |
 | [`b9dc96a2`](https://github.com/matthewmackes/map2-audio/commit/b9dc96a262a467c05e855bb304a4053faa3502fe) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-05 |
-| [`871b0f14`](https://github.com/matthewmackes/map2-audio/commit/871b0f14090917326e5319108fd03889041f6353) | docs(avb-services): T2496 closeout — full first-class par... | Map2 Audio | 2026-05-05 |
-| [`99e318a3`](https://github.com/matthewmackes/map2-audio/commit/99e318a3db5e05ad62eda8a334b21539efa356d0) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-05 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
