@@ -332,6 +332,7 @@ import { useSnapshotEditorLockMutation } from './snapshotEditor/useSnapshotEdito
 import { useSnapshotEditorChainEditMutations } from './snapshotEditor/useSnapshotEditorChainEditMutations'
 import { useSnapshotEditorChainRenameMutation } from './snapshotEditor/useSnapshotEditorChainRenameMutation'
 import { useSnapshotEditorOpenEditorSnapshotMutation } from './snapshotEditor/useSnapshotEditorOpenEditorSnapshotMutation'
+import { useSnapshotEditorUpdateActiveSnapshotMutation } from './snapshotEditor/useSnapshotEditorUpdateActiveSnapshotMutation'
 import { FEATURED_NATIVE_BROWSER_GROUPS } from './snapshotEditor/featuredNativeBrowserGroups'
 import {
   createBlankSnapshotEditorDraft,
@@ -1972,32 +1973,8 @@ export function SnapshotEditorPage() {
   // openEditorSnapshotMutation extracted into useSnapshotEditorOpenEditorSnapshotMutation
   // and called after hydrateEditorFromSnapshot definition (TDZ) — see T2472 slice 9.
 
-  const updateActiveSnapshotMutation = useMutation({
-    mutationFn: async () => {
-      if (!activeSnapshot) {
-        throw new Error('No active snapshot to update')
-      }
-      if (activeSnapshot.is_locked) {
-        throw new Error('Unlock snapshot before updating it')
-      }
-      return snapshotsApi.update(activeSnapshot.id, {
-        ...flowSnapshotDataToSnapshotPayload(currentSnapshotDraft),
-        create_revision: true,
-      })
-    },
-    onSuccess: (response) => {
-      syncSnapshotDetailCaches(response.snapshot)
-      queryClient.invalidateQueries({ queryKey: ['snapshots', 'revisions', response.snapshot.id] })
-      hydrateEditorFromSnapshot(response.snapshot, {
-        toastMessage: 'Snapshot updated',
-        invalidateSnapshots: true,
-        resetUndoHistory: false,
-      })
-    },
-    onError: (error) => {
-      pushToast(error instanceof Error ? error.message : 'Failed to update snapshot', 'error')
-    },
-  })
+  // updateActiveSnapshotMutation extracted into useSnapshotEditorUpdateActiveSnapshotMutation
+  // and called after hydrateEditorFromSnapshot definition (TDZ) — see T2472 slice 10.
 
   const activateCurrentSnapshotMutation = useMutation({
     mutationFn: async (snapshotId: number) => {
@@ -2420,6 +2397,17 @@ export function SnapshotEditorPage() {
   const { openEditorSnapshotMutation } = useSnapshotEditorOpenEditorSnapshotMutation({
     controlPlaneSnapshot,
     setEditorSnapshotOverride,
+    hydrateEditorFromSnapshot,
+    pushToast,
+  })
+
+  // T2472 mutation extraction slice 10 — update-active-snapshot mutation
+  // colocated here, after syncSnapshotDetailCaches + hydrateEditorFromSnapshot
+  // are defined (TDZ).
+  const { updateActiveSnapshotMutation } = useSnapshotEditorUpdateActiveSnapshotMutation({
+    activeSnapshot,
+    currentSnapshotDraft,
+    syncSnapshotDetailCaches,
     hydrateEditorFromSnapshot,
     pushToast,
   })
