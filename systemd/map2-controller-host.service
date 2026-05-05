@@ -22,8 +22,13 @@ Type=simple
 User=mm
 Group=mm
 
-# Audio + JACK access for libremidi.
-SupplementaryGroups=audio realtime
+# Audio + JACK access for libremidi. The previous version listed a
+# `realtime` group, but that group does not exist on the canonical
+# Fedora-based MAP2 testbed and broke unit start with exit code
+# 216/GROUP ("Failed at step GROUP"). RT scheduling for the libremidi
+# I/O thread is already granted via LimitRTPRIO=80 + CAP_SYS_NICE
+# below, so the `realtime` group reference was redundant.
+SupplementaryGroups=audio
 
 WorkingDirectory=/home/mm/map2-audio
 Environment="PATH=/usr/local/bin:/usr/bin:/bin:/home/mm/.local/bin"
@@ -78,10 +83,23 @@ AmbientCapabilities=CAP_SYS_NICE
 CapabilityBoundingSet=CAP_SYS_NICE
 
 # UDS socket cleanup — make sure /run/map2/ exists with the right
-# perms before the daemon binds. systemd-tmpfiles handles persistent
-# state, but the simple `mkdir` here keeps the unit self-contained.
+# perms before the daemon binds. systemd-tmpfiles
+# (`/etc/tmpfiles.d/map2-controller-host.conf` in this repo) handles
+# the canonical creation; this `mkdir`/`chmod` belt-and-suspenders pair
+# keeps the unit self-contained on hosts where tmpfiles hasn't run yet.
 ExecStartPre=/bin/mkdir -p /run/map2
 ExecStartPre=/bin/chmod 0755 /run/map2
+
+# SELinux context fix for the daemon binary. `cmake --build` produces
+# an executable with the inherited `user_home_t` context, which
+# systemd (running under `init_t`) is not permitted to exec under
+# enforcing policy — failure mode `status=203/EXEC` with AVC denial
+# `{ execute } ... scontext=...:init_t ... tcontext=...:user_home_t`.
+# The `+` prefix makes this exec run as root regardless of `User=mm`.
+# Re-applied on every start so it survives rebuilds (`cmake --build`
+# replaces the binary's inode and the new file inherits the parent
+# dir's context again).
+ExecStartPre=+/usr/bin/chcon -t bin_t /home/mm/map2-audio/juce-engine/build/map2-controller-host
 
 # Hardening — the daemon does not need most of the host filesystem.
 ProtectSystem=strict
