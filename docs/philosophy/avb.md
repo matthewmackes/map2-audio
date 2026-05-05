@@ -51,12 +51,24 @@ The build flag `HAS_AVDECC=1` is set when `USE_AVDECC=ON` and libpcap is found. 
 `docs/AVB_MULTI_NODE_ARCHITECTURE.md` is the canonical design document; the implementation is split across:
 
 - `app/services/avb/avb_discovery.py` — enumerates local and remote endpoints (mDNS for MAP2-to-MAP2, AVDECC for third-party gear).
-- `app/services/avb/avb_router.py` — N-to-M talker/listener bookkeeping, per-node SRP reservation tracking, `effects_loop_send`/`effects_loop_return`/`general_route` connection roles.
+- `app/services/avb/avb_router.py` — N-to-M talker/listener bookkeeping, per-node SRP reservation tracking, `effects_loop_send`/`effects_loop_return`/`general_route` connection roles. Writes through `AvbBindingAuthority` (see §5.1) on connect/disconnect; reads back its own state on startup.
 - `web/src/app/components/AvbRouting/` — the React routing UI: matrix view, node tree sidebar, ReactFlow-based cross-node visualisation.
+- `web/src/app/pages/avb-services/` — the canonical operator mount at `/avb/*` (six regions: Overview, Connections, Bindings, Devices, Routing, Network).
 
 Endpoints carry `node_id` and `node_address`, so a "connect talker A to listener B" request is unambiguous about which node holds each side. The matrix exposes node membership through colour and grouping rather than burying it in a tooltip.
 
 SRP (Stream Reservation Protocol) admission is tracked per stream. A failed reservation surfaces as `SRP_RELEASE_FAILED` with a remediation hint rather than a silent dropout.
+
+## 5.1 Canonical authority pattern (T2490 + T2496)
+
+AVB Services is one of the four standing first-class platform services (MIDI, AVB, Sampler, Audio Effects per `docs/architecture/FIRST_CLASS_SERVICES.md`). The discipline is **single canonical authority + single canonical surface + no parallel implementations**. For AVB, that authority is `AvbBindingAuthority` (`app/services/avb/binding_authority.py`):
+
+- **Single writer.** Every AVB binding write — talker/listener pairing, AVDECC stream, Tesira preset recall, Tesira block subscription, cluster route, SRP reservation — goes through this service. Vocab: `consumer_type ∈ {avdecc_stream, tesira_preset, tesira_block, cluster_route, srp_reservation}`.
+- **Source of truth across restarts.** `AvbRouter._reconcile_connections_from_authority()` rebuilds the in-memory `connections` dict from durable rows on `start()`. The dict is a transient cache; the authority is the durable record. This is the same posture MIDI Services takes (T2482) and the same posture every other first-class service must take.
+- **Observable through one REST surface.** `/api/avb/bindings*` (CRUD + matrix + count + cluster fan-out). The operator UI at `/avb/*` reads exclusively from this surface; there is no parallel "live router state" endpoint.
+- **Defensive coupling.** Authority writes are non-fatal — a DB exception logs a warning but does not fail the audio routing operation. Authority drift self-heals on next operator action against the same talker/listener pair.
+
+The Tesira fold-in mirrors this pattern: `TesiraFleet`'s in-memory DSP-block model remains source-of-truth for moment-to-moment block parameters, but every operator-visible decision (subscription pin, preset recall, design push) is a row in the binding authority. The Tesira adapter (`app/services/tesira/binding_adapter.py`) writes `consumer_type="tesira_block"` for raw subscriptions and `consumer_type="tesira_preset"` for preset/design recall (with `metadata.kind` discriminating preset vs. design). Pending recalls are written with `enabled=False`; the device-ack handler flips them to `enabled=True`.
 
 ## 6. The hardware contract
 
