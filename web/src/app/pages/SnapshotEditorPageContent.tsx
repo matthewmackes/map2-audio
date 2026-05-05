@@ -339,6 +339,7 @@ import { useSnapshotEditorActivateCurrentMutation } from './snapshotEditor/useSn
 import { useSnapshotEditorUpdateLiveRoutingMutation } from './snapshotEditor/useSnapshotEditorUpdateLiveRoutingMutation'
 import { useSnapshotEditorDeletePluginMutation } from './snapshotEditor/useSnapshotEditorDeletePluginMutation'
 import { useSnapshotEditorAddPluginMutation } from './snapshotEditor/useSnapshotEditorAddPluginMutation'
+import { useSnapshotEditorUpdateAuthorityLiveChainsMutation } from './snapshotEditor/useSnapshotEditorUpdateAuthorityLiveChainsMutation'
 import { FEATURED_NATIVE_BROWSER_GROUPS } from './snapshotEditor/featuredNativeBrowserGroups'
 import {
   createBlankSnapshotEditorDraft,
@@ -3218,23 +3219,6 @@ export function SnapshotEditorPage() {
     pushToast,
   })
 
-  type ChainActivationMutationContext = {
-    previousChains?: ChainsResponse
-    previousCommittedAudioState?: AuthoritativeAudioStateEnvelope
-    previousAuthorityActiveSnapshot?: SnapshotDetail | null
-  }
-
-  type AuthorityLiveChainMutationVariables = {
-    nextActiveChainIds: number[]
-    nextCommittedState: AuthoritativeAudioStateEnvelope['value']
-    request: ReturnType<typeof buildAuthorityLivePathSelectionUpdate>['request']
-    pruneChainIds: number[]
-    successMessage: string
-    successKind: 'success' | 'info'
-    errorMessage: string
-    markDirty?: boolean
-  }
-
   // T2472 mutation extraction slice 15 — delete-plugin mutation
   // colocated here, after updateChainPluginsCache is defined.
   const { deleteMutation } = useSnapshotEditorDeletePluginMutation({
@@ -3270,51 +3254,16 @@ export function SnapshotEditorPage() {
     pushToast,
   })
 
-  const updateAuthorityLiveChainsMutation = useMutation({
-    mutationFn: (variables: AuthorityLiveChainMutationVariables) => audioStateApi.putDesired(variables.request),
-    onMutate: async (variables): Promise<ChainActivationMutationContext> => {
-      await queryClient.cancelQueries({ queryKey: ['chains'] })
-      await queryClient.cancelQueries({ queryKey: ['audio-state', 'committed'] })
-      await cancelControlPlaneSnapshotCaches()
-      const previousChains = queryClient.getQueryData<ChainsResponse>(['chains'])
-      const previousCommittedAudioState = queryClient.getQueryData<AuthoritativeAudioStateEnvelope>(['audio-state', 'committed'])
-      const previousAuthorityActiveSnapshot = authoritySnapshotId != null
-        ? queryClient.getQueryData<SnapshotDetail | null>(['snapshots', 'detail', 'authority-active', authoritySnapshotId])
-        : undefined
-      queryClient.setQueryData<ChainsResponse>(['chains'], (current) => (
-        applyOptimisticJuceGridLiveChainSet(current, variables.nextActiveChainIds)
-      ))
-      if (previousCommittedAudioState) {
-        queryClient.setQueryData<AuthoritativeAudioStateEnvelope>(['audio-state', 'committed'], {
-          ...previousCommittedAudioState,
-          value: variables.nextCommittedState,
-        })
-      }
-      pruneLiveSnapshotCache(variables.pruneChainIds)
-      return { previousChains, previousCommittedAudioState, previousAuthorityActiveSnapshot }
-    },
-    onSuccess: (response, variables) => {
-      queryClient.setQueryData(['audio-state', 'committed'], response)
-      queryClient.invalidateQueries({ queryKey: ['chains'] })
-      invalidateControlPlaneSnapshotCaches({ includeDesired: true })
-      if (variables.markDirty) {
-        markSnapshotsDirty()
-      }
-      pushToast(variables.successMessage, variables.successKind)
-    },
-    onError: (error, variables, context) => {
-      if (context?.previousChains) {
-        queryClient.setQueryData(['chains'], context.previousChains)
-      }
-      if (context?.previousCommittedAudioState) {
-        queryClient.setQueryData(['audio-state', 'committed'], context.previousCommittedAudioState)
-      }
-      if (authoritySnapshotId != null && context?.previousAuthorityActiveSnapshot !== undefined) {
-        restoreAuthorityAwareLiveSnapshot(queryClient, context.previousAuthorityActiveSnapshot, authoritySnapshotId)
-      }
-      const message = error instanceof Error ? error.message : variables.errorMessage
-      pushToast(message, 'error')
-    },
+  // T2472 mutation extraction slice 17 — update-authority-live-chains mutation
+  // (the last remaining inline useMutation in the monolith)
+  const { updateAuthorityLiveChainsMutation } = useSnapshotEditorUpdateAuthorityLiveChainsMutation({
+    authoritySnapshotId,
+    cancelControlPlaneSnapshotCaches,
+    invalidateControlPlaneSnapshotCaches,
+    pruneLiveSnapshotCache,
+    applyOptimisticJuceGridLiveChainSet,
+    markSnapshotsDirty,
+    pushToast,
   })
 
   const { undoMutation, redoMutation } = useSnapshotEditorUndoRedoMutations({
