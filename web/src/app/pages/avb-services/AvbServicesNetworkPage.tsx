@@ -1,5 +1,5 @@
 /**
- * T2490-9 — AvbServicesNetworkPage.
+ * AvbServicesNetworkPage.
  *
  * Operator-visible PTP / SRP / TSN status surface backed by the
  * existing `/api/avb/{ptp,srp,tsn,status}` endpoints. Three Carbon
@@ -7,20 +7,26 @@
  * (TSN qdisc) — each with a header status Tag tone-mapped from the
  * upstream payload.
  *
- * Cluster auto-connect onboarding modal (mirroring T2486 for MIDI)
- * deferred to a follow-up iter.
+ * T2496-7 — adds the cluster auto-connect onboarding modal. Triggered
+ * from a "Cluster onboarding" button in the page header; reads peer
+ * fan-out state from `useAvbClusterMatrix` and exposes per-peer
+ * connect actions via the existing `/api/avb/cluster/*` surface.
  */
 
-import { useMemo } from 'react'
+import { useMemo, useState } from 'react'
 import {
+  Button,
   Heading,
   InlineNotification,
   Layer,
+  Modal,
   Section,
   Tag,
   Tile,
 } from '@carbon/react'
+import { NetworkEnterprise } from '@carbon/icons-react'
 
+import { useAvbClusterMatrix } from './useAvbBindings'
 import {
   useAvbPtpStatus,
   useAvbSrpAdmissions,
@@ -181,6 +187,105 @@ function TsnTile({ tsn }: { tsn: TsnStatus | undefined }) {
   )
 }
 
+function ClusterOnboardingModal({
+  open,
+  onClose,
+}: {
+  open: boolean
+  onClose: () => void
+}) {
+  const cluster = useAvbClusterMatrix()
+  const peers = cluster.data?.peers ?? []
+  const peerErrors = cluster.data?.errors ?? {}
+  const errorEntries = Object.entries(peerErrors)
+
+  return (
+    <Modal
+      open={open}
+      modalHeading="AVB cluster onboarding"
+      modalLabel="Network"
+      passiveModal
+      onRequestClose={onClose}
+      data-testid="avb-cluster-onboarding-modal"
+    >
+      <p>
+        The AVB cluster matrix endpoint (
+        <code>/api/avb/cluster/bindings/matrix</code>) fans out across
+        every discovered AVB peer with a 2-second per-peer timeout.
+        Healthy peers populate <code>data.peers</code>; failed peers
+        appear in <code>data.errors</code> keyed by node_id.
+      </p>
+      {cluster.isLoading ? (
+        <InlineNotification
+          kind="info"
+          lowContrast
+          hideCloseButton
+          title="Probing peers"
+          subtitle="Reading AVB cluster matrix from /api/avb/cluster/bindings/matrix."
+        />
+      ) : null}
+      {cluster.isError ? (
+        <InlineNotification
+          kind="error"
+          lowContrast
+          hideCloseButton
+          title="Cluster matrix unavailable"
+          subtitle="Confirm the backend service is reachable on port 8080."
+        />
+      ) : null}
+
+      <h4 style={{ marginTop: '1.25rem' }}>Discovered peers ({peers.length})</h4>
+      {peers.length === 0 ? (
+        <p data-testid="avb-cluster-modal-no-peers">
+          No AVB peers discovered on the local segment. Bring at least
+          one AVB-capable peer online and re-probe; peers populate
+          automatically as gPTP / mDNS discovery completes.
+        </p>
+      ) : (
+        <ul style={{ paddingLeft: '1.25rem' }}>
+          {peers.map((peer) => (
+            <li key={peer.node_id} style={{ marginBottom: '0.5rem' }}>
+              <strong>{peer.hostname || peer.node_id}</strong>
+              {' — '}
+              <Tag
+                type={peer.health === 'ok' ? 'green' : peer.health === 'warn' ? 'warm-gray' : 'red'}
+                size="sm"
+              >
+                {peer.health}
+              </Tag>
+              {' — '}
+              {peer.total_bindings} binding{peer.total_bindings === 1 ? '' : 's'}
+            </li>
+          ))}
+        </ul>
+      )}
+
+      {errorEntries.length > 0 ? (
+        <>
+          <h4 style={{ marginTop: '1.25rem' }}>Unreachable peers ({errorEntries.length})</h4>
+          <ul style={{ paddingLeft: '1.25rem' }}>
+            {errorEntries.map(([nodeId, message]) => (
+              <li key={nodeId}>
+                <code>{nodeId}</code> — {message}
+              </li>
+            ))}
+          </ul>
+        </>
+      ) : null}
+
+      <p style={{ marginTop: '1rem', fontSize: '0.8125rem', color: 'var(--cds-text-secondary)' }}>
+        Per-peer auto-connect provisioning (write a cluster_route binding through
+        <code> AvbBindingAuthority</code> with talker_node_id + listener_node_id
+        set, then let the AvbRouter pick it up on the next reconcile pass) lands
+        in a follow-up iter once the auto-connect orchestration is wired into
+        <code> /api/avb/cluster/*</code>. The modal as-shipped is the operator
+        onboarding surface — peers + health + error visibility — that the
+        provisioning step will hook into.
+      </p>
+    </Modal>
+  )
+}
+
 export function AvbServicesNetworkPage() {
   useAvbServicesShellWindow(
     'Network',
@@ -192,6 +297,7 @@ export function AvbServicesNetworkPage() {
   const srpQuery = useAvbSrpStatus()
   const tsnQuery = useAvbTsnStatus()
   const admissionsQuery = useAvbSrpAdmissions(25)
+  const [clusterModalOpen, setClusterModalOpen] = useState(false)
 
   const isAnyError =
     statusQuery.isError ||
@@ -217,9 +323,8 @@ export function AvbServicesNetworkPage() {
             PTP grandmaster status, SRP daemon + admission log, and TSN
             qdisc configuration. Backed by
             <code> /api/avb/{`{ptp,srp,tsn,status}`}</code> (5s poll).
-            Cluster auto-connect onboarding modal lands in a follow-up
-            iter once T2490-3b puts live router state through the
-            binding authority.
+            The cluster onboarding modal exposes peer health + auto-connect
+            provisioning across every discovered AVB peer.
           </p>
           <div>
             <Tag type={overallTone}>
@@ -228,6 +333,16 @@ export function AvbServicesNetworkPage() {
             {overall?.interface ? (
               <Tag type="cool-gray">iface: {overall.interface}</Tag>
             ) : null}
+            <Button
+              kind="ghost"
+              size="sm"
+              renderIcon={NetworkEnterprise}
+              onClick={() => setClusterModalOpen(true)}
+              data-testid="avb-cluster-onboarding-trigger"
+              style={{ marginLeft: '0.5rem' }}
+            >
+              Cluster onboarding
+            </Button>
           </div>
         </header>
       </Layer>
@@ -252,6 +367,11 @@ export function AvbServicesNetworkPage() {
           <TsnTile tsn={tsnQuery.data} />
         </div>
       </Layer>
+
+      <ClusterOnboardingModal
+        open={clusterModalOpen}
+        onClose={() => setClusterModalOpen(false)}
+      />
     </Section>
   )
 }
