@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1483** Python | **1533** TypeScript | **179** C++/H | **147** Docs | **3920** total commits | **4** stars | **0** forks | **0** open issues
+**1484** Python | **1533** TypeScript | **179** C++/H | **147** Docs | **3922** total commits | **4** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`d2a54ae2`](https://github.com/matthewmackes/map2-audio/commit/d2a54ae201eb479fdaa4a0e5e6ae2f3e8b662845) | feat(avb-router): hydrate connections from AvbBindingAuth... | Map2 Audio | 2026-05-05 |
+| [`1b90d52b`](https://github.com/matthewmackes/map2-audio/commit/1b90d52b004b27e640e90291da5fc2b212e3b60e) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-05 |
 | [`a88d73ad`](https://github.com/matthewmackes/map2-audio/commit/a88d73adb26dea48dbada13ee56df771b9c554c6) | feat(avb-router): wire writer-side coupling to AvbBinding... | Map2 Audio | 2026-05-05 |
 | [`14f7d037`](https://github.com/matthewmackes/map2-audio/commit/14f7d0375594b4749877214be8ee30696ebbfc9f) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-05 |
 | [`e5286112`](https://github.com/matthewmackes/map2-audio/commit/e5286112b341fcdd1ba5262c0b33d9a3f068f882) | feat(avb-services): retire scaffold framing, ship live Ov... | Map2 Audio | 2026-05-05 |
 | [`2b9adf1d`](https://github.com/matthewmackes/map2-audio/commit/2b9adf1da4789bdf455b774ee54694a0e4535272) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-05 |
 | [`5485ba45`](https://github.com/matthewmackes/map2-audio/commit/5485ba4570f60e2bfcbff8bf64a1076840718635) | refactor(snapshot-editor): extract revisions query into s... | Map2 Audio | 2026-05-05 |
 | [`1ae228c1`](https://github.com/matthewmackes/map2-audio/commit/1ae228c1fd932f3a11dbe32f9cb40f1a6c020362) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-05 |
-| [`1f96b077`](https://github.com/matthewmackes/map2-audio/commit/1f96b07766aa6859a880a6edcd3e1a5bef36273f) | refactor(snapshot-editor): extract publish-readiness quer... | Map2 Audio | 2026-05-05 |
-| [`0ab597f6`](https://github.com/matthewmackes/map2-audio/commit/0ab597f68685cd564bd470defffb5f5509df76af) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-05 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
