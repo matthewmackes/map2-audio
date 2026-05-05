@@ -334,6 +334,7 @@ import { useSnapshotEditorChainRenameMutation } from './snapshotEditor/useSnapsh
 import { useSnapshotEditorOpenEditorSnapshotMutation } from './snapshotEditor/useSnapshotEditorOpenEditorSnapshotMutation'
 import { useSnapshotEditorUpdateActiveSnapshotMutation } from './snapshotEditor/useSnapshotEditorUpdateActiveSnapshotMutation'
 import { useSnapshotEditorRestoreRevisionMutation } from './snapshotEditor/useSnapshotEditorRestoreRevisionMutation'
+import { useSnapshotEditorCreateFromEditorMutation } from './snapshotEditor/useSnapshotEditorCreateFromEditorMutation'
 import { FEATURED_NATIVE_BROWSER_GROUPS } from './snapshotEditor/featuredNativeBrowserGroups'
 import {
   createBlankSnapshotEditorDraft,
@@ -1908,68 +1909,8 @@ export function SnapshotEditorPage() {
     setRoutingLiveApplyState('idle')
   }, [activeSnapshot?.id, isAuthorityLiveSnapshot])
 
-  const createSnapshotFromEditorMutation = useMutation({
-    mutationFn: async ({
-      snapshotName,
-      sourceDraft,
-    }: {
-      snapshotName: string
-      sourceDraft: SnapshotDraftData
-      openPluginBrowser?: boolean
-      focusSnapshotName?: boolean
-    }) => {
-      const created = await snapshotsApi.create({
-        name: snapshotName,
-        description: 'Created from Snapshot Editor',
-        tempo_bpm: activeSnapshot?.tempo_bpm ?? 120,
-        ...flowSnapshotDataToSnapshotPayload(sourceDraft),
-      })
-      const activated = await snapshotsApi.activate(created.snapshot_id)
-      const activatedSnapshotId = activated.snapshot_id ?? created.snapshot_id
-      const snapshotData = activated.snapshot_data
-      return {
-        snapshot_id: activatedSnapshotId,
-        snapshot_data: snapshotData,
-      }
-    },
-    onSuccess: (response, variables) => {
-      setConfirmedGoLiveSnapshotId(response.snapshot_id)
-      setEditorSnapshotOverride(null)
-      setControlPlaneSnapshotCaches(response.snapshot_data)
-      queryClient.setQueryData(['snapshots', 'detail', response.snapshot_id], response.snapshot_data)
-      void queryClient.invalidateQueries({ queryKey: ['snapshots', 'runtime', 'live-state', 'local'] })
-      void queryClient.invalidateQueries({ queryKey: ['snapshots', 'runtime', 'cluster-live-state'] })
-      invalidateControlPlaneSnapshotCaches({ includeDesired: true })
-      hydrateEditorFromSnapshot(response.snapshot_data, {
-        toastMessage: buildSnapshotActivationToastMessage(response.snapshot_data),
-        toastDurationMs: SNAPSHOT_ACTIVATION_TOAST_DURATION_MS,
-        toast: {
-          ...buildSnapshotActivationStageToast(response.snapshot_data),
-          tone: 'success',
-        },
-        resetSelectedBlock: true,
-        invalidateSnapshots: true,
-      })
-      setRenameSnapshotName(response.snapshot_data.name)
-      setEditingSnapshotName(Boolean(variables.focusSnapshotName))
-      if (variables.openPluginBrowser) {
-        setShowPluginBrowser(true)
-      }
-    },
-    onError: (error, variables) => {
-      const stageToast = buildSnapshotActivationFailureStageToast(variables.snapshotName, error)
-      pushToast(
-        buildSnapshotActivationFailureToastMessage(variables.snapshotName, error),
-        'warn',
-        {
-          durationMs: SNAPSHOT_ACTIVATION_TOAST_DURATION_MS,
-          id: stageToast.options.id,
-          title: stageToast.title,
-          stage: stageToast.options.stage,
-        },
-      )
-    },
-  })
+  // createSnapshotFromEditorMutation extracted into useSnapshotEditorCreateFromEditorMutation
+  // and called after hydrateEditorFromSnapshot definition (TDZ) — see T2472 slice 12.
 
   // openEditorSnapshotMutation extracted into useSnapshotEditorOpenEditorSnapshotMutation
   // and called after hydrateEditorFromSnapshot definition (TDZ) — see T2472 slice 9.
@@ -2397,6 +2338,21 @@ export function SnapshotEditorPage() {
     hydrateEditorFromSnapshot,
     closeVersionHistoryWorkspace,
     recordSnapshotUndoRedoStep,
+    pushToast,
+  })
+
+  // T2472 mutation extraction slice 12 — create-from-editor mutation
+  // colocated here, after hydrateEditorFromSnapshot is defined (TDZ).
+  const { createSnapshotFromEditorMutation } = useSnapshotEditorCreateFromEditorMutation({
+    activeSnapshot,
+    setConfirmedGoLiveSnapshotId,
+    setEditorSnapshotOverride,
+    setControlPlaneSnapshotCaches,
+    invalidateControlPlaneSnapshotCaches,
+    hydrateEditorFromSnapshot,
+    setRenameSnapshotName,
+    setEditingSnapshotName,
+    setShowPluginBrowser,
     pushToast,
   })
 
