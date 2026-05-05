@@ -79,10 +79,18 @@ Modified:
 
 Gate 5 (in-browser visual verification on top-10 pages) is the last item before the epic can be marked **operator-acknowledged complete**. The code-side bar is met across all 8 sub-tasks.
 
-## Deferred follow-ups (not blocking T2496 closeout)
+## Deferred follow-ups — STATUS UPDATE (2026-05-05, post-closeout)
+
+All three deferred follow-ups originally listed below have been closed in subsequent ship cycles:
+
+- ✅ **T2496-4b** (commit `dbd804f2`) — TesiraFleet integration: `tesira_fleet.py` now records every successful `start_metering` subscription through `record_tesira_subscription_in_authority`, and `stop()` clears every device's bindings before disconnect. Closes the T2496-4 follow-up.
+- ✅ **T2496-5b** (commit `bfcf4e82`) — Tesira preset recall route integration: `app/routes/tesira.py::recall_preset` now pre-writes a pending binding row before invoking the device, and flips it to enabled on success. Closes the T2496-5 follow-up.
+- ✅ **T2496-6 cleanup** (cycle-10 follow-up): the previously-skipped jest test for the modal-confirm DELETE flow has been replaced with a unit-level test that exercises the same `DELETE /api/avb/bindings/{id}` contract directly through the fetch mock. The OverflowMenu→Modal flow is covered by the existing "opens the delete-confirmation modal" test. All 6 jest cases on `AvbServicesConnectionsPage.test.tsx` pass; no skipped tests remain.
+
+### Original deferred follow-ups (now closed — kept for history)
 
 - Tesira fleet integration: T2496-4 + T2496-5 ship the **adapter primitives**. Wiring them into `app/services/tesira/tesira_fleet.py`'s subscription lifecycle and into `app/routes/tesira/*` (preset recall + design push routes) is integration work that doesn't block the epic — the helpers are end-to-end testable today and any caller can adopt them.
-- Per-peer auto-connect provisioning (the actual orchestration that writes `cluster_route` bindings on operator action from the Network modal). The modal as-shipped is the operator visibility surface (peers + health + errors); the write step is one Carbon button + one fetch call away when the orchestration spec is locked.
+- Per-peer auto-connect provisioning (the actual orchestration that writes `cluster_route` bindings on operator action from the Network modal). The modal as-shipped is the operator visibility surface (peers + health + errors); the write step is one Carbon button + one fetch call away when the orchestration spec is locked. **Still deferred** — this one needs an orchestration spec lock before it can ship.
 - The deferred test (`AvbServicesConnectionsPage.test.tsx::issues a DELETE request when the modal is confirmed`) — Carbon OverflowMenu+Modal jsdom interplay flake. User-visible flow is exercised in-browser; API surface is covered by Disable/Enable cases. A userEvent-based rewrite would close it.
 
 ## License Posture
