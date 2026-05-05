@@ -245,3 +245,69 @@ export function useSnapshotEditorAudioReadQueries({
     expressionEngineParametersQuery,
   }
 }
+
+// ============================================================================
+// T2472 slice 5 — assignment dialog read group.
+//
+// Two queries gated on `assignmentDialogOpen`:
+//
+//   - clusterNodesQuery     — `['cluster', 'nodes']`, fast cadence
+//                             when dialog open, otherwise paused
+//                             (`refetchInterval: false` + `enabled: false`)
+//   - assignmentAnalysisQuery — `['chains', chainId, 'analysis']`,
+//                                no refetch, gated on
+//                                `assignmentDialogOpen && !!chainId`
+//
+// Both keys reproduced verbatim from `SnapshotEditorPageContent.tsx
+// lines 1042-1071`. The cluster-nodes queryFn raw-fetches against
+// `${API_BASE}/cluster/nodes`; the analysis queryFn raw-fetches
+// against `${API_BASE}/chains/<chainId>/analysis` and returns a typed
+// shape verbatim.
+
+export interface UseSnapshotEditorAssignmentReadQueriesArgs {
+  cadences: SnapshotEditorCadences
+  assignmentDialogOpen: boolean
+  selectedAssignmentChainId: number | string | undefined
+}
+
+export function useSnapshotEditorAssignmentReadQueries({
+  cadences,
+  assignmentDialogOpen,
+  selectedAssignmentChainId,
+}: UseSnapshotEditorAssignmentReadQueriesArgs) {
+  const clusterNodesQuery = useQuery({
+    queryKey: ['cluster', 'nodes'],
+    queryFn: async () => {
+      const res = await fetch(`${API_BASE}/cluster/nodes`)
+      if (!res.ok) throw new Error('Failed to load cluster nodes')
+      const data = await res.json()
+      return {
+        nodes: Array.isArray(data?.nodes) ? data.nodes : [],
+      }
+    },
+    refetchInterval: assignmentDialogOpen ? cadences.fast : false,
+    enabled: assignmentDialogOpen,
+  })
+
+  const assignmentAnalysisQuery = useQuery({
+    queryKey: ['chains', selectedAssignmentChainId, 'analysis'],
+    queryFn: async () => {
+      const res = await fetch(`${API_BASE}/chains/${selectedAssignmentChainId}/analysis`)
+      if (!res.ok) {
+        throw new Error('Failed to load chain analysis')
+      }
+      return res.json() as Promise<{
+        estimated_cpu_percent?: number
+        estimated_memory_mb?: number
+        requires_gpu?: boolean
+        gpu_recommended?: boolean
+      }>
+    },
+    enabled: assignmentDialogOpen && !!selectedAssignmentChainId,
+  })
+
+  return {
+    clusterNodesQuery,
+    assignmentAnalysisQuery,
+  }
+}

@@ -15,10 +15,25 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import type { ReactNode } from 'react'
 
 import {
+  useSnapshotEditorAssignmentReadQueries,
   useSnapshotEditorAudioReadQueries,
   useSnapshotEditorCatalogReadQueries,
   useSnapshotEditorMidiReadQueries,
 } from './useSnapshotEditorReadQueries'
+
+// jsdom doesn't have fetch — provide a no-op stub for the
+// cluster-nodes / chain-analysis raw-fetch queryFns. The hook still
+// instantiates the query (registers the cache key) before fetch ever
+// runs, so a stub that returns a never-resolving Promise is fine.
+beforeAll(() => {
+  if (typeof globalThis.fetch === 'undefined') {
+    Object.defineProperty(globalThis, 'fetch', {
+      value: jest.fn(() => new Promise(() => undefined)),
+      configurable: true,
+      writable: true,
+    })
+  }
+})
 
 jest.mock('../../../map2/api', () => ({
   chainsApi: {
@@ -205,5 +220,62 @@ describe('useSnapshotEditorAudioReadQueries — cache-key parity (T2472 slice 4)
       .find((k) => Array.isArray(k) && k[0] === 'audio' && k[1] === 'routing' && k[2] === 'chain')
 
     expect(chainRoutingKey).toEqual(['audio', 'routing', 'chain', 42])
+  })
+})
+
+describe('useSnapshotEditorAssignmentReadQueries — cache-key parity (T2472 slice 5)', () => {
+  it('exposes cluster + analysis queryKeys verbatim with dialog closed', () => {
+    const client = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    })
+    const cadences = { standard: 5_000 as number | false, fast: 2_000 as number | false, meter: 1_000 as number | false, slow: 10_000 as number | false }
+
+    renderHook(
+      () =>
+        useSnapshotEditorAssignmentReadQueries({
+          cadences,
+          assignmentDialogOpen: false,
+          selectedAssignmentChainId: undefined,
+        }),
+      { wrapper: withQueryClient(client) },
+    )
+
+    const cacheKeys = client
+      .getQueryCache()
+      .getAll()
+      .map((q) => q.queryKey)
+
+    expect(cacheKeys).toEqual(
+      expect.arrayContaining([
+        ['cluster', 'nodes'],
+        ['chains', undefined, 'analysis'],
+      ]),
+    )
+    expect(cacheKeys).toHaveLength(2)
+  })
+
+  it('embeds the selected chain id verbatim into the analysis queryKey', () => {
+    const client = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    })
+    const cadences = { standard: 5_000 as number | false, fast: 2_000 as number | false, meter: 1_000 as number | false, slow: 10_000 as number | false }
+
+    renderHook(
+      () =>
+        useSnapshotEditorAssignmentReadQueries({
+          cadences,
+          assignmentDialogOpen: true,
+          selectedAssignmentChainId: 'chain-13',
+        }),
+      { wrapper: withQueryClient(client) },
+    )
+
+    const analysisKey = client
+      .getQueryCache()
+      .getAll()
+      .map((q) => q.queryKey)
+      .find((k) => Array.isArray(k) && k[0] === 'chains' && k[2] === 'analysis')
+
+    expect(analysisKey).toEqual(['chains', 'chain-13', 'analysis'])
   })
 })

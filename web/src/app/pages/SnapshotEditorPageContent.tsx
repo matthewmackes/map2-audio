@@ -317,6 +317,7 @@ import {
 } from './snapshotEditor/useJuceGridPersistedState'
 import { useSnapshotEditorCadences } from './snapshotEditor/useSnapshotEditorCadences'
 import {
+  useSnapshotEditorAssignmentReadQueries,
   useSnapshotEditorAudioReadQueries,
   useSnapshotEditorCatalogReadQueries,
   useSnapshotEditorMidiReadQueries,
@@ -1039,35 +1040,16 @@ export function SnapshotEditorPage() {
     activeFlowChainId,
   })
 
-  const clusterNodesQuery = useQuery({
-    queryKey: ['cluster', 'nodes'],
-    queryFn: async () => {
-      const res = await fetch(`${API_BASE}/cluster/nodes`)
-      if (!res.ok) throw new Error('Failed to load cluster nodes')
-      const data = await res.json()
-      return {
-        nodes: Array.isArray(data?.nodes) ? data.nodes : [],
-      }
-    },
-    refetchInterval: assignmentDialogOpen ? snapshotFastCadence : false,
-    enabled: assignmentDialogOpen,
-  })
-
-  const assignmentAnalysisQuery = useQuery({
-    queryKey: ['chains', selectedFlowForAssignment?.chainId, 'analysis'],
-    queryFn: async () => {
-      const res = await fetch(`${API_BASE}/chains/${selectedFlowForAssignment?.chainId}/analysis`)
-      if (!res.ok) {
-        throw new Error('Failed to load chain analysis')
-      }
-      return res.json() as Promise<{
-        estimated_cpu_percent?: number
-        estimated_memory_mb?: number
-        requires_gpu?: boolean
-        gpu_recommended?: boolean
-      }>
-    },
-    enabled: assignmentDialogOpen && !!selectedFlowForAssignment?.chainId,
+  // T2472 slice 5 — assignment dialog read group lifted into a sibling
+  // hook. Cache-key bit-identity preserved: ['cluster', 'nodes'] and
+  // ['chains', chainId, 'analysis'].
+  const {
+    clusterNodesQuery,
+    assignmentAnalysisQuery,
+  } = useSnapshotEditorAssignmentReadQueries({
+    cadences: snapshotEditorCadences,
+    assignmentDialogOpen,
+    selectedAssignmentChainId: selectedFlowForAssignment?.chainId,
   })
 
   const assignmentNodes = clusterNodesQuery.data?.nodes ?? []
