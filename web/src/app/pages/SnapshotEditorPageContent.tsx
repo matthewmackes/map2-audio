@@ -338,6 +338,7 @@ import { useSnapshotEditorCreateFromEditorMutation } from './snapshotEditor/useS
 import { useSnapshotEditorActivateCurrentMutation } from './snapshotEditor/useSnapshotEditorActivateCurrentMutation'
 import { useSnapshotEditorUpdateLiveRoutingMutation } from './snapshotEditor/useSnapshotEditorUpdateLiveRoutingMutation'
 import { useSnapshotEditorDeletePluginMutation } from './snapshotEditor/useSnapshotEditorDeletePluginMutation'
+import { useSnapshotEditorAddPluginMutation } from './snapshotEditor/useSnapshotEditorAddPluginMutation'
 import { FEATURED_NATIVE_BROWSER_GROUPS } from './snapshotEditor/featuredNativeBrowserGroups'
 import {
   createBlankSnapshotEditorDraft,
@@ -3217,17 +3218,6 @@ export function SnapshotEditorPage() {
     pushToast,
   })
 
-  type PluginMutationContext = {
-    previousChains?: ChainsResponse
-    previousSelectedPluginUri: string | null
-    previousSelectedPluginPosition: number | null
-  }
-
-  type AddPluginMutationContext = PluginMutationContext & {
-    previousShowPluginBrowser: boolean
-    previousPluginSearchQuery: string
-  }
-
   type ChainActivationMutationContext = {
     previousChains?: ChainsResponse
     previousCommittedAudioState?: AuthoritativeAudioStateEnvelope
@@ -3246,8 +3236,7 @@ export function SnapshotEditorPage() {
   }
 
   // T2472 mutation extraction slice 15 — delete-plugin mutation
-  // colocated here, after PluginMutationContext + updateChainPluginsCache
-  // are defined.
+  // colocated here, after updateChainPluginsCache is defined.
   const { deleteMutation } = useSnapshotEditorDeletePluginMutation({
     activeSnapshot,
     selectedPluginUri,
@@ -3261,103 +3250,24 @@ export function SnapshotEditorPage() {
     pushToast,
   })
 
-  const addPluginMutation = useMutation<
-    SnapshotDetail | { status: string; chain_id: number; plugin: string; plugins_count: number; plugin_position?: number },
-    Error,
-    {
-      chainId,
-      pluginUri,
-      undoRedoDraft?: SnapshotDraftData
-      undoRedoDescription?: string
-    },
-    AddPluginMutationContext
-  >({
-    mutationFn: ({
-      chainId,
-      pluginUri,
-    }: {
-      chainId: number
-      pluginUri: string
-      undoRedoDraft?: SnapshotDraftData
-      undoRedoDescription?: string
-    }): Promise<SnapshotDetail | { status: string; chain_id: number; plugin: string; plugins_count: number; plugin_position?: number }> => {
-      if (activeSnapshot?.id != null) {
-        const snapshotChainId = requireSnapshotChainId(chainId)
-        const meta = pluginMeta[pluginUri]
-        return snapshotsApi.addPlugin(activeSnapshot.id, snapshotChainId, {
-          plugin_uri: pluginUri,
-          plugin_name: meta?.name,
-          loader_state: {},
-        })
-      }
-      return chainsApi.addPlugin(chainId, pluginUri)
-    },
-    onMutate: async (variables): Promise<AddPluginMutationContext> => {
-      await queryClient.cancelQueries({ queryKey: ['chains'] })
-      const previousChains = queryClient.getQueryData<ChainsResponse>(['chains'])
-      const previousSelectedPluginUri = selectedPluginUri
-      const previousSelectedPluginPosition = selectedPluginPosition
-      const previousShowPluginBrowser = showPluginBrowser
-      const previousPluginSearchQuery = pluginSearchQuery
-      const meta = pluginMeta[variables.pluginUri]
-
-      updateChainPluginsCache(variables.chainId, (plugins) => {
-        const nextPosition = plugins.reduce(
-          (maxPosition, plugin) => Math.max(maxPosition, plugin.position ?? -1),
-          -1,
-        ) + 1
-
-        const nextPlugin: Chain['plugins'][number] = {
-          uri: variables.pluginUri,
-          name: meta?.name ?? variables.pluginUri,
-          position: nextPosition,
-          bypassed: false,
-          parameters: {},
-          in_ports: meta?.in_ports,
-          out_ports: meta?.out_ports,
-          format: meta?.format,
-        }
-
-        return [...plugins, nextPlugin].sort((a, b) => a.position - b.position)
-      })
-      setShowPluginBrowser(false)
-      setPluginSearchQuery('')
-      return {
-        previousChains,
-        previousSelectedPluginUri,
-        previousSelectedPluginPosition,
-        previousShowPluginBrowser,
-        previousPluginSearchQuery,
-      }
-    },
-    onSuccess: (data, variables) => {
-      if (activeSnapshot?.id != null) {
-        syncSnapshotMutationResult(data as SnapshotDetail)
-      }
-      if (variables.undoRedoDraft) {
-        recordSnapshotUndoRedoStep(
-          variables.undoRedoDraft,
-          variables.undoRedoDescription ?? 'Add block',
-        )
-      }
-      pushToast('Plugin added', 'success')
-    },
-    onError: (error, variables, context) => {
-      if (context?.previousChains) {
-        queryClient.setQueryData(['chains'], context.previousChains)
-      }
-      setSelectedPluginSelection(
-        context?.previousSelectedPluginUri ?? null,
-        context?.previousSelectedPluginPosition ?? null,
-      )
-      setShowPluginBrowser(context?.previousShowPluginBrowser ?? false)
-      setPluginSearchQuery(context?.previousPluginSearchQuery ?? '')
-      pushToast(`Failed to add: ${error}`, 'error')
-    },
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ['chains'] })
-      markSnapshotsDirty()
-    },
+  // T2472 mutation extraction slice 16 — add-plugin mutation
+  // colocated here, after pluginMeta is defined.
+  const { addPluginMutation } = useSnapshotEditorAddPluginMutation({
+    activeSnapshot,
+    selectedPluginUri,
+    selectedPluginPosition,
+    showPluginBrowser,
+    pluginSearchQuery,
+    pluginMeta,
+    requireSnapshotChainId,
+    updateChainPluginsCache,
+    setSelectedPluginSelection,
+    setShowPluginBrowser,
+    setPluginSearchQuery,
+    syncSnapshotMutationResult,
+    recordSnapshotUndoRedoStep,
+    markSnapshotsDirty,
+    pushToast,
   })
 
   const updateAuthorityLiveChainsMutation = useMutation({
