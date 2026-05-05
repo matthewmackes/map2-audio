@@ -340,6 +340,7 @@ import { useSnapshotEditorUpdateLiveRoutingMutation } from './snapshotEditor/use
 import { useSnapshotEditorDeletePluginMutation } from './snapshotEditor/useSnapshotEditorDeletePluginMutation'
 import { useSnapshotEditorAddPluginMutation } from './snapshotEditor/useSnapshotEditorAddPluginMutation'
 import { useSnapshotEditorUpdateAuthorityLiveChainsMutation } from './snapshotEditor/useSnapshotEditorUpdateAuthorityLiveChainsMutation'
+import { useSnapshotEditorPublishReadinessQuery } from './snapshotEditor/useSnapshotEditorPublishReadinessQuery'
 import { FEATURED_NATIVE_BROWSER_GROUPS } from './snapshotEditor/featuredNativeBrowserGroups'
 import {
   createBlankSnapshotEditorDraft,
@@ -1930,18 +1931,10 @@ export function SnapshotEditorPage() {
   // useSnapshotEditorLockMutation and called after the
   // syncSnapshotDetailCaches definition (TDZ) — see T2472 slice 6.
 
-  // Hero sub-row: publish-readiness drives the SnapshotPublishStatus pill +
-  // contextual actions. Polled at 5s to mirror SnapshotPublishPage.
-  const heroPublishReadinessQuery = useQuery({
-    queryKey: ['snapshots', 'publish-readiness', activeSnapshot?.id ?? null],
-    queryFn: () => {
-      if (!activeSnapshot) throw new Error('No active snapshot')
-      return snapshotsApi.getPublishReadiness(activeSnapshot.id)
-    },
-    enabled: Boolean(activeSnapshot?.id),
-    refetchInterval: 5_000,
-  })
-  const heroPublishReadiness = heroPublishReadinessQuery.data ?? null
+  // T2472 deferred-read slice 1 — publish-readiness query lifted into
+  // useSnapshotEditorPublishReadinessQuery; canonical key shape preserved.
+  const { heroPublishReadinessQuery, heroPublishReadiness } =
+    useSnapshotEditorPublishReadinessQuery({ activeSnapshot })
 
   const {
     heroConfirmPublishMutation,
