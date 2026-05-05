@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1476** Python | **1494** TypeScript | **179** C++/H | **146** Docs | **3853** total commits | **3** stars | **0** forks | **0** open issues
+**1476** Python | **1494** TypeScript | **179** C++/H | **146** Docs | **3855** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`bf45ad5e`](https://github.com/matthewmackes/map2-audio/commit/bf45ad5ea00e46a21ae34a2e671cdd8018ad03bf) | refactor(t2472): slice 3 — extract MIDI status/learn-stat... | Map2 Audio | 2026-05-04 |
+| [`76e37e16`](https://github.com/matthewmackes/map2-audio/commit/76e37e16ebbcf6f949d94fb987912c3e660773da) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-05 |
 | [`7e9326a0`](https://github.com/matthewmackes/map2-audio/commit/7e9326a0eb83ddc6b87fe54696dcd22cf1d6118d) | refactor(t2472): slice 2 — extract static-catalog read qu... | Map2 Audio | 2026-05-04 |
 | [`2aabc8c6`](https://github.com/matthewmackes/map2-audio/commit/2aabc8c6b6ce089a366d70fb874c8897d5309ca3) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-04 |
 | [`9dab4001`](https://github.com/matthewmackes/map2-audio/commit/9dab400159f50165f1a36c60cece91a02b87675a) | docs(t2481-e1): scope MidiAssignments calibration form ca... | Map2 Audio | 2026-05-04 |
 | [`d976918d`](https://github.com/matthewmackes/map2-audio/commit/d976918d696a14a13c96035f9699e5ce2241bc25) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-04 |
 | [`5c4e5491`](https://github.com/matthewmackes/map2-audio/commit/5c4e5491e50fa7a93ab7ae6b85d749e173522c47) | docs(t2481-g4): closing audit walk — 25-page rubric scoring | Map2 Audio | 2026-05-04 |
 | [`d120ba92`](https://github.com/matthewmackes/map2-audio/commit/d120ba92b6fca296d6c18054cc16c32225b6db3a) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-04 |
-| [`abee5e17`](https://github.com/matthewmackes/map2-audio/commit/abee5e17dd65566d2fc6ba36273962bc4efddf40) | docs(t2481-g3): refresh suppression audit post Z-cleanup | Map2 Audio | 2026-05-04 |
-| [`a7a6b2ca`](https://github.com/matthewmackes/map2-audio/commit/a7a6b2caba642a486716b4022a2c84b6200e9614) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-04 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
