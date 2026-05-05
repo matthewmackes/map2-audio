@@ -1,5 +1,5 @@
 /**
- * T2490-5 — AvbServicesDevicesPage.
+ * AvbServicesDevicesPage.
  *
  * Operator-visible Devices index. Two co-located Carbon DataTables:
  *   - "Discovered AVB nodes" — sourced from /api/avb/discovery
@@ -7,9 +7,9 @@
  *   - "AVDECC entities" — sourced from /api/avb/avdecc/entities
  *     (one row per entity reported by the la_avdecc-backed controller).
  *
- * Cross-link to /avb/devices/tesira lands in T2490-6 once the Tesira
- * fold-in is in place; for now the page surfaces a one-line note that
- * Tesira fleet members will appear here after the fold-in.
+ * The Tesira fleet workspace lives at /avb/devices/tesira (legacy
+ * /devices/tesira + /tesira hard-redirect there). DSP-block-level
+ * Tesira surfaces become canonical bindings under T2496-4 + T2496-5.
  */
 
 import { useMemo } from 'react'

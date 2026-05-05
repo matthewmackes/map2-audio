@@ -45,3 +45,10 @@
   color: var(--cds-text-secondary);
   font-size: 0.8125rem;
 }
+
+.avb-services-bindings__filters {
+  display: grid;
+  grid-template-columns: minmax(12rem, 1fr) minmax(10rem, 1fr) minmax(8rem, auto);
+  gap: 1rem;
+  align-items: end;
+}

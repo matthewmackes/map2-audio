@@ -1,12 +1,13 @@
 /**
- * T2490-4 — AvbServicesConnectionsPage.
+ * AvbServicesConnectionsPage.
  *
  * Operator-visible Carbon DataTable backed by the canonical
- * `/api/avb/bindings/*` authority shipped in T2490-2. Mirrors the
- * MidiServicesConnectionsPage in spirit (single canonical surface,
- * no parallel store) but starts simpler — read-only listing in iter 3.
- * Per-row mutation surface lands in T2490-3 (avb_router refactor) +
- * T2490-7 (cluster matrix endpoint).
+ * `/api/avb/bindings/*` authority. Mirrors MidiServicesConnectionsPage
+ * (single canonical surface, no parallel store). Rows include both
+ * durable bindings and live `AvbRouter`-projected synthetic rows
+ * (tagged "(live)" in the Authored-by column).
+ *
+ * Per-row mutation surface (Disable / Enable / Delete) lands with T2496-6.
  */
 
 import { useMemo } from 'react'
@@ -102,9 +103,9 @@ export function AvbServicesConnectionsPage() {
           <p className="avb-services-region__subtitle">
             Talker / listener pairings backed by the canonical
             <code> AvbBindingAuthority</code> (
-            <code>/api/avb/bindings</code>). Per-row mutation lands in
-            T2490-3 once <code>avb_router.py</code> is refactored to
-            consume this authority.
+            <code>/api/avb/bindings</code>). Durable rows and live
+            <code> AvbRouter</code>-projected synthetic rows are folded
+            into a single read.
           </p>
           <div>
             <Tag type="cool-gray">Read-only</Tag>
@@ -126,11 +127,10 @@ export function AvbServicesConnectionsPage() {
       <Layer level={1}>
         {!isLoading && rows.length === 0 ? (
           <div className="avb-services-region__placeholder">
-            No AVB bindings yet. Use <code>POST /api/avb/bindings</code> to
-            seed talker / listener pairings, AVDECC stream connections,
-            Tesira preset recall, or cluster routing decisions. T2490-3
-            wires the existing <code>avb_router.py</code> orchestrator
-            to write through this authority.
+            No AVB connections to show. Connections populate as operators
+            author talker / listener pairings, as AVDECC stream
+            connections complete, or as cluster routing decisions land.
+            <code>POST /api/avb/bindings</code> seeds rows directly.
           </div>
         ) : (
           <DataTable rows={rows} headers={HEADERS}>

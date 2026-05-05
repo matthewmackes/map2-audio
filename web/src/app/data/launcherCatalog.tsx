@@ -216,7 +216,6 @@ const LAUNCHER_STOREFRONT_OVERRIDES: Record<string, StorefrontOverride> = {
       { route: '/artifacts?category=soundfonts', label: 'SoundFonts' },
       { route: '/artifacts?category=native-juce', label: 'Native JUCE' },
       { route: '/artifacts?category=snapshots', label: 'Snapshots' },
-      { route: '/artifacts/discover', label: 'Discover' },
     ],
   },
   '/tesira': {

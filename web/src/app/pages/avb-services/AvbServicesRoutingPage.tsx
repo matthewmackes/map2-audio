@@ -1,13 +1,13 @@
 /**
- * T2490-8 / nav-reorg — AvbServicesRoutingPage.
+ * AvbServicesRoutingPage.
  *
- * Canonical AVB routing surface. Hosts the rich AvbRoutingWorkspace
+ * Canonical AVB routing surface. Hosts the AvbRoutingWorkspace
  * (transport-node fabric graph, expandable node table, Tesira detail
  * inspector, deep-link footer) that previously lived under
  * `/workspace/platforms/avb-routing`. The Source × Consumer matrix tile
  * sourced from `/api/avb/bindings/matrix?include_router=true` is kept
  * below as a secondary section so the binding-authority cross-reference
- * is still one click away.
+ * is one click away.
  */
 
 import { useMemo } from 'react'
@@ -132,10 +132,10 @@ function BindingsMatrixSection() {
       <Layer level={1}>
         {rows.length === 0 ? (
           <div className="avb-services-region__placeholder">
-            No bindings to render. Once T2490-3b starts writing live AvbRouter
-            connections through the binding authority — or once an operator
-            POSTs to <code>/api/avb/bindings</code> — cells will populate here
-            with live counts.
+            No bindings to render. Cells populate as live
+            <code> AvbRouter</code> connections complete, as operators
+            author bindings via <code>POST /api/avb/bindings</code>, or
+            as Tesira preset recalls and cluster routing decisions land.
           </div>
         ) : (
           <div className="avb-routing-matrix">
