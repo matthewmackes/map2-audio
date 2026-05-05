@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1476** Python | **1494** TypeScript | **179** C++/H | **146** Docs | **3863** total commits | **3** stars | **0** forks | **0** open issues
+**1476** Python | **1494** TypeScript | **179** C++/H | **146** Docs | **3865** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`426c6f32`](https://github.com/matthewmackes/map2-audio/commit/426c6f32df7c27ec6339c18962f5d0d1aa1ecbd8) | docs(t2459-h3): scope production-dispatcher wiring gap | Map2 Audio | 2026-05-04 |
+| [`386550a6`](https://github.com/matthewmackes/map2-audio/commit/386550a68c9abaef1061504ba6baa7f31214784d) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-05 |
 | [`beda2b88`](https://github.com/matthewmackes/map2-audio/commit/beda2b88e7e8a009fdb8430674079568fa96526e) | docs(t2472): refresh task Last-updated with cycles 53-57 ... | Map2 Audio | 2026-05-04 |
 | [`fbc37730`](https://github.com/matthewmackes/map2-audio/commit/fbc37730b6ea020deea28e0f0d171c807fb5441f) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-05 |
 | [`9d41baf8`](https://github.com/matthewmackes/map2-audio/commit/9d41baf8df24a35d7202ad45bdd9ceff1b4dd565) | refactor(t2472): slice 6 — extract snapshot config + summ... | Map2 Audio | 2026-05-04 |
 | [`b33e779c`](https://github.com/matthewmackes/map2-audio/commit/b33e779cccbde4e78ed480bd8d724445c25ea8d3) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-05 |
 | [`3951ccca`](https://github.com/matthewmackes/map2-audio/commit/3951cccafdac3672c2d6512d1f524d40f6a777f4) | refactor(t2472): slice 5 — extract assignment dialog read... | Map2 Audio | 2026-05-04 |
 | [`e5633743`](https://github.com/matthewmackes/map2-audio/commit/e5633743d71b69528063a5c4c74ce52f7f29ad84) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-05 |
-| [`a71055d6`](https://github.com/matthewmackes/map2-audio/commit/a71055d6c7fde54bfa3a64a4299a0d5c63e88e49) | refactor(t2472): slice 4 — extract audio engine read grou... | Map2 Audio | 2026-05-04 |
-| [`25c1edcc`](https://github.com/matthewmackes/map2-audio/commit/25c1edcc266f39238ff52d65c349cc43f1953438) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-05 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
