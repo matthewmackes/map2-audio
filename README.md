@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1481** Python | **1500** TypeScript | **179** C++/H | **147** Docs | **3881** total commits | **3** stars | **0** forks | **0** open issues
+**1481** Python | **1502** TypeScript | **179** C++/H | **147** Docs | **3883** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`1b5abb37`](https://github.com/matthewmackes/map2-audio/commit/1b5abb3718a752b1c7a22deba9ec0a77e8f19fb0) | refactor(snapshot-editor): extract hero-publish mutations... | Map2 Audio | 2026-05-05 |
+| [`9c052971`](https://github.com/matthewmackes/map2-audio/commit/9c052971be5be92a71cb6202faccf42916a34625) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-05 |
 | [`e20e367b`](https://github.com/matthewmackes/map2-audio/commit/e20e367b4b51cb03239d050d930ef5a1dadb3cbe) | refactor(snapshot-editor): extract undo/redo mutations in... | Map2 Audio | 2026-05-05 |
 | [`581bbf2f`](https://github.com/matthewmackes/map2-audio/commit/581bbf2f577f184b7378b3125e221866d31e4d44) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-05 |
 | [`ba186c82`](https://github.com/matthewmackes/map2-audio/commit/ba186c82ea15283384ce35394e9e3877a59b5880) | refactor(snapshot-editor): extract preset mutations into ... | Map2 Audio | 2026-05-05 |
 | [`b3ed7b47`](https://github.com/matthewmackes/map2-audio/commit/b3ed7b477f45a97deacd7f4c64cfe4ed21eda111) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-05 |
 | [`5928a102`](https://github.com/matthewmackes/map2-audio/commit/5928a1026af0e1d5a64e1fc7a50029a8a97d2457) | refactor(snapshot-editor): extract MIDI learn mutations i... | Map2 Audio | 2026-05-05 |
 | [`e1385e20`](https://github.com/matthewmackes/map2-audio/commit/e1385e20f2181c80edc972a4ea816893aebbf4a9) | test(routes): add static audit for unawaited async-engine... | Map2 Audio | 2026-05-05 |
-| [`bed82b08`](https://github.com/matthewmackes/map2-audio/commit/bed82b08318ba3ce4e169fdd1798e265b2fe02f1) | fix(systemd): make map2-controller-host.service deployabl... | Map2 Audio | 2026-05-05 |
-| [`0ea3c70a`](https://github.com/matthewmackes/map2-audio/commit/0ea3c70a27e9ff50a8d35de04ff588128f54754f) | fix(state-authority): await async engine methods in morph... | Map2 Audio | 2026-05-05 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
