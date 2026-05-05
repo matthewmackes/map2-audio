@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1481** Python | **1496** TypeScript | **179** C++/H | **147** Docs | **3877** total commits | **3** stars | **0** forks | **0** open issues
+**1481** Python | **1498** TypeScript | **179** C++/H | **147** Docs | **3879** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`ba186c82`](https://github.com/matthewmackes/map2-audio/commit/ba186c82ea15283384ce35394e9e3877a59b5880) | refactor(snapshot-editor): extract preset mutations into ... | Map2 Audio | 2026-05-05 |
+| [`b3ed7b47`](https://github.com/matthewmackes/map2-audio/commit/b3ed7b477f45a97deacd7f4c64cfe4ed21eda111) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-05 |
 | [`5928a102`](https://github.com/matthewmackes/map2-audio/commit/5928a1026af0e1d5a64e1fc7a50029a8a97d2457) | refactor(snapshot-editor): extract MIDI learn mutations i... | Map2 Audio | 2026-05-05 |
 | [`e1385e20`](https://github.com/matthewmackes/map2-audio/commit/e1385e20f2181c80edc972a4ea816893aebbf4a9) | test(routes): add static audit for unawaited async-engine... | Map2 Audio | 2026-05-05 |
 | [`bed82b08`](https://github.com/matthewmackes/map2-audio/commit/bed82b08318ba3ce4e169fdd1798e265b2fe02f1) | fix(systemd): make map2-controller-host.service deployabl... | Map2 Audio | 2026-05-05 |
 | [`0ea3c70a`](https://github.com/matthewmackes/map2-audio/commit/0ea3c70a27e9ff50a8d35de04ff588128f54754f) | fix(state-authority): await async engine methods in morph... | Map2 Audio | 2026-05-05 |
 | [`2ed0dbed`](https://github.com/matthewmackes/map2-audio/commit/2ed0dbed0521996595863b91b294aa207160cda5) | test(routes): add static audit for narrow Dict[str, X] re... | Map2 Audio | 2026-05-05 |
 | [`5554175a`](https://github.com/matthewmackes/map2-audio/commit/5554175a1888c92fe47a62298ba58e4ace2661b4) | fix(automation): correct /lanes return annotation; add re... | Map2 Audio | 2026-05-05 |
-| [`716ec2f7`](https://github.com/matthewmackes/map2-audio/commit/716ec2f7043d2642792cf854e37598e2259cec71) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-05 |
-| [`ed390cdc`](https://github.com/matthewmackes/map2-audio/commit/ed390cdc7af5091f4ecafc2259612ac40fde2412) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-05 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
