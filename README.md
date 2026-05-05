@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1481** Python | **1504** TypeScript | **179** C++/H | **147** Docs | **3885** total commits | **3** stars | **0** forks | **0** open issues
+**1481** Python | **1506** TypeScript | **179** C++/H | **147** Docs | **3887** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -193,7 +193,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 |  |  |  |
 | :---: | :---: | :---: |
 | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/map2-banner.png" width="280" alt="map2 banner"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/map2-banner-3.png" width="280" alt="map2 banner 3"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot-Cli.png" width="280" alt="Screenshot Cli"> |
-| <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 08-00-43 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 08 00 43 Mackes Audio Platform 2 FEB2025"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 07-57-33 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 07 57 33 Mackes Audio Platform 2 FEB2025"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 07-58-14 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 07 58 14 Mackes Audio Platform 2 FEB2025"> |
+| <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 08-00-43 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 08 00 43 Mackes Audio Platform 2 FEB2025"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 07-58-14 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 07 58 14 Mackes Audio Platform 2 FEB2025"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 07-57-33 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 07 57 33 Mackes Audio Platform 2 FEB2025"> |
 | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/MAP2_AUDIO-NODE_ARCH_DIAGRAM3.png" width="280" alt="MAP2 AUDIO NODE ARCH DIAGRAM3"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/MAP2_AUDIO-NODE_ARCH_DIAGRAM2-BANG.png" width="280" alt="MAP2 AUDIO NODE ARCH DIAGRAM2 BANG"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/MAP2_AUDIO-NODE_ARCH_DIAGRAM.png" width="280" alt="MAP2 AUDIO NODE ARCH DIAGRAM"> |
 <!-- GALLERY:END -->
 
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`9fca75d2`](https://github.com/matthewmackes/map2-audio/commit/9fca75d255f740722eb2ec5e67b61bef2098892f) | refactor(snapshot-editor): extract toggle-lock mutation i... | Map2 Audio | 2026-05-05 |
+| [`0d4b2c2d`](https://github.com/matthewmackes/map2-audio/commit/0d4b2c2d7348f3ea80c978367b7e0c23d1d231b3) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-05 |
 | [`cca1d87f`](https://github.com/matthewmackes/map2-audio/commit/cca1d87f0c2dbfa3a5fffd9297ec2aa1cbe427fe) | refactor(snapshot-editor): extract metadata mutations int... | Map2 Audio | 2026-05-05 |
 | [`23fe8a0c`](https://github.com/matthewmackes/map2-audio/commit/23fe8a0ccfeb2e8317bddaed41c52cbbaf407ccb) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-05 |
 | [`1b5abb37`](https://github.com/matthewmackes/map2-audio/commit/1b5abb3718a752b1c7a22deba9ec0a77e8f19fb0) | refactor(snapshot-editor): extract hero-publish mutations... | Map2 Audio | 2026-05-05 |
 | [`9c052971`](https://github.com/matthewmackes/map2-audio/commit/9c052971be5be92a71cb6202faccf42916a34625) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-05 |
 | [`e20e367b`](https://github.com/matthewmackes/map2-audio/commit/e20e367b4b51cb03239d050d930ef5a1dadb3cbe) | refactor(snapshot-editor): extract undo/redo mutations in... | Map2 Audio | 2026-05-05 |
 | [`581bbf2f`](https://github.com/matthewmackes/map2-audio/commit/581bbf2f577f184b7378b3125e221866d31e4d44) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-05 |
-| [`ba186c82`](https://github.com/matthewmackes/map2-audio/commit/ba186c82ea15283384ce35394e9e3877a59b5880) | refactor(snapshot-editor): extract preset mutations into ... | Map2 Audio | 2026-05-05 |
-| [`b3ed7b47`](https://github.com/matthewmackes/map2-audio/commit/b3ed7b477f45a97deacd7f4c64cfe4ed21eda111) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-05 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
