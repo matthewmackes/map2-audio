@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1477** Python | **1494** TypeScript | **179** C++/H | **147** Docs | **3869** total commits | **3** stars | **0** forks | **0** open issues
+**1477** Python | **1494** TypeScript | **179** C++/H | **147** Docs | **3870** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,6 +206,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`ed390cdc`](https://github.com/matthewmackes/map2-audio/commit/ed390cdc7af5091f4ecafc2259612ac40fde2412) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-05 |
 | [`aa476098`](https://github.com/matthewmackes/map2-audio/commit/aa47609885c51bfad329ecd975da797458f8c13a) | docs(t2459-h3): correct stale dispatcher gap doc; pin tru... | Map2 Audio | 2026-05-05 |
 | [`15eb8936`](https://github.com/matthewmackes/map2-audio/commit/15eb8936126dab4fb716500c650c01e63c319c77) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-05 |
 | [`1c6ca094`](https://github.com/matthewmackes/map2-audio/commit/1c6ca094387b0e20eaa8614cab8c7e96480bd9ca) | docs: autonomous-loop closure status report (cycles 11-60) | Map2 Audio | 2026-05-04 |
@@ -213,7 +214,6 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 | [`426c6f32`](https://github.com/matthewmackes/map2-audio/commit/426c6f32df7c27ec6339c18962f5d0d1aa1ecbd8) | docs(t2459-h3): scope production-dispatcher wiring gap | Map2 Audio | 2026-05-04 |
 | [`386550a6`](https://github.com/matthewmackes/map2-audio/commit/386550a68c9abaef1061504ba6baa7f31214784d) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-05 |
 | [`beda2b88`](https://github.com/matthewmackes/map2-audio/commit/beda2b88e7e8a009fdb8430674079568fa96526e) | docs(t2472): refresh task Last-updated with cycles 53-57 ... | Map2 Audio | 2026-05-04 |
-| [`fbc37730`](https://github.com/matthewmackes/map2-audio/commit/fbc37730b6ea020deea28e0f0d171c807fb5441f) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-05 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
