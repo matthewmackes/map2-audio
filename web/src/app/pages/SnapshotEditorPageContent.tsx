@@ -341,6 +341,7 @@ import { useSnapshotEditorDeletePluginMutation } from './snapshotEditor/useSnaps
 import { useSnapshotEditorAddPluginMutation } from './snapshotEditor/useSnapshotEditorAddPluginMutation'
 import { useSnapshotEditorUpdateAuthorityLiveChainsMutation } from './snapshotEditor/useSnapshotEditorUpdateAuthorityLiveChainsMutation'
 import { useSnapshotEditorPublishReadinessQuery } from './snapshotEditor/useSnapshotEditorPublishReadinessQuery'
+import { useSnapshotEditorRevisionsQuery } from './snapshotEditor/useSnapshotEditorRevisionsQuery'
 import { FEATURED_NATIVE_BROWSER_GROUPS } from './snapshotEditor/featuredNativeBrowserGroups'
 import {
   createBlankSnapshotEditorDraft,
@@ -953,11 +954,12 @@ export function SnapshotEditorPage() {
     invalidateAuthorityAwareLiveSnapshot(queryClient, options)
   }, [queryClient])
   const currentEditorSnapshotId = activeSnapshot?.id ?? authoritySnapshotId ?? null
-  const snapshotRevisionsQuery = useQuery({
-    queryKey: ['snapshots', 'revisions', currentEditorSnapshotId],
-    queryFn: () => snapshotsApi.listRevisions(currentEditorSnapshotId!),
-    enabled: showVersionHistoryModal && currentEditorSnapshotId != null,
-    refetchOnWindowFocus: false,
+  // T2472 deferred-read slice 2 — snapshot-revisions query lifted into
+  // useSnapshotEditorRevisionsQuery; canonical key shape preserved so the
+  // slice-11 (restore-revision) invalidation continues to hit it.
+  const { snapshotRevisionsQuery } = useSnapshotEditorRevisionsQuery({
+    currentEditorSnapshotId,
+    showVersionHistoryModal,
   })
   const snapshotCount = snapshotsSummaryQuery.data?.count ?? 0
   const snapshotLoadFailureMessage = authoritySnapshotDetailQuery.isError
