@@ -328,6 +328,7 @@ import { useSnapshotEditorPresetMutations } from './snapshotEditor/useSnapshotEd
 import { useSnapshotEditorUndoRedoMutations } from './snapshotEditor/useSnapshotEditorUndoRedoMutations'
 import { useSnapshotEditorHeroPublishMutations } from './snapshotEditor/useSnapshotEditorHeroPublishMutations'
 import { useSnapshotEditorMetadataMutations } from './snapshotEditor/useSnapshotEditorMetadataMutations'
+import { useSnapshotEditorLockMutation } from './snapshotEditor/useSnapshotEditorLockMutation'
 import { FEATURED_NATIVE_BROWSER_GROUPS } from './snapshotEditor/featuredNativeBrowserGroups'
 import {
   createBlankSnapshotEditorDraft,
@@ -2080,24 +2081,9 @@ export function SnapshotEditorPage() {
     },
   })
 
-  const toggleActiveSnapshotLockMutation = useMutation({
-    mutationFn: async () => {
-      if (!activeSnapshot) {
-        throw new Error('No active snapshot to lock')
-      }
-      return snapshotsApi.update(activeSnapshot.id, {
-        is_locked: !activeSnapshot.is_locked,
-      })
-    },
-    onSuccess: (response) => {
-      syncSnapshotDetailCaches(response.snapshot)
-      queryClient.invalidateQueries({ queryKey: ['snapshots'] })
-      pushToast(response.snapshot.is_locked ? 'Snapshot locked' : 'Snapshot unlocked', 'success')
-    },
-    onError: (error) => {
-      pushToast(error instanceof Error ? error.message : 'Failed to update snapshot lock', 'error')
-    },
-  })
+  // toggleActiveSnapshotLockMutation is extracted into
+  // useSnapshotEditorLockMutation and called after the
+  // syncSnapshotDetailCaches definition (TDZ) — see T2472 slice 6.
 
   // Hero sub-row: publish-readiness drives the SnapshotPublishStatus pill +
   // contextual actions. Polled at 5s to mirror SnapshotPublishPage.
@@ -2250,6 +2236,12 @@ export function SnapshotEditorPage() {
     setEditingSnapshotName,
     setRenameSnapshotName,
     setSnapshotProgramValue,
+    pushToast,
+  })
+
+  const { toggleActiveSnapshotLockMutation } = useSnapshotEditorLockMutation({
+    activeSnapshot,
+    syncSnapshotDetailCaches,
     pushToast,
   })
 
