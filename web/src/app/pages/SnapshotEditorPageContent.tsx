@@ -331,6 +331,7 @@ import { useSnapshotEditorMetadataMutations } from './snapshotEditor/useSnapshot
 import { useSnapshotEditorLockMutation } from './snapshotEditor/useSnapshotEditorLockMutation'
 import { useSnapshotEditorChainEditMutations } from './snapshotEditor/useSnapshotEditorChainEditMutations'
 import { useSnapshotEditorChainRenameMutation } from './snapshotEditor/useSnapshotEditorChainRenameMutation'
+import { useSnapshotEditorOpenEditorSnapshotMutation } from './snapshotEditor/useSnapshotEditorOpenEditorSnapshotMutation'
 import { FEATURED_NATIVE_BROWSER_GROUPS } from './snapshotEditor/featuredNativeBrowserGroups'
 import {
   createBlankSnapshotEditorDraft,
@@ -1968,24 +1969,8 @@ export function SnapshotEditorPage() {
     },
   })
 
-  const openEditorSnapshotMutation = useMutation({
-    mutationFn: (snapshotId: number) => snapshotsApi.openDraft(snapshotId),
-    onSuccess: (response) => {
-      const detail = response.snapshot
-      if (controlPlaneSnapshot?.id === detail.id) {
-        setEditorSnapshotOverride(null)
-      } else {
-        setEditorSnapshotOverride(detail)
-      }
-      hydrateEditorFromSnapshot(detail, {
-        toastMessage: `Loaded: ${detail.name}`,
-        resetSelectedBlock: true,
-      })
-    },
-    onError: (error) => {
-      pushToast(error instanceof Error ? error.message : 'Failed to load snapshot', 'error')
-    },
-  })
+  // openEditorSnapshotMutation extracted into useSnapshotEditorOpenEditorSnapshotMutation
+  // and called after hydrateEditorFromSnapshot definition (TDZ) — see T2472 slice 9.
 
   const updateActiveSnapshotMutation = useMutation({
     mutationFn: async () => {
@@ -2429,6 +2414,15 @@ export function SnapshotEditorPage() {
     snapshotUndoRedo.reset(restoredDraft)
     markSnapshotsDirty()
   }, [markSnapshotsDirty, queryClient, setEditorSnapshotState, snapshotUndoRedo.reset])
+
+  // T2472 mutation extraction slice 9 — open-editor-snapshot mutation
+  // colocated here, after hydrateEditorFromSnapshot is defined (TDZ).
+  const { openEditorSnapshotMutation } = useSnapshotEditorOpenEditorSnapshotMutation({
+    controlPlaneSnapshot,
+    setEditorSnapshotOverride,
+    hydrateEditorFromSnapshot,
+    pushToast,
+  })
 
   const applySnapshotDraftPreview = useCallback(async (draft: SnapshotDraftData) => {
     const preview = await snapshotsApi.preview(draft)
