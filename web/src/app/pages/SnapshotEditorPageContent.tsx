@@ -335,6 +335,7 @@ import { useSnapshotEditorOpenEditorSnapshotMutation } from './snapshotEditor/us
 import { useSnapshotEditorUpdateActiveSnapshotMutation } from './snapshotEditor/useSnapshotEditorUpdateActiveSnapshotMutation'
 import { useSnapshotEditorRestoreRevisionMutation } from './snapshotEditor/useSnapshotEditorRestoreRevisionMutation'
 import { useSnapshotEditorCreateFromEditorMutation } from './snapshotEditor/useSnapshotEditorCreateFromEditorMutation'
+import { useSnapshotEditorActivateCurrentMutation } from './snapshotEditor/useSnapshotEditorActivateCurrentMutation'
 import { FEATURED_NATIVE_BROWSER_GROUPS } from './snapshotEditor/featuredNativeBrowserGroups'
 import {
   createBlankSnapshotEditorDraft,
@@ -1918,74 +1919,8 @@ export function SnapshotEditorPage() {
   // updateActiveSnapshotMutation extracted into useSnapshotEditorUpdateActiveSnapshotMutation
   // and called after hydrateEditorFromSnapshot definition (TDZ) — see T2472 slice 10.
 
-  const activateCurrentSnapshotMutation = useMutation({
-    mutationFn: async (snapshotId: number) => {
-      const activated = await snapshotsApi.activate(snapshotId)
-      const activatedSnapshotId = activated.snapshot_id ?? snapshotId
-      const snapshotData = activated.snapshot_data
-      return {
-        snapshot_id: activatedSnapshotId,
-        snapshot_data: snapshotData,
-        activation_intent: activated.activation_intent ?? null,
-      }
-    },
-    onMutate: (snapshotId) => {
-      setPendingGoLiveSnapshotId(snapshotId)
-      setPendingGoLiveRequestedAt(Date.now())
-      setConfirmedGoLiveSnapshotId(null)
-      setFailedGoLiveSnapshotId(null)
-      setGoLiveFailureReason(null)
-      setGoLiveFailureDetail(null)
-    },
-    onSuccess: (response) => {
-      setPendingGoLiveSnapshotId(null)
-      setPendingGoLiveRequestedAt(null)
-      setConfirmedGoLiveSnapshotId(response.snapshot_id)
-      setFailedGoLiveSnapshotId(null)
-      setGoLiveFailureReason(null)
-      setGoLiveFailureDetail(null)
-      setControlPlaneSnapshotCaches(response.snapshot_data)
-      queryClient.setQueryData(['snapshots', 'detail', response.snapshot_id], response.snapshot_data)
-      void queryClient.invalidateQueries({ queryKey: ['snapshots', 'runtime', 'live-state', 'local'] })
-      void queryClient.invalidateQueries({ queryKey: ['snapshots', 'runtime', 'cluster-live-state'] })
-      void queryClient.invalidateQueries({ queryKey: ['snapshots', 'runtime', 'activation-events', 'local'] })
-      invalidateControlPlaneSnapshotCaches({ includeDesired: true })
-      setEditorSnapshotOverride(null)
-      hydrateEditorFromSnapshot(response.snapshot_data, {
-        toastMessage: buildSnapshotActivationToastMessage(response.snapshot_data),
-        toastDurationMs: SNAPSHOT_ACTIVATION_TOAST_DURATION_MS,
-        toast: {
-          ...buildSnapshotActivationStageToast(response.snapshot_data),
-          tone: 'success',
-        },
-        resetSelectedBlock: true,
-        invalidateSnapshots: true,
-      })
-    },
-    onError: (error, snapshotId) => {
-      const failureDetail = extractSnapshotActivationFailureDetail(error)
-      const failureReason = extractSnapshotActivationFailureReason(error, { separator: '\n' }) ?? 'Activation failed.'
-      const snapshotName = activeSnapshot?.id === snapshotId
-        ? activeSnapshot.name
-        : snapshotsSummaryQuery.data?.snapshots.find((snapshot) => snapshot.id === snapshotId)?.name ?? 'Snapshot'
-      setPendingGoLiveSnapshotId((current) => (current === snapshotId ? null : current))
-      setPendingGoLiveRequestedAt(null)
-      setFailedGoLiveSnapshotId(snapshotId)
-      setGoLiveFailureReason(failureReason)
-      setGoLiveFailureDetail(failureDetail)
-      const stageToast = buildSnapshotActivationFailureStageToast(snapshotName, error, { snapshotId })
-      pushToast(
-        buildSnapshotActivationFailureToastMessage(snapshotName, error),
-        'warn',
-        {
-          durationMs: SNAPSHOT_ACTIVATION_TOAST_DURATION_MS,
-          id: stageToast.options.id,
-          title: stageToast.title,
-          stage: stageToast.options.stage,
-        },
-      )
-    },
-  })
+  // activateCurrentSnapshotMutation extracted into useSnapshotEditorActivateCurrentMutation
+  // and called after hydrateEditorFromSnapshot definition (TDZ) — see T2472 slice 13.
 
   // toggleActiveSnapshotLockMutation is extracted into
   // useSnapshotEditorLockMutation and called after the
@@ -2353,6 +2288,24 @@ export function SnapshotEditorPage() {
     setRenameSnapshotName,
     setEditingSnapshotName,
     setShowPluginBrowser,
+    pushToast,
+  })
+
+  // T2472 mutation extraction slice 13 — activate-current-snapshot mutation
+  // colocated here, after hydrateEditorFromSnapshot is defined (TDZ).
+  const { activateCurrentSnapshotMutation } = useSnapshotEditorActivateCurrentMutation({
+    activeSnapshot,
+    snapshotsSummaryQuery,
+    setPendingGoLiveSnapshotId,
+    setPendingGoLiveRequestedAt,
+    setConfirmedGoLiveSnapshotId,
+    setFailedGoLiveSnapshotId,
+    setGoLiveFailureReason,
+    setGoLiveFailureDetail,
+    setControlPlaneSnapshotCaches,
+    invalidateControlPlaneSnapshotCaches,
+    setEditorSnapshotOverride,
+    hydrateEditorFromSnapshot,
     pushToast,
   })
 
