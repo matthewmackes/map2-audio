@@ -793,14 +793,62 @@ async def list_presets(device_id: str):
 
 @router.post("/devices/{device_id}/presets/{preset_index}/recall", summary="Recall a preset")
 async def recall_preset(device_id: str, preset_index: int = FPath(..., ge=1)):
-    """Recall a preset on the Tesira device by index (1-based)."""
+    """Recall a preset on the Tesira device by index (1-based).
+
+    T2496-5 — writes a pending row through `AvbBindingAuthority` BEFORE
+    invoking the device, then flips it to enabled=True on success. The
+    operator surface (Bindings page, Connections page) sees the recall
+    request as a warm-gray row while it's in-flight, then green once
+    the device acks. Defensive: authority write/ack failures log +
+    swallow without failing the recall.
+    """
     device = _get_device(device_id)
     _require_connected(device)
+
+    # T2496-5 — pre-write the binding row in pending state.
+    try:
+        from app.services.tesira.binding_adapter import (
+            record_tesira_preset_in_authority,
+        )
+
+        await record_tesira_preset_in_authority(
+            device_host=device.host,
+            device_name=getattr(device, "name", "") or device.host,
+            preset_id=preset_index,
+            pending=True,
+        )
+    except Exception as exc:  # noqa: BLE001 — defensive
+        logger.warning(
+            "recall_preset: could not pre-write binding for %s/%d: %s",
+            device_id,
+            preset_index,
+            exc,
+        )
+
     try:
         await device.recall_preset(preset_index)
-        return {"ok": True, "preset_index": preset_index}
     except Exception as exc:
         raise HTTPException(status_code=502, detail=str(exc))
+
+    # T2496-5 — device acked → flip the binding row to enabled=True.
+    try:
+        from app.services.tesira.binding_adapter import (
+            mark_preset_acked_in_authority,
+        )
+
+        await mark_preset_acked_in_authority(
+            device_host=device.host,
+            preset_id=preset_index,
+        )
+    except Exception as exc:  # noqa: BLE001 — defensive
+        logger.warning(
+            "recall_preset: could not flip binding to enabled for %s/%d: %s",
+            device_id,
+            preset_index,
+            exc,
+        )
+
+    return {"ok": True, "preset_index": preset_index}
 
 
 # ──────────────────────────────────────────────────────────────────────────────
