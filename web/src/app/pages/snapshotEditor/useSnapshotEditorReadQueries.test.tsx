@@ -19,6 +19,7 @@ import {
   useSnapshotEditorAudioReadQueries,
   useSnapshotEditorCatalogReadQueries,
   useSnapshotEditorMidiReadQueries,
+  useSnapshotEditorSnapshotConfigQueries,
 } from './useSnapshotEditorReadQueries'
 
 // jsdom doesn't have fetch — provide a no-op stub for the
@@ -277,5 +278,39 @@ describe('useSnapshotEditorAssignmentReadQueries — cache-key parity (T2472 sli
       .find((k) => Array.isArray(k) && k[0] === 'chains' && k[2] === 'analysis')
 
     expect(analysisKey).toEqual(['chains', 'chain-13', 'analysis'])
+  })
+})
+
+describe('useSnapshotEditorSnapshotConfigQueries — cache-key parity (T2472 slice 6)', () => {
+  it('exposes the three snapshot-config queryKeys verbatim', () => {
+    const client = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    })
+    const cadences = { standard: 5_000 as number | false, fast: 2_000 as number | false, meter: 1_000 as number | false, slow: 10_000 as number | false }
+    const fallback = { thresholdDb: -60, releaseMs: 250 }
+
+    renderHook(
+      () =>
+        useSnapshotEditorSnapshotConfigQueries({
+          cadences,
+          fallbackNoiseGateDefaults: fallback,
+          snapshotsListFn: jest.fn().mockResolvedValue({ snapshots: [], count: 0 }),
+        }),
+      { wrapper: withQueryClient(client) },
+    )
+
+    const cacheKeys = client
+      .getQueryCache()
+      .getAll()
+      .map((q) => q.queryKey)
+
+    expect(cacheKeys).toEqual(
+      expect.arrayContaining([
+        ['snapshots'],
+        ['config', 'snapshot-noise-gate-defaults'],
+        ['config', 'snapshot-io-defaults'],
+      ]),
+    )
+    expect(cacheKeys).toHaveLength(3)
   })
 })

@@ -311,3 +311,114 @@ export function useSnapshotEditorAssignmentReadQueries({
     assignmentAnalysisQuery,
   }
 }
+
+// ============================================================================
+// T2472 slice 6 — snapshot config + summary read group.
+//
+// Three queries that fetch global snapshot-system config + a summary
+// of all snapshots:
+//
+//   - snapshotsSummaryQuery        — `['snapshots']`, standard cadence
+//   - systemNoiseGateDefaultsQuery — `['config', 'snapshot-noise-gate-defaults']`,
+//                                    no refetch interval, default backed
+//                                    by DEFAULT_SYSTEM_NOISE_GATE_DEFAULTS
+//                                    (passed in to keep the hook
+//                                    decoupled from the constants module)
+//   - snapshotIoDefaultsQuery      — `['config', 'snapshot-io-defaults']`,
+//                                    no refetch interval, returns
+//                                    SnapshotIoDefaults shape verbatim
+//
+// All three keys reproduced verbatim from `SnapshotEditorPageContent.tsx
+// lines 877-936`.
+
+export interface SystemNoiseGateDefaults {
+  thresholdDb: number
+  releaseMs: number
+}
+
+export interface SnapshotIoDefaultsShape {
+  input_device: string | null
+  output_device: string | null
+  monitoring_output_index: number | null
+}
+
+export interface UseSnapshotEditorSnapshotConfigQueriesArgs<TSnapshotsList> {
+  cadences: SnapshotEditorCadences
+  fallbackNoiseGateDefaults: SystemNoiseGateDefaults
+  snapshotsListFn: () => Promise<TSnapshotsList>
+}
+
+export function useSnapshotEditorSnapshotConfigQueries<TSnapshotsList>({
+  cadences,
+  fallbackNoiseGateDefaults,
+  snapshotsListFn,
+}: UseSnapshotEditorSnapshotConfigQueriesArgs<TSnapshotsList>) {
+  const snapshotsSummaryQuery = useQuery<TSnapshotsList>({
+    queryKey: ['snapshots'],
+    queryFn: snapshotsListFn,
+    refetchInterval: cadences.standard,
+  })
+
+  const systemNoiseGateDefaultsQuery = useQuery({
+    queryKey: ['config', 'snapshot-noise-gate-defaults'],
+    queryFn: async () => {
+      const response = await fetchJson<{
+        config?: {
+          snapshots?: {
+            global_noise_gate_threshold_db?: number
+            global_noise_gate_release_ms?: number
+          }
+        }
+      }>('/api/cluster/config/runtime')
+      const snapshotsConfig = response.config?.snapshots ?? {}
+      return {
+        thresholdDb:
+          typeof snapshotsConfig.global_noise_gate_threshold_db === 'number'
+            ? snapshotsConfig.global_noise_gate_threshold_db
+            : fallbackNoiseGateDefaults.thresholdDb,
+        releaseMs:
+          typeof snapshotsConfig.global_noise_gate_release_ms === 'number'
+            ? snapshotsConfig.global_noise_gate_release_ms
+            : fallbackNoiseGateDefaults.releaseMs,
+      }
+    },
+    refetchOnWindowFocus: false,
+  })
+
+  const snapshotIoDefaultsQuery = useQuery({
+    queryKey: ['config', 'snapshot-io-defaults'],
+    queryFn: async (): Promise<SnapshotIoDefaultsShape> => {
+      const response = await fetchJson<{
+        config?: {
+          snapshots?: {
+            default_input_device?: string | null
+            default_output_device?: string | null
+            default_monitoring_output_index?: number | null
+          }
+        }
+      }>('/api/cluster/config/runtime')
+      const snapshotsConfig = response.config?.snapshots ?? {}
+      return {
+        input_device:
+          typeof snapshotsConfig.default_input_device === 'string'
+            ? snapshotsConfig.default_input_device
+            : null,
+        output_device:
+          typeof snapshotsConfig.default_output_device === 'string'
+            ? snapshotsConfig.default_output_device
+            : null,
+        monitoring_output_index:
+          typeof snapshotsConfig.default_monitoring_output_index === 'number'
+            ? snapshotsConfig.default_monitoring_output_index
+            : null,
+      }
+    },
+    refetchOnWindowFocus: false,
+  })
+
+  return {
+    snapshotsSummaryQuery,
+    systemNoiseGateDefaultsQuery,
+    snapshotIoDefaultsQuery,
+  }
+}

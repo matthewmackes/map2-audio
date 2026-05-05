@@ -321,6 +321,7 @@ import {
   useSnapshotEditorAudioReadQueries,
   useSnapshotEditorCatalogReadQueries,
   useSnapshotEditorMidiReadQueries,
+  useSnapshotEditorSnapshotConfigQueries,
 } from './snapshotEditor/useSnapshotEditorReadQueries'
 import { FEATURED_NATIVE_BROWSER_GROUPS } from './snapshotEditor/featuredNativeBrowserGroups'
 import {
@@ -874,66 +875,26 @@ export function SnapshotEditorPage() {
   const deviceDisconnected = deviceHealthQuery.data
     ? deviceHealthQuery.data.device_connected === false
     : false
-  const snapshotsSummaryQuery = useQuery({
-    queryKey: ['snapshots'],
-    queryFn: () => snapshotsApi.list(),
-    refetchInterval: snapshotStandardCadence,
+  // T2472 slice 6 — snapshot config + summary read group lifted into
+  // a sibling hook. Cache-key bit-identity preserved: ['snapshots'],
+  // ['config', 'snapshot-noise-gate-defaults'], ['config',
+  // 'snapshot-io-defaults']. The DEFAULT_SYSTEM_NOISE_GATE_DEFAULTS
+  // fallback constant is passed in to keep the hook decoupled from
+  // the monolith's constants module.
+  const {
+    snapshotsSummaryQuery,
+    systemNoiseGateDefaultsQuery,
+    snapshotIoDefaultsQuery,
+  } = useSnapshotEditorSnapshotConfigQueries({
+    cadences: snapshotEditorCadences,
+    fallbackNoiseGateDefaults: DEFAULT_SYSTEM_NOISE_GATE_DEFAULTS,
+    snapshotsListFn: () => snapshotsApi.list(),
   })
   // T2454 slice 1C: warm-cache status for the Preload Slots panel + the
   // Go Live cold-gate. Polls /api/snapshots/preload-status every 5s and
   // exposes `preloadNow()` so Go Live can warm a pinned-but-cold target
   // synchronously instead of waiting for the 30s reconciler tick.
   const snapshotPreloadStatus = useSnapshotPreloadStatus()
-  const systemNoiseGateDefaultsQuery = useQuery({
-    queryKey: ['config', 'snapshot-noise-gate-defaults'],
-    queryFn: async () => {
-      const response = await fetchJson<{
-        config?: {
-          snapshots?: {
-            global_noise_gate_threshold_db?: number
-            global_noise_gate_release_ms?: number
-          }
-        }
-      }>('/api/cluster/config/runtime')
-      const snapshotsConfig = response.config?.snapshots ?? {}
-      return {
-        thresholdDb: typeof snapshotsConfig.global_noise_gate_threshold_db === 'number'
-          ? snapshotsConfig.global_noise_gate_threshold_db
-          : DEFAULT_SYSTEM_NOISE_GATE_DEFAULTS.thresholdDb,
-        releaseMs: typeof snapshotsConfig.global_noise_gate_release_ms === 'number'
-          ? snapshotsConfig.global_noise_gate_release_ms
-          : DEFAULT_SYSTEM_NOISE_GATE_DEFAULTS.releaseMs,
-      }
-    },
-    refetchOnWindowFocus: false,
-  })
-  const snapshotIoDefaultsQuery = useQuery({
-    queryKey: ['config', 'snapshot-io-defaults'],
-    queryFn: async (): Promise<SnapshotIoDefaults> => {
-      const response = await fetchJson<{
-        config?: {
-          snapshots?: {
-            default_input_device?: string | null
-            default_output_device?: string | null
-            default_monitoring_output_index?: number | null
-          }
-        }
-      }>('/api/cluster/config/runtime')
-      const snapshotsConfig = response.config?.snapshots ?? {}
-      return {
-        input_device: typeof snapshotsConfig.default_input_device === 'string'
-          ? snapshotsConfig.default_input_device
-          : null,
-        output_device: typeof snapshotsConfig.default_output_device === 'string'
-          ? snapshotsConfig.default_output_device
-          : null,
-        monitoring_output_index: typeof snapshotsConfig.default_monitoring_output_index === 'number'
-          ? snapshotsConfig.default_monitoring_output_index
-          : null,
-      }
-    },
-    refetchOnWindowFocus: false,
-  })
   const runtimeLiveState = runtimeStateQuery.data ?? null
   const committedAudioState = committedAudioStateQuery.data?.value ?? null
   const authoritySnapshotDetail = authoritySnapshotDetailQuery.data ?? null
