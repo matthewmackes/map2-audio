@@ -323,6 +323,7 @@ import {
   useSnapshotEditorMidiReadQueries,
   useSnapshotEditorSnapshotConfigQueries,
 } from './snapshotEditor/useSnapshotEditorReadQueries'
+import { useSnapshotEditorMidiMutations } from './snapshotEditor/useSnapshotEditorMidiMutations'
 import { FEATURED_NATIVE_BROWSER_GROUPS } from './snapshotEditor/featuredNativeBrowserGroups'
 import {
   createBlankSnapshotEditorDraft,
@@ -3426,33 +3427,10 @@ export function SnapshotEditorPage() {
     void queryClient.invalidateQueries({ queryKey: ['midi', 'mappings', 'juce-grid'] })
   }, [queryClient])
 
-  const startMidiLearnMutation = useMutation({
-    mutationFn: (params: {
-      chain_id: number
-      plugin_uri: string
-      param_symbol: string
-      param_index: number
-      min_val?: number
-      max_val?: number
-    }) => midiApiV2.startLearn(params),
-    onSuccess: () => {
-      invalidateMidiQueries()
-    },
-    onError: (error) => {
-      setMidiLearnActive(false)
-      pushToast(error instanceof Error ? error.message : 'Failed to start MIDI learn', 'error')
-    },
-  })
-
-  const stopMidiLearnMutation = useMutation({
-    mutationFn: () => midiApiV2.stopLearn(),
-    onSuccess: () => {
-      setMidiLearnActive(false)
-      invalidateMidiQueries()
-    },
-    onError: (error) => {
-      pushToast(error instanceof Error ? error.message : 'Failed to stop MIDI learn', 'error')
-    },
+  const { startMidiLearnMutation, stopMidiLearnMutation } = useSnapshotEditorMidiMutations({
+    invalidateMidiQueries,
+    setMidiLearnActive,
+    pushToast,
   })
 
   const reorderMutation = useMutation({
