@@ -220,15 +220,18 @@ async def remove_point(request: RemovePointRequest) -> Dict[str, str]:
 
 
 @router.get("/lanes")
-async def list_lanes() -> Dict[str, List[str]]:
+async def list_lanes() -> Dict[str, Any]:
     """
     Get list of all parameters with automation
-    
+
     Returns:
-        List of parameter IDs
+        ``{"parameters": [parameter_id, ...], "count": int}``. The previous
+        annotation was ``Dict[str, List[str]]`` which forced FastAPI to
+        validate ``count`` as a list and made every call to this endpoint
+        raise ``ResponseValidationError`` (``'list_type', input: 0``).
     """
     parameters = automation_engine.get_all_automated_parameters()
-    
+
     return {
         "parameters": parameters,
         "count": len(parameters)
