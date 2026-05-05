@@ -162,11 +162,11 @@ async def post_morph_position(payload: MorphPositionRequest) -> MorphStateRespon
                 }
             },
         )
-    set_position(payload.x, payload.y)
+    await set_position(payload.x, payload.y)
     state_getter = getattr(engine, "get_morph_state", None)
     if state_getter is None:
         return MorphStateResponse(x=payload.x, y=payload.y, configured_corners=[])
-    state = state_getter() or {}
+    state = (await state_getter()) or {}
     return MorphStateResponse(
         x=float(state.get("x", payload.x)),
         y=float(state.get("y", payload.y)),
@@ -191,7 +191,7 @@ async def get_morph_state() -> MorphStateResponse:
     state_getter = getattr(engine, "get_morph_state", None)
     if state_getter is None:
         return MorphStateResponse(x=0.5, y=0.5, configured_corners=[])
-    state = state_getter() or {}
+    state = (await state_getter()) or {}
     return MorphStateResponse(
         x=float(state.get("x", 0.5)),
         y=float(state.get("y", 0.5)),

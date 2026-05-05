@@ -19,17 +19,26 @@ def _client() -> TestClient:
 
 
 class _FakeEngine:
+    """Mirrors the real ``JuceSnapshotBridgeMixin`` shape: both engine
+    methods are ``async def`` and the route handlers must await them.
+
+    Prior to 2026-05-05 these were declared as plain ``def`` here, which
+    let the synchronous-call bug at ``state_authority.py::get_morph_state``
+    pass tests while breaking the production endpoint with
+    ``'coroutine' object has no attribute 'get'``. Keep the async shape
+    so a future regression to the unawaited pattern fails this test."""
+
     def __init__(self, state: dict | None = None):
         self._state = state or {"x": 0.5, "y": 0.5, "configured_corners": []}
         self._last_position: tuple[float, float] | None = None
 
-    def set_morph_position_2d(self, x: float, y: float) -> bool:
+    async def set_morph_position_2d(self, x: float, y: float) -> bool:
         self._last_position = (x, y)
         self._state["x"] = max(0.0, min(1.0, x))
         self._state["y"] = max(0.0, min(1.0, y))
         return True
 
-    def get_morph_state(self) -> dict:
+    async def get_morph_state(self) -> dict:
         return dict(self._state)
 
 
