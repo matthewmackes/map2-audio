@@ -324,6 +324,7 @@ import {
   useSnapshotEditorSnapshotConfigQueries,
 } from './snapshotEditor/useSnapshotEditorReadQueries'
 import { useSnapshotEditorMidiMutations } from './snapshotEditor/useSnapshotEditorMidiMutations'
+import { useSnapshotEditorPresetMutations } from './snapshotEditor/useSnapshotEditorPresetMutations'
 import { FEATURED_NATIVE_BROWSER_GROUPS } from './snapshotEditor/featuredNativeBrowserGroups'
 import {
   createBlankSnapshotEditorDraft,
@@ -3818,36 +3819,14 @@ export function SnapshotEditorPage() {
     },
   })
 
-  const savePresetMutation = useMutation({
-    mutationFn: ({ chainId, name }: { chainId: number; name: string }) => chainsApi.savePreset(chainId, name),
-    onSuccess: (_, variables) => {
-      queryClient.invalidateQueries({ queryKey: ['chains', 'presets'] })
-      setShowSavePresetModal(false)
-      setSavePresetName('')
-      pushToast(`Preset "${variables.name}" saved`, 'success')
-    },
-    onError: (error) => pushToast(`Failed to save: ${error}`, 'error'),
-  })
-
-  const loadPresetMutation = useMutation({
-    mutationFn: (presetId: number) => chainsApi.loadPreset(presetId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['chains'] })
-      setShowPresetBrowser(false)
-      pushToast('Preset loaded', 'success')
-    },
-    onError: (error) => pushToast(`Failed to load preset: ${error}`, 'error'),
-  })
-
-  const deletePresetMutation = useMutation({
-    mutationFn: (presetId: number) => chainsApi.deletePreset(presetId),
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['chains', 'presets'] })
-      setPresetPendingDelete(null)
-      pushToast('Preset deleted', 'success')
-    },
-    onError: (error) => pushToast(`Failed to delete preset: ${error}`, 'error'),
-  })
+  const { savePresetMutation, loadPresetMutation, deletePresetMutation } =
+    useSnapshotEditorPresetMutations({
+      setShowSavePresetModal,
+      setSavePresetName,
+      setShowPresetBrowser,
+      setPresetPendingDelete,
+      pushToast,
+    })
 
   const renameMutation = useMutation({
     mutationFn: ({ chainId, name }: { chainId: number; name: string }): Promise<SnapshotDetail | { status: string; chain_id: number; name: string }> =>
