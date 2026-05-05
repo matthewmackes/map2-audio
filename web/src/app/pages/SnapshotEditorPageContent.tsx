@@ -336,6 +336,7 @@ import { useSnapshotEditorUpdateActiveSnapshotMutation } from './snapshotEditor/
 import { useSnapshotEditorRestoreRevisionMutation } from './snapshotEditor/useSnapshotEditorRestoreRevisionMutation'
 import { useSnapshotEditorCreateFromEditorMutation } from './snapshotEditor/useSnapshotEditorCreateFromEditorMutation'
 import { useSnapshotEditorActivateCurrentMutation } from './snapshotEditor/useSnapshotEditorActivateCurrentMutation'
+import { useSnapshotEditorUpdateLiveRoutingMutation } from './snapshotEditor/useSnapshotEditorUpdateLiveRoutingMutation'
 import { FEATURED_NATIVE_BROWSER_GROUPS } from './snapshotEditor/featuredNativeBrowserGroups'
 import {
   createBlankSnapshotEditorDraft,
@@ -2143,35 +2144,12 @@ export function SnapshotEditorPage() {
     return chainsApi.create(name)
   }, [activeSnapshot?.id, queryClient, syncSnapshotMutationResult])
 
-  type SnapshotRoutingMutationResponse = SnapshotDetail & {
-    routing_requires_reactivation?: boolean
-    routing_mode_changed_live?: boolean
-  }
-
-  const updateLiveSnapshotRoutingMutation = useMutation({
-    mutationFn: async ({
-      snapshotId,
-      nextDraft,
-    }: {
-      snapshotId: number
-      nextDraft: SnapshotDraftData
-    }) => snapshotsApi.updateRouting(
-      snapshotId,
-      flowSnapshotDataToSnapshotPayload(nextDraft).routing,
-    ) as Promise<SnapshotRoutingMutationResponse>,
-    onSuccess: (snapshot) => {
-      syncSnapshotDetailCaches(snapshot, {
-        updateAuthorityActiveSnapshot: true,
-      })
-      setRoutingLiveApplyState('live-applied')
-      if (snapshot.routing_mode_changed_live) {
-        pushToast('Live routing mode updated', 'success')
-      }
-    },
-    onError: (error) => {
-      setRoutingLiveApplyState('idle')
-      pushToast(error instanceof Error ? error.message : 'Failed to update live routing', 'error')
-    },
+  // T2472 mutation extraction slice 14 — update-live-routing mutation
+  // colocated here, after syncSnapshotDetailCaches is defined (TDZ).
+  const { updateLiveSnapshotRoutingMutation } = useSnapshotEditorUpdateLiveRoutingMutation({
+    syncSnapshotDetailCaches,
+    setRoutingLiveApplyState,
+    pushToast,
   })
 
   const hydrateEditorFromSnapshot = useCallback((
