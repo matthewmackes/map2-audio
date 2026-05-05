@@ -330,6 +330,7 @@ import { useSnapshotEditorHeroPublishMutations } from './snapshotEditor/useSnaps
 import { useSnapshotEditorMetadataMutations } from './snapshotEditor/useSnapshotEditorMetadataMutations'
 import { useSnapshotEditorLockMutation } from './snapshotEditor/useSnapshotEditorLockMutation'
 import { useSnapshotEditorChainEditMutations } from './snapshotEditor/useSnapshotEditorChainEditMutations'
+import { useSnapshotEditorChainRenameMutation } from './snapshotEditor/useSnapshotEditorChainRenameMutation'
 import { FEATURED_NATIVE_BROWSER_GROUPS } from './snapshotEditor/featuredNativeBrowserGroups'
 import {
   createBlankSnapshotEditorDraft,
@@ -3638,22 +3639,14 @@ export function SnapshotEditorPage() {
       pushToast,
     })
 
-  const renameMutation = useMutation({
-    mutationFn: ({ chainId, name }: { chainId: number; name: string }): Promise<SnapshotDetail | { status: string; chain_id: number; name: string }> =>
-      activeSnapshot?.id != null
-        ? snapshotsApi.renameChain(activeSnapshot.id, requireSnapshotChainId(chainId), name)
-        : chainsApi.rename(chainId, name),
-    onSuccess: (data) => {
-      if (activeSnapshot?.id != null) {
-        syncSnapshotMutationResult(data as SnapshotDetail)
-      }
-      queryClient.invalidateQueries({ queryKey: ['chains'] })
-      markSnapshotsDirty()
-      setShowRenameChainModal(false)
-      setRenameChainName('')
-      pushToast('Chain renamed', 'success')
-    },
-    onError: (error) => pushToast(`Failed to rename: ${error}`, 'error'),
+  const { renameMutation } = useSnapshotEditorChainRenameMutation({
+    activeSnapshot,
+    requireSnapshotChainId,
+    syncSnapshotMutationResult,
+    markSnapshotsDirty,
+    setShowRenameChainModal,
+    setRenameChainName,
+    pushToast,
   })
 
   // ============================================================================
