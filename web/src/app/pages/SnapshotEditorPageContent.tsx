@@ -337,6 +337,7 @@ import { useSnapshotEditorRestoreRevisionMutation } from './snapshotEditor/useSn
 import { useSnapshotEditorCreateFromEditorMutation } from './snapshotEditor/useSnapshotEditorCreateFromEditorMutation'
 import { useSnapshotEditorActivateCurrentMutation } from './snapshotEditor/useSnapshotEditorActivateCurrentMutation'
 import { useSnapshotEditorUpdateLiveRoutingMutation } from './snapshotEditor/useSnapshotEditorUpdateLiveRoutingMutation'
+import { useSnapshotEditorDeletePluginMutation } from './snapshotEditor/useSnapshotEditorDeletePluginMutation'
 import { FEATURED_NATIVE_BROWSER_GROUPS } from './snapshotEditor/featuredNativeBrowserGroups'
 import {
   createBlankSnapshotEditorDraft,
@@ -3244,95 +3245,20 @@ export function SnapshotEditorPage() {
     markDirty?: boolean
   }
 
-  const deleteMutation = useMutation<
-    SnapshotDetail | { status: string; chain_id: number },
-    Error,
-    {
-      chainId,
-      pluginUri,
-      pluginPosition,
-      undoRedoDraft?: SnapshotDraftData
-      undoRedoDescription?: string
-    },
-    PluginMutationContext
-  >({
-    mutationFn: ({
-      chainId,
-      pluginUri,
-      pluginPosition,
-    }: {
-      chainId: number
-      pluginUri: string
-      pluginPosition?: number
-      undoRedoDraft?: SnapshotDraftData
-      undoRedoDescription?: string
-    }): Promise<SnapshotDetail | { status: string; chain_id: number }> => {
-      if (activeSnapshot?.id != null) {
-        const identity = requireSnapshotPluginId(chainId, pluginUri, pluginPosition)
-        return snapshotsApi.removePlugin(
-          activeSnapshot.id,
-          identity.snapshotChainId,
-          identity.snapshotPluginId,
-        )
-      }
-      return chainsApi.removePlugin(chainId, pluginUri, pluginPosition)
-    },
-    onMutate: async (variables): Promise<PluginMutationContext> => {
-      await queryClient.cancelQueries({ queryKey: ['chains'] })
-      const previousChains = queryClient.getQueryData<ChainsResponse>(['chains'])
-      const previousSelectedPluginUri = selectedPluginUri
-      const previousSelectedPluginPosition = selectedPluginPosition
-
-      updateChainPluginsCache(variables.chainId, (plugins) => {
-        if (typeof variables.pluginPosition !== 'number') {
-          return plugins.filter((plugin) => plugin.uri !== variables.pluginUri)
-        }
-        return plugins.filter(
-          (plugin) => !(plugin.uri === variables.pluginUri && plugin.position === variables.pluginPosition)
-        )
-      })
-      if (
-        selectedPluginUri === variables.pluginUri
-        && (
-          typeof variables.pluginPosition !== 'number'
-          || selectedPluginPosition === variables.pluginPosition
-        )
-      ) {
-        setSelectedPluginSelection(null)
-      }
-
-      return {
-        previousChains,
-        previousSelectedPluginUri,
-        previousSelectedPluginPosition,
-      }
-    },
-    onSuccess: (data, variables) => {
-      if (activeSnapshot?.id != null) {
-        syncSnapshotMutationResult(data as SnapshotDetail)
-      }
-      if (variables.undoRedoDraft) {
-        recordSnapshotUndoRedoStep(
-          variables.undoRedoDraft,
-          variables.undoRedoDescription ?? 'Remove block',
-        )
-      }
-      pushToast('Plugin removed', 'success')
-    },
-    onError: (error, variables, context) => {
-      if (context?.previousChains) {
-        queryClient.setQueryData(['chains'], context.previousChains)
-      }
-      setSelectedPluginSelection(
-        context?.previousSelectedPluginUri ?? null,
-        context?.previousSelectedPluginPosition ?? null,
-      )
-      pushToast(`Failed to remove: ${error}`, 'error')
-    },
-    onSettled: () => {
-      queryClient.invalidateQueries({ queryKey: ['chains'] })
-      markSnapshotsDirty()
-    },
+  // T2472 mutation extraction slice 15 — delete-plugin mutation
+  // colocated here, after PluginMutationContext + updateChainPluginsCache
+  // are defined.
+  const { deleteMutation } = useSnapshotEditorDeletePluginMutation({
+    activeSnapshot,
+    selectedPluginUri,
+    selectedPluginPosition,
+    requireSnapshotPluginId,
+    updateChainPluginsCache,
+    setSelectedPluginSelection,
+    syncSnapshotMutationResult,
+    recordSnapshotUndoRedoStep,
+    markSnapshotsDirty,
+    pushToast,
   })
 
   const addPluginMutation = useMutation<
