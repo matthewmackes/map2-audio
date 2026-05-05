@@ -534,9 +534,15 @@ try:
                     fallback_instance_id=explicit_instance_id,
                 )
             except TypeError:
+                # Defensive signature-probe: the await above failed
+                # with TypeError on the kwargs-form, so try positional
+                # variants. The coroutine that comes back is awaited at
+                # the bottom via inspect.isawaitable().
                 try:
+                    # audit-allow: unawaited-async-engine-call
                     resolved_instance_id = resolver(plugin_uri, plugin_position)
                 except TypeError:
+                    # audit-allow: unawaited-async-engine-call
                     resolved_instance_id = resolver(plugin_uri)
                 if inspect.isawaitable(resolved_instance_id):
                     resolved_instance_id = await resolved_instance_id
