@@ -156,6 +156,31 @@ class TesiraFleet:
             except Exception as exc:
                 logger.warning("Disconnect error for %s: %s", device.device_id, exc)
 
+            # T2496-4 — clear every authority row for this device's
+            # subscriptions so the operator surface doesn't accumulate
+            # stale Tesira bindings across fleet restarts. Defensive:
+            # failures log + swallow.
+            try:
+                from app.services.tesira.binding_adapter import (
+                    list_tesira_bindings_for_device,
+                    clear_tesira_subscription_in_authority,
+                )
+
+                bindings = await list_tesira_bindings_for_device(device.host)
+                for row in bindings:
+                    ttp_tag = (row.metadata or {}).get("ttp_tag")
+                    if ttp_tag:
+                        await clear_tesira_subscription_in_authority(
+                            device_host=device.host,
+                            ttp_tag=str(ttp_tag),
+                        )
+            except Exception as exc:  # noqa: BLE001 — defensive
+                logger.warning(
+                    "TesiraFleet: could not clear subscriptions for %s on stop: %s",
+                    getattr(device, "host", "?"),
+                    exc,
+                )
+
         self._devices.clear()
         self._offline_retry_failures.clear()
         self._offline_next_retry_at.clear()
@@ -263,6 +288,30 @@ class TesiraFleet:
                 await device.start_metering(tag, cfg.metering_interval_ms)
             except Exception as exc:
                 logger.warning("TesiraFleet: metering start failed for %s/%s: %s", device.device_id, tag, exc)
+                continue
+            # T2496-4 — record the live subscription as a canonical
+            # AvbBinding so the operator surface (Bindings + Connections
+            # pages) can see Tesira fleet state in the same view as
+            # AVDECC streams + cluster routes. Defensive: failures here
+            # log + swallow, never block metering startup.
+            try:
+                from app.services.tesira.binding_adapter import (
+                    record_tesira_subscription_in_authority,
+                )
+
+                await record_tesira_subscription_in_authority(
+                    device_host=cfg.host,
+                    device_name=cfg.name or cfg.host,
+                    ttp_tag=tag,
+                    metering_interval_ms=cfg.metering_interval_ms,
+                )
+            except Exception as exc:  # noqa: BLE001 — defensive
+                logger.warning(
+                    "TesiraFleet: could not record subscription %s/%s in AvbBindingAuthority: %s",
+                    cfg.host,
+                    tag,
+                    exc,
+                )
 
     # ──────────────────────────────────────────────────────────────────────────
     # Internal: AVB endpoint registration
