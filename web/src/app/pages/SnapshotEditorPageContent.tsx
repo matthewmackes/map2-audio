@@ -316,7 +316,10 @@ import {
   useJuceGridPersistedState,
 } from './snapshotEditor/useJuceGridPersistedState'
 import { useSnapshotEditorCadences } from './snapshotEditor/useSnapshotEditorCadences'
-import { useSnapshotEditorCatalogReadQueries } from './snapshotEditor/useSnapshotEditorReadQueries'
+import {
+  useSnapshotEditorCatalogReadQueries,
+  useSnapshotEditorMidiReadQueries,
+} from './snapshotEditor/useSnapshotEditorReadQueries'
 import { FEATURED_NATIVE_BROWSER_GROUPS } from './snapshotEditor/featuredNativeBrowserGroups'
 import {
   createBlankSnapshotEditorDraft,
@@ -821,38 +824,20 @@ export function SnapshotEditorPage() {
     cadences: snapshotEditorCadences,
   })
 
-  const midiStatusQuery = useQuery({
-    queryKey: ['midi', 'status'],
-    queryFn: midiApiV2.getStatus,
-    refetchInterval: snapshotFastCadence,
-  })
-
-  const midiLearnStatusQuery = useQuery({
-    queryKey: ['midi', 'learn', 'status'],
-    queryFn: midiApiV2.getLearnStatus,
-    refetchInterval: (query) => {
-      const learnStatus = query.state.data as { learning?: boolean } | undefined
-      return midiLearnActive || learnStatus?.learning ? snapshotMeterCadence : snapshotFastCadence
-    },
-  })
-
-  const midiMappingsQuery = useQuery({
-    queryKey: ['midi', 'mappings', 'juce-grid', midiScope, activeFlowChainId, selectedPluginUri ?? null, selectedPluginPosition ?? null],
-    queryFn: () => {
-      if (midiScope === 'selected-plugin' && selectedPluginUri) {
-        return midiApiV2.getMappings({
-          chain_id: activeFlowChainId ?? undefined,
-          plugin_uri: selectedPluginUri,
-        })
-      }
-
-      if (midiScope === 'active-chain' && activeFlowChainId !== null) {
-        return midiApiV2.getMappings({ chain_id: activeFlowChainId })
-      }
-
-      return midiApiV2.getMappings()
-    },
-    refetchInterval: snapshotStandardCadence,
+  // T2472 slice 3 — MIDI read group lifted into a sibling hook.
+  // Cache-key bit-identity preserved across all three queries; the
+  // mappings queryKey embeds (scope, chainId, uri, position) verbatim.
+  const {
+    midiStatusQuery,
+    midiLearnStatusQuery,
+    midiMappingsQuery,
+  } = useSnapshotEditorMidiReadQueries({
+    cadences: snapshotEditorCadences,
+    midiScope,
+    midiLearnActive,
+    activeFlowChainId,
+    selectedPluginUri,
+    selectedPluginPosition,
   })
 
   const committedAudioStateQuery = useCommittedAudioState({
