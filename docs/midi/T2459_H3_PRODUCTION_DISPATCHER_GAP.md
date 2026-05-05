@@ -1,6 +1,6 @@
-# T2459-H3 — Production Dispatcher Wiring Gap
+# T2459-H3 — Production Dispatcher Status
 
-**Status:** Scoped 2026-05-04 (cycle 59 of autonomous-loop session). Slices 1 and 2 of T2459-H3 already shipped by Codex (pack migration + Python host-client IPC surface). The remaining production-dispatcher wiring lives in a parallel agent's worktree (`.claude/worktrees/agent-*/juce-engine/Source/ControllerHost/`) and is **not yet on `master`**. This doc captures the gap so the next focused session can resume cleanly.
+**Status:** Production dispatcher is SHIPPED on `master`. Doc updated 2026-05-05 to correct the cycle-59 gap-scoping that incorrectly claimed the dispatcher only existed in a parallel worktree. Inspecting master revealed slices 3, 5, and 6 had already landed by that date — the dispatcher entries (`script_load_request`, `mapping_activate`, `midi_open_input_request`) and the live ring-drain dispatch path are present in `juce-engine/Source/ControllerHost/main.cpp`. Only the bench-HIL evidence run with physical hardware remains.
 
 ## Background
 
@@ -10,57 +10,77 @@ T2459-H3 converts the hardcoded 669-line `MELOAUDIO_COMMANDER_PROFILE` Python di
 - `device-packs/meloaudio/midi-commander/profiles/midi-commander.midi.yaml`
 - `device-packs/meloaudio/midi-commander/scripts/commander.js`
 
-Slice 1 shipped the pack on disk + ProfileRegistry resolution + legacy-id alias compatibility (`meloaudio_commander` → `meloaudio_midi_commander`). Slice 2 shipped the Python host-client IPC methods `load_script(...)` → `script_load_request` and `activate_mapping(...)` → `mapping_activate` with descriptor-payload serialization for `IpcMessages.h`.
-
-The pipeline is now:
+## Pipeline status
 
 ```
 [device-pack on disk]
-  → ProfileRegistry resolution                 ✓ Slice 1
-  → Python host-client serializes descriptor   ✓ Slice 2
-  → IPC frame to map2-controller-host          ✓ Slice 2 (sender side)
-  → host main-loop dispatches the script_load  ✗ GAP
-  → host loads JS via QuickJS engine           ✗ GAP (engine exists; production wiring missing)
-  → libremidi events flow through the script   ✗ GAP
-  → host emits chain.bypass.toggle UDS message ✗ GAP
-  → JUCE engine handles the action             ✓ pre-existing
+  → ProfileRegistry resolution                  ✓ Slice 1 (master)
+  → Python host-client serializes descriptor    ✓ Slice 2 (master)
+  → IPC frame to map2-controller-host           ✓ Slice 2 (master)
+  → host main-loop dispatches script_load       ✓ Slice 3 (master, main.cpp:925)
+  → host caches/loads JS via QuickJS engine     ✓ Slice 3 + Slice 5 (master)
+  → libremidi events flow through script        ✓ Slice 5 (master, drain_ring_and_dispatch)
+  → host emits engine_command UDS frames        ✓ Slice 5 (master)
+  → multi-controller routing per Slot::ctrl_idx ✓ Slice 6 (master)
+  → JUCE engine handles the action              ✓ pre-existing
+  → Bench HIL with MeloAudio Commander          ✗ HARDWARE GATE
 ```
 
-The host main-loop dispatcher (`map2-controller-host/main.cpp` or equivalent C++ entry) needs to register handlers for the new `script_load_request` and `mapping_activate` IPC messages and route them through the QuickJS engine (T2459-H2). Without that, the IPC frames the Python side serializes are received but never executed.
+## Source layout (master, verified 2026-05-05)
 
-## Current source layout
+`grep -n "script_load_request\|mapping_activate\|midi_open_input_request" juce-engine/Source/ControllerHost/main.cpp`:
 
-`grep -rln "mapping_activate\|script_load_request"` shows the non-test references currently live in:
+- `main.cpp:409` — `parse_mapping_activate_frame()` definition
+- `main.cpp:533` — `drain_ring_and_dispatch()` (live MIDI → planDispatch → dispatch → engine_command emission)
+- `main.cpp:600..612` — `js().drainEngineCommands()` / `drainShortMidi()` drain into UDS frames
+- `main.cpp:766..777` — RT and control ring drains in the main poll loop
+- `main.cpp:825..873` — `midi_open_input_request` handler (libremidi adapter open)
+- `main.cpp:925..947` — `script_load_request` handler (controller-keyed script cache)
+- `main.cpp:953..` — `mapping_activate` handler (descriptor parse, script resolve, `Map2MappingEngine::loadDescriptor`, `log_event` / `script_error` response)
 
-- `app/services/midi_host_client.py` (sender — Python)
-- `app/schemas/controller_host.py` (IPC schema)
-- `scripts/measure_p1_2_dispatch_latency.py` (load measurement)
-- `.claude/worktrees/agent-*/juce-engine/Source/ControllerHost/main.cpp` ← **not on master**
-- `.claude/worktrees/agent-*/juce-engine/Source/ControllerHost/IpcMessages.h` ← **not on master**
+Python sender side: `app/services/midi_host_client.py` (Slice 2) — `load_script(...)`, `activate_mapping(...)`, `open_midi_input(...)`, `send_ump(...)` all in tree.
 
-The worktree-resident work is the production dispatcher implementation. Until those branches merge to master, this scope doc parks the work.
+IPC schema: `app/schemas/controller_host.py` + `juce-engine/Source/ControllerHost/IpcMessages.h` — both kept in sync via `tests/test_controller_host_ipc_schema.py::test_python_manifest_matches_cpp`.
 
-## What "done" looks like
+## Test coverage
 
-Once the worktree branch merges:
+- `tests/test_controller_host_main_loop_t2459h3.py` — 4 cases. Real `map2-controller-host` binary spun up over a tmp UDS socket; asserts `script_load_request` + `mapping_activate` are consumed; rejects unresolved-script descriptors with `script_error`.
+- `tests/test_controller_host_main_loop_t2459h3_slice5.py` — 3 cases. Asserts `midi_open_input_request` for an unknown port returns a typed error log, host stays responsive after a load+activate+open round, and the schema manifest carries `MidiOpenInputRequest`.
+- `tests/test_controller_host_main_loop_t2459h3_slice6.py` — 2 cases. Two distinct controllers each load + activate + open without state drift; index-reuse path (same controller_key, second port) is crash-free.
+- `tests/test_controller_host_ipc_schema.py` — Python ↔ C++ manifest parity guard.
 
-1. **Schema completeness:** `tests/test_controller_host_ipc_schema.py` passes including `script_load_request` + `mapping_activate` round-trip cases.
-2. **Main-loop dispatch:** `tests/test_controller_host_main_loop_t2459h3.py` + `_slice5.py` + `_slice6.py` exercise the production code path (currently HIL-skipped — `pytest -q ... -m "not hil"`). Move the existing skip markers off once the dispatcher is in tree.
-3. **JS execution:** `tests/test_controller_host_main_loop_t2459h3_slice6.py` covers `script_load_request → QuickJS load → mapping_activate → JS-side onMidi(...)`. The test is in tree but skipped pending dispatcher; un-skip after merge.
-4. **HIL run:** physical MeloAudio Commander on the bench drives chain bypass + tuner-on through the new pipeline. Capture evidence at `docs/fit-for-purpose-evidence/<YYYYMMDD>/t2459h3-meloaudio-commander/` per the original acceptance.
+All nine integration cases pass when the host binary is built (`pytest -q tests/test_controller_host_main_loop_t2459h3*.py` → **9 passed in 3.05s** on 2026-05-05).
 
-## Why this can't be done in an autonomous-loop cycle
+The fixtures skip ONLY if the host binary isn't on disk — they are not HIL-gated in the bench-hardware sense. CI build → CI test pipeline can run them end-to-end.
 
-- **Source-of-truth split:** the dispatcher implementation is in another agent's worktree branch. Authoring a competing implementation on `master` would create a merge conflict on a hot path (the controller-host main loop).
-- **HIL hardware:** the final acceptance gate is bench-side with the physical MIDI Commander. Not autonomous-loop-executable.
+C++ side: `juce-engine/tests/Map2MappingEngineTests.cpp` carries Slice 5 + Slice 6 cases (CC byte sequences pushed through `LibremidiAdapter::pushMessage` → ring drain → dispatch → assert `EngineCommand` + outbound short MIDI got queued); `juce-engine/tests/ShmEventRingTests.cpp` carries 3 UMP cases + `Slot::controllerIndex` round-trip cases.
+
+## What remains for full T2459-H3 acceptance
+
+The original H3 acceptance (worklist line 114) reads:
+
+> physical MeloAudio Commander on the bench drives a chain bypass + a tuner-on action through the new path with bit-identical CC mappings to the legacy Python profile; legacy `MELOAUDIO_COMMANDER_PROFILE` deleted with a stub redirect for any in-flight callers; one HIL evidence run captured under `docs/fit-for-purpose-evidence/<YYYYMMDD>/t2459h3-meloaudio-commander/`.
+
+Code-side gates are met. Hardware-gated remainder:
+
+1. **Bench HIL run.** Plug a MeloAudio Commander into the bench, run `map2-controller-host` with the device-pack profile loaded, capture the CC stream as the operator presses bypass + tuner, diff against the legacy profile's expected CC mappings, write the evidence directory.
+2. **Legacy profile deletion.** Once the HIL run confirms parity, delete the legacy hardcoded behavior (the loader already prefers the device-pack — `app/services/midi_device_profiles.py` legacy alias `meloaudio_commander → meloaudio_midi_commander` can shrink to a deprecation shim once no in-flight caller uses it; verify with a code search before deleting).
+
+## Why this can't ship in an autonomous-loop cycle
+
+- **HIL hardware required.** The acceptance gate is bench-side with the physical MIDI Commander. Autonomous-loop cycles can verify the code paths via integration tests (which already pass), but they can't drive a physical pedal.
+- **No source-of-truth split.** Everything the autonomous-loop session can do is already on master. There is no parallel worktree fork to merge.
 
 ## Recommended next move
 
-The next focused session should:
+The next focused operator session should:
 
-1. Inspect the agent-`abbc212ce384a2df3` (or whichever) worktree's `main.cpp` + `IpcMessages.h` changes; confirm they implement `script_load_request` + `mapping_activate` dispatch correctly.
-2. Either land that worktree onto `master` (fast-forward merge if no conflicts) or open a focused PR.
-3. Un-skip the `test_controller_host_main_loop_t2459h3_*.py` HIL-marked cases once the production dispatcher is in tree.
-4. Schedule the bench HIL run for evidence capture.
+1. Plug a MeloAudio Commander into the bench.
+2. Build the host: `cmake --build juce-engine/build --target map2-controller-host`.
+3. Start `map2-controller-host` against the device-pack profile (procedure: `docs/midi/MIDI_BACKEND.md` operator runbook).
+4. Press bypass + tuner footswitches; capture the engine_command stream from the host's UDS output.
+5. Compare against the legacy `MELOAUDIO_COMMANDER_PROFILE` expected mappings (one CC for bypass, one CC for tuner per the original profile dict).
+6. Write evidence to `docs/fit-for-purpose-evidence/<YYYYMMDD>/t2459h3-meloaudio-commander/`.
+7. If parity holds, file the legacy-profile deletion follow-up; flip H3 to `[✓] Done` once the deletion lands.
 
-Until then, T2459-H3 stays `[>] In Progress` with slice 1+2 shipped and the production-dispatcher gap documented here.
+Until the bench session lands, T2459-H3 stays `[>] In Progress` with all code-side slices shipped and the bench acceptance gate explicitly documented here.
