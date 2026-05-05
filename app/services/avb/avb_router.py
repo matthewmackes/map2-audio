@@ -135,6 +135,12 @@ class StreamConnection:
     flow_trace_id: Optional[str] = None
     connection_role: str = "general_route"
     loop_id: Optional[str] = None
+    # T2496-2 — set after `connect()` writes the connection through
+    # `AvbBindingAuthority`. Read-side projection (router_projection.py)
+    # skips connections whose authority_binding_id is set so the
+    # operator surface doesn't see both a synthetic projection and a
+    # durable authority row for the same connection.
+    authority_binding_id: Optional[str] = None
 
     def connection_id(self) -> str:
         """Unique identifier for this connection"""
@@ -1763,11 +1769,44 @@ class AvbRouter:
         if success:
             connection.state = ConnectionState.CONNECTED
             connection.established_time = datetime.now(timezone.utc)
+            # T2496-2 — write the durable AvbBinding row before reporting
+            # success. Defensive: a DB failure logs a warning but does
+            # NOT fail the connection (the router stays operational).
+            try:
+                from app.services.avb.router_authority_writer import (
+                    record_connection_in_authority,
+                )
+
+                connection.authority_binding_id = (
+                    await record_connection_in_authority(connection)
+                )
+                self._record_flow_stage(
+                    result=result,
+                    trace_id=trace_id,
+                    stage="connect.authority_record",
+                    status="ok" if connection.authority_binding_id else "warning",
+                    detail=connection.authority_binding_id or "no binding_id returned",
+                )
+            except Exception as auth_exc:  # noqa: BLE001 — defensive
+                logger.warning(
+                    "AvbRouter: authority_record raised for %s: %s",
+                    conn_id,
+                    auth_exc,
+                )
+                self._record_flow_stage(
+                    result=result,
+                    trace_id=trace_id,
+                    stage="connect.authority_record",
+                    status="warning",
+                    detail=str(auth_exc),
+                )
             logger.info(f"Connected: {conn_id}")
             result["success"] = True
             result["connection_id"] = conn_id
             result["connection_role"] = connection.connection_role
             result["loop_id"] = connection.loop_id
+            if connection.authority_binding_id:
+                result["authority_binding_id"] = connection.authority_binding_id
             self._record_flow_stage(
                 result=result,
                 trace_id=trace_id,
@@ -2030,6 +2069,37 @@ class AvbRouter:
                     trace_id=trace_id,
                     stage="disconnect.release_srp",
                     status="skipped",
+                )
+            # T2496-2 — clear the durable AvbBinding row before dropping
+            # the in-memory connection. Defensive: a DB failure logs a
+            # warning but does NOT fail the disconnect.
+            try:
+                from app.services.avb.router_authority_writer import (
+                    clear_connection_in_authority,
+                )
+
+                cleared = await clear_connection_in_authority(conn_id)
+                self._record_flow_stage(
+                    result=result,
+                    trace_id=trace_id,
+                    stage="disconnect.authority_clear",
+                    status="ok",
+                    detail=f"rows_deleted={cleared}",
+                )
+                if cleared:
+                    result["authority_rows_cleared"] = cleared
+            except Exception as auth_exc:  # noqa: BLE001 — defensive
+                logger.warning(
+                    "AvbRouter: authority_clear raised for %s: %s",
+                    conn_id,
+                    auth_exc,
+                )
+                self._record_flow_stage(
+                    result=result,
+                    trace_id=trace_id,
+                    stage="disconnect.authority_clear",
+                    status="warning",
+                    detail=str(auth_exc),
                 )
             del self.connections[conn_id]
             logger.info(f"Disconnected: {conn_id}")

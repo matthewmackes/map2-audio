@@ -58,8 +58,18 @@ def _project_one_connection(connection) -> Optional[AvbBindingRead]:
     """Render a single `StreamConnection` as an `AvbBindingRead`.
 
     Returns None if the connection is missing required fields (defensive
-    — `StreamConnection` is a permissive dataclass).
+    — `StreamConnection` is a permissive dataclass), OR if the
+    connection has already been recorded in the canonical
+    `AvbBindingAuthority` (T2496-2 writer-side coupling). When the
+    authority owns the row, skipping projection prevents the operator
+    surface from showing both a synthetic projection AND a durable
+    binding for the same connection.
     """
+    # T2496-2 — authority-backed connections are projected by the
+    # canonical authority read path, not by this synthetic projection.
+    if getattr(connection, "authority_binding_id", None):
+        return None
+
     try:
         talker = connection.talker
         listener = connection.listener
