@@ -15,6 +15,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import type { ReactNode } from 'react'
 
 import {
+  useSnapshotEditorAudioReadQueries,
   useSnapshotEditorCatalogReadQueries,
   useSnapshotEditorMidiReadQueries,
 } from './useSnapshotEditorReadQueries'
@@ -32,6 +33,20 @@ jest.mock('../../../map2/api', () => ({
     getLearnStatus: jest.fn().mockResolvedValue({ learning: false }),
     getMappings: jest.fn().mockResolvedValue([]),
   },
+  audioApi: {
+    getStatus: jest.fn().mockResolvedValue({}),
+    getLevels: jest.fn().mockResolvedValue({}),
+    getPorts: jest.fn().mockResolvedValue({}),
+    getRouting: jest.fn().mockResolvedValue({}),
+    getChainRouting: jest.fn().mockResolvedValue({}),
+  },
+  metricsApi: {
+    getJack: jest.fn().mockResolvedValue({}),
+  },
+}))
+
+jest.mock('../../../map2/http', () => ({
+  fetchJson: jest.fn().mockResolvedValue({ parameters: [] }),
 }))
 
 function withQueryClient(client: QueryClient) {
@@ -48,7 +63,7 @@ describe('useSnapshotEditorCatalogReadQueries — cache-key parity (T2472 slice 
       defaultOptions: { queries: { retry: false } },
     })
 
-    const cadences = { standard: 5_000 as number | false, fast: 2_000 as number | false, meter: 1_000 as number | false }
+    const cadences = { standard: 5_000 as number | false, fast: 2_000 as number | false, meter: 1_000 as number | false, slow: 10_000 as number | false }
     renderHook(() => useSnapshotEditorCatalogReadQueries({ cadences }), {
       wrapper: withQueryClient(client),
     })
@@ -74,7 +89,7 @@ describe('useSnapshotEditorMidiReadQueries — cache-key parity (T2472 slice 3)'
     const client = new QueryClient({
       defaultOptions: { queries: { retry: false } },
     })
-    const cadences = { standard: 5_000 as number | false, fast: 2_000 as number | false, meter: 1_000 as number | false }
+    const cadences = { standard: 5_000 as number | false, fast: 2_000 as number | false, meter: 1_000 as number | false, slow: 10_000 as number | false }
 
     renderHook(
       () =>
@@ -108,7 +123,7 @@ describe('useSnapshotEditorMidiReadQueries — cache-key parity (T2472 slice 3)'
     const client = new QueryClient({
       defaultOptions: { queries: { retry: false } },
     })
-    const cadences = { standard: 5_000 as number | false, fast: 2_000 as number | false, meter: 1_000 as number | false }
+    const cadences = { standard: 5_000 as number | false, fast: 2_000 as number | false, meter: 1_000 as number | false, slow: 10_000 as number | false }
 
     renderHook(
       () =>
@@ -138,5 +153,57 @@ describe('useSnapshotEditorMidiReadQueries — cache-key parity (T2472 slice 3)'
       'urn:test',
       3,
     ])
+  })
+})
+
+describe('useSnapshotEditorAudioReadQueries — cache-key parity (T2472 slice 4)', () => {
+  it('exposes the seven audio-engine queryKeys verbatim with no chain selected', () => {
+    const client = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    })
+    const cadences = { standard: 5_000 as number | false, fast: 2_000 as number | false, meter: 1_000 as number | false, slow: 10_000 as number | false }
+
+    renderHook(
+      () => useSnapshotEditorAudioReadQueries({ cadences, activeFlowChainId: null }),
+      { wrapper: withQueryClient(client) },
+    )
+
+    const cacheKeys = client
+      .getQueryCache()
+      .getAll()
+      .map((q) => q.queryKey)
+
+    expect(cacheKeys).toEqual(
+      expect.arrayContaining([
+        ['audio', 'status'],
+        ['audio', 'levels'],
+        ['metrics', 'jack'],
+        ['audio', 'ports'],
+        ['audio', 'routing'],
+        ['audio', 'routing', 'chain', null],
+        ['expression-engine-parameters', 'snapshot-editor'],
+      ]),
+    )
+    expect(cacheKeys).toHaveLength(7)
+  })
+
+  it('embeds the active chainId verbatim into the chain-routing queryKey', () => {
+    const client = new QueryClient({
+      defaultOptions: { queries: { retry: false } },
+    })
+    const cadences = { standard: 5_000 as number | false, fast: 2_000 as number | false, meter: 1_000 as number | false, slow: 10_000 as number | false }
+
+    renderHook(
+      () => useSnapshotEditorAudioReadQueries({ cadences, activeFlowChainId: 42 }),
+      { wrapper: withQueryClient(client) },
+    )
+
+    const chainRoutingKey = client
+      .getQueryCache()
+      .getAll()
+      .map((q) => q.queryKey)
+      .find((k) => Array.isArray(k) && k[0] === 'audio' && k[1] === 'routing' && k[2] === 'chain')
+
+    expect(chainRoutingKey).toEqual(['audio', 'routing', 'chain', 42])
   })
 })

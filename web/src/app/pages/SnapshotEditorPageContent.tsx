@@ -317,6 +317,7 @@ import {
 } from './snapshotEditor/useJuceGridPersistedState'
 import { useSnapshotEditorCadences } from './snapshotEditor/useSnapshotEditorCadences'
 import {
+  useSnapshotEditorAudioReadQueries,
   useSnapshotEditorCatalogReadQueries,
   useSnapshotEditorMidiReadQueries,
 } from './snapshotEditor/useSnapshotEditorReadQueries'
@@ -800,12 +801,8 @@ export function SnapshotEditorPage() {
   const snapshotStandardCadence = snapshotEditorCadences.standard
   const snapshotFastCadence = snapshotEditorCadences.fast
   const snapshotMeterCadence = snapshotEditorCadences.meter
-  const snapshotSlowCadence = useRealtimeCadence({
-    routeActive: snapshotRouteActive,
-    visibleMs: 10_000,
-    hiddenMs: 30_000,
-    inactiveMs: false,
-  })
+  // T2472 slice 4 — slow cadence consolidated into useSnapshotEditorCadences.
+  const snapshotSlowCadence = snapshotEditorCadences.slow
 
   // ============================================================================
   // Queries
@@ -1023,53 +1020,23 @@ export function SnapshotEditorPage() {
     openArtifactsSnapshots()
   }, [openArtifactsSnapshots])
 
-  // Fetch audio status
-  const audioQuery = useQuery({
-    queryKey: ['audio', 'status'],
-    queryFn: () => audioApi.getStatus(),
-    refetchInterval: snapshotStandardCadence,
-  })
-
-  const audioLevelsQuery = useQuery({
-    queryKey: ['audio', 'levels'],
-    queryFn: audioApi.getLevels,
-    refetchInterval: snapshotMeterCadence,
-  })
-
-  // Fetch JACK metrics
-  const jackQuery = useQuery({
-    queryKey: ['metrics', 'jack'],
-    queryFn: metricsApi.getJack,
-    refetchInterval: snapshotFastCadence,
-  })
-
-  // Fetch audio port routing
-  const portsQuery = useQuery({
-    queryKey: ['audio', 'ports'],
-    queryFn: () => audioApi.getPorts(),
-    refetchInterval: snapshotSlowCadence,
-  })
-
-  const routingQuery = useQuery({
-    queryKey: ['audio', 'routing'],
-    queryFn: () => audioApi.getRouting(),
-    refetchInterval: snapshotStandardCadence,
-  })
-
-  const activeFlowChainRoutingQuery = useQuery({
-    queryKey: ['audio', 'routing', 'chain', activeFlowChainId],
-    queryFn: () => audioApi.getChainRouting(activeFlowChainId!),
-    refetchInterval: snapshotStandardCadence,
-    enabled: activeFlowChainId !== null,
-  })
-
-  const expressionEngineParametersQuery = useQuery({
-    queryKey: ['expression-engine-parameters', 'snapshot-editor'],
-    queryFn: () => fetchJson<{ parameters: Array<{ id: string; label: string; unit: string; min: number; max: number }> }>(
-      `${API_BASE}/v2/engine/parameters`,
-      { cache: 'no-store' },
-    ),
-    staleTime: 60_000,
+  // T2472 slice 4 — audio engine read group lifted into a sibling hook.
+  // 7 queries (audio status / levels, JACK metrics, ports, routing,
+  // active-flow chain routing, expression engine parameters) routed
+  // through useSnapshotEditorAudioReadQueries. Cache-key bit-identity
+  // preserved for all seven queries; the chain-routing key embeds the
+  // dynamic chainId verbatim.
+  const {
+    audioQuery,
+    audioLevelsQuery,
+    jackQuery,
+    portsQuery,
+    routingQuery,
+    activeFlowChainRoutingQuery,
+    expressionEngineParametersQuery,
+  } = useSnapshotEditorAudioReadQueries({
+    cadences: snapshotEditorCadences,
+    activeFlowChainId,
   })
 
   const clusterNodesQuery = useQuery({

@@ -1,12 +1,12 @@
-// Snapshot editor polling-cadence hook (T2472 prep). Consolidates
-// the three useRealtimeCadence calls the page makes for read-side
-// queries — standard / fast / meter — so the upcoming
-// useSnapshotEditorData extraction can consume one shared cadence
-// object instead of three duplicate hook calls.
+// Snapshot editor polling-cadence hook (T2472 prep / slice 4).
+// Consolidates the four useRealtimeCadence calls the page makes for
+// read-side queries — standard / fast / meter / slow — so the
+// useSnapshotEditorData extraction (slice 2+) can consume one shared
+// cadence object instead of four duplicate hook calls.
 //
 // Stays in its own file so the cadence wiring is testable in
 // isolation and the page-monolith can drop the inline
-// useRealtimeCadence calls when the data hook lands.
+// useRealtimeCadence calls when each data slice lands.
 
 import { useRealtimeCadence } from '../../hooks/useRealtimeCadence'
 
@@ -14,6 +14,7 @@ export interface SnapshotEditorCadences {
   standard: number | false
   fast: number | false
   meter: number | false
+  slow: number | false
 }
 
 interface UseSnapshotEditorCadencesArgs {
@@ -41,6 +42,12 @@ export function useSnapshotEditorCadences(
     hiddenMs: 5_000,
     inactiveMs: false,
   })
+  const slow = useRealtimeCadence({
+    routeActive,
+    visibleMs: 10_000,
+    hiddenMs: 30_000,
+    inactiveMs: false,
+  })
 
-  return { standard, fast, meter }
+  return { standard, fast, meter, slow }
 }
