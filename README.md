@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1477** Python | **1494** TypeScript | **179** C++/H | **147** Docs | **3870** total commits | **3** stars | **0** forks | **0** open issues
+**1481** Python | **1496** TypeScript | **179** C++/H | **147** Docs | **3877** total commits | **3** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`5928a102`](https://github.com/matthewmackes/map2-audio/commit/5928a1026af0e1d5a64e1fc7a50029a8a97d2457) | refactor(snapshot-editor): extract MIDI learn mutations i... | Map2 Audio | 2026-05-05 |
+| [`e1385e20`](https://github.com/matthewmackes/map2-audio/commit/e1385e20f2181c80edc972a4ea816893aebbf4a9) | test(routes): add static audit for unawaited async-engine... | Map2 Audio | 2026-05-05 |
+| [`bed82b08`](https://github.com/matthewmackes/map2-audio/commit/bed82b08318ba3ce4e169fdd1798e265b2fe02f1) | fix(systemd): make map2-controller-host.service deployabl... | Map2 Audio | 2026-05-05 |
+| [`0ea3c70a`](https://github.com/matthewmackes/map2-audio/commit/0ea3c70a27e9ff50a8d35de04ff588128f54754f) | fix(state-authority): await async engine methods in morph... | Map2 Audio | 2026-05-05 |
+| [`2ed0dbed`](https://github.com/matthewmackes/map2-audio/commit/2ed0dbed0521996595863b91b294aa207160cda5) | test(routes): add static audit for narrow Dict[str, X] re... | Map2 Audio | 2026-05-05 |
+| [`5554175a`](https://github.com/matthewmackes/map2-audio/commit/5554175a1888c92fe47a62298ba58e4ace2661b4) | fix(automation): correct /lanes return annotation; add re... | Map2 Audio | 2026-05-05 |
+| [`716ec2f7`](https://github.com/matthewmackes/map2-audio/commit/716ec2f7043d2642792cf854e37598e2259cec71) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-05 |
 | [`ed390cdc`](https://github.com/matthewmackes/map2-audio/commit/ed390cdc7af5091f4ecafc2259612ac40fde2412) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-05 |
-| [`aa476098`](https://github.com/matthewmackes/map2-audio/commit/aa47609885c51bfad329ecd975da797458f8c13a) | docs(t2459-h3): correct stale dispatcher gap doc; pin tru... | Map2 Audio | 2026-05-05 |
-| [`15eb8936`](https://github.com/matthewmackes/map2-audio/commit/15eb8936126dab4fb716500c650c01e63c319c77) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-05 |
-| [`1c6ca094`](https://github.com/matthewmackes/map2-audio/commit/1c6ca094387b0e20eaa8614cab8c7e96480bd9ca) | docs: autonomous-loop closure status report (cycles 11-60) | Map2 Audio | 2026-05-04 |
-| [`1d0836b1`](https://github.com/matthewmackes/map2-audio/commit/1d0836b1b5f8f2d495a0d38e8123b9a3d10d97b2) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-05 |
-| [`426c6f32`](https://github.com/matthewmackes/map2-audio/commit/426c6f32df7c27ec6339c18962f5d0d1aa1ecbd8) | docs(t2459-h3): scope production-dispatcher wiring gap | Map2 Audio | 2026-05-04 |
-| [`386550a6`](https://github.com/matthewmackes/map2-audio/commit/386550a68c9abaef1061504ba6baa7f31214784d) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-05 |
-| [`beda2b88`](https://github.com/matthewmackes/map2-audio/commit/beda2b88e7e8a009fdb8430674079568fa96526e) | docs(t2472): refresh task Last-updated with cycles 53-57 ... | Map2 Audio | 2026-05-04 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
