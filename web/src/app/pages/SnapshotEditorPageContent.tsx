@@ -333,6 +333,7 @@ import { useSnapshotEditorChainEditMutations } from './snapshotEditor/useSnapsho
 import { useSnapshotEditorChainRenameMutation } from './snapshotEditor/useSnapshotEditorChainRenameMutation'
 import { useSnapshotEditorOpenEditorSnapshotMutation } from './snapshotEditor/useSnapshotEditorOpenEditorSnapshotMutation'
 import { useSnapshotEditorUpdateActiveSnapshotMutation } from './snapshotEditor/useSnapshotEditorUpdateActiveSnapshotMutation'
+import { useSnapshotEditorRestoreRevisionMutation } from './snapshotEditor/useSnapshotEditorRestoreRevisionMutation'
 import { FEATURED_NATIVE_BROWSER_GROUPS } from './snapshotEditor/featuredNativeBrowserGroups'
 import {
   createBlankSnapshotEditorDraft,
@@ -2091,31 +2092,8 @@ export function SnapshotEditorPage() {
   // (after `syncSnapshotDetailCaches` is defined to satisfy TDZ) — see
   // T2472 mutation extraction slice 5.
 
-  const restoreSnapshotRevisionMutation = useMutation({
-    mutationFn: async ({ snapshotId, revisionNumber }: { snapshotId: number; revisionNumber: number }) =>
-      snapshotsApi.restoreRevision(snapshotId, revisionNumber),
-    onSuccess: (response) => {
-      const restoredDraft = buildSnapshotEditorLiveSnapshotHydration(
-        response.snapshot,
-        queryClient.getQueryData<ChainsResponse>(['chains']),
-      ).snapshotData
-      syncSnapshotDetailCaches(response.snapshot)
-      queryClient.invalidateQueries({ queryKey: ['snapshots', 'revisions', response.snapshot.id] })
-      closeVersionHistoryWorkspace()
-      hydrateEditorFromSnapshot(response.snapshot, {
-        toastMessage: `Restored revision ${response.restored_revision_number}`,
-        invalidateSnapshots: true,
-        resetUndoHistory: false,
-      })
-      recordSnapshotUndoRedoStep(
-        restoredDraft,
-        `Restore revision ${response.restored_revision_number}`,
-      )
-    },
-    onError: (error) => {
-      pushToast(error instanceof Error ? error.message : 'Failed to restore snapshot revision', 'error')
-    },
-  })
+  // restoreSnapshotRevisionMutation extracted into useSnapshotEditorRestoreRevisionMutation
+  // and called after hydrateEditorFromSnapshot definition (TDZ) — see T2472 slice 11.
 
   const setEditorSnapshotState = useCallback((data: SnapshotDraftData) => {
     const normalizedSnapshotState = normalizeRuntimeGridState(
@@ -2409,6 +2387,16 @@ export function SnapshotEditorPage() {
     currentSnapshotDraft,
     syncSnapshotDetailCaches,
     hydrateEditorFromSnapshot,
+    pushToast,
+  })
+
+  // T2472 mutation extraction slice 11 — restore-revision mutation
+  // colocated here for the same TDZ reason as slice 10.
+  const { restoreSnapshotRevisionMutation } = useSnapshotEditorRestoreRevisionMutation({
+    syncSnapshotDetailCaches,
+    hydrateEditorFromSnapshot,
+    closeVersionHistoryWorkspace,
+    recordSnapshotUndoRedoStep,
     pushToast,
   })
 
