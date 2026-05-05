@@ -329,6 +329,7 @@ import { useSnapshotEditorUndoRedoMutations } from './snapshotEditor/useSnapshot
 import { useSnapshotEditorHeroPublishMutations } from './snapshotEditor/useSnapshotEditorHeroPublishMutations'
 import { useSnapshotEditorMetadataMutations } from './snapshotEditor/useSnapshotEditorMetadataMutations'
 import { useSnapshotEditorLockMutation } from './snapshotEditor/useSnapshotEditorLockMutation'
+import { useSnapshotEditorChainEditMutations } from './snapshotEditor/useSnapshotEditorChainEditMutations'
 import { FEATURED_NATIVE_BROWSER_GROUPS } from './snapshotEditor/featuredNativeBrowserGroups'
 import {
   createBlankSnapshotEditorDraft,
@@ -3346,90 +3347,15 @@ export function SnapshotEditorPage() {
     pushToast,
   })
 
-  const reorderMutation = useMutation({
-    mutationFn: ({
-      chainId,
-      pluginOrder,
-    }: {
-      chainId: number
-      pluginOrder: PluginOrderRef[]
-      undoRedoDraft?: SnapshotDraftData
-      undoRedoDescription?: string
-    }): Promise<SnapshotDetail | { status: string; chain_id: number; plugins: PluginOrderRef[] }> => {
-      if (activeSnapshot?.id != null) {
-        const identity = requireSnapshotPluginOrderIds(chainId, pluginOrder)
-        return snapshotsApi.reorderPlugins(
-          activeSnapshot.id,
-          identity.snapshotChainId,
-          identity.snapshotPluginIds,
-        )
-      }
-      return chainsApi.reorderPlugins(chainId, pluginOrder)
-    },
-    onSuccess: (data, variables) => {
-      if (activeSnapshot?.id != null) {
-        syncSnapshotMutationResult(data as SnapshotDetail)
-      } else {
-        queryClient.invalidateQueries({ queryKey: ['chains'] })
-      }
-      queryClient.invalidateQueries({ queryKey: ['chains'] })
-      if (variables.undoRedoDraft) {
-        recordSnapshotUndoRedoStep(
-          variables.undoRedoDraft,
-          variables.undoRedoDescription ?? 'Reorder blocks',
-        )
-        return
-      }
-      markSnapshotsDirty()
-    },
-    onError: (error) => pushToast(`Failed to reorder: ${error}`, 'error'),
-    onSettled: () => {
-      setReorderPreview(null)
-    },
-  })
-
-  const bypassMutation = useMutation({
-    mutationFn: ({
-      chainId,
-      pluginUri,
-      bypass,
-      pluginPosition,
-    }: {
-      chainId: number
-      pluginUri: string
-      bypass: boolean
-      pluginPosition?: number
-      undoRedoDraft?: SnapshotDraftData
-      undoRedoDescription?: string
-    }): Promise<SnapshotDetail | { status: string; chain_id: number; plugin: string; bypass: boolean }> => {
-      if (activeSnapshot?.id != null) {
-        const identity = requireSnapshotPluginId(chainId, pluginUri, pluginPosition)
-        return snapshotsApi.setPluginBypass(
-          activeSnapshot.id,
-          identity.snapshotChainId,
-          identity.snapshotPluginId,
-          bypass,
-        )
-      }
-      return chainsApi.togglePluginBypass(chainId, pluginUri, bypass, pluginPosition)
-    },
-    onSuccess: (data, variables) => {
-      if (activeSnapshot?.id != null) {
-        syncSnapshotMutationResult(data as SnapshotDetail)
-      } else {
-        queryClient.invalidateQueries({ queryKey: ['chains'] })
-      }
-      queryClient.invalidateQueries({ queryKey: ['chains'] })
-      if (variables.undoRedoDraft) {
-        recordSnapshotUndoRedoStep(
-          variables.undoRedoDraft,
-          variables.undoRedoDescription ?? (variables.bypass ? 'Bypass block' : 'Enable block'),
-        )
-        return
-      }
-      markSnapshotsDirty()
-    },
-    onError: (error) => pushToast(`Failed to toggle bypass: ${error}`, 'error'),
+  const { reorderMutation, bypassMutation } = useSnapshotEditorChainEditMutations({
+    activeSnapshot,
+    requireSnapshotPluginOrderIds,
+    requireSnapshotPluginId,
+    syncSnapshotMutationResult,
+    recordSnapshotUndoRedoStep,
+    markSnapshotsDirty,
+    setReorderPreview,
+    pushToast,
   })
 
   type PluginMutationContext = {
