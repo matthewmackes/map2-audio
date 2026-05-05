@@ -343,6 +343,7 @@ import { useSnapshotEditorUpdateAuthorityLiveChainsMutation } from './snapshotEd
 import { useSnapshotEditorPublishReadinessQuery } from './snapshotEditor/useSnapshotEditorPublishReadinessQuery'
 import { useSnapshotEditorRevisionsQuery } from './snapshotEditor/useSnapshotEditorRevisionsQuery'
 import { useSnapshotEditorAuthoritySnapshotDetailQuery } from './snapshotEditor/useSnapshotEditorAuthoritySnapshotDetailQuery'
+import { useSnapshotEditorPluginBrowserData } from './snapshotEditor/useSnapshotEditorPluginBrowserData'
 import { FEATURED_NATIVE_BROWSER_GROUPS } from './snapshotEditor/featuredNativeBrowserGroups'
 import {
   createBlankSnapshotEditorDraft,
@@ -2830,62 +2831,20 @@ export function SnapshotEditorPage() {
     return { nativeProcessors: native, lv2Plugins: lv2 }
   }, [filteredPlugins, specialSettings])
 
-  const { featuredNativeGroups, remainingNativeProcessors } = useMemo(() => {
-    const nativeByUri = new Map(
-      nativeProcessors.map((plugin) => [canonicalizePluginUri(plugin.uri), plugin] as const),
-    )
-
-    const featuredGroups = FEATURED_NATIVE_BROWSER_GROUPS
-      .map((group) => {
-        const plugins = group.pluginUris
-          .map((pluginUri) => nativeByUri.get(pluginUri))
-          .filter((plugin): plugin is Plugin => plugin !== undefined)
-
-        return {
-          ...group,
-          plugins,
-        }
-      })
-      .filter((group) => group.plugins.length > 0)
-
-    const featuredPluginUris = new Set(
-      featuredGroups.flatMap((group) => group.plugins.map((plugin) => canonicalizePluginUri(plugin.uri))),
-    )
-
-    const remainingNative = nativeProcessors.filter(
-      (plugin) => !featuredPluginUris.has(canonicalizePluginUri(plugin.uri)),
-    )
-
-    return {
-      featuredNativeGroups: featuredGroups,
-      remainingNativeProcessors: remainingNative,
-    }
-  }, [nativeProcessors])
-
-  // Group LV2 plugins by category for collapsible display
-  const groupedPlugins = useMemo(() => {
-    const groups: Record<string, Plugin[]> = {}
-    const favoritesList: Plugin[] = []
-
-    lv2Plugins.forEach(p => {
-      if (favoritePlugins.has(p.uri)) favoritesList.push(p)
-      const cat = p.category || 'Other'
-      if (!groups[cat]) groups[cat] = []
-      groups[cat].push(p)
-    })
-
-    const sorted = Object.entries(groups).sort(([a], [b]) => a.localeCompare(b))
-
-    if (favoritesList.length > 0) {
-      return [['Favorites', favoritesList] as [string, Plugin[]], ...sorted]
-    }
-    return sorted
-  }, [lv2Plugins, favoritePlugins])
-
-  const favoriteVisibleCount = useMemo(
-    () => filteredPlugins.filter((plugin) => favoritePlugins.has(plugin.uri)).length,
-    [filteredPlugins, favoritePlugins],
-  )
+  // T2473 JSX partition — Plugin Browser derived-data extraction.
+  // featuredNativeGroups + remainingNativeProcessors + groupedPlugins
+  // + favoriteVisibleCount all lifted into useSnapshotEditorPluginBrowserData.
+  const {
+    featuredNativeGroups,
+    remainingNativeProcessors,
+    groupedPlugins,
+    favoriteVisibleCount,
+  } = useSnapshotEditorPluginBrowserData({
+    nativeProcessors,
+    lv2Plugins,
+    filteredPlugins,
+    favoritePlugins,
+  })
 
   // Compute audio interface status
   // Get port routing data
