@@ -353,6 +353,32 @@ flowchart TB
 
 ---
 
+## 3.5 T2496 closeout (2026-05-05) — full first-class parity
+
+T2490 (closed [✓] Done 2026-05-02) shipped the operator-surface slice with four sub-tasks deferred:
+
+- T2490-3b — `avb_router.py` writer-side coupling (router writes through `AvbBindingAuthority`)
+- T2490-3c — Replace internal connections dict with binding-table projection
+- T2490-6b — TesiraFleet adapter writes through `AvbBindingAuthority`
+- T2490-6c — Tesira presets/designs become canonical bindings
+
+T2496 (closed [✓] Done 2026-05-05) is the campaign that closes those four refactors plus the operator-surface scaffold-language sweep, bringing AVB to release-grade parity with MIDI Services per the standing first-class-platform-services directive.
+
+| Sub-task | Closes | Commit |
+|---|---|---|
+| T2496-1 | Scaffold-language sweep + Overview surface | `e5286112` |
+| T2496-2 | T2490-3b (router writer-side coupling) | `a88d73ad` |
+| T2496-3 | T2490-3c (dict → authority reconciliation) | `d2a54ae2` |
+| T2496-4 | T2490-6b (TesiraFleet adapter primitive) | `350f3b14` |
+| T2496-5 | T2490-6c (preset/design as canonical bindings) | `260ae9ea` |
+| T2496-6 | Per-row mutation surface (Disable/Enable/Delete) | `5832ccc4` |
+| T2496-7 | Cluster auto-connect onboarding modal | `66b0e711` |
+| T2496-8 | Closeout (this section + evidence dir) | (final commit) |
+
+Final test surface: 86 pytest cases + 17 jest cases (was 49 + 5 before T2496; +49 net new across 7 new test files).
+
+Evidence directory: `docs/fit-for-purpose-evidence/20260505/T2496_avb_services_full_completion/`.
+
 ## 4. References
 
 - `docs/architecture/FIRST_CLASS_SERVICES.md` — the four-services template this doc lifts from
