@@ -325,6 +325,7 @@ import {
 } from './snapshotEditor/useSnapshotEditorReadQueries'
 import { useSnapshotEditorMidiMutations } from './snapshotEditor/useSnapshotEditorMidiMutations'
 import { useSnapshotEditorPresetMutations } from './snapshotEditor/useSnapshotEditorPresetMutations'
+import { useSnapshotEditorUndoRedoMutations } from './snapshotEditor/useSnapshotEditorUndoRedoMutations'
 import { FEATURED_NATIVE_BROWSER_GROUPS } from './snapshotEditor/featuredNativeBrowserGroups'
 import {
   createBlankSnapshotEditorDraft,
@@ -3785,38 +3786,10 @@ export function SnapshotEditorPage() {
     },
   })
 
-  const undoMutation = useMutation({
-    mutationFn: async () => {
-      const draft = snapshotUndoRedo.undo()
-      if (!draft) {
-        throw new Error('Nothing to undo')
-      }
-      return applySnapshotDraftPreview(draft)
-    },
-    onSuccess: () => {
-      pushToast('Undo successful', 'success')
-    },
-    onError: (error) => {
-      snapshotUndoRedo.redo()
-      pushToast(`Undo failed: ${error}`, 'error')
-    },
-  })
-
-  const redoMutation = useMutation({
-    mutationFn: async () => {
-      const draft = snapshotUndoRedo.redo()
-      if (!draft) {
-        throw new Error('Nothing to redo')
-      }
-      return applySnapshotDraftPreview(draft)
-    },
-    onSuccess: () => {
-      pushToast('Redo successful', 'success')
-    },
-    onError: (error) => {
-      snapshotUndoRedo.undo()
-      pushToast(`Redo failed: ${error}`, 'error')
-    },
+  const { undoMutation, redoMutation } = useSnapshotEditorUndoRedoMutations({
+    snapshotUndoRedo,
+    applyDraftPreview: applySnapshotDraftPreview,
+    pushToast,
   })
 
   const { savePresetMutation, loadPresetMutation, deletePresetMutation } =
