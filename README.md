@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1481** Python | **1530** TypeScript | **179** C++/H | **147** Docs | **3914** total commits | **4** stars | **0** forks | **0** open issues
+**1481** Python | **1532** TypeScript | **179** C++/H | **147** Docs | **3916** total commits | **4** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`5485ba45`](https://github.com/matthewmackes/map2-audio/commit/5485ba4570f60e2bfcbff8bf64a1076840718635) | refactor(snapshot-editor): extract revisions query into s... | Map2 Audio | 2026-05-05 |
+| [`1ae228c1`](https://github.com/matthewmackes/map2-audio/commit/1ae228c1fd932f3a11dbe32f9cb40f1a6c020362) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-05 |
 | [`1f96b077`](https://github.com/matthewmackes/map2-audio/commit/1f96b07766aa6859a880a6edcd3e1a5bef36273f) | refactor(snapshot-editor): extract publish-readiness quer... | Map2 Audio | 2026-05-05 |
 | [`0ab597f6`](https://github.com/matthewmackes/map2-audio/commit/0ab597f68685cd564bd470defffb5f5509df76af) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-05 |
 | [`c6a0e63a`](https://github.com/matthewmackes/map2-audio/commit/c6a0e63a4d77fda4914d040b214dec665186dacb) | refactor(snapshot-editor): extract update-authority-live-... | Map2 Audio | 2026-05-05 |
 | [`487b8865`](https://github.com/matthewmackes/map2-audio/commit/487b8865318b24840cbd13a4186820601145c885) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-05 |
 | [`a4ea4626`](https://github.com/matthewmackes/map2-audio/commit/a4ea462642f797864c18899db3b84c781a3ca138) | refactor(snapshot-editor): extract add-plugin mutation in... | Map2 Audio | 2026-05-05 |
 | [`a4fc4bfe`](https://github.com/matthewmackes/map2-audio/commit/a4fc4bfe5592c2313472a9ccb0ce5929f346e818) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-05 |
-| [`86c49971`](https://github.com/matthewmackes/map2-audio/commit/86c49971fdf2b4be6d8e7a7cae608fe1f8875de2) | refactor(snapshot-editor): extract delete-plugin mutation... | Map2 Audio | 2026-05-05 |
-| [`fdb17523`](https://github.com/matthewmackes/map2-audio/commit/fdb175235aeca0882b8dd46f976abf6a2e0ba6c1) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-05 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
