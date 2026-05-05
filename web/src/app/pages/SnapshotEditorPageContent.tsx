@@ -316,6 +316,7 @@ import {
   useJuceGridPersistedState,
 } from './snapshotEditor/useJuceGridPersistedState'
 import { useSnapshotEditorCadences } from './snapshotEditor/useSnapshotEditorCadences'
+import { useSnapshotEditorCatalogReadQueries } from './snapshotEditor/useSnapshotEditorReadQueries'
 import { FEATURED_NATIVE_BROWSER_GROUPS } from './snapshotEditor/featuredNativeBrowserGroups'
 import {
   createBlankSnapshotEditorDraft,
@@ -807,25 +808,17 @@ export function SnapshotEditorPage() {
   // Queries
   // ============================================================================
 
-  // Fetch chains
-  const chainsQuery = useQuery({
-    queryKey: ['chains'],
-    queryFn: () => chainsApi.list(),
-    refetchInterval: snapshotStandardCadence,
-  })
-
-  // Fetch available plugins
-  const pluginsQuery = useQuery({
-    queryKey: ['plugins', 'discover'],
-    queryFn: () => pluginsApi.discover(),
-    staleTime: 5 * 60 * 1000,
-    refetchOnWindowFocus: false,
-  })
-
-  // Fetch presets
-  const presetsQuery = useQuery({
-    queryKey: ['chains', 'presets'],
-    queryFn: () => chainsApi.listPresets(),
+  // T2472 slice 2 — static catalog read-queries lifted into a sibling
+  // hook. Cache-key bit-identity preserved: `['chains']`,
+  // `['plugins', 'discover']`, `['chains', 'presets']` reproduced
+  // verbatim by the hook so any other consumer that hits these keys
+  // continues to dedup against the same cache slot.
+  const {
+    chainsQuery,
+    pluginsQuery,
+    presetsQuery,
+  } = useSnapshotEditorCatalogReadQueries({
+    cadences: snapshotEditorCadences,
   })
 
   const midiStatusQuery = useQuery({
