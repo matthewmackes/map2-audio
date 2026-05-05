@@ -342,6 +342,7 @@ import { useSnapshotEditorAddPluginMutation } from './snapshotEditor/useSnapshot
 import { useSnapshotEditorUpdateAuthorityLiveChainsMutation } from './snapshotEditor/useSnapshotEditorUpdateAuthorityLiveChainsMutation'
 import { useSnapshotEditorPublishReadinessQuery } from './snapshotEditor/useSnapshotEditorPublishReadinessQuery'
 import { useSnapshotEditorRevisionsQuery } from './snapshotEditor/useSnapshotEditorRevisionsQuery'
+import { useSnapshotEditorAuthoritySnapshotDetailQuery } from './snapshotEditor/useSnapshotEditorAuthoritySnapshotDetailQuery'
 import { FEATURED_NATIVE_BROWSER_GROUPS } from './snapshotEditor/featuredNativeBrowserGroups'
 import {
   createBlankSnapshotEditorDraft,
@@ -862,20 +863,15 @@ export function SnapshotEditorPage() {
     refetchInterval: 2_000,
   })
   const authoritySnapshotId = resolveAuthoritySnapshotId(committedAudioStateQuery.data?.value ?? null)
-  const authoritySnapshotDetailQuery = useQuery({
-    queryKey: ['snapshots', 'detail', 'authority-active', authoritySnapshotId],
-    queryFn: async () => {
-      try {
-        return await snapshotsApi.get(authoritySnapshotId!)
-      } catch (error) {
-        if (error instanceof ApiError && error.status === 404) {
-          return null
-        }
-        throw error
-      }
-    },
-    enabled: authoritySnapshotId != null && !editorSnapshotOverride,
-    retry: false,
+  // T2472 deferred-read slice 3 — authoritySnapshotDetailQuery lifted
+  // into useSnapshotEditorAuthoritySnapshotDetailQuery. Cache key
+  // ['snapshots', 'detail', 'authority-active', authoritySnapshotId]
+  // preserved verbatim so any cross-cache invalidation continues to
+  // hit it. 404 → null preserved. retry: false preserved (operator
+  // gets a manual refetch button on load failure).
+  const { authoritySnapshotDetailQuery } = useSnapshotEditorAuthoritySnapshotDetailQuery({
+    authoritySnapshotId,
+    editorSnapshotOverride: Boolean(editorSnapshotOverride),
     refetchInterval: snapshotStandardCadence,
   })
   const runtimeStateQuery = useSnapshotRuntimeLiveState(undefined, {
