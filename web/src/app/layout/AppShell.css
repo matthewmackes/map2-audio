@@ -92,10 +92,15 @@
 
 .platform-brand-backdrop__mark {
   position: absolute;
-  /* T2474 B2: Themed text color — was hardcoded #fff. The brand mark is a
-   * faint center watermark; --cds-text-on-color resolves to the right
-   * contrast against --cds-background on every shell. */
-  color: var(--cds-text-on-color, #fff);
+  /* Cycle 54 follow-up to cycle 49 home-theme fix: switched from
+   * --cds-text-on-color (always white) to --cds-text-secondary, which
+   * inverts correctly across themes:
+   *   - cds--g100 (dark): #c6c6c6 → faint light watermark on #161616
+   *   - cds--g10 (light):  #525252 → faint dark watermark on #f4f4f4
+   *   - cds--white:        similar mid-grey → readable on white
+   * The previous rule rendered the watermark as invisible on light
+   * themes (white at 0.16 opacity over near-white background). */
+  color: var(--cds-text-secondary, #c6c6c6);
   opacity: 0.16;
   filter: none;
 }
