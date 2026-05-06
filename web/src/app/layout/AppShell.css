@@ -2,7 +2,7 @@
   background: var(--bg);
 }
 
-.app-shell:not(:has(.hp-root)) {
+.app-shell:not(:has(.hp2-root)) {
   --platform-shell-bg: var(--bg);
   --platform-shell-layer: color-mix(in srgb, var(--surface) 82%, transparent);
   --platform-shell-layer-strong: color-mix(in srgb, var(--surface-2) 88%, transparent);
@@ -22,7 +22,7 @@
  * any future override that targets `.app-shell::before` keeps working
  * during page-by-page migration. Remove the rule entirely in B12 if no
  * consumer relies on it. */
-.app-shell:not(:has(.hp-root))::before {
+.app-shell:not(:has(.hp2-root))::before {
   content: none;
 }
 
