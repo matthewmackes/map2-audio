@@ -40,10 +40,6 @@ const UNTESTED_HOOKS: ReadonlyArray<{ name: string; reason: string }> = [
     name: 'useSnapshotEditorRoutingHandlers',
     reason: 'Pre-T2473 — covered indirectly via routing-modal tests.',
   },
-  {
-    name: 'useSnapshotEditorRoutingInspectorContent',
-    reason: 'T2473 slice 15 — covered indirectly via integration test; paired test queued.',
-  },
 ]
 
 // Pinned minimum count. Bump this when shipping a new hook.
