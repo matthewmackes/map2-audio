@@ -347,6 +347,7 @@ import { useSnapshotEditorPluginBrowserData } from './snapshotEditor/useSnapshot
 import { useSnapshotEditorAudioInterfaceStatus } from './snapshotEditor/useSnapshotEditorAudioInterfaceStatus'
 import { useSnapshotEditorActiveChannelStatusRail } from './snapshotEditor/useSnapshotEditorActiveChannelStatusRail'
 import { useSnapshotEditorRoutingInspectorContent } from './snapshotEditor/useSnapshotEditorRoutingInspectorContent'
+import { useSnapshotEditorClipTimestamps } from './snapshotEditor/useSnapshotEditorClipTimestamps'
 import { FEATURED_NATIVE_BROWSER_GROUPS } from './snapshotEditor/featuredNativeBrowserGroups'
 import {
   createBlankSnapshotEditorDraft,
@@ -1223,164 +1224,20 @@ export function SnapshotEditorPage() {
     }
     setPluginLevels(levels)
   }, [pluginPeaks, outputsConnected, setPluginLevels])
-
-  const flowClipPeakEntries = useMemo(
-    () => Object.values(pluginPeaks ?? {}).flatMap((ports) => Object.values(ports)).map((peak) => ({
-      uri: peak.uri,
-      pluginPosition: peak.plugin_position ?? null,
-      isClipping: Boolean(peak.is_clipping),
-      portSymbol: peak.port_symbol ?? null,
-    })),
-    [pluginPeaks],
-  )
-
-  useEffect(() => {
-    const now = Date.now()
-    const clipSourceChains = controlPlaneSnapshot
-      ? buildEffectiveLiveSnapshotChains(controlPlaneSnapshot, chainsQuery.data).chains
-      : (chainsQuery.data?.chains ?? [])
-    const clipSourceChainById = new Map(clipSourceChains.map((chain) => [chain.id, chain] as const))
-
-    setFlowClipTimestamps((previous) => {
-      const next: Record<string, number> = {}
-
-      flowSlots.forEach((flow) => {
-        const chain = flow.chainId != null ? clipSourceChainById.get(flow.chainId) : undefined
-        const nextTimestamp = resolveFlowClipTimestamp(
-          chain?.plugins ?? [],
-          flowClipPeakEntries,
-          previous[flow.id],
-          now,
-          FLOW_CARD_CLIP_HOLD_MS,
-        )
-        if (typeof nextTimestamp === 'number') {
-          next[flow.id] = nextTimestamp
-        }
-      })
-
-      const previousKeys = Object.keys(previous)
-      const nextKeys = Object.keys(next)
-      const changed = previousKeys.length !== nextKeys.length
-        || nextKeys.some((key) => previous[key] !== next[key])
-
-      return changed ? next : previous
-    })
-  }, [chainsQuery.data, controlPlaneSnapshot, flowClipPeakEntries, flowSlots])
-
-  useEffect(() => {
-    const now = Date.now()
-    const clipSourceChains = controlPlaneSnapshot
-      ? buildEffectiveLiveSnapshotChains(controlPlaneSnapshot, chainsQuery.data).chains
-      : (chainsQuery.data?.chains ?? [])
-    const clipSourceChainById = new Map(clipSourceChains.map((chain) => [chain.id, chain] as const))
-
-    const updateEdgeClipTimestamps = (
-      previous: Record<string, number>,
-      edge: 'input' | 'output',
-    ): Record<string, number> => {
-      const next: Record<string, number> = {}
-
-      flowSlots.forEach((flow) => {
-        const chain = flow.chainId != null ? clipSourceChainById.get(flow.chainId) : undefined
-        const nextTimestamp = resolveFlowEdgeClipTimestamp(
-          chain?.plugins ?? [],
-          flowClipPeakEntries,
-          edge,
-          previous[flow.id],
-          now,
-          FLOW_CARD_CLIP_HOLD_MS,
-        )
-        if (typeof nextTimestamp === 'number') {
-          next[flow.id] = nextTimestamp
-        }
-      })
-
-      const previousKeys = Object.keys(previous)
-      const nextKeys = Object.keys(next)
-      const changed = previousKeys.length !== nextKeys.length
-        || nextKeys.some((key) => previous[key] !== next[key])
-
-      return changed ? next : previous
-    }
-
-    setFlowInputClipTimestamps((previous) => updateEdgeClipTimestamps(previous, 'input'))
-    setFlowOutputClipTimestamps((previous) => updateEdgeClipTimestamps(previous, 'output'))
-  }, [chainsQuery.data, controlPlaneSnapshot, flowClipPeakEntries, flowSlots])
-
-  useEffect(() => {
-    const expiryDelays = Object.values(flowClipTimestamps)
-      .map((timestamp) => (timestamp + FLOW_CARD_CLIP_HOLD_MS) - Date.now())
-      .filter((delay) => delay > 0)
-
-    if (expiryDelays.length === 0) {
-      return
-    }
-
-    const timeoutId = window.setTimeout(() => {
-      const now = Date.now()
-      setFlowClipTimestamps((previous) => {
-        const next = Object.fromEntries(
-          Object.entries(previous).filter(([, timestamp]) => now - timestamp < FLOW_CARD_CLIP_HOLD_MS),
-        )
-        const changed = Object.keys(next).length !== Object.keys(previous).length
-        return changed ? next : previous
-      })
-    }, Math.max(50, Math.min(...expiryDelays)))
-
-    return () => {
-      window.clearTimeout(timeoutId)
-    }
-  }, [flowClipTimestamps])
-
-  useEffect(() => {
-    const expiryDelays = Object.values(flowInputClipTimestamps)
-      .map((timestamp) => (timestamp + FLOW_CARD_CLIP_HOLD_MS) - Date.now())
-      .filter((delay) => delay > 0)
-
-    if (expiryDelays.length === 0) {
-      return
-    }
-
-    const timeoutId = window.setTimeout(() => {
-      const now = Date.now()
-      setFlowInputClipTimestamps((previous) => {
-        const next = Object.fromEntries(
-          Object.entries(previous).filter(([, timestamp]) => now - timestamp < FLOW_CARD_CLIP_HOLD_MS),
-        )
-        const changed = Object.keys(next).length !== Object.keys(previous).length
-        return changed ? next : previous
-      })
-    }, Math.max(50, Math.min(...expiryDelays)))
-
-    return () => {
-      window.clearTimeout(timeoutId)
-    }
-  }, [flowInputClipTimestamps])
-
-  useEffect(() => {
-    const expiryDelays = Object.values(flowOutputClipTimestamps)
-      .map((timestamp) => (timestamp + FLOW_CARD_CLIP_HOLD_MS) - Date.now())
-      .filter((delay) => delay > 0)
-
-    if (expiryDelays.length === 0) {
-      return
-    }
-
-    const timeoutId = window.setTimeout(() => {
-      const now = Date.now()
-      setFlowOutputClipTimestamps((previous) => {
-        const next = Object.fromEntries(
-          Object.entries(previous).filter(([, timestamp]) => now - timestamp < FLOW_CARD_CLIP_HOLD_MS),
-        )
-        const changed = Object.keys(next).length !== Object.keys(previous).length
-        return changed ? next : previous
-      })
-    }, Math.max(50, Math.min(...expiryDelays)))
-
-    return () => {
-      window.clearTimeout(timeoutId)
-    }
-  }, [flowOutputClipTimestamps])
+  // T2473 JSX partition slice 16 — clip-timestamp lifecycle (1 useMemo
+  // + 5 useEffects, ~157 LoC) lifted into useSnapshotEditorClipTimestamps.
+  const { flowClipPeakEntries } = useSnapshotEditorClipTimestamps({
+    pluginPeaks,
+    flowSlots,
+    chainsQueryData: chainsQuery.data,
+    controlPlaneSnapshot,
+    flowClipTimestamps,
+    flowInputClipTimestamps,
+    flowOutputClipTimestamps,
+    setFlowClipTimestamps,
+    setFlowInputClipTimestamps,
+    setFlowOutputClipTimestamps,
+  })
 
 
   // ============================================================================
