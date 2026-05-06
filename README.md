@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1497** Python | **1541** TypeScript | **183** C++/H | **147** Docs | **4058** total commits | **4** stars | **0** forks | **0** open issues
+**1497** Python | **1546** TypeScript | **183** C++/H | **147** Docs | **4066** total commits | **4** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
-| [`22f4d9c4`](https://github.com/matthewmackes/map2-audio/commit/22f4d9c44df0a3a08578bea2a8ddcbafb4374594) | test(platformEventStore): regression guard for Round-1 La... | Map2 Audio | 2026-05-06 |
-| [`74e7bce5`](https://github.com/matthewmackes/map2-audio/commit/74e7bce596b9381a697b851598e41b7f6b924806) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-06 |
-| [`3b975128`](https://github.com/matthewmackes/map2-audio/commit/3b975128507a4fac4873d20b96f2a9a697d15d10) | fix(eslint): exempt test files from map2 carbon-disciplin... | Map2 Audio | 2026-05-06 |
-| [`1f2bf2d1`](https://github.com/matthewmackes/map2-audio/commit/1f2bf2d14997fcfa7da91aeab7e46f1c00bcbd78) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-06 |
-| [`1958290a`](https://github.com/matthewmackes/map2-audio/commit/1958290a1616b5f9e48de3118689c503e7f56686) | perf(HardwareStorePage): memoize three buildProfileRows c... | Map2 Audio | 2026-05-06 |
-| [`c2b995b7`](https://github.com/matthewmackes/map2-audio/commit/c2b995b72291c43cdb890c723f047fb75cdf8ba7) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-06 |
-| [`b051e057`](https://github.com/matthewmackes/map2-audio/commit/b051e05731911c5a9a5015d680d293169ea17812) | refactor(HardwareStorePage): extract row-building helpers... | Map2 Audio | 2026-05-06 |
-| [`11aa6977`](https://github.com/matthewmackes/map2-audio/commit/11aa69778e3f85298bde2c8b5f768e84dc0aeded) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-06 |
+| [`c428aec7`](https://github.com/matthewmackes/map2-audio/commit/c428aec7376911dade3055ea12961f84c00981cc) | refactor(web): T2477 — `<SignalFlowGraph>` primitive + 7-... | Map2 Audio | 2026-05-06 |
+| [`62139141`](https://github.com/matthewmackes/map2-audio/commit/621391412488a41b993a772a651026828117562a) | test(WelcomeHero.css): regression guard for cycle 64 --ma... | Map2 Audio | 2026-05-06 |
+| [`774c4397`](https://github.com/matthewmackes/map2-audio/commit/774c439770eaa408b14db177b808a5e27ffbaccf) | fix(home): bind --map2x-* design tokens to Carbon --cds-*... | Map2 Audio | 2026-05-06 |
+| [`a42f9085`](https://github.com/matthewmackes/map2-audio/commit/a42f9085e501d0e17d2c09597bc37198535b4fc8) | test(AppShell.css): regression guards for cycle 49/54/62 ... | Map2 Audio | 2026-05-06 |
+| [`2d53fab3`](https://github.com/matthewmackes/map2-audio/commit/2d53fab3800b97fee403e9bc61982d2d4846fc47) | fix(home): repair stale `.hp-root` selector that was mask... | Map2 Audio | 2026-05-06 |
+| [`0b6d2f36`](https://github.com/matthewmackes/map2-audio/commit/0b6d2f36299f07ffd422a99bf1756681772d8e15) | fix(theme): synchronous first-paint bootstrap eliminates ... | Map2 Audio | 2026-05-06 |
+| [`af43134c`](https://github.com/matthewmackes/map2-audio/commit/af43134c7cee221b6fee24da39bc2d6b5436621c) | test(useTheme): regression guard for cycle 50 theme-color... | Map2 Audio | 2026-05-06 |
+| [`6e3d8537`](https://github.com/matthewmackes/map2-audio/commit/6e3d8537c7698fd7014f8f597a4eed6f9f902f57) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-06 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
