@@ -33,10 +33,6 @@ const UNTESTED_HOOKS: ReadonlyArray<{ name: string; reason: string }> = [
     reason: 'Pre-T2473 — covered by the cadences-resolver unit test.',
   },
   {
-    name: 'useSnapshotEditorClipTimestamps',
-    reason: 'T2473 slice 16 — covered indirectly via integration test; paired test queued.',
-  },
-  {
     name: 'useSnapshotEditorMidiBindingDrafts',
     reason: 'Pre-T2473 — covered indirectly via SnapshotEditorMidi panel tests.',
   },
