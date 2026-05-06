@@ -348,6 +348,7 @@ import { useSnapshotEditorAudioInterfaceStatus } from './snapshotEditor/useSnaps
 import { useSnapshotEditorActiveChannelStatusRail } from './snapshotEditor/useSnapshotEditorActiveChannelStatusRail'
 import { useSnapshotEditorRoutingInspectorContent } from './snapshotEditor/useSnapshotEditorRoutingInspectorContent'
 import { useSnapshotEditorClipTimestamps } from './snapshotEditor/useSnapshotEditorClipTimestamps'
+import { useSnapshotEditorUiPresentation } from './snapshotEditor/useSnapshotEditorUiPresentation'
 import { FEATURED_NATIVE_BROWSER_GROUPS } from './snapshotEditor/featuredNativeBrowserGroups'
 import {
   createBlankSnapshotEditorDraft,
@@ -4073,21 +4074,28 @@ export function SnapshotEditorPage() {
   const clearFlowsDisabled = snapshotEditingLocked || flowSlots.length <= 1
   const midiMappingsTitle = midiLearning ? 'MIDI Learn armed' : `${midiMappingCountLabel} MIDI mappings`
 
-  const snapshotInspectorWorkspaceActionId = useMemo<SnapshotEditorWorkspaceActionId>(() => {
-    if (showVersionHistoryModal) {
-      return 'version-history'
-    }
-    if (automationTimelineExpanded) {
-      return 'automation'
-    }
-    if (effectModalOpen && selectedPlugin) {
-      return 'parameters'
-    }
-    if (showPluginBrowser) {
-      return 'directory'
-    }
-    return 'signal-grid'
-  }, [automationTimelineExpanded, effectModalOpen, selectedPlugin, showPluginBrowser, showVersionHistoryModal])
+  // T2473 JSX partition slice 17 — UI-presentation memos consolidated.
+  // snapshotInspectorWorkspaceActionId + automationToggleBottomOffset
+  // + automationFloatingToggleStyle + automationFloatingToggleTitle
+  // all lifted into useSnapshotEditorUiPresentation.
+  const {
+    snapshotInspectorWorkspaceActionId,
+    automationToggleBottomOffset,
+    automationFloatingToggleStyle,
+    automationFloatingToggleTitle,
+  } = useSnapshotEditorUiPresentation({
+    showVersionHistoryModal,
+    automationTimelineExpanded,
+    effectModalOpen,
+    selectedPlugin,
+    showPluginBrowser,
+    automationPanelHeight,
+    snapshotEntryRequired,
+    automationRecording,
+    automationPlaying,
+    automationLanesLength: automationLanes.length,
+    armedAutomationLane,
+  })
   const tabletDetailsAction = isTabletTouchLayout ? (
     <Button
       size="sm"
@@ -4390,28 +4398,9 @@ export function SnapshotEditorPage() {
     </div>
   )
 
-  const automationToggleBottomOffset = useMemo(() => (
-    12 + (automationTimelineExpanded ? automationPanelHeight + 12 : 0)
-  ), [automationPanelHeight, automationTimelineExpanded])
-
-  const automationFloatingToggleStyle = useMemo<CSSProperties>(() => ({
-    bottom: `calc(${automationToggleBottomOffset}px + env(safe-area-inset-bottom))`,
-  }), [automationToggleBottomOffset])
-
-  const automationFloatingToggleTitle = useMemo(() => {
-    if (snapshotEntryRequired) {
-      return 'Load or create a snapshot to edit automation.'
-    }
-    const statusLabel = automationRecording
-      ? 'Recording'
-      : automationPlaying
-        ? 'Playing'
-        : automationLanes.length > 0
-          ? 'Ready'
-          : 'Idle'
-    const armedLabel = armedAutomationLane ? ` • Armed ${armedAutomationLane.parameterName}` : ''
-    return `${statusLabel} • ${automationLanes.length} lanes${armedLabel}`
-  }, [armedAutomationLane, automationLanes.length, automationPlaying, automationRecording, snapshotEntryRequired])
+  // automationToggleBottomOffset / automationFloatingToggleStyle /
+  // automationFloatingToggleTitle now provided by
+  // useSnapshotEditorUiPresentation above (T2473 slice 17).
 
   // ============================================================================
   // Keyboard Shortcuts
