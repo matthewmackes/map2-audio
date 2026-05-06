@@ -86,27 +86,3 @@ export function LCDFeed({ entries, onEntryClick, maxHeight = '400px' }: LCDFeedP
   );
 }
 
-/**
- * Compact event feed for sidebars/cards
- */
-export function CompactLCDFeed({ entries, maxItems = 5 }: { entries: LCDFeedEntry[]; maxItems?: number }) {
-  return (
-    <div className="space-y-2">
-      {entries.slice(0, maxItems).map((entry) => {
-        const EventTypeIcon = eventTypeIcons[entry.category] || Information;
-        return (
-          <div key={entry.event_id} className="text-sm bg-gray-800 p-2 rounded border border-gray-700">
-            <div className="flex items-center gap-2">
-              <EventTypeIcon size={14} />
-              <span className="font-semibold text-white flex-1 truncate">{entry.title}</span>
-              <span className={`text-xs ${severityColors[entry.severity]}`}>
-                {entry.severity[0].toUpperCase()}
-              </span>
-            </div>
-            <p className="text-[#9ca3af] text-xs ml-6 line-clamp-1">{entry.message}</p>
-          </div>
-        );
-      })}
-    </div>
-  );
-}

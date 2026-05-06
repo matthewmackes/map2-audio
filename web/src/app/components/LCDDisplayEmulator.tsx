@@ -87,25 +87,3 @@ export function LCDDisplayEmulator({ entry, nodeLabel = 'NODE-0000', loading = f
   );
 }
 
-/**
- * Mini LCD emulator for cards/sidebars
- */
-export function MiniLCDDisplayEmulator({ entry, nodeLabel = 'NODE' }: { entry?: LCDFeedEntry; nodeLabel?: string }) {
-  const source = entry?.source_node === nodeLabel ? 'L' : 'R';
-  
-  return (
-    <div className="bg-black border-2 border-gray-700 rounded-lg p-2 font-mono text-gray-300 text-xs"
-         style={{ width: '200px' }}>
-      <div className="bg-gray-900 rounded p-1 space-y-px">
-        <div>{nodeLabel.substring(0, 12)}</div>
-        <div className="text-cyan-400">
-          [{source}] {entry?.icon} {entry?.title.substring(0, 8)}
-        </div>
-        <div className="text-green-400">{entry?.message.substring(0, 14)}</div>
-        <div className="text-yellow-600 text-xs">
-          {entry ? new Date(entry.timestamp).toLocaleTimeString() : '00:00:00'}
-        </div>
-      </div>
-    </div>
-  );
-}
