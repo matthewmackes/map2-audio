@@ -294,6 +294,69 @@ class EventFeedback(TypedDict):
 # Shared payload types
 # ---------------------------------------------------------------------------
 
+# ---------------------------------------------------------------------------
+# T2459-H4 slice 13 — Maschine MK1 transport messages.
+# ---------------------------------------------------------------------------
+#
+# The host-client transport facade (slice 11) talks to the
+# controller-host through these three message types. Slice 14 lands
+# the engine-side HID parser that emits maschine_hid_event; slice 15
+# lands the bulk-display sink that consumes maschine_bulk_frame.
+# Slice 12's daemon flag-aware factory already routes through these
+# envelopes once MAP2_MASCHINE_HOST_CLIENT_TRANSPORT=1 is set.
+
+
+class MaschineHidEvent(TypedDict):
+    """Inbound (host → daemon) decoded HID input from the Maschine MK1.
+
+    The host owns the USB device and runs the HID parser (slice 14).
+    The daemon receives one of these per pad / button / encoder change.
+    ``kind`` discriminates which queue the daemon's ``read_pads`` /
+    ``read_buttons_encoders`` consumer drains from. ``bytes`` is the
+    decoded HID payload — same byte shape as ``mk1_protocol.py`` parses
+    today.
+    """
+    type: Literal["maschine_hid_event"]
+    msg_id: str
+    schema_version: int
+    controller_key: str       # always "maschine-mk1"
+    timestamp_ns: int
+    kind: str                 # "pad" | "button" | "encoder"
+    bytes: list[int]          # raw decoded HID payload
+
+
+class MaschineBulkFrame(TypedDict):
+    """Outbound (daemon → host) bulk frame for the Maschine MK1.
+
+    ``kind="led"`` carries the LED primer + grid frame the daemon
+    composes from the choreography state machine.
+    ``kind="display"`` carries the 256×64 framebuffer rendered by the
+    daemon's render loop. The host (slice 15) writes the bytes to the
+    appropriate USB endpoint.
+    """
+    type: Literal["maschine_bulk_frame"]
+    msg_id: str
+    schema_version: int
+    controller_key: str       # always "maschine-mk1"
+    kind: str                 # "led" | "display"
+    bytes: list[int]          # raw bytes the host writes to the EP
+
+
+class MaschineInitRequest(TypedDict):
+    """Outbound (daemon → host) boot-time init request.
+
+    Mirrors ``MaschineMK1UsbTransport.initialize_device`` — sends the
+    interface alt-setting + LED primer packets that the device needs
+    before it streams pad/button input. The host responds with a
+    ``log_event`` of level ``info`` on success or ``error`` on
+    failure.
+    """
+    type: Literal["maschine_init"]
+    msg_id: str
+    schema_version: int
+    controller_key: str       # always "maschine-mk1"
+
+
 class MappingControlPayload(TypedDict, total=False):
     """One control row from a MappingDescriptor sent to the host.
 
@@ -365,6 +428,9 @@ FIELD_MANIFEST: dict[str, list[str]] = {
     "LogEvent":          list(LogEvent.__annotations__.keys()),
     "ScriptError":       list(ScriptError.__annotations__.keys()),
     "EventFeedback":     list(EventFeedback.__annotations__.keys()),
+    "MaschineHidEvent":   list(MaschineHidEvent.__annotations__.keys()),
+    "MaschineBulkFrame":  list(MaschineBulkFrame.__annotations__.keys()),
+    "MaschineInitRequest": list(MaschineInitRequest.__annotations__.keys()),
     "MappingControlPayload":    list(MappingControlPayload.__annotations__.keys()),
     "MappingDescriptorPayload": list(MappingDescriptorPayload.__annotations__.keys()),
 }
@@ -381,6 +447,9 @@ InboundMessage = (
     | MidiListPortsRequest
     | MidiOpenInputRequest
     | MidiCreateVirtualPortRequest
+    # T2459-H4 slice 13 — Maschine MK1 daemon → host envelopes.
+    | MaschineBulkFrame
+    | MaschineInitRequest
 )
 OutboundMessage = (
     EngineCommand
@@ -389,6 +458,8 @@ OutboundMessage = (
     | ScriptError
     | EventFeedback
     | MidiListPortsResponse
+    # T2459-H4 slice 13 — Maschine MK1 host → daemon envelopes.
+    | MaschineHidEvent
 )
 
 

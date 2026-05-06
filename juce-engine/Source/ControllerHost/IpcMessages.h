@@ -236,6 +236,55 @@ struct EventFeedback
 };
 
 // ---------------------------------------------------------------------------
+// T2459-H4 slice 13 — Maschine MK1 transport messages.
+// ---------------------------------------------------------------------------
+//
+// The host-client transport facade (slice 11) talks to the
+// controller-host through these three message types. Slice 14 lands
+// the engine-side HID parser that emits maschine_hid_event records;
+// slice 15 lands the bulk-display sink that consumes
+// maschine_bulk_frame writes. Slice 12's daemon flag-aware factory
+// already routes through these envelopes once
+// MAP2_MASCHINE_HOST_CLIENT_TRANSPORT=1 is set on the daemon.
+//
+// All three messages carry controller_key="maschine-mk1" so they can
+// share a UDS connection with the existing MIDI traffic.
+
+// Inbound (host → daemon): a decoded HID input event from the device.
+struct MaschineHidEvent
+{
+    static constexpr const char* kType = "maschine_hid_event";
+    std::string msg_id;
+    int schema_version = kSchemaVersion;
+    std::string controller_key;        // always "maschine-mk1"
+    std::int64_t timestamp_ns = 0;
+    std::string kind;                  // "pad" | "button" | "encoder"
+    std::vector<std::uint8_t> bytes;   // raw decoded HID payload (matches mk1_protocol.py shape)
+};
+
+// Outbound (daemon → host): a bulk frame for the device.
+// kind="led" → led primer + grid frame
+// kind="display" → 256x64 framebuffer
+struct MaschineBulkFrame
+{
+    static constexpr const char* kType = "maschine_bulk_frame";
+    std::string msg_id;
+    int schema_version = kSchemaVersion;
+    std::string controller_key;        // always "maschine-mk1"
+    std::string kind;                  // "led" | "display"
+    std::vector<std::uint8_t> bytes;   // raw bytes the host writes to the EP
+};
+
+// Outbound (daemon → host): the boot-time init packet sequence.
+struct MaschineInitRequest
+{
+    static constexpr const char* kType = "maschine_init";
+    std::string msg_id;
+    int schema_version = kSchemaVersion;
+    std::string controller_key;        // always "maschine-mk1"
+};
+
+// ---------------------------------------------------------------------------
 // Field manifest — must match app/schemas/controller_host.py FIELD_MANIFEST.
 // CI test tests/test_controller_host_ipc_schema.py reads this header
 // textually + compares against the Python TypedDict annotations.
@@ -258,6 +307,9 @@ struct EventFeedback
 // LogEvent: type, msg_id, schema_version, controller_key, level, message
 // ScriptError: type, msg_id, schema_version, controller_key, file, line, column, message, stack
 // EventFeedback: type, msg_id, schema_version, controller_key, stage, timestamp_ns, detail, inbound_bytes, callback_name, engine_command_count, outbound_short_count, outbound_sysex_count
+// MaschineHidEvent: type, msg_id, schema_version, controller_key, timestamp_ns, kind, bytes
+// MaschineBulkFrame: type, msg_id, schema_version, controller_key, kind, bytes
+// MaschineInitRequest: type, msg_id, schema_version, controller_key
 // MappingControlPayload: status, midino, channel, target, action, script, fast_path, description
 // MappingDescriptorPayload: pack_id, model, kind, scripts, controls, outputs, settings, mixxx_alias_table
 // CPP_FIELD_MANIFEST_END
