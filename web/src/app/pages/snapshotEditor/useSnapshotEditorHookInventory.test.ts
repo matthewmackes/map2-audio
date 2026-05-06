@@ -29,10 +29,6 @@ const HOOKS_DIR = __dirname
 // review checkpoint — the goal is to drive this list down to empty.
 const UNTESTED_HOOKS: ReadonlyArray<{ name: string; reason: string }> = [
   {
-    name: 'useSnapshotEditorAudioInterfaceStatus',
-    reason: 'T2473 slice 13 — covered indirectly via integration test; paired test queued.',
-  },
-  {
     name: 'useSnapshotEditorCadences',
     reason: 'Pre-T2473 — covered by the cadences-resolver unit test.',
   },
