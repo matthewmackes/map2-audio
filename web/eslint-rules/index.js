@@ -347,12 +347,88 @@ const noHardcodedFontFamily = {
   },
 }
 
+/**
+ * Phase E primitive-migration rules (T2481-E1 .. T2481-E7).
+ *
+ * Each rule bans a raw HTML primitive on JSX elements and points the
+ * author at the Carbon equivalent. All four rules support the standard
+ * `// carbon-allow: <reason>` escape hatch on the preceding line.
+ *
+ * Initial activation: `'warn'` so existing violations surface without
+ * breaking CI. Ratchet to `'error'` after the canary + sweep close
+ * (T2481-E-lint).
+ */
+
+function makeNoRawPrimitiveRule(elementName, carbonReplacement) {
+  return {
+    meta: {
+      type: 'suggestion',
+      docs: {
+        description:
+          `Use Carbon ${carbonReplacement} instead of a raw <${elementName}> JSX element.`,
+      },
+      schema: [],
+      messages: {
+        raw:
+          `Raw <${elementName}> primitive. Use Carbon ${carbonReplacement} from @carbon/react. ` +
+          'If a hardware-skin / device-graphics surface (CARBON_CONFORMANCE_STANDARD §10.5) ' +
+          'genuinely needs the raw primitive, annotate with `// carbon-allow: <reason>`.',
+      },
+    },
+    create(context) {
+      const sourceCode = context.sourceCode ?? context.getSourceCode()
+      function hasCarbonAllowOnPrecedingLine(node) {
+        const comments = sourceCode.getCommentsBefore(node)
+        return comments.some((c) => /carbon-allow\s*:/i.test(c.value))
+      }
+      return {
+        JSXOpeningElement(node) {
+          if (
+            !node.name ||
+            node.name.type !== 'JSXIdentifier' ||
+            node.name.name !== elementName
+          ) {
+            return
+          }
+          // Walk up to the JSXElement so the `// carbon-allow:` comment
+          // lookup matches comments authored on the line immediately
+          // above the opening tag.
+          const target = node.parent && node.parent.type === 'JSXElement' ? node.parent : node
+          if (hasCarbonAllowOnPrecedingLine(target)) return
+          context.report({ node, messageId: 'raw' })
+        },
+      }
+    },
+  }
+}
+
+const noRawButton = makeNoRawPrimitiveRule(
+  'button',
+  '<Button> / <IconButton> / <OverflowMenu>',
+)
+const noRawInput = makeNoRawPrimitiveRule(
+  'input',
+  '<TextInput> / <NumberInput> / <Checkbox> / <RadioButton>',
+)
+const noRawSelect = makeNoRawPrimitiveRule(
+  'select',
+  '<Dropdown> / <ComboBox> / <Select>',
+)
+const noRawDialog = makeNoRawPrimitiveRule(
+  'dialog',
+  '<Modal> / <ComposedModal>',
+)
+
 const plugin = {
   rules: {
     'no-mui-import': noMuiImport,
     'no-ad-hoc-transition': noAdHocTransition,
     'no-hardcoded-px-spacing': noHardcodedPxSpacing,
     'no-hardcoded-font-family': noHardcodedFontFamily,
+    'no-raw-button': noRawButton,
+    'no-raw-input': noRawInput,
+    'no-raw-select': noRawSelect,
+    'no-raw-dialog': noRawDialog,
   },
 }
 

@@ -49,6 +49,16 @@ export default tseslint.config(
       // via the per-files override below. Ratchet straight to `error`
       // so future drift is a hard CI fail.
       'map2/no-hardcoded-font-family': 'error',
+      // T2481-E (Phase E primitive migration) — initial activation at
+      // `warn` so the existing violation snapshot surfaces without
+      // breaking CI. The four rules ratchet to `error` under T2481-E-lint
+      // after the canary + sweep close per phase. The `// carbon-allow:`
+      // escape hatch covers §10.5 hardware-skin / device-graphics surfaces
+      // that legitimately need a raw primitive.
+      'map2/no-raw-button': 'warn',
+      'map2/no-raw-input': 'warn',
+      'map2/no-raw-select': 'warn',
+      'map2/no-raw-dialog': 'warn',
       // Cycle 32 (audit Arch-8): block re-introduction of the deprecated
       // NodeContext UI surfaces. The Unified Node Pill directive (CLAUDE.md
       // §5) folded NodeContextBanner / NodeContextPicker / NodeAlertBar into

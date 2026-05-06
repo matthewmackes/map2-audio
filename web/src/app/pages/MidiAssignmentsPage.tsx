@@ -24,6 +24,13 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { Link, useSearchParams } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Close, Music } from '@carbon/icons-react'
+import {
+  NumberInput,
+  Select,
+  SelectItem,
+  TextInput,
+  Toggle,
+} from '@carbon/react'
 
 import {
   chainsApi,
@@ -1311,98 +1318,158 @@ function StepCalibrate({
 
       <div className="cal">
         <div className="cal-fields">
-          <div className="field">
-            <div className="lbl">Mapping name</div>
-            <input type="text" value={cal.name} onChange={(e) => set({ name: e.target.value })} />
+          <div className="field cal-field--carbon">
+            <TextInput
+              id="mapping-name"
+              labelText="Mapping name"
+              value={cal.name}
+              onChange={(e) => set({ name: e.target.value })}
+            />
           </div>
-          <div className="field">
-            <div className="lbl">Scope</div>
-            <select value={cal.scope} onChange={(e) => set({ scope: e.target.value as 'global' | 'chain' })}>
-              <option value="global">Global</option>
-              <option value="chain">Per-chain (active chain)</option>
-            </select>
+          <div className="field cal-field--carbon">
+            <Select
+              id="mapping-scope"
+              labelText="Scope"
+              value={cal.scope}
+              onChange={(e) => set({ scope: e.target.value as 'global' | 'chain' })}
+            >
+              <SelectItem value="global" text="Global" />
+              <SelectItem value="chain" text="Per-chain (active chain)" />
+            </Select>
           </div>
 
           {isContinuous && (
             <>
-              <div className="field">
+              <div className="field cal-field--carbon">
                 <div className="lbl">Input range</div>
-                <div className="range-pair">
-                  <input type="number" value={cal.minIn} onChange={(e) => set({ minIn: Number(e.target.value) })} />
+                <div className="range-pair range-pair--carbon">
+                  <NumberInput
+                    id="mapping-min-in"
+                    label=""
+                    hideLabel
+                    hideSteppers
+                    value={cal.minIn}
+                    onChange={(_e, { value }) => set({ minIn: Number(value) })}
+                  />
                   <span>→</span>
-                  <input type="number" value={cal.maxIn} onChange={(e) => set({ maxIn: Number(e.target.value) })} />
+                  <NumberInput
+                    id="mapping-max-in"
+                    label=""
+                    hideLabel
+                    hideSteppers
+                    value={cal.maxIn}
+                    onChange={(_e, { value }) => set({ maxIn: Number(value) })}
+                  />
                 </div>
               </div>
-              <div className="field">
+              <div className="field cal-field--carbon">
                 <div className="lbl">Output range</div>
-                <div className="range-pair">
-                  <input type="number" value={cal.minOut} onChange={(e) => set({ minOut: Number(e.target.value) })} />
+                <div className="range-pair range-pair--carbon">
+                  <NumberInput
+                    id="mapping-min-out"
+                    label=""
+                    hideLabel
+                    hideSteppers
+                    value={cal.minOut}
+                    onChange={(_e, { value }) => set({ minOut: Number(value) })}
+                  />
                   <span>→</span>
-                  <input type="number" value={cal.maxOut} onChange={(e) => set({ maxOut: Number(e.target.value) })} />
+                  <NumberInput
+                    id="mapping-max-out"
+                    label=""
+                    hideLabel
+                    hideSteppers
+                    value={cal.maxOut}
+                    onChange={(_e, { value }) => set({ maxOut: Number(value) })}
+                  />
                 </div>
               </div>
-              <div className="field">
+              <div className="field cal-field--carbon">
                 <div className="lbl">Deadzone (L / H)</div>
-                <div className="range-pair">
-                  <input type="number" value={cal.deadzoneL} onChange={(e) => set({ deadzoneL: Number(e.target.value) })} />
+                <div className="range-pair range-pair--carbon">
+                  <NumberInput
+                    id="mapping-deadzone-l"
+                    label=""
+                    hideLabel
+                    hideSteppers
+                    value={cal.deadzoneL}
+                    onChange={(_e, { value }) => set({ deadzoneL: Number(value) })}
+                  />
                   <span>·</span>
-                  <input type="number" value={cal.deadzoneH} onChange={(e) => set({ deadzoneH: Number(e.target.value) })} />
+                  <NumberInput
+                    id="mapping-deadzone-h"
+                    label=""
+                    hideLabel
+                    hideSteppers
+                    value={cal.deadzoneH}
+                    onChange={(_e, { value }) => set({ deadzoneH: Number(value) })}
+                  />
                 </div>
               </div>
-              <div className="field">
-                <div className="lbl">Invert</div>
-                <button
-                  type="button"
-                  role="switch"
-                  aria-checked={cal.invert}
-                  aria-label="Invert"
-                  className={`switch ${cal.invert ? 'on' : ''}`}
-                  onClick={() => set({ invert: !cal.invert })}
+              <div className="field cal-field--carbon">
+                <Toggle
+                  id="mapping-invert"
+                  labelText="Invert"
+                  size="sm"
+                  toggled={cal.invert}
+                  onToggle={(checked) => set({ invert: checked })}
                 />
               </div>
-              <div className="field">
-                <div className="lbl">LED feedback</div>
-                <button
-                  type="button"
-                  role="switch"
-                  aria-checked={cal.feedback}
-                  aria-label="LED feedback"
-                  className={`switch ${cal.feedback ? 'on' : ''}`}
-                  onClick={() => set({ feedback: !cal.feedback })}
+              <div className="field cal-field--carbon">
+                <Toggle
+                  id="mapping-led-feedback"
+                  labelText="LED feedback"
+                  size="sm"
+                  toggled={cal.feedback}
+                  onToggle={(checked) => set({ feedback: checked })}
                 />
               </div>
             </>
           )}
 
           {isTrigger && (
-            <div className="field">
-              <div className="lbl">Velocity / value threshold</div>
-              <input type="number" min="0" max="127" value={cal.threshold} onChange={(e) => set({ threshold: Number(e.target.value) })} />
+            <div className="field cal-field--carbon">
+              <NumberInput
+                id="mapping-threshold"
+                label="Velocity / value threshold"
+                min={0}
+                max={127}
+                value={cal.threshold}
+                onChange={(_e, { value }) => set({ threshold: Number(value) })}
+              />
             </div>
           )}
 
           {isRouting && (
             <>
-              <div className="field">
-                <div className="lbl">From flow index</div>
-                <input type="number" min="0" value={cal.fromFlow} onChange={(e) => set({ fromFlow: Number(e.target.value) })} />
+              <div className="field cal-field--carbon">
+                <NumberInput
+                  id="mapping-from-flow"
+                  label="From flow index"
+                  min={0}
+                  value={cal.fromFlow}
+                  onChange={(_e, { value }) => set({ fromFlow: Number(value) })}
+                />
               </div>
-              <div className="field">
-                <div className="lbl">To flow index</div>
-                <input type="number" min="0" value={cal.toFlow} onChange={(e) => set({ toFlow: Number(e.target.value) })} />
+              <div className="field cal-field--carbon">
+                <NumberInput
+                  id="mapping-to-flow"
+                  label="To flow index"
+                  min={0}
+                  value={cal.toFlow}
+                  onChange={(_e, { value }) => set({ toFlow: Number(value) })}
+                />
               </div>
             </>
           )}
 
-          <div className="field">
-            <div className="lbl">Enabled</div>
-            <button
-              type="button"
-              role="switch"
-              aria-checked={cal.enabled}
-              aria-label="Enabled"
-              className={`switch ${cal.enabled ? 'on' : ''}`}
-              onClick={() => set({ enabled: !cal.enabled })}
+          <div className="field cal-field--carbon">
+            <Toggle
+              id="mapping-enabled"
+              labelText="Enabled"
+              size="sm"
+              toggled={cal.enabled}
+              onToggle={(checked) => set({ enabled: checked })}
             />
           </div>
         </div>
