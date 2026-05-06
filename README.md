@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1497** Python | **1536** TypeScript | **183** C++/H | **147** Docs | **4007** total commits | **4** stars | **0** forks | **0** open issues
+**1497** Python | **1537** TypeScript | **183** C++/H | **147** Docs | **4010** total commits | **4** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`3ae41989`](https://github.com/matthewmackes/map2-audio/commit/3ae41989135641abcdd7c6fe79691c89c07f0e0d) | perf(App): hoist router future-flags to stable module-lev... | Map2 Audio | 2026-05-06 |
+| [`e5b964fa`](https://github.com/matthewmackes/map2-audio/commit/e5b964fa98d2c67071991336cc10f3f511dc7c61) | chore(eslint): block re-introduction of deprecated NodeCo... | Map2 Audio | 2026-05-06 |
+| [`38a96a06`](https://github.com/matthewmackes/map2-audio/commit/38a96a062f63d7fe611b3ca994c2e232524a5759) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-06 |
 | [`18dd57bf`](https://github.com/matthewmackes/map2-audio/commit/18dd57bf95b5f7361fcb1e35519b93ad1b6ffb76) | fix(useLocalStorage): add SSR guard on read + write paths... | Map2 Audio | 2026-05-06 |
 | [`456bb3f4`](https://github.com/matthewmackes/map2-audio/commit/456bb3f4afaf9e59f845f0e1982c475adadac6bc) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-06 |
 | [`1b788deb`](https://github.com/matthewmackes/map2-audio/commit/1b788deb68d101ace03d3875c2d6b171f7e1dda8) | docs(audit): annotate closure status on web-audit finding... | Map2 Audio | 2026-05-06 |
 | [`32c36d32`](https://github.com/matthewmackes/map2-audio/commit/32c36d32951d8b315e6d5c5a5fc320976fc6f042) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-06 |
 | [`d0f88a9a`](https://github.com/matthewmackes/map2-audio/commit/d0f88a9a3a0c67ee496da421d1b22b44eb1b1b24) | refactor(hooks): retire useMetricsStream dead wrapper (au... | Map2 Audio | 2026-05-06 |
-| [`5eb3d6b4`](https://github.com/matthewmackes/map2-audio/commit/5eb3d6b45794d0c01688bed82dc2c955474ab45c) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-06 |
-| [`278614b9`](https://github.com/matthewmackes/map2-audio/commit/278614b93256bb74411acb406abb74610ba8018a) | refactor(useIsMobile): retire shared stub + 8 caller dead... | Map2 Audio | 2026-05-06 |
-| [`ba4270f0`](https://github.com/matthewmackes/map2-audio/commit/ba4270f04bd85800c9d0e3f4c3b3a9215b3762ec) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-06 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
