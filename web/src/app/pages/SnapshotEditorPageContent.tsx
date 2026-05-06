@@ -345,6 +345,7 @@ import { useSnapshotEditorRevisionsQuery } from './snapshotEditor/useSnapshotEdi
 import { useSnapshotEditorAuthoritySnapshotDetailQuery } from './snapshotEditor/useSnapshotEditorAuthoritySnapshotDetailQuery'
 import { useSnapshotEditorPluginBrowserData } from './snapshotEditor/useSnapshotEditorPluginBrowserData'
 import { useSnapshotEditorAudioInterfaceStatus } from './snapshotEditor/useSnapshotEditorAudioInterfaceStatus'
+import { useSnapshotEditorActiveChannelStatusRail } from './snapshotEditor/useSnapshotEditorActiveChannelStatusRail'
 import { FEATURED_NATIVE_BROWSER_GROUPS } from './snapshotEditor/featuredNativeBrowserGroups'
 import {
   createBlankSnapshotEditorDraft,
@@ -2874,50 +2875,20 @@ export function SnapshotEditorPage() {
     activeFlowChain,
   })
 
-  const activeChannelStatusRail = useMemo(() => {
-    if (!activeFlow) {
-      return null
-    }
-
-    const flowState = livePathLayout.flowStates[activeFlow.id]
-    const blockCount = currentChain?.plugins.length ?? 0
-    const blendPercent = Math.max(0, Math.min(100, Math.round(routing.blendPositions[activeFlow.id] ?? 100)))
-    const routingSourceLabel = activeFlowChainId === null
-      ? 'No chain routing'
-      : activeFlowChainRoutingQuery.isLoading
-        ? 'Routing status loading'
-        : activeFlowChainRoutingQuery.data?.is_override
-          ? 'Channel routing override'
-          : 'Shared routing map'
-
-    return {
-      channelLabel: activeFlowLabel,
-      chainLabel: currentChain ? `Chain ${activeFlowLabel}` : 'No chain assigned',
-      blockSummary: currentChain
-        ? `${blockCount} loaded ${blockCount === 1 ? 'block' : 'blocks'}`
-        : 'No chain assigned',
-      blendLabel: `${blendPercent}% blend`,
-      routingSourceLabel,
-      stateLabel: flowState?.activeAudio ? 'Live' : 'Snapshot',
-      muted: activeFlow.muted,
-      solo: activeFlow.solo,
-      inputClipActive: typeof flowInputClipTimestamps[activeFlow.id] === 'number',
-      outputClipActive: typeof flowOutputClipTimestamps[activeFlow.id] === 'number',
-      clipActive: typeof flowClipTimestamps[activeFlow.id] === 'number',
-    }
-  }, [
+  // T2473 JSX partition slice 14 — activeChannelStatusRail lifted into
+  // useSnapshotEditorActiveChannelStatusRail.
+  const activeChannelStatusRail = useSnapshotEditorActiveChannelStatusRail({
     activeFlow,
     activeFlowChainId,
-    activeFlowChainRoutingQuery.data?.is_override,
-    activeFlowChainRoutingQuery.isLoading,
+    activeFlowChainRoutingQuery,
     activeFlowLabel,
     currentChain,
     flowClipTimestamps,
     flowInputClipTimestamps,
     flowOutputClipTimestamps,
-    livePathLayout.flowStates,
-    routing.blendPositions,
-  ])
+    livePathLayout,
+    routingBlendPositions: routing.blendPositions,
+  })
 
   const routingInspectorContent = useMemo<RoutingInspectorContent | null>(() => {
     if (!routingInspectorId) {
