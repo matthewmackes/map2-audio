@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1497** Python | **1539** TypeScript | **183** C++/H | **147** Docs | **4048** total commits | **4** stars | **0** forks | **0** open issues
+**1497** Python | **1539** TypeScript | **183** C++/H | **147** Docs | **4050** total commits | **4** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`66d12b7f`](https://github.com/matthewmackes/map2-audio/commit/66d12b7f508f4a265a9b789e0a78f5763ba790f0) | docs(audit): close Build-9/10/11 (cycle 55, set 6 final) | Map2 Audio | 2026-05-06 |
+| [`84ac7cd4`](https://github.com/matthewmackes/map2-audio/commit/84ac7cd417e9ab32f6241abec86f04db05b22fde) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-06 |
 | [`ebdcf038`](https://github.com/matthewmackes/map2-audio/commit/ebdcf03896c920687662e25c8961852ee58224b3) | fix(theme): brand watermark uses theme-aware text-seconda... | Map2 Audio | 2026-05-06 |
 | [`87158ebe`](https://github.com/matthewmackes/map2-audio/commit/87158ebea49e2a78bac7c03c1767788af7c1225b) | chore(deps): sync package-lock.json for @types/dompurify ... | Map2 Audio | 2026-05-06 |
 | [`46b0bf98`](https://github.com/matthewmackes/map2-audio/commit/46b0bf982da28c290ed2d7e274d104a15426ff66) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-06 |
 | [`8e23789f`](https://github.com/matthewmackes/map2-audio/commit/8e23789f2e3565cac6d83feac578e2ee6b8ba9dc) | chore(deps): remove redundant @types/dompurify; close Dea... | Map2 Audio | 2026-05-06 |
 | [`06b2b41a`](https://github.com/matthewmackes/map2-audio/commit/06b2b41a75541aed46e3c4595789c9784a4a9e39) | test(theme): regression guard for index.html !important c... | Map2 Audio | 2026-05-06 |
 | [`c9f7096d`](https://github.com/matthewmackes/map2-audio/commit/c9f7096d0763ef24d24e0fb64e85672d2d7de72c) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-06 |
-| [`75bcfb07`](https://github.com/matthewmackes/map2-audio/commit/75bcfb0707e81f797565ef09c563584a921c0eba) | fix(theme): sync `<meta name="theme-color">` to active Ca... | Map2 Audio | 2026-05-06 |
-| [`330cd843`](https://github.com/matthewmackes/map2-audio/commit/330cd8435ccfccb799d95c912171693d78a29a29) | fix(home): remove hardcoded #000 !important overrides blo... | Map2 Audio | 2026-05-06 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
