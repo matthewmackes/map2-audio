@@ -29,10 +29,6 @@ const HOOKS_DIR = __dirname
 // review checkpoint — the goal is to drive this list down to empty.
 const UNTESTED_HOOKS: ReadonlyArray<{ name: string; reason: string }> = [
   {
-    name: 'useSnapshotEditorMidiBindingDrafts',
-    reason: 'Pre-T2473 — covered indirectly via SnapshotEditorMidi panel tests.',
-  },
-  {
     name: 'useSnapshotEditorRoutingHandlers',
     reason: 'Pre-T2473 — covered indirectly via routing-modal tests.',
   },
