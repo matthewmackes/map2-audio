@@ -112,4 +112,39 @@ describe('platformEventStore', () => {
     expect(state.events[0]?.event_id).toBe(`event-${events.length - 1}`)
     expect(state.events[state.events.length - 1]?.event_id).toBe('event-5')
   })
+
+  // Audit Lat-2 (cycle 59 regression guard for Round-1 closure):
+  // upsertEvents must reuse the existing `events` array reference when
+  // the upsert produces content-equal data. Downstream consumers
+  // (`usePlatformEventDecisions` flatMap memo, `ToastsPresenter`
+  // reconciliation) rely on this ref-identity short-circuit to avoid
+  // re-running per-event work on every store write. Without it, every
+  // poll would invalidate every memo dependency keyed on `events`.
+  it('upsertEvents reuses the existing events array when content is unchanged (audit Lat-2)', () => {
+    const event = makeEvent('event-1', '2026-04-19T13:00:00Z')
+    usePlatformEventStore.getState().upsertEvents([event])
+    const firstEventsRef = usePlatformEventStore.getState().events
+
+    // Re-upsert the same event with the exact same content — no
+    // changes that should bump the events reference.
+    usePlatformEventStore.getState().upsertEvents([event])
+
+    const secondEventsRef = usePlatformEventStore.getState().events
+    expect(secondEventsRef).toBe(firstEventsRef)
+  })
+
+  it('upsertEvents bumps the events reference when content changes (audit Lat-2 negative test)', () => {
+    const original = makeEvent('event-1', '2026-04-19T13:00:00Z')
+    usePlatformEventStore.getState().upsertEvents([original])
+    const firstEventsRef = usePlatformEventStore.getState().events
+
+    // Upsert the same event-id but with a different occurred_at —
+    // content is not equal, so the events array MUST be replaced.
+    const updated = makeEvent('event-1', '2026-04-19T13:01:00Z')
+    usePlatformEventStore.getState().upsertEvents([updated])
+
+    const secondEventsRef = usePlatformEventStore.getState().events
+    expect(secondEventsRef).not.toBe(firstEventsRef)
+    expect(secondEventsRef[0]?.occurred_at).toBe('2026-04-19T13:01:00Z')
+  })
 })
