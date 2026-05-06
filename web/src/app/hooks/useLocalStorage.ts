@@ -63,6 +63,13 @@ export function useLocalStorage<T>(
   options?: { serialize?: (v: T) => string; deserialize?: (v: string) => T }
 ) {
   const [value, setValue] = useState<T>(() => {
+    // Audit Fit-10 (cycle 31): SSR guard. Server-render contexts have
+    // no `window`; reading localStorage there throws ReferenceError
+    // and crashes the initial render. Returning the default keeps
+    // SSR / SSG / Jest-Node environments safe.
+    if (typeof window === 'undefined') {
+      return defaultValue
+    }
     try {
       const item = window.localStorage.getItem(key)
       if (item !== null) {
@@ -79,6 +86,13 @@ export function useLocalStorage<T>(
     (newValue: T | ((val: T) => T)) => {
       setValue((prev) => {
         const valueToStore = newValue instanceof Function ? newValue(prev) : newValue
+        // Audit Fit-10 (cycle 31): SSR guard on the write path too —
+        // the setter can be invoked from an effect that fires on a
+        // client-only re-render, but defensively guard for symmetry
+        // with the read path.
+        if (typeof window === 'undefined') {
+          return valueToStore
+        }
         try {
           window.localStorage.setItem(
             key,
