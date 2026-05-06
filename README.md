@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1489** Python | **1549** TypeScript | **179** C++/H | **147** Docs | **3958** total commits | **4** stars | **0** forks | **0** open issues
+**1489** Python | **1550** TypeScript | **179** C++/H | **147** Docs | **3960** total commits | **4** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`022b7100`](https://github.com/matthewmackes/map2-audio/commit/022b710089bb7848bab350260f470ba7e7df1286) | test(snapshot-editor): paired test for ActiveChannelStatu... | Map2 Audio | 2026-05-05 |
+| [`cb2912bc`](https://github.com/matthewmackes/map2-audio/commit/cb2912bc73ba77444dbbc5dfb12dc9f4063ad76f) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-06 |
 | [`9b36eaa4`](https://github.com/matthewmackes/map2-audio/commit/9b36eaa41ae502eeccaadcaf53f25d88e59cb995) | test(snapshot-editor): hook-inventory regression guard + ... | Map2 Audio | 2026-05-05 |
 | [`4dd63fa8`](https://github.com/matthewmackes/map2-audio/commit/4dd63fa84535c4f75866472bcaaab199799da789) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-06 |
 | [`ce312d8e`](https://github.com/matthewmackes/map2-audio/commit/ce312d8e86304019d30912843194988217b04dcf) | refactor(snapshot-editor): consolidate UI-presentation me... | Map2 Audio | 2026-05-05 |
 | [`052b275e`](https://github.com/matthewmackes/map2-audio/commit/052b275e286dfa9a09ab17bea28b7487110388b3) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-06 |
 | [`bd82712c`](https://github.com/matthewmackes/map2-audio/commit/bd82712c4567107992d0035388a64dfd7f833631) | refactor(snapshot-editor): extract clip-timestamp lifecyc... | Map2 Audio | 2026-05-05 |
 | [`38ebfebf`](https://github.com/matthewmackes/map2-audio/commit/38ebfebf8ce034a68dcb4b9552bb2f533bbc8d9b) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-06 |
-| [`6c6f0213`](https://github.com/matthewmackes/map2-audio/commit/6c6f0213fc6dc2fa7d08fa52426aebcbe61ed530) | refactor(snapshot-editor): extract routing-inspector-cont... | Map2 Audio | 2026-05-05 |
-| [`2cccc137`](https://github.com/matthewmackes/map2-audio/commit/2cccc137a0dc5774b9bc656049d0d84bee41ba9c) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-06 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
