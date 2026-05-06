@@ -28,6 +28,12 @@
             margin: 0;
         }
     </style>
+    <!-- Cycle 61 first-paint theme bootstrap. External script (CSP
+         `script-src 'self'` blocks inline <script>). Reads
+         localStorage('theme') synchronously and applies the matching
+         Carbon class + --cds-background before main.tsx mounts so
+         light-theme users don't see a dark flash. -->
+    <script src="/theme-bootstrap.js"></script>
     <title>Mackes Audio Platform</title>
 </head>
 

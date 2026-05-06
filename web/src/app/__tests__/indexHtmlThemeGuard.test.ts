@@ -43,4 +43,31 @@ describe('web/index.html theme-token discipline (cycle 51)', () => {
     expect(html).toMatch(/body\s*{[^}]*background:\s*#161616[^}]*}/)
     expect(html).not.toMatch(/body\s*{[^}]*background:\s*#161616[^}]*!important/)
   })
+
+  // Cycle 61 — first-paint theme bootstrap script.
+  it('references the external theme-bootstrap.js script before main.tsx', () => {
+    // CSP `script-src 'self'` blocks inline <script> tags, so the
+    // bootstrap lives in `web/public/theme-bootstrap.js` and is
+    // referenced by URL. Vite copies public/ to dist/ at build time.
+    const bootstrapMatch = html.match(/<script\s+src=["']\/theme-bootstrap\.js["']/)
+    const mainMatch = html.match(/<script\s+type=["']module["']\s+src=["'][^"']*main\.tsx?["']/)
+    expect(bootstrapMatch).not.toBeNull()
+    expect(mainMatch).not.toBeNull()
+    // Ordering matters: the synchronous bootstrap must execute before
+    // the deferred (type=module) main.tsx loader.
+    if (bootstrapMatch && mainMatch && bootstrapMatch.index !== undefined && mainMatch.index !== undefined) {
+      expect(bootstrapMatch.index).toBeLessThan(mainMatch.index)
+    }
+  })
+
+  it('theme-bootstrap.js contains the localStorage read + Carbon class application', () => {
+    const bootstrapPath = join(REPO_WEB, 'public', 'theme-bootstrap.js')
+    const bootstrap = readFileSync(bootstrapPath, 'utf-8')
+    expect(bootstrap).toMatch(/window\.localStorage\.getItem\(['"]theme['"]\)/)
+    expect(bootstrap).toMatch(/cds--g10/)
+    expect(bootstrap).toMatch(/cds--white/)
+    expect(bootstrap).toMatch(/cds--g100/)
+    expect(bootstrap).toMatch(/data-carbon-theme/)
+    expect(bootstrap).toMatch(/--cds-background/)
+  })
 })
