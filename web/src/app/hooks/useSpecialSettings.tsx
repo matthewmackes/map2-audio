@@ -363,9 +363,22 @@ export function useSpecialSettings(): UseSpecialSettingsReturn {
     let ws: WebSocket | null = null
     let reconnectTimer: ReturnType<typeof setTimeout> | null = null
 
+    // Audit Lat-15 (cycle 38): exponential backoff replacing the fixed
+    // 10 s reconnect. Starts at 1 s, doubles on each successive failure,
+    // caps at 30 s. A successful `onopen` resets the delay so the next
+    // disconnect doesn't inherit the previous backoff. Prior fixed cadence
+    // hammered the backend every 10 s during long outages.
+    const RECONNECT_DELAY_MIN_MS = 1_000
+    const RECONNECT_DELAY_MAX_MS = 30_000
+    let reconnectDelayMs = RECONNECT_DELAY_MIN_MS
+
     function connect() {
       try {
         ws = new WebSocket(eventsWsUrl)
+
+        ws.onopen = () => {
+          reconnectDelayMs = RECONNECT_DELAY_MIN_MS
+        }
 
         ws.onmessage = (event) => {
           try {
@@ -379,7 +392,8 @@ export function useSpecialSettings(): UseSpecialSettingsReturn {
         }
 
         ws.onclose = () => {
-          reconnectTimer = setTimeout(connect, 10000)
+          reconnectTimer = setTimeout(connect, reconnectDelayMs)
+          reconnectDelayMs = Math.min(reconnectDelayMs * 2, RECONNECT_DELAY_MAX_MS)
         }
 
         ws.onerror = () => {
