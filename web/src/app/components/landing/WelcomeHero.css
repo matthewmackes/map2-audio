@@ -11,24 +11,37 @@
   }
 }
 
-/* MAP2 unified design tokens — scoped to the new home surface */
+/* MAP2 unified design tokens — scoped to the new home surface.
+ *
+ * Cycle 64 (audit follow-up to user-reported home-theme regression):
+ * these tokens previously hardcoded dark hex values, so the home page
+ * rendered an OLED-deep palette regardless of which Carbon theme was
+ * active. The user reported "the home page does not respect the
+ * theme"; cycle 62 fixed the AppShell.css `.hp-root` → `.hp2-root`
+ * selector but the home page still rendered dark because *these*
+ * tokens overrode every surface inside `.map2x`.
+ *
+ * Re-binding each token to a Carbon `--cds-*` equivalent makes the
+ * full home-page palette follow the active theme. Hardcoded fallbacks
+ * preserve the original dark palette if Carbon variables aren't loaded
+ * yet (same pattern AppShell.css and PluginCardShell already use). */
 .map2x {
-  --map2x-bg-0: #07090d;
-  --map2x-bg-1: #0b0f15;
-  --map2x-bg-2: #11161e;
-  --map2x-bg-3: #161c26;
-  --map2x-panel: #0e131b;
-  --map2x-panel-2: #141b25;
+  --map2x-bg-0: var(--cds-background, #07090d);
+  --map2x-bg-1: var(--cds-layer-01, #0b0f15);
+  --map2x-bg-2: var(--cds-layer-02, #11161e);
+  --map2x-bg-3: var(--cds-layer-03, #161c26);
+  --map2x-panel: var(--cds-layer-01, #0e131b);
+  --map2x-panel-2: var(--cds-layer-02, #141b25);
 
-  --map2x-line: #1c242f;
-  --map2x-line-2: #242e3c;
-  --map2x-line-3: #2f3b4c;
+  --map2x-line: var(--cds-border-subtle, #1c242f);
+  --map2x-line-2: var(--cds-border-subtle-01, #242e3c);
+  --map2x-line-3: var(--cds-border-strong, #2f3b4c);
 
-  --map2x-text-hi: #e8eef5;
-  --map2x-text: #c5cfdb;
-  --map2x-text-mid: #8593a4;
-  --map2x-text-low: #5a6675;
-  --map2x-text-dim: #3d4654;
+  --map2x-text-hi: var(--cds-text-primary, #e8eef5);
+  --map2x-text: var(--cds-text-secondary, #c5cfdb);
+  --map2x-text-mid: var(--cds-text-helper, #8593a4);
+  --map2x-text-low: var(--cds-text-placeholder, #5a6675);
+  --map2x-text-dim: var(--cds-text-disabled, #3d4654);
 
   --map2x-accent: oklch(0.72 0.16 250);
   --map2x-accent-soft: oklch(0.72 0.16 250 / 0.16);
