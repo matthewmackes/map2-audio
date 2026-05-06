@@ -1,20 +1,9 @@
-import { useEffect, useMemo } from 'react'
-import '../shared/ReactFlowTheme.css'
+import { useMemo } from 'react'
 
-import ReactFlow, {
-  Background,
-  BackgroundVariant,
-  Controls,
-  Handle,
-  Position,
-  ReactFlowProvider,
-  useReactFlow,
-  type Edge,
-  type Node,
-  type NodeProps,
-} from 'reactflow'
-import 'reactflow/dist/style.css'
+import { Handle, Position } from 'reactflow'
+import type { Node, NodeProps } from 'reactflow'
 
+import { SignalFlowGraph } from '../shared/SignalFlowGraph'
 import type {
   JuceSourceTruthGraphModel,
   JuceSourceTruthNodeData,
@@ -63,7 +52,7 @@ function toneLabel(tone: JuceSourceTruthNodeData['tone']) {
   }
 }
 
-function SourceTruthNode({ data }: NodeProps<RenderNodeData>) {
+export function SourceTruthNode({ data }: NodeProps<RenderNodeData>) {
   return (
     <button
       type="button"
@@ -94,38 +83,7 @@ function SourceTruthNode({ data }: NodeProps<RenderNodeData>) {
   )
 }
 
-function SourceTruthGraphCanvas({
-  nodes,
-  edges,
-}: {
-  nodes: Array<Node<RenderNodeData>>
-  edges: Edge[]
-}) {
-  const { fitView } = useReactFlow()
-
-  useEffect(() => {
-    fitView({ padding: 0.16, duration: 180 })
-  }, [edges, fitView, nodes])
-
-  return (
-    <ReactFlow
-      fitView
-      nodes={nodes}
-      edges={edges}
-      nodeTypes={{ juceSourceTruthNode: SourceTruthNode }}
-      minZoom={0.5}
-      maxZoom={1.5}
-      nodesDraggable={false}
-      nodesConnectable={false}
-      elementsSelectable={false}
-      panOnDrag
-      zoomOnScroll
-    >
-      <Background variant={BackgroundVariant.Dots} gap={18} size={1} color="var(--cds-border-subtle-01)" />
-      <Controls showInteractive={false} />
-    </ReactFlow>
-  )
-}
+const nodeTypes = { juceSourceTruthNode: SourceTruthNode }
 
 export function JuceSourceTruthGraph({
   model,
@@ -144,20 +102,20 @@ export function JuceSourceTruthGraph({
     }))
   ), [model.nodes, onSelectNode])
 
-  if (graphNodes.length === 0) {
-    return (
-      <div className="audio-engine-page__workspace-graph-empty">
-        Source-of-truth graph data is not available for this node.
-      </div>
-    )
-  }
-
   return (
-    <div className="audio-engine-page__source-truth-graph">
-      <ReactFlowProvider>
-        <SourceTruthGraphCanvas nodes={graphNodes} edges={model.edges} />
-      </ReactFlowProvider>
-    </div>
+    <SignalFlowGraph<RenderNodeData>
+      nodes={graphNodes}
+      edges={model.edges}
+      nodeTypes={nodeTypes}
+      wrapperClassName="audio-engine-page__source-truth-graph"
+      minZoom={0.5}
+      backgroundDotGap={18}
+      emptyState={
+        <div className="audio-engine-page__workspace-graph-empty">
+          Source-of-truth graph data is not available for this node.
+        </div>
+      }
+    />
   )
 }
 

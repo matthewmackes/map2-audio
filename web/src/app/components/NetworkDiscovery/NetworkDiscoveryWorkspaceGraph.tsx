@@ -1,21 +1,9 @@
-import { useEffect, useMemo } from 'react'
-import '../shared/ReactFlowTheme.css'
+import { useMemo } from 'react'
 
-import ReactFlow, {
-  Background,
-  BackgroundVariant,
-  Controls,
-  Handle,
-  Position,
-  ReactFlowProvider,
-  useReactFlow,
-  type Edge,
-  type Node,
-  type NodeProps,
-} from 'reactflow'
-import 'reactflow/dist/style.css'
+import { Handle, Position } from 'reactflow'
+import type { Node, NodeProps } from 'reactflow'
 
-import { analyzeReactFlowDensity } from '../shared/reactFlowDensity'
+import { SignalFlowGraph } from '../shared/SignalFlowGraph'
 import type {
   NetworkDiscoveryWorkspaceGraphModel,
   NetworkDiscoveryWorkspaceGraphSelection,
@@ -66,7 +54,7 @@ function cardWidth(kind: NetworkDiscoveryWorkspaceNodeData['kind']) {
   }
 }
 
-function NetworkDiscoveryWorkspaceNodeCard({ data }: NodeProps<RenderNodeData>) {
+export function NetworkDiscoveryWorkspaceNodeCard({ data }: NodeProps<RenderNodeData>) {
   return (
     <button
       type="button"
@@ -111,50 +99,7 @@ function NetworkDiscoveryWorkspaceNodeCard({ data }: NodeProps<RenderNodeData>) 
   )
 }
 
-function NetworkDiscoveryWorkspaceGraphCanvas({
-  nodes,
-  edges,
-  densityTier,
-  showBackground,
-  showControls,
-  fitViewDurationMs,
-}: {
-  nodes: Array<Node<RenderNodeData>>
-  edges: Edge[]
-  densityTier: string
-  showBackground: boolean
-  showControls: boolean
-  fitViewDurationMs: number
-}) {
-  const { fitView } = useReactFlow()
-
-  useEffect(() => {
-    fitView({
-      padding: 0.16,
-      ...(fitViewDurationMs > 0 ? { duration: fitViewDurationMs } : {}),
-    })
-  }, [edges, fitView, fitViewDurationMs, nodes])
-
-  return (
-    <ReactFlow
-      className={`react-flow-density--${densityTier}`}
-      fitView
-      nodes={nodes}
-      edges={edges}
-      nodeTypes={{ networkDiscoveryWorkspaceNode: NetworkDiscoveryWorkspaceNodeCard }}
-      minZoom={0.45}
-      maxZoom={1.5}
-      nodesDraggable={false}
-      nodesConnectable={false}
-      elementsSelectable={false}
-      panOnDrag
-      zoomOnScroll
-    >
-      {showBackground ? <Background variant={BackgroundVariant.Dots} gap={20} size={1} color="var(--cds-border-subtle-01)" /> : null}
-      {showControls ? <Controls showInteractive={false} /> : null}
-    </ReactFlow>
-  )
-}
+const nodeTypes = { networkDiscoveryWorkspaceNode: NetworkDiscoveryWorkspaceNodeCard }
 
 export function NetworkDiscoveryWorkspaceGraph({
   model,
@@ -172,34 +117,19 @@ export function NetworkDiscoveryWorkspaceGraph({
       },
     }))
   ), [model.nodes, onSelect])
-  const density = useMemo(() => analyzeReactFlowDensity(graphNodes.length, model.edges.length), [graphNodes.length, model.edges.length])
-
-  if (graphNodes.length === 0) {
-    return (
-      <div className="network-discovery-workspace__graph-empty">
-        No discovery telemetry is currently available for this workspace.
-      </div>
-    )
-  }
 
   return (
-    <div
-      className={`network-discovery-workspace__graph react-flow-density--${density.tier}`}
-      data-density-tier={density.tier}
-      data-node-count={density.nodeCount}
-      data-edge-count={density.edgeCount}
-    >
-      <ReactFlowProvider>
-        <NetworkDiscoveryWorkspaceGraphCanvas
-          nodes={graphNodes}
-          edges={model.edges}
-          densityTier={density.tier}
-          showBackground={density.showBackground}
-          showControls={density.showControls}
-          fitViewDurationMs={density.fitViewDurationMs}
-        />
-      </ReactFlowProvider>
-    </div>
+    <SignalFlowGraph<RenderNodeData>
+      nodes={graphNodes}
+      edges={model.edges}
+      nodeTypes={nodeTypes}
+      wrapperClassName="network-discovery-workspace__graph"
+      emptyState={
+        <div className="network-discovery-workspace__graph-empty">
+          No discovery telemetry is currently available for this workspace.
+        </div>
+      }
+    />
   )
 }
 

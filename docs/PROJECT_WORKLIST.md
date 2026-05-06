@@ -60,7 +60,7 @@ Each task/subtask should contain these fields:
 - `[>]` `T2459-H5` — MIDI Hub v2 absorption and route consolidation
 - `[>]` `T2472` — Snapshot editor data-layer extraction (`useSnapshotEditorData.ts`)
 - `[ ]` `T2459-H6` — Retire legacy `Map2MidiController` path after soak + deletion
-- `[>]` `T2477` — Graph-rendering consolidation primitive (cycle 23: ChainBuilder dead-code purge shipped, -2080 LoC; the larger `<SignalFlowGraph>` unification across 7 active workspaces remains open)
+- `[✓]` `T2477` — Graph-rendering consolidation primitive (shipped 2026-05-06; `<SignalFlowGraph>` + `layoutSignalFlowGraph` land in `web/src/app/components/shared/`; all 7 active workspace graphs migrated in one commit; 26 jest tests across 13 suites green; -410 LoC of duplicated wrapper code retired)
 - `[ ]` `T2481` — Carbon deepening fit-and-finish epic
 - `[✓]` `T2496` — AVB Services full-completion (shipped 2026-05-05; 8 sub-tasks; +22 pytest +17 jest; bench-side visual verification remains as operator gate)
 - `[✓]` `T2497` — Audio Artifacts global tree nav: remove duplicated "Discover" entries under every subcategory (shipped 2026-05-05)
@@ -596,7 +596,7 @@ Last updated: 2026-05-03 EDT - Claude: Slice 2 (IpcMidiBridgeController factory 
 ---
 
 ID: T2477
-Status: [ ] Todo
+Status: [✓] Done
 Title: Graph-rendering consolidation — unify ReactFlow + custom canvas + custom builder into one signal-flow primitive
 Description:
 - Goal / acceptance criteria: Audit the three concurrent graph-rendering approaches: (1) ReactFlow in NodeGraph, (2) custom canvas in AudioEngineWorkspaceGraph, (3) custom builder logic in AvbRoutingWorkspaceGraph + ManagementWorkspaceGraph. Design a single signal-flow primitive (`<SignalFlowGraph nodes={...} edges={...} layout={...} />`) backed by ReactFlow with a unified node/edge schema. Migrate all four call sites to the primitive. Preserve all interactions: drag-rewire, zoom/pan, edge highlighting, node selection, tearsheet, clustering. Validate with Jest + manual routing-edit testing. PAUSED pending user clarification round (Q&A on whether ReactFlow stays as the substrate, custom-renderer escape hatches, performance budget for large graphs).
@@ -604,8 +604,10 @@ Description:
 - Dependencies: T2474 (tokens + primitives), ideally after T2476 (so plugin cards inside graph nodes use the unified primitive).
 - Estimated effort: Large — architectural refactor with behavioral risk in MAP2's identity surface (NodeGraph).
 - Required outputs: Unified `<SignalFlowGraph>` primitive; all four call sites migrated; documented node/edge schema; Jest + integration-test coverage.
-Assigned to: TBD (paused — clarification round complete; deferred behind T2475 due to AvbRouting interlock)
-Last updated: 2026-04-29 - Claude (clarification round complete; execution deferred behind T2475)
+Assigned to: Claude
+Last updated: 2026-05-06 EDT — **T2477 SHIPPED — `<SignalFlowGraph>` primitive + 7-workspace migration (Claude).** Built two shared modules under `web/src/app/components/shared/`: `SignalFlowGraph.tsx` (186 LoC — render-prop primitive owning the ReactFlowProvider + density-aware Background/Controls + fitView lifecycle + wrapper `<div>` with density data-attrs; takes the standard ReactFlow `nodeTypes` map as the per-workspace render slot), and `layoutSignalFlowGraph.ts` (85 LoC — single dagre layout helper accepting per-node `getNodeSize` callback + optional config). New `SignalFlowGraph.test.tsx` covers 10 cases across both modules: empty-state, wrapper class + density data-attrs, toolbar slot, click-forwarding, density override, dagre LR vs TB rankdir, per-node sizing. All 7 active workspace wrappers migrated in one commit per the locked Q4=A decision: NodeGraph, ManagementWorkspaceGraph, ClusterDashboardWorkspaceGraph, NetworkDiscoveryWorkspaceGraph, AudioEngineWorkspaceGraph, JuceSourceTruthGraph, AvbRoutingWorkspaceGraph. Per-workspace `<*NodeBody>` components remain in their workspace folders (locked Q3=B); the migration only swaps the wrapper. The model files (`*WorkspaceGraph.ts` builder + tests) are unchanged — they produce `Node<XxxNodeData>[]` + `Edge[]` exactly as before, so all existing model-shape tests continue to pass without modification. Wrapper LoC delta: 1298 → 888 = **−410 LoC** of duplicated outer-shell code retired across the 7 wrappers (−31.6%); +271 LoC of shared infrastructure (primitive + layout helper); +181 LoC of new test coverage. Validation: typecheck clean; full jest sweep 2356/2361 green (5 pre-existing failures in DesktopExperience + SequencerPage suites confirmed against master HEAD via `git stash`, unrelated to T2477); production build clean (19.37s); broad graph + workspace test sweep 26/26 green across 13 suites. Closes the locked clarification round (C+D + D + B + A + A from 2026-04-29). Cycle 22-23 dead-code purge of ChainBuilder + cycle 24 inventory pin remain part of the same epic; this commit closes the unification slice that was the multi-month architectural lift.
+
+Prior — 2026-04-29 - Claude (clarification round complete; execution deferred behind T2475)
 - Clarification round (2026-04-29): C+D + D + B + A + A locked.
   - **C+D** (Q1): Schema-driven `<SignalFlowGraph>` primitive AND dead-code purge of 11+ `web/src/map2/components/ChainBuilder/` files (zero incoming references — parallel to E1's 28 dead MUI files).
   - **D** (Q2): Render-prop body slot. The primitive owns Carbon Tile chrome + dagre layout + ReactFlow wiring; per-workspace `<*NodeBody>` components fill the body via `renderNodeBody` callback.

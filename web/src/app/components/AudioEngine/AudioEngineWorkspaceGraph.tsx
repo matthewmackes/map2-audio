@@ -1,21 +1,9 @@
-import { useEffect, useMemo } from 'react'
-import '../shared/ReactFlowTheme.css'
+import { useMemo } from 'react'
 
-import ReactFlow, {
-  Background,
-  BackgroundVariant,
-  Controls,
-  Handle,
-  Position,
-  ReactFlowProvider,
-  useReactFlow,
-  type Edge,
-  type Node,
-  type NodeProps,
-} from 'reactflow'
-import 'reactflow/dist/style.css'
+import { Handle, Position } from 'reactflow'
+import type { Node, NodeProps } from 'reactflow'
 
-import { analyzeReactFlowDensity } from '../shared/reactFlowDensity'
+import { SignalFlowGraph } from '../shared/SignalFlowGraph'
 import type {
   AudioEngineWorkspaceAnchorId,
   AudioEngineWorkspaceGraphModel,
@@ -54,7 +42,7 @@ function toneLabel(tone: AudioEngineWorkspaceNodeData['tone']) {
   }
 }
 
-function AudioEngineWorkspaceNodeCard({ data }: NodeProps<AudioEngineWorkspaceRenderNodeData>) {
+export function AudioEngineWorkspaceNodeCard({ data }: NodeProps<AudioEngineWorkspaceRenderNodeData>) {
   const cardStyle = {
     width: data.kind === 'engine' ? 280 : data.kind === 'authority' ? 260 : 224,
     minHeight: data.kind === 'engine' ? 124 : 104,
@@ -99,50 +87,7 @@ function AudioEngineWorkspaceNodeCard({ data }: NodeProps<AudioEngineWorkspaceRe
   )
 }
 
-function AudioEngineWorkspaceGraphCanvas({
-  nodes,
-  edges,
-  densityTier,
-  showBackground,
-  showControls,
-  fitViewDurationMs,
-}: {
-  nodes: Array<Node<AudioEngineWorkspaceRenderNodeData>>
-  edges: Edge[]
-  densityTier: string
-  showBackground: boolean
-  showControls: boolean
-  fitViewDurationMs: number
-}) {
-  const { fitView } = useReactFlow()
-
-  useEffect(() => {
-    fitView({
-      padding: 0.16,
-      ...(fitViewDurationMs > 0 ? { duration: fitViewDurationMs } : {}),
-    })
-  }, [edges, fitView, fitViewDurationMs, nodes])
-
-  return (
-    <ReactFlow
-      className={`react-flow-density--${densityTier}`}
-      fitView
-      nodes={nodes}
-      edges={edges}
-      nodeTypes={{ audioEngineWorkspaceNode: AudioEngineWorkspaceNodeCard }}
-      minZoom={0.5}
-      maxZoom={1.55}
-      nodesDraggable={false}
-      nodesConnectable={false}
-      elementsSelectable={false}
-      panOnDrag
-      zoomOnScroll
-    >
-      {showBackground ? <Background variant={BackgroundVariant.Dots} gap={20} size={1} color="var(--cds-border-subtle-01)" /> : null}
-      {showControls ? <Controls showInteractive={false} /> : null}
-    </ReactFlow>
-  )
-}
+const nodeTypes = { audioEngineWorkspaceNode: AudioEngineWorkspaceNodeCard }
 
 export function AudioEngineWorkspaceGraph({
   model,
@@ -160,34 +105,21 @@ export function AudioEngineWorkspaceGraph({
       },
     }))
   ), [model.nodes, onSelectAnchor])
-  const density = useMemo(() => analyzeReactFlowDensity(graphNodes.length, model.edges.length), [graphNodes.length, model.edges.length])
-
-  if (graphNodes.length === 0) {
-    return (
-      <div className="audio-engine-page__workspace-graph-empty">
-        No runtime topology is currently available for this node.
-      </div>
-    )
-  }
 
   return (
-    <div
-      className={`audio-engine-page__workspace-graph react-flow-density--${density.tier}`}
-      data-density-tier={density.tier}
-      data-node-count={density.nodeCount}
-      data-edge-count={density.edgeCount}
-    >
-      <ReactFlowProvider>
-        <AudioEngineWorkspaceGraphCanvas
-          nodes={graphNodes}
-          edges={model.edges}
-          densityTier={density.tier}
-          showBackground={density.showBackground}
-          showControls={density.showControls}
-          fitViewDurationMs={density.fitViewDurationMs}
-        />
-      </ReactFlowProvider>
-    </div>
+    <SignalFlowGraph<AudioEngineWorkspaceRenderNodeData>
+      nodes={graphNodes}
+      edges={model.edges}
+      nodeTypes={nodeTypes}
+      wrapperClassName="audio-engine-page__workspace-graph"
+      minZoom={0.5}
+      maxZoom={1.55}
+      emptyState={
+        <div className="audio-engine-page__workspace-graph-empty">
+          No runtime topology is currently available for this node.
+        </div>
+      }
+    />
   )
 }
 
