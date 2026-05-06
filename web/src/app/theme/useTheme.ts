@@ -133,6 +133,26 @@ function applyCarbonThemeClass(carbonTheme: CarbonThemeId): void {
   });
 }
 
+// Cycle 50 follow-up to cycle 49 (home-page theme fix): keep the
+// `<meta name="theme-color">` tag synced to the active theme so the
+// browser chrome (mobile status bar, PWA title bar) doesn't lock to
+// the static `#161616` declared in index.html. We read the freshly
+// applied `--cds-background` off the root and fall back to the same
+// static value if the computed style isn't readable yet.
+function syncThemeColorMeta(): void {
+  if (typeof document === 'undefined') return;
+  const meta = document.querySelector<HTMLMetaElement>('meta[name="theme-color"]');
+  if (!meta) return;
+  try {
+    const bg = getComputedStyle(document.documentElement).getPropertyValue('--cds-background').trim();
+    if (bg) {
+      meta.setAttribute('content', bg);
+    }
+  } catch {
+    // getComputedStyle can throw in unusual document states (e.g. detached). Leave the static fallback.
+  }
+}
+
 function emitThemeChange(themeId: string, carbonTheme: CarbonThemeId): void {
   if (typeof window === 'undefined') return;
 
@@ -259,6 +279,8 @@ export function applyTheme(themeId: string): void {
     Object.entries(theme.widgets).forEach(([key, value]) => {
       root.style.setProperty(`--${key}`, value);
     });
+
+    syncThemeColorMeta();
   }
 
   if (typeof localStorage !== 'undefined') {
