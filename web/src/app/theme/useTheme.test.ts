@@ -124,6 +124,71 @@ describe('theme defaults', () => {
     expect(document.documentElement.style.getPropertyValue('--cds-button-primary')).toBe('')
     expect(document.documentElement.style.getPropertyValue('--cds-support-error')).toBe('')
   })
+
+  // Cycle 60 — regression guard for cycle 50's `<meta name="theme-color">`
+  // sync. applyTheme reads `--cds-background` off documentElement after
+  // the carbon class lands and writes its computed value into the
+  // meta tag's `content` attribute, so mobile browser chrome / PWA
+  // title-bar tracks the active theme instead of the static `#161616`
+  // declared in index.html.
+  it('updates the <meta name="theme-color"> tag content when applying a theme', () => {
+    // Seed a theme-color meta tag into the test DOM (jsdom doesn't
+    // include the one from web/index.html in the test environment).
+    let meta = document.querySelector<HTMLMetaElement>('meta[name="theme-color"]')
+    if (!meta) {
+      meta = document.createElement('meta')
+      meta.setAttribute('name', 'theme-color')
+      meta.setAttribute('content', '#161616')
+      document.head.appendChild(meta)
+    } else {
+      meta.setAttribute('content', '#161616')
+    }
+
+    // Stub the computed-style read so we don't depend on jsdom's
+    // ability to resolve Carbon's CSS variables (which it can't, since
+    // the @carbon/styles import is an external bundle).
+    const originalGetComputedStyle = window.getComputedStyle
+    window.getComputedStyle = ((elt: Element) => ({
+      ...originalGetComputedStyle(elt),
+      getPropertyValue: (prop: string) => (prop === '--cds-background' ? '#f4f4f4' : ''),
+    })) as typeof window.getComputedStyle
+
+    try {
+      applyTheme('gray-10')
+      expect(meta.getAttribute('content')).toBe('#f4f4f4')
+    } finally {
+      window.getComputedStyle = originalGetComputedStyle
+      meta.parentNode?.removeChild(meta)
+    }
+  })
+
+  it('leaves the <meta name="theme-color"> tag untouched when applying a theme produces no readable --cds-background', () => {
+    let meta = document.querySelector<HTMLMetaElement>('meta[name="theme-color"]')
+    if (!meta) {
+      meta = document.createElement('meta')
+      meta.setAttribute('name', 'theme-color')
+      meta.setAttribute('content', '#161616')
+      document.head.appendChild(meta)
+    } else {
+      meta.setAttribute('content', '#161616')
+    }
+
+    const originalGetComputedStyle = window.getComputedStyle
+    window.getComputedStyle = ((elt: Element) => ({
+      ...originalGetComputedStyle(elt),
+      // Empty / unresolved value → cycle-50 sync helper should leave
+      // the existing static fallback in place rather than blanking it.
+      getPropertyValue: () => '',
+    })) as typeof window.getComputedStyle
+
+    try {
+      applyTheme('default')
+      expect(meta.getAttribute('content')).toBe('#161616')
+    } finally {
+      window.getComputedStyle = originalGetComputedStyle
+      meta.parentNode?.removeChild(meta)
+    }
+  })
 })
 
 describe('toCarbonBaseTheme', () => {
