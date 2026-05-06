@@ -120,6 +120,15 @@ export function SegmentedLedText({
       style={{ '--seg-led-color': color } as CSSProperties}
       aria-label={text}
     >
+      {/* Audit Anti-5 (cycle 37): kept the index+char composite key
+          intentionally. `renderGlyph` dispatches to structurally-different
+          spans depending on `char` (digit → 7 segment children, colon →
+          2 dot children, percent → 3 children, plain text → none). Using
+          index-only keys would force React to reconcile heterogeneous
+          children inside one position when the char class changes (e.g.
+          "1" → ":"), which is messier than letting the position remount.
+          For monotonic numeric updates ("P12" → "P22") only the changed
+          position remounts; positions 0 and 2 reuse cleanly. */}
       {Array.from(text).map((char, index) => renderGlyph(char, `${index}-${char}`))}
     </span>
   )
