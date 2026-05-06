@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1497** Python | **1537** TypeScript | **183** C++/H | **147** Docs | **4027** total commits | **4** stars | **0** forks | **0** open issues
+**1497** Python | **1538** TypeScript | **183** C++/H | **147** Docs | **4029** total commits | **4** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`95acd94d`](https://github.com/matthewmackes/map2-audio/commit/95acd94dafbcabdbdb14908b105a07e7167d7c8c) | feat(deviceContext): introduce DeviceKey string-literal u... | Map2 Audio | 2026-05-06 |
+| [`0b10ff7f`](https://github.com/matthewmackes/map2-audio/commit/0b10ff7f57c0e538cff86d882830bec7508b649a) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-06 |
 | [`09b01794`](https://github.com/matthewmackes/map2-audio/commit/09b01794ca8f7ea766ae30883c8bb3512503ed77) | docs(audit): close Anti-4, Arch-8, Arch-18 (cycle 42) | Map2 Audio | 2026-05-06 |
 | [`c5be436a`](https://github.com/matthewmackes/map2-audio/commit/c5be436a192416f8aed2b0ad8d9a092da38da15a) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-06 |
 | [`bd266d13`](https://github.com/matthewmackes/map2-audio/commit/bd266d1314965d7df7a790bcc4417d3809bbce02) | docs(audit): re-verify and close Lat-12, Lat-16 (cycle 41) | Map2 Audio | 2026-05-06 |
 | [`6893704c`](https://github.com/matthewmackes/map2-audio/commit/6893704c09dcd3c05fc1b53e60db2652f1d8a1fb) | docs(audit): re-verify and close Anti-7, Arch-9 as alread... | Map2 Audio | 2026-05-06 |
 | [`07e13f95`](https://github.com/matthewmackes/map2-audio/commit/07e13f954b4b4ab3a7aa91dff1f0a086e01d5e58) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-06 |
 | [`51424a4d`](https://github.com/matthewmackes/map2-audio/commit/51424a4dca71e511a55e6bc2c3bc11bc3fc9506f) | docs(useRealtimeCadence): pin rules-of-hooks invariant in... | Map2 Audio | 2026-05-06 |
-| [`b5605553`](https://github.com/matthewmackes/map2-audio/commit/b5605553ac5f22b20ab0595fd149fde5c70a8ec3) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-06 |
-| [`879d2741`](https://github.com/matthewmackes/map2-audio/commit/879d27411110c70ec109420e111f550def824004) | perf(useSpecialSettings): exponential WS reconnect backof... | Map2 Audio | 2026-05-06 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
