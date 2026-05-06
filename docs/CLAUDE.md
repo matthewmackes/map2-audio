@@ -552,7 +552,8 @@ Clicking a pill opens a `Popover` with `NodeMiniCard`. The popover contains:
 These components are **deprecated and must not be used** on any page:
 - `NodeContextBanner` — host/scope card (replaced by pill accent colors + popover context line)
 - `NodeContextPicker` — dropdown selector (replaced by pill popover "Set as page node")
-- `NodeAlertBar` / `NodeAlertToast` — alert notifications (folded into pill: amber/red dot pulse + popover alert rows)
+- `NodeAlertBar` — alert notifications (folded into pill: amber/red dot pulse + popover alert rows)
+- **`NodeAlertToast` is NOT deprecated** (clarified 2026-05-06, audit Dead-2b) — it is the toast-output bridge that mirrors `nodeAlertStore` into the platform `useToasts()` queue with `replaceLiveBanner: true`. Mounted in `NodeNavBar`; returns `null`. Keeps the platform-wide notification path live when the pill popover is closed. Earlier doc revisions listed this file alongside `NodeAlertBar`; that pairing was incorrect.
 - Per-page "Viewing node:" text — removed (pill VIEW accent + presence tag communicates this)
 
 If any page currently renders these components, they must be removed and replaced with the pill-only pattern.
