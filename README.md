@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1497** Python | **1546** TypeScript | **183** C++/H | **147** Docs | **4070** total commits | **4** stars | **0** forks | **0** open issues
+**1497** Python | **1546** TypeScript | **183** C++/H | **147** Docs | **4072** total commits | **4** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`bcdc9e0c`](https://github.com/matthewmackes/map2-audio/commit/bcdc9e0c44d33142482b900c9519255da96b8a4e) | refactor(web): T2481-F1 — audio-meters chrome → Carbon to... | Map2 Audio | 2026-05-06 |
+| [`5a95cde7`](https://github.com/matthewmackes/map2-audio/commit/5a95cde7fdd6ce7e31a135f48cfe21c2dbe98d1d) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-06 |
 | [`87864bd4`](https://github.com/matthewmackes/map2-audio/commit/87864bd465dc6a7f33d2f1062165033aef8f537d) | docs(t2472): close out — snapshot-editor data-layer extra... | Map2 Audio | 2026-05-06 |
 | [`975668fb`](https://github.com/matthewmackes/map2-audio/commit/975668fbab37701a14b6264fb258dc862df08625) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-06 |
 | [`9b832a4f`](https://github.com/matthewmackes/map2-audio/commit/9b832a4fe2bfbda679988e637cc7643209ea63cf) | docs(t2459-h): cycle-65 reconciliation — record H4 slices... | Map2 Audio | 2026-05-06 |
 | [`1855c140`](https://github.com/matthewmackes/map2-audio/commit/1855c140efbe21023fe15656ebdb95ac8474e341) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-06 |
 | [`c428aec7`](https://github.com/matthewmackes/map2-audio/commit/c428aec7376911dade3055ea12961f84c00981cc) | refactor(web): T2477 — `<SignalFlowGraph>` primitive + 7-... | Map2 Audio | 2026-05-06 |
 | [`62139141`](https://github.com/matthewmackes/map2-audio/commit/621391412488a41b993a772a651026828117562a) | test(WelcomeHero.css): regression guard for cycle 64 --ma... | Map2 Audio | 2026-05-06 |
-| [`774c4397`](https://github.com/matthewmackes/map2-audio/commit/774c439770eaa408b14db177b808a5e27ffbaccf) | fix(home): bind --map2x-* design tokens to Carbon --cds-*... | Map2 Audio | 2026-05-06 |
-| [`a42f9085`](https://github.com/matthewmackes/map2-audio/commit/a42f9085e501d0e17d2c09597bc37198535b4fc8) | test(AppShell.css): regression guards for cycle 49/54/62 ... | Map2 Audio | 2026-05-06 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
