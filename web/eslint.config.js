@@ -49,6 +49,31 @@ export default tseslint.config(
       // via the per-files override below. Ratchet straight to `error`
       // so future drift is a hard CI fail.
       'map2/no-hardcoded-font-family': 'error',
+      // Cycle 32 (audit Arch-8): block re-introduction of the deprecated
+      // NodeContext UI surfaces. The Unified Node Pill directive (CLAUDE.md
+      // §5) folded NodeContextBanner / NodeContextPicker / NodeAlertBar into
+      // the global NodeNavChip; the source files are gone, but nothing in
+      // ESLint stopped a future contributor from re-introducing them. This
+      // rule makes any matching import a hard CI fail.
+      'no-restricted-imports': [
+        'error',
+        {
+          patterns: [
+            {
+              group: [
+                '**/NodeContextBanner',
+                '**/NodeContextBanner.*',
+                '**/NodeContextPicker',
+                '**/NodeContextPicker.*',
+                '**/NodeAlertBar',
+                '**/NodeAlertBar.*',
+              ],
+              message:
+                'Deprecated by the Unified Node Pill directive (CLAUDE.md §5). Use NodeNavChip in the global nav instead of NodeContextBanner / NodeContextPicker / NodeAlertBar.',
+            },
+          ],
+        },
+      ],
       // The codebase has retired the Vite dev server and HMR entirely
       // (see CLAUDE.md §6 #1: "NO Vite dev server. NO HMR. Atomic builds
       // only — `npm run build` then `npm run preview` on port 3000."),
