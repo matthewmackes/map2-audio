@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1490** Python | **1553** TypeScript | **179** C++/H | **147** Docs | **3968** total commits | **4** stars | **0** forks | **0** open issues
+**1492** Python | **1553** TypeScript | **179** C++/H | **147** Docs | **3970** total commits | **4** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`0a39b498`](https://github.com/matthewmackes/map2-audio/commit/0a39b4981791c853f3dfbf7b3aa5baa5b7dc6280) | feat(maschine): MaschineMK1HostClientTransport facade (T2... | Map2 Audio | 2026-05-06 |
+| [`5b6cdeea`](https://github.com/matthewmackes/map2-audio/commit/5b6cdeea6d96c584dc4d71e76bdbf81734b0516a) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-06 |
 | [`e23cee02`](https://github.com/matthewmackes/map2-audio/commit/e23cee025df2bc1b12abff6c47b4900915d86bf1) | docs(maschine): MK1 HID/USB migration scope doc + audit-t... | Map2 Audio | 2026-05-06 |
 | [`df17cbd6`](https://github.com/matthewmackes/map2-audio/commit/df17cbd64d940b7f39e9aa48678948728263a61b) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-06 |
 | [`67521088`](https://github.com/matthewmackes/map2-audio/commit/67521088fe1f49e5015a2fc326533bd67be6ceab) | test(snapshot-editor): paired test for RoutingInspectorCo... | Map2 Audio | 2026-05-05 |
 | [`5c8dbfe6`](https://github.com/matthewmackes/map2-audio/commit/5c8dbfe6bfb490b5145d66218b2a41ae2e6f704e) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-06 |
 | [`adc2c899`](https://github.com/matthewmackes/map2-audio/commit/adc2c899e3b167fa9bea41201f83d646cc424aff) | test(snapshot-editor): paired test for ClipTimestamps hoo... | Map2 Audio | 2026-05-05 |
 | [`eff6c651`](https://github.com/matthewmackes/map2-audio/commit/eff6c651a6e04a4112d5cb6cc2b506276981a1aa) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-06 |
-| [`55ae85ea`](https://github.com/matthewmackes/map2-audio/commit/55ae85ea70a6e049ddfe7008c79edf02f82bfc67) | test(snapshot-editor): paired test for AudioInterfaceStat... | Map2 Audio | 2026-05-05 |
-| [`1f00f7ea`](https://github.com/matthewmackes/map2-audio/commit/1f00f7eadfb475a649c7465054704e0a855595c0) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-06 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
