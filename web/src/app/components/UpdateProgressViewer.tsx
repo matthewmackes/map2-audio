@@ -51,8 +51,14 @@ export function UpdateProgressViewer({ updateId }: { updateId?: string }) {
         })
 
         addLog('Status refreshed', 'info')
-      } catch (e: any) {
-        addLog(`Failed to fetch status: ${e.message}`, 'error')
+      } catch (e: unknown) {
+        // Audit Anti-6 (cycle 34): rejected promises and string `throw`s
+        // both end up here; `e.message` was previously accessed without
+        // narrowing, so a non-Error rejection produced "undefined" in
+        // the log line. Narrow on `Error` first; fall back to `String(e)`
+        // so anything thrown still surfaces something readable.
+        const message = e instanceof Error ? e.message : String(e)
+        addLog(`Failed to fetch status: ${message}`, 'error')
       }
     }
 
