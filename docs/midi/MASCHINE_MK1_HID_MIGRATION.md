@@ -122,10 +122,17 @@ worklist completion note.
   consumes raw HID input buffers via the slice-14 decoders to publish
   `MaschineHidEvent` records. Header-only, transport-injectable for
   unit testability. 13 Catch2 cases + 11 Python regression-pin cases.
-- **Slice 16** — Build-time retirement gate (mirrors
-  `MAP2_USE_LEGACY_MIDI_CONTROLLER`): a `MAP2_USE_MASCHINE_USB_DIRECT`
-  env flag controls whether the daemon imports `mk1_usb_transport.py`.
-  Default ON during the deprecation window; flips OFF for HIL soak.
+- **Slice 16** — Caller-audit pin test. **Shipped 2026-05-06 (cycle 18)**:
+  `tests/test_maschine_mk1_caller_audit_t2459h4.py` enumerates every
+  load-bearing reference to `mk1_usb_transport` (1 daemon import + 12
+  bench-script imports + 2 parity-test imports = 15 total), pins each
+  category, and fails if a new unaudited importer lands. The
+  build-time `MAP2_USE_MASCHINE_USB_DIRECT` env flag is no longer
+  needed: the slice-12 `MAP2_MASCHINE_HOST_CLIENT_TRANSPORT` flag
+  already controls the runtime selection, so the cleaner approach is
+  the audit pin (no build-system surface change needed). Slice 18
+  drops the daemon's import + this entry from `EXPECTED_DAEMON_CALLERS`
+  in the same atomic commit.
 - **Slice 17** — Bench HIL evidence run with a physical Maschine
   MK1 + the host owning USB; capture the LED/pad/encoder round-trip
   latency under the new path.
