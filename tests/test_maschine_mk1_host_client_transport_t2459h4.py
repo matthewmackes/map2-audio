@@ -27,7 +27,6 @@ from app.services.maschine.mk1_usb_transport import MaschineMK1UsbTransport
 # ---------------------------------------------------------------------------
 
 _LEGACY_PUBLIC_METHODS = (
-    "is_open",
     "open",
     "close",
     "initialize_device",
@@ -36,6 +35,9 @@ _LEGACY_PUBLIC_METHODS = (
     "read_pads",
     "read_buttons_encoders",
 )
+# is_open is a @property on both transports — the daemon reads it as
+# `transport.is_open` (no parens). Treated separately from method
+# parity below.
 
 
 def test_facade_implements_every_legacy_public_method() -> None:
@@ -58,6 +60,15 @@ def test_facade_methods_are_callable() -> None:
         assert callable(method), f"{name} is not callable on the facade"
 
 
+def test_is_open_is_property_on_both_transports() -> None:
+    """Both transports expose ``is_open`` as a @property so the daemon
+    reads ``transport.is_open`` without parens. Pin both shapes."""
+    legacy_attr = inspect.getattr_static(MaschineMK1UsbTransport, "is_open")
+    facade_attr = inspect.getattr_static(MaschineMK1HostClientTransport, "is_open")
+    assert isinstance(legacy_attr, property), "legacy is_open must be a @property"
+    assert isinstance(facade_attr, property), "facade is_open must be a @property"
+
+
 def test_facade_read_signature_matches_legacy() -> None:
     """``read_pads`` and ``read_buttons_encoders`` accept the same
     keyword shape on both transports."""
@@ -76,19 +87,19 @@ def test_facade_read_signature_matches_legacy() -> None:
 
 def test_open_then_close_is_idempotent() -> None:
     transport = MaschineMK1HostClientTransport()
-    assert transport.is_open() is False
+    assert transport.is_open is False
 
     transport.open()
-    assert transport.is_open() is True
+    assert transport.is_open is True
 
     transport.open()  # second open is a no-op
-    assert transport.is_open() is True
+    assert transport.is_open is True
 
     transport.close()
-    assert transport.is_open() is False
+    assert transport.is_open is False
 
     transport.close()  # second close is a no-op
-    assert transport.is_open() is False
+    assert transport.is_open is False
 
 
 def test_close_stops_reader_thread() -> None:

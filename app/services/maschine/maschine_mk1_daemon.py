@@ -92,6 +92,9 @@ from app.services.maschine.mk1_usb_transport import (
     MaschineMK1NotFound,
     MaschineMK1UsbTransport,
 )
+from app.services.maschine.mk1_host_client_transport import (
+    MaschineMK1HostClientTransport,
+)
 from app.services.maschine_encoder_map_service import default_maschine_encoder_map
 from app.services.maschine_lcd_service import (
     LCD_HEIGHT,
@@ -352,6 +355,44 @@ class SharedRuntimeState:
     boot_active: bool = False
     onboarding_active: bool = False
     admin_console_state: dict[str, Any] = field(default_factory=dict)
+
+
+def _maschine_use_host_client_transport() -> bool:
+    """T2459-H4 slice 12 — env-var gate for the Maschine daemon's
+    host-client transport.
+
+    When ``MAP2_MASCHINE_HOST_CLIENT_TRANSPORT`` is truthy
+    (``1`` / ``true`` / ``yes`` / ``on`` — case-insensitive), the
+    daemon constructs ``MaschineMK1HostClientTransport`` instead of
+    ``MaschineMK1UsbTransport``. The host-client facade matches the
+    legacy public method shape byte-for-byte, so the daemon's read/
+    write call sites are unchanged.
+
+    Default OFF until slices 13-15 ship the host-side IPC contract +
+    HID parser + bulk sink. See ``docs/midi/MASCHINE_MK1_HID_MIGRATION.md``
+    for the slice-by-slice plan.
+    """
+    import os
+
+    raw = os.environ.get("MAP2_MASCHINE_HOST_CLIENT_TRANSPORT", "")
+    return raw.strip().lower() in {"1", "true", "yes", "on"}
+
+
+def _build_maschine_mk1_transport(
+    *,
+    allow_kernel_detach: bool,
+) -> MaschineMK1UsbTransport | MaschineMK1HostClientTransport:
+    """Slice-12 factory — picks the host-client facade when the env
+    flag is on, the legacy USB transport otherwise.
+
+    The two implementations share a public surface (open/close/
+    initialize_device/write_leds/write_display_frame/read_pads/
+    read_buttons_encoders/is_open) so the daemon's downstream code
+    doesn't branch on the choice.
+    """
+    if _maschine_use_host_client_transport():
+        return MaschineMK1HostClientTransport()
+    return MaschineMK1UsbTransport(allow_kernel_detach=allow_kernel_detach)
 
 
 def _maschine_use_midi_host() -> bool:
@@ -883,7 +924,9 @@ class MaschineMK1Daemon:
         self._long_operation_feedback = MaschineLongOperationFeedback()
         self._onboarding = MaschineOnboardingTour()
         self._screensaver = MaschineScreensaverState()
-        self._transport: MaschineMK1UsbTransport | None = None
+        self._transport: (
+            MaschineMK1UsbTransport | MaschineMK1HostClientTransport | None
+        ) = None
         self._midi = VirtualMidiOutput(config.virtual_port_name)
         self._hotplug_monitor = MaschineDeviceHotplugMonitor()
         self._outbound_messages: "queue.Queue[dict[str, Any]]" = queue.Queue(maxsize=BACKEND_MESSAGE_QUEUE_LIMIT)
@@ -958,7 +1001,11 @@ class MaschineMK1Daemon:
                 # Connect / reconnect
                 if self._transport is None or not self._transport.is_open:
                     try:
-                        transport = MaschineMK1UsbTransport(
+                        # T2459-H4 slice 12 — flag-aware factory picks
+                        # the host-client facade when
+                        # MAP2_MASCHINE_HOST_CLIENT_TRANSPORT=1, else
+                        # the legacy direct-USB transport.
+                        transport = _build_maschine_mk1_transport(
                             allow_kernel_detach=self.config.allow_kernel_detach,
                         )
                         transport.open()

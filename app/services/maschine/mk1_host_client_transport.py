@@ -80,6 +80,7 @@ class MaschineMK1HostClientTransport:
     # Lifecycle
     # ------------------------------------------------------------------
 
+    @property
     def is_open(self) -> bool:
         return self._opened
 
