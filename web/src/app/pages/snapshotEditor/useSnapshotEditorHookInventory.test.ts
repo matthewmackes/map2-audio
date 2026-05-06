@@ -28,10 +28,11 @@ const HOOKS_DIR = __dirname
 // follow-up note explaining why. New entries here require a code-
 // review checkpoint — the goal is to drive this list down to empty.
 const UNTESTED_HOOKS: ReadonlyArray<{ name: string; reason: string }> = [
-  {
-    name: 'useSnapshotEditorRoutingHandlers',
-    reason: 'Pre-T2473 — covered indirectly via routing-modal tests.',
-  },
+  // T2473 cycle 21 — UNTESTED_HOOKS now empty. Every sibling hook
+  // in pages/snapshotEditor/ has a paired .test.tsx. Future
+  // contributions must add a paired test or this list will grow
+  // again (and the next session can decide whether it's a paired-
+  // test gap or a deliberate test-deferral).
 ]
 
 // Pinned minimum count. Bump this when shipping a new hook.
