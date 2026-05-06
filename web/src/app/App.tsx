@@ -41,6 +41,18 @@ function buildDeviceRoute(deviceId: string, viewId?: string): string {
     : `/devices/${deviceId}`
 }
 
+// Audit Lat-13 (cycle 33): the React Router v6 future-flags object was
+// previously declared inline as `future={{ v7_startTransition: true,
+// v7_relativeSplatPath: true }}` on every render of `App`, recreating
+// the object reference each time and forcing React Router to re-run its
+// future-flags effect. Hoisting it to a module-level constant gives the
+// router a stable identity so its effect runs once at mount and not on
+// every parent re-render.
+const ROUTER_FUTURE_FLAGS = {
+  v7_startTransition: true,
+  v7_relativeSplatPath: true,
+} as const
+
 // Lazy-load devtools so they don't bloat the production shell chunk. The
 // import is also gated on NODE_ENV so the prod build tree-shakes the
 // `lazy()` call entirely. Using process.env.NODE_ENV (instead of
@@ -550,10 +562,7 @@ export function App() {
       <ViewportPolicyGate>
     <HistoryRouter
       history={routerHistory}
-          future={{
-            v7_startTransition: true,
-            v7_relativeSplatPath: true,
-          }}
+          future={ROUTER_FUTURE_FLAGS}
     >
           <ClusterProvider>
             <ToastProvider>
