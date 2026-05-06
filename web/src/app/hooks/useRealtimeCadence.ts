@@ -15,6 +15,12 @@ export function useRealtimeCadence({
   hiddenMs,
   inactiveMs = false,
 }: RealtimeCadenceOptions): number | false {
+  // Audit Anti-2 (cycle 39): all hook calls MUST happen above the early
+  // returns below. React's rules-of-hooks require hooks to run in the
+  // same order on every render — a hook added below an early return
+  // would silently violate that on the cycles where the return fires.
+  // Future maintainers: keep new hook calls grouped here, before the
+  // first `if (!...) return ...`.
   const visible = usePageVisible()
 
   if (!enabled) {
