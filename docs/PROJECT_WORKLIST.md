@@ -957,7 +957,7 @@ Completion note: 2026-05-06 — Claude. **SHIPPED.** ~26 chrome literals across 
 Last updated: 2026-05-06 — Claude.
 
 ID: T2481-F2
-Status: [ ] Todo
+Status: [✓] Done
 Parent: T2481
 Title: UnifiedChannelGrid chrome — `Block` / `EmptySlot` / `ChannelHeader` Carbon-token sweep
 Description:
@@ -965,10 +965,11 @@ Description:
 - Acceptance: `web/src/app/components/SnapshotEditor/UnifiedChannelGrid/{Block,EmptySlot,ChannelHeader}.{tsx,css}` carries 0 hex-color literals on operational chrome (FxIcon registry hue tokens preserved as documented category accents per the cycle-2 audit); UnifiedChannelGrid jest suite green; lint 0/0.
 - Required outputs: component + paired CSS diffs, rubric refresh.
 - Estimated effort: 1–2 cycles.
-Last updated: 2026-05-06 — filed by Claude.
+Completion note: 2026-05-06 — Claude. **VERIFIED-CLEAN (no-op slice).** Audit found UnifiedChannelGrid's TSX + CSS surfaces are already Carbon-deep from prior T710 + T2481-B3 work: every hex literal is wrapped in `var(--cds-*, #fallback)` form, every spacing value in `UnifiedChannelGrid.css` references `--cds-spacing-*` or `--map2-spacing-*` tokens, and `categoryHues.ts` is purely oklch polar coordinates with semantic fallback labels (no hex). 13 jest suites green (69 tests across UnifiedChannelGrid / Block / EmptySlot / ChannelHeader / ChannelRow / WireOverlay / BlockPicker / SlotRuler / chainToUnifiedRow / useChainMeter / useGridKeyboard / useRefuseWhenFull / categoryHues). No code changes shipped — slice closes as verification-only.
+Last updated: 2026-05-06 — Claude.
 
 ID: T2481-F3
-Status: [ ] Todo
+Status: [✓] Done
 Parent: T2481
 Title: Signal-flow canvases — `MPX1SignalPathCanvas` / `IntelFXSignalPathCanvas` / `ChainGraphCanvas` chrome tokenization
 Description:
@@ -976,10 +977,11 @@ Description:
 - Acceptance: `web/src/app/components/{MPX1,IntelFX,ChainBuilder}/...Canvas.{tsx,css}` chrome literals = 0 outside §10.5; lint 0/0; canvas-level jest suites green.
 - Required outputs: per-canvas diff, rubric refresh, optional `<SignalFlowGraph>` primitive shared-style follow-up filed under T2477 if a common token-routed wrapper emerges.
 - Estimated effort: 2–3 cycles.
-Last updated: 2026-05-06 — filed by Claude.
+Completion note: 2026-05-06 — Claude. **VERIFIED-CLEAN (no-op slice).** Audit: `MPX1SignalPathCanvas.{tsx,css}` and `IntelFXSignalPathCanvas.{tsx,css}` carry zero unwrapped hex literals (every literal is `var(--cds-*, #fallback)` form). `ChainGraphCanvas` was retired by T2477 (`<SignalFlowGraph>` primitive shipped 2026-05-06; the 7 active workspace graphs migrated). The shared `SignalFlowGraph` primitive itself was audited in this slice — only one literal remains, in a JSDoc comment explaining ReactFlow's `<Background>` color rationale. No code changes shipped — slice closes as verification-only. Future genuine work on per-canvas chrome is captured under T2477's natural follow-up scope, not under T2481.
+Last updated: 2026-05-06 — Claude.
 
 ID: T2481-F4
-Status: [ ] Todo
+Status: [✓] Done
 Parent: T2481
 Title: Maschine MK1 grid + LED-slider input + pad chrome Carbon-token sweep
 Description:
@@ -987,10 +989,11 @@ Description:
 - Acceptance: chrome literals = 0 on operational surfaces under `web/src/app/components/Devices/Maschine/...` outside §10.5 carve-outs.
 - Required outputs: per-surface diff + rubric refresh.
 - Estimated effort: 1–2 cycles.
-Last updated: 2026-05-06 — filed by Claude.
+Completion note: 2026-05-06 — Claude. **VERIFIED-CLEAN (no-op slice).** Audit: every Maschine-surface unwrapped hex literal is a §10.5 device-skin / hardware-aesthetic preservation: `MaschineLcdSimulatorPanel.tsx` (`#1a1a2e` LCD glass tint + `#42be65` active-pixel green — pixel-exact rendered LCD output), `MaschineMidiMapPage.css` (9 pad/encoder color-coded backgrounds — `#0a0a1a` / `#1e1e3a` / `#252550` / `#2a2540` / `#1a2e1a` / `#222244` / `#2a2a55` / `#2a2a44` / `#1a1a2e` — preserved per the cycle-22 audit and documented under §10.5). The eslint per-files override at `web/eslint.config.js:149` already exempts `components/Devices/Maschine/**` from `no-hardcoded-px-spacing` and `no-hardcoded-font-family`; the chrome surfaces previously swept (cycle-22 cleared 12 hex literals) leave 0 operational-chrome literals on Maschine surfaces today. No code changes shipped — slice closes as verification-only.
+Last updated: 2026-05-06 — Claude.
 
 ID: T2481-F5
-Status: [ ] Todo
+Status: [~] Cancelled
 Parent: T2481
 Title: Brain surfaces — `BrainKeyboardVisualizer` + `BrainConsoleView` channel strips + Step pads chrome tokenization
 Description:
@@ -998,10 +1001,11 @@ Description:
 - Acceptance: chrome literals = 0 outside §10.5 on `web/src/app/components/Brain/...` operational surfaces.
 - Required outputs: per-surface diff + rubric refresh.
 - Estimated effort: 2 cycles.
-Last updated: 2026-05-06 — filed by Claude.
+Cancellation note: 2026-05-06 — Claude. **CANCELLED — target surfaces not present in the codebase.** Audit ran `find web/src/app -ipath '*brain*' -type f` → 0 matches. No `BrainKeyboardVisualizer`, `BrainConsoleView`, or any Brain-prefixed components exist under `web/src/app/`. The original Epic spec referenced T2480-3 (BrainKeyboardVisualizer) as a future deliverable; without those surfaces in-tree, this F-phase subtask has no targets. When/if the Brain surfaces ship under their owning Epic, the Carbon-token sweep should be filed as a sibling subtask there (carrying the same canvas-vs-chrome separation logic established here in F1/F4), not under T2481. T2481 closure is **not** blocked by this cancellation.
+Last updated: 2026-05-06 — Claude.
 
 ID: T2481-F6
-Status: [ ] Todo
+Status: [~] Cancelled
 Parent: T2481
 Title: Drum Machine — pads + step grid + kit picker chrome tokenization
 Description:
@@ -1009,10 +1013,11 @@ Description:
 - Acceptance: chrome literals = 0 outside §10.5 on `web/src/app/components/DrumMachine/...` operational surfaces.
 - Required outputs: per-surface diff + rubric refresh.
 - Estimated effort: 1 cycle.
-Last updated: 2026-05-06 — filed by Claude.
+Cancellation note: 2026-05-06 — Claude. **CANCELLED — target surfaces not present in the codebase.** Audit ran `find web/src/app -iname '*drum*'` → only `web/src/app/components/icons/noun/drums` (icon path glyphs). No `DrumMachine` component or page-level surface exists under `web/src/app/`. Same logic as F5: aspirational Epic-spec deliverable referenced an unbuilt surface. When/if Drum Machine ships under its owning Epic, sibling Carbon-token subtask should be filed there — not under T2481. T2481 closure is **not** blocked.
+Last updated: 2026-05-06 — Claude.
 
 ID: T2481-F7
-Status: [ ] Todo
+Status: [~] Cancelled
 Parent: T2481
 Title: Synth Forge — oscillator / envelope / filter cards chrome tokenization
 Description:
@@ -1020,7 +1025,8 @@ Description:
 - Acceptance: chrome literals = 0 outside §10.5 on `web/src/app/components/SynthForge/...` operational surfaces.
 - Required outputs: per-card diff + rubric refresh.
 - Estimated effort: 1 cycle.
-Last updated: 2026-05-06 — filed by Claude.
+Cancellation note: 2026-05-06 — Claude. **CANCELLED — target surfaces not present in the codebase.** Audit ran `find web/src/app -iname '*synth*'` → 0 matches. No `SynthForge` component or page-level surface exists under `web/src/app/`. Same logic as F5/F6. When/if Synth Forge ships under its owning Epic, sibling Carbon-token subtask should be filed there. T2481 closure is **not** blocked.
+Last updated: 2026-05-06 — Claude.
 
 ID: T2481-E1
 Status: [ ] Todo
