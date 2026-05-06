@@ -162,9 +162,6 @@ export function PedalboardBuildWizard({
         <div className="pedalboard-wizard__hero-actions">
           <HeroIconRow items={heroIconItems} />
           <div className="pedalboard-wizard__hero-buttons">
-            <Button size="sm" kind="ghost" renderIcon={Launch} onClick={onOpenProgressModal} disabled={!onOpenProgressModal}>
-              Publish to live
-            </Button>
             <Button size="sm" kind="ghost" renderIcon={Folder} onClick={onOpenSnapshots} disabled={!onOpenSnapshots}>
               Open snapshots
             </Button>
@@ -197,21 +194,12 @@ export function PedalboardBuildWizard({
           </Button>
           <Button
             size="sm"
-            kind="ghost"
+            kind="primary"
             renderIcon={Launch}
             onClick={onOpenProgressModal}
             disabled={!onOpenProgressModal}
           >
             Publish to live
-          </Button>
-          <Button
-            size="sm"
-            kind="primary"
-            renderIcon={Add}
-            onClick={onCreateSnapshot}
-            disabled={!onCreateSnapshot || createSnapshotPending}
-          >
-            {createSnapshotPending ? 'Creating…' : 'New snapshot'}
           </Button>
         </div>
       </div>
