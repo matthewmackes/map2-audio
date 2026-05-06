@@ -3,6 +3,25 @@ import type { NodeInfo } from '../../contexts/ClusterContextStore'
 
 export type { DeviceLocation, NodeInfo }
 
+// ── Device key registry ──────────────────────────────────────────────────────
+//
+// Audit Arch-14 (cycle 43): central string-literal union of every known
+// device-key currently rendered through the DeviceContext / Devices/* shell
+// stack. Call sites that pass a literal get autocomplete + a compile error
+// on typos; consumers that genuinely need to pass a dynamically-derived key
+// (e.g. from URL params) can still widen to `string` at the boundary, but
+// that becomes an explicit cast that surfaces in code review.
+//
+// Adding a new device pack: add its key here and TypeScript will guide you
+// to every shell/banner/dialog touchpoint that needs to know about it.
+export type DeviceKey =
+  | 'lexicon-mpx1'
+  | 'rocktron-intelfx'
+  | 'edirol-ua1000'
+  | 'hotone-jogg'
+  | 'lcd-console'
+  | 'ground-control-pro'
+
 // ── Device state ─────────────────────────────────────────────────────────────
 
 export type DeviceNodeState =

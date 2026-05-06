@@ -3,11 +3,18 @@ import { useCluster } from '../contexts/useCluster'
 import { useDeviceLocation } from './useDeviceLocation'
 import type {
   DeviceIssue,
+  DeviceKey,
   DeviceNodeContextValue,
   DeviceNodeState,
 } from '../components/DeviceContext/deviceContextTypes'
 
-export function useDeviceNodeContext(deviceKey: string | string[]): DeviceNodeContextValue {
+// Audit Arch-14 (cycle 43): the parameter type is the central `DeviceKey`
+// union. New devices should be added to deviceContextTypes.ts; the type
+// system will then guide every shell/banner/dialog touchpoint that needs
+// to know about the new key. Consumers that genuinely need to pass a
+// dynamically-derived string (e.g. URL params) cast through `as DeviceKey`
+// at the boundary so the widening is explicit and reviewable.
+export function useDeviceNodeContext(deviceKey: DeviceKey | DeviceKey[]): DeviceNodeContextValue {
   const { activeNodeId, localNodeId, nodes } = useCluster()
   const { location, matches, isLoading } = useDeviceLocation(deviceKey)
 

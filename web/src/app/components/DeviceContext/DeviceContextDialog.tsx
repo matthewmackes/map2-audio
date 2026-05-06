@@ -17,6 +17,7 @@ import { useCluster } from '../../contexts/useCluster'
 import type {
   DeviceIssue,
   DeviceIssueSeverity,
+  DeviceKey,
   SwitchProgressState,
   SwitchStep,
 } from './deviceContextTypes'
@@ -99,7 +100,7 @@ interface DeviceContextDialogProps {
   open: boolean
   onClose: () => void
   deviceName: string
-  deviceKey: string | string[]
+  deviceKey: DeviceKey | DeviceKey[]
   onRequestReassign?: (targetNodeId: string) => void
   onRequestRediscovery?: () => void
 }

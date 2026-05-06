@@ -5,11 +5,11 @@ import { Button } from '@carbon/react'
 import { ErrorFilled, Information, WarningAlt } from '@carbon/icons-react'
 import { useDeviceNodeContext } from '../../hooks/useDeviceNodeContext'
 import { DeviceContextDialog } from './DeviceContextDialog'
-import type { DeviceIssueSeverity } from './deviceContextTypes'
+import type { DeviceIssueSeverity, DeviceKey } from './deviceContextTypes'
 
 interface DeviceContextBannerProps {
   deviceName: string
-  deviceKey: string | string[]
+  deviceKey: DeviceKey | DeviceKey[]
   onRequestReassign?: (targetNodeId: string) => void
   onRequestRediscovery?: () => void
   className?: string
