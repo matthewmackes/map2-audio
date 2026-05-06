@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1497** Python | **1546** TypeScript | **183** C++/H | **147** Docs | **4066** total commits | **4** stars | **0** forks | **0** open issues
+**1497** Python | **1546** TypeScript | **183** C++/H | **147** Docs | **4068** total commits | **4** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`9b832a4f`](https://github.com/matthewmackes/map2-audio/commit/9b832a4fe2bfbda679988e637cc7643209ea63cf) | docs(t2459-h): cycle-65 reconciliation — record H4 slices... | Map2 Audio | 2026-05-06 |
+| [`1855c140`](https://github.com/matthewmackes/map2-audio/commit/1855c140efbe21023fe15656ebdb95ac8474e341) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-06 |
 | [`c428aec7`](https://github.com/matthewmackes/map2-audio/commit/c428aec7376911dade3055ea12961f84c00981cc) | refactor(web): T2477 — `<SignalFlowGraph>` primitive + 7-... | Map2 Audio | 2026-05-06 |
 | [`62139141`](https://github.com/matthewmackes/map2-audio/commit/621391412488a41b993a772a651026828117562a) | test(WelcomeHero.css): regression guard for cycle 64 --ma... | Map2 Audio | 2026-05-06 |
 | [`774c4397`](https://github.com/matthewmackes/map2-audio/commit/774c439770eaa408b14db177b808a5e27ffbaccf) | fix(home): bind --map2x-* design tokens to Carbon --cds-*... | Map2 Audio | 2026-05-06 |
 | [`a42f9085`](https://github.com/matthewmackes/map2-audio/commit/a42f9085e501d0e17d2c09597bc37198535b4fc8) | test(AppShell.css): regression guards for cycle 49/54/62 ... | Map2 Audio | 2026-05-06 |
 | [`2d53fab3`](https://github.com/matthewmackes/map2-audio/commit/2d53fab3800b97fee403e9bc61982d2d4846fc47) | fix(home): repair stale `.hp-root` selector that was mask... | Map2 Audio | 2026-05-06 |
 | [`0b6d2f36`](https://github.com/matthewmackes/map2-audio/commit/0b6d2f36299f07ffd422a99bf1756681772d8e15) | fix(theme): synchronous first-paint bootstrap eliminates ... | Map2 Audio | 2026-05-06 |
-| [`af43134c`](https://github.com/matthewmackes/map2-audio/commit/af43134c7cee221b6fee24da39bc2d6b5436621c) | test(useTheme): regression guard for cycle 50 theme-color... | Map2 Audio | 2026-05-06 |
-| [`6e3d8537`](https://github.com/matthewmackes/map2-audio/commit/6e3d8537c7698fd7014f8f597a4eed6f9f902f57) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-06 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
