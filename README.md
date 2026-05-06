@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1497** Python | **1536** TypeScript | **183** C++/H | **147** Docs | **3997** total commits | **4** stars | **0** forks | **0** open issues
+**1497** Python | **1536** TypeScript | **183** C++/H | **147** Docs | **3999** total commits | **4** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`302c480f`](https://github.com/matthewmackes/map2-audio/commit/302c480fda74db981be477977af305a75b2541db) | chore(deps): remove unused @fontsource/jetbrains-mono (cy... | Map2 Audio | 2026-05-06 |
+| [`fecdcfd7`](https://github.com/matthewmackes/map2-audio/commit/fecdcfd703ee0a62d4e57a22bd395ed4b976c379) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-06 |
 | [`30765df7`](https://github.com/matthewmackes/map2-audio/commit/30765df72de4c18d05e9c3c331c10e2829fb1d53) | test(hooks): pin useIsMobile audit-Fit-7 gap + deprecatio... | Map2 Audio | 2026-05-06 |
 | [`00e1f1a6`](https://github.com/matthewmackes/map2-audio/commit/00e1f1a668b8332e603f3ee62a7cae8960278150) | refactor(snapshot-editor): drop workspace icon bar; renam... | Map2 Audio | 2026-05-06 |
 | [`dd7a04cb`](https://github.com/matthewmackes/map2-audio/commit/dd7a04cb0d6b7b9fab7e396e8e8738f1fa6f040f) | refactor(snapshot-editor): fold management hero into stat... | Map2 Audio | 2026-05-06 |
 | [`39721821`](https://github.com/matthewmackes/map2-audio/commit/39721821733c94903efbf482788528d576a59165) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-06 |
 | [`5c2a2256`](https://github.com/matthewmackes/map2-audio/commit/5c2a22567ff03916a83710bf295f02f52e605bf9) | docs(worklist): two-set autonomous campaign status snapsh... | Map2 Audio | 2026-05-06 |
 | [`1fa9c621`](https://github.com/matthewmackes/map2-audio/commit/1fa9c621de26aa3a0d12023410b2c5489d8b89db) | refactor(snapshot-editor): split duplicated actions in sn... | Map2 Audio | 2026-05-06 |
-| [`abafb1a4`](https://github.com/matthewmackes/map2-audio/commit/abafb1a4d3c95dcfba6fae73981d186446ed0641) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-06 |
-| [`662261eb`](https://github.com/matthewmackes/map2-audio/commit/662261eb0cbbf789baef899e5b92e1854476d17a) | refactor(map2): retire ChainBuilder dead code (T2477 cycl... | Map2 Audio | 2026-05-06 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
