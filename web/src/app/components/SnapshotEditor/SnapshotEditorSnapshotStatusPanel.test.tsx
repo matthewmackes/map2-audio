@@ -201,13 +201,25 @@ function renderPanel(overrides: Partial<React.ComponentProps<typeof SnapshotEdit
 }
 
 describe('SnapshotEditorSnapshotStatusPanel', () => {
-  it('renders the snapshot title without the Audio Grid banner or header-level publish controls', () => {
-    renderPanel()
+  it('renders the snapshot title and the workflow actions/chips folded in from the retired build wizard', () => {
+    renderPanel({
+      activeChannelCount: 2,
+      totalChannelCount: 2,
+      onOpenSnapshots: jest.fn(),
+      onCreateSnapshot: jest.fn(),
+      onOpenVersionHistory: jest.fn(),
+      onOpenSignalGrid: jest.fn(),
+    })
 
     expect(screen.queryByText('Audio Grid')).not.toBeInTheDocument()
     expect(screen.getByRole('heading', { name: 'Friday Night Drive' })).toBeInTheDocument()
-    expect(screen.queryByRole('button', { name: 'Publish to live' })).not.toBeInTheDocument()
-    expect(screen.queryByText('2 of 2 channels active')).not.toBeInTheDocument()
+    // Workflow items now live here (Option 5 of the duplication review).
+    expect(screen.getByRole('button', { name: 'Publish to live' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'Open snapshots' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /new snapshot/i })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: 'History' })).toBeInTheDocument()
+    expect(screen.getByText('2 of 2 channels active')).toBeInTheDocument()
+    expect(screen.getByRole('toolbar', { name: 'Snapshot workspaces' })).toBeInTheDocument()
   })
 
   it('supports inline snapshot rename editing', () => {

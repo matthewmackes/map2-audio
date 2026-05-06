@@ -2423,6 +2423,76 @@
   box-shadow: inset 0 0 0 1px color-mix(in srgb, #f1c21b 35%, transparent);
 }
 
+.juce-grid-page__snapshot-status-channels-badge.cds--tag {
+  min-block-size: 1.75rem;
+  padding-inline: 0.625rem;
+  font-size: var(--juce-grid-font-support-72);
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  background: color-mix(in srgb, #42be65 14%, var(--cds-layer, #262626));
+  color: var(--cds-green-40, #42be65);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, #42be65 28%, transparent);
+}
+
+.juce-grid-page__snapshot-status-workspace-bar {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.125rem;
+  padding: 0.125rem;
+  border-radius: 0.25rem;
+  background: color-mix(in srgb, var(--cds-layer-accent, #393939) 60%, transparent);
+  margin-block-end: 0.5rem;
+}
+
+.juce-grid-page__snapshot-status-workspace-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  inline-size: 1.75rem;
+  block-size: 1.75rem;
+  padding: 0;
+  border: 0;
+  border-radius: 0.1875rem;
+  background: transparent;
+  color: var(--cds-text-secondary, #c6c6c6);
+  cursor: pointer;
+  transition: background-color 90ms ease, color 90ms ease;
+}
+
+.juce-grid-page__snapshot-status-workspace-btn:hover:not(:disabled) {
+  background: color-mix(in srgb, var(--cds-layer-hover, #4c4c4c) 70%, transparent);
+  color: var(--cds-text-primary, #f4f4f4);
+}
+
+.juce-grid-page__snapshot-status-workspace-btn.is-active {
+  background: var(--cds-layer-selected, #525252);
+  color: var(--cds-text-primary, #f4f4f4);
+}
+
+.juce-grid-page__snapshot-status-workspace-btn:disabled {
+  opacity: 0.4;
+  cursor: not-allowed;
+}
+
+.juce-grid-page__snapshot-status-actions {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+  margin-block-start: 0.75rem;
+  padding-block-start: 0.75rem;
+  border-block-start: 1px solid color-mix(in srgb, var(--cds-border-subtle, #393939) 60%, transparent);
+}
+
+.juce-grid-page__snapshot-status-actions-snapshot,
+.juce-grid-page__snapshot-status-actions-group {
+  display: inline-flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.25rem;
+}
+
 .juce-grid-page__snapshot-status-channel-warning-list {
   display: flex;
   flex-wrap: wrap;

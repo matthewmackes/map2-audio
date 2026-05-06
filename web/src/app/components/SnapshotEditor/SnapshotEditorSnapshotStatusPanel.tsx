@@ -1,6 +1,16 @@
-import { Edit, Launch } from '@carbon/icons-react'
+import {
+  Add,
+  ChartLine,
+  Edit,
+  Flow,
+  Folder,
+  Help,
+  Launch,
+  SettingsAdjust,
+  Time,
+} from '@carbon/icons-react'
 import { Button, Layer, NumberInput, Tag } from '@carbon/react'
-import { useMemo, type KeyboardEvent } from 'react'
+import { useMemo, type KeyboardEvent, type ReactNode } from 'react'
 
 import type { AuthoritativeAudioState, SnapshotDetail, SnapshotDraftData, SnapshotPublishReadiness, SnapshotRuntimeLiveState } from '../../../map2/types'
 import type { SnapshotGoLiveState } from '../../utils/snapshotGoLiveState'
@@ -112,6 +122,9 @@ interface SnapshotEditorSnapshotStatusPanelProps {
   onOpenVersionHistory?: () => void
   versionHistoryDisabled?: boolean
   onOpenHelp?: () => void
+  // Workflow summary chips (replace the retired PedalboardBuildWizard hero).
+  activeChannelCount?: number | null
+  totalChannelCount?: number | null
   // Iter 1+: hero enhancements — metadata cluster, lock toggle, state row.
   publishReadiness?: SnapshotPublishReadiness | null
   isSnapshotLocked?: boolean
@@ -221,6 +234,22 @@ export function SnapshotEditorSnapshotStatusPanel({
   onOverwriteLive,
   onViewPublishErrors,
   publishActionPending = false,
+  onOpenProgressModal,
+  onOpenSnapshots,
+  onCreateSnapshot,
+  createSnapshotPending = false,
+  activeWorkspaceActionId,
+  onOpenSignalGrid,
+  onOpenDirectory,
+  directoryDisabled = false,
+  onOpenParameters,
+  parametersDisabled = false,
+  onOpenAutomation,
+  onOpenVersionHistory,
+  versionHistoryDisabled = false,
+  onOpenHelp,
+  activeChannelCount = null,
+  totalChannelCount = null,
 }: SnapshotEditorSnapshotStatusPanelProps) {
   const liveHeadline = useMemo(
     () => resolveLiveHeadline(liveSnapshot, authoritativeAudioState, liveBadgeState),
@@ -247,10 +276,58 @@ export function SnapshotEditorSnapshotStatusPanel({
     }
   }
 
+  const workspaceIconItems: Array<{
+    id: SnapshotEditorWorkspaceActionId
+    label: string
+    icon: ReactNode
+    onClick?: () => void
+    disabled?: boolean
+  }> = [
+    { id: 'signal-grid', label: 'Signal grid', icon: <Flow size={14} />, onClick: onOpenSignalGrid },
+    { id: 'directory', label: 'Directory', icon: <Folder size={14} />, onClick: onOpenDirectory, disabled: directoryDisabled },
+    { id: 'parameters', label: 'Parameters', icon: <SettingsAdjust size={14} />, onClick: onOpenParameters, disabled: parametersDisabled },
+    { id: 'automation', label: 'Automation', icon: <ChartLine size={14} />, onClick: onOpenAutomation },
+    { id: 'version-history', label: 'Version history', icon: <Time size={14} />, onClick: onOpenVersionHistory, disabled: versionHistoryDisabled },
+    { id: 'help', label: 'Help', icon: <Help size={14} />, onClick: onOpenHelp },
+  ]
+  const workspaceIconBar = workspaceIconItems.some((item) => item.onClick) ? (
+    <div className="juce-grid-page__snapshot-status-workspace-bar" role="toolbar" aria-label="Snapshot workspaces">
+      {workspaceIconItems.map((item) => (
+        <button
+          key={item.id}
+          type="button"
+          className={`juce-grid-page__snapshot-status-workspace-btn${activeWorkspaceActionId === item.id ? ' is-active' : ''}`}
+          aria-label={item.label}
+          aria-pressed={activeWorkspaceActionId === item.id}
+          title={item.label}
+          onClick={item.onClick}
+          disabled={item.disabled || !item.onClick}
+        >
+          {item.icon}
+        </button>
+      ))}
+    </div>
+  ) : null
+
+  const channelsLabel = (() => {
+    if (typeof activeChannelCount === 'number' && typeof totalChannelCount === 'number') {
+      return `${activeChannelCount} of ${totalChannelCount} channels active`
+    }
+    if (typeof totalChannelCount === 'number') {
+      return `${totalChannelCount} channels`
+    }
+    return null
+  })()
+
+  const hasGroupActions = Boolean(onOpenSnapshots || onCreateSnapshot)
+  const hasSnapshotActions = Boolean(onOpenVersionHistory || onOpenProgressModal)
+  const showActionFooter = hasGroupActions || hasSnapshotActions
+
   return (
     <Layer className="juce-grid-page__chain-card juce-grid-page__snapshot-status-card">
       <div className="juce-grid-page__snapshot-status-layout">
         <div className="juce-grid-page__snapshot-status-hero">
+          {workspaceIconBar}
           <div className="juce-grid-page__snapshot-status-content-row">
             <div className="juce-grid-page__snapshot-status-live-block">
               <div className="juce-grid-page__snapshot-status-state-row">
@@ -317,14 +394,24 @@ export function SnapshotEditorSnapshotStatusPanel({
                   </>
                 )}
               </div>
-              {monitoringStatusLabel ? (
+              {monitoringStatusLabel || channelsLabel ? (
                 <div className="juce-grid-page__snapshot-status-pill-row">
-                  <Tag
-                    type={monitoringStatusWarning ? 'warm-gray' : 'cool-gray'}
-                    className={`juce-grid-page__snapshot-status-monitoring-badge ${monitoringStatusWarning ? 'is-warning' : ''}`}
-                  >
-                    {monitoringStatusLabel}
-                  </Tag>
+                  {channelsLabel ? (
+                    <Tag
+                      type="green"
+                      className="juce-grid-page__snapshot-status-channels-badge"
+                    >
+                      {channelsLabel}
+                    </Tag>
+                  ) : null}
+                  {monitoringStatusLabel ? (
+                    <Tag
+                      type={monitoringStatusWarning ? 'warm-gray' : 'cool-gray'}
+                      className={`juce-grid-page__snapshot-status-monitoring-badge ${monitoringStatusWarning ? 'is-warning' : ''}`}
+                    >
+                      {monitoringStatusLabel}
+                    </Tag>
+                  ) : null}
                 </div>
               ) : null}
               {!liveSnapshot ? (
@@ -378,6 +465,56 @@ export function SnapshotEditorSnapshotStatusPanel({
               onViewErrors={onViewPublishErrors}
               busy={publishActionPending}
             />
+          ) : null}
+          {showActionFooter ? (
+            <div className="juce-grid-page__snapshot-status-actions" role="toolbar" aria-label="Snapshot actions">
+              <div className="juce-grid-page__snapshot-status-actions-snapshot">
+                {onOpenVersionHistory ? (
+                  <Button
+                    size="sm"
+                    kind="ghost"
+                    renderIcon={Time}
+                    onClick={onOpenVersionHistory}
+                    disabled={versionHistoryDisabled}
+                  >
+                    History
+                  </Button>
+                ) : null}
+                {onOpenProgressModal ? (
+                  <Button
+                    size="sm"
+                    kind="primary"
+                    renderIcon={Launch}
+                    onClick={onOpenProgressModal}
+                  >
+                    Publish to live
+                  </Button>
+                ) : null}
+              </div>
+              <div className="juce-grid-page__snapshot-status-actions-group">
+                {onOpenSnapshots ? (
+                  <Button
+                    size="sm"
+                    kind="ghost"
+                    renderIcon={Folder}
+                    onClick={onOpenSnapshots}
+                  >
+                    Open snapshots
+                  </Button>
+                ) : null}
+                {onCreateSnapshot ? (
+                  <Button
+                    size="sm"
+                    kind="tertiary"
+                    renderIcon={Add}
+                    onClick={onCreateSnapshot}
+                    disabled={createSnapshotPending}
+                  >
+                    {createSnapshotPending ? 'Creating…' : 'New snapshot'}
+                  </Button>
+                ) : null}
+              </div>
+            </div>
           ) : null}
         </div>
       </div>

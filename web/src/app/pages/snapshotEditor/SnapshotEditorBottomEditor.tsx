@@ -2,7 +2,8 @@
 // Renders the pinned parameter-editor panel that appears below the
 // signal grid on non-tablet layouts. Three display states:
 //   • plugin selected + open  → full parameter editor (+ optional MIDI panel)
-//   • snapshot inspector      → PublishReadyBanner + build wizard
+//   • snapshot inspector      → PublishReadyBanner only (workflow actions
+//                               and workspace nav now live in the top hero)
 //   • neither                 → placeholder copy tile
 // All state and mutations stay parent-owned.
 
@@ -34,7 +35,6 @@ export interface SnapshotEditorBottomEditorProps {
 
   selectedBlockMidiPanelEnabled: boolean
   selectedPluginEditorContent: ReactNode
-  pedalboardBuildWizard: ReactNode
 
   // MIDI panel
   chainId: number | null
@@ -73,7 +73,6 @@ export function SnapshotEditorBottomEditor({
   snapshotEntryRequired,
   selectedBlockMidiPanelEnabled,
   selectedPluginEditorContent,
-  pedalboardBuildWizard,
   chainId,
   lastMidiEvent,
   midiLearnInProgress,
@@ -165,9 +164,6 @@ export function SnapshotEditorBottomEditor({
         >
           {bottomEditorOpen && selectedPlugin ? (
             <div className="juce-grid-page__bottom-editor-parameter-stack">
-              <div className="juce-grid-page__snapshot-inspector-row juce-grid-page__snapshot-inspector-row--parameter-editor">
-                {pedalboardBuildWizard}
-              </div>
               {selectedBlockMidiPanelEnabled && selectedPluginMeta ? (
                 <div className="juce-grid-page__bottom-editor-desktop-layout">
                   <div className="juce-grid-page__bottom-editor-main">
@@ -190,13 +186,11 @@ export function SnapshotEditorBottomEditor({
             </div>
           ) : bottomEditorShowsSnapshotInspector ? (
             <div className="juce-grid-page__snapshot-inspector-row">
-              {/* Build Workflow hero (2026-04-25) — single composite that
-                  replaced the old Management hero, active-channel rail,
-                  and standalone Morph tile. Engine sync, routing,
-                  channel meta, and the morph pad are all wired through
-                  this one component to their respective single sources
-                  of truth (computeLiveBadgeState, setRoutingMode,
-                  activeChannelStatusRail, <MorphPad/>). */}
+              {/* Snapshot management (workflow icon bar, channel/chain
+                  summary, group + per-snapshot actions) now lives in the
+                  top hero panel — see SnapshotEditorSnapshotStatusPanel.
+                  This branch keeps only the Publish-ready banner so the
+                  bottom sheet stays a quiet handoff surface. */}
               {activeSnapshot && snapshotsDirty ? (
                 <PublishReadyBanner
                   snapshotName={activeSnapshot.name}
@@ -205,7 +199,6 @@ export function SnapshotEditorBottomEditor({
                   onPublish={onOpenGuidedProgress}
                 />
               ) : null}
-              {pedalboardBuildWizard}
             </div>
           ) : (
             <Tile className="juce-grid-page__bottom-editor-placeholder">

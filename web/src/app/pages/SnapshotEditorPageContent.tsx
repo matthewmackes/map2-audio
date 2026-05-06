@@ -192,7 +192,6 @@ import { JuceGridSelectedBlockMidiPanel } from '../components/SnapshotEditor/Sna
 import { SnapshotPreloadSlotsPanel } from '../components/SnapshotEditor/SnapshotPreloadSlotsPanel'
 import { decidePreloadGate } from '../components/SnapshotEditor/snapshotEditorPreloadGate'
 import { useSnapshotPreloadStatus } from '../hooks/useSnapshotPreloadStatus'
-import { PedalboardBuildWizard } from '../components/SnapshotEditor/BottomWizard/PedalboardBuildWizard'
 import { PublishReadyBanner } from '../components/SnapshotEditor/PublishReadyBanner'
 import { SnapshotAbSwitchMidiCard } from '../components/SnapshotEditor/SnapshotAbSwitchMidiCard'
 import {
@@ -5103,63 +5102,13 @@ export function SnapshotEditorPage() {
     authoritativeAudioState,
   })
   const liveRuntimeActive = liveRuntimeDisplayState === 'live' || liveRuntimeDisplayState === 'live_warning'
-  // Snapshot management hero — new Build Workflow design (2026-04-25). Wires
-  // every section to its single source of truth:
-  //   • engine sync   → liveBadgeState (computeLiveBadgeState)
-  //   • routing map   → routing.mode + ROUTING_MODE_OPTIONS
-  //   • active channel→ activeChannelStatusRail memo
-  //   • morph pad     → <MorphPad/> (state-authority API)
-  const buildWorkflowEngineSync: { tone: 'live' | 'publishing' | 'desync' | 'idle'; label: string } = (() => {
-    switch (liveBadgeState) {
-      case 'live_confirmed': return { tone: 'live', label: 'Engine in sync' }
-      case 'publishing': return { tone: 'publishing', label: 'Publishing…' }
-      case 'engine_desync': return { tone: 'desync', label: 'Engine desync' }
-      case 'idle':
-      default: return { tone: 'idle', label: 'Engine idle' }
-    }
-  })()
+  // Channel counts feed the snapshot status panel's "X of Y channels active"
+  // chip (folded in from the retired PedalboardBuildWizard).
   const buildWorkflowChannelCounts = useMemo(() => {
     const active = authoritativeAudioState?.derived.active_channel_count ?? activeSnapshot?.live_state?.paths.length ?? null
     const total = authoritativeAudioState?.derived.total_channel_count ?? activeSnapshot?.channels.length ?? activeSnapshot?.paths.length ?? null
     return { active, total }
   }, [authoritativeAudioState, activeSnapshot])
-  const buildWorkflowUpdatedAtLabel = useMemo(() => {
-    const raw = activeSnapshot?.updated_at
-    if (!raw) return null
-    const ts = new Date(raw).getTime()
-    if (!Number.isFinite(ts)) return null
-    const seconds = Math.max(0, Math.round((Date.now() - ts) / 1000))
-    if (seconds < 30) return 'updated just now'
-    if (seconds < 90) return 'updated a minute ago'
-    if (seconds < 3600) return `updated ${Math.round(seconds / 60)} min ago`
-    if (seconds < 86_400) return `updated ${Math.round(seconds / 3600)} hr ago`
-    return `updated ${Math.round(seconds / 86_400)} d ago`
-  }, [activeSnapshot?.updated_at])
-  const pedalboardBuildWizard = (
-    <PedalboardBuildWizard
-      activeWorkspaceActionId={snapshotInspectorWorkspaceActionId}
-      onOpenSignalGrid={openSignalGridWorkspace}
-      onOpenDirectory={handleAddPlugin}
-      directoryDisabled={snapshotEditingLocked}
-      onOpenParameters={openSelectedBlockEditor}
-      parametersDisabled={!selectedPlugin || snapshotEntryRequired}
-      onOpenAutomation={openAutomationWorkspace}
-      onOpenVersionHistory={openVersionHistoryWorkspace}
-      versionHistoryDisabled={!activeSnapshot}
-      onOpenProgressModal={openGuidedProgress}
-      onOpenSnapshots={() => navigate('/snapshots')}
-      onCreateSnapshot={() => createCapturedSnapshot()}
-      createSnapshotPending={createSnapshotFromEditorMutation.isPending}
-      onOpenHelp={openKeyboardHelpWorkspace}
-      snapshotTitle={activeSnapshot?.name ?? 'No snapshot loaded'}
-      activeChannelCount={buildWorkflowChannelCounts.active}
-      channelCount={buildWorkflowChannelCounts.total}
-      chainCount={activeSnapshot?.chain_count ?? null}
-      updatedAtLabel={buildWorkflowUpdatedAtLabel}
-      engineSyncTone={buildWorkflowEngineSync.tone}
-      engineSyncLabel={buildWorkflowEngineSync.label}
-    />
-  )
   if (showViewportBlockScreen) {
     return (
       <div className="juce-grid-page">
@@ -5207,6 +5156,18 @@ export function SnapshotEditorPage() {
             onOpenSnapshots={() => navigate('/snapshots')}
             onCreateSnapshot={() => createCapturedSnapshot()}
             createSnapshotPending={createSnapshotFromEditorMutation.isPending}
+            activeWorkspaceActionId={snapshotInspectorWorkspaceActionId}
+            onOpenSignalGrid={openSignalGridWorkspace}
+            onOpenDirectory={handleAddPlugin}
+            directoryDisabled={snapshotEditingLocked}
+            onOpenParameters={openSelectedBlockEditor}
+            parametersDisabled={!selectedPlugin || snapshotEntryRequired}
+            onOpenAutomation={openAutomationWorkspace}
+            onOpenVersionHistory={openVersionHistoryWorkspace}
+            versionHistoryDisabled={!activeSnapshot}
+            onOpenHelp={openKeyboardHelpWorkspace}
+            activeChannelCount={buildWorkflowChannelCounts.active}
+            totalChannelCount={buildWorkflowChannelCounts.total}
             selectedChainId={activeFlow?.chainId ?? null}
             onChainSelect={(chainId) => {
               if (!activeFlow) return
@@ -5426,7 +5387,6 @@ export function SnapshotEditorPage() {
         snapshotEntryRequired={snapshotEntryRequired}
         selectedBlockMidiPanelEnabled={selectedBlockMidiPanelEnabled}
         selectedPluginEditorContent={selectedPluginEditorContent}
-        pedalboardBuildWizard={pedalboardBuildWizard}
         chainId={currentChain?.id ?? null}
         lastMidiEvent={lastMidiEvent}
         midiLearnInProgress={midiLearnInProgress}
