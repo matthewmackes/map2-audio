@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1497** Python | **1553** TypeScript | **183** C++/H | **147** Docs | **3980** total commits | **4** stars | **0** forks | **0** open issues
+**1497** Python | **1554** TypeScript | **183** C++/H | **147** Docs | **3982** total commits | **4** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`9e56492f`](https://github.com/matthewmackes/map2-audio/commit/9e56492f4fe8dc74da8474e389f3ec240ac33338) | test(snapshot-editor): paired test for useSnapshotEditorC... | Map2 Audio | 2026-05-06 |
+| [`41cca6f7`](https://github.com/matthewmackes/map2-audio/commit/41cca6f782e49549e3e9e8dc54393b8c68624047) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-06 |
 | [`19aa21f7`](https://github.com/matthewmackes/map2-audio/commit/19aa21f7eef6b06db3ca1ad0b67d10c124544e29) | test(maschine): caller-audit pin for mk1_usb_transport (T... | Map2 Audio | 2026-05-06 |
 | [`2dae01a4`](https://github.com/matthewmackes/map2-audio/commit/2dae01a4e4a6b7d91731d2b1e24c2f47efdb4f65) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-06 |
 | [`840de249`](https://github.com/matthewmackes/map2-audio/commit/840de2499d48d1903d939bc6750d3072f73e5ce8) | feat(controller-host): Maschine MK1 bulk-frame router (T2... | Map2 Audio | 2026-05-06 |
 | [`dd8bd015`](https://github.com/matthewmackes/map2-audio/commit/dd8bd0151940c0fa9b12e0ce06c54524772616e4) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-06 |
 | [`a17f5f18`](https://github.com/matthewmackes/map2-audio/commit/a17f5f18242ea0dcae96f2c0951fbac1277e342b) | feat(controller-host): Maschine MK1 HID parser (T2459-H4 ... | Map2 Audio | 2026-05-06 |
 | [`27be5ae2`](https://github.com/matthewmackes/map2-audio/commit/27be5ae22bd3571916e76d06b208b5d587eec0d5) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-06 |
-| [`5df16bba`](https://github.com/matthewmackes/map2-audio/commit/5df16bba4577f0eac0f0336ef479bf8c9c394e94) | feat(controller-host): Maschine IPC envelope contract (T2... | Map2 Audio | 2026-05-06 |
-| [`a3c599fa`](https://github.com/matthewmackes/map2-audio/commit/a3c599fae1644d1fec2b36bafc36ace06c487206) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-06 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
