@@ -254,6 +254,16 @@ export default tseslint.config(
     rules: {
       '@typescript-eslint/no-unused-vars': 'off',
       '@typescript-eslint/no-explicit-any': 'off',
+      // Audit cycle 58: test files commonly assert exact CSS strings
+      // produced by helpers (e.g. `bottom: 'calc(12px + env(...))'` for
+      // safe-area-aware floating toggles). The map2 carbon rules are
+      // valuable for *production* CSS; in tests they generate noise on
+      // assertion-side string literals that intentionally mirror the
+      // tested code's output. Disable the carbon-discipline rules in
+      // test files.
+      'map2/no-hardcoded-px-spacing': 'off',
+      'map2/no-hardcoded-font-family': 'off',
+      'map2/no-ad-hoc-transition': 'off',
     },
   },
 )
