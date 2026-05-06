@@ -344,6 +344,7 @@ import { useSnapshotEditorPublishReadinessQuery } from './snapshotEditor/useSnap
 import { useSnapshotEditorRevisionsQuery } from './snapshotEditor/useSnapshotEditorRevisionsQuery'
 import { useSnapshotEditorAuthoritySnapshotDetailQuery } from './snapshotEditor/useSnapshotEditorAuthoritySnapshotDetailQuery'
 import { useSnapshotEditorPluginBrowserData } from './snapshotEditor/useSnapshotEditorPluginBrowserData'
+import { useSnapshotEditorAudioInterfaceStatus } from './snapshotEditor/useSnapshotEditorAudioInterfaceStatus'
 import { FEATURED_NATIVE_BROWSER_GROUPS } from './snapshotEditor/featuredNativeBrowserGroups'
 import {
   createBlankSnapshotEditorDraft,
@@ -2856,58 +2857,22 @@ export function SnapshotEditorPage() {
     return slot?.chainId !== null ? effectiveChainById.get(slot.chainId) : undefined
   }, [flowSlots, activeFlowIndex, effectiveChainById])
 
-  const avbReadinessState = useMemo(() => {
-    const readiness = portsInfo?.avb_readiness
-    if (!readiness || typeof readiness !== 'object') {
-      return 'unknown'
-    }
-
-    const state = (readiness as Record<string, unknown>).state
-    return typeof state === 'string' && state.trim() ? state : 'unknown'
-  }, [portsInfo?.avb_readiness])
-
-  const audioInterfaceStatus: JuceGridAudioInterfaceStatus = useMemo(() => ({
-    deviceName: portsInfo?.device || audioStatus?.engine || 'JACK Audio',
-    sampleRate: jackMetrics?.sample_rate || 48000,
-    bufferSize: jackMetrics?.buffer_size || 256,
-    channels: countAudioBindingChannels(
-      portRouting?.input_bindings,
-      portRouting?.input_ports?.length || 0,
-      portRouting?.input_avb_endpoints?.length || 0,
-    ),
-    isRunning: audioStatus?.running ?? true,
-    selectedPorts: portRouting?.input_ports || [],
-    selectedAvbEndpoints: portRouting?.input_avb_endpoints || [],
-    totalPorts: portsInfo?.input_count || 2,
-    routingMode: routing.mode,
-    chainActive: activeFlowChain?.is_active ?? false,
-    chainName: activeFlowChain?.name,
-    bindings: portRouting?.input_bindings || [],
+  // T2473 JSX partition slice 13 — audio-interface status pair lifted
+  // into useSnapshotEditorAudioInterfaceStatus. avbReadinessState +
+  // audioInterfaceStatus + audioOutputStatus all preserved verbatim.
+  const {
     avbReadinessState,
-    meterLevels: [audioLevels?.input_left || 0, audioLevels?.input_right || 0],
-  }), [audioLevels, audioStatus, avbReadinessState, jackMetrics, portRouting, portsInfo, routing.mode, activeFlowChain])
-
-  // Create separate output status with output port info
-  const audioOutputStatus: JuceGridAudioInterfaceStatus = useMemo(() => ({
-    deviceName: portsInfo?.device || audioStatus?.engine || 'JACK Audio',
-    sampleRate: jackMetrics?.sample_rate || 48000,
-    bufferSize: jackMetrics?.buffer_size || 256,
-    channels: countAudioBindingChannels(
-      portRouting?.output_bindings,
-      portRouting?.output_ports?.length || 0,
-      portRouting?.output_avb_endpoints?.length || 0,
-    ),
-    isRunning: audioStatus?.running ?? true,
-    selectedPorts: portRouting?.output_ports || [],
-    selectedAvbEndpoints: portRouting?.output_avb_endpoints || [],
-    totalPorts: portsInfo?.output_count || 2,
-    routingMode: routing.mode,
-    chainActive: activeFlowChain?.is_active ?? false,
-    chainName: activeFlowChain?.name,
-    bindings: portRouting?.output_bindings || [],
-    avbReadinessState,
-    meterLevels: [audioLevels?.output_left || 0, audioLevels?.output_right || 0],
-  }), [audioLevels, audioStatus, avbReadinessState, jackMetrics, portRouting, portsInfo, routing.mode, activeFlowChain])
+    audioInterfaceStatus,
+    audioOutputStatus,
+  } = useSnapshotEditorAudioInterfaceStatus({
+    portRouting,
+    portsInfo,
+    jackMetrics,
+    audioStatus,
+    audioLevels,
+    routing,
+    activeFlowChain,
+  })
 
   const activeChannelStatusRail = useMemo(() => {
     if (!activeFlow) {
