@@ -2434,44 +2434,34 @@
   box-shadow: inset 0 0 0 1px color-mix(in srgb, #42be65 28%, transparent);
 }
 
-.juce-grid-page__snapshot-status-workspace-bar {
-  display: inline-flex;
-  align-items: center;
-  gap: 0.125rem;
-  padding: 0.125rem;
-  border-radius: 0.25rem;
-  background: color-mix(in srgb, var(--cds-layer-accent, #393939) 60%, transparent);
-  margin-block-end: 0.5rem;
+.juce-grid-page__snapshot-status-publish-btn.is-dirty-blinking {
+  animation: juce-grid-page__snapshot-status-blink 1.4s steps(2, jump-none) infinite;
 }
 
-.juce-grid-page__snapshot-status-workspace-btn {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  inline-size: 1.75rem;
-  block-size: 1.75rem;
-  padding: 0;
-  border: 0;
-  border-radius: 0.1875rem;
-  background: transparent;
-  color: var(--cds-text-secondary, #c6c6c6);
-  cursor: pointer;
-  transition: background-color 90ms ease, color 90ms ease;
+/* Carbon-green primary tint for the New snapshot button. Carbon green-50
+   is #24a148; we mirror Carbon's primary-button shape (solid fill, white
+   icon/text, hover/active darker shades) instead of the default tertiary
+   outline. */
+.juce-grid-page__snapshot-status-new-snapshot-btn.cds--btn--tertiary {
+  background-color: var(--cds-green-50, #24a148);
+  border-color: var(--cds-green-50, #24a148);
+  color: #ffffff;
 }
 
-.juce-grid-page__snapshot-status-workspace-btn:hover:not(:disabled) {
-  background: color-mix(in srgb, var(--cds-layer-hover, #4c4c4c) 70%, transparent);
-  color: var(--cds-text-primary, #f4f4f4);
+.juce-grid-page__snapshot-status-new-snapshot-btn.cds--btn--tertiary:hover:not(:disabled) {
+  background-color: var(--cds-green-60, #198038);
+  border-color: var(--cds-green-60, #198038);
+  color: #ffffff;
 }
 
-.juce-grid-page__snapshot-status-workspace-btn.is-active {
-  background: var(--cds-layer-selected, #525252);
-  color: var(--cds-text-primary, #f4f4f4);
+.juce-grid-page__snapshot-status-new-snapshot-btn.cds--btn--tertiary:active:not(:disabled) {
+  background-color: var(--cds-green-70, #0e6027);
+  border-color: var(--cds-green-70, #0e6027);
+  color: #ffffff;
 }
 
-.juce-grid-page__snapshot-status-workspace-btn:disabled {
-  opacity: 0.4;
-  cursor: not-allowed;
+.juce-grid-page__snapshot-status-new-snapshot-btn.cds--btn--tertiary svg {
+  fill: #ffffff;
 }
 
 .juce-grid-page__snapshot-status-actions {

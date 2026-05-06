@@ -208,18 +208,30 @@ describe('SnapshotEditorSnapshotStatusPanel', () => {
       onOpenSnapshots: jest.fn(),
       onCreateSnapshot: jest.fn(),
       onOpenVersionHistory: jest.fn(),
-      onOpenSignalGrid: jest.fn(),
     })
 
     expect(screen.queryByText('Audio Grid')).not.toBeInTheDocument()
     expect(screen.getByRole('heading', { name: 'Friday Night Drive' })).toBeInTheDocument()
     // Workflow items now live here (Option 5 of the duplication review).
-    expect(screen.getByRole('button', { name: 'Publish to live' })).toBeInTheDocument()
+    expect(screen.getByRole('button', { name: /Publish \(Save\) Snapshot/i })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'Open snapshots' })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: /new snapshot/i })).toBeInTheDocument()
     expect(screen.getByRole('button', { name: 'History' })).toBeInTheDocument()
     expect(screen.getByText('2 of 2 channels active')).toBeInTheDocument()
-    expect(screen.getByRole('toolbar', { name: 'Snapshot workspaces' })).toBeInTheDocument()
+    // Workspace icon bar removed — it duplicated the global nav.
+    expect(screen.queryByRole('toolbar', { name: 'Snapshot workspaces' })).not.toBeInTheDocument()
+  })
+
+  it('blinks the publish button when the snapshot has unpublished edits', () => {
+    renderPanel({ snapshotsDirty: true })
+    const publishBtn = screen.getByRole('button', { name: /Publish \(Save\) Snapshot/i })
+    expect(publishBtn.className).toContain('is-dirty-blinking')
+  })
+
+  it('does not blink the publish button when the snapshot is clean', () => {
+    renderPanel({ snapshotsDirty: false })
+    const publishBtn = screen.getByRole('button', { name: /Publish \(Save\) Snapshot/i })
+    expect(publishBtn.className).not.toContain('is-dirty-blinking')
   })
 
   it('supports inline snapshot rename editing', () => {

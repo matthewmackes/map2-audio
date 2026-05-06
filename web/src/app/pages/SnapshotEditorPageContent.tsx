@@ -5156,18 +5156,11 @@ export function SnapshotEditorPage() {
             onOpenSnapshots={() => navigate('/snapshots')}
             onCreateSnapshot={() => createCapturedSnapshot()}
             createSnapshotPending={createSnapshotFromEditorMutation.isPending}
-            activeWorkspaceActionId={snapshotInspectorWorkspaceActionId}
-            onOpenSignalGrid={openSignalGridWorkspace}
-            onOpenDirectory={handleAddPlugin}
-            directoryDisabled={snapshotEditingLocked}
-            onOpenParameters={openSelectedBlockEditor}
-            parametersDisabled={!selectedPlugin || snapshotEntryRequired}
-            onOpenAutomation={openAutomationWorkspace}
             onOpenVersionHistory={openVersionHistoryWorkspace}
             versionHistoryDisabled={!activeSnapshot}
-            onOpenHelp={openKeyboardHelpWorkspace}
             activeChannelCount={buildWorkflowChannelCounts.active}
             totalChannelCount={buildWorkflowChannelCounts.total}
+            snapshotsDirty={snapshotsDirty}
             selectedChainId={activeFlow?.chainId ?? null}
             onChainSelect={(chainId) => {
               if (!activeFlow) return

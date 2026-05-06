@@ -1,16 +1,6 @@
-import {
-  Add,
-  ChartLine,
-  Edit,
-  Flow,
-  Folder,
-  Help,
-  Launch,
-  SettingsAdjust,
-  Time,
-} from '@carbon/icons-react'
+import { Add, Edit, Folder, Launch, Time } from '@carbon/icons-react'
 import { Button, Layer, NumberInput, Tag } from '@carbon/react'
-import { useMemo, type KeyboardEvent, type ReactNode } from 'react'
+import { useMemo, type KeyboardEvent } from 'react'
 
 import type { AuthoritativeAudioState, SnapshotDetail, SnapshotDraftData, SnapshotPublishReadiness, SnapshotRuntimeLiveState } from '../../../map2/types'
 import type { SnapshotGoLiveState } from '../../utils/snapshotGoLiveState'
@@ -111,20 +101,14 @@ interface SnapshotEditorSnapshotStatusPanelProps {
   onOpenSnapshots?: () => void
   onCreateSnapshot?: () => void
   createSnapshotPending?: boolean
-  activeWorkspaceActionId?: SnapshotEditorWorkspaceActionId
-  onOpenSignalGrid?: () => void
-  onOpenDirectory?: () => void
-  directoryDisabled?: boolean
-  onOpenParameters?: () => void
-  parametersDisabled?: boolean
-  onOpenAutomation?: () => void
-  automationActive?: boolean
   onOpenVersionHistory?: () => void
   versionHistoryDisabled?: boolean
-  onOpenHelp?: () => void
   // Workflow summary chips (replace the retired PedalboardBuildWizard hero).
   activeChannelCount?: number | null
   totalChannelCount?: number | null
+  // When true, the snapshot has unpublished edits — drives the blink on the
+  // Publish (Save) Snapshot button.
+  snapshotsDirty?: boolean
   // Iter 1+: hero enhancements — metadata cluster, lock toggle, state row.
   publishReadiness?: SnapshotPublishReadiness | null
   isSnapshotLocked?: boolean
@@ -238,18 +222,11 @@ export function SnapshotEditorSnapshotStatusPanel({
   onOpenSnapshots,
   onCreateSnapshot,
   createSnapshotPending = false,
-  activeWorkspaceActionId,
-  onOpenSignalGrid,
-  onOpenDirectory,
-  directoryDisabled = false,
-  onOpenParameters,
-  parametersDisabled = false,
-  onOpenAutomation,
   onOpenVersionHistory,
   versionHistoryDisabled = false,
-  onOpenHelp,
   activeChannelCount = null,
   totalChannelCount = null,
+  snapshotsDirty = false,
 }: SnapshotEditorSnapshotStatusPanelProps) {
   const liveHeadline = useMemo(
     () => resolveLiveHeadline(liveSnapshot, authoritativeAudioState, liveBadgeState),
@@ -276,39 +253,6 @@ export function SnapshotEditorSnapshotStatusPanel({
     }
   }
 
-  const workspaceIconItems: Array<{
-    id: SnapshotEditorWorkspaceActionId
-    label: string
-    icon: ReactNode
-    onClick?: () => void
-    disabled?: boolean
-  }> = [
-    { id: 'signal-grid', label: 'Signal grid', icon: <Flow size={14} />, onClick: onOpenSignalGrid },
-    { id: 'directory', label: 'Directory', icon: <Folder size={14} />, onClick: onOpenDirectory, disabled: directoryDisabled },
-    { id: 'parameters', label: 'Parameters', icon: <SettingsAdjust size={14} />, onClick: onOpenParameters, disabled: parametersDisabled },
-    { id: 'automation', label: 'Automation', icon: <ChartLine size={14} />, onClick: onOpenAutomation },
-    { id: 'version-history', label: 'Version history', icon: <Time size={14} />, onClick: onOpenVersionHistory, disabled: versionHistoryDisabled },
-    { id: 'help', label: 'Help', icon: <Help size={14} />, onClick: onOpenHelp },
-  ]
-  const workspaceIconBar = workspaceIconItems.some((item) => item.onClick) ? (
-    <div className="juce-grid-page__snapshot-status-workspace-bar" role="toolbar" aria-label="Snapshot workspaces">
-      {workspaceIconItems.map((item) => (
-        <button
-          key={item.id}
-          type="button"
-          className={`juce-grid-page__snapshot-status-workspace-btn${activeWorkspaceActionId === item.id ? ' is-active' : ''}`}
-          aria-label={item.label}
-          aria-pressed={activeWorkspaceActionId === item.id}
-          title={item.label}
-          onClick={item.onClick}
-          disabled={item.disabled || !item.onClick}
-        >
-          {item.icon}
-        </button>
-      ))}
-    </div>
-  ) : null
-
   const channelsLabel = (() => {
     if (typeof activeChannelCount === 'number' && typeof totalChannelCount === 'number') {
       return `${activeChannelCount} of ${totalChannelCount} channels active`
@@ -327,7 +271,6 @@ export function SnapshotEditorSnapshotStatusPanel({
     <Layer className="juce-grid-page__chain-card juce-grid-page__snapshot-status-card">
       <div className="juce-grid-page__snapshot-status-layout">
         <div className="juce-grid-page__snapshot-status-hero">
-          {workspaceIconBar}
           <div className="juce-grid-page__snapshot-status-content-row">
             <div className="juce-grid-page__snapshot-status-live-block">
               <div className="juce-grid-page__snapshot-status-state-row">
@@ -486,8 +429,9 @@ export function SnapshotEditorSnapshotStatusPanel({
                     kind="primary"
                     renderIcon={Launch}
                     onClick={onOpenProgressModal}
+                    className={`juce-grid-page__snapshot-status-publish-btn${snapshotsDirty ? ' is-dirty-blinking' : ''}`}
                   >
-                    Publish to live
+                    Publish (Save) Snapshot
                   </Button>
                 ) : null}
               </div>
@@ -509,6 +453,7 @@ export function SnapshotEditorSnapshotStatusPanel({
                     renderIcon={Add}
                     onClick={onCreateSnapshot}
                     disabled={createSnapshotPending}
+                    className="juce-grid-page__snapshot-status-new-snapshot-btn"
                   >
                     {createSnapshotPending ? 'Creating…' : 'New snapshot'}
                   </Button>
