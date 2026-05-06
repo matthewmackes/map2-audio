@@ -18,8 +18,11 @@ export * from './hooks/useWebSocket';
 export * from './realtimeParams';
 export * from './hooks/useRTParameter';
 
-// ChainBuilder module (still in use by JUCE engine integration)
-export * from './components/ChainBuilder/index';
+// ChainBuilder module — retired (T2477 cycle 23 dead-code purge,
+// 2026-05-06). The 22 files had zero incoming references outside
+// the directory; cycle 22's regression guard pinned that state and
+// cycle 23 deletes the directory + this re-export line. The
+// retirement is tracked by tests/ChainBuilderRetired.test.ts.
 
 // MIDI Learn Mode Module
 export * from './components/MIDI';
