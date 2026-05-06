@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1497** Python | **1538** TypeScript | **183** C++/H | **147** Docs | **4037** total commits | **4** stars | **0** forks | **0** open issues
+**1497** Python | **1538** TypeScript | **183** C++/H | **147** Docs | **4039** total commits | **4** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`01b54adf`](https://github.com/matthewmackes/map2-audio/commit/01b54adfe8c9878133a0333a22266c0516f7070c) | docs(audit): close Lat-10/11, Build-3 against build outpu... | Map2 Audio | 2026-05-06 |
+| [`43a35805`](https://github.com/matthewmackes/map2-audio/commit/43a3580575bcda9c84eab40e3c7a4775c868967a) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-06 |
 | [`727e9c11`](https://github.com/matthewmackes/map2-audio/commit/727e9c1187062f23f914cfaa6ae6f746fa63954a) | feat(ClusterContext): expose initial-discovery isLoading ... | Map2 Audio | 2026-05-06 |
 | [`c37957e3`](https://github.com/matthewmackes/map2-audio/commit/c37957e358fb842dc864dad26961da1f6f0c3d74) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-06 |
 | [`28513de3`](https://github.com/matthewmackes/map2-audio/commit/28513de32904a53c6dcb3264be3e362e08e31c55) | refactor: delete orphan CompactLCDFeed + MiniLCDDisplayEm... | Map2 Audio | 2026-05-06 |
 | [`46690fdd`](https://github.com/matthewmackes/map2-audio/commit/46690fddd1202a3b5dff72f0d4f8e11e7d7d8448) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-06 |
 | [`4dec7d67`](https://github.com/matthewmackes/map2-audio/commit/4dec7d6796a3cd31a72ddb1a57121cf5ab2ed943) | refactor(HardwareStorePage): extract parseProfileKey help... | Map2 Audio | 2026-05-06 |
 | [`791ab891`](https://github.com/matthewmackes/map2-audio/commit/791ab89111952baebf72caa5154bc15fec782c4c) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-06 |
-| [`aac50c8d`](https://github.com/matthewmackes/map2-audio/commit/aac50c8d3e46d971e19210d20988611923a03918) | docs(audit): back-fill Round-1 closures (Lat-1/2/3/5, Bui... | Map2 Audio | 2026-05-06 |
-| [`4aec01e5`](https://github.com/matthewmackes/map2-audio/commit/4aec01e5d65ba677e622c9c3500c2705a69bce62) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-06 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
