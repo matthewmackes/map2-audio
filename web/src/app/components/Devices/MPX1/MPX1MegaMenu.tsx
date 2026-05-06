@@ -17,7 +17,6 @@ import {
 import { Button, Layer, Tag } from '@carbon/react'
 
 import { formatMpx1ProgramNumber } from './programNumber'
-import { useIsMobile } from '../../../hooks/useIsMobile'
 import './MPX1MegaMenu.css'
 
 type Mpx1TileId = 'panel' | 'editor' | 'midi-map' | 'matrix' | 'library' | 'diag' | 'flow'
@@ -114,101 +113,9 @@ export function MPX1MegaMenu({
   onDisconnect,
   onProgramStep,
 }: MPX1MegaMenuProps) {
-  const isMobile = useIsMobile()
   const safeMix = clamp01(mixMeter)
   const safeLevel = clamp01(levelMeter)
 
-  if (isMobile) {
-    return (
-      <div id={menuId} className="mpx1-mega-menu-mobile-root" role="menu" aria-label="MPX1 menu">
-        <button
-          type="button"
-          className="mpx1-mega-menu-mobile-backdrop"
-          onClick={onClose}
-          aria-label="Close MPX1 menu"
-        />
-        <section className="mpx1-mega-menu-mobile-sheet">
-          <div className="mpx1-mega-menu-mobile-header">
-            <div className="mpx1-mega-menu-mobile-status">
-              <span className={`mpx1-status-dot${connected ? ' is-online' : ''}`} aria-hidden />
-              <span className="mpx1-status-label">{connected ? 'Device Online' : 'No Device Connected'}</span>
-            </div>
-            <button type="button" className="mpx1-mega-menu-mobile-close" onClick={onClose} aria-label="Dismiss menu">
-              Close
-            </button>
-          </div>
-
-          <div className="mpx1-mega-menu-mobile-program-readout">
-            <div className="mpx1-mega-menu-mobile-program-number">P{formatMpx1ProgramNumber(currentProgram)}</div>
-            <div className="mpx1-mega-menu-mobile-program-name" title={currentProgramName}>
-              {currentProgramName}
-            </div>
-          </div>
-
-          <div className="mpx1-mega-menu-mobile-meter">
-            <div className="mpx1-mega-menu-mobile-meter-label">Mix</div>
-            <div
-              className="mpx1-mega-menu-mobile-meter-track"
-              role="progressbar"
-              aria-valuemin={0}
-              aria-valuemax={100}
-              aria-valuenow={Math.round(safeMix * 100)}
-            >
-              <span className="mpx1-mega-menu-mobile-meter-fill" style={{ width: `${safeMix * 100}%` }} />
-            </div>
-            <div className="mpx1-mega-menu-mobile-meter-value">{Math.round(safeMix * 100)}%</div>
-          </div>
-
-          <div className="mpx1-mega-menu-mobile-meter">
-            <div className="mpx1-mega-menu-mobile-meter-label">Level</div>
-            <div
-              className="mpx1-mega-menu-mobile-meter-track"
-              role="progressbar"
-              aria-valuemin={0}
-              aria-valuemax={100}
-              aria-valuenow={Math.round(safeLevel * 100)}
-            >
-              <span className="mpx1-mega-menu-mobile-meter-fill" style={{ width: `${safeLevel * 100}%` }} />
-            </div>
-            <div className="mpx1-mega-menu-mobile-meter-value">{Math.round(safeLevel * 100)}%</div>
-          </div>
-
-          <div className="mpx1-mega-menu-mobile-program-controls">
-            <button
-              type="button"
-              className="mpx1-mega-menu-mobile-step"
-              onClick={() => void onProgramStep?.(-1)}
-              aria-label="Previous MPX1 program"
-            >
-              <ChevronLeft size={16} aria-hidden />
-              Prev Program
-            </button>
-            <button
-              type="button"
-              className="mpx1-mega-menu-mobile-step"
-              onClick={() => void onProgramStep?.(1)}
-              aria-label="Next MPX1 program"
-            >
-              <ChevronRight size={16} aria-hidden />
-              Next Program
-            </button>
-          </div>
-
-          <div className="mpx1-mega-menu-mobile-links" role="list">
-            {TILES.map((tile) => {
-              const TileIcon = tile.icon
-              return (
-                <NavLink key={tile.id} to={tile.to} className="mpx1-mega-menu-mobile-link" onClick={onClose}>
-                  <TileIcon size={16} aria-hidden />
-                  <span>{tile.label}</span>
-                </NavLink>
-              )
-            })}
-          </div>
-        </section>
-      </div>
-    )
-  }
 
   return (
     <Layer id={menuId} className="mpx1-mega-menu" role="menu" aria-label="MPX1 menu">

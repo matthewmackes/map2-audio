@@ -18,7 +18,6 @@ import {
 import { uploadApi } from '../../../map2/api'
 import { LegacyButton } from '../shared/LegacyButton'
 import { useToasts } from '../Toasts'
-import { useIsMobile } from '../../hooks/useIsMobile'
 import '../library/ModelList.css'
 import './UploadPrimitives.css'
 
@@ -108,7 +107,6 @@ export function UnifiedUploadDialog({
   onUploadComplete,
 }: Props) {
   const { pushToast } = useToasts()
-  const isMobile = useIsMobile()
   const queryClient = useQueryClient()
   const fileInputRef = useRef<HTMLInputElement>(null)
   const dropZoneRef = useRef<HTMLDivElement>(null)
@@ -342,7 +340,7 @@ export function UnifiedUploadDialog({
       />
       <ModalBody
         style={{
-          maxHeight: isMobile ? '100vh' : '85vh',
+          maxHeight: '85vh',
         }}
       >
         <div className="flex" style={{ gap: 10, alignItems: 'center', marginBottom: 12 }}>

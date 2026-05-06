@@ -70,7 +70,6 @@ import { isSnapshotFlowRoute, usePendingLiveChangesNavigationGuard } from '../ho
 import { useRouteScrollRestoration } from '../hooks/useRouteScrollRestoration'
 import { useSnapshotEditorStore } from '../stores/snapshotEditorStore'
 import { resolveSnapshotEditorSignalCanvasSettings, useSpecialSettings } from '../hooks/useSpecialSettings'
-import { useIsMobile } from '../hooks/useIsMobile'
 import { useRealtimeCadence } from '../hooks/useRealtimeCadence'
 import { useRouteActive } from '../hooks/useRouteActive'
 import { useTabletTouchRouteLayout } from '../hooks/useTabletTouchRouteLayout'
@@ -508,16 +507,14 @@ export function SnapshotEditorPage() {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
   const { pushToast } = useToasts()
-  const isMobile = useIsMobile()
   const {
     isTabletViewport: isTablet,
-    isTouchCapable,
     isTabletTouchRoute: isTabletTouchLayout,
   } = useTabletTouchRouteLayout(location.pathname)
-  const isCompactLayout = isMobile || isTablet
+  const isCompactLayout = isTablet
   const showCompactWorkflowPanels = isCompactLayout && !isTabletTouchLayout
-  const showViewportBlockScreen = isMobile
-  const showViewportRotateHint = showViewportBlockScreen && isTouchCapable
+  const showViewportBlockScreen = false
+  const showViewportRotateHint = false
 
   const compactTab = useSnapshotEditorStore((s) => s.compactTab)
   const setCompactTab = useSnapshotEditorStore((s) => s.setCompactTab)
@@ -5055,7 +5052,6 @@ export function SnapshotEditorPage() {
     bottomEditorOpen
     && selectedPlugin
     && selectedPluginMeta
-    && !isMobile
     && !isTabletTouchLayout
     && (selectedPluginMeta.parameters?.length ?? 0) > 0
     && selectedPluginMeta.format !== 'Hardware'

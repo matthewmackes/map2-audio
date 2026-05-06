@@ -61,7 +61,6 @@ import { DeviceContextBanner } from '../../DeviceContext'
 import { useCluster } from '../../../contexts/useCluster'
 import { useDeviceNodeContext } from '../../../hooks/useDeviceNodeContext'
 import { usePipeWire } from '../../../hooks/usePipeWire'
-import { useIsMobile } from '../../../hooks/useIsMobile'
 import { ShoppingSearchDialog } from '../../ShoppingSearchDialog'
 import { withNodeTopic } from '../../../utils/clusterTransport'
 import type { AudioStatus } from '../../../../map2/types'
@@ -108,7 +107,6 @@ function PanelImageFallback({
 export function EdirolUA1000View() {
   const { pushToast } = useToasts()
   const queryClient = useQueryClient()
-  const isMobile = useIsMobile()
   const { activeNodeId, localNodeId, nodes } = useCluster()
   const { deviceState } = useDeviceNodeContext('edirol-ua1000')
   const [selectedTab, setSelectedTab] = useState('engine')
@@ -542,7 +540,7 @@ export function EdirolUA1000View() {
           <TabList
             className="tab-list edirol-tab-list"
             aria-label="UA-1000 sections"
-            style={{ gap: 4, display: 'flex', flexWrap: isMobile ? 'nowrap' : 'wrap' }}
+            style={{ gap: 4, display: 'flex', flexWrap: 'wrap' }}
           >
             <Tab id="engine" className="tab" style={{ padding: '10px 16px', fontSize: 14, fontWeight: 600, flex: '1 1 auto' }}>
               <Activity size={18} /> JUCE Engine
@@ -632,7 +630,6 @@ export function EdirolUA1000View() {
         onClose={() => setConfigDialogOpen(false)}
         status={status}
         bufferPresets={bufferPresetsQuery.data}
-        isMobile={isMobile}
         nodeId={apiNodeId}
         onConfigured={() => queryClient.invalidateQueries({ queryKey: ['audio'] })}
       />
@@ -1836,7 +1833,6 @@ function ConfigDialog({
   onClose,
   status,
   bufferPresets,
-  isMobile,
   nodeId,
   onConfigured,
 }: {
@@ -1844,7 +1840,6 @@ function ConfigDialog({
   onClose: () => void
   status?: AudioStatus
   bufferPresets?: BufferPreset[]
-  isMobile: boolean
   nodeId?: string | null
   onConfigured: () => void
 }) {

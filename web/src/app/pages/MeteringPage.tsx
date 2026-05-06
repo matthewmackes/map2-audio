@@ -22,7 +22,6 @@ import { PhaseCorrelationMeter } from '../components/Visualizations/PhaseCorrela
 import { VuMeterDisplay } from '../components/Visualizations/VuMeterDisplay'
 import { DynamicsMeteringPanel } from '../components/Visualizations/DynamicsMeteringPanel'
 import { ClusterMeteringStrip } from '../components/Visualizations/ClusterMeteringStrip'
-import { useIsMobile } from '../hooks/useIsMobile'
 import { useWebSocketTopic } from '../../map2/hooks/useWebSocket'
 import { useCluster } from '../contexts/useCluster'
 import { withNodeTopic } from '../utils/clusterTransport'
@@ -30,13 +29,11 @@ import { withNodeTopic } from '../utils/clusterTransport'
 export function MeteringPage() {
   const { activeNodeId, nodes, localNodeId } = useCluster()
   const [showApiReference, setShowApiReference] = useState(false)
-  const [isFullscreen, setIsFullscreen] = useState(false)
   const [topicActivity, setTopicActivity] = useState({
     meters: false,
     cpu: false,
     latency: false,
   })
-  const isMobile = useIsMobile()
   const pageRef = useRef<HTMLDivElement | null>(null)
   const allNodesSelected = activeNodeId === 'all'
   const detailNodeId = allNodesSelected ? null : activeNodeId
@@ -73,35 +70,6 @@ export function MeteringPage() {
   useWebSocketTopic(latencyTopic, () => {
     markTopicActive('latency')
   })
-
-  useEffect(() => {
-    const handleFullscreenChange = () => {
-      setIsFullscreen(Boolean(document.fullscreenElement))
-    }
-
-    document.addEventListener('fullscreenchange', handleFullscreenChange)
-    handleFullscreenChange()
-
-    return () => {
-      document.removeEventListener('fullscreenchange', handleFullscreenChange)
-    }
-  }, [])
-
-  const handleToggleFullscreen = async () => {
-    if (!isMobile) {
-      return
-    }
-
-    try {
-      if (!document.fullscreenElement) {
-        await pageRef.current?.requestFullscreen?.()
-      } else {
-        await document.exitFullscreen()
-      }
-    } catch (error) {
-      console.error('Failed to toggle metering fullscreen mode:', error)
-    }
-  }
 
   const meteringApis = [
     { endpoint: 'GET /api/audio/status', description: 'Audio engine status and configuration' },
@@ -165,17 +133,6 @@ export function MeteringPage() {
               {allNodesSelected ? ': Cluster Meters' : ': Meters'}
             </span>
           </div>
-          {isMobile && (
-            <button
-              type="button"
-              className="metering-fullscreen-button touch-target"
-              onClick={() => {
-                void handleToggleFullscreen()
-              }}
-            >
-              {isFullscreen ? 'Exit Fullscreen' : 'Fullscreen Meters'}
-            </button>
-          )}
         </div>
         <p style={{
           fontSize: 13,

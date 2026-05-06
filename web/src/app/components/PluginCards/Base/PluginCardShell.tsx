@@ -23,7 +23,6 @@ import { getCategoryConfig } from '../types'
 import { getPluginDescription } from '../../../data/pluginDescriptions'
 import { getDisplayPluginName, sanitizeRestrictedDisplayText } from '../../../../map2/displayNames'
 import { getEffectIcon } from '../../icons/effectIcons'
-import { useIsMobile } from '../../../hooks/useIsMobile'
 
 interface PluginCardShellProps {
   plugin: Plugin
@@ -69,7 +68,6 @@ export function PluginCardShell({
   className = '',
 }: PluginCardShellProps) {
   const [showMenu, setShowMenu] = useState(false)
-  const isMobile = useIsMobile()
   const catConfig = getCategoryConfig(plugin.category)
   const accentColor = providedAccent || catConfig.color
   const displayName = getDisplayPluginName(plugin.name, plugin.uri)
@@ -77,7 +75,7 @@ export function PluginCardShell({
   const parameterCount = plugin.parameters?.length ?? 0
   const description = sanitizeRestrictedDisplayText(getPluginDescription(plugin.name) || '')
   const WatermarkIcon = getEffectIcon(plugin.category)
-  const hasWatermark = !compact && !isMobile
+  const hasWatermark = !compact
 
   const handleBypassToggle = useCallback(() => {
     onBypassToggle?.(!bypassed)

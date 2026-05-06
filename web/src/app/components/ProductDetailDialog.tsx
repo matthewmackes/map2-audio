@@ -15,7 +15,6 @@ import {
   Tag,
 } from '@carbon/react'
 import { CheckmarkFilled, Information, Launch, WarningAlt } from '@carbon/icons-react'
-import { useIsMobile } from '../hooks/useIsMobile'
 import './ProductDetailDialog.css'
 
 export interface ProductDetails {
@@ -70,7 +69,6 @@ function getTierTagType(tier: string): 'cyan' | 'blue' | 'green' | 'teal' | 'war
 }
 
 export function ProductDetailDialog({ open, onClose, product }: ProductDetailDialogProps) {
-  const isMobile = useIsMobile()
   const [activeTab, setActiveTab] = useState(0)
 
   useEffect(() => {
@@ -114,7 +112,7 @@ export function ProductDetailDialog({ open, onClose, product }: ProductDetailDia
   return (
     <Modal
       open={open}
-      size={isMobile ? 'sm' : 'lg'}
+      size="lg"
       modalHeading={product.model}
       modalLabel={product.manufacturer || 'Unknown manufacturer'}
       primaryButtonText="Search for this device"

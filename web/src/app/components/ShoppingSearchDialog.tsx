@@ -25,7 +25,6 @@ import {
 import { ChevronDown, ChevronUp, Compare, Information, Launch, Search as SearchIcon } from '@carbon/icons-react'
 import { API_BASE } from '../../map2/api'
 import { ProductDetailDialog, type ProductDetails } from './ProductDetailDialog'
-import { useIsMobile } from '../hooks/useIsMobile'
 import { EmptyState } from './shared/EmptyState'
 import { LoadingState } from './shared/LoadingState'
 import './ShoppingSearchDialog.css'
@@ -80,7 +79,6 @@ function getTierTagType(tier: string): 'cyan' | 'blue' | 'green' | 'teal' | 'war
 }
 
 export function ShoppingSearchDialog({ open, onClose }: ShoppingSearchDialogProps) {
-  const isMobile = useIsMobile()
   const [loading, setLoading] = useState(false)
   const [results, setResults] = useState<SearchResult[]>([])
   const [error, setError] = useState<string | null>(null)
@@ -252,7 +250,7 @@ export function ShoppingSearchDialog({ open, onClose }: ShoppingSearchDialogProp
     <>
       <Modal
         open={open}
-        size={isMobile ? 'sm' : 'lg'}
+        size="lg"
         modalHeading="Find your next audio interface"
         modalLabel="Marketplace assistant"
         primaryButtonText="Close"
