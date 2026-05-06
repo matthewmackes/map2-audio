@@ -42,6 +42,10 @@ EXPECTED_STAY_PYTHON: frozenset[str] = frozenset({
     "screensaver.py",
     "onboarding.py",
     "midi_map_config.py",
+    # T2459-H4 slice 11 — the new host-client facade is the
+    # replacement for mk1_usb_transport.py once slice 18 deletes
+    # the legacy direct-USB path.
+    "mk1_host_client_transport.py",
 })
 
 # Modules that get retired by the slice-18 deletion PR. While each

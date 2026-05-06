@@ -41,6 +41,7 @@ talking directly to the USB device.
 |---|---|---|---|
 | `maschine_mk1_daemon.py` | 3 297 | **Stays Python** (slimmed) | Render loop, profile system, admin console, framebuffer composition, LED choreography. |
 | `mk1_usb_transport.py` | 266 | **Retire** | Direct USB transport — replace with host-client transport. |
+| `mk1_host_client_transport.py` | ~250 | **Stays Python** | New (slice 11). Drop-in replacement for `mk1_usb_transport.py`; delegates to controller-host over UDS. |
 | `mk1_protocol.py` | 596 | **Move to host** | HID parsing — moves to `juce-engine/Source/ControllerHost/Hid/Map2MaschineMK1.{h,cpp}` (or via device-pack JS). |
 | `transport.py` | 783 | **Stays Python** | Operator-facing transport state (clock, BPM, tap tempo); reads from host MIDI events but isn't transport-level. |
 | `led_animations.py` | 192 | **Stays Python** | Frame composition; output goes through bulk channel. |
