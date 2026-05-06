@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1489** Python | **1542** TypeScript | **179** C++/H | **147** Docs | **3946** total commits | **4** stars | **0** forks | **0** open issues
+**1489** Python | **1543** TypeScript | **179** C++/H | **147** Docs | **3948** total commits | **4** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`cb09b5e8`](https://github.com/matthewmackes/map2-audio/commit/cb09b5e856ad2cc9e887a8692b132c2d45ccf9d6) | refactor(snapshot-editor): extract audio-interface status... | Map2 Audio | 2026-05-05 |
+| [`54d3a73b`](https://github.com/matthewmackes/map2-audio/commit/54d3a73b4ec3256342f558b335c99f00f2cfabaf) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-05 |
 | [`59afe8ba`](https://github.com/matthewmackes/map2-audio/commit/59afe8bae398dd2f3ade92d2f93452f2fb597998) | refactor(snapshot-editor): extract plugin-browser derived... | Map2 Audio | 2026-05-05 |
 | [`a8491845`](https://github.com/matthewmackes/map2-audio/commit/a849184500e504849e870ffab67b10f33afe674c) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-05 |
 | [`2763ed02`](https://github.com/matthewmackes/map2-audio/commit/2763ed02ef9a1128c8577640b40489169c373665) | refactor(snapshot-editor): extract authority-detail query... | Map2 Audio | 2026-05-05 |
 | [`b736c32d`](https://github.com/matthewmackes/map2-audio/commit/b736c32d03eafa61f7fa8a78b58474f538aa6ac8) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-05 |
 | [`9fe64d99`](https://github.com/matthewmackes/map2-audio/commit/9fe64d99bef772d44bafe3fd991e307fccd278b3) | feat(midi-services): operator-visible v1 retirement banne... | Map2 Audio | 2026-05-05 |
 | [`580b8870`](https://github.com/matthewmackes/map2-audio/commit/580b8870b6c0e0bc8b0e5720a57931280c4c3342) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-05 |
-| [`69b98f64`](https://github.com/matthewmackes/map2-audio/commit/69b98f644ef7a1c480d99b145746373261a449c1) | test(avb-connections): replace skipped modal-DELETE test ... | Map2 Audio | 2026-05-05 |
-| [`01f1f512`](https://github.com/matthewmackes/map2-audio/commit/01f1f512135e11e9826e9fee905cebbbaa7a931c) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-05 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
