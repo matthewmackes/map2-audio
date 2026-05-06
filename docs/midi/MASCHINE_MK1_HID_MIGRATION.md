@@ -116,7 +116,12 @@ worklist completion note.
   that re-uses `mk1_protocol.py`'s frame-parsing semantics ported
   byte-for-byte to C++.
 - **Slice 15** — Engine-side bulk-display sink that forwards bytes
-  to the device.
+  to the device. **Shipped 2026-05-06 (cycle 17)**: `Map2MaschineMK1Router.h`
+  routes `MaschineBulkFrame` envelopes to EP_CONTROL_OUT (led) /
+  EP_DISPLAY_OUT (display), handles `maschine_init` requests, and
+  consumes raw HID input buffers via the slice-14 decoders to publish
+  `MaschineHidEvent` records. Header-only, transport-injectable for
+  unit testability. 13 Catch2 cases + 11 Python regression-pin cases.
 - **Slice 16** — Build-time retirement gate (mirrors
   `MAP2_USE_LEGACY_MIDI_CONTROLLER`): a `MAP2_USE_MASCHINE_USB_DIRECT`
   env flag controls whether the daemon imports `mk1_usb_transport.py`.
