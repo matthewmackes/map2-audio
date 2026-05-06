@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1489** Python | **1552** TypeScript | **179** C++/H | **147** Docs | **3964** total commits | **4** stars | **0** forks | **0** open issues
+**1489** Python | **1553** TypeScript | **179** C++/H | **147** Docs | **3966** total commits | **4** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`67521088`](https://github.com/matthewmackes/map2-audio/commit/67521088fe1f49e5015a2fc326533bd67be6ceab) | test(snapshot-editor): paired test for RoutingInspectorCo... | Map2 Audio | 2026-05-05 |
+| [`5c8dbfe6`](https://github.com/matthewmackes/map2-audio/commit/5c8dbfe6bfb490b5145d66218b2a41ae2e6f704e) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-06 |
 | [`adc2c899`](https://github.com/matthewmackes/map2-audio/commit/adc2c899e3b167fa9bea41201f83d646cc424aff) | test(snapshot-editor): paired test for ClipTimestamps hoo... | Map2 Audio | 2026-05-05 |
 | [`eff6c651`](https://github.com/matthewmackes/map2-audio/commit/eff6c651a6e04a4112d5cb6cc2b506276981a1aa) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-06 |
 | [`55ae85ea`](https://github.com/matthewmackes/map2-audio/commit/55ae85ea70a6e049ddfe7008c79edf02f82bfc67) | test(snapshot-editor): paired test for AudioInterfaceStat... | Map2 Audio | 2026-05-05 |
 | [`1f00f7ea`](https://github.com/matthewmackes/map2-audio/commit/1f00f7eadfb475a649c7465054704e0a855595c0) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-06 |
 | [`022b7100`](https://github.com/matthewmackes/map2-audio/commit/022b710089bb7848bab350260f470ba7e7df1286) | test(snapshot-editor): paired test for ActiveChannelStatu... | Map2 Audio | 2026-05-05 |
 | [`cb2912bc`](https://github.com/matthewmackes/map2-audio/commit/cb2912bc73ba77444dbbc5dfb12dc9f4063ad76f) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-06 |
-| [`9b36eaa4`](https://github.com/matthewmackes/map2-audio/commit/9b36eaa41ae502eeccaadcaf53f25d88e59cb995) | test(snapshot-editor): hook-inventory regression guard + ... | Map2 Audio | 2026-05-05 |
-| [`4dd63fa8`](https://github.com/matthewmackes/map2-audio/commit/4dd63fa84535c4f75866472bcaaab199799da789) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-06 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
