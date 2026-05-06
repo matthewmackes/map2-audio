@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1497** Python | **1541** TypeScript | **183** C++/H | **147** Docs | **4052** total commits | **4** stars | **0** forks | **0** open issues
+**1497** Python | **1541** TypeScript | **183** C++/H | **147** Docs | **4054** total commits | **4** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`1958290a`](https://github.com/matthewmackes/map2-audio/commit/1958290a1616b5f9e48de3118689c503e7f56686) | perf(HardwareStorePage): memoize three buildProfileRows c... | Map2 Audio | 2026-05-06 |
+| [`c2b995b7`](https://github.com/matthewmackes/map2-audio/commit/c2b995b72291c43cdb890c723f047fb75cdf8ba7) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-06 |
 | [`b051e057`](https://github.com/matthewmackes/map2-audio/commit/b051e05731911c5a9a5015d680d293169ea17812) | refactor(HardwareStorePage): extract row-building helpers... | Map2 Audio | 2026-05-06 |
 | [`11aa6977`](https://github.com/matthewmackes/map2-audio/commit/11aa69778e3f85298bde2c8b5f768e84dc0aeded) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-06 |
 | [`66d12b7f`](https://github.com/matthewmackes/map2-audio/commit/66d12b7f508f4a265a9b789e0a78f5763ba790f0) | docs(audit): close Build-9/10/11 (cycle 55, set 6 final) | Map2 Audio | 2026-05-06 |
 | [`84ac7cd4`](https://github.com/matthewmackes/map2-audio/commit/84ac7cd417e9ab32f6241abec86f04db05b22fde) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-06 |
 | [`ebdcf038`](https://github.com/matthewmackes/map2-audio/commit/ebdcf03896c920687662e25c8961852ee58224b3) | fix(theme): brand watermark uses theme-aware text-seconda... | Map2 Audio | 2026-05-06 |
 | [`87158ebe`](https://github.com/matthewmackes/map2-audio/commit/87158ebea49e2a78bac7c03c1767788af7c1225b) | chore(deps): sync package-lock.json for @types/dompurify ... | Map2 Audio | 2026-05-06 |
-| [`46b0bf98`](https://github.com/matthewmackes/map2-audio/commit/46b0bf982da28c290ed2d7e274d104a15426ff66) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-06 |
-| [`8e23789f`](https://github.com/matthewmackes/map2-audio/commit/8e23789f2e3565cac6d83feac578e2ee6b8ba9dc) | chore(deps): remove redundant @types/dompurify; close Dea... | Map2 Audio | 2026-05-06 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
