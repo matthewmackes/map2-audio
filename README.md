@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1497** Python | **1538** TypeScript | **183** C++/H | **147** Docs | **4033** total commits | **4** stars | **0** forks | **0** open issues
+**1497** Python | **1538** TypeScript | **183** C++/H | **147** Docs | **4035** total commits | **4** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -193,7 +193,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 |  |  |  |
 | :---: | :---: | :---: |
 | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/map2-banner.png" width="280" alt="map2 banner"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/map2-banner-3.png" width="280" alt="map2 banner 3"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot-Cli.png" width="280" alt="Screenshot Cli"> |
-| <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 08-00-43 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 08 00 43 Mackes Audio Platform 2 FEB2025"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 07-57-33 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 07 57 33 Mackes Audio Platform 2 FEB2025"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 07-58-14 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 07 58 14 Mackes Audio Platform 2 FEB2025"> |
+| <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 08-00-43 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 08 00 43 Mackes Audio Platform 2 FEB2025"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 07-58-14 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 07 58 14 Mackes Audio Platform 2 FEB2025"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 07-57-33 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 07 57 33 Mackes Audio Platform 2 FEB2025"> |
 | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/MAP2_AUDIO-NODE_ARCH_DIAGRAM3.png" width="280" alt="MAP2 AUDIO NODE ARCH DIAGRAM3"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/MAP2_AUDIO-NODE_ARCH_DIAGRAM2-BANG.png" width="280" alt="MAP2 AUDIO NODE ARCH DIAGRAM2 BANG"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/MAP2_AUDIO-NODE_ARCH_DIAGRAM.png" width="280" alt="MAP2 AUDIO NODE ARCH DIAGRAM"> |
 <!-- GALLERY:END -->
 
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`28513de3`](https://github.com/matthewmackes/map2-audio/commit/28513de32904a53c6dcb3264be3e362e08e31c55) | refactor: delete orphan CompactLCDFeed + MiniLCDDisplayEm... | Map2 Audio | 2026-05-06 |
+| [`46690fdd`](https://github.com/matthewmackes/map2-audio/commit/46690fddd1202a3b5dff72f0d4f8e11e7d7d8448) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-06 |
 | [`4dec7d67`](https://github.com/matthewmackes/map2-audio/commit/4dec7d6796a3cd31a72ddb1a57121cf5ab2ed943) | refactor(HardwareStorePage): extract parseProfileKey help... | Map2 Audio | 2026-05-06 |
 | [`791ab891`](https://github.com/matthewmackes/map2-audio/commit/791ab89111952baebf72caa5154bc15fec782c4c) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-06 |
 | [`aac50c8d`](https://github.com/matthewmackes/map2-audio/commit/aac50c8d3e46d971e19210d20988611923a03918) | docs(audit): back-fill Round-1 closures (Lat-1/2/3/5, Bui... | Map2 Audio | 2026-05-06 |
 | [`4aec01e5`](https://github.com/matthewmackes/map2-audio/commit/4aec01e5d65ba677e622c9c3500c2705a69bce62) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-06 |
 | [`95acd94d`](https://github.com/matthewmackes/map2-audio/commit/95acd94dafbcabdbdb14908b105a07e7167d7c8c) | feat(deviceContext): introduce DeviceKey string-literal u... | Map2 Audio | 2026-05-06 |
 | [`0b10ff7f`](https://github.com/matthewmackes/map2-audio/commit/0b10ff7f57c0e538cff86d882830bec7508b649a) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-06 |
-| [`09b01794`](https://github.com/matthewmackes/map2-audio/commit/09b01794ca8f7ea766ae30883c8bb3512503ed77) | docs(audit): close Anti-4, Arch-8, Arch-18 (cycle 42) | Map2 Audio | 2026-05-06 |
-| [`c5be436a`](https://github.com/matthewmackes/map2-audio/commit/c5be436a192416f8aed2b0ad8d9a092da38da15a) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-06 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
