@@ -61,6 +61,39 @@ function indexPacks(rows: PackSourceRow[]): Record<string, PackSourceRow> {
   return out
 }
 
+/**
+ * Parse a profile-key of the form `<packId>/<model>.<kind>` into its
+ * three component fields. `indexProfiles` (above) builds keys with
+ * exactly this shape, so the parse is the structural inverse.
+ *
+ * Used by the buildProfileRows fallback branch when a profile-key is
+ * known to the backend's connected/pinned/recent sets but no matching
+ * `DeviceProfileSummary` is present in the local profile index — the
+ * fallback row still needs the packId/model/kind triple to render.
+ *
+ * Audit Lat-18 (cycle 45): replaces an inline `key.split('/')` +
+ * `(rest ?? '').split('.')` pair so the format is named, the safe-default
+ * fields are co-located with the parse, and any future caller that
+ * needs the same triple has one canonical helper to call.
+ */
+function parseProfileKey(key: string): {
+  packId: string
+  model: string
+  kind: ProfileRow['kind']
+} {
+  const slashIndex = key.indexOf('/')
+  const packId = slashIndex >= 0 ? key.slice(0, slashIndex) : ''
+  const rest = slashIndex >= 0 ? key.slice(slashIndex + 1) : ''
+  const dotIndex = rest.indexOf('.')
+  const model = dotIndex >= 0 ? rest.slice(0, dotIndex) : rest
+  const kindRaw = dotIndex >= 0 ? rest.slice(dotIndex + 1) : ''
+  return {
+    packId,
+    model,
+    kind: (kindRaw as ProfileRow['kind']) || 'audio',
+  }
+}
+
 function buildProfileRows(args: {
   profileKeys: string[]
   profileIndex: Record<string, DeviceProfileSummary>
@@ -101,17 +134,16 @@ function buildProfileRows(args: {
       const sequencerSnapshotBindings = toSequencerSnapshotBindings(bindingsByProfileKey?.get(key))
       const p = profileIndex[key]
       if (!p) {
-        const [packId, rest] = key.split('/')
-        const [model, kind] = (rest ?? '').split('.')
-        const dx = diagByPack[packId ?? '']
+        const { packId, model, kind } = parseProfileKey(key)
+        const dx = diagByPack[packId]
         return {
           profileKey: key,
-          packId: packId ?? '',
-          model: model ?? '',
-          kind: (kind as ProfileRow['kind']) ?? 'audio',
-          vendor: packIndex[packId ?? '']?.vendor,
-          source: packIndex[packId ?? '']?.source,
-          isDegraded: packIndex[packId ?? '']?.is_degraded,
+          packId,
+          model,
+          kind,
+          vendor: packIndex[packId]?.vendor,
+          source: packIndex[packId]?.source,
+          isDegraded: packIndex[packId]?.is_degraded,
           isConnected: connectedKeys.has(key),
           isPinned: pinnedKeys.has(key),
           recentlyDisconnected: recentlyDisconnectedKeys.has(key),
