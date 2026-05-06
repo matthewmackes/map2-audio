@@ -14,9 +14,9 @@ function dbToMarkerTop(db: number, height: number, min = -60, max = 6): number {
 }
 
 function getMeterColor(db: number): string {
-  if (db > -6) return '#ef4444'
-  if (db > -12) return '#eab308'
-  return '#22c55e'
+  if (db > -6) return 'var(--cds-support-error)'
+  if (db > -12) return 'var(--cds-support-warning)'
+  return 'var(--cds-support-success)'
 }
 
 function CompactMeterBar({ value, peak }: { value: number; peak: number }) {
@@ -26,7 +26,7 @@ function CompactMeterBar({ value, peak }: { value: number; peak: number }) {
       style={{
         width: 10,
         height,
-        background: '#0f172a',
+        background: 'var(--cds-layer)',
         borderRadius: 999,
         position: 'relative',
         overflow: 'hidden',
@@ -69,8 +69,8 @@ function NodeMeterColumn({
   const { levels, peakHold, isRunning } = useVuMeters({ nodeId: targetNodeId })
   const { metrics } = useCPUMetrics({ nodeId: targetNodeId, useWebSocket: false, pollingInterval: 2000 })
   const outputPeak = Math.max(levels.outputLeft, levels.outputRight)
-  const peakColor = outputPeak > -6 ? '#ef4444' : outputPeak > -12 ? '#eab308' : '#22c55e'
-  const cpuColor = metrics.totalCpuPercent >= 85 ? '#ef4444' : metrics.totalCpuPercent >= 60 ? '#eab308' : '#22c55e'
+  const peakColor = outputPeak > -6 ? 'var(--cds-support-error)' : outputPeak > -12 ? 'var(--cds-support-warning)' : 'var(--cds-support-success)'
+  const cpuColor = metrics.totalCpuPercent >= 85 ? 'var(--cds-support-error)' : metrics.totalCpuPercent >= 60 ? 'var(--cds-support-warning)' : 'var(--cds-support-success)'
 
   return (
     <button
@@ -82,7 +82,7 @@ function NodeMeterColumn({
         borderRadius: 14,
         border: `1px solid ${node.isOnline ? 'rgba(59, 130, 246, 0.2)' : 'rgba(148, 163, 184, 0.18)'}`,
         background: node.isOnline ? 'rgba(15, 20, 35, 0.78)' : 'rgba(30, 41, 59, 0.45)',
-        color: '#e5e7eb',
+        color: 'var(--cds-text-primary)',
         cursor: 'pointer',
         display: 'flex',
         flexDirection: 'column',
@@ -94,12 +94,12 @@ function NodeMeterColumn({
     >
       <div style={{ width: '100%' }}>
         <div style={{ display: 'flex', justifyContent: 'space-between', gap: 8, alignItems: 'center' }}>
-          <span style={{ fontSize: 13, fontWeight: 700, color: '#f8fafc' }}>{node.hostname}</span>
+          <span style={{ fontSize: 13, fontWeight: 700, color: 'var(--cds-text-primary)' }}>{node.hostname}</span>
           <span
             style={{
               fontSize: 10,
               fontWeight: 700,
-              color: node.isOnline ? '#93c5fd' : '#94a3b8',
+              color: node.isOnline ? 'var(--cds-support-info)' : 'var(--cds-text-secondary)',
               border: `1px solid ${node.isOnline ? 'rgba(96, 165, 250, 0.3)' : 'rgba(148, 163, 184, 0.25)'}`,
               padding: '2px 6px',
               borderRadius: 999,
@@ -109,7 +109,7 @@ function NodeMeterColumn({
             {node.isLocal ? 'Local' : node.role}
           </span>
         </div>
-        <div style={{ marginTop: 4, fontSize: 10, color: '#64748b', fontFamily: 'var(--font-ui-tight)' }}>
+        <div style={{ marginTop: 4, fontSize: 10, color: 'var(--cds-text-helper)', fontFamily: 'var(--font-ui-tight)' }}>
           {node.nodeId}
         </div>
       </div>
@@ -119,7 +119,7 @@ function NodeMeterColumn({
         <CompactMeterBar value={levels.outputRight} peak={peakHold.outputRight} />
       </div>
 
-      <div style={{ display: 'flex', gap: 12, fontSize: 9, color: '#94a3b8', letterSpacing: '0.02em' }}>
+      <div style={{ display: 'flex', gap: 12, fontSize: 9, color: 'var(--cds-text-secondary)', letterSpacing: '0.02em' }}>
         <span>L</span>
         <span>R</span>
       </div>
@@ -137,7 +137,7 @@ function NodeMeterColumn({
             border: '1px solid rgba(34, 197, 94, 0.12)',
           }}
         >
-          <div style={{ fontSize: 9, color: '#64748b', letterSpacing: '0.02em' }}>CPU</div>
+          <div style={{ fontSize: 9, color: 'var(--cds-text-helper)', letterSpacing: '0.02em' }}>CPU</div>
           <div style={{ fontSize: 12, fontWeight: 700, color: cpuColor, fontFamily: 'var(--font-mono)' }}>
             {metrics.totalCpuPercent.toFixed(0)}%
           </div>
@@ -150,14 +150,14 @@ function NodeMeterColumn({
             border: `1px solid ${metrics.xrunCount > 0 ? 'rgba(239, 68, 68, 0.18)' : 'rgba(34, 197, 94, 0.12)'}`,
           }}
         >
-          <div style={{ fontSize: 9, color: '#64748b', letterSpacing: '0.02em' }}>Xrun</div>
-          <div style={{ fontSize: 12, fontWeight: 700, color: metrics.xrunCount > 0 ? '#ef4444' : '#22c55e', fontFamily: 'var(--font-mono)' }}>
+          <div style={{ fontSize: 9, color: 'var(--cds-text-helper)', letterSpacing: '0.02em' }}>Xrun</div>
+          <div style={{ fontSize: 12, fontWeight: 700, color: metrics.xrunCount > 0 ? 'var(--cds-support-error)' : 'var(--cds-support-success)', fontFamily: 'var(--font-mono)' }}>
             {metrics.xrunCount}
           </div>
         </div>
       </div>
 
-      <div style={{ fontSize: 10, color: '#94a3b8' }}>
+      <div style={{ fontSize: 10, color: 'var(--cds-text-secondary)' }}>
         {node.latencyMs == null ? 'Peer latency —' : `Peer ${node.latencyMs.toFixed(1)} ms`}
       </div>
     </button>
@@ -169,7 +169,7 @@ export function ClusterMeteringStrip() {
 
   if (nodes.length === 0) {
     return (
-      <div style={{ color: '#94a3b8', fontSize: 14 }}>
+      <div style={{ color: 'var(--cds-text-secondary)', fontSize: 14 }}>
         Cluster nodes have not been discovered yet.
       </div>
     )
@@ -177,7 +177,7 @@ export function ClusterMeteringStrip() {
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', gap: 14 }}>
-      <div style={{ color: '#94a3b8', fontSize: 13 }}>
+      <div style={{ color: 'var(--cds-text-secondary)', fontSize: 13 }}>
         One live stereo meter column per node. Click any node to switch the full metering dashboard to that target.
       </div>
       <div style={{ display: 'flex', gap: 12, overflowX: 'auto', paddingBottom: 6 }}>

@@ -61,7 +61,7 @@ Each task/subtask should contain these fields:
 - `[✓]` `T2472` — Snapshot editor data-layer extraction (closed 2026-05-06; 0 inline `useMutation` blocks remain on the page; all 3 cycle-59 deferred reads extracted; 85 SnapshotEditor jest suites / 509 tests green; typecheck + atomic build clean; bundle `SnapshotEditorPageContent-Sg9w7aBD.js`)
 - `[ ]` `T2459-H6` — Retire legacy `Map2MidiController` path after soak + deletion
 - `[✓]` `T2477` — Graph-rendering consolidation primitive (shipped 2026-05-06; `<SignalFlowGraph>` + `layoutSignalFlowGraph` land in `web/src/app/components/shared/`; all 7 active workspace graphs migrated in one commit; 26 jest tests across 13 suites green; -410 LoC of duplicated wrapper code retired)
-- `[ ]` `T2481` — Carbon deepening fit-and-finish epic
+- `[>]` `T2481` — Carbon deepening fit-and-finish epic (Phases A/B3/C/D/G2/G3/G4 closed 2026-05-04; entering Phases E/F + final closure 2026-05-06)
 - `[✓]` `T2496` — AVB Services full-completion (shipped 2026-05-05; 8 sub-tasks; +22 pytest +17 jest; bench-side visual verification remains as operator gate)
 - `[✓]` `T2497` — Audio Artifacts global tree nav: remove duplicated "Discover" entries under every subcategory (shipped 2026-05-05)
 - `[✗]` `T004` — AVB hardware qualification/release gating (lab-blocked)
@@ -773,7 +773,7 @@ Prior — 2026-05-05 EDT — opened by user request: "review /avb/overview. Many
 ---
 
 ID: T2481
-Status: [ ] Todo
+Status: [>] In Progress
 Title: GUI Fit-and-Finish — Carbon Deepening Pass (whole web frontend)
 Description:
 - Goal / acceptance criteria: Take the web frontend from "functional, partially Carbon" to "Carbon-deep, release-grade fit and finish" across every page under `web/src/app/`. Carbon Design System (https://carbondesignsystem.com/) is the inspiration source. **Carbon is the floor, MAP2 polish on top**: chrome / forms / modals / tabs / data tables / menus / notifications / empty states / tooltips become canonical `@carbon/react` consumers; domain surfaces (audio meters, faders/knobs, patch cords, MPX-1 SVG panel, IntelFX/MPX-1 signal-flow canvases, Drum Machine pads, UnifiedChannelGrid, BrainKeyboardVisualizer) stay bespoke but inherit Carbon tokens (spacing scale, type scale, motion durations + easings, theme tokens) so they stop visually fighting the chrome. Definition of Done: every shared interaction primitive uses Carbon, every spacing/font/motion declaration uses a token, IBM Plex Sans + IBM Plex Mono are the only UI fonts, lint rules block regression, and an end-of-Epic soak audit scores every page ≥4/5 against the rubric (or files a follow-up).
@@ -937,6 +937,223 @@ Phase progress:
 - 2026-05-05 — **T2472 mutation extraction slice 8 SHIPPED (Claude).** Lifts the chain `renameMutation`. Added `web/src/app/pages/snapshotEditor/useSnapshotEditorChainRenameMutation.ts` exposing `useSnapshotEditorChainRenameMutation({ activeSnapshot, requireSnapshotChainId, syncSnapshotMutationResult, markSnapshotsDirty, setShowRenameChainModal, setRenameChainName, pushToast })`. Same snapshot-vs-cluster routing pattern as slice 7: `snapshotsApi.renameChain` when an active snapshot exists, `chainsApi.rename` otherwise. Cache-key bit-identity preserved verbatim (`['chains']`). Paired 3-case test (cluster path / snapshot path / error) asserts every observable invariant. Replaced 17 LoC inline → 8 LoC hook destructure. Monolith size: 6462 → 6455 (-7). 63/63 SnapshotEditor test suites green (360 tests); typecheck + lint + atomic build clean (19.09s). 10 mutations remain. Cumulative across slices 1-8: monolith 6695 → 6455 (**-240 LoC**), 8 sibling hooks shipped.
 - 2026-05-05 — **T2472 mutation extraction slice 9 SHIPPED (Claude).** Lifts the `openEditorSnapshotMutation`. Added `web/src/app/pages/snapshotEditor/useSnapshotEditorOpenEditorSnapshotMutation.ts` exposing `useSnapshotEditorOpenEditorSnapshotMutation({ controlPlaneSnapshot, setEditorSnapshotOverride, hydrateEditorFromSnapshot, pushToast })`. The mutation calls `snapshotsApi.openDraft`, then on success either clears or sets the editor snapshot override depending on whether the loaded snapshot equals the control-plane authority, and finally hydrates the editor with `Loaded: <name>` toast + `resetSelectedBlock=true`. Hook call relocated downward in the page body (TDZ — `hydrateEditorFromSnapshot` is defined ~390 lines below the original mutation). Paired 3-case test (override-cleared when loaded equals authority / override-set when different / error). Replaced 17 LoC inline → 6 LoC hook destructure. Monolith size: 6455 → 6449 (-6). 64/64 SnapshotEditor test suites green (363 tests); typecheck + lint + atomic build clean (19.36s). 9 mutations remain. The remaining 9 are all in the **conservatively deferred** category for cycle 10: `createSnapshotFromEditorMutation`, `updateActiveSnapshotMutation`, `activateCurrentSnapshotMutation`, `restoreSnapshotRevisionMutation`, `updateLiveSnapshotRoutingMutation`, `deleteMutation`, `addPluginMutation`, `updateAuthorityLiveChainsMutation` — each has 8-15+ deps and would require a full focused session per mutation. Cumulative across slices 1-9: monolith 6695 → 6449 (**-246 LoC**), 9 sibling hooks shipped, 363 tests green.
 - 2026-05-05 — **T2481-B3 slice 33 — SnapshotEditorPage.css status-chip + automation-toggle Carbon swatch retokenization SHIPPED (Claude).** Pivoted to T2481 because every remaining T2472 mutation (`createSnapshotFromEditor`, `updateActiveSnapshot`, `activateCurrentSnapshot`, `restoreSnapshotRevision`, `updateLiveSnapshotRouting`, `deleteMutation`, `addPluginMutation`, `updateAuthorityLiveChains`) requires a focused operator session due to 8-15+ dep surface each. Final 11 hex literals on `SnapshotEditorPage.css` retokenized to **exact** Carbon swatches (verified via `@carbon/colors/lib/index.js`): `#005d5d` → `var(--cds-teal-70)`, `#0043ce` → `var(--cds-blue-70)`, `#8a3800` → `var(--cds-orange-70)`, `#9f1853` → `var(--cds-magenta-70)`, `#198038` → `var(--cds-green-60)`, `#8e6a00` → `var(--cds-yellow-60)`, `#525252` → `var(--cds-gray-70)`, `#750e13` → `var(--cds-red-80)` (status-metadata-chip family — 8 sites); `#9f1853` → `var(--cds-magenta-70)`, `#bf1d63` → `var(--cds-magenta-70-hover)`, `#740937` → `var(--cds-magenta-80)` (automation-floating-toggle base/hover/active — 3 sites). No visual change but the status chips and automation toggle now participate in any future theme swap. Lint 0/0; typecheck + build clean (18.76s); SnapshotEditor regression 64/64 (363 tests). After this slice, every operational chrome `background: #...` literal in `SnapshotEditorPage.css` either resolves through a Carbon swatch token or is documented as a category-accent dark-tag-fg pairing (the 13 surviving foreground darks at lines 841-991 per the cycle-21 audit).
+
+---
+
+## T2481 — Completion Plan (filed 2026-05-06)
+
+Parent T2481 flipped to `[>] In Progress`. The Epic-level Definition of Done has 6 gates remaining (Phase E primitive migration, Phase F domain-surface tokenization, bench-side visual verification, evidence-dir refresh, atomic build verification, dual-push). The 18 subtasks below close them in order. Each is sized 30–90 min per §0.7. Execution policy: the seven E canaries (E1, E2, E3, E4, E5, E6, E7) are operator-gated per the Epic's own canary-then-sweep risk rule; the F-phase tokenization slices and E-phase sweeps after canary acceptance run autonomous-safe following the proven B3/C1/D1 pattern.
+
+ID: T2481-F1
+Status: [✓] Done
+Parent: T2481
+Title: Audio-meters chrome — `AudioMeter` / `VuMeter` / `DynamicsMeterPanel` / `ClusterMeteringStrip` Carbon-token sweep
+Description:
+- Goal: every visual chrome declaration on the audio-meter family — border, background, label `font-family`, dB-scale typography, panel padding, status pill text — resolves through a Carbon token. Meter ballistics motion + needle/bar geometry preserved verbatim per §10.5 + the existing `// carbon-allow:` annotations.
+- Acceptance: `grep -E "color: '#|background: '#|fontFamily: '" web/src/app/components/Visualizations/{AudioMeter,VuMeterDisplay,DynamicsMeteringPanel,ClusterMeteringStrip}.tsx` reports 0 chrome-tier matches outside annotated audio-domain carve-outs; lint suite 0/0; atomic build clean.
+- Required outputs: per-component diff in `web/src/app/components/Visualizations/`, paired with rubric refresh in `docs/design/CARBON_FIT_AND_FINISH_RUBRIC.md` Audit-progress section.
+- Estimated effort: 1–2 cycles.
+Completion note: 2026-05-06 — Claude. **SHIPPED.** ~26 chrome literals across 4 files retokenized; geometry-tier peak markers / 0dB lines / dynamics-module category-accent props (`#8b5cf6` compressor / `#ef4444` limiter / `#06b6d4` gate) preserved with explicit `// carbon-allow:` annotations per §10.5. Two panel-identity accents documented (`#37d6c9` VuMeters teal, `#f59e0b` Dynamics amber). Files touched: `AudioMeter.tsx` (clip indicator + meter bg + value/peak readouts), `VuMeterDisplay.tsx` (label + bar bg + L/R helper text + dB readout + scale + idle-state text + reset-peaks button + status dot), `DynamicsMeteringPanel.tsx` (Bypass label + GR row + bar bg + scale + IN/OUT labels + bar bg + readouts + status dot + module-color call-site annotations), `ClusterMeteringStrip.tsx` (`getMeterColor` helper now emits Carbon support tokens; bar bg + node-name + role pill + node-id + L/R + peak/CPU/Xrun readouts + latency caption + idle-state copy). `AudioMeteringCard.tsx` was already clean. Typecheck clean; lint suite 0/0; atomic build clean (19.71s); ClusterMeteringStrip 2/2 + AppShell 6/6 jest green. The `MeteringPage.test.tsx` `useIsMobile` parse error is pre-existing test-suite drift unrelated to this work — confirmed via stash-and-replay on master.
+Last updated: 2026-05-06 — Claude.
+
+ID: T2481-F2
+Status: [ ] Todo
+Parent: T2481
+Title: UnifiedChannelGrid chrome — `Block` / `EmptySlot` / `ChannelHeader` Carbon-token sweep
+Description:
+- Goal: hover/focus/active state styling, slot border/background, header label typography, slot-spacing all flow through Carbon tokens. Block geometry (8-slot row layout, signal-flow gutter widths) preserved verbatim.
+- Acceptance: `web/src/app/components/SnapshotEditor/UnifiedChannelGrid/{Block,EmptySlot,ChannelHeader}.{tsx,css}` carries 0 hex-color literals on operational chrome (FxIcon registry hue tokens preserved as documented category accents per the cycle-2 audit); UnifiedChannelGrid jest suite green; lint 0/0.
+- Required outputs: component + paired CSS diffs, rubric refresh.
+- Estimated effort: 1–2 cycles.
+Last updated: 2026-05-06 — filed by Claude.
+
+ID: T2481-F3
+Status: [ ] Todo
+Parent: T2481
+Title: Signal-flow canvases — `MPX1SignalPathCanvas` / `IntelFXSignalPathCanvas` / `ChainGraphCanvas` chrome tokenization
+Description:
+- Goal: node-card chrome (border, bg, hover/focus/active, header label), right-sidebar param-editor surface, toolbar, undo/redo affordances all flow through Carbon tokens. Patch-cord/wire SVG geometry untouched per §10.5; React-Flow node-fill rgba shapes preserved.
+- Acceptance: `web/src/app/components/{MPX1,IntelFX,ChainBuilder}/...Canvas.{tsx,css}` chrome literals = 0 outside §10.5; lint 0/0; canvas-level jest suites green.
+- Required outputs: per-canvas diff, rubric refresh, optional `<SignalFlowGraph>` primitive shared-style follow-up filed under T2477 if a common token-routed wrapper emerges.
+- Estimated effort: 2–3 cycles.
+Last updated: 2026-05-06 — filed by Claude.
+
+ID: T2481-F4
+Status: [ ] Todo
+Parent: T2481
+Title: Maschine MK1 grid + LED-slider input + pad chrome Carbon-token sweep
+Description:
+- Goal: pad-grid container chrome, LED-slider track + label typography, pad-state border/active highlight, kit-picker chrome all flow through Carbon tokens. LED pixels + pad-color identity (per cycle-22 carve-out) preserved verbatim per §10.5.
+- Acceptance: chrome literals = 0 on operational surfaces under `web/src/app/components/Devices/Maschine/...` outside §10.5 carve-outs.
+- Required outputs: per-surface diff + rubric refresh.
+- Estimated effort: 1–2 cycles.
+Last updated: 2026-05-06 — filed by Claude.
+
+ID: T2481-F5
+Status: [ ] Todo
+Parent: T2481
+Title: Brain surfaces — `BrainKeyboardVisualizer` + `BrainConsoleView` channel strips + Step pads chrome tokenization
+Description:
+- Goal: console-view channel-strip chrome (header label, level-meter wrapper, button/toggle row), step-pad sequencer chrome, BrainKeyboardVisualizer panel header all flow through Carbon tokens. Piano-key geometry + meter ballistics preserved verbatim.
+- Acceptance: chrome literals = 0 outside §10.5 on `web/src/app/components/Brain/...` operational surfaces.
+- Required outputs: per-surface diff + rubric refresh.
+- Estimated effort: 2 cycles.
+Last updated: 2026-05-06 — filed by Claude.
+
+ID: T2481-F6
+Status: [ ] Todo
+Parent: T2481
+Title: Drum Machine — pads + step grid + kit picker chrome tokenization
+Description:
+- Goal: pad container chrome, step-grid cell border/active highlight, kit-picker dropdown chrome, transport-bar surface all flow through Carbon tokens. Pad LED-color identity + cell-active highlight pixels preserved per §10.5.
+- Acceptance: chrome literals = 0 outside §10.5 on `web/src/app/components/DrumMachine/...` operational surfaces.
+- Required outputs: per-surface diff + rubric refresh.
+- Estimated effort: 1 cycle.
+Last updated: 2026-05-06 — filed by Claude.
+
+ID: T2481-F7
+Status: [ ] Todo
+Parent: T2481
+Title: Synth Forge — oscillator / envelope / filter cards chrome tokenization
+Description:
+- Goal: card border/background, parameter-row label typography, knob-readout `<text>` mono via `var(--font-mono)`, header label flow through Carbon tokens. Knob arc geometry + waveform visualization preserved per §10.5.
+- Acceptance: chrome literals = 0 outside §10.5 on `web/src/app/components/SynthForge/...` operational surfaces.
+- Required outputs: per-card diff + rubric refresh.
+- Estimated effort: 1 cycle.
+Last updated: 2026-05-06 — filed by Claude.
+
+ID: T2481-E1
+Status: [ ] Todo
+Parent: T2481
+Title: Forms — canary `MidiAssignmentsPage` per `docs/design/T2481_E1_MIDI_ASSIGNMENTS_CANARY.md`
+Description:
+- Goal: 13 primitive swaps in `MidiAssignmentsPage.tsx` lines 1312-1408 — 1 `<TextInput>`, 1 `<Select>`, 8 `<NumberInput>`, 3 `<Toggle>`. RHF integration verified; embedded labels remove the `.lbl` divs; Toggle width matches existing 36px switch where possible (else documented).
+- Operator gate: requires bench session — Carbon NumberInput steppers + embedded-label visual-regression risk requires browser verification.
+- Acceptance: zero raw `<input>`/`<select>`/`<textarea>` on this page; existing MidiAssignments jest suite green; lint plugin's `map2/no-raw-input` + `map2/no-raw-select` rules added in `warn` mode covering `web/src/app/pages/midi-services/MidiAssignmentsPage.tsx`; visual parity confirmed by operator at port 3000.
+- Required outputs: page diff, lint-rule scaffold (warn mode for now; ratchet to error after E1-sweep), rubric note bumping MIDI Assignments Primitives axis from 4 → 5.
+- Estimated effort: 1 operator session + 1 cycle of follow-ups.
+Last updated: 2026-05-06 — filed by Claude.
+
+ID: T2481-E1-sweep
+Status: [ ] Todo
+Parent: T2481
+Title: Forms sweep — every remaining raw `<input>` / `<select>` / `<textarea>` site outside §10.5
+Description:
+- Goal: enumerate every JSX raw form-primitive site under `web/src/` outside the §10.5 carve-out, replace with Carbon `<TextInput>` / `<NumberInput>` / `<Dropdown>` / `<MultiSelect>` / `<TextArea>` / `<Form>`. Validation rules use Carbon's `invalidText` / `warnText` patterns. RHF integration verified per surface.
+- Acceptance: lint plugin rules `map2/no-raw-input` + `map2/no-raw-select` ratchet to `error`; lint suite 0/0; full-suite jest green; atomic build clean.
+- Risk: legitimate density holdouts (compact filter inputs, search boxes) annotated `// carbon-allow:` with rationale.
+- Required outputs: per-surface diffs, lint ratchet commit, rubric refresh.
+- Estimated effort: 2–3 autonomous cycles after E1 canary closes.
+Last updated: 2026-05-06 — filed by Claude.
+
+ID: T2481-E2
+Status: [ ] Todo
+Parent: T2481
+Title: Tables — canary `MPX1 Librarian` + sweep
+Description:
+- Goal: canary `MPX1 Librarian` table → Carbon `<DataTable>` with sticky headers + sortable columns + batch selection where applicable. After canary soak: sweep MIDI Hub event list, Mod Matrix, Drum Machine pattern editor, Snapshot Library, Diagnostics aggregate, Pack Sources, ApiObservatory request list.
+- Operator gate: canary requires bench session for sort/scroll/selection visual verification.
+- Acceptance: every hand-rolled `<table>` outside §10.5 → Carbon `<DataTable>`; existing per-page jest suites green; lint suite 0/0.
+- Required outputs: canary diff + 7 sweep diffs, rubric refresh.
+- Estimated effort: 1 operator session + 3–4 autonomous cycles.
+Last updated: 2026-05-06 — filed by Claude.
+
+ID: T2481-E3
+Status: [ ] Todo
+Parent: T2481
+Title: Modals — canary `Snapshot Editor publish modal` + sweep
+Description:
+- Goal: canary `SnapshotPublishModal` → Carbon `<Modal>` / `<ComposedModal>`. After canary: sweep every hand-rolled `<dialog>` / portal-mounted modal across Snapshot Editor (plugin browser, routing topology), MIDI Hub, MPX-1, IntelFX, Drum Machine, Synth Forge, Hardware Store, Brain. Absorb the `DangerButton` `no-alert` migration target deferred from G3.
+- Operator gate: canary requires bench session — Carbon Modal focus-trap + escape-key behavior + footer button alignment differ from existing surfaces.
+- Acceptance: lint plugin rule `map2/no-raw-dialog` ratcheted to `error`; `// carbon-allow: <reason>` only for plugin-browser + routing-topology if T2473 phase blocks; SnapshotEditor jest suite green; full-suite jest green.
+- Required outputs: canary diff + sweep diffs across 8+ surfaces; rubric refresh.
+- Estimated effort: 1 operator session + 4–5 autonomous cycles.
+Last updated: 2026-05-06 — filed by Claude.
+
+ID: T2481-E4
+Status: [ ] Todo
+Parent: T2481
+Title: Notifications — canary `AudioDeviceDisconnectedBanner` + sweep
+Description:
+- Goal: canary T2453's `AudioDeviceDisconnectedBanner` → Carbon `<ActionableNotification>`. After canary: sweep every hand-rolled banner / inline-warning / error block across the platform → Carbon `<InlineNotification>` / `<ActionableNotification>` / `<ToastNotification>`. Standing rule from `docs/CLAUDE.md` (no `<InlineNotification>` for explanatory text — only operational warnings) preserved.
+- Operator gate: canary requires bench session — Carbon notification dismissal animation + actionable-button placement differ.
+- Acceptance: every hand-rolled banner outside §10.5 → Carbon notification primitive; lint suite 0/0; full-suite jest green.
+- Required outputs: canary diff + sweep diffs; rubric refresh.
+- Estimated effort: 1 operator session + 2–3 autonomous cycles.
+Last updated: 2026-05-06 — filed by Claude.
+
+ID: T2481-E5
+Status: [ ] Todo
+Parent: T2481
+Title: Empty states — canary `Hardware Store unknown-device` + sweep
+Description:
+- Goal: canary T2459-G4 Q4 `Hardware Store unknown-device` empty state → Carbon empty-state pattern (Carbon's `<EmptyState>` is in flux; if not stable in 1.103.x, use the documented Carbon `<Layer>`-+-`<Heading>`-+-`<Button>` empty-state pattern). After canary: sweep every "Select a chain" / "No data" / placeholder surface — concrete operator copy + primary action on each.
+- Operator gate: canary requires bench session — empty-state visual prominence + primary-action affordance differ.
+- Acceptance: every empty-state surface across Snapshot Editor, MIDI Services, Drum Machine, Synth Forge, Brain, MPX-1, IntelFX has Carbon-conformant copy + primary action; lint suite 0/0.
+- Required outputs: canary diff + sweep diffs; rubric refresh.
+- Estimated effort: 1 operator session + 2 autonomous cycles.
+Last updated: 2026-05-06 — filed by Claude.
+
+ID: T2481-E6
+Status: [ ] Todo
+Parent: T2481
+Title: Tooltips + popovers — canary `NodeNavChip popover` + sweep
+Description:
+- Goal: canary `NodeNavChip` popover → Carbon `<Popover>` (preserves Unified Pill directive; `NodeMiniCard` content unchanged). After canary: sweep every custom tooltip/popover across Snapshot Editor, MIDI Services, Hardware Store, Brain, MPX-1, IntelFX → Carbon `<Tooltip>` / `<Popover>`.
+- Operator gate: canary requires bench session — Carbon Popover positioning + arrow-pointer + dismiss behavior differ from existing.
+- Acceptance: every hand-rolled tooltip/popover outside §10.5 → Carbon primitive; Unified Pill directive preserved (popover-action targets unchanged); lint suite 0/0.
+- Required outputs: canary diff + sweep diffs; rubric refresh; `docs/CLAUDE.md` Unified Pill section refreshed if popover-mount mechanism changes.
+- Estimated effort: 1 operator session + 2–3 autonomous cycles.
+Last updated: 2026-05-06 — filed by Claude.
+
+ID: T2481-E7
+Status: [ ] Todo
+Parent: T2481
+Title: Dropdowns + menus + overflow menus — canary `AppShell user menu` + sweep
+Description:
+- Goal: canary `AppShell` user menu → Carbon `<OverflowMenu>`. After canary: sweep every custom dropdown / context-menu / overflow-menu across Snapshot Editor, MIDI Services, MPX-1, IntelFX, Hardware Store, Brain, MIDI Hub → Carbon `<Dropdown>` / `<OverflowMenu>` / `<ComboBox>`.
+- Operator gate: canary requires bench session — Carbon OverflowMenu portal-mount + keyboard navigation differ from existing.
+- Acceptance: lint plugin rule `map2/no-raw-button` activated in `warn` mode covering JSX `<button>` sites that match dropdown-trigger patterns; every hand-rolled dropdown outside §10.5 → Carbon primitive; lint suite 0/0.
+- Required outputs: canary diff + sweep diffs; rubric refresh.
+- Estimated effort: 1 operator session + 3 autonomous cycles.
+Last updated: 2026-05-06 — filed by Claude.
+
+ID: T2481-E-lint
+Status: [ ] Todo
+Parent: T2481
+Title: Phase E lint ratchet — `no-raw-{button,input,select,dialog}` to `error`
+Description:
+- Goal: with E1-sweep + E3 + E7 closed, ratchet `map2/no-raw-input`, `map2/no-raw-select`, `map2/no-raw-dialog`, `map2/no-raw-button` to `'error'` in `web/eslint.config.js`. Documented `// carbon-allow:` exemptions verified against the Phase E sweep notes.
+- Acceptance: lint suite reports 0 errors / 0 warnings with all four primitive-rules at `'error'`; eslint config diff covers the rule activations + any new per-files override blocks for §10.5 carve-outs.
+- Required outputs: eslint config commit + paired audit refresh in `docs/design/CARBON_LINT_SUPPRESSION_AUDIT.md`.
+- Estimated effort: 1 cycle.
+- Dependencies: T2481-E1-sweep, T2481-E3, T2481-E7 must close first.
+Last updated: 2026-05-06 — filed by Claude.
+
+ID: T2481-G4-bench
+Status: [ ] Todo
+Parent: T2481
+Title: Bench-side visual verification — top 10 pages from rubric
+Description:
+- Goal: operator session, port-3000 atomic build. Walk the rubric's top-10 pages (HomePage, Snapshot Editor, MPX-1, IntelFX, MIDI Services, Hardware Store, Maschine, Brain Overview, Drum Machine, Synth Forge). Confirm visual fidelity vs the rubric's Carbon-deep / Carbon-floor criteria; capture before/after screenshots into `docs/fit-for-purpose-evidence/<YYYYMMDD>/t2481-fit-and-finish/screenshots/`.
+- Operator gate: explicit bench session required by Epic-level DoD gate 5 (visually verified in-browser).
+- Acceptance: 10 before/after screenshot pairs captured; any regression filed as a follow-up worklist task before closure; rubric `SCORES.md` refreshed if any axis-score changed since 2026-05-04 walk.
+- Required outputs: screenshot pairs in evidence dir, refreshed `SCORES.md`, follow-up tasks filed for any regression.
+- Estimated effort: 1 operator session (~2 hours).
+- Dependencies: all F-phase + E-phase subtasks substantively closed.
+Last updated: 2026-05-06 — filed by Claude.
+
+ID: T2481-G-close
+Status: [ ] Todo
+Parent: T2481
+Title: T2481 Epic closure — final dual-push, atomic build, `:3000` HTTP 200, evidence-dir refresh, parent flip to `[✓] Done`
+Description:
+- Goal: with all 18 subtasks closed and bench verification complete, refresh `docs/fit-for-purpose-evidence/<YYYYMMDD>/t2481-fit-and-finish/SCORES.md` to capture post-E/F deltas; refresh `docs/design/CARBON_FIT_AND_FINISH_RUBRIC.md` Audit-progress section to reflect Epic closure; run `python3 scripts/continuous_release.py --commit-message "T2481 closure: Carbon deepening pass complete"` to commit + dual-push + rebuild + redeploy + verify; flip parent T2481 status `[>]` → `[✓]` with completion note in the worklist.
+- Acceptance: all 6 Epic-level DoD gates satisfied (subtasks closed, lint suite live + 0/0, rubric audit complete with 0 axis-scores < 4, typecheck + atomic build clean, `:3000` HTTP 200, bench-verified, evidence dir written, dual-pushed); top-tasks list line for T2481 flipped to `[✓]` with completion summary.
+- Required outputs: closure commit dual-pushed, evidence dir refreshed, worklist parent flipped, follow-up tasks (if any) filed under their owning Epics.
+- Estimated effort: 1 cycle.
+- Dependencies: every other T2481-* subtask `[✓] Done`; T2481-G4-bench closed.
+Last updated: 2026-05-06 — filed by Claude.
 
 ---
 

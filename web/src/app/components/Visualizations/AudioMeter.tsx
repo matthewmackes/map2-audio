@@ -100,7 +100,7 @@ export function AudioMeter({
             <span style={{
               fontSize: 9,
               fontWeight: 700,
-              color: '#ef4444',
+              color: 'var(--cds-support-error)',
               background: 'rgba(239, 68, 68, 0.2)',
               padding: '2px 6px',
               borderRadius: 4,
@@ -116,10 +116,10 @@ export function AudioMeter({
           flex: 1,
           position: 'relative',
           height,
-          background: '#1a1628',
+          background: 'var(--cds-layer)',
           borderRadius: 4,
           overflow: 'hidden',
-          border: isClipping ? '1px solid #ef4444' : '1px solid transparent',
+          border: isClipping ? '1px solid var(--cds-support-error)' : '1px solid transparent',
           transition: 'border-color var(--map2-dur-instant, 80ms) var(--map2-ease-in-out-rack, ease)',
         }}>
           {/* Main level bar */}
@@ -169,7 +169,7 @@ export function AudioMeter({
         {showValue && (
           <div style={{
             fontSize: compact ? 10 : 12,
-            color: value > 0 ? '#ef4444' : '#f2f6ff',
+            color: value > 0 ? 'var(--cds-support-error)' : 'var(--cds-text-primary)',
             minWidth: compact ? 50 : 60,
             textAlign: 'right',
             fontWeight: value > 0 ? 600 : 400,
@@ -182,7 +182,7 @@ export function AudioMeter({
         {showPeak && !compact && (
           <div style={{
             fontSize: 11,
-            color: peakHold > 0 ? '#ef4444' : '#888',
+            color: peakHold > 0 ? 'var(--cds-support-error)' : 'var(--cds-text-secondary)',
             minWidth: 70,
             textAlign: 'right',
             fontFamily: 'var(--font-ui-tight)',

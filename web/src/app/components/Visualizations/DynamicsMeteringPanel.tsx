@@ -45,7 +45,7 @@ const GainReductionMeter: React.FC<GainReductionMeterProps> = ({
       }}>
         <span style={{ fontSize: 11, fontWeight: 600, color }}>{label}</span>
         {bypass && (
-          <span style={{ fontSize: 9, color: '#666', letterSpacing: '0.02em' }}>Bypass</span>
+          <span style={{ fontSize: 9, color: 'var(--cds-text-helper)', letterSpacing: '0.02em' }}>Bypass</span>
         )}
       </div>
 
@@ -55,20 +55,20 @@ const GainReductionMeter: React.FC<GainReductionMeterProps> = ({
           display: 'flex',
           justifyContent: 'space-between',
           fontSize: 9,
-          color: '#666',
+          color: 'var(--cds-text-helper)',
           marginBottom: 2
         }}>
           <span>GR</span>
           <span style={{
             fontFamily: 'var(--font-mono)',
-            color: metering.gainReduction < -3 ? color : '#888'
+            color: metering.gainReduction < -3 ? color : 'var(--cds-text-secondary)'
           }}>
             {metering.gainReduction.toFixed(1)} dB
           </span>
         </div>
         <div style={{
           height: 8,
-          background: '#1a1628',
+          background: 'var(--cds-layer)',
           borderRadius: 4,
           overflow: 'hidden',
           position: 'relative'
@@ -89,7 +89,7 @@ const GainReductionMeter: React.FC<GainReductionMeterProps> = ({
           display: 'flex',
           justifyContent: 'space-between',
           fontSize: 8,
-          color: '#444',
+          color: 'var(--cds-text-disabled)',
           marginTop: 1
         }}>
           <span>0</span>
@@ -104,42 +104,42 @@ const GainReductionMeter: React.FC<GainReductionMeterProps> = ({
         gap: 8
       }}>
         <div style={{ flex: 1 }}>
-          <div style={{ fontSize: 8, color: '#555', marginBottom: 2 }}>IN</div>
+          <div style={{ fontSize: 8, color: 'var(--cds-text-disabled)', marginBottom: 2 }}>IN</div>
           <div style={{
             height: 4,
-            background: '#1a1628',
+            background: 'var(--cds-layer)',
             borderRadius: 2,
             overflow: 'hidden'
           }}>
             <div style={{
               height: '100%',
               width: `${Math.max(0, Math.min(100, (metering.inputLevel + 60) / 60 * 100))}%`,
-              background: '#3b82f6',
+              background: 'var(--cds-support-info)',
               // carbon-allow: input-level meter ballistics 50ms — explicit T2466 carve-out (audio-domain motion).
               transition: 'width 0.05s ease-out'
             }} />
           </div>
-          <div style={{ fontSize: 9, fontFamily: 'var(--font-mono)', color: '#666', marginTop: 1 }}>
+          <div style={{ fontSize: 9, fontFamily: 'var(--font-mono)', color: 'var(--cds-text-helper)', marginTop: 1 }}>
             {formatDb(metering.inputLevel)}
           </div>
         </div>
         <div style={{ flex: 1 }}>
-          <div style={{ fontSize: 8, color: '#555', marginBottom: 2 }}>OUT</div>
+          <div style={{ fontSize: 8, color: 'var(--cds-text-disabled)', marginBottom: 2 }}>OUT</div>
           <div style={{
             height: 4,
-            background: '#1a1628',
+            background: 'var(--cds-layer)',
             borderRadius: 2,
             overflow: 'hidden'
           }}>
             <div style={{
               height: '100%',
               width: `${Math.max(0, Math.min(100, (metering.outputLevel + 60) / 60 * 100))}%`,
-              background: '#22c55e',
+              background: 'var(--cds-support-success)',
               // carbon-allow: output-level meter ballistics 50ms — explicit T2466 carve-out (audio-domain motion).
               transition: 'width 0.05s ease-out'
             }} />
           </div>
-          <div style={{ fontSize: 9, fontFamily: 'var(--font-mono)', color: '#666', marginTop: 1 }}>
+          <div style={{ fontSize: 9, fontFamily: 'var(--font-mono)', color: 'var(--cds-text-helper)', marginTop: 1 }}>
             {formatDb(metering.outputLevel)}
           </div>
         </div>
@@ -175,7 +175,7 @@ export const DynamicsMeteringPanel: React.FC<DynamicsMeteringPanelProps> = ({
 
   if (!isRunning) {
     return (
-      <div className={className} style={{ color: '#666', fontSize: 12, textAlign: 'center', padding: 20 }}>
+      <div className={className} style={{ color: 'var(--cds-text-helper)', fontSize: 12, textAlign: 'center', padding: 20 }}>
         Audio engine not running
       </div>
     )
@@ -194,12 +194,13 @@ export const DynamicsMeteringPanel: React.FC<DynamicsMeteringPanelProps> = ({
           justifyContent: 'space-between',
           marginBottom: 12
         }}>
+          {/* carbon-allow: panel-identity amber accent (T2481-F1; matches dynamics module visual identity in audio-meter family). */}
           <span style={{ fontSize: 13, fontWeight: 600, color: '#f59e0b' }}>Dynamics</span>
           <div style={{
             width: 6,
             height: 6,
             borderRadius: '50%',
-            background: isConnected ? '#22c55e' : '#666'
+            background: isConnected ? 'var(--cds-support-success)' : 'var(--cds-text-helper)'
           }} />
         </div>
 
@@ -212,6 +213,7 @@ export const DynamicsMeteringPanel: React.FC<DynamicsMeteringPanelProps> = ({
             <GainReductionMeter
               label="Compressor"
               metering={compressor.metering}
+              // carbon-allow: dynamics-module category accent (T2481-F1; per-module identity color, no Carbon equivalent token).
               color="#8b5cf6"
               bypass={compressor.parameters.bypass}
             />
@@ -220,6 +222,7 @@ export const DynamicsMeteringPanel: React.FC<DynamicsMeteringPanelProps> = ({
             <GainReductionMeter
               label="Limiter"
               metering={limiter.metering}
+              // carbon-allow: dynamics-module category accent (T2481-F1; limiter-module identity color, no Carbon equivalent token).
               color="#ef4444"
               bypass={limiter.parameters.bypass}
             />
@@ -228,6 +231,7 @@ export const DynamicsMeteringPanel: React.FC<DynamicsMeteringPanelProps> = ({
             <GainReductionMeter
               label="Gate"
               metering={gate.metering}
+              // carbon-allow: dynamics-module category accent (T2481-F1; gate-module identity color, no Carbon equivalent token).
               color="#06b6d4"
               bypass={gate.parameters.bypass}
             />

@@ -45,13 +45,13 @@ const VuMeterBar: React.FC<VuMeterBarProps> = ({
 
   return (
     <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4 }}>
-      <span style={{ fontSize: 11, color: '#888', fontWeight: 500 }}>{label}</span>
+      <span style={{ fontSize: 11, color: 'var(--cds-text-secondary)', fontWeight: 500 }}>{label}</span>
       <div style={{ display: 'flex', gap: 3 }}>
         {/* Left channel */}
         <div style={{
           width: 12,
           height: barHeight,
-          background: '#1a1628',
+          background: 'var(--cds-layer)',
           borderRadius: 3,
           position: 'relative',
           overflow: 'hidden'
@@ -91,7 +91,7 @@ const VuMeterBar: React.FC<VuMeterBarProps> = ({
         <div style={{
           width: 12,
           height: barHeight,
-          background: '#1a1628',
+          background: 'var(--cds-layer)',
           borderRadius: 3,
           position: 'relative',
           overflow: 'hidden'
@@ -125,14 +125,14 @@ const VuMeterBar: React.FC<VuMeterBarProps> = ({
           }} />
         </div>
       </div>
-      <div style={{ display: 'flex', gap: 6, fontSize: 9, color: '#666' }}>
+      <div style={{ display: 'flex', gap: 6, fontSize: 9, color: 'var(--cds-text-helper)' }}>
         <span>L</span>
         <span>R</span>
       </div>
       <div style={{
         fontSize: 10,
         fontFamily: 'var(--font-mono)',
-        color: Math.max(leftDb, rightDb) > 0 ? '#ef4444' : '#f2f6ff'
+        color: Math.max(leftDb, rightDb) > 0 ? 'var(--cds-support-error)' : 'var(--cds-text-primary)'
       }}>
         {formatDb(Math.max(leftDb, rightDb))} dB
       </div>
@@ -159,7 +159,7 @@ export const VuMeterDisplay: React.FC<VuMeterDisplayProps> = ({
 
   if (!isRunning) {
     return (
-      <div className={className} style={{ color: '#666', fontSize: 12, textAlign: 'center', padding: 20 }}>
+      <div className={className} style={{ color: 'var(--cds-text-helper)', fontSize: 12, textAlign: 'center', padding: 20 }}>
         Audio engine not running
       </div>
     )
@@ -178,19 +178,20 @@ export const VuMeterDisplay: React.FC<VuMeterDisplayProps> = ({
           justifyContent: 'space-between',
           marginBottom: 12
         }}>
+          {/* carbon-allow: panel-identity teal accent (T2481-F1; matches DynamicsMeteringPanel + audio-meter family chrome theme). */}
           <span style={{ fontSize: 13, fontWeight: 600, color: '#37d6c9' }}>VU Meters</span>
           <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
             <div style={{
               width: 6,
               height: 6,
               borderRadius: '50%',
-              background: isConnected ? '#22c55e' : '#666'
+              background: isConnected ? 'var(--cds-support-success)' : 'var(--cds-text-helper)'
             }} />
             <button
               onClick={resetPeaks}
               style={{
                 fontSize: 9,
-                color: '#888',
+                color: 'var(--cds-text-secondary)',
                 background: 'rgba(255,255,255,0.05)',
                 border: '1px solid rgba(255,255,255,0.1)',
                 borderRadius: 4,
@@ -234,7 +235,7 @@ export const VuMeterDisplay: React.FC<VuMeterDisplayProps> = ({
           justifyContent: 'space-between',
           marginTop: 8,
           fontSize: 9,
-          color: '#555',
+          color: 'var(--cds-text-disabled)',
           paddingLeft: 10,
           paddingRight: 10
         }}>
