@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1497** Python | **1537** TypeScript | **183** C++/H | **147** Docs | **4012** total commits | **4** stars | **0** forks | **0** open issues
+**1497** Python | **1537** TypeScript | **183** C++/H | **147** Docs | **4014** total commits | **4** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`0c64feda`](https://github.com/matthewmackes/map2-audio/commit/0c64feda5b81e554ae6b106c2b546b718da35a5f) | docs(audit): re-verify and close 4 stale findings (Anti-1... | Map2 Audio | 2026-05-06 |
+| [`ab81b4f4`](https://github.com/matthewmackes/map2-audio/commit/ab81b4f456c9f031125e87f9d106a1de95cda0f7) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-06 |
 | [`3319d13d`](https://github.com/matthewmackes/map2-audio/commit/3319d13d00dbf1729e98bd42b88c109ee2086994) | fix(UpdateProgressViewer): narrow catch error to handle n... | Map2 Audio | 2026-05-06 |
 | [`d6489ae1`](https://github.com/matthewmackes/map2-audio/commit/d6489ae187270d180c609ca7619c9dff51d45267) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-06 |
 | [`3ae41989`](https://github.com/matthewmackes/map2-audio/commit/3ae41989135641abcdd7c6fe79691c89c07f0e0d) | perf(App): hoist router future-flags to stable module-lev... | Map2 Audio | 2026-05-06 |
 | [`e5b964fa`](https://github.com/matthewmackes/map2-audio/commit/e5b964fa98d2c67071991336cc10f3f511dc7c61) | chore(eslint): block re-introduction of deprecated NodeCo... | Map2 Audio | 2026-05-06 |
 | [`38a96a06`](https://github.com/matthewmackes/map2-audio/commit/38a96a062f63d7fe611b3ca994c2e232524a5759) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-06 |
 | [`18dd57bf`](https://github.com/matthewmackes/map2-audio/commit/18dd57bf95b5f7361fcb1e35519b93ad1b6ffb76) | fix(useLocalStorage): add SSR guard on read + write paths... | Map2 Audio | 2026-05-06 |
-| [`456bb3f4`](https://github.com/matthewmackes/map2-audio/commit/456bb3f4afaf9e59f845f0e1982c475adadac6bc) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-06 |
-| [`1b788deb`](https://github.com/matthewmackes/map2-audio/commit/1b788deb68d101ace03d3875c2d6b171f7e1dda8) | docs(audit): annotate closure status on web-audit finding... | Map2 Audio | 2026-05-06 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
