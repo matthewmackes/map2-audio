@@ -211,31 +211,61 @@ export function HardwareStorePage(): React.JSX.Element {
 
   // Section partitioning. Connected first, then recently-disconnected,
   // then known-but-not-recent (pinned or 24h-window).
-  const connectedRows = buildProfileRows({
-    profileKeys: Array.from(connectedKeys),
-    profileIndex, packIndex,
-    connectedKeys, pinnedKeys, recentlyDisconnectedKeys,
-    knownLastSeen, knownLastBound, diagByPack, sequencerAssetCounts,
-    bindingsByProfileKey,
-  })
+  //
+  // Audit Lat-6 (cycle 57): the three buildProfileRows calls below
+  // were running on every render (only the catalogueRows call was
+  // memoized). Each call walks every profile key in its section and
+  // produces a fresh ProfileRow[]; with 50+ devices that's hundreds
+  // of object allocations per parent re-render. Wrap each in useMemo
+  // keyed on the underlying state so they only recompute when an
+  // input genuinely changes.
+  const connectedRows = React.useMemo(
+    () =>
+      buildProfileRows({
+        profileKeys: Array.from(connectedKeys),
+        profileIndex, packIndex,
+        connectedKeys, pinnedKeys, recentlyDisconnectedKeys,
+        knownLastSeen, knownLastBound, diagByPack, sequencerAssetCounts,
+        bindingsByProfileKey,
+      }),
+    [
+      connectedKeys, profileIndex, packIndex, pinnedKeys, recentlyDisconnectedKeys,
+      knownLastSeen, knownLastBound, diagByPack, sequencerAssetCounts, bindingsByProfileKey,
+    ],
+  )
 
-  const recentRows = buildProfileRows({
-    profileKeys: Array.from(recentlyDisconnectedKeys).filter((k) => !connectedKeys.has(k)),
-    profileIndex, packIndex,
-    connectedKeys, pinnedKeys, recentlyDisconnectedKeys,
-    knownLastSeen, knownLastBound, diagByPack, sequencerAssetCounts,
-    bindingsByProfileKey,
-  })
+  const recentRows = React.useMemo(
+    () =>
+      buildProfileRows({
+        profileKeys: Array.from(recentlyDisconnectedKeys).filter((k) => !connectedKeys.has(k)),
+        profileIndex, packIndex,
+        connectedKeys, pinnedKeys, recentlyDisconnectedKeys,
+        knownLastSeen, knownLastBound, diagByPack, sequencerAssetCounts,
+        bindingsByProfileKey,
+      }),
+    [
+      recentlyDisconnectedKeys, connectedKeys, profileIndex, packIndex, pinnedKeys,
+      knownLastSeen, knownLastBound, diagByPack, sequencerAssetCounts, bindingsByProfileKey,
+    ],
+  )
 
-  const knownNotRecentRows = buildProfileRows({
-    profileKeys: Array.from(knownKeys).filter(
-      (k) => !connectedKeys.has(k) && !recentlyDisconnectedKeys.has(k),
-    ),
-    profileIndex, packIndex,
-    connectedKeys, pinnedKeys, recentlyDisconnectedKeys,
-    knownLastSeen, knownLastBound, diagByPack, sequencerAssetCounts,
-    bindingsByProfileKey,
-  })
+  const knownNotRecentRows = React.useMemo(
+    () =>
+      buildProfileRows({
+        profileKeys: Array.from(knownKeys).filter(
+          (k) => !connectedKeys.has(k) && !recentlyDisconnectedKeys.has(k),
+        ),
+        profileIndex, packIndex,
+        connectedKeys, pinnedKeys, recentlyDisconnectedKeys,
+        knownLastSeen, knownLastBound, diagByPack, sequencerAssetCounts,
+        bindingsByProfileKey,
+      }),
+    [
+      knownKeys, connectedKeys, recentlyDisconnectedKeys, profileIndex, packIndex,
+      pinnedKeys, knownLastSeen, knownLastBound, diagByPack, sequencerAssetCounts,
+      bindingsByProfileKey,
+    ],
+  )
 
   // Catalogue: all known profiles minus those already shown in
   // Connected / Recently disconnected / Known. Renders read-only in
