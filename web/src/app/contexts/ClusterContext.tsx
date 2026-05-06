@@ -189,11 +189,17 @@ export function ClusterProvider({ children }: { children: React.ReactNode }) {
       nodes,
       localNodeId,
       isClusterMode,
+      // Audit Arch-15 (cycle 47): expose the initial-discovery loading
+      // state so consumers can distinguish "no peers" from "haven't
+      // queried the backend yet". `peersQuery.isLoading` is true only
+      // for the very first fetch; subsequent refetches use `isFetching`,
+      // which we don't surface here because it'd flap on every poll.
+      isLoading: peersQuery.isLoading,
       setActiveNode: handleSetActiveNode,
       getNodeApiPrefix: apiPrefixFor,
       getNodeWsPrefix: wsPrefixFor,
     }
-  }, [activeNodeId, handleSetActiveNode, isClusterMode, localNodeId, nodes])
+  }, [activeNodeId, handleSetActiveNode, isClusterMode, localNodeId, nodes, peersQuery.isLoading])
 
   return <ClusterContext.Provider value={value}>{children}</ClusterContext.Provider>
 }

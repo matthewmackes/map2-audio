@@ -221,4 +221,34 @@ describe('ClusterContext', () => {
     expect(remoteNode?.hostname).toBe('rack-b')
     expect(remoteNode?.isOnline).toBe(false)
   })
+
+  // Audit Arch-15 (cycle 47): consumers (device shells, AppShell)
+  // need to distinguish "topology not yet discovered" from "no peers
+  // present". The provider exposes `isLoading: peersQuery.isLoading`
+  // which is true only on the very first fetch.
+  it('exposes isLoading=true while the initial /api/peers query is in flight', async () => {
+    let resolvePeers: ((response: Response) => void) | null = null
+    fetchMock.mockReturnValueOnce(
+      new Promise<Response>((resolve) => {
+        resolvePeers = resolve
+      }),
+    )
+
+    const { result } = renderHook(() => useCluster(), { wrapper: makeWrapper() })
+
+    expect(result.current.isLoading).toBe(true)
+    expect(result.current.nodes).toEqual([])
+
+    act(() => {
+      resolvePeers?.(
+        makeJsonResponse({
+          local_node_id: 'node-a',
+          peers: [],
+        }),
+      )
+    })
+
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+    expect(result.current.localNodeId).toBe('node-a')
+  })
 })
