@@ -61,7 +61,7 @@ Each task/subtask should contain these fields:
 - `[✓]` `T2472` — Snapshot editor data-layer extraction (closed 2026-05-06; 0 inline `useMutation` blocks remain on the page; all 3 cycle-59 deferred reads extracted; 85 SnapshotEditor jest suites / 509 tests green; typecheck + atomic build clean; bundle `SnapshotEditorPageContent-Sg9w7aBD.js`)
 - `[ ]` `T2459-H6` — Retire legacy `Map2MidiController` path after soak + deletion
 - `[✓]` `T2477` — Graph-rendering consolidation primitive (shipped 2026-05-06; `<SignalFlowGraph>` + `layoutSignalFlowGraph` land in `web/src/app/components/shared/`; all 7 active workspace graphs migrated in one commit; 26 jest tests across 13 suites green; -410 LoC of duplicated wrapper code retired)
-- `[>]` `T2481` — Carbon deepening fit-and-finish epic (Phases A/B3/C/D/G2/G3/G4 closed 2026-05-04; entering Phases E/F + final closure 2026-05-06)
+- `[>]` `T2481` — Carbon deepening fit-and-finish epic (Phases A/B3/C/D/G2/G3/G4 closed 2026-05-04; F1 SHIPPED + F2/F3/F4 verified-clean + F5/F6/F7 cancelled 2026-05-06; E1 canary code-side SHIPPED + 5 E1-sweep cycles SHIPPED + E4 sweep slice SHIPPED; map2/no-raw-dialog ratcheted to 'error'; 47 raw primitives migrated this session; awaiting bench session for canary visual sign-off)
 - `[✓]` `T2496` — AVB Services full-completion (shipped 2026-05-05; 8 sub-tasks; +22 pytest +17 jest; bench-side visual verification remains as operator gate)
 - `[✓]` `T2497` — Audio Artifacts global tree nav: remove duplicated "Discover" entries under every subcategory (shipped 2026-05-05)
 - `[✗]` `T004` — AVB hardware qualification/release gating (lab-blocked)
