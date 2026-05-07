@@ -69,3 +69,42 @@ The full per-file list is too long to enumerate here; `grep -rn "carbon-allow" w
 - **`@ts-nocheck` (1 site):** documented OpenAPI generated artifact; tracked under T2455.
 
 T2481-G3 closes with a clean lint-suppression contract: every active suppression is either justified inline or covered by a per-files override with rationale. The 3 `react-refresh/only-export-components` per-line suppressions called out in the original audit were retired in cycle 49 (T2481-Z follow-up).
+
+---
+
+## Update 2026-05-06 — Phase E lint-rule additions
+
+The lint plugin gained four new primitive-banning rules during the T2481-E1 canary work (commit `5445507b`):
+
+- `map2/no-raw-button` — initial snapshot 681 sites, all at `'warn'`
+- `map2/no-raw-input` — initial snapshot 113 sites, all at `'warn'`
+- `map2/no-raw-select` — initial snapshot 73 sites, all at `'warn'`
+- `map2/no-raw-dialog` — initial snapshot 0 sites (modal sweep already complete from prior work) — could ratchet to `'error'` immediately if desired.
+
+After the 2026-05-06 sweep cycles 1-6 (AudioInterfaceControl + OnboardingWizard + WebSocketInspectorTab + TrafficMonitorTab + RequestBuilderTab), the snapshot is **672 / 87 / 61 / 0** — net retired so far: **9 button, 26 input, 12 select, 0 dialog** = **47 total raw primitives migrated to Carbon equivalents** across 5 files. Each migration commit is dual-pushed and verified against typecheck + atomic build + targeted jest suites where they exist.
+
+**Where the remaining bulk lives:**
+
+- **Button (672 sites):** dominant cluster. Most are bespoke-affordance triggers (custom tablists in ThemePage, color-themed action buttons with `style.background` overrides in the MidiAssignmentsPage walkthrough, dense walkthrough micro-buttons, switch-style toggles in plugin cards under §10.5 device viewers). Each migration is its own focused refactor; they don't fold into Carbon `<Button>` without per-site redesign. Tracked as natural follow-ups under owning Epics (T2459-H deeper Carbon refactor for MIDI Assignments, T2475 follow-up for ThemePage tabs → Carbon `<Tabs>`).
+- **Input (87 sites):** mostly dense plugin cards (LCD settings, MPX-1 librarian, Sequencer page) and hand-rolled forms scattered across pages.
+- **Select (61 sites):** smaller cluster; most are filter/scope dropdowns that fold cleanly into Carbon `<Select>`. The remaining ones are inside §10.5 plugin-card chrome where `<Select>` would conflict with the device's per-parameter visual contract.
+
+The lint rules stay at `'warn'` so the violations remain visible in CI without blocking it. T2481-E-lint will ratchet `no-raw-dialog` to `'error'` immediately (already at 0) and the others as their respective sweep work closes.
+
+**Sweep cycles 1-6 (this session):**
+
+| Commit | Cycle | Surface | Migrations | Net retired |
+|---|---|---|---|---|
+| `5445507b` | E1 canary | MidiAssignmentsPage calibration form | 1 TextInput, 1 Select, 9 NumberInput, 3 Toggle | -3 button, -10 input, -1 select |
+| `8f3240fa` | E4 sweep | TesiraOfflineBanner | hand-rolled banner → ActionableNotification | (notification, not counted in raw-primitive snapshot) |
+| `23f14ca6` | Cycle 1 | AudioInterfaceControl | 4 Select, 7 Button | -9 button, -5 select |
+| `cb7bc9c5` | Cycle 2 | OnboardingWizard step-3 | 2 TextInput, 1 Select, 2 Checkbox | -4 input, -1 select |
+| `3982e4fc` | Cycle 4 | WebSocketInspectorTab | 4 TextInput, 3 Select, 1 Checkbox | -5 input, -3 select |
+| `62051739` | Cycle 5 | TrafficMonitorTab | 4 TextInput, 1 Select | -4 input, -1 select |
+| `33bac9a0` | Cycle 6 | RequestBuilderTab | 2 Select, 2 TextInput, 1 Checkbox | -3 input, -2 select |
+
+**`// carbon-allow:` annotations added during the sweep (5 new sites):**
+
+- `AudioInterfaceControl.tsx`: 2× input gain / output gain range sliders (Carbon `<Slider>` labelText collision with existing test contract — operator session needed for slider+test bundled migration).
+- `OnboardingWizard.tsx`: 2× radio inputs (deployment mode + cert mode, clickable-card pattern incompatible with Carbon `<RadioButton>`'s dot+label-only visual).
+- `TrafficMonitorTab.tsx`: 1× file input (Carbon `<FileUploader>` is a fuller surface; intentional dense toolbar).
