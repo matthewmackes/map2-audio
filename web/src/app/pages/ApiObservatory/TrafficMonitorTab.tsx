@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { Select, SelectItem, TextInput } from '@carbon/react'
 
 import { StatusBadge, MethodBadge, JsonTreeViewer } from '../../components/ApiObservatory/primitives'
 import { useWebSocketTopic } from '../../../map2/hooks/useWebSocket'
@@ -172,19 +173,53 @@ export function TrafficMonitorTab() {
         )}
         <button type="button" onClick={() => void reload()}>Refresh</button>
 
-        <select value={methodFilter} onChange={(event) => setMethodFilter(event.target.value)}>
-          <option value="">All methods</option>
-          <option value="GET">GET</option>
-          <option value="POST">POST</option>
-          <option value="PUT">PUT</option>
-          <option value="PATCH">PATCH</option>
-          <option value="DELETE">DELETE</option>
-        </select>
+        <Select
+          id="traffic-method-filter"
+          labelText="Filter by HTTP method"
+          hideLabel
+          value={methodFilter}
+          onChange={(event) => setMethodFilter(event.target.value)}
+        >
+          <SelectItem value="" text="All methods" />
+          <SelectItem value="GET" text="GET" />
+          <SelectItem value="POST" text="POST" />
+          <SelectItem value="PUT" text="PUT" />
+          <SelectItem value="PATCH" text="PATCH" />
+          <SelectItem value="DELETE" text="DELETE" />
+        </Select>
 
-        <input value={statusFilter} onChange={(event) => setStatusFilter(event.target.value)} placeholder="Status >=" />
-        <input value={pathFilter} onChange={(event) => setPathFilter(event.target.value)} placeholder="Path regex" />
-        <input value={durationFilter} onChange={(event) => setDurationFilter(event.target.value)} placeholder="Min ms" />
-        <input value={sizeFilter} onChange={(event) => setSizeFilter(event.target.value)} placeholder="Min bytes" />
+        <TextInput
+          id="traffic-status-filter"
+          labelText="Status filter"
+          hideLabel
+          value={statusFilter}
+          onChange={(event) => setStatusFilter(event.target.value)}
+          placeholder="Status >="
+        />
+        <TextInput
+          id="traffic-path-filter"
+          labelText="Path filter"
+          hideLabel
+          value={pathFilter}
+          onChange={(event) => setPathFilter(event.target.value)}
+          placeholder="Path regex"
+        />
+        <TextInput
+          id="traffic-duration-filter"
+          labelText="Duration filter"
+          hideLabel
+          value={durationFilter}
+          onChange={(event) => setDurationFilter(event.target.value)}
+          placeholder="Min ms"
+        />
+        <TextInput
+          id="traffic-size-filter"
+          labelText="Size filter"
+          hideLabel
+          value={sizeFilter}
+          onChange={(event) => setSizeFilter(event.target.value)}
+          placeholder="Min bytes"
+        />
       </div>
 
       <div className="api-observatory-traffic__stats-grid">
@@ -297,6 +332,10 @@ export function TrafficMonitorTab() {
           </div>
           <label className="api-observatory-traffic__import">
             Import Session
+            {/* carbon-allow: file-import affordance; Carbon <FileUploader> is
+                a fuller upload surface (drag+drop, progress, multi-file). The
+                inline label-wrapped <input type="file"> is intentional for
+                this dense observability toolbar. */}
             <input
               type="file"
               accept="application/json"
