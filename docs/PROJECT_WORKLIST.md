@@ -74,6 +74,18 @@ Each task/subtask should contain these fields:
 - Completed and cancelled history remains in the archive file listed above.
 - This active worklist intentionally contains only unfinished work (`Todo`, `In Progress`, `Blocked`).
 
+## T2459 — Driver-to-completion campaign state (2026-05-07)
+
+Code-side across H1-H7 is shipped on `master`. What remains is operator-driven:
+
+- `T2459-H3` + `T2459-H3-CFG` Phase 7 — bench HIL with MeloAudio Commander. Runbook: [`HIL_OPERATOR_RUNBOOK.md`](midi/HIL_OPERATOR_RUNBOOK.md) §A.
+- `T2459-H4` — bench HIL with Maschine MK1 (+ MPX-1 / IntelFX if present). Runbook §B.
+- `T2459-H5` UMP gate — blocked on libremidi UMP I/O API + MIDI 2.0 hardware. Runbook §D.
+- `T2459-H6` — 30-min retirement soak via `./scripts/run_t2459h6_retirement_soak.sh`, then atomic deletion PR per `docs/midi/MAP2MIDICONTROLLER_RETIREMENT.md` §4. Runbook §C.
+- `T2459-H7-PW-UMP` — operator decision on resolution path. Decision doc: [`T2459_H7_PW_UMP_DECISION.md`](midi/T2459_H7_PW_UMP_DECISION.md) (recommends Path 3 — backend-priority bypass).
+
+Architecture deep-dive for the Configurator stack: [`MELOAUDIO_COMMANDER_CONFIGURATOR.md`](midi/MELOAUDIO_COMMANDER_CONFIGURATOR.md). Closeout state: [`T2459H_CLOSEOUT.md`](midi/T2459H_CLOSEOUT.md).
+
 ## In Progress
 
 ID: T2459-H
@@ -263,7 +275,9 @@ Assigned to: Claude
 
   Bundles live at `device-packs/meloaudio/firmware/` (README + LICENSE-harvie256.md + .dfu binary placeholder); operator-installed binaries land alongside.
 
-Last updated: 2026-05-07 EDT — Claude: Phases 1-5 + Outer Loop 2 dispatcher shipped + dual-pushed (`813b6331` + `5d24a35a`). Phase 6 docs deep-dive is the next code-side slice; Phase 7 HIL is the operator gate.
+  2026-05-07 — Claude: **Phase 6 docs SHIPPED.** New architecture deep-dive at `docs/midi/MELOAUDIO_COMMANDER_CONFIGURATOR.md` covers all 7 phases + Outer Loop 2: module map, per-phase architecture (detection/discovery/SysEx/DFU/UI/resolver/dispatcher), end-to-end data flow for both operator paths, design constraints + invariants, full test-surface map. Cross-linked from `T2459H_CLOSEOUT.md` and the new `HIL_OPERATOR_RUNBOOK.md`. Phase 7 HIL is the only remaining gate; runbook §A walks the operator through both paths.
+Last updated: 2026-05-07 EDT — Claude: Phase 6 docs shipped. Phase 7 HIL is the sole remaining gate; see `docs/midi/HIL_OPERATOR_RUNBOOK.md` §A.
+Prior — 2026-05-07 EDT — Claude: Phases 1-5 + Outer Loop 2 dispatcher shipped + dual-pushed (`813b6331` + `5d24a35a`). Phase 6 docs deep-dive is the next code-side slice; Phase 7 HIL is the operator gate.
 Prior — 2026-05-07 EDT — Claude: subtask filed; Phase 1+2 starting in this session.
 
 ---
@@ -662,7 +676,9 @@ Assigned to: Claude
   - `pytest -q tests/test_map2midicontroller_caller_audit_t2459h6.py tests/test_soak_harness_midi_extension_t2459h6.py` — **11 passed**.
 
   Remaining for full T2459-H6: HIL soak run with the host driving real MIDI traffic + atomic deletion PR per `docs/midi/MAP2MIDICONTROLLER_RETIREMENT.md` §4.
-Last updated: 2026-05-06 EDT - Claude: H6 code-side is complete (Slices 1 + 2 shipped). Sole remaining gate is the 30-min HIL soak with `--midi-driver host`, `--threshold-max-xruns 0 --threshold-max-peak-jitter-ms 0.35`, followed by the atomic deletion PR per `docs/midi/MAP2MIDICONTROLLER_RETIREMENT.md` §4.
+  2026-05-07 — Claude: **Slice 3 SHIPPED — one-command retirement-soak wrapper + retirement doc updated.** Operator can now run the H6 gate with `./scripts/run_t2459h6_retirement_soak.sh` instead of a 12-line copy-paste. The wrapper pre-flights the controller-host daemon + OFF-build artifact, pins every threshold the worklist task requires (`--threshold-max-xruns 0 --threshold-max-peak-jitter-ms 0.35 --midi-driver host --midi-message-mix mixed --midi-rate-events-per-sec 30 --soak-tag t2459h6-shm-ring`), and supports `--quick` (5-min smoke), `--duration <N>` (custom), and `MAP2_DRY_RUN=1`. `docs/midi/MAP2MIDICONTROLLER_RETIREMENT.md` §3 updated to point at the wrapper as the canonical invocation; the direct python invocation is kept for reference. Operator runbook `docs/midi/HIL_OPERATOR_RUNBOOK.md` §C walks through preflight → soak → pass criteria → atomic deletion → rollback in one place. Code-side slice; HIL run + atomic deletion PR are the remaining operator gates.
+Last updated: 2026-05-07 EDT - Claude: Slice 3 (one-command soak wrapper + runbook) shipped. Operator gates: 30-min soak via `./scripts/run_t2459h6_retirement_soak.sh` → atomic deletion PR per `docs/midi/MAP2MIDICONTROLLER_RETIREMENT.md` §4.
+Prior — 2026-05-06 EDT - Claude: H6 code-side is complete (Slices 1 + 2 shipped). Sole remaining gate is the 30-min HIL soak with `--midi-driver host`, `--threshold-max-xruns 0 --threshold-max-peak-jitter-ms 0.35`, followed by the atomic deletion PR per `docs/midi/MAP2MIDICONTROLLER_RETIREMENT.md` §4.
 Prior — 2026-05-03 EDT - Claude: Slice 2 (IpcMidiBridgeController factory adapter) shipped; the OFF build is now a working configuration end-to-end. HIL soak + file deletion remain.
 
 
@@ -688,7 +704,9 @@ Assigned to: Unassigned (operator-driven; gated on a non-bench resolution decisi
 
   2026-05-07 — Claude: filed via T2459-H3-CFG slice 2-5 ship cycle. The Discovery Wizard's mido+rtmidi-via-ALSA-seq subscriber (`app/services/devices/meloaudio/commander_discovery_subscriber.py`) is the per-device sidestep; the substrate fix lives here. No code changes for this file in this slice.
 
-Last updated: 2026-05-07 EDT - Claude: Filed. Ownership pending — not on Outer Loop 2's path because it requires substrate decisions (PipeWire upstream / kernel) that aren't local to MAP2 source.
+  2026-05-07 — Claude: **Decision doc SHIPPED.** New `docs/midi/T2459_H7_PW_UMP_DECISION.md` enumerates four resolution paths with concrete tradeoffs (effort × lead-time × permanence × latency-neutrality × reversibility), a full comparison matrix, and a recommendation: ship Path 3 (backend-priority bypass) as the immediate fix — ~3-5 days, ~150 LOC, reversible. Pursue Path 1 (PipeWire upstream patch) in parallel as the long-term right answer; hold Path 2 (in-platform bridge daemon) in reserve. Path 4 (ALSA-raw fallback) is already shipped via libremidi probe order. Implementation plan for Path 3 enumerated in §5 if approved. **Operator owes:** approve a path. No implementation slice opens against this task until that decision lands.
+Last updated: 2026-05-07 EDT - Claude: Decision doc shipped (`docs/midi/T2459_H7_PW_UMP_DECISION.md`). Operator decision pending on which of paths 1-4 to ship.
+Prior — 2026-05-07 EDT - Claude: Filed. Ownership pending — not on Outer Loop 2's path because it requires substrate decisions (PipeWire upstream / kernel) that aren't local to MAP2 source.
 
 ---
 

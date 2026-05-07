@@ -117,7 +117,26 @@ systemctl status map2-controller-host
 ls juce-engine/build/map2_audio_engine*.so   # must be the OFF build
 ```
 
-Run the soak (30 minutes, H6 gate):
+Run the full 30-min H6 gate via the one-command wrapper
+(`scripts/run_t2459h6_retirement_soak.sh`, shipped with H6 Slice 3):
+
+```bash
+./scripts/run_t2459h6_retirement_soak.sh
+```
+
+The wrapper pins every threshold + flag listed in this doc, runs preflight
+checks for the controller-host + OFF-build artifact, and forwards any
+override env vars (`T2459H6_RATE_HZ`, `T2459H6_MIX`, `T2459H6_TAG`,
+`MAP2_DRY_RUN=1`) to the underlying soak.
+
+For confidence smokes (NOT a gate run):
+
+```bash
+./scripts/run_t2459h6_retirement_soak.sh --quick     # 5-min duration
+```
+
+Equivalent direct invocation (kept for reference and for environments
+where the wrapper isn't available):
 
 ```bash
 python3 .codex/skills/juce-random-effects-soak/scripts/run_juce_random_fx_soak.py \
