@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { Checkbox, TextInput } from '@carbon/react'
 
 import { EmptyState } from '../../components/shared/EmptyState'
 import { CodeEditor } from './CodeEditor'
@@ -461,30 +462,29 @@ export function CollectionsTab({
                       <button type="button" onClick={() => onOpenRequest(request.draft)}>Open in Builder</button>
                     </header>
                     <p>{request.draft.method} {request.draft.url}</p>
-                    <label>
-                      Dependencies (comma-separated request IDs)
-                      <input
-                        value={request.dependencies.join(',')}
-                        onChange={(event) => {
-                          const next = event.target.value.split(',').map((part) => part.trim()).filter(Boolean)
-                          mutateWorkspace((workspace) => ({
-                            ...workspace,
-                            collections: workspace.collections.map((collection) => (
-                              collection.id === activeCollection.id
-                                ? {
-                                    ...collection,
-                                    requests: collection.requests.map((candidate) => (
-                                      candidate.id === request.id
-                                        ? { ...candidate, dependencies: next }
-                                        : candidate
-                                    )),
-                                  }
-                                : collection
-                            )),
-                          }))
-                        }}
-                      />
-                    </label>
+                    <TextInput
+                      id={`collection-deps-${request.id}`}
+                      labelText="Dependencies (comma-separated request IDs)"
+                      value={request.dependencies.join(',')}
+                      onChange={(event) => {
+                        const next = event.target.value.split(',').map((part) => part.trim()).filter(Boolean)
+                        mutateWorkspace((workspace) => ({
+                          ...workspace,
+                          collections: workspace.collections.map((collection) => (
+                            collection.id === activeCollection.id
+                              ? {
+                                  ...collection,
+                                  requests: collection.requests.map((candidate) => (
+                                    candidate.id === request.id
+                                      ? { ...candidate, dependencies: next }
+                                      : candidate
+                                  )),
+                                }
+                              : collection
+                          )),
+                        }))
+                      }}
+                    />
                     <textarea
                       value={request.notes ?? ''}
                       onChange={(event) => {
@@ -517,10 +517,12 @@ export function CollectionsTab({
                   <textarea value={parameterRowsText} onChange={(event) => setParameterRowsText(event.target.value)} rows={5} />
                 </label>
                 <div className="api-observatory-collections__row">
-                  <label>
-                    <input type="checkbox" checked={runParallel} onChange={(event) => setRunParallel(event.target.checked)} />
-                    Run in parallel
-                  </label>
+                  <Checkbox
+                    id="collection-run-parallel"
+                    labelText="Run in parallel"
+                    checked={runParallel}
+                    onChange={(_event, { checked }) => setRunParallel(checked)}
+                  />
                   <button type="button" onClick={runCollection} disabled={running || activeCollection.requests.length === 0}>
                     {running ? 'Running…' : 'Run All Tests'}
                   </button>
