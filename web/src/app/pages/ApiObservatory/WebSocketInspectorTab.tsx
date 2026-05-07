@@ -1,4 +1,5 @@
 import { useMemo, useRef, useState } from 'react'
+import { Checkbox, Select, SelectItem, TextInput } from '@carbon/react'
 
 import { JsonDiffViewer, JsonTreeViewer } from '../../components/ApiObservatory/primitives'
 import { EmptyState } from '../../components/shared/EmptyState'
@@ -236,8 +237,22 @@ export function WebSocketInspectorTab() {
         <aside className="api-observatory-websocket__connections">
           <h3>Connections</h3>
           <div className="api-observatory-websocket__new-connection">
-            <input value={newConnectionName} onChange={(event) => setNewConnectionName(event.target.value)} placeholder="Connection name" />
-            <input value={newConnectionUrl} onChange={(event) => setNewConnectionUrl(event.target.value)} placeholder="ws://..." />
+            <TextInput
+              id="ws-new-connection-name"
+              labelText="Connection name"
+              hideLabel
+              value={newConnectionName}
+              onChange={(event) => setNewConnectionName(event.target.value)}
+              placeholder="Connection name"
+            />
+            <TextInput
+              id="ws-new-connection-url"
+              labelText="Connection URL"
+              hideLabel
+              value={newConnectionUrl}
+              onChange={(event) => setNewConnectionUrl(event.target.value)}
+              placeholder="ws://..."
+            />
             <button type="button" onClick={handleAddConnection}>Connect</button>
           </div>
           <div className="api-observatory-websocket__connection-list">
@@ -258,12 +273,18 @@ export function WebSocketInspectorTab() {
           </div>
 
           <h3>Compose and Send</h3>
-          <select value={composerConnectionId ?? ''} onChange={(event) => setComposerConnectionId(event.target.value)}>
-            <option value="">Select connection</option>
+          <Select
+            id="ws-composer-connection"
+            labelText="Compose connection"
+            hideLabel
+            value={composerConnectionId ?? ''}
+            onChange={(event) => setComposerConnectionId(event.target.value)}
+          >
+            <SelectItem value="" text="Select connection" />
             {connections.map((connection) => (
-              <option key={connection.id} value={connection.id}>{connection.name}</option>
+              <SelectItem key={connection.id} value={connection.id} text={connection.name} />
             ))}
-          </select>
+          </Select>
           <CodeEditor language="json" value={composerPayload} onChange={setComposerPayload} height={170} />
           <div className="api-observatory-websocket__templates">
             {WS_TEMPLATES.map((template) => (
@@ -330,20 +351,46 @@ export function WebSocketInspectorTab() {
           <header>
             <h3>Message Stream</h3>
             <div className="api-observatory-websocket__filters">
-              <select value={filterConnectionId} onChange={(event) => setFilterConnectionId(event.target.value)}>
-                <option value="all">All connections</option>
+              <Select
+                id="ws-filter-connection"
+                labelText="Filter by connection"
+                hideLabel
+                value={filterConnectionId}
+                onChange={(event) => setFilterConnectionId(event.target.value)}
+              >
+                <SelectItem value="all" text="All connections" />
                 {connections.map((connection) => (
-                  <option key={connection.id} value={connection.id}>{connection.name}</option>
+                  <SelectItem key={connection.id} value={connection.id} text={connection.name} />
                 ))}
-              </select>
-              <select value={filterDirection} onChange={(event) => setFilterDirection(event.target.value as 'all' | 'sent' | 'received' | 'system')}>
-                <option value="all">All directions</option>
-                <option value="sent">Sent</option>
-                <option value="received">Received</option>
-                <option value="system">System</option>
-              </select>
-              <input value={filterType} onChange={(event) => setFilterType(event.target.value)} placeholder="Event type" />
-              <input value={filterText} onChange={(event) => setFilterText(event.target.value)} placeholder="Payload text" />
+              </Select>
+              <Select
+                id="ws-filter-direction"
+                labelText="Filter by direction"
+                hideLabel
+                value={filterDirection}
+                onChange={(event) => setFilterDirection(event.target.value as 'all' | 'sent' | 'received' | 'system')}
+              >
+                <SelectItem value="all" text="All directions" />
+                <SelectItem value="sent" text="Sent" />
+                <SelectItem value="received" text="Received" />
+                <SelectItem value="system" text="System" />
+              </Select>
+              <TextInput
+                id="ws-filter-type"
+                labelText="Filter by event type"
+                hideLabel
+                value={filterType}
+                onChange={(event) => setFilterType(event.target.value)}
+                placeholder="Event type"
+              />
+              <TextInput
+                id="ws-filter-text"
+                labelText="Filter by payload text"
+                hideLabel
+                value={filterText}
+                onChange={(event) => setFilterText(event.target.value)}
+                placeholder="Payload text"
+              />
             </div>
           </header>
 
@@ -358,24 +405,22 @@ export function WebSocketInspectorTab() {
                   <span>{new Date(message.timestamp).toLocaleTimeString()}</span>
                 </header>
                 <JsonTreeViewer value={message.payload} maxHeight={180} />
-                <label>
-                  <input
-                    type="checkbox"
-                    checked={diffIds[0] === message.id || diffIds[1] === message.id}
-                    onChange={(event) => {
-                      if (!event.target.checked) {
-                        setDiffIds((prev) => [prev[0] === message.id ? null : prev[0], prev[1] === message.id ? null : prev[1]])
-                        return
-                      }
-                      setDiffIds((prev) => {
-                        if (!prev[0]) return [message.id, prev[1]]
-                        if (!prev[1]) return [prev[0], message.id]
-                        return [prev[1], message.id]
-                      })
-                    }}
-                  />
-                  Diff
-                </label>
+                <Checkbox
+                  id={`ws-diff-${message.id}`}
+                  labelText="Diff"
+                  checked={diffIds[0] === message.id || diffIds[1] === message.id}
+                  onChange={(_event, { checked }) => {
+                    if (!checked) {
+                      setDiffIds((prev) => [prev[0] === message.id ? null : prev[0], prev[1] === message.id ? null : prev[1]])
+                      return
+                    }
+                    setDiffIds((prev) => {
+                      if (!prev[0]) return [message.id, prev[1]]
+                      if (!prev[1]) return [prev[0], message.id]
+                      return [prev[1], message.id]
+                    })
+                  }}
+                />
               </article>
             ))}
             {filteredMessages.length === 0 && (
