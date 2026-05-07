@@ -221,6 +221,8 @@ When executing work in this repository:
 ### Design directives
 - **Unified Node Pill** — All node identity/status/scope UI goes through `NodeNavChip` in the global nav; `NodeContextBanner`, `NodeContextPicker`, `NodeAlertBar` are deprecated.
 - **Device Context Pattern** — All device panels use `DeviceContextBanner` + `DeviceContextDialog` + `useDeviceNodeContext`; never write per-device inline node-switch banners.
+- **Engine-command dispatcher** — Vendor mapping JS scripts emit `engine_command` IPC frames; the backend consumes them through `app/services/engine_command_dispatcher.py`. Add new audio-surface targets to `engine_command_handlers.py` via the `HandlerHooks` DI seam — never bypass the dispatcher and consume `engine_command` directly. Full doc: `docs/midi/ENGINE_COMMAND_DISPATCHER.md`.
+- **Per-installation device override pattern** — For devices with stock firmware that emits different MIDI per mode (MeloAudio Commander is the reference case), capture per-install bindings to `~/.map2/devices/<device>-discovered.yaml` and merge over the device-pack defaults via a resolver (`commander_resolver.py`). Don't bend canonical device-pack constants to match one operator's mode.
 
 ### Known constraints
 - GRUB changes (`isolcpus=4,5`, C-states, `preempt=full`) **require reboot** to take effect. Currently running `isolcpus=2,3` until reboot — audio is still on non-isolated cores.

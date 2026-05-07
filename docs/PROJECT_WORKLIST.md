@@ -56,7 +56,7 @@ Each task/subtask should contain these fields:
 
 - `[>]` `T2459-H` — MIDI Backend Unification (controller-host + libremidi + ControllerEngine)
 - `[>]` `T2459-H3` — MeloAudio Commander device-pack cutover completion (HIL session 2026-05-07 revealed PipeWire UMP-MIDI2 bridge gap + stock-firmware-mode CC drift; resolution carried by T2459-H3-CFG)
-- `[>]` `T2459-H3-CFG` — MeloAudio Commander Configurator (in-platform UI; stock-mode discovery + custom-firmware install + MAP2-canonical SysEx config; 7 phases, ~25-35h)
+- `[>]` `T2459-H3-CFG` — MeloAudio Commander Configurator (in-platform UI; Phases 1-5 + Outer-Loop-2 dispatcher SHIPPED 2026-05-07 across `813b6331` + `5d24a35a`; 251 tests; HIL evidence is the operator gate)
 - `[>]` `T2459-H4` — Device-service migrations (Maschine/MPX-1/IntelFX) + HIL parity
 - `[>]` `T2459-H5` — MIDI Hub v2 absorption and route consolidation
 - `[✓]` `T2472` — Snapshot editor data-layer extraction (closed 2026-05-06; 0 inline `useMutation` blocks remain on the page; all 3 cycle-59 deferred reads extracted; 85 SnapshotEditor jest suites / 509 tests green; typecheck + atomic build clean; bundle `SnapshotEditorPageContent-Sg9w7aBD.js`)
@@ -240,7 +240,31 @@ Description:
   - **Per-installation override compatibility with H1 IPC schema** — discovery saves to a per-host YAML, but the host's `mapping_activate` IPC frame takes a descriptor not a per-host file. Phase 2's resolver loads the YAML at activation time and merges with the device-pack profile before sending the descriptor; the host doesn't need to know about per-host overrides.
 - Definition of Done (subtask-level): All 7 phases ship; bench HIL evidence captured for stock-discovery path AND custom-firmware path; lint suite 0/0; typecheck + atomic build clean; T2459-H3 parent gates met (acceptance text "physical Commander drives chain bypass + tuner-on through new path with bit-identical CC mappings" satisfied); dual-pushed.
 Assigned to: Claude
-Last updated: 2026-05-07 EDT — Claude: subtask filed; Phase 1+2 starting in this session.
+
+  2026-05-07 — Claude: **Phases 1-5 + L2 dispatcher all SHIPPED across two ship cycles (`813b6331` Configurator stack + `5d24a35a` engine-command dispatcher).**
+
+  Phase 1 (detection): `app/services/devices/meloaudio/commander_detection.py` — STOCK / CUSTOM / DFU / UNKNOWN / NOT_PRESENT classification via USB descriptor probing. Live-verified against the bench's TSMIDI2.0 unit.
+
+  Phase 2 (discovery): `commander_discovery.py` (orchestrator + override file format + atomic save) + `commander_discovery_subscriber.py` (mido+rtmidi-via-ALSA-seq subscriber that sidesteps the PipeWire UMP-MIDI2 bridge gap, filed separately as T2459-H7-PW-UMP).
+
+  Phase 3 (SysEx packer): `sysex_packer.py` — full port of harvie256's `cmdBinaryPacker.py` + `settingsBinaryPacker.py` with attribution preserved. Global settings, bank naming, 10-command-per-button packing (PC/CC/Note/PB/Start/Stop), full flash image + 16-byte chunked WRITE_FLASH SysEx, erase + reset frames, full sequence builder.
+
+  Phase 4 (DFU flash orchestrator): `dfu_flash.py` — DfuFlashEvent / DfuFlashPhase / DfuFlashRequest, find_dfu_util, list_bundled_firmware, build_dfu_util_command (`-a 0 -s 0x08000000:leave -D ...`), parse_dfu_util_progress, run_pre_check, run_dfu_flash with subprocess_runner test seam.
+
+  Phase 5 (Configurator UI): `app/routes/devices_meloaudio_commander.py` (FastAPI: GET /status, GET /override, DELETE /override, GET /firmware/bundled) + frontend `web/src/app/pages/midi-services/MeloAudioCommanderConfigurator.tsx` + `MeloAudioCommanderDiscoveryPanel.tsx` + `MeloAudioCommanderFirmwarePanel.tsx`. Mounted at `/midi/devices/meloaudio-midi-commander/configurator`. Polls /status every 2.5s. Restore-to-stock runbook links to MeloAudio support per Q2.
+
+  Outer Loop 2 (post-Configurator): `commander_resolver.py` (device-pack + override merger; `EffectiveCommanderProfile.find_binding`) + `engine_command_dispatcher.py` (exact + glob pattern routing, error isolation, observability counters) + `engine_command_handlers.py` (audio.chain.<N>.bypass, audio.snapshot.recall, audio.master.volume, audio.transport.tap_tempo with HandlerHooks DI seam) + `docs/midi/ENGINE_COMMAND_DISPATCHER.md`.
+
+  Test surface delta: 53 new backend tests (resolver:13 + dispatcher:16 + handlers:18 + integration:6) + 12 backend route tests + 20 frontend tests + 6 prior phase suites = **231 passing in the meloaudio + t2459 selector**, 0 failures across the run. Frontend `npm run typecheck` + atomic `npm run build` both clean.
+
+  Phase 6 docs (queued for L3 of this campaign): `docs/midi/MELOAUDIO_COMMANDER_CONFIGURATOR.md` architecture deep-dive; `docs/midi/MELOAUDIO_COMMANDER_FIRMWARE.md` already shipped in slice 1 with full mode-table.
+
+  Phase 7 HIL evidence — operator-driven, awaits the next bench session. With this commit, the dispatcher path is end-to-end testable in CI without the audio engine; the bench gate is "wire HandlerHooks to chain_service / snapshot_runtime_service / audio_engine + run a 30-min HIL soak with Commander driving chain bypass + snapshot recall."
+
+  Bundles live at `device-packs/meloaudio/firmware/` (README + LICENSE-harvie256.md + .dfu binary placeholder); operator-installed binaries land alongside.
+
+Last updated: 2026-05-07 EDT — Claude: Phases 1-5 + Outer Loop 2 dispatcher shipped + dual-pushed (`813b6331` + `5d24a35a`). Phase 6 docs deep-dive is the next code-side slice; Phase 7 HIL is the operator gate.
+Prior — 2026-05-07 EDT — Claude: subtask filed; Phase 1+2 starting in this session.
 
 ---
 
