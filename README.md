@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1497** Python | **1546** TypeScript | **183** C++/H | **147** Docs | **4092** total commits | **4** stars | **0** forks | **0** open issues
+**1497** Python | **1546** TypeScript | **183** C++/H | **147** Docs | **4094** total commits | **4** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -175,8 +175,8 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-DOCS:START -->
 | Document | Last Updated |
 |:---------|:------------|
+| [MAP2 Canonical Project Worklist](https://github.com/matthewmackes/map2-audio/blob/master/docs/PROJECT_WORKLIST.md) | 2026-05-07 |
 | [MAP2 Audio Platform — AI Instructions](https://github.com/matthewmackes/map2-audio/blob/master/docs/CLAUDE.md) | 2026-05-06 |
-| [MAP2 Canonical Project Worklist](https://github.com/matthewmackes/map2-audio/blob/master/docs/PROJECT_WORKLIST.md) | 2026-05-06 |
 | [Autonomous Loop Closure Status — 2026-05-04 (cycles 11-60)](https://github.com/matthewmackes/map2-audio/blob/master/docs/PROJECT_WORKLIST_AUTONOMOUS_LOOP_STATUS_20260504.md) | 2026-05-04 |
 | [MAP2 Renames — Migration Notes](https://github.com/matthewmackes/map2-audio/blob/master/docs/RENAMES.md) | 2026-05-03 |
 | [MAP2 Backend Runtime Contract](https://github.com/matthewmackes/map2-audio/blob/master/docs/backend-runtime-contract.md) | 2026-04-27 |
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`7ac1d3a5`](https://github.com/matthewmackes/map2-audio/commit/7ac1d3a5d19911f2c3ee4397d6258a0ac667bcee) | docs(t2481): ungate E1/E4/E6/E7 + G4-bench — visual sign-... | Map2 Audio | 2026-05-07 |
+| [`787ef922`](https://github.com/matthewmackes/map2-audio/commit/787ef922caf76b0335c6b682a9ac2676eb783d88) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-07 |
 | [`9611f094`](https://github.com/matthewmackes/map2-audio/commit/9611f094a6b6abe1b44422b1bcc3f9d83e52a06d) | docs(t2481): cycle 10 — session-end worklist refresh + ep... | Map2 Audio | 2026-05-06 |
 | [`e1f785f4`](https://github.com/matthewmackes/map2-audio/commit/e1f785f4b7708266bac05ae12190878224f2e7f3) | refactor(web): T2481 cycle 9 — CollectionsTab primitives ... | Map2 Audio | 2026-05-06 |
 | [`f7a6be23`](https://github.com/matthewmackes/map2-audio/commit/f7a6be23b3b1b1b85663e53808ed135df3b99a45) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-07 |
 | [`876b4ab6`](https://github.com/matthewmackes/map2-audio/commit/876b4ab6f520824d119d839c6c1eef1a0c4adc6f) | refactor(web): T2481 cycle 8 — ratchet map2/no-raw-dialog... | Map2 Audio | 2026-05-06 |
 | [`3d55b273`](https://github.com/matthewmackes/map2-audio/commit/3d55b27313541e2ac6a566c966e256b61112a52a) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-07 |
 | [`f3913360`](https://github.com/matthewmackes/map2-audio/commit/f3913360b88a284a5f9b4fb9b454e4f6962ffab9) | docs(t2481): cycle 7 — lint suppression audit refresh pos... | Map2 Audio | 2026-05-06 |
-| [`33bac9a0`](https://github.com/matthewmackes/map2-audio/commit/33bac9a055754c6b28b51cfad1301abeb05559f6) | refactor(web): T2481 cycle 6 — RequestBuilderTab primitiv... | Map2 Audio | 2026-05-06 |
-| [`62051739`](https://github.com/matthewmackes/map2-audio/commit/62051739daa4260dfc3249a4cd3bbbe9fd52aef1) | refactor(web): T2481 cycle 5 — TrafficMonitorTab primitiv... | Map2 Audio | 2026-05-06 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
