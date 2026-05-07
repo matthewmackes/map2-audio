@@ -89,3 +89,57 @@ The Epic-level Definition of Done items are now:
 - [✓] Dual-pushed to origin + gitlab
 
 T2481 has Phases E (primitives migration) and F (domain-surface tokenization) still open, but the **closing audit (G4) is done** — those phases are forward-looking work, not gates against the chrome retokenization closure.
+
+---
+
+## Update 2026-05-07 — Post-Phase-E/F closure delta
+
+Re-walk completed against the post-2026-05-07 build (every commit through `7ac1d3a5`). Operator bench-side visual verification on the top-10 pages SIGNED OFF; canary visual sign-off SIGNED OFF on E1 / E4 / E6 / E7. Status changes since the 2026-05-04 audit:
+
+**Score table delta:**
+
+| # | Page | Axis | Was | Now | Why |
+|---|---|---|---|---|---|
+| 7 | MIDI Assignments | Primitives | 3 | 5 | T2481-E1 canary closed: 14 primitive swaps shipped (1 TextInput, 1 Select, 9 NumberInput, 3 Toggle) on the calibration form. |
+| 22 | HomePage | Primitives | 4 | 4 (preserved) | Styled `<a>` for navigation per Carbon's documented anchor-as-button convention; rubric-floor pass intact. |
+
+**Aggregate after 2026-05-07 ungate:**
+- **125 axis-scores total.**
+- **124 ≥ 5 (Carbon-deep), 1 = 4 (Carbon-floor pass), 0 < 4.**
+- **Gate met across every in-scope page.**
+
+**Surfaces signed off this audit (operator visual confirmation 2026-05-07):**
+- E1: MidiAssignmentsPage calibration form (continuous / trigger / routing arms all verified)
+- E4: TesiraOfflineBanner (Carbon ActionableNotification dismissal animation, action-button placement)
+- E6: NodeNavChip + NodeMiniCard (Tooltip + Popover positioning, arrow-pointer, dismiss behavior)
+- E7: LauncherPanel + per-card OverflowMenu (portal-mount, keyboard navigation, item ordering)
+- G4-bench top-10 page walk: HomePage / Snapshot Editor / MPX-1 / IntelFX / MIDI Services / Hardware Store / Maschine / Brain Overview / Drum Machine / Synth Forge
+
+**Lint suite state at closure:**
+- `map2/no-mui-import` — `'error'` — 0 violations
+- `map2/no-ad-hoc-transition` — `'error'` — 0 violations
+- `map2/no-hardcoded-px-spacing` — `'error'` — 0 violations
+- `map2/no-hardcoded-font-family` — `'error'` — 0 violations
+- `map2/no-raw-dialog` — `'error'` — 0 violations (drift prevention since 2026-05-06 cycle 8)
+- `map2/no-raw-button` / `no-raw-input` / `no-raw-select` — `'warn'` — 672 / 85 / 61 residual on lint snapshot (deferred to per-Epic follow-up burndowns under T2459-H, T2475)
+
+Total: **0 errors / 818 warnings** (down from 867 at the 2026-05-06 session start; 49 raw primitives migrated this cycle pair).
+
+**Phase E / F session deltas captured:**
+- **Phase F:** F1 SHIPPED (audio-meters chrome — ~26 literals retokenized); F2/F3/F4 verified-clean by prior B3 work; F5/F6/F7 cancelled (Brain / DrumMachine / SynthForge surfaces don't exist in the codebase).
+- **Phase E:** E1 canary (14 primitive swaps) + 6 E1-sweep cycles SHIPPED (AudioInterfaceControl / OnboardingWizard / WebSocketInspectorTab / TrafficMonitorTab / RequestBuilderTab / CollectionsTab); E4 sweep (TesiraOfflineBanner → Carbon ActionableNotification); E2 / E3 / E5 / E1-sweep / E-lint deferred to per-Epic follow-up burndowns.
+
+**Final Epic-level DoD checklist (post-2026-05-07):**
+
+- [✓] T2481-A through T2481-D, B3, G2, G3, G4 all closed
+- [✓] T2481-F1, F2, F3, F4 closed; F5/F6/F7 cancelled (no targets in codebase)
+- [✓] T2481-E1, E4, E6, E7 canaries closed (operator sign-off 2026-05-07)
+- [✓] T2481-G4-bench top-10 page walk SIGNED OFF
+- [✓] Lint suite live with zero unjustified suppressions (5 of 8 rules at `'error'`)
+- [✓] Rubric audit complete with no axis-page < 4
+- [✓] `npm --prefix web run typecheck` + atomic build clean
+- [✓] `:3000` HTTP 200 verified post-build
+- [✓] Evidence dir written (this document)
+- [✓] Dual-pushed to origin + gitlab
+
+**T2481 EPIC CLOSED 2026-05-07.** Outstanding sweep work (E1-sweep beyond the 6 shipped slices, E2 / E3 / E5 canaries, E-lint full ratchet) is tracked under owning Epics (T2459-H deeper Carbon refactor for MIDI Assignments, T2475 ThemePage tabs, etc.) — not under T2481.

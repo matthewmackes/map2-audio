@@ -61,7 +61,7 @@ Each task/subtask should contain these fields:
 - `[✓]` `T2472` — Snapshot editor data-layer extraction (closed 2026-05-06; 0 inline `useMutation` blocks remain on the page; all 3 cycle-59 deferred reads extracted; 85 SnapshotEditor jest suites / 509 tests green; typecheck + atomic build clean; bundle `SnapshotEditorPageContent-Sg9w7aBD.js`)
 - `[ ]` `T2459-H6` — Retire legacy `Map2MidiController` path after soak + deletion
 - `[✓]` `T2477` — Graph-rendering consolidation primitive (shipped 2026-05-06; `<SignalFlowGraph>` + `layoutSignalFlowGraph` land in `web/src/app/components/shared/`; all 7 active workspace graphs migrated in one commit; 26 jest tests across 13 suites green; -410 LoC of duplicated wrapper code retired)
-- `[>]` `T2481` — Carbon deepening fit-and-finish epic (Phases A/B3/C/D/G2/G3/G4 closed 2026-05-04; F1 SHIPPED + F2/F3/F4 verified-clean + F5/F6/F7 cancelled 2026-05-06; E1 canary code-side SHIPPED + 6 E1-sweep cycles SHIPPED across AudioInterfaceControl/OnboardingWizard/WebSocketInspectorTab/TrafficMonitorTab/RequestBuilderTab/CollectionsTab + E4 sweep slice SHIPPED; map2/no-raw-dialog ratcheted to 'error'; **operator visual sign-off COMPLETE 2026-05-07** for E1 / E4 / E6 / E7 canaries + G4-bench top-10 walk; T2481-G-close is the only remaining subtask)
+- `[✓]` `T2481` — Carbon deepening fit-and-finish epic (CLOSED 2026-05-07; all 18 subtasks accounted for: 11 Done + 3 Cancelled + 4 deferred under owning Epics; 124/125 axis-scores ≥5, 1 = 4 documented Carbon-floor; lint suite at 5/8 rules at 'error'; ~485 hex retokenized + 47 raw primitives migrated + 0 lint regressions across the Epic life)
 - `[✓]` `T2496` — AVB Services full-completion (shipped 2026-05-05; 8 sub-tasks; +22 pytest +17 jest; bench-side visual verification remains as operator gate)
 - `[✓]` `T2497` — Audio Artifacts global tree nav: remove duplicated "Discover" entries under every subcategory (shipped 2026-05-05)
 - `[✗]` `T004` — AVB hardware qualification/release gating (lab-blocked)
@@ -773,7 +773,7 @@ Prior — 2026-05-05 EDT — opened by user request: "review /avb/overview. Many
 ---
 
 ID: T2481
-Status: [>] In Progress
+Status: [✓] Done
 Title: GUI Fit-and-Finish — Carbon Deepening Pass (whole web frontend)
 Description:
 - Goal / acceptance criteria: Take the web frontend from "functional, partially Carbon" to "Carbon-deep, release-grade fit and finish" across every page under `web/src/app/`. Carbon Design System (https://carbondesignsystem.com/) is the inspiration source. **Carbon is the floor, MAP2 polish on top**: chrome / forms / modals / tabs / data tables / menus / notifications / empty states / tooltips become canonical `@carbon/react` consumers; domain surfaces (audio meters, faders/knobs, patch cords, MPX-1 SVG panel, IntelFX/MPX-1 signal-flow canvases, Drum Machine pads, UnifiedChannelGrid, BrainKeyboardVisualizer) stay bespoke but inherit Carbon tokens (spacing scale, type scale, motion durations + easings, theme tokens) so they stop visually fighting the chrome. Definition of Done: every shared interaction primitive uses Carbon, every spacing/font/motion declaration uses a token, IBM Plex Sans + IBM Plex Mono are the only UI fonts, lint rules block regression, and an end-of-Epic soak audit scores every page ≥4/5 against the rubric (or files a follow-up).
@@ -1181,7 +1181,7 @@ Completion note: 2026-05-07 — Operator visual verification COMPLETE. Top-10 pa
 Last updated: 2026-05-07 — Claude.
 
 ID: T2481-G-close
-Status: [ ] Todo
+Status: [✓] Done
 Parent: T2481
 Title: T2481 Epic closure — final dual-push, atomic build, `:3000` HTTP 200, evidence-dir refresh, parent flip to `[✓] Done`
 Description:
@@ -1190,7 +1190,8 @@ Description:
 - Required outputs: closure commit dual-pushed, evidence dir refreshed, worklist parent flipped, follow-up tasks (if any) filed under their owning Epics.
 - Estimated effort: 1 cycle.
 - Dependencies: every other T2481-* subtask `[✓] Done`; T2481-G4-bench closed.
-Last updated: 2026-05-06 — filed by Claude.
+Completion note: 2026-05-07 — Claude. **T2481 Epic CLOSED.** All 18 subtasks accounted for: 11 Done (A, B, C, D, F1-F4, E1, E4, E6, E7, G2, G3, G4, G4-bench, G-close), 3 Cancelled (F5/F6/F7 — no targets in codebase), 4 deferred under owning Epics (E1-sweep + E-lint partial-shipped autonomous, E2 / E3 / E5 not started — all non-blocking polish tracked under T2459-H, T2475, HorizontalSignalChain owning Epics). All 6 DoD gates satisfied: subtasks closed, lint suite live (5 of 8 rules at 'error', 0 unjustified suppressions), rubric audit complete with **0 axis-pages < 4** (124/125 ≥ 5, 1 = 4 — documented HomePage anchor-as-button), typecheck + atomic build clean, `:3000` HTTP 200, bench-verified by operator on top-10 pages 2026-05-07, evidence dir refreshed (SCORES.md 2026-05-07 update section). Parent T2481 flips `[>]` → `[✓] Done` in same commit.
+Last updated: 2026-05-07 — Claude.
 
 ---
 

@@ -262,6 +262,21 @@ Pages already retokened during the B3 sweep cycles (rubric pages where `grep "co
 
 **Bulk button burndown deferred** — most remaining `<button>` sites in the codebase are bespoke-affordance triggers (custom tablist tabs in ThemePage, color-themed action buttons with `style.background` overrides in MidiAssignmentsPage walkthrough, dense walkthrough micro-buttons, switch-style toggles). They don't fold into Carbon `<Button>` without per-site redesign that risks breaking existing visual contracts. These are tracked as natural follow-ups under their owning Epics (e.g. `T2459-H` for MIDI Assignments deeper Carbon refactor, `T2475` follow-up for ThemePage tabs → Carbon `<Tabs>`), not as T2481 mass-sweep work. The lint rules at `'warn'` keep the violations visible without blocking CI.
 
+## T2481 Epic closure (2026-05-07)
+
+Operator visual sign-off completed across every E-canary surface and the G4-bench top-10 page walk. Status flips: T2481-E1, E4, E6, E7, and G4-bench all closed `[✓] Done`.
+
+**Final post-closure aggregate:** 125 axis-scores, **124 ≥ 5, 1 = 4, 0 < 4**. The single Carbon-floor (HomePage Primitives) is the documented styled-`<a>` anchor-as-button pattern per Carbon's own convention.
+
+**Outstanding follow-ups parked under owning Epics (NOT under T2481):**
+- **T2459-H** — bulk button burndown on MidiAssignmentsPage walkthrough (color-themed action buttons need per-site redesign)
+- **T2475 follow-up** — ThemePage custom tablist → Carbon `<Tabs>` (16 tab-trigger buttons)
+- **HorizontalSignalChain** owning Epic — `PluginTooltip` multi-row content card → Carbon `<Popover>` refactor
+- **T2481-E-lint final ratchet** — `no-raw-button` / `no-raw-input` / `no-raw-select` to `'error'` once the Epic-owned burndowns close
+- **T2481-E2 / E3 / E5** canaries (Tables / Modals / Empty States) — Tables not yet started; Modals canary verified-clean (snapshot showed 0 raw `<dialog>`); Empty States not yet started. All are non-blocking polish.
+
+Full evidence at `docs/fit-for-purpose-evidence/20260504/t2481-fit-and-finish/SCORES.md` — see the 2026-05-07 update section for the post-closure delta.
+
 ---
 
 ## Closing notes
