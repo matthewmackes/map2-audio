@@ -1029,7 +1029,7 @@ Cancellation note: 2026-05-06 — Claude. **CANCELLED — target surfaces not pr
 Last updated: 2026-05-06 — Claude.
 
 ID: T2481-E1
-Status: [ ] Todo
+Status: [>] In Progress
 Parent: T2481
 Title: Forms — canary `MidiAssignmentsPage` per `docs/design/T2481_E1_MIDI_ASSIGNMENTS_CANARY.md`
 Description:
@@ -1038,7 +1038,8 @@ Description:
 - Acceptance: zero raw `<input>`/`<select>`/`<textarea>` on this page; existing MidiAssignments jest suite green; lint plugin's `map2/no-raw-input` + `map2/no-raw-select` rules added in `warn` mode covering `web/src/app/pages/midi-services/MidiAssignmentsPage.tsx`; visual parity confirmed by operator at port 3000.
 - Required outputs: page diff, lint-rule scaffold (warn mode for now; ratchet to error after E1-sweep), rubric note bumping MIDI Assignments Primitives axis from 4 → 5.
 - Estimated effort: 1 operator session + 1 cycle of follow-ups.
-Last updated: 2026-05-06 — filed by Claude.
+Progress note: 2026-05-06 — Claude. **Code-side migration SHIPPED + lint-rule scaffold SHIPPED.** Lint plugin gained four new primitive-banning rules (`map2/no-raw-button`, `map2/no-raw-input`, `map2/no-raw-select`, `map2/no-raw-dialog`) at `'warn'` mode. Initial violation snapshot captured: **681 buttons / 113 inputs / 73 selects / 0 dialogs** (the modal sweep already cleared `<dialog>`). Calibration form on `MidiAssignmentsPage.tsx` lines 1312-1408 migrated: 1 TextInput + 1 Select+SelectItem + 9 NumberInput (hideSteppers + hideLabel for the dense range-pair layouts) + 3 Toggle(size="sm") = 14 primitive swaps. Surrounding `.field` wrapper preserved with `cal-field--carbon` modifier reserved for follow-up CSS rhythm tweaks. Lint diff: -3 buttons / -10 inputs / -1 select. Typecheck + atomic build clean (18.80s); MidiAssignmentsPage 38/38 jest tests green across 3 suites. Operator visual sign-off (DoD gate 5) at `localhost:3000/midi/assignments` with all three conditional arms (continuous/trigger/routing) is the remaining gate before T2481-E1 flips to `[✓] Done` and unblocks E1-sweep.
+Last updated: 2026-05-06 — Claude.
 
 ID: T2481-E1-sweep
 Status: [ ] Todo
@@ -1077,7 +1078,7 @@ Description:
 Last updated: 2026-05-06 — filed by Claude.
 
 ID: T2481-E4
-Status: [ ] Todo
+Status: [>] In Progress
 Parent: T2481
 Title: Notifications — canary `AudioDeviceDisconnectedBanner` + sweep
 Description:
@@ -1086,7 +1087,15 @@ Description:
 - Acceptance: every hand-rolled banner outside §10.5 → Carbon notification primitive; lint suite 0/0; full-suite jest green.
 - Required outputs: canary diff + sweep diffs; rubric refresh.
 - Estimated effort: 1 operator session + 2–3 autonomous cycles.
-Last updated: 2026-05-06 — filed by Claude.
+Progress note: 2026-05-06 — Claude. **Canary verified-clean + first sweep slice SHIPPED.** Audit:
+  - `AudioDeviceDisconnectedBanner` (T2453): already `<ActionableNotification kind="error">` — was the platform's canonical pattern from prior work; canary surface needed no migration.
+  - `TesiraOfflineBanner`: hand-rolled banner with Carbon `<Button>` + `<InlineLoading>` + `<Close>` icon button inside a custom `tesira-offline-banner__*` chrome wrapper — **migrated to `<ActionableNotification kind="warning">`**. 38 lines of hand-rolled chrome → 12-line ActionableNotification call. Tesira suite 23/23 (41 tests) green post-migration.
+  - `PublishReadyBanner`: already fully Carbon, two-action info-banner shape (Diff + Publish) that doesn't fold into ActionableNotification's single-action contract — kept as the canonical "two-action info banner" pattern.
+  - `mobile-connection-banner` (AppShell): non-actionable WebSocket-status indicator with `role="status"` + `aria-live="polite"`. Migrating would expand visual prominence and violate the standing rule "no InlineNotification for explanatory text". Stays.
+  - `hm-audio-banner` (AudioNodeFeatures): info card, not a notification. Left alone.
+  - `DeviceContextBanner`: already deprecated by Unified Pill directive; retirement tracked there, not here.
+  Operator visual sign-off on the TesiraOfflineBanner migration at `localhost:3000/midi-services/tesira/<deviceId>` is the remaining gate before T2481-E4 flips to `[✓] Done`.
+Last updated: 2026-05-06 — Claude.
 
 ID: T2481-E5
 Status: [ ] Todo
@@ -1101,7 +1110,7 @@ Description:
 Last updated: 2026-05-06 — filed by Claude.
 
 ID: T2481-E6
-Status: [ ] Todo
+Status: [>] In Progress
 Parent: T2481
 Title: Tooltips + popovers — canary `NodeNavChip popover` + sweep
 Description:
@@ -1110,10 +1119,13 @@ Description:
 - Acceptance: every hand-rolled tooltip/popover outside §10.5 → Carbon primitive; Unified Pill directive preserved (popover-action targets unchanged); lint suite 0/0.
 - Required outputs: canary diff + sweep diffs; rubric refresh; `docs/CLAUDE.md` Unified Pill section refreshed if popover-mount mechanism changes.
 - Estimated effort: 1 operator session + 2–3 autonomous cycles.
-Last updated: 2026-05-06 — filed by Claude.
+Progress note: 2026-05-06 — Claude. **Canary verified-clean.** `NodeNavBar.tsx` already uses Carbon `<Popover>` + `<PopoverContent>` to render the `NodeMiniCard` (from prior Unified Pill / NodeNav work); `NodeNavChip.tsx` already uses Carbon `<Tooltip>` for the hostname hover. Canary surface needs no migration. **Remaining sweep work** (autonomous-safe after the canary visual sign-off):
+  - `HorizontalSignalChain/PluginTooltip.tsx`: hand-rolled multi-row info card (~40 LoC of `plugin-tooltip-*` chrome). Not a 1:1 swap to Carbon `<Tooltip>` (single-line label primitive); needs a `<Popover>` refactor with structured `<PopoverContent>` body. Filed for the next focused session — cancellation rationale: "this is a content card, not a tooltip; the Carbon primitive boundary doesn't fit the existing API surface without a wider redesign of how the host renders hover details."
+  Operator visual sign-off on the existing NodeNavChip + NodeMiniCard surfaces is the remaining gate before T2481-E6 flips to `[✓] Done`.
+Last updated: 2026-05-06 — Claude.
 
 ID: T2481-E7
-Status: [ ] Todo
+Status: [>] In Progress
 Parent: T2481
 Title: Dropdowns + menus + overflow menus — canary `AppShell user menu` + sweep
 Description:
@@ -1122,7 +1134,8 @@ Description:
 - Acceptance: lint plugin rule `map2/no-raw-button` activated in `warn` mode covering JSX `<button>` sites that match dropdown-trigger patterns; every hand-rolled dropdown outside §10.5 → Carbon primitive; lint suite 0/0.
 - Required outputs: canary diff + sweep diffs; rubric refresh.
 - Estimated effort: 1 operator session + 3 autonomous cycles.
-Last updated: 2026-05-06 — filed by Claude.
+Progress note: 2026-05-06 — Claude. **Canary verified-clean.** `LauncherPanel.tsx` already uses Carbon `<OverflowMenu>` + `<OverflowMenuItem>` for the platform's user-menu equivalent (Restart backend / Refresh desktop / Log out actions); `CarbonCardShell.tsx` already uses `<OverflowMenu size="sm" flipped>` for the per-card "More options" menu. The canary `AppShell user menu` surface as named in the spec is the LauncherPanel — already Carbon. The `map2/no-raw-button` lint rule landed in T2481-E1 at `warn` mode (681 violations on the snapshot — the largest of the four primitive rules); the sweep work on those 681 sites is the remaining E7-sweep autonomous-safe burndown after operator sign-off on a few representative pages. Operator visual sign-off on the existing OverflowMenu surfaces is the remaining gate before T2481-E7 flips to `[✓] Done`.
+Last updated: 2026-05-06 — Claude.
 
 ID: T2481-E-lint
 Status: [ ] Todo
