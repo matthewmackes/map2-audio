@@ -1,4 +1,5 @@
 import { useEffect, useMemo, useState } from 'react'
+import { Checkbox, Select, SelectItem, TextInput } from '@carbon/react'
 
 import type { OpenApiCatalogEndpoint } from '../../hooks/useOpenApiSchema'
 import {
@@ -409,15 +410,21 @@ export function RequestBuilderTab({
       {activeDraft && (
         <>
           <div className="api-observatory-builder__request-row">
-            <select
+            <Select
+              id="builder-method"
+              labelText="HTTP method"
+              hideLabel
               value={activeDraft.method}
               onChange={(event) => upsertActiveDraft((draft) => ({ ...draft, method: event.target.value }))}
             >
               {['GET', 'POST', 'PUT', 'PATCH', 'DELETE', 'HEAD', 'OPTIONS'].map((method) => (
-                <option key={method} value={method}>{method}</option>
+                <SelectItem key={method} value={method} text={method} />
               ))}
-            </select>
-            <input
+            </Select>
+            <TextInput
+              id="builder-url"
+              labelText="Request URL"
+              hideLabel
               data-api-observatory="builder-url"
               value={activeDraft.url}
               onChange={(event) => upsertActiveDraft((draft) => ({ ...draft, url: event.target.value }))}
@@ -455,16 +462,22 @@ export function RequestBuilderTab({
 
               <h3>Auth</h3>
               <div className="api-observatory-builder__auth-row">
-                <select
+                <Select
+                  id="builder-auth-mode"
+                  labelText="Auth mode"
+                  hideLabel
                   value={activeDraft.authMode}
                   onChange={(event) => upsertActiveDraft((draft) => ({ ...draft, authMode: event.target.value as RequestDraft['authMode'] }))}
                 >
-                  <option value="none">None</option>
-                  <option value="bearer">Bearer</option>
-                  <option value="basic">Basic</option>
-                  <option value="api-key">API Key</option>
-                </select>
-                <input
+                  <SelectItem value="none" text="None" />
+                  <SelectItem value="bearer" text="Bearer" />
+                  <SelectItem value="basic" text="Basic" />
+                  <SelectItem value="api-key" text="API Key" />
+                </Select>
+                <TextInput
+                  id="builder-auth-value"
+                  labelText="Auth value"
+                  hideLabel
                   value={activeDraft.authValue}
                   onChange={(event) => upsertActiveDraft((draft) => ({ ...draft, authValue: event.target.value }))}
                   placeholder="{{token}}"
@@ -613,27 +626,25 @@ export function RequestBuilderTab({
                   <StatusBadge status={item.status} compact />
                   <span>{item.url}</span>
                   <span>{item.durationMs.toFixed(1)}ms</span>
-                  <label>
-                    <input
-                      type="checkbox"
-                      checked={historyDiffIds[0] === item.id || historyDiffIds[1] === item.id}
-                      onChange={(event) => {
-                        if (!event.target.checked) {
-                          setHistoryDiffIds((prev) => [
-                            prev[0] === item.id ? null : prev[0],
-                            prev[1] === item.id ? null : prev[1],
-                          ])
-                          return
-                        }
-                        setHistoryDiffIds((prev) => {
-                          if (!prev[0]) return [item.id, prev[1]]
-                          if (!prev[1]) return [prev[0], item.id]
-                          return [prev[1], item.id]
-                        })
-                      }}
-                    />
-                    Diff
-                  </label>
+                  <Checkbox
+                    id={`builder-history-diff-${item.id}`}
+                    labelText="Diff"
+                    checked={historyDiffIds[0] === item.id || historyDiffIds[1] === item.id}
+                    onChange={(_event, { checked }) => {
+                      if (!checked) {
+                        setHistoryDiffIds((prev) => [
+                          prev[0] === item.id ? null : prev[0],
+                          prev[1] === item.id ? null : prev[1],
+                        ])
+                        return
+                      }
+                      setHistoryDiffIds((prev) => {
+                        if (!prev[0]) return [item.id, prev[1]]
+                        if (!prev[1]) return [prev[0], item.id]
+                        return [prev[1], item.id]
+                      })
+                    }}
+                  />
                 </button>
               ))}
             </div>
