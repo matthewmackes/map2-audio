@@ -1,0 +1,10 @@
+{
+  "subtask": "T2459-H3",
+  "controller": "MeloAudio MIDI Commander (TSMIDI2.0)",
+  "controller_key": "meloaudio_midi_commander",
+  "port_id": "Midi-Bridge:TSMIDI2-0 MIDI 1 (capture)",
+  "duration_s": 27.31,
+  "frame_count": 0,
+  "captured_at_utc": "2026-05-07T14:58:09.619629+00:00",
+  "frames": []
+}

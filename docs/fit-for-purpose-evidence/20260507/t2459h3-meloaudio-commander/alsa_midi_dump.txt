@@ -1,0 +1,122 @@
+# T2459-H3 — MeloAudio MIDI Commander HIL evidence
+# Captured: 2026-05-07
+# Tool: `amidi -p hw:4,0,0 --dump` (90s window)
+# Hardware: MeloAudio MIDI Commander (USB ID 2eee:0301), ALSA card 4
+# Bus: USB 2.0, full speed, port usb-0000:00:14.0-7
+#
+# Operator was instructed to press: top 1-4, bottom A-D, bank up/down,
+# expression 1/2 in order. Bank up/down were not pressed in this sweep.
+#
+# Each line is a 3-byte MIDI message (status / data1 / data2), or a
+# 2-byte program change (status / program). Hex.
+
+# Top switch warm-up presses (carried over from the diagnostic capture)
+B0 18 00       # CC 24 release (top switch 1 release)
+B0 16 7F       # CC 22 press   (top switch 3 press)
+B0 19 00       # CC 25 release (top switch 2 release)
+B0 18 7F       # CC 24 press   (top switch 1 press)
+B0 1A 7F       # CC 26 press   (top switch 4 press)
+
+# Bottom row — 4 program-change buttons
+C0 00          # PC 0          (bottom switch A)
+C0 01          # PC 1          (bottom switch B)
+C0 02          # PC 2          (bottom switch C)
+C0 03          # PC 3          (bottom switch D, press 1)
+C0 03          # PC 3          (bottom switch D, press 2)
+C0 03          # PC 3          (bottom switch D, press 3)
+
+# Expression pedal 1 — CC 4, sweep up then back down
+B0 04 0D
+B0 04 0E
+B0 04 11
+B0 04 17
+B0 04 1D
+B0 04 23
+B0 04 2B
+B0 04 32
+B0 04 39
+B0 04 40
+B0 04 47
+B0 04 4D
+B0 04 52
+B0 04 57
+B0 04 5C
+B0 04 60
+B0 04 64
+B0 04 67       # peak ~103/127
+B0 04 66
+B0 04 61
+B0 04 5C
+B0 04 56
+B0 04 4F
+B0 04 49
+B0 04 43
+B0 04 3D
+B0 04 38
+B0 04 32
+B0 04 2F
+B0 04 29
+B0 04 26
+B0 04 21
+B0 04 1F
+B0 04 1B
+B0 04 18
+B0 04 16
+B0 04 13
+B0 04 12
+B0 04 10
+B0 04 0E
+B0 04 0C
+B0 04 0B
+B0 04 0A
+B0 04 09
+B0 04 07
+B0 04 06
+B0 04 05
+B0 04 04
+B0 04 03
+B0 04 02
+B0 04 01
+B0 04 02
+
+# Expression pedal 2 — CC 7, sweep up then back down
+B0 07 44
+B0 07 47
+B0 07 4A
+B0 07 4E
+B0 07 52
+B0 07 56
+B0 07 5A
+B0 07 5D       # peak ~93/127
+B0 07 5A
+B0 07 57
+B0 07 50
+B0 07 4B
+B0 07 45
+B0 07 40
+B0 07 3A
+B0 07 36
+B0 07 31
+B0 07 2D
+B0 07 28
+B0 07 25
+B0 07 20
+B0 07 1E
+B0 07 1A
+B0 07 18
+B0 07 16
+B0 07 13
+B0 07 12
+B0 07 10
+B0 07 0E
+B0 07 0C
+B0 07 0B
+B0 07 0A
+B0 07 09
+B0 07 08
+B0 07 06
+B0 07 05
+B0 07 04
+B0 07 03
+B0 07 02
+B0 07 01
