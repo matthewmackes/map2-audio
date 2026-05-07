@@ -10,7 +10,7 @@
  */
 
 import React, { useCallback, useEffect, useState } from 'react'
-import { Tag } from '@carbon/react'
+import { Button, Select, SelectItem, Tag } from '@carbon/react'
 
 import { LoadingState } from '../../app/components/shared/LoadingState'
 import { useToasts } from '../../app/components/Toasts'
@@ -560,10 +560,9 @@ CURRENT STATUS
           <div className="audio-panel-title">Configuration</div>
 
           <div className="audio-control-group">
-            <label className="audio-control-label" htmlFor="audio-device-select">Audio Device</label>
-            <select
+            <Select
               id="audio-device-select"
-              className="audio-select"
+              labelText="Audio Device"
               value={selectedAudioDevice}
               onChange={(e) => {
                 setSelectedAudioDevice(e.target.value)
@@ -571,64 +570,63 @@ CURRENT STATUS
               }}
             >
               {audioDeviceOptions.length === 0 ? (
-                <option value="">No USB audio devices detected</option>
+                <SelectItem value="" text="No USB audio devices detected" />
               ) : null}
               {audioDeviceOptions.map((option) => (
-                <option key={option.value} value={option.value}>{option.label}</option>
+                <SelectItem key={option.value} value={option.value} text={option.label} />
               ))}
-            </select>
+            </Select>
           </div>
 
           <div className="audio-control-group">
-            <label className="audio-control-label" htmlFor="audio-input-channel-mode-select">Input Channel Mode</label>
-            <select
+            <Select
               id="audio-input-channel-mode-select"
-              className="audio-select"
+              labelText="Input Channel Mode"
               value={selectedInputChannelMode}
               onChange={(e) => {
                 setSelectedInputChannelMode(e.target.value as 'mono_left' | 'mono_right' | 'stereo')
                 setConfigDirty(true)
               }}
             >
-              <option value="mono_left">Mono Left</option>
-              <option value="mono_right">Mono Right</option>
-              <option value="stereo">Stereo</option>
-            </select>
+              <SelectItem value="mono_left" text="Mono Left" />
+              <SelectItem value="mono_right" text="Mono Right" />
+              <SelectItem value="stereo" text="Stereo" />
+            </Select>
           </div>
 
           <div className="audio-control-group">
-            <label className="audio-control-label">Sample Rate</label>
-            <select
-              className="audio-select"
+            <Select
+              id="audio-sample-rate-select"
+              labelText="Sample Rate"
               value={sampleRate}
               onChange={(e) => {
                 setSampleRate(parseInt(e.target.value, 10))
                 setConfigDirty(true)
               }}
             >
-              <option value={44100}>44.1 kHz</option>
-              <option value={48000}>48 kHz</option>
-              <option value={96000}>96 kHz</option>
-              <option value={192000}>192 kHz</option>
-            </select>
+              <SelectItem value={44100} text="44.1 kHz" />
+              <SelectItem value={48000} text="48 kHz" />
+              <SelectItem value={96000} text="96 kHz" />
+              <SelectItem value={192000} text="192 kHz" />
+            </Select>
           </div>
 
           <div className="audio-control-group">
-            <label className="audio-control-label">Buffer Size</label>
-            <select
-              className="audio-select"
+            <Select
+              id="audio-buffer-size-select"
+              labelText="Buffer Size"
               value={bufferSize}
               onChange={(e) => {
                 setBufferSize(parseInt(e.target.value, 10))
                 setConfigDirty(true)
               }}
             >
-              <option value={64}>64 samples (1.3ms)</option>
-              <option value={128}>128 samples (2.7ms)</option>
-              <option value={256}>256 samples (5.3ms)</option>
-              <option value={512}>512 samples (10.7ms)</option>
-              <option value={1024}>1024 samples (21.3ms)</option>
-            </select>
+              <SelectItem value={64} text="64 samples (1.3ms)" />
+              <SelectItem value={128} text="128 samples (2.7ms)" />
+              <SelectItem value={256} text="256 samples (5.3ms)" />
+              <SelectItem value={512} text="512 samples (10.7ms)" />
+              <SelectItem value={1024} text="1024 samples (21.3ms)" />
+            </Select>
           </div>
 
           <div className="audio-control-group">
@@ -636,6 +634,11 @@ CURRENT STATUS
               <label className="audio-control-label" htmlFor="audio-input-gain-slider">Input Gain</label>
               <span className="audio-slider-value">{selectedInputGainDb.toFixed(1)} dB</span>
             </div>
+            {/* carbon-allow: gain-knob range slider; Carbon <Slider> labelText
+                renders two queryable labels (visual + embedded text input)
+                which collide with getByLabelText('Input Gain') in the
+                existing test contract. T2481-E1-sweep follow-up tracks
+                migrating both sliders + the test together. */}
             <input
               id="audio-input-gain-slider"
               aria-label="Input Gain"
@@ -657,6 +660,7 @@ CURRENT STATUS
               <label className="audio-control-label" htmlFor="audio-output-gain-slider">Output Gain</label>
               <span className="audio-slider-value">{selectedOutputGainDb.toFixed(1)} dB</span>
             </div>
+            {/* carbon-allow: gain-knob range slider; see input-gain-slider note. */}
             <input
               id="audio-output-gain-slider"
               aria-label="Output Gain"
@@ -675,44 +679,38 @@ CURRENT STATUS
 
           <div className="audio-button-row">
             {!audioStatus?.running ? (
-              <button
-                className="audio-control-btn"
+              <Button
+                size="md"
                 onClick={handleStartAudio}
                 disabled={isStartingAudio}
               >
                 {isStartingAudio ? 'Starting...' : 'Start Audio'}
-              </button>
+              </Button>
             ) : (
-              <button
-                className="audio-control-btn"
+              <Button
+                size="md"
                 onClick={handleStopAudio}
                 disabled={isStoppingAudio}
               >
                 {isStoppingAudio ? 'Stopping...' : 'Stop Audio'}
-              </button>
+              </Button>
             )}
-            <button
-              className="audio-control-btn"
+            <Button
+              size="md"
               onClick={handleApplyConfig}
               disabled={!configDirty || isApplyingConfig || isStartingAudio || isStoppingAudio}
             >
               {isApplyingConfig ? 'Applying...' : 'Apply Settings'}
-            </button>
+            </Button>
           </div>
 
           <div className="audio-button-row">
-            <button className="audio-control-btn" onClick={handleRestart}>
-              Restart
-            </button>
-            <button className="audio-control-btn" onClick={handleTest}>
-              Test
-            </button>
+            <Button size="md" onClick={handleRestart}>Restart</Button>
+            <Button size="md" onClick={handleTest}>Test</Button>
           </div>
 
           <div className="audio-button-row">
-            <button className="audio-control-btn secondary" onClick={handleMoreInfo}>
-              Device Info
-            </button>
+            <Button size="md" kind="secondary" onClick={handleMoreInfo}>Device Info</Button>
           </div>
         </div>
 
