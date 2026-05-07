@@ -102,9 +102,14 @@ AmbientCapabilities=CAP_SYS_NICE CAP_NET_RAW
 CapabilityBoundingSet=CAP_SYS_NICE CAP_NET_RAW
 
 # Security hardening (NoNewPrivileges removed - RT scheduling via RTKit requires new privileges)
+# /run/map2/ is required for the in-process ControllerHostService supervisor —
+# it spawns the map2-controller-host binary as a subprocess that needs to
+# bind a UDS socket at /run/map2/controller-host.sock. Without this in the
+# ReadWritePaths list, the child fails with `bind() failed: Read-only
+# file system`. Distinct from /run/map2-audio/ (legacy logs/lockfiles dir).
 ProtectSystem=strict
 ProtectHome=read-only
-ReadWritePaths=/home/mm/map2-audio/logs /home/mm/map2-audio/data /home/mm/.map2 /home/mm/.config/pipewire /home/mm/.local/share /home/mm/.cache /tmp /etc/map2 /run/map2-audio /var/lib/map2 /var/log/map2
+ReadWritePaths=/home/mm/map2-audio/logs /home/mm/map2-audio/data /home/mm/.map2 /home/mm/.config/pipewire /home/mm/.local/share /home/mm/.cache /tmp /etc/map2 /run/map2 /run/map2-audio /var/lib/map2 /var/log/map2
 
 [Install]
 WantedBy=multi-user.target
