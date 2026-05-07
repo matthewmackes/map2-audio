@@ -243,6 +243,25 @@ Pages already retokened during the B3 sweep cycles (rubric pages where `grep "co
 
 **Phase B3 substantively closed.** Every operational-chrome `color:` / `background:` / `border:` / `font-size:` declaration on the **top-25 audit pages and 13+ shared chrome components** outside §10.5 carve-outs (PluginCards/Custom/**, Devices/<vendor>/**, Visualizations/**, LV2PluginParameterEditor.tsx, PluginBrowser/**, Dynamics/**, EQ/**, PluginTags/**) now routes through Carbon tokens, swatches, or the `--map2x-heading-*` token family. The closing audit (T2481-G4) walks the full 25-page list with the rubric to score each page; per-page Typography-axis scores should be ≥4 across the swept surfaces.
 
+## Audit progress (T2481 Phase E + F — 2026-05-06 sweep)
+
+**Phase F (domain-surface tokenization):**
+- F1 (audio meters) — SHIPPED `bcdc9e0c`: ~26 chrome literals retokenized across `AudioMeter` / `VuMeterDisplay` / `DynamicsMeteringPanel` / `ClusterMeteringStrip` (clip indicators → `--cds-support-error`, peak/CPU/Xrun status colors → `--cds-support-{success,warning,error}`, label/helper text → `--cds-text-{primary,secondary,helper,disabled}`, meter bar bg → `--cds-layer`). Geometry-tier peak markers + dynamics-module category accents preserved with `// carbon-allow:`. 2 panel-identity accents documented (`#37d6c9` VuMeters teal, `#f59e0b` Dynamics amber).
+- F2 (UnifiedChannelGrid), F3 (signal-flow canvases), F4 (Maschine MK1) — verified-clean (already token-routed by prior B3 work).
+- F5/F6/F7 (Brain / DrumMachine / SynthForge) — cancelled (target surfaces not present in codebase).
+
+**Phase E (primitive migration):**
+- E1 canary (MidiAssignmentsPage calibration form) — code-side migration SHIPPED `5445507b`: 14 primitive swaps (1 TextInput, 1 Select, 9 NumberInput, 3 Toggle). Operator visual sign-off pending.
+- E1-sweep cycle 1 (AudioInterfaceControl) — SHIPPED `23f14ca6`: 4 selects → Carbon Select+SelectItem, 7 buttons → Carbon Button. 2 range sliders held back with `// carbon-allow:` (Carbon Slider's labelText collides with existing test contract).
+- E1-sweep cycle 2 (OnboardingWizard) — SHIPPED `cb7bc9c5`: 2 TextInput, 1 Select, 2 Checkbox; 2 radios held back with `// carbon-allow:` (clickable-card pattern).
+- E4 (TesiraOfflineBanner) — SHIPPED `8f3240fa`: hand-rolled banner → Carbon `<ActionableNotification kind="warning">`. AudioDeviceDisconnectedBanner already canonical (T2453); PublishReadyBanner is two-action shape kept as canonical pattern.
+- E6 (NodeNavChip popover) — verified-clean: NodeNavBar uses Carbon `<Popover>` + `<PopoverContent>`; NodeNavChip uses `<Tooltip>`.
+- E7 (LauncherPanel user menu) — verified-clean: already uses Carbon `<OverflowMenu>` + `<OverflowMenuItem>`.
+
+**Lint plugin gained 4 new primitive-banning rules** (`no-raw-button` / `no-raw-input` / `no-raw-select` / `no-raw-dialog`) at `'warn'`. Initial snapshot: **681/113/73/0**. Post cycle 1+2: **672/99/67/0** (net −9 button, −14 input, −6 select). Modal sweep was already complete by prior work (0 raw `<dialog>` violations).
+
+**Bulk button burndown deferred** — most remaining `<button>` sites in the codebase are bespoke-affordance triggers (custom tablist tabs in ThemePage, color-themed action buttons with `style.background` overrides in MidiAssignmentsPage walkthrough, dense walkthrough micro-buttons, switch-style toggles). They don't fold into Carbon `<Button>` without per-site redesign that risks breaking existing visual contracts. These are tracked as natural follow-ups under their owning Epics (e.g. `T2459-H` for MIDI Assignments deeper Carbon refactor, `T2475` follow-up for ThemePage tabs → Carbon `<Tabs>`), not as T2481 mass-sweep work. The lint rules at `'warn'` keep the violations visible without blocking CI.
+
 ---
 
 ## Closing notes
