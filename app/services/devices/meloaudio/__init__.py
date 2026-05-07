@@ -23,6 +23,14 @@ from .commander_discovery import (
     override_yaml_path,
     save_override,
 )
+from .commander_resolver import (
+    CC_STATUS_BYTE,
+    DEFAULT_MIDI_CHANNEL,
+    EffectiveCommanderProfile,
+    PC_STATUS_BYTE,
+    ResolvedBinding,
+    resolve_commander_profile,
+)
 from .commander_discovery_subscriber import (
     CommanderDiscoverySubscriber,
     SubscriberConfig,
@@ -78,6 +86,12 @@ __all__ = [
     "load_override",
     "override_yaml_path",
     "save_override",
+    "CC_STATUS_BYTE",
+    "DEFAULT_MIDI_CHANNEL",
+    "EffectiveCommanderProfile",
+    "PC_STATUS_BYTE",
+    "ResolvedBinding",
+    "resolve_commander_profile",
     "CommanderDiscoverySubscriber",
     "SubscriberConfig",
     "SubscriberError",

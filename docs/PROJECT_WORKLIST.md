@@ -61,6 +61,7 @@ Each task/subtask should contain these fields:
 - `[>]` `T2459-H5` — MIDI Hub v2 absorption and route consolidation
 - `[✓]` `T2472` — Snapshot editor data-layer extraction (closed 2026-05-06; 0 inline `useMutation` blocks remain on the page; all 3 cycle-59 deferred reads extracted; 85 SnapshotEditor jest suites / 509 tests green; typecheck + atomic build clean; bundle `SnapshotEditorPageContent-Sg9w7aBD.js`)
 - `[ ]` `T2459-H6` — Retire legacy `Map2MidiController` path after soak + deletion
+- `[ ]` `T2459-H7-PW-UMP` — PipeWire 1.4.10 UMP-MIDI2 → legacy MIDI 1.0 bridge gap (filed 2026-05-07; sub-task under T2459-H7)
 - `[✓]` `T2477` — Graph-rendering consolidation primitive (shipped 2026-05-06; `<SignalFlowGraph>` + `layoutSignalFlowGraph` land in `web/src/app/components/shared/`; all 7 active workspace graphs migrated in one commit; 26 jest tests across 13 suites green; -410 LoC of duplicated wrapper code retired)
 - `[✓]` `T2481` — Carbon deepening fit-and-finish epic (CLOSED 2026-05-07; all 18 subtasks closed: 15 Done + 3 Cancelled; 124/125 axis-scores ≥5, 1 = 4 documented Carbon-floor; **all 8 MAP2 lint rules at 'error', 0/0 lint state**; ~485 hex retokenized + ~110 raw primitives migrated/exempted + 0 lint regressions across the Epic life)
 - `[✓]` `T2496` — AVB Services full-completion (shipped 2026-05-05; 8 sub-tasks; +22 pytest +17 jest; bench-side visual verification remains as operator gate)
@@ -640,6 +641,30 @@ Assigned to: Claude
 Last updated: 2026-05-06 EDT - Claude: H6 code-side is complete (Slices 1 + 2 shipped). Sole remaining gate is the 30-min HIL soak with `--midi-driver host`, `--threshold-max-xruns 0 --threshold-max-peak-jitter-ms 0.35`, followed by the atomic deletion PR per `docs/midi/MAP2MIDICONTROLLER_RETIREMENT.md` §4.
 Prior — 2026-05-03 EDT - Claude: Slice 2 (IpcMidiBridgeController factory adapter) shipped; the OFF build is now a working configuration end-to-end. HIL soak + file deletion remain.
 
+
+---
+
+ID: T2459-H7-PW-UMP
+Status: [ ] Todo
+Parent: T2459-H7
+Title: PipeWire 1.4.10 UMP-MIDI2 → legacy MIDI 1.0 bridge gap
+Description:
+- **Origin (HIL bench, 2026-05-07):** With the MeloAudio MIDI Commander connected and emitting on ALSA seq client `32:0 (TSMIDI2.0)`, the libremidi-via-PipeWire JACK MIDI port `Midi-Bridge:TSMIDI2-0 MIDI 1` opens cleanly but never sees kernel events. ALSA-seq direct subscription (`aseqdump -p 32:0`) works — the device is healthy. PipeWire's UMP-MIDI2 ALSA seq clients (clients `142` + `143`) do not auto-bridge legacy `[type=kernel]` MIDI 1.0 clients to JACK MIDI ports, so any MIDI 1.0 device appears as a discoverable source on the JACK side but produces zero events at the libremidi callback.
+- **Scope:** This is a substrate issue affecting *every* legacy MIDI 1.0 device on a PipeWire 1.4.10+ host running UMP-MIDI2 — not just the Commander. The MAP2 Commander Discovery Wizard (Phase 2b) sidesteps it via direct ALSA-seq subscription using mido+rtmidi, but the controller-host's normal `JackMidi` path stays broken until the substrate gap is closed.
+- **Goal:** Bridge legacy ALSA-seq MIDI 1.0 clients into PipeWire's JACK MIDI graph so libremidi (and therefore the controller-host's `JackMidi` backend) sees their events — without forcing operators to manually run `aconnect` or to install a separate kernel module.
+- **Resolution paths (research, not committed):**
+  1. **PipeWire patch / config**: investigate the UMP-MIDI2 client implementation to identify whether a ports-config or per-client policy can opt legacy clients into the bridge. Upstream the fix if PipeWire accepts.
+  2. **MAP2 substrate adapter**: ship a small `map2-midi-bridge` daemon that subscribes via ALSA seq, re-emits via UMP-MIDI2 → JACK. Run alongside the controller-host but isolated.
+  3. **Backend-priority bypass**: keep `AlsaSeq` as the fallback in libremidi's backend probe order on PipeWire 1.4.10+ hosts; controller-host already probes `JackMidi` first with `AlsaSeq` second, but the PipeWire daemon may pre-empt the ALSA seq client. Investigate.
+  4. **Direct ALSA-raw bypass**: have the controller-host detect this gap and probe `AlsaRaw` (kernel raw-MIDI) for affected USB devices — works without PipeWire involvement at all but loses unified routing.
+- **Acceptance:** With the Commander on the bus, the controller-host's `JackMidi` backend receives MIDI events at the libremidi callback for a 30-minute soak (no per-installation manual `aconnect` workaround needed); evidence captured under `docs/fit-for-purpose-evidence/<YYYYMMDD>/t2459h7-pw-ump/`. Whichever resolution path lands in production must be documented in `docs/midi/MIDI_BACKEND.md` with environment-detection logic so MAP2 picks the right backend automatically.
+- **Required outputs:** Resolution decision + implementation, regression test that asserts `JackMidi`-backed reception works for a synthetic MIDI 1.0 client on a PipeWire 1.4.10 host (gated by `MAP2_HIL_PIPEWIRE_UMP=1` so it's a no-op in CI), `docs/midi/MIDI_BACKEND.md` update, evidence directory.
+- **Why this is filed separately, not folded into T2459-H3 / H4:** This is a *substrate* gap, not a device-specific issue. Every device-pack that ships in a future iteration would inherit the same blocker if H3 or H4 tried to absorb it; it deserves its own backlog slot.
+Assigned to: Unassigned (operator-driven; gated on a non-bench resolution decision)
+
+  2026-05-07 — Claude: filed via T2459-H3-CFG slice 2-5 ship cycle. The Discovery Wizard's mido+rtmidi-via-ALSA-seq subscriber (`app/services/devices/meloaudio/commander_discovery_subscriber.py`) is the per-device sidestep; the substrate fix lives here. No code changes for this file in this slice.
+
+Last updated: 2026-05-07 EDT - Claude: Filed. Ownership pending — not on Outer Loop 2's path because it requires substrate decisions (PipeWire upstream / kernel) that aren't local to MAP2 source.
 
 ---
 
