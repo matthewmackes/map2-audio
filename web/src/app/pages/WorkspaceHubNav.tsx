@@ -1,5 +1,6 @@
 import { useMemo, useState } from 'react'
 import { NavLink, useLocation } from 'react-router-dom'
+import { Search as CarbonSearch } from '@carbon/react'
 
 import type { WorkspaceHubNavSection } from './WorkspaceHubContext'
 import './WorkspaceHubNav.css'
@@ -43,13 +44,10 @@ export function WorkspaceHubNav({ sections, className }: WorkspaceHubNavProps) {
       </div>
 
       <div className="workspace-hub-nav__filter">
-        <label className="workspace-hub-nav__filter-label" htmlFor="workspace-hub-nav-filter">
-          Filter workspace areas
-        </label>
-        <input
+        <CarbonSearch
           id="workspace-hub-nav-filter"
-          className="workspace-hub-nav__filter-input"
-          type="search"
+          labelText="Filter workspace areas"
+          size="sm"
           value={filterValue}
           onChange={(event) => setFilterValue(event.target.value)}
           placeholder="Search sections and pages"

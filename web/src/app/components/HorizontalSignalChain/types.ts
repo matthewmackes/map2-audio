@@ -76,17 +76,6 @@ export interface HorizontalConnectorProps {
   isActive?: boolean
 }
 
-export interface PluginTooltipProps {
-  /** The plugin instance data */
-  plugin: ChainPlugin
-  /** Plugin metadata */
-  meta?: Plugin
-  /** Whether the tooltip is visible */
-  isOpen: boolean
-  /** Anchor element for positioning */
-  anchorRef: React.RefObject<HTMLElement>
-}
-
 /** Icon name type for effect categories */
 export type FxIconName =
   | 'fx_amplifier'

@@ -26,6 +26,7 @@ export function AssetUploadButton({
 }: AssetUploadButtonProps) {
   return (
     <div className={`map2-asset-upload-button ${className}`.trim()}>
+      {/* carbon-allow: the AssetUploadButton primitive renders a styled wrapper with an absolute-positioned <input type="file"> as the click target. Carbon <FileUploader> is a fuller surface; this primitive is the platform's compact Carbon-button-styled file picker and is consumed everywhere the operator needs a single-shot upload. */}
       <input
         className="map2-asset-upload-button__input"
         type="file"

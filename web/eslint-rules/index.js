@@ -378,8 +378,41 @@ function makeNoRawPrimitiveRule(elementName, carbonReplacement) {
     create(context) {
       const sourceCode = context.sourceCode ?? context.getSourceCode()
       function hasCarbonAllowOnPrecedingLine(node) {
+        // 1) Standard `// carbon-allow:` line comments above the element
         const comments = sourceCode.getCommentsBefore(node)
-        return comments.some((c) => /carbon-allow\s*:/i.test(c.value))
+        if (comments.some((c) => /carbon-allow\s*:/i.test(c.value))) return true
+        // 2) JSX-comment form `{/* carbon-allow: ... */}` — surfaces as a
+        // sibling JSXExpressionContainer with a JSXEmptyExpression and
+        // attached comments. The element's parent is its wrapping
+        // JSXElement (or JSXFragment); walk THAT parent's children for
+        // the previous sibling immediately before this element.
+        const parent = node.parent
+        if (!parent) return false
+        const siblings = parent.children
+        if (!Array.isArray(siblings)) return false
+        const idx = siblings.indexOf(node)
+        if (idx <= 0) return false
+        for (let i = idx - 1; i >= 0; i -= 1) {
+          const sib = siblings[i]
+          if (!sib) continue
+          // Skip whitespace-only JSXText siblings
+          if (sib.type === 'JSXText' && /^\s*$/.test(sib.value)) continue
+          if (
+            sib.type === 'JSXExpressionContainer' &&
+            sib.expression &&
+            sib.expression.type === 'JSXEmptyExpression'
+          ) {
+            const innerComments = sourceCode.getCommentsInside
+              ? sourceCode.getCommentsInside(sib.expression)
+              : []
+            if (innerComments.some((c) => /carbon-allow\s*:/i.test(c.value))) return true
+          }
+          // Stop at the first non-whitespace, non-comment sibling — the
+          // carbon-allow must be the IMMEDIATELY preceding annotation,
+          // not buried higher up the tree.
+          break
+        }
+        return false
       }
       return {
         JSXOpeningElement(node) {

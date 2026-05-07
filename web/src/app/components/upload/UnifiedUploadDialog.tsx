@@ -408,6 +408,7 @@ export function UnifiedUploadDialog({
           </p>
         </div>
 
+        {/* carbon-allow: hidden file picker triggered by the surrounding drag+drop zone via ref; Carbon <FileUploader> is a fuller surface that owns its own dropzone, but this dialog's drag+drop affordance is custom-styled with theme-tinted accents. */}
         <input
           ref={fileInputRef}
           type="file"

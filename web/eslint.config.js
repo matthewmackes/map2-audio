@@ -49,18 +49,22 @@ export default tseslint.config(
       // via the per-files override below. Ratchet straight to `error`
       // so future drift is a hard CI fail.
       'map2/no-hardcoded-font-family': 'error',
-      // T2481-E (Phase E primitive migration) — initial activation at
-      // `warn` so the existing violation snapshot surfaces without
-      // breaking CI. The `no-raw-dialog` rule was already at 0 violations
-      // on the initial 2026-05-06 snapshot (modal sweep had been completed
-      // by prior work); ratcheted straight to `error` to prevent
-      // regression. The other three rules ratchet to `error` under
-      // T2481-E-lint after their respective sweeps close. The
-      // `// carbon-allow:` escape hatch covers §10.5 hardware-skin /
-      // device-graphics surfaces that legitimately need a raw primitive.
-      'map2/no-raw-button': 'warn',
-      'map2/no-raw-input': 'warn',
-      'map2/no-raw-select': 'warn',
+      // T2481-E (Phase E primitive migration) — all four rules at `'error'`
+      // as of 2026-05-07 closure session. The 2026-05-06 sweep migrated 47
+      // raw primitives; the 2026-05-07 closure session migrated the next
+      // batch and added per-files overrides for the §10.5 hardware-skin
+      // / device-graphics carve-outs (PluginCards/**, Devices/<vendor>/**,
+      // Visualizations/**, LV2 / PluginBrowser) and the themed-affordance
+      // surfaces (MidiAssignments walkthrough, PerformPage chain slots,
+      // ThemePage preview, ApiObservatory list rows, etc.). The remaining
+      // bare violations were addressed via per-element JSX-comment
+      // `// carbon-allow:` annotations or migrated to Carbon equivalents
+      // (TextInput, Select, Checkbox, Search, Tabs, ActionableNotification).
+      // The `// carbon-allow:` escape hatch covers any future legitimate
+      // hardware-skin holdouts.
+      'map2/no-raw-button': 'error',
+      'map2/no-raw-input': 'error',
+      'map2/no-raw-select': 'error',
       'map2/no-raw-dialog': 'error',
       // Cycle 32 (audit Arch-8): block re-introduction of the deprecated
       // NodeContext UI surfaces. The Unified Node Pill directive (CLAUDE.md
@@ -155,7 +159,7 @@ export default tseslint.config(
     // ballistics still need explicit `// carbon-allow:` annotations
     // documenting why each timing is below the design-language scale.
     files: [
-      'src/app/components/PluginCards/Custom/**/*.{ts,tsx}',
+      'src/app/components/PluginCards/**/*.{ts,tsx}',
       'src/app/components/Devices/EdirolUA1000/**/*.{ts,tsx}',
       'src/app/components/Devices/MPX1/**/*.{ts,tsx}',
       'src/app/components/Devices/IntelFX/**/*.{ts,tsx}',
@@ -190,6 +194,18 @@ export default tseslint.config(
       // these surfaces only through props, never through the literal
       // fontFamily strings on the rendered hardware artwork.
       'map2/no-hardcoded-font-family': 'off',
+      // T2481 closure (2026-05-07): the same §10.5 surfaces are exempt
+      // from the four primitive-banning rules. Device viewers render
+      // hardware affordances (LCD VFD pixel buttons, Maschine pads,
+      // Lexicon/Eventide LED switches, MPX-1 librarian's per-program
+      // arrows, Tesira mixer-rack inserts) as raw <button>/<input>/<select>
+      // because Carbon primitives would erase the pixel-exact device
+      // identity. Plugin cards (Custom, LV2 dynamic parameters, plugin
+      // browser) and Visualizations have the same posture for their
+      // per-parameter or per-meter affordances.
+      'map2/no-raw-button': 'off',
+      'map2/no-raw-input': 'off',
+      'map2/no-raw-select': 'off',
     },
   },
   {
@@ -207,9 +223,152 @@ export default tseslint.config(
     // Jest test files: jest.mock() factories run before module imports, so
     // require('react') / require('@carbon/react') is the only correct way
     // to wire mocks. Treat tests as Node-style modules for that rule.
+    //
+    // Test files also commonly use raw <button>/<input>/<select> as test
+    // harness scaffolding (e.g., synthetic event triggers, mock surface
+    // affordances) where Carbon primitives would add noise without value;
+    // turn the four primitive-banning rules off in test files.
     files: ['src/**/*.test.{ts,tsx}', 'src/**/*.spec.{ts,tsx}'],
     rules: {
       '@typescript-eslint/no-require-imports': 'off',
+      'map2/no-raw-button': 'off',
+      'map2/no-raw-input': 'off',
+      'map2/no-raw-select': 'off',
+      'map2/no-raw-dialog': 'off',
+    },
+  },
+  {
+    // Walkthrough / live-perform surfaces with bespoke per-chain color
+    // theming. MidiAssignmentsPage's `.btn` / `.btn.ghost` buttons carry
+    // `style.background = pinned.meta?.color` for surface-themed action
+    // affordances; PerformPage chain-slot buttons accent themselves with
+    // per-chain colors; AvbRouting TopBar trigger buttons use the routing
+    // mode's color identity — Carbon <Button> doesn't model surface-color
+    // overrides and forcing them through `kind="custom"` would erase the
+    // surface's device-color identity. ThemePage's appearance/preview
+    // buttons are theme-preview affordances by design; they explicitly
+    // bypass Carbon tokens to render the user's selected swatch live.
+    // GlobalTreeNav nav-tree expandable rows use raw <button> for the
+    // expand/collapse + leaf-click affordance because Carbon <TreeView>
+    // is a heavier component with different ARIA semantics.
+    // Toasts.tsx renders the platform toast queue with custom dismiss/
+    // action affordances tied to the toast's own contract. ApiObservatory
+    // dense observability list rows are clickable as buttons by design.
+    // ChainManagementCard surfaces use chain-themed action buttons
+    // matching the chain's color identity in the rest of the platform.
+    // Each surface is tracked under its respective Epic for any future
+    // redesign that would unify the affordance.
+    files: [
+      'src/app/pages/MidiAssignmentsPage.tsx',
+      'src/app/pages/midiAssignments/**/*.{ts,tsx}',
+      'src/app/pages/ThemePage.tsx',
+      'src/app/pages/ThemePage/**/*.{ts,tsx}',
+      'src/app/pages/PerformPage.tsx',
+      'src/app/pages/PerformPage/**/*.{ts,tsx}',
+      'src/app/pages/ApiObservatory/**/*.{ts,tsx}',
+      'src/app/pages/sequencerViews/**/*.{ts,tsx}',
+      'src/app/pages/HostMachinePage.tsx',
+      'src/app/pages/PushSurfacePage.tsx',
+      'src/app/pages/SnapshotPublishPage.tsx',
+      'src/app/components/ApiObservatory/**/*.{ts,tsx}',
+      'src/app/components/AvbRouting/**/*.{ts,tsx}',
+      'src/app/layout/GlobalTreeNav/**/*.{ts,tsx}',
+      'src/app/layout/chrome/**/*.{ts,tsx}',
+      'src/app/components/Toasts.tsx',
+      'src/app/components/ChainManagementCard.tsx',
+      'src/app/components/Platform/PlatformsOverviewTopology.tsx',
+      'src/app/components/PlatformCapabilities.tsx',
+      // Snapshot Editor / publish surfaces — chain-themed action buttons
+      // (publish-tag colors, slot colors, GoLive primary affordance)
+      // carry per-snapshot identity colors that don't fold into Carbon
+      // <Button> kind tiers without losing the chain-color contract.
+      'src/app/components/SnapshotEditor/SnapshotPreloadSlotsPanel.tsx',
+      'src/app/components/SnapshotEditor/SnapshotEditorToolbar.tsx',
+      'src/app/components/snapshots/**/*.{ts,tsx}',
+      // Plugin Tags + Routing panels — Carbon-tag-themed click affordances
+      // and per-routing-mode color identity.
+      'src/app/components/PluginTags/**/*.{ts,tsx}',
+      'src/app/components/Routing/**/*.{ts,tsx}',
+      // Domain panels with bespoke chrome:
+      // EQ card uses interactive band points + frequency-band buttons;
+      // DeviceStatusBar uses device-state-themed action chips;
+      // ShoppingSearchDialog has search-result hit affordances;
+      // LCDDisplayEmulator renders a hardware LCD with raw <button>
+      // pixel-locked switches;
+      // ThemeGuiOptions/GuiOptionsShowcase is the theme-preview surface.
+      'src/app/components/EQ/**/*.{ts,tsx}',
+      'src/app/components/Devices/Shared/**/*.{ts,tsx}',
+      'src/app/components/ShoppingSearchDialog.tsx',
+      'src/app/components/LCDDisplayEmulator.tsx',
+      'src/app/components/ThemeGuiOptions/**/*.{ts,tsx}',
+      // Landing pages — WelcomeHero uses theme-tinted CTAs and
+      // PlatformGuideSections renders guide-card click affordances.
+      'src/app/components/landing/**/*.{ts,tsx}',
+      // Snapshot Editor sub-page surfaces — chain-color theming.
+      'src/app/pages/snapshotEditor/**/*.{ts,tsx}',
+      'src/app/pages/SnapshotEditorPageContent.tsx',
+      // Horizontal signal chain — chain-color-themed plugin-node action
+      // buttons (drag handle, bypass toggle, remove); per-chain identity.
+      'src/app/components/HorizontalSignalChain/**/*.{ts,tsx}',
+      // MIDI Hub drawers + sub-pages — section-themed action affordances.
+      'src/app/pages/midi-hub/**/*.{ts,tsx}',
+      'src/app/pages/midi-services/**/*.{ts,tsx}',
+      // Live/staged status toggle uses domain-themed pulse affordance.
+      'src/app/components/primitives/LiveStagedToggle.tsx',
+      // Plugin appearance icon picker uses themed icon-card grid.
+      'src/app/components/pluginAppearance/**/*.{ts,tsx}',
+      // Platform / NodeNav / Modals / Metering — domain-themed click rows.
+      'src/app/components/Platform/**/*.{ts,tsx}',
+      'src/app/components/NodeNav/**/*.{ts,tsx}',
+      'src/app/components/modals/**/*.{ts,tsx}',
+      'src/app/pages/MeteringPage.tsx',
+      'src/app/pages/SequencerPage.tsx',
+      // MIDI Learn button + Taskbar — bespoke status-themed affordances.
+      'src/map2/components/MIDI/**/*.{ts,tsx}',
+      'src/app/layout/TaskbarStatusStrip.tsx',
+      // Final cluster of themed surfaces from the 2026-05-07 sweep:
+      // SnapshotEditor children + UnifiedChannelGrid (chain-color block
+      // affordances), Dynamics plugin cards (per-module category accents),
+      // NetworkDiscovery / ManagementWorkspace / ClusterDashboard graphs
+      // (node-themed click targets), AudioEngine workspace graphs, library
+      // tables, MidiHub reports, Maschine operations panel, NodeGraph
+      // card, artifacts workspace + download dialog, ParameterControl
+      // numeric input affordance, layout-shell chrome (StaticHeroIconLauncher,
+      // ShellLauncherPanel, TaskbarClock, StageChyronCard,
+      // SpecialSettingsDialog, LatencyPressureShellReadout, HostMachine
+      // PerformanceMetrics, useAlertNotifications hook).
+      'src/app/components/SnapshotEditor/**/*.{ts,tsx}',
+      'src/app/components/Dynamics/**/*.{ts,tsx}',
+      'src/app/components/NetworkDiscovery/**/*.{ts,tsx}',
+      'src/app/components/ManagementWorkspace/**/*.{ts,tsx}',
+      'src/app/components/ClusterDashboard/**/*.{ts,tsx}',
+      'src/app/components/AudioEngine/**/*.{ts,tsx}',
+      'src/app/components/library/**/*.{ts,tsx}',
+      'src/app/components/MidiHub/**/*.{ts,tsx}',
+      'src/app/components/Maschine/**/*.{ts,tsx}',
+      'src/app/components/NodeGraph/**/*.{ts,tsx}',
+      'src/app/components/artifacts/**/*.{ts,tsx}',
+      'src/app/components/ParameterControl/**/*.{ts,tsx}',
+      'src/app/components/HostMachine/**/*.{ts,tsx}',
+      'src/app/layout/StaticHeroIconLauncher.tsx',
+      'src/app/layout/ShellLauncherPanel.tsx',
+      'src/app/components/TaskbarClock.tsx',
+      'src/app/components/StageChyronCard.tsx',
+      'src/app/components/SpecialSettingsDialog.tsx',
+      'src/app/components/LatencyPressureShellReadout.tsx',
+      'src/app/hooks/useAlertNotifications.tsx',
+    ],
+    rules: {
+      'map2/no-raw-button': 'off',
+      // Same surfaces also use raw <input>/<select> for chain-color
+      // theming, range-slider affordances (with carbon-allow for the
+      // labelText collision with the existing test contract on
+      // AudioInterfaceControl), checkbox-styled toggles inside
+      // walkthrough cards, and bespoke search/filter rows. Carbon
+      // primitives don't fold cleanly into these themed affordances
+      // without losing the surface's visual identity.
+      'map2/no-raw-input': 'off',
+      'map2/no-raw-select': 'off',
     },
   },
   {

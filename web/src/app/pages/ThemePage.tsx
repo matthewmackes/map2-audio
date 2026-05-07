@@ -19,6 +19,9 @@ import {
   Search as CarbonSearch,
   Select,
   SelectItem,
+  Tab,
+  TabList,
+  Tabs,
   Tag,
   TextInput,
   Toggle,
@@ -982,27 +985,24 @@ export function ThemePage() {
       </header>
 
       <div className="theme-page__tabs-shell">
-        <div className="theme-page__top-tabs" role="tablist" aria-label="Theme workspace sections">
-          {THEME_PAGE_SECTION_LINKS.map((section) => {
-            const active = activeTab === section.id
-
-            return (
-              <button
-                key={section.id}
-                type="button"
-                role="tab"
-                id={`${section.id}-tab`}
-                aria-controls={`${section.id}-panel`}
-                aria-selected={active}
-                tabIndex={active ? 0 : -1}
-                className={`theme-page__top-tab${active ? ' theme-page__top-tab--active' : ''}`}
-                onClick={() => setActiveTab(section.id)}
-              >
+        <Tabs
+          selectedIndex={Math.max(
+            0,
+            THEME_PAGE_SECTION_LINKS.findIndex((section) => section.id === activeTab),
+          )}
+          onChange={({ selectedIndex }) => {
+            const section = THEME_PAGE_SECTION_LINKS[selectedIndex]
+            if (section) setActiveTab(section.id)
+          }}
+        >
+          <TabList aria-label="Theme workspace sections" className="theme-page__top-tabs">
+            {THEME_PAGE_SECTION_LINKS.map((section) => (
+              <Tab key={section.id} id={`${section.id}-tab`}>
                 {section.label}
-              </button>
-            )
-          })}
-        </div>
+              </Tab>
+            ))}
+          </TabList>
+        </Tabs>
 
         <div className="theme-page__section-panel">
           <ThemeWorkspacePanel

@@ -148,6 +148,7 @@ function MK1Cell({
         <>
           <div className="mk1-led-bar mk1-led-bar--on" />
           <div className="mk1-led-slider" onClick={(e) => e.stopPropagation()}>
+            {/* carbon-allow: Maschine MK1 hardware LED brightness slider; pixel-exact device-skin per §10.5. */}
             <input
               type="range"
               min={0}

@@ -12,6 +12,7 @@ import {
   CodeSnippet,
   InlineNotification,
   Loading,
+  Checkbox,
   Tag,
   TextInput,
   StructuredListWrapper,
@@ -236,15 +237,14 @@ export function PackSourcesAdminPage(): React.JSX.Element {
             onChange={(e) => setClonePath(e.target.value)}
             disabled={runner.running}
           />
-          <label className="pack-sources-admin__checkbox">
-            <input
-              type="checkbox"
-              checked={checksumOnly}
-              onChange={(e) => setChecksumOnly(e.target.checked)}
-              disabled={runner.running}
-            />
-            checksum-only (no copy)
-          </label>
+          <Checkbox
+            id="pack-sources-admin-checksum-only"
+            className="pack-sources-admin__checkbox"
+            labelText="checksum-only (no copy)"
+            checked={checksumOnly}
+            onChange={(_e, { checked }) => setChecksumOnly(checked)}
+            disabled={runner.running}
+          />
           <Button
             kind="primary"
             disabled={!clonePath || runner.running}

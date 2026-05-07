@@ -611,6 +611,7 @@ export function NumericInput({
             {displayOverlay}
           </div>
         )}
+        {/* carbon-allow: this IS the platform NumericInput primitive — it owns the raw <input> at its core and exposes a richer API surface than Carbon <NumberInput> (display-overlay states, focus-routed text/value sync, dragable values, profile-driven formatting). The Carbon equivalent is consumed at the call sites that don't need this richer affordance; this primitive itself necessarily wraps a raw <input>. */}
         <input
           ref={inputRef}
           id={inputId}
