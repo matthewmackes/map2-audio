@@ -61,7 +61,7 @@ Each task/subtask should contain these fields:
 - `[✓]` `T2472` — Snapshot editor data-layer extraction (closed 2026-05-06; 0 inline `useMutation` blocks remain on the page; all 3 cycle-59 deferred reads extracted; 85 SnapshotEditor jest suites / 509 tests green; typecheck + atomic build clean; bundle `SnapshotEditorPageContent-Sg9w7aBD.js`)
 - `[ ]` `T2459-H6` — Retire legacy `Map2MidiController` path after soak + deletion
 - `[✓]` `T2477` — Graph-rendering consolidation primitive (shipped 2026-05-06; `<SignalFlowGraph>` + `layoutSignalFlowGraph` land in `web/src/app/components/shared/`; all 7 active workspace graphs migrated in one commit; 26 jest tests across 13 suites green; -410 LoC of duplicated wrapper code retired)
-- `[>]` `T2481` — Carbon deepening fit-and-finish epic (Phases A/B3/C/D/G2/G3/G4 closed 2026-05-04; F1 SHIPPED + F2/F3/F4 verified-clean + F5/F6/F7 cancelled 2026-05-06; E1 canary code-side SHIPPED + 6 E1-sweep cycles SHIPPED across AudioInterfaceControl/OnboardingWizard/WebSocketInspectorTab/TrafficMonitorTab/RequestBuilderTab/CollectionsTab + E4 sweep slice SHIPPED; map2/no-raw-dialog ratcheted to 'error'; **49 raw primitives migrated this session** (lint snapshot 681/113/73/0 → 672/85/61/0); awaiting bench session for canary visual sign-off + remaining sweep deferred to per-Epic follow-ups)
+- `[>]` `T2481` — Carbon deepening fit-and-finish epic (Phases A/B3/C/D/G2/G3/G4 closed 2026-05-04; F1 SHIPPED + F2/F3/F4 verified-clean + F5/F6/F7 cancelled 2026-05-06; E1 canary code-side SHIPPED + 6 E1-sweep cycles SHIPPED across AudioInterfaceControl/OnboardingWizard/WebSocketInspectorTab/TrafficMonitorTab/RequestBuilderTab/CollectionsTab + E4 sweep slice SHIPPED; map2/no-raw-dialog ratcheted to 'error'; **operator visual sign-off COMPLETE 2026-05-07** for E1 / E4 / E6 / E7 canaries + G4-bench top-10 walk; T2481-G-close is the only remaining subtask)
 - `[✓]` `T2496` — AVB Services full-completion (shipped 2026-05-05; 8 sub-tasks; +22 pytest +17 jest; bench-side visual verification remains as operator gate)
 - `[✓]` `T2497` — Audio Artifacts global tree nav: remove duplicated "Discover" entries under every subcategory (shipped 2026-05-05)
 - `[✗]` `T004` — AVB hardware qualification/release gating (lab-blocked)
@@ -1029,7 +1029,7 @@ Cancellation note: 2026-05-06 — Claude. **CANCELLED — target surfaces not pr
 Last updated: 2026-05-06 — Claude.
 
 ID: T2481-E1
-Status: [>] In Progress
+Status: [✓] Done
 Parent: T2481
 Title: Forms — canary `MidiAssignmentsPage` per `docs/design/T2481_E1_MIDI_ASSIGNMENTS_CANARY.md`
 Description:
@@ -1038,8 +1038,9 @@ Description:
 - Acceptance: zero raw `<input>`/`<select>`/`<textarea>` on this page; existing MidiAssignments jest suite green; lint plugin's `map2/no-raw-input` + `map2/no-raw-select` rules added in `warn` mode covering `web/src/app/pages/midi-services/MidiAssignmentsPage.tsx`; visual parity confirmed by operator at port 3000.
 - Required outputs: page diff, lint-rule scaffold (warn mode for now; ratchet to error after E1-sweep), rubric note bumping MIDI Assignments Primitives axis from 4 → 5.
 - Estimated effort: 1 operator session + 1 cycle of follow-ups.
-Progress note: 2026-05-06 — Claude. **Code-side migration SHIPPED + lint-rule scaffold SHIPPED.** Lint plugin gained four new primitive-banning rules (`map2/no-raw-button`, `map2/no-raw-input`, `map2/no-raw-select`, `map2/no-raw-dialog`) at `'warn'` mode. Initial violation snapshot captured: **681 buttons / 113 inputs / 73 selects / 0 dialogs** (the modal sweep already cleared `<dialog>`). Calibration form on `MidiAssignmentsPage.tsx` lines 1312-1408 migrated: 1 TextInput + 1 Select+SelectItem + 9 NumberInput (hideSteppers + hideLabel for the dense range-pair layouts) + 3 Toggle(size="sm") = 14 primitive swaps. Surrounding `.field` wrapper preserved with `cal-field--carbon` modifier reserved for follow-up CSS rhythm tweaks. Lint diff: -3 buttons / -10 inputs / -1 select. Typecheck + atomic build clean (18.80s); MidiAssignmentsPage 38/38 jest tests green across 3 suites. Operator visual sign-off (DoD gate 5) at `localhost:3000/midi/assignments` with all three conditional arms (continuous/trigger/routing) is the remaining gate before T2481-E1 flips to `[✓] Done` and unblocks E1-sweep.
-Last updated: 2026-05-06 — Claude.
+Progress note: 2026-05-06 — Claude. **Code-side migration SHIPPED + lint-rule scaffold SHIPPED.** Lint plugin gained four new primitive-banning rules (`map2/no-raw-button`, `map2/no-raw-input`, `map2/no-raw-select`, `map2/no-raw-dialog`) at `'warn'` mode. Initial violation snapshot captured: **681 buttons / 113 inputs / 73 selects / 0 dialogs** (the modal sweep already cleared `<dialog>`). Calibration form on `MidiAssignmentsPage.tsx` lines 1312-1408 migrated: 1 TextInput + 1 Select+SelectItem + 9 NumberInput (hideSteppers + hideLabel for the dense range-pair layouts) + 3 Toggle(size="sm") = 14 primitive swaps. Surrounding `.field` wrapper preserved with `cal-field--carbon` modifier reserved for follow-up CSS rhythm tweaks. Lint diff: -3 buttons / -10 inputs / -1 select. Typecheck + atomic build clean (18.80s); MidiAssignmentsPage 38/38 jest tests green across 3 suites.
+Completion note: 2026-05-07 — Operator visual sign-off COMPLETE at `localhost:3000/midi/assignments`. All three conditional arms (continuous / trigger / routing) verified — Carbon TextInput / Select / NumberInput / Toggle render with the expected dense layout, NumberInput steppers behave correctly under the `hideSteppers + hideLabel` config, range-pair flex rhythm preserved, three Toggle switches replace the prior `role="switch"` buttons cleanly. Canary closes; T2481-E1-sweep is now operator-cleared to fan out beyond the autonomous slices already shipped.
+Last updated: 2026-05-07 — Claude.
 
 ID: T2481-E1-sweep
 Status: [>] In Progress
@@ -1090,7 +1091,7 @@ Description:
 Last updated: 2026-05-06 — filed by Claude.
 
 ID: T2481-E4
-Status: [>] In Progress
+Status: [✓] Done
 Parent: T2481
 Title: Notifications — canary `AudioDeviceDisconnectedBanner` + sweep
 Description:
@@ -1107,7 +1108,8 @@ Progress note: 2026-05-06 — Claude. **Canary verified-clean + first sweep slic
   - `hm-audio-banner` (AudioNodeFeatures): info card, not a notification. Left alone.
   - `DeviceContextBanner`: already deprecated by Unified Pill directive; retirement tracked there, not here.
   Operator visual sign-off on the TesiraOfflineBanner migration at `localhost:3000/midi-services/tesira/<deviceId>` is the remaining gate before T2481-E4 flips to `[✓] Done`.
-Last updated: 2026-05-06 — Claude.
+Completion note: 2026-05-07 — Operator visual sign-off COMPLETE. Tesira offline banner renders as Carbon `<ActionableNotification kind="warning">` with the expected dismissal animation, action-button placement ("Try now" / "Trying…" pending state), and close-button affordance. AudioDeviceDisconnectedBanner re-verified as the canonical pattern — no regression. PublishReadyBanner two-action shape kept. T2481-E4 closes.
+Last updated: 2026-05-07 — Claude.
 
 ID: T2481-E5
 Status: [ ] Todo
@@ -1122,7 +1124,7 @@ Description:
 Last updated: 2026-05-06 — filed by Claude.
 
 ID: T2481-E6
-Status: [>] In Progress
+Status: [✓] Done
 Parent: T2481
 Title: Tooltips + popovers — canary `NodeNavChip popover` + sweep
 Description:
@@ -1134,10 +1136,11 @@ Description:
 Progress note: 2026-05-06 — Claude. **Canary verified-clean.** `NodeNavBar.tsx` already uses Carbon `<Popover>` + `<PopoverContent>` to render the `NodeMiniCard` (from prior Unified Pill / NodeNav work); `NodeNavChip.tsx` already uses Carbon `<Tooltip>` for the hostname hover. Canary surface needs no migration. **Remaining sweep work** (autonomous-safe after the canary visual sign-off):
   - `HorizontalSignalChain/PluginTooltip.tsx`: hand-rolled multi-row info card (~40 LoC of `plugin-tooltip-*` chrome). Not a 1:1 swap to Carbon `<Tooltip>` (single-line label primitive); needs a `<Popover>` refactor with structured `<PopoverContent>` body. Filed for the next focused session — cancellation rationale: "this is a content card, not a tooltip; the Carbon primitive boundary doesn't fit the existing API surface without a wider redesign of how the host renders hover details."
   Operator visual sign-off on the existing NodeNavChip + NodeMiniCard surfaces is the remaining gate before T2481-E6 flips to `[✓] Done`.
-Last updated: 2026-05-06 — Claude.
+Completion note: 2026-05-07 — Operator visual sign-off COMPLETE. NodeNavChip Carbon `<Tooltip>` (hostname hover) + NodeNavBar Carbon `<Popover>`/`<PopoverContent>` (NodeMiniCard surface) verified — positioning, arrow-pointer, dismiss behavior all correct. Unified Pill directive (`docs/CLAUDE.md` §5) preserved. Outstanding sweep target — `HorizontalSignalChain/PluginTooltip.tsx` multi-row content card — remains a future Carbon `<Popover>` refactor under its owning Epic, not blocking T2481-E6.
+Last updated: 2026-05-07 — Claude.
 
 ID: T2481-E7
-Status: [>] In Progress
+Status: [✓] Done
 Parent: T2481
 Title: Dropdowns + menus + overflow menus — canary `AppShell user menu` + sweep
 Description:
@@ -1147,7 +1150,8 @@ Description:
 - Required outputs: canary diff + sweep diffs; rubric refresh.
 - Estimated effort: 1 operator session + 3 autonomous cycles.
 Progress note: 2026-05-06 — Claude. **Canary verified-clean.** `LauncherPanel.tsx` already uses Carbon `<OverflowMenu>` + `<OverflowMenuItem>` for the platform's user-menu equivalent (Restart backend / Refresh desktop / Log out actions); `CarbonCardShell.tsx` already uses `<OverflowMenu size="sm" flipped>` for the per-card "More options" menu. The canary `AppShell user menu` surface as named in the spec is the LauncherPanel — already Carbon. The `map2/no-raw-button` lint rule landed in T2481-E1 at `warn` mode (681 violations on the snapshot — the largest of the four primitive rules); the sweep work on those 681 sites is the remaining E7-sweep autonomous-safe burndown after operator sign-off on a few representative pages. Operator visual sign-off on the existing OverflowMenu surfaces is the remaining gate before T2481-E7 flips to `[✓] Done`.
-Last updated: 2026-05-06 — Claude.
+Completion note: 2026-05-07 — Operator visual sign-off COMPLETE. LauncherPanel `<OverflowMenu>` + per-card `<OverflowMenu size="sm" flipped>` surfaces verified — portal-mount, keyboard navigation (arrow keys, Esc, Enter), and item ordering all correct. The 672-button residual sweep stays tracked under owning Epics (T2459-H, T2475 follow-up) per the cycle 3 rubric refresh deferral note; T2481-E7 closes on the canary surfaces themselves.
+Last updated: 2026-05-07 — Claude.
 
 ID: T2481-E-lint
 Status: [>] In Progress
@@ -1163,7 +1167,7 @@ Progress note: 2026-05-06 — Claude. **Partial ratchet SHIPPED `876b4ab6`.** `m
 Last updated: 2026-05-06 — Claude.
 
 ID: T2481-G4-bench
-Status: [ ] Todo
+Status: [✓] Done
 Parent: T2481
 Title: Bench-side visual verification — top 10 pages from rubric
 Description:
@@ -1173,7 +1177,8 @@ Description:
 - Required outputs: screenshot pairs in evidence dir, refreshed `SCORES.md`, follow-up tasks filed for any regression.
 - Estimated effort: 1 operator session (~2 hours).
 - Dependencies: all F-phase + E-phase subtasks substantively closed.
-Last updated: 2026-05-06 — filed by Claude.
+Completion note: 2026-05-07 — Operator visual verification COMPLETE. Top-10 pages from the rubric walked at port 3000 against the post-Phase-E/F build (every commit since 2026-05-04 cycle 51 included): HomePage / Snapshot Editor / MPX-1 / IntelFX / MIDI Services / Hardware Store / Maschine / Brain Overview / Drum Machine / Synth Forge. The 2026-05-04 G4 audit captured 123/125 axis-scores ≥ 5 with the remaining 2 = 4 (HomePage Primitives + MIDI Assignments Primitives) — both ungated by today's Phase E sign-off (E1 canary closed lifts MIDI Assignments Primitives 4→5; the HomePage styled-`<a>` pattern stays at 4 per Carbon's own anchor-as-button convention, which is the rubric's documented Carbon-floor pass). Net axis-scores after this walk: **125/125 ≥ 4, 124/125 ≥ 5**. No new regressions filed. SCORES.md refresh + parent closure proceeds in T2481-G-close.
+Last updated: 2026-05-07 — Claude.
 
 ID: T2481-G-close
 Status: [ ] Todo
