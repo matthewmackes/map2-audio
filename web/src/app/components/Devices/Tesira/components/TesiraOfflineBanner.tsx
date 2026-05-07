@@ -1,14 +1,19 @@
 import { useCallback, useState } from 'react'
-import { Close, Renew, WifiOff } from '@carbon/icons-react'
-import { Button, InlineLoading } from '@carbon/react'
+import { ActionableNotification } from '@carbon/react'
 import { useReconnectDevice } from '../hooks/useTesiraApi'
 import { useTesiraDeviceState } from '../hooks/useTesiraWebSocket'
-import './TesiraCarbonChrome.css'
 
 export interface TesiraOfflineBannerProps {
   deviceId: string
 }
 
+/**
+ * T2481-E4 (Notifications phase): migrated from a hand-rolled banner
+ * with Carbon <Button> + <InlineLoading> to a Carbon <ActionableNotification>
+ * (the platform pattern — same shape as AudioDeviceDisconnectedBanner).
+ * The TesiraCarbonChrome stylesheet's tesira-offline-banner__* classes
+ * are retired with this migration.
+ */
 export function TesiraOfflineBanner({ deviceId }: TesiraOfflineBannerProps) {
   const reconnect = useReconnectDevice()
   const [dismissed, setDismissed] = useState(false)
@@ -42,44 +47,24 @@ export function TesiraOfflineBanner({ deviceId }: TesiraOfflineBannerProps) {
 
   if (dismissed) return null
 
+  const baseSubtitle =
+    `MAP2 is probing port 61451 and retrying every 30s.` +
+    (nextRetryS != null ? ` Next retry in ${nextRetryS}s.` : '') +
+    ` Enable Telnet or SSH in Tesira Software once the control layout is deployed.`
+  const subtitle = reconnectMsg ? `${baseSubtitle} ${reconnectMsg}` : baseSubtitle
+
   return (
-    <div className="tesira-offline-banner">
-      <div className="tesira-offline-banner__icon" aria-hidden>
-        <WifiOff size={18} />
-      </div>
-
-      <div className="tesira-offline-banner__copy">
-        <p className="tesira-offline-banner__title">Device offline — TTP not reachable on port 23</p>
-        <p className="tesira-offline-banner__body">
-          MAP2 is probing port 61451 and retrying every 30s.
-          {nextRetryS != null ? ` Next retry in ${nextRetryS}s.` : ''}
-          {' '}Enable Telnet or SSH in Tesira Software once the control layout is deployed.
-        </p>
-        {reconnectMsg ? <p className="tesira-offline-banner__body">{reconnectMsg}</p> : null}
-      </div>
-
-      <div className="tesira-offline-banner__actions">
-        <Button
-          size="sm"
-          kind="secondary"
-          renderIcon={Renew}
-          disabled={reconnect.isPending}
-          onClick={() => {
-            void handleTryNow()
-          }}
-        >
-          {reconnect.isPending ? 'Trying…' : 'Try now'}
-        </Button>
-        {reconnect.isPending ? <InlineLoading description="Sending reconnect request" /> : null}
-        <Button
-          kind="ghost"
-          size="sm"
-          hasIconOnly
-          renderIcon={Close}
-          iconDescription="Dismiss offline banner"
-          onClick={() => setDismissed(true)}
-        />
-      </div>
-    </div>
+    <ActionableNotification
+      kind="warning"
+      title="Device offline — TTP not reachable on port 23"
+      subtitle={subtitle}
+      actionButtonLabel={reconnect.isPending ? 'Trying…' : 'Try now'}
+      onActionButtonClick={() => {
+        void handleTryNow()
+      }}
+      onCloseButtonClick={() => setDismissed(true)}
+      closeOnEscape
+      role="status"
+    />
   )
 }
