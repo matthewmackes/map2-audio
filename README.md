@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1497** Python | **1546** TypeScript | **183** C++/H | **147** Docs | **4082** total commits | **4** stars | **0** forks | **0** open issues
+**1497** Python | **1546** TypeScript | **183** C++/H | **147** Docs | **4087** total commits | **4** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`f3913360`](https://github.com/matthewmackes/map2-audio/commit/f3913360b88a284a5f9b4fb9b454e4f6962ffab9) | docs(t2481): cycle 7 — lint suppression audit refresh pos... | Map2 Audio | 2026-05-06 |
+| [`33bac9a0`](https://github.com/matthewmackes/map2-audio/commit/33bac9a055754c6b28b51cfad1301abeb05559f6) | refactor(web): T2481 cycle 6 — RequestBuilderTab primitiv... | Map2 Audio | 2026-05-06 |
+| [`62051739`](https://github.com/matthewmackes/map2-audio/commit/62051739daa4260dfc3249a4cd3bbbe9fd52aef1) | refactor(web): T2481 cycle 5 — TrafficMonitorTab primitiv... | Map2 Audio | 2026-05-06 |
+| [`3982e4fc`](https://github.com/matthewmackes/map2-audio/commit/3982e4fcdc64bb36b245916ed34f2aed09d6f85b) | refactor(web): T2481 cycle 4 — WebSocketInspectorTab prim... | Map2 Audio | 2026-05-06 |
+| [`7abd09a5`](https://github.com/matthewmackes/map2-audio/commit/7abd09a5ae4b21627ca17fb6b2da985a44ed6f32) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-07 |
 | [`c6c9259e`](https://github.com/matthewmackes/map2-audio/commit/c6c9259e130835a72f04f0aef24fb3ea2f4611e9) | docs(t2481): cycle 3 — rubric refresh with Phase E + F pr... | Map2 Audio | 2026-05-06 |
 | [`cb7bc9c5`](https://github.com/matthewmackes/map2-audio/commit/cb7bc9c55486fd526b0294a499d67778bc2698f8) | refactor(web): T2481 cycle 2 — OnboardingWizard primitive... | Map2 Audio | 2026-05-06 |
 | [`23f14ca6`](https://github.com/matthewmackes/map2-audio/commit/23f14ca6c772e53aaa8cbfbf7723ca90addc3d57) | refactor(web): T2481 cycle 1 — AudioInterfaceControl prim... | Map2 Audio | 2026-05-06 |
-| [`81ecb8d6`](https://github.com/matthewmackes/map2-audio/commit/81ecb8d66ca0c6aecb6729d2f9472c89ff03bc0d) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-07 |
-| [`654f9d49`](https://github.com/matthewmackes/map2-audio/commit/654f9d4983d059d7183cd1fe4e05e1749c1a0172) | docs(t2481): record E1/E4/E6/E7 canary progress | Map2 Audio | 2026-05-06 |
-| [`8f3240fa`](https://github.com/matthewmackes/map2-audio/commit/8f3240fa9dbc1660df616f521ed8d7fe4e00c002) | refactor(web): T2481-E4 — TesiraOfflineBanner → Carbon Ac... | Map2 Audio | 2026-05-06 |
-| [`5445507b`](https://github.com/matthewmackes/map2-audio/commit/5445507bdd3e2c828528e28725faf505e96b2168) | feat(web): T2481-E1 canary — MidiAssignments calibration ... | Map2 Audio | 2026-05-06 |
-| [`91faa811`](https://github.com/matthewmackes/map2-audio/commit/91faa8116adcfff53b425c9f8a41e0a0a602bb6b) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-06 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
