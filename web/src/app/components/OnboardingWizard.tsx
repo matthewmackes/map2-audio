@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import { ArrowLeft, ArrowRight, BareMetalServer, Certificate, ChartNetwork, Checkmark, CheckmarkFilled, Close, Document, Link, Locked, Renew, Search, Security, WarningAlt } from '@carbon/icons-react'
+import { Checkbox, Select, SelectItem, TextInput } from '@carbon/react'
 import { NumberInput } from './ParameterControl'
 import { EmptyState } from './shared/EmptyState'
 import { LegacyButton } from './shared/LegacyButton'
@@ -235,6 +236,10 @@ export function OnboardingWizard({ onComplete }: { onComplete?: () => void }) {
                     transition: 'all var(--map2-dur-base, 220ms) var(--map2-ease-in-out-rack, ease)',
                   }}
                 >
+                  {/* carbon-allow: clickable-card radio pattern; Carbon <RadioButton>
+                      renders only the radio dot + inline label. The card-style wrapper
+                      with description text below requires the raw input here so the
+                      whole card surface is the click target. */}
                   <input
                     type="radio"
                     name="deployment-mode"
@@ -359,68 +364,36 @@ export function OnboardingWizard({ onComplete }: { onComplete?: () => void }) {
 
             <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fit, minmax(250px, 1fr))', gap: 16 }}>
               <div>
-                <label style={{ display: 'block', marginBottom: 6, fontSize: 13, fontWeight: 600 }}>
-                  Cluster Name:
-                </label>
-                <input
-                  type="text"
+                <TextInput
+                  id="onboarding-cluster-name"
+                  labelText="Cluster Name"
                   value={clusterName}
                   onChange={e => setClusterName(e.target.value)}
                   placeholder="my-audio-cluster"
-                  style={{
-                    width: '100%',
-                    // carbon-allow: dense surface; off-grid between Carbon stops.
-                    padding: '10px 12px',
-                    background: 'var(--cds-layer)',
-                    border: '1px solid var(--cds-border-subtle)',
-                    borderRadius: 6,
-                    color: 'var(--cds-text-primary)',
-                  }}
                 />
               </div>
 
               <div>
-                <label style={{ display: 'block', marginBottom: 6, fontSize: 13, fontWeight: 600 }}>
-                  Management Node IP:
-                </label>
-                <input
-                  type="text"
+                <TextInput
+                  id="onboarding-management-ip"
+                  labelText="Management Node IP"
                   value={managementIp}
                   onChange={e => setManagementIp(e.target.value)}
                   placeholder="192.168.1.100"
-                  style={{
-                    width: '100%',
-                    // carbon-allow: dense surface; off-grid between Carbon stops.
-                    padding: '10px 12px',
-                    background: 'var(--cds-layer)',
-                    border: '1px solid var(--cds-border-subtle)',
-                    borderRadius: 6,
-                    color: 'var(--cds-text-primary)',
-                  }}
                 />
               </div>
 
               <div>
-                <label style={{ display: 'block', marginBottom: 6, fontSize: 13, fontWeight: 600 }}>
-                  Network Interface:
-                </label>
-                <select
+                <Select
+                  id="onboarding-network-interface"
+                  labelText="Network Interface"
                   value={networkInterface}
                   onChange={e => setNetworkInterface(e.target.value)}
-                  style={{
-                    width: '100%',
-                    // carbon-allow: dense surface; off-grid between Carbon stops.
-                    padding: '10px 12px',
-                    background: 'var(--cds-layer)',
-                    border: '1px solid var(--cds-border-subtle)',
-                    borderRadius: 6,
-                    color: 'var(--cds-text-primary)',
-                  }}
                 >
-                  <option value="eth0">eth0</option>
-                  <option value="wlan0">wlan0</option>
-                  <option value="enp0s3">enp0s3</option>
-                </select>
+                  <SelectItem value="eth0" text="eth0" />
+                  <SelectItem value="wlan0" text="wlan0" />
+                  <SelectItem value="enp0s3" text="enp0s3" />
+                </Select>
               </div>
 
               <div>
@@ -439,23 +412,18 @@ export function OnboardingWizard({ onComplete }: { onComplete?: () => void }) {
             </div>
 
             <div style={{ display: 'flex', gap: 20, marginTop: 8 }}>
-              <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
-                <input
-                  type="checkbox"
-                  checked={enableMdns}
-                  onChange={e => setEnableMdns(e.target.checked)}
-                />
-                <span>Enable mDNS discovery</span>
-              </label>
-
-              <label style={{ display: 'flex', alignItems: 'center', gap: 8, cursor: 'pointer' }}>
-                <input
-                  type="checkbox"
-                  checked={enableTls}
-                  onChange={e => setEnableTls(e.target.checked)}
-                />
-                <span>Enable TLS/SSL</span>
-              </label>
+              <Checkbox
+                id="onboarding-enable-mdns"
+                labelText="Enable mDNS discovery"
+                checked={enableMdns}
+                onChange={(_e, { checked }) => setEnableMdns(checked)}
+              />
+              <Checkbox
+                id="onboarding-enable-tls"
+                labelText="Enable TLS/SSL"
+                checked={enableTls}
+                onChange={(_e, { checked }) => setEnableTls(checked)}
+              />
             </div>
 
             <div
@@ -506,6 +474,7 @@ export function OnboardingWizard({ onComplete }: { onComplete?: () => void }) {
                     cursor: 'pointer',
                   }}
                 >
+                  {/* carbon-allow: clickable-card radio pattern; same rationale as deployment-mode radios above. */}
                   <input
                     type="radio"
                     name="cert-mode"
