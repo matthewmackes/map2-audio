@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1522** Python | **1552** TypeScript | **181** C++/H | **147** Docs | **4114** total commits | **4** stars | **0** forks | **0** open issues
+**1522** Python | **1552** TypeScript | **181** C++/H | **147** Docs | **4116** total commits | **4** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -175,7 +175,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-DOCS:START -->
 | Document | Last Updated |
 |:---------|:------------|
-| [MAP2 Canonical Project Worklist](https://github.com/matthewmackes/map2-audio/blob/master/docs/PROJECT_WORKLIST.md) | 2026-05-07 |
+| [MAP2 Canonical Project Worklist](https://github.com/matthewmackes/map2-audio/blob/master/docs/PROJECT_WORKLIST.md) | 2026-05-08 |
 | [MAP2 Audio Platform — AI Instructions](https://github.com/matthewmackes/map2-audio/blob/master/docs/CLAUDE.md) | 2026-05-06 |
 | [Autonomous Loop Closure Status — 2026-05-04 (cycles 11-60)](https://github.com/matthewmackes/map2-audio/blob/master/docs/PROJECT_WORKLIST_AUTONOMOUS_LOOP_STATUS_20260504.md) | 2026-05-04 |
 | [MAP2 Renames — Migration Notes](https://github.com/matthewmackes/map2-audio/blob/master/docs/RENAMES.md) | 2026-05-03 |
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`8d0b2d02`](https://github.com/matthewmackes/map2-audio/commit/8d0b2d025b038c71ae05a9926876f0bea76c0276) | docs(t2459): worklist — H6 Done, H7-PW-UMP In Progress, T... | Map2 Audio | 2026-05-08 |
+| [`30c70131`](https://github.com/matthewmackes/map2-audio/commit/30c7013104cc70ba8d6b61e6538afefc06a86b91) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-08 |
 | [`73723978`](https://github.com/matthewmackes/map2-audio/commit/73723978083407b71377f778ee605babf5c9f615) | feat(midi): T2459-H7-PW-UMP — Path 4 substrate detection ... | Map2 Audio | 2026-05-08 |
 | [`fc6029d3`](https://github.com/matthewmackes/map2-audio/commit/fc6029d30699b8447c6d66bf171074a28ab7dc12) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-08 |
 | [`550d043d`](https://github.com/matthewmackes/map2-audio/commit/550d043dd84b7db5c9524d8c865fddd4c6c09056) | feat(midi): T2459-H6 — retire legacy raw-ALSA Map2MidiCon... | Map2 Audio | 2026-05-08 |
 | [`a61670cc`](https://github.com/matthewmackes/map2-audio/commit/a61670cc677e77c0d6db17e78720b314410fa80e) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-08 |
 | [`46d69bb0`](https://github.com/matthewmackes/map2-audio/commit/46d69bb0a96986a0dce21132929ffa1a535daba9) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-07 |
 | [`f5e93494`](https://github.com/matthewmackes/map2-audio/commit/f5e9349403f815d1446950674306da440db385d3) | docs(t2459): drive-to-completion campaign — Phase 6 docs,... | Map2 Audio | 2026-05-07 |
-| [`f608dc70`](https://github.com/matthewmackes/map2-audio/commit/f608dc70279c25c500eb93d10531fe2ee56f0ce8) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-07 |
-| [`1d7d3fef`](https://github.com/matthewmackes/map2-audio/commit/1d7d3fef7164b9187d47758fde69d27afc061735) | docs(t2459-h3-cfg): three-loop campaign closure — worklis... | Map2 Audio | 2026-05-07 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
