@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1520** Python | **1552** TypeScript | **181** C++/H | **147** Docs | **4112** total commits | **4** stars | **0** forks | **0** open issues
+**1522** Python | **1552** TypeScript | **181** C++/H | **147** Docs | **4114** total commits | **4** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`73723978`](https://github.com/matthewmackes/map2-audio/commit/73723978083407b71377f778ee605babf5c9f615) | feat(midi): T2459-H7-PW-UMP — Path 4 substrate detection ... | Map2 Audio | 2026-05-08 |
+| [`fc6029d3`](https://github.com/matthewmackes/map2-audio/commit/fc6029d30699b8447c6d66bf171074a28ab7dc12) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-08 |
 | [`550d043d`](https://github.com/matthewmackes/map2-audio/commit/550d043dd84b7db5c9524d8c865fddd4c6c09056) | feat(midi): T2459-H6 — retire legacy raw-ALSA Map2MidiCon... | Map2 Audio | 2026-05-08 |
 | [`a61670cc`](https://github.com/matthewmackes/map2-audio/commit/a61670cc677e77c0d6db17e78720b314410fa80e) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-08 |
 | [`46d69bb0`](https://github.com/matthewmackes/map2-audio/commit/46d69bb0a96986a0dce21132929ffa1a535daba9) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-07 |
 | [`f5e93494`](https://github.com/matthewmackes/map2-audio/commit/f5e9349403f815d1446950674306da440db385d3) | docs(t2459): drive-to-completion campaign — Phase 6 docs,... | Map2 Audio | 2026-05-07 |
 | [`f608dc70`](https://github.com/matthewmackes/map2-audio/commit/f608dc70279c25c500eb93d10531fe2ee56f0ce8) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-07 |
 | [`1d7d3fef`](https://github.com/matthewmackes/map2-audio/commit/1d7d3fef7164b9187d47758fde69d27afc061735) | docs(t2459-h3-cfg): three-loop campaign closure — worklis... | Map2 Audio | 2026-05-07 |
-| [`c350bd29`](https://github.com/matthewmackes/map2-audio/commit/c350bd2906f94138050a711a3a23fb8d2f7e6c19) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-07 |
-| [`5d24a35a`](https://github.com/matthewmackes/map2-audio/commit/5d24a35abbf43307a84439e9f0483274af7a47c9) | feat(midi): T2459-H Outer Loop 2 — engine-command dispatc... | Map2 Audio | 2026-05-07 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
