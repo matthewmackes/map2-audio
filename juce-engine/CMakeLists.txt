@@ -175,15 +175,10 @@ endif()
 # ========================================
 # AVB/TSN Network Audio Transport (Optional)
 # ========================================
-# T2459-H6 retirement gate. Default ON preserves today's behavior: the
-# legacy raw-ALSA Map2MidiController.cpp builds and links into both the
-# engine and controllers_tests. When OFF (`-DMAP2_USE_LEGACY_MIDI_CONTROLLER=OFF`),
-# the legacy source is excluded from compilation, the factory's "midi"
-# protocol arm short-circuits to nullptr, and IpcMidiBridge is the sole
-# MIDI consumer. The OFF build is the bench-soak gate for full retirement
-# (see docs/midi/MAP2MIDICONTROLLER_RETIREMENT.md).
-option(MAP2_USE_LEGACY_MIDI_CONTROLLER
-    "Build the legacy raw-ALSA Map2MidiController path (T2459-H6 retirement gate)" ON)
+# T2459-H6: legacy raw-ALSA Map2MidiController path retired 2026-05-08.
+# IpcMidiBridge is the sole MIDI consumer; the engine drains events from
+# the host's shm event ring instead of opening its own ALSA-seq client.
+# Retirement evidence: docs/fit-for-purpose-evidence/20260508/t2459h6-shm-ring/.
 
 option(USE_AVB "Enable AVB/TSN network audio transport" ON)
 if(USE_AVB)
@@ -321,8 +316,6 @@ set(SOURCES
     # map2-controller-host binary; only MIDI is constructed here.
     Source/Controllers/Map2Controller.cpp
     Source/Controllers/Map2ControllerFactory.cpp
-    # Map2MidiController.cpp appended below if MAP2_USE_LEGACY_MIDI_CONTROLLER=ON
-    # (T2459-H6 retirement gate)
 
     # Existing components (updated)
     Source/MidiHandler.cpp
@@ -420,8 +413,6 @@ set(HEADERS
     # Controllers / Mapping subsystem (T2459)
     Source/Controllers/Map2Controller.h
     Source/Controllers/Map2ControllerFactory.h
-    # Map2MidiController.h appended below if MAP2_USE_LEGACY_MIDI_CONTROLLER=ON
-    # (T2459-H6 retirement gate)
 
     # Existing components
     Source/MidiHandler.h
@@ -435,21 +426,10 @@ if(USE_NAM)
     list(APPEND HEADERS Source/NAMProcessor.h)
 endif()
 
-# T2459-H6 retirement gate. When MAP2_USE_LEGACY_MIDI_CONTROLLER=ON (default)
-# the legacy raw-ALSA Map2MidiController source/header join the engine
-# translation units. When OFF the engine builds without them and the
-# factory returns IpcMidiBridgeController instead.
-if(MAP2_USE_LEGACY_MIDI_CONTROLLER)
-    list(APPEND SOURCES Source/Controllers/Midi/Map2MidiController.cpp)
-    list(APPEND HEADERS Source/Controllers/Midi/Map2MidiController.h)
-endif()
-
-# T2459-H6 Slice 2: IpcMidiBridge + IpcMidiBridgeController are unconditional
-# — they're the canonical MIDI ingestion path under OFF and stay parallel-
-# available under ON so the factory's OFF arm has a real Map2Controller
-# to return instead of nullptr. The bridge itself is the H1-shipped shm
-# event-ring consumer; the controller wraps it in the Map2Controller
-# contract used by the engine's controller layer.
+# T2459-H6: IpcMidiBridge + IpcMidiBridgeController are the canonical MIDI
+# ingestion path. The bridge consumes the host's shm event ring (shipped
+# under H1); the controller wraps it in the Map2Controller contract used
+# by the engine's controller layer.
 list(APPEND SOURCES
     Source/Controllers/Midi/IpcMidiBridge.cpp
     Source/Controllers/Midi/IpcMidiBridgeController.cpp
@@ -664,14 +644,6 @@ if(AVDECC_AVAILABLE)
     )
 endif()
 
-# T2459-H6 retirement gate. Surface the option as a compile definition so
-# Map2ControllerFactory.cpp can guard the legacy include + instantiation.
-if(MAP2_USE_LEGACY_MIDI_CONTROLLER)
-    target_compile_definitions(map2_audio_engine PRIVATE MAP2_HAS_LEGACY_MIDI_CONTROLLER=1)
-else()
-    target_compile_definitions(map2_audio_engine PRIVATE MAP2_HAS_LEGACY_MIDI_CONTROLLER=0)
-endif()
-
 # ========================================
 # Compiler flags
 # ========================================
@@ -816,21 +788,12 @@ if(BUILD_CONTROLLERS_TESTS)
         # bridge symbols resolve when the legacy path is excluded.
         Source/ControllerHost/EventRing/ShmEventRing.cpp
     )
-    if(MAP2_USE_LEGACY_MIDI_CONTROLLER)
-        list(APPEND CONTROLLERS_TESTS_SOURCES
-            Source/Controllers/Midi/Map2MidiController.cpp)
-    endif()
     add_executable(controllers_tests ${CONTROLLERS_TESTS_SOURCES})
     target_compile_definitions(controllers_tests PRIVATE
         JUCE_GLOBAL_MODULE_SETTINGS_INCLUDED=1
         JUCE_WEB_BROWSER=0
         JUCE_USE_CURL=0
     )
-    if(MAP2_USE_LEGACY_MIDI_CONTROLLER)
-        target_compile_definitions(controllers_tests PRIVATE MAP2_HAS_LEGACY_MIDI_CONTROLLER=1)
-    else()
-        target_compile_definitions(controllers_tests PRIVATE MAP2_HAS_LEGACY_MIDI_CONTROLLER=0)
-    endif()
     target_include_directories(controllers_tests PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/Source
     )
@@ -838,13 +801,6 @@ if(BUILD_CONTROLLERS_TESTS)
         Catch2::Catch2WithMain
         juce::juce_core
     )
-    # ALSA seq for Map2MidiController. Optional — Map2MidiController has
-    # a #if MAP2_HAS_ALSA_SEQ guard that turns into a no-op when the
-    # header is missing.
-    find_library(ALSA_LIBRARY NAMES asound)
-    if(ALSA_LIBRARY)
-        target_link_libraries(controllers_tests PRIVATE ${ALSA_LIBRARY})
-    endif()
     add_test(NAME controllers_tests COMMAND controllers_tests)
 
     add_custom_target(check-controllers

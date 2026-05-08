@@ -5,7 +5,7 @@
 //
 // Given a ControllerIdentity (with protocol field set), the factory
 // constructs the appropriate Map2Controller subclass:
-//   - "midi" → Map2MidiController (T2459-B1)
+//   - "midi" → IpcMidiBridgeController (T2459-H6 — drains shm event ring)
 //   - "hid"  → Map2HidController  (T2459-D1) — lives in controller-host
 //   - "bulk" → Map2BulkController (T2459-D3) — lives in controller-host
 //

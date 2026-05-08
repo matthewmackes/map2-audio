@@ -1,12 +1,12 @@
-"""T2459-H6 — caller audit regression test.
+"""T2459-H6 — retirement confirmation regression test.
 
-Locks the `Map2MidiController` reference set so future PRs cannot silently
-introduce a new dependency that would block the H6 retirement deletion.
-The set is small and explicit; the docs/midi/MAP2MIDICONTROLLER_RETIREMENT.md
-runbook tracks any movement here.
+Locks the post-retirement state of the legacy raw-ALSA Map2MidiController
+path so it cannot silently come back. Original purpose was to track the
+shrinking reference set during the multi-slice retirement; this version
+asserts the deletion landed cleanly and stays gone.
 
-Mirrors the grep-then-compare pattern from
-tests/test_route_registration_policy.py.
+Retired: 2026-05-08. Evidence:
+  docs/fit-for-purpose-evidence/20260508/t2459h6-shm-ring/
 """
 from __future__ import annotations
 
@@ -20,37 +20,40 @@ ENGINE_TESTS = REPO_ROOT / "juce-engine" / "tests"
 ENGINE_CMAKE = REPO_ROOT / "juce-engine" / "CMakeLists.txt"
 RETIREMENT_DOC = REPO_ROOT / "docs" / "midi" / "MAP2MIDICONTROLLER_RETIREMENT.md"
 
-PATTERN = re.compile(r"Map2MidiController")
+LEGACY_CPP = ENGINE_SRC / "Controllers" / "Midi" / "Map2MidiController.cpp"
+LEGACY_H = ENGINE_SRC / "Controllers" / "Midi" / "Map2MidiController.h"
 
-# Files the audit doc explicitly enumerates as load-bearing references.
-EXPECTED_LOAD_BEARING = {
-    REPO_ROOT / "juce-engine" / "CMakeLists.txt",
-    REPO_ROOT / "juce-engine" / "Source" / "Controllers" / "Map2ControllerFactory.cpp",
-    REPO_ROOT / "juce-engine" / "tests" / "Map2ControllerTests.cpp",
-    # The legacy implementation files themselves stay until the deletion PR.
-    REPO_ROOT / "juce-engine" / "Source" / "Controllers" / "Midi" / "Map2MidiController.cpp",
-    REPO_ROOT / "juce-engine" / "Source" / "Controllers" / "Midi" / "Map2MidiController.h",
-}
+# Word-boundary pattern — matches "Map2MidiController" but not e.g.
+# "Map2MidiControllerTests" if a future name reuses the prefix.
+PATTERN = re.compile(r"\bMap2MidiController\b")
 
-# Comment-only references — kept tracked so a future code-using mutation in
-# any of these files surfaces as a test failure inviting a deliberate
-# reclassification rather than silent inclusion.
-EXPECTED_COMMENT_ONLY = {
+# Allowed mentions: documentation comments referring to the retirement
+# itself live in these files. They must remain comment-only — any code-
+# using mutation surfaces here as a test failure.
+ALLOWED_COMMENT_MENTIONS = {
     REPO_ROOT / "juce-engine" / "Source" / "Controllers" / "Map2Controller.cpp",
+    REPO_ROOT / "juce-engine" / "Source" / "Controllers" / "Map2ControllerFactory.cpp",
     REPO_ROOT / "juce-engine" / "Source" / "Controllers" / "Map2ControllerFactory.h",
     REPO_ROOT / "juce-engine" / "Source" / "Controllers" / "Midi" / "IpcMidiBridge.h",
-    # T2459-H6 Slice 2: IpcMidiBridgeController.h docstring mentions
-    # Map2MidiController as the legacy path it replaces under OFF.
     REPO_ROOT / "juce-engine" / "Source" / "Controllers" / "Midi" / "IpcMidiBridgeController.h",
+    REPO_ROOT / "juce-engine" / "tests" / "Map2ControllerTests.cpp",
 }
 
-EXPECTED_ALL = EXPECTED_LOAD_BEARING | EXPECTED_COMMENT_ONLY
+
+def test_legacy_source_files_deleted() -> None:
+    assert not LEGACY_CPP.exists(), (
+        f"Map2MidiController.cpp came back: {LEGACY_CPP}. "
+        "The legacy raw-ALSA MIDI path was retired 2026-05-08 — "
+        "MIDI ingestion now lives in map2-controller-host (libremidi) "
+        "and is consumed by the engine via the shm event ring "
+        "(IpcMidiBridgeController)."
+    )
+    assert not LEGACY_H.exists(), f"Map2MidiController.h came back: {LEGACY_H}"
 
 
-def _scan_engine_for_pattern() -> set[Path]:
+def test_no_unexpected_references_in_engine() -> None:
     matches: set[Path] = set()
-    roots = [ENGINE_SRC, ENGINE_TESTS]
-    for root in roots:
+    for root in (ENGINE_SRC, ENGINE_TESTS):
         for path in root.rglob("*"):
             if not path.is_file():
                 continue
@@ -62,66 +65,39 @@ def _scan_engine_for_pattern() -> set[Path]:
                 continue
             if PATTERN.search(text):
                 matches.add(path)
-    if PATTERN.search(ENGINE_CMAKE.read_text(encoding="utf-8")):
-        matches.add(ENGINE_CMAKE)
-    return matches
-
-
-def test_audit_doc_exists() -> None:
-    assert RETIREMENT_DOC.exists(), (
-        f"missing T2459-H6 retirement runbook: {RETIREMENT_DOC}"
-    )
-
-
-def test_caller_set_matches_audit() -> None:
-    found = _scan_engine_for_pattern()
-    unexpected = found - EXPECTED_ALL
-    missing = EXPECTED_ALL - found
+    unexpected = matches - ALLOWED_COMMENT_MENTIONS
     assert not unexpected, (
-        "New Map2MidiController reference appeared in the engine. "
-        "Either retire it or add it to the H6 audit doc + this test's "
-        f"EXPECTED set with the appropriate classification: {sorted(unexpected)}"
-    )
-    assert not missing, (
-        "Expected Map2MidiController references not found — has the deletion "
-        "PR landed without updating this test? Refresh the EXPECTED set: "
-        f"{sorted(missing)}"
+        "Map2MidiController reference reappeared outside the allowed "
+        "comment-mention set. The legacy path was retired 2026-05-08 — "
+        f"new code dependencies are not permitted: {sorted(unexpected)}"
     )
 
 
-def test_factory_guards_legacy_include_under_retirement_flag() -> None:
+def test_cmakelists_does_not_reintroduce_retirement_option() -> None:
+    cmake_text = ENGINE_CMAKE.read_text(encoding="utf-8")
+    assert "MAP2_USE_LEGACY_MIDI_CONTROLLER" not in cmake_text, (
+        "CMakeLists.txt must not re-expose the retired retirement-gate "
+        "option. The legacy path is gone; there is no gate left."
+    )
+    assert "MAP2_HAS_LEGACY_MIDI_CONTROLLER" not in cmake_text, (
+        "CMakeLists.txt must not re-define MAP2_HAS_LEGACY_MIDI_CONTROLLER. "
+        "Compile defs for the retired flag should be removed."
+    )
+
+
+def test_factory_returns_ipc_midi_bridge_unconditionally() -> None:
     factory_cpp = (
         ENGINE_SRC / "Controllers" / "Map2ControllerFactory.cpp"
     ).read_text(encoding="utf-8")
-    assert "MAP2_HAS_LEGACY_MIDI_CONTROLLER" in factory_cpp, (
-        "Factory must guard the legacy include + instantiation behind "
-        "MAP2_HAS_LEGACY_MIDI_CONTROLLER so the OFF build links cleanly."
+    assert "MAP2_HAS_LEGACY_MIDI_CONTROLLER" not in factory_cpp, (
+        "Factory must not retain the retired conditional include guard."
     )
-    # When OFF, the "midi" arm short-circuits to nullptr.
-    assert "return nullptr;" in factory_cpp
-
-
-def test_cmakelists_exposes_retirement_option() -> None:
-    cmake_text = ENGINE_CMAKE.read_text(encoding="utf-8")
-    assert "MAP2_USE_LEGACY_MIDI_CONTROLLER" in cmake_text, (
-        "CMakeLists.txt must expose the MAP2_USE_LEGACY_MIDI_CONTROLLER "
-        "option (T2459-H6 retirement gate)."
+    assert "IpcMidiBridgeController" in factory_cpp, (
+        "Factory must construct IpcMidiBridgeController for MIDI identities."
     )
-    # The option must default to ON to preserve today's behavior until
-    # the bench soak passes.
-    assert (
-        'option(MAP2_USE_LEGACY_MIDI_CONTROLLER\n'
-        in cmake_text
-        or "MAP2_USE_LEGACY_MIDI_CONTROLLER" in cmake_text
+
+
+def test_retirement_doc_exists() -> None:
+    assert RETIREMENT_DOC.exists(), (
+        f"missing T2459-H6 retirement runbook: {RETIREMENT_DOC}"
     )
-    # Source/header are conditionally appended (not unconditionally listed).
-    assert "if(MAP2_USE_LEGACY_MIDI_CONTROLLER)" in cmake_text
-
-
-def test_catch2_test_has_both_on_and_off_arms() -> None:
-    test_cpp = (ENGINE_TESTS / "Map2ControllerTests.cpp").read_text(encoding="utf-8")
-    assert "Factory returns a Map2MidiController for MIDI identities" in test_cpp
-    # T2459-H6 Slice 2: the OFF arm now returns IpcMidiBridgeController
-    # instead of nullptr (closes the deletion-blocking factory gap).
-    assert "Factory returns IpcMidiBridgeController under retirement gate" in test_cpp
-    assert "MAP2_HAS_LEGACY_MIDI_CONTROLLER" in test_cpp

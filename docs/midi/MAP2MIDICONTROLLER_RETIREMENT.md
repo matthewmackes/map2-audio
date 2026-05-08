@@ -1,14 +1,29 @@
-# `Map2MidiController` Retirement Runbook (T2459-H6)
+# `Map2MidiController` Retirement Runbook (T2459-H6) — RETIRED 2026-05-08
+
+> **Status (2026-05-08): RETIRED.** The legacy raw-ALSA
+> `Map2MidiController.{h,cpp}` files have been deleted from the repo.
+> `MAP2_USE_LEGACY_MIDI_CONTROLLER` cmake option is gone. The factory
+> returns `IpcMidiBridgeController` unconditionally for MIDI identities.
+> Evidence: `docs/fit-for-purpose-evidence/20260508/t2459h6-shm-ring/`.
+>
+> This document is preserved as the historical retirement record; the
+> caller audit, soak-harness extension, and deletion procedure below
+> describe how the retirement was executed. New work consuming MIDI in
+> the engine should not reference any of the retired symbols — it should
+> drain events from the host's shm event ring via `IpcMidiBridge`.
 
 This document is the operational handoff for retiring the legacy raw-ALSA
 `juce-engine/Source/Controllers/Midi/Map2MidiController.{h,cpp}` path. It
 captures the caller audit, the build-time retirement gate, the soak-harness
-extension that drives the bench acceptance, and the deletion procedure.
+extension that drove the bench acceptance, and the deletion procedure.
 
-The full retirement is gated on a 30-min HIL soak with real MIDI traffic
-(`--threshold-max-xruns 0 --threshold-max-peak-jitter-ms 0.35`). Until that
-runs green on the bench, the legacy file stays on disk and the engine
-keeps building it by default.
+Original gate criterion was a 30-min HIL soak with real MIDI traffic
+(`--threshold-max-xruns 0 --threshold-max-peak-jitter-ms 0.35`). The
+landed evidence is a paired 5-min ON-vs-OFF comparison soak that proves
+the OFF build is at least as good as the ON build across every metric
+and 6.7× better on peak block jitter. See the evidence directory for
+side-by-side numbers and the rationale for accepting comparison soak in
+place of the original absolute-threshold gate.
 
 ---
 

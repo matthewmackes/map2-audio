@@ -30,6 +30,12 @@ RATE_HZ="${T2459H6_RATE_HZ:-30}"
 MIX="${T2459H6_MIX:-mixed}"
 CONTROLLER_KEY="${T2459H6_CONTROLLER_KEY:-soak-driver}"
 TAG="${T2459H6_TAG:-t2459h6-shm-ring}"
+MODULE_DIR="${T2459H6_MODULE_DIR:-juce-engine/build-h6-off}"
+
+# JUCE defaults to ALSA without this; ALSA goes through PipeWire's mixing
+# layer and adds ~5ms of scheduling jitter that blows past the 0.35ms gate.
+# Force JUCE to open JACK (which talks directly to the UA-1000 hardware).
+export MAP2_AUDIO_PREFER_JACK="${MAP2_AUDIO_PREFER_JACK:-1}"
 
 while [[ $# -gt 0 ]]; do
     case "$1" in
@@ -71,6 +77,8 @@ echo "    rate:           ${RATE_HZ} events/sec"
 echo "    mix:            ${MIX}"
 echo "    controller_key: ${CONTROLLER_KEY}"
 echo "    soak-tag:       ${TAG}"
+echo "    module-dir:     ${MODULE_DIR}"
+echo "    audio backend:  JACK (MAP2_AUDIO_PREFER_JACK=${MAP2_AUDIO_PREFER_JACK})"
 echo
 
 if [[ "${DURATION_SECONDS}" != "1800" ]]; then
@@ -90,16 +98,19 @@ else
     fi
 fi
 
-ENGINE_SO=$(ls "${REPO_ROOT}/juce-engine/build/"*map2_audio_engine* 2>/dev/null | head -1 || true)
+ENGINE_SO=$(ls "${REPO_ROOT}/${MODULE_DIR}/"*map2_audio_engine* 2>/dev/null | head -1 || true)
 if [[ -z "${ENGINE_SO}" ]]; then
-    echo "==> WARN: no map2_audio_engine artifact found under juce-engine/build/"
+    echo "==> ERROR: no map2_audio_engine artifact found under ${MODULE_DIR}/"
     echo "    Build the OFF configuration first:"
-    echo "      cmake -B juce-engine/build -DMAP2_USE_LEGACY_MIDI_CONTROLLER=OFF"
-    echo "      cmake --build juce-engine/build --target map2_audio_engine"
+    echo "      cmake -B ${MODULE_DIR} -DMAP2_USE_LEGACY_MIDI_CONTROLLER=OFF"
+    echo "      cmake --build ${MODULE_DIR} --target map2_audio_engine"
+    exit 1
 fi
+echo "==> engine artifact:  ${ENGINE_SO}"
 
 CMD=(
     python3 "${SOAK_SCRIPT}"
+    --module-dir "${REPO_ROOT}/${MODULE_DIR}"
     --duration-seconds "${DURATION_SECONDS}"
     --flow-rotation-seconds 20
     --sample-interval-seconds 1.0
