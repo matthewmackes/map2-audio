@@ -1,15 +1,63 @@
 # T2459-H7-PW-UMP — PipeWire UMP-MIDI2 → MIDI 1.0 bridge gap (decision doc)
 
-**Worklist anchor:** [`T2459-H7-PW-UMP`](../PROJECT_WORKLIST.md) (Todo, parent T2459-H7).
+**Worklist anchor:** [`T2459-H7-PW-UMP`](../PROJECT_WORKLIST.md) (In progress, parent T2459-H7).
 **Filed:** 2026-05-07 (HIL bench, Claude).
-**Owner:** Unassigned. Operator decision required before implementation can start.
+**Decision locked:** 2026-05-08 — **Path 4 selected (ALSA-seq direct subscription as the production answer).**
+**Owner:** Claude (implementation-side); operator owns HIL evidence capture.
 **Substrate:** PipeWire 1.4.10, libremidi v5.1.0, ALSA seq, JACK MIDI.
 
 ---
 
-## TL;DR
+## Decision: Path 4 selected (2026-05-08)
+
+The operator chose **Path 4** — declare the existing ALSA-seq direct-subscription fallback the **production** answer for the UMP-MIDI2 → MIDI 1.0 bridge gap, and add the missing pieces that make it operationally complete.
+
+### Rationale
+
+- **Already proven on the bench.** The MeloAudio Commander discovery wizard (T2459-H3-CFG Phase 2b) routes live MIDI through `app/services/devices/meloaudio/commander_discovery_subscriber.py` using `mido` + `python-rtmidi` ALSA-seq direct subscription — exactly the path this decision generalizes. It worked first try at the bench session that surfaced the gap.
+- **Already in the libremidi probe order.** `Map2MidiBackend::probe()` already lists `AlsaSeq` as the third backend; the C++ adapter binds to a real ALSA-seq client via libremidi when forced there. There is no new C++ DSP, no new IPC contract, no new daemon process.
+- **Lowest possible blast radius.** Path 3 (backend-priority bypass) and Path 4 land on the same destination — `AlsaSeq` carrying the traffic — but Path 4 ships **without** modifying the C++ probe-order code at all. The decision moves to a Python-side environment probe that flips `MAP2_MIDI_BACKEND_FORCE=alsa_seq` before the controller-host spawns. No C++ rebuild on the operator's bench is required to ship the fix.
+- **Reversible at zero cost.** When PipeWire 1.5 closes the substrate gap, the Python probe naturally returns `HEALTHY` and the C++ side keeps the original `JackMidi → PipewireNative → AlsaSeq → AlsaRaw` order. The probe code can be deleted with no migration; nothing else changes.
+- **Per-installation, not per-device.** The current `Map2MidiBackend` is process-global (one selected backend per host). Path 4 takes the host-wide posture: if any legacy MIDI 1.0 device on this host shows the gap signature, force ``alsa_seq`` for the controller-host's libremidi observer. UMP-MIDI2-native devices still work through ALSA seq (which subscribes the kernel client directly without any UMP translation step). A future iteration can move per-device backend selection into the C++ adapter if a multi-device rig actually needs it.
+
+### What ships under Path 4
+
+| Piece | File | Status |
+|---|---|---|
+| Environment-detection probe (Python) | `app/services/controller_host_pipewire_substrate.py` | Shipped 2026-05-08 |
+| Hooked into controller-host spawn env | `app/services/controller_host_service.py` (consumer of `apply_to_env_overrides`) | Wiring slice queued |
+| C++ env-var consumption (`MAP2_MIDI_BACKEND_FORCE`) | `juce-engine/Source/ControllerHost/main.cpp` | **Wiring missing today.** §5 below describes the one-line consumer that calls `Map2MidiBackend::forceSelect()` with the env-var value. |
+| Regression test (unit + HIL gate) | `tests/test_t2459h7_pw_ump_fallback.py` | Shipped 2026-05-08 (12 unit cases pass; HIL case gated by `MAP2_HIL_PIPEWIRE_UMP=1`) |
+| Backend-architecture doc update | `docs/midi/MIDI_BACKEND.md` §"PipeWire 1.4.10 UMP-MIDI2 substrate gap" | Shipped 2026-05-08 |
+| Evidence directory | `docs/fit-for-purpose-evidence/20260508/t2459h7-pw-ump-path4/` | Stub shipped 2026-05-08; operator fills in actual HIL traces at the bench |
+
+### Operator-visible behaviour
+
+When the probe fires on a broken substrate, journalctl on the backend will carry:
+
+```
+[map2-backend] T2459-H7-PW-UMP probe: BROKEN_UMP_BRIDGE — PipeWire 1.4.10 UMP-MIDI2 bridge gap detected:
+  orphan kernel MIDI 1.0 clients ['TSMIDI2.0'] have no peer subscription from ['Midi-Bridge'].
+  Forcing controller-host to alsa_seq backend (Path 4).
+[map2-controller-host] midi backend = alsa_seq
+[map2-controller-host] degraded: midi_backend_degraded — MIDI backend bound to alsa_seq …
+```
+
+The `midi_backend_degraded` Warning diagnostic is intentional — it tells the operator that traffic is on the substrate-aware fallback rather than the preferred JACK-MIDI cycle-aligned path. If the operator believes it's a false positive, they can short-circuit with `MAP2_PW_UMP_PROBE_DISABLE=1` (skip the probe) or `MAP2_MIDI_BACKEND_FORCE=jack_midi` (force the original backend regardless of the probe outcome).
+
+### What this decision **does not** do
+
+- Does not retire Paths 1 / 2 / 3. Path 1 (upstream PipeWire fix) remains the long-term right answer; if it lands the Python probe becomes a no-op and is deleted. Path 2 (bridge daemon) stays in reserve. Path 3 (in-binary backend reordering) is superseded — Path 4 is strictly simpler at the same destination.
+- Does not change the C++ probe order. The C++ side continues to walk `JackMidi → PipewireNative → AlsaSeq → AlsaRaw` whenever the env-var override is absent.
+- Does not change the libremidi vendoring or the ni-midi2 dependency.
+
+---
+
+## TL;DR (historical — superseded by the 2026-05-08 decision)
 
 Per the locked-decision summary in §6 below, the **recommended path is #3 (backend-priority bypass)** as the immediate ship — it requires only an environment-detection probe in MAP2 source, no PipeWire patch, no extra daemon, no kernel work. Path #1 (upstream PipeWire fix) and Path #2 (in-platform bridge daemon) remain on the table for the long run; both are larger lifts. Path #4 (ALSA-raw bypass) is a per-device fallback that is already implicitly covered by the existing libremidi probe order — listed for completeness, not as a primary plan.
+
+> **Note (2026-05-08):** the operator selected Path 4 instead. See the decision section above. The original recommendation is preserved here for context.
 
 ---
 
@@ -205,9 +253,20 @@ const MidiBackend probeOrder[] = {
 
 ## 6. Locked decisions
 
-None yet. **Operator owes:** approve Path 3 (recommended), Path 2 (more invasive), Path 1 (long-term only), or pick a different ordering. This doc enumerates the tradeoffs; the decision itself is operator-driven because it touches substrate posture and ship-cycle priorities.
+**2026-05-08 — Path 4 selected** (see top-of-doc Decision section for rationale and shipped artifacts).
 
-When approved, this doc updates with the decision + date and the implementation slice opens against `T2459-H7-PW-UMP` in the worklist.
+- **Why not Path 3?** Path 3 reaches the same destination (AlsaSeq carrying traffic) but requires modifying the C++ probe-order code, recompiling the controller-host binary, and reasoning about probe-order-state machines. Path 4 ships the same outcome through a Python-side environment probe + the existing `MAP2_MIDI_BACKEND_FORCE` env override on the C++ side. Smaller blast radius, identical operator behaviour.
+- **Why not Path 1 or Path 2?** Both remain on the table for the long term. Path 1 (upstream PipeWire fix) is a 3–12 month calendar lift outside MAP2's control; Path 4 unblocks operators today and removes itself when Path 1 lands. Path 2 (bridge daemon) adds a supervised process and a latency hop — overkill while Path 4 is sufficient.
+- **Why was the env-var override path documented as "already supported" when it isn't fully wired?** The decision doc's earlier `MAP2_MIDI_BACKEND_FORCE=jack_midi` reference assumed the C++ `main.cpp` consumes the env var to call `Map2MidiBackend::forceSelect()`. Audit (2026-05-08) confirmed the consumer line is **not** present; it must be added under the implementation slice (single small edit to `juce-engine/Source/ControllerHost/main.cpp` reading `std::getenv("MAP2_MIDI_BACKEND_FORCE")` before `midiBackend.probe()`). Until that lands, the Python probe still runs but its env override has no effect on the C++ side. See "What ships under Path 4" table above.
+
+**Implementation slice (open):**
+
+1. Wire `controller_host_pipewire_substrate.detect_substrate_state()` into `ControllerHostService.start()` — call before `_spawn_and_wait()`, merge `result.env_overrides` into `self.env_overrides` via `apply_to_env_overrides(self.env_overrides, result)`. Log the `result.reason` line at INFO. *Owner: Claude.*
+2. Add the `MAP2_MIDI_BACKEND_FORCE` consumer in `juce-engine/Source/ControllerHost/main.cpp` — read the env var; if non-empty, call `forceSelect()` with the matching enum; on failure, fall through to the original `probe()`. *Owner: Claude (single-line edit; behind a build).*
+3. HIL run on the bench with the MeloAudio Commander: confirm `journalctl -u map2-backend` carries the BROKEN_UMP_BRIDGE log line and `midi backend = alsa_seq`; capture in `docs/fit-for-purpose-evidence/20260508/t2459h7-pw-ump-path4/`. *Owner: operator.*
+4. 30-min soak under live mapping load with the Commander on the bus to verify event flow and no drops; same evidence directory. *Owner: operator.*
+
+When all four slices land + evidence is captured, this task graduates to `[✓] Done` per the Definition of Done gates in `.claude/CLAUDE.md` §0.8.
 
 ---
 
