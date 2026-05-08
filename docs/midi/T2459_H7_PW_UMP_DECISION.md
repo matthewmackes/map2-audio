@@ -25,7 +25,7 @@ The operator chose **Path 4** — declare the existing ALSA-seq direct-subscript
 | Piece | File | Status |
 |---|---|---|
 | Environment-detection probe (Python) | `app/services/controller_host_pipewire_substrate.py` | Shipped 2026-05-08 |
-| Hooked into controller-host spawn env | `app/services/controller_host_service.py` (consumer of `apply_to_env_overrides`) | Wiring slice queued |
+| Hooked into controller-host spawn env | `app/services/controller_host_service.py` (consumer of `apply_to_env_overrides`) | **LANDED 2026-05-08.** `ControllerHostService.start()` calls `_apply_substrate_probe()` once before kicking off the supervisor; on `BROKEN_UMP_BRIDGE`, merges `MAP2_MIDI_BACKEND_FORCE=alsa_seq` into `self.env_overrides` (operator-supplied values win). Probe failure is logged + non-fatal. Tests: `tests/test_t2459h7_pw_ump_service_wiring.py` (4 cases). |
 | C++ env-var consumption (`MAP2_MIDI_BACKEND_FORCE`) | `juce-engine/Source/ControllerHost/main.cpp` | **LANDED 2026-05-08.** Reads `std::getenv("MAP2_MIDI_BACKEND_FORCE")` inside the accept loop before `Map2MidiBackend::probe()`. Lowercases the value, maps to the `MidiBackend` enum (`jack` / `pipewire` / `alsa_seq` / `alsa_raw`), calls `forceSelect()` on a recognized value, falls back to `probe()` on unrecognized with a stderr warning. Audit pin: `tests/test_t2459h7_pw_ump_main_cpp_wiring.py` (4 cases). |
 | Regression test (unit + HIL gate) | `tests/test_t2459h7_pw_ump_fallback.py` | Shipped 2026-05-08 (12 unit cases pass; HIL case gated by `MAP2_HIL_PIPEWIRE_UMP=1`) |
 | Backend-architecture doc update | `docs/midi/MIDI_BACKEND.md` §"PipeWire 1.4.10 UMP-MIDI2 substrate gap" | Shipped 2026-05-08 |
@@ -262,11 +262,11 @@ const MidiBackend probeOrder[] = {
 **Implementation slices:**
 
 1. ✅ **Landed 2026-05-08** — `MAP2_MIDI_BACKEND_FORCE` consumer in `juce-engine/Source/ControllerHost/main.cpp`. Reads `std::getenv("MAP2_MIDI_BACKEND_FORCE")` inside the accept loop; lowercases and maps to the `MidiBackend` enum (`jack` / `pipewire` / `alsa_seq` / `alsa_raw`); calls `forceSelect()` on a recognized value; falls back to the locked `probe()` order on an unrecognized value with a stderr warning. Audit pin: `tests/test_t2459h7_pw_ump_main_cpp_wiring.py` (4 cases pass).
-2. ⏳ **Operator-driven** — Wire `controller_host_pipewire_substrate.detect_substrate_state()` into `ControllerHostService.start()`. Call before `_spawn_and_wait()`, merge `result.env_overrides` into `self.env_overrides` via `apply_to_env_overrides(...)`. Log `result.reason` at INFO. (This is the Python-side glue that makes the probe fire on backend startup; the C++ side will pick up the env var the moment this runs.)
+2. ✅ **Landed 2026-05-08** — `ControllerHostService.start()` invokes `detect_substrate_state()` once before kicking off the supervisor; on `BROKEN_UMP_BRIDGE`, merges `MAP2_MIDI_BACKEND_FORCE=alsa_seq` into `self.env_overrides` so the spawn picks it up. Operator-supplied values in `env_overrides` win (base-wins merge). Probe failure logs a warning and falls through to the locked C++ probe order. Tests: `tests/test_t2459h7_pw_ump_service_wiring.py` (4 cases pass).
 3. ⏳ **Operator HIL** — Run on the bench with the MeloAudio Commander; confirm `journalctl -u map2-backend` carries the `BROKEN_UMP_BRIDGE` log line and `midi backend = alsa_seq (forced)`; capture in `docs/fit-for-purpose-evidence/20260508/t2459h7-pw-ump-path4/`.
 4. ⏳ **Operator HIL** — 30-min soak under live mapping load with the Commander on the bus to verify event flow and no drops; same evidence directory.
 
-**Code-side closure (2026-05-08):** Slice 1 + the Python detection probe + 12 unit tests + the C++ audit pin are all on `master`. Path 4 is fully implemented — slices 2–4 are the operator-driven wiring + HIL evidence capture, not further code work.
+**Code-side closure (2026-05-08):** Slices 1 + 2 + the Python detection probe + 20 unit tests are all on `master`. Path 4 is fully implemented end-to-end. Slices 3–4 are operator-driven HIL evidence capture, not further code work.
 
 ---
 

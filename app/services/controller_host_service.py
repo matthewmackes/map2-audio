@@ -129,12 +129,52 @@ class ControllerHostService:
         if self._supervisor_task is not None and not self._supervisor_task.done():
             logger.debug("ControllerHostService.start: already running")
             return
+        # T2459-H7-PW-UMP — probe the PipeWire substrate before spawning the
+        # child. On a PipeWire 1.4.10+ host with the UMP-MIDI2 → MIDI 1.0
+        # bridge gap, the probe writes MAP2_MIDI_BACKEND_FORCE=alsa_seq into
+        # env_overrides; main.cpp consumes the env var and skips the broken
+        # JackMidi probe arm. Operator-supplied env_overrides win over the
+        # probe (apply_to_env_overrides() is base-wins). Probe failure is
+        # non-fatal — fall through to the locked probe order on the C++ side.
+        self._apply_substrate_probe()
         self._stop_event.clear()
         self._supervisor_task = asyncio.create_task(
             self._supervisor_loop(),
             name="ControllerHostService.supervisor",
         )
         logger.info("ControllerHostService: supervisor task started")
+
+    def _apply_substrate_probe(self) -> None:
+        """Run the PipeWire substrate detection probe and merge its env
+        overrides into ``self.env_overrides`` so the next spawn picks them up.
+
+        The probe is hermetic — it shells out to ``pw-cli info 0`` and reads
+        ``/proc/asound/seq/clients``. Both are cheap (~tens of ms total) and
+        run synchronously here because they're called once at backend startup
+        before the supervisor task kicks off.
+        """
+        try:
+            from app.services.controller_host_pipewire_substrate import (
+                apply_to_env_overrides,
+                detect_substrate_state,
+            )
+
+            result = detect_substrate_state()
+            logger.info(
+                "ControllerHostService: PipeWire substrate probe — state=%s reason=%s",
+                result.state.value,
+                result.reason,
+            )
+            if result.is_broken:
+                self.env_overrides = apply_to_env_overrides(
+                    self.env_overrides, result
+                )
+        except Exception as exc:  # pragma: no cover — defensive
+            logger.warning(
+                "ControllerHostService: PipeWire substrate probe failed: %s. "
+                "Falling back to the controller-host's locked probe order.",
+                exc,
+            )
 
     async def stop(self) -> None:
         """Stop the supervisor and the child process gracefully."""
