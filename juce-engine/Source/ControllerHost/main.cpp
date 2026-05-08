@@ -698,10 +698,62 @@ int run_main_loop (const std::string& socket_path)
         // other IPC, and a list_ports request will respond with backend
         // = "none" + an empty port list.
         map2::controller_host::Map2MidiBackend midiBackend;
-        if (! midiBackend.probe())
+
+        // T2459-H7-PW-UMP — Path 4. When MAP2_MIDI_BACKEND_FORCE is set
+        // (typically by app/services/controller_host_pipewire_substrate.py
+        // after detecting the PipeWire 1.4.10 UMP-MIDI2 → MIDI 1.0 bridge
+        // gap), bypass the locked probe order and bind the requested
+        // backend directly. This is what makes the legacy MIDI 1.0 device
+        // path work on PipeWire-1.4.10+ hosts without an aconnect dance.
+        // Unrecognized values fall through to probe() so the host doesn't
+        // hard-fail on a typo. See docs/midi/MIDI_BACKEND.md §10.
+        bool forced = false;
+        if (const char* override_raw = std::getenv ("MAP2_MIDI_BACKEND_FORCE"))
+        {
+            std::string override_lc = override_raw;
+            std::transform (override_lc.begin(), override_lc.end(), override_lc.begin(),
+                            [] (unsigned char c) { return std::tolower (c); });
+            using MB = map2::controller_host::MidiBackend;
+            std::optional<MB> requested;
+            if (override_lc == "jack" || override_lc == "jack_midi" || override_lc == "jackmidi")
+                requested = MB::JackMidi;
+            else if (override_lc == "pipewire" || override_lc == "pipewire_native")
+                requested = MB::PipewireNative;
+            else if (override_lc == "alsa" || override_lc == "alsa_seq" || override_lc == "alsaseq")
+                requested = MB::AlsaSeq;
+            else if (override_lc == "alsa_raw" || override_lc == "alsaraw")
+                requested = MB::AlsaRaw;
+
+            if (requested.has_value())
+            {
+                std::cerr << "[map2-controller-host] MAP2_MIDI_BACKEND_FORCE="
+                          << override_raw << " — bypassing probe order\n";
+                if (midiBackend.forceSelect (*requested))
+                {
+                    forced = true;
+                    std::cerr << "[map2-controller-host] midi backend = "
+                              << map2::controller_host::Map2MidiBackend::backendName (
+                                     midiBackend.selectedBackend())
+                              << " (forced)\n";
+                }
+                else
+                {
+                    std::cerr << "[map2-controller-host] forceSelect failed; "
+                                 "falling back to probe order\n";
+                }
+            }
+            else
+            {
+                std::cerr << "[map2-controller-host] MAP2_MIDI_BACKEND_FORCE="
+                          << override_raw << " — unrecognized value; "
+                          << "expected one of jack|pipewire|alsa_seq|alsa_raw\n";
+            }
+        }
+
+        if (! forced && ! midiBackend.probe())
             std::cerr << "[map2-controller-host] MIDI backend probe failed; "
                          "all MIDI requests will return empty\n";
-        else
+        else if (! forced)
             std::cerr << "[map2-controller-host] midi backend = "
                       << map2::controller_host::Map2MidiBackend::backendName (
                              midiBackend.selectedBackend())

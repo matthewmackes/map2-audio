@@ -26,7 +26,7 @@ The operator chose **Path 4** — declare the existing ALSA-seq direct-subscript
 |---|---|---|
 | Environment-detection probe (Python) | `app/services/controller_host_pipewire_substrate.py` | Shipped 2026-05-08 |
 | Hooked into controller-host spawn env | `app/services/controller_host_service.py` (consumer of `apply_to_env_overrides`) | Wiring slice queued |
-| C++ env-var consumption (`MAP2_MIDI_BACKEND_FORCE`) | `juce-engine/Source/ControllerHost/main.cpp` | **Wiring missing today.** §5 below describes the one-line consumer that calls `Map2MidiBackend::forceSelect()` with the env-var value. |
+| C++ env-var consumption (`MAP2_MIDI_BACKEND_FORCE`) | `juce-engine/Source/ControllerHost/main.cpp` | **LANDED 2026-05-08.** Reads `std::getenv("MAP2_MIDI_BACKEND_FORCE")` inside the accept loop before `Map2MidiBackend::probe()`. Lowercases the value, maps to the `MidiBackend` enum (`jack` / `pipewire` / `alsa_seq` / `alsa_raw`), calls `forceSelect()` on a recognized value, falls back to `probe()` on unrecognized with a stderr warning. Audit pin: `tests/test_t2459h7_pw_ump_main_cpp_wiring.py` (4 cases). |
 | Regression test (unit + HIL gate) | `tests/test_t2459h7_pw_ump_fallback.py` | Shipped 2026-05-08 (12 unit cases pass; HIL case gated by `MAP2_HIL_PIPEWIRE_UMP=1`) |
 | Backend-architecture doc update | `docs/midi/MIDI_BACKEND.md` §"PipeWire 1.4.10 UMP-MIDI2 substrate gap" | Shipped 2026-05-08 |
 | Evidence directory | `docs/fit-for-purpose-evidence/20260508/t2459h7-pw-ump-path4/` | Stub shipped 2026-05-08; operator fills in actual HIL traces at the bench |
@@ -257,16 +257,16 @@ const MidiBackend probeOrder[] = {
 
 - **Why not Path 3?** Path 3 reaches the same destination (AlsaSeq carrying traffic) but requires modifying the C++ probe-order code, recompiling the controller-host binary, and reasoning about probe-order-state machines. Path 4 ships the same outcome through a Python-side environment probe + the existing `MAP2_MIDI_BACKEND_FORCE` env override on the C++ side. Smaller blast radius, identical operator behaviour.
 - **Why not Path 1 or Path 2?** Both remain on the table for the long term. Path 1 (upstream PipeWire fix) is a 3–12 month calendar lift outside MAP2's control; Path 4 unblocks operators today and removes itself when Path 1 lands. Path 2 (bridge daemon) adds a supervised process and a latency hop — overkill while Path 4 is sufficient.
-- **Why was the env-var override path documented as "already supported" when it isn't fully wired?** The decision doc's earlier `MAP2_MIDI_BACKEND_FORCE=jack_midi` reference assumed the C++ `main.cpp` consumes the env var to call `Map2MidiBackend::forceSelect()`. Audit (2026-05-08) confirmed the consumer line is **not** present; it must be added under the implementation slice (single small edit to `juce-engine/Source/ControllerHost/main.cpp` reading `std::getenv("MAP2_MIDI_BACKEND_FORCE")` before `midiBackend.probe()`). Until that lands, the Python probe still runs but its env override has no effect on the C++ side. See "What ships under Path 4" table above.
+- **What about the env-var override?** The earlier draft of this doc claimed `MAP2_MIDI_BACKEND_FORCE=jack_midi` was already wired in `forceSelect()` — that was true at the API layer but **not** at the consumer layer. An audit on 2026-05-08 caught that `main.cpp` called `probe()` directly without ever reading the env var; the consumer was added in the same day's commit. The override is now genuinely end-to-end: Python probe → `MAP2_MIDI_BACKEND_FORCE` in env → `main.cpp` reads it → `forceSelect()` binds the requested backend.
 
-**Implementation slice (open):**
+**Implementation slices:**
 
-1. Wire `controller_host_pipewire_substrate.detect_substrate_state()` into `ControllerHostService.start()` — call before `_spawn_and_wait()`, merge `result.env_overrides` into `self.env_overrides` via `apply_to_env_overrides(self.env_overrides, result)`. Log the `result.reason` line at INFO. *Owner: Claude.*
-2. Add the `MAP2_MIDI_BACKEND_FORCE` consumer in `juce-engine/Source/ControllerHost/main.cpp` — read the env var; if non-empty, call `forceSelect()` with the matching enum; on failure, fall through to the original `probe()`. *Owner: Claude (single-line edit; behind a build).*
-3. HIL run on the bench with the MeloAudio Commander: confirm `journalctl -u map2-backend` carries the BROKEN_UMP_BRIDGE log line and `midi backend = alsa_seq`; capture in `docs/fit-for-purpose-evidence/20260508/t2459h7-pw-ump-path4/`. *Owner: operator.*
-4. 30-min soak under live mapping load with the Commander on the bus to verify event flow and no drops; same evidence directory. *Owner: operator.*
+1. ✅ **Landed 2026-05-08** — `MAP2_MIDI_BACKEND_FORCE` consumer in `juce-engine/Source/ControllerHost/main.cpp`. Reads `std::getenv("MAP2_MIDI_BACKEND_FORCE")` inside the accept loop; lowercases and maps to the `MidiBackend` enum (`jack` / `pipewire` / `alsa_seq` / `alsa_raw`); calls `forceSelect()` on a recognized value; falls back to the locked `probe()` order on an unrecognized value with a stderr warning. Audit pin: `tests/test_t2459h7_pw_ump_main_cpp_wiring.py` (4 cases pass).
+2. ⏳ **Operator-driven** — Wire `controller_host_pipewire_substrate.detect_substrate_state()` into `ControllerHostService.start()`. Call before `_spawn_and_wait()`, merge `result.env_overrides` into `self.env_overrides` via `apply_to_env_overrides(...)`. Log `result.reason` at INFO. (This is the Python-side glue that makes the probe fire on backend startup; the C++ side will pick up the env var the moment this runs.)
+3. ⏳ **Operator HIL** — Run on the bench with the MeloAudio Commander; confirm `journalctl -u map2-backend` carries the `BROKEN_UMP_BRIDGE` log line and `midi backend = alsa_seq (forced)`; capture in `docs/fit-for-purpose-evidence/20260508/t2459h7-pw-ump-path4/`.
+4. ⏳ **Operator HIL** — 30-min soak under live mapping load with the Commander on the bus to verify event flow and no drops; same evidence directory.
 
-When all four slices land + evidence is captured, this task graduates to `[✓] Done` per the Definition of Done gates in `.claude/CLAUDE.md` §0.8.
+**Code-side closure (2026-05-08):** Slice 1 + the Python detection probe + 12 unit tests + the C++ audit pin are all on `master`. Path 4 is fully implemented — slices 2–4 are the operator-driven wiring + HIL evidence capture, not further code work.
 
 ---
 

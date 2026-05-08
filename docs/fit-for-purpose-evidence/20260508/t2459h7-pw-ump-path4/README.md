@@ -66,19 +66,21 @@ MAP2_HIL_PIPEWIRE_UMP=1 python3 -m pytest tests/test_t2459h7_pw_ump_fallback.py:
 
 ### G3 — Controller-host binds to `alsa_seq` after the env override is wired
 
-**Goal:** With the `ControllerHostService` env-override merging slice landed, the controller-host main loop logs `midi backend = alsa_seq` on a broken host. **Open dependency:** the C++ `main.cpp` consumer of `MAP2_MIDI_BACKEND_FORCE` must land first (see decision-doc §6 implementation slice 2).
+**Goal:** With the C++ env-var consumer in `juce-engine/Source/ControllerHost/main.cpp` landed, the controller-host main loop logs `midi backend = alsa_seq (forced)` whenever `MAP2_MIDI_BACKEND_FORCE=alsa_seq` is in its environment.
 
-**Capture (after slice 2 lands):**
+**Status (2026-05-08):** Consumer landed. `main.cpp` reads `MAP2_MIDI_BACKEND_FORCE`, maps the lowercased value to the `MidiBackend` enum (`jack` / `pipewire` / `alsa_seq` / `alsa_raw`), calls `Map2MidiBackend::forceSelect()` on a recognized value, and falls back to the locked probe order on an unrecognized value with a warning to stderr. Audit pin: `tests/test_t2459h7_pw_ump_main_cpp_wiring.py` (4 cases). Build verified: `cmake --build juce-engine/build --target map2-controller-host` clean. End-to-end smoke deferred to operator HIL — the runtime path requires a real backend connection through the UDS socket to fire the diagnostic, and the Python side already has unit + HIL-gated coverage.
+
+**Capture (operator, on a broken-substrate host):**
 
 ```bash
 # Restart the backend (which spawns the controller-host with the
 # probe-derived env overrides) and grep the journal.
 sudo systemctl restart map2-backend
 sleep 2
-journalctl -u map2-backend -n 200 --no-pager | grep -E 'T2459-H7|midi backend|midi_backend_degraded' > journalctl_startup.txt
+journalctl -u map2-backend -n 200 --no-pager | grep -E 'T2459-H7|midi backend|midi_backend_degraded|MAP2_MIDI_BACKEND_FORCE' > journalctl_startup.txt
 ```
 
-**Expected reading:** `journalctl_startup.txt` contains the `BROKEN_UMP_BRIDGE` Python log line, the C++ line `midi backend = alsa_seq`, and the `midi_backend_degraded` Warning diagnostic.
+**Expected reading:** `journalctl_startup.txt` contains the `BROKEN_UMP_BRIDGE` Python log line, the C++ line `MAP2_MIDI_BACKEND_FORCE=alsa_seq — bypassing probe order`, the C++ line `midi backend = alsa_seq (forced)`, and the `midi_backend_degraded` Warning diagnostic.
 
 ### G4 — Live mapping load: 30-min soak with no event drops
 
@@ -146,4 +148,6 @@ print(json.dumps({"state": detect_substrate_state().state.value}))
 
 ## Definition-of-Done sign-off
 
-When G1–G5 each carry a real artifact and a one-sentence reading in `EVIDENCE.md`, the worklist task `T2459-H7-PW-UMP` graduates from `[>] In Progress` to `[✓] Done` per `.claude/CLAUDE.md` §0.8. Until G3 lands (which depends on the C++ `main.cpp` env-var consumer), the task remains `[>]`.
+**Code-side status (2026-05-08):** All implementation slices are on `master`. Python detection probe + 12 unit tests landed in commit `73723978`. The C++ `main.cpp` env-var consumer + 4-case audit pin landed in this commit. The remaining gates (G1, G2, G3 evidence capture, G4, G5) are operator-driven HIL captures on a real broken-substrate bench — there is no further code work to schedule.
+
+When G1–G5 each carry a real artifact and a one-sentence reading in `EVIDENCE.md`, the worklist task `T2459-H7-PW-UMP` graduates from `[>] In Progress` to `[✓] Done` per `.claude/CLAUDE.md` §0.8. Code-side closure is achieved; HIL capture remains.
