@@ -501,8 +501,23 @@ export function MidiServicesBindingsPage() {
                               )
                             }
                             if (cell.info.header === 'actions') {
+                              const consumerBinding = bindingsById.get(dtRow.id)
                               const isSnapshotConsumer =
-                                bindingsById.get(dtRow.id)?.consumer_type === 'snapshot'
+                                consumerBinding?.consumer_type === 'snapshot'
+                              // Cycle 7 — differentiate the menu label so
+                              // operators see the binding kind at a glance.
+                              // 'program_number' rows go through snapshot
+                              // recall; midi_map[] rows are per-effect maps
+                              // edited inside the Snapshot Editor.
+                              const snapshotKind =
+                                isSnapshotConsumer && typeof consumerBinding?.metadata?.kind === 'string'
+                                  ? (consumerBinding.metadata.kind as string)
+                                  : null
+                              const snapshotItemLabel = isSnapshotConsumer
+                                ? snapshotKind === 'program_number'
+                                  ? 'View snapshot (Program Change recall)'
+                                  : 'View snapshot (per-effect MIDI map)'
+                                : ''
                               return (
                                 <TableCell key={cell.id} className="midi-services-bindings__actions-cell">
                                   <OverflowMenu
@@ -516,7 +531,7 @@ export function MidiServicesBindingsPage() {
                                     />
                                     {isSnapshotConsumer ? (
                                       <OverflowMenuItem
-                                        itemText="Open in Snapshots Browser"
+                                        itemText={snapshotItemLabel}
                                         onClick={() => handleOpenInSnapshots(dtRow.id)}
                                       />
                                     ) : null}
