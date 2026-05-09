@@ -27,9 +27,12 @@ import {
 import { submitBrainSlotBinding } from '../../components/DeviceConfigurator/bindingsWriter'
 import type { ConfiguratorPackDescriptor } from '../../components/DeviceConfigurator/types'
 import { meloaudioCommanderPack } from '../../components/DeviceConfigurator/packs/meloaudioCommander'
+import { createMidiLearnPollingSubscriber } from '../../components/DeviceConfigurator/midiLearnPollingSubscriber'
 import { useToasts } from '../../components/Toasts'
 
-const NULL_SUBSCRIBER: MidiEventSubscriber = () => () => undefined
+// Cycle 8 / 2026-05-09 — replaces the no-op subscriber with a real
+// polling bridge over GET /api/midi/bindings/learn/last-cc.
+const DEFAULT_SUBSCRIBER: MidiEventSubscriber = createMidiLearnPollingSubscriber()
 
 /**
  * Minimal seed brain-slot list for the MIDI Learn fallback. Real
@@ -51,18 +54,16 @@ interface MidiServicesConfiguratorPageProps {
    */
   packs?: ConfiguratorPackDescriptor[]
   /**
-   * Inject a MIDI Learn event source. Defaults to a no-op
-   * subscriber; the production websocket bridge lands in a follow-on
-   * slice. The MIDI Learn module renders correctly with the no-op
-   * subscriber — operators just won't capture an event until the
-   * bridge is wired.
+   * Inject a MIDI Learn event source. Defaults to a polling bridge
+   * over GET /api/midi/bindings/learn/last-cc (cycle 8). Tests inject
+   * a fake subscriber so they don't depend on the network.
    */
   subscribeToMidiEvents?: MidiEventSubscriber
 }
 
 export function MidiServicesConfiguratorPage({
   packs,
-  subscribeToMidiEvents = NULL_SUBSCRIBER,
+  subscribeToMidiEvents = DEFAULT_SUBSCRIBER,
 }: MidiServicesConfiguratorPageProps = {}) {
   const navigate = useNavigate()
   const { pushToast } = useToasts()
