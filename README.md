@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1524** Python | **1553** TypeScript | **181** C++/H | **147** Docs | **4131** total commits | **4** stars | **0** forks | **0** open issues
+**1529** Python | **1553** TypeScript | **181** C++/H | **147** Docs | **4133** total commits | **4** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`e6684ba0`](https://github.com/matthewmackes/map2-audio/commit/e6684ba066527d35f6fae9267f40f3a5423302e1) | feat(t2499-a/1): Configurator framework primitives | Map2 Audio | 2026-05-08 |
+| [`8c0b70e2`](https://github.com/matthewmackes/map2-audio/commit/8c0b70e2ab86d973cb6d754640c7193c9f133bfd) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-09 |
 | [`72a65a7d`](https://github.com/matthewmackes/map2-audio/commit/72a65a7dc0a6e185e51802121c0da47611cf4de4) | fix(t2500): IR pickers fail with bogus node_id from TanSt... | Map2 Audio | 2026-05-08 |
 | [`3c89db25`](https://github.com/matthewmackes/map2-audio/commit/3c89db25224988c4686fbdac09d9759b7e5a4930) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-09 |
 | [`6831906a`](https://github.com/matthewmackes/map2-audio/commit/6831906a501867314c69856db9b50ac8f3752b2a) | chore(worklist): file T2500 IR picker bug (Cabinet + Reverb) | Map2 Audio | 2026-05-08 |
 | [`0acb8877`](https://github.com/matthewmackes/map2-audio/commit/0acb887749286195fc66b9206d72892240a43816) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-09 |
 | [`170a3d9e`](https://github.com/matthewmackes/map2-audio/commit/170a3d9e7258ed3290ff59303bba94b8e58dffeb) | Merge remote-tracking branch 'origin/master' | Map2 Audio | 2026-05-08 |
 | [`a54d8c9e`](https://github.com/matthewmackes/map2-audio/commit/a54d8c9e69f0ff52e53c4398865c1e80af6589c4) | chore(worklist): file T2499 Sequencer Setup "Coming Soon"... | Map2 Audio | 2026-05-08 |
-| [`80dbd457`](https://github.com/matthewmackes/map2-audio/commit/80dbd457f14023ce619984052a9bc257c5999006) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-09 |
-| [`671d13e6`](https://github.com/matthewmackes/map2-audio/commit/671d13e683d8f19705d33a662913eda4544ab8e0) | chore(t2459): close H5 + T2498, consolidate remaining HIL... | Map2 Audio | 2026-05-08 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
