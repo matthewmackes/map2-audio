@@ -16,6 +16,16 @@ export type {
   MidiLearnEvent,
   MidiLearnSubmission,
 } from './MidiLearnModule'
+export {
+  buildBrainSlotPayload,
+  eventToSource,
+  stableStringify,
+  submitBrainSlotBinding,
+} from './bindingsWriter'
+export type {
+  BindingsWriterOptions,
+  ConfiguratorBindingResult,
+} from './bindingsWriter'
 export type {
   ConfiguratorPackDescriptor,
   ConfiguratorPrimitive,
