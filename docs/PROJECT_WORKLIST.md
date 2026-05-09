@@ -1038,7 +1038,26 @@ Completion note: 2026-04-28 — Codex: **Slice 1 SHIPPED (shared MIDI curve enum
   Remaining for full H4 acceptance:
   - Maschine MK1 and other device-service cuts to host-client facades.
   - Bench HIL parity evidence with migrated devices.
-Last updated: 2026-04-28 EDT - Claude: slice 5 (IntelFX parser routes through device-pack JS runtime under MAP2_SYSEX_PARSER_USE_JS_RUNTIME) shipped; H4 remains in progress pending Maschine MK1 cutover + bench HIL parity.
+  2026-04-28 — Claude: **Slice 6 SHIPPED (Maschine MK1 MIDI-mode device-pack cutover — HID/USB control surface stays out of scope per separate-process isolation).**
+  Delivered:
+  - New device pack `device-packs/native-instruments/`:
+    - `pack.yaml` — vendor=Native Instruments, license AGPL-3.0-only, source map2-native, model `maschine-mk1` (no upstream Mixxx import exists for Maschine MK1 — MAP2 original work).
+    - `profiles/maschine-mk1.midi.yaml` — 60 control rows mirroring `app/services/maschine/midi_map_config.py` defaults: 16 pads (notes 36..51), 11 rotary encoders (CC 0..7 + 9,10,11), 8 group buttons (CC 20..27), 8 transport-zone buttons (notes 60..67), 17 LCD-side/display/misc buttons (CC 64..80), 8 left-of-pads function buttons (CC 40..47). Bound to virtual ALSA port `MAP2:Maschine-MK1` published by the existing Python daemon (no conflict with the daemon's HID/USB ownership).
+    - `scripts/maschine-mk1.js` — pack-side script registering one MaschineMK1.* function per control row (pads → `audio.pad.<N>.trigger`, encoders → `audio.macro.*` / `audio.master.volume` / `audio.transport.tempo` / `audio.transport.swing` / `audio.nav.cursor`, transport buttons → `audio.transport.*`, group/modifier buttons → `audio.group.*` / `audio.modifier.*` / `audio.lcd.*`).
+  - Wired profile loading in `app/services/midi_device_profiles.py`:
+    - New constants `MASCHINE_MK1_PROFILE_ID = "native_instruments_maschine_mk1"`, `LEGACY_MASCHINE_MK1_PROFILE_ID = "maschine_mk1"`, `MASCHINE_MK1_PACK_PROFILE_PATH`.
+    - New `_build_maschine_mk1_profile_from_device_pack()` mirrors the MeloAudio cutover pattern; loads identity from YAML, sets USB VID/PID 0x17CC/0x0808, populates name_patterns including the virtual ALSA port pattern.
+    - `MIDIDeviceProfileService.__init__` registers the canonical id + the legacy `maschine_mk1` alias.
+    - New `is_maschine_mk1_profile_id()` helper mirrors `is_meloaudio_profile_id()`.
+  - New focused regression `tests/test_maschine_mk1_pack_t2459h4.py` (8 tests): pack files exist, registry exposes canonical id, legacy alias resolves to canonical with `profile_id_canonical` set, control counts (16/11/8/8) match, identity matches virtual ALSA port + USB VID/PID, scripts reference resolves, encoder CC→script parity (CC 0/9/10/11), pack manifest declares canonical metadata.
+  - Out of scope (stays Python-owned per separate-process isolation rule): `app/services/maschine/maschine_mk1_daemon.py`, `mk1_protocol.py`, `mk1_usb_transport.py`, `led_animations.py`, `led_choreography.py`, `admin_console.py`, `boot_sequence.py`, `shutdown_sequence.py`, `incident_log.py`, `long_op_feedback.py`, `onboarding.py`, `screensaver.py`, `transport.py`, `fonts/`, `render/`, `profiles/`. `midi_map_config.py` retained as the daemon's persistence surface; the new device-pack profile is a parallel, controller-host-side authoring surface that binds against the daemon's virtual ALSA port.
+  Validation:
+  - `pytest -q tests/test_maschine_mk1_pack_t2459h4.py tests/test_device_packs_schema.py tests/test_midi_device_profiles_t2459h3.py tests/test_midi_v2_routes.py tests/test_intelfx_syx_parser_js_runtime_t2459h4.py tests/test_mpx1_syx_parser_js_runtime_t2459h4.py` -> **55 passed**.
+  - `pytest -q tests/test_maschine_mk1.py tests/test_maschine_mk1_daemon.py tests/test_maschine_mk1_protocol.py tests/test_maschine_routes.py tests/test_maschine_admin_console.py tests/test_maschine_boot_shutdown.py tests/test_maschine_fonts.py tests/test_maschine_incident_log.py tests/test_maschine_lcd_service.py tests/test_maschine_led_animations.py tests/test_maschine_led_choreography.py tests/test_maschine_long_op_feedback.py tests/test_maschine_onboarding.py tests/test_maschine_pressure_routing.py tests/test_maschine_screensaver.py tests/test_maschine_transport.py` -> **120 passed** (existing Maschine surfaces unchanged).
+  Remaining for full H4 acceptance:
+  - Maschine MK1 HID/USB control surface migration (Slice 7+) — daemon → host-client facade, LED choreography to device-pack runtime.
+  - Bench HIL parity evidence with migrated devices.
+Last updated: 2026-04-28 EDT - Claude: slice 6 (Maschine MK1 MIDI-mode device-pack cutover) shipped; H4 remains in progress pending Maschine MK1 HID/USB control surface migration + bench HIL parity.
 
 ---
 

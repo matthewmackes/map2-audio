@@ -1,0 +1,353 @@
+schema_version: 1
+identity:
+  manufacturer: Native Instruments
+  model: maschine-mk1
+  alsa_client_pattern: 'MAP2:Maschine-MK1'
+  hardware_id: usb:17cc:0808
+
+scripts:
+  - scripts/maschine-mk1.js
+
+# Maschine MK1 MIDI-mode mapping. The HID/USB control surface (LEDs, dual
+# displays, 12-bit pad pressure stream) is owned by the Python daemon at
+# app/services/maschine/maschine_mk1_daemon.py and publishes a virtual
+# ALSA-seq port named "MAP2:Maschine-MK1" — this profile binds against
+# that virtual port, not the raw 17cc:0808 USB endpoints.
+controls:
+  # 16 pressure pads (notes 36..51 -> Pad 1..16).
+  - status: 0x90
+    midino: 36
+    script: MaschineMK1.pad_1
+    description: 'Pad 1.'
+  - status: 0x90
+    midino: 37
+    script: MaschineMK1.pad_2
+    description: 'Pad 2.'
+  - status: 0x90
+    midino: 38
+    script: MaschineMK1.pad_3
+    description: 'Pad 3.'
+  - status: 0x90
+    midino: 39
+    script: MaschineMK1.pad_4
+    description: 'Pad 4.'
+  - status: 0x90
+    midino: 40
+    script: MaschineMK1.pad_5
+    description: 'Pad 5.'
+  - status: 0x90
+    midino: 41
+    script: MaschineMK1.pad_6
+    description: 'Pad 6.'
+  - status: 0x90
+    midino: 42
+    script: MaschineMK1.pad_7
+    description: 'Pad 7.'
+  - status: 0x90
+    midino: 43
+    script: MaschineMK1.pad_8
+    description: 'Pad 8.'
+  - status: 0x90
+    midino: 44
+    script: MaschineMK1.pad_9
+    description: 'Pad 9.'
+  - status: 0x90
+    midino: 45
+    script: MaschineMK1.pad_10
+    description: 'Pad 10.'
+  - status: 0x90
+    midino: 46
+    script: MaschineMK1.pad_11
+    description: 'Pad 11.'
+  - status: 0x90
+    midino: 47
+    script: MaschineMK1.pad_12
+    description: 'Pad 12.'
+  - status: 0x90
+    midino: 48
+    script: MaschineMK1.pad_13
+    description: 'Pad 13.'
+  - status: 0x90
+    midino: 49
+    script: MaschineMK1.pad_14
+    description: 'Pad 14.'
+  - status: 0x90
+    midino: 50
+    script: MaschineMK1.pad_15
+    description: 'Pad 15.'
+  - status: 0x90
+    midino: 51
+    script: MaschineMK1.pad_16
+    description: 'Pad 16.'
+
+  # 11 rotary encoders (relative). NAVIGATE is the push-push center
+  # encoder; ENCODER 1..7 are the row above the displays; VOLUME / TEMPO
+  # / SWING are the dedicated knobs.
+  - status: 0xB0
+    midino: 0
+    action: set
+    script: MaschineMK1.navigate_encoder
+    description: 'NAVIGATE encoder (CC 0).'
+  - status: 0xB0
+    midino: 1
+    action: set
+    script: MaschineMK1.encoder_1
+    description: 'ENCODER 1 (CC 1).'
+  - status: 0xB0
+    midino: 2
+    action: set
+    script: MaschineMK1.encoder_2
+    description: 'ENCODER 2 (CC 2).'
+  - status: 0xB0
+    midino: 3
+    action: set
+    script: MaschineMK1.encoder_3
+    description: 'ENCODER 3 (CC 3).'
+  - status: 0xB0
+    midino: 4
+    action: set
+    script: MaschineMK1.encoder_4
+    description: 'ENCODER 4 (CC 4).'
+  - status: 0xB0
+    midino: 5
+    action: set
+    script: MaschineMK1.encoder_5
+    description: 'ENCODER 5 (CC 5).'
+  - status: 0xB0
+    midino: 6
+    action: set
+    script: MaschineMK1.encoder_6
+    description: 'ENCODER 6 (CC 6).'
+  - status: 0xB0
+    midino: 7
+    action: set
+    script: MaschineMK1.encoder_7
+    description: 'ENCODER 7 (CC 7).'
+  - status: 0xB0
+    midino: 9
+    action: set
+    script: MaschineMK1.volume_encoder
+    description: 'VOLUME encoder (CC 9).'
+  - status: 0xB0
+    midino: 10
+    action: set
+    script: MaschineMK1.tempo_encoder
+    description: 'TEMPO encoder (CC 10).'
+  - status: 0xB0
+    midino: 11
+    action: set
+    script: MaschineMK1.swing_encoder
+    description: 'SWING encoder (CC 11).'
+
+  # 8 group buttons (CC 20..27 -> GROUP E..A).
+  - status: 0xB0
+    midino: 20
+    action: momentary
+    script: MaschineMK1.group_e
+    description: 'GROUP E (CC 20).'
+  - status: 0xB0
+    midino: 21
+    action: momentary
+    script: MaschineMK1.group_f
+    description: 'GROUP F (CC 21).'
+  - status: 0xB0
+    midino: 22
+    action: momentary
+    script: MaschineMK1.group_g
+    description: 'GROUP G (CC 22).'
+  - status: 0xB0
+    midino: 23
+    action: momentary
+    script: MaschineMK1.group_h
+    description: 'GROUP H (CC 23).'
+  - status: 0xB0
+    midino: 24
+    action: momentary
+    script: MaschineMK1.group_d
+    description: 'GROUP D (CC 24).'
+  - status: 0xB0
+    midino: 25
+    action: momentary
+    script: MaschineMK1.group_c
+    description: 'GROUP C (CC 25).'
+  - status: 0xB0
+    midino: 26
+    action: momentary
+    script: MaschineMK1.group_b
+    description: 'GROUP B (CC 26).'
+  - status: 0xB0
+    midino: 27
+    action: momentary
+    script: MaschineMK1.group_a
+    description: 'GROUP A (CC 27).'
+
+  # 8 transport-zone buttons (notes 60..67).
+  - status: 0x90
+    midino: 60
+    action: momentary
+    script: MaschineMK1.transport_rec
+    description: 'REC (note 60).'
+  - status: 0x90
+    midino: 61
+    action: momentary
+    script: MaschineMK1.transport_erase
+    description: 'ERASE (note 61).'
+  - status: 0x90
+    midino: 62
+    action: momentary
+    script: MaschineMK1.transport_shift
+    description: 'SHIFT (note 62).'
+  - status: 0x90
+    midino: 63
+    action: momentary
+    script: MaschineMK1.transport_grid
+    description: 'GRID (note 63).'
+  - status: 0x90
+    midino: 64
+    action: momentary
+    script: MaschineMK1.transport_right
+    description: 'Transport right (note 64).'
+  - status: 0x90
+    midino: 65
+    action: momentary
+    script: MaschineMK1.transport_left
+    description: 'Transport left (note 65).'
+  - status: 0x90
+    midino: 66
+    action: momentary
+    script: MaschineMK1.transport_restart
+    description: 'RESTART (note 66).'
+  - status: 0x90
+    midino: 67
+    action: momentary
+    script: MaschineMK1.transport_play
+    description: 'PLAY (note 67).'
+
+  # 17 LCD-side / display / misc buttons (CC 64..80, momentary).
+  - status: 0xB0
+    midino: 64
+    action: momentary
+    script: MaschineMK1.button_control
+    description: 'CONTROL (CC 64).'
+  - status: 0xB0
+    midino: 65
+    action: momentary
+    script: MaschineMK1.button_browse
+    description: 'BROWSE (CC 65).'
+  - status: 0xB0
+    midino: 66
+    action: momentary
+    script: MaschineMK1.button_browse_left
+    description: '< BROWSE (CC 66).'
+  - status: 0xB0
+    midino: 67
+    action: momentary
+    script: MaschineMK1.button_snap
+    description: 'SNAP (CC 67).'
+  - status: 0xB0
+    midino: 68
+    action: momentary
+    script: MaschineMK1.button_auto
+    description: 'AUTO (CC 68).'
+  - status: 0xB0
+    midino: 69
+    action: momentary
+    script: MaschineMK1.button_browse_right
+    description: 'BROWSE > (CC 69).'
+  - status: 0xB0
+    midino: 70
+    action: momentary
+    script: MaschineMK1.button_sampling
+    description: 'SAMPLING (CC 70).'
+  - status: 0xB0
+    midino: 71
+    action: momentary
+    script: MaschineMK1.button_step
+    description: 'STEP (CC 71).'
+  - status: 0xB0
+    midino: 72
+    action: momentary
+    script: MaschineMK1.button_display_8
+    description: 'DISPLAY 8 (CC 72).'
+  - status: 0xB0
+    midino: 73
+    action: momentary
+    script: MaschineMK1.button_display_7
+    description: 'DISPLAY 7 (CC 73).'
+  - status: 0xB0
+    midino: 74
+    action: momentary
+    script: MaschineMK1.button_display_6
+    description: 'DISPLAY 6 (CC 74).'
+  - status: 0xB0
+    midino: 75
+    action: momentary
+    script: MaschineMK1.button_display_5
+    description: 'DISPLAY 5 (CC 75).'
+  - status: 0xB0
+    midino: 76
+    action: momentary
+    script: MaschineMK1.button_display_4
+    description: 'DISPLAY 4 (CC 76).'
+  - status: 0xB0
+    midino: 77
+    action: momentary
+    script: MaschineMK1.button_display_3
+    description: 'DISPLAY 3 (CC 77).'
+  - status: 0xB0
+    midino: 78
+    action: momentary
+    script: MaschineMK1.button_display_2
+    description: 'DISPLAY 2 (CC 78).'
+  - status: 0xB0
+    midino: 79
+    action: momentary
+    script: MaschineMK1.button_display_1
+    description: 'DISPLAY 1 (CC 79).'
+  - status: 0xB0
+    midino: 80
+    action: momentary
+    script: MaschineMK1.button_note_repeat
+    description: 'NOTE REPEAT (CC 80).'
+
+  # 8 left-of-pads function buttons (CC 40..47).
+  - status: 0xB0
+    midino: 40
+    action: momentary
+    script: MaschineMK1.button_mute
+    description: 'MUTE (CC 40).'
+  - status: 0xB0
+    midino: 41
+    action: momentary
+    script: MaschineMK1.button_solo
+    description: 'SOLO (CC 41).'
+  - status: 0xB0
+    midino: 42
+    action: momentary
+    script: MaschineMK1.button_select
+    description: 'SELECT (CC 42).'
+  - status: 0xB0
+    midino: 43
+    action: momentary
+    script: MaschineMK1.button_duplicate
+    description: 'DUPLICATE (CC 43).'
+  - status: 0xB0
+    midino: 44
+    action: momentary
+    script: MaschineMK1.button_navigate
+    description: 'NAVIGATE (CC 44).'
+  - status: 0xB0
+    midino: 45
+    action: momentary
+    script: MaschineMK1.button_keyboard
+    description: 'KEYBOARD (CC 45).'
+  - status: 0xB0
+    midino: 46
+    action: momentary
+    script: MaschineMK1.button_pattern
+    description: 'PATTERN (CC 46).'
+  - status: 0xB0
+    midino: 47
+    action: momentary
+    script: MaschineMK1.button_scene
+    description: 'SCENE (CC 47).'

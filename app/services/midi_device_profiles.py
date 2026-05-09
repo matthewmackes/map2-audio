@@ -30,6 +30,8 @@ logger = logging.getLogger(__name__)
 
 MIDI_COMMANDER_PROFILE_ID = "meloaudio_midi_commander"
 LEGACY_MIDI_COMMANDER_PROFILE_ID = "meloaudio_commander"
+MASCHINE_MK1_PROFILE_ID = "native_instruments_maschine_mk1"
+LEGACY_MASCHINE_MK1_PROFILE_ID = "maschine_mk1"
 BANK_UP_CC = 85
 BANK_DOWN_CC = 86
 BUTTON_CC_BY_ID: Dict[str, int] = {
@@ -54,6 +56,13 @@ MELOAUDIO_PACK_PROFILE_PATH = (
     / "meloaudio"
     / "profiles"
     / "midi-commander.midi.yaml"
+)
+MASCHINE_MK1_PACK_PROFILE_PATH = (
+    Path(__file__).resolve().parents[2]
+    / "device-packs"
+    / "native-instruments"
+    / "profiles"
+    / "maschine-mk1.midi.yaml"
 )
 
 
@@ -291,6 +300,58 @@ def _build_meloaudio_profile_from_device_pack() -> DeviceProfile:
     )
 
 
+def _build_maschine_mk1_profile_from_device_pack() -> DeviceProfile:
+    """Load the Maschine MK1 MIDI-mode profile from device-packs.
+
+    The Maschine MK1 control surface has no footswitches or expression
+    pedals; its mappable surface is pads + encoders + buttons. The
+    detailed control inventory lives in the YAML and is consumed by the
+    controller-host mapping engine. The DeviceProfile returned here only
+    needs to expose identity + detection patterns so the auto-detect
+    + apply path finds it.
+
+    Raises ValueError when the pack profile cannot be read or is malformed.
+    """
+    if not MASCHINE_MK1_PACK_PROFILE_PATH.exists():
+        raise ValueError(f"missing Maschine MK1 profile at {MASCHINE_MK1_PACK_PROFILE_PATH}")
+
+    doc = yaml.safe_load(MASCHINE_MK1_PACK_PROFILE_PATH.read_text(encoding="utf-8"))
+    if not isinstance(doc, dict):
+        raise ValueError("Maschine MK1 profile YAML did not parse to an object")
+
+    identity = doc.get("identity", {}) if isinstance(doc.get("identity"), dict) else {}
+    manufacturer = str(identity.get("manufacturer") or "Native Instruments")
+    model = str(identity.get("model") or "maschine-mk1")
+    alsa_pattern = str(identity.get("alsa_client_pattern") or "MAP2:Maschine-MK1")
+
+    return DeviceProfile(
+        profile_id=MASCHINE_MK1_PROFILE_ID,
+        name="Native Instruments Maschine MK1",
+        manufacturer=manufacturer,
+        description=(
+            "Maschine MK1 MIDI-mode surface: 16 pressure pads, 11 rotary "
+            "encoders, 41 buttons. The HID/USB control surface (LEDs, "
+            "displays, pad pressure stream) is owned by the Python daemon."
+        ),
+        icon="🥁",
+        is_recommended=False,
+        usb_vendor_id=0x17CC,
+        usb_product_id=0x0808,
+        name_patterns=[
+            alsa_pattern,
+            "Maschine MK1",
+            "maschine-mk1",
+            "MAP2:Maschine-MK1",
+            manufacturer,
+            model,
+        ],
+        footswitches=[],
+        expression_pedals=[],
+        bank_config=None,
+        supports_firmware_update=False,
+    )
+
+
 class MIDIDeviceProfileService:
     """
     Manages MIDI device profiles and applies default configurations.
@@ -300,8 +361,10 @@ class MIDIDeviceProfileService:
         self._profiles: Dict[str, DeviceProfile] = {"generic": GENERIC_MIDI_PROFILE}
         self._profile_aliases: Dict[str, str] = {
             LEGACY_MIDI_COMMANDER_PROFILE_ID: MIDI_COMMANDER_PROFILE_ID,
+            LEGACY_MASCHINE_MK1_PROFILE_ID: MASCHINE_MK1_PROFILE_ID,
         }
         self._load_meloaudio_profile()
+        self._load_maschine_mk1_profile()
         self._active_profile: Optional[DeviceProfile] = None
         self._active_profile_id: Optional[str] = None
         self._bank_state: Dict[str, int] = {}  # profile_id -> current_bank
@@ -317,6 +380,19 @@ class MIDIDeviceProfileService:
                 "MIDI Commander profile surfaces will be unavailable until fixed.",
                 exc,
             )
+
+    def _load_maschine_mk1_profile(self) -> None:
+        try:
+            self._profiles[MASCHINE_MK1_PROFILE_ID] = _build_maschine_mk1_profile_from_device_pack()
+        except Exception as exc:
+            logger.error(
+                "Failed to load Maschine MK1 profile from device-pack (%s). "
+                "Maschine MK1 profile surfaces will be unavailable until fixed.",
+                exc,
+            )
+
+    def is_maschine_mk1_profile_id(self, profile_id: str | None) -> bool:
+        return self._resolve_profile_id(profile_id) == MASCHINE_MK1_PROFILE_ID
 
     def _resolve_profile_id(self, profile_id: str | None) -> str | None:
         if profile_id is None:
