@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1523** Python | **1552** TypeScript | **181** C++/H | **147** Docs | **4118** total commits | **4** stars | **0** forks | **0** open issues
+**1524** Python | **1552** TypeScript | **181** C++/H | **147** Docs | **4120** total commits | **4** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`e5e5bfb2`](https://github.com/matthewmackes/map2-audio/commit/e5e5bfb27b4e205abdfa4064ad909d766f4e656b) | feat(midi): T2459-H7-PW-UMP — wire substrate probe into C... | Map2 Audio | 2026-05-08 |
+| [`88f342e1`](https://github.com/matthewmackes/map2-audio/commit/88f342e1cb10dc37c4edc248dcf792977b1e08b2) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-08 |
 | [`ca0521e9`](https://github.com/matthewmackes/map2-audio/commit/ca0521e9ce2374ac59b466ccd07c8756879e7125) | feat(midi): T2459-H7-PW-UMP — Path 4 C++ env-var consumer... | Map2 Audio | 2026-05-08 |
 | [`41495519`](https://github.com/matthewmackes/map2-audio/commit/414955198427b9ec8e0b5c4d6155ae4325a5356a) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-08 |
 | [`8d0b2d02`](https://github.com/matthewmackes/map2-audio/commit/8d0b2d025b038c71ae05a9926876f0bea76c0276) | docs(t2459): worklist — H6 Done, H7-PW-UMP In Progress, T... | Map2 Audio | 2026-05-08 |
 | [`30c70131`](https://github.com/matthewmackes/map2-audio/commit/30c7013104cc70ba8d6b61e6538afefc06a86b91) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-08 |
 | [`73723978`](https://github.com/matthewmackes/map2-audio/commit/73723978083407b71377f778ee605babf5c9f615) | feat(midi): T2459-H7-PW-UMP — Path 4 substrate detection ... | Map2 Audio | 2026-05-08 |
 | [`fc6029d3`](https://github.com/matthewmackes/map2-audio/commit/fc6029d30699b8447c6d66bf171074a28ab7dc12) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-08 |
-| [`550d043d`](https://github.com/matthewmackes/map2-audio/commit/550d043dd84b7db5c9524d8c865fddd4c6c09056) | feat(midi): T2459-H6 — retire legacy raw-ALSA Map2MidiCon... | Map2 Audio | 2026-05-08 |
-| [`a61670cc`](https://github.com/matthewmackes/map2-audio/commit/a61670cc677e77c0d6db17e78720b314410fa80e) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-08 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
