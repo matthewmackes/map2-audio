@@ -277,3 +277,87 @@ describe('MidiServicesBindingsPage mutation flows', () => {
   // Devices-page mutation tests + the iter-105/106 drawer tests which
   // exercise the same iter-104 mutation surface this page uses.
 })
+
+
+// 2026-05-09 — cycle 5: snapshot-consumer row coverage. Locks the
+// behavior shipped in c3324cf1 where snapshot rows expose an
+// "Open in Snapshots Browser" overflow item routing back to /snapshots.
+const SNAPSHOT_PROGRAM_BINDING = {
+  binding_id: 'b-snap-1',
+  consumer_type: 'snapshot' as const,
+  consumer_id: '13',
+  consumer_label: 'Program #24 → snapshot "Rig20260421"',
+  source_type: 'midi_pc' as const,
+  source_descriptor: { program_number: 24 },
+  target_type: 'snapshot_action' as const,
+  target_descriptor: { action: 'recall' },
+  device_id: null,
+  scope: 'snapshot' as const,
+  scope_id: '13',
+  enabled: true,
+  source: 'snapshot-program-number',
+  metadata: { kind: 'program_number' },
+  created_at: '2026-05-09',
+  created_by: 'snapshot-editor',
+  modified_at: '2026-05-09',
+  modified_by: 'snapshot-editor',
+}
+
+describe('MidiServicesBindingsPage snapshot-consumer rows', () => {
+  it('renders a snapshot-consumer row when filtered by consumer_type=snapshot', async () => {
+    mockList.mockResolvedValue([SNAPSHOT_PROGRAM_BINDING])
+    renderPage('/midi/bindings?consumer_type=snapshot&consumer_id=13')
+    await waitFor(() =>
+      expect(screen.getByText('snapshot:13')).toBeInTheDocument(),
+    )
+    // The PC source-type and snapshot-action target-type should both
+    // appear in the rendered row.
+    expect(screen.getByText('midi_pc')).toBeInTheDocument()
+    expect(screen.getByText('snapshot_action')).toBeInTheDocument()
+  })
+
+  it('exposes the per-row OverflowMenu on a snapshot-consumer row', async () => {
+    mockList.mockResolvedValue([SNAPSHOT_PROGRAM_BINDING])
+    renderPage('/midi/bindings?consumer_type=snapshot&consumer_id=13')
+    await waitFor(() =>
+      expect(screen.getByText('snapshot:13')).toBeInTheDocument(),
+    )
+    expect(
+      screen.getByRole('button', { name: /Row actions/i }),
+    ).toBeInTheDocument()
+  })
+
+  it('passes through ?consumer_type=snapshot in the API filter', async () => {
+    mockList.mockResolvedValue([SNAPSHOT_PROGRAM_BINDING])
+    renderPage('/midi/bindings?consumer_type=snapshot&consumer_id=13')
+    await waitFor(() => expect(mockList).toHaveBeenCalled())
+    const lastCall = mockList.mock.calls[mockList.mock.calls.length - 1][0]
+    expect(lastCall).toMatchObject({
+      consumer_type: 'snapshot',
+      consumer_id: '13',
+    })
+  })
+
+  it('renders both source types when program_number + midi_map siblings coexist', async () => {
+    // Cycle 2 added the kind discriminator so two snapshot-consumer
+    // rows (program_number + midi_map[]) coexist for one snapshot.
+    // Verify the table surfaces both rows distinguishable by source_type.
+    const MIDI_MAP_SIBLING = {
+      ...SNAPSHOT_PROGRAM_BINDING,
+      binding_id: 'b-snap-2',
+      consumer_label: 'load (snapshot 13)',
+      source_type: 'midi_cc' as const,
+      source_descriptor: { cc: 7, channel: 0 },
+      target_descriptor: { action: 'load' },
+      source: 'snapshot-editor',
+      metadata: { legacy_table: 'snapshot_midi_maps', legacy_entry_index: 0 },
+    }
+    mockList.mockResolvedValue([SNAPSHOT_PROGRAM_BINDING, MIDI_MAP_SIBLING])
+    renderPage('/midi/bindings?consumer_type=snapshot&consumer_id=13')
+    await waitFor(() =>
+      expect(screen.getByText('midi_pc')).toBeInTheDocument(),
+    )
+    // The midi_cc sibling row also renders.
+    expect(screen.getByText('midi_cc')).toBeInTheDocument()
+  })
+})
