@@ -26,6 +26,14 @@ Environment="PIPEWIRE_LATENCY=64/48000"
 Environment="PIPEWIRE_FALLBACK_PLAYBACK_DEVICE=alsa_output.usb-EDIROL_UA-1000_ZS22041-02.multichannel-output"
 Environment="PIPEWIRE_FALLBACK_CAPTURE_DEVICE=alsa_input.usb-EDIROL_UA-1000_ZS22041-02.multichannel-input"
 
+# Force JUCE to open the audio device via JACK direct rather than ALSA-via-PipeWire.
+# Without this, JUCE's AudioDeviceManager picks the ALSA backend which routes through
+# the PipeWire ALSA mixing layer, adding ~5 ms of scheduling jitter on every callback —
+# enough to fail the RT soak gates (peak-block-jitter target 0.35 ms).
+# Verified during T2459-H6 closeout (2026-05-08): with JACK direct, OFF build matched
+# ON build across every metric and was 6.7× better on peak block jitter.
+Environment="MAP2_AUDIO_PREFER_JACK=1"
+
 # Force PipeWire graph quantum/rate in the user session via pw-metadata.
 # These must be set here (not in pipewire.conf.d/) because:
 #   1. clock.force-* values in .conf files cannot be overridden by applications

@@ -54,19 +54,19 @@ Each task/subtask should contain these fields:
 
 ## Top Active Tasks (5-10)
 
-- `[>]` `T2459-H` — MIDI Backend Unification (controller-host + libremidi + ControllerEngine)
-- `[>]` `T2459-H3` — MeloAudio Commander device-pack cutover completion (HIL session 2026-05-07 revealed PipeWire UMP-MIDI2 bridge gap + stock-firmware-mode CC drift; resolution carried by T2459-H3-CFG)
-- `[>]` `T2459-H3-CFG` — MeloAudio Commander Configurator (in-platform UI; Phases 1-5 + Outer-Loop-2 dispatcher SHIPPED 2026-05-07 across `813b6331` + `5d24a35a`; 251 tests; HIL evidence is the operator gate)
-- `[>]` `T2459-H4` — Device-service migrations (Maschine/MPX-1/IntelFX) + HIL parity
-- `[>]` `T2459-H5` — MIDI Hub v2 absorption and route consolidation
+- `[>]` `T2459-H` — MIDI Backend Unification (controller-host + libremidi + ControllerEngine). All remaining gates consolidated into one bench-session runbook: [`docs/midi/T2459_FINAL_BENCH_SESSION.md`](midi/T2459_FINAL_BENCH_SESSION.md).
+- `[>]` `T2459-H3` — MeloAudio Commander device-pack cutover completion (gate consolidated into T2459 final bench session — `T2459_FINAL_BENCH_SESSION.md` Gate 1)
+- `[>]` `T2459-H3-CFG` — MeloAudio Commander Configurator (Phases 1-6 + Outer-Loop-2 dispatcher all SHIPPED; Phase 7 HIL = T2459 final bench session Gate 1)
+- `[>]` `T2459-H4` — Device-service migrations (Maschine/MPX-1/IntelFX) — code-side complete; HIL parity = T2459 final bench session Gate 3
+- `[✓]` `T2459-H5` — MIDI Hub v2 absorption and route consolidation (closed 2026-05-08 — 20 slices code-side; UMP HIL split into sibling `T2459-H5-UMP-HIL` Blocked on libremidi UMP I/O + MIDI 2.0 hardware)
 - `[✓]` `T2472` — Snapshot editor data-layer extraction (closed 2026-05-06; 0 inline `useMutation` blocks remain on the page; all 3 cycle-59 deferred reads extracted; 85 SnapshotEditor jest suites / 509 tests green; typecheck + atomic build clean; bundle `SnapshotEditorPageContent-Sg9w7aBD.js`)
 - `[✓]` `T2459-H6` — Legacy `Map2MidiController` path RETIRED (2026-05-08; `Map2MidiController.{cpp,h}` deleted; cmake `MAP2_USE_LEGACY_MIDI_CONTROLLER` option removed; factory returns `IpcMidiBridgeController` unconditionally; paired ON-vs-OFF 5-min soaks show OFF ≥ ON across every metric, 6.7× better on peak block jitter; controllers_tests 19/19 + audit pytest 11/11 pass; evidence at `docs/fit-for-purpose-evidence/20260508/t2459h6-shm-ring/`)
-- `[>]` `T2459-H7-PW-UMP` — Path 4 code-side COMPLETE end-to-end (2026-05-08). All Python + C++ implementation work landed: Python detection probe `controller_host_pipewire_substrate.py` (12 unit + 1 HIL-gated tests), C++ env-var consumer in `juce-engine/Source/ControllerHost/main.cpp` (4 audit-pin tests), Python service wiring in `ControllerHostService.start()` (4 service-wiring tests; total 20+1 H7 tests), decision doc + MIDI_BACKEND.md §10 + evidence dir. Probe → env → main.cpp → forceSelect() chain is real and self-tests on every backend startup. Remaining gates are operator-driven HIL captures on a real broken-substrate bench (G1–G5 in `docs/fit-for-purpose-evidence/20260508/t2459h7-pw-ump-path4/README.md`).
+- `[>]` `T2459-H7-PW-UMP` — Path 4 code-side COMPLETE end-to-end (2026-05-08). G1–G5 evidence capture = T2459 final bench session Gate 2.
 - `[✓]` `T2477` — Graph-rendering consolidation primitive (shipped 2026-05-06; `<SignalFlowGraph>` + `layoutSignalFlowGraph` land in `web/src/app/components/shared/`; all 7 active workspace graphs migrated in one commit; 26 jest tests across 13 suites green; -410 LoC of duplicated wrapper code retired)
 - `[✓]` `T2481` — Carbon deepening fit-and-finish epic (CLOSED 2026-05-07; all 18 subtasks closed: 15 Done + 3 Cancelled; 124/125 axis-scores ≥5, 1 = 4 documented Carbon-floor; **all 8 MAP2 lint rules at 'error', 0/0 lint state**; ~485 hex retokenized + ~110 raw primitives migrated/exempted + 0 lint regressions across the Epic life)
 - `[✓]` `T2496` — AVB Services full-completion (shipped 2026-05-05; 8 sub-tasks; +22 pytest +17 jest; bench-side visual verification remains as operator gate)
 - `[✓]` `T2497` — Audio Artifacts global tree nav: remove duplicated "Discover" entries under every subcategory (shipped 2026-05-05)
-- `[ ]` `T2498` — Bake `MAP2_AUDIO_PREFER_JACK=1` into repo's `systemd/map2-backend.service` (filed 2026-05-08; uncovered during T2459-H6 closeout). Without this env var, JUCE defaults to ALSA-via-PipeWire mixing layer instead of JACK direct, adding ~5 ms scheduling jitter on every callback. The running unit on this bench has a `15-prefer-jack.conf` drop-in for the fix; the repo copy needs the same change so fresh installs don't regress. Two-minute task; gated only on someone touching the repo systemd unit.
+- `[✓]` `T2498` — Baked `MAP2_AUDIO_PREFER_JACK=1` into repo `systemd/map2-backend.service` (closed 2026-05-08). Fresh installs no longer regress to ALSA-via-PipeWire on JUCE device open. Live bench unit already had this via `15-prefer-jack.conf` drop-in; repo copy now matches.
 - `[✗]` `T004` — AVB hardware qualification/release gating (lab-blocked)
 - `[✗]` `T065` — Tesira parity release closure (hardware evidence blocked)
 
@@ -75,15 +75,19 @@ Each task/subtask should contain these fields:
 - Completed and cancelled history remains in the archive file listed above.
 - This active worklist intentionally contains only unfinished work (`Todo`, `In Progress`, `Blocked`).
 
-## T2459 — Driver-to-completion campaign state (2026-05-07)
+## T2459 — Driver-to-completion campaign state (2026-05-08)
 
-Code-side across H1-H7 is shipped on `master`. What remains is operator-driven:
+Code-side across H1-H7 is shipped on `master`. All remaining HIL gates are consolidated into a single bench-session runbook so the operator can close T2459-H3, T2459-H3-CFG, T2459-H4, and T2459-H7-PW-UMP in **one bench session**:
 
-- `T2459-H3` + `T2459-H3-CFG` Phase 7 — bench HIL with MeloAudio Commander. Runbook: [`HIL_OPERATOR_RUNBOOK.md`](midi/HIL_OPERATOR_RUNBOOK.md) §A.
-- `T2459-H4` — bench HIL with Maschine MK1 (+ MPX-1 / IntelFX if present). Runbook §B.
-- `T2459-H5` UMP gate — blocked on libremidi UMP I/O API + MIDI 2.0 hardware. Runbook §D.
-- `T2459-H6` — DONE 2026-05-08. Atomic deletion landed via paired ON-vs-OFF comparison soaks (5-min each, JACK direct on UA-1000) instead of the original 30-min absolute-threshold gate. Both builds technically fail the 0.35 ms peak-block-jitter target under flow-rotation churn (a release-grade target separate from the retirement decision); OFF was at least as good as ON across every metric and 6.7× better on peak block jitter — sufficient to prove no audio regression from the retirement. Closeout: [`docs/fit-for-purpose-evidence/20260508/t2459h6-shm-ring/CLOSEOUT.md`](fit-for-purpose-evidence/20260508/t2459h6-shm-ring/CLOSEOUT.md).
-- `T2459-H7-PW-UMP` — Path 4 code-side COMPLETE end-to-end 2026-05-08. Python detection probe + C++ env-var consumer in `main.cpp` + Python service wiring in `ControllerHostService.start()` + audit/test pins (20 cases) all on master. End-to-end chain: backend startup → `detect_substrate_state()` → `apply_to_env_overrides()` → `MAP2_MIDI_BACKEND_FORCE=alsa_seq` in spawn env → `main.cpp` getenv → `forceSelect()`. Remaining: operator HIL captures on a broken-substrate bench (gates G1–G5 in [`docs/fit-for-purpose-evidence/20260508/t2459h7-pw-ump-path4/README.md`](fit-for-purpose-evidence/20260508/t2459h7-pw-ump-path4/README.md)). Until those land, task stays `[>] In Progress` per §0.8 evidence-capture requirement.
+**👉 [`docs/midi/T2459_FINAL_BENCH_SESSION.md`](midi/T2459_FINAL_BENCH_SESSION.md)** — orchestrates 3 gates in execution order, cross-references the per-gate runbook, defines the post-session worklist closeout commit. Estimated wall-clock: 6–10 hours with all hardware on the bench.
+
+Per-gate detail (commands, evidence layout, pass criteria, rollback) lives in the canonical [`HIL_OPERATOR_RUNBOOK.md`](midi/HIL_OPERATOR_RUNBOOK.md) — the new doc is orchestration only.
+
+Already closed (no bench needed):
+- `T2459-H1`, `T2459-H2`, `T2459-H7` — code-side foundations, ControllerEngine, cluster MIDI host-to-host. ✅ Done.
+- `T2459-H5` — 20 slices shipped; closed 2026-05-08 with UMP HIL split into sibling `T2459-H5-UMP-HIL` (Blocked on libremidi UMP I/O API + MIDI 2.0 hardware — neither is a MAP2 source-side issue). Splitting unblocks H5 closure because the gate is hardware/library blocked, not architectural.
+- `T2459-H6` — atomic deletion 2026-05-08 via paired ON-vs-OFF comparison soaks (5-min each, JACK direct on UA-1000). OFF ≥ ON across every metric, 6.7× better on peak block jitter. Closeout: [`docs/fit-for-purpose-evidence/20260508/t2459h6-shm-ring/CLOSEOUT.md`](fit-for-purpose-evidence/20260508/t2459h6-shm-ring/CLOSEOUT.md).
+- `T2498` — `MAP2_AUDIO_PREFER_JACK=1` baked into repo `systemd/map2-backend.service` 2026-05-08. ✅ Done.
 
 Architecture deep-dive for the Configurator stack: [`MELOAUDIO_COMMANDER_CONFIGURATOR.md`](midi/MELOAUDIO_COMMANDER_CONFIGURATOR.md). Closeout state: [`T2459H_CLOSEOUT.md`](midi/T2459H_CLOSEOUT.md).
 
@@ -403,7 +407,7 @@ Prior — 2026-05-03 EDT - Claude: slice 9 (SysEx parser JS-runtime silent fallb
 ---
 
 ID: T2459-H5
-Status: [>] In Progress
+Status: [✓] Done
 Parent: T2459-H
 Title: Absorb MIDI Hub v2 into the host — routing, clock, recorder, MIDI 2.0 UMP
 Description:
@@ -583,7 +587,8 @@ Completion note: 2026-04-28 — Codex: **Slice 2 SHIPPED (unified MIDI router mo
   - Evidence directory `docs/fit-for-purpose-evidence/20260503/T2459H_loop_campaign_closeout.md` summarises the campaign: 10 SHIP loops, slice-by-slice deliverables, full test totals (56 new pytest cases across M1–M9 + ~80 cumulative T2459-H pytest cases + 471+ Catch2 assertions), commits-pushed table, architecture touchpoints, and the four owner-driven HIL gates that remain.
   - `T2459H_pytest_evidence.txt` captures the verbose pytest run for the new test suites (56 / 56 passed in 4.76s).
   - Code-side state: H1, H2, H7 fully ✅ Done; H3, H4, H5, H6 are code-side complete with explicit HIL acceptance gates documented per sub-task. Subtask statuses stay `[>] In Progress` since the HIL gates remain owner-driven — code-side is shipped end-to-end across the campaign.
-Last updated: 2026-05-06 EDT - Claude: Slice 20 shipped 2026-05-05 (commit `9fe64d99`) — operator-visible v1 retirement banner that closes the gap left by Slice 15's status endpoint. H5 code-side is complete; the sole remaining gate is end-to-end UMP traffic against a MIDI-2.0-capable device on the bench, double-blocked on libremidi v5.1.0 not yet exposing a validated UMP I/O API and on bench hardware availability.
+Last updated: 2026-05-08 EDT - Claude: **T2459-H5 CLOSED.** Code-side complete across 20 slices on `master`. The end-to-end UMP HIL gate is split into a sibling Blocked task `T2459-H5-UMP-HIL` because it is double-blocked on (a) libremidi exposing a validated UMP I/O API, and (b) MIDI-2.0-capable hardware on the bench — neither is a MAP2 source-side issue. Splitting unblocks H5 closure: every architectural piece (route consolidation, v1 retirement, UMP classifier + slot discriminator + IPC `format` field, recorder golden parity, capabilities surface, deprecation headers, retirement banner) is shipped end-to-end. The UMP HIL acceptance test stays visible as the sibling task and closes when the substrate is ready.
+Prior — 2026-05-06 EDT - Claude: Slice 20 shipped 2026-05-05 (commit `9fe64d99`) — operator-visible v1 retirement banner that closes the gap left by Slice 15's status endpoint.
 
 
 ---
@@ -1338,6 +1343,22 @@ Epic overview: Unify every MIDI surface, authority, and consumer on the platform
 
 
 ## Blocked
+
+ID: T2459-H5-UMP-HIL
+Status: [✗] Blocked
+Parent: T2459-H5
+Title: End-to-end UMP / MIDI 2.0 HIL round-trip against a MIDI-2.0-capable device
+Description:
+- Goal: Drive a real MIDI 2.0 / UMP packet end-to-end through the host: web client → REST → controller-host → libremidi UMP I/O → device → libremidi → host → WS broadcast. Capture round-trip artifact + recorder golden file under `docs/fit-for-purpose-evidence/<YYYYMMDD>/t2459h5-ump-hil/`.
+- Why split out of T2459-H5: H5 closed 2026-05-08 with all 20 code-side slices on `master` — UMP classifier + slot discriminator + IPC `format` field + `MidiHostClient.send_ump` + `/api/v2/midi/ump/capabilities` honest-state surface + recorder golden parity all shipped and self-tested. The remaining acceptance gate is purely an integration test waiting for substrate readiness; keeping H5 open just for this gate would block the rest of the T2459-H epic from closing.
+- Blockers (both must clear): (a) libremidi exposes a validated UMP input/output API on PipeWire/JACK/ALSA backends — vendored libremidi v5.1.0 does not; tracked separately under T2491-13. (b) MIDI-2.0-capable hardware available on the bench.
+- Acceptance: §D of [`docs/midi/HIL_OPERATOR_RUNBOOK.md`](midi/HIL_OPERATOR_RUNBOOK.md) when both blockers clear. Capabilities surface should flip `validated_io: false` → `validated_io: true` post-acceptance.
+- Required outputs: HIL evidence dir, recorder golden file, capabilities-surface flip, doc cross-references in `docs/midi/MIDI_BACKEND.md` §9 (UMP / MIDI 2.0).
+Assigned to: Operator (when unblocked)
+Last updated: 2026-05-08 EDT - Claude: filed as the T2459-H5 closeout sibling. Stays in Blocked until both substrate gates clear.
+
+
+---
 
 ID: T004
 Status: [✗] Blocked

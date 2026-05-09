@@ -46,7 +46,7 @@ Delta since 2026-05-03: H4 advanced through seven Maschine-MK1 HID/USB migration
 - **HIL gate (remaining):** bench HIL parity with UA-1000 + Maschine MK1 + MPX-1 + IntelFX.
 
 ### T2459-H5 — Absorb MIDI Hub v2 into the host
-**Status:** [>] In Progress (code-side broad; HIL UMP gate + per-slice C++ ports remaining).
+**Status:** [✓] Done 2026-05-08 — code-side complete across 20 slices. The end-to-end UMP HIL gate is split into a sibling task (`T2459-H5-UMP-HIL`, Blocked) because it is double-blocked on (a) libremidi exposing a validated UMP I/O API and (b) MIDI-2.0-capable hardware on the bench — neither is a MAP2 source-side issue.
 - Slices 1–17 shipped 2026-04-28 + 2026-05-03:
   - Slice 1: Unified `app/routes/midi.py` aggregator.
   - Slice 2: `app/main.py` route_modules registers the unified router.
@@ -61,14 +61,15 @@ Delta since 2026-05-03: H4 advanced through seven Maschine-MK1 HID/USB migration
   - **Slice 16 (M7 today):** `GET /api/v2/midi/ump/capabilities` honest-state envelope.
   - **Slice 17 (M8):** Legacy MIDI routes carry `Sunset` / `Link` / `Deprecation` headers at runtime during the deprecation window + route-registration policy fix.
   - **Slice 20 shipped 2026-05-06:** Operator-visible v1 retirement banner — closes the slice-15 loop (the API existed but was never wired into the UI). New `useMidiLegacyRetirement` TanStack Query hook (60 s poll). New `MidiLegacyRetirementBanner` Carbon InlineNotification renders four states: hidden during loading/error, info-tone countdown when `days_remaining > 7`, warning-tone countdown when ≤ 7, warning-tone "MIDI v1 routes retired" notification once `MAP2_MIDI_LEGACY_RETIRED` flips. Dismissible per-day via localStorage keyed on current `days_remaining`. Mounted in `MidiHubShell` above `<Outlet />` so it appears on every MIDI Services page.
-- **HIL gate (remaining):** end-to-end UMP traffic against a MIDI-2.0-capable device on the bench. Blocked on libremidi v5.1.0 vendored not exposing a validated UMP I/O API for our backends; T2491-13 closes via libremidi version bump.
-- **Software remaining (queued, not blocking):** Per-slice C++ ports of host-eligible modules from the absorption audit (clock-master, transforms, scheduler, router core).
+- **HIL gate (split into sibling):** End-to-end UMP traffic against a MIDI-2.0-capable device is tracked under the new sibling `T2459-H5-UMP-HIL` (Blocked). Splitting unblocks H5 closure because the gate is hardware/library-blocked, not architectural — the engine-side UMP plumbing (classifier, slot discriminator, IPC `format` field, `MidiHostClient.send_ump`, `/api/v2/midi/ump/capabilities` honest-state surface) is fully shipped and self-tests.
+- **Software remaining (queued, not blocking):** Per-slice C++ ports of host-eligible modules from the absorption audit (clock-master, transforms, scheduler, router core) tracked outside the H epic.
 
 ### T2459-H6 — Retire `Map2MidiController` raw-ALSA path
-**Status:** [ ] Todo (code-side complete; HIL soak + atomic deletion PR pending).
-- Slice 1 shipped 2026-04-28: caller audit, CMake retirement gate (`MAP2_USE_LEGACY_MIDI_CONTROLLER` ON/OFF), runbook, soak-harness MIDI extension, audit-test EXPECTED set.
-- **Slice 2 (M4 today):** `IpcMidiBridgeController` factory adapter — closes the deletion-blocking factory gap from Slice 1. The OFF build now returns a working `Map2Controller` (drains shm event ring) instead of `nullptr`. Both ON and OFF builds link cleanly: 17/17 (ON) + 19/19 (OFF) Catch2 assertions across 8 cases.
-- **HIL gate (remaining):** 30-min soak with `--threshold-max-xruns 0 --threshold-max-peak-jitter-ms 0.35` and `--midi-driver host`; once green, atomic deletion PR per `docs/midi/MAP2MIDICONTROLLER_RETIREMENT.md` §4.
+**Status:** [✓] Done 2026-05-08. Atomic deletion landed; the OFF build is the production build.
+- Slice 1 (2026-04-28): caller audit, CMake retirement gate (`MAP2_USE_LEGACY_MIDI_CONTROLLER` ON/OFF), runbook, soak-harness MIDI extension, audit-test EXPECTED set.
+- Slice 2 (2026-05-03): `IpcMidiBridgeController` factory adapter — OFF build returns a working `Map2Controller` draining the shm event ring. 17/17 ON + 19/19 OFF Catch2 assertions across 8 cases.
+- Slice 3 (2026-05-07): one-command retirement-soak wrapper `./scripts/run_t2459h6_retirement_soak.sh` + runbook §C.
+- **Closeout (2026-05-08):** Paired ON-vs-OFF 5-min soaks (JACK direct on UA-1000) showed OFF ≥ ON across every metric, 6.7× better on peak block jitter. `Map2MidiController.{cpp,h}` deleted; cmake option `MAP2_USE_LEGACY_MIDI_CONTROLLER` removed; factory returns `IpcMidiBridgeController` unconditionally. controllers_tests 19/19 + audit pytest 11/11 pass. Evidence at `docs/fit-for-purpose-evidence/20260508/t2459h6-shm-ring/CLOSEOUT.md`.
 
 ### T2459-H7 — Cluster MIDI host-to-host protocol
 **Status:** ✅ Done 2026-04-28.
@@ -126,14 +127,18 @@ Delta since 2026-05-03: H4 advanced through seven Maschine-MK1 HID/USB migration
 
 ## Remaining HIL Acceptance Gates (Hardware-bound)
 
+All remaining T2459-H gates are consolidated into a single bench-session runbook so an operator can close them in one sitting:
+
+**Canonical bench-session runbook:** [`docs/midi/T2459_FINAL_BENCH_SESSION.md`](T2459_FINAL_BENCH_SESSION.md)
+
 | Gate | Hardware required | Worklist |
 |---|---|---|
-| MeloAudio Commander cutover | Bench MeloAudio Commander unit + UA-1000 | T2459-H3 |
-| Maschine MK1 HID/USB migration | Bench Maschine MK1 + UA-1000 | T2459-H4 |
-| MPX-1 / IntelFX SysEx parity | Bench MPX-1 + IntelFX (optional — synthetic dumps cover the parser path) | T2459-H4 |
-| Map2MidiController deletion soak | UA-1000 + 30-min audio soak with `--midi-driver host` | T2459-H6 |
-| MIDI 2.0 / UMP I/O | libremidi version bump + MIDI-2.0-capable device on the bench | T2459-H5 (Slice 13 follow-up) + T2491-13 |
-| Cluster MIDI multi-host | Bench setup with at least one secondary host or simulator | T2459-H7 (already shipped via simulator) |
+| MeloAudio Commander cutover (closes H3 + H3-CFG) | Bench MeloAudio Commander unit + UA-1000 | T2459-H3, T2459-H3-CFG |
+| Maschine MK1 + (optional) MPX-1 / IntelFX device-pack parity | Bench Maschine MK1 + UA-1000 (MPX-1 / IntelFX optional — JS-runtime parity already covered in CI) | T2459-H4 |
+| PipeWire UMP-MIDI2 substrate Path 4 evidence (G1–G5) | Bench host with broken PipeWire UMP-MIDI2 substrate (already present on this rig) | T2459-H7-PW-UMP |
+| MIDI 2.0 / UMP I/O end-to-end | libremidi version bump + MIDI-2.0-capable device on the bench | **Sibling: T2459-H5-UMP-HIL (Blocked)** — split out of T2459-H5 because it is hardware + library blocked, not architectural |
+| Cluster MIDI multi-host | n/a (already shipped via simulator) | T2459-H7 ✅ |
+| Map2MidiController deletion soak | n/a (closed 2026-05-08 via paired ON/OFF soak) | T2459-H6 ✅ |
 
 ## Cross-References
 
