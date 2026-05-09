@@ -1,5 +1,5 @@
-import { useCallback, useMemo, useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   Button,
@@ -69,6 +69,10 @@ function buildDefaultName(existing: readonly SnapshotSummary[]): string {
 export function SnapshotsBrowserPage() {
   const navigate = useNavigate()
   const queryClient = useQueryClient()
+  const [searchParams, setSearchParams] = useSearchParams()
+  const highlightParam = searchParams.get('highlight')
+  const highlightId = highlightParam !== null ? Number(highlightParam) : null
+  const highlightedRowRef = useRef<HTMLTableRowElement | null>(null)
 
   const listQuery = useQuery({
     queryKey: ['snapshots'],
@@ -175,6 +179,20 @@ export function SnapshotsBrowserPage() {
     createMutation.mutate(name)
   }, [createMutation, snapshots])
 
+  useEffect(() => {
+    if (highlightId == null || Number.isNaN(highlightId)) return
+    if (!snapshots.some((s) => s.id === highlightId)) return
+    const node = highlightedRowRef.current
+    if (!node) return
+    node.scrollIntoView({ behavior: 'smooth', block: 'center' })
+    const timeout = window.setTimeout(() => {
+      const next = new URLSearchParams(searchParams)
+      next.delete('highlight')
+      setSearchParams(next, { replace: true })
+    }, 4000)
+    return () => window.clearTimeout(timeout)
+  }, [highlightId, snapshots, searchParams, setSearchParams])
+
   return (
     <div className="snapshots-browser">
       <Layer className="snapshots-browser__header">
@@ -253,8 +271,16 @@ export function SnapshotsBrowserPage() {
                       if (!snapshot) return null
                       const { key: _k, ...rowProps } = getRowProps({ row })
                       const isEditing = editingId === snapshotId
+                      const isHighlighted = highlightId === snapshotId
                       return (
-                        <TableRow key={row.id} {...rowProps}>
+                        <TableRow
+                          key={row.id}
+                          {...rowProps}
+                          ref={isHighlighted ? highlightedRowRef : undefined}
+                          className={[rowProps.className, isHighlighted ? 'snapshots-browser__row--highlighted' : '']
+                            .filter(Boolean)
+                            .join(' ')}
+                        >
                           {row.cells.map((cell) => {
                             if (cell.info.header === 'name' && isEditing) {
                               return (
@@ -301,9 +327,21 @@ export function SnapshotsBrowserPage() {
                             }
                             if (cell.info.header === 'program') {
                               const value = cell.value
+                              if (typeof value !== 'number') {
+                                return <TableCell key={cell.id}>—</TableCell>
+                              }
+                              const bindingsHref = `/midi/bindings?consumer_type=snapshot&consumer_id=${snapshotId}`
                               return (
                                 <TableCell key={cell.id}>
-                                  {typeof value === 'number' ? <Tag type="cool-gray">#{value}</Tag> : '—'}
+                                  <button
+                                    type="button"
+                                    className="snapshots-browser__program-link"
+                                    onClick={() => navigate(bindingsHref)}
+                                    title={`View MIDI bindings for this snapshot (Program #${value})`}
+                                    aria-label={`View MIDI bindings for snapshot, currently bound to Program #${value}`}
+                                  >
+                                    <Tag type="cool-gray">#{value}</Tag>
+                                  </button>
                                 </TableCell>
                               )
                             }

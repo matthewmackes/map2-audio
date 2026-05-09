@@ -81,3 +81,30 @@
   gap: 0.25rem;
   align-items: center;
 }
+
+.snapshots-browser__program-link {
+  background: none;
+  border: 0;
+  padding: 0;
+  margin: 0;
+  cursor: pointer;
+  border-radius: 0.25rem;
+}
+
+.snapshots-browser__program-link:focus-visible {
+  outline: 2px solid var(--cds-focus);
+  outline-offset: 2px;
+}
+
+.snapshots-browser__program-link:hover .cds--tag {
+  background: var(--cds-layer-selected-hover);
+}
+
+@keyframes snapshots-browser-highlight-pulse {
+  0% { background-color: var(--cds-highlight); }
+  100% { background-color: transparent; }
+}
+
+.snapshots-browser__row--highlighted > td {
+  animation: snapshots-browser-highlight-pulse 2.5s ease-out 1;
+}

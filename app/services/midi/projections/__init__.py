@@ -12,4 +12,7 @@ Projections are added incrementally as their consumer migrations land:
 - T2482-P2.5: device_pack.py
 - T2482-P2.6: transport.py, tesira_ttp.py, gpio.py
 - T2482-P2.7: plugin_param.py
+- 2026-05-09: snapshot_program.py — surfaces the per-snapshot
+  `program_number` column as a canonical PC binding so the MIDI Services
+  Bindings/Routing pages reflect it alongside every other binding.
 """

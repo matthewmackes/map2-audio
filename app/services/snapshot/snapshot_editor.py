@@ -2,6 +2,12 @@
 
 from .common import *
 
+from app.services.midi.authority import MidiBindingAuthority
+from app.services.midi.projections.snapshot_program import (
+    delete_program_number_binding as _delete_snapshot_program_binding,
+    sync_program_number as _sync_snapshot_program_binding,
+)
+
 
 class SnapshotEditorMixin:
     def _normalize_controls_payload(
@@ -164,6 +170,15 @@ class SnapshotEditorMixin:
         self.session.add(snapshot)
         await self.session.flush()
 
+        if program_number is not None:
+            await _sync_snapshot_program_binding(
+                MidiBindingAuthority(self.session),
+                snapshot.id,
+                int(program_number),
+                snapshot_name=snapshot.name,
+                modified_by="snapshot-editor",
+            )
+
         normalized = self._normalize_detail_payload(detail_payload or {})
         normalized["extensions"] = await self._resolve_snapshot_persisted_extensions(
             detail_payload,
@@ -236,6 +251,10 @@ class SnapshotEditorMixin:
 
         if program_number is not UNSET and program_number != snapshot.program_number:
             await self._validate_program_number(program_number, exclude_snapshot_id=snapshot_id)
+
+        program_number_changed = (
+            program_number is not UNSET and program_number != snapshot.program_number
+        )
 
         if name is not UNSET:
             snapshot.name = validate_snapshot_name(name)
@@ -322,6 +341,24 @@ class SnapshotEditorMixin:
         await self._persist_snapshot_document(snapshot, normalized, document_type=document_type)
 
         await self.session.flush()
+        if program_number_changed:
+            await _sync_snapshot_program_binding(
+                MidiBindingAuthority(self.session),
+                snapshot_id,
+                None if program_number is None else int(program_number),
+                snapshot_name=snapshot.name,
+                modified_by="snapshot-editor",
+            )
+        elif name is not UNSET:
+            current_pn = snapshot.program_number
+            if current_pn is not None:
+                await _sync_snapshot_program_binding(
+                    MidiBindingAuthority(self.session),
+                    snapshot_id,
+                    int(current_pn),
+                    snapshot_name=snapshot.name,
+                    modified_by="snapshot-editor",
+                )
         if create_revision and revision_source is not None:
             await self._append_snapshot_revision(snapshot_id, revision_source)
 
@@ -505,6 +542,10 @@ class SnapshotEditorMixin:
         if control_plane_snapshot_id == snapshot_id:
             raise ValueError("Cannot delete a live snapshot.")
 
+        await _delete_snapshot_program_binding(
+            MidiBindingAuthority(self.session),
+            snapshot_id,
+        )
         await self.session.delete(snapshot)
         await self.session.flush()
         return True

@@ -18,7 +18,7 @@
  */
 
 import { useEffect, useMemo, useState } from 'react'
-import { useSearchParams } from 'react-router-dom'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   DataTable,
@@ -176,6 +176,7 @@ function rowsFromBindings(bindings: MidiBindingRead[]): BindingTableRow[] {
 // ---------- Page ----------
 
 export function MidiServicesBindingsPage() {
+  const navigate = useNavigate()
   const [searchParams, setSearchParams] = useSearchParams()
   const [filter, setFilter] = useState<FilterState>(() => filterFromSearchParams(searchParams))
   const queryClient = useQueryClient()
@@ -270,6 +271,18 @@ export function MidiServicesBindingsPage() {
     }
     return rows
   }, [query.data, filter.source_type])
+
+  const bindingsById = useMemo(() => {
+    const map = new Map<string, MidiBindingRead>()
+    for (const b of query.data ?? []) map.set(b.binding_id, b)
+    return map
+  }, [query.data])
+
+  const handleOpenInSnapshots = (bindingId: string) => {
+    const binding = bindingsById.get(bindingId)
+    if (!binding || binding.consumer_type !== 'snapshot') return
+    navigate(`/snapshots?highlight=${encodeURIComponent(binding.consumer_id)}`)
+  }
 
   return (
     <Section className="midi-services-bindings">
@@ -488,6 +501,8 @@ export function MidiServicesBindingsPage() {
                               )
                             }
                             if (cell.info.header === 'actions') {
+                              const isSnapshotConsumer =
+                                bindingsById.get(dtRow.id)?.consumer_type === 'snapshot'
                               return (
                                 <TableCell key={cell.id} className="midi-services-bindings__actions-cell">
                                   <OverflowMenu
@@ -499,6 +514,12 @@ export function MidiServicesBindingsPage() {
                                       itemText="Edit"
                                       onClick={() => handleEdit(dtRow.id)}
                                     />
+                                    {isSnapshotConsumer ? (
+                                      <OverflowMenuItem
+                                        itemText="Open in Snapshots Browser"
+                                        onClick={() => handleOpenInSnapshots(dtRow.id)}
+                                      />
+                                    ) : null}
                                     <OverflowMenuItem
                                       itemText="Delete"
                                       isDelete
