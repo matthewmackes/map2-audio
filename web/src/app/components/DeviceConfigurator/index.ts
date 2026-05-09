@@ -8,6 +8,7 @@
 
 export { DeviceConfiguratorShell } from './DeviceConfiguratorShell'
 export { DeviceConfiguratorStatusCard } from './DeviceConfiguratorStatusCard'
+export { DevicePackPicker } from './DevicePackPicker'
 export type {
   ConfiguratorPackDescriptor,
   ConfiguratorPrimitive,
