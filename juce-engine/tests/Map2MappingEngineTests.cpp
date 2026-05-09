@@ -204,6 +204,117 @@ TEST_CASE ("Slice 5: shm-ring-pushed CC event drives planDispatch + dispatch + E
     REQUIRE (outbound[0].status == 0x90);
 }
 
+TEST_CASE ("Slice 6: multi-controller routing dispatches each ring event through its own descriptor", "[H3][slice6][live-pump]")
+{
+    // Two distinct descriptors, each bound to a different controller_key
+    // and tagging its own outbound short MIDI status so we can tell the
+    // dispatch paths apart on the consumer side.
+    auto makeDescriptorFor = [] (const std::string& tag, std::uint8_t outStatus) {
+        MappingDescriptorSpec d;
+        d.pack_id = "test-pack-" + tag;
+        d.model   = "test-model";
+        d.kind    = "midi";
+        d.scripts.push_back (
+            std::string ("var Pack_") + tag + " = {};"
+            "Pack_" + tag + ".onCC = function(bytes) {"
+            "  engine.setValue('[Channel_" + tag + "]', 'volume', bytes[2] / 127.0);"
+            "  midi.sendShortMsg(" + std::to_string (outStatus) + ", 60, bytes[2]);"
+            "};");
+        MappingControlSpec ctl;
+        ctl.status   = 0xB0;
+        ctl.midino   = 0x07;
+        ctl.channel  = 0x00;
+        ctl.script   = std::string ("Pack_") + tag + ".onCC";
+        ctl.fast_path = false;
+        d.controls.push_back (ctl);
+        return d;
+    };
+
+    Map2MappingEngine eng;
+    REQUIRE (eng.initialise());
+    REQUIRE_FALSE (eng.loadDescriptor ("ctrl-A", makeDescriptorFor ("A", 0x90)).has_value());
+    REQUIRE_FALSE (eng.loadDescriptor ("ctrl-B", makeDescriptorFor ("B", 0x91)).has_value());
+
+    LibremidiAdapter adapter (MidiBackend::JackMidi);
+    ShmEventRing rtRing;
+    const std::string shmName = std::string ("/map2-test-slice6-rt-") + std::to_string (::getpid());
+    REQUIRE (rtRing.open (shmName, 64, ShmEventRing::Mode::CreateOwned));
+    adapter.setEventRings (&rtRing, nullptr);
+
+    // Two events: one tagged with index 1 (=> ctrl-A), one with index 2
+    // (=> ctrl-B). Each carries CC#7 with a distinct value so we can
+    // verify per-controller dispatch by inspecting the EngineCommand args.
+    const std::uint8_t cc_for_A[3] = { 0xB0, 0x07, 11  };
+    const std::uint8_t cc_for_B[3] = { 0xB0, 0x07, 99  };
+    adapter.pushMessage (cc_for_A, 3, 1);
+    adapter.pushMessage (cc_for_B, 3, 2);
+
+    const std::vector<std::string> controller_keys_by_index { "ctrl-A", "ctrl-B" };
+
+    std::uint8_t buf[map2::controller_host::kMaxPayloadBytes];
+    std::uint64_t ts = 0;
+    std::uint16_t idx = 0;
+
+    auto dispatch_one = [&] (const std::string& expected_key) {
+        const std::size_t n = rtRing.pop (&ts, buf, sizeof (buf), &idx);
+        REQUIRE (n == 3);
+        REQUIRE (idx >= 1);
+        REQUIRE (idx <= controller_keys_by_index.size());
+        const std::string controller_key = controller_keys_by_index[idx - 1];
+        REQUIRE (controller_key == expected_key);
+        const std::uint8_t status   = buf[0];
+        const std::uint8_t data1    = buf[1];
+        const std::uint8_t channel  = static_cast<std::uint8_t> (status & 0x0Fu);
+        const std::uint8_t statusHi = static_cast<std::uint8_t> (status & 0xF0u);
+        auto plan = eng.planDispatch (controller_key, statusHi, data1, channel);
+        REQUIRE (plan.matched);
+        std::vector<std::uint8_t> payload (buf, buf + n);
+        REQUIRE_FALSE (eng.dispatch (controller_key, plan.callback_name, payload).has_value());
+    };
+
+    dispatch_one ("ctrl-A");
+    dispatch_one ("ctrl-B");
+
+    auto commands = eng.js().drainEngineCommands();
+    REQUIRE (commands.size() == 2);
+    REQUIRE (commands[0].controller_key == "ctrl-A");
+    REQUIRE (commands[0].target == "[Channel_A]");
+    REQUIRE (commands[1].controller_key == "ctrl-B");
+    REQUIRE (commands[1].target == "[Channel_B]");
+
+    auto outbound = eng.drainShortMidi();
+    REQUIRE (outbound.size() == 2);
+    REQUIRE (outbound[0].controller_key == "ctrl-A");
+    REQUIRE (outbound[0].status == 0x90);
+    REQUIRE (outbound[0].data2  == 11);
+    REQUIRE (outbound[1].controller_key == "ctrl-B");
+    REQUIRE (outbound[1].status == 0x91);
+    REQUIRE (outbound[1].data2  == 99);
+}
+
+TEST_CASE ("Slice 6: ring fallback (controllerIndex=0) routes through the most-recently-opened controller", "[H3][slice6][live-pump]")
+{
+    Map2MappingEngine eng;
+    REQUIRE (eng.initialise());
+    REQUIRE_FALSE (eng.loadDescriptor ("ctrl-fb", makeSimpleDescriptor()).has_value());
+
+    LibremidiAdapter adapter (MidiBackend::JackMidi);
+    ShmEventRing rtRing;
+    const std::string shmName = std::string ("/map2-test-slice6-fb-") + std::to_string (::getpid());
+    REQUIRE (rtRing.open (shmName, 16, ShmEventRing::Mode::CreateOwned));
+    adapter.setEventRings (&rtRing, nullptr);
+
+    // Push WITHOUT a controllerIndex (legacy path).
+    const std::uint8_t bytes[3] = { 0xB0, 0x07, 50 };
+    adapter.pushMessage (bytes, 3);
+
+    std::uint8_t buf[map2::controller_host::kMaxPayloadBytes];
+    std::uint64_t ts = 0;
+    std::uint16_t idx = 0xAAAA;
+    REQUIRE (rtRing.pop (&ts, buf, sizeof (buf), &idx) == 3);
+    REQUIRE (idx == 0);
+}
+
 TEST_CASE ("Map2MappingEngine reload swaps the descriptor's script body", "[H2][engine][reload]")
 {
     Map2MappingEngine eng;

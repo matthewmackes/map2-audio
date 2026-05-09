@@ -59,18 +59,26 @@ public:
     bool openVirtualInput (const std::string& name);
     bool openVirtualOutput (const std::string& name);
 
-    // T2459-H3 Slice 5 — open a hardware input port discovered via
+    // T2459-H3 Slice 5/6 — open a hardware input port discovered via
     // listPorts(). The match is by port id first, then by display name
     // (libremidi's `port_name`). On success, incoming messages route
     // through onIncomingMessage() into the configured shm rings exactly
-    // like a virtual input. Idempotent overwrite — opening a second
-    // hardware input replaces the first (single-active-input until the
-    // multi-port routing in Slice 6).
-    bool openInput (const std::string& port_id_or_name);
+    // like a virtual input. Slice 6: each port carries an optional
+    // `controllerIndex` (host-assigned, default 0 = unknown/legacy) that
+    // the libremidi callback writes into the slot's controllerIndex field
+    // so the consumer can dispatch through the matching descriptor. The
+    // adapter keeps a per-port midi_in alive so concurrent inputs can
+    // each tag their events with their own index.
+    bool openInput (const std::string& port_id_or_name,
+                    std::uint16_t controllerIndex = 0);
 
     // Push a raw MIDI message into the producer pipeline as if it had
     // arrived via libremidi. Used by tests and by virtual-output loopback.
-    void pushMessage (const std::uint8_t* bytes, std::size_t length);
+    // Slice 6: optional controllerIndex tags the synthetic event identically
+    // to a real port-callback push.
+    void pushMessage (const std::uint8_t* bytes,
+                      std::size_t length,
+                      std::uint16_t controllerIndex = 0);
 
     // libremidi backend in use.
     MidiBackend backend() const noexcept { return backend_; }
@@ -80,7 +88,10 @@ public:
 private:
     static int toLibremidiApiInt (MidiBackend backend);
 
-    void onIncomingMessage (const std::uint8_t* bytes, std::size_t length, std::uint64_t tsNanos);
+    void onIncomingMessage (const std::uint8_t* bytes,
+                            std::size_t length,
+                            std::uint64_t tsNanos,
+                            std::uint16_t controllerIndex);
 
     struct Impl;
     MidiBackend                  backend_     = MidiBackend::None;
