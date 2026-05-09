@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1529** Python | **1566** TypeScript | **181** C++/H | **147** Docs | **4145** total commits | **4** stars | **0** forks | **0** open issues
+**1529** Python | **1567** TypeScript | **181** C++/H | **147** Docs | **4147** total commits | **4** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`d64b5648`](https://github.com/matthewmackes/map2-audio/commit/d64b56488494171bc53060e32aa57e6bbd012484) | feat(t2499-a/7): Flip "Map a MIDI controller" card to Ava... | Map2 Audio | 2026-05-09 |
+| [`49266a2c`](https://github.com/matthewmackes/map2-audio/commit/49266a2cbd8e7178d1e9e81e5512e29f6551c90e) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-09 |
 | [`2af47bac`](https://github.com/matthewmackes/map2-audio/commit/2af47bacb18de9dba175d4884603414e8554a665) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-09 |
 | [`3fd72fc5`](https://github.com/matthewmackes/map2-audio/commit/3fd72fc5abf78d5cce1172587c9d22ba407a3dfb) | feat(t2499-a/6): Bindings writer to MIDI Services (idempo... | Map2 Audio | 2026-05-09 |
 | [`4db1f646`](https://github.com/matthewmackes/map2-audio/commit/4db1f6462bb86f511caa882044310962cb98ca25) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-09 |
 | [`9e800255`](https://github.com/matthewmackes/map2-audio/commit/9e8002559a78399440eb8d6f804d01db6825537f) | feat(t2499-a/5): MIDI Learn fallback module | Map2 Audio | 2026-05-09 |
 | [`d7a47b19`](https://github.com/matthewmackes/map2-audio/commit/d7a47b19ab59bf429a33593b15d4928030ef09ae) | fix(t2499-a/4): narrow refetchInterval to (number  |  false) for useQueries | Map2 Audio |
 | [`d0cced35`](https://github.com/matthewmackes/map2-audio/commit/d0cced3554ab0f0948182308c356c6c505c62e2c) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-09 |
-| [`64bab844`](https://github.com/matthewmackes/map2-audio/commit/64bab8448706bb6143b6a38eb20a46129f5f8500) | feat(t2499-a/4): Device-pack picker with presence-driven ... | Map2 Audio | 2026-05-09 |
-| [`f7a9996b`](https://github.com/matthewmackes/map2-audio/commit/f7a9996b808a46b93a6c4b7942df6316f47f68dc) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-09 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
