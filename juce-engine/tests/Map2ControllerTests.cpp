@@ -199,6 +199,11 @@ TEST_CASE ("Factory returns nullptr for unsupported protocols (HID, bulk, unknow
     REQUIRE (Map2ControllerFactory::create (makeIdentity ("unknown")) == nullptr);
 }
 
+#ifndef MAP2_HAS_LEGACY_MIDI_CONTROLLER
+  #define MAP2_HAS_LEGACY_MIDI_CONTROLLER 1
+#endif
+
+#if MAP2_HAS_LEGACY_MIDI_CONTROLLER
 TEST_CASE ("Factory returns a Map2MidiController for MIDI identities", "[T2459-B1]")
 {
     // After T2459-B1, MIDI identities produce a real Map2MidiController.
@@ -207,3 +212,12 @@ TEST_CASE ("Factory returns a Map2MidiController for MIDI identities", "[T2459-B
     auto controller = Map2ControllerFactory::create (makeIdentity ("midi"));
     REQUIRE (controller != nullptr);
 }
+#else
+TEST_CASE ("Factory returns nullptr for MIDI identities under retirement gate", "[T2459-H6]")
+{
+    // T2459-H6 OFF build: legacy raw-ALSA path is excluded; the factory
+    // short-circuits to nullptr and ingestion is owned by IpcMidiBridge.
+    auto controller = Map2ControllerFactory::create (makeIdentity ("midi"));
+    REQUIRE (controller == nullptr);
+}
+#endif

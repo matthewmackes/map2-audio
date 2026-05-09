@@ -18,13 +18,20 @@ import platform
 import random
 import statistics
 import sys
+import threading
 import time
 from dataclasses import dataclass
 from datetime import UTC, datetime
 from pathlib import Path
-from typing import Any, Iterable, TypeVar
+from typing import Any, Iterable, Optional, TypeVar
 
 DEFAULT_ACTIVE_EFFECT_COUNT = 10
+
+# T2459-H6 — MIDI driver options for the host-driven soak path. The default
+# remains "none" so existing soak invocations are byte-for-byte unchanged.
+MIDI_DRIVER_CHOICES = ("none", "host")
+MIDI_MESSAGE_MIX_CHOICES = ("note", "cc", "clock", "mixed")
+DEFAULT_MIDI_RATE_EVENTS_PER_SEC = 30
 
 
 DEFAULT_EFFECT_FALLBACK = [
@@ -586,6 +593,136 @@ def build_markdown_report(result: dict[str, Any], output_json: Path, output_md: 
     output_md.write_text("\n".join(lines), encoding="utf-8")
 
 
+class HostMidiSoakDriver:
+    """Synthetic MIDI generator for the host-driven soak.
+
+    T2459-H6. Connects to map2-controller-host over the same UDS the
+    rest of the FastAPI backend uses, opens a virtual input bound to
+    `controller_key`, then pumps synthetic MIDI bytes via the host's
+    drain pump (Slice 5/6) at the configured rate. The IpcMidiBridge
+    (H1) on the engine side drains them through the shm rings.
+
+    The driver runs in a background thread so the soak's main loop
+    stays focused on flow rotation and metrics. ``stats`` is a snapshot
+    available at finally-block time for inclusion in the artifact.
+    """
+
+    def __init__(
+        self,
+        *,
+        controller_key: str,
+        rate_events_per_sec: float,
+        message_mix: str,
+        socket_path: Optional[Path] = None,
+    ) -> None:
+        self.controller_key = controller_key
+        self.rate_events_per_sec = max(0.001, float(rate_events_per_sec))
+        self.message_mix = message_mix
+        self.socket_path = socket_path
+        self._stop = threading.Event()
+        self._thread: Optional[threading.Thread] = None
+        self._client: Any = None
+        self._open_msg_id: Optional[str] = None
+        self.events_pushed = 0
+        self.errors: list[str] = []
+        self.started_at_iso: Optional[str] = None
+        self.stopped_at_iso: Optional[str] = None
+
+    def start(self) -> None:
+        # Lazy import keeps the harness usable without the FastAPI
+        # backend deps installed (the default --midi-driver=none path
+        # never imports this module).
+        from app.services.midi_host_client import MidiHostClient
+
+        self._client = MidiHostClient(socket_path=self.socket_path)
+        # Bind the controller_key. The host emits a log_event back; we
+        # do not block on it (Slice 5 contract).
+        try:
+            self._open_msg_id = self._client.open_midi_input(
+                controller_key=self.controller_key,
+                port_id=f"virtual:{self.controller_key}",
+            )
+        except Exception as exc:  # pragma: no cover - exercised only on bench
+            self.errors.append(f"open_midi_input_failed:{exc}")
+            return
+        self.started_at_iso = utc_now_iso()
+        self._stop.clear()
+        self._thread = threading.Thread(
+            target=self._loop,
+            name=f"soak-midi-{self.controller_key}",
+            daemon=True,
+        )
+        self._thread.start()
+
+    def stop(self, timeout_s: float = 2.0) -> None:
+        self._stop.set()
+        if self._thread is not None:
+            self._thread.join(timeout=timeout_s)
+        self.stopped_at_iso = utc_now_iso()
+
+    def stats(self) -> dict[str, Any]:
+        return {
+            "controller_key": self.controller_key,
+            "socket_path": str(self.socket_path) if self.socket_path else None,
+            "rate_events_per_sec": self.rate_events_per_sec,
+            "message_mix": self.message_mix,
+            "events_pushed": int(self.events_pushed),
+            "open_msg_id": self._open_msg_id,
+            "started_at_utc": self.started_at_iso,
+            "stopped_at_utc": self.stopped_at_iso,
+            "error_count": len(self.errors),
+            "errors": list(self.errors),
+        }
+
+    def _loop(self) -> None:
+        period = 1.0 / self.rate_events_per_sec
+        rng = random.Random(0xB17A2459)  # deterministic seed (T2459-H6)
+        next_at = time.monotonic()
+        while not self._stop.is_set():
+            now = time.monotonic()
+            if now < next_at:
+                # Cap sleep so stop() returns promptly even at low rates.
+                self._stop.wait(min(period, next_at - now))
+                continue
+            payload = self._next_message(rng)
+            try:
+                # H6 prep ships the synthetic-traffic plumbing as a
+                # send_ump call against the host's outbound surface; the
+                # host's MIDI 1.0/2.0 routing translates that into
+                # inbound-equivalent ring traffic for the engine. The
+                # actual byte format is intentionally the simplest
+                # 32-bit UMP word so this code stays driver-agnostic.
+                self._client.send_ump(
+                    controller_key=self.controller_key,
+                    packet_bytes=payload,
+                )
+                self.events_pushed += 1
+            except Exception as exc:  # pragma: no cover - bench-only failure paths
+                self.errors.append(f"send_failed:{exc}")
+                # back off briefly to avoid tight error spin
+                self._stop.wait(0.1)
+            next_at += period
+
+    def _next_message(self, rng: random.Random) -> bytes:
+        mix = self.message_mix
+        if mix == "mixed":
+            mix = rng.choice(("note", "cc", "clock"))
+        if mix == "clock":
+            # MIDI 1.0 timing clock 0xF8 → MIDI-1.0 in UMP message-type 2.
+            return bytes((0x20, 0xF8, 0x00, 0x00))
+        if mix == "note":
+            note = rng.randint(36, 96)
+            vel = rng.randint(1, 127)
+            on_off = 0x90 if rng.random() < 0.5 else 0x80
+            return bytes((0x20, on_off, note, vel))
+        if mix == "cc":
+            cc = rng.randint(0, 127)
+            val = rng.randint(0, 127)
+            return bytes((0x20, 0xB0, cc, val))
+        # Default fallback: note-on middle C.
+        return bytes((0x20, 0x90, 60, 64))
+
+
 def parse_args(repo_root: Path) -> argparse.Namespace:
     parser = argparse.ArgumentParser(
         description=(
@@ -690,6 +827,57 @@ def parse_args(repo_root: Path) -> argparse.Namespace:
         default=0,
         help="Pass threshold: max flow apply errors.",
     )
+    # ----------------------------------------------------------------
+    # T2459-H6 — host-driven MIDI extension. Default driver is "none" so
+    # legacy soak invocations behave identically. When --midi-driver=host
+    # the script connects to map2-controller-host over UDS, opens a
+    # virtual input bound to --midi-controller-key, and pushes synthetic
+    # MIDI traffic at --midi-rate-events-per-sec for the soak duration.
+    # The IpcMidiBridge in the engine drains it via the shm rings.
+    # ----------------------------------------------------------------
+    parser.add_argument(
+        "--midi-driver",
+        type=str,
+        choices=MIDI_DRIVER_CHOICES,
+        default="none",
+        help="MIDI driver for the soak. 'none' = no MIDI traffic (default). "
+             "'host' = drive synthetic MIDI through map2-controller-host.",
+    )
+    parser.add_argument(
+        "--midi-controller-key",
+        type=str,
+        default="soak-driver",
+        help="controller_key registered with map2-controller-host for the "
+             "synthetic input port (only used when --midi-driver=host).",
+    )
+    parser.add_argument(
+        "--midi-rate-events-per-sec",
+        type=float,
+        default=float(DEFAULT_MIDI_RATE_EVENTS_PER_SEC),
+        help="Synthetic MIDI event rate (events/sec). 30 is the realistic "
+             "worst-case used by the H6 acceptance gate.",
+    )
+    parser.add_argument(
+        "--midi-message-mix",
+        type=str,
+        choices=MIDI_MESSAGE_MIX_CHOICES,
+        default="mixed",
+        help="Message mix for synthetic MIDI traffic.",
+    )
+    parser.add_argument(
+        "--midi-host-socket",
+        type=Path,
+        default=None,
+        help="Override path to controller-host UDS (default: "
+             "/run/map2/controller-host.sock).",
+    )
+    parser.add_argument(
+        "--soak-tag",
+        type=str,
+        default="",
+        help="Free-form tag stamped into the captured artifacts so multiple "
+             "soak runs (e.g. baseline vs. T2459-H6) are distinguishable.",
+    )
     return parser.parse_args()
 
 
@@ -763,6 +951,18 @@ def run() -> int:
     init_ok = False
     begin_topology_update = None
     end_topology_update = None
+    midi_driver: Optional[HostMidiSoakDriver] = None
+    midi_driver_stats: dict[str, Any] = {"driver": args.midi_driver}
+    if args.midi_driver == "host":
+        # Make `app.services.midi_host_client` importable without polluting
+        # sys.path for the JUCE module loader path.
+        sys.path.insert(0, str(repo_root))
+        midi_driver = HostMidiSoakDriver(
+            controller_key=args.midi_controller_key,
+            rate_events_per_sec=args.midi_rate_events_per_sec,
+            message_mix=args.midi_message_mix,
+            socket_path=args.midi_host_socket,
+        )
 
     engine.set_sample_rate(args.sample_rate)
     engine.set_buffer_size(args.buffer_size)
@@ -817,6 +1017,9 @@ def run() -> int:
                 raise SystemExit(f"failed to preload effect pool: {exc}") from exc
             load_failures.extend(preload_errors)
             preloaded_instance_count = len(preloaded_effects)
+
+        if midi_driver is not None:
+            midi_driver.start()
 
         time.sleep(max(0.0, args.warmup_seconds))
         if args.reset_stats_after_warmup:
@@ -1031,6 +1234,10 @@ def run() -> int:
 
             time.sleep(0.01)
     finally:
+        if midi_driver is not None:
+            midi_driver.stop()
+            midi_driver_stats = {"driver": "host", **midi_driver.stats()}
+
         if audio_running:
             try:
                 engine.stop_audio()
@@ -1106,6 +1313,8 @@ def run() -> int:
             "python_version": sys.version,
             "module_dir": str(args.module_dir),
             "seed": seed,
+            "soak_tag": args.soak_tag,
+            "midi_driver": midi_driver_stats,
         },
         "config": {
             "sample_rate_hz": args.sample_rate,

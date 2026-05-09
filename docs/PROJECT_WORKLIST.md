@@ -1230,6 +1230,26 @@ Description:
 - Required outputs: `Map2MidiController.cpp` + `.h` deletion, `IpcMidiBridge` final form, soak-harness MIDI extension, evidence directory, `docs/MEMORY.md` and `CLAUDE.md` Gotchas updated to retire the "MIDI Device Selection Requires ALSA Subscriptions" note (no longer relevant — libremidi handles this).
 Assigned to: Claude
 
+  2026-04-28 — Claude: **Slice 1 SHIPPED (code-only retirement prep — caller audit + CMake retirement gate + soak-harness MIDI extension; HIL soak + file deletion remain).**
+
+  Caller audit: 3 load-bearing references identified (`juce-engine/CMakeLists.txt`, `Source/Controllers/Map2ControllerFactory.cpp`, `tests/Map2ControllerTests.cpp`); 3 comment-only references catalogued (`Map2Controller.cpp`, `Map2ControllerFactory.h`, `IpcMidiBridge.h`). Filed gap: `Map2ControllerFactory::create("midi", ...)` returns `nullptr` under the OFF build because `IpcMidiBridge` has no `Map2Controller`-shaped wrapper. No non-test caller exists in-tree today, so the OFF build links cleanly; the deletion PR should re-confirm during the bench soak. Sub-task **T2459-H6 Slice 2 (planned)** filed in `docs/midi/MAP2MIDICONTROLLER_RETIREMENT.md` for an `IpcMidiBridge`-backed adapter only if a non-test caller surfaces.
+
+  Files added: `docs/midi/MAP2MIDICONTROLLER_RETIREMENT.md` (caller-by-caller table + risk notes + step-by-step deletion runbook + rollback procedure), `tests/test_soak_harness_midi_extension_t2459h6.py`, `tests/test_map2midicontroller_caller_audit_t2459h6.py`.
+
+  Files modified: `juce-engine/CMakeLists.txt` (new option `MAP2_USE_LEGACY_MIDI_CONTROLLER` default `ON`; conditional `list(APPEND SOURCES/HEADERS ...)`; conditional `controllers_tests` source list; `MAP2_HAS_LEGACY_MIDI_CONTROLLER=1/0` compile def on `map2_audio_engine` and `controllers_tests`), `juce-engine/Source/Controllers/Map2ControllerFactory.cpp` (`#if MAP2_HAS_LEGACY_MIDI_CONTROLLER` guard around the legacy include + the `"midi"` instantiation; OFF arm returns `nullptr`), `juce-engine/tests/Map2ControllerTests.cpp` (Catch2 case has both ON and OFF arms), `.codex/skills/juce-random-effects-soak/scripts/run_juce_random_fx_soak.py` (new flags `--midi-driver {none,host}`, `--midi-controller-key`, `--midi-rate-events-per-sec`, `--midi-message-mix {note,cc,clock,mixed}`, `--midi-host-socket`, `--soak-tag`; `HostMidiSoakDriver` background-thread driver that posts UMP-shaped synthetic traffic through `MidiHostClient.send_ump`; driver stats stamped into `metadata.midi_driver` of the artifact JSON; default `--midi-driver=none` preserves byte-for-byte legacy behavior).
+
+  Validation:
+    - `python3 -m pytest -q tests/test_soak_harness_midi_extension_t2459h6.py tests/test_map2midicontroller_caller_audit_t2459h6.py` — **11 passed in 0.31s**.
+    - `python3 -m pytest -q tests/test_controller_host_main_loop_t2459h3.py tests/test_controller_host_main_loop_t2459h3_slice5.py tests/test_controller_host_main_loop_t2459h3_slice6.py tests/test_controller_host_ipc_schema.py` — **11 passed, 7 skipped in 2.73s** (skips are HIL-gated, pre-existing).
+    - `cmake -B juce-engine/build-h6-on -DMAP2_USE_LEGACY_MIDI_CONTROLLER=ON` — Configuring done (138.4s), `MAP2_HAS_LEGACY_MIDI_CONTROLLER=1` set on both `map2_audio_engine` and `controllers_tests`, `Map2MidiController.cpp` present in compile graph.
+    - `cmake -B juce-engine/build-h6-off -DMAP2_USE_LEGACY_MIDI_CONTROLLER=OFF` — Configuring done (130.7s), `MAP2_HAS_LEGACY_MIDI_CONTROLLER=0` set on both targets, `Map2MidiController.cpp` **absent** from the compile graph (`grep -rl Map2MidiController build-h6-off/CMakeFiles/map2_audio_engine.dir` returns empty). Throwaway build dirs cleaned.
+    - Full link verification (`cmake --build`) skipped per slice scope — runbook step §2 documents the manual command for the bench operator before the deletion PR.
+
+  Next-action runbook (bench operator): With `map2-controller-host` running and the engine rebuilt with `cmake -B juce-engine/build -DMAP2_USE_LEGACY_MIDI_CONTROLLER=OFF && cmake --build juce-engine/build --target map2_audio_engine`, run `python3 .codex/skills/juce-random-effects-soak/scripts/run_juce_random_fx_soak.py --duration-seconds 1800 --flow-rotation-seconds 20 --sample-interval-seconds 1.0 --reset-stats-after-warmup --threshold-max-xruns 0 --threshold-max-peak-jitter-ms 0.35 --midi-driver host --midi-controller-key soak-driver --midi-rate-events-per-sec 30 --midi-message-mix mixed --soak-tag t2459h6-shm-ring`. If `overall_pass=True`, follow the deletion procedure in `docs/midi/MAP2MIDICONTROLLER_RETIREMENT.md` §4 — drop the option, the source/header, and the audit-test EXPECTED set entries in one atomic commit; capture the producer→consumer latency graph under `docs/fit-for-purpose-evidence/<YYYYMMDD>/t2459h6-shm-ring/`.
+
+  Status stays `[ ] Todo` (full retirement still gated on HIL soak + file deletion). The slice's job — make the HIL run a one-command operation and the deletion a one-PR change — is complete.
+Last updated: 2026-04-28 EDT - Claude: Slice 1 (code-only retirement prep) shipped; HIL soak + file deletion remain.
+
 ---
 
 ID: T2459-H7
