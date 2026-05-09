@@ -498,6 +498,24 @@ class SnapshotPersistenceMixin:
         )
         await self.session.flush()
 
+        # Mirror the per-effect midi_map[] entries into the canonical
+        # MidiBinding authority. Sibling to the program-number write-
+        # through projection wired in snapshot_editor (commit c3324cf1).
+        # Full-replace semantics match the legacy table behavior above:
+        # this snapshot'\''s prior bindings are dropped and the current
+        # entry list is re-inserted with stable legacy_entry_index
+        # ordering.
+        from app.services.midi.authority import MidiBindingAuthority
+        from app.services.midi.projections.snapshot import (
+            replace_snapshot_midi_map_entries,
+        )
+        await replace_snapshot_midi_map_entries(
+            MidiBindingAuthority(self.session),
+            snapshot.id,
+            [dict(entry) for entry in normalized["midi_map"]],
+            modified_by="snapshot-editor",
+        )
+
     def _normalize_detail_payload(self, detail_payload: dict[str, Any]) -> dict[str, Any]:
         payload = copy.deepcopy(detail_payload or {})
 

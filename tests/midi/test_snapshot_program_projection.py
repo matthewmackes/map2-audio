@@ -226,6 +226,53 @@ def test_get_returns_only_program_number_binding_when_siblings_present(tmp_path)
     asyncio.run(_run())
 
 
+def test_midi_map_replace_does_not_clobber_program_number_binding(tmp_path):
+    """Cycle 2 / 2026-05-09: the per-effect midi_map[] projection's
+    full-replace must NOT destroy the snapshot's program-number
+    binding. Before the cycle 2 fix, replace_snapshot_midi_map_entries
+    called delete_for_consumer which nuked everything under the
+    consumer_type='snapshot' bucket — including the sibling kind=
+    'program_number' row this test guards."""
+    _init_temp_db(tmp_path)
+
+    async def _run():
+        from app.services.midi.projections.snapshot import (
+            replace_snapshot_midi_map_entries,
+        )
+
+        await database_module._ensure_tables_created()
+        async with database_module.get_session() as session:
+            authority = MidiBindingAuthority(session)
+            # Stand up a program-number binding first.
+            await sync_program_number(authority, 42, 24, snapshot_name="Lead")
+            await session.commit()
+
+            # Then write some midi_map[] entries via the sibling projection.
+            await replace_snapshot_midi_map_entries(
+                authority,
+                42,
+                [
+                    {"channel": 0, "cc": 7, "action": "load"},
+                    {"channel": 0, "cc": 8, "action": "morph"},
+                ],
+            )
+            await session.commit()
+
+            # The program-number binding must still exist.
+            pn_binding = await get_program_number_binding(authority, 42)
+            assert pn_binding is not None
+            assert (pn_binding.source_descriptor or {}).get("program_number") == 24
+
+            # And replacing again with an empty list must still leave it alone.
+            await replace_snapshot_midi_map_entries(authority, 42, [])
+            await session.commit()
+            pn_after = await get_program_number_binding(authority, 42)
+            assert pn_after is not None
+            assert pn_after.binding_id == pn_binding.binding_id
+
+    asyncio.run(_run())
+
+
 def test_backfill_creates_bindings_for_existing_snapshots(tmp_path):
     """Backfill walks every Snapshot row with a non-null program_number
     and ensures a corresponding canonical binding exists."""

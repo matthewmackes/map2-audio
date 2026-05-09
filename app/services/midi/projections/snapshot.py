@@ -70,6 +70,14 @@ _KNOWN_LEGACY_FIELDS = frozenset(
 )
 
 
+def _has_value(entry: dict[str, Any], key: str) -> bool:
+    """A legacy field counts as 'present' only when it carries a real
+    value. Real-world snapshot payloads frequently include keys with
+    None values (e.g. ``program_number: None`` for non-PC actions); we
+    treat those as absent so int() conversion below doesn't blow up."""
+    return key in entry and entry[key] is not None
+
+
 def _infer_source_type(entry: dict[str, Any]) -> BindingSourceType:
     """Choose a canonical source_type from the legacy entry's shape.
 
@@ -89,11 +97,11 @@ def _infer_source_type(entry: dict[str, Any]) -> BindingSourceType:
         "midi_channel_pressure",
     }:
         return explicit  # type: ignore[return-value]
-    if "program_number" in entry:
+    if _has_value(entry, "program_number"):
         return "midi_pc"
-    if "cc" in entry:
+    if _has_value(entry, "cc"):
         return "midi_cc"
-    if "note" in entry:
+    if _has_value(entry, "note"):
         return "midi_note"
     return "midi_cc"
 
@@ -114,21 +122,23 @@ def legacy_entry_to_create_payload(
     source_type = _infer_source_type(entry)
 
     # Source descriptor: pick known signal fields explicitly; anything
-    # else passes through metadata.extra.
+    # else passes through metadata.extra. None-valued keys are treated
+    # as absent so we don't crash on real snapshot payloads that
+    # include placeholders like ``program_number: None``.
     source_descriptor: dict[str, Any] = {}
-    if "channel" in entry:
+    if _has_value(entry, "channel"):
         source_descriptor["channel"] = int(entry["channel"])
-    if source_type == "midi_cc" and "cc" in entry:
+    if source_type == "midi_cc" and _has_value(entry, "cc"):
         source_descriptor["cc"] = int(entry["cc"])
-    if source_type == "midi_note" and "note" in entry:
+    if source_type == "midi_note" and _has_value(entry, "note"):
         source_descriptor["note"] = int(entry["note"])
-    if source_type == "midi_pc" and "program_number" in entry:
+    if source_type == "midi_pc" and _has_value(entry, "program_number"):
         source_descriptor["program_number"] = int(entry["program_number"])
-    if "curve" in entry:
+    if _has_value(entry, "curve"):
         source_descriptor["curve"] = entry["curve"]
-    if "min" in entry:
+    if _has_value(entry, "min"):
         source_descriptor["min"] = entry["min"]
-    if "max" in entry:
+    if _has_value(entry, "max"):
         source_descriptor["max"] = entry["max"]
 
     # Target descriptor: the legacy entry's "action" string + any extras.
@@ -136,7 +146,7 @@ def legacy_entry_to_create_payload(
     action = entry.get("action")
     if action is not None:
         target_descriptor["action"] = str(action)
-    if "program_number" in entry and source_type != "midi_pc":
+    if _has_value(entry, "program_number") and source_type != "midi_pc":
         # PC bindings carry program_number on the source side (above);
         # other source types that mention program_number put it here.
         target_descriptor["program_number"] = int(entry["program_number"])
@@ -218,13 +228,25 @@ def binding_to_legacy_entry(binding: MidiBindingRead) -> dict[str, Any]:
     return entry
 
 
+def _is_midi_map_binding(binding: MidiBindingRead) -> bool:
+    """A midi_map[] binding is any snapshot-consumer row whose
+    metadata.kind is NOT 'program_number'. The sibling
+    ``snapshot_program`` projection writes its rows with
+    metadata.kind='program_number'; this discriminator keeps the two
+    projections from clobbering each other when they share the same
+    consumer_type='snapshot' bucket."""
+    return (binding.metadata or {}).get("kind") != "program_number"
+
+
 async def list_snapshot_midi_map_entries(
     authority: MidiBindingAuthority,
     snapshot_id: int,
 ) -> list[dict[str, Any]]:
-    """Read-side projection: return every binding for this snapshot in
-    the legacy entries shape, ordered by legacy_entry_index when
-    available (so a migrated snapshot reads back in its original order)."""
+    """Read-side projection: return every midi_map[] binding for this
+    snapshot in the legacy entries shape, ordered by legacy_entry_index
+    when available (so a migrated snapshot reads back in its original
+    order). Sibling program-number bindings are excluded — they are
+    served by ``snapshot_program.get_program_number_binding``."""
     bindings = await authority.list_for_consumer(
         "snapshot", str(snapshot_id), enabled_only=False
     )
@@ -237,6 +259,7 @@ async def list_snapshot_midi_map_entries(
         # ordering by binding_id (UUID) so the order is deterministic.
         return (1, binding.binding_id)
 
+    bindings = [b for b in bindings if _is_midi_map_binding(b)]
     bindings.sort(key=_sort_key)
     return [binding_to_legacy_entry(b) for b in bindings]
 
@@ -248,21 +271,25 @@ async def replace_snapshot_midi_map_entries(
     *,
     modified_by: str = "snapshot-editor",
 ) -> list[dict[str, Any]]:
-    """Write-side projection: replace every binding for this snapshot
-    with the supplied entry list.
+    """Write-side projection: replace every midi_map[] binding for this
+    snapshot with the supplied entry list.
 
-    Semantics: hard delete + bulk insert. Matches the existing
-    snapshot_editor.replace_midi_map() contract — full replace, not
-    a delta merge. Caller owns commit/rollback.
+    Semantics: hard delete + bulk insert, **scoped to midi_map[]
+    bindings only**. The sibling program-number binding (if any) is
+    left untouched — it's owned by ``snapshot_program.sync_program_number``.
 
-    This is the canonical write path for snapshot MIDI bindings after
-    P2.3 part 2 ships. The legacy snapshot_persistence.py code path
-    that wrote to SnapshotMidiMap.entries gets rewired in iter 9.
+    Matches the legacy ``snapshot_persistence`` SnapshotMidiMap full-
+    replace contract. Caller owns commit/rollback.
+
+    This is the canonical write path for snapshot MIDI bindings.
     """
-    # Hard-delete the existing binding set, then bulk-insert the new
-    # one. Each new entry gets a fresh legacy_entry_index = position so
-    # later round-trips preserve the new order.
-    await authority.delete_for_consumer("snapshot", str(snapshot_id))
+    # Per-binding delete (instead of delete_for_consumer) so we don't
+    # clobber the snapshot's program-number binding.
+    existing = await authority.list_for_consumer("snapshot", str(snapshot_id))
+    for binding in existing:
+        if _is_midi_map_binding(binding):
+            await authority.delete(binding.binding_id)
+
     for index, entry in enumerate(entries):
         payload = legacy_entry_to_create_payload(
             entry,
