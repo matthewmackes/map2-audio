@@ -893,6 +893,35 @@ async def lifespan(app):
         except Exception as exc:
             logger.warning("ConnectionEventBus not started: %s", exc)
 
+        # T2459-H Phase H L2 closeout — wire the engine-command dispatcher
+        # to a real ``recall_snapshot`` hook + start the controller-host
+        # subscription so MIDI Program Change → snapshot recall actually
+        # fires end-to-end. The subscription start may block waiting for
+        # the host UDS to come up; run it as a background task so lifespan
+        # startup doesn't stall.
+        try:
+            from app.services.engine_command_bridge import init_engine_command_bridge
+            bridge = init_engine_command_bridge(asyncio.get_running_loop())
+
+            async def _start_engine_command_subscription() -> None:
+                # Hand off the blocking wait_for_daemon to a thread so we
+                # don't tie up the event loop.
+                ok = await asyncio.to_thread(
+                    bridge.start_subscription, wait_timeout_s=10.0
+                )
+                logger.info(
+                    "EngineCommandBridge subscription started: %s", ok
+                )
+
+            background_start_tasks.append(
+                asyncio.create_task(
+                    _start_engine_command_subscription(),
+                    name="engine_command_bridge_subscription",
+                )
+            )
+        except Exception as exc:
+            logger.warning("EngineCommandBridge not initialized: %s", exc)
+
         running = sum(1 for v in results.values() if v)
         total = len(results)
         logger.info("Startup complete: %s/%s services running", running, total)
@@ -911,6 +940,10 @@ async def lifespan(app):
             from app.services.controllers.connection_event_bus import (
                 get_connection_event_bus,
             )
+            from app.services.engine_command_bridge import get_engine_command_bridge
+            bridge = get_engine_command_bridge()
+            if bridge is not None:
+                bridge.stop_subscription()
             await safe_stop_service(
                 logger,
                 "Hardware Store connection event bus",
