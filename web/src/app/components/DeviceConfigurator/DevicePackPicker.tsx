@@ -113,11 +113,12 @@ export function DevicePackPicker({
   onPickMidiLearn,
   pollMs = POLL_MS,
 }: DevicePackPickerProps) {
+  const refetchInterval: number | false = pollMs === false ? false : pollMs
   const queries = useQueries({
     queries: packs.map((pack) => ({
       queryKey: ['device-pack-picker', pack.packId],
       queryFn: () => pack.fetchStatus(),
-      refetchInterval: pollMs === false ? false : pollMs,
+      refetchInterval,
       refetchIntervalInBackground: false,
     })),
   })
