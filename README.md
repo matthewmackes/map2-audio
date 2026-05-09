@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1529** Python | **1570** TypeScript | **181** C++/H | **147** Docs | **4153** total commits | **4** stars | **0** forks | **0** open issues
+**1538** Python | **1574** TypeScript | **181** C++/H | **147** Docs | **4165** total commits | **4** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
-| [`10100c43`](https://github.com/matthewmackes/map2-audio/commit/10100c43e7bb6783a3bc430edc47d3631dd4901d) | feat(t2499-a/follow-on): mount framework Configurator at ... | Map2 Audio | 2026-05-09 |
-| [`cce31513`](https://github.com/matthewmackes/map2-audio/commit/cce3151366817ea3a01b50d34c2a6f225a27fc9a) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-09 |
-| [`8dc929aa`](https://github.com/matthewmackes/map2-audio/commit/8dc929aa2866e69fc647a7ef40087c684272608a) | chore(t2499-a): autonomous-10 run closeout — 8/8 code sli... | Map2 Audio | 2026-05-09 |
-| [`08d4015c`](https://github.com/matthewmackes/map2-audio/commit/08d4015cb32ff268d87dc8f97bcda6eadd8acf84) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-09 |
-| [`8f1114b8`](https://github.com/matthewmackes/map2-audio/commit/8f1114b8f5b83a2ef426b9d6a9e66e45b5e315f7) | feat(t2499-a/8): End-to-end integration test for the Conf... | Map2 Audio | 2026-05-09 |
-| [`1bf80290`](https://github.com/matthewmackes/map2-audio/commit/1bf8029058371cc34d0869f166ce19f79519baf0) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-09 |
-| [`d64b5648`](https://github.com/matthewmackes/map2-audio/commit/d64b56488494171bc53060e32aa57e6bbd012484) | feat(t2499-a/7): Flip "Map a MIDI controller" card to Ava... | Map2 Audio | 2026-05-09 |
-| [`49266a2c`](https://github.com/matthewmackes/map2-audio/commit/49266a2cbd8e7178d1e9e81e5512e29f6551c90e) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-09 |
+| [`99f49295`](https://github.com/matthewmackes/map2-audio/commit/99f49295d15eea837c7270b0a3ef3f537add4f52) | chore: autonomous-10 (snapshot-bindings + Configurator fo... | Map2 Audio | 2026-05-09 |
+| [`fa6aa452`](https://github.com/matthewmackes/map2-audio/commit/fa6aa45272acdb6d25482e0babd889f1c496ee1b) | feat(t2499-a): backend pack-discovery seam for the Config... | Map2 Audio | 2026-05-09 |
+| [`d26d081f`](https://github.com/matthewmackes/map2-audio/commit/d26d081f42a38a0f5d2c6cf67a05f5b26c554445) | feat(t2499-a): wire production MIDI Learn event source fo... | Map2 Audio | 2026-05-09 |
+| [`0cfe00d9`](https://github.com/matthewmackes/map2-audio/commit/0cfe00d9f8b5d74f275f9d6aff70fda327f71168) | feat(midi-bindings): differentiate snapshot row menu labe... | Map2 Audio | 2026-05-09 |
+| [`ff5fae62`](https://github.com/matthewmackes/map2-audio/commit/ff5fae62ad5eda2a78c213582fbbdca7f3c07fb4) | test(midi): service-level round-trip — snapshot program u... | Map2 Audio | 2026-05-09 |
+| [`5c6bdb04`](https://github.com/matthewmackes/map2-audio/commit/5c6bdb044bb4c5a880d6d58a63784dd842dd7971) | test(midi-bindings): cover snapshot-consumer row behavior | Map2 Audio | 2026-05-09 |
+| [`d59d64d0`](https://github.com/matthewmackes/map2-audio/commit/d59d64d085f50af86dad5461718396bdbd21fdc3) | test(snapshots-browser): cover program-badge deep-link + ... | Map2 Audio | 2026-05-09 |
+| [`3881ba99`](https://github.com/matthewmackes/map2-audio/commit/3881ba99c8495f0ac96753bb29b4009022fdb4ad) | chore(midi): one-shot backfill CLI for snapshot midi_map[... | Map2 Audio | 2026-05-09 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
