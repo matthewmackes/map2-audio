@@ -149,6 +149,32 @@ class MidiHostClient:
         self._send_only(request)
         return msg_id
 
+    def open_midi_input(
+        self,
+        *,
+        controller_key: str,
+        port_id: str,
+    ) -> str:
+        """Send a ``midi_open_input_request`` to the host.
+
+        T2459-H3 Slice 5 — bind a hardware MIDI input port (resolved via
+        ``list_ports()``) to a controller_key so live inbound traffic
+        routes through the loaded mapping descriptor for that controller.
+        Fire-and-forget; the host replies with a ``log_event`` frame on
+        success or error which the consumer surfaces via the response
+        channel out-of-band.
+        """
+        msg_id = uuid.uuid4().hex
+        request = {
+            "type": "midi_open_input_request",
+            "msg_id": msg_id,
+            "schema_version": SCHEMA_VERSION,
+            "controller_key": str(controller_key),
+            "port_id": str(port_id),
+        }
+        self._send_only(request)
+        return msg_id
+
     def activate_mapping(
         self,
         *,

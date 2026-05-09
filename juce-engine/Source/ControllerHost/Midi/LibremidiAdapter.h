@@ -59,6 +59,15 @@ public:
     bool openVirtualInput (const std::string& name);
     bool openVirtualOutput (const std::string& name);
 
+    // T2459-H3 Slice 5 — open a hardware input port discovered via
+    // listPorts(). The match is by port id first, then by display name
+    // (libremidi's `port_name`). On success, incoming messages route
+    // through onIncomingMessage() into the configured shm rings exactly
+    // like a virtual input. Idempotent overwrite — opening a second
+    // hardware input replaces the first (single-active-input until the
+    // multi-port routing in Slice 6).
+    bool openInput (const std::string& port_id_or_name);
+
     // Push a raw MIDI message into the producer pipeline as if it had
     // arrived via libremidi. Used by tests and by virtual-output loopback.
     void pushMessage (const std::uint8_t* bytes, std::size_t length);

@@ -943,7 +943,24 @@ Completion note: 2026-04-28 — Codex: **Slice 1 SHIPPED (pack migration + legac
   Remaining for full H3 acceptance:
   - Live libremidi event ingestion still needs to route through the loaded descriptor dispatch path and emit engine commands from real inbound MIDI traffic (current slices activate mappings but do not yet wire the full runtime event loop).
   - Physical HIL evidence run with MeloAudio hardware.
-Last updated: 2026-04-28 11:26 EDT - Codex: slices 1-4 shipped; H3 remains in progress.
+  2026-04-28 — Claude: **Slice 5 SHIPPED (live libremidi ingestion → planDispatch → dispatch → engine_command emission).**
+  Delivered:
+  - `juce-engine/Source/ControllerHost/Midi/LibremidiAdapter.{h,cpp}`: new `openInput(port_id_or_name)` that resolves the requested name against `observer->get_input_ports()` and opens a real `libremidi::midi_in` whose `on_message` callback feeds the existing two-ring producer (RT vs control via `classifyMidiStatus`). `openVirtualInput` left untouched.
+  - `juce-engine/Source/ControllerHost/IpcMessages.h`: new inbound `MidiOpenInputRequest{ controller_key, port_id }` + matching `CPP_FIELD_MANIFEST` line.
+  - `app/schemas/controller_host.py`: matching `MidiOpenInputRequest` TypedDict + `FIELD_MANIFEST` entry + added to `InboundMessage` union; `tests/test_controller_host_ipc_schema.py` stays green.
+  - `juce-engine/Source/ControllerHost/main.cpp`: restructured the inner connection loop to a `poll(client_fd, 1ms)` non-blocking pump. On every tick the host now: (a) per-PID-named SHM rings created on connect and bound to the libremidi adapter; (b) drains up to 64 RT events + 16 control events through `mapping_engine.planDispatch()` → `mapping_engine.dispatch()` (tries `(status & 0xF0, channel)` first then raw status for descriptors that don't split channel out); (c) drains `js().drainEngineCommands()` / `drainLogs()` / `drainShortMidi()` / `drainSysExMidi()` and serializes each to `engine_command` / `log_event` / `midi_send_request` IPC frames back to the backend; (d) handles new `midi_open_input_request` (single-active-controller selection — most-recently opened port wins; per-port→key map kept for future Slice 6 multi-controller routing without breaking the H1-locked ring slot format).
+  - `app/services/midi_host_client.py`: new `open_midi_input(controller_key, port_id)` fire-and-forget client method.
+  - C++ Catch2 coverage in `juce-engine/tests/Map2MappingEngineTests.cpp`: new "Slice 5" case that pushes a CC byte sequence into the RT shm ring through the adapter, drains, dispatches, and asserts both the JS-side `EngineCommand` and the outbound short MIDI got queued.
+  - Python integration coverage `tests/test_controller_host_main_loop_t2459h3_slice5.py`: drives the real host binary over a tmp UDS — asserts manifest membership, `midi_open_input_request` for an unknown port returns a typed error log without crashing the host, and the host stays responsive for follow-up frames after a load+activate+open round.
+  - Python parity test extension in `tests/test_midi_host_client_t2459h3.py` for the new `open_midi_input` client surface.
+  Validation:
+  - `cd juce-engine && cmake --build build --target map2-controller-host controller_host_tests` -> clean.
+  - `cd juce-engine && ./build/controller_host_tests` -> **All tests passed (382 assertions in 66 test cases)** (was 366/65 before this slice — 16 new assertions, 1 new case).
+  - `pytest -q tests/test_controller_host_main_loop_t2459h3.py tests/test_controller_host_main_loop_t2459h3_slice5.py tests/test_controller_host_ipc_schema.py tests/test_midi_host_client_t2459h1.py tests/test_midi_host_client_t2459h3.py` -> **25 passed** (was 21 — 4 new tests).
+  Remaining for full H3 acceptance:
+  - Multi-controller routing: today the host treats the most-recently opened input as the active controller_key for any drained ring event; Slice 6 will plumb the per-port→key map through to per-event dispatch (the `port_to_controller` map + the `port_id` arg on `midi_open_input_request` are already in place so this is API-compatible).
+  - Physical HIL evidence run with MeloAudio Commander on the bench (`docs/fit-for-purpose-evidence/<YYYYMMDD>/t2459h3-meloaudio-commander/`) — slice 5 ships the production live-event loop; the bench-acceptance bullet still requires hardware.
+Last updated: 2026-04-28 EDT - Claude: slice 5 shipped; H3 remains in progress pending HIL bench evidence.
 
 ---
 
