@@ -9,6 +9,13 @@
 export { DeviceConfiguratorShell } from './DeviceConfiguratorShell'
 export { DeviceConfiguratorStatusCard } from './DeviceConfiguratorStatusCard'
 export { DevicePackPicker } from './DevicePackPicker'
+export { MidiLearnModule } from './MidiLearnModule'
+export type {
+  BrainSlotChoice,
+  MidiEventSubscriber,
+  MidiLearnEvent,
+  MidiLearnSubmission,
+} from './MidiLearnModule'
 export type {
   ConfiguratorPackDescriptor,
   ConfiguratorPrimitive,

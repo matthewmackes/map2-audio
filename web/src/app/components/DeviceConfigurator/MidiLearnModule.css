@@ -1,0 +1,62 @@
+.midi-learn {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.midi-learn__tile {
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+  padding: 1.25rem 1.5rem 1.5rem;
+}
+
+.midi-learn__header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.midi-learn__title {
+  font-size: 1.125rem;
+  font-weight: 600;
+  margin: 0;
+}
+
+.midi-learn__subtitle {
+  margin: 0;
+  color: var(--cds-text-secondary);
+  max-width: 60rem;
+}
+
+.midi-learn__row {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  max-width: 40rem;
+}
+
+.midi-learn__actions {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.midi-learn__listening,
+.midi-learn__captured,
+.midi-learn__submitted {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  background: var(--cds-layer-accent);
+  border-radius: 4px;
+}
+
+.midi-learn__captured code,
+.midi-learn__submitted code {
+  font-family: var(--cds-mono-font);
+  background: var(--cds-layer);
+  padding: 0.125rem 0.25rem;
+  border-radius: 2px;
+}
