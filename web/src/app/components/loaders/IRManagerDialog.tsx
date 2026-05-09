@@ -308,7 +308,10 @@ export function IRManagerDialog({ type, open, onClose, onLoad, instanceId, plugi
             lowContrast
             hideCloseButton
             title="Unable to load IR list"
-            subtitle={`The ${type} IR query failed. Refresh and try again.`}
+            subtitle={getErrorMessage(
+              irsQuery.error,
+              `The ${type} IR query failed. Refresh and try again.`,
+            )}
           />
         ) : filteredIRs.length === 0 ? (
           <p className="model-manager-dialog__empty">{config.emptyMessage}</p>

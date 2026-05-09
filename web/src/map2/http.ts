@@ -56,7 +56,7 @@ export async function fetchBlob(url: string, options?: RequestInit): Promise<Blo
 }
 
 export function appendNodeQuery(url: string, nodeId?: string | null): string {
-  if (!nodeId || nodeId === 'all') return url
+  if (typeof nodeId !== 'string' || nodeId === '' || nodeId === 'all') return url
   const separator = url.includes('?') ? '&' : '?'
   return `${url}${separator}node_id=${encodeURIComponent(nodeId)}`
 }

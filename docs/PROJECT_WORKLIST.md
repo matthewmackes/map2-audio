@@ -639,7 +639,7 @@ Prior — 2026-05-05 EDT — Slices 2-6 SHIPPED + Mutation slice 1 SHIPPED. 15 u
 ## Todo
 
 ID: T2500
-Status: [ ] Todo
+Status: [✓] Done
 Title: Cabinet IR and Reverb IR pickers fail to load IR list in Snapshot Editor
 Description:
 - Goal: Both the Cabinet IR and Reverb IR asset library pickers show "Unable to load IR list — The …IR query failed. Refresh and try again." instead of populating with available IRs. Fix the underlying queries so both pickers list IRs and the operator can select one.
@@ -658,8 +658,15 @@ Description:
   - Regression coverage: jest tests for both modals' loading + error states, and pytest tests for both backend routes (or the shared scanner).
 - Estimated effort: Small-to-medium. Both modals failing together points at a shared regression — one fix likely closes both.
 - Dependencies: none known.
-Assigned to: unassigned
-Last updated: 2026-05-08 EDT - Claude: filed from operator screenshot of Snapshot Editor showing the error banner in the Cabinet IR picker; operator confirmed Reverb IR picker has the same failure.
+Assigned to: Claude
+Last updated: 2026-05-08 EDT - Claude
+Completion notes:
+- **Root cause**: `appendNodeQuery(url, nodeId)` in `web/src/map2/http.ts` only checked truthiness (`!nodeId`). When TanStack Query invokes a bare `queryFn: irApi.listCabinets` (without an arrow wrapper), it passes the `QueryFunctionContext` object as the first argument. `irApi.listCabinets` forwards it as `nodeId`, the truthiness guard fails (objects are truthy), and `encodeURIComponent(nodeId)` stringifies it to `[object%20Object]`. The frontend then issued `GET /api/ir/cabinets?node_id=%5Bobject%20Object%5D`, which the backend correctly 404'd ("Node [object Object] not found or offline"). The modal swallowed the 404 and showed a generic "query failed" banner.
+- **Fix**: tightened `appendNodeQuery` to require `typeof nodeId === 'string'` and a non-empty string; objects/numbers/null/undefined now pass through as no-ops. Single-line fix at the seam — neutralizes the entire class of bug for every `irApi.list*` / `xApi.getStatus` / etc. used as a bare queryFn.
+- **Surface**: also updated the modal to render the real backend error via the existing `getErrorMessage` helper instead of the generic "query failed" subtitle, so future failures are diagnosable from the operator's screen.
+- **Tests**: added `web/src/map2/http.test.ts` (15 tests covering `appendNodeQuery`, `appendQueryParams`, `appendPluginRuntimeQuery`) — explicit regression cases for object-as-nodeId, number-as-nodeId, and a TanStack QueryFunctionContext shape.
+- **Verification**: `IRManagerDialog.test.tsx` 9/9 green; new http.test.ts 15/15 green; `npm run typecheck` clean; production build clean (new `index-*.js` bundle hash); via `:3000` proxy: `GET /api/ir/cabinets` → HTTP 200 in 0.16s with 3877 entries; `GET /api/ir/reverbs` → HTTP 200 in 0.21s with 5040 entries.
+- **Closeout commit**: see commit message + branch state for hash.
 
 ---
 
