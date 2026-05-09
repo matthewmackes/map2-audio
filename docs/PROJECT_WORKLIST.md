@@ -638,6 +638,31 @@ Prior — 2026-05-05 EDT — Slices 2-6 SHIPPED + Mutation slice 1 SHIPPED. 15 u
 
 ## Todo
 
+ID: T2500
+Status: [ ] Todo
+Title: Cabinet IR and Reverb IR pickers fail to load IR list in Snapshot Editor
+Description:
+- Goal: Both the Cabinet IR and Reverb IR asset library pickers show "Unable to load IR list — The …IR query failed. Refresh and try again." instead of populating with available IRs. Fix the underlying queries so both pickers list IRs and the operator can select one.
+- Repro: Snapshot Editor → load a snapshot containing a Cabinet IR or Reverb IR block (e.g., `5150andInteFX`, Path A) → click the IR block → asset library modal opens → red error banner appears in place of the IR list. Search box and Upload WAV button render; Refresh button does not recover. Same failure on both Cabinet IR and Reverb IR modals.
+- Why it matters: Cabinet IR and Reverb IR are core stages in the signal chain. Without working pickers, operators cannot audition or assign IRs from the GUI. Regression on two primary signal-flow surfaces — Cabinet IR is in every amp-sim chain, Reverb IR is in every spatial chain.
+- That both modals fail in parallel suggests a shared backend infra regression (asset-scanner, base IR route, filesystem path, or shared query layer) rather than two unrelated bugs. Diagnose at the shared layer first.
+- Investigation pointers:
+  - Frontend: `web/src/app/components/SnapshotEditor/` — the asset library modals for Cabinet IR and Reverb IR. Inspect their TanStack Query hooks and error paths; the modals render a generic "query failed" message rather than the underlying error. Surface the real error from the API response.
+  - Backend: IR list endpoints (likely `/api/cabinet-ir/*` and `/api/reverb-ir/*`, or a shared `/api/assets/irs?kind=...`). Verify routes are registered, return 200, and match client schemas. Check `app/routes/` and `app/services/` for the IR list service(s) — likely a shared scanner.
+  - Filesystem: confirm the cabinet-IR and reverb-IR asset directories exist and are readable by the backend process user. Check whether either was renamed/moved recently (`git log` on the asset-config or scanner module).
+  - Cross-check whether other asset pickers on the same page (e.g., NAM models, plugins) load — narrows shared-layer vs. IR-specific.
+- Acceptance:
+  - Both pickers load and list available IRs in `5150andInteFX` and other snapshots without the error banner.
+  - Selecting an IR loads it into the block; signal chain renders normally.
+  - For genuine failure modes (missing directory, permissions, malformed WAV), the backend returns an actionable error and the UI surfaces it instead of the generic "query failed" message.
+  - Regression coverage: jest tests for both modals' loading + error states, and pytest tests for both backend routes (or the shared scanner).
+- Estimated effort: Small-to-medium. Both modals failing together points at a shared regression — one fix likely closes both.
+- Dependencies: none known.
+Assigned to: unassigned
+Last updated: 2026-05-08 EDT - Claude: filed from operator screenshot of Snapshot Editor showing the error banner in the Cabinet IR picker; operator confirmed Reverb IR picker has the same failure.
+
+---
+
 ID: T2499
 Status: [ ] Todo
 Title: Sequencer Setup "Coming Soon" Cards — graduate all three to fully operational
