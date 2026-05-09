@@ -284,4 +284,108 @@ verifies the `MidiSendRequest` field list matches the C++
 
 ---
 
+---
+
+## 10. PipeWire 1.4.10 UMP-MIDI2 substrate gap (T2459-H7-PW-UMP, Path 4)
+
+**Status:** Path 4 selected 2026-05-08 — see `docs/midi/T2459_H7_PW_UMP_DECISION.md`.
+
+PipeWire ≥ 1.4.10 ships its UMP-MIDI2 ALSA-seq clients (default-named
+`Midi-Bridge`, typically client IDs 142+) as the substrate that should
+auto-bridge legacy `[type=kernel]` MIDI 1.0 clients into the JACK MIDI
+graph. In practice it does not subscribe them — kernel MIDI 1.0 devices
+appear as discoverable JACK MIDI ports (`Midi-Bridge:<DEVICE> MIDI 1`)
+but never deliver events. libremidi opens the JACK MIDI port cleanly,
+so the controller-host's `JackMidi` probe binds — silently, with zero
+inbound traffic.
+
+The MAP2 platform answer is **Path 4**: detect the gap before spawning
+the controller-host and force the libremidi backend to `alsa_seq` for
+that host instance. ALSA-seq direct subscription works (it's the
+substrate the kernel client is registered on; PipeWire's UMP layer is
+upstream of the bridge gap).
+
+### Detection logic
+
+`app/services/controller_host_pipewire_substrate.detect_substrate_state()`
+runs at controller-host startup and classifies the host into one of:
+
+| State | Meaning | Effect |
+|---|---|---|
+| `HEALTHY` | PipeWire absent / older / no UMP-MIDI2 client / kernel clients have peers | C++ probe order preserved |
+| `BROKEN_UMP_BRIDGE` | Gap signature matched | Force `MAP2_MIDI_BACKEND_FORCE=alsa_seq` for the controller-host child process |
+| `NO_PIPEWIRE` | No `pw-cli` available; no PipeWire daemon | C++ probe order preserved |
+| `PROBE_DISABLED` | `MAP2_PW_UMP_PROBE_DISABLE=1` set in env | C++ probe order preserved |
+| `PROBE_ERROR` | Tooling missing / unparseable output | C++ probe order preserved (fail-open) |
+
+The gap signature requires **all** of:
+
+1. PipeWire core.version ≥ 1.4.10 (parsed from `pw-cli info 0`).
+2. At least one ALSA-seq client whose name matches `Midi-Bridge`,
+   `PipeWire-UMP`, or `PipeWire-MIDI2` (case-insensitive substring;
+   pinned to PipeWire-published names so it never collides with
+   kernel device names like `TSMIDI2.0`).
+3. At least one `[type=kernel]` MIDI 1.0 client on the bus that has
+   no `Connecting To:` peer **and** no `Connected From:` peer (the
+   PipeWire bridge has not subscribed it). System / `Midi Through`
+   clients are excluded; the client must have at least one `Port`
+   line to count as a real device.
+
+### Per-device skip (host-wide posture today)
+
+The detection is per-installation: if **any** legacy MIDI 1.0 device on
+this host has the gap signature, the host-wide `alsa_seq` posture is
+forced. UMP-MIDI2-native devices still work through ALSA seq — no
+correctness regression, only a unification regression for ports that
+get multiplexed by JACK (a feature MAP2 doesn't currently exercise on
+the affected substrate). Per-device backend selection is filed as a
+follow-on if a multi-device rig actually needs it.
+
+### Operator-visible behaviour
+
+Backend startup log on a broken host:
+
+```
+[map2-backend] T2459-H7-PW-UMP probe: BROKEN_UMP_BRIDGE — PipeWire 1.4.10 UMP-MIDI2 bridge gap detected:
+  orphan kernel MIDI 1.0 clients ['TSMIDI2.0'] have no peer subscription from ['Midi-Bridge'].
+  Forcing controller-host to alsa_seq backend (Path 4).
+[map2-controller-host] midi backend = alsa_seq
+[map2-controller-host] degraded: midi_backend_degraded — MIDI backend bound to alsa_seq …
+```
+
+The `midi_backend_degraded` Warning diagnostic is intentional — it tells
+the operator that traffic is on the substrate-aware fallback rather than
+the preferred JACK-MIDI cycle-aligned path.
+
+### Operator overrides
+
+| Env var | Effect |
+|---|---|
+| `MAP2_PW_UMP_PROBE_DISABLE=1` | Skip the substrate probe entirely. C++ probe order runs verbatim. |
+| `MAP2_MIDI_BACKEND_FORCE=jack_midi` | Force `JackMidi` regardless of probe outcome. Wins over the probe via `apply_to_env_overrides()` (caller-supplied values beat probe defaults). |
+| `MAP2_MIDI_BACKEND_FORCE=alsa_seq` / `pipewire` / `alsa_raw` | Force any specific backend; same precedence rule. |
+| `MAP2_HIL_PIPEWIRE_UMP=1` | Enables the live HIL test case in `tests/test_t2459h7_pw_ump_fallback.py`. No-op in CI. |
+
+### Removal path
+
+When PipeWire upstream closes the bridge gap (Path 1 in the decision
+doc), the probe naturally returns `HEALTHY` because either (a) the
+parsed version is below `PIPEWIRE_VERSION_BROKEN_AT` (raise it), or
+(b) the orphan-kernel-client check passes (peers are subscribed). Once
+verified across the supported PipeWire range, the entire
+`controller_host_pipewire_substrate` module + its env-override hookup
++ the C++ `MAP2_MIDI_BACKEND_FORCE` consumer can be deleted in a single
+commit. Nothing else depends on this code path.
+
+### Cross-references
+
+- Decision doc with all four resolution paths: `docs/midi/T2459_H7_PW_UMP_DECISION.md`
+- Probe module: `app/services/controller_host_pipewire_substrate.py`
+- Probe tests: `tests/test_t2459h7_pw_ump_fallback.py` (12 unit cases + HIL gate)
+- Per-device sidestep that motivated the generalization: `app/services/devices/meloaudio/commander_discovery_subscriber.py`
+- Bench evidence (gap surfaced): `docs/fit-for-purpose-evidence/20260507/t2459h3-meloaudio-commander/alsa_midi_dump.txt`
+- Bench evidence (Path 4 production): `docs/fit-for-purpose-evidence/20260508/t2459h7-pw-ump-path4/`
+
+---
+
 **End of document.** Authoritative for T2459-H implementation work. Edits go through the standard `update` shorthand and dual-push.
