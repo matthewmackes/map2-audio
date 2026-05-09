@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1529** Python | **1566** TypeScript | **181** C++/H | **147** Docs | **4144** total commits | **4** stars | **0** forks | **0** open issues
+**1529** Python | **1566** TypeScript | **181** C++/H | **147** Docs | **4145** total commits | **4** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,6 +206,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`2af47bac`](https://github.com/matthewmackes/map2-audio/commit/2af47bacb18de9dba175d4884603414e8554a665) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-09 |
 | [`3fd72fc5`](https://github.com/matthewmackes/map2-audio/commit/3fd72fc5abf78d5cce1172587c9d22ba407a3dfb) | feat(t2499-a/6): Bindings writer to MIDI Services (idempo... | Map2 Audio | 2026-05-09 |
 | [`4db1f646`](https://github.com/matthewmackes/map2-audio/commit/4db1f6462bb86f511caa882044310962cb98ca25) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-09 |
 | [`9e800255`](https://github.com/matthewmackes/map2-audio/commit/9e8002559a78399440eb8d6f804d01db6825537f) | feat(t2499-a/5): MIDI Learn fallback module | Map2 Audio | 2026-05-09 |
@@ -213,7 +214,6 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 | [`d0cced35`](https://github.com/matthewmackes/map2-audio/commit/d0cced3554ab0f0948182308c356c6c505c62e2c) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-09 |
 | [`64bab844`](https://github.com/matthewmackes/map2-audio/commit/64bab8448706bb6143b6a38eb20a46129f5f8500) | feat(t2499-a/4): Device-pack picker with presence-driven ... | Map2 Audio | 2026-05-09 |
 | [`f7a9996b`](https://github.com/matthewmackes/map2-audio/commit/f7a9996b808a46b93a6c4b7942df6316f47f68dc) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-09 |
-| [`3edfdffd`](https://github.com/matthewmackes/map2-audio/commit/3edfdffdbd1d261888eff7138ba55f85b0202483) | feat(t2499-a/3): MeloAudio Configurator adapter onto shar... | Map2 Audio | 2026-05-08 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
