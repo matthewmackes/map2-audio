@@ -29,6 +29,10 @@ from typing import Any, Dict, List, Optional, Sequence, Tuple
 
 from app.services.sysex_tags import auto_tag_from_name as infer_auto_tags
 from app.services.sysex_tags import compile_mpx1_tag_map
+from app.services.sysex_tags_js_runtime import (
+    compile_mpx1_tag_map_via_js,
+    is_sysex_parser_js_runtime_enabled,
+)
 
 # Lexicon manufacturer ID in SysEx
 _LEXICON_ID: int = 0x06
@@ -44,6 +48,16 @@ _NAME_LENGTH: int = 12
 _MIN_PROGRAM_DUMP_SIZE: int = 20
 
 _NAME_TAG_MAP = compile_mpx1_tag_map()
+
+
+def _resolve_tag_map():
+    """Return the active MPX-1 tag map, honoring the JS-runtime feature flag.
+
+    Re-evaluated per call so flag flips at test time take effect immediately.
+    """
+    if is_sysex_parser_js_runtime_enabled():
+        return compile_mpx1_tag_map_via_js()
+    return _NAME_TAG_MAP
 
 
 @dataclass
@@ -140,7 +154,7 @@ class MPX1SyxParser:
 
     def auto_tag_from_name(self, name: str) -> List[str]:
         """Return a deduplicated list of tags inferred from *name* tokens."""
-        return infer_auto_tags(name, _NAME_TAG_MAP)
+        return infer_auto_tags(name, _resolve_tag_map())
 
     # -------------------------------------------------------------------------
     # Frame splitting
