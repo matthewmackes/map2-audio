@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1529** Python | **1568** TypeScript | **181** C++/H | **147** Docs | **4151** total commits | **4** stars | **0** forks | **0** open issues
+**1529** Python | **1570** TypeScript | **181** C++/H | **147** Docs | **4153** total commits | **4** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`10100c43`](https://github.com/matthewmackes/map2-audio/commit/10100c43e7bb6783a3bc430edc47d3631dd4901d) | feat(t2499-a/follow-on): mount framework Configurator at ... | Map2 Audio | 2026-05-09 |
+| [`cce31513`](https://github.com/matthewmackes/map2-audio/commit/cce3151366817ea3a01b50d34c2a6f225a27fc9a) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-09 |
 | [`8dc929aa`](https://github.com/matthewmackes/map2-audio/commit/8dc929aa2866e69fc647a7ef40087c684272608a) | chore(t2499-a): autonomous-10 run closeout — 8/8 code sli... | Map2 Audio | 2026-05-09 |
 | [`08d4015c`](https://github.com/matthewmackes/map2-audio/commit/08d4015cb32ff268d87dc8f97bcda6eadd8acf84) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-09 |
 | [`8f1114b8`](https://github.com/matthewmackes/map2-audio/commit/8f1114b8f5b83a2ef426b9d6a9e66e45b5e315f7) | feat(t2499-a/8): End-to-end integration test for the Conf... | Map2 Audio | 2026-05-09 |
 | [`1bf80290`](https://github.com/matthewmackes/map2-audio/commit/1bf8029058371cc34d0869f166ce19f79519baf0) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-09 |
 | [`d64b5648`](https://github.com/matthewmackes/map2-audio/commit/d64b56488494171bc53060e32aa57e6bbd012484) | feat(t2499-a/7): Flip "Map a MIDI controller" card to Ava... | Map2 Audio | 2026-05-09 |
 | [`49266a2c`](https://github.com/matthewmackes/map2-audio/commit/49266a2cbd8e7178d1e9e81e5512e29f6551c90e) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-09 |
-| [`2af47bac`](https://github.com/matthewmackes/map2-audio/commit/2af47bacb18de9dba175d4884603414e8554a665) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-09 |
-| [`3fd72fc5`](https://github.com/matthewmackes/map2-audio/commit/3fd72fc5abf78d5cce1172587c9d22ba407a3dfb) | feat(t2499-a/6): Bindings writer to MIDI Services (idempo... | Map2 Audio | 2026-05-09 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
