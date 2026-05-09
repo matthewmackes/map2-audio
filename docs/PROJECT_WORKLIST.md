@@ -690,7 +690,7 @@ Last updated: 2026-05-08 EDT - Claude: epic filed via 3-cycle 5-question protoco
 ---
 
 ID: T2499-A
-Status: [ ] Todo
+Status: [>] In Progress
 Parent: T2499
 Title: Map a MIDI controller — generalize the MeloAudio Configurator pattern into a reusable wizard with layered scope
 Description:
@@ -709,8 +709,10 @@ Description:
 - Acceptance: Operator clicks the card → lands on MIDI Services Configurator → can pick a device-pack and bind it; OR if a known device is on USB, sees its deep configurator; OR if no known device, can MIDI-Learn-bind any controller. Bindings appear in the global MIDI Services Bindings list with `consumer_type=brain_slot`. MeloAudio Configurator continues to work (parity test: existing MeloAudio HIL acceptance stays green).
 - Estimated effort: Large (3–4 weeks). The framework extraction is most of the work; per-device tabs are thin after that.
 - Dependencies: T2459-H3-CFG (the reference pattern, already shipped).
+- **Slice progress** (2026-05-08, Cycle 2 of autonomous-10 run):
+  - **Slice 1 SHIPPED** — `app/services/devices/_shared/{__init__,protocols,override_store,registry}.py` lands the framework primitives. Five `runtime_checkable` Protocols (`DeviceDetector`, `DeviceDiscoverer`, `OverrideStore`, `ConfigInstaller`, `BindingPusher`) + concrete result types (`DeviceDetectionStatus`, `DevicePresence`, `ConfigInstallEvent`, `ConfigInstallPhase`, `BindingPushResult`, `DeviceDiscoverySession`). Reusable `YamlOverrideStore` extracted from the MeloAudio per-host override pattern (atomic write + schema_version + device-id validation + `~/.map2/devices/<pack>-<slug>.yaml` location). Thread-safe `DeviceConfiguratorRegistry` with opt-in per-primitive registration (so simple controllers register only `detector` + `pusher`). Process-wide `get_default_registry()` singleton. 33 framework unit tests in `tests/test_configurator_framework_t2499a.py`. Existing MeloAudio tests (56) remain green — no behavior changes to the device path yet (refactor is slice 3 / cycle 4).
 Assigned to: Claude
-Last updated: 2026-05-08 EDT - Claude: filed.
+Last updated: 2026-05-08 EDT - Claude: slice 1 (framework primitives) shipped.
 
 
 ---
