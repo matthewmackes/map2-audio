@@ -1,0 +1,70 @@
+.device-configurator {
+  display: flex;
+  flex-direction: column;
+  gap: 1.5rem;
+}
+
+.device-configurator__header {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.device-configurator__title {
+  font-size: 1.75rem;
+  line-height: 2.25rem;
+  margin: 0;
+}
+
+.device-configurator__subtitle {
+  margin: 0;
+  color: var(--cds-text-secondary);
+  max-width: 60rem;
+}
+
+.device-configurator__vendor {
+  margin: 0;
+  font-size: 0.875rem;
+  color: var(--cds-text-helper);
+}
+
+.device-configurator__loading {
+  padding: 1rem;
+}
+
+.device-configurator__status {
+  padding: 1.25rem 1.5rem 1.5rem;
+  display: flex;
+  flex-direction: column;
+  gap: 1rem;
+}
+
+.device-configurator__status-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  flex-wrap: wrap;
+}
+
+.device-configurator__status-title {
+  margin: 0;
+  font-size: 1rem;
+  line-height: 1.5rem;
+}
+
+.device-configurator__status-tags {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.device-configurator__status-copy {
+  margin: 0;
+  color: var(--cds-text-secondary);
+  max-width: 60rem;
+}
+
+.device-configurator__status-table {
+  --cds-structured-list-padding: 0.5rem;
+}
