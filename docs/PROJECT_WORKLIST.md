@@ -1116,7 +1116,18 @@ Completion note: 2026-04-28 — Codex: **Slice 2 SHIPPED (unified MIDI router mo
   Remaining for full H5 acceptance:
   - Land explicit v1 retirement flow (410 Gone after deprecation window).
   - Complete host-owned UMP round-trip and preserve recorder golden artifacts under the migrated path.
-Last updated: 2026-04-28 11:26 EDT - Codex: unified route-registration + callable-gating slices shipped; H5 remains in progress.
+  2026-04-28 — Claude: **Slice 12 SHIPPED (explicit v1 retirement flow — 410 Gone gated by MAP2_MIDI_LEGACY_RETIRED).**
+  Delivered:
+  - Added `app/routes/_midi_v1_retirement.py` with `is_legacy_midi_retired()` env-var helper, fixed `Sunset`/`Link`/`Deprecation` headers, and `include_legacy_midi_router(parent, legacy)` shim that mounts a 410-Gone catch-all (one route per legacy path, all methods) when the flag is truthy and falls back to the existing `deprecated=True` mount when the flag is unset.
+  - Updated `app/routes/midi.py` to route every legacy router (`midi_hub`, `midi_cluster`, `midi_learn`, `midi_commander_surface`, `enriched_midi_physical_surfaces`) through `include_legacy_midi_router`. v2 surface (`/api/v2/midi/...`) is unaffected by the flag in either state.
+  - 410 body uses the canonical error envelope from `docs/api-contract-standards.md`: `{"error": {"code": "midi_v1_retired", "message": "<path> retired; use /api/v2/midi/...", "details": {"replacement_prefix": "/api/v2/midi"}}}`.
+  - Retired legacy paths are dropped from the OpenAPI schema (`include_in_schema=False`) once the flag flips on.
+  - New `tests/test_midi_v1_retirement_t2459h5.py` covers: flag-off keeps legacy routes non-410; flag-on returns 410 + `Sunset`/`Link`/`Deprecation` headers + envelope shape on one path from each of the five legacy routers; v2 path (`/api/v2/midi/mappings`) present and non-deprecated in both states; retired paths absent from OpenAPI.
+  Validation:
+  - `pytest -q tests/test_midi_v1_retirement_t2459h5.py tests/test_midi_unified_routes_t2459h5.py tests/test_midi_v2_routes.py tests/test_route_registration_policy.py tests/test_midi_hub_available_guard_t2459h5.py` -> **28 passed**.
+  Remaining for full H5 acceptance:
+  - Complete host-owned UMP round-trip and preserve recorder golden artifacts under the migrated path.
+Last updated: 2026-04-28 EDT - Claude: slice 12 (explicit v1 retirement flow / 410 Gone via MAP2_MIDI_LEGACY_RETIRED) shipped; H5 remains in progress pending host-owned UMP round-trip + recorder goldens.
 
 ---
 
