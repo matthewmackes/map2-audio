@@ -39,12 +39,11 @@ const SETUP_TASKS: readonly SetupTaskMeta[] = [
     Icon: ConnectionSignal,
     status: 'available',
     roadmapTag: 'T2499-A',
-    // Deep-link into the MeloAudio Configurator — today the only
-    // landed deep-config flow. The framework's pack picker (slice
-    // 4 of T2499-A) lists every registered pack; future packs flip
-    // this to a generic /midi-services/devices/configurator route
-    // once they register.
-    navigateTo: '/midi-services/devices/meloaudio-midi-commander/configurator',
+    // Deep-link into the framework Configurator entry point. The
+    // pack picker there lists every registered device-pack; the
+    // operator picks one and either runs MIDI Learn or jumps into
+    // a pack's bespoke configurator (today: MeloAudio).
+    navigateTo: '/midi/devices/configurator',
   },
   {
     id: 'calibrate-mk1',

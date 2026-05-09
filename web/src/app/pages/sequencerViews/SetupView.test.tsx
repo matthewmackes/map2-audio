@@ -35,9 +35,9 @@ function renderInRouter() {
         <Routes>
           <Route path="/sequencer/setup" element={<SetupView />} />
           <Route
-            path="/midi-services/devices/meloaudio-midi-commander/configurator"
+            path="/midi/devices/configurator"
             element={
-              <div data-testid="meloaudio-configurator-page">configurator</div>
+              <div data-testid="framework-configurator-page">configurator</div>
             }
           />
         </Routes>
@@ -67,12 +67,12 @@ describe('SetupView — Sequencer Setup tasks', () => {
     expect(screen.getAllByText('Coming soon')).toHaveLength(2)
   })
 
-  it('navigates to the MeloAudio Configurator when "Map a MIDI controller" is clicked', () => {
+  it('navigates to the framework Configurator when "Map a MIDI controller" is clicked', () => {
     renderInRouter()
     const tile = screen.getByLabelText('Start setup task: Map a MIDI controller')
     fireEvent.click(tile)
     expect(
-      screen.getByTestId('meloaudio-configurator-page'),
+      screen.getByTestId('framework-configurator-page'),
     ).toBeInTheDocument()
   })
 

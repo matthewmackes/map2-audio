@@ -101,6 +101,7 @@ const MidiDeviceMcuLanding = lazy(() => import('./pages/midi-services/MidiDevice
 const MidiDeviceLaunchControlLanding = lazy(() => import('./pages/midi-services/MidiDeviceLaunchControlLanding').then(m => ({ default: m.MidiDeviceLaunchControlLanding })))
 const MidiDeviceMidiCommanderLanding = lazy(() => import('./pages/midi-services/MidiDeviceMidiCommanderLanding').then(m => ({ default: m.MidiDeviceMidiCommanderLanding })))
 const MeloAudioCommanderConfigurator = lazy(() => import('./pages/midi-services/MeloAudioCommanderConfigurator').then(m => ({ default: m.MeloAudioCommanderConfigurator })))
+const MidiServicesConfiguratorPage = lazy(() => import('./pages/midi-services/MidiServicesConfiguratorPage').then(m => ({ default: m.MidiServicesConfiguratorPage })))
 // T2487-3 — Expression unified-shell console (replaces the iter-8
 // MidiDeviceExpressionLanding cross-link; deleted Loop 6 as dead code).
 const ExpressionConsoleView = lazy(() => import('./components/Devices/Expression/ExpressionConsoleView').then(m => ({ default: m.ExpressionConsoleView })))
@@ -832,6 +833,15 @@ export function App() {
                                   {/* T2459-H3-CFG Phase 5 slice 2-4 — Configurator page
                                       (status + Discovery Wizard + Custom Firmware install). */}
                                   <Route path="devices/meloaudio-midi-commander/configurator" element={<MeloAudioCommanderConfigurator />} />
+                                  {/* T2499-A follow-on (autonomous-10 + 1) — generic
+                                      Configurator entry point: device-pack picker +
+                                      MIDI Learn fallback. The Sequencer Setup "Map a
+                                      MIDI controller" card deep-links here. Picking a
+                                      recognised pack navigates to its bespoke route
+                                      (today: meloaudio-midi-commander/configurator;
+                                      future packs land their own tabs on the framework
+                                      shell). */}
+                                  <Route path="devices/configurator" element={<MidiServicesConfiguratorPage />} />
                                   {/* T2487-3 — devices/expression no longer renders the
                                       iter-8 cross-link landing; the unified shell mount
                                       at /midi/devices/expression/* (declared above the
