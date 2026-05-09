@@ -1,6 +1,7 @@
 import { ClickableTile, Tile } from '@carbon/react'
 import { Keyboard, ConnectionSignal, Calibrate, Network_4 } from '@carbon/icons-react'
 import { useState } from 'react'
+import { useNavigate } from 'react-router-dom'
 
 import { StatusChip } from '../../components/primitives'
 import { ConnectKeyboardTask } from '../../components/Sequencer/Setup/ConnectKeyboardTask'
@@ -15,6 +16,10 @@ interface SetupTaskMeta {
   Icon: typeof Keyboard
   status: 'available' | 'coming-soon'
   roadmapTag?: string
+  /** When `status === 'available'` and `navigateTo` is set, clicking
+   *  the tile navigates here. Otherwise the legacy on-page task
+   *  flow runs (today: only `connect-keyboard`). */
+  navigateTo?: string
 }
 
 const SETUP_TASKS: readonly SetupTaskMeta[] = [
@@ -32,8 +37,14 @@ const SETUP_TASKS: readonly SetupTaskMeta[] = [
     description:
       'Bind faders, encoders, and buttons on a control surface to MAP2 targets via the controller-host mapping engine.',
     Icon: ConnectionSignal,
-    status: 'coming-soon',
-    roadmapTag: 'T2459',
+    status: 'available',
+    roadmapTag: 'T2499-A',
+    // Deep-link into the MeloAudio Configurator — today the only
+    // landed deep-config flow. The framework's pack picker (slice
+    // 4 of T2499-A) lists every registered pack; future packs flip
+    // this to a generic /midi-services/devices/configurator route
+    // once they register.
+    navigateTo: '/midi-services/devices/meloaudio-midi-commander/configurator',
   },
   {
     id: 'calibrate-mk1',
@@ -57,9 +68,18 @@ const SETUP_TASKS: readonly SetupTaskMeta[] = [
 
 export function SetupView() {
   const [activeTaskId, setActiveTaskId] = useState<SetupTaskId | null>(null)
+  const navigate = useNavigate()
 
   if (activeTaskId === 'connect-keyboard') {
     return <ConnectKeyboardTask onExit={() => setActiveTaskId(null)} />
+  }
+
+  const handleAvailableClick = (task: SetupTaskMeta) => {
+    if (task.navigateTo) {
+      navigate(task.navigateTo)
+    } else {
+      setActiveTaskId(task.id)
+    }
   }
 
   return (
@@ -102,7 +122,7 @@ export function SetupView() {
               {isAvailable ? (
                 <ClickableTile
                   className="brain-setup__tile brain-setup__tile--available"
-                  onClick={() => setActiveTaskId(task.id)}
+                  onClick={() => handleAvailableClick(task)}
                   aria-label={`Start setup task: ${task.title}`}
                 >
                   {tile}

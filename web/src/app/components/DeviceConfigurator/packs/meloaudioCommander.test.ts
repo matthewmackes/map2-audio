@@ -173,7 +173,7 @@ describe('meloaudioCommanderPack descriptor', () => {
 
   it('points to the bespoke production UI route in metadata', () => {
     expect(meloaudioCommanderPack.metadata?.bespoke_route).toBe(
-      '/midi-services/devices/meloaudio-commander',
+      '/midi-services/devices/meloaudio-midi-commander/configurator',
     )
   })
 

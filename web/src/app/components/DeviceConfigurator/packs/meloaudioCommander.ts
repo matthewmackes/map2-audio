@@ -82,6 +82,6 @@ export const meloaudioCommanderPack: ConfiguratorPackDescriptor = {
   metadata: {
     docs_url:
       'https://github.com/matthewmackes/map2-audio/blob/master/docs/midi/MELOAUDIO_COMMANDER_CONFIGURATOR.md',
-    bespoke_route: '/midi-services/devices/meloaudio-commander',
+    bespoke_route: '/midi-services/devices/meloaudio-midi-commander/configurator',
   },
 }
