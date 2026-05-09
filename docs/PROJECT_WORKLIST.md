@@ -1028,7 +1028,17 @@ Completion note: 2026-04-28 — Codex: **Slice 1 SHIPPED (shared MIDI curve enum
   - IntelFX parser cutover behind the same flag (next slice; same facade — `auto_tag_from_name_via_js(..., "intelfx")` already shipped).
   - Maschine MK1 and other device-service cuts to host-client facades.
   - Bench HIL parity evidence with migrated devices.
-Last updated: 2026-04-28 EDT - Claude: slice 4 (MPX-1 parser routes through device-pack JS runtime under MAP2_SYSEX_PARSER_USE_JS_RUNTIME) shipped; H4 remains in progress pending IntelFX cutover + Maschine MK1 + bench HIL parity.
+  2026-04-28 — Claude: **Slice 5 SHIPPED (IntelFX SysEx parser tag-extraction routes through device-pack JS runtime when MAP2_SYSEX_PARSER_USE_JS_RUNTIME is on).**
+  Delivered:
+  - Extended `app/services/sysex_tags_js_runtime.py` with `compile_intelfx_tag_map_via_js()` — independent `@functools.lru_cache(maxsize=1)` mirror of the MPX-1 helper, evaluating `MAP2SysexTags.buildIntelfxTagRules()` via the same Node-subprocess pattern and surfacing failures through `SysexJsRuntimeError`.
+  - Wired `app/services/intelfx_syx_parser.py` to a per-call `_resolve_tag_map()` seam that mirrors the MPX-1 cutover: flag off → existing Python `compile_intelfx_tag_map()` (default behavior unchanged); flag on → JS runtime via the facade. Output is bit-identical (same regex source, same tag arrays — parity already proven in Slice 3).
+  - Added `tests/test_intelfx_syx_parser_js_runtime_t2459h4.py`: flag-off baseline coverage (clean/chorus/hush/lead/plate/wah/crunch/acoustic/slap and a no-tag control), flag-on bit-identical-to-baseline parity, and facade caching (1 subprocess per process). Module-level skip when `node` is not on PATH.
+  Validation:
+  - `pytest -q tests/test_intelfx_syx_parser_js_runtime_t2459h4.py tests/test_intelfx_syx_parser.py tests/test_mpx1_syx_parser_js_runtime_t2459h4.py tests/test_mpx1_syx_parser.py tests/test_sysex_tags_shared_t2459h4.py tests/test_sysex_tags_runtime_js_t2459h4.py` -> **83 passed**.
+  Remaining for full H4 acceptance:
+  - Maschine MK1 and other device-service cuts to host-client facades.
+  - Bench HIL parity evidence with migrated devices.
+Last updated: 2026-04-28 EDT - Claude: slice 5 (IntelFX parser routes through device-pack JS runtime under MAP2_SYSEX_PARSER_USE_JS_RUNTIME) shipped; H4 remains in progress pending Maschine MK1 cutover + bench HIL parity.
 
 ---
 
