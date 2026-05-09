@@ -67,6 +67,7 @@ Each task/subtask should contain these fields:
 - `[✓]` `T2496` — AVB Services full-completion (shipped 2026-05-05; 8 sub-tasks; +22 pytest +17 jest; bench-side visual verification remains as operator gate)
 - `[✓]` `T2497` — Audio Artifacts global tree nav: remove duplicated "Discover" entries under every subcategory (shipped 2026-05-05)
 - `[✓]` `T2498` — Baked `MAP2_AUDIO_PREFER_JACK=1` into repo `systemd/map2-backend.service` (closed 2026-05-08). Fresh installs no longer regress to ALSA-via-PipeWire on JUCE device open. Live bench unit already had this via `15-prefer-jack.conf` drop-in; repo copy now matches.
+- `[ ]` `T2499` — Sequencer Setup "Coming Soon" cards epic (filed 2026-05-08 via 5-question protocol × 3 cycles): T2499-A MIDI controller mapping wizard (generalize T2459-H3-CFG into a reusable Configurator framework + layered scope: device-pack picker + deep configurator + MIDI Learn fallback), T2499-B Maschine MK1 full T700 onboarding (audit T700 first; dual-surface web + MK1 LCD; per-unit YAML keyed by USB serial), T2499-C AVDECC Sequencer-context binding (simulator-backed v1, T004 as production gate; tiered multi-entity UX).
 - `[✗]` `T004` — AVB hardware qualification/release gating (lab-blocked)
 - `[✗]` `T065` — Tesira parity release closure (hardware evidence blocked)
 
@@ -636,6 +637,103 @@ Prior — 2026-05-05 EDT — Slices 2-6 SHIPPED + Mutation slice 1 SHIPPED. 15 u
 
 
 ## Todo
+
+ID: T2499
+Status: [ ] Todo
+Title: Sequencer Setup "Coming Soon" Cards — graduate all three to fully operational
+Description:
+- Goal: The Sequencer page's Setup tab (`Operator setup` section) currently shows three onboarding cards labeled `Coming soon`: "Map a MIDI controller" (T2459), "Calibrate Maschine MK1" (T700), "Discover AVDECC devices" (AVDECC). This epic graduates each from `Coming soon` to `Available` with a complete, operator-tested implementation. The fourth card on the page, "Connect a new keyboard", is already `Available` and out of scope.
+- Why it matters: Onboarding is the first surface a new operator touches. Three of four onboarding paths currently leave the operator blocked at a placeholder card. Closing this epic means a fresh-install bench can complete every documented onboarding path without manually walking through the underlying APIs.
+- Architecture posture (locked across three Q&A cycles, 2026-05-08):
+  - Each card deep-links into its canonical service area (MIDI Services / Maschine onboarding / AVB Services); the Sequencer Setup card itself is just the entry point. Per-feature wizards live in their canonical home, not duplicated across pages.
+  - The MeloAudio Commander Configurator (T2459-H3-CFG) becomes the reference pattern. T2499-A generalizes it into a reusable Configurator framework so every device-pack drops in by registering a detection probe + (optional) custom config tab.
+- Sub-tasks: T2499-A (MIDI controller mapping wizard), T2499-B (Maschine MK1 onboarding), T2499-C (AVDECC discovery → Brain binding).
+- Acceptance: All three cards on the Sequencer Setup tab show `Available` (or, in T2499-C's case, `Available (simulator)` until T004 closes). Each onboarding path is reachable from the card, completes a full operator flow, and writes to its canonical authority.
+- Estimated effort: Large (~6–10 weeks across the three sub-tasks; T2499-A is the largest because it generalizes T2459-H3-CFG). Each sub-task is independently shippable.
+Subtasks: T2499-A, T2499-B, T2499-C
+Assigned to: Claude
+Last updated: 2026-05-08 EDT - Claude: epic filed via 3-cycle 5-question protocol (5 questions per coming-soon feature). Each sub-task carries locked decisions inline.
+
+
+---
+
+ID: T2499-A
+Status: [ ] Todo
+Parent: T2499
+Title: Map a MIDI controller — generalize the MeloAudio Configurator pattern into a reusable wizard with layered scope
+Description:
+- Goal: Implement the "Map a MIDI controller" Sequencer Setup card. Click → operator deep-links into MIDI Services where a wizard offers three layered paths: (1) pick from known device-packs (Commander, Maschine MK1 MIDI mode, MPX-1, IntelFX, future packs); (2) launch a known device's deep configurator if detected on USB (the MeloAudio Configurator pattern, generalized); (3) fall back to MIDI Learn for unknown controllers. All three paths write bindings to MIDI Services as the canonical binding authority (`consumer_type=brain_slot` per the InlineNotification on the page).
+- Locked decisions (5-question protocol, cycle 1, 2026-05-08):
+  - **Q1 — scope:** all-three layered (device-pack picker + per-device deep configurator + MIDI Learn fallback).
+  - **Q2 — binding target:** MIDI Services Bindings (canonical authority); not snapshot-scoped, not dual.
+  - **Q3 — pattern reuse:** generalize T2459-H3-CFG into a reusable Configurator framework under `app/services/devices/_shared/` + `web/src/app/components/DeviceConfigurator/`. Each new device-pack drops in by registering a detection probe + optional custom config tab.
+  - **Q4 — entry-point UX:** Sequencer Setup card deep-links into MIDI Services; the canonical wizard surface lives there. Multiple entry points, single wizard.
+- Required outputs:
+  - `app/services/devices/_shared/configurator_framework.py` — generalized detection / discovery / override / install / push primitives extracted from `app/services/devices/meloaudio/`.
+  - `web/src/app/components/DeviceConfigurator/` — Carbon shell (status card + tab navigator + per-device tab slot).
+  - MeloAudio Configurator refactored to use the shared framework (proves it's actually generic).
+  - Device-pack picker UI; MIDI Learn fallback module; bindings writer to MIDI Services.
+  - Sequencer Setup card update: `Coming soon` → `Available`; deep-link to `/midi/devices/configurator`.
+- Acceptance: Operator clicks the card → lands on MIDI Services Configurator → can pick a device-pack and bind it; OR if a known device is on USB, sees its deep configurator; OR if no known device, can MIDI-Learn-bind any controller. Bindings appear in the global MIDI Services Bindings list with `consumer_type=brain_slot`. MeloAudio Configurator continues to work (parity test: existing MeloAudio HIL acceptance stays green).
+- Estimated effort: Large (3–4 weeks). The framework extraction is most of the work; per-device tabs are thin after that.
+- Dependencies: T2459-H3-CFG (the reference pattern, already shipped).
+Assigned to: Claude
+Last updated: 2026-05-08 EDT - Claude: filed.
+
+
+---
+
+ID: T2499-B
+Status: [ ] Todo
+Parent: T2499
+Title: Calibrate Maschine MK1 — full T700 onboarding (pads + pressure + screen + profile selection) with dual-surface UX
+Description:
+- Goal: Implement the "Calibrate Maschine MK1" Sequencer Setup card as the **full T700 'MK1 as primary headless console' onboarding**, not just calibration: pad sensitivity + pressure curves + LCD screen calibration + 25-profile catalog selection + admin-console / boot-shutdown sequence integration. The flow runs as a **dual surface** — both the web UI and the MK1's own LCD show calibration state and accept input, kept in sync via shared state.
+- Locked decisions (5-question protocol, cycle 2, 2026-05-08):
+  - **Q1 — scope:** full T700 onboarding, not just calibration. Wraps the 25-profile catalog from the T700 epic into the calibration flow as the final step.
+  - **Q2 — existing-code reuse:** **PREREQUISITE** — audit T700's 75 locked decisions before architecting. T700 may already specify the onboarding architecture; choose between (a) wrap-existing-daemon, (b) onboarding-orchestrator, (c) state-machine-refactor based on what's already locked. T700 audit ships as the first slice.
+  - **Q3 — presence model:** dual-surface (web + MK1 LCD). Operator picks the surface they prefer; state is shared via a single state machine.
+  - **Q4 — calibration storage:** per-unit YAML keyed by USB serial number, in `~/.map2/devices/`. Mirrors the MeloAudio discovery override pattern but adds the unit-identity dimension so operators with multiple MK1s on one host get distinct calibrations, and an MK1 carries its calibration when moved between hosts.
+- Required outputs:
+  - Slice 1 — T700 audit (`docs/maschine/T700_LOCKED_DECISIONS_AUDIT.md`): enumerate the 75 locked decisions, classify which apply to onboarding, recommend which architecture (wrap / orchestrate / state-machine) is consistent with what's already locked.
+  - Slice 2+ — implementation per the audit-recommended architecture.
+  - Per-unit calibration store: `~/.map2/devices/maschine-mk1-<USB_SERIAL>-calibrated.yaml`. Schema covers per-pad sensitivity, pressure curves, LCD calibration, selected profile.
+  - Dual-surface state machine driving both web UI and MK1 LCD render pipeline.
+  - Sequencer Setup card update: `Coming soon` → `Available`; deep-link to MK1 onboarding entry.
+- Acceptance: Operator with a fresh MK1 on USB clicks the card → onboarding state machine starts → operator can complete pad / pressure / screen calibration + profile selection on either the web UI or the MK1 LCD → calibration data lands at `~/.map2/devices/maschine-mk1-<serial>-calibrated.yaml` → MK1 is operationally ready as a primary console. T700 acceptance text from the original epic must be satisfied.
+- Estimated effort: Large (4–6 weeks; depends heavily on what the T700 audit surfaces). Audit slice is ~1 week; implementation slices follow the audit's architecture call.
+- Dependencies: T666 / T700 epics (existing Maschine work). T700 audit is the gating prerequisite.
+Assigned to: Claude
+Last updated: 2026-05-08 EDT - Claude: filed.
+
+
+---
+
+ID: T2499-C
+Status: [ ] Todo
+Parent: T2499
+Title: Discover AVDECC devices — Sequencer-context binding flow with simulator-backed shipment + T004 production gate
+Description:
+- Goal: Implement the "Discover AVDECC devices" Sequencer Setup card as a **Sequencer-context binding flow**: AVDECC audio streams → Brain inputs (not generic routing). Wizard discovers AVDECC entities via the la_avdecc backend already shipped under T2496, scales the multi-entity UX from 1 entity (one-click bind) to 10+ entities (DataTable + auto-suggest + bulk-import), surfaces substrate readiness state inline (rather than gating on it), and ships against an AVDECC simulator now with T004's hardware lab as the production-readiness gate.
+- Locked decisions (5-question protocol, cycle 3, 2026-05-08):
+  - **Q1 — scope:** Sequencer-context binding flow (AVDECC streams → Brain inputs), not generic routing, not a full commissioning workbench. Tightly coupled to the active Brain on the page.
+  - **Q2 — multi-entity handling:** all four UX modes layered (tiered scaling + DataTable picker + auto-suggest by entity-name heuristics + bulk-import). UX adapts to the bench size automatically; operator can override the auto-suggested mode.
+  - **Q3 — readiness gate:** always-launch; surface PTP / interface / entity-count state in the wizard with a 'Fix it' link to AVB Services config. Don't block the wizard on substrate state.
+  - **Q4 — T004 hardware-blocked handling:** ship now with simulator-backed wizard + diagnostic empty state for the no-hardware case. T004 stays the production-readiness gate; the card flips from `Coming soon` → `Available (simulator)` now and `Available` once T004 closes.
+- Required outputs:
+  - AVDECC simulator (`app/services/avb/avdecc_simulator.py`, if not already present from T2496) emitting synthetic ADP / AECP / ACMP traffic against the la_avdecc observer API.
+  - Wizard UI under `web/src/app/pages/avb/AvdeccBindingWizard.tsx` (or canonical AVB Services area). Tiered multi-entity UX (1 = one-click, 2–9 = DataTable + auto-suggest, 10+ = bulk-import + filter).
+  - Brain-input binding writer that takes an AVDECC stream descriptor and a Brain input slot index, writes the binding through the existing routing matrix.
+  - Substrate-state diagnostic panel (PTP / interface / entity-count) embedded in the wizard.
+  - Sequencer Setup card update: `Coming soon` → `Available (simulator)` for v1; flips to `Available` once T004 closes.
+- Acceptance: Operator clicks the card → lands on the binding wizard → with simulator running, sees entities + can complete a binding to a Brain input → binding visible in the routing matrix. Real-hardware acceptance gated by T004's lab availability per the existing AVB Services policy.
+- Estimated effort: Medium-Large (2–3 weeks). Simulator + wizard UI are most of the work; binding writer reuses T2496 routing matrix.
+- Dependencies: T2496 (AVB Services, shipped). T004 (real-hardware production gate, blocked on lab availability).
+Assigned to: Claude
+Last updated: 2026-05-08 EDT - Claude: filed.
+
+
+---
 
 ID: T2459-H6
 Status: [ ] Todo
