@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1529** Python | **1558** TypeScript | **181** C++/H | **147** Docs | **4135** total commits | **4** stars | **0** forks | **0** open issues
+**1529** Python | **1560** TypeScript | **181** C++/H | **147** Docs | **4137** total commits | **4** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`3edfdffd`](https://github.com/matthewmackes/map2-audio/commit/3edfdffdbd1d261888eff7138ba55f85b0202483) | feat(t2499-a/3): MeloAudio Configurator adapter onto shar... | Map2 Audio | 2026-05-08 |
+| [`398f9c79`](https://github.com/matthewmackes/map2-audio/commit/398f9c7989624d88d7e5e8bdc2c9e504f1ecb77c) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-09 |
 | [`bde46bd7`](https://github.com/matthewmackes/map2-audio/commit/bde46bd75ba886f2196fcbbe7959cfe609d07dbf) | feat(t2499-a/2): Configurator Carbon shell + status card ... | Map2 Audio | 2026-05-08 |
 | [`3662493e`](https://github.com/matthewmackes/map2-audio/commit/3662493ec9e401b30aa41075f0fb35163194fd61) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-09 |
 | [`e6684ba0`](https://github.com/matthewmackes/map2-audio/commit/e6684ba066527d35f6fae9267f40f3a5423302e1) | feat(t2499-a/1): Configurator framework primitives | Map2 Audio | 2026-05-08 |
 | [`8c0b70e2`](https://github.com/matthewmackes/map2-audio/commit/8c0b70e2ab86d973cb6d754640c7193c9f133bfd) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-09 |
 | [`72a65a7d`](https://github.com/matthewmackes/map2-audio/commit/72a65a7dc0a6e185e51802121c0da47611cf4de4) | fix(t2500): IR pickers fail with bogus node_id from TanSt... | Map2 Audio | 2026-05-08 |
 | [`3c89db25`](https://github.com/matthewmackes/map2-audio/commit/3c89db25224988c4686fbdac09d9759b7e5a4930) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-09 |
-| [`6831906a`](https://github.com/matthewmackes/map2-audio/commit/6831906a501867314c69856db9b50ac8f3752b2a) | chore(worklist): file T2500 IR picker bug (Cabinet + Reverb) | Map2 Audio | 2026-05-08 |
-| [`0acb8877`](https://github.com/matthewmackes/map2-audio/commit/0acb887749286195fc66b9206d72892240a43816) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-09 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
