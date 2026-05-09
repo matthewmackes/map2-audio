@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1529** Python | **1560** TypeScript | **181** C++/H | **147** Docs | **4137** total commits | **4** stars | **0** forks | **0** open issues
+**1529** Python | **1562** TypeScript | **181** C++/H | **147** Docs | **4139** total commits | **4** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -175,7 +175,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-DOCS:START -->
 | Document | Last Updated |
 |:---------|:------------|
-| [MAP2 Canonical Project Worklist](https://github.com/matthewmackes/map2-audio/blob/master/docs/PROJECT_WORKLIST.md) | 2026-05-08 |
+| [MAP2 Canonical Project Worklist](https://github.com/matthewmackes/map2-audio/blob/master/docs/PROJECT_WORKLIST.md) | 2026-05-09 |
 | [MAP2 Audio Platform — AI Instructions](https://github.com/matthewmackes/map2-audio/blob/master/docs/CLAUDE.md) | 2026-05-06 |
 | [Autonomous Loop Closure Status — 2026-05-04 (cycles 11-60)](https://github.com/matthewmackes/map2-audio/blob/master/docs/PROJECT_WORKLIST_AUTONOMOUS_LOOP_STATUS_20260504.md) | 2026-05-04 |
 | [MAP2 Renames — Migration Notes](https://github.com/matthewmackes/map2-audio/blob/master/docs/RENAMES.md) | 2026-05-03 |
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`64bab844`](https://github.com/matthewmackes/map2-audio/commit/64bab8448706bb6143b6a38eb20a46129f5f8500) | feat(t2499-a/4): Device-pack picker with presence-driven ... | Map2 Audio | 2026-05-09 |
+| [`f7a9996b`](https://github.com/matthewmackes/map2-audio/commit/f7a9996b808a46b93a6c4b7942df6316f47f68dc) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-09 |
 | [`3edfdffd`](https://github.com/matthewmackes/map2-audio/commit/3edfdffdbd1d261888eff7138ba55f85b0202483) | feat(t2499-a/3): MeloAudio Configurator adapter onto shar... | Map2 Audio | 2026-05-08 |
 | [`398f9c79`](https://github.com/matthewmackes/map2-audio/commit/398f9c7989624d88d7e5e8bdc2c9e504f1ecb77c) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-09 |
 | [`bde46bd7`](https://github.com/matthewmackes/map2-audio/commit/bde46bd75ba886f2196fcbbe7959cfe609d07dbf) | feat(t2499-a/2): Configurator Carbon shell + status card ... | Map2 Audio | 2026-05-08 |
 | [`3662493e`](https://github.com/matthewmackes/map2-audio/commit/3662493ec9e401b30aa41075f0fb35163194fd61) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-09 |
 | [`e6684ba0`](https://github.com/matthewmackes/map2-audio/commit/e6684ba066527d35f6fae9267f40f3a5423302e1) | feat(t2499-a/1): Configurator framework primitives | Map2 Audio | 2026-05-08 |
 | [`8c0b70e2`](https://github.com/matthewmackes/map2-audio/commit/8c0b70e2ab86d973cb6d754640c7193c9f133bfd) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-09 |
-| [`72a65a7d`](https://github.com/matthewmackes/map2-audio/commit/72a65a7dc0a6e185e51802121c0da47611cf4de4) | fix(t2500): IR pickers fail with bogus node_id from TanSt... | Map2 Audio | 2026-05-08 |
-| [`3c89db25`](https://github.com/matthewmackes/map2-audio/commit/3c89db25224988c4686fbdac09d9759b7e5a4930) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-09 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
