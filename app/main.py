@@ -1212,6 +1212,16 @@ def create_app():
         except Exception as e:
             logger.warning(f"Failed to load device-pack auto-gen routes: {e}")
 
+        # T2499-A follow-on / autonomous-10+1 cycle 9 — Configurator
+        # pack-discovery seam. Backs the framework picker so the
+        # frontend stops hardcoding the registered pack list.
+        try:
+            from app.routes import configurator_packs
+            app.include_router(configurator_packs.router)
+            logger.info("Configurator pack-discovery routes registered")
+        except Exception as e:
+            logger.warning(f"Failed to load configurator pack-discovery routes: {e}")
+
         # T2459-H5 Slice 16 — UMP capabilities is mounted under the
         # unified MIDI router (`app.routes.midi`); the explicit import
         # below satisfies the route-registration policy test that

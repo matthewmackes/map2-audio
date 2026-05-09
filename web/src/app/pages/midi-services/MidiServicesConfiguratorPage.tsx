@@ -15,6 +15,7 @@
  */
 import { useMemo, useState } from 'react'
 import { useNavigate } from 'react-router-dom'
+import { useQuery } from '@tanstack/react-query'
 import { Heading, Layer, Section } from '@carbon/react'
 
 import { DevicePackPicker } from '../../components/DeviceConfigurator/DevicePackPicker'
@@ -28,7 +29,16 @@ import { submitBrainSlotBinding } from '../../components/DeviceConfigurator/bind
 import type { ConfiguratorPackDescriptor } from '../../components/DeviceConfigurator/types'
 import { meloaudioCommanderPack } from '../../components/DeviceConfigurator/packs/meloaudioCommander'
 import { createMidiLearnPollingSubscriber } from '../../components/DeviceConfigurator/midiLearnPollingSubscriber'
+import { configuratorPacksApi } from '../../../map2/clients/configuratorPacks'
 import { useToasts } from '../../components/Toasts'
+
+// Cycle 9 / 2026-05-09 — local descriptor library keyed by pack_id so
+// the backend pack-discovery list can drive UI selection. New packs
+// (Maschine MK1 / AVDECC) register their descriptor here once their
+// bespoke flows land.
+const LOCAL_PACK_REGISTRY: Record<string, ConfiguratorPackDescriptor> = {
+  meloaudio_commander: meloaudioCommanderPack,
+}
 
 // Cycle 8 / 2026-05-09 — replaces the no-op subscriber with a real
 // polling bridge over GET /api/midi/bindings/learn/last-cc.
@@ -69,10 +79,32 @@ export function MidiServicesConfiguratorPage({
   const { pushToast } = useToasts()
   const [view, setView] = useState<'picker' | 'learn'>('picker')
 
-  const registeredPacks = useMemo(
-    () => packs ?? [meloaudioCommanderPack],
-    [packs],
-  )
+  // Cycle 9 — backend-driven pack discovery. The backend reports which
+  // pack_ids are registered + available; the frontend renders only the
+  // packs whose descriptors it knows about locally (so a backend-only
+  // pack with no UI yet is silently filtered until its descriptor
+  // lands). Falls back to the full local registry if the backend call
+  // hasn't resolved yet (or fails) — matches the prior hardcoded
+  // behavior so the page stays usable in offline tests.
+  const packsQuery = useQuery({
+    queryKey: ['configurator-packs'],
+    queryFn: () => configuratorPacksApi.list(),
+    enabled: packs === undefined,
+    staleTime: 30_000,
+  })
+
+  const registeredPacks = useMemo(() => {
+    if (packs !== undefined) return packs
+    const backendList = packsQuery.data?.packs
+    if (!backendList || backendList.length === 0) {
+      return Object.values(LOCAL_PACK_REGISTRY)
+    }
+    return backendList
+      .map((entry) => LOCAL_PACK_REGISTRY[entry.pack_id])
+      .filter((descriptor): descriptor is ConfiguratorPackDescriptor =>
+        descriptor !== undefined,
+      )
+  }, [packs, packsQuery.data])
 
   const handlePickPack = (pack: ConfiguratorPackDescriptor) => {
     const route = pack.metadata?.bespoke_route
