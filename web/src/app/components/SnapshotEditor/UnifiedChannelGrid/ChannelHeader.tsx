@@ -1,11 +1,10 @@
-import type { CSSProperties } from 'react'
 import { Button, Tag } from '@carbon/react'
 import { TrashCan, VolumeMute, VolumeUp } from '@carbon/icons-react'
 
 import { SegmentedLedText } from '../../Displays/SegmentedLedText'
 import { FlowLevelControl } from '../../../pages/snapshotEditor/FlowLevelControl'
 
-import { COLUMN_WIDTHS, ROW_HEIGHTS, type UnifiedChannelRow } from './gridConstants'
+import { type UnifiedChannelRow } from './gridConstants'
 import type { ChainMeterReading } from './useChainMeter'
 import type { ChannelStripProps } from './UnifiedChannelGrid'
 
@@ -20,10 +19,10 @@ export interface ChannelHeaderProps {
 const CLIP_LED_COLOR = 'var(--cds-support-error, #da1e28)'
 
 export function ChannelHeader({ row, meter, strip, onToggleMute, onToggleSolo }: ChannelHeaderProps) {
-  const style: CSSProperties = {
-    width: COLUMN_WIDTHS.channelHeader,
-    height: ROW_HEIGHTS.channel,
-  }
+  // T2505: width comes from the parent .ucg-channel-row CSS grid track
+  // (240px), height from the row container. Inline `width` here would
+  // override the grid track and cause the row to overflow horizontally
+  // — exactly what produced the scrollbar before this fix.
 
   const flowLabel = strip?.flowLabel ?? null
   const identitySubtitle = strip?.identitySubtitle ?? row.name
@@ -37,7 +36,6 @@ export function ChannelHeader({ row, meter, strip, onToggleMute, onToggleSolo }:
   return (
     <div
       className={`ucg-channel-header${showStrip ? ' ucg-channel-header--strip' : ''}`}
-      style={style}
       role="rowheader"
       data-row-id={row.id}
       data-stereo={row.stereo ? 'true' : 'false'}

@@ -136,17 +136,27 @@
 
 /* Consolidated channel-strip layout (T2474 — "Signal Chain Update"):
    absorbs the per-flow toolbar that used to sit above the grid into the
-   left column of every chain row. Five auto rows, top-aligned. */
+   left column of every chain row.
+
+   T2505: switched from `grid-template-rows: auto auto auto auto auto`
+   (which was both fragile — adding a 6th row clipped — and capped the
+   container so strip-controls were pushed off the bottom edge) to a
+   flex column so every section (identity, path, channel-sub, VU,
+   fader, strip-controls) stacks naturally. The override here also has
+   to redeclare `display: flex` because the base `.ucg-channel-header`
+   selector sets `display: grid`. */
 .ucg-channel-header--strip {
-  grid-template-rows: auto auto auto auto auto;
+  display: flex;
+  flex-direction: column;
   gap: var(--cds-spacing-02, 4px);
   padding: var(--cds-spacing-03, 8px);
-  align-content: start;
   background: linear-gradient(
     180deg,
     var(--cds-layer-02, #262626) 0%,
     var(--cds-layer-01, #161616) 100%
   );
+  /* Flex children must not overflow the 240px column. */
+  overflow: hidden;
 }
 
 .ucg-channel-header__labels {
@@ -309,7 +319,11 @@
   flex-wrap: wrap;
   align-items: center;
   gap: var(--cds-spacing-02, 4px);
-  margin-block-start: 2px;
+  /* Anchor the controls to the bottom of the column (T2505 — user
+     requested "below CLIP" placement). The flex column above eats the
+     remaining space, pushing this row down. */
+  margin-block-start: auto;
+  padding-block-start: var(--cds-spacing-02, 4px);
 }
 
 .ucg-channel-header__pill {
@@ -366,19 +380,24 @@
 
 .ucg-block {
   position: relative;
-  display: grid;
-  grid-template-columns: auto 1fr;
-  grid-template-rows: auto auto;
-  gap: 4px 8px;
+  /* T2505: re-laid from icon-left/label-right grid to a vertical
+     "card" stack — hero icon top, label below, lower-third strip
+     pinned to the bottom (CPU% + remove-X). Matches the user's
+     "more traditional way" ask. */
+  display: flex;
+  flex-direction: column;
   align-items: center;
-  padding: 6px 10px 18px;
+  /* Reserve room at the bottom for the absolutely-positioned
+     `__lower-third` strip (~18px). */
+  padding: 8px 10px 22px;
+  gap: 4px;
   background: var(--cds-layer-03, #393939);
   border: 1px solid var(--cds-border-subtle-02, #525252);
   border-left-width: 4px;
   border-radius: 4px;
   color: var(--cds-text-primary, #f4f4f4);
   cursor: pointer;
-  text-align: left;
+  text-align: center;
   font-size: 12px;
   overflow: hidden;
   transition: background var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease), border-color var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease);
@@ -400,23 +419,34 @@
 }
 
 .ucg-block__icon {
-  grid-row: 1 / span 2;
   display: flex;
   align-items: center;
   justify-content: center;
   color: var(--cds-icon-primary, #f4f4f4);
+  /* Take the upper portion of the card. The label sits below; the
+     lower-third strip is absolutely positioned over the bottom edge. */
+  flex: 1 1 auto;
+  min-height: 0;
+  margin-block-start: 2px;
 }
 
 .ucg-block__label {
   font-weight: 500;
-  white-space: nowrap;
+  /* T2505: wrap to two lines so wider blocks can show the full plugin
+     name (e.g. 'SYS Noise Gate' instead of 'SYS Nois...'). Long names
+     still truncate after line 2 via -webkit-line-clamp + box-orient. */
+  display: -webkit-box;
+  -webkit-line-clamp: 2;
+  -webkit-box-orient: vertical;
   overflow: hidden;
-  text-overflow: ellipsis;
+  line-height: 1.2;
+  word-break: break-word;
+  text-align: center;
+  flex: 0 0 auto;
 }
 
 .ucg-block__sc-tag {
-  grid-column: 2;
-  justify-self: start;
+  flex: 0 0 auto;
 }
 
 .ucg-block__lower-third {
@@ -590,6 +620,13 @@
   position: relative;
   z-index: 1;
   color: var(--ucg-accent, var(--cds-icon-primary, #f4f4f4));
+  /* Anchor the icon span to the FxIcon's 32×32 visual size so the ring
+     (positioned via inset: -8px → 48×48) stays concentric. Without
+     this, the flex-column block layout sized the span to its content
+     bounding box and the ring drifted off-centre. */
+  inline-size: 32px;
+  block-size: 32px;
+  flex: 0 0 auto;
 }
 .ucg-block[data-slot-style='v4-ring'] .ucg-block__cpu-ring {
   position: absolute;
