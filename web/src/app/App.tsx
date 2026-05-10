@@ -80,6 +80,8 @@ const HostMachinePage       = lazy(() => import('./pages/HostMachinePage').then(
 // /midi/devices/ableton-push-3/console mount, which composes
 // DeviceLandingHeader + PushSurfacePage via PushSurfaceConsoleView.
 const MaschinePage          = lazy(() => import('./pages/MaschinePage').then(m => ({ default: m.MaschinePage })))
+// T2503 Set 10 — DAW reference UI (non-tier-1; tier-1 surfaces are MIDI controllers).
+const DawPage               = lazy(() => import('./pages/DawPage').then(m => ({ default: m.DawPage })))
 const McuPage               = lazy(() => import('./pages/McuPage').then(m => ({ default: m.McuPage })))
 const LaunchControlPage     = lazy(() => import('./pages/LaunchControlPage').then(m => ({ default: m.LaunchControlPage })))
 const MidiCommanderPage     = lazy(() => import('./pages/MidiCommanderPage').then(m => ({ default: m.MidiCommanderPage })))
@@ -644,6 +646,8 @@ export function App() {
                                 <Route path="/labs/push-surface" element={<Navigate to="/midi/devices/ableton-push-3/console" replace />} />
                                 <Route path="/maschine" element={<MaschinePage />} />
                                 <Route path="/maschine/midi-map" element={<Navigate to="/maschine#hardware-layout" replace />} />
+                                {/* T2503 Set 10 — DAW reference UI (non-tier-1 surface). */}
+                                <Route path="/daw" element={<DawPage />} />
                                 <Route path="/mcu" element={<McuPage />} />
                                 <Route path="/launch-control" element={<LaunchControlPage />} />
                                 <Route path="/midi-commander" element={<MidiCommanderPage />} />

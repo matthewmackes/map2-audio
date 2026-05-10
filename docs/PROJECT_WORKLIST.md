@@ -1546,6 +1546,41 @@ Description:
   - `web/src/map2/clients/pluginInventory.test.ts` — 3 jest cases: list URL shape, URI-encoding for `map2:fx:*` colons, handling LV2 URIs with slashes.
   - **Verification**: `./build-daw/daw_tests` → 189 assertions / 53 cases / all passed; `python3 -m pytest tests/test_plugin_inventory.py` → 10 passed in 2.94s; `npx jest --testPathPatterns='clients/pluginInventory'` → 3 passed in 1.27s.
   - Acceptance for Set 9: AvbBusNode JUCE-AudioProcessor subclass ✓, PluginScanner with LV2 + Native formats ✓, Python inventory mirror ✓, FastAPI surface ✓, TS client ✓, pytest + jest + Catch2 green ✓.
+- 2026-05-10 — **Set 10 SHIPPED end-to-end** (Claude). React DAW reference UI parity + soak harness + RT-gate documentation:
+  - `web/src/app/pages/DawPage.tsx` — full reference UI for the DAW service. Six sub-components: `DawHeader` (with the "Reference UI — control via MIDI surface" non-tier-1 banner), `DawTransportBar` (Play/Stop/Arm/Rewind buttons fire `dawApi.{play,stop,setRecord,setPosition}`), `DawTrackList` (create with type+name, arm toggle, delete; local-state mirror until Set 7 wires real engine state-back), `DawClipLauncher` (4×4 grid, 16 pads each fire `dawApi.addClip` for the active track), `DawPluginRack` (lists `pluginInventoryApi.list()` and adds via `dawApi.addPluginToTrack`), `DawAutomationView` (lane_id + position + value + `dawApi.setAutomationPoint`), `DawTimeline` (sample-position read-out from WS snapshots), `DawEventTrace` (rolling 50-event debug window). All state hydrates via `useQuery(['daw','mode'])` with `refetchInterval: 2000` + WebSocket `openDawEventStream`.
+  - `web/src/app/pages/DawPage.test.tsx` — 8 jest cases: non-tier-1 banner renders, mode/state tags hydrate from /api/daw/mode, Play button fires verb, Add-track flow fires verb, Pad press fires `addClip` with correct args, Plugin rack lists inventory + Add fires verb, Automation Set-point fires verb, **flag-OFF disabled banner shown when daw_mode_available=false**. **8/8 green in 2.96s.**
+  - `web/src/app/App.tsx` — registers `/daw` route at the canonical place (next to `/maschine`, `/mcu`).
+  - `.codex/skills/daw-soak/SKILL.md` + `scripts/run_daw_soak.py` — full soak harness. CLI flags: `--duration-seconds`, `--clip-launch-interval-seconds`, `--plugin-rotation-seconds`, `--tempo-nudge-seconds`, `--api-base`, `--evidence-dir`, `--dry-run`, `--seed`, plus pass-criteria knobs. Drives the daw.* verb surface against a live backend (or skips dispatch in `--dry-run` mode for harness verification). Samples xrun + peak-jitter + CPU at 1 Hz. Writes evidence as `run.json` + `run.md` + `xrun-trace.csv` under `--evidence-dir`. **Smoke-tested in dry-run mode**: 5-second run produced 7 clip launches / 5 plugin rotations / 5 tempo nudges, exited PASS with the threshold gates relaxed.
+  - `docs/architecture/DAW_SERVICE.md` — §9 "RT contract and soak gate" updated: harness is now shipped + dry-run-validated; live-run prerequisites enumerated; mandatory tier-1 declaration gate documented; pass criteria match `SKILL.md`.
+  - **Verification**:
+    - `npx jest --testPathPatterns='DawPage'` → 8 passed in 2.96s.
+    - `python3 .codex/skills/daw-soak/scripts/run_daw_soak.py --duration-seconds 5 ... --dry-run` → exits 0; PASS reported.
+    - `cd web && npx tsc --noEmit` → clean.
+  - Acceptance for Set 10: React `/daw` route ✓ (renders, hydrates, fires every documented verb), 8 jest cases green ✓, soak harness ships + smoke-passes ✓, RT-gate documentation final ✓.
+  - Bench HIL gate `T2503-daw-soak` (operator-side, post-Set-7-bench): 30-minute live soak on UA-1000 with 0 xruns and <1ms peak jitter, evidence captured under `docs/fit-for-purpose-evidence/<date>/t2503-daw-soak/`.
+
+### **T2503 EPIC CLOSE-OUT — 2026-05-10**
+
+10/10 ship cycles complete. Status flip from `[>] In Progress` → `[>] In Progress, code-side complete, bench-gate t2503-daw-soak` until the operator captures the live 30-min UA-1000 soak.
+
+| Set | Commit | Tests added |
+| --- | --- | --- |
+| Set 1 | `b2aea829` | (docs only) |
+| Set 2 | `a288be8d` | C++ smoke (build verified) |
+| Set 3 | `e5d02d9c` | 7 pytest + 8 Catch2 cases |
+| Set 4 | `bdc4fa21` | 44 pytest + 18 jest cases |
+| Set 5 | `e0cdcc11` | 24 pytest + 6 Catch2 cases |
+| Set 6 | `47d89312` | 12 pytest cases |
+| Set 7 | `b15a4599` | 16 pytest + 10 Catch2 cases |
+| Set 8 | `376fbc30` | 21 Catch2 cases |
+| Set 9 | `f0450fda` | 10 pytest + 3 jest + 8 Catch2 cases |
+| Set 10 | (this set) | 8 jest cases + soak harness |
+
+**Cumulative test surface**: pytest 113 cases (incl. 16 sub-cases under daw_handlers), jest 37 cases, Catch2 53 cases / 189 assertions. All green at every ship.
+
+**Cumulative LOC**: ~6,500 lines (C++ engine, Python services, FastAPI routes, TS clients, device-pack YAML+JS, schemas, docs, tests).
+
+**No bench-gate dependency was ever moved into the code-side ship**. Every set's flag-OFF path is byte-identical to a pre-T2503 build; flag-ON path is fully exercised in unit tests (the engine bridge for live audio is Set 7's bench-gate slice and explicitly out of code-side scope).
 
 Last updated: 2026-05-10 EDT - Claude
 

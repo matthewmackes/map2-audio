@@ -222,9 +222,14 @@ The implementation is a **clean re-implementation in MAP2 source**, not copy-pas
 
 ### Soak
 
-`.codex/skills/daw-soak/` (T2503 Set 10) replicates the `juce-random-effects-soak` pattern: random clip launches, plugin reorder, tempo nudge, all over 30 minutes. Output to `docs/fit-for-purpose-evidence/<date>/t2503-daw-soak/`.
+`.codex/skills/daw-soak/` (shipped under T2503 Set 10) replicates the `juce-random-effects-soak` pattern: random clip launches, plugin reorder, tempo nudge, all over 30 minutes. Output to `docs/fit-for-purpose-evidence/<date>/t2503-daw-soak/`.
 
-The soak gate is **mandatory** before declaring DAW tier-1. Until the operator captures a clean run on the UA-1000, the service ships as `[>] In Progress, code-side complete, bench-gate t2503-daw-soak`.
+The harness (`.codex/skills/daw-soak/scripts/run_daw_soak.py`) supports:
+
+- **Dry-run mode** (`--dry-run`): exercises verb dispatch + scheduling without an engine; useful for verifying the harness itself doesn't drop frames.
+- **Live mode**: drives the FastAPI surface against a running backend on `--api-base` (default `http://127.0.0.1:8080`). Requires Set 7+ to wire `DawDeviceManager` into real audio.
+
+The soak gate is **mandatory** before declaring DAW tier-1. Until the operator captures a clean live run on the UA-1000, the service ships as `[>] In Progress, code-side complete, bench-gate t2503-daw-soak`. Pass criteria are encoded in `SKILL.md` and enforced by the harness's exit code.
 
 ---
 
