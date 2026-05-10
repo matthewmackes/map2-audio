@@ -2788,6 +2788,7 @@ export function SnapshotEditorPage() {
   }, [queryClient])
 
   const { startMidiLearnMutation, stopMidiLearnMutation } = useSnapshotEditorMidiMutations({
+    activeSnapshotId: activeSnapshot?.id ?? null,
     invalidateMidiQueries,
     setMidiLearnActive,
     pushToast,
