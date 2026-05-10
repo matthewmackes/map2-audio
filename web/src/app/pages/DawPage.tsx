@@ -36,7 +36,7 @@ import {
   Play,
   Stop,
   Recording,
-  RewindOutline,
+  SkipBack,
   TrashCan,
   Add,
 } from '@carbon/icons-react'
@@ -209,7 +209,7 @@ function DawTransportBar({
           </Button>
           <Button
             kind="ghost"
-            renderIcon={RewindOutline}
+            renderIcon={SkipBack}
             onClick={() => seekMutation.mutate(0)}
             disabled={disabled}
             data-testid="daw-transport-rewind"
