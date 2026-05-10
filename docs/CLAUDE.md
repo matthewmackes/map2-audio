@@ -750,12 +750,11 @@ curl -s http://localhost:3000/ | grep 'index-' # Layer 4: correct files?
 - **Fix**: Always update `docs/PROJECT_WORKLIST.md` — it is the single canonical worklist
 - **For "Status" requests**: report from worklist first, then add git working-tree context
 
-### [HIGH] MIDI Device Selection Requires ALSA Subscriptions — Feb 12, 2026
+### [HISTORICAL] MIDI Device Selection — RETIRED 2026-05-08 (T2459-H6)
 
-- **Files**: `juce-engine/Source/MidiHandler.cpp:190-410`, `MidiHandler.h:321-327`
-- **Problem**: `openInputDevice()` stored device name but didn't actually connect
-- **Fix**: Explicit `snd_seq_subscribe_port()` calls with sender/dest addresses matching `"ClientName:PortName"` format
-- **Lesson**: ALSA device selection is explicit, not implicit — device names must match exactly
+- **Status**: No longer applicable. The `Map2MidiController` raw `snd_seq_*` ALSA path was deleted under T2459-H6 (2026-05-08); JUCE engine consumes MIDI events exclusively from the `map2-controller-host` shm event ring. The host owns I/O via libremidi, which selects backends (ALSA seq / ALSA raw / JACK / PipeWire native) automatically per device.
+- **What replaced it**: `juce-engine/Source/Controllers/Midi/IpcMidiBridgeController.cpp` (consumer of the shm ring) and `juce-engine/Source/ControllerHost/Midi/LibremidiAdapter.{h,cpp}` (host-side I/O).
+- **Live PipeWire UMP-MIDI2 substrate gap**: see [docs/midi/T2459_H7_PW_UMP_DECISION.md](../docs/midi/T2459_H7_PW_UMP_DECISION.md) — *that* is the live MIDI-substrate concern, not the retired ALSA-subscription path.
 
 ### [HIGH] Parallel Scene + Snapshot UX Causes Operator Confusion
 

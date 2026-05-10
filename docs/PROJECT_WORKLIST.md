@@ -872,7 +872,7 @@ Last updated: 2026-05-10 EDT - Claude: T2500-MV CLOSED. All 18 subtasks shipped 
 ---
 
 ID: T2499-B
-Status: [ ] Todo
+Status: [>] In Progress
 Parent: T2499
 Title: Calibrate Maschine MK1 — full T700 onboarding (pads + pressure + screen + profile selection) with dual-surface UX
 Description:
@@ -892,13 +892,14 @@ Description:
 - Estimated effort: Large (4–6 weeks; depends heavily on what the T700 audit surfaces). Audit slice is ~1 week; implementation slices follow the audit's architecture call.
 - Dependencies: T666 / T700 epics (existing Maschine work). T700 audit is the gating prerequisite.
 Assigned to: Claude
-Last updated: 2026-05-08 EDT - Claude: filed.
+Last updated: 2026-05-10 EDT - Claude: **Slice 1 SHIPPED — T700 locked-decisions audit (`docs/maschine/T700_LOCKED_DECISIONS_AUDIT.md`).** All 75 Q-decisions classified (6 onboarding / 47 runtime / 22 infra). Architecture recommendation: **(b) onboarding-orchestrator** — new top-level service that drives existing daemon primitives (boot_sequence, profile_runtime, incident_log) in a defined order; calibration UI = temporary profile in the existing Q58/Q67 render pipeline; per-unit YAML at `~/.map2/devices/maschine-mk1-<USB_SERIAL>-calibrated.yaml` (Q49 says calibration does NOT embed in snapshot JSONB). Bound onboarding contracts pinned: Q4 / Q10a-Q10c / Q50 / Q60. Slice 2+ files mapped (orchestrator + calibration_store + Pydantic schema + React onboarding page + tests). Status flipped `[ ] Todo` → `[>] In Progress`; next slice writes the per-unit calibration YAML schema + atomic writer + tests (~1 day, no hardware).
+Prior — 2026-05-08 EDT - Claude: filed.
 
 
 ---
 
 ID: T2499-C
-Status: [ ] Todo
+Status: [>] In Progress
 Parent: T2499
 Title: Discover AVDECC devices — Sequencer-context binding flow with simulator-backed shipment + T004 production gate
 Description:
@@ -918,7 +919,8 @@ Description:
 - Estimated effort: Medium-Large (2–3 weeks). Simulator + wizard UI are most of the work; binding writer reuses T2496 routing matrix.
 - Dependencies: T2496 (AVB Services, shipped). T004 (real-hardware production gate, blocked on lab availability).
 Assigned to: Claude
-Last updated: 2026-05-08 EDT - Claude: filed.
+Last updated: 2026-05-10 EDT - Claude: **Slice 1 SHIPPED — AVDECC simulator scaffold (`app/services/avb/avdecc_simulator.py`) + 19 pytest tests (`tests/test_avdecc_simulator_t2499c.py`).** Self-contained, zero new deps. Five preset benches (single / small=4 / large=16 / empty / offline) cover all three Q2 tiered-UX paths (1=one-click, 2-9=DataTable+auto-suggest, 10+=bulk-import+filter). `MockAvdeccController` is duck-type compatible with the live la_avdecc surface — `get_avdecc_entities()` / `find_entity()` / `get_active_connections()` + camelCase aliases — so the wizard can swap `router.avdecc_entity` to the simulator without touching the existing `app/routes/avb/discovery.py` route handlers. **Round-trip verified** through the production formatter at `app/routes/avb/common.py::_format_avdecc_entity_payload`: simulator entities serialize byte-identical to live AVDECC, with all expected schema keys (entity_id 16-char hex / capabilities block / ptp block / source_node_id provenance). Substrate-state report (`SimulatedSubstrateState.to_dict()`) ships the wizard's diagnostic-panel schema (interface / ptp / entity_count / source) — schema pinned by test so a key rename forces a wizard test update. Status flipped `[ ] Todo` → `[>] In Progress`. Next slice: wizard UI under `web/src/app/pages/avb/AvdeccBindingWizard.tsx` (no hardware needed; reads simulator over `/api/avb/avdecc/entities` once a thin "use simulator" toggle lands in the avb_router accessor).
+Prior — 2026-05-08 EDT - Claude: filed.
 
 
 ---
@@ -1583,6 +1585,7 @@ Description:
 **No bench-gate dependency was ever moved into the code-side ship**. Every set's flag-OFF path is byte-identical to a pre-T2503 build; flag-ON path is fully exercised in unit tests (the engine bridge for live audio is Set 7's bench-gate slice and explicitly out of code-side scope).
 
 Last updated: 2026-05-10 EDT - Claude
+- 2026-05-10 EDT — Claude: **Code-side polish slice SHIPPED — DawPage WS test expansion (8 → 15 cases).** New jest coverage for: timeline pending-state render, WS snapshot frame mirroring into the timeline read-out, 50-entry rolling cap on the event trace (push 60 → render last 50 most-recent-first), WS `close()` fires on unmount, plugin-rack-error-envelope renders nothing (no silent empty list), automation `setAutomationPoint` arg-passing (lane=0/position=0/value=0.5), automation Set-point button disabled when `daw_mode_available=false`. All listener emits wrapped in `act()` so no React act-warning noise. **15/15 jest cases green; `npx jest --testPathPatterns='DawPage'` passes in 3.6s.** Bench-gate `T2503-daw-soak` (30-min UA-1000 soak) remains operator-side.
 
 ---
 
