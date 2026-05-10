@@ -381,6 +381,11 @@ if(MAP2_DAW_MODE)
         Source/Daw/DawProjectLoader.cpp
         Source/Daw/TransportBridge.cpp
         Source/Daw/DawDeviceManager.cpp
+        Source/Daw/Deck/CueModel.cpp
+        Source/Daw/Deck/BeatGrid.cpp
+        Source/Daw/Deck/SyncEngine.cpp
+        Source/Daw/Deck/SlipMode.cpp
+        Source/Daw/Deck/ClipLauncher.cpp
     )
 endif()
 
@@ -826,11 +831,17 @@ if(MAP2_DAW_MODE)
         tests/ModeSwitchCoordinatorTests.cpp
         tests/DawProjectLoaderTests.cpp
         tests/TransportBridgeTests.cpp
+        tests/DeckPatternsTests.cpp
         Source/Daw/DawService.cpp
         Source/Daw/ModeSwitchCoordinator.cpp
         Source/Daw/DawProjectLoader.cpp
         Source/Daw/TransportBridge.cpp
         Source/Daw/DawDeviceManager.cpp
+        Source/Daw/Deck/CueModel.cpp
+        Source/Daw/Deck/BeatGrid.cpp
+        Source/Daw/Deck/SyncEngine.cpp
+        Source/Daw/Deck/SlipMode.cpp
+        Source/Daw/Deck/ClipLauncher.cpp
     )
     target_compile_definitions(daw_tests PRIVATE
         MAP2_DAW_MODE=1
