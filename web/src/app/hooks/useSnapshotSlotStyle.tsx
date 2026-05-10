@@ -71,7 +71,11 @@ export function useSnapshotSlotStyle(): readonly [
     }
     const onSync = (event: Event) => {
       const next = (event as CustomEvent<SnapshotSlotStyle>).detail
-      if (isSlotStyle(next)) setValue(next)
+      if (isSlotStyle(next)) {
+        // Skip the redundant render on the instance that emitted the
+        // event — only sibling hook instances need the cross-update.
+        setValue((prev) => (prev === next ? prev : next))
+      }
     }
     window.addEventListener('storage', onStorage)
     window.addEventListener(SYNC_EVENT, onSync as EventListener)
@@ -82,7 +86,7 @@ export function useSnapshotSlotStyle(): readonly [
   }, [])
 
   const update = useCallback((next: SnapshotSlotStyle) => {
-    setValue(next)
+    setValue((prev) => (prev === next ? prev : next))
     if (typeof window === 'undefined') return
     try {
       window.localStorage.setItem(STORAGE_KEY, next)

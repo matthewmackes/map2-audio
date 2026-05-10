@@ -143,21 +143,18 @@ export function SpecialSettingsDialog({
   const [saveError, setSaveError] = useState('')
 
   useEffect(() => {
-    if (isOpen) {
-      setSaveError('')
-      setHiddenPlugins(new Set(currentHiddenPlugins))
-      setSnapshotEditorFlowAnimation(currentSnapshotEditorFlowAnimation)
-      setSnapshotEditorGridBackdrop(currentSnapshotEditorGridBackdrop)
-      setSnapshotEditorNodeShape(currentSnapshotEditorNodeShape)
-      void fetchNativePlugins()
-    }
-  }, [
-    currentHiddenPlugins,
-    currentSnapshotEditorFlowAnimation,
-    currentSnapshotEditorGridBackdrop,
-    currentSnapshotEditorNodeShape,
-    isOpen,
-  ])
+    if (!isOpen) return
+    setSaveError('')
+    setHiddenPlugins(new Set(currentHiddenPlugins))
+    setSnapshotEditorFlowAnimation(currentSnapshotEditorFlowAnimation)
+    setSnapshotEditorGridBackdrop(currentSnapshotEditorGridBackdrop)
+    setSnapshotEditorNodeShape(currentSnapshotEditorNodeShape)
+    void fetchNativePlugins()
+    // Re-seed only on open transitions. Background WS pushes change
+    // currentHiddenPlugins/etc. by reference and would otherwise stomp
+    // the user's in-progress edits mid-click.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [isOpen])
 
   const fetchNativePlugins = async () => {
     setIsLoading(true)
