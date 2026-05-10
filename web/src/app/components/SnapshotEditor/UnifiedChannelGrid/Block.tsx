@@ -77,8 +77,9 @@ export function Block({ slot, selected = false, onClick, onRemove }: BlockProps)
   const [slotStyle] = useSnapshotSlotStyle()
 
   const style: CSSProperties = {
-    width: BLOCK_DIMENSIONS.width,
-    height: BLOCK_DIMENSIONS.height,
+    // Width + height now driven by CSS — the parent slot cell is a fluid
+    // grid track and the block fills it (block-size: 100%). Inline sizing
+    // would defeat the fluid layout introduced for T2504.
     borderLeft: `${BLOCK_DIMENSIONS.categoryStripWidth}px solid ${stripColor}`,
     opacity: slot.bypass ? 0.5 : 1,
     // Per-block accent surfaced as a CSS variable so the tinted/ring/LED
@@ -147,7 +148,7 @@ export function Block({ slot, selected = false, onClick, onRemove }: BlockProps)
             />
           </svg>
         ) : null}
-        <FxIcon name={iconName} size={20} />
+        <FxIcon name={iconName} size={32} />
       </span>
       <span className="ucg-block__label">{slot.label ?? '—'}</span>
       {slot.sidechainSourceLabel ? (

@@ -30,12 +30,10 @@ export function ChannelRow({
   onAddBlock,
   onRemoveBlock,
 }: ChannelRowProps) {
+  // Match SlotRuler: fixed-width header column + N fluid slot tracks.
   const rowStyle: CSSProperties = {
     height: ROW_HEIGHTS.channel,
-  }
-  const slotStyle: CSSProperties = {
-    width: COLUMN_WIDTHS.slot,
-    height: ROW_HEIGHTS.channel,
+    gridTemplateColumns: `${COLUMN_WIDTHS.channelHeader}px repeat(${row.slots.length}, minmax(${COLUMN_WIDTHS.slot}px, 1fr))`,
   }
 
   return (
@@ -60,7 +58,6 @@ export function ChannelRow({
         <div
           key={`slot-${slot.index}`}
           className="ucg-channel-row__slot-cell"
-          style={slotStyle}
           role="gridcell"
           data-slot-index={slot.index}
         >

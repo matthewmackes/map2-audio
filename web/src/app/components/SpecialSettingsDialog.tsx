@@ -77,7 +77,10 @@ function SlotStylePreview({ style }: { style: SnapshotSlotStyle }) {
         className="ucg-block"
         style={{
           width: 116,
-          height: 60,
+          // Match the live editor block height (T2504 stretched blocks
+          // to fill the slot cell — 148px row − 12px padding ≈ 136px).
+          // Keeps the picker honest: what you select is what you see.
+          height: 136,
           borderLeft: `4px solid ${PREVIEW_ACCENT}`,
           ['--ucg-accent' as string]: PREVIEW_ACCENT,
         }}
@@ -108,7 +111,7 @@ function SlotStylePreview({ style }: { style: SnapshotSlotStyle }) {
               />
             </svg>
           ) : null}
-          <FxIcon name="reverb" size={20} />
+          <FxIcon name="reverb" size={32} />
         </span>
         <span className="ucg-block__label">Hall Reverb</span>
         <span className="ucg-block__lower-third">

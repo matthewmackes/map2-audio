@@ -7,28 +7,24 @@ export interface SlotRulerProps {
 }
 
 export function SlotRuler({ slotCount = SLOT_COUNT }: SlotRulerProps) {
+  // Grid template: fixed-width channel header + N fluid slot tracks
+  // (`minmax(slot-floor, 1fr)`). Slots flex to fill the viewport; below
+  // the floor (~96px each), the parent .ucg-grid scrolls horizontally
+  // and the channel header stays sticky-left.
   const rowStyle: CSSProperties = {
     height: ROW_HEIGHTS.ruler,
-  }
-  const headerStyle: CSSProperties = {
-    width: COLUMN_WIDTHS.channelHeader,
-    height: ROW_HEIGHTS.ruler,
-  }
-  const slotStyle: CSSProperties = {
-    width: COLUMN_WIDTHS.slot,
-    height: ROW_HEIGHTS.ruler,
+    gridTemplateColumns: `${COLUMN_WIDTHS.channelHeader}px repeat(${slotCount}, minmax(${COLUMN_WIDTHS.slot}px, 1fr))`,
   }
 
   return (
     <div className="ucg-slot-ruler" style={rowStyle} role="row">
-      <div className="ucg-slot-ruler__channel-header" style={headerStyle} role="columnheader">
+      <div className="ucg-slot-ruler__channel-header" role="columnheader">
         <span className="ucg-slot-ruler__channel-label">Channel</span>
       </div>
       {Array.from({ length: slotCount }, (_, index) => (
         <div
           key={`slot-${index}`}
           className="ucg-slot-ruler__slot"
-          style={slotStyle}
           role="columnheader"
           data-slot-index={index}
         >

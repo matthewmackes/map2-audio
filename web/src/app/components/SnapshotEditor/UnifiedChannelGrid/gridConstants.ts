@@ -13,7 +13,10 @@ export const SLOT_COUNT = 8 as const
 
 export const COLUMN_WIDTHS = {
   channelHeader: 240,
-  slot: 128,
+  // Lower bound for slot width when the row is in fluid mode (fills the
+  // viewport). Anything wider relies on the CSS `minmax(96px, 1fr)` floor;
+  // anything narrower triggers the sticky-header scroll fallback.
+  slot: 96,
   insertGap: 16,
 } as const
 
@@ -24,7 +27,11 @@ export const ROW_HEIGHTS = {
 
 export const BLOCK_DIMENSIONS = {
   width: COLUMN_WIDTHS.slot - 12,
-  height: 60,
+  // Block now stretches to fill its slot cell vertically. The numeric value
+  // is kept for places that still hard-code a height (preview cards,
+  // tests); .ucg-block in CSS uses height: 100% so the live editor follows
+  // the row height (148px - 12px padding = 136px in practice).
+  height: 136,
   categoryStripWidth: 4,
 } as const
 

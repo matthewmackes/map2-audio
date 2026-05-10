@@ -37,7 +37,9 @@
 }
 
 .ucg-slot-ruler {
-  display: flex;
+  display: grid;
+  /* Inline `grid-template-columns` from SlotRuler.tsx: fixed header +
+     N fluid slot tracks (`minmax(96px, 1fr)`). */
   align-items: center;
   background: var(--cds-layer-02, #262626);
   border-bottom: 1px solid var(--cds-border-subtle-01, #393939);
@@ -51,9 +53,20 @@
 .ucg-slot-ruler__slot {
   display: flex;
   align-items: center;
+  height: 100%;
   padding: 0 8px;
   box-sizing: border-box;
   border-right: 1px solid var(--cds-border-subtle-02, #525252);
+  min-width: 0;
+}
+
+/* Pin the "Channel" column header so it stays visible when the slot
+   strip horizontally scrolls below the fluid-width threshold. */
+.ucg-slot-ruler__channel-header {
+  position: sticky;
+  left: 0;
+  z-index: 3;
+  background: var(--cds-layer-02, #262626);
 }
 
 .ucg-slot-ruler__slot:last-child {
@@ -61,7 +74,8 @@
 }
 
 .ucg-channel-row {
-  display: flex;
+  display: grid;
+  /* `grid-template-columns` set inline (see ChannelRow.tsx). */
   align-items: stretch;
   border-bottom: 1px solid var(--cds-border-subtle-01, #393939);
   position: relative;
@@ -108,6 +122,12 @@
   box-sizing: border-box;
   background: var(--cds-layer-02, #262626);
   border-right: 1px solid var(--cds-border-subtle-02, #525252);
+  /* Pin the channel header so it stays visible when the slot strip
+     scrolls horizontally below the fluid-width threshold (~1100px). */
+  position: sticky;
+  left: 0;
+  z-index: 2;
+  min-width: 0;
 }
 
 /* Consolidated channel-strip layout (T2474 — "Signal Chain Update"):
@@ -316,13 +336,24 @@
 
 .ucg-channel-row__slot-cell {
   display: flex;
-  align-items: center;
-  justify-content: center;
+  /* T2504: stretch the block (or empty-slot button) to fill the cell
+     vertically — kills the dead space above and below each block. */
+  align-items: stretch;
+  justify-content: stretch;
   box-sizing: border-box;
   border-right: 1px solid var(--cds-border-subtle-01, #393939);
   padding: 6px;
   position: relative;
   z-index: 1;
+  min-width: 0;
+}
+
+/* Stretch the immediate block / empty-slot to fill the cell so the
+   visible fill matches the row height. */
+.ucg-channel-row__slot-cell > .ucg-block,
+.ucg-channel-row__slot-cell > .ucg-empty-slot {
+  width: 100%;
+  height: 100%;
 }
 
 .ucg-channel-row__slot-cell:last-child {
@@ -558,11 +589,12 @@
 }
 .ucg-block[data-slot-style='v4-ring'] .ucg-block__cpu-ring {
   position: absolute;
-  /* Centre on the 20px icon at the icon span's centre. The 6px negative
-     inset matches a 32×32 ring centred over the FxIcon's 20×20 box. */
-  inset: -6px;
-  width: 32px;
-  height: 32px;
+  /* Centre on the 32px icon (T2504 grew it from 20 → 32 when blocks
+     stretched to fill the row). 8px negative inset → 48×48 ring around
+     the FxIcon's 32×32 box. */
+  inset: -8px;
+  width: 48px;
+  height: 48px;
   pointer-events: none;
 }
 .ucg-block[data-slot-style='v4-ring'] .ucg-block__cpu-ring-track {

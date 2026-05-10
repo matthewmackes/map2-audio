@@ -84,7 +84,7 @@ const ICON_COMPONENTS: Record<FxIconName, FC<SVGProps<SVGSVGElement>>> = {
   utility: FxUtility,
 }
 
-export type FxIconSize = 16 | 20 | 24
+export type FxIconSize = 16 | 20 | 24 | 32 | 48
 
 export interface FxIconProps extends Omit<SVGProps<SVGSVGElement>, 'ref'> {
   name: FxIconName

@@ -172,7 +172,9 @@
   display: flex;
   align-items: center;
   justify-content: center;
-  block-size: 4.5rem;
+  /* T2504: bumped from 4.5rem (72px) → 9rem (144px) so the preview can
+     host the tall 136px live-editor block without clipping. */
+  block-size: 9rem;
   background: var(--cds-bg-deep, #0f1115);
   border-radius: 3px;
   /* Mock canvas chrome so the preview reads as a slot card on a dark grid,
