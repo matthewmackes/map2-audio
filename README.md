@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1546** Python | **1593** TypeScript | **187** C++/H | **148** Docs | **4186** total commits | **4** stars | **0** forks | **0** open issues
+**1552** Python | **1595** TypeScript | **187** C++/H | **148** Docs | **4188** total commits | **4** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`bdc4fa21`](https://github.com/matthewmackes/map2-audio/commit/bdc4fa2179beb7349d6e9b7d73a0f1504ead79f3) | feat(daw): T2503-set4 — engine_command daw.* + 17 verbs +... | Map2 Audio | 2026-05-10 |
+| [`cd824699`](https://github.com/matthewmackes/map2-audio/commit/cd82469958bd585fa5ce6ed0546227221b9a7607) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-10 |
 | [`e5d02d9c`](https://github.com/matthewmackes/map2-audio/commit/e5d02d9c2f3a81b814b08d378fa8fa8574587df0) | feat(daw): T2503-set3 — DAW mode lifecycle (state machine... | Map2 Audio | 2026-05-10 |
 | [`aa4987c8`](https://github.com/matthewmackes/map2-audio/commit/aa4987c881549ad1c0f3f52866f79ff40a29b44c) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-10 |
 | [`a288be8d`](https://github.com/matthewmackes/map2-audio/commit/a288be8dd0562d06d8cb4dd8b8af1d3f70ca486f) | feat(daw): T2503-set2 — pivot to MAP2-native engine + smo... | Map2 Audio | 2026-05-10 |
 | [`2fc97df3`](https://github.com/matthewmackes/map2-audio/commit/2fc97df322f2c3aea67cd5dd4dcd96e1608d60cb) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-10 |
 | [`c7c72d12`](https://github.com/matthewmackes/map2-audio/commit/c7c72d12955167b439ef849e4134d85c7dfe3cc7) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-10 |
 | [`23f499b2`](https://github.com/matthewmackes/map2-audio/commit/23f499b27b24c0cfb30dd88f125abdf8b6f1f8ec) | feat(snapshot-editor): slot-style variants + de-collision... | Map2 Audio | 2026-05-10 |
-| [`5c93021f`](https://github.com/matthewmackes/map2-audio/commit/5c93021f9436dc5784b5ba897d2a1ecd0cd06b98) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-10 |
-| [`b2aea829`](https://github.com/matthewmackes/map2-audio/commit/b2aea8298dca5872f5d7a1c7962e6354a5171c8d) | feat(daw): T2503-set1 — file DAW Service epic + reserve M... | Map2 Audio | 2026-05-09 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
