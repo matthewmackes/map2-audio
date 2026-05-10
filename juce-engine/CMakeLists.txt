@@ -372,11 +372,12 @@ if(AVDECC_AVAILABLE)
     )
 endif()
 
-# T2503 Set 2 — DAW service sources (Tracktion-backed)
+# T2503 — DAW service sources (MAP2-native, built on juce::AudioProcessorGraph).
 # Only compiled when -DMAP2_DAW_MODE=ON. Builds out incrementally Sets 2..10.
 if(MAP2_DAW_MODE)
     list(APPEND SOURCES
         Source/Daw/DawService.cpp
+        Source/Daw/ModeSwitchCoordinator.cpp
     )
 endif()
 
@@ -819,7 +820,9 @@ if(MAP2_DAW_MODE)
 
     add_executable(daw_tests
         tests/DawServiceShellTests.cpp
+        tests/ModeSwitchCoordinatorTests.cpp
         Source/Daw/DawService.cpp
+        Source/Daw/ModeSwitchCoordinator.cpp
     )
     target_compile_definitions(daw_tests PRIVATE
         MAP2_DAW_MODE=1

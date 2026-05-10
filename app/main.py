@@ -1227,6 +1227,16 @@ def create_app():
         # generic Learn / per-installation YAML config registers
         # against the framework registry; these routes are the thin
         # HTTP wrappers over that registration.
+        # T2503 Set 3 — DAW service mode-switch routes. Always registered so
+        # OpenAPI is stable; returns 503 with a standard error envelope when
+        # the engine was built without -DMAP2_DAW_MODE=ON.
+        try:
+            from app.routes import daw as daw_routes
+            app.include_router(daw_routes.router)
+            logger.info("T2503 DAW service routes registered")
+        except Exception as e:
+            logger.warning(f"Failed to load T2503 DAW service routes: {e}")
+
         try:
             from app.routes import configurator_devices
             app.include_router(configurator_devices.router)
