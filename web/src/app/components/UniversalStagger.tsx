@@ -77,10 +77,13 @@ function isStaggerContainer(element: Element): boolean {
 }
 
 export function findStaggerContainers(root: Element): Element[] {
+  const out: Element[] = []
+  if (isStaggerContainer(root)) {
+    out.push(root)
+  }
   const candidates = root.querySelectorAll<HTMLElement>(
     'ul, ol, [role="list"], [role="grid"], main, section, article, div',
   )
-  const out: Element[] = []
   candidates.forEach((el) => {
     if (isStaggerContainer(el)) {
       // Skip nested containers inside an already-selected ancestor — only
@@ -126,6 +129,18 @@ export function staggerElement(child: Element, index: number, options: StaggerOp
       easing: `cubic-bezier(${EASE[0]}, ${EASE[1]}, ${EASE[2]}, ${EASE[3]})`,
       fill: 'backwards',
     })
+    // Tidy DevTools: drop the marker attributes once the animation completes
+    // so a stable page doesn't have hundreds of stale `data-stagger-applied`s.
+    const cleanup = () => {
+      child.removeAttribute(STAGGER_APPLIED_ATTR)
+      child.removeAttribute(STAGGER_RUN_ATTR)
+    }
+    if (typeof anim.finished?.then === 'function') {
+      anim.finished.then(cleanup, cleanup)
+    } else {
+      anim.onfinish = cleanup
+      anim.oncancel = cleanup
+    }
     return anim
   } catch {
     return null
@@ -157,32 +172,42 @@ export function UniversalStaggerProvider() {
     if (pageTransitionPreset !== 'staggered-reveal') return undefined
     if (typeof document === 'undefined') return undefined
 
-    // Skip the initial render — only fire on real navigation. Otherwise
-    // the very first paint stutters on cold load.
-    if (lastPathRef.current === null) {
-      lastPathRef.current = location.pathname
-      return undefined
-    }
-    if (lastPathRef.current === location.pathname) return undefined
+    const isFirstPaint = lastPathRef.current === null
+    if (!isFirstPaint && lastPathRef.current === location.pathname) return undefined
     lastPathRef.current = location.pathname
 
     const reduced = reducedEffectsEnabled || prefersReducedMotion()
     const runId = String(++runIdRef.current)
     const timings = getStaggerTimings(staggerSpeed)
 
-    // Defer to next frame so the new route's DOM is committed.
+    // Defer to next frame so the new route's DOM is committed. On the
+    // very first paint we wait one extra frame so React StrictMode's
+    // double-mount doesn't double-trigger the animation.
     let cancelled = false
     let animations: Animation[] = []
-    const handle = window.requestAnimationFrame(() => {
-      if (cancelled) return
+    const queueRun = () => {
       const root = document.querySelector('main') ?? document.body
       if (!root) return
       animations = runStaggerOnRoot(root, runId, reduced, timings)
+    }
+    let firstHandle = 0
+    let secondHandle = 0
+    firstHandle = window.requestAnimationFrame(() => {
+      if (cancelled) return
+      if (isFirstPaint) {
+        secondHandle = window.requestAnimationFrame(() => {
+          if (cancelled) return
+          queueRun()
+        })
+      } else {
+        queueRun()
+      }
     })
 
     return () => {
       cancelled = true
-      window.cancelAnimationFrame(handle)
+      window.cancelAnimationFrame(firstHandle)
+      window.cancelAnimationFrame(secondHandle)
       animations.forEach((anim) => {
         try {
           anim.cancel()
