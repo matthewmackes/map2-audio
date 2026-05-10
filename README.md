@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1543** Python | **1593** TypeScript | **181** C++/H | **148** Docs | **4181** total commits | **4** stars | **0** forks | **0** open issues
+**1543** Python | **1593** TypeScript | **181** C++/H | **148** Docs | **4182** total commits | **4** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,6 +206,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`c7c72d12`](https://github.com/matthewmackes/map2-audio/commit/c7c72d12955167b439ef849e4134d85c7dfe3cc7) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-10 |
 | [`23f499b2`](https://github.com/matthewmackes/map2-audio/commit/23f499b27b24c0cfb30dd88f125abdf8b6f1f8ec) | feat(snapshot-editor): slot-style variants + de-collision... | Map2 Audio | 2026-05-10 |
 | [`5c93021f`](https://github.com/matthewmackes/map2-audio/commit/5c93021f9436dc5784b5ba897d2a1ecd0cd06b98) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-10 |
 | [`b2aea829`](https://github.com/matthewmackes/map2-audio/commit/b2aea8298dca5872f5d7a1c7962e6354a5171c8d) | feat(daw): T2503-set1 — file DAW Service epic + reserve M... | Map2 Audio | 2026-05-09 |
@@ -213,7 +214,6 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 | [`c3343647`](https://github.com/matthewmackes/map2-audio/commit/c3343647a098908f977756ca0278024d68084efa) | feat(stagger): replay lockout, debounce-recovery test, ex... | Map2 Audio | 2026-05-09 |
 | [`476e582a`](https://github.com/matthewmackes/map2-audio/commit/476e582a0093b1f51f73bedf02cc31ba1a42ef95) | feat(stagger): rapid-nav overlay debounce + persisted-mig... | Map2 Audio | 2026-05-09 |
 | [`b312b3c1`](https://github.com/matthewmackes/map2-audio/commit/b312b3c13e772302d735a0dad31e09b4397d2286) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-10 |
-| [`76302cc3`](https://github.com/matthewmackes/map2-audio/commit/76302cc3958be388e9fc9a960efec7020ad6404c) | docs(stagger): architecture doc + universal scope fallback | Map2 Audio | 2026-05-09 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
