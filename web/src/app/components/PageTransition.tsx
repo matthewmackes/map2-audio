@@ -8,7 +8,7 @@ import { markRouteRenderReady, markRouteRenderStart, reportRouteRequestVolume } 
 import './PageTransition.css'
 
 type TransitionScope = {
-  id: 'home' | 'audio-artifacts' | 'juce-grid' | 'midi-hub'
+  id: 'home' | 'audio-artifacts' | 'juce-grid' | 'midi-hub' | 'workspace'
 }
 
 type TransitionMode = 'staggered' | 'fade' | 'pager'
@@ -62,7 +62,9 @@ export function getLandingTransitionScope(pathname: string): TransitionScope | n
     return { id: 'midi-hub' }
   }
 
-  return null
+  // Generic fallback: any other navigation gets a minimal workspace
+  // scope so the universal staggered overlay still renders.
+  return { id: 'workspace' }
 }
 
 function resolveScopedTransitionMode(

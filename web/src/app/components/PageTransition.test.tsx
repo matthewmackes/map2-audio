@@ -119,13 +119,17 @@ describe('PageTransition', () => {
     expect(document.querySelector('.page-transition-scope__content--pager')).not.toBeNull()
   })
 
-  it('skips the transition for unrelated route changes', () => {
+  it('runs the universal staggered overlay for previously-unscoped route changes', () => {
+    // Generic 'workspace' scope: any navigation not in the four named
+    // landing surfaces still gets the universal overlay so the user
+    // who chose React Staggered Reveal feels it everywhere.
     renderHarness('/node-ops')
 
     fireEvent.click(screen.getByRole('button', { name: 'Go Expression' }))
 
     expect(screen.getByTestId('transition-pathname')).toHaveTextContent('/expression')
-    expect(screen.queryByTestId('landing-route-transition')).toBeNull()
+    expect(screen.getByTestId('landing-route-transition')).toHaveClass('landing-route-transition--staggered')
+    expect(screen.getByTestId('landing-route-transition')).toHaveClass('landing-route-transition--workspace')
   })
 
   it('falls back to the minimal fade when system reduced motion is enabled', () => {
