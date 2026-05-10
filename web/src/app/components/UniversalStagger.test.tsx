@@ -3,7 +3,7 @@ import { act, render } from '@testing-library/react'
 import '@testing-library/jest-dom'
 import { MemoryRouter, Route, Routes, useLocation, useNavigate } from 'react-router-dom'
 
-import { UniversalStaggerProvider, useStaggerOnMount } from './UniversalStagger'
+import { StaggerReveal, UniversalStaggerProvider, useStaggerOnMount } from './UniversalStagger'
 import { useEffectsSettingsStore } from '../stores/effectsSettingsStore'
 
 interface AnimateMock extends jest.Mock {
@@ -175,6 +175,38 @@ describe('UniversalStaggerProvider', () => {
       await new Promise((resolve) => requestAnimationFrame(() => resolve(null)))
     })
 
+    expect(animateMock.mock.calls.length).toBeGreaterThan(initialCalls)
+  })
+
+  it('StaggerReveal wrapper re-fires when triggerKey changes', async () => {
+    const { useState } = React
+    function Harness() {
+      const [open, setOpen] = useState(false)
+      return (
+        <div>
+          <button type="button" onClick={() => setOpen((current) => !current)}>Toggle</button>
+          <StaggerReveal triggerKey={open}>
+            <div style={{ display: 'grid' }}>
+              <div>1</div>
+              <div>2</div>
+              <div>3</div>
+            </div>
+          </StaggerReveal>
+        </div>
+      )
+    }
+
+    const { getByRole } = render(<Harness />)
+    await act(async () => {
+      await new Promise((resolve) => requestAnimationFrame(() => resolve(null)))
+    })
+    const initialCalls = animateMock.mock.calls.length
+    expect(initialCalls).toBeGreaterThanOrEqual(1)
+
+    await act(async () => {
+      getByRole('button', { name: 'Toggle' }).click()
+      await new Promise((resolve) => requestAnimationFrame(() => resolve(null)))
+    })
     expect(animateMock.mock.calls.length).toBeGreaterThan(initialCalls)
   })
 

@@ -1,4 +1,4 @@
-import { useEffect, useRef, type RefObject } from 'react'
+import { useEffect, useRef, type ReactNode, type RefObject } from 'react'
 import { useLocation } from 'react-router-dom'
 
 import {
@@ -157,7 +157,26 @@ export function runStaggerOnRoot(root: Element, runId: string, reduced: boolean,
       if (anim) animations.push(anim)
     })
   })
+  if (animations.length > 0 && shouldTraceStagger()) {
+    // eslint-disable-next-line no-console
+    console.debug(
+      `[stagger] run=${runId} elements=${animations.length} reduced=${reduced} duration=${timings.perItemMs}ms step=${timings.staggerStepMs}ms`,
+    )
+  }
   return animations
+}
+
+function shouldTraceStagger(): boolean {
+  // Dev-mode trace gate. Vite injects `import.meta.env.DEV`; Jest does
+  // not understand `import.meta` so we feature-detect via `process.env`.
+  if (typeof process !== 'undefined' && process.env?.NODE_ENV === 'development') {
+    return true
+  }
+  if (typeof globalThis !== 'undefined') {
+    const flag = (globalThis as { __MAP2_STAGGER_TRACE__?: boolean }).__MAP2_STAGGER_TRACE__
+    if (flag === true) return true
+  }
+  return false
 }
 
 export function UniversalStaggerProvider() {
@@ -219,6 +238,37 @@ export function UniversalStaggerProvider() {
   }, [location.pathname, pageTransitionPreset, reducedEffectsEnabled, staggerSpeed])
 
   return null
+}
+
+/**
+ * Lightweight wrapper component that runs the staggered reveal on its
+ * children every time the `triggerKey` value changes. Drop it around a
+ * grid/list/modal-body to opt that surface in to the universal effect
+ * without writing a hook call site.
+ *
+ * Example (modal body):
+ *   <Modal open={open}>
+ *     <StaggerReveal triggerKey={open}>
+ *       <ul>...</ul>
+ *     </StaggerReveal>
+ *   </Modal>
+ */
+export function StaggerReveal({
+  triggerKey,
+  children,
+  className,
+}: {
+  triggerKey: unknown
+  children: ReactNode
+  className?: string
+}) {
+  const ref = useRef<HTMLDivElement | null>(null)
+  useStaggerOnMount(ref, [triggerKey])
+  return (
+    <div ref={ref} className={className}>
+      {children}
+    </div>
+  )
 }
 
 /**
