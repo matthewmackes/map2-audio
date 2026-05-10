@@ -1230,10 +1230,12 @@ def create_app():
         # T2503 Set 3 — DAW service mode-switch routes. Always registered so
         # OpenAPI is stable; returns 503 with a standard error envelope when
         # the engine was built without -DMAP2_DAW_MODE=ON.
+        # T2503 Set 4 — full v1 DAW verb surface alongside.
         try:
             from app.routes import daw as daw_routes
             app.include_router(daw_routes.router)
-            logger.info("T2503 DAW service routes registered")
+            app.include_router(daw_routes.router_v1)
+            logger.info("T2503 DAW service routes registered (mode + v1 verb surface)")
         except Exception as e:
             logger.warning(f"Failed to load T2503 DAW service routes: {e}")
 

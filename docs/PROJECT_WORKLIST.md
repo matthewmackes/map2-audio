@@ -1480,6 +1480,19 @@ Description:
   - Verified: C++ daw_tests still passes (39 assertions / 8 cases); Python pytest green; flag-OFF FastAPI path returns the documented 503 envelope; flag-ON path completes the full state ladder synchronously.
   - Bench HIL gate `T2503-set3-bench` (operator-side, post-Set 7): observe sub-second hard switch on UA-1000 with 0 xrun on either side. Captured under `docs/fit-for-purpose-evidence/<date>/t2503-set3-mode-switch/` once Set 7 wires `DawDeviceManager` into the live audio path.
   - Acceptance for Set 3: state machine ✓, idempotency ✓, queueing ✓, error rollback ✓, FastAPI surface stable across flag states ✓, pytest + Catch2 green ✓.
+- 2026-05-10 — **Set 4 SHIPPED end-to-end** (Claude). engine_command `daw.*` dispatcher + 17 verbs + FastAPI v1 surface + WebSocket events:
+  - `app/services/daw_handlers.py` — 17 closure-factory handlers (transport.{play,stop,record,set_position}, project.{new,load,save}, track.{create,delete,set_arm}, clip.{add,remove,move}, automation.set_point, plugin.{add_to_track,remove_from_track,set_param}); `DawHandlerHooks` dataclass with one Optional callable per verb; `register_daw_handlers(dispatcher, hooks=None)` registers all 17; matches `engine_command_handlers.py` shape.
+  - `app/services/daw_dispatch_seam.py` — in-process seam between FastAPI routes and the engine_command dispatcher; thread-safe `set_dispatcher` / `get_dispatcher` / `dispatch_daw_verb`; defaults to log-and-return when no dispatcher is wired; Set 7+ replaces with the real engine bridge.
+  - `app/services/daw_event_bus.py` — async pub/sub with bounded per-subscriber queues (drop-oldest under back-pressure); singleton accessor; reset helper for tests.
+  - `app/schemas/daw.py` — Pydantic models for every verb's request/response (TrackType enum, TransportRecordRequest/SetPositionRequest, ProjectNewRequest/LoadRequest, TrackCreateRequest/SetArmRequest, ClipAddRequest/MoveRequest, AutomationSetPointRequest, PluginAddToTrackRequest/SetParamRequest, DawActionAccepted, DawEvent envelope).
+  - `app/routes/daw.py` — extends Set 3 with `router_v1` (prefix `/api/v1/daw`): 17 REST endpoints with unique operationIds (`daw_v1_transport_play`, ..., `daw_v1_plugin_set_param`); proper REST verbs (POST for create + transport actions, DELETE for removal, PATCH for partial update); flag-OFF returns 503 + standard error envelope; flag-ON dispatches via `dispatch_daw_verb`. Plus `WS /api/v1/daw/events` with hydration snapshot + bus-driven streaming.
+  - `app/main.py` — registers both `router` and `router_v1` under the same try/except.
+  - `web/src/map2/clients/daw.ts` — TS client mirroring all 17 verbs + mode-switch + WebSocket subscription helper (`openDawEventStream`).
+  - `tests/test_daw_handlers.py` — 25 pytest cases: registration check, every verb happy path, malformed-args graceful warn-and-skip paths, no-hook null-safety paths.
+  - `tests/test_daw_routes_v1.py` — 19 pytest cases: each verb dispatches correctly through the seam, flag-OFF 503 envelope, Pydantic validation 422s, operationId uniqueness assertion (all 17 unique).
+  - `web/src/map2/clients/daw.test.ts` — 18 jest cases asserting URL shape, HTTP method, JSON body for every verb.
+  - **Test totals**: pytest 52/52 green (handlers 25 + routes 19 + mode-switch 7 + carry-over from earlier sets), jest 18/18 green, typecheck clean.
+  - Acceptance for Set 4: 17 verbs registered ✓, all unique operationIds ✓, Pydantic models ✓, REST shape natural ✓, flag-OFF 503 ✓, dispatch round-trip via seam ✓, TS client + WS open helper ✓, jest + pytest green ✓.
 
 Last updated: 2026-05-10 EDT - Claude
 
