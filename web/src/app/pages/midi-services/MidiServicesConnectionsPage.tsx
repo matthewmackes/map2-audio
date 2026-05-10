@@ -27,6 +27,7 @@ import { useMidiHubOverview } from '../../components/MidiHub/useMidiHubOverview'
 import { useMidiHubNodeScope } from '../../components/MidiHub/MidiHubNodeScope'
 import { DinGlyph } from './MidiServicesGlyphs'
 import { MidiServicesSection } from './MidiServicesSection'
+import MidiServicesConnectionsTabs from './MidiServicesConnectionsTabs'
 import { useMidiServicesShellWindow } from './useMidiServicesShellWindow'
 import './MidiServicesRegionPage.css'
 
@@ -47,6 +48,7 @@ export function MidiServicesConnectionsPage() {
 
   return (
     <Section className="midi-services-region">
+      <MidiServicesConnectionsTabs />
       <Layer level={0}>
         <header className="midi-services-region__header">
           <Heading className="midi-services-region__title">Connections</Heading>

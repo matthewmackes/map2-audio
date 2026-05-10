@@ -122,6 +122,7 @@ const MidiServicesProcessingPage = lazy(() => import('./pages/midi-services/Midi
 const MidiServicesLabPage = lazy(() => import('./pages/midi-services/MidiServicesLabPage').then(m => ({ default: m.MidiServicesLabPage })))
 const MidiServicesTransportPage = lazy(() => import('./pages/midi-services/MidiServicesTransportPage').then(m => ({ default: m.MidiServicesTransportPage })))
 const MidiServicesConnectionsPage = lazy(() => import('./pages/midi-services/MidiServicesConnectionsPage').then(m => ({ default: m.MidiServicesConnectionsPage })))
+const MidiServicesConnectionsVisualizationPage = lazy(() => import('./pages/midi-services/MidiServicesConnectionsVisualizationPage').then(m => ({ default: m.MidiServicesConnectionsVisualizationPage })))
 // T2490-1 — AVB Services canonical mount scaffold.
 const AvbServicesShell           = lazy(() => import('./pages/AvbServicesShell').then(m => ({ default: m.AvbServicesShell })))
 const AvbServicesOverviewPage    = lazy(() => import('./pages/avb-services/AvbServicesOverviewPage').then(m => ({ default: m.AvbServicesOverviewPage })))
@@ -806,6 +807,12 @@ export function App() {
                                       in iter 154 (T2483-2). Transport flipped to
                                       MidiServicesTransportPage in iter 132 (P3.6). */}
                                   <Route path="connections" element={<MidiServicesConnectionsPage />} />
+                                  {/* T2500-MV-E1 — MIDI Connections Visualization
+                                      sub-route. Renders a live three-tier React Flow
+                                      graph (Devices ↔ Mappings ↔ Engine targets) over
+                                      `/ws/midi/visualization`. Outer-tab strip lives
+                                      in MidiServicesConnectionsTabs. */}
+                                  <Route path="connections/visualization" element={<MidiServicesConnectionsVisualizationPage />} />
                                   <Route path="presets" element={<MidiServicesPresetsPage />} />
                                   <Route path="transport" element={<MidiServicesTransportPage />} />
                                   <Route path="events" element={<MidiServicesEventsPage />} />

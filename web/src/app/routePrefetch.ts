@@ -127,6 +127,13 @@ const PREFETCH_RULES: PrefetchRule[] = [
     prefix: '/midi/assignments',
     loaders: [() => import('./pages/MidiAssignmentsPage')],
   },
+  // T2500-MV — Visualization sub-route under /midi/connections.
+  {
+    prefix: '/midi/connections/visualization',
+    loaders: [
+      () => import('./pages/midi-services/MidiServicesConnectionsVisualizationPage'),
+    ],
+  },
 
   // Devices shell + per-device heavy views. Per-device prefixes win over
   // the generic /devices fallback because of longest-prefix matching.

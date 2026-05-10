@@ -68,7 +68,7 @@ Each task/subtask should contain these fields:
 - `[✓]` `T2497` — Audio Artifacts global tree nav: remove duplicated "Discover" entries under every subcategory (shipped 2026-05-05)
 - `[✓]` `T2498` — Baked `MAP2_AUDIO_PREFER_JACK=1` into repo `systemd/map2-backend.service` (closed 2026-05-08). Fresh installs no longer regress to ALSA-via-PipeWire on JUCE device open. Live bench unit already had this via `15-prefer-jack.conf` drop-in; repo copy now matches.
 - `[>]` `T2499` — Sequencer Setup "Coming Soon" cards epic. **T2499-A 8/8 code slices SHIPPED in autonomous-10 run 2026-05-08/09** (framework primitives + Carbon shell + MeloAudio adapter + device-pack picker + MIDI Learn fallback + bindings writer + Setup card flip + e2e integration test; 75 jest + 33 pytest = 108 net new tests). T2499-A stays `[>] In Progress` pending UI swap (framework shell mount on a route), HIL parity bench gate, and pack-picker integration with MIDI Services. T2499-B (Maschine MK1) and T2499-C (AVDECC) still `[ ] Todo`.
-- `[>]` `T2500-MV` — MIDI Connections Visualization. New `/midi/connections/visualization` sub-route renders a live three-tier React Flow graph (Devices ↔ Mappings ↔ Engine targets) over the existing `midi:traffic` WS topic. Particles + edge thickness + heatmap; rolling 5-min replay buffer; click-node detail drawer; rAF-batched coalescing. 18 subtasks across 6 phases.
+- `[✓]` `T2500-MV` — MIDI Connections Visualization (closed 2026-05-10; all 18 subtasks shipped in one bundle). `/midi/connections/visualization` mounts a live three-tier `<SignalFlowGraph>` (Devices ↔ Mappings ↔ Engine targets) over a new `/ws/midi/visualization` WS that replays a rolling 5-min `MidiTrafficBuffer` on connect and live-streams events. Particle/heatmap canvas overlay + Carbon detail drawer + filter bar. Backend wiring: dispatcher gains `iter_registrations()` introspection + `subscribe()` observer registry; new `MidiVisualizationProducerBridge` mirrors dispatched + raw events into the buffer; new topology + WS routes registered in `app/main.py`. 54 backend tests + 23 jest tests green; backend live at `http://127.0.0.1:8080/api/midi/visualization/graph` (200, returns 4 registered targets); WS replay handshake verified; web preview serves the new bundle hash on port 3000.
 - `[✓]` `T2500` — Cabinet IR + Reverb IR pickers fix in Snapshot Editor (closed 2026-05-08; root cause was `appendNodeQuery` accepting a TanStack `QueryFunctionContext` object as `nodeId` and stringifying it to `[object Object]`. Fixed at the http.ts seam — single-line type-guard tightening neutralizes this class of bug for every bare `queryFn` reference. 15 new http unit tests; modal now surfaces real backend errors via the existing `getErrorMessage` helper).
 - `[✓]` `T2501` — Snapshot slot-style variants regression test coverage (closed 2026-05-09; +17 net tests across `Block.test.tsx` (+8) and new `useSnapshotSlotStyle.test.tsx` (9) — locks data-attr reflection, V4 ring SVG render, V6 LED bar width, idle-floor (4%), full-load ceiling (95%), and the localStorage hook's persistence + cross-tab sync + quota-error path; full targeted sweep 127/127).
 - `[✓]` `T2502` — Snapshot slot accent palette de-collisioned (closed 2026-05-09; scope expanded mid-task from 2 → 5 collision groups: Distortion+Drums, Pitch+Multi-Effect, Cabinet+Utility+Effects, Dynamics+Instrument, Delay+AVB. 6 hexes changed: Drums coral, Pitch indigo, Utility cool-slate, Effects taupe, Instrument mint-cyan, AVB steel. New `categoryPalette.test.ts` (5 tests) sweeps `MAP2_CATEGORIES` for hex uniqueness; `categoryHues.test.ts` updated in lockstep; V3/V4/V6 variants pick up new palette automatically via `--ucg-accent`).
@@ -847,26 +847,26 @@ Description:
 - Dependencies: T2459-H (controller-host + dispatcher), T2477 (`<SignalFlowGraph>`), T2480-3 (inbound MIDI traffic bridge unconditional install).
 - Estimated effort: ~6–8 hr engineering wall-clock across 18 atomic bundles.
 Subtasks:
-  - `[>]` `T2500-MV-A1` — Worklist entry (this entry).
-  - `[ ]` `T2500-MV-A2` — Backend topology assembler service + 4 unit tests.
-  - `[ ]` `T2500-MV-A3` — Backend topology HTTP route + main.py wiring.
-  - `[ ]` `T2500-MV-A4` — Dispatcher `iter_registrations()` accessor.
-  - `[ ]` `T2500-MV-B1` — Rolling 5-min edge buffer service + 6 unit tests.
-  - `[ ]` `T2500-MV-B2` — Engine-command observer hook + bridge wiring.
-  - `[ ]` `T2500-MV-B-RAW-TAP` — Reuse existing `midi:traffic` topic for raw events (no new IPC).
-  - `[ ]` `T2500-MV-B3` — `/ws/midi/visualization` endpoint with replay-on-connect.
-  - `[ ]` `T2500-MV-C1` — `useMidiVisualizationGraph` hook with rAF batching + clock filter.
-  - `[ ]` `T2500-MV-C2` — Layout adapter (three-tier dagre rank anchors).
-  - `[ ]` `T2500-MV-D1` — DeviceNodeBody / MappingNodeBody / TargetNodeBody.
-  - `[ ]` `T2500-MV-D2` — Single canvas particle/heatmap overlay (perf-critical).
-  - `[ ]` `T2500-MV-D3` — Detail drawer (composes `<DrawerPanel>`).
-  - `[ ]` `T2500-MV-D4` — Filter bar (scope chips + event-kind toggle + clock filter + intensity dial).
-  - `[ ]` `T2500-MV-E1` — Outer-tab strip + visualization page + App.tsx route + prefetch.
-  - `[ ]` `T2500-MV-F1` — Backend e2e test.
-  - `[ ]` `T2500-MV-F2` — Frontend smoke test.
-  - `[ ]` `T2500-MV-F3` — Definition of Done verification (build + restart + in-browser visual confirm).
+  - `[✓]` `T2500-MV-A1` — Worklist entry (this entry).
+  - `[✓]` `T2500-MV-A2` — Backend topology assembler service + 6 unit tests (`app/services/midi_visualization_topology.py`, `tests/test_midi_visualization_topology.py`).
+  - `[✓]` `T2500-MV-A3` — Backend topology HTTP route + `app/main.py` wiring (`app/routes/midi_visualization.py`; route module added to `route_modules` array).
+  - `[✓]` `T2500-MV-A4` — Dispatcher `iter_registrations()` accessor (`app/services/engine_command_dispatcher.py`).
+  - `[✓]` `T2500-MV-B1` — Rolling 5-min edge buffer service + 12 unit tests (`app/services/midi_visualization_buffer.py`, `tests/test_midi_visualization_buffer.py`).
+  - `[✓]` `T2500-MV-B2` — Engine-command observer registry + producer bridge dispatcher wiring (`app/services/engine_command_dispatcher.py::subscribe()`, `app/services/midi_visualization_bridge.py`).
+  - `[✓]` `T2500-MV-B-RAW-TAP` — Raw MidiHub subscription via `MidiVisualizationProducerBridge` (no new IPC; mirrors `inbound_traffic_bridge` semantics).
+  - `[✓]` `T2500-MV-B3` — `/ws/midi/visualization` endpoint with replay-on-connect (`app/routes/midi_visualization_ws.py`; module added to `route_modules`).
+  - `[✓]` `T2500-MV-C1` — `useMidiVisualizationGraph` hook with rAF batching + clock filter (`web/src/app/hooks/useMidiVisualizationGraph.ts`).
+  - `[✓]` `T2500-MV-C2` — Three-tier dagre layout adapter (`web/src/app/pages/midi-services/visualization/midiVisualizationLayout.ts`).
+  - `[✓]` `T2500-MV-D1` — Device / Mapping / Target node bodies (`web/src/app/pages/midi-services/visualization/MidiVisualizationNodeBodies.tsx`).
+  - `[✓]` `T2500-MV-D2` — Single-canvas particle + heatmap overlay (`web/src/app/pages/midi-services/visualization/MidiEdgeOverlayCanvas.tsx` + `edgeAnimation.ts`).
+  - `[✓]` `T2500-MV-D3` — Right-side detail drawer (`web/src/app/pages/midi-services/visualization/MidiVisualizationDetailDrawer.tsx`).
+  - `[✓]` `T2500-MV-D4` — Filter bar with scope chips + clock filter + intensity dial (`web/src/app/pages/midi-services/visualization/MidiVisualizationFilterBar.tsx`).
+  - `[✓]` `T2500-MV-E1` — Outer-tab strip + visualization page + App.tsx route + routePrefetch entry (`MidiServicesConnectionsTabs.tsx`, `MidiServicesConnectionsVisualizationPage.tsx`, `App.tsx` line 125 lazy import + `connections/visualization` route, `routePrefetch.ts`).
+  - `[✓]` `T2500-MV-F1` — Backend e2e test (`tests/test_midi_visualization_e2e.py`; topology + buffer + bridge round-trip).
+  - `[✓]` `T2500-MV-F2` — Frontend smoke test (`MidiServicesConnectionsVisualizationPage.test.tsx`, `useMidiVisualizationGraph.test.tsx`).
+  - `[✓]` `T2500-MV-F3` — Definition of Done verification: 54 backend pytest + 23 jest green; `npm run build` clean (21.17s); `systemctl restart map2-backend` green; `curl /api/midi/visualization/graph` 200 with 4 registered targets; WS handshake replay frame received; preview server on :3000 serves new `MidiServicesConnectionsVisualizationPage-CVSlEm6a.js` and `/midi/connections/visualization` returns 200.
 Assigned to: Claude
-Last updated: 2026-05-09 EDT - Claude: T2500-MV opened. A1 worklist entry shipped; A2-A4 next in dependency order.
+Last updated: 2026-05-10 EDT - Claude: T2500-MV CLOSED. All 18 subtasks shipped in one autonomous bundle.
 
 
 ---

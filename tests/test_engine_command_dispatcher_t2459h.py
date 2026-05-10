@@ -282,3 +282,83 @@ def test_reset_stats_zeros_counters() -> None:
     assert dispatcher.dispatched_count == 0
     assert dispatcher.unmatched_count == 0
     assert dispatcher.errored_count == 0
+
+
+# ---------------------------------------------------------------------------
+# T2500-MV-A4 — iter_registrations introspection
+# ---------------------------------------------------------------------------
+
+
+def test_iter_registrations_lists_exact_then_pattern() -> None:
+    dispatcher = EngineCommandDispatcher()
+    dispatcher.register("audio.snapshot.recall", lambda c: None)
+    dispatcher.register("audio.master.volume", lambda c: None)
+    dispatcher.register_pattern("audio.chain.*.bypass", lambda c: None)
+
+    out = dispatcher.iter_registrations()
+    assert ("audio.snapshot.recall", False) in out
+    assert ("audio.master.volume", False) in out
+    assert ("audio.chain.*.bypass", True) in out
+    # Exact entries come before pattern entries.
+    pattern_index = next(i for i, (_, p) in enumerate(out) if p)
+    assert all(not p for _, p in out[:pattern_index])
+
+
+def test_iter_registrations_empty_dispatcher() -> None:
+    dispatcher = EngineCommandDispatcher()
+    assert dispatcher.iter_registrations() == []
+
+
+# ---------------------------------------------------------------------------
+# T2500-MV-B2 — observer registry
+# ---------------------------------------------------------------------------
+
+
+def test_subscribe_observer_fires_on_dispatch() -> None:
+    dispatcher = EngineCommandDispatcher()
+    dispatcher.register("audio.snapshot.recall", lambda c: None)
+    seen: list[tuple[str, str]] = []
+    dispatcher.subscribe(lambda ctx, target: seen.append((ctx.target, target)))
+
+    dispatcher.dispatch(_frame("audio.snapshot.recall"))
+    assert seen == [("audio.snapshot.recall", "audio.snapshot.recall")]
+
+
+def test_subscribe_observer_fires_even_when_handler_raises() -> None:
+    dispatcher = EngineCommandDispatcher()
+
+    def _boom(ctx: EngineCommandContext) -> None:
+        raise RuntimeError("nope")
+
+    dispatcher.register("audio.snapshot.recall", _boom)
+    seen: list[str] = []
+    dispatcher.subscribe(lambda ctx, target: seen.append(target))
+
+    dispatcher.dispatch(_frame("audio.snapshot.recall"))
+    assert seen == ["audio.snapshot.recall"]
+    assert dispatcher.errored_count == 1
+
+
+def test_subscribe_unsubscribe_stops_observer() -> None:
+    dispatcher = EngineCommandDispatcher()
+    dispatcher.register("audio.snapshot.recall", lambda c: None)
+    seen: list[str] = []
+    unsubscribe = dispatcher.subscribe(lambda ctx, target: seen.append(target))
+
+    dispatcher.dispatch(_frame("audio.snapshot.recall"))
+    unsubscribe()
+    dispatcher.dispatch(_frame("audio.snapshot.recall"))
+    assert seen == ["audio.snapshot.recall"]
+
+
+def test_buggy_observer_does_not_kill_dispatcher() -> None:
+    dispatcher = EngineCommandDispatcher()
+    dispatcher.register("audio.snapshot.recall", lambda c: None)
+    survivor: list[str] = []
+    dispatcher.subscribe(lambda ctx, target: (_ for _ in ()).throw(RuntimeError("boom")))
+    dispatcher.subscribe(lambda ctx, target: survivor.append(target))
+
+    dispatcher.dispatch(_frame("audio.snapshot.recall"))
+    # Dispatch counted as successful; the surviving observer still fired.
+    assert dispatcher.dispatched_count == 1
+    assert survivor == ["audio.snapshot.recall"]

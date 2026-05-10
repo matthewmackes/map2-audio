@@ -123,6 +123,12 @@ class EngineCommandDispatcher:
         # patterns before catch-alls.
         self._patterns: list[_Registration] = []
         self._on_error = on_error
+        # T2500-MV-A4 + B2 — observers fire after every successful or
+        # failed dispatch. Used by the visualization buffer to mirror
+        # dispatched events into the rolling 5-min ring. Observer
+        # exceptions are swallowed (one bad observer must not kill the
+        # reader thread).
+        self._observers: list[Callable[[EngineCommandContext, str], None]] = []
         # Stats for observability — 'dispatched' counts successful
         # routings, 'unmatched' counts targets with no handler,
         # 'errored' counts handler exceptions.
@@ -234,12 +240,72 @@ class EngineCommandDispatcher:
                         "EngineCommandDispatcher: on_error hook also raised; "
                         "swallowing"
                     )
+        finally:
+            # T2500-MV-B2 — fire observers regardless of handler outcome
+            # so the visualization buffer reflects errored dispatches too.
+            self._notify_observers(ctx, target)
 
     def reset_stats(self) -> None:
         """Reset dispatched/unmatched/errored counters. Test seam."""
         self.dispatched_count = 0
         self.unmatched_count = 0
         self.errored_count = 0
+
+    # ------------------------------------------------------------------
+    # T2500-MV-A4 — Introspection accessor
+    # ------------------------------------------------------------------
+
+    def iter_registrations(self) -> list[tuple[str, bool]]:
+        """Return the registry as ``[(target_or_pattern, is_pattern), ...]``.
+
+        Used by the MIDI Connections Visualization topology assembler to
+        materialise the third-tier "Engine targets" column without
+        reaching into private fields. Exact-match registrations come
+        first, then pattern registrations in their registration order.
+        """
+        out: list[tuple[str, bool]] = [
+            (target, False) for target in self._exact.keys()
+        ]
+        out.extend((reg.pattern, True) for reg in self._patterns)
+        return out
+
+    # ------------------------------------------------------------------
+    # T2500-MV-B2 — Observer registry
+    # ------------------------------------------------------------------
+
+    def subscribe(
+        self,
+        observer: Callable[[EngineCommandContext, str], None],
+    ) -> Callable[[], None]:
+        """Register an observer that fires after each dispatch attempt.
+
+        The observer receives ``(ctx, target)`` where ``target`` is the
+        resolved frame target (matched exact key OR the original frame
+        target for pattern-matched and unmatched cases). Observer
+        exceptions are caught and logged so a buggy observer cannot kill
+        the reader thread.
+
+        Returns an ``unsubscribe()`` callable for symmetric cleanup.
+        """
+        self._observers.append(observer)
+
+        def _unsubscribe() -> None:
+            try:
+                self._observers.remove(observer)
+            except ValueError:
+                pass
+
+        return _unsubscribe
+
+    def _notify_observers(self, ctx: EngineCommandContext, target: str) -> None:
+        for observer in self._observers:
+            try:
+                observer(ctx, target)
+            except Exception:  # noqa: BLE001 — observers must not kill the dispatcher
+                logger.exception(
+                    "EngineCommandDispatcher: observer for target %r raised",
+                    target,
+                )
 
 
 def _build_context(message: dict[str, Any]) -> EngineCommandContext:

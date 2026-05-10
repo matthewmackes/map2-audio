@@ -1,0 +1,95 @@
+/* T2500-MV-D1 — node body styles. Carbon-token only per T2481. */
+
+.midi-viz-node {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cds-spacing-02, 0.25rem);
+  width: 100%;
+  height: 100%;
+  padding: var(--cds-spacing-03, 0.5rem) var(--cds-spacing-04, 0.75rem);
+  background-color: var(--cds-layer-01);
+  border: 1px solid var(--cds-border-subtle-01);
+  border-radius: 0;
+  box-sizing: border-box;
+  font-family: var(--cds-body-compact-01-font-family, inherit);
+  color: var(--cds-text-primary);
+  transition: border-color 120ms ease-out, background-color 120ms ease-out;
+}
+
+.midi-viz-node--live {
+  border-color: var(--cds-support-success);
+  background-color: var(--cds-layer-02);
+}
+
+.midi-viz-node--idle {
+  border-color: var(--cds-border-subtle-01);
+  background-color: var(--cds-layer-01);
+  opacity: 0.7;
+}
+
+.midi-viz-node__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  font-size: var(--cds-label-01-font-size, 0.75rem);
+  letter-spacing: 0.32px;
+  text-transform: uppercase;
+  color: var(--cds-text-secondary);
+}
+
+.midi-viz-node__kind {
+  font-weight: 600;
+}
+
+.midi-viz-node__pulse {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  background-color: var(--cds-icon-disabled);
+  transition: background-color 200ms ease-out;
+}
+
+.midi-viz-node__pulse--live {
+  background-color: var(--cds-support-success);
+  box-shadow: 0 0 6px var(--cds-support-success);
+}
+
+.midi-viz-node__title {
+  font-size: var(--cds-body-compact-02-font-size, 1rem);
+  font-weight: 600;
+  line-height: 1.2;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.midi-viz-node__title--mono {
+  font-family: var(--cds-code-02-font-family, monospace);
+  font-size: var(--cds-code-01-font-size, 0.8125rem);
+}
+
+.midi-viz-node__sub {
+  font-size: var(--cds-helper-text-01-font-size, 0.75rem);
+  color: var(--cds-text-helper);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.midi-viz-node__footer {
+  display: flex;
+  align-items: baseline;
+  justify-content: space-between;
+  margin-top: auto;
+  font-size: var(--cds-label-01-font-size, 0.75rem);
+  color: var(--cds-text-helper);
+}
+
+.midi-viz-node__meta {
+  font-variant-numeric: tabular-nums;
+}
+
+.midi-viz-node__rate {
+  font-variant-numeric: tabular-nums;
+  color: var(--cds-text-secondary);
+}
