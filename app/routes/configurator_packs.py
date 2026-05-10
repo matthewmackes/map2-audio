@@ -76,6 +76,25 @@ _REGISTERED_PACKS: list[ConfiguratorPackEntry] = [
         bespoke_route="/midi/devices/meloaudio-commander",
         available=True,
     ),
+    # T2499 mega-epic Phase 2.1 (2026-05-09) — Maschine MK1 pack
+    # registration. The frontend Configurator surface lands in
+    # Phase 2.7 (`/midi/devices/configurator/maschine`); the
+    # backend pack is wired to the framework registry on startup
+    # so detection, learn-event polling, and per-installation
+    # overrides are reachable through the generic routes
+    # immediately.
+    ConfiguratorPackEntry(
+        pack_id="maschine_mk1",
+        display_name="Native Instruments Maschine MK1",
+        vendor_name="Native Instruments",
+        summary=(
+            "Headless Maschine MK1 console — pad calibration, pressure curves, "
+            "25-profile LCD catalog, LED choreography, per-installation HID + MIDI "
+            "bindings."
+        ),
+        bespoke_route="/midi/devices/configurator/maschine",
+        available=True,
+    ),
 ]
 
 

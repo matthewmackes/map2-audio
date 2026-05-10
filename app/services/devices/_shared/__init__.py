@@ -22,7 +22,9 @@ from .protocols import (
     DeviceDetector,
     DeviceDiscoverer,
     DeviceDiscoverySession,
+    DeviceLearnEventSnapshot,
     DevicePresence,
+    LearnEventSource,
     OverrideStore,
 )
 from .override_store import YamlOverrideStore
@@ -44,7 +46,9 @@ __all__ = [
     "DeviceDetector",
     "DeviceDiscoverer",
     "DeviceDiscoverySession",
+    "DeviceLearnEventSnapshot",
     "DevicePresence",
+    "LearnEventSource",
     "OverrideStore",
     "YamlOverrideStore",
     "get_default_registry",

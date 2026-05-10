@@ -5,6 +5,7 @@ import { MemoryRouter, Route, Routes } from 'react-router-dom'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 
 import { MidiServicesConfiguratorPage } from './MidiServicesConfiguratorPage'
+import type { BrainSlotChoice } from '../../components/DeviceConfigurator/MidiLearnModule'
 import type { ConfiguratorPackDescriptor } from '../../components/DeviceConfigurator/types'
 
 beforeAll(() => {
@@ -54,7 +55,17 @@ function makePack(
   }
 }
 
-function renderPage(packs: ConfiguratorPackDescriptor[]) {
+const STUB_BRAIN_SLOTS: BrainSlotChoice[] = [
+  { id: 'brain-slot-0', label: '01 · Slot 1 (empty)' },
+  { id: 'brain-slot-1', label: '02 · Slot 2 (empty)' },
+  { id: 'brain-slot-2', label: '03 · Slot 3 (empty)' },
+  { id: 'brain-slot-3', label: '04 · Slot 4 (empty)' },
+]
+
+function renderPage(
+  packs: ConfiguratorPackDescriptor[],
+  brainSlots: BrainSlotChoice[] = STUB_BRAIN_SLOTS,
+) {
   const client = new QueryClient({
     defaultOptions: { queries: { retry: false } },
   })
@@ -64,7 +75,9 @@ function renderPage(packs: ConfiguratorPackDescriptor[]) {
         <Routes>
           <Route
             path="/midi/devices/configurator"
-            element={<MidiServicesConfiguratorPage packs={packs} />}
+            element={
+              <MidiServicesConfiguratorPage packs={packs} brainSlots={brainSlots} />
+            }
           />
           <Route
             path="/midi/devices/meloaudio-midi-commander/configurator"
@@ -98,13 +111,13 @@ describe('MidiServicesConfiguratorPage', () => {
     )
   })
 
-  it('warns via toast when a pack has no bespoke_route registered', async () => {
-    renderPage([makePack('rookie')])
-    const tile = await screen.findByTestId('device-pack-tile-rookie')
+  it('reports a clear error when a pack descriptor has no bespoke_route and no tabs', async () => {
+    renderPage([makePack('malformed')])
+    const tile = await screen.findByTestId('device-pack-tile-malformed')
     fireEvent.click(tile)
     expect(mockPushToast).toHaveBeenCalledWith(
-      expect.stringContaining('ROOKIE has not registered a configurator surface'),
-      'warn',
+      expect.stringContaining('descriptor is incomplete'),
+      'error',
     )
   })
 
@@ -113,15 +126,21 @@ describe('MidiServicesConfiguratorPage', () => {
     const learnTile = await screen.findByTestId('device-pack-tile-midi-learn')
     fireEvent.click(learnTile)
     expect(await screen.findByTestId('midi-learn-module')).toBeInTheDocument()
-    // Picker is gone; learn is up.
     expect(screen.queryByTestId('device-pack-picker')).toBeNull()
   })
 
-  it('seeds four brain slots in the MIDI Learn module', async () => {
+  it('renders injected brain slots in the MIDI Learn module', async () => {
     renderPage([makePack('alpha', '/alpha/route')])
     fireEvent.click(await screen.findByTestId('device-pack-tile-midi-learn'))
     await screen.findByTestId('midi-learn-module')
-    // Slot picker label
     expect(screen.getByText('Brain slot')).toBeInTheDocument()
+  })
+
+  it('shows a warning when no brain slots are available', async () => {
+    renderPage([makePack('alpha', '/alpha/route')], [])
+    fireEvent.click(await screen.findByTestId('device-pack-tile-midi-learn'))
+    expect(
+      await screen.findByText('No brain slots available'),
+    ).toBeInTheDocument()
   })
 })

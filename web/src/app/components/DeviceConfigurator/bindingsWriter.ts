@@ -1,38 +1,31 @@
 /**
  * T2499-A slice 6 — Configurator bindings writer.
  *
- * Submits operator-chosen bindings to the canonical MIDI Services
- * binding authority (`POST /api/midi/bindings`, schema mirrors
- * `app/services/midi/schemas.py`).
+ * Submits operator-chosen bindings to the canonical store for the
+ * event's kind:
  *
- * Idempotency: the authority generates a fresh UUID on every
- * `create()`, so duplicate-detection lives client-side. We do this
- * via *list-before-post by content equality*:
+ *   - MIDI events  → `POST /api/midi/bindings` (canonical MIDI
+ *     Services binding authority; mirrors `app/services/midi/schemas.py`).
+ *   - HID + AVDECC events → per-pack overrides via
+ *     `PUT /api/devices/configurator/{pack_id}/overrides` writing a
+ *     `bindings.<slot_id>` entry into the pack's YAML override store.
  *
- *   1. List existing bindings filtered to `(consumer_type=brain_slot,
- *      consumer_id=<slot>)`.
- *   2. Check whether any existing binding has the same `(source_type,
- *      source_descriptor, target_type, target_descriptor)` tuple.
- *   3. If yes → return the existing binding unchanged ("already
- *      bound, nothing to do").
- *   4. If no → POST a new binding with `source='configurator'` so the
- *      provenance is traceable. Return the new binding.
+ * Both paths are idempotent: identical (slot, event) tuples never
+ * create duplicate state.
+ *
+ * The MIDI path is unchanged from T2499-A — list-before-post by
+ * content equality. The non-MIDI path is read-modify-write on the
+ * pack's YAML override file, with shape equality short-circuiting
+ * the write when the same binding already exists.
  *
  * **Author note (autonomous-10 cycle 7, 2026-05-09):** the locked
  * spec says the Configurator must write bindings "to MIDI Services
  * Bindings (canonical authority); not snapshot-scoped, not dual."
- * This writer obeys: scope=`global`, consumer_type=`brain_slot`,
- * provenance=`configurator`. Schema decisions made here for
- * subsequent review:
- *   - Equality is by JSON-serialized descriptor — exact match. No
- *     semantic equivalence (e.g. `{cc:7,channel:1}` vs
- *     `{channel:1,cc:7}` ARE treated as equal because we sort keys
- *     before comparing).
- *   - We never `update()` an existing matching binding; if the
- *     operator wants to change the source/target, they delete + retry.
- *   - We never auto-disable conflicting bindings on the same slot
- *     (operator-managed: two bindings for the same slot = two valid
- *     ways to trigger the action).
+ * That rule still holds for MIDI bindings. The T2499 mega-epic
+ * (2026-05-09) extends it: per-installation HID + AVDECC bindings
+ * live in per-device YAML override stores under
+ * `~/.map2/devices/<pack_id>-<slug>.yaml`, matching the 'per-
+ * installation device override pattern' established for MeloAudio.
  */
 
 import {
@@ -40,6 +33,15 @@ import {
   type MidiBindingRead,
   midiBindingsApi,
 } from '../../../map2/clients/midiBindings'
+import {
+  deviceOverridesApi,
+  type DeviceOverridesPayload,
+} from '../../../map2/clients/deviceOverrides'
+import type { DeviceLearnEvent, MidiDeviceLearnEvent } from './types'
+import type {
+  BrainSlotChoice,
+  DeviceLearnSubmission,
+} from './LearnModule'
 import type { MidiLearnEvent, MidiLearnSubmission } from './MidiLearnModule'
 
 const PROVENANCE = 'configurator'
@@ -52,12 +54,25 @@ export interface BindingsWriterOptions {
   deviceId?: string | null
   /** Override the entire MIDI bindings client (tests). */
   client?: Pick<typeof midiBindingsApi, 'list' | 'create'>
+  /** Override the per-pack overrides client (tests). */
+  overridesClient?: Pick<typeof deviceOverridesApi, 'get' | 'put'>
 }
 
 export interface ConfiguratorBindingResult {
   binding: MidiBindingRead
   /** True if this exact (source, target) tuple already existed. */
   duplicate: boolean
+}
+
+export interface ConfiguratorDeviceBindingResult {
+  /** The pack the binding was written to. */
+  pack_id: string
+  /** Slot id the binding was attached to. */
+  slot_id: string
+  /** True if this exact (slot, event) tuple already existed. */
+  duplicate: boolean
+  /** Path to the YAML file that holds the override (for audit). */
+  override_path: string
 }
 
 /** Stable JSON serializer — sorts object keys recursively so tuple
@@ -173,3 +188,134 @@ export async function submitBrainSlotBinding(
   const created = await client.create(payload)
   return { binding: created, duplicate: false }
 }
+
+// ---------------------------------------------------------------------------
+// Phase 0 — generic device binding writer (HID, AVDECC)
+// ---------------------------------------------------------------------------
+
+/**
+ * Build the canonical YAML override entry for a non-MIDI event +
+ * brain slot. Stored under `bindings.<slot_id>` in the pack's
+ * override file. Schema is intentionally permissive — packs that
+ * need richer fields can extend the entry but `kind`, `slot_id`,
+ * and `event` are required.
+ */
+export function buildDeviceBindingEntry(
+  submission: DeviceLearnSubmission,
+  options: BindingsWriterOptions = {},
+): Record<string, unknown> {
+  return {
+    schema_version: 1,
+    slot_id: submission.slot.id,
+    slot_label: submission.slot.label,
+    event_kind: submission.event.kind,
+    event: submission.event,
+    notes: submission.notes || undefined,
+    device_id: options.deviceId ?? submission.event.source_id ?? null,
+    source: PROVENANCE,
+    created_by: options.createdBy ?? CREATED_BY_DEFAULT,
+  }
+}
+
+/**
+ * Submit a non-MIDI Learn submission to the pack's YAML override
+ * store. Idempotent on `(slot_id, event)` — if the existing entry
+ * has the same shape (computed via stableStringify of the relevant
+ * fields), the write is short-circuited and `duplicate=true`
+ * returned.
+ *
+ * MIDI events are rejected with an error: callers should use
+ * `submitBrainSlotBinding()` for MIDI.
+ */
+export async function submitDeviceBinding(
+  packId: string,
+  submission: DeviceLearnSubmission,
+  options: BindingsWriterOptions = {},
+): Promise<ConfiguratorDeviceBindingResult> {
+  if (submission.event.kind === 'midi') {
+    throw new Error(
+      'submitDeviceBinding rejected MIDI event; use submitBrainSlotBinding for MIDI.',
+    )
+  }
+  const client = options.overridesClient ?? deviceOverridesApi
+
+  const current = await client.get(packId)
+  const existingBindings =
+    (current.payload?.bindings as Record<string, unknown> | undefined) ?? {}
+
+  const newEntry = buildDeviceBindingEntry(submission, options)
+  const existingEntry = existingBindings[submission.slot.id]
+
+  const newKey = stableStringify({
+    slot_id: newEntry.slot_id,
+    event_kind: newEntry.event_kind,
+    event: newEntry.event,
+  })
+  const existingKey = existingEntry
+    ? stableStringify({
+        slot_id: (existingEntry as Record<string, unknown>).slot_id,
+        event_kind: (existingEntry as Record<string, unknown>).event_kind,
+        event: (existingEntry as Record<string, unknown>).event,
+      })
+    : null
+
+  if (existingKey === newKey) {
+    return {
+      pack_id: packId,
+      slot_id: submission.slot.id,
+      duplicate: true,
+      override_path: current.path,
+    }
+  }
+
+  const nextPayload: DeviceOverridesPayload = {
+    ...(current.payload ?? {}),
+    bindings: {
+      ...existingBindings,
+      [submission.slot.id]: newEntry,
+    },
+  }
+
+  const written = await client.put(packId, nextPayload)
+  return {
+    pack_id: packId,
+    slot_id: submission.slot.id,
+    duplicate: false,
+    override_path: written.path,
+  }
+}
+
+/**
+ * Unified submission entrypoint. Routes MIDI events to the canonical
+ * MIDI Services authority and HID/AVDECC events to the per-pack
+ * YAML override store. Callers wire this directly to
+ * `LearnModule.onSubmit`.
+ */
+export async function submitConfiguratorBinding(
+  packId: string,
+  submission: DeviceLearnSubmission,
+  options: BindingsWriterOptions = {},
+): Promise<
+  | { kind: 'midi'; result: ConfiguratorBindingResult }
+  | { kind: 'device'; result: ConfiguratorDeviceBindingResult }
+> {
+  if (submission.event.kind === 'midi') {
+    const midiSubmission: MidiLearnSubmission = {
+      slot: submission.slot,
+      event: stripMidiKind(submission.event as MidiDeviceLearnEvent),
+      notes: submission.notes,
+    }
+    const result = await submitBrainSlotBinding(midiSubmission, options)
+    return { kind: 'midi', result }
+  }
+  const result = await submitDeviceBinding(packId, submission, options)
+  return { kind: 'device', result }
+}
+
+function stripMidiKind(event: MidiDeviceLearnEvent): MidiLearnEvent {
+  const { kind: _kind, ...rest } = event
+  void _kind
+  return rest
+}
+
+export type { BrainSlotChoice }

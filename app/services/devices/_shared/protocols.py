@@ -172,3 +172,51 @@ class BindingPusher(Protocol):
     must not produce duplicate bindings."""
 
     def push(self, bindings: Mapping[str, Any]) -> BindingPushResult: ...
+
+
+# ---------------------------------------------------------------------------
+# T2499 Phase 0.2 — generic Learn event source
+# ---------------------------------------------------------------------------
+
+
+@dataclass(frozen=True)
+class DeviceLearnEventSnapshot:
+    """One observation of a Learn event in the canonical wire shape.
+
+    The frontend `DeviceLearnEvent` discriminated union (see
+    ``web/src/app/components/DeviceConfigurator/types.ts``) maps
+    1:1 onto this dataclass when serialised. The ``event`` field is
+    free-form so each pack can include its kind-specific payload
+    (MIDI cc/channel/data1, HID control_id/value, AVDECC
+    descriptor_type/index/value_change) without the framework
+    needing to enumerate them.
+    """
+
+    sequence: int
+    """Monotonic counter incremented on each new observation. The
+    polling subscriber anchors on the value at subscribe time and
+    emits exactly once when a strictly larger sequence is observed."""
+
+    observed_at: Optional[float] = None
+    """Unix wall-clock timestamp (seconds) when the event was observed."""
+
+    event: Optional[Mapping[str, Any]] = None
+    """Canonical event shape (kind: 'midi'|'hid'|'avdecc', plus
+    kind-specific fields). None until the pack has observed any event."""
+
+
+@runtime_checkable
+class LearnEventSource(Protocol):
+    """Expose the most recent Learn event observed by a pack.
+
+    Each Configurator pack that wants the framework Learn module to
+    capture its events implements this protocol. The framework polls
+    ``last_event()`` over HTTP via
+    ``GET /api/devices/configurator/{pack_id}/learn/last-event`` and
+    forwards the result to the Learn module's polling subscriber.
+
+    Implementations must be cheap (the route is polled at ~250 ms)
+    and must keep ``sequence`` strictly monotonic across observations.
+    """
+
+    def last_event(self) -> DeviceLearnEventSnapshot: ...

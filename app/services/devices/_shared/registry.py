@@ -19,6 +19,7 @@ from .protocols import (
     ConfigInstaller,
     DeviceDetector,
     DeviceDiscoverer,
+    LearnEventSource,
     OverrideStore,
 )
 
@@ -40,6 +41,7 @@ class ConfiguratorRegistration:
     override_store: Optional[OverrideStore] = None
     installer: Optional[ConfigInstaller] = None
     pusher: Optional[BindingPusher] = None
+    learn_event_source: Optional[LearnEventSource] = None
     metadata: Mapping[str, object] = field(default_factory=dict)
     """Free-form pack metadata (vendor, links, custom UI tab routes)."""
 
@@ -56,6 +58,8 @@ class ConfiguratorRegistration:
             names.append("install")
         if self.pusher is not None:
             names.append("push")
+        if self.learn_event_source is not None:
+            names.append("learn")
         return tuple(names)
 
 

@@ -1222,6 +1222,31 @@ def create_app():
         except Exception as e:
             logger.warning(f"Failed to load configurator pack-discovery routes: {e}")
 
+        # T2499 mega-epic Phase 0.2/0.3 — per-pack overrides + learn
+        # event-source endpoints. Each Configurator pack that wants
+        # generic Learn / per-installation YAML config registers
+        # against the framework registry; these routes are the thin
+        # HTTP wrappers over that registration.
+        try:
+            from app.routes import configurator_devices
+            app.include_router(configurator_devices.router)
+            logger.info("Configurator per-device routes registered")
+        except Exception as e:
+            logger.warning(f"Failed to load configurator per-device routes: {e}")
+
+        # T2499 mega-epic Phase 2.1 — register the Maschine MK1 pack
+        # against the framework so the per-pack overrides + learn
+        # event-source routes route through it. The detector + event
+        # source bind lazily to MaschineService so the registration
+        # itself doesn't pull in DB / WS deps.
+        try:
+            from app.services.devices.maschine_mk1 import register_default as _mk1_register
+
+            _mk1_register()
+            logger.info("Maschine MK1 Configurator pack registered")
+        except Exception as e:
+            logger.warning(f"Failed to register Maschine MK1 Configurator pack: {e}")
+
         # T2459-H5 Slice 16 — UMP capabilities is mounted under the
         # unified MIDI router (`app.routes.midi`); the explicit import
         # below satisfies the route-registration policy test that
