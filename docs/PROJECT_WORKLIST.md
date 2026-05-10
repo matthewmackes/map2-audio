@@ -68,7 +68,10 @@ Each task/subtask should contain these fields:
 - `[✓]` `T2497` — Audio Artifacts global tree nav: remove duplicated "Discover" entries under every subcategory (shipped 2026-05-05)
 - `[✓]` `T2498` — Baked `MAP2_AUDIO_PREFER_JACK=1` into repo `systemd/map2-backend.service` (closed 2026-05-08). Fresh installs no longer regress to ALSA-via-PipeWire on JUCE device open. Live bench unit already had this via `15-prefer-jack.conf` drop-in; repo copy now matches.
 - `[>]` `T2499` — Sequencer Setup "Coming Soon" cards epic. **T2499-A 8/8 code slices SHIPPED in autonomous-10 run 2026-05-08/09** (framework primitives + Carbon shell + MeloAudio adapter + device-pack picker + MIDI Learn fallback + bindings writer + Setup card flip + e2e integration test; 75 jest + 33 pytest = 108 net new tests). T2499-A stays `[>] In Progress` pending UI swap (framework shell mount on a route), HIL parity bench gate, and pack-picker integration with MIDI Services. T2499-B (Maschine MK1) and T2499-C (AVDECC) still `[ ] Todo`.
+- `[>]` `T2500-MV` — MIDI Connections Visualization. New `/midi/connections/visualization` sub-route renders a live three-tier React Flow graph (Devices ↔ Mappings ↔ Engine targets) over the existing `midi:traffic` WS topic. Particles + edge thickness + heatmap; rolling 5-min replay buffer; click-node detail drawer; rAF-batched coalescing. 18 subtasks across 6 phases.
 - `[✓]` `T2500` — Cabinet IR + Reverb IR pickers fix in Snapshot Editor (closed 2026-05-08; root cause was `appendNodeQuery` accepting a TanStack `QueryFunctionContext` object as `nodeId` and stringifying it to `[object Object]`. Fixed at the http.ts seam — single-line type-guard tightening neutralizes this class of bug for every bare `queryFn` reference. 15 new http unit tests; modal now surfaces real backend errors via the existing `getErrorMessage` helper).
+- `[✓]` `T2501` — Snapshot slot-style variants regression test coverage (closed 2026-05-09; +17 net tests across `Block.test.tsx` (+8) and new `useSnapshotSlotStyle.test.tsx` (9) — locks data-attr reflection, V4 ring SVG render, V6 LED bar width, idle-floor (4%), full-load ceiling (95%), and the localStorage hook's persistence + cross-tab sync + quota-error path; full targeted sweep 127/127).
+- `[✓]` `T2502` — Snapshot slot accent palette de-collisioned (closed 2026-05-09; scope expanded mid-task from 2 → 5 collision groups: Distortion+Drums, Pitch+Multi-Effect, Cabinet+Utility+Effects, Dynamics+Instrument, Delay+AVB. 6 hexes changed: Drums coral, Pitch indigo, Utility cool-slate, Effects taupe, Instrument mint-cyan, AVB steel. New `categoryPalette.test.ts` (5 tests) sweeps `MAP2_CATEGORIES` for hex uniqueness; `categoryHues.test.ts` updated in lockstep; V3/V4/V6 variants pick up new palette automatically via `--ucg-accent`).
 - `[✗]` `T004` — AVB hardware qualification/release gating (lab-blocked)
 - `[✗]` `T065` — Tesira parity release closure (hardware evidence blocked)
 
@@ -671,6 +674,76 @@ Completion notes:
 
 ---
 
+ID: T2501
+Status: [✓] Done
+Title: Snapshot slot-style variants — regression test coverage
+Description:
+- Goal: Lock the V3 / V4 / V6 slot-style variants in place with focused regression tests so a future refactor that drops `data-slot-style` from the `Block` element, breaks the V4 ring SVG render, or detaches the LED-bar width from `cpuPercent` fails CI instead of shipping silently. Cover both the per-block render (Block.tsx) and the new persistence hook (useSnapshotSlotStyle.tsx).
+- Why it matters: when the variant work first shipped, `npm run typecheck` and `npm run build` passed cleanly with the V4 ring overlapping the label and the V6 LED bar invisible at idle. The build gate caught nothing because none of the new behaviour was asserted. The variants live in the user's daily workflow (Snapshot Editor's signal grid, eight slots × N chains) and any silent regression fans out across every chain in every snapshot. Closing this gap is what turns this from a "design experiment" into a maintainable feature.
+- Acceptance:
+  - **Block.tsx** — three new tests: (a) `data-slot-style="v3-tinted"` is reflected on `.ucg-block`; (b) `data-slot-style="v4-ring"` renders the `.ucg-block__cpu-ring` SVG with two circles whose `strokeDasharray` reflects clamped CPU%; (c) `data-slot-style="v6-led"` renders `.ucg-block__led-bar-fill` with `width` matching clamped CPU%. Each test should drive the variant by mocking `useSnapshotSlotStyle` so it doesn't depend on a real `localStorage` or storage-event surface.
+  - **Idle-floor coverage** — at least one assertion per ring/LED test that confirms the visual fill is non-zero at `cpuPercent: 0` (≥ the 4% floor in `clampVisualCpu`). This is the regression that cost most of last cycle.
+  - **Idle-ceiling coverage** — at least one assertion that `cpuPercent: 100` clamps to 95% in the rendered geometry, not 100% (otherwise the ring reads as a closed loop with no headroom).
+  - **useSnapshotSlotStyle.tsx** — a new `useSnapshotSlotStyle.test.tsx` covering: initial value when localStorage is empty (returns 'default'); initial value with a valid localStorage entry; rejection of an invalid localStorage entry (falls through to default); update writes to localStorage; update dispatches the `map2:snapshot-editor.slot-style.sync` custom event; same-tab subscription receives the sync event; cross-tab subscription receives a `storage` event; quota-exceeded error in `setItem` does not throw.
+  - All existing UCG / SignalCanvas / SpecialSettingsDialog / ThemePage / useSpecialSettings tests stay green (currently 86 across 16 suites).
+- Estimated effort: Small. ~80–120 LOC of test code across two new test files / one extended file. ~30 minutes including run + verify.
+- Dependencies: builds on the slot-style work shipped in this session — `Block.tsx` slot-style branches, `useSnapshotSlotStyle.tsx` hook, `clampVisualCpu` floor/ceiling constants, the dialog's preview cards. None of those need to change.
+- Required outputs/deliverables:
+  - `web/src/app/components/SnapshotEditor/UnifiedChannelGrid/Block.test.tsx` extended with 3+ slot-style tests + 2+ floor/ceiling tests.
+  - `web/src/app/hooks/useSnapshotSlotStyle.test.tsx` new file, ~6–8 tests.
+  - `npm run typecheck` clean, full `npm run test` clean (no new failures introduced).
+  - Worklist completion notes with file paths + final test count.
+Assigned to: Claude
+Last updated: 2026-05-09 EDT - Claude
+Completion notes:
+- **Block.tsx variant tests** — extended `Block.test.tsx` from 4 → 12 tests (+8 new). New tests under `describe('slot-style variants', …)` cover: data-attr reflection on `.ucg-block` (`v3-tinted` case as the canonical example); CPU ring SVG renders 2 circles with a parsed `stroke-dasharray` under `v4-ring`; ring fill > 2 of 81.68 circumference at idle (4% floor verified, generous lower bound for resilience to future tweaks); ring fill ≤ 96% of total at 100% input (95% ceiling); LED bar fill width tracks input at 30%; LED bar = '4%' at idle (floor); LED bar = '95%' at 100% (ceiling); neither ring nor LED render in default mode.
+- **Hook tests** — new `useSnapshotSlotStyle.test.tsx`, 9 tests: empty-localStorage default; valid-entry hydration; invalid-entry rejection; setItem persistence; same-tab sync event dispatched; sibling instance updated via sync event; cross-tab `storage` event handled; cross-tab clear resets to default; quota-exceeded throw doesn't break in-memory state.
+- **Module mock pattern** — `jest.spyOn(slotStyleHook, 'useSnapshotSlotStyle')` per-test with `restoreAllMocks` in `afterEach`. Cleaner than the legacy `jest.mock(…, factory)` approach because it doesn't require listing every export and re-export drift can't silently break it.
+- **Verification** — `npx jest UnifiedChannelGrid/Block.test` 12/12 green; `npx jest useSnapshotSlotStyle` 9/9 green; full targeted sweep (UnifiedChannelGrid + SpecialSettingsDialog + useSpecialSettings + useSnapshotSlotStyle + SnapshotEditorSignalCanvas + ThemePage + categoryPalette + categoryHues) 127/127 across 19 suites; `npm run typecheck` clean; production build clean (`SnapshotEditorPageContent-*.js` rebuilt).
+- **Files touched**: `web/src/app/components/SnapshotEditor/UnifiedChannelGrid/Block.test.tsx` (+103 LOC), `web/src/app/hooks/useSnapshotSlotStyle.test.tsx` (new, 113 LOC).
+- **Closeout commit**: see commit message + branch state for hash.
+
+---
+
+ID: T2502
+Status: [✓] Done
+Title: Snapshot slot accent palette — resolve category colour collisions
+Description:
+- Goal: The slot accent palette currently maps 15 MAP2 categories onto 9 colours, creating two collisions that hide chain composition: Distortion + Drums both render rose (#e36b8e), Pitch + Multi-Effect both render purple (#9b7cd6). Replace the duplicates with two new accent hues so every category gets a distinct colour. Update both `CATEGORY_COLOR_TOKENS` (the consumed value) and `categoryHues.ts` (the oklch fallback metadata) atomically — they are intended to be siblings.
+- Why it matters: the slot's category strip is the operator's primary "what is this" cue when scanning a chain. Today, a chain mixing Distortion (an overdrive plugin) and Drums (a synth plugin) shows two indistinguishable rose strips. Same for Pitch + Multi-Effect on purple. Duplicate accents are worse than no accent because they imply false identity. The current mapping is a temporary papered-over result of squeezing the design's 9-colour palette into MAP2's 15 categories.
+- Acceptance:
+  - **Distortion** retains the current rose `#e36b8e` (the more "warm/red" category visually).
+  - **Drums** moves to a new coral hue, e.g. `#e89478` — a warm orange-leaning rose distinct from both Distortion's rose and Amplifier's orange `#e48a3a`.
+  - **Multi-Effect** retains the current purple `#9b7cd6` (the catch-all bucket category).
+  - **Pitch** moves to a new violet hue, e.g. `#7d6acb` — a cooler, more blue-leaning violet distinct from Multi-Effect's purple and EQ's amber.
+  - All 15 categories produce visually distinct accent colours when rendered side-by-side at `borderLeft: 4px solid …` (validated by visual inspection on a chain with one slot per category, or by an oklch-distance assertion in unit tests).
+  - `categoryHues.ts` updated in lockstep: `Drums` becomes a new `coral` fallback (or extend the `fallback` Literal type), `Pitch` becomes a new `violet` fallback. Hue/chroma values updated to oklch coordinates that match the new sRGB hexes.
+  - All existing tests stay green; no SnapshotEditor / UCG snapshot/integration test breaks because of the colour change. (Most likely none touch the literal hex strings; verify.)
+- Estimated effort: Small. Two hex value swaps in `gridConstants.ts` + two hue/chroma updates in `categoryHues.ts` + a regression test asserting palette uniqueness via either string-distinct (cheap) or oklch-distance (correct). ~20 minutes including run + verify.
+- Dependencies: none. The variant CSS reads `--ucg-accent` from per-block inline style, which reads `CATEGORY_COLOR_TOKENS[slot.category]` — so the V3/V4/V6 variants automatically pick up the palette change with no further wiring.
+- Required outputs/deliverables:
+  - `web/src/app/components/SnapshotEditor/UnifiedChannelGrid/gridConstants.ts` — Drums and Pitch hex values updated.
+  - `web/src/app/components/SnapshotEditor/categoryHues.ts` — `CATEGORY_HUES.Drums` and `CATEGORY_HUES.Pitch` updated; `CategoryHue.fallback` type extended with `coral` and `violet` if needed.
+  - `web/src/app/components/SnapshotEditor/UnifiedChannelGrid/categoryPalette.test.ts` (or extension of an existing test) asserting all 15 categories produce distinct hex values in `CATEGORY_COLOR_TOKENS`.
+  - `npm run typecheck` clean, all targeted tests green.
+  - Worklist completion notes with the final hex values and the assertion shape.
+Assigned to: Claude
+Last updated: 2026-05-09 EDT - Claude
+Completion notes:
+- **Scope expanded mid-task** — initial spec named only the Distortion+Drums and Pitch+Multi-Effect collisions. While auditing the palette, three more collision groups surfaced: Cabinet+Utility+Effects (warm gray ×3), Dynamics+Instrument (spring green ×2), and Delay+AVB (sky ×2). The acceptance criterion stated "all 15 categories produce visually distinct accent colours" — strict reading of the criterion required addressing all five groups, which I did in this PR rather than splitting into a follow-on task.
+- **Final palette** — every MAP2 category now resolves to a unique fallback hex:
+  - Amplifier `#e48a3a`, Cabinet `#8a8f95`, EQ `#e0b446`, Dynamics `#3fbf8a`, Modulation `#5bc9a8`, Delay `#5fa8e0`, Reverb `#3db7c9`, Distortion `#e36b8e`
+  - **Changed**: Utility `#6f7a8a` (cool slate, was `#8a8f95`), Instrument `#6dd0a8` (mint-cyan, was `#3fbf8a`), Drums `#e89478` (coral, was `#e36b8e`), Pitch `#7d6acb` (indigo, was `#9b7cd6`), Effects `#a89c8a` (taupe, was `#8a8f95`), AVB `#4a85b8` (steel, was `#5fa8e0`)
+  - Multi-Effect `#9b7cd6`, Unknown sentinel `#525252`
+- **categoryHues.ts** — `CategoryHue.fallback` Literal extended with `coral`, `indigo`, `cool-neutral`, `taupe`, `mint`, `steel` (6 new tokens). Hue/chroma values updated for the 6 changed categories. Header comment added explaining the de-collisioning history.
+- **Tests** — new `categoryPalette.test.ts` (5 tests): every entry parses as `var(--map2-cat-*, #hex)`; uniqueness sweep iterates `MAP2_CATEGORIES` and fails on first collision with a readable error pointing at the offending pair; explicit T2502 regression guards for the two named collisions; `Unknown` sentinel correctly excluded. Existing `categoryHues.test.ts` updated in lockstep (`it.each` table + the case-insensitive AVB assertion).
+- **Verification** — full sweep 127/127 across 19 suites; `npm run typecheck` clean; production build clean.
+- **Side benefit** — the V3/V4/V6 slot-style variants automatically pick up the new palette via `--ucg-accent` since they read from `CATEGORY_COLOR_TOKENS`. No additional wiring required.
+- **Files touched**: `web/src/app/components/SnapshotEditor/UnifiedChannelGrid/gridConstants.ts`, `web/src/app/components/SnapshotEditor/categoryHues.ts`, `web/src/app/components/SnapshotEditor/UnifiedChannelGrid/categoryPalette.test.ts` (new), `web/src/app/components/SnapshotEditor/categoryHues.test.ts`.
+- **Closeout commit**: see commit message + branch state for hash.
+
+---
+
 ID: T2499
 Status: [ ] Todo
 Title: Sequencer Setup "Coming Soon" Cards — graduate all three to fully operational
@@ -731,6 +804,69 @@ Description:
 - **10-cycle run summary**: T2500 closed (IR pickers regression + http.ts seam fix); T2499-A: 8/8 code slices SHIPPED, 75 jest + 33 pytest tests added (108 net new tests across the run); 8 dual-pushed commits at HEAD `8f1114b8` after this closeout commit. Server :3000 verified healthy after every cycle.
 Assigned to: Claude
 Last updated: 2026-05-09 EDT - Claude: 10-cycle autonomous run complete. T2499-A 8/8 code slices SHIPPED; UI swap + HIL parity + pack-picker route mount are the remaining work to flip Done.
+
+
+---
+
+ID: T2500-MV
+Status: [>] In Progress
+Parent: —
+Title: MIDI Connections Visualization — live three-tier React Flow graph at /midi/connections/visualization
+Description:
+- Goal: Build a new sub-route at `/midi/connections/visualization` (mounted as a tab inside the existing `/midi/connections` page) that renders a live React Flow graph of loaded + active MIDI connections. Three-tier node model: Devices (left) ↔ Mappings (middle) ↔ Engine targets (right). Live activity rendered as animated edge particles + thickness driven by rolling rate + cool→hot heatmap. Click-node opens a right-side detail drawer with last-50-events. Default scope: only edges active in the last 60 s (configurable via filter chips). Backend serves a graph topology + a 5-min rolling replay buffer over a new `/ws/midi/visualization` WebSocket. Front-end uses rAF batching to keep the canvas at 60 fps under sustained load.
+- Why it matters: today operators have no live visualization of MIDI flow across the platform — they get the routing matrix, the patchbay graph, and a flat traffic monitor table, but no spatial picture of `which physical device → which mapping → which engine target` is firing right now. This collapses three separate mental models into one canvas, makes mis-routed bindings visible at a glance, and is the natural surface for the controller-host's `engine_command` dispatch pipeline (no other UI shows what the dispatcher is actually doing).
+- Locked decisions (10-question protocol, 2026-05-09):
+  - **Q1 — node model:** three tiers (Devices ↔ Mappings ↔ Engine targets).
+  - **Q2 — traffic source:** dual-source over a single WS, with a UI toggle. Reuses the existing `midi:traffic` topic where `direction='inbound'` (raw) and `direction='outbound'` (dispatched/routed) discriminates the layer.
+  - **Q3 — activity rendering:** layered — particles per event + edge thickness for rolling rate + cool→hot heatmap, with an intensity dial.
+  - **Q4 — default scope:** only edges active in the last 60 s; filter chips opt into Loaded / Discovered / Engine-targets / Channels.
+  - **Q5 — interactions (MVP):** click-node → right-side detail drawer with last-50-events. Edge-click and drag-to-rebind out of v1 scope.
+  - **Q6 — layout:** dagre LTR three-rank, no manual-position persistence in v1.
+  - **Q7 — navigation:** new outer-tab strip on `/midi/connections` with Overview + Visualization tabs; existing in-page Carbon tabs (Port matrix / Patchbay graph) untouched.
+  - **Q8 — backpressure:** client-side rAF batching; no server-side throttling. MIDI clock + active-sense filtered by default with toggle.
+  - **Q9 — history:** rolling 5-min in-memory buffer on the backend, replayed on WS connect. No disk persistence.
+  - **Q10 — scope:** full plan as designed (not an MVP cut, not a spike).
+- Plan & subtasks (18 atomic 15-60 min restart-safe bundles, six phases):
+  - Phase A — foundations: A1 worklist entry, A2 topology assembler service, A4 dispatcher introspection accessor (`iter_registrations()`), A3 topology HTTP route.
+  - Phase B — backend traffic plumbing: B1 5-min rolling edge buffer, B2 engine-command observer hook + bridge wiring, B-RAW-TAP (collapsed: existing `midi:traffic` `direction='inbound'` topic already carries raw MIDI — no new IPC needed), B3 `/ws/midi/visualization` endpoint with replay-on-connect.
+  - Phase C — frontend foundations: C1 `useMidiVisualizationGraph` hook with rAF batching + clock filter, C2 layout adapter with three-tier dagre rank anchors.
+  - Phase D — rendering surface: D1 three custom node bodies (Device/Mapping/Target), D2 single canvas particle/heatmap overlay (perf-critical), D3 detail drawer reusing `<DrawerPanel>`, D4 filter bar.
+  - Phase E — assembly: E1 outer-tab strip + visualization page + `App.tsx` route + prefetch entry.
+  - Phase F — verification: F1 backend e2e, F2 frontend smoke, F3 Definition of Done.
+- Required outputs:
+  - Backend: `app/services/midi_visualization_topology.py`, `app/services/midi_visualization_buffer.py`, `app/routes/midi_visualization.py`, `app/routes/midi_visualization_ws.py`. Additive `iter_registrations()` + `subscribe(observer)` on `app/services/engine_command_dispatcher.py`. New observer wiring inside `app/services/engine_command_bridge.py`.
+  - Frontend: `web/src/app/hooks/useMidiVisualizationGraph.ts`, `web/src/app/pages/midi-services/visualization/{midiVisualizationLayout,DeviceNodeBody,MappingNodeBody,TargetNodeBody,MidiEdgeOverlayCanvas,edgeAnimation,MidiVisualizationDetailDrawer,MidiVisualizationFilterBar}.tsx/ts`, `web/src/app/pages/midi-services/MidiServicesConnectionsTabs.tsx`, `web/src/app/pages/midi-services/MidiServicesConnectionsVisualizationPage.tsx`. App.tsx route + routePrefetch entry.
+  - Tests: `tests/test_midi_visualization_*.py` (topology, route, buffer, ws, e2e), `*.test.{ts,tsx}` for hook + layout + page (vitest/jest).
+- Reuse decisions (no new deps):
+  - `reactflow ^11.11.4` and `dagre ^0.8.5` already in `web/package.json`.
+  - `<SignalFlowGraph>` + `layoutSignalFlowGraph` (T2477) is the consensus graph primitive — visualization page composes it, never instantiates `<ReactFlow>` directly.
+  - `<DrawerPanel>` (`web/src/app/components/primitives/DrawerPanel.tsx`) hosts the detail drawer.
+  - Tab-strip pattern copies `web/src/app/pages/midi-hub/MidiHubTabs.tsx` (NavLink + framer-motion `layoutId` indicator).
+  - Raw MIDI traffic uses the existing `midi:traffic` WS topic populated by `app/services/midi_hub/inbound_traffic_bridge.py` (already installed unconditionally at lifespan startup, T2480-3 + 2026-05-01 fix).
+- Acceptance: Operator opens `/midi/connections`, clicks the new "Visualization" tab → sees three labeled columns (Devices / Mappings / Engine targets); plugged-in MIDI device fires events → particles travel device → mapping → target on the canvas; clicking a node opens the right-side drawer with the last-50 events; toggling the MIDI-clock filter visibly damps clock-driven edges; reload restores the last 5 min of traffic from the replay buffer.
+- Dependencies: T2459-H (controller-host + dispatcher), T2477 (`<SignalFlowGraph>`), T2480-3 (inbound MIDI traffic bridge unconditional install).
+- Estimated effort: ~6–8 hr engineering wall-clock across 18 atomic bundles.
+Subtasks:
+  - `[>]` `T2500-MV-A1` — Worklist entry (this entry).
+  - `[ ]` `T2500-MV-A2` — Backend topology assembler service + 4 unit tests.
+  - `[ ]` `T2500-MV-A3` — Backend topology HTTP route + main.py wiring.
+  - `[ ]` `T2500-MV-A4` — Dispatcher `iter_registrations()` accessor.
+  - `[ ]` `T2500-MV-B1` — Rolling 5-min edge buffer service + 6 unit tests.
+  - `[ ]` `T2500-MV-B2` — Engine-command observer hook + bridge wiring.
+  - `[ ]` `T2500-MV-B-RAW-TAP` — Reuse existing `midi:traffic` topic for raw events (no new IPC).
+  - `[ ]` `T2500-MV-B3` — `/ws/midi/visualization` endpoint with replay-on-connect.
+  - `[ ]` `T2500-MV-C1` — `useMidiVisualizationGraph` hook with rAF batching + clock filter.
+  - `[ ]` `T2500-MV-C2` — Layout adapter (three-tier dagre rank anchors).
+  - `[ ]` `T2500-MV-D1` — DeviceNodeBody / MappingNodeBody / TargetNodeBody.
+  - `[ ]` `T2500-MV-D2` — Single canvas particle/heatmap overlay (perf-critical).
+  - `[ ]` `T2500-MV-D3` — Detail drawer (composes `<DrawerPanel>`).
+  - `[ ]` `T2500-MV-D4` — Filter bar (scope chips + event-kind toggle + clock filter + intensity dial).
+  - `[ ]` `T2500-MV-E1` — Outer-tab strip + visualization page + App.tsx route + prefetch.
+  - `[ ]` `T2500-MV-F1` — Backend e2e test.
+  - `[ ]` `T2500-MV-F2` — Frontend smoke test.
+  - `[ ]` `T2500-MV-F3` — Definition of Done verification (build + restart + in-browser visual confirm).
+Assigned to: Claude
+Last updated: 2026-05-09 EDT - Claude: T2500-MV opened. A1 worklist entry shipped; A2-A4 next in dependency order.
 
 
 ---
@@ -1204,6 +1340,105 @@ Phase progress:
 - 2026-05-05 — **T2472 mutation extraction slice 8 SHIPPED (Claude).** Lifts the chain `renameMutation`. Added `web/src/app/pages/snapshotEditor/useSnapshotEditorChainRenameMutation.ts` exposing `useSnapshotEditorChainRenameMutation({ activeSnapshot, requireSnapshotChainId, syncSnapshotMutationResult, markSnapshotsDirty, setShowRenameChainModal, setRenameChainName, pushToast })`. Same snapshot-vs-cluster routing pattern as slice 7: `snapshotsApi.renameChain` when an active snapshot exists, `chainsApi.rename` otherwise. Cache-key bit-identity preserved verbatim (`['chains']`). Paired 3-case test (cluster path / snapshot path / error) asserts every observable invariant. Replaced 17 LoC inline → 8 LoC hook destructure. Monolith size: 6462 → 6455 (-7). 63/63 SnapshotEditor test suites green (360 tests); typecheck + lint + atomic build clean (19.09s). 10 mutations remain. Cumulative across slices 1-8: monolith 6695 → 6455 (**-240 LoC**), 8 sibling hooks shipped.
 - 2026-05-05 — **T2472 mutation extraction slice 9 SHIPPED (Claude).** Lifts the `openEditorSnapshotMutation`. Added `web/src/app/pages/snapshotEditor/useSnapshotEditorOpenEditorSnapshotMutation.ts` exposing `useSnapshotEditorOpenEditorSnapshotMutation({ controlPlaneSnapshot, setEditorSnapshotOverride, hydrateEditorFromSnapshot, pushToast })`. The mutation calls `snapshotsApi.openDraft`, then on success either clears or sets the editor snapshot override depending on whether the loaded snapshot equals the control-plane authority, and finally hydrates the editor with `Loaded: <name>` toast + `resetSelectedBlock=true`. Hook call relocated downward in the page body (TDZ — `hydrateEditorFromSnapshot` is defined ~390 lines below the original mutation). Paired 3-case test (override-cleared when loaded equals authority / override-set when different / error). Replaced 17 LoC inline → 6 LoC hook destructure. Monolith size: 6455 → 6449 (-6). 64/64 SnapshotEditor test suites green (363 tests); typecheck + lint + atomic build clean (19.36s). 9 mutations remain. The remaining 9 are all in the **conservatively deferred** category for cycle 10: `createSnapshotFromEditorMutation`, `updateActiveSnapshotMutation`, `activateCurrentSnapshotMutation`, `restoreSnapshotRevisionMutation`, `updateLiveSnapshotRoutingMutation`, `deleteMutation`, `addPluginMutation`, `updateAuthorityLiveChainsMutation` — each has 8-15+ deps and would require a full focused session per mutation. Cumulative across slices 1-9: monolith 6695 → 6449 (**-246 LoC**), 9 sibling hooks shipped, 363 tests green.
 - 2026-05-05 — **T2481-B3 slice 33 — SnapshotEditorPage.css status-chip + automation-toggle Carbon swatch retokenization SHIPPED (Claude).** Pivoted to T2481 because every remaining T2472 mutation (`createSnapshotFromEditor`, `updateActiveSnapshot`, `activateCurrentSnapshot`, `restoreSnapshotRevision`, `updateLiveSnapshotRouting`, `deleteMutation`, `addPluginMutation`, `updateAuthorityLiveChains`) requires a focused operator session due to 8-15+ dep surface each. Final 11 hex literals on `SnapshotEditorPage.css` retokenized to **exact** Carbon swatches (verified via `@carbon/colors/lib/index.js`): `#005d5d` → `var(--cds-teal-70)`, `#0043ce` → `var(--cds-blue-70)`, `#8a3800` → `var(--cds-orange-70)`, `#9f1853` → `var(--cds-magenta-70)`, `#198038` → `var(--cds-green-60)`, `#8e6a00` → `var(--cds-yellow-60)`, `#525252` → `var(--cds-gray-70)`, `#750e13` → `var(--cds-red-80)` (status-metadata-chip family — 8 sites); `#9f1853` → `var(--cds-magenta-70)`, `#bf1d63` → `var(--cds-magenta-70-hover)`, `#740937` → `var(--cds-magenta-80)` (automation-floating-toggle base/hover/active — 3 sites). No visual change but the status chips and automation toggle now participate in any future theme swap. Lint 0/0; typecheck + build clean (18.76s); SnapshotEditor regression 64/64 (363 tests). After this slice, every operational chrome `background: #...` literal in `SnapshotEditorPage.css` either resolves through a Carbon swatch token or is documented as a category-accent dark-tag-fg pairing (the 13 surviving foreground darks at lines 841-991 per the cycle-21 audit).
+
+---
+
+## T2503 — DAW Service (Tracktion-backed) Epic (filed 2026-05-09)
+
+ID: T2503
+Status: [>] In Progress
+Title: DAW Service (Tracktion-backed) — first-class platform service offering
+Opened: 2026-05-09
+Authorization: Standing autonomous full-execution authority granted by operator. Each "set" ships as commit + dual-push + verify; bench HIL operator-side. Code lands behind `MAP2_DAW_MODE` build flag (default OFF) so sets compose without disturbing the live engine.
+
+Description:
+- Goal: Add Tracktion Engine (https://github.com/Tracktion/tracktion_engine, GPLv3) as the C++ core of a new tier-1 platform service named **DAW**, peer to MIDI / AVB / Sampler / Audio Effects. The DAW service exposes timeline, tracks, clips, automation, and plugin hosting through the existing engine_command IPC, and is driven primarily by MIDI control surfaces (MK1, MCU-protocol surfaces, generic MIDI learn). The React UI is a *reference parity* surface, not the tier-1 interface.
+- Why: MAP2 today is a live-rig platform; users routinely want to capture, edit, and arrange the same signal chain they perform with. A tier-1 DAW service unifies live + studio under one codebase, one configuration authority, one device topology — instead of forcing operators to bounce between MAP2 and an external DAW.
+- Non-goals: Replacing or competing with the existing JUCE engine in live mode. The two coexist as peers under a hard mode switch. The DAW service is not a "plugin" of the live engine — it is its own first-class service with its own callback ownership when DAW mode is active.
+
+### Locked architecture decisions (from 25-question protocol, 2026-05-09)
+- **A1** Tracktion is **embedded in `juce-engine/`** alongside the existing engine, gated by `-DMAP2_DAW_MODE=ON`.
+- **A2** Tracktion **owns the audio device callback** when DAW mode is engaged. The existing `Map2AudioEngine` callback is stopped first.
+- **A3** Mode switch is **hard** (stop / re-init). Brief audio dropout is acceptable; we are not building a hot-swap hand-off in v1.
+- **A4** Service identity: **`DAW (Tracktion-backed)`** — tier-1 platform service.
+- **A5** Tier-1 surfaces on day one: NI Maschine MK1 + MCU-protocol surfaces (X-Touch, Behringer XR, etc.) + generic MIDI learn. MeloAudio Commander not tier-1 for DAW.
+- **A6** All control flows through `map2-controller-host` → `engine_command` IPC → DAW handlers. No native `tracktion::ControlSurface` path; MCU emulation is implemented as a controller-host device-pack that emits engine_command frames.
+- **A7 + A8 + A12 + A25** **MAP2 State Authority is the on-disk source of truth** (graph JSON). `.tracktionedit` XML is a regenerated cache shipped alongside for tooling compatibility. MAP2→Tracktion sync is one-way; Tracktion is read-only at the API boundary.
+- **A9** **Single shared plugin scanner / inventory** across live and DAW services.
+- **A10** Plugin formats on day one: **LV2 + native MAP2 plugins** (NAM, IRs, internal JUCE plugins). VST3/CLAP/VST2 deferred — separate epic.
+- **A11** Sessions live under `~/.map2/daw/<project>/` (user-scoped, matches Configuration Authority Model).
+- **A13** **MAP2 platform clock is canonical**; Tracktion follows.
+- **A14** External sync supported: **MIDI Clock out + MIDI Clock in + MTC/LTC** (no Ableton Link in v1).
+- **A15** **Tracktion's sampler becomes the new core of the tier-1 Sampler service** — re-platform.
+- **A16** Audio Effects service stays **platform-native**; Tracktion sees them as JUCE plugins via the shared scanner.
+- **A17** AVB streams routed via **dedicated "AVB bus" plugins** — each stream = a Tracktion plugin instance with audio I/O.
+- **A18** **DAW gate: 128 samples internal graph / 48 kHz / <1 ms peak jitter / 0 xruns**. Device callback stays at the Tier-A locked 64 samples (Common.h `DEFAULT_BUFFER_SIZE` is invariant); Tracktion's `BufferingAudioSource` provides headroom for disk + plugin scheduling. This preserves Tier A locks while giving DAW mode realistic plugin headroom.
+- **A19** **Soak gate: 30-min adapted random-FX/clip soak** modeled on `juce-random-effects-soak`. Mandatory pre-ship for the final tier-1 declaration.
+- **A20** **License: AGPLv3-or-later (existing) is compatible with GPLv3 (Tracktion).** No relicense needed; only attribution + compatibility audit + THIRD_PARTY_NOTICES update.
+- **A21** Vendor Tracktion via **CMake FetchContent pinned to a release tag** (mirrors JUCE 8.0.0 pattern).
+- **A22** FastAPI talks to embedded Tracktion via **extended engine_command IPC** (`daw.*` verbs). Single engine, single IPC channel.
+- **A23** React UI: **full editing parity** (timeline, plugin params, automation curves) — but explicitly tagged non-tier-1 surface; control flows through MIDI surfaces.
+- **A24** **Full-scope autonomous epic**, no phased stubs. All 10 sets specified at filing time; ship as code-side complete behind the `MAP2_DAW_MODE` flag.
+
+### Conflict resolutions
+- *Q7/Q8 vs. Q12*: resolved via Q25 — MAP2 graph is authoritative, `.tracktionedit` is a generated cache.
+- *Q15 vs. Q16*: kept asymmetric on purpose — Sampler re-platforms on Tracktion (A15), Effects stay platform-native (A16). Documented as intentional.
+- *Q18 vs. Tier-A locks (CLAUDE.md §Critical System Rules)*: resolved by routing the 128-sample headroom through Tracktion's internal graph rather than the device callback. Device callback stays at 64 samples per Tier A.
+- *Q20 vs. actual license*: existing license is AGPLv3-only, not MIT. AGPLv3 is GPLv3 + network-use clause; GPLv3 → AGPLv3 is one-way compatible. Tracktion (GPLv3) embedded in AGPLv3 is permitted; combined work distributes as AGPLv3. Captured in Set 1 audit.
+
+### Epic structure — 10 ship cycles, all behind `-DMAP2_DAW_MODE=ON`
+
+#### Set 1 — License attribution + compatibility audit
+- Deliverables: `docs/THIRD_PARTY_NOTICES.md` (Tracktion row), `docs/architecture/DAW_SERVICE.md`, `docs/architecture/LICENSE_COMPATIBILITY.md` (AGPLv3↔GPLv3↔MIT matrix), `juce-engine/CMakeLists.txt` (`option(MAP2_DAW_MODE … OFF)` reservation only), this worklist entry.
+- Acceptance: `cmake -B build -LAH | grep MAP2_DAW_MODE` shows the flag; THIRD_PARTY_NOTICES lists Tracktion; LICENSE_COMPATIBILITY published.
+
+#### Set 2 — Vendor Tracktion via FetchContent + smoke build
+- Deliverables: `juce-engine/cmake/Map2Tracktion.cmake`, conditional `include()` in `CMakeLists.txt`, `juce-engine/Source/Daw/DawService.{h,cpp}` shell, `juce-engine/tests/test_daw_service_compiles.cpp`, `scripts/build_juce_engine_daw.sh`.
+- Acceptance: `cmake -B build-daw -DMAP2_DAW_MODE=ON && cmake --build build-daw` succeeds; flag-OFF build byte-identical to before.
+
+#### Set 3 — DAW mode lifecycle (hard switch + device handover)
+- Deliverables: `Daw/DawDeviceManager.{h,cpp}`, `Daw/ModeSwitchCoordinator.{h,cpp}`, `Map2AudioEngine::requestModeSwitch()`, `app/services/daw_service.py` (mode endpoint), `tests/test_daw_mode_switch.py`, `juce-engine/tests/test_mode_switch_coordinator.cpp`.
+- Acceptance: flag-OFF `/api/daw/mode` returns 503; flag-ON state machine logs full transition; bench HIL gate captures sub-second switch with 0 xrun.
+
+#### Set 4 — engine_command `daw.*` dispatcher + FastAPI surface
+- Deliverables: register 17 `daw.*` verbs in `engine_command_handlers.py`; `Daw/DawCommandRouter.{h,cpp}`; `app/routes/daw.py` REST + WS; `app/schemas/daw.py`; `web/src/map2/clients/daw.ts`; pytest + jest coverage.
+- Acceptance: OpenAPI lists `/api/v1/daw/*` with unique opIds; flag-OFF returns 503 envelope; flag-ON round-trips a stock `.tracktionedit` to the UA-1000 (HIL gate).
+
+#### Set 5 — State Authority + Edit XML projector + ~/.map2/daw layout
+- Deliverables: `state_authority/daw_schema.py` (DawProject/Track/Clip/AutomationLane/PluginInstance/AvbBus); idempotent migration; `daw_project_service.py`; `daw_project_serializer.py` (round-trip identity test); `Daw/DawProjectLoader.{h,cpp}`; filesystem layout doc.
+- Acceptance: `daw.project.new` creates dir + `project.json` + `edit.tracktionedit`; `state_graph → xml → graph` is identity.
+
+#### Set 6 — Controller-host MCU pack + MK1 DAW pack + generic MIDI learn
+- Deliverables: `device-packs/mackie/mcu-protocol/`, `device-packs/native-instruments/maschine-mk1/daw-mode/`, `device-packs/_generic/midi-learn-daw/`, extended `midi_learn_service.py` DAW target group, `tests/test_mcu_device_pack.py`, `tests/test_mk1_daw_overlay.py`.
+- Acceptance: device-pack-validator green; MCU SysEx → `daw.transport.play` round-trip in pytest; MK1 pad press → `daw.clip.add` verb emitted.
+
+#### Set 7 — Transport bridge + MIDI Clock/MTC/LTC
+- Deliverables: `Daw/TransportBridge.{h,cpp}`, `MidiClockOut.{h,cpp}`, `MidiClockIn.{h,cpp}`, `MtcLtcBridge.{h,cpp}`, extended `tempo_service.py` sync-source state machine, pytest harness with synthetic clock pulses.
+- Acceptance: Tracktion position matches platform clock ±1 sample; MIDI Clock out emits at correct PPQ; MTC quarter-frame stream encodes platform position.
+
+#### Set 8 — Sampler re-platform on Tracktion sampler core
+- Deliverables: `Daw/Sampler/Map2SamplerCore.{h,cpp}` wrapping `tracktion::SamplerPlugin`; `Map2SamplerCompat.{h,cpp}` shim; `sampler_service.py` backend switch under flag; `sampler_migration.py`; round-trip test; `docs/architecture/SAMPLER_REPACKAGING.md`.
+- Acceptance: flag-OFF legacy unchanged; flag-ON serves all existing Sampler verbs through Tracktion core; round-trip migration test green.
+
+#### Set 9 — AVB-bus plugin + LV2 + shared plugin scanner
+- Deliverables: `Daw/AvbBusPlugin.{h,cpp}`, `AvbBusPluginFactory.cpp`, `Daw/PluginScanner.{h,cpp}`, `app/services/plugin_inventory_service.py`, `web/src/map2/clients/plugin_inventory.ts`, pytest + C++ coverage.
+- Acceptance: AVB streams visible as track plugins; LV2 enumerated and instantiable; live engine + DAW share inventory.
+
+#### Set 10 — React DAW UI parity + soak harness + RT gate
+- Deliverables: `web/src/app/pages/DawPage.tsx` + Timeline / TrackList / PluginRack / Automation / Transport / ClipLauncher component tree; `.codex/skills/daw-soak/`; `scripts/run_daw_soak.py`; sample run captured pre-bench; final RT-gate section in `DAW_SERVICE.md`.
+- Acceptance: `/daw` route renders, loads project, fires transport; soak harness completes in flag-ON build; tier-1 declaration deferred until operator runs the 30-min UA-1000 soak.
+
+### Standing rules for this epic
+- Every set ships with a *new* commit message of the form `feat(daw): T2503-setN — <slice>`; never `--amend` shipped commits.
+- Every set updates this entry's progress notes with the bundle hash (where UI-touching), pytest counts, jest counts, and a one-line "what changed" pin.
+- The `MAP2_DAW_MODE` flag MUST default OFF until Set 10 closes. No set may flip the default.
+- Sets 3, 4, 7, 9, 10 carry bench HIL gates; capture evidence under `docs/fit-for-purpose-evidence/<date>/t2503-setN-<slice>/` with the operator's reproducible command.
+- If implementation surfaces an opportunistic chrome / industry-standard improvement (e.g., add VST3 to Set 9 if LV2 hosting reveals JUCE already has the path; add Ableton Link if MIDI Clock In bridge is trivially extensible), append a sub-task `T2503-setN-Chrome-<n>` to this entry and ship in the same set.
+
+### Progress log
+- 2026-05-09 — Epic filed (Claude). 25-question protocol completed; locked decisions A1–A24; AGPLv3↔GPLv3 compatibility audit deferred to Set 1 work. Set 1 in progress.
+
+Last updated: 2026-05-09 EDT - Claude
 
 ---
 

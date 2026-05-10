@@ -40,6 +40,26 @@ option(MAP2_PYBIND_ENABLE_EXTRAS
     ON)
 
 # ========================================
+# T2503 — DAW Service (Tracktion-backed) build flag
+# ========================================
+# When ON, the build fetches Tracktion Engine via FetchContent (see
+# cmake/Map2Tracktion.cmake — introduced under T2503 Set 2) and compiles the
+# juce-engine/Source/Daw/ source tree. When OFF (default), the DAW service
+# source tree is excluded and the resulting binary is byte-identical to a
+# pre-T2503 build. License posture: Tracktion is GPLv3; combined with MAP2's
+# AGPLv3 the work distributes as AGPLv3 (per AGPLv3 §13). Full audit at
+# docs/architecture/LICENSE_COMPATIBILITY.md.
+option(MAP2_DAW_MODE
+    "Build the Tracktion-backed DAW service (T2503). Default OFF — sets 2..10 will activate it."
+    OFF)
+if(MAP2_DAW_MODE)
+    message(STATUS "T2503 DAW mode: ENABLED (Tracktion Engine will be fetched in Set 2; combined work distributes as AGPLv3)")
+    add_compile_definitions(MAP2_DAW_MODE=1)
+else()
+    message(STATUS "T2503 DAW mode: disabled (set -DMAP2_DAW_MODE=ON to enable)")
+endif()
+
+# ========================================
 # JUCE Framework Integration
 # ========================================
 include(FetchContent)
