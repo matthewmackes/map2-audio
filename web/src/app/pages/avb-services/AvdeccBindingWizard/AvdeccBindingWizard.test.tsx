@@ -167,8 +167,8 @@ describe('AvdeccBindingWizard — tier 1 (one-click)', () => {
 // Tier 2 / Tier 3 placeholders
 // ---------------------------------------------------------------------------
 
-describe('AvdeccBindingWizard — tier placeholders', () => {
-  it('renders the DataTable placeholder for tier 2 (2-9 entities)', () => {
+describe('AvdeccBindingWizard — tier 2/3 picker mount', () => {
+  it('renders the DataTable picker for tier 2 (2-9 entities)', () => {
     render(
       <AvdeccBindingWizard
         dataSource={makeDataSource({
@@ -176,19 +176,17 @@ describe('AvdeccBindingWizard — tier placeholders', () => {
         })}
       />,
     )
-    expect(screen.queryByTestId('avdecc-wizard-data-table-placeholder')).not.toBeNull()
-    expect(screen.queryByText(/2 entities discovered/)).not.toBeNull()
+    expect(screen.queryByTestId('avdecc-data-table-picker')).not.toBeNull()
   })
 
-  it('renders the bulk-import placeholder for tier 3 (≥10 entities)', () => {
+  it('renders the same picker for tier 3 (≥10 entities)', () => {
     const entities = Array.from({ length: 12 }, (_, i) =>
       makeEntity({ entity_id: `0010fa00000000${(i + 16).toString(16).padStart(2, '0')}` }),
     )
     render(
       <AvdeccBindingWizard dataSource={makeDataSource({ entities })} />,
     )
-    expect(screen.queryByTestId('avdecc-wizard-bulk-placeholder')).not.toBeNull()
-    expect(screen.queryByText(/12 entities discovered/)).not.toBeNull()
+    expect(screen.queryByTestId('avdecc-data-table-picker')).not.toBeNull()
   })
 })
 

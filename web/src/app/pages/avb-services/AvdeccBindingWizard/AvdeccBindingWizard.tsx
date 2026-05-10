@@ -32,6 +32,7 @@ import {
 } from '@carbon/react'
 
 import type { AvbAvdeccEntity } from '../../../components/AvbRouting/types/endpoint'
+import { AvdeccDataTablePicker } from './AvdeccDataTablePicker'
 
 // ---------------------------------------------------------------------------
 // Tier classifier — locked by T2499-C Q2
@@ -104,12 +105,13 @@ export function AvdeccBindingWizard({
               onSelect={onSelectEntity}
             />
           )}
-          {!isLoading && !error && enabled && tier === 'data_table' && (
-            <DataTablePlaceholder count={entities.length} />
-          )}
-          {!isLoading && !error && enabled && tier === 'bulk_import' && (
-            <BulkImportPlaceholder count={entities.length} />
-          )}
+          {!isLoading && !error && enabled &&
+            (tier === 'data_table' || tier === 'bulk_import') && (
+              <AvdeccDataTablePicker
+                entities={entities}
+                onSelectEntity={(entity) => onSelectEntity?.(entity)}
+              />
+            )}
         </div>
       </Layer>
     </div>
@@ -232,28 +234,6 @@ function OneClickEntityTile({
         </Button>
       </Stack>
     </Tile>
-  )
-}
-
-function DataTablePlaceholder({ count }: { count: number }): React.ReactElement {
-  return (
-    <div data-testid="avdecc-wizard-data-table-placeholder">
-      <p style={{ margin: 0 }}>
-        {count} entities discovered. The DataTable picker ships in T2499-C
-        Slice 4 with sortable columns + auto-suggest by entity-name.
-      </p>
-    </div>
-  )
-}
-
-function BulkImportPlaceholder({ count }: { count: number }): React.ReactElement {
-  return (
-    <div data-testid="avdecc-wizard-bulk-placeholder">
-      <p style={{ margin: 0 }}>
-        {count} entities discovered. The bulk-import + filter UI ships in
-        T2499-C Slice 4 (large-bench tier; ≥10 entities).
-      </p>
-    </div>
   )
 }
 
