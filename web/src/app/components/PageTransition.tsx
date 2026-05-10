@@ -66,22 +66,16 @@ export function getLandingTransitionScope(pathname: string): TransitionScope | n
 }
 
 function resolveScopedTransitionMode(
-  scope: TransitionScope,
+  _scope: TransitionScope,
   preferredMode: TransitionMode,
 ): TransitionMode {
-  if (preferredMode !== 'staggered') {
-    return preferredMode
-  }
-
-  // Keep the slow staggered overlay only on the most intentionally branded
-  // landing surfaces — secondary routes get the lighter fade so navigation
-  // inside a workspace stays snappy. The universal in-content stagger still
-  // runs on every route via UniversalStaggerProvider.
-  if (scope.id === 'home' || scope.id === 'audio-artifacts') {
-    return 'staggered'
-  }
-
-  return 'fade'
+  // Operators who pick the React Staggered Reveal preset want it
+  // everywhere — including MIDI Hub, JUCE grid, and other previously
+  // light-fade scopes. We keep the universal in-content stagger across
+  // every route and now run the matching subtle wash overlay alongside
+  // it for consistent feel. A user who wants the lighter alternative
+  // can always pick Pager Slide or enable Reduce Effects.
+  return preferredMode
 }
 
 export function PageTransition({ children }: PageTransitionProps) {

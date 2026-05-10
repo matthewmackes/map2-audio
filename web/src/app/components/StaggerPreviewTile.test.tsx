@@ -61,6 +61,16 @@ describe('StaggerPreviewTile', () => {
     expect(screen.getByText('Channel F')).toBeInTheDocument()
   })
 
+  it('shows the Reduced motion badge when reduced=true', () => {
+    render(<StaggerPreviewTile speed="slow" reduced />)
+    expect(screen.getByTestId('stagger-preview-reduced-badge')).toHaveTextContent('Reduced motion')
+  })
+
+  it('does not show the Reduced motion badge in the default state', () => {
+    render(<StaggerPreviewTile speed="slow" />)
+    expect(screen.queryByTestId('stagger-preview-reduced-badge')).toBeNull()
+  })
+
   it('runs the staggered animation on the cells and re-runs on replay', async () => {
     render(<StaggerPreviewTile speed="slow" />)
 

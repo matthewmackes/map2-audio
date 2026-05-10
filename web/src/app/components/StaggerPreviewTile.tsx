@@ -53,6 +53,11 @@ export function StaggerPreviewTile({ speed, reduced = false }: StaggerPreviewTil
     <div className="stagger-preview-tile">
       <div className="stagger-preview-tile__head">
         <span className="stagger-preview-tile__title">Live preview</span>
+        {reduced ? (
+          <span className="stagger-preview-tile__reduced-badge" data-testid="stagger-preview-reduced-badge">
+            Reduced motion
+          </span>
+        ) : null}
         <button
           type="button"
           className="stagger-preview-tile__replay"

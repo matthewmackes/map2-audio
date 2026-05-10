@@ -24,6 +24,18 @@
   color: var(--cds-text-secondary, rgba(244, 244, 244, 0.7));
 }
 
+.stagger-preview-tile__reduced-badge {
+  font-size: 0.65rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--cds-support-warning, #f1c21b);
+  border: 1px solid color-mix(in srgb, var(--cds-support-warning, #f1c21b) 36%, transparent);
+  padding: 0.1rem 0.4rem;
+  border-radius: 999px;
+  background: color-mix(in srgb, var(--cds-support-warning, #f1c21b) 12%, transparent);
+}
+
 .stagger-preview-tile__replay {
   appearance: none;
   border: 1px solid var(--cds-border-subtle, rgba(255, 255, 255, 0.12));

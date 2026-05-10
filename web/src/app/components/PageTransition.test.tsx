@@ -96,14 +96,17 @@ describe('PageTransition', () => {
     expect(screen.queryByTestId('landing-route-transition')).toBeNull()
   })
 
-  it('uses a lighter transition inside the MIDI Hub route family', () => {
+  it('runs the staggered overlay on MIDI Hub navigations when staggered-reveal is selected', () => {
     renderHarness('/midi-hub/connections')
 
     fireEvent.click(screen.getByRole('button', { name: 'Go MIDI Presets' }))
 
     expect(screen.getByTestId('transition-pathname')).toHaveTextContent('/midi-hub/presets')
     expect(screen.getByTestId('landing-route-transition')).toHaveClass('landing-route-transition--midi-hub')
-    expect(screen.getByTestId('landing-route-transition')).toHaveClass('landing-route-transition--fade')
+    // Universal staggered reveal: MIDI Hub no longer gets the legacy
+    // lighter-fade downgrade. Operators who want the lighter look can
+    // pick Pager Slide or toggle Reduce Effects.
+    expect(screen.getByTestId('landing-route-transition')).toHaveClass('landing-route-transition--staggered')
   })
 
   it('uses the pager slide preset when selected in effects settings', () => {
