@@ -58,10 +58,16 @@ const SETUP_TASKS: readonly SetupTaskMeta[] = [
     id: 'discover-avdecc',
     title: 'Discover AVDECC devices',
     description:
-      'Enumerate AVB-capable devices via la_avdecc, audition stream formats, and bind them into the routing matrix.',
+      'Enumerate AVB-capable devices via la_avdecc, audition stream formats, and bind them to Brain inputs. Drives the AVDECC simulator on hosts without AVB hardware (set MAP2_AVDECC_SIMULATOR=small to demo).',
     Icon: Network_4,
-    status: 'coming-soon',
-    roadmapTag: 'AVDECC',
+    // T2499-C — flipped to "available" 2026-05-10 with the AVDECC
+    // binding wizard's full code-side stack landed (entity provider,
+    // wizard shell, DataTable picker, substrate panel, binding writer).
+    // Real-hardware acceptance remains gated by T004 (AVB lab); the
+    // simulator path is operator-runnable today.
+    status: 'available',
+    roadmapTag: 'T2499-C',
+    navigateTo: '/avb-services/avdecc/binding-wizard',
   },
 ] as const
 
