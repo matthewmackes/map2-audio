@@ -1,0 +1,20 @@
+schema_version: 1
+pack_id: _generic-midi-learn-daw
+vendor:
+  name: MAP2 (generic)
+  website: https://map2.audio/
+description: |
+  T2503 Set 6 — generic MIDI Learn target catalog for the DAW service.
+
+  This pack is not bound to any specific hardware. It declares the typed
+  list of ``daw.*`` engine_command verbs an operator can MIDI-learn against
+  any controller via the controller-host's generic-learn UI. Each target
+  carries argument shape + display label so the learn UI can prompt the
+  operator for a track_id / clip_id / param_id when needed.
+
+  Mode discriminator: this catalog activates only when MAP2 mode == "daw".
+  Live-mode generic-learn targets remain in their existing pack(s).
+license: AGPL-3.0-only
+source: map2-native
+models:
+  - generic-midi-learn-daw

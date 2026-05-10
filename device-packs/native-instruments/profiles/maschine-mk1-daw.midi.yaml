@@ -1,0 +1,83 @@
+schema_version: 1
+identity:
+  manufacturer: Native Instruments
+  model: maschine-mk1-daw
+  alsa_client_pattern: 'MAP2:Maschine-MK1'
+  hardware_id: usb:17cc:0808
+
+# T2503 Set 6 — DAW-mode overlay for Maschine MK1.
+#
+# Same hardware surface as maschine-mk1.midi.yaml (the live-mode pack), but
+# every binding emits ``daw.*`` engine_command verbs. The controller-host's
+# mode-aware loader picks this profile when MAP2 mode == "daw".
+#
+# Pad layout (4×4):
+#   The 16 pads are the clip launcher. Pad N triggers clip slot N on the
+#   currently-selected track. Operator picks the active track via the
+#   group-button row (see scripts/maschine-mk1-daw.js:select_track).
+#
+# Encoder layout (11):
+#   - The 8 group encoders (CC 7..14) each scrub plugin params on the
+#     visible track strip in DAW mode.
+#   - The "MASTER" big encoder (CC 6) controls daw.transport.set_position.
+#   - The two reserved encoders (CC 70..71) drive plugin-bank navigation.
+#
+# Button layout (transport row + group row + utility row):
+#   PLAY/STOP/REC/RESTART map directly to daw.transport.{play,stop,record,
+#   set_position(0)}. Group buttons select the active track. Pattern button
+#   toggles loop region.
+
+scripts:
+  - scripts/maschine-mk1-daw.js
+
+controls:
+  # ---------- 4×4 pads → daw.clip.add (or trigger if clip already at slot) ---
+  # The "active track" lives in script state; the active pad index is the slot
+  # within that track. mk1_daw.js keeps the (track_id, clip_slot_offset)
+  # tuple and synthesizes daw.clip.add frames with the right (track_id, start,
+  # length, source) tuple.
+  - { status: 0x90, midino: 36, script: MaschineMK1_DAW.pad,  description: 'Pad 1 → clip slot 0.' }
+  - { status: 0x90, midino: 37, script: MaschineMK1_DAW.pad,  description: 'Pad 2 → clip slot 1.' }
+  - { status: 0x90, midino: 38, script: MaschineMK1_DAW.pad,  description: 'Pad 3 → clip slot 2.' }
+  - { status: 0x90, midino: 39, script: MaschineMK1_DAW.pad,  description: 'Pad 4 → clip slot 3.' }
+  - { status: 0x90, midino: 40, script: MaschineMK1_DAW.pad,  description: 'Pad 5 → clip slot 4.' }
+  - { status: 0x90, midino: 41, script: MaschineMK1_DAW.pad,  description: 'Pad 6 → clip slot 5.' }
+  - { status: 0x90, midino: 42, script: MaschineMK1_DAW.pad,  description: 'Pad 7 → clip slot 6.' }
+  - { status: 0x90, midino: 43, script: MaschineMK1_DAW.pad,  description: 'Pad 8 → clip slot 7.' }
+  - { status: 0x90, midino: 44, script: MaschineMK1_DAW.pad,  description: 'Pad 9 → clip slot 8.' }
+  - { status: 0x90, midino: 45, script: MaschineMK1_DAW.pad,  description: 'Pad 10 → clip slot 9.' }
+  - { status: 0x90, midino: 46, script: MaschineMK1_DAW.pad,  description: 'Pad 11 → clip slot 10.' }
+  - { status: 0x90, midino: 47, script: MaschineMK1_DAW.pad,  description: 'Pad 12 → clip slot 11.' }
+  - { status: 0x90, midino: 48, script: MaschineMK1_DAW.pad,  description: 'Pad 13 → clip slot 12.' }
+  - { status: 0x90, midino: 49, script: MaschineMK1_DAW.pad,  description: 'Pad 14 → clip slot 13.' }
+  - { status: 0x90, midino: 50, script: MaschineMK1_DAW.pad,  description: 'Pad 15 → clip slot 14.' }
+  - { status: 0x90, midino: 51, script: MaschineMK1_DAW.pad,  description: 'Pad 16 → clip slot 15.' }
+
+  # ---------- 8 group encoders → plugin param scrub on selected track ----
+  - { status: 0xB0, midino: 7,  action: increment, script: MaschineMK1_DAW.encoder_param, description: 'Encoder 1 → plugin param on track[0].' }
+  - { status: 0xB0, midino: 8,  action: increment, script: MaschineMK1_DAW.encoder_param, description: 'Encoder 2 → plugin param on track[1].' }
+  - { status: 0xB0, midino: 9,  action: increment, script: MaschineMK1_DAW.encoder_param, description: 'Encoder 3 → plugin param on track[2].' }
+  - { status: 0xB0, midino: 10, action: increment, script: MaschineMK1_DAW.encoder_param, description: 'Encoder 4 → plugin param on track[3].' }
+  - { status: 0xB0, midino: 11, action: increment, script: MaschineMK1_DAW.encoder_param, description: 'Encoder 5 → plugin param on track[4].' }
+  - { status: 0xB0, midino: 12, action: increment, script: MaschineMK1_DAW.encoder_param, description: 'Encoder 6 → plugin param on track[5].' }
+  - { status: 0xB0, midino: 13, action: increment, script: MaschineMK1_DAW.encoder_param, description: 'Encoder 7 → plugin param on track[6].' }
+  - { status: 0xB0, midino: 14, action: increment, script: MaschineMK1_DAW.encoder_param, description: 'Encoder 8 → plugin param on track[7].' }
+
+  # MASTER encoder → transport position scrub.
+  - { status: 0xB0, midino: 6, action: increment, script: MaschineMK1_DAW.master_encoder, description: 'MASTER encoder → daw.transport.set_position scrub.' }
+
+  # ---------- Transport buttons ----------
+  - { status: 0x90, midino: 108, action: set, target: daw.transport.play,                          description: 'PLAY → daw.transport.play.' }
+  - { status: 0x90, midino: 109, action: set, target: daw.transport.stop,                          description: 'STOP → daw.transport.stop.' }
+  - { status: 0x90, midino: 110, action: set, target: daw.transport.record,                        description: 'REC → daw.transport.record(arm=true).' }
+  - { status: 0x90, midino: 111, action: set, script: MaschineMK1_DAW.restart,                     description: 'RESTART → daw.transport.set_position(0).' }
+
+  # ---------- Group buttons (A..H) → select active track ----------
+  - { status: 0x90, midino: 112, script: MaschineMK1_DAW.select_track, description: 'GROUP A → select track[0].' }
+  - { status: 0x90, midino: 113, script: MaschineMK1_DAW.select_track, description: 'GROUP B → select track[1].' }
+  - { status: 0x90, midino: 114, script: MaschineMK1_DAW.select_track, description: 'GROUP C → select track[2].' }
+  - { status: 0x90, midino: 115, script: MaschineMK1_DAW.select_track, description: 'GROUP D → select track[3].' }
+  - { status: 0x90, midino: 116, script: MaschineMK1_DAW.select_track, description: 'GROUP E → select track[4].' }
+  - { status: 0x90, midino: 117, script: MaschineMK1_DAW.select_track, description: 'GROUP F → select track[5].' }
+  - { status: 0x90, midino: 118, script: MaschineMK1_DAW.select_track, description: 'GROUP G → select track[6].' }
+  - { status: 0x90, midino: 119, script: MaschineMK1_DAW.select_track, description: 'GROUP H → select track[7].' }

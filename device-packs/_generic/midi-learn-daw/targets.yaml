@@ -1,0 +1,178 @@
+schema_version: 1
+mode: daw
+description: |
+  Generic MIDI-learn target catalog for the DAW service. The controller-host
+  learn UI displays these targets grouped by category. Each entry is a
+  fully-qualified daw.* verb with its expected argument shape so the learn
+  flow can prompt the operator for parameter values where needed.
+
+groups:
+  - id: transport
+    label: Transport
+    targets:
+      - verb: daw.transport.play
+        label: Play
+        action_template:
+          action: set
+      - verb: daw.transport.stop
+        label: Stop
+        action_template:
+          action: set
+      - verb: daw.transport.record
+        label: Record arm (toggle)
+        action_template:
+          action: set
+        arg_prompts:
+          - name: arm
+            label: Arm state
+            type: bool
+      - verb: daw.transport.set_position
+        label: Jump to position
+        action_template:
+          action: set
+        arg_prompts:
+          - name: samples
+            label: Position (samples)
+            type: int
+
+  - id: tracks
+    label: Tracks
+    targets:
+      - verb: daw.track.set_arm
+        label: Track record-arm
+        action_template:
+          action: set
+        arg_prompts:
+          - name: track_id
+            label: Track ID
+            type: int
+          - name: arm
+            label: Arm state
+            type: bool
+      - verb: daw.track.delete
+        label: Delete track (destructive)
+        action_template:
+          action: set
+        arg_prompts:
+          - name: track_id
+            label: Track ID to delete
+            type: int
+
+  - id: clips
+    label: Clips
+    targets:
+      - verb: daw.clip.add
+        label: Add clip on track
+        action_template:
+          action: set
+        arg_prompts:
+          - name: track_id
+            label: Track ID
+            type: int
+          - name: start_samples
+            label: Start (samples)
+            type: int
+          - name: length_samples
+            label: Length (samples)
+            type: int
+          - name: source
+            label: Source path or URI
+            type: str
+      - verb: daw.clip.remove
+        label: Remove clip
+        action_template:
+          action: set
+        arg_prompts:
+          - name: clip_id
+            label: Clip ID
+            type: int
+      - verb: daw.clip.move
+        label: Move clip
+        action_template:
+          action: set
+        arg_prompts:
+          - name: clip_id
+            label: Clip ID
+            type: int
+          - name: new_start_samples
+            label: New start (samples)
+            type: int
+
+  - id: plugins
+    label: Plugins
+    targets:
+      - verb: daw.plugin.add_to_track
+        label: Add plugin to track
+        action_template:
+          action: set
+        arg_prompts:
+          - name: track_id
+            label: Track ID
+            type: int
+          - name: plugin_uri
+            label: Plugin URI (LV2 or map2:fx:*)
+            type: str
+      - verb: daw.plugin.remove_from_track
+        label: Remove plugin from track
+        action_template:
+          action: set
+        arg_prompts:
+          - name: track_id
+            label: Track ID
+            type: int
+          - name: slot_index
+            label: Plugin slot
+            type: int
+      - verb: daw.plugin.set_param
+        label: Plugin parameter
+        action_template:
+          action: set
+        arg_prompts:
+          - name: track_id
+            label: Track ID
+            type: int
+          - name: slot_index
+            label: Plugin slot
+            type: int
+          - name: param_id
+            label: Parameter ID
+            type: str
+
+  - id: automation
+    label: Automation
+    targets:
+      - verb: daw.automation.set_point
+        label: Automation point
+        action_template:
+          action: set
+        arg_prompts:
+          - name: lane_id
+            label: Automation lane ID
+            type: int
+          - name: position
+            label: Position (beats)
+            type: float
+
+  - id: project
+    label: Project
+    targets:
+      - verb: daw.project.save
+        label: Save project
+        action_template:
+          action: set
+      - verb: daw.project.new
+        label: New project
+        action_template:
+          action: set
+        arg_prompts:
+          - name: name
+            label: Project name
+            type: str
+      - verb: daw.project.load
+        label: Load project
+        action_template:
+          action: set
+        arg_prompts:
+          - name: path
+            label: Project path
+            type: str
