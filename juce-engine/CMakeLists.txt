@@ -40,20 +40,20 @@ option(MAP2_PYBIND_ENABLE_EXTRAS
     ON)
 
 # ========================================
-# T2503 — DAW Service (Tracktion-backed) build flag
+# T2503 — DAW Service build flag
 # ========================================
-# When ON, the build fetches Tracktion Engine via FetchContent (see
-# cmake/Map2Tracktion.cmake — introduced under T2503 Set 2) and compiles the
-# juce-engine/Source/Daw/ source tree. When OFF (default), the DAW service
-# source tree is excluded and the resulting binary is byte-identical to a
-# pre-T2503 build. License posture: Tracktion is GPLv3; combined with MAP2's
-# AGPLv3 the work distributes as AGPLv3 (per AGPLv3 §13). Full audit at
-# docs/architecture/LICENSE_COMPATIBILITY.md.
+# When ON, the build compiles the MAP2-native DAW core under
+# juce-engine/Source/Daw/. The DAW core is built on juce::AudioProcessorGraph
+# (already in tree for the live engine) plus deck/clip-launcher patterns
+# adapted from Mixxx (license-clean — see device-packs/_mixx-imports/ and
+# docs/architecture/LICENSE_COMPATIBILITY.md). No new external dependency.
+# When OFF (default), the DAW source tree is excluded and the resulting binary
+# is byte-identical to a pre-T2503 build.
 option(MAP2_DAW_MODE
-    "Build the Tracktion-backed DAW service (T2503). Default OFF — sets 2..10 will activate it."
+    "Build the MAP2-native DAW service (T2503). Default OFF — sets 2..10 build it out."
     OFF)
 if(MAP2_DAW_MODE)
-    message(STATUS "T2503 DAW mode: ENABLED (Tracktion Engine will be fetched in Set 2; combined work distributes as AGPLv3)")
+    message(STATUS "T2503 DAW mode: ENABLED (MAP2-native engine on juce::AudioProcessorGraph)")
     add_compile_definitions(MAP2_DAW_MODE=1)
 else()
     message(STATUS "T2503 DAW mode: disabled (set -DMAP2_DAW_MODE=ON to enable)")
@@ -372,6 +372,14 @@ if(AVDECC_AVAILABLE)
     )
 endif()
 
+# T2503 Set 2 — DAW service sources (Tracktion-backed)
+# Only compiled when -DMAP2_DAW_MODE=ON. Builds out incrementally Sets 2..10.
+if(MAP2_DAW_MODE)
+    list(APPEND SOURCES
+        Source/Daw/DawService.cpp
+    )
+endif()
+
 set(HEADERS
     Source/Common.h
     Source/Map2AudioEngine.h
@@ -602,6 +610,16 @@ if(SFIZZ_AVAILABLE)
     endif()
 endif()
 
+# T2503 Set 2 — DAW service link.
+# The MAP2-native DAW core builds on juce::AudioProcessorGraph and friends;
+# those modules are already linked above for the live engine. No additional
+# external dependency is needed.
+if(MAP2_DAW_MODE)
+    # No extra link — Source/Daw/*.cpp uses the same JUCE modules already
+    # available to map2_audio_engine. The conditional source listing above
+    # adds Source/Daw/DawService.cpp to SOURCES.
+endif()
+
 # ========================================
 # Compile definitions
 # ========================================
@@ -784,6 +802,53 @@ if(BUILD_SYNTHFORGE_TESTS)
         juce::juce_dsp
     )
     add_test(NAME synthforge_tests COMMAND synthforge_tests)
+endif()
+
+# T2503 Set 2 — DAW service shell smoke test.
+# Only configured when MAP2_DAW_MODE is ON. Verifies DawService instantiates
+# and destructs cleanly without acquiring an audio device. Sets 3+ replace
+# this with substantive coverage as the lifecycle wiring lands.
+if(MAP2_DAW_MODE)
+    FetchContent_Declare(
+        catch2
+        GIT_REPOSITORY https://github.com/catchorg/Catch2.git
+        GIT_TAG v3.5.2
+        GIT_SHALLOW TRUE
+    )
+    FetchContent_MakeAvailable(catch2)
+
+    add_executable(daw_tests
+        tests/DawServiceShellTests.cpp
+        Source/Daw/DawService.cpp
+    )
+    target_compile_definitions(daw_tests PRIVATE
+        MAP2_DAW_MODE=1
+        # JUCE module-settings flags (mirrors live engine + synthforge_tests):
+        # avoids pulling juce_gui_extra (GTK), curl (libcurl-dev), VST headers.
+        JUCE_GLOBAL_MODULE_SETTINGS_INCLUDED=1
+        JUCE_WEB_BROWSER=0
+        JUCE_USE_CURL=0
+        JUCE_PLUGINHOST_VST3=0
+        JUCE_PLUGINHOST_AU=0
+    )
+    target_include_directories(daw_tests PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/Source
+    )
+    target_link_libraries(daw_tests PRIVATE
+        Catch2::Catch2WithMain
+        juce::juce_audio_basics
+        juce::juce_audio_processors
+        juce::juce_core
+        juce::juce_dsp
+    )
+    add_test(NAME daw_tests COMMAND daw_tests)
+
+    add_custom_target(check-daw
+        COMMAND ${CMAKE_CTEST_COMMAND} -R "daw_tests" --output-on-failure
+        DEPENDS daw_tests
+        WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+        COMMENT "Running T2503 DAW Catch2 tests"
+    )
 endif()
 
 # T2459-A2 — Map2Controller / factory smoke tests.

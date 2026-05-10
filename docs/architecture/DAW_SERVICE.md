@@ -1,7 +1,7 @@
-# DAW Service (Tracktion-backed) — Architecture
+# DAW Service (MAP2-native) — Architecture
 
-> **Status:** filed 2026-05-09 under T2503 Epic. Code-side delivery in 10 ship cycles.
-> **License posture:** AGPLv3 (existing) + GPLv3 (Tracktion) → distributes as AGPLv3. See [`LICENSE_COMPATIBILITY.md`](./LICENSE_COMPATIBILITY.md).
+> **Status:** filed 2026-05-09 under T2503 Epic. Pivoted 2026-05-10 from Tracktion Engine to a MAP2-native core built on `juce::AudioProcessorGraph`. Code-side delivery in 10 ship cycles.
+> **License posture:** AGPLv3 (no new external dependency). See [`LICENSE_COMPATIBILITY.md`](./LICENSE_COMPATIBILITY.md).
 > **Build flag:** `-DMAP2_DAW_MODE=ON` (default OFF until Set 10 closes).
 
 ---
@@ -12,31 +12,44 @@ The **DAW** service is a tier-1 platform service offering, peer to:
 
 - MIDI Services
 - AVB Services
-- Sampler (re-platformed on Tracktion sampler core under T2503 Set 8 — see [`SAMPLER_REPACKAGING.md`](./SAMPLER_REPACKAGING.md))
+- Sampler
 - Audio Effects Services
 
-Each service has a single canonical authority, a single canonical surface, and zero parallel implementations. The DAW service follows that pattern: **one engine** (Tracktion embedded in `juce-engine/`), **one IPC channel** (the existing `engine_command` bus, extended with `daw.*` verbs), **one on-disk authority** (the MAP2 State Authority graph).
+Each service has a single canonical authority, a single canonical surface, and zero parallel implementations. The DAW service follows that pattern: **one engine** (MAP2-native, built on `juce::AudioProcessorGraph` inside `juce-engine/`), **one IPC channel** (the existing `engine_command` bus, extended with `daw.*` verbs), **one on-disk authority** (the MAP2 State Authority graph; `~/.map2/daw/<project>/project.json` is canonical).
 
 The **React UI is a non-tier-1 reference surface**. The tier-1 surfaces for DAW control are MIDI control surfaces (NI Maschine MK1, Mackie Control Universal protocol surfaces, generic MIDI learn).
 
 ---
 
-## 2. Process and callback model
+## 2. Process and engine model
 
 ### Embedding
 
-Tracktion Engine is **embedded inside `juce-engine/`** alongside the existing `Map2AudioEngine`. There is no separate `map2-daw-host` process. This keeps the DAW signal path inside the same address space as the live-mode engine and avoids adding a third audio process to coordinate against PipeWire.
+The DAW core is **embedded inside `juce-engine/`** alongside the existing `Map2AudioEngine`. There is no separate `map2-daw-host` process. This keeps the DAW signal path inside the same address space as the live-mode engine and avoids adding a third audio process to coordinate against PipeWire.
 
-The build flag `-DMAP2_DAW_MODE=ON` controls inclusion. With the flag OFF (default), the DAW source tree compiles to nothing and the live engine is byte-identical to a pre-T2503 build.
+The build flag `-DMAP2_DAW_MODE=ON` controls inclusion. With the flag OFF (default), `juce-engine/Source/Daw/` compiles to nothing and the live engine is byte-identical to a pre-T2503 build.
+
+### Why MAP2-native rather than Tracktion?
+
+The original T2503 plan (filed 2026-05-09) embedded Tracktion Engine. The Set 2 implementation surfaced a hard version-coordination problem: Tracktion's `develop` HEAD tracks JUCE `develop` HEAD, while the live engine pins JUCE 8.0.0; intermediate Tracktion tags (v3.2.0) had a JUCE 8.x patch range that didn't intersect with anything we could build cleanly. Bumping JUCE for the entire engine had unbounded blast radius on AVB/AVDECC/audio I/O. Operator made the call (2026-05-10) to drop Tracktion entirely.
+
+The MAP2-native replacement uses what's already in tree:
+
+- **`juce::AudioProcessorGraph`** for the signal graph (the live engine already uses it for the plugin chain).
+- **`juce::AudioFormatManager` + `BufferingAudioSource` + `AudioTransportSource`** for clip playback and disk streaming.
+- **`juce::MidiBuffer` + `MidiMessageSequence`** for MIDI clips.
+- **Mixxx clip/deck patterns** (already vendored at `device-packs/_mixx-imports/`, GPLv2-or-later) for clip-launcher behavior, beat-sync, deck cueing.
+
+No new external dependency. No version-coordination headaches. Every line of the DAW core lives in the MAP2 source tree.
 
 ### Callback ownership
 
-When DAW mode is engaged, **Tracktion owns the audio device callback**. The transition is a **hard mode switch**:
+When DAW mode is engaged, **the DAW signal graph owns the audio device callback**. The transition is a **hard mode switch**:
 
 ```
 Live mode                                    DAW mode
 ─────────                                    ────────
-Map2AudioEngine.callback (RT)                tracktion::Engine.callback (RT)
+Map2AudioEngine.callback (RT)                DawDeviceManager.callback (RT)
    │                                            │
    └─── audio device (UA-1000 @ 64/48k) ───────┘
         single-owner; transition is              single-owner; transition is
@@ -47,7 +60,7 @@ A brief audio dropout during transition is acceptable (v1). Hot-swap with no dro
 
 ### Buffer math
 
-The Tier-A locked device callback is **64 samples / 48 kHz / 1.33 ms** (`juce-engine/Source/Common.h::DEFAULT_BUFFER_SIZE`). That invariant is preserved in DAW mode. To give Tracktion realistic plugin-scheduling and disk-streaming headroom, the DAW signal graph runs internally at **128 samples** through `tracktion::BufferingAudioSource`. The device callback consumes the buffered output at 64 samples — Tracktion absorbs the difference.
+The Tier-A locked device callback is **64 samples / 48 kHz / 1.33 ms** (`juce-engine/Source/Common.h::DEFAULT_BUFFER_SIZE`). That invariant is preserved in DAW mode. To give the graph realistic plugin-scheduling and disk-streaming headroom, the DAW signal graph runs internally at **128 samples** through `BufferingAudioSource`. The device callback consumes the buffered output at 64 samples — the buffer absorbs the difference.
 
 | Parameter | Live mode | DAW mode |
 | --- | --- | --- |
@@ -61,17 +74,17 @@ The Tier-A locked device callback is **64 samples / 48 kHz / 1.33 ms** (`juce-en
 
 ### Authority
 
-**MAP2 State Authority is the source of truth.** Tracktion's native `Edit` XML is a **regenerated cache**.
+**MAP2 State Authority is the source of truth.** The DAW core holds an in-memory projection of the relevant State Authority subgraph and rebuilds the `juce::AudioProcessorGraph` whenever that subgraph mutates. There is no separate on-disk DAW format — `project.json` is the only file.
 
 ```
-MAP2 graph (project.json)  ←── authoritative
+MAP2 graph (project.json)  ←── authoritative, on-disk
         │
-        │ project (one-way)
+        │ subscribed (one-way)
         ▼
-edit.tracktionedit  ←── generated cache, never edited in place
+DawService (in-memory: AudioProcessorGraph, ClipLaunchers, AutomationLanes)
 ```
 
-This honors locked decisions A7, A8, A12, A25 simultaneously: the on-disk MAP2 representation is portable and versioned by State Authority migrations; `.tracktionedit` is shipped alongside for tooling compatibility (Waveform, Tracktion's own apps) but is never the source of truth.
+This honors locked decisions A7, A8, A12, A25 of the original T2503 plan: the on-disk MAP2 representation is portable and versioned by State Authority migrations.
 
 ### Filesystem layout
 
@@ -79,8 +92,7 @@ Sessions live under `~/.map2/daw/<project>/` (matching the [Configuration Author
 
 ```
 ~/.map2/daw/<project>/
-├── project.json                  # MAP2 graph (authoritative)
-├── edit.tracktionedit            # generated cache
+├── project.json                  # MAP2 State Authority graph (authoritative)
 ├── audio/                        # recorded takes
 │   └── <track-id>/<take-id>.wav
 ├── render/                       # bounce / mixdown output
@@ -89,7 +101,7 @@ Sessions live under `~/.map2/daw/<project>/` (matching the [Configuration Author
 
 ### Sync direction
 
-MAP2 → Tracktion is the **only** sync direction. Tracktion is **read-only at the API boundary** — mutations flow through `engine_command` `daw.*` verbs, MAP2 graph mutates, MAP2 re-projects to `edit.tracktionedit`, Tracktion reloads. This eliminates dual-write divergence by construction.
+State Authority → DAW core is the **only** sync direction. DAW mutations flow through `engine_command` `daw.*` verbs, the State Authority graph mutates, the DAW core re-projects in-memory. No file gets written outside `project.json` (and the audio/render dirs).
 
 ---
 
@@ -103,7 +115,7 @@ MAP2 → Tracktion is the **only** sync direction. Tracktion is **read-only at t
 
 ### Routing
 
-All control flows through **`map2-controller-host` → `engine_command` IPC → DAW handlers**. This is a deliberate choice over Tracktion's native `tracktion::ControlSurface` framework: it preserves single-source-of-truth mapping in the controller-host (per [`CONTROLLER_LAYER.md`](./CONTROLLER_LAYER.md)) and avoids fragmenting MIDI ownership.
+All control flows through **`map2-controller-host` → `engine_command` IPC → DAW handlers**. This preserves single-source-of-truth mapping in the controller-host (per [`CONTROLLER_LAYER.md`](./CONTROLLER_LAYER.md)) and avoids fragmenting MIDI ownership.
 
 ```
 MIDI surface
@@ -121,7 +133,7 @@ juce-engine
    ▼ DawCommandRouter dispatches to DawService method
    │
    ▼
-tracktion::Engine
+juce::AudioProcessorGraph
 ```
 
 ### Verb surface
@@ -138,9 +150,9 @@ Set 4 introduces 17 `daw.*` verbs covering transport, project lifecycle, tracks,
 
 ### Master
 
-**MAP2's platform clock is canonical.** Tracktion's `TransportControl` follows via `setUseExternalSync(true)`. Position is sample-accurate at 48 kHz.
+**MAP2's platform clock is canonical.** The DAW core's transport position chases the platform clock; position is sample-accurate at 48 kHz.
 
-This inverts the typical DAW arrangement (where Tracktion would be master). The reason: MAP2's tempo service (`app/services/tempo_service.py`) is already the master for the live engine, MIDI Hub, Sampler, and other services. Adding a second master in DAW mode would violate the "one master clock" invariant called out in CLAUDE.md *Common Pitfalls*.
+This inverts the typical DAW arrangement (where the DAW would be master). The reason: MAP2's tempo service (`app/services/tempo_service.py`) is already the master for the live engine, MIDI Hub, Sampler, and other services. Adding a second master in DAW mode would violate the "one master clock" invariant called out in CLAUDE.md *Common Pitfalls*.
 
 ### External sync sources
 
@@ -153,7 +165,7 @@ The tempo service is extended with a sync-source state machine:
 | `mtc` | MIDI Time Code quarter-frame | excludes `ltc` |
 | `ltc` | Linear Time Code (SMPTE) | excludes `mtc` |
 
-Tracktion does not see the source choice; it always follows the platform clock.
+The DAW core does not see the source choice; it always follows the platform clock.
 
 ### Outbound
 
@@ -172,23 +184,31 @@ A **single shared plugin scanner** (`Daw/PluginScanner`) produces one inventory 
 - **LV2** (native Linux ecosystem)
 - **Native MAP2 plugins** (NAM, Cabinet IR, Reverb IR, JUCE-internal effects)
 
-VST3, CLAP, VST2 are explicitly deferred to a separate epic. Adding them is mechanical (JUCE supports all three) once the scanner abstraction is in place.
+VST3, CLAP, VST2 are explicitly deferred to a separate epic. JUCE supports all three; adding them is mechanical once the scanner abstraction is in place.
 
-### AVB streams as plugins
+### AVB streams as graph nodes
 
-AVB streams are exposed to Tracktion as **dedicated plugins** (`Daw/AvbBusPlugin`). One stream descriptor = one plugin instance. The plugin appears in track plugin browsers as `MAP2 ▸ AVB Bus`. `processBlock` reads/writes the existing AVB ring buffers.
+AVB streams are exposed to the DAW graph as **dedicated `AudioProcessorGraph` nodes** (`Daw/AvbBusNode`). One stream descriptor = one node. The node appears in track plugin browsers as `MAP2 ▸ AVB Bus`. `processBlock` reads/writes the existing AVB ring buffers.
 
 ---
 
 ## 7. Sampler service interaction
 
-The MAP2 Sampler service is **re-platformed on Tracktion's `SamplerPlugin`** as its core. The Sampler service IPC and verb surface are unchanged; the implementation underneath swaps. See [`SAMPLER_REPACKAGING.md`](./SAMPLER_REPACKAGING.md) (filed under T2503 Set 8).
+The MAP2 Sampler service stays platform-native. Original A15 (re-platform on Tracktion's sampler core) was cancelled with the Tracktion drop on 2026-05-10. The Sampler service and the DAW service are peers; the DAW core can host the Sampler as a plugin via the shared plugin scanner.
 
-This is asymmetric with the Audio Effects service, which **stays platform-native** (Tracktion sees existing FX as JUCE plugins via the shared scanner). The asymmetry is intentional: Tracktion's sampler is well-tested upstream and used in commercial products; the existing MAP2 effects are tuned to specific live-rig requirements (NAM IR latency, cabinet IR matching) that we do not want to re-validate.
+The Audio Effects service likewise stays platform-native (per A16).
 
 ---
 
-## 8. RT contract and soak gate
+## 8. Clip launcher / deck patterns
+
+Set 8 implements the clip-launcher and deck patterns adapted from Mixxx (vendored at `device-packs/_mixx-imports/`, GPLv2-or-later). Mixxx's deck model (cue, hot-cue, sync, beat-grid, slip mode) is mature and well-tested upstream; re-implementing those patterns in MAP2's DAW core is faster and more reliable than reinventing them.
+
+The implementation is a **clean re-implementation in MAP2 source**, not copy-paste. Per the standing rule in `.gemini/instructions.md`, attribution is preserved in source comments wherever a Mixxx-derived pattern is named (e.g., the cue-mode state machine).
+
+---
+
+## 9. RT contract and soak gate
 
 ### RT gate
 
@@ -208,7 +228,7 @@ The soak gate is **mandatory** before declaring DAW tier-1. Until the operator c
 
 ---
 
-## 9. React reference UI scope
+## 10. React reference UI scope
 
 Per locked decision A23, the React UI provides **full editing parity** (timeline, plugin params, automation curves) but is explicitly tagged a **non-tier-1 surface**. It exists as:
 
@@ -220,22 +240,23 @@ It is **not** the recommended day-to-day surface. Operators run DAW mode through
 
 ---
 
-## 10. Open questions / future work
+## 11. Open questions / future work
 
 - **VST3 / CLAP / VST2** — separate epic. Pull in once the LV2 path validates the scanner abstraction.
 - **Ableton Link** — separate epic. Network peer-to-peer sync is convenient for ad-hoc jams but not required for studio recording.
 - **Hot-swap mode transitions** — v1 ships hard switch (audio dropout). A buffer-aligned hot swap is feasible but adds substantial state-machine complexity; defer until operator demand surfaces.
-- **Multi-project active sessions** — v1 supports one open project at a time (one `Edit` instance). Multi-project would require Tracktion's `EditManager` and a project-scoped State Authority subgraph.
+- **Multi-project active sessions** — v1 supports one open project at a time. Multi-project would require a project-scoped State Authority subgraph and is deferred.
+- **Tracktion re-evaluation** — if upstream stabilizes its JUCE pin, Tracktion remains a candidate to replace the MAP2-native core in a future epic. The MAP2-native implementation is a sustainable forever-home, but the option to revisit is preserved.
 
 ---
 
-## 11. References
+## 12. References
 
-- Tracktion Engine: https://github.com/Tracktion/tracktion_engine (GPLv3)
 - License audit: [`LICENSE_COMPATIBILITY.md`](./LICENSE_COMPATIBILITY.md)
-- Sampler re-platform: [`SAMPLER_REPACKAGING.md`](./SAMPLER_REPACKAGING.md) (filed under T2503 Set 8)
 - Controller layer: [`CONTROLLER_LAYER.md`](./CONTROLLER_LAYER.md)
 - Configuration authority: [`CONFIGURATION_AUTHORITY_MODEL.md`](./CONFIGURATION_AUTHORITY_MODEL.md)
 - AVB services (peer): [`AVB_SERVICES.md`](./AVB_SERVICES.md)
 - Audio Effects services (peer): [`AUDIO_EFFECTS_SERVICES.md`](./AUDIO_EFFECTS_SERVICES.md)
 - Worklist epic entry: [`../PROJECT_WORKLIST.md`](../PROJECT_WORKLIST.md) (T2503)
+- JUCE AudioProcessorGraph reference: https://docs.juce.com/master/classAudioProcessorGraph.html
+- Mixxx (clip-launcher pattern reference): https://github.com/mixxxdj/mixxx

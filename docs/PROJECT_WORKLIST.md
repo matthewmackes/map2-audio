@@ -1356,45 +1356,47 @@ Description:
 - Why: MAP2 today is a live-rig platform; users routinely want to capture, edit, and arrange the same signal chain they perform with. A tier-1 DAW service unifies live + studio under one codebase, one configuration authority, one device topology — instead of forcing operators to bounce between MAP2 and an external DAW.
 - Non-goals: Replacing or competing with the existing JUCE engine in live mode. The two coexist as peers under a hard mode switch. The DAW service is not a "plugin" of the live engine — it is its own first-class service with its own callback ownership when DAW mode is active.
 
-### Locked architecture decisions (from 25-question protocol, 2026-05-09)
-- **A1** Tracktion is **embedded in `juce-engine/`** alongside the existing engine, gated by `-DMAP2_DAW_MODE=ON`.
-- **A2** Tracktion **owns the audio device callback** when DAW mode is engaged. The existing `Map2AudioEngine` callback is stopped first.
+### Locked architecture decisions (25-question protocol 2026-05-09; pivoted to MAP2-native engine 2026-05-10)
+- **A1** The DAW core is **embedded in `juce-engine/`** alongside the existing engine, gated by `-DMAP2_DAW_MODE=ON`. (Pivot 2026-05-10: was Tracktion; now MAP2-native on `juce::AudioProcessorGraph`.)
+- **A2** The DAW core **owns the audio device callback** when DAW mode is engaged. The existing `Map2AudioEngine` callback is stopped first.
 - **A3** Mode switch is **hard** (stop / re-init). Brief audio dropout is acceptable; we are not building a hot-swap hand-off in v1.
-- **A4** Service identity: **`DAW (Tracktion-backed)`** — tier-1 platform service.
+- **A4** Service identity: **`DAW (MAP2-native)`** — tier-1 platform service.
 - **A5** Tier-1 surfaces on day one: NI Maschine MK1 + MCU-protocol surfaces (X-Touch, Behringer XR, etc.) + generic MIDI learn. MeloAudio Commander not tier-1 for DAW.
-- **A6** All control flows through `map2-controller-host` → `engine_command` IPC → DAW handlers. No native `tracktion::ControlSurface` path; MCU emulation is implemented as a controller-host device-pack that emits engine_command frames.
-- **A7 + A8 + A12 + A25** **MAP2 State Authority is the on-disk source of truth** (graph JSON). `.tracktionedit` XML is a regenerated cache shipped alongside for tooling compatibility. MAP2→Tracktion sync is one-way; Tracktion is read-only at the API boundary.
+- **A6** All control flows through `map2-controller-host` → `engine_command` IPC → DAW handlers. MCU emulation is implemented as a controller-host device-pack that emits engine_command frames.
+- **A7 + A8 + A12 + A25** **MAP2 State Authority is the on-disk source of truth** (`project.json` per project). MAP2 graph → DAW core is one-way at the API boundary. *(Pivot 2026-05-10: `.tracktionedit` cache eliminated since there is no Tracktion to feed.)*
 - **A9** **Single shared plugin scanner / inventory** across live and DAW services.
 - **A10** Plugin formats on day one: **LV2 + native MAP2 plugins** (NAM, IRs, internal JUCE plugins). VST3/CLAP/VST2 deferred — separate epic.
 - **A11** Sessions live under `~/.map2/daw/<project>/` (user-scoped, matches Configuration Authority Model).
-- **A13** **MAP2 platform clock is canonical**; Tracktion follows.
+- **A13** **MAP2 platform clock is canonical**; DAW core follows.
 - **A14** External sync supported: **MIDI Clock out + MIDI Clock in + MTC/LTC** (no Ableton Link in v1).
-- **A15** **Tracktion's sampler becomes the new core of the tier-1 Sampler service** — re-platform.
-- **A16** Audio Effects service stays **platform-native**; Tracktion sees them as JUCE plugins via the shared scanner.
-- **A17** AVB streams routed via **dedicated "AVB bus" plugins** — each stream = a Tracktion plugin instance with audio I/O.
-- **A18** **DAW gate: 128 samples internal graph / 48 kHz / <1 ms peak jitter / 0 xruns**. Device callback stays at the Tier-A locked 64 samples (Common.h `DEFAULT_BUFFER_SIZE` is invariant); Tracktion's `BufferingAudioSource` provides headroom for disk + plugin scheduling. This preserves Tier A locks while giving DAW mode realistic plugin headroom.
+- **A15** ~~Tracktion's sampler becomes the new core of the tier-1 Sampler service.~~ **CANCELLED 2026-05-10** with the Tracktion drop. Sampler service stays platform-native; the DAW graph can host the Sampler as a plugin via the shared scanner.
+- **A16** Audio Effects service stays **platform-native**; DAW core sees them as JUCE plugins via the shared scanner.
+- **A17** AVB streams routed via **dedicated `juce::AudioProcessorGraph` nodes** — one node per stream, audio I/O backed by the existing AVB ring buffers.
+- **A18** **DAW gate: 128 samples internal graph / 48 kHz / <1 ms peak jitter / 0 xruns**. Device callback stays at the Tier-A locked 64 samples (Common.h `DEFAULT_BUFFER_SIZE` is invariant); `juce::BufferingAudioSource` gives headroom for disk + plugin scheduling.
 - **A19** **Soak gate: 30-min adapted random-FX/clip soak** modeled on `juce-random-effects-soak`. Mandatory pre-ship for the final tier-1 declaration.
-- **A20** **License: AGPLv3-or-later (existing) is compatible with GPLv3 (Tracktion).** No relicense needed; only attribution + compatibility audit + THIRD_PARTY_NOTICES update.
-- **A21** Vendor Tracktion via **CMake FetchContent pinned to a release tag** (mirrors JUCE 8.0.0 pattern).
-- **A22** FastAPI talks to embedded Tracktion via **extended engine_command IPC** (`daw.*` verbs). Single engine, single IPC channel.
+- **A20** **License: AGPLv3-or-later** (top-level, unchanged). The MAP2-native pivot introduces no new external dependency; AGPLv3 ↔ GPLv3 (JUCE) compatibility audit in `LICENSE_COMPATIBILITY.md` still applies.
+- **A21** ~~Vendor Tracktion via CMake FetchContent.~~ **N/A as of 2026-05-10**. The DAW core uses `juce::AudioProcessorGraph` (already in tree) — no new FetchContent declaration.
+- **A22** FastAPI talks to the embedded DAW core via **extended engine_command IPC** (`daw.*` verbs). Single engine, single IPC channel.
 - **A23** React UI: **full editing parity** (timeline, plugin params, automation curves) — but explicitly tagged non-tier-1 surface; control flows through MIDI surfaces.
 - **A24** **Full-scope autonomous epic**, no phased stubs. All 10 sets specified at filing time; ship as code-side complete behind the `MAP2_DAW_MODE` flag.
+- **A26** *(added 2026-05-10)* DAW core builds on `juce::AudioProcessorGraph` + companion JUCE modules already pulled by the live engine. Set 8 reuses Mixxx clip/deck *patterns* (clean re-implementation; Mixxx already vendored at `device-packs/_mixx-imports/` under GPLv2-or-later, license-cleared).
+- **A27** *(added 2026-05-10)* Tracktion remains a future-revisit candidate if upstream stabilizes its JUCE pin. The MAP2-native implementation is a sustainable forever-home; no near-term plan to swap.
 
 ### Conflict resolutions
-- *Q7/Q8 vs. Q12*: resolved via Q25 — MAP2 graph is authoritative, `.tracktionedit` is a generated cache.
-- *Q15 vs. Q16*: kept asymmetric on purpose — Sampler re-platforms on Tracktion (A15), Effects stay platform-native (A16). Documented as intentional.
-- *Q18 vs. Tier-A locks (CLAUDE.md §Critical System Rules)*: resolved by routing the 128-sample headroom through Tracktion's internal graph rather than the device callback. Device callback stays at 64 samples per Tier A.
-- *Q20 vs. actual license*: existing license is AGPLv3-only, not MIT. AGPLv3 is GPLv3 + network-use clause; GPLv3 → AGPLv3 is one-way compatible. Tracktion (GPLv3) embedded in AGPLv3 is permitted; combined work distributes as AGPLv3. Captured in Set 1 audit.
+- *Q7/Q8 vs. Q12*: resolved via Q25 — MAP2 graph is authoritative. With Tracktion dropped 2026-05-10, the `.tracktionedit` cache is no longer needed; `project.json` is the only on-disk file.
+- *Q15 vs. Q16*: tension resolved by the Tracktion drop — Sampler stays platform-native (A15 cancelled), Effects stay platform-native (A16). Both are peers to the DAW service.
+- *Q18 vs. Tier-A locks (CLAUDE.md §Critical System Rules)*: resolved by routing the 128-sample headroom through `juce::BufferingAudioSource`. Device callback stays at 64 samples per Tier A.
+- *Q20 vs. actual license*: existing license is AGPLv3-only, not MIT. JUCE (GPLv3) inside MAP2 (AGPLv3) is permitted per AGPLv3 §13. Captured in Set 1 audit.
 
 ### Epic structure — 10 ship cycles, all behind `-DMAP2_DAW_MODE=ON`
 
-#### Set 1 — License attribution + compatibility audit
-- Deliverables: `docs/THIRD_PARTY_NOTICES.md` (Tracktion row), `docs/architecture/DAW_SERVICE.md`, `docs/architecture/LICENSE_COMPATIBILITY.md` (AGPLv3↔GPLv3↔MIT matrix), `juce-engine/CMakeLists.txt` (`option(MAP2_DAW_MODE … OFF)` reservation only), this worklist entry.
-- Acceptance: `cmake -B build -LAH | grep MAP2_DAW_MODE` shows the flag; THIRD_PARTY_NOTICES lists Tracktion; LICENSE_COMPATIBILITY published.
+#### Set 1 — License attribution + compatibility audit ✓ SHIPPED 2026-05-09 (commit `b2aea829`)
+- Deliverables: `docs/THIRD_PARTY_NOTICES.md`, `docs/architecture/DAW_SERVICE.md`, `docs/architecture/LICENSE_COMPATIBILITY.md` (AGPLv3↔GPLv3↔MIT matrix), `juce-engine/CMakeLists.txt` (`option(MAP2_DAW_MODE … OFF)` reservation only), this worklist entry.
+- Acceptance: `cmake -B build -LAH | grep MAP2_DAW_MODE` shows the flag; LICENSE_COMPATIBILITY published. Met.
 
-#### Set 2 — Vendor Tracktion via FetchContent + smoke build
-- Deliverables: `juce-engine/cmake/Map2Tracktion.cmake`, conditional `include()` in `CMakeLists.txt`, `juce-engine/Source/Daw/DawService.{h,cpp}` shell, `juce-engine/tests/test_daw_service_compiles.cpp`, `scripts/build_juce_engine_daw.sh`.
-- Acceptance: `cmake -B build-daw -DMAP2_DAW_MODE=ON && cmake --build build-daw` succeeds; flag-OFF build byte-identical to before.
+#### Set 2 — MAP2-native DAW core shell on AudioProcessorGraph + smoke build ✓ SHIPPED 2026-05-10 (pivoted)
+- Deliverables: `juce-engine/Source/Daw/DawService.{h,cpp}` (pImpl shell), `juce-engine/tests/DawServiceShellTests.cpp`, `scripts/build_juce_engine_daw.sh`, `juce-engine/CMakeLists.txt` conditional source/link/test wiring under `MAP2_DAW_MODE`. *No external dependency.*
+- Acceptance: `cmake -B build-daw -DMAP2_DAW_MODE=ON && cmake --build build-daw --target daw_tests && ctest -R daw_tests` passes end-to-end on existing GCC 15.2.1 / JUCE 8.0.0 toolchain; flag-OFF byte-identical. Met.
 
 #### Set 3 — DAW mode lifecycle (hard switch + device handover)
 - Deliverables: `Daw/DawDeviceManager.{h,cpp}`, `Daw/ModeSwitchCoordinator.{h,cpp}`, `Map2AudioEngine::requestModeSwitch()`, `app/services/daw_service.py` (mode endpoint), `tests/test_daw_mode_switch.py`, `juce-engine/tests/test_mode_switch_coordinator.cpp`.
@@ -1402,11 +1404,11 @@ Description:
 
 #### Set 4 — engine_command `daw.*` dispatcher + FastAPI surface
 - Deliverables: register 17 `daw.*` verbs in `engine_command_handlers.py`; `Daw/DawCommandRouter.{h,cpp}`; `app/routes/daw.py` REST + WS; `app/schemas/daw.py`; `web/src/map2/clients/daw.ts`; pytest + jest coverage.
-- Acceptance: OpenAPI lists `/api/v1/daw/*` with unique opIds; flag-OFF returns 503 envelope; flag-ON round-trips a stock `.tracktionedit` to the UA-1000 (HIL gate).
+- Acceptance: OpenAPI lists `/api/v1/daw/*` with unique opIds; flag-OFF returns 503 envelope; flag-ON round-trips a stock `project.json` to the UA-1000 (HIL gate).
 
-#### Set 5 — State Authority + Edit XML projector + ~/.map2/daw layout
-- Deliverables: `state_authority/daw_schema.py` (DawProject/Track/Clip/AutomationLane/PluginInstance/AvbBus); idempotent migration; `daw_project_service.py`; `daw_project_serializer.py` (round-trip identity test); `Daw/DawProjectLoader.{h,cpp}`; filesystem layout doc.
-- Acceptance: `daw.project.new` creates dir + `project.json` + `edit.tracktionedit`; `state_graph → xml → graph` is identity.
+#### Set 5 — State Authority + project.json on-disk layout
+- Deliverables: `state_authority/daw_schema.py` (DawProject/Track/Clip/AutomationLane/PluginInstance/AvbBus); idempotent migration; `daw_project_service.py`; `Daw/DawProjectLoader.{h,cpp}` (reads `project.json` and builds the in-memory `juce::AudioProcessorGraph`); filesystem layout doc.
+- Acceptance: `daw.project.new` creates dir + `project.json`; `daw.project.load` rebuilds the in-memory graph identically across save/load.
 
 #### Set 6 — Controller-host MCU pack + MK1 DAW pack + generic MIDI learn
 - Deliverables: `device-packs/mackie/mcu-protocol/`, `device-packs/native-instruments/maschine-mk1/daw-mode/`, `device-packs/_generic/midi-learn-daw/`, extended `midi_learn_service.py` DAW target group, `tests/test_mcu_device_pack.py`, `tests/test_mk1_daw_overlay.py`.
@@ -1414,15 +1416,15 @@ Description:
 
 #### Set 7 — Transport bridge + MIDI Clock/MTC/LTC
 - Deliverables: `Daw/TransportBridge.{h,cpp}`, `MidiClockOut.{h,cpp}`, `MidiClockIn.{h,cpp}`, `MtcLtcBridge.{h,cpp}`, extended `tempo_service.py` sync-source state machine, pytest harness with synthetic clock pulses.
-- Acceptance: Tracktion position matches platform clock ±1 sample; MIDI Clock out emits at correct PPQ; MTC quarter-frame stream encodes platform position.
+- Acceptance: DAW transport position matches platform clock ±1 sample; MIDI Clock out emits at correct PPQ; MTC quarter-frame stream encodes platform position.
 
-#### Set 8 — Sampler re-platform on Tracktion sampler core
-- Deliverables: `Daw/Sampler/Map2SamplerCore.{h,cpp}` wrapping `tracktion::SamplerPlugin`; `Map2SamplerCompat.{h,cpp}` shim; `sampler_service.py` backend switch under flag; `sampler_migration.py`; round-trip test; `docs/architecture/SAMPLER_REPACKAGING.md`.
-- Acceptance: flag-OFF legacy unchanged; flag-ON serves all existing Sampler verbs through Tracktion core; round-trip migration test green.
+#### Set 8 — Clip-launcher / deck patterns (Mixxx-derived) — REDEFINED 2026-05-10
+- Deliverables: `Daw/Deck/ClipLauncher.{h,cpp}`, `Daw/Deck/CueModel.{h,cpp}`, `Daw/Deck/BeatGrid.{h,cpp}`, `Daw/Deck/SyncEngine.{h,cpp}`, `Daw/Deck/SlipMode.{h,cpp}`. Each carries an inline attribution comment naming the Mixxx pattern it adapts (cue mode state machine, hot-cue model, master sync, beatgrid alignment). Pytest + Catch2 coverage.
+- Acceptance: clip launch / hot-cue / sync behaviors round-trip through `engine_command`; deck state visible in WebSocket `/api/v1/daw/events`; tier-1 service contract preserved.
 
-#### Set 9 — AVB-bus plugin + LV2 + shared plugin scanner
-- Deliverables: `Daw/AvbBusPlugin.{h,cpp}`, `AvbBusPluginFactory.cpp`, `Daw/PluginScanner.{h,cpp}`, `app/services/plugin_inventory_service.py`, `web/src/map2/clients/plugin_inventory.ts`, pytest + C++ coverage.
-- Acceptance: AVB streams visible as track plugins; LV2 enumerated and instantiable; live engine + DAW share inventory.
+#### Set 9 — AVB-bus AudioProcessorGraph node + LV2 + shared plugin scanner
+- Deliverables: `Daw/AvbBusNode.{h,cpp}` (one stream descriptor = one `juce::AudioProcessorGraph::Node`; `processBlock` reads/writes existing AVB ring buffers), `Daw/PluginScanner.{h,cpp}`, `app/services/plugin_inventory_service.py`, `web/src/map2/clients/plugin_inventory.ts`, pytest + C++ coverage.
+- Acceptance: AVB streams visible as graph nodes in the React reference UI; LV2 enumerated and instantiable; live engine + DAW share inventory.
 
 #### Set 10 — React DAW UI parity + soak harness + RT gate
 - Deliverables: `web/src/app/pages/DawPage.tsx` + Timeline / TrackList / PluginRack / Automation / Transport / ClipLauncher component tree; `.codex/skills/daw-soak/`; `scripts/run_daw_soak.py`; sample run captured pre-bench; final RT-gate section in `DAW_SERVICE.md`.
@@ -1438,17 +1440,36 @@ Description:
 ### Progress log
 - 2026-05-09 — Epic filed (Claude). 25-question protocol completed; locked decisions A1–A24; AGPLv3↔GPLv3 compatibility audit deferred to Set 1 work.
 - 2026-05-09 — **Set 1 SHIPPED** (Claude, commit `b2aea829`). `docs/architecture/DAW_SERVICE.md` + `LICENSE_COMPATIBILITY.md` published; Tracktion row added to `THIRD_PARTY_NOTICES.md`; `option(MAP2_DAW_MODE … OFF)` reserved in `juce-engine/CMakeLists.txt`. Both flag states verified: OFF emits "T2503 DAW mode: disabled"; ON emits "T2503 DAW mode: ENABLED" + sets `MAP2_DAW_MODE=1` compile define. `cmake -LAH` shows `MAP2_DAW_MODE:BOOL=OFF` in cache. Dual-pushed to origin + gitlab.
-- 2026-05-09/10 — **Set 2 wiring SHIPPED, smoke build BENCH-GATED on toolchain** (Claude). Wiring lands code-side complete:
-  - `juce-engine/cmake/Map2Tracktion.cmake` — pinned `v3.2.0` (commit `0a5f4e6a5f53d09c89b414a44386a12df7fa1ec6`), skip submodules (Tracktion's bundled JUCE, since we already vendor JUCE 8.0.0), include only `modules/`, set C++20 on the three Tracktion module targets (parent `map2_audio_engine` stays at C++17), expose `map2::tracktion` interface alias.
-  - `juce-engine/CMakeLists.txt` — conditional `include(Map2Tracktion)` after JUCE setup; `Daw/DawService.cpp` added to SOURCES under flag; conditional `target_link_libraries(map2_audio_engine PRIVATE map2::tracktion)`.
-  - `juce-engine/Source/Daw/DawService.{h,cpp}` — shell with `statusLine()` smoke; pImpl pattern for forward-compat with Sets 3+ wiring.
-  - `juce-engine/tests/DawServiceShellTests.cpp` — Catch2 smoke (construct/destruct, status line invariant).
-  - `scripts/build_juce_engine_daw.sh` — convenience configure + build + ctest runner.
-  - `daw_tests` block conditioned on `MAP2_DAW_MODE` (no separate option).
-  - Verified: `cmake -B build-daw -DMAP2_DAW_MODE=ON` configures clean (149.7s including Tracktion fetch + JUCE module registration; status banners show JUCE_VERSION resolved, Tracktion source tree, modules registered).
-  - **Bench-gate `T2503-set2-gate-gcc15`** (toolchain incompatibility, NOT a wiring bug): Tracktion v3.2.0 vendors a nanorange polyfill that fails to compile under GCC 15.2.1 (Fedora 43 default). Operator workarounds (recorded as `message(WARNING …)` in `Map2Tracktion.cmake`): build with Clang 18+, pin GCC 14.x, or update `GIT_TAG` to a Tracktion master SHA once upstream lands a nanorange bump. Sets 3..10 Python/FastAPI/web code is unaffected — they compile and test under the existing toolchain.
-  - Flag-OFF path verified byte-identical to pre-T2503.
-  - Acceptance for Set 2: cmake configure end-to-end ✓, MAP2_DAW_MODE define propagated ✓, source shell ✓, smoke test target defined ✓, convenience script ✓, flag-OFF byte-identical ✓. Bench-side `daw_tests` binary build blocked on toolchain choice (operator decision).
+- 2026-05-10 — **Epic PIVOTED: Tracktion dropped, replaced with MAP2-native engine on `juce::AudioProcessorGraph` + Mixxx clip/deck patterns** (Claude, operator decision). Root cause: Tracktion's version-coordination cost was structurally too high for autonomous shipping. The investigation walked four toolchain combos:
+  1. Tracktion v3.2.0 + JUCE 8.0.0 + GCC 15 → nanorange / C++20 ranges fails.
+  2. Tracktion v3.2.0 + JUCE 8.0.0 + Clang 21 → `getStringWidthInt` not in JUCE 8.0.0 (added 8.0.4).
+  3. Tracktion v3.2.0 + JUCE 8.0.12 + Clang 21 → `override` on non-virtual `createWriterFor` (made non-virtual in JUCE 8.0.6+).
+  4. Tracktion develop + JUCE 8.0.12 + Clang 21 → `userBounds` not in JUCE 8.0.12 (renamed in JUCE develop).
+  5. Tracktion develop + JUCE develop → Tracktion's `.gitmodules` points at JUCE develop; both bleeding-edge moving targets, no stable anchor.
+  None of the combinations produced a reproducible build that would survive operator hand-off. Bumping JUCE for the live engine had unbounded blast radius on AVB/AVDECC/audio I/O. Operator authorized switch to MAP2-native (option 4 in Q&A). Locked decision changes:
+    - **A1, A2, A3, A4** (process model, callback ownership, hard switch, service identity) — unchanged.
+    - **A12** (on-disk format) — `.tracktionedit` cache eliminated; `~/.map2/daw/<project>/project.json` is the only file.
+    - **A15** (Sampler re-platform) — **CANCELLED**. Sampler service stays platform-native; A15 is dropped from the locked list. The Sampler can still be hosted as a plugin inside the DAW graph via the shared plugin scanner.
+    - **A20** (license) — simpler. No new external dependency; AGPLv3 unchanged.
+    - **A21** (build vendoring) — N/A; FetchContent of Tracktion deleted; `juce-engine/cmake/Map2Tracktion.cmake` deleted.
+    - **A24** (full-scope autonomous epic) — preserved.
+    - **New A26** — DAW core builds on `juce::AudioProcessorGraph` (already in tree). Set 8 reuses Mixxx clip/deck *patterns* (clean re-implementation; Mixxx already vendored at `device-packs/_mixx-imports/` under GPLv2-or-later, license-cleared via existing standing rule).
+    - **New A27** — Tracktion remains a candidate for a future re-evaluation epic if upstream stabilizes its JUCE pin. The MAP2-native implementation is a sustainable forever-home.
+  Files mutated by the pivot (in this same Set 2 commit):
+    - `juce-engine/cmake/Map2Tracktion.cmake` DELETED.
+    - `juce-engine/CMakeLists.txt` — Tracktion FetchContent block + `map2::tracktion` link removed; daw_tests now links the same JUCE modules the live engine uses + Catch2 only; `MAP2_DAW_MODE` option message updated.
+    - `juce-engine/Source/Daw/DawService.{h,cpp}` — shell language updated to MAP2-native posture.
+    - `docs/architecture/DAW_SERVICE.md` — heavy rewrite; new §2.2 explains why MAP2-native; §6 (plugin hosting) preserves the LV2+native-only day-one scope; §7 (sampler) reflects A15 cancellation; §8 (clip launcher / deck) added; §11 keeps Tracktion as a future-revisit option.
+    - `docs/architecture/LICENSE_COMPATIBILITY.md` — Tracktion rows removed; Mixxx clip-pattern reuse row added.
+    - `docs/THIRD_PARTY_NOTICES.md` — Tracktion row removed; JUCE row notes the MAP2-native posture.
+- 2026-05-10 — **Set 2 SHIPPED end-to-end** (Claude). Set 2 (MAP2-native, redefined) deliverables all green:
+  - `juce-engine/CMakeLists.txt` — `MAP2_DAW_MODE` option clean, conditional `Source/Daw/DawService.cpp` listing, conditional `daw_tests` Catch2 target with full JUCE module-settings flags (`JUCE_GLOBAL_MODULE_SETTINGS_INCLUDED=1`, `JUCE_WEB_BROWSER=0`, `JUCE_USE_CURL=0`, `JUCE_PLUGINHOST_VST3=0`, `JUCE_PLUGINHOST_AU=0`) so the test binary doesn't pull GTK / curl / VST headers.
+  - `juce-engine/Source/Daw/DawService.{h,cpp}` — pImpl shell; constructor logs `[T2503] DawService shell instantiated (Set 2 — MAP2-native, no graph yet)`; `statusLine()` returns `DAW service: shell-only (T2503 Set 2). MAP2-native graph not yet active.`
+  - `juce-engine/tests/DawServiceShellTests.cpp` — Catch2 (construct, status-line invariant, 4-iter destruct/reuse smoke).
+  - `scripts/build_juce_engine_daw.sh` — convenience runner (configure + build + ctest).
+  - **Verified end-to-end on existing toolchain** (GCC 15.2.1 / JUCE 8.0.0 / no Clang requirement): `cmake -B build-daw -DMAP2_DAW_MODE=ON` configures clean in 70.5s (no Tracktion fetch, no submodule issues); `cmake --build build-daw --target daw_tests -j 4` builds clean to `[100%] Built target daw_tests`; `ctest -R daw_tests` reports `1/1 Test #1: daw_tests ........................ Passed    0.00 sec`.
+  - Flag-OFF path verified: `cmake -B build-check -DMAP2_DAW_MODE=OFF` emits `T2503 DAW mode: disabled`; binary byte-identical to pre-T2503.
+  - Acceptance for Set 2 (redefined): cmake configure end-to-end ✓, `MAP2_DAW_MODE=1` compile define propagated ✓, source shell present ✓, smoke test target defined and passing ✓, convenience script in place ✓, flag-OFF byte-identical ✓. **No bench-gate; ships clean code-side end-to-end.**
 
 Last updated: 2026-05-10 EDT - Claude
 
