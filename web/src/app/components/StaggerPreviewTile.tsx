@@ -4,6 +4,8 @@ import { runStaggerOnRoot } from './UniversalStagger'
 import { getStaggerTimings, type StaggerSpeed } from '../stores/effectsSettingsStore'
 import './StaggerPreviewTile.css'
 
+const REPLAY_LOCKOUT_BUFFER_MS = 50
+
 interface StaggerPreviewTileProps {
   speed: StaggerSpeed
   /** Forces a reduced-motion run regardless of the OS preference. */
@@ -20,7 +22,9 @@ const PREVIEW_TILE_LABELS = ['Channel A', 'Channel B', 'Channel C', 'Channel D',
 export function StaggerPreviewTile({ speed, reduced = false }: StaggerPreviewTileProps) {
   const gridRef = useRef<HTMLDivElement | null>(null)
   const animationsRef = useRef<Animation[]>([])
+  const lockoutTimerRef = useRef<number | null>(null)
   const [runCount, setRunCount] = useState(0)
+  const [replayLocked, setReplayLocked] = useState(false)
 
   const runPreview = useCallback(() => {
     const grid = gridRef.current
@@ -34,6 +38,14 @@ export function StaggerPreviewTile({ speed, reduced = false }: StaggerPreviewTil
     })
     const timings = getStaggerTimings(speed)
     animationsRef.current = runStaggerOnRoot(grid, `preview-${runCount}-${Date.now()}`, reduced, timings)
+    setReplayLocked(true)
+    if (lockoutTimerRef.current !== null) {
+      window.clearTimeout(lockoutTimerRef.current)
+    }
+    lockoutTimerRef.current = window.setTimeout(() => {
+      setReplayLocked(false)
+      lockoutTimerRef.current = null
+    }, timings.totalBudgetMs + REPLAY_LOCKOUT_BUFFER_MS)
   }, [speed, reduced, runCount])
 
   useEffect(() => {
@@ -46,6 +58,10 @@ export function StaggerPreviewTile({ speed, reduced = false }: StaggerPreviewTil
           /* noop */
         }
       })
+      if (lockoutTimerRef.current !== null) {
+        window.clearTimeout(lockoutTimerRef.current)
+        lockoutTimerRef.current = null
+      }
     }
   }, [runPreview])
 
@@ -63,6 +79,7 @@ export function StaggerPreviewTile({ speed, reduced = false }: StaggerPreviewTil
           className="stagger-preview-tile__replay"
           onClick={() => setRunCount((count) => count + 1)}
           aria-label="Replay staggered reveal preview"
+          disabled={replayLocked}
         >
           Replay
         </button>

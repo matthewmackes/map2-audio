@@ -58,6 +58,11 @@
   outline-offset: 1px;
 }
 
+.stagger-preview-tile__replay:disabled {
+  opacity: 0.5;
+  cursor: not-allowed;
+}
+
 .stagger-preview-tile__grid {
   display: grid;
   grid-template-columns: repeat(3, minmax(0, 1fr));

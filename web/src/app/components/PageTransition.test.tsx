@@ -147,6 +147,22 @@ describe('PageTransition', () => {
     expect(screen.queryAllByTestId('landing-route-transition').length).toBeLessThanOrEqual(1)
   })
 
+  it('renders the overlay again after the rapid-nav debounce window has passed', () => {
+    renderHarness('/')
+    fireEvent.click(screen.getByRole('button', { name: 'Go Audio Artifacts' }))
+    expect(screen.getByTestId('landing-route-transition')).toHaveClass('landing-route-transition--staggered')
+
+    // Wait long enough for both the active overlay timeout AND the
+    // debounce window to clear.
+    act(() => {
+      jest.advanceTimersByTime(900)
+    })
+    expect(screen.queryByTestId('landing-route-transition')).toBeNull()
+
+    fireEvent.click(screen.getByRole('button', { name: 'Go MIDI Presets' }))
+    expect(screen.getByTestId('landing-route-transition')).toHaveClass('landing-route-transition--staggered')
+  })
+
   it('falls back to the minimal fade when system reduced motion is enabled', () => {
     setMatchMedia(true)
     renderHarness('/')

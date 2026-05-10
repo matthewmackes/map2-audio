@@ -72,18 +72,36 @@ describe('StaggerPreviewTile', () => {
   })
 
   it('runs the staggered animation on the cells and re-runs on replay', async () => {
+    jest.useFakeTimers()
+    try {
+      render(<StaggerPreviewTile speed="slow" />)
+
+      const animateMock = HTMLElement.prototype.animate as jest.Mock
+      // Initial run animates 6 cells.
+      expect(animateMock.mock.calls.length).toBeGreaterThanOrEqual(1)
+
+      const initialCalls = animateMock.mock.calls.length
+
+      // Wait for the replay lockout to clear so the button is enabled
+      // again. Lockout = totalBudgetMs (slow=900) + 50ms buffer.
+      await act(async () => {
+        jest.advanceTimersByTime(1000)
+      })
+
+      await act(async () => {
+        screen.getByRole('button', { name: 'Replay staggered reveal preview' }).click()
+      })
+
+      expect(animateMock.mock.calls.length).toBeGreaterThan(initialCalls)
+    } finally {
+      jest.useRealTimers()
+    }
+  })
+
+  it('disables the Replay button while an animation run is in flight', () => {
     render(<StaggerPreviewTile speed="slow" />)
-
-    const animateMock = HTMLElement.prototype.animate as jest.Mock
-    // Initial run animates 6 cells.
-    expect(animateMock.mock.calls.length).toBeGreaterThanOrEqual(1)
-
-    const initialCalls = animateMock.mock.calls.length
-
-    await act(async () => {
-      screen.getByRole('button', { name: 'Replay staggered reveal preview' }).click()
-    })
-
-    expect(animateMock.mock.calls.length).toBeGreaterThan(initialCalls)
+    expect(
+      screen.getByRole('button', { name: 'Replay staggered reveal preview' }),
+    ).toBeDisabled()
   })
 })

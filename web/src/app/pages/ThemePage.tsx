@@ -140,7 +140,7 @@ function usesCssVariables(theme: Theme): boolean {
   return Object.values(theme.colors).some((value) => typeof value === 'string' && value.includes('var('))
 }
 
-function pageTransitionPresetLabel(preset: PageTransitionPreset): string {
+export function pageTransitionPresetLabel(preset: PageTransitionPreset): string {
   switch (preset) {
     case 'pager-slide':
       return 'Pager slide'
