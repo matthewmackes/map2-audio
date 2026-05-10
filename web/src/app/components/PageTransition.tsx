@@ -29,6 +29,10 @@ const STAGGERED_REVEAL_DURATION_MS = 600
 const FADE_DURATION_MS = 140
 const PAGER_SLIDE_DURATION_MS = 160
 const FALLBACK_SCOPE: TransitionScope = { id: 'home' }
+// Suppress rapid back-to-back overlays. The in-content universal
+// stagger still runs because it is keyed off the new pathname; only
+// the screen-wide wash is debounced so it does not strobe.
+const TRANSITION_OVERLAY_MIN_GAP_MS = 220
 
 export function getLandingTransitionScope(pathname: string): TransitionScope | null {
   const canonicalPathname = canonicalizeNavigationRoute(pathname)
@@ -86,6 +90,7 @@ export function PageTransition({ children }: PageTransitionProps) {
   const { resolvedPageTransitionMode } = useReducedEffectsPreference()
   const previousPathnameRef = useRef(location.pathname)
   const timeoutRef = useRef<number | null>(null)
+  const lastOverlayAtRef = useRef<number>(0)
   const [transition, setTransition] = useState<TransitionSnapshot | null>(null)
   const currentScope = useMemo(() => getLandingTransitionScope(location.pathname), [location.pathname])
 
@@ -107,6 +112,16 @@ export function PageTransition({ children }: PageTransitionProps) {
       window.clearTimeout(timeoutRef.current)
       timeoutRef.current = null
     }
+
+    // Debounce: if the previous overlay started less than the minimum
+    // gap ago, skip rendering this overlay. Operators rapidly clicking
+    // through tabs in the MIDI Hub or similar dense workspaces should
+    // not see a strobe of the wash gradient.
+    const now = Date.now()
+    if (now - lastOverlayAtRef.current < TRANSITION_OVERLAY_MIN_GAP_MS) {
+      return undefined
+    }
+    lastOverlayAtRef.current = now
 
     const preferredMode: TransitionMode =
       resolvedPageTransitionMode === 'fade'

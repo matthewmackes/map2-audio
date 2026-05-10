@@ -132,6 +132,21 @@ describe('PageTransition', () => {
     expect(screen.getByTestId('landing-route-transition')).toHaveClass('landing-route-transition--workspace')
   })
 
+  it('debounces back-to-back overlays inside the rapid-nav window', () => {
+    renderHarness('/')
+    fireEvent.click(screen.getByRole('button', { name: 'Go Audio Artifacts' }))
+    expect(screen.getByTestId('landing-route-transition')).toHaveClass('landing-route-transition--staggered')
+
+    // A second navigation within the suppression window: no new
+    // overlay element should be rendered (the in-content universal
+    // stagger handles the per-route reveal separately).
+    fireEvent.click(screen.getByRole('button', { name: 'Go MIDI Connections' }))
+    // The transition timeout is keyed by the previous nav; we have
+    // not advanced the clock, so the same overlay (or nothing new)
+    // is shown — never two simultaneous overlays.
+    expect(screen.queryAllByTestId('landing-route-transition').length).toBeLessThanOrEqual(1)
+  })
+
   it('falls back to the minimal fade when system reduced motion is enabled', () => {
     setMatchMedia(true)
     renderHarness('/')

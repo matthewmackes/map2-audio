@@ -63,4 +63,36 @@ describe('effectsSettingsStore', () => {
   it('uses staggered-reveal as the default preset for fresh installs', () => {
     expect(DEFAULT_PAGE_TRANSITION_PRESET).toBe('staggered-reveal')
   })
+
+  it('preserves the migrated value across a subsequent rehydrate', async () => {
+    // Persisted state remains 'hyperactive-block' from a prior session;
+    // every rehydrate must coerce to the new preset.
+    window.localStorage.setItem(
+      REDUCED_EFFECTS_STORAGE_KEY,
+      JSON.stringify({
+        state: { reducedEffectsEnabled: false, pageTransitionPreset: 'hyperactive-block' },
+        version: 0,
+      }),
+    )
+
+    await act(async () => {
+      await (useEffectsSettingsStore as typeof useEffectsSettingsStore & PersistApi).persist.rehydrate()
+    })
+    expect(useEffectsSettingsStore.getState().pageTransitionPreset).toBe('staggered-reveal')
+
+    // Second rehydrate after another setItem of the legacy value should
+    // still land on staggered-reveal.
+    window.localStorage.setItem(
+      REDUCED_EFFECTS_STORAGE_KEY,
+      JSON.stringify({
+        state: { reducedEffectsEnabled: false, pageTransitionPreset: 'hyperactive-block' },
+        version: 0,
+      }),
+    )
+
+    await act(async () => {
+      await (useEffectsSettingsStore as typeof useEffectsSettingsStore & PersistApi).persist.rehydrate()
+    })
+    expect(useEffectsSettingsStore.getState().pageTransitionPreset).toBe('staggered-reveal')
+  })
 })
