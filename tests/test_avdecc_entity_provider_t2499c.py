@@ -163,6 +163,40 @@ def test_env_probe_with_offline_bench(monkeypatch) -> None:
 
 
 @pytest.mark.asyncio
+async def test_substrate_state_route_returns_simulator_state_when_override_installed():
+    """T2499-C Slice 5 — substrate-state route mirrors simulator state."""
+    from app.routes.avb.discovery import get_avdecc_substrate_state
+
+    set_avdecc_entity_override(
+        avdecc_simulator.offline_bench(),
+        origin="test:substrate-route",
+    )
+    state = await get_avdecc_substrate_state()
+    assert state["source"] == "avdecc_simulator"
+    assert state["origin"] == "test:substrate-route"
+    assert state["interface"]["up"] is False
+    assert state["ptp"]["locked"] is False
+    assert state["entity_count"] == 0
+
+
+@pytest.mark.asyncio
+async def test_substrate_state_route_returns_healthy_simulator_state():
+    from app.routes.avb.discovery import get_avdecc_substrate_state
+
+    set_avdecc_entity_override(
+        avdecc_simulator.small_bench(),
+        origin="test:substrate-route-healthy",
+    )
+    state = await get_avdecc_substrate_state()
+    assert state["interface"]["up"] is True
+    assert state["ptp"]["locked"] is True
+    assert state["entity_count"] == 4
+    # Schema keys the wizard's panel reads.
+    assert set(state["interface"].keys()) == {"name", "up"}
+    assert {"locked", "offset_ns", "grandmaster_id"} == set(state["ptp"].keys())
+
+
+@pytest.mark.asyncio
 async def test_entities_route_returns_simulator_payload_when_override_installed():
     """
     Full route round-trip with no live AVDECC and no AVB config.

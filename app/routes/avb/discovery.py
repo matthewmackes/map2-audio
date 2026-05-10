@@ -223,6 +223,102 @@ async def get_discovered_node(node_id: str) -> Dict[str, Any]:
 # AVDECC (IEEE 1722.1) Endpoints
 # ============================================================================
 
+
+@router.get("/avdecc/substrate-state")
+async def get_avdecc_substrate_state() -> Dict[str, Any]:
+    """
+    T2499-C Slice 5 — substrate readiness for the binding wizard.
+
+    Returns a ``{interface, ptp, entity_count, source}`` dict. When the
+    simulator override is installed, the simulator's own
+    ``substrate_state()`` is returned. Otherwise the response is built
+    from the live AVB service. Schema is pinned by tests so the wizard
+    can read either path with one renderer.
+    """
+    from app.services.avb.avdecc_entity_provider import (
+        get_avdecc_entity_override,
+        get_avdecc_entity_override_origin,
+    )
+
+    override = get_avdecc_entity_override()
+    if override is not None and hasattr(override, "substrate_state"):
+        try:
+            state = override.substrate_state()
+            state["origin"] = get_avdecc_entity_override_origin()
+            return state
+        except Exception as exc:
+            logger.exception("Substrate state lookup raised on override: %s", exc)
+            return {
+                "interface": {"name": "unknown", "up": False},
+                "ptp": {
+                    "locked": False,
+                    "offset_ns": 0.0,
+                    "grandmaster_id": "0000000000000000",
+                },
+                "entity_count": 0,
+                "source": "avdecc_simulator",
+                "origin": get_avdecc_entity_override_origin(),
+                "error": str(exc),
+            }
+
+    # Live path — derive from the existing AVB service.
+    try:
+        from app.services.avb.avb_service import get_avb_service
+
+        svc = get_avb_service()
+        readiness_getter = getattr(svc, "get_readiness", None)
+        readiness = readiness_getter() if callable(readiness_getter) else {}
+        if not isinstance(readiness, dict):
+            readiness = {}
+        interface_name = readiness.get("interface") or "unknown"
+        from app.services.avb.avb_router import get_avb_router
+
+        live_router = get_avb_router()
+        entity_count = 0
+        if live_router and getattr(live_router, "avdecc_entity", None):
+            discover_fn = _resolve_avdecc_callable(
+                live_router.avdecc_entity,
+                [
+                    "get_avdecc_entities",
+                    "getDiscoveredEntities",
+                    "get_discovered_entities",
+                    "getAvdeccEntities",
+                ],
+            )
+            if discover_fn is not None:
+                try:
+                    entities = await asyncio.to_thread(discover_fn)
+                    entity_count = len(entities) if entities else 0
+                except Exception:
+                    entity_count = 0
+        operational = bool(readiness.get("operational", False))
+        return {
+            "interface": {"name": interface_name, "up": operational},
+            "ptp": {
+                "locked": operational,
+                "offset_ns": 0.0,
+                "grandmaster_id": "0000000000000000",
+            },
+            "entity_count": entity_count,
+            "source": "live",
+            "origin": None,
+        }
+    except Exception as exc:
+        logger.exception("Live substrate state lookup raised: %s", exc)
+        return {
+            "interface": {"name": "unknown", "up": False},
+            "ptp": {
+                "locked": False,
+                "offset_ns": 0.0,
+                "grandmaster_id": "0000000000000000",
+            },
+            "entity_count": 0,
+            "source": "live",
+            "origin": None,
+            "error": str(exc),
+        }
+
+
 @router.get("/avdecc/entities")
 async def get_avdecc_entities() -> Dict[str, Any]:
     """
