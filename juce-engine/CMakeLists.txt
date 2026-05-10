@@ -379,6 +379,8 @@ if(MAP2_DAW_MODE)
         Source/Daw/DawService.cpp
         Source/Daw/ModeSwitchCoordinator.cpp
         Source/Daw/DawProjectLoader.cpp
+        Source/Daw/TransportBridge.cpp
+        Source/Daw/DawDeviceManager.cpp
     )
 endif()
 
@@ -823,9 +825,12 @@ if(MAP2_DAW_MODE)
         tests/DawServiceShellTests.cpp
         tests/ModeSwitchCoordinatorTests.cpp
         tests/DawProjectLoaderTests.cpp
+        tests/TransportBridgeTests.cpp
         Source/Daw/DawService.cpp
         Source/Daw/ModeSwitchCoordinator.cpp
         Source/Daw/DawProjectLoader.cpp
+        Source/Daw/TransportBridge.cpp
+        Source/Daw/DawDeviceManager.cpp
     )
     target_compile_definitions(daw_tests PRIVATE
         MAP2_DAW_MODE=1
