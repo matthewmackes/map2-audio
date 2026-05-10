@@ -329,6 +329,20 @@ const STAGGER_SPEED_OPTIONS: Array<{ id: StaggerSpeed; label: string }> = [
   { id: 'faster', label: 'Faster' },
 ]
 
+function staggerSpeedLabel(speed: StaggerSpeed): string {
+  switch (speed) {
+    case 'slower':
+      return 'Slower'
+    case 'slow':
+      return 'Slow'
+    case 'normal':
+      return 'Normal'
+    case 'faster':
+    default:
+      return 'Faster'
+  }
+}
+
 function staggerSpeedHint(speed: StaggerSpeed): string {
   switch (speed) {
     case 'slower':
@@ -2384,6 +2398,9 @@ function ThemeWorkspacePanel(props: ThemeWorkspacePanelProps) {
             </div>
             <div className="theme-page__section-tags">
               <Tag type="blue" size="sm">{pageTransitionPresetLabel(pageTransitionPreset)}</Tag>
+              {pageTransitionPreset === 'staggered-reveal' ? (
+                <Tag type="cool-gray" size="sm">{`Speed: ${staggerSpeedLabel(staggerSpeed)}`}</Tag>
+              ) : null}
               <Tag type={shouldReduceEffects ? 'green' : 'warm-gray'} size="sm">
                 {shouldReduceEffects ? 'Reduced effects active' : 'Full effects active'}
               </Tag>
