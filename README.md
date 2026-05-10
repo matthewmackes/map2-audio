@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1584** Python | **1617** TypeScript | **211** C++/H | **149** Docs | **4217** total commits | **4** stars | **0** forks | **0** open issues
+**1586** Python | **1617** TypeScript | **211** C++/H | **149** Docs | **4219** total commits | **4** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`f883e6f0`](https://github.com/matthewmackes/map2-audio/commit/f883e6f0edee104ab33dd3616f0b68f85973591c) | feat(maschine): T2499-B Slice 5 — pressure-curve fitter | Map2 Audio | 2026-05-10 |
+| [`4c876830`](https://github.com/matthewmackes/map2-audio/commit/4c87683030626aa9a505b59cda1a204287efbcd3) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-10 |
 | [`4caa8831`](https://github.com/matthewmackes/map2-audio/commit/4caa88318297478f73e41020fda40231fc2dce60) | feat(avdecc): T2499-C Slice 4 — DataTable picker + auto-s... | Map2 Audio | 2026-05-10 |
 | [`4edc4e14`](https://github.com/matthewmackes/map2-audio/commit/4edc4e1440718cd0b8d1996cf9c5c252b95568bc) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-10 |
 | [`6d6709b9`](https://github.com/matthewmackes/map2-audio/commit/6d6709b9caaab5024f52ba67066a9e3ecdca94c3) | feat(maschine): T2499-B Slice 4 — pad-sensitivity calibrator | Map2 Audio | 2026-05-10 |
 | [`ae13fe99`](https://github.com/matthewmackes/map2-audio/commit/ae13fe99b7851f357fbea4061a3e7c41d50bd735) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-10 |
 | [`e3740ee6`](https://github.com/matthewmackes/map2-audio/commit/e3740ee6cba4891d2af2484f2bab6fce2f2431a8) | feat(avdecc): T2499-C Slice 3 — AvdeccBindingWizard React... | Map2 Audio | 2026-05-10 |
 | [`1cf190c3`](https://github.com/matthewmackes/map2-audio/commit/1cf190c3a1e61ea11d1817544b79960aa50588cc) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-10 |
-| [`e44c800b`](https://github.com/matthewmackes/map2-audio/commit/e44c800bba639852235d78e3b1752c76727dc10e) | feat(maschine): T2499-B Slice 3 — onboarding orchestrator... | Map2 Audio | 2026-05-10 |
-| [`609a6cf0`](https://github.com/matthewmackes/map2-audio/commit/609a6cf011e525d0f94933c3f2fa0b41806a2558) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-10 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
