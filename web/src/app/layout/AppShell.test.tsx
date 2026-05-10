@@ -198,14 +198,16 @@ describe('AppShell global tree navigation', () => {
     const navTree = screen.getByLabelText('Global navigation')
     expect(navTree).toBeInTheDocument()
     // Nav reskin 2026-05-03 — the IA now reads:
-    //   Home → hero cards (Snapshot Editor, Sequencer)
+    //   Home → hero cards (Snapshot Editor, MultiTrack Recorder, Sequencer)
     //   → Services (MIDI Services, AVB, Audio Artifacts, Settings,
     //     Hardware, Node Ops) → Platform Guide.
     // The "Pinned" and "System" SectionBars were removed; System items
-    // were folded into the Services tree.
+    // were folded into the Services tree. MultiTrack Recorder hero added
+    // 2026-05-10 as the DAW entry point.
     expectInDocumentOrder([
       'Home',
       'Snapshot Editor',
+      'MultiTrack Recorder',
       'Sequencer',
       'MIDI Services',
       'AVB',
@@ -233,10 +235,11 @@ describe('AppShell global tree navigation', () => {
     expect(within(navTree).getAllByText('Presets').length).toBeGreaterThan(0)
     // Node Ops + AVB are dense-row groups under System/Services and
     // are NOT auto-expanded on first load (only Snapshot Editor,
-    // Sequencer, MIDI Services, Hardware, Devices are expanded by
-    // default). Their child entries (Midpoint, LV2 Plugins, NAM
-    // Models, Overview, etc.) are exercised in the navigation tests
-    // below where the parent is opened first.
+    // MultiTrack Recorder, Sequencer, MIDI Services, Hardware,
+    // Devices are expanded by default). Their child entries
+    // (Midpoint, LV2 Plugins, NAM Models, Overview, etc.) are
+    // exercised in the navigation tests below where the parent is
+    // opened first.
 
     // The node identity card surfaces the display name plus the host/role plate.
     const nodeCard = screen.getByRole('button', { name: /Node map2-host \(Studio\)/i })

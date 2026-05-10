@@ -41,7 +41,7 @@ function renderInRouter() {
             }
           />
           <Route
-            path="/avb-services/avdecc/binding-wizard"
+            path="/avb/avdecc/binding-wizard"
             element={
               <div data-testid="avdecc-binding-wizard-page">wizard</div>
             }

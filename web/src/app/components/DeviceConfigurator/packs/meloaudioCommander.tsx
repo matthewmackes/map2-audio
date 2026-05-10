@@ -1,26 +1,23 @@
 /**
  * T2499-A slice 3 — MeloAudio Commander adapter onto the framework.
- *
- * This is the parity test for the framework: the live MeloAudio
- * Configurator UI keeps using its bespoke shell (the production HIL
- * path), but the framework now has a `ConfiguratorPackDescriptor`
- * that adapts MeloAudio's existing API client to the generic shape.
- *
- * Future slices wire this descriptor into the device-pack picker
- * (slice 4) and the bindings writer (slice 6). The full UI swap onto
- * `DeviceConfiguratorShell` is a later slice once the framework has
- * more mileage from other packs (Maschine, MPX-1, IntelFX).
+ * T2499-A UI swap (2026-05-10) — the framework shell at
+ * `/midi/devices/configurator/meloaudio` is now the canonical operator
+ * surface; the bespoke `MeloAudioCommanderConfigurator` body is mounted
+ * as the `Configurator` tab inside the shell. The legacy direct route
+ * stays as a redirect for back-compat.
  */
 
-import meloaudioCommanderApi, {
-  type CommanderFirmwareKind,
-  type CommanderStatusResponse,
+import meloaudioCommanderApi from '../../../../map2/clients/meloaudioCommander'
+import type {
+  CommanderFirmwareKind,
+  CommanderStatusResponse,
 } from '../../../../map2/clients/meloaudioCommander'
 import type {
   ConfiguratorPackDescriptor,
   DeviceDetectionStatus,
   DevicePresence,
 } from '../types'
+import { MeloAudioCommanderConfigurator } from '../../../pages/midi-services/MeloAudioCommanderConfigurator'
 
 const FIRMWARE_TO_PRESENCE: Record<CommanderFirmwareKind, DevicePresence> = {
   stock: 'present_stock',
@@ -72,16 +69,20 @@ export const meloaudioCommanderPack: ConfiguratorPackDescriptor = {
     'Discovery wizard for stock firmware; canonical SysEx push for harvie256 custom firmware.',
   supportedPrimitives: ['detection', 'discovery', 'override', 'install', 'push'],
   fetchStatus: async () => adaptCommanderStatus(await meloaudioCommanderApi.getStatus()),
-  // Tabs are intentionally empty in slice 3: the bespoke
-  // MeloAudioCommanderConfigurator surface is the production UI and
-  // continues to handle the wizard + firmware install flows. This
-  // adapter exists so other framework consumers (the device-pack
-  // picker, the bindings writer) can interrogate MeloAudio through
-  // the generic seam.
-  tabs: [],
+  // UI swap (2026-05-10) — the bespoke Configurator body now mounts as
+  // a single tab inside the framework shell so the framework is the
+  // canonical operator surface.
+  tabs: [
+    {
+      id: 'configurator',
+      label: 'Configurator',
+      priority: 10,
+      render: () => <MeloAudioCommanderConfigurator />,
+    },
+  ],
   metadata: {
     docs_url:
       'https://github.com/matthewmackes/map2-audio/blob/master/docs/midi/MELOAUDIO_COMMANDER_CONFIGURATOR.md',
-    bespoke_route: '/midi-services/devices/meloaudio-midi-commander/configurator',
+    bespoke_route: '/midi/devices/configurator/meloaudio',
   },
 }

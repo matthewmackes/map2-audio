@@ -171,13 +171,15 @@ describe('meloaudioCommanderPack descriptor', () => {
     expect(meloaudioCommanderPack.vendorName).toBe('MeloAudio')
   })
 
-  it('points to the bespoke production UI route in metadata', () => {
+  it('points at the framework-canonical route in metadata (UI swap 2026-05-10)', () => {
     expect(meloaudioCommanderPack.metadata?.bespoke_route).toBe(
-      '/midi-services/devices/meloaudio-midi-commander/configurator',
+      '/midi/devices/configurator/meloaudio',
     )
   })
 
-  it('starts with no tabs in slice 3 — bespoke UI owns the operator surface', () => {
-    expect(meloaudioCommanderPack.tabs).toEqual([])
+  it('declares a single Configurator tab that hosts the bespoke UI body', () => {
+    expect(meloaudioCommanderPack.tabs).toHaveLength(1)
+    expect(meloaudioCommanderPack.tabs[0]?.id).toBe('configurator')
+    expect(meloaudioCommanderPack.tabs[0]?.label).toBe('Configurator')
   })
 })

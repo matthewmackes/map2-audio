@@ -67,7 +67,7 @@ const SETUP_TASKS: readonly SetupTaskMeta[] = [
     // simulator path is operator-runnable today.
     status: 'available',
     roadmapTag: 'T2499-C',
-    navigateTo: '/avb-services/avdecc/binding-wizard',
+    navigateTo: '/avb/avdecc/binding-wizard',
   },
 ] as const
 

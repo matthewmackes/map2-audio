@@ -313,6 +313,7 @@ const RULES: ShellRouteRule[] = [
     }),
   },
   staticMeta('/snapshot-editor', { windowLabel: 'Snapshot Editor', breadcrumbs: [{ label: 'Snapshots', to: '/snapshots' }, { label: 'Snapshot Editor' }] }),
+  staticMeta('/multitrack-recorder', { windowLabel: 'MultiTrack Recorder', breadcrumbs: [{ label: 'MultiTrack Recorder' }] }),
   staticMeta('/midi/assignments', { windowLabel: 'MIDI Assignments', breadcrumbs: [{ label: 'MIDI Services', to: '/midi/connections' }, { label: 'Assignments' }] }),
   // T2491 (2026-05-02 cleanup) — canonical /midi/* breadcrumb meta.
   // The /midi-hub/* legacy paths still appear below as low-priority

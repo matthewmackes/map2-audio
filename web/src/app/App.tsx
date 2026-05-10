@@ -102,8 +102,8 @@ const MidiDeviceMaschineLanding = lazy(() => import('./pages/midi-services/MidiD
 const MidiDeviceMcuLanding = lazy(() => import('./pages/midi-services/MidiDeviceMcuLanding').then(m => ({ default: m.MidiDeviceMcuLanding })))
 const MidiDeviceLaunchControlLanding = lazy(() => import('./pages/midi-services/MidiDeviceLaunchControlLanding').then(m => ({ default: m.MidiDeviceLaunchControlLanding })))
 const MidiDeviceMidiCommanderLanding = lazy(() => import('./pages/midi-services/MidiDeviceMidiCommanderLanding').then(m => ({ default: m.MidiDeviceMidiCommanderLanding })))
-const MeloAudioCommanderConfigurator = lazy(() => import('./pages/midi-services/MeloAudioCommanderConfigurator').then(m => ({ default: m.MeloAudioCommanderConfigurator })))
 const MidiServicesConfiguratorPage = lazy(() => import('./pages/midi-services/MidiServicesConfiguratorPage').then(m => ({ default: m.MidiServicesConfiguratorPage })))
+const MeloAudioConfiguratorFrameworkPage = lazy(() => import('./pages/midi-services/MeloAudioConfiguratorFrameworkPage').then(m => ({ default: m.MeloAudioConfiguratorFrameworkPage })))
 // T2487-3 — Expression unified-shell console (replaces the iter-8
 // MidiDeviceExpressionLanding cross-link; deleted Loop 6 as dead code).
 const ExpressionConsoleView = lazy(() => import('./components/Devices/Expression/ExpressionConsoleView').then(m => ({ default: m.ExpressionConsoleView })))
@@ -131,6 +131,7 @@ const AvbServicesBindingsPage    = lazy(() => import('./pages/avb-services/AvbSe
 const AvbServicesDevicesPage     = lazy(() => import('./pages/avb-services/AvbServicesDevicesPage').then(m => ({ default: m.AvbServicesDevicesPage })))
 const AvbServicesRoutingPage     = lazy(() => import('./pages/avb-services/AvbServicesRoutingPage').then(m => ({ default: m.AvbServicesRoutingPage })))
 const AvbServicesNetworkPage     = lazy(() => import('./pages/avb-services/AvbServicesNetworkPage').then(m => ({ default: m.AvbServicesNetworkPage })))
+const AvbServicesAvdeccBindingWizardPage = lazy(() => import('./pages/avb-services/AvbServicesAvdeccBindingWizardPage').then(m => ({ default: m.AvbServicesAvdeccBindingWizardPage })))
 // T2491 (2026-05-02 cleanup) — the 7 MidiHub*Page lazy imports
 // retired with the /midi-hub/* mount. Canonical /midi/* mount uses
 // MidiServicesConnectionsPage / MidiServicesPresetsPage / etc. The
@@ -189,6 +190,7 @@ const IntelFXFlowView       = lazy(() => import('./components/Devices/IntelFX/vi
 const MOTURMEPage           = lazy(() => import('./pages/MOTURMEPage'))
 const WelcomePage           = lazy(() => import('./pages/WelcomePage').then(m => ({ default: m.WelcomePage })))
 const SequencerPage  = lazy(() => import('./pages/SequencerPage').then(m => ({ default: m.SequencerPage })))
+const MultiTrackRecorderPage = lazy(() => import('./pages/MultiTrackRecorderPage').then(m => ({ default: m.MultiTrackRecorderPage })))
 const MeteringPage          = lazy(() => import('./pages/MeteringPage').then(m => ({ default: m.MeteringPage })))
 const PipeWirePage          = lazy(() => import('./pages/PipeWirePage').then(m => ({ default: m.PipeWirePage })))
 const PerformPage           = lazy(() => import('./pages/PerformPage').then(m => ({ default: m.PerformPage })))
@@ -841,9 +843,17 @@ export function App() {
                                   <Route path="devices/mackie-mcu-pro" element={<MidiDeviceMcuLanding />} />
                                   <Route path="devices/novation-launch-control-xl" element={<MidiDeviceLaunchControlLanding />} />
                                   <Route path="devices/meloaudio-midi-commander" element={<MidiDeviceMidiCommanderLanding />} />
-                                  {/* T2459-H3-CFG Phase 5 slice 2-4 — Configurator page
-                                      (status + Discovery Wizard + Custom Firmware install). */}
-                                  <Route path="devices/meloaudio-midi-commander/configurator" element={<MeloAudioCommanderConfigurator />} />
+                                  {/* T2459-H3-CFG Phase 5 slice 2-4 — legacy direct
+                                      route. Per the T2499-A UI swap (2026-05-10) the
+                                      framework-canonical entry is now
+                                      /midi/devices/configurator/meloaudio; this path
+                                      stays as a back-compat redirect for any
+                                      bookmarks / runbook links. */}
+                                  <Route path="devices/meloaudio-midi-commander/configurator" element={<Navigate to="/midi/devices/configurator/meloaudio" replace />} />
+                                  {/* T2499-A UI swap — framework-canonical MeloAudio
+                                      configurator surface; bespoke UI body mounts as
+                                      a tab inside DeviceConfiguratorShell. */}
+                                  <Route path="devices/configurator/meloaudio" element={<MeloAudioConfiguratorFrameworkPage />} />
                                   {/* T2499-A follow-on (autonomous-10 + 1) — generic
                                       Configurator entry point: device-pack picker +
                                       MIDI Learn fallback. The Sequencer Setup "Map a
@@ -910,6 +920,12 @@ export function App() {
                                   <Route path="devices" element={<AvbServicesDevicesPage />} />
                                   <Route path="routing" element={<AvbServicesRoutingPage />} />
                                   <Route path="network" element={<AvbServicesNetworkPage />} />
+                                  {/* T2499-C wizard route mount (2026-05-10) — Sequencer Setup
+                                      "Discover AVDECC devices" card deep-links here. Pulls
+                                      AVDECC entities from /api/avb/avdecc/entities (or the
+                                      simulator when MAP2_AVDECC_SIMULATOR is set) and writes
+                                      Brain-input bindings via /api/avb/bindings. */}
+                                  <Route path="avdecc/binding-wizard" element={<AvbServicesAvdeccBindingWizardPage />} />
                                 </Route>
                                 <Route path={HOST_MACHINE_ROUTE} element={<RouteBoundary title="Host Machine view crashed" actionLabel="Reload host machine"><HostMachinePage /></RouteBoundary>} />
                                 <Route path="/grid" element={<Navigate to="/snapshot-editor" replace />} />
@@ -984,6 +1000,7 @@ export function App() {
                                 <Route path="/pipewire" element={<RouteBoundary title="PipeWire view crashed" actionLabel="Reload PipeWire"><PipeWirePage /></RouteBoundary>} />
                                 <Route path="/welcome" element={<WelcomePage />} />
                                 <Route path="/sequencer" element={<SequencerPage />} />
+                                <Route path="/multitrack-recorder" element={<RouteBoundary title="MultiTrack Recorder crashed" actionLabel="Reload MultiTrack Recorder"><MultiTrackRecorderPage /></RouteBoundary>} />
                                 {/* T2487-4 — /expression hard-redirects to the unified
                                     /midi/devices/expression/console mount (Q1=A locked
                                     decision). ExpressionPage shim still exports

@@ -246,6 +246,13 @@ const LAUNCHER_STOREFRONT_OVERRIDES: Record<string, StorefrontOverride> = {
     // tree node renders as a leaf.
     treeChildren: [],
   },
+  '/multitrack-recorder': {
+    // MultiTrack Recorder is the DAW entry point — flat top-level
+    // tree node, sibling of Snapshot Editor. No tree children yet;
+    // future capture / arrange / mix / export sub-sections will hang
+    // here once the workspace is built out.
+    treeChildren: [],
+  },
   '/sequencer': {
     // T2442: Brain Overview tabs (Performance / Console / Step / Split) are now
     // first-class `?section=` values, alongside the other Brain sections.

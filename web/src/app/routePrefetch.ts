@@ -39,6 +39,12 @@ const PREFETCH_RULES: PrefetchRule[] = [
       () => import('./pages/SnapshotPublishPage'),
     ],
   },
+  // MultiTrack Recorder — DAW entry point hero (sibling of snapshot
+  // editor in the global tree nav).
+  {
+    prefix: '/multitrack-recorder',
+    loaders: [() => import('./pages/MultiTrackRecorderPage')],
+  },
   // Legacy aliases that redirect into the snapshot editor.
   {
     prefix: '/grid',
