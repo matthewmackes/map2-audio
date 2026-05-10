@@ -1,4 +1,4 @@
-import { useEffect, useRef } from 'react'
+import { useEffect, useRef, type RefObject } from 'react'
 import { useLocation } from 'react-router-dom'
 
 import {
@@ -219,4 +219,54 @@ export function UniversalStaggerProvider() {
   }, [location.pathname, pageTransitionPreset, reducedEffectsEnabled, staggerSpeed])
 
   return null
+}
+
+/**
+ * Trigger the same staggered reveal on a specific element whenever the
+ * provided deps change. Useful for tab swaps, modal opens, or any other
+ * "in-page" reveal that isn't tied to a route change.
+ *
+ * Honors the same gates as the universal provider: only fires when the
+ * staggered-reveal preset is active and respects prefers-reduced-motion.
+ *
+ * Usage:
+ *   const ref = useRef<HTMLDivElement>(null)
+ *   useStaggerOnMount(ref, [activeTab])
+ *   return <div ref={ref}>...</div>
+ */
+export function useStaggerOnMount<T extends Element>(ref: RefObject<T | null>, deps: unknown[]) {
+  const pageTransitionPreset = useEffectsSettingsStore((state) => state.pageTransitionPreset)
+  const reducedEffectsEnabled = useEffectsSettingsStore((state) => state.reducedEffectsEnabled)
+  const staggerSpeed = useEffectsSettingsStore((state) => state.staggerSpeed)
+  const runIdRef = useRef(0)
+
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  useEffect(() => {
+    if (pageTransitionPreset !== 'staggered-reveal') return undefined
+    const root = ref.current
+    if (!root) return undefined
+
+    const reduced = reducedEffectsEnabled || prefersReducedMotion()
+    const runId = `mount-${++runIdRef.current}`
+    const timings = getStaggerTimings(staggerSpeed)
+
+    let cancelled = false
+    let animations: Animation[] = []
+    const handle = window.requestAnimationFrame(() => {
+      if (cancelled) return
+      animations = runStaggerOnRoot(root, runId, reduced, timings)
+    })
+
+    return () => {
+      cancelled = true
+      window.cancelAnimationFrame(handle)
+      animations.forEach((anim) => {
+        try {
+          anim.cancel()
+        } catch {
+          /* noop */
+        }
+      })
+    }
+  }, [pageTransitionPreset, reducedEffectsEnabled, staggerSpeed, ...deps])
 }

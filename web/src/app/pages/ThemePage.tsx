@@ -58,7 +58,6 @@ import {
   resolveSnapshotEditorSignalCanvasSettings,
   type SnapshotEditorFlowAnimation,
   type SnapshotEditorNodeShape,
-  type SnapshotEditorSlotStyle,
   useSpecialSettings,
 } from '../hooks/useSpecialSettings'
 import {
@@ -100,6 +99,7 @@ import {
   type StaggerSpeed,
 } from '../stores/effectsSettingsStore'
 import { StaggerPreviewTile } from '../components/StaggerPreviewTile'
+import { useStaggerOnMount } from '../components/UniversalStagger'
 import {
   readDesktopWallpaperState,
   writeDesktopWallpaperState,
@@ -542,6 +542,8 @@ export function ThemePage() {
   const [activeCategoryPicker, setActiveCategoryPicker] = useState<string | null>(null)
   const [showCustomizePanel, setShowCustomizePanel] = useState(false)
   const [activeTab, setActiveTab] = useState<string>(THEME_PAGE_SECTION_IDS.appearance)
+  const sectionPanelRef = useRef<HTMLDivElement | null>(null)
+  useStaggerOnMount(sectionPanelRef, [activeTab])
   const [importedPaletteSets, setImportedPaletteSets] = useState<PublicPaletteSet[]>([])
   const [activePaletteSetId, setActivePaletteSetId] = useState(PUBLIC_PANTONE_PALETTE_SETS[0]?.id ?? '')
   const [paletteBase, setPaletteBase] = useState<BaseShell>('g100')
@@ -961,7 +963,6 @@ export function ThemePage() {
     'snapshot_editor.flow_animation': SnapshotEditorFlowAnimation
     'snapshot_editor.grid_backdrop': boolean
     'snapshot_editor.node_shape': SnapshotEditorNodeShape
-    'snapshot_editor.slot_style': SnapshotEditorSlotStyle
   }) => {
     await updateSpecialSettings(settings)
     setShowSpecialSettings(false)
@@ -1034,7 +1035,7 @@ export function ThemePage() {
           </TabList>
         </Tabs>
 
-        <div className="theme-page__section-panel">
+        <div className="theme-page__section-panel" ref={sectionPanelRef}>
           <ThemeWorkspacePanel
             activeTab={activeTab}
             activeThemeLabel={activeThemeLabel}
@@ -1161,7 +1162,6 @@ export function ThemePage() {
         currentSnapshotEditorFlowAnimation={snapshotEditorSignalCanvasSettings.flowAnimation}
         currentSnapshotEditorGridBackdrop={snapshotEditorSignalCanvasSettings.gridBackdrop}
         currentSnapshotEditorNodeShape={snapshotEditorSignalCanvasSettings.nodeShape}
-        currentSnapshotEditorSlotStyle={snapshotEditorSignalCanvasSettings.slotStyle}
         onSave={handleSpecialSettingsSave}
       />
 

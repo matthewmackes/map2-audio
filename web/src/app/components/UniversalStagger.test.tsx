@@ -3,7 +3,7 @@ import { act, render } from '@testing-library/react'
 import '@testing-library/jest-dom'
 import { MemoryRouter, Route, Routes, useLocation, useNavigate } from 'react-router-dom'
 
-import { UniversalStaggerProvider } from './UniversalStagger'
+import { UniversalStaggerProvider, useStaggerOnMount } from './UniversalStagger'
 import { useEffectsSettingsStore } from '../stores/effectsSettingsStore'
 
 interface AnimateMock extends jest.Mock {
@@ -139,6 +139,43 @@ describe('UniversalStaggerProvider', () => {
     expect(keyframes[1]).toEqual({ opacity: 1 })
     // No transform when reduced.
     expect(Object.keys(keyframes[0])).not.toContain('transform')
+  })
+
+  it('useStaggerOnMount fires when the dep tuple changes', async () => {
+    const { useState, useRef } = React
+    function Harness() {
+      const [tab, setTab] = useState('a')
+      const ref = useRef<HTMLDivElement | null>(null)
+      useStaggerOnMount(ref, [tab])
+      return (
+        <div>
+          <button type="button" onClick={() => setTab((current) => (current === 'a' ? 'b' : 'a'))}>
+            Switch
+          </button>
+          <div ref={ref} style={{ display: 'grid' }} data-testid="panel">
+            <div>1</div>
+            <div>2</div>
+            <div>3</div>
+          </div>
+        </div>
+      )
+    }
+
+    const { getByRole } = render(<Harness />)
+
+    await act(async () => {
+      await new Promise((resolve) => requestAnimationFrame(() => resolve(null)))
+    })
+
+    const initialCalls = animateMock.mock.calls.length
+    expect(initialCalls).toBeGreaterThanOrEqual(1)
+
+    await act(async () => {
+      getByRole('button', { name: 'Switch' }).click()
+      await new Promise((resolve) => requestAnimationFrame(() => resolve(null)))
+    })
+
+    expect(animateMock.mock.calls.length).toBeGreaterThan(initialCalls)
   })
 
   it('does not run when the preset is not staggered-reveal', async () => {
