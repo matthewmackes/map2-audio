@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1543** Python | **1590** TypeScript | **181** C++/H | **148** Docs | **4179** total commits | **4** stars | **0** forks | **0** open issues
+**1543** Python | **1593** TypeScript | **181** C++/H | **148** Docs | **4181** total commits | **4** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -175,7 +175,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-DOCS:START -->
 | Document | Last Updated |
 |:---------|:------------|
-| [MAP2 Canonical Project Worklist](https://github.com/matthewmackes/map2-audio/blob/master/docs/PROJECT_WORKLIST.md) | 2026-05-09 |
+| [MAP2 Canonical Project Worklist](https://github.com/matthewmackes/map2-audio/blob/master/docs/PROJECT_WORKLIST.md) | 2026-05-10 |
 | [React Staggered Reveal — universal page effect](https://github.com/matthewmackes/map2-audio/blob/master/docs/REACT_STAGGERED_REVEAL.md) | 2026-05-09 |
 | [Third-Party Notices](https://github.com/matthewmackes/map2-audio/blob/master/docs/THIRD_PARTY_NOTICES.md) | 2026-05-09 |
 | [MAP2 Audio Platform — AI Instructions](https://github.com/matthewmackes/map2-audio/blob/master/docs/CLAUDE.md) | 2026-05-06 |
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`23f499b2`](https://github.com/matthewmackes/map2-audio/commit/23f499b27b24c0cfb30dd88f125abdf8b6f1f8ec) | feat(snapshot-editor): slot-style variants + de-collision... | Map2 Audio | 2026-05-10 |
+| [`5c93021f`](https://github.com/matthewmackes/map2-audio/commit/5c93021f9436dc5784b5ba897d2a1ecd0cd06b98) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-10 |
 | [`b2aea829`](https://github.com/matthewmackes/map2-audio/commit/b2aea8298dca5872f5d7a1c7962e6354a5171c8d) | feat(daw): T2503-set1 — file DAW Service epic + reserve M... | Map2 Audio | 2026-05-09 |
 | [`b35f00d3`](https://github.com/matthewmackes/map2-audio/commit/b35f00d38fdce6a2c18192154824ccdc6db3f588) | feat(theme): show active stagger speed inline + project m... | Map2 Audio | 2026-05-09 |
 | [`c3343647`](https://github.com/matthewmackes/map2-audio/commit/c3343647a098908f977756ca0278024d68084efa) | feat(stagger): replay lockout, debounce-recovery test, ex... | Map2 Audio | 2026-05-09 |
 | [`476e582a`](https://github.com/matthewmackes/map2-audio/commit/476e582a0093b1f51f73bedf02cc31ba1a42ef95) | feat(stagger): rapid-nav overlay debounce + persisted-mig... | Map2 Audio | 2026-05-09 |
 | [`b312b3c1`](https://github.com/matthewmackes/map2-audio/commit/b312b3c13e772302d735a0dad31e09b4397d2286) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-10 |
 | [`76302cc3`](https://github.com/matthewmackes/map2-audio/commit/76302cc3958be388e9fc9a960efec7020ad6404c) | docs(stagger): architecture doc + universal scope fallback | Map2 Audio | 2026-05-09 |
-| [`1f471378`](https://github.com/matthewmackes/map2-audio/commit/1f4713781ba19a281bf8dba638e5ef6f18f028dd) | feat(stagger): StaggerReveal wrapper + dev-mode trace | Map2 Audio | 2026-05-09 |
-| [`565c6946`](https://github.com/matthewmackes/map2-audio/commit/565c6946fff134329cf2f25d8d31a474f91c4c9a) | feat(stagger): unified overlay across all routes + reduce... | Map2 Audio | 2026-05-09 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
