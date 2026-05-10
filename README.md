@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1538** Python | **1574** TypeScript | **181** C++/H | **147** Docs | **4165** total commits | **4** stars | **0** forks | **0** open issues
+**1543** Python | **1590** TypeScript | **181** C++/H | **148** Docs | **4174** total commits | **4** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -176,11 +176,11 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 | Document | Last Updated |
 |:---------|:------------|
 | [MAP2 Canonical Project Worklist](https://github.com/matthewmackes/map2-audio/blob/master/docs/PROJECT_WORKLIST.md) | 2026-05-09 |
+| [React Staggered Reveal — universal page effect](https://github.com/matthewmackes/map2-audio/blob/master/docs/REACT_STAGGERED_REVEAL.md) | 2026-05-09 |
 | [MAP2 Audio Platform — AI Instructions](https://github.com/matthewmackes/map2-audio/blob/master/docs/CLAUDE.md) | 2026-05-06 |
 | [Autonomous Loop Closure Status — 2026-05-04 (cycles 11-60)](https://github.com/matthewmackes/map2-audio/blob/master/docs/PROJECT_WORKLIST_AUTONOMOUS_LOOP_STATUS_20260504.md) | 2026-05-04 |
 | [MAP2 Renames — Migration Notes](https://github.com/matthewmackes/map2-audio/blob/master/docs/RENAMES.md) | 2026-05-03 |
 | [MAP2 Backend Runtime Contract](https://github.com/matthewmackes/map2-audio/blob/master/docs/backend-runtime-contract.md) | 2026-04-27 |
-| [MAP2 API Contract Standards](https://github.com/matthewmackes/map2-audio/blob/master/docs/api-contract-standards.md) | 2026-04-25 |
 <!-- RECENT-DOCS:END -->
 
 <p align="right"><a href="https://github.com/matthewmackes/map2-audio/tree/master/docs">Browse all docs &rarr;</a></p>
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
-| [`99f49295`](https://github.com/matthewmackes/map2-audio/commit/99f49295d15eea837c7270b0a3ef3f537add4f52) | chore: autonomous-10 (snapshot-bindings + Configurator fo... | Map2 Audio | 2026-05-09 |
-| [`fa6aa452`](https://github.com/matthewmackes/map2-audio/commit/fa6aa45272acdb6d25482e0babd889f1c496ee1b) | feat(t2499-a): backend pack-discovery seam for the Config... | Map2 Audio | 2026-05-09 |
-| [`d26d081f`](https://github.com/matthewmackes/map2-audio/commit/d26d081f42a38a0f5d2c6cf67a05f5b26c554445) | feat(t2499-a): wire production MIDI Learn event source fo... | Map2 Audio | 2026-05-09 |
-| [`0cfe00d9`](https://github.com/matthewmackes/map2-audio/commit/0cfe00d9f8b5d74f275f9d6aff70fda327f71168) | feat(midi-bindings): differentiate snapshot row menu labe... | Map2 Audio | 2026-05-09 |
-| [`ff5fae62`](https://github.com/matthewmackes/map2-audio/commit/ff5fae62ad5eda2a78c213582fbbdca7f3c07fb4) | test(midi): service-level round-trip — snapshot program u... | Map2 Audio | 2026-05-09 |
-| [`5c6bdb04`](https://github.com/matthewmackes/map2-audio/commit/5c6bdb044bb4c5a880d6d58a63784dd842dd7971) | test(midi-bindings): cover snapshot-consumer row behavior | Map2 Audio | 2026-05-09 |
-| [`d59d64d0`](https://github.com/matthewmackes/map2-audio/commit/d59d64d085f50af86dad5461718396bdbd21fdc3) | test(snapshots-browser): cover program-badge deep-link + ... | Map2 Audio | 2026-05-09 |
-| [`3881ba99`](https://github.com/matthewmackes/map2-audio/commit/3881ba99c8495f0ac96753bb29b4009022fdb4ad) | chore(midi): one-shot backfill CLI for snapshot midi_map[... | Map2 Audio | 2026-05-09 |
+| [`76302cc3`](https://github.com/matthewmackes/map2-audio/commit/76302cc3958be388e9fc9a960efec7020ad6404c) | docs(stagger): architecture doc + universal scope fallback | Map2 Audio | 2026-05-09 |
+| [`1f471378`](https://github.com/matthewmackes/map2-audio/commit/1f4713781ba19a281bf8dba638e5ef6f18f028dd) | feat(stagger): StaggerReveal wrapper + dev-mode trace | Map2 Audio | 2026-05-09 |
+| [`565c6946`](https://github.com/matthewmackes/map2-audio/commit/565c6946fff134329cf2f25d8d31a474f91c4c9a) | feat(stagger): unified overlay across all routes + reduce... | Map2 Audio | 2026-05-09 |
+| [`4b26ca43`](https://github.com/matthewmackes/map2-audio/commit/4b26ca43ea2c800c445bde50a444d098ea104672) | feat(stagger): useStaggerOnMount hook + Theme tab swap st... | Map2 Audio | 2026-05-09 |
+| [`e370e610`](https://github.com/matthewmackes/map2-audio/commit/e370e6102583ee7bb532a95fab4734fde69d83e0) | feat(stagger): first-paint reveal, attr cleanup, and unit... | Map2 Audio | 2026-05-09 |
+| [`ce199bfc`](https://github.com/matthewmackes/map2-audio/commit/ce199bfc052257d9b5cb73f1da4ea9a5be4c916a) | feat(theme): add live preview + speed tuner for React Sta... | Map2 Audio | 2026-05-09 |
+| [`7e5f358b`](https://github.com/matthewmackes/map2-audio/commit/7e5f358bfdf1c9e6a430f00f45ac2ef97fb9ea48) | feat(theme): replace Hyperactive Block Reveal with React ... | Map2 Audio | 2026-05-09 |
+| [`90ebf1df`](https://github.com/matthewmackes/map2-audio/commit/90ebf1dffa25d9c8a04f1f44854f9011e692066c) | feat(t2499): mega-epic Phase 0/1/2.1 — generic Configurat... | Map2 Audio | 2026-05-09 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
