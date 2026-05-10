@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1562** Python | **1597** TypeScript | **211** C++/H | **148** Docs | **4198** total commits | **4** stars | **0** forks | **0** open issues
+**1563** Python | **1599** TypeScript | **211** C++/H | **148** Docs | **4200** total commits | **4** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`d1797097`](https://github.com/matthewmackes/map2-audio/commit/d1797097c93c9b6c58417e2bc45350394c820204) | feat(daw): T2503-set10 — React DAW reference UI + soak ha... | Map2 Audio | 2026-05-10 |
+| [`bbeead5b`](https://github.com/matthewmackes/map2-audio/commit/bbeead5b2f562a46f0ae2342c31cb959e5ddc843) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-10 |
 | [`f0450fda`](https://github.com/matthewmackes/map2-audio/commit/f0450fda70b1ee4df7e07cb3b836505ef3018467) | feat(daw): T2503-set9 — AVB-bus graph node + LV2 + shared... | Map2 Audio | 2026-05-10 |
 | [`1622d402`](https://github.com/matthewmackes/map2-audio/commit/1622d402fdf63b519b198350312379f316c2c4ad) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-10 |
 | [`376fbc30`](https://github.com/matthewmackes/map2-audio/commit/376fbc3033fe905ff53fd03610e5f24c1ca7056b) | feat(daw): T2503-set8 — Mixxx-derived clip-launcher / dec... | Map2 Audio | 2026-05-10 |
 | [`071d8fd2`](https://github.com/matthewmackes/map2-audio/commit/071d8fd2f62a676f2a029a42fcc08ac9053279f8) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-10 |
 | [`b15a4599`](https://github.com/matthewmackes/map2-audio/commit/b15a45997ee2ceb4847329b888a784f73a922969) | feat(daw): T2503-set7 — TransportBridge + MIDI Clock/MTC/... | Map2 Audio | 2026-05-10 |
 | [`2497768f`](https://github.com/matthewmackes/map2-audio/commit/2497768f7748b2714f61567728e701df46767fb3) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-10 |
-| [`47d89312`](https://github.com/matthewmackes/map2-audio/commit/47d89312be5afdc57979d42198ef71a40b0f542b) | feat(daw): T2503-set6 — DAW-mode device packs + generic M... | Map2 Audio | 2026-05-10 |
-| [`87c13707`](https://github.com/matthewmackes/map2-audio/commit/87c13707d7611f21890982a06bc76e3c55bfcf48) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-10 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
