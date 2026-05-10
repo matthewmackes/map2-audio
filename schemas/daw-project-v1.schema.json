@@ -1,0 +1,241 @@
+{
+    "$schema": "https://json-schema.org/draft/2020-12/schema",
+    "$id": "https://map2.audio/schemas/daw-project-v1.schema.json",
+    "title": "MAP2 DAW Project (v1)",
+    "description": "T2503 — canonical on-disk format for a DAW project. Lives at ~/.map2/daw/<project>/project.json. Authoritative; the DAW core's in-memory state (juce::AudioProcessorGraph + clip launchers + automation lanes) is rebuilt from this file on load.",
+    "type": "object",
+    "required": ["schema_version", "name", "sample_rate", "tracks", "clips", "plugin_instances", "automation_lanes"],
+    "additionalProperties": false,
+    "properties": {
+        "schema_version": {
+            "type": "string",
+            "const": "v1",
+            "description": "Locked at v1; future bumps require a migration."
+        },
+        "name": {
+            "type": "string",
+            "minLength": 1,
+            "maxLength": 255,
+            "description": "Project display name; matches the directory name under ~/.map2/daw/."
+        },
+        "sample_rate": {
+            "type": "integer",
+            "minimum": 44100,
+            "maximum": 192000,
+            "description": "Project sample rate. Tier-A locked to 48000 in this build; the field is recorded so future projects can interoperate."
+        },
+        "tempo_bpm": {
+            "type": "number",
+            "minimum": 20,
+            "maximum": 999,
+            "default": 120
+        },
+        "time_signature_numerator": {
+            "type": "integer",
+            "minimum": 1,
+            "maximum": 32,
+            "default": 4
+        },
+        "time_signature_denominator": {
+            "type": "integer",
+            "enum": [1, 2, 4, 8, 16, 32],
+            "default": 4
+        },
+        "tracks": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "required": ["id", "type", "name"],
+                "additionalProperties": false,
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "description": "Stable track ID; assigned at create time, never reused."
+                    },
+                    "type": {
+                        "type": "string",
+                        "enum": ["audio", "midi"]
+                    },
+                    "name": {
+                        "type": "string",
+                        "minLength": 1,
+                        "maxLength": 255
+                    },
+                    "armed": {
+                        "type": "boolean",
+                        "default": false
+                    },
+                    "muted": {
+                        "type": "boolean",
+                        "default": false
+                    },
+                    "soloed": {
+                        "type": "boolean",
+                        "default": false
+                    },
+                    "gain_linear": {
+                        "type": "number",
+                        "minimum": 0,
+                        "maximum": 4,
+                        "default": 1
+                    },
+                    "pan": {
+                        "type": "number",
+                        "minimum": -1,
+                        "maximum": 1,
+                        "default": 0
+                    }
+                }
+            },
+            "default": []
+        },
+        "clips": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "required": ["id", "track_id", "start_samples", "length_samples", "source"],
+                "additionalProperties": false,
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "minimum": 0
+                    },
+                    "track_id": {
+                        "type": "integer",
+                        "minimum": 0
+                    },
+                    "start_samples": {
+                        "type": "integer",
+                        "minimum": 0
+                    },
+                    "length_samples": {
+                        "type": "integer",
+                        "minimum": 1
+                    },
+                    "source": {
+                        "type": "string",
+                        "minLength": 1,
+                        "description": "Relative path to a .wav under <project>/audio/, or an inline MIDI sequence reference."
+                    },
+                    "fade_in_samples": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "default": 0
+                    },
+                    "fade_out_samples": {
+                        "type": "integer",
+                        "minimum": 0,
+                        "default": 0
+                    }
+                }
+            },
+            "default": []
+        },
+        "plugin_instances": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "required": ["track_id", "slot_index", "plugin_uri"],
+                "additionalProperties": false,
+                "properties": {
+                    "track_id": {
+                        "type": "integer",
+                        "minimum": 0
+                    },
+                    "slot_index": {
+                        "type": "integer",
+                        "minimum": 0
+                    },
+                    "plugin_uri": {
+                        "type": "string",
+                        "minLength": 1,
+                        "description": "LV2 URI or 'map2:fx:nam' / 'map2:fx:cabinet-ir' / 'map2:fx:reverb-ir' for native plugins."
+                    },
+                    "enabled": {
+                        "type": "boolean",
+                        "default": true
+                    },
+                    "params": {
+                        "type": "object",
+                        "additionalProperties": {
+                            "type": "number"
+                        },
+                        "default": {}
+                    }
+                }
+            },
+            "default": []
+        },
+        "automation_lanes": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "required": ["id", "target_kind", "target_ref"],
+                "additionalProperties": false,
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "minimum": 0
+                    },
+                    "target_kind": {
+                        "type": "string",
+                        "enum": ["track_gain", "track_pan", "plugin_param", "transport_tempo"]
+                    },
+                    "target_ref": {
+                        "type": "string",
+                        "minLength": 1,
+                        "description": "Opaque target reference (track_id for track_*; track_id/slot_index/param_id for plugin_param)."
+                    },
+                    "points": {
+                        "type": "array",
+                        "items": {
+                            "type": "object",
+                            "required": ["position", "value"],
+                            "additionalProperties": false,
+                            "properties": {
+                                "position": {
+                                    "type": "number",
+                                    "description": "Position in beats (track-relative) or samples (depending on lane unit)."
+                                },
+                                "value": {
+                                    "type": "number"
+                                }
+                            }
+                        },
+                        "default": []
+                    }
+                }
+            },
+            "default": []
+        },
+        "avb_buses": {
+            "type": "array",
+            "items": {
+                "type": "object",
+                "required": ["id", "stream_descriptor"],
+                "additionalProperties": false,
+                "properties": {
+                    "id": {
+                        "type": "integer",
+                        "minimum": 0
+                    },
+                    "stream_descriptor": {
+                        "type": "string",
+                        "description": "Opaque AVB stream descriptor (entity/talker/listener IDs)."
+                    },
+                    "direction": {
+                        "type": "string",
+                        "enum": ["input", "output"]
+                    }
+                }
+            },
+            "default": []
+        },
+        "metadata": {
+            "type": "object",
+            "additionalProperties": true,
+            "description": "Free-form project metadata (created_at, last_modified, author, etc.)."
+        }
+    }
+}

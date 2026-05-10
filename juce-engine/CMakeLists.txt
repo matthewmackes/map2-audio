@@ -378,6 +378,7 @@ if(MAP2_DAW_MODE)
     list(APPEND SOURCES
         Source/Daw/DawService.cpp
         Source/Daw/ModeSwitchCoordinator.cpp
+        Source/Daw/DawProjectLoader.cpp
     )
 endif()
 
@@ -821,8 +822,10 @@ if(MAP2_DAW_MODE)
     add_executable(daw_tests
         tests/DawServiceShellTests.cpp
         tests/ModeSwitchCoordinatorTests.cpp
+        tests/DawProjectLoaderTests.cpp
         Source/Daw/DawService.cpp
         Source/Daw/ModeSwitchCoordinator.cpp
+        Source/Daw/DawProjectLoader.cpp
     )
     target_compile_definitions(daw_tests PRIVATE
         MAP2_DAW_MODE=1
