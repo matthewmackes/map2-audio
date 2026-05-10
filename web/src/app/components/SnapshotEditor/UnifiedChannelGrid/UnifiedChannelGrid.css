@@ -5,6 +5,10 @@
 .ucg-grid {
   display: flex;
   flex-direction: column;
+  /* T2504: container fills its parent so child rows (CSS grids with
+     fluid `minmax(96px, 1fr)` slot tracks) can stretch slots to absorb
+     all available horizontal space. */
+  width: 100%;
   background: var(--cds-layer-01, #161616);
   border: 1px solid var(--cds-border-subtle-01, #393939);
   border-radius: 4px;

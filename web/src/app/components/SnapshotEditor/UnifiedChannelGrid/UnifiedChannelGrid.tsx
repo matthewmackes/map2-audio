@@ -1,12 +1,9 @@
-import type { CSSProperties } from 'react'
-
 import { ChannelRow } from './ChannelRow'
 import { SlotRuler } from './SlotRuler'
 import { useGridKeyboard } from './useGridKeyboard'
 import type { ChainMeterReading } from './useChainMeter'
 import { WireOverlay, type Wire } from './WireOverlay'
 import {
-  COLUMN_WIDTHS,
   SLOT_COUNT,
   type UnifiedChannelRow,
 } from './gridConstants'
@@ -77,15 +74,15 @@ export function UnifiedChannelGrid({
     onRemove: onRemoveBlock,
     onDeselect,
   })
-  const totalWidth = COLUMN_WIDTHS.channelHeader + COLUMN_WIDTHS.slot * SLOT_COUNT
-  const style: CSSProperties = {
-    width: totalWidth,
-  }
+  // Grid container has no inline width — it fills its parent so the row
+  // CSS grid (`<header>px repeat(N, minmax(96px, 1fr))`) can flex slots
+  // out to whatever real estate the page hands us. Below ~1008px total,
+  // the .ucg-grid scrolls horizontally and the channel-header column
+  // stays sticky-left.
 
   return (
     <div
       className="ucg-grid"
-      style={style}
       role="grid"
       aria-label={`Unified channel grid with ${rows.length} rows and ${SLOT_COUNT} slots`}
       aria-rowcount={rows.length + 1}
