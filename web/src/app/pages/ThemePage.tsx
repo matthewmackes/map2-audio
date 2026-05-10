@@ -58,6 +58,7 @@ import {
   resolveSnapshotEditorSignalCanvasSettings,
   type SnapshotEditorFlowAnimation,
   type SnapshotEditorNodeShape,
+  type SnapshotEditorSlotStyle,
   useSpecialSettings,
 } from '../hooks/useSpecialSettings'
 import {
@@ -138,14 +139,14 @@ function pageTransitionPresetLabel(preset: PageTransitionPreset): string {
   switch (preset) {
     case 'pager-slide':
       return 'Pager slide'
-    case 'hyperactive-block':
+    case 'staggered-reveal':
     default:
-      return 'Hyperactive block'
+      return 'React Staggered Reveal'
   }
 }
 
 function isPageTransitionPreset(value: string): value is PageTransitionPreset {
-  return value === 'hyperactive-block' || value === 'pager-slide'
+  return value === 'staggered-reveal' || value === 'pager-slide'
 }
 
 function resolvePreviewTheme(themeId: string, theme: Theme): Theme {
@@ -305,9 +306,9 @@ const PAGE_TRANSITION_PRESET_OPTIONS: Array<{
   description: string
 }> = [
   {
-    id: 'hyperactive-block',
-    name: 'Hyperactive Block Reveal',
-    description: 'Blueprint-style blocks sweep across supported shell routes for a harder-edged transition cue.',
+    id: 'staggered-reveal',
+    name: 'React Staggered Reveal',
+    description: 'Framer Motion-driven slow stagger: lists and grids fade-and-slide into place across every page (~600ms total). Universal across the GUI; honours reduce-motion.',
   },
   {
     id: 'pager-slide',
@@ -932,6 +933,7 @@ export function ThemePage() {
     'snapshot_editor.flow_animation': SnapshotEditorFlowAnimation
     'snapshot_editor.grid_backdrop': boolean
     'snapshot_editor.node_shape': SnapshotEditorNodeShape
+    'snapshot_editor.slot_style': SnapshotEditorSlotStyle
   }) => {
     await updateSpecialSettings(settings)
     setShowSpecialSettings(false)
@@ -1129,6 +1131,7 @@ export function ThemePage() {
         currentSnapshotEditorFlowAnimation={snapshotEditorSignalCanvasSettings.flowAnimation}
         currentSnapshotEditorGridBackdrop={snapshotEditorSignalCanvasSettings.gridBackdrop}
         currentSnapshotEditorNodeShape={snapshotEditorSignalCanvasSettings.nodeShape}
+        currentSnapshotEditorSlotStyle={snapshotEditorSignalCanvasSettings.slotStyle}
         onSave={handleSpecialSettingsSave}
       />
 

@@ -40,4 +40,27 @@ describe('effectsSettingsStore', () => {
 
     expect(useEffectsSettingsStore.getState().pageTransitionPreset).toBe(DEFAULT_PAGE_TRANSITION_PRESET)
   })
+
+  it('migrates the legacy hyperactive-block preset to staggered-reveal on rehydrate', async () => {
+    window.localStorage.setItem(
+      REDUCED_EFFECTS_STORAGE_KEY,
+      JSON.stringify({
+        state: {
+          reducedEffectsEnabled: false,
+          pageTransitionPreset: 'hyperactive-block',
+        },
+        version: 0,
+      }),
+    )
+
+    await act(async () => {
+      await (useEffectsSettingsStore as typeof useEffectsSettingsStore & PersistApi).persist.rehydrate()
+    })
+
+    expect(useEffectsSettingsStore.getState().pageTransitionPreset).toBe('staggered-reveal')
+  })
+
+  it('uses staggered-reveal as the default preset for fresh installs', () => {
+    expect(DEFAULT_PAGE_TRANSITION_PRESET).toBe('staggered-reveal')
+  })
 })

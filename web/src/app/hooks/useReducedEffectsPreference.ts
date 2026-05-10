@@ -48,3 +48,29 @@ export function useReducedEffectsPreference() {
     resolvedPageTransitionMode: reducedEffectsEnabled || prefersReducedMotion ? 'fade' : pageTransitionPreset,
   }
 }
+
+export function useUniversalStaggerEnabled(): boolean {
+  const pageTransitionPreset = useEffectsSettingsStore((state) => state.pageTransitionPreset)
+  const reducedEffectsEnabled = useEffectsSettingsStore((state) => state.reducedEffectsEnabled)
+  const [prefersReducedMotion, setPrefersReducedMotion] = useState(getPrefersReducedMotion)
+
+  useEffect(() => {
+    if (typeof window === 'undefined' || typeof window.matchMedia !== 'function') {
+      return undefined
+    }
+    const mediaQuery = window.matchMedia('(prefers-reduced-motion: reduce)')
+    const handleChange = (event: MediaQueryListEvent) => setPrefersReducedMotion(event.matches)
+    setPrefersReducedMotion(mediaQuery.matches)
+    if (typeof mediaQuery.addEventListener === 'function') {
+      mediaQuery.addEventListener('change', handleChange)
+      return () => mediaQuery.removeEventListener('change', handleChange)
+    }
+    mediaQuery.addListener(handleChange)
+    return () => mediaQuery.removeListener(handleChange)
+  }, [])
+
+  // Reduced motion users still get the (very brief) fade variant of the
+  // staggered reveal — see UniversalStagger — but the universal sweep
+  // is otherwise gated on the preset being selected.
+  return pageTransitionPreset === 'staggered-reveal' && !reducedEffectsEnabled && !prefersReducedMotion
+}

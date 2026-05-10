@@ -1,9 +1,9 @@
 .page-transition-scope {
-  /* Choreography durations — intentionally distinct from --map2-dur-fast (120ms):
-     block/slide at 160ms gives the grid stagger room to breathe;
-     fade at 140ms exits slightly before the new content arrives.
-     Stagger multipliers: 6ms per cell (desktop), 16ms per cell (mobile). */
-  --page-transition-block-duration: var(--map2-dur-page-block, 160ms);
+  /* Choreography durations:
+     staggered overlay = 600ms (matches the universal in-content stagger budget),
+     fade = 140ms exits slightly before the new content arrives,
+     pager = 160ms horizontal glide. */
+  --page-transition-staggered-duration: var(--map2-dur-page-staggered, 600ms);
   --page-transition-fade-duration: var(--map2-dur-page-fade, 140ms);
   --page-transition-slide-duration: var(--map2-dur-page-slide, 160ms);
   position: relative;
@@ -64,25 +64,25 @@
 
 .landing-route-transition::before {
   background:
-    radial-gradient(circle at 18% 82%, rgba(96, 165, 250, 0.28) 0%, transparent 34%),
-    radial-gradient(circle at 78% 18%, rgba(37, 99, 235, 0.24) 0%, transparent 32%),
-    linear-gradient(135deg, rgba(8, 14, 28, 0.96) 0%, rgba(7, 14, 28, 0.82) 46%, rgba(3, 8, 18, 0.96) 100%);
+    radial-gradient(circle at 18% 82%, rgba(96, 165, 250, 0.22) 0%, transparent 36%),
+    radial-gradient(circle at 78% 18%, rgba(37, 99, 235, 0.18) 0%, transparent 32%),
+    linear-gradient(135deg, rgba(8, 14, 28, 0.62) 0%, rgba(7, 14, 28, 0.46) 46%, rgba(3, 8, 18, 0.62) 100%);
 }
 
 .landing-route-transition::after {
   background:
-    linear-gradient(90deg, rgba(96, 165, 250, 0.08) 1px, transparent 1px),
-    linear-gradient(0deg, rgba(147, 197, 253, 0.06) 1px, transparent 1px);
+    linear-gradient(90deg, rgba(96, 165, 250, 0.06) 1px, transparent 1px),
+    linear-gradient(0deg, rgba(147, 197, 253, 0.04) 1px, transparent 1px);
   background-size: clamp(2rem, 3.6vw, 3.25rem) clamp(2rem, 3.6vw, 3.25rem);
   mix-blend-mode: screen;
 }
 
-.landing-route-transition--block::before {
-  animation: landing-route-transition-scrim var(--page-transition-block-duration) cubic-bezier(0.2, 0, 0.38, 0.9) forwards;
+.landing-route-transition--staggered::before {
+  animation: landing-route-transition-staggered-wash var(--page-transition-staggered-duration) cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-.landing-route-transition--block::after {
-  animation: landing-route-transition-blueprint var(--page-transition-block-duration) cubic-bezier(0.2, 0, 0.38, 0.9) forwards;
+.landing-route-transition--staggered::after {
+  animation: landing-route-transition-staggered-grid var(--page-transition-staggered-duration) cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 .landing-route-transition--fade::before,
@@ -106,45 +106,14 @@
   animation: landing-route-transition-pager-grid var(--page-transition-slide-duration) cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-.landing-route-transition__grid {
+.landing-route-transition__stagger-wash {
   position: absolute;
-  inset: clamp(0.45rem, 0.85vw, 0.9rem);
-  z-index: 1;
-  display: grid;
-  grid-template-columns: repeat(8, minmax(0, 1fr));
-  grid-template-rows: repeat(5, minmax(0, 1fr));
-  gap: clamp(0.2rem, 0.5vw, 0.45rem);
-}
-
-.landing-route-transition__block {
-  position: relative;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  border: 1px solid color-mix(in srgb, var(--landing-route-transition-accent) 50%, rgba(255, 255, 255, 0.08));
-  border-radius: clamp(0.22rem, 0.4vw, 0.45rem);
+  inset: 0;
   background:
-    radial-gradient(circle at 18% 14%, rgba(219, 234, 254, 0.22) 0%, transparent 38%),
-    linear-gradient(180deg, rgba(147, 197, 253, 0.22) 0%, rgba(59, 130, 246, 0.32) 26%, rgba(30, 64, 175, 0.78) 100%);
-  box-shadow:
-    inset 0 0 0 1px rgba(191, 219, 254, 0.06),
-    inset 0 1px 0 rgba(255, 255, 255, 0.12),
-    0 14px 24px rgba(2, 6, 23, 0.28),
-    0 0 18px rgba(96, 165, 250, 0.12);
+    radial-gradient(ellipse at 50% 100%, rgba(96, 165, 250, 0.22) 0%, transparent 58%),
+    linear-gradient(180deg, rgba(8, 14, 28, 0) 0%, rgba(8, 14, 28, 0.18) 64%, rgba(3, 8, 18, 0.32) 100%);
   opacity: 0;
-  transform: translate3d(-18%, 24%, 0) scale(0.82);
-  animation: landing-route-transition-block var(--page-transition-block-duration) cubic-bezier(0.16, 1, 0.3, 1) forwards;
-  animation-delay: calc(((4 - var(--landing-route-transition-row)) + var(--landing-route-transition-column)) * 6ms);
-}
-
-.landing-route-transition__block-icon {
-  width: clamp(1.2rem, 2.4vw, 2.3rem);
-  height: clamp(1.2rem, 2.4vw, 2.3rem);
-  color: color-mix(in srgb, white 84%, var(--landing-route-transition-accent) 16%);
-  opacity: 0.94;
-  filter:
-    drop-shadow(0 0 10px rgba(191, 219, 254, 0.24))
-    drop-shadow(0 4px 10px rgba(2, 6, 23, 0.26));
+  animation: landing-route-transition-stagger-overlay var(--page-transition-staggered-duration) cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
 .landing-route-transition__fade-panel {
@@ -191,18 +160,18 @@
   animation: landing-route-transition-pager-band-backward var(--page-transition-slide-duration) cubic-bezier(0.16, 1, 0.3, 1) forwards;
 }
 
-@keyframes landing-route-transition-scrim {
+@keyframes landing-route-transition-staggered-wash {
   0% {
     opacity: 0;
-    transform: scale(1.04);
+    transform: scale(1.02);
   }
 
-  18% {
-    opacity: 0.98;
+  22% {
+    opacity: 0.78;
   }
 
-  58% {
-    opacity: 0.82;
+  68% {
+    opacity: 0.42;
   }
 
   100% {
@@ -211,55 +180,39 @@
   }
 }
 
-@keyframes landing-route-transition-blueprint {
+@keyframes landing-route-transition-staggered-grid {
   0% {
     opacity: 0;
-    transform: translate3d(-2.5%, 2.5%, 0) scale(1.03);
+    transform: translate3d(0, 1.4%, 0);
   }
 
-  20% {
+  30% {
+    opacity: 0.22;
+  }
+
+  100% {
+    opacity: 0;
+    transform: translate3d(0, 0, 0);
+  }
+}
+
+@keyframes landing-route-transition-stagger-overlay {
+  0% {
+    opacity: 0;
+    transform: translate3d(0, 1%, 0);
+  }
+
+  26% {
+    opacity: 0.7;
+  }
+
+  72% {
     opacity: 0.32;
   }
 
   100% {
     opacity: 0;
-    transform: translate3d(0, 0, 0) scale(1);
-  }
-}
-
-@keyframes landing-route-transition-block {
-  0% {
-    opacity: 0;
-    transform: translate3d(-18%, 24%, 0) scale(0.82);
-    box-shadow:
-      inset 0 0 0 1px rgba(191, 219, 254, 0.04),
-      inset 0 1px 0 rgba(255, 255, 255, 0.08),
-      0 18px 32px rgba(2, 6, 23, 0.34),
-      0 0 0 rgba(96, 165, 250, 0);
-  }
-
-  24% {
-    opacity: 1;
-  }
-
-  42% {
-    opacity: 1;
-    transform: translate3d(0, 0, 0) scale(1);
-    box-shadow:
-      inset 0 0 0 1px rgba(191, 219, 254, 0.08),
-      inset 0 1px 0 rgba(255, 255, 255, 0.14),
-      0 14px 24px rgba(2, 6, 23, 0.26),
-      0 0 22px rgba(96, 165, 250, 0.16);
-  }
-
-  100% {
-    opacity: 0;
-    transform: translate3d(16%, -18%, 0) scale(0.94);
-    box-shadow:
-      inset 0 0 0 1px rgba(191, 219, 254, 0.04),
-      inset 0 1px 0 rgba(255, 255, 255, 0.1),
-      0 10px 20px rgba(2, 6, 23, 0.18),
-      0 0 20px rgba(96, 165, 250, 0.08);
+    transform: translate3d(0, 0, 0);
   }
 }
 
@@ -378,9 +331,9 @@
 
 @media (prefers-reduced-motion: reduce) {
   .page-transition-scope__content--pager,
-  .landing-route-transition__block,
-  .landing-route-transition--block::before,
-  .landing-route-transition--block::after,
+  .landing-route-transition__stagger-wash,
+  .landing-route-transition--staggered::before,
+  .landing-route-transition--staggered::after,
   .landing-route-transition--pager::before,
   .landing-route-transition--pager::after,
   .landing-route-transition__pager-band::before {

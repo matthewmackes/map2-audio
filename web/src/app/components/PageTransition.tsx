@@ -1,8 +1,7 @@
-import type { CSSProperties, ReactNode } from 'react'
+import type { ReactNode } from 'react'
 import { useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
 import { useLocation, useNavigationType } from 'react-router-dom'
 
-import { MapClusterFabricIcon } from './icons/map'
 import { canonicalizeNavigationRoute } from '../data/advancedMenuItems'
 import { useReducedEffectsPreference } from '../hooks/useReducedEffectsPreference'
 import { markRouteRenderReady, markRouteRenderStart, reportRouteRequestVolume } from '../performance/devDiagnostics'
@@ -12,7 +11,7 @@ type TransitionScope = {
   id: 'home' | 'audio-artifacts' | 'juce-grid' | 'midi-hub'
 }
 
-type TransitionMode = 'block' | 'fade' | 'pager'
+type TransitionMode = 'staggered' | 'fade' | 'pager'
 type TransitionDirection = 'forward' | 'backward'
 
 interface PageTransitionProps {
@@ -26,21 +25,10 @@ interface TransitionSnapshot {
   direction: TransitionDirection
 }
 
-const BLOCK_REVEAL_DURATION_MS = 160
+const STAGGERED_REVEAL_DURATION_MS = 600
 const FADE_DURATION_MS = 140
 const PAGER_SLIDE_DURATION_MS = 160
-const TRANSITION_BLOCK_COLUMNS = 8
-const TRANSITION_BLOCK_ROWS = 5
-const TRANSITION_BLOCK_MOBILE_COLUMNS = 5
-const TRANSITION_BLOCK_COUNT = TRANSITION_BLOCK_COLUMNS * TRANSITION_BLOCK_ROWS
 const FALLBACK_SCOPE: TransitionScope = { id: 'home' }
-const TRANSITION_BLOCKS = Array.from({ length: TRANSITION_BLOCK_COUNT }, (_, index) => ({
-  index,
-  column: index % TRANSITION_BLOCK_COLUMNS,
-  row: Math.floor(index / TRANSITION_BLOCK_COLUMNS),
-  mobileColumn: index % TRANSITION_BLOCK_MOBILE_COLUMNS,
-  mobileRow: Math.floor(index / TRANSITION_BLOCK_MOBILE_COLUMNS),
-}))
 
 export function getLandingTransitionScope(pathname: string): TransitionScope | null {
   const canonicalPathname = canonicalizeNavigationRoute(pathname)
@@ -81,13 +69,16 @@ function resolveScopedTransitionMode(
   scope: TransitionScope,
   preferredMode: TransitionMode,
 ): TransitionMode {
-  if (preferredMode !== 'block') {
+  if (preferredMode !== 'staggered') {
     return preferredMode
   }
 
-  // Keep the heaviest reveal effect only on the most intentionally branded landing surfaces.
+  // Keep the slow staggered overlay only on the most intentionally branded
+  // landing surfaces — secondary routes get the lighter fade so navigation
+  // inside a workspace stays snappy. The universal in-content stagger still
+  // runs on every route via UniversalStaggerProvider.
   if (scope.id === 'home' || scope.id === 'audio-artifacts') {
-    return 'block'
+    return 'staggered'
   }
 
   return 'fade'
@@ -126,7 +117,7 @@ export function PageTransition({ children }: PageTransitionProps) {
         ? 'fade'
         : resolvedPageTransitionMode === 'pager-slide'
           ? 'pager'
-          : 'block'
+          : 'staggered'
     const scope = currentScope ?? previousScope ?? FALLBACK_SCOPE
 
     const nextTransition: TransitionSnapshot = {
@@ -145,7 +136,7 @@ export function PageTransition({ children }: PageTransitionProps) {
       ? FADE_DURATION_MS
       : nextTransition.mode === 'pager'
         ? PAGER_SLIDE_DURATION_MS
-        : BLOCK_REVEAL_DURATION_MS)
+        : STAGGERED_REVEAL_DURATION_MS)
 
     return undefined
   }, [currentScope, location.pathname, navigationType, resolvedPageTransitionMode])
@@ -195,23 +186,8 @@ export function PageTransition({ children }: PageTransitionProps) {
           data-testid="landing-route-transition"
           aria-hidden="true"
         >
-          {transition.mode === 'block' ? (
-            <div className="landing-route-transition__grid">
-              {TRANSITION_BLOCKS.map((block) => (
-                <span
-                  key={`${transition.key}-${transition.scope.id}-${block.index}`}
-                  className="landing-route-transition__block"
-                  style={{
-                    '--landing-route-transition-column': block.column,
-                    '--landing-route-transition-row': block.row,
-                    '--landing-route-transition-mobile-column': block.mobileColumn,
-                    '--landing-route-transition-mobile-row': block.mobileRow,
-                  } as CSSProperties}
-                >
-                  <MapClusterFabricIcon className="landing-route-transition__block-icon" aria-hidden />
-                </span>
-              ))}
-            </div>
+          {transition.mode === 'staggered' ? (
+            <span className="landing-route-transition__stagger-wash" />
           ) : transition.mode === 'fade' ? (
             <span className="landing-route-transition__fade-panel" />
           ) : (

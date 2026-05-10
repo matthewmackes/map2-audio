@@ -68,7 +68,7 @@ describe('PageTransition', () => {
     window.localStorage.clear()
     useEffectsSettingsStore.setState({
       reducedEffectsEnabled: false,
-      pageTransitionPreset: 'hyperactive-block',
+      pageTransitionPreset: 'staggered-reveal',
     })
     setMatchMedia(false)
   })
@@ -80,14 +80,14 @@ describe('PageTransition', () => {
     jest.useRealTimers()
   })
 
-  it('shows the Hyperactive Block Reveal on eligible landing-route changes', () => {
+  it('shows the React Staggered Reveal on eligible landing-route changes', () => {
     renderHarness('/')
 
     fireEvent.click(screen.getByRole('button', { name: 'Go Audio Artifacts' }))
 
     expect(screen.getByTestId('transition-pathname')).toHaveTextContent('/workspace/artifacts')
-    expect(screen.getByTestId('landing-route-transition')).toHaveClass('landing-route-transition--block')
-    expect(document.querySelectorAll('.landing-route-transition__block-icon').length).toBeGreaterThan(0)
+    expect(screen.getByTestId('landing-route-transition')).toHaveClass('landing-route-transition--staggered')
+    expect(document.querySelectorAll('.landing-route-transition__stagger-wash').length).toBeGreaterThan(0)
 
     act(() => {
       jest.advanceTimersByTime(900)

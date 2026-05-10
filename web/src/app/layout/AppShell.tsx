@@ -3,6 +3,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import type { CSSProperties } from 'react'
 import { useLocation, useNavigate } from 'react-router-dom'
 import { PageTransition } from '../components/PageTransition'
+import { UniversalStaggerProvider } from '../components/UniversalStagger'
 import { RebootConfirmModal } from './RebootConfirmModal'
 import { RebootOverlay } from './RebootOverlay'
 import { RestartOverlay } from './RestartOverlay'
@@ -264,6 +265,7 @@ export function AppShell({ children }: { children: ReactNode }) {
                   closeLabel={`Close ${mergedTitle || shellWorkspaceLabel}`}
                 />
               ) : null}
+              <UniversalStaggerProvider />
               <PageTransition>{children}</PageTransition>
             </ShellWindowMutatorProvider>
           </ShellWindowProvider>

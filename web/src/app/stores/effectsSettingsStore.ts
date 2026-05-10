@@ -2,9 +2,16 @@ import { create } from 'zustand'
 import { createJSONStorage, persist } from 'zustand/middleware'
 
 export const REDUCED_EFFECTS_STORAGE_KEY = 'map2_reduce_effects_mode'
-export const DEFAULT_PAGE_TRANSITION_PRESET = 'hyperactive-block'
+export const DEFAULT_PAGE_TRANSITION_PRESET: PageTransitionPreset = 'staggered-reveal'
 
-export type PageTransitionPreset = 'hyperactive-block' | 'pager-slide'
+export type PageTransitionPreset = 'staggered-reveal' | 'pager-slide'
+
+const LEGACY_PAGE_TRANSITION_PRESET_REPLACEMENTS: Record<string, PageTransitionPreset> = {
+  // 2026-05-09 — Hyperactive Block Reveal removed in favor of the slower,
+  // universal Framer Motion staggered reveal. Existing persisted picks are
+  // silently migrated so users do not get bumped back to a generic default.
+  'hyperactive-block': 'staggered-reveal',
+}
 
 export interface EffectsSettingsState {
   reducedEffectsEnabled: boolean
@@ -13,8 +20,18 @@ export interface EffectsSettingsState {
   setPageTransitionPreset: (preset: PageTransitionPreset) => void
 }
 
-function isPageTransitionPreset(value: unknown): value is PageTransitionPreset {
-  return value === 'hyperactive-block' || value === 'pager-slide'
+export function isPageTransitionPreset(value: unknown): value is PageTransitionPreset {
+  return value === 'staggered-reveal' || value === 'pager-slide'
+}
+
+function coercePageTransitionPreset(value: unknown): PageTransitionPreset {
+  if (isPageTransitionPreset(value)) {
+    return value
+  }
+  if (typeof value === 'string' && value in LEGACY_PAGE_TRANSITION_PRESET_REPLACEMENTS) {
+    return LEGACY_PAGE_TRANSITION_PRESET_REPLACEMENTS[value]
+  }
+  return DEFAULT_PAGE_TRANSITION_PRESET
 }
 
 function normalizePersistedEffectsSettingsState(
@@ -22,9 +39,7 @@ function normalizePersistedEffectsSettingsState(
 ) {
   return {
     reducedEffectsEnabled: state?.reducedEffectsEnabled === true,
-    pageTransitionPreset: isPageTransitionPreset(state?.pageTransitionPreset)
-      ? state.pageTransitionPreset
-      : DEFAULT_PAGE_TRANSITION_PRESET,
+    pageTransitionPreset: coercePageTransitionPreset(state?.pageTransitionPreset),
   }
 }
 

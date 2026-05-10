@@ -109,7 +109,7 @@ describe('ThemePage', () => {
     window.localStorage.clear()
     useEffectsSettingsStore.setState({
       reducedEffectsEnabled: false,
-      pageTransitionPreset: 'hyperactive-block',
+      pageTransitionPreset: 'staggered-reveal',
     })
     mockUpdateSpecialSettings.mockReset()
     mockDiscover.mockReset()
