@@ -1,0 +1,75 @@
+.stagger-preview-tile {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+  padding: 0.75rem;
+  border-radius: 0.5rem;
+  border: 1px solid var(--cds-border-subtle, rgba(255, 255, 255, 0.08));
+  background: var(--cds-layer, rgba(8, 14, 28, 0.42));
+  min-width: 0;
+}
+
+.stagger-preview-tile__head {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 0.5rem;
+}
+
+.stagger-preview-tile__title {
+  font-size: 0.75rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--cds-text-secondary, rgba(244, 244, 244, 0.7));
+}
+
+.stagger-preview-tile__replay {
+  appearance: none;
+  border: 1px solid var(--cds-border-subtle, rgba(255, 255, 255, 0.12));
+  background: transparent;
+  color: var(--cds-text-primary, #f4f4f4);
+  font-size: 0.75rem;
+  padding: 0.18rem 0.55rem;
+  border-radius: 0.25rem;
+  cursor: pointer;
+  transition: background 120ms ease-out, border-color 120ms ease-out;
+}
+
+.stagger-preview-tile__replay:hover {
+  background: var(--cds-layer-hover, rgba(255, 255, 255, 0.08));
+  border-color: var(--cds-border-strong, rgba(255, 255, 255, 0.24));
+}
+
+.stagger-preview-tile__replay:focus-visible {
+  outline: 2px solid var(--cds-focus, #0f62fe);
+  outline-offset: 1px;
+}
+
+.stagger-preview-tile__grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 0.45rem;
+}
+
+.stagger-preview-tile__cell {
+  position: relative;
+  aspect-ratio: 1.6 / 1;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 0.4rem;
+  background:
+    radial-gradient(circle at 22% 18%, rgba(96, 165, 250, 0.36) 0%, transparent 64%),
+    linear-gradient(180deg, rgba(59, 130, 246, 0.32) 0%, rgba(30, 64, 175, 0.78) 100%);
+  border: 1px solid color-mix(in srgb, #60a5fa 36%, rgba(255, 255, 255, 0.08));
+  box-shadow: 0 6px 16px rgba(2, 6, 23, 0.32);
+  color: rgba(255, 255, 255, 0.92);
+  font-size: 0.72rem;
+  letter-spacing: 0.02em;
+  user-select: none;
+}
+
+.stagger-preview-tile__cell-label {
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.42);
+}

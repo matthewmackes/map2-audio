@@ -94,7 +94,12 @@ import { PluginColorPicker } from '../components/pluginAppearance/PluginColorPic
 import { EmptyState } from '../components/shared/EmptyState'
 import { LoadingState } from '../components/shared/LoadingState'
 import { usePluginAppearances } from '../hooks/usePluginAppearances'
-import type { PageTransitionPreset } from '../stores/effectsSettingsStore'
+import {
+  useEffectsSettingsStore,
+  type PageTransitionPreset,
+  type StaggerSpeed,
+} from '../stores/effectsSettingsStore'
+import { StaggerPreviewTile } from '../components/StaggerPreviewTile'
 import {
   readDesktopWallpaperState,
   writeDesktopWallpaperState,
@@ -317,6 +322,27 @@ const PAGE_TRANSITION_PRESET_OPTIONS: Array<{
   },
 ]
 
+const STAGGER_SPEED_OPTIONS: Array<{ id: StaggerSpeed; label: string }> = [
+  { id: 'slower', label: 'Slower' },
+  { id: 'slow', label: 'Slow' },
+  { id: 'normal', label: 'Normal' },
+  { id: 'faster', label: 'Faster' },
+]
+
+function staggerSpeedHint(speed: StaggerSpeed): string {
+  switch (speed) {
+    case 'slower':
+      return 'Very deliberate — items take ~500ms each, ~1.4s total reveal.'
+    case 'slow':
+      return 'The default cinematic pace — ~350ms per item, ~600–900ms total.'
+    case 'normal':
+      return 'Balanced — ~240ms per item, ~600ms total reveal.'
+    case 'faster':
+    default:
+      return 'Snappy — ~160ms per item, ~400ms total. Closest to the old block reveal.'
+  }
+}
+
 const THEME_PAGE_SECTION_IDS = {
   appearance: 'theme-appearance',
   paletteMapper: 'theme-palette-mapper',
@@ -490,6 +516,8 @@ export function ThemePage() {
     setReducedEffectsEnabled,
     setPageTransitionPreset,
   } = useReducedEffectsPreference()
+  const staggerSpeed = useEffectsSettingsStore((state) => state.staggerSpeed)
+  const setStaggerSpeed = useEffectsSettingsStore((state) => state.setStaggerSpeed)
   const [themeLibraryVersion, setThemeLibraryVersion] = useState(0)
   const [draftBase, setDraftBase] = useState<BaseShell>(() => toCarbonBaseTheme(theme.carbonTheme))
   const [draftFamilyId, setDraftFamilyId] = useState(() => inferFamilyIdFromTheme(resolvePreviewTheme(themeId, theme)))
@@ -1113,6 +1141,8 @@ export function ThemePage() {
             onHandleWallpaperUpload={handleWallpaperUpload}
             onSetReducedEffectsEnabled={setReducedEffectsEnabled}
             onSetPageTransitionPreset={setPageTransitionPreset}
+            staggerSpeed={staggerSpeed}
+            onSetStaggerSpeed={setStaggerSpeed}
             onOpenSpecialSettings={() => setShowSpecialSettings(true)}
           />
         </div>
@@ -1274,6 +1304,8 @@ interface ThemeWorkspacePanelProps {
   onHandleWallpaperUpload: (event: ChangeEvent<HTMLInputElement>) => void
   onSetReducedEffectsEnabled: (enabled: boolean) => void
   onSetPageTransitionPreset: (preset: PageTransitionPreset) => void
+  staggerSpeed: StaggerSpeed
+  onSetStaggerSpeed: (speed: StaggerSpeed) => void
   onOpenSpecialSettings: () => void
 }
 
@@ -1375,6 +1407,8 @@ function ThemeWorkspacePanel(props: ThemeWorkspacePanelProps) {
     onHandleWallpaperUpload,
     onSetReducedEffectsEnabled,
     onSetPageTransitionPreset,
+    staggerSpeed,
+    onSetStaggerSpeed,
     onOpenSpecialSettings,
   } = props
 
@@ -2401,6 +2435,29 @@ function ThemeWorkspacePanel(props: ThemeWorkspacePanelProps) {
                   </button>
                 ))}
               </div>
+              {pageTransitionPreset === 'staggered-reveal' ? (
+                <div className="theme-page__stagger-tuner" data-no-stagger>
+                  <div className="theme-page__stagger-tuner-controls">
+                    <span className="theme-page__stagger-tuner-label">Reveal speed</span>
+                    <div role="radiogroup" aria-label="Stagger reveal speed" className="theme-page__stagger-speed-row">
+                      {STAGGER_SPEED_OPTIONS.map((option) => (
+                        <button
+                          key={option.id}
+                          type="button"
+                          role="radio"
+                          aria-checked={option.id === staggerSpeed}
+                          className={`theme-page__stagger-speed-pill${option.id === staggerSpeed ? ' theme-page__stagger-speed-pill--active' : ''}`}
+                          onClick={() => onSetStaggerSpeed(option.id)}
+                        >
+                          {option.label}
+                        </button>
+                      ))}
+                    </div>
+                    <p className="theme-page__stagger-tuner-hint">{staggerSpeedHint(staggerSpeed)}</p>
+                  </div>
+                  <StaggerPreviewTile speed={staggerSpeed} reduced={shouldReduceEffects} />
+                </div>
+              ) : null}
             </div>
 
             <div className="theme-page__settings-row">
