@@ -242,7 +242,7 @@ async def update_special_settings(request: SpecialSettingsUpdateRequest):
                         last_updated=settings.last_updated.isoformat(),
                         updated_by_node=settings.updated_by_node
                     )
-            
+
             except asyncio.TimeoutError:
                 logger.warning("Settings replication timed out - may still succeed")
                 # Even if timeout, the entry may be committed. Return partial success.

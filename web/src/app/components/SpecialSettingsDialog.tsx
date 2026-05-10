@@ -14,9 +14,20 @@ import {
   type SnapshotEditorFlowAnimation,
   type SnapshotEditorNodeShape,
 } from '../hooks/useSpecialSettings'
+import {
+  SNAPSHOT_SLOT_STYLE_OPTIONS,
+  useSnapshotSlotStyle,
+  type SnapshotSlotStyle,
+} from '../hooks/useSnapshotSlotStyle'
+import { FxIcon } from './FxIcons/FxIcon'
+
 import { getDisplayPluginName } from '../../map2/displayNames'
 import { EmptyState } from './shared/EmptyState'
 import { LoadingState } from './shared/LoadingState'
+// Pull in the real Unified Channel Grid styles so the slot-style preview
+// cards render with the exact same .ucg-block treatment that ships in the
+// editor — no drift between preview and reality.
+import './SnapshotEditor/UnifiedChannelGrid/UnifiedChannelGrid.css'
 import './SpecialSettingsDialog.css'
 
 interface Plugin {
@@ -46,6 +57,68 @@ const SNAPSHOT_EDITOR_NODE_SHAPE_OPTIONS: Array<{ id: SnapshotEditorNodeShape; l
   { id: 'hex', label: 'Hex' },
 ]
 
+/**
+ * Mock plugin used inside the slot-style preview cards. Pinning to "Reverb" so
+ * the cyan accent reads cleanly against the Carbon dark layer at any palette
+ * tint percentage. CPU value picked to be visibly non-zero in V4/V6 (which
+ * floor at 4%) and visibly non-full in V4 (clamps at 95%).
+ */
+const PREVIEW_ACCENT = 'var(--map2-cat-reverb, #3db7c9)'
+const PREVIEW_CPU_PERCENT = 42
+
+const PREVIEW_RING_RADIUS = 13
+const PREVIEW_RING_CIRCUMFERENCE = 2 * Math.PI * PREVIEW_RING_RADIUS
+
+function SlotStylePreview({ style }: { style: SnapshotSlotStyle }) {
+  const dash = (PREVIEW_CPU_PERCENT / 100) * PREVIEW_RING_CIRCUMFERENCE
+  return (
+    <div className="special-settings-slot-preview" aria-hidden="true">
+      <div
+        className="ucg-block"
+        style={{
+          width: 116,
+          height: 60,
+          borderLeft: `4px solid ${PREVIEW_ACCENT}`,
+          ['--ucg-accent' as string]: PREVIEW_ACCENT,
+        }}
+        data-category="Reverb"
+        data-kind="reverb-ir"
+        data-bypass="false"
+        data-slot-style={style}
+      >
+        {style === 'v6-led' ? (
+          <span className="ucg-block__led-bar">
+            <span
+              className="ucg-block__led-bar-fill"
+              style={{ width: `${PREVIEW_CPU_PERCENT}%` }}
+            />
+          </span>
+        ) : null}
+        <span className="ucg-block__icon">
+          {style === 'v4-ring' ? (
+            <svg className="ucg-block__cpu-ring" viewBox="0 0 32 32">
+              <circle cx="16" cy="16" r={PREVIEW_RING_RADIUS} className="ucg-block__cpu-ring-track" />
+              <circle
+                cx="16"
+                cy="16"
+                r={PREVIEW_RING_RADIUS}
+                className="ucg-block__cpu-ring-fill"
+                strokeDasharray={`${dash} ${PREVIEW_RING_CIRCUMFERENCE}`}
+                transform="rotate(-90 16 16)"
+              />
+            </svg>
+          ) : null}
+          <FxIcon name="reverb" size={20} />
+        </span>
+        <span className="ucg-block__label">Hall Reverb</span>
+        <span className="ucg-block__lower-third">
+          <span className="ucg-block__cpu">{PREVIEW_CPU_PERCENT}%</span>
+        </span>
+      </div>
+    </div>
+  )
+}
+
 export function SpecialSettingsDialog({
   isOpen,
   onClose,
@@ -60,6 +133,10 @@ export function SpecialSettingsDialog({
   const [snapshotEditorFlowAnimation, setSnapshotEditorFlowAnimation] = useState<SnapshotEditorFlowAnimation>(currentSnapshotEditorFlowAnimation)
   const [snapshotEditorGridBackdrop, setSnapshotEditorGridBackdrop] = useState(currentSnapshotEditorGridBackdrop)
   const [snapshotEditorNodeShape, setSnapshotEditorNodeShape] = useState<SnapshotEditorNodeShape>(currentSnapshotEditorNodeShape)
+  // Slot style is per-browser localStorage state, not part of the backend
+  // special-settings record. Writes commit immediately so the editor repaints
+  // live; the dialog's Save button doesn't apply or revert it.
+  const [snapshotSlotStyle, setSnapshotSlotStyle] = useSnapshotSlotStyle()
   const [isLoading, setIsLoading] = useState(true)
   const [isSaving, setIsSaving] = useState(false)
   const [loadError, setLoadError] = useState('')
@@ -85,18 +162,18 @@ export function SpecialSettingsDialog({
   const fetchNativePlugins = async () => {
     setIsLoading(true)
     setLoadError('')
-    
+
     try {
       const response = await fetch(apiUrl('/api/plugins/discover'))
       if (!response.ok) {
         throw new Error(`HTTP ${response.status}: ${response.statusText}`)
       }
       const data = await response.json() as { plugins?: Plugin[] }
-      
+
       // Filter for native plugins (uri starts with "map2://")
       const plugins = data.plugins || []
       const native = plugins.filter((p: Plugin) => p.uri.startsWith('map2://'))
-      
+
       setNativePlugins(native)
     } catch (err) {
       setLoadError('Failed to load plugin list.')
@@ -119,7 +196,7 @@ export function SpecialSettingsDialog({
   const handleSave = async () => {
     setIsSaving(true)
     setSaveError('')
-    
+
     try {
       await onSave({
         hiddenPlugins: Array.from(hiddenPlugins),
@@ -146,6 +223,8 @@ export function SpecialSettingsDialog({
   }
 
   if (!isOpen) return null
+
+  const activeSlotStyleOption = SNAPSHOT_SLOT_STYLE_OPTIONS.find((option) => option.id === snapshotSlotStyle)
 
   return (
     <Modal
@@ -201,19 +280,69 @@ export function SpecialSettingsDialog({
           />
         </div>
 
-        <div className="special-settings-segmented" role="radiogroup" aria-label="Signal node shape">
-          {SNAPSHOT_EDITOR_NODE_SHAPE_OPTIONS.map((option) => (
-            <button
-              key={option.id}
-              type="button"
-              role="radio"
-              aria-checked={snapshotEditorNodeShape === option.id}
-              className={`special-settings-segment${snapshotEditorNodeShape === option.id ? ' is-selected' : ''}`}
-              onClick={() => setSnapshotEditorNodeShape(option.id)}
-            >
-              {option.label}
-            </button>
-          ))}
+        <div className="special-settings-field">
+          <span className="special-settings-field__label" id="snapshot-editor-node-shape-label">
+            Signal node shape
+          </span>
+          <div
+            className="special-settings-segmented"
+            role="radiogroup"
+            aria-labelledby="snapshot-editor-node-shape-label"
+          >
+            {SNAPSHOT_EDITOR_NODE_SHAPE_OPTIONS.map((option) => (
+              <button
+                key={option.id}
+                type="button"
+                role="radio"
+                aria-checked={snapshotEditorNodeShape === option.id}
+                className={`special-settings-segment${snapshotEditorNodeShape === option.id ? ' is-selected' : ''}`}
+                onClick={() => setSnapshotEditorNodeShape(option.id)}
+              >
+                {option.label}
+              </button>
+            ))}
+          </div>
+        </div>
+
+        <div className="special-settings-field">
+          <span className="special-settings-field__label" id="snapshot-slot-style-label">
+            Snapshot slot style
+          </span>
+          <p className="special-settings-field__helper">
+            How each plugin slot looks in the Snapshot Editor's signal grid. Per-browser preference — applies live, no save needed.
+            {activeSlotStyleOption ? (
+              <>
+                {' '}
+                <span className="special-settings-field__helper-strong">
+                  {activeSlotStyleOption.description}
+                </span>
+              </>
+            ) : null}
+          </p>
+          <div
+            className="special-settings-slot-preview-row"
+            role="radiogroup"
+            aria-labelledby="snapshot-slot-style-label"
+          >
+            {SNAPSHOT_SLOT_STYLE_OPTIONS.map((option) => {
+              const isSelected = snapshotSlotStyle === option.id
+              return (
+                <button
+                  key={option.id}
+                  type="button"
+                  role="radio"
+                  aria-checked={isSelected}
+                  aria-label={option.label}
+                  title={option.description}
+                  className={`special-settings-slot-card${isSelected ? ' is-selected' : ''}`}
+                  onClick={() => setSnapshotSlotStyle(option.id)}
+                >
+                  <SlotStylePreview style={option.id} />
+                  <span className="special-settings-slot-card__label">{option.label}</span>
+                </button>
+              )
+            })}
+          </div>
         </div>
       </section>
 

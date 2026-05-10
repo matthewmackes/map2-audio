@@ -5,22 +5,25 @@ describe('categoryHues', () => {
     expect(MAP2_CATEGORIES).toHaveLength(15)
   })
 
+  // T2502: palette de-collisioned 2026-05-09. Every category now has a
+  // distinct accent — see CATEGORY_COLOR_TOKENS in gridConstants.ts and the
+  // header comment in categoryHues.ts for the full collision history.
   it.each([
     ['Amplifier', 'amber'],
     ['Cabinet', 'warm-neutral'],
-    ['EQ', 'blue'],
+    ['EQ', 'amber'],
     ['Dynamics', 'green'],
-    ['Modulation', 'violet'],
-    ['Delay', 'cyan'],
+    ['Modulation', 'mint'],
+    ['Delay', 'blue'],
     ['Reverb', 'cyan'],
     ['Distortion', 'red'],
-    ['Utility', 'neutral'],
-    ['Instrument', 'green'],
-    ['Drums', 'red'],
-    ['Pitch', 'cyan'],
+    ['Utility', 'cool-neutral'],
+    ['Instrument', 'mint'],
+    ['Drums', 'coral'],
+    ['Pitch', 'indigo'],
     ['Multi-Effect', 'violet'],
-    ['Effects', 'neutral'],
-    ['AVB', 'blue'],
+    ['Effects', 'taupe'],
+    ['AVB', 'steel'],
   ])('maps %s to fallback %s', (category, fallback) => {
     expect(getCategoryHue(category).fallback).toBe(fallback)
   })
@@ -36,7 +39,7 @@ describe('categoryHues', () => {
 
   it('case-insensitive match for canonical names', () => {
     expect(getCategoryHue('amplifier').fallback).toBe('amber')
-    expect(getCategoryHue('AVB').fallback).toBe('blue')
+    expect(getCategoryHue('AVB').fallback).toBe('steel')
     expect(getCategoryHue('multi-effect').fallback).toBe('violet')
   })
 

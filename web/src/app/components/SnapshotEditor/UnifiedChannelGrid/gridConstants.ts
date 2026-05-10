@@ -28,22 +28,31 @@ export const BLOCK_DIMENSIONS = {
   categoryStripWidth: 4,
 } as const
 
+// T2502: every MAP2 category resolves to a distinct accent so chains that
+// mix similar plugin types stay scannable. Collision history (pre-T2502):
+//   Distortion + Drums         → both rose
+//   Pitch + Multi-Effect       → both purple
+//   Cabinet + Utility + Effects → all warm-gray
+//   Dynamics + Instrument      → both green
+//   Delay + AVB                → both sky
+// Resolved by reassigning Drums (coral), Pitch (indigo), Utility (cool slate),
+// Effects (taupe), Instrument (mint-cyan), and AVB (steel) below.
 export const CATEGORY_COLOR_TOKENS: Record<MAP2Category | 'Unknown', string> = {
-  Amplifier: 'var(--map2-cat-amplifier, #d79a3a)',
-  Cabinet: 'var(--map2-cat-cabinet, #a28463)',
-  EQ: 'var(--map2-cat-eq, #4a7dff)',
-  Dynamics: 'var(--map2-cat-dynamics, #3bb375)',
-  Modulation: 'var(--map2-cat-modulation, #b268d9)',
-  Delay: 'var(--map2-cat-delay, #34a6b8)',
-  Reverb: 'var(--map2-cat-reverb, #34a6b8)',
-  Distortion: 'var(--map2-cat-distortion, #e55a3a)',
-  Utility: 'var(--map2-cat-utility, #8d8d8d)',
-  Instrument: 'var(--map2-cat-instrument, #3bb375)',
-  Drums: 'var(--map2-cat-drums, #e55a3a)',
-  Pitch: 'var(--map2-cat-pitch, #34a6b8)',
-  'Multi-Effect': 'var(--map2-cat-multi-effect, #b268d9)',
-  Effects: 'var(--map2-cat-effects, #8d8d8d)',
-  AVB: 'var(--map2-cat-avb, #4a7dff)',
+  Amplifier: 'var(--map2-cat-amplifier, #e48a3a)',
+  Cabinet: 'var(--map2-cat-cabinet, #8a8f95)',
+  EQ: 'var(--map2-cat-eq, #e0b446)',
+  Dynamics: 'var(--map2-cat-dynamics, #3fbf8a)',
+  Modulation: 'var(--map2-cat-modulation, #5bc9a8)',
+  Delay: 'var(--map2-cat-delay, #5fa8e0)',
+  Reverb: 'var(--map2-cat-reverb, #3db7c9)',
+  Distortion: 'var(--map2-cat-distortion, #e36b8e)',
+  Utility: 'var(--map2-cat-utility, #6f7a8a)',
+  Instrument: 'var(--map2-cat-instrument, #6dd0a8)',
+  Drums: 'var(--map2-cat-drums, #e89478)',
+  Pitch: 'var(--map2-cat-pitch, #7d6acb)',
+  'Multi-Effect': 'var(--map2-cat-multi-effect, #9b7cd6)',
+  Effects: 'var(--map2-cat-effects, #a89c8a)',
+  AVB: 'var(--map2-cat-avb, #4a85b8)',
   Unknown: 'var(--map2-cat-unknown, #525252)',
 }
 

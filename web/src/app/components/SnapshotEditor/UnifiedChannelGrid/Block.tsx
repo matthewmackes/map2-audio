@@ -4,6 +4,7 @@ import { Tag } from '@carbon/react'
 import { FxIcon } from '../../FxIcons/FxIcon'
 import type { FxIconName } from '../../FxIcons/fxIconRegistry'
 import type { MAP2Category } from '../categoryHues'
+import { useSnapshotSlotStyle } from '../../../hooks/useSnapshotSlotStyle'
 
 import { BLOCK_DIMENSIONS, CATEGORY_COLOR_TOKENS, type BlockKind, type UnifiedSlot } from './gridConstants'
 
@@ -48,6 +49,23 @@ function formatCpuPercent(value: number): string {
   return `${cpu.toFixed(1)}%`
 }
 
+// Geometry of the V4 CPU-ring overlay. Drawn at 32×32 viewBox; CSS sizes the
+// SVG to match the icon span and absolute-positions it behind the glyph.
+const RING_RADIUS = 13
+const RING_CIRCUMFERENCE = 2 * Math.PI * RING_RADIUS
+
+// Clamp ranges shared by V4 (ring) and V6 (LED bar). The visible-floor of 4%
+// keeps idle slots reading as "alive" — a fully-empty ring or a 0px LED bar
+// reads as "this slot is broken / has no data". The ceiling of 95% prevents a
+// genuinely heavy slot from looking like a complete loop with no room to grow.
+const VISUAL_CPU_FLOOR = 4
+const VISUAL_CPU_CEILING = 95
+
+function clampVisualCpu(raw: number): number {
+  const cpu = Number.isFinite(raw) ? Math.max(0, raw) : 0
+  return Math.min(VISUAL_CPU_CEILING, Math.max(VISUAL_CPU_FLOOR, cpu))
+}
+
 export function Block({ slot, selected = false, onClick, onRemove }: BlockProps) {
   const category = slot.category ?? 'Unknown'
   const stripColor = CATEGORY_COLOR_TOKENS[category]
@@ -56,13 +74,20 @@ export function Block({ slot, selected = false, onClick, onRemove }: BlockProps)
     : slot.kind
       ? KIND_ICON[slot.kind]
       : 'plugin'
+  const [slotStyle] = useSnapshotSlotStyle()
 
   const style: CSSProperties = {
     width: BLOCK_DIMENSIONS.width,
     height: BLOCK_DIMENSIONS.height,
     borderLeft: `${BLOCK_DIMENSIONS.categoryStripWidth}px solid ${stripColor}`,
     opacity: slot.bypass ? 0.5 : 1,
+    // Per-block accent surfaced as a CSS variable so the tinted/ring/LED
+    // variants can paint without re-selecting on data-category.
+    ['--ucg-accent' as string]: stripColor,
   }
+
+  const visualCpu = clampVisualCpu(slot.cpuPercent)
+  const ringDash = (visualCpu / 100) * RING_CIRCUMFERENCE
 
   const handleKeyDown = (event: KeyboardEvent<HTMLDivElement>) => {
     if (event.key !== 'Enter' && event.key !== ' ') return
@@ -90,12 +115,38 @@ export function Block({ slot, selected = false, onClick, onRemove }: BlockProps)
       data-category={category}
       data-kind={slot.kind ?? 'none'}
       data-bypass={slot.bypass ? 'true' : 'false'}
+      data-slot-style={slotStyle}
       onClick={handleClick}
       onKeyDown={handleKeyDown}
       aria-label={slot.label ?? `Slot ${slot.index + 1}`}
       aria-pressed={selected}
     >
+      {slotStyle === 'v6-led' ? (
+        <span className="ucg-block__led-bar" aria-hidden="true">
+          <span
+            className="ucg-block__led-bar-fill"
+            style={{ width: `${visualCpu}%` }}
+          />
+        </span>
+      ) : null}
       <span className="ucg-block__icon">
+        {slotStyle === 'v4-ring' ? (
+          <svg
+            className="ucg-block__cpu-ring"
+            viewBox="0 0 32 32"
+            aria-hidden="true"
+          >
+            <circle cx="16" cy="16" r={RING_RADIUS} className="ucg-block__cpu-ring-track" />
+            <circle
+              cx="16"
+              cy="16"
+              r={RING_RADIUS}
+              className="ucg-block__cpu-ring-fill"
+              strokeDasharray={`${ringDash} ${RING_CIRCUMFERENCE}`}
+              transform="rotate(-90 16 16)"
+            />
+          </svg>
+        ) : null}
         <FxIcon name={iconName} size={20} />
       </span>
       <span className="ucg-block__label">{slot.label ?? '—'}</span>

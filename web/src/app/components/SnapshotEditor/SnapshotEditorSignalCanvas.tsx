@@ -4,6 +4,7 @@ import { Tile } from '@carbon/react'
 import type { AudioRoutingSelectionBinding } from '../../../map2/api'
 import type { Chain, Plugin, PluginOrderRef } from '../../../map2/types'
 import type { SnapshotEditorFlowAnimation, SnapshotEditorNodeShape } from '../../hooks/useSpecialSettings'
+import { useSnapshotSlotStyle } from '../../hooks/useSnapshotSlotStyle'
 import useCPUMetrics from '../../hooks/useCPUMetrics'
 
 import {
@@ -137,6 +138,7 @@ export const JuceGridSignalCanvas = memo(function JuceGridSignalCanvas({
   const routingMode = audioStatus?.routingMode ?? audioOutputStatus?.routingMode ?? 'series'
   const sidechainLabel = routingMode === 'sidechain' ? 'KEY SEND' : null
   const cpuTelemetry = useCPUMetrics({ pollingInterval: 1000 })
+  const [slotStyle] = useSnapshotSlotStyle()
 
   const row = useMemo(
     () =>
@@ -257,6 +259,7 @@ export const JuceGridSignalCanvas = memo(function JuceGridSignalCanvas({
         data-flow={flowAnimation}
         data-grid-backdrop={gridBackdrop ? 'true' : 'false'}
         data-node-shape={nodeShape}
+        data-slot-style={slotStyle}
       >
         <Tile className="snapshot-chain-row__empty" onClick={onCanvasEmptyPress}>
           <strong>Select a chain to view and edit</strong>
@@ -272,6 +275,7 @@ export const JuceGridSignalCanvas = memo(function JuceGridSignalCanvas({
       data-flow={flowAnimation}
       data-grid-backdrop={gridBackdrop ? 'true' : 'false'}
       data-node-shape={nodeShape}
+      data-slot-style={slotStyle}
       data-testid="snapshot-signal-canvas"
     >
       <UnifiedChannelGrid

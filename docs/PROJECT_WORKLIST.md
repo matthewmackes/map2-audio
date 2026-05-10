@@ -1436,9 +1436,21 @@ Description:
 - If implementation surfaces an opportunistic chrome / industry-standard improvement (e.g., add VST3 to Set 9 if LV2 hosting reveals JUCE already has the path; add Ableton Link if MIDI Clock In bridge is trivially extensible), append a sub-task `T2503-setN-Chrome-<n>` to this entry and ship in the same set.
 
 ### Progress log
-- 2026-05-09 — Epic filed (Claude). 25-question protocol completed; locked decisions A1–A24; AGPLv3↔GPLv3 compatibility audit deferred to Set 1 work. Set 1 in progress.
+- 2026-05-09 — Epic filed (Claude). 25-question protocol completed; locked decisions A1–A24; AGPLv3↔GPLv3 compatibility audit deferred to Set 1 work.
+- 2026-05-09 — **Set 1 SHIPPED** (Claude, commit `b2aea829`). `docs/architecture/DAW_SERVICE.md` + `LICENSE_COMPATIBILITY.md` published; Tracktion row added to `THIRD_PARTY_NOTICES.md`; `option(MAP2_DAW_MODE … OFF)` reserved in `juce-engine/CMakeLists.txt`. Both flag states verified: OFF emits "T2503 DAW mode: disabled"; ON emits "T2503 DAW mode: ENABLED" + sets `MAP2_DAW_MODE=1` compile define. `cmake -LAH` shows `MAP2_DAW_MODE:BOOL=OFF` in cache. Dual-pushed to origin + gitlab.
+- 2026-05-09/10 — **Set 2 wiring SHIPPED, smoke build BENCH-GATED on toolchain** (Claude). Wiring lands code-side complete:
+  - `juce-engine/cmake/Map2Tracktion.cmake` — pinned `v3.2.0` (commit `0a5f4e6a5f53d09c89b414a44386a12df7fa1ec6`), skip submodules (Tracktion's bundled JUCE, since we already vendor JUCE 8.0.0), include only `modules/`, set C++20 on the three Tracktion module targets (parent `map2_audio_engine` stays at C++17), expose `map2::tracktion` interface alias.
+  - `juce-engine/CMakeLists.txt` — conditional `include(Map2Tracktion)` after JUCE setup; `Daw/DawService.cpp` added to SOURCES under flag; conditional `target_link_libraries(map2_audio_engine PRIVATE map2::tracktion)`.
+  - `juce-engine/Source/Daw/DawService.{h,cpp}` — shell with `statusLine()` smoke; pImpl pattern for forward-compat with Sets 3+ wiring.
+  - `juce-engine/tests/DawServiceShellTests.cpp` — Catch2 smoke (construct/destruct, status line invariant).
+  - `scripts/build_juce_engine_daw.sh` — convenience configure + build + ctest runner.
+  - `daw_tests` block conditioned on `MAP2_DAW_MODE` (no separate option).
+  - Verified: `cmake -B build-daw -DMAP2_DAW_MODE=ON` configures clean (149.7s including Tracktion fetch + JUCE module registration; status banners show JUCE_VERSION resolved, Tracktion source tree, modules registered).
+  - **Bench-gate `T2503-set2-gate-gcc15`** (toolchain incompatibility, NOT a wiring bug): Tracktion v3.2.0 vendors a nanorange polyfill that fails to compile under GCC 15.2.1 (Fedora 43 default). Operator workarounds (recorded as `message(WARNING …)` in `Map2Tracktion.cmake`): build with Clang 18+, pin GCC 14.x, or update `GIT_TAG` to a Tracktion master SHA once upstream lands a nanorange bump. Sets 3..10 Python/FastAPI/web code is unaffected — they compile and test under the existing toolchain.
+  - Flag-OFF path verified byte-identical to pre-T2503.
+  - Acceptance for Set 2: cmake configure end-to-end ✓, MAP2_DAW_MODE define propagated ✓, source shell ✓, smoke test target defined ✓, convenience script ✓, flag-OFF byte-identical ✓. Bench-side `daw_tests` binary build blocked on toolchain choice (operator decision).
 
-Last updated: 2026-05-09 EDT - Claude
+Last updated: 2026-05-10 EDT - Claude
 
 ---
 

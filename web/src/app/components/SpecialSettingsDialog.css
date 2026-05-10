@@ -88,3 +88,95 @@
   line-height: 1.4;
 }
 
+.special-settings-field {
+  margin-top: var(--cds-spacing-06);
+  display: flex;
+  flex-direction: column;
+  gap: var(--cds-spacing-02);
+}
+
+.special-settings-field__label {
+  color: var(--cds-text-secondary);
+  font-size: var(--cds-label-01-font-size, 0.75rem);
+  font-weight: var(--cds-label-01-font-weight, 400);
+  line-height: var(--cds-label-01-line-height, 1.33);
+  letter-spacing: var(--cds-label-01-letter-spacing, 0.32px);
+}
+
+.special-settings-field__helper {
+  margin: 0;
+  color: var(--cds-text-helper, var(--cds-text-secondary));
+  font-size: var(--cds-helper-text-01-font-size, 0.75rem);
+  line-height: 1.45;
+}
+
+.special-settings-field__helper-strong {
+  color: var(--cds-text-primary);
+}
+
+/* Make the bare segmented row fit under the new field-label conventions
+   (kill the now-doubled top margin from .special-settings-segmented). */
+.special-settings-field .special-settings-segmented {
+  margin-top: 0;
+}
+
+.special-settings-slot-preview-row {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(7.5rem, 1fr));
+  gap: var(--cds-spacing-04);
+  margin-top: var(--cds-spacing-03);
+}
+
+.special-settings-slot-card {
+  display: flex;
+  flex-direction: column;
+  align-items: stretch;
+  gap: var(--cds-spacing-03);
+  padding: var(--cds-spacing-04);
+  border: 1px solid var(--cds-border-subtle-01);
+  border-radius: 4px;
+  background: var(--cds-layer);
+  color: var(--cds-text-primary);
+  font: inherit;
+  text-align: center;
+  cursor: pointer;
+  transition: border-color 140ms ease, background 140ms ease, box-shadow 140ms ease;
+}
+
+.special-settings-slot-card:hover {
+  background: var(--cds-layer-hover);
+  border-color: var(--cds-border-strong-01);
+}
+
+.special-settings-slot-card.is-selected {
+  border-color: var(--cds-interactive);
+  box-shadow: 0 0 0 1px var(--cds-interactive);
+}
+
+.special-settings-slot-card:focus-visible {
+  outline: 2px solid var(--cds-focus);
+  outline-offset: 2px;
+}
+
+.special-settings-slot-card__label {
+  color: var(--cds-text-secondary);
+  font-size: var(--cds-helper-text-01-font-size, 0.75rem);
+  letter-spacing: 0.16px;
+}
+
+.special-settings-slot-card.is-selected .special-settings-slot-card__label {
+  color: var(--cds-text-primary);
+}
+
+.special-settings-slot-preview {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  block-size: 4.5rem;
+  background: var(--cds-bg-deep, #0f1115);
+  border-radius: 3px;
+  /* Mock canvas chrome so the preview reads as a slot card on a dark grid,
+     matching what the user actually sees in the Snapshot Editor. */
+  padding: 4px;
+}
+

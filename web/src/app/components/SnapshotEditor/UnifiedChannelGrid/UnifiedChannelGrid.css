@@ -520,3 +520,86 @@
   display: flex;
   justify-content: flex-end;
 }
+
+/* ----------------------------------------------------------------
+ * Snapshot slot variants
+ *
+ * Three alternate slot-card layouts selectable from Special Settings →
+ * "Snapshot slot style". The variant is set via data-slot-style on each
+ * .ucg-block (so the dialog's standalone preview cards inherit the same
+ * styling without needing a canvas wrapper). Default (= "default" or
+ * absent) keeps the Carbon look defined above.
+ *
+ * The variant-specific extra DOM (LED bar, CPU ring) is rendered
+ * conditionally by Block.tsx based on the active variant — the CSS only
+ * has to position what's there, not hide what isn't.
+ * ---------------------------------------------------------------- */
+
+/* V3 — Tinted card. Subtle accent-tinted background, accent-coloured icon.
+ * Same parts as Default; the change is the surface tint and icon hue. */
+.ucg-block[data-slot-style='v3-tinted'] {
+  background: color-mix(in oklab, var(--ucg-accent, var(--cds-layer-03, #393939)) 14%, var(--cds-layer-03, #393939));
+  border-color: color-mix(in oklab, var(--ucg-accent, var(--cds-border-subtle-02, #525252)) 32%, var(--cds-border-subtle-02, #525252));
+}
+.ucg-block[data-slot-style='v3-tinted']:hover {
+  background: color-mix(in oklab, var(--ucg-accent, var(--cds-layer-hover-03, #4c4c4c)) 22%, var(--cds-layer-03, #393939));
+}
+.ucg-block[data-slot-style='v3-tinted'] .ucg-block__icon {
+  color: var(--ucg-accent, var(--cds-icon-primary, #f4f4f4));
+}
+
+/* V4 — CPU ring. The 32×32 ring overlays the 20px icon (icon span stays its
+ * normal Default size, so the label keeps its column). The textual CPU% is
+ * suppressed because the ring carries the same information. */
+.ucg-block[data-slot-style='v4-ring'] .ucg-block__icon {
+  position: relative;
+  z-index: 1;
+  color: var(--ucg-accent, var(--cds-icon-primary, #f4f4f4));
+}
+.ucg-block[data-slot-style='v4-ring'] .ucg-block__cpu-ring {
+  position: absolute;
+  /* Centre on the 20px icon at the icon span's centre. The 6px negative
+     inset matches a 32×32 ring centred over the FxIcon's 20×20 box. */
+  inset: -6px;
+  width: 32px;
+  height: 32px;
+  pointer-events: none;
+}
+.ucg-block[data-slot-style='v4-ring'] .ucg-block__cpu-ring-track {
+  fill: none;
+  stroke: color-mix(in srgb, var(--cds-border-strong-01, #6f6f6f) 50%, transparent);
+  stroke-width: 2.4;
+}
+.ucg-block[data-slot-style='v4-ring'] .ucg-block__cpu-ring-fill {
+  fill: none;
+  stroke: var(--ucg-accent, var(--cds-icon-primary, #f4f4f4));
+  stroke-width: 2.4;
+  stroke-linecap: round;
+  transition: stroke-dasharray var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease);
+}
+.ucg-block[data-slot-style='v4-ring'] .ucg-block__cpu {
+  /* Hide the textual CPU% — the ring carries the same information. */
+  display: none;
+}
+
+/* V6 — LED bar. Coloured top edge tracks live activity. The track is a
+ * dim pad (not transparent) so an idle slot still reads as "alive": the
+ * track is visible, and Block.tsx floors the visible fill at 4% so even
+ * a 0% slot shows a sliver of accent colour. */
+.ucg-block[data-slot-style='v6-led'] .ucg-block__led-bar {
+  position: absolute;
+  inset-block-start: 0;
+  inset-inline: 0;
+  height: 3px;
+  background: color-mix(in srgb, var(--cds-border-subtle-02, #525252) 60%, transparent);
+  pointer-events: none;
+  overflow: hidden;
+  z-index: 1;
+}
+.ucg-block[data-slot-style='v6-led'] .ucg-block__led-bar-fill {
+  display: block;
+  height: 100%;
+  background: var(--ucg-accent, var(--cds-icon-primary, #f4f4f4));
+  box-shadow: 0 0 6px color-mix(in srgb, var(--ucg-accent, transparent) 70%, transparent);
+  transition: width var(--map2-dur-fast, 140ms) var(--map2-ease-in-out-rack, ease);
+}
