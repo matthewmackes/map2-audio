@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1586** Python | **1621** TypeScript | **211** C++/H | **149** Docs | **4223** total commits | **4** stars | **0** forks | **0** open issues
+**1588** Python | **1625** TypeScript | **211** C++/H | **149** Docs | **4230** total commits | **4** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`4862113c`](https://github.com/matthewmackes/map2-audio/commit/4862113ce2ab26d03c40f8ee6aa9baf7b44b80f5) | feat(nav): add MultiTrack Recorder top-level entry — DAW ... | Map2 Audio | 2026-05-10 |
+| [`6afe3469`](https://github.com/matthewmackes/map2-audio/commit/6afe346923b5b88953904aa2dfaca090ef4275e8) | feat(snapshot-editor): T2505 — channel-header column fits... | Map2 Audio | 2026-05-10 |
+| [`6c22b3d8`](https://github.com/matthewmackes/map2-audio/commit/6c22b3d8ed58f8ac06bddf68204ddc77000d05bd) | fix(snapshot-editor): drop UCG total-width cap so cards a... | Map2 Audio | 2026-05-10 |
+| [`0a8109f4`](https://github.com/matthewmackes/map2-audio/commit/0a8109f4fa57cab7b1c25bd3dc226e26fe997335) | feat(snapshot-editor): T2504 — fluid slot widths + blocks... | Map2 Audio | 2026-05-10 |
+| [`3ddf7cac`](https://github.com/matthewmackes/map2-audio/commit/3ddf7cacee505044885c76765f487af06346ee25) | chore(deps): bump @babel/preset-env → 7.29.5 to clear GHS... | Map2 Audio | 2026-05-10 |
+| [`26cceb24`](https://github.com/matthewmackes/map2-audio/commit/26cceb24c4f7e03df763c7dc8502577a568f3f95) | fix(snapshot-editor): stop slot-style picker glitch / ins... | Map2 Audio | 2026-05-10 |
+| [`3c9b9119`](https://github.com/matthewmackes/map2-audio/commit/3c9b9119f734b3a298a87f50ec1491ee34347f8a) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-10 |
 | [`7bf48c22`](https://github.com/matthewmackes/map2-audio/commit/7bf48c225855f33616ba541bdeb76fbadf3d9cb3) | feat(avdecc): T2499-C Slice 6 — Brain-input binding write... | Map2 Audio | 2026-05-10 |
-| [`20f027dd`](https://github.com/matthewmackes/map2-audio/commit/20f027dd758eff4dbc9c5dc7b10c0ab2c6af0150) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-10 |
-| [`b8ca4e43`](https://github.com/matthewmackes/map2-audio/commit/b8ca4e43b22fca218e165f5cc1c5285d54dfe80c) | feat(avdecc): T2499-C Slice 5 — substrate-state diagnosti... | Map2 Audio | 2026-05-10 |
-| [`90d08457`](https://github.com/matthewmackes/map2-audio/commit/90d08457b3ae75a80d958271867a9fbf70b8294c) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-10 |
-| [`f883e6f0`](https://github.com/matthewmackes/map2-audio/commit/f883e6f0edee104ab33dd3616f0b68f85973591c) | feat(maschine): T2499-B Slice 5 — pressure-curve fitter | Map2 Audio | 2026-05-10 |
-| [`4c876830`](https://github.com/matthewmackes/map2-audio/commit/4c87683030626aa9a505b59cda1a204287efbcd3) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-10 |
-| [`4caa8831`](https://github.com/matthewmackes/map2-audio/commit/4caa88318297478f73e41020fda40231fc2dce60) | feat(avdecc): T2499-C Slice 4 — DataTable picker + auto-s... | Map2 Audio | 2026-05-10 |
-| [`4edc4e14`](https://github.com/matthewmackes/map2-audio/commit/4edc4e1440718cd0b8d1996cf9c5c252b95568bc) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-10 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
