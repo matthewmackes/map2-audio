@@ -230,10 +230,23 @@ async def get_avdecc_entities() -> Dict[str, Any]:
 
     Returns:
         List of discovered AVDECC entities with capabilities.
+
+    T2499-C — When `MAP2_AVDECC_SIMULATOR=<bench>` is set, an override
+    AVDECC controller (simulator) is consulted first via
+    `resolve_avdecc_entity()`. Live la_avdecc remains the default when
+    no override is installed.
     """
     try:
         source_node_id = _local_source_node_id()
-        if not _is_avdecc_enabled():
+
+        from app.services.avb.avdecc_entity_provider import (
+            get_avdecc_entity_override_origin,
+            resolve_avdecc_entity,
+        )
+
+        override_origin = get_avdecc_entity_override_origin()
+
+        if override_origin is None and not _is_avdecc_enabled():
             return {
                 "enabled": False,
                 "entities": [],
@@ -243,9 +256,13 @@ async def get_avdecc_entities() -> Dict[str, Any]:
 
         from app.services.avb.avb_router import get_avb_router
 
-        router = get_avb_router()
+        def _live_lookup():
+            live_router = get_avb_router()
+            return live_router.avdecc_entity if live_router else None
 
-        if not router or not router.avdecc_entity:
+        avdecc_entity = resolve_avdecc_entity(live_lookup=_live_lookup)
+
+        if not avdecc_entity:
             return {
                 "enabled": True,
                 "entities": [],
@@ -254,7 +271,7 @@ async def get_avdecc_entities() -> Dict[str, Any]:
             }
 
         discover_fn = _resolve_avdecc_callable(
-            router.avdecc_entity,
+            avdecc_entity,
             [
                 "getDiscoveredEntities",
                 "get_discovered_entities",
