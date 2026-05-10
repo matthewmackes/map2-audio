@@ -1239,6 +1239,15 @@ def create_app():
         except Exception as e:
             logger.warning(f"Failed to load T2503 DAW service routes: {e}")
 
+        # T2503 Set 9 — unified plugin inventory routes (consumed by both the
+        # live engine and the DAW reference UI).
+        try:
+            from app.routes import plugin_inventory as plugin_inventory_routes
+            app.include_router(plugin_inventory_routes.router)
+            logger.info("T2503 plugin inventory routes registered")
+        except Exception as e:
+            logger.warning(f"Failed to load T2503 plugin inventory routes: {e}")
+
         try:
             from app.routes import configurator_devices
             app.include_router(configurator_devices.router)

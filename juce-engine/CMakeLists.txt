@@ -386,6 +386,8 @@ if(MAP2_DAW_MODE)
         Source/Daw/Deck/SyncEngine.cpp
         Source/Daw/Deck/SlipMode.cpp
         Source/Daw/Deck/ClipLauncher.cpp
+        Source/Daw/AvbBusNode.cpp
+        Source/Daw/PluginScanner.cpp
     )
 endif()
 
@@ -832,6 +834,7 @@ if(MAP2_DAW_MODE)
         tests/DawProjectLoaderTests.cpp
         tests/TransportBridgeTests.cpp
         tests/DeckPatternsTests.cpp
+        tests/AvbBusAndScannerTests.cpp
         Source/Daw/DawService.cpp
         Source/Daw/ModeSwitchCoordinator.cpp
         Source/Daw/DawProjectLoader.cpp
@@ -842,6 +845,8 @@ if(MAP2_DAW_MODE)
         Source/Daw/Deck/SyncEngine.cpp
         Source/Daw/Deck/SlipMode.cpp
         Source/Daw/Deck/ClipLauncher.cpp
+        Source/Daw/AvbBusNode.cpp
+        Source/Daw/PluginScanner.cpp
     )
     target_compile_definitions(daw_tests PRIVATE
         MAP2_DAW_MODE=1
