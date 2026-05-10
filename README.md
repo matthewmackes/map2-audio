@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1586** Python | **1619** TypeScript | **211** C++/H | **149** Docs | **4221** total commits | **4** stars | **0** forks | **0** open issues
+**1586** Python | **1621** TypeScript | **211** C++/H | **149** Docs | **4223** total commits | **4** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`7bf48c22`](https://github.com/matthewmackes/map2-audio/commit/7bf48c225855f33616ba541bdeb76fbadf3d9cb3) | feat(avdecc): T2499-C Slice 6 — Brain-input binding write... | Map2 Audio | 2026-05-10 |
+| [`20f027dd`](https://github.com/matthewmackes/map2-audio/commit/20f027dd758eff4dbc9c5dc7b10c0ab2c6af0150) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-10 |
 | [`b8ca4e43`](https://github.com/matthewmackes/map2-audio/commit/b8ca4e43b22fca218e165f5cc1c5285d54dfe80c) | feat(avdecc): T2499-C Slice 5 — substrate-state diagnosti... | Map2 Audio | 2026-05-10 |
 | [`90d08457`](https://github.com/matthewmackes/map2-audio/commit/90d08457b3ae75a80d958271867a9fbf70b8294c) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-10 |
 | [`f883e6f0`](https://github.com/matthewmackes/map2-audio/commit/f883e6f0edee104ab33dd3616f0b68f85973591c) | feat(maschine): T2499-B Slice 5 — pressure-curve fitter | Map2 Audio | 2026-05-10 |
 | [`4c876830`](https://github.com/matthewmackes/map2-audio/commit/4c87683030626aa9a505b59cda1a204287efbcd3) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-10 |
 | [`4caa8831`](https://github.com/matthewmackes/map2-audio/commit/4caa88318297478f73e41020fda40231fc2dce60) | feat(avdecc): T2499-C Slice 4 — DataTable picker + auto-s... | Map2 Audio | 2026-05-10 |
 | [`4edc4e14`](https://github.com/matthewmackes/map2-audio/commit/4edc4e1440718cd0b8d1996cf9c5c252b95568bc) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-10 |
-| [`6d6709b9`](https://github.com/matthewmackes/map2-audio/commit/6d6709b9caaab5024f52ba67066a9e3ecdca94c3) | feat(maschine): T2499-B Slice 4 — pad-sensitivity calibrator | Map2 Audio | 2026-05-10 |
-| [`ae13fe99`](https://github.com/matthewmackes/map2-audio/commit/ae13fe99b7851f357fbea4061a3e7c41d50bd735) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-10 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
