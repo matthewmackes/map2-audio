@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1589** Python | **1640** TypeScript | **211** C++/H | **149** Docs | **4238** total commits | **4** stars | **0** forks | **0** open issues
+**1589** Python | **1640** TypeScript | **211** C++/H | **149** Docs | **4240** total commits | **4** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`548a8621`](https://github.com/matthewmackes/map2-audio/commit/548a86213876940457e358f5dfec92d76f2f0466) | docs(worklist): close T2459-H10 — wildcard Consumer ID fi... | Map2 Audio | 2026-05-10 |
+| [`e7b8dd6a`](https://github.com/matthewmackes/map2-audio/commit/e7b8dd6ac950675199a583126094bb66da830169) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-11 |
 | [`c18d9c17`](https://github.com/matthewmackes/map2-audio/commit/c18d9c1762a2094923b477fc2bfe88dc54ade923) | fix(midi): T2459-H10 — wildcard Consumer ID filter on /mi... | Map2 Audio | 2026-05-10 |
 | [`d3287ae0`](https://github.com/matthewmackes/map2-audio/commit/d3287ae04f36d6771cfd4d8912bc49ff7eb0238a) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-11 |
 | [`cf7fd663`](https://github.com/matthewmackes/map2-audio/commit/cf7fd6632031b11fd7df65b700a949dddc359c4c) | feat(daw): T2503-set10-promotion — collapse /daw into tie... | Map2 Audio | 2026-05-10 |
 | [`447cc714`](https://github.com/matthewmackes/map2-audio/commit/447cc7147c3b477d0c4c93882d9d8eab687bb1b3) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-11 |
 | [`6605231f`](https://github.com/matthewmackes/map2-audio/commit/6605231f4789dafa503747a7ae2ec198ff52d40f) | docs(worklist): close T2459-H8; file T2459-H8b / T2459-H9... | Map2 Audio | 2026-05-10 |
 | [`1d65ec66`](https://github.com/matthewmackes/map2-audio/commit/1d65ec660a3757c2652dd626a6dc3e8a197537e8) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-10 |
-| [`b138bfc8`](https://github.com/matthewmackes/map2-audio/commit/b138bfc84f1e702791429c9b16d321ea561078f2) | feat(snapshot-editor): T2459-H8 — cutover effect-param MI... | Map2 Audio | 2026-05-10 |
-| [`1a17b81f`](https://github.com/matthewmackes/map2-audio/commit/1a17b81fc5bef82fab3159810866db99f84c3707) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-10 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
