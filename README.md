@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1589** Python | **1640** TypeScript | **211** C++/H | **149** Docs | **4242** total commits | **4** stars | **0** forks | **0** open issues
+**1590** Python | **1640** TypeScript | **211** C++/H | **149** Docs | **4244** total commits | **4** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -175,8 +175,8 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-DOCS:START -->
 | Document | Last Updated |
 |:---------|:------------|
+| [MAP2 Canonical Project Worklist](https://github.com/matthewmackes/map2-audio/blob/master/docs/PROJECT_WORKLIST.md) | 2026-05-11 |
 | [MAP2 Audio Platform — AI Instructions](https://github.com/matthewmackes/map2-audio/blob/master/docs/CLAUDE.md) | 2026-05-10 |
-| [MAP2 Canonical Project Worklist](https://github.com/matthewmackes/map2-audio/blob/master/docs/PROJECT_WORKLIST.md) | 2026-05-10 |
 | [MAP2 — No-Hardware Worklist](https://github.com/matthewmackes/map2-audio/blob/master/docs/PROJECT_WORKLIST_NO_HARDWARE.md) | 2026-05-10 |
 | [Third-Party Notices](https://github.com/matthewmackes/map2-audio/blob/master/docs/THIRD_PARTY_NOTICES.md) | 2026-05-10 |
 | [React Staggered Reveal — universal page effect](https://github.com/matthewmackes/map2-audio/blob/master/docs/REACT_STAGGERED_REVEAL.md) | 2026-05-09 |
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`000d0161`](https://github.com/matthewmackes/map2-audio/commit/000d016115c94b202c5de6eb718c3d2945fe52bf) | fix(controller-host): T2459-H9 — hoist per-accept setup t... | Map2 Audio | 2026-05-11 |
+| [`ada4daa8`](https://github.com/matthewmackes/map2-audio/commit/ada4daa8796727efa76e8a11cfd36f84c714822b) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-11 |
 | [`01782101`](https://github.com/matthewmackes/map2-audio/commit/01782101b2b435a8a7e7fe292d7f39d53e8da7e4) | feat(snapshot-editor): T2459-H8b — cutover Selected-block... | Map2 Audio | 2026-05-10 |
 | [`e4c55140`](https://github.com/matthewmackes/map2-audio/commit/e4c551402081b096d5b4bf7636acb754b1c89a11) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-11 |
 | [`548a8621`](https://github.com/matthewmackes/map2-audio/commit/548a86213876940457e358f5dfec92d76f2f0466) | docs(worklist): close T2459-H10 — wildcard Consumer ID fi... | Map2 Audio | 2026-05-10 |
 | [`e7b8dd6a`](https://github.com/matthewmackes/map2-audio/commit/e7b8dd6ac950675199a583126094bb66da830169) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-11 |
 | [`c18d9c17`](https://github.com/matthewmackes/map2-audio/commit/c18d9c1762a2094923b477fc2bfe88dc54ade923) | fix(midi): T2459-H10 — wildcard Consumer ID filter on /mi... | Map2 Audio | 2026-05-10 |
 | [`d3287ae0`](https://github.com/matthewmackes/map2-audio/commit/d3287ae04f36d6771cfd4d8912bc49ff7eb0238a) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-11 |
-| [`cf7fd663`](https://github.com/matthewmackes/map2-audio/commit/cf7fd6632031b11fd7df65b700a949dddc359c4c) | feat(daw): T2503-set10-promotion — collapse /daw into tie... | Map2 Audio | 2026-05-10 |
-| [`447cc714`](https://github.com/matthewmackes/map2-audio/commit/447cc7147c3b477d0c4c93882d9d8eab687bb1b3) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-11 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
