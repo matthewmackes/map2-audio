@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1583** Python | **1642** TypeScript | **205** C++/H | **149** Docs | **4267** total commits | **4** stars | **0** forks | **0** open issues
+**1584** Python | **1642** TypeScript | **205** C++/H | **149** Docs | **4269** total commits | **4** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`8e595fe0`](https://github.com/matthewmackes/map2-audio/commit/8e595fe0c14ace0db75af4d62154cadc9a199ca9) | feat(T2508-2,T2508-3): AssetType.RECORDING + recordings_l... | Map2 Audio | 2026-05-11 |
+| [`84dbbacd`](https://github.com/matthewmackes/map2-audio/commit/84dbbacd04c479d3346d16debc670e8b762542ab) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-11 |
 | [`474ad228`](https://github.com/matthewmackes/map2-audio/commit/474ad2288b81efe86bc481cd6d1462bcf7eea2d0) | feat(T2508-4): /api/v1/recorder/sessions HTTP routes | Map2 Audio | 2026-05-11 |
 | [`f54d9414`](https://github.com/matthewmackes/map2-audio/commit/f54d9414999f378983d21734e23da48dd47aca38) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-11 |
 | [`7e1b8775`](https://github.com/matthewmackes/map2-audio/commit/7e1b87753ec9d1cb9d941514ac2a2cc41981fdc8) | feat(T2508): ship RecorderService class (5 async lifecycl... | Map2 Audio | 2026-05-11 |
 | [`9e9df68a`](https://github.com/matthewmackes/map2-audio/commit/9e9df68a6f21771fb6879ad83575a38087e487b3) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-11 |
 | [`1cd7d9a8`](https://github.com/matthewmackes/map2-audio/commit/1cd7d9a851bd2a2d1d127ea72e58c11133e9ffa7) | feat(T2508): add 5 recorder verb handlers to engine_comma... | Map2 Audio | 2026-05-11 |
 | [`b4799b96`](https://github.com/matthewmackes/map2-audio/commit/b4799b96b54ad8ed3e6a2ece1a418857435a91ad) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-11 |
-| [`5942a2c8`](https://github.com/matthewmackes/map2-audio/commit/5942a2c814f03ee1b0dc40a06ad3d4fdd4c827ae) | refactor(T2473): extract Plugin Browser handlers into sib... | Map2 Audio | 2026-05-11 |
-| [`ec998450`](https://github.com/matthewmackes/map2-audio/commit/ec998450417f58314f3d35ac6052dfa63c233a1b) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-11 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
