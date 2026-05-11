@@ -29,6 +29,11 @@ class AssetType(str, Enum):
     CABINET_IR = "cabinet_ir"
     REVERB_IR = "reverb_ir"
     VST3 = "vst3"
+    # T2508-2 (phase 4 of T2504 Multi-Track Recorder). Recorded WAV
+    # takes register through the StateAuthorityAsset registry the
+    # same way IRs + NAMs do; the 10 GB ceiling matches the
+    # worklist spec (long band practice / soundcheck captures).
+    RECORDING = "recording"
 
 
 @dataclass
@@ -72,6 +77,10 @@ class UnifiedUploadService:
         AssetType.CABINET_IR: 50 * 1024 * 1024,  # 50 MB
         AssetType.REVERB_IR: 100 * 1024 * 1024,  # 100 MB
         AssetType.VST3: 500 * 1024 * 1024,       # 500 MB
+        # T2508-2: 10 GB per take (e.g. a 1-hour stereo 48 kHz / 24-bit
+        # capture is ~1 GB; the ceiling allows long-form multi-take
+        # band sessions on cluster nodes).
+        AssetType.RECORDING: 10 * 1024 * 1024 * 1024,  # 10 GB
     }
 
     def __init__(self):

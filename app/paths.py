@@ -214,6 +214,15 @@ class Map2Paths:
         return Map2Paths.service_file("irs", "reverbs")
 
     @staticmethod
+    def recordings_library_dir() -> Path:
+        # T2508-3 (phase 4 of T2504 Multi-Track Recorder). Recorded
+        # WAV takes + sidecar metadata land here. Service-plane
+        # authority (NOT user-plane) — recordings are first-class
+        # platform artefacts that travel with snapshots via the
+        # StateAuthorityAsset registry, not personal user files.
+        return Map2Paths.service_file("recordings")
+
+    @staticmethod
     def presets_dir() -> Path:
         return Map2Paths.service_file("presets")
 
