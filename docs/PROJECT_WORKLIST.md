@@ -2113,6 +2113,35 @@ Cycle 5 — RecorderService class SHIPPED. New `app/services/recorder_service.py
 - Singleton: `get_recorder_service()` for production wiring; `set_recorder_service()` test seam.
 - New `tests/test_recorder_service.py`: 24 pytest cases covering topic constant, verb enum alignment with dispatcher targets, arm path (basic + tap_matrix normalization + invalid snapshot_id rejection + snapshot_id=0 accept), roll path (transition + idempotent + stopped-rejection + unknown-session rejection), stop path (from rolling + from armed + idempotent + unknown-session rejection), disarm path (removes record + final STOPPED broadcast + silent no-op on unknown), GET path (no side effects + list filter post-disarm), transport/broadcaster injection (no-transport silent no-op + transport-exception isolation + broadcaster-exception isolation), WS payload shape parity, multi-session isolation under interleaved arm/roll/stop. **24/24 green.**
 
+Cycle 15 — Recordings empty-state polish SHIPPED (final cycle of autonomous Continue run):
+- `ArtifactEmptyState` in `AudioArtifactsPage.tsx` special-cases `activeCategory === 'recordings'`. The default empty state offers Upload/Download/Scan buttons that don't apply to recordings (they're produced by the recorder service, not imported). The recordings variant shows: title "No recordings captured yet", description pointing operators at the snapshot editor's recording panel as the actual control surface, no Upload/Download/Scan buttons, optional "Browse other nodes" button preserved when cluster mode is active.
+- Closes the operator-flow loop: open `/artifacts?category=recordings` → see the focused empty state pointing at the right next-step → land on snapshot editor → use RecordingPanel (cycle 13) to arm a session → roll → captured WAV registers in the artifact registry → returns to `/artifacts?category=recordings` and now sees the take.
+- 30 jest tests across the recorder UI surface (AudioArtifactsPage 8 + RecordingPanel 11 + useRecorderSession 11) all green. Typecheck clean. Atomic build clean. Frontend re-served on :3000; backend :8080/api/health 200.
+
+### Run summary (autonomous Continue, 2026-05-11)
+
+15 ship cycles delivered. Zero changes inside `juce-engine/Source/` or the JUCE audioCallback across all 15 cycles, per the operator's mid-run "RT safety is most important" directive.
+
+| Cycle | Task | Files | LOC delta | Commit |
+|---|---|---|---|---|
+| 1 | T2505 Retire T2503 DAW | 85 | +79 / -5173 | bb4c552a |
+| 2 | T2506 Schema 2026.05 + recording block | 16 | +445 / -16 | 8dcc5e7f |
+| 3 | T2473 slice 18 Plugin Browser handlers | 4 | +321 / -28 | 5942a2c8 |
+| 4 | T2508 dispatcher half (5 verbs) | 3 | +376 / -5 | 1cd7d9a8 |
+| 5 | T2508 RecorderService class | 3 | +913 / -7 | 7e1b8775 |
+| 6 | T2508-4 HTTP routes | 4 | +587 / -5 | 474ad228 |
+| 7 | T2508-2 + T2508-3 AssetType + paths | 4 | +119 / -2 | 8e595fe0 |
+| 8 | T2508-5 /api/recordings/* | 4 | +668 / -4 | 02b5e1b0 |
+| 9 | T2508-6 WS broadcaster | 5 | +410 / -2 | ef3cb649 |
+| 10 | T2509-5 useRecorderSession + recorderApi | 4 | +767 / 0 | 0fcf54be |
+| 11 | T2509-2 AudioArtifactsPage recordings | 2 | +72 / -1 | 88887518 |
+| 12 | T2509-3 RecordingDetailPanel | 2 | +38 / 0 | 6839c8a9 |
+| 13 | T2509-4 RecordingPanel component | 4 | +509 / 0 | 591f3366 |
+| 14 | T2508 integration smoke + memory | 2 | +214 / 0 | 20f3dd37 |
+| 15 | Recordings empty-state polish | 1 | +25 / -1 | (this commit) |
+
+T2504 remaining work: T2507 C++ engine taps (RT-critical, bench-gated by operator review of SPSC ring + io_uring design); T2511 punch-in playback (RT-critical, same gate); T2510 cluster sync; T2512 looper. Everything that could ship safely without RT review is shipped.
+
 Cycle 14 — T2508 integration smoke test SHIPPED:
 - New `tests/test_recorder_integration.py` (~140 LoC). End-to-end tests against the real `app.main.app` instance via `httpx.ASGITransport`:
   - Route registration pins: 6 recorder lifecycle routes mount at `/api/v1/recorder/sessions[/{id}/{verb}]`; 4 recordings registry routes mount at `/api/recordings[/{hash}[/wav|/metadata]]`. Catches regressions where the `route_modules` auto-loader misses an entry.

@@ -539,6 +539,35 @@ interface EmptyStateProps {
 function ArtifactEmptyState({ category, onUpload, isClusterMode, onBrowseNodes, onOpenDownload, onScan, isScanning }: EmptyStateProps) {
   const Icon = category.icon
   const isPluginCategory = category.id === 'lv2-plugins' || category.id === 'native-juce'
+  // T2509-2 — recordings have no upload/download/scan workflow.
+  // Operators produce them by arming a session on the snapshot
+  // editor's RecordingPanel (T2509-4) and rolling capture; the
+  // engine writes WAV files into recordings_library_dir and the
+  // recorder service registers them. Show a focused empty-state
+  // pointing operators at the right control surface.
+  if (category.id === 'recordings') {
+    return (
+      <EmptyState
+        className="aap-empty"
+        icon={
+          <div className="aap-empty__icon-wrap">
+            <Icon size={48} aria-hidden="true" />
+          </div>
+        }
+        title="No recordings captured yet"
+        description="Recordings are produced by the recorder service when a snapshot's session is armed and rolled. Open a snapshot in the editor and use its recording panel to start capturing — takes appear here once finalized."
+        actions={(
+          <>
+            {isClusterMode ? (
+              <Button kind="ghost" size="md" renderIcon={Network_4} onClick={onBrowseNodes}>
+                Browse other nodes
+              </Button>
+            ) : null}
+          </>
+        )}
+      />
+    )
+  }
 
   return (
     <EmptyState
