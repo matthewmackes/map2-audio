@@ -322,10 +322,18 @@ async def list_bindings(
 ) -> list[MidiBindingRead]:
     """List bindings, with optional filters. Filter precedence:
     consumer (consumer_type+consumer_id) > device > scope.
+
+    `consumer_id="*"` is a wildcard: when combined with `consumer_type`,
+    every binding of that type is returned regardless of consumer_id
+    (T2459-H10 — matches the UI hint "use * for any").
     """
     async with get_session(read_only=True) as session:
         authority = MidiBindingAuthority(session)
         if consumer_type is not None and consumer_id is not None:
+            if consumer_id == "*":
+                return await authority.list_by_consumer_type(
+                    consumer_type, enabled_only=enabled_only
+                )
             return await authority.list_for_consumer(
                 consumer_type, consumer_id, enabled_only=enabled_only
             )

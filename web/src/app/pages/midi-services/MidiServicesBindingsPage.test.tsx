@@ -339,6 +339,7 @@ describe('MidiServicesBindingsPage snapshot-consumer rows', () => {
   })
 
   it('renders both source types when program_number + midi_map siblings coexist', async () => {
+    // (T2459-H10 wildcard tests live in their own describe below.)
     // Cycle 2 added the kind discriminator so two snapshot-consumer
     // rows (program_number + midi_map[]) coexist for one snapshot.
     // Verify the table surfaces both rows distinguishable by source_type.
@@ -359,5 +360,72 @@ describe('MidiServicesBindingsPage snapshot-consumer rows', () => {
     )
     // The midi_cc sibling row also renders.
     expect(screen.getByText('midi_cc')).toBeInTheDocument()
+  })
+})
+
+
+// T2459-H10 — Consumer ID `*` wildcard. The placeholder hint
+// "use * for any" in the consumer-id input must produce a result set
+// that includes every consumer_id under the chosen consumer_type.
+// Backend half of the contract lives in tests/midi/test_consumer_id_wildcard.py.
+describe('MidiServicesBindingsPage consumer-id wildcard', () => {
+  const ROW_FROM_NEURAL_AMP = {
+    binding_id: 'b-w1',
+    consumer_type: 'plugin_param' as const,
+    consumer_id: '40:urn:lv2:plugin:neural-amp-modeler:0',
+    consumer_label: 'NAM gain',
+    source_type: 'midi_cc' as const,
+    source_descriptor: { cc: 7, channel: 0 },
+    target_type: 'engine_param' as const,
+    target_descriptor: { plugin_uri: 'urn:lv2:plugin:neural-amp-modeler', param_index: 0 },
+    device_id: null,
+    scope: 'snapshot' as const,
+    scope_id: '13',
+    enabled: true,
+    source: 'snapshot-editor',
+    metadata: {},
+    created_at: '2026-05-10',
+    created_by: 'web-ui',
+    modified_at: '2026-05-10',
+    modified_by: 'web-ui',
+  }
+
+  const ROW_FROM_CABINET = {
+    ...ROW_FROM_NEURAL_AMP,
+    binding_id: 'b-w2',
+    consumer_id: '41:urn:lv2:plugin:cabinet:0',
+    consumer_label: 'Cabinet mix',
+    target_descriptor: { plugin_uri: 'urn:lv2:plugin:cabinet', param_index: 0 },
+  }
+
+  it('sends consumer_id="*" to midiBindingsApi.list on the default consumer-strategy view', async () => {
+    renderPage('/midi/bindings?consumer_type=plugin_param')
+    await waitFor(() => expect(mockList).toHaveBeenCalled())
+    const call = mockList.mock.calls[0][0]
+    expect(call).toMatchObject({
+      consumer_type: 'plugin_param',
+      consumer_id: '*',
+    })
+  })
+
+  it('renders every consumer_id row when the backend honors the wildcard', async () => {
+    mockList.mockResolvedValue([ROW_FROM_NEURAL_AMP, ROW_FROM_CABINET])
+    renderPage('/midi/bindings?consumer_type=plugin_param')
+    await waitFor(() =>
+      expect(
+        screen.getByText('plugin_param:40:urn:lv2:plugin:neural-amp-modeler:0'),
+      ).toBeInTheDocument(),
+    )
+    expect(
+      screen.getByText('plugin_param:41:urn:lv2:plugin:cabinet:0'),
+    ).toBeInTheDocument()
+    // The list call only fires when an apiFilter is built — confirm the
+    // wildcard payload was on every invocation.
+    for (const call of mockList.mock.calls) {
+      expect(call[0]).toMatchObject({
+        consumer_type: 'plugin_param',
+        consumer_id: '*',
+      })
+    }
   })
 })

@@ -121,6 +121,23 @@ class MidiBindingAuthority:
         result = await self._session.execute(stmt)
         return [self._row_to_read(r) for r in result.scalars().all()]
 
+    async def list_by_consumer_type(
+        self,
+        consumer_type: BindingConsumerType,
+        *,
+        enabled_only: bool = False,
+    ) -> list[MidiBindingRead]:
+        """All bindings of a given consumer_type regardless of consumer_id.
+
+        Backs the `/api/midi/bindings?consumer_type=...&consumer_id=*`
+        wildcard surface advertised by the Bindings page hint (T2459-H10).
+        """
+        stmt = select(MidiBinding).where(MidiBinding.consumer_type == consumer_type)
+        if enabled_only:
+            stmt = stmt.where(MidiBinding.enabled.is_(True))
+        result = await self._session.execute(stmt)
+        return [self._row_to_read(r) for r in result.scalars().all()]
+
     async def list_for_device(
         self,
         device_id: str,
