@@ -188,6 +188,7 @@ import {
 } from '../utils/snapshotIoBindings'
 import { applyFlowSlotUpdate } from '../utils/snapshotFlowSlots'
 import { SnapshotPreloadSlotsPanel } from '../components/SnapshotEditor/SnapshotPreloadSlotsPanel'
+import { RecordingPanel } from '../components/Recordings/RecordingPanel'  // T2509-4 mount
 import { decidePreloadGate } from '../components/SnapshotEditor/snapshotEditorPreloadGate'
 import { useSnapshotPreloadStatus } from '../hooks/useSnapshotPreloadStatus'
 import { PublishReadyBanner } from '../components/SnapshotEditor/PublishReadyBanner'
@@ -5262,6 +5263,19 @@ export function SnapshotEditorPage() {
             snapshotNamesById={snapshotNamesById}
             selectedSnapshotId={currentEditorSnapshotId}
           />
+          {/* T2509-4 mount — live recorder for the currently-loaded
+              snapshot. Operator arms a take that's bound to this
+              snapshot's chains via the tap_matrix; engine writes
+              pre.wav + post.wav + automation.jsonl on stop. The
+              panel is idle (and harmless) when no snapshot is loaded.
+              See docs/PROJECT_WORKLIST.md § T2509-4 for the worklist
+              entry. */}
+          {activeSnapshot ? (
+            <RecordingPanel
+              snapshotId={activeSnapshot.id}
+              defaultTapMatrix={{}}
+            />
+          ) : null}
         </div>
       </section>
 

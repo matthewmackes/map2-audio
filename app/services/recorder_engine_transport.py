@@ -38,17 +38,83 @@ RecorderService mutex; they never block the audio thread.
 
 from __future__ import annotations
 
+import hashlib
 import logging
+from pathlib import Path
 from typing import Any, Optional
 
+from sqlalchemy import select
+
+from app import database as database_module
 from app.paths import Map2Paths
 from app.services.recorder_service import (
     RecorderTransport,
     RecorderVerb,
 )
+from app.services.upload_service import AssetType
 
 
 logger = logging.getLogger(__name__)
+
+
+async def _register_recording_asset(
+    *,
+    file_path: str,
+    asset_type: str = AssetType.RECORDING.value,
+) -> None:
+    """Insert a state_authority_assets row for a produced recording.
+
+    Idempotent: when the same WAV is registered twice (e.g. after a
+    backend restart that re-finalises the same session), the SHA-256
+    hash collides and we update the existing row in place. Skips
+    silently when the file doesn't exist on disk (defensive — the
+    engine reports a path even when the writer thread fails to write).
+    """
+    path = Path(file_path).expanduser()
+    if not path.exists() or not path.is_file():
+        logger.warning(
+            "recorder: registry insert skipped — file missing on disk: %s",
+            file_path,
+        )
+        return
+
+    try:
+        with path.open("rb") as fh:
+            digest = hashlib.sha256(fh.read()).hexdigest()
+    except OSError as exc:  # noqa: BLE001
+        logger.warning(
+            "recorder: registry insert skipped — sha256 read failed for %s: %s",
+            file_path, exc,
+        )
+        return
+
+    # Use the on-disk file size, not the engine's reported
+    # bytes_written — the engine counts data bytes only, the WAV
+    # header (44 bytes) is invisible to that counter.
+    on_disk_size = path.stat().st_size
+    asset_hash = f"sha256:{digest}"
+    async with database_module.get_session() as session:
+        result = await session.execute(
+            select(database_module.StateAuthorityAsset).where(
+                database_module.StateAuthorityAsset.asset_hash == asset_hash,
+            )
+        )
+        existing = result.scalar_one_or_none()
+        if existing is None:
+            session.add(
+                database_module.StateAuthorityAsset(
+                    asset_hash=asset_hash,
+                    source_path=str(path.resolve()),
+                    file_name=path.name,
+                    size_bytes=on_disk_size,
+                    asset_type=asset_type,
+                )
+            )
+        else:
+            existing.source_path = str(path.resolve())
+            existing.file_name   = path.name
+            existing.size_bytes  = on_disk_size
+            existing.asset_type  = asset_type
 
 
 def make_engine_recorder_transport(
@@ -125,6 +191,22 @@ def make_engine_recorder_transport(
                 stop_status.get("post", {}).get("frames_written"),
                 stop_status.get("total_samples"),
             )
+            # Register both WAV files in state_authority_assets so
+            # they appear in `/api/recordings` and the
+            # AudioArtifactsPage recordings tab. Idempotent + hash-
+            # addressed; identical files (same SHA-256) collapse to
+            # one registry row.
+            for tap_key in ("pre", "post"):
+                tap = stop_status.get(tap_key, {}) or {}
+                path = tap.get("path")
+                if path:
+                    try:
+                        await _register_recording_asset(file_path=path)
+                    except Exception as exc:  # noqa: BLE001
+                        logger.exception(
+                            "recorder: registry insert failed for %s: %s",
+                            path, exc,
+                        )
             return
 
         if verb is RecorderVerb.STATUS:
