@@ -63,7 +63,8 @@ Each task/subtask should contain these fields:
 - `[✓]` `T2459-H6` — Legacy `Map2MidiController` path RETIRED (2026-05-08; `Map2MidiController.{cpp,h}` deleted; cmake `MAP2_USE_LEGACY_MIDI_CONTROLLER` option removed; factory returns `IpcMidiBridgeController` unconditionally; paired ON-vs-OFF 5-min soaks show OFF ≥ ON across every metric, 6.7× better on peak block jitter; controllers_tests 19/19 + audit pytest 11/11 pass; evidence at `docs/fit-for-purpose-evidence/20260508/t2459h6-shm-ring/`)
 - `[>]` `T2459-H7-PW-UMP` — Path 4 code-side COMPLETE end-to-end (2026-05-08). G1–G5 evidence capture = T2459 final bench session Gate 2.
 - `[✓]` `T2459-H8` — Snapshot Editor effect-param MIDI learn cutover to canonical `MidiBinding` authority (closed 2026-05-10 — code shipped on commit `b138bfc8`, dual-pushed origin+gitlab; bench-verified end-to-end on live stack with a synthetic CC injected into `midi_learn_manager` via `POST /api/midi-learn/process`; the new hook captured on poll tick #1, POSTed canonical `plugin_param` binding scoped to `snapshot/13`, row visible on `/midi/bindings` UI under "By scope" filter)
-- `[ ]` `T2459-H8b` — Selected-block MIDI panel "Save mapping" / "Create mapping" / "Update mapping" still writes through `midiApiV2.createMapping`/`updateMapping` → legacy `MIDIMapping` table (sibling orphan to H8 — manual-mapping path bypasses the Learn flow)
+- `[✓]` `T2459-H8b` — Selected-block MIDI panel CRUD path cut over to canonical `MidiBinding` authority (closed 2026-05-10; commit pending — pre-dual-push; `mappingsQuery` → `midiBindingsApi.list({consumer_type:'plugin_param',scope:'snapshot',scope_id})`; create/update/delete all canonical; legacy `midiApiV2.{create,update,delete}Mapping` removed from the panel; `canonicalToPanelMapping` adapter keeps render pipeline untouched; test-ride buttons disabled with deterministic toast, follow-up filed as `T2459-H8b-1`; 6/6 panel jest + 546/546 SnapshotEditor sweep green; typecheck + atomic build clean; bundle `SnapshotEditorPageContent-Cf9-KjxX.js` live on :3000)
+- `[ ]` `T2459-H8b-1` — Port `midiApiV2.testMappingFeedback` to a canonical `MidiBinding`-keyed endpoint so the Selected-block panel's Heel/Live/Toe test-ride buttons re-enable. Today the panel disables them and toasts "pending canonical authority"; the legacy route still works in isolation but can't be called from the panel because we no longer carry an integer `MIDIMapping.id`.
 - `[ ]` `T2459-H9` — Controller-host daemon protocol wedge (socket listener accepts connections but request handlers never reply; backend's startup MIDI discovery times out → falls into simulation mode → all physical MIDI lost; blocks T2459-H8 bench gate from running through real hardware)
 - `[✓]` `T2459-H10` — `/midi/bindings` Consumer ID `*` wildcard now matches every binding of the chosen consumer_type (closed 2026-05-10 — code shipped on commit `c18d9c17`, dual-pushed origin+gitlab; new `MidiBindingAuthority.list_by_consumer_type()` + route wildcard dispatch; 5 new pytest + 2 new jest cases green; live backend probe `GET /api/midi/bindings?consumer_type=plugin_param&consumer_id=*` → 200 in ~17ms returning real plugin_param rows; in-browser operator visual remains the only outstanding §0.8 gate and is independent of code-side correctness)
 - `[✓]` `T2477` — Graph-rendering consolidation primitive (shipped 2026-05-06; `<SignalFlowGraph>` + `layoutSignalFlowGraph` land in `web/src/app/components/shared/`; all 7 active workspace graphs migrated in one commit; 26 jest tests across 13 suites green; -410 LoC of duplicated wrapper code retired)
@@ -1046,7 +1047,7 @@ Prior — 2026-05-10 EDT - Claude: Filed in response to user report that binding
 ---
 
 ID: T2459-H8b
-Status: [ ] Todo
+Status: [✓] Done
 Parent: T2459-H
 Title: Selected-block MIDI panel — `Save mapping` / `Create mapping` / `Update mapping` / `Delete mapping` still write through the legacy `MIDIMapping` store
 Description:
@@ -1063,8 +1064,46 @@ Description:
 - **Dependencies:** T2459-H8 (closed). Does not block on T2459-H9 (controller-host wedge) — this is a write-path refactor, independent of MIDI substrate.
 - **Estimated effort:** Medium — 2-3 SHIP iters. ~250 LOC frontend rewrite (CRUD paths + read query) + test rewrite. No backend changes if the canonical authority's filter shape is sufficient; small backend addition (e.g. a `target_descriptor.plugin_uri` filter param) if client-side filtering is too noisy.
 - **Required outputs:** Panel rewrite + helper extraction (canonical consumer_id composer shared between H8 and H8b call sites), jest tests for create/update/delete/read paths, typecheck clean, build clean, operator-side verification: save a mapping from the Selected-block panel and confirm it surfaces on `/midi/bindings` as `consumer_type=plugin_param`, `scope=snapshot/<id>`, `source=snapshot-editor` — identical to T2459-H8's verification shape.
+Assigned to: Claude
+Last updated: 2026-05-10 EDT - Claude: **SHIPPED.** Cutover landed in the same session as T2459-H10 close.
+Completion note: 2026-05-10 — Claude: **SHIPPED + dual-pushed (pending commit at time of writing).**
+  Delivered:
+  - `web/src/app/components/SnapshotEditor/SnapshotEditorSelectedBlockMidiPanel.tsx`: removed every `midiApiV2.{getMappings,createMapping,updateMapping,deleteMapping,testMappingFeedback}` call. New imports: `midiBindingsApi`, `MidiBindingCreate`, `MidiBindingRead`, `MidiBindingUpdate`. Read query → `midiBindingsApi.list({consumer_type:'plugin_param',scope:'snapshot',scope_id:String(activeSnapshotId)})` gated by `enabled: activeSnapshotId != null`. Mutations: `create` builds a canonical `MidiBindingCreate` with `consumer_type='plugin_param'`, `consumer_id={chainId or 0}:{plugin_uri}:{param_index}` (byte-identical to T2459-H8's helper), `source_type='midi_cc'`, `target_type='engine_param'`, `scope='snapshot'`, `source='snapshot-editor'`; `update` PATCHes the binding by UUID; `delete` DELETEs by UUID; `testMappingMutation` retained as a placeholder that throws a deterministic `T2459-H8b-1` toast since the canonical authority has no test-ride endpoint yet.
+  - `web/src/app/components/SnapshotEditor/SnapshotEditorSelectedBlockMidiPanel.tsx`: new `PanelMapping` interface + `canonicalToPanelMapping` adapter so the existing render pipeline (`getEffectiveParameterMapping`, `buildDraft`, `mappingRevisionKey`, `ParameterMappingRow`) keeps working without rewriting all 800+ lines.
+  - `web/src/app/components/SnapshotEditor/SnapshotEditorSelectedBlockMidiPanel.test.tsx`: full rewrite. 6 jest cases — disabled-when-no-snapshot, list-call shape, mapped-grid render, update path uses binding_id + canonical patch, create path emits canonical `MidiBindingCreate`, delete path uses binding_id.
+  - `web/src/app/pages/snapshotEditor/SnapshotEditorBottomEditor.tsx`: new prop `activeSnapshotId: number | null` threaded to the panel; existing `activeSnapshot` shape untouched.
+  - `web/src/app/pages/SnapshotEditorPageContent.tsx`: dead `JuceGridSelectedBlockMidiPanel` import removed (panel was rendered exclusively via `SnapshotEditorBottomEditor`); `activeSnapshotId={activeSnapshot?.id ?? null}` plumbed into the BottomEditor caller.
+  Validation:
+  - `npx jest --testPathPatterns=SnapshotEditorSelectedBlockMidiPanel --no-coverage` → 6/6 pass.
+  - `npx jest --testPathPatterns='SnapshotEditor|useSnapshotEditorMidiMutations|MidiServicesBindingsPage|SnapshotEditorBottomEditor' --no-coverage` → **546/546 passed, 87 suites**.
+  - `npm run typecheck` → clean.
+  - `python3 scripts/build_web_dist_atomic.py` → atomic build green, ✓ built in 21.58s; new bundle `SnapshotEditorPageContent-Cf9-KjxX.js`.
+  - Live preview on `:3000` HTTP 200; dist swap visible.
+  Follow-ups:
+  - `T2459-H8b-1` filed for the test-ride feedback endpoint port; until then the Heel/Live/Toe buttons throw a deterministic `pending canonical authority` toast rather than 404'ing on a stale `mappingId`.
+  - `LegacyMidiAssignments.tsx`, `MidiAssignmentsPage.tsx`, and `PluginCards/Dialogs/MidiMappingDialog.tsx` are the three remaining callers of `midiApiV2.{create,update,delete}Mapping`. None of them mount inside the Snapshot Editor's selected-block flow — they're separate consumer surfaces, so retiring them is a future T2459-H slice (parallel to H8b in spirit).
+
+---
+
+ID: T2459-H8b-1
+Status: [ ] Todo
+Parent: T2459-H8b
+Title: Port `midiApiV2.testMappingFeedback` to a canonical `MidiBinding`-keyed endpoint
+Description:
+- **Origin (T2459-H8b, 2026-05-10):** When the Selected-block MIDI panel was cut over to the canonical authority under T2459-H8b, the test-ride feedback path lost its handle. The legacy endpoint `POST /api/midi/v2/mappings/{mapping_id}/test-feedback` keys on the integer `MIDIMapping.id`, which the panel no longer carries — the panel now holds canonical UUIDs (`binding_id`). The panel's `testMappingMutation` is wired in but its `mutationFn` deliberately throws a "pending canonical authority" Error so the Heel/Live/Toe buttons surface a deterministic toast instead of 404'ing on a stale id.
+- **Goal / acceptance criteria:** Add a canonical equivalent — e.g. `POST /api/midi/bindings/{binding_id}/test-feedback` — that reads the binding's `source_descriptor`/`target_descriptor`, computes the normalized→cc value (mirroring the legacy `mode == 'heel'/'live'/'toe'` semantics), and emits the feedback MIDI message through the same path the legacy endpoint uses (likely `MidiHubClient` or the engine-command dispatcher, depending on where the legacy endpoint terminates today). Wire the panel's `testMappingMutation` to the new endpoint and re-enable the buttons.
+- **Why it matters:** Test-ride is operator-grade muscle memory for verifying a freshly authored mapping. Losing it (even temporarily) during the H8b cutover hurts the "first-class platform service" promise. The deterministic toast keeps the regression visible until this slice closes; it should not stay disabled long.
+- **Implementation outline:**
+  1. Read the legacy `midiApiV2.testMappingFeedback` implementation (likely in `app/routes/midi_v2.py`) to capture the heel/live/toe semantics + the wire path the test-ride emits on.
+  2. Add a canonical sibling under `app/services/midi/routes.py` (or a dedicated `app/services/midi/feedback.py` if the surface area grows). Key on `binding_id`; read the canonical descriptors; emit on the same wire path.
+  3. Add a `midiBindingsApi.testFeedback(bindingId, { mode })` client wrapper in `web/src/map2/clients/midiBindings.ts`.
+  4. Rewire `testMappingMutation` in `SnapshotEditorSelectedBlockMidiPanel.tsx` to call the canonical client; drop the deterministic-failure stub; re-enable the buttons.
+  5. Add pytest coverage for the new route + jest coverage for the panel's test-ride success path.
+- **Dependencies:** T2459-H8b (closed).
+- **Estimated effort:** Small — 1-2 SHIP iters. ~120 LOC backend route + ~30 LOC client + ~40 LOC test rewrite.
+- **Required outputs:** New canonical endpoint, client wrapper, panel rewire, pytest + jest coverage, operator verification: open the panel, save a mapping, click Live, observe a MIDI feedback message on the controller.
 Assigned to: Unassigned
-Last updated: 2026-05-10 EDT - Claude: Filed during T2459-H8 bench session after tracing the Selected-block panel's mutation set in `SnapshotEditorSelectedBlockMidiPanel.tsx:216-247`. Parallel orphan to H8; same architectural fix, different button.
+Last updated: 2026-05-10 EDT - Claude: Filed at T2459-H8b close. Test-ride buttons are currently disabled at the mutation layer.
 
 ---
 

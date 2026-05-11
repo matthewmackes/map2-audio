@@ -44,6 +44,7 @@ export interface SnapshotEditorBottomEditorProps {
 
   // active snapshot
   activeSnapshot: { name: string } | null | undefined
+  activeSnapshotId: number | null
   snapshotsDirty: boolean
   activeSnapshotBlockCount: number
 
@@ -78,6 +79,7 @@ export function SnapshotEditorBottomEditor({
   midiLearnInProgress,
   midiLearnTarget,
   activeSnapshot,
+  activeSnapshotId,
   snapshotsDirty,
   activeSnapshotBlockCount,
   renderSelectedBlockNavBar,
@@ -173,6 +175,7 @@ export function SnapshotEditorBottomEditor({
                     plugin={selectedPlugin}
                     meta={selectedPluginMeta}
                     chainId={chainId}
+                    activeSnapshotId={activeSnapshotId}
                     lastMidiEvent={lastMidiEvent}
                     midiLearnInProgress={midiLearnInProgress}
                     midiLearnTarget={midiLearnTarget}

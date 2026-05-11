@@ -187,7 +187,6 @@ import {
   type SnapshotIoDefaults,
 } from '../utils/snapshotIoBindings'
 import { applyFlowSlotUpdate } from '../utils/snapshotFlowSlots'
-import { JuceGridSelectedBlockMidiPanel } from '../components/SnapshotEditor/SnapshotEditorSelectedBlockMidiPanel'
 import { SnapshotPreloadSlotsPanel } from '../components/SnapshotEditor/SnapshotPreloadSlotsPanel'
 import { decidePreloadGate } from '../components/SnapshotEditor/snapshotEditorPreloadGate'
 import { useSnapshotPreloadStatus } from '../hooks/useSnapshotPreloadStatus'
@@ -5382,6 +5381,7 @@ export function SnapshotEditorPage() {
         midiLearnInProgress={midiLearnInProgress}
         midiLearnTarget={midiLearnStatus?.target ?? null}
         activeSnapshot={activeSnapshot}
+        activeSnapshotId={activeSnapshot?.id ?? null}
         snapshotsDirty={snapshotsDirty}
         activeSnapshotBlockCount={currentChain?.plugins.length ?? 0}
         renderSelectedBlockNavBar={renderSelectedBlockNavBar}

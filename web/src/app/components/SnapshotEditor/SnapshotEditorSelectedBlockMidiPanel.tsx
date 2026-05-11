@@ -2,9 +2,14 @@ import { useCallback, useEffect, useMemo, useState } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
 import { Flash, Meter, Music, Save, TrashCan } from '@carbon/icons-react'
 import { Button, Checkbox, InlineLoading, Layer, Select, SelectItem, Tag, TextInput, Tile } from '@carbon/react'
-import { midiApiV2 } from '../../../map2/api'
+import {
+  midiBindingsApi,
+  type MidiBindingCreate,
+  type MidiBindingRead,
+  type MidiBindingUpdate,
+} from '../../../map2/clients/midiBindings'
 import { getDisplayPluginName } from '../../../map2/displayNames'
-import type { ChainPlugin, MIDICurveType, MIDILearnTarget, MIDIMappingV2, Plugin, PluginParameter } from '../../../map2/types'
+import type { ChainPlugin, MIDICurveType, MIDILearnTarget, Plugin, PluginParameter } from '../../../map2/types'
 import { useToasts } from '../Toasts'
 import { SnapshotSchematicReadout } from './SnapshotSchematicSurface'
 
@@ -21,11 +26,36 @@ interface JuceGridSelectedBlockMidiPanelProps {
   plugin: ChainPlugin
   meta: Plugin
   chainId: number | null
+  activeSnapshotId: number | null
   lastMidiEvent: MidiActivitySummary | null
   midiLearnInProgress: boolean
   midiLearnTarget: MIDILearnTarget | null
   onStartLearn: (parameter: PluginParameter) => void
   onStopLearn: () => void
+}
+
+// T2459-H8b — local plugin-param mapping shape used by this panel.
+// Identical to the legacy `MIDIMappingV2` rendered fields except `id`
+// is the canonical binding UUID (string) instead of the legacy
+// integer. Bindings round-trip through `MidiBindingRead` on the wire
+// and are adapted by `canonicalToPanelMapping` below so the existing
+// render/draft pipeline keeps working without rewrite.
+interface PanelMapping {
+  id: string
+  channel: number
+  cc: number
+  chain_id: number | null
+  target_plugin_uri: string | null
+  target_param_index: number | null
+  target_param_symbol: string | null
+  min_val: number
+  max_val: number
+  curve_type: MIDICurveType
+  invert: boolean
+  feedback_enabled: boolean
+  feedback_cc: number | null
+  name: string | null
+  is_enabled: boolean
 }
 
 interface MidiDraft {
@@ -45,9 +75,81 @@ interface MidiDraft {
 interface ParameterMappingRow {
   parameter: PluginParameter
   currentValue: number
-  mapping: MIDIMappingV2 | null
+  mapping: PanelMapping | null
   mappingScope: DraftScope | null
   hasGlobalCompanion: boolean
+}
+
+// Compose the canonical consumer_id used by the plugin_param
+// projection (`app/services/midi/projections/plugin_param.py::make_consumer_id`).
+// Byte-identical to T2459-H8's helper in
+// `web/src/app/pages/snapshotEditor/useSnapshotEditorMidiMutations.ts`
+// so manual-save bindings list alongside Learn bindings on
+// `/midi/bindings`.
+function makePluginParamConsumerId(
+  chainId: number,
+  pluginUri: string,
+  paramIndex: number,
+): string {
+  return `${chainId}:${pluginUri}:${paramIndex}`
+}
+
+function readNumber(value: unknown, fallback: number): number {
+  return typeof value === 'number' && Number.isFinite(value) ? value : fallback
+}
+
+function readBoolean(value: unknown, fallback: boolean): boolean {
+  return typeof value === 'boolean' ? value : fallback
+}
+
+function readString(value: unknown): string | null {
+  return typeof value === 'string' ? value : null
+}
+
+function readChannelNumber(value: unknown): number | null {
+  if (typeof value === 'number' && Number.isFinite(value)) return value
+  return null
+}
+
+function readCurve(value: unknown): MIDICurveType {
+  return value === 'logarithmic' || value === 'exponential' || value === 's_curve'
+    ? value
+    : 'linear'
+}
+
+// Adapt a canonical MidiBindingRead (consumer_type='plugin_param',
+// source_type='midi_cc') into the legacy-shaped PanelMapping that this
+// panel's render pipeline still expects. Inverse of `buildCreatePayload`.
+function canonicalToPanelMapping(
+  binding: MidiBindingRead,
+  parameterMin: number,
+  parameterMax: number,
+): PanelMapping {
+  const source = binding.source_descriptor ?? {}
+  const target = binding.target_descriptor ?? {}
+  const chainIdRaw = (target as Record<string, unknown>).chain_id
+  const chainId = typeof chainIdRaw === 'number' && Number.isFinite(chainIdRaw) ? chainIdRaw : null
+  const feedbackEnabled = readBoolean((source as Record<string, unknown>).feedback_enabled, true)
+  const feedbackCcRaw = (source as Record<string, unknown>).feedback_cc
+  const feedbackCc = readChannelNumber(feedbackCcRaw)
+
+  return {
+    id: binding.binding_id,
+    channel: readChannelNumber((source as Record<string, unknown>).channel) ?? 0,
+    cc: readNumber((source as Record<string, unknown>).cc, 0),
+    chain_id: chainId,
+    target_plugin_uri: readString((target as Record<string, unknown>).plugin_uri),
+    target_param_index: readChannelNumber((target as Record<string, unknown>).param_index),
+    target_param_symbol: readString((target as Record<string, unknown>).parameter_symbol),
+    min_val: readNumber((source as Record<string, unknown>).min, parameterMin),
+    max_val: readNumber((source as Record<string, unknown>).max, parameterMax),
+    curve_type: readCurve((source as Record<string, unknown>).curve),
+    invert: readBoolean((source as Record<string, unknown>).invert, false),
+    feedback_enabled: feedbackEnabled,
+    feedback_cc: feedbackCc,
+    name: binding.consumer_label ?? null,
+    is_enabled: binding.enabled,
+  }
 }
 
 const CURVE_OPTIONS: Array<{ value: MIDICurveType; label: string }> = [
@@ -120,7 +222,7 @@ function formatCurrentValue(parameter: PluginParameter, value: number): string {
   return Number.isInteger(value) ? `${value}` : value.toFixed(2)
 }
 
-function mappingRevisionKey(mapping: MIDIMappingV2 | null): string {
+function mappingRevisionKey(mapping: PanelMapping | null): string {
   if (!mapping) {
     return 'unmapped'
   }
@@ -165,10 +267,10 @@ function buildDraft(
 }
 
 function getEffectiveParameterMapping(
-  mappings: MIDIMappingV2[],
+  mappings: PanelMapping[],
   parameterIndex: number,
   chainId: number | null,
-): { mapping: MIDIMappingV2 | null; scope: DraftScope | null; hasGlobalCompanion: boolean } {
+): { mapping: PanelMapping | null; scope: DraftScope | null; hasGlobalCompanion: boolean } {
   const parameterMappings = mappings.filter((mapping) => mapping.target_param_index === parameterIndex)
   const chainMapping = chainId === null ? null : parameterMappings.find((mapping) => mapping.chain_id === chainId) ?? null
   const globalMapping = parameterMappings.find((mapping) => mapping.chain_id === null) ?? null
@@ -188,6 +290,7 @@ export function JuceGridSelectedBlockMidiPanel({
   plugin,
   meta,
   chainId,
+  activeSnapshotId,
   lastMidiEvent,
   midiLearnInProgress,
   midiLearnTarget,
@@ -204,9 +307,26 @@ export function JuceGridSelectedBlockMidiPanel({
   const [draft, setDraft] = useState<MidiDraft | null>(null)
   const [draftBaseline, setDraftBaseline] = useState<MidiDraft | null>(null)
 
+  // T2459-H8b — read from the canonical MidiBinding authority scoped to
+  // the active snapshot. Returns *every* plugin_param binding for this
+  // snapshot; we filter to the active plugin URI below. The wildcard
+  // `consumer_id=*` path (T2459-H10) is not used here because we already
+  // have a tighter scope filter; an exact-consumer-id query would
+  // miss bindings created via the Learn flow for other params on the
+  // same plugin.
   const mappingsQuery = useQuery({
-    queryKey: ['midi', 'mappings', 'selected-block-panel', plugin.uri],
-    queryFn: () => midiApiV2.getMappings({ plugin_uri: plugin.uri }),
+    queryKey: ['midi', 'bindings', 'selected-block-panel', activeSnapshotId, plugin.uri],
+    queryFn: async () => {
+      if (activeSnapshotId == null) {
+        return [] as MidiBindingRead[]
+      }
+      return midiBindingsApi.list({
+        consumer_type: 'plugin_param',
+        scope: 'snapshot',
+        scope_id: String(activeSnapshotId),
+      })
+    },
+    enabled: activeSnapshotId != null,
   })
 
   const invalidateMidiQueries = useCallback(() => {
@@ -214,7 +334,7 @@ export function JuceGridSelectedBlockMidiPanel({
   }, [queryClient])
 
   const createMappingMutation = useMutation({
-    mutationFn: (payload: Partial<MIDIMappingV2>) => midiApiV2.createMapping(payload),
+    mutationFn: (payload: MidiBindingCreate) => midiBindingsApi.create(payload),
     onSuccess: () => {
       invalidateMidiQueries()
       pushToast('MIDI mapping created', 'success')
@@ -225,7 +345,7 @@ export function JuceGridSelectedBlockMidiPanel({
   })
 
   const updateMappingMutation = useMutation({
-    mutationFn: ({ id, updates }: { id: number; updates: Partial<MIDIMappingV2> }) => midiApiV2.updateMapping(id, updates),
+    mutationFn: ({ id, patch }: { id: string; patch: MidiBindingUpdate }) => midiBindingsApi.update(id, patch),
     onSuccess: () => {
       invalidateMidiQueries()
       pushToast('MIDI mapping updated', 'success')
@@ -236,7 +356,7 @@ export function JuceGridSelectedBlockMidiPanel({
   })
 
   const deleteMappingMutation = useMutation({
-    mutationFn: (mappingId: number) => midiApiV2.deleteMapping(mappingId),
+    mutationFn: (bindingId: string) => midiBindingsApi.delete(bindingId),
     onSuccess: () => {
       invalidateMidiQueries()
       pushToast('MIDI mapping removed', 'info')
@@ -246,33 +366,47 @@ export function JuceGridSelectedBlockMidiPanel({
     },
   })
 
+  // T2459-H8b-1 — test-ride feedback has no canonical equivalent yet.
+  // Keeping the mutation surface but disabled at the button layer
+  // (see disabled prop on Heel/Live/Toe buttons) so the operator gets
+  // a deterministic "pending canonical authority" toast rather than a
+  // 404 from a stale legacy endpoint that no longer has matching rows.
   const testMappingMutation = useMutation({
-    mutationFn: ({
-      mappingId,
-      mode,
-    }: {
-      mappingId: number
-      mode: TestRideMode
-    }) => midiApiV2.testMappingFeedback(
-      mappingId,
-      mode === 'live'
-        ? { use_current_value: true }
-        : { normalized_value: mode === 'heel' ? 0 : 1 },
-    ),
-    onSuccess: (result) => {
-      pushToast(`Sent CC ${result.cc} on Ch ${result.channel} with value ${result.cc_value}`, 'success')
+    mutationFn: async (_args: { bindingId: string; mode: TestRideMode }) => {
+      void _args
+      throw new Error('Test-ride feedback pending canonical authority endpoint (T2459-H8b-1).')
     },
     onError: (error) => {
-      pushToast(error instanceof Error ? error.message : 'Failed to send MIDI feedback test', 'error')
+      pushToast(error instanceof Error ? error.message : 'Test-ride feedback unavailable', 'warn')
     },
   })
 
-  const relevantMappings = useMemo(() => {
-    const pluginMappings = (mappingsQuery.data?.mappings ?? []).filter((mapping) => mapping.target_plugin_uri === plugin.uri)
-    return pluginMappings.filter((mapping) => (
+  const relevantMappings = useMemo<PanelMapping[]>(() => {
+    const bindings = mappingsQuery.data ?? []
+    const adapted = bindings
+      .filter((binding) => {
+        const target = binding.target_descriptor ?? {}
+        return (target as Record<string, unknown>).plugin_uri === plugin.uri
+      })
+      .map((binding) => {
+        // Resolve parameter min/max from the plugin metadata so the
+        // adapter can fall back when source_descriptor omits the field
+        // (older bindings authored before this slice).
+        const target = binding.target_descriptor ?? {}
+        const paramIndex = (target as Record<string, unknown>).param_index
+        const param = typeof paramIndex === 'number'
+          ? meta.parameters.find((p) => p.index === paramIndex)
+          : undefined
+        return canonicalToPanelMapping(
+          binding,
+          param?.min ?? 0,
+          param?.max ?? 1,
+        )
+      })
+    return adapted.filter((mapping) => (
       mapping.chain_id === null || (chainId !== null && mapping.chain_id === chainId)
     ))
-  }, [chainId, mappingsQuery.data?.mappings, plugin.uri])
+  }, [chainId, mappingsQuery.data, meta.parameters, plugin.uri])
 
   const rows = useMemo<ParameterMappingRow[]>(() => (
     meta.parameters.map((parameter) => {
@@ -374,31 +508,73 @@ export function JuceGridSelectedBlockMidiPanel({
       pushToast('Select an active chain before creating a per-chain mapping', 'warn')
       return
     }
+    if (activeSnapshotId == null) {
+      pushToast('Open a snapshot before saving a MIDI mapping', 'warn')
+      return
+    }
 
-    const payload: Partial<MIDIMappingV2> = {
+    const effectiveChainId = draft.scope === 'chain' ? chainId : null
+    // Canonical bindings live under a single consumer_id derived from
+    // (chain_id, plugin_uri, param_index). Global-scope mappings use
+    // chain_id=0 in the consumer_id (sentinel) so per-chain and global
+    // mappings for the same plugin/param don't collide.
+    const consumerIdChain = effectiveChainId ?? 0
+    const consumerId = makePluginParamConsumerId(
+      consumerIdChain,
+      plugin.uri,
+      selectedRow.parameter.index,
+    )
+
+    const sourceDescriptor: Record<string, unknown> = {
       cc,
       channel,
-      chain_id: draft.scope === 'chain' ? chainId : null,
-      target_plugin_uri: plugin.uri,
-      target_param_index: selectedRow.parameter.index,
-      target_param_symbol: selectedRow.parameter.symbol,
-      min_val: minVal,
-      max_val: maxVal,
-      curve_type: draft.curve,
+      min: minVal,
+      max: maxVal,
+      curve: draft.curve,
       invert: draft.invert,
       feedback_enabled: draft.feedbackEnabled,
       feedback_cc: draft.feedbackEnabled ? feedbackCc : null,
-      is_enabled: draft.isEnabled,
-      name: `${displayPluginName} - ${selectedRow.parameter.name}`,
+    }
+    const targetDescriptor: Record<string, unknown> = {
+      chain_id: effectiveChainId,
+      plugin_uri: plugin.uri,
+      param_index: selectedRow.parameter.index,
+      parameter_symbol: selectedRow.parameter.symbol,
     }
 
     if (selectedMapping) {
-      updateMappingMutation.mutate({ id: selectedMapping.id, updates: payload })
+      const patch: MidiBindingUpdate = {
+        consumer_label: `${displayPluginName} - ${selectedRow.parameter.name}`,
+        source_descriptor: sourceDescriptor,
+        target_descriptor: targetDescriptor,
+        scope: 'snapshot',
+        scope_id: String(activeSnapshotId),
+        enabled: draft.isEnabled,
+        source: 'snapshot-editor',
+        modified_by: 'snapshot-editor',
+      }
+      updateMappingMutation.mutate({ id: selectedMapping.id, patch })
       return
+    }
+
+    const payload: MidiBindingCreate = {
+      consumer_type: 'plugin_param',
+      consumer_id: consumerId,
+      consumer_label: `${displayPluginName} - ${selectedRow.parameter.name}`,
+      source_type: 'midi_cc',
+      source_descriptor: sourceDescriptor,
+      target_type: 'engine_param',
+      target_descriptor: targetDescriptor,
+      scope: 'snapshot',
+      scope_id: String(activeSnapshotId),
+      enabled: draft.isEnabled,
+      source: 'snapshot-editor',
+      created_by: 'snapshot-editor',
     }
 
     createMappingMutation.mutate(payload)
   }, [
+    activeSnapshotId,
     chainId,
     createMappingMutation,
     displayPluginName,
@@ -437,7 +613,7 @@ export function JuceGridSelectedBlockMidiPanel({
       pushToast('Save mapping changes before sending a test ride', 'warn')
       return
     }
-    testMappingMutation.mutate({ mappingId: selectedMapping.id, mode })
+    testMappingMutation.mutate({ bindingId: selectedMapping.id, mode })
   }, [draftDirty, pushToast, selectedMapping, testMappingMutation])
 
   if (meta.parameters.length === 0) {
