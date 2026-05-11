@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1588** Python | **1625** TypeScript | **211** C++/H | **149** Docs | **4234** total commits | **4** stars | **0** forks | **0** open issues
+**1588** Python | **1640** TypeScript | **211** C++/H | **149** Docs | **4236** total commits | **4** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`cf7fd663`](https://github.com/matthewmackes/map2-audio/commit/cf7fd6632031b11fd7df65b700a949dddc359c4c) | feat(daw): T2503-set10-promotion — collapse /daw into tie... | Map2 Audio | 2026-05-10 |
+| [`447cc714`](https://github.com/matthewmackes/map2-audio/commit/447cc7147c3b477d0c4c93882d9d8eab687bb1b3) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-11 |
 | [`6605231f`](https://github.com/matthewmackes/map2-audio/commit/6605231f4789dafa503747a7ae2ec198ff52d40f) | docs(worklist): close T2459-H8; file T2459-H8b / T2459-H9... | Map2 Audio | 2026-05-10 |
 | [`1d65ec66`](https://github.com/matthewmackes/map2-audio/commit/1d65ec660a3757c2652dd626a6dc3e8a197537e8) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-10 |
 | [`b138bfc8`](https://github.com/matthewmackes/map2-audio/commit/b138bfc84f1e702791429c9b16d321ea561078f2) | feat(snapshot-editor): T2459-H8 — cutover effect-param MI... | Map2 Audio | 2026-05-10 |
 | [`1a17b81f`](https://github.com/matthewmackes/map2-audio/commit/1a17b81fc5bef82fab3159810866db99f84c3707) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-10 |
 | [`4862113c`](https://github.com/matthewmackes/map2-audio/commit/4862113ce2ab26d03c40f8ee6aa9baf7b44b80f5) | feat(nav): add MultiTrack Recorder top-level entry — DAW ... | Map2 Audio | 2026-05-10 |
 | [`6afe3469`](https://github.com/matthewmackes/map2-audio/commit/6afe346923b5b88953904aa2dfaca090ef4275e8) | feat(snapshot-editor): T2505 — channel-header column fits... | Map2 Audio | 2026-05-10 |
-| [`6c22b3d8`](https://github.com/matthewmackes/map2-audio/commit/6c22b3d8ed58f8ac06bddf68204ddc77000d05bd) | fix(snapshot-editor): drop UCG total-width cap so cards a... | Map2 Audio | 2026-05-10 |
-| [`0a8109f4`](https://github.com/matthewmackes/map2-audio/commit/0a8109f4fa57cab7b1c25bd3dc226e26fe997335) | feat(snapshot-editor): T2504 — fluid slot widths + blocks... | Map2 Audio | 2026-05-10 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
