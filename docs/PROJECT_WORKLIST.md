@@ -2113,6 +2113,18 @@ Cycle 5 — RecorderService class SHIPPED. New `app/services/recorder_service.py
 - Singleton: `get_recorder_service()` for production wiring; `set_recorder_service()` test seam.
 - New `tests/test_recorder_service.py`: 24 pytest cases covering topic constant, verb enum alignment with dispatcher targets, arm path (basic + tap_matrix normalization + invalid snapshot_id rejection + snapshot_id=0 accept), roll path (transition + idempotent + stopped-rejection + unknown-session rejection), stop path (from rolling + from armed + idempotent + unknown-session rejection), disarm path (removes record + final STOPPED broadcast + silent no-op on unknown), GET path (no side effects + list filter post-disarm), transport/broadcaster injection (no-transport silent no-op + transport-exception isolation + broadcaster-exception isolation), WS payload shape parity, multi-session isolation under interleaved arm/roll/stop. **24/24 green.**
 
+Cycle 14 — T2508 integration smoke test SHIPPED:
+- New `tests/test_recorder_integration.py` (~140 LoC). End-to-end tests against the real `app.main.app` instance via `httpx.ASGITransport`:
+  - Route registration pins: 6 recorder lifecycle routes mount at `/api/v1/recorder/sessions[/{id}/{verb}]`; 4 recordings registry routes mount at `/api/recordings[/{hash}[/wav|/metadata]]`. Catches regressions where the `route_modules` auto-loader misses an entry.
+  - Operation-id uniqueness across both routers — pins against the contract-standards requirement that ids are globally unique. Catches collisions when new routes ship.
+  - Full lifecycle smoke: arm (201, ARMED) → list (count=1) → roll (200, ROLLING) → stop (200, STOPPED) → disarm (204) → list (count=0).
+  - Recordings registry: list returns `{recordings: [], count: 0}` cleanly (200, not 500/404) when no rows seeded.
+  - Error envelope: stopped → roll surfaces the service's `invalid_state` error code as HTTP 409.
+  - Unknown session: roll/stop/get all return 404; delete returns silent 204 (idempotent cleanup).
+- Wider sweep: 133/133 green across all 9 recorder test files + graph recording + dispatcher + readiness probe.
+- Added a project memory file `/home/mm/.claude/projects/-home-mm-map2-audio/memory/project_t2504_multi_track_recorder.md` capturing the full T2504 architecture + status snapshot + key files + topic/verbs + RT-safety constraint. Future sessions inherit the institutional knowledge.
+- MEMORY.md index updated to point at the new project entry.
+
 Cycle 13 — T2509-4 RecordingPanel component SHIPPED (Carbon-styled live session control):
 - New `web/src/app/components/Recordings/RecordingPanel.{tsx,css,test.tsx}`. Standalone Carbon-conformant panel for the snapshot editor's live-session UX: 4-state UI (idle / armed / rolling / stopped), connection badge tied to `useRecorderSession.isConnected`, state-driven button surface (Arm session → Start rolling + Disarm → Stop → Release session), Session ID + timestamps + tap count metadata block.
 - Component is library-ready but not yet mounted on a route. The future mount point inside the snapshot editor chain row (or the live session bar) lands in a follow-on cycle — keeping the standalone slice tested first protects the monolith integration.
