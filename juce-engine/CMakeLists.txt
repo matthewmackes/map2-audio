@@ -259,6 +259,9 @@ set(SOURCES
     # Core engine
     Source/Map2AudioEngine.cpp
 
+    # T2507 — Multi-track recorder (engine-level v1; per-chain v2 follow-on).
+    Source/Recorder/IoUringWriter.cpp
+
     # JUCE-based components (new)
     Source/JuceAudioIO.cpp
     Source/JucePluginHost.cpp
@@ -848,6 +851,8 @@ if(BUILD_RECORDER_TESTS)
         tests/RecordingTapTests.cpp
         tests/TapNodeTests.cpp
         tests/EngineRecorderTests.cpp
+        tests/IoUringWriterTests.cpp
+        Source/Recorder/IoUringWriter.cpp
     )
     add_executable(recorder_tests ${RECORDER_TESTS_SOURCES})
     target_compile_definitions(recorder_tests PRIVATE
@@ -859,12 +864,14 @@ if(BUILD_RECORDER_TESTS)
     )
     target_include_directories(recorder_tests PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/Source
+        ${LIBURING_INCLUDE_DIRS}
     )
     target_link_libraries(recorder_tests PRIVATE
         Catch2::Catch2WithMain
         juce::juce_audio_basics
         juce::juce_audio_processors
         juce::juce_core
+        ${LIBURING_LIBRARIES}
     )
     add_test(NAME recorder_tests COMMAND recorder_tests)
 
