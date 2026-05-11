@@ -91,6 +91,16 @@ if(UNIX AND NOT APPLE)
     pkg_check_modules(ALSA REQUIRED alsa)
 endif()
 
+# T2507 — io_uring for the multi-track recorder writer.
+# Operator decision (2026-05-11): assume kernel >= 6.10. No
+# thread-pool fallback path. liburing 2.x ships everywhere we run.
+# If a future deployment lands on a host with kernel < 6.10 the
+# recorder taps will refuse to arm at runtime with a clear log line;
+# the rest of the engine still works.
+if(UNIX AND NOT APPLE)
+    pkg_check_modules(LIBURING REQUIRED liburing)
+endif()
+
 # JACK (optional) - now provided by PipeWire JACK compatibility layer
 # PipeWire provides libjack.so.0 in /usr/lib64/pipewire-0.3/jack/
 pkg_check_modules(JACK jack QUIET)
@@ -487,6 +497,8 @@ if(UNIX AND NOT APPLE)
     if(JACK_FOUND AND JACK_INCLUDE_DIRS)
         target_include_directories(map2_audio_engine PRIVATE ${JACK_INCLUDE_DIRS})
     endif()
+    # T2507 — liburing headers for the recorder writer.
+    target_include_directories(map2_audio_engine PRIVATE ${LIBURING_INCLUDE_DIRS})
 endif()
 
 # NAM include directories
@@ -537,6 +549,9 @@ target_link_libraries(map2_audio_engine PRIVATE
 
 if(UNIX AND NOT APPLE)
     target_link_libraries(map2_audio_engine PRIVATE ${ALSA_LIBRARIES})
+    # T2507 — liburing link (recorder writer). Single shared library;
+    # no static linkage required.
+    target_link_libraries(map2_audio_engine PRIVATE ${LIBURING_LIBRARIES})
 endif()
 
 if(JACK_FOUND)

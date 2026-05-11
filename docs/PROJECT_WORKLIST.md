@@ -2043,8 +2043,14 @@ Last updated: 2026-05-11 — Claude.
 
 ID: T2507
 Parent: T2504
-Status: [ ] Todo
+Status: [>] In Progress
 Title: Insert pre-FX and post-FX tap nodes per chain in the live `juce::AudioProcessorGraph`. SPSC ring → io_uring disk writer.
+
+RT-safety review (2026-05-11 — locked by operator before any C++ shipped):
+  - **Ring**: 16 frames × 1024 samples (~340 ms cushion at 48k, ~128 KB per tap; ~2 MB per session at 8 chains × 2 taps). Matches the existing metering-ring pattern (`juce::AbstractFifo` + `std::array<Frame, RING_SIZE>`) — zero allocations in the audio callback.
+  - **Disk writer**: io_uring only. **Kernel floor: 6.10**. No thread-pool fallback — the operator chose to skip the dual-path complexity. If a deployment lands on a host with kernel < 6.10 the recorder refuses to arm at runtime with a clear log line; the rest of the engine still works. Bench is kernel 6.18.5; the build links liburing 2.9 via pkg-config.
+  - **Overflow policy**: drop-newest + bump `ringOverflowCount_`. Audio thread NEVER blocks. The live signal keeps flowing; the recording marks the gap in the sidecar JSON. Matches JUCE's metering-ring convention.
+  - **Bench gate**: standard 30-min soak, all chains armed, 0 xruns, <0.35 ms peak jitter. Evidence under `docs/fit-for-purpose-evidence/<date>/t2507-recording-taps-rt/`.
 
 Description:
 - Goal: Modify `Map2AudioEngine`'s `juce::AudioProcessorGraph` construction to insert a tap node at each chain's pre-FX input and post-FX output. Tap nodes are zero-cost passthrough when no session is armed; when armed, they fan-out a copy to a per-tap SPSC ring buffer. Disk writers consume rings via io_uring submitted from the audio thread itself (R3.A2). RT-safe by construction: no locks, no allocations on the audio thread.
@@ -2053,10 +2059,10 @@ Description:
 - Estimated effort: 4-5 cycles (RT-safety review required).
 
 Sub-tasks:
-- `T2507-1` — `juce-engine/Source/Recorder/RecordingTap.{h,cpp}` — SPSC ring buffer per tap (pattern matches `Common.h` metering ring). Lock-free, fixed-size (default 4096 samples), wraparound semantics. Bench: ring write cost <50 ns under contention.
+- `T2507-1` — `juce-engine/Source/Recorder/RecordingTap.{h,cpp}` — SPSC ring buffer per tap, exactly matching the existing metering-ring pattern (`juce::AbstractFifo` + `std::array<Frame, 16>` of pre-allocated 1024-sample frames). Lock-free, fixed-size 16 × 1024 = 16384 samples per tap, drop-newest overflow + `ringOverflowCount_` counter. Bench: ring write cost <50 ns under contention (audio thread side only; no kernel calls).
 - `T2507-2` — `juce-engine/Source/Recorder/TapNode.{h,cpp}` — `juce::AudioProcessor` subclass that copies its input buffer into the SPSC ring when `armed.load(std::memory_order_acquire)` is true, then passes the buffer through unchanged. Zero-cost when disarmed.
 - `T2507-3` — Modify `Map2AudioEngine`'s graph builder to insert one `TapNode` before each chain's first plugin and one after the chain's last plugin. Tap pairs are addressable by `chain_id` from the snapshot intent.
-- `T2507-4` — `juce-engine/Source/Recorder/IoUringWriter.{h,cpp}` — io_uring submission queue + completion handling. Submit batched writes at audio-callback end. Queue depth ≥ 8 × (chain_count × 2 taps). Fallback to thread-pool writer if kernel <5.6 or io_uring init fails.
+- `T2507-4` — `juce-engine/Source/Recorder/IoUringWriter.{h,cpp}` — io_uring submission queue + completion handling. Submit batched writes from the writer thread (NOT the audio callback — only the SPSC ring read from the audio thread, all kernel calls live on a dedicated writer thread). Queue depth ≥ 8 × (chain_count × 2 taps). **No thread-pool fallback** (operator decision 2026-05-11; kernel floor 6.10). If `io_uring_queue_init` returns ENOSYS or the kernel rejects the SQE flags, the recorder logs and refuses to arm — the rest of the engine keeps running.
 - `T2507-5` — `juce-engine/Source/Recorder/RecorderService.{h,cpp}` — owns session lifecycle, ring → io_uring plumbing, sidecar JSON generation. Listens on the `engine_command` dispatcher for `recorder.arm`, `recorder.disarm`, `recorder.roll`, `recorder.stop`, `recorder.status`.
 - `T2507-6` — Automation capture: subscribe to the existing parameter-change broadcast inside the engine, write JSON-Lines to `<session_id>/automation.jsonl` keyed by `(timestamp_samples, chain_id, plugin_id, param_id, value_f32)`. JSONL writer also goes through io_uring.
 - `T2507-7` — RT-safety review: run the existing soak harness with recording armed for all chains. Acceptance gate: 0 xruns / <0.35 ms peak jitter / 30 min. Evidence under `docs/fit-for-purpose-evidence/<date>/t2507-recording-taps-rt/`.
