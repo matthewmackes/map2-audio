@@ -734,6 +734,12 @@ Map2AudioEngine::Map2AudioEngine() {
             return setParameterByName(instanceId, name, value);
         }
     );
+    // T2507-3 — engine-level recorder hooks. Always constructed so
+    // audioCallback can call the hooks unconditionally. Stays dormant
+    // (armed_ == false) until the operator-facing RecorderService
+    // arms it; the disarmed hot path is one atomic load + branch
+    // (industry-standard pattern; see EngineRecorder.h).
+    engineRecorder_ = std::make_unique<map2::recorder::EngineRecorder>();
 }
 
 Map2AudioEngine::~Map2AudioEngine() {
@@ -2324,6 +2330,12 @@ void Map2AudioEngine::audioCallback(const float* const* inputs, int numInputs,
                                               numInputs, numOutputs);
     }
 
+    // T2507-3 — pre-FX recorder hook. RT-safe; disarmed cost is one
+    // atomic load + branch. See Recorder/EngineRecorder.h.
+    if (engineRecorder_) {
+        engineRecorder_->capturePreFx(buffer);
+    }
+
     // Process through plugin graph (includes automatic PDC)
     audioGraph_->process(buffer, midiBuffer);
     if (graphCrossfadeInputBuffer_.getNumChannels() >= processChannels
@@ -2471,6 +2483,15 @@ void Map2AudioEngine::audioCallback(const float* const* inputs, int numInputs,
                 }
             }
         }
+    }
+
+    // T2507-3 — post-FX recorder hook. Mirrors the pre-FX hook
+    // sited before audioGraph_->process(); together they form the
+    // engine-level capture pair. Advances the shared sample
+    // counter inside capturePostFx so pre/post share the same
+    // startSampleIndex for the buffer they processed.
+    if (engineRecorder_) {
+        engineRecorder_->capturePostFx(buffer);
     }
 
     // Push to metering thread (Option 3 - OFF audio thread)

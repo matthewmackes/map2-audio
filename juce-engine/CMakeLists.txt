@@ -847,6 +847,7 @@ if(BUILD_RECORDER_TESTS)
     set(RECORDER_TESTS_SOURCES
         tests/RecordingTapTests.cpp
         tests/TapNodeTests.cpp
+        tests/EngineRecorderTests.cpp
     )
     add_executable(recorder_tests ${RECORDER_TESTS_SOURCES})
     target_compile_definitions(recorder_tests PRIVATE

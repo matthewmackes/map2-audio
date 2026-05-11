@@ -21,6 +21,7 @@
 #include "VuMeter.h"
 #include "ParameterBridge.h"
 #include "SnapshotManager.h"
+#include "Recorder/EngineRecorder.h"  // T2507-3
 
 #ifdef HAS_NAM
 #include "NAMProcessor.h"
@@ -1699,6 +1700,27 @@ private:
     // Metering thread entry point
     void meteringThreadFunc();
     void pushMeteringData(const juce::AudioBuffer<float>& buffer);
+
+    // T2507-3 — engine-level recorder hooks. Disarmed by default;
+    // when armed (via the operator-facing RecorderService in T2507-5),
+    // capturePreFx() + capturePostFx() are called inside audioCallback
+    // and fan the buffers out to two SPSC rings (T2507-1). The writer
+    // thread (T2507-4) drains the rings and writes WAV files.
+    // Lifecycle: constructed unconditionally in the Map2AudioEngine
+    // ctor so the audioCallback always has a valid pointer; remains
+    // dormant + zero-cost until the operator arms it.
+    std::unique_ptr<map2::recorder::EngineRecorder> engineRecorder_;
+
+public:
+    /// Non-owning accessor for the operator-facing RecorderService
+    /// (T2507-5). Returns nullptr if the engine has not finished
+    /// constructing the recorder (defensive — should not happen
+    /// in practice).
+    map2::recorder::EngineRecorder* engineRecorder() noexcept {
+        return engineRecorder_.get();
+    }
+
+private:
 
     // Existing Components
     MidiHandler midiHandler_;
