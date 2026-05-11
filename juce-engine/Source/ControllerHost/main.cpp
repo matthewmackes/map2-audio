@@ -666,7 +666,13 @@ int run_main_loop (const std::string& socket_path)
         return 1;
     }
 
-    if (::listen (listen_fd, 1) < 0)
+    // T2459-H9 — bump the kernel accept queue from 1 to 16. With backlog=1,
+    // any probe that piles up while the daemon is mid-serve (initialising
+    // libremidi, building shm rings) was rejected with EAGAIN, presenting
+    // as a "daemon unreachable" wedge to the backend. 16 gives ample
+    // headroom for probe storms (is_daemon_available() + the real backend
+    // reconnect) without ever falling over.
+    if (::listen (listen_fd, 16) < 0)
     {
         std::cerr << "[map2-controller-host] listen() failed: " << std::strerror (errno) << "\n";
         ::close (listen_fd);
@@ -679,6 +685,109 @@ int run_main_loop (const std::string& socket_path)
     mapping_engine.initialise();
     std::unordered_map<std::string, std::unordered_map<std::string, std::string>> controller_script_cache;
 
+    // T2459-H9 — hoist the heavy per-process MIDI setup out of the
+    // accept loop. Previously each new backend connection re-ran the
+    // libremidi probe order and recreated shm rings, which took >2s
+    // and caused the next inbound connect to time out at the probe
+    // layer's 2.0s recv() deadline (see MidiHostClient._roundtrip).
+    // Doing this once at process start means every accept now hits
+    // poll() in single-digit microseconds.
+    //
+    // T2459-H1 — instantiate the MIDI backend and run the locked probe
+    // order (JACK MIDI → PipeWire → ALSA seq → ALSA raw). Failure is
+    // non-fatal here: the host still serves other IPC, and a list_ports
+    // request will respond with backend = "none" + an empty port list.
+    map2::controller_host::Map2MidiBackend midiBackend;
+
+    // T2459-H7-PW-UMP — Path 4. When MAP2_MIDI_BACKEND_FORCE is set
+    // (typically by app/services/controller_host_pipewire_substrate.py
+    // after detecting the PipeWire 1.4.10 UMP-MIDI2 → MIDI 1.0 bridge
+    // gap), bypass the locked probe order and bind the requested
+    // backend directly. This is what makes the legacy MIDI 1.0 device
+    // path work on PipeWire-1.4.10+ hosts without an aconnect dance.
+    // Unrecognized values fall through to probe() so the host doesn't
+    // hard-fail on a typo. See docs/midi/MIDI_BACKEND.md §10.
+    bool forced = false;
+    if (const char* override_raw = std::getenv ("MAP2_MIDI_BACKEND_FORCE"))
+    {
+        std::string override_lc = override_raw;
+        std::transform (override_lc.begin(), override_lc.end(), override_lc.begin(),
+                        [] (unsigned char c) { return std::tolower (c); });
+        using MB = map2::controller_host::MidiBackend;
+        std::optional<MB> requested;
+        if (override_lc == "jack" || override_lc == "jack_midi" || override_lc == "jackmidi")
+            requested = MB::JackMidi;
+        else if (override_lc == "pipewire" || override_lc == "pipewire_native")
+            requested = MB::PipewireNative;
+        else if (override_lc == "alsa" || override_lc == "alsa_seq" || override_lc == "alsaseq")
+            requested = MB::AlsaSeq;
+        else if (override_lc == "alsa_raw" || override_lc == "alsaraw")
+            requested = MB::AlsaRaw;
+
+        if (requested.has_value())
+        {
+            std::cerr << "[map2-controller-host] MAP2_MIDI_BACKEND_FORCE="
+                      << override_raw << " — bypassing probe order\n";
+            if (midiBackend.forceSelect (*requested))
+            {
+                forced = true;
+                std::cerr << "[map2-controller-host] midi backend = "
+                          << map2::controller_host::Map2MidiBackend::backendName (
+                                 midiBackend.selectedBackend())
+                          << " (forced)\n";
+            }
+            else
+            {
+                std::cerr << "[map2-controller-host] forceSelect failed; "
+                             "falling back to probe order\n";
+            }
+        }
+        else
+        {
+            std::cerr << "[map2-controller-host] MAP2_MIDI_BACKEND_FORCE="
+                      << override_raw << " — unrecognized value; "
+                      << "expected one of jack|pipewire|alsa_seq|alsa_raw\n";
+        }
+    }
+
+    if (! forced && ! midiBackend.probe())
+        std::cerr << "[map2-controller-host] MIDI backend probe failed; "
+                     "all MIDI requests will return empty\n";
+    else if (! forced)
+        std::cerr << "[map2-controller-host] midi backend = "
+                  << map2::controller_host::Map2MidiBackend::backendName (
+                         midiBackend.selectedBackend())
+                  << "\n";
+
+    // T2459-H3 Slice 5 — create the shm rings and wire them to the
+    // libremidi adapter so live inbound MIDI is producer-pushed by the
+    // libremidi I/O thread and consumer-popped by this main loop.
+    // T2459-H9 — rings are now process-scoped (one set for the entire
+    // daemon lifetime) so subsequent backend reconnects don't pay the
+    // shm-create cost that previously stalled per-accept setup. PID-
+    // based naming still prevents host-instance collisions.
+    const std::string rt_shm_name      = "/map2-controller-host.midi.rt." + std::to_string (::getpid());
+    const std::string control_shm_name = "/map2-controller-host.midi.control." + std::to_string (::getpid());
+    map2::controller_host::ShmEventRing rtRing;
+    map2::controller_host::ShmEventRing controlRing;
+    const bool rt_ok = rtRing.open (rt_shm_name,
+                                     map2::controller_host::kRtRingDefaultCapacity,
+                                     map2::controller_host::ShmEventRing::Mode::CreateOwned);
+    const bool ctl_ok = controlRing.open (control_shm_name,
+                                            map2::controller_host::kControlRingDefaultCapacity,
+                                            map2::controller_host::ShmEventRing::Mode::CreateOwned);
+    if (! rt_ok || ! ctl_ok)
+        std::cerr << "[map2-controller-host] shm ring open failed: rt="
+                  << rtRing.errorMessage() << " control=" << controlRing.errorMessage() << "\n";
+    if (auto* adapter = midiBackend.adapter(); adapter != nullptr)
+        adapter->setEventRings (rt_ok ? &rtRing : nullptr, ctl_ok ? &controlRing : nullptr);
+
+    // T2459-H9 — accept loop. Each accept now hits a fully-warm daemon
+    // (backend + rings + mapping engine all live), so probe round-trips
+    // settle in microseconds instead of waiting on a 2-second probe
+    // order. Per-connection state (port → controller key map, 1-based
+    // index table, active controller key) stays inside the accept body
+    // — it encodes the backend's per-session expectations.
     while (! g_shutdownRequested.load (std::memory_order_acquire))
     {
         int client_fd = ::accept (listen_fd, nullptr, nullptr);
@@ -691,94 +800,6 @@ int run_main_loop (const std::string& socket_path)
         }
 
         std::cerr << "[map2-controller-host] backend connected\n";
-
-        // T2459-H1 — instantiate the MIDI backend on first connection and
-        // run the locked probe order (JACK MIDI → PipeWire → ALSA seq →
-        // ALSA raw). Failure is non-fatal here: the host still serves
-        // other IPC, and a list_ports request will respond with backend
-        // = "none" + an empty port list.
-        map2::controller_host::Map2MidiBackend midiBackend;
-
-        // T2459-H7-PW-UMP — Path 4. When MAP2_MIDI_BACKEND_FORCE is set
-        // (typically by app/services/controller_host_pipewire_substrate.py
-        // after detecting the PipeWire 1.4.10 UMP-MIDI2 → MIDI 1.0 bridge
-        // gap), bypass the locked probe order and bind the requested
-        // backend directly. This is what makes the legacy MIDI 1.0 device
-        // path work on PipeWire-1.4.10+ hosts without an aconnect dance.
-        // Unrecognized values fall through to probe() so the host doesn't
-        // hard-fail on a typo. See docs/midi/MIDI_BACKEND.md §10.
-        bool forced = false;
-        if (const char* override_raw = std::getenv ("MAP2_MIDI_BACKEND_FORCE"))
-        {
-            std::string override_lc = override_raw;
-            std::transform (override_lc.begin(), override_lc.end(), override_lc.begin(),
-                            [] (unsigned char c) { return std::tolower (c); });
-            using MB = map2::controller_host::MidiBackend;
-            std::optional<MB> requested;
-            if (override_lc == "jack" || override_lc == "jack_midi" || override_lc == "jackmidi")
-                requested = MB::JackMidi;
-            else if (override_lc == "pipewire" || override_lc == "pipewire_native")
-                requested = MB::PipewireNative;
-            else if (override_lc == "alsa" || override_lc == "alsa_seq" || override_lc == "alsaseq")
-                requested = MB::AlsaSeq;
-            else if (override_lc == "alsa_raw" || override_lc == "alsaraw")
-                requested = MB::AlsaRaw;
-
-            if (requested.has_value())
-            {
-                std::cerr << "[map2-controller-host] MAP2_MIDI_BACKEND_FORCE="
-                          << override_raw << " — bypassing probe order\n";
-                if (midiBackend.forceSelect (*requested))
-                {
-                    forced = true;
-                    std::cerr << "[map2-controller-host] midi backend = "
-                              << map2::controller_host::Map2MidiBackend::backendName (
-                                     midiBackend.selectedBackend())
-                              << " (forced)\n";
-                }
-                else
-                {
-                    std::cerr << "[map2-controller-host] forceSelect failed; "
-                                 "falling back to probe order\n";
-                }
-            }
-            else
-            {
-                std::cerr << "[map2-controller-host] MAP2_MIDI_BACKEND_FORCE="
-                          << override_raw << " — unrecognized value; "
-                          << "expected one of jack|pipewire|alsa_seq|alsa_raw\n";
-            }
-        }
-
-        if (! forced && ! midiBackend.probe())
-            std::cerr << "[map2-controller-host] MIDI backend probe failed; "
-                         "all MIDI requests will return empty\n";
-        else if (! forced)
-            std::cerr << "[map2-controller-host] midi backend = "
-                      << map2::controller_host::Map2MidiBackend::backendName (
-                             midiBackend.selectedBackend())
-                      << "\n";
-
-        // T2459-H3 Slice 5 — create the per-connection shm rings and wire
-        // them to the libremidi adapter so live inbound MIDI is producer-
-        // pushed by the libremidi I/O thread and consumer-popped by this
-        // main loop. Per-connection naming keeps multiple host instances
-        // (e.g. tests) from racing on the same shm region.
-        const std::string rt_shm_name      = "/map2-controller-host.midi.rt." + std::to_string (::getpid());
-        const std::string control_shm_name = "/map2-controller-host.midi.control." + std::to_string (::getpid());
-        map2::controller_host::ShmEventRing rtRing;
-        map2::controller_host::ShmEventRing controlRing;
-        const bool rt_ok = rtRing.open (rt_shm_name,
-                                         map2::controller_host::kRtRingDefaultCapacity,
-                                         map2::controller_host::ShmEventRing::Mode::CreateOwned);
-        const bool ctl_ok = controlRing.open (control_shm_name,
-                                                map2::controller_host::kControlRingDefaultCapacity,
-                                                map2::controller_host::ShmEventRing::Mode::CreateOwned);
-        if (! rt_ok || ! ctl_ok)
-            std::cerr << "[map2-controller-host] shm ring open failed: rt="
-                      << rtRing.errorMessage() << " control=" << controlRing.errorMessage() << "\n";
-        if (auto* adapter = midiBackend.adapter(); adapter != nullptr)
-            adapter->setEventRings (rt_ok ? &rtRing : nullptr, ctl_ok ? &controlRing : nullptr);
 
         // T2459-H3 Slice 5 — port_id → controller_key map.
         // T2459-H3 Slice 6 — controller_keys_by_index_ is a 1-based table
