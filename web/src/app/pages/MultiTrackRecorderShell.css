@@ -1,0 +1,44 @@
+.multitrack-recorder-shell {
+  background: var(--shell-bg, #161616);
+  color: var(--cds-text-primary, #f4f4f4);
+  min-height: 100%;
+}
+
+.multitrack-recorder-shell__template {
+  height: 100%;
+}
+
+.multitrack-recorder-shell__frame {
+  /* WorkspacePageTemplate already owns the frame layout; this hook
+     exists for future surface-specific overrides. */
+}
+
+.multitrack-recorder-shell__content {
+  padding: 0;
+}
+
+.multitrack-recorder-shell__content-body {
+  display: flex;
+  flex-direction: column;
+  gap: 0;
+  min-height: 100%;
+}
+
+.multitrack-recorder-shell__flag-off {
+  background: var(--cds-notification-warning-background, #392b00);
+  color: var(--cds-text-primary, #f4f4f4);
+  border-left: 3px solid var(--cds-support-warning, #f1c21b);
+  padding: 10px 14px;
+  font-family: var(--shell-f-sans);
+  font-size: 13px;
+  line-height: 1.45;
+}
+
+.multitrack-recorder-shell__flag-off code {
+  background: var(--cds-layer-accent, #1e1e1e);
+  border: 1px solid var(--cds-border-subtle, #2a2a2a);
+  border-radius: 3px;
+  padding: 0 6px;
+  font-family: var(--shell-f-mono);
+  font-size: 11.5px;
+}

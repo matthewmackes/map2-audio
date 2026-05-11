@@ -1534,9 +1534,43 @@ Description:
 - Deliverables: `Daw/AvbBusNode.{h,cpp}` (one stream descriptor = one `juce::AudioProcessorGraph::Node`; `processBlock` reads/writes existing AVB ring buffers), `Daw/PluginScanner.{h,cpp}`, `app/services/plugin_inventory_service.py`, `web/src/map2/clients/plugin_inventory.ts`, pytest + C++ coverage.
 - Acceptance: AVB streams visible as graph nodes in the React reference UI; LV2 enumerated and instantiable; live engine + DAW share inventory.
 
-#### Set 10 — React DAW UI parity + soak harness + RT gate
-- Deliverables: `web/src/app/pages/DawPage.tsx` + Timeline / TrackList / PluginRack / Automation / Transport / ClipLauncher component tree; `.codex/skills/daw-soak/`; `scripts/run_daw_soak.py`; sample run captured pre-bench; final RT-gate section in `DAW_SERVICE.md`.
-- Acceptance: `/daw` route renders, loads project, fires transport; soak harness completes in flag-ON build; tier-1 declaration deferred until operator runs the 30-min UA-1000 soak.
+#### Set 10 — Tier-1 DAW UI (MultiTrack Recorder shell) — PROMOTED 2026-05-10
+- **Pivot context**: Set 10 ships ahead of Sets 7–9 (transport bridge / clip-launcher / AVB-LV2). The verb surface from Sets 3–6 is complete and round-trippable, so the operator-facing UI lands first; later sets populate already-built panels.
+- **Surface merger**: the standalone `/daw` reference page (DawPage.tsx) collapses into `/multitrack-recorder`. `/multitrack-recorder` is the canonical tier-1 entry point (already pinned hero in `GlobalTreeNav`); `/daw` becomes a permanent redirect for back-compat bookmarks.
+- **First-class platform reuse** (the four primitives this surface natively reuses):
+  1. `WorkspacePageTemplate` + `useSetShellWindow` + `MidiHubShell`-style child-route nesting → tier-1 shell shape, peer to MIDI Services.
+  2. `UnifiedChannelGrid` (T710) + new `trackToUnifiedRow` adapter → Mixer view operators already know.
+  3. `PluginCardRouter` (web/src/app/components/PluginCards/) → DAW PluginRack opens plugins in the same modal pattern as Snapshot Editor.
+  4. `useNodePageContext(NODE_PAGE_KEYS.daw)` + new `MultiTrackNodeScopeProvider` → DAW reads as a first-class node-scoped service (live or remote node).
+- **Sub-areas** (each is its own page component, lazy-loaded, mounted as a child route under `/multitrack-recorder/*`):
+  - `transport` — transport bar + sample-position read-out + event trace (ports DawTransportBar + DawTimeline + DawEventTrace)
+  - `tracks` — track list, arm, delete, type filter (ports DawTrackList)
+  - `mixer` — `UnifiedChannelGrid` populated from DAW tracks + meters via `useChainMeter('daw-track-<n>')`
+  - `clips` — clip-launcher grid (ports DawClipLauncher); fills out once Set 8 lands
+  - `plugins` — track-scoped plugin rack using `PluginCardRouter`; inventory via `pluginInventoryApi`
+  - `automation` — lane points editor (ports DawAutomationView); fills out as automation lanes hydrate from project.json
+  - `sessions` — project new / load / save UI on top of Set 5's `daw.project.*` verbs
+  - `export` — placeholder pending engine-side render verb (Set 9+)
+- **Shell status drawer**: mirrors `MidiHubHealthDrawer` shape. Surfaces DAW mode (live/daw), transition state, project name, track count, transport state. Polled via `useDawOverview` (2s `getMode` + WS events).
+- **Flag-OFF degradation**: when `daw_mode_available === false`, every sub-area renders inside the shell with a clear `InlineNotification` (warning) explaining the build flag. No mutation buttons are disabled-and-hidden — they remain visible and return the documented 503 envelope, so operators can see the full layout in a flag-OFF deployment.
+- **Deliverables**:
+  - `web/src/app/pages/MultiTrackRecorderShell.tsx` (replaces 42-line stub)
+  - `web/src/app/pages/multitrack-recorder/*Page.tsx` (8 sub-area pages)
+  - `web/src/app/components/MultiTrackRecorder/MultiTrackNodeScope.tsx`
+  - `web/src/app/components/MultiTrackRecorder/useDawOverview.ts`
+  - `web/src/app/components/MultiTrackRecorder/MultiTrackHealthDrawer.tsx`
+  - `web/src/app/components/MultiTrackRecorder/trackToUnifiedRow.ts`
+  - `web/src/app/App.tsx` — nested route declaration; `/daw` → `<Navigate to="/multitrack-recorder/transport" replace />`
+  - `web/src/app/utils/nodeDisplay.ts` — add `NODE_PAGE_KEYS.daw = 'daw'`
+  - DELETE: `web/src/app/pages/DawPage.tsx` + `DawPage.test.tsx` (logic absorbed; daw.ts client + daw.test.ts retained — they wrap the verb surface).
+  - Tests: shell-mounts test + one mount test per sub-area page (10 jest cases minimum).
+- **Acceptance**:
+  - `/multitrack-recorder` renders the shell + redirects to `/multitrack-recorder/transport`.
+  - All 8 sub-area routes load without runtime errors; flag-OFF state renders cleanly with the warning banner.
+  - `typecheck` + `jest` + `npm run build` all green; the `MultiTrackRecorder-*.js` bundle hash changes when source changes (per CLAUDE.md gotcha #9).
+  - Live verification: `curl -s http://localhost:3000/multitrack-recorder` returns the SPA shell; the new bundle is referenced.
+  - **Bench HIL gate `T2503-set10-bench` (operator-side, deferred)**: full UA-1000 flag-ON walk-through + 30-min soak captured under `docs/fit-for-purpose-evidence/<date>/t2503-set10-tier1-ui/`. Tier-1 declaration deferred until that gate completes. Sets 7–9 ship into this UI between Set 10 code-side completion and the bench gate.
+- **Note**: Sets 7–9 remain as filed. They populate panels Set 10 lays out (Set 7 → transport ↔ timeline, Set 8 → clips, Set 9 → mixer AVB-bus rows + real plugin inventory). No re-scoping needed.
 
 ### Standing rules for this epic
 - Every set ships with a *new* commit message of the form `feat(daw): T2503-setN — <slice>`; never `--amend` shipped commits.
@@ -1692,6 +1726,24 @@ Description:
 
 Last updated: 2026-05-10 EDT - Claude
 - 2026-05-10 EDT — Claude: **Code-side polish slice SHIPPED — DawPage WS test expansion (8 → 15 cases).** New jest coverage for: timeline pending-state render, WS snapshot frame mirroring into the timeline read-out, 50-entry rolling cap on the event trace (push 60 → render last 50 most-recent-first), WS `close()` fires on unmount, plugin-rack-error-envelope renders nothing (no silent empty list), automation `setAutomationPoint` arg-passing (lane=0/position=0/value=0.5), automation Set-point button disabled when `daw_mode_available=false`. All listener emits wrapped in `act()` so no React act-warning noise. **15/15 jest cases green; `npx jest --testPathPatterns='DawPage'` passes in 3.6s.** Bench-gate `T2503-daw-soak` (30-min UA-1000 soak) remains operator-side.
+
+- 2026-05-10 EDT — Claude: **Set 10 PROMOTION SHIPPED — `/daw` retired into `/multitrack-recorder` tier-1 surface.** Operator-driven re-scope: the previous Set-10 ship landed `/daw` as a standalone reference page, but operators see two DAW entry points (the pinned `/multitrack-recorder` hero in `GlobalTreeNav` was still a 42-line stub). This slice merges the two and elevates the result to a first-class platform service surface — peer to MIDI Services. Native reuse of four already-in-tree primitives (per operator brief: "natively use what is already available in the platform"):
+  - **WorkspacePageTemplate + useSetShellWindow + child-route Outlet** — mirrors `MidiHubShell` exactly. New shell renders at `/multitrack-recorder/*` with 8 nested sub-area routes (`transport / tracks / mixer / clips / plugins / automation / sessions / export`). Each sub-area is its own lazy-loaded page component under `web/src/app/pages/multitrack-recorder/`. Index redirects to `transport`.
+  - **UnifiedChannelGrid (T710) + new trackToUnifiedRow adapter** — DAW Mixer view reuses the SnapshotEditor's 8-slot channel-strip primitive. `trackToUnifiedRow.ts` is the only seam (~80 lines, pure / dependency-free): each `DawTrack` becomes one `UnifiedChannelRow` with category-guessed plugin slots. Meters come from `useChainMeter('daw-track-<id>')` — the synthetic chain id passes straight through the existing engine VU stream.
+  - **PluginCard accent registry + pluginInventoryApi** — Plugins sub-area renders a two-pane layout (inventory left / per-track rack right). Inventory hits `pluginInventoryApi.list()` (the same scanner Set 9 wired). Rack cards reuse `getPluginAccentConfig(uri, category)` so the visual language is identical to the SnapshotEditor; full bottom-sheet `PluginCardRouter` integration lands later when DAW plugin params hydrate through the same chain-id contract live uses.
+  - **useNodePageContext + new MultiTrackNodeScopeProvider** — DAW becomes node-scoped via `NODE_PAGE_KEYS.daw`. The Node Pill popover in the global nav treats DAW as a peer service to MIDI Services. `pageKeyFromPathname` maps both `/multitrack-recorder/*` and `/daw/*` to the new key.
+  - Files: `pages/MultiTrackRecorderShell.{tsx,css,test.tsx}` (310 + 32 + 230 LOC), 8 × `pages/multitrack-recorder/MultiTrack*Page.tsx`, `pages/multitrack-recorder/MultiTrackRecorderTabs.{tsx,css}`, `components/MultiTrackRecorder/{MultiTrackNodeScope,MultiTrackHealthDrawer,useDawOverview,useDawEventStream,trackToUnifiedRow}.{ts,tsx,css,test.ts}`, `stores/dawProjectStore.ts` (in-memory mirror of the engine-side project tree; WS hydration in Set 7+).
+  - Routing: `App.tsx` registers `/multitrack-recorder/*` with 8 child routes; `/daw` + `/daw/*` redirect via `<Navigate replace />` to `/multitrack-recorder/transport`. `routePrefetch.ts` prefetches the shell + the landing transport page. Old `DawPage.tsx` + `DawPage.test.tsx` + the `MultiTrackRecorderPage.tsx` stub deleted (their logic absorbed into the sub-areas).
+  - First-class shell chrome: 8 ShellActionSlot items wired via `useSetShellWindow` (Engine health / Mode / Transport / Project / Tracks / Clips / Plugins / Auto). System status action opens `MultiTrackHealthDrawer` (mirrors `MidiHubHealthDrawer` shape; replaces the daemon-restart button with an engine-reseat action that flips live↔daw via Set 3's mode-switch). Flag-OFF banner renders inside the shell when `daw_mode_available=false` so the layout stays visible — mutations return the documented 503 envelope per the Set-3/Set-4 contract.
+  - Tests: 11 jest cases in `MultiTrackRecorderShell.test.tsx` (shell mounts, all 8 tab nav entries present, WS stream opens once, flag-OFF banner, each of the 8 sub-areas mounts) + 6 jest cases for `trackToUnifiedRow.test.ts` (empty track, MIDI ioLabel, plugin slot population with category guessing + clamping, dawTrackChainId stability, mute/solo surfacing). The 18-case `daw.test.ts` client suite remains green. `useVuMeters` mocked per CLAUDE.md gotcha #11.
+  - **Verification**:
+    - `npm run typecheck` → clean.
+    - `npm test -- --testPathPatterns='MultiTrackRecorderShell|trackToUnifiedRow'` → **17/17 green in 3.93s**.
+    - `npm test -- --testPathPatterns='daw.test'` → 18/18 green (regression).
+    - `python3 -m pytest tests/test_daw_mode_switch.py tests/test_daw_handlers.py tests/test_daw_routes_v1.py tests/test_daw_project_service.py -q` → **76/76 green in 4.81s** (no backend changes).
+    - `python3 scripts/build_web_dist_atomic.py` → builds clean in 20.8s; new bundles emitted: `MultiTrackRecorderShell-vSMUljbC.js` + 8 sub-area pages + `dawProjectStore-DS4CoFOQ.js` + `MultiTrackRecorderShell-CbU_rkD6.css`.
+    - Live verification on port 3000: `curl -I /multitrack-recorder` → 200; `/multitrack-recorder/transport` → 200; `/daw` → 200 (SPA shell loads then router redirects); bundle artefacts directly fetchable (`MultiTrackRecorderShell-*.js` 200).
+  - Acceptance for the promotion: route merger ✓, 8 sub-area pages ✓, UnifiedChannelGrid reuse in Mixer ✓, PluginCard accent registry reuse in Plugins ✓, MidiHubShell-pattern shell + status drawer ✓, NODE_PAGE_KEYS.daw + scope provider ✓, jest 17/17 + pytest 76/76 + typecheck + build all green ✓, port 3000 serves new bundles ✓. Bench-gate `T2503-daw-soak` (30-min UA-1000 soak) remains operator-side.
 
 ---
 
