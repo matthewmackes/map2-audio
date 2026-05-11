@@ -341,6 +341,7 @@ import { useSnapshotEditorPublishReadinessQuery } from './snapshotEditor/useSnap
 import { useSnapshotEditorRevisionsQuery } from './snapshotEditor/useSnapshotEditorRevisionsQuery'
 import { useSnapshotEditorAuthoritySnapshotDetailQuery } from './snapshotEditor/useSnapshotEditorAuthoritySnapshotDetailQuery'
 import { useSnapshotEditorPluginBrowserData } from './snapshotEditor/useSnapshotEditorPluginBrowserData'
+import { useSnapshotEditorPluginBrowserHandlers } from './snapshotEditor/useSnapshotEditorPluginBrowserHandlers'
 import { useSnapshotEditorAudioInterfaceStatus } from './snapshotEditor/useSnapshotEditorAudioInterfaceStatus'
 import { useSnapshotEditorActiveChannelStatusRail } from './snapshotEditor/useSnapshotEditorActiveChannelStatusRail'
 import { useSnapshotEditorRoutingInspectorContent } from './snapshotEditor/useSnapshotEditorRoutingInspectorContent'
@@ -539,7 +540,13 @@ export function SnapshotEditorPage() {
   // /api/state-authority/uri-catalog, 'plugins' = the full LV2+native plugin
   // directory (default). Local state (not persisted) so it defaults back to
   // 'plugins' each time the modal is reopened.
-  const [pluginBrowserMode, setPluginBrowserMode] = useState<'plugins' | 'catalog'>('plugins')
+  // T2473 cycle 3 (2026-05-11) — `pluginBrowserMode` + the four
+  // Plugin-Browser-only handlers (`toggleFavorite`, `collapseAll`/
+  // `expandAllCategories`, `handleShowDetails`) are bundled in the
+  // `useSnapshotEditorPluginBrowserHandlers` sibling hook so the modal
+  // can move toward owning its own surface without re-threading
+  // toast/store identity. Definitions live below where the inputs are
+  // in scope; consumers reach for the destructured names verbatim.
   const showPresetBrowser = useSnapshotEditorStore((s) => s.showPresetBrowser)
   const setShowPresetBrowser = useSnapshotEditorStore((s) => s.setShowPresetBrowser)
   const showSavePresetModal = useSnapshotEditorStore((s) => s.showSavePresetModal)
@@ -3806,33 +3813,29 @@ export function SnapshotEditorPage() {
   ])
 
   // Favorites handling
-  const toggleFavorite = useCallback((uri: string) => {
-    setFavoritePlugins(prev => {
-      const next = new Set(prev)
-      if (next.has(uri)) {
-        next.delete(uri)
-        pushToast('Removed from favorites', 'info')
-      } else {
-        next.add(uri)
-        pushToast('Added to favorites', 'success')
-      }
-      return next
-    })
-  }, [pushToast])
-
-  const collapseAllCategories = useCallback(() => {
-    setCollapsedCategories(new Set(groupedPlugins.map(([name]) => name)))
-  }, [groupedPlugins])
-
-  const expandAllCategories = useCallback(() => {
-    setCollapsedCategories(new Set())
-  }, [])
-
-  // Wet/dry mix handler for per-plugin mixing
-  // Show plugin details
-  const handleShowDetails = useCallback((plugin: Plugin) => {
-    setDetailsPlugin(plugin)
-  }, [])
+  // T2473 cycle 3 — Plugin Browser handlers + mode state extracted to
+  // `useSnapshotEditorPluginBrowserHandlers`. The hook owns:
+  // `pluginBrowserMode` (local useState — resets to 'plugins' on
+  // remount, identical to the pre-extraction behavior),
+  // `toggleFavorite` (with toast routing), `collapseAllCategories` +
+  // `expandAllCategories` (operate on `groupedPlugins`), and
+  // `handleShowDetails` (opens the per-plugin details overlay).
+  // Behavioral parity verbatim — same toast strings, same setter
+  // shape, same memo dependencies.
+  const {
+    pluginBrowserMode,
+    setPluginBrowserMode,
+    toggleFavorite,
+    collapseAllCategories,
+    expandAllCategories,
+    handleShowDetails,
+  } = useSnapshotEditorPluginBrowserHandlers({
+    groupedPlugins,
+    setFavoritePlugins,
+    setCollapsedCategories,
+    setDetailsPlugin,
+    pushToast,
+  })
 
   const midiMappingCount = midiMappings.length
   const midiMappingCountLabel = midiMappingCount > 99 ? '99+' : String(midiMappingCount)
