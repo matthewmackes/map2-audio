@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1591** Python | **1640** TypeScript | **211** C++/H | **149** Docs | **4248** total commits | **4** stars | **0** forks | **0** open issues
+**1591** Python | **1640** TypeScript | **211** C++/H | **149** Docs | **4249** total commits | **4** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,6 +206,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`524d406f`](https://github.com/matthewmackes/map2-audio/commit/524d406f57081b4fd01e41f69c5bdd61a9482c51) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-11 |
 | [`17f6c982`](https://github.com/matthewmackes/map2-audio/commit/17f6c98207a067610b04e6468ceb09329c826f9f) | fix(controller-host): T2459-H11 — multi-client poll-fanou... | Map2 Audio | 2026-05-11 |
 | [`c407ddfa`](https://github.com/matthewmackes/map2-audio/commit/c407ddfa0c6ac6219fc9ebc37c69721fa7ee2335) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-11 |
 | [`2a272d4b`](https://github.com/matthewmackes/map2-audio/commit/2a272d4ba3834017036bbb9b58029c5d55eb2411) | fix(midi-hub,maschine,ws,ui): harden against controller-h... | Map2 Audio | 2026-05-11 |
@@ -213,7 +214,6 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 | [`000d0161`](https://github.com/matthewmackes/map2-audio/commit/000d016115c94b202c5de6eb718c3d2945fe52bf) | fix(controller-host): T2459-H9 — hoist per-accept setup t... | Map2 Audio | 2026-05-11 |
 | [`ada4daa8`](https://github.com/matthewmackes/map2-audio/commit/ada4daa8796727efa76e8a11cfd36f84c714822b) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-11 |
 | [`01782101`](https://github.com/matthewmackes/map2-audio/commit/01782101b2b435a8a7e7fe292d7f39d53e8da7e4) | feat(snapshot-editor): T2459-H8b — cutover Selected-block... | Map2 Audio | 2026-05-10 |
-| [`e4c55140`](https://github.com/matthewmackes/map2-audio/commit/e4c551402081b096d5b4bf7636acb754b1c89a11) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-11 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
