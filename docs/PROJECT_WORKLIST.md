@@ -54,8 +54,9 @@ Each task/subtask should contain these fields:
 
 ## Top Active Tasks (5-10)
 
-- `[>]` `T2504` — **Multi-Track Recorder & Playback (snapshot-bound)** epic — supersedes cancelled T2503. 8 phase epics (T2505 cleanup → T2506 schema → T2507 taps → T2508 routes → T2509 GUI → T2510 cluster → T2511 punch-in → **T2512 Guitarist Looper**). Locked-decision body + per-phase sub-tasks filed 2026-05-11; first slice = T2505 retirement of T2503 artefacts.
-- `[~]` `T2503` — DAW Service (Tracktion-backed / pivoted to MAP2-native) — Cancelled 2026-05-11, superseded by T2504. Code-side artefacts scheduled for retirement under T2505.
+- `[>]` `T2504` — **Multi-Track Recorder & Playback (snapshot-bound)** epic — supersedes cancelled T2503. 8 phase epics (T2505 cleanup → T2506 schema → T2507 taps → T2508 routes → T2509 GUI → T2510 cluster → T2511 punch-in → **T2512 Guitarist Looper**). Locked-decision body + per-phase sub-tasks filed 2026-05-11. **T2505 closed 2026-05-11** (autonomous Continue cycle 1/15); next is T2506 schema.
+- `[~]` `T2503` — DAW Service (Tracktion-backed / pivoted to MAP2-native) — Cancelled 2026-05-11, superseded by T2504. **Retirement complete under T2505 on 2026-05-11.**
+- `[✓]` `T2505` — Retire T2503 artefacts (phase 1 of T2504) — closed 2026-05-11. C++ Daw tree archived; Python DAW backend + 76 pytest cases deleted; `MAP2_DAW_MODE` CMake flag removed; frontend shell + sub-pages archived with redirects to `/artifacts`; license + third-party + worklist docs reframed under T2504; cmake configure clean, atomic web build clean, typecheck + readiness tests green.
 - `[>]` `T2459-H` — MIDI Backend Unification (controller-host + libremidi + ControllerEngine). All remaining gates consolidated into one bench-session runbook: [`docs/midi/T2459_FINAL_BENCH_SESSION.md`](midi/T2459_FINAL_BENCH_SESSION.md).
 - `[>]` `T2459-H3` — MeloAudio Commander device-pack cutover completion (gate consolidated into T2459 final bench session — `T2459_FINAL_BENCH_SESSION.md` Gate 1)
 - `[>]` `T2459-H3-CFG` — MeloAudio Commander Configurator (Phases 1-6 + Outer-Loop-2 dispatcher all SHIPPED; Phase 7 HIL = T2459 final bench session Gate 1)
@@ -1957,7 +1958,7 @@ Last updated: 2026-05-11 — Claude.
 
 ID: T2505
 Parent: T2504
-Status: [ ] Todo
+Status: [✓] Done
 Title: Cancel T2503 and remove DAW-mode code, routes, services, build flag, and architecture doc.
 
 Description:
@@ -1975,7 +1976,16 @@ Sub-tasks:
 
 Acceptance: `cmake -B juce-engine/build && cmake --build juce-engine/build` clean; `grep -r MAP2_DAW_MODE` empty outside archive; `pytest tests/` green (no daw_test imports remain).
 
-Last updated: 2026-05-11 — Claude.
+Completion (2026-05-11 — Claude, autonomous Continue cycle 1/15):
+- C++ DAW source tree archived: `juce-engine/Source/Daw/` → `juce-engine/Source/_archive/Daw_2026-05-11/` (all 15 .{h,cpp} + Deck/ subdir preserved). All conditional `if(MAP2_DAW_MODE)` blocks in `juce-engine/CMakeLists.txt` removed (option declaration, conditional SOURCES list, link block, daw_tests Catch2 target). 6 DAW-only Catch2 test files deleted (`DawServiceShellTests`, `DawProjectLoaderTests`, `AvbBusAndScannerTests`, `DeckPatternsTests`, `ModeSwitchCoordinatorTests`, `TransportBridgeTests`).
+- Python DAW backend deleted: `app/routes/daw.py`, `app/services/daw_service.py`, `daw_handlers.py`, `daw_dispatch_seam.py`, `daw_event_bus.py`, `daw_project_hooks.py`, `daw_project_schema.py`, `daw_project_service.py`, `daw_tempo_service.py`. T2503 route registration block removed from `app/main.py` (plugin_inventory route retained with comment reframed under T2504).
+- Pytest suites deleted: `test_daw_device_packs.py`, `test_daw_handlers.py`, `test_daw_mode_switch.py`, `test_daw_project_service.py`, `test_daw_routes_v1.py`, `test_daw_tempo_service.py` (76 tests).
+- Build/skill artefacts: `scripts/build_juce_engine_daw.sh` deleted; `.codex/skills/daw-soak/` skill removed.
+- Frontend salvage map executed: shell + sub-pages + components + client + store archived under `web/src/_archive/multitrack-recorder-2026-05-11/`. `/daw` + `/multitrack-recorder` routes now redirect to `/artifacts` (the T2509 destination). Removed live references from `web/src/app/App.tsx`, `routePrefetch.ts`, `layout/GlobalTreeNav/GlobalTreeNav.tsx` (default-expanded, hero list, icon overrides, label overrides, badge/featured branches, unused `RecordingFilledAlt` import), `data/advancedMenuItems.ts` (catalog entry + unused import), `data/launcherCatalog.tsx` (tree-children block), `utils/nodeDisplay.ts` (`NODE_PAGE_KEYS.daw` + pathname branch), `routing/shellRouteMeta.ts` (static meta entry).
+- Docs: `docs/architecture/DAW_SERVICE.md` → `docs/architecture/archive/DAW_SERVICE_RETIRED_2026-05-11.md` with prepended T2504/T2505 retirement notice + salvage map. `LICENSE_COMPATIBILITY.md` rewritten: T2503 epic added to "Components removed" timeline, Mixxx attribution row reframed to T2459-H, MAP2_DAW_MODE build-flag-gating section retired with explanatory note, Conclusion + Last-Updated stamp pointing at T2504. `THIRD_PARTY_NOTICES.md` JUCE row trimmed of DAW-flag clause. `docs/PROJECT_WORKLIST_NO_HARDWARE.md` T2503 section collapsed to a cancelled audit row + default-execution-order updated to T2505/T2506.
+- Verification: `cmake -B juce-engine/build` configures clean (4.4s, no MAP2_DAW_MODE flag visible); `grep -rE 'MAP2_DAW_MODE|DawService' --include='*.{cpp,h,py,ts,tsx,md,sh,txt}' .` returns only archive paths + historical worklist body; `npm --prefix web run typecheck` clean; `python3 -c "import app.main"` clean; `pytest tests/test_api_route_readiness.py tests/test_state_authority_graph.py` 18/18 green; `npx jest --testPathPatterns='nodeDisplay\.test|GlobalTreeNav\.test'` 12/12 green; `python3 scripts/build_web_dist_atomic.py` produces a clean bundle (App-B90d5J6r.js, no MultiTrackRecorder bundles); `/api/health` 200, `:3000/` 200, `:3000/daw` SPA 200 (client-side router redirects to `/artifacts`), `:3000/multitrack-recorder` SPA 200 (same).
+
+Last updated: 2026-05-11 — Claude (autonomous Continue cycle 1/15 — T2505 closed).
 
 ---
 

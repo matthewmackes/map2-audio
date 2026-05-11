@@ -1,8 +1,16 @@
-# DAW Service (MAP2-native) — Architecture
+# DAW Service (MAP2-native) — Architecture [RETIRED 2026-05-11]
 
-> **Status:** filed 2026-05-09 under T2503 Epic. Pivoted 2026-05-10 from Tracktion Engine to a MAP2-native core built on `juce::AudioProcessorGraph`. Code-side delivery in 10 ship cycles.
-> **License posture:** AGPLv3 (no new external dependency). See [`LICENSE_COMPATIBILITY.md`](./LICENSE_COMPATIBILITY.md).
-> **Build flag:** `-DMAP2_DAW_MODE=ON` (default OFF until Set 10 closes).
+> **STATUS — RETIRED.** This document describes the T2503 DAW Service epic that was cancelled on 2026-05-11. The reframed successor — **T2504 Multi-Track Recorder & Playback (snapshot-bound)** — supersedes every architectural decision below. Read `docs/PROJECT_WORKLIST.md` § T2504 for the current design.
+> **Retirement task:** T2505 (phase 1 of T2504). Code-side artefacts removed from `juce-engine/Source/`, `app/`, `tests/`, and `scripts/`; the original tree is preserved at `juce-engine/Source/_archive/Daw_2026-05-11/` for salvage reference.
+> **Why retired:** the platform's snapshot graph already owns rig topology, plugin chains, and AVB routing. Layering a second timeline-based authority (DAW projects + tracks + clips + cues) duplicated state and forked the engine. T2504 collapses the two: the recorder is a snapshot-bound capture surface; the DAW timeline went away.
+> **Salvage map:** the `MultiTrackRecorderShell` React route from T2503 Set 10 is salvaged under T2509. `juce-engine/Source/_archive/Daw_2026-05-11/Deck/` patterns may still inform T2511 playback engine work.
+
+---
+
+> **Original status block (preserved for history):**
+> Filed 2026-05-09 under T2503 Epic. Pivoted 2026-05-10 from Tracktion Engine to a MAP2-native core built on `juce::AudioProcessorGraph`. Code-side delivery in 10 ship cycles.
+> **License posture:** AGPLv3 (no new external dependency). See [`LICENSE_COMPATIBILITY.md`](../LICENSE_COMPATIBILITY.md).
+> **Build flag (retired):** `-DMAP2_DAW_MODE=ON` — removed from `juce-engine/CMakeLists.txt` under T2505.
 
 ---
 

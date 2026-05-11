@@ -11,10 +11,6 @@ export const NODE_PAGE_KEYS = {
   audioEngine: 'audio-engine',
   lv2Plugins: 'lv2-plugins',
   midiHub: 'midi-hub',
-  // T2503 Set 10 — DAW (MAP2-native) is a tier-1 platform service. The
-  // MultiTrack Recorder shell scopes node selection through this key so
-  // it reads as a peer to MIDI Services in the Node Pill popover.
-  daw: 'daw',
   labs: 'labs',
   platform: 'nodes',
   nodes: 'nodes',
@@ -188,15 +184,6 @@ export function pageKeyFromPathname(pathname: string): string | null {
   // 2026-05-03); no separate page key needed.
   if (canonicalPathname.startsWith('/midi-hub')) {
     return NODE_PAGE_KEYS.midiHub
-  }
-  // T2503 Set 10 (promoted 2026-05-10) — /multitrack-recorder is the
-  // tier-1 DAW surface; node scoping flows through the daw page key.
-  // /daw is a back-compat alias that lands on the same scope.
-  if (
-    canonicalPathname.startsWith('/multitrack-recorder')
-    || canonicalPathname.startsWith('/daw')
-  ) {
-    return NODE_PAGE_KEYS.daw
   }
   if (canonicalPathname.startsWith('/platform')) {
     return NODE_PAGE_KEYS.platform

@@ -80,12 +80,12 @@ const HostMachinePage       = lazy(() => import('./pages/HostMachinePage').then(
 // /midi/devices/ableton-push-3/console mount, which composes
 // DeviceLandingHeader + PushSurfacePage via PushSurfaceConsoleView.
 const MaschinePage          = lazy(() => import('./pages/MaschinePage').then(m => ({ default: m.MaschinePage })))
-// T2503 Set 10 (promoted 2026-05-10) — DAW UI now lives under /multitrack-recorder
-// (tier-1 platform surface). /daw becomes a permanent redirect to /multitrack-recorder.
-// The shell + sub-area pages live in pages/MultiTrackRecorderShell.tsx +
-// pages/multitrack-recorder/*Page.tsx. Tier-1 control still flows through MIDI
-// surfaces (MK1, MCU, generic learn) per A23; this UI is the reference-parity
-// editing surface.
+// T2505 (2026-05-11) — `/multitrack-recorder` shell + sub-area pages and
+// `/daw` redirect collapsed into a single redirect → `/artifacts` (the
+// canonical Audio Artifacts surface where T2509 will mount the
+// recordings tab). The T2503 DAW Service epic was cancelled under
+// T2504; the salvaged shell tree lives at
+// `web/src/_archive/multitrack-recorder-2026-05-11/` for T2509 reference.
 const McuPage               = lazy(() => import('./pages/McuPage').then(m => ({ default: m.McuPage })))
 const LaunchControlPage     = lazy(() => import('./pages/LaunchControlPage').then(m => ({ default: m.LaunchControlPage })))
 const MidiCommanderPage     = lazy(() => import('./pages/MidiCommanderPage').then(m => ({ default: m.MidiCommanderPage })))
@@ -198,15 +198,6 @@ const SequencerPage  = lazy(() => import('./pages/SequencerPage').then(m => ({ d
 // surface. The shell renders WorkspacePageTemplate (peer to MIDI Services) +
 // nested sub-area routes. Sub-area pages are lazy-loaded individually so the
 // shell bundle stays light.
-const MultiTrackRecorderShell = lazy(() => import('./pages/MultiTrackRecorderShell').then(m => ({ default: m.MultiTrackRecorderShell })))
-const MultiTrackTransportPage = lazy(() => import('./pages/multitrack-recorder/MultiTrackTransportPage').then(m => ({ default: m.MultiTrackTransportPage })))
-const MultiTrackTracksPage = lazy(() => import('./pages/multitrack-recorder/MultiTrackTracksPage').then(m => ({ default: m.MultiTrackTracksPage })))
-const MultiTrackMixerPage = lazy(() => import('./pages/multitrack-recorder/MultiTrackMixerPage').then(m => ({ default: m.MultiTrackMixerPage })))
-const MultiTrackClipsPage = lazy(() => import('./pages/multitrack-recorder/MultiTrackClipsPage').then(m => ({ default: m.MultiTrackClipsPage })))
-const MultiTrackPluginsPage = lazy(() => import('./pages/multitrack-recorder/MultiTrackPluginsPage').then(m => ({ default: m.MultiTrackPluginsPage })))
-const MultiTrackAutomationPage = lazy(() => import('./pages/multitrack-recorder/MultiTrackAutomationPage').then(m => ({ default: m.MultiTrackAutomationPage })))
-const MultiTrackSessionsPage = lazy(() => import('./pages/multitrack-recorder/MultiTrackSessionsPage').then(m => ({ default: m.MultiTrackSessionsPage })))
-const MultiTrackExportPage = lazy(() => import('./pages/multitrack-recorder/MultiTrackExportPage').then(m => ({ default: m.MultiTrackExportPage })))
 const MeteringPage          = lazy(() => import('./pages/MeteringPage').then(m => ({ default: m.MeteringPage })))
 const PipeWirePage          = lazy(() => import('./pages/PipeWirePage').then(m => ({ default: m.PipeWirePage })))
 const PerformPage           = lazy(() => import('./pages/PerformPage').then(m => ({ default: m.PerformPage })))
@@ -665,13 +656,13 @@ export function App() {
                                 <Route path="/labs/push-surface" element={<Navigate to="/midi/devices/ableton-push-3/console" replace />} />
                                 <Route path="/maschine" element={<MaschinePage />} />
                                 <Route path="/maschine/midi-map" element={<Navigate to="/maschine#hardware-layout" replace />} />
-                                {/* T2503 Set 10 (promoted 2026-05-10) — /daw collapses
-                                    into /multitrack-recorder. The single canonical DAW
-                                    surface is /multitrack-recorder (tier-1 entry; pinned
-                                    in GlobalTreeNav). Bookmarks / runbook links land on
-                                    /transport inside the new shell. */}
-                                <Route path="/daw" element={<Navigate to="/multitrack-recorder/transport" replace />} />
-                                <Route path="/daw/*" element={<Navigate to="/multitrack-recorder/transport" replace />} />
+                                {/* T2505 (2026-05-11) — T2503 DAW Service epic
+                                    retired; /daw and /multitrack-recorder both
+                                    redirect to /artifacts (the Audio Artifacts
+                                    surface where T2509 will mount the recordings
+                                    tab under the reframed T2504 epic). */}
+                                <Route path="/daw" element={<Navigate to="/artifacts" replace />} />
+                                <Route path="/daw/*" element={<Navigate to="/artifacts" replace />} />
                                 <Route path="/mcu" element={<McuPage />} />
                                 <Route path="/launch-control" element={<LaunchControlPage />} />
                                 <Route path="/midi-commander" element={<MidiCommanderPage />} />
@@ -1021,22 +1012,14 @@ export function App() {
                                 <Route path="/pipewire" element={<RouteBoundary title="PipeWire view crashed" actionLabel="Reload PipeWire"><PipeWirePage /></RouteBoundary>} />
                                 <Route path="/welcome" element={<WelcomePage />} />
                                 <Route path="/sequencer" element={<SequencerPage />} />
-                                {/* T2503 Set 10 (promoted 2026-05-10) — MultiTrack
-                                    Recorder is the tier-1 DAW surface. WorkspacePageTemplate
-                                    shell + nested sub-area routes (MidiHubShell pattern).
-                                    Index → /transport so a cold operator lands on the
-                                    transport control. */}
-                                <Route path="/multitrack-recorder/*" element={<RouteBoundary title="MultiTrack Recorder crashed" actionLabel="Reload MultiTrack Recorder"><MultiTrackRecorderShell /></RouteBoundary>}>
-                                    <Route index element={<Navigate to="transport" replace />} />
-                                    <Route path="transport" element={<MultiTrackTransportPage />} />
-                                    <Route path="tracks" element={<MultiTrackTracksPage />} />
-                                    <Route path="mixer" element={<MultiTrackMixerPage />} />
-                                    <Route path="clips" element={<MultiTrackClipsPage />} />
-                                    <Route path="plugins" element={<MultiTrackPluginsPage />} />
-                                    <Route path="automation" element={<MultiTrackAutomationPage />} />
-                                    <Route path="sessions" element={<MultiTrackSessionsPage />} />
-                                    <Route path="export" element={<MultiTrackExportPage />} />
-                                </Route>
+                                {/* T2505 (2026-05-11) — MultiTrack Recorder shell
+                                    archived under T2504 retirement. All
+                                    /multitrack-recorder/* paths collapse to
+                                    /artifacts (the canonical Audio Artifacts
+                                    surface; T2509 will mount the recordings tab
+                                    + RecordingDetailPanel here). */}
+                                <Route path="/multitrack-recorder" element={<Navigate to="/artifacts" replace />} />
+                                <Route path="/multitrack-recorder/*" element={<Navigate to="/artifacts" replace />} />
                                 {/* T2487-4 — /expression hard-redirects to the unified
                                     /midi/devices/expression/console mount (Q1=A locked
                                     decision). ExpressionPage shim still exports

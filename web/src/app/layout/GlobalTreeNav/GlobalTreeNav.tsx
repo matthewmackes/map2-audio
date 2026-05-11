@@ -30,7 +30,6 @@ import {
   PlayFilled,
   Plug,
   Power,
-  RecordingFilledAlt,
   Renew,
   Restart,
   ScanAlt,
@@ -129,7 +128,6 @@ const BROWSE_DEVICES_TREE_ID = '/hardware::devices::browse'
 
 const DEFAULT_EXPANDED_IDS: readonly string[] = [
   '/snapshot-editor',
-  '/multitrack-recorder',
   '/sequencer',
   '/midi-hub',
   '/hardware',
@@ -149,11 +147,13 @@ const GLOBAL_TREE_EXPANDED_KEY: PersistedKey<string[]> = {
   },
 }
 
-// Pinned (hero cards) — Snapshot Editor, MultiTrack Recorder, Sequencer.
-// Hard-coded order, no user reorder. The MultiTrack Recorder hero is the
-// DAW entry point; it sits between the Snapshot Editor (graph/snapshot
-// authoring) and Sequencer (performance brain) heroes.
-const PINNED_HERO_ROUTES = ['/snapshot-editor', '/multitrack-recorder', '/sequencer'] as const
+// Pinned (hero cards) — Snapshot Editor, Sequencer.
+// Hard-coded order, no user reorder. The MultiTrack Recorder hero was
+// retired under T2505 with the T2503 DAW Service cancellation; the
+// reframed T2504 recorder mounts inside /artifacts so no hero card is
+// needed yet (it will return as a hero once T2509 + T2511 ship the
+// playback UX).
+const PINNED_HERO_ROUTES = ['/snapshot-editor', '/sequencer'] as const
 // Services section — MIDI, AVB, Audio Artifacts.
 const SERVICES_ROUTES = ['/midi-hub', '/avb', '/artifacts'] as const
 // System section — Settings, Hardware, Node Ops. Hardware bucket folds
@@ -167,7 +167,6 @@ const HARDWARE_HOST_MACHINE_ID = '/hardware::host-machine'
 const TREE_ICON_OVERRIDES: Record<string, CarbonIconComponent> = {
   '/': Home,
   '/snapshot-editor': ScreenMap,
-  '/multitrack-recorder': RecordingFilledAlt,
   '/sequencer': Grid,
   '/midi-hub': Music,
   '/avb': ChartNetwork,
@@ -222,7 +221,6 @@ const TREE_LABEL_OVERRIDES: Record<string, string> = {
   '/artifacts': 'Audio Artifacts',
   '/about': 'Platform Guide',
   '/snapshot-editor': 'Snapshot Editor',
-  '/multitrack-recorder': 'MultiTrack Recorder',
   '/sequencer': 'Sequencer',
   '/midi-hub': 'MIDI Services',
   '/avb': 'AVB',
@@ -495,12 +493,8 @@ function buildSectionItems(
       children,
       secondary: route === '/snapshot-editor' ? snapshotEditorStatus.label : undefined,
       secondaryTone: route === '/snapshot-editor' ? snapshotEditorStatus.tone : undefined,
-      badge: route === '/snapshot-editor'
-        ? 'Signal Flow'
-        : route === '/multitrack-recorder'
-          ? 'DAW'
-          : undefined,
-      featured: route === '/snapshot-editor' || route === '/multitrack-recorder',
+      badge: route === '/snapshot-editor' ? 'Signal Flow' : undefined,
+      featured: route === '/snapshot-editor',
     }]
   })
 }

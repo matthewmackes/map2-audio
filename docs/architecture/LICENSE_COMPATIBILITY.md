@@ -2,6 +2,7 @@
 
 > **Filed:** 2026-05-09 under T2503 Set 1.
 > **Updated:** 2026-05-10 — pivoted from Tracktion Engine to MAP2-native DAW core; Tracktion rows removed, Mixxx clip-pattern reuse retained.
+> **Updated:** 2026-05-11 — T2503 DAW Service epic retired under T2504 / T2505. `MAP2_DAW_MODE` CMake flag and `juce-engine/Source/Daw/` tree have been removed; the archived doc is `docs/architecture/archive/DAW_SERVICE_RETIRED_2026-05-11.md`. Mixxx mapping/import attribution remains in effect for the controller-host device-pack subsystem (T2459-H).
 > **Scope:** verify that every third-party component vendored or fetched by MAP2 is compatible with the top-level AGPLv3-only license.
 
 ---
@@ -22,13 +23,17 @@ Nothing in this audit relicenses MAP2-owned code or alters the terms under which
 | **JUCE 8.0.0** | GPL-3.0-or-later or commercial | Linked at build time (`FetchContent`) | **Yes** — GPLv3 → AGPLv3 (one-way per AGPLv3 §13) | https://juce.com/get-juce |
 | **NeuralAmpModelerCore** | MIT | Vendored under `juce-engine/Modules/NeuralAmpModelerCore/` | **Yes** — MIT is permissive, compatible with any GPL family | `juce-engine/Modules/NeuralAmpModelerCore/LICENSE` |
 | **PiPedal-derived UI code** | MIT | Vendored under `web/src/pipedal/` | **Yes** — MIT permissive | per-file headers |
-| **Mixxx controller mappings + clip-launcher patterns** | GPL-2.0-or-later | Mappings vendored under `device-packs/_mixx-imports/`. T2503 reuses Mixxx's clip-deck/launcher *patterns* (re-implementation in MAP2 source) for the DAW service. | **Yes** — GPLv2-or-later → can be combined with GPLv3 → AGPLv3. Re-implementation must preserve attribution per `.gemini/instructions.md` standing rule. | upstream Mixxx repo |
+| **Mixxx controller mappings + ControllerEngine patterns** | GPL-2.0-or-later | Mappings vendored under `device-packs/_mixx-imports/`. MAP2 reuses Mixxx's ControllerEngine XML+JS *pattern* (re-implementation in `map2-controller-host`) under T2459-H. The retired T2503 DAW service used the same patterns for deck/launcher — that consumer is gone, but the mappings stay for the device-pack subsystem. | **Yes** — GPLv2-or-later → can be combined with GPLv3 → AGPLv3. Re-implementation must preserve attribution per `.gemini/instructions.md` standing rule. | upstream Mixxx repo |
 | **Open Color palette values** | MIT | Numeric constants in `externalPaletteThemes.ts` | **Yes** — MIT permissive | `yeun/open-color` |
 | **Material palette values** | (numeric constants only — values, not code) | Numeric constants in `externalPaletteThemes.ts` | **Yes** — bare numeric constants are not copyrightable | Google Material Design docs |
 | **Web fonts (Roboto, IBM Plex Sans, Plex Mono, Fira Sans, Space Grotesk, Inter)** | each per upstream license (Apache 2.0 / SIL OFL 1.1) | Bundled into web build | **Yes** — Apache 2.0 → AGPLv3 (one-way), SIL OFL is independent of GPL (fonts) | per-package metadata |
 
 **Components removed in the 2026-05-10 pivot:**
-- *Tracktion Engine (GPL-3.0-or-later)* — was planned for T2503 Set 2 but the version-coordination cost between Tracktion `develop` and JUCE 8.x patch releases proved too high for autonomous shipping. Replaced with a MAP2-native DAW core built on `juce::AudioProcessorGraph` (no new external dependency). The audit text below is preserved for reference if the operator ever re-evaluates Tracktion.
+- *Tracktion Engine (GPL-3.0-or-later)* — was planned for T2503 Set 2 but the version-coordination cost between Tracktion `develop` and JUCE 8.x patch releases proved too high for autonomous shipping. Replaced with a MAP2-native DAW core built on `juce::AudioProcessorGraph` (no new external dependency).
+
+**Components removed in the 2026-05-11 T2503 retirement (T2505):**
+- *MAP2-native DAW service* (`juce-engine/Source/Daw/`) — entire tree archived under `juce-engine/Source/_archive/Daw_2026-05-11/`. T2504 Multi-Track Recorder + Playback supersedes the DAW timeline model with a snapshot-bound capture/playback surface that introduces no new third-party dependency.
+- `-DMAP2_DAW_MODE` CMake flag — removed from `juce-engine/CMakeLists.txt`. Stock builds were already byte-identical to the flag-OFF path, so no operator-visible binary change resulted.
 
 ---
 
@@ -53,21 +58,12 @@ AGPLv3's distinguishing clause requires that operators of network services built
 - The web frontend served on port 3000 is a network service. Source disclosure obligations apply.
 - The FastAPI backend on port 8080 is a network service. Source disclosure obligations apply.
 - The C++ engine, when accessed only by local IPC, is not a "network service" in the AGPLv3 sense. But because it links into a process whose state is reachable over the network (via FastAPI), source disclosure of the engine still applies as part of the combined work.
-- The MAP2-native DAW service (T2503, when `-DMAP2_DAW_MODE=ON`) does not introduce any new third-party dependency, so the AGPLv3 obligations on the combined work are unchanged.
 
 ---
 
 ## 5. Build-flag gating
 
-The `-DMAP2_DAW_MODE` CMake option (default `OFF`) gates whether the DAW service source tree is compiled. With the flag OFF:
-
-- `juce-engine/Source/Daw/` is excluded from `SOURCES`.
-- The resulting binary is byte-identical to a pre-T2503 build.
-
-With the flag ON:
-
-- The DAW source tree compiles into `map2_audio_engine` and into the `daw_tests` Catch2 binary.
-- All deps (JUCE, etc.) are already pulled by the live engine; no additional fetch is performed.
+The `-DMAP2_DAW_MODE` CMake option that previously gated the DAW service tree was **removed** under T2505 (2026-05-11). All MAP2 source trees are unconditional under their respective subsystem CMake blocks; there is no per-subsystem opt-out flag for the audio engine, the controller-host, or the (forthcoming) recorder service. Stock builds remain byte-identical to the prior flag-OFF path because the retired DAW sources were never reachable from the live engine.
 
 ---
 
@@ -75,7 +71,7 @@ With the flag ON:
 
 - **MAP2 trademarks** are held by Matthew Mackes. AGPLv3 §7 expressly disclaims trademark grants. Nothing in this audit alters that.
 - **Copyright headers** in vendored MIT and GPLv2-or-later components are preserved verbatim.
-- **Mixxx clip/deck pattern reuse** in T2503 Set 8: the MAP2 implementation is a clean re-implementation, not copy-paste. Per the standing rule in `.gemini/instructions.md`, attribution is preserved in source comments wherever a Mixxx-derived pattern is named.
+- **Mixxx ControllerEngine pattern reuse** in `map2-controller-host`: the MAP2 implementation is a clean re-implementation, not copy-paste. Per the standing rule in `.gemini/instructions.md`, attribution is preserved in source comments wherever a Mixxx-derived pattern is named.
 
 ---
 
@@ -90,10 +86,8 @@ With the flag ON:
 
 ## 8. Conclusion
 
-Every third-party component currently vendored or fetched by MAP2 is **compatible with the top-level AGPLv3-only license**. The MAP2-native DAW service (T2503) introduces no new external dependency — it builds on JUCE's `AudioProcessorGraph` (already in tree) and reuses Mixxx clip/deck *patterns* (re-implementation; Mixxx is already vendored and license-cleared).
-
-The flag `-DMAP2_DAW_MODE` (default OFF) ensures stock builds contain no DAW service code, so operators who do not need DAW mode pay zero compile-time or binary-size cost. Operators who do enable the flag receive the same AGPLv3 distribution as the live engine.
+Every third-party component currently vendored or fetched by MAP2 is **compatible with the top-level AGPLv3-only license**. The forthcoming Multi-Track Recorder + Playback subsystem (T2504) introduces no new external dependency — it builds on JUCE's `AudioProcessorGraph`, `AudioFormatReader`, and `io_uring` (kernel feature), all of which are already pulled by the live engine. Mixxx ControllerEngine patterns remain in use through the `map2-controller-host` device-pack subsystem (T2459-H) with attribution preserved.
 
 ---
 
-Last updated: 2026-05-10 EDT - Claude (T2503 Set 2 pivot to MAP2-native engine)
+Last updated: 2026-05-11 EDT - Claude (T2505 retired T2503 DAW service epic; superseded by T2504)

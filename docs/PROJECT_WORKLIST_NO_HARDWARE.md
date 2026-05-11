@@ -37,15 +37,9 @@ Scope: Every active task whose remaining work can be completed without hardware-
 - Hardware gate excluded: real-hardware acceptance is gated by T004 (lab availability, not a workstation gate).
 - Per the locked decision (Q4): "ship now with simulator-backed wizard; T004 stays the production-readiness gate."
 
-### `[>]` T2503 — DAW Service set-cleanup + flag-OFF maintenance
+### ~~T2503 — DAW Service~~ — CANCELLED 2026-05-11
 - Source: [PROJECT_WORKLIST.md §T2503](PROJECT_WORKLIST.md)
-- Status: 10/10 ship cycles **code-side complete**. Bench-gate `t2503-daw-soak` (30-min UA-1000 soak) is operator-side.
-- Remaining no-hardware work:
-  1. **Flag-OFF byte-identity verification** on every supported toolchain combo — ship CI matrix entries proving `MAP2_DAW_MODE=OFF` produces a byte-identical engine binary (already proven on dev box; nail to CI).
-  2. **`scripts/run_daw_soak.py` `--dry-run` mode hardening** — already smoke-passes; expand the dry-run to exercise every Set-10-listed verb (transport, project CRUD, track/clip/plugin/automation mutations, mode switch) with synthetic results so CI gates regressions on the harness shape itself.
-  3. **DAW reference UI test surface** — extend `DawPage.test.tsx` (currently 8 cases) to cover the WS event-stream rendering, plugin-rack hydration error envelope, and automation-lane scrub edge cases.
-  4. **`docs/architecture/DAW_SERVICE.md` §10 (operator runbook)** — a fresh-bench runbook for the soak gate, but written today from `--dry-run` evidence so the live operator just runs the wrapper.
-- Hardware gate excluded: 30-min UA-1000 live soak (`T2503-daw-soak`).
+- Status: **Cancelled** 2026-05-11; superseded by T2504 Multi-Track Recorder + Playback. Code-side artefacts retired under T2505 (this section is preserved only as an audit trail; no remaining no-hardware work). New no-hardware work for the reframed epic appears under T2505-T2509 in `PROJECT_WORKLIST.md`.
 
 ### `[ ]` T2459-H6 (Gotcha cleanup) — MEMORY.md / CLAUDE.md update after legacy ALSA retirement
 - Source: [PROJECT_WORKLIST.md §T2459-H6 "Required outputs"](PROJECT_WORKLIST.md)
@@ -94,8 +88,8 @@ These are **explicitly excluded** from the no-hardware list. Each carries an HIL
 
 ## How to use this list
 
-- **Default execution order**: T2459-H6 docs cleanup → T2499-B Slice 1 (T700 audit, pure docs) → T2503 polish + DAW UI test expansion → T2499-C simulator + wizard → T2499-A UI swap.
-- **Parallelization**: T2499-B audit + T2499-C simulator + T2503 polish are all independent; ship in parallel cycles.
+- **Default execution order**: T2459-H6 docs cleanup → T2499-B Slice 1 (T700 audit, pure docs) → T2505/T2506 recorder cleanup + schema (T2504 phases 1-2) → T2499-C simulator + wizard → T2499-A UI swap.
+- **Parallelization**: T2499-B audit + T2499-C simulator + T2505/T2506 are all independent; ship in parallel cycles.
 - **Re-derive**: regenerate this file with `grep -nE "^Status: \[(>| )\]" docs/PROJECT_WORKLIST.md` and walk each entry, asking: *does the remaining acceptance text quote any hardware?*
 
 ---

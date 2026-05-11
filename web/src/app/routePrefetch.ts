@@ -39,17 +39,6 @@ const PREFETCH_RULES: PrefetchRule[] = [
       () => import('./pages/SnapshotPublishPage'),
     ],
   },
-  // MultiTrack Recorder — DAW entry point hero (sibling of snapshot
-  // editor in the global tree nav). T2503 Set 10 (promoted 2026-05-10):
-  // the route is now a nested shell with 8 sub-area pages; prefetch
-  // just the shell + landing-tab transport page (others load on demand).
-  {
-    prefix: '/multitrack-recorder',
-    loaders: [
-      () => import('./pages/MultiTrackRecorderShell'),
-      () => import('./pages/multitrack-recorder/MultiTrackTransportPage'),
-    ],
-  },
   // Legacy aliases that redirect into the snapshot editor.
   {
     prefix: '/grid',
