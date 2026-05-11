@@ -58,6 +58,7 @@ Each task/subtask should contain these fields:
 - `[~]` `T2503` — DAW Service (Tracktion-backed / pivoted to MAP2-native) — Cancelled 2026-05-11, superseded by T2504. **Retirement complete under T2505 on 2026-05-11.**
 - `[✓]` `T2505` — Retire T2503 artefacts (phase 1 of T2504) — closed 2026-05-11. C++ Daw tree archived; Python DAW backend + 76 pytest cases deleted; `MAP2_DAW_MODE` CMake flag removed; frontend shell + sub-pages archived with redirects to `/artifacts`; license + third-party + worklist docs reframed under T2504; cmake configure clean, atomic web build clean, typecheck + readiness tests green.
 - `[✓]` `T2506` — Snapshot graph extensions for recording (phase 2 of T2504) — closed 2026-05-11. SNAPSHOT_GRAPH_VERSION 2026.04→2026.05; new `recording` block with `oneOf [null | full 6-field session]`; v2026.04 docs migrate transparently via `ACCEPTED_LEGACY_GRAPH_VERSIONS`; `CompiledSnapshotIntent` surfaces `record_session_id` + `tap_matrix`; philosophy doc + 5 adjacent test files updated; 14 new + 79 adjacent pytest cases green; jest schema mocks updated; atomic build clean.
+- `[>]` `T2508` — Python recorder service + routes + artifacts integration (phase 4 of T2504) — **dispatcher half shipped 2026-05-11** (autonomous Continue cycle 4/15) ahead of the C++ RT-critical T2507 taps, per the operator's "RT safety is most important" directive. 5 new `engine_command` verbs (`recorder.arm`/`disarm`/`roll`/`stop`/`status`) registered with the canonical `HandlerHooks` no-op-when-unbound pattern; 11 new pytest cases green; 60/60 dispatcher+handlers+bridge sweep green; zero changes inside `juce-engine/Source/` or the audioCallback. RecorderService class + HTTP routes + WS topic remain pending.
 - `[>]` `T2459-H` — MIDI Backend Unification (controller-host + libremidi + ControllerEngine). All remaining gates consolidated into one bench-session runbook: [`docs/midi/T2459_FINAL_BENCH_SESSION.md`](midi/T2459_FINAL_BENCH_SESSION.md).
 - `[>]` `T2459-H3` — MeloAudio Commander device-pack cutover completion (gate consolidated into T2459 final bench session — `T2459_FINAL_BENCH_SESSION.md` Gate 1)
 - `[>]` `T2459-H3-CFG` — MeloAudio Commander Configurator (Phases 1-6 + Outer-Loop-2 dispatcher all SHIPPED; Phase 7 HIL = T2459 final bench session Gate 1)
@@ -2070,8 +2071,24 @@ Last updated: 2026-05-11 — Claude.
 
 ID: T2508
 Parent: T2504
-Status: [ ] Todo
+Status: [>] In Progress (dispatcher half shipped 2026-05-11; service/routes/WS still pending)
 Title: `RecorderService` Python facade + `/api/v1/recorder/*` routes + `StateAuthorityAsset` registration as `asset_type="recording"`.
+
+Partial completion (2026-05-11 — Claude, autonomous Continue cycle 4/15):
+- **Dispatcher half of T2508-1 SHIPPED ahead of the rest.** Per the operator's standing "RT safety is most important" directive (issued mid-run), reordered the slice plan to land non-RT Python verbs first; T2507 (RT-critical C++ taps) stays deferred to a bench-gated cycle with explicit RT-safety review.
+- Added 5 new dispatcher verbs: `recorder.arm`, `recorder.disarm`, `recorder.roll`, `recorder.stop`, `recorder.status`. All five share the same args shape: `args[0] = session_id`, `action = "set"`, value unused. Five new `HandlerHooks` fields: `recorder_arm` / `recorder_disarm` / `recorder_roll` / `recorder_stop` / `recorder_status`, all `Optional` with no-op-when-unbound semantics matching the established `_make_*_handler` pattern.
+- Single shared validator `_extract_recorder_session_id()` handles: non-set action drop (recorder verbs are lifecycle triggers — no toggle / increment / decrement meaning), missing args, blank-string + whitespace session_id rejection, non-string coercion via `str().strip()`. Each handler is a thin closure factory around the validator + the hook call.
+- `register_default_handlers()` extended to register all 5 new exact targets after the 4 original verbs. Dispatcher `_exact` map now has 8 entries; `_patterns` still has 1.
+- New pytest cases (11 total, all green): per-verb arm/disarm/roll/stop/status routing with session_id; missing-args drop + WARN; blank/None/whitespace session_id drop; non-set action drop on toggle + increment; coerce non-string session_id (int, bool) → str; idempotent status pings; no-hook silent no-ops for all 5; multi-session isolation (5 verbs × 2 sessions interleave without cross-talk).
+- Existing `test_handlers_with_no_hooks_are_silent_no_ops` + `test_register_default_handlers_does_not_overlap_targets` extended to include the 5 new verbs. Combined sweep: 60/60 green across `test_engine_command_handlers_t2459h.py` + `test_engine_command_dispatcher_t2459h.py` + `test_engine_command_bridge.py`.
+- RT-safety profile preserved verbatim: zero changes to `juce-engine/Source/`; zero changes to anything inside the JUCE audioCallback. Python handlers run on the asyncio loop / WS thread and emit IPC frames; the future T2507 RT-safe C++ tap nodes will consume the same verbs over the shm event ring.
+
+Remaining work (still open under T2508):
+- `RecorderService` class with the 5 async methods (`arm_session`/`disarm_session`/`start_rolling`/`stop`/`get_session_status`). Each method *emits* the same `engine_command` verbs the dispatcher consumes — so the dispatcher path lands first; the service is the producer-side facade.
+- `AssetType.RECORDING` + 10 GB ceiling in `upload_service.py`; `recordings_library_dir()` in `paths.py`.
+- HTTP routes (T2508-4 + T2508-5): `/api/v1/recorder/sessions/*` + `/api/recordings/*`.
+- WS topic `RECORDER_SESSION_TOPIC` at 15 fps.
+- Operator-side tests for the service + routes + WS broadcast.
 
 Description:
 - Goal: Expose the C++ recorder over the existing `engine_command` IPC + REST. Every produced WAV registers in the `StateAuthorityAsset` registry with `asset_type = "recording"` and sidecar metadata. Routes follow the existing `app/routes/ir.py`/`nam.py` patterns. WebSocket topic `RECORDER_SESSION_TOPIC` broadcasts live session state.

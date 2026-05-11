@@ -99,6 +99,31 @@ class _TapTempoFn(Protocol):
     def __call__(self, timestamp_ns: Optional[int]) -> None: ...
 
 
+# T2508 (phase 4 of T2504 Multi-Track Recorder) — recorder-service hooks.
+# Non-RT: all five recorder verbs are dispatched from the controller-host /
+# Python WS path, never from inside the JUCE audioCallback. The T2507 C++
+# tap nodes consume the same verbs over IPC; the dispatcher here is the
+# Python-side authority.
+class _RecorderArmFn(Protocol):
+    def __call__(self, session_id: str) -> None: ...
+
+
+class _RecorderDisarmFn(Protocol):
+    def __call__(self, session_id: str) -> None: ...
+
+
+class _RecorderRollFn(Protocol):
+    def __call__(self, session_id: str) -> None: ...
+
+
+class _RecorderStopFn(Protocol):
+    def __call__(self, session_id: str) -> None: ...
+
+
+class _RecorderStatusFn(Protocol):
+    def __call__(self, session_id: str) -> None: ...
+
+
 @dataclass
 class HandlerHooks:
     """Bundle of side-effect functions handlers call.
@@ -114,6 +139,12 @@ class HandlerHooks:
     recall_snapshot: Optional[_SnapshotRecallFn] = None
     set_master_volume: Optional[_MasterVolumeFn] = None
     tap_tempo: Optional[_TapTempoFn] = None
+    # T2508 (phase 4 of T2504 Multi-Track Recorder).
+    recorder_arm: Optional[_RecorderArmFn] = None
+    recorder_disarm: Optional[_RecorderDisarmFn] = None
+    recorder_roll: Optional[_RecorderRollFn] = None
+    recorder_stop: Optional[_RecorderStopFn] = None
+    recorder_status: Optional[_RecorderStatusFn] = None
 
 
 # ---------------------------------------------------------------------------
@@ -327,6 +358,143 @@ def _make_tap_tempo_handler(hooks: HandlerHooks) -> Callable[[EngineCommandConte
 
 
 # ---------------------------------------------------------------------------
+# T2508 — recorder verb handlers
+# ---------------------------------------------------------------------------
+#
+# Five verbs share the same lifecycle shape:
+#
+#     target: "recorder.arm"     args: [session_id]
+#     target: "recorder.disarm"  args: [session_id]
+#     target: "recorder.roll"    args: [session_id]
+#     target: "recorder.stop"    args: [session_id]
+#     target: "recorder.status"  args: [session_id]
+#
+# All five are exact-match (not pattern) targets — session_id rides in
+# args[0] rather than the target path so dispatch never has to parse a
+# variable URL-style segment. ``action`` is always ``set``; non-set
+# actions are logged and dropped (mirrors snapshot.recall's treatment).
+# ``value`` is unused — recorder verbs are lifecycle triggers, not
+# numeric setters.
+#
+# RT-safety note: these handlers run on the Python event loop / WS
+# thread, never inside the JUCE audioCallback. The T2507 engine-side
+# capture nodes consume the same verbs over the shm IPC ring; the
+# Python side never touches the audio thread.
+
+
+def _extract_recorder_session_id(ctx: EngineCommandContext, verb: str) -> Optional[str]:
+    """Pull the session_id off the verb context.
+
+    Returns ``None`` and logs at WARN if the args are missing/empty or
+    the session_id is blank after str() + strip(). Non-set actions are
+    rejected (recorder verbs are lifecycle triggers — there is no
+    'toggle' meaning).
+    """
+    if ctx.action != "set":
+        logger.info("recorder.%s: ignoring non-set action %r", verb, ctx.action)
+        return None
+    if not ctx.args:
+        logger.warning("recorder.%s: missing session_id in args[0]", verb)
+        return None
+    raw = ctx.args[0]
+    session_id = str(raw or "").strip()
+    if not session_id:
+        logger.warning("recorder.%s: blank session_id %r", verb, raw)
+        return None
+    return session_id
+
+
+def _make_recorder_arm_handler(hooks: HandlerHooks) -> Callable[[EngineCommandContext], None]:
+    """Exact target: ``recorder.arm`` — arm a session for capture."""
+
+    def handler(ctx: EngineCommandContext) -> None:
+        session_id = _extract_recorder_session_id(ctx, "arm")
+        if session_id is None:
+            return
+        if hooks.recorder_arm is None:
+            logger.info(
+                "recorder.arm: no service hook wired; would arm session %s",
+                session_id,
+            )
+            return
+        hooks.recorder_arm(session_id=session_id)
+
+    return handler
+
+
+def _make_recorder_disarm_handler(hooks: HandlerHooks) -> Callable[[EngineCommandContext], None]:
+    """Exact target: ``recorder.disarm`` — release a previously-armed session."""
+
+    def handler(ctx: EngineCommandContext) -> None:
+        session_id = _extract_recorder_session_id(ctx, "disarm")
+        if session_id is None:
+            return
+        if hooks.recorder_disarm is None:
+            logger.info(
+                "recorder.disarm: no service hook wired; would disarm session %s",
+                session_id,
+            )
+            return
+        hooks.recorder_disarm(session_id=session_id)
+
+    return handler
+
+
+def _make_recorder_roll_handler(hooks: HandlerHooks) -> Callable[[EngineCommandContext], None]:
+    """Exact target: ``recorder.roll`` — start rolling on an armed session."""
+
+    def handler(ctx: EngineCommandContext) -> None:
+        session_id = _extract_recorder_session_id(ctx, "roll")
+        if session_id is None:
+            return
+        if hooks.recorder_roll is None:
+            logger.info(
+                "recorder.roll: no service hook wired; would roll session %s",
+                session_id,
+            )
+            return
+        hooks.recorder_roll(session_id=session_id)
+
+    return handler
+
+
+def _make_recorder_stop_handler(hooks: HandlerHooks) -> Callable[[EngineCommandContext], None]:
+    """Exact target: ``recorder.stop`` — stop a rolling session."""
+
+    def handler(ctx: EngineCommandContext) -> None:
+        session_id = _extract_recorder_session_id(ctx, "stop")
+        if session_id is None:
+            return
+        if hooks.recorder_stop is None:
+            logger.info(
+                "recorder.stop: no service hook wired; would stop session %s",
+                session_id,
+            )
+            return
+        hooks.recorder_stop(session_id=session_id)
+
+    return handler
+
+
+def _make_recorder_status_handler(hooks: HandlerHooks) -> Callable[[EngineCommandContext], None]:
+    """Exact target: ``recorder.status`` — request a one-shot status broadcast."""
+
+    def handler(ctx: EngineCommandContext) -> None:
+        session_id = _extract_recorder_session_id(ctx, "status")
+        if session_id is None:
+            return
+        if hooks.recorder_status is None:
+            logger.info(
+                "recorder.status: no service hook wired; would query session %s",
+                session_id,
+            )
+            return
+        hooks.recorder_status(session_id=session_id)
+
+    return handler
+
+
+# ---------------------------------------------------------------------------
 # Public registration entrypoint
 # ---------------------------------------------------------------------------
 
@@ -356,3 +524,13 @@ def register_default_handlers(
     dispatcher.register(
         "audio.transport.tap_tempo", _make_tap_tempo_handler(actual_hooks)
     )
+
+    # T2508 — recorder verbs (phase 4 of T2504 Multi-Track Recorder).
+    # All five share the same args[0]=session_id, action=set shape; their
+    # service-side bindings (hooks.recorder_*) stay None until T2508's
+    # `RecorderService` lands in `app/services/recorder_service.py`.
+    dispatcher.register("recorder.arm", _make_recorder_arm_handler(actual_hooks))
+    dispatcher.register("recorder.disarm", _make_recorder_disarm_handler(actual_hooks))
+    dispatcher.register("recorder.roll", _make_recorder_roll_handler(actual_hooks))
+    dispatcher.register("recorder.stop", _make_recorder_stop_handler(actual_hooks))
+    dispatcher.register("recorder.status", _make_recorder_status_handler(actual_hooks))

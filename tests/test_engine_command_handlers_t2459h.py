@@ -62,6 +62,34 @@ def _make_dispatcher_with_recording_hooks() -> tuple[
     return dispatcher, bypass_calls, recall_calls, volume_calls, tempo_calls
 
 
+def _make_dispatcher_with_recorder_hooks() -> tuple[
+    EngineCommandDispatcher,
+    list[str],  # arm
+    list[str],  # disarm
+    list[str],  # roll
+    list[str],  # stop
+    list[str],  # status
+]:
+    """T2508 — recorder-verb harness. Each verb appends session_id."""
+    arm_calls: list[str] = []
+    disarm_calls: list[str] = []
+    roll_calls: list[str] = []
+    stop_calls: list[str] = []
+    status_calls: list[str] = []
+
+    hooks = HandlerHooks(
+        recorder_arm=lambda session_id: arm_calls.append(session_id),
+        recorder_disarm=lambda session_id: disarm_calls.append(session_id),
+        recorder_roll=lambda session_id: roll_calls.append(session_id),
+        recorder_stop=lambda session_id: stop_calls.append(session_id),
+        recorder_status=lambda session_id: status_calls.append(session_id),
+    )
+
+    dispatcher = EngineCommandDispatcher()
+    register_default_handlers(dispatcher, hooks=hooks)
+    return dispatcher, arm_calls, disarm_calls, roll_calls, stop_calls, status_calls
+
+
 # ---------------------------------------------------------------------------
 # audio.chain.<N>.bypass
 # ---------------------------------------------------------------------------
@@ -219,14 +247,162 @@ def test_handlers_with_no_hooks_are_silent_no_ops() -> None:
     dispatcher.dispatch(_frame("audio.snapshot.recall", action="set", value=2.0))
     dispatcher.dispatch(_frame("audio.master.volume", action="set", value=0.5))
     dispatcher.dispatch(_frame("audio.transport.tap_tempo"))
-    assert dispatcher.dispatched_count == 4
+    # T2508 — five recorder verbs share the same no-hook silent-no-op behavior.
+    dispatcher.dispatch(_frame("recorder.arm", args=["sess-1"]))
+    dispatcher.dispatch(_frame("recorder.disarm", args=["sess-1"]))
+    dispatcher.dispatch(_frame("recorder.roll", args=["sess-1"]))
+    dispatcher.dispatch(_frame("recorder.stop", args=["sess-1"]))
+    dispatcher.dispatch(_frame("recorder.status", args=["sess-1"]))
+    assert dispatcher.dispatched_count == 9
     assert dispatcher.errored_count == 0
 
 
 def test_register_default_handlers_does_not_overlap_targets() -> None:
-    """Sanity: the four target/patterns we register don't collide."""
+    """Sanity: every registered target/pattern is unique."""
     dispatcher = EngineCommandDispatcher()
     register_default_handlers(dispatcher)
-    # exact map has 3 entries; pattern list has 1.
-    assert len(dispatcher._exact) == 3  # type: ignore[attr-defined]
+    # Exact targets: snapshot.recall, master.volume, transport.tap_tempo,
+    # plus the 5 T2508 recorder verbs = 8 total.
+    # Pattern list: audio.chain.*.bypass = 1.
+    assert len(dispatcher._exact) == 8  # type: ignore[attr-defined]
     assert len(dispatcher._patterns) == 1  # type: ignore[attr-defined]
+    expected_exact = {
+        "audio.snapshot.recall",
+        "audio.master.volume",
+        "audio.transport.tap_tempo",
+        "recorder.arm",
+        "recorder.disarm",
+        "recorder.roll",
+        "recorder.stop",
+        "recorder.status",
+    }
+    assert set(dispatcher._exact.keys()) == expected_exact  # type: ignore[attr-defined]
+
+
+# ---------------------------------------------------------------------------
+# T2508 — recorder verbs (recorder.arm / disarm / roll / stop / status)
+# ---------------------------------------------------------------------------
+
+
+def test_recorder_arm_routes_with_session_id() -> None:
+    d, arm_calls, *_ = _make_dispatcher_with_recorder_hooks()
+    d.dispatch(_frame("recorder.arm", args=["sess-42"]))
+    assert arm_calls == ["sess-42"]
+
+
+def test_recorder_disarm_routes_with_session_id() -> None:
+    d, _arm, disarm_calls, *_ = _make_dispatcher_with_recorder_hooks()
+    d.dispatch(_frame("recorder.disarm", args=["sess-42"]))
+    assert disarm_calls == ["sess-42"]
+
+
+def test_recorder_roll_routes_with_session_id() -> None:
+    d, _arm, _disarm, roll_calls, *_ = _make_dispatcher_with_recorder_hooks()
+    d.dispatch(_frame("recorder.roll", args=["sess-42"]))
+    assert roll_calls == ["sess-42"]
+
+
+def test_recorder_stop_routes_with_session_id() -> None:
+    d, _arm, _disarm, _roll, stop_calls, _status = (
+        _make_dispatcher_with_recorder_hooks()
+    )
+    d.dispatch(_frame("recorder.stop", args=["sess-42"]))
+    assert stop_calls == ["sess-42"]
+
+
+def test_recorder_status_routes_with_session_id() -> None:
+    d, _arm, _disarm, _roll, _stop, status_calls = (
+        _make_dispatcher_with_recorder_hooks()
+    )
+    d.dispatch(_frame("recorder.status", args=["sess-42"]))
+    assert status_calls == ["sess-42"]
+
+
+def test_recorder_arm_drops_missing_args() -> None:
+    """No args → handler logs WARN and returns; no service call."""
+    d, arm_calls, *_ = _make_dispatcher_with_recorder_hooks()
+    d.dispatch(_frame("recorder.arm"))
+    assert arm_calls == []
+    # Dispatcher still counts the dispatch as completed (the handler did
+    # fire — it just declined to invoke the hook). That matches the
+    # established "WARN + return" pattern used by snapshot.recall when
+    # value is missing.
+    assert d.dispatched_count == 1
+    assert d.errored_count == 0
+
+
+def test_recorder_disarm_drops_blank_session_id() -> None:
+    """Blank session_id (empty string, whitespace) → handler declines."""
+    d, _arm, disarm_calls, *_ = _make_dispatcher_with_recorder_hooks()
+    d.dispatch(_frame("recorder.disarm", args=[""]))
+    d.dispatch(_frame("recorder.disarm", args=["   "]))
+    d.dispatch(_frame("recorder.disarm", args=[None]))
+    assert disarm_calls == []
+    assert d.dispatched_count == 3
+    assert d.errored_count == 0
+
+
+def test_recorder_roll_ignores_non_set_action() -> None:
+    """Recorder verbs are lifecycle triggers — no toggle / increment."""
+    d, _arm, _disarm, roll_calls, *_ = _make_dispatcher_with_recorder_hooks()
+    d.dispatch(_frame("recorder.roll", action="toggle", args=["sess-42"]))
+    d.dispatch(_frame("recorder.roll", action="increment", args=["sess-42"]))
+    assert roll_calls == []
+    assert d.dispatched_count == 2
+    assert d.errored_count == 0
+
+
+def test_recorder_stop_coerces_non_string_session_id_to_str() -> None:
+    """args[0] arrives as whatever JSON parsed it as. The handler runs
+    str() + strip() so an integer / float / bool round-trips into a
+    string session_id without crashing."""
+    d, _arm, _disarm, _roll, stop_calls, _status = (
+        _make_dispatcher_with_recorder_hooks()
+    )
+    d.dispatch(_frame("recorder.stop", args=[42]))
+    d.dispatch(_frame("recorder.stop", args=[True]))
+    assert stop_calls == ["42", "True"]
+
+
+def test_recorder_status_multiple_dispatches_for_same_session() -> None:
+    """Status pings are idempotent — handler doesn't dedupe; the
+    recorder service does that if it cares to."""
+    d, _arm, _disarm, _roll, _stop, status_calls = (
+        _make_dispatcher_with_recorder_hooks()
+    )
+    d.dispatch(_frame("recorder.status", args=["sess-1"]))
+    d.dispatch(_frame("recorder.status", args=["sess-1"]))
+    d.dispatch(_frame("recorder.status", args=["sess-1"]))
+    assert status_calls == ["sess-1", "sess-1", "sess-1"]
+
+
+def test_recorder_verbs_with_no_hooks_are_silent_no_ops() -> None:
+    """T2508 default HandlerHooks() has every recorder_* hook = None.
+    Dispatch must not raise and must increment dispatched_count."""
+    dispatcher = EngineCommandDispatcher()
+    register_default_handlers(dispatcher, hooks=None)
+    dispatcher.dispatch(_frame("recorder.arm", args=["sess-1"]))
+    dispatcher.dispatch(_frame("recorder.disarm", args=["sess-1"]))
+    dispatcher.dispatch(_frame("recorder.roll", args=["sess-1"]))
+    dispatcher.dispatch(_frame("recorder.stop", args=["sess-1"]))
+    dispatcher.dispatch(_frame("recorder.status", args=["sess-1"]))
+    assert dispatcher.dispatched_count == 5
+    assert dispatcher.errored_count == 0
+
+
+def test_recorder_handlers_isolate_session_ids() -> None:
+    """Five verbs can interleave on multiple sessions without cross-talk."""
+    d, arm_calls, disarm_calls, roll_calls, stop_calls, status_calls = (
+        _make_dispatcher_with_recorder_hooks()
+    )
+    d.dispatch(_frame("recorder.arm", args=["sess-A"]))
+    d.dispatch(_frame("recorder.arm", args=["sess-B"]))
+    d.dispatch(_frame("recorder.roll", args=["sess-A"]))
+    d.dispatch(_frame("recorder.status", args=["sess-B"]))
+    d.dispatch(_frame("recorder.stop", args=["sess-A"]))
+    d.dispatch(_frame("recorder.disarm", args=["sess-B"]))
+    assert arm_calls == ["sess-A", "sess-B"]
+    assert roll_calls == ["sess-A"]
+    assert status_calls == ["sess-B"]
+    assert stop_calls == ["sess-A"]
+    assert disarm_calls == ["sess-B"]
