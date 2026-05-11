@@ -438,6 +438,24 @@ function ArtifactDetailPanel({
           </dl>
         </div>
 
+        {category.id === 'recordings' ? (
+          <div className="aap-detail-panel__section">
+            <h3 className="aap-detail-panel__section-title">Playback</h3>
+            {/* T2509-3 — inline WAV streaming via /api/recordings/
+                {hash}/wav. Browser-native <audio> controls handle
+                play/pause/scrub/loop; the URL is hash-addressed so
+                the browser can cache aggressively. When the file is
+                missing on disk the backend serves 404 and the audio
+                element surfaces "broken file" UX. */}
+            <audio
+              controls
+              src={`/api/recordings/${encodeURIComponent(item.id as string)}/wav`}
+              style={{ width: '100%' }}
+              preload="metadata"
+            />
+          </div>
+        ) : null}
+
         <div className="aap-detail-panel__section">
           <h3 className="aap-detail-panel__section-title">Primary action</h3>
           <Button
@@ -1021,6 +1039,13 @@ export function AudioArtifactsPage({
         await loadReverbMutation.mutateAsync(item.name as string)
       } else if (activeCategory === 'nam-models') {
         await activateNamMutation.mutateAsync(item.name as string)
+      } else if (activeCategory === 'recordings') {
+        // T2509-3 — "Inspect Recording" surfaces the take via the
+        // detail panel; the inline <audio> element streams the WAV
+        // directly through recorderApi.recordingWavUrl(). The
+        // detail panel is already open at this point; the primary
+        // action just emits a confirmation toast.
+        pushToast('info', `Streaming ${item.name as string}`, 'Use the detail panel to play, scrub, or delete.')
       } else {
         pushToast('info', `${item.name as string} — ${category.primaryAction}`, 'Action sent to engine')
       }
@@ -1515,6 +1540,12 @@ export function AudioArtifactsPage({
             if (activeCategory === 'lv2-plugins' || activeCategory === 'native-juce') {
               await pluginsApi.delete(deleteConfirmItem.id, detailNodeId)
               void queryClient.invalidateQueries({ queryKey: ['plugins'] })
+            } else if (activeCategory === 'recordings') {
+              // T2509-3 — delete via /api/recordings/{hash}. id ===
+              // asset_hash. Invalidate the recordings list so the
+              // row disappears.
+              await recorderApi.deleteRecording(deleteConfirmItem.id)
+              void queryClient.invalidateQueries({ queryKey: ['recordings', 'list'] })
             }
             pushToast('success', `${deleteConfirmItem.name as string} deleted`)
           } catch (e: unknown) {

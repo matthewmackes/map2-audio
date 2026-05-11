@@ -2113,6 +2113,13 @@ Cycle 5 — RecorderService class SHIPPED. New `app/services/recorder_service.py
 - Singleton: `get_recorder_service()` for production wiring; `set_recorder_service()` test seam.
 - New `tests/test_recorder_service.py`: 24 pytest cases covering topic constant, verb enum alignment with dispatcher targets, arm path (basic + tap_matrix normalization + invalid snapshot_id rejection + snapshot_id=0 accept), roll path (transition + idempotent + stopped-rejection + unknown-session rejection), stop path (from rolling + from armed + idempotent + unknown-session rejection), disarm path (removes record + final STOPPED broadcast + silent no-op on unknown), GET path (no side effects + list filter post-disarm), transport/broadcaster injection (no-transport silent no-op + transport-exception isolation + broadcaster-exception isolation), WS payload shape parity, multi-session isolation under interleaved arm/roll/stop. **24/24 green.**
 
+Cycle 12 — T2509-3 RecordingDetailPanel SHIPPED (in-place extension of ArtifactDetailPanel):
+- Detail panel for the recordings category now embeds a Carbon-styled native `<audio controls>` element that streams the WAV directly from `/api/recordings/{hash}/wav` (uses the route from T2508-5 cycle 8). Browser-native controls handle play/pause/scrub/loop; `preload="metadata"` keeps initial-load cost low. When the file is missing on disk the backend serves 404 and the audio element surfaces the broken-file UX natively.
+- `handlePrimaryAction` extended: `'Inspect Recording'` emits a confirmation toast (the panel is already open and the audio element is the actual primary surface).
+- Delete confirmation modal extended: for `activeCategory === 'recordings'`, the modal hits `recorderApi.deleteRecording(asset_hash)` (cycle 6's `/api/recordings/{hash}` DELETE) and invalidates the recordings list cache so the row disappears. Existing toast messaging carries through; error envelope translates to a `pushToast('error', ...)`.
+- Detail panel's existing generic Details section continues to render every column from the recording row (file_name, size, createdAt, assetHash, node, status) — no new fields needed.
+- Existing 8 AudioArtifactsPage tests still pass. Typecheck clean. Atomic build clean. Frontend serving the new bundle on :3000.
+
 Cycle 11 — T2509-2 AudioArtifactsPage `recordings` category SHIPPED:
 - Extended `web/src/app/pages/AudioArtifactsPage.tsx`:
   - New `ArtifactCategory = 'recordings'` enum value.
