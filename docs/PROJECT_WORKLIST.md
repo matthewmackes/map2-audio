@@ -58,7 +58,7 @@ Each task/subtask should contain these fields:
 - `[~]` `T2503` — DAW Service (Tracktion-backed / pivoted to MAP2-native) — Cancelled 2026-05-11, superseded by T2504. **Retirement complete under T2505 on 2026-05-11.**
 - `[✓]` `T2505` — Retire T2503 artefacts (phase 1 of T2504) — closed 2026-05-11. C++ Daw tree archived; Python DAW backend + 76 pytest cases deleted; `MAP2_DAW_MODE` CMake flag removed; frontend shell + sub-pages archived with redirects to `/artifacts`; license + third-party + worklist docs reframed under T2504; cmake configure clean, atomic web build clean, typecheck + readiness tests green.
 - `[✓]` `T2506` — Snapshot graph extensions for recording (phase 2 of T2504) — closed 2026-05-11. SNAPSHOT_GRAPH_VERSION 2026.04→2026.05; new `recording` block with `oneOf [null | full 6-field session]`; v2026.04 docs migrate transparently via `ACCEPTED_LEGACY_GRAPH_VERSIONS`; `CompiledSnapshotIntent` surfaces `record_session_id` + `tap_matrix`; philosophy doc + 5 adjacent test files updated; 14 new + 79 adjacent pytest cases green; jest schema mocks updated; atomic build clean.
-- `[>]` `T2508` — Python recorder service + routes + artifacts integration (phase 4 of T2504) — **dispatcher half + RecorderService class shipped 2026-05-11** (autonomous Continue cycles 4-5/15) ahead of the C++ RT-critical T2507 taps, per the operator's "RT safety is most important" directive. 5 new `engine_command` verbs registered (cycle 4); full lifecycle state machine + transport/broadcaster injection seams + singleton accessor + 24 pytest cases (cycle 5). 107/107 combined sweep green; zero changes inside `juce-engine/Source/` or the audioCallback. HTTP routes + WS topic + asset registry integration remain pending.
+- `[>]` `T2508` — Python recorder service + routes + artifacts integration (phase 4 of T2504) — **dispatcher half + RecorderService class + HTTP routes shipped 2026-05-11** (autonomous Continue cycles 4-6/15) ahead of the C++ RT-critical T2507 taps, per the operator's "RT safety is most important" directive. 5 `engine_command` verbs (cycle 4); RecorderService lifecycle state machine + injection seams (cycle 5); 6-route `/api/v1/recorder/sessions/*` HTTP surface + standard error-envelope mapping + canonical operation IDs (cycle 6). 113/113 combined sweep green; live arm/list/delete verified on the running :8080 backend; zero changes inside `juce-engine/Source/` or the audioCallback. Remaining: WS broadcaster, `/api/recordings/*` artifact-registry routes, AssetType.RECORDING, engine-side transport binding (gated by T2507).
 - `[>]` `T2459-H` — MIDI Backend Unification (controller-host + libremidi + ControllerEngine). All remaining gates consolidated into one bench-session runbook: [`docs/midi/T2459_FINAL_BENCH_SESSION.md`](midi/T2459_FINAL_BENCH_SESSION.md).
 - `[>]` `T2459-H3` — MeloAudio Commander device-pack cutover completion (gate consolidated into T2459 final bench session — `T2459_FINAL_BENCH_SESSION.md` Gate 1)
 - `[>]` `T2459-H3-CFG` — MeloAudio Commander Configurator (Phases 1-6 + Outer-Loop-2 dispatcher all SHIPPED; Phase 7 HIL = T2459 final bench session Gate 1)
@@ -2083,6 +2083,27 @@ Partial completion (2026-05-11 — Claude, autonomous Continue cycles 4-5/15):
 - Existing `test_handlers_with_no_hooks_are_silent_no_ops` + `test_register_default_handlers_does_not_overlap_targets` extended to include the 5 new verbs. Combined sweep: 60/60 green across `test_engine_command_handlers_t2459h.py` + `test_engine_command_dispatcher_t2459h.py` + `test_engine_command_bridge.py`.
 - RT-safety profile preserved verbatim: zero changes to `juce-engine/Source/`; zero changes to anything inside the JUCE audioCallback. Python handlers run on the asyncio loop / WS thread and emit IPC frames; the future T2507 RT-safe C++ tap nodes will consume the same verbs over the shm event ring.
 
+Cycle 6 — HTTP routes SHIPPED. New `app/routes/recorder.py` (~210 LoC) ships the 6-route operator surface under `/api/v1/recorder/sessions`:
+- `POST /sessions` (arm) — body `{snapshot_id, tap_matrix}`; returns 201 + full status payload.
+- `POST /sessions/{id}/roll` — 200 + status; 404 on unknown; 409 on stopped→roll.
+- `POST /sessions/{id}/stop` — 200 + status; idempotent on already-stopped; 404 on unknown.
+- `DELETE /sessions/{id}` — 204; silent no-op on unknown.
+- `GET /sessions/{id}` — 200 + status; 404 on unknown.
+- `GET /sessions` — 200 + `{sessions[], count}`.
+
+Error-envelope mapping: `RecorderServiceError.code` → HTTP status via `_ERROR_STATUS` table (`unknown_session`→404, `invalid_state`→409, `invalid_snapshot_id`→400; fallback 500). Pydantic catches schema-level rejects at 422 (per FastAPI convention).
+
+Operation IDs follow API contract standards: `recorder_arm_session`, `recorder_start_rolling`, `recorder_stop_session`, `recorder_disarm_session`, `recorder_get_session_status`, `recorder_list_sessions`.
+
+Wired via the existing `route_modules` auto-import loop in `app/main.py` (entry: `'recorder'`).
+
+New `tests/test_recorder_routes.py`: 18 cases covering all 6 routes + error mappings + idempotency + operation-id uniqueness pin. **18/18 green** under FastAPI TestClient with dependency_overrides injecting a deterministic-clock + counting-transport fixture service.
+
+Live verification on the running backend at :8080:
+- `POST /api/v1/recorder/sessions` with a real tap_matrix → 201 with `sess-<uuid>` + the canonical 10-field status.
+- `GET /api/v1/recorder/sessions` → 1 in-flight session listed.
+- `DELETE /api/v1/recorder/sessions/{id}` → 204; subsequent `GET /sessions` → `{sessions: [], count: 0}`.
+
 Cycle 5 — RecorderService class SHIPPED. New `app/services/recorder_service.py` (~400 LoC) ships the operator-facing facade ahead of the C++ taps + HTTP routes:
 - `RecorderService` class with the 5 async methods specified by T2508-1: `arm_session(snapshot_id, tap_matrix)` (allocates session_id, transitions ARMED, emits `recorder.arm`), `start_rolling(session_id)` (ARMED → ROLLING + `recorder.roll`), `stop(session_id)` (any → STOPPED + `recorder.stop`; idempotent), `disarm_session(session_id)` (drops record + `recorder.disarm`; silent no-op on unknown), `get_session_status(session_id)`/`list_sessions()` (REST queries; no verb emission).
 - Lifecycle state machine: 3-state (ARMED / ROLLING / STOPPED) with explicit transition validation. Invalid transitions raise `RecorderServiceError` with operator-facing `code` + `message` so route handlers can emit 4xx envelopes. Idempotent on already-rolling and already-stopped (no spurious verbs or broadcasts).
@@ -2093,9 +2114,9 @@ Cycle 5 — RecorderService class SHIPPED. New `app/services/recorder_service.py
 - New `tests/test_recorder_service.py`: 24 pytest cases covering topic constant, verb enum alignment with dispatcher targets, arm path (basic + tap_matrix normalization + invalid snapshot_id rejection + snapshot_id=0 accept), roll path (transition + idempotent + stopped-rejection + unknown-session rejection), stop path (from rolling + from armed + idempotent + unknown-session rejection), disarm path (removes record + final STOPPED broadcast + silent no-op on unknown), GET path (no side effects + list filter post-disarm), transport/broadcaster injection (no-transport silent no-op + transport-exception isolation + broadcaster-exception isolation), WS payload shape parity, multi-session isolation under interleaved arm/roll/stop. **24/24 green.**
 
 Remaining work (still open under T2508):
-- `AssetType.RECORDING` + 10 GB ceiling in `upload_service.py`; `recordings_library_dir()` in `paths.py`.
-- HTTP routes (T2508-4 + T2508-5): `/api/v1/recorder/sessions/*` + `/api/recordings/*`. Wires `get_recorder_service()` into FastAPI routes; standard error-envelope mapping for `RecorderServiceError.code`.
-- WS topic broadcaster at 15 fps cadence (consumes `RECORDER_SESSION_TOPIC`).
+- `AssetType.RECORDING` + 10 GB ceiling in `upload_service.py`; `recordings_library_dir()` in `paths.py` (T2508-2 + T2508-3).
+- `/api/recordings/*` artifact-registry routes (T2508-5).
+- WS topic broadcaster at 15 fps cadence (consumes `RECORDER_SESSION_TOPIC`) — T2508-6.
 - Engine-side transport binding once T2507 C++ taps ship — wire `RecorderTransport` to ship verbs over the controller-host IPC.
 
 Description:

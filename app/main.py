@@ -1154,7 +1154,7 @@ def create_app():
 
         # Import and register routes individually to avoid cascade failures
         # Audio engine routes are provided via the 'engine' module (JUCE-based)
-        route_modules = ['services', 'audio', 'audio_state', 'plugins', 'plugin_appearances', 'midi', 'chains', 'effects_loops', 'health', 'metrics', 'nam', 'nam_models', 'ir', 'guitar', 'websocket', 'websocket_rt', 'automation', 'history', 'performance', 'runtime_profiles', 'plugin_scanner', 'sessions', 'plugin_presets', 'preset_exchange', 'packages', 'profiling', 'reverb', 'impulse_response', 'folders', 'system', 'dsp', 'latency_v2', 'usb_devices', 'system_tests', 'engine', 'network', 'www', 'backup', 'dashboard', 'preset_migration', 'plugin_packages', 'unified_snapshots', 'spectrum', 'cpu_metrics', 'loudness', 'sidechain', 'upload', 'core_plugins', 'soundfonts', 'synthforge', 'mpx1', 'dynamics', 'filters', 'parallel', 'plugin_tags', 'delay', 'modulation', 'pitch', 'shoegaze', 'lexi_love', 'h3000', 'peavey5150', 'tweedbassman', 'passionfx', 'cluster_snapshots', 'cluster_health', 'cluster_health_extended', 'cluster_plugin_inventory', 'cluster_admin', 'bootstrap', 'adoption', 'platform_events', 'webhooks', 'platform_remediation', 'cluster_nodes', 'cluster_update', 'cluster_update_hybrid', 'raft_api', 'config_api', 'push_surface', 'maschine', 'mcu_surface', 'launch_control_surface', 'transport', 'sequencer', 'drums', 'pipewire', 'audio_path', 'special_settings', 'audio_diagnostics', 'shopping', 'graceful_degradation', 'expression', 'dev_proxy', 'api_observatory', 'intelfx', 'ground_control_pro', 'nodes', 'branding', 'state_authority', 'state_authority_corrections', 'device_hero_images', 'devices_meloaudio_commander', 'midi_visualization', 'midi_visualization_ws']
+        route_modules = ['services', 'audio', 'audio_state', 'plugins', 'plugin_appearances', 'midi', 'chains', 'effects_loops', 'health', 'metrics', 'nam', 'nam_models', 'ir', 'guitar', 'websocket', 'websocket_rt', 'automation', 'history', 'performance', 'runtime_profiles', 'plugin_scanner', 'sessions', 'plugin_presets', 'preset_exchange', 'packages', 'profiling', 'reverb', 'impulse_response', 'folders', 'system', 'dsp', 'latency_v2', 'usb_devices', 'system_tests', 'engine', 'network', 'www', 'backup', 'dashboard', 'preset_migration', 'plugin_packages', 'unified_snapshots', 'spectrum', 'cpu_metrics', 'loudness', 'sidechain', 'upload', 'core_plugins', 'soundfonts', 'synthforge', 'mpx1', 'dynamics', 'filters', 'parallel', 'plugin_tags', 'delay', 'modulation', 'pitch', 'shoegaze', 'lexi_love', 'h3000', 'peavey5150', 'tweedbassman', 'passionfx', 'cluster_snapshots', 'cluster_health', 'cluster_health_extended', 'cluster_plugin_inventory', 'cluster_admin', 'bootstrap', 'adoption', 'platform_events', 'webhooks', 'platform_remediation', 'cluster_nodes', 'cluster_update', 'cluster_update_hybrid', 'raft_api', 'config_api', 'push_surface', 'maschine', 'mcu_surface', 'launch_control_surface', 'transport', 'sequencer', 'drums', 'pipewire', 'audio_path', 'special_settings', 'audio_diagnostics', 'shopping', 'graceful_degradation', 'expression', 'dev_proxy', 'api_observatory', 'intelfx', 'ground_control_pro', 'nodes', 'branding', 'state_authority', 'state_authority_corrections', 'device_hero_images', 'devices_meloaudio_commander', 'midi_visualization', 'midi_visualization_ws', 'recorder']
         route_load_failures = []
 
         for route_name in route_modules:
@@ -1252,6 +1252,13 @@ def create_app():
             logger.info("Plugin inventory routes registered")
         except Exception as e:
             logger.warning(f"Failed to load plugin inventory routes: {e}")
+
+        # T2508-4 (phase 4 of T2504 Multi-Track Recorder) — recorder
+        # session lifecycle routes register through the generic
+        # `route_modules` loop above (entry: `'recorder'`). The route
+        # layer is a thin FastAPI shell over `RecorderService` from
+        # cycle 5; the engine-side transport binding lands once T2507
+        # C++ taps ship. Non-RT — routes run on the asyncio loop.
 
         try:
             from app.routes import configurator_devices
