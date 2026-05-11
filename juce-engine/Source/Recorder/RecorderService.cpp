@@ -102,18 +102,20 @@ RecorderServiceStatus RecorderService::stopSession() {
     status.sessionDir           = sessionDir_;
     status.armedAtIso           = armedAtIso_;
     if (recorder_ != nullptr) {
-        status.totalSamplesProcessed = recorder_->totalSamplesProcessed();
-        status.channelOverflowCount  = recorder_->channelOverflowCount();
-        status.preRingOverflowCount  =
+        status.totalSamplesProcessed   = recorder_->totalSamplesProcessed();
+        status.channelOverflowCount    = recorder_->channelOverflowCount();
+        status.preRingOverflowCount    =
             recorder_->tapPreFx()
                 ? recorder_->tapPreFx()->overflowCount() : 0;
-        status.postRingOverflowCount =
+        status.postRingOverflowCount   =
             recorder_->tapPostFx()
                 ? recorder_->tapPostFx()->overflowCount() : 0;
+        status.automationOverflowCount = recorder_->automationOverflowCount();
     }
     if (writer_) {
-        status.preStats  = writer_->preStats();
-        status.postStats = writer_->postStats();
+        status.preStats        = writer_->preStats();
+        status.postStats       = writer_->postStats();
+        status.automationStats = writer_->automationStats();
     }
 
     writer_.reset();
@@ -134,18 +136,20 @@ RecorderServiceStatus RecorderService::getStatus() const {
     status.sessionDir = sessionDir_;
     status.armedAtIso = armedAtIso_;
     if (recorder_ != nullptr) {
-        status.totalSamplesProcessed = recorder_->totalSamplesProcessed();
-        status.channelOverflowCount  = recorder_->channelOverflowCount();
-        status.preRingOverflowCount  =
+        status.totalSamplesProcessed   = recorder_->totalSamplesProcessed();
+        status.channelOverflowCount    = recorder_->channelOverflowCount();
+        status.preRingOverflowCount    =
             recorder_->tapPreFx()
                 ? recorder_->tapPreFx()->overflowCount() : 0;
-        status.postRingOverflowCount =
+        status.postRingOverflowCount   =
             recorder_->tapPostFx()
                 ? recorder_->tapPostFx()->overflowCount() : 0;
+        status.automationOverflowCount = recorder_->automationOverflowCount();
     }
     if (writer_) {
-        status.preStats  = writer_->preStats();
-        status.postStats = writer_->postStats();
+        status.preStats        = writer_->preStats();
+        status.postStats       = writer_->postStats();
+        status.automationStats = writer_->automationStats();
     }
     return status;
 }

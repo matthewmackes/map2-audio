@@ -2319,9 +2319,19 @@ void Map2AudioEngine::audioCallback(const float* const* inputs, int numInputs,
     // Pull pending MIDI events captured by MidiHandler thread.
     drainMidiEvents(midiBuffer, processSamples);
 
-    // Process parameter updates from queue
+    // Process parameter updates from queue.
+    // T2507-6 — tee each operator parameter change into the
+    // EngineRecorder's automation ring so the writer thread can
+    // serialize it into automation.jsonl. RT-safe: one atomic load
+    // + branch + ring push (drop-newest on overflow).
     parameterBridge_.processQueue([this](const ParameterUpdate& update) {
         pluginHost_.setParameter(update.pluginId, update.paramIndex, update.value);
+        if (engineRecorder_) {
+            engineRecorder_->capturePluginParameter(
+                static_cast<std::int64_t>(update.pluginId),
+                update.paramIndex,
+                update.value);
+        }
     });
     parameterBridge_.processSmoothingBlock(processSamples, [this](InstanceId pluginId, int paramIndex, float value) {
         pluginHost_.setParameter(pluginId, paramIndex, value);

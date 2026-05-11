@@ -6555,6 +6555,13 @@ PYBIND11_MODULE(map2_audio_engine, m) {
                  post["iouring_failures"] = status.postStats.ioUringFailures;
                  d["pre"]  = pre;
                  d["post"] = post;
+                 // T2507-6 — surface automation.jsonl stats.
+                 py::dict autom;
+                 autom["path"]            = status.automationStats.path;
+                 autom["entries_written"] = status.automationStats.entriesWritten;
+                 autom["bytes_written"]   = status.automationStats.bytesWritten;
+                 autom["iouring_failures"] = status.automationStats.ioUringFailures;
+                 d["automation"] = autom;
                  return d;
              },
              "Stop the active session. Drains the rings, finalises WAV"

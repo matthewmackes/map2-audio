@@ -67,8 +67,10 @@ struct RecorderServiceStatus {
     std::uint64_t channelOverflowCount  {0};
     std::uint64_t preRingOverflowCount  {0};
     std::uint64_t postRingOverflowCount {0};
-    WavWriterStats preStats;
-    WavWriterStats postStats;
+    std::uint64_t automationOverflowCount {0};
+    WavWriterStats        preStats;
+    WavWriterStats        postStats;
+    AutomationWriterStats automationStats;
     /// Wall-clock arm time (UTC, ISO-ish). Empty when inactive.
     std::string   armedAtIso;
 };

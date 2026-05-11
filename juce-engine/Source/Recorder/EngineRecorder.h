@@ -31,15 +31,40 @@
 
 #pragma once
 
+#include <array>
 #include <atomic>
 #include <cstdint>
 #include <memory>
 
 #include <juce_audio_basics/juce_audio_basics.h>
+#include <juce_core/juce_core.h>
 
 #include "Recorder/RecordingTap.h"
 
 namespace map2::recorder {
+
+// T2507-6 — Automation capture: per-callback ring of parameter
+// changes the audio thread observed while processing the buffer.
+//
+// Sized so a heavy operator gesture (say, 100 simultaneous
+// modulation events from a controller surface across a 64-sample
+// buffer) fits without overflow. The writer thread drains the
+// ring on its 2 ms poll and serializes each entry as a JSON-Lines
+// record into <session_dir>/automation.jsonl via io_uring.
+constexpr int kAutomationRingCapacity = 2048;
+
+// juce::AbstractFifo's sentinel slot — same as the audio ring
+// (kTapRingStorageSlots = kTapRingFrameCount + 1). Allocate storage
+// for one extra slot so the operator-visible capacity is the round
+// 2048.
+constexpr int kAutomationRingStorageSlots = kAutomationRingCapacity + 1;
+
+struct AutomationEntry {
+    std::int64_t  samplePosition {0};  // Sample count from arm() at the time the event fired.
+    std::int64_t  pluginId       {0};
+    int           paramIndex     {0};
+    float         value          {0.0f};
+};
 
 /// Position of the buffer relative to the audio engine's plugin graph.
 enum class EnginePosition {
@@ -82,6 +107,13 @@ public:
     void arm() noexcept {
         sampleCounter_.store(0, std::memory_order_release);
         warnedChannelOverflow_.store(false, std::memory_order_release);
+        // T2507-6 — clear any stale automation entries left over
+        // from a prior session so the new take starts clean.
+        // AbstractFifo::reset is not thread-safe, but we're the
+        // sole producer (audio thread) and consumer (writer thread)
+        // and neither runs while we're flipping armed_=true.
+        automationFifo_.reset();
+        automationOverflowCount_.store(0, std::memory_order_release);
         armed_.store(true, std::memory_order_release);
     }
 
@@ -149,6 +181,68 @@ public:
                              std::memory_order_release);
     }
 
+    /// T2507-6 — RT-safe capture of a parameter change. Called from
+    /// the audio thread's ParameterBridge::processQueue handler.
+    /// Drop-newest on overflow + bump automationOverflowCount_.
+    /// Cost when disarmed: one atomic load + branch.
+    void capturePluginParameter(std::int64_t pluginId,
+                                int paramIndex,
+                                float value) noexcept {
+        if (!armed_.load(std::memory_order_acquire)) {
+            return;
+        }
+        int start1, size1, start2, size2;
+        automationFifo_.prepareToWrite(1, start1, size1, start2, size2);
+        if (size1 <= 0) {
+            automationOverflowCount_.fetch_add(1, std::memory_order_release);
+            return;
+        }
+        auto& entry = automationRing_[static_cast<size_t>(start1)];
+        entry.samplePosition = sampleCounter_.load(std::memory_order_acquire);
+        entry.pluginId       = pluginId;
+        entry.paramIndex     = paramIndex;
+        entry.value          = value;
+        automationFifo_.finishedWrite(1);
+    }
+
+    // ------------------------------------------------------------------
+    // Writer-thread API (non-RT)
+    // ------------------------------------------------------------------
+
+    /// Drain up to `maxEntries` automation entries off the ring,
+    /// writing them into `out`. Returns the number drained. Called
+    /// from the IoUringWriter thread on its 2 ms poll.
+    int drainAutomation(AutomationEntry* out, int maxEntries) noexcept {
+        if (out == nullptr || maxEntries <= 0) {
+            return 0;
+        }
+        int start1, size1, start2, size2;
+        automationFifo_.prepareToRead(maxEntries, start1, size1, start2, size2);
+        const int total = size1 + size2;
+        int written = 0;
+        for (int i = 0; i < size1; ++i) {
+            out[written++] = automationRing_[
+                static_cast<size_t>(start1 + i)];
+        }
+        for (int i = 0; i < size2; ++i) {
+            out[written++] = automationRing_[
+                static_cast<size_t>(start2 + i)];
+        }
+        automationFifo_.finishedRead(total);
+        return total;
+    }
+
+    /// Snapshot of the automation-ring drop-newest counter.
+    std::uint64_t automationOverflowCount() const noexcept {
+        return automationOverflowCount_.load(std::memory_order_acquire);
+    }
+
+    /// Number of automation entries currently queued (writer thread
+    /// use only — not RT-safe).
+    int getAutomationNumReady() const noexcept {
+        return automationFifo_.getNumReady();
+    }
+
 private:
     void captureToTap(RecordingTap& tap,
                       const juce::AudioBuffer<float>& buffer,
@@ -194,6 +288,15 @@ private:
     std::atomic<bool>                  warnedChannelOverflow_     {false};
     std::atomic<std::uint64_t>         overflowChannelClampCount_ {0};
     std::atomic<std::int64_t>          sampleCounter_             {0};
+
+    // T2507-6 — automation capture ring (audio-thread push, writer-
+    // thread drain). Independent of the audio rings so a flood of
+    // parameter events doesn't compete with the audio data for ring
+    // slots. Storage = kAutomationRingCapacity + 1 to absorb the
+    // juce::AbstractFifo sentinel slot.
+    std::array<AutomationEntry, kAutomationRingStorageSlots> automationRing_{};
+    juce::AbstractFifo                 automationFifo_ {kAutomationRingStorageSlots};
+    std::atomic<std::uint64_t>         automationOverflowCount_ {0};
 };
 
 }  // namespace map2::recorder

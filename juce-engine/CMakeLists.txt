@@ -854,6 +854,7 @@ if(BUILD_RECORDER_TESTS)
         tests/EngineRecorderTests.cpp
         tests/IoUringWriterTests.cpp
         tests/RecorderServiceTests.cpp
+        tests/AutomationCaptureTests.cpp
         Source/Recorder/IoUringWriter.cpp
         Source/Recorder/RecorderService.cpp
     )

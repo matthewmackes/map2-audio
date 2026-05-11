@@ -78,6 +78,21 @@ bool IoUringWriter::start() {
         ::close(preFd_); preFd_ = -1;
         return false;
     }
+    // T2507-6 — automation.jsonl. Append-only; the writer thread
+    // streams JSON-Lines records into it via io_uring (one write
+    // per drainAutomationOnce batch).
+    const auto autoPath = (config_.sessionDir / "automation.jsonl").string();
+    automationFd_ = ::open(autoPath.c_str(),
+                           O_WRONLY | O_CREAT | O_TRUNC | O_APPEND,
+                           0644);
+    if (automationFd_ < 0) {
+        std::cerr << "[IoUringWriter] open " << autoPath << " failed: errno="
+                  << errno << "\n";
+        ::close(preFd_);  preFd_  = -1;
+        ::close(postFd_); postFd_ = -1;
+        return false;
+    }
+    automationStats_.path = autoPath;
 
     // Reserve header space; we patch the size fields in stop().
     if (!writeWavHeader(preFd_, 0) || !writeWavHeader(postFd_, 0)) {
@@ -112,8 +127,9 @@ bool IoUringWriter::start() {
 void IoUringWriter::stop() {
     if (!running_.load(std::memory_order_acquire)) {
         // Either never started or already stopped.
-        if (preFd_ >= 0) { ::close(preFd_);  preFd_  = -1; }
-        if (postFd_ >= 0) { ::close(postFd_); postFd_ = -1; }
+        if (preFd_        >= 0) { ::close(preFd_);        preFd_        = -1; }
+        if (postFd_       >= 0) { ::close(postFd_);       postFd_       = -1; }
+        if (automationFd_ >= 0) { ::close(automationFd_); automationFd_ = -1; }
         return;
     }
 
@@ -132,6 +148,9 @@ void IoUringWriter::stop() {
         patchWavHeader(postFd_, postStats_.bytesWritten);
         ::close(postFd_); postFd_ = -1;
     }
+    if (automationFd_ >= 0) {
+        ::close(automationFd_); automationFd_ = -1;
+    }
 
     if (uringInitialized_) {
         ::io_uring_queue_exit(&uring_);
@@ -148,6 +167,7 @@ void IoUringWriter::writerThreadFunc() {
     while (running_.load(std::memory_order_acquire)) {
         drainTapOnce(*recorder_->tapPreFx(),  preFd_,  preStats_);
         drainTapOnce(*recorder_->tapPostFx(), postFd_, postStats_);
+        drainAutomationOnce();
         std::this_thread::sleep_for(kPollInterval);
     }
 
@@ -156,6 +176,94 @@ void IoUringWriter::writerThreadFunc() {
     // disarmed; the ring isn't empty by accident.
     drainTapOnce(*recorder_->tapPreFx(),  preFd_,  preStats_);
     drainTapOnce(*recorder_->tapPostFx(), postFd_, postStats_);
+    drainAutomationOnce();
+}
+
+
+void IoUringWriter::drainAutomationOnce() {
+    if (recorder_ == nullptr || automationFd_ < 0) {
+        return;
+    }
+    // Drain up to a batch of automation entries on this poll. The
+    // ring is 2048 deep (kAutomationRingCapacity); we drain in
+    // chunks that fit comfortably in a single io_uring write.
+    static constexpr int kDrainBatchSize = 256;
+    AutomationEntry entries[kDrainBatchSize];
+    while (true) {
+        const int drained = recorder_->drainAutomation(entries, kDrainBatchSize);
+        if (drained <= 0) {
+            return;
+        }
+
+        // Build one newline-terminated JSON-Lines buffer for the
+        // batch. Each line:
+        // {"sample":<int>,"plugin_id":<int>,"param":<int>,"value":<float>}
+        thread_local std::string scratch;
+        scratch.clear();
+        scratch.reserve(static_cast<std::size_t>(drained) * 96);
+
+        char numBuf[64];
+        for (int i = 0; i < drained; ++i) {
+            const auto& e = entries[i];
+            scratch.append("{\"sample\":");
+            std::snprintf(numBuf, sizeof(numBuf), "%lld",
+                          static_cast<long long>(e.samplePosition));
+            scratch.append(numBuf);
+            scratch.append(",\"plugin_id\":");
+            std::snprintf(numBuf, sizeof(numBuf), "%lld",
+                          static_cast<long long>(e.pluginId));
+            scratch.append(numBuf);
+            scratch.append(",\"param\":");
+            std::snprintf(numBuf, sizeof(numBuf), "%d", e.paramIndex);
+            scratch.append(numBuf);
+            scratch.append(",\"value\":");
+            // %g chosen for compact float serialization; preserves
+            // enough precision for operator-readable automation
+            // takes. Switch to %.9g if reproducible sample-exact
+            // playback becomes a requirement.
+            std::snprintf(numBuf, sizeof(numBuf), "%g",
+                          static_cast<double>(e.value));
+            scratch.append(numBuf);
+            scratch.append("}\n");
+        }
+
+        // Submit one io_uring write for the whole batch.
+        struct io_uring_sqe* sqe = io_uring_get_sqe(&uring_);
+        if (sqe == nullptr) {
+            ++automationStats_.ioUringFailures;
+            // Without an SQE slot we drop the batch on the floor —
+            // the ring is small relative to the 2 ms poll cadence
+            // so this should be a rare failure mode.
+            return;
+        }
+        io_uring_prep_write(sqe, automationFd_,
+                            scratch.data(),
+                            static_cast<unsigned>(scratch.size()), -1);
+        const int submitted = io_uring_submit(&uring_);
+        if (submitted < 0) {
+            ++automationStats_.ioUringFailures;
+            return;
+        }
+        struct io_uring_cqe* cqe = nullptr;
+        if (io_uring_wait_cqe(&uring_, &cqe) == 0) {
+            if (cqe->res < 0) {
+                ++automationStats_.ioUringFailures;
+            } else {
+                automationStats_.bytesWritten +=
+                    static_cast<std::uint64_t>(cqe->res);
+                automationStats_.entriesWritten +=
+                    static_cast<std::uint64_t>(drained);
+            }
+            io_uring_cqe_seen(&uring_, cqe);
+        }
+
+        // If we drained the full batch, there may be more in the
+        // ring; loop to clear it before sleeping. This bounds the
+        // worst-case drain latency under heavy automation traffic.
+        if (drained < kDrainBatchSize) {
+            return;
+        }
+    }
 }
 
 

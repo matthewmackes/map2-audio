@@ -48,6 +48,14 @@ struct WavWriterStats {
     std::uint64_t ioUringFailures {0};
 };
 
+/// T2507-6 — automation.jsonl stats.
+struct AutomationWriterStats {
+    std::string   path;
+    std::uint64_t entriesWritten  {0};
+    std::uint64_t bytesWritten    {0};
+    std::uint64_t ioUringFailures {0};
+};
+
 /**
  * IoUringWriter — drains an EngineRecorder's pre+post rings and
  * writes them to <session_dir>/pre.wav + <session_dir>/post.wav.
@@ -106,10 +114,14 @@ public:
 
     const WavWriterStats& preStats()  const noexcept { return preStats_;  }
     const WavWriterStats& postStats() const noexcept { return postStats_; }
+    const AutomationWriterStats& automationStats() const noexcept {
+        return automationStats_;
+    }
 
 private:
     void writerThreadFunc();
     void drainTapOnce(RecordingTap& tap, int fd, WavWriterStats& stats);
+    void drainAutomationOnce();
     bool writeWavHeader(int fd, std::uint64_t dataBytesPlaceholder);
     bool patchWavHeader(int fd, std::uint64_t actualDataBytes);
 
@@ -120,16 +132,18 @@ private:
     std::thread       writerThread_;
 
     // Open file descriptors.
-    int preFd_  {-1};
-    int postFd_ {-1};
+    int preFd_        {-1};
+    int postFd_       {-1};
+    int automationFd_ {-1};
 
     // io_uring state — owned exclusively by the writer thread once
     // start() returns true.
     struct ::io_uring uring_ {};
     bool              uringInitialized_ {false};
 
-    WavWriterStats preStats_;
-    WavWriterStats postStats_;
+    WavWriterStats         preStats_;
+    WavWriterStats         postStats_;
+    AutomationWriterStats  automationStats_;
 };
 
 }  // namespace map2::recorder
