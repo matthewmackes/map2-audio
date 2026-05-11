@@ -143,6 +143,22 @@ export interface LastCcResponse {
   observed_at: number
 }
 
+// ---------- Feedback test shape (T2459-H8b-1) ----------
+
+export interface BindingFeedbackTestRequest {
+  normalized_value?: number
+  use_current_value?: boolean
+}
+
+export interface BindingFeedbackTestResponse {
+  binding_id: string
+  channel: number
+  cc: number
+  normalized_value: number
+  cc_value: number
+  source: 'manual' | 'current'
+}
+
 // ---------- Cluster matrix shape (T2484-1 iter 184) ----------
 
 export interface ClusterPeerMatrix {
@@ -237,6 +253,18 @@ export const midiBindingsApi = {
     fetchJson<MidiBindingRead>(
       `${API_BASE}/midi/bindings/${encodeURIComponent(bindingId)}/disable`,
       { method: 'POST' },
+    ),
+
+  // T2459-H8b-1 — outbound feedback test by canonical binding_id.
+  // Replaces the legacy integer-id midiApiV2.testMappingFeedback that
+  // the Selected-block panel had to disable post-migration.
+  test: (
+    bindingId: string,
+    options?: BindingFeedbackTestRequest,
+  ) =>
+    fetchJson<BindingFeedbackTestResponse>(
+      `${API_BASE}/midi/bindings/${encodeURIComponent(bindingId)}/test`,
+      { method: 'POST', body: JSON.stringify(options ?? {}) },
     ),
 }
 

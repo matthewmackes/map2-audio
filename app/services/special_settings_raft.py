@@ -177,6 +177,24 @@ class SpecialSettingsStateManager:
                     f"last_active_node={settings.last_active_node}, "
                     f"version={settings.version}"
                 )
+
+                # Why: every node must notify its own connected browsers after
+                # the committed log entry lands locally; otherwise Browser B on
+                # any node stays stale until manual reload (see useSpecialSettings).
+                try:
+                    from app.services.websocket_manager import ws_manager
+                    await ws_manager.broadcast_json(
+                        {
+                            "type": "special_settings_update",
+                            "version": settings.version,
+                            "updated_by_node": settings.updated_by_node,
+                        }
+                    )
+                except Exception as exc:
+                    self.logger.warning(
+                        f"Failed to broadcast special_settings_update: {exc}"
+                    )
+
                 return True
                 
         except Exception as e:

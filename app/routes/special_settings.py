@@ -51,9 +51,33 @@ from app.services.special_settings_normalization import (
     resolve_snapshot_setlist_order_from_settings,
 )
 from app.services.cluster.raft_consensus import get_raft_consensus
+from app.services.websocket_manager import ws_manager
 
 logger = logging.getLogger(__name__)
 router = APIRouter(prefix="/api/settings/special", tags=["special"])
+
+
+async def _broadcast_special_settings_update(
+    version: Optional[int] = None,
+    updated_by_node: Optional[str] = None,
+) -> None:
+    """Notify connected WebSocket clients that special settings changed.
+
+    Why: useSpecialSettings (web/src/app/hooks/useSpecialSettings.tsx) listens
+    on /ws/events for `{"type": "special_settings_update"}` and reloads. Without
+    this broadcast, a pin set in Browser A is invisible to Browser B until B
+    reloads — and B's next write silently clobbers A's pins from stale state.
+    """
+    try:
+        await ws_manager.broadcast_json(
+            {
+                "type": "special_settings_update",
+                "version": version,
+                "updated_by_node": updated_by_node,
+            }
+        )
+    except Exception as exc:
+        logger.warning(f"Failed to broadcast special_settings_update: {exc}")
 
 # Detect if running in cluster mode
 CLUSTER_MODE = os.getenv("CLUSTER_MODE", "disabled").lower() == "enabled"
@@ -316,7 +340,12 @@ async def update_special_settings(request: SpecialSettingsUpdateRequest):
                 f"snapshot_preload_pins={len(settings.snapshot_preload_pins or [])}, "
                 f"last_active_node={settings.last_active_node}"
             )
-            
+
+            await _broadcast_special_settings_update(
+                version=settings.version,
+                updated_by_node=settings.updated_by_node,
+            )
+
             return SpecialSettingsResponse(
                 enabled=settings.enabled,
                 hidden_plugins=settings.hidden_plugins or [],
@@ -369,7 +398,12 @@ async def reset_special_settings():
                 
                 await session.flush()
                 logger.info("Special settings reset to defaults")
-            
+
+                await _broadcast_special_settings_update(
+                    version=settings.version,
+                    updated_by_node=getattr(settings, "updated_by_node", None),
+                )
+
             return {"status": "reset", "message": "Special settings reset to defaults"}
     
     except Exception as e:

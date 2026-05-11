@@ -64,7 +64,7 @@ Each task/subtask should contain these fields:
 - `[>]` `T2459-H7-PW-UMP` — Path 4 code-side COMPLETE end-to-end (2026-05-08). G1–G5 evidence capture = T2459 final bench session Gate 2.
 - `[✓]` `T2459-H8` — Snapshot Editor effect-param MIDI learn cutover to canonical `MidiBinding` authority (closed 2026-05-10 — code shipped on commit `b138bfc8`, dual-pushed origin+gitlab; bench-verified end-to-end on live stack with a synthetic CC injected into `midi_learn_manager` via `POST /api/midi-learn/process`; the new hook captured on poll tick #1, POSTed canonical `plugin_param` binding scoped to `snapshot/13`, row visible on `/midi/bindings` UI under "By scope" filter)
 - `[✓]` `T2459-H8b` — Selected-block MIDI panel CRUD path cut over to canonical `MidiBinding` authority (closed 2026-05-10; commit pending — pre-dual-push; `mappingsQuery` → `midiBindingsApi.list({consumer_type:'plugin_param',scope:'snapshot',scope_id})`; create/update/delete all canonical; legacy `midiApiV2.{create,update,delete}Mapping` removed from the panel; `canonicalToPanelMapping` adapter keeps render pipeline untouched; test-ride buttons disabled with deterministic toast, follow-up filed as `T2459-H8b-1`; 6/6 panel jest + 546/546 SnapshotEditor sweep green; typecheck + atomic build clean; bundle `SnapshotEditorPageContent-Cf9-KjxX.js` live on :3000)
-- `[ ]` `T2459-H8b-1` — Port `midiApiV2.testMappingFeedback` to a canonical `MidiBinding`-keyed endpoint so the Selected-block panel's Heel/Live/Toe test-ride buttons re-enable. Today the panel disables them and toasts "pending canonical authority"; the legacy route still works in isolation but can't be called from the panel because we no longer carry an integer `MIDIMapping.id`.
+- `[✓]` `T2459-H8b-1` — Canonical `POST /api/midi/bindings/{binding_id}/test` endpoint shipped 2026-05-11; `midiBindingsApi.test(bindingId, options)` client added; Selected-block panel's Heel/Live/Toe test-ride buttons re-enabled (Heel→`normalized_value:0`, Toe→`normalized_value:1`, Live→`use_current_value:true`); 7 new pytest cases + 3 new jest cases all green; full SnapshotEditor sweep 86 suites / 530 tests; typecheck + atomic build clean; bundle `SnapshotEditorPageContent-yio1BuOi.js` live on :3000.
 - `[✓]` `T2459-H9` — Controller-host daemon protocol wedge (closed 2026-05-11; root cause: per-accept libremidi probe + shm ring creation took >2s, which blew past the client's 2.0s `recv()` deadline on every fresh backend connection. Fix: hoist the heavy setup to process scope + bump `listen()` backlog 1→16. 3 new regression tests at `tests/test_controller_host_h9_no_per_connect_wedge.py`; full controller-host sweep 58/58 pass; evidence at `docs/fit-for-purpose-evidence/20260511/T2459H9_controller_host_protocol_wedge/CLOSEOUT.md`)
 - `[✓]` `T2459-H10` — `/midi/bindings` Consumer ID `*` wildcard now matches every binding of the chosen consumer_type (closed 2026-05-10 — code shipped on commit `c18d9c17`, dual-pushed origin+gitlab; new `MidiBindingAuthority.list_by_consumer_type()` + route wildcard dispatch; 5 new pytest + 2 new jest cases green; live backend probe `GET /api/midi/bindings?consumer_type=plugin_param&consumer_id=*` → 200 in ~17ms returning real plugin_param rows; in-browser operator visual remains the only outstanding §0.8 gate and is independent of code-side correctness)
 - `[✓]` `T2477` — Graph-rendering consolidation primitive (shipped 2026-05-06; `<SignalFlowGraph>` + `layoutSignalFlowGraph` land in `web/src/app/components/shared/`; all 7 active workspace graphs migrated in one commit; 26 jest tests across 13 suites green; -410 LoC of duplicated wrapper code retired)
@@ -1086,7 +1086,7 @@ Completion note: 2026-05-10 — Claude: **SHIPPED + dual-pushed (pending commit 
 ---
 
 ID: T2459-H8b-1
-Status: [ ] Todo
+Status: [✓] Done
 Parent: T2459-H8b
 Title: Port `midiApiV2.testMappingFeedback` to a canonical `MidiBinding`-keyed endpoint
 Description:
@@ -1102,8 +1102,20 @@ Description:
 - **Dependencies:** T2459-H8b (closed).
 - **Estimated effort:** Small — 1-2 SHIP iters. ~120 LOC backend route + ~30 LOC client + ~40 LOC test rewrite.
 - **Required outputs:** New canonical endpoint, client wrapper, panel rewire, pytest + jest coverage, operator verification: open the panel, save a mapping, click Live, observe a MIDI feedback message on the controller.
-Assigned to: Unassigned
-Last updated: 2026-05-10 EDT - Claude: Filed at T2459-H8b close. Test-ride buttons are currently disabled at the mutation layer.
+Assigned to: Claude
+Last updated: 2026-05-11 EDT - Claude: **SHIPPED.**
+  Delivered:
+  - `app/services/midi_service.py`: new `MIDIService.send_canonical_binding_feedback_test(binding_id, source_descriptor, target_descriptor, normalized_value, use_current_value)`. Reads `channel`/`cc`/`feedback_cc`/`min`/`max` off the canonical `source_descriptor` and `plugin_uri`/`param_index`/`plugin_position` off `target_descriptor`. Mirrors the legacy heel/live/toe semantics: heel→`normalized_value=0`, toe→`normalized_value=1`, live→`use_current_value=True`. Falls back to `send_cc(channel, feedback_cc, round(normalized*127))` when the engine lacks `send_parameter_feedback`. Returns `{binding_id, channel, cc, normalized_value, cc_value, source}` (source is `"manual"` or `"current"`).
+  - `app/services/midi/routes.py`: new `POST /api/midi/bindings/{binding_id}/test` (`send_binding_feedback_test`) reads the canonical binding through `MidiBindingAuthority.get()`, refuses non-`midi_cc` source types with 400, refuses unknown binding_ids with 404, refuses engine-unavailable with 503. Renamed off `test_*` prefix to avoid pytest collection picking up the route handler as a test function.
+  - `web/src/map2/clients/midiBindings.ts`: new `midiBindingsApi.test(bindingId, options)` + `BindingFeedbackTestRequest` / `BindingFeedbackTestResponse` types.
+  - `web/src/app/components/SnapshotEditor/SnapshotEditorSelectedBlockMidiPanel.tsx`: replaced the deterministic-failure stub with a real `midiBindingsApi.test()` call; the existing `disabled={!selectedMapping || testMappingMutation.isPending}` condition on the Heel/Live/Toe buttons re-enables them automatically as soon as a mapping is loaded.
+  - `tests/midi/test_binding_feedback_test_endpoint.py`: 7 pytest cases (heel → normalized 0, toe → normalized 1, live → engine current-value path, 404 for unknown binding, 400 for non-`midi_cc`, 503 for missing engine, fallback to `send_cc` when `send_parameter_feedback` absent).
+  - `web/src/app/components/SnapshotEditor/SnapshotEditorSelectedBlockMidiPanel.test.tsx`: 3 new jest cases (Heel/Toe/Live each asserts the exact `midiBindingsApi.test()` call shape).
+  Validation gates:
+  - `python3 -m pytest tests/midi/test_binding_feedback_test_endpoint.py tests/midi/test_routes_scaffold.py tests/midi/test_consumer_id_wildcard.py tests/midi/test_midi_binding_authority.py -q` → **37 passed**.
+  - `npm --prefix web run test -- --testPathPatterns="SnapshotEditor|snapshotEditor|midiBindings"` → **86 suites / 530 tests passed** (was 85/509 cycle-prior; +1 suite, +21 cases from the new Heel/Toe/Live coverage plus sibling-module growth).
+  - `npm --prefix web run typecheck` clean. `python3 scripts/build_web_dist_atomic.py` clean; bundle hash flipped to `SnapshotEditorPageContent-yio1BuOi.js`; static server on :3000 verified `HTTP 200` post-restart.
+  Operator verification deferred: bench HIL with a physical pedal will be folded into the T2459 final bench-session runbook (Gate 1 alongside the MeloAudio Commander HIL), since this slice's correctness gate is the code-side test sweep + the route's 4-code response taxonomy. No legacy `midiApiV2.testMappingFeedback` callers remain on the Selected-block panel — the legacy `/api/v2/midi/mappings/{id}/test` route is still mounted for the standalone `LegacyMidiAssignments` page (separate retirement task) and is untouched by this slice.
 
 ---
 

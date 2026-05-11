@@ -370,6 +370,94 @@ class MIDIService:
             "source": source,
         }
 
+    async def send_canonical_binding_feedback_test(
+        self,
+        binding_id: str,
+        source_descriptor: Dict[str, Any],
+        target_descriptor: Dict[str, Any],
+        normalized_value: Optional[float] = None,
+        use_current_value: bool = False,
+    ) -> Dict[str, Any]:
+        # T2459-H8b-1 — canonical-binding-keyed equivalent of
+        # send_mapping_feedback_test. The legacy variant looked up a
+        # MIDIMapping row by integer id; this one accepts the descriptor
+        # blobs straight off a MidiBindingRead so the panel can keep its
+        # string binding_id all the way through.
+        if not self._engine:
+            raise RuntimeError("MIDI engine is not available")
+
+        try:
+            channel_raw = int(source_descriptor.get("channel", 0))
+        except (TypeError, ValueError):
+            channel_raw = 0
+        output_channel = self._normalize_feedback_channel(channel_raw)
+
+        try:
+            cc_raw = int(source_descriptor.get("cc", 0))
+        except (TypeError, ValueError):
+            cc_raw = 0
+        feedback_cc_raw = source_descriptor.get("feedback_cc")
+        try:
+            feedback_cc = int(feedback_cc_raw) if feedback_cc_raw is not None else cc_raw
+        except (TypeError, ValueError):
+            feedback_cc = cc_raw
+
+        plugin_uri = target_descriptor.get("plugin_uri")
+        param_index = target_descriptor.get("param_index")
+        plugin_position = target_descriptor.get("plugin_position")
+        try:
+            min_val = float(source_descriptor.get("min", 0.0))
+            max_val = float(source_descriptor.get("max", 1.0))
+        except (TypeError, ValueError):
+            min_val, max_val = 0.0, 1.0
+
+        if use_current_value:
+            if plugin_uri is None or param_index is None:
+                raise RuntimeError(
+                    "Binding target is missing plugin_uri/param_index for current-value feedback"
+                )
+            current_value = await self._call_engine_method(
+                "get_plugin_parameter",
+                args=(plugin_uri, int(param_index)),
+                kwargs={"plugin_position": plugin_position},
+            )
+            if current_value is None:
+                raise RuntimeError("The engine did not return a current parameter value")
+            normalized = self._normalize_parameter_feedback_value(
+                float(current_value), min_val, max_val
+            )
+            source = "current"
+        else:
+            normalized = max(
+                0.0,
+                min(1.0, float(normalized_value if normalized_value is not None else 1.0)),
+            )
+            source = "manual"
+
+        feedback_sent = await self._call_engine_method(
+            "send_parameter_feedback",
+            "midi_send_parameter_feedback",
+            args=(output_channel, feedback_cc, normalized),
+        )
+        cc_value = int(round(normalized * 127))
+        if feedback_sent is None:
+            feedback_sent = await self._call_engine_method(
+                "send_cc",
+                "midi_send_cc",
+                args=(output_channel, feedback_cc, cc_value),
+            )
+        if feedback_sent is None:
+            raise RuntimeError("The MIDI engine does not support outbound controller feedback")
+
+        return {
+            "binding_id": binding_id,
+            "channel": output_channel,
+            "cc": feedback_cc,
+            "normalized_value": normalized,
+            "cc_value": cc_value,
+            "source": source,
+        }
+
     async def get_all_mappings(self, session: AsyncSession, chain_id: Optional[int] = None) -> List[Dict[str, Any]]:
         """Get all MIDI mappings, optionally filtered by chain."""
         try:

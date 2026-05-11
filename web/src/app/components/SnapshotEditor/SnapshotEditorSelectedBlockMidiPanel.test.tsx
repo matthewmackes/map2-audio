@@ -17,6 +17,7 @@ jest.mock('../../../map2/clients/midiBindings', () => {
       create: jest.fn(),
       update: jest.fn(),
       delete: jest.fn(),
+      test: jest.fn(),
     },
   }
 })
@@ -31,6 +32,7 @@ const mockList = midiBindingsApi.list as jest.Mock
 const mockCreate = midiBindingsApi.create as jest.Mock
 const mockUpdate = midiBindingsApi.update as jest.Mock
 const mockDelete = midiBindingsApi.delete as jest.Mock
+const mockTest = midiBindingsApi.test as jest.Mock
 
 const plugin: ChainPlugin = {
   uri: 'plugin://drive',
@@ -154,6 +156,15 @@ describe('JuceGridSelectedBlockMidiPanel', () => {
     mockCreate.mockResolvedValue(gainBinding)
     mockUpdate.mockResolvedValue(gainBinding)
     mockDelete.mockResolvedValue(undefined)
+    mockTest.mockReset()
+    mockTest.mockResolvedValue({
+      binding_id: 'b-gain-uuid',
+      channel: 1,
+      cc: 11,
+      normalized_value: 0,
+      cc_value: 0,
+      source: 'manual',
+    })
   })
 
   it('skips the read when no snapshot is active', async () => {
@@ -270,5 +281,46 @@ describe('JuceGridSelectedBlockMidiPanel', () => {
 
     expect(mockDelete).toHaveBeenCalledTimes(1)
     expect(mockDelete).toHaveBeenCalledWith('b-gain-uuid')
+  })
+
+  // T2459-H8b-1 — re-enabled test-ride buttons must hit the
+  // canonical `POST /api/midi/bindings/{id}/test` endpoint.
+  it('Heel button sends normalized_value=0 through midiBindingsApi.test', async () => {
+    renderPanel()
+    await screen.findByLabelText('MIDI map: 1/2 mapped')
+
+    const heel = screen.getByRole('button', { name: /^Heel$/i })
+    expect(heel).not.toBeDisabled()
+    fireEvent.click(heel)
+    await new Promise((r) => setTimeout(r, 0))
+
+    expect(mockTest).toHaveBeenCalledTimes(1)
+    expect(mockTest).toHaveBeenCalledWith('b-gain-uuid', { normalized_value: 0 })
+  })
+
+  it('Toe button sends normalized_value=1 through midiBindingsApi.test', async () => {
+    renderPanel()
+    await screen.findByLabelText('MIDI map: 1/2 mapped')
+
+    const toe = screen.getByRole('button', { name: /^Toe$/i })
+    expect(toe).not.toBeDisabled()
+    fireEvent.click(toe)
+    await new Promise((r) => setTimeout(r, 0))
+
+    expect(mockTest).toHaveBeenCalledTimes(1)
+    expect(mockTest).toHaveBeenCalledWith('b-gain-uuid', { normalized_value: 1 })
+  })
+
+  it('Live button asks the engine for the current value via use_current_value=true', async () => {
+    renderPanel()
+    await screen.findByLabelText('MIDI map: 1/2 mapped')
+
+    const live = screen.getByRole('button', { name: /^Live$/i })
+    expect(live).not.toBeDisabled()
+    fireEvent.click(live)
+    await new Promise((r) => setTimeout(r, 0))
+
+    expect(mockTest).toHaveBeenCalledTimes(1)
+    expect(mockTest).toHaveBeenCalledWith('b-gain-uuid', { use_current_value: true })
   })
 })

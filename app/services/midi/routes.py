@@ -386,6 +386,63 @@ async def delete_binding(binding_id: str) -> None:
             raise HTTPException(status_code=404, detail=f"binding not found: {binding_id}")
 
 
+# T2459-H8b-1 — outbound feedback test for a canonical MidiBinding.
+# Replaces the legacy integer-id `POST /api/v2/midi/mappings/{id}/test`
+# call that the Snapshot Editor Selected-block panel had to disable when
+# it cut over to canonical authority. Re-enables the Heel/Live/Toe buttons.
+
+
+class BindingFeedbackTestRequest(BaseModel):
+    normalized_value: Optional[float] = None
+    use_current_value: bool = False
+
+
+class BindingFeedbackTestResponse(BaseModel):
+    binding_id: str
+    channel: int
+    cc: int
+    normalized_value: float
+    cc_value: int
+    source: str
+
+
+@router.post("/bindings/{binding_id}/test", response_model=BindingFeedbackTestResponse)
+async def send_binding_feedback_test(
+    binding_id: str,
+    request: BindingFeedbackTestRequest,
+) -> BindingFeedbackTestResponse:
+    from app.services.midi_service import midi_service
+
+    async with get_session(read_only=True) as session:
+        authority = MidiBindingAuthority(session)
+        try:
+            binding = await authority.get(binding_id)
+        except MidiBindingNotFound:
+            raise HTTPException(status_code=404, detail=f"binding not found: {binding_id}")
+
+    if binding.source_type != "midi_cc":
+        raise HTTPException(
+            status_code=400,
+            detail=(
+                "feedback test is only supported for midi_cc bindings; "
+                f"binding {binding_id} has source_type={binding.source_type}"
+            ),
+        )
+
+    try:
+        payload = await midi_service.send_canonical_binding_feedback_test(
+            binding_id=binding_id,
+            source_descriptor=dict(binding.source_descriptor or {}),
+            target_descriptor=dict(binding.target_descriptor or {}),
+            normalized_value=request.normalized_value,
+            use_current_value=request.use_current_value,
+        )
+    except RuntimeError as exc:
+        raise HTTPException(status_code=503, detail=str(exc)) from exc
+
+    return BindingFeedbackTestResponse(**payload)
+
+
 @router.post("/bindings/{binding_id}/disable", response_model=MidiBindingRead)
 async def disable_binding(
     binding_id: str,

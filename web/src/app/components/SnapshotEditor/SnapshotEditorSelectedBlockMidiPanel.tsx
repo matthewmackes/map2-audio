@@ -366,18 +366,22 @@ export function JuceGridSelectedBlockMidiPanel({
     },
   })
 
-  // T2459-H8b-1 — test-ride feedback has no canonical equivalent yet.
-  // Keeping the mutation surface but disabled at the button layer
-  // (see disabled prop on Heel/Live/Toe buttons) so the operator gets
-  // a deterministic "pending canonical authority" toast rather than a
-  // 404 from a stale legacy endpoint that no longer has matching rows.
+  // T2459-H8b-1 — re-enabled on the canonical-binding-keyed
+  // `POST /api/midi/bindings/{id}/test` endpoint. Heel/Toe send a fixed
+  // normalized value (0 / 1); Live asks the engine for the current
+  // parameter value via use_current_value=true.
   const testMappingMutation = useMutation({
-    mutationFn: async (_args: { bindingId: string; mode: TestRideMode }) => {
-      void _args
-      throw new Error('Test-ride feedback pending canonical authority endpoint (T2459-H8b-1).')
+    mutationFn: async ({ bindingId, mode }: { bindingId: string; mode: TestRideMode }) => {
+      const options = mode === 'live'
+        ? { use_current_value: true }
+        : { normalized_value: mode === 'heel' ? 0 : 1 }
+      return midiBindingsApi.test(bindingId, options)
+    },
+    onSuccess: (_result, variables) => {
+      pushToast(`Test-ride sent (${variables.mode})`, 'info')
     },
     onError: (error) => {
-      pushToast(error instanceof Error ? error.message : 'Test-ride feedback unavailable', 'warn')
+      pushToast(error instanceof Error ? error.message : 'Test-ride feedback failed', 'warn')
     },
   })
 
