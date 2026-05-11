@@ -1,0 +1,67 @@
+/* T2509-4 — RecordingPanel layout. Carbon-conformant via tokens. */
+
+.recording-panel {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cds-spacing-04);
+  padding: var(--cds-spacing-05);
+  background-color: var(--cds-layer-01);
+  border: 1px solid var(--cds-border-subtle-01);
+  border-radius: 4px;
+}
+
+.recording-panel__header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: var(--cds-spacing-03);
+}
+
+.recording-panel__title {
+  font-size: var(--cds-heading-03-font-size, 1.25rem);
+  font-weight: var(--cds-heading-03-font-weight, 400);
+  margin: 0;
+  color: var(--cds-text-primary);
+}
+
+.recording-panel__badges {
+  display: flex;
+  gap: var(--cds-spacing-02);
+}
+
+.recording-panel__controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: var(--cds-spacing-03);
+}
+
+.recording-panel__metadata {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cds-spacing-02);
+  margin: 0;
+  padding-top: var(--cds-spacing-03);
+  border-top: 1px solid var(--cds-border-subtle-01);
+  font-size: var(--cds-body-01-font-size, 0.875rem);
+}
+
+.recording-panel__metadata-row {
+  display: flex;
+  justify-content: space-between;
+  gap: var(--cds-spacing-04);
+}
+
+.recording-panel__metadata-row dt {
+  color: var(--cds-text-secondary);
+}
+
+.recording-panel__metadata-row dd {
+  margin: 0;
+  color: var(--cds-text-primary);
+  text-align: right;
+}
+
+.recording-panel__metadata-mono {
+  font-family: var(--cds-code-01-font-family, 'IBM Plex Mono', monospace);
+  font-size: 0.8125rem;
+}
