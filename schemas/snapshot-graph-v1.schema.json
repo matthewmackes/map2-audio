@@ -1,15 +1,15 @@
 {
   "$schema": "https://json-schema.org/draft/2020-12/schema",
   "$id": "https://map2.audio/schemas/snapshot-graph-v1.schema.json",
-  "title": "MAP2 Snapshot Graph v2026.04",
-  "description": "Monolithic graph document schema for MAP2 State Authority. A snapshot is a single JSONB document that fully describes a rig state: plugins/system-blocks as nodes, port-to-port audio/sidechain edges, parallel/series groups, A-F channels, routing mode, A/B/C/D quad morph, effects loops, unified control mappings (MIDI/Expression/Maschine/OSC/GPIO), I/O bindings, tempo, output safety, deployment intent, and template composition.",
+  "title": "MAP2 Snapshot Graph v2026.05",
+  "description": "Monolithic graph document schema for MAP2 State Authority. A snapshot is a single JSONB document that fully describes a rig state: plugins/system-blocks as nodes, port-to-port audio/sidechain edges, parallel/series groups, A-F channels, routing mode, A/B/C/D quad morph, effects loops, unified control mappings (MIDI/Expression/Maschine/OSC/GPIO), I/O bindings, tempo, output safety, deployment intent, template composition, and (v2026.05+) the optional snapshot-bound `recording` session block consumed by the T2504 Multi-Track Recorder.",
   "type": "object",
   "required": ["version", "meta", "graph"],
   "additionalProperties": true,
   "properties": {
     "version": {
       "type": "string",
-      "const": "2026.04"
+      "const": "2026.05"
     },
     "meta": {
       "type": "object",
@@ -384,6 +384,39 @@
         },
         "linked": { "type": "boolean" }
       }
+    },
+    "recording": {
+      "description": "Optional snapshot-bound recording session metadata. Consumed by the T2504 Multi-Track Recorder + Playback subsystem. `null` means no recording session is bound to this snapshot. When non-null, the T2507 engine taps install per-chain capture nodes per `tap_matrix`, and the recorder service (T2508) drives lifecycle from `armed`/`rolling`.",
+      "oneOf": [
+        { "type": "null" },
+        {
+          "type": "object",
+          "required": ["armed", "rolling", "session_id", "started_at", "participating_nodes", "tap_matrix"],
+          "additionalProperties": true,
+          "properties": {
+            "session_id": { "type": ["string", "null"] },
+            "armed": { "type": "boolean" },
+            "rolling": { "type": "boolean" },
+            "started_at": { "type": ["string", "null"] },
+            "participating_nodes": {
+              "type": "array",
+              "items": { "type": "string", "minLength": 1 }
+            },
+            "tap_matrix": {
+              "type": "object",
+              "additionalProperties": {
+                "type": "object",
+                "required": ["pre_fx", "post_fx"],
+                "additionalProperties": true,
+                "properties": {
+                  "pre_fx": { "type": "boolean" },
+                  "post_fx": { "type": "boolean" }
+                }
+              }
+            }
+          }
+        }
+      ]
     },
     "assets": {
       "type": "array",

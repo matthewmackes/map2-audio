@@ -19,6 +19,7 @@ from app.services.chain_service import (
     _default_loader_state_for_plugin,
 )
 from app.services.juce_parameter_schema import is_fixed_native_processor_uri
+from app.services.state_authority_graph import SNAPSHOT_GRAPH_VERSION
 
 logger = logging.getLogger(__name__)
 
@@ -711,7 +712,7 @@ def _build_chain_morph_document(snapshot_detail: Dict[str, Any], chain: Dict[str
 
     routing = snapshot_detail.get("routing") if isinstance(snapshot_detail.get("routing"), dict) else {}
     return {
-        "version": "2026.04",
+        "version": SNAPSHOT_GRAPH_VERSION,
         "meta": {
             "name": str(snapshot_detail.get("name") or chain.get("name") or "Morph Endpoint"),
             "type": "snapshot",

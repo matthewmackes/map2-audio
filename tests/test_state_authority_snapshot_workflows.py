@@ -95,7 +95,7 @@ def test_snapshot_service_persists_and_reads_state_authority_document(tmp_path, 
 
             snapshot_row = await session.get(database_module.Snapshot, created["id"])
             assert snapshot_row is not None
-            assert snapshot_row.document["version"] == "2026.04"
+            assert snapshot_row.document["version"] == "2026.05"
             assert "map2:fx:nam" in [node["uri"] for node in snapshot_row.document["graph"]["nodes"]]
 
             await session.execute(delete(database_module.SnapshotChannel).where(database_module.SnapshotChannel.snapshot_id == created["id"]))

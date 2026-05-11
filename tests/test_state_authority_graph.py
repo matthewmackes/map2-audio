@@ -21,7 +21,7 @@ def test_load_snapshot_graph_schema_reads_monolithic_schema_file():
     schema = load_snapshot_graph_schema()
 
     assert SNAPSHOT_GRAPH_SCHEMA_PATH.exists()
-    assert schema["title"] == "MAP2 Snapshot Graph v2026.04"
+    assert schema["title"] == "MAP2 Snapshot Graph v2026.05"
     assert schema["properties"]["graph"]["properties"]["nodes"]["items"]["properties"]["uri"]["pattern"].startswith("^")
 
 

@@ -1,4 +1,4 @@
-"""Runtime validator tests for the full v2026.04 graph document schema.
+"""Runtime validator tests for the full v2026.05 graph document schema.
 
 Companion to `tests/test_state_authority_graph.py` (which exercises the pre-rollout
 validator surface) and `tests/test_snapshot_graph_schema.py` (which asserts

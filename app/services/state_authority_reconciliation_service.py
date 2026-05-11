@@ -15,6 +15,7 @@ from typing import Any
 
 from app.services.juce_engine_service import get_audio_engine
 from app.services.snapshot_runtime_service import snapshot_plugin_position
+from app.services.state_authority_graph import SNAPSHOT_GRAPH_VERSION
 
 
 RECONCILIATION_TOLERANCE = 0.01
@@ -215,7 +216,7 @@ class StateAuthorityReconciliationService:
             return []
         document = await engine.save_graph_document(
             {
-                "version": "2026.04",
+                "version": SNAPSHOT_GRAPH_VERSION,
                 "meta": {"name": "Reconciliation Probe", "type": "snapshot"},
                 "graph": {"nodes": [], "edges": []},
             }

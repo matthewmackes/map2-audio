@@ -1,4 +1,4 @@
-"""Schema-level tests for the MAP2 Snapshot Graph v2026.04 monolithic schema.
+"""Schema-level tests for the MAP2 Snapshot Graph v2026.05 monolithic schema.
 
 These tests exercise the `schemas/snapshot-graph-v1.schema.json` file directly,
 confirming that every locked design decision from the State Authority plan
@@ -214,4 +214,4 @@ def test_schema_assets_require_sha256_hash_pattern():
 def test_schema_file_passes_draft_2020_12_declaration():
     schema = json.loads(SNAPSHOT_GRAPH_SCHEMA_PATH.read_text(encoding="utf-8"))
     assert schema["$schema"] == "https://json-schema.org/draft/2020-12/schema"
-    assert schema["title"] == "MAP2 Snapshot Graph v2026.04"
+    assert schema["title"] == "MAP2 Snapshot Graph v2026.05"

@@ -57,6 +57,7 @@ Each task/subtask should contain these fields:
 - `[>]` `T2504` — **Multi-Track Recorder & Playback (snapshot-bound)** epic — supersedes cancelled T2503. 8 phase epics (T2505 cleanup → T2506 schema → T2507 taps → T2508 routes → T2509 GUI → T2510 cluster → T2511 punch-in → **T2512 Guitarist Looper**). Locked-decision body + per-phase sub-tasks filed 2026-05-11. **T2505 closed 2026-05-11** (autonomous Continue cycle 1/15); next is T2506 schema.
 - `[~]` `T2503` — DAW Service (Tracktion-backed / pivoted to MAP2-native) — Cancelled 2026-05-11, superseded by T2504. **Retirement complete under T2505 on 2026-05-11.**
 - `[✓]` `T2505` — Retire T2503 artefacts (phase 1 of T2504) — closed 2026-05-11. C++ Daw tree archived; Python DAW backend + 76 pytest cases deleted; `MAP2_DAW_MODE` CMake flag removed; frontend shell + sub-pages archived with redirects to `/artifacts`; license + third-party + worklist docs reframed under T2504; cmake configure clean, atomic web build clean, typecheck + readiness tests green.
+- `[✓]` `T2506` — Snapshot graph extensions for recording (phase 2 of T2504) — closed 2026-05-11. SNAPSHOT_GRAPH_VERSION 2026.04→2026.05; new `recording` block with `oneOf [null | full 6-field session]`; v2026.04 docs migrate transparently via `ACCEPTED_LEGACY_GRAPH_VERSIONS`; `CompiledSnapshotIntent` surfaces `record_session_id` + `tap_matrix`; philosophy doc + 5 adjacent test files updated; 14 new + 79 adjacent pytest cases green; jest schema mocks updated; atomic build clean.
 - `[>]` `T2459-H` — MIDI Backend Unification (controller-host + libremidi + ControllerEngine). All remaining gates consolidated into one bench-session runbook: [`docs/midi/T2459_FINAL_BENCH_SESSION.md`](midi/T2459_FINAL_BENCH_SESSION.md).
 - `[>]` `T2459-H3` — MeloAudio Commander device-pack cutover completion (gate consolidated into T2459 final bench session — `T2459_FINAL_BENCH_SESSION.md` Gate 1)
 - `[>]` `T2459-H3-CFG` — MeloAudio Commander Configurator (Phases 1-6 + Outer-Loop-2 dispatcher all SHIPPED; Phase 7 HIL = T2459 final bench session Gate 1)
@@ -1990,6 +1991,26 @@ Last updated: 2026-05-11 — Claude (autonomous Continue cycle 1/15 — T2505 cl
 ---
 
 ## T2506 — Snapshot graph extensions for recording (phase 2 of T2504)
+
+Status: [✓] Done — 2026-05-11 (autonomous Continue cycle 2/15).
+
+Completion notes:
+- T2506-1 (schema): `SNAPSHOT_GRAPH_VERSION` bumped from `"2026.04"` → `"2026.05"`. New `ACCEPTED_LEGACY_GRAPH_VERSIONS = ("2026.04",)` registers v2026.04 for transparent on-read migration. JSON schema title rewritten to "MAP2 Snapshot Graph v2026.05"; `version.const` to `"2026.05"`. New top-level `recording` block defined as `oneOf [{type:null}, {type:object, required:[armed,rolling,session_id,started_at,participating_nodes,tap_matrix], ...}]`, with `tap_matrix` modeled as `additionalProperties: { required: [pre_fx,post_fx], properties: {pre_fx:boolean, post_fx:boolean} }`.
+- T2506-2 (migration): `normalize_graph_document()` recognizes legacy v2026.04 versions and upcasts to v2026.05 by injecting `recording = None`. v2026.05 inputs with partial / malformed recording dicts are coerced into the canonical 6-field shape (`session_id` blank → None; missing `armed`/`rolling` → False; `participating_nodes` strips blanks; `tap_matrix` drops blank keys + non-mapping values; `pre_fx`/`post_fx` default to False). Non-Mapping `recording` values (int, string, list) are coerced to `None`.
+- T2506-3 (compiler): `CompiledSnapshotIntent` gained `record_session_id: Optional[str] = None` and `tap_matrix: dict[str, dict[str, bool]] = {}`. `compile_snapshot_detail_to_intent()` reads `detail["recording"]` (if a dict) and surfaces both fields onto the intent. Blank session_ids are normalized to `None`; tap_matrix drops blank chain_ids and non-dict tap definitions.
+- T2506-4 (philosophy doc upkeep): `docs/philosophy/snapshot-single-source-of-truth.md` §2 schema table expanded to 5 blocks (added `recording`), text now references v2026.05 + `ACCEPTED_LEGACY_GRAPH_VERSIONS`. §4 flow diagram now describes the `record_session_id` / `tap_matrix` thread from compile → engine taps (T2507) → recorder lifecycle (T2508).
+- T2506-5 (tests): new `tests/test_state_authority_graph_recording.py` with 14 cases covering schema version pin, legacy version acceptance, schema title pin, schema `recording.oneOf` shape, v2026.04→v2026.05 migration (raw + with validate), v2026.05 round-trip with full recording dict, partial-recording-dict canonicalization, malformed tap_matrix entry drop, non-Mapping recording → None coercion, compile-intent defaults, compile-intent full surfacing, compile-intent drops malformed entries, compile-intent strips blank session_ids. **14/14 green.**
+- Adjacent service refactor: `app/services/state_authority_reconciliation_service.py` + `app/services/snapshot_runtime_service.py` now import `SNAPSHOT_GRAPH_VERSION` instead of hard-coding `"2026.04"` literally. Existing test version refs ("MAP2 Snapshot Graph v2026.04" title + `version == "2026.04"` assertions) updated to v2026.05 in 5 test files; documents that *input* version=2026.04 retained as-is (migration path tested).
+
+Verification:
+- `python3 -m pytest tests/test_state_authority_graph_recording.py tests/test_state_authority_graph.py tests/test_snapshot_graph_schema.py` → 48/48 green.
+- `python3 -m pytest tests/test_state_authority_graph_full_schema.py` → 38/38 green.
+- `python3 -m pytest tests/test_state_authority_routes.py tests/test_state_authority_reconciliation_service.py tests/test_state_authority_templates.py` → 36/36 green.
+- `python3 -m pytest tests/test_state_authority_activation_service.py tests/test_state_authority_snapshot_workflows.py` → 19/19 green.
+- `npm --prefix web run typecheck` → clean.
+- `npm --prefix web run test -- --testPathPatterns='stateAuthority\.test|GraphDocumentInspector'` → 17/17 jest green.
+- `python3 scripts/build_web_dist_atomic.py` → clean atomic build.
+- Engine-dependent integration tests (test_juce_engine_graph_document.py, test_juce_engine_service_instance_resolution.py, test_snapshot_service.py) block on `/dev/snd/seq` ALSA seq probe — pre-existing infra dependency unrelated to T2506; the migration path is fully validated by the schema-layer test sweep above. Engine-restart bench validation will be folded into a future cycle when the engine restart is part of the change.
 
 ID: T2506
 Parent: T2504

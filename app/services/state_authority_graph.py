@@ -21,7 +21,10 @@ from urllib.parse import urlparse
 
 _PROJECT_ROOT = Path(__file__).resolve().parents[2]
 SNAPSHOT_GRAPH_SCHEMA_PATH = _PROJECT_ROOT / "schemas" / "snapshot-graph-v1.schema.json"
-SNAPSHOT_GRAPH_VERSION = "2026.04"
+SNAPSHOT_GRAPH_VERSION = "2026.05"
+# Schema versions accepted as inputs to normalize_graph_document(). v2026.04 is
+# migrated to v2026.05 on read by injecting `recording=None`; see T2506.
+ACCEPTED_LEGACY_GRAPH_VERSIONS = ("2026.04",)
 
 _EXACT_URI_MAP = {
     "map2://juce/nam": "map2:fx:nam",
@@ -141,7 +144,17 @@ def extract_asset_references(document: Mapping[str, Any]) -> set[str]:
 
 def normalize_graph_document(document: Mapping[str, Any]) -> dict[str, Any]:
     normalized = deepcopy(dict(document))
+    incoming_version = normalized.get("version")
+    if incoming_version in ACCEPTED_LEGACY_GRAPH_VERSIONS:
+        # T2506 — v2026.04 → v2026.05 upcast. The only structural addition is
+        # the top-level `recording` block, which becomes `None` on legacy docs
+        # (no recording session bound to the snapshot).
+        normalized["version"] = SNAPSHOT_GRAPH_VERSION
+        normalized.setdefault("recording", None)
     normalized.setdefault("version", SNAPSHOT_GRAPH_VERSION)
+    # `recording` is always normalized (even for v2026.05 input that already
+    # has the field) so downstream consumers see the canonical 6-field shape.
+    normalized["recording"] = _normalize_recording_block(normalized.get("recording"))
     graph = normalized.setdefault("graph", {})
     nodes = graph.setdefault("nodes", [])
     morph = graph.get("morph")
@@ -460,6 +473,48 @@ def _normalize_morph_position(value: Any) -> Any:
 def _normalize_optional_string(value: Any) -> str | None:
     text = str(value or "").strip()
     return text or None
+
+
+def _normalize_recording_block(value: Any) -> dict[str, Any] | None:
+    """Normalize the T2506 top-level `recording` block.
+
+    Accepted shapes:
+      * `None` — no recording session bound to this snapshot. Round-trips as `None`.
+      * `dict` — coerced into the canonical 6-field layout. Missing keys default
+        to safe values (`armed=False`, `rolling=False`, empty `tap_matrix`).
+    """
+    if value is None:
+        return None
+    if not isinstance(value, Mapping):
+        return None
+    session_id = _normalize_optional_string(value.get("session_id"))
+    started_at = _normalize_optional_string(value.get("started_at"))
+    participating = value.get("participating_nodes")
+    participating_nodes: list[str] = []
+    if isinstance(participating, list):
+        for entry in participating:
+            text = str(entry or "").strip()
+            if text:
+                participating_nodes.append(text)
+    raw_matrix = value.get("tap_matrix")
+    tap_matrix: dict[str, dict[str, bool]] = {}
+    if isinstance(raw_matrix, Mapping):
+        for chain_id, taps in raw_matrix.items():
+            chain_key = str(chain_id or "").strip()
+            if not chain_key or not isinstance(taps, Mapping):
+                continue
+            tap_matrix[chain_key] = {
+                "pre_fx": bool(taps.get("pre_fx", False)),
+                "post_fx": bool(taps.get("post_fx", False)),
+            }
+    return {
+        "session_id": session_id,
+        "armed": bool(value.get("armed", False)),
+        "rolling": bool(value.get("rolling", False)),
+        "started_at": started_at,
+        "participating_nodes": participating_nodes,
+        "tap_matrix": tap_matrix,
+    }
 
 
 def _clamp01(value: Any) -> float:

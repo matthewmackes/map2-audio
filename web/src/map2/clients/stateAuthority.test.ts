@@ -87,13 +87,13 @@ describe('stateAuthorityApi', () => {
   it('fetches the monolithic JSON Schema from /api/state-authority/schema', async () => {
     fetchMock.mockResolvedValueOnce({
       ok: true,
-      json: async () => ({ title: 'MAP2 Snapshot Graph v2026.04' }),
+      json: async () => ({ title: 'MAP2 Snapshot Graph v2026.05' }),
     })
 
     const schema = await stateAuthorityApi.getSchema()
 
     expect(fetchMock.mock.calls[0]?.[0]).toBe(`${API_BASE}/state-authority/schema`)
-    expect(schema.title).toBe('MAP2 Snapshot Graph v2026.04')
+    expect(schema.title).toBe('MAP2 Snapshot Graph v2026.05')
   })
 
   it('POSTs morph XY coordinates to /api/state-authority/morph/position', async () => {

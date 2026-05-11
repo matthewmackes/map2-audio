@@ -106,6 +106,27 @@ def compile_snapshot_detail_to_intent(
     routing = detail.get("routing") if isinstance(detail.get("routing"), dict) else {}
     active_path = routing.get("active_channel_key")
     series_order = routing.get("series_order") if isinstance(routing.get("series_order"), list) else []
+    # T2506 — surface the snapshot-bound recording session, when present, so
+    # the JUCE engine can install T2507 taps and the recorder service can drive
+    # lifecycle. `recording` is `None` when no session is bound; both compiled
+    # fields fall back to defaults in that case.
+    recording_block = detail.get("recording") if isinstance(detail.get("recording"), dict) else None
+    record_session_id: str | None = None
+    tap_matrix: dict[str, dict[str, bool]] = {}
+    if recording_block is not None:
+        raw_session_id = recording_block.get("session_id")
+        if isinstance(raw_session_id, str) and raw_session_id.strip():
+            record_session_id = raw_session_id.strip()
+        raw_matrix = recording_block.get("tap_matrix")
+        if isinstance(raw_matrix, dict):
+            for chain_id, taps in raw_matrix.items():
+                chain_key = str(chain_id or "").strip()
+                if not chain_key or not isinstance(taps, dict):
+                    continue
+                tap_matrix[chain_key] = {
+                    "pre_fx": bool(taps.get("pre_fx", False)),
+                    "post_fx": bool(taps.get("post_fx", False)),
+                }
 
     return CompiledSnapshotIntent(
         snapshot_id=snapshot_id,
@@ -146,6 +167,8 @@ def compile_snapshot_detail_to_intent(
             preferred_nodes=preferred_nodes,
         ),
         chains=[chain for chain in detail.get("chains", []) if isinstance(chain, dict)],
+        record_session_id=record_session_id,
+        tap_matrix=tap_matrix,
         extensions=_normalize_extensions(extensions),
     )
 

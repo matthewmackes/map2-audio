@@ -215,6 +215,12 @@ class CompiledSnapshotIntent(BaseModel):
     routing: AudioStateRouting
     deployment: AudioStateDeployment = Field(default_factory=AudioStateDeployment)
     chains: list[dict[str, Any]] = Field(default_factory=list)
+    # T2506 — snapshot-bound recording session, threaded through the State
+    # Authority graph so the JUCE engine can install/uninstall T2507 taps and
+    # the T2508 recorder service can drive lifecycle. Both fields are `None`
+    # when no recording session is bound to the snapshot.
+    record_session_id: Optional[str] = None
+    tap_matrix: dict[str, dict[str, bool]] = Field(default_factory=dict)
     extensions: dict[str, Any] = Field(default_factory=dict)
 
 

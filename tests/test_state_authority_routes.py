@@ -122,7 +122,7 @@ def test_get_state_authority_schema_returns_monolithic_schema():
     assert response.status_code == 200
     schema = response.json()
     assert schema["$schema"] == "https://json-schema.org/draft/2020-12/schema"
-    assert schema["title"] == "MAP2 Snapshot Graph v2026.04"
+    assert schema["title"] == "MAP2 Snapshot Graph v2026.05"
     assert "meta" in schema["properties"]
     assert "graph" in schema["properties"]
     assert "routing" in schema["properties"]

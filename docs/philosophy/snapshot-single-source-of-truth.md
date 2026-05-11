@@ -17,13 +17,14 @@ If a piece of state matters to the sound, it lives in the graph document. If it 
 
 ## 2. The data model
 
-A snapshot is a JSON document validated against schema version `2026.04` (`app/services/state_authority_graph.py`, `SNAPSHOT_GRAPH_SCHEMA_PATH`). It has four blocks:
+A snapshot is a JSON document validated against schema version `2026.05` (`app/services/state_authority_graph.py`, `SNAPSHOT_GRAPH_SCHEMA_PATH`). v2026.04 documents migrate transparently on read — `ACCEPTED_LEGACY_GRAPH_VERSIONS` in the same module lists every accepted legacy version. It has five blocks:
 
 | Block | Holds |
 |---|---|
 | `meta` | name, description, tags, community metadata, I/O bindings |
 | `graph` | channels, chains, plugin nodes, routing/morph configuration, MIDI map, tempo, audio levels |
 | `controls` | monitoring outputs, automation lanes, expression mappings |
+| `recording` | (v2026.05+) optional snapshot-bound recording session: `session_id`, `armed`, `rolling`, `started_at`, `participating_nodes`, `tap_matrix` per chain (pre-fx + post-fx). `None` when no session is bound. Consumed by the T2504 Multi-Track Recorder. |
 | `extensions` | vendor-specific payloads (kept additive so old snapshots load) |
 
 Persistence is in SQLite (WAL enabled, `app/database.py`). The `Snapshot` ORM row stores the full `document` JSON plus a few denormalized columns (`controls_payload`, `extensions_payload`, `live_state_payload`) and — critically — a `version` column used as an **optimistic-concurrency token**. Routes accept an `If-Match` header and reject stale edits with `412 Precondition Failed`. Two operators editing the same snapshot cannot both win silently.
@@ -66,6 +67,8 @@ edit → mutate document → bump version → write revision
                                    ↓
                   WebSocket → live_snapshot_payload → UI
 ```
+
+When the document's `recording` block transitions through `armed`/`rolling`, the same compile-and-apply path threads `record_session_id` and `tap_matrix` onto the intent (T2506). The JUCE engine installs T2507 capture taps for each chain marked in `tap_matrix`, and the T2508 recorder service drives lifecycle (arm → roll → stop) by mutating the `recording` block — never by side-channel state. The recorder's broadcast topic (`RECORDER_SESSION_TOPIC`) reflects the live session but is a *projection*, not authority.
 
 The frontend hooks `useSnapshotLive` and `useSnapshotPinDetails` subscribe to `live_snapshot_payload` and re-render against it. A recent fix (commit `9750ce1f` — "re-sync `live_snapshot_payload` after plugin mutations") tightened exactly this loop: when the engine mutates a plugin, the runtime payload is rebroadcast so the editor never shows a value the engine no longer holds.
 
