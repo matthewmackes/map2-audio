@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1579** Python | **1642** TypeScript | **205** C++/H | **149** Docs | **4261** total commits | **4** stars | **0** forks | **0** open issues
+**1579** Python | **1642** TypeScript | **205** C++/H | **149** Docs | **4263** total commits | **4** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`1cd7d9a8`](https://github.com/matthewmackes/map2-audio/commit/1cd7d9a851bd2a2d1d127ea72e58c11133e9ffa7) | feat(T2508): add 5 recorder verb handlers to engine_comma... | Map2 Audio | 2026-05-11 |
+| [`b4799b96`](https://github.com/matthewmackes/map2-audio/commit/b4799b96b54ad8ed3e6a2ece1a418857435a91ad) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-11 |
 | [`5942a2c8`](https://github.com/matthewmackes/map2-audio/commit/5942a2c814f03ee1b0dc40a06ad3d4fdd4c827ae) | refactor(T2473): extract Plugin Browser handlers into sib... | Map2 Audio | 2026-05-11 |
 | [`ec998450`](https://github.com/matthewmackes/map2-audio/commit/ec998450417f58314f3d35ac6052dfa63c233a1b) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-11 |
 | [`8dcc5e7f`](https://github.com/matthewmackes/map2-audio/commit/8dcc5e7faa0e05e24432a2470eda08def5e25b37) | feat(T2506): snapshot graph extensions for recording (v20... | Map2 Audio | 2026-05-11 |
 | [`595794b0`](https://github.com/matthewmackes/map2-audio/commit/595794b0788ecc16b9ce39b41dd11c048817241b) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-11 |
 | [`bb4c552a`](https://github.com/matthewmackes/map2-audio/commit/bb4c552a2f5b0ec017fcfe4d9791fa4725bf973e) | chore(T2505): retire T2503 DAW Service epic; clean tree f... | Map2 Audio | 2026-05-11 |
 | [`7ff59a43`](https://github.com/matthewmackes/map2-audio/commit/7ff59a433d614f53ff3e910c7d3cc3377f649267) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-11 |
-| [`4b2c95a9`](https://github.com/matthewmackes/map2-audio/commit/4b2c95a9c3ebd35a49a7a0edd9672ea3dbc03a25) | docs(worklist): T2504 — Multi-Track Recorder + Playback e... | Map2 Audio | 2026-05-11 |
-| [`1c9f8404`](https://github.com/matthewmackes/map2-audio/commit/1c9f8404a707708778388af6b8cc12a56f8d840a) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-11 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
