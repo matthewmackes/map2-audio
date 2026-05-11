@@ -376,6 +376,25 @@ class RecorderService:
             return [self._project(s) for s in self._sessions.values()]
 
     # ------------------------------------------------------------------
+    # Late binding seams (production-wiring helpers)
+    # ------------------------------------------------------------------
+
+    def replace_broadcaster(self, broadcaster: Optional[RecorderBroadcaster]) -> None:
+        """Swap the broadcaster after construction. Used by
+        `recorder_ws_bridge.init_recorder_ws_bridge` so app startup
+        can wire the singleton to the WS pipeline without rebuilding
+        the in-flight session map. ``None`` un-binds and reverts to
+        silent broadcast.
+        """
+        self._broadcaster = broadcaster
+
+    def replace_transport(self, transport: Optional[RecorderTransport]) -> None:
+        """Swap the transport after construction. Used once the T2507
+        engine-side IPC lands so app startup can bind real verb
+        emission without rebuilding the singleton."""
+        self._transport = transport
+
+    # ------------------------------------------------------------------
     # Internals
     # ------------------------------------------------------------------
 

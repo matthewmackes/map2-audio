@@ -922,6 +922,18 @@ async def lifespan(app):
         except Exception as exc:
             logger.warning("EngineCommandBridge not initialized: %s", exc)
 
+        # T2508-6 (phase 4 of T2504 Multi-Track Recorder) — wire the
+        # RecorderService singleton to the platform WS pipeline so
+        # /api/v1/recorder/* lifecycle transitions stream over
+        # `recorder:session`. Transition-only path for now; real-time
+        # counters (elapsed_seconds, take_counts, peak_levels) land
+        # once T2507 engine-side counters ship. RT-irrelevant.
+        try:
+            from app.services.recorder_ws_bridge import init_recorder_ws_bridge
+            init_recorder_ws_bridge()
+        except Exception as exc:
+            logger.warning("RecorderService WS bridge not initialized: %s", exc)
+
         # T2500-MV-B2 + T2500-MV-B-RAW-TAP — install the MIDI visualization
         # producer bridge (dispatcher observer + MidiHub raw subscriber).
         # Idempotent + defensive: a buffer-side regression here cannot break
