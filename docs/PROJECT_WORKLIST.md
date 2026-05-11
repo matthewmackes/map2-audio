@@ -54,6 +54,8 @@ Each task/subtask should contain these fields:
 
 ## Top Active Tasks (5-10)
 
+- `[>]` `T2504` — **Multi-Track Recorder & Playback (snapshot-bound)** epic — supersedes cancelled T2503. 8 phase epics (T2505 cleanup → T2506 schema → T2507 taps → T2508 routes → T2509 GUI → T2510 cluster → T2511 punch-in → **T2512 Guitarist Looper**). Locked-decision body + per-phase sub-tasks filed 2026-05-11; first slice = T2505 retirement of T2503 artefacts.
+- `[~]` `T2503` — DAW Service (Tracktion-backed / pivoted to MAP2-native) — Cancelled 2026-05-11, superseded by T2504. Code-side artefacts scheduled for retirement under T2505.
 - `[>]` `T2459-H` — MIDI Backend Unification (controller-host + libremidi + ControllerEngine). All remaining gates consolidated into one bench-session runbook: [`docs/midi/T2459_FINAL_BENCH_SESSION.md`](midi/T2459_FINAL_BENCH_SESSION.md).
 - `[>]` `T2459-H3` — MeloAudio Commander device-pack cutover completion (gate consolidated into T2459 final bench session — `T2459_FINAL_BENCH_SESSION.md` Gate 1)
 - `[>]` `T2459-H3-CFG` — MeloAudio Commander Configurator (Phases 1-6 + Outer-Loop-2 dispatcher all SHIPPED; Phase 7 HIL = T2459 final bench session Gate 1)
@@ -1589,10 +1591,12 @@ Phase progress:
 ## T2503 — DAW Service (Tracktion-backed) Epic (filed 2026-05-09)
 
 ID: T2503
-Status: [>] In Progress
-Title: DAW Service (Tracktion-backed) — first-class platform service offering
+Status: [~] Cancelled — superseded by T2504 (Multi-Track Recorder) on 2026-05-11
+Title: DAW Service (MAP2-native) — first-class platform service offering [SUPERSEDED]
 Opened: 2026-05-09
-Authorization: Standing autonomous full-execution authority granted by operator. Each "set" ships as commit + dual-push + verify; bench HIL operator-side. Code lands behind `MAP2_DAW_MODE` build flag (default OFF) so sets compose without disturbing the live engine.
+Closed: 2026-05-11 — replaced by the Multi-Track Recorder reframing. See T2504 for the successor epic and migration plan. Code-side artefacts (`juce-engine/Source/Daw/`, `app/routes/daw.py`, `app/services/daw_*.py`, `docs/architecture/DAW_SERVICE.md`, the `-DMAP2_DAW_MODE` CMake flag) are scheduled for retirement under T2505. The `MultiTrackRecorderShell` React routes shipped in Set 10 are salvageable and rewire under T2509.
+Supersession rationale: "DAW mode" introduced two engine personalities (Live / DAW) gated by a build flag, violating the spirit of the first-class-services rule (one canonical authority per offering). Operator decision 2026-05-11: reframe as a Multi-Track Recorder service whose source-of-truth is the active snapshot. No mode switch; recorder is an always-available overlay on the live engine; cluster-wide synchronized recording becomes a normal Raft-replicated session block on the snapshot graph.
+Authorization (historical): Standing autonomous full-execution authority granted by operator. Each "set" ships as commit + dual-push + verify; bench HIL operator-side. Code lands behind `MAP2_DAW_MODE` build flag (default OFF) so sets compose without disturbing the live engine.
 
 Description:
 - Goal: Add Tracktion Engine (https://github.com/Tracktion/tracktion_engine, GPLv3) as the C++ core of a new tier-1 platform service named **DAW**, peer to MIDI / AVB / Sampler / Audio Effects. The DAW service exposes timeline, tracks, clips, automation, and plugin hosting through the existing engine_command IPC, and is driven primarily by MIDI control surfaces (MK1, MCU-protocol surfaces, generic MIDI learn). The React UI is a *reference parity* surface, not the tier-1 interface.
@@ -1879,6 +1883,355 @@ Last updated: 2026-05-10 EDT - Claude
     - `python3 scripts/build_web_dist_atomic.py` → builds clean in 20.8s; new bundles emitted: `MultiTrackRecorderShell-vSMUljbC.js` + 8 sub-area pages + `dawProjectStore-DS4CoFOQ.js` + `MultiTrackRecorderShell-CbU_rkD6.css`.
     - Live verification on port 3000: `curl -I /multitrack-recorder` → 200; `/multitrack-recorder/transport` → 200; `/daw` → 200 (SPA shell loads then router redirects); bundle artefacts directly fetchable (`MultiTrackRecorderShell-*.js` 200).
   - Acceptance for the promotion: route merger ✓, 8 sub-area pages ✓, UnifiedChannelGrid reuse in Mixer ✓, PluginCard accent registry reuse in Plugins ✓, MidiHubShell-pattern shell + status drawer ✓, NODE_PAGE_KEYS.daw + scope provider ✓, jest 17/17 + pytest 76/76 + typecheck + build all green ✓, port 3000 serves new bundles ✓. Bench-gate `T2503-daw-soak` (30-min UA-1000 soak) remains operator-side.
+
+---
+
+## T2504 — Multi-Track Recorder Epic (filed 2026-05-11)
+
+ID: T2504
+Status: [>] In Progress
+Title: Multi-Track Recorder & Playback — snapshot-bound first-class service offering
+Opened: 2026-05-11
+Supersedes: T2503
+Authorization: Standing autonomous full-execution authority granted by operator. Each phase ships as commit + dual-push + verify; bench HIL (RT soak) operator-side. No build-time flag; recorder is always available in the live engine.
+
+Description:
+- Goal: Replace the cancelled "DAW mode" (T2503) with a Multi-Track Recorder service whose authority is the active snapshot. Recorder is an always-available overlay on the live engine — no callback ownership transfer, no mode switch, no build flag. Each chain in the snapshot exposes pre-FX and post-FX taps; armed sessions write WAVs to the artifact library (`StateAuthorityAsset`, `asset_type="recording"`). Cluster-wide synchronized recording is the default for record-arm (Raft-replicated). Playback is per-take, cluster-aware-but-operator-elected. Punch-in overdub is sample-accurate, lock-free, and child-take based.
+- Why: MAP2 today is a live-rig platform; operators routinely want to capture multi-chain takes and re-amp them, without leaving the platform. T2503's "DAW mode" approach forced two engine personalities and a build-time toggle. Reframing as a snapshot-bound recorder unifies live + capture under one authority (the snapshot graph), preserves the first-class-services rule, and aligns disk artifacts with the existing `StateAuthorityAsset` registry.
+- Non-goals (v1):
+  - Arrangement-view timeline editing (regions, automation curves, time-stretch). Per-take playback only.
+  - Offline non-realtime bounce / mixdown.
+  - Plugin determinism guarantees across replays (operator records audio, not just automation).
+  - MIDI clip editing.
+
+### Locked architecture decisions
+**Round 1 — Framing (2026-05-11)**
+- **R1.A1** Reframe as Multi-Track Recorder over the snapshot graph. No "DAW mode" concept. No build flag.
+- **R1.A2** Snapshot stays mutable during recording. Every parameter change is captured as an automation event on the take's timeline (JSON-Lines, content-hashed via `StateAuthorityAsset`).
+- **R1.A3** Per-chain dual tap (pre-FX + post-FX). 2 tracks per chain per take. Supports re-amping at playback.
+- **R1.A4** Cluster-wide synchronized recording — record-arm propagates via Raft. Every peer records the chains it owns. Takes share `session_id` + `revision_id`. Per-node disk artefacts, not Raft-replicated; session metadata + automation timeline ARE Raft-replicated.
+- **R1.A5** T2503 retired entirely. `juce-engine/Source/Daw/`, `app/routes/daw.py`, `app/services/daw_*.py`, the `MAP2_DAW_MODE` CMake flag, and `docs/architecture/DAW_SERVICE.md` are all removed. `MultiTrackRecorderShell` React routes are salvaged and rewired.
+
+**Round 2 — Playback (2026-05-11)**
+- **R2.A1** Operator picks per-chain at playback time: (a) post-FX WAV (frozen wet), (b) pre-FX WAV through current chain (live re-amp), or (c) pre-FX WAV through chain at original revision_id (historical re-amp).
+- **R2.A2** Per-take playback (clip-launcher model). Each take has its own play/stop. No master session timeline in v1.
+- **R2.A3** Playback REPLACES live input on that chain (mutually exclusive, no summing).
+- **R2.A4** Playback is cluster-aware but operator-elected. Default single-node. Explicit "broadcast playback" toggle promotes to cluster-wide.
+- **R2.A5** Full transport + punch-in overdub. Play/Stop/Loop/Cue + punch-in. Punch-in creates child takes that supersede parent regions.
+
+**Round 3 — Punch-in RT design (2026-05-11)**
+- **R3.A1** Lock-free atomic pointer swap (`std::atomic<AudioSource*>`) per chain. Compare-exchange at buffer start. No crossfade (operator triggers at musical boundary).
+- **R3.A2** `io_uring` async I/O submitted from the audio callback at end-of-buffer. No disk threads. Queue depth tuned for 64-sample cadence at 48 kHz (1.33 ms).
+- **R3.A3** Within-buffer sample-accurate trigger. Controller-host stamps triggers with sample-domain timestamp; audio callback applies at exact sample offset within the buffer.
+- **R3.A4** Child WAV + manifest seam. Parent WAV untouched. Child holds only the punched region. Take manifest stores a region list: `[(start_sample, end_sample, source_take_id), ...]`. Non-destructive; supports stacked overdubs.
+- **R3.A5** Punch-in is local to the chain's owning node. Raft replicates only the manifest update. No cross-node audio coordination during punch.
+
+### Storage & GUI integration (locked)
+- **On-disk**: `/var/lib/map2/recordings/<session_id>/<node_id>/<chain_id>/<tap>/<take_id>.wav` (+ `.json` sidecar). Service-plane authority via `Map2Paths.service_file("recordings")`. NOT user-plane.
+- **Database**: existing `StateAuthorityAsset` registry. `asset_type = "recording"`. Take sidecar JSON in the `metadata` column. No new table.
+- **GUI**: extend `web/src/app/pages/AudioArtifactsPage.tsx` with a `'recordings'` tab alongside the existing 7 categories (LV2 / NAM / Cabinet IRs / Reverb IRs / SoundFonts / Native JUCE / Snapshots). Detail panel = waveform preview + transport + per-chain routing toggles + punch-in arm. No standalone `RecorderPage.tsx`. `<RecordingPanel />` lives inside `SnapshotEditorPageContent.tsx` for live session state.
+
+### Epic structure — 8 phase epics
+- **T2505** — Retire T2503 artefacts (cleanup)
+- **T2506** — Snapshot graph extensions for recording sessions
+- **T2507** — Engine-side recording taps + automation capture (C++)
+- **T2508** — Python recorder service + routes + artifacts integration
+- **T2509** — React surfaces (AudioArtifactsPage tab + RecordingPanel + AudioArtifactsPage detail panel)
+- **T2510** — Cluster-wide synchronized recording (Raft)
+- **T2511** — Playback engine + punch-in overdub (RT-critical)
+- **T2512** — Guitarist Looper (stomp-style live loop pedal — guitarist-first UX, reuses T2507/T2511 engine plumbing)
+
+### Definition of Done (epic-level)
+1. T2505-T2511 all `[✓] Done`.
+2. `pkill -9 daw_*` and `grep -r MAP2_DAW_MODE` return empty across the codebase.
+3. 30-min cluster-wide soak with recording armed on 2+ nodes: 0 xruns, <0.35 ms peak jitter (matches existing live-engine gate). Evidence under `docs/fit-for-purpose-evidence/<date>/t2504-mtr-soak/`.
+4. End-to-end manual: arm → roll → mutate snapshot mid-record → stop → playback per-chain routing toggle works → punch-in mid-playback creates a child take that supersedes the parent region.
+5. `npm --prefix web run typecheck && npm --prefix web run build` clean; `pytest tests/test_recorder_*.py tests/test_state_authority_graph_recording.py` green.
+6. Philosophy doc `docs/philosophy/snapshot-single-source-of-truth.md` updated to reflect the `recording` block.
+
+Last updated: 2026-05-11 — Claude.
+
+---
+
+## T2505 — Retire T2503 artefacts (phase 1 of T2504)
+
+ID: T2505
+Parent: T2504
+Status: [ ] Todo
+Title: Cancel T2503 and remove DAW-mode code, routes, services, build flag, and architecture doc.
+
+Description:
+- Goal: Remove every artefact that the cancelled DAW-mode epic introduced, so the recorder reframing starts from a clean tree. Salvage only the `MultiTrackRecorderShell` React routes (rewired under T2509) and the `FileInputProcessor` pattern from `Source/Daw/Deck/` (refactored under T2511).
+- Why: "DAW mode" + the `MAP2_DAW_MODE` build flag violate the first-class-services rule (one canonical authority per offering). Leaving the code in place would create confusion about which path is canonical.
+- Dependencies: T2503 marked `[~] Cancelled — superseded` (done 2026-05-11).
+- Estimated effort: 2 cycles (60-90 min).
+
+Sub-tasks:
+- `T2505-1` — Archive `juce-engine/Source/Daw/` → `juce-engine/Source/_archive/Daw_2026-05-11/`. Remove all references from `juce-engine/CMakeLists.txt` (lines 52-60 for flag, 377-392 for sources, 822 for tests). Keep `Source/Daw/Deck/FileInputProcessor.{h,cpp}` flagged for salvage into `Source/Recorder/Playback/` under T2511.
+- `T2505-2` — Delete `app/routes/daw.py`, `app/services/daw_service.py`, `app/services/daw_handlers.py`, `app/services/daw_dispatch_seam.py`, `app/services/daw_event_bus.py`. Strip route registration in `app/main.py`. Delete `tests/test_daw_*.py` (76 tests).
+- `T2505-3` — Move `docs/architecture/DAW_SERVICE.md` → `docs/architecture/archive/DAW_SERVICE_RETIRED_2026-05-11.md` with a header pointer to T2504 + this archive note.
+- `T2505-4` — Strip `MAP2_DAW_MODE` references from `LICENSE_COMPATIBILITY.md`, `THIRD_PARTY_NOTICES.md` (Tracktion entry removed under the 2026-05-10 pivot but verify), `docs/CLAUDE.md`, and `.gemini/instructions.md`.
+- `T2505-5` — Verify `grep -r "MAP2_DAW_MODE\|daw_mode\|DawService" --include='*.{cpp,h,py,ts,tsx,md}' .` returns only archive paths and the worklist entry.
+
+Acceptance: `cmake -B juce-engine/build && cmake --build juce-engine/build` clean; `grep -r MAP2_DAW_MODE` empty outside archive; `pytest tests/` green (no daw_test imports remain).
+
+Last updated: 2026-05-11 — Claude.
+
+---
+
+## T2506 — Snapshot graph extensions for recording (phase 2 of T2504)
+
+ID: T2506
+Parent: T2504
+Status: [ ] Todo
+Title: Extend snapshot graph schema with a `recording` block (session_id, armed, rolling, tap_matrix, participating_nodes).
+
+Description:
+- Goal: Bump `SNAPSHOT_GRAPH_SCHEMA` from `2026.04` → `2026.05` and add a `recording` block under `controls`. Schema becomes the cluster-wide authority for record-arm state, propagated through the existing State Authority Raft path.
+- Why: Per R1.A4, record-arm is a snapshot mutation, not a side-table. Cluster-wide synchronization comes for free from the existing State Authority replication.
+- Dependencies: T2505 (clean tree).
+- Estimated effort: 2 cycles.
+
+Sub-tasks:
+- `T2506-1` — Schema definition in `app/services/state_authority_graph.py`: `recording: { session_id: str|null, armed: bool, rolling: bool, started_at: ISO8601|null, participating_nodes: [node_id], tap_matrix: { <chain_id>: { pre_fx: bool, post_fx: bool } } }`. Bump `SNAPSHOT_SCHEMA_VERSION = "2026.05"`.
+- `T2506-2` — Migration in `audio_state_snapshot_compiler.py::document_to_normalized()`: schema `2026.04` documents get `recording = null` injected. Migration test in `tests/test_state_authority_graph_recording.py`.
+- `T2506-3` — Compiler extension: `CompiledSnapshotIntent` exposes `record_session_id` and `tap_matrix` so the JUCE engine can install taps when the intent applies.
+- `T2506-4` — Philosophy doc upkeep: `docs/philosophy/snapshot-single-source-of-truth.md` §2 gains the `recording` block in the schema table; §4 flow diagram adds the recorder broadcast leg.
+- `T2506-5` — Test coverage: load a snapshot with `recording.armed=true` → assert compiler emits `tap_matrix` in intent; load a v2026.04 snapshot → assert it migrates with `recording=null`; mutate `recording.armed` via state-authority API → assert revision_id bumps.
+
+Acceptance: `pytest tests/test_state_authority_graph_recording.py` green; philosophy doc updated; no other subsystem yet references the new block (engine integration is T2507).
+
+Last updated: 2026-05-11 — Claude.
+
+---
+
+## T2507 — Engine-side recording taps + automation capture (phase 3 of T2504, RT-CRITICAL)
+
+ID: T2507
+Parent: T2504
+Status: [ ] Todo
+Title: Insert pre-FX and post-FX tap nodes per chain in the live `juce::AudioProcessorGraph`. SPSC ring → io_uring disk writer.
+
+Description:
+- Goal: Modify `Map2AudioEngine`'s `juce::AudioProcessorGraph` construction to insert a tap node at each chain's pre-FX input and post-FX output. Tap nodes are zero-cost passthrough when no session is armed; when armed, they fan-out a copy to a per-tap SPSC ring buffer. Disk writers consume rings via io_uring submitted from the audio thread itself (R3.A2). RT-safe by construction: no locks, no allocations on the audio thread.
+- Why: Per R1.A3, every chain needs dual taps. Per R3.A2, io_uring is the chosen disk path. Per the existing metering pattern, SPSC + lock-free is the verified RT-safe primitive in this codebase.
+- Dependencies: T2506 (`tap_matrix` available in CompiledSnapshotIntent).
+- Estimated effort: 4-5 cycles (RT-safety review required).
+
+Sub-tasks:
+- `T2507-1` — `juce-engine/Source/Recorder/RecordingTap.{h,cpp}` — SPSC ring buffer per tap (pattern matches `Common.h` metering ring). Lock-free, fixed-size (default 4096 samples), wraparound semantics. Bench: ring write cost <50 ns under contention.
+- `T2507-2` — `juce-engine/Source/Recorder/TapNode.{h,cpp}` — `juce::AudioProcessor` subclass that copies its input buffer into the SPSC ring when `armed.load(std::memory_order_acquire)` is true, then passes the buffer through unchanged. Zero-cost when disarmed.
+- `T2507-3` — Modify `Map2AudioEngine`'s graph builder to insert one `TapNode` before each chain's first plugin and one after the chain's last plugin. Tap pairs are addressable by `chain_id` from the snapshot intent.
+- `T2507-4` — `juce-engine/Source/Recorder/IoUringWriter.{h,cpp}` — io_uring submission queue + completion handling. Submit batched writes at audio-callback end. Queue depth ≥ 8 × (chain_count × 2 taps). Fallback to thread-pool writer if kernel <5.6 or io_uring init fails.
+- `T2507-5` — `juce-engine/Source/Recorder/RecorderService.{h,cpp}` — owns session lifecycle, ring → io_uring plumbing, sidecar JSON generation. Listens on the `engine_command` dispatcher for `recorder.arm`, `recorder.disarm`, `recorder.roll`, `recorder.stop`, `recorder.status`.
+- `T2507-6` — Automation capture: subscribe to the existing parameter-change broadcast inside the engine, write JSON-Lines to `<session_id>/automation.jsonl` keyed by `(timestamp_samples, chain_id, plugin_id, param_id, value_f32)`. JSONL writer also goes through io_uring.
+- `T2507-7` — RT-safety review: run the existing soak harness with recording armed for all chains. Acceptance gate: 0 xruns / <0.35 ms peak jitter / 30 min. Evidence under `docs/fit-for-purpose-evidence/<date>/t2507-recording-taps-rt/`.
+
+Acceptance: Soak gate green; `cmake --build juce-engine/build` clean with no new warnings; manual: arm a session, roll for 60 s, stop, inspect WAVs (correct sample rate / channel count / non-zero) and `automation.jsonl` (events present when parameters were touched).
+
+Last updated: 2026-05-11 — Claude.
+
+---
+
+## T2508 — Python recorder service + routes + artifacts integration (phase 4 of T2504)
+
+ID: T2508
+Parent: T2504
+Status: [ ] Todo
+Title: `RecorderService` Python facade + `/api/v1/recorder/*` routes + `StateAuthorityAsset` registration as `asset_type="recording"`.
+
+Description:
+- Goal: Expose the C++ recorder over the existing `engine_command` IPC + REST. Every produced WAV registers in the `StateAuthorityAsset` registry with `asset_type = "recording"` and sidecar metadata. Routes follow the existing `app/routes/ir.py`/`nam.py` patterns. WebSocket topic `RECORDER_SESSION_TOPIC` broadcasts live session state.
+- Why: Per the artifacts/GUI directive, recordings are first-class artifacts. Reusing `StateAuthorityAsset` means content-hashing, dedup, and cluster sync (push/pull) come for free.
+- Dependencies: T2507 (engine emits artefacts).
+- Estimated effort: 3 cycles.
+
+Sub-tasks:
+- `T2508-1` — `app/services/recorder_service.py` — `RecorderService` class. Methods: `arm_session(snapshot_id, tap_matrix)`, `disarm_session(session_id)`, `start_rolling(session_id)`, `stop(session_id)`, `get_session_status(session_id)`. Each method emits an `engine_command` frame to the C++ recorder.
+- `T2508-2` — Extend `app/services/upload_service.py`: add `AssetType.RECORDING = "recording"`, with `MAX_SIZES[AssetType.RECORDING] = 10 * 1024**3` (10 GB ceiling per take). Wire `.wav` extension auto-detect.
+- `T2508-3` — `app/paths.py` extension: `def recordings_library_dir() -> Path: return Map2Paths.service_file("recordings")`. Service-plane authority, NOT user-plane.
+- `T2508-4` — `app/routes/recorder.py` — `POST /api/v1/recorder/sessions` (arm), `POST /api/v1/recorder/sessions/{id}/roll`, `POST /api/v1/recorder/sessions/{id}/stop`, `GET /api/v1/recorder/sessions/{id}`, `GET /api/v1/recorder/sessions` (list). Standard error envelope per API contract standards.
+- `T2508-5` — `app/routes/recordings.py` — `GET /api/recordings` (list by artifact registry), `GET /api/recordings/{hash}/wav` (stream WAV), `GET /api/recordings/{hash}/metadata` (sidecar JSON), `DELETE /api/recordings/{hash}`, `POST /api/recordings/{hash}/sync/{node_id}` (cluster push). Follows `ir.py` template.
+- `T2508-6` — WebSocket `RECORDER_SESSION_TOPIC` broadcast: `{ session_id, rolling, elapsed_seconds, take_counts_by_chain, disk_bytes_written, peak_levels_by_tap }`. 15 fps cadence (matches existing metering broadcast policy).
+- `T2508-7` — Tests: `tests/test_recorder_service.py`, `tests/test_recorder_routes.py`, `tests/test_recordings_routes.py`, `tests/test_state_authority_asset_recording.py`. Mock the `engine_command` dispatcher; assert verbs are emitted with correct payloads.
+
+Acceptance: `pytest tests/test_recorder_*.py tests/test_recordings_*.py` green; manual: `curl POST /api/v1/recorder/sessions` arms, `roll` starts capture, `stop` finalizes, `GET /api/recordings` lists the produced takes with `asset_type=recording`.
+
+Last updated: 2026-05-11 — Claude.
+
+---
+
+## T2509 — React surfaces (phase 5 of T2504)
+
+ID: T2509
+Parent: T2504
+Status: [ ] Todo
+Title: Extend `AudioArtifactsPage` with a `recordings` tab. Add `<RecordingPanel />` to `SnapshotEditorPageContent`. Rewire salvaged `MultiTrackRecorderShell` routes.
+
+Description:
+- Goal: All recorder GUI is grafted onto existing surfaces — no new top-level pages. `AudioArtifactsPage` gains an 8th category tab (recordings) with the per-chain routing toggles and full transport. `SnapshotEditorPageContent` gains a `<RecordingPanel />` sibling for live session state (arm / level meters / take counter).
+- Why: Per the artifacts/GUI directive, recordings are artifacts. Per the established design (NodeNavChip pattern, AudioArtifacts unified categories), one canonical artifact surface is preferable to a parallel page.
+- Dependencies: T2508 (routes available).
+- Estimated effort: 4 cycles.
+
+Sub-tasks:
+- `T2509-1` — Salvage `MultiTrackRecorderShell` from the T2503 Set 10 code under `web/src/app/pages/MultiTrackRecorderShell/`. Strip DAW-mode references; keep the shell pattern (NodeNavChip + sub-area routing) if useful for the playback-detail surface, otherwise archive.
+- `T2509-2` — Extend `web/src/app/pages/AudioArtifactsPage.tsx`: add `'recordings'` to `ArtifactCategory` type (line 77-85). Add new `CategoryMeta` entry to `CATEGORIES` (line 133-256): icon `Microphone` from `@carbon/icons-react`, columns `[name, session, chain, tap, duration, size, node, status]`, status tags per existing pattern.
+- `T2509-3` — `web/src/app/components/Recordings/RecordingDetailPanel.tsx` — detail panel rendered when a recording is selected on AudioArtifactsPage. Waveform preview (use existing `WavWaveformPreview` if present, else simple bar-rendered amplitude). Transport (Play/Stop/Loop/Cue) hooks into T2511's playback engine. Per-chain routing toggles for the take's chains (R2.A1: post-FX / pre-FX through current / pre-FX through original-revision). Punch-in arm button (T2511).
+- `T2509-4` — `web/src/app/components/SnapshotEditor/RecordingPanel.tsx` — live session panel inside the snapshot editor. Arm toggle (mutates `recording.armed` in the snapshot via existing snapshot-mutation API). Level meters per tap (consumes `RECORDER_SESSION_TOPIC` WebSocket). Take counter. "Roll" / "Stop" buttons.
+- `T2509-5` — `web/src/app/hooks/useRecorderSession.ts` — TanStack Query + WebSocket hook. Pattern matches `useChainMeter`. Returns `{ session, takes, peakLevels, isConnected, arm, disarm, roll, stop }`.
+- `T2509-6` — Routing: no new top-level route. `/artifacts?tab=recordings` is the canonical URL. Update `web/src/app/data/advancedMenuItems.ts` only if a quick-link is desired.
+- `T2509-7` — Tests: `RecordingPanel.test.tsx`, `RecordingDetailPanel.test.tsx`, `useRecorderSession.test.ts`, `AudioArtifactsPage.test.tsx` (extend with recordings tab assertion). Mock `useVuMeters` per the T710 pattern.
+
+Acceptance: `npm --prefix web run typecheck && npm --prefix web run build` clean; jest `npx jest --testPathPattern='Recording|AudioArtifacts'` green; bundle includes `RecordingDetailPanel-*.js`; `curl /artifacts` returns 200 and renders the recordings tab when the route param is `?tab=recordings`.
+
+Last updated: 2026-05-11 — Claude.
+
+---
+
+## T2510 — Cluster-wide synchronized recording (phase 6 of T2504)
+
+ID: T2510
+Parent: T2504
+Status: [ ] Todo
+Title: Raft-replicated record-arm propagation; per-node sharded disk writes; lazy session assembly.
+
+Description:
+- Goal: Per R1.A4, when one operator hits "Arm" on a snapshot, every peer node in the cluster begins recording the chains it owns. Takes share `session_id` + `revision_id` but live on per-node disks. A session-assembly tool walks the cluster (via existing per-node proxy) and produces a unified manifest.
+- Why: Operators record live performances across distributed audio nodes. A single-node recorder would mean any chain assigned to a different node is silently lost from the multitrack.
+- Dependencies: T2508 (recorder service), T2506 (`recording` block already in the Raft-replicated snapshot graph).
+- Estimated effort: 3-4 cycles.
+
+Sub-tasks:
+- `T2510-1` — Confirm Raft replication of the `recording` block works end-to-end: operator mutates `recording.armed=true` on node A → node B sees the mutation within Raft commit latency (typically <200 ms). Test in `tests/test_cluster_recording_propagation.py`.
+- `T2510-2` — Each node's `RecorderService` subscribes to snapshot mutations; when `recording.armed` flips to true AND the node owns ≥1 chain in `tap_matrix` (per `chain.node_assignment`), it opens local writers for those chains. Mutations from a peer's flip-to-true become local arm.
+- `T2510-3` — Sample-accurate clock alignment: takes share an AVB-derived `start_sample_offset` so cluster-wide assembly can align them sample-perfectly. The lead node (the one that issued `roll`) broadcasts the AVB sample clock value at roll-time; peers stamp their first WAV sample with the offset.
+- `T2510-4` — `scripts/recorder_assemble_session.py --session-id <id>` — walks `/api/cluster/nodes` for peer list, fetches each peer's takes via `/api/node/{node_id}/proxy/recordings/{hash}/wav`, builds a unified session manifest with per-take sample offsets. Output: a single JSON manifest + symlinks/refs to per-node WAVs.
+- `T2510-5` — "Session sealed" Raft transition: when all participating peers have flushed their writers and registered their takes in the StateAuthorityAsset registry, the session metadata flips to `sealed=true`. Sealed sessions are read-only.
+- `T2510-6` — Cluster-wide soak: 30 min synchronized record on 2+ nodes, gate on 0 xruns + sample-accurate alignment within ±1 sample at session boundaries. Evidence under `docs/fit-for-purpose-evidence/<date>/t2510-cluster-recording-soak/`.
+
+Acceptance: 2-node soak passes; `scripts/recorder_assemble_session.py` produces a valid manifest for the cluster session; `tests/test_cluster_recording_propagation.py` green.
+
+Last updated: 2026-05-11 — Claude.
+
+---
+
+## T2511 — Playback engine + punch-in overdub (phase 7 of T2504, RT-CRITICAL)
+
+ID: T2511
+Parent: T2504
+Status: [ ] Todo
+Title: Per-take playback through `FileInputProcessor` graph nodes. Lock-free atomic-pointer-swap punch-in. Sample-accurate triggers via controller-host.
+
+Description:
+- Goal: Implement playback such that a take's WAV becomes the input source for its chain, with the operator's choice of routing (R2.A1: post-FX wet / pre-FX through current / pre-FX through original revision). Punch-in overdub uses lock-free atomic pointer swap (R3.A1), within-buffer sample-accurate triggers (R3.A3), and creates child takes whose disk representation is a separate WAV + manifest seam (R3.A4). Punch-in stays local to the chain's owning node (R3.A5).
+- Why: This is the most RT-critical piece of the epic. Simultaneous playback + record on the same chain during punch-in stresses the io_uring path (T2507) in both directions. Locks here would forfeit the platform's <5 ms latency budget.
+- Dependencies: T2507 (taps + io_uring), T2508 (routes + dispatcher), T2509 (UI transport surface).
+- Estimated effort: 5-6 cycles (most complex phase).
+
+Sub-tasks:
+- `T2511-1` — Salvage `FileInputProcessor.{h,cpp}` from `juce-engine/Source/_archive/Daw_2026-05-11/Deck/` into `juce-engine/Source/Recorder/Playback/`. Refactor to use `juce::BufferingAudioSource` over a `juce::AudioFormatReader` for the WAV; queue depth tuned for io_uring read-cadence at 64-sample buffers.
+- `T2511-2` — `juce-engine/Source/Recorder/Playback/ChainInputSwitch.{h,cpp}` — `juce::AudioProcessor` node holding `std::atomic<AudioSource*> currentSource` (one of: `LiveInputSource*`, `FileInputProcessor*` for post-FX, `FileInputProcessor*` for pre-FX). Each callback reads `currentSource.load(std::memory_order_acquire)` once at buffer start; writes/swaps happen via compare-exchange from the controller-host event-handler thread.
+- `T2511-3` — Engine graph rebuild: when a take is loaded for playback on a chain, the graph builder swaps the chain's input from `LiveInputSource` to `ChainInputSwitch`. Existing tap nodes (T2507) stay in place. The downstream plugin chain is unchanged for live re-amp, OR is rebuilt from the take's original `revision_id` for historical re-amp (per R2.A1 option c) — this last case fetches the State Authority graph at that revision_id and rebuilds the chain's plugin nodes.
+- `T2511-4` — Sample-accurate trigger path: extend `engine_command` to carry an optional `apply_at_sample` field. Controller-host (`map2-controller-host`) timestamps punch triggers with the current audio sample clock (read from a shared-memory atomic the JUCE callback updates each buffer). The audio callback queues triggers by sample offset and applies them at the exact offset within the current/next buffer via the atomic pointer swap.
+- `T2511-5` — Punch-in workflow: take is playing back → operator triggers punch-in → callback at sample S flips `ChainInputSwitch.currentSource` from playback to live → recorder taps (T2507) are armed for that chain immediately (chain is already in the snapshot, so `tap_matrix` entries exist) → io_uring opens a child WAV file → child take's manifest entry stamps `parent_take_id`, `punch_in_offset_samples = S`, `punch_out_offset_samples = null`. On punch-out, switch flips back, child WAV finalizes, manifest seam is updated.
+- `T2511-6` — Take manifest format: `{ take_id, session_id, chain_id, tap, revision_id, sample_count, sample_rate, regions: [ { start_sample, end_sample, source_take_id, role: "parent"|"child" } ] }`. Stored in StateAuthorityAsset's `metadata` column. Playback engine assembles audio from regions; child-take WAVs play their region; gaps fall through to parent.
+- `T2511-7` — Transport state machine: Play / Stop / Pause / Loop / Cue / Locate (jump to cue offset) / PunchInArm / PunchInTrigger / PunchOutTrigger. Implemented in `RecorderService` (Python) for orchestration + `Map2AudioEngine`'s playback subsystem (C++) for sample-clocking. Cue points stored in take manifest as `[{ name, sample_offset }]`.
+- `T2511-8` — RT-safety review: full soak harness with simultaneous playback + record on the same chain (continuous punch-in / punch-out cycle every 5 s for 30 min). Acceptance gate: 0 xruns / <0.35 ms peak jitter. Evidence under `docs/fit-for-purpose-evidence/<date>/t2511-punch-in-rt/`.
+- `T2511-9` — Tests: `tests/test_punch_in_manifest.py` (region-list semantics), `tests/test_chain_input_switch.cpp` (atomic-swap correctness under stress), `tests/test_playback_routing.py` (per-chain R2.A1 routing toggle), `web/src/app/components/Recordings/PunchInControls.test.tsx` (UI integration).
+
+Acceptance: Punch-in soak gate green; manual: play a take → trigger punch-in mid-playback → verify child WAV created + parent untouched + manifest region list reflects seam → stop → reload take → playback assembly correctly stitches parent+child; switching the per-chain playback routing toggle (R2.A1) audibly changes the signal (post-FX wet vs. live re-amp vs. historical re-amp).
+
+Last updated: 2026-05-11 — Claude.
+
+---
+
+## T2512 — Guitarist Looper (phase 8 of T2504)
+
+ID: T2512
+Parent: T2504
+Status: [ ] Todo
+Title: Stomp-style live loop pedal — guitarist-first UX layered on top of T2507 recording taps + T2511 playback engine.
+
+Description:
+- Goal: A loop pedal a guitarist already knows how to use, expressed as a thin UX layer over the recorder/playback infrastructure. Single-tap recording (tap once = record, tap again = play, tap again = overdub, hold = stop, double-tap = undo last layer, long-hold = clear). Always-running playback ring so the loop seam is sample-accurate without operator skill. Works on a single chain by default; can span N chains for synchronized multi-instrument looping.
+- Why: Guitarists use loop pedals constantly (Boss RC-series, Ditto, Headrush Looperboard). Asking them to interact with "tap matrix" + "sessions" + "takes" + "child WAV manifests" is the wrong mental model. The looper exposes the SAME engine plumbing under a familiar stompbox UX.
+- Non-goals (v1):
+  - Quantized looping with click-track sync (operator records the seam by ear; quantization is phase 2).
+  - More than 4 overdub layers (Boss RC-30 = unlimited, but layer count is a multi-channel mix-down design decision deferred to v2).
+  - MIDI sync to external tempo source (deferred).
+  - Loop chaining / scenes (deferred).
+- Dependencies: T2507 (taps + io_uring), T2511 (playback engine + ChainInputSwitch + sample-accurate triggers).
+- Estimated effort: 4-5 cycles (most reuse, one new RT primitive).
+
+### Guitarist mental model (the only thing the UX must match)
+
+```
+1st tap   →  REC      (recording first pass, click-free)
+2nd tap   →  PLAY     (loop starts, plays forever)
+3rd tap   →  OVERDUB  (next pass overlays on top — layer 2, 3, 4...)
+4th tap   →  PLAY     (stop overdub, keep playing)
+Hold      →  STOP     (mute the loop but keep its memory)
+2× tap    →  UNDO     (remove the most recent layer)
+Long-hold →  CLEAR    (wipe the loop and forget the length)
+```
+
+There is no "session", no "take", no "tap matrix" in the operator's mental model. The loop is one thing.
+
+### Locked design decisions
+- **L1** A looper instance is bound to ONE chain in the snapshot (default) or N chains (synchronized multi-chain, phase 2 of this epic). Each instance has its own state machine.
+- **L2** Disk artefact: a looper IS a recording session under the hood. Loop length determines the parent take's sample count. Overdubs are child takes with `parent_take_id = loop_session_id` and `regions = [(0, loop_length, child_take_id)]` — i.e., full-length overlays, not seam-based.
+- **L3** Playback semantics: post-FX WAV only (R2.A1 option a). Looper does NOT support live re-amp by default — the loop is what was played, with the effects that were on at record-time. (Re-amp is exposed in T2509's full transport panel for operators who want it; the looper UX hides it.)
+- **L4** RT mixing: the audio callback sums the parent take + N active overdubs sample-by-sample into the chain's output. Mixing is a hot-path summation; no plugin overhead. Per-layer mute/solo handled via `std::atomic<float> gain[N_LAYERS]` (no locks).
+- **L5** Seam handling: when the operator taps to end the first record pass, the audio callback marks the next buffer boundary as the loop's end. Loop length = (end_sample − start_sample). Subsequent overdubs and playback wrap modulo loop_length. Sample-accurate; no operator-visible click because the seam is at a buffer boundary, not a sample-level edit.
+- **L6** Undo: each overdub layer is a separate child take. Undo decrements an `std::atomic<int> active_layer_count`. Layer WAVs are NOT deleted on undo — they're kept for redo (also new feature) and disk cleanup happens on `CLEAR`.
+- **L7** Trigger surface: every looper action is a single `engine_command` verb with `apply_at_sample` (T2511-4). Tier-1 triggers: footswitch (MIDI CC from MeloAudio Commander or generic CC), Maschine MK1 pad, GUI button. All three paths land at the same dispatcher.
+- **L8** Snapshot integration: each chain in the snapshot gets an optional `looper` block: `{ enabled: bool, layer_count: int, loop_length_samples: int|null, active_layers: bool[N], gain_per_layer: float[N] }`. Looper state IS snapshot state. Recall a snapshot → recall the loop (loop WAVs are StateAuthorityAssets and travel with the snapshot via the existing asset-reference path).
+
+### Sub-tasks
+
+- `T2512-1` — Engine state machine: `juce-engine/Source/Recorder/Looper/LooperState.{h,cpp}`. Five states (IDLE / RECORDING / PLAYING / OVERDUBBING / STOPPED). All transitions driven by single `LooperAction` enum (TAP / HOLD / DOUBLE_TAP / LONG_HOLD), with the dispatcher table making the state machine readable. Lock-free, callback-callable.
+- `T2512-2` — Engine playback mixer: `juce-engine/Source/Recorder/Looper/LooperMixer.{h,cpp}`. `juce::AudioProcessor` node that owns one parent + N child `juce::AudioFormatReader`s (default N=4, configurable). Per-buffer: read parent at `(playhead % loop_length)`, sum active overdubs at the same offset (each muted/unmuted via `std::atomic<bool>`), apply per-layer gain, write to output. Disk reads via the existing T2507 io_uring path.
+- `T2512-3` — Engine recorder integration: `LooperState::transitionTo(RECORDING)` arms a recorder session on the chain (T2507 service); first buffer post-arm marks `start_sample`. `transitionTo(PLAYING)` from RECORDING marks `end_sample` at the next buffer boundary and computes `loop_length`. `transitionTo(OVERDUBBING)` arms a new child take with `parent_take_id = loop_session_id` and length = `loop_length`.
+- `T2512-4` — Engine command verbs: `looper.tap`, `looper.hold`, `looper.double_tap`, `looper.long_hold`, `looper.set_layer_gain`, `looper.toggle_layer`, `looper.get_state`. All carry `apply_at_sample` for sample-accurate response. Implemented in `Source/Recorder/Looper/LooperDispatchHandler.{h,cpp}` and registered via the engine-command dispatcher (`app/services/engine_command_handlers.py`, per the established `HandlerHooks` DI seam — never bypass the dispatcher).
+- `T2512-5` — Snapshot integration: extend `SNAPSHOT_GRAPH_SCHEMA` v2026.05 (the T2506 bump) to add a `looper` block per chain. Migration: existing snapshots get `looper = null` on every chain. Loop WAVs are referenced via `state_authority_assets` like NAM/IR assets — they travel with the snapshot.
+- `T2512-6` — Python service: `app/services/looper_service.py`. Thin facade: `tap(chain_id)`, `hold(chain_id)`, `double_tap(chain_id)`, `long_hold(chain_id)`, `set_layer_gain(chain_id, layer_idx, gain)`, `get_state(chain_id)`. Each emits `engine_command` with current sample-clock from the dispatcher. WebSocket broadcast: `LOOPER_STATE_TOPIC` per chain, 30 fps (state changes + playhead position for visual feedback).
+- `T2512-7` — Python routes: `app/routes/looper.py`. `POST /api/v1/looper/{chain_id}/tap`, `POST /api/v1/looper/{chain_id}/hold`, `POST /api/v1/looper/{chain_id}/double-tap`, `POST /api/v1/looper/{chain_id}/long-hold`, `PATCH /api/v1/looper/{chain_id}/layer/{layer_idx}` (gain + active), `GET /api/v1/looper/{chain_id}`. Standard error envelope per API contract standards.
+- `T2512-8` — **Snapshot editor UX (THIS IS THE SHIP-CRITICAL UX SLICE).** Add `<LooperPanel chain_id={chain_id} />` to each chain row in `SnapshotEditorPageContent.tsx`. The panel is a single big stomp-button (Carbon `Button` `kind="primary"` with a custom stompbox style, 80×80 px) plus a layer strip (4 small chips showing layers, each with mute/solo/gain). State badge below the stomp-button: IDLE → "Tap to record" / RECORDING → red recording light + "Tap to play" / PLAYING → green light + "Tap to overdub" / OVERDUBBING → amber light + "Tap to play" / STOPPED → gray light + "Tap to resume". One look = one action — no menus, no settings, no advanced toggle. Advanced controls live in the Audio Artifacts page under the recording's detail panel (T2509).
+- `T2512-9` — Footswitch / MIDI mapping: extend the existing MIDI Learn surface (`midi_learn_service.py`) with a typed `Looper` target group: `Tap`, `Hold`, `DoubleTap`, `LongHold`, per chain. Operators can map any CC/Note from any MIDI device (incl. MeloAudio Commander, expression pedals, footswitches). Pre-fill bindings for MeloAudio Commander mode `LOOP` if the device-pack exposes one.
+- `T2512-10` — Maschine MK1 pads: in the existing `device-packs/native-instruments/maschine-mk1/` device-pack, bind 4 pads (per the Maschine integration plan) to looper Tap on chains 1-4. Per-chain LED color reflects state (red=REC, green=PLAY, amber=OVERDUB, gray=STOP). Reuses the existing MK1 LED feedback pipeline.
+- `T2512-11` — UX hardening: latency budget tap-to-sound. Tier-1 controller (footswitch via MeloAudio Commander → controller-host → shm event ring → engine callback → first buffer of recording) must be under 5 ms (one audio buffer + one event-ring poll). Measure this end-to-end and gate on <5 ms. Evidence under `docs/fit-for-purpose-evidence/<date>/t2512-looper-latency/`.
+- `T2512-12` — Tests: `tests/test_looper_state_machine.py` (Python service unit), `tests/test_looper_routes.py` (HTTP), `tests/test_looper_engine_command.cpp` (C++ verb dispatch), `web/src/app/components/SnapshotEditor/LooperPanel.test.tsx` (UI), `tests/test_looper_snapshot_integration.py` (snapshot recall replays loop).
+- `T2512-13` — Soak: 30 min continuous loop+overdub+undo+clear cycles on a single chain. Gate: 0 xruns / <0.35 ms peak jitter. Evidence under `docs/fit-for-purpose-evidence/<date>/t2512-looper-soak/`.
+
+### Snapshot Editor surface — what the guitarist sees
+
+```
+┌─────────────────────────────────────────────────────────────────────────┐
+│ Chain 1: "Guitar — Lead"                                                │
+│                                                                         │
+│  [Input] → [NAM Twin] → [Compressor] → [Reverb] → [Output]              │
+│                                                                         │
+│  ╔══════════════╗   ┌────┬────┬────┬────┐                              │
+│  ║              ║   │ L1 │ L2 │ L3 │ L4 │   ← Layer strip               │
+│  ║   ● REC      ║   │ ●  │ ●  │ ○  │ ○  │   (mute/solo/gain per chip)   │
+│  ║              ║   └────┴────┴────┴────┘                              │
+│  ║  TAP TO PLAY ║   ◀ 0:08 / 0:12 ▶              Footswitch: ✓ Mapped   │
+│  ╚══════════════╝                                                       │
+│  (Stomp button)                                                         │
+└─────────────────────────────────────────────────────────────────────────┘
+```
+
+The stomp button color + the badge below it is the whole UX. Everything else is optional power-user surface.
+
+### Definition of Done
+1. Soak gate (T2512-13) green.
+2. Latency gate (T2512-11) < 5 ms tap-to-record.
+3. Snapshot recall replays the loop exactly (T2512-12 snapshot integration test).
+4. A guitarist (operator) successfully records → plays → overdubs → undoes → clears, using ONLY the footswitch, without touching the GUI. Manual gate; evidence is a video under `docs/fit-for-purpose-evidence/<date>/t2512-looper-footswitch-walkthrough/`.
+5. All five sub-suites (state-machine / routes / engine-command / UI / snapshot-integration) green.
+
+Last updated: 2026-05-11 — Claude.
 
 ---
 
