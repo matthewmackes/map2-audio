@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1589** Python | **1647** TypeScript | **211** C++/H | **149** Docs | **4291** total commits | **4** stars | **0** forks | **0** open issues
+**1589** Python | **1647** TypeScript | **214** C++/H | **149** Docs | **4293** total commits | **4** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`9b0ce9b3`](https://github.com/matthewmackes/map2-audio/commit/9b0ce9b3593a5797131e6832b53b25973478c1c9) | feat(T2507-4): IoUringWriter — writer thread + WAV header... | Map2 Audio | 2026-05-11 |
+| [`26bcf997`](https://github.com/matthewmackes/map2-audio/commit/26bcf9970110db45938ad0e6c81d27ea5aaf5dfd) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-11 |
 | [`a64e96a3`](https://github.com/matthewmackes/map2-audio/commit/a64e96a33bbf176ce170af414aed215fa11821cd) | feat(T2507-3): wire EngineRecorder hooks into Map2AudioEn... | Map2 Audio | 2026-05-11 |
 | [`5f9e67c1`](https://github.com/matthewmackes/map2-audio/commit/5f9e67c1936f7abb7b3c48c500b93e67f13fc027) | feat(T2507-2): TapNode — RT-safe juce::AudioProcessor for... | Map2 Audio | 2026-05-11 |
 | [`a85e0604`](https://github.com/matthewmackes/map2-audio/commit/a85e0604a298369bdd077dcf2b96a85885397e49) | feat(T2507-1): RecordingTap SPSC ring (RT-safe per-tap au... | Map2 Audio | 2026-05-11 |
 | [`f3b4f6db`](https://github.com/matthewmackes/map2-audio/commit/f3b4f6dba57c179fc8a3addfc91e034e7ee18cf2) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-11 |
 | [`7e686767`](https://github.com/matthewmackes/map2-audio/commit/7e6867671c41641d345701ec21ab1bc9c78c6c7f) | build(T2507-0): wire liburing into the engine build | Map2 Audio | 2026-05-11 |
 | [`0f3be279`](https://github.com/matthewmackes/map2-audio/commit/0f3be2790efe1f6b2272b231de063d12d9a121f2) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-11 |
-| [`0dd9ab9b`](https://github.com/matthewmackes/map2-audio/commit/0dd9ab9b87cbb4a86af7b6c078f30aaebbbcf3f1) | feat(T2509-2): recordings empty-state polish + Continue r... | Map2 Audio | 2026-05-11 |
-| [`10bc59a6`](https://github.com/matthewmackes/map2-audio/commit/10bc59a6bdde08d888ef2657f53710a2c704d7ef) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-11 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
