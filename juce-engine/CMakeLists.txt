@@ -827,6 +827,53 @@ if(BUILD_CONTROLLERS_TESTS)
 endif()
 
 # ========================================
+# T2507 — Recorder Catch2 tests (multi-track recorder RT-safe primitives)
+# ========================================
+# Tests the SPSC ring + tap node + io_uring writer in isolation. Each
+# new T2507 sub-task adds its own translation unit here. Catch2 is
+# fetched lazily so this target can build without depending on the
+# rest of the engine.
+option(BUILD_RECORDER_TESTS "Build Recorder/Catch2 unit tests (T2507)" ON)
+
+if(BUILD_RECORDER_TESTS)
+    FetchContent_Declare(
+        catch2
+        GIT_REPOSITORY https://github.com/catchorg/Catch2.git
+        GIT_TAG v3.5.2
+        GIT_SHALLOW TRUE
+    )
+    FetchContent_MakeAvailable(catch2)
+
+    set(RECORDER_TESTS_SOURCES
+        tests/RecordingTapTests.cpp
+    )
+    add_executable(recorder_tests ${RECORDER_TESTS_SOURCES})
+    target_compile_definitions(recorder_tests PRIVATE
+        JUCE_GLOBAL_MODULE_SETTINGS_INCLUDED=1
+        JUCE_WEB_BROWSER=0
+        JUCE_USE_CURL=0
+        JUCE_PLUGINHOST_VST3=0
+        JUCE_PLUGINHOST_AU=0
+    )
+    target_include_directories(recorder_tests PRIVATE
+        ${CMAKE_CURRENT_SOURCE_DIR}/Source
+    )
+    target_link_libraries(recorder_tests PRIVATE
+        Catch2::Catch2WithMain
+        juce::juce_audio_basics
+        juce::juce_core
+    )
+    add_test(NAME recorder_tests COMMAND recorder_tests)
+
+    add_custom_target(check-recorder
+        COMMAND ${CMAKE_CTEST_COMMAND} -R "recorder_tests" --output-on-failure
+        DEPENDS recorder_tests
+        WORKING_DIRECTORY ${CMAKE_BINARY_DIR}
+        COMMENT "Running Recorder Catch2 tests (T2507)"
+    )
+endif()
+
+# ========================================
 # Print configuration summary
 # ========================================
 message(STATUS "")
