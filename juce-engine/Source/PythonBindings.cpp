@@ -8,6 +8,8 @@
 #include <pybind11/stl.h>
 #include <pybind11/functional.h>
 
+#include <filesystem>  // T2507-5b — std::filesystem::path for recorder bindings.
+
 #include "Map2AudioEngine.h"
 #include "SpectrumAnalyzer.h"
 #include "LufsMeter.h"
@@ -6492,6 +6494,96 @@ PYBIND11_MODULE(map2_audio_engine, m) {
            py::arg("configuration_index") = 0,
            "Set AVDECC stream format via AECP SET_STREAM_FORMAT")
         #endif
+
+        // ========================================
+        // T2507-5b — Multi-Track Recorder bindings
+        // ========================================
+        // Bridges the Python RecorderService (cycle 5 of the parent
+        // autonomous Continue run) into the live engine. The Python
+        // service owns session ids + state-machine semantics; these
+        // bindings are the thin executor pass-through.
+
+        .def("recorder_arm_session",
+             [](Map2AudioEngine& self,
+                const std::string& session_id,
+                const std::string& parent_dir,
+                double sample_rate,
+                int num_channels) -> bool {
+                 auto* svc = self.recorderService();
+                 if (svc == nullptr) return false;
+                 return svc->armSession(session_id,
+                                        std::filesystem::path(parent_dir),
+                                        sample_rate,
+                                        num_channels);
+             },
+             py::arg("session_id"),
+             py::arg("parent_dir"),
+             py::arg("sample_rate") = 48000.0,
+             py::arg("num_channels") = 2,
+             "Arm a recorder session. Opens <parent_dir>/<session_id>/{pre.wav,"
+             " post.wav}, initialises io_uring, spawns the writer thread,"
+             " and arms the engine recorder. Returns false on any failure"
+             " (already-active session, FS error, kernel < 6.10).")
+
+        .def("recorder_stop_session",
+             [](Map2AudioEngine& self) -> py::dict {
+                 auto* svc = self.recorderService();
+                 py::dict d;
+                 if (svc == nullptr) {
+                     d["active"] = false;
+                     return d;
+                 }
+                 const auto status = svc->stopSession();
+                 d["active"]                  = status.active;
+                 d["session_id"]              = status.sessionId;
+                 d["session_dir"]             = status.sessionDir.string();
+                 d["total_samples"]           = status.totalSamplesProcessed;
+                 d["channel_overflow_count"]  = status.channelOverflowCount;
+                 d["pre_ring_overflow_count"] = status.preRingOverflowCount;
+                 d["post_ring_overflow_count"] = status.postRingOverflowCount;
+                 d["armed_at_iso"]            = status.armedAtIso;
+                 py::dict pre, post;
+                 pre["path"]              = status.preStats.path;
+                 pre["frames_written"]    = status.preStats.framesWritten;
+                 pre["bytes_written"]     = status.preStats.bytesWritten;
+                 pre["iouring_submits"]   = status.preStats.ioUringSubmits;
+                 pre["iouring_failures"]  = status.preStats.ioUringFailures;
+                 post["path"]             = status.postStats.path;
+                 post["frames_written"]   = status.postStats.framesWritten;
+                 post["bytes_written"]    = status.postStats.bytesWritten;
+                 post["iouring_submits"]  = status.postStats.ioUringSubmits;
+                 post["iouring_failures"] = status.postStats.ioUringFailures;
+                 d["pre"]  = pre;
+                 d["post"] = post;
+                 return d;
+             },
+             "Stop the active session. Drains the rings, finalises WAV"
+             " headers, releases io_uring + file descriptors. Returns the"
+             " final stat snapshot (active=false on success).")
+
+        .def("recorder_get_status",
+             [](const Map2AudioEngine& self) -> py::dict {
+                 // recorderService() is non-const; const_cast is OK
+                 // because getStatus() is logically const and acquires
+                 // its own mutex.
+                 auto* svc = const_cast<Map2AudioEngine&>(self).recorderService();
+                 py::dict d;
+                 if (svc == nullptr) {
+                     d["active"] = false;
+                     return d;
+                 }
+                 const auto status = svc->getStatus();
+                 d["active"]                  = status.active;
+                 d["session_id"]              = status.sessionId;
+                 d["session_dir"]             = status.sessionDir.string();
+                 d["total_samples"]           = status.totalSamplesProcessed;
+                 d["channel_overflow_count"]  = status.channelOverflowCount;
+                 d["pre_ring_overflow_count"] = status.preRingOverflowCount;
+                 d["post_ring_overflow_count"] = status.postRingOverflowCount;
+                 d["armed_at_iso"]            = status.armedAtIso;
+                 return d;
+             },
+             "Snapshot of the current recorder session (or active=false).")
         ;
 
     // ========================================

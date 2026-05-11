@@ -740,6 +740,13 @@ Map2AudioEngine::Map2AudioEngine() {
     // arms it; the disarmed hot path is one atomic load + branch
     // (industry-standard pattern; see EngineRecorder.h).
     engineRecorder_ = std::make_unique<map2::recorder::EngineRecorder>();
+
+    // T2507-5b — engine-side recorder session manager. Owns the
+    // IoUringWriter on arm; flips engineRecorder_'s atomic flag.
+    // Methods are called from the Python message thread via
+    // pybind11.
+    recorderService_ = std::make_unique<map2::recorder::RecorderService>(
+        engineRecorder_.get());
 }
 
 Map2AudioEngine::~Map2AudioEngine() {

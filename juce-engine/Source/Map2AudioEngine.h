@@ -22,6 +22,7 @@
 #include "ParameterBridge.h"
 #include "SnapshotManager.h"
 #include "Recorder/EngineRecorder.h"  // T2507-3
+#include "Recorder/RecorderService.h" // T2507-5b
 
 #ifdef HAS_NAM
 #include "NAMProcessor.h"
@@ -1711,13 +1712,24 @@ private:
     // dormant + zero-cost until the operator arms it.
     std::unique_ptr<map2::recorder::EngineRecorder> engineRecorder_;
 
+    // T2507-5b — engine-side session manager. Wraps engineRecorder_
+    // and a per-session IoUringWriter. Constructed in the engine
+    // ctor; methods are safe to call from the Python message thread.
+    std::unique_ptr<map2::recorder::RecorderService> recorderService_;
+
 public:
-    /// Non-owning accessor for the operator-facing RecorderService
-    /// (T2507-5). Returns nullptr if the engine has not finished
-    /// constructing the recorder (defensive — should not happen
-    /// in practice).
+    /// Non-owning accessor for the recorder hooks. Returns nullptr
+    /// if the engine has not finished constructing the recorder
+    /// (defensive — should not happen in practice).
     map2::recorder::EngineRecorder* engineRecorder() noexcept {
         return engineRecorder_.get();
+    }
+
+    /// Non-owning accessor for the engine-side recorder session
+    /// manager (T2507-5). The Python binding calls into this from
+    /// the recorder_* HandlerHook bindings.
+    map2::recorder::RecorderService* recorderService() noexcept {
+        return recorderService_.get();
     }
 
 private:

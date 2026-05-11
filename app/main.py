@@ -934,6 +934,21 @@ async def lifespan(app):
         except Exception as exc:
             logger.warning("RecorderService WS bridge not initialized: %s", exc)
 
+        # T2507-5b — wire the Python RecorderService to the live JUCE
+        # engine. Without this the Python service logs the recorder.*
+        # verbs but no WAV ever gets written; with it, /api/v1/recorder/*
+        # drives the actual engine-side capture pipeline (T2507-1..5).
+        try:
+            from app.services.juce_engine_service import get_audio_engine
+            from app.services.recorder_engine_transport import (
+                install_recorder_engine_transport,
+            )
+            engine_service = get_audio_engine()
+            engine_obj = getattr(engine_service, "_engine", None) or engine_service
+            install_recorder_engine_transport(engine_obj)
+        except Exception as exc:
+            logger.warning("Recorder engine transport not installed: %s", exc)
+
         # T2500-MV-B2 + T2500-MV-B-RAW-TAP — install the MIDI visualization
         # producer bridge (dispatcher observer + MidiHub raw subscriber).
         # Idempotent + defensive: a buffer-side regression here cannot break
