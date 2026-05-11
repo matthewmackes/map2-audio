@@ -522,23 +522,49 @@ bool recv_frame (int fd, std::string& out)
     return true;
 }
 
-// T2459-H3 Slice 5/6 — drain a shm ring up to maxEvents per call, dispatch
-// each event through the loaded mapping descriptor matching the slot's
-// per-port controllerIndex, and emit any resulting engine commands / logs /
-// outbound MIDI as IPC frames on `client_fd`. Slot index 0 (or any out-of-
-// range index) falls back to `fallback_controller_key` (preserves Slice 5
-// most-recently-opened-controller behavior for any path that pushes without
-// an index). Returns false if a send to the backend fails (caller should
-// treat as disconnect).
-bool drain_ring_and_dispatch (int client_fd,
+// T2459-H11 — broadcast an outbound frame to every connected backend client.
+// Each subscriber (EngineCommandBridge, future SnapshotBridge, etc.) gets the
+// same event stream and filters client-side via its registered
+// MidiEventSubscription callbacks. Clients that fail send() are appended to
+// `dead_clients_out` so the caller can prune them after the broadcast loop —
+// we must not mutate the client set while iterating it.
+inline void broadcast_frame (const std::vector<int>& clients,
+                             const std::string& payload,
+                             std::vector<int>& dead_clients_out)
+{
+    for (int fd : clients)
+    {
+        if (! send_frame (fd, payload))
+            dead_clients_out.push_back (fd);
+    }
+}
+
+// T2459-H3 Slice 5/6 + T2459-H11 — drain a shm ring up to maxEvents per call,
+// dispatch each event through the loaded mapping descriptor matching the
+// slot's per-port controllerIndex, and emit any resulting engine commands /
+// logs / outbound MIDI as IPC frames BROADCAST to every connected backend.
+// Slot index 0 (or any out-of-range index) falls back to
+// `fallback_controller_key` (preserves Slice 5 most-recently-opened-
+// controller behavior for any path that pushes without an index).
+//
+// Pre-H11 this took a single client_fd; now it fans out to all connected
+// clients so each persistent subscriber (engine_command, log_event, …) gets
+// the events its callbacks need. Dead clients are appended to
+// `dead_clients_out` for the caller to prune.
+//
+// Always returns void — historical "returns false to indicate disconnect"
+// semantics no longer apply with the broadcast model; per-client failures
+// are surfaced through `dead_clients_out` instead.
+void drain_ring_and_dispatch (const std::vector<int>& clients,
                               map2::controller_host::ShmEventRing& ring,
                               map2::controller_host::Map2MappingEngine& mapping_engine,
                               const std::vector<std::string>& controller_keys_by_index,
                               const std::string& fallback_controller_key,
                               std::size_t maxEvents,
-                              map2::controller_host::LibremidiAdapter* outbound_adapter = nullptr)
+                              map2::controller_host::LibremidiAdapter* outbound_adapter,
+                              std::vector<int>& dead_clients_out)
 {
-    if (! ring.isOpen()) return true;
+    if (! ring.isOpen()) return;
 
     std::uint8_t buf[map2::controller_host::kMaxPayloadBytes];
     std::uint64_t ts = 0;
@@ -589,26 +615,27 @@ bool drain_ring_and_dispatch (int client_fd,
         if (auto exc = mapping_engine.dispatch (controller_key, plan.callback_name, bytes);
             exc.has_value())
         {
-            if (! send_frame (client_fd, build_script_error ("", controller_key, *exc)))
-                return false;
+            broadcast_frame (clients,
+                             build_script_error ("", controller_key, *exc),
+                             dead_clients_out);
         }
     }
 
     // Drain JS-side outbound queues regardless of how many events fired —
     // JS callbacks during dispatch may have queued engine commands / logs
-    // / MIDI sends that must reach the backend.
+    // / MIDI sends that must reach the backend. Broadcast each frame to
+    // every connected subscriber.
     for (auto& cmd : mapping_engine.js().drainEngineCommands())
-        if (! send_frame (client_fd, build_engine_command_frame (cmd)))
-            return false;
+        broadcast_frame (clients, build_engine_command_frame (cmd), dead_clients_out);
     for (auto& ev : mapping_engine.js().drainLogs())
-        if (! send_frame (client_fd, build_log_event_from_pending (ev)))
-            return false;
+        broadcast_frame (clients, build_log_event_from_pending (ev), dead_clients_out);
+
     // T2482-P1.2 Gap C (iter 73) — prefer libremidi-direct send to
     // the host's virtual output port over the legacy
     // midi_send_request → Python IPC round-trip. Falls back to the
-    // IPC path when no adapter is supplied OR no virtual output is
-    // open (transitional behaviour until per-hardware-output port
-    // resolution lands in a future loop).
+    // IPC path (broadcast) when no adapter is supplied OR no virtual
+    // output is open (transitional behaviour until per-hardware-output
+    // port resolution lands in a future loop).
     for (auto& sm : mapping_engine.drainShortMidi())
     {
         const std::vector<std::uint8_t> bytes { sm.status, sm.data1, sm.data2 };
@@ -620,8 +647,9 @@ bool drain_ring_and_dispatch (int client_fd,
         }
         if (! sent_libremidi)
         {
-            if (! send_frame (client_fd, build_midi_send_request_frame (sm.controller_key, bytes)))
-                return false;
+            broadcast_frame (clients,
+                             build_midi_send_request_frame (sm.controller_key, bytes),
+                             dead_clients_out);
         }
     }
     for (auto& sx : mapping_engine.drainSysExMidi())
@@ -634,12 +662,11 @@ bool drain_ring_and_dispatch (int client_fd,
         }
         if (! sent_libremidi)
         {
-            if (! send_frame (client_fd, build_midi_send_request_frame (sx.controller_key, sx.bytes)))
-                return false;
+            broadcast_frame (clients,
+                             build_midi_send_request_frame (sx.controller_key, sx.bytes),
+                             dead_clients_out);
         }
     }
-
-    return true;
 }
 
 int run_main_loop (const std::string& socket_path)
@@ -647,7 +674,17 @@ int run_main_loop (const std::string& socket_path)
     // Remove any leftover socket file from a prior crashed run.
     ::unlink (socket_path.c_str());
 
-    int listen_fd = ::socket (AF_UNIX, SOCK_STREAM, 0);
+    // T2459-H11 — SOCK_NONBLOCK so the poll-fanout accept loop can
+    // drain ALL pending accepts in one tick without blocking. The
+    // listen socket is polled via POLLIN and we accept4() in a loop
+    // until EAGAIN. Client fds inherit blocking semantics from
+    // accept4() (we pass SOCK_CLOEXEC only); recv_frame's blocking
+    // MSG_WAITALL is preserved for partial-frame handling — clients
+    // shouldn't send a partial header and stall the daemon in
+    // practice, but if it ever becomes a problem the path forward is
+    // a per-fd partial-frame buffer, not a non-blocking flip on the
+    // client fd (which would require re-architecting recv_frame).
+    int listen_fd = ::socket (AF_UNIX, SOCK_STREAM | SOCK_NONBLOCK, 0);
     if (listen_fd < 0)
     {
         std::cerr << "[map2-controller-host] socket() failed: " << std::strerror (errno) << "\n";
@@ -782,439 +819,518 @@ int run_main_loop (const std::string& socket_path)
     if (auto* adapter = midiBackend.adapter(); adapter != nullptr)
         adapter->setEventRings (rt_ok ? &rtRing : nullptr, ctl_ok ? &controlRing : nullptr);
 
-    // T2459-H9 — accept loop. Each accept now hits a fully-warm daemon
-    // (backend + rings + mapping engine all live), so probe round-trips
-    // settle in microseconds instead of waiting on a 2-second probe
-    // order. Per-connection state (port → controller key map, 1-based
-    // index table, active controller key) stays inside the accept body
-    // — it encodes the backend's per-session expectations.
+    // T2459-H3 Slice 5/6 — device state that is shared across ALL
+    // backend connections. Pre-H11 this lived inside the per-accept
+    // body which meant only one backend client could open ports and
+    // load mappings; every other client saw an empty index table. With
+    // the multi-client poll-fanout (T2459-H11) the libremidi adapter
+    // is a single process-scope resource, so its state must also be
+    // process-scope.
+    //
+    // port_to_controller: which controller_key owns each opened port.
+    // controller_keys_by_index: 1-based table whose index is mirrored
+    //     into the libremidi adapter via openInput(port, index). The
+    //     producer writes the index into Slot::controllerIndex and the
+    //     consumer dispatches through the matching descriptor. Index 0
+    //     is reserved for the unknown/legacy fallback so the first
+    //     real controller is index 1. A second port that names the
+    //     same controller_key reuses the existing index so all ports
+    //     for one controller dispatch through the same descriptor.
+    // active_controller_key: most-recently-opened controller — the
+    //     fallback for events that arrive with controllerIndex=0.
+    std::unordered_map<std::string, std::string> port_to_controller;
+    std::vector<std::string> controller_keys_by_index;
+    std::string active_controller_key;
+
+    // T2459-H11 — process_request_frame handles ONE inbound frame on a
+    // specific client fd. Returns false if the frame caller should
+    // close the connection (currently only the shutdown frame).
+    //
+    // Each handler that emits a response sends it back on the same
+    // client_fd that issued the request (request/response semantics).
+    // Async outbound events (engine_command, log_event, script_error,
+    // midi_send_request) are broadcast to ALL connected clients out
+    // of drain_ring_and_dispatch — they are NOT routed here.
+    //
+    // Captures by reference because the helper closes over the
+    // process-scope state established above plus the local
+    // controller_script_cache. (controller_script_cache is also
+    // process-scope so a script loaded on one connection is visible
+    // to mapping_activate on any other connection.)
+    auto process_request_frame = [&] (int client_fd, const std::string& frame) -> bool
+    {
+        if (frame.find ("\"type\":\"shutdown\"") != std::string::npos)
+        {
+            g_shutdownRequested.store (true, std::memory_order_release);
+            send_frame (client_fd, "{\"type\":\"log_event\",\"msg_id\":\"\","
+                                   "\"schema_version\":1,\"level\":\"info\","
+                                   "\"message\":\"shutting down\"}");
+            return false;
+        }
+
+        if (frame.find ("\"type\":\"midi_list_ports_request\"") != std::string::npos)
+        {
+            const std::string msg_id = extract_string_field (frame, "msg_id");
+            send_frame (client_fd, build_list_ports_response (msg_id, midiBackend));
+            return true;
+        }
+
+        if (frame.find ("\"type\":\"midi_open_input_request\"") != std::string::npos)
+        {
+            const std::string msg_id = extract_string_field (frame, "msg_id");
+            const std::string controller_key = extract_string_field (frame, "controller_key");
+            const std::string port_id = extract_string_field (frame, "port_id");
+            if (controller_key.empty() || port_id.empty())
+            {
+                send_frame (client_fd, build_log_event (
+                    msg_id, "error",
+                    "midi_open_input_request missing controller_key or port_id",
+                    controller_key.empty() ? std::nullopt : std::optional<std::string> (controller_key)));
+                return true;
+            }
+
+            auto* adapter = midiBackend.adapter();
+            if (adapter == nullptr)
+            {
+                send_frame (client_fd, build_log_event (
+                    msg_id, "error",
+                    "midi_open_input_request: no MIDI backend bound",
+                    controller_key));
+                return true;
+            }
+            std::uint16_t controller_index = 0;
+            for (std::size_t i = 0; i < controller_keys_by_index.size(); ++i)
+            {
+                if (controller_keys_by_index[i] == controller_key)
+                {
+                    controller_index = static_cast<std::uint16_t> (i + 1);
+                    break;
+                }
+            }
+            if (controller_index == 0)
+            {
+                controller_keys_by_index.push_back (controller_key);
+                controller_index = static_cast<std::uint16_t> (controller_keys_by_index.size());
+            }
+
+            if (! adapter->openInput (port_id, controller_index))
+            {
+                send_frame (client_fd, build_log_event (
+                    msg_id, "error",
+                    "midi_open_input_request failed: " + adapter->errorMessage(),
+                    controller_key));
+                return true;
+            }
+            port_to_controller[port_id] = controller_key;
+            active_controller_key = controller_key;
+            send_frame (client_fd, build_log_event (
+                msg_id, "info",
+                "midi input opened: " + port_id,
+                controller_key));
+            return true;
+        }
+
+        if (frame.find ("\"type\":\"midi_create_virtual_port_request\"") != std::string::npos)
+        {
+            const std::string msg_id = extract_string_field (frame, "msg_id");
+            const std::string name = extract_string_field (frame, "name");
+            if (name.empty())
+            {
+                send_frame (client_fd, build_log_event (
+                    msg_id, "error",
+                    "midi_create_virtual_port_request missing name"));
+                return true;
+            }
+            auto* adapter = midiBackend.adapter();
+            if (adapter == nullptr)
+            {
+                send_frame (client_fd, build_log_event (
+                    msg_id, "error",
+                    "midi_create_virtual_port_request: no MIDI backend bound"));
+                return true;
+            }
+            if (! adapter->openVirtualOutput (name))
+            {
+                send_frame (client_fd, build_log_event (
+                    msg_id, "error",
+                    "midi_create_virtual_port_request failed: "
+                    + adapter->errorMessage()));
+                return true;
+            }
+            send_frame (client_fd, build_log_event (
+                msg_id, "info",
+                "virtual output published: " + name));
+            return true;
+        }
+
+        if (frame.find ("\"type\":\"script_load_request\"") != std::string::npos)
+        {
+            const std::string msg_id = extract_string_field (frame, "msg_id");
+            const std::string controller_key = extract_string_field (frame, "controller_key");
+            const std::string script_path = extract_string_field (frame, "script_path");
+            const std::string script_body = extract_string_field (frame, "script_body");
+            if (controller_key.empty() || script_path.empty())
+            {
+                send_frame (client_fd, build_log_event (
+                    msg_id, "warning",
+                    "script_load_request missing controller_key or script_path",
+                    controller_key.empty() ? std::nullopt : std::optional<std::string> (controller_key)));
+                return true;
+            }
+
+            controller_script_cache[controller_key][script_path] = script_body;
+            send_frame (client_fd, build_log_event (
+                msg_id, "info",
+                "script cached: " + script_path,
+                controller_key));
+            return true;
+        }
+
+        if (frame.find ("\"type\":\"mapping_activate\"") != std::string::npos)
+        {
+            const std::string msg_id = extract_string_field (frame, "msg_id");
+            map2::controller_host::MappingDescriptorSpec descriptor;
+            std::string controller_key;
+            if (! parse_mapping_activate_frame (frame, descriptor, controller_key))
+            {
+                send_frame (client_fd, build_log_event (
+                    msg_id, "error",
+                    "mapping_activate parse failed"));
+                return true;
+            }
+
+            std::vector<std::string> resolved_scripts;
+            const int declared_scripts = static_cast<int> (descriptor.scripts.size());
+            const auto cache_it = controller_script_cache.find (controller_key);
+            static const std::unordered_map<std::string, std::string> kEmptyCache;
+            const auto& cache_for_controller = cache_it != controller_script_cache.end()
+                ? cache_it->second
+                : kEmptyCache;
+
+            int missing_scripts = 0;
+            for (const auto& script_ref : descriptor.scripts)
+            {
+                if (auto script_body = resolve_script_body (script_ref, descriptor.pack_id, cache_for_controller);
+                    script_body.has_value())
+                {
+                    resolved_scripts.push_back (*script_body);
+                    continue;
+                }
+                if (script_ref.find ("function") != std::string::npos
+                    || script_ref.find ("=>") != std::string::npos
+                    || script_ref.find ('\n') != std::string::npos
+                    || script_ref.find ('{') != std::string::npos
+                    || script_ref.find (';') != std::string::npos
+                    || script_ref.find ("var ") != std::string::npos
+                    || script_ref.find ("const ") != std::string::npos
+                    || script_ref.find ("let ") != std::string::npos)
+                {
+                    resolved_scripts.push_back (script_ref);
+                    continue;
+                }
+                ++missing_scripts;
+            }
+            descriptor.scripts = std::move (resolved_scripts);
+            if (missing_scripts == declared_scripts
+                && missing_scripts > 0
+                && descriptor_uses_script_callbacks (descriptor))
+            {
+                map2::controller_host::ScriptException exc;
+                exc.file = "<mapping_activate>";
+                exc.line = 0;
+                exc.column = 0;
+                exc.message = "no descriptor scripts resolved for script-bound controls";
+                send_frame (client_fd, build_script_error (msg_id, controller_key, exc));
+                return true;
+            }
+
+            if (auto exc = mapping_engine.loadDescriptor (controller_key, descriptor); exc.has_value())
+            {
+                send_frame (client_fd, build_script_error (msg_id, controller_key, *exc));
+                return true;
+            }
+
+            std::ostringstream message;
+            message << "mapping activated: controls=" << descriptor.controls.size()
+                    << " scripts=" << descriptor.scripts.size();
+            if (missing_scripts > 0) message << " missing_scripts=" << missing_scripts;
+            send_frame (client_fd, build_log_event (
+                msg_id,
+                missing_scripts > 0 ? "warning" : "info",
+                message.str(),
+                controller_key));
+            return true;
+        }
+
+        if (frame.find ("\"type\":\"mapping_deactivate\"") != std::string::npos)
+        {
+            const std::string msg_id = extract_string_field (frame, "msg_id");
+            const std::string controller_key = extract_string_field (frame, "controller_key");
+            if (controller_key.empty())
+            {
+                send_frame (client_fd, build_log_event (
+                    msg_id, "error",
+                    "mapping_deactivate missing controller_key"));
+                return true;
+            }
+            const bool removed = mapping_engine.unloadDescriptor (controller_key);
+            send_frame (client_fd, build_log_event (
+                msg_id,
+                removed ? "info" : "warning",
+                removed
+                    ? std::string ("mapping deactivated")
+                    : std::string ("mapping_deactivate: controller_key not loaded"),
+                controller_key));
+            return true;
+        }
+
+        if (frame.find ("\"type\":\"mapping_reload\"") != std::string::npos)
+        {
+            const std::string msg_id = extract_string_field (frame, "msg_id");
+            map2::controller_host::MappingDescriptorSpec descriptor;
+            std::string controller_key;
+            if (! parse_mapping_activate_frame (frame, descriptor, controller_key))
+            {
+                send_frame (client_fd, build_log_event (
+                    msg_id, "error",
+                    "mapping_reload parse failed"));
+                return true;
+            }
+
+            std::vector<std::string> resolved_scripts;
+            const int declared_scripts = static_cast<int> (descriptor.scripts.size());
+            const auto cache_it = controller_script_cache.find (controller_key);
+            static const std::unordered_map<std::string, std::string> kEmptyCache;
+            const auto& cache_for_controller = cache_it != controller_script_cache.end()
+                ? cache_it->second
+                : kEmptyCache;
+
+            int missing_scripts = 0;
+            for (const auto& script_ref : descriptor.scripts)
+            {
+                if (auto script_body = resolve_script_body (script_ref, descriptor.pack_id, cache_for_controller);
+                    script_body.has_value())
+                {
+                    resolved_scripts.push_back (*script_body);
+                    continue;
+                }
+                if (script_ref.find ("function") != std::string::npos
+                    || script_ref.find ("=>") != std::string::npos
+                    || script_ref.find ('\n') != std::string::npos
+                    || script_ref.find ('{') != std::string::npos
+                    || script_ref.find (';') != std::string::npos
+                    || script_ref.find ("var ") != std::string::npos
+                    || script_ref.find ("const ") != std::string::npos
+                    || script_ref.find ("let ") != std::string::npos)
+                {
+                    resolved_scripts.push_back (script_ref);
+                    continue;
+                }
+                ++missing_scripts;
+            }
+            descriptor.scripts = std::move (resolved_scripts);
+            if (missing_scripts == declared_scripts
+                && missing_scripts > 0
+                && descriptor_uses_script_callbacks (descriptor))
+            {
+                map2::controller_host::ScriptException exc;
+                exc.file = "<mapping_reload>";
+                exc.line = 0;
+                exc.column = 0;
+                exc.message = "no descriptor scripts resolved for script-bound controls";
+                send_frame (client_fd, build_script_error (msg_id, controller_key, exc));
+                return true;
+            }
+
+            if (auto exc = mapping_engine.reloadDescriptor (controller_key, descriptor); exc.has_value())
+            {
+                send_frame (client_fd, build_script_error (msg_id, controller_key, *exc));
+                return true;
+            }
+
+            std::ostringstream message;
+            message << "mapping reloaded: controls=" << descriptor.controls.size()
+                    << " scripts=" << descriptor.scripts.size();
+            if (missing_scripts > 0) message << " missing_scripts=" << missing_scripts;
+            send_frame (client_fd, build_log_event (
+                msg_id,
+                missing_scripts > 0 ? "warning" : "info",
+                message.str(),
+                controller_key));
+            return true;
+        }
+
+        // Unknown frame type — log and drop. Don't close the connection;
+        // the backend may evolve the protocol with new frame types we
+        // haven't compiled in yet.
+        std::cerr << "[map2-controller-host] unhandled frame type ("
+                  << frame.size() << " bytes)\n";
+        return true;
+    };
+
+    // T2459-H11 — single-threaded poll-fanout accept loop. Replaces the
+    // strictly-serialized accept→handle→close model with one poll() over
+    // [listen_fd, ...connected_client_fds]. On each tick:
+    //   1. drain both shm rings ONCE and broadcast outbound frames to
+    //      every connected backend (each subscriber filters
+    //      client-side via its registered callbacks)
+    //   2. accept() any pending new client on listen_fd (non-blocking)
+    //   3. process up to one frame per ready client_fd via
+    //      process_request_frame (request/response on the same fd)
+    //   4. prune any client that hangs up
+    //
+    // Why poll-fanout vs threads: the mapping engine, libremidi adapter,
+    // and shm rings were authored single-threaded and share state freely.
+    // A thread-per-connection model would require auditing every call
+    // site for races; the single-thread loop guarantees the existing
+    // invariants without new mutex surface area. Connection scalability
+    // is bounded by struct rlimit, but we expect 4–8 concurrent backend
+    // subscribers in practice (one per long-lived bridge plus transient
+    // short-lived round-trips), well under any reasonable limit.
+    std::vector<int> client_fds;
+    client_fds.reserve (16);
+    std::vector<struct pollfd> pollset;
+    pollset.reserve (16);
+    std::vector<int> dead_clients;
+    dead_clients.reserve (16);
+
     while (! g_shutdownRequested.load (std::memory_order_acquire))
     {
-        int client_fd = ::accept (listen_fd, nullptr, nullptr);
-        if (client_fd < 0)
+        // T2482-P1.2 Gap C (iter 73) — outbound MIDI from JS callbacks
+        // lands on the host's virtual output port when one is open.
+        auto* outbound_adapter = midiBackend.adapter();
+
+        // Drain shm rings ONCE per outer iteration and broadcast.
+        dead_clients.clear();
+        if (rt_ok)
         {
-            if (errno == EINTR)
-                continue;
-            std::cerr << "[map2-controller-host] accept() failed: " << std::strerror (errno) << "\n";
+            drain_ring_and_dispatch (client_fds, rtRing, mapping_engine,
+                                     controller_keys_by_index,
+                                     active_controller_key, 64,
+                                     outbound_adapter,
+                                     dead_clients);
+        }
+        if (ctl_ok)
+        {
+            drain_ring_and_dispatch (client_fds, controlRing, mapping_engine,
+                                     controller_keys_by_index,
+                                     active_controller_key, 16,
+                                     outbound_adapter,
+                                     dead_clients);
+        }
+
+        // Prune clients that broadcast-failed during ring drain.
+        if (! dead_clients.empty())
+        {
+            for (int fd : dead_clients)
+            {
+                client_fds.erase (std::remove (client_fds.begin(),
+                                                 client_fds.end(),
+                                                 fd),
+                                   client_fds.end());
+                ::close (fd);
+                std::cerr << "[map2-controller-host] backend pruned (broadcast send failed)\n";
+            }
+        }
+
+        // Build the poll set fresh each tick — small N, allocation cost
+        // is dwarfed by the libremidi I/O thread.
+        pollset.clear();
+        pollset.push_back ({ listen_fd, POLLIN, 0 });
+        for (int fd : client_fds)
+            pollset.push_back ({ fd, POLLIN, 0 });
+
+        // 1 ms timeout matches the legacy single-client loop cadence so
+        // ring-drain freshness is unchanged.
+        const int pr = ::poll (pollset.data(),
+                                static_cast<nfds_t> (pollset.size()),
+                                1);
+        if (pr < 0)
+        {
+            if (errno == EINTR) continue;
+            std::cerr << "[map2-controller-host] poll() failed: "
+                      << std::strerror (errno) << "\n";
             break;
         }
+        if (pr == 0) continue; // timeout — loop back to drain.
 
-        std::cerr << "[map2-controller-host] backend connected\n";
-
-        // T2459-H3 Slice 5 — port_id → controller_key map.
-        // T2459-H3 Slice 6 — controller_keys_by_index_ is a 1-based table
-        // mirrored into the libremidi adapter via per-port `openInput(port,
-        // index)`. The producer writes the index into Slot::controllerIndex
-        // and the consumer dispatches through the matching descriptor. Index
-        // 0 is reserved for "unknown" and falls back to the most-recently
-        // opened controller — preserving the Slice-5 single-active behavior
-        // for any path that pushes without an index. A second port that
-        // names the same controller_key reuses the existing index so all
-        // ports for one controller dispatch through the same descriptor.
-        std::unordered_map<std::string, std::string> port_to_controller;
-        std::vector<std::string> controller_keys_by_index;
-        std::string active_controller_key;
-
-        while (! g_shutdownRequested.load (std::memory_order_acquire))
+        // Accept on listen_fd ready. Drain ALL pending accepts so a
+        // probe storm doesn't queue across multiple ticks.
+        if (pollset[0].revents & POLLIN)
         {
-            // T2459-H3 Slice 5 — non-blocking dispatch. Poll the client fd
-            // with a 1 ms timeout; on each tick, drain inbound MIDI from
-            // both rings before re-checking for an IPC frame. This is the
-            // production live-event loop.
-            struct pollfd pfd { client_fd, POLLIN, 0 };
-            const int pr = ::poll (&pfd, 1, 1);
-            if (pr > 0 && (pfd.revents & (POLLERR | POLLHUP | POLLNVAL)))
+            while (true)
             {
-                std::cerr << "[map2-controller-host] backend disconnected (poll hup)\n";
-                break;
-            }
-
-            // T2482-P1.2 Gap C (iter 73) — pass the libremidi adapter
-            // through so outbound MIDI from JS callbacks lands on the
-            // host's virtual output port instead of round-tripping
-            // through Python via midi_send_request IPC frames.
-            auto* outbound_adapter = midiBackend.adapter();
-            if (rt_ok)
-            {
-                if (! drain_ring_and_dispatch (client_fd, rtRing, mapping_engine,
-                                               controller_keys_by_index,
-                                               active_controller_key, 64,
-                                               outbound_adapter))
+                int new_fd = ::accept4 (listen_fd, nullptr, nullptr, SOCK_CLOEXEC);
+                if (new_fd < 0)
                 {
-                    std::cerr << "[map2-controller-host] backend disconnected during rt drain\n";
-                    goto disconnect;
+                    if (errno == EAGAIN || errno == EWOULDBLOCK) break;
+                    if (errno == EINTR) continue;
+                    std::cerr << "[map2-controller-host] accept() failed: "
+                              << std::strerror (errno) << "\n";
+                    break;
                 }
-            }
-            if (ctl_ok)
-            {
-                if (! drain_ring_and_dispatch (client_fd, controlRing, mapping_engine,
-                                               controller_keys_by_index,
-                                               active_controller_key, 16,
-                                               outbound_adapter))
-                {
-                    std::cerr << "[map2-controller-host] backend disconnected during control drain\n";
-                    goto disconnect;
-                }
-            }
-
-            if (pr <= 0 || ! (pfd.revents & POLLIN))
-                continue;
-
-            std::string frame;
-            if (! recv_frame (client_fd, frame))
-            {
-                std::cerr << "[map2-controller-host] backend disconnected\n";
-                break;
-            }
-            // Minimum-viable handler: T2459-H1 wires midi_list_ports_request,
-            // T2459-B2-followup will replace the find()-based dispatch with
-            // a proper JSON parser. For now, the type literal is the gate.
-            std::cerr << "[map2-controller-host] frame received (" << frame.size() << " bytes)\n";
-
-            // Naive shutdown detection — if the payload mentions
-            // "shutdown" type, exit. JSON parser integration in
-            // follow-up.
-            if (frame.find ("\"type\":\"shutdown\"") != std::string::npos)
-            {
-                g_shutdownRequested.store (true, std::memory_order_release);
-                send_frame (client_fd, "{\"type\":\"log_event\",\"msg_id\":\"\","
-                                       "\"schema_version\":1,\"level\":\"info\","
-                                       "\"message\":\"shutting down\"}");
-                break;
-            }
-
-            // T2459-H1 — list-ports request.
-            if (frame.find ("\"type\":\"midi_list_ports_request\"") != std::string::npos)
-            {
-                const std::string msg_id = extract_string_field (frame, "msg_id");
-                const std::string response = build_list_ports_response (msg_id, midiBackend);
-                send_frame (client_fd, response);
-                continue;
-            }
-
-            // T2459-H3 Slice 5 — open a hardware input port and bind it
-            // to a controller_key so live MIDI traffic routes through the
-            // loaded mapping descriptor.
-            if (frame.find ("\"type\":\"midi_open_input_request\"") != std::string::npos)
-            {
-                const std::string msg_id = extract_string_field (frame, "msg_id");
-                const std::string controller_key = extract_string_field (frame, "controller_key");
-                const std::string port_id = extract_string_field (frame, "port_id");
-                if (controller_key.empty() || port_id.empty())
-                {
-                    send_frame (client_fd, build_log_event (
-                        msg_id,
-                        "error",
-                        "midi_open_input_request missing controller_key or port_id",
-                        controller_key.empty() ? std::nullopt : std::optional<std::string> (controller_key)));
-                    continue;
-                }
-
-                auto* adapter = midiBackend.adapter();
-                if (adapter == nullptr)
-                {
-                    send_frame (client_fd, build_log_event (
-                        msg_id, "error",
-                        "midi_open_input_request: no MIDI backend bound",
-                        controller_key));
-                    continue;
-                }
-                // T2459-H3 Slice 6 — assign or reuse a controllerIndex for
-                // this controller_key. Same key reuses the same slot; a new
-                // key gets the next index. Index 0 is reserved for the
-                // unknown/legacy fallback so the first real controller is
-                // index 1.
-                std::uint16_t controller_index = 0;
-                for (std::size_t i = 0; i < controller_keys_by_index.size(); ++i)
-                {
-                    if (controller_keys_by_index[i] == controller_key)
-                    {
-                        controller_index = static_cast<std::uint16_t> (i + 1);
-                        break;
-                    }
-                }
-                if (controller_index == 0)
-                {
-                    controller_keys_by_index.push_back (controller_key);
-                    controller_index = static_cast<std::uint16_t> (controller_keys_by_index.size());
-                }
-
-                if (! adapter->openInput (port_id, controller_index))
-                {
-                    send_frame (client_fd, build_log_event (
-                        msg_id, "error",
-                        "midi_open_input_request failed: " + adapter->errorMessage(),
-                        controller_key));
-                    continue;
-                }
-                port_to_controller[port_id] = controller_key;
-                active_controller_key = controller_key;
-                send_frame (client_fd, build_log_event (
-                    msg_id, "info",
-                    "midi input opened: " + port_id,
-                    controller_key));
-                continue;
-            }
-
-            // T2482-P1.2 Gap C completion / iter 75 — publish a virtual
-            // MIDI output port. Unblocks the Maschine virtual-port flip
-            // (iter-50b/iter-55 deferral) AND closes the iter-72/73
-            // outbound back-loop (the host needs an open virtual output
-            // for sendToVirtualOutput to succeed).
-            if (frame.find ("\"type\":\"midi_create_virtual_port_request\"") != std::string::npos)
-            {
-                const std::string msg_id = extract_string_field (frame, "msg_id");
-                const std::string name = extract_string_field (frame, "name");
-                if (name.empty())
-                {
-                    send_frame (client_fd, build_log_event (
-                        msg_id, "error",
-                        "midi_create_virtual_port_request missing name"));
-                    continue;
-                }
-                auto* adapter = midiBackend.adapter();
-                if (adapter == nullptr)
-                {
-                    send_frame (client_fd, build_log_event (
-                        msg_id, "error",
-                        "midi_create_virtual_port_request: no MIDI backend bound"));
-                    continue;
-                }
-                if (! adapter->openVirtualOutput (name))
-                {
-                    send_frame (client_fd, build_log_event (
-                        msg_id, "error",
-                        "midi_create_virtual_port_request failed: "
-                        + adapter->errorMessage()));
-                    continue;
-                }
-                send_frame (client_fd, build_log_event (
-                    msg_id, "info",
-                    "virtual output published: " + name));
-                continue;
-            }
-
-            // T2459-H3 — cache script sources for later mapping activation.
-            if (frame.find ("\"type\":\"script_load_request\"") != std::string::npos)
-            {
-                const std::string msg_id = extract_string_field (frame, "msg_id");
-                const std::string controller_key = extract_string_field (frame, "controller_key");
-                const std::string script_path = extract_string_field (frame, "script_path");
-                const std::string script_body = extract_string_field (frame, "script_body");
-                if (controller_key.empty() || script_path.empty())
-                {
-                    send_frame (client_fd, build_log_event (
-                        msg_id,
-                        "warning",
-                        "script_load_request missing controller_key or script_path",
-                        controller_key.empty() ? std::nullopt : std::optional<std::string> (controller_key)));
-                    continue;
-                }
-
-                controller_script_cache[controller_key][script_path] = script_body;
-                send_frame (client_fd, build_log_event (
-                    msg_id,
-                    "info",
-                    "script cached: " + script_path,
-                    controller_key));
-                continue;
-            }
-
-            // T2459-H3 — mapping activation consumed by the production
-            // host loop. Descriptor/script parsing remains intentionally
-            // conservative until the full JSON dispatcher lands.
-            if (frame.find ("\"type\":\"mapping_activate\"") != std::string::npos)
-            {
-                const std::string msg_id = extract_string_field (frame, "msg_id");
-                map2::controller_host::MappingDescriptorSpec descriptor;
-                std::string controller_key;
-                if (! parse_mapping_activate_frame (frame, descriptor, controller_key))
-                {
-                    send_frame (client_fd, build_log_event (
-                        msg_id,
-                        "error",
-                        "mapping_activate parse failed"));
-                    continue;
-                }
-
-                std::vector<std::string> resolved_scripts;
-                const int declared_scripts = static_cast<int> (descriptor.scripts.size());
-                const auto cache_it = controller_script_cache.find (controller_key);
-                static const std::unordered_map<std::string, std::string> kEmptyCache;
-                const auto& cache_for_controller = cache_it != controller_script_cache.end()
-                    ? cache_it->second
-                    : kEmptyCache;
-
-                int missing_scripts = 0;
-                for (const auto& script_ref : descriptor.scripts)
-                {
-                    if (auto script_body = resolve_script_body (script_ref, descriptor.pack_id, cache_for_controller);
-                        script_body.has_value())
-                    {
-                        resolved_scripts.push_back (*script_body);
-                        continue;
-                    }
-                    // Fallback: allow inline script bodies.
-                    if (script_ref.find ("function") != std::string::npos
-                        || script_ref.find ("=>") != std::string::npos
-                        || script_ref.find ('\n') != std::string::npos
-                        || script_ref.find ('{') != std::string::npos
-                        || script_ref.find (';') != std::string::npos
-                        || script_ref.find ("var ") != std::string::npos
-                        || script_ref.find ("const ") != std::string::npos
-                        || script_ref.find ("let ") != std::string::npos)
-                    {
-                        resolved_scripts.push_back (script_ref);
-                        continue;
-                    }
-                    ++missing_scripts;
-                }
-                descriptor.scripts = std::move (resolved_scripts);
-                if (missing_scripts == declared_scripts
-                    && missing_scripts > 0
-                    && descriptor_uses_script_callbacks (descriptor))
-                {
-                    map2::controller_host::ScriptException exc;
-                    exc.file = "<mapping_activate>";
-                    exc.line = 0;
-                    exc.column = 0;
-                    exc.message = "no descriptor scripts resolved for script-bound controls";
-                    send_frame (client_fd, build_script_error (msg_id, controller_key, exc));
-                    continue;
-                }
-
-                if (auto exc = mapping_engine.loadDescriptor (controller_key, descriptor); exc.has_value())
-                {
-                    send_frame (client_fd, build_script_error (msg_id, controller_key, *exc));
-                    continue;
-                }
-
-                std::ostringstream message;
-                message << "mapping activated: controls=" << descriptor.controls.size()
-                        << " scripts=" << descriptor.scripts.size();
-                if (missing_scripts > 0) message << " missing_scripts=" << missing_scripts;
-                send_frame (client_fd, build_log_event (
-                    msg_id,
-                    missing_scripts > 0 ? "warning" : "info",
-                    message.str(),
-                    controller_key));
-                continue;
-            }
-
-            // T2482-P1.2 Gap A (iter 64) — operator-facing lifecycle envelopes.
-            //
-            // mapping_deactivate: drop the active descriptor for the
-            // named controller_key. Inbound MIDI/HID then flows
-            // through the host's default pass-through (controller_event
-            // IPC frames) instead of routing via JS callbacks.
-            if (frame.find ("\"type\":\"mapping_deactivate\"") != std::string::npos)
-            {
-                const std::string msg_id = extract_string_field (frame, "msg_id");
-                const std::string controller_key = extract_string_field (frame, "controller_key");
-                if (controller_key.empty())
-                {
-                    send_frame (client_fd, build_log_event (
-                        msg_id,
-                        "error",
-                        "mapping_deactivate missing controller_key"));
-                    continue;
-                }
-                const bool removed = mapping_engine.unloadDescriptor (controller_key);
-                send_frame (client_fd, build_log_event (
-                    msg_id,
-                    removed ? "info" : "warning",
-                    removed
-                        ? std::string ("mapping deactivated")
-                        : std::string ("mapping_deactivate: controller_key not loaded"),
-                    controller_key));
-                continue;
-            }
-
-            // mapping_reload: atomic unload + load. Reuses the
-            // mapping_activate parser since the wire form is identical
-            // minus the type discriminator.
-            if (frame.find ("\"type\":\"mapping_reload\"") != std::string::npos)
-            {
-                const std::string msg_id = extract_string_field (frame, "msg_id");
-                map2::controller_host::MappingDescriptorSpec descriptor;
-                std::string controller_key;
-                if (! parse_mapping_activate_frame (frame, descriptor, controller_key))
-                {
-                    send_frame (client_fd, build_log_event (
-                        msg_id,
-                        "error",
-                        "mapping_reload parse failed"));
-                    continue;
-                }
-
-                // Same script-resolution dance as mapping_activate.
-                std::vector<std::string> resolved_scripts;
-                const int declared_scripts = static_cast<int> (descriptor.scripts.size());
-                const auto cache_it = controller_script_cache.find (controller_key);
-                static const std::unordered_map<std::string, std::string> kEmptyCache;
-                const auto& cache_for_controller = cache_it != controller_script_cache.end()
-                    ? cache_it->second
-                    : kEmptyCache;
-
-                int missing_scripts = 0;
-                for (const auto& script_ref : descriptor.scripts)
-                {
-                    if (auto script_body = resolve_script_body (script_ref, descriptor.pack_id, cache_for_controller);
-                        script_body.has_value())
-                    {
-                        resolved_scripts.push_back (*script_body);
-                        continue;
-                    }
-                    if (script_ref.find ("function") != std::string::npos
-                        || script_ref.find ("=>") != std::string::npos
-                        || script_ref.find ('\n') != std::string::npos
-                        || script_ref.find ('{') != std::string::npos
-                        || script_ref.find (';') != std::string::npos
-                        || script_ref.find ("var ") != std::string::npos
-                        || script_ref.find ("const ") != std::string::npos
-                        || script_ref.find ("let ") != std::string::npos)
-                    {
-                        resolved_scripts.push_back (script_ref);
-                        continue;
-                    }
-                    ++missing_scripts;
-                }
-                descriptor.scripts = std::move (resolved_scripts);
-                if (missing_scripts == declared_scripts
-                    && missing_scripts > 0
-                    && descriptor_uses_script_callbacks (descriptor))
-                {
-                    map2::controller_host::ScriptException exc;
-                    exc.file = "<mapping_reload>";
-                    exc.line = 0;
-                    exc.column = 0;
-                    exc.message = "no descriptor scripts resolved for script-bound controls";
-                    send_frame (client_fd, build_script_error (msg_id, controller_key, exc));
-                    continue;
-                }
-
-                if (auto exc = mapping_engine.reloadDescriptor (controller_key, descriptor); exc.has_value())
-                {
-                    send_frame (client_fd, build_script_error (msg_id, controller_key, *exc));
-                    continue;
-                }
-
-                std::ostringstream message;
-                message << "mapping reloaded: controls=" << descriptor.controls.size()
-                        << " scripts=" << descriptor.scripts.size();
-                if (missing_scripts > 0) message << " missing_scripts=" << missing_scripts;
-                send_frame (client_fd, build_log_event (
-                    msg_id,
-                    missing_scripts > 0 ? "warning" : "info",
-                    message.str(),
-                    controller_key));
-                continue;
+                // T2459-H11 — bound recv stalls. poll() can signal
+                // POLLIN on partial data; recv_frame's MSG_WAITALL
+                // would then block until the rest arrives. A 5s
+                // recv timeout ensures one slow/dying client can't
+                // stall the whole single-threaded loop. Well-behaved
+                // clients send full frames atomically (sendall in
+                // python's MidiHostClient) so this is purely a safety
+                // net.
+                struct timeval tv { 5, 0 };
+                ::setsockopt (new_fd, SOL_SOCKET, SO_RCVTIMEO,
+                                &tv, sizeof (tv));
+                client_fds.push_back (new_fd);
+                std::cerr << "[map2-controller-host] backend connected (now "
+                          << client_fds.size() << " client(s))\n";
             }
         }
 
-    disconnect:
-        ::close (client_fd);
+        // Process up to one frame per ready client.
+        dead_clients.clear();
+        for (std::size_t i = 1; i < pollset.size(); ++i)
+        {
+            int fd = pollset[i].fd;
+            short ev = pollset[i].revents;
+            if (ev & (POLLERR | POLLHUP | POLLNVAL))
+            {
+                dead_clients.push_back (fd);
+                std::cerr << "[map2-controller-host] backend disconnected (poll hup)\n";
+                continue;
+            }
+            if (! (ev & POLLIN)) continue;
+
+            std::string frame;
+            if (! recv_frame (fd, frame))
+            {
+                dead_clients.push_back (fd);
+                std::cerr << "[map2-controller-host] backend disconnected\n";
+                continue;
+            }
+            std::cerr << "[map2-controller-host] frame received ("
+                      << frame.size() << " bytes)\n";
+
+            if (! process_request_frame (fd, frame))
+            {
+                // shutdown — close this client and stop the loop.
+                dead_clients.push_back (fd);
+                break;
+            }
+        }
+
+        for (int fd : dead_clients)
+        {
+            client_fds.erase (std::remove (client_fds.begin(),
+                                             client_fds.end(),
+                                             fd),
+                               client_fds.end());
+            ::close (fd);
+        }
     }
+
+    // Shutdown: close every connected client.
+    for (int fd : client_fds)
+        ::close (fd);
 
     ::close (listen_fd);
     ::unlink (socket_path.c_str());

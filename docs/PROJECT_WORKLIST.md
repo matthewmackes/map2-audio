@@ -1176,7 +1176,7 @@ Completion note: 2026-05-10 — Claude: **SHIPPED + dual-pushed.**
 ---
 
 ID: T2459-H11
-Status: [ ] Todo
+Status: [✓] Done
 Parent: T2459-H
 Title: Controller-host daemon serializes ALL backend clients — first long-lived subscriber monopolizes the UDS, every other call queues forever
 Description:
@@ -1200,8 +1200,35 @@ Description:
   - Hardware Store + Launch Control surface populate WITHOUT requiring a manual `engine/stop` + `engine/start` cycle after backend boot.
 - **Why this is filed separately, not folded into T2459-H9:** T2459-H9 was scoped narrowly to the per-accept setup cost (libremidi probe + shm rings). The accept-loop's single-client serialization was inherited from the iter-45 daemon skeleton and only became operator-visible once additional persistent subscribers (T2459-H8 EngineCommandBridge, engine_command_handlers, etc.) shipped. Two independent problems; T2459-H9 closing didn't change the multi-client architecture.
 - **Required outputs:** Root-cause confirmation, architectural decision (one of paths 1-4 above), C++ implementation in `juce-engine/Source/ControllerHost/main.cpp`, new regression suite, evidence directory.
-Assigned to: Unassigned
-Last updated: 2026-05-11 EDT - Claude: Filed during the post-T2459-H9 Hardware Store / Launch Control fix session. Backend-side workarounds shipped this session: `MidiHub._seed_alsa_ports` + `_run_hotplug_loop` survive `MidiHostClientError`, `MidiDeviceRegistry._build_local_inventory` falls back to no-descriptor mode on daemon transient. Those let the rest of the platform stay responsive when the daemon is wedged but they do NOT make MIDI actually work — the only path to a functioning MIDI substrate today is to manually `engine/stop` + `engine/start` after the persistent subscriber has been forcibly killed.
+Assigned to: Claude
+Last updated: 2026-05-11 EDT - Claude: **SHIPPED.** Root cause confirmed: `run_main_loop` was a strictly-serialized accept→handle→close (one client at a time); when `EngineCommandBridge.start_subscription()` opened a persistent UDS at lifespan boot, that one fd monopolized the daemon. Every other Python caller succeeded at the kernel `connect()` level, queued in the listen backlog (16 slots), and never got `accept()`ed.
+Completion note: 2026-05-11 — Claude: **SHIPPED + tested + bench-verified.**
+  Architecture decision: **Path 2 (event-loop poll over multiple fds)** from the filed options. Single-threaded poll-fanout — one `poll()` over `[listen_fd, ...client_fds]` per tick. Reasons: avoids new mutex surface area on `Map2MidiBackend` / `Map2MappingEngine` / `ShmEventRing` (all authored single-threaded); preserves existing invariants; bounded by `ulimit -n` (we expect 4–8 concurrent backend subscribers in practice).
+  Delivered:
+  - `juce-engine/Source/ControllerHost/main.cpp::run_main_loop`:
+    - Replaced strict-serialized accept loop with `poll()`-fanout over listen_fd + connected client fds. New `process_request_frame` lambda handles one frame per client per tick.
+    - Hoisted previously-per-connection state (`port_to_controller`, `controller_keys_by_index`, `active_controller_key`) to process scope — the libremidi adapter is a single process-scope resource so its state must be too. Pre-H11 bug: a second backend couldn't `midi_open_input_request` because its `controller_keys_by_index` was an empty fresh vector that didn't match what the libremidi adapter expected.
+    - `controller_script_cache` also process-scope so a script loaded by one connection is reusable by `mapping_activate` from another.
+    - `listen_fd` now `SOCK_NONBLOCK` so the inner `accept4()`-until-`EAGAIN` loop drains the entire kernel backlog per tick.
+    - 5-second `SO_RCVTIMEO` on every accepted client to bound the worst-case `recv_frame` stall on a partial-frame client.
+  - `juce-engine/Source/ControllerHost/main.cpp::drain_ring_and_dispatch`:
+    - Signature changed from `(int client_fd, …)` to `(const vector<int>& clients, …, vector<int>& dead_clients_out)`.
+    - Outbound shm-drain frames (`engine_command`, `log_event`, `script_error`, `midi_send_request` IPC fallback) now broadcast to every connected backend via a new `broadcast_frame` helper. Each subscriber filters client-side via its registered `MidiEventSubscription.on_*` callbacks.
+    - Per-client send failures append to `dead_clients_out` for the caller to prune after the broadcast loop completes.
+  - `tests/test_controller_host_t2459h11_multi_client.py` (new) — 3 regression cases:
+    1. `test_list_ports_succeeds_while_persistent_subscriber_is_connected` — holds one UDS open (models `EngineCommandBridge`) and confirms a fresh `midi_list_ports_request` round-trips in <500 ms. Pre-H11 this timed out.
+    2. `test_ten_concurrent_list_ports_all_succeed_under_load` — persistent subscriber + 10 worker threads each round-tripping `midi_list_ports_request`. All 10 must succeed within 2 s. Pre-H11 they queued in the backlog and timed out.
+    3. `test_listen_backlog_does_not_accumulate_under_persistent_subscriber` — fires 8 connect+close cycles while a persistent subscriber is open; confirms a fresh request still succeeds. Pre-H11 the kernel `ss -lxn` queue hit 16/16 within seconds and stayed full.
+  Validation:
+  - `cmake --build build --target map2-controller-host` clean.
+  - Full controller-host test sweep `tests/test_controller_host_*.py` → **98 passed, 1 xfailed in 16.40s** (no regressions; +3 new H11 cases on top of the 95 H1–H10 baseline).
+  - Bench verification on live system after `sudo systemctl restart map2-backend.service`:
+    - `ss -lxn /run/map2/controller-host.sock` → backlog 0/16 (was 16/16 pre-fix).
+    - `MidiHostClient().list_ports()` → 30 ports, 0.5 ms round-trip — through a daemon that already has the `EngineCommandBridge` persistent subscriber attached.
+    - `GET /api/midi/hub/status` → 41 ports including `Midi-Bridge:Launch Control MIDI 1 (capture)` + `(playback)`. **No manual `engine/stop` + `engine/start` cycle required after backend boot.**
+    - `GET /api/launch-control/status` → `connected: True, matched: 2, daemon: connected`.
+    - `GET /api/devices/profiles`, `GET /api/devices/packs/sources`, `GET /api/midi/hub/devices` → all HTTP 200.
+  Out of scope (filed as future small slices, not regressions): the `libremidi client-N:map2-controller-host input` JACK MIDI port proliferation (every hotplug-loop re-sync creates new libremidi-side ports — cosmetic noise in the port list, no functional impact); `systemd/map2-controller-host.service` still isn't installed under `/etc/systemd/system/` (the daemon is supervised as a uvicorn child today); no protocol-level `ping`/`pong` (probe-via-connect is good enough now that the daemon is actually multi-client).
 
 ---
 
