@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1589** Python | **1647** TypeScript | **205** C++/H | **149** Docs | **4285** total commits | **4** stars | **0** forks | **0** open issues
+**1589** Python | **1647** TypeScript | **205** C++/H | **149** Docs | **4287** total commits | **4** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`7e686767`](https://github.com/matthewmackes/map2-audio/commit/7e6867671c41641d345701ec21ab1bc9c78c6c7f) | build(T2507-0): wire liburing into the engine build | Map2 Audio | 2026-05-11 |
+| [`0f3be279`](https://github.com/matthewmackes/map2-audio/commit/0f3be2790efe1f6b2272b231de063d12d9a121f2) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-11 |
 | [`0dd9ab9b`](https://github.com/matthewmackes/map2-audio/commit/0dd9ab9b87cbb4a86af7b6c078f30aaebbbcf3f1) | feat(T2509-2): recordings empty-state polish + Continue r... | Map2 Audio | 2026-05-11 |
 | [`10bc59a6`](https://github.com/matthewmackes/map2-audio/commit/10bc59a6bdde08d888ef2657f53710a2c704d7ef) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-11 |
 | [`20f3dd37`](https://github.com/matthewmackes/map2-audio/commit/20f3dd37510fcda6e45b7a90bacf2ead56f4bf76) | test(T2508): end-to-end integration smoke for recorder ro... | Map2 Audio | 2026-05-11 |
 | [`27792e80`](https://github.com/matthewmackes/map2-audio/commit/27792e805edd0a37b83cb59f4b141e2d17ccadcb) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-11 |
 | [`591f3366`](https://github.com/matthewmackes/map2-audio/commit/591f3366ee0cfcdf1ab4991cda0f8af74524c1ca) | feat(T2509-4): RecordingPanel — Carbon live-session control | Map2 Audio | 2026-05-11 |
 | [`91d13747`](https://github.com/matthewmackes/map2-audio/commit/91d13747a151b1e9cc969829d37933b0e9c4ee72) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-11 |
-| [`6839c8a9`](https://github.com/matthewmackes/map2-audio/commit/6839c8a9a0154ed964526d3228f86765a290c102) | feat(T2509-3): RecordingDetailPanel — inline audio + delete | Map2 Audio | 2026-05-11 |
-| [`a4e308f3`](https://github.com/matthewmackes/map2-audio/commit/a4e308f31defc5a277fea180c01b48e6c2b3b2b8) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-11 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
