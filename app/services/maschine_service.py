@@ -10,7 +10,7 @@ from dataclasses import dataclass, field
 from datetime import datetime, timedelta, timezone
 from typing import Any, Literal
 
-from fastapi import WebSocket
+from fastapi import WebSocket, WebSocketDisconnect
 from sqlalchemy import select
 from sqlalchemy.ext.asyncio import AsyncSession
 
@@ -560,7 +560,20 @@ class MaschineService(Singleton):
             self._clients.discard(websocket)
 
     async def send_ws_message(self, websocket: WebSocket, message: dict[str, Any]) -> None:
-        await websocket.send_json(message)
+        # The peer may have closed (uvicorn 1011 keepalive timeout,
+        # client navigation, network drop) between the time we decided
+        # to send and the time we actually call send_json. Starlette
+        # raises RuntimeError("Cannot call \"send\" once a close message
+        # has been sent.") in that window. That exception is not a
+        # programming error — it's just a race with the close — so
+        # treat it the same as WebSocketDisconnect: drop the client
+        # silently and let the caller decide whether to keep looping.
+        try:
+            await websocket.send_json(message)
+        except RuntimeError as exc:
+            if "close message has been sent" in str(exc) or "not connected" in str(exc).lower():
+                raise WebSocketDisconnect() from exc
+            raise
 
     def _status_event_payload_locked(self, *, event: str, extra: dict[str, Any] | None = None) -> dict[str, Any]:
         data = self._state.to_dict()

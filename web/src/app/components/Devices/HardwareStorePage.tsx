@@ -360,7 +360,7 @@ export function HardwareStorePage(): React.JSX.Element {
           lowContrast
           hideCloseButton
           title="Hardware Store: backend reads degraded"
-          subtitle="Some sections may show stale data until /api/devices/profiles + /packs/sources recover."
+          subtitle="Some sections may show stale data until /api/devices/profiles + /api/devices/packs/sources recover."
           className="hwstore-page__notice"
         />
       )}

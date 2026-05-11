@@ -1175,6 +1175,36 @@ Completion note: 2026-05-10 — Claude: **SHIPPED + dual-pushed.**
 
 ---
 
+ID: T2459-H11
+Status: [ ] Todo
+Parent: T2459-H
+Title: Controller-host daemon serializes ALL backend clients — first long-lived subscriber monopolizes the UDS, every other call queues forever
+Description:
+- **Origin (2026-05-11, post-T2459-H9 closeout):** While running down the Launch Control "Offline / 0 reconnects" bench symptom + Hardware Store "backend reads degraded" banner, root cause was traced past T2459-H9 to a deeper architectural issue: `juce-engine/Source/ControllerHost/main.cpp::run_main_loop` is a single-threaded accept loop. Each `accept()` returns one client_fd, the daemon enters an inner poll loop that handles frames on that fd, and `accept()` is only called again after that client disconnects. T2459-H9 fixed the per-accept setup cost; it did NOT make the daemon multi-client.
+- **Symptom:** With `EngineCommandBridge.start_subscription()` running at lifespan boot, exactly one persistent `MidiEventSubscription` connects, occupies the daemon's only client slot, and is the only Python caller that can talk to the daemon. Every other path that opens a fresh UDS (`MidiHostClient._roundtrip` / `_send_only` for list_ports, open_midi_input, script_load, etc.) succeeds at the kernel `connect()` level but queues in the listen backlog (now 16 slots), and the daemon never `accept()`s them. The pattern shows up as: `is_daemon_available() → False` (probe connect succeeds but no peer dialog), `list_ports() → MidiHostClientError: cannot connect to controller-host UDS: [Errno 11] Resource temporarily unavailable`, and downstream `MidiHub._seed_alsa_ports` deferred (worked around by T2459-H11-followup safety net; permanent crippling of ALSA enumeration without it).
+- **Direct evidence (live trace 2026-05-11 ~07:47 EDT):**
+  - `ss -lxn /run/map2/controller-host.sock` → `Recv-Q 17 Send-Q 16` (kernel backlog full).
+  - `ss -p src "unix:/run/map2/controller-host.sock"` → only one ESTAB entry: `fd=23` on the daemon side connected to `python3 pid=3591172 fd=111` (the `EngineCommandBridge` subscriber).
+  - Daemon process state: `S (sleeping)`, syscall 7 (`poll`), blocked on the inner-loop poll of the engine-command-subscription fd; not in `accept`.
+  - Backend `MidiHostClient().is_daemon_available()` → `False` despite the daemon being alive and the socket bound.
+- **Goal / acceptance criteria:** Multiple concurrent backend clients can talk to the daemon without any one starving the others. Specifically: with `EngineCommandBridge` subscription live (long-lived), a fresh `MidiHostClient().list_ports()` must succeed in <200 ms. Bench validation: open one persistent subscriber, then in parallel call `list_ports()` from a second connection 10× back-to-back — every call returns the port list, none time out, no kernel backlog accumulation on `/run/map2/controller-host.sock`.
+- **Why it matters:** Without this fix, the platform's MIDI substrate is locked to one Python consumer. T2459-H9 closed the per-accept setup-cost wedge but the single-client serialization remained latent because there was only one persistent subscriber in the pre-EngineCommandBridge era. Now that multiple subsystems (EngineCommandBridge, future SnapshotAuthority bridge, GroundControl Pro transport bridge, engine_command_handlers) each want their own persistent subscription, only the first one works. Every short-lived caller (`list_ports`, `open_midi_input`, `script_load`) competes with the long-lived holders and loses.
+- **Investigation paths (not prescribed):**
+  1. **Per-connection thread model:** `accept()` in a dedicated thread; spawn a worker thread per accepted client_fd; protect shared state (mapping_engine, midiBackend, shm rings) with mutexes / atomics where needed. Most direct fix but adds thread-safety surface area.
+  2. **Event-loop poll over multiple fds:** keep the daemon single-threaded but use a single `poll()` over [listen_fd, ...accepted_fds]. Accept on listen_fd EAGAIN'ability + drain ready clients in round-robin. Avoids new threads but requires restructuring the inner-loop frame dispatch to be per-fd.
+  3. **Multiplex over the existing subscription:** instead of opening N persistent connections, define a single multiplexed control channel (one persistent fd) where each consumer registers a subscription and gets a stream of frames matching its filter. Eliminates the multi-client need at the cost of a protocol redesign.
+  4. **Short-lived fan-out + outbound push channel:** keep current single-client accept, but split outbound `controller_event`/`engine_command`/`log_event` frames onto a separate UDS that consumers tail (read-only fan-out). The main socket stays request/response only and never holds a long-lived connection. Lightest protocol churn.
+- **Acceptance:**
+  - Regression test: `tests/test_controller_host_t2459h11_multi_client.py` — open one persistent subscriber, run 10× concurrent `list_ports()` round-trips, every call returns within 200 ms, no backlog accumulation.
+  - Bench evidence: `docs/fit-for-purpose-evidence/<YYYYMMDD>/T2459H11_multi_client/` with live `ss -lxn` snapshots showing zero backlog under load + a `journalctl` capture proving the daemon services multiple concurrent backends.
+  - Hardware Store + Launch Control surface populate WITHOUT requiring a manual `engine/stop` + `engine/start` cycle after backend boot.
+- **Why this is filed separately, not folded into T2459-H9:** T2459-H9 was scoped narrowly to the per-accept setup cost (libremidi probe + shm rings). The accept-loop's single-client serialization was inherited from the iter-45 daemon skeleton and only became operator-visible once additional persistent subscribers (T2459-H8 EngineCommandBridge, engine_command_handlers, etc.) shipped. Two independent problems; T2459-H9 closing didn't change the multi-client architecture.
+- **Required outputs:** Root-cause confirmation, architectural decision (one of paths 1-4 above), C++ implementation in `juce-engine/Source/ControllerHost/main.cpp`, new regression suite, evidence directory.
+Assigned to: Unassigned
+Last updated: 2026-05-11 EDT - Claude: Filed during the post-T2459-H9 Hardware Store / Launch Control fix session. Backend-side workarounds shipped this session: `MidiHub._seed_alsa_ports` + `_run_hotplug_loop` survive `MidiHostClientError`, `MidiDeviceRegistry._build_local_inventory` falls back to no-descriptor mode on daemon transient. Those let the rest of the platform stay responsive when the daemon is wedged but they do NOT make MIDI actually work — the only path to a functioning MIDI substrate today is to manually `engine/stop` + `engine/start` after the persistent subscriber has been forcibly killed.
+
+---
+
 ID: T2477
 Status: [✓] Done
 Title: Graph-rendering consolidation — unify ReactFlow + custom canvas + custom builder into one signal-flow primitive

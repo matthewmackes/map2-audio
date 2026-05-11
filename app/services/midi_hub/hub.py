@@ -268,11 +268,30 @@ class MidiHub:
         }
 
     def _seed_alsa_ports(self) -> None:
-        discovered = discover_alsa_ports()
+        # The controller-host daemon may not be reachable when the hub
+        # first starts (race during boot, transient EAGAIN, daemon
+        # restart). Treat that as "no ALSA ports yet" — the hotplug
+        # thread will retry every hotplug_interval_s and pick the ports
+        # up once the daemon recovers. Without this guard a startup-time
+        # daemon hiccup left the hub permanently empty.
+        try:
+            discovered = discover_alsa_ports()
+        except Exception as exc:
+            logger.warning(
+                "MidiHub initial ALSA seed deferred (daemon unreachable): %s", exc
+            )
+            self._known_alsa_inputs = set()
+            self._known_alsa_outputs = set()
+            return
         self._known_alsa_inputs = set(discovered.get("inputs", []))
         self._known_alsa_outputs = set(discovered.get("outputs", []))
-        for port in build_alsa_ports(prefix="alsa"):
-            self._ports[port.port_id] = port
+        try:
+            for port in build_alsa_ports(prefix="alsa"):
+                self._ports[port.port_id] = port
+        except Exception as exc:
+            logger.warning(
+                "MidiHub initial ALSA port build deferred (daemon transient): %s", exc
+            )
 
     def _configure_current_thread_realtime(self) -> None:
         # Best-effort RT scheduling for MIDI I/O thread.
@@ -285,9 +304,19 @@ class MidiHub:
             return
 
     def _run_hotplug_loop(self) -> None:
+        # The hotplug loop MUST survive transient failures of the
+        # controller-host UDS — without this guard a single
+        # MidiHostClientError kills the thread permanently and the hub
+        # never picks up ALSA ports again (no auto-recovery once the
+        # daemon comes back). Log-and-retry on the next interval.
         while not self._stop_evt.is_set():
             if self._auto_discover_alsa:
-                self._sync_alsa_ports()
+                try:
+                    self._sync_alsa_ports()
+                except Exception as exc:
+                    logger.debug(
+                        "MidiHub ALSA hotplug sync skipped (will retry): %s", exc
+                    )
             self._stop_evt.wait(timeout=self._hotplug_interval_s)
 
     def _sync_alsa_ports(self) -> None:

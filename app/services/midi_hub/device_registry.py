@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import asyncio
+import logging
 import re
 import threading
 from dataclasses import dataclass, field
@@ -24,6 +25,8 @@ from app.services.platform_event.factories import (
 from app.services.platform_event.severity import Severity
 from app.services.ws_federation import get_ws_federator
 
+
+logger = logging.getLogger(__name__)
 
 ASSIGNMENT_PREFIX = "assignment::"
 
@@ -803,7 +806,23 @@ class MidiDeviceRegistry:
         return None
 
     def _build_local_inventory(self) -> Dict[str, Any]:
-        descriptors = {d["name"]: d for d in discover_alsa_port_descriptors()}
+        # USB descriptor enrichment requires the controller-host daemon
+        # for ALSA port discovery. If the daemon is briefly unreachable,
+        # fall back to no-descriptor mode — the port list from
+        # self._hub.list_ports() is still authoritative (it caches what
+        # the hotplug loop already seeded), and descriptors are only
+        # used to fill in vendor_id/product_id metadata. Without this
+        # guard a transient daemon outage 500s every `/api/midi/hub/devices`
+        # call, which the Hardware Store page then surfaces as a
+        # "backend reads degraded" banner.
+        try:
+            descriptors = {d["name"]: d for d in discover_alsa_port_descriptors()}
+        except Exception as exc:
+            logger.debug(
+                "MidiDeviceRegistry descriptor enrichment skipped (daemon transient): %s",
+                exc,
+            )
+            descriptors = {}
         ports = self._hub.list_ports()
         grouped: Dict[str, Dict[str, Any]] = {}
         now = _now_iso()
