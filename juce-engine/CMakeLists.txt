@@ -261,6 +261,7 @@ set(SOURCES
 
     # T2507 — Multi-track recorder (engine-level v1; per-chain v2 follow-on).
     Source/Recorder/IoUringWriter.cpp
+    Source/Recorder/RecorderService.cpp
 
     # JUCE-based components (new)
     Source/JuceAudioIO.cpp
@@ -852,7 +853,9 @@ if(BUILD_RECORDER_TESTS)
         tests/TapNodeTests.cpp
         tests/EngineRecorderTests.cpp
         tests/IoUringWriterTests.cpp
+        tests/RecorderServiceTests.cpp
         Source/Recorder/IoUringWriter.cpp
+        Source/Recorder/RecorderService.cpp
     )
     add_executable(recorder_tests ${RECORDER_TESTS_SOURCES})
     target_compile_definitions(recorder_tests PRIVATE
