@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1578** Python | **1640** TypeScript | **205** C++/H | **149** Docs | **4257** total commits | **4** stars | **0** forks | **0** open issues
+**1579** Python | **1640** TypeScript | **205** C++/H | **149** Docs | **4259** total commits | **4** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`8dcc5e7f`](https://github.com/matthewmackes/map2-audio/commit/8dcc5e7faa0e05e24432a2470eda08def5e25b37) | feat(T2506): snapshot graph extensions for recording (v20... | Map2 Audio | 2026-05-11 |
+| [`595794b0`](https://github.com/matthewmackes/map2-audio/commit/595794b0788ecc16b9ce39b41dd11c048817241b) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-11 |
 | [`bb4c552a`](https://github.com/matthewmackes/map2-audio/commit/bb4c552a2f5b0ec017fcfe4d9791fa4725bf973e) | chore(T2505): retire T2503 DAW Service epic; clean tree f... | Map2 Audio | 2026-05-11 |
 | [`7ff59a43`](https://github.com/matthewmackes/map2-audio/commit/7ff59a433d614f53ff3e910c7d3cc3377f649267) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-11 |
 | [`4b2c95a9`](https://github.com/matthewmackes/map2-audio/commit/4b2c95a9c3ebd35a49a7a0edd9672ea3dbc03a25) | docs(worklist): T2504 — Multi-Track Recorder + Playback e... | Map2 Audio | 2026-05-11 |
 | [`1c9f8404`](https://github.com/matthewmackes/map2-audio/commit/1c9f8404a707708778388af6b8cc12a56f8d840a) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-11 |
 | [`173ac465`](https://github.com/matthewmackes/map2-audio/commit/173ac465ffa18abd0c6785b1187e23b089b1a32d) | feat(maschine): T2499-B slice 7 — profile-selection drive... | Map2 Audio | 2026-05-11 |
 | [`5fe89479`](https://github.com/matthewmackes/map2-audio/commit/5fe89479b69981884e58cf96b40e3d16b32c4ecf) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-11 |
-| [`6ed42bde`](https://github.com/matthewmackes/map2-audio/commit/6ed42bde5b899ac1801172928f5442ded0500322) | fix(midi,special-settings): T2459-H8b-1 re-enables Heel/L... | Map2 Audio | 2026-05-11 |
-| [`c2bee8ce`](https://github.com/matthewmackes/map2-audio/commit/c2bee8ce3ae980619f6ee58b07698bcbd9a44eeb) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-11 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
