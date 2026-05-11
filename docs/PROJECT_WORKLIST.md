@@ -58,7 +58,7 @@ Each task/subtask should contain these fields:
 - `[~]` `T2503` — DAW Service (Tracktion-backed / pivoted to MAP2-native) — Cancelled 2026-05-11, superseded by T2504. **Retirement complete under T2505 on 2026-05-11.**
 - `[✓]` `T2505` — Retire T2503 artefacts (phase 1 of T2504) — closed 2026-05-11. C++ Daw tree archived; Python DAW backend + 76 pytest cases deleted; `MAP2_DAW_MODE` CMake flag removed; frontend shell + sub-pages archived with redirects to `/artifacts`; license + third-party + worklist docs reframed under T2504; cmake configure clean, atomic web build clean, typecheck + readiness tests green.
 - `[✓]` `T2506` — Snapshot graph extensions for recording (phase 2 of T2504) — closed 2026-05-11. SNAPSHOT_GRAPH_VERSION 2026.04→2026.05; new `recording` block with `oneOf [null | full 6-field session]`; v2026.04 docs migrate transparently via `ACCEPTED_LEGACY_GRAPH_VERSIONS`; `CompiledSnapshotIntent` surfaces `record_session_id` + `tap_matrix`; philosophy doc + 5 adjacent test files updated; 14 new + 79 adjacent pytest cases green; jest schema mocks updated; atomic build clean.
-- `[>]` `T2508` — Python recorder service + routes + artifacts integration (phase 4 of T2504) — **dispatcher half + RecorderService + HTTP routes + AssetType.RECORDING + recordings_library_dir() shipped 2026-05-11** (autonomous Continue cycles 4-7/15) ahead of the C++ RT-critical T2507 taps, per the operator's "RT safety is most important" directive. 5 `engine_command` verbs (cycle 4); RecorderService lifecycle (cycle 5); 6-route HTTP surface (cycle 6); asset-type + service-plane library dir (cycle 7). 121/121 combined sweep green; live arm/list/delete verified on :8080; zero changes inside `juce-engine/Source/` or the audioCallback. Remaining: WS broadcaster, `/api/recordings/*` artifact-registry routes, engine-side transport binding (gated by T2507).
+- `[>]` `T2508` — Python recorder service + routes + artifacts integration (phase 4 of T2504) — **5 of 7 sub-tasks shipped 2026-05-11** (autonomous Continue cycles 4-8/15) ahead of the C++ RT-critical T2507 taps, per the operator's "RT safety is most important" directive. 5 `engine_command` verbs (cycle 4); RecorderService lifecycle (cycle 5); 6-route session HTTP surface (cycle 6); asset-type + service-plane library dir (cycle 7); 4-route artifact-registry HTTP surface (cycle 8 — `/api/recordings/*` list + metadata + wav + delete). 117/117 combined sweep green; live `arm/list/delete` on `/api/v1/recorder/*` + live empty `/api/recordings` verified on :8080; zero changes inside `juce-engine/Source/` or the audioCallback. Remaining: WS broadcaster (T2508-6, partial-only until T2507 ships counters), engine-side transport binding (T2507).
 - `[>]` `T2459-H` — MIDI Backend Unification (controller-host + libremidi + ControllerEngine). All remaining gates consolidated into one bench-session runbook: [`docs/midi/T2459_FINAL_BENCH_SESSION.md`](midi/T2459_FINAL_BENCH_SESSION.md).
 - `[>]` `T2459-H3` — MeloAudio Commander device-pack cutover completion (gate consolidated into T2459 final bench session — `T2459_FINAL_BENCH_SESSION.md` Gate 1)
 - `[>]` `T2459-H3-CFG` — MeloAudio Commander Configurator (Phases 1-6 + Outer-Loop-2 dispatcher all SHIPPED; Phase 7 HIL = T2459 final bench session Gate 1)
@@ -2113,6 +2113,20 @@ Cycle 5 — RecorderService class SHIPPED. New `app/services/recorder_service.py
 - Singleton: `get_recorder_service()` for production wiring; `set_recorder_service()` test seam.
 - New `tests/test_recorder_service.py`: 24 pytest cases covering topic constant, verb enum alignment with dispatcher targets, arm path (basic + tap_matrix normalization + invalid snapshot_id rejection + snapshot_id=0 accept), roll path (transition + idempotent + stopped-rejection + unknown-session rejection), stop path (from rolling + from armed + idempotent + unknown-session rejection), disarm path (removes record + final STOPPED broadcast + silent no-op on unknown), GET path (no side effects + list filter post-disarm), transport/broadcaster injection (no-transport silent no-op + transport-exception isolation + broadcaster-exception isolation), WS payload shape parity, multi-session isolation under interleaved arm/roll/stop. **24/24 green.**
 
+Cycle 8 — Recordings artifact-registry routes SHIPPED (T2508-5):
+- New `app/routes/recordings.py` (~250 LoC). 4 routes under unversioned `/api/recordings` prefix (matching the IR/NAM artifact-registry convention):
+  - `GET /api/recordings` — list every `asset_type=recording` row sorted by created_at desc.
+  - `GET /api/recordings/{hash}/metadata` — sidecar JSON; 404 on unknown hash; 404 on missing sidecar file; 500 on unreadable JSON.
+  - `GET /api/recordings/{hash}/wav` — `FileResponse(media_type="audio/wav")`; 404 on unknown hash; 404 on missing WAV.
+  - `DELETE /api/recordings/{hash}` — drops registry row + unlinks WAV + JSON; 204 on success; 404 on unknown; idempotent on missing files (registry-side delete is authoritative, file unlink failures only log).
+- Reads/writes the `state_authority_assets` table directly. Filter is exact on `asset_type == "recording"` so NAM + IR registries don't pollute the recordings list.
+- File-system resolution: WAV path checks `recordings_library_dir() / file_name` then falls back to registered `source_path`; metadata path checks same library dir for `<basename>.json` then `dirname(source_path)/<basename>.json` — independent from WAV existence so operators can delete one without losing the other.
+- `_RowSnapshot` projection materialises read-only row attributes inside the session context, working around the `expire_on_commit=True` autoexpire that fires when handlers operate on row attributes after the `async with get_session(read_only=True)` exits.
+- New `tests/test_recordings_routes.py`: **14 cases** under FastAPI + httpx.AsyncClient ASGI transport (per-test tmpdir DB + monkey-patched `recordings_library_dir()`) — empty list, filter-by-asset_type isolation (NAM + IR seeded but not returned), order newest-first, metadata happy path + 404 unknown + 404 missing sidecar + 500 unreadable JSON, WAV stream + correct mime, WAV 404 paths, DELETE 204 + drops row + unlinks files + subsequent list empty, DELETE 404 on unknown, DELETE 204 when files already gone (registry delete is authoritative), operation-id uniqueness pin. All 14 green.
+- Combined sweep with cycle 4-7 recorder code + readiness: **117/117 green.**
+- Wired via `route_modules` auto-import (entry: `'recordings'`).
+- Live verification: `curl http://127.0.0.1:8080/api/recordings` returns `{"recordings": [], "count": 0}` after backend restart.
+
 Cycle 7 — Asset-type + library-dir plumbing SHIPPED (T2508-2 + T2508-3):
 - `app/services/upload_service.py`: `AssetType.RECORDING = "recording"` registered; `MAX_SIZES[AssetType.RECORDING] = 10 * 1024**3` (10 GB ceiling per worklist spec — long band/soundcheck captures).
 - `app/paths.py`: new `Map2Paths.recordings_library_dir()` → `<service-state>/recordings` (service-plane authority, sibling of `nam_library_dir`/`lv2_library_dir`).
@@ -2120,8 +2134,7 @@ Cycle 7 — Asset-type + library-dir plumbing SHIPPED (T2508-2 + T2508-3):
 - Live values verified: `AssetType.RECORDING.value == "recording"`; `MAX_SIZES[RECORDING] == 10737418240`; `recordings_library_dir() → /var/lib/map2/recordings`.
 
 Remaining work (still open under T2508):
-- `/api/recordings/*` artifact-registry routes (T2508-5).
-- WS topic broadcaster at 15 fps cadence (consumes `RECORDER_SESSION_TOPIC`) — T2508-6.
+- WS topic broadcaster at 15 fps cadence (consumes `RECORDER_SESSION_TOPIC`) — T2508-6. Real-time fields (`elapsed_seconds`, `take_counts_by_chain`, `disk_bytes_written`, `peak_levels_by_tap`) require T2507 engine-side data; partial broadcaster (transition-only) can land sooner.
 - Engine-side transport binding once T2507 C++ taps ship — wire `RecorderTransport` to ship verbs over the controller-host IPC.
 
 Description:
