@@ -127,6 +127,17 @@ describe('looperApi HTTP surface', () => {
     })
   })
 
+  it('resetAutoPeak(2) → POST /track/2/auto-record/reset-peak', async () => {
+    // T2512-AUTO-PEAK — operator clears the recent-peak indicator
+    // without disturbing arm/threshold state.
+    await looperApi.resetAutoPeak(2)
+    expect(fetchMock.mock.calls[0]?.[0]).toBe(
+      `${BASE}/track/2/auto-record/reset-peak`,
+    )
+    const init = fetchMock.mock.calls[0]?.[1] as RequestInit | undefined
+    expect(init?.method).toBe('POST')
+  })
+
   // ---------- T2512-PAGE-V2: new methods exposed in cycle 10 ----------
 
   it('setStopMode(0, "fade") → PATCH /track/0/stop-mode with {mode}', async () => {

@@ -66,6 +66,32 @@ import './LooperPage.css'
 
 const TRACK_COUNT = 4
 
+/**
+ * T2512-AUTO-PEAK-UI — format a per-track input-level dB.
+ *
+ * Service sentinel is -150 dB (means "no sample yet since last
+ * arm/reset"). Render that as an em-dash so the indicator doesn't
+ * imply silence.
+ */
+function formatPeakDb(db: number | undefined): string {
+  if (db == null || db <= -149.9) {
+    return '—'
+  }
+  return `${db.toFixed(1)} dB`
+}
+
+/**
+ * T2512-AUTO-PEAK-UI — true when peak has crossed the threshold,
+ * meaning auto-record *would* have triggered if armed. Operators use
+ * this to know whether to widen the threshold.
+ */
+function isPeakAboveThreshold(track: LooperTrackStatus): boolean {
+  if (track.auto_peak_db == null || track.auto_peak_db <= -149.9) {
+    return false
+  }
+  return track.auto_peak_db > track.auto_threshold_db
+}
+
 const STATE_TONE: Record<string, 'gray' | 'red' | 'green' | 'magenta' | 'cool-gray'> = {
   empty:       'cool-gray',
   recording:   'red',
@@ -739,6 +765,59 @@ function TrackCard({
           toggled={track.auto_armed}
           onToggle={(val) => onAction(() => looperApi.setAutoArmed(track.track, val))}
         />
+      </div>
+
+      {/* T2512-AUTO-PEAK-UI — threshold slider + peak indicator. The
+          backend already exposes auto_last_level_db + auto_peak_db on
+          every status frame; this block surfaces them so an operator
+          can tune the threshold from the page. Sentinel -150 dB means
+          "no sample yet"; render as em-dash so the meter doesn't
+          imply silence. */}
+      <div
+        className="looper-track__auto-peak"
+        data-testid={`looper-auto-peak-${track.track}`}
+      >
+        <Slider
+          id={`looper-auto-threshold-${track.track}`}
+          labelText={`Threshold: ${track.auto_threshold_db.toFixed(1)} dB`}
+          min={-90}
+          max={0}
+          step={1}
+          value={track.auto_threshold_db}
+          onRelease={(e: { value: number }) =>
+            onAction(() => looperApi.setAutoThresholdDb(track.track, e.value))
+          }
+        />
+        <div className="looper-track__auto-peak-meta">
+          <Tag
+            type={
+              isPeakAboveThreshold(track)
+                ? 'green'
+                : 'cool-gray'
+            }
+            size="sm"
+            data-testid={`looper-auto-peak-tag-${track.track}`}
+          >
+            Peak {formatPeakDb(track.auto_peak_db)}
+          </Tag>
+          <Tag
+            type="cool-gray"
+            size="sm"
+            data-testid={`looper-auto-last-tag-${track.track}`}
+          >
+            Last {formatPeakDb(track.auto_last_level_db)}
+          </Tag>
+          <Button
+            kind="ghost"
+            size="sm"
+            data-testid={`looper-auto-peak-reset-${track.track}`}
+            onClick={() =>
+              onAction(() => looperApi.resetAutoPeak(track.track))
+            }
+          >
+            Reset peak
+          </Button>
+        </div>
       </div>
 
       {/* T2512-PAGE-V2 — advanced operator state surface (sync / stop / quantize). */}

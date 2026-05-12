@@ -146,6 +146,7 @@ jest.mock('../../map2/clients/looper', () => ({
     applyPreset: jest.fn(async () => mockIdleSnapshot),
     deletePreset: jest.fn(async () => mockIdleSnapshot),
     clearPresets: jest.fn(async () => mockIdleSnapshot),
+    resetAutoPeak: jest.fn(async () => mockIdleSnapshot),
   },
 }))
 
@@ -1461,6 +1462,136 @@ describe('LooperPage T2512-PRESET-UI named-preset panel', () => {
       expect(
         screen.getByTestId('looper-preset-save-button'),
       ).toHaveTextContent('Overwrite')
+    })
+  })
+})
+
+describe('LooperPage T2512-AUTO-PEAK-UI threshold meter', () => {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const mod = require('../../map2/clients/looper') as {
+    looperApi: {
+      setAutoThresholdDb: jest.Mock
+      resetAutoPeak: jest.Mock
+    }
+  }
+
+  beforeEach(() => {
+    mod.looperApi.setAutoThresholdDb.mockClear()
+    mod.looperApi.resetAutoPeak.mockClear()
+  })
+
+  function pushTrack0AutoPeak(opts: {
+    threshold_db: number
+    peak_db?: number
+    last_db?: number
+  }): void {
+    act(() => {
+      sockets[0]!.onopen?.call(sockets[0] as unknown as WebSocket)
+    })
+    const frame = {
+      type: 'looper_status',
+      payload: {
+        ...mockIdleSnapshot,
+        tracks: mockIdleSnapshot.tracks.map((t, i) =>
+          i === 0
+            ? {
+                ...t,
+                auto_threshold_db: opts.threshold_db,
+                auto_peak_db: opts.peak_db,
+                auto_last_level_db: opts.last_db,
+              }
+            : t,
+        ),
+      },
+    }
+    act(() => {
+      sockets[0]!.onmessage?.call(
+        sockets[0] as unknown as WebSocket,
+        { data: JSON.stringify(frame) } as MessageEvent,
+      )
+    })
+  }
+
+  it('renders the auto-peak block for every track', async () => {
+    renderPage()
+    for (let i = 0; i < 4; i++) {
+      await screen.findByTestId(`looper-auto-peak-${i}`)
+    }
+  })
+
+  it('renders em-dash for both peak and last when sentinel -150 dB', async () => {
+    renderPage()
+    pushTrack0AutoPeak({
+      threshold_db: -36,
+      peak_db: -150,
+      last_db: -150,
+    })
+    await waitFor(() => {
+      expect(
+        screen.getByTestId('looper-auto-peak-tag-0'),
+      ).toHaveTextContent('Peak —')
+    })
+    expect(
+      screen.getByTestId('looper-auto-last-tag-0'),
+    ).toHaveTextContent('Last —')
+  })
+
+  it('renders real dB values when peak/last are above sentinel', async () => {
+    renderPage()
+    await screen.findByTestId('looper-auto-peak-0')
+    pushTrack0AutoPeak({
+      threshold_db: -36,
+      peak_db: -12.5,
+      last_db: -24.3,
+    })
+    await waitFor(() => {
+      expect(
+        screen.getByTestId('looper-auto-peak-tag-0'),
+      ).toHaveTextContent('Peak -12.5 dB')
+    })
+    await waitFor(() => {
+      expect(
+        screen.getByTestId('looper-auto-last-tag-0'),
+      ).toHaveTextContent('Last -24.3 dB')
+    })
+  })
+
+  it('peak Tag flips to green when the recorded peak exceeds the current threshold', async () => {
+    renderPage()
+    pushTrack0AutoPeak({
+      threshold_db: -36,
+      peak_db: -12,
+      last_db: -20,
+    })
+    // Above threshold (-12 > -36): green type. The class name is
+    // Carbon's --green variant on the tag root.
+    await waitFor(() => {
+      const tag = screen.getByTestId('looper-auto-peak-tag-0')
+      expect(tag.className).toMatch(/--green/)
+    })
+  })
+
+  it('peak Tag is cool-gray when the peak is below the threshold', async () => {
+    renderPage()
+    pushTrack0AutoPeak({
+      threshold_db: -10,
+      peak_db: -40,
+      last_db: -50,
+    })
+    await waitFor(() => {
+      const tag = screen.getByTestId('looper-auto-peak-tag-0')
+      expect(tag.className).toMatch(/--cool-gray/)
+    })
+  })
+
+  it('Reset-peak button calls looperApi.resetAutoPeak with the track index', async () => {
+    renderPage()
+    const btn = (await screen.findByTestId(
+      'looper-auto-peak-reset-2',
+    )) as HTMLButtonElement
+    fireEvent.click(btn)
+    await waitFor(() => {
+      expect(mod.looperApi.resetAutoPeak).toHaveBeenCalledWith(2)
     })
   })
 })

@@ -333,6 +333,21 @@
   font-size: 0.8125rem;
 }
 
+/* T2512-AUTO-PEAK-UI — threshold slider + peak indicator. */
+.looper-track__auto-peak {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cds-spacing-02);
+  padding: var(--cds-spacing-02) 0;
+}
+
+.looper-track__auto-peak-meta {
+  display: flex;
+  align-items: center;
+  gap: var(--cds-spacing-03);
+  flex-wrap: wrap;
+}
+
 /* T2512-PRESET-UI — named in-memory state presets panel. */
 .looper-page__presets {
   display: flex;

@@ -53,6 +53,10 @@ export interface LooperTrackStatus {
   auto_armed: boolean
   /** T2512-AUTO — input-threshold in dB, clamped -90..0. */
   auto_threshold_db: number
+  /** T2512-AUTO-PEAK — most recent input-level dB. -150 sentinel = no sample. */
+  auto_last_level_db?: number
+  /** T2512-AUTO-PEAK — highest input-level dB observed since last arm/reset. */
+  auto_peak_db?: number
   /** T2512-FADE — stop kind. "hard" (default, cutoff) or "fade" (gain ramp). */
   stop_mode: LooperStopMode
   /** T2512-FADE — fade-out duration in ms, clamped 0..5000. */
@@ -139,6 +143,12 @@ export const looperApi = {
   setAutoArmed:        (track: number, armed: boolean) => patch(`${BASE}/track/${track}/auto-armed`,     { value: armed }),
   /** T2512-AUTO — set the input-threshold dB for auto-record (clamped -90..0). */
   setAutoThresholdDb:  (track: number, db: number)     => patch(`${BASE}/track/${track}/auto-threshold`, { db }),
+  /** T2512-AUTO-PEAK — reset the per-track peak indicator without touching arm/threshold. */
+  resetAutoPeak: (track: number) =>
+    fetchJson<LooperStatus>(
+      `${BASE}/track/${track}/auto-record/reset-peak`,
+      { method: 'POST' },
+    ),
   /** T2512-FADE — set stop mode for a track. */
   setStopMode: (track: number, mode: LooperStopMode) =>
     patch(`${BASE}/track/${track}/stop-mode`, { mode }),
