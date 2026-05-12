@@ -146,6 +146,14 @@ class _LooperMasterLevelFn(Protocol):
     def __call__(self, value: float) -> None: ...
 
 
+# T2512-DISPATCH-MUTE — master-bus panic mute setter for the dispatcher
+# path. Takes a bool: a footswitch CC sends 0/127 → False/True. The
+# handler factory below maps the numeric value via the standard
+# >=64 threshold used by the other looper bool setters.
+class _LooperSetMasterMutedFn(Protocol):
+    def __call__(self, value: bool) -> None: ...
+
+
 # T2512-DISPATCH-V2 — string-enum setters (stop_mode / sync_mode /
 # quantize_division). The dispatcher path receives an integer index
 # (footswitch CC value ÷ step size); the handler factory below
@@ -187,6 +195,8 @@ class HandlerHooks:
     looper_set_reverse: Optional[_LooperSetBoolFn]    = None
     looper_set_half_speed: Optional[_LooperSetBoolFn] = None
     looper_set_master_level: Optional[_LooperMasterLevelFn] = None
+    # T2512-DISPATCH-MUTE — master-bus panic mute via MIDI / scripts.
+    looper_set_master_muted: Optional[_LooperSetMasterMutedFn] = None
     # T2512-LOCK over MIDI — toggle the write-lock from a footswitch.
     looper_set_locked: Optional[_LooperSetBoolFn]     = None
     # T2512-OS over MIDI — toggle one-shot / trigger mode from a footswitch.
@@ -752,6 +762,39 @@ def _make_looper_master_level_handler(
     return handler
 
 
+def _make_looper_master_muted_handler(
+    hooks: HandlerHooks,
+) -> Callable[[EngineCommandContext], None]:
+    """T2512-DISPATCH-MUTE — master-bus panic mute via MIDI / scripts.
+
+    Uses the standard half-octave CC convention (value >= 64 → on)
+    that the other looper bool setters apply. The dispatcher
+    pre-normalizes the frame's ``value`` to a float (so a JS
+    script's literal ``true`` becomes 1.0, which evaluates below
+    threshold — JS scripts should send 127.0/0.0 explicitly).
+    Missing value warns + drops.
+    """
+    def handler(ctx: EngineCommandContext) -> None:
+        if ctx.action != "set":
+            logger.info(
+                "looper.master.muted: ignoring non-set action %r", ctx.action
+            )
+            return
+        if ctx.value is None:
+            logger.warning("looper.master.muted: missing value")
+            return
+        value = bool(ctx.value >= 64.0)
+        if hooks.looper_set_master_muted is None:
+            logger.info(
+                "looper.master.muted: no service hook wired; would set %s",
+                value,
+            )
+            return
+        hooks.looper_set_master_muted(value=value)
+
+    return handler
+
+
 # ---------------------------------------------------------------------------
 # Public registration entrypoint
 # ---------------------------------------------------------------------------
@@ -899,4 +942,8 @@ def register_default_handlers(
     )
     dispatcher.register(
         "audio.looper.master.level", _make_looper_master_level_handler(actual_hooks)
+    )
+    dispatcher.register(
+        "audio.looper.master.muted",
+        _make_looper_master_muted_handler(actual_hooks),
     )

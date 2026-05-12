@@ -263,14 +263,15 @@ def test_register_default_handlers_does_not_overlap_targets() -> None:
     register_default_handlers(dispatcher)
     # Exact targets: snapshot.recall, master.volume, transport.tap_tempo,
     # plus the 5 T2508 recorder verbs, plus audio.looper.master.level
-    # from T2512-MIDI = 9 total.
+    # from T2512-MIDI + audio.looper.master.muted from
+    # T2512-DISPATCH-MUTE = 10 total.
     # Pattern list: audio.chain.*.bypass + the 10 audio.looper.*.<verb>
     # patterns from T2512-MIDI + audio.looper.*.locked from
     # T2512-LOCK-MIDI + audio.looper.*.one_shot from T2512-OS +
     # audio.looper.*.auto_armed from T2512-AUTO + 4 new from
     # T2512-DISPATCH-V2 (stop_mode, sync_mode, quantize_division,
     # fade_ms) = 18.
-    assert len(dispatcher._exact) == 9  # type: ignore[attr-defined]
+    assert len(dispatcher._exact) == 10  # type: ignore[attr-defined]
     assert len(dispatcher._patterns) == 18  # type: ignore[attr-defined]
     expected_exact = {
         "audio.snapshot.recall",
@@ -282,6 +283,7 @@ def test_register_default_handlers_does_not_overlap_targets() -> None:
         "recorder.stop",
         "recorder.status",
         "audio.looper.master.level",
+        "audio.looper.master.muted",
     }
     assert set(dispatcher._exact.keys()) == expected_exact  # type: ignore[attr-defined]
 
@@ -438,6 +440,7 @@ def _make_dispatcher_with_looper_hooks() -> tuple[
         "half_speed": [],
         "locked": [],
         "master_level": [],
+        "master_muted": [],
     }
 
     hooks = HandlerHooks(
@@ -455,6 +458,7 @@ def _make_dispatcher_with_looper_hooks() -> tuple[
         ),
         looper_set_locked=lambda track, value: log["locked"].append((track, value)),
         looper_set_master_level=lambda value: log["master_level"].append(value),
+        looper_set_master_muted=lambda value: log["master_muted"].append(value),
     )
     dispatcher = EngineCommandDispatcher()
     register_default_handlers(dispatcher, hooks=hooks)
@@ -524,6 +528,56 @@ def test_looper_master_level_clamps() -> None:
     assert log["master_level"] == [-3.0, 6.0, -60.0]
 
 
+# T2512-DISPATCH-MUTE — master-bus panic mute via the engine_command path
+
+
+def test_looper_master_muted_on_at_threshold() -> None:
+    """CC value >= 64 → True (standard half-octave threshold for the
+    other looper bool setters)."""
+    d, log = _make_dispatcher_with_looper_hooks()
+    d.dispatch(_frame("audio.looper.master.muted", action="set", value=127.0))
+    d.dispatch(_frame("audio.looper.master.muted", action="set", value=64.0))
+    assert log["master_muted"] == [True, True]
+
+
+def test_looper_master_muted_off_below_threshold() -> None:
+    d, log = _make_dispatcher_with_looper_hooks()
+    d.dispatch(_frame("audio.looper.master.muted", action="set", value=0.0))
+    d.dispatch(_frame("audio.looper.master.muted", action="set", value=63.0))
+    assert log["master_muted"] == [False, False]
+
+
+def test_looper_master_muted_bool_value_normalizes_to_zero_one() -> None:
+    """The dispatcher pre-normalizes ctx.value to float, so True → 1.0
+    and False → 0.0; both fall below the 64 threshold → False."""
+    d, log = _make_dispatcher_with_looper_hooks()
+    d.dispatch(_frame("audio.looper.master.muted", action="set", value=True))
+    d.dispatch(_frame("audio.looper.master.muted", action="set", value=False))
+    assert log["master_muted"] == [False, False]
+
+
+def test_looper_master_muted_drops_non_numeric_value() -> None:
+    """A garbage payload normalizes to ctx.value=None via the
+    dispatcher's float() coercion; the handler sees missing value
+    and drops without raising."""
+    d, log = _make_dispatcher_with_looper_hooks()
+    d.dispatch(_frame("audio.looper.master.muted", action="set", value="garbage"))
+    assert log["master_muted"] == []
+
+
+def test_looper_master_muted_ignores_non_set_actions() -> None:
+    d, log = _make_dispatcher_with_looper_hooks()
+    d.dispatch(_frame("audio.looper.master.muted", action="toggle"))
+    d.dispatch(_frame("audio.looper.master.muted", action="custom"))
+    assert log["master_muted"] == []
+
+
+def test_looper_master_muted_missing_value_dropped() -> None:
+    d, log = _make_dispatcher_with_looper_hooks()
+    d.dispatch(_frame("audio.looper.master.muted", action="set"))
+    assert log["master_muted"] == []
+
+
 def test_looper_handlers_safe_with_no_hooks_wired() -> None:
     """Default HandlerHooks() has every looper_* = None. Dispatch must not
     raise and must increment dispatched_count."""
@@ -540,7 +594,8 @@ def test_looper_handlers_safe_with_no_hooks_wired() -> None:
     dispatcher.dispatch(_frame("audio.looper.0.fade_ms", action="set", value=500.0))
     dispatcher.dispatch(_frame("audio.looper.0.sync_mode", action="set", value=1.0))
     dispatcher.dispatch(_frame("audio.looper.0.quantize_division", action="set", value=3.0))
-    assert dispatcher.dispatched_count == 11
+    dispatcher.dispatch(_frame("audio.looper.master.muted", action="set", value=127.0))
+    assert dispatcher.dispatched_count == 12
     assert dispatcher.errored_count == 0
 
 

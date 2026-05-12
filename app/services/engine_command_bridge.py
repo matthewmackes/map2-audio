@@ -182,6 +182,9 @@ class EngineCommandBridge:
             looper_set_master_level=lambda value: self._looper_call_master(
                 "set_master_level_db", value
             ),
+            looper_set_master_muted=lambda value: self._looper_call_master(
+                "set_master_muted", value
+            ),
             # Other hooks left None — handlers fall back to no-op +
             # log line until their audio-engine APIs are ready.
         )
