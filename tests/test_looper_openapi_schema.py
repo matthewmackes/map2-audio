@@ -33,6 +33,7 @@ EXPECTED_PATHS_BY_METHOD: dict[str, set[str]] = {
         "/api/v1/looper/track/{track}/redo",
         "/api/v1/looper/state",                          # T2512-SNAP — apply
         "/api/v1/looper/track/{track}/slices",           # T2512-SLICE — add
+        "/api/v1/looper/track/{track}/slices/at-playhead",  # T2512-SLICE-AT-PLAYHEAD
     },
     "patch": {
         "/api/v1/looper/track/{track}/level",

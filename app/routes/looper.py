@@ -163,6 +163,15 @@ class AddSliceRequest(BaseModel):
     label: str = ""
 
 
+class AddSliceAtPlayheadRequest(BaseModel):
+    """T2512-SLICE-AT-PLAYHEAD — body for the playhead helper.
+
+    Only the label is operator-controlled; start_frame + end_frame
+    are computed service-side from the current playhead.
+    """
+    label: str = ""
+
+
 class SetQuantizeDivisionRequest(BaseModel):
     """T2512-QUANT-WIRE — quantize division setter.
 
@@ -467,6 +476,25 @@ async def add_track_slice(track: int, body: AddSliceRequest,
         result = service.add_slice(
             track, body.start_frame, body.end_frame, body.label
         )
+    except LooperServiceError as exc:
+        raise _http_for_error(exc)
+    return LooperStatusResponse.from_status(result)
+
+
+@router.post("/track/{track}/slices/at-playhead",
+             response_model=LooperStatusResponse,
+             operation_id="looper_add_slice_at_playhead",
+             summary="T2512-SLICE-AT-PLAYHEAD — add a slice from the previous boundary to the current playhead")
+async def add_slice_at_playhead(track: int, body: AddSliceAtPlayheadRequest,
+                                service: LooperService = Depends(_get_service)) -> LooperStatusResponse:
+    """T2512-SLICE-AT-PLAYHEAD — convenience helper that reads the
+    current playhead and adds a slice from the previous slice
+    boundary up to it. Returns HTTP 400 ``invalid_slice`` when the
+    playhead is at 0 (no captured content yet) or before the
+    previous slice's end (no new region).
+    """
+    try:
+        result = service.add_slice_at_playhead(track, body.label)
     except LooperServiceError as exc:
         raise _http_for_error(exc)
     return LooperStatusResponse.from_status(result)

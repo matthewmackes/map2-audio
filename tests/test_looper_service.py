@@ -909,6 +909,115 @@ def test_delete_slice_broadcasts() -> None:
     assert len(received) == 1
 
 
+# ---------------------------------------------------------------------------
+# T2512-SLICE-AT-PLAYHEAD — playhead-driven slice helper
+# ---------------------------------------------------------------------------
+
+
+class _PlayheadEngine:
+    """Test engine that lets a test fix the playhead frame count."""
+
+    def __init__(self, playhead: int = 0) -> None:
+        self.playhead = playhead
+
+    def looper_get_status(self) -> dict:
+        return {
+            "tracks": [
+                {
+                    "track": i,
+                    "state": int(TrackState.PLAYING if i == 0 else TrackState.EMPTY),
+                    "loop_length_frames": 96000 if i == 0 else 0,
+                    "playhead_frames": self.playhead if i == 0 else 0,
+                    "layer_count": 1 if i == 0 else 0,
+                    "level_db": 0.0,
+                    "muted": False,
+                    "soloed": False,
+                    "reverse": False,
+                    "half_speed": False,
+                }
+                for i in range(4)
+            ],
+            "active_track_count": 1,
+            "sync_master": False,
+            "master_level_db": 0.0,
+        }
+
+
+def test_add_slice_at_playhead_first_slice_spans_zero_to_playhead() -> None:
+    engine = _PlayheadEngine(playhead=48000)
+    service = LooperService(engine=engine)
+    service.add_slice_at_playhead(0, "intro")
+    slices = service.get_status().tracks[0].slices
+    assert len(slices) == 1
+    assert slices[0].start_frame == 0
+    assert slices[0].end_frame == 48000
+    assert slices[0].label == "intro"
+
+
+def test_add_slice_at_playhead_subsequent_starts_at_prior_end() -> None:
+    engine = _PlayheadEngine(playhead=24000)
+    service = LooperService(engine=engine)
+    service.add_slice_at_playhead(0, "intro")
+    engine.playhead = 48000
+    service.add_slice_at_playhead(0, "verse")
+    slices = service.get_status().tracks[0].slices
+    assert [s.start_frame for s in slices] == [0, 24000]
+    assert [s.end_frame   for s in slices] == [24000, 48000]
+    assert [s.label       for s in slices] == ["intro", "verse"]
+
+
+def test_add_slice_at_playhead_rejects_zero_playhead() -> None:
+    engine = _PlayheadEngine(playhead=0)
+    service = LooperService(engine=engine)
+    with pytest.raises(LooperServiceError) as exc:
+        service.add_slice_at_playhead(0, "")
+    assert exc.value.code == "invalid_slice"
+
+
+def test_add_slice_at_playhead_rejects_playhead_at_or_before_prior_end() -> None:
+    engine = _PlayheadEngine(playhead=48000)
+    service = LooperService(engine=engine)
+    service.add_slice_at_playhead(0, "first")
+    # Playhead hasn't advanced — operator's second click is a no-op.
+    with pytest.raises(LooperServiceError) as exc:
+        service.add_slice_at_playhead(0, "second")
+    assert exc.value.code == "invalid_slice"
+
+
+def test_add_slice_at_playhead_invalid_track_raises() -> None:
+    engine = _PlayheadEngine(playhead=48000)
+    service = LooperService(engine=engine)
+    with pytest.raises(LooperServiceError) as exc:
+        service.add_slice_at_playhead(9, "")
+    assert exc.value.code == "invalid_track"
+
+
+def test_add_slice_at_playhead_no_engine_returns_invalid_slice() -> None:
+    """Without an engine, the default fallback status has playhead=0,
+    so the helper rejects with invalid_slice (not a crash)."""
+    service = LooperService()
+    with pytest.raises(LooperServiceError) as exc:
+        service.add_slice_at_playhead(0, "")
+    assert exc.value.code == "invalid_slice"
+
+
+def test_add_slice_at_playhead_broadcasts_once() -> None:
+    engine = _PlayheadEngine(playhead=48000)
+    received: list = []
+    service = LooperService(engine=engine, broadcaster=received.append)
+    service.add_slice_at_playhead(0, "x")
+    # Single broadcast through add_slice (the helper reuses it).
+    assert len(received) == 1
+
+
+def test_add_slice_at_playhead_label_truncation() -> None:
+    """Reuses add_slice's 64-char label cap."""
+    engine = _PlayheadEngine(playhead=48000)
+    service = LooperService(engine=engine)
+    service.add_slice_at_playhead(0, "x" * 200)
+    assert service.get_status().tracks[0].slices[0].label == "x" * 64
+
+
 def test_slice_payload_serialization() -> None:
     """to_payload() shape for each slice — what the WS frame ships."""
     service = LooperService()

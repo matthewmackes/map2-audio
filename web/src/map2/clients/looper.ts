@@ -119,6 +119,13 @@ export const looperApi = {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ start_frame, end_frame, label }),
     }),
+  /** T2512-SLICE-AT-PLAYHEAD — add a slice from the previous boundary to the playhead. */
+  addSliceAtPlayhead: (track: number, label = '') =>
+    fetchJson<LooperStatus>(`${BASE}/track/${track}/slices/at-playhead`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ label }),
+    }),
   /** T2512-SLICE — drop every slice on a track. */
   clearSlices: (track: number) =>
     fetchJson<LooperStatus>(`${BASE}/track/${track}/slices`, { method: 'DELETE' }),

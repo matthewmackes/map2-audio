@@ -526,6 +526,45 @@ def test_delete_slice_invalid_track_returns_400() -> None:
 
 
 # ---------------------------------------------------------------------------
+# T2512-SLICE-AT-PLAYHEAD — playhead-driven slice route
+# ---------------------------------------------------------------------------
+
+
+def test_add_slice_at_playhead_with_no_content_returns_400() -> None:
+    """The default _FakeEngine in the test harness reports
+    playhead_frames=0, so the helper rejects with HTTP 400
+    ``invalid_slice``."""
+    client, _, _ = _build_client()
+    resp = client.post(
+        "/api/v1/looper/track/0/slices/at-playhead",
+        json={"label": "x"},
+    )
+    assert resp.status_code == 400
+    assert "playhead" in resp.json()["detail"].lower()
+
+
+def test_add_slice_at_playhead_invalid_track_returns_400() -> None:
+    client, _, _ = _build_client()
+    resp = client.post(
+        "/api/v1/looper/track/9/slices/at-playhead",
+        json={"label": ""},
+    )
+    assert resp.status_code == 400
+
+
+def test_add_slice_at_playhead_accepts_empty_body_default_label() -> None:
+    """An empty JSON body defaults to label=''. The slice still gets
+    rejected (playhead=0 in the test harness), but with the
+    invalid_slice path rather than a Pydantic 422."""
+    client, _, _ = _build_client()
+    resp = client.post(
+        "/api/v1/looper/track/0/slices/at-playhead",
+        json={},
+    )
+    assert resp.status_code == 400  # invalid_slice, not 422
+
+
+# ---------------------------------------------------------------------------
 # T2512-QUANT-WIRE — quantize-division route surface
 # ---------------------------------------------------------------------------
 

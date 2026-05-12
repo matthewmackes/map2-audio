@@ -113,6 +113,7 @@ jest.mock('../../map2/clients/looper', () => ({
     setSyncMode: jest.fn(async () => mockIdleSnapshot),
     setQuantizeDivision: jest.fn(async () => mockIdleSnapshot),
     addSlice: jest.fn(async () => mockIdleSnapshot),
+    addSliceAtPlayhead: jest.fn(async () => mockIdleSnapshot),
     clearSlices: jest.fn(async () => mockIdleSnapshot),
     deleteSlice: jest.fn(async () => mockIdleSnapshot),
     setMasterLevel: jest.fn(async () => mockIdleSnapshot),
@@ -570,6 +571,81 @@ describe('LooperPage T2512-SLICE-UI region editor', () => {
     expect(list).toHaveTextContent('intro')
     expect(list).toHaveTextContent('24000–48000')
     expect(list).toHaveTextContent('verse')
+  })
+
+  it('Slice-here button is hidden when playhead is 0', async () => {
+    // Default mock snapshot has playhead_frames=0 for every track.
+    renderPage()
+    const toggle = await screen.findByTestId('looper-slice-editor-toggle-0')
+    toggle.click()
+    expect(screen.queryByTestId('looper-slice-at-playhead-0')).toBeNull()
+  })
+
+  it('Slice-here button renders when a WS frame reports a non-zero playhead', async () => {
+    renderPage()
+    await screen.findByTestId('looper-ws-status')
+    act(() => {
+      sockets[0]!.onopen?.call(sockets[0] as unknown as WebSocket)
+    })
+
+    const frame = {
+      type: 'looper_status',
+      payload: {
+        ...mockIdleSnapshot,
+        tracks: mockIdleSnapshot.tracks.map((t, i) =>
+          i === 0 ? { ...t, playhead_frames: 24000 } : t,
+        ),
+      },
+    }
+    act(() => {
+      sockets[0]!.onmessage?.call(
+        sockets[0] as unknown as WebSocket,
+        { data: JSON.stringify(frame) } as MessageEvent,
+      )
+    })
+
+    const toggle = await screen.findByTestId('looper-slice-editor-toggle-0')
+    toggle.click()
+    const btn = await screen.findByTestId('looper-slice-at-playhead-0')
+    expect(btn).toHaveTextContent('Slice here (playhead @ 24000)')
+  })
+
+  it('Slice-here click fires looperApi.addSliceAtPlayhead with the trimmed label', async () => {
+    renderPage()
+    await screen.findByTestId('looper-ws-status')
+    act(() => {
+      sockets[0]!.onopen?.call(sockets[0] as unknown as WebSocket)
+    })
+
+    act(() => {
+      sockets[0]!.onmessage?.call(
+        sockets[0] as unknown as WebSocket,
+        {
+          data: JSON.stringify({
+            type: 'looper_status',
+            payload: {
+              ...mockIdleSnapshot,
+              tracks: mockIdleSnapshot.tracks.map((t, i) =>
+                i === 0 ? { ...t, playhead_frames: 24000 } : t,
+              ),
+            },
+          }),
+        } as MessageEvent,
+      )
+    })
+
+    const toggle = await screen.findByTestId('looper-slice-editor-toggle-0')
+    toggle.click()
+
+    // Type into the same label field shared with the manual add form.
+    const labelInput = await screen.findByTestId('looper-slice-label-0')
+    fireEvent.change(labelInput, { target: { value: '  bridge  ' } })
+
+    const btn = await screen.findByTestId('looper-slice-at-playhead-0')
+    btn.click()
+    await waitFor(() => {
+      expect(looperApi.addSliceAtPlayhead).toHaveBeenCalledWith(0, 'bridge')
+    })
   })
 
   it('per-slice delete button fires looperApi.deleteSlice with the start_frame', async () => {

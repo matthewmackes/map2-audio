@@ -635,6 +635,24 @@ function SliceEditor({
             </Button>
           </div>
 
+          {/* T2512-SLICE-AT-PLAYHEAD — quick action: slice from the
+              previous boundary up to the current playhead. Only
+              renders when there's captured content (playhead > 0). */}
+          {track.playhead_frames > 0 ? (
+            <Button
+              kind="tertiary"
+              size="sm"
+              data-testid={`looper-slice-at-playhead-${track.track}`}
+              onClick={() =>
+                onAction(() =>
+                  looperApi.addSliceAtPlayhead(track.track, label.trim()),
+                )
+              }
+            >
+              Slice here (playhead @ {track.playhead_frames})
+            </Button>
+          ) : null}
+
           {track.slices.length > 0 ? (
             <ul
               className="looper-track__slice-list"

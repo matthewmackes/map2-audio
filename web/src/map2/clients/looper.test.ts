@@ -189,6 +189,16 @@ describe('looperApi HTTP surface', () => {
     expect(init?.method).toBe('DELETE')
   })
 
+  it('addSliceAtPlayhead(0, "x") → POST /track/0/slices/at-playhead', async () => {
+    await looperApi.addSliceAtPlayhead(0, 'x')
+    expect(fetchMock.mock.calls[0]?.[0]).toBe(
+      `${BASE}/track/0/slices/at-playhead`,
+    )
+    const init = fetchMock.mock.calls[0]?.[1] as RequestInit | undefined
+    expect(init?.method).toBe('POST')
+    expect(JSON.parse(String(init?.body))).toEqual({ label: 'x' })
+  })
+
   // ---------- Master ----------
 
   it('setMasterLevel(0) → PATCH /master/level with {db: 0}', async () => {

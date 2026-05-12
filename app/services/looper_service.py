@@ -632,6 +632,56 @@ class LooperService:
         self._slices[track] = []
         return self._broadcast(self.get_status())
 
+    def add_slice_at_playhead(
+        self,
+        track: int,
+        label: str = "",
+    ) -> LooperStatus:
+        """T2512-SLICE-AT-PLAYHEAD — add a slice from the previous
+        boundary to the current playhead.
+
+        Convenience helper for operators who want to drop a region
+        marker at the moment they noticed something interesting.
+        Computes:
+          - ``start = max(largest existing slice's end, 0)``
+          - ``end   = current playhead_frames``
+
+        Raises ``LooperServiceError(invalid_slice)`` when:
+          - the playhead is at frame 0 (no content captured yet)
+          - the computed range is empty (playhead is at or before the
+            previous slice's end — meaning the operator already
+            captured everything up to here).
+
+        Reuses ``add_slice`` for all other validation (overlap,
+        per-track cap, label sanitization), so any future tightening
+        of those rules picks up here for free.
+        """
+        _validate_track(track)
+        status = self.get_status()
+        playhead = int(status.tracks[track].playhead_frames)
+        if playhead <= 0:
+            raise LooperServiceError(
+                code="invalid_slice",
+                message=(
+                    f"cannot slice at playhead — track {track} has no captured "
+                    f"content yet (playhead_frames={playhead})"
+                ),
+            )
+        prior_end = 0
+        for slc in self._slices[track]:
+            if slc.end_frame > prior_end:
+                prior_end = slc.end_frame
+        start = prior_end
+        if playhead <= start:
+            raise LooperServiceError(
+                code="invalid_slice",
+                message=(
+                    f"playhead ({playhead}) is at or before the previous "
+                    f"slice's end ({start}); no new region to add"
+                ),
+            )
+        return self.add_slice(track, start, playhead, label)
+
     def delete_slice(self, track: int, start_frame: int) -> LooperStatus:
         """T2512-SLICE-DEL — drop a single slice identified by its start_frame.
 
