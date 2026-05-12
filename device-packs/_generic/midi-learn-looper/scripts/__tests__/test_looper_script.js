@@ -125,6 +125,21 @@ run('master level setter scales identically', () => {
     assert.equal(ctx.calls[0].value, 6.0);
 });
 
+// T2512-PACK-MUTE — master-bus mute toggle exposed via the script surface.
+run('master muted toggle uses action=toggle and routes to master', () => {
+    const ctx = loadLooperScript();
+    ctx.sandbox['Looper.master.muted']([0xB0, 72, 127]);
+    assert.equal(ctx.calls.length, 1);
+    assert.equal(ctx.calls[0].target, 'audio.looper.master.muted');
+    assert.equal(ctx.calls[0].action, 'toggle');
+});
+
+run('master muted release at value=0 is dropped', () => {
+    const ctx = loadLooperScript();
+    ctx.sandbox['Looper.master.muted']([0xB0, 72, 0]);
+    assert.equal(ctx.calls.length, 0);
+});
+
 // ----------------------------------------------------------------------
 // Coverage: every track exposes the full handler surface
 // ----------------------------------------------------------------------
@@ -144,6 +159,9 @@ run('every track 0..3 exposes all 17 verbs on globalThis', () => {
     }
     assert.truthy(typeof ctx.sandbox['Looper.master.level'] === 'function',
                   'Looper.master.level');
+    // T2512-PACK-MUTE — master mute toggle on the master.
+    assert.truthy(typeof ctx.sandbox['Looper.master.muted'] === 'function',
+                  'Looper.master.muted');
 });
 
 // T2512-LOCK-MIDI — write-lock toggle via the script surface.

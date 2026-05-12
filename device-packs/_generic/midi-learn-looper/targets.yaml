@@ -464,3 +464,18 @@ groups:
             default: 0.0
             min: -60.0
             max: 6.0
+      - verb: audio.looper.master.muted
+        label: Master mute (panic)
+        # T2512-DISPATCH-MUTE — panic mute on the master bus. Per-track
+        # mute flags are unaffected; unmute restores the pre-mute level.
+        # CC value >= 64 → mute on; < 64 → mute off (standard half-octave
+        # threshold mirroring the per-track muted target).
+        action_template:
+          action: set
+        arg_prompts:
+          - name: value
+            label: CC value (>=64 → mute on, <64 → mute off)
+            type: int
+            default: 127
+            min: 0
+            max: 127

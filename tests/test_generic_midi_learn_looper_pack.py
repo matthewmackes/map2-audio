@@ -130,10 +130,33 @@ def test_mixer_group_covers_every_track_and_setter(catalog: dict) -> None:
     assert verbs == expected
 
 
-def test_master_group_has_only_master_level(catalog: dict) -> None:
+def test_master_group_lists_level_and_muted(catalog: dict) -> None:
+    """T2512-PACK-MUTE — master group now contains both the level fader
+    and the panic-mute toggle."""
     master = next(g for g in catalog["groups"] if g["id"] == "master")
     verbs = [entry["verb"] for entry in master["targets"]]
-    assert verbs == ["audio.looper.master.level"]
+    assert verbs == [
+        "audio.looper.master.level",
+        "audio.looper.master.muted",
+    ]
+
+
+def test_master_muted_target_shape(catalog: dict) -> None:
+    """T2512-PACK-MUTE — the muted target prompts for a CC value
+    (operators set 0..127) and uses action: set so the dispatcher's
+    >=64 threshold applies."""
+    master = next(g for g in catalog["groups"] if g["id"] == "master")
+    entry = next(
+        e for e in master["targets"] if e["verb"] == "audio.looper.master.muted"
+    )
+    assert entry["action_template"]["action"] == "set"
+    prompts = entry.get("arg_prompts", [])
+    assert len(prompts) == 1
+    p = prompts[0]
+    assert p["name"] == "value"
+    assert p["type"] == "int"
+    assert p["min"] == 0
+    assert p["max"] == 127
 
 
 # ---------------------------------------------------------------------------
@@ -189,8 +212,9 @@ def test_level_setters_prompt_for_db_value(catalog: dict) -> None:
 def test_catalog_total_verb_count(catalog: dict) -> None:
     """20 stomp verbs + 48 mixer setters (12 kinds × 4 tracks: original
     5 + locked + one_shot + auto_armed + stop_mode + fade_ms +
-    sync_mode + quantize_division) + 1 master = 69 total."""
-    assert len(_flat_verbs(catalog)) == 69
+    sync_mode + quantize_division) + 2 master (level + muted from
+    T2512-PACK-MUTE) = 70 total."""
+    assert len(_flat_verbs(catalog)) == 70
 
 
 # ---------------------------------------------------------------------------
@@ -219,4 +243,5 @@ def test_looper_script_file_exists() -> None:
     # Node-side harness at scripts/__tests__/test_looper_script.js.
     assert "Looper.track_0.record" in src
     assert "Looper.master.level" in src
+    assert "Looper.master.muted" in src  # T2512-PACK-MUTE
     assert "engine.setValue" in src

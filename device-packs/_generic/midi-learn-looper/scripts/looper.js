@@ -133,6 +133,10 @@ var Looper = Looper || {};
 
     Looper.master = {
         level: _level('audio.looper.master.level'),
+        // T2512-PACK-MUTE — master-bus panic mute via the dispatcher
+        // (audio.looper.master.muted). Uses _toggle so the same
+        // >=64 threshold the per-track muted helpers apply.
+        muted: _toggle('audio.looper.master.muted'),
     };
 
     // Expose for QuickJS host lookup by string name (mirrors the
@@ -160,4 +164,5 @@ var Looper = Looper || {};
         globalThis[prefix + 'fade_ms']           = slot.fade_ms;
     }
     globalThis['Looper.master.level'] = Looper.master.level;
+    globalThis['Looper.master.muted'] = Looper.master.muted;
 })();
