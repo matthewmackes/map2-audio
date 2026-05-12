@@ -177,3 +177,32 @@ def test_level_setters_prompt_for_db_value(catalog: dict) -> None:
 def test_catalog_total_verb_count(catalog: dict) -> None:
     """20 stomp verbs + 20 mixer setters + 1 master = 41 total."""
     assert len(_flat_verbs(catalog)) == 41
+
+
+# ---------------------------------------------------------------------------
+# T2512-SCRIPT — scripts/looper.js wiring sanity
+# ---------------------------------------------------------------------------
+
+
+def test_pack_references_looper_script(manifest: dict) -> None:
+    """pack.yaml's ``scripts`` list must point at scripts/looper.js so
+    any importing pack only has to write
+    ``scripts: [_generic/midi-learn-looper/scripts/looper.js]``."""
+    scripts = manifest.get("scripts", [])
+    assert "scripts/looper.js" in scripts, (
+        "pack manifest should reference scripts/looper.js so device packs "
+        "can import the looper handler surface"
+    )
+
+
+def test_looper_script_file_exists() -> None:
+    script_path = PACK_ROOT / "scripts" / "looper.js"
+    assert script_path.exists(), (
+        f"missing T2512-SCRIPT module at {script_path}"
+    )
+    src = script_path.read_text()
+    # Quick shape check — full behavior is exercised by the
+    # Node-side harness at scripts/__tests__/test_looper_script.js.
+    assert "Looper.track_0.record" in src
+    assert "Looper.master.level" in src
+    assert "engine.setValue" in src

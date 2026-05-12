@@ -28,3 +28,12 @@ license: AGPL-3.0-only
 source: map2-native
 models:
   - generic-midi-learn-looper
+
+# T2512-SCRIPT — drop-in QuickJS module any device pack can import.
+# Profile YAML references the helpers as ``script: Looper.track_0.record``
+# etc.; the script translates the MIDI message into an
+# ``engine.setValue('audio.looper.<n>.<verb>', ...)`` call, which the
+# controller-host emits as an ``engine_command`` frame for the
+# dispatcher (T2512-MIDI).
+scripts:
+  - scripts/looper.js

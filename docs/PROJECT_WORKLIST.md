@@ -2367,7 +2367,7 @@ Operator requested 27 features; v1 ships 13 live + files the remaining 14 as nam
 | T2512-SLICE | Loop slicing / editing                | Region editor UI + non-destructive slice metadata. |
 | T2512-DAW   | USB / DAW integration                 | JACK port exposure + Ableton Link clock. |
 | T2512-STOR  | Preset / loop storage browser         | Snapshot-bound storage UI. WAVs already write through the recorder; storage browser surfaces them. |
-| T2512-SCRIPT | Scriptable / automation hooks        | Mixxx ControllerEngine bindings for looper.* verbs. |
+| T2512-SCRIPT | Scriptable / automation hooks        | [✓] Shipped 2026-05-12. Generic QuickJS module `_generic/midi-learn-looper/scripts/looper.js` — drop-in helpers any device pack can import. 10-verb-per-track × 4 tracks + master.level via `engine.setValue(...)`; stomps drop release-at-zero; bool setters use `toggle`; level setters scale CC 0..127 → -60..+6 dB matching the dispatcher clamp. +13 Python tests (manifest + catalog + script-file sanity), +10 Node JS tests (handler-by-handler behavior with stubbed `engine.setValue`). |
 
 
 Description:
