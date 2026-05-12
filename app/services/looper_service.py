@@ -328,6 +328,11 @@ class LooperService:
         # invocations. Cap is 200 events; oldest get dropped first.
         # Operator-facing audit trail, not a full state stream.
         self._activity: deque[ActivityEvent] = deque(maxlen=200)
+        # T2512-METRICS — verb-name → invocation count. Mirrors the
+        # activity log's coverage (records on the same set of high-
+        # impact mutating verbs). Operator-facing diagnostics —
+        # zero RT-path cost.
+        self._metrics: dict[str, int] = {}
         # T2512-WS — fan-out hook for status changes. Set by
         # ``init_looper_ws_bridge`` at lifespan startup; remains None
         # in tests where WS isn't wired. The broadcaster is sync —
@@ -382,6 +387,10 @@ class LooperService:
                     summary=summary,
                 )
             )
+            # T2512-METRICS — increment the verb counter at the same
+            # callsite the audit log records. Failures swallow to
+            # debug so a metric write can't break verb flow.
+            self._metrics[verb] = self._metrics.get(verb, 0) + 1
         except Exception as exc:  # noqa: BLE001
             logger.debug(
                 "looper.record_activity: append failed (swallowed): %s", exc
@@ -399,6 +408,18 @@ class LooperService:
     def clear_activity(self) -> None:
         """T2512-ACTIVITY — drop every recorded event."""
         self._activity.clear()
+
+    def get_metrics(self) -> dict[str, int]:
+        """T2512-METRICS — snapshot copy of the verb invocation
+        counters. Mirrors the activity log's coverage (high-impact
+        mutating verbs only). Returns a fresh dict so callers can
+        mutate it without affecting service state."""
+        return dict(self._metrics)
+
+    def reset_metrics(self) -> None:
+        """T2512-METRICS — zero the counters. Operator-driven reset;
+        does not affect the activity log or any other service state."""
+        self._metrics.clear()
 
     def _broadcast(self, status: "LooperStatus") -> "LooperStatus":
         """Fire-and-forget broadcast on every mutating verb's return

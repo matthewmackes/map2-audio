@@ -1182,6 +1182,72 @@ def test_recent_activity_empty_by_default() -> None:
     assert service.get_status().recent_activity == ()
 
 
+def test_metrics_default_is_empty() -> None:
+    service = LooperService()
+    assert service.get_metrics() == {}
+
+
+def test_metrics_increment_on_each_logged_verb() -> None:
+    """T2512-METRICS — counters move on the same verbs the activity
+    log records (record/stop/clear/undo/redo + reset_state + apply_state)."""
+    engine = _FakeEngine()
+    service = LooperService(engine=engine)
+    service.record(0)
+    service.record(1)
+    service.stop_track(0)
+    service.clear(0)
+    service.undo(0)
+    service.redo(0)
+    metrics = service.get_metrics()
+    assert metrics["record"] == 2
+    assert metrics["stop"] == 1
+    assert metrics["clear"] == 1
+    assert metrics["undo"] == 1
+    assert metrics["redo"] == 1
+
+
+def test_metrics_count_apply_state_and_reset_state() -> None:
+    service = LooperService()
+    service.reset_state()
+    service.apply_state({"schema_version": 1, "tracks": [{}, {}, {}, {}]})
+    metrics = service.get_metrics()
+    assert metrics.get("reset_state") == 1
+    assert metrics.get("apply_state") == 1
+
+
+def test_metrics_independent_of_track_index() -> None:
+    """Each verb has one counter — track 0 and track 3 increment the
+    same key."""
+    engine = _FakeEngine()
+    service = LooperService(engine=engine)
+    for t in range(4):
+        service.record(t)
+    assert service.get_metrics()["record"] == 4
+
+
+def test_reset_metrics_zeroes_counters_without_touching_activity() -> None:
+    engine = _FakeEngine()
+    service = LooperService(engine=engine)
+    service.record(0)
+    service.stop_track(0)
+    assert service.get_metrics()["record"] == 1
+    activity_before = service.get_activity()
+    service.reset_metrics()
+    assert service.get_metrics() == {}
+    # Activity log untouched.
+    assert service.get_activity() == activity_before
+
+
+def test_get_metrics_returns_copy_not_internal_dict() -> None:
+    """Mutating the returned dict must not affect service state."""
+    engine = _FakeEngine()
+    service = LooperService(engine=engine)
+    service.record(0)
+    snap = service.get_metrics()
+    snap["record"] = 99999
+    assert service.get_metrics()["record"] == 1
+
+
 def test_recent_activity_in_to_payload() -> None:
     engine = _FakeEngine()
     service = LooperService(engine=engine)

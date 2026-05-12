@@ -124,6 +124,11 @@ class ActivityLogResponse(BaseModel):
     cap: int
 
 
+class MetricsResponse(BaseModel):
+    """T2512-METRICS — verb counter snapshot."""
+    counters: dict[str, int]
+
+
 class LooperStatusResponse(BaseModel):
     tracks: list[TrackStatusResponse]
     active_track_count: int
@@ -712,6 +717,35 @@ async def clear_activity(
     one round-trip."""
     service.clear_activity()
     return ActivityLogResponse(events=[], cap=200)
+
+
+@router.get("/metrics",
+            response_model=MetricsResponse,
+            operation_id="looper_get_metrics",
+            summary="T2512-METRICS — verb invocation counters")
+async def get_metrics(
+    service: LooperService = Depends(_get_service),
+) -> MetricsResponse:
+    """T2512-METRICS — return the current verb counter snapshot.
+
+    Each key is a verb name (record / stop / clear / undo / redo /
+    reset_state / apply_state); each value is the cumulative count
+    since the last reset.
+    """
+    return MetricsResponse(counters=service.get_metrics())
+
+
+@router.delete("/metrics",
+               response_model=MetricsResponse,
+               operation_id="looper_reset_metrics",
+               summary="T2512-METRICS — zero the verb counters")
+async def reset_metrics(
+    service: LooperService = Depends(_get_service),
+) -> MetricsResponse:
+    """T2512-METRICS — clear every verb counter. The activity log is
+    unaffected — use ``DELETE /activity`` for that."""
+    service.reset_metrics()
+    return MetricsResponse(counters={})
 
 
 @router.post("/state/reset",

@@ -718,6 +718,34 @@ def test_activity_records_mutating_verbs() -> None:
         assert ev["summary"]
 
 
+def test_metrics_route_returns_empty_counter_dict_by_default() -> None:
+    client, _, _ = _build_client()
+    resp = client.get("/api/v1/looper/metrics")
+    assert resp.status_code == 200
+    assert resp.json() == {"counters": {}}
+
+
+def test_metrics_route_increments_on_each_verb() -> None:
+    client, _, _ = _build_client()
+    client.post("/api/v1/looper/track/0/record")
+    client.post("/api/v1/looper/track/1/record")
+    client.post("/api/v1/looper/track/0/stop")
+
+    body = client.get("/api/v1/looper/metrics").json()
+    assert body["counters"]["record"] == 2
+    assert body["counters"]["stop"] == 1
+
+
+def test_reset_metrics_route_clears_counters() -> None:
+    client, _, _ = _build_client()
+    client.post("/api/v1/looper/track/0/record")
+    resp = client.delete("/api/v1/looper/metrics")
+    assert resp.status_code == 200
+    assert resp.json() == {"counters": {}}
+    # Confirm via a follow-up GET.
+    assert client.get("/api/v1/looper/metrics").json()["counters"] == {}
+
+
 def test_clear_activity_route_drops_everything() -> None:
     client, _, _ = _build_client()
     client.post("/api/v1/looper/track/0/record")

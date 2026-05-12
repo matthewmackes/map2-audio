@@ -240,6 +240,20 @@ describe('looperApi HTTP surface', () => {
     expect(init.method ?? 'GET').toBe('GET')
   })
 
+  it('getMetrics() → GET /metrics (default method)', async () => {
+    await looperApi.getMetrics()
+    expect(fetchMock.mock.calls[0]?.[0]).toBe(`${BASE}/metrics`)
+    const init = (fetchMock.mock.calls[0]?.[1] ?? {}) as RequestInit
+    expect(init.method ?? 'GET').toBe('GET')
+  })
+
+  it('resetMetrics() → DELETE /metrics', async () => {
+    await looperApi.resetMetrics()
+    expect(fetchMock.mock.calls[0]?.[0]).toBe(`${BASE}/metrics`)
+    const init = fetchMock.mock.calls[0]?.[1] as RequestInit | undefined
+    expect(init?.method).toBe('DELETE')
+  })
+
   it('applyState(payload) → POST /state with the body', async () => {
     const payload = {
       schema_version: 1,

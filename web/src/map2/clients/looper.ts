@@ -215,6 +215,14 @@ export const looperApi = {
       events: []
       cap: number
     }>(`${BASE}/activity`, { method: 'DELETE' }),
+  /** T2512-METRICS — verb invocation counter snapshot. */
+  getMetrics: () =>
+    fetchJson<{ counters: Record<string, number> }>(`${BASE}/metrics`),
+  /** T2512-METRICS — zero the verb counters. Activity log unaffected. */
+  resetMetrics: () =>
+    fetchJson<{ counters: Record<string, number> }>(`${BASE}/metrics`, {
+      method: 'DELETE',
+    }),
 }
 
 function patch(url: string, body: unknown): Promise<LooperStatus> {
