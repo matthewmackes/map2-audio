@@ -1010,6 +1010,96 @@ def test_add_slice_at_playhead_broadcasts_once() -> None:
     assert len(received) == 1
 
 
+def test_reset_state_returns_every_flag_to_defaults() -> None:
+    """T2512-RESET — operator-driven full reset of policy state."""
+    engine = _FakeEngine()
+    service = LooperService(engine=engine)
+    # Drift every flag away from defaults.
+    service.set_locked(0, True)
+    service.set_one_shot(1, True)
+    service.set_auto_armed(2, True)
+    service.set_auto_threshold_db(0, -24.0)
+    service.set_stop_mode(3, "fade")
+    service.set_fade_ms(3, 1000)
+    service.set_sync_mode(0, "master")
+    service.set_quantize_division(1, "quarter")
+    service.add_slice(2, 0, 1000, "hello")
+
+    service.reset_state()
+    status = service.get_status()
+    for t in status.tracks:
+        assert t.locked is False
+        assert t.one_shot is False
+        assert t.auto_armed is False
+        assert t.auto_threshold_db == -36.0
+        assert t.stop_mode == "hard"
+        assert t.fade_ms == 250
+        assert t.sync_mode == "free"
+        assert t.quantize_division == "off"
+        assert t.slices == ()
+    assert status.sync_master is False
+    assert status.sync_master_track is None
+
+
+def test_reset_state_broadcasts_once() -> None:
+    engine = _FakeEngine()
+    received: list = []
+    service = LooperService(engine=engine, broadcaster=received.append)
+    service.set_locked(0, True)
+    service.add_slice(0, 0, 1000, "x")
+    received.clear()
+    service.reset_state()
+    assert len(received) == 1
+
+
+def test_reset_state_resets_master_level_through_engine() -> None:
+    """T2512-RESET — when the engine binding is present, master level
+    is reset to 0 dB."""
+
+    class _MasterAwareEngine(_FakeEngine):
+        def __init__(self) -> None:
+            super().__init__()
+            self.master_calls: list[float] = []
+
+        def looper_set_master_level_db(self, db: float) -> None:
+            self.master_calls.append(db)
+
+    engine = _MasterAwareEngine()
+    service = LooperService(engine=engine)
+    service.reset_state()
+    assert engine.master_calls == [0.0]
+
+
+def test_reset_state_no_engine_does_not_crash() -> None:
+    service = LooperService()
+    # No engine, no looper_set_master_level_db. Reset must still work.
+    service.reset_state()
+
+
+def test_reset_state_does_not_touch_engine_loop_content() -> None:
+    """Capture content is engine-side. reset_state must not call any
+    engine verb that would clear / stop the captured audio."""
+
+    class _ContentTrackingEngine(_FakeEngine):
+        def __init__(self) -> None:
+            super().__init__()
+            self.clear_calls: list[int] = []
+            self.stop_calls: list[int] = []
+
+        def looper_clear(self, track: int) -> None:
+            self.clear_calls.append(track)
+
+        def looper_stop(self, track: int) -> None:
+            self.stop_calls.append(track)
+
+    engine = _ContentTrackingEngine()
+    service = LooperService(engine=engine)
+    service.set_locked(0, True)
+    service.reset_state()
+    assert engine.clear_calls == []
+    assert engine.stop_calls == []
+
+
 def test_add_slice_at_playhead_label_truncation() -> None:
     """Reuses add_slice's 64-char label cap."""
     engine = _PlayheadEngine(playhead=48000)

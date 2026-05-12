@@ -565,6 +565,41 @@ def test_add_slice_at_playhead_accepts_empty_body_default_label() -> None:
 
 
 # ---------------------------------------------------------------------------
+# T2512-RESET — full state reset route
+# ---------------------------------------------------------------------------
+
+
+def test_reset_state_route_returns_defaults() -> None:
+    client, _, _ = _build_client()
+    # Drift state away from defaults via the existing route surface.
+    client.patch("/api/v1/looper/track/0/locked", json={"value": True})
+    client.patch("/api/v1/looper/track/1/quantize-division", json={"division": "quarter"})
+    client.post(
+        "/api/v1/looper/track/2/slices",
+        json={"start_frame": 0, "end_frame": 1000, "label": "a"},
+    )
+
+    resp = client.post("/api/v1/looper/state/reset")
+    assert resp.status_code == 200
+    body = resp.json()
+    for track in body["tracks"]:
+        assert track["locked"] is False
+        assert track["one_shot"] is False
+        assert track["auto_armed"] is False
+        assert track["stop_mode"] == "hard"
+        assert track["sync_mode"] == "free"
+        assert track["quantize_division"] == "off"
+        assert track["slices"] == []
+
+
+def test_reset_state_route_does_not_require_a_body() -> None:
+    """POST /state/reset doesn't take a body — must work without one."""
+    client, _, _ = _build_client()
+    resp = client.post("/api/v1/looper/state/reset")
+    assert resp.status_code == 200
+
+
+# ---------------------------------------------------------------------------
 # T2512-QUANT-WIRE — quantize-division route surface
 # ---------------------------------------------------------------------------
 

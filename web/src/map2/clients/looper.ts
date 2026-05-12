@@ -136,6 +136,9 @@ export const looperApi = {
       { method: 'DELETE' },
     ),
   setMasterLevel: (db: number)                 => patch(`${BASE}/master/level`, { db }),
+  /** T2512-RESET — clear every Python-side flag + master level. Captured loop content is unaffected. */
+  resetState: () =>
+    fetchJson<LooperStatus>(`${BASE}/state/reset`, { method: 'POST' }),
 }
 
 function patch(url: string, body: unknown): Promise<LooperStatus> {

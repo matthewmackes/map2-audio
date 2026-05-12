@@ -116,6 +116,7 @@ jest.mock('../../map2/clients/looper', () => ({
     addSliceAtPlayhead: jest.fn(async () => mockIdleSnapshot),
     clearSlices: jest.fn(async () => mockIdleSnapshot),
     deleteSlice: jest.fn(async () => mockIdleSnapshot),
+    resetState: jest.fn(async () => mockIdleSnapshot),
     setMasterLevel: jest.fn(async () => mockIdleSnapshot),
   },
 }))
@@ -780,6 +781,69 @@ describe('LooperPage T2512-INVENTORY-V2 feature inventory accuracy', () => {
     for (const phrase of livePhrases) {
       expect(screen.getByText(phrase)).toBeInTheDocument()
     }
+  })
+})
+
+describe('LooperPage T2512-RESET state-reset modal', () => {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const { looperApi } = require('../../map2/clients/looper') as {
+    looperApi: Record<string, jest.Mock>
+  }
+
+  beforeEach(() => {
+    Object.values(looperApi).forEach((fn) => fn.mockClear())
+  })
+
+  it('Reset-state button is rendered on the master Tile', async () => {
+    renderPage()
+    const btn = await screen.findByTestId('looper-reset-state-button')
+    expect(btn).toBeInTheDocument()
+    expect(btn).toHaveTextContent('Reset state')
+  })
+
+  it('clicking Reset-state opens the confirmation modal without firing the API', async () => {
+    renderPage()
+    const btn = await screen.findByTestId('looper-reset-state-button')
+    act(() => {
+      btn.click()
+    })
+    // The modal copy is present in the DOM once open.
+    expect(
+      await screen.findByText(/clears every per-track flag/i),
+    ).toBeInTheDocument()
+    // No reset call has fired yet.
+    expect(looperApi.resetState).not.toHaveBeenCalled()
+  })
+
+  it('clicking the modal primary button fires looperApi.resetState', async () => {
+    renderPage()
+    const trigger = await screen.findByTestId('looper-reset-state-button')
+    act(() => {
+      trigger.click()
+    })
+    // Wait for the modal copy to render so we know the modal is open.
+    await screen.findByText(/clears every per-track flag/i)
+    // The Carbon Modal primary button isn't directly addressable
+    // by role/name in jsdom because of Carbon's internal markup —
+    // pull it out by its rendered text within the modal footer.
+    // The primary button has the literal "Reset state" inside it
+    // but as the second occurrence (first is the trigger).
+    const allResets = screen.getAllByText('Reset state').filter(
+      (el) => (el as HTMLElement).tagName === 'BUTTON' ||
+              (el as HTMLElement).closest('button') !== null,
+    )
+    expect(allResets.length).toBeGreaterThanOrEqual(2)
+    // The trigger is rendered first in the DOM; the modal confirm
+    // comes later (Carbon Modal appends to the body via a portal-
+    // like positioning).
+    const modalConfirmText = allResets[allResets.length - 1]
+    const modalConfirm = modalConfirmText.closest('button') ?? modalConfirmText
+    act(() => {
+      ;(modalConfirm as HTMLElement).click()
+    })
+    await waitFor(() => {
+      expect(looperApi.resetState).toHaveBeenCalledTimes(1)
+    })
   })
 })
 

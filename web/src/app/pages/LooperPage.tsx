@@ -31,6 +31,7 @@ interface LooperStatusFrame {
 import { useNavigate } from 'react-router-dom'
 import {
   Button,
+  Modal,
   NumberInput,
   Select,
   SelectItem,
@@ -128,6 +129,8 @@ export function LooperPage() {
   // T2512-WS — surface live WS connectivity so the operator can tell
   // whether they're getting push updates or just the 2 s safety-net poll.
   const [wsConnected, setWsConnected] = useState(false)
+  // T2512-RESET — confirmation modal state.
+  const [resetModalOpen, setResetModalOpen] = useState(false)
 
   const refresh = useCallback(async () => {
     try {
@@ -300,8 +303,44 @@ export function LooperPage() {
                   Track {status.sync_master_track + 1} = sync master
                 </Tag>
               ) : null}
+              <Button
+                kind="danger--tertiary"
+                size="sm"
+                data-testid="looper-reset-state-button"
+                onClick={() => setResetModalOpen(true)}
+              >
+                Reset state
+              </Button>
             </div>
           </Tile>
+
+          {/* T2512-RESET — confirmation modal. Pretty rare to need
+              this; the explicit modal protects against an accidental
+              click on the danger-tinted button. */}
+          <Modal
+            data-testid="looper-reset-modal"
+            open={resetModalOpen}
+            modalHeading="Reset all looper policy state?"
+            primaryButtonText="Reset state"
+            secondaryButtonText="Cancel"
+            danger
+            onRequestClose={() => setResetModalOpen(false)}
+            onRequestSubmit={() => {
+              setResetModalOpen(false)
+              wrap(() => looperApi.resetState())
+            }}
+          >
+            <p>
+              This clears every per-track flag (lock, one-shot,
+              auto-record, stop mode, fade, sync, quantize, slices)
+              and resets the master level to 0 dB.
+            </p>
+            <p>
+              Captured loop content is <strong>not</strong> touched —
+              use the per-track <em>Clear</em> button to discard a
+              loop.
+            </p>
+          </Modal>
 
           <FeatureInventory />
         </>

@@ -617,3 +617,21 @@ async def apply_state(
     """
     result = service.apply_state(body.model_dump())
     return LooperStatusResponse.from_status(result)
+
+
+@router.post("/state/reset",
+             response_model=LooperStatusResponse,
+             operation_id="looper_reset_state",
+             summary="T2512-RESET — return all operator policy state to defaults")
+async def reset_state(
+    service: LooperService = Depends(_get_service),
+) -> LooperStatusResponse:
+    """T2512-RESET — clear every Python-side per-track flag (lock,
+    one-shot, auto-record, stop mode, fade, sync, quantize, slices)
+    and reset master level to 0 dB.
+
+    Captured loop content is NOT touched — operators clear loops
+    with the per-track ``clear`` verb. The state-machine state /
+    loop_length / playhead come from the engine and are not reset.
+    """
+    return LooperStatusResponse.from_status(service.reset_state())

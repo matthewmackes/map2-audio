@@ -199,6 +199,15 @@ describe('looperApi HTTP surface', () => {
     expect(JSON.parse(String(init?.body))).toEqual({ label: 'x' })
   })
 
+  it('resetState() → POST /state/reset (no body)', async () => {
+    await looperApi.resetState()
+    expect(fetchMock.mock.calls[0]?.[0]).toBe(`${BASE}/state/reset`)
+    const init = fetchMock.mock.calls[0]?.[1] as RequestInit | undefined
+    expect(init?.method).toBe('POST')
+    // No body / Content-Type expected.
+    expect(init?.body).toBeUndefined()
+  })
+
   // ---------- Master ----------
 
   it('setMasterLevel(0) → PATCH /master/level with {db: 0}', async () => {

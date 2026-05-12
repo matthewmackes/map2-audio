@@ -847,6 +847,48 @@ class LooperService:
             "master_level_db": master_level,
         }
 
+    def reset_state(self) -> LooperStatus:
+        """T2512-RESET — return every Python-side per-track flag and
+        the master level back to defaults.
+
+        Resets:
+          - locked / one_shot / auto_armed all → False
+          - auto_threshold_db → -36 dB
+          - stop_mode → "hard"; fade_ms → 250
+          - sync_mode → "free"
+          - quantize_division → "off"
+          - slices → empty list per track
+          - master level → 0 dB (only if engine bound)
+
+        Does NOT touch captured loop content — the engine's heap-
+        allocated layer storage is unaffected. Operators clear loops
+        with the per-track ``clear`` verb. The state-machine flags
+        (state / loop_length / playhead) come from the engine and
+        are not reset here either.
+
+        Broadcasts once on completion.
+        """
+        self._locked = [False, False, False, False]
+        self._one_shot = [False, False, False, False]
+        self._auto_armed = [False, False, False, False]
+        self._auto_threshold_db = [-36.0, -36.0, -36.0, -36.0]
+        self._stop_mode = ["hard", "hard", "hard", "hard"]
+        self._fade_ms = [250, 250, 250, 250]
+        self._sync_mode = ["free", "free", "free", "free"]
+        self._quantize_division = ["off", "off", "off", "off"]
+        self._slices = [[], [], [], []]
+        if (
+            self._engine is not None
+            and hasattr(self._engine, "looper_set_master_level_db")
+        ):
+            try:
+                self._engine.looper_set_master_level_db(0.0)
+            except Exception as exc:  # noqa: BLE001
+                logger.debug(
+                    "looper.reset_state: master_level reset failed: %s", exc
+                )
+        return self._broadcast(self.get_status())
+
     def apply_state(self, state: dict[str, Any]) -> LooperStatus:
         """T2512-SNAP — restore operator policy from snapshot payload.
 
