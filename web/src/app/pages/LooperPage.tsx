@@ -343,6 +343,7 @@ export function LooperPage() {
           </Modal>
 
           <FeatureInventory />
+          <ActivityPanel />
         </>
       )}
     </div>
@@ -779,6 +780,125 @@ function FeatureInventory() {
               ))}
             </ul>
           </div>
+        </div>
+      ) : null}
+    </section>
+  )
+}
+
+
+// T2512-ACTIVITY-UI — collapsible panel surfacing the audit log
+// shipped under T2512-ACTIVITY. Polls every 2 s (matches the
+// LooperPage safety-net cadence) so an operator who just toggled
+// something sees the entry within one heartbeat.
+type ActivityEvent = {
+  timestamp_iso: string
+  verb: string
+  track: number | null
+  summary: string
+}
+
+function ActivityPanel() {
+  const [open, setOpen] = useState(false)
+  const [events, setEvents] = useState<ActivityEvent[]>([])
+  const [cap, setCap] = useState<number>(200)
+  const [error, setError] = useState<string | null>(null)
+
+  const refresh = useCallback(async () => {
+    try {
+      const data = await looperApi.getActivity()
+      setEvents(data.events)
+      setCap(data.cap)
+      setError(null)
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : 'Failed to load activity')
+    }
+  }, [])
+
+  useEffect(() => {
+    if (!open) return
+    void refresh()
+    const handle = window.setInterval(() => { void refresh() }, 2000)
+    return () => window.clearInterval(handle)
+  }, [open, refresh])
+
+  const handleClear = () => {
+    void (async () => {
+      try {
+        await looperApi.clearActivity()
+        setEvents([])
+        setError(null)
+      } catch (e: unknown) {
+        setError(e instanceof Error ? e.message : 'Failed to clear activity')
+      }
+    })()
+  }
+
+  // Newest first in the rendered list — operators care about the
+  // most recent action.
+  const newestFirst = events.slice().reverse()
+
+  return (
+    <section className="looper-page__inventory" data-testid="looper-activity-panel">
+      <button
+        type="button"
+        className="looper-page__inventory-toggle"
+        onClick={() => setOpen((o) => !o)}
+        aria-expanded={open}
+        data-testid="looper-activity-toggle"
+      >
+        <ChevronDown size={16} />
+        <span>
+          Recent activity — {events.length} of {cap} captured
+        </span>
+      </button>
+      {open ? (
+        <div className="looper-page__inventory-body">
+          <div className="looper-page__activity-actions">
+            <Button
+              kind="ghost"
+              size="sm"
+              data-testid="looper-activity-clear"
+              disabled={events.length === 0}
+              onClick={handleClear}
+            >
+              Clear log
+            </Button>
+          </div>
+          {error ? (
+            <InlineNotification
+              kind="warning"
+              title="Activity log error"
+              subtitle={error}
+              hideCloseButton
+              lowContrast
+            />
+          ) : null}
+          {newestFirst.length === 0 ? (
+            <p className="looper-track__slice-empty">
+              No recorded activity yet. Mutating verbs (record, stop,
+              clear, undo, redo, reset, snapshot apply) will appear
+              here as they happen.
+            </p>
+          ) : (
+            <ul
+              className="looper-page__activity-list"
+              data-testid="looper-activity-list"
+            >
+              {newestFirst.map((ev) => (
+                <li key={`${ev.timestamp_iso}-${ev.verb}-${ev.track ?? 'm'}`}>
+                  <span className="looper-track__slice-range">
+                    {ev.timestamp_iso}
+                  </span>
+                  <span className="looper-track__slice-label-text">
+                    <strong>{ev.verb}</strong>
+                    {ev.track != null ? <> · track {ev.track + 1}</> : null}
+                    {' '}— {ev.summary}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          )}
         </div>
       ) : null}
     </section>

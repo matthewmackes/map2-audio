@@ -117,6 +117,12 @@ jest.mock('../../map2/clients/looper', () => ({
     clearSlices: jest.fn(async () => mockIdleSnapshot),
     deleteSlice: jest.fn(async () => mockIdleSnapshot),
     resetState: jest.fn(async () => mockIdleSnapshot),
+    getActivity: jest.fn(async () => ({ events: [], cap: 200 })),
+    clearActivity: jest.fn(async () => ({ events: [], cap: 200 })),
+    autoRecordPush: jest.fn(async () => ({
+      fired: false,
+      status: mockIdleSnapshot,
+    })),
     setMasterLevel: jest.fn(async () => mockIdleSnapshot),
   },
 }))
@@ -781,6 +787,116 @@ describe('LooperPage T2512-INVENTORY-V2 feature inventory accuracy', () => {
     for (const phrase of livePhrases) {
       expect(screen.getByText(phrase)).toBeInTheDocument()
     }
+  })
+})
+
+describe('LooperPage T2512-ACTIVITY-UI panel', () => {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const { looperApi } = require('../../map2/clients/looper') as {
+    looperApi: Record<string, jest.Mock>
+  }
+
+  beforeEach(() => {
+    Object.values(looperApi).forEach((fn) => fn.mockClear())
+  })
+
+  it('Activity panel toggle renders on the page', async () => {
+    renderPage()
+    const toggle = await screen.findByTestId('looper-activity-toggle')
+    expect(toggle).toBeInTheDocument()
+    expect(toggle).toHaveTextContent(/Recent activity/)
+  })
+
+  it('does not fetch activity until the toggle is clicked', async () => {
+    renderPage()
+    await screen.findByTestId('looper-activity-toggle')
+    // Panel is closed → no fetch.
+    expect(looperApi.getActivity).not.toHaveBeenCalled()
+  })
+
+  it('opens the panel, fetches activity, and shows the empty-state copy', async () => {
+    renderPage()
+    const toggle = await screen.findByTestId('looper-activity-toggle')
+    act(() => {
+      toggle.click()
+    })
+    await waitFor(() => {
+      expect(looperApi.getActivity).toHaveBeenCalled()
+    })
+    expect(
+      await screen.findByText(/No recorded activity yet/i),
+    ).toBeInTheDocument()
+  })
+
+  it('renders newest-first events when the API returns a non-empty log', async () => {
+    looperApi.getActivity.mockResolvedValueOnce({
+      events: [
+        {
+          timestamp_iso: '2026-05-12T10:00:00Z',
+          verb: 'record',
+          track: 0,
+          summary: 'track 0 record stomp',
+        },
+        {
+          timestamp_iso: '2026-05-12T10:00:05Z',
+          verb: 'stop',
+          track: 0,
+          summary: 'track 0 stop',
+        },
+      ],
+      cap: 200,
+    })
+    renderPage()
+    const toggle = await screen.findByTestId('looper-activity-toggle')
+    act(() => {
+      toggle.click()
+    })
+    const list = await screen.findByTestId('looper-activity-list')
+    // Service returns oldest-first; UI flips to newest-first.
+    const rows = list.querySelectorAll('li')
+    expect(rows.length).toBe(2)
+    expect(rows[0]).toHaveTextContent('stop')        // newer
+    expect(rows[1]).toHaveTextContent('record')      // older
+  })
+
+  it('Clear-log button is disabled when events is empty', async () => {
+    renderPage()
+    const toggle = await screen.findByTestId('looper-activity-toggle')
+    act(() => {
+      toggle.click()
+    })
+    const clearBtn = await screen.findByTestId('looper-activity-clear')
+    expect(clearBtn).toBeDisabled()
+  })
+
+  it('Clear-log button fires looperApi.clearActivity and empties the list', async () => {
+    looperApi.getActivity.mockResolvedValue({
+      events: [
+        {
+          timestamp_iso: '2026-05-12T10:00:00Z',
+          verb: 'record',
+          track: 0,
+          summary: 'track 0 record stomp',
+        },
+      ],
+      cap: 200,
+    })
+    renderPage()
+    const toggle = await screen.findByTestId('looper-activity-toggle')
+    act(() => {
+      toggle.click()
+    })
+    // Wait for the list to render with the seeded event.
+    await screen.findByTestId('looper-activity-list')
+
+    const clearBtn = await screen.findByTestId('looper-activity-clear')
+    expect(clearBtn).not.toBeDisabled()
+    act(() => {
+      clearBtn.click()
+    })
+    await waitFor(() => {
+      expect(looperApi.clearActivity).toHaveBeenCalled()
+    })
   })
 })
 
