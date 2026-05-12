@@ -1155,6 +1155,43 @@ def test_clear_activity_drops_everything() -> None:
     assert service.get_activity() == []
 
 
+def test_recent_activity_newest_first_in_status() -> None:
+    """T2512-ACTIVITY-WS — status.recent_activity is newest-first
+    and ships in every status snapshot."""
+    engine = _FakeEngine()
+    service = LooperService(engine=engine)
+    service.record(0)
+    service.stop_track(0)
+    status = service.get_status()
+    verbs = [ev.verb for ev in status.recent_activity]
+    assert verbs == ["stop", "record"]
+
+
+def test_recent_activity_caps_at_20_in_status() -> None:
+    """T2512-ACTIVITY-WS — the embedded tail is capped at 20."""
+    engine = _FakeEngine()
+    service = LooperService(engine=engine)
+    for _ in range(30):
+        service.stop_track(0)
+    status = service.get_status()
+    assert len(status.recent_activity) == 20
+
+
+def test_recent_activity_empty_by_default() -> None:
+    service = LooperService()
+    assert service.get_status().recent_activity == ()
+
+
+def test_recent_activity_in_to_payload() -> None:
+    engine = _FakeEngine()
+    service = LooperService(engine=engine)
+    service.record(0)
+    payload = service.get_status().to_payload()
+    assert "recent_activity" in payload
+    assert len(payload["recent_activity"]) == 1
+    assert payload["recent_activity"][0]["verb"] == "record"
+
+
 def test_activity_does_not_raise_on_internal_failure() -> None:
     """T2512-ACTIVITY — a broken timestamp source must not break verbs.
     Verified by monkey-patching datetime to raise."""

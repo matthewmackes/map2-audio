@@ -65,6 +65,13 @@ export interface LooperTrackStatus {
   quantize_division: LooperQuantizeDivision
 }
 
+export interface LooperActivityEvent {
+  timestamp_iso: string
+  verb: string
+  track: number | null
+  summary: string
+}
+
 export interface LooperStatus {
   tracks: LooperTrackStatus[]
   active_track_count: number
@@ -74,6 +81,8 @@ export interface LooperStatus {
   bpm: number | null
   /** T2512-SYNC — index of the track set to sync_mode "master", or null. */
   sync_master_track: number | null
+  /** T2512-ACTIVITY-WS — newest-first tail of the activity log (cap 20). */
+  recent_activity: LooperActivityEvent[]
 }
 
 const BASE = `${API_BASE}/v1/looper`

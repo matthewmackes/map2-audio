@@ -249,3 +249,8 @@ def test_looper_status_schema_contains_bpm_and_one_shot_fields() -> None:
     assert "sync_master_track" in status_schema.get("properties", {}), (
         "LooperStatusResponse.sync_master_track missing from generated schema"
     )
+
+    # T2512-ACTIVITY-WS top-level field on LooperStatusResponse.
+    assert "recent_activity" in status_schema.get("properties", {}), (
+        "LooperStatusResponse.recent_activity missing from generated schema"
+    )

@@ -202,6 +202,11 @@ class LooperStatus:
     # rather than per-track so subscribers (UI, scripts) can find
     # the timebase reference with a single read.
     sync_master_track:  Optional[int] = None
+    # T2512-ACTIVITY-WS — newest-first tail of the activity log
+    # (capped 20 events). Embedded so a WS subscriber gets activity
+    # updates pushed alongside status without a separate poll.
+    # The full log (capped 200) is reachable via GET /activity.
+    recent_activity:    tuple["ActivityEvent", ...] = ()
 
     def to_payload(self) -> dict[str, Any]:
         return {
@@ -211,6 +216,7 @@ class LooperStatus:
             "master_level_db":    self.master_level_db,
             "bpm":                self.bpm,
             "sync_master_track":  self.sync_master_track,
+            "recent_activity":    [e.to_payload() for e in self.recent_activity],
         }
 
 
@@ -1173,6 +1179,11 @@ class LooperService:
         master_idx = self._current_master_track()
         sync_master_present = master_idx is not None
 
+        # T2512-ACTIVITY-WS — capture the last 20 events newest-first
+        # so WS subscribers get the same shape the UI panel expects.
+        # The full log (capped 200) is reachable via GET /activity.
+        recent_tail = tuple(reversed(list(self._activity)[-20:]))
+
         return LooperStatus(
             tracks=decorated,
             active_track_count=status.active_track_count,
@@ -1180,6 +1191,7 @@ class LooperService:
             master_level_db=status.master_level_db,
             bpm=bpm,
             sync_master_track=master_idx,
+            recent_activity=recent_tail,
         )
 
 

@@ -343,7 +343,10 @@ export function LooperPage() {
           </Modal>
 
           <FeatureInventory />
-          <ActivityPanel />
+          <ActivityPanel
+            statusRecentActivity={status.recent_activity}
+            wsConnected={wsConnected}
+          />
         </>
       )}
     </div>
@@ -788,9 +791,11 @@ function FeatureInventory() {
 
 
 // T2512-ACTIVITY-UI — collapsible panel surfacing the audit log
-// shipped under T2512-ACTIVITY. Polls every 2 s (matches the
-// LooperPage safety-net cadence) so an operator who just toggled
-// something sees the entry within one heartbeat.
+// shipped under T2512-ACTIVITY. After T2512-ACTIVITY-WS, the recent
+// activity tail rides every status broadcast, so when WS is
+// connected the panel renders that tail and skips polling. The HTTP
+// fallback still fetches the full 200-event log every 2 s when WS
+// is down (operator can still audit during a reconnect).
 type ActivityEvent = {
   timestamp_iso: string
   verb: string
@@ -798,16 +803,22 @@ type ActivityEvent = {
   summary: string
 }
 
-function ActivityPanel() {
+function ActivityPanel({
+  statusRecentActivity,
+  wsConnected,
+}: {
+  statusRecentActivity: ActivityEvent[]
+  wsConnected: boolean
+}) {
   const [open, setOpen] = useState(false)
-  const [events, setEvents] = useState<ActivityEvent[]>([])
+  const [polledEvents, setPolledEvents] = useState<ActivityEvent[]>([])
   const [cap, setCap] = useState<number>(200)
   const [error, setError] = useState<string | null>(null)
 
   const refresh = useCallback(async () => {
     try {
       const data = await looperApi.getActivity()
-      setEvents(data.events)
+      setPolledEvents(data.events)
       setCap(data.cap)
       setError(null)
     } catch (e: unknown) {
@@ -817,16 +828,32 @@ function ActivityPanel() {
 
   useEffect(() => {
     if (!open) return
+    // When WS is live, the embedded status carries the recent tail —
+    // no need to poll. We still fetch once on open so the cap is set.
+    if (wsConnected) {
+      // One fetch to populate `cap` (status frames don't carry it).
+      void refresh()
+      return
+    }
     void refresh()
     const handle = window.setInterval(() => { void refresh() }, 2000)
     return () => window.clearInterval(handle)
-  }, [open, refresh])
+  }, [open, wsConnected, refresh])
+
+  // Pick the live source. WS-connected → status tail (newest-first
+  // already). HTTP poll → reverse oldest-first to newest-first below.
+  const liveEvents: ActivityEvent[] = wsConnected
+    ? statusRecentActivity
+    : polledEvents.slice().reverse()
+  // Number-displayed count. Use the WS tail length when connected;
+  // otherwise the polled list length.
+  const events = liveEvents
 
   const handleClear = () => {
     void (async () => {
       try {
         await looperApi.clearActivity()
-        setEvents([])
+        setPolledEvents([])
         setError(null)
       } catch (e: unknown) {
         setError(e instanceof Error ? e.message : 'Failed to clear activity')
@@ -834,9 +861,9 @@ function ActivityPanel() {
     })()
   }
 
-  // Newest first in the rendered list — operators care about the
-  // most recent action.
-  const newestFirst = events.slice().reverse()
+  // Already newest-first thanks to the WS branch handling reversal
+  // in the source selection above.
+  const newestFirst = events
 
   return (
     <section className="looper-page__inventory" data-testid="looper-activity-panel">

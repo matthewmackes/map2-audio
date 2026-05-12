@@ -89,6 +89,7 @@ const mockIdleSnapshot: LooperStatus = {
   master_level_db: 0,
   bpm: null,
   sync_master_track: null,
+  recent_activity: [],
 }
 
 jest.mock('../../map2/clients/looper', () => ({
@@ -797,6 +798,20 @@ describe('LooperPage T2512-ACTIVITY-UI panel', () => {
   }
 
   beforeEach(() => {
+    // mockClear preserves implementations; mockReset wipes them.
+    // We use mockReset on activity-related mocks so a queued
+    // ``mockResolvedValueOnce`` from one test doesn't leak into the
+    // next, then re-install the empty default.
+    ;(looperApi.getActivity as jest.Mock).mockReset()
+    ;(looperApi.clearActivity as jest.Mock).mockReset()
+    ;(looperApi.getActivity as jest.Mock).mockResolvedValue({
+      events: [],
+      cap: 200,
+    })
+    ;(looperApi.clearActivity as jest.Mock).mockResolvedValue({
+      events: [],
+      cap: 200,
+    })
     Object.values(looperApi).forEach((fn) => fn.mockClear())
   })
 
@@ -867,6 +882,62 @@ describe('LooperPage T2512-ACTIVITY-UI panel', () => {
     })
     const clearBtn = await screen.findByTestId('looper-activity-clear')
     expect(clearBtn).toBeDisabled()
+  })
+
+  it('renders embedded recent_activity from a WS frame without polling', async () => {
+    // T2512-ACTIVITY-WS — when the WS is connected, the panel
+    // reads status.recent_activity directly and does NOT call
+    // getActivity() on a polling interval.
+    renderPage()
+    await screen.findByTestId('looper-ws-status')
+    act(() => {
+      sockets[0]!.onopen?.call(sockets[0] as unknown as WebSocket)
+    })
+
+    const frame = {
+      type: 'looper_status',
+      payload: {
+        ...mockIdleSnapshot,
+        recent_activity: [
+          {
+            timestamp_iso: '2026-05-12T11:00:00Z',
+            verb: 'record',
+            track: 0,
+            summary: 'track 0 record stomp',
+          },
+          {
+            timestamp_iso: '2026-05-12T11:00:01Z',
+            verb: 'stop',
+            track: 0,
+            summary: 'track 0 stop',
+          },
+        ],
+      },
+    }
+    act(() => {
+      sockets[0]!.onmessage?.call(
+        sockets[0] as unknown as WebSocket,
+        { data: JSON.stringify(frame) } as MessageEvent,
+      )
+    })
+
+    // Open the activity toggle.
+    const toggle = await screen.findByTestId('looper-activity-toggle')
+    act(() => {
+      toggle.click()
+    })
+    // getActivity() gets called *once* on open (to populate `cap`),
+    // but the rendered list comes from the WS-embedded payload, not
+    // from the polling fetch. Reset getActivity to default empty so
+    // we can detect that the rendered events come from the status
+    // frame, not the fetch.
+    looperApi.getActivity.mockResolvedValueOnce({ events: [], cap: 200 })
+
+    const list = await screen.findByTestId('looper-activity-list')
+    // The WS frame's recent_activity is newest-first already; UI
+    // renders verbatim.
+    expect(list).toHaveTextContent('record')
+    expect(list).toHaveTextContent('stop')
   })
 
   it('Clear-log button fires looperApi.clearActivity and empties the list', async () => {

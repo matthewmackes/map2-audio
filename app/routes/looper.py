@@ -110,6 +110,20 @@ class TrackStatusResponse(BaseModel):
     quantize_division: str = "off"     # T2512-QUANT-WIRE — auto-close grid
 
 
+class ActivityEventResponse(BaseModel):
+    """T2512-ACTIVITY — single activity-log entry."""
+    timestamp_iso: str
+    verb: str
+    track: int | None = None
+    summary: str
+
+
+class ActivityLogResponse(BaseModel):
+    """T2512-ACTIVITY — the operator activity log envelope."""
+    events: list[ActivityEventResponse]
+    cap: int
+
+
 class LooperStatusResponse(BaseModel):
     tracks: list[TrackStatusResponse]
     active_track_count: int
@@ -121,6 +135,11 @@ class LooperStatusResponse(BaseModel):
     # T2512-SYNC — index of the track currently set to sync_mode
     # "master", or null when no master is set.
     sync_master_track: int | None = None
+    # T2512-ACTIVITY-WS — newest-first tail (cap 20) of the activity
+    # log embedded in the status frame. Surfaces over WS without
+    # forcing the client to poll /activity. Full 200-event log
+    # remains at GET /activity.
+    recent_activity: list[ActivityEventResponse] = []
 
     @classmethod
     def from_status(cls, status_obj: LooperStatus) -> "LooperStatusResponse":
@@ -659,20 +678,6 @@ async def apply_state(
     """
     result = service.apply_state(body.model_dump())
     return LooperStatusResponse.from_status(result)
-
-
-class ActivityEventResponse(BaseModel):
-    """T2512-ACTIVITY — single activity-log entry."""
-    timestamp_iso: str
-    verb: str
-    track: int | None = None
-    summary: str
-
-
-class ActivityLogResponse(BaseModel):
-    """T2512-ACTIVITY — the operator activity log envelope."""
-    events: list[ActivityEventResponse]
-    cap: int
 
 
 @router.get("/activity",
