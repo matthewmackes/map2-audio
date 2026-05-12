@@ -34,7 +34,7 @@ from __future__ import annotations
 
 import logging
 
-from fastapi import APIRouter, Depends, HTTPException, status
+from fastapi import APIRouter, Depends, HTTPException, Query, status
 from pydantic import BaseModel, Field
 
 from app.services.looper_service import (
@@ -747,6 +747,34 @@ async def apply_state(
             operation_id="looper_get_activity",
             summary="T2512-ACTIVITY — recent operator-action audit log (capped 200 events)")
 async def get_activity(
+    verb: str | None = Query(
+        None,
+        description=(
+            "T2512-ACTIVITY-FILTER — case-sensitive exact-match filter on the "
+            "verb field. Multiple comma-separated values OR-match "
+            "(e.g. ?verb=record,stop). Unknown verbs match nothing."
+        ),
+    ),
+    track: int | None = Query(
+        None,
+        ge=0,
+        le=3,
+        description=(
+            "T2512-ACTIVITY-FILTER — exact-match filter on the track field. "
+            "Events with track=null (e.g. reset_state) are excluded when this "
+            "filter is set."
+        ),
+    ),
+    limit: int | None = Query(
+        None,
+        ge=1,
+        le=200,
+        description=(
+            "T2512-ACTIVITY-FILTER — return only the most recent N events "
+            "after verb/track filtering. Applied last so a low limit on a "
+            "big log doesn't drop matching events from the head."
+        ),
+    ),
     service: LooperService = Depends(_get_service),
 ) -> ActivityLogResponse:
     """T2512-ACTIVITY — return the recent activity log.
@@ -755,11 +783,37 @@ async def get_activity(
     the service's internal deque). Loop content and engine state
     are not in this log — it's an operator-actions trail, not a
     full state stream.
+
+    T2512-ACTIVITY-FILTER — optional ``verb`` (comma-separated set)
+    and ``track`` (0..3) query params narrow the result; ``limit``
+    truncates to the most recent N entries *after* filtering so the
+    operator's filter intent isn't masked by an early-drop. ``cap``
+    in the response remains 200 (the buffer size) regardless of
+    filters — clients can tell the absolute ceiling vs. the
+    filtered slice.
     """
-    events = [
-        ActivityEventResponse(**ev.to_payload()) for ev in service.get_activity()
-    ]
-    return ActivityLogResponse(events=events, cap=200)
+    events = service.get_activity()
+
+    if verb is not None:
+        # Comma-separated OR-set; empty tokens are ignored. Case-sensitive
+        # match because activity verbs are canonical names (record, stop,
+        # clear, undo, redo, reset_state, apply_state).
+        wanted = {token.strip() for token in verb.split(",") if token.strip()}
+        if wanted:
+            events = [ev for ev in events if ev.verb in wanted]
+        else:
+            events = []
+
+    if track is not None:
+        events = [ev for ev in events if ev.track == track]
+
+    if limit is not None and len(events) > limit:
+        events = events[-limit:]
+
+    return ActivityLogResponse(
+        events=[ActivityEventResponse(**ev.to_payload()) for ev in events],
+        cap=200,
+    )
 
 
 @router.delete("/activity",

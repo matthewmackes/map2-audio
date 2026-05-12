@@ -819,6 +819,145 @@ def test_activity_route_returns_empty_log_by_default() -> None:
     assert body["cap"] == 200
 
 
+# ---------------------------------------------------------------------------
+# T2512-ACTIVITY-FILTER — verb / track / limit query params on /activity
+# ---------------------------------------------------------------------------
+
+
+def _seed_activity(client) -> None:
+    """Helper: drive a known set of mutating verbs across multiple tracks."""
+    client.post("/api/v1/looper/track/0/record")
+    client.post("/api/v1/looper/track/0/stop")
+    client.post("/api/v1/looper/track/1/record")
+    client.post("/api/v1/looper/track/1/stop")
+    client.post("/api/v1/looper/track/0/clear")
+    client.post("/api/v1/looper/track/2/record")
+
+
+def test_activity_filter_by_verb_single() -> None:
+    client, _, _ = _build_client()
+    _seed_activity(client)
+    resp = client.get("/api/v1/looper/activity?verb=record")
+    body = resp.json()
+    verbs = [ev["verb"] for ev in body["events"]]
+    assert all(v == "record" for v in verbs)
+    assert len(verbs) == 3  # track 0, 1, 2 record stomps
+    # cap remains the buffer ceiling regardless of filter
+    assert body["cap"] == 200
+
+
+def test_activity_filter_by_verb_csv_or_set() -> None:
+    """Multiple comma-separated verbs OR-match."""
+    client, _, _ = _build_client()
+    _seed_activity(client)
+    resp = client.get("/api/v1/looper/activity?verb=record,clear")
+    verbs = [ev["verb"] for ev in resp.json()["events"]]
+    assert sorted(set(verbs)) == ["clear", "record"]
+    assert verbs.count("record") == 3
+    assert verbs.count("clear") == 1
+
+
+def test_activity_filter_by_unknown_verb_matches_nothing() -> None:
+    client, _, _ = _build_client()
+    _seed_activity(client)
+    resp = client.get("/api/v1/looper/activity?verb=nonexistent")
+    assert resp.json()["events"] == []
+
+
+def test_activity_filter_by_empty_verb_token_matches_nothing() -> None:
+    """A bare ?verb= or all-whitespace tokens reject everything rather
+    than silently returning the full log (operator intent is clearly
+    'filter on something' even if the token is empty)."""
+    client, _, _ = _build_client()
+    _seed_activity(client)
+    resp = client.get("/api/v1/looper/activity?verb=")
+    assert resp.json()["events"] == []
+
+
+def test_activity_filter_by_track() -> None:
+    client, _, _ = _build_client()
+    _seed_activity(client)
+    resp = client.get("/api/v1/looper/activity?track=0")
+    events = resp.json()["events"]
+    assert all(ev["track"] == 0 for ev in events)
+    # Track 0 had: record, stop, clear → 3 events
+    assert len(events) == 3
+
+
+def test_activity_filter_track_out_of_range_returns_422() -> None:
+    """track=9 is outside 0..3 → pydantic Query validation returns 422."""
+    client, _, _ = _build_client()
+    resp = client.get("/api/v1/looper/activity?track=9")
+    assert resp.status_code == 422
+
+
+def test_activity_filter_track_excludes_global_events() -> None:
+    """Events with track=null (e.g. reset_state) must be excluded when
+    a track filter is set, even if it's track=0 (null != 0)."""
+    client, _, _ = _build_client()
+    client.post("/api/v1/looper/track/0/record")
+    client.post("/api/v1/looper/state/reset")  # global event, track=null
+    resp = client.get("/api/v1/looper/activity?track=0")
+    events = resp.json()["events"]
+    verbs = [ev["verb"] for ev in events]
+    assert "reset_state" not in verbs
+    assert "record" in verbs
+
+
+def test_activity_filter_verb_and_track_combine_as_and() -> None:
+    client, _, _ = _build_client()
+    _seed_activity(client)
+    resp = client.get("/api/v1/looper/activity?verb=record&track=1")
+    events = resp.json()["events"]
+    assert len(events) == 1
+    assert events[0]["verb"] == "record"
+    assert events[0]["track"] == 1
+
+
+def test_activity_filter_limit_keeps_most_recent() -> None:
+    """limit truncates to the most recent N AFTER filtering — confirms
+    we slice with [-N:] rather than [:N]."""
+    client, _, _ = _build_client()
+    _seed_activity(client)
+    # All 6 events; limit=2 should return the last two in insertion order.
+    resp = client.get("/api/v1/looper/activity?limit=2")
+    events = resp.json()["events"]
+    assert len(events) == 2
+    # _seed_activity ended with track 2 record stomp.
+    assert events[-1]["verb"] == "record"
+    assert events[-1]["track"] == 2
+
+
+def test_activity_filter_limit_applied_after_filter() -> None:
+    """limit is applied after verb filter; a filter that drops events
+    must not let limit re-include them. record filter → 3 events;
+    limit=2 → 2 most recent records."""
+    client, _, _ = _build_client()
+    _seed_activity(client)
+    resp = client.get("/api/v1/looper/activity?verb=record&limit=2")
+    events = resp.json()["events"]
+    assert len(events) == 2
+    assert all(ev["verb"] == "record" for ev in events)
+    # Most recent two records are tracks 1 and 2.
+    assert [ev["track"] for ev in events] == [1, 2]
+
+
+def test_activity_filter_limit_validates_range() -> None:
+    """limit must be 1..200 (ge=1 le=200). 0 fails, 999 fails."""
+    client, _, _ = _build_client()
+    assert client.get("/api/v1/looper/activity?limit=0").status_code == 422
+    assert client.get("/api/v1/looper/activity?limit=999").status_code == 422
+
+
+def test_activity_filter_no_params_returns_full_log() -> None:
+    """No filters → unchanged behavior; full log oldest→newest."""
+    client, _, _ = _build_client()
+    _seed_activity(client)
+    resp = client.get("/api/v1/looper/activity")
+    events = resp.json()["events"]
+    assert len(events) == 6  # all six seeded
+
+
 def test_activity_records_mutating_verbs() -> None:
     client, _, _ = _build_client()
     # Drive several mutating verbs.
