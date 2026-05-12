@@ -1,0 +1,109 @@
+schema_version: 1
+# T2512-FSW-MAC-4T — alternate MeloAudio Commander looper profile that
+# distributes the 8 row switches across all 4 looper tracks instead of
+# packing four verbs onto two tracks like ``midi-commander-looper``.
+#
+# This variant trades undo / clear reachability for full per-track
+# stomp coverage:
+#
+#   Row 1 (top, midino 80..83):  Tracks 0-3 record / play / overdub
+#   Row 2 (next, midino 84..87): Tracks 0-3 stop / resume
+#   Bottom switch 9 (midino 14): Toggle Track 0 write-lock
+#   Expression 1 (CC 7):         Looper master level
+#   Expression 2 (CC 1):         Track 0 level
+#
+# Operators who never use undo/clear (or who reach those from the
+# UI) get a true 4-track stompbox here. The original 2-track-with-
+# undo profile (``midi-commander-looper.midi.yaml``) stays available
+# for the loop-pedal-style workflow.
+identity:
+  manufacturer: MeloAudio
+  model: midi-commander
+  alsa_client_pattern: 'MIDI Commander'
+  hardware_id: alsa-seq:MIDI Commander:0
+  variant: looper-4track
+
+scripts:
+  - ../../_generic/midi-learn-looper/scripts/looper.js
+
+controls:
+  # ---------- Row 1 — Record stomps for tracks 0-3 ----------
+  - status: 0xB0
+    midino: 80
+    action: set
+    target: audio.looper.0.record
+    script: Looper.track_0.record
+    description: 'Row 1 / Switch 1 → Track 0 record / play / overdub stomp.'
+
+  - status: 0xB0
+    midino: 81
+    action: set
+    target: audio.looper.1.record
+    script: Looper.track_1.record
+    description: 'Row 1 / Switch 2 → Track 1 record / play / overdub stomp.'
+
+  - status: 0xB0
+    midino: 82
+    action: set
+    target: audio.looper.2.record
+    script: Looper.track_2.record
+    description: 'Row 1 / Switch 3 → Track 2 record / play / overdub stomp.'
+
+  - status: 0xB0
+    midino: 83
+    action: set
+    target: audio.looper.3.record
+    script: Looper.track_3.record
+    description: 'Row 1 / Switch 4 → Track 3 record / play / overdub stomp.'
+
+  # ---------- Row 2 — Stop / resume for tracks 0-3 ----------
+  - status: 0xB0
+    midino: 84
+    action: set
+    target: audio.looper.0.stop
+    script: Looper.track_0.stop
+    description: 'Row 2 / Switch 1 → Track 0 stop / resume.'
+
+  - status: 0xB0
+    midino: 85
+    action: set
+    target: audio.looper.1.stop
+    script: Looper.track_1.stop
+    description: 'Row 2 / Switch 2 → Track 1 stop / resume.'
+
+  - status: 0xB0
+    midino: 86
+    action: set
+    target: audio.looper.2.stop
+    script: Looper.track_2.stop
+    description: 'Row 2 / Switch 3 → Track 2 stop / resume.'
+
+  - status: 0xB0
+    midino: 87
+    action: set
+    target: audio.looper.3.stop
+    script: Looper.track_3.stop
+    description: 'Row 2 / Switch 4 → Track 3 stop / resume.'
+
+  # ---------- Lock latch ----------
+  - status: 0xB0
+    midino: 14
+    action: toggle
+    target: audio.looper.0.locked
+    script: Looper.track_0.locked
+    description: 'Bottom switch → toggle Track 0 write-lock (latched freeze).'
+
+  # ---------- Expression pedals ----------
+  - status: 0xB0
+    midino: 7
+    action: set
+    target: audio.looper.master.level
+    script: Looper.master.level
+    description: 'Expression 1 → looper master level (-60..+6 dB).'
+
+  - status: 0xB0
+    midino: 1
+    action: set
+    target: audio.looper.0.level
+    script: Looper.track_0.level
+    description: 'Expression 2 → Track 0 level (-60..+6 dB).'
