@@ -186,3 +186,196 @@ def test_stop_subscription_is_idempotent():
         bridge.stop_subscription()  # No active subscription — must not raise.
     finally:
         loop.close()
+
+
+# ---------------------------------------------------------------------------
+# T2512-MIDI / T2512-LOCK-MIDI — looper hook end-to-end coverage.
+#
+# The bridge's _looper_call / _looper_call_master closures resolve the
+# LooperService singleton at call time, so a test can inject a fake
+# service via ``set_looper_service`` and assert the dispatched frame
+# reaches the right method with the right args.
+# ---------------------------------------------------------------------------
+
+
+def _looper_frame(target: str, action: str = "set", value: float | None = 1.0) -> dict:
+    frame: dict = {
+        "type": "engine_command",
+        "msg_id": "looper-test",
+        "schema_version": 1,
+        "controller_key": "test/controller",
+        "target": target,
+        "action": action,
+    }
+    if value is not None:
+        frame["value"] = value
+    return frame
+
+
+class _FakeLooperService:
+    """Stub that mirrors the LooperService surface the bridge invokes."""
+
+    def __init__(self) -> None:
+        self.calls: list[tuple[str, tuple, dict]] = []
+
+    def __getattr__(self, name: str):
+        def _record(*args, **kwargs):
+            self.calls.append((name, args, kwargs))
+            return None
+        return _record
+
+
+def test_looper_stomp_dispatch_routes_to_service_method():
+    """audio.looper.<n>.record frame ⇒ LooperService.record(n)."""
+    from app.services.looper_service import set_looper_service
+
+    loop = asyncio.new_event_loop()
+    fake = _FakeLooperService()
+    try:
+        set_looper_service(fake)  # type: ignore[arg-type]
+        bridge = EngineCommandBridge(loop)
+        bridge.dispatch_engine_command(
+            _looper_frame("audio.looper.2.record", value=127.0)
+        )
+        assert fake.calls == [("record", (2,), {})]
+    finally:
+        set_looper_service(None)
+        loop.close()
+
+
+def test_looper_stop_dispatch_routes_to_stop_track_method():
+    """The bridge maps ``looper_stop`` hook → ``service.stop_track(n)``
+    (not ``stop``) because LooperService's public method is named
+    ``stop_track`` to avoid shadowing the bool ``stop`` flag."""
+    from app.services.looper_service import set_looper_service
+
+    loop = asyncio.new_event_loop()
+    fake = _FakeLooperService()
+    try:
+        set_looper_service(fake)  # type: ignore[arg-type]
+        bridge = EngineCommandBridge(loop)
+        bridge.dispatch_engine_command(
+            _looper_frame("audio.looper.1.stop", value=127.0)
+        )
+        assert fake.calls == [("stop_track", (1,), {})]
+    finally:
+        set_looper_service(None)
+        loop.close()
+
+
+def test_looper_level_setter_routes_with_clamped_db_value():
+    """audio.looper.<n>.level with value=-12.0 ⇒
+    LooperService.set_level_db(n, -12.0)."""
+    from app.services.looper_service import set_looper_service
+
+    loop = asyncio.new_event_loop()
+    fake = _FakeLooperService()
+    try:
+        set_looper_service(fake)  # type: ignore[arg-type]
+        bridge = EngineCommandBridge(loop)
+        bridge.dispatch_engine_command(
+            _looper_frame("audio.looper.0.level", value=-12.0)
+        )
+        assert fake.calls == [("set_level_db", (0, -12.0), {})]
+    finally:
+        set_looper_service(None)
+        loop.close()
+
+
+def test_looper_bool_setter_routes_with_bool_value():
+    """audio.looper.<n>.muted action=set value=1.0 ⇒
+    LooperService.set_muted(n, True)."""
+    from app.services.looper_service import set_looper_service
+
+    loop = asyncio.new_event_loop()
+    fake = _FakeLooperService()
+    try:
+        set_looper_service(fake)  # type: ignore[arg-type]
+        bridge = EngineCommandBridge(loop)
+        bridge.dispatch_engine_command(
+            _looper_frame("audio.looper.3.muted", action="set", value=1.0)
+        )
+        assert fake.calls == [("set_muted", (3, True), {})]
+    finally:
+        set_looper_service(None)
+        loop.close()
+
+
+def test_looper_locked_setter_routes_to_set_locked():
+    """T2512-LOCK-MIDI. audio.looper.<n>.locked ⇒
+    LooperService.set_locked(n, bool)."""
+    from app.services.looper_service import set_looper_service
+
+    loop = asyncio.new_event_loop()
+    fake = _FakeLooperService()
+    try:
+        set_looper_service(fake)  # type: ignore[arg-type]
+        bridge = EngineCommandBridge(loop)
+        bridge.dispatch_engine_command(
+            _looper_frame("audio.looper.2.locked", action="set", value=1.0)
+        )
+        assert fake.calls == [("set_locked", (2, True), {})]
+    finally:
+        set_looper_service(None)
+        loop.close()
+
+
+def test_looper_master_level_routes_to_master_method():
+    """audio.looper.master.level value=-3.0 ⇒
+    LooperService.set_master_level_db(-3.0). Note: no track index — the
+    bridge uses a separate closure for this exact target."""
+    from app.services.looper_service import set_looper_service
+
+    loop = asyncio.new_event_loop()
+    fake = _FakeLooperService()
+    try:
+        set_looper_service(fake)  # type: ignore[arg-type]
+        bridge = EngineCommandBridge(loop)
+        bridge.dispatch_engine_command(
+            _looper_frame("audio.looper.master.level", value=-3.0)
+        )
+        assert fake.calls == [("set_master_level_db", (-3.0,), {})]
+    finally:
+        set_looper_service(None)
+        loop.close()
+
+
+def test_looper_dispatch_with_no_service_logs_and_drops():
+    """If LooperService isn't wired (lifespan ordering: bridge can come
+    up before the engine), the hook logs and drops without raising."""
+    from app.services.looper_service import set_looper_service
+
+    loop = asyncio.new_event_loop()
+    try:
+        set_looper_service(None)  # ensure unbound
+        bridge = EngineCommandBridge(loop)
+        # Should not raise.
+        bridge.dispatch_engine_command(
+            _looper_frame("audio.looper.0.record", value=127.0)
+        )
+    finally:
+        loop.close()
+
+
+def test_looper_service_method_exception_is_logged_not_raised():
+    """A buggy LooperService method must not bubble out of the
+    dispatcher reader-thread — the bridge wraps each invocation in
+    a try/except that just logs."""
+    from app.services.looper_service import set_looper_service
+
+    loop = asyncio.new_event_loop()
+
+    class _BoomService:
+        def record(self, *_a, **_k):
+            raise RuntimeError("simulated record failure")
+
+    try:
+        set_looper_service(_BoomService())  # type: ignore[arg-type]
+        bridge = EngineCommandBridge(loop)
+        # Should not raise.
+        bridge.dispatch_engine_command(
+            _looper_frame("audio.looper.0.record", value=127.0)
+        )
+    finally:
+        set_looper_service(None)
+        loop.close()
