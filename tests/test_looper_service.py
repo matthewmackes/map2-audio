@@ -170,3 +170,76 @@ def test_lock_default_is_unlocked() -> None:
     service = LooperService()
     status = service.get_status()
     assert all(t.locked is False for t in status.tracks)
+
+
+# ---------------------------------------------------------------------------
+# T2512-WS — broadcaster injection
+# ---------------------------------------------------------------------------
+
+
+def test_broadcaster_fires_on_every_mutating_verb() -> None:
+    engine = _FakeEngine()
+    received: list = []
+    service = LooperService(engine=engine, broadcaster=received.append)
+    service.record(0)
+    service.stop_track(0)
+    service.clear(0)
+    service.undo(0)
+    service.redo(0)
+    service.set_level_db(0, -6.0)
+    service.set_muted(0, True)
+    service.set_soloed(0, True)
+    service.set_reverse(0, True)
+    service.set_half_speed(0, True)
+    service.set_master_level_db(0.0)
+    service.set_locked(0, True)
+    # 12 mutating verbs → 12 broadcasts.
+    assert len(received) == 12
+
+
+def test_get_status_does_not_broadcast() -> None:
+    """Read-only inspection must never fire the broadcaster — it would
+    create an infinite loop if the WS client pulls status on every push."""
+    engine = _FakeEngine()
+    received: list = []
+    service = LooperService(engine=engine, broadcaster=received.append)
+    service.get_status()
+    service.get_status()
+    assert received == []
+
+
+def test_replace_broadcaster_swaps_destination() -> None:
+    """The bridge replaces the broadcaster at lifespan startup; later
+    broadcasts must hit the new sink."""
+    engine = _FakeEngine()
+    first: list = []
+    second: list = []
+    service = LooperService(engine=engine, broadcaster=first.append)
+    service.record(0)
+    service.replace_broadcaster(second.append)
+    service.record(0)
+    assert len(first) == 1
+    assert len(second) == 1
+
+
+def test_broadcaster_exception_does_not_break_verb() -> None:
+    """A flaky WS layer can never bring down the operator control flow."""
+    engine = _FakeEngine()
+
+    def boom(_status) -> None:
+        raise RuntimeError("WS layer down")
+
+    service = LooperService(engine=engine, broadcaster=boom)
+    # Should not raise.
+    status = service.record(0)
+    assert status.tracks[0].track == 0
+    assert engine.record_calls == [0]
+
+
+def test_no_broadcaster_means_silent_default() -> None:
+    """Tests + early-lifespan callers don't have to wire a broadcaster."""
+    engine = _FakeEngine()
+    service = LooperService(engine=engine)
+    # Just ensure it doesn't raise.
+    service.record(0)
+    service.set_locked(0, True)

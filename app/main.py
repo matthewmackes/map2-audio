@@ -963,6 +963,14 @@ async def lifespan(app):
         except Exception as exc:
             logger.warning("LooperService not installed: %s", exc)
 
+        # T2512-WS — bind the looper WS broadcaster so every mutating
+        # verb fans out a status frame on LOOPER_STATUS_TOPIC. Idempotent.
+        try:
+            from app.services.looper_ws_bridge import init_looper_ws_bridge
+            init_looper_ws_bridge()
+        except Exception as exc:
+            logger.warning("LooperService WS bridge not installed: %s", exc)
+
         # T2500-MV-B2 + T2500-MV-B-RAW-TAP — install the MIDI visualization
         # producer bridge (dispatcher observer + MidiHub raw subscriber).
         # Idempotent + defensive: a buffer-side regression here cannot break

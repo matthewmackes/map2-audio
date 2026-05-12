@@ -32,7 +32,7 @@ import asyncio
 import logging
 from dataclasses import dataclass, field
 from enum import Enum
-from typing import Any, Optional
+from typing import Any, Callable, Optional
 
 
 logger = logging.getLogger(__name__)
@@ -160,13 +160,24 @@ class LooperService:
     # adjust how it sounds in the mix.
     _LOCKED_VERBS = frozenset({"record", "clear", "undo", "redo"})
 
-    def __init__(self, *, engine: Optional[Any] = None) -> None:
+    def __init__(
+        self,
+        *,
+        engine: Optional[Any] = None,
+        broadcaster: Optional[Callable[["LooperStatus"], None]] = None,
+    ) -> None:
         self._engine = engine
         # T2512-LOCK — per-track write-lock state. Python-side flag,
         # not propagated into the C++ engine: the engine's record path
         # is unconditional, and we enforce the lock at the service
         # boundary before any binding call. Indexed 0..3.
         self._locked: list[bool] = [False, False, False, False]
+        # T2512-WS — fan-out hook for status changes. Set by
+        # ``init_looper_ws_bridge`` at lifespan startup; remains None
+        # in tests where WS isn't wired. The broadcaster is sync —
+        # the bridge stashes a closure that schedules its own async
+        # WS push onto the FastAPI loop.
+        self._broadcaster = broadcaster
         # Defensive: probe the binding once at construction so we
         # log a clear warning if the engine SO predates T2512.
         if engine is not None:
@@ -180,6 +191,27 @@ class LooperService:
                     "verbs will degrade to logs.",
                     ", ".join(missing),
                 )
+
+    def replace_broadcaster(
+        self,
+        broadcaster: Optional[Callable[["LooperStatus"], None]],
+    ) -> None:
+        """T2512-WS — wire the WebSocket fan-out. Idempotent."""
+        self._broadcaster = broadcaster
+
+    def _broadcast(self, status: "LooperStatus") -> "LooperStatus":
+        """Fire-and-forget broadcast on every mutating verb's return
+        path. Exceptions are swallowed + logged so a flaky WS layer
+        cannot break audio control flow."""
+        if self._broadcaster is None:
+            return status
+        try:
+            self._broadcaster(status)
+        except Exception as exc:  # noqa: BLE001
+            logger.exception(
+                "LooperService: broadcaster failed (swallowed): %s", exc
+            )
+        return status
 
     def _enforce_lock(self, track: int, verb: str) -> None:
         if verb in self._LOCKED_VERBS and self._locked[track]:
@@ -200,7 +232,7 @@ class LooperService:
             self._engine.looper_record(track)
         else:
             logger.info("looper.record (no engine binding): track=%d", track)
-        return self.get_status()
+        return self._broadcast(self.get_status())
 
     def stop_track(self, track: int) -> LooperStatus:
         _validate_track(track)
@@ -210,28 +242,28 @@ class LooperService:
         # remains intact through the stop.
         if self._engine and hasattr(self._engine, "looper_stop"):
             self._engine.looper_stop(track)
-        return self.get_status()
+        return self._broadcast(self.get_status())
 
     def clear(self, track: int) -> LooperStatus:
         _validate_track(track)
         self._enforce_lock(track, "clear")
         if self._engine and hasattr(self._engine, "looper_clear"):
             self._engine.looper_clear(track)
-        return self.get_status()
+        return self._broadcast(self.get_status())
 
     def undo(self, track: int) -> LooperStatus:
         _validate_track(track)
         self._enforce_lock(track, "undo")
         if self._engine and hasattr(self._engine, "looper_undo"):
             self._engine.looper_undo(track)
-        return self.get_status()
+        return self._broadcast(self.get_status())
 
     def redo(self, track: int) -> LooperStatus:
         _validate_track(track)
         self._enforce_lock(track, "redo")
         if self._engine and hasattr(self._engine, "looper_redo"):
             self._engine.looper_redo(track)
-        return self.get_status()
+        return self._broadcast(self.get_status())
 
     # -------- Settings --------
 
@@ -240,37 +272,37 @@ class LooperService:
         db = float(max(-60.0, min(6.0, db)))
         if self._engine and hasattr(self._engine, "looper_set_level_db"):
             self._engine.looper_set_level_db(track, db)
-        return self.get_status()
+        return self._broadcast(self.get_status())
 
     def set_muted(self, track: int, muted: bool) -> LooperStatus:
         _validate_track(track)
         if self._engine and hasattr(self._engine, "looper_set_muted"):
             self._engine.looper_set_muted(track, bool(muted))
-        return self.get_status()
+        return self._broadcast(self.get_status())
 
     def set_soloed(self, track: int, soloed: bool) -> LooperStatus:
         _validate_track(track)
         if self._engine and hasattr(self._engine, "looper_set_soloed"):
             self._engine.looper_set_soloed(track, bool(soloed))
-        return self.get_status()
+        return self._broadcast(self.get_status())
 
     def set_reverse(self, track: int, reverse: bool) -> LooperStatus:
         _validate_track(track)
         if self._engine and hasattr(self._engine, "looper_set_reverse"):
             self._engine.looper_set_reverse(track, bool(reverse))
-        return self.get_status()
+        return self._broadcast(self.get_status())
 
     def set_half_speed(self, track: int, half: bool) -> LooperStatus:
         _validate_track(track)
         if self._engine and hasattr(self._engine, "looper_set_half_speed"):
             self._engine.looper_set_half_speed(track, bool(half))
-        return self.get_status()
+        return self._broadcast(self.get_status())
 
     def set_master_level_db(self, db: float) -> LooperStatus:
         db = float(max(-60.0, min(6.0, db)))
         if self._engine and hasattr(self._engine, "looper_set_master_level_db"):
             self._engine.looper_set_master_level_db(db)
-        return self.get_status()
+        return self._broadcast(self.get_status())
 
     def set_locked(self, track: int, locked: bool) -> LooperStatus:
         """T2512-LOCK — toggle the write-lock flag for a track.
@@ -284,7 +316,7 @@ class LooperService:
         """
         _validate_track(track)
         self._locked[track] = bool(locked)
-        return self.get_status()
+        return self._broadcast(self.get_status())
 
     # -------- Inspection --------
 

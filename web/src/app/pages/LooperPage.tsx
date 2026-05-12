@@ -18,7 +18,16 @@
  * shipped yet, it appears as a deferred follow-on.
  */
 
-import { useCallback, useEffect, useState } from 'react'
+import { useCallback, useEffect, useRef, useState } from 'react'
+
+import { getWsUrl } from '../../map2/transport'
+
+/** T2512-WS — backend topic + frame envelope from looper_ws_bridge.py. */
+const LOOPER_WS_TOPIC = 'looper:status'
+interface LooperStatusFrame {
+  type: 'looper_status'
+  payload: LooperStatus
+}
 import { useNavigate } from 'react-router-dom'
 import {
   Button,
@@ -123,11 +132,55 @@ export function LooperPage() {
     }
   }, [])
 
-  // Initial load + 250 ms polling so the playhead readout stays live.
+  // T2512-WS — push-based updates via the LOOPER_WS_TOPIC topic.
+  // The backend broadcasts a status frame on every mutating verb, so
+  // the UI no longer needs a 250 ms poll for record/stop/clear/etc.
+  // We keep a 2 s safety-net refresh so the playhead readout still
+  // ticks when nobody is touching the loops (the backend doesn't push
+  // periodic frames for pure playhead motion in v1) and to recover
+  // from any WS hiccup.
+  const wsRef = useRef<WebSocket | null>(null)
   useEffect(() => {
     void refresh()
-    const handle = window.setInterval(() => { void refresh() }, 250)
-    return () => window.clearInterval(handle)
+    let cancelled = false
+    let ws: WebSocket | null = null
+    try {
+      ws = new WebSocket(getWsUrl())
+      wsRef.current = ws
+      ws.onopen = () => {
+        if (cancelled) return
+        ws?.send(JSON.stringify({ action: 'subscribe', topic: LOOPER_WS_TOPIC }))
+      }
+      ws.onmessage = (event) => {
+        if (cancelled) return
+        try {
+          const message = JSON.parse(event.data) as LooperStatusFrame
+          if (message.type === 'looper_status' && message.payload) {
+            setStatus(message.payload)
+            setError(null)
+            setLoading(false)
+          }
+        } catch {
+          // Drop malformed frames silently.
+        }
+      }
+    } catch {
+      // Browser may block WS construction (very rare) — poll-only fallback.
+    }
+    const handle = window.setInterval(() => { void refresh() }, 2000)
+    return () => {
+      cancelled = true
+      window.clearInterval(handle)
+      if (ws && ws.readyState === WebSocket.OPEN) {
+        try {
+          ws.send(JSON.stringify({ action: 'unsubscribe', topic: LOOPER_WS_TOPIC }))
+        } catch {
+          // Connection may already be down; safe to ignore.
+        }
+      }
+      ws?.close()
+      wsRef.current = null
+    }
   }, [refresh])
 
   const wrap = useCallback(

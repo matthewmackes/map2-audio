@@ -2349,6 +2349,10 @@ Operator requested 27 features; v1 ships 13 live + files the remaining 14 as nam
 
 ### T2512 follow-on tasks (filed 2026-05-12)
 
+T2512-WS shipped 2026-05-12 — broadcaster injection on LooperService, sync→async scheduling closure in `app/services/looper_ws_bridge.py`, `LOOPER_STATUS_TOPIC = "looper:status"` envelope `{type: "looper_status", payload: ...}`. Every mutating verb (12 entry points) fires a broadcast; `get_status` does not. LooperPage replaces its 250 ms poll with WS subscription + 2 s safety-net refresh. +9 service tests, +4 bridge tests.
+
+
+
 | Task | Title | Notes |
 |---|---|---|
 | T2512-LONG  | Unlimited loop length via streaming   | Hybrid ring + io_uring file streaming. RT-safety review needed (writer thread keeps up with audio). |
