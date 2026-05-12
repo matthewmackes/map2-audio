@@ -971,6 +971,17 @@ async def lifespan(app):
         except Exception as exc:
             logger.warning("LooperService WS bridge not installed: %s", exc)
 
+        # T2512-AUTO-TRIGGER — initialize the auto-record trigger
+        # singleton so the HTTP push endpoint + future engine
+        # input-level binding have a ready entry point. Idempotent.
+        try:
+            from app.services.looper_auto_record_trigger import (
+                init_looper_auto_record_trigger,
+            )
+            init_looper_auto_record_trigger()
+        except Exception as exc:
+            logger.warning("LooperAutoRecordTrigger not installed: %s", exc)
+
         # T2500-MV-B2 + T2500-MV-B-RAW-TAP — install the MIDI visualization
         # producer bridge (dispatcher observer + MidiHub raw subscriber).
         # Idempotent + defensive: a buffer-side regression here cannot break

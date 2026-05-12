@@ -600,6 +600,92 @@ def test_reset_state_route_does_not_require_a_body() -> None:
 
 
 # ---------------------------------------------------------------------------
+# T2512-AUTO-PUSH — HTTP push endpoint for the auto-record trigger
+# ---------------------------------------------------------------------------
+
+
+def test_auto_record_push_route_returns_fired_false_when_not_armed() -> None:
+    """The trigger short-circuits when auto_armed is False — the
+    response carries fired=False and the status unchanged."""
+    from app.services.looper_auto_record_trigger import (
+        reset_looper_auto_record_trigger_for_tests,
+    )
+    reset_looper_auto_record_trigger_for_tests()
+
+    client, _, _ = _build_client()
+    resp = client.post(
+        "/api/v1/looper/track/0/auto-record/push",
+        json={"level_db": 0.0},
+    )
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["fired"] is False
+    assert body["status"]["tracks"][0]["auto_armed"] is False
+
+    reset_looper_auto_record_trigger_for_tests()
+
+
+def test_auto_record_push_route_fires_when_armed_and_above_threshold() -> None:
+    """Set auto_armed via the existing route; push a level above the
+    default threshold (-36 dB); assert fired=True and the trigger
+    auto-disarmed."""
+    from app.services.looper_auto_record_trigger import (
+        reset_looper_auto_record_trigger_for_tests,
+    )
+    reset_looper_auto_record_trigger_for_tests()
+
+    client, _, _ = _build_client()
+    client.patch(
+        "/api/v1/looper/track/0/auto-armed", json={"value": True}
+    )
+    resp = client.post(
+        "/api/v1/looper/track/0/auto-record/push",
+        json={"level_db": -10.0},
+    )
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["fired"] is True
+    # Auto-armed is disarmed after firing (the trigger's one-shot
+    # semantics — operator re-arms explicitly for the next take).
+    # We don't check track state here because the test harness's
+    # fake engine doesn't transition state on looper_record() calls
+    # — that's an engine-side concern, not a service contract.
+    assert body["status"]["tracks"][0]["auto_armed"] is False
+
+    reset_looper_auto_record_trigger_for_tests()
+
+
+def test_auto_record_push_invalid_track_returns_fired_false() -> None:
+    """The trigger returns False for invalid track indices without
+    raising — the route should respond 200 with fired=False rather
+    than 400 (operator's external monitor shouldn't crash on a
+    benign mis-routing)."""
+    from app.services.looper_auto_record_trigger import (
+        reset_looper_auto_record_trigger_for_tests,
+    )
+    reset_looper_auto_record_trigger_for_tests()
+
+    client, _, _ = _build_client()
+    resp = client.post(
+        "/api/v1/looper/track/9/auto-record/push",
+        json={"level_db": 0.0},
+    )
+    assert resp.status_code == 200
+    assert resp.json()["fired"] is False
+
+    reset_looper_auto_record_trigger_for_tests()
+
+
+def test_auto_record_push_missing_level_returns_422() -> None:
+    client, _, _ = _build_client()
+    resp = client.post(
+        "/api/v1/looper/track/0/auto-record/push",
+        json={},
+    )
+    assert resp.status_code == 422
+
+
+# ---------------------------------------------------------------------------
 # T2512-QUANT-WIRE — quantize-division route surface
 # ---------------------------------------------------------------------------
 

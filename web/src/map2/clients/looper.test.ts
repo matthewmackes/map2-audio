@@ -208,6 +208,16 @@ describe('looperApi HTTP surface', () => {
     expect(init?.body).toBeUndefined()
   })
 
+  it('autoRecordPush(2, -12) → POST /track/2/auto-record/push with {level_db}', async () => {
+    await looperApi.autoRecordPush(2, -12)
+    expect(fetchMock.mock.calls[0]?.[0]).toBe(
+      `${BASE}/track/2/auto-record/push`,
+    )
+    const init = fetchMock.mock.calls[0]?.[1] as RequestInit | undefined
+    expect(init?.method).toBe('POST')
+    expect(JSON.parse(String(init?.body))).toEqual({ level_db: -12 })
+  })
+
   // ---------- Master ----------
 
   it('setMasterLevel(0) → PATCH /master/level with {db: 0}', async () => {

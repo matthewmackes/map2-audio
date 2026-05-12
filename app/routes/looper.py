@@ -141,6 +141,17 @@ class SetAutoThresholdRequest(BaseModel):
     db: float = Field(..., ge=-90.0, le=0.0)
 
 
+class AutoRecordPushRequest(BaseModel):
+    """T2512-AUTO-PUSH — body for the input-level push endpoint."""
+    level_db: float
+
+
+class AutoRecordPushResponse(BaseModel):
+    """T2512-AUTO-PUSH — push result envelope."""
+    fired: bool
+    status: "LooperStatusResponse"
+
+
 class SetStopModeRequest(BaseModel):
     """T2512-FADE — stop mode setter."""
     mode: str = Field(..., pattern="^(hard|fade)$")
@@ -405,6 +416,37 @@ async def set_track_auto_threshold(track: int, body: SetAutoThresholdRequest,
     except LooperServiceError as exc:
         raise _http_for_error(exc)
     return LooperStatusResponse.from_status(result)
+
+
+@router.post("/track/{track}/auto-record/push",
+             response_model=AutoRecordPushResponse,
+             operation_id="looper_auto_record_push",
+             summary="T2512-AUTO-PUSH — feed an input-level RMS sample to the auto-record trigger")
+async def auto_record_push(track: int, body: AutoRecordPushRequest,
+                           service: LooperService = Depends(_get_service)) -> AutoRecordPushResponse:
+    """T2512-AUTO-PUSH — drive the T2512-AUTO-TRIGGER state machine
+    over HTTP. Lets test harnesses or external level monitors fire
+    auto-record without the engine binding being wired.
+
+    Returns ``{fired: bool, status: LooperStatusResponse}``. The
+    trigger only fires when the track is armed + EMPTY + level >
+    threshold + outside the cooldown window; otherwise ``fired``
+    is False and ``status`` reflects the unchanged state.
+    """
+    # Construct a route-scoped trigger bound to the injected service.
+    # Using the singleton would shadow the route's DI override in
+    # tests; per-call construction keeps cooldown semantics
+    # per-request (acceptable for an HTTP-driven push path — the
+    # operator's external monitor is the cooldown authority).
+    from app.services.looper_auto_record_trigger import (
+        LooperAutoRecordTrigger,
+    )
+    trigger = LooperAutoRecordTrigger(service=service)
+    fired = trigger.push_input_level(track, body.level_db)
+    return AutoRecordPushResponse(
+        fired=fired,
+        status=LooperStatusResponse.from_status(service.get_status()),
+    )
 
 
 @router.patch("/track/{track}/stop-mode",

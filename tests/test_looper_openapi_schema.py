@@ -35,6 +35,7 @@ EXPECTED_PATHS_BY_METHOD: dict[str, set[str]] = {
         "/api/v1/looper/track/{track}/slices",           # T2512-SLICE — add
         "/api/v1/looper/track/{track}/slices/at-playhead",  # T2512-SLICE-AT-PLAYHEAD
         "/api/v1/looper/state/reset",                      # T2512-RESET
+        "/api/v1/looper/track/{track}/auto-record/push",   # T2512-AUTO-PUSH
     },
     "patch": {
         "/api/v1/looper/track/{track}/level",
@@ -186,9 +187,14 @@ def test_every_looper_op_returns_a_known_response_model() -> None:
             ok = op.get("responses", {}).get("200", {})
             content = ok.get("content", {}).get("application/json", {})
             ref = content.get("schema", {}).get("$ref", "")
-            # GET /state → LooperStatePayload, everything else → LooperStatusResponse.
+            # GET /state → LooperStatePayload.
+            # POST /track/{track}/auto-record/push → AutoRecordPushResponse.
+            # Everything else → LooperStatusResponse.
             if method == "get" and path == "/api/v1/looper/state":
                 if "LooperStatePayload" not in ref:
+                    failures.append(f"{method.upper()} {path} → {ref!r}")
+            elif path == "/api/v1/looper/track/{track}/auto-record/push":
+                if "AutoRecordPushResponse" not in ref:
                     failures.append(f"{method.upper()} {path} → {ref!r}")
             else:
                 if "LooperStatusResponse" not in ref:

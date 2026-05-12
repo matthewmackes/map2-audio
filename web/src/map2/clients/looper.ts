@@ -139,6 +139,21 @@ export const looperApi = {
   /** T2512-RESET — clear every Python-side flag + master level. Captured loop content is unaffected. */
   resetState: () =>
     fetchJson<LooperStatus>(`${BASE}/state/reset`, { method: 'POST' }),
+  /**
+   * T2512-AUTO-PUSH — feed an input-level RMS sample to the auto-record
+   * trigger. Returns {fired, status}. Useful for test harnesses or
+   * external level monitors driving auto-record without the engine
+   * binding.
+   */
+  autoRecordPush: (track: number, level_db: number) =>
+    fetchJson<{ fired: boolean; status: LooperStatus }>(
+      `${BASE}/track/${track}/auto-record/push`,
+      {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ level_db }),
+      },
+    ),
 }
 
 function patch(url: string, body: unknown): Promise<LooperStatus> {
