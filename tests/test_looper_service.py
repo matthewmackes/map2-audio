@@ -1670,6 +1670,87 @@ def test_recent_activity_in_to_payload() -> None:
     assert payload["recent_activity"][0]["verb"] == "record"
 
 
+# ---------------------------------------------------------------------------
+# T2512-METRICS-WS — counters embedded in status frame
+# ---------------------------------------------------------------------------
+
+
+def test_status_includes_empty_metrics_by_default() -> None:
+    """Fresh service surfaces metrics={} so WS subscribers see a
+    stable shape rather than a missing key."""
+    service = LooperService()
+    status = service.get_status()
+    assert status.metrics == {}
+
+
+def test_status_metrics_reflects_recorded_verbs() -> None:
+    engine = _FakeEngine()
+    service = LooperService(engine=engine)
+    service.record(0)
+    service.record(1)
+    service.stop_track(0)
+    status = service.get_status()
+    assert status.metrics["record"] == 2
+    assert status.metrics["stop"] == 1
+
+
+def test_status_metrics_is_a_copy_not_internal_dict() -> None:
+    """Mutating the embedded dict must not corrupt service state."""
+    engine = _FakeEngine()
+    service = LooperService(engine=engine)
+    service.record(0)
+    status = service.get_status()
+    status.metrics["record"] = 99999
+    # Service counter unchanged.
+    assert service.get_metrics()["record"] == 1
+
+
+def test_status_metrics_matches_get_metrics() -> None:
+    """Two views of the same counters must agree at all times."""
+    engine = _FakeEngine()
+    service = LooperService(engine=engine)
+    service.record(0)
+    service.stop_track(0)
+    service.clear(0)
+    direct = service.get_metrics()
+    embedded = service.get_status().metrics
+    assert embedded == direct
+
+
+def test_status_metrics_in_to_payload() -> None:
+    """to_payload must surface metrics so the WS frame and REST
+    response share the same dict."""
+    engine = _FakeEngine()
+    service = LooperService(engine=engine)
+    service.record(0)
+    payload = service.get_status().to_payload()
+    assert "metrics" in payload
+    assert payload["metrics"]["record"] == 1
+
+
+def test_status_metrics_resets_with_reset_metrics() -> None:
+    """reset_metrics zeroes the embedded view next time get_status runs."""
+    engine = _FakeEngine()
+    service = LooperService(engine=engine)
+    service.record(0)
+    assert service.get_status().metrics["record"] == 1
+    service.reset_metrics()
+    assert service.get_status().metrics == {}
+
+
+def test_status_metrics_unaffected_by_clear_activity() -> None:
+    """Activity and metrics are independent surfaces — clearing one
+    must not zero the other."""
+    engine = _FakeEngine()
+    service = LooperService(engine=engine)
+    service.record(0)
+    service.clear_activity()
+    status = service.get_status()
+    assert status.recent_activity == ()
+    # Metrics still show the record verb.
+    assert status.metrics["record"] == 1
+
+
 def test_activity_does_not_raise_on_internal_failure() -> None:
     """T2512-ACTIVITY — a broken timestamp source must not break verbs.
     Verified by monkey-patching datetime to raise."""

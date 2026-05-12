@@ -265,3 +265,9 @@ def test_looper_status_schema_contains_bpm_and_one_shot_fields() -> None:
     assert "recent_activity" in status_schema.get("properties", {}), (
         "LooperStatusResponse.recent_activity missing from generated schema"
     )
+
+    # T2512-METRICS-WS top-level field on LooperStatusResponse.
+    assert "metrics" in status_schema.get("properties", {}), (
+        "LooperStatusResponse.metrics missing from generated schema "
+        "(T2512-METRICS-WS regression)"
+    )

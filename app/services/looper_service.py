@@ -231,6 +231,12 @@ class LooperStatus:
     # updates pushed alongside status without a separate poll.
     # The full log (capped 200) is reachable via GET /activity.
     recent_activity:    tuple["ActivityEvent", ...] = ()
+    # T2512-METRICS-WS — current verb-invocation counters embedded
+    # in every status frame so WS subscribers see metric updates
+    # without polling /metrics. Mirrors the cumulative counters
+    # returned by ``LooperService.get_metrics()``. Empty dict means
+    # the service has never recorded a tracked verb yet.
+    metrics:            dict[str, int] = field(default_factory=dict)
 
     def to_payload(self) -> dict[str, Any]:
         return {
@@ -241,6 +247,7 @@ class LooperStatus:
             "bpm":                self.bpm,
             "sync_master_track":  self.sync_master_track,
             "recent_activity":    [e.to_payload() for e in self.recent_activity],
+            "metrics":            dict(self.metrics),
         }
 
 
@@ -1400,6 +1407,11 @@ class LooperService:
             bpm=bpm,
             sync_master_track=master_idx,
             recent_activity=recent_tail,
+            # T2512-METRICS-WS — embed the cumulative verb counters
+            # so WS subscribers stay in sync without polling /metrics.
+            # Copy via dict() so a frame consumer mutating the dict
+            # doesn't corrupt service state.
+            metrics=dict(self._metrics),
         )
 
 

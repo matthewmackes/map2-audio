@@ -700,6 +700,29 @@ def test_one_shot_passes_default_in_status_payload() -> None:
         assert entry["one_shot_passes"] == 1
 
 
+# T2512-METRICS-WS — embedded counters surface on /status response too,
+# not just over the WS bridge, since both share the LooperStatus -> payload
+# serialization path.
+
+
+def test_status_route_includes_metrics_field() -> None:
+    client, _, _ = _build_client()
+    resp = client.get("/api/v1/looper/status")
+    body = resp.json()
+    assert "metrics" in body
+    assert body["metrics"] == {}
+
+
+def test_status_route_metrics_reflects_recent_verbs() -> None:
+    client, _, _ = _build_client()
+    client.post("/api/v1/looper/track/0/record")
+    client.post("/api/v1/looper/track/0/stop")
+    resp = client.get("/api/v1/looper/status")
+    body = resp.json()
+    assert body["metrics"].get("record") == 1
+    assert body["metrics"].get("stop") == 1
+
+
 def test_set_one_shot_passes_route_updates_field() -> None:
     client, _, _ = _build_client()
     resp = client.patch(

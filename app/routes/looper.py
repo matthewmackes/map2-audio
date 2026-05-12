@@ -153,6 +153,11 @@ class LooperStatusResponse(BaseModel):
     # forcing the client to poll /activity. Full 200-event log
     # remains at GET /activity.
     recent_activity: list[ActivityEventResponse] = []
+    # T2512-METRICS-WS — cumulative verb-invocation counters embedded
+    # in every status frame. Mirrors GET /metrics; subscribers see
+    # counter changes without polling. Empty dict means no tracked
+    # verb has been invoked yet.
+    metrics: dict[str, int] = {}
 
     @classmethod
     def from_status(cls, status_obj: LooperStatus) -> "LooperStatusResponse":
