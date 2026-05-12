@@ -267,9 +267,11 @@ def test_register_default_handlers_does_not_overlap_targets() -> None:
     # Pattern list: audio.chain.*.bypass + the 10 audio.looper.*.<verb>
     # patterns from T2512-MIDI + audio.looper.*.locked from
     # T2512-LOCK-MIDI + audio.looper.*.one_shot from T2512-OS +
-    # audio.looper.*.auto_armed from T2512-AUTO = 14.
+    # audio.looper.*.auto_armed from T2512-AUTO + 4 new from
+    # T2512-DISPATCH-V2 (stop_mode, sync_mode, quantize_division,
+    # fade_ms) = 18.
     assert len(dispatcher._exact) == 9  # type: ignore[attr-defined]
-    assert len(dispatcher._patterns) == 14  # type: ignore[attr-defined]
+    assert len(dispatcher._patterns) == 18  # type: ignore[attr-defined]
     expected_exact = {
         "audio.snapshot.recall",
         "audio.master.volume",
@@ -534,7 +536,11 @@ def test_looper_handlers_safe_with_no_hooks_wired() -> None:
     dispatcher.dispatch(_frame("audio.looper.3.locked", action="set", value=1.0))
     dispatcher.dispatch(_frame("audio.looper.0.one_shot", action="set", value=1.0))
     dispatcher.dispatch(_frame("audio.looper.0.auto_armed", action="set", value=1.0))
-    assert dispatcher.dispatched_count == 7
+    dispatcher.dispatch(_frame("audio.looper.0.stop_mode", action="set", value=1.0))
+    dispatcher.dispatch(_frame("audio.looper.0.fade_ms", action="set", value=500.0))
+    dispatcher.dispatch(_frame("audio.looper.0.sync_mode", action="set", value=1.0))
+    dispatcher.dispatch(_frame("audio.looper.0.quantize_division", action="set", value=3.0))
+    assert dispatcher.dispatched_count == 11
     assert dispatcher.errored_count == 0
 
 
@@ -625,4 +631,129 @@ def test_looper_auto_armed_invalid_track_dropped() -> None:
     dispatcher = EngineCommandDispatcher()
     register_default_handlers(dispatcher, hooks=hooks)
     dispatcher.dispatch(_frame("audio.looper.9.auto_armed", action="set", value=1.0))
+    assert called == []
+
+
+# ---------------------------------------------------------------------------
+# T2512-DISPATCH-V2 — stop_mode / sync_mode / quantize_division / fade_ms
+# ---------------------------------------------------------------------------
+
+
+def test_looper_stop_mode_index_resolves_to_enum_label() -> None:
+    called: list[tuple[int, str]] = []
+    hooks = HandlerHooks(
+        looper_set_stop_mode=lambda track, value: called.append((track, value)),
+    )
+    dispatcher = EngineCommandDispatcher()
+    register_default_handlers(dispatcher, hooks=hooks)
+    # 0 → "hard", 1 → "fade".
+    dispatcher.dispatch(_frame("audio.looper.0.stop_mode", action="set", value=0.0))
+    dispatcher.dispatch(_frame("audio.looper.0.stop_mode", action="set", value=1.0))
+    assert called == [(0, "hard"), (0, "fade")]
+
+
+def test_looper_stop_mode_clamps_out_of_range_index() -> None:
+    called: list[tuple[int, str]] = []
+    hooks = HandlerHooks(
+        looper_set_stop_mode=lambda track, value: called.append((track, value)),
+    )
+    dispatcher = EngineCommandDispatcher()
+    register_default_handlers(dispatcher, hooks=hooks)
+    # Out-of-range index clamps to the nearest valid enum.
+    dispatcher.dispatch(_frame("audio.looper.0.stop_mode", action="set", value=99.0))
+    assert called == [(0, "fade")]
+
+
+def test_looper_stop_mode_accepts_string_via_args() -> None:
+    """JS scripts can pass the literal enum string in args[0]."""
+    called: list[tuple[int, str]] = []
+    hooks = HandlerHooks(
+        looper_set_stop_mode=lambda track, value: called.append((track, value)),
+    )
+    dispatcher = EngineCommandDispatcher()
+    register_default_handlers(dispatcher, hooks=hooks)
+    dispatcher.dispatch(_frame(
+        "audio.looper.1.stop_mode", action="set", args=["fade"],
+    ))
+    assert called == [(1, "fade")]
+
+
+def test_looper_stop_mode_rejects_unknown_string() -> None:
+    called: list = []
+    hooks = HandlerHooks(
+        looper_set_stop_mode=lambda track, value: called.append((track, value)),
+    )
+    dispatcher = EngineCommandDispatcher()
+    register_default_handlers(dispatcher, hooks=hooks)
+    dispatcher.dispatch(_frame(
+        "audio.looper.1.stop_mode", action="set", args=["ramp"],
+    ))
+    assert called == []
+
+
+def test_looper_sync_mode_index_resolves_to_enum_label() -> None:
+    called: list[tuple[int, str]] = []
+    hooks = HandlerHooks(
+        looper_set_sync_mode=lambda track, value: called.append((track, value)),
+    )
+    dispatcher = EngineCommandDispatcher()
+    register_default_handlers(dispatcher, hooks=hooks)
+    # 0 → free, 1 → master, 2 → slave.
+    for i in range(3):
+        dispatcher.dispatch(_frame(
+            "audio.looper.0.sync_mode", action="set", value=float(i),
+        ))
+    assert called == [(0, "free"), (0, "master"), (0, "slave")]
+
+
+def test_looper_quantize_division_index_resolves_to_enum_label() -> None:
+    called: list[tuple[int, str]] = []
+    hooks = HandlerHooks(
+        looper_set_quantize_division=lambda track, value: called.append(
+            (track, value)
+        ),
+    )
+    dispatcher = EngineCommandDispatcher()
+    register_default_handlers(dispatcher, hooks=hooks)
+    # 0..6 → off / whole / half / quarter / eighth / sixteenth / thirty-second.
+    expected = [
+        "off", "whole", "half", "quarter",
+        "eighth", "sixteenth", "thirty-second",
+    ]
+    for i, label in enumerate(expected):
+        dispatcher.dispatch(_frame(
+            "audio.looper.0.quantize_division", action="set", value=float(i),
+        ))
+    assert called == [(0, label) for label in expected]
+
+
+def test_looper_fade_ms_clamps_via_float_handler() -> None:
+    called: list[tuple[int, float]] = []
+    hooks = HandlerHooks(
+        looper_set_fade_ms=lambda track, value: called.append((track, value)),
+    )
+    dispatcher = EngineCommandDispatcher()
+    register_default_handlers(dispatcher, hooks=hooks)
+    dispatcher.dispatch(_frame("audio.looper.0.fade_ms", action="set", value=750.0))
+    dispatcher.dispatch(_frame("audio.looper.0.fade_ms", action="set", value=-100.0))
+    dispatcher.dispatch(_frame("audio.looper.0.fade_ms", action="set", value=10000.0))
+    assert called == [(0, 750.0), (0, 0.0), (0, 5000.0)]
+
+
+def test_looper_dispatch_v2_invalid_tracks_dropped() -> None:
+    called: list = []
+    hooks = HandlerHooks(
+        looper_set_stop_mode=lambda track, value: called.append(("sm", track, value)),
+        looper_set_sync_mode=lambda track, value: called.append(("sy", track, value)),
+        looper_set_quantize_division=lambda track, value: called.append(
+            ("qd", track, value)
+        ),
+        looper_set_fade_ms=lambda track, value: called.append(("fm", track, value)),
+    )
+    dispatcher = EngineCommandDispatcher()
+    register_default_handlers(dispatcher, hooks=hooks)
+    dispatcher.dispatch(_frame("audio.looper.9.stop_mode", action="set", value=1.0))
+    dispatcher.dispatch(_frame("audio.looper.9.sync_mode", action="set", value=1.0))
+    dispatcher.dispatch(_frame("audio.looper.9.quantize_division", action="set", value=1.0))
+    dispatcher.dispatch(_frame("audio.looper.9.fade_ms", action="set", value=100.0))
     assert called == []

@@ -146,6 +146,14 @@ class _LooperMasterLevelFn(Protocol):
     def __call__(self, value: float) -> None: ...
 
 
+# T2512-DISPATCH-V2 — string-enum setters (stop_mode / sync_mode /
+# quantize_division). The dispatcher path receives an integer index
+# (footswitch CC value ÷ step size); the handler factory below
+# resolves it to the enum string label.
+class _LooperSetStringFn(Protocol):
+    def __call__(self, track: int, value: str) -> None: ...
+
+
 @dataclass
 class HandlerHooks:
     """Bundle of side-effect functions handlers call.
@@ -185,6 +193,13 @@ class HandlerHooks:
     looper_set_one_shot: Optional[_LooperSetBoolFn]   = None
     # T2512-AUTO over MIDI — arm / disarm input-threshold auto-record.
     looper_set_auto_armed: Optional[_LooperSetBoolFn] = None
+    # T2512-DISPATCH-V2 — cycle-6/7/9 state setters reachable via MIDI.
+    # stop_mode + sync_mode + quantize_division take an enum string;
+    # fade_ms takes a float clamped 0..5000 by the service.
+    looper_set_stop_mode: Optional[_LooperSetStringFn] = None
+    looper_set_fade_ms: Optional[_LooperSetFloatFn] = None
+    looper_set_sync_mode: Optional[_LooperSetStringFn] = None
+    looper_set_quantize_division: Optional[_LooperSetStringFn] = None
 
 
 # ---------------------------------------------------------------------------
@@ -648,6 +663,76 @@ def _make_looper_set_bool_handler(
     return handler
 
 
+def _make_looper_indexed_enum_handler(
+    hooks: HandlerHooks,
+    verb: str,
+    hook_attr: str,
+    enum_labels: tuple[str, ...],
+) -> Callable[[EngineCommandContext], None]:
+    """T2512-DISPATCH-V2 — string-enum setter driven by a numeric
+    footswitch value.
+
+    The dispatcher receives ``ctx.value`` as a float (a CC value, a
+    knob position, a controller-script literal). We treat it as a
+    *zero-based index* into ``enum_labels`` after clamping. So a
+    3-position selector mapped to ``("free", "master", "slave")``
+    accepts value=0 → "free", value=1 → "master", value=2 → "slave".
+    Out-of-range indices are clamped to the nearest valid label
+    rather than dropped — the operator's intent ("this knob is at
+    position N") is honored as well as the knob allows.
+
+    The handler also accepts a literal string in ``ctx.args[0]``
+    when the dispatcher caller (e.g. a JS controller script) wants
+    to set the enum by name. The string is validated against
+    ``enum_labels`` and rejected if unknown.
+    """
+
+    def handler(ctx: EngineCommandContext) -> None:
+        if ctx.action != "set":
+            logger.info("looper.%s: ignoring non-set action %r", verb, ctx.action)
+            return
+
+        # String-by-name path (used by JS scripts).
+        if ctx.args and isinstance(ctx.args[0], str):
+            raw_label = ctx.args[0]
+            if raw_label not in enum_labels:
+                logger.warning(
+                    "looper.%s: unknown enum label %r (allowed: %s)",
+                    verb,
+                    raw_label,
+                    sorted(enum_labels),
+                )
+                return
+            label = raw_label
+        else:
+            # Index-by-value path (used by CC footswitches / knobs).
+            if ctx.value is None:
+                logger.warning("looper.%s: missing value (no index)", verb)
+                return
+            try:
+                idx = int(float(ctx.value))
+            except (TypeError, ValueError):
+                logger.warning("looper.%s: non-numeric value %r", verb, ctx.value)
+                return
+            idx = max(0, min(len(enum_labels) - 1, idx))
+            label = enum_labels[idx]
+
+        track = _extract_looper_track(ctx, verb)
+        if track is None:
+            return
+
+        fn = getattr(hooks, hook_attr)
+        if fn is None:
+            logger.info(
+                "looper.%s: no service hook wired; would set track %d → %s",
+                verb, track, label,
+            )
+            return
+        fn(track=track, value=label)
+
+    return handler
+
+
 def _make_looper_master_level_handler(
     hooks: HandlerHooks,
 ) -> Callable[[EngineCommandContext], None]:
@@ -772,6 +857,44 @@ def register_default_handlers(
         "audio.looper.*.auto_armed",
         _make_looper_set_bool_handler(
             actual_hooks, "auto_armed", "looper_set_auto_armed"
+        ),
+    )
+    # T2512-DISPATCH-V2 — cycle-6/7/9 state setters over MIDI.
+    # stop_mode index → ("hard", "fade").
+    dispatcher.register_pattern(
+        "audio.looper.*.stop_mode",
+        _make_looper_indexed_enum_handler(
+            actual_hooks, "stop_mode", "looper_set_stop_mode",
+            ("hard", "fade"),
+        ),
+    )
+    # sync_mode index → ("free", "master", "slave").
+    dispatcher.register_pattern(
+        "audio.looper.*.sync_mode",
+        _make_looper_indexed_enum_handler(
+            actual_hooks, "sync_mode", "looper_set_sync_mode",
+            ("free", "master", "slave"),
+        ),
+    )
+    # quantize_division index → ("off", "whole", "half", "quarter",
+    # "eighth", "sixteenth", "thirty-second"). 7 positions — fits a
+    # 7-stop rotary or a 0..6 footswitch step.
+    dispatcher.register_pattern(
+        "audio.looper.*.quantize_division",
+        _make_looper_indexed_enum_handler(
+            actual_hooks, "quantize_division", "looper_set_quantize_division",
+            ("off", "whole", "half", "quarter", "eighth",
+             "sixteenth", "thirty-second"),
+        ),
+    )
+    # fade_ms takes a raw float (0..5000 ms) clamped service-side.
+    # The float-setter handler shares the same shape as level/threshold,
+    # so we reuse it with min/max matching the service's clamp.
+    dispatcher.register_pattern(
+        "audio.looper.*.fade_ms",
+        _make_looper_set_float_handler(
+            actual_hooks, "fade_ms", "looper_set_fade_ms",
+            min_v=0.0, max_v=5000.0,
         ),
     )
     dispatcher.register(

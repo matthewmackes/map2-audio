@@ -166,6 +166,19 @@ class EngineCommandBridge:
             looper_set_auto_armed=lambda track, value: self._looper_call(
                 "set_auto_armed", track, value
             ),
+            # T2512-DISPATCH-V2 — cycle-6/7/9 setters via dispatcher.
+            looper_set_stop_mode=lambda track, value: self._looper_call(
+                "set_stop_mode", track, value
+            ),
+            looper_set_fade_ms=lambda track, value: self._looper_call(
+                "set_fade_ms", track, int(value)
+            ),
+            looper_set_sync_mode=lambda track, value: self._looper_call(
+                "set_sync_mode", track, value
+            ),
+            looper_set_quantize_division=lambda track, value: self._looper_call(
+                "set_quantize_division", track, value
+            ),
             looper_set_master_level=lambda value: self._looper_call_master(
                 "set_master_level_db", value
             ),
