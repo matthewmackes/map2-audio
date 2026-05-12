@@ -132,6 +132,52 @@ export function LooperPage() {
   // T2512-RESET — confirmation modal state.
   const [resetModalOpen, setResetModalOpen] = useState(false)
 
+  // T2512-IMPORT-UI — file input ref + handler. The file picker is
+  // a hidden <input type="file"> triggered by an Import button so we
+  // don't need to ship a custom modal — operators pick from the OS
+  // file dialog the same way they would for a snapshot save.
+  const importInputRef = useRef<HTMLInputElement | null>(null)
+
+  const handleImportState = useCallback(
+    async (file: File): Promise<void> => {
+      try {
+        // Use FileReader rather than File.text() for broader browser
+        // compatibility (and so jsdom under jest can exercise this
+        // path — its File.text() implementation is patchy).
+        const text = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader()
+          reader.onload = () => {
+            const result = reader.result
+            if (typeof result === 'string') {
+              resolve(result)
+            } else {
+              reject(new Error('FileReader returned non-string result'))
+            }
+          }
+          reader.onerror = () => reject(reader.error ?? new Error('Read failed'))
+          reader.readAsText(file)
+        })
+        const parsed = JSON.parse(text) as unknown
+        if (
+          typeof parsed !== 'object' ||
+          parsed === null ||
+          !Array.isArray((parsed as { tracks?: unknown }).tracks)
+        ) {
+          throw new Error(
+            'Invalid looper state payload — expected an object with a tracks array',
+          )
+        }
+        await looperApi.applyState(parsed as Parameters<typeof looperApi.applyState>[0])
+        setError(null)
+      } catch (e: unknown) {
+        setError(
+          e instanceof Error ? e.message : 'Failed to import state',
+        )
+      }
+    },
+    [],
+  )
+
   // T2512-EXPORT-UI — fetch the current LooperStatePayload, format
   // as pretty JSON, and trigger a browser download. No mutation;
   // safe to click any time. Filename includes ISO date so an
@@ -335,6 +381,29 @@ export function LooperPage() {
               >
                 Export state (JSON)
               </Button>
+              <Button
+                kind="tertiary"
+                size="sm"
+                data-testid="looper-import-state-button"
+                onClick={() => importInputRef.current?.click()}
+              >
+                Import state…
+              </Button>
+              <input
+                ref={importInputRef}
+                type="file"
+                accept=".json,application/json"
+                style={{ display: 'none' }}
+                data-testid="looper-import-state-input"
+                onChange={(e) => {
+                  const file = e.target.files?.[0]
+                  if (file) {
+                    void handleImportState(file)
+                  }
+                  // Reset so picking the same file twice in a row still fires onChange.
+                  e.target.value = ''
+                }}
+              />
               <Button
                 kind="danger--tertiary"
                 size="sm"

@@ -1035,6 +1035,112 @@ describe('LooperPage T2512-EXPORT-UI export-state button', () => {
   })
 })
 
+describe('LooperPage T2512-IMPORT-UI import-state button', () => {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const { looperApi } = require('../../map2/clients/looper') as {
+    looperApi: Record<string, jest.Mock>
+  }
+
+  beforeEach(() => {
+    Object.values(looperApi).forEach((fn) => fn.mockClear())
+  })
+
+  function _samplePayload() {
+    return {
+      schema_version: 1,
+      tracks: Array.from({ length: 4 }, () => ({
+        locked: false,
+        one_shot: false,
+        auto_armed: false,
+        auto_threshold_db: -36.0,
+        stop_mode: 'hard',
+        fade_ms: 250,
+        sync_mode: 'free',
+        slices: [],
+        quantize_division: 'off',
+      })),
+      master_level_db: -6,
+    }
+  }
+
+  it('Import-state button renders on the master Tile', async () => {
+    renderPage()
+    const btn = await screen.findByTestId('looper-import-state-button')
+    expect(btn).toBeInTheDocument()
+    expect(btn).toHaveTextContent(/Import state/)
+  })
+
+  it('renders a hidden file input for the OS picker', async () => {
+    renderPage()
+    const input = await screen.findByTestId('looper-import-state-input')
+    expect(input).toBeInTheDocument()
+    expect((input as HTMLInputElement).type).toBe('file')
+    expect((input as HTMLInputElement).accept).toBe('.json,application/json')
+  })
+
+  it('valid JSON payload triggers looperApi.applyState with the parsed object', async () => {
+    renderPage()
+    const input = (await screen.findByTestId(
+      'looper-import-state-input',
+    )) as HTMLInputElement
+
+    // Build a File from the sample payload.
+    const payload = _samplePayload()
+    const blob = new Blob([JSON.stringify(payload)], {
+      type: 'application/json',
+    })
+    const file = new File([blob], 'state.json', { type: 'application/json' })
+
+    // fireEvent.change is the React-aware way to inject a file —
+    // it updates React's synthetic FileList and triggers onChange.
+    fireEvent.change(input, { target: { files: [file] } })
+
+    await waitFor(() => {
+      expect(looperApi.applyState).toHaveBeenCalledTimes(1)
+    })
+    const arg = looperApi.applyState.mock.calls[0]?.[0]
+    expect(arg.schema_version).toBe(1)
+    expect(arg.master_level_db).toBe(-6)
+    expect(arg.tracks).toHaveLength(4)
+  })
+
+  it('rejects an invalid JSON payload without calling applyState', async () => {
+    renderPage()
+    const input = (await screen.findByTestId(
+      'looper-import-state-input',
+    )) as HTMLInputElement
+
+    const blob = new Blob(['{not-json'], { type: 'application/json' })
+    const file = new File([blob], 'bad.json', { type: 'application/json' })
+
+    fireEvent.change(input, { target: { files: [file] } })
+    // Let the async handler finish.
+    await new Promise((r) => setTimeout(r, 50))
+
+    expect(looperApi.applyState).not.toHaveBeenCalled()
+  })
+
+  it('rejects a payload missing the tracks array', async () => {
+    renderPage()
+    const input = (await screen.findByTestId(
+      'looper-import-state-input',
+    )) as HTMLInputElement
+
+    // Valid JSON but wrong shape.
+    const blob = new Blob([JSON.stringify({ schema_version: 1 })], {
+      type: 'application/json',
+    })
+    const file = new File([blob], 'bad-shape.json', {
+      type: 'application/json',
+    })
+
+    fireEvent.change(input, { target: { files: [file] } })
+    await new Promise((r) => setTimeout(r, 50))
+
+    expect(looperApi.applyState).not.toHaveBeenCalled()
+  })
+})
+
 describe('LooperPage T2512-RESET state-reset modal', () => {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
   const { looperApi } = require('../../map2/clients/looper') as {
