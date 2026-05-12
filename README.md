@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1618** Python | **1664** TypeScript | **222** C++/H | **149** Docs | **4345** total commits | **4** stars | **0** forks | **0** open issues
+**1618** Python | **1664** TypeScript | **222** C++/H | **149** Docs | **4347** total commits | **4** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`1e56bf8a`](https://github.com/matthewmackes/map2-audio/commit/1e56bf8ab8b744239d76dda605a5bb631c5b22ab) | feat(looper,snap): T2512-SNAP — export/apply state primit... | Map2 Audio | 2026-05-12 |
+| [`744dd699`](https://github.com/matthewmackes/map2-audio/commit/744dd699cca639045d01c0dc4db4a71f89a798ee) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-12 |
 | [`a69d1708`](https://github.com/matthewmackes/map2-audio/commit/a69d1708a9b2cdc73c1ec9b6e11d9a7726ca1de3) | test(looper,openapi): T2512-OPENAPI-SCHEMA — audit genera... | Map2 Audio | 2026-05-12 |
 | [`231d6772`](https://github.com/matthewmackes/map2-audio/commit/231d677259000a88032eb5613e82e6a2acc23dcf) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-12 |
 | [`3ea22cbd`](https://github.com/matthewmackes/map2-audio/commit/3ea22cbd19722a997d2dd64efcb3e88baf58a6cf) | test(looper,lifespan): T2512-LIFESPAN — install-order smo... | Map2 Audio | 2026-05-12 |
 | [`96005475`](https://github.com/matthewmackes/map2-audio/commit/960054752f4cff5710071f930083caa43901c736) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-12 |
 | [`583b723f`](https://github.com/matthewmackes/map2-audio/commit/583b723f923cac9b5e3a5c47245d49e52d578649) | feat(looper): T2512-OS-RUNNER — async auto-stop watcher f... | Map2 Audio | 2026-05-12 |
 | [`000c8073`](https://github.com/matthewmackes/map2-audio/commit/000c80739a761049b697353ab57b13a9c650019d) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-12 |
-| [`52216f9b`](https://github.com/matthewmackes/map2-audio/commit/52216f9b48c6c747af8aefcc2149341afaf73abb) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-12 |
-| [`6703465b`](https://github.com/matthewmackes/map2-audio/commit/6703465bc28beefd2af0c3c9ed9118702feac179) | test(looper): T2512-PAGE-CLICKS — RTL coverage for Looper... | Map2 Audio | 2026-05-12 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
