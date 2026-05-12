@@ -126,6 +126,22 @@ class LooperAutoRecordTrigger:
         if service is None:
             return False
 
+        # T2512-AUTO-PEAK — every push updates the operator-visible
+        # recent-level + peak surface, regardless of arm state or
+        # whether the push fires. Operators tune the threshold by
+        # watching the peak move while playing into a disarmed track.
+        # Failures here must never block trigger evaluation.
+        try:
+            service.record_input_level(track, level_db)
+        except Exception as exc:  # noqa: BLE001
+            logger.debug(
+                "auto_record_trigger: record_input_level(%d, %.2f) "
+                "failed (non-fatal): %s",
+                track,
+                level_db,
+                exc,
+            )
+
         # Cooldown check first so we can short-circuit cheap.
         now = self._clock()
         last = self._last_fire[track]

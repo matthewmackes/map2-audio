@@ -133,6 +133,17 @@ class TrackStatus:
     # Python.
     auto_armed:          bool  = False
     auto_threshold_db:   float = -36.0
+    # T2512-AUTO-PEAK — operator-tuning surface for the auto-record
+    # threshold. ``auto_last_level_db`` mirrors the most recent input
+    # level pushed for this track (any source: LooperAutoRecordTrigger
+    # poll, HTTP /auto-record/push, future engine RMS binding); -inf
+    # equivalent (sentinel value -150.0 dB) means "no level pushed
+    # yet since the last arm/reset". ``auto_peak_db`` is the highest
+    # level seen since the last arm; the trigger resets it whenever
+    # the operator re-arms a track (so a stale peak from a previous
+    # take never misleads the threshold setter). Both stay updated
+    # whether or not the track is armed — the operator can watch them
+    # while disarmed to tune the threshold against real playing.
     # T2512-FADE — per-track stop mode + fade duration. v1 ships the
     # operator-visible state ("hard" vs "fade"; fade duration in ms,
     # clamped 0..5000) so the route + UI + dispatcher pattern can land
@@ -147,6 +158,8 @@ class TrackStatus:
     # "slave" (track length follows the master). State-only in v1;
     # actual loop-length locking on the engine is RT-critical work
     # gated behind T2512-SYNC-LOCK.
+    auto_last_level_db:  float = -150.0
+    auto_peak_db:        float = -150.0
     sync_mode:           str   = "free"
     # T2512-QUANT-WIRE — per-track quantize grid for auto-close on
     # record stop. "off" disables quantization (default — preserves
@@ -177,6 +190,8 @@ class TrackStatus:
             "one_shot":           self.one_shot,
             "auto_armed":         self.auto_armed,
             "auto_threshold_db":  self.auto_threshold_db,
+            "auto_last_level_db": self.auto_last_level_db,
+            "auto_peak_db":       self.auto_peak_db,
             "stop_mode":          self.stop_mode,
             "fade_ms":            self.fade_ms,
             "sync_mode":          self.sync_mode,
@@ -305,6 +320,14 @@ class LooperService:
         # the arm state.
         self._auto_armed: list[bool] = [False, False, False, False]
         self._auto_threshold_db: list[float] = [-36.0, -36.0, -36.0, -36.0]
+        # T2512-AUTO-PEAK — operator-tuning surface. Both fields default
+        # to a sentinel -150.0 dB ("no level pushed yet"). Updated by
+        # ``record_input_level`` from any push source (auto-record
+        # trigger, /auto-record/push HTTP route, future engine RMS
+        # binding). Reset by ``set_auto_armed(armed=True)`` so a stale
+        # pre-arm peak doesn't survive into the next take.
+        self._auto_last_level_db: list[float] = [-150.0, -150.0, -150.0, -150.0]
+        self._auto_peak_db:       list[float] = [-150.0, -150.0, -150.0, -150.0]
         # T2512-FADE — per-track stop mode + fade duration. "hard"
         # (default, matches current engine behavior) vs "fade" (gain
         # ramp over fade_ms milliseconds). The engine reads these
@@ -573,9 +596,62 @@ class LooperService:
 
         Non-destructive: does not touch loop content or any other
         verb's behavior.
+
+        T2512-AUTO-PEAK — re-arming a track resets the recent-peak
+        tracking so a stale peak from a previous take never misleads
+        the operator's threshold dial; disarming leaves the peak
+        intact so the operator can review what they were playing into
+        the trigger.
         """
         _validate_track(track)
+        was_armed = self._auto_armed[track]
         self._auto_armed[track] = bool(armed)
+        if bool(armed) and not was_armed:
+            self._auto_last_level_db[track] = -150.0
+            self._auto_peak_db[track] = -150.0
+        return self._broadcast(self.get_status())
+
+    def record_input_level(self, track: int, level_db: float) -> None:
+        """T2512-AUTO-PEAK — record an input-level push for a track.
+
+        Updates the per-track ``auto_last_level_db`` and bumps
+        ``auto_peak_db`` when ``level_db`` exceeds the current peak.
+        Invalid tracks (or NaN levels) silently no-op — the caller
+        (engine binding, HTTP push, trigger) may not have full
+        validation in the push path.
+
+        This is the storage primitive; the LooperAutoRecordTrigger
+        and the /auto-record/push route both call it on every push
+        whether or not the push itself fires record(). Operators tune
+        the threshold by watching `auto_peak_db` move while playing,
+        regardless of arm state. No broadcast is fired here: input
+        levels arrive far faster than the WS bridge can fan out, so
+        subscribers read the field at next status frame.
+        """
+        if not isinstance(track, int) or not (0 <= track < 4):
+            return
+        try:
+            db = float(level_db)
+        except (TypeError, ValueError):
+            return
+        if db != db:  # NaN check (NaN != NaN by IEEE 754)
+            return
+        self._auto_last_level_db[track] = db
+        if db > self._auto_peak_db[track]:
+            self._auto_peak_db[track] = db
+
+    def reset_auto_peak(self, track: int) -> LooperStatus:
+        """T2512-AUTO-PEAK — explicit operator-driven peak reset.
+
+        Clears the recent-peak surface for a single track without
+        touching the arm state or threshold. UI exposes this as a
+        "reset peak" button next to the threshold dial — operators
+        use it after deliberately playing a louder-than-target hit to
+        recalibrate the indicator without re-arming the track.
+        """
+        _validate_track(track)
+        self._auto_last_level_db[track] = -150.0
+        self._auto_peak_db[track] = -150.0
         return self._broadcast(self.get_status())
 
     def set_auto_threshold_db(self, track: int, db: float) -> LooperStatus:
@@ -979,6 +1055,8 @@ class LooperService:
         self._one_shot = [False, False, False, False]
         self._auto_armed = [False, False, False, False]
         self._auto_threshold_db = [-36.0, -36.0, -36.0, -36.0]
+        self._auto_last_level_db = [-150.0, -150.0, -150.0, -150.0]
+        self._auto_peak_db = [-150.0, -150.0, -150.0, -150.0]
         self._stop_mode = ["hard", "hard", "hard", "hard"]
         self._fade_ms = [250, 250, 250, 250]
         self._sync_mode = ["free", "free", "free", "free"]
@@ -1160,6 +1238,14 @@ class LooperService:
                 auto_threshold_db=(
                     self._auto_threshold_db[t.track]
                     if 0 <= t.track < 4 else -36.0
+                ),
+                auto_last_level_db=(
+                    self._auto_last_level_db[t.track]
+                    if 0 <= t.track < 4 else -150.0
+                ),
+                auto_peak_db=(
+                    self._auto_peak_db[t.track]
+                    if 0 <= t.track < 4 else -150.0
                 ),
                 stop_mode=(
                     self._stop_mode[t.track] if 0 <= t.track < 4 else "hard"

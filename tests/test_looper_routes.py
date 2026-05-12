@@ -686,6 +686,72 @@ def test_auto_record_push_missing_level_returns_422() -> None:
 
 
 # ---------------------------------------------------------------------------
+# T2512-AUTO-PEAK — reset-peak route
+# ---------------------------------------------------------------------------
+
+
+def test_auto_peak_fields_default_in_status_payload() -> None:
+    """Every track surfaces the sentinel -150.0 dB pair until a push lands."""
+    client, _, _ = _build_client()
+    resp = client.get("/api/v1/looper/status")
+    body = resp.json()
+    for entry in body["tracks"]:
+        assert entry["auto_last_level_db"] == -150.0
+        assert entry["auto_peak_db"] == -150.0
+
+
+def test_auto_record_push_route_updates_peak_fields() -> None:
+    """T2512-AUTO-PEAK — pushing a level via /auto-record/push must
+    update the per-track recent-level + peak surface, whether or not
+    the trigger fires."""
+    from app.services.looper_auto_record_trigger import (
+        reset_looper_auto_record_trigger_for_tests,
+    )
+    reset_looper_auto_record_trigger_for_tests()
+    client, _, _ = _build_client()
+    # Push without arming — fire stays False but peak still records.
+    resp = client.post(
+        "/api/v1/looper/track/0/auto-record/push",
+        json={"level_db": -25.0},
+    )
+    body = resp.json()
+    assert body["fired"] is False
+    assert body["status"]["tracks"][0]["auto_last_level_db"] == -25.0
+    assert body["status"]["tracks"][0]["auto_peak_db"] == -25.0
+    reset_looper_auto_record_trigger_for_tests()
+
+
+def test_reset_auto_peak_route_clears_indicator() -> None:
+    """T2512-AUTO-PEAK — POST /track/{n}/auto-record/reset-peak
+    returns the status with both fields back to the sentinel."""
+    from app.services.looper_auto_record_trigger import (
+        reset_looper_auto_record_trigger_for_tests,
+    )
+    reset_looper_auto_record_trigger_for_tests()
+    client, _, _ = _build_client()
+    # Seed a peak with a push.
+    client.post(
+        "/api/v1/looper/track/0/auto-record/push",
+        json={"level_db": -10.0},
+    )
+    # Reset.
+    resp = client.post("/api/v1/looper/track/0/auto-record/reset-peak")
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["tracks"][0]["auto_last_level_db"] == -150.0
+    assert body["tracks"][0]["auto_peak_db"] == -150.0
+    reset_looper_auto_record_trigger_for_tests()
+
+
+def test_reset_auto_peak_invalid_track_returns_400() -> None:
+    """T2512-AUTO-PEAK — invalid track index propagates as the
+    looper service's standard 400-error envelope."""
+    client, _, _ = _build_client()
+    resp = client.post("/api/v1/looper/track/9/auto-record/reset-peak")
+    assert resp.status_code == 400
+
+
+# ---------------------------------------------------------------------------
 # T2512-ACTIVITY — audit log routes
 # ---------------------------------------------------------------------------
 

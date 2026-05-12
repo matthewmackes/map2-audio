@@ -38,6 +38,7 @@ EXPECTED_PATHS_BY_METHOD: dict[str, set[str]] = {
         "/api/v1/looper/track/{track}/slices/at-playhead",  # T2512-SLICE-AT-PLAYHEAD
         "/api/v1/looper/state/reset",                      # T2512-RESET
         "/api/v1/looper/track/{track}/auto-record/push",   # T2512-AUTO-PUSH
+        "/api/v1/looper/track/{track}/auto-record/reset-peak",  # T2512-AUTO-PEAK
     },
     "patch": {
         "/api/v1/looper/track/{track}/level",
@@ -233,6 +234,7 @@ def test_looper_status_schema_contains_bpm_and_one_shot_fields() -> None:
     track_props = track_schema.get("properties", {})
     for required_field in (
         "locked", "one_shot", "auto_armed", "auto_threshold_db",
+        "auto_last_level_db", "auto_peak_db",  # T2512-AUTO-PEAK
         "stop_mode", "fade_ms",  # T2512-FADE
         "sync_mode",             # T2512-SYNC
         "slices",                # T2512-SLICE

@@ -495,6 +495,58 @@ def test_hold_count_threshold_in_init_singleton() -> None:
     assert trigger.hold_count == 5
 
 
+def test_push_input_level_updates_service_peak_surface() -> None:
+    """T2512-AUTO-PEAK — every trigger push must propagate to
+    LooperService.record_input_level so the operator-visible
+    last/peak surface reflects what the trigger saw, regardless
+    of whether it fired."""
+    engine = _FakeEngine()
+    service = LooperService(engine=engine)
+    # Unarmed: trigger won't fire, but peak surface must still update.
+    trigger = LooperAutoRecordTrigger(service=service)
+    trigger.push_input_level(0, -22.0)
+    status = service.get_status()
+    assert status.tracks[0].auto_last_level_db == -22.0
+    assert status.tracks[0].auto_peak_db == -22.0
+
+
+def test_push_input_level_peak_grows_across_calls() -> None:
+    engine = _FakeEngine()
+    service = LooperService(engine=engine)
+    trigger = LooperAutoRecordTrigger(service=service)
+    trigger.push_input_level(0, -30.0)
+    trigger.push_input_level(0, -15.0)
+    trigger.push_input_level(0, -40.0)
+    status = service.get_status()
+    assert status.tracks[0].auto_last_level_db == -40.0
+    assert status.tracks[0].auto_peak_db == -15.0
+
+
+def test_push_input_level_swallows_record_input_level_failure() -> None:
+    """If the service's record_input_level raises, the trigger must
+    still complete (the peak surface is informational, not load-bearing)."""
+    real_engine = _FakeEngine()
+    real_service = LooperService(engine=real_engine)
+    real_service.set_auto_armed(0, True)
+    real_service.set_auto_threshold_db(0, -36.0)
+
+    class _BoomRecordInputLevel:
+        def __init__(self, base):
+            self.base = base
+
+        def __getattr__(self, name):
+            if name == "record_input_level":
+                def _boom(*_a, **_k):
+                    raise RuntimeError("simulated")
+                return _boom
+            return getattr(self.base, name)
+
+    trigger = LooperAutoRecordTrigger(service=_BoomRecordInputLevel(real_service))
+    fired = trigger.push_input_level(0, -10.0)
+    # Trigger still fires (record_input_level failure is non-fatal).
+    assert fired is True
+
+
 def test_post_fire_streak_resets() -> None:
     """After a fire, the per-track streak resets so a subsequent
     re-arm + push needs hold_count fresh pushes again (not just 1)."""

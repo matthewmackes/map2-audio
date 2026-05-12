@@ -445,6 +445,174 @@ def test_auto_state_payload_includes_both_keys() -> None:
 
 
 # ---------------------------------------------------------------------------
+# T2512-AUTO-PEAK — input-level + recent-peak surface
+# ---------------------------------------------------------------------------
+
+
+def test_auto_peak_defaults_to_sentinel() -> None:
+    """Fresh service starts with no level pushed; both fields surface
+    the -150.0 dB sentinel meaning 'no level seen yet'."""
+    service = LooperService()
+    status = service.get_status()
+    for t in status.tracks:
+        assert t.auto_last_level_db == -150.0
+        assert t.auto_peak_db == -150.0
+
+
+def test_record_input_level_updates_last_and_peak() -> None:
+    service = LooperService()
+    service.record_input_level(0, -20.0)
+    status = service.get_status()
+    assert status.tracks[0].auto_last_level_db == -20.0
+    assert status.tracks[0].auto_peak_db == -20.0
+
+
+def test_record_input_level_peak_only_grows() -> None:
+    """A lower subsequent push updates last_level_db but not peak."""
+    service = LooperService()
+    service.record_input_level(0, -20.0)
+    service.record_input_level(0, -40.0)
+    status = service.get_status()
+    assert status.tracks[0].auto_last_level_db == -40.0
+    assert status.tracks[0].auto_peak_db == -20.0
+
+
+def test_record_input_level_peak_advances_on_higher_push() -> None:
+    service = LooperService()
+    service.record_input_level(0, -30.0)
+    service.record_input_level(0, -10.0)
+    service.record_input_level(0, -20.0)
+    status = service.get_status()
+    assert status.tracks[0].auto_last_level_db == -20.0
+    assert status.tracks[0].auto_peak_db == -10.0
+
+
+def test_record_input_level_per_track_isolation() -> None:
+    """Pushing into track 0 must not contaminate track 1's peak."""
+    service = LooperService()
+    service.record_input_level(0, -5.0)
+    status = service.get_status()
+    assert status.tracks[0].auto_peak_db == -5.0
+    for i in (1, 2, 3):
+        assert status.tracks[i].auto_peak_db == -150.0
+        assert status.tracks[i].auto_last_level_db == -150.0
+
+
+def test_record_input_level_invalid_track_silent_noop() -> None:
+    """Out-of-range tracks must not raise — push paths may not
+    have full validation."""
+    service = LooperService()
+    service.record_input_level(9, -10.0)   # too high
+    service.record_input_level(-1, -10.0)  # negative
+    service.record_input_level("bad", -10.0)  # type: ignore[arg-type]
+    status = service.get_status()
+    for t in status.tracks:
+        assert t.auto_peak_db == -150.0
+
+
+def test_record_input_level_nan_silent_noop() -> None:
+    """NaN levels must not corrupt the surface."""
+    service = LooperService()
+    service.record_input_level(0, float("nan"))
+    status = service.get_status()
+    assert status.tracks[0].auto_last_level_db == -150.0
+    assert status.tracks[0].auto_peak_db == -150.0
+
+
+def test_record_input_level_coerces_int_to_float() -> None:
+    service = LooperService()
+    service.record_input_level(0, -25)  # int
+    status = service.get_status()
+    assert status.tracks[0].auto_last_level_db == -25.0
+    assert status.tracks[0].auto_peak_db == -25.0
+
+
+def test_arming_resets_peak() -> None:
+    """T2512-AUTO-PEAK — re-arming the operator flag clears the
+    recent-peak so a stale peak from a previous take doesn't mislead
+    the threshold tuner."""
+    service = LooperService()
+    service.record_input_level(0, -10.0)
+    assert service.get_status().tracks[0].auto_peak_db == -10.0
+    service.set_auto_armed(0, True)  # OFF → ON
+    status = service.get_status()
+    assert status.tracks[0].auto_peak_db == -150.0
+    assert status.tracks[0].auto_last_level_db == -150.0
+
+
+def test_disarming_preserves_peak() -> None:
+    """Disarming a track must leave the peak intact so the operator
+    can review what they were playing into the trigger."""
+    service = LooperService()
+    service.set_auto_armed(0, True)
+    service.record_input_level(0, -10.0)
+    service.set_auto_armed(0, False)
+    status = service.get_status()
+    assert status.tracks[0].auto_peak_db == -10.0
+    assert status.tracks[0].auto_last_level_db == -10.0
+
+
+def test_re_arming_already_armed_track_does_not_reset_peak() -> None:
+    """Setting auto_armed=True on a track that's already armed is a
+    no-op for the peak reset (must observe an off→on edge)."""
+    service = LooperService()
+    service.set_auto_armed(0, True)
+    service.record_input_level(0, -8.0)
+    service.set_auto_armed(0, True)  # already armed
+    status = service.get_status()
+    assert status.tracks[0].auto_peak_db == -8.0
+
+
+def test_reset_auto_peak_clears_single_track() -> None:
+    service = LooperService()
+    service.record_input_level(0, -10.0)
+    service.record_input_level(1, -15.0)
+    service.reset_auto_peak(0)
+    status = service.get_status()
+    assert status.tracks[0].auto_peak_db == -150.0
+    assert status.tracks[0].auto_last_level_db == -150.0
+    # Track 1 untouched.
+    assert status.tracks[1].auto_peak_db == -15.0
+
+
+def test_reset_auto_peak_invalid_track_raises() -> None:
+    service = LooperService()
+    with pytest.raises(LooperServiceError):
+        service.reset_auto_peak(7)
+
+
+def test_reset_auto_peak_does_not_change_arm_or_threshold() -> None:
+    service = LooperService()
+    service.set_auto_armed(0, True)
+    service.set_auto_threshold_db(0, -24.0)
+    service.record_input_level(0, -10.0)
+    service.reset_auto_peak(0)
+    status = service.get_status()
+    assert status.tracks[0].auto_armed is True
+    assert status.tracks[0].auto_threshold_db == -24.0
+
+
+def test_reset_state_zeroes_peak_surface() -> None:
+    """T2512-RESET extension: full state reset must clear the
+    auto-peak surface so a recall reset starts clean."""
+    service = LooperService()
+    service.record_input_level(0, -10.0)
+    service.record_input_level(2, -5.0)
+    service.reset_state()
+    status = service.get_status()
+    for t in status.tracks:
+        assert t.auto_last_level_db == -150.0
+        assert t.auto_peak_db == -150.0
+
+
+def test_auto_peak_payload_includes_both_keys() -> None:
+    service = LooperService()
+    payload = service.get_status().to_payload()
+    assert "auto_last_level_db" in payload["tracks"][0]
+    assert "auto_peak_db" in payload["tracks"][0]
+
+
+# ---------------------------------------------------------------------------
 # T2512-FADE — stop mode + fade duration state surface
 # ---------------------------------------------------------------------------
 

@@ -103,6 +103,13 @@ class TrackStatusResponse(BaseModel):
     one_shot: bool = False  # T2512-OS — one-shot / trigger mode
     auto_armed: bool = False           # T2512-AUTO — operator armed input-threshold record
     auto_threshold_db: float = -36.0   # T2512-AUTO — threshold dB
+    # T2512-AUTO-PEAK — recent input-level + peak surface for the
+    # threshold-tuning UI. Sentinel -150.0 dB means "no level pushed
+    # since arm/reset". The route layer just mirrors the service-side
+    # fields; producers are LooperAutoRecordTrigger.push_input_level
+    # and the /auto-record/push HTTP endpoint.
+    auto_last_level_db: float = -150.0
+    auto_peak_db: float = -150.0
     stop_mode: str = "hard"            # T2512-FADE — "hard" | "fade"
     fade_ms: int = 250                 # T2512-FADE — fade-out duration in ms
     sync_mode: str = "free"            # T2512-SYNC — "free" | "master" | "slave"
@@ -471,6 +478,25 @@ async def auto_record_push(track: int, body: AutoRecordPushRequest,
         fired=fired,
         status=LooperStatusResponse.from_status(service.get_status()),
     )
+
+
+@router.post("/track/{track}/auto-record/reset-peak",
+             response_model=LooperStatusResponse,
+             operation_id="looper_reset_auto_peak",
+             summary="T2512-AUTO-PEAK — reset the recent-peak indicator for a track")
+async def reset_auto_peak(track: int,
+                          service: LooperService = Depends(_get_service)) -> LooperStatusResponse:
+    """T2512-AUTO-PEAK — clear the per-track ``auto_last_level_db``
+    + ``auto_peak_db`` indicators without touching the arm flag or
+    threshold. UI exposes this as a "reset peak" button next to the
+    threshold dial so operators can recalibrate after a deliberately
+    loud hit.
+    """
+    try:
+        result = service.reset_auto_peak(track)
+    except LooperServiceError as exc:
+        raise _http_for_error(exc)
+    return LooperStatusResponse.from_status(result)
 
 
 @router.patch("/track/{track}/stop-mode",
