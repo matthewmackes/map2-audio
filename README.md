@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1614** Python | **1664** TypeScript | **222** C++/H | **149** Docs | **4338** total commits | **4** stars | **0** forks | **0** open issues
+**1614** Python | **1664** TypeScript | **222** C++/H | **149** Docs | **4339** total commits | **4** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,6 +206,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`52216f9b`](https://github.com/matthewmackes/map2-audio/commit/52216f9b48c6c747af8aefcc2149341afaf73abb) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-12 |
 | [`6703465b`](https://github.com/matthewmackes/map2-audio/commit/6703465bc28beefd2af0c3c9ed9118702feac179) | test(looper): T2512-PAGE-CLICKS — RTL coverage for Looper... | Map2 Audio | 2026-05-12 |
 | [`e4d4eb92`](https://github.com/matthewmackes/map2-audio/commit/e4d4eb9249e7043fdd0255b393a84435daf17ab2) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-12 |
 | [`ae4de3e1`](https://github.com/matthewmackes/map2-audio/commit/ae4de3e1c4443622b013d08da99220ee18170f74) | feat(looper): T2512-AUTO — service-side auto-record state... | Map2 Audio | 2026-05-12 |
@@ -213,7 +214,6 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 | [`4926d7b3`](https://github.com/matthewmackes/map2-audio/commit/4926d7b367960b6483749fb82badf5d978eaa72b) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-12 |
 | [`acba013c`](https://github.com/matthewmackes/map2-audio/commit/acba013c4d37eb43b357ae4813ac8ae92f530fbd) | feat(looper,clock): T2512-CLOCK (inbound) — surface snaps... | Map2 Audio | 2026-05-12 |
 | [`6f1ba060`](https://github.com/matthewmackes/map2-audio/commit/6f1ba060d3716af12fa74eb50a4a5992ae763aa5) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-12 |
-| [`b39f8d95`](https://github.com/matthewmackes/map2-audio/commit/b39f8d953613ffbdc37e020466ff4085ae09be2f) | Merge branch 'master' of https://github.com/matthewmackes... | Map2 Audio | 2026-05-12 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
