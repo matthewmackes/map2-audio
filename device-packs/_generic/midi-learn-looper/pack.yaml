@@ -1,0 +1,30 @@
+schema_version: 1
+pack_id: _generic-midi-learn-looper
+vendor:
+  name: MAP2 (generic)
+  website: https://map2.audio/
+description: |
+  T2512-FSW — generic MIDI Learn target catalog for the multi-track looper.
+
+  This pack is not bound to any specific hardware. It declares the typed
+  list of ``audio.looper.*`` engine_command verbs an operator can MIDI-learn
+  against any footswitch or controller via the controller-host's
+  generic-learn UI. Each target carries argument shape + display label so
+  the learn UI can prompt the operator for a track index (0..3) when needed.
+
+  Discoverability path (operator perspective):
+    1. Plug in a MIDI footswitch (Boss FS-7, MeloAudio Commander, generic
+       2/3/5-button controller, etc.).
+    2. Open the controller-host learn UI for that device.
+    3. Pick a category (Stomp / Mixer / Master) → pick a target verb →
+       press the footswitch → the host writes the binding to the device's
+       discovered overrides.
+    4. The press now drives the looper through the engine_command
+       dispatcher's ``audio.looper.*`` targets (T2512-MIDI).
+
+  License: this catalog is MAP2-native (AGPL-3.0-only). It contains no
+  vendor SysEx and no imports from any third-party mapping repo.
+license: AGPL-3.0-only
+source: map2-native
+models:
+  - generic-midi-learn-looper

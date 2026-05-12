@@ -1,0 +1,239 @@
+schema_version: 1
+mode: looper
+description: |
+  T2512-FSW — generic MIDI-learn target catalog for the multi-track
+  looper. The controller-host learn UI displays these targets grouped
+  by category. Each entry is a fully-qualified ``audio.looper.*`` verb
+  (registered by ``register_default_handlers`` under T2512-MIDI) with
+  its expected argument shape so the learn flow can prompt the operator
+  for a track index where needed.
+
+  Stomp verbs (record / stop / clear / undo / redo) take only the
+  track index — the footswitch press itself is the trigger. Setter
+  verbs (level / muted / soloed / reverse / half_speed) take the
+  track index plus a value; the learn UI defaults setters to
+  ``action: set`` and prompts for the value type.
+
+groups:
+  - id: stomps
+    label: Stomp triggers
+    description: |
+      Momentary triggers. A footswitch press at CC value > 0 fires
+      the verb; the matching release at value 0 is dropped. Bind
+      one footswitch per verb, per track.
+    targets:
+      - verb: audio.looper.0.record
+        label: Track 1 — Record / Play / Overdub
+        action_template:
+          action: set
+      - verb: audio.looper.1.record
+        label: Track 2 — Record / Play / Overdub
+        action_template:
+          action: set
+      - verb: audio.looper.2.record
+        label: Track 3 — Record / Play / Overdub
+        action_template:
+          action: set
+      - verb: audio.looper.3.record
+        label: Track 4 — Record / Play / Overdub
+        action_template:
+          action: set
+      - verb: audio.looper.0.stop
+        label: Track 1 — Stop / Resume
+        action_template:
+          action: set
+      - verb: audio.looper.1.stop
+        label: Track 2 — Stop / Resume
+        action_template:
+          action: set
+      - verb: audio.looper.2.stop
+        label: Track 3 — Stop / Resume
+        action_template:
+          action: set
+      - verb: audio.looper.3.stop
+        label: Track 4 — Stop / Resume
+        action_template:
+          action: set
+      - verb: audio.looper.0.clear
+        label: Track 1 — Clear
+        action_template:
+          action: set
+      - verb: audio.looper.1.clear
+        label: Track 2 — Clear
+        action_template:
+          action: set
+      - verb: audio.looper.2.clear
+        label: Track 3 — Clear
+        action_template:
+          action: set
+      - verb: audio.looper.3.clear
+        label: Track 4 — Clear
+        action_template:
+          action: set
+      - verb: audio.looper.0.undo
+        label: Track 1 — Undo last layer
+        action_template:
+          action: set
+      - verb: audio.looper.1.undo
+        label: Track 2 — Undo last layer
+        action_template:
+          action: set
+      - verb: audio.looper.2.undo
+        label: Track 3 — Undo last layer
+        action_template:
+          action: set
+      - verb: audio.looper.3.undo
+        label: Track 4 — Undo last layer
+        action_template:
+          action: set
+      - verb: audio.looper.0.redo
+        label: Track 1 — Redo
+        action_template:
+          action: set
+      - verb: audio.looper.1.redo
+        label: Track 2 — Redo
+        action_template:
+          action: set
+      - verb: audio.looper.2.redo
+        label: Track 3 — Redo
+        action_template:
+          action: set
+      - verb: audio.looper.3.redo
+        label: Track 4 — Redo
+        action_template:
+          action: set
+
+  - id: mixer
+    label: Per-track mixer
+    description: |
+      Continuous (level) and bool (muted / soloed / reverse /
+      half_speed) setters. Best mapped to expression pedals (level)
+      or latching footswitches (booleans).
+    targets:
+      - verb: audio.looper.0.level
+        label: Track 1 — Level (dB)
+        action_template:
+          action: set
+        arg_prompts:
+          - name: db
+            label: Level (dB, clamped -60..+6)
+            type: float
+            default: 0.0
+            min: -60.0
+            max: 6.0
+      - verb: audio.looper.1.level
+        label: Track 2 — Level (dB)
+        action_template:
+          action: set
+        arg_prompts:
+          - name: db
+            label: Level (dB, clamped -60..+6)
+            type: float
+            default: 0.0
+            min: -60.0
+            max: 6.0
+      - verb: audio.looper.2.level
+        label: Track 3 — Level (dB)
+        action_template:
+          action: set
+        arg_prompts:
+          - name: db
+            label: Level (dB, clamped -60..+6)
+            type: float
+            default: 0.0
+            min: -60.0
+            max: 6.0
+      - verb: audio.looper.3.level
+        label: Track 4 — Level (dB)
+        action_template:
+          action: set
+        arg_prompts:
+          - name: db
+            label: Level (dB, clamped -60..+6)
+            type: float
+            default: 0.0
+            min: -60.0
+            max: 6.0
+      - verb: audio.looper.0.muted
+        label: Track 1 — Mute (toggle)
+        action_template:
+          action: toggle
+      - verb: audio.looper.1.muted
+        label: Track 2 — Mute (toggle)
+        action_template:
+          action: toggle
+      - verb: audio.looper.2.muted
+        label: Track 3 — Mute (toggle)
+        action_template:
+          action: toggle
+      - verb: audio.looper.3.muted
+        label: Track 4 — Mute (toggle)
+        action_template:
+          action: toggle
+      - verb: audio.looper.0.soloed
+        label: Track 1 — Solo (toggle)
+        action_template:
+          action: toggle
+      - verb: audio.looper.1.soloed
+        label: Track 2 — Solo (toggle)
+        action_template:
+          action: toggle
+      - verb: audio.looper.2.soloed
+        label: Track 3 — Solo (toggle)
+        action_template:
+          action: toggle
+      - verb: audio.looper.3.soloed
+        label: Track 4 — Solo (toggle)
+        action_template:
+          action: toggle
+      - verb: audio.looper.0.reverse
+        label: Track 1 — Reverse (toggle)
+        action_template:
+          action: toggle
+      - verb: audio.looper.1.reverse
+        label: Track 2 — Reverse (toggle)
+        action_template:
+          action: toggle
+      - verb: audio.looper.2.reverse
+        label: Track 3 — Reverse (toggle)
+        action_template:
+          action: toggle
+      - verb: audio.looper.3.reverse
+        label: Track 4 — Reverse (toggle)
+        action_template:
+          action: toggle
+      - verb: audio.looper.0.half_speed
+        label: Track 1 — Half-speed (toggle)
+        action_template:
+          action: toggle
+      - verb: audio.looper.1.half_speed
+        label: Track 2 — Half-speed (toggle)
+        action_template:
+          action: toggle
+      - verb: audio.looper.2.half_speed
+        label: Track 3 — Half-speed (toggle)
+        action_template:
+          action: toggle
+      - verb: audio.looper.3.half_speed
+        label: Track 4 — Half-speed (toggle)
+        action_template:
+          action: toggle
+
+  - id: master
+    label: Master bus
+    description: |
+      Master-level fader. No per-track index; ride this from an
+      expression pedal for a hands-free volume ride across all
+      four loop tracks.
+    targets:
+      - verb: audio.looper.master.level
+        label: Master level (dB)
+        action_template:
+          action: set
+        arg_prompts:
+          - name: db
+            label: Level (dB, clamped -60..+6)
+            type: float
+            default: 0.0
+            min: -60.0
+            max: 6.0
