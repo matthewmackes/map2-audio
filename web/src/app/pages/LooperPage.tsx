@@ -291,8 +291,14 @@ export function LooperPage() {
               <Tag type="cool-gray" size="sm">
                 Active tracks: {status.active_track_count}
               </Tag>
-              {status.sync_master ? (
-                <Tag type="blue" size="sm">Track 0 = sync master</Tag>
+              {status.sync_master && status.sync_master_track != null ? (
+                <Tag
+                  type="blue"
+                  size="sm"
+                  data-testid="looper-master-sync-tag"
+                >
+                  Track {status.sync_master_track + 1} = sync master
+                </Tag>
               ) : null}
             </div>
           </Tile>

@@ -467,6 +467,78 @@ describe('LooperPage T2512-PAGE-V2 advanced state surface', () => {
   })
 })
 
+describe('LooperPage T2512-FIX-SYNC-TAG master sync indicator', () => {
+  it('does not render the sync-master tag when sync_master is false', async () => {
+    renderPage()
+    await screen.findByTestId('looper-ws-status')
+    // Initial mock snapshot has sync_master: false.
+    expect(screen.queryByTestId('looper-master-sync-tag')).toBeNull()
+  })
+
+  it('renders "Track N = sync master" using sync_master_track from status', async () => {
+    renderPage()
+    await screen.findByTestId('looper-ws-status')
+    act(() => {
+      sockets[0]!.onopen?.call(sockets[0] as unknown as WebSocket)
+    })
+
+    // Push a frame with Track 3 (index 2) as the sync master.
+    const frame = {
+      type: 'looper_status',
+      payload: {
+        ...mockIdleSnapshot,
+        sync_master: true,
+        sync_master_track: 2,
+        tracks: mockIdleSnapshot.tracks.map((t, i) =>
+          i === 2 ? { ...t, sync_mode: 'master' as const } : t,
+        ),
+      },
+    }
+    act(() => {
+      sockets[0]!.onmessage?.call(
+        sockets[0] as unknown as WebSocket,
+        { data: JSON.stringify(frame) } as MessageEvent,
+      )
+    })
+
+    const tag = await screen.findByTestId('looper-master-sync-tag')
+    // Display uses 1-based track numbering — index 2 → "Track 3".
+    expect(tag).toHaveTextContent('Track 3 = sync master')
+  })
+
+  it('honors sync_master_track even when it is 0 (formerly hardcoded)', async () => {
+    // Regression: the prior implementation hard-coded "Track 0" in
+    // the label. This test pins the new behavior where track index
+    // 0 explicitly resolves to "Track 1" (1-based display).
+    renderPage()
+    await screen.findByTestId('looper-ws-status')
+    act(() => {
+      sockets[0]!.onopen?.call(sockets[0] as unknown as WebSocket)
+    })
+
+    const frame = {
+      type: 'looper_status',
+      payload: {
+        ...mockIdleSnapshot,
+        sync_master: true,
+        sync_master_track: 0,
+        tracks: mockIdleSnapshot.tracks.map((t, i) =>
+          i === 0 ? { ...t, sync_mode: 'master' as const } : t,
+        ),
+      },
+    }
+    act(() => {
+      sockets[0]!.onmessage?.call(
+        sockets[0] as unknown as WebSocket,
+        { data: JSON.stringify(frame) } as MessageEvent,
+      )
+    })
+
+    const tag = await screen.findByTestId('looper-master-sync-tag')
+    expect(tag).toHaveTextContent('Track 1 = sync master')
+  })
+})
+
 describe('LooperPage T2512-CLOCK BPM tag', () => {
   it('renders the BPM tag when status.bpm is non-null', async () => {
     renderPage()
