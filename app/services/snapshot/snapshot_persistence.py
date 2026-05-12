@@ -863,6 +863,8 @@ class SnapshotPersistenceMixin:
         detail["io_bindings"] = {
             "input_device": snapshot.input_device,
             "output_device": snapshot.output_device,
+            "input_interface_id": detail["controls"].get("input_interface_id"),
+            "output_interface_id": detail["controls"].get("output_interface_id"),
             "monitoring_output_index": detail["controls"].get("monitoring_output_index"),
             "remap_required": False,
         }
@@ -1548,15 +1550,17 @@ class SnapshotPersistenceMixin:
             ),
             "input_device": snapshot.input_device,
             "output_device": snapshot.output_device,
-            "io_bindings": {
+            "io_bindings": (lambda controls: {
                 "input_device": snapshot.input_device,
                 "output_device": snapshot.output_device,
-                "monitoring_output_index": self._normalize_controls_payload(
-                    snapshot.controls_payload if isinstance(snapshot.controls_payload, dict) else None,
-                    None,
-                ).get("monitoring_output_index"),
+                "input_interface_id": controls.get("input_interface_id"),
+                "output_interface_id": controls.get("output_interface_id"),
+                "monitoring_output_index": controls.get("monitoring_output_index"),
                 "remap_required": False,
-            },
+            })(self._normalize_controls_payload(
+                snapshot.controls_payload if isinstance(snapshot.controls_payload, dict) else None,
+                None,
+            )),
             "lineage": {
                 "derived_from_snapshot_id": snapshot.derived_from_snapshot_id,
             },

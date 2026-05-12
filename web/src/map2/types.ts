@@ -2410,6 +2410,8 @@ export interface SnapshotPath {
 export interface SnapshotIOBindings {
   input_device: string | null;
   output_device: string | null;
+  input_interface_id?: string | null;
+  output_interface_id?: string | null;
   monitoring_output_index?: number | null;
   remap_required: boolean;
 }
@@ -2419,6 +2421,8 @@ export interface SnapshotControls {
   automation_lanes: Array<Record<string, unknown>>;
   expression_mappings: SnapshotExpressionMapping[];
   monitoring_output_index?: number | null;
+  input_interface_id?: string | null;
+  output_interface_id?: string | null;
   maschine_encoder_map: SnapshotMaschineEncoderMap;
 }
 
@@ -2640,6 +2644,8 @@ export interface AudioStateSnapshotRef {
 export interface AudioStateDesiredIO {
   requested_input_device?: string | null;
   requested_output_device?: string | null;
+  requested_input_interface_id?: string | null;
+  requested_output_interface_id?: string | null;
   monitoring_output_index?: number | null;
 }
 

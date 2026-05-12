@@ -150,6 +150,8 @@ class SnapshotPublishReadiness(BaseModel):
 class AudioStateDesiredIO(BaseModel):
     requested_input_device: Optional[str] = None
     requested_output_device: Optional[str] = None
+    requested_input_interface_id: Optional[str] = None
+    requested_output_interface_id: Optional[str] = None
     monitoring_output_index: Optional[int] = None
 
 

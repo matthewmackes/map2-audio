@@ -99,6 +99,8 @@ class SnapshotPathInput(BaseModel):
 class SnapshotIOBindingsInput(BaseModel):
     input_device: Optional[str] = None
     output_device: Optional[str] = None
+    input_interface_id: Optional[str] = None
+    output_interface_id: Optional[str] = None
     monitoring_output_index: Optional[int] = Field(default=None, ge=0)
 
 
@@ -107,6 +109,8 @@ class SnapshotControlsInput(BaseModel):
     automation_lanes: list[dict[str, Any]] = Field(default_factory=list)
     expression_mappings: list[dict[str, Any]] = Field(default_factory=list)
     monitoring_output_index: Optional[int] = Field(default=None, ge=0)
+    input_interface_id: Optional[str] = None
+    output_interface_id: Optional[str] = None
     maschine_encoder_map: dict[str, Any] = Field(default_factory=dict)
 
 
@@ -293,15 +297,36 @@ def _monitoring_output_index_from_request(request: SnapshotCreateRequest | Snaps
     return UNSET
 
 
+def _interface_id_from_request(
+    request: SnapshotCreateRequest | SnapshotUpdateRequest, field_name: str
+) -> Any:
+    if request.io_bindings is not None and field_name in request.io_bindings.model_fields_set:
+        return getattr(request.io_bindings, field_name)
+    if request.controls is not None and field_name in request.controls.model_fields_set:
+        return getattr(request.controls, field_name)
+    return UNSET
+
+
 def _controls_payload_from_request(request: SnapshotCreateRequest | SnapshotUpdateRequest) -> Any:
     monitoring_output_index = _monitoring_output_index_from_request(request)
+    input_interface_id = _interface_id_from_request(request, "input_interface_id")
+    output_interface_id = _interface_id_from_request(request, "output_interface_id")
 
     if isinstance(request, SnapshotUpdateRequest) and request.controls is None:
-        if monitoring_output_index is UNSET:
+        if (
+            monitoring_output_index is UNSET
+            and input_interface_id is UNSET
+            and output_interface_id is UNSET
+        ):
             return UNSET
-        return {
-            "monitoring_output_index": monitoring_output_index,
-        }
+        payload: dict[str, Any] = {}
+        if monitoring_output_index is not UNSET:
+            payload["monitoring_output_index"] = monitoring_output_index
+        if input_interface_id is not UNSET:
+            payload["input_interface_id"] = input_interface_id
+        if output_interface_id is not UNSET:
+            payload["output_interface_id"] = output_interface_id
+        return payload
 
     payload = (
         request.controls.model_dump(exclude_none=True, exclude_unset=True)
@@ -312,6 +337,10 @@ def _controls_payload_from_request(request: SnapshotCreateRequest | SnapshotUpda
         payload["monitoring_output_index"] = request.controls.monitoring_output_index
     if monitoring_output_index is not UNSET:
         payload["monitoring_output_index"] = monitoring_output_index
+    if input_interface_id is not UNSET:
+        payload["input_interface_id"] = input_interface_id
+    if output_interface_id is not UNSET:
+        payload["output_interface_id"] = output_interface_id
     return payload or None
 
 

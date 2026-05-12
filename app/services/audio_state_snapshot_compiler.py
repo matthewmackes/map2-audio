@@ -136,6 +136,24 @@ def compile_snapshot_detail_to_intent(
         io=AudioStateDesiredIO(
             requested_input_device=(detail.get("io_bindings") or {}).get("input_device") if isinstance(detail.get("io_bindings"), dict) else detail.get("input_device"),
             requested_output_device=(detail.get("io_bindings") or {}).get("output_device") if isinstance(detail.get("io_bindings"), dict) else detail.get("output_device"),
+            requested_input_interface_id=(
+                (detail.get("io_bindings") or {}).get("input_interface_id")
+                if isinstance(detail.get("io_bindings"), dict)
+                else (
+                    (detail.get("controls") or {}).get("input_interface_id")
+                    if isinstance(detail.get("controls"), dict)
+                    else None
+                )
+            ),
+            requested_output_interface_id=(
+                (detail.get("io_bindings") or {}).get("output_interface_id")
+                if isinstance(detail.get("io_bindings"), dict)
+                else (
+                    (detail.get("controls") or {}).get("output_interface_id")
+                    if isinstance(detail.get("controls"), dict)
+                    else None
+                )
+            ),
             monitoring_output_index=(
                 (detail.get("controls") or {}).get("monitoring_output_index")
                 if isinstance(detail.get("controls"), dict)

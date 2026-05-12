@@ -81,6 +81,9 @@ export const audioApi = {
   getPorts: (nodeId?: string | null) =>
     fetchJson<Api.AudioPortsResponse>(appendNodeQuery(`${API_BASE}/audio/ports`, nodeId)),
 
+  getInterfaces: (nodeId?: string | null) =>
+    fetchJson<Api.AudioInterfacesResponse>(appendNodeQuery(`${API_BASE}/audio/interfaces`, nodeId)),
+
   getRouting: (nodeId?: string | null) =>
     fetchJson<Api.AudioRoutingResponse>(appendNodeQuery(`${API_BASE}/audio/routing`, nodeId)),
 

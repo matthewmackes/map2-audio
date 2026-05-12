@@ -492,6 +492,36 @@ export interface AudioPortsResponse {
   error?: string;
 }
 
+export type AudioInterfaceTransport =
+  | 'pipewire_usb'
+  | 'pipewire_alsa'
+  | 'pipewire_other'
+  | 'avb'
+  | 'cluster';
+
+export interface AudioInterfaceRecord {
+  interface_id: string;
+  display_name: string;
+  transport: AudioInterfaceTransport;
+  vendor: string | null;
+  product: string | null;
+  serial: string | null;
+  input_port_count: number;
+  output_port_count: number;
+  sample_rate: number | null;
+  available: boolean;
+  is_default: boolean;
+  node_id: string | null;
+  direction: 'talker' | 'listener' | null;
+  notes: string[];
+}
+
+export interface AudioInterfacesResponse {
+  interfaces: AudioInterfaceRecord[];
+  default_interface_id: string | null;
+  transports: AudioInterfaceTransport[];
+}
+
 export interface AudioRoutingResponse {
   available: boolean;
   input_ports: number[];

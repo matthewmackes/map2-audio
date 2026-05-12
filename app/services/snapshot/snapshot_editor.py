@@ -33,6 +33,16 @@ class SnapshotEditorMixin:
                 if isinstance(io_source, dict):
                     monitoring_output_index = io_source.get("monitoring_output_index")
         payload["monitoring_output_index"] = _normalize_monitoring_output_index(monitoring_output_index)
+        payload["input_interface_id"] = _normalize_interface_id_payload(
+            payload.get("input_interface_id"),
+            detail_payload,
+            ("input_interface_id",),
+        )
+        payload["output_interface_id"] = _normalize_interface_id_payload(
+            payload.get("output_interface_id"),
+            detail_payload,
+            ("output_interface_id",),
+        )
         payload["maschine_encoder_map"] = normalize_maschine_encoder_map(payload.get("maschine_encoder_map"))
         payload["controller_mappings"] = _normalize_controller_mappings_payload(
             payload.get("controller_mappings"),

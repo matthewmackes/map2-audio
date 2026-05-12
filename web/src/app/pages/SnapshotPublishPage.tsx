@@ -31,10 +31,10 @@ import type {
 import {
   SNAPSHOT_IO_USE_DEFAULT_OPTION,
   collectMonitoringOutputPairOptions,
-  collectSnapshotIoDeviceOptions,
   normalizeSelectDeviceValue,
 } from '../utils/snapshotIoBindings'
 import { SnapshotPublishAudioPortWorkspace } from '../components/snapshots/SnapshotPublishAudioPortWorkspace'
+import { SnapshotInterfacePicker } from '../components/snapshots/SnapshotInterfacePicker'
 import { PublishPerformanceShell } from '../components/snapshots/publish/PublishPerformanceShell'
 import { RoutingTopologyContent } from '../components/modals/RoutingTopologyContent'
 import { fingerprintSnapshotData } from '../components/SnapshotEditor/snapshotEditorComparison'
@@ -497,6 +497,8 @@ export function SnapshotPublishPage() {
   const [sessionInputValue, setSessionInputValue] = useState<string>(SNAPSHOT_IO_USE_DEFAULT_OPTION)
   const [sessionOutputValue, setSessionOutputValue] = useState<string>(SNAPSHOT_IO_USE_DEFAULT_OPTION)
   const [sessionMonitoringValue, setSessionMonitoringValue] = useState<string>(SNAPSHOT_IO_USE_DEFAULT_OPTION)
+  const [sessionInputInterfaceId, setSessionInputInterfaceId] = useState<string | null>(null)
+  const [sessionOutputInterfaceId, setSessionOutputInterfaceId] = useState<string | null>(null)
   const [saveRigDefaults, setSaveRigDefaults] = useState(false)
   const [editorWorkingDraft, setEditorWorkingDraft] = useState<LiveWorkingSnapshotDraftRecord | null>(null)
   const [activeWizardStep, setActiveWizardStep] = useState<WizardStepId>('save')
@@ -686,6 +688,16 @@ export function SnapshotPublishPage() {
     }
     setSessionInputValue(snapshot.input_device ?? SNAPSHOT_IO_USE_DEFAULT_OPTION)
     setSessionOutputValue(snapshot.output_device ?? SNAPSHOT_IO_USE_DEFAULT_OPTION)
+    setSessionInputInterfaceId(
+      snapshot.io_bindings?.input_interface_id
+        ?? snapshot.controls?.input_interface_id
+        ?? null,
+    )
+    setSessionOutputInterfaceId(
+      snapshot.io_bindings?.output_interface_id
+        ?? snapshot.controls?.output_interface_id
+        ?? null,
+    )
     setSessionMonitoringValue(
       snapshot.controls?.monitoring_output_index != null
         ? String(snapshot.controls.monitoring_output_index)
@@ -694,10 +706,14 @@ export function SnapshotPublishPage() {
           : SNAPSHOT_IO_USE_DEFAULT_OPTION,
     )
   }, [
+    snapshot?.controls?.input_interface_id,
     snapshot?.controls?.monitoring_output_index,
+    snapshot?.controls?.output_interface_id,
     snapshot?.id,
     snapshot?.input_device,
+    snapshot?.io_bindings?.input_interface_id,
     snapshot?.io_bindings?.monitoring_output_index,
+    snapshot?.io_bindings?.output_interface_id,
     snapshot?.output_device,
   ])
 
@@ -919,6 +935,8 @@ export function SnapshotPublishPage() {
         controls: {
           ...(currentSnapshot?.controls ?? {}),
           monitoring_output_index: monitoringOutputIndex,
+          input_interface_id: sessionInputInterfaceId,
+          output_interface_id: sessionOutputInterfaceId,
         },
       })
       return {
@@ -997,22 +1015,6 @@ export function SnapshotPublishPage() {
     return cards
   }, [clusterNodes, fallbackLocalHostId, runtimeStateQuery.data?.is_offline, selectedDeployment?.primary_node_id, selectedHostId])
 
-  const hostDeviceOptions = useMemo(() => collectSnapshotIoDeviceOptions(hostAudioStatusQuery.data, {
-    input: [
-      snapshot?.input_device ?? null,
-      snapshotIoDefaultsQuery.data?.input_device ?? null,
-    ],
-    output: [
-      snapshot?.output_device ?? null,
-      snapshotIoDefaultsQuery.data?.output_device ?? null,
-    ],
-  }), [
-    hostAudioStatusQuery.data,
-    snapshot?.input_device,
-    snapshot?.output_device,
-    snapshotIoDefaultsQuery.data?.input_device,
-    snapshotIoDefaultsQuery.data?.output_device,
-  ])
 
   const monitoringOutputOptions = useMemo(
     () => collectMonitoringOutputPairOptions(hostPortsQuery.data?.outputs ?? []),
@@ -1524,36 +1526,27 @@ export function SnapshotPublishPage() {
                     ) : null}
                   </div>
                 </div>
+                <div className="snapshot-publish-page__interface-grid">
+                  <SnapshotInterfacePicker
+                    nodeId={selectedHostId}
+                    direction="input"
+                    selectedInterfaceId={sessionInputInterfaceId}
+                    onChange={setSessionInputInterfaceId}
+                    disabled={!selectedHostId || applySnapshotIoMutation.isPending}
+                  />
+                  <SnapshotInterfacePicker
+                    nodeId={selectedHostId}
+                    direction="output"
+                    selectedInterfaceId={sessionOutputInterfaceId}
+                    onChange={setSessionOutputInterfaceId}
+                    disabled={!selectedHostId || applySnapshotIoMutation.isPending}
+                  />
+                </div>
                 <div className="snapshot-publish-page__device-grid">
-                  <Select
-                    id="snapshot-publish-input-device"
-                    labelText="Session input device"
-                    value={sessionInputValue}
-                    onChange={(event) => setSessionInputValue(event.target.value)}
-                    disabled={!selectedHostId || applySnapshotIoMutation.isPending}
-                  >
-                    <SelectItem value={SNAPSHOT_IO_USE_DEFAULT_OPTION} text="Use rig default input" />
-                    {hostDeviceOptions.inputOptions.map((option) => (
-                      <SelectItem key={`publish-input-${option}`} value={option} text={option} />
-                    ))}
-                  </Select>
-
-                  <Select
-                    id="snapshot-publish-output-device"
-                    labelText="Session output device"
-                    value={sessionOutputValue}
-                    onChange={(event) => setSessionOutputValue(event.target.value)}
-                    disabled={!selectedHostId || applySnapshotIoMutation.isPending}
-                  >
-                    <SelectItem value={SNAPSHOT_IO_USE_DEFAULT_OPTION} text="Use rig default output" />
-                    {hostDeviceOptions.outputOptions.map((option) => (
-                      <SelectItem key={`publish-output-${option}`} value={option} text={option} />
-                    ))}
-                  </Select>
-
                   <Select
                     id="snapshot-publish-monitor-output"
                     labelText="Monitoring output"
+                    helperText="Specific physical output pair the operator monitors on this host."
                     value={sessionMonitoringValue}
                     onChange={(event) => setSessionMonitoringValue(event.target.value)}
                     disabled={!selectedHostId || applySnapshotIoMutation.isPending}
@@ -1969,43 +1962,34 @@ export function SnapshotPublishPage() {
                         </Tag>
                       </div>
                     </div>
+                    <div className="snapshot-publish-page__interface-grid">
+                      <SnapshotInterfacePicker
+                        nodeId={selectedHostId}
+                        direction="input"
+                        selectedInterfaceId={sessionInputInterfaceId}
+                        onChange={setSessionInputInterfaceId}
+                        disabled={!selectedHostId || applySnapshotIoMutation.isPending}
+                      />
+                      <SnapshotInterfacePicker
+                        nodeId={selectedHostId}
+                        direction="output"
+                        selectedInterfaceId={sessionOutputInterfaceId}
+                        onChange={setSessionOutputInterfaceId}
+                        disabled={!selectedHostId || applySnapshotIoMutation.isPending}
+                      />
+                    </div>
                     <div className="snapshot-publish-page__device-grid">
                       <Select
-                        id="snapshot-publish-input-device"
-                        labelText="Session input device"
-                        value={sessionInputValue}
-                        onChange={(event) => setSessionInputValue(event.target.value)}
-                        disabled={!selectedHostId || applySnapshotIoMutation.isPending}
-                      >
-                        <SelectItem value={SNAPSHOT_IO_USE_DEFAULT_OPTION} text="Use rig default input" />
-                        {hostDeviceOptions.inputOptions.map((option) => (
-                          <SelectItem key={`publish-input-${option}`} value={option} text={option} />
-                        ))}
-                      </Select>
-
-                      <Select
-                        id="snapshot-publish-output-device"
-                        labelText="Session output device"
-                        value={sessionOutputValue}
-                        onChange={(event) => setSessionOutputValue(event.target.value)}
-                        disabled={!selectedHostId || applySnapshotIoMutation.isPending}
-                      >
-                        <SelectItem value={SNAPSHOT_IO_USE_DEFAULT_OPTION} text="Use rig default output" />
-                        {hostDeviceOptions.outputOptions.map((option) => (
-                          <SelectItem key={`publish-output-${option}`} value={option} text={option} />
-                        ))}
-                      </Select>
-
-                      <Select
-                        id="snapshot-publish-monitor-output"
+                        id="snapshot-publish-wizard-monitor-output"
                         labelText="Monitoring output"
+                        helperText="Specific physical output pair the operator monitors on this host."
                         value={sessionMonitoringValue}
                         onChange={(event) => setSessionMonitoringValue(event.target.value)}
                         disabled={!selectedHostId || applySnapshotIoMutation.isPending}
                       >
                         <SelectItem value={SNAPSHOT_IO_USE_DEFAULT_OPTION} text="Use rig default monitor output" />
                         {monitoringOutputOptions.map((option) => (
-                          <SelectItem key={`publish-monitor-${option.value}`} value={option.value} text={option.label} />
+                          <SelectItem key={`publish-wizard-monitor-${option.value}`} value={option.value} text={option.label} />
                         ))}
                       </Select>
                     </div>

@@ -591,6 +591,41 @@ def _normalize_monitoring_output_index(value: Any) -> Optional[int]:
     return normalized if normalized >= 0 else None
 
 
+def _normalize_interface_id(value: Any) -> Optional[str]:
+    """Coerce a stable audio-interface ID to its canonical string form, or None."""
+    if value is None:
+        return None
+    text = str(value).strip()
+    return text or None
+
+
+def _normalize_interface_id_payload(
+    value: Any,
+    detail_payload: Optional[dict[str, Any]] = None,
+    detail_lookup: tuple[str, ...] = (),
+) -> Optional[str]:
+    """Resolve an interface ID from an explicit value, with fallbacks.
+
+    Looks in `detail_payload['controls']` and `detail_payload['io_bindings']`
+    for the matching key when the inline value is missing. This mirrors the
+    fallback pattern used by `_normalize_monitoring_output_index`.
+    """
+    resolved = _normalize_interface_id(value)
+    if resolved is not None or not detail_lookup:
+        return resolved
+    if not isinstance(detail_payload, dict):
+        return None
+    for source_key in ("controls", "io_bindings"):
+        source = detail_payload.get(source_key)
+        if not isinstance(source, dict):
+            continue
+        for lookup_key in detail_lookup:
+            candidate = _normalize_interface_id(source.get(lookup_key))
+            if candidate is not None:
+                return candidate
+    return None
+
+
 def _utcnow() -> datetime:
     return utc_now()
 
