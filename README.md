@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1598** Python | **1651** TypeScript | **222** C++/H | **149** Docs | **4333** total commits | **4** stars | **0** forks | **0** open issues
+**1614** Python | **1664** TypeScript | **222** C++/H | **149** Docs | **4336** total commits | **4** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`ae4de3e1`](https://github.com/matthewmackes/map2-audio/commit/ae4de3e1c4443622b013d08da99220ee18170f74) | feat(looper): T2512-AUTO — service-side auto-record state... | Map2 Audio | 2026-05-12 |
+| [`93efabd2`](https://github.com/matthewmackes/map2-audio/commit/93efabd21a3adec988af619975bf0371705245b8) | feat(devices,effects): T2515 + T2517 — TASCAM US-144MKII ... | Map2 Audio | 2026-05-12 |
+| [`4926d7b3`](https://github.com/matthewmackes/map2-audio/commit/4926d7b367960b6483749fb82badf5d978eaa72b) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-12 |
 | [`acba013c`](https://github.com/matthewmackes/map2-audio/commit/acba013c4d37eb43b357ae4813ac8ae92f530fbd) | feat(looper,clock): T2512-CLOCK (inbound) — surface snaps... | Map2 Audio | 2026-05-12 |
 | [`6f1ba060`](https://github.com/matthewmackes/map2-audio/commit/6f1ba060d3716af12fa74eb50a4a5992ae763aa5) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-12 |
 | [`b39f8d95`](https://github.com/matthewmackes/map2-audio/commit/b39f8d953613ffbdc37e020466ff4085ae09be2f) | Merge branch 'master' of https://github.com/matthewmackes... | Map2 Audio | 2026-05-12 |
 | [`32d3df28`](https://github.com/matthewmackes/map2-audio/commit/32d3df2898794ba986f3a8f815ad766cc726cf0f) | feat(looper): T2512-OS — per-track one-shot / trigger mod... | Map2 Audio | 2026-05-12 |
 | [`1de4e278`](https://github.com/matthewmackes/map2-audio/commit/1de4e2789fb374d7fe2e0dc779793c7c6797bda3) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-12 |
-| [`cca7fba1`](https://github.com/matthewmackes/map2-audio/commit/cca7fba166de4aa7f970add5ba72ebb5fd4f055b) | docs(worklist): T2512 — file remaining looper follow-on w... | Map2 Audio | 2026-05-12 |
-| [`c5239beb`](https://github.com/matthewmackes/map2-audio/commit/c5239bebf45ca918efd39f63b76ed660b9a63f79) | test(looper,bridge): T2512-MIDI — end-to-end engine_comma... | Map2 Audio | 2026-05-12 |
-| [`cbb4d9cc`](https://github.com/matthewmackes/map2-audio/commit/cbb4d9cce2cb97c541a139b15a80fdb12e4dc785) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-12 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
