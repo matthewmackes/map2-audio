@@ -55,6 +55,7 @@ EXPECTED_PATHS_BY_METHOD: dict[str, set[str]] = {
         "/api/v1/looper/track/{track}/fade-ms",          # T2512-FADE
         "/api/v1/looper/track/{track}/sync-mode",        # T2512-SYNC
         "/api/v1/looper/track/{track}/quantize-division",  # T2512-QUANT-WIRE
+        "/api/v1/looper/track/{track}/slices/{start_frame}",  # T2512-SLICE-RENAME
         "/api/v1/looper/master/level",
     },
     "delete": {

@@ -1214,6 +1214,114 @@ def test_delete_slice_broadcasts() -> None:
 
 
 # ---------------------------------------------------------------------------
+# T2512-SLICE-RENAME — label update by start_frame
+# ---------------------------------------------------------------------------
+
+
+def test_rename_slice_updates_label() -> None:
+    service = LooperService()
+    service.add_slice(0, 0, 1000, "verse")
+    service.rename_slice(0, 0, "chorus")
+    status = service.get_status()
+    assert status.tracks[0].slices[0].label == "chorus"
+
+
+def test_rename_slice_preserves_frame_range() -> None:
+    """Rename must not touch start_frame / end_frame."""
+    service = LooperService()
+    service.add_slice(0, 100, 500, "old")
+    service.rename_slice(0, 100, "new")
+    status = service.get_status()
+    slc = status.tracks[0].slices[0]
+    assert slc.start_frame == 100
+    assert slc.end_frame == 500
+    assert slc.label == "new"
+
+
+def test_rename_slice_clears_label_with_empty_string() -> None:
+    """Passing an empty / whitespace label is intentionally allowed
+    and clears the existing label without deleting the slice."""
+    service = LooperService()
+    service.add_slice(0, 0, 1000, "original")
+    service.rename_slice(0, 0, "")
+    status = service.get_status()
+    assert status.tracks[0].slices[0].label == ""
+    # Slice still exists.
+    assert len(status.tracks[0].slices) == 1
+
+
+def test_rename_slice_whitespace_label_trims_to_empty() -> None:
+    service = LooperService()
+    service.add_slice(0, 0, 1000, "x")
+    service.rename_slice(0, 0, "   \t  \n  ")
+    status = service.get_status()
+    assert status.tracks[0].slices[0].label == ""
+
+
+def test_rename_slice_trims_long_label() -> None:
+    """Same 64-char ceiling as add_slice."""
+    service = LooperService()
+    service.add_slice(0, 0, 1000, "short")
+    long_label = "x" * 200
+    service.rename_slice(0, 0, long_label)
+    status = service.get_status()
+    assert len(status.tracks[0].slices[0].label) == 64
+
+
+def test_rename_slice_not_found_raises() -> None:
+    service = LooperService()
+    service.add_slice(0, 0, 1000, "verse")
+    with pytest.raises(LooperServiceError) as exc:
+        service.rename_slice(0, 9999, "missing")
+    assert exc.value.code == "slice_not_found"
+
+
+def test_rename_slice_invalid_track_raises() -> None:
+    service = LooperService()
+    with pytest.raises(LooperServiceError):
+        service.rename_slice(9, 0, "no")
+
+
+def test_rename_slice_invalid_start_frame_type_raises() -> None:
+    service = LooperService()
+    service.add_slice(0, 0, 1000, "x")
+    with pytest.raises(LooperServiceError) as exc:
+        service.rename_slice(0, "not-an-int", "label")  # type: ignore[arg-type]
+    assert exc.value.code == "invalid_slice"
+
+
+def test_rename_slice_per_track() -> None:
+    """Renaming a slice on track 0 must not touch track 1."""
+    service = LooperService()
+    service.add_slice(0, 0, 1000, "t0-a")
+    service.add_slice(1, 0, 1000, "t1-a")
+    service.rename_slice(0, 0, "t0-renamed")
+    status = service.get_status()
+    assert status.tracks[0].slices[0].label == "t0-renamed"
+    assert status.tracks[1].slices[0].label == "t1-a"
+
+
+def test_rename_slice_broadcasts() -> None:
+    received: list = []
+    service = LooperService(broadcaster=received.append)
+    service.add_slice(0, 0, 1000, "a")
+    received.clear()
+    service.rename_slice(0, 0, "renamed")
+    assert len(received) == 1
+    assert received[0].tracks[0].slices[0].label == "renamed"
+
+
+def test_rename_slice_does_not_change_slice_count() -> None:
+    service = LooperService()
+    service.add_slice(0, 0, 1000, "a")
+    service.add_slice(0, 1100, 2000, "b")
+    service.rename_slice(0, 1100, "B-renamed")
+    status = service.get_status()
+    labels = [s.label for s in status.tracks[0].slices]
+    assert labels == ["a", "B-renamed"]
+
+
+# ---------------------------------------------------------------------------
 # T2512-SLICE-AT-PLAYHEAD — playhead-driven slice helper
 # ---------------------------------------------------------------------------
 

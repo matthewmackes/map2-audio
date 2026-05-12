@@ -940,6 +940,45 @@ class LooperService:
             ),
         )
 
+    def rename_slice(
+        self, track: int, start_frame: int, label: str
+    ) -> LooperStatus:
+        """T2512-SLICE-RENAME — replace an existing slice's label.
+
+        Identified by start_frame (unique per track). The new label is
+        trimmed + truncated to the same 64-char cap as ``add_slice``;
+        an empty / all-whitespace label is accepted and clears the
+        existing label (lets the operator un-label without deleting).
+        The slice's frame range is unchanged — this is metadata-only.
+
+        Raises ``LooperServiceError(slice_not_found)`` when no slice
+        on the track matches.
+        """
+        _validate_track(track)
+        try:
+            start = int(start_frame)
+        except (TypeError, ValueError):
+            raise LooperServiceError(
+                code="invalid_slice",
+                message=f"start_frame must be an integer (got {start_frame!r})",
+            )
+        sanitized = str(label or "").strip()[: self._MAX_LABEL_LENGTH]
+        existing = self._slices[track]
+        for idx, slc in enumerate(existing):
+            if slc.start_frame == start:
+                existing[idx] = TrackSlice(
+                    start_frame=slc.start_frame,
+                    end_frame=slc.end_frame,
+                    label=sanitized,
+                )
+                return self._broadcast(self.get_status())
+        raise LooperServiceError(
+            code="slice_not_found",
+            message=(
+                f"no slice on track {track} with start_frame={start}"
+            ),
+        )
+
     # T2512-QUANT-WIRE — quantize state + decision math ----------------
 
     _VALID_QUANTIZE_DIVISIONS = frozenset({

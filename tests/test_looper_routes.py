@@ -526,6 +526,94 @@ def test_delete_slice_invalid_track_returns_400() -> None:
 
 
 # ---------------------------------------------------------------------------
+# T2512-SLICE-RENAME — PATCH slice label by start_frame
+# ---------------------------------------------------------------------------
+
+
+def test_rename_slice_updates_label_route() -> None:
+    client, _, _ = _build_client()
+    client.post(
+        "/api/v1/looper/track/0/slices",
+        json={"start_frame": 0, "end_frame": 1000, "label": "old"},
+    )
+    resp = client.patch(
+        "/api/v1/looper/track/0/slices/0",
+        json={"label": "new"},
+    )
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["tracks"][0]["slices"][0]["label"] == "new"
+
+
+def test_rename_slice_route_preserves_other_fields() -> None:
+    client, _, _ = _build_client()
+    client.post(
+        "/api/v1/looper/track/0/slices",
+        json={"start_frame": 100, "end_frame": 500, "label": "x"},
+    )
+    resp = client.patch(
+        "/api/v1/looper/track/0/slices/100",
+        json={"label": "renamed"},
+    )
+    slc = resp.json()["tracks"][0]["slices"][0]
+    assert slc["start_frame"] == 100
+    assert slc["end_frame"] == 500
+    assert slc["label"] == "renamed"
+
+
+def test_rename_slice_route_empty_label_clears() -> None:
+    client, _, _ = _build_client()
+    client.post(
+        "/api/v1/looper/track/0/slices",
+        json={"start_frame": 0, "end_frame": 1000, "label": "verse"},
+    )
+    resp = client.patch(
+        "/api/v1/looper/track/0/slices/0",
+        json={"label": ""},
+    )
+    assert resp.status_code == 200
+    assert resp.json()["tracks"][0]["slices"][0]["label"] == ""
+
+
+def test_rename_unknown_slice_returns_404() -> None:
+    client, _, _ = _build_client()
+    client.post(
+        "/api/v1/looper/track/0/slices",
+        json={"start_frame": 0, "end_frame": 1000, "label": "a"},
+    )
+    resp = client.patch(
+        "/api/v1/looper/track/0/slices/9999",
+        json={"label": "nope"},
+    )
+    assert resp.status_code == 404
+
+
+def test_rename_slice_invalid_track_returns_400() -> None:
+    client, _, _ = _build_client()
+    resp = client.patch(
+        "/api/v1/looper/track/9/slices/0",
+        json={"label": "x"},
+    )
+    assert resp.status_code == 400
+
+
+def test_rename_slice_no_body_uses_empty_default() -> None:
+    """RenameSliceRequest.label defaults to '' so an empty JSON body
+    is valid; this also acts as a 'clear label' shortcut."""
+    client, _, _ = _build_client()
+    client.post(
+        "/api/v1/looper/track/0/slices",
+        json={"start_frame": 0, "end_frame": 1000, "label": "x"},
+    )
+    resp = client.patch(
+        "/api/v1/looper/track/0/slices/0",
+        json={},
+    )
+    assert resp.status_code == 200
+    assert resp.json()["tracks"][0]["slices"][0]["label"] == ""
+
+
+# ---------------------------------------------------------------------------
 # T2512-SLICE-AT-PLAYHEAD — playhead-driven slice route
 # ---------------------------------------------------------------------------
 

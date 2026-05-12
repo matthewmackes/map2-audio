@@ -223,6 +223,12 @@ class AddSliceAtPlayheadRequest(BaseModel):
     label: str = ""
 
 
+class RenameSliceRequest(BaseModel):
+    """T2512-SLICE-RENAME — replace a slice's label without changing
+    its frame range. Empty/whitespace label clears the existing one."""
+    label: str = ""
+
+
 class SetQuantizeDivisionRequest(BaseModel):
     """T2512-QUANT-WIRE — quantize division setter.
 
@@ -651,6 +657,26 @@ async def delete_track_slice(track: int, start_frame: int,
     """
     try:
         result = service.delete_slice(track, start_frame)
+    except LooperServiceError as exc:
+        raise _http_for_error(exc)
+    return LooperStatusResponse.from_status(result)
+
+
+@router.patch("/track/{track}/slices/{start_frame}",
+              response_model=LooperStatusResponse,
+              operation_id="looper_rename_track_slice",
+              summary="T2512-SLICE-RENAME — replace a slice's label by start_frame")
+async def rename_track_slice(track: int, start_frame: int,
+                             body: RenameSliceRequest,
+                             service: LooperService = Depends(_get_service)) -> LooperStatusResponse:
+    """T2512-SLICE-RENAME — update an existing slice's label.
+
+    Frame range is unchanged; label is trimmed + truncated to 64
+    chars. Empty label clears the existing one. Returns HTTP 404
+    ``slice_not_found`` when no slice on the track matches.
+    """
+    try:
+        result = service.rename_slice(track, start_frame, body.label)
     except LooperServiceError as exc:
         raise _http_for_error(exc)
     return LooperStatusResponse.from_status(result)
