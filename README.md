@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1595** Python | **1649** TypeScript | **222** C++/H | **149** Docs | **4313** total commits | **4** stars | **0** forks | **0** open issues
+**1595** Python | **1649** TypeScript | **222** C++/H | **149** Docs | **4315** total commits | **4** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`3a1986ff`](https://github.com/matthewmackes/map2-audio/commit/3a1986ff405d62b13c3dfccd66a9594833aab241) | feat(looper,midi): T2512-LOCK-MIDI — expose write-lock to... | Map2 Audio | 2026-05-12 |
+| [`e41af9d7`](https://github.com/matthewmackes/map2-audio/commit/e41af9d7e322e10c9c293e15a9cee5f67688b915) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-12 |
 | [`776ae4ac`](https://github.com/matthewmackes/map2-audio/commit/776ae4ac8fd0973fa3b1b487563720c5a9cca85f) | Merge branch 'master' of https://github.com/matthewmackes... | Map2 Audio | 2026-05-12 |
 | [`95b71eae`](https://github.com/matthewmackes/map2-audio/commit/95b71eaedfbaa9bd72a22c3e8a9dae9934a50f10) | feat(device-packs,looper): T2512-SCRIPT — generic QuickJS... | Map2 Audio | 2026-05-12 |
 | [`48494046`](https://github.com/matthewmackes/map2-audio/commit/484940469a842a602283c56ac1e9e6959d1140b8) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-12 |
 | [`1e671f2a`](https://github.com/matthewmackes/map2-audio/commit/1e671f2a9cc801be7b906ef2b0947b1ecf544c85) | Merge branch 'master' of https://github.com/matthewmackes... | Map2 Audio | 2026-05-12 |
 | [`b82eafc2`](https://github.com/matthewmackes/map2-audio/commit/b82eafc2a99829ce0757a076904023de7cce799a) | feat(device-packs,looper): T2512-FSW — generic looper-foo... | Map2 Audio | 2026-05-12 |
 | [`e82e4aeb`](https://github.com/matthewmackes/map2-audio/commit/e82e4aeb8ce37479d0b0abed85bfaa59ca2b68ae) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-12 |
-| [`a0c262b1`](https://github.com/matthewmackes/map2-audio/commit/a0c262b190d0a66ffe9aa226cab6b17bef83915b) | Merge branch 'master' of https://github.com/matthewmackes... | Map2 Audio | 2026-05-12 |
-| [`b25c181f`](https://github.com/matthewmackes/map2-audio/commit/b25c181ff16ea596ff7c1add1eeb9b023ef58eda) | feat(looper): T2512-LOCK — per-track write-lock toggle | Map2 Audio | 2026-05-12 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
