@@ -75,6 +75,7 @@ const mockIdleSnapshot: LooperStatus = {
     reverse: false,
     half_speed: false,
     locked: false,
+    one_shot: false,
   })),
   active_track_count: 0,
   sync_master: false,
@@ -95,6 +96,7 @@ jest.mock('../../map2/clients/looper', () => ({
     setReverse: jest.fn(async () => mockIdleSnapshot),
     setHalfSpeed: jest.fn(async () => mockIdleSnapshot),
     setLocked: jest.fn(async () => mockIdleSnapshot),
+    setOneShot: jest.fn(async () => mockIdleSnapshot),
     setMasterLevel: jest.fn(async () => mockIdleSnapshot),
   },
 }))

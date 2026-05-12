@@ -80,8 +80,8 @@ var Looper = Looper || {};
     var STOMP_VERBS = ['record', 'stop', 'clear', 'undo', 'redo'];
     // T2512-LOCK-MIDI — write-lock is exposed alongside the playback
     // bool toggles so a footswitch can engage write-protection from
-    // the same JS surface.
-    var BOOL_VERBS  = ['muted', 'soloed', 'reverse', 'half_speed', 'locked'];
+    // the same JS surface. T2512-OS adds one_shot for the same reason.
+    var BOOL_VERBS  = ['muted', 'soloed', 'reverse', 'half_speed', 'locked', 'one_shot'];
 
     Looper.track = [];
     for (var t = 0; t < NUM_TRACKS; t++) {
@@ -118,6 +118,7 @@ var Looper = Looper || {};
         globalThis[prefix + 'reverse']    = slot.reverse;
         globalThis[prefix + 'half_speed'] = slot.half_speed;
         globalThis[prefix + 'locked']     = slot.locked;
+        globalThis[prefix + 'one_shot']   = slot.one_shot;
         globalThis[prefix + 'level']      = slot.level;
     }
     globalThis['Looper.master.level'] = Looper.master.level;

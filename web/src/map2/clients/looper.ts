@@ -30,6 +30,8 @@ export interface LooperTrackStatus {
   half_speed: boolean
   /** T2512-LOCK — write-lock state. Locked tracks reject record/clear/undo/redo. */
   locked: boolean
+  /** T2512-OS — one-shot / trigger mode. Auto-stop after one playhead pass (runner deferred). */
+  one_shot: boolean
 }
 
 export interface LooperStatus {
@@ -57,6 +59,8 @@ export const looperApi = {
   setHalfSpeed: (track: number, half: boolean)   => patch(`${BASE}/track/${track}/half-speed`, { value: half }),
   /** T2512-LOCK — toggle the write-lock for a track. */
   setLocked:   (track: number, locked: boolean) => patch(`${BASE}/track/${track}/locked`,   { value: locked }),
+  /** T2512-OS — toggle one-shot / trigger mode for a track. */
+  setOneShot:  (track: number, oneShot: boolean) => patch(`${BASE}/track/${track}/one-shot`, { value: oneShot }),
   setMasterLevel: (db: number)                 => patch(`${BASE}/master/level`, { db }),
 }
 

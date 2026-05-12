@@ -266,9 +266,9 @@ def test_register_default_handlers_does_not_overlap_targets() -> None:
     # from T2512-MIDI = 9 total.
     # Pattern list: audio.chain.*.bypass + the 10 audio.looper.*.<verb>
     # patterns from T2512-MIDI + audio.looper.*.locked from
-    # T2512-LOCK-MIDI = 12.
+    # T2512-LOCK-MIDI + audio.looper.*.one_shot from T2512-OS = 13.
     assert len(dispatcher._exact) == 9  # type: ignore[attr-defined]
-    assert len(dispatcher._patterns) == 12  # type: ignore[attr-defined]
+    assert len(dispatcher._patterns) == 13  # type: ignore[attr-defined]
     expected_exact = {
         "audio.snapshot.recall",
         "audio.master.volume",
@@ -531,7 +531,8 @@ def test_looper_handlers_safe_with_no_hooks_wired() -> None:
     dispatcher.dispatch(_frame("audio.looper.2.muted", action="set", value=1.0))
     dispatcher.dispatch(_frame("audio.looper.master.level", action="set", value=0.0))
     dispatcher.dispatch(_frame("audio.looper.3.locked", action="set", value=1.0))
-    assert dispatcher.dispatched_count == 5
+    dispatcher.dispatch(_frame("audio.looper.0.one_shot", action="set", value=1.0))
+    assert dispatcher.dispatched_count == 6
     assert dispatcher.errored_count == 0
 
 
@@ -557,3 +558,38 @@ def test_looper_locked_invalid_track_dropped() -> None:
     d, log = _make_dispatcher_with_looper_hooks()
     d.dispatch(_frame("audio.looper.9.locked", action="set", value=1.0))
     assert log["locked"] == []
+
+
+# ---------------------------------------------------------------------------
+# T2512-OS — audio.looper.<n>.one_shot dispatcher target
+# ---------------------------------------------------------------------------
+
+
+def test_looper_one_shot_routes_via_set() -> None:
+    d, log = _make_dispatcher_with_looper_hooks()
+    # Extend the harness on the fly — the original log dict doesn't
+    # have a "one_shot" key, so capture via a side list.
+    one_shot_calls: list[tuple[int, bool]] = []
+
+    hooks = HandlerHooks(
+        looper_set_one_shot=lambda track, value: one_shot_calls.append(
+            (track, value)
+        ),
+    )
+    dispatcher = EngineCommandDispatcher()
+    register_default_handlers(dispatcher, hooks=hooks)
+    dispatcher.dispatch(_frame("audio.looper.0.one_shot", action="set", value=1.0))
+    dispatcher.dispatch(_frame("audio.looper.0.one_shot", action="set", value=0.0))
+    dispatcher.dispatch(_frame("audio.looper.3.one_shot", action="toggle"))
+    assert one_shot_calls == [(0, True), (0, False), (3, True)]
+
+
+def test_looper_one_shot_invalid_track_dropped() -> None:
+    called: list = []
+    hooks = HandlerHooks(
+        looper_set_one_shot=lambda track, value: called.append((track, value)),
+    )
+    dispatcher = EngineCommandDispatcher()
+    register_default_handlers(dispatcher, hooks=hooks)
+    dispatcher.dispatch(_frame("audio.looper.4.one_shot", action="set", value=1.0))
+    assert called == []

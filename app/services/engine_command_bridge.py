@@ -158,6 +158,10 @@ class EngineCommandBridge:
             looper_set_locked=lambda track, value: self._looper_call(
                 "set_locked", track, value
             ),
+            # T2512-OS — footswitch latches one-shot / trigger mode.
+            looper_set_one_shot=lambda track, value: self._looper_call(
+                "set_one_shot", track, value
+            ),
             looper_set_master_level=lambda value: self._looper_call_master(
                 "set_master_level_db", value
             ),

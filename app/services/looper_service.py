@@ -74,6 +74,7 @@ class TrackStatus:
     reverse:             bool
     half_speed:          bool
     locked:              bool = False  # T2512-LOCK — write-lock toggle
+    one_shot:            bool = False  # T2512-OS — one-shot / trigger mode
 
     def to_payload(self) -> dict[str, Any]:
         return {
@@ -89,6 +90,7 @@ class TrackStatus:
             "reverse":            self.reverse,
             "half_speed":         self.half_speed,
             "locked":             self.locked,
+            "one_shot":           self.one_shot,
         }
 
 
@@ -172,6 +174,14 @@ class LooperService:
         # is unconditional, and we enforce the lock at the service
         # boundary before any binding call. Indexed 0..3.
         self._locked: list[bool] = [False, False, False, False]
+        # T2512-OS — per-track one-shot / trigger flag. When True, the
+        # track auto-stops after one full playhead pass. The flag is
+        # persistent across state transitions and survives recall/clear.
+        # Actual auto-stop scheduling is the responsibility of an
+        # async runner outside this sync service (filed as
+        # T2512-OS-RUNNER); this service exposes the flag + status so
+        # the runner can react without owning service state.
+        self._one_shot: list[bool] = [False, False, False, False]
         # T2512-WS — fan-out hook for status changes. Set by
         # ``init_looper_ws_bridge`` at lifespan startup; remains None
         # in tests where WS isn't wired. The broadcaster is sync —
@@ -318,6 +328,23 @@ class LooperService:
         self._locked[track] = bool(locked)
         return self._broadcast(self.get_status())
 
+    def set_one_shot(self, track: int, one_shot: bool) -> LooperStatus:
+        """T2512-OS — toggle the one-shot / trigger flag for a track.
+
+        When True, the track is meant to auto-stop after one playhead
+        pass (the runner that performs the actual stop lives outside
+        this service — see T2512-OS-RUNNER). Setting the flag is
+        non-destructive: the captured loop content stays intact and
+        all other verbs (record / clear / undo / redo / level / mute /
+        solo / reverse / half-speed) remain live.
+
+        The flag is persistent across state transitions; the operator
+        explicitly clears it via ``set_one_shot(track, False)``.
+        """
+        _validate_track(track)
+        self._one_shot[track] = bool(one_shot)
+        return self._broadcast(self.get_status())
+
     # -------- Inspection --------
 
     def get_status(self) -> LooperStatus:
@@ -341,9 +368,9 @@ class LooperService:
                 sync_master=False,
                 master_level_db=0.0,
             )
-        # T2512-LOCK — overlay the Python-side lock flags onto each
-        # track. The engine doesn't know about locks; the service is
-        # authoritative.
+        # T2512-LOCK / T2512-OS — overlay the Python-side flags onto
+        # each track. The engine doesn't know about locks or one-shot
+        # mode; the service is authoritative for both.
         decorated = [
             TrackStatus(
                 track=t.track,
@@ -358,6 +385,7 @@ class LooperService:
                 reverse=t.reverse,
                 half_speed=t.half_speed,
                 locked=self._locked[t.track] if 0 <= t.track < 4 else False,
+                one_shot=self._one_shot[t.track] if 0 <= t.track < 4 else False,
             )
             for t in status.tracks
         ]

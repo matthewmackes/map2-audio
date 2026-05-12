@@ -243,3 +243,67 @@ def test_no_broadcaster_means_silent_default() -> None:
     # Just ensure it doesn't raise.
     service.record(0)
     service.set_locked(0, True)
+
+
+# ---------------------------------------------------------------------------
+# T2512-OS — one-shot / trigger mode
+# ---------------------------------------------------------------------------
+
+
+def test_one_shot_default_is_off() -> None:
+    service = LooperService()
+    status = service.get_status()
+    assert all(t.one_shot is False for t in status.tracks)
+
+
+def test_set_one_shot_flips_flag_in_status() -> None:
+    service = LooperService()
+    service.set_one_shot(2, True)
+    status = service.get_status()
+    assert status.tracks[2].one_shot is True
+    # Other tracks unaffected.
+    assert all(
+        status.tracks[i].one_shot is False for i in (0, 1, 3)
+    )
+
+
+def test_set_one_shot_persistent_across_state_transitions() -> None:
+    """T2512-OS — flag must survive record/clear/undo/redo. The
+    operator clears it explicitly, not implicitly."""
+    engine = _FakeEngine()
+    service = LooperService(engine=engine)
+    service.set_one_shot(0, True)
+    service.record(0)
+    service.stop_track(0)
+    service.clear(0)
+    status = service.get_status()
+    assert status.tracks[0].one_shot is True
+
+
+def test_set_one_shot_invalid_track_raises() -> None:
+    service = LooperService()
+    with pytest.raises(LooperServiceError) as exc:
+        service.set_one_shot(7, True)
+    assert exc.value.code == "invalid_track"
+
+
+def test_set_one_shot_broadcasts() -> None:
+    """T2512-OS hooked into the WS fan-out for live UI updates."""
+    received: list = []
+    service = LooperService(broadcaster=received.append)
+    service.set_one_shot(0, True)
+    service.set_one_shot(0, False)
+    assert len(received) == 2
+
+
+def test_one_shot_is_orthogonal_to_locked() -> None:
+    """Locking a track does NOT lock the one_shot flag — the operator
+    must be able to arm/disarm one-shot on a write-protected loop."""
+    engine = _FakeEngine()
+    service = LooperService(engine=engine)
+    service.set_locked(1, True)
+    # Should succeed without raising.
+    service.set_one_shot(1, True)
+    status = service.get_status()
+    assert status.tracks[1].locked is True
+    assert status.tracks[1].one_shot is True

@@ -172,3 +172,40 @@ def test_operation_ids_are_unique_within_looper_router() -> None:
         "duplicate operation_id values: "
         + str([op for op in op_ids if op_ids.count(op) > 1])
     )
+
+
+# ---------------------------------------------------------------------------
+# T2512-OS — one-shot / trigger mode route surface
+# ---------------------------------------------------------------------------
+
+
+def test_set_one_shot_route_toggles_flag() -> None:
+    client, _, _ = _build_client()
+    resp = client.patch("/api/v1/looper/track/2/one-shot", json={"value": True})
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["tracks"][2]["one_shot"] is True
+    assert all(body["tracks"][i]["one_shot"] is False for i in (0, 1, 3))
+
+
+def test_set_one_shot_invalid_track_returns_400() -> None:
+    client, _, _ = _build_client()
+    resp = client.patch("/api/v1/looper/track/9/one-shot", json={"value": True})
+    assert resp.status_code == 400
+
+
+def test_one_shot_status_persists_across_record() -> None:
+    """Flag must survive operator actions on the track."""
+    client, _, engine = _build_client()
+    client.patch("/api/v1/looper/track/0/one-shot", json={"value": True})
+    client.post("/api/v1/looper/track/0/record")
+    resp = client.get("/api/v1/looper/status")
+    assert resp.status_code == 200
+    assert resp.json()["tracks"][0]["one_shot"] is True
+
+
+def test_get_status_default_reports_one_shot_false() -> None:
+    client, _, _ = _build_client()
+    resp = client.get("/api/v1/looper/status")
+    body = resp.json()
+    assert all(t["one_shot"] is False for t in body["tracks"])

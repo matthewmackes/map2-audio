@@ -234,6 +234,22 @@ groups:
         label: Track 4 — Write-lock (toggle)
         action_template:
           action: toggle
+      - verb: audio.looper.0.one_shot
+        label: Track 1 — One-shot (toggle)
+        action_template:
+          action: toggle
+      - verb: audio.looper.1.one_shot
+        label: Track 2 — One-shot (toggle)
+        action_template:
+          action: toggle
+      - verb: audio.looper.2.one_shot
+        label: Track 3 — One-shot (toggle)
+        action_template:
+          action: toggle
+      - verb: audio.looper.3.one_shot
+        label: Track 4 — One-shot (toggle)
+        action_template:
+          action: toggle
 
   - id: master
     label: Master bus

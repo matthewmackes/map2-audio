@@ -81,6 +81,7 @@ class TrackStatusResponse(BaseModel):
     reverse: bool
     half_speed: bool
     locked: bool = False  # T2512-LOCK — write-lock state
+    one_shot: bool = False  # T2512-OS — one-shot / trigger mode
 
 
 class LooperStatusResponse(BaseModel):
@@ -269,6 +270,27 @@ async def set_track_locked(track: int, body: SetBoolRequest,
     """
     try:
         result = service.set_locked(track, body.value)
+    except LooperServiceError as exc:
+        raise _http_for_error(exc)
+    return LooperStatusResponse.from_status(result)
+
+
+@router.patch("/track/{track}/one-shot",
+              response_model=LooperStatusResponse,
+              operation_id="looper_set_track_one_shot",
+              summary="T2512-OS — toggle one-shot / trigger mode for a track")
+async def set_track_one_shot(track: int, body: SetBoolRequest,
+                             service: LooperService = Depends(_get_service)) -> LooperStatusResponse:
+    """T2512-OS — set the one-shot / trigger flag for a track.
+
+    When True, the track is meant to auto-stop after one playhead
+    pass (actual stop scheduling lives in a separate runner — see
+    ``T2512-OS-RUNNER`` in PROJECT_WORKLIST). Setting the flag does
+    not alter loop content or any other playback parameter; the
+    operator clears it by sending ``{"value": false}``.
+    """
+    try:
+        result = service.set_one_shot(track, body.value)
     except LooperServiceError as exc:
         raise _http_for_error(exc)
     return LooperStatusResponse.from_status(result)

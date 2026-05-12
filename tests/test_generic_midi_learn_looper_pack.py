@@ -117,9 +117,13 @@ def test_mixer_group_covers_every_track_and_setter(catalog: dict) -> None:
     expected = {
         f"audio.looper.{track}.{kind}"
         for track in range(4)
-        # T2512-LOCK-MIDI adds the per-track ``locked`` toggle alongside
-        # the original mixer setters.
-        for kind in ("level", "muted", "soloed", "reverse", "half_speed", "locked")
+        # T2512-LOCK-MIDI adds the per-track ``locked`` toggle and
+        # T2512-OS adds ``one_shot`` alongside the original mixer
+        # setters.
+        for kind in (
+            "level", "muted", "soloed", "reverse", "half_speed",
+            "locked", "one_shot",
+        )
     }
     assert verbs == expected
 
@@ -146,11 +150,12 @@ def test_stomp_targets_use_set_action(catalog: dict) -> None:
 
 
 def test_mixer_bool_setters_default_to_toggle(catalog: dict) -> None:
-    """Mute / solo / reverse / half_speed / locked default to toggle so a
-    single footswitch press flips state (the dispatcher honors both set
-    and toggle, but toggle is the more natural footswitch UX)."""
+    """Mute / solo / reverse / half_speed / locked / one_shot default to
+    toggle so a single footswitch press flips state (the dispatcher
+    honors both set and toggle, but toggle is the more natural
+    footswitch UX)."""
     mixer = next(g for g in catalog["groups"] if g["id"] == "mixer")
-    bool_kinds = ("muted", "soloed", "reverse", "half_speed", "locked")
+    bool_kinds = ("muted", "soloed", "reverse", "half_speed", "locked", "one_shot")
     bool_pattern = re.compile(r"audio\.looper\.\d\.(" + "|".join(bool_kinds) + ")$")
     for entry in mixer["targets"]:
         if bool_pattern.match(entry["verb"]):
@@ -177,9 +182,9 @@ def test_level_setters_prompt_for_db_value(catalog: dict) -> None:
 
 
 def test_catalog_total_verb_count(catalog: dict) -> None:
-    """20 stomp verbs + 24 mixer setters (T2512-LOCK-MIDI added 4 ×
-    locked) + 1 master = 45 total."""
-    assert len(_flat_verbs(catalog)) == 45
+    """20 stomp verbs + 28 mixer setters (T2512-LOCK-MIDI added 4 ×
+    locked; T2512-OS added 4 × one_shot) + 1 master = 49 total."""
+    assert len(_flat_verbs(catalog)) == 49
 
 
 # ---------------------------------------------------------------------------

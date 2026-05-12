@@ -101,7 +101,7 @@ const FEATURE_INVENTORY: ReadonlyArray<{
   { label: 'External footswitch support',              live: false, note: 'Maps through generic MIDI; needs surface picker (T2512-FSW).' },
   { label: 'Multiple footswitch controls',             live: false, note: 'Lands with T2512-FSW.' },
   { label: 'Loop syncing (master/slave)',              live: false, note: 'Per-track sync mode picker (T2512-SYNC).' },
-  { label: 'One-shot / trigger mode',                  live: false, note: 'State-machine extension (T2512-OS).' },
+  { label: 'One-shot / trigger mode',                  live: true,  note: 'T2512-OS — per-track one-shot flag (Python service + route + dispatcher target). Auto-stop scheduling deferred to T2512-OS-RUNNER follow-up.' },
   { label: 'Auto-record (threshold start)',            live: false, note: 'Input-level analyzer + trigger (T2512-AUTO).' },
   { label: 'Fade-out / stop modes',                    live: false, note: 'Per-stop fade ramp (T2512-FADE).' },
   { label: 'Loop / layer protection',                  live: true,  note: 'T2512-LOCK — per-track write-lock toggle. Locked tracks reject record/clear/undo/redo (HTTP 409); playback, level, mute, solo, reverse, half-speed, and stop remain live.' },
@@ -399,6 +399,13 @@ function TrackCard({
           labelText="Lock"
           toggled={track.locked}
           onToggle={(val) => onAction(() => looperApi.setLocked(track.track, val))}
+        />
+        <Toggle
+          id={`looper-one-shot-${track.track}`}
+          size="sm"
+          labelText="One-shot"
+          toggled={track.one_shot}
+          onToggle={(val) => onAction(() => looperApi.setOneShot(track.track, val))}
         />
       </div>
     </Tile>

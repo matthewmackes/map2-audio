@@ -100,6 +100,15 @@ describe('looperApi HTTP surface', () => {
     })
   })
 
+  it('setOneShot(1, true) → PATCH /track/1/one-shot with {value: true}', async () => {
+    // T2512-OS — one-shot mode toggle.
+    await looperApi.setOneShot(1, true)
+    expect(fetchMock.mock.calls[0]?.[0]).toBe(`${BASE}/track/1/one-shot`)
+    expect(JSON.parse(String(fetchMock.mock.calls[0]?.[1]?.body))).toEqual({
+      value: true,
+    })
+  })
+
   // ---------- Master ----------
 
   it('setMasterLevel(0) → PATCH /master/level with {db: 0}', async () => {

@@ -181,6 +181,8 @@ class HandlerHooks:
     looper_set_master_level: Optional[_LooperMasterLevelFn] = None
     # T2512-LOCK over MIDI — toggle the write-lock from a footswitch.
     looper_set_locked: Optional[_LooperSetBoolFn]     = None
+    # T2512-OS over MIDI — toggle one-shot / trigger mode from a footswitch.
+    looper_set_one_shot: Optional[_LooperSetBoolFn]   = None
 
 
 # ---------------------------------------------------------------------------
@@ -757,6 +759,11 @@ def register_default_handlers(
     dispatcher.register_pattern(
         "audio.looper.*.locked",
         _make_looper_set_bool_handler(actual_hooks, "locked", "looper_set_locked"),
+    )
+    # T2512-OS — footswitch toggle for per-track one-shot / trigger mode.
+    dispatcher.register_pattern(
+        "audio.looper.*.one_shot",
+        _make_looper_set_bool_handler(actual_hooks, "one_shot", "looper_set_one_shot"),
     )
     dispatcher.register(
         "audio.looper.master.level", _make_looper_master_level_handler(actual_hooks)
