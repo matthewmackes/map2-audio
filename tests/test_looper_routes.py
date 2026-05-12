@@ -132,3 +132,43 @@ def test_status_route_reports_lock_state() -> None:
     body = resp.json()
     assert body["tracks"][0]["locked"] is True
     assert all(body["tracks"][i]["locked"] is False for i in (1, 2, 3))
+
+
+# ---------------------------------------------------------------------------
+# OpenAPI surface — every route carries a summary + operation_id.
+# ---------------------------------------------------------------------------
+
+
+def test_every_looper_route_has_summary_and_operation_id() -> None:
+    """Locks the OpenAPI audit so a future hand-written route can't slip
+    in without docs. Failing this test means a route is missing one of
+    ``summary=`` or ``operation_id=`` on its decorator."""
+    from app.routes.looper import router
+
+    # APIRoute objects expose .name (function name), .operation_id, and
+    # .summary. We require both to be non-empty for every route this
+    # module owns.
+    missing: list[tuple[str, list[str]]] = []
+    for route in router.routes:
+        gaps: list[str] = []
+        if not getattr(route, "operation_id", None):
+            gaps.append("operation_id")
+        if not getattr(route, "summary", None):
+            gaps.append("summary")
+        if gaps:
+            missing.append((getattr(route, "name", str(route)), gaps))
+    assert missing == [], f"routes missing OpenAPI metadata: {missing}"
+
+
+def test_operation_ids_are_unique_within_looper_router() -> None:
+    from app.routes.looper import router
+
+    op_ids = [
+        route.operation_id
+        for route in router.routes
+        if getattr(route, "operation_id", None)
+    ]
+    assert len(op_ids) == len(set(op_ids)), (
+        "duplicate operation_id values: "
+        + str([op for op in op_ids if op_ids.count(op) > 1])
+    )

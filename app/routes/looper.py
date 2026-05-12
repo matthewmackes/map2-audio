@@ -115,20 +115,6 @@ async def get_status(service: LooperService = Depends(_get_service)) -> LooperSt
     return LooperStatusResponse.from_status(service.get_status())
 
 
-def _stomp_endpoint(verb_name: str, op_id: str, summary: str):
-    """Factory for the 5 stomp routes — same shape, different method on the service."""
-    async def handler(track: int,
-                      service: LooperService = Depends(_get_service)) -> LooperStatusResponse:
-        try:
-            method = getattr(service, verb_name)
-            result = method(track)
-        except LooperServiceError as exc:
-            raise _http_for_error(exc)
-        return LooperStatusResponse.from_status(result)
-    handler.__name__ = f"_looper_{verb_name}"
-    return handler
-
-
 @router.post("/track/{track}/record",
              response_model=LooperStatusResponse,
              operation_id="looper_record_stomp",
@@ -157,7 +143,8 @@ async def stop_stomp(track: int,
 
 @router.post("/track/{track}/clear",
              response_model=LooperStatusResponse,
-             operation_id="looper_clear_stomp")
+             operation_id="looper_clear_stomp",
+             summary="Clear the track's loop content")
 async def clear_stomp(track: int,
                       service: LooperService = Depends(_get_service)) -> LooperStatusResponse:
     try:
@@ -169,7 +156,8 @@ async def clear_stomp(track: int,
 
 @router.post("/track/{track}/undo",
              response_model=LooperStatusResponse,
-             operation_id="looper_undo_stomp")
+             operation_id="looper_undo_stomp",
+             summary="Undo the most recent overdub layer (up to 4 deep)")
 async def undo_stomp(track: int,
                      service: LooperService = Depends(_get_service)) -> LooperStatusResponse:
     try:
@@ -181,7 +169,8 @@ async def undo_stomp(track: int,
 
 @router.post("/track/{track}/redo",
              response_model=LooperStatusResponse,
-             operation_id="looper_redo_stomp")
+             operation_id="looper_redo_stomp",
+             summary="Redo a previously-undone overdub layer")
 async def redo_stomp(track: int,
                      service: LooperService = Depends(_get_service)) -> LooperStatusResponse:
     try:
@@ -193,7 +182,8 @@ async def redo_stomp(track: int,
 
 @router.patch("/track/{track}/level",
               response_model=LooperStatusResponse,
-              operation_id="looper_set_track_level")
+              operation_id="looper_set_track_level",
+              summary="Set per-track playback level in dB (clamped -60..+6)")
 async def set_track_level(track: int, body: SetLevelRequest,
                           service: LooperService = Depends(_get_service)) -> LooperStatusResponse:
     try:
@@ -205,7 +195,8 @@ async def set_track_level(track: int, body: SetLevelRequest,
 
 @router.patch("/track/{track}/muted",
               response_model=LooperStatusResponse,
-              operation_id="looper_set_track_muted")
+              operation_id="looper_set_track_muted",
+              summary="Mute / unmute the track in the looper master sum")
 async def set_track_muted(track: int, body: SetBoolRequest,
                           service: LooperService = Depends(_get_service)) -> LooperStatusResponse:
     try:
@@ -217,7 +208,8 @@ async def set_track_muted(track: int, body: SetBoolRequest,
 
 @router.patch("/track/{track}/soloed",
               response_model=LooperStatusResponse,
-              operation_id="looper_set_track_soloed")
+              operation_id="looper_set_track_soloed",
+              summary="Solo / un-solo the track (any solo'd track mutes the rest)")
 async def set_track_soloed(track: int, body: SetBoolRequest,
                            service: LooperService = Depends(_get_service)) -> LooperStatusResponse:
     try:
@@ -229,7 +221,8 @@ async def set_track_soloed(track: int, body: SetBoolRequest,
 
 @router.patch("/track/{track}/reverse",
               response_model=LooperStatusResponse,
-              operation_id="looper_set_track_reverse")
+              operation_id="looper_set_track_reverse",
+              summary="Reverse the playback direction of the track")
 async def set_track_reverse(track: int, body: SetBoolRequest,
                             service: LooperService = Depends(_get_service)) -> LooperStatusResponse:
     try:
@@ -241,7 +234,8 @@ async def set_track_reverse(track: int, body: SetBoolRequest,
 
 @router.patch("/track/{track}/half-speed",
               response_model=LooperStatusResponse,
-              operation_id="looper_set_track_half_speed")
+              operation_id="looper_set_track_half_speed",
+              summary="Halve the playback rate (one octave down)")
 async def set_track_half_speed(track: int, body: SetBoolRequest,
                                service: LooperService = Depends(_get_service)) -> LooperStatusResponse:
     try:
@@ -253,7 +247,8 @@ async def set_track_half_speed(track: int, body: SetBoolRequest,
 
 @router.patch("/master/level",
               response_model=LooperStatusResponse,
-              operation_id="looper_set_master_level")
+              operation_id="looper_set_master_level",
+              summary="Set the looper master bus level in dB (clamped -60..+6)")
 async def set_master_level(body: SetLevelRequest,
                            service: LooperService = Depends(_get_service)) -> LooperStatusResponse:
     return LooperStatusResponse.from_status(service.set_master_level_db(body.db))
