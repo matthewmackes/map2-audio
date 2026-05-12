@@ -288,7 +288,8 @@
 
 .looper-track__slice-list li {
   display: grid;
-  grid-template-columns: auto 1fr;
+  grid-template-columns: auto 1fr auto;
+  align-items: center;
   gap: var(--cds-spacing-04);
   font-family: var(--cds-code-01-font-family, 'IBM Plex Mono', monospace);
   font-size: 0.8125rem;

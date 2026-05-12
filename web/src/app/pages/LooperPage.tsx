@@ -648,6 +648,20 @@ function SliceEditor({
                   <span className="looper-track__slice-label-text">
                     {slc.label || <em>unlabeled</em>}
                   </span>
+                  <Button
+                    kind="ghost"
+                    size="sm"
+                    hasIconOnly
+                    renderIcon={TrashCan}
+                    iconDescription={`Delete slice ${slc.start_frame}–${slc.end_frame}`}
+                    tooltipPosition="left"
+                    data-testid={`looper-delete-slice-${track.track}-${slc.start_frame}`}
+                    onClick={() =>
+                      onAction(() =>
+                        looperApi.deleteSlice(track.track, slc.start_frame),
+                      )
+                    }
+                  />
                 </li>
               ))}
             </ul>

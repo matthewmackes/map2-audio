@@ -67,6 +67,8 @@ def _http_for_error(exc: LooperServiceError) -> HTTPException:
         "invalid_slice": status.HTTP_400_BAD_REQUEST,
         "slice_overlap": status.HTTP_409_CONFLICT,
         "slice_limit":   status.HTTP_409_CONFLICT,
+        # T2512-SLICE-DEL — addressed slice doesn't exist.
+        "slice_not_found": status.HTTP_404_NOT_FOUND,
         # T2512-QUANT-WIRE — unknown quantize division name.
         "invalid_quantize_division": status.HTTP_400_BAD_REQUEST,
     }.get(exc.code, status.HTTP_500_INTERNAL_SERVER_ERROR)
@@ -480,6 +482,24 @@ async def clear_track_slices(track: int,
     unaffected."""
     try:
         result = service.clear_slices(track)
+    except LooperServiceError as exc:
+        raise _http_for_error(exc)
+    return LooperStatusResponse.from_status(result)
+
+
+@router.delete("/track/{track}/slices/{start_frame}",
+               response_model=LooperStatusResponse,
+               operation_id="looper_delete_track_slice",
+               summary="T2512-SLICE-DEL — drop a single slice by start_frame")
+async def delete_track_slice(track: int, start_frame: int,
+                             service: LooperService = Depends(_get_service)) -> LooperStatusResponse:
+    """T2512-SLICE-DEL — remove the slice with the matching start_frame.
+
+    Returns HTTP 404 ``slice_not_found`` when no slice on the track
+    has that start_frame. Loop content is unaffected.
+    """
+    try:
+        result = service.delete_slice(track, start_frame)
     except LooperServiceError as exc:
         raise _http_for_error(exc)
     return LooperStatusResponse.from_status(result)

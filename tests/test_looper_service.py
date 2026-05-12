@@ -855,6 +855,60 @@ def test_slices_persist_across_record() -> None:
     assert status.tracks[0].slices[0].label == "intro"
 
 
+def test_delete_slice_drops_matching_slice() -> None:
+    service = LooperService()
+    service.add_slice(0, 0,     1000,  "a")
+    service.add_slice(0, 2000,  3000,  "b")
+    service.add_slice(0, 5000,  6000,  "c")
+    service.delete_slice(0, 2000)
+    labels = [s.label for s in service.get_status().tracks[0].slices]
+    assert labels == ["a", "c"]
+
+
+def test_delete_slice_per_track() -> None:
+    service = LooperService()
+    service.add_slice(0, 0, 1000, "a")
+    service.add_slice(1, 0, 1000, "b")
+    service.delete_slice(0, 0)
+    s = service.get_status()
+    assert s.tracks[0].slices == ()
+    assert len(s.tracks[1].slices) == 1
+    assert s.tracks[1].slices[0].label == "b"
+
+
+def test_delete_slice_not_found_raises() -> None:
+    service = LooperService()
+    service.add_slice(0, 0, 1000, "a")
+    with pytest.raises(LooperServiceError) as exc:
+        service.delete_slice(0, 9999)
+    assert exc.value.code == "slice_not_found"
+    # Existing slice untouched.
+    assert len(service.get_status().tracks[0].slices) == 1
+
+
+def test_delete_slice_invalid_track_raises() -> None:
+    service = LooperService()
+    with pytest.raises(LooperServiceError) as exc:
+        service.delete_slice(7, 0)
+    assert exc.value.code == "invalid_track"
+
+
+def test_delete_slice_invalid_start_frame_type_raises() -> None:
+    service = LooperService()
+    with pytest.raises(LooperServiceError) as exc:
+        service.delete_slice(0, "not-an-int")  # type: ignore[arg-type]
+    assert exc.value.code == "invalid_slice"
+
+
+def test_delete_slice_broadcasts() -> None:
+    received: list = []
+    service = LooperService(broadcaster=received.append)
+    service.add_slice(0, 0, 1000, "a")
+    received.clear()
+    service.delete_slice(0, 0)
+    assert len(received) == 1
+
+
 def test_slice_payload_serialization() -> None:
     """to_payload() shape for each slice — what the WS frame ships."""
     service = LooperService()

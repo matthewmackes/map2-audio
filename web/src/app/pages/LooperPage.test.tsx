@@ -114,6 +114,7 @@ jest.mock('../../map2/clients/looper', () => ({
     setQuantizeDivision: jest.fn(async () => mockIdleSnapshot),
     addSlice: jest.fn(async () => mockIdleSnapshot),
     clearSlices: jest.fn(async () => mockIdleSnapshot),
+    deleteSlice: jest.fn(async () => mockIdleSnapshot),
     setMasterLevel: jest.fn(async () => mockIdleSnapshot),
   },
 }))
@@ -569,6 +570,49 @@ describe('LooperPage T2512-SLICE-UI region editor', () => {
     expect(list).toHaveTextContent('intro')
     expect(list).toHaveTextContent('24000–48000')
     expect(list).toHaveTextContent('verse')
+  })
+
+  it('per-slice delete button fires looperApi.deleteSlice with the start_frame', async () => {
+    // T2512-SLICE-DEL — each row in the slice list carries a trash
+    // button keyed by track + start_frame.
+    renderPage()
+    await screen.findByTestId('looper-ws-status')
+    act(() => {
+      sockets[0]!.onopen?.call(sockets[0] as unknown as WebSocket)
+    })
+
+    const frame = {
+      type: 'looper_status',
+      payload: {
+        ...mockIdleSnapshot,
+        tracks: mockIdleSnapshot.tracks.map((t, i) =>
+          i === 0
+            ? {
+                ...t,
+                slices: [
+                  { start_frame: 0,     end_frame: 1000, label: 'a' },
+                  { start_frame: 2000,  end_frame: 3000, label: 'b' },
+                ],
+              }
+            : t,
+        ),
+      },
+    }
+    act(() => {
+      sockets[0]!.onmessage?.call(
+        sockets[0] as unknown as WebSocket,
+        { data: JSON.stringify(frame) } as MessageEvent,
+      )
+    })
+
+    const toggle = await screen.findByTestId('looper-slice-editor-toggle-0')
+    toggle.click()
+
+    const trash = await screen.findByTestId('looper-delete-slice-0-2000')
+    trash.click()
+    await waitFor(() => {
+      expect(looperApi.deleteSlice).toHaveBeenCalledWith(0, 2000)
+    })
   })
 
   it('renders "unlabeled" placeholder for slices with empty labels', async () => {

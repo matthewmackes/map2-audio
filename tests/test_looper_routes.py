@@ -484,6 +484,48 @@ def test_status_default_slices_empty() -> None:
 
 
 # ---------------------------------------------------------------------------
+# T2512-SLICE-DEL — per-slice delete
+# ---------------------------------------------------------------------------
+
+
+def test_delete_single_slice_by_start_frame() -> None:
+    client, _, _ = _build_client()
+    client.post(
+        "/api/v1/looper/track/0/slices",
+        json={"start_frame": 0, "end_frame": 1000, "label": "a"},
+    )
+    client.post(
+        "/api/v1/looper/track/0/slices",
+        json={"start_frame": 2000, "end_frame": 3000, "label": "b"},
+    )
+    resp = client.delete("/api/v1/looper/track/0/slices/0")
+    assert resp.status_code == 200
+    body = resp.json()
+    labels = [s["label"] for s in body["tracks"][0]["slices"]]
+    assert labels == ["b"]
+
+
+def test_delete_unknown_slice_returns_404() -> None:
+    client, _, _ = _build_client()
+    client.post(
+        "/api/v1/looper/track/0/slices",
+        json={"start_frame": 0, "end_frame": 1000, "label": "a"},
+    )
+    resp = client.delete("/api/v1/looper/track/0/slices/9999")
+    assert resp.status_code == 404
+    body = resp.json()
+    assert "no slice" in body["detail"].lower()
+    # Existing slice untouched.
+    assert len(client.get("/api/v1/looper/status").json()["tracks"][0]["slices"]) == 1
+
+
+def test_delete_slice_invalid_track_returns_400() -> None:
+    client, _, _ = _build_client()
+    resp = client.delete("/api/v1/looper/track/9/slices/0")
+    assert resp.status_code == 400
+
+
+# ---------------------------------------------------------------------------
 # T2512-QUANT-WIRE — quantize-division route surface
 # ---------------------------------------------------------------------------
 

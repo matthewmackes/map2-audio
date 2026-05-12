@@ -182,6 +182,13 @@ describe('looperApi HTTP surface', () => {
     expect(init?.method).toBe('DELETE')
   })
 
+  it('deleteSlice(1, 24000) → DELETE /track/1/slices/24000', async () => {
+    await looperApi.deleteSlice(1, 24000)
+    expect(fetchMock.mock.calls[0]?.[0]).toBe(`${BASE}/track/1/slices/24000`)
+    const init = fetchMock.mock.calls[0]?.[1] as RequestInit | undefined
+    expect(init?.method).toBe('DELETE')
+  })
+
   // ---------- Master ----------
 
   it('setMasterLevel(0) → PATCH /master/level with {db: 0}', async () => {

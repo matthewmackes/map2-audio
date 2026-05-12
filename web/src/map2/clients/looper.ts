@@ -122,6 +122,12 @@ export const looperApi = {
   /** T2512-SLICE — drop every slice on a track. */
   clearSlices: (track: number) =>
     fetchJson<LooperStatus>(`${BASE}/track/${track}/slices`, { method: 'DELETE' }),
+  /** T2512-SLICE-DEL — drop a single slice by start_frame. Returns 404 when no match. */
+  deleteSlice: (track: number, start_frame: number) =>
+    fetchJson<LooperStatus>(
+      `${BASE}/track/${track}/slices/${start_frame}`,
+      { method: 'DELETE' },
+    ),
   setMasterLevel: (db: number)                 => patch(`${BASE}/master/level`, { db }),
 }
 

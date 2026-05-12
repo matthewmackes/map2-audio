@@ -52,6 +52,7 @@ EXPECTED_PATHS_BY_METHOD: dict[str, set[str]] = {
     },
     "delete": {
         "/api/v1/looper/track/{track}/slices",           # T2512-SLICE — clear
+        "/api/v1/looper/track/{track}/slices/{start_frame}",  # T2512-SLICE-DEL
     },
 }
 
