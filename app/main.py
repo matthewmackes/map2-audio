@@ -938,16 +938,35 @@ async def lifespan(app):
         # engine. Without this the Python service logs the recorder.*
         # verbs but no WAV ever gets written; with it, /api/v1/recorder/*
         # drives the actual engine-side capture pipeline (T2507-1..5).
+        recorder_engine_obj: Any = None
         try:
             from app.services.juce_engine_service import get_audio_engine
             from app.services.recorder_engine_transport import (
                 install_recorder_engine_transport,
             )
             engine_service = get_audio_engine()
-            engine_obj = getattr(engine_service, "_engine", None) or engine_service
-            install_recorder_engine_transport(engine_obj)
+            recorder_engine_obj = getattr(engine_service, "_engine", None) or engine_service
+            install_recorder_engine_transport(recorder_engine_obj)
         except Exception as exc:
             logger.warning("Recorder engine transport not installed: %s", exc)
+
+        # T2508-6 (rich path) — periodic 15 fps WS broadcaster for
+        # in-flight recorder sessions. Ships a `recorder_session_tick`
+        # frame on `recorder:session` for every ROLLING session, with
+        # live engine counters (elapsed_seconds, ring overflows,
+        # armed_at_iso). Companion to the transition-only broadcaster
+        # bound above. RT-irrelevant: engine.recorder_get_status grabs
+        # the C++ RecorderService mutex; never enters the audio thread.
+        try:
+            from app.services.recorder_periodic_broadcaster import (
+                init_recorder_periodic_broadcaster,
+            )
+            broadcaster = init_recorder_periodic_broadcaster(
+                engine=recorder_engine_obj,
+            )
+            background_start_tasks.append(broadcaster._task)  # type: ignore[arg-type]
+        except Exception as exc:
+            logger.warning("Recorder periodic broadcaster not started: %s", exc)
 
         # T2512 — wire the looper service singleton to the engine
         # bindings so /api/v1/looper/* drives the C++ LooperEngine.
