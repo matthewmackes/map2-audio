@@ -139,6 +139,18 @@ var Looper = Looper || {};
         muted: _toggle('audio.looper.master.muted'),
     };
 
+    // T2512-PACK-PRESET — named in-memory state presets reachable from
+    // the controller-host MIDI-learn UI (operator types the preset
+    // name at learn time into the catalog's ``preset_name`` arg_prompt;
+    // the host emits args=[name] in the engine_command frame directly,
+    // no JS helper required). No script-side helper is exposed here:
+    // ``engine.setValue`` carries only (target, action, value) — it
+    // cannot transport a string ``args[]`` payload, so a JS-side stomb
+    // can't drive these verbs end-to-end yet. The catalog still
+    // exposes the three verbs so the learn UI can bind them; once a
+    // ``setValueWithArgs`` JS binding lands, a Looper.preset surface
+    // can be added here without touching profile YAML.
+
     // Expose for QuickJS host lookup by string name (mirrors the
     // MeloAudioCommander pattern). Profile YAML references handlers
     // as e.g. ``script: Looper.track_0.record``.

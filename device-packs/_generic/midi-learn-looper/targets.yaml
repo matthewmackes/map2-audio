@@ -479,3 +479,42 @@ groups:
             default: 127
             min: 0
             max: 127
+
+  - id: preset
+    label: Named state presets
+    description: |
+      T2512-PRESET-DISPATCH — operator footswitches can save, recall,
+      or drop named in-memory state presets (T2512-PRESET cap = 32).
+      Each verb takes a string name in args[0]; the action is always
+      ``set``. Useful for "verse → chorus → bridge" recall on a single
+      bottom-row stomp, or saving an exact configuration before
+      experimenting on stage. The list is volatile; persistent
+      presets live in the snapshot service.
+    targets:
+      - verb: audio.looper.preset.save
+        label: Save preset (by name)
+        action_template:
+          action: set
+        arg_prompts:
+          - name: preset_name
+            label: Preset name (any non-empty string, ≤ service cap)
+            type: string
+            default: "set-a"
+      - verb: audio.looper.preset.apply
+        label: Recall preset (by name)
+        action_template:
+          action: set
+        arg_prompts:
+          - name: preset_name
+            label: Preset name (must already exist)
+            type: string
+            default: "set-a"
+      - verb: audio.looper.preset.delete
+        label: Drop preset (by name)
+        action_template:
+          action: set
+        arg_prompts:
+          - name: preset_name
+            label: Preset name (must already exist)
+            type: string
+            default: "set-a"

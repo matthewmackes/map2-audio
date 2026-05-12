@@ -54,7 +54,8 @@ def test_catalog_mode_is_looper(catalog: dict) -> None:
 
 def test_catalog_groups_present(catalog: dict) -> None:
     group_ids = {g["id"] for g in catalog["groups"]}
-    assert group_ids == {"stomps", "mixer", "master"}
+    # T2512-PACK-PRESET adds the preset group (save/apply/delete).
+    assert group_ids == {"stomps", "mixer", "master", "preset"}
 
 
 # ---------------------------------------------------------------------------
@@ -213,8 +214,42 @@ def test_catalog_total_verb_count(catalog: dict) -> None:
     """20 stomp verbs + 48 mixer setters (12 kinds × 4 tracks: original
     5 + locked + one_shot + auto_armed + stop_mode + fade_ms +
     sync_mode + quantize_division) + 2 master (level + muted from
-    T2512-PACK-MUTE) = 70 total."""
-    assert len(_flat_verbs(catalog)) == 70
+    T2512-PACK-MUTE) + 3 preset (save/apply/delete from
+    T2512-PACK-PRESET) = 73 total."""
+    assert len(_flat_verbs(catalog)) == 73
+
+
+# ---------------------------------------------------------------------------
+# T2512-PACK-PRESET — named state preset save/apply/delete coverage.
+# ---------------------------------------------------------------------------
+
+
+def test_preset_group_lists_save_apply_delete(catalog: dict) -> None:
+    """T2512-PACK-PRESET — preset group exposes the three dispatcher
+    targets registered under T2512-PRESET-DISPATCH."""
+    preset = next(g for g in catalog["groups"] if g["id"] == "preset")
+    verbs = [entry["verb"] for entry in preset["targets"]]
+    assert verbs == [
+        "audio.looper.preset.save",
+        "audio.looper.preset.apply",
+        "audio.looper.preset.delete",
+    ]
+
+
+def test_preset_targets_prompt_for_string_name(catalog: dict) -> None:
+    """Each preset verb takes a single ``preset_name`` string prompt;
+    the dispatcher reads it off args[0]."""
+    preset = next(g for g in catalog["groups"] if g["id"] == "preset")
+    for entry in preset["targets"]:
+        assert entry["action_template"]["action"] == "set"
+        prompts = entry.get("arg_prompts", [])
+        assert len(prompts) == 1, entry["verb"]
+        prompt = prompts[0]
+        assert prompt["name"] == "preset_name"
+        assert prompt["type"] == "string"
+        # All three default to the same example name so the learn UI
+        # presents a consistent placeholder.
+        assert prompt["default"] == "set-a"
 
 
 # ---------------------------------------------------------------------------
@@ -245,3 +280,20 @@ def test_looper_script_file_exists() -> None:
     assert "Looper.master.level" in src
     assert "Looper.master.muted" in src  # T2512-PACK-MUTE
     assert "engine.setValue" in src
+
+
+def test_looper_script_documents_preset_limitation() -> None:
+    """T2512-PACK-PRESET — the script module documents why no
+    ``Looper.preset.*`` helpers are exposed yet (engine.setValue can't
+    carry args[]), so a future maintainer understands the gap. This
+    pin prevents accidental shipment of a non-functional preset
+    helper before the JS args binding lands."""
+    script_path = PACK_ROOT / "scripts" / "looper.js"
+    src = script_path.read_text()
+    assert "T2512-PACK-PRESET" in src, (
+        "looper.js should document the preset catalog status under "
+        "T2512-PACK-PRESET so the gap is greppable"
+    )
+    # The string explicitly refers to setValueWithArgs as the missing
+    # binding so a future engine API change is easy to find.
+    assert "setValueWithArgs" in src
