@@ -659,6 +659,40 @@ def test_apply_state_drops_invalid_sync_mode() -> None:
     assert service.get_status().tracks[0].sync_mode == "master"
 
 
+def test_apply_state_includes_slices_round_trip() -> None:
+    """T2512-SLICE — slices round-trip through export/apply."""
+    a = LooperService()
+    a.add_slice(0, 0, 48000, "intro")
+    a.add_slice(0, 48000, 96000, "verse")
+    payload = a.export_state()
+
+    b = LooperService()
+    b.apply_state(payload)
+    status = b.get_status()
+    assert len(status.tracks[0].slices) == 2
+    assert status.tracks[0].slices[0].label == "intro"
+    assert status.tracks[0].slices[1].label == "verse"
+
+
+def test_apply_state_drops_overlapping_slices_in_payload() -> None:
+    """A malformed payload with overlapping slices keeps the first
+    one and drops the rest."""
+    service = LooperService()
+    service.apply_state({
+        "tracks": [
+            {"slices": [
+                {"start_frame": 0,    "end_frame": 1000, "label": "a"},
+                {"start_frame": 500,  "end_frame": 1500, "label": "b"},  # overlaps a
+                {"start_frame": 2000, "end_frame": 3000, "label": "c"},
+            ]},
+            {}, {}, {},
+        ],
+    })
+    status = service.get_status()
+    labels = [s.label for s in status.tracks[0].slices]
+    assert labels == ["a", "c"]
+
+
 def test_apply_state_demotes_multiple_masters_in_payload() -> None:
     """A malformed payload with two masters keeps the lowest-indexed
     one as master and demotes the rest to free."""
@@ -680,6 +714,158 @@ def test_apply_state_demotes_multiple_masters_in_payload() -> None:
 
 
 # ---------------------------------------------------------------------------
+# T2512-SLICE — non-destructive slice metadata
+# ---------------------------------------------------------------------------
+
+
+def test_slices_default_empty() -> None:
+    service = LooperService()
+    status = service.get_status()
+    for track in status.tracks:
+        assert track.slices == ()
+
+
+def test_add_slice_records_metadata() -> None:
+    service = LooperService()
+    service.add_slice(0, 0, 48000, "intro")
+    status = service.get_status()
+    assert len(status.tracks[0].slices) == 1
+    slc = status.tracks[0].slices[0]
+    assert slc.start_frame == 0
+    assert slc.end_frame == 48000
+    assert slc.label == "intro"
+
+
+def test_add_slice_orders_by_start_frame() -> None:
+    service = LooperService()
+    service.add_slice(0, 96000, 144000, "outro")
+    service.add_slice(0, 0,     48000,  "intro")
+    service.add_slice(0, 48000, 96000,  "verse")
+    status = service.get_status()
+    labels = [s.label for s in status.tracks[0].slices]
+    assert labels == ["intro", "verse", "outro"]
+
+
+def test_add_slice_rejects_overlap() -> None:
+    service = LooperService()
+    service.add_slice(0, 0, 1000, "a")
+    with pytest.raises(LooperServiceError) as exc:
+        service.add_slice(0, 500, 1500, "b")
+    assert exc.value.code == "slice_overlap"
+    # Existing slice still intact.
+    assert len(service.get_status().tracks[0].slices) == 1
+
+
+def test_add_slice_rejects_inverted_range() -> None:
+    service = LooperService()
+    with pytest.raises(LooperServiceError) as exc:
+        service.add_slice(0, 1000, 500, "")
+    assert exc.value.code == "invalid_slice"
+
+
+def test_add_slice_rejects_zero_length() -> None:
+    service = LooperService()
+    with pytest.raises(LooperServiceError) as exc:
+        service.add_slice(0, 500, 500, "")
+    assert exc.value.code == "invalid_slice"
+
+
+def test_add_slice_rejects_negative_start() -> None:
+    service = LooperService()
+    with pytest.raises(LooperServiceError) as exc:
+        service.add_slice(0, -10, 1000, "")
+    assert exc.value.code == "invalid_slice"
+
+
+def test_add_slice_invalid_track_raises() -> None:
+    service = LooperService()
+    with pytest.raises(LooperServiceError) as exc:
+        service.add_slice(9, 0, 1000, "")
+    assert exc.value.code == "invalid_track"
+
+
+def test_add_slice_trims_long_label() -> None:
+    service = LooperService()
+    service.add_slice(0, 0, 1000, "  hello  ")
+    assert service.get_status().tracks[0].slices[0].label == "hello"
+
+    long_label = "x" * 200
+    service.add_slice(0, 2000, 3000, long_label)
+    truncated = service.get_status().tracks[0].slices[1].label
+    assert len(truncated) == 64
+    assert truncated == "x" * 64
+
+
+def test_add_slice_enforces_per_track_cap() -> None:
+    service = LooperService()
+    # Add 64 slices.
+    for i in range(64):
+        service.add_slice(0, i * 100, i * 100 + 50, f"s{i}")
+    with pytest.raises(LooperServiceError) as exc:
+        service.add_slice(0, 100_000, 101_000, "overflow")
+    assert exc.value.code == "slice_limit"
+
+
+def test_clear_slices_drops_everything() -> None:
+    service = LooperService()
+    service.add_slice(0, 0, 1000, "a")
+    service.add_slice(0, 2000, 3000, "b")
+    service.clear_slices(0)
+    assert service.get_status().tracks[0].slices == ()
+
+
+def test_clear_slices_is_idempotent() -> None:
+    service = LooperService()
+    # No slices yet — should not raise.
+    service.clear_slices(0)
+    service.clear_slices(0)
+
+
+def test_clear_slices_per_track() -> None:
+    """Clearing track 0 must not touch track 1's slices."""
+    service = LooperService()
+    service.add_slice(0, 0, 1000, "a")
+    service.add_slice(1, 0, 2000, "b")
+    service.clear_slices(0)
+    status = service.get_status()
+    assert status.tracks[0].slices == ()
+    assert len(status.tracks[1].slices) == 1
+    assert status.tracks[1].slices[0].label == "b"
+
+
+def test_slice_state_broadcasts() -> None:
+    received: list = []
+    service = LooperService(broadcaster=received.append)
+    service.add_slice(0, 0, 1000, "a")
+    service.add_slice(0, 2000, 3000, "b")
+    service.clear_slices(0)
+    assert len(received) == 3
+
+
+def test_slices_persist_across_record() -> None:
+    """Operator policy state survives state-machine transitions."""
+    engine = _FakeEngine()
+    service = LooperService(engine=engine)
+    service.add_slice(0, 0, 48000, "intro")
+    service.record(0)
+    service.stop_track(0)
+    service.clear(0)
+    status = service.get_status()
+    assert len(status.tracks[0].slices) == 1
+    assert status.tracks[0].slices[0].label == "intro"
+
+
+def test_slice_payload_serialization() -> None:
+    """to_payload() shape for each slice — what the WS frame ships."""
+    service = LooperService()
+    service.add_slice(0, 1000, 2000, "test")
+    payload = service.get_status().to_payload()
+    assert payload["tracks"][0]["slices"] == [
+        {"start_frame": 1000, "end_frame": 2000, "label": "test"},
+    ]
+
+
+# ---------------------------------------------------------------------------
 # T2512-SNAP — export_state / apply_state primitive
 # ---------------------------------------------------------------------------
 
@@ -698,6 +884,7 @@ def test_export_state_default_shape() -> None:
             "stop_mode": "hard",
             "fade_ms": 250,
             "sync_mode": "free",
+            "slices": [],
         }
     assert payload["master_level_db"] == 0.0
 

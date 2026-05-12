@@ -396,6 +396,94 @@ def test_status_default_sync_state() -> None:
 
 
 # ---------------------------------------------------------------------------
+# T2512-SLICE — slice route surface
+# ---------------------------------------------------------------------------
+
+
+def test_add_slice_route_records_metadata() -> None:
+    client, _, _ = _build_client()
+    resp = client.post(
+        "/api/v1/looper/track/0/slices",
+        json={"start_frame": 0, "end_frame": 48000, "label": "intro"},
+    )
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["tracks"][0]["slices"] == [
+        {"start_frame": 0, "end_frame": 48000, "label": "intro"},
+    ]
+
+
+def test_add_slice_overlap_returns_409() -> None:
+    client, _, _ = _build_client()
+    client.post(
+        "/api/v1/looper/track/0/slices",
+        json={"start_frame": 0, "end_frame": 1000, "label": "a"},
+    )
+    resp = client.post(
+        "/api/v1/looper/track/0/slices",
+        json={"start_frame": 500, "end_frame": 1500, "label": "b"},
+    )
+    assert resp.status_code == 409
+    body = resp.json()
+    assert "overlap" in body["detail"].lower()
+
+
+def test_add_slice_inverted_range_returns_400() -> None:
+    """Pydantic accepts both ge=0/ge=1 so the inverted check lands at
+    the service layer with invalid_slice → 400."""
+    client, _, _ = _build_client()
+    resp = client.post(
+        "/api/v1/looper/track/0/slices",
+        json={"start_frame": 1000, "end_frame": 500, "label": ""},
+    )
+    assert resp.status_code == 400
+
+
+def test_add_slice_negative_start_returns_422() -> None:
+    """Pydantic ge=0 rejects negative starts before reaching service."""
+    client, _, _ = _build_client()
+    resp = client.post(
+        "/api/v1/looper/track/0/slices",
+        json={"start_frame": -10, "end_frame": 1000, "label": ""},
+    )
+    assert resp.status_code == 422
+
+
+def test_add_slice_invalid_track_returns_400() -> None:
+    client, _, _ = _build_client()
+    resp = client.post(
+        "/api/v1/looper/track/9/slices",
+        json={"start_frame": 0, "end_frame": 1000, "label": ""},
+    )
+    assert resp.status_code == 400
+
+
+def test_clear_slices_route_drops_everything() -> None:
+    client, _, _ = _build_client()
+    client.post(
+        "/api/v1/looper/track/0/slices",
+        json={"start_frame": 0, "end_frame": 1000, "label": "a"},
+    )
+    resp = client.delete("/api/v1/looper/track/0/slices")
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["tracks"][0]["slices"] == []
+
+
+def test_clear_slices_invalid_track_returns_400() -> None:
+    client, _, _ = _build_client()
+    resp = client.delete("/api/v1/looper/track/9/slices")
+    assert resp.status_code == 400
+
+
+def test_status_default_slices_empty() -> None:
+    client, _, _ = _build_client()
+    body = client.get("/api/v1/looper/status").json()
+    for track in body["tracks"]:
+        assert track["slices"] == []
+
+
+# ---------------------------------------------------------------------------
 # T2512-SNAP — /state export + apply
 # ---------------------------------------------------------------------------
 

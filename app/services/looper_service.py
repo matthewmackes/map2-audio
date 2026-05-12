@@ -61,6 +61,30 @@ class TrackState(int, Enum):
 
 
 @dataclass(frozen=True)
+class TrackSlice:
+    """T2512-SLICE — non-destructive slice metadata.
+
+    A slice marks a frame range within a track's captured loop for
+    operator-driven region editing (label, audition, future region-
+    extract). Slices do NOT mutate captured audio; the engine plays
+    the loop intact regardless of how many slices are stored.
+
+    ``label`` is sanitized (trimmed; max 64 chars) by the setter,
+    never the dataclass.
+    """
+    start_frame: int
+    end_frame: int
+    label: str = ""
+
+    def to_payload(self) -> dict[str, Any]:
+        return {
+            "start_frame": self.start_frame,
+            "end_frame":   self.end_frame,
+            "label":       self.label,
+        }
+
+
+@dataclass(frozen=True)
 class TrackStatus:
     track:               int
     state:               TrackState
@@ -98,6 +122,11 @@ class TrackStatus:
     # actual loop-length locking on the engine is RT-critical work
     # gated behind T2512-SYNC-LOCK.
     sync_mode:           str   = "free"
+    # T2512-SLICE — per-track non-destructive slice metadata. Ordered
+    # by ``start_frame``, no overlaps within the same track (enforced
+    # by the service-side setter). Region-editor UI lands as a
+    # follow-up; the model + storage + snapshot round-trip ship now.
+    slices:              tuple[TrackSlice, ...] = ()
 
     def to_payload(self) -> dict[str, Any]:
         return {
@@ -119,6 +148,7 @@ class TrackStatus:
             "stop_mode":          self.stop_mode,
             "fade_ms":            self.fade_ms,
             "sync_mode":          self.sync_mode,
+            "slices":             [s.to_payload() for s in self.slices],
         }
 
 
@@ -246,6 +276,10 @@ class LooperService:
         # "at most one master" invariant: setting any track to
         # "master" demotes a previously-set master to "free".
         self._sync_mode: list[str] = ["free", "free", "free", "free"]
+        # T2512-SLICE — per-track ordered list of non-destructive
+        # slices. The setter sorts + validates (no overlaps); the
+        # decoration step exposes an immutable tuple on TrackStatus.
+        self._slices: list[list[TrackSlice]] = [[], [], [], []]
         # T2512-WS — fan-out hook for status changes. Set by
         # ``init_looper_ws_bridge`` at lifespan startup; remains None
         # in tests where WS isn't wired. The broadcaster is sync —
@@ -509,6 +543,83 @@ class LooperService:
                 return i
         return None
 
+    # T2512-SLICE — slice metadata management ----------------------------
+
+    _MAX_SLICES_PER_TRACK = 64
+    _MAX_LABEL_LENGTH = 64
+
+    def add_slice(
+        self,
+        track: int,
+        start_frame: int,
+        end_frame: int,
+        label: str = "",
+    ) -> LooperStatus:
+        """T2512-SLICE — add a non-destructive slice to a track.
+
+        Validates:
+          - track index 0..3
+          - 0 <= start_frame < end_frame
+          - no overlap with any existing slice on this track
+          - max 64 slices per track (hard cap to keep status payload
+            bounded)
+          - label trimmed; truncated to 64 chars
+
+        Raises ``LooperServiceError`` on validation failure. The
+        existing slice list is preserved on any error.
+        """
+        _validate_track(track)
+        try:
+            s = int(start_frame)
+            e = int(end_frame)
+        except (TypeError, ValueError):
+            raise LooperServiceError(
+                code="invalid_slice",
+                message=(
+                    f"start_frame / end_frame must be integers (got "
+                    f"{start_frame!r}, {end_frame!r})"
+                ),
+            )
+        if s < 0 or e <= s:
+            raise LooperServiceError(
+                code="invalid_slice",
+                message=(
+                    f"slice frame range must satisfy 0 <= start < end "
+                    f"(got start={s}, end={e})"
+                ),
+            )
+        existing = self._slices[track]
+        if len(existing) >= self._MAX_SLICES_PER_TRACK:
+            raise LooperServiceError(
+                code="slice_limit",
+                message=(
+                    f"track {track} already has {len(existing)} slices "
+                    f"(max {self._MAX_SLICES_PER_TRACK}); clear before adding more"
+                ),
+            )
+        # Overlap check — half-open [s, e). Existing slice [es, ee)
+        # overlaps when es < e AND s < ee.
+        for ex in existing:
+            if ex.start_frame < e and s < ex.end_frame:
+                raise LooperServiceError(
+                    code="slice_overlap",
+                    message=(
+                        f"slice [{s}, {e}) overlaps existing slice "
+                        f"[{ex.start_frame}, {ex.end_frame})"
+                    ),
+                )
+        sanitized = str(label or "").strip()[: self._MAX_LABEL_LENGTH]
+        new_slice = TrackSlice(start_frame=s, end_frame=e, label=sanitized)
+        existing.append(new_slice)
+        existing.sort(key=lambda x: x.start_frame)
+        return self._broadcast(self.get_status())
+
+    def clear_slices(self, track: int) -> LooperStatus:
+        """T2512-SLICE — drop every slice on a track. No-op if empty."""
+        _validate_track(track)
+        self._slices[track] = []
+        return self._broadcast(self.get_status())
+
     # -------- Snapshot integration (T2512-SNAP) --------
     #
     # The looper carries operator preferences that should travel with a
@@ -553,6 +664,7 @@ class LooperService:
                     "stop_mode":         self._stop_mode[i],
                     "fade_ms":           self._fade_ms[i],
                     "sync_mode":         self._sync_mode[i],
+                    "slices":            [s.to_payload() for s in self._slices[i]],
                 }
                 for i in range(4)
             ],
@@ -601,6 +713,38 @@ class LooperService:
                 mode = track_state["sync_mode"]
                 if isinstance(mode, str) and mode in self._VALID_SYNC_MODES:
                     self._sync_mode[idx] = mode
+            if "slices" in track_state:
+                raw_slices = track_state["slices"]
+                if isinstance(raw_slices, list):
+                    rebuilt: list[TrackSlice] = []
+                    seen_ranges: list[tuple[int, int]] = []
+                    for raw in raw_slices:
+                        if not isinstance(raw, dict):
+                            continue
+                        try:
+                            s = int(raw.get("start_frame", -1))
+                            e = int(raw.get("end_frame", -1))
+                        except (TypeError, ValueError):
+                            continue
+                        if s < 0 or e <= s:
+                            continue
+                        if len(rebuilt) >= self._MAX_SLICES_PER_TRACK:
+                            break
+                        # Drop overlapping slices defensively.
+                        overlap = any(
+                            es < e and s < ee for es, ee in seen_ranges
+                        )
+                        if overlap:
+                            continue
+                        label = str(raw.get("label") or "").strip()[
+                            : self._MAX_LABEL_LENGTH
+                        ]
+                        rebuilt.append(
+                            TrackSlice(start_frame=s, end_frame=e, label=label)
+                        )
+                        seen_ranges.append((s, e))
+                    rebuilt.sort(key=lambda x: x.start_frame)
+                    self._slices[idx] = rebuilt
 
         # T2512-SYNC — enforce the "at most one master" invariant
         # after bulk apply. If the payload set multiple tracks to
@@ -688,6 +832,10 @@ class LooperService:
                 ),
                 sync_mode=(
                     self._sync_mode[t.track] if 0 <= t.track < 4 else "free"
+                ),
+                slices=(
+                    tuple(self._slices[t.track])
+                    if 0 <= t.track < 4 else ()
                 ),
             )
             for t in status.tracks

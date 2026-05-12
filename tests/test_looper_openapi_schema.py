@@ -31,7 +31,8 @@ EXPECTED_PATHS_BY_METHOD: dict[str, set[str]] = {
         "/api/v1/looper/track/{track}/clear",
         "/api/v1/looper/track/{track}/undo",
         "/api/v1/looper/track/{track}/redo",
-        "/api/v1/looper/state",  # T2512-SNAP — apply
+        "/api/v1/looper/state",                          # T2512-SNAP — apply
+        "/api/v1/looper/track/{track}/slices",           # T2512-SLICE — add
     },
     "patch": {
         "/api/v1/looper/track/{track}/level",
@@ -43,10 +44,13 @@ EXPECTED_PATHS_BY_METHOD: dict[str, set[str]] = {
         "/api/v1/looper/track/{track}/one-shot",
         "/api/v1/looper/track/{track}/auto-armed",
         "/api/v1/looper/track/{track}/auto-threshold",
-        "/api/v1/looper/track/{track}/stop-mode",       # T2512-FADE
-        "/api/v1/looper/track/{track}/fade-ms",         # T2512-FADE
-        "/api/v1/looper/track/{track}/sync-mode",       # T2512-SYNC
+        "/api/v1/looper/track/{track}/stop-mode",        # T2512-FADE
+        "/api/v1/looper/track/{track}/fade-ms",          # T2512-FADE
+        "/api/v1/looper/track/{track}/sync-mode",        # T2512-SYNC
         "/api/v1/looper/master/level",
+    },
+    "delete": {
+        "/api/v1/looper/track/{track}/slices",           # T2512-SLICE — clear
     },
 }
 
@@ -209,9 +213,19 @@ def test_looper_status_schema_contains_bpm_and_one_shot_fields() -> None:
         "locked", "one_shot", "auto_armed", "auto_threshold_db",
         "stop_mode", "fade_ms",  # T2512-FADE
         "sync_mode",             # T2512-SYNC
+        "slices",                # T2512-SLICE
     ):
         assert required_field in track_props, (
             f"TrackStatusResponse.{required_field} missing from generated schema"
+        )
+
+    # T2512-SLICE — TrackSliceResponse component must exist with the
+    # expected three properties.
+    slice_schema = comp.get("TrackSliceResponse", {})
+    slice_props = slice_schema.get("properties", {})
+    for field in ("start_frame", "end_frame", "label"):
+        assert field in slice_props, (
+            f"TrackSliceResponse.{field} missing from generated schema"
         )
 
     # T2512-SYNC top-level field on LooperStatusResponse.

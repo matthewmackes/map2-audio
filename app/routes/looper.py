@@ -63,6 +63,10 @@ def _http_for_error(exc: LooperServiceError) -> HTTPException:
         "invalid_stop_mode": status.HTTP_400_BAD_REQUEST,
         # T2512-SYNC — unknown sync_mode strings.
         "invalid_sync_mode": status.HTTP_400_BAD_REQUEST,
+        # T2512-SLICE — invalid frame ranges / overlap / cap reached.
+        "invalid_slice": status.HTTP_400_BAD_REQUEST,
+        "slice_overlap": status.HTTP_409_CONFLICT,
+        "slice_limit":   status.HTTP_409_CONFLICT,
     }.get(exc.code, status.HTTP_500_INTERNAL_SERVER_ERROR)
     return HTTPException(status_code=code, detail=str(exc))
 
@@ -70,6 +74,13 @@ def _http_for_error(exc: LooperServiceError) -> HTTPException:
 # ---------------------------------------------------------------------------
 # Pydantic models
 # ---------------------------------------------------------------------------
+
+
+class TrackSliceResponse(BaseModel):
+    """T2512-SLICE — non-destructive slice metadata."""
+    start_frame: int
+    end_frame: int
+    label: str = ""
 
 
 class TrackStatusResponse(BaseModel):
@@ -91,6 +102,7 @@ class TrackStatusResponse(BaseModel):
     stop_mode: str = "hard"            # T2512-FADE — "hard" | "fade"
     fade_ms: int = 250                 # T2512-FADE — fade-out duration in ms
     sync_mode: str = "free"            # T2512-SYNC — "free" | "master" | "slave"
+    slices: list["TrackSliceResponse"] = []   # T2512-SLICE — slice metadata
 
 
 class LooperStatusResponse(BaseModel):
@@ -137,6 +149,13 @@ class SetFadeMsRequest(BaseModel):
 class SetSyncModeRequest(BaseModel):
     """T2512-SYNC — sync mode setter."""
     mode: str = Field(..., pattern="^(free|master|slave)$")
+
+
+class AddSliceRequest(BaseModel):
+    """T2512-SLICE — add a non-destructive slice."""
+    start_frame: int = Field(..., ge=0)
+    end_frame: int = Field(..., ge=1)
+    label: str = ""
 
 
 # ---------------------------------------------------------------------------
@@ -420,6 +439,39 @@ async def set_track_sync_mode(track: int, body: SetSyncModeRequest,
     return LooperStatusResponse.from_status(result)
 
 
+@router.post("/track/{track}/slices",
+             response_model=LooperStatusResponse,
+             operation_id="looper_add_track_slice",
+             summary="T2512-SLICE — add a non-destructive slice to a track")
+async def add_track_slice(track: int, body: AddSliceRequest,
+                          service: LooperService = Depends(_get_service)) -> LooperStatusResponse:
+    """T2512-SLICE — append a slice. Overlaps with existing slices
+    return HTTP 409 ``slice_overlap``; the per-track 64-slice cap
+    returns ``slice_limit``."""
+    try:
+        result = service.add_slice(
+            track, body.start_frame, body.end_frame, body.label
+        )
+    except LooperServiceError as exc:
+        raise _http_for_error(exc)
+    return LooperStatusResponse.from_status(result)
+
+
+@router.delete("/track/{track}/slices",
+               response_model=LooperStatusResponse,
+               operation_id="looper_clear_track_slices",
+               summary="T2512-SLICE — clear all slices on a track")
+async def clear_track_slices(track: int,
+                             service: LooperService = Depends(_get_service)) -> LooperStatusResponse:
+    """T2512-SLICE — drop every slice on a track. Loop content is
+    unaffected."""
+    try:
+        result = service.clear_slices(track)
+    except LooperServiceError as exc:
+        raise _http_for_error(exc)
+    return LooperStatusResponse.from_status(result)
+
+
 # ---------------------------------------------------------------------------
 # T2512-SNAP — snapshot integration primitive
 # ---------------------------------------------------------------------------
@@ -447,6 +499,7 @@ class LooperStateTrackPayload(BaseModel):
     stop_mode: str = "hard"
     fade_ms: int = 250
     sync_mode: str = "free"
+    slices: list[TrackSliceResponse] = []
 
 
 class LooperStatePayload(BaseModel):
