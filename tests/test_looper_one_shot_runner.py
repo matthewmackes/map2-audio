@@ -47,6 +47,7 @@ def _track(
     one_shot: bool = False,
     loop_length_frames: int = 0,
     playhead_frames: int = 0,
+    one_shot_passes: int = 1,
 ) -> TrackStatus:
     return TrackStatus(
         track=idx,
@@ -62,6 +63,7 @@ def _track(
         half_speed=False,
         locked=False,
         one_shot=one_shot,
+        one_shot_passes=one_shot_passes,
     )
 
 
@@ -338,3 +340,178 @@ async def test_sample_rate_constant_matches_48000():
     """SAMPLE_RATE_HZ must match the engine's locked rate. A regression
     here would silently shift the deadline math."""
     assert SAMPLE_RATE_HZ == 48000.0
+
+
+# ---------------------------------------------------------------------------
+# T2512-OS-COUNT — multi-pass one-shot
+# ---------------------------------------------------------------------------
+
+
+class _ScriptedService:
+    """Fake LooperService whose ``get_status`` returns a queue of
+    scripted statuses. Used by OS-COUNT tests where the runner
+    re-reads status after each pass to decide whether to keep
+    rescheduling."""
+
+    def __init__(self, statuses: list[LooperStatus]) -> None:
+        self._statuses = list(statuses)
+        self.stop_calls: list[int] = []
+        self.status_reads = 0
+
+    def stop_track(self, track: int) -> None:
+        self.stop_calls.append(track)
+
+    def get_status(self) -> LooperStatus:
+        self.status_reads += 1
+        if not self._statuses:
+            raise AssertionError(
+                "ScriptedService: ran out of scripted statuses"
+            )
+        # Last status repeats once exhausted to model "still playing".
+        if len(self._statuses) == 1:
+            return self._statuses[0]
+        return self._statuses.pop(0)
+
+
+def test_one_shot_passes_initial_observe_captures_count():
+    """Runner reads one_shot_passes from the first observe() that
+    schedules the deadline (not from later status frames)."""
+    import asyncio
+    loop = asyncio.new_event_loop()
+    try:
+        runner = LooperOneShotRunner(service=_FakeService(), loop=loop)
+        runner.observe(
+            _status([
+                _track(0, state=TrackState.PLAYING, one_shot=True,
+                       loop_length_frames=48_000, playhead_frames=0,
+                       one_shot_passes=3),
+                _track(1), _track(2), _track(3),
+            ])
+        )
+        assert runner._passes_remaining_for_test()[0] == 3
+        runner.cancel_all()
+    finally:
+        loop.close()
+
+
+def test_cancel_resets_passes_remaining():
+    """When the runner cancels a pending stop (state change), the
+    passes-remaining counter must reset to 0 — a future re-observe
+    starts a fresh count instead of inheriting stale state."""
+    import asyncio
+    loop = asyncio.new_event_loop()
+    try:
+        runner = LooperOneShotRunner(service=_FakeService(), loop=loop)
+        runner.observe(
+            _status([
+                _track(0, state=TrackState.PLAYING, one_shot=True,
+                       loop_length_frames=48_000, playhead_frames=0,
+                       one_shot_passes=4),
+                _track(1), _track(2), _track(3),
+            ])
+        )
+        assert runner._passes_remaining_for_test()[0] == 4
+        # Operator stops the track → state OVERDUBBING (or any non-PLAYING).
+        runner.observe(
+            _status([
+                _track(0, state=TrackState.OVERDUBBING, one_shot=True,
+                       loop_length_frames=48_000, playhead_frames=0,
+                       one_shot_passes=4),
+                _track(1), _track(2), _track(3),
+            ])
+        )
+        assert runner._passes_remaining_for_test()[0] == 0
+    finally:
+        loop.close()
+
+
+async def test_two_pass_one_shot_reschedules_then_stops():
+    """passes=2 + a short initial deadline: first deadline reschedules,
+    second deadline calls stop_track."""
+    loop = asyncio.get_event_loop()
+    # 48k loop, head at 47900 → ~2.08 ms remaining + 5 ms floor = 5 ms.
+    # Loop length is 48000 frames = 1.0 s, so the rescheduled pass is 1 s.
+    # That's too long for a test — shrink the loop_length to a few ms.
+    # 480 frames = 10 ms; full reschedule is 10 ms (clamped to 5 ms minimum
+    # but 10 > 5 so we get 10 ms).
+    playing_status = _status([
+        _track(0, state=TrackState.PLAYING, one_shot=True,
+               loop_length_frames=480, playhead_frames=0,
+               one_shot_passes=2),
+        _track(1), _track(2), _track(3),
+    ])
+    service = _ScriptedService([playing_status])
+    runner = LooperOneShotRunner(service=service, loop=loop)
+    runner.observe(playing_status)
+    assert runner._passes_remaining_for_test()[0] == 2
+    # First deadline (5 ms + slack) → reschedules; second deadline
+    # (10 ms + slack) → stops.
+    await asyncio.sleep(0.10)
+    assert service.stop_calls == [0]
+    assert runner._passes_remaining_for_test()[0] == 0
+
+
+async def test_passes_count_clamped_via_max_in_runner():
+    """A track with one_shot_passes=1 (default) still works identically
+    to the pre-OS-COUNT behavior — single deadline → single stop."""
+    loop = asyncio.get_event_loop()
+    playing_status = _status([
+        _track(0, state=TrackState.PLAYING, one_shot=True,
+               loop_length_frames=480, playhead_frames=0,
+               one_shot_passes=1),
+        _track(1), _track(2), _track(3),
+    ])
+    service = _ScriptedService([playing_status])
+    runner = LooperOneShotRunner(service=service, loop=loop)
+    runner.observe(playing_status)
+    assert runner._passes_remaining_for_test()[0] == 1
+    await asyncio.sleep(0.05)
+    assert service.stop_calls == [0]
+    # Status was read 0 times because the single-pass path doesn't
+    # reschedule — it goes straight to stop_track.
+    assert service.status_reads == 0
+
+
+async def test_reschedule_aborts_to_stop_when_track_no_longer_playing():
+    """Defensive: between the first deadline firing and our re-read
+    of get_status, the operator may have stopped/cleared the track.
+    If status no longer shows one_shot + PLAYING, fall through to
+    stop_track to resolve the operator intent."""
+    loop = asyncio.get_event_loop()
+    playing_status = _status([
+        _track(0, state=TrackState.PLAYING, one_shot=True,
+               loop_length_frames=480, playhead_frames=0,
+               one_shot_passes=3),
+        _track(1), _track(2), _track(3),
+    ])
+    stopped_status = _status([
+        _track(0, state=TrackState.STOPPED, one_shot=True,
+               loop_length_frames=480, playhead_frames=480,
+               one_shot_passes=3),
+        _track(1), _track(2), _track(3),
+    ])
+    service = _ScriptedService([playing_status, stopped_status, stopped_status])
+    runner = LooperOneShotRunner(service=service, loop=loop)
+    runner.observe(playing_status)
+    assert runner._passes_remaining_for_test()[0] == 3
+    await asyncio.sleep(0.05)
+    # stop_track called even though we never burned all 3 passes,
+    # because get_status reported a non-playing track at reschedule
+    # time. The operator's one_shot intent resolves cleanly.
+    assert service.stop_calls == [0]
+
+
+async def test_cancel_all_clears_passes_remaining():
+    loop = asyncio.get_event_loop()
+    runner = LooperOneShotRunner(service=_FakeService(), loop=loop)
+    runner.observe(
+        _status([
+            _track(0, state=TrackState.PLAYING, one_shot=True,
+                   loop_length_frames=48_000, playhead_frames=0,
+                   one_shot_passes=5),
+            _track(1), _track(2), _track(3),
+        ])
+    )
+    assert runner._passes_remaining_for_test()[0] == 5
+    runner.cancel_all()
+    assert runner._passes_remaining_for_test() == [0, 0, 0, 0]

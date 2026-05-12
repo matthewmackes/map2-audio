@@ -600,6 +600,60 @@ def test_reset_state_route_does_not_require_a_body() -> None:
 
 
 # ---------------------------------------------------------------------------
+# T2512-OS-COUNT — multi-pass one-shot pass-count route
+# ---------------------------------------------------------------------------
+
+
+def test_one_shot_passes_default_in_status_payload() -> None:
+    client, _, _ = _build_client()
+    resp = client.get("/api/v1/looper/status")
+    body = resp.json()
+    for entry in body["tracks"]:
+        assert entry["one_shot_passes"] == 1
+
+
+def test_set_one_shot_passes_route_updates_field() -> None:
+    client, _, _ = _build_client()
+    resp = client.patch(
+        "/api/v1/looper/track/0/one-shot-passes",
+        json={"passes": 6},
+    )
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["tracks"][0]["one_shot_passes"] == 6
+    assert body["tracks"][1]["one_shot_passes"] == 1
+
+
+def test_set_one_shot_passes_route_validates_range_low() -> None:
+    """0 falls below pydantic's ge=1 → 422 instead of silent clamp."""
+    client, _, _ = _build_client()
+    resp = client.patch(
+        "/api/v1/looper/track/0/one-shot-passes",
+        json={"passes": 0},
+    )
+    assert resp.status_code == 422
+
+
+def test_set_one_shot_passes_route_validates_range_high() -> None:
+    """100 falls above pydantic's le=32 → 422."""
+    client, _, _ = _build_client()
+    resp = client.patch(
+        "/api/v1/looper/track/0/one-shot-passes",
+        json={"passes": 100},
+    )
+    assert resp.status_code == 422
+
+
+def test_set_one_shot_passes_route_invalid_track_returns_400() -> None:
+    client, _, _ = _build_client()
+    resp = client.patch(
+        "/api/v1/looper/track/9/one-shot-passes",
+        json={"passes": 4},
+    )
+    assert resp.status_code == 400
+
+
+# ---------------------------------------------------------------------------
 # T2512-AUTO-PUSH — HTTP push endpoint for the auto-record trigger
 # ---------------------------------------------------------------------------
 

@@ -125,6 +125,14 @@ class TrackStatus:
     half_speed:          bool
     locked:              bool = False  # T2512-LOCK — write-lock toggle
     one_shot:            bool = False  # T2512-OS — one-shot / trigger mode
+    # T2512-OS-COUNT — number of consecutive loop passes a one-shot
+    # track should play before auto-stopping. Defaults to 1 (preserves
+    # the original T2512-OS contract: stop after one full pass).
+    # Operators set higher counts to play a verse-progression that
+    # spans N bars before stopping. Clamped 1..32 by the service-side
+    # setter; the runner reads this on the initial schedule and
+    # decrements after each completed pass.
+    one_shot_passes:     int  = 1
     # T2512-AUTO — auto-record state surface. v1 ships the operator
     # toggle + threshold storage so the UI and dispatcher path can
     # land without an engine binding. The actual "input level above
@@ -188,6 +196,7 @@ class TrackStatus:
             "half_speed":         self.half_speed,
             "locked":             self.locked,
             "one_shot":           self.one_shot,
+            "one_shot_passes":    self.one_shot_passes,
             "auto_armed":         self.auto_armed,
             "auto_threshold_db":  self.auto_threshold_db,
             "auto_last_level_db": self.auto_last_level_db,
@@ -307,6 +316,12 @@ class LooperService:
         # T2512-OS-RUNNER); this service exposes the flag + status so
         # the runner can react without owning service state.
         self._one_shot: list[bool] = [False, False, False, False]
+        # T2512-OS-COUNT — per-track pass count for one-shot mode.
+        # Each entry is the number of consecutive loop passes a
+        # one-shot track plays before the runner auto-stops.
+        # Defaults to 1 (preserves the pre-OS-COUNT contract).
+        # Clamped 1..32 by ``set_one_shot_passes``.
+        self._one_shot_passes: list[int] = [1, 1, 1, 1]
         # T2512-AUTO — per-track auto-record state. `_auto_armed`
         # tracks whether the operator has armed input-level detection
         # for this track; `_auto_threshold_db` stores the dB threshold
@@ -566,6 +581,38 @@ class LooperService:
         """
         _validate_track(track)
         self._locked[track] = bool(locked)
+        return self._broadcast(self.get_status())
+
+    _MIN_ONE_SHOT_PASSES = 1
+    _MAX_ONE_SHOT_PASSES = 32
+
+    def set_one_shot_passes(self, track: int, passes: int) -> LooperStatus:
+        """T2512-OS-COUNT — set the consecutive-pass count for a
+        one-shot track. Clamped 1..32.
+
+        Setting this on a non-one-shot track is intentionally allowed:
+        the operator may stage the pass count before flipping
+        ``one_shot=True``. The runner only reads this when one_shot is
+        already True, so a pre-staged value never has runtime effect
+        on its own.
+
+        Coerces non-int input (e.g. float "2.0", numeric string) into
+        an int when possible; rejects unparseable values with
+        LooperServiceError.
+        """
+        _validate_track(track)
+        try:
+            value = int(passes)
+        except (TypeError, ValueError):
+            raise LooperServiceError(
+                code="invalid_one_shot_passes",
+                message=f"one_shot_passes must be int (got {passes!r})",
+            )
+        clamped = max(
+            self._MIN_ONE_SHOT_PASSES,
+            min(self._MAX_ONE_SHOT_PASSES, value),
+        )
+        self._one_shot_passes[track] = clamped
         return self._broadcast(self.get_status())
 
     def set_one_shot(self, track: int, one_shot: bool) -> LooperStatus:
@@ -1017,6 +1064,7 @@ class LooperService:
                 {
                     "locked":            self._locked[i],
                     "one_shot":          self._one_shot[i],
+                    "one_shot_passes":   self._one_shot_passes[i],
                     "auto_armed":        self._auto_armed[i],
                     "auto_threshold_db": self._auto_threshold_db[i],
                     "stop_mode":         self._stop_mode[i],
@@ -1053,6 +1101,7 @@ class LooperService:
         """
         self._locked = [False, False, False, False]
         self._one_shot = [False, False, False, False]
+        self._one_shot_passes = [1, 1, 1, 1]
         self._auto_armed = [False, False, False, False]
         self._auto_threshold_db = [-36.0, -36.0, -36.0, -36.0]
         self._auto_last_level_db = [-150.0, -150.0, -150.0, -150.0]
@@ -1095,6 +1144,15 @@ class LooperService:
                 self._locked[idx] = bool(track_state["locked"])
             if "one_shot" in track_state:
                 self._one_shot[idx] = bool(track_state["one_shot"])
+            if "one_shot_passes" in track_state:
+                try:
+                    passes_val = int(track_state["one_shot_passes"])
+                    self._one_shot_passes[idx] = max(
+                        self._MIN_ONE_SHOT_PASSES,
+                        min(self._MAX_ONE_SHOT_PASSES, passes_val),
+                    )
+                except (TypeError, ValueError):
+                    pass
             if "auto_armed" in track_state:
                 self._auto_armed[idx] = bool(track_state["auto_armed"])
             if "auto_threshold_db" in track_state:
@@ -1232,6 +1290,10 @@ class LooperService:
                 half_speed=t.half_speed,
                 locked=self._locked[t.track] if 0 <= t.track < 4 else False,
                 one_shot=self._one_shot[t.track] if 0 <= t.track < 4 else False,
+                one_shot_passes=(
+                    self._one_shot_passes[t.track]
+                    if 0 <= t.track < 4 else 1
+                ),
                 auto_armed=(
                     self._auto_armed[t.track] if 0 <= t.track < 4 else False
                 ),

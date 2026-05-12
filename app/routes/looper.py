@@ -101,6 +101,7 @@ class TrackStatusResponse(BaseModel):
     half_speed: bool
     locked: bool = False  # T2512-LOCK — write-lock state
     one_shot: bool = False  # T2512-OS — one-shot / trigger mode
+    one_shot_passes: int = 1  # T2512-OS-COUNT — consecutive-pass count
     auto_armed: bool = False           # T2512-AUTO — operator armed input-threshold record
     auto_threshold_db: float = -36.0   # T2512-AUTO — threshold dB
     # T2512-AUTO-PEAK — recent input-level + peak surface for the
@@ -170,6 +171,14 @@ class SetAutoThresholdRequest(BaseModel):
     """T2512-AUTO — auto-record threshold setter. Same -90..0 dB clamp
     as the service-side ``set_auto_threshold_db``."""
     db: float = Field(..., ge=-90.0, le=0.0)
+
+
+class SetOneShotPassesRequest(BaseModel):
+    """T2512-OS-COUNT — multi-pass one-shot setter. Service-side
+    clamps to 1..32; FastAPI's validator enforces the same bounds
+    so an out-of-range value returns 422 rather than being silently
+    clamped at the route boundary."""
+    passes: int = Field(..., ge=1, le=32)
 
 
 class AutoRecordPushRequest(BaseModel):
@@ -412,6 +421,28 @@ async def set_track_one_shot(track: int, body: SetBoolRequest,
     """
     try:
         result = service.set_one_shot(track, body.value)
+    except LooperServiceError as exc:
+        raise _http_for_error(exc)
+    return LooperStatusResponse.from_status(result)
+
+
+@router.patch("/track/{track}/one-shot-passes",
+              response_model=LooperStatusResponse,
+              operation_id="looper_set_track_one_shot_passes",
+              summary="T2512-OS-COUNT — set consecutive-pass count for one-shot mode (1..32)")
+async def set_track_one_shot_passes(track: int, body: SetOneShotPassesRequest,
+                                    service: LooperService = Depends(_get_service)) -> LooperStatusResponse:
+    """T2512-OS-COUNT — set how many consecutive loop passes a
+    one-shot track plays before the runner auto-stops it.
+
+    Clamped 1..32 (1 preserves the original T2512-OS single-pass
+    contract). Setting this on a non-one-shot track is intentionally
+    allowed: operators may stage the count before flipping the
+    one-shot flag. The runner only reads this when a track first
+    enters the one-shot+playing state.
+    """
+    try:
+        result = service.set_one_shot_passes(track, body.passes)
     except LooperServiceError as exc:
         raise _http_for_error(exc)
     return LooperStatusResponse.from_status(result)

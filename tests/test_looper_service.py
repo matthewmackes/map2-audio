@@ -310,6 +310,142 @@ def test_one_shot_is_orthogonal_to_locked() -> None:
 
 
 # ---------------------------------------------------------------------------
+# T2512-OS-COUNT — multi-pass one-shot pass counter
+# ---------------------------------------------------------------------------
+
+
+def test_one_shot_passes_default_is_one() -> None:
+    """Every track starts with the original T2512-OS single-pass contract."""
+    service = LooperService()
+    status = service.get_status()
+    for t in status.tracks:
+        assert t.one_shot_passes == 1
+
+
+def test_set_one_shot_passes_sets_field() -> None:
+    service = LooperService()
+    service.set_one_shot_passes(0, 4)
+    status = service.get_status()
+    assert status.tracks[0].one_shot_passes == 4
+    assert all(status.tracks[i].one_shot_passes == 1 for i in (1, 2, 3))
+
+
+def test_set_one_shot_passes_clamps_low() -> None:
+    """0 (or negative) clamps to 1 so the runner never receives a
+    deadline that would never fire."""
+    service = LooperService()
+    service.set_one_shot_passes(0, 0)
+    service.set_one_shot_passes(1, -5)
+    status = service.get_status()
+    assert status.tracks[0].one_shot_passes == 1
+    assert status.tracks[1].one_shot_passes == 1
+
+
+def test_set_one_shot_passes_clamps_high() -> None:
+    """32 is the practical ceiling; 1000 clamps to 32 — guards against
+    UI sliders that accidentally let an operator dial in a five-minute
+    one-shot run by mistake."""
+    service = LooperService()
+    service.set_one_shot_passes(0, 1000)
+    status = service.get_status()
+    assert status.tracks[0].one_shot_passes == 32
+
+
+def test_set_one_shot_passes_rejects_non_int() -> None:
+    service = LooperService()
+    with pytest.raises(LooperServiceError) as exc:
+        service.set_one_shot_passes(0, "not a number")  # type: ignore[arg-type]
+    assert exc.value.code == "invalid_one_shot_passes"
+
+
+def test_set_one_shot_passes_invalid_track_raises() -> None:
+    service = LooperService()
+    with pytest.raises(LooperServiceError):
+        service.set_one_shot_passes(9, 2)
+
+
+def test_set_one_shot_passes_broadcasts() -> None:
+    """Mutating verbs always broadcast — symmetry with set_one_shot."""
+    received: list[LooperStatus] = []
+    service = LooperService(broadcaster=lambda status: received.append(status))
+    service.set_one_shot_passes(0, 3)
+    assert len(received) == 1
+    assert received[0].tracks[0].one_shot_passes == 3
+
+
+def test_one_shot_passes_persistent_across_state_transitions() -> None:
+    """The pass count survives record/stop/clear — operators stage it
+    once and re-use across takes."""
+    engine = _FakeEngine()
+    service = LooperService(engine=engine)
+    service.set_one_shot_passes(0, 5)
+    service.record(0)
+    service.stop_track(0)
+    service.clear(0)
+    assert service.get_status().tracks[0].one_shot_passes == 5
+
+
+def test_one_shot_passes_independent_of_one_shot_flag() -> None:
+    """Pre-staging the count without arming one_shot is allowed —
+    the runner ignores the count until one_shot is also True."""
+    service = LooperService()
+    service.set_one_shot_passes(0, 4)
+    status = service.get_status()
+    assert status.tracks[0].one_shot is False
+    assert status.tracks[0].one_shot_passes == 4
+
+
+def test_reset_state_zeroes_one_shot_passes_to_default() -> None:
+    service = LooperService()
+    service.set_one_shot_passes(0, 16)
+    service.reset_state()
+    status = service.get_status()
+    for t in status.tracks:
+        assert t.one_shot_passes == 1
+
+
+def test_apply_state_round_trips_one_shot_passes() -> None:
+    service = LooperService()
+    service.set_one_shot_passes(0, 3)
+    service.set_one_shot_passes(2, 8)
+    snap = service.export_state()
+    other = LooperService()
+    other.apply_state(snap)
+    status = other.get_status()
+    assert status.tracks[0].one_shot_passes == 3
+    assert status.tracks[2].one_shot_passes == 8
+    # Untouched tracks still default.
+    assert status.tracks[1].one_shot_passes == 1
+    assert status.tracks[3].one_shot_passes == 1
+
+
+def test_apply_state_clamps_one_shot_passes_from_payload() -> None:
+    service = LooperService()
+    payload = {
+        "schema_version": 1,
+        "tracks": [
+            {"one_shot_passes": 999},  # clamps to 32
+            {"one_shot_passes": 0},    # clamps to 1
+            {"one_shot_passes": "bad"},  # rejected — preserves default
+            {"one_shot_passes": 4},
+        ],
+        "master_level_db": 0.0,
+    }
+    service.apply_state(payload)
+    status = service.get_status()
+    assert status.tracks[0].one_shot_passes == 32
+    assert status.tracks[1].one_shot_passes == 1
+    assert status.tracks[2].one_shot_passes == 1  # preserved default
+    assert status.tracks[3].one_shot_passes == 4
+
+
+def test_one_shot_passes_payload_includes_key() -> None:
+    service = LooperService()
+    payload = service.get_status().to_payload()
+    assert "one_shot_passes" in payload["tracks"][0]
+
+
+# ---------------------------------------------------------------------------
 # T2512-CLOCK (inbound) — snapshot BPM surfaced in LooperStatus
 # ---------------------------------------------------------------------------
 
@@ -1644,6 +1780,7 @@ def test_export_state_default_shape() -> None:
         assert track == {
             "locked": False,
             "one_shot": False,
+            "one_shot_passes": 1,
             "auto_armed": False,
             "auto_threshold_db": -36.0,
             "stop_mode": "hard",

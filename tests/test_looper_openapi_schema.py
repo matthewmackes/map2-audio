@@ -48,6 +48,7 @@ EXPECTED_PATHS_BY_METHOD: dict[str, set[str]] = {
         "/api/v1/looper/track/{track}/half-speed",
         "/api/v1/looper/track/{track}/locked",
         "/api/v1/looper/track/{track}/one-shot",
+        "/api/v1/looper/track/{track}/one-shot-passes",  # T2512-OS-COUNT
         "/api/v1/looper/track/{track}/auto-armed",
         "/api/v1/looper/track/{track}/auto-threshold",
         "/api/v1/looper/track/{track}/stop-mode",        # T2512-FADE
@@ -233,7 +234,8 @@ def test_looper_status_schema_contains_bpm_and_one_shot_fields() -> None:
 
     track_props = track_schema.get("properties", {})
     for required_field in (
-        "locked", "one_shot", "auto_armed", "auto_threshold_db",
+        "locked", "one_shot", "one_shot_passes",  # T2512-OS-COUNT
+        "auto_armed", "auto_threshold_db",
         "auto_last_level_db", "auto_peak_db",  # T2512-AUTO-PEAK
         "stop_mode", "fade_ms",  # T2512-FADE
         "sync_mode",             # T2512-SYNC
