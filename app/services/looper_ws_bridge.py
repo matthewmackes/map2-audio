@@ -80,11 +80,31 @@ def init_looper_ws_bridge(
     active = service if service is not None else get_looper_service()
     target_loop = loop if loop is not None else asyncio.get_event_loop()
 
+    # T2512-OS-RUNNER — install the auto-stop watcher and compose it
+    # with the WS push so one mutating-verb broadcast feeds both
+    # subscribers (the WS clients + the one-shot scheduler). The
+    # runner's observe() is sync and idempotent across repeated
+    # frames; it never blocks the broadcaster thread.
+    from app.services.looper_one_shot_runner import init_looper_one_shot_runner
+    one_shot_runner = init_looper_one_shot_runner(
+        service=active, loop=target_loop
+    )
+
     def _schedule(status: LooperStatus) -> None:
-        """Sync entrypoint: schedule the async broadcast on the loop.
-        We do not block on the future — broadcast failures are logged
-        inside ``broadcast_looper_status`` and inside the
-        ``_log_result`` callback below."""
+        """Sync entrypoint: schedule the async broadcast on the loop
+        AND drive the one-shot runner inline. We do not block on the
+        future — broadcast failures are logged inside
+        ``broadcast_looper_status`` and inside the ``_log_result``
+        callback below."""
+        # One-shot scheduling first — runs inline, swallows its own
+        # exceptions so a buggy runner can't shadow the WS push.
+        try:
+            one_shot_runner.observe(status)
+        except Exception as exc:  # noqa: BLE001
+            logger.exception(
+                "looper_ws_bridge: one_shot_runner.observe failed: %s", exc
+            )
+
         try:
             future = asyncio.run_coroutine_threadsafe(
                 broadcast_looper_status(status), target_loop
