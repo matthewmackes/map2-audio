@@ -2421,6 +2421,40 @@ Shipped this run, in order:
 
 **Bench-only items** (skip during pure-Python ship loops): T2512-STOR, T2512-LONG, T2512-FX, T2512-TIME, T2512-DAW, T2512-FADE-RAMP, T2512-SYNC-LOCK.
 
+### Pick-up next (third Continue run handoff, filed 2026-05-12, end-of-run)
+
+**Third run total: 14 cycles + handoff, all dual-pushed. Cumulative T2512 test totals after three runs: ~397 Python tests across 16 suites + 85 web tests across 3 suites + 19 Node JS tests.**
+
+Shipped this run, in order:
+1. **T2512-AUTO-TRIGGER** — pure-Python decision engine completing the deferred auto-record half (push_input_level → service.record + auto-disarm, per-track 50ms cooldown, robustness against service exceptions)
+2. **T2512-SLICE-UI** — collapsible SliceEditor on LooperPage with add-form, sorted slice list, empty-state copy
+3. **T2512-SLICE-DEL** — per-slice delete (service verb + route + trash-can Button per row, accessibility metadata)
+4. **T2512-SLICE-AT-PLAYHEAD** — "Slice here (playhead @ N)" Button computes range from previous boundary; only renders when playhead > 0
+5. **T2512-RESET** — full state reset (service + route + danger-tertiary Button gated by Carbon Modal confirmation)
+6. **T2512-FSW-FS7** — Boss FS-7 dual-footswitch looper profile (first Boss/Roland vendor entry, CC 80/81 DAMC defaults)
+7. **T2512-AUTO-PUSH** — HTTP push endpoint `POST /track/{n}/auto-record/push` so external level monitors / test harnesses can drive auto-record without engine binding
+8. **T2512-ACTIVITY** — 200-entry ring buffer of operator-action audit events + GET/DELETE `/activity` routes
+9. **T2512-ACTIVITY-UI** — collapsible ActivityPanel on LooperPage polling every 2s while open
+10. **T2512-FSW-MAC-4T** — sibling MeloAudio Commander profile that distributes record+stop across all 4 tracks (variant `looper-4track`)
+11. **T2512-ACTIVITY-WS** — embed `recent_activity` tail (cap 20) in `LooperStatus` so WS subscribers get push-delivered audit updates; UI panel reads from status when wsConnected=true
+12. **T2512-EXPORT-UI** — "Export state (JSON)" Button + `looperApi.getState()` + browser download with ISO-timestamped filename
+13. **T2512-IMPORT-UI** — "Import state…" Button + hidden file input + FileReader-based JSON parse + `looperApi.applyState()` with shape validation
+14. **T2512-METRICS** — verb invocation counters incremented from inside `_record_activity()` + GET/DELETE `/metrics` routes + TS clients
+
+**Status of long-term priorities after this run:**
+- The previous handoff's order-1 picks (T2512-AUTO-TRIGGER, T2512-SLICE-UI, T2512-QUANT-ENGINE) — first two shipped here; QUANT-ENGINE remains C++ bench work.
+- New pure-Python operator features shipped: per-slice delete, slice-at-playhead, state reset/export/import, activity log + UI + WS embedding, metrics counters, FS-7 vendor profile, 4-track Commander variant.
+- LooperPage operator surface now end-to-end complete for every Python-side feature: every state field has UI + route + dispatcher (where applicable) + JS helper + tests.
+
+**Next-session order-1 picks** (priority order):
+1. **T2512-QUANT-ENGINE** — engine-side consumer of `quantize_record_length`. C++ bench task; Python decision helper is callable from the audio thread via pybind11. Should be next concrete engine slice.
+2. **T2512-AUTO-TRIGGER engine binding** — input-level RMS push from JUCE callback to Python. The Python state machine is fully tested + ready (T2512-AUTO-TRIGGER + T2512-AUTO-PUSH); just needs the audio-thread push.
+3. **T2512-FADE-RAMP** — gain-ramp on engine `looper_stop`. State surface already shipped; engine work is the bottleneck.
+
+**Bench-only / spec-needed** (unchanged from previous handoff): T2512-STOR, T2512-LONG, T2512-FX, T2512-TIME, T2512-DAW, T2512-BYP, T2512-SYNC-LOCK, T2512-CLOCK outbound.
+
+**Operator-visible "all done" list** (operator-facing T2512 features): record/stop/clear/undo/redo, level/mute/solo, reverse, half-speed, write-lock, one-shot (flag + runner), auto-record (state + trigger + HTTP push), fade-out mode (state), sync mode (state), slice metadata (model + UI + delete + at-playhead), quantize grid (math + service wiring), snapshot integration (export + import + reset), activity audit log (data + UI + WS push), metrics counters, MIDI/dispatcher routes across all 18 patterns, generic + MeloAudio + Boss FS-7 footswitch profiles, JS handler library.
+
 Remaining T2512 follow-ons, ordered by suggested pickup. **Read this list first next session.**
 
 | Order | Task | Why pickable now | RT gate | Suggested first move |
