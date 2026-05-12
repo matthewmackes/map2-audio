@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1590** Python | **1647** TypeScript | **218** C++/H | **149** Docs | **4299** total commits | **4** stars | **0** forks | **0** open issues
+**1592** Python | **1649** TypeScript | **222** C++/H | **149** Docs | **4302** total commits | **4** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -175,7 +175,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-DOCS:START -->
 | Document | Last Updated |
 |:---------|:------------|
-| [MAP2 Canonical Project Worklist](https://github.com/matthewmackes/map2-audio/blob/master/docs/PROJECT_WORKLIST.md) | 2026-05-11 |
+| [MAP2 Canonical Project Worklist](https://github.com/matthewmackes/map2-audio/blob/master/docs/PROJECT_WORKLIST.md) | 2026-05-12 |
 | [MAP2 — No-Hardware Worklist](https://github.com/matthewmackes/map2-audio/blob/master/docs/PROJECT_WORKLIST_NO_HARDWARE.md) | 2026-05-11 |
 | [Third-Party Notices](https://github.com/matthewmackes/map2-audio/blob/master/docs/THIRD_PARTY_NOTICES.md) | 2026-05-11 |
 | [MAP2 Audio Platform — AI Instructions](https://github.com/matthewmackes/map2-audio/blob/master/docs/CLAUDE.md) | 2026-05-10 |
@@ -193,7 +193,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 |  |  |  |
 | :---: | :---: | :---: |
 | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/map2-banner.png" width="280" alt="map2 banner"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/map2-banner-3.png" width="280" alt="map2 banner 3"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot-Cli.png" width="280" alt="Screenshot Cli"> |
-| <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 08-00-43 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 08 00 43 Mackes Audio Platform 2 FEB2025"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 07-58-14 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 07 58 14 Mackes Audio Platform 2 FEB2025"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 07-57-33 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 07 57 33 Mackes Audio Platform 2 FEB2025"> |
+| <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 08-00-43 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 08 00 43 Mackes Audio Platform 2 FEB2025"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 07-57-33 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 07 57 33 Mackes Audio Platform 2 FEB2025"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 07-58-14 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 07 58 14 Mackes Audio Platform 2 FEB2025"> |
 | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/MAP2_AUDIO-NODE_ARCH_DIAGRAM3.png" width="280" alt="MAP2 AUDIO NODE ARCH DIAGRAM3"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/MAP2_AUDIO-NODE_ARCH_DIAGRAM2-BANG.png" width="280" alt="MAP2 AUDIO NODE ARCH DIAGRAM2 BANG"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/MAP2_AUDIO-NODE_ARCH_DIAGRAM.png" width="280" alt="MAP2 AUDIO NODE ARCH DIAGRAM"> |
 <!-- GALLERY:END -->
 
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`b4e071ed`](https://github.com/matthewmackes/map2-audio/commit/b4e071ed7ded34df68829e721c8604cfe406ec5e) | feat(T2512): multi-track looper v1 — engine + service + page | Map2 Audio | 2026-05-12 |
+| [`6adaf69b`](https://github.com/matthewmackes/map2-audio/commit/6adaf69b43e09c105107c5c4848c6413c4683af5) | feat: mount RecordingPanel in snapshot editor + register ... | Map2 Audio | 2026-05-11 |
+| [`24e38f4b`](https://github.com/matthewmackes/map2-audio/commit/24e38f4b10316864f0f50f8977f7c160bea8571d) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-11 |
 | [`16f85595`](https://github.com/matthewmackes/map2-audio/commit/16f85595e1eb64ec0b59fc2e3178597c99189609) | feat(T2507-6): automation capture — parameter changes → J... | Map2 Audio | 2026-05-11 |
 | [`f3de9f72`](https://github.com/matthewmackes/map2-audio/commit/f3de9f7283825fb9eeebef8ef4199948c64827da) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-11 |
 | [`457dac6c`](https://github.com/matthewmackes/map2-audio/commit/457dac6ced3bf4291e5c8db5cb2d52190555c974) | feat(T2507-5b): pybind11 bindings — operator route reache... | Map2 Audio | 2026-05-11 |
 | [`f74bdfff`](https://github.com/matthewmackes/map2-audio/commit/f74bdfff7b2a7f39788fdbe48c3a9256e8487c2f) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-11 |
 | [`4d424d91`](https://github.com/matthewmackes/map2-audio/commit/4d424d91a6b2cc7bb19030fe11c9d4d9c0c0a3c7) | feat(T2507-5): RecorderService — engine-side session life... | Map2 Audio | 2026-05-11 |
-| [`f9400be1`](https://github.com/matthewmackes/map2-audio/commit/f9400be1d9829122ac06d5aa3d9917f751752257) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-11 |
-| [`9b0ce9b3`](https://github.com/matthewmackes/map2-audio/commit/9b0ce9b3593a5797131e6832b53b25973478c1c9) | feat(T2507-4): IoUringWriter — writer thread + WAV header... | Map2 Audio | 2026-05-11 |
-| [`26bcf997`](https://github.com/matthewmackes/map2-audio/commit/26bcf9970110db45938ad0e6c81d27ea5aaf5dfd) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-11 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
