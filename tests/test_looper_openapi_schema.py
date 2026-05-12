@@ -45,6 +45,7 @@ EXPECTED_PATHS_BY_METHOD: dict[str, set[str]] = {
         "/api/v1/looper/track/{track}/auto-threshold",
         "/api/v1/looper/track/{track}/stop-mode",       # T2512-FADE
         "/api/v1/looper/track/{track}/fade-ms",         # T2512-FADE
+        "/api/v1/looper/track/{track}/sync-mode",       # T2512-SYNC
         "/api/v1/looper/master/level",
     },
 }
@@ -207,7 +208,13 @@ def test_looper_status_schema_contains_bpm_and_one_shot_fields() -> None:
     for required_field in (
         "locked", "one_shot", "auto_armed", "auto_threshold_db",
         "stop_mode", "fade_ms",  # T2512-FADE
+        "sync_mode",             # T2512-SYNC
     ):
         assert required_field in track_props, (
             f"TrackStatusResponse.{required_field} missing from generated schema"
         )
+
+    # T2512-SYNC top-level field on LooperStatusResponse.
+    assert "sync_master_track" in status_schema.get("properties", {}), (
+        "LooperStatusResponse.sync_master_track missing from generated schema"
+    )

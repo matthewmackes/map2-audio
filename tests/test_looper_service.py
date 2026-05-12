@@ -532,6 +532,154 @@ def test_fade_state_payload_includes_both_keys() -> None:
 
 
 # ---------------------------------------------------------------------------
+# T2512-SYNC — per-track sync mode + master-track invariant
+# ---------------------------------------------------------------------------
+
+
+def test_sync_mode_default_is_free() -> None:
+    service = LooperService()
+    status = service.get_status()
+    assert all(t.sync_mode == "free" for t in status.tracks)
+    assert status.sync_master is False
+    assert status.sync_master_track is None
+
+
+def test_set_sync_mode_to_master() -> None:
+    service = LooperService()
+    service.set_sync_mode(0, "master")
+    status = service.get_status()
+    assert status.tracks[0].sync_mode == "master"
+    assert status.sync_master is True
+    assert status.sync_master_track == 0
+
+
+def test_set_sync_mode_demotes_previous_master() -> None:
+    """At-most-one-master invariant — promoting track 2 demotes track 0."""
+    service = LooperService()
+    service.set_sync_mode(0, "master")
+    service.set_sync_mode(2, "master")
+    status = service.get_status()
+    assert status.tracks[0].sync_mode == "free"
+    assert status.tracks[2].sync_mode == "master"
+    assert status.sync_master_track == 2
+
+
+def test_set_sync_mode_slave() -> None:
+    service = LooperService()
+    service.set_sync_mode(0, "master")
+    service.set_sync_mode(1, "slave")
+    service.set_sync_mode(2, "slave")
+    status = service.get_status()
+    assert status.tracks[1].sync_mode == "slave"
+    assert status.tracks[2].sync_mode == "slave"
+    # Slaves don't disturb the master.
+    assert status.sync_master_track == 0
+
+
+def test_set_sync_mode_rejects_unknown() -> None:
+    service = LooperService()
+    with pytest.raises(LooperServiceError) as exc:
+        service.set_sync_mode(0, "follower")
+    assert exc.value.code == "invalid_sync_mode"
+
+
+def test_set_sync_mode_invalid_track_raises() -> None:
+    service = LooperService()
+    with pytest.raises(LooperServiceError) as exc:
+        service.set_sync_mode(9, "free")
+    assert exc.value.code == "invalid_track"
+
+
+def test_sync_master_track_returns_none_when_demoted_to_free() -> None:
+    service = LooperService()
+    service.set_sync_mode(0, "master")
+    service.set_sync_mode(0, "free")
+    status = service.get_status()
+    assert status.sync_master_track is None
+    assert status.sync_master is False
+
+
+def test_sync_state_broadcasts() -> None:
+    received: list = []
+    service = LooperService(broadcaster=received.append)
+    service.set_sync_mode(0, "master")
+    service.set_sync_mode(1, "slave")
+    assert len(received) == 2
+
+
+def test_sync_state_persistent_across_record() -> None:
+    engine = _FakeEngine()
+    service = LooperService(engine=engine)
+    service.set_sync_mode(0, "master")
+    service.set_sync_mode(1, "slave")
+    service.record(0)
+    service.stop_track(0)
+    service.clear(0)
+    status = service.get_status()
+    assert status.tracks[0].sync_mode == "master"
+    assert status.tracks[1].sync_mode == "slave"
+
+
+def test_export_state_includes_sync_mode() -> None:
+    service = LooperService()
+    service.set_sync_mode(0, "master")
+    service.set_sync_mode(1, "slave")
+    payload = service.export_state()
+    assert payload["tracks"][0]["sync_mode"] == "master"
+    assert payload["tracks"][1]["sync_mode"] == "slave"
+
+
+def test_apply_state_restores_sync_mode() -> None:
+    service = LooperService()
+    service.apply_state({
+        "tracks": [
+            {"sync_mode": "master"},
+            {"sync_mode": "slave"},
+            {"sync_mode": "free"},
+            {"sync_mode": "slave"},
+        ],
+    })
+    status = service.get_status()
+    assert status.tracks[0].sync_mode == "master"
+    assert status.tracks[1].sync_mode == "slave"
+    assert status.tracks[3].sync_mode == "slave"
+    assert status.sync_master_track == 0
+
+
+def test_apply_state_drops_invalid_sync_mode() -> None:
+    """Unknown sync_mode in a payload must NOT overwrite valid prior state."""
+    service = LooperService()
+    service.set_sync_mode(0, "master")
+    service.apply_state({
+        "tracks": [
+            {"sync_mode": "boss"},  # unknown
+            {}, {}, {},
+        ],
+    })
+    assert service.get_status().tracks[0].sync_mode == "master"
+
+
+def test_apply_state_demotes_multiple_masters_in_payload() -> None:
+    """A malformed payload with two masters keeps the lowest-indexed
+    one as master and demotes the rest to free."""
+    service = LooperService()
+    service.apply_state({
+        "tracks": [
+            {"sync_mode": "master"},
+            {"sync_mode": "master"},  # duplicate
+            {"sync_mode": "master"},  # duplicate
+            {"sync_mode": "slave"},
+        ],
+    })
+    status = service.get_status()
+    assert status.tracks[0].sync_mode == "master"
+    assert status.tracks[1].sync_mode == "free"
+    assert status.tracks[2].sync_mode == "free"
+    assert status.tracks[3].sync_mode == "slave"
+    assert status.sync_master_track == 0
+
+
+# ---------------------------------------------------------------------------
 # T2512-SNAP — export_state / apply_state primitive
 # ---------------------------------------------------------------------------
 
@@ -549,6 +697,7 @@ def test_export_state_default_shape() -> None:
             "auto_threshold_db": -36.0,
             "stop_mode": "hard",
             "fade_ms": 250,
+            "sync_mode": "free",
         }
     assert payload["master_level_db"] == 0.0
 

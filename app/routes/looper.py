@@ -61,6 +61,8 @@ def _http_for_error(exc: LooperServiceError) -> HTTPException:
         "track_locked": status.HTTP_409_CONFLICT,
         # T2512-FADE — unknown stop_mode strings.
         "invalid_stop_mode": status.HTTP_400_BAD_REQUEST,
+        # T2512-SYNC — unknown sync_mode strings.
+        "invalid_sync_mode": status.HTTP_400_BAD_REQUEST,
     }.get(exc.code, status.HTTP_500_INTERNAL_SERVER_ERROR)
     return HTTPException(status_code=code, detail=str(exc))
 
@@ -88,6 +90,7 @@ class TrackStatusResponse(BaseModel):
     auto_threshold_db: float = -36.0   # T2512-AUTO — threshold dB
     stop_mode: str = "hard"            # T2512-FADE — "hard" | "fade"
     fade_ms: int = 250                 # T2512-FADE — fade-out duration in ms
+    sync_mode: str = "free"            # T2512-SYNC — "free" | "master" | "slave"
 
 
 class LooperStatusResponse(BaseModel):
@@ -98,6 +101,9 @@ class LooperStatusResponse(BaseModel):
     # T2512-CLOCK (inbound) — current snapshot tempo BPM.
     # Optional: None when the tempo service can't be reached.
     bpm: float | None = None
+    # T2512-SYNC — index of the track currently set to sync_mode
+    # "master", or null when no master is set.
+    sync_master_track: int | None = None
 
     @classmethod
     def from_status(cls, status_obj: LooperStatus) -> "LooperStatusResponse":
@@ -126,6 +132,11 @@ class SetStopModeRequest(BaseModel):
 class SetFadeMsRequest(BaseModel):
     """T2512-FADE — fade-out duration in ms (clamped 0..5000)."""
     fade_ms: int = Field(..., ge=0, le=5000)
+
+
+class SetSyncModeRequest(BaseModel):
+    """T2512-SYNC — sync mode setter."""
+    mode: str = Field(..., pattern="^(free|master|slave)$")
 
 
 # ---------------------------------------------------------------------------
@@ -386,6 +397,29 @@ async def set_track_fade_ms(track: int, body: SetFadeMsRequest,
     return LooperStatusResponse.from_status(result)
 
 
+@router.patch("/track/{track}/sync-mode",
+              response_model=LooperStatusResponse,
+              operation_id="looper_set_track_sync_mode",
+              summary="T2512-SYNC — set per-track sync mode (\"free\" | \"master\" | \"slave\")")
+async def set_track_sync_mode(track: int, body: SetSyncModeRequest,
+                              service: LooperService = Depends(_get_service)) -> LooperStatusResponse:
+    """T2512-SYNC — set per-track sync mode.
+
+    State-only in v1: the engine still plays every track at its own
+    captured length regardless of this value. Actual loop-length
+    locking is gated behind T2512-SYNC-LOCK (RT-critical).
+
+    Service enforces the "at most one master" invariant: promoting
+    a track to "master" demotes any other track currently set to
+    "master" back to "free".
+    """
+    try:
+        result = service.set_sync_mode(track, body.mode)
+    except LooperServiceError as exc:
+        raise _http_for_error(exc)
+    return LooperStatusResponse.from_status(result)
+
+
 # ---------------------------------------------------------------------------
 # T2512-SNAP — snapshot integration primitive
 # ---------------------------------------------------------------------------
@@ -412,6 +446,7 @@ class LooperStateTrackPayload(BaseModel):
     auto_threshold_db: float = -36.0
     stop_mode: str = "hard"
     fade_ms: int = 250
+    sync_mode: str = "free"
 
 
 class LooperStatePayload(BaseModel):

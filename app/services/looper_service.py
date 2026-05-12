@@ -91,6 +91,13 @@ class TrackStatus:
     # bench task (T2512-FADE-RAMP) for RT-safety review.
     stop_mode:           str   = "hard"
     fade_ms:             int   = 250
+    # T2512-SYNC — per-track sync mode. "free" (default — track plays
+    # at its own captured length), "master" (the timebase reference;
+    # at most one master at a time, enforced by the service), or
+    # "slave" (track length follows the master). State-only in v1;
+    # actual loop-length locking on the engine is RT-critical work
+    # gated behind T2512-SYNC-LOCK.
+    sync_mode:           str   = "free"
 
     def to_payload(self) -> dict[str, Any]:
         return {
@@ -111,6 +118,7 @@ class TrackStatus:
             "auto_threshold_db":  self.auto_threshold_db,
             "stop_mode":          self.stop_mode,
             "fade_ms":            self.fade_ms,
+            "sync_mode":          self.sync_mode,
         }
 
 
@@ -126,6 +134,11 @@ class LooperStatus:
     # failed). UI surfaces this without acting on it; quantization
     # logic lands later under T2512-QUANT.
     bpm:                Optional[float] = None
+    # T2512-SYNC — index of the track currently set to sync_mode
+    # "master", or None when no master is set. Top-level field
+    # rather than per-track so subscribers (UI, scripts) can find
+    # the timebase reference with a single read.
+    sync_master_track:  Optional[int] = None
 
     def to_payload(self) -> dict[str, Any]:
         return {
@@ -134,6 +147,7 @@ class LooperStatus:
             "sync_master":        self.sync_master,
             "master_level_db":    self.master_level_db,
             "bpm":                self.bpm,
+            "sync_master_track":  self.sync_master_track,
         }
 
 
@@ -228,6 +242,10 @@ class LooperService:
         # values when it lands; until then they're storage-only.
         self._stop_mode: list[str] = ["hard", "hard", "hard", "hard"]
         self._fade_ms:   list[int] = [250, 250, 250, 250]
+        # T2512-SYNC — per-track sync mode. The service enforces the
+        # "at most one master" invariant: setting any track to
+        # "master" demotes a previously-set master to "free".
+        self._sync_mode: list[str] = ["free", "free", "free", "free"]
         # T2512-WS — fan-out hook for status changes. Set by
         # ``init_looper_ws_bridge`` at lifespan startup; remains None
         # in tests where WS isn't wired. The broadcaster is sync —
@@ -455,6 +473,42 @@ class LooperService:
         self._fade_ms[track] = clamped
         return self._broadcast(self.get_status())
 
+    _VALID_SYNC_MODES = frozenset({"free", "master", "slave"})
+
+    def set_sync_mode(self, track: int, mode: str) -> LooperStatus:
+        """T2512-SYNC — set per-track sync mode.
+
+        Enforces the "at most one master" invariant: promoting a
+        track to "master" demotes any other track currently set to
+        "master" back to "free" (they can't both be the timebase
+        reference).
+
+        Invalid modes raise ``LooperServiceError(invalid_sync_mode)``.
+        """
+        _validate_track(track)
+        if mode not in self._VALID_SYNC_MODES:
+            raise LooperServiceError(
+                code="invalid_sync_mode",
+                message=(
+                    f"sync_mode must be one of {sorted(self._VALID_SYNC_MODES)} "
+                    f"(got {mode!r})"
+                ),
+            )
+        if mode == "master":
+            # Demote any other current master.
+            for i in range(4):
+                if i != track and self._sync_mode[i] == "master":
+                    self._sync_mode[i] = "free"
+        self._sync_mode[track] = mode
+        return self._broadcast(self.get_status())
+
+    def _current_master_track(self) -> Optional[int]:
+        """Return the track index currently set to ``master``, or None."""
+        for i in range(4):
+            if self._sync_mode[i] == "master":
+                return i
+        return None
+
     # -------- Snapshot integration (T2512-SNAP) --------
     #
     # The looper carries operator preferences that should travel with a
@@ -498,6 +552,7 @@ class LooperService:
                     "auto_threshold_db": self._auto_threshold_db[i],
                     "stop_mode":         self._stop_mode[i],
                     "fade_ms":           self._fade_ms[i],
+                    "sync_mode":         self._sync_mode[i],
                 }
                 for i in range(4)
             ],
@@ -542,6 +597,25 @@ class LooperService:
                     self._fade_ms[idx] = max(0, min(5000, ms))
                 except (TypeError, ValueError):
                     pass
+            if "sync_mode" in track_state:
+                mode = track_state["sync_mode"]
+                if isinstance(mode, str) and mode in self._VALID_SYNC_MODES:
+                    self._sync_mode[idx] = mode
+
+        # T2512-SYNC — enforce the "at most one master" invariant
+        # after bulk apply. If the payload set multiple tracks to
+        # "master" (malformed input), keep the lowest-indexed master
+        # and demote the rest to "free". This preserves at least one
+        # functional timebase reference rather than corrupting state.
+        masters = [i for i in range(4) if self._sync_mode[i] == "master"]
+        if len(masters) > 1:
+            for extra in masters[1:]:
+                self._sync_mode[extra] = "free"
+            logger.warning(
+                "looper.apply_state: payload listed multiple masters; "
+                "kept track %d, demoted %s to free",
+                masters[0], masters[1:],
+            )
 
         master_level = state.get("master_level_db")
         if master_level is not None:
@@ -612,6 +686,9 @@ class LooperService:
                 fade_ms=(
                     self._fade_ms[t.track] if 0 <= t.track < 4 else 250
                 ),
+                sync_mode=(
+                    self._sync_mode[t.track] if 0 <= t.track < 4 else "free"
+                ),
             )
             for t in status.tracks
         ]
@@ -627,12 +704,20 @@ class LooperService:
         except Exception as exc:  # noqa: BLE001
             logger.debug("looper: tempo read failed (swallowed): %s", exc)
 
+        # T2512-SYNC — resolve the master track from service state.
+        # The boolean ``sync_master`` flag reports whether a master is
+        # currently set (kept for backwards compatibility with the
+        # original sync_master bool field).
+        master_idx = self._current_master_track()
+        sync_master_present = master_idx is not None
+
         return LooperStatus(
             tracks=decorated,
             active_track_count=status.active_track_count,
-            sync_master=status.sync_master,
+            sync_master=sync_master_present,
             master_level_db=status.master_level_db,
             bpm=bpm,
+            sync_master_track=master_idx,
         )
 
 

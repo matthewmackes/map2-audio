@@ -340,6 +340,62 @@ def test_status_default_fade_state() -> None:
 
 
 # ---------------------------------------------------------------------------
+# T2512-SYNC — per-track sync mode route surface
+# ---------------------------------------------------------------------------
+
+
+def test_set_sync_mode_route_accepts_master() -> None:
+    client, _, _ = _build_client()
+    resp = client.patch(
+        "/api/v1/looper/track/0/sync-mode", json={"mode": "master"}
+    )
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["tracks"][0]["sync_mode"] == "master"
+    assert body["sync_master_track"] == 0
+    assert body["sync_master"] is True
+
+
+def test_set_sync_mode_route_demotes_previous_master() -> None:
+    client, _, _ = _build_client()
+    client.patch("/api/v1/looper/track/0/sync-mode", json={"mode": "master"})
+    resp = client.patch(
+        "/api/v1/looper/track/2/sync-mode", json={"mode": "master"}
+    )
+    body = resp.json()
+    assert body["tracks"][0]["sync_mode"] == "free"
+    assert body["tracks"][2]["sync_mode"] == "master"
+    assert body["sync_master_track"] == 2
+
+
+def test_set_sync_mode_route_rejects_unknown_mode() -> None:
+    client, _, _ = _build_client()
+    resp = client.patch(
+        "/api/v1/looper/track/0/sync-mode", json={"mode": "follower"}
+    )
+    # Pydantic pattern rejects before reaching service.
+    assert resp.status_code == 422
+
+
+def test_set_sync_mode_invalid_track_returns_400() -> None:
+    client, _, _ = _build_client()
+    resp = client.patch(
+        "/api/v1/looper/track/9/sync-mode", json={"mode": "master"}
+    )
+    assert resp.status_code == 400
+
+
+def test_status_default_sync_state() -> None:
+    client, _, _ = _build_client()
+    resp = client.get("/api/v1/looper/status")
+    body = resp.json()
+    assert body["sync_master_track"] is None
+    assert body["sync_master"] is False
+    for track in body["tracks"]:
+        assert track["sync_mode"] == "free"
+
+
+# ---------------------------------------------------------------------------
 # T2512-SNAP — /state export + apply
 # ---------------------------------------------------------------------------
 
