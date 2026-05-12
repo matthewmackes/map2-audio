@@ -43,6 +43,8 @@ EXPECTED_PATHS_BY_METHOD: dict[str, set[str]] = {
         "/api/v1/looper/track/{track}/one-shot",
         "/api/v1/looper/track/{track}/auto-armed",
         "/api/v1/looper/track/{track}/auto-threshold",
+        "/api/v1/looper/track/{track}/stop-mode",       # T2512-FADE
+        "/api/v1/looper/track/{track}/fade-ms",         # T2512-FADE
         "/api/v1/looper/master/level",
     },
 }
@@ -204,6 +206,7 @@ def test_looper_status_schema_contains_bpm_and_one_shot_fields() -> None:
     track_props = track_schema.get("properties", {})
     for required_field in (
         "locked", "one_shot", "auto_armed", "auto_threshold_db",
+        "stop_mode", "fade_ms",  # T2512-FADE
     ):
         assert required_field in track_props, (
             f"TrackStatusResponse.{required_field} missing from generated schema"

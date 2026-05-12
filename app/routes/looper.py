@@ -59,6 +59,8 @@ def _http_for_error(exc: LooperServiceError) -> HTTPException:
         # T2512-LOCK — write-locked tracks reject mutating verbs with
         # 409 Conflict. UI surfaces this as "Unlock the track first".
         "track_locked": status.HTTP_409_CONFLICT,
+        # T2512-FADE — unknown stop_mode strings.
+        "invalid_stop_mode": status.HTTP_400_BAD_REQUEST,
     }.get(exc.code, status.HTTP_500_INTERNAL_SERVER_ERROR)
     return HTTPException(status_code=code, detail=str(exc))
 
@@ -84,6 +86,8 @@ class TrackStatusResponse(BaseModel):
     one_shot: bool = False  # T2512-OS — one-shot / trigger mode
     auto_armed: bool = False           # T2512-AUTO — operator armed input-threshold record
     auto_threshold_db: float = -36.0   # T2512-AUTO — threshold dB
+    stop_mode: str = "hard"            # T2512-FADE — "hard" | "fade"
+    fade_ms: int = 250                 # T2512-FADE — fade-out duration in ms
 
 
 class LooperStatusResponse(BaseModel):
@@ -112,6 +116,16 @@ class SetAutoThresholdRequest(BaseModel):
     """T2512-AUTO — auto-record threshold setter. Same -90..0 dB clamp
     as the service-side ``set_auto_threshold_db``."""
     db: float = Field(..., ge=-90.0, le=0.0)
+
+
+class SetStopModeRequest(BaseModel):
+    """T2512-FADE — stop mode setter."""
+    mode: str = Field(..., pattern="^(hard|fade)$")
+
+
+class SetFadeMsRequest(BaseModel):
+    """T2512-FADE — fade-out duration in ms (clamped 0..5000)."""
+    fade_ms: int = Field(..., ge=0, le=5000)
 
 
 # ---------------------------------------------------------------------------
@@ -339,6 +353,39 @@ async def set_track_auto_threshold(track: int, body: SetAutoThresholdRequest,
     return LooperStatusResponse.from_status(result)
 
 
+@router.patch("/track/{track}/stop-mode",
+              response_model=LooperStatusResponse,
+              operation_id="looper_set_track_stop_mode",
+              summary="T2512-FADE — set the track's stop mode (\"hard\" | \"fade\")")
+async def set_track_stop_mode(track: int, body: SetStopModeRequest,
+                              service: LooperService = Depends(_get_service)) -> LooperStatusResponse:
+    """T2512-FADE — set the operator-visible stop mode for a track.
+
+    State-only in v1: the C++ engine still performs a hard cutoff
+    on ``stop_track`` regardless of this value. The actual gain
+    ramp is gated behind T2512-FADE-RAMP for RT-safety review.
+    """
+    try:
+        result = service.set_stop_mode(track, body.mode)
+    except LooperServiceError as exc:
+        raise _http_for_error(exc)
+    return LooperStatusResponse.from_status(result)
+
+
+@router.patch("/track/{track}/fade-ms",
+              response_model=LooperStatusResponse,
+              operation_id="looper_set_track_fade_ms",
+              summary="T2512-FADE — set the fade-out duration in ms (clamped 0..5000)")
+async def set_track_fade_ms(track: int, body: SetFadeMsRequest,
+                            service: LooperService = Depends(_get_service)) -> LooperStatusResponse:
+    """T2512-FADE — set the fade-out duration in milliseconds."""
+    try:
+        result = service.set_fade_ms(track, body.fade_ms)
+    except LooperServiceError as exc:
+        raise _http_for_error(exc)
+    return LooperStatusResponse.from_status(result)
+
+
 # ---------------------------------------------------------------------------
 # T2512-SNAP — snapshot integration primitive
 # ---------------------------------------------------------------------------
@@ -363,6 +410,8 @@ class LooperStateTrackPayload(BaseModel):
     one_shot: bool = False
     auto_armed: bool = False
     auto_threshold_db: float = -36.0
+    stop_mode: str = "hard"
+    fade_ms: int = 250
 
 
 class LooperStatePayload(BaseModel):

@@ -445,6 +445,93 @@ def test_auto_state_payload_includes_both_keys() -> None:
 
 
 # ---------------------------------------------------------------------------
+# T2512-FADE — stop mode + fade duration state surface
+# ---------------------------------------------------------------------------
+
+
+def test_stop_mode_default_is_hard() -> None:
+    service = LooperService()
+    status = service.get_status()
+    assert all(t.stop_mode == "hard" for t in status.tracks)
+
+
+def test_fade_ms_default_is_250() -> None:
+    service = LooperService()
+    status = service.get_status()
+    assert all(t.fade_ms == 250 for t in status.tracks)
+
+
+def test_set_stop_mode_to_fade() -> None:
+    service = LooperService()
+    service.set_stop_mode(0, "fade")
+    status = service.get_status()
+    assert status.tracks[0].stop_mode == "fade"
+    assert all(t.stop_mode == "hard" for t in status.tracks[1:])
+
+
+def test_set_stop_mode_rejects_unknown_value() -> None:
+    service = LooperService()
+    with pytest.raises(LooperServiceError) as exc:
+        service.set_stop_mode(0, "ramp")
+    assert exc.value.code == "invalid_stop_mode"
+
+
+def test_set_stop_mode_invalid_track_raises() -> None:
+    service = LooperService()
+    with pytest.raises(LooperServiceError) as exc:
+        service.set_stop_mode(7, "fade")
+    assert exc.value.code == "invalid_track"
+
+
+def test_set_fade_ms_clamps_extreme_values() -> None:
+    service = LooperService()
+    service.set_fade_ms(0, -500)    # below clamp
+    service.set_fade_ms(1, 99999)   # above clamp
+    service.set_fade_ms(2, 1500)
+    status = service.get_status()
+    assert status.tracks[0].fade_ms == 0
+    assert status.tracks[1].fade_ms == 5000
+    assert status.tracks[2].fade_ms == 1500
+
+
+def test_set_fade_ms_invalid_track_raises() -> None:
+    service = LooperService()
+    with pytest.raises(LooperServiceError) as exc:
+        service.set_fade_ms(-1, 100)
+    assert exc.value.code == "invalid_track"
+
+
+def test_fade_state_broadcasts() -> None:
+    received: list = []
+    service = LooperService(broadcaster=received.append)
+    service.set_stop_mode(0, "fade")
+    service.set_fade_ms(0, 500)
+    assert len(received) == 2
+
+
+def test_fade_state_persistent_across_record() -> None:
+    """Like other operator policy state, fade mode must survive
+    record/clear/undo/redo."""
+    engine = _FakeEngine()
+    service = LooperService(engine=engine)
+    service.set_stop_mode(0, "fade")
+    service.set_fade_ms(0, 750)
+    service.record(0)
+    service.stop_track(0)
+    service.clear(0)
+    status = service.get_status()
+    assert status.tracks[0].stop_mode == "fade"
+    assert status.tracks[0].fade_ms == 750
+
+
+def test_fade_state_payload_includes_both_keys() -> None:
+    service = LooperService()
+    payload = service.get_status().to_payload()
+    assert "stop_mode" in payload["tracks"][0]
+    assert "fade_ms" in payload["tracks"][0]
+
+
+# ---------------------------------------------------------------------------
 # T2512-SNAP — export_state / apply_state primitive
 # ---------------------------------------------------------------------------
 
@@ -460,6 +547,8 @@ def test_export_state_default_shape() -> None:
             "one_shot": False,
             "auto_armed": False,
             "auto_threshold_db": -36.0,
+            "stop_mode": "hard",
+            "fade_ms": 250,
         }
     assert payload["master_level_db"] == 0.0
 
@@ -591,6 +680,46 @@ def test_apply_state_handles_short_tracks_array() -> None:
     assert status.tracks[1].one_shot is True
     # Tracks 2, 3 still default.
     assert status.tracks[2].locked is False
+
+
+def test_export_state_includes_fade_fields() -> None:
+    """T2512-FADE — stop_mode + fade_ms must be in the snapshot payload."""
+    service = LooperService()
+    service.set_stop_mode(0, "fade")
+    service.set_fade_ms(0, 1000)
+    payload = service.export_state()
+    assert payload["tracks"][0]["stop_mode"] == "fade"
+    assert payload["tracks"][0]["fade_ms"] == 1000
+
+
+def test_apply_state_restores_fade_fields() -> None:
+    service = LooperService()
+    service.apply_state({
+        "tracks": [
+            {"stop_mode": "fade", "fade_ms": 750},
+            {"stop_mode": "hard", "fade_ms": 100},
+            {}, {},
+        ],
+    })
+    status = service.get_status()
+    assert status.tracks[0].stop_mode == "fade"
+    assert status.tracks[0].fade_ms == 750
+    assert status.tracks[1].stop_mode == "hard"
+    assert status.tracks[1].fade_ms == 100
+
+
+def test_apply_state_drops_invalid_stop_mode() -> None:
+    """An unknown stop_mode value must NOT be applied — keep the
+    prior valid value rather than corrupt the service state."""
+    service = LooperService()
+    service.set_stop_mode(0, "fade")
+    service.apply_state({
+        "tracks": [
+            {"stop_mode": "ramp"},  # not in {"hard", "fade"}
+            {}, {}, {},
+        ],
+    })
+    assert service.get_status().tracks[0].stop_mode == "fade"
 
 
 def test_round_trip_export_then_apply_preserves_state() -> None:

@@ -83,6 +83,14 @@ class TrackStatus:
     # Python.
     auto_armed:          bool  = False
     auto_threshold_db:   float = -36.0
+    # T2512-FADE — per-track stop mode + fade duration. v1 ships the
+    # operator-visible state ("hard" vs "fade"; fade duration in ms,
+    # clamped 0..5000) so the route + UI + dispatcher pattern can land
+    # independent of the engine. The actual gain-ramp on stop lives
+    # in the C++ audio callback and is gated behind a separate
+    # bench task (T2512-FADE-RAMP) for RT-safety review.
+    stop_mode:           str   = "hard"
+    fade_ms:             int   = 250
 
     def to_payload(self) -> dict[str, Any]:
         return {
@@ -101,6 +109,8 @@ class TrackStatus:
             "one_shot":           self.one_shot,
             "auto_armed":         self.auto_armed,
             "auto_threshold_db":  self.auto_threshold_db,
+            "stop_mode":          self.stop_mode,
+            "fade_ms":            self.fade_ms,
         }
 
 
@@ -212,6 +222,12 @@ class LooperService:
         # the arm state.
         self._auto_armed: list[bool] = [False, False, False, False]
         self._auto_threshold_db: list[float] = [-36.0, -36.0, -36.0, -36.0]
+        # T2512-FADE — per-track stop mode + fade duration. "hard"
+        # (default, matches current engine behavior) vs "fade" (gain
+        # ramp over fade_ms milliseconds). The engine reads these
+        # values when it lands; until then they're storage-only.
+        self._stop_mode: list[str] = ["hard", "hard", "hard", "hard"]
+        self._fade_ms:   list[int] = [250, 250, 250, 250]
         # T2512-WS — fan-out hook for status changes. Set by
         # ``init_looper_ws_bridge`` at lifespan startup; remains None
         # in tests where WS isn't wired. The broadcaster is sync —
@@ -404,6 +420,41 @@ class LooperService:
         self._auto_threshold_db[track] = clamped
         return self._broadcast(self.get_status())
 
+    _VALID_STOP_MODES = frozenset({"hard", "fade"})
+
+    def set_stop_mode(self, track: int, mode: str) -> LooperStatus:
+        """T2512-FADE — set the stop mode for a track.
+
+        Accepts "hard" (current default, immediate cutoff) or "fade"
+        (gain ramp over fade_ms milliseconds — engine ramp gated
+        behind T2512-FADE-RAMP). Invalid modes raise
+        ``LooperServiceError(invalid_stop_mode)``.
+        """
+        _validate_track(track)
+        if mode not in self._VALID_STOP_MODES:
+            raise LooperServiceError(
+                code="invalid_stop_mode",
+                message=(
+                    f"stop_mode must be one of {sorted(self._VALID_STOP_MODES)} "
+                    f"(got {mode!r})"
+                ),
+            )
+        self._stop_mode[track] = mode
+        return self._broadcast(self.get_status())
+
+    def set_fade_ms(self, track: int, fade_ms: int) -> LooperStatus:
+        """T2512-FADE — set the fade-out duration in milliseconds.
+
+        Clamped to 0..5000 ms. 0 ms effectively degrades a "fade"
+        stop to a "hard" stop. 5000 ms is the practical upper bound
+        — longer ramps risk noticeable seam artifacts when the
+        operator triggers another loop event.
+        """
+        _validate_track(track)
+        clamped = int(max(0, min(5000, fade_ms)))
+        self._fade_ms[track] = clamped
+        return self._broadcast(self.get_status())
+
     # -------- Snapshot integration (T2512-SNAP) --------
     #
     # The looper carries operator preferences that should travel with a
@@ -445,6 +496,8 @@ class LooperService:
                     "one_shot":          self._one_shot[i],
                     "auto_armed":        self._auto_armed[i],
                     "auto_threshold_db": self._auto_threshold_db[i],
+                    "stop_mode":         self._stop_mode[i],
+                    "fade_ms":           self._fade_ms[i],
                 }
                 for i in range(4)
             ],
@@ -477,6 +530,16 @@ class LooperService:
                 try:
                     db = float(track_state["auto_threshold_db"])
                     self._auto_threshold_db[idx] = max(-90.0, min(0.0, db))
+                except (TypeError, ValueError):
+                    pass
+            if "stop_mode" in track_state:
+                mode = track_state["stop_mode"]
+                if isinstance(mode, str) and mode in self._VALID_STOP_MODES:
+                    self._stop_mode[idx] = mode
+            if "fade_ms" in track_state:
+                try:
+                    ms = int(track_state["fade_ms"])
+                    self._fade_ms[idx] = max(0, min(5000, ms))
                 except (TypeError, ValueError):
                     pass
 
@@ -542,6 +605,12 @@ class LooperService:
                 auto_threshold_db=(
                     self._auto_threshold_db[t.track]
                     if 0 <= t.track < 4 else -36.0
+                ),
+                stop_mode=(
+                    self._stop_mode[t.track] if 0 <= t.track < 4 else "hard"
+                ),
+                fade_ms=(
+                    self._fade_ms[t.track] if 0 <= t.track < 4 else 250
                 ),
             )
             for t in status.tracks

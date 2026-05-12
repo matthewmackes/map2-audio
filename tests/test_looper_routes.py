@@ -279,6 +279,67 @@ def test_status_default_auto_state() -> None:
 
 
 # ---------------------------------------------------------------------------
+# T2512-FADE — stop_mode + fade_ms route surface
+# ---------------------------------------------------------------------------
+
+
+def test_set_stop_mode_route_accepts_fade() -> None:
+    client, _, _ = _build_client()
+    resp = client.patch(
+        "/api/v1/looper/track/0/stop-mode", json={"mode": "fade"}
+    )
+    assert resp.status_code == 200
+    assert resp.json()["tracks"][0]["stop_mode"] == "fade"
+
+
+def test_set_stop_mode_route_rejects_unknown_mode() -> None:
+    """The Pydantic pattern rejects unknown modes before reaching the service."""
+    client, _, _ = _build_client()
+    resp = client.patch(
+        "/api/v1/looper/track/0/stop-mode", json={"mode": "ramp"}
+    )
+    assert resp.status_code == 422
+
+
+def test_set_stop_mode_invalid_track_returns_400() -> None:
+    client, _, _ = _build_client()
+    resp = client.patch(
+        "/api/v1/looper/track/9/stop-mode", json={"mode": "fade"}
+    )
+    assert resp.status_code == 400
+
+
+def test_set_fade_ms_route_stores_clamped_value() -> None:
+    client, _, _ = _build_client()
+    resp = client.patch(
+        "/api/v1/looper/track/2/fade-ms", json={"fade_ms": 1500}
+    )
+    assert resp.status_code == 200
+    assert resp.json()["tracks"][2]["fade_ms"] == 1500
+
+
+def test_set_fade_ms_rejects_out_of_range() -> None:
+    client, _, _ = _build_client()
+    resp = client.patch(
+        "/api/v1/looper/track/0/fade-ms", json={"fade_ms": -100}
+    )
+    assert resp.status_code == 422
+    resp = client.patch(
+        "/api/v1/looper/track/0/fade-ms", json={"fade_ms": 10000}
+    )
+    assert resp.status_code == 422
+
+
+def test_status_default_fade_state() -> None:
+    client, _, _ = _build_client()
+    resp = client.get("/api/v1/looper/status")
+    body = resp.json()
+    for track in body["tracks"]:
+        assert track["stop_mode"] == "hard"
+        assert track["fade_ms"] == 250
+
+
+# ---------------------------------------------------------------------------
 # T2512-SNAP — /state export + apply
 # ---------------------------------------------------------------------------
 
