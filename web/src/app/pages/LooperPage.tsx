@@ -132,6 +132,30 @@ export function LooperPage() {
   // T2512-RESET — confirmation modal state.
   const [resetModalOpen, setResetModalOpen] = useState(false)
 
+  // T2512-EXPORT-UI — fetch the current LooperStatePayload, format
+  // as pretty JSON, and trigger a browser download. No mutation;
+  // safe to click any time. Filename includes ISO date so an
+  // operator with multiple backups can sort by name.
+  const handleExportState = useCallback(async () => {
+    try {
+      const payload = await looperApi.getState()
+      const json = JSON.stringify(payload, null, 2)
+      const blob = new Blob([json], { type: 'application/json' })
+      const url = URL.createObjectURL(blob)
+      const a = document.createElement('a')
+      const ts = new Date().toISOString().replace(/[:.]/g, '-')
+      a.href = url
+      a.download = `looper-state-${ts}.json`
+      document.body.appendChild(a)
+      a.click()
+      document.body.removeChild(a)
+      URL.revokeObjectURL(url)
+      setError(null)
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : 'Failed to export state')
+    }
+  }, [])
+
   const refresh = useCallback(async () => {
     try {
       const s = await looperApi.getStatus()
@@ -303,6 +327,14 @@ export function LooperPage() {
                   Track {status.sync_master_track + 1} = sync master
                 </Tag>
               ) : null}
+              <Button
+                kind="tertiary"
+                size="sm"
+                data-testid="looper-export-state-button"
+                onClick={handleExportState}
+              >
+                Export state (JSON)
+              </Button>
               <Button
                 kind="danger--tertiary"
                 size="sm"

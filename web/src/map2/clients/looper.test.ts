@@ -233,6 +233,38 @@ describe('looperApi HTTP surface', () => {
     expect(init?.method).toBe('DELETE')
   })
 
+  it('getState() → GET /state (default method)', async () => {
+    await looperApi.getState()
+    expect(fetchMock.mock.calls[0]?.[0]).toBe(`${BASE}/state`)
+    const init = (fetchMock.mock.calls[0]?.[1] ?? {}) as RequestInit
+    expect(init.method ?? 'GET').toBe('GET')
+  })
+
+  it('applyState(payload) → POST /state with the body', async () => {
+    const payload = {
+      schema_version: 1,
+      tracks: Array.from({ length: 4 }, () => ({
+        locked: false,
+        one_shot: false,
+        auto_armed: false,
+        auto_threshold_db: -36.0,
+        stop_mode: 'hard' as const,
+        fade_ms: 250,
+        sync_mode: 'free' as const,
+        slices: [],
+        quantize_division: 'off' as const,
+      })),
+      master_level_db: -3,
+    }
+    await looperApi.applyState(payload)
+    expect(fetchMock.mock.calls[0]?.[0]).toBe(`${BASE}/state`)
+    const init = fetchMock.mock.calls[0]?.[1] as RequestInit | undefined
+    expect(init?.method).toBe('POST')
+    const body = JSON.parse(String(init?.body))
+    expect(body.master_level_db).toBe(-3)
+    expect(body.tracks).toHaveLength(4)
+  })
+
   // ---------- Master ----------
 
   it('setMasterLevel(0) → PATCH /master/level with {db: 0}', async () => {

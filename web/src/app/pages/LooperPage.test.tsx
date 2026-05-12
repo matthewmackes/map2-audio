@@ -124,6 +124,22 @@ jest.mock('../../map2/clients/looper', () => ({
       fired: false,
       status: mockIdleSnapshot,
     })),
+    getState: jest.fn(async () => ({
+      schema_version: 1,
+      tracks: Array.from({ length: 4 }, () => ({
+        locked: false,
+        one_shot: false,
+        auto_armed: false,
+        auto_threshold_db: -36.0,
+        stop_mode: 'hard',
+        fade_ms: 250,
+        sync_mode: 'free',
+        slices: [],
+        quantize_division: 'off',
+      })),
+      master_level_db: 0,
+    })),
+    applyState: jest.fn(async () => mockIdleSnapshot),
     setMasterLevel: jest.fn(async () => mockIdleSnapshot),
   },
 }))
@@ -968,6 +984,54 @@ describe('LooperPage T2512-ACTIVITY-UI panel', () => {
     await waitFor(() => {
       expect(looperApi.clearActivity).toHaveBeenCalled()
     })
+  })
+})
+
+describe('LooperPage T2512-EXPORT-UI export-state button', () => {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const { looperApi } = require('../../map2/clients/looper') as {
+    looperApi: Record<string, jest.Mock>
+  }
+
+  beforeEach(() => {
+    Object.values(looperApi).forEach((fn) => fn.mockClear())
+  })
+
+  it('Export-state Button is rendered on the master Tile', async () => {
+    renderPage()
+    const btn = await screen.findByTestId('looper-export-state-button')
+    expect(btn).toBeInTheDocument()
+    expect(btn).toHaveTextContent('Export state (JSON)')
+  })
+
+  it('clicking the button fetches state and triggers a browser download', async () => {
+    // jsdom doesn't ship URL.createObjectURL; stub both ends.
+    const createObjectURL = jest.fn(() => 'blob:mock-url')
+    const revokeObjectURL = jest.fn()
+    ;(globalThis as unknown as { URL: typeof URL }).URL = {
+      ...(globalThis.URL as unknown as object),
+      createObjectURL,
+      revokeObjectURL,
+    } as unknown as typeof URL
+    // Stub anchor click so jsdom doesn't try to navigate.
+    const clickSpy = jest.spyOn(HTMLAnchorElement.prototype, 'click')
+      .mockImplementation(() => {})
+
+    renderPage()
+    const btn = await screen.findByTestId('looper-export-state-button')
+    act(() => {
+      btn.click()
+    })
+    await waitFor(() => {
+      expect(looperApi.getState).toHaveBeenCalledTimes(1)
+    })
+    await waitFor(() => {
+      expect(createObjectURL).toHaveBeenCalled()
+      expect(clickSpy).toHaveBeenCalled()
+      expect(revokeObjectURL).toHaveBeenCalledWith('blob:mock-url')
+    })
+
+    clickSpy.mockRestore()
   })
 })
 

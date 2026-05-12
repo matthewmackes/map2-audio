@@ -85,6 +85,28 @@ export interface LooperStatus {
   recent_activity: LooperActivityEvent[]
 }
 
+/**
+ * T2512-SNAP — exported / import-able operator policy state.
+ * The `recent_activity`-style transient fields are deliberately
+ * absent here: the snapshot service round-trips only the
+ * recall-relevant knobs.
+ */
+export interface LooperStatePayload {
+  schema_version: number
+  tracks: Array<{
+    locked: boolean
+    one_shot: boolean
+    auto_armed: boolean
+    auto_threshold_db: number
+    stop_mode: LooperStopMode
+    fade_ms: number
+    sync_mode: LooperSyncMode
+    slices: LooperTrackSlice[]
+    quantize_division: LooperQuantizeDivision
+  }>
+  master_level_db: number
+}
+
 const BASE = `${API_BASE}/v1/looper`
 
 export const looperApi = {
@@ -148,6 +170,19 @@ export const looperApi = {
   /** T2512-RESET — clear every Python-side flag + master level. Captured loop content is unaffected. */
   resetState: () =>
     fetchJson<LooperStatus>(`${BASE}/state/reset`, { method: 'POST' }),
+  /**
+   * T2512-SNAP — serialize operator policy state for snapshot save
+   * or offline backup. The returned payload is the same shape
+   * ``applyState`` accepts.
+   */
+  getState: () => fetchJson<LooperStatePayload>(`${BASE}/state`),
+  /** T2512-SNAP — apply a previously-exported state payload. */
+  applyState: (payload: LooperStatePayload) =>
+    fetchJson<LooperStatus>(`${BASE}/state`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+    }),
   /**
    * T2512-AUTO-PUSH — feed an input-level RMS sample to the auto-record
    * trigger. Returns {fired, status}. Useful for test harnesses or
