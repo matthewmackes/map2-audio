@@ -109,6 +109,15 @@ describe('looperApi HTTP surface', () => {
     })
   })
 
+  it('setOneShotPasses(2, 4) → PATCH /track/2/one-shot-passes with {passes: 4}', async () => {
+    // T2512-OS-COUNT — multi-pass one-shot.
+    await looperApi.setOneShotPasses(2, 4)
+    expect(fetchMock.mock.calls[0]?.[0]).toBe(`${BASE}/track/2/one-shot-passes`)
+    expect(JSON.parse(String(fetchMock.mock.calls[0]?.[1]?.body))).toEqual({
+      passes: 4,
+    })
+  })
+
   it('setAutoArmed(2, true) → PATCH /track/2/auto-armed with {value: true}', async () => {
     // T2512-AUTO — operator arms input-threshold auto-record.
     await looperApi.setAutoArmed(2, true)

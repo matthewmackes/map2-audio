@@ -147,6 +147,7 @@ jest.mock('../../map2/clients/looper', () => ({
     deletePreset: jest.fn(async () => mockIdleSnapshot),
     clearPresets: jest.fn(async () => mockIdleSnapshot),
     resetAutoPeak: jest.fn(async () => mockIdleSnapshot),
+    setOneShotPasses: jest.fn(async () => mockIdleSnapshot),
   },
 }))
 
@@ -1592,6 +1593,120 @@ describe('LooperPage T2512-AUTO-PEAK-UI threshold meter', () => {
     fireEvent.click(btn)
     await waitFor(() => {
       expect(mod.looperApi.resetAutoPeak).toHaveBeenCalledWith(2)
+    })
+  })
+})
+
+describe('LooperPage T2512-OS-COUNT-UI one-shot passes input', () => {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const mod = require('../../map2/clients/looper') as {
+    looperApi: {
+      setOneShotPasses: jest.Mock
+    }
+  }
+
+  beforeEach(() => {
+    mod.looperApi.setOneShotPasses.mockClear()
+  })
+
+  function pushTrack0OneShot(opts: {
+    one_shot: boolean
+    passes?: number
+  }): void {
+    act(() => {
+      sockets[0]!.onopen?.call(sockets[0] as unknown as WebSocket)
+    })
+    const frame = {
+      type: 'looper_status',
+      payload: {
+        ...mockIdleSnapshot,
+        tracks: mockIdleSnapshot.tracks.map((t, i) =>
+          i === 0
+            ? {
+                ...t,
+                one_shot: opts.one_shot,
+                one_shot_passes: opts.passes,
+              }
+            : t,
+        ),
+      },
+    }
+    act(() => {
+      sockets[0]!.onmessage?.call(
+        sockets[0] as unknown as WebSocket,
+        { data: JSON.stringify(frame) } as MessageEvent,
+      )
+    })
+  }
+
+  function getOneShotInput(track: number): HTMLInputElement {
+    // Carbon NumberInput renders the <input> with the id we provide.
+    return document.getElementById(
+      `looper-one-shot-passes-${track}`,
+    ) as HTMLInputElement
+  }
+
+  it('renders the one-shot passes input for every track', async () => {
+    renderPage()
+    await waitFor(() => {
+      for (let i = 0; i < 4; i++) {
+        expect(getOneShotInput(i)).not.toBeNull()
+      }
+    })
+  })
+
+  it('disables the input when the one-shot flag is off', async () => {
+    renderPage()
+    // mockIdleSnapshot has one_shot=false on every track; input should
+    // be disabled out of the box.
+    await waitFor(() => {
+      const input = getOneShotInput(0)
+      expect(input).not.toBeNull()
+      expect(input).toBeDisabled()
+    })
+  })
+
+  it('enables the input when a status frame turns one_shot on', async () => {
+    renderPage()
+    await waitFor(() => expect(getOneShotInput(0)).not.toBeNull())
+    pushTrack0OneShot({ one_shot: true, passes: 4 })
+    await waitFor(() => {
+      const input = getOneShotInput(0)
+      expect(input).not.toBeDisabled()
+      expect(input.value).toBe('4')
+    })
+  })
+
+  it('typing a value into the input fires setOneShotPasses with the clamped int', async () => {
+    renderPage()
+    await waitFor(() => expect(getOneShotInput(0)).not.toBeNull())
+    pushTrack0OneShot({ one_shot: true, passes: 1 })
+    await waitFor(() => expect(getOneShotInput(0)).not.toBeDisabled())
+    fireEvent.change(getOneShotInput(0), { target: { value: '7' } })
+    await waitFor(() => {
+      expect(mod.looperApi.setOneShotPasses).toHaveBeenCalledWith(0, 7)
+    })
+  })
+
+  it('over-range input clamps to 32 before calling the API', async () => {
+    renderPage()
+    await waitFor(() => expect(getOneShotInput(0)).not.toBeNull())
+    pushTrack0OneShot({ one_shot: true, passes: 1 })
+    await waitFor(() => expect(getOneShotInput(0)).not.toBeDisabled())
+    fireEvent.change(getOneShotInput(0), { target: { value: '99' } })
+    await waitFor(() => {
+      expect(mod.looperApi.setOneShotPasses).toHaveBeenCalledWith(0, 32)
+    })
+  })
+
+  it('under-range input clamps to 1 before calling the API', async () => {
+    renderPage()
+    await waitFor(() => expect(getOneShotInput(0)).not.toBeNull())
+    pushTrack0OneShot({ one_shot: true, passes: 5 })
+    await waitFor(() => expect(getOneShotInput(0)).not.toBeDisabled())
+    fireEvent.change(getOneShotInput(0), { target: { value: '0' } })
+    await waitFor(() => {
+      expect(mod.looperApi.setOneShotPasses).toHaveBeenCalledWith(0, 1)
     })
   })
 })

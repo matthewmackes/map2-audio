@@ -895,6 +895,33 @@ function TrackCard({
           <SelectItem value="thirty-second" text="1/32 (thirty-second)" />
         </Select>
 
+        {/* T2512-OS-COUNT-UI — multi-pass one-shot count. Backend
+            clamps to 1..32; the input mirrors the same bounds. Disabled
+            when the one-shot flag is off so operators can't tune a
+            value that nothing consumes — the runner reads this only
+            at one-shot+playing transition. */}
+        <NumberInput
+          id={`looper-one-shot-passes-${track.track}`}
+          data-testid={`looper-one-shot-passes-${track.track}`}
+          size="sm"
+          label="One-shot passes"
+          min={1}
+          max={32}
+          step={1}
+          value={track.one_shot_passes ?? 1}
+          disabled={!track.one_shot}
+          onChange={(_evt: unknown, payload: { value: number | string }) => {
+            const next = typeof payload.value === 'number'
+              ? payload.value
+              : parseInt(payload.value, 10)
+            if (!Number.isFinite(next)) return
+            const clamped = Math.max(1, Math.min(32, next))
+            onAction(() =>
+              looperApi.setOneShotPasses(track.track, clamped),
+            )
+          }}
+        />
+
         {/* T2512-SLICE — slice count + clear action. */}
         <div
           className="looper-track__slices"
