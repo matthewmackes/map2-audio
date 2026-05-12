@@ -73,6 +73,7 @@ class TrackStatus:
     soloed:              bool
     reverse:             bool
     half_speed:          bool
+    locked:              bool = False  # T2512-LOCK — write-lock toggle
 
     def to_payload(self) -> dict[str, Any]:
         return {
@@ -87,6 +88,7 @@ class TrackStatus:
             "soloed":             self.soloed,
             "reverse":            self.reverse,
             "half_speed":         self.half_speed,
+            "locked":             self.locked,
         }
 
 
@@ -150,8 +152,21 @@ def _status_from_engine_dict(payload: dict[str, Any]) -> LooperStatus:
 class LooperService:
     """Operator-facing looper. Wraps engine bindings."""
 
+    # T2512-LOCK — verbs that *mutate* the captured loop content. While
+    # a track is locked, these verbs raise ``LooperServiceError(locked)``
+    # without touching the engine. Verbs that only change *playback*
+    # parameters (level/mute/solo/reverse/half_speed) stay live; the
+    # lock protects the loop *content*, not the operator's ability to
+    # adjust how it sounds in the mix.
+    _LOCKED_VERBS = frozenset({"record", "clear", "undo", "redo"})
+
     def __init__(self, *, engine: Optional[Any] = None) -> None:
         self._engine = engine
+        # T2512-LOCK — per-track write-lock state. Python-side flag,
+        # not propagated into the C++ engine: the engine's record path
+        # is unconditional, and we enforce the lock at the service
+        # boundary before any binding call. Indexed 0..3.
+        self._locked: list[bool] = [False, False, False, False]
         # Defensive: probe the binding once at construction so we
         # log a clear warning if the engine SO predates T2512.
         if engine is not None:
@@ -166,10 +181,21 @@ class LooperService:
                     ", ".join(missing),
                 )
 
+    def _enforce_lock(self, track: int, verb: str) -> None:
+        if verb in self._LOCKED_VERBS and self._locked[track]:
+            raise LooperServiceError(
+                code="track_locked",
+                message=(
+                    f"track {track} is write-locked; unlock before "
+                    f"{verb!r} (set_locked(track, False))"
+                ),
+            )
+
     # -------- Stomp verbs --------
 
     def record(self, track: int) -> LooperStatus:
         _validate_track(track)
+        self._enforce_lock(track, "record")
         if self._engine and hasattr(self._engine, "looper_record"):
             self._engine.looper_record(track)
         else:
@@ -178,24 +204,31 @@ class LooperService:
 
     def stop_track(self, track: int) -> LooperStatus:
         _validate_track(track)
+        # stop_track is intentionally NOT lock-guarded: stopping a
+        # locked track is part of how an operator "freezes" the loop —
+        # take a playing track, lock it, then stop it later; the lock
+        # remains intact through the stop.
         if self._engine and hasattr(self._engine, "looper_stop"):
             self._engine.looper_stop(track)
         return self.get_status()
 
     def clear(self, track: int) -> LooperStatus:
         _validate_track(track)
+        self._enforce_lock(track, "clear")
         if self._engine and hasattr(self._engine, "looper_clear"):
             self._engine.looper_clear(track)
         return self.get_status()
 
     def undo(self, track: int) -> LooperStatus:
         _validate_track(track)
+        self._enforce_lock(track, "undo")
         if self._engine and hasattr(self._engine, "looper_undo"):
             self._engine.looper_undo(track)
         return self.get_status()
 
     def redo(self, track: int) -> LooperStatus:
         _validate_track(track)
+        self._enforce_lock(track, "redo")
         if self._engine and hasattr(self._engine, "looper_redo"):
             self._engine.looper_redo(track)
         return self.get_status()
@@ -239,27 +272,68 @@ class LooperService:
             self._engine.looper_set_master_level_db(db)
         return self.get_status()
 
+    def set_locked(self, track: int, locked: bool) -> LooperStatus:
+        """T2512-LOCK — toggle the write-lock flag for a track.
+
+        Locking is non-destructive: the captured loop content stays
+        intact, but ``record``, ``clear``, ``undo``, ``redo`` will
+        raise ``track_locked`` until the lock is released. Playback,
+        per-track volume / mute / solo / reverse / half-speed, and
+        ``stop_track`` remain live so the operator can still mix and
+        stop the loop.
+        """
+        _validate_track(track)
+        self._locked[track] = bool(locked)
+        return self.get_status()
+
     # -------- Inspection --------
 
     def get_status(self) -> LooperStatus:
         if self._engine and hasattr(self._engine, "looper_get_status"):
-            return _status_from_engine_dict(self._engine.looper_get_status())
-        # No engine — return an empty 4-track snapshot.
-        empty_tracks = [
-            TrackStatus(
-                track=i, state=TrackState.EMPTY,
-                state_label=TrackState.EMPTY.label,
-                loop_length_frames=0, playhead_frames=0, layer_count=0,
-                level_db=0.0, muted=False, soloed=False,
-                reverse=False, half_speed=False,
+            status = _status_from_engine_dict(self._engine.looper_get_status())
+        else:
+            # No engine — return an empty 4-track snapshot.
+            empty_tracks = [
+                TrackStatus(
+                    track=i, state=TrackState.EMPTY,
+                    state_label=TrackState.EMPTY.label,
+                    loop_length_frames=0, playhead_frames=0, layer_count=0,
+                    level_db=0.0, muted=False, soloed=False,
+                    reverse=False, half_speed=False,
+                )
+                for i in range(4)
+            ]
+            status = LooperStatus(
+                tracks=empty_tracks,
+                active_track_count=0,
+                sync_master=False,
+                master_level_db=0.0,
             )
-            for i in range(4)
+        # T2512-LOCK — overlay the Python-side lock flags onto each
+        # track. The engine doesn't know about locks; the service is
+        # authoritative.
+        decorated = [
+            TrackStatus(
+                track=t.track,
+                state=t.state,
+                state_label=t.state_label,
+                loop_length_frames=t.loop_length_frames,
+                playhead_frames=t.playhead_frames,
+                layer_count=t.layer_count,
+                level_db=t.level_db,
+                muted=t.muted,
+                soloed=t.soloed,
+                reverse=t.reverse,
+                half_speed=t.half_speed,
+                locked=self._locked[t.track] if 0 <= t.track < 4 else False,
+            )
+            for t in status.tracks
         ]
         return LooperStatus(
-            tracks=empty_tracks,
-            active_track_count=0,
-            sync_master=False,
-            master_level_db=0.0,
+            tracks=decorated,
+            active_track_count=status.active_track_count,
+            sync_master=status.sync_master,
+            master_level_db=status.master_level_db,
         )
 
 

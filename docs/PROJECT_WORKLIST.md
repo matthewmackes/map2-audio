@@ -2360,7 +2360,7 @@ Operator requested 27 features; v1 ships 13 live + files the remaining 14 as nam
 | T2512-OS    | One-shot / trigger mode               | Per-track flag; on press, play once and stop. |
 | T2512-AUTO  | Auto-record (threshold start)          | Input-level analyzer + trigger. |
 | T2512-FADE  | Fade-out stop modes                   | Stop kinds: hard / fade-out (ms). |
-| T2512-LOCK  | Loop / layer protection                | Per-track write-lock toggle. |
+| T2512-LOCK  | Loop / layer protection                | [✓] Shipped 2026-05-12. Per-track write-lock toggle in `LooperService` (Python-only, no engine change). Lock gates record/clear/undo/redo with `track_locked` → HTTP 409; stop, level, mute, solo, reverse, half-speed, playback stay live. New route `PATCH /api/v1/looper/track/{n}/locked`, new field `locked` on track status, new toggle in LooperPage. +15 tests (8 service, 7 route). |
 | T2512-BYP   | True bypass / buffered signal path     | Operator review of where the looper sits in the signal graph. |
 | T2512-FX    | Per-track effects (EQ / reverb)        | Per-track FX bus. Lands alongside T2507 v2 per-chain mounting. |
 | T2512-TIME  | Time-stretching                       | RT-safe DSP work (likely RubberBand or similar; license review). |

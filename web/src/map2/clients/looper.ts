@@ -28,6 +28,8 @@ export interface LooperTrackStatus {
   soloed: boolean
   reverse: boolean
   half_speed: boolean
+  /** T2512-LOCK — write-lock state. Locked tracks reject record/clear/undo/redo. */
+  locked: boolean
 }
 
 export interface LooperStatus {
@@ -53,6 +55,8 @@ export const looperApi = {
   setSoloed:   (track: number, soloed: boolean) => patch(`${BASE}/track/${track}/soloed`,    { value: soloed }),
   setReverse:  (track: number, reverse: boolean) => patch(`${BASE}/track/${track}/reverse`,  { value: reverse }),
   setHalfSpeed: (track: number, half: boolean)   => patch(`${BASE}/track/${track}/half-speed`, { value: half }),
+  /** T2512-LOCK — toggle the write-lock for a track. */
+  setLocked:   (track: number, locked: boolean) => patch(`${BASE}/track/${track}/locked`,   { value: locked }),
   setMasterLevel: (db: number)                 => patch(`${BASE}/master/level`, { db }),
 }
 

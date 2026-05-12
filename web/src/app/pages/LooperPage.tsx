@@ -95,7 +95,7 @@ const FEATURE_INVENTORY: ReadonlyArray<{
   { label: 'One-shot / trigger mode',                  live: false, note: 'State-machine extension (T2512-OS).' },
   { label: 'Auto-record (threshold start)',            live: false, note: 'Input-level analyzer + trigger (T2512-AUTO).' },
   { label: 'Fade-out / stop modes',                    live: false, note: 'Per-stop fade ramp (T2512-FADE).' },
-  { label: 'Loop / layer protection',                  live: false, note: 'Per-track write-lock toggle (T2512-LOCK).' },
+  { label: 'Loop / layer protection',                  live: true,  note: 'T2512-LOCK — per-track write-lock toggle. Locked tracks reject record/clear/undo/redo (HTTP 409); playback, level, mute, solo, reverse, half-speed, and stop remain live.' },
   { label: 'True bypass / buffered signal path',       live: false, note: 'Signal-path placement review needed (T2512-BYP).' },
   { label: 'Per-track effects (EQ / reverb)',          live: false, note: 'Per-track FX bus (T2512-FX).' },
   { label: 'Time-stretching',                          live: false, note: 'RT-safe DSP work (T2512-TIME).' },
@@ -318,6 +318,13 @@ function TrackCard({
           labelText="Half-speed"
           toggled={track.half_speed}
           onToggle={(val) => onAction(() => looperApi.setHalfSpeed(track.track, val))}
+        />
+        <Toggle
+          id={`looper-locked-${track.track}`}
+          size="sm"
+          labelText="Lock"
+          toggled={track.locked}
+          onToggle={(val) => onAction(() => looperApi.setLocked(track.track, val))}
         />
       </div>
     </Tile>

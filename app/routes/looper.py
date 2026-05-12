@@ -56,6 +56,9 @@ def _get_service() -> LooperService:
 def _http_for_error(exc: LooperServiceError) -> HTTPException:
     code = {
         "invalid_track": status.HTTP_400_BAD_REQUEST,
+        # T2512-LOCK — write-locked tracks reject mutating verbs with
+        # 409 Conflict. UI surfaces this as "Unlock the track first".
+        "track_locked": status.HTTP_409_CONFLICT,
     }.get(exc.code, status.HTTP_500_INTERNAL_SERVER_ERROR)
     return HTTPException(status_code=code, detail=str(exc))
 
@@ -77,6 +80,7 @@ class TrackStatusResponse(BaseModel):
     soloed: bool
     reverse: bool
     half_speed: bool
+    locked: bool = False  # T2512-LOCK — write-lock state
 
 
 class LooperStatusResponse(BaseModel):
@@ -253,3 +257,23 @@ async def set_track_half_speed(track: int, body: SetBoolRequest,
 async def set_master_level(body: SetLevelRequest,
                            service: LooperService = Depends(_get_service)) -> LooperStatusResponse:
     return LooperStatusResponse.from_status(service.set_master_level_db(body.db))
+
+
+@router.patch("/track/{track}/locked",
+              response_model=LooperStatusResponse,
+              operation_id="looper_set_track_locked",
+              summary="T2512-LOCK — toggle write-lock for a track")
+async def set_track_locked(track: int, body: SetBoolRequest,
+                           service: LooperService = Depends(_get_service)) -> LooperStatusResponse:
+    """T2512-LOCK — set the write-lock flag for a track.
+
+    Locked tracks reject ``record``, ``clear``, ``undo``, ``redo`` with
+    HTTP 409 Conflict (error code ``track_locked``). Playback, level,
+    mute, solo, reverse, half-speed, and stop remain live so the
+    operator can still mix and stop the loop.
+    """
+    try:
+        result = service.set_locked(track, body.value)
+    except LooperServiceError as exc:
+        raise _http_for_error(exc)
+    return LooperStatusResponse.from_status(result)
