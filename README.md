@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1622** Python | **1664** TypeScript | **222** C++/H | **149** Docs | **4375** total commits | **4** stars | **0** forks | **0** open issues
+**1622** Python | **1664** TypeScript | **222** C++/H | **149** Docs | **4377** total commits | **4** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`5247df33`](https://github.com/matthewmackes/map2-audio/commit/5247df33ef1c0c5f031c9c2bc36e7af9a5ec6bac) | feat(looper,slice): T2512-SLICE-AT-PLAYHEAD — slice from ... | Map2 Audio | 2026-05-12 |
+| [`efb34ca4`](https://github.com/matthewmackes/map2-audio/commit/efb34ca4c4c75b5d9a72a49c9f2519da5850b43c) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-12 |
 | [`0d99cbea`](https://github.com/matthewmackes/map2-audio/commit/0d99cbeab30cdbf410b1d4071895a03d478c3f25) | feat(looper,slice): T2512-SLICE-DEL — per-slice delete (s... | Map2 Audio | 2026-05-12 |
 | [`be058652`](https://github.com/matthewmackes/map2-audio/commit/be058652211c7dd2b06bfedabdc39f7f21fbd606) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-12 |
 | [`e3417f47`](https://github.com/matthewmackes/map2-audio/commit/e3417f475f3e1e6e3ff65a4e89e8f404732839d6) | feat(looper,ui): T2512-SLICE-UI — inline region editor fo... | Map2 Audio | 2026-05-12 |
 | [`67c76658`](https://github.com/matthewmackes/map2-audio/commit/67c7665830605fe5453d72987401fb813f439432) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-12 |
 | [`e00bb051`](https://github.com/matthewmackes/map2-audio/commit/e00bb05184ecff4d85062e9d0fa128c5ff581b81) | feat(looper): T2512-AUTO-TRIGGER — input-level state mach... | Map2 Audio | 2026-05-12 |
 | [`728f3392`](https://github.com/matthewmackes/map2-audio/commit/728f339236378a04f58dea7311a86111ee8b5925) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-12 |
-| [`39380382`](https://github.com/matthewmackes/map2-audio/commit/3938038230746b78b154f352c4ab89ae12cfcf6c) | docs(worklist): T2512 — second Continue run end-of-run ha... | Map2 Audio | 2026-05-12 |
-| [`da7ef1e2`](https://github.com/matthewmackes/map2-audio/commit/da7ef1e284e85cc7cc2c8201e05a3d31501fbb04) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-12 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
