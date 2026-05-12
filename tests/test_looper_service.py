@@ -307,3 +307,55 @@ def test_one_shot_is_orthogonal_to_locked() -> None:
     status = service.get_status()
     assert status.tracks[1].locked is True
     assert status.tracks[1].one_shot is True
+
+
+# ---------------------------------------------------------------------------
+# T2512-CLOCK (inbound) — snapshot BPM surfaced in LooperStatus
+# ---------------------------------------------------------------------------
+
+
+def test_status_includes_bpm_field() -> None:
+    """LooperStatus.bpm is always present (may be None) so the UI can
+    rely on a stable field shape."""
+    service = LooperService()
+    status = service.get_status()
+    # bpm is a top-level field on LooperStatus.
+    assert hasattr(status, "bpm")
+
+
+def test_status_bpm_reads_snapshot_tempo_service(monkeypatch) -> None:
+    """get_status() pulls live BPM from SnapshotTempoService.current_bpm()."""
+    service = LooperService()
+
+    class _FakeTempo:
+        def current_bpm(self) -> float:
+            return 142.5
+
+    import app.services.snapshot_tempo_service as tempo_mod
+    monkeypatch.setattr(tempo_mod, "SnapshotTempoService", lambda: _FakeTempo())
+
+    status = service.get_status()
+    assert status.bpm == 142.5
+
+
+def test_status_bpm_is_none_when_tempo_service_unavailable(monkeypatch) -> None:
+    """A broken tempo service must not break the looper status read."""
+    service = LooperService()
+
+    def _boom():
+        raise RuntimeError("tempo service down")
+
+    import app.services.snapshot_tempo_service as tempo_mod
+    monkeypatch.setattr(tempo_mod, "SnapshotTempoService", _boom)
+
+    status = service.get_status()
+    # Status still returns; bpm is None on tempo-read failure.
+    assert status.bpm is None
+
+
+def test_status_payload_includes_bpm_key() -> None:
+    """LooperStatus.to_payload() includes bpm so the WS frame + HTTP
+    response carry it through to the client."""
+    service = LooperService()
+    payload = service.get_status().to_payload()
+    assert "bpm" in payload

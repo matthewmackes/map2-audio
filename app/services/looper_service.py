@@ -100,6 +100,12 @@ class LooperStatus:
     active_track_count: int
     sync_master:        bool
     master_level_db:    float
+    # T2512-CLOCK (inbound) — current snapshot tempo in BPM. Resolved
+    # at status-read time from SnapshotTempoService; None when tempo
+    # is unavailable (snapshot tempo service not wired, or read
+    # failed). UI surfaces this without acting on it; quantization
+    # logic lands later under T2512-QUANT.
+    bpm:                Optional[float] = None
 
     def to_payload(self) -> dict[str, Any]:
         return {
@@ -107,6 +113,7 @@ class LooperStatus:
             "active_track_count": self.active_track_count,
             "sync_master":        self.sync_master,
             "master_level_db":    self.master_level_db,
+            "bpm":                self.bpm,
         }
 
 
@@ -389,11 +396,24 @@ class LooperService:
             )
             for t in status.tracks
         ]
+        # T2512-CLOCK (inbound) — resolve current BPM from the snapshot
+        # tempo service lazily so the looper never hard-imports a
+        # service that may not be wired in tests. Failures are
+        # swallowed: tempo is informational only in v1; quantization
+        # under T2512-QUANT will tighten this contract.
+        bpm: Optional[float] = None
+        try:
+            from app.services.snapshot_tempo_service import SnapshotTempoService
+            bpm = SnapshotTempoService().current_bpm()
+        except Exception as exc:  # noqa: BLE001
+            logger.debug("looper: tempo read failed (swallowed): %s", exc)
+
         return LooperStatus(
             tracks=decorated,
             active_track_count=status.active_track_count,
             sync_master=status.sync_master,
             master_level_db=status.master_level_db,
+            bpm=bpm,
         )
 
 

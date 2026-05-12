@@ -41,6 +41,24 @@ class SnapshotTempoService(Singleton):
         self._updated_at = _utcnow_iso()
         self._tap_timestamps: list[float] = []
 
+    def current_bpm(self) -> float:
+        """T2512-CLOCK — return the active tempo BPM as a single float.
+
+        Resolves the live tap override if one is in effect; otherwise
+        returns the stored snapshot tempo. Useful for consumers like
+        the looper that want a single read-side handle on tempo
+        without owning the full snapshot context.
+
+        Returns 120.0 when no snapshot has activated tempo yet.
+        """
+        with self._lock:
+            if (
+                self._tempo_source == "tap"
+                and self._live_tempo_bpm is not None
+            ):
+                return _clamp_bpm(self._live_tempo_bpm)
+            return _clamp_bpm(self._stored_tempo_bpm)
+
     def get_status(
         self,
         *,

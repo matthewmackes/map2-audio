@@ -39,6 +39,8 @@ export interface LooperStatus {
   active_track_count: number
   sync_master: boolean
   master_level_db: number
+  /** T2512-CLOCK (inbound) — current snapshot tempo BPM; null when tempo service unavailable. */
+  bpm: number | null
 }
 
 const BASE = `${API_BASE}/v1/looper`

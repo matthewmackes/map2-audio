@@ -97,7 +97,7 @@ const FEATURE_INVENTORY: ReadonlyArray<{
   { label: 'Visual status indicators',                live: true,  note: 'Per-track LED + state badge in this UI.' },
   { label: 'MIDI control (CC / Program Change)',      live: false, note: 'engine_command verb dispatcher exists; looper.* targets land under T2512-MIDI.' },
   { label: 'Precise loop timing (quantize/auto-close)', live: false, note: 'Needs tempo clock + quantize grid (T2512-QUANT).' },
-  { label: 'MIDI sync (clock in/out)',                 live: false, note: 'Tempo-clock source picker + outbound clock (T2512-CLOCK).' },
+  { label: 'MIDI sync (clock in/out)',                 live: false, note: 'T2512-CLOCK (inbound) shipped 2026-05-12 — current snapshot BPM surfaced in LooperStatus and the page header. Outbound clock + tempo-clock source picker still pending; T2512-QUANT depends on this.' },
   { label: 'External footswitch support',              live: false, note: 'Maps through generic MIDI; needs surface picker (T2512-FSW).' },
   { label: 'Multiple footswitch controls',             live: false, note: 'Lands with T2512-FSW.' },
   { label: 'Loop syncing (master/slave)',              live: false, note: 'Per-track sync mode picker (T2512-SYNC).' },
@@ -231,6 +231,15 @@ export function LooperPage() {
           >
             {wsConnected ? 'Live' : 'Polling (2 s)'}
           </Tag>
+          {status?.bpm != null ? (
+            <Tag
+              data-testid="looper-bpm"
+              type="cool-gray"
+              size="sm"
+            >
+              {status.bpm.toFixed(1)} BPM
+            </Tag>
+          ) : null}
         </div>
       </div>
 

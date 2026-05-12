@@ -184,3 +184,46 @@ def test_snapshot_tempo_service_singleton_reset():
     snapshot_tempo_service.reset_snapshot_tempo_service()
     replacement = snapshot_tempo_service.get_snapshot_tempo_service()
     assert replacement is not first
+
+
+# ---------------------------------------------------------------------------
+# T2512-CLOCK (inbound) — current_bpm() read helper
+# ---------------------------------------------------------------------------
+
+
+def test_current_bpm_returns_stored_default():
+    """Fresh service returns 120.0 (the seeded default) when no
+    snapshot has activated tempo yet."""
+    snapshot_tempo_service.reset_snapshot_tempo_service()
+    service = snapshot_tempo_service.get_snapshot_tempo_service()
+    assert service.current_bpm() == 120.0
+
+
+def test_current_bpm_returns_stored_bpm_after_activate():
+    snapshot_tempo_service.reset_snapshot_tempo_service()
+    service = snapshot_tempo_service.get_snapshot_tempo_service()
+    # Set internal state without touching the async apply path.
+    service._stored_tempo_bpm = 138.0  # type: ignore[attr-defined]
+    service._tempo_source = "stored"  # type: ignore[attr-defined]
+    assert service.current_bpm() == 138.0
+
+
+def test_current_bpm_prefers_live_tap_override():
+    """When tempo_source == 'tap' and live_tempo_bpm is set, current_bpm
+    returns the live override, not the stored value."""
+    snapshot_tempo_service.reset_snapshot_tempo_service()
+    service = snapshot_tempo_service.get_snapshot_tempo_service()
+    service._stored_tempo_bpm = 100.0  # type: ignore[attr-defined]
+    service._live_tempo_bpm = 156.0  # type: ignore[attr-defined]
+    service._tempo_source = "tap"  # type: ignore[attr-defined]
+    assert service.current_bpm() == 156.0
+
+
+def test_current_bpm_clamps_extreme_values():
+    """The same 20..300 clamp guard the other readers use."""
+    snapshot_tempo_service.reset_snapshot_tempo_service()
+    service = snapshot_tempo_service.get_snapshot_tempo_service()
+    service._stored_tempo_bpm = 1000.0  # type: ignore[attr-defined]
+    assert service.current_bpm() == 300.0
+    service._stored_tempo_bpm = 5.0  # type: ignore[attr-defined]
+    assert service.current_bpm() == 20.0

@@ -89,6 +89,9 @@ class LooperStatusResponse(BaseModel):
     active_track_count: int
     sync_master: bool
     master_level_db: float
+    # T2512-CLOCK (inbound) — current snapshot tempo BPM.
+    # Optional: None when the tempo service can't be reached.
+    bpm: float | None = None
 
     @classmethod
     def from_status(cls, status_obj: LooperStatus) -> "LooperStatusResponse":

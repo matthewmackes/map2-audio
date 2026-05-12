@@ -80,6 +80,7 @@ const mockIdleSnapshot: LooperStatus = {
   active_track_count: 0,
   sync_master: false,
   master_level_db: 0,
+  bpm: null,
 }
 
 jest.mock('../../map2/clients/looper', () => ({
@@ -245,5 +246,40 @@ describe('LooperPage WS frame application', () => {
 
     // Track grid is still rendered, no crash, state still empty.
     expect(screen.getByTestId('looper-ws-status')).toBeInTheDocument()
+  })
+})
+
+describe('LooperPage T2512-CLOCK BPM tag', () => {
+  it('renders the BPM tag when status.bpm is non-null', async () => {
+    renderPage()
+    await screen.findByTestId('looper-ws-status')
+    act(() => {
+      sockets[0]!.onopen?.call(sockets[0] as unknown as WebSocket)
+    })
+
+    const frame = {
+      type: 'looper_status',
+      payload: {
+        ...mockIdleSnapshot,
+        bpm: 142.5,
+      },
+    }
+    act(() => {
+      sockets[0]!.onmessage?.call(
+        sockets[0] as unknown as WebSocket,
+        { data: JSON.stringify(frame) } as MessageEvent,
+      )
+    })
+
+    await waitFor(() => {
+      expect(screen.getByTestId('looper-bpm')).toHaveTextContent('142.5 BPM')
+    })
+  })
+
+  it('omits the BPM tag entirely when status.bpm is null', async () => {
+    renderPage()
+    await screen.findByTestId('looper-ws-status')
+    // Initial snapshot has bpm=null; tag should never appear.
+    expect(screen.queryByTestId('looper-bpm')).toBeNull()
   })
 })

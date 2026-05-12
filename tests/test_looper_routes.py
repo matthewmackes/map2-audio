@@ -209,3 +209,17 @@ def test_get_status_default_reports_one_shot_false() -> None:
     resp = client.get("/api/v1/looper/status")
     body = resp.json()
     assert all(t["one_shot"] is False for t in body["tracks"])
+
+
+# ---------------------------------------------------------------------------
+# T2512-CLOCK (inbound) — bpm field on the status response
+# ---------------------------------------------------------------------------
+
+
+def test_status_response_includes_bpm_field() -> None:
+    """The HTTP response must always include the bpm key (may be null)
+    so the TypeScript client can rely on its presence."""
+    client, _, _ = _build_client()
+    resp = client.get("/api/v1/looper/status")
+    body = resp.json()
+    assert "bpm" in body
