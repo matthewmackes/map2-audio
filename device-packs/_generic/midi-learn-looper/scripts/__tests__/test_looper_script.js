@@ -129,11 +129,11 @@ run('master level setter scales identically', () => {
 // Coverage: every track exposes the full handler surface
 // ----------------------------------------------------------------------
 
-run('every track 0..3 exposes all 12 verbs on globalThis', () => {
+run('every track 0..3 exposes all 13 verbs on globalThis', () => {
     const ctx = loadLooperScript();
     const expected = ['record', 'stop', 'clear', 'undo', 'redo',
                       'muted', 'soloed', 'reverse', 'half_speed',
-                      'locked', 'one_shot', 'level'];
+                      'locked', 'one_shot', 'auto_armed', 'level'];
     for (let t = 0; t < 4; t++) {
         for (const v of expected) {
             const key = 'Looper.track_' + t + '.' + v;
@@ -165,6 +165,15 @@ run('one_shot toggle uses action=toggle and routes per track', () => {
     ctx.sandbox['Looper.track_2.one_shot']([0xB0, 71, 127]);
     assert.equal(ctx.calls.length, 1);
     assert.equal(ctx.calls[0].target, 'audio.looper.2.one_shot');
+    assert.equal(ctx.calls[0].action, 'toggle');
+});
+
+// T2512-AUTO — auto-record arm toggle.
+run('auto_armed toggle uses action=toggle and routes per track', () => {
+    const ctx = loadLooperScript();
+    ctx.sandbox['Looper.track_3.auto_armed']([0xB0, 72, 127]);
+    assert.equal(ctx.calls.length, 1);
+    assert.equal(ctx.calls[0].target, 'audio.looper.3.auto_armed');
     assert.equal(ctx.calls[0].action, 'toggle');
 });
 

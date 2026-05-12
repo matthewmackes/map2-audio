@@ -183,6 +183,8 @@ class HandlerHooks:
     looper_set_locked: Optional[_LooperSetBoolFn]     = None
     # T2512-OS over MIDI — toggle one-shot / trigger mode from a footswitch.
     looper_set_one_shot: Optional[_LooperSetBoolFn]   = None
+    # T2512-AUTO over MIDI — arm / disarm input-threshold auto-record.
+    looper_set_auto_armed: Optional[_LooperSetBoolFn] = None
 
 
 # ---------------------------------------------------------------------------
@@ -764,6 +766,13 @@ def register_default_handlers(
     dispatcher.register_pattern(
         "audio.looper.*.one_shot",
         _make_looper_set_bool_handler(actual_hooks, "one_shot", "looper_set_one_shot"),
+    )
+    # T2512-AUTO — footswitch toggle for per-track input-threshold auto-record.
+    dispatcher.register_pattern(
+        "audio.looper.*.auto_armed",
+        _make_looper_set_bool_handler(
+            actual_hooks, "auto_armed", "looper_set_auto_armed"
+        ),
     )
     dispatcher.register(
         "audio.looper.master.level", _make_looper_master_level_handler(actual_hooks)

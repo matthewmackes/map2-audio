@@ -359,3 +359,86 @@ def test_status_payload_includes_bpm_key() -> None:
     service = LooperService()
     payload = service.get_status().to_payload()
     assert "bpm" in payload
+
+
+# ---------------------------------------------------------------------------
+# T2512-AUTO — auto-record state surface
+# ---------------------------------------------------------------------------
+
+
+def test_auto_armed_default_is_off() -> None:
+    service = LooperService()
+    status = service.get_status()
+    assert all(t.auto_armed is False for t in status.tracks)
+
+
+def test_auto_threshold_default_is_minus_36() -> None:
+    """A sensible default for guitar input — quiet enough not to false-
+    trigger from cabinet bleed, loud enough that a normal pick fires."""
+    service = LooperService()
+    status = service.get_status()
+    assert all(t.auto_threshold_db == -36.0 for t in status.tracks)
+
+
+def test_set_auto_armed_flips_flag() -> None:
+    service = LooperService()
+    service.set_auto_armed(2, True)
+    status = service.get_status()
+    assert status.tracks[2].auto_armed is True
+    assert all(status.tracks[i].auto_armed is False for i in (0, 1, 3))
+
+
+def test_set_auto_threshold_db_clamps_extreme_values() -> None:
+    service = LooperService()
+    service.set_auto_threshold_db(0, -200.0)  # below clamp
+    service.set_auto_threshold_db(1, 50.0)     # above clamp
+    service.set_auto_threshold_db(2, -24.0)
+    status = service.get_status()
+    assert status.tracks[0].auto_threshold_db == -90.0
+    assert status.tracks[1].auto_threshold_db == 0.0
+    assert status.tracks[2].auto_threshold_db == -24.0
+
+
+def test_set_auto_armed_invalid_track_raises() -> None:
+    service = LooperService()
+    with pytest.raises(LooperServiceError) as exc:
+        service.set_auto_armed(9, True)
+    assert exc.value.code == "invalid_track"
+
+
+def test_set_auto_threshold_invalid_track_raises() -> None:
+    service = LooperService()
+    with pytest.raises(LooperServiceError) as exc:
+        service.set_auto_threshold_db(-1, -24.0)
+    assert exc.value.code == "invalid_track"
+
+
+def test_auto_state_broadcasts() -> None:
+    """Auto setters fan out to the WS like any other mutating verb."""
+    received: list = []
+    service = LooperService(broadcaster=received.append)
+    service.set_auto_armed(0, True)
+    service.set_auto_threshold_db(0, -24.0)
+    assert len(received) == 2
+
+
+def test_auto_state_persistent_across_record() -> None:
+    """T2512-AUTO state survives record/clear/undo/redo — the operator
+    explicitly clears it, just like locked + one_shot."""
+    engine = _FakeEngine()
+    service = LooperService(engine=engine)
+    service.set_auto_armed(0, True)
+    service.set_auto_threshold_db(0, -24.0)
+    service.record(0)
+    service.stop_track(0)
+    service.clear(0)
+    status = service.get_status()
+    assert status.tracks[0].auto_armed is True
+    assert status.tracks[0].auto_threshold_db == -24.0
+
+
+def test_auto_state_payload_includes_both_keys() -> None:
+    service = LooperService()
+    payload = service.get_status().to_payload()
+    assert "auto_armed" in payload["tracks"][0]
+    assert "auto_threshold_db" in payload["tracks"][0]

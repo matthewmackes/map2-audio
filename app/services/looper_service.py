@@ -75,6 +75,14 @@ class TrackStatus:
     half_speed:          bool
     locked:              bool = False  # T2512-LOCK — write-lock toggle
     one_shot:            bool = False  # T2512-OS — one-shot / trigger mode
+    # T2512-AUTO — auto-record state surface. v1 ships the operator
+    # toggle + threshold storage so the UI and dispatcher path can
+    # land without an engine binding. The actual "input level above
+    # threshold → fire record()" behavior lands later under
+    # T2512-AUTO-TRIGGER once engine input-level RMS is exposed to
+    # Python.
+    auto_armed:          bool  = False
+    auto_threshold_db:   float = -36.0
 
     def to_payload(self) -> dict[str, Any]:
         return {
@@ -91,6 +99,8 @@ class TrackStatus:
             "half_speed":         self.half_speed,
             "locked":             self.locked,
             "one_shot":           self.one_shot,
+            "auto_armed":         self.auto_armed,
+            "auto_threshold_db":  self.auto_threshold_db,
         }
 
 
@@ -189,6 +199,19 @@ class LooperService:
         # T2512-OS-RUNNER); this service exposes the flag + status so
         # the runner can react without owning service state.
         self._one_shot: list[bool] = [False, False, False, False]
+        # T2512-AUTO — per-track auto-record state. `_auto_armed`
+        # tracks whether the operator has armed input-level detection
+        # for this track; `_auto_threshold_db` stores the dB threshold
+        # below which audio is treated as silence (clamped -90..0 dB
+        # to match the bounds of useful guitar input). When an
+        # engine-side input-level binding eventually exposes RMS to
+        # Python (filed as T2512-AUTO-TRIGGER), a watcher loop will
+        # call `record(track)` whenever the RMS exceeds the threshold
+        # on an armed track. Until then, these fields are storage-
+        # only and surface in the status payload so the UI can show
+        # the arm state.
+        self._auto_armed: list[bool] = [False, False, False, False]
+        self._auto_threshold_db: list[float] = [-36.0, -36.0, -36.0, -36.0]
         # T2512-WS — fan-out hook for status changes. Set by
         # ``init_looper_ws_bridge`` at lifespan startup; remains None
         # in tests where WS isn't wired. The broadcaster is sync —
@@ -352,6 +375,35 @@ class LooperService:
         self._one_shot[track] = bool(one_shot)
         return self._broadcast(self.get_status())
 
+    def set_auto_armed(self, track: int, armed: bool) -> LooperStatus:
+        """T2512-AUTO — arm / disarm input-threshold auto-record.
+
+        Arming a track only stores the operator's intent — actual
+        record triggering depends on an engine binding that pushes
+        input-level RMS to Python (filed as T2512-AUTO-TRIGGER).
+        Until that lands, setting the flag is operator-visible state
+        only; the looper does not start recording on its own.
+
+        Non-destructive: does not touch loop content or any other
+        verb's behavior.
+        """
+        _validate_track(track)
+        self._auto_armed[track] = bool(armed)
+        return self._broadcast(self.get_status())
+
+    def set_auto_threshold_db(self, track: int, db: float) -> LooperStatus:
+        """T2512-AUTO — set the input-threshold dB for auto-record.
+
+        Clamped to -90..0 dB to match the useful range of a guitar
+        front-end. Below -90 dB the operator can't realistically play
+        quietly enough to stay under it; above 0 dB the threshold
+        would never trip.
+        """
+        _validate_track(track)
+        clamped = float(max(-90.0, min(0.0, db)))
+        self._auto_threshold_db[track] = clamped
+        return self._broadcast(self.get_status())
+
     # -------- Inspection --------
 
     def get_status(self) -> LooperStatus:
@@ -393,6 +445,13 @@ class LooperService:
                 half_speed=t.half_speed,
                 locked=self._locked[t.track] if 0 <= t.track < 4 else False,
                 one_shot=self._one_shot[t.track] if 0 <= t.track < 4 else False,
+                auto_armed=(
+                    self._auto_armed[t.track] if 0 <= t.track < 4 else False
+                ),
+                auto_threshold_db=(
+                    self._auto_threshold_db[t.track]
+                    if 0 <= t.track < 4 else -36.0
+                ),
             )
             for t in status.tracks
         ]

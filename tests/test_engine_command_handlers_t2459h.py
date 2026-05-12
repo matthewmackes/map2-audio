@@ -266,9 +266,10 @@ def test_register_default_handlers_does_not_overlap_targets() -> None:
     # from T2512-MIDI = 9 total.
     # Pattern list: audio.chain.*.bypass + the 10 audio.looper.*.<verb>
     # patterns from T2512-MIDI + audio.looper.*.locked from
-    # T2512-LOCK-MIDI + audio.looper.*.one_shot from T2512-OS = 13.
+    # T2512-LOCK-MIDI + audio.looper.*.one_shot from T2512-OS +
+    # audio.looper.*.auto_armed from T2512-AUTO = 14.
     assert len(dispatcher._exact) == 9  # type: ignore[attr-defined]
-    assert len(dispatcher._patterns) == 13  # type: ignore[attr-defined]
+    assert len(dispatcher._patterns) == 14  # type: ignore[attr-defined]
     expected_exact = {
         "audio.snapshot.recall",
         "audio.master.volume",
@@ -532,7 +533,8 @@ def test_looper_handlers_safe_with_no_hooks_wired() -> None:
     dispatcher.dispatch(_frame("audio.looper.master.level", action="set", value=0.0))
     dispatcher.dispatch(_frame("audio.looper.3.locked", action="set", value=1.0))
     dispatcher.dispatch(_frame("audio.looper.0.one_shot", action="set", value=1.0))
-    assert dispatcher.dispatched_count == 6
+    dispatcher.dispatch(_frame("audio.looper.0.auto_armed", action="set", value=1.0))
+    assert dispatcher.dispatched_count == 7
     assert dispatcher.errored_count == 0
 
 
@@ -592,4 +594,35 @@ def test_looper_one_shot_invalid_track_dropped() -> None:
     dispatcher = EngineCommandDispatcher()
     register_default_handlers(dispatcher, hooks=hooks)
     dispatcher.dispatch(_frame("audio.looper.4.one_shot", action="set", value=1.0))
+    assert called == []
+
+
+# ---------------------------------------------------------------------------
+# T2512-AUTO — audio.looper.<n>.auto_armed dispatcher target
+# ---------------------------------------------------------------------------
+
+
+def test_looper_auto_armed_routes_via_set_and_toggle() -> None:
+    called: list[tuple[int, bool]] = []
+    hooks = HandlerHooks(
+        looper_set_auto_armed=lambda track, value: called.append(
+            (track, value)
+        ),
+    )
+    dispatcher = EngineCommandDispatcher()
+    register_default_handlers(dispatcher, hooks=hooks)
+    dispatcher.dispatch(_frame("audio.looper.1.auto_armed", action="set", value=1.0))
+    dispatcher.dispatch(_frame("audio.looper.1.auto_armed", action="set", value=0.0))
+    dispatcher.dispatch(_frame("audio.looper.2.auto_armed", action="toggle"))
+    assert called == [(1, True), (1, False), (2, True)]
+
+
+def test_looper_auto_armed_invalid_track_dropped() -> None:
+    called: list = []
+    hooks = HandlerHooks(
+        looper_set_auto_armed=lambda track, value: called.append((track, value)),
+    )
+    dispatcher = EngineCommandDispatcher()
+    register_default_handlers(dispatcher, hooks=hooks)
+    dispatcher.dispatch(_frame("audio.looper.9.auto_armed", action="set", value=1.0))
     assert called == []

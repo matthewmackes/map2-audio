@@ -223,3 +223,56 @@ def test_status_response_includes_bpm_field() -> None:
     resp = client.get("/api/v1/looper/status")
     body = resp.json()
     assert "bpm" in body
+
+
+# ---------------------------------------------------------------------------
+# T2512-AUTO — auto-armed + auto-threshold route surface
+# ---------------------------------------------------------------------------
+
+
+def test_set_auto_armed_route_toggles_flag() -> None:
+    client, _, _ = _build_client()
+    resp = client.patch(
+        "/api/v1/looper/track/2/auto-armed", json={"value": True}
+    )
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["tracks"][2]["auto_armed"] is True
+    assert all(body["tracks"][i]["auto_armed"] is False for i in (0, 1, 3))
+
+
+def test_set_auto_threshold_route_stores_clamped_db() -> None:
+    client, _, _ = _build_client()
+    resp = client.patch(
+        "/api/v1/looper/track/0/auto-threshold", json={"db": -24.0}
+    )
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["tracks"][0]["auto_threshold_db"] == -24.0
+
+
+def test_set_auto_threshold_rejects_out_of_range_db() -> None:
+    """The Pydantic clamp on SetAutoThresholdRequest rejects values
+    outside [-90, 0]."""
+    client, _, _ = _build_client()
+    resp = client.patch(
+        "/api/v1/looper/track/0/auto-threshold", json={"db": -200.0}
+    )
+    assert resp.status_code == 422
+
+
+def test_set_auto_armed_invalid_track_returns_400() -> None:
+    client, _, _ = _build_client()
+    resp = client.patch(
+        "/api/v1/looper/track/9/auto-armed", json={"value": True}
+    )
+    assert resp.status_code == 400
+
+
+def test_status_default_auto_state() -> None:
+    client, _, _ = _build_client()
+    resp = client.get("/api/v1/looper/status")
+    body = resp.json()
+    for track in body["tracks"]:
+        assert track["auto_armed"] is False
+        assert track["auto_threshold_db"] == -36.0

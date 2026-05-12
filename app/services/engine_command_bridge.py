@@ -162,6 +162,10 @@ class EngineCommandBridge:
             looper_set_one_shot=lambda track, value: self._looper_call(
                 "set_one_shot", track, value
             ),
+            # T2512-AUTO — footswitch arms input-threshold auto-record.
+            looper_set_auto_armed=lambda track, value: self._looper_call(
+                "set_auto_armed", track, value
+            ),
             looper_set_master_level=lambda value: self._looper_call_master(
                 "set_master_level_db", value
             ),

@@ -82,6 +82,8 @@ class TrackStatusResponse(BaseModel):
     half_speed: bool
     locked: bool = False  # T2512-LOCK — write-lock state
     one_shot: bool = False  # T2512-OS — one-shot / trigger mode
+    auto_armed: bool = False           # T2512-AUTO — operator armed input-threshold record
+    auto_threshold_db: float = -36.0   # T2512-AUTO — threshold dB
 
 
 class LooperStatusResponse(BaseModel):
@@ -104,6 +106,12 @@ class SetLevelRequest(BaseModel):
 
 class SetBoolRequest(BaseModel):
     value: bool
+
+
+class SetAutoThresholdRequest(BaseModel):
+    """T2512-AUTO — auto-record threshold setter. Same -90..0 dB clamp
+    as the service-side ``set_auto_threshold_db``."""
+    db: float = Field(..., ge=-90.0, le=0.0)
 
 
 # ---------------------------------------------------------------------------
@@ -294,6 +302,38 @@ async def set_track_one_shot(track: int, body: SetBoolRequest,
     """
     try:
         result = service.set_one_shot(track, body.value)
+    except LooperServiceError as exc:
+        raise _http_for_error(exc)
+    return LooperStatusResponse.from_status(result)
+
+
+@router.patch("/track/{track}/auto-armed",
+              response_model=LooperStatusResponse,
+              operation_id="looper_set_track_auto_armed",
+              summary="T2512-AUTO — arm / disarm input-threshold auto-record for a track")
+async def set_track_auto_armed(track: int, body: SetBoolRequest,
+                               service: LooperService = Depends(_get_service)) -> LooperStatusResponse:
+    """T2512-AUTO — operator arms input-level auto-record on a track.
+
+    Storage-only in v1: actual record triggering depends on the
+    forthcoming engine input-level RMS push (T2512-AUTO-TRIGGER).
+    """
+    try:
+        result = service.set_auto_armed(track, body.value)
+    except LooperServiceError as exc:
+        raise _http_for_error(exc)
+    return LooperStatusResponse.from_status(result)
+
+
+@router.patch("/track/{track}/auto-threshold",
+              response_model=LooperStatusResponse,
+              operation_id="looper_set_track_auto_threshold",
+              summary="T2512-AUTO — set the input-threshold dB for auto-record (clamped -90..0)")
+async def set_track_auto_threshold(track: int, body: SetAutoThresholdRequest,
+                                   service: LooperService = Depends(_get_service)) -> LooperStatusResponse:
+    """T2512-AUTO — set the input-threshold dB for auto-record."""
+    try:
+        result = service.set_auto_threshold_db(track, body.db)
     except LooperServiceError as exc:
         raise _http_for_error(exc)
     return LooperStatusResponse.from_status(result)

@@ -109,6 +109,24 @@ describe('looperApi HTTP surface', () => {
     })
   })
 
+  it('setAutoArmed(2, true) → PATCH /track/2/auto-armed with {value: true}', async () => {
+    // T2512-AUTO — operator arms input-threshold auto-record.
+    await looperApi.setAutoArmed(2, true)
+    expect(fetchMock.mock.calls[0]?.[0]).toBe(`${BASE}/track/2/auto-armed`)
+    expect(JSON.parse(String(fetchMock.mock.calls[0]?.[1]?.body))).toEqual({
+      value: true,
+    })
+  })
+
+  it('setAutoThresholdDb(3, -24) → PATCH /track/3/auto-threshold with {db: -24}', async () => {
+    // T2512-AUTO — set the input-threshold dB.
+    await looperApi.setAutoThresholdDb(3, -24)
+    expect(fetchMock.mock.calls[0]?.[0]).toBe(`${BASE}/track/3/auto-threshold`)
+    expect(JSON.parse(String(fetchMock.mock.calls[0]?.[1]?.body))).toEqual({
+      db: -24,
+    })
+  })
+
   // ---------- Master ----------
 
   it('setMasterLevel(0) → PATCH /master/level with {db: 0}', async () => {

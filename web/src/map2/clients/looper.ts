@@ -32,6 +32,10 @@ export interface LooperTrackStatus {
   locked: boolean
   /** T2512-OS — one-shot / trigger mode. Auto-stop after one playhead pass (runner deferred). */
   one_shot: boolean
+  /** T2512-AUTO — operator armed input-threshold auto-record (storage-only until engine RMS lands). */
+  auto_armed: boolean
+  /** T2512-AUTO — input-threshold in dB, clamped -90..0. */
+  auto_threshold_db: number
 }
 
 export interface LooperStatus {
@@ -63,6 +67,10 @@ export const looperApi = {
   setLocked:   (track: number, locked: boolean) => patch(`${BASE}/track/${track}/locked`,   { value: locked }),
   /** T2512-OS — toggle one-shot / trigger mode for a track. */
   setOneShot:  (track: number, oneShot: boolean) => patch(`${BASE}/track/${track}/one-shot`, { value: oneShot }),
+  /** T2512-AUTO — arm / disarm input-threshold auto-record. */
+  setAutoArmed:        (track: number, armed: boolean) => patch(`${BASE}/track/${track}/auto-armed`,     { value: armed }),
+  /** T2512-AUTO — set the input-threshold dB for auto-record (clamped -90..0). */
+  setAutoThresholdDb:  (track: number, db: number)     => patch(`${BASE}/track/${track}/auto-threshold`, { db }),
   setMasterLevel: (db: number)                 => patch(`${BASE}/master/level`, { db }),
 }
 

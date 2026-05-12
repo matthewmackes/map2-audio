@@ -250,6 +250,22 @@ groups:
         label: Track 4 — One-shot (toggle)
         action_template:
           action: toggle
+      - verb: audio.looper.0.auto_armed
+        label: Track 1 — Auto-record arm (toggle)
+        action_template:
+          action: toggle
+      - verb: audio.looper.1.auto_armed
+        label: Track 2 — Auto-record arm (toggle)
+        action_template:
+          action: toggle
+      - verb: audio.looper.2.auto_armed
+        label: Track 3 — Auto-record arm (toggle)
+        action_template:
+          action: toggle
+      - verb: audio.looper.3.auto_armed
+        label: Track 4 — Auto-record arm (toggle)
+        action_template:
+          action: toggle
 
   - id: master
     label: Master bus
