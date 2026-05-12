@@ -78,6 +78,8 @@ Each task/subtask should contain these fields:
 - `[✓]` `T2497` — Audio Artifacts global tree nav: remove duplicated "Discover" entries under every subcategory (shipped 2026-05-05)
 - `[✓]` `T2498` — Baked `MAP2_AUDIO_PREFER_JACK=1` into repo `systemd/map2-backend.service` (closed 2026-05-08). Fresh installs no longer regress to ALSA-via-PipeWire on JUCE device open. Live bench unit already had this via `15-prefer-jack.conf` drop-in; repo copy now matches.
 - `[>]` `T2499` — Sequencer Setup "Coming Soon" cards epic. **T2499-A 8/8 code slices SHIPPED in autonomous-10 run 2026-05-08/09** (framework primitives + Carbon shell + MeloAudio adapter + device-pack picker + MIDI Learn fallback + bindings writer + Setup card flip + e2e integration test; 75 jest + 33 pytest = 108 net new tests). T2499-A stays `[>] In Progress` pending UI swap (framework shell mount on a route), HIL parity bench gate, and pack-picker integration with MIDI Services. T2499-B (Maschine MK1) and T2499-C (AVDECC) still `[ ] Todo`.
+- `[>]` `T2515` — **TASCAM US-144MKII tier-1 native support** (filed 2026-05-12). 8 sub-tasks. Greenfield integration of `0644:8020` (operational PID) + `0644:800F` (boot-mode PID intentionally unmapped). In-tree kernel ≥6.x driver `snd-usb-us144mkii`; no DKMS. Pinned 48 kHz / 64-sample to match Tier A locks; S/PDIF ch 3-4 first-class; full-custom Carbon Devices panel mirroring UA-1000 richness. **No C++** — mirrors UA-1000/Jogg precedent (Python constants + device-pack + React). Estimated 15-17 h active + 0.5 h soak.
+- `[>]` `T2517` — **MPX-1 as effects-chooser block + AES/S/PDIF dual-connection** (filed 2026-05-12). 9 sub-tasks. Generalize existing `LexiconHardwareProcessor` (drop hardcoded UA-1000 channel constexprs → per-instance atomic channel-config); wire existing `hardware://lexicon-mpx1-spdif` descriptor into `/api/plugins/discover` (currently defined but never returned); add interface-capability registry (`digital_io_stereo`, `aes_ebu`, `spdif_coax`); singleton-instance enforcement with structured 409; per-instance side-panel + measured-latency calibration wizard. AES preferred, S/PDIF fallback, both per-instance. Estimated 19-21 h active + 1.5 h soak.
 - `[✓]` `T2500-MV` — MIDI Connections Visualization (closed 2026-05-10; all 18 subtasks shipped in one bundle). `/midi/connections/visualization` mounts a live three-tier `<SignalFlowGraph>` (Devices ↔ Mappings ↔ Engine targets) over a new `/ws/midi/visualization` WS that replays a rolling 5-min `MidiTrafficBuffer` on connect and live-streams events. Particle/heatmap canvas overlay + Carbon detail drawer + filter bar. Backend wiring: dispatcher gains `iter_registrations()` introspection + `subscribe()` observer registry; new `MidiVisualizationProducerBridge` mirrors dispatched + raw events into the buffer; new topology + WS routes registered in `app/main.py`. 54 backend tests + 23 jest tests green; backend live at `http://127.0.0.1:8080/api/midi/visualization/graph` (200, returns 4 registered targets); WS replay handshake verified; web preview serves the new bundle hash on port 3000.
 - `[✓]` `T2500` — Cabinet IR + Reverb IR pickers fix in Snapshot Editor (closed 2026-05-08; root cause was `appendNodeQuery` accepting a TanStack `QueryFunctionContext` object as `nodeId` and stringifying it to `[object Object]`. Fixed at the http.ts seam — single-line type-guard tightening neutralizes this class of bug for every bare `queryFn` reference. 15 new http unit tests; modal now surfaces real backend errors via the existing `getErrorMessage` helper).
 - `[✓]` `T2501` — Snapshot slot-style variants regression test coverage (closed 2026-05-09; +17 net tests across `Block.test.tsx` (+8) and new `useSnapshotSlotStyle.test.tsx` (9) — locks data-attr reflection, V4 ring SVG render, V6 LED bar width, idle-floor (4%), full-load ceiling (95%), and the localStorage hook's persistence + cross-tab sync + quota-error path; full targeted sweep 127/127).
@@ -2351,7 +2353,33 @@ Operator requested 27 features; v1 ships 13 live + files the remaining 14 as nam
 
 T2512-WS shipped 2026-05-12 — broadcaster injection on LooperService, sync→async scheduling closure in `app/services/looper_ws_bridge.py`, `LOOPER_STATUS_TOPIC = "looper:status"` envelope `{type: "looper_status", payload: ...}`. Every mutating verb (12 entry points) fires a broadcast; `get_status` does not. LooperPage replaces its 250 ms poll with WS subscription + 2 s safety-net refresh. WS UI follow-up (2026-05-12) — LooperPage surfaces a `Live`/`Polling (2 s)` Tag next to the page subtitle so operators can tell at a glance whether they're getting push or poll updates; new `LooperPage.test.tsx` with 6 RTL tests covering the open/close transitions, WS frame application, and bad-frame robustness. +9 service tests, +4 bridge tests, +6 RTL tests.
 
+### Pick-up next (Continue run handoff, filed 2026-05-12)
 
+Shipped this run (Continue cycles 1–11, all dual-pushed to origin + gitlab, ~105 looper tests across 7 suites): T2512-MIDI, T2512-LOCK, T2512-FSW, T2512-SCRIPT, T2512-LOCK-MIDI, T2512-WS, T2512-FSW-MAC, T2512-OPENAPI, T2512 web client tests, T2512 WS-UI Tag + LooperPage RTL suite, T2512 bridge↔LooperService end-to-end coverage.
+
+Remaining T2512 follow-ons, ordered by suggested pickup. **Read this list first next session.**
+
+| Order | Task | Why pickable now | RT gate | Suggested first move |
+|---|---|---|---|---|
+| 1 | T2512-OS    | Pure-Python: per-track one-shot flag + async watcher that calls `stop_track()` after one playhead pass. Catch: needs careful task cleanup so a state change (record again) cancels the watcher. | none — Python only | Add `set_one_shot(track, bool)` to LooperService + an `asyncio.Task` dict keyed by track; cancel on every state-change verb. Add route + UI toggle + WS broadcast. Reference T2512-LOCK for the per-track-flag pattern. |
+| 2 | T2512-AUTO  | Auto-record threshold-start. Engine input-level binding may not exist yet — ship the **service-side state machine** (`set_auto_armed`, threshold dB, last-detected level field) so a future engine input-level push just fires the trigger. | none for state surface; bench-needed for engine push | Add `auto_armed` + `auto_threshold_db` fields to TrackStatus; expose route + UI; document the bench child task (engine input-level RMS poll). |
+| 3 | T2512-FADE  | Stop kinds (hard / fade-out N ms). C++ `looper_stop` is hard; fade-out needs a gain ramp inside the audio callback. | **RT** — needs engine work | File C++ bench task first; service-side ship `set_stop_mode(track, kind, fade_ms)` storage so the route + UI land independent of the engine. |
+| 4 | T2512-CLOCK (inbound only) | Read snapshot tempo service for current BPM, surface in LooperStatus + LooperPage. Doesn't act on it (that's T2512-QUANT). | none | Add `bpm: Optional[float]` to LooperStatus; pull from `app/services/snapshot_tempo_service.SnapshotTempoService` in `get_status()`; display next to the WS-status Tag. |
+| 5 | T2512-QUANT | Quantize / auto-close. Depends on T2512-CLOCK landing first. Snap loop length to grid; auto-close after N beats. | partial — engine must land on a grid boundary | After CLOCK ships, file C++ bench task for tempo-locked recording stop; ship Python-side quantize math as a unit-tested helper. |
+| 6 | T2512-STOR  | Storage browser. Looper v1 doesn't dump WAVs (heap-only). Needs an engine-side `looper_export_track(track, path)` op before a browser is meaningful. | bench-needed for export | File the engine bench task; defer UI until the dump op exists. |
+| 7 | T2512-SYNC  | Per-track sync mode picker; slave tracks lock loop length to master. | **RT** — engine playhead-locking | Bench task only — no usable Python slice. |
+| 8 | T2512-LONG  | Unlimited length via streaming. Hybrid heap ring → io_uring file streaming. | **RT** — heavy; operator RT-safety review required | Bench task only. Reference T2507 punch-in playback patterns. |
+| 9 | T2512-BYP   | True bypass vs buffered. Operator review of where the looper sits in the signal graph. | RT placement decision | Spec doc first; operator review meeting; no code until placement decided. |
+| 10 | T2512-FX    | Per-track FX bus. Lands alongside T2507 v2 per-chain mounting. | **RT** — engine FX graph | Bench task; gated on T2507 v2. |
+| 11 | T2512-TIME  | Time-stretching (RubberBand or equivalent). License review needed. | **RT** + license | Spec + license review first. |
+| 12 | T2512-SLICE | Region editor + non-destructive slice metadata. | none for metadata; UI-heavy | Pure-Python; ship metadata model first, region editor UI second. |
+| 13 | T2512-DAW   | JACK port exposure + Ableton Link clock. | **RT** for JACK ports | File C++ bench task; Ableton Link client can be a separate Python service. |
+
+Newly surfaced gaps during this run (not in the original 14 follow-ons):
+- **T2512-SNAP — Snapshot integration.** Looper has no entry in the snapshot graph / state authority. Lock, levels, master level, sync state — none persist across snapshot recall. File new task; reference `app/services/state_authority_*` for the integration seam.
+- **T2512-LIFESPAN — `app/main.py` lifespan ordering smoke test.** Looper service + WS bridge install order is currently uncovered. A regression that swaps the order silently breaks WS for verbs that fire before the bridge is wired. Add an integration test that boots a stripped-down app and asserts the broadcaster is installed before any HTTP traffic.
+- **T2512-OPENAPI-SCHEMA — OpenAPI document audit.** Existing tests check `summary` + `operation_id` per route, but not that the *generated* OpenAPI doc includes all 13 routes under the `looper` tag. Extend `tests/test_openapi_schema_sync.py`.
+- **T2512-PAGE-CLICKS — LooperPage RTL click coverage.** Current RTL suite covers WS state only. Add 5 small click-and-assert tests asserting record/stop/clear/undo/redo per-track buttons invoke the right `looperApi` method (mock is already in place).
 
 | Task | Title | Notes |
 |---|---|---|
@@ -2453,6 +2481,99 @@ The stomp button color + the badge below it is the whole UX. Everything else is 
 5. All five sub-suites (state-machine / routes / engine-command / UI / snapshot-integration) green.
 
 Last updated: 2026-05-11 — Claude.
+
+---
+
+## T2515 — TASCAM US-144MKII tier-1 native support (filed 2026-05-12)
+
+ID: T2515
+Status: [>] In Progress
+Title: Promote the TASCAM US-144MKII to a tier-1, natively supported audio interface (peer to UA-1000 / Jogg).
+Description:
+- **Goal:** First-class platform support for the US-144MKII. VID/PID `0644:8020` (operational; firmware-loaded by `snd-usb-us144mkii`) recognized everywhere UA-1000/Jogg are. Boot/loader PID `0644:800F` intentionally **not** mapped — the kernel module handles the firmware-upload re-enumeration; we surface "device in boot mode" state in the UI instead of treating it as connected.
+- **Locked decisions (per user Q&A 2026-05-12):**
+  - **No C++ layer.** Mirror UA-1000/Jogg precedent: device-specific behavior in Python constants + USB manager + device-pack YAML/QuickJS + React panel. Generic JUCE `AudioDeviceManager` handles ALSA/JACK.
+  - **No DKMS.** In-tree `snd-usb-us144mkii` on kernel ≥6.x (Fedora 6.18.5 verified). Preflight check errors clearly if module is absent.
+  - **Pinned 48 kHz / 64-sample.** Matches Tier A locks (`audio.sample_rate=48000`, `audio.buffer_size=64`) — no operator-selectable SR in tier-1 ship.
+  - **S/PDIF (ch 3-4) first-class** with clock-source picker (internal-48k / S/PDIF-in).
+  - **Full-custom Carbon Devices panel** mirroring UA-1000 richness: status / I/O routing / metering / clock / diagnostics / S/PDIF-bridge tabs + always-visible hardware-state banner ("MON MIX = front-panel only", "+48 V = hardware switch", etc.).
+- **Why it matters:** US-144MKII is a common bench-tier interface; tier-1 promotion expands the supported hardware matrix beyond UA-1000/Jogg and provides the S/PDIF substrate for the T2517 MPX-1 effects-block fallback path (S/PDIF when no AES-capable interface is present).
+- **Dependencies:** None blocking; T2517 builds on T2515-3's device-pack S/PDIF port declarations.
+- **Estimated effort:** 15-17 h active + 0.5 h wall-clock soak across 8 sub-tasks. Restart-safe per CLAUDE.md §0.5.
+- **Required outputs/deliverables:**
+  - Inventory + identity wiring (VID/PID recognized in `hardware_inventory.py` + `enhanced_node_identity.py` + `usb_audio_manager.py`)
+  - Python constants in `app/services/juce/common.py::TASCAM_US144MKII`
+  - Driver preflight module `app/services/devices/tascam_us144mkii_preflight.py`
+  - `auto_configure_tascam_us144mkii()` in `app/services/audio_io.py`
+  - Sample-rate-change safety wrapper (stop streams → switch → restart) — re-uses 2026-02-17 RT-safety pattern
+  - JACK-direct enforcement (`MAP2_AUDIO_PREFER_JACK=1` required when device is active)
+  - Device pack `device-packs/tascam/` (pack.yaml + us-144mkii.{audio,midi}.yaml + scripts + identifier_rules + S/PDIF port `role: hardware_fx_bridge_capable`)
+  - React panel `web/src/app/components/Devices/TascamUS144MKII/` (6 tabs + hardware banner)
+  - Backend routes: status / meters / clock-source / reset
+  - Soak evidence at `docs/fit-for-purpose-evidence/2026-05-12/tascam-us144mkii/` — 0 xruns, ≤0.35 ms peak jitter @ 48 k / 64-sample / 30 min
+  - Worklist + memory file `project_t2515_us144mkii.md`
+- **Subtasks:**
+  - `T2515-0` [>] Worklist entries + memory pointer (this section + project memory file)
+  - `T2515-1` [ ] Hardware inventory + identity (VID/PID 0644:8020)
+  - `T2515-2` [ ] Python constants + auto-config + driver preflight module
+  - `T2515-3` [ ] Device pack `device-packs/tascam/` with S/PDIF role flags
+  - `T2515-4` [ ] Engine wiring: SR safety wrapper + JACK-direct enforcement
+  - `T2515-5` [ ] Full-custom React panel (Status/IO/Metering/Clock/Diagnostics/Bridge tabs + hardware banner)
+  - `T2515-6` [ ] Backend routes (`status`, `meters`, `clock-source`, `reset`)
+  - `T2515-7` [ ] Soak + fit-for-purpose evidence
+  - `T2515-8` [ ] Docs + memory + DoD close
+
+Last updated: 2026-05-12 — Claude.
+
+---
+
+## T2517 — MPX-1 as first-class effects-chooser block + AES/S/PDIF dual-connection (filed 2026-05-12)
+
+ID: T2517
+Status: [>] In Progress
+Title: Promote Lexicon MPX-1 to a first-class entry in the effects chooser; support AES (preferred) + S/PDIF (fallback) per-instance connection routing.
+Description:
+- **Goal:** MPX-1 appears in the effects-chooser modal alongside JUCE-native and LV2 plugins. Insertion drops a hardware-bridge block into the signal chain; audio flows through the unit and back. Two connection types supported per-instance: **AES/EBU (preferred)** and **S/PDIF coax (fallback)**, auto-selected by available interface capability with operator override. **Single-active-instance** enforced with structured 409 ("MPX-1 already in use by chain <id>").
+- **Locked decisions (per user Q&A 2026-05-12):**
+  - **Connection model:** Both AES and S/PDIF per-instance, AES preferred when an AES-capable interface is connected; falls back to S/PDIF otherwise. Operator can override.
+  - **Singleton enforcement:** Refuse second insertion with clear error pointing at chain in use. No silent steal, no multi-instance standby pool.
+  - **Build on existing `LexiconHardwareProcessor`** — do not fork a parallel class. Drop hardcoded UA-1000 channel `static constexpr` (lines 31-34 of the header); replace with atomic per-instance `setChannelMapping()` + `setConnectionType()`.
+  - **Wire existing `hardware://lexicon-mpx1-spdif` descriptor into `/api/plugins/discover`.** Currently defined at `app/services/plugin_uris.py:32-57` but `_get_hardware_plugins()` at `app/routes/plugins.py:253` is never called in the discovery path. New URI `hardware://lexicon-mpx1` (connection-agnostic); old URI kept as alias for snapshot compatibility.
+  - **Latency calibration:** Measured-impulse wizard, one-time per (interface, connection-type) tuple, persisted at `~/.map2/devices/mpx1-calibration.json`. No hardcoded fallback (audio path tolerates a default 256-sample placeholder if uncalibrated, with banner warning).
+  - **UI:** MPX-1 effect block exposes per-instance config in a snapshot-editor side-panel when selected in a chain — connection-type picker, channel mapper, calibration wizard, latency display, bypass. No dual-anchored bridge panel; the chooser+side-panel pattern is the model.
+- **Why it matters:** MPX-1 control surface is already shipped (T022/T035-T042 — registry, scenes, morphing, .syx import, signal-flow canvas), but the *audio* path is missing. Promoting MPX-1 to the chooser closes the loop and makes the hardware FX usable in any chain like any plugin. The AES/S/PDIF dual-connection establishes a generic primitive (`requires_interface_capability` + connection-type picker) future hardware FX (Eventide H8000, TC Fireworx, etc.) can reuse.
+- **Dependencies:** Builds on T2515-3 (device-pack `digital_io_stereo` / `spdif_coax` capability declarations). UA-1000 device-pack needs equivalent capability declarations.
+- **Estimated effort:** 19-21 h active + 1.5 h wall-clock soak across 9 sub-tasks.
+- **Required outputs/deliverables:**
+  - `juce-engine/Source/LexiconHardwareProcessor.{h,cpp}` — remove UA-1000 hardcoded constexprs; add `setChannelMapping(sendL, sendR, returnL, returnR)`, `setConnectionType(AES_EBU | SPDIF_COAX | SPDIF_OPTICAL)` (atomic, RT-safe)
+  - `app/services/plugin_uris.py` — descriptor extended with `connection_types`, `preferred_connection`, `singleton: True`, `requires_interface_capability`, `aliases`
+  - `app/routes/plugins.py` — `_get_hardware_plugins()` wired into `/api/plugins/discover` response
+  - `app/services/effects/interface_capabilities.py` — capability registry reading from device packs
+  - `app/services/effects/hardware_singleton_lock.py` — singleton lock service (acquire/release/list)
+  - `app/services/state_authority_graph.py` — singleton-acquire/release hooks at chain materialize/teardown
+  - `device-packs/edirol-ua/profiles/ua-1000.audio.yaml` — capability declarations `[digital_io_stereo, spdif_coax, adat, r_bus]`
+  - Backend routes: `/api/v1/effects/mpx1/instance/{chain_id}` (GET/POST calibrate/POST bypass), `/api/v1/chains/hardware-usage`, `/api/v1/interfaces/capabilities`
+  - React: `web/src/app/components/Effects/MPX1Block/` — `MPX1BlockSidePanel`, `MPX1BlockConnectionConfig`, `MPX1BlockChannelMapper`, `MPX1BlockCalibrationWizard`, `MPX1BlockLatencyDisplay`, `MPX1BlockBypassToggle`, `useMpx1BlockConfig`
+  - React: `SnapshotEditorPluginBrowser.tsx` extended for `is_hardware: true` entries (availability greyed-out + tooltip + connection-type inline picker + "Already in use" deep-link)
+  - Soak evidence at `docs/fit-for-purpose-evidence/2026-05-12/mpx1-effects-block/` — 0 xruns, ≤0.35 ms peak jitter, ≤1-sample dry-vs-wet drift, mid-soak singleton 409 confirmed
+  - Memory file `project_t2517_mpx1_effects_block.md`
+- **Out of scope (filed as follow-ups):**
+  - `T2517-Follow-up-A` — AES soak proof (deferred until an AES-capable interface is in the rig)
+  - `T2517-Follow-up-B` — Crossfade on connection-type hot-swap (atomic-swap currently mutes briefly)
+  - `T2517-Follow-up-C` — Multi-rig federation (singleton lock is per-rig only)
+  - `T2517-Follow-up-D` — Hardware-bridge generalization (extract base class when second hardware FX needs it; don't generalize prematurely)
+- **Subtasks:**
+  - `T2517-1` [ ] Generalize `LexiconHardwareProcessor`: drop UA-1000 constexprs; per-instance atomic `setChannelMapping` + `setConnectionType`
+  - `T2517-2` [ ] Wire MPX-1 descriptor into `/api/plugins/discover`; extend descriptor with `connection_types`, `singleton`, `requires_interface_capability`, `aliases`
+  - `T2517-3` [ ] Interface-capability registry + device-pack capability declarations (TASCAM + UA-1000)
+  - `T2517-4` [ ] Effects-chooser UI: hardware entries with availability gating + inline connection picker + "already in use" link
+  - `T2517-5` [ ] Graph builder + `hardware_singleton_lock.py` enforcement + `/api/v1/chains/hardware-usage`
+  - `T2517-6` [ ] Per-instance side-panel + measured-latency calibration wizard
+  - `T2517-7` [ ] Backend routes (`/api/v1/effects/mpx1/instance/...`, `/api/v1/interfaces/capabilities`)
+  - `T2517-8` [ ] Soak with MPX-1 in chain (S/PDIF first; AES filed as follow-up)
+  - `T2517-9` [ ] Docs + memory + DoD close
+
+Last updated: 2026-05-12 — Claude.
 
 ---
 
