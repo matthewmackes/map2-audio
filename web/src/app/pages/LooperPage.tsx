@@ -119,6 +119,9 @@ export function LooperPage() {
   const [status, setStatus] = useState<LooperStatus | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError]     = useState<string | null>(null)
+  // T2512-WS — surface live WS connectivity so the operator can tell
+  // whether they're getting push updates or just the 2 s safety-net poll.
+  const [wsConnected, setWsConnected] = useState(false)
 
   const refresh = useCallback(async () => {
     try {
@@ -150,6 +153,7 @@ export function LooperPage() {
       ws.onopen = () => {
         if (cancelled) return
         ws?.send(JSON.stringify({ action: 'subscribe', topic: LOOPER_WS_TOPIC }))
+        setWsConnected(true)
       }
       ws.onmessage = (event) => {
         if (cancelled) return
@@ -164,8 +168,17 @@ export function LooperPage() {
           // Drop malformed frames silently.
         }
       }
+      ws.onclose = () => {
+        if (cancelled) return
+        setWsConnected(false)
+      }
+      ws.onerror = () => {
+        if (cancelled) return
+        setWsConnected(false)
+      }
     } catch {
       // Browser may block WS construction (very rare) — poll-only fallback.
+      setWsConnected(false)
     }
     const handle = window.setInterval(() => { void refresh() }, 2000)
     return () => {
@@ -180,6 +193,7 @@ export function LooperPage() {
       }
       ws?.close()
       wsRef.current = null
+      setWsConnected(false)
     }
   }, [refresh])
 
@@ -209,7 +223,14 @@ export function LooperPage() {
         </Button>
         <h1 className="looper-page__title">Looper</h1>
         <div className="looper-page__sub">
-          4 tracks · 60 s max · post-FX capture
+          <span>4 tracks · 60 s max · post-FX capture</span>
+          <Tag
+            data-testid="looper-ws-status"
+            type={wsConnected ? 'green' : 'warm-gray'}
+            size="sm"
+          >
+            {wsConnected ? 'Live' : 'Polling (2 s)'}
+          </Tag>
         </div>
       </div>
 

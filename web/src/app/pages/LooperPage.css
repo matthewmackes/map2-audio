@@ -25,6 +25,9 @@
 .looper-page__sub {
   color: var(--cds-text-secondary);
   font-size: var(--cds-body-01-font-size, 0.875rem);
+  display: flex;
+  align-items: center;
+  gap: var(--cds-spacing-03);
 }
 
 .looper-page__grid {

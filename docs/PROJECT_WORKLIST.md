@@ -2349,7 +2349,7 @@ Operator requested 27 features; v1 ships 13 live + files the remaining 14 as nam
 
 ### T2512 follow-on tasks (filed 2026-05-12)
 
-T2512-WS shipped 2026-05-12 — broadcaster injection on LooperService, sync→async scheduling closure in `app/services/looper_ws_bridge.py`, `LOOPER_STATUS_TOPIC = "looper:status"` envelope `{type: "looper_status", payload: ...}`. Every mutating verb (12 entry points) fires a broadcast; `get_status` does not. LooperPage replaces its 250 ms poll with WS subscription + 2 s safety-net refresh. +9 service tests, +4 bridge tests.
+T2512-WS shipped 2026-05-12 — broadcaster injection on LooperService, sync→async scheduling closure in `app/services/looper_ws_bridge.py`, `LOOPER_STATUS_TOPIC = "looper:status"` envelope `{type: "looper_status", payload: ...}`. Every mutating verb (12 entry points) fires a broadcast; `get_status` does not. LooperPage replaces its 250 ms poll with WS subscription + 2 s safety-net refresh. WS UI follow-up (2026-05-12) — LooperPage surfaces a `Live`/`Polling (2 s)` Tag next to the page subtitle so operators can tell at a glance whether they're getting push or poll updates; new `LooperPage.test.tsx` with 6 RTL tests covering the open/close transitions, WS frame application, and bad-frame robustness. +9 service tests, +4 bridge tests, +6 RTL tests.
 
 
 
