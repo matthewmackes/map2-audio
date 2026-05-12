@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1592** Python | **1649** TypeScript | **222** C++/H | **149** Docs | **4304** total commits | **4** stars | **0** forks | **0** open issues
+**1594** Python | **1649** TypeScript | **222** C++/H | **149** Docs | **4307** total commits | **4** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`a0c262b1`](https://github.com/matthewmackes/map2-audio/commit/a0c262b190d0a66ffe9aa226cab6b17bef83915b) | Merge branch 'master' of https://github.com/matthewmackes... | Map2 Audio | 2026-05-12 |
+| [`b25c181f`](https://github.com/matthewmackes/map2-audio/commit/b25c181ff16ea596ff7c1add1eeb9b023ef58eda) | feat(looper): T2512-LOCK — per-track write-lock toggle | Map2 Audio | 2026-05-12 |
+| [`6ff88890`](https://github.com/matthewmackes/map2-audio/commit/6ff88890dfdaa51243ea3d9cf33b0405c76e4752) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-12 |
 | [`f48633db`](https://github.com/matthewmackes/map2-audio/commit/f48633dbdcbcccac0a5d87e6cc9bb147a2c74885) | feat(looper,midi): T2512-MIDI — wire looper verbs through... | Map2 Audio | 2026-05-12 |
 | [`a61c1991`](https://github.com/matthewmackes/map2-audio/commit/a61c19910ffd8b60cb29c4e4b1ac25c0243abb4b) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-12 |
 | [`b4e071ed`](https://github.com/matthewmackes/map2-audio/commit/b4e071ed7ded34df68829e721c8604cfe406ec5e) | feat(T2512): multi-track looper v1 — engine + service + page | Map2 Audio | 2026-05-12 |
 | [`6adaf69b`](https://github.com/matthewmackes/map2-audio/commit/6adaf69b43e09c105107c5c4848c6413c4683af5) | feat: mount RecordingPanel in snapshot editor + register ... | Map2 Audio | 2026-05-11 |
 | [`24e38f4b`](https://github.com/matthewmackes/map2-audio/commit/24e38f4b10316864f0f50f8977f7c160bea8571d) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-11 |
-| [`16f85595`](https://github.com/matthewmackes/map2-audio/commit/16f85595e1eb64ec0b59fc2e3178597c99189609) | feat(T2507-6): automation capture — parameter changes → J... | Map2 Audio | 2026-05-11 |
-| [`f3de9f72`](https://github.com/matthewmackes/map2-audio/commit/f3de9f7283825fb9eeebef8ef4199948c64827da) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-11 |
-| [`457dac6c`](https://github.com/matthewmackes/map2-audio/commit/457dac6ced3bf4291e5c8db5cb2d52190555c974) | feat(T2507-5b): pybind11 bindings — operator route reache... | Map2 Audio | 2026-05-11 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
