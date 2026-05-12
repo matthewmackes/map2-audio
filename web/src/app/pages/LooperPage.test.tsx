@@ -78,11 +78,17 @@ const mockIdleSnapshot: LooperStatus = {
     one_shot: false,
     auto_armed: false,
     auto_threshold_db: -36.0,
+    stop_mode: 'hard',
+    fade_ms: 250,
+    sync_mode: 'free',
+    slices: [],
+    quantize_division: 'off',
   })),
   active_track_count: 0,
   sync_master: false,
   master_level_db: 0,
   bpm: null,
+  sync_master_track: null,
 }
 
 jest.mock('../../map2/clients/looper', () => ({
@@ -102,6 +108,12 @@ jest.mock('../../map2/clients/looper', () => ({
     setOneShot: jest.fn(async () => mockIdleSnapshot),
     setAutoArmed: jest.fn(async () => mockIdleSnapshot),
     setAutoThresholdDb: jest.fn(async () => mockIdleSnapshot),
+    setStopMode: jest.fn(async () => mockIdleSnapshot),
+    setFadeMs: jest.fn(async () => mockIdleSnapshot),
+    setSyncMode: jest.fn(async () => mockIdleSnapshot),
+    setQuantizeDivision: jest.fn(async () => mockIdleSnapshot),
+    addSlice: jest.fn(async () => mockIdleSnapshot),
+    clearSlices: jest.fn(async () => mockIdleSnapshot),
     setMasterLevel: jest.fn(async () => mockIdleSnapshot),
   },
 }))
@@ -344,6 +356,113 @@ describe('LooperPage transport-button → looperApi wiring', () => {
     await waitFor(() => {
       const btn = screen.getByTestId('looper-record-0')
       expect(btn).toHaveTextContent('Stop & play')
+    })
+  })
+})
+
+describe('LooperPage T2512-PAGE-V2 advanced state surface', () => {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const { looperApi } = require('../../map2/clients/looper') as {
+    looperApi: Record<string, jest.Mock>
+  }
+
+  beforeEach(() => {
+    Object.values(looperApi).forEach((fn) => fn.mockClear())
+  })
+
+  it('renders the advanced row per track', async () => {
+    renderPage()
+    for (let t = 0; t < 4; t++) {
+      const row = await screen.findByTestId(`looper-advanced-${t}`)
+      expect(row).toBeInTheDocument()
+    }
+  })
+
+  // Carbon's <Select labelText=...> renders the label as a separate
+  // element rather than associating it via htmlFor, so RTL's
+  // findByLabelText doesn't resolve. Pull the <select> directly by
+  // id — same identifier the component sets.
+  async function _selectById(id: string): Promise<HTMLSelectElement> {
+    // findByTestId on a parent container, then drill to the <select>.
+    await screen.findByTestId('looper-advanced-0')
+    const el = document.getElementById(id)
+    if (!el) throw new Error(`select #${id} not found in DOM`)
+    return el as HTMLSelectElement
+  }
+
+  it('changing the sync-mode select calls looperApi.setSyncMode', async () => {
+    renderPage()
+    const select = await _selectById('looper-sync-0')
+    select.value = 'master'
+    select.dispatchEvent(new Event('change', { bubbles: true }))
+    await waitFor(() => {
+      expect(looperApi.setSyncMode).toHaveBeenCalledWith(0, 'master')
+    })
+  })
+
+  it('changing the stop-mode select calls looperApi.setStopMode', async () => {
+    renderPage()
+    const select = await _selectById('looper-stop-mode-0')
+    select.value = 'fade'
+    select.dispatchEvent(new Event('change', { bubbles: true }))
+    await waitFor(() => {
+      expect(looperApi.setStopMode).toHaveBeenCalledWith(0, 'fade')
+    })
+  })
+
+  it('changing the quantize select calls looperApi.setQuantizeDivision', async () => {
+    renderPage()
+    const select = await _selectById('looper-quantize-0')
+    select.value = 'eighth'
+    select.dispatchEvent(new Event('change', { bubbles: true }))
+    await waitFor(() => {
+      expect(looperApi.setQuantizeDivision).toHaveBeenCalledWith(0, 'eighth')
+    })
+  })
+
+  it('shows a "0 slices" badge per track by default', async () => {
+    renderPage()
+    for (let t = 0; t < 4; t++) {
+      const strip = await screen.findByTestId(`looper-slices-${t}`)
+      expect(strip).toHaveTextContent('0 slices')
+    }
+  })
+
+  it('does not render the Clear-slices button when slices are empty', async () => {
+    renderPage()
+    // No matching testid should exist for empty tracks.
+    expect(screen.queryByTestId('looper-clear-slices-0')).toBeNull()
+  })
+
+  it('renders Clear-slices when a status frame carries slices', async () => {
+    renderPage()
+    await screen.findByTestId('looper-ws-status')
+    act(() => {
+      sockets[0]!.onopen?.call(sockets[0] as unknown as WebSocket)
+    })
+
+    const frame = {
+      type: 'looper_status',
+      payload: {
+        ...mockIdleSnapshot,
+        tracks: mockIdleSnapshot.tracks.map((t, i) =>
+          i === 0
+            ? { ...t, slices: [{ start_frame: 0, end_frame: 1000, label: 'a' }] }
+            : t,
+        ),
+      },
+    }
+    act(() => {
+      sockets[0]!.onmessage?.call(
+        sockets[0] as unknown as WebSocket,
+        { data: JSON.stringify(frame) } as MessageEvent,
+      )
+    })
+
+    const btn = await screen.findByTestId('looper-clear-slices-0')
+    btn.click()
+    await waitFor(() => {
+      expect(looperApi.clearSlices).toHaveBeenCalledWith(0)
     })
   })
 })

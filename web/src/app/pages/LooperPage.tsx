@@ -31,6 +31,9 @@ interface LooperStatusFrame {
 import { useNavigate } from 'react-router-dom'
 import {
   Button,
+  NumberInput,
+  Select,
+  SelectItem,
   Slider,
   Tag,
   Tile,
@@ -50,7 +53,10 @@ import {
 
 import {
   looperApi,
+  type LooperQuantizeDivision,
   type LooperStatus,
+  type LooperStopMode,
+  type LooperSyncMode,
   type LooperTrackStatus,
 } from '../../map2/clients/looper'
 
@@ -427,6 +433,102 @@ function TrackCard({
           toggled={track.auto_armed}
           onToggle={(val) => onAction(() => looperApi.setAutoArmed(track.track, val))}
         />
+      </div>
+
+      {/* T2512-PAGE-V2 — advanced operator state surface (sync / stop / quantize). */}
+      <div className="looper-track__advanced" data-testid={`looper-advanced-${track.track}`}>
+        <Select
+          id={`looper-sync-${track.track}`}
+          size="sm"
+          labelText="Sync mode"
+          value={track.sync_mode}
+          onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
+            onAction(() =>
+              looperApi.setSyncMode(track.track, e.target.value as LooperSyncMode),
+            )
+          }
+        >
+          <SelectItem value="free"   text="Free" />
+          <SelectItem value="master" text="Master" />
+          <SelectItem value="slave"  text="Slave" />
+        </Select>
+
+        <Select
+          id={`looper-stop-mode-${track.track}`}
+          size="sm"
+          labelText="Stop mode"
+          value={track.stop_mode}
+          onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
+            onAction(() =>
+              looperApi.setStopMode(track.track, e.target.value as LooperStopMode),
+            )
+          }
+        >
+          <SelectItem value="hard" text="Hard" />
+          <SelectItem value="fade" text="Fade" />
+        </Select>
+
+        <NumberInput
+          id={`looper-fade-ms-${track.track}`}
+          size="sm"
+          label="Fade ms"
+          min={0}
+          max={5000}
+          step={50}
+          value={track.fade_ms}
+          // Disable when stop_mode is "hard" — the field has no effect.
+          disabled={track.stop_mode === 'hard'}
+          onChange={(_evt: unknown, payload: { value: number | string }) => {
+            const next = typeof payload.value === 'number'
+              ? payload.value
+              : parseInt(payload.value, 10)
+            if (!Number.isFinite(next)) return
+            onAction(() => looperApi.setFadeMs(track.track, next))
+          }}
+        />
+
+        <Select
+          id={`looper-quantize-${track.track}`}
+          size="sm"
+          labelText="Quantize"
+          value={track.quantize_division}
+          onChange={(e: React.ChangeEvent<HTMLSelectElement>) =>
+            onAction(() =>
+              looperApi.setQuantizeDivision(
+                track.track,
+                e.target.value as LooperQuantizeDivision,
+              ),
+            )
+          }
+        >
+          <SelectItem value="off"           text="Off" />
+          <SelectItem value="whole"         text="1/1 (whole)" />
+          <SelectItem value="half"          text="1/2 (half)" />
+          <SelectItem value="quarter"       text="1/4 (quarter)" />
+          <SelectItem value="eighth"        text="1/8 (eighth)" />
+          <SelectItem value="sixteenth"     text="1/16 (sixteenth)" />
+          <SelectItem value="thirty-second" text="1/32 (thirty-second)" />
+        </Select>
+
+        {/* T2512-SLICE — slice count + clear action. Editor UI is a follow-up. */}
+        <div
+          className="looper-track__slices"
+          data-testid={`looper-slices-${track.track}`}
+        >
+          <Tag type={track.slices.length > 0 ? 'cool-gray' : 'gray'} size="sm">
+            {track.slices.length} slice{track.slices.length === 1 ? '' : 's'}
+          </Tag>
+          {track.slices.length > 0 ? (
+            <Button
+              kind="ghost"
+              size="sm"
+              data-testid={`looper-clear-slices-${track.track}`}
+              onClick={() => onAction(() => looperApi.clearSlices(track.track))}
+            >
+              Clear slices
+            </Button>
+          ) : null}
+        </div>
       </div>
     </Tile>
   )

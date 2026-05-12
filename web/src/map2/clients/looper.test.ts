@@ -127,6 +127,61 @@ describe('looperApi HTTP surface', () => {
     })
   })
 
+  // ---------- T2512-PAGE-V2: new methods exposed in cycle 10 ----------
+
+  it('setStopMode(0, "fade") → PATCH /track/0/stop-mode with {mode}', async () => {
+    await looperApi.setStopMode(0, 'fade')
+    expect(fetchMock.mock.calls[0]?.[0]).toBe(`${BASE}/track/0/stop-mode`)
+    expect(JSON.parse(String(fetchMock.mock.calls[0]?.[1]?.body))).toEqual({
+      mode: 'fade',
+    })
+  })
+
+  it('setFadeMs(2, 750) → PATCH /track/2/fade-ms with {fade_ms}', async () => {
+    await looperApi.setFadeMs(2, 750)
+    expect(fetchMock.mock.calls[0]?.[0]).toBe(`${BASE}/track/2/fade-ms`)
+    expect(JSON.parse(String(fetchMock.mock.calls[0]?.[1]?.body))).toEqual({
+      fade_ms: 750,
+    })
+  })
+
+  it('setSyncMode(3, "master") → PATCH /track/3/sync-mode with {mode}', async () => {
+    await looperApi.setSyncMode(3, 'master')
+    expect(fetchMock.mock.calls[0]?.[0]).toBe(`${BASE}/track/3/sync-mode`)
+    expect(JSON.parse(String(fetchMock.mock.calls[0]?.[1]?.body))).toEqual({
+      mode: 'master',
+    })
+  })
+
+  it('setQuantizeDivision(0, "eighth") → PATCH /track/0/quantize-division', async () => {
+    await looperApi.setQuantizeDivision(0, 'eighth')
+    expect(fetchMock.mock.calls[0]?.[0]).toBe(
+      `${BASE}/track/0/quantize-division`,
+    )
+    expect(JSON.parse(String(fetchMock.mock.calls[0]?.[1]?.body))).toEqual({
+      division: 'eighth',
+    })
+  })
+
+  it('addSlice(1, 0, 48000, "intro") → POST /track/1/slices with body', async () => {
+    await looperApi.addSlice(1, 0, 48000, 'intro')
+    expect(fetchMock.mock.calls[0]?.[0]).toBe(`${BASE}/track/1/slices`)
+    const init = fetchMock.mock.calls[0]?.[1] as RequestInit | undefined
+    expect(init?.method).toBe('POST')
+    expect(JSON.parse(String(init?.body))).toEqual({
+      start_frame: 0,
+      end_frame: 48000,
+      label: 'intro',
+    })
+  })
+
+  it('clearSlices(2) → DELETE /track/2/slices', async () => {
+    await looperApi.clearSlices(2)
+    expect(fetchMock.mock.calls[0]?.[0]).toBe(`${BASE}/track/2/slices`)
+    const init = fetchMock.mock.calls[0]?.[1] as RequestInit | undefined
+    expect(init?.method).toBe('DELETE')
+  })
+
   // ---------- Master ----------
 
   it('setMasterLevel(0) → PATCH /master/level with {db: 0}', async () => {

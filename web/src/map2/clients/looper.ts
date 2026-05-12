@@ -16,6 +16,23 @@ export type LooperTrackStateLabel =
   | 'overdubbing'
   | 'stopped'
 
+export interface LooperTrackSlice {
+  start_frame: number
+  end_frame: number
+  label: string
+}
+
+export type LooperStopMode = 'hard' | 'fade'
+export type LooperSyncMode = 'free' | 'master' | 'slave'
+export type LooperQuantizeDivision =
+  | 'off'
+  | 'whole' | '1/1'
+  | 'half' | '1/2'
+  | 'quarter' | '1/4'
+  | 'eighth' | '1/8'
+  | 'sixteenth' | '1/16'
+  | 'thirty-second' | 'thirty_second' | '1/32'
+
 export interface LooperTrackStatus {
   track: number
   state: LooperTrackState
@@ -30,12 +47,22 @@ export interface LooperTrackStatus {
   half_speed: boolean
   /** T2512-LOCK — write-lock state. Locked tracks reject record/clear/undo/redo. */
   locked: boolean
-  /** T2512-OS — one-shot / trigger mode. Auto-stop after one playhead pass (runner deferred). */
+  /** T2512-OS — one-shot / trigger mode. Auto-stop after one playhead pass. */
   one_shot: boolean
-  /** T2512-AUTO — operator armed input-threshold auto-record (storage-only until engine RMS lands). */
+  /** T2512-AUTO — operator armed input-threshold auto-record. */
   auto_armed: boolean
   /** T2512-AUTO — input-threshold in dB, clamped -90..0. */
   auto_threshold_db: number
+  /** T2512-FADE — stop kind. "hard" (default, cutoff) or "fade" (gain ramp). */
+  stop_mode: LooperStopMode
+  /** T2512-FADE — fade-out duration in ms, clamped 0..5000. */
+  fade_ms: number
+  /** T2512-SYNC — per-track sync mode. */
+  sync_mode: LooperSyncMode
+  /** T2512-SLICE — non-destructive slice metadata. */
+  slices: LooperTrackSlice[]
+  /** T2512-QUANT-WIRE — auto-close grid. "off" disables quantization. */
+  quantize_division: LooperQuantizeDivision
 }
 
 export interface LooperStatus {
@@ -45,6 +72,8 @@ export interface LooperStatus {
   master_level_db: number
   /** T2512-CLOCK (inbound) — current snapshot tempo BPM; null when tempo service unavailable. */
   bpm: number | null
+  /** T2512-SYNC — index of the track set to sync_mode "master", or null. */
+  sync_master_track: number | null
 }
 
 const BASE = `${API_BASE}/v1/looper`
@@ -71,6 +100,28 @@ export const looperApi = {
   setAutoArmed:        (track: number, armed: boolean) => patch(`${BASE}/track/${track}/auto-armed`,     { value: armed }),
   /** T2512-AUTO — set the input-threshold dB for auto-record (clamped -90..0). */
   setAutoThresholdDb:  (track: number, db: number)     => patch(`${BASE}/track/${track}/auto-threshold`, { db }),
+  /** T2512-FADE — set stop mode for a track. */
+  setStopMode: (track: number, mode: LooperStopMode) =>
+    patch(`${BASE}/track/${track}/stop-mode`, { mode }),
+  /** T2512-FADE — set fade-out duration in ms (clamped 0..5000). */
+  setFadeMs: (track: number, fade_ms: number) =>
+    patch(`${BASE}/track/${track}/fade-ms`, { fade_ms }),
+  /** T2512-SYNC — set per-track sync mode (service enforces at-most-one master). */
+  setSyncMode: (track: number, mode: LooperSyncMode) =>
+    patch(`${BASE}/track/${track}/sync-mode`, { mode }),
+  /** T2512-QUANT-WIRE — set the auto-close grid for a track. */
+  setQuantizeDivision: (track: number, division: LooperQuantizeDivision) =>
+    patch(`${BASE}/track/${track}/quantize-division`, { division }),
+  /** T2512-SLICE — append a non-destructive slice to a track. */
+  addSlice: (track: number, start_frame: number, end_frame: number, label = '') =>
+    fetchJson<LooperStatus>(`${BASE}/track/${track}/slices`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ start_frame, end_frame, label }),
+    }),
+  /** T2512-SLICE — drop every slice on a track. */
+  clearSlices: (track: number) =>
+    fetchJson<LooperStatus>(`${BASE}/track/${track}/slices`, { method: 'DELETE' }),
   setMasterLevel: (db: number)                 => patch(`${BASE}/master/level`, { db }),
 }
 
