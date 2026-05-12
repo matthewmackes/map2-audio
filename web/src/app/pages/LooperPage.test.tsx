@@ -13,7 +13,7 @@
  */
 
 import '@testing-library/jest-dom'
-import { act, render, screen, waitFor } from '@testing-library/react'
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { MemoryRouter } from 'react-router-dom'
 
 // ---------------------------------------------------------------------------
@@ -464,6 +464,146 @@ describe('LooperPage T2512-PAGE-V2 advanced state surface', () => {
     await waitFor(() => {
       expect(looperApi.clearSlices).toHaveBeenCalledWith(0)
     })
+  })
+})
+
+describe('LooperPage T2512-SLICE-UI region editor', () => {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const { looperApi } = require('../../map2/clients/looper') as {
+    looperApi: Record<string, jest.Mock>
+  }
+
+  beforeEach(() => {
+    Object.values(looperApi).forEach((fn) => fn.mockClear())
+  })
+
+  it('renders the slice-editor toggle for every track', async () => {
+    renderPage()
+    for (let t = 0; t < 4; t++) {
+      const toggle = await screen.findByTestId(
+        `looper-slice-editor-toggle-${t}`,
+      )
+      expect(toggle).toBeInTheDocument()
+    }
+  })
+
+  it('does not render the editor body until the toggle is clicked', async () => {
+    renderPage()
+    // Body absent before toggle.
+    expect(screen.queryByTestId('looper-add-slice-0')).toBeNull()
+    const toggle = await screen.findByTestId('looper-slice-editor-toggle-0')
+    toggle.click()
+    expect(await screen.findByTestId('looper-add-slice-0')).toBeInTheDocument()
+  })
+
+  it('shows the empty-state copy when a track has no slices', async () => {
+    renderPage()
+    const toggle = await screen.findByTestId('looper-slice-editor-toggle-0')
+    toggle.click()
+    expect(await screen.findByText(/No slices yet/)).toBeInTheDocument()
+    expect(screen.queryByTestId('looper-slice-list-0')).toBeNull()
+  })
+
+  it('Add-slice button fires looperApi.addSlice with the form values', async () => {
+    renderPage()
+    const toggle = await screen.findByTestId('looper-slice-editor-toggle-0')
+    toggle.click()
+
+    // Set the label by firing a synthetic change event — React's
+    // controlled input requires the React-aware event helper to pick
+    // up the value transition.
+    const labelInput = await screen.findByTestId('looper-slice-label-0')
+    fireEvent.change(labelInput, { target: { value: 'intro' } })
+
+    const btn = await screen.findByTestId('looper-add-slice-0')
+    btn.click()
+
+    await waitFor(() => {
+      expect(looperApi.addSlice).toHaveBeenCalled()
+    })
+    // Default form values are start=0, end=48000.
+    const call = looperApi.addSlice.mock.calls[0]
+    expect(call?.[0]).toBe(0)         // track
+    expect(call?.[1]).toBe(0)         // start_frame
+    expect(call?.[2]).toBe(48000)     // end_frame
+    expect(call?.[3]).toBe('intro')   // label (trimmed)
+  })
+
+  it('renders the slice list when status carries slices', async () => {
+    renderPage()
+    await screen.findByTestId('looper-ws-status')
+    act(() => {
+      sockets[0]!.onopen?.call(sockets[0] as unknown as WebSocket)
+    })
+
+    const frame = {
+      type: 'looper_status',
+      payload: {
+        ...mockIdleSnapshot,
+        tracks: mockIdleSnapshot.tracks.map((t, i) =>
+          i === 0
+            ? {
+                ...t,
+                slices: [
+                  { start_frame: 0,     end_frame: 24000,  label: 'intro' },
+                  { start_frame: 24000, end_frame: 48000,  label: 'verse' },
+                ],
+              }
+            : t,
+        ),
+      },
+    }
+    act(() => {
+      sockets[0]!.onmessage?.call(
+        sockets[0] as unknown as WebSocket,
+        { data: JSON.stringify(frame) } as MessageEvent,
+      )
+    })
+
+    const toggle = await screen.findByTestId('looper-slice-editor-toggle-0')
+    toggle.click()
+
+    const list = await screen.findByTestId('looper-slice-list-0')
+    expect(list).toBeInTheDocument()
+    expect(list).toHaveTextContent('0–24000')
+    expect(list).toHaveTextContent('intro')
+    expect(list).toHaveTextContent('24000–48000')
+    expect(list).toHaveTextContent('verse')
+  })
+
+  it('renders "unlabeled" placeholder for slices with empty labels', async () => {
+    renderPage()
+    await screen.findByTestId('looper-ws-status')
+    act(() => {
+      sockets[0]!.onopen?.call(sockets[0] as unknown as WebSocket)
+    })
+
+    const frame = {
+      type: 'looper_status',
+      payload: {
+        ...mockIdleSnapshot,
+        tracks: mockIdleSnapshot.tracks.map((t, i) =>
+          i === 0
+            ? {
+                ...t,
+                slices: [
+                  { start_frame: 0, end_frame: 1000, label: '' },
+                ],
+              }
+            : t,
+        ),
+      },
+    }
+    act(() => {
+      sockets[0]!.onmessage?.call(
+        sockets[0] as unknown as WebSocket,
+        { data: JSON.stringify(frame) } as MessageEvent,
+      )
+    })
+
+    const toggle = await screen.findByTestId('looper-slice-editor-toggle-0')
+    toggle.click()
+    expect(await screen.findByText('unlabeled')).toBeInTheDocument()
   })
 })
 

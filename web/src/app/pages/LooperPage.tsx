@@ -516,7 +516,7 @@ function TrackCard({
           <SelectItem value="thirty-second" text="1/32 (thirty-second)" />
         </Select>
 
-        {/* T2512-SLICE — slice count + clear action. Editor UI is a follow-up. */}
+        {/* T2512-SLICE — slice count + clear action. */}
         <div
           className="looper-track__slices"
           data-testid={`looper-slices-${track.track}`}
@@ -536,7 +536,130 @@ function TrackCard({
           ) : null}
         </div>
       </div>
+
+      {/* T2512-SLICE-UI — region editor: inline add-slice form +
+          sorted list of existing slices. Lives outside the advanced
+          grid row so the form widgets don't compete with the
+          dropdown column track. */}
+      <SliceEditor track={track} onAction={onAction} />
     </Tile>
+  )
+}
+
+function SliceEditor({
+  track,
+  onAction,
+}: {
+  track: LooperTrackStatus
+  onAction: (fn: () => Promise<LooperStatus>) => Promise<void>
+}) {
+  const [open, setOpen] = useState(false)
+  const [start, setStart] = useState<number>(0)
+  const [end, setEnd] = useState<number>(48000)
+  const [label, setLabel] = useState<string>('')
+
+  const handleAdd = () => {
+    if (end <= start) return  // service rejects anyway; spare the round-trip
+    onAction(() => looperApi.addSlice(track.track, start, end, label.trim()))
+    // Reset label after a successful add so the operator can chain entries.
+    setLabel('')
+  }
+
+  return (
+    <div
+      className="looper-track__slice-editor"
+      data-testid={`looper-slice-editor-${track.track}`}
+    >
+      <button
+        type="button"
+        className="looper-track__slice-editor-toggle"
+        onClick={() => setOpen((o) => !o)}
+        aria-expanded={open}
+        data-testid={`looper-slice-editor-toggle-${track.track}`}
+      >
+        <ChevronDown size={16} />
+        <span>Slice editor</span>
+        <Tag type={track.slices.length > 0 ? 'cool-gray' : 'gray'} size="sm">
+          {track.slices.length}
+        </Tag>
+      </button>
+
+      {open ? (
+        <div className="looper-track__slice-editor-body">
+          <div className="looper-track__slice-form">
+            <NumberInput
+              id={`looper-slice-start-${track.track}`}
+              size="sm"
+              label="Start frame"
+              min={0}
+              step={1}
+              value={start}
+              onChange={(_evt: unknown, payload: { value: number | string }) => {
+                const v = typeof payload.value === 'number'
+                  ? payload.value
+                  : parseInt(payload.value, 10)
+                if (Number.isFinite(v)) setStart(v)
+              }}
+            />
+            <NumberInput
+              id={`looper-slice-end-${track.track}`}
+              size="sm"
+              label="End frame"
+              min={1}
+              step={1}
+              value={end}
+              onChange={(_evt: unknown, payload: { value: number | string }) => {
+                const v = typeof payload.value === 'number'
+                  ? payload.value
+                  : parseInt(payload.value, 10)
+                if (Number.isFinite(v)) setEnd(v)
+              }}
+            />
+            <input
+              type="text"
+              className="looper-track__slice-label"
+              placeholder="Label (optional)"
+              value={label}
+              onChange={(e) => setLabel(e.target.value)}
+              maxLength={64}
+              data-testid={`looper-slice-label-${track.track}`}
+            />
+            <Button
+              kind="primary"
+              size="sm"
+              disabled={end <= start}
+              data-testid={`looper-add-slice-${track.track}`}
+              onClick={handleAdd}
+            >
+              Add slice
+            </Button>
+          </div>
+
+          {track.slices.length > 0 ? (
+            <ul
+              className="looper-track__slice-list"
+              data-testid={`looper-slice-list-${track.track}`}
+            >
+              {track.slices.map((slc) => (
+                <li key={`${slc.start_frame}-${slc.end_frame}`}>
+                  <span className="looper-track__slice-range">
+                    {slc.start_frame}–{slc.end_frame}
+                  </span>
+                  <span className="looper-track__slice-label-text">
+                    {slc.label || <em>unlabeled</em>}
+                  </span>
+                </li>
+              ))}
+            </ul>
+          ) : (
+            <p className="looper-track__slice-empty">
+              No slices yet. Add a region using start + end frame counts
+              (1 second @ 48 kHz = 48000 frames).
+            </p>
+          )}
+        </div>
+      ) : null}
+    </div>
   )
 }
 
