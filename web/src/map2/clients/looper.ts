@@ -83,6 +83,14 @@ export interface LooperStatus {
   sync_master_track: number | null
   /** T2512-ACTIVITY-WS — newest-first tail of the activity log (cap 20). */
   recent_activity: LooperActivityEvent[]
+  /** T2512-PRESET — names of currently-saved in-memory presets, save order. */
+  preset_names?: string[]
+}
+
+/** T2512-PRESET — list-presets envelope returned by GET /presets. */
+export interface LooperPresetNames {
+  names: string[]
+  cap: number
 }
 
 /**
@@ -223,6 +231,29 @@ export const looperApi = {
     fetchJson<{ counters: Record<string, number> }>(`${BASE}/metrics`, {
       method: 'DELETE',
     }),
+  /** T2512-PRESET — list named in-memory state presets (insertion order). */
+  listPresets: () => fetchJson<LooperPresetNames>(`${BASE}/presets`),
+  /** T2512-PRESET — snapshot the current state under a named slot. */
+  savePreset: (name: string) =>
+    fetchJson<LooperStatus>(
+      `${BASE}/presets/${encodeURIComponent(name)}`,
+      { method: 'POST' },
+    ),
+  /** T2512-PRESET — restore a named preset into active state. */
+  applyPreset: (name: string) =>
+    fetchJson<LooperStatus>(
+      `${BASE}/presets/${encodeURIComponent(name)}/apply`,
+      { method: 'POST' },
+    ),
+  /** T2512-PRESET — drop a single named preset (no impact on active state). */
+  deletePreset: (name: string) =>
+    fetchJson<LooperStatus>(
+      `${BASE}/presets/${encodeURIComponent(name)}`,
+      { method: 'DELETE' },
+    ),
+  /** T2512-PRESET — drop every named preset (no impact on active state). */
+  clearPresets: () =>
+    fetchJson<LooperStatus>(`${BASE}/presets`, { method: 'DELETE' }),
 }
 
 function patch(url: string, body: unknown): Promise<LooperStatus> {

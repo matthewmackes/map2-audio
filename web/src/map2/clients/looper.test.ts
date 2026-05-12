@@ -289,6 +289,50 @@ describe('looperApi HTTP surface', () => {
     })
   })
 
+  // ---------- T2512-PRESET ----------
+
+  it('listPresets() → GET /presets (default method)', async () => {
+    await looperApi.listPresets()
+    expect(fetchMock.mock.calls[0]?.[0]).toBe(`${BASE}/presets`)
+    const init = (fetchMock.mock.calls[0]?.[1] ?? {}) as RequestInit
+    expect(init.method ?? 'GET').toBe('GET')
+  })
+
+  it('savePreset("set-a") → POST /presets/set-a', async () => {
+    await looperApi.savePreset('set-a')
+    expect(fetchMock.mock.calls[0]?.[0]).toBe(`${BASE}/presets/set-a`)
+    const init = fetchMock.mock.calls[0]?.[1] as RequestInit | undefined
+    expect(init?.method).toBe('POST')
+  })
+
+  it('savePreset URL-encodes preset names with spaces/slashes', async () => {
+    await looperApi.savePreset('verse 1/chorus')
+    expect(fetchMock.mock.calls[0]?.[0]).toBe(
+      `${BASE}/presets/${encodeURIComponent('verse 1/chorus')}`,
+    )
+  })
+
+  it('applyPreset("set-a") → POST /presets/set-a/apply', async () => {
+    await looperApi.applyPreset('set-a')
+    expect(fetchMock.mock.calls[0]?.[0]).toBe(`${BASE}/presets/set-a/apply`)
+    const init = fetchMock.mock.calls[0]?.[1] as RequestInit | undefined
+    expect(init?.method).toBe('POST')
+  })
+
+  it('deletePreset("set-a") → DELETE /presets/set-a', async () => {
+    await looperApi.deletePreset('set-a')
+    expect(fetchMock.mock.calls[0]?.[0]).toBe(`${BASE}/presets/set-a`)
+    const init = fetchMock.mock.calls[0]?.[1] as RequestInit | undefined
+    expect(init?.method).toBe('DELETE')
+  })
+
+  it('clearPresets() → DELETE /presets', async () => {
+    await looperApi.clearPresets()
+    expect(fetchMock.mock.calls[0]?.[0]).toBe(`${BASE}/presets`)
+    const init = fetchMock.mock.calls[0]?.[1] as RequestInit | undefined
+    expect(init?.method).toBe('DELETE')
+  })
+
   // ---------- Headers ----------
 
   it('PATCH calls send Content-Type: application/json', async () => {

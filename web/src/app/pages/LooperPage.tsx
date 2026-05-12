@@ -18,7 +18,7 @@
  * shipped yet, it appears as a deferred follow-on.
  */
 
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 import { getWsUrl } from '../../map2/transport'
 
@@ -37,6 +37,7 @@ import {
   SelectItem,
   Slider,
   Tag,
+  TextInput,
   Tile,
   Toggle,
   InlineLoading,
@@ -443,6 +444,11 @@ export function LooperPage() {
             </p>
           </Modal>
 
+          <PresetPanel
+            presetNames={status.preset_names ?? []}
+            onAction={wrap}
+            setError={setError}
+          />
           <FeatureInventory />
           <ActivityPanel
             statusRecentActivity={status.recent_activity}
@@ -451,6 +457,156 @@ export function LooperPage() {
         </>
       )}
     </div>
+  )
+}
+
+/**
+ * T2512-PRESET-UI — named in-memory state presets.
+ *
+ * Backend exposes 5 routes (`GET/POST/DELETE /presets`,
+ * `POST /presets/{name}/apply`, `DELETE /presets/{name}`) with a
+ * 32-entry cap. The list is volatile (cleared on backend restart);
+ * persistent presets remain the snapshot service's job, which is
+ * tracked separately under T2512-SNAP.
+ *
+ * UX: a Save-current input + Save button along the top, then one
+ * row per saved preset with Apply / Delete buttons. A Clear-all
+ * button appears once any presets exist.
+ */
+function PresetPanel({
+  presetNames,
+  onAction,
+  setError,
+}: {
+  presetNames: ReadonlyArray<string>
+  onAction: (fn: () => Promise<LooperStatus>) => Promise<void>
+  setError: (msg: string | null) => void
+}) {
+  const [draftName, setDraftName] = useState('')
+  const sortedNames = useMemo(() => [...presetNames], [presetNames])
+  const isFull = sortedNames.length >= 32
+  const trimmed = draftName.trim()
+  const isDuplicate = trimmed !== '' && sortedNames.includes(trimmed)
+  const canSave = trimmed !== '' && (!isFull || isDuplicate)
+
+  const handleSave = useCallback(async () => {
+    if (!canSave) return
+    const name = trimmed
+    setError(null)
+    await onAction(() => looperApi.savePreset(name))
+    setDraftName('')
+  }, [canSave, onAction, setError, trimmed])
+
+  return (
+    <Tile
+      className="looper-page__presets"
+      data-testid="looper-preset-panel"
+    >
+      <div className="looper-page__presets-header">
+        <h3 style={{ margin: 0 }}>Presets</h3>
+        <Tag
+          type="cool-gray"
+          size="sm"
+          data-testid="looper-preset-count-tag"
+        >
+          {sortedNames.length} / 32 saved
+        </Tag>
+      </div>
+      <p className="looper-page__presets-help">
+        Named in-memory snapshots of every per-track flag + master
+        level. Recall is instant; the list clears on backend
+        restart. Use Snapshot Editor for persistent saves.
+      </p>
+
+      <div className="looper-page__presets-save-row">
+        <TextInput
+          id="looper-preset-name-input"
+          data-testid="looper-preset-name-input"
+          labelText="New preset name"
+          placeholder="e.g. verse-a"
+          value={draftName}
+          onChange={(e) => setDraftName(e.target.value)}
+          onKeyDown={(e) => {
+            if (e.key === 'Enter' && canSave) {
+              e.preventDefault()
+              void handleSave()
+            }
+          }}
+        />
+        <Button
+          kind="primary"
+          size="sm"
+          disabled={!canSave}
+          data-testid="looper-preset-save-button"
+          onClick={() => void handleSave()}
+        >
+          {isDuplicate ? 'Overwrite' : 'Save'}
+        </Button>
+      </div>
+
+      {sortedNames.length === 0 ? (
+        <p
+          className="looper-page__presets-empty"
+          data-testid="looper-preset-empty"
+        >
+          No presets saved yet.
+        </p>
+      ) : (
+        <>
+          <ul
+            className="looper-page__presets-list"
+            data-testid="looper-preset-list"
+          >
+            {sortedNames.map((name) => (
+              <li
+                key={name}
+                className="looper-page__presets-row"
+                data-testid={`looper-preset-row-${name}`}
+              >
+                <span
+                  className="looper-page__presets-row-name"
+                  title={name}
+                >
+                  {name}
+                </span>
+                <div className="looper-page__presets-row-actions">
+                  <Button
+                    kind="tertiary"
+                    size="sm"
+                    data-testid={`looper-preset-apply-${name}`}
+                    onClick={() =>
+                      void onAction(() => looperApi.applyPreset(name))
+                    }
+                  >
+                    Apply
+                  </Button>
+                  <Button
+                    kind="danger--ghost"
+                    size="sm"
+                    data-testid={`looper-preset-delete-${name}`}
+                    onClick={() =>
+                      void onAction(() => looperApi.deletePreset(name))
+                    }
+                  >
+                    Delete
+                  </Button>
+                </div>
+              </li>
+            ))}
+          </ul>
+          <div className="looper-page__presets-clear-row">
+            <Button
+              kind="danger--tertiary"
+              size="sm"
+              data-testid="looper-preset-clear-all"
+              onClick={() => void onAction(() => looperApi.clearPresets())}
+            >
+              Clear all presets
+            </Button>
+          </div>
+        </>
+      )}
+    </Tile>
   )
 }
 

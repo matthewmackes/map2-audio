@@ -141,6 +141,11 @@ jest.mock('../../map2/clients/looper', () => ({
     })),
     applyState: jest.fn(async () => mockIdleSnapshot),
     setMasterLevel: jest.fn(async () => mockIdleSnapshot),
+    listPresets: jest.fn(async () => ({ names: [], cap: 32 })),
+    savePreset: jest.fn(async () => mockIdleSnapshot),
+    applyPreset: jest.fn(async () => mockIdleSnapshot),
+    deletePreset: jest.fn(async () => mockIdleSnapshot),
+    clearPresets: jest.fn(async () => mockIdleSnapshot),
   },
 }))
 
@@ -1308,5 +1313,154 @@ describe('LooperPage T2512-CLOCK BPM tag', () => {
     await screen.findByTestId('looper-ws-status')
     // Initial snapshot has bpm=null; tag should never appear.
     expect(screen.queryByTestId('looper-bpm')).toBeNull()
+  })
+})
+
+describe('LooperPage T2512-PRESET-UI named-preset panel', () => {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const mod = require('../../map2/clients/looper') as {
+    looperApi: {
+      savePreset: jest.Mock
+      applyPreset: jest.Mock
+      deletePreset: jest.Mock
+      clearPresets: jest.Mock
+    }
+  }
+
+  beforeEach(() => {
+    mod.looperApi.savePreset.mockClear()
+    mod.looperApi.applyPreset.mockClear()
+    mod.looperApi.deletePreset.mockClear()
+    mod.looperApi.clearPresets.mockClear()
+  })
+
+  async function pushPresets(names: string[]): Promise<void> {
+    act(() => {
+      sockets[0]!.onopen?.call(sockets[0] as unknown as WebSocket)
+    })
+    const frame = {
+      type: 'looper_status',
+      payload: { ...mockIdleSnapshot, preset_names: names },
+    }
+    act(() => {
+      sockets[0]!.onmessage?.call(
+        sockets[0] as unknown as WebSocket,
+        { data: JSON.stringify(frame) } as MessageEvent,
+      )
+    })
+  }
+
+  it('renders the preset panel with empty-state copy when no presets exist', async () => {
+    renderPage()
+    await screen.findByTestId('looper-preset-panel')
+    expect(screen.getByTestId('looper-preset-empty')).toBeInTheDocument()
+    expect(screen.getByTestId('looper-preset-count-tag')).toHaveTextContent(
+      '0 / 32 saved',
+    )
+    // Empty state hides the clear-all button.
+    expect(screen.queryByTestId('looper-preset-clear-all')).toBeNull()
+  })
+
+  it('disables Save when the name input is empty or whitespace', async () => {
+    renderPage()
+    const btn = (await screen.findByTestId(
+      'looper-preset-save-button',
+    )) as HTMLButtonElement
+    expect(btn).toBeDisabled()
+
+    const input = screen.getByTestId('looper-preset-name-input') as HTMLInputElement
+    fireEvent.change(input, { target: { value: '   ' } })
+    expect(btn).toBeDisabled()
+  })
+
+  it('Save button posts the trimmed preset name and clears the input', async () => {
+    renderPage()
+    const input = (await screen.findByTestId(
+      'looper-preset-name-input',
+    )) as HTMLInputElement
+    fireEvent.change(input, { target: { value: '  set-a  ' } })
+    const btn = screen.getByTestId('looper-preset-save-button') as HTMLButtonElement
+    expect(btn).not.toBeDisabled()
+    fireEvent.click(btn)
+    await waitFor(() => {
+      expect(mod.looperApi.savePreset).toHaveBeenCalledWith('set-a')
+    })
+    await waitFor(() => {
+      expect(input.value).toBe('')
+    })
+  })
+
+  it('renders one row per saved preset with Apply/Delete buttons', async () => {
+    renderPage()
+    await screen.findByTestId('looper-preset-panel')
+    await pushPresets(['set-a', 'verse-1'])
+
+    await waitFor(() => {
+      expect(screen.getByTestId('looper-preset-list')).toBeInTheDocument()
+    })
+    expect(screen.getByTestId('looper-preset-row-set-a')).toBeInTheDocument()
+    expect(screen.getByTestId('looper-preset-row-verse-1')).toBeInTheDocument()
+    expect(screen.getByTestId('looper-preset-count-tag')).toHaveTextContent(
+      '2 / 32 saved',
+    )
+  })
+
+  it('Apply button calls looperApi.applyPreset with the row name', async () => {
+    renderPage()
+    await screen.findByTestId('looper-preset-panel')
+    await pushPresets(['set-a'])
+
+    const apply = (await screen.findByTestId(
+      'looper-preset-apply-set-a',
+    )) as HTMLButtonElement
+    fireEvent.click(apply)
+    await waitFor(() => {
+      expect(mod.looperApi.applyPreset).toHaveBeenCalledWith('set-a')
+    })
+  })
+
+  it('Delete button calls looperApi.deletePreset with the row name', async () => {
+    renderPage()
+    await screen.findByTestId('looper-preset-panel')
+    await pushPresets(['set-a'])
+
+    const del = (await screen.findByTestId(
+      'looper-preset-delete-set-a',
+    )) as HTMLButtonElement
+    fireEvent.click(del)
+    await waitFor(() => {
+      expect(mod.looperApi.deletePreset).toHaveBeenCalledWith('set-a')
+    })
+  })
+
+  it('Clear-all button calls looperApi.clearPresets', async () => {
+    renderPage()
+    await screen.findByTestId('looper-preset-panel')
+    await pushPresets(['set-a', 'set-b'])
+
+    const clearAll = (await screen.findByTestId(
+      'looper-preset-clear-all',
+    )) as HTMLButtonElement
+    fireEvent.click(clearAll)
+    await waitFor(() => {
+      expect(mod.looperApi.clearPresets).toHaveBeenCalled()
+    })
+  })
+
+  it('Save button label switches to Overwrite when the name matches an existing preset', async () => {
+    renderPage()
+    await screen.findByTestId('looper-preset-panel')
+    await pushPresets(['set-a'])
+    await screen.findByTestId('looper-preset-row-set-a')
+
+    const input = (await screen.findByTestId(
+      'looper-preset-name-input',
+    )) as HTMLInputElement
+    fireEvent.change(input, { target: { value: 'set-a' } })
+    await waitFor(() => {
+      expect(
+        screen.getByTestId('looper-preset-save-button'),
+      ).toHaveTextContent('Overwrite')
+    })
   })
 })

@@ -332,3 +332,73 @@
   font-family: var(--cds-code-01-font-family, 'IBM Plex Mono', monospace);
   font-size: 0.8125rem;
 }
+
+/* T2512-PRESET-UI — named in-memory state presets panel. */
+.looper-page__presets {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cds-spacing-04);
+}
+
+.looper-page__presets-header {
+  display: flex;
+  align-items: center;
+  gap: var(--cds-spacing-03);
+}
+
+.looper-page__presets-help {
+  margin: 0;
+  color: var(--cds-text-secondary);
+  font-size: 0.8125rem;
+}
+
+.looper-page__presets-save-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: var(--cds-spacing-04);
+  align-items: end;
+}
+
+.looper-page__presets-empty {
+  margin: 0;
+  color: var(--cds-text-secondary);
+  font-style: italic;
+  font-size: 0.8125rem;
+}
+
+.looper-page__presets-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cds-spacing-02);
+  list-style: none;
+  margin: 0;
+  padding: 0;
+}
+
+.looper-page__presets-row {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: var(--cds-spacing-04);
+  align-items: center;
+  padding: var(--cds-spacing-02) var(--cds-spacing-03);
+  background-color: var(--cds-layer-02);
+  border: 1px solid var(--cds-border-subtle-01);
+}
+
+.looper-page__presets-row-name {
+  font-family: var(--cds-code-01-font-family, 'IBM Plex Mono', monospace);
+  font-size: 0.875rem;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.looper-page__presets-row-actions {
+  display: flex;
+  gap: var(--cds-spacing-02);
+}
+
+.looper-page__presets-clear-row {
+  display: flex;
+  justify-content: flex-end;
+}
