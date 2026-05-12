@@ -23,6 +23,7 @@ from app.routes.looper import router as looper_router
 EXPECTED_PATHS_BY_METHOD: dict[str, set[str]] = {
     "get": {
         "/api/v1/looper/status",
+        "/api/v1/looper/state",  # T2512-SNAP
     },
     "post": {
         "/api/v1/looper/track/{track}/record",
@@ -30,6 +31,7 @@ EXPECTED_PATHS_BY_METHOD: dict[str, set[str]] = {
         "/api/v1/looper/track/{track}/clear",
         "/api/v1/looper/track/{track}/undo",
         "/api/v1/looper/track/{track}/redo",
+        "/api/v1/looper/state",  # T2512-SNAP — apply
     },
     "patch": {
         "/api/v1/looper/track/{track}/level",
@@ -157,10 +159,11 @@ def test_track_routes_expose_integer_track_path_param() -> None:
 # ---------------------------------------------------------------------------
 
 
-def test_every_looper_op_returns_looper_status_response() -> None:
-    """Every successful response must point at #/components/schemas/LooperStatusResponse
-    so a typed client (TypeScript via openapi-typescript) gets a
-    stable return type."""
+def test_every_looper_op_returns_a_known_response_model() -> None:
+    """Every successful response must point at one of the known
+    component schemas. Most ops return LooperStatusResponse; the
+    T2512-SNAP /state GET returns LooperStatePayload (a different
+    shape — operator policy without engine-derived runtime fields)."""
     schema = _build_app().openapi()
     failures: list[str] = []
     for path, methods in schema["paths"].items():
@@ -172,10 +175,15 @@ def test_every_looper_op_returns_looper_status_response() -> None:
             ok = op.get("responses", {}).get("200", {})
             content = ok.get("content", {}).get("application/json", {})
             ref = content.get("schema", {}).get("$ref", "")
-            if "LooperStatusResponse" not in ref:
-                failures.append(f"{method.upper()} {path} → {ref!r}")
+            # GET /state → LooperStatePayload, everything else → LooperStatusResponse.
+            if method == "get" and path == "/api/v1/looper/state":
+                if "LooperStatePayload" not in ref:
+                    failures.append(f"{method.upper()} {path} → {ref!r}")
+            else:
+                if "LooperStatusResponse" not in ref:
+                    failures.append(f"{method.upper()} {path} → {ref!r}")
     assert not failures, (
-        f"operations not returning LooperStatusResponse: {failures}"
+        f"operations returning unknown response model: {failures}"
     )
 
 

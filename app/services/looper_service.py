@@ -404,6 +404,97 @@ class LooperService:
         self._auto_threshold_db[track] = clamped
         return self._broadcast(self.get_status())
 
+    # -------- Snapshot integration (T2512-SNAP) --------
+    #
+    # The looper carries operator preferences that should travel with a
+    # snapshot recall: per-track write-lock, one-shot, auto-record
+    # arm/threshold, and master level. These knobs are policy, not
+    # captured audio — the captured loop content stays heap-only in
+    # the engine across snapshot transitions. (Loop content persistence
+    # is a separate bench task; see T2512-STOR.)
+    #
+    # ``export_state`` returns a JSON-safe dict; ``apply_state`` accepts
+    # the same shape and is tolerant of missing keys so older snapshot
+    # payloads still load. Both are sync — the integration point with
+    # the snapshot service is expected to call them inline at recall
+    # time. Unknown keys are ignored; out-of-range values are clamped
+    # by the existing setters.
+
+    _STATE_SCHEMA_VERSION = 1
+
+    def export_state(self) -> dict[str, Any]:
+        """T2512-SNAP — serialize operator policy state for snapshot save.
+
+        Captures per-track lock / one_shot / auto_armed /
+        auto_threshold_db + master level. Does NOT capture loop
+        content or transient engine state (state machine, playhead).
+        Output is JSON-safe.
+        """
+        master_level = 0.0
+        try:
+            engine_status = self.get_status()
+            master_level = engine_status.master_level_db
+        except Exception as exc:  # noqa: BLE001
+            logger.debug("looper.export_state: master level read failed: %s", exc)
+
+        return {
+            "schema_version": self._STATE_SCHEMA_VERSION,
+            "tracks": [
+                {
+                    "locked":            self._locked[i],
+                    "one_shot":          self._one_shot[i],
+                    "auto_armed":        self._auto_armed[i],
+                    "auto_threshold_db": self._auto_threshold_db[i],
+                }
+                for i in range(4)
+            ],
+            "master_level_db": master_level,
+        }
+
+    def apply_state(self, state: dict[str, Any]) -> LooperStatus:
+        """T2512-SNAP — restore operator policy from snapshot payload.
+
+        Tolerant of missing keys + unknown future fields. Each setter
+        re-applies its own clamp (track indices, dB range), so a
+        payload from a future schema doesn't corrupt service state.
+        Broadcasts once on completion.
+        """
+        if not isinstance(state, dict):
+            logger.warning("looper.apply_state: dropping non-dict payload")
+            return self.get_status()
+
+        tracks = state.get("tracks") or []
+        for idx, track_state in enumerate(tracks[:4]):
+            if not isinstance(track_state, dict):
+                continue
+            if "locked" in track_state:
+                self._locked[idx] = bool(track_state["locked"])
+            if "one_shot" in track_state:
+                self._one_shot[idx] = bool(track_state["one_shot"])
+            if "auto_armed" in track_state:
+                self._auto_armed[idx] = bool(track_state["auto_armed"])
+            if "auto_threshold_db" in track_state:
+                try:
+                    db = float(track_state["auto_threshold_db"])
+                    self._auto_threshold_db[idx] = max(-90.0, min(0.0, db))
+                except (TypeError, ValueError):
+                    pass
+
+        master_level = state.get("master_level_db")
+        if master_level is not None:
+            try:
+                db = float(master_level)
+                clamped = max(-60.0, min(6.0, db))
+                if (
+                    self._engine
+                    and hasattr(self._engine, "looper_set_master_level_db")
+                ):
+                    self._engine.looper_set_master_level_db(clamped)
+            except (TypeError, ValueError):
+                pass
+
+        return self._broadcast(self.get_status())
+
     # -------- Inspection --------
 
     def get_status(self) -> LooperStatus:

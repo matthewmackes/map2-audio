@@ -337,3 +337,63 @@ async def set_track_auto_threshold(track: int, body: SetAutoThresholdRequest,
     except LooperServiceError as exc:
         raise _http_for_error(exc)
     return LooperStatusResponse.from_status(result)
+
+
+# ---------------------------------------------------------------------------
+# T2512-SNAP — snapshot integration primitive
+# ---------------------------------------------------------------------------
+#
+# These routes expose ``export_state`` + ``apply_state`` so a snapshot
+# service hook (or an operator with curl) can save/load operator
+# policy state across snapshot recalls. Loop content is not part of
+# the payload — only knobs that the operator sets (lock, one-shot,
+# auto-record arm + threshold, master level).
+#
+# Two patterns make sense for the snapshot integration:
+#   1. Snapshot service calls export_state() at save time, writes the
+#      payload to its store, and calls apply_state(payload) at recall
+#      time.
+#   2. Operator backups: GET /state, POST /state.
+#
+# Both are served by the same routes below.
+
+
+class LooperStateTrackPayload(BaseModel):
+    locked: bool = False
+    one_shot: bool = False
+    auto_armed: bool = False
+    auto_threshold_db: float = -36.0
+
+
+class LooperStatePayload(BaseModel):
+    schema_version: int = 1
+    tracks: list[LooperStateTrackPayload]
+    master_level_db: float = 0.0
+
+
+@router.get("/state",
+            response_model=LooperStatePayload,
+            operation_id="looper_export_state",
+            summary="T2512-SNAP — serialize operator policy state for snapshot save")
+async def export_state(
+    service: LooperService = Depends(_get_service),
+) -> LooperStatePayload:
+    return LooperStatePayload(**service.export_state())
+
+
+@router.post("/state",
+             response_model=LooperStatusResponse,
+             operation_id="looper_apply_state",
+             summary="T2512-SNAP — restore operator policy state from a snapshot payload")
+async def apply_state(
+    body: LooperStatePayload,
+    service: LooperService = Depends(_get_service),
+) -> LooperStatusResponse:
+    """T2512-SNAP — apply a saved snapshot payload to the looper.
+
+    Tolerant of missing optional keys; unknown future fields are
+    ignored. Out-of-range values are clamped by the underlying
+    setters (-90..0 dB threshold; -60..+6 dB master level).
+    """
+    result = service.apply_state(body.model_dump())
+    return LooperStatusResponse.from_status(result)

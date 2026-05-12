@@ -276,3 +276,78 @@ def test_status_default_auto_state() -> None:
     for track in body["tracks"]:
         assert track["auto_armed"] is False
         assert track["auto_threshold_db"] == -36.0
+
+
+# ---------------------------------------------------------------------------
+# T2512-SNAP — /state export + apply
+# ---------------------------------------------------------------------------
+
+
+def test_get_state_returns_default_payload() -> None:
+    client, _, _ = _build_client()
+    resp = client.get("/api/v1/looper/state")
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["schema_version"] == 1
+    assert len(body["tracks"]) == 4
+    for track in body["tracks"]:
+        assert track["locked"] is False
+        assert track["one_shot"] is False
+        assert track["auto_armed"] is False
+        assert track["auto_threshold_db"] == -36.0
+
+
+def test_post_state_applies_payload_and_returns_status() -> None:
+    client, _, _ = _build_client()
+    payload = {
+        "schema_version": 1,
+        "tracks": [
+            {"locked": True, "one_shot": False, "auto_armed": False,
+             "auto_threshold_db": -36.0},
+            {"locked": False, "one_shot": True, "auto_armed": False,
+             "auto_threshold_db": -36.0},
+            {"locked": False, "one_shot": False, "auto_armed": True,
+             "auto_threshold_db": -24.0},
+            {"locked": False, "one_shot": False, "auto_armed": False,
+             "auto_threshold_db": -36.0},
+        ],
+        "master_level_db": 0.0,
+    }
+    resp = client.post("/api/v1/looper/state", json=payload)
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["tracks"][0]["locked"] is True
+    assert body["tracks"][1]["one_shot"] is True
+    assert body["tracks"][2]["auto_armed"] is True
+    assert body["tracks"][2]["auto_threshold_db"] == -24.0
+
+
+def test_state_route_round_trip() -> None:
+    """GET /state → mutate via setters → GET /state again must reflect
+    the mutations. POST /state must reverse them."""
+    client, _, _ = _build_client()
+    # Mutate via the existing route surface.
+    client.patch("/api/v1/looper/track/0/locked", json={"value": True})
+    client.patch("/api/v1/looper/track/1/one-shot", json={"value": True})
+
+    resp = client.get("/api/v1/looper/state")
+    saved = resp.json()
+    assert saved["tracks"][0]["locked"] is True
+    assert saved["tracks"][1]["one_shot"] is True
+
+    # Reset back to default by reapplying a fresh payload.
+    default_payload = {
+        "schema_version": 1,
+        "tracks": [
+            {"locked": False, "one_shot": False, "auto_armed": False,
+             "auto_threshold_db": -36.0}
+            for _ in range(4)
+        ],
+        "master_level_db": 0.0,
+    }
+    client.post("/api/v1/looper/state", json=default_payload)
+
+    final = client.get("/api/v1/looper/state").json()
+    for track in final["tracks"]:
+        assert track["locked"] is False
+        assert track["one_shot"] is False

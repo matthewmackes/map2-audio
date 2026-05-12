@@ -442,3 +442,174 @@ def test_auto_state_payload_includes_both_keys() -> None:
     payload = service.get_status().to_payload()
     assert "auto_armed" in payload["tracks"][0]
     assert "auto_threshold_db" in payload["tracks"][0]
+
+
+# ---------------------------------------------------------------------------
+# T2512-SNAP — export_state / apply_state primitive
+# ---------------------------------------------------------------------------
+
+
+def test_export_state_default_shape() -> None:
+    service = LooperService()
+    payload = service.export_state()
+    assert payload["schema_version"] == 1
+    assert len(payload["tracks"]) == 4
+    for track in payload["tracks"]:
+        assert track == {
+            "locked": False,
+            "one_shot": False,
+            "auto_armed": False,
+            "auto_threshold_db": -36.0,
+        }
+    assert payload["master_level_db"] == 0.0
+
+
+def test_export_state_reflects_operator_changes() -> None:
+    engine = _FakeEngine()
+    service = LooperService(engine=engine)
+    service.set_locked(0, True)
+    service.set_one_shot(1, True)
+    service.set_auto_armed(2, True)
+    service.set_auto_threshold_db(2, -24.0)
+
+    payload = service.export_state()
+    assert payload["tracks"][0]["locked"] is True
+    assert payload["tracks"][1]["one_shot"] is True
+    assert payload["tracks"][2]["auto_armed"] is True
+    assert payload["tracks"][2]["auto_threshold_db"] == -24.0
+
+
+def test_apply_state_restores_full_payload() -> None:
+    service = LooperService()
+    payload = {
+        "schema_version": 1,
+        "tracks": [
+            {"locked": True,  "one_shot": False, "auto_armed": True,
+             "auto_threshold_db": -18.0},
+            {"locked": False, "one_shot": True,  "auto_armed": False,
+             "auto_threshold_db": -36.0},
+            {"locked": False, "one_shot": False, "auto_armed": False,
+             "auto_threshold_db": -42.0},
+            {"locked": True,  "one_shot": True,  "auto_armed": True,
+             "auto_threshold_db": -60.0},
+        ],
+        "master_level_db": -6.0,
+    }
+    service.apply_state(payload)
+    status = service.get_status()
+    assert status.tracks[0].locked is True
+    assert status.tracks[0].auto_armed is True
+    assert status.tracks[0].auto_threshold_db == -18.0
+    assert status.tracks[1].one_shot is True
+    assert status.tracks[2].auto_threshold_db == -42.0
+    assert status.tracks[3].locked is True
+    assert status.tracks[3].one_shot is True
+
+
+def test_apply_state_tolerates_missing_keys() -> None:
+    """A payload with only some fields must not crash; missing fields
+    keep their prior value."""
+    service = LooperService()
+    service.set_locked(0, True)
+    service.apply_state({
+        "tracks": [
+            {"one_shot": True},  # only this key
+            {},
+            {},
+            {},
+        ],
+    })
+    status = service.get_status()
+    # locked preserved, one_shot applied.
+    assert status.tracks[0].locked is True
+    assert status.tracks[0].one_shot is True
+
+
+def test_apply_state_ignores_unknown_future_fields() -> None:
+    service = LooperService()
+    service.apply_state({
+        "schema_version": 99,
+        "tracks": [
+            {"locked": True, "future_knob": "hello"},
+            {}, {}, {},
+        ],
+        "future_block": {"key": "value"},
+    })
+    status = service.get_status()
+    assert status.tracks[0].locked is True
+
+
+def test_apply_state_drops_non_dict_payload() -> None:
+    service = LooperService()
+    # Must not raise.
+    service.apply_state("not a dict")  # type: ignore[arg-type]
+    service.apply_state(None)  # type: ignore[arg-type]
+    service.apply_state([])  # type: ignore[arg-type]
+
+
+def test_apply_state_clamps_extreme_threshold_db() -> None:
+    service = LooperService()
+    service.apply_state({
+        "tracks": [
+            {"auto_threshold_db": -200.0},  # below clamp
+            {"auto_threshold_db": 50.0},     # above clamp
+            {}, {},
+        ],
+    })
+    status = service.get_status()
+    assert status.tracks[0].auto_threshold_db == -90.0
+    assert status.tracks[1].auto_threshold_db == 0.0
+
+
+def test_apply_state_broadcasts_once() -> None:
+    """Bulk apply should fan out a single status broadcast, not one
+    per modified field (would flood subscribers)."""
+    received: list = []
+    service = LooperService(broadcaster=received.append)
+    service.apply_state({
+        "tracks": [
+            {"locked": True, "one_shot": True, "auto_armed": True,
+             "auto_threshold_db": -24.0},
+            {}, {}, {},
+        ],
+        "master_level_db": -6.0,
+    })
+    assert len(received) == 1
+
+
+def test_apply_state_handles_short_tracks_array() -> None:
+    """Older snapshot payload with fewer than 4 tracks must not crash."""
+    service = LooperService()
+    service.apply_state({
+        "tracks": [
+            {"locked": True},
+            {"one_shot": True},
+        ],
+    })
+    status = service.get_status()
+    assert status.tracks[0].locked is True
+    assert status.tracks[1].one_shot is True
+    # Tracks 2, 3 still default.
+    assert status.tracks[2].locked is False
+
+
+def test_round_trip_export_then_apply_preserves_state() -> None:
+    """The output of export_state must be a valid input to
+    apply_state — round-trip identity for policy state."""
+    engine = _FakeEngine()
+    a = LooperService(engine=engine)
+    a.set_locked(0, True)
+    a.set_one_shot(1, True)
+    a.set_auto_armed(2, True)
+    a.set_auto_threshold_db(3, -24.0)
+
+    payload = a.export_state()
+
+    b = LooperService()
+    b.apply_state(payload)
+    b_status = b.get_status()
+
+    assert b_status.tracks[0].locked is True
+    assert b_status.tracks[1].one_shot is True
+    assert b_status.tracks[2].auto_armed is True
+    assert b_status.tracks[3].auto_threshold_db == -24.0
