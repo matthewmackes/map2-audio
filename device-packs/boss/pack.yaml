@@ -1,0 +1,24 @@
+schema_version: 1
+pack_id: boss
+vendor:
+  name: Roland Boss
+  website: https://www.boss.info/
+  support_url: https://www.boss.info/support/
+description: |
+  Boss MIDI controllers. v1 covers the Boss FS-7 dual footswitch — one
+  of the most common pedalboard additions for guitarists. The FS-7
+  has two momentary footswitches; this pack ships a single looper
+  profile that maps switch A → Track 0 record/play/overdub stomp and
+  switch B → Track 0 stop/resume.
+
+  The FS-7 itself doesn't generate MIDI directly — it's a 1/4" TRS
+  output. Operators typically pair it with a MIDI conversion box
+  (e.g. a Disaster Area MIDI Baby) that emits CC on a chosen
+  channel/CC pair when the switches close. This profile assumes
+  the standard CC 80/81 mapping that DAMC defaults to; operators
+  with different boxes can use the controller-host's MIDI Learn
+  to remap.
+license: AGPL-3.0-only
+source: map2-native
+models:
+  - fs-7-looper

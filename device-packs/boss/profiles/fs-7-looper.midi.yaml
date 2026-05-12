@@ -1,0 +1,40 @@
+schema_version: 1
+# T2512-FSW-FS7 — Boss FS-7 dual footswitch as a minimal Track-0
+# looper controller. Two momentary switches → record stomp + stop.
+#
+# The FS-7 is a TRS-output footswitch (no native MIDI). A MIDI
+# conversion box translates the switch closures to CCs. We default
+# to CC 80 / 81 (the standard mapping DAMC and most boxes use).
+# Operators with different boxes remap via the controller-host
+# MIDI Learn surface.
+identity:
+  manufacturer: Roland Boss
+  model: fs-7-looper
+  alsa_client_pattern: 'FS-7'
+  # FS-7 has no native USB identity; conversion-box vendor varies.
+  # The hardware_id is left intentionally permissive — controller-
+  # host matches on alsa_client_pattern.
+  hardware_id: alsa-seq:FS-7:0
+
+scripts:
+  # T2512-SCRIPT — inherit the generic looper handler library so the
+  # release-at-zero filter + indexed-enum semantics come from one
+  # canonical place.
+  - ../../_generic/midi-learn-looper/scripts/looper.js
+
+controls:
+  # ---------- Switch A — record / play / overdub stomp ----------
+  - status: 0xB0
+    midino: 80
+    action: set
+    target: audio.looper.0.record
+    script: Looper.track_0.record
+    description: 'Switch A → Track 0 record / play / overdub stomp.'
+
+  # ---------- Switch B — stop / resume ----------
+  - status: 0xB0
+    midino: 81
+    action: set
+    target: audio.looper.0.stop
+    script: Looper.track_0.stop
+    description: 'Switch B → Track 0 stop / resume.'
