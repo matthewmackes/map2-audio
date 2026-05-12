@@ -2493,6 +2493,40 @@ Shipped this run, in order (10 T2512 follow-ons + 1 T2508 cleanup):
 
 ---
 
+### Pick-up next (fifth Continue run handoff, filed 2026-05-12, end-of-run)
+
+**Fifth run total: 6 cycles, all dual-pushed. Cumulative T2512 test totals after five runs: ~600 Python tests across 18 suites + 118 web tests + 21 Node JS tests.**
+
+Shipped this run, in order (6 T2512 follow-ons — covers every UI-surface order-1 pick from the fourth handoff plus the catalog catch-up):
+
+1. **T2512-PRESET-UI** — Named in-memory state presets panel on LooperPage. New `PresetPanel` Tile under master Tile: Save (text input + button; switches to "Overwrite" when name matches existing slot), per-row Apply + Delete, Clear-all when populated, 32-cap surfaced via count Tag. WS frames now carry `status.preset_names` so the panel stays push-synced. `looperApi` gains 5 methods (list/save/apply/delete/clear); URL-encodes the name segment. +6 client tests + 8 RTL tests. LooperPage RTL suite 25 → 33.
+2. **T2512-PRESET-DISPATCH** — Three new exact dispatcher targets `audio.looper.preset.{save,apply,delete}` (args[0] = name; action = set). New `_LooperPresetFn` Protocol + three `HandlerHooks` fields; single `_make_looper_preset_handler` factory; bridge gains `_looper_call_preset` helper that resolves the LooperService singleton and invokes `service.{save,apply,delete}_preset(name)` with LooperServiceError caught + WARN-logged. Exact-target sanity test bumps 10 → 13; pattern count stays at 18. +8 handler tests + 4 bridge tests. Full looper sweep 508 passed across 17 suites.
+3. **T2512-AUTO-PEAK-UI** — Threshold slider + peak indicator on every TrackCard. Carbon Slider bound to `auto_threshold_db` (-90..0 dB, 1 dB step); Peak Tag flips green when `auto_peak_db` > threshold (visual confirmation that auto-record *would* have fired); Last Tag shows `auto_last_level_db`; em-dash render for the -150 sentinel; ghost "Reset peak" button → `POST /track/{n}/auto-record/reset-peak`. `LooperTrackStatus` gains optional `auto_last_level_db` + `auto_peak_db`. `looperApi.resetAutoPeak(track)`. +1 client test + 6 RTL tests.
+4. **T2512-OS-COUNT-UI** — Multi-pass one-shot NumberInput. Per-track Carbon NumberInput in the advanced row (1..32, default 1, disabled when one-shot is off so the field never surfaces a value nothing consumes; the runner reads `one_shot_passes` only at one-shot+playing transition). Out-of-range typing clamped client-side, sparing 422 round-trips. `LooperTrackStatus.one_shot_passes`. `looperApi.setOneShotPasses(track, passes)`. +1 client test + 6 RTL tests.
+5. **T2512-MASTER-MUTE-UI** — Panic-mute Button on master Tile. One-click `PATCH /master/muted` toggle, `danger--tertiary` styling matching Reset-state, label flips between "Panic mute" and "Unmute master" off `status.master_muted`. Red Tag echoes the muted state next to active-tracks. **No modal** — panic-mute MUST be one click. `LooperStatus.master_muted`. `looperApi.setMasterMuted(muted)`. +1 client test + 4 RTL tests.
+6. **T2512-PACK-PRESET** — Generic MIDI-learn catalog catches up to T2512-PRESET-DISPATCH. New `preset` group in `_generic/midi-learn-looper/targets.yaml` with three verbs (save/apply/delete), each prompting for a single `preset_name` string. Catalog verb count 70 → 73. JS handler module intentionally does NOT expose `Looper.preset.*` — `engine.setValue` can't transport a string `args[]` payload yet; the limitation is documented in-source under T2512-PACK-PRESET (naming the missing `setValueWithArgs` JS binding) and pinned by a regression test. +3 catalog tests + 1 doc-pin. Node-side looper.js harness still 21 passed.
+
+**Status of long-term priorities after this run:**
+- Every order-1 pick from the fourth handoff (T2512-PRESET-UI, T2512-PRESET-DISPATCH, T2512-AUTO-PEAK-UI, T2512-OS-COUNT-UI, T2512-MASTER-MUTE-UI) is now shipped.
+- Catalog parity: every dispatcher pattern + exact target registered under `register_default_handlers` has a matching `_generic/midi-learn-looper` catalog entry (regression-pinned by `test_every_catalog_verb_routes_through_dispatcher`).
+- LooperPage now exposes every operator-tunable knob the service offers (lock / one-shot / auto-record / threshold + peak meter / one_shot_passes / sync / stop / fade / quantize / slices / preset list / master mute / master level / reset / export / import).
+- Only RT-gated tasks remain on the long-term list: T2512-QUANT-ENGINE (C++ engine consumer of quantize_record_length), T2512-AUTO-TRIGGER engine binding (input-level RMS push from JUCE callback), T2512-FADE-RAMP (gain ramp inside engine `looper_stop`), T2512-STOR / LONG / FX / TIME / DAW / BYP / SYNC-LOCK / CLOCK-outbound.
+
+**Next-session order-1 picks** (priority order; pure-Python or pure-frontend only):
+
+The earlier order-1 row from the fourth handoff is fully drained on pure-Python/pure-frontend slices. The next pickable items are either RT-gated or require a JS engine-binding change. The smallest next pickable Python-only slice would be a JS `setValueWithArgs` C++ binding (small but touches the controller-host JS API surface — needs operator review) OR moving on to:
+
+1. **T2512-SLICE-UI follow-ups** — Inspect the existing SliceEditor for any operator-asked refinements (multi-select delete, batch label rename, slice playback preview). Pure-frontend.
+2. **T2512-METRICS-UI** — Surface the embedded WS metrics counters on LooperPage as a foldable panel. Pure-frontend; status frame already carries the data.
+3. **T2512-PRESET-PERSIST** — Add a localStorage layer above the volatile in-memory list (operator preset names survive a backend restart even though the loop-state content can't). Pure-frontend.
+4. **T2512-QUANT-ENGINE** — Engine-side consumer of `quantize_record_length`. C++ bench task; Python decision helper already audio-thread-callable via pybind11.
+5. **T2512-AUTO-TRIGGER engine binding** — input-level RMS push from JUCE callback to Python. Python state machine fully ready; just needs the audio-thread push.
+6. **T2512-FADE-RAMP** — Gain ramp on engine `looper_stop`. State surface shipped; engine work remains.
+
+**Bench-only / spec-needed** (unchanged): T2512-STOR, T2512-LONG, T2512-FX, T2512-TIME, T2512-DAW, T2512-BYP, T2512-SYNC-LOCK, T2512-CLOCK outbound.
+
+---
+
 Remaining T2512 follow-ons, ordered by suggested pickup. **Read this list first next session.**
 
 | Order | Task | Why pickable now | RT gate | Suggested first move |
