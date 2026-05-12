@@ -237,6 +237,10 @@ class LooperStatus:
     # returned by ``LooperService.get_metrics()``. Empty dict means
     # the service has never recorded a tracked verb yet.
     metrics:            dict[str, int] = field(default_factory=dict)
+    # T2512-PRESET — names of currently-saved in-memory presets
+    # (insertion order). Embedded so the UI dropdown stays in sync
+    # without a separate poll. Empty tuple means no presets saved.
+    preset_names:       tuple[str, ...] = ()
 
     def to_payload(self) -> dict[str, Any]:
         return {
@@ -248,6 +252,7 @@ class LooperStatus:
             "sync_master_track":  self.sync_master_track,
             "recent_activity":    [e.to_payload() for e in self.recent_activity],
             "metrics":            dict(self.metrics),
+            "preset_names":       list(self.preset_names),
         }
 
 
@@ -378,6 +383,15 @@ class LooperService:
         # impact mutating verbs). Operator-facing diagnostics —
         # zero RT-path cost.
         self._metrics: dict[str, int] = {}
+        # T2512-PRESET — named in-memory state presets. Each entry
+        # is the same payload shape as ``export_state()``. Cap at 32
+        # presets so a runaway scripted save loop can't fill memory
+        # (the state payload itself is small, but the cap also keeps
+        # the operator's preset list legible). Insertion order is
+        # preserved so ``list_presets`` reflects save chronology.
+        # Volatile by design: cleared on process restart. Persistent
+        # presets land later via the existing snapshot service path.
+        self._presets: dict[str, dict[str, Any]] = {}
         # T2512-WS — fan-out hook for status changes. Set by
         # ``init_looper_ws_bridge`` at lifespan startup; remains None
         # in tests where WS isn't wired. The broadcaster is sync —
@@ -1295,6 +1309,107 @@ class LooperService:
         )
         return self._broadcast(self.get_status())
 
+    # T2512-PRESET — named in-memory state presets -------------------------
+
+    _MAX_PRESETS = 32
+    _MAX_PRESET_NAME_LENGTH = 64
+
+    def _sanitize_preset_name(self, name: str) -> str:
+        """Normalize a preset name; raise LooperServiceError on empty
+        or unparseable input. Whitespace-trimmed + length-capped."""
+        try:
+            text = str(name or "").strip()
+        except Exception:  # noqa: BLE001
+            raise LooperServiceError(
+                code="invalid_preset_name",
+                message=f"preset name must be a string (got {name!r})",
+            )
+        if not text:
+            raise LooperServiceError(
+                code="invalid_preset_name",
+                message="preset name must not be empty",
+            )
+        return text[: self._MAX_PRESET_NAME_LENGTH]
+
+    def save_preset(self, name: str) -> LooperStatus:
+        """T2512-PRESET — store the current state under ``name``.
+
+        Overwrites silently when a preset with the same name exists
+        (operator-visible behavior matches a UI 'Save' that updates
+        in place). Capped at 32 named presets; once the cap is
+        reached, a new save raises ``LooperServiceError(preset_limit)``
+        unless the name already exists (which is an overwrite and
+        doesn't grow the dict).
+        """
+        clean = self._sanitize_preset_name(name)
+        if clean not in self._presets and len(self._presets) >= self._MAX_PRESETS:
+            raise LooperServiceError(
+                code="preset_limit",
+                message=(
+                    f"preset cap reached ({self._MAX_PRESETS}); delete an "
+                    f"existing preset before saving a new one"
+                ),
+            )
+        # Snapshot via export_state so the same shape round-trips
+        # through apply_preset.
+        self._presets[clean] = self.export_state()
+        self._record_activity(
+            "save_preset", None, f"saved preset {clean!r}"
+        )
+        return self._broadcast(self.get_status())
+
+    def apply_preset(self, name: str) -> LooperStatus:
+        """T2512-PRESET — restore a previously-saved preset by name.
+
+        Raises ``LooperServiceError(preset_not_found)`` when the
+        name doesn't match. Reuses ``apply_state`` so all the
+        existing payload validation + clamps fire identically to
+        the snapshot-restore path; a future change to apply_state
+        picks up here for free.
+        """
+        clean = self._sanitize_preset_name(name)
+        payload = self._presets.get(clean)
+        if payload is None:
+            raise LooperServiceError(
+                code="preset_not_found",
+                message=f"no preset named {clean!r}",
+            )
+        # Make a fresh copy so a later save under the same name
+        # doesn't observe in-flight mutation by apply_state.
+        return self.apply_state(dict(payload))
+
+    def delete_preset(self, name: str) -> LooperStatus:
+        """T2512-PRESET — drop a single named preset. Raises
+        ``LooperServiceError(preset_not_found)`` on miss."""
+        clean = self._sanitize_preset_name(name)
+        if clean not in self._presets:
+            raise LooperServiceError(
+                code="preset_not_found",
+                message=f"no preset named {clean!r}",
+            )
+        del self._presets[clean]
+        self._record_activity(
+            "delete_preset", None, f"deleted preset {clean!r}"
+        )
+        return self._broadcast(self.get_status())
+
+    def list_presets(self) -> list[str]:
+        """T2512-PRESET — names in insertion order (oldest save first).
+        Returns a fresh list so callers can iterate / mutate without
+        affecting service state."""
+        return list(self._presets.keys())
+
+    def clear_presets(self) -> LooperStatus:
+        """T2512-PRESET — drop every preset. Operator-facing reset
+        for the named-preset dict; does not touch active state."""
+        had_any = bool(self._presets)
+        self._presets.clear()
+        if had_any:
+            self._record_activity(
+                "clear_presets", None, "dropped all named presets"
+            )
+        return self._broadcast(self.get_status())
+
     # -------- Inspection --------
 
     def get_status(self) -> LooperStatus:
@@ -1412,6 +1527,10 @@ class LooperService:
             # Copy via dict() so a frame consumer mutating the dict
             # doesn't corrupt service state.
             metrics=dict(self._metrics),
+            # T2512-PRESET — names of saved in-memory presets in
+            # insertion order. Tuple-immutable so callers can't
+            # accidentally mutate.
+            preset_names=tuple(self._presets.keys()),
         )
 
 

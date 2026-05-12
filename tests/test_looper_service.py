@@ -1751,6 +1751,191 @@ def test_status_metrics_unaffected_by_clear_activity() -> None:
     assert status.metrics["record"] == 1
 
 
+# ---------------------------------------------------------------------------
+# T2512-PRESET — named in-memory state presets
+# ---------------------------------------------------------------------------
+
+
+def test_presets_default_is_empty() -> None:
+    service = LooperService()
+    assert service.list_presets() == []
+    assert service.get_status().preset_names == ()
+
+
+def test_save_preset_stores_current_state() -> None:
+    service = LooperService()
+    service.set_locked(0, True)
+    service.set_one_shot_passes(2, 4)
+    service.save_preset("verse1")
+    names = service.list_presets()
+    assert names == ["verse1"]
+    # Status surfaces the name too.
+    assert service.get_status().preset_names == ("verse1",)
+
+
+def test_save_preset_overwrites_existing_name() -> None:
+    service = LooperService()
+    service.set_locked(0, True)
+    service.save_preset("snap")
+    service.set_locked(0, False)
+    service.save_preset("snap")  # overwrite
+    # Only one entry; the new state is stored.
+    assert service.list_presets() == ["snap"]
+    # Apply confirms the overwrite captured the unlocked state.
+    service.set_locked(0, True)
+    service.apply_preset("snap")
+    assert service.get_status().tracks[0].locked is False
+
+
+def test_apply_preset_restores_state() -> None:
+    service = LooperService()
+    service.set_one_shot_passes(0, 8)
+    service.set_auto_threshold_db(1, -24.0)
+    service.save_preset("song")
+    # Mutate.
+    service.set_one_shot_passes(0, 1)
+    service.set_auto_threshold_db(1, -60.0)
+    # Restore.
+    service.apply_preset("song")
+    status = service.get_status()
+    assert status.tracks[0].one_shot_passes == 8
+    assert status.tracks[1].auto_threshold_db == -24.0
+
+
+def test_apply_preset_unknown_raises() -> None:
+    service = LooperService()
+    with pytest.raises(LooperServiceError) as exc:
+        service.apply_preset("ghost")
+    assert exc.value.code == "preset_not_found"
+
+
+def test_delete_preset_drops_name() -> None:
+    service = LooperService()
+    service.save_preset("a")
+    service.save_preset("b")
+    service.delete_preset("a")
+    assert service.list_presets() == ["b"]
+
+
+def test_delete_unknown_preset_raises() -> None:
+    service = LooperService()
+    with pytest.raises(LooperServiceError) as exc:
+        service.delete_preset("ghost")
+    assert exc.value.code == "preset_not_found"
+
+
+def test_clear_presets_drops_everything() -> None:
+    service = LooperService()
+    service.save_preset("a")
+    service.save_preset("b")
+    service.clear_presets()
+    assert service.list_presets() == []
+    assert service.get_status().preset_names == ()
+
+
+def test_clear_presets_no_op_on_empty() -> None:
+    """Calling clear on an empty preset list returns gracefully and
+    does not record a clear_presets activity event."""
+    service = LooperService()
+    before_len = len(service.get_activity())
+    service.clear_presets()
+    after_len = len(service.get_activity())
+    assert before_len == after_len
+
+
+def test_save_preset_empty_name_raises() -> None:
+    service = LooperService()
+    with pytest.raises(LooperServiceError) as exc:
+        service.save_preset("")
+    assert exc.value.code == "invalid_preset_name"
+
+
+def test_save_preset_whitespace_name_raises() -> None:
+    service = LooperService()
+    with pytest.raises(LooperServiceError) as exc:
+        service.save_preset("   \t\n   ")
+    assert exc.value.code == "invalid_preset_name"
+
+
+def test_save_preset_name_is_trimmed() -> None:
+    service = LooperService()
+    service.save_preset("  trimmed  ")
+    assert service.list_presets() == ["trimmed"]
+
+
+def test_save_preset_name_truncates_to_64_chars() -> None:
+    service = LooperService()
+    service.save_preset("x" * 200)
+    name = service.list_presets()[0]
+    assert len(name) == 64
+
+
+def test_save_preset_cap_blocks_new_names() -> None:
+    """31 distinct names succeed; the 33rd new name raises preset_limit
+    (overwrite is fine, distinct is the bound)."""
+    service = LooperService()
+    for i in range(32):
+        service.save_preset(f"p{i}")
+    assert len(service.list_presets()) == 32
+    with pytest.raises(LooperServiceError) as exc:
+        service.save_preset("p32")
+    assert exc.value.code == "preset_limit"
+    # Overwrite of an existing name still works.
+    service.save_preset("p0")  # no raise
+    assert len(service.list_presets()) == 32
+
+
+def test_preset_names_in_insertion_order() -> None:
+    service = LooperService()
+    service.save_preset("c")
+    service.save_preset("a")
+    service.save_preset("b")
+    assert service.list_presets() == ["c", "a", "b"]
+
+
+def test_save_preset_broadcasts_and_records_activity() -> None:
+    received: list = []
+    service = LooperService(broadcaster=received.append)
+    service.save_preset("first")
+    assert len(received) == 1
+    activity = service.get_activity()
+    assert any(ev.verb == "save_preset" for ev in activity)
+
+
+def test_delete_preset_broadcasts_and_records_activity() -> None:
+    received: list = []
+    service = LooperService(broadcaster=received.append)
+    service.save_preset("x")
+    received.clear()
+    service.delete_preset("x")
+    assert len(received) == 1
+    activity = service.get_activity()
+    # delete_preset event present.
+    assert any(ev.verb == "delete_preset" for ev in activity)
+
+
+def test_apply_preset_round_trips_slices() -> None:
+    """Preset state captures slices via export_state; apply restores them."""
+    service = LooperService()
+    service.add_slice(0, 0, 1000, "intro")
+    service.add_slice(0, 1500, 2500, "verse")
+    service.save_preset("song")
+    service.clear_slices(0)
+    assert service.get_status().tracks[0].slices == ()
+    service.apply_preset("song")
+    slices = service.get_status().tracks[0].slices
+    assert len(slices) == 2
+    assert slices[0].label == "intro"
+    assert slices[1].label == "verse"
+
+
+def test_preset_names_in_to_payload() -> None:
+    service = LooperService()
+    service.save_preset("only")
+    payload = service.get_status().to_payload()
+    assert payload["preset_names"] == ["only"]
+
+
 def test_activity_does_not_raise_on_internal_failure() -> None:
     """T2512-ACTIVITY — a broken timestamp source must not break verbs.
     Verified by monkey-patching datetime to raise."""

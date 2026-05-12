@@ -71,6 +71,12 @@ def _http_for_error(exc: LooperServiceError) -> HTTPException:
         "slice_not_found": status.HTTP_404_NOT_FOUND,
         # T2512-QUANT-WIRE — unknown quantize division name.
         "invalid_quantize_division": status.HTTP_400_BAD_REQUEST,
+        # T2512-OS-COUNT — non-int pass count.
+        "invalid_one_shot_passes": status.HTTP_400_BAD_REQUEST,
+        # T2512-PRESET — named preset addressing errors.
+        "invalid_preset_name": status.HTTP_400_BAD_REQUEST,
+        "preset_not_found":    status.HTTP_404_NOT_FOUND,
+        "preset_limit":        status.HTTP_409_CONFLICT,
     }.get(exc.code, status.HTTP_500_INTERNAL_SERVER_ERROR)
     return HTTPException(status_code=code, detail=str(exc))
 
@@ -158,6 +164,9 @@ class LooperStatusResponse(BaseModel):
     # counter changes without polling. Empty dict means no tracked
     # verb has been invoked yet.
     metrics: dict[str, int] = {}
+    # T2512-PRESET — names of currently-saved in-memory presets
+    # (insertion order). Empty list means no presets exist yet.
+    preset_names: list[str] = []
 
     @classmethod
     def from_status(cls, status_obj: LooperStatus) -> "LooperStatusResponse":
@@ -906,3 +915,89 @@ async def reset_state(
     loop_length / playhead come from the engine and are not reset.
     """
     return LooperStatusResponse.from_status(service.reset_state())
+
+
+# ---------------------------------------------------------------------------
+# T2512-PRESET — named in-memory state presets
+# ---------------------------------------------------------------------------
+
+
+class PresetNamesResponse(BaseModel):
+    """T2512-PRESET — current named-preset roster (insertion order)."""
+    names: list[str]
+    cap: int
+
+
+@router.get("/presets",
+            response_model=PresetNamesResponse,
+            operation_id="looper_list_presets",
+            summary="T2512-PRESET — list named in-memory state presets")
+async def list_presets(
+    service: LooperService = Depends(_get_service),
+) -> PresetNamesResponse:
+    """T2512-PRESET — return preset names in save order. Volatile;
+    cleared on process restart. Persistent presets go through the
+    snapshot service (separate path)."""
+    return PresetNamesResponse(
+        names=service.list_presets(),
+        cap=LooperService._MAX_PRESETS,
+    )
+
+
+@router.post("/presets/{name}",
+             response_model=LooperStatusResponse,
+             operation_id="looper_save_preset",
+             summary="T2512-PRESET — save current state under a named slot")
+async def save_preset(name: str,
+                      service: LooperService = Depends(_get_service)) -> LooperStatusResponse:
+    """T2512-PRESET — snapshot the current state and store it under
+    ``name``. Overwrites silently when the name already exists.
+    Returns 409 ``preset_limit`` when adding a new name would exceed
+    the 32-preset cap. Reused names update in place."""
+    try:
+        result = service.save_preset(name)
+    except LooperServiceError as exc:
+        raise _http_for_error(exc)
+    return LooperStatusResponse.from_status(result)
+
+
+@router.post("/presets/{name}/apply",
+             response_model=LooperStatusResponse,
+             operation_id="looper_apply_preset",
+             summary="T2512-PRESET — restore a named preset into active state")
+async def apply_preset(name: str,
+                       service: LooperService = Depends(_get_service)) -> LooperStatusResponse:
+    """T2512-PRESET — restore the named preset via apply_state.
+    Returns 404 ``preset_not_found`` when the name doesn't match."""
+    try:
+        result = service.apply_preset(name)
+    except LooperServiceError as exc:
+        raise _http_for_error(exc)
+    return LooperStatusResponse.from_status(result)
+
+
+@router.delete("/presets/{name}",
+               response_model=LooperStatusResponse,
+               operation_id="looper_delete_preset",
+               summary="T2512-PRESET — drop a single named preset")
+async def delete_preset(name: str,
+                        service: LooperService = Depends(_get_service)) -> LooperStatusResponse:
+    """T2512-PRESET — delete the named preset. Returns 404
+    ``preset_not_found`` when the name doesn't match."""
+    try:
+        result = service.delete_preset(name)
+    except LooperServiceError as exc:
+        raise _http_for_error(exc)
+    return LooperStatusResponse.from_status(result)
+
+
+@router.delete("/presets",
+               response_model=LooperStatusResponse,
+               operation_id="looper_clear_presets",
+               summary="T2512-PRESET — drop every named preset")
+async def clear_presets(
+    service: LooperService = Depends(_get_service),
+) -> LooperStatusResponse:
+    """T2512-PRESET — wipe every named preset. Active state is
+    unaffected. Returns the current LooperStatus."""
+    return LooperStatusResponse.from_status(service.clear_presets())

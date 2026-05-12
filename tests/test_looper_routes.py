@@ -688,6 +688,76 @@ def test_reset_state_route_does_not_require_a_body() -> None:
 
 
 # ---------------------------------------------------------------------------
+# T2512-PRESET — named in-memory state presets
+# ---------------------------------------------------------------------------
+
+
+def test_list_presets_empty_by_default() -> None:
+    client, _, _ = _build_client()
+    resp = client.get("/api/v1/looper/presets")
+    body = resp.json()
+    assert body["names"] == []
+    assert body["cap"] == 32
+
+
+def test_save_preset_route_records_name() -> None:
+    client, _, _ = _build_client()
+    resp = client.post("/api/v1/looper/presets/verse1")
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["preset_names"] == ["verse1"]
+
+
+def test_apply_preset_route_restores_state() -> None:
+    client, _, _ = _build_client()
+    # Mutate state, save preset, mutate again, apply.
+    client.patch("/api/v1/looper/track/0/auto-threshold", json={"db": -24.0})
+    client.post("/api/v1/looper/presets/song")
+    client.patch("/api/v1/looper/track/0/auto-threshold", json={"db": -60.0})
+    resp = client.post("/api/v1/looper/presets/song/apply")
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["tracks"][0]["auto_threshold_db"] == -24.0
+
+
+def test_apply_unknown_preset_returns_404() -> None:
+    client, _, _ = _build_client()
+    resp = client.post("/api/v1/looper/presets/ghost/apply")
+    assert resp.status_code == 404
+
+
+def test_delete_preset_route_drops_name() -> None:
+    client, _, _ = _build_client()
+    client.post("/api/v1/looper/presets/a")
+    client.post("/api/v1/looper/presets/b")
+    resp = client.delete("/api/v1/looper/presets/a")
+    assert resp.status_code == 200
+    assert resp.json()["preset_names"] == ["b"]
+
+
+def test_delete_unknown_preset_returns_404() -> None:
+    client, _, _ = _build_client()
+    resp = client.delete("/api/v1/looper/presets/ghost")
+    assert resp.status_code == 404
+
+
+def test_clear_all_presets_route_empties_list() -> None:
+    client, _, _ = _build_client()
+    client.post("/api/v1/looper/presets/x")
+    client.post("/api/v1/looper/presets/y")
+    resp = client.delete("/api/v1/looper/presets")
+    assert resp.status_code == 200
+    assert resp.json()["preset_names"] == []
+
+
+def test_status_route_surfaces_preset_names() -> None:
+    client, _, _ = _build_client()
+    client.post("/api/v1/looper/presets/snap")
+    resp = client.get("/api/v1/looper/status")
+    assert resp.json()["preset_names"] == ["snap"]
+
+
+# ---------------------------------------------------------------------------
 # T2512-OS-COUNT — multi-pass one-shot pass-count route
 # ---------------------------------------------------------------------------
 

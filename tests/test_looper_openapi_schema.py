@@ -26,6 +26,7 @@ EXPECTED_PATHS_BY_METHOD: dict[str, set[str]] = {
         "/api/v1/looper/state",     # T2512-SNAP
         "/api/v1/looper/activity",  # T2512-ACTIVITY
         "/api/v1/looper/metrics",   # T2512-METRICS
+        "/api/v1/looper/presets",   # T2512-PRESET
     },
     "post": {
         "/api/v1/looper/track/{track}/record",
@@ -39,6 +40,8 @@ EXPECTED_PATHS_BY_METHOD: dict[str, set[str]] = {
         "/api/v1/looper/state/reset",                      # T2512-RESET
         "/api/v1/looper/track/{track}/auto-record/push",   # T2512-AUTO-PUSH
         "/api/v1/looper/track/{track}/auto-record/reset-peak",  # T2512-AUTO-PEAK
+        "/api/v1/looper/presets/{name}",                # T2512-PRESET — save
+        "/api/v1/looper/presets/{name}/apply",          # T2512-PRESET — apply
     },
     "patch": {
         "/api/v1/looper/track/{track}/level",
@@ -63,6 +66,8 @@ EXPECTED_PATHS_BY_METHOD: dict[str, set[str]] = {
         "/api/v1/looper/track/{track}/slices/{start_frame}",  # T2512-SLICE-DEL
         "/api/v1/looper/activity",                       # T2512-ACTIVITY
         "/api/v1/looper/metrics",                        # T2512-METRICS
+        "/api/v1/looper/presets",                        # T2512-PRESET — clear all
+        "/api/v1/looper/presets/{name}",                 # T2512-PRESET — delete one
     },
 }
 
@@ -198,6 +203,7 @@ def test_every_looper_op_returns_a_known_response_model() -> None:
             # POST /track/{track}/auto-record/push → AutoRecordPushResponse.
             # GET / DELETE /activity → ActivityLogResponse.
             # GET / DELETE /metrics → MetricsResponse.
+            # GET /presets → PresetNamesResponse (T2512-PRESET).
             # Everything else → LooperStatusResponse.
             if method == "get" and path == "/api/v1/looper/state":
                 if "LooperStatePayload" not in ref:
@@ -210,6 +216,9 @@ def test_every_looper_op_returns_a_known_response_model() -> None:
                     failures.append(f"{method.upper()} {path} → {ref!r}")
             elif path == "/api/v1/looper/metrics":
                 if "MetricsResponse" not in ref:
+                    failures.append(f"{method.upper()} {path} → {ref!r}")
+            elif method == "get" and path == "/api/v1/looper/presets":
+                if "PresetNamesResponse" not in ref:
                     failures.append(f"{method.upper()} {path} → {ref!r}")
             else:
                 if "LooperStatusResponse" not in ref:
@@ -270,4 +279,10 @@ def test_looper_status_schema_contains_bpm_and_one_shot_fields() -> None:
     assert "metrics" in status_schema.get("properties", {}), (
         "LooperStatusResponse.metrics missing from generated schema "
         "(T2512-METRICS-WS regression)"
+    )
+
+    # T2512-PRESET top-level field on LooperStatusResponse.
+    assert "preset_names" in status_schema.get("properties", {}), (
+        "LooperStatusResponse.preset_names missing from generated schema "
+        "(T2512-PRESET regression)"
     )
