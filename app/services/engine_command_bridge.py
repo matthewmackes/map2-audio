@@ -154,6 +154,10 @@ class EngineCommandBridge:
             looper_set_half_speed=lambda track, value: self._looper_call(
                 "set_half_speed", track, value
             ),
+            # T2512-LOCK over MIDI — footswitch latches write-protection.
+            looper_set_locked=lambda track, value: self._looper_call(
+                "set_locked", track, value
+            ),
             looper_set_master_level=lambda value: self._looper_call_master(
                 "set_master_level_db", value
             ),

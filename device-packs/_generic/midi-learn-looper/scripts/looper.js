@@ -78,7 +78,10 @@ var Looper = Looper || {};
     // working with no edits here.
     var NUM_TRACKS = 4;
     var STOMP_VERBS = ['record', 'stop', 'clear', 'undo', 'redo'];
-    var BOOL_VERBS  = ['muted', 'soloed', 'reverse', 'half_speed'];
+    // T2512-LOCK-MIDI — write-lock is exposed alongside the playback
+    // bool toggles so a footswitch can engage write-protection from
+    // the same JS surface.
+    var BOOL_VERBS  = ['muted', 'soloed', 'reverse', 'half_speed', 'locked'];
 
     Looper.track = [];
     for (var t = 0; t < NUM_TRACKS; t++) {
@@ -114,6 +117,7 @@ var Looper = Looper || {};
         globalThis[prefix + 'soloed']     = slot.soloed;
         globalThis[prefix + 'reverse']    = slot.reverse;
         globalThis[prefix + 'half_speed'] = slot.half_speed;
+        globalThis[prefix + 'locked']     = slot.locked;
         globalThis[prefix + 'level']      = slot.level;
     }
     globalThis['Looper.master.level'] = Looper.master.level;

@@ -129,10 +129,11 @@ run('master level setter scales identically', () => {
 // Coverage: every track exposes the full handler surface
 // ----------------------------------------------------------------------
 
-run('every track 0..3 exposes all 10 verbs on globalThis', () => {
+run('every track 0..3 exposes all 11 verbs on globalThis', () => {
     const ctx = loadLooperScript();
     const expected = ['record', 'stop', 'clear', 'undo', 'redo',
-                      'muted', 'soloed', 'reverse', 'half_speed', 'level'];
+                      'muted', 'soloed', 'reverse', 'half_speed',
+                      'locked', 'level'];
     for (let t = 0; t < 4; t++) {
         for (const v of expected) {
             const key = 'Looper.track_' + t + '.' + v;
@@ -141,6 +142,21 @@ run('every track 0..3 exposes all 10 verbs on globalThis', () => {
     }
     assert.truthy(typeof ctx.sandbox['Looper.master.level'] === 'function',
                   'Looper.master.level');
+});
+
+// T2512-LOCK-MIDI — write-lock toggle via the script surface.
+run('locked toggle uses action=toggle and routes per track', () => {
+    const ctx = loadLooperScript();
+    ctx.sandbox['Looper.track_3.locked']([0xB0, 70, 127]);
+    assert.equal(ctx.calls.length, 1);
+    assert.equal(ctx.calls[0].target, 'audio.looper.3.locked');
+    assert.equal(ctx.calls[0].action, 'toggle');
+});
+
+run('locked release at value=0 is dropped', () => {
+    const ctx = loadLooperScript();
+    ctx.sandbox['Looper.track_0.locked']([0xB0, 70, 0]);
+    assert.equal(ctx.calls.length, 0);
 });
 
 summary();

@@ -179,6 +179,8 @@ class HandlerHooks:
     looper_set_reverse: Optional[_LooperSetBoolFn]    = None
     looper_set_half_speed: Optional[_LooperSetBoolFn] = None
     looper_set_master_level: Optional[_LooperMasterLevelFn] = None
+    # T2512-LOCK over MIDI — toggle the write-lock from a footswitch.
+    looper_set_locked: Optional[_LooperSetBoolFn]     = None
 
 
 # ---------------------------------------------------------------------------
@@ -749,6 +751,12 @@ def register_default_handlers(
         _make_looper_set_bool_handler(
             actual_hooks, "half_speed", "looper_set_half_speed"
         ),
+    )
+    # T2512-LOCK over MIDI — a footswitch latched to ``audio.looper.<n>.locked``
+    # can engage/disengage write-protection without touching the UI.
+    dispatcher.register_pattern(
+        "audio.looper.*.locked",
+        _make_looper_set_bool_handler(actual_hooks, "locked", "looper_set_locked"),
     )
     dispatcher.register(
         "audio.looper.master.level", _make_looper_master_level_handler(actual_hooks)

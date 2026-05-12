@@ -265,9 +265,10 @@ def test_register_default_handlers_does_not_overlap_targets() -> None:
     # plus the 5 T2508 recorder verbs, plus audio.looper.master.level
     # from T2512-MIDI = 9 total.
     # Pattern list: audio.chain.*.bypass + the 10 audio.looper.*.<verb>
-    # patterns from T2512-MIDI = 11.
+    # patterns from T2512-MIDI + audio.looper.*.locked from
+    # T2512-LOCK-MIDI = 12.
     assert len(dispatcher._exact) == 9  # type: ignore[attr-defined]
-    assert len(dispatcher._patterns) == 11  # type: ignore[attr-defined]
+    assert len(dispatcher._patterns) == 12  # type: ignore[attr-defined]
     expected_exact = {
         "audio.snapshot.recall",
         "audio.master.volume",
@@ -432,6 +433,7 @@ def _make_dispatcher_with_looper_hooks() -> tuple[
         "soloed": [],
         "reverse": [],
         "half_speed": [],
+        "locked": [],
         "master_level": [],
     }
 
@@ -448,6 +450,7 @@ def _make_dispatcher_with_looper_hooks() -> tuple[
         looper_set_half_speed=lambda track, value: log["half_speed"].append(
             (track, value)
         ),
+        looper_set_locked=lambda track, value: log["locked"].append((track, value)),
         looper_set_master_level=lambda value: log["master_level"].append(value),
     )
     dispatcher = EngineCommandDispatcher()
@@ -527,5 +530,30 @@ def test_looper_handlers_safe_with_no_hooks_wired() -> None:
     dispatcher.dispatch(_frame("audio.looper.1.level", action="set", value=-6.0))
     dispatcher.dispatch(_frame("audio.looper.2.muted", action="set", value=1.0))
     dispatcher.dispatch(_frame("audio.looper.master.level", action="set", value=0.0))
-    assert dispatcher.dispatched_count == 4
+    dispatcher.dispatch(_frame("audio.looper.3.locked", action="set", value=1.0))
+    assert dispatcher.dispatched_count == 5
     assert dispatcher.errored_count == 0
+
+
+# ---------------------------------------------------------------------------
+# T2512-LOCK-MIDI — audio.looper.<n>.locked dispatcher target
+# ---------------------------------------------------------------------------
+
+
+def test_looper_locked_routes_via_set() -> None:
+    d, log = _make_dispatcher_with_looper_hooks()
+    d.dispatch(_frame("audio.looper.0.locked", action="set", value=1.0))
+    d.dispatch(_frame("audio.looper.0.locked", action="set", value=0.0))
+    assert log["locked"] == [(0, True), (0, False)]
+
+
+def test_looper_locked_honors_toggle_action() -> None:
+    d, log = _make_dispatcher_with_looper_hooks()
+    d.dispatch(_frame("audio.looper.2.locked", action="toggle"))
+    assert log["locked"] == [(2, True)]
+
+
+def test_looper_locked_invalid_track_dropped() -> None:
+    d, log = _make_dispatcher_with_looper_hooks()
+    d.dispatch(_frame("audio.looper.9.locked", action="set", value=1.0))
+    assert log["locked"] == []

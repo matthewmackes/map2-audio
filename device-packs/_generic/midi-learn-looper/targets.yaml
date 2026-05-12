@@ -218,6 +218,22 @@ groups:
         label: Track 4 — Half-speed (toggle)
         action_template:
           action: toggle
+      - verb: audio.looper.0.locked
+        label: Track 1 — Write-lock (toggle)
+        action_template:
+          action: toggle
+      - verb: audio.looper.1.locked
+        label: Track 2 — Write-lock (toggle)
+        action_template:
+          action: toggle
+      - verb: audio.looper.2.locked
+        label: Track 3 — Write-lock (toggle)
+        action_template:
+          action: toggle
+      - verb: audio.looper.3.locked
+        label: Track 4 — Write-lock (toggle)
+        action_template:
+          action: toggle
 
   - id: master
     label: Master bus
