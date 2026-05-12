@@ -949,6 +949,20 @@ async def lifespan(app):
         except Exception as exc:
             logger.warning("Recorder engine transport not installed: %s", exc)
 
+        # T2512 — wire the looper service singleton to the engine
+        # bindings so /api/v1/looper/* drives the C++ LooperEngine.
+        try:
+            from app.services.looper_service import (
+                LooperService, set_looper_service,
+            )
+            from app.services.juce_engine_service import get_audio_engine
+            engine_service = get_audio_engine()
+            engine_obj = getattr(engine_service, "_engine", None) or engine_service
+            set_looper_service(LooperService(engine=engine_obj))
+            logger.info("LooperService wired to engine bindings (T2512).")
+        except Exception as exc:
+            logger.warning("LooperService not installed: %s", exc)
+
         # T2500-MV-B2 + T2500-MV-B-RAW-TAP — install the MIDI visualization
         # producer bridge (dispatcher observer + MidiHub raw subscriber).
         # Idempotent + defensive: a buffer-side regression here cannot break
@@ -1181,7 +1195,7 @@ def create_app():
 
         # Import and register routes individually to avoid cascade failures
         # Audio engine routes are provided via the 'engine' module (JUCE-based)
-        route_modules = ['services', 'audio', 'audio_state', 'plugins', 'plugin_appearances', 'midi', 'chains', 'effects_loops', 'health', 'metrics', 'nam', 'nam_models', 'ir', 'guitar', 'websocket', 'websocket_rt', 'automation', 'history', 'performance', 'runtime_profiles', 'plugin_scanner', 'sessions', 'plugin_presets', 'preset_exchange', 'packages', 'profiling', 'reverb', 'impulse_response', 'folders', 'system', 'dsp', 'latency_v2', 'usb_devices', 'system_tests', 'engine', 'network', 'www', 'backup', 'dashboard', 'preset_migration', 'plugin_packages', 'unified_snapshots', 'spectrum', 'cpu_metrics', 'loudness', 'sidechain', 'upload', 'core_plugins', 'soundfonts', 'synthforge', 'mpx1', 'dynamics', 'filters', 'parallel', 'plugin_tags', 'delay', 'modulation', 'pitch', 'shoegaze', 'lexi_love', 'h3000', 'peavey5150', 'tweedbassman', 'passionfx', 'cluster_snapshots', 'cluster_health', 'cluster_health_extended', 'cluster_plugin_inventory', 'cluster_admin', 'bootstrap', 'adoption', 'platform_events', 'webhooks', 'platform_remediation', 'cluster_nodes', 'cluster_update', 'cluster_update_hybrid', 'raft_api', 'config_api', 'push_surface', 'maschine', 'mcu_surface', 'launch_control_surface', 'transport', 'sequencer', 'drums', 'pipewire', 'audio_path', 'special_settings', 'audio_diagnostics', 'shopping', 'graceful_degradation', 'expression', 'dev_proxy', 'api_observatory', 'intelfx', 'ground_control_pro', 'nodes', 'branding', 'state_authority', 'state_authority_corrections', 'device_hero_images', 'devices_meloaudio_commander', 'midi_visualization', 'midi_visualization_ws', 'recorder', 'recordings']
+        route_modules = ['services', 'audio', 'audio_state', 'plugins', 'plugin_appearances', 'midi', 'chains', 'effects_loops', 'health', 'metrics', 'nam', 'nam_models', 'ir', 'guitar', 'websocket', 'websocket_rt', 'automation', 'history', 'performance', 'runtime_profiles', 'plugin_scanner', 'sessions', 'plugin_presets', 'preset_exchange', 'packages', 'profiling', 'reverb', 'impulse_response', 'folders', 'system', 'dsp', 'latency_v2', 'usb_devices', 'system_tests', 'engine', 'network', 'www', 'backup', 'dashboard', 'preset_migration', 'plugin_packages', 'unified_snapshots', 'spectrum', 'cpu_metrics', 'loudness', 'sidechain', 'upload', 'core_plugins', 'soundfonts', 'synthforge', 'mpx1', 'dynamics', 'filters', 'parallel', 'plugin_tags', 'delay', 'modulation', 'pitch', 'shoegaze', 'lexi_love', 'h3000', 'peavey5150', 'tweedbassman', 'passionfx', 'cluster_snapshots', 'cluster_health', 'cluster_health_extended', 'cluster_plugin_inventory', 'cluster_admin', 'bootstrap', 'adoption', 'platform_events', 'webhooks', 'platform_remediation', 'cluster_nodes', 'cluster_update', 'cluster_update_hybrid', 'raft_api', 'config_api', 'push_surface', 'maschine', 'mcu_surface', 'launch_control_surface', 'transport', 'sequencer', 'drums', 'pipewire', 'audio_path', 'special_settings', 'audio_diagnostics', 'shopping', 'graceful_degradation', 'expression', 'dev_proxy', 'api_observatory', 'intelfx', 'ground_control_pro', 'nodes', 'branding', 'state_authority', 'state_authority_corrections', 'device_hero_images', 'devices_meloaudio_commander', 'midi_visualization', 'midi_visualization_ws', 'recorder', 'recordings', 'looper']
         route_load_failures = []
 
         for route_name in route_modules:

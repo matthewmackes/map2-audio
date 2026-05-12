@@ -747,6 +747,12 @@ Map2AudioEngine::Map2AudioEngine() {
     // pybind11.
     recorderService_ = std::make_unique<map2::recorder::RecorderService>(
         engineRecorder_.get());
+
+    // T2512 — multi-track looper. ~370 MB of pre-allocated buffer
+    // storage (4 tracks × 4 layers × 60 s × 48 kHz × 2 ch × 4 B);
+    // construction happens here, outside the audio callback, so
+    // the audio thread never touches the allocator.
+    looperEngine_ = std::make_unique<map2::looper::LooperEngine>();
 }
 
 Map2AudioEngine::~Map2AudioEngine() {
@@ -2509,6 +2515,16 @@ void Map2AudioEngine::audioCallback(const float* const* inputs, int numInputs,
     // startSampleIndex for the buffer they processed.
     if (engineRecorder_) {
         engineRecorder_->capturePostFx(buffer);
+    }
+
+    // T2512 — looper. Runs AFTER the recorder hooks so the
+    // recorder captures the pre-loop post-FX signal (operator's
+    // dry guitar through the rig) while the looper layers its
+    // loop content on top before the buffer goes to outputs.
+    // RT-safe: pre-allocated layer storage + atomic state flips;
+    // see Looper/LooperTrack.h.
+    if (looperEngine_) {
+        looperEngine_->processBlock(buffer);
     }
 
     // Push to metering thread (Option 3 - OFF audio thread)

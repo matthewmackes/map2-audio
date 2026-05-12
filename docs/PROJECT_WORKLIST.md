@@ -2338,8 +2338,37 @@ Last updated: 2026-05-11 — Claude.
 
 ID: T2512
 Parent: T2504
-Status: [ ] Todo
+Status: [>] In Progress (v1 SHIPPED 2026-05-12 — see "v1 completion" below; named follow-ons remain for the gated features the operator requested)
 Title: Stomp-style live loop pedal — guitarist-first UX layered on top of T2507 recording taps + T2511 playback engine.
+
+v1 completion (2026-05-12)
+--------------------------
+Shipped the multi-track looper backend + Python service + `/api/v1/looper/*` routes + LooperPage at `/snapshot-editor/looper`. 4 tracks, up to 60 s per track, post-FX capture, overdub with 4-deep undo/redo, per-track level/mute/solo/reverse/half-speed, master gain. RT-safe by construction: ~370 MB of pre-allocated layer storage, atomic state flips, drop-newest overflow. Engine SO rebuilt clean; `curl POST /api/v1/looper/track/0/record` toggles the engine's TrackState from Empty → Recording correctly on the live deployment.
+
+Operator requested 27 features; v1 ships 13 live + files the remaining 14 as named follow-on tasks below. Each follow-on has the design + the RT-safety gate spelled out; they ship as separate slices.
+
+### T2512 follow-on tasks (filed 2026-05-12)
+
+| Task | Title | Notes |
+|---|---|---|
+| T2512-LONG  | Unlimited loop length via streaming   | Hybrid ring + io_uring file streaming. RT-safety review needed (writer thread keeps up with audio). |
+| T2512-QUANT | Quantize / auto-close                 | Tempo clock source + grid alignment. Needs the snapshot's tempo block as a source. |
+| T2512-CLOCK | MIDI clock in/out                     | Inbound clock as quantize source; outbound clock when looper is sync master. Wire via the controller-host MIDI plumbing. |
+| T2512-MIDI  | MIDI control (CC / Program Change)    | Bind looper.record/stop/clear/undo/redo to engine_command verbs. Lands as `looper.*` targets in the dispatcher. |
+| T2512-FSW   | External footswitch mapping           | Hands-free triggers via MIDI Learn or device-pack bindings. |
+| T2512-SYNC  | Loop sync master/slave                | Per-track sync mode picker. Slave tracks lock loop length to the master. |
+| T2512-OS    | One-shot / trigger mode               | Per-track flag; on press, play once and stop. |
+| T2512-AUTO  | Auto-record (threshold start)          | Input-level analyzer + trigger. |
+| T2512-FADE  | Fade-out stop modes                   | Stop kinds: hard / fade-out (ms). |
+| T2512-LOCK  | Loop / layer protection                | Per-track write-lock toggle. |
+| T2512-BYP   | True bypass / buffered signal path     | Operator review of where the looper sits in the signal graph. |
+| T2512-FX    | Per-track effects (EQ / reverb)        | Per-track FX bus. Lands alongside T2507 v2 per-chain mounting. |
+| T2512-TIME  | Time-stretching                       | RT-safe DSP work (likely RubberBand or similar; license review). |
+| T2512-SLICE | Loop slicing / editing                | Region editor UI + non-destructive slice metadata. |
+| T2512-DAW   | USB / DAW integration                 | JACK port exposure + Ableton Link clock. |
+| T2512-STOR  | Preset / loop storage browser         | Snapshot-bound storage UI. WAVs already write through the recorder; storage browser surfaces them. |
+| T2512-SCRIPT | Scriptable / automation hooks        | Mixxx ControllerEngine bindings for looper.* verbs. |
+
 
 Description:
 - Goal: A loop pedal a guitarist already knows how to use, expressed as a thin UX layer over the recorder/playback infrastructure. Single-tap recording (tap once = record, tap again = play, tap again = overdub, hold = stop, double-tap = undo last layer, long-hold = clear). Always-running playback ring so the loop seam is sample-accurate without operator skill. Works on a single chain by default; can span N chains for synchronized multi-instrument looping.

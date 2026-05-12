@@ -5271,10 +5271,21 @@ export function SnapshotEditorPage() {
               See docs/PROJECT_WORKLIST.md § T2509-4 for the worklist
               entry. */}
           {activeSnapshot ? (
-            <RecordingPanel
-              snapshotId={activeSnapshot.id}
-              defaultTapMatrix={{}}
-            />
+            <>
+              <RecordingPanel
+                snapshotId={activeSnapshot.id}
+                defaultTapMatrix={{}}
+              />
+              {/* T2512 — Looper entry point under the snapshot editor.
+                  Lives at /snapshot-editor/looper. */}
+              <Button
+                kind="tertiary"
+                size="md"
+                onClick={() => navigate('/snapshot-editor/looper')}
+              >
+                Open looper →
+              </Button>
+            </>
           ) : null}
         </div>
       </section>

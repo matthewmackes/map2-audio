@@ -143,6 +143,7 @@ const AvbServicesAvdeccBindingWizardPage = lazy(() => import('./pages/avb-servic
 // in this commit; the redirects at /midi-hub and /midi-hub/* are
 // kept so stale operator bookmarks land on the canonical surface.
 const SnapshotEditorPage    = lazy(() => import('./pages/SnapshotEditorPageContent').then(m => ({ default: m.SnapshotEditorPage })))
+const LooperPage            = lazy(() => import('./pages/LooperPage').then(m => ({ default: m.LooperPage })))  // T2512
 const SnapshotsBrowserPage  = lazy(() => import('./pages/SnapshotsBrowserPage').then(m => ({ default: m.SnapshotsBrowserPage })))
 const StateAuthorityPage    = lazy(() => import('./pages/StateAuthorityPage').then(m => ({ default: m.StateAuthorityPage })))
 const SnapshotPublishPage   = lazy(() => import('./pages/SnapshotPublishPage').then(m => ({ default: m.SnapshotPublishPage })))
@@ -943,6 +944,10 @@ export function App() {
                                 <Route path="/grid" element={<Navigate to="/snapshot-editor" replace />} />
                                 <Route path="/juce-grid" element={<Navigate to="/snapshot-editor" replace />} />
                                 <Route path="/snapshot-editor" element={<RouteBoundary title="Snapshot Editor crashed" actionLabel="Reload snapshot editor"><SnapshotEditorPage /></RouteBoundary>} />
+                                {/* T2512 — Looper sub-route under the snapshot editor.
+                                    Lives at /snapshot-editor/looper so the operator's
+                                    looper state stays under the per-snapshot context. */}
+                                <Route path="/snapshot-editor/looper" element={<RouteBoundary title="Looper crashed" actionLabel="Reload looper"><LooperPage /></RouteBoundary>} />
                                 <Route path="/snapshots" element={<RouteBoundary title="Snapshots browser crashed" actionLabel="Reload snapshots browser"><SnapshotsBrowserPage /></RouteBoundary>} />
                                 <Route path="/state-authority" element={<RouteBoundary title="State Authority crashed" actionLabel="Reload state authority"><StateAuthorityPage /></RouteBoundary>} />
                                 <Route path="/snapshots/:snapshotId/publish" element={<RouteBoundary title="Snapshot publish workspace crashed" actionLabel="Reload publish workspace"><SnapshotPublishPage /></RouteBoundary>} />

@@ -263,6 +263,10 @@ set(SOURCES
     Source/Recorder/IoUringWriter.cpp
     Source/Recorder/RecorderService.cpp
 
+    # T2512 — Multi-track looper (4 parallel tracks, post-FX capture).
+    Source/Looper/LooperTrack.cpp
+    Source/Looper/LooperEngine.cpp
+
     # JUCE-based components (new)
     Source/JuceAudioIO.cpp
     Source/JucePluginHost.cpp

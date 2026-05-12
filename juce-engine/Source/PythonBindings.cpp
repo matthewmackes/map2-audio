@@ -6591,6 +6591,101 @@ PYBIND11_MODULE(map2_audio_engine, m) {
                  return d;
              },
              "Snapshot of the current recorder session (or active=false).")
+
+        // ========================================
+        // T2512 — Multi-track looper bindings
+        // ========================================
+
+        .def("looper_record",
+             [](Map2AudioEngine& self, int track) {
+                 if (auto* l = self.looperEngine()) l->recordStomp(track);
+             },
+             py::arg("track"),
+             "Record stomp — empty→record, record→play, play→overdub, overdub→play, stopped→play.")
+        .def("looper_stop",
+             [](Map2AudioEngine& self, int track) {
+                 if (auto* l = self.looperEngine()) l->stopStomp(track);
+             },
+             py::arg("track"),
+             "Stop or resume playback for the track.")
+        .def("looper_clear",
+             [](Map2AudioEngine& self, int track) {
+                 if (auto* l = self.looperEngine()) l->clearStomp(track);
+             },
+             py::arg("track"),
+             "Clear the track entirely.")
+        .def("looper_undo",
+             [](Map2AudioEngine& self, int track) {
+                 if (auto* l = self.looperEngine()) l->undoStomp(track);
+             },
+             py::arg("track"))
+        .def("looper_redo",
+             [](Map2AudioEngine& self, int track) {
+                 if (auto* l = self.looperEngine()) l->redoStomp(track);
+             },
+             py::arg("track"))
+        .def("looper_set_level_db",
+             [](Map2AudioEngine& self, int track, float db) {
+                 if (auto* l = self.looperEngine()) l->setTrackLevelDb(track, db);
+             },
+             py::arg("track"), py::arg("db"))
+        .def("looper_set_muted",
+             [](Map2AudioEngine& self, int track, bool muted) {
+                 if (auto* l = self.looperEngine()) l->setTrackMuted(track, muted);
+             },
+             py::arg("track"), py::arg("muted"))
+        .def("looper_set_soloed",
+             [](Map2AudioEngine& self, int track, bool soloed) {
+                 if (auto* l = self.looperEngine()) l->setTrackSoloed(track, soloed);
+             },
+             py::arg("track"), py::arg("soloed"))
+        .def("looper_set_reverse",
+             [](Map2AudioEngine& self, int track, bool reverse) {
+                 if (auto* l = self.looperEngine()) l->setTrackReverse(track, reverse);
+             },
+             py::arg("track"), py::arg("reverse"))
+        .def("looper_set_half_speed",
+             [](Map2AudioEngine& self, int track, bool half) {
+                 if (auto* l = self.looperEngine()) l->setTrackHalfSpeed(track, half);
+             },
+             py::arg("track"), py::arg("half"))
+        .def("looper_set_master_level_db",
+             [](Map2AudioEngine& self, float db) {
+                 if (auto* l = self.looperEngine()) l->setMasterLevelDb(db);
+             },
+             py::arg("db"))
+        .def("looper_get_status",
+             [](Map2AudioEngine& self) -> py::dict {
+                 auto* l = self.looperEngine();
+                 py::dict out;
+                 if (l == nullptr) {
+                     out["active_track_count"] = 0;
+                     out["tracks"]             = py::list();
+                     return out;
+                 }
+                 const auto status = l->getStatus();
+                 out["active_track_count"] = status.activeTrackCount;
+                 out["sync_master"]        = status.syncMaster;
+                 out["master_level_db"]    = status.masterLevelDb;
+                 py::list arr;
+                 for (const auto& t : status.tracks) {
+                     py::dict td;
+                     td["track"]              = t.trackIndex;
+                     td["state"]              = static_cast<int>(t.state);
+                     td["loop_length_frames"] = t.loopLengthFrames;
+                     td["playhead_frames"]    = t.playheadFrames;
+                     td["layer_count"]        = t.layerCount;
+                     td["level_db"]           = t.levelDb;
+                     td["muted"]              = t.muted;
+                     td["soloed"]             = t.soloed;
+                     td["reverse"]            = t.reverse;
+                     td["half_speed"]         = t.halfSpeed;
+                     arr.append(td);
+                 }
+                 out["tracks"] = arr;
+                 return out;
+             },
+             "Snapshot of all 4 looper tracks.")
         ;
 
     // ========================================

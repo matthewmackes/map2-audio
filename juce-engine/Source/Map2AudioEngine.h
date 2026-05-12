@@ -23,6 +23,7 @@
 #include "SnapshotManager.h"
 #include "Recorder/EngineRecorder.h"  // T2507-3
 #include "Recorder/RecorderService.h" // T2507-5b
+#include "Looper/LooperEngine.h"      // T2512 looper
 
 #ifdef HAS_NAM
 #include "NAMProcessor.h"
@@ -1717,6 +1718,12 @@ private:
     // ctor; methods are safe to call from the Python message thread.
     std::unique_ptr<map2::recorder::RecorderService> recorderService_;
 
+    // T2512 — multi-track looper. Sits AFTER the plugin graph in
+    // the audio callback so each track captures the engine's
+    // post-FX output. Constructed unconditionally; dormant when
+    // every track is in Empty state.
+    std::unique_ptr<map2::looper::LooperEngine> looperEngine_;
+
 public:
     /// Non-owning accessor for the recorder hooks. Returns nullptr
     /// if the engine has not finished constructing the recorder
@@ -1730,6 +1737,12 @@ public:
     /// the recorder_* HandlerHook bindings.
     map2::recorder::RecorderService* recorderService() noexcept {
         return recorderService_.get();
+    }
+
+    /// Non-owning accessor for the multi-track looper (T2512).
+    /// Operator-side mutations + status reads come through here.
+    map2::looper::LooperEngine* looperEngine() noexcept {
+        return looperEngine_.get();
     }
 
 private:
