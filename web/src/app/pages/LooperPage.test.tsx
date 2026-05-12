@@ -467,6 +467,62 @@ describe('LooperPage T2512-PAGE-V2 advanced state surface', () => {
   })
 })
 
+describe('LooperPage T2512-INVENTORY-V2 feature inventory accuracy', () => {
+  it('summary button reflects the current live / pending split', async () => {
+    renderPage()
+    // The toggle button text encodes both counts as "Feature
+    // inventory — N live, M on the worklist". Pin both numbers so a
+    // future regression that mis-flags a shipped feature trips the
+    // test loudly.
+    const button = await screen.findByRole('button', {
+      name: /Feature inventory/,
+    })
+    expect(button).toHaveTextContent('22 live')
+    expect(button).toHaveTextContent('8 on the worklist')
+  })
+
+  it('clicking the summary button expands the body with both lists', async () => {
+    renderPage()
+    const button = await screen.findByRole('button', {
+      name: /Feature inventory/,
+    })
+    // Body hidden initially.
+    expect(screen.queryByText('Live in v1')).toBeNull()
+    button.click()
+    // After clicking, both lists are rendered.
+    expect(await screen.findByText('Live in v1')).toBeInTheDocument()
+    expect(screen.getByText('Filed as worklist follow-ons')).toBeInTheDocument()
+  })
+
+  it('headline features shipped this run appear in the live list', async () => {
+    // After cycles 1-13 of this run, several major features moved
+    // from "pending" to "live". Spot-check that the inventory body
+    // reflects that — catches a regression where someone updates
+    // the service contract but forgets to update the operator-
+    // visible inventory.
+    renderPage()
+    const button = await screen.findByRole('button', {
+      name: /Feature inventory/,
+    })
+    button.click()
+    await screen.findByText('Live in v1')
+
+    // Each of these features must appear as a <strong> label inside
+    // the live list. The "live" tag is a sibling of the strong; we
+    // assert presence of the label text.
+    const livePhrases = [
+      'MIDI control (CC / Program Change)',
+      'Loop syncing (master/slave)',
+      'Fade-out / stop modes',
+      'Loop slicing / editing',
+      'External footswitch support',
+    ]
+    for (const phrase of livePhrases) {
+      expect(screen.getByText(phrase)).toBeInTheDocument()
+    }
+  })
+})
+
 describe('LooperPage T2512-FIX-SYNC-TAG master sync indicator', () => {
   it('does not render the sync-master tag when sync_master is false', async () => {
     renderPage()
