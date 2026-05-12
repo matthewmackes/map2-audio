@@ -253,6 +253,101 @@ describe('LooperPage WS frame application', () => {
   })
 })
 
+describe('LooperPage transport-button → looperApi wiring', () => {
+  // We import the mocked looperApi back via require() so we can read
+  // its jest.fn instances without breaking the jest.mock factory's
+  // hoist-safety rules.
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const { looperApi } = require('../../map2/clients/looper') as {
+    looperApi: Record<string, jest.Mock>
+  }
+
+  beforeEach(() => {
+    Object.values(looperApi).forEach((fn) => fn.mockClear())
+  })
+
+  it('clicking the Record button calls looperApi.record(track)', async () => {
+    renderPage()
+    const btn = await screen.findByTestId('looper-record-1')
+    btn.click()
+    await waitFor(() => {
+      expect(looperApi.record).toHaveBeenCalledWith(1)
+    })
+  })
+
+  it('clicking Stop / Undo / Redo / Clear routes to the matching client method', async () => {
+    renderPage()
+    const stop = await screen.findByTestId('looper-stop-2')
+    stop.click()
+    await waitFor(() => expect(looperApi.stop).toHaveBeenCalledWith(2))
+
+    const undo = await screen.findByTestId('looper-undo-2')
+    undo.click()
+    await waitFor(() => expect(looperApi.undo).toHaveBeenCalledWith(2))
+
+    const redo = await screen.findByTestId('looper-redo-2')
+    redo.click()
+    await waitFor(() => expect(looperApi.redo).toHaveBeenCalledWith(2))
+
+    const clear = await screen.findByTestId('looper-clear-2')
+    clear.click()
+    await waitFor(() => expect(looperApi.clear).toHaveBeenCalledWith(2))
+  })
+
+  it('each track 0..3 has its own independent transport buttons', async () => {
+    renderPage()
+    // Pull all 4 record buttons in parallel and click each.
+    for (let t = 0; t < 4; t++) {
+      const btn = await screen.findByTestId(`looper-record-${t}`)
+      btn.click()
+    }
+    await waitFor(() => {
+      expect(looperApi.record).toHaveBeenCalledTimes(4)
+    })
+    const callArgs = looperApi.record.mock.calls.map((c) => c[0])
+    expect(callArgs.sort()).toEqual([0, 1, 2, 3])
+  })
+
+  it('record-button rerender swaps label on state change', async () => {
+    renderPage()
+    await screen.findByTestId('looper-ws-status')
+    act(() => {
+      sockets[0]!.onopen?.call(sockets[0] as unknown as WebSocket)
+    })
+
+    // Push a frame with track 0 RECORDING.
+    const frame = {
+      type: 'looper_status',
+      payload: {
+        ...mockIdleSnapshot,
+        tracks: mockIdleSnapshot.tracks.map((t, i) =>
+          i === 0
+            ? {
+                ...t,
+                state: 1,
+                state_label: 'recording',
+                layer_count: 1,
+              }
+            : t,
+        ),
+      },
+    }
+    act(() => {
+      sockets[0]!.onmessage?.call(
+        sockets[0] as unknown as WebSocket,
+        { data: JSON.stringify(frame) } as MessageEvent,
+      )
+    })
+
+    // While recording, the same testid resolves to a Button whose
+    // text content is "Stop & play".
+    await waitFor(() => {
+      const btn = screen.getByTestId('looper-record-0')
+      expect(btn).toHaveTextContent('Stop & play')
+    })
+  })
+})
+
 describe('LooperPage T2512-CLOCK BPM tag', () => {
   it('renders the BPM tag when status.bpm is non-null', async () => {
     renderPage()

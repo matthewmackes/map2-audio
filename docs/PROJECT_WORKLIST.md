@@ -2353,9 +2353,28 @@ Operator requested 27 features; v1 ships 13 live + files the remaining 14 as nam
 
 T2512-WS shipped 2026-05-12 — broadcaster injection on LooperService, sync→async scheduling closure in `app/services/looper_ws_bridge.py`, `LOOPER_STATUS_TOPIC = "looper:status"` envelope `{type: "looper_status", payload: ...}`. Every mutating verb (12 entry points) fires a broadcast; `get_status` does not. LooperPage replaces its 250 ms poll with WS subscription + 2 s safety-net refresh. WS UI follow-up (2026-05-12) — LooperPage surfaces a `Live`/`Polling (2 s)` Tag next to the page subtitle so operators can tell at a glance whether they're getting push or poll updates; new `LooperPage.test.tsx` with 6 RTL tests covering the open/close transitions, WS frame application, and bad-frame robustness. +9 service tests, +4 bridge tests, +6 RTL tests.
 
-### Pick-up next (Continue run handoff, filed 2026-05-12)
+### Pick-up next (Continue run handoff, filed 2026-05-12, updated end-of-run)
 
-Shipped this run (Continue cycles 1–11, all dual-pushed to origin + gitlab, ~105 looper tests across 7 suites): T2512-MIDI, T2512-LOCK, T2512-FSW, T2512-SCRIPT, T2512-LOCK-MIDI, T2512-WS, T2512-FSW-MAC, T2512-OPENAPI, T2512 web client tests, T2512 WS-UI Tag + LooperPage RTL suite, T2512 bridge↔LooperService end-to-end coverage.
+**Run total: 15 cycles, ~160 tests across 8 Python suites + 3 web suites + 1 Node JS suite, all dual-pushed.**
+
+Shipped this run, in order:
+1. T2512-MIDI — dispatcher targets for looper verbs
+2. T2512-LOCK — per-track write-lock toggle
+3. T2512-FSW — generic looper-footswitch MIDI-learn catalog
+4. T2512-SCRIPT — generic QuickJS handler module
+5. T2512-LOCK-MIDI — write-lock via dispatcher
+6. T2512-WS — broadcaster injection + WS bridge module
+7. T2512-FSW-MAC — MeloAudio Commander dedicated looper profile
+8. T2512-OPENAPI — fill missing route summaries + drop dead code
+9. T2512 web client tests — pin looperApi HTTP shapes
+10. T2512 WS-UI Tag — Live/Polling tag + first LooperPage RTL suite
+11. T2512 bridge↔service E2E — dispatcher → LooperService method coverage
+12. T2512-OS — one-shot mode flag (auto-stop runner deferred)
+13. T2512-CLOCK (inbound) — snapshot BPM in LooperStatus + UI tag
+14. T2512-AUTO — auto-record state surface (trigger deferred)
+15. T2512-PAGE-CLICKS — LooperPage RTL coverage for transport buttons
+
+Remaining T2512 follow-ons → see the prioritized table below. Next-session order-1 picks (in priority): **T2512-OS-RUNNER** (async one-shot auto-stop watcher — flag/route/UI already shipped; needs a runner that reads `playhead_frames` and fires `stop_track` after one pass), **T2512-AUTO-TRIGGER** (engine-side input-level RMS push that turns the AUTO armed-state into an actual record trigger — gated on a C++ bench task), and **T2512-FADE** (fade-out stop modes — RT-gated).
 
 Remaining T2512 follow-ons, ordered by suggested pickup. **Read this list first next session.**
 
@@ -2379,7 +2398,7 @@ Newly surfaced gaps during this run (not in the original 14 follow-ons):
 - **T2512-SNAP — Snapshot integration.** Looper has no entry in the snapshot graph / state authority. Lock, levels, master level, sync state — none persist across snapshot recall. File new task; reference `app/services/state_authority_*` for the integration seam.
 - **T2512-LIFESPAN — `app/main.py` lifespan ordering smoke test.** Looper service + WS bridge install order is currently uncovered. A regression that swaps the order silently breaks WS for verbs that fire before the bridge is wired. Add an integration test that boots a stripped-down app and asserts the broadcaster is installed before any HTTP traffic.
 - **T2512-OPENAPI-SCHEMA — OpenAPI document audit.** Existing tests check `summary` + `operation_id` per route, but not that the *generated* OpenAPI doc includes all 13 routes under the `looper` tag. Extend `tests/test_openapi_schema_sync.py`.
-- **T2512-PAGE-CLICKS — LooperPage RTL click coverage.** Current RTL suite covers WS state only. Add 5 small click-and-assert tests asserting record/stop/clear/undo/redo per-track buttons invoke the right `looperApi` method (mock is already in place).
+- **T2512-PAGE-CLICKS — LooperPage RTL click coverage.** [✓] Shipped 2026-05-12. Added `data-testid` attributes to Stop/Undo/Redo/Clear buttons (Record already had one); +4 RTL tests covering Record (single + all 4 tracks), Stop/Undo/Redo/Clear routing, and Record-button label swap on state change. LooperPage RTL suite now 12 tests.
 
 | Task | Title | Notes |
 |---|---|---|

@@ -335,18 +335,22 @@ function TrackCard({
             : 'Resume'}
         </Button>
         <Button kind="ghost" size="md" renderIcon={StopFilled}
+                data-testid={`looper-stop-${track.track}`}
                 onClick={() => onAction(() => looperApi.stop(track.track))}>
           Stop
         </Button>
         <Button kind="ghost" size="md" renderIcon={Undo}
+                data-testid={`looper-undo-${track.track}`}
                 onClick={() => onAction(() => looperApi.undo(track.track))}>
           Undo
         </Button>
         <Button kind="ghost" size="md" renderIcon={Redo}
+                data-testid={`looper-redo-${track.track}`}
                 onClick={() => onAction(() => looperApi.redo(track.track))}>
           Redo
         </Button>
         <Button kind="ghost" size="md" renderIcon={TrashCan}
+                data-testid={`looper-clear-${track.track}`}
                 onClick={() => onAction(() => looperApi.clear(track.track))}>
           Clear
         </Button>
