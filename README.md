@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1620** Python | **1664** TypeScript | **222** C++/H | **149** Docs | **4357** total commits | **4** stars | **0** forks | **0** open issues
+**1620** Python | **1664** TypeScript | **222** C++/H | **149** Docs | **4359** total commits | **4** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`f6fb0d1d`](https://github.com/matthewmackes/map2-audio/commit/f6fb0d1de20267d31642529ad95b71f2ac1c251c) | feat(looper,ui): T2512-PAGE-V2 — surface sync / fade / qu... | Map2 Audio | 2026-05-12 |
+| [`fa2c1195`](https://github.com/matthewmackes/map2-audio/commit/fa2c1195478ea030c431bd602c67fb5836393a96) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-12 |
 | [`72be8dcd`](https://github.com/matthewmackes/map2-audio/commit/72be8dcdd581fd6ecab9911cc1f61e8f909f0529) | feat(looper,quant): T2512-QUANT-WIRE — per-track quantize... | Map2 Audio | 2026-05-12 |
 | [`ead24ec9`](https://github.com/matthewmackes/map2-audio/commit/ead24ec92744c1b728ba7a154f8fdfbce91b0895) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-12 |
 | [`25179765`](https://github.com/matthewmackes/map2-audio/commit/25179765fad95ec782e8115b84df2416cb01d39e) | feat(looper,quant): T2512-QUANT — pure-Python tempo-grid ... | Map2 Audio | 2026-05-12 |
 | [`ecaf253a`](https://github.com/matthewmackes/map2-audio/commit/ecaf253a3d9fbb67eb6dce1e53b39001c26e2b85) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-12 |
 | [`f8e6049f`](https://github.com/matthewmackes/map2-audio/commit/f8e6049ff20fcc4ec3de1085e129edb111d2c47d) | feat(looper,slice): T2512-SLICE — non-destructive slice m... | Map2 Audio | 2026-05-12 |
 | [`294174dc`](https://github.com/matthewmackes/map2-audio/commit/294174dc31bd2bd65d1e99b302732ca8b2520a3a) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-12 |
-| [`29315d34`](https://github.com/matthewmackes/map2-audio/commit/29315d344fd7937599b50571d9ac0121cd630cee) | feat(looper,sync): T2512-SYNC — service-side sync-mode + ... | Map2 Audio | 2026-05-12 |
-| [`5cfe7cc0`](https://github.com/matthewmackes/map2-audio/commit/5cfe7cc0f77797f1b1668dfd41152b0d284ad3fb) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-12 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
