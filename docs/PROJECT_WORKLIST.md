@@ -2376,6 +2376,51 @@ Shipped this run, in order:
 
 Remaining T2512 follow-ons → see the prioritized table below. Next-session order-1 picks (in priority): **T2512-OS-RUNNER** (async one-shot auto-stop watcher — flag/route/UI already shipped; needs a runner that reads `playhead_frames` and fires `stop_track` after one pass), **T2512-AUTO-TRIGGER** (engine-side input-level RMS push that turns the AUTO armed-state into an actual record trigger — gated on a C++ bench task), and **T2512-FADE** (fade-out stop modes — RT-gated).
 
+### Pick-up next (second Continue run handoff, filed 2026-05-12, end-of-run)
+
+**Second run total: 14 cycles, all dual-pushed. Cumulative T2512 test totals after both runs: ~330 Python tests across 12 suites + 47 web tests across 3 suites + 19 Node JS tests.**
+
+Shipped this run, in order:
+1. **T2512-OS-RUNNER** — async auto-stop watcher (closes T2512-OS deferred half from the first run)
+2. **T2512-LIFESPAN** — install-order smoke test for the looper service + bridges
+3. **T2512-OPENAPI-SCHEMA** — generated-doc audit (all 24 paths, tag wiring, response models)
+4. **T2512-SNAP** — `export_state` / `apply_state` primitive + routes
+5. **T2512-FADE** — service-side `stop_mode` + `fade_ms` state surface
+6. **T2512-SYNC** — per-track sync_mode + at-most-one-master invariant + `sync_master_track`
+7. **T2512-SLICE** — non-destructive slice metadata model + add/clear routes
+8. **T2512-QUANT** — pure-Python tempo-grid quantize math helper
+9. **T2512-QUANT-WIRE** — service-side per-track `quantize_division` + `quantize_record_length` decision helper
+10. **T2512-PAGE-V2** — LooperPage surfaces cycle-6-9 state (sync/stop/fade/quantize selectors + slice strip)
+11. **T2512-DISPATCH-V2** — 4 new dispatcher patterns (stop_mode / sync_mode / quantize_division / fade_ms) + indexed-enum factory
+12. **T2512-PACK-V2** — generic catalog + JS module catches up to DISPATCH-V2 (16 new mixer entries + 4 JS helpers)
+13. **T2512-FIX-SYNC-TAG** — regression fix for hardcoded "Track 0" in master Tile sync label
+14. **T2512-INVENTORY-V2** — flipped 7 features from pending → live in LooperPage FEATURE_INVENTORY (22 live / 8 pending)
+
+**Status of the original 13-row priority table at end of this run:**
+
+| Task | Status after this run |
+|---|---|
+| T2512-OS | ✓ Fully shipped (flag + runner both live) |
+| T2512-AUTO | ✓ State surface live; T2512-AUTO-TRIGGER (engine RMS push) still pending |
+| T2512-FADE | ✓ State surface live; T2512-FADE-RAMP (engine gain ramp) still pending |
+| T2512-CLOCK | ✓ Inbound shipped (cycle 13 of first run); outbound still pending |
+| T2512-QUANT | ✓ Math helper + service wiring live; T2512-QUANT-ENGINE (engine consumes snapped length) pending |
+| T2512-STOR | Bench-required (engine WAV dump). Unchanged. |
+| T2512-SYNC | ✓ State surface live; T2512-SYNC-LOCK (engine loop-length lock) pending |
+| T2512-LONG | Bench-only. Unchanged. |
+| T2512-BYP | Spec/review needed. Unchanged. |
+| T2512-FX | Bench, gated on T2507 v2. Unchanged. |
+| T2512-TIME | Spec + license review. Unchanged. |
+| T2512-SLICE | ✓ Metadata model live; T2512-SLICE-UI (region editor) pending |
+| T2512-DAW | Bench/host work. Unchanged. |
+
+**Next-session order-1 picks (priority order):**
+1. **T2512-AUTO-TRIGGER** — pure-Python state machine that accepts an input-level RMS push from any source (engine binding when it lands, test stub today) and fires `record(track)` when armed + level > threshold. Can land as a service-side helper before the engine binding exists, same pattern as T2512-OS-RUNNER.
+2. **T2512-SLICE-UI** — region editor UI on top of the slice metadata model. Pure-frontend slice; data layer + routes already shipped.
+3. **T2512-QUANT-ENGINE** — engine-side consumer of `quantize_record_length`. C++ bench task; the Python decision helper is already callable from the audio thread via pybind11.
+
+**Bench-only items** (skip during pure-Python ship loops): T2512-STOR, T2512-LONG, T2512-FX, T2512-TIME, T2512-DAW, T2512-FADE-RAMP, T2512-SYNC-LOCK.
+
 Remaining T2512 follow-ons, ordered by suggested pickup. **Read this list first next session.**
 
 | Order | Task | Why pickable now | RT gate | Suggested first move |
