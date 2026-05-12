@@ -12,6 +12,7 @@ import pytest
 
 from app.services.looper_auto_record_trigger import (
     DEFAULT_COOLDOWN_S,
+    DEFAULT_HOLD_COUNT,
     LooperAutoRecordTrigger,
     get_looper_auto_record_trigger,
     init_looper_auto_record_trigger,
@@ -341,3 +342,182 @@ def test_reset_clears_per_track_cooldown() -> None:
 
 def test_default_cooldown_is_50_ms() -> None:
     assert DEFAULT_COOLDOWN_S == 0.050
+
+
+def test_default_hold_count_is_one() -> None:
+    """T2512-AUTO-HOLD — default debounce is 1 (no debounce), preserving
+    pre-feature trigger semantics for callers that don't opt in."""
+    assert DEFAULT_HOLD_COUNT == 1
+
+
+# ---------------------------------------------------------------------------
+# T2512-AUTO-HOLD — consecutive-push debounce
+# ---------------------------------------------------------------------------
+
+
+def test_hold_count_requires_multiple_consecutive_pushes_to_fire() -> None:
+    """hold_count=3 means the first 2 qualifying pushes are absorbed
+    (no fire), and only the 3rd one fires record()."""
+    engine = _FakeEngine()
+    service = LooperService(engine=engine)
+    service.set_auto_armed(0, True)
+    service.set_auto_threshold_db(0, -36.0)
+
+    trigger = LooperAutoRecordTrigger(service=service, hold_count=3)
+    assert trigger.push_input_level(0, -10.0) is False
+    assert trigger.push_input_level(0, -10.0) is False
+    assert engine.record_calls == []
+    assert trigger.push_input_level(0, -10.0) is True
+    assert engine.record_calls == [0]
+
+
+def test_hold_count_below_threshold_resets_streak() -> None:
+    """A single below-threshold push between qualifying pushes must
+    reset the streak — a transient spike + dip + spike should not
+    fire if it doesn't sustain across hold_count consecutive pushes."""
+    engine = _FakeEngine()
+    service = LooperService(engine=engine)
+    service.set_auto_armed(0, True)
+    service.set_auto_threshold_db(0, -36.0)
+
+    trigger = LooperAutoRecordTrigger(service=service, hold_count=3)
+    trigger.push_input_level(0, -10.0)  # streak 1
+    trigger.push_input_level(0, -10.0)  # streak 2
+    trigger.push_input_level(0, -50.0)  # below threshold → streak 0
+    assert engine.record_calls == []
+    # Need 3 fresh consecutive qualifying pushes now.
+    assert trigger.push_input_level(0, -10.0) is False
+    assert trigger.push_input_level(0, -10.0) is False
+    assert trigger.push_input_level(0, -10.0) is True
+    assert engine.record_calls == [0]
+
+
+def test_hold_count_streak_is_per_track() -> None:
+    """The hold-count debounce tracks per-track streaks independently;
+    pushes against track 0 must not advance track 1's streak."""
+    engine = _FakeEngine()
+    service = LooperService(engine=engine)
+    for t in range(4):
+        service.set_auto_armed(t, True)
+        service.set_auto_threshold_db(t, -36.0)
+
+    trigger = LooperAutoRecordTrigger(service=service, hold_count=2)
+    trigger.push_input_level(0, -10.0)  # track 0 streak 1
+    trigger.push_input_level(1, -10.0)  # track 1 streak 1
+    # Neither has reached 2 yet — no record yet.
+    assert engine.record_calls == []
+    trigger.push_input_level(0, -10.0)  # track 0 streak 2 → fire
+    assert engine.record_calls == [0]
+    # Track 1 still needs one more.
+    trigger.push_input_level(1, -10.0)  # track 1 streak 2 → fire
+    assert engine.record_calls == [0, 1]
+
+
+def test_hold_count_unarmed_push_resets_streak() -> None:
+    """If the operator disarms mid-streak, the unarmed-return path
+    resets the per-track streak — re-arming starts the debounce
+    counter fresh."""
+    engine = _FakeEngine()
+    service = LooperService(engine=engine)
+    service.set_auto_armed(0, True)
+    service.set_auto_threshold_db(0, -36.0)
+
+    trigger = LooperAutoRecordTrigger(service=service, hold_count=3)
+    trigger.push_input_level(0, -10.0)  # streak 1
+    trigger.push_input_level(0, -10.0)  # streak 2
+
+    # Operator disarms; the next push should reset the streak.
+    service.set_auto_armed(0, False)
+    trigger.push_input_level(0, -10.0)
+    assert trigger._streak_for_test()[0] == 0
+
+    # Re-arm. Must take 3 fresh pushes to fire.
+    service.set_auto_armed(0, True)
+    assert trigger.push_input_level(0, -10.0) is False
+    assert trigger.push_input_level(0, -10.0) is False
+    assert trigger.push_input_level(0, -10.0) is True
+
+
+def test_hold_count_clamps_to_minimum_one() -> None:
+    """hold_count=0 (or negative) must clamp to 1 so the trigger never
+    becomes silent on a misconfiguration."""
+    engine = _FakeEngine()
+    service = LooperService(engine=engine)
+    service.set_auto_armed(0, True)
+    service.set_auto_threshold_db(0, -36.0)
+
+    trigger = LooperAutoRecordTrigger(service=service, hold_count=0)
+    assert trigger.hold_count == 1
+    assert trigger.push_input_level(0, -10.0) is True
+
+
+def test_set_hold_count_resets_in_flight_streaks() -> None:
+    """Reconfiguring hold_count mid-flight clears any half-armed streaks
+    so the new threshold-count starts cleanly."""
+    engine = _FakeEngine()
+    service = LooperService(engine=engine)
+    service.set_auto_armed(0, True)
+    service.set_auto_threshold_db(0, -36.0)
+
+    trigger = LooperAutoRecordTrigger(service=service, hold_count=3)
+    trigger.push_input_level(0, -10.0)
+    trigger.push_input_level(0, -10.0)
+    assert trigger._streak_for_test()[0] == 2
+
+    trigger.set_hold_count(2)
+    assert trigger.hold_count == 2
+    assert trigger._streak_for_test() == [0, 0, 0, 0]
+    # Two fresh pushes required for the new hold_count.
+    assert trigger.push_input_level(0, -10.0) is False
+    assert trigger.push_input_level(0, -10.0) is True
+
+
+def test_reset_clears_per_track_streak() -> None:
+    """Symmetry with the cooldown reset behavior: trigger.reset() must
+    wipe the per-track hold-count streak as well."""
+    engine = _FakeEngine()
+    service = LooperService(engine=engine)
+    service.set_auto_armed(0, True)
+    service.set_auto_threshold_db(0, -36.0)
+
+    trigger = LooperAutoRecordTrigger(service=service, hold_count=3)
+    trigger.push_input_level(0, -10.0)
+    trigger.push_input_level(0, -10.0)
+    assert trigger._streak_for_test()[0] == 2
+
+    trigger.reset()
+    assert trigger._streak_for_test() == [0, 0, 0, 0]
+
+
+def test_hold_count_threshold_in_init_singleton() -> None:
+    """init_looper_auto_record_trigger should honor the hold_count kwarg."""
+    trigger = init_looper_auto_record_trigger(hold_count=5)
+    assert trigger.hold_count == 5
+
+
+def test_post_fire_streak_resets() -> None:
+    """After a fire, the per-track streak resets so a subsequent
+    re-arm + push needs hold_count fresh pushes again (not just 1)."""
+    clock = _FakeClock()
+    engine = _FakeEngine()
+    service = LooperService(engine=engine)
+    service.set_auto_armed(0, True)
+    service.set_auto_threshold_db(0, -36.0)
+
+    trigger = LooperAutoRecordTrigger(
+        service=service, hold_count=2, cooldown_s=0.001, clock_fn=clock
+    )
+    trigger.push_input_level(0, -10.0)
+    trigger.push_input_level(0, -10.0)
+    assert engine.record_calls == [0]
+    assert trigger._streak_for_test()[0] == 0
+
+    # Re-arm + clear + advance past cooldown for a fresh take.
+    service.set_auto_armed(0, True)
+    service.stop_track(0)
+    service.clear(0)
+    clock.advance(0.010)
+    # First push doesn't refire (streak now 1 of 2 again).
+    assert trigger.push_input_level(0, -10.0) is False
+    # Second push fires.
+    assert trigger.push_input_level(0, -10.0) is True

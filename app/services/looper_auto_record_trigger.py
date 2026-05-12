@@ -70,6 +70,7 @@ logger = logging.getLogger(__name__)
 
 
 DEFAULT_COOLDOWN_S = 0.050  # 50 ms — see module docstring
+DEFAULT_HOLD_COUNT = 1  # T2512-AUTO-HOLD — fire on first qualifying push
 
 
 class LooperAutoRecordTrigger:
@@ -81,6 +82,7 @@ class LooperAutoRecordTrigger:
         service: Optional[LooperService] = None,
         cooldown_s: float = DEFAULT_COOLDOWN_S,
         clock_fn: Optional[Callable[[], float]] = None,
+        hold_count: int = DEFAULT_HOLD_COUNT,
     ) -> None:
         self._service = service
         self._cooldown_s = float(cooldown_s)
@@ -88,6 +90,15 @@ class LooperAutoRecordTrigger:
         # Per-track last-fire timestamp (monotonic seconds). 0.0
         # means "never fired".
         self._last_fire: list[float] = [0.0, 0.0, 0.0, 0.0]
+        # T2512-AUTO-HOLD — debounce: require this many consecutive
+        # above-threshold pushes before firing. Defaults to 1
+        # (no debounce, preserving the pre-T2512-AUTO-HOLD contract).
+        # Any below-threshold push (or any non-firing exit) resets
+        # the per-track streak to 0. This prevents string ring-down
+        # / cable-noise / fingertip-release spikes from re-triggering
+        # the moment after the operator re-arms.
+        self._hold_count = max(1, int(hold_count))
+        self._streak: list[int] = [0, 0, 0, 0]
 
     def _resolve_service(self) -> Optional[LooperService]:
         if self._service is not None:
@@ -131,13 +142,23 @@ class LooperAutoRecordTrigger:
 
         track_status = status.tracks[track]
         if not track_status.auto_armed:
+            self._streak[track] = 0
             return False
         if track_status.state != TrackState.EMPTY:
             # Only fire on a fresh EMPTY track. RECORDING / PLAYING /
             # OVERDUBBING / STOPPED tracks are owned by the operator's
             # explicit state machine; the auto-trigger never preempts.
+            self._streak[track] = 0
             return False
         if level_db <= track_status.auto_threshold_db:
+            self._streak[track] = 0
+            return False
+
+        # T2512-AUTO-HOLD — debounce: this push qualifies, but the
+        # track may still need more consecutive qualifying pushes
+        # before we fire.
+        self._streak[track] += 1
+        if self._streak[track] < self._hold_count:
             return False
 
         # Conditions met — fire.
@@ -147,6 +168,8 @@ class LooperAutoRecordTrigger:
             logger.exception(
                 "auto_record_trigger: record(%d) failed: %s", track, exc
             )
+            # Streak stays elevated so a retry in the same window can
+            # still fire after the engine recovers; cooldown gates it.
             return False
 
         # Disarm after fire. If this raises, the loop is already
@@ -161,24 +184,46 @@ class LooperAutoRecordTrigger:
             )
 
         self._last_fire[track] = now
+        # Reset streak post-fire so a retry after re-arming starts
+        # fresh against the hold-count gate.
+        self._streak[track] = 0
         logger.info(
             "auto_record_trigger: fired record(%d) at level=%.2f dB "
-            "(threshold=%.2f dB)",
+            "(threshold=%.2f dB, hold_count=%d)",
             track,
             level_db,
             track_status.auto_threshold_db,
+            self._hold_count,
         )
         return True
 
     def reset(self) -> None:
-        """Drop all per-track cooldown state. Used at lifespan
+        """Drop all per-track cooldown + streak state. Used at lifespan
         teardown and in test fixtures."""
         self._last_fire = [0.0, 0.0, 0.0, 0.0]
+        self._streak = [0, 0, 0, 0]
+
+    @property
+    def hold_count(self) -> int:
+        """T2512-AUTO-HOLD — currently configured consecutive-push
+        debounce count (1 == no debounce)."""
+        return self._hold_count
+
+    def set_hold_count(self, hold_count: int) -> None:
+        """T2512-AUTO-HOLD — reconfigure the debounce. Clamps to
+        minimum 1 (no debounce). Resets the per-track streaks so an
+        in-flight half-armed streak doesn't carry forward against the
+        new count."""
+        self._hold_count = max(1, int(hold_count))
+        self._streak = [0, 0, 0, 0]
 
     # Test seam ------------------------------------------------------------
 
     def _last_fire_for_test(self) -> list[float]:
         return list(self._last_fire)
+
+    def _streak_for_test(self) -> list[int]:
+        return list(self._streak)
 
 
 # ----------------------------------------------------------------------
@@ -193,12 +238,16 @@ def init_looper_auto_record_trigger(
     service: Optional[LooperService] = None,
     cooldown_s: float = DEFAULT_COOLDOWN_S,
     clock_fn: Optional[Callable[[], float]] = None,
+    hold_count: int = DEFAULT_HOLD_COUNT,
 ) -> LooperAutoRecordTrigger:
     """Create + register the singleton. Idempotent."""
     global _trigger
     if _trigger is None:
         _trigger = LooperAutoRecordTrigger(
-            service=service, cooldown_s=cooldown_s, clock_fn=clock_fn
+            service=service,
+            cooldown_s=cooldown_s,
+            clock_fn=clock_fn,
+            hold_count=hold_count,
         )
     return _trigger
 
