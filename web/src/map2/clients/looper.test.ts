@@ -309,6 +309,15 @@ describe('looperApi HTTP surface', () => {
     })
   })
 
+  it('setMasterMuted(true) → PATCH /master/muted with {value: true}', async () => {
+    // T2512-MASTER-MUTE — global panic mute via SetBoolRequest body.
+    await looperApi.setMasterMuted(true)
+    expect(fetchMock.mock.calls[0]?.[0]).toBe(`${BASE}/master/muted`)
+    expect(JSON.parse(String(fetchMock.mock.calls[0]?.[1]?.body))).toEqual({
+      value: true,
+    })
+  })
+
   // ---------- T2512-PRESET ----------
 
   it('listPresets() → GET /presets (default method)', async () => {

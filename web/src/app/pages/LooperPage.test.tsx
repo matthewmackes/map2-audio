@@ -148,6 +148,7 @@ jest.mock('../../map2/clients/looper', () => ({
     clearPresets: jest.fn(async () => mockIdleSnapshot),
     resetAutoPeak: jest.fn(async () => mockIdleSnapshot),
     setOneShotPasses: jest.fn(async () => mockIdleSnapshot),
+    setMasterMuted: jest.fn(async () => mockIdleSnapshot),
   },
 }))
 
@@ -1707,6 +1708,84 @@ describe('LooperPage T2512-OS-COUNT-UI one-shot passes input', () => {
     fireEvent.change(getOneShotInput(0), { target: { value: '0' } })
     await waitFor(() => {
       expect(mod.looperApi.setOneShotPasses).toHaveBeenCalledWith(0, 1)
+    })
+  })
+})
+
+describe('LooperPage T2512-MASTER-MUTE-UI panic-mute button', () => {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const mod = require('../../map2/clients/looper') as {
+    looperApi: { setMasterMuted: jest.Mock }
+  }
+
+  beforeEach(() => {
+    mod.looperApi.setMasterMuted.mockClear()
+  })
+
+  async function pushMuted(muted: boolean): Promise<void> {
+    act(() => {
+      sockets[0]!.onopen?.call(sockets[0] as unknown as WebSocket)
+    })
+    const frame = {
+      type: 'looper_status',
+      payload: { ...mockIdleSnapshot, master_muted: muted },
+    }
+    act(() => {
+      sockets[0]!.onmessage?.call(
+        sockets[0] as unknown as WebSocket,
+        { data: JSON.stringify(frame) } as MessageEvent,
+      )
+    })
+  }
+
+  it('renders the Panic-mute button on the master Tile', async () => {
+    renderPage()
+    const btn = await screen.findByTestId('looper-master-mute-button')
+    expect(btn).toHaveTextContent('Panic mute')
+    // Mute Tag is hidden in the default unmuted snapshot.
+    expect(screen.queryByTestId('looper-master-mute-tag')).toBeNull()
+  })
+
+  it('clicking the button fires looperApi.setMasterMuted(true) when unmuted', async () => {
+    renderPage()
+    const btn = (await screen.findByTestId(
+      'looper-master-mute-button',
+    )) as HTMLButtonElement
+    fireEvent.click(btn)
+    await waitFor(() => {
+      expect(mod.looperApi.setMasterMuted).toHaveBeenCalledWith(true)
+    })
+  })
+
+  it('flips label + Tag when a WS frame reports master_muted=true', async () => {
+    renderPage()
+    await screen.findByTestId('looper-master-mute-button')
+    await pushMuted(true)
+    await waitFor(() => {
+      expect(screen.getByTestId('looper-master-mute-button')).toHaveTextContent(
+        'Unmute master',
+      )
+    })
+    expect(screen.getByTestId('looper-master-mute-tag')).toHaveTextContent(
+      'Master muted',
+    )
+  })
+
+  it('clicking while muted fires setMasterMuted(false)', async () => {
+    renderPage()
+    await screen.findByTestId('looper-master-mute-button')
+    await pushMuted(true)
+    await waitFor(() =>
+      expect(screen.getByTestId('looper-master-mute-button')).toHaveTextContent(
+        'Unmute master',
+      ),
+    )
+    const btn = screen.getByTestId(
+      'looper-master-mute-button',
+    ) as HTMLButtonElement
+    fireEvent.click(btn)
+    await waitFor(() => {
+      expect(mod.looperApi.setMasterMuted).toHaveBeenCalledWith(false)
     })
   })
 })

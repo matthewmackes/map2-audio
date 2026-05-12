@@ -83,6 +83,10 @@ export interface LooperStatus {
   active_track_count: number
   sync_master: boolean
   master_level_db: number
+  /** T2512-MASTER-MUTE — global panic-mute flag. When true the master
+   *  bus is clamped to the -60 dB floor; pre-mute level restores on
+   *  release. */
+  master_muted?: boolean
   /** T2512-CLOCK (inbound) — current snapshot tempo BPM; null when tempo service unavailable. */
   bpm: number | null
   /** T2512-SYNC — index of the track set to sync_mode "master", or null. */
@@ -190,6 +194,8 @@ export const looperApi = {
       { method: 'DELETE' },
     ),
   setMasterLevel: (db: number)                 => patch(`${BASE}/master/level`, { db }),
+  /** T2512-MASTER-MUTE — toggle the global panic-mute flag. */
+  setMasterMuted: (muted: boolean) => patch(`${BASE}/master/muted`, { value: muted }),
   /** T2512-RESET — clear every Python-side flag + master level. Captured loop content is unaffected. */
   resetState: () =>
     fetchJson<LooperStatus>(`${BASE}/state/reset`, { method: 'POST' }),

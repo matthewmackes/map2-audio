@@ -391,6 +391,18 @@ export function LooperPage() {
               <Tag type="cool-gray" size="sm">
                 Active tracks: {status.active_track_count}
               </Tag>
+              {/* T2512-MASTER-MUTE-UI — operator-visible Tag echoing
+                  the muted state so the panic button's effect is
+                  obvious even when the dial hasn't moved. */}
+              {status.master_muted ? (
+                <Tag
+                  type="red"
+                  size="sm"
+                  data-testid="looper-master-mute-tag"
+                >
+                  Master muted
+                </Tag>
+              ) : null}
               {status.sync_master && status.sync_master_track != null ? (
                 <Tag
                   type="blue"
@@ -431,6 +443,20 @@ export function LooperPage() {
                   e.target.value = ''
                 }}
               />
+              {/* T2512-MASTER-MUTE-UI — panic mute. Same danger-tertiary
+                  styling as Reset so operators read it as a high-impact
+                  action; label flips so the button doubles as a release
+                  trigger. No modal: panic-mute MUST be one click. */}
+              <Button
+                kind={status.master_muted ? 'primary' : 'danger--tertiary'}
+                size="sm"
+                data-testid="looper-master-mute-button"
+                onClick={() =>
+                  wrap(() => looperApi.setMasterMuted(!status.master_muted))
+                }
+              >
+                {status.master_muted ? 'Unmute master' : 'Panic mute'}
+              </Button>
               <Button
                 kind="danger--tertiary"
                 size="sm"
