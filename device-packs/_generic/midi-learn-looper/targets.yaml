@@ -266,6 +266,185 @@ groups:
         label: Track 4 — Auto-record arm (toggle)
         action_template:
           action: toggle
+      # T2512-DISPATCH-V2 — stop_mode / sync_mode / quantize_division
+      # are indexed-enum setters: value is a zero-based index into the
+      # enum's label tuple. fade_ms is a clamped float (0..5000 ms).
+      - verb: audio.looper.0.stop_mode
+        label: Track 1 — Stop mode (index → hard / fade)
+        action_template:
+          action: set
+        arg_prompts:
+          - name: index
+            label: Stop-mode index (0=hard, 1=fade)
+            type: int
+            default: 0
+            min: 0
+            max: 1
+      - verb: audio.looper.1.stop_mode
+        label: Track 2 — Stop mode (index → hard / fade)
+        action_template:
+          action: set
+        arg_prompts:
+          - name: index
+            label: Stop-mode index (0=hard, 1=fade)
+            type: int
+            default: 0
+            min: 0
+            max: 1
+      - verb: audio.looper.2.stop_mode
+        label: Track 3 — Stop mode (index → hard / fade)
+        action_template:
+          action: set
+        arg_prompts:
+          - name: index
+            label: Stop-mode index (0=hard, 1=fade)
+            type: int
+            default: 0
+            min: 0
+            max: 1
+      - verb: audio.looper.3.stop_mode
+        label: Track 4 — Stop mode (index → hard / fade)
+        action_template:
+          action: set
+        arg_prompts:
+          - name: index
+            label: Stop-mode index (0=hard, 1=fade)
+            type: int
+            default: 0
+            min: 0
+            max: 1
+      - verb: audio.looper.0.fade_ms
+        label: Track 1 — Fade duration (ms, clamped 0..5000)
+        action_template:
+          action: set
+        arg_prompts:
+          - name: ms
+            label: Fade duration (ms)
+            type: int
+            default: 250
+            min: 0
+            max: 5000
+      - verb: audio.looper.1.fade_ms
+        label: Track 2 — Fade duration (ms, clamped 0..5000)
+        action_template:
+          action: set
+        arg_prompts:
+          - name: ms
+            label: Fade duration (ms)
+            type: int
+            default: 250
+            min: 0
+            max: 5000
+      - verb: audio.looper.2.fade_ms
+        label: Track 3 — Fade duration (ms, clamped 0..5000)
+        action_template:
+          action: set
+        arg_prompts:
+          - name: ms
+            label: Fade duration (ms)
+            type: int
+            default: 250
+            min: 0
+            max: 5000
+      - verb: audio.looper.3.fade_ms
+        label: Track 4 — Fade duration (ms, clamped 0..5000)
+        action_template:
+          action: set
+        arg_prompts:
+          - name: ms
+            label: Fade duration (ms)
+            type: int
+            default: 250
+            min: 0
+            max: 5000
+      - verb: audio.looper.0.sync_mode
+        label: Track 1 — Sync mode (index → free / master / slave)
+        action_template:
+          action: set
+        arg_prompts:
+          - name: index
+            label: Sync-mode index (0=free, 1=master, 2=slave)
+            type: int
+            default: 0
+            min: 0
+            max: 2
+      - verb: audio.looper.1.sync_mode
+        label: Track 2 — Sync mode (index → free / master / slave)
+        action_template:
+          action: set
+        arg_prompts:
+          - name: index
+            label: Sync-mode index (0=free, 1=master, 2=slave)
+            type: int
+            default: 0
+            min: 0
+            max: 2
+      - verb: audio.looper.2.sync_mode
+        label: Track 3 — Sync mode (index → free / master / slave)
+        action_template:
+          action: set
+        arg_prompts:
+          - name: index
+            label: Sync-mode index (0=free, 1=master, 2=slave)
+            type: int
+            default: 0
+            min: 0
+            max: 2
+      - verb: audio.looper.3.sync_mode
+        label: Track 4 — Sync mode (index → free / master / slave)
+        action_template:
+          action: set
+        arg_prompts:
+          - name: index
+            label: Sync-mode index (0=free, 1=master, 2=slave)
+            type: int
+            default: 0
+            min: 0
+            max: 2
+      - verb: audio.looper.0.quantize_division
+        label: Track 1 — Quantize grid (index 0..6)
+        action_template:
+          action: set
+        arg_prompts:
+          - name: index
+            label: Quantize index (0=off, 1=whole, 2=half, 3=quarter, 4=eighth, 5=sixteenth, 6=thirty-second)
+            type: int
+            default: 0
+            min: 0
+            max: 6
+      - verb: audio.looper.1.quantize_division
+        label: Track 2 — Quantize grid (index 0..6)
+        action_template:
+          action: set
+        arg_prompts:
+          - name: index
+            label: Quantize index (0=off, 1=whole, 2=half, 3=quarter, 4=eighth, 5=sixteenth, 6=thirty-second)
+            type: int
+            default: 0
+            min: 0
+            max: 6
+      - verb: audio.looper.2.quantize_division
+        label: Track 3 — Quantize grid (index 0..6)
+        action_template:
+          action: set
+        arg_prompts:
+          - name: index
+            label: Quantize index (0=off, 1=whole, 2=half, 3=quarter, 4=eighth, 5=sixteenth, 6=thirty-second)
+            type: int
+            default: 0
+            min: 0
+            max: 6
+      - verb: audio.looper.3.quantize_division
+        label: Track 4 — Quantize grid (index 0..6)
+        action_template:
+          action: set
+        arg_prompts:
+          - name: index
+            label: Quantize index (0=off, 1=whole, 2=half, 3=quarter, 4=eighth, 5=sixteenth, 6=thirty-second)
+            type: int
+            default: 0
+            min: 0
+            max: 6
 
   - id: master
     label: Master bus

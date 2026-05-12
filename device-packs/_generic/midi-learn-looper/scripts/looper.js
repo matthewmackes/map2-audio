@@ -73,6 +73,33 @@ var Looper = Looper || {};
         };
     }
 
+    // T2512-PACK-V2 — helpers for the cycle-6/7/9 dispatcher verbs.
+    // ``_indexedEnum`` maps a CC value to an index by clamping the
+    // 0..127 range to the available enum positions. The dispatcher
+    // (T2512-DISPATCH-V2) re-clamps if we overshoot, so this is a
+    // best-effort mapping; the actual enum resolution lives Python-side.
+    function _indexedEnum(target, positions) {
+        return function (bytes) {
+            if (!bytes || bytes.length < 3) return;
+            var v = Math.max(0, Math.min(127, bytes[2]));
+            // Map 0..127 to 0..(positions-1) linearly, rounded down.
+            var idx = Math.floor((v / 128.0) * positions);
+            if (idx >= positions) idx = positions - 1;
+            engine.setValue(target, 'set', idx);
+        };
+    }
+
+    // T2512-PACK-V2 — fade_ms reads CC body as 0..5000 ms (linear).
+    // 0..127 CC range covers a 5000ms span at ~39ms resolution.
+    function _fadeMs(target) {
+        return function (bytes) {
+            if (!bytes || bytes.length < 3) return;
+            var v = Math.max(0, Math.min(127, bytes[2]));
+            var ms = Math.round((v / 127.0) * 5000.0);
+            engine.setValue(target, 'set', ms);
+        };
+    }
+
     // Build the 4-track surface programmatically so a future MAX_TRACKS
     // bump only changes one constant in C++ / Python — the script keeps
     // working with no edits here.
@@ -96,6 +123,11 @@ var Looper = Looper || {};
             entry[bv] = _toggle('audio.looper.' + t + '.' + bv);
         }
         entry.level = _level('audio.looper.' + t + '.level');
+        // T2512-PACK-V2 — cycle-6/7/9 setters.
+        entry.stop_mode         = _indexedEnum('audio.looper.' + t + '.stop_mode', 2);
+        entry.sync_mode         = _indexedEnum('audio.looper.' + t + '.sync_mode', 3);
+        entry.quantize_division = _indexedEnum('audio.looper.' + t + '.quantize_division', 7);
+        entry.fade_ms           = _fadeMs('audio.looper.' + t + '.fade_ms');
         Looper.track[t] = entry;
     }
 
@@ -122,6 +154,10 @@ var Looper = Looper || {};
         globalThis[prefix + 'one_shot']   = slot.one_shot;
         globalThis[prefix + 'auto_armed'] = slot.auto_armed;
         globalThis[prefix + 'level']      = slot.level;
+        globalThis[prefix + 'stop_mode']         = slot.stop_mode;
+        globalThis[prefix + 'sync_mode']         = slot.sync_mode;
+        globalThis[prefix + 'quantize_division'] = slot.quantize_division;
+        globalThis[prefix + 'fade_ms']           = slot.fade_ms;
     }
     globalThis['Looper.master.level'] = Looper.master.level;
 })();

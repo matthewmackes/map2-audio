@@ -129,11 +129,13 @@ run('master level setter scales identically', () => {
 // Coverage: every track exposes the full handler surface
 // ----------------------------------------------------------------------
 
-run('every track 0..3 exposes all 13 verbs on globalThis', () => {
+run('every track 0..3 exposes all 17 verbs on globalThis', () => {
     const ctx = loadLooperScript();
     const expected = ['record', 'stop', 'clear', 'undo', 'redo',
                       'muted', 'soloed', 'reverse', 'half_speed',
-                      'locked', 'one_shot', 'auto_armed', 'level'];
+                      'locked', 'one_shot', 'auto_armed', 'level',
+                      // T2512-PACK-V2 — cycle-6/7/9 setters.
+                      'stop_mode', 'sync_mode', 'quantize_division', 'fade_ms'];
     for (let t = 0; t < 4; t++) {
         for (const v of expected) {
             const key = 'Looper.track_' + t + '.' + v;
@@ -175,6 +177,52 @@ run('auto_armed toggle uses action=toggle and routes per track', () => {
     assert.equal(ctx.calls.length, 1);
     assert.equal(ctx.calls[0].target, 'audio.looper.3.auto_armed');
     assert.equal(ctx.calls[0].action, 'toggle');
+});
+
+// T2512-PACK-V2 — cycle-6/7/9 setters.
+run('stop_mode maps CC 0 → index 0 ("hard")', () => {
+    const ctx = loadLooperScript();
+    ctx.sandbox['Looper.track_0.stop_mode']([0xB0, 100, 0]);
+    assert.equal(ctx.calls.length, 1);
+    assert.equal(ctx.calls[0].target, 'audio.looper.0.stop_mode');
+    assert.equal(ctx.calls[0].action, 'set');
+    assert.equal(ctx.calls[0].value, 0);
+});
+
+run('stop_mode maps CC 127 → index 1 ("fade")', () => {
+    const ctx = loadLooperScript();
+    ctx.sandbox['Looper.track_0.stop_mode']([0xB0, 100, 127]);
+    assert.equal(ctx.calls[0].value, 1);
+});
+
+run('sync_mode maps CC 0/64/127 to indices 0/1/2', () => {
+    const ctx = loadLooperScript();
+    ctx.sandbox['Looper.track_0.sync_mode']([0xB0, 101, 0]);
+    ctx.sandbox['Looper.track_0.sync_mode']([0xB0, 101, 64]);
+    ctx.sandbox['Looper.track_0.sync_mode']([0xB0, 101, 127]);
+    assert.equal(ctx.calls[0].value, 0);
+    assert.equal(ctx.calls[1].value, 1);
+    assert.equal(ctx.calls[2].value, 2);
+});
+
+run('quantize_division spans 7 indices across CC 0..127', () => {
+    const ctx = loadLooperScript();
+    // CC 0 → 0; CC 127 → 6 (last index for 7 positions).
+    ctx.sandbox['Looper.track_2.quantize_division']([0xB0, 102, 0]);
+    ctx.sandbox['Looper.track_2.quantize_division']([0xB0, 102, 127]);
+    assert.equal(ctx.calls[0].target, 'audio.looper.2.quantize_division');
+    assert.equal(ctx.calls[0].value, 0);
+    assert.equal(ctx.calls[1].value, 6);
+});
+
+run('fade_ms maps CC 0..127 to 0..5000 ms', () => {
+    const ctx = loadLooperScript();
+    ctx.sandbox['Looper.track_1.fade_ms']([0xB0, 103, 0]);
+    ctx.sandbox['Looper.track_1.fade_ms']([0xB0, 103, 127]);
+    assert.equal(ctx.calls[0].target, 'audio.looper.1.fade_ms');
+    assert.equal(ctx.calls[0].action, 'set');
+    assert.equal(ctx.calls[0].value, 0);
+    assert.equal(ctx.calls[1].value, 5000);
 });
 
 summary();

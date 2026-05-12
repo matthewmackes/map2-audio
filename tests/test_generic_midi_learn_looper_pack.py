@@ -118,11 +118,13 @@ def test_mixer_group_covers_every_track_and_setter(catalog: dict) -> None:
         f"audio.looper.{track}.{kind}"
         for track in range(4)
         # T2512-LOCK-MIDI adds ``locked``, T2512-OS adds ``one_shot``,
-        # T2512-AUTO adds ``auto_armed`` alongside the original mixer
-        # setters.
+        # T2512-AUTO adds ``auto_armed``, T2512-PACK-V2 adds the four
+        # cycle-6/7/9 state setters (stop_mode / fade_ms / sync_mode /
+        # quantize_division) alongside the original mixer setters.
         for kind in (
             "level", "muted", "soloed", "reverse", "half_speed",
             "locked", "one_shot", "auto_armed",
+            "stop_mode", "fade_ms", "sync_mode", "quantize_division",
         )
     }
     assert verbs == expected
@@ -185,10 +187,10 @@ def test_level_setters_prompt_for_db_value(catalog: dict) -> None:
 
 
 def test_catalog_total_verb_count(catalog: dict) -> None:
-    """20 stomp verbs + 32 mixer setters (T2512-LOCK-MIDI added 4 ×
-    locked; T2512-OS added 4 × one_shot; T2512-AUTO added 4 ×
-    auto_armed) + 1 master = 53 total."""
-    assert len(_flat_verbs(catalog)) == 53
+    """20 stomp verbs + 48 mixer setters (12 kinds × 4 tracks: original
+    5 + locked + one_shot + auto_armed + stop_mode + fade_ms +
+    sync_mode + quantize_division) + 1 master = 69 total."""
+    assert len(_flat_verbs(catalog)) == 69
 
 
 # ---------------------------------------------------------------------------
