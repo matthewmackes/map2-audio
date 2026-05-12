@@ -104,6 +104,41 @@ EDIROL_UA1000 = {
     "buffer_size": 64,
 }
 
+# TASCAM US-144MKII USB 2.0 audio interface (T2515 tier-1).
+#
+# - Vendor-specific kernel driver `snd-usb-us144mkii` (in-tree on kernel >= 6.x).
+#   Two-stage USB enumeration: 0644:800F (boot/loader) → 0644:8020 (operational
+#   after firmware upload). Only the operational PID is referenced here.
+# - 4-in / 4-out fixed layout: channels 1-2 analog (mic/line/inst combo XLR/TRS),
+#   channels 3-4 S/PDIF coax RCA. MIDI via separate ALSA-rawmidi seq client.
+# - Sample-rate switching mid-stream is unreliable on this driver — the safety
+#   wrapper in `juce_engine_service` stops PCM streams before any SR change.
+# - Tier-1 ship pins 48 kHz / 64 samples to match the platform-wide Tier A locks
+#   (`audio.sample_rate=48000`, `audio.buffer_size=64`).
+TASCAM_US144MKII = {
+    "vendor_id": "0644",
+    "product_id": "8020",
+    "boot_product_id": "800F",
+    "name": "TASCAM US-144MKII",
+    "manufacturer": "TASCAM",
+    "alsa_device": "hw:US144MKII",
+    "alsa_device_alt": "hw:1,0",
+    "kernel_module": "snd-usb-us144mkii",
+    "alsa_card_name_pattern": "USx_4_Mk_II",   # kernel-given card name pattern
+    "sample_rate": 48000,
+    "input_channels": 4,    # 2 analog + 2 S/PDIF
+    "output_channels": 4,   # 2 analog + 2 S/PDIF
+    "format": "S24_3LE",
+    "period_size": 64,
+    "buffer_size": 64,
+    # Channel-index layout for downstream consumers (effects-bridge, routing):
+    #   playback / capture both use 0-indexed: 0,1 = analog L/R, 2,3 = S/PDIF L/R.
+    "spdif_send_channels": (2, 3),
+    "spdif_return_channels": (2, 3),
+    "analog_send_channels": (0, 1),
+    "analog_return_channels": (0, 1),
+}
+
 
 @dataclass
 class AudioEngineConfig:

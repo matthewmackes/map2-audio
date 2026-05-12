@@ -1087,18 +1087,20 @@ try:
 
             loader = get_plugin_loader()
             if not loader:
-                # If loader not available, return JUCE processors only.
-                fallback_plugins = juce_processors
+                # If loader not available, return JUCE + hardware plugins only.
+                # T2517-2 — hardware-FX bridges live in `plugin_uris.py` and are
+                # not loader-dependent; surface them even when LV2 is offline.
+                fallback_plugins = juce_processors + _get_hardware_plugins()
                 if fallback_plugins:
                     with _plugin_cache_lock:
                         _discovered_plugins = list(fallback_plugins)
                         _cache_timestamp = time.time()
-                    logger.warning("Plugin loader not available, returning JUCE processors only")
+                    logger.warning("Plugin loader not available, returning JUCE + hardware plugins only")
                     return {
                         "plugins": fallback_plugins,
                         "count": len(fallback_plugins),
                         "cached": False,
-                        "warning": "LV2 loader not available, showing JUCE processors only",
+                        "warning": "LV2 loader not available, showing JUCE + hardware-bridge plugins only",
                         "native_inventory": _native_inventory_snapshot(fallback_plugins),
                     }
                 # If we have cached data, return it anyway
@@ -1131,13 +1133,18 @@ try:
                 logger.debug(f"Raw plugins from loader: {[(p.uri if hasattr(p, 'uri') else str(p)) for p in plugins]}")
                 lv2_plugins = [_transform_plugin(p) for p in plugins]
 
-                # Generic discovery surfaces expose JUCE native and LV2 plugins only.
-                combined_plugins = juce_processors + lv2_plugins
+                # T2517-2 — surface hardware-FX bridges (Lexicon MPX-1 et al.)
+                # alongside JUCE-native + LV2 plugins. The descriptor carries
+                # `singleton: true` + `requires_interface_capability` so the
+                # chooser can gate availability per current rig.
+                hw_plugins = _get_hardware_plugins()
+
+                combined_plugins = juce_processors + lv2_plugins + hw_plugins
                 with _plugin_cache_lock:
                     _discovered_plugins = combined_plugins
                     _cache_timestamp = time.time()
 
-                logger.info(f"Discovered {len(combined_plugins)} total plugins ({len(juce_processors)} JUCE + {len(lv2_plugins)} LV2, refresh={refresh})")
+                logger.info(f"Discovered {len(combined_plugins)} total plugins ({len(juce_processors)} JUCE + {len(lv2_plugins)} LV2 + {len(hw_plugins)} hardware, refresh={refresh})")
                 logger.info(f"Plugin URIs: {[p.get('uri') for p in combined_plugins]}")
                 return {
                     "plugins": combined_plugins,

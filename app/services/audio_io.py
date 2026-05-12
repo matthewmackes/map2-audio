@@ -47,6 +47,18 @@ HOTONE_JOGG_DEVICE = {
     "buffer_size": 256,
 }
 
+# TASCAM US-144MKII (T2515 tier-1) — 2 analog + 2 S/PDIF (ch 3-4).
+# Operational PID 0x8020 only; boot/loader PID 0x800F is handled in the
+# tascam_us144mkii_preflight module before audio I/O is attempted.
+TASCAM_US144MKII_DEVICE = {
+    "name": "TASCAM US-144MKII",
+    "vendor_id": "0644",
+    "product_id": "8020",
+    "sample_rate": 48000,
+    "channels": 4,      # 2 analog + 2 S/PDIF
+    "buffer_size": 64,  # matches Tier A locks; SR-change wrapper stops streams first
+}
+
 # Buffer size presets for different use cases
 BUFFER_PRESETS = {
     "ultra_low": 64,    # ~1.3ms @ 48kHz - studio only
@@ -537,6 +549,42 @@ class RealAudioIOManager:
             return True
         logger.warning("Hotone Jogg not found - using default device")
         return False
+
+    def find_tascam_us144mkii(self) -> Optional[int]:
+        """Find the TASCAM US-144MKII USB audio device index (T2515 tier-1).
+
+        Matches on the kernel-given card name pattern first ("USx_4_Mk_II"),
+        then on substring 'us-144' / 'tascam' to be robust to ALSA renaming.
+        """
+        devices = self.get_devices()
+        for device in devices:
+            name = device.name.lower()
+            if "usx_4_mk_ii" in name or "us-144" in name or "us 144" in name or "tascam" in name:
+                logger.info(f"Found TASCAM US-144MKII at device index {device.index}: {device.name}")
+                return device.index
+        return None
+
+    def auto_configure_tascam_us144mkii(self) -> bool:
+        """Auto-configure to use TASCAM US-144MKII as primary input/output (T2515).
+
+        Pins to 48 kHz / 64-sample buffer to match Tier A locks. The
+        snd-usb-us144mkii driver requires PCM streams to be stopped before any
+        sample-rate change; the SR-safety wrapper in juce_engine_service
+        enforces this for runtime changes — this function only sets the
+        canonical tier-1 defaults at boot.
+        """
+        idx = self.find_tascam_us144mkii()
+        if idx is None:
+            logger.warning("TASCAM US-144MKII not found")
+            return False
+        self.input_device = idx
+        self.output_device = idx
+        self.sample_rate = TASCAM_US144MKII_DEVICE["sample_rate"]
+        self.block_size = TASCAM_US144MKII_DEVICE["buffer_size"]
+        self.channels = TASCAM_US144MKII_DEVICE["channels"]
+        self._reallocate_buffers(self.block_size, self.channels)
+        logger.info(f"Auto-configured TASCAM US-144MKII at device {idx}")
+        return True
 
     def set_buffer_size(self, buffer_size: int) -> bool:
         """Change buffer size (requires stream restart).

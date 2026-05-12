@@ -27,6 +27,10 @@ logger = logging.getLogger(__name__)
 _KNOWN_USB_AUDIO_NAMES = {
     "0582:0074": "Edirol UA-1000",
     "84ef:0014": "Hotone Jogg USB Audio",
+    # TASCAM US-144MKII operational firmware-loaded PID. 0644:800F is the
+    # transient boot/loader PID; intentionally omitted so the device only
+    # registers as "connected" once snd-usb-us144mkii has finished re-enumeration.
+    "0644:8020": "TASCAM US-144MKII",
 }
 
 

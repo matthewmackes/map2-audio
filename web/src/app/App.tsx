@@ -31,6 +31,7 @@ const KNOWN_LEGACY_DEVICE_IDS = new Set<string>([
   'intelfx',
   'edirol-ua1000',
   'hotone-jogg',
+  'tascam-us144mkii',
   'lcd',
   'tesira',
 ])
@@ -158,6 +159,7 @@ const DiagnosticsAggregatePage = lazy(() => import('./components/Devices/Diagnos
 const PackSourcesAdminPage = lazy(() => import('./components/Devices/PackSourcesAdminPage').then(m => ({ default: m.PackSourcesAdminPage })))
 const EdirolUA1000View      = lazy(() => import('./components/Devices/EdirolUA1000/EdirolUA1000View').then(m => ({ default: m.EdirolUA1000View })))
 const HoToneJoGGView        = lazy(() => import('./components/Devices/HoToneJoGG/HoToneJoGGView').then(m => ({ default: m.HoToneJoGGView })))
+const TascamUS144MKIIView   = lazy(() => import('./components/Devices/TascamUS144MKII/TascamUS144MKIIView').then(m => ({ default: m.TascamUS144MKIIView })))
 // T2459-C1 — auto-rendered device panel for any pack/model under
 // device-packs/<vendor>/profiles/<model>.audio.yaml.
 const DevicePage            = lazy(() => import('./pages/DevicePage').then(m => ({ default: m.DevicePage })))
@@ -965,6 +967,8 @@ export function App() {
                                   <Route path="edirol-ua1000/:view" element={<EdirolUA1000View />} />
                                   <Route path="hotone-jogg" element={<HoToneJoGGView />} />
                                   <Route path="hotone-jogg/:view" element={<HoToneJoGGView />} />
+                                  <Route path="tascam-us144mkii" element={<TascamUS144MKIIView />} />
+                                  <Route path="tascam-us144mkii/:view" element={<TascamUS144MKIIView />} />
                                   {/* T2459-C1 — auto-rendered profile-driven device pages. */}
                                   <Route path="profile/:packId/:model" element={<RouteBoundary title="Device profile crashed" actionLabel="Reload"><DevicePage /></RouteBoundary>} />
                                   {/* T2459-G5 — Hardware Store device detail tabs (preview). */}
@@ -999,6 +1003,7 @@ export function App() {
                                 </Route>
                                 <Route path="/edirol-ua1000" element={<Navigate to="/devices/edirol-ua1000" replace />} />
                                 <Route path="/hotone-jogg" element={<Navigate to="/devices/hotone-jogg" replace />} />
+                                <Route path="/tascam-us144mkii" element={<Navigate to="/devices/tascam-us144mkii" replace />} />
                                 <Route path="/lcd" element={<Navigate to="/devices/lcd" replace />} />
                                 {/* T2490-6a — legacy bare /tesira/* hard-redirects to the
                                     canonical /avb/devices/tesira/* mount. */}

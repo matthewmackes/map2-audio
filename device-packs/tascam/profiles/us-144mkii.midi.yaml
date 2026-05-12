@@ -1,0 +1,24 @@
+schema_version: 1
+identity:
+  manufacturer: TASCAM (TEAC Corporation)
+  model: us-144mkii
+  alsa_client_pattern: 'US-144MKII MIDI'
+  hardware_id: alsa-seq:US-144MKII MIDI:0
+
+# T2515 ships the US-144MKII as a tier-1 audio interface. MIDI is exposed via
+# snd-rawmidi (standard ALSA-seq client), unaffected by the PipeWire UMP
+# bridge gap documented in reference_pipewire_ump_bridge_gap.md. No bindings
+# are declared here because the device has no hardware controls beyond
+# front-panel analog pots; the MIDI ports are pure I/O pass-through.
+
+scripts:
+  - scripts/us-144mkii-scripts.js
+
+controls: []
+
+notes: |
+  The US-144MKII front panel has no software-readable controls — gain pots,
+  +48 V switch, Hi-Z switch, MON MIX knob, LINE OUT level, and PHONES level
+  are all analog/hardware-only. The MIDI in/out ports on the rear panel
+  carry external MIDI 1.0 traffic with no relationship to the unit's audio
+  state.

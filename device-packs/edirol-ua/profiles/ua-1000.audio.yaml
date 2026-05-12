@@ -140,6 +140,17 @@ use_case_presets:
     ports_used: [spdif_in, spdif_out]
     routing: identity
 
+# T2517-3 — interface-level capability tags for effects-chooser availability
+# gating. The MPX-1 effects block requires `digital_io_stereo` and binds
+# preferentially to whichever interface advertises `aes_ebu`. The UA-1000
+# has S/PDIF coax + ADAT + R-BUS but no native AES/EBU, so AES is not
+# declared here.
+capabilities:
+  - digital_io_stereo
+  - spdif_coax
+  - adat
+  - r_bus
+
 metadata:
   product_image_urls:
     - 'https://www.roland.com/us/products/ua-1000/images/ua-1000_front.jpg'

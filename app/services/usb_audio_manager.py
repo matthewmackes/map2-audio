@@ -26,6 +26,7 @@ logger = logging.getLogger(__name__)
 AUDIO_INTERFACE_VENDOR_IDS = {
     "046d",  # Logitech
     "0582",  # Roland / Edirol
+    "0644",  # TASCAM (US-144MKII operational PID 0x8020; boot PID 0x800F)
     "0763",  # M-Audio
     "0d8c",  # C-Media
     "1235",  # Focusrite
@@ -109,6 +110,48 @@ HOTONE_DEVICES = {
 
 # Primary device for MAP2
 PRIMARY_DEVICE = HOTONE_DEVICES["jogg"]
+
+
+# ============================================================================
+# TASCAM DEVICE DEFINITIONS
+# ============================================================================
+
+@dataclass
+class TascamDevice:
+    """TASCAM USB audio device specification.
+
+    Note: TASCAM US-series interfaces are NOT USB Audio Class compliant — they
+    require the vendor-specific kernel driver `snd-usb-us144mkii` (in-tree on
+    kernel >= 6.x). The driver performs a two-stage USB enumeration: device
+    appears initially as the boot/loader PID, then re-enumerates to the
+    operational PID after firmware upload.
+    """
+    name: str
+    vendor_id: str
+    product_id: str               # operational PID (post firmware upload)
+    boot_product_id: str          # transient boot/loader PID
+    description: str
+    sample_rates: List[int] = field(default_factory=lambda: [44100, 48000, 88200, 96000])
+    bit_depth: int = 24
+    channels_in: int = 4          # 2 analog + 2 S/PDIF
+    channels_out: int = 4         # 2 analog + 2 S/PDIF
+    usb_class: str = "Vendor-specific (snd-usb-us144mkii)"
+    kernel_module: str = "snd-usb-us144mkii"
+
+
+TASCAM_DEVICES = {
+    "us-144mkii": TascamDevice(
+        name="TASCAM US-144MKII",
+        vendor_id="0644",
+        product_id="8020",
+        boot_product_id="800F",
+        description="TASCAM US-144MKII 4x4 USB 2.0 audio interface (2 analog + 2 S/PDIF coax)",
+        sample_rates=[44100, 48000, 88200, 96000],
+        bit_depth=24,
+        channels_in=4,
+        channels_out=4,
+    ),
+}
 
 
 @dataclass

@@ -1,0 +1,10 @@
+# Shared identifier rules for the TASCAM USB audio family.
+# TASCAM USB vendor ID is 0x0644. The US-144MKII has two distinct PIDs:
+#   0x800F — boot/loader stage (transient; before firmware upload)
+#   0x8020 — operational (post firmware upload by snd-usb-us144mkii)
+# Per-model ALSA card-name and JACK node patterns live in each profile YAML.
+
+vendor_id: 0x0644
+product_ids:
+  us-144mkii: 0x8020
+  us-144mkii-boot: 0x800F      # transitional; MAP2 surfaces as "boot mode" only

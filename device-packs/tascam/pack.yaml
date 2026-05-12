@@ -1,0 +1,20 @@
+schema_version: 1
+pack_id: tascam
+vendor:
+  name: TASCAM (TEAC Corporation)
+  website: https://tascam.com/
+  support_url: https://tascam.com/us/support/
+description: |
+  TASCAM USB audio interfaces, currently focused on the US-144MKII bench-tier
+  device. The US-144MKII is NOT USB Audio Class compliant — it requires the
+  vendor-specific in-tree kernel driver `snd-usb-us144mkii` (kernel >= 6.x).
+  Two-stage USB enumeration: 0644:800F (boot/loader) → 0644:8020 (operational
+  after firmware upload). MAP2 tier-1 pins this device to 48 kHz / 64-sample
+  to match the platform-wide Tier A locks; S/PDIF channels 3-4 are first-class
+  with `role: hardware_fx_bridge_capable` for the T2517 MPX-1 effects-block
+  fallback path.
+license: AGPL-3.0-only
+source: map2-native
+identifier_rules_path: shared/identifier_rules.yaml
+models:
+  - us-144mkii

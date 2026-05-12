@@ -19,6 +19,7 @@ export type DeviceKey =
   | 'rocktron-intelfx'
   | 'edirol-ua1000'
   | 'hotone-jogg'
+  | 'tascam-us144mkii'
   | 'lcd-console'
   | 'ground-control-pro'
 

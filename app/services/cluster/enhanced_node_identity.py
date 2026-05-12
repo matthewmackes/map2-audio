@@ -86,6 +86,10 @@ class NodeHardwareDetector:
     KNOWN_USB_AUDIO_IDS = {
         ("0582", "0074"): "Edirol UA-1000",
         ("84ef", "0014"): "Hotone Jogg USB Audio",
+        # TASCAM US-144MKII operational PID (post firmware upload). Boot/loader
+        # PID 0644:800F is intentionally omitted; snd-usb-us144mkii re-enumerates
+        # the device to 0644:8020 before audio I/O is usable.
+        ("0644", "8020"): "TASCAM US-144MKII",
     }
     
     @staticmethod

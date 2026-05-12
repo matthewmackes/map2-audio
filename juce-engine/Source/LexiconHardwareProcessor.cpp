@@ -1,14 +1,16 @@
 /**
  * MAP2 Audio Engine - Lexicon MPX-1 Hardware Processor
- * Routes audio through external Lexicon MPX-1 via S/PDIF coax.
+ * Routes audio through an external Lexicon MPX-1 via send/return on any
+ * interface advertising the hardware_fx_bridge_capable port role.
  *
  * processBlock() flow:
- *   1. Save dry copy
- *   2. Apply send gain → write to S/PDIF out channels on UA-1000
- *   3. Read S/PDIF return channels → latency compensation delay line
- *   4. Read compensated wet signal
- *   5. Apply return gain
- *   6. Blend dry/wet → write back to graph buffer
+ *   1. Load atomic channel-map + controls
+ *   2. Save dry copy
+ *   3. Apply send gain → write to configured send channels
+ *   4. Read configured return channels → latency compensation delay line
+ *   5. Read compensated wet signal
+ *   6. Apply return gain
+ *   7. Blend dry/wet → write back to graph buffer
  *
  * All buffers pre-allocated in prepareToPlay(). Zero heap allocations
  * in the audio callback path.
@@ -24,6 +26,7 @@ LexiconHardwareProcessor::LexiconHardwareProcessor()
         .withInput("Input", juce::AudioChannelSet::stereo(), true)
         .withOutput("Output", juce::AudioChannelSet::stereo(), true))
 {
+    setLatencySamples(DEFAULT_LATENCY_SAMPLES);
 }
 
 const juce::String LexiconHardwareProcessor::getName() const
@@ -68,25 +71,40 @@ void LexiconHardwareProcessor::processBlock(juce::AudioBuffer<float>& buffer,
     if (hwInputs_ == nullptr || hwOutputs_ == nullptr)
         return;
 
-    // Check S/PDIF channels are available
-    const bool hasSpdifSend = (hwNumOutputs_ > SPDIF_SEND_RIGHT);
-    const bool hasSpdifReturn = (hwNumInputs_ > SPDIF_RETURN_RIGHT);
+    // ---- Load per-instance channel mapping (atomic, no torn read) ----
+    const std::uint32_t packedMap = channelMap_.load(std::memory_order_relaxed);
+    const int sendL   = static_cast<int>( packedMap        & 0xFFu);
+    const int sendR   = static_cast<int>((packedMap >>  8) & 0xFFu);
+    const int returnL = static_cast<int>((packedMap >> 16) & 0xFFu);
+    const int returnR = static_cast<int>((packedMap >> 24) & 0xFFu);
 
-    if (!hasSpdifSend || !hasSpdifReturn)
+    const bool hasSends   = (hwNumOutputs_ > sendL && hwNumOutputs_ > sendR);
+    const bool hasReturns = (hwNumInputs_  > returnL && hwNumInputs_  > returnR);
+    if (!hasSends || !hasReturns)
         return;
 
-    // ---- Bypass: pass through unchanged, silence S/PDIF send ----
-    if (bypassed_.load(std::memory_order_relaxed)) {
-        // Write silence to S/PDIF out so the hardware doesn't get stale signal
+    // ---- Mid-stream remap: emit one block of silence to avoid clicks ----
+    if (muteNextBlock_.exchange(false, std::memory_order_acq_rel)) {
         for (int s = 0; s < numSamples; ++s) {
-            hwOutputs_[SPDIF_SEND_LEFT][s] = 0.0f;
-            hwOutputs_[SPDIF_SEND_RIGHT][s] = 0.0f;
+            hwOutputs_[sendL][s] = 0.0f;
+            hwOutputs_[sendR][s] = 0.0f;
+            for (int ch = 0; ch < numChannels; ++ch)
+                buffer.setSample(ch, s, 0.0f);
+        }
+        return;
+    }
+
+    // ---- Bypass: pass dry through, silence send so the hardware sees nothing ----
+    if (bypassed_.load(std::memory_order_relaxed)) {
+        for (int s = 0; s < numSamples; ++s) {
+            hwOutputs_[sendL][s] = 0.0f;
+            hwOutputs_[sendR][s] = 0.0f;
         }
         // Buffer passes through unchanged (dry signal)
         return;
     }
 
-    // Load atomic controls
+    // Load remaining atomic controls
     const float sendGain = sendGainLinear_.load(std::memory_order_relaxed);
     const float returnGain = returnGainLinear_.load(std::memory_order_relaxed);
     const float wetMix = dryWetMix_.load(std::memory_order_relaxed);
@@ -98,42 +116,37 @@ void LexiconHardwareProcessor::processBlock(juce::AudioBuffer<float>& buffer,
         dryBuffer_.copyFrom(ch, 0, buffer, ch, 0, numSamples);
     }
 
-    // ---- 2. Send to S/PDIF out (with send gain) ----
+    // ---- 2. Send to hardware out (with send gain) ----
     for (int s = 0; s < numSamples; ++s) {
-        hwOutputs_[SPDIF_SEND_LEFT][s] =
-            buffer.getSample(0, s) * sendGain;
-        hwOutputs_[SPDIF_SEND_RIGHT][s] =
+        hwOutputs_[sendL][s] = buffer.getSample(0, s) * sendGain;
+        hwOutputs_[sendR][s] =
             (numChannels > 1) ? buffer.getSample(1, s) * sendGain
                               : buffer.getSample(0, s) * sendGain;
     }
 
-    // ---- 3. Read S/PDIF return into delay buffer ----
-    // ---- 4. Read compensated samples from delay buffer ----
+    // ---- 3+4. Read returns into delay buffer; read compensated samples ----
     for (int s = 0; s < numSamples; ++s) {
-        // Write incoming S/PDIF return to delay line
         delayBuffers_[0][static_cast<size_t>(delayWritePos_)] =
-            hwInputs_[SPDIF_RETURN_LEFT][s];
+            hwInputs_[returnL][s];
         delayBuffers_[1][static_cast<size_t>(delayWritePos_)] =
-            hwInputs_[SPDIF_RETURN_RIGHT][s];
+            hwInputs_[returnR][s];
 
-        // Read from delay line with latency compensation
         int readPos = delayWritePos_ - latencySamples;
         if (readPos < 0)
             readPos += delayBufferSize_;
 
-        float wetL = delayBuffers_[0][static_cast<size_t>(readPos)] * returnGain;
-        float wetR = delayBuffers_[1][static_cast<size_t>(readPos)] * returnGain;
+        const float wetLs = delayBuffers_[0][static_cast<size_t>(readPos)] * returnGain;
+        const float wetRs = delayBuffers_[1][static_cast<size_t>(readPos)] * returnGain;
 
         // ---- 5. Blend dry/wet ----
-        float dryL = dryBuffer_.getSample(0, s);
-        float dryR = (numChannels > 1) ? dryBuffer_.getSample(1, s) : dryL;
+        const float dryLs = dryBuffer_.getSample(0, s);
+        const float dryRs = (numChannels > 1) ? dryBuffer_.getSample(1, s) : dryLs;
 
-        buffer.setSample(0, s, dryL * dryMix + wetL * wetMix);
+        buffer.setSample(0, s, dryLs * dryMix + wetLs * wetMix);
         if (numChannels > 1) {
-            buffer.setSample(1, s, dryR * dryMix + wetR * wetMix);
+            buffer.setSample(1, s, dryRs * dryMix + wetRs * wetMix);
         }
 
-        // Advance write position
         delayWritePos_ = (delayWritePos_ + 1) % delayBufferSize_;
     }
 }
@@ -147,6 +160,43 @@ double LexiconHardwareProcessor::getTailLengthSeconds() const
 void LexiconHardwareProcessor::setMeasuredLatencySamples(int samples)
 {
     setLatencySamples(juce::jlimit(0, MAX_LATENCY_SAMPLES, samples));
+}
+
+void LexiconHardwareProcessor::setChannelMapping(int sendLeft, int sendRight,
+                                                  int returnLeft, int returnRight)
+{
+    // Clamp to 8-bit range so all four indices fit in the packed atomic.
+    const auto clampByte = [](int v) {
+        return static_cast<std::uint8_t>(juce::jlimit(0, 254, v));
+    };
+    const std::uint32_t packed = packMap(
+        clampByte(sendLeft),
+        clampByte(sendRight),
+        clampByte(returnLeft),
+        clampByte(returnRight));
+    channelMap_.store(packed, std::memory_order_release);
+    muteNextBlock_.store(true, std::memory_order_release);
+}
+
+void LexiconHardwareProcessor::getChannelMapping(int& sendLeft, int& sendRight,
+                                                  int& returnLeft, int& returnRight) const
+{
+    const std::uint32_t packed = channelMap_.load(std::memory_order_acquire);
+    sendLeft   = static_cast<int>( packed        & 0xFFu);
+    sendRight  = static_cast<int>((packed >>  8) & 0xFFu);
+    returnLeft = static_cast<int>((packed >> 16) & 0xFFu);
+    returnRight= static_cast<int>((packed >> 24) & 0xFFu);
+}
+
+void LexiconHardwareProcessor::setConnectionType(ConnectionType type)
+{
+    connectionType_.store(static_cast<int>(type), std::memory_order_relaxed);
+}
+
+LexiconHardwareProcessor::ConnectionType LexiconHardwareProcessor::getConnectionType() const
+{
+    return static_cast<ConnectionType>(
+        connectionType_.load(std::memory_order_relaxed));
 }
 
 void LexiconHardwareProcessor::setHardwareBuffers(

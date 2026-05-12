@@ -1,0 +1,165 @@
+schema_version: 1
+identity:
+  manufacturer: TASCAM (TEAC Corporation)
+  model: US-144MKII
+  family: TASCAM US-series
+  hardware_id: usb:0644:8020
+  hardware_id_boot: usb:0644:800F          # transitional; surfaced as boot stage only
+  alsa_card_regex: '^USx_4_Mk_II'
+  jack_node_pattern: 'US-144MKII'
+  kernel_module: snd-usb-us144mkii         # in-tree kernel >= 6.x; no DKMS fallback
+
+# 4-in / 4-out: channels 1-2 analog (mic/line/inst combo XLR/TRS), 3-4 S/PDIF coax.
+# Channel-indices are 0-based on both playback and capture sides.
+ports:
+  - id: analog_in
+    kind: analog
+    direction: input
+    count: 2
+    sample_rates: [44100, 48000, 88200, 96000]
+    bit_depths: [24]
+    connectors: [xlr_combo_trs]
+    channel_indices: [0, 1]
+    jack_node_pattern: 'US-144MKII'
+    notes: |
+      Channel 1 is mic/line/inst (combo XLR/TRS).
+      Channel 2 is mic/line, with a front-panel Hi-Z switch for instrument level.
+      Front-panel +48 V switch is a single global toggle feeding both XLR sockets.
+      All gain pots, the +48 V switch, and the Hi-Z switch are hardware-only —
+      MAP2 cannot read or write them via USB.
+  - id: analog_out
+    kind: analog
+    direction: output
+    count: 2
+    sample_rates: [44100, 48000, 88200, 96000]
+    bit_depths: [24]
+    connectors: [rca]
+    channel_indices: [0, 1]
+    jack_node_pattern: 'US-144MKII'
+    notes: |
+      LINE OUT L/R (rear RCA) share DACs with the front-panel 1/4" headphone jack.
+      LINE OUT level and PHONES level knobs are hardware-only.
+
+  - id: spdif_in
+    kind: digital
+    direction: input
+    count: 2
+    sample_rates: [44100, 48000, 88200, 96000]
+    bit_depths: [24]
+    connectors: [rca_coax_spdif]
+    channel_indices: [2, 3]
+    jack_node_pattern: 'US-144MKII'
+    role: hardware_fx_bridge_capable        # T2517 MPX-1 effects-block fallback path
+    role_format: spdif_coax
+    notes: |
+      S/PDIF coax RCA. Channels 3-4 of the capture stream are always present
+      in the PCM stream even with no S/PDIF source connected (silent channels
+      rather than ENOTAVAIL). When used as the T2517 MPX-1 effects-block
+      return path on this device, this is the canonical port pair.
+  - id: spdif_out
+    kind: digital
+    direction: output
+    count: 2
+    sample_rates: [44100, 48000, 88200, 96000]
+    bit_depths: [24]
+    connectors: [rca_coax_spdif]
+    channel_indices: [2, 3]
+    jack_node_pattern: 'US-144MKII'
+    role: hardware_fx_bridge_capable
+    role_format: spdif_coax
+    notes: |
+      S/PDIF coax RCA. Used as the T2517 MPX-1 effects-block send path on
+      this device. Carries consumer-format channel-status bits (IEC 60958);
+      see T2517 docs for AES level-translation transformer requirements if
+      driving the MPX-1's AES XLR jacks instead of its S/PDIF coax jacks.
+
+# Single-stereo MIDI pair via snd-rawmidi (separate ALSA seq client).
+midi_ports:
+  - id: midi_in
+    kind: midi
+    direction: input
+    count: 1
+    connectors: [din5_midi]
+  - id: midi_out
+    kind: midi
+    direction: output
+    count: 1
+    connectors: [din5_midi]
+
+# Mixer surfaces — front-panel hardware only on this device. Document for the
+# Devices panel so the operator banner reflects what's adjustable from MAP2.
+mixer_surfaces:
+  - id: front_panel_monitor
+    kind: hardware
+    description: |
+      The front-panel MON MIX knob blends input monitoring against the
+      computer return signal entirely in analog. MAP2 cannot read or
+      write it via USB. The Devices banner surfaces this so operators
+      know to reach for the unit.
+  - id: front_panel_gain
+    kind: hardware
+    description: |
+      INPUT 1 / INPUT 2 gain pots are analog and not software-readable.
+      Use input metering on the Devices panel as the only digital level
+      reference.
+
+on_device_dsp: []
+
+# Tier-1 ship pins to 48 kHz (matches Tier A locks). Other rates are
+# declared per-port for future use; the SR-safety wrapper in
+# `juce_engine_service` enforces "stop streams before SR change" on this
+# driver because mid-stream SR switching is unreliable.
+sample_rate_policy:
+  tier1_default: 48000
+  tier1_buffer_size: 64
+  requires_stream_stop_for_sr_change: true
+  prefer_jack: true                       # MAP2_AUDIO_PREFER_JACK=1 required
+
+# Clock sources the operator can pick on the Devices panel's Clock tab.
+clock_sources:
+  - id: internal_48k
+    label: Internal (48 kHz)
+    is_default: true
+  - id: spdif_in
+    label: S/PDIF Input
+    requires_signal_on: spdif_in
+    notes: |
+      Slave the US-144MKII to an incoming S/PDIF clock. Only valid when a
+      live S/PDIF stream is detected on the coax input.
+
+routing_topology:
+  default_matrix: identity_4x4
+  allowed_routes:
+    - identity
+    - fan_out
+    - monitor_send
+
+loopback_ports:
+  playback: 'US-144MKII:playback_AUX0'
+  capture: 'US-144MKII:capture_AUX0'
+
+use_case_presets:
+  - id: stereo_record_play
+    name: 'Stereo record / play (analog only)'
+    description: 'Identity routing on channels 1-2; S/PDIF unused.'
+    ports_used: [analog_in, analog_out]
+    routing: identity
+  - id: mpx1_spdif_bridge
+    name: 'MPX-1 hardware FX bridge via S/PDIF'
+    description: |
+      T2517 effects-block routing: chain stereo sends to S/PDIF OUT 3-4,
+      reads from S/PDIF IN 3-4. Analog 1-2 free for instrument tracking.
+    ports_used: [analog_in, analog_out, spdif_in, spdif_out]
+    routing: monitor_send
+
+# Interface-level capability tags (T2517 effects-chooser availability gating).
+capabilities:
+  - digital_io_stereo
+  - spdif_coax
+  - midi_1_in_1_out
+
+metadata:
+  product_image_urls:
+    - 'https://tascam.com/content/images/products/us-144mkii/us-144mkii_front_l.jpg'
+  manual_url: 'https://tascam.com/us/product/us-144mkii/downloads'
+  vendor_support_url: 'https://tascam.com/us/support/'

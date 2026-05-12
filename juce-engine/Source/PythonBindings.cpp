@@ -2985,6 +2985,77 @@ PYBIND11_MODULE(map2_audio_engine, m) {
             return false;
         }, py::arg("gain_db"), "Set Lexicon MPX-1 return gain in dB")
 
+        // ---- T2517-1: per-instance channel + connection routing ----
+
+        .def("set_lexicon_channel_mapping",
+             [](Map2AudioEngine& self,
+                int sendL, int sendR, int returnL, int returnR) {
+            if (!self.isLexiconLoaded()) return false;
+            auto* p = self.getPluginHost().getProcessor(self.getLexiconInstanceId());
+            if (auto* lex = dynamic_cast<LexiconHardwareProcessor*>(p)) {
+                lex->setChannelMapping(sendL, sendR, returnL, returnR);
+                return true;
+            }
+            return false;
+        }, py::arg("send_left"), py::arg("send_right"),
+           py::arg("return_left"), py::arg("return_right"),
+           "Set MPX-1 per-instance send/return channel indices on the active interface")
+
+        .def("get_lexicon_channel_mapping", [](Map2AudioEngine& self) {
+            py::dict result;
+            if (!self.isLexiconLoaded()) {
+                result["loaded"] = false;
+                return result;
+            }
+            auto* p = self.getPluginHost().getProcessor(self.getLexiconInstanceId());
+            if (auto* lex = dynamic_cast<LexiconHardwareProcessor*>(p)) {
+                int sL = 0, sR = 0, rL = 0, rR = 0;
+                lex->getChannelMapping(sL, sR, rL, rR);
+                result["loaded"] = true;
+                result["send_left"] = sL;
+                result["send_right"] = sR;
+                result["return_left"] = rL;
+                result["return_right"] = rR;
+                return result;
+            }
+            result["loaded"] = false;
+            return result;
+        }, "Return current MPX-1 send/return channel mapping as a dict")
+
+        .def("set_lexicon_connection_type",
+             [](Map2AudioEngine& self, const std::string& type) {
+            if (!self.isLexiconLoaded()) return false;
+            auto* p = self.getPluginHost().getProcessor(self.getLexiconInstanceId());
+            auto* lex = dynamic_cast<LexiconHardwareProcessor*>(p);
+            if (!lex) return false;
+            if (type == "aes_ebu") {
+                lex->setConnectionType(LexiconHardwareProcessor::ConnectionType::AES_EBU);
+                return true;
+            }
+            if (type == "spdif_coax") {
+                lex->setConnectionType(LexiconHardwareProcessor::ConnectionType::SPDIF_COAX);
+                return true;
+            }
+            if (type == "spdif_optical") {
+                lex->setConnectionType(LexiconHardwareProcessor::ConnectionType::SPDIF_OPTICAL);
+                return true;
+            }
+            return false;
+        }, py::arg("connection_type"),
+           "Set MPX-1 connection format tag: 'aes_ebu' | 'spdif_coax' | 'spdif_optical'")
+
+        .def("set_lexicon_measured_latency_samples",
+             [](Map2AudioEngine& self, int samples) {
+            if (!self.isLexiconLoaded()) return false;
+            auto* p = self.getPluginHost().getProcessor(self.getLexiconInstanceId());
+            if (auto* lex = dynamic_cast<LexiconHardwareProcessor*>(p)) {
+                lex->setMeasuredLatencySamples(samples);
+                return true;
+            }
+            return false;
+        }, py::arg("samples"),
+           "Set MPX-1 measured round-trip latency for PDC (T2517 calibration wizard)")
+
         // ========================================
         // Plugin Management (Multi-Format)
         // ========================================

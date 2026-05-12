@@ -28,6 +28,7 @@ export const LEGACY_DEVICE_MANIFEST: ReadonlyArray<LegacyDeviceManifestEntry> = 
   { id: 'intelfx',                    label: 'IntelFX Processor',       legacyRoute: '/devices/intelfx',                    icon: DevicesIcon },
   { id: 'edirol-ua1000',              label: 'Edirol UA-1000',          legacyRoute: '/devices/edirol-ua1000',              icon: DevicesIcon },
   { id: 'hotone-jogg',                label: 'Hotone Jogg',             legacyRoute: '/devices/hotone-jogg',                icon: DevicesIcon },
+  { id: 'tascam-us144mkii',           label: 'TASCAM US-144MKII',       legacyRoute: '/devices/tascam-us144mkii',           icon: DevicesIcon },
   { id: 'lcd',                        label: 'LCD Displays',            legacyRoute: '/devices/lcd',                        icon: DevicesIcon },
   { id: 'tesira',                     label: 'Biamp Tesira',            legacyRoute: '/devices/tesira',                     icon: DevicesIcon },
   { id: 'maschine-mk1',               label: 'Maschine MK1',            legacyRoute: '/maschine',                           icon: DevicesIcon },

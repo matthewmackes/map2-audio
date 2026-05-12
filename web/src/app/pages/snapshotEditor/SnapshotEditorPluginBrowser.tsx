@@ -24,6 +24,7 @@ import { ComponentType, Dispatch, SetStateAction } from 'react'
 
 import { EmptyState } from '../../components/shared/EmptyState'
 import { BlockPicker } from '../../components/StateAuthority/BlockPicker'
+import { HardwareBridgeSection } from '../../components/Effects/MPX1Block/HardwareBridgeTile'
 import { getDisplayPluginName, sanitizeRestrictedDisplayText } from '../../../map2/displayNames'
 import { getCategoryConfig } from '../../grid/shared'
 import type { Chain, Plugin } from '../../../map2/types'
@@ -57,6 +58,14 @@ export interface SnapshotEditorPluginBrowserProps {
   featuredNativeGroups: SnapshotEditorPluginBrowserFeaturedGroup[]
   remainingNativeProcessors: Plugin[]
   groupedPlugins: Array<[string, Plugin[]]>
+
+  // T2517-4 — `is_hardware: true` plugins (hardware-FX bridges). Rendered in
+  // their own section above the LV2 grouping with availability + singleton-
+  // in-use affordances. Filtered out of `groupedPlugins` upstream so they
+  // do not double-render.
+  hardwarePlugins?: Plugin[]
+  // Current chain (for the side-panel deep-link from the hardware tile).
+  currentChainId?: string | null
 
   // Favorites + collapsed-category state (parent-owned Sets).
   favoritePlugins: Set<string>
@@ -101,6 +110,8 @@ export function SnapshotEditorPluginBrowser({
   snapshotEditingLocked,
   onAddPluginToCurrentChain,
   onShowDetails,
+  hardwarePlugins,
+  currentChainId,
 }: SnapshotEditorPluginBrowserProps) {
   if (!open) return null
 
@@ -330,6 +341,16 @@ export function SnapshotEditorPluginBrowser({
                   </div>
                 </section>
               )}
+
+              {/* T2517-4 — hardware-FX bridges (Lexicon MPX-1 et al.) */}
+              {hardwarePlugins && hardwarePlugins.length > 0 ? (
+                <HardwareBridgeSection
+                  hardwarePlugins={hardwarePlugins}
+                  currentChainId={currentChainId ?? null}
+                  snapshotEditingLocked={snapshotEditingLocked}
+                  onAddPluginToCurrentChain={onAddPluginToCurrentChain}
+                />
+              ) : null}
 
               {groupedPlugins.length > 0 && (
                 <section className="juce-grid-page__browser-section">
