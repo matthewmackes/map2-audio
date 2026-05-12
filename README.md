@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1622** Python | **1664** TypeScript | **222** C++/H | **149** Docs | **4371** total commits | **4** stars | **0** forks | **0** open issues
+**1622** Python | **1664** TypeScript | **222** C++/H | **149** Docs | **4373** total commits | **4** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`e3417f47`](https://github.com/matthewmackes/map2-audio/commit/e3417f475f3e1e6e3ff65a4e89e8f404732839d6) | feat(looper,ui): T2512-SLICE-UI — inline region editor fo... | Map2 Audio | 2026-05-12 |
+| [`67c76658`](https://github.com/matthewmackes/map2-audio/commit/67c7665830605fe5453d72987401fb813f439432) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-12 |
 | [`e00bb051`](https://github.com/matthewmackes/map2-audio/commit/e00bb05184ecff4d85062e9d0fa128c5ff581b81) | feat(looper): T2512-AUTO-TRIGGER — input-level state mach... | Map2 Audio | 2026-05-12 |
 | [`728f3392`](https://github.com/matthewmackes/map2-audio/commit/728f339236378a04f58dea7311a86111ee8b5925) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-12 |
 | [`39380382`](https://github.com/matthewmackes/map2-audio/commit/3938038230746b78b154f352c4ab89ae12cfcf6c) | docs(worklist): T2512 — second Continue run end-of-run ha... | Map2 Audio | 2026-05-12 |
 | [`da7ef1e2`](https://github.com/matthewmackes/map2-audio/commit/da7ef1e284e85cc7cc2c8201e05a3d31501fbb04) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-12 |
 | [`263a9cb8`](https://github.com/matthewmackes/map2-audio/commit/263a9cb88cd0edf43ddad50374570ab0a9c2dde0) | docs(looper,ui): T2512-INVENTORY-V2 — refresh LooperPage ... | Map2 Audio | 2026-05-12 |
 | [`1374cac0`](https://github.com/matthewmackes/map2-audio/commit/1374cac0cd6a6f11b5c1f71bd1b12e8e0310d1cf) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-12 |
-| [`139f9af8`](https://github.com/matthewmackes/map2-audio/commit/139f9af8d46712243215cd34ce00db8ac3255ddc) | fix(looper,ui): T2512-FIX-SYNC-TAG — honor sync_master_tr... | Map2 Audio | 2026-05-12 |
-| [`9dbb57f3`](https://github.com/matthewmackes/map2-audio/commit/9dbb57f3af55c5631bbd21bbaed8eda666c444ec) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-12 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
