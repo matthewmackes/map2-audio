@@ -30,7 +30,9 @@ from __future__ import annotations
 
 import asyncio
 import logging
+from collections import deque
 from dataclasses import dataclass, field
+from datetime import datetime, timezone
 from enum import Enum
 from typing import Any, Callable, Optional
 
@@ -58,6 +60,30 @@ class TrackState(int, Enum):
             TrackState.OVERDUBBING: "overdubbing",
             TrackState.STOPPED:     "stopped",
         }[self]
+
+
+@dataclass(frozen=True)
+class ActivityEvent:
+    """T2512-ACTIVITY — single entry in the looper activity log.
+
+    Records that a mutating verb was invoked, with enough context
+    (timestamp, verb name, optional track index, short summary) for
+    an operator to audit what changed when. Loop content / engine
+    state isn't captured — this is an operator-actions log, not a
+    full snapshot stream.
+    """
+    timestamp_iso: str
+    verb: str
+    track: Optional[int]
+    summary: str
+
+    def to_payload(self) -> dict[str, Any]:
+        return {
+            "timestamp_iso": self.timestamp_iso,
+            "verb": self.verb,
+            "track": self.track,
+            "summary": self.summary,
+        }
 
 
 @dataclass(frozen=True)
@@ -292,6 +318,10 @@ class LooperService:
         # no-op in that case. Engine-side application of the snapped
         # length lands later in a focused engine slice.
         self._quantize_division: list[str] = ["off", "off", "off", "off"]
+        # T2512-ACTIVITY — bounded in-memory log of recent verb
+        # invocations. Cap is 200 events; oldest get dropped first.
+        # Operator-facing audit trail, not a full state stream.
+        self._activity: deque[ActivityEvent] = deque(maxlen=200)
         # T2512-WS — fan-out hook for status changes. Set by
         # ``init_looper_ws_bridge`` at lifespan startup; remains None
         # in tests where WS isn't wired. The broadcaster is sync —
@@ -318,6 +348,51 @@ class LooperService:
     ) -> None:
         """T2512-WS — wire the WebSocket fan-out. Idempotent."""
         self._broadcaster = broadcaster
+
+    def _record_activity(
+        self,
+        verb: str,
+        track: Optional[int] = None,
+        summary: str = "",
+    ) -> None:
+        """T2512-ACTIVITY — append a single event to the ring buffer.
+
+        Internal helper called from mutating verbs. Time source is
+        ``datetime.utcnow()`` formatted as ISO 8601 with a trailing
+        Z — same convention map2's audit log uses elsewhere.
+
+        Never raises: a failure to record activity must not break a
+        verb call. Swallows everything with a debug log.
+        """
+        try:
+            ts = datetime.now(timezone.utc).isoformat().replace(
+                "+00:00", "Z"
+            )
+            self._activity.append(
+                ActivityEvent(
+                    timestamp_iso=ts,
+                    verb=verb,
+                    track=track,
+                    summary=summary,
+                )
+            )
+        except Exception as exc:  # noqa: BLE001
+            logger.debug(
+                "looper.record_activity: append failed (swallowed): %s", exc
+            )
+
+    def get_activity(self) -> list[ActivityEvent]:
+        """T2512-ACTIVITY — snapshot copy of the recent activity log.
+
+        Oldest first; newest last. Returns a list (not the deque) so
+        callers can iterate without worrying about the buffer
+        mutating mid-iteration.
+        """
+        return list(self._activity)
+
+    def clear_activity(self) -> None:
+        """T2512-ACTIVITY — drop every recorded event."""
+        self._activity.clear()
 
     def _broadcast(self, status: "LooperStatus") -> "LooperStatus":
         """Fire-and-forget broadcast on every mutating verb's return
@@ -352,6 +427,7 @@ class LooperService:
             self._engine.looper_record(track)
         else:
             logger.info("looper.record (no engine binding): track=%d", track)
+        self._record_activity("record", track, f"track {track} record stomp")
         return self._broadcast(self.get_status())
 
     def stop_track(self, track: int) -> LooperStatus:
@@ -362,6 +438,7 @@ class LooperService:
         # remains intact through the stop.
         if self._engine and hasattr(self._engine, "looper_stop"):
             self._engine.looper_stop(track)
+        self._record_activity("stop", track, f"track {track} stop")
         return self._broadcast(self.get_status())
 
     def clear(self, track: int) -> LooperStatus:
@@ -369,6 +446,7 @@ class LooperService:
         self._enforce_lock(track, "clear")
         if self._engine and hasattr(self._engine, "looper_clear"):
             self._engine.looper_clear(track)
+        self._record_activity("clear", track, f"track {track} clear")
         return self._broadcast(self.get_status())
 
     def undo(self, track: int) -> LooperStatus:
@@ -376,6 +454,7 @@ class LooperService:
         self._enforce_lock(track, "undo")
         if self._engine and hasattr(self._engine, "looper_undo"):
             self._engine.looper_undo(track)
+        self._record_activity("undo", track, f"track {track} undo")
         return self._broadcast(self.get_status())
 
     def redo(self, track: int) -> LooperStatus:
@@ -383,6 +462,7 @@ class LooperService:
         self._enforce_lock(track, "redo")
         if self._engine and hasattr(self._engine, "looper_redo"):
             self._engine.looper_redo(track)
+        self._record_activity("redo", track, f"track {track} redo")
         return self._broadcast(self.get_status())
 
     # -------- Settings --------
@@ -887,6 +967,7 @@ class LooperService:
                 logger.debug(
                     "looper.reset_state: master_level reset failed: %s", exc
                 )
+        self._record_activity("reset_state", None, "full state reset")
         return self._broadcast(self.get_status())
 
     def apply_state(self, state: dict[str, Any]) -> LooperStatus:
@@ -999,6 +1080,10 @@ class LooperService:
             except (TypeError, ValueError):
                 pass
 
+        self._record_activity(
+            "apply_state", None,
+            f"snapshot-restore (schema v{state.get('schema_version', '?')})",
+        )
         return self._broadcast(self.get_status())
 
     # -------- Inspection --------

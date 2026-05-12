@@ -661,6 +661,54 @@ async def apply_state(
     return LooperStatusResponse.from_status(result)
 
 
+class ActivityEventResponse(BaseModel):
+    """T2512-ACTIVITY — single activity-log entry."""
+    timestamp_iso: str
+    verb: str
+    track: int | None = None
+    summary: str
+
+
+class ActivityLogResponse(BaseModel):
+    """T2512-ACTIVITY — the operator activity log envelope."""
+    events: list[ActivityEventResponse]
+    cap: int
+
+
+@router.get("/activity",
+            response_model=ActivityLogResponse,
+            operation_id="looper_get_activity",
+            summary="T2512-ACTIVITY — recent operator-action audit log (capped 200 events)")
+async def get_activity(
+    service: LooperService = Depends(_get_service),
+) -> ActivityLogResponse:
+    """T2512-ACTIVITY — return the recent activity log.
+
+    Oldest first; newest last. Capped at 200 events (configured on
+    the service's internal deque). Loop content and engine state
+    are not in this log — it's an operator-actions trail, not a
+    full state stream.
+    """
+    events = [
+        ActivityEventResponse(**ev.to_payload()) for ev in service.get_activity()
+    ]
+    return ActivityLogResponse(events=events, cap=200)
+
+
+@router.delete("/activity",
+               response_model=ActivityLogResponse,
+               operation_id="looper_clear_activity",
+               summary="T2512-ACTIVITY — drop every recorded activity event")
+async def clear_activity(
+    service: LooperService = Depends(_get_service),
+) -> ActivityLogResponse:
+    """T2512-ACTIVITY — clear the audit log. Returns an empty
+    ``ActivityLogResponse`` so the client can confirm the wipe in
+    one round-trip."""
+    service.clear_activity()
+    return ActivityLogResponse(events=[], cap=200)
+
+
 @router.post("/state/reset",
              response_model=LooperStatusResponse,
              operation_id="looper_reset_state",

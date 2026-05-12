@@ -1076,6 +1076,110 @@ def test_reset_state_no_engine_does_not_crash() -> None:
     service.reset_state()
 
 
+def test_activity_default_is_empty() -> None:
+    """T2512-ACTIVITY — fresh service has no events."""
+    service = LooperService()
+    assert service.get_activity() == []
+
+
+def test_activity_records_record_stop_clear_undo_redo() -> None:
+    """T2512-ACTIVITY — the five core stomp verbs each append an
+    event with the right track + verb name."""
+    engine = _FakeEngine()
+    service = LooperService(engine=engine)
+    service.record(0)
+    service.stop_track(0)
+    service.clear(0)
+    service.undo(0)
+    service.redo(0)
+    verbs = [ev.verb for ev in service.get_activity()]
+    assert verbs == ["record", "stop", "clear", "undo", "redo"]
+    # Every event got the track index attached.
+    assert all(ev.track == 0 for ev in service.get_activity())
+
+
+def test_activity_records_reset_state_with_null_track() -> None:
+    """T2512-ACTIVITY — the reset_state verb logs once with
+    track=None (it's a service-wide action, not per-track)."""
+    service = LooperService()
+    service.reset_state()
+    log = service.get_activity()
+    assert len(log) == 1
+    assert log[0].verb == "reset_state"
+    assert log[0].track is None
+
+
+def test_activity_records_apply_state() -> None:
+    service = LooperService()
+    service.apply_state({"schema_version": 1, "tracks": [{}, {}, {}, {}]})
+    log = service.get_activity()
+    assert len(log) == 1
+    assert log[0].verb == "apply_state"
+    assert "snapshot-restore" in log[0].summary
+    assert "v1" in log[0].summary
+
+
+def test_activity_timestamp_is_iso_z_format() -> None:
+    """T2512-ACTIVITY — timestamps follow the platform's ISO-Z
+    convention so the audit log lines up with other map2 logs."""
+    import re
+    engine = _FakeEngine()
+    service = LooperService(engine=engine)
+    service.record(0)
+    ts = service.get_activity()[0].timestamp_iso
+    # Format: YYYY-MM-DDTHH:MM:SS(.ffffff)?Z
+    assert re.match(r"^\d{4}-\d{2}-\d{2}T\d{2}:\d{2}:\d{2}", ts)
+    assert ts.endswith("Z")
+
+
+def test_activity_is_capped_at_200_events() -> None:
+    """T2512-ACTIVITY — bounded ring buffer; oldest events drop first."""
+    engine = _FakeEngine()
+    service = LooperService(engine=engine)
+    for _ in range(250):
+        service.stop_track(0)
+    log = service.get_activity()
+    # Cap is 200; the first 50 entries are gone.
+    assert len(log) == 200
+    # All remaining entries are stop_track events.
+    assert all(ev.verb == "stop" for ev in log)
+
+
+def test_clear_activity_drops_everything() -> None:
+    engine = _FakeEngine()
+    service = LooperService(engine=engine)
+    service.record(0)
+    service.stop_track(0)
+    assert len(service.get_activity()) == 2
+    service.clear_activity()
+    assert service.get_activity() == []
+
+
+def test_activity_does_not_raise_on_internal_failure() -> None:
+    """T2512-ACTIVITY — a broken timestamp source must not break verbs.
+    Verified by monkey-patching datetime to raise."""
+    import app.services.looper_service as svc_mod
+    engine = _FakeEngine()
+    service = LooperService(engine=engine)
+
+    real_datetime = svc_mod.datetime
+
+    class _BoomDatetime:
+        @classmethod
+        def now(cls, *_a, **_k):
+            raise RuntimeError("simulated clock failure")
+
+    svc_mod.datetime = _BoomDatetime  # type: ignore[attr-defined]
+    try:
+        # Verb must succeed even though record_activity raises internally.
+        service.record(0)
+        assert engine.record_calls == [0]
+        # No event recorded due to the failure.
+        assert service.get_activity() == []
+    finally:
+        svc_mod.datetime = real_datetime  # type: ignore[attr-defined]
+
+
 def test_reset_state_does_not_touch_engine_loop_content() -> None:
     """Capture content is engine-side. reset_state must not call any
     engine verb that would clear / stop the captured audio."""

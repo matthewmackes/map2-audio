@@ -686,6 +686,50 @@ def test_auto_record_push_missing_level_returns_422() -> None:
 
 
 # ---------------------------------------------------------------------------
+# T2512-ACTIVITY — audit log routes
+# ---------------------------------------------------------------------------
+
+
+def test_activity_route_returns_empty_log_by_default() -> None:
+    client, _, _ = _build_client()
+    resp = client.get("/api/v1/looper/activity")
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["events"] == []
+    assert body["cap"] == 200
+
+
+def test_activity_records_mutating_verbs() -> None:
+    client, _, _ = _build_client()
+    # Drive several mutating verbs.
+    client.post("/api/v1/looper/track/0/record")
+    client.post("/api/v1/looper/track/0/stop")
+    client.post("/api/v1/looper/track/2/clear")
+
+    resp = client.get("/api/v1/looper/activity")
+    events = resp.json()["events"]
+    verbs = [ev["verb"] for ev in events]
+    tracks = [ev["track"] for ev in events]
+    assert verbs == ["record", "stop", "clear"]
+    assert tracks == [0, 0, 2]
+    # Every event has a non-empty ISO timestamp + summary.
+    for ev in events:
+        assert ev["timestamp_iso"]
+        assert ev["summary"]
+
+
+def test_clear_activity_route_drops_everything() -> None:
+    client, _, _ = _build_client()
+    client.post("/api/v1/looper/track/0/record")
+    assert client.get("/api/v1/looper/activity").json()["events"]
+    resp = client.delete("/api/v1/looper/activity")
+    assert resp.status_code == 200
+    assert resp.json()["events"] == []
+    # Confirm via a second GET.
+    assert client.get("/api/v1/looper/activity").json()["events"] == []
+
+
+# ---------------------------------------------------------------------------
 # T2512-QUANT-WIRE — quantize-division route surface
 # ---------------------------------------------------------------------------
 

@@ -218,6 +218,21 @@ describe('looperApi HTTP surface', () => {
     expect(JSON.parse(String(init?.body))).toEqual({ level_db: -12 })
   })
 
+  it('getActivity() → GET /activity', async () => {
+    await looperApi.getActivity()
+    expect(fetchMock.mock.calls[0]?.[0]).toBe(`${BASE}/activity`)
+    const init = (fetchMock.mock.calls[0]?.[1] ?? {}) as RequestInit
+    // GET — no method override expected from fetchJson defaults.
+    expect(init.method ?? 'GET').toBe('GET')
+  })
+
+  it('clearActivity() → DELETE /activity', async () => {
+    await looperApi.clearActivity()
+    expect(fetchMock.mock.calls[0]?.[0]).toBe(`${BASE}/activity`)
+    const init = fetchMock.mock.calls[0]?.[1] as RequestInit | undefined
+    expect(init?.method).toBe('DELETE')
+  })
+
   // ---------- Master ----------
 
   it('setMasterLevel(0) → PATCH /master/level with {db: 0}', async () => {

@@ -154,6 +154,23 @@ export const looperApi = {
         body: JSON.stringify({ level_db }),
       },
     ),
+  /** T2512-ACTIVITY — fetch the operator-actions audit log (capped 200 events). */
+  getActivity: () =>
+    fetchJson<{
+      events: Array<{
+        timestamp_iso: string
+        verb: string
+        track: number | null
+        summary: string
+      }>
+      cap: number
+    }>(`${BASE}/activity`),
+  /** T2512-ACTIVITY — drop every recorded activity event. */
+  clearActivity: () =>
+    fetchJson<{
+      events: []
+      cap: number
+    }>(`${BASE}/activity`, { method: 'DELETE' }),
 }
 
 function patch(url: string, body: unknown): Promise<LooperStatus> {

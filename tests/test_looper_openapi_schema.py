@@ -23,7 +23,8 @@ from app.routes.looper import router as looper_router
 EXPECTED_PATHS_BY_METHOD: dict[str, set[str]] = {
     "get": {
         "/api/v1/looper/status",
-        "/api/v1/looper/state",  # T2512-SNAP
+        "/api/v1/looper/state",     # T2512-SNAP
+        "/api/v1/looper/activity",  # T2512-ACTIVITY
     },
     "post": {
         "/api/v1/looper/track/{track}/record",
@@ -56,6 +57,7 @@ EXPECTED_PATHS_BY_METHOD: dict[str, set[str]] = {
     "delete": {
         "/api/v1/looper/track/{track}/slices",           # T2512-SLICE — clear
         "/api/v1/looper/track/{track}/slices/{start_frame}",  # T2512-SLICE-DEL
+        "/api/v1/looper/activity",                       # T2512-ACTIVITY
     },
 }
 
@@ -189,12 +191,16 @@ def test_every_looper_op_returns_a_known_response_model() -> None:
             ref = content.get("schema", {}).get("$ref", "")
             # GET /state → LooperStatePayload.
             # POST /track/{track}/auto-record/push → AutoRecordPushResponse.
+            # GET / DELETE /activity → ActivityLogResponse.
             # Everything else → LooperStatusResponse.
             if method == "get" and path == "/api/v1/looper/state":
                 if "LooperStatePayload" not in ref:
                     failures.append(f"{method.upper()} {path} → {ref!r}")
             elif path == "/api/v1/looper/track/{track}/auto-record/push":
                 if "AutoRecordPushResponse" not in ref:
+                    failures.append(f"{method.upper()} {path} → {ref!r}")
+            elif path == "/api/v1/looper/activity":
+                if "ActivityLogResponse" not in ref:
                     failures.append(f"{method.upper()} {path} → {ref!r}")
             else:
                 if "LooperStatusResponse" not in ref:
