@@ -47,6 +47,7 @@ EXPECTED_PATHS_BY_METHOD: dict[str, set[str]] = {
         "/api/v1/looper/track/{track}/stop-mode",        # T2512-FADE
         "/api/v1/looper/track/{track}/fade-ms",          # T2512-FADE
         "/api/v1/looper/track/{track}/sync-mode",        # T2512-SYNC
+        "/api/v1/looper/track/{track}/quantize-division",  # T2512-QUANT-WIRE
         "/api/v1/looper/master/level",
     },
     "delete": {
@@ -214,6 +215,7 @@ def test_looper_status_schema_contains_bpm_and_one_shot_fields() -> None:
         "stop_mode", "fade_ms",  # T2512-FADE
         "sync_mode",             # T2512-SYNC
         "slices",                # T2512-SLICE
+        "quantize_division",     # T2512-QUANT-WIRE
     ):
         assert required_field in track_props, (
             f"TrackStatusResponse.{required_field} missing from generated schema"

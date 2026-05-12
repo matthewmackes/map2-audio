@@ -866,6 +866,143 @@ def test_slice_payload_serialization() -> None:
 
 
 # ---------------------------------------------------------------------------
+# T2512-QUANT-WIRE — per-track quantize_division + quantize_record_length
+# ---------------------------------------------------------------------------
+
+
+def test_quantize_division_default_is_off() -> None:
+    service = LooperService()
+    status = service.get_status()
+    assert all(t.quantize_division == "off" for t in status.tracks)
+
+
+def test_set_quantize_division_accepts_known_grids() -> None:
+    service = LooperService()
+    for division in ("whole", "half", "quarter", "eighth",
+                     "sixteenth", "thirty-second", "1/4", "1/8"):
+        service.set_quantize_division(0, division)
+        assert service.get_status().tracks[0].quantize_division == division
+
+
+def test_set_quantize_division_rejects_unknown() -> None:
+    service = LooperService()
+    with pytest.raises(LooperServiceError) as exc:
+        service.set_quantize_division(0, "1/3")
+    assert exc.value.code == "invalid_quantize_division"
+
+
+def test_set_quantize_division_invalid_track_raises() -> None:
+    service = LooperService()
+    with pytest.raises(LooperServiceError) as exc:
+        service.set_quantize_division(9, "quarter")
+    assert exc.value.code == "invalid_track"
+
+
+def test_quantize_record_length_off_returns_raw(monkeypatch) -> None:
+    """The "off" default must be a no-op even when tempo is wired."""
+    service = LooperService()
+
+    class _FakeTempo:
+        def current_bpm(self) -> float:
+            return 120.0
+
+    import app.services.snapshot_tempo_service as tempo_mod
+    monkeypatch.setattr(tempo_mod, "SnapshotTempoService", lambda: _FakeTempo())
+
+    assert service.quantize_record_length(0, 33333) == 33333
+
+
+def test_quantize_record_length_snaps_to_quarter_at_120bpm(monkeypatch) -> None:
+    """120 BPM, quarter division = 24000 frames/beat. 23900 frames
+    snaps to 24000 (nearest)."""
+    service = LooperService()
+    service.set_quantize_division(0, "quarter")
+
+    class _FakeTempo:
+        def current_bpm(self) -> float:
+            return 120.0
+
+    import app.services.snapshot_tempo_service as tempo_mod
+    monkeypatch.setattr(tempo_mod, "SnapshotTempoService", lambda: _FakeTempo())
+
+    assert service.quantize_record_length(0, 23900) == 24000
+    assert service.quantize_record_length(0, 24100) == 24000
+    assert service.quantize_record_length(0, 0) == 0
+
+
+def test_quantize_record_length_zero_or_negative_passes_through() -> None:
+    service = LooperService()
+    service.set_quantize_division(0, "quarter")
+    assert service.quantize_record_length(0, 0) == 0
+    assert service.quantize_record_length(0, -42) == -42
+
+
+def test_quantize_record_length_no_tempo_returns_raw(monkeypatch) -> None:
+    """If the tempo service is unreachable, the helper falls back to
+    returning ``raw_frames`` unchanged — no usable grid."""
+    service = LooperService()
+    service.set_quantize_division(0, "quarter")
+
+    def _boom():
+        raise RuntimeError("tempo down")
+
+    import app.services.snapshot_tempo_service as tempo_mod
+    monkeypatch.setattr(tempo_mod, "SnapshotTempoService", _boom)
+
+    assert service.quantize_record_length(0, 33333) == 33333
+
+
+def test_quantize_record_length_invalid_track_raises() -> None:
+    service = LooperService()
+    with pytest.raises(LooperServiceError) as exc:
+        service.quantize_record_length(9, 24000)
+    assert exc.value.code == "invalid_track"
+
+
+def test_quantize_division_broadcasts() -> None:
+    received: list = []
+    service = LooperService(broadcaster=received.append)
+    service.set_quantize_division(0, "quarter")
+    service.set_quantize_division(0, "off")
+    assert len(received) == 2
+
+
+def test_quantize_division_persists_across_record() -> None:
+    engine = _FakeEngine()
+    service = LooperService(engine=engine)
+    service.set_quantize_division(0, "eighth")
+    service.record(0)
+    service.stop_track(0)
+    service.clear(0)
+    assert service.get_status().tracks[0].quantize_division == "eighth"
+
+
+def test_quantize_division_round_trips_through_snapshot_state() -> None:
+    a = LooperService()
+    a.set_quantize_division(0, "quarter")
+    a.set_quantize_division(2, "sixteenth")
+    payload = a.export_state()
+    b = LooperService()
+    b.apply_state(payload)
+    status = b.get_status()
+    assert status.tracks[0].quantize_division == "quarter"
+    assert status.tracks[2].quantize_division == "sixteenth"
+    assert status.tracks[1].quantize_division == "off"
+
+
+def test_apply_state_drops_invalid_quantize_division() -> None:
+    service = LooperService()
+    service.set_quantize_division(0, "quarter")
+    service.apply_state({
+        "tracks": [
+            {"quantize_division": "1/3"},  # unknown
+            {}, {}, {},
+        ],
+    })
+    assert service.get_status().tracks[0].quantize_division == "quarter"
+
+
+# ---------------------------------------------------------------------------
 # T2512-SNAP — export_state / apply_state primitive
 # ---------------------------------------------------------------------------
 
@@ -885,6 +1022,7 @@ def test_export_state_default_shape() -> None:
             "fade_ms": 250,
             "sync_mode": "free",
             "slices": [],
+            "quantize_division": "off",
         }
     assert payload["master_level_db"] == 0.0
 

@@ -67,6 +67,8 @@ def _http_for_error(exc: LooperServiceError) -> HTTPException:
         "invalid_slice": status.HTTP_400_BAD_REQUEST,
         "slice_overlap": status.HTTP_409_CONFLICT,
         "slice_limit":   status.HTTP_409_CONFLICT,
+        # T2512-QUANT-WIRE — unknown quantize division name.
+        "invalid_quantize_division": status.HTTP_400_BAD_REQUEST,
     }.get(exc.code, status.HTTP_500_INTERNAL_SERVER_ERROR)
     return HTTPException(status_code=code, detail=str(exc))
 
@@ -103,6 +105,7 @@ class TrackStatusResponse(BaseModel):
     fade_ms: int = 250                 # T2512-FADE — fade-out duration in ms
     sync_mode: str = "free"            # T2512-SYNC — "free" | "master" | "slave"
     slices: list["TrackSliceResponse"] = []   # T2512-SLICE — slice metadata
+    quantize_division: str = "off"     # T2512-QUANT-WIRE — auto-close grid
 
 
 class LooperStatusResponse(BaseModel):
@@ -156,6 +159,16 @@ class AddSliceRequest(BaseModel):
     start_frame: int = Field(..., ge=0)
     end_frame: int = Field(..., ge=1)
     label: str = ""
+
+
+class SetQuantizeDivisionRequest(BaseModel):
+    """T2512-QUANT-WIRE — quantize division setter.
+
+    Pattern intentionally permissive — the service layer validates
+    against the full allowlist (including 1/N aliases) so the error
+    message stays useful when an unknown name slips through.
+    """
+    division: str
 
 
 # ---------------------------------------------------------------------------
@@ -472,6 +485,27 @@ async def clear_track_slices(track: int,
     return LooperStatusResponse.from_status(result)
 
 
+@router.patch("/track/{track}/quantize-division",
+              response_model=LooperStatusResponse,
+              operation_id="looper_set_track_quantize_division",
+              summary="T2512-QUANT-WIRE — set the auto-close grid (\"off\" | grid name)")
+async def set_track_quantize_division(track: int,
+                                      body: SetQuantizeDivisionRequest,
+                                      service: LooperService = Depends(_get_service)) -> LooperStatusResponse:
+    """T2512-QUANT-WIRE — set per-track quantize grid for auto-close.
+
+    State-only in v1: the math is wired (``LooperService.quantize_record_length``)
+    so callers and the future engine-side auto-close can read it,
+    but recording stop currently still uses the raw playhead. Engine
+    integration lands later under T2512-QUANT-ENGINE.
+    """
+    try:
+        result = service.set_quantize_division(track, body.division)
+    except LooperServiceError as exc:
+        raise _http_for_error(exc)
+    return LooperStatusResponse.from_status(result)
+
+
 # ---------------------------------------------------------------------------
 # T2512-SNAP — snapshot integration primitive
 # ---------------------------------------------------------------------------
@@ -500,6 +534,7 @@ class LooperStateTrackPayload(BaseModel):
     fade_ms: int = 250
     sync_mode: str = "free"
     slices: list[TrackSliceResponse] = []
+    quantize_division: str = "off"
 
 
 class LooperStatePayload(BaseModel):

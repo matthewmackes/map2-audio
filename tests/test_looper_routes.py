@@ -484,6 +484,61 @@ def test_status_default_slices_empty() -> None:
 
 
 # ---------------------------------------------------------------------------
+# T2512-QUANT-WIRE — quantize-division route surface
+# ---------------------------------------------------------------------------
+
+
+def test_set_quantize_division_route_accepts_quarter() -> None:
+    client, _, _ = _build_client()
+    resp = client.patch(
+        "/api/v1/looper/track/0/quantize-division",
+        json={"division": "quarter"},
+    )
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["tracks"][0]["quantize_division"] == "quarter"
+
+
+def test_set_quantize_division_route_accepts_off() -> None:
+    client, _, _ = _build_client()
+    client.patch(
+        "/api/v1/looper/track/0/quantize-division",
+        json={"division": "eighth"},
+    )
+    resp = client.patch(
+        "/api/v1/looper/track/0/quantize-division",
+        json={"division": "off"},
+    )
+    assert resp.status_code == 200
+    assert resp.json()["tracks"][0]["quantize_division"] == "off"
+
+
+def test_set_quantize_division_rejects_unknown() -> None:
+    client, _, _ = _build_client()
+    resp = client.patch(
+        "/api/v1/looper/track/0/quantize-division",
+        json={"division": "1/3"},
+    )
+    assert resp.status_code == 400
+
+
+def test_set_quantize_division_invalid_track_returns_400() -> None:
+    client, _, _ = _build_client()
+    resp = client.patch(
+        "/api/v1/looper/track/9/quantize-division",
+        json={"division": "quarter"},
+    )
+    assert resp.status_code == 400
+
+
+def test_status_default_quantize_off() -> None:
+    client, _, _ = _build_client()
+    body = client.get("/api/v1/looper/status").json()
+    for track in body["tracks"]:
+        assert track["quantize_division"] == "off"
+
+
+# ---------------------------------------------------------------------------
 # T2512-SNAP — /state export + apply
 # ---------------------------------------------------------------------------
 

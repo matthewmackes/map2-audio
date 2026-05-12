@@ -122,6 +122,12 @@ class TrackStatus:
     # actual loop-length locking on the engine is RT-critical work
     # gated behind T2512-SYNC-LOCK.
     sync_mode:           str   = "free"
+    # T2512-QUANT-WIRE — per-track quantize grid for auto-close on
+    # record stop. "off" disables quantization (default — preserves
+    # T2512 v1 behavior). Valid divisions match looper_quantize:
+    # whole, half, quarter, eighth, sixteenth, thirty-second + 1/N
+    # aliases. State-only here; engine-side auto-close lands later.
+    quantize_division:   str   = "off"
     # T2512-SLICE — per-track non-destructive slice metadata. Ordered
     # by ``start_frame``, no overlaps within the same track (enforced
     # by the service-side setter). Region-editor UI lands as a
@@ -149,6 +155,7 @@ class TrackStatus:
             "fade_ms":            self.fade_ms,
             "sync_mode":          self.sync_mode,
             "slices":             [s.to_payload() for s in self.slices],
+            "quantize_division":  self.quantize_division,
         }
 
 
@@ -280,6 +287,11 @@ class LooperService:
         # slices. The setter sorts + validates (no overlaps); the
         # decoration step exposes an immutable tuple on TrackStatus.
         self._slices: list[list[TrackSlice]] = [[], [], [], []]
+        # T2512-QUANT-WIRE — per-track quantize grid for auto-close.
+        # "off" is the v1-compatible default; the snap helper is a
+        # no-op in that case. Engine-side application of the snapped
+        # length lands later in a focused engine slice.
+        self._quantize_division: list[str] = ["off", "off", "off", "off"]
         # T2512-WS — fan-out hook for status changes. Set by
         # ``init_looper_ws_bridge`` at lifespan startup; remains None
         # in tests where WS isn't wired. The broadcaster is sync —
@@ -620,6 +632,91 @@ class LooperService:
         self._slices[track] = []
         return self._broadcast(self.get_status())
 
+    # T2512-QUANT-WIRE — quantize state + decision math ----------------
+
+    _VALID_QUANTIZE_DIVISIONS = frozenset({
+        "off",
+        "whole", "1/1",
+        "half", "1/2",
+        "quarter", "1/4",
+        "eighth", "1/8",
+        "sixteenth", "1/16",
+        "thirty-second", "thirty_second", "1/32",
+    })
+
+    def set_quantize_division(self, track: int, division: str) -> LooperStatus:
+        """T2512-QUANT-WIRE — set the auto-close grid for a track.
+
+        ``"off"`` disables quantization (the v1-compatible default).
+        Any value from :data:`_VALID_QUANTIZE_DIVISIONS` is stored
+        as-is so the snap helper can resolve aliases at call time.
+
+        Raises ``LooperServiceError(invalid_quantize_division)`` for
+        anything outside the allowlist.
+        """
+        _validate_track(track)
+        if division not in self._VALID_QUANTIZE_DIVISIONS:
+            raise LooperServiceError(
+                code="invalid_quantize_division",
+                message=(
+                    f"quantize_division must be one of "
+                    f"{sorted(self._VALID_QUANTIZE_DIVISIONS)} (got {division!r})"
+                ),
+            )
+        self._quantize_division[track] = division
+        return self._broadcast(self.get_status())
+
+    def quantize_record_length(self, track: int, raw_frames: int) -> int:
+        """T2512-QUANT-WIRE — snap a raw recording length to the
+        track's quantize grid.
+
+        Returns ``raw_frames`` unchanged when:
+          - the track's quantize_division is ``"off"``, OR
+          - the snapshot tempo service is unreachable / returns a
+            zero/negative BPM (no usable grid), OR
+          - ``raw_frames`` is non-positive.
+
+        Otherwise calls ``looper_quantize.snap_frames_to_grid`` with
+        ``mode="nearest"`` (the operator's intent: the *closest*
+        bar/beat to where they actually let off the pedal). The
+        result is always an ``int`` ready for engine consumption.
+
+        This is a *decision* helper — no state mutation; callers
+        (engine-side auto-close, UI preview) read it as needed.
+        """
+        _validate_track(track)
+        if raw_frames <= 0:
+            return int(raw_frames)
+        division = self._quantize_division[track]
+        if division == "off":
+            return int(raw_frames)
+        # Lazy import keeps the looper service light when callers
+        # never touch quantize math (unit-test path).
+        from app.services import looper_quantize
+
+        bpm: Optional[float] = None
+        try:
+            from app.services.snapshot_tempo_service import SnapshotTempoService
+            bpm = SnapshotTempoService().current_bpm()
+        except Exception as exc:  # noqa: BLE001
+            logger.debug(
+                "quantize_record_length: tempo read failed (swallowed): %s",
+                exc,
+            )
+        if bpm is None or bpm <= 0:
+            return int(raw_frames)
+
+        try:
+            return looper_quantize.snap_frames_to_grid(
+                int(raw_frames), bpm, division, mode="nearest"
+            )
+        except looper_quantize.QuantizeError as exc:
+            logger.warning(
+                "quantize_record_length: snap failed (track=%d, division=%r): %s",
+                track, division, exc,
+            )
+            return int(raw_frames)
+
     # -------- Snapshot integration (T2512-SNAP) --------
     #
     # The looper carries operator preferences that should travel with a
@@ -665,6 +762,7 @@ class LooperService:
                     "fade_ms":           self._fade_ms[i],
                     "sync_mode":         self._sync_mode[i],
                     "slices":            [s.to_payload() for s in self._slices[i]],
+                    "quantize_division": self._quantize_division[i],
                 }
                 for i in range(4)
             ],
@@ -713,6 +811,13 @@ class LooperService:
                 mode = track_state["sync_mode"]
                 if isinstance(mode, str) and mode in self._VALID_SYNC_MODES:
                     self._sync_mode[idx] = mode
+            if "quantize_division" in track_state:
+                qd = track_state["quantize_division"]
+                if (
+                    isinstance(qd, str)
+                    and qd in self._VALID_QUANTIZE_DIVISIONS
+                ):
+                    self._quantize_division[idx] = qd
             if "slices" in track_state:
                 raw_slices = track_state["slices"]
                 if isinstance(raw_slices, list):
@@ -836,6 +941,10 @@ class LooperService:
                 slices=(
                     tuple(self._slices[t.track])
                     if 0 <= t.track < 4 else ()
+                ),
+                quantize_division=(
+                    self._quantize_division[t.track]
+                    if 0 <= t.track < 4 else "off"
                 ),
             )
             for t in status.tracks
