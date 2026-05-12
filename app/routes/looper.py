@@ -148,6 +148,11 @@ class LooperStatusResponse(BaseModel):
     active_track_count: int
     sync_master: bool
     master_level_db: float
+    # T2512-MASTER-MUTE — operator-facing panic-mute on the master bus.
+    # Independent of per-track mute flags. When True, engine master
+    # gain is at the -60 dB floor; unmuting restores the saved
+    # pre-mute level.
+    master_muted: bool = False
     # T2512-CLOCK (inbound) — current snapshot tempo BPM.
     # Optional: None when the tempo service can't be reached.
     bpm: float | None = None
@@ -403,6 +408,23 @@ async def set_track_half_speed(track: int, body: SetBoolRequest,
 async def set_master_level(body: SetLevelRequest,
                            service: LooperService = Depends(_get_service)) -> LooperStatusResponse:
     return LooperStatusResponse.from_status(service.set_master_level_db(body.db))
+
+
+@router.patch("/master/muted",
+              response_model=LooperStatusResponse,
+              operation_id="looper_set_master_muted",
+              summary="T2512-MASTER-MUTE — toggle the panic-mute on the master bus")
+async def set_master_muted(body: SetBoolRequest,
+                           service: LooperService = Depends(_get_service)) -> LooperStatusResponse:
+    """T2512-MASTER-MUTE — toggle the master-bus panic mute.
+
+    When the toggle moves OFF→ON, the engine's master gain drops
+    to the -60 dB clamp floor and the operator's pre-mute level is
+    remembered. ON→OFF restores the saved level. Per-track mute
+    flags are untouched — this is a dedicated panic stop on the
+    master bus.
+    """
+    return LooperStatusResponse.from_status(service.set_master_muted(body.value))
 
 
 @router.patch("/track/{track}/locked",

@@ -31,6 +31,9 @@ class _FakeEngine:
         self.stop_calls: list[int] = []
         self.muted_calls: list[tuple[int, bool]] = []
         self.level_calls: list[tuple[int, float]] = []
+        # T2512-MASTER-MUTE — track every push to the master gain so
+        # tests can assert mute/unmute thresholds and pre-mute restore.
+        self.master_level_history: list[float] = []
 
     def looper_record(self, track: int) -> None:
         self.record_calls.append(track)
@@ -52,6 +55,9 @@ class _FakeEngine:
 
     def looper_set_level_db(self, track: int, db: float) -> None:
         self.level_calls.append((track, db))
+
+    def looper_set_master_level_db(self, db: float) -> None:
+        self.master_level_history.append(db)
 
     def looper_get_status(self) -> dict:
         # Return a stable 4-track empty snapshot — locking is a
@@ -1936,6 +1942,155 @@ def test_preset_names_in_to_payload() -> None:
     assert payload["preset_names"] == ["only"]
 
 
+# ---------------------------------------------------------------------------
+# T2512-MASTER-MUTE — master-bus panic mute toggle
+# ---------------------------------------------------------------------------
+
+
+def test_master_mute_default_is_off() -> None:
+    service = LooperService()
+    assert service.get_status().master_muted is False
+
+
+def test_set_master_muted_on_pushes_engine_to_floor() -> None:
+    engine = _FakeEngine()
+    service = LooperService(engine=engine)
+    service.set_master_level_db(-6.0)
+    engine.master_level_history = []  # reset call log
+    service.set_master_muted(True)
+    # Engine got pushed to -60 dB floor.
+    assert engine.master_level_history[-1] == -60.0
+    assert service.get_status().master_muted is True
+
+
+def test_set_master_muted_off_restores_premute_level() -> None:
+    engine = _FakeEngine()
+    service = LooperService(engine=engine)
+    service.set_master_level_db(-12.0)
+    service.set_master_muted(True)
+    engine.master_level_history = []
+    service.set_master_muted(False)
+    # Engine got the pre-mute level back.
+    assert engine.master_level_history[-1] == -12.0
+    assert service.get_status().master_muted is False
+
+
+def test_set_master_muted_to_same_state_is_noop_at_engine() -> None:
+    """ON→ON shouldn't re-push -60 dB; OFF→OFF shouldn't re-push the pre-mute level."""
+    engine = _FakeEngine()
+    service = LooperService(engine=engine)
+    service.set_master_level_db(-3.0)
+    service.set_master_muted(True)
+    engine.master_level_history = []
+    service.set_master_muted(True)  # already muted
+    assert engine.master_level_history == []
+    service.set_master_muted(False)
+    engine.master_level_history = []
+    service.set_master_muted(False)  # already unmuted
+    assert engine.master_level_history == []
+
+
+def test_set_master_level_while_muted_updates_premute_only() -> None:
+    """Operator turns the dial while muted; the saved level shifts but
+    the engine stays at the floor until unmute."""
+    engine = _FakeEngine()
+    service = LooperService(engine=engine)
+    service.set_master_muted(True)
+    engine.master_level_history = []
+    service.set_master_level_db(-9.0)
+    # Engine NOT touched.
+    assert engine.master_level_history == []
+    # But unmuting restores the new pre-mute level.
+    service.set_master_muted(False)
+    assert engine.master_level_history[-1] == -9.0
+
+
+def test_master_mute_broadcasts() -> None:
+    received: list = []
+    service = LooperService(broadcaster=received.append)
+    service.set_master_muted(True)
+    service.set_master_muted(False)
+    assert len(received) == 2
+    assert received[0].master_muted is True
+    assert received[1].master_muted is False
+
+
+def test_master_mute_independent_of_track_mute() -> None:
+    """Per-track mute calls are not changed when master mute toggles.
+    Verify by asserting the engine binding for per-track mute is
+    unaffected by master mute toggles."""
+    engine = _FakeEngine()
+    service = LooperService(engine=engine)
+    service.set_muted(0, True)
+    engine.muted_calls = []
+    # Master mute toggling should not generate per-track mute calls.
+    service.set_master_muted(True)
+    service.set_master_muted(False)
+    assert engine.muted_calls == []
+    # Master toggle landed back to unmuted in the service state.
+    assert service.get_status().master_muted is False
+
+
+def test_reset_state_unmutes_master() -> None:
+    engine = _FakeEngine()
+    service = LooperService(engine=engine)
+    service.set_master_level_db(-12.0)
+    service.set_master_muted(True)
+    engine.master_level_history = []
+    service.reset_state()
+    # reset_state sets level to 0.0 — that's the engine push.
+    assert engine.master_level_history[-1] == 0.0
+    status = service.get_status()
+    assert status.master_muted is False
+    assert status.master_level_db == 0.0
+
+
+def test_apply_state_round_trips_master_mute() -> None:
+    engine_a = _FakeEngine()
+    a = LooperService(engine=engine_a)
+    a.set_master_level_db(-6.0)
+    a.set_master_muted(True)
+    snap = a.export_state()
+    assert snap["master_muted"] is True
+
+    engine_b = _FakeEngine()
+    b = LooperService(engine=engine_b)
+    b.apply_state(snap)
+    status = b.get_status()
+    assert status.master_muted is True
+
+
+def test_apply_state_round_trips_unmuted() -> None:
+    engine_a = _FakeEngine()
+    a = LooperService(engine=engine_a)
+    a.set_master_level_db(-6.0)
+    # Not muted.
+    snap = a.export_state()
+    engine_b = _FakeEngine()
+    b = LooperService(engine=engine_b)
+    # Start b muted; apply should unmute.
+    b.set_master_muted(True)
+    b.apply_state(snap)
+    assert b.get_status().master_muted is False
+
+
+def test_master_mute_works_without_engine() -> None:
+    """No engine bound → toggle still flips the Python flag; reads
+    surface correctly through status."""
+    service = LooperService()  # engine=None
+    service.set_master_muted(True)
+    assert service.get_status().master_muted is True
+    service.set_master_muted(False)
+    assert service.get_status().master_muted is False
+
+
+def test_master_mute_payload_includes_key() -> None:
+    service = LooperService()
+    payload = service.get_status().to_payload()
+    assert "master_muted" in payload
+    assert payload["master_muted"] is False
+
+
 def test_activity_does_not_raise_on_internal_failure() -> None:
     """T2512-ACTIVITY — a broken timestamp source must not break verbs.
     Verified by monkey-patching datetime to raise."""
@@ -2164,6 +2319,8 @@ def test_export_state_default_shape() -> None:
             "quantize_division": "off",
         }
     assert payload["master_level_db"] == 0.0
+    # T2512-MASTER-MUTE — default not muted; round-trips in the payload.
+    assert payload["master_muted"] is False
 
 
 def test_export_state_reflects_operator_changes() -> None:

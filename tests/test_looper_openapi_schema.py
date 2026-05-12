@@ -60,6 +60,7 @@ EXPECTED_PATHS_BY_METHOD: dict[str, set[str]] = {
         "/api/v1/looper/track/{track}/quantize-division",  # T2512-QUANT-WIRE
         "/api/v1/looper/track/{track}/slices/{start_frame}",  # T2512-SLICE-RENAME
         "/api/v1/looper/master/level",
+        "/api/v1/looper/master/muted",  # T2512-MASTER-MUTE
     },
     "delete": {
         "/api/v1/looper/track/{track}/slices",           # T2512-SLICE — clear
@@ -285,4 +286,10 @@ def test_looper_status_schema_contains_bpm_and_one_shot_fields() -> None:
     assert "preset_names" in status_schema.get("properties", {}), (
         "LooperStatusResponse.preset_names missing from generated schema "
         "(T2512-PRESET regression)"
+    )
+
+    # T2512-MASTER-MUTE top-level field on LooperStatusResponse.
+    assert "master_muted" in status_schema.get("properties", {}), (
+        "LooperStatusResponse.master_muted missing from generated schema "
+        "(T2512-MASTER-MUTE regression)"
     )

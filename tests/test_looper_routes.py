@@ -688,6 +688,34 @@ def test_reset_state_route_does_not_require_a_body() -> None:
 
 
 # ---------------------------------------------------------------------------
+# T2512-MASTER-MUTE — master-bus panic mute toggle
+# ---------------------------------------------------------------------------
+
+
+def test_master_mute_default_off_in_status_payload() -> None:
+    client, _, _ = _build_client()
+    resp = client.get("/api/v1/looper/status")
+    body = resp.json()
+    assert body["master_muted"] is False
+
+
+def test_set_master_muted_on_then_off() -> None:
+    client, _, _ = _build_client()
+    on = client.patch("/api/v1/looper/master/muted", json={"value": True})
+    assert on.status_code == 200
+    assert on.json()["master_muted"] is True
+    off = client.patch("/api/v1/looper/master/muted", json={"value": False})
+    assert off.status_code == 200
+    assert off.json()["master_muted"] is False
+
+
+def test_master_mute_missing_value_returns_422() -> None:
+    client, _, _ = _build_client()
+    resp = client.patch("/api/v1/looper/master/muted", json={})
+    assert resp.status_code == 422
+
+
+# ---------------------------------------------------------------------------
 # T2512-PRESET — named in-memory state presets
 # ---------------------------------------------------------------------------
 

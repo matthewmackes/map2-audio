@@ -215,6 +215,13 @@ class LooperStatus:
     active_track_count: int
     sync_master:        bool
     master_level_db:    float
+    # T2512-MASTER-MUTE — operator-facing master mute flag. Python-
+    # side state: when True, the LooperService instructs the engine
+    # to drop master gain to -60 dB (the floor of the configured
+    # clamp), and remembers the operator's pre-mute level so an
+    # unmute restores it. Independent of per-track mute toggles —
+    # this is a panic-stop for the entire looper.
+    master_muted:       bool = False
     # T2512-CLOCK (inbound) — current snapshot tempo in BPM. Resolved
     # at status-read time from SnapshotTempoService; None when tempo
     # is unavailable (snapshot tempo service not wired, or read
@@ -248,6 +255,7 @@ class LooperStatus:
             "active_track_count": self.active_track_count,
             "sync_master":        self.sync_master,
             "master_level_db":    self.master_level_db,
+            "master_muted":       self.master_muted,
             "bpm":                self.bpm,
             "sync_master_track":  self.sync_master_track,
             "recent_activity":    [e.to_payload() for e in self.recent_activity],
@@ -383,6 +391,15 @@ class LooperService:
         # impact mutating verbs). Operator-facing diagnostics —
         # zero RT-path cost.
         self._metrics: dict[str, int] = {}
+        # T2512-MASTER-MUTE — operator-facing master mute. Python-
+        # side panic toggle: when True, the engine's master gain
+        # drops to the -60 dB clamp floor; the operator's pre-mute
+        # level is remembered so unmute restores it without losing
+        # the dial setting. set_master_level_db while muted just
+        # updates the saved pre-mute level (no audible change until
+        # unmute).
+        self._master_muted: bool = False
+        self._pre_mute_master_db: float = 0.0
         # T2512-PRESET — named in-memory state presets. Each entry
         # is the same payload shape as ``export_state()``. Cap at 32
         # presets so a runaway scripted save loop can't fill memory
@@ -584,10 +601,63 @@ class LooperService:
             self._engine.looper_set_half_speed(track, bool(half))
         return self._broadcast(self.get_status())
 
+    _MASTER_DB_MIN = -60.0
+    _MASTER_DB_MAX = 6.0
+
     def set_master_level_db(self, db: float) -> LooperStatus:
-        db = float(max(-60.0, min(6.0, db)))
-        if self._engine and hasattr(self._engine, "looper_set_master_level_db"):
-            self._engine.looper_set_master_level_db(db)
+        db = float(max(self._MASTER_DB_MIN, min(self._MASTER_DB_MAX, db)))
+        # T2512-MASTER-MUTE — while muted, the operator's dial change
+        # updates the *pre-mute* level (so unmute restores the new
+        # value) without lifting the engine gain off the floor.
+        if self._master_muted:
+            self._pre_mute_master_db = db
+        else:
+            if self._engine and hasattr(self._engine, "looper_set_master_level_db"):
+                self._engine.looper_set_master_level_db(db)
+            self._pre_mute_master_db = db
+        return self._broadcast(self.get_status())
+
+    def set_master_muted(self, muted: bool) -> LooperStatus:
+        """T2512-MASTER-MUTE — operator-facing panic mute.
+
+        When the toggle moves OFF→ON, the engine's master gain
+        drops to the -60 dB clamp floor and the pre-mute level is
+        remembered. ON→OFF restores the saved level so the operator
+        gets back the same mix balance without re-dialing.
+
+        Idempotent: toggling to the current state is a no-op (no
+        engine call, no broadcast suppression — we still broadcast
+        for observability). Per-track mute toggles are unaffected.
+        """
+        new_state = bool(muted)
+        was = self._master_muted
+        # Capture pre-mute level on the OFF→ON edge so we can restore
+        # exactly what was there. If the engine binding doesn't exist
+        # we still remember it for the snapshot/preset round-trip.
+        if new_state and not was:
+            # Already-stored pre_mute_master_db tracks the operator's
+            # last set level; no need to read engine state.
+            if self._engine and hasattr(self._engine, "looper_set_master_level_db"):
+                try:
+                    self._engine.looper_set_master_level_db(self._MASTER_DB_MIN)
+                except Exception as exc:  # noqa: BLE001
+                    logger.exception(
+                        "looper.set_master_muted: engine master-mute floor "
+                        "failed: %s", exc
+                    )
+        elif was and not new_state:
+            # Restore the saved level.
+            if self._engine and hasattr(self._engine, "looper_set_master_level_db"):
+                try:
+                    self._engine.looper_set_master_level_db(
+                        self._pre_mute_master_db
+                    )
+                except Exception as exc:  # noqa: BLE001
+                    logger.exception(
+                        "looper.set_master_muted: engine master-unmute restore "
+                        "failed: %s", exc
+                    )
+        self._master_muted = new_state
         return self._broadcast(self.get_status())
 
     def set_locked(self, track: int, locked: bool) -> LooperStatus:
@@ -1136,6 +1206,7 @@ class LooperService:
                 for i in range(4)
             ],
             "master_level_db": master_level,
+            "master_muted":    self._master_muted,
         }
 
     def reset_state(self) -> LooperStatus:
@@ -1171,6 +1242,11 @@ class LooperService:
         self._sync_mode = ["free", "free", "free", "free"]
         self._quantize_division = ["off", "off", "off", "off"]
         self._slices = [[], [], [], []]
+        # T2512-MASTER-MUTE — reset_state lifts the panic-mute flag
+        # and resets the saved pre-mute level so the operator
+        # doesn't get a surprise unmute after a fresh start.
+        self._master_muted = False
+        self._pre_mute_master_db = 0.0
         if (
             self._engine is not None
             and hasattr(self._engine, "looper_set_master_level_db")
@@ -1291,10 +1367,15 @@ class LooperService:
             )
 
         master_level = state.get("master_level_db")
+        master_muted_payload = state.get("master_muted")
         if master_level is not None:
             try:
                 db = float(master_level)
                 clamped = max(-60.0, min(6.0, db))
+                # T2512-MASTER-MUTE — always update the pre-mute level
+                # so apply followed by unmute restores the payload's
+                # intended balance.
+                self._pre_mute_master_db = clamped
                 if (
                     self._engine
                     and hasattr(self._engine, "looper_set_master_level_db")
@@ -1302,6 +1383,43 @@ class LooperService:
                     self._engine.looper_set_master_level_db(clamped)
             except (TypeError, ValueError):
                 pass
+
+        # T2512-MASTER-MUTE — if the payload includes the flag and asks
+        # for mute, apply it last so the engine sees a mute floor even
+        # if a level was also set. apply_state intentionally does NOT
+        # broadcast intermediate states; set_master_muted is called via
+        # the low-level path so the broadcast happens once at the end.
+        if master_muted_payload is not None:
+            should_mute = bool(master_muted_payload)
+            if should_mute and not self._master_muted:
+                if (
+                    self._engine
+                    and hasattr(self._engine, "looper_set_master_level_db")
+                ):
+                    try:
+                        self._engine.looper_set_master_level_db(
+                            self._MASTER_DB_MIN
+                        )
+                    except Exception as exc:  # noqa: BLE001
+                        logger.exception(
+                            "looper.apply_state: master-mute floor failed: %s",
+                            exc,
+                        )
+            elif not should_mute and self._master_muted:
+                if (
+                    self._engine
+                    and hasattr(self._engine, "looper_set_master_level_db")
+                ):
+                    try:
+                        self._engine.looper_set_master_level_db(
+                            self._pre_mute_master_db
+                        )
+                    except Exception as exc:  # noqa: BLE001
+                        logger.exception(
+                            "looper.apply_state: master-unmute restore "
+                            "failed: %s", exc,
+                        )
+            self._master_muted = should_mute
 
         self._record_activity(
             "apply_state", None,
@@ -1531,6 +1649,8 @@ class LooperService:
             # insertion order. Tuple-immutable so callers can't
             # accidentally mutate.
             preset_names=tuple(self._presets.keys()),
+            # T2512-MASTER-MUTE — Python-side panic mute toggle.
+            master_muted=self._master_muted,
         )
 
 
