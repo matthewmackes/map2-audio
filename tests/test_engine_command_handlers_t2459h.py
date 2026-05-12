@@ -264,14 +264,15 @@ def test_register_default_handlers_does_not_overlap_targets() -> None:
     # Exact targets: snapshot.recall, master.volume, transport.tap_tempo,
     # plus the 5 T2508 recorder verbs, plus audio.looper.master.level
     # from T2512-MIDI + audio.looper.master.muted from
-    # T2512-DISPATCH-MUTE = 10 total.
+    # T2512-DISPATCH-MUTE + audio.looper.preset.{save,apply,delete}
+    # from T2512-PRESET-DISPATCH = 13 total.
     # Pattern list: audio.chain.*.bypass + the 10 audio.looper.*.<verb>
     # patterns from T2512-MIDI + audio.looper.*.locked from
     # T2512-LOCK-MIDI + audio.looper.*.one_shot from T2512-OS +
     # audio.looper.*.auto_armed from T2512-AUTO + 4 new from
     # T2512-DISPATCH-V2 (stop_mode, sync_mode, quantize_division,
     # fade_ms) = 18.
-    assert len(dispatcher._exact) == 10  # type: ignore[attr-defined]
+    assert len(dispatcher._exact) == 13  # type: ignore[attr-defined]
     assert len(dispatcher._patterns) == 18  # type: ignore[attr-defined]
     expected_exact = {
         "audio.snapshot.recall",
@@ -284,6 +285,9 @@ def test_register_default_handlers_does_not_overlap_targets() -> None:
         "recorder.status",
         "audio.looper.master.level",
         "audio.looper.master.muted",
+        "audio.looper.preset.save",
+        "audio.looper.preset.apply",
+        "audio.looper.preset.delete",
     }
     assert set(dispatcher._exact.keys()) == expected_exact  # type: ignore[attr-defined]
 
@@ -812,3 +816,100 @@ def test_looper_dispatch_v2_invalid_tracks_dropped() -> None:
     dispatcher.dispatch(_frame("audio.looper.9.quantize_division", action="set", value=1.0))
     dispatcher.dispatch(_frame("audio.looper.9.fade_ms", action="set", value=100.0))
     assert called == []
+
+
+# ---------------------------------------------------------------------------
+# T2512-PRESET-DISPATCH — audio.looper.preset.{save,apply,delete}
+# ---------------------------------------------------------------------------
+
+
+def _make_dispatcher_with_preset_hooks() -> tuple[
+    EngineCommandDispatcher,
+    list[str],  # save
+    list[str],  # apply
+    list[str],  # delete
+]:
+    """T2512-PRESET-DISPATCH — record-only harness. Each verb appends
+    the preset name."""
+    save_calls: list[str] = []
+    apply_calls: list[str] = []
+    delete_calls: list[str] = []
+
+    hooks = HandlerHooks(
+        looper_save_preset=lambda *, name: save_calls.append(name),
+        looper_apply_preset=lambda *, name: apply_calls.append(name),
+        looper_delete_preset=lambda *, name: delete_calls.append(name),
+    )
+
+    dispatcher = EngineCommandDispatcher()
+    register_default_handlers(dispatcher, hooks=hooks)
+    return dispatcher, save_calls, apply_calls, delete_calls
+
+
+def test_looper_preset_save_routes_with_name() -> None:
+    d, save_calls, *_ = _make_dispatcher_with_preset_hooks()
+    d.dispatch(_frame("audio.looper.preset.save", args=["set-a"]))
+    assert save_calls == ["set-a"]
+
+
+def test_looper_preset_apply_routes_with_name() -> None:
+    d, _save, apply_calls, _delete = _make_dispatcher_with_preset_hooks()
+    d.dispatch(_frame("audio.looper.preset.apply", args=["verse-1"]))
+    assert apply_calls == ["verse-1"]
+
+
+def test_looper_preset_delete_routes_with_name() -> None:
+    d, _save, _apply, delete_calls = _make_dispatcher_with_preset_hooks()
+    d.dispatch(_frame("audio.looper.preset.delete", args=["old-take"]))
+    assert delete_calls == ["old-take"]
+
+
+def test_looper_preset_save_drops_missing_args() -> None:
+    """No args → handler logs WARN and returns; no hook call."""
+    d, save_calls, *_ = _make_dispatcher_with_preset_hooks()
+    d.dispatch(_frame("audio.looper.preset.save"))
+    assert save_calls == []
+    # Same shape as recorder verbs: handler counts as dispatched but no error.
+    assert d.dispatched_count == 1
+    assert d.errored_count == 0
+
+
+def test_looper_preset_apply_drops_blank_name() -> None:
+    """Blank name (empty / whitespace-only / None) → handler declines."""
+    d, _save, apply_calls, _delete = _make_dispatcher_with_preset_hooks()
+    d.dispatch(_frame("audio.looper.preset.apply", args=[""]))
+    d.dispatch(_frame("audio.looper.preset.apply", args=["   "]))
+    d.dispatch(_frame("audio.looper.preset.apply", args=[None]))
+    assert apply_calls == []
+    assert d.dispatched_count == 3
+    assert d.errored_count == 0
+
+
+def test_looper_preset_delete_ignores_non_set_action() -> None:
+    """Preset verbs are lifecycle triggers — no toggle / increment."""
+    d, _save, _apply, delete_calls = _make_dispatcher_with_preset_hooks()
+    d.dispatch(_frame("audio.looper.preset.delete", action="toggle", args=["x"]))
+    d.dispatch(_frame("audio.looper.preset.delete", action="increment", args=["x"]))
+    assert delete_calls == []
+
+
+def test_looper_preset_save_strips_whitespace_padding() -> None:
+    """Operators picking names from a CC payload often have stray
+    whitespace. Strip the same way the recorder verbs do so the
+    LooperService receives the canonical form."""
+    d, save_calls, *_ = _make_dispatcher_with_preset_hooks()
+    d.dispatch(_frame("audio.looper.preset.save", args=["  set-a  "]))
+    assert save_calls == ["set-a"]
+
+
+def test_looper_preset_handlers_noop_when_hook_unbound() -> None:
+    """Without a service hook the dispatcher still completes the
+    dispatch (log line only) — the bridge wires the real hook at
+    install time."""
+    dispatcher = EngineCommandDispatcher()
+    register_default_handlers(dispatcher)
+    dispatcher.dispatch(_frame("audio.looper.preset.save", args=["x"]))
+    dispatcher.dispatch(_frame("audio.looper.preset.apply", args=["x"]))
+    dispatcher.dispatch(_frame("audio.looper.preset.delete", args=["x"]))
+    assert dispatcher.dispatched_count == 3
+    assert dispatcher.errored_count == 0

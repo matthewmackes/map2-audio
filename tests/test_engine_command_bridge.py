@@ -379,3 +379,96 @@ def test_looper_service_method_exception_is_logged_not_raised():
     finally:
         set_looper_service(None)
         loop.close()
+
+
+# ---------------------------------------------------------------------------
+# T2512-PRESET-DISPATCH — bridge wires save/apply/delete to LooperService.
+# ---------------------------------------------------------------------------
+
+
+def _preset_frame(target: str, name: str) -> dict:
+    """Engine-command frame with ``args=[name]`` (T2512-PRESET-DISPATCH
+    carries the preset name in args[0], not value)."""
+    return {
+        "type": "engine_command",
+        "msg_id": "preset-test",
+        "schema_version": 1,
+        "controller_key": "test/controller",
+        "target": target,
+        "action": "set",
+        "args": [name],
+    }
+
+
+def test_looper_preset_save_dispatch_routes_to_save_preset():
+    """audio.looper.preset.save args=[name] ⇒ LooperService.save_preset(name)."""
+    from app.services.looper_service import set_looper_service
+
+    loop = asyncio.new_event_loop()
+    fake = _FakeLooperService()
+    try:
+        set_looper_service(fake)  # type: ignore[arg-type]
+        bridge = EngineCommandBridge(loop)
+        bridge.dispatch_engine_command(_preset_frame("audio.looper.preset.save", "set-a"))
+        assert fake.calls == [("save_preset", ("set-a",), {})]
+    finally:
+        set_looper_service(None)
+        loop.close()
+
+
+def test_looper_preset_apply_dispatch_routes_to_apply_preset():
+    from app.services.looper_service import set_looper_service
+
+    loop = asyncio.new_event_loop()
+    fake = _FakeLooperService()
+    try:
+        set_looper_service(fake)  # type: ignore[arg-type]
+        bridge = EngineCommandBridge(loop)
+        bridge.dispatch_engine_command(
+            _preset_frame("audio.looper.preset.apply", "verse-1")
+        )
+        assert fake.calls == [("apply_preset", ("verse-1",), {})]
+    finally:
+        set_looper_service(None)
+        loop.close()
+
+
+def test_looper_preset_delete_dispatch_routes_to_delete_preset():
+    from app.services.looper_service import set_looper_service
+
+    loop = asyncio.new_event_loop()
+    fake = _FakeLooperService()
+    try:
+        set_looper_service(fake)  # type: ignore[arg-type]
+        bridge = EngineCommandBridge(loop)
+        bridge.dispatch_engine_command(
+            _preset_frame("audio.looper.preset.delete", "old-take")
+        )
+        assert fake.calls == [("delete_preset", ("old-take",), {})]
+    finally:
+        set_looper_service(None)
+        loop.close()
+
+
+def test_looper_preset_service_error_does_not_raise():
+    """LooperServiceError (preset_limit / preset_not_found) must be
+    caught inside _looper_call_preset so the reader thread keeps
+    running."""
+    from app.services.looper_service import set_looper_service
+
+    loop = asyncio.new_event_loop()
+
+    class _BoomService:
+        def apply_preset(self, *_a, **_k):
+            raise RuntimeError("simulated preset_not_found")
+
+    try:
+        set_looper_service(_BoomService())  # type: ignore[arg-type]
+        bridge = EngineCommandBridge(loop)
+        # Should not raise.
+        bridge.dispatch_engine_command(
+            _preset_frame("audio.looper.preset.apply", "ghost")
+        )
+    finally:
+        set_looper_service(None)
+        loop.close()

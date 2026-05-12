@@ -162,6 +162,13 @@ class _LooperSetStringFn(Protocol):
     def __call__(self, track: int, value: str) -> None: ...
 
 
+# T2512-PRESET-DISPATCH — preset save/apply/delete take a string
+# preset name in ``args[0]``; the action is always ``set``. Mirrors
+# the recorder-verb shape (session_id-by-args[0]).
+class _LooperPresetFn(Protocol):
+    def __call__(self, *, name: str) -> None: ...
+
+
 @dataclass
 class HandlerHooks:
     """Bundle of side-effect functions handlers call.
@@ -210,6 +217,12 @@ class HandlerHooks:
     looper_set_fade_ms: Optional[_LooperSetFloatFn] = None
     looper_set_sync_mode: Optional[_LooperSetStringFn] = None
     looper_set_quantize_division: Optional[_LooperSetStringFn] = None
+    # T2512-PRESET-DISPATCH — named in-memory state presets reachable
+    # from a footswitch (or any device-pack script). ``name`` comes
+    # off the frame's ``args[0]``.
+    looper_save_preset: Optional[_LooperPresetFn] = None
+    looper_apply_preset: Optional[_LooperPresetFn] = None
+    looper_delete_preset: Optional[_LooperPresetFn] = None
 
 
 # ---------------------------------------------------------------------------
@@ -796,6 +809,65 @@ def _make_looper_master_muted_handler(
 
 
 # ---------------------------------------------------------------------------
+# T2512-PRESET-DISPATCH — preset save / apply / delete handlers
+# ---------------------------------------------------------------------------
+#
+# Exact targets ``audio.looper.preset.{save,apply,delete}``. Each takes
+# a string preset name in ``args[0]``; action is always ``set``. Mirrors
+# the recorder-verb shape (session_id-by-args[0]).
+
+
+def _extract_preset_name(ctx: EngineCommandContext, verb: str) -> Optional[str]:
+    """Pull the preset name off the verb context.
+
+    Returns ``None`` and logs at WARN if the args are missing/empty or
+    the name is blank after str() + strip(). Non-set actions are
+    rejected — presets have no toggle semantics.
+    """
+    if ctx.action != "set":
+        logger.info("looper.preset.%s: ignoring non-set action %r", verb, ctx.action)
+        return None
+    if not ctx.args:
+        logger.warning("looper.preset.%s: missing name in args[0]", verb)
+        return None
+    raw = ctx.args[0]
+    name = str(raw or "").strip()
+    if not name:
+        logger.warning("looper.preset.%s: blank name %r", verb, raw)
+        return None
+    return name
+
+
+def _make_looper_preset_handler(
+    hooks: HandlerHooks,
+    verb: str,
+    hook_attr: str,
+) -> Callable[[EngineCommandContext], None]:
+    """Factory for the three preset verbs.
+
+    ``verb`` is the log-friendly tag ("save" / "apply" / "delete") and
+    ``hook_attr`` is the HandlerHooks field name; both stay aligned
+    with the recorder verb factory's contract.
+    """
+    def handler(ctx: EngineCommandContext) -> None:
+        name = _extract_preset_name(ctx, verb)
+        if name is None:
+            return
+        fn = getattr(hooks, hook_attr, None)
+        if fn is None:
+            logger.info(
+                "looper.preset.%s: no service hook wired; would %s preset %r",
+                verb,
+                verb,
+                name,
+            )
+            return
+        fn(name=name)
+
+    return handler
+
+
+# ---------------------------------------------------------------------------
 # Public registration entrypoint
 # ---------------------------------------------------------------------------
 
@@ -946,4 +1018,20 @@ def register_default_handlers(
     dispatcher.register(
         "audio.looper.master.muted",
         _make_looper_master_muted_handler(actual_hooks),
+    )
+    # T2512-PRESET-DISPATCH — named in-memory state presets reachable
+    # from a footswitch. ``args[0]`` carries the preset name; action is
+    # always ``set``. The Python LooperService.{save,apply,delete}_preset
+    # methods own the cap + lookup logic.
+    dispatcher.register(
+        "audio.looper.preset.save",
+        _make_looper_preset_handler(actual_hooks, "save", "looper_save_preset"),
+    )
+    dispatcher.register(
+        "audio.looper.preset.apply",
+        _make_looper_preset_handler(actual_hooks, "apply", "looper_apply_preset"),
+    )
+    dispatcher.register(
+        "audio.looper.preset.delete",
+        _make_looper_preset_handler(actual_hooks, "delete", "looper_delete_preset"),
     )

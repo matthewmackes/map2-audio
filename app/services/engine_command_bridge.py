@@ -185,6 +185,20 @@ class EngineCommandBridge:
             looper_set_master_muted=lambda value: self._looper_call_master(
                 "set_master_muted", value
             ),
+            # T2512-PRESET-DISPATCH — footswitch / script can recall a
+            # named in-memory preset by name. Service errors
+            # (preset_limit / preset_not_found / invalid_preset_name)
+            # are caught + logged inside _looper_call_preset; the
+            # dispatcher never raises into the reader thread.
+            looper_save_preset=lambda *, name: self._looper_call_preset(
+                "save_preset", name
+            ),
+            looper_apply_preset=lambda *, name: self._looper_call_preset(
+                "apply_preset", name
+            ),
+            looper_delete_preset=lambda *, name: self._looper_call_preset(
+                "delete_preset", name
+            ),
             # Other hooks left None — handlers fall back to no-op +
             # log line until their audio-engine APIs are ready.
         )
@@ -252,6 +266,39 @@ class EngineCommandBridge:
                 "engine_command looper.%s(value=%.3f) failed: %s",
                 method_name,
                 value,
+                exc,
+            )
+
+    def _looper_call_preset(self, method_name: str, name: str) -> None:
+        """T2512-PRESET-DISPATCH — resolve LooperService and invoke a
+        preset method (``save_preset`` / ``apply_preset`` /
+        ``delete_preset``) with the given name.
+
+        LooperServiceError (preset_limit, preset_not_found,
+        invalid_preset_name) is caught + logged at WARN so a bad
+        footswitch press never raises into the reader thread.
+        """
+        service = self._resolve_looper_service()
+        if service is None:
+            logger.info(
+                "engine_command looper.%s(name=%r): LooperService not ready",
+                method_name,
+                name,
+            )
+            return
+        method = getattr(service, method_name, None)
+        if method is None:
+            logger.warning(
+                "engine_command looper.%s: LooperService missing method", method_name
+            )
+            return
+        try:
+            method(name)
+        except Exception as exc:  # noqa: BLE001
+            logger.warning(
+                "engine_command looper.%s(name=%r) failed: %s",
+                method_name,
+                name,
                 exc,
             )
 
