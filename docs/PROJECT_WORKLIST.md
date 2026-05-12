@@ -80,6 +80,7 @@ Each task/subtask should contain these fields:
 - `[>]` `T2499` — Sequencer Setup "Coming Soon" cards epic. **T2499-A 8/8 code slices SHIPPED in autonomous-10 run 2026-05-08/09** (framework primitives + Carbon shell + MeloAudio adapter + device-pack picker + MIDI Learn fallback + bindings writer + Setup card flip + e2e integration test; 75 jest + 33 pytest = 108 net new tests). T2499-A stays `[>] In Progress` pending UI swap (framework shell mount on a route), HIL parity bench gate, and pack-picker integration with MIDI Services. T2499-B (Maschine MK1) and T2499-C (AVDECC) still `[ ] Todo`.
 - `[>]` `T2515` — **TASCAM US-144MKII tier-1 native support** (filed 2026-05-12). 8 sub-tasks. Greenfield integration of `0644:8020` (operational PID) + `0644:800F` (boot-mode PID intentionally unmapped). In-tree kernel ≥6.x driver `snd-usb-us144mkii`; no DKMS. Pinned 48 kHz / 64-sample to match Tier A locks; S/PDIF ch 3-4 first-class; full-custom Carbon Devices panel mirroring UA-1000 richness. **No C++** — mirrors UA-1000/Jogg precedent (Python constants + device-pack + React). Estimated 15-17 h active + 0.5 h soak.
 - `[>]` `T2517` — **MPX-1 as effects-chooser block + AES/S/PDIF dual-connection** (filed 2026-05-12). 9 sub-tasks. Generalize existing `LexiconHardwareProcessor` (drop hardcoded UA-1000 channel constexprs → per-instance atomic channel-config); wire existing `hardware://lexicon-mpx1-spdif` descriptor into `/api/plugins/discover` (currently defined but never returned); add interface-capability registry (`digital_io_stereo`, `aes_ebu`, `spdif_coax`); singleton-instance enforcement with structured 409; per-instance side-panel + measured-latency calibration wizard. AES preferred, S/PDIF fallback, both per-instance. Estimated 19-21 h active + 1.5 h soak.
+- `[>]` `T2518` — **Snapshot interface binding — world-class picker** (filed 2026-05-12). Snapshot publish UI only shows "Use rig default" because there's no unified enumeration. New `AudioInterfaceRegistry` merges PipeWire (local) + AVB endpoints + cluster nodes into a single stable-ID model (`pipewire:<vendor>:<product>:<serial>`, `avb:<endpoint_id>`, `cluster:<node_id>:<sub_id>`); new `GET /api/audio/interfaces` route; `AudioStateDesiredIO` gains `input_interface_id` / `output_interface_id` (display-name kept as resolver fallback for back-compat); new Carbon `SnapshotInterfacePicker` card-grid with transport chips, vendor/product, port counts, live availability tag, search/filter; wired into `SnapshotPublishPage` Devices section. Per-snapshot binding (all chains share). Estimated 8-10 h active.
 - `[✓]` `T2500-MV` — MIDI Connections Visualization (closed 2026-05-10; all 18 subtasks shipped in one bundle). `/midi/connections/visualization` mounts a live three-tier `<SignalFlowGraph>` (Devices ↔ Mappings ↔ Engine targets) over a new `/ws/midi/visualization` WS that replays a rolling 5-min `MidiTrafficBuffer` on connect and live-streams events. Particle/heatmap canvas overlay + Carbon detail drawer + filter bar. Backend wiring: dispatcher gains `iter_registrations()` introspection + `subscribe()` observer registry; new `MidiVisualizationProducerBridge` mirrors dispatched + raw events into the buffer; new topology + WS routes registered in `app/main.py`. 54 backend tests + 23 jest tests green; backend live at `http://127.0.0.1:8080/api/midi/visualization/graph` (200, returns 4 registered targets); WS replay handshake verified; web preview serves the new bundle hash on port 3000.
 - `[✓]` `T2500` — Cabinet IR + Reverb IR pickers fix in Snapshot Editor (closed 2026-05-08; root cause was `appendNodeQuery` accepting a TanStack `QueryFunctionContext` object as `nodeId` and stringifying it to `[object Object]`. Fixed at the http.ts seam — single-line type-guard tightening neutralizes this class of bug for every bare `queryFn` reference. 15 new http unit tests; modal now surfaces real backend errors via the existing `getErrorMessage` helper).
 - `[✓]` `T2501` — Snapshot slot-style variants regression test coverage (closed 2026-05-09; +17 net tests across `Block.test.tsx` (+8) and new `useSnapshotSlotStyle.test.tsx` (9) — locks data-attr reflection, V4 ring SVG render, V6 LED bar width, idle-floor (4%), full-load ceiling (95%), and the localStorage hook's persistence + cross-tab sync + quota-error path; full targeted sweep 127/127).
@@ -2455,6 +2456,43 @@ Shipped this run, in order:
 
 **Operator-visible "all done" list** (operator-facing T2512 features): record/stop/clear/undo/redo, level/mute/solo, reverse, half-speed, write-lock, one-shot (flag + runner), auto-record (state + trigger + HTTP push), fade-out mode (state), sync mode (state), slice metadata (model + UI + delete + at-playhead), quantize grid (math + service wiring), snapshot integration (export + import + reset), activity audit log (data + UI + WS push), metrics counters, MIDI/dispatcher routes across all 18 patterns, generic + MeloAudio + Boss FS-7 footswitch profiles, JS handler library.
 
+### Pick-up next (fourth Continue run handoff, filed 2026-05-12, end-of-run)
+
+**Fourth run total: 10 cycles + 1 pre-existing pending broadcaster ship, all dual-pushed. Cumulative T2512 test totals after four runs: ~580 Python tests across 17 suites + 85 web tests + 21 Node JS tests.**
+
+Shipped this run, in order (10 T2512 follow-ons + 1 T2508 cleanup):
+
+0. **T2508-6 (rich path) recorder periodic broadcaster** — closed out a pre-existing pending diff with 16 tests; `recorder_session_tick` frame at ~15 fps for every ROLLING session, enriched with engine.recorder_get_status counters. Companion to the transition-only `recorder_ws_bridge`. Not strictly T2512, but it was blocking a clean working tree at run start.
+1. **T2512-AUTO-HOLD** — consecutive-push debounce on the auto-record trigger (`hold_count` constructor kwarg + property/setter). Default 1 (preserves pre-feature contract); higher values require N qualifying pushes in a row before firing — prevents string ring-down / cable-pop / fingertip-release transients from preempting the take. Per-track streaks reset on below-threshold / unarmed / non-EMPTY pushes, mid-flight reconfigure, and post-fire. +10 trigger tests; suite 16 → 26.
+2. **T2512-AUTO-PEAK** — operator-tuning surface for the auto-record threshold. New `auto_last_level_db` + `auto_peak_db` on TrackStatus (sentinel -150.0 dB); new `LooperService.record_input_level(track, db)` storage primitive called from every push source (trigger, `/auto-record/push`, future engine RMS binding); new `reset_auto_peak(track)` + route. Re-arming auto-resets the peak; disarming preserves it. Trigger wired to call record_input_level on every push (fires or not). +15 service tests, +4 route tests, +3 trigger tests, OpenAPI audit extended.
+3. **T2512-OS-COUNT** — multi-pass one-shot. New per-track `one_shot_passes` (1..32, default 1 preserves T2512-OS single-pass contract). Runner reads the count on initial schedule, decrements on every deadline; if >0 reschedules a full loop pass via `call_later`, on 0 (or if the track is no longer playing at reschedule) it fires `stop_track`. Mid-take changes to the count do NOT retroactively extend — operators toggle one_shot off+on to apply. New PATCH route with pydantic 1..32 validation. +12 service, +6 runner, +5 route tests; OpenAPI audit extended.
+4. **T2512-ACTIVITY-FILTER** — `verb` (CSV-OR-set), `track` (0..3), `limit` (1..200) query params on `GET /activity`. AND-combine across filters; limit applied AFTER filtering; events with `track=null` are excluded when `?track=` is set; unknown verbs match nothing; empty `?verb=` returns nothing. +12 route tests.
+5. **T2512-SLICE-RENAME** — replace a slice label by start_frame without touching frame range. New `rename_slice(track, start_frame, label)` service verb (same 64-char trim + truncate as add_slice; empty label clears); new PATCH route. Distinct from the existing DELETE on the same URL. +10 service tests, +6 route tests; OpenAPI audit extended.
+6. **T2512-METRICS-WS** — embed the cumulative verb-invocation counters in every LooperStatus frame so WS subscribers see metric updates without polling `/metrics`. Symmetric to the existing T2512-ACTIVITY-WS embedding. Defensive copy via dict() so a consumer mutating the embedded dict can't corrupt service state. +7 service tests, +2 route tests, +1 OpenAPI assertion.
+7. **T2512-PRESET** — named in-memory state presets (32-entry cap, 64-char names). New `save_preset`/`apply_preset`/`delete_preset`/`list_presets`/`clear_presets` service methods on top of the existing `export_state`/`apply_state` primitive — reuses all the payload validation. 5 new routes; `LooperStatus.preset_names` embedded so the UI dropdown stays WS-synced; new PresetNamesResponse model; error codes: invalid_preset_name (400), preset_not_found (404), preset_limit (409). Volatile by design (cleared on restart); persistent presets remain the snapshot service's job. +18 service tests, +8 route tests, OpenAPI audit extended with 5 paths.
+8. **T2512-MASTER-MUTE** — master-bus panic mute toggle. New `LooperStatus.master_muted` field; `set_master_muted(bool)` drops the engine master gain to the -60 dB clamp floor on OFF→ON (remembering pre-mute level), restores it on ON→OFF; turning the dial while muted updates the pre-mute level without lifting the floor. Independent of per-track mute flags. reset_state unmutes; export_state / apply_state round-trip the flag (apply path triggers the engine push as a side-effect). New PATCH `/master/muted` route. +11 service, +3 route tests; OpenAPI audit extended. `_FakeEngine` test helper extended with `master_level_history` so mute tests can assert exact engine sequences.
+9. **T2512-DISPATCH-MUTE** — wires T2512-MASTER-MUTE into the engine_command dispatcher. New exact target `audio.looper.master.muted` with the standard ≥64 half-octave threshold; new `_LooperSetMasterMutedFn` Protocol + HandlerHooks slot; LooperEngineCommandBridge `_build_hooks` extended. Exact-target sanity test bumps 9 → 10, dispatcher pattern count unchanged at 18. +6 dispatcher tests.
+10. **T2512-PACK-MUTE** — generic catalog + JS module catch up to DISPATCH-MUTE. `targets.yaml` master group now lists [level, muted]; `looper.js` exposes `Looper.master.muted` + `globalThis['Looper.master.muted']`. Catalog verb count 69 → 70. +3 catalog tests, +2 Node JS tests (suite 19 → 21).
+
+**Status of long-term priorities after this run:**
+- Every pure-Python item in the original 13-row priority table now has at least a state surface; only RT-gated tasks remain (FADE-RAMP, SYNC-LOCK, QUANT-ENGINE, STOR, LONG, FX, TIME, DAW, BYP, CLOCK-outbound).
+- Operator-visible "all done" list now also includes: auto-record-trigger debounce, auto-record-trigger peak meter + reset, multi-pass one-shot (N=1..32), `/activity` query filters, slice label rename, named in-memory state presets, master panic mute (service + dispatcher + JS pack), embedded metrics in WS frames.
+- Third handoff's order-1 picks status: T2512-QUANT-ENGINE still C++ bench (unchanged), T2512-AUTO-TRIGGER engine binding still bench (Python state machine fully complete; AUTO-HOLD + AUTO-PEAK both shipped in this run), T2512-FADE-RAMP still bench.
+
+**Next-session order-1 picks** (priority order; pure-Python or pure-frontend):
+1. **T2512-PRESET-UI** — surface preset save/apply/delete on LooperPage (dropdown + Save/Recall/Delete buttons + persist-to-localStorage layer above the volatile in-memory list). Backend done; pure-frontend.
+2. **T2512-PRESET-DISPATCH** — engine_command targets `audio.looper.preset.save/apply/delete` so footswitches can recall presets. Backend service + bridge exist; needs handler factories + register call + generic catalog entries.
+3. **T2512-AUTO-PEAK-UI** — operator-tuning meter on LooperPage threshold dial. Backend service + route ready; pure-frontend.
+4. **T2512-OS-COUNT-UI** — NumberInput for the multi-pass count on the one-shot row; surface the existing `one_shot_passes` field. Backend done; pure-frontend.
+5. **T2512-MASTER-MUTE-UI** — panic-mute Button on the master Tile; reuse danger-tertiary style from the existing Reset button. Backend done; pure-frontend.
+6. **T2512-QUANT-ENGINE** — engine-side consumer of `quantize_record_length`. C++ bench task; Python decision helper is already audio-thread-callable via pybind11.
+7. **T2512-AUTO-TRIGGER engine binding** — input-level RMS push from JUCE callback to Python. Python state machine (with HOLD + PEAK) is fully ready; just needs the audio-thread push.
+8. **T2512-FADE-RAMP** — gain-ramp on engine `looper_stop`. State surface shipped; engine work remains.
+
+**Bench-only / spec-needed** (unchanged): T2512-STOR, T2512-LONG, T2512-FX, T2512-TIME, T2512-DAW, T2512-BYP, T2512-SYNC-LOCK, T2512-CLOCK outbound.
+
+---
+
 Remaining T2512 follow-ons, ordered by suggested pickup. **Read this list first next session.**
 
 | Order | Task | Why pickable now | RT gate | Suggested first move |
@@ -3707,6 +3745,44 @@ Last updated: 2026-04-20 11:55 EDT - Codex
 - Blocked notes:
   - 2026-04-20 11:55 EDT - Codex: Blocked until 2026-07-18 by design; current date is 2026-04-20, so removing the persisted-event compatibility kinds now would violate the T2363 aging window.
 
+
+---
+
+
+## T2518 — Snapshot interface binding, world-class picker (filed 2026-05-12)
+
+ID: T2518
+Status: [>] In Progress
+Title: Snapshot publish — unified audio interface picker with stable IDs
+
+Problem statement:
+Snapshot Publish → Devices currently shows only "Use rig default input/output/monitor" because the dropdowns are populated from `AudioStatus.available_input_devices` / `available_output_devices`, which only ever reflect the single device JUCE's `AudioDeviceManager` is currently bound to. Operators with multiple USB audio interfaces, AVB endpoints, and/or peer cluster nodes cannot select between them per snapshot. Display-name-only storage is also fragile to PipeWire renaming and USB-port reshuffles.
+
+Locked design decisions:
+1. **Enumeration scope = every source**: local PipeWire (every audio source/sink node, not just the active engine device) + AVB talkers/listeners + cluster nodes.
+2. **Stable IDs**: `pipewire:<vendor-id>:<product-id>:<serial>` for USB nodes; `pipewire:<alsa-card-name>` fallback for built-in/non-USB; `avb:<endpoint_id>`; `cluster:<node_id>:<sub_id>`.
+3. **Granularity = per snapshot** (all chains share). Per-chain overrides are out of scope for T2518; T2459-controller-host already owns per-chain AVB endpoint routing via `set_chain_input_avb_endpoints`.
+4. **Storage**: `AudioStateDesiredIO` and `SnapshotIOBindingsInput` gain `input_interface_id` / `output_interface_id`. Legacy `requested_input_device` / `requested_output_device` (display name) stay as resolver fallback so existing snapshots keep working.
+5. **UI**: a Carbon card-grid picker grouped by transport (USB / AVB / Cluster), each card shows vendor, product, port counts, live availability tag, and a selection radio. Replaces the three lonely `Select` dropdowns in the publish page Devices section.
+
+Subtasks:
+- `T2518-1` — `app/services/audio_interface_registry.py`: new service merging `PipeWireService.get_nodes()` (Audio/Source + Audio/Sink) + `AvbService.get_channel_capabilities()` (talkers/listeners) + `cluster.hardware_inventory.pipewire_devices`. Each record gets a stable `interface_id`, `display_name`, `vendor`, `product`, `transport` (`pipewire_usb` | `pipewire_alsa` | `avb` | `cluster`), `input_port_count`, `output_port_count`, `available`, `is_default`. Identity derived from `device.product.id` / `device.vendor.id` / `device.serial` PipeWire properties when present.
+- `T2518-2` — `GET /api/audio/interfaces` route in `app/routes/audio/interfaces.py` registered through the existing `app/routes/audio/__init__.py` package; returns `{ interfaces, default_interface_id }`; ETag/`Cache-Control: max-age=2` to dampen poll cost.
+- `T2518-3` — Snapshot model: `AudioStateDesiredIO.input_interface_id` / `output_interface_id` (Optional[str]). `SnapshotIOBindingsInput` gains the same two fields. `unified_snapshots.py` propagates them through create/update + read. Backward-compat resolver: when picking the engine device, prefer `interface_id`, fall back to `requested_*_device` name lookup.
+- `T2518-4` — Carbon `SnapshotInterfacePicker` at `web/src/app/components/snapshots/SnapshotInterfacePicker.tsx`: query `/api/audio/interfaces`, render transport-grouped `Tile` card grid, search input + transport filter `ContentSwitcher`, per-card selection radio with live "Available / Unreachable" `Tag`, "Use rig default" first card.
+- `T2518-5` — Wire picker into `SnapshotPublishPage` Devices section (replace the three `Select` dropdowns; keep the monitoring-output `Select` because that's a port index, not an interface). Persist via `snapshotsApi.update(snapshot_id, { io_bindings: { input_interface_id, output_interface_id, monitoring_output_index } })`.
+- `T2518-6` — Backend tests: `tests/test_audio_interface_registry.py` (merge correctness + stable-ID derivation + missing-PipeWire fallback) and `tests/test_audio_interfaces_route.py` (endpoint contract).
+- `T2518-7` — Frontend tests: `SnapshotInterfacePicker.test.tsx` (renders interface cards, filter works, selection mutates) + `SnapshotPublishPage.test.tsx` update (Devices tile now shows picker rather than three empty selects).
+- `T2518-8` — Build + dual-push + restart + visually verify in browser that the picker lists real interfaces.
+
+Definition of Done:
+1. T2518-1..T2518-8 complete.
+2. `pytest tests/test_audio_interface_registry.py tests/test_audio_interfaces_route.py` green.
+3. `npm --prefix web run typecheck` + `npm --prefix web run test -- SnapshotInterfacePicker.test.tsx SnapshotPublishPage.test.tsx --run` green.
+4. `npm --prefix web run build` clean; new bundle hash served on `:3000`.
+5. Manual browser verification: SnapshotPublishPage Devices section lists ≥ 1 real interface card beyond "Use rig default".
+6. Worklist updated.
+7. Committed on master and dual-pushed to origin + gitlab.
 
 ---
 
