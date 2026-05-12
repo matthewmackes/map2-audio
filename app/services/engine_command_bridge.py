@@ -130,9 +130,102 @@ class EngineCommandBridge:
     def _build_hooks(self) -> HandlerHooks:
         return HandlerHooks(
             recall_snapshot=self._recall_snapshot_hook,
+            # T2512-MIDI — looper verbs. Each hook resolves the
+            # LooperService singleton at call time; if the engine /
+            # service isn't up yet, the resolver logs and returns
+            # without calling into the binding.
+            looper_record=lambda track: self._looper_call("record", track),
+            looper_stop=lambda track: self._looper_call("stop_track", track),
+            looper_clear=lambda track: self._looper_call("clear", track),
+            looper_undo=lambda track: self._looper_call("undo", track),
+            looper_redo=lambda track: self._looper_call("redo", track),
+            looper_set_level=lambda track, value: self._looper_call(
+                "set_level_db", track, value
+            ),
+            looper_set_muted=lambda track, value: self._looper_call(
+                "set_muted", track, value
+            ),
+            looper_set_soloed=lambda track, value: self._looper_call(
+                "set_soloed", track, value
+            ),
+            looper_set_reverse=lambda track, value: self._looper_call(
+                "set_reverse", track, value
+            ),
+            looper_set_half_speed=lambda track, value: self._looper_call(
+                "set_half_speed", track, value
+            ),
+            looper_set_master_level=lambda value: self._looper_call_master(
+                "set_master_level_db", value
+            ),
             # Other hooks left None — handlers fall back to no-op +
             # log line until their audio-engine APIs are ready.
         )
+
+    @staticmethod
+    def _resolve_looper_service() -> Optional[Any]:
+        """Late-bind the LooperService singleton. Returns None if the
+        service hasn't been wired yet (lifespan ordering: bridge may
+        come up before JuceEngineService is ready)."""
+        try:
+            from app.services.looper_service import get_looper_service
+        except ImportError:
+            return None
+        return get_looper_service()
+
+    def _looper_call(self, method_name: str, track: int, *extra: Any) -> None:
+        """Resolve LooperService and invoke ``method_name(track, *extra)``.
+        All looper verbs run on the reader thread; they call into the
+        pybind11 bindings which only flip atomic flags inside the
+        engine — no async scheduling needed."""
+        service = self._resolve_looper_service()
+        if service is None:
+            logger.info(
+                "engine_command looper.%s(track=%d): LooperService not ready",
+                method_name,
+                track,
+            )
+            return
+        method = getattr(service, method_name, None)
+        if method is None:
+            logger.warning(
+                "engine_command looper.%s: LooperService missing method", method_name
+            )
+            return
+        try:
+            method(track, *extra)
+        except Exception as exc:  # noqa: BLE001
+            logger.exception(
+                "engine_command looper.%s(track=%d, extra=%r) failed: %s",
+                method_name,
+                track,
+                extra,
+                exc,
+            )
+
+    def _looper_call_master(self, method_name: str, value: float) -> None:
+        service = self._resolve_looper_service()
+        if service is None:
+            logger.info(
+                "engine_command looper.%s(value=%.3f): LooperService not ready",
+                method_name,
+                value,
+            )
+            return
+        method = getattr(service, method_name, None)
+        if method is None:
+            logger.warning(
+                "engine_command looper.%s: LooperService missing method", method_name
+            )
+            return
+        try:
+            method(value)
+        except Exception as exc:  # noqa: BLE001
+            logger.exception(
+                "engine_command looper.%s(value=%.3f) failed: %s",
+                method_name,
+                value,
+                exc,
+            )
 
     def _recall_snapshot_hook(self, *, snapshot_id: int) -> None:
         """Schedule an async snapshot activation onto the FastAPI loop.

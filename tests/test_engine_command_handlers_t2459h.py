@@ -262,10 +262,12 @@ def test_register_default_handlers_does_not_overlap_targets() -> None:
     dispatcher = EngineCommandDispatcher()
     register_default_handlers(dispatcher)
     # Exact targets: snapshot.recall, master.volume, transport.tap_tempo,
-    # plus the 5 T2508 recorder verbs = 8 total.
-    # Pattern list: audio.chain.*.bypass = 1.
-    assert len(dispatcher._exact) == 8  # type: ignore[attr-defined]
-    assert len(dispatcher._patterns) == 1  # type: ignore[attr-defined]
+    # plus the 5 T2508 recorder verbs, plus audio.looper.master.level
+    # from T2512-MIDI = 9 total.
+    # Pattern list: audio.chain.*.bypass + the 10 audio.looper.*.<verb>
+    # patterns from T2512-MIDI = 11.
+    assert len(dispatcher._exact) == 9  # type: ignore[attr-defined]
+    assert len(dispatcher._patterns) == 11  # type: ignore[attr-defined]
     expected_exact = {
         "audio.snapshot.recall",
         "audio.master.volume",
@@ -275,6 +277,7 @@ def test_register_default_handlers_does_not_overlap_targets() -> None:
         "recorder.roll",
         "recorder.stop",
         "recorder.status",
+        "audio.looper.master.level",
     }
     assert set(dispatcher._exact.keys()) == expected_exact  # type: ignore[attr-defined]
 
@@ -406,3 +409,123 @@ def test_recorder_handlers_isolate_session_ids() -> None:
     assert status_calls == ["sess-B"]
     assert stop_calls == ["sess-A"]
     assert disarm_calls == ["sess-B"]
+
+
+# ---------------------------------------------------------------------------
+# T2512-MIDI — audio.looper.<track>.<verb> + audio.looper.master.level
+# ---------------------------------------------------------------------------
+
+
+def _make_dispatcher_with_looper_hooks() -> tuple[
+    EngineCommandDispatcher,
+    dict[str, list],
+]:
+    """Per-verb recording harness for the looper dispatcher path."""
+    log: dict[str, list] = {
+        "record": [],
+        "stop": [],
+        "clear": [],
+        "undo": [],
+        "redo": [],
+        "level": [],
+        "muted": [],
+        "soloed": [],
+        "reverse": [],
+        "half_speed": [],
+        "master_level": [],
+    }
+
+    hooks = HandlerHooks(
+        looper_record=lambda track: log["record"].append(track),
+        looper_stop=lambda track: log["stop"].append(track),
+        looper_clear=lambda track: log["clear"].append(track),
+        looper_undo=lambda track: log["undo"].append(track),
+        looper_redo=lambda track: log["redo"].append(track),
+        looper_set_level=lambda track, value: log["level"].append((track, value)),
+        looper_set_muted=lambda track, value: log["muted"].append((track, value)),
+        looper_set_soloed=lambda track, value: log["soloed"].append((track, value)),
+        looper_set_reverse=lambda track, value: log["reverse"].append((track, value)),
+        looper_set_half_speed=lambda track, value: log["half_speed"].append(
+            (track, value)
+        ),
+        looper_set_master_level=lambda value: log["master_level"].append(value),
+    )
+    dispatcher = EngineCommandDispatcher()
+    register_default_handlers(dispatcher, hooks=hooks)
+    return dispatcher, log
+
+
+def test_looper_record_stomp_routes_to_track() -> None:
+    d, log = _make_dispatcher_with_looper_hooks()
+    d.dispatch(_frame("audio.looper.0.record", action="set", value=127.0))
+    d.dispatch(_frame("audio.looper.2.record", action="set", value=64.0))
+    assert log["record"] == [0, 2]
+
+
+def test_looper_stomp_drops_release_at_value_zero() -> None:
+    """A MIDI footswitch sends CC value=0 on release; ignore it."""
+    d, log = _make_dispatcher_with_looper_hooks()
+    d.dispatch(_frame("audio.looper.0.record", action="set", value=127.0))
+    d.dispatch(_frame("audio.looper.0.record", action="set", value=0.0))
+    assert log["record"] == [0]
+
+
+def test_looper_all_stomp_verbs_dispatch() -> None:
+    d, log = _make_dispatcher_with_looper_hooks()
+    for verb in ("record", "stop", "clear", "undo", "redo"):
+        d.dispatch(_frame(f"audio.looper.1.{verb}", action="set", value=127.0))
+    assert log["record"] == [1]
+    assert log["stop"] == [1]
+    assert log["clear"] == [1]
+    assert log["undo"] == [1]
+    assert log["redo"] == [1]
+
+
+def test_looper_level_setter_clamps_and_routes() -> None:
+    d, log = _make_dispatcher_with_looper_hooks()
+    d.dispatch(_frame("audio.looper.0.level", action="set", value=-12.0))
+    d.dispatch(_frame("audio.looper.1.level", action="set", value=99.0))  # > 6dB
+    d.dispatch(_frame("audio.looper.2.level", action="set", value=-999.0))  # < -60
+    assert log["level"] == [(0, -12.0), (1, 6.0), (2, -60.0)]
+
+
+def test_looper_bool_setters_set_and_toggle() -> None:
+    d, log = _make_dispatcher_with_looper_hooks()
+    d.dispatch(_frame("audio.looper.0.muted", action="set", value=1.0))
+    d.dispatch(_frame("audio.looper.0.muted", action="set", value=0.0))
+    d.dispatch(_frame("audio.looper.3.soloed", action="toggle"))
+    d.dispatch(_frame("audio.looper.2.reverse", action="set", value=1.0))
+    d.dispatch(_frame("audio.looper.2.half_speed", action="set", value=1.0))
+    assert log["muted"] == [(0, True), (0, False)]
+    assert log["soloed"] == [(3, True)]
+    assert log["reverse"] == [(2, True)]
+    assert log["half_speed"] == [(2, True)]
+
+
+def test_looper_invalid_track_index_dropped() -> None:
+    d, log = _make_dispatcher_with_looper_hooks()
+    d.dispatch(_frame("audio.looper.4.record", action="set", value=127.0))  # out of range
+    d.dispatch(_frame("audio.looper.x.record", action="set", value=127.0))  # non-int
+    d.dispatch(_frame("audio.looper.-1.record", action="set", value=127.0))  # negative
+    assert log["record"] == []
+
+
+def test_looper_master_level_clamps() -> None:
+    d, log = _make_dispatcher_with_looper_hooks()
+    d.dispatch(_frame("audio.looper.master.level", action="set", value=-3.0))
+    d.dispatch(_frame("audio.looper.master.level", action="set", value=99.0))  # > 6
+    d.dispatch(_frame("audio.looper.master.level", action="set", value=-999.0))  # < -60
+    assert log["master_level"] == [-3.0, 6.0, -60.0]
+
+
+def test_looper_handlers_safe_with_no_hooks_wired() -> None:
+    """Default HandlerHooks() has every looper_* = None. Dispatch must not
+    raise and must increment dispatched_count."""
+    dispatcher = EngineCommandDispatcher()
+    register_default_handlers(dispatcher, hooks=None)
+    dispatcher.dispatch(_frame("audio.looper.0.record", action="set", value=127.0))
+    dispatcher.dispatch(_frame("audio.looper.1.level", action="set", value=-6.0))
+    dispatcher.dispatch(_frame("audio.looper.2.muted", action="set", value=1.0))
+    dispatcher.dispatch(_frame("audio.looper.master.level", action="set", value=0.0))
+    assert dispatcher.dispatched_count == 4
+    assert dispatcher.errored_count == 0

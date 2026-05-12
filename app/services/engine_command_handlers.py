@@ -124,6 +124,28 @@ class _RecorderStatusFn(Protocol):
     def __call__(self, session_id: str) -> None: ...
 
 
+# T2512-MIDI (phase 8 of T2504 Multi-Track Recorder / Looper) — looper
+# verb hooks. All routed through the engine_command dispatcher so a
+# MIDI Learn CC, a footswitch device-pack binding, or a JS controller
+# script can drive the looper. Stomp verbs (record / stop / clear /
+# undo / redo) take a track index; setter verbs additionally take the
+# new value.
+class _LooperStompFn(Protocol):
+    def __call__(self, track: int) -> None: ...
+
+
+class _LooperSetFloatFn(Protocol):
+    def __call__(self, track: int, value: float) -> None: ...
+
+
+class _LooperSetBoolFn(Protocol):
+    def __call__(self, track: int, value: bool) -> None: ...
+
+
+class _LooperMasterLevelFn(Protocol):
+    def __call__(self, value: float) -> None: ...
+
+
 @dataclass
 class HandlerHooks:
     """Bundle of side-effect functions handlers call.
@@ -145,6 +167,18 @@ class HandlerHooks:
     recorder_roll: Optional[_RecorderRollFn] = None
     recorder_stop: Optional[_RecorderStopFn] = None
     recorder_status: Optional[_RecorderStatusFn] = None
+    # T2512-MIDI (looper verbs via dispatcher) — stomps + setters.
+    looper_record:     Optional[_LooperStompFn]       = None
+    looper_stop:       Optional[_LooperStompFn]       = None
+    looper_clear:      Optional[_LooperStompFn]       = None
+    looper_undo:       Optional[_LooperStompFn]       = None
+    looper_redo:       Optional[_LooperStompFn]       = None
+    looper_set_level:  Optional[_LooperSetFloatFn]    = None
+    looper_set_muted:  Optional[_LooperSetBoolFn]     = None
+    looper_set_soloed: Optional[_LooperSetBoolFn]     = None
+    looper_set_reverse: Optional[_LooperSetBoolFn]    = None
+    looper_set_half_speed: Optional[_LooperSetBoolFn] = None
+    looper_set_master_level: Optional[_LooperMasterLevelFn] = None
 
 
 # ---------------------------------------------------------------------------
@@ -495,6 +529,139 @@ def _make_recorder_status_handler(hooks: HandlerHooks) -> Callable[[EngineComman
 
 
 # ---------------------------------------------------------------------------
+# T2512-MIDI — looper verb handlers (pattern: audio.looper.<track>.<verb>)
+# ---------------------------------------------------------------------------
+#
+# Each handler extracts the track index from ctx.params[0]. Stomps
+# ignore action/value (they are momentary triggers — a footswitch CC
+# at value>0). Setters (level/muted/soloed/reverse/half_speed) honor
+# action="set" + ctx.value; mute/solo/reverse/half also honor
+# action="toggle" via the existing _resolve_bool_for_action helper.
+#
+# Master-level (audio.looper.master.level) is an exact target, NOT
+# under the per-track pattern.
+#
+# RT-safety note: the audio thread never enters these handlers. The
+# C++ LooperEngine (T2512) reads atomic flags on each callback; the
+# Python dispatcher path just flips the flags.
+
+
+def _extract_looper_track(ctx: EngineCommandContext, verb: str) -> Optional[int]:
+    if not ctx.params:
+        logger.warning("looper.%s: missing track index in pattern", verb)
+        return None
+    try:
+        track = int(ctx.params[0])
+    except (TypeError, ValueError):
+        logger.warning("looper.%s: non-integer track index %r", verb, ctx.params[0])
+        return None
+    if track < 0 or track > 3:
+        logger.warning("looper.%s: track %d out of range (must be 0..3)", verb, track)
+        return None
+    return track
+
+
+def _make_looper_stomp_handler(
+    hooks: HandlerHooks,
+    verb: str,
+    hook_attr: str,
+) -> Callable[[EngineCommandContext], None]:
+    def handler(ctx: EngineCommandContext) -> None:
+        # Stomps are momentary triggers. Only fire on set/toggle
+        # actions where the value is non-zero (matches MIDI footswitch
+        # behavior — press fires the stomp; release at value=0 is a
+        # no-op).
+        if ctx.value is not None and ctx.value == 0.0 and ctx.action != "toggle":
+            logger.debug("looper.%s: ignoring release (value=0)", verb)
+            return
+        track = _extract_looper_track(ctx, verb)
+        if track is None:
+            return
+        fn = getattr(hooks, hook_attr)
+        if fn is None:
+            logger.info("looper.%s: no service hook wired; would stomp track %d",
+                        verb, track)
+            return
+        fn(track=track)
+
+    return handler
+
+
+def _make_looper_set_float_handler(
+    hooks: HandlerHooks,
+    verb: str,
+    hook_attr: str,
+    min_v: float,
+    max_v: float,
+) -> Callable[[EngineCommandContext], None]:
+    def handler(ctx: EngineCommandContext) -> None:
+        if ctx.action != "set":
+            logger.info("looper.%s: ignoring non-set action %r", verb, ctx.action)
+            return
+        if ctx.value is None:
+            logger.warning("looper.%s: missing value", verb)
+            return
+        track = _extract_looper_track(ctx, verb)
+        if track is None:
+            return
+        value = max(min_v, min(max_v, float(ctx.value)))
+        fn = getattr(hooks, hook_attr)
+        if fn is None:
+            logger.info("looper.%s: no service hook wired; would set track %d → %.3f",
+                        verb, track, value)
+            return
+        fn(track=track, value=value)
+
+    return handler
+
+
+def _make_looper_set_bool_handler(
+    hooks: HandlerHooks,
+    verb: str,
+    hook_attr: str,
+) -> Callable[[EngineCommandContext], None]:
+    """Per-track bool setter. Honors action=set (value!=0 → true) and
+    action=toggle (flips, requires current state which we don't track
+    here — toggle just sets True so a CC bound to toggle flips on
+    first press and stays on; pair with another binding for off)."""
+    def handler(ctx: EngineCommandContext) -> None:
+        track = _extract_looper_track(ctx, verb)
+        if track is None:
+            return
+        target = _resolve_bool_for_action(ctx.action, ctx.value, current=None)
+        if target is None:
+            logger.warning("looper.%s: unknown action %r", verb, ctx.action)
+            return
+        fn = getattr(hooks, hook_attr)
+        if fn is None:
+            logger.info("looper.%s: no service hook wired; would set track %d → %s",
+                        verb, track, target)
+            return
+        fn(track=track, value=target)
+
+    return handler
+
+
+def _make_looper_master_level_handler(
+    hooks: HandlerHooks,
+) -> Callable[[EngineCommandContext], None]:
+    def handler(ctx: EngineCommandContext) -> None:
+        if ctx.action != "set":
+            logger.info("looper.master.level: ignoring non-set action %r", ctx.action)
+            return
+        if ctx.value is None:
+            logger.warning("looper.master.level: missing value")
+            return
+        value = max(-60.0, min(6.0, float(ctx.value)))
+        if hooks.looper_set_master_level is None:
+            logger.info("looper.master.level: no service hook wired; would set %.3f", value)
+            return
+        hooks.looper_set_master_level(value=value)
+
+    return handler
+
+
+# ---------------------------------------------------------------------------
 # Public registration entrypoint
 # ---------------------------------------------------------------------------
 
@@ -534,3 +701,55 @@ def register_default_handlers(
     dispatcher.register("recorder.roll", _make_recorder_roll_handler(actual_hooks))
     dispatcher.register("recorder.stop", _make_recorder_stop_handler(actual_hooks))
     dispatcher.register("recorder.status", _make_recorder_status_handler(actual_hooks))
+
+    # T2512-MIDI — looper verbs (phase 8 of T2504 Multi-Track Recorder /
+    # Looper). Stomps (record/stop/clear/undo/redo) and per-track setters
+    # (level/muted/soloed/reverse/half_speed) share the pattern
+    # ``audio.looper.<track>.<verb>``; master level is an exact target.
+    dispatcher.register_pattern(
+        "audio.looper.*.record",
+        _make_looper_stomp_handler(actual_hooks, "record", "looper_record"),
+    )
+    dispatcher.register_pattern(
+        "audio.looper.*.stop",
+        _make_looper_stomp_handler(actual_hooks, "stop", "looper_stop"),
+    )
+    dispatcher.register_pattern(
+        "audio.looper.*.clear",
+        _make_looper_stomp_handler(actual_hooks, "clear", "looper_clear"),
+    )
+    dispatcher.register_pattern(
+        "audio.looper.*.undo",
+        _make_looper_stomp_handler(actual_hooks, "undo", "looper_undo"),
+    )
+    dispatcher.register_pattern(
+        "audio.looper.*.redo",
+        _make_looper_stomp_handler(actual_hooks, "redo", "looper_redo"),
+    )
+    dispatcher.register_pattern(
+        "audio.looper.*.level",
+        _make_looper_set_float_handler(
+            actual_hooks, "level", "looper_set_level", min_v=-60.0, max_v=6.0
+        ),
+    )
+    dispatcher.register_pattern(
+        "audio.looper.*.muted",
+        _make_looper_set_bool_handler(actual_hooks, "muted", "looper_set_muted"),
+    )
+    dispatcher.register_pattern(
+        "audio.looper.*.soloed",
+        _make_looper_set_bool_handler(actual_hooks, "soloed", "looper_set_soloed"),
+    )
+    dispatcher.register_pattern(
+        "audio.looper.*.reverse",
+        _make_looper_set_bool_handler(actual_hooks, "reverse", "looper_set_reverse"),
+    )
+    dispatcher.register_pattern(
+        "audio.looper.*.half_speed",
+        _make_looper_set_bool_handler(
+            actual_hooks, "half_speed", "looper_set_half_speed"
+        ),
+    )
+    dispatcher.register(
+        "audio.looper.master.level", _make_looper_master_level_handler(actual_hooks)
+    )
