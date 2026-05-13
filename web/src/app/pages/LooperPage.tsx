@@ -1246,12 +1246,69 @@ function SliceEditor({
   const [start, setStart] = useState<number>(0)
   const [end, setEnd] = useState<number>(48000)
   const [label, setLabel] = useState<string>('')
+  // T2512-SLICE-MULTI — multi-select state. Keyed by start_frame
+  // (the same primary key the DELETE route uses). Reset on every
+  // status update because the underlying slice list can change
+  // out-of-band (preset apply / clear-slices / etc.); stale
+  // start_frame keys are filtered out at render time.
+  const [selected, setSelected] = useState<Set<number>>(() => new Set())
+
+  // Prune selections that no longer correspond to a slice on the
+  // current track (preset apply / external clear can change the
+  // list under us).
+  const validSelected = useMemo(() => {
+    const present = new Set(track.slices.map((s) => s.start_frame))
+    const out = new Set<number>()
+    selected.forEach((sf) => {
+      if (present.has(sf)) out.add(sf)
+    })
+    return out
+  }, [selected, track.slices])
 
   const handleAdd = () => {
     if (end <= start) return  // service rejects anyway; spare the round-trip
     onAction(() => looperApi.addSlice(track.track, start, end, label.trim()))
     // Reset label after a successful add so the operator can chain entries.
     setLabel('')
+  }
+
+  const toggleSelected = (startFrame: number) => {
+    setSelected((prev) => {
+      const next = new Set(prev)
+      if (next.has(startFrame)) {
+        next.delete(startFrame)
+      } else {
+        next.add(startFrame)
+      }
+      return next
+    })
+  }
+
+  const handleDeleteSelected = useCallback(async () => {
+    if (validSelected.size === 0) return
+    const targets = Array.from(validSelected).sort((a, b) => a - b)
+    // Sequential awaits — DELETE on the same track is cheap and the
+    // service-side mutex serializes anyway. Bulk DELETE isn't worth
+    // a separate route until operators actually feel the cost.
+    await onAction(async () => {
+      let last: LooperStatus | null = null
+      for (const sf of targets) {
+        last = await looperApi.deleteSlice(track.track, sf)
+      }
+      // onAction expects a LooperStatus — fall back to a status fetch
+      // if nothing was deleted (shouldn't happen because validSelected
+      // is non-empty, but TS doesn't know that).
+      return last ?? (await looperApi.getStatus())
+    })
+    setSelected(new Set())
+  }, [onAction, track.track, validSelected])
+
+  const handleSelectAll = () => {
+    setSelected(new Set(track.slices.map((s) => s.start_frame)))
+  }
+
+  const handleClearSelection = () => {
+    setSelected(new Set())
   }
 
   return (
@@ -1343,35 +1400,80 @@ function SliceEditor({
           ) : null}
 
           {track.slices.length > 0 ? (
-            <ul
-              className="looper-track__slice-list"
-              data-testid={`looper-slice-list-${track.track}`}
-            >
-              {track.slices.map((slc) => (
-                <li key={`${slc.start_frame}-${slc.end_frame}`}>
-                  <span className="looper-track__slice-range">
-                    {slc.start_frame}–{slc.end_frame}
-                  </span>
-                  <span className="looper-track__slice-label-text">
-                    {slc.label || <em>unlabeled</em>}
-                  </span>
-                  <Button
-                    kind="ghost"
-                    size="sm"
-                    hasIconOnly
-                    renderIcon={TrashCan}
-                    iconDescription={`Delete slice ${slc.start_frame}–${slc.end_frame}`}
-                    tooltipPosition="left"
-                    data-testid={`looper-delete-slice-${track.track}-${slc.start_frame}`}
-                    onClick={() =>
-                      onAction(() =>
-                        looperApi.deleteSlice(track.track, slc.start_frame),
-                      )
-                    }
-                  />
-                </li>
-              ))}
-            </ul>
+            <>
+              {/* T2512-SLICE-MULTI — bulk-action row. Only renders
+                  selection-driven buttons; the per-row delete trash
+                  can still works for single-shot deletes. */}
+              <div
+                className="looper-track__slice-bulk"
+                data-testid={`looper-slice-bulk-${track.track}`}
+              >
+                <Button
+                  kind="ghost"
+                  size="sm"
+                  data-testid={`looper-slice-select-all-${track.track}`}
+                  onClick={handleSelectAll}
+                  disabled={validSelected.size === track.slices.length}
+                >
+                  Select all
+                </Button>
+                <Button
+                  kind="ghost"
+                  size="sm"
+                  data-testid={`looper-slice-clear-selection-${track.track}`}
+                  onClick={handleClearSelection}
+                  disabled={validSelected.size === 0}
+                >
+                  Clear selection
+                </Button>
+                <Button
+                  kind="danger--tertiary"
+                  size="sm"
+                  data-testid={`looper-slice-delete-selected-${track.track}`}
+                  onClick={() => void handleDeleteSelected()}
+                  disabled={validSelected.size === 0}
+                >
+                  Delete selected ({validSelected.size})
+                </Button>
+              </div>
+              <ul
+                className="looper-track__slice-list"
+                data-testid={`looper-slice-list-${track.track}`}
+              >
+                {track.slices.map((slc) => (
+                  <li key={`${slc.start_frame}-${slc.end_frame}`}>
+                    <input
+                      type="checkbox"
+                      className="looper-track__slice-checkbox"
+                      data-testid={`looper-slice-checkbox-${track.track}-${slc.start_frame}`}
+                      aria-label={`Select slice ${slc.start_frame}–${slc.end_frame}`}
+                      checked={validSelected.has(slc.start_frame)}
+                      onChange={() => toggleSelected(slc.start_frame)}
+                    />
+                    <span className="looper-track__slice-range">
+                      {slc.start_frame}–{slc.end_frame}
+                    </span>
+                    <span className="looper-track__slice-label-text">
+                      {slc.label || <em>unlabeled</em>}
+                    </span>
+                    <Button
+                      kind="ghost"
+                      size="sm"
+                      hasIconOnly
+                      renderIcon={TrashCan}
+                      iconDescription={`Delete slice ${slc.start_frame}–${slc.end_frame}`}
+                      tooltipPosition="left"
+                      data-testid={`looper-delete-slice-${track.track}-${slc.start_frame}`}
+                      onClick={() =>
+                        onAction(() =>
+                          looperApi.deleteSlice(track.track, slc.start_frame),
+                        )
+                      }
+                    />
+                  </li>
+                ))}
+              </ul>
+            </>
           ) : (
             <p className="looper-track__slice-empty">
               No slices yet. Add a region using start + end frame counts

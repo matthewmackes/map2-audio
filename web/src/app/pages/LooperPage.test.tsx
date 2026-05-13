@@ -2066,3 +2066,183 @@ describe('LooperPage T2512-PRESET-PERSIST localStorage cache', () => {
     })
   })
 })
+
+describe('LooperPage T2512-SLICE-MULTI bulk-delete on slice editor', () => {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const mod = require('../../map2/clients/looper') as {
+    looperApi: { deleteSlice: jest.Mock }
+  }
+
+  beforeEach(() => {
+    mod.looperApi.deleteSlice.mockClear()
+  })
+
+  async function pushTrack0Slices(
+    slices: Array<{ start_frame: number; end_frame: number; label: string }>,
+  ): Promise<void> {
+    // Open the slice editor first so the body is mounted; the
+    // status frame application then triggers the list render.
+    const toggle = await screen.findByTestId('looper-slice-editor-toggle-0')
+    fireEvent.click(toggle)
+    act(() => {
+      sockets[0]!.onopen?.call(sockets[0] as unknown as WebSocket)
+    })
+    const frame = {
+      type: 'looper_status',
+      payload: {
+        ...mockIdleSnapshot,
+        tracks: mockIdleSnapshot.tracks.map((t, i) =>
+          i === 0 ? { ...t, slices } : t,
+        ),
+      },
+    }
+    act(() => {
+      sockets[0]!.onmessage?.call(
+        sockets[0] as unknown as WebSocket,
+        { data: JSON.stringify(frame) } as MessageEvent,
+      )
+    })
+    await screen.findByTestId('looper-slice-list-0')
+  }
+
+  it('Bulk-delete buttons are disabled when no slice is selected', async () => {
+    renderPage()
+    await pushTrack0Slices([
+      { start_frame: 0, end_frame: 24000, label: 'intro' },
+      { start_frame: 24000, end_frame: 48000, label: 'verse' },
+    ])
+    expect(
+      screen.getByTestId('looper-slice-delete-selected-0'),
+    ).toBeDisabled()
+    expect(
+      screen.getByTestId('looper-slice-clear-selection-0'),
+    ).toBeDisabled()
+    // Select-all stays enabled when nothing is selected (it's the
+    // path to populate the selection).
+    expect(
+      screen.getByTestId('looper-slice-select-all-0'),
+    ).not.toBeDisabled()
+  })
+
+  it('Clicking a checkbox enables the Delete-selected button with the count', async () => {
+    renderPage()
+    await pushTrack0Slices([
+      { start_frame: 0, end_frame: 24000, label: 'intro' },
+      { start_frame: 24000, end_frame: 48000, label: 'verse' },
+    ])
+    fireEvent.click(screen.getByTestId('looper-slice-checkbox-0-24000'))
+    const delBtn = screen.getByTestId(
+      'looper-slice-delete-selected-0',
+    ) as HTMLButtonElement
+    expect(delBtn).not.toBeDisabled()
+    expect(delBtn).toHaveTextContent('Delete selected (1)')
+  })
+
+  it('Select-all selects every slice on the track and disables itself', async () => {
+    renderPage()
+    await pushTrack0Slices([
+      { start_frame: 0, end_frame: 24000, label: 'intro' },
+      { start_frame: 24000, end_frame: 48000, label: 'verse' },
+      { start_frame: 48000, end_frame: 72000, label: 'chorus' },
+    ])
+    fireEvent.click(screen.getByTestId('looper-slice-select-all-0'))
+    await waitFor(() => {
+      expect(
+        screen.getByTestId('looper-slice-delete-selected-0'),
+      ).toHaveTextContent('Delete selected (3)')
+    })
+    expect(
+      screen.getByTestId('looper-slice-select-all-0'),
+    ).toBeDisabled()
+  })
+
+  it('Clear-selection resets to zero without touching the slice list', async () => {
+    renderPage()
+    await pushTrack0Slices([
+      { start_frame: 0, end_frame: 24000, label: 'intro' },
+      { start_frame: 24000, end_frame: 48000, label: 'verse' },
+    ])
+    fireEvent.click(screen.getByTestId('looper-slice-select-all-0'))
+    await waitFor(() =>
+      expect(
+        screen.getByTestId('looper-slice-delete-selected-0'),
+      ).toHaveTextContent('Delete selected (2)'),
+    )
+    fireEvent.click(screen.getByTestId('looper-slice-clear-selection-0'))
+    await waitFor(() =>
+      expect(
+        screen.getByTestId('looper-slice-delete-selected-0'),
+      ).toHaveTextContent('Delete selected (0)'),
+    )
+    // Slices themselves are untouched.
+    expect(screen.getByTestId('looper-slice-list-0')).toHaveTextContent(
+      'intro',
+    )
+  })
+
+  it('Delete-selected fires deleteSlice for every selected start_frame', async () => {
+    renderPage()
+    await pushTrack0Slices([
+      { start_frame: 0, end_frame: 24000, label: 'a' },
+      { start_frame: 24000, end_frame: 48000, label: 'b' },
+      { start_frame: 48000, end_frame: 72000, label: 'c' },
+    ])
+    fireEvent.click(screen.getByTestId('looper-slice-checkbox-0-0'))
+    fireEvent.click(screen.getByTestId('looper-slice-checkbox-0-48000'))
+    fireEvent.click(screen.getByTestId('looper-slice-delete-selected-0'))
+    await waitFor(() => {
+      expect(mod.looperApi.deleteSlice).toHaveBeenCalledTimes(2)
+    })
+    // start_frame=0 sorts before 48000, so order is deterministic.
+    expect(mod.looperApi.deleteSlice).toHaveBeenNthCalledWith(1, 0, 0)
+    expect(mod.looperApi.deleteSlice).toHaveBeenNthCalledWith(2, 0, 48000)
+  })
+
+  it('Selection clears after a bulk-delete (stale start_frames filtered out)', async () => {
+    // After the deletion completes, the mock returns the empty-slice
+    // mockIdleSnapshot — the slice-list element is unmounted, but the
+    // ``validSelected`` filter still correctly drops the now-stale
+    // start_frame so a re-push with new slices starts at (0).
+    renderPage()
+    await pushTrack0Slices([
+      { start_frame: 0, end_frame: 24000, label: 'a' },
+    ])
+    fireEvent.click(screen.getByTestId('looper-slice-checkbox-0-0'))
+    fireEvent.click(screen.getByTestId('looper-slice-delete-selected-0'))
+    await waitFor(() => {
+      expect(mod.looperApi.deleteSlice).toHaveBeenCalledWith(0, 0)
+    })
+    // Re-push fresh slices: the previously-selected start_frame=0
+    // points at a new slice now (id reuse). The selection should
+    // already be cleared inside the editor by the setSelected(new Set())
+    // call at the end of handleDeleteSelected — re-push gives the
+    // editor a chance to re-render.
+    act(() => {
+      const frame = {
+        type: 'looper_status',
+        payload: {
+          ...mockIdleSnapshot,
+          tracks: mockIdleSnapshot.tracks.map((t, i) =>
+            i === 0
+              ? {
+                  ...t,
+                  slices: [
+                    { start_frame: 0, end_frame: 24000, label: 'reused' },
+                  ],
+                }
+              : t,
+          ),
+        },
+      }
+      sockets[0]!.onmessage?.call(
+        sockets[0] as unknown as WebSocket,
+        { data: JSON.stringify(frame) } as MessageEvent,
+      )
+    })
+    await waitFor(() => {
+      expect(
+        screen.getByTestId('looper-slice-delete-selected-0'),
+      ).toHaveTextContent('Delete selected (0)')
+    })
+  })
+})
