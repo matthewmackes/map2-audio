@@ -74,6 +74,44 @@ describe('DevicePeakMetersOverview', () => {
     expect(screen.getByTestId('device-peak-meters-overview-loading')).toBeInTheDocument()
   })
 
+  it('renders a Peak (dBFS) column when includeSnapshot=true and shows formatted peaks', () => {
+    mockUseDevicesPeakMetersRegistry.mockReturnValue({
+      devices: [
+        {
+          device_id: 'tascam-us144mkii',
+          input_channels: 4,
+          output_channels: 4,
+          has_engine_source: true,
+          snapshot: {
+            input_peak_db: [-12.0, -18.0, -150.0, -150.0],
+            output_peak_db: [-3.0, -3.0, -150.0, -150.0],
+            source: 'engine',
+          },
+        },
+        {
+          device_id: 'edirol-ua-1000',
+          input_channels: 10,
+          output_channels: 10,
+          has_engine_source: false,
+          snapshot: {
+            input_peak_db: Array(10).fill(-150.0),
+            output_peak_db: Array(10).fill(-150.0),
+            source: 'placeholder',
+          },
+        },
+      ],
+      isError: false,
+      isLoading: false,
+    })
+    render(<DevicePeakMetersOverview includeSnapshot />)
+    // Column header rendered.
+    expect(screen.getByText('Peak (dBFS)')).toBeInTheDocument()
+    // Tascam row: loudest input -12.0, loudest output -3.0.
+    expect(screen.getByText('in -12.0 / out -3.0 dBFS')).toBeInTheDocument()
+    // UA-1000 row: all channels at silence → em-dash.
+    expect(screen.getByText('—')).toBeInTheDocument()
+  })
+
   it('renders the optional title above the table', () => {
     mockUseDevicesPeakMetersRegistry.mockReturnValue({
       devices: [

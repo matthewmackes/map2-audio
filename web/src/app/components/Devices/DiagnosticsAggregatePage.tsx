@@ -132,7 +132,7 @@ export function DiagnosticsAggregatePage(): React.JSX.Element {
         data-testid="dx-meters-overview"
         style={{ marginBottom: 24 }}
       >
-        <DevicePeakMetersOverview title="Per-device metering" />
+        <DevicePeakMetersOverview title="Per-device metering" includeSnapshot />
       </section>
 
       <DataTable

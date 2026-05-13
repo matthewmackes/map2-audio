@@ -78,4 +78,41 @@ describe('useDevicesPeakMetersRegistry', () => {
     expect(screen.getByTestId('probe-count').textContent).toBe('0')
     expect(global.fetch).not.toHaveBeenCalled()
   })
+
+  it('passes include_snapshot=true to the registry route when requested', async () => {
+    mockFetchOnce({
+      devices: [
+        {
+          device_id: 'tascam-us144mkii',
+          input_channels: 4,
+          output_channels: 4,
+          has_engine_source: false,
+          snapshot: {
+            input_peak_db: [-12.0, -150.0, -150.0, -150.0],
+            output_peak_db: [-3.0, -3.0, -150.0, -150.0],
+            source: 'placeholder',
+          },
+        },
+      ],
+    })
+    function SnapshotProbe() {
+      const { devices } = useDevicesPeakMetersRegistry({
+        refetchIntervalMs: 60_000,
+        includeSnapshot: true,
+      })
+      return (
+        <span data-testid="snap-peak">
+          {devices[0]?.snapshot?.input_peak_db?.[0] ?? 'none'}
+        </span>
+      )
+    }
+    renderWithQuery(<SnapshotProbe />)
+    await waitFor(() => {
+      expect(screen.getByTestId('snap-peak').textContent).toBe('-12')
+    })
+    // Verify the include_snapshot query string was sent.
+    expect((global.fetch as jest.Mock).mock.calls[0]?.[0]).toBe(
+      '/api/v1/devices/peak-meters/registry?include_snapshot=true',
+    )
+  })
 })

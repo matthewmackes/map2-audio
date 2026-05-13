@@ -19,6 +19,10 @@ export interface DevicePeakMetersOverviewProps {
   title?: string
   /** Inherits the hook's default 5 s cadence. */
   refetchIntervalMs?: number
+  /** When true, the registry route is asked to inline a peak-meter
+   * snapshot for every device and the overview gains a "Peak (dBFS)"
+   * column summarizing the loudest channel per direction. */
+  includeSnapshot?: boolean
 }
 
 interface OverviewRow {
@@ -26,6 +30,27 @@ interface OverviewRow {
   device_id: string
   channels: string
   source: string
+  peak: string
+}
+
+const SILENCE_THRESHOLD_DBFS = -149.9
+
+function maxFinite(values: number[]): number | null {
+  let best: number | null = null
+  for (const v of values) {
+    if (!Number.isFinite(v) || v <= SILENCE_THRESHOLD_DBFS) continue
+    if (best === null || v > best) best = v
+  }
+  return best
+}
+
+function formatPeak(snapshot: { input_peak_db: number[]; output_peak_db: number[] } | null | undefined): string {
+  if (!snapshot) return '—'
+  const inMax = maxFinite(snapshot.input_peak_db)
+  const outMax = maxFinite(snapshot.output_peak_db)
+  if (inMax === null && outMax === null) return '—'
+  const fmt = (v: number | null) => (v === null ? '—' : `${v.toFixed(1)}`)
+  return `in ${fmt(inMax)} / out ${fmt(outMax)} dBFS`
 }
 
 function sourceTag(hasEngine: boolean) {
@@ -46,22 +71,32 @@ function sourceTag(hasEngine: boolean) {
 export function DevicePeakMetersOverview({
   title,
   refetchIntervalMs,
+  includeSnapshot,
 }: DevicePeakMetersOverviewProps) {
   const { devices, isError, isLoading } = useDevicesPeakMetersRegistry({
     refetchIntervalMs,
+    includeSnapshot,
   })
 
-  const headers = [
-    { key: 'device_id', header: 'Device' },
-    { key: 'channels', header: 'Channels (in/out)' },
-    { key: 'source', header: 'Metering source' },
-  ]
+  const headers = includeSnapshot
+    ? [
+        { key: 'device_id', header: 'Device' },
+        { key: 'channels', header: 'Channels (in/out)' },
+        { key: 'source', header: 'Metering source' },
+        { key: 'peak', header: 'Peak (dBFS)' },
+      ]
+    : [
+        { key: 'device_id', header: 'Device' },
+        { key: 'channels', header: 'Channels (in/out)' },
+        { key: 'source', header: 'Metering source' },
+      ]
 
   const rows: OverviewRow[] = devices.map((d) => ({
     id: d.device_id,
     device_id: d.device_id,
     channels: `${d.input_channels} / ${d.output_channels}`,
     source: d.has_engine_source ? 'engine' : 'placeholder',
+    peak: formatPeak(d.snapshot ?? null),
   }))
 
   if (isError) {

@@ -9,11 +9,18 @@
 
 import { useQuery } from '@tanstack/react-query'
 
+export interface DeviceMetersRegistrySnapshot {
+  input_peak_db: number[]
+  output_peak_db: number[]
+  source: 'placeholder' | 'engine'
+}
+
 export interface DeviceMetersRegistryEntry {
   device_id: string
   input_channels: number
   output_channels: number
   has_engine_source: boolean
+  snapshot?: DeviceMetersRegistrySnapshot | null
 }
 
 export interface DeviceMetersRegistryPayload {
@@ -27,6 +34,9 @@ export interface UseDevicesPeakMetersRegistryOptions {
   /** Default true. Pass false to hold the query (e.g. while
    * navigating between Devices subroutes). */
   enabled?: boolean
+  /** When true, asks the registry route to inline a peak-meter
+   * snapshot for every device (single round-trip dashboard). */
+  includeSnapshot?: boolean
 }
 
 export interface UseDevicesPeakMetersRegistryResult {
@@ -42,11 +52,16 @@ export function useDevicesPeakMetersRegistry(
 ): UseDevicesPeakMetersRegistryResult {
   const refetchInterval = opts?.refetchIntervalMs ?? DEFAULT_REFETCH_MS
   const enabled = opts?.enabled ?? true
+  const includeSnapshot = opts?.includeSnapshot ?? false
+
+  const url = includeSnapshot
+    ? '/api/v1/devices/peak-meters/registry?include_snapshot=true'
+    : '/api/v1/devices/peak-meters/registry'
 
   const query = useQuery<DeviceMetersRegistryPayload>({
-    queryKey: ['devices-peak-meters-registry'],
+    queryKey: ['devices-peak-meters-registry', includeSnapshot ? 'with-snapshot' : 'flat'],
     queryFn: async () => {
-      const resp = await fetch('/api/v1/devices/peak-meters/registry')
+      const resp = await fetch(url)
       if (!resp.ok) throw new Error(`peak-meters/registry HTTP ${resp.status}`)
       return resp.json()
     },
