@@ -58,6 +58,8 @@ import { LegacyTile } from '../../shared/LegacyTile'
 import { useToasts } from '../../Toasts'
 import { audioApi, diagnosticsApi, getWsUrl } from '../../../../map2/api'
 import { DeviceContextBanner } from '../../DeviceContext'
+import { DeviceMeterSourceTag } from '../Shared/DeviceMeterSourceTag'
+import { useDeviceMeterSource } from '../../../hooks/useDeviceMeterSource'
 import { useCluster } from '../../../contexts/useCluster'
 import { useDeviceNodeContext } from '../../../hooks/useDeviceNodeContext'
 import { usePipeWire } from '../../../hooks/usePipeWire'
@@ -967,6 +969,11 @@ function JuceEngineTab({
 // ========== Live Meters Tab ==========
 
 function LiveMetersTab({ meterData, wsConnected }: { meterData: MeterData; wsConnected: boolean }) {
+  // T2519 — per-device meter-source signal. Surfaces whether the
+  // /api/v1/devices/edirol-ua-1000/peak-meters route is backed by the
+  // engine or still serving the placeholder. Independent from the
+  // WebSocket "Live" pill above, which only tracks WS connectivity.
+  const meterSource = useDeviceMeterSource('edirol-ua-1000')
   const MeterBar = ({ value, label, color }: { value: number; label: string; color: string }) => (
     <div style={{ flex: 1 }}>
       <div style={{ fontSize: 11, color: 'var(--text-muted)', marginBottom: 4 }}>{label}</div>
@@ -1015,12 +1022,20 @@ function LiveMetersTab({ meterData, wsConnected }: { meterData: MeterData; wsCon
             {!wsConnected && <span style={{ color: '#f59e0b' }}> (Reconnecting...)</span>}
           </p>
         </div>
-        <StatusChip
-          tone={wsConnected ? 'ok' : 'neutral'}
-          dot
-          label={wsConnected ? 'Live' : 'Offline'}
-          size="sm"
-        />
+        <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+          <StatusChip
+            tone={wsConnected ? 'ok' : 'neutral'}
+            dot
+            label={wsConnected ? 'Live' : 'Offline'}
+            size="sm"
+          />
+          <span style={{ fontSize: 11, color: 'var(--text-muted)' }}>Per-device source:</span>
+          <DeviceMeterSourceTag
+            source={meterSource.source}
+            isError={meterSource.isError}
+            testId="ua1000-meter-source"
+          />
+        </div>
       </div>
 
       <div className="grid two">

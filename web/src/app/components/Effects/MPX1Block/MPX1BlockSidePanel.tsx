@@ -30,6 +30,8 @@ import {
   useSetMpx1Bypass,
   useUpsertMpx1Instance,
 } from './useMpx1BlockApi'
+import { DeviceMeterSourceTag } from '../../Devices/Shared/DeviceMeterSourceTag'
+import { useDeviceMeterSource } from '../../../hooks/useDeviceMeterSource'
 
 export interface MPX1BlockSidePanelProps {
   open: boolean
@@ -43,6 +45,12 @@ export function MPX1BlockSidePanel({ open, chainId, onClose }: MPX1BlockSidePane
   const instanceQuery = useMpx1Instance(open ? chainId : null)
   const interfacesQuery = useInterfaceCapabilities()
   const { preferred } = useAutoConnectionType()
+
+  // T2519 — meter-source signal for the MPX-1 hardware bridge. The
+  // peak-meters route is registered via lexicon_mpx1_meters.py and
+  // serves a placeholder snapshot until the engine wire-up lands.
+  // Gate on `open` so the closed modal doesn't fire the poll.
+  const meterSource = useDeviceMeterSource('lexicon-mpx1', { enabled: open })
 
   const upsertMutation = useUpsertMpx1Instance()
   const bypassMutation = useSetMpx1Bypass(chainId)
@@ -217,6 +225,18 @@ export function MPX1BlockSidePanel({ open, chainId, onClose }: MPX1BlockSidePane
             max={254}
             onChange={(_e, { value }) => setReturnR(Number(value))}
           />
+        </section>
+
+        <section className="stack" data-testid="mpx1-meter-source-section">
+          <h5>Live signal</h5>
+          <div style={{ display: 'flex', gap: 8, alignItems: 'center' }}>
+            <Tag type="cool-gray" size="sm">Metering source</Tag>
+            <DeviceMeterSourceTag
+              source={meterSource.source}
+              isError={meterSource.isError}
+              testId="mpx1-meter-source"
+            />
+          </div>
         </section>
 
         <section className="stack">

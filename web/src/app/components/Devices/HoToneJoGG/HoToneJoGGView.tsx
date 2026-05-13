@@ -1,10 +1,42 @@
+import { Tag } from '@carbon/react'
+
 import { useSetShellWindow } from '../../../layout/useSetShellWindow'
 import { EmptyState } from '../../shared/EmptyState'
 import { LoadingState } from '../../shared/LoadingState'
 import { DeviceContextBanner } from '../../DeviceContext'
+import { DeviceMeterSourceTag } from '../Shared/DeviceMeterSourceTag'
 import { AudioInterfaceControl } from '../../../../map2/components/AudioInterfaceControl'
 import { useCluster } from '../../../contexts/useCluster'
 import { useDeviceNodeContext } from '../../../hooks/useDeviceNodeContext'
+import { useDeviceMeterSource } from '../../../hooks/useDeviceMeterSource'
+
+interface JoggMeterSourceBannerProps {
+  enabled: boolean
+}
+
+function JoggMeterSourceBanner({ enabled }: JoggMeterSourceBannerProps) {
+  // T2519 — meter-source signal for the JoGG. Pure status line; the
+  // actual peak-meter values render inside AudioInterfaceControl.
+  const meter = useDeviceMeterSource('hotone-jogg', { enabled })
+  return (
+    <div
+      data-testid="jogg-meter-source-banner"
+      style={{
+        display: 'flex',
+        gap: 8,
+        alignItems: 'center',
+        padding: '4px 0',
+      }}
+    >
+      <Tag type="cool-gray" size="sm">Metering source</Tag>
+      <DeviceMeterSourceTag
+        source={meter.source}
+        isError={meter.isError}
+        testId="jogg-meter-source"
+      />
+    </div>
+  )
+}
 
 export function HoToneJoGGView() {
   const { activeNodeId, localNodeId, nodes } = useCluster()
@@ -54,7 +86,10 @@ export function HoToneJoGGView() {
       ) : null}
 
       {deviceState === 'ready' || deviceState === 'needs_switch' ? (
-        <AudioInterfaceControl nodeId={apiNodeId} />
+        <>
+          <JoggMeterSourceBanner enabled={!controlIsRemote} />
+          <AudioInterfaceControl nodeId={apiNodeId} />
+        </>
       ) : null}
     </div>
   )

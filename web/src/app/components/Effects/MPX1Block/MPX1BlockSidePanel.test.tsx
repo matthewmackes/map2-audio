@@ -50,6 +50,19 @@ const mockInstance = jest.fn()
 const mockInterfaces = jest.fn()
 const mockAuto = jest.fn()
 
+// T2519 — mock the shared meter-source hook so the panel test can
+// exercise placeholder / engine / error states without a fetch.
+const mockUseDeviceMeterSource = jest.fn(() => ({
+  source: 'placeholder' as const,
+  payload: undefined,
+  isError: false,
+  isLoading: false,
+}))
+
+jest.mock('../../../hooks/useDeviceMeterSource', () => ({
+  useDeviceMeterSource: (...args: unknown[]) => mockUseDeviceMeterSource(...(args as [])),
+}))
+
 jest.mock('./useMpx1BlockApi', () => ({
   useMpx1Instance: () => mockInstance(),
   useInterfaceCapabilities: () => mockInterfaces(),
@@ -108,6 +121,13 @@ beforeEach(() => {
   mockInstance.mockReset()
   mockInterfaces.mockReset()
   mockAuto.mockReset()
+  mockUseDeviceMeterSource.mockReset()
+  mockUseDeviceMeterSource.mockReturnValue({
+    source: 'placeholder',
+    payload: undefined,
+    isError: false,
+    isLoading: false,
+  })
 })
 
 describe('MPX1BlockSidePanel', () => {
@@ -314,5 +334,65 @@ describe('MPX1BlockSidePanel', () => {
       screen.getByText(/MPX-1 is already in use by another chain/i),
     ).toBeInTheDocument()
     expect(screen.getByText(/chain-OTHER/)).toBeInTheDocument()
+  })
+
+  // -----------------------------------------------------------------
+  // T2519 — Live signal section + meter-source Tag.
+  // -----------------------------------------------------------------
+
+  it('renders the meter-source section with the warm-gray placeholder Tag by default', () => {
+    mockInstance.mockReturnValue({ data: null })
+    mockInterfaces.mockReturnValue({ data: { interfaces: [TASCAM_ROW] } })
+    mockAuto.mockReturnValue({ preferred: 'spdif_coax', aesCapable: [], spdifCapable: [TASCAM_ROW] })
+    render(<MPX1BlockSidePanel open chainId="chain-A" onClose={() => {}} />)
+    expect(screen.getByTestId('mpx1-meter-source-section')).toBeInTheDocument()
+    const tag = screen.getByTestId('mpx1-meter-source')
+    expect(tag).toHaveTextContent('Awaiting engine wire-up')
+    expect(tag.classList.contains('cds--tag--warm-gray')).toBe(true)
+  })
+
+  it('renders the green Live Tag when the meter source is engine', () => {
+    mockUseDeviceMeterSource.mockReturnValue({
+      source: 'engine',
+      payload: undefined,
+      isError: false,
+      isLoading: false,
+    })
+    mockInstance.mockReturnValue({ data: null })
+    mockInterfaces.mockReturnValue({ data: { interfaces: [TASCAM_ROW] } })
+    mockAuto.mockReturnValue({ preferred: 'spdif_coax', aesCapable: [], spdifCapable: [TASCAM_ROW] })
+    render(<MPX1BlockSidePanel open chainId="chain-A" onClose={() => {}} />)
+    const tag = screen.getByTestId('mpx1-meter-source')
+    expect(tag).toHaveTextContent('Live')
+    expect(tag.classList.contains('cds--tag--green')).toBe(true)
+  })
+
+  it('renders the red Endpoint unavailable Tag when the route 5xxs', () => {
+    mockUseDeviceMeterSource.mockReturnValue({
+      source: undefined,
+      payload: undefined,
+      isError: true,
+      isLoading: false,
+    })
+    mockInstance.mockReturnValue({ data: null })
+    mockInterfaces.mockReturnValue({ data: { interfaces: [TASCAM_ROW] } })
+    mockAuto.mockReturnValue({ preferred: 'spdif_coax', aesCapable: [], spdifCapable: [TASCAM_ROW] })
+    render(<MPX1BlockSidePanel open chainId="chain-A" onClose={() => {}} />)
+    expect(screen.getByTestId('mpx1-meter-source')).toHaveTextContent(
+      'Endpoint unavailable',
+    )
+  })
+
+  it('disables the meter-source query when the modal is closed (enabled=false)', () => {
+    mockInstance.mockReturnValue({ data: null })
+    mockInterfaces.mockReturnValue({ data: { interfaces: [TASCAM_ROW] } })
+    mockAuto.mockReturnValue({ preferred: 'spdif_coax', aesCapable: [], spdifCapable: [TASCAM_ROW] })
+    render(<MPX1BlockSidePanel open={false} chainId="chain-A" onClose={() => {}} />)
+    // useDeviceMeterSource called with enabled=false.
+    const lastCall = mockUseDeviceMeterSource.mock.calls[
+      mockUseDeviceMeterSource.mock.calls.length - 1
+    ] as unknown as [string, { enabled?: boolean } | undefined]
+    expect(lastCall[0]).toBe('lexicon-mpx1')
+    expect(lastCall[1]?.enabled).toBe(false)
   })
 })
