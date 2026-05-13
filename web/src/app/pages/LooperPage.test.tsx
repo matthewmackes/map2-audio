@@ -1849,10 +1849,12 @@ describe('LooperPage T2512-METRICS-UI verb-counter panel', () => {
     await waitFor(() => {
       expect(screen.queryByTestId('looper-metrics-list')).not.toBeNull()
     })
-    // Sum is 8 verb calls; 3 tracked.
+    // Sum is 8 verb calls; 3 tracked. After T2512-METRICS-CHART the
+    // toggle also surfaces "· N in last 60 samples" once history is
+    // non-empty, so we substring-match on the leading half only.
     await waitFor(() => {
       expect(screen.getByTestId('looper-metrics-toggle')).toHaveTextContent(
-        'Metrics — 8 verb calls (3 tracked)',
+        /Metrics — 8 verb calls \(3 tracked/,
       )
     })
     expect(screen.getByTestId('looper-metrics-row-clear')).toHaveTextContent('1')
@@ -1893,6 +1895,66 @@ describe('LooperPage T2512-METRICS-UI verb-counter panel', () => {
         callsBefore,
       )
     })
+  })
+
+  // ---------------------------------------------------------------
+  // T2512-METRICS-CHART — sparkline per row + recent-totals headline.
+  // ---------------------------------------------------------------
+
+  it('renders a sparkline SVG for each counter row', async () => {
+    renderPage()
+    fireEvent.click(await screen.findByTestId('looper-metrics-toggle'))
+    await pushMetrics({ record: 2, stop_track: 1 })
+    await waitFor(() => {
+      expect(
+        screen.queryByTestId('looper-metrics-sparkline-record'),
+      ).toBeInTheDocument()
+      expect(
+        screen.queryByTestId('looper-metrics-sparkline-stop_track'),
+      ).toBeInTheDocument()
+    })
+  })
+
+  it('surfaces "N in last 60 samples" in the toggle once history is non-empty', async () => {
+    renderPage()
+    fireEvent.click(await screen.findByTestId('looper-metrics-toggle'))
+    await pushMetrics({ record: 4 })
+    await waitFor(() => {
+      expect(
+        screen.queryByTestId('looper-metrics-recent'),
+      ).toBeInTheDocument()
+    })
+    // First-appearance clamp caps the delta at 1, so the headline
+    // says "1 in last 60 samples" — not 4.
+    expect(screen.getByTestId('looper-metrics-recent')).toHaveTextContent(
+      /1 in last 60 samples/,
+    )
+  })
+
+  it('subsequent pushes accumulate the recent counter (not reset on each frame)', async () => {
+    renderPage()
+    fireEvent.click(await screen.findByTestId('looper-metrics-toggle'))
+    await pushMetrics({ record: 3 }) // first sighting → clamp to 1
+    await pushMetrics({ record: 5 }) // delta = 2 → cumulative 3
+    await waitFor(() => {
+      expect(screen.getByTestId('looper-metrics-recent')).toHaveTextContent(
+        /3 in last 60 samples/,
+      )
+    })
+  })
+
+  it('sparkline polyline points grow as samples arrive', async () => {
+    renderPage()
+    fireEvent.click(await screen.findByTestId('looper-metrics-toggle'))
+    await pushMetrics({ record: 1 })
+    await pushMetrics({ record: 2 })
+    await pushMetrics({ record: 3 })
+    const svg = await screen.findByTestId('looper-metrics-sparkline-record')
+    const polyline = svg.querySelector('polyline')
+    expect(polyline).not.toBeNull()
+    const pts = polyline!.getAttribute('points') ?? ''
+    // 3 samples → 3 coord pairs separated by a space.
+    expect(pts.split(' ')).toHaveLength(3)
   })
 })
 

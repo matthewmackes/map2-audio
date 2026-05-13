@@ -77,6 +77,14 @@ import {
   saveLooperKeybindings,
 } from './looperKeybindings'
 
+import {
+  SPARKLINE_CAPACITY,
+  type MetricsHistory,
+  appendMetricsDelta,
+  sparklinePoints,
+  trailingSum,
+} from './looperMetricsSparkline'
+
 import './LooperPage.css'
 
 const TRACK_COUNT = 4
@@ -1304,6 +1312,35 @@ function MetricsPanel({
     () => entries.reduce((sum, [, n]) => sum + n, 0),
     [entries],
   )
+
+  // T2512-METRICS-CHART — ring-buffer per-verb deltas across status
+  // frames so each row renders a sparkline. ``prevRef`` holds the
+  // last seen snapshot so delta computation is incremental, and
+  // ``historyRef`` is the mutable map of verb → samples. The
+  // dependency is the ``metrics`` object reference: every status
+  // frame creates a new dict via the LooperPage refresh path, so
+  // identity-stability is sufficient — no deep-compare needed.
+  // A version counter forces React to re-render after we mutate
+  // the ref-backed history (mutating refs alone wouldn't re-render).
+  const prevRef = useRef<Record<string, number>>({})
+  const historyRef = useRef<MetricsHistory>(new Map())
+  const [historyVersion, setHistoryVersion] = useState(0)
+
+  useEffect(() => {
+    appendMetricsDelta(historyRef.current, prevRef.current, metrics)
+    prevRef.current = metrics
+    setHistoryVersion((v) => v + 1)
+  }, [metrics])
+
+  const recentTotal = useMemo(() => {
+    let sum = 0
+    for (const buf of historyRef.current.values()) {
+      sum += trailingSum(buf)
+    }
+    return sum
+    // historyVersion tracks ref mutations.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [historyVersion])
   return (
     <Tile
       className="looper-page__metrics"
@@ -1322,7 +1359,13 @@ function MetricsPanel({
         />
         <span>
           Metrics — {total} verb call{total === 1 ? '' : 's'} ({entries.length}{' '}
-          tracked)
+          tracked
+          {recentTotal > 0 ? (
+            <span data-testid="looper-metrics-recent">
+              {' '}· {recentTotal} in last {SPARKLINE_CAPACITY} samples
+            </span>
+          ) : null}
+          )
         </span>
       </button>
       {open ? (
@@ -1340,15 +1383,50 @@ function MetricsPanel({
               className="looper-page__metrics-list"
               data-testid="looper-metrics-list"
             >
-              {entries.map(([verb, count]) => (
-                <li
-                  key={verb}
-                  data-testid={`looper-metrics-row-${verb}`}
-                >
-                  <span>{verb}</span>
-                  <span>{count}</span>
-                </li>
-              ))}
+              {entries.map(([verb, count]) => {
+                const samples = historyRef.current.get(verb) ?? []
+                const points = sparklinePoints(samples, 80, 18)
+                const recent = trailingSum(samples)
+                return (
+                  <li
+                    key={verb}
+                    data-testid={`looper-metrics-row-${verb}`}
+                  >
+                    <span>{verb}</span>
+                    <svg
+                      data-testid={`looper-metrics-sparkline-${verb}`}
+                      role="img"
+                      aria-label={`${verb} — ${recent} in the last ${samples.length} sample${samples.length === 1 ? '' : 's'}`}
+                      width={80}
+                      height={18}
+                      viewBox="0 0 80 18"
+                      style={{ flex: '0 0 80px', alignSelf: 'center' }}
+                    >
+                      {points ? (
+                        <polyline
+                          fill="none"
+                          stroke="var(--cds-support-info, #4589ff)"
+                          strokeWidth={1.5}
+                          strokeLinejoin="round"
+                          strokeLinecap="round"
+                          points={points}
+                        />
+                      ) : (
+                        <line
+                          x1={0}
+                          y1={17}
+                          x2={80}
+                          y2={17}
+                          stroke="var(--cds-border-subtle, #c6c6c6)"
+                          strokeWidth={1}
+                          strokeDasharray="2 2"
+                        />
+                      )}
+                    </svg>
+                    <span>{count}</span>
+                  </li>
+                )
+              })}
             </ul>
           )}
           <div className="looper-page__metrics-actions">
