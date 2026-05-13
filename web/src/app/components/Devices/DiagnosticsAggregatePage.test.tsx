@@ -25,6 +25,13 @@ jest.mock('../../../map2/clients/devices', () => ({
   listDeviceDiagnostics: (...args: unknown[]) => mockListDiagnostics(...args),
 }))
 
+// Mock the registry hook so the overview tile mounted on this page
+// doesn't issue a real fetch. The hook is covered by its own test.
+const mockUseDevicesPeakMetersRegistry = jest.fn()
+jest.mock('../../hooks/useDevicesPeakMetersRegistry', () => ({
+  useDevicesPeakMetersRegistry: () => mockUseDevicesPeakMetersRegistry(),
+}))
+
 import { DiagnosticsAggregatePage } from './DiagnosticsAggregatePage'
 
 function renderPage() {
@@ -39,6 +46,14 @@ function renderPage() {
 }
 
 afterEach(() => mockListDiagnostics.mockReset())
+
+beforeEach(() => {
+  mockUseDevicesPeakMetersRegistry.mockReturnValue({
+    devices: [],
+    isError: false,
+    isLoading: false,
+  })
+})
 
 test('DiagnosticsAggregatePage: renders header + counts when data loads', async () => {
   mockListDiagnostics.mockResolvedValue({
@@ -82,6 +97,31 @@ test('DiagnosticsAggregatePage: error InlineNotification on failure', async () =
   await waitFor(() => {
     expect(screen.getByText('Diagnostics unavailable')).toBeInTheDocument()
   })
+})
+
+test('DiagnosticsAggregatePage: mounts the per-device metering overview', async () => {
+  mockListDiagnostics.mockResolvedValue({
+    diagnostics: [], count: 0,
+    counts_by_severity: { info: 0, warning: 0, error: 0 },
+  })
+  mockUseDevicesPeakMetersRegistry.mockReturnValue({
+    devices: [
+      { device_id: 'tascam-us144mkii', input_channels: 4, output_channels: 4, has_engine_source: false },
+      { device_id: 'lexicon-mpx1', input_channels: 2, output_channels: 2, has_engine_source: true },
+    ],
+    isError: false,
+    isLoading: false,
+  })
+
+  renderPage()
+  await waitFor(() => {
+    expect(screen.getByTestId('dx-meters-overview')).toBeInTheDocument()
+  })
+  // The overview section header should appear.
+  expect(screen.getByText('Per-device metering')).toBeInTheDocument()
+  // Both rows rendered through the table.
+  expect(screen.getByText('tascam-us144mkii')).toBeInTheDocument()
+  expect(screen.getByText('lexicon-mpx1')).toBeInTheDocument()
 })
 
 test('DiagnosticsAggregatePage: pack_id column links to device profile', async () => {

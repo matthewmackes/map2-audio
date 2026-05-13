@@ -27,6 +27,7 @@ import { Link as RouterLink } from 'react-router-dom'
 
 import { useDeviceDiagnostics } from './hooks/useDeviceProfiles'
 import type { DiagnosticEntry } from '../../../map2/clients/devices'
+import { DevicePeakMetersOverview } from './Shared/DevicePeakMetersOverview'
 
 import './DiagnosticsAggregatePage.css'
 
@@ -125,6 +126,14 @@ export function DiagnosticsAggregatePage(): React.JSX.Element {
           <Loading withOverlay={false} small description="Loading diagnostics…" />
         </div>
       ) : null}
+
+      <section
+        className="diagnostics-aggregate-page__meters-overview"
+        data-testid="dx-meters-overview"
+        style={{ marginBottom: 24 }}
+      >
+        <DevicePeakMetersOverview title="Per-device metering" />
+      </section>
 
       <DataTable
         rows={rows}
