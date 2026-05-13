@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1630** Python | **1666** TypeScript | **222** C++/H | **149** Docs | **4439** total commits | **4** stars | **0** forks | **0** open issues
+**1630** Python | **1670** TypeScript | **222** C++/H | **149** Docs | **4448** total commits | **4** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
-| [`56922ec9`](https://github.com/matthewmackes/map2-audio/commit/56922ec900e113618dde6b13fa9964f38496d001) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-13 |
-| [`2940d0ca`](https://github.com/matthewmackes/map2-audio/commit/2940d0ca25d45baeb253d093fa6c4969749cead8) | fix(launcher): show physical MIDI interfaces in the syste... | Map2 Audio | 2026-05-13 |
-| [`347e22ce`](https://github.com/matthewmackes/map2-audio/commit/347e22ceeb67bbfcdde75779b347e1ac42c79c61) | feat(snapshot-editor): T2509-8 — Recorder/Looper compact ... | Map2 Audio | 2026-05-13 |
-| [`e2811e1d`](https://github.com/matthewmackes/map2-audio/commit/e2811e1dafbaf7f26e2ec39f41d77128432c6123) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-13 |
-| [`e7f8fdd1`](https://github.com/matthewmackes/map2-audio/commit/e7f8fdd12c893dae9d8f7fc195a5c341ac1ac5b3) | docs(worklist): T2512 — seventh Continue run end-of-run h... | Map2 Audio | 2026-05-13 |
-| [`864cc9a4`](https://github.com/matthewmackes/map2-audio/commit/864cc9a4ab60709e7734e28c6b673a6070ba37f6) | feat(looper): T2512-KEYBOARD — keyboard shortcuts for the... | Map2 Audio | 2026-05-13 |
-| [`3607fb54`](https://github.com/matthewmackes/map2-audio/commit/3607fb54ffd35d404cff41030114f9ec2e6b296c) | feat(looper): T2512-PRESET-EXPORT-WITH-LOCAL — fold cache... | Map2 Audio | 2026-05-13 |
-| [`399333da`](https://github.com/matthewmackes/map2-audio/commit/399333daf10c5239e8db800383ac06911f97a8e7) | feat(looper): T2512-PRESET-PERSIST-EXPORT — export/import... | Map2 Audio | 2026-05-13 |
+| [`8b73479a`](https://github.com/matthewmackes/map2-audio/commit/8b73479a8fd930431c067c7c16db4b7eb79fddba) | docs(worklist): T2512 — eighth Continue run end-of-run ha... | Map2 Audio | 2026-05-13 |
+| [`6591bee8`](https://github.com/matthewmackes/map2-audio/commit/6591bee82a3a1ab3f168dc20c560950a5daa06ac) | feat(tascam-us144mkii): T2515-6 — /meters and /clock-sour... | Map2 Audio | 2026-05-13 |
+| [`25c0ed6d`](https://github.com/matthewmackes/map2-audio/commit/25c0ed6d84cb46dc9d7feb860d67bc1a9af51c6c) | feat(looper): T2512-PRESET-DRAG-REORDER — drag-to-reorder... | Map2 Audio | 2026-05-13 |
+| [`85bc5a12`](https://github.com/matthewmackes/map2-audio/commit/85bc5a12aacd7d25de1a75a3eeb8cfb9f964ab46) | feat(looper): T2512-PRESET-RENAME — relabel a saved prese... | Map2 Audio | 2026-05-13 |
+| [`0a0c2596`](https://github.com/matthewmackes/map2-audio/commit/0a0c259666e5a8548d19c53d59861c5763a9f351) | feat(looper): T2512-METRICS-CHART — per-verb sparkline + ... | Map2 Audio | 2026-05-13 |
+| [`2f6587af`](https://github.com/matthewmackes/map2-audio/commit/2f6587aff4f5e2af030479fb3cd0d0e4aab7ad3b) | feat(looper): T2512-KEYBOARD-CUSTOMIZE — operator-remappa... | Map2 Audio | 2026-05-13 |
+| [`5d21366c`](https://github.com/matthewmackes/map2-audio/commit/5d21366c3d1faef5cbea1e50a1e4ee0c2dff2762) | fix(port80-proxy): retarget :80 → :3000 to preserve SPA f... | Map2 Audio | 2026-05-13 |
+| [`ced52d2c`](https://github.com/matthewmackes/map2-audio/commit/ced52d2cc22b8d8bc4d7e8ccfe6c831516815f5b) | feat(midi): project device-pack YAML defaults into canoni... | Map2 Audio | 2026-05-13 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
