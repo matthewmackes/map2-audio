@@ -42,6 +42,7 @@ EXPECTED_PATHS_BY_METHOD: dict[str, set[str]] = {
         "/api/v1/looper/track/{track}/auto-record/reset-peak",  # T2512-AUTO-PEAK
         "/api/v1/looper/presets/{name}",                # T2512-PRESET — save
         "/api/v1/looper/presets/{name}/apply",          # T2512-PRESET — apply
+        "/api/v1/looper/presets/reorder",               # T2512-PRESET-DRAG-REORDER
     },
     "patch": {
         "/api/v1/looper/track/{track}/level",

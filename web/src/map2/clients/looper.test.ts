@@ -387,6 +387,17 @@ describe('looperApi HTTP surface', () => {
     )
   })
 
+  // T2512-PRESET-DRAG-REORDER — POST /presets/reorder with a names body.
+  it('reorderPresets sends the names array to /presets/reorder', async () => {
+    await looperApi.reorderPresets(['b', 'a', 'c'])
+    expect(fetchMock.mock.calls[0]?.[0]).toBe(`${BASE}/presets/reorder`)
+    const init = fetchMock.mock.calls[0]?.[1] as RequestInit | undefined
+    expect(init?.method).toBe('POST')
+    expect(JSON.parse(String(init?.body ?? '{}'))).toEqual({
+      names: ['b', 'a', 'c'],
+    })
+  })
+
   // ---------- Headers ----------
 
   it('PATCH calls send Content-Type: application/json', async () => {

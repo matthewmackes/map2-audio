@@ -846,6 +846,67 @@ def test_rename_preset_route_no_op_returns_200_with_same_name() -> None:
 
 
 # ---------------------------------------------------------------------------
+# T2512-PRESET-DRAG-REORDER — set the explicit preset sequence over HTTP.
+# ---------------------------------------------------------------------------
+
+
+def test_reorder_presets_route_changes_order() -> None:
+    client, _, _ = _build_client()
+    client.post("/api/v1/looper/presets/a")
+    client.post("/api/v1/looper/presets/b")
+    client.post("/api/v1/looper/presets/c")
+    resp = client.post(
+        "/api/v1/looper/presets/reorder",
+        json={"names": ["c", "a", "b"]},
+    )
+    assert resp.status_code == 200
+    assert resp.json()["preset_names"] == ["c", "a", "b"]
+
+
+def test_reorder_presets_route_400_on_missing_name() -> None:
+    client, _, _ = _build_client()
+    client.post("/api/v1/looper/presets/a")
+    client.post("/api/v1/looper/presets/b")
+    resp = client.post(
+        "/api/v1/looper/presets/reorder",
+        json={"names": ["a"]},  # missing 'b'
+    )
+    assert resp.status_code == 400
+
+
+def test_reorder_presets_route_400_on_unknown_name() -> None:
+    client, _, _ = _build_client()
+    client.post("/api/v1/looper/presets/a")
+    resp = client.post(
+        "/api/v1/looper/presets/reorder",
+        json={"names": ["a", "ghost"]},
+    )
+    assert resp.status_code == 400
+
+
+def test_reorder_presets_route_does_not_collide_with_save_preset() -> None:
+    """Critical: ``POST /presets/reorder`` must not be intercepted by
+    ``POST /presets/{name}`` (which would attempt to save a preset
+    literally named "reorder"). Registration order in the router
+    pins this — saving "reorder" would normally succeed, but here
+    we expect the reorder route to fire first and 400 on the body
+    shape mismatch instead.
+    """
+    client, _, _ = _build_client()
+    # No body — Pydantic validation should reject this at the
+    # reorder route. If the catch-all save-preset route fired
+    # instead it would return 200 with preset_names=["reorder"].
+    resp = client.post("/api/v1/looper/presets/reorder")
+    # Either 422 (Pydantic) or 400 (service) — both confirm the
+    # reorder handler is the one that fired. What we MUST NOT get
+    # is 200 with preset_names containing "reorder".
+    assert resp.status_code in (400, 422)
+    # Verify no "reorder" preset was created as a side-effect.
+    list_resp = client.get("/api/v1/looper/presets")
+    assert "reorder" not in list_resp.json()["names"]
+
+
+# ---------------------------------------------------------------------------
 # T2512-OS-COUNT — multi-pass one-shot pass-count route
 # ---------------------------------------------------------------------------
 

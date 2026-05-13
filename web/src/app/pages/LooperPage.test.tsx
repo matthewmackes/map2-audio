@@ -148,6 +148,7 @@ jest.mock('../../map2/clients/looper', () => ({
     deletePreset: jest.fn(async () => mockIdleSnapshot),
     clearPresets: jest.fn(async () => mockIdleSnapshot),
     renamePreset: jest.fn(async () => mockIdleSnapshot),
+    reorderPresets: jest.fn(async () => mockIdleSnapshot),
     resetAutoPeak: jest.fn(async () => mockIdleSnapshot),
     setOneShotPasses: jest.fn(async () => mockIdleSnapshot),
     setMasterMuted: jest.fn(async () => mockIdleSnapshot),
@@ -1592,6 +1593,119 @@ describe('LooperPage T2512-PRESET-UI named-preset panel', () => {
     // Renaming to its own name → enabled (no-op rename is fine).
     fireEvent.change(input, { target: { value: 'set-a' } })
     expect(save).not.toBeDisabled()
+  })
+
+  // ---------------------------------------------------------------
+  // T2512-PRESET-DRAG-REORDER — HTML5 drag-and-drop to reorder rows.
+  // ---------------------------------------------------------------
+
+  /** Minimal DataTransfer stub for jsdom — only the methods/props
+   * the LooperPage drag handlers actually call. */
+  function makeDataTransfer(): DataTransfer {
+    const data = new Map<string, string>()
+    return {
+      effectAllowed: 'none',
+      dropEffect: 'none',
+      types: [],
+      files: [] as unknown as FileList,
+      items: [] as unknown as DataTransferItemList,
+      setData: (k: string, v: string) => {
+        data.set(k, v)
+      },
+      getData: (k: string) => data.get(k) ?? '',
+      clearData: () => {
+        data.clear()
+      },
+      setDragImage: () => {},
+    } as unknown as DataTransfer
+  }
+
+  it('preset rows are draggable when not in edit mode', async () => {
+    renderPage()
+    await screen.findByTestId('looper-preset-panel')
+    await pushPresets(['set-a', 'set-b'])
+    const row = await screen.findByTestId('looper-preset-row-set-a')
+    expect(row.getAttribute('draggable')).toBe('true')
+  })
+
+  it('rows in rename edit mode are not draggable', async () => {
+    renderPage()
+    await screen.findByTestId('looper-preset-panel')
+    await pushPresets(['set-a'])
+    fireEvent.click(await screen.findByTestId('looper-preset-rename-set-a'))
+    const row = await screen.findByTestId('looper-preset-row-set-a')
+    expect(row.getAttribute('draggable')).toBe('false')
+  })
+
+  it('drop fires looperApi.reorderPresets with the new sequence', async () => {
+    const looperApiMod = require('../../map2/clients/looper') as {
+      looperApi: { reorderPresets: jest.Mock }
+    }
+    looperApiMod.looperApi.reorderPresets.mockClear()
+    renderPage()
+    await screen.findByTestId('looper-preset-panel')
+    await pushPresets(['a', 'b', 'c'])
+    const rowA = await screen.findByTestId('looper-preset-row-a')
+    const rowC = await screen.findByTestId('looper-preset-row-c')
+    const dt = makeDataTransfer()
+    fireEvent.dragStart(rowA, { dataTransfer: dt })
+    fireEvent.dragOver(rowC, { dataTransfer: dt })
+    fireEvent.drop(rowC, { dataTransfer: dt })
+    await waitFor(() => {
+      expect(looperApiMod.looperApi.reorderPresets).toHaveBeenCalledWith([
+        'b',
+        'c',
+        'a',
+      ])
+    })
+  })
+
+  it('drop on the same row does NOT call reorderPresets', async () => {
+    const looperApiMod = require('../../map2/clients/looper') as {
+      looperApi: { reorderPresets: jest.Mock }
+    }
+    looperApiMod.looperApi.reorderPresets.mockClear()
+    renderPage()
+    await screen.findByTestId('looper-preset-panel')
+    await pushPresets(['a', 'b'])
+    const rowA = await screen.findByTestId('looper-preset-row-a')
+    const dt = makeDataTransfer()
+    fireEvent.dragStart(rowA, { dataTransfer: dt })
+    fireEvent.drop(rowA, { dataTransfer: dt })
+    expect(looperApiMod.looperApi.reorderPresets).not.toHaveBeenCalled()
+  })
+
+  it('drop renders the optimistic order before the server frame arrives', async () => {
+    const looperApiMod = require('../../map2/clients/looper') as {
+      looperApi: { reorderPresets: jest.Mock }
+    }
+    // Make the reorder call hang so we can observe the optimistic state.
+    let resolveReorder: () => void = () => {}
+    looperApiMod.looperApi.reorderPresets.mockImplementationOnce(
+      () =>
+        new Promise<unknown>((resolve) => {
+          resolveReorder = () => resolve(mockIdleSnapshot)
+        }),
+    )
+    renderPage()
+    await screen.findByTestId('looper-preset-panel')
+    await pushPresets(['a', 'b'])
+    const rowA = await screen.findByTestId('looper-preset-row-a')
+    const rowB = await screen.findByTestId('looper-preset-row-b')
+    const dt = makeDataTransfer()
+    fireEvent.dragStart(rowA, { dataTransfer: dt })
+    fireEvent.drop(rowB, { dataTransfer: dt })
+    // Before the server resolves, the row order should be [b, a].
+    await waitFor(() => {
+      const items = screen
+        .getAllByTestId(/^looper-preset-row-/)
+        .map((el) => el.getAttribute('data-testid'))
+      expect(items).toEqual([
+        'looper-preset-row-b',
+        'looper-preset-row-a',
+      ])
+    })
+    resolveReorder()
   })
 })
 

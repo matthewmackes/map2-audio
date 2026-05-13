@@ -304,6 +304,18 @@ export const looperApi = {
         body: JSON.stringify({ new_name: newName }),
       },
     ),
+  /**
+   * T2512-PRESET-DRAG-REORDER — set the explicit preset sequence.
+   *
+   * ``names`` must be a permutation of the current preset roster.
+   * 400 from the backend if it isn't (another tab raced a save/delete).
+   */
+  reorderPresets: (names: ReadonlyArray<string>) =>
+    fetchJson<LooperStatus>(`${BASE}/presets/reorder`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ names: [...names] }),
+    }),
 }
 
 function patch(url: string, body: unknown): Promise<LooperStatus> {

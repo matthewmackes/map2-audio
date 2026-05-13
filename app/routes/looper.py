@@ -79,6 +79,8 @@ def _http_for_error(exc: LooperServiceError) -> HTTPException:
         "preset_limit":        status.HTTP_409_CONFLICT,
         # T2512-PRESET-RENAME — destination name already exists.
         "preset_name_conflict": status.HTTP_409_CONFLICT,
+        # T2512-PRESET-DRAG-REORDER — reorder list is not a permutation.
+        "invalid_preset_order": status.HTTP_400_BAD_REQUEST,
     }.get(exc.code, status.HTTP_500_INTERNAL_SERVER_ERROR)
     return HTTPException(status_code=code, detail=str(exc))
 
@@ -253,6 +255,16 @@ class RenamePresetRequest(BaseModel):
     targeting the same preset slot.
     """
     new_name: str = Field(..., min_length=1)
+
+
+class ReorderPresetsRequest(BaseModel):
+    """T2512-PRESET-DRAG-REORDER — set the explicit preset order.
+
+    ``names`` must be a permutation of the current preset names. The
+    service raises 400 ``invalid_preset_order`` for any non-permutation
+    so the caller can detect a stale local view.
+    """
+    names: list[str] = Field(..., min_length=1)
 
 
 class RenameSliceRequest(BaseModel):
@@ -977,6 +989,31 @@ async def list_presets(
         names=service.list_presets(),
         cap=LooperService._MAX_PRESETS,
     )
+
+
+@router.post("/presets/reorder",
+             response_model=LooperStatusResponse,
+             operation_id="looper_reorder_presets",
+             summary="T2512-PRESET-DRAG-REORDER — set the saved presets' explicit order")
+async def reorder_presets(
+    body: ReorderPresetsRequest,
+    service: LooperService = Depends(_get_service),
+) -> LooperStatusResponse:
+    """T2512-PRESET-DRAG-REORDER — replace the preset sequence with
+    the supplied permutation.
+
+    Registered before ``POST /presets/{name}`` so the literal path
+    matches first (FastAPI matches routes in registration order).
+
+    Returns 400 ``invalid_preset_order`` when ``names`` is not a
+    permutation of the current preset roster (typically because
+    another tab raced a save/delete and the local view is stale).
+    """
+    try:
+        result = service.reorder_presets(body.names)
+    except LooperServiceError as exc:
+        raise _http_for_error(exc)
+    return LooperStatusResponse.from_status(result)
 
 
 @router.post("/presets/{name}",

@@ -945,11 +945,77 @@ function PresetPanel({
   // the operator's focus is always unambiguous.
   const [renamingName, setRenamingName] = useState<string | null>(null)
   const [renameDraft, setRenameDraft] = useState('')
+  // T2512-PRESET-DRAG-REORDER — optimistic local ordering during a
+  // drag. While ``pendingOrder`` is non-null it overrides the
+  // server-supplied ``presetNames`` until a fresh status frame lands
+  // (which clears the override). dragSourceRef tracks the row index
+  // currently being dragged so the drop handler can compute the
+  // new sequence.
+  const [pendingOrder, setPendingOrder] = useState<string[] | null>(null)
+  const dragSourceRef = useRef<number | null>(null)
   // Re-read the cache on every render of a name list that might have
   // diverged. Cheap: localStorage hits a synchronous map.
   const [cacheTick, setCacheTick] = useState(0)
   const cache = useMemo(() => readPresetCache(), [cacheTick])
   const sortedNames = useMemo(() => [...presetNames], [presetNames])
+
+  // T2512-PRESET-DRAG-REORDER — clear the pending optimistic order
+  // whenever the server-supplied roster catches up. The pendingOrder
+  // only exists to bridge the milliseconds between drop and the
+  // status frame; once they agree, drop the override so future
+  // saves/deletes from other tabs surface immediately.
+  useEffect(() => {
+    if (pendingOrder == null) return
+    const same =
+      pendingOrder.length === sortedNames.length &&
+      pendingOrder.every((n, i) => n === sortedNames[i])
+    if (same) setPendingOrder(null)
+  }, [pendingOrder, sortedNames])
+
+  // Effective order for rendering — pendingOrder during a drag,
+  // otherwise the server roster. Names that vanish from the server
+  // roster (deleted from another tab) are dropped from the pending
+  // override before it's used so we never render a ghost row.
+  const displayOrder = useMemo<string[]>(() => {
+    if (pendingOrder == null) return sortedNames
+    const known = new Set(sortedNames)
+    const filtered = pendingOrder.filter((n) => known.has(n))
+    // Append any names the server roster has that the pending order
+    // didn't (a save raced our drag).
+    for (const n of sortedNames) {
+      if (!filtered.includes(n)) filtered.push(n)
+    }
+    return filtered
+  }, [pendingOrder, sortedNames])
+
+  const handleReorder = useCallback(
+    async (sourceIdx: number, targetIdx: number) => {
+      const base = pendingOrder ?? sortedNames
+      if (
+        sourceIdx < 0 ||
+        sourceIdx >= base.length ||
+        targetIdx < 0 ||
+        targetIdx >= base.length ||
+        sourceIdx === targetIdx
+      ) {
+        return
+      }
+      const next = [...base]
+      const [moved] = next.splice(sourceIdx, 1)
+      next.splice(targetIdx, 0, moved)
+      setPendingOrder(next)
+      setError(null)
+      try {
+        await looperApi.reorderPresets(next)
+      } catch (e: unknown) {
+        setError(e instanceof Error ? e.message : 'Reorder failed')
+        // Roll back: drop the optimistic override so the UI snaps
+        // back to the server-supplied roster on the next render.
+        setPendingOrder(null)
+      }
+    },
+    [pendingOrder, setError, sortedNames],
+  )
   // Names cached locally but missing on the backend — restore
   // candidates. Backend cleared its volatile store; ours survived.
   const missingFromBackend = useMemo(() => {
@@ -1002,6 +1068,9 @@ function PresetPanel({
     await onAction(() => looperApi.clearPresets())
     writePresetCache({})
     setCacheTick((v) => v + 1)
+    // T2512-PRESET-DRAG-REORDER — drop any optimistic order since the
+    // roster is now empty.
+    setPendingOrder(null)
   }, [onAction, setError])
 
   const handleRestoreFromCache = useCallback(
@@ -1229,14 +1298,34 @@ function PresetPanel({
             className="looper-page__presets-list"
             data-testid="looper-preset-list"
           >
-            {sortedNames.map((name) => {
+            {displayOrder.map((name, idx) => {
               const inEditMode = renamingName === name
               return (
                 <li
                   key={name}
                   className="looper-page__presets-row"
                   data-testid={`looper-preset-row-${name}`}
-                >
+                  draggable={!inEditMode}
+                  onDragStart={(e) => {
+                    dragSourceRef.current = idx
+                    e.dataTransfer.effectAllowed = 'move'
+                    e.dataTransfer.setData('text/plain', name)
+                  }}
+                  onDragOver={(e) => {
+                    if (dragSourceRef.current == null) return
+                    e.preventDefault()
+                    e.dataTransfer.dropEffect = 'move'
+                  }}
+                  onDrop={(e) => {
+                    e.preventDefault()
+                    const src = dragSourceRef.current
+                    dragSourceRef.current = null
+                    if (src == null || src === idx) return
+                    void handleReorder(src, idx)
+                  }}
+                  onDragEnd={() => {
+                    dragSourceRef.current = null
+                  }}>
                   {inEditMode ? (
                     <TextInput
                       id={`looper-preset-rename-input-${name}`}

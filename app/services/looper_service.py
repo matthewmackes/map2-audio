@@ -1528,6 +1528,57 @@ class LooperService:
             )
         return self._broadcast(self.get_status())
 
+    def reorder_presets(self, names: list[str]) -> LooperStatus:
+        """T2512-PRESET-DRAG-REORDER — set the explicit insertion order
+        of the saved presets.
+
+        ``names`` must be a permutation of the *currently saved*
+        preset names (after the same sanitization the other preset
+        verbs apply). The validation is strict — an operator passing
+        a list that drops or adds a preset is almost certainly racing
+        a save/delete from another tab, and silently dropping the
+        update would leave the local UI ahead of the backend.
+
+        Raises ``LooperServiceError(invalid_preset_order)`` with a
+        descriptive message when:
+          - the input is missing a currently-saved name
+          - the input contains a name we don't know about
+          - the input has duplicates
+
+        A no-op reorder (same sequence) still broadcasts so external
+        subscribers can confirm the order they expected is the one
+        the backend holds.
+        """
+        # Sanitize each requested name; an empty / unparseable entry
+        # short-circuits with the existing invalid_preset_name code so
+        # the operator gets the same error class as every other write.
+        cleaned: list[str] = [self._sanitize_preset_name(n) for n in names]
+
+        # Strict permutation check: same multiset.
+        current_keys = list(self._presets.keys())
+        if sorted(cleaned) != sorted(current_keys):
+            raise LooperServiceError(
+                code="invalid_preset_order",
+                message=(
+                    "reorder list must be a permutation of the current "
+                    f"presets {current_keys!r}; got {cleaned!r}"
+                ),
+            )
+        # No-op short-circuit — same order in, same order out. Still
+        # broadcasts so callers can confirm.
+        if cleaned == current_keys:
+            return self._broadcast(self.get_status())
+
+        # Rebuild the dict honoring the new sequence.
+        rebuilt: dict[str, dict[str, Any]] = {}
+        for name in cleaned:
+            rebuilt[name] = self._presets[name]
+        self._presets = rebuilt
+        self._record_activity(
+            "reorder_presets", None, f"reordered presets to {cleaned!r}"
+        )
+        return self._broadcast(self.get_status())
+
     def rename_preset(self, old_name: str, new_name: str) -> LooperStatus:
         """T2512-PRESET-RENAME — rebind a saved preset to a new name.
 

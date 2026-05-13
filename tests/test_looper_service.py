@@ -2608,3 +2608,98 @@ def test_rename_preset_preserves_insertion_order_when_renaming_middle_entry() ->
     service.rename_preset("b", "B-renamed")
     # Middle entry rename keeps the slot index — operators expect this.
     assert service.list_presets() == ["a", "B-renamed", "c"]
+
+
+# ---------------------------------------------------------------------------
+# T2512-PRESET-DRAG-REORDER — set the explicit preset sequence.
+# ---------------------------------------------------------------------------
+
+
+def test_reorder_presets_changes_order_in_place() -> None:
+    service = LooperService()
+    service.save_preset("a")
+    service.save_preset("b")
+    service.save_preset("c")
+    service.reorder_presets(["c", "a", "b"])
+    assert service.list_presets() == ["c", "a", "b"]
+    assert service.get_status().preset_names == ("c", "a", "b")
+
+
+def test_reorder_presets_same_order_is_noop() -> None:
+    service = LooperService()
+    service.save_preset("a")
+    service.save_preset("b")
+    service.reorder_presets(["a", "b"])
+    assert service.list_presets() == ["a", "b"]
+
+
+def test_reorder_presets_missing_name_raises() -> None:
+    service = LooperService()
+    service.save_preset("a")
+    service.save_preset("b")
+    with pytest.raises(LooperServiceError) as exc:
+        service.reorder_presets(["a"])  # drops b
+    assert exc.value.code == "invalid_preset_order"
+
+
+def test_reorder_presets_unknown_name_raises() -> None:
+    service = LooperService()
+    service.save_preset("a")
+    with pytest.raises(LooperServiceError) as exc:
+        service.reorder_presets(["a", "ghost"])
+    assert exc.value.code == "invalid_preset_order"
+
+
+def test_reorder_presets_duplicate_name_raises() -> None:
+    service = LooperService()
+    service.save_preset("a")
+    service.save_preset("b")
+    with pytest.raises(LooperServiceError) as exc:
+        service.reorder_presets(["a", "a"])
+    assert exc.value.code == "invalid_preset_order"
+
+
+def test_reorder_presets_empty_input_against_empty_roster_is_ok() -> None:
+    service = LooperService()
+    # No presets saved. Sanitization would fail on an empty string,
+    # so we just verify the empty-list-into-empty-roster path:
+    # sorted([]) == sorted([]) -> permutation succeeds.
+    service.reorder_presets([])
+    assert service.list_presets() == []
+
+
+def test_reorder_presets_payload_survives() -> None:
+    """A reorder must NOT touch the saved payloads — applying any
+    preset after reorder still restores the state captured at save
+    time."""
+    service = LooperService()
+    service.set_locked(0, True)
+    service.save_preset("first")
+    service.set_locked(0, False)
+    service.set_locked(2, True)
+    service.save_preset("second")
+    service.reorder_presets(["second", "first"])
+    # Apply first should still restore locked=True on track 0.
+    service.apply_preset("first")
+    status = service.get_status()
+    assert status.tracks[0].locked is True
+
+
+def test_reorder_presets_broadcasts_and_records_activity() -> None:
+    received: list = []
+    service = LooperService(broadcaster=received.append)
+    service.save_preset("a")
+    service.save_preset("b")
+    received.clear()
+    service.reorder_presets(["b", "a"])
+    assert len(received) == 1
+    activity = service.get_activity()
+    assert any(ev.verb == "reorder_presets" for ev in activity)
+
+
+def test_reorder_presets_invalid_name_raises_invalid_preset_name() -> None:
+    service = LooperService()
+    service.save_preset("a")
+    with pytest.raises(LooperServiceError) as exc:
+        service.reorder_presets([""])
+    assert exc.value.code == "invalid_preset_name"
