@@ -62,6 +62,21 @@ import {
   type LooperTrackStatus,
 } from '../../map2/clients/looper'
 
+import {
+  DEFAULT_LOOPER_KEYBINDINGS,
+  LOOPER_ACTIONS,
+  LOOPER_ACTION_LABEL,
+  type LooperAction,
+  type LooperKeybindings,
+  type KeyBinding,
+  bindingFromEvent,
+  bindingLabel,
+  findDuplicateBindings,
+  loadLooperKeybindings,
+  resolveActionForEvent,
+  saveLooperKeybindings,
+} from './looperKeybindings'
+
 import './LooperPage.css'
 
 const TRACK_COUNT = 4
@@ -176,6 +191,17 @@ export function LooperPage() {
     return 0
   })
   const [kbHelpOpen, setKbHelpOpen] = useState(false)
+  // T2512-KEYBOARD-CUSTOMIZE — operator-remappable shortcuts.
+  // Bindings live in localStorage under ``map2.looper.keybindings``;
+  // a missing/corrupt entry falls back to DEFAULT_LOOPER_KEYBINDINGS.
+  const [keybindings, setKeybindings] = useState<LooperKeybindings>(() =>
+    loadLooperKeybindings(),
+  )
+  const [customizeOpen, setCustomizeOpen] = useState(false)
+  // Action currently capturing a new binding (null = not capturing).
+  const [capturingAction, setCapturingAction] = useState<LooperAction | null>(
+    null,
+  )
 
   // T2512-IMPORT-UI — file input ref + handler. The file picker is
   // a hidden <input type="file"> triggered by an Import button so we
@@ -414,12 +440,23 @@ export function LooperPage() {
     }
   }, [activeKbTrack])
 
+  // T2512-KEYBOARD-CUSTOMIZE — persist remapped bindings whenever they
+  // change. Quota errors are swallowed by the storage helper.
+  useEffect(() => {
+    saveLooperKeybindings(keybindings)
+  }, [keybindings])
+
   // T2512-KEYBOARD — global keyboard listener. We attach to window so
   // an operator can drive the looper from anywhere on the page (not
   // just when a button has focus). Shortcuts intentionally ignore
   // when the event target is an editable field (input / textarea /
   // contenteditable) so typing into a preset name or slice label
   // doesn't accidentally fire a stomp verb.
+  //
+  // T2512-KEYBOARD-CUSTOMIZE — every shortcut now resolves through
+  // the live ``keybindings`` map (with localStorage-backed
+  // persistence). The default map matches the original hardcoded
+  // layout; remapping any action takes effect on the next keypress.
   useEffect(() => {
     function isEditableTarget(el: EventTarget | null): boolean {
       if (!(el instanceof HTMLElement)) return false
@@ -428,51 +465,58 @@ export function LooperPage() {
       return tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT'
     }
     function handler(ev: KeyboardEvent) {
-      if (isEditableTarget(ev.target)) return
-      // Track selectors (1..4 → 0..3). No modifier required.
-      if (!ev.ctrlKey && !ev.metaKey && !ev.altKey) {
-        if (ev.key >= '1' && ev.key <= String(TRACK_COUNT)) {
-          ev.preventDefault()
-          setActiveKbTrack(parseInt(ev.key, 10) - 1)
-          return
-        }
-        if (ev.key === '?') {
-          ev.preventDefault()
-          setKbHelpOpen((v) => !v)
-          return
-        }
-      }
-      const t = activeKbTrack
-      if (status == null) return
-      const track = status.tracks[t]
-      if (!track) return
-      // Transport: Space → record (Shift+Space → stop).
-      if (ev.code === 'Space') {
+      // Capture mode: the customizer is recording the next key press
+      // for a specific action. Swallow the event and forward it to
+      // the capture sink instead of firing transport verbs.
+      if (capturingAction != null) {
+        const captured = bindingFromEvent(ev)
+        if (captured == null) return // pure modifier — wait
         ev.preventDefault()
-        if (ev.shiftKey) {
-          void wrap(() => looperApi.stop(t))
-        } else {
-          void wrap(() => looperApi.record(t))
+        setKeybindings((prev) => ({ ...prev, [capturingAction]: captured }))
+        setCapturingAction(null)
+        return
+      }
+      if (isEditableTarget(ev.target)) return
+      const action = resolveActionForEvent(keybindings, ev)
+      if (action == null) return
+      // Selectors and the help-overlay action don't depend on the
+      // current status; fire them eagerly.
+      if (action === 'selectTrack1' || action === 'selectTrack2' ||
+          action === 'selectTrack3' || action === 'selectTrack4') {
+        const idx = parseInt(action.slice('selectTrack'.length), 10) - 1
+        if (idx >= 0 && idx < TRACK_COUNT) {
+          ev.preventDefault()
+          setActiveKbTrack(idx)
         }
         return
       }
-      // Bare-key shortcuts; ignore when a modifier we don't recognize is held.
-      if (ev.ctrlKey || ev.metaKey || ev.altKey) return
-      switch (ev.key.toLowerCase()) {
-        case 'u':
-          ev.preventDefault()
+      if (action === 'helpToggle') {
+        ev.preventDefault()
+        setKbHelpOpen((v) => !v)
+        return
+      }
+      if (status == null) return
+      const t = activeKbTrack
+      const track = status.tracks[t]
+      if (!track) return
+      ev.preventDefault()
+      switch (action) {
+        case 'record':
+          void wrap(() => looperApi.record(t))
+          break
+        case 'stop':
+          void wrap(() => looperApi.stop(t))
+          break
+        case 'undo':
           void wrap(() => looperApi.undo(t))
           break
-        case 'y':
-          ev.preventDefault()
+        case 'redo':
           void wrap(() => looperApi.redo(t))
           break
-        case 'm':
-          ev.preventDefault()
+        case 'muteToggle':
           void wrap(() => looperApi.setMuted(t, !track.muted))
           break
-        case 'r':
-          ev.preventDefault()
+        case 'reverseToggle':
           void wrap(() => looperApi.setReverse(t, !track.reverse))
           break
         default:
@@ -481,7 +525,7 @@ export function LooperPage() {
     }
     window.addEventListener('keydown', handler)
     return () => window.removeEventListener('keydown', handler)
-  }, [activeKbTrack, status, wrap])
+  }, [activeKbTrack, capturingAction, keybindings, status, wrap])
 
   return (
     <div className="looper-page">
@@ -732,7 +776,9 @@ export function LooperPage() {
             </p>
           </Modal>
 
-          {/* T2512-KEYBOARD — shortcuts help modal. */}
+          {/* T2512-KEYBOARD — shortcuts help modal. Rows render live
+              from the customizable binding map (T2512-KEYBOARD-CUSTOMIZE)
+              so a remapped binding shows up here immediately. */}
           <Modal
             data-testid="looper-kb-help-modal"
             open={kbHelpOpen}
@@ -741,43 +787,59 @@ export function LooperPage() {
             onRequestClose={() => setKbHelpOpen(false)}
           >
             <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'grid', gridTemplateColumns: 'auto 1fr', gap: '0.25rem 1rem' }}>
-              <li style={{ display: 'contents' }}>
-                <kbd>1..4</kbd>
-                <span>Select active track</span>
-              </li>
-              <li style={{ display: 'contents' }}>
-                <kbd>Space</kbd>
-                <span>Record / play / overdub on active track</span>
-              </li>
-              <li style={{ display: 'contents' }}>
-                <kbd>Shift + Space</kbd>
-                <span>Stop active track</span>
-              </li>
-              <li style={{ display: 'contents' }}>
-                <kbd>U</kbd>
-                <span>Undo last layer on active track</span>
-              </li>
-              <li style={{ display: 'contents' }}>
-                <kbd>Y</kbd>
-                <span>Redo last layer on active track</span>
-              </li>
-              <li style={{ display: 'contents' }}>
-                <kbd>M</kbd>
-                <span>Toggle mute on active track</span>
-              </li>
-              <li style={{ display: 'contents' }}>
-                <kbd>R</kbd>
-                <span>Toggle reverse on active track</span>
-              </li>
-              <li style={{ display: 'contents' }}>
-                <kbd>?</kbd>
-                <span>Toggle this help</span>
-              </li>
+              {LOOPER_ACTIONS.map((action) => (
+                <li
+                  key={action}
+                  style={{ display: 'contents' }}
+                  data-testid={`looper-kb-help-row-${action}`}
+                >
+                  <kbd>{bindingLabel(keybindings[action])}</kbd>
+                  <span>{LOOPER_ACTION_LABEL[action]}</span>
+                </li>
+              ))}
             </ul>
             <p style={{ marginTop: '1rem', color: 'var(--cds-text-secondary)' }}>
               Shortcuts are suppressed while editing a text field (preset name, slice label, etc.).
             </p>
+            <Button
+              data-testid="looper-kb-customize-open"
+              kind="tertiary"
+              size="sm"
+              onClick={() => {
+                setKbHelpOpen(false)
+                setCustomizeOpen(true)
+              }}
+              style={{ marginTop: '1rem' }}
+            >
+              Customize shortcuts…
+            </Button>
           </Modal>
+
+          {/* T2512-KEYBOARD-CUSTOMIZE — rebind any action to any key.
+              Click "Record" beside an action then press the key combo
+              you want; the page absorbs the keystroke instead of
+              firing the original shortcut. Reset returns the entire
+              map to DEFAULT_LOOPER_KEYBINDINGS. */}
+          <LooperKeybindingsModal
+            open={customizeOpen}
+            bindings={keybindings}
+            capturingAction={capturingAction}
+            onCaptureStart={setCapturingAction}
+            onClear={(action) =>
+              setKeybindings((prev) => ({
+                ...prev,
+                [action]: {} as KeyBinding,
+              }))
+            }
+            onResetAll={() => {
+              setKeybindings({ ...DEFAULT_LOOPER_KEYBINDINGS })
+              setCapturingAction(null)
+            }}
+            onClose={() => {
+              setCustomizeOpen(false)
+              setCapturingAction(null)
+            }}
+          />
 
           <PresetPanel
             presetNames={status.preset_names ?? []}
@@ -2186,5 +2248,124 @@ function ActivityPanel({
         </div>
       ) : null}
     </section>
+  )
+}
+
+/**
+ * T2512-KEYBOARD-CUSTOMIZE — rebind dialog.
+ *
+ * Each action row shows its current binding label + a "Rebind"
+ * button that arms capture mode. While capturingAction is set, the
+ * LooperPage's global keydown handler routes the next non-modifier
+ * keypress here instead of firing transport verbs.
+ *
+ * Duplicate bindings are surfaced with an InlineNotification but not
+ * blocked — operators sometimes deliberately stack two actions on
+ * one key (rare but useful for footswitch overlays).
+ */
+function LooperKeybindingsModal({
+  open,
+  bindings,
+  capturingAction,
+  onCaptureStart,
+  onClear,
+  onResetAll,
+  onClose,
+}: {
+  open: boolean
+  bindings: LooperKeybindings
+  capturingAction: LooperAction | null
+  onCaptureStart: (action: LooperAction | null) => void
+  onClear: (action: LooperAction) => void
+  onResetAll: () => void
+  onClose: () => void
+}) {
+  const duplicates = useMemo(
+    () => findDuplicateBindings(bindings),
+    [bindings],
+  )
+  return (
+    <Modal
+      data-testid="looper-kb-customize-modal"
+      open={open}
+      modalHeading="Customize keyboard shortcuts"
+      primaryButtonText="Done"
+      secondaryButtonText="Reset all to defaults"
+      onRequestClose={onClose}
+      onRequestSubmit={onClose}
+      onSecondarySubmit={onResetAll}
+      preventCloseOnClickOutside
+    >
+      <p
+        style={{
+          margin: '0 0 0.75rem',
+          color: 'var(--cds-text-secondary)',
+        }}
+      >
+        Click <em>Rebind</em> beside an action, then press the key
+        combo you want. Bindings save to this browser only.
+      </p>
+      {duplicates.length > 0 ? (
+        <InlineNotification
+          data-testid="looper-kb-customize-dupe-warning"
+          kind="warning"
+          lowContrast
+          hideCloseButton
+          title="Duplicate bindings"
+          subtitle={duplicates
+            .map((arr) =>
+              arr.map((a) => LOOPER_ACTION_LABEL[a]).join(' & '),
+            )
+            .join('; ')}
+          style={{ marginBottom: '0.75rem' }}
+        />
+      ) : null}
+      <ul
+        data-testid="looper-kb-customize-list"
+        style={{
+          listStyle: 'none',
+          padding: 0,
+          margin: 0,
+          display: 'grid',
+          gridTemplateColumns: '1fr auto auto auto',
+          gap: '0.5rem 0.75rem',
+          alignItems: 'center',
+        }}
+      >
+        {LOOPER_ACTIONS.map((action) => {
+          const capturing = capturingAction === action
+          return (
+            <li
+              key={action}
+              style={{ display: 'contents' }}
+              data-testid={`looper-kb-customize-row-${action}`}
+            >
+              <span>{LOOPER_ACTION_LABEL[action]}</span>
+              <kbd data-testid={`looper-kb-customize-binding-${action}`}>
+                {bindingLabel(bindings[action])}
+              </kbd>
+              <Button
+                kind={capturing ? 'danger--tertiary' : 'tertiary'}
+                size="sm"
+                data-testid={`looper-kb-customize-capture-${action}`}
+                onClick={() =>
+                  onCaptureStart(capturing ? null : action)
+                }
+              >
+                {capturing ? 'Press a key…' : 'Rebind'}
+              </Button>
+              <Button
+                kind="ghost"
+                size="sm"
+                data-testid={`looper-kb-customize-clear-${action}`}
+                onClick={() => onClear(action)}
+              >
+                Clear
+              </Button>
+            </li>
+          )
+        })}
+      </ul>
+    </Modal>
   )
 }

@@ -2945,3 +2945,177 @@ describe('LooperPage T2512-KEYBOARD shortcuts', () => {
     expect(chip).toHaveTextContent('track 3')
   })
 })
+
+describe('LooperPage T2512-KEYBOARD-CUSTOMIZE — rebind shortcuts', () => {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const mod = require('../../map2/clients/looper') as {
+    looperApi: {
+      record: jest.Mock
+      stop: jest.Mock
+      undo: jest.Mock
+      redo: jest.Mock
+      setMuted: jest.Mock
+      setReverse: jest.Mock
+    }
+  }
+
+  const BINDINGS_KEY = 'map2.looper.keybindings'
+
+  beforeEach(() => {
+    localStorage.clear()
+    mod.looperApi.record.mockClear()
+    mod.looperApi.stop.mockClear()
+    mod.looperApi.undo.mockClear()
+    mod.looperApi.redo.mockClear()
+    mod.looperApi.setMuted.mockClear()
+    mod.looperApi.setReverse.mockClear()
+  })
+
+  function dispatchKey(opts: KeyboardEventInit & { key: string }): void {
+    act(() => {
+      window.dispatchEvent(new KeyboardEvent('keydown', opts))
+    })
+  }
+
+  it('opens the customizer from the help-modal Customize button', async () => {
+    renderPage()
+    await screen.findByTestId('looper-kb-active-track')
+    dispatchKey({ key: '?' })
+    const openCustomize = await screen.findByTestId(
+      'looper-kb-customize-open',
+    )
+    fireEvent.click(openCustomize)
+    await screen.findByTestId('looper-kb-customize-modal')
+    // Every action row should render with the default binding label.
+    expect(
+      screen.getByTestId('looper-kb-customize-binding-record'),
+    ).toHaveTextContent('Space')
+    expect(
+      screen.getByTestId('looper-kb-customize-binding-stop'),
+    ).toHaveTextContent('Shift + Space')
+  })
+
+  it('rebinding "record" from Space to G fires record on G after capture', async () => {
+    renderPage()
+    await screen.findByTestId('looper-master-mute-button')
+    // Open help → customize.
+    dispatchKey({ key: '?' })
+    const openCustomize = await screen.findByTestId(
+      'looper-kb-customize-open',
+    )
+    fireEvent.click(openCustomize)
+    // Arm capture for "record".
+    const capture = await screen.findByTestId(
+      'looper-kb-customize-capture-record',
+    )
+    fireEvent.click(capture)
+    // The button label should flip to "Press a key…".
+    expect(capture).toHaveTextContent('Press a key…')
+    // Press "g" — should be captured, not fire record.
+    dispatchKey({ key: 'g', code: 'KeyG' })
+    expect(mod.looperApi.record).not.toHaveBeenCalled()
+    await waitFor(() => {
+      expect(
+        screen.getByTestId('looper-kb-customize-binding-record'),
+      ).toHaveTextContent('G')
+    })
+    // localStorage should reflect the new binding.
+    const raw = localStorage.getItem(BINDINGS_KEY)
+    expect(raw).not.toBeNull()
+    const parsed = JSON.parse(raw!)
+    expect(parsed.bindings.record).toMatchObject({ key: 'g' })
+    // Pressing Space should no longer fire record (no binding now).
+    dispatchKey({ key: ' ', code: 'Space' })
+    expect(mod.looperApi.record).not.toHaveBeenCalled()
+    // Pressing G should fire record on the active track (track 0).
+    dispatchKey({ key: 'g', code: 'KeyG' })
+    await waitFor(() => {
+      expect(mod.looperApi.record).toHaveBeenCalledWith(0)
+    })
+  })
+
+  it('"Reset all to defaults" restores the original layout', async () => {
+    // Seed localStorage with a custom record binding (G).
+    localStorage.setItem(
+      BINDINGS_KEY,
+      JSON.stringify({
+        schema: 1,
+        bindings: {
+          record: { key: 'g', shift: false, ctrl: false, alt: false, meta: false },
+        },
+      }),
+    )
+    renderPage()
+    await screen.findByTestId('looper-kb-active-track')
+    dispatchKey({ key: '?' })
+    fireEvent.click(await screen.findByTestId('looper-kb-customize-open'))
+    expect(
+      await screen.findByTestId('looper-kb-customize-binding-record'),
+    ).toHaveTextContent('G')
+    // Carbon Modal's secondary button text is configurable; find by text.
+    fireEvent.click(screen.getByText('Reset all to defaults'))
+    await waitFor(() => {
+      expect(
+        screen.getByTestId('looper-kb-customize-binding-record'),
+      ).toHaveTextContent('Space')
+    })
+  })
+
+  it('Clear button unbinds a single action without resetting others', async () => {
+    renderPage()
+    await screen.findByTestId('looper-kb-active-track')
+    dispatchKey({ key: '?' })
+    fireEvent.click(await screen.findByTestId('looper-kb-customize-open'))
+    fireEvent.click(
+      await screen.findByTestId('looper-kb-customize-clear-undo'),
+    )
+    await waitFor(() => {
+      expect(
+        screen.getByTestId('looper-kb-customize-binding-undo'),
+      ).toHaveTextContent('—')
+    })
+    // Other actions unchanged.
+    expect(
+      screen.getByTestId('looper-kb-customize-binding-record'),
+    ).toHaveTextContent('Space')
+    // Pressing U should no longer fire undo.
+    dispatchKey({ key: 'u' })
+    expect(mod.looperApi.undo).not.toHaveBeenCalled()
+  })
+
+  it('shows a duplicate-binding warning when two actions share a combo', async () => {
+    renderPage()
+    await screen.findByTestId('looper-kb-active-track')
+    dispatchKey({ key: '?' })
+    fireEvent.click(await screen.findByTestId('looper-kb-customize-open'))
+    // Rebind undo to M (collides with muteToggle).
+    fireEvent.click(
+      await screen.findByTestId('looper-kb-customize-capture-undo'),
+    )
+    dispatchKey({ key: 'm', code: 'KeyM' })
+    await screen.findByTestId('looper-kb-customize-dupe-warning')
+  })
+
+  it('mounts an operator-stored binding on page load', async () => {
+    // U remapped to Z + ctrl.
+    localStorage.setItem(
+      BINDINGS_KEY,
+      JSON.stringify({
+        schema: 1,
+        bindings: {
+          undo: { key: 'z', shift: false, ctrl: true, alt: false, meta: false },
+        },
+      }),
+    )
+    renderPage()
+    await screen.findByTestId('looper-master-mute-button')
+    // Original U should no longer fire undo.
+    dispatchKey({ key: 'u' })
+    expect(mod.looperApi.undo).not.toHaveBeenCalled()
+    // Ctrl+Z should fire it.
+    dispatchKey({ key: 'z', ctrlKey: true })
+    await waitFor(() => {
+      expect(mod.looperApi.undo).toHaveBeenCalledWith(0)
+    })
+  })
+})
