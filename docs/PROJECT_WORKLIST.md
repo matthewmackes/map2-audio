@@ -58,6 +58,7 @@ Each task/subtask should contain these fields:
 - `[~]` `T2503` — DAW Service (Tracktion-backed / pivoted to MAP2-native) — Cancelled 2026-05-11, superseded by T2504. **Retirement complete under T2505 on 2026-05-11.**
 - `[✓]` `T2505` — Retire T2503 artefacts (phase 1 of T2504) — closed 2026-05-11. C++ Daw tree archived; Python DAW backend + 76 pytest cases deleted; `MAP2_DAW_MODE` CMake flag removed; frontend shell + sub-pages archived with redirects to `/artifacts`; license + third-party + worklist docs reframed under T2504; cmake configure clean, atomic web build clean, typecheck + readiness tests green.
 - `[✓]` `T2506` — Snapshot graph extensions for recording (phase 2 of T2504) — closed 2026-05-11. SNAPSHOT_GRAPH_VERSION 2026.04→2026.05; new `recording` block with `oneOf [null | full 6-field session]`; v2026.04 docs migrate transparently via `ACCEPTED_LEGACY_GRAPH_VERSIONS`; `CompiledSnapshotIntent` surfaces `record_session_id` + `tap_matrix`; philosophy doc + 5 adjacent test files updated; 14 new + 79 adjacent pytest cases green; jest schema mocks updated; atomic build clean.
+- `[>]` `T2509-8` — Snapshot editor Recorder/Looper entry-point visual polish — compact deck wrapper for existing `RecordingPanel` + looper button; graphical-only, no dependency/platform-layer changes expected.
 - `[>]` `T2508` — Python recorder service + routes + artifacts integration (phase 4 of T2504) — **6 of 7 sub-tasks shipped 2026-05-11** (autonomous Continue cycles 4-9/15) ahead of the C++ RT-critical T2507 taps, per the operator's "RT safety is most important" directive. 5 `engine_command` verbs (cycle 4); RecorderService lifecycle (cycle 5); 6-route session HTTP surface (cycle 6); asset-type + service-plane library dir (cycle 7); 4-route artifact-registry HTTP surface (cycle 8); WS broadcaster on `recorder:session` topic + lifespan-init bridge (cycle 9, transition-only path). 125/125 combined sweep green; live `arm/list/delete` + `/api/recordings` empty + bridge init verified on :8080; zero changes inside `juce-engine/Source/` or the audioCallback. Remaining: periodic-task 15 fps real-time broadcaster (gated on T2507 counters), engine-side transport binding (gated on T2507).
 - `[>]` `T2459-H` — MIDI Backend Unification (controller-host + libremidi + ControllerEngine). All remaining gates consolidated into one bench-session runbook: [`docs/midi/T2459_FINAL_BENCH_SESSION.md`](midi/T2459_FINAL_BENCH_SESSION.md).
 - `[>]` `T2459-H3` — MeloAudio Commander device-pack cutover completion (gate consolidated into T2459 final bench session — `T2459_FINAL_BENCH_SESSION.md` Gate 1)
@@ -2273,6 +2274,20 @@ Sub-tasks:
 - `T2509-5` — `web/src/app/hooks/useRecorderSession.ts` — TanStack Query + WebSocket hook. Pattern matches `useChainMeter`. Returns `{ session, takes, peakLevels, isConnected, arm, disarm, roll, stop }`.
 - `T2509-6` — Routing: no new top-level route. `/artifacts?tab=recordings` is the canonical URL. Update `web/src/app/data/advancedMenuItems.ts` only if a quick-link is desired.
 - `T2509-7` — Tests: `RecordingPanel.test.tsx`, `RecordingDetailPanel.test.tsx`, `useRecorderSession.test.ts`, `AudioArtifactsPage.test.tsx` (extend with recordings tab assertion). Mock `useVuMeters` per the T710 pattern.
+- `T2509-8` — Snapshot editor Recorder/Looper entry-point visual polish.
+
+ID: T2509-8
+Status: [>] In Progress
+Parent: T2509
+Title: Give the Snapshot editor Recorder/Looper entry point a compact hardware-deck visual treatment without behavior changes.
+Description:
+- Goal / acceptance criteria: Replace the plain stacked Recorder/Looper entry controls in `web/src/app/pages/SnapshotEditorPageContent.tsx` with a compact visual deck using existing Carbon primitives and CSS only; preserve current recorder hook behavior and `/snapshot-editor/looper` navigation; no new dependencies, services, packages, build assumptions, or installer/environment changes.
+- Why it matters: The new Recorder/Looper entry point is a primary live-performance affordance and should look intentional in the Snapshot editor while staying low-risk and graphical-only.
+- Dependencies: T2509-4 RecordingPanel, T2512 looper route.
+- Estimated effort: Low.
+- Required outputs/deliverables: JSX/CSS polish, focused frontend validation, worklist closeout notes.
+Assigned to: Codex
+Last updated: 2026-05-13 06:27 EDT - Codex
 
 Acceptance: `npm --prefix web run typecheck && npm --prefix web run build` clean; jest `npx jest --testPathPattern='Recording|AudioArtifacts'` green; bundle includes `RecordingDetailPanel-*.js`; `curl /artifacts` returns 200 and renders the recordings tab when the route param is `?tab=recordings`.
 
@@ -2554,6 +2569,39 @@ The earlier order-1 row is fully drained for pure-Python / pure-frontend slices.
 4. **T2512-PRESET-EXPORT-WITH-LOCAL** — When Export-state (T2512-EXPORT-UI) fires, optionally include the localStorage preset cache in the JSON so an operator's full setup (active state + named presets + saved cache) travels as one file.
 5. **T2512-QUANT-ENGINE** — Engine-side consumer of `quantize_record_length`. C++ bench task; Python decision helper already audio-thread-callable via pybind11.
 6. **T2512-AUTO-TRIGGER engine binding** — input-level RMS push from JUCE callback to Python. Python state machine fully ready; just needs the audio-thread push.
+7. **T2512-FADE-RAMP** — Gain ramp on engine `looper_stop`. State surface shipped; engine work remains.
+
+**Bench-only / spec-needed** (unchanged): T2512-STOR, T2512-LONG, T2512-FX, T2512-TIME, T2512-DAW, T2512-BYP, T2512-SYNC-LOCK, T2512-CLOCK outbound.
+
+---
+
+### Pick-up next (seventh Continue run handoff, filed 2026-05-13, end-of-run)
+
+**Seventh run total: 4 cycles + handoff doc, all dual-pushed. Cumulative T2512 test totals after seven runs: ~600 Python tests across 18 suites + 173 web tests across 3 suites + 21 Node JS tests.**
+
+Shipped this run, in order (4 pure-frontend operator-quality slices drawn from the sixth handoff's "Next-session order-1 picks" plus one substituted ergonomic win):
+
+1. **T2512-FOOTER-STATS** — Compact verb-call chip in the page header. Reads `status.metrics` (already in every WS frame via T2512-METRICS-WS) so the value is push-synced without an extra HTTP round-trip. Hidden until at least one verb has fired; pluralization ("1 call" vs "5 calls"). +4 RTL tests.
+2. **T2512-PRESET-PERSIST-EXPORT** — Operator-facing export/import of the localStorage preset cache. Two new ghost buttons on the PresetPanel header (Export cache / Import cache…); purple "N cached" Tag shows the operator the export target at a glance. Replace-not-merge semantics on import; shape-checked entries reject the whole import atomically on any malformed value. +6 RTL tests.
+3. **T2512-PRESET-EXPORT-WITH-LOCAL** — Fold the localStorage preset cache into the master Export-state JSON file when it has entries. Envelope schema `map2.looper.state+cache@1` with reserved `__schema` + `__preset_cache` keys. Backward-compatible: cache-empty exports write the bare LooperStatePayload (no envelope churn); imports strip envelope keys before `applyState` and seed localStorage from the cache field when present. +5 RTL tests.
+4. **T2512-KEYBOARD** — Keyboard shortcuts for the looper transport. Layout: `1..4` selects active track (persisted to localStorage); `Space` records; `Shift+Space` stops; `U`/`Y` undo/redo; `M`/`R` toggle mute/reverse; `?` toggles a help modal. Global window listener with editable-field suppression so typing into a preset name doesn't fire a stomp verb. Active-track chip in the page header (clickable to cycle). Carbon Modal lists every binding. +11 RTL tests.
+
+**Status of long-term priorities after this run:**
+- Every pure-frontend nice-to-have from the sixth handoff's order-1 list is now shipped (FOOTER-STATS, PRESET-PERSIST-EXPORT, PRESET-EXPORT-WITH-LOCAL).
+- T2512-KEYBOARD added as a substitute for the explicitly-deferred T2512-SLICE-EDIT-PERSIST (the handoff called it "probably not worth the complexity"). Keyboard shortcuts have wider ROI for operators who drive the looper from a laptop without a footswitch.
+- Operator-facing surface is now genuinely "complete" for the pure-frontend axis: state, presets, slices, metrics, keyboard, durable backup all land. Operators have a one-file portable rig export including the cached preset list.
+- Only RT-gated tasks remain: T2512-QUANT-ENGINE, T2512-AUTO-TRIGGER engine binding, T2512-FADE-RAMP, plus the long-deferred T2512-STOR / LONG / FX / TIME / DAW / BYP / SYNC-LOCK / CLOCK-outbound.
+
+**Next-session order-1 picks** (priority order; pure-Python or pure-frontend only):
+
+The pure-frontend pickup well is genuinely dry now. The smallest pickable items that remain:
+
+1. **T2512-KEYBOARD-CUSTOMIZE** — Allow operators to remap keyboard shortcuts via a settings panel. localStorage-backed; defaults match the current bindings. Pure-frontend.
+2. **T2512-PRESET-RENAME** — Inline rename for a preset name without delete+save. Backend has no rename route — would need either a new PATCH route (small Python task) or a client-side save-then-delete sequence. Mostly-Python.
+3. **T2512-METRICS-CHART** — Sparkline or bar-chart visualization of verb counters in the MetricsPanel. Pure-frontend; recharts already in the bundle.
+4. **T2512-PRESET-DRAG-REORDER** — Drag the preset list rows to reorder. Backend list is insertion-order; would need a new POST route to reseat the order. Mostly-Python.
+5. **T2512-QUANT-ENGINE** — Engine-side consumer of `quantize_record_length`. C++ bench task.
+6. **T2512-AUTO-TRIGGER engine binding** — input-level RMS push from JUCE callback to Python. Python state machine ready.
 7. **T2512-FADE-RAMP** — Gain ramp on engine `looper_stop`. State surface shipped; engine work remains.
 
 **Bench-only / spec-needed** (unchanged): T2512-STOR, T2512-LONG, T2512-FX, T2512-TIME, T2512-DAW, T2512-BYP, T2512-SYNC-LOCK, T2512-CLOCK outbound.
