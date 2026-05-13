@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1632** Python | **1672** TypeScript | **222** C++/H | **149** Docs | **4454** total commits | **4** stars | **0** forks | **0** open issues
+**1640** Python | **1673** TypeScript | **222** C++/H | **149** Docs | **4461** total commits | **4** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`f21c105d`](https://github.com/matthewmackes/map2-audio/commit/f21c105d4c2b69aaf68c09cbdd25196276a8f712) | docs(worklist): tenth Continue run handoff + T2519 filing | Map2 Audio | 2026-05-13 |
+| [`29f1fa0c`](https://github.com/matthewmackes/map2-audio/commit/29f1fa0c9e10d874941ca8aac09d3196bb4afc4c) | feat(devices): tenth-Continue-5 — Lexicon MPX-1 meter facade | Map2 Audio | 2026-05-13 |
+| [`995c7be9`](https://github.com/matthewmackes/map2-audio/commit/995c7be9095cad684da03f0d9c2c29ad5055c24d) | feat(devices): tenth-Continue-4 — generic /peak-meters route | Map2 Audio | 2026-05-13 |
+| [`23521202`](https://github.com/matthewmackes/map2-audio/commit/2352120274bc7bcc37b134b35bfa054402f2da33) | feat(devices): tenth-Continue-3 — UA-1000 + Hotone JoGG m... | Map2 Audio | 2026-05-13 |
+| [`10f6efed`](https://github.com/matthewmackes/map2-audio/commit/10f6efedc192d7c61dac09959ce31dd7917cadef) | refactor(devices): tenth-Continue-2 — generic DeviceMeter... | Map2 Audio | 2026-05-13 |
+| [`2fba326a`](https://github.com/matthewmackes/map2-audio/commit/2fba326a133d9110f7efd040432c8d8cc24b4e16) | feat(tascam-us144mkii): tenth-Continue-1 — StatusTab mete... | Map2 Audio | 2026-05-13 |
+| [`f581fad6`](https://github.com/matthewmackes/map2-audio/commit/f581fad684edbcfd9691f21e03c82af074ba5ea4) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-13 |
 | [`56bce9c2`](https://github.com/matthewmackes/map2-audio/commit/56bce9c2f576314ca80cf6269b40c5cfb99dd795) | docs(worklist): ninth Continue run handoff + T2515/T2517 ... | Map2 Audio | 2026-05-13 |
-| [`e9cd3b08`](https://github.com/matthewmackes/map2-audio/commit/e9cd3b08e837ddd807bc7b5f415381354e1efee1) | feat(tascam-us144mkii): T2515-5 — metering tab silence se... | Map2 Audio | 2026-05-13 |
-| [`d5b1fe93`](https://github.com/matthewmackes/map2-audio/commit/d5b1fe932d9d8ecd9d1912e8b4551397cbde90f2) | feat(tascam-us144mkii): T2515-Follow-up-METER-WIRE — mete... | Map2 Audio | 2026-05-13 |
-| [`7625ca81`](https://github.com/matthewmackes/map2-audio/commit/7625ca81fccdd068204caea485c0260fa4eb9800) | test(mpx1-block): T2517-6 — RTL coverage for the per-inst... | Map2 Audio | 2026-05-13 |
-| [`e6f4d34d`](https://github.com/matthewmackes/map2-audio/commit/e6f4d34de475d446ec73163b0b489585e56c846a) | feat(snapshot-editor): T2517-4 — thread hardware-FX bridg... | Map2 Audio | 2026-05-13 |
-| [`7bc5e0a8`](https://github.com/matthewmackes/map2-audio/commit/7bc5e0a8f70564577e37e3e94770c319352e93a5) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-13 |
-| [`8b73479a`](https://github.com/matthewmackes/map2-audio/commit/8b73479a8fd930431c067c7c16db4b7eb79fddba) | docs(worklist): T2512 — eighth Continue run end-of-run ha... | Map2 Audio | 2026-05-13 |
-| [`6591bee8`](https://github.com/matthewmackes/map2-audio/commit/6591bee82a3a1ab3f168dc20c560950a5daa06ac) | feat(tascam-us144mkii): T2515-6 — /meters and /clock-sour... | Map2 Audio | 2026-05-13 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
