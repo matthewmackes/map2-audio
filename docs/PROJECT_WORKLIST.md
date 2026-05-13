@@ -2577,6 +2577,43 @@ The earlier order-1 row is fully drained for pure-Python / pure-frontend slices.
 
 ---
 
+### Pick-up next (eleventh Continue run handoff, filed 2026-05-13, end-of-run)
+
+**Eleventh run total: 9 cycles, all dual-pushed to origin + gitlab.** This run took the unified meter-source primitive shipped in run 10 (T2519) and built it out into a full operator-facing surface: shared hook + tag primitive, three device-panel parity rollouts, a registry-enumeration route, a frontend overview table, a wired diagnostics-page mount, and an opt-in snapshot-inlining mode with a live "Peak (dBFS)" column. T2519 stays `[✓]` but is now genuinely complete end-to-end.
+
+Shipped this run, in order:
+
+1. **Cycle 6 — `useDeviceMeterSource` + `DeviceMeterSourceTag` primitives** (commit `73b3add8`). Extracted the per-device meter-source policy from the TASCAM StatusTab so the upcoming three-panel rollout landed as one-liners. Hook returns `{source, payload, isError, isLoading}` from `/api/v1/devices/{id}/peak-meters` at a 5 s cadence (overridable); honors `enabled` gate. Tag wraps the four-state signal (placeholder/engine/error/loading) with a single Carbon `Tag` component. TASCAM StatusTab refactored to consume both; existing 5 tests pass against the refactor — proves the public surface is unchanged. +11 RTL tests across the two new files.
+
+2. **Cycles 7–9 — UA-1000 + JoGG + MPX-1 panel parity** (bundled commit `980f85a1`). UA-1000 LiveMetersTab gains an inline "Per-device source:" Tag next to the existing WS connectivity pill. JoGG view gains a small `JoggMeterSourceBanner` row above `AudioInterfaceControl` gated on `controlIsRemote` so the hook does not poll the local route when viewing a remote node. MPX-1 BlockSidePanel gains a new "Live signal" section above Latency calibration, gated on the modal's `open` flag. Tests: +3 RTL for JoGG (placeholder banner, error banner, remote disables poll), +4 RTL for MPX-1 (placeholder/engine/error tags + closed-modal disables poll). Cumulative meter-source web tests: 49 across 7 suites.
+
+3. **Cycle 10 — peak-meters registry enumeration route** (commit `98fd2d213`). New `GET /api/v1/devices/peak-meters/registry` returning every device registered with the meter-source primitive (alphabetically sorted) with `{device_id, input_channels, output_channels, has_engine_source}`. `DeviceMeterSourceRegistry.list_devices()` introspection method added; `DeviceRegistration` dataclass exposes the read-only view. Literal path registered before the parametric `/{device_id}/peak-meters` route — `test_registry_route_does_not_shadow_parametric_route` pins the coexistence. +9 Python tests (5 registry + 4 route). Cumulative meter-source Python tests: 63 across 5 suites.
+
+4. **Cycle 11 — `useDevicesPeakMetersRegistry` + `DevicePeakMetersOverview`** (commit `f5cac5df4`). Frontend half of the registry round-trip. Hook wraps the new route; component renders a Carbon DataTable with one row per device showing channel counts and a Live/placeholder Tag. Loading + error states render scoped testids so a parent panel can branch on them. +8 RTL tests across the two new files.
+
+5. **Cycle 12 — mount overview on the diagnostics aggregate page** (commit `1b7a78115`). `DiagnosticsAggregatePage` (route `/devices/diagnostics`) gains a new `<section data-testid="dx-meters-overview">` right above the diagnostics DataTable. Existing test sweep updated with a mock for the new hook + 1 new test asserting the overview is mounted. Operators now have one bench-wide place to see every device's metering wire-up state.
+
+6. **Cycle 13 — `?include_snapshot=true` on the registry route** (commit `359d0c526`). New optional query param inlines the per-device peak-meter snapshot for every device, collapsing the common dashboard pattern (registry + N per-device polls) into a single request. `DeviceRegistrySnapshot` model carries the same shape as `GenericMeterPayload` minus the redundant `device_id` echo. Awaitable-aware via `registry.read_snapshot(device_id)`. +3 Python route tests. Cumulative meter-source Python tests: 66 across 5 suites.
+
+7. **Cycle 14 — Peak (dBFS) column in the overview tile** (commit `9ed417887`). `useDevicesPeakMetersRegistry` gains `includeSnapshot` option that flips the URL + forks the cache key (`'flat'` vs `'with-snapshot'` so the two modes don't share an entry). `DevicePeakMetersOverview` gains an `includeSnapshot` prop, rendering a "Peak (dBFS)" column with formatted `in -X / out -Y dBFS` strings (loudest finite peak per direction, em-dash for silence-only channels matching the -149.9 dBFS threshold). DiagnosticsAggregatePage enables `includeSnapshot` so the live Peak column shows up there. +2 RTL tests. Cumulative meter-source web tests: 60 across 9 suites.
+
+**Cumulative coverage after the eleventh run: 66 Python tests across 5 suites + 60 web tests across 9 suites.**
+
+**Status of long-term priorities after this run:**
+- T2519 (filed in run 10) is now complete end-to-end. The Tascam-specific meter seam → unified registry primitive → 4 device facades → 3 device-panel banner adoptions → registry-enumeration route → frontend hook + overview component → diagnostics-page mount → snapshot-inlining mode with live Peak column. Operators see per-device wire-up state in the device's own Status surface AND in a unified bench-wide overview on `/devices/diagnostics`. When the C++ engine wire-up lands and registers a `JuceEngineMeterSource` per device at lifespan startup, every surface flips from `placeholder` to `engine` simultaneously.
+- T2515 + T2517 unchanged: same gates as the tenth handoff. Remaining work is bench- or RT-gated.
+
+**Next-session order-1 picks** (priority order; pure-Python or pure-frontend only):
+
+1. **WS-driven `/peak-meters/registry` streaming surface** — current overview polls at 5 s; a WS subscription that pushes registry updates (with optional snapshot mode) would let a Devices landing page render at 30 fps without per-device fetches. Pure-Python on the backend, pure-frontend on the hook side. ~2 cycles.
+2. **Per-device "last-snapshot timestamp" diagnostic** — extend `MeterSnapshot` with an optional `captured_at: float` field so the registry-enumeration route can show "last reading 3 s ago" beside the wire-up Tag. Requires a small protocol change but all facades + the placeholder source already construct snapshots in one place. ~1 cycle.
+3. **Dashboard column variants for `DevicePeakMetersOverview`** — add column toggles (channels in/out separated, source pill, raw snapshot timestamps) and a sort-by-source-state filter. Pure-frontend. ~1 cycle.
+4. **T2459-H final bench session gates** — `docs/midi/T2459_FINAL_BENCH_SESSION.md`; physical hardware required. Code-side complete.
+
+**Bench-only / spec-needed** (unchanged): T2515-7, T2515-8, T2517-1 (C++ + RT review), T2517-8, T2517-9, T2517-Follow-up-A (AES soak), T2517-Follow-up-B (crossfade on hot-swap), plus the full looper RT-gated tail (T2512-STOR / LONG / FX / TIME / DAW / BYP / SYNC-LOCK / CLOCK outbound).
+
+---
+
 ### Pick-up next (tenth Continue run handoff, filed 2026-05-13, end-of-run)
 
 **Tenth run total: 5 cycles + 1 worklist filing (T2519), all dual-pushed to origin + gitlab.** This run promoted the Tascam-specific meter-source seam from run 9 into a unified, multi-device primitive, migrated all four audio-interface + hardware-bridge devices onto it, and surfaced the source state in the Carbon Status tab so operators don't need to open the Metering tab to see the wire-up health.
