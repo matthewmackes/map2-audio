@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1630** Python | **1666** TypeScript | **222** C++/H | **149** Docs | **4422** total commits | **4** stars | **0** forks | **0** open issues
+**1630** Python | **1666** TypeScript | **222** C++/H | **149** Docs | **4429** total commits | **4** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -175,7 +175,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-DOCS:START -->
 | Document | Last Updated |
 |:---------|:------------|
-| [MAP2 Canonical Project Worklist](https://github.com/matthewmackes/map2-audio/blob/master/docs/PROJECT_WORKLIST.md) | 2026-05-12 |
+| [MAP2 Canonical Project Worklist](https://github.com/matthewmackes/map2-audio/blob/master/docs/PROJECT_WORKLIST.md) | 2026-05-13 |
 | [MAP2 — No-Hardware Worklist](https://github.com/matthewmackes/map2-audio/blob/master/docs/PROJECT_WORKLIST_NO_HARDWARE.md) | 2026-05-11 |
 | [Third-Party Notices](https://github.com/matthewmackes/map2-audio/blob/master/docs/THIRD_PARTY_NOTICES.md) | 2026-05-11 |
 | [MAP2 Audio Platform — AI Instructions](https://github.com/matthewmackes/map2-audio/blob/master/docs/CLAUDE.md) | 2026-05-10 |
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`b87d631e`](https://github.com/matthewmackes/map2-audio/commit/b87d631ee27edf45071b40fd124b3719ab488919) | docs(worklist): T2512 — sixth Continue run end-of-run han... | Map2 Audio | 2026-05-13 |
+| [`e3cd3907`](https://github.com/matthewmackes/map2-audio/commit/e3cd3907c4da96c525ccab68b27a8076098843e9) | feat(looper): T2512-SLICE-EDIT — inline-rename slice labe... | Map2 Audio | 2026-05-13 |
+| [`9f7c59e4`](https://github.com/matthewmackes/map2-audio/commit/9f7c59e40ebc835fe810c77344f769aedb85af30) | feat(looper): T2512-RESET-PEAK-ALL — master "Reset all pe... | Map2 Audio | 2026-05-13 |
+| [`48cd9d7f`](https://github.com/matthewmackes/map2-audio/commit/48cd9d7fe124c73e0b80e6c943f5cc63a138ecca) | feat(looper): T2512-SLICE-MULTI — bulk-delete on the slic... | Map2 Audio | 2026-05-13 |
+| [`2bea5ce0`](https://github.com/matthewmackes/map2-audio/commit/2bea5ce017a9a14dc9b7ed49fb1a7f0b23c9fc97) | feat(looper): T2512-PRESET-PERSIST — localStorage layer a... | Map2 Audio | 2026-05-13 |
+| [`0a7a70df`](https://github.com/matthewmackes/map2-audio/commit/0a7a70dfeb918cc32300c653fc0fa658d889eed2) | feat(looper): T2512-METRICS-UI — foldable verb-counter pa... | Map2 Audio | 2026-05-13 |
+| [`caff68c8`](https://github.com/matthewmackes/map2-audio/commit/caff68c84ce06fbb316c2be40a6d1cc8e76c0a08) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-12 |
 | [`2718038c`](https://github.com/matthewmackes/map2-audio/commit/2718038c8ac37bde3bb96b2dd15692c8f73ef0b6) | docs(worklist): T2512 — fifth Continue run end-of-run han... | Map2 Audio | 2026-05-12 |
-| [`98a552b8`](https://github.com/matthewmackes/map2-audio/commit/98a552b86cbef38f971dc25556c34b0b5c195488) | feat(devices,looper): T2512-PACK-PRESET — generic catalog... | Map2 Audio | 2026-05-12 |
-| [`3d9eac1c`](https://github.com/matthewmackes/map2-audio/commit/3d9eac1c48cd7ff6d97ceb9dd658861f28998488) | feat(looper): T2512-MASTER-MUTE-UI — panic-mute button on... | Map2 Audio | 2026-05-12 |
-| [`18de1259`](https://github.com/matthewmackes/map2-audio/commit/18de1259bcfd414ce2410c01a3c8d490f688a4d6) | feat(looper): T2512-OS-COUNT-UI — multi-pass one-shot Num... | Map2 Audio | 2026-05-12 |
-| [`d21c8726`](https://github.com/matthewmackes/map2-audio/commit/d21c8726953db3f5c75cdee3de84fef155ef6936) | feat(looper): T2512-AUTO-PEAK-UI — threshold slider + pea... | Map2 Audio | 2026-05-12 |
-| [`b94012e3`](https://github.com/matthewmackes/map2-audio/commit/b94012e3dcac33ad9c1495b9c136cf3f9c9cb989) | feat(looper,midi): T2512-PRESET-DISPATCH — preset recall ... | Map2 Audio | 2026-05-12 |
-| [`5fd36e4e`](https://github.com/matthewmackes/map2-audio/commit/5fd36e4ee31c8d939b92d2537b900a2cfb444b28) | feat(looper): T2512-PRESET-UI — named in-memory state pre... | Map2 Audio | 2026-05-12 |
-| [`ba7acbc4`](https://github.com/matthewmackes/map2-audio/commit/ba7acbc41af5c3b914f73ec89d69316daf60ac24) | chore(version): refresh generated VERSION/version.json ar... | Map2 Audio | 2026-05-12 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
