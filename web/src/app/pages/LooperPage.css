@@ -333,6 +333,66 @@
   font-size: 0.8125rem;
 }
 
+/* T2512-METRICS-UI — verb counters panel. */
+.looper-page__metrics {
+  border: 1px solid var(--cds-border-subtle-01);
+  background-color: var(--cds-layer-01);
+}
+
+.looper-page__metrics-toggle {
+  display: flex;
+  align-items: center;
+  gap: var(--cds-spacing-03);
+  width: 100%;
+  padding: var(--cds-spacing-04);
+  background: none;
+  border: none;
+  color: var(--cds-text-primary);
+  font-size: 0.9375rem;
+  cursor: pointer;
+  text-align: left;
+}
+
+.looper-page__metrics-toggle svg {
+  transition: transform 120ms ease-out;
+}
+
+.looper-page__metrics-body {
+  padding: 0 var(--cds-spacing-04) var(--cds-spacing-04);
+}
+
+.looper-page__metrics-empty {
+  margin: 0;
+  color: var(--cds-text-secondary);
+  font-style: italic;
+  font-size: 0.8125rem;
+}
+
+.looper-page__metrics-list {
+  display: flex;
+  flex-direction: column;
+  gap: var(--cds-spacing-02);
+  list-style: none;
+  margin: 0 0 var(--cds-spacing-04) 0;
+  padding: 0;
+}
+
+.looper-page__metrics-list li {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: var(--cds-spacing-04);
+  font-family: var(--cds-code-01-font-family, 'IBM Plex Mono', monospace);
+  font-size: 0.8125rem;
+  padding: var(--cds-spacing-02) var(--cds-spacing-03);
+  background-color: var(--cds-layer-02);
+  border: 1px solid var(--cds-border-subtle-01);
+}
+
+.looper-page__metrics-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
 /* T2512-AUTO-PEAK-UI — threshold slider + peak indicator. */
 .looper-track__auto-peak {
   display: flex;

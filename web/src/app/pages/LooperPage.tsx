@@ -501,6 +501,10 @@ export function LooperPage() {
             onAction={wrap}
             setError={setError}
           />
+          <MetricsPanel
+            metrics={status.metrics ?? {}}
+            onAction={wrap}
+          />
           <FeatureInventory />
           <ActivityPanel
             statusRecentActivity={status.recent_activity}
@@ -658,6 +662,106 @@ function PresetPanel({
           </div>
         </>
       )}
+    </Tile>
+  )
+}
+
+/**
+ * T2512-METRICS-UI — verb invocation counters panel.
+ *
+ * Backend (T2512-METRICS-WS) embeds the cumulative counter dict in
+ * every WS status frame so the page never has to poll /metrics. This
+ * panel renders the counters as a sortable table inside a foldable
+ * Tile. The Reset button drops the counters server-side (DELETE
+ * /metrics) without touching the activity log. Counter keys are the
+ * exact LooperService verb names (record / stop / clear / undo /
+ * redo / reset_state / apply_state) so the panel doesn't need its
+ * own pretty-name map — what you see is what fires.
+ */
+function MetricsPanel({
+  metrics,
+  onAction,
+}: {
+  metrics: Record<string, number>
+  onAction: (fn: () => Promise<LooperStatus>) => Promise<void>
+}) {
+  const [open, setOpen] = useState(false)
+  const entries = useMemo(() => {
+    return Object.entries(metrics).sort(([a], [b]) => a.localeCompare(b))
+  }, [metrics])
+  const total = useMemo(
+    () => entries.reduce((sum, [, n]) => sum + n, 0),
+    [entries],
+  )
+  return (
+    <Tile
+      className="looper-page__metrics"
+      data-testid="looper-metrics-panel"
+    >
+      <button
+        type="button"
+        className="looper-page__metrics-toggle"
+        data-testid="looper-metrics-toggle"
+        aria-expanded={open}
+        onClick={() => setOpen((v) => !v)}
+      >
+        <ChevronDown
+          aria-hidden
+          style={{ transform: open ? 'rotate(0deg)' : 'rotate(-90deg)' }}
+        />
+        <span>
+          Metrics — {total} verb call{total === 1 ? '' : 's'} ({entries.length}{' '}
+          tracked)
+        </span>
+      </button>
+      {open ? (
+        <div className="looper-page__metrics-body">
+          {entries.length === 0 ? (
+            <p
+              className="looper-page__metrics-empty"
+              data-testid="looper-metrics-empty"
+            >
+              No verb has fired yet since the backend started (or since
+              the last reset).
+            </p>
+          ) : (
+            <ul
+              className="looper-page__metrics-list"
+              data-testid="looper-metrics-list"
+            >
+              {entries.map(([verb, count]) => (
+                <li
+                  key={verb}
+                  data-testid={`looper-metrics-row-${verb}`}
+                >
+                  <span>{verb}</span>
+                  <span>{count}</span>
+                </li>
+              ))}
+            </ul>
+          )}
+          <div className="looper-page__metrics-actions">
+            <Button
+              kind="danger--ghost"
+              size="sm"
+              disabled={entries.length === 0}
+              data-testid="looper-metrics-reset-button"
+              onClick={() =>
+                onAction(async () => {
+                  await looperApi.resetMetrics()
+                  // Reset the counters server-side, then pull a fresh
+                  // status so the page reflects the zeroed dict (the
+                  // WS broadcast also re-broadcasts on the next verb,
+                  // but doesn't fire on the reset itself).
+                  return looperApi.getStatus()
+                })
+              }
+            >
+              Reset counters
+            </Button>
+          </div>
+        </div>
+      ) : null}
     </Tile>
   )
 }

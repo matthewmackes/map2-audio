@@ -149,6 +149,8 @@ jest.mock('../../map2/clients/looper', () => ({
     resetAutoPeak: jest.fn(async () => mockIdleSnapshot),
     setOneShotPasses: jest.fn(async () => mockIdleSnapshot),
     setMasterMuted: jest.fn(async () => mockIdleSnapshot),
+    getMetrics: jest.fn(async () => ({ counters: {} })),
+    resetMetrics: jest.fn(async () => ({ counters: {} })),
   },
 }))
 
@@ -1786,6 +1788,109 @@ describe('LooperPage T2512-MASTER-MUTE-UI panic-mute button', () => {
     fireEvent.click(btn)
     await waitFor(() => {
       expect(mod.looperApi.setMasterMuted).toHaveBeenCalledWith(false)
+    })
+  })
+})
+
+describe('LooperPage T2512-METRICS-UI verb-counter panel', () => {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const mod = require('../../map2/clients/looper') as {
+    looperApi: { resetMetrics: jest.Mock; getStatus: jest.Mock }
+  }
+
+  beforeEach(() => {
+    mod.looperApi.resetMetrics.mockClear()
+  })
+
+  async function pushMetrics(metrics: Record<string, number>): Promise<void> {
+    act(() => {
+      sockets[0]!.onopen?.call(sockets[0] as unknown as WebSocket)
+    })
+    const frame = {
+      type: 'looper_status',
+      payload: { ...mockIdleSnapshot, metrics },
+    }
+    act(() => {
+      sockets[0]!.onmessage?.call(
+        sockets[0] as unknown as WebSocket,
+        { data: JSON.stringify(frame) } as MessageEvent,
+      )
+    })
+  }
+
+  it('renders the metrics toggle button on the page', async () => {
+    renderPage()
+    const btn = await screen.findByTestId('looper-metrics-toggle')
+    // Initial snapshot has metrics undefined; the toggle still
+    // renders and says 0 verb calls.
+    expect(btn).toHaveTextContent('Metrics — 0 verb calls (0 tracked)')
+  })
+
+  it('body stays hidden until the toggle is clicked', async () => {
+    renderPage()
+    await screen.findByTestId('looper-metrics-toggle')
+    expect(screen.queryByTestId('looper-metrics-list')).toBeNull()
+    expect(screen.queryByTestId('looper-metrics-empty')).toBeNull()
+  })
+
+  it('expanding shows empty-state copy when no counters fired', async () => {
+    renderPage()
+    fireEvent.click(await screen.findByTestId('looper-metrics-toggle'))
+    expect(await screen.findByTestId('looper-metrics-empty')).toHaveTextContent(
+      'No verb has fired yet',
+    )
+  })
+
+  it('renders one row per counter sorted alphabetically with totals', async () => {
+    renderPage()
+    fireEvent.click(await screen.findByTestId('looper-metrics-toggle'))
+    await pushMetrics({ stop_track: 2, record: 5, clear: 1 })
+    await waitFor(() => {
+      expect(screen.queryByTestId('looper-metrics-list')).not.toBeNull()
+    })
+    // Sum is 8 verb calls; 3 tracked.
+    await waitFor(() => {
+      expect(screen.getByTestId('looper-metrics-toggle')).toHaveTextContent(
+        'Metrics — 8 verb calls (3 tracked)',
+      )
+    })
+    expect(screen.getByTestId('looper-metrics-row-clear')).toHaveTextContent('1')
+    expect(screen.getByTestId('looper-metrics-row-record')).toHaveTextContent(
+      '5',
+    )
+    expect(
+      screen.getByTestId('looper-metrics-row-stop_track'),
+    ).toHaveTextContent('2')
+  })
+
+  it('Reset-counters button is disabled when no counters', async () => {
+    renderPage()
+    fireEvent.click(await screen.findByTestId('looper-metrics-toggle'))
+    const btn = (await screen.findByTestId(
+      'looper-metrics-reset-button',
+    )) as HTMLButtonElement
+    expect(btn).toBeDisabled()
+  })
+
+  it('Reset-counters fires looperApi.resetMetrics then refreshes status', async () => {
+    renderPage()
+    fireEvent.click(await screen.findByTestId('looper-metrics-toggle'))
+    await pushMetrics({ record: 2 })
+    const btn = (await screen.findByTestId(
+      'looper-metrics-reset-button',
+    )) as HTMLButtonElement
+    await waitFor(() => expect(btn).not.toBeDisabled())
+    const callsBefore = mod.looperApi.getStatus.mock.calls.length
+    fireEvent.click(btn)
+    await waitFor(() => {
+      expect(mod.looperApi.resetMetrics).toHaveBeenCalled()
+    })
+    // The handler chains resetMetrics → getStatus so the page reflects
+    // the cleared dict immediately, not just on the next mutating verb.
+    await waitFor(() => {
+      expect(mod.looperApi.getStatus.mock.calls.length).toBeGreaterThan(
+        callsBefore,
+      )
     })
   })
 })

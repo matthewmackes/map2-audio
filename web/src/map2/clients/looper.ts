@@ -95,6 +95,9 @@ export interface LooperStatus {
   recent_activity: LooperActivityEvent[]
   /** T2512-PRESET — names of currently-saved in-memory presets, save order. */
   preset_names?: string[]
+  /** T2512-METRICS-WS — cumulative verb-invocation counters embedded in
+   *  every status frame. Mirrors GET /metrics. */
+  metrics?: Record<string, number>
 }
 
 /** T2512-PRESET — list-presets envelope returned by GET /presets. */
