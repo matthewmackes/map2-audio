@@ -15,6 +15,7 @@ import pytest
 
 from app.services.devices._meter_source import (
     DeviceMeterSourceRegistry,
+    DeviceRegistration,
     MeterSnapshot,
     PlaceholderMeterSource,
     SILENCE_DBFS,
@@ -171,6 +172,60 @@ def test_re_registering_with_new_counts_changes_placeholder_layout(registry):
 # ---------------------------------------------------------------------------
 # Tascam facade is wired through the global registry
 # ---------------------------------------------------------------------------
+
+
+# ---------------------------------------------------------------------------
+# list_devices() — registry introspection
+# ---------------------------------------------------------------------------
+
+
+def test_list_devices_returns_empty_for_fresh_registry(registry):
+    assert registry.list_devices() == []
+
+
+def test_list_devices_returns_alphabetically_sorted_entries(registry):
+    # Register out of order to confirm sort is by device_id, not insertion.
+    registry.register_device("zeta", input_channels=2, output_channels=2)
+    registry.register_device("alpha", input_channels=4, output_channels=4)
+    registry.register_device("mike", input_channels=10, output_channels=10)
+
+    rows = registry.list_devices()
+    assert [r.device_id for r in rows] == ["alpha", "mike", "zeta"]
+    assert all(isinstance(r, DeviceRegistration) for r in rows)
+
+
+def test_list_devices_reflects_channel_counts(registry):
+    registry.register_device("a", input_channels=4, output_channels=8)
+    [row] = registry.list_devices()
+    assert row.input_channels == 4
+    assert row.output_channels == 8
+    assert row.has_engine_source is False
+
+
+def test_list_devices_flags_engine_source_after_install(registry):
+    class EngineSource:
+        def snapshot(self):
+            return MeterSnapshot(source="engine")
+
+    registry.register_device("a", input_channels=2, output_channels=2)
+    registry.register_device("b", input_channels=2, output_channels=2)
+    registry.set_active_source("a", EngineSource())
+
+    rows = {r.device_id: r for r in registry.list_devices()}
+    assert rows["a"].has_engine_source is True
+    assert rows["b"].has_engine_source is False
+
+
+def test_list_devices_flips_back_after_reset(registry):
+    class EngineSource:
+        def snapshot(self):
+            return MeterSnapshot(source="engine")
+
+    registry.register_device("a", input_channels=2, output_channels=2)
+    registry.set_active_source("a", EngineSource())
+    assert registry.list_devices()[0].has_engine_source is True
+    registry.reset_active_source("a")
+    assert registry.list_devices()[0].has_engine_source is False
 
 
 def test_tascam_facade_is_bound_to_the_global_registry():

@@ -59,6 +59,56 @@ class GenericMeterPayload(BaseModel):
     )
 
 
+class DeviceRegistryEntry(BaseModel):
+    """One row in the peak-meters registry enumeration."""
+
+    device_id: str
+    input_channels: int
+    output_channels: int
+    has_engine_source: bool
+
+
+class DeviceRegistryResponse(BaseModel):
+    """Top-level shape for the registry enumeration route.
+
+    UIs that need to render every device's meter-source state at once
+    can call this single endpoint instead of polling per-device. The
+    ``devices`` list is alphabetically ordered for deterministic
+    enumeration.
+    """
+
+    devices: List[DeviceRegistryEntry]
+
+
+@router.get("/peak-meters/registry", response_model=DeviceRegistryResponse)
+async def get_peak_meters_registry() -> DeviceRegistryResponse:
+    """Enumerate every device registered with the meter-source registry.
+
+    Returned in alphabetical order by ``device_id``. Each entry carries
+    the device's declared channel counts and a ``has_engine_source``
+    flag indicating whether the engine wire-up is currently installed
+    (vs the silence-fallback placeholder).
+
+    The path lives under the ``/api/v1/devices`` prefix and uses the
+    ``peak-meters/registry`` segment so it does not collide with the
+    parametric ``/{device_id}/peak-meters`` route below. FastAPI's
+    matcher tries literal segments first, so this stays unambiguous.
+    """
+    registry = get_registry()
+    rows = registry.list_devices()
+    return DeviceRegistryResponse(
+        devices=[
+            DeviceRegistryEntry(
+                device_id=row.device_id,
+                input_channels=row.input_channels,
+                output_channels=row.output_channels,
+                has_engine_source=row.has_engine_source,
+            )
+            for row in rows
+        ],
+    )
+
+
 @router.get("/{device_id}/peak-meters", response_model=GenericMeterPayload)
 async def get_device_peak_meters(device_id: str) -> GenericMeterPayload:
     """Generic per-device peak-meter readout.

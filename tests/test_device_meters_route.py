@@ -129,6 +129,77 @@ def test_route_facades_remain_isolated(client):
     assert jogg_body["source"] == "placeholder"
 
 
+# ---------------------------------------------------------------------------
+# Registry-enumeration route — /api/v1/devices/peak-meters/registry
+# ---------------------------------------------------------------------------
+
+
+def test_registry_route_lists_every_registered_device(client):
+    """The registry route must return all four canonical devices
+    (Tascam, UA-1000, Hotone JoGG, Lexicon MPX-1) alphabetically
+    sorted with their declared channel counts and the placeholder
+    has_engine_source=False default.
+    """
+    resp = client.get("/api/v1/devices/peak-meters/registry")
+    assert resp.status_code == 200
+    body = resp.json()
+    ids = [row["device_id"] for row in body["devices"]]
+    # Alphabetical: edirol-ua-1000, hotone-jogg, lexicon-mpx1,
+    # tascam-us144mkii.
+    assert "edirol-ua-1000" in ids
+    assert "hotone-jogg" in ids
+    assert "lexicon-mpx1" in ids
+    assert "tascam-us144mkii" in ids
+    assert ids == sorted(ids)
+    # All four start in placeholder state.
+    for row in body["devices"]:
+        assert row["has_engine_source"] is False
+
+
+def test_registry_route_reflects_engine_source_install(client):
+    class EngineSource:
+        def snapshot(self):
+            return MeterSnapshot(source="engine")
+
+    edirol_ua1000_meters.set_active_meter_source(EngineSource())
+    resp = client.get("/api/v1/devices/peak-meters/registry")
+    body = resp.json()
+    rows = {r["device_id"]: r for r in body["devices"]}
+    assert rows["edirol-ua-1000"]["has_engine_source"] is True
+    # Others unaffected.
+    assert rows["tascam-us144mkii"]["has_engine_source"] is False
+    assert rows["hotone-jogg"]["has_engine_source"] is False
+    assert rows["lexicon-mpx1"]["has_engine_source"] is False
+
+
+def test_registry_route_reflects_canonical_channel_counts(client):
+    resp = client.get("/api/v1/devices/peak-meters/registry")
+    body = resp.json()
+    rows = {r["device_id"]: r for r in body["devices"]}
+    assert rows["tascam-us144mkii"]["input_channels"] == 4
+    assert rows["tascam-us144mkii"]["output_channels"] == 4
+    assert rows["edirol-ua-1000"]["input_channels"] == 10
+    assert rows["edirol-ua-1000"]["output_channels"] == 10
+    assert rows["hotone-jogg"]["input_channels"] == 2
+    assert rows["hotone-jogg"]["output_channels"] == 2
+    assert rows["lexicon-mpx1"]["input_channels"] == 2
+    assert rows["lexicon-mpx1"]["output_channels"] == 2
+
+
+def test_registry_route_does_not_shadow_parametric_route(client):
+    """Registry path is the literal `/peak-meters/registry`, which
+    sits *under* the parametric `/{device_id}/peak-meters` route
+    (literal segments rank first in FastAPI). This test pins that
+    behavior so a future route reorder doesn't break either path.
+    """
+    a = client.get("/api/v1/devices/peak-meters/registry")
+    b = client.get("/api/v1/devices/tascam-us144mkii/peak-meters")
+    assert a.status_code == 200
+    assert b.status_code == 200
+    assert "devices" in a.json()
+    assert "device_id" in b.json()
+
+
 def test_legacy_tascam_meters_route_still_works(client):
     """The new generic route uses ``/peak-meters`` so it does not
     collide with the existing per-device ``/meters`` route. This test

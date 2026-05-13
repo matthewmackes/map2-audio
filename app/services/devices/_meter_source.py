@@ -36,7 +36,7 @@ from __future__ import annotations
 import inspect
 from dataclasses import dataclass, field
 from threading import Lock
-from typing import Awaitable, Dict, List, Optional, Protocol, runtime_checkable
+from typing import Awaitable, Dict, List, Optional, Protocol, Tuple, runtime_checkable
 
 
 SILENCE_DBFS = -150.0
@@ -208,6 +208,42 @@ class DeviceMeterSourceRegistry:
         if inspect.isawaitable(result):
             return await result
         return result
+
+    def list_devices(self) -> List["DeviceRegistration"]:
+        """Snapshot of every registered device.
+
+        Returns the device_id, declared channel counts, and whether
+        an engine-backed source is currently installed (vs the
+        fallback placeholder). Ordered alphabetically by device_id
+        so UI consumers get a stable, deterministic enumeration
+        without needing to sort themselves.
+        """
+        with self._lock:
+            items: List[Tuple[str, _DeviceBinding]] = sorted(self._bindings.items())
+        return [
+            DeviceRegistration(
+                device_id=device_id,
+                input_channels=binding.input_channels,
+                output_channels=binding.output_channels,
+                has_engine_source=binding.source is not None,
+            )
+            for device_id, binding in items
+        ]
+
+
+@dataclass(frozen=True)
+class DeviceRegistration:
+    """Public read-only view of one entry in the device registry.
+
+    Returned by ``DeviceMeterSourceRegistry.list_devices()``. UI
+    consumers can use ``has_engine_source`` to render a quick
+    "wired-up" indicator without polling each device's snapshot.
+    """
+
+    device_id: str
+    input_channels: int
+    output_channels: int
+    has_engine_source: bool
 
 
 # ---------------------------------------------------------------------------
