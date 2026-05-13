@@ -4,6 +4,8 @@ Surfaces the device's operational state to the Carbon Devices panel:
 
   GET  /api/v1/devices/tascam-us144mkii/status         driver + USB-enum state
   GET  /api/v1/devices/tascam-us144mkii/capabilities   declared port + capability table
+  GET  /api/v1/devices/tascam-us144mkii/meters         per-channel peak dBFS (T2515-6-METERS)
+  GET  /api/v1/devices/tascam-us144mkii/clock-source   clock-source state + valid options (T2515-6-CLOCK)
   POST /api/v1/devices/tascam-us144mkii/reset          confirm=true → usbreset
 """
 
@@ -86,6 +88,53 @@ class ResetResponse(BaseModel):
     operational_path: Optional[str] = None
 
 
+class MeterPayload(BaseModel):
+    """T2515-6-METERS — per-channel peak readout in dBFS.
+
+    Channel indexing follows the device-pack profile: indices 0-1 are the
+    analog L/R pair, 2-3 are the S/PDIF L/R pair. A live engine metering
+    hook is filed as **T2515-Follow-up-METER-WIRE**; until that lands the
+    sentinel value (-150.0) is returned per channel so the Carbon panel
+    renders the row with an em-dash instead of crashing.
+    """
+
+    input_peak_db: List[float]
+    output_peak_db: List[float]
+    source: str = Field(
+        ...,
+        description=(
+            "How the values were obtained. One of: 'engine', 'placeholder'. "
+            "Operators reading 'placeholder' should treat them as 'not yet measured'."
+        ),
+    )
+
+
+class ClockSourceOption(BaseModel):
+    id: str
+    label: str
+    description: str
+    selectable: bool
+
+
+class ClockSourceResponse(BaseModel):
+    """T2515-6-CLOCK — clock source state for the Carbon Clock tab.
+
+    Tier-1 pins to ``internal_48k``; the other options are advertised as
+    selectable=False until the transactional clock-change endpoint ships.
+    """
+
+    selected: str = Field(..., description="Currently-active clock source id.")
+    locked_for_tier1: bool = Field(
+        ...,
+        description=(
+            "True while tier-1 pins the device to 48 kHz / internal clock. "
+            "Operators can't change the source until the change endpoint ships."
+        ),
+    )
+    sample_rate_hz: int
+    options: List[ClockSourceOption]
+
+
 # ----------------------------------------------------------------------------
 # Helpers
 # ----------------------------------------------------------------------------
@@ -139,6 +188,66 @@ async def get_capabilities() -> CapabilitiesResponse:
         spdif_return_channels=list(spec["spdif_return_channels"]),
         analog_send_channels=list(spec["analog_send_channels"]),
         analog_return_channels=list(spec["analog_return_channels"]),
+    )
+
+
+@router.get("/meters", response_model=MeterPayload)
+async def get_meters() -> MeterPayload:
+    """Per-channel peak meter values in dBFS.
+
+    Until **T2515-Follow-up-METER-WIRE** wires the JUCE engine's per-device
+    ring-buffer metering pipeline to this device, the endpoint returns a
+    placeholder payload (-150 dBFS per channel) so the Carbon panel renders
+    its structure cleanly instead of error-stating. The ``source`` field is
+    ``placeholder`` while this is the case; once the wire-up lands it will
+    flip to ``engine``.
+    """
+    spec = TASCAM_US144MKII
+    channels_in = int(spec["input_channels"])
+    channels_out = int(spec["output_channels"])
+    return MeterPayload(
+        input_peak_db=[-150.0] * channels_in,
+        output_peak_db=[-150.0] * channels_out,
+        source="placeholder",
+    )
+
+
+@router.get("/clock-source", response_model=ClockSourceResponse)
+async def get_clock_source() -> ClockSourceResponse:
+    """Clock-source state + the choice menu the operator sees.
+
+    Tier-1 pins to ``internal_48k`` to match the platform-wide Tier A
+    locks (``audio.sample_rate=48000``). The other options are listed
+    with ``selectable=false`` so the panel can render a proper radio
+    group with an explanatory subtitle; an operator selecting one will
+    hit the (future) transactional clock-source-change route.
+    """
+    spec = TASCAM_US144MKII
+    return ClockSourceResponse(
+        selected="internal_48k",
+        locked_for_tier1=True,
+        sample_rate_hz=int(spec["sample_rate"]),
+        options=[
+            ClockSourceOption(
+                id="internal_48k",
+                label="Internal — 48 kHz",
+                description=(
+                    "Device generates its own clock at 48 kHz. Tier-1 default; "
+                    "matches platform-wide Tier A locks."
+                ),
+                selectable=True,
+            ),
+            ClockSourceOption(
+                id="spdif_in",
+                label="External — S/PDIF in",
+                description=(
+                    "Slave to the incoming S/PDIF stream's clock. Requires a "
+                    "valid signal on the S/PDIF coax input. Transactional "
+                    "change endpoint ships in T2515 follow-up."
+                ),
+                selectable=False,
+            ),
+        ],
     )
 
 

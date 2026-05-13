@@ -135,3 +135,63 @@ def test_reset_returns_503_when_usbreset_missing(client, monkeypatch):
     resp = client.post("/api/v1/devices/tascam-us144mkii/reset?confirm=true")
     assert resp.status_code == 503
     assert resp.json()["detail"]["code"] == "usbreset_unavailable"
+
+
+# ----------------------------------------------------------------------------
+# GET /meters — T2515-6-METERS
+# ----------------------------------------------------------------------------
+
+def test_meters_returns_placeholder_payload_shape(client):
+    """Until the engine metering wire-up ships, /meters returns a
+    placeholder structured payload so the Carbon panel renders cleanly."""
+    resp = client.get("/api/v1/devices/tascam-us144mkii/meters")
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["source"] == "placeholder"
+    # Tier-1 device has 4 input + 4 output channels.
+    assert len(body["input_peak_db"]) == 4
+    assert len(body["output_peak_db"]) == 4
+
+
+def test_meters_placeholder_values_use_silence_sentinel(client):
+    """The placeholder uses -150 dBFS so the panel renders an em-dash
+    instead of showing a misleading 0 dBFS (digital full scale)."""
+    resp = client.get("/api/v1/devices/tascam-us144mkii/meters")
+    body = resp.json()
+    for v in body["input_peak_db"]:
+        assert v == -150.0
+    for v in body["output_peak_db"]:
+        assert v == -150.0
+
+
+# ----------------------------------------------------------------------------
+# GET /clock-source — T2515-6-CLOCK
+# ----------------------------------------------------------------------------
+
+def test_clock_source_returns_internal_48k_locked_for_tier1(client):
+    resp = client.get("/api/v1/devices/tascam-us144mkii/clock-source")
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["selected"] == "internal_48k"
+    assert body["locked_for_tier1"] is True
+    assert body["sample_rate_hz"] == 48000
+
+
+def test_clock_source_lists_two_options(client):
+    resp = client.get("/api/v1/devices/tascam-us144mkii/clock-source")
+    body = resp.json()
+    ids = [opt["id"] for opt in body["options"]]
+    assert "internal_48k" in ids
+    assert "spdif_in" in ids
+
+
+def test_clock_source_spdif_in_is_not_yet_selectable(client):
+    """Until the transactional clock-change endpoint ships the S/PDIF-in
+    option is documented but un-gated. Pinning this protects the
+    operator from picking an option that silently does nothing."""
+    resp = client.get("/api/v1/devices/tascam-us144mkii/clock-source")
+    body = resp.json()
+    by_id = {opt["id"]: opt for opt in body["options"]}
+    assert by_id["spdif_in"]["selectable"] is False
+    # Internal 48k is selectable (the default).
+    assert by_id["internal_48k"]["selectable"] is True
