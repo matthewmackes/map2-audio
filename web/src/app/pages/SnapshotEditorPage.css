@@ -220,6 +220,133 @@
   display: none;
 }
 
+.juce-grid-page__recorder-looper-entry {
+  position: relative;
+  isolation: isolate;
+  inline-size: min(100%, 23rem);
+  margin: 0.75rem 0 0;
+  padding: 0.75rem;
+  border: 1px solid color-mix(in srgb, var(--cds-support-info, #0f62fe) 34%, var(--cds-border-subtle, #393939));
+  border-radius: 0.75rem;
+  background:
+    radial-gradient(circle at 14% 0%, color-mix(in srgb, var(--cds-support-error, #da1e28) 22%, transparent) 0, transparent 34%),
+    linear-gradient(135deg, color-mix(in srgb, var(--cds-layer-02, #262626) 92%, #000 8%), var(--cds-layer-01, #161616));
+  box-shadow:
+    inset 0 1px 0 color-mix(in srgb, var(--cds-text-on-color, #fff) 10%, transparent),
+    0 18px 42px color-mix(in srgb, #000 36%, transparent);
+}
+
+.juce-grid-page__recorder-looper-entry::before {
+  position: absolute;
+  inset: 0.5rem;
+  z-index: -1;
+  pointer-events: none;
+  content: '';
+  border-radius: 0.55rem;
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--cds-support-error, #da1e28) 72%, transparent), transparent 34%),
+    repeating-linear-gradient(
+      90deg,
+      color-mix(in srgb, var(--cds-text-primary, #f4f4f4) 5%, transparent) 0 1px,
+      transparent 1px 12px
+    );
+  opacity: 0.24;
+}
+
+.juce-grid-page__recorder-looper-topline {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 0.75rem;
+  margin-bottom: 0.75rem;
+}
+
+.juce-grid-page__recorder-looper-kicker {
+  margin: 0 0 0.125rem;
+  color: var(--cds-text-secondary, #c6c6c6);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  letter-spacing: 0.12em;
+  line-height: 1;
+  text-transform: uppercase;
+}
+
+.juce-grid-page__recorder-looper-title {
+  margin: 0;
+  color: var(--cds-text-primary, #f4f4f4);
+  font-size: 1rem;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  line-height: 1.15;
+}
+
+.juce-grid-page__recorder-looper-chip {
+  flex: 0 0 auto;
+  padding: 0.1875rem 0.5rem;
+  border: 1px solid color-mix(in srgb, var(--cds-support-success, #24a148) 44%, transparent);
+  border-radius: 999px;
+  color: color-mix(in srgb, var(--cds-support-success, #24a148) 78%, var(--cds-text-primary, #fff));
+  background: color-mix(in srgb, var(--cds-support-success, #24a148) 12%, transparent);
+  font-size: 0.6875rem;
+  font-weight: 600;
+  line-height: 1.2;
+}
+
+.juce-grid-page__recorder-looper-controls {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr);
+  gap: 0.5rem;
+}
+
+.juce-grid-page__recorder-looper-entry .recording-panel {
+  gap: 0.5rem;
+  padding: 0.625rem;
+  border-color: color-mix(in srgb, var(--cds-text-primary, #f4f4f4) 11%, transparent);
+  border-radius: 0.5rem;
+  background:
+    linear-gradient(180deg, color-mix(in srgb, var(--cds-layer-03, #393939) 72%, transparent), transparent),
+    color-mix(in srgb, var(--cds-layer-02, #262626) 86%, #000 14%);
+}
+
+.juce-grid-page__recorder-looper-entry .recording-panel__title {
+  font-size: 0.8125rem;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+}
+
+.juce-grid-page__recorder-looper-entry .recording-panel__badges {
+  flex-wrap: wrap;
+  justify-content: flex-end;
+}
+
+.juce-grid-page__recorder-looper-entry .recording-panel__controls {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(8.5rem, 1fr));
+  gap: 0.5rem;
+}
+
+.juce-grid-page__recorder-looper-entry .recording-panel__controls .cds--btn,
+.juce-grid-page__recorder-looper-button.cds--btn {
+  inline-size: 100%;
+  justify-content: space-between;
+  border-radius: 0.35rem;
+}
+
+.juce-grid-page__recorder-looper-button.cds--btn {
+  min-block-size: 2.75rem;
+  border-color: color-mix(in srgb, var(--cds-support-success, #24a148) 45%, var(--cds-border-subtle, #393939));
+  color: var(--cds-text-primary, #f4f4f4);
+  background:
+    linear-gradient(90deg, color-mix(in srgb, var(--cds-support-success, #24a148) 14%, transparent), transparent),
+    color-mix(in srgb, var(--cds-layer-02, #262626) 82%, #000 18%);
+}
+
+.juce-grid-page__recorder-looper-button.cds--btn:hover {
+  border-color: var(--cds-support-success, #24a148);
+  background-color: color-mix(in srgb, var(--cds-support-success, #24a148) 18%, var(--cds-layer-02, #262626));
+}
+
 .juce-grid-page__live-chain-panel {
   display: flex;
   flex-direction: column;
@@ -8849,4 +8976,3 @@
 }
 
 /* ── 960px Narrow Viewport ─────────────────────────────────────────────── */
-

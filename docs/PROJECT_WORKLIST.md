@@ -58,7 +58,7 @@ Each task/subtask should contain these fields:
 - `[~]` `T2503` — DAW Service (Tracktion-backed / pivoted to MAP2-native) — Cancelled 2026-05-11, superseded by T2504. **Retirement complete under T2505 on 2026-05-11.**
 - `[✓]` `T2505` — Retire T2503 artefacts (phase 1 of T2504) — closed 2026-05-11. C++ Daw tree archived; Python DAW backend + 76 pytest cases deleted; `MAP2_DAW_MODE` CMake flag removed; frontend shell + sub-pages archived with redirects to `/artifacts`; license + third-party + worklist docs reframed under T2504; cmake configure clean, atomic web build clean, typecheck + readiness tests green.
 - `[✓]` `T2506` — Snapshot graph extensions for recording (phase 2 of T2504) — closed 2026-05-11. SNAPSHOT_GRAPH_VERSION 2026.04→2026.05; new `recording` block with `oneOf [null | full 6-field session]`; v2026.04 docs migrate transparently via `ACCEPTED_LEGACY_GRAPH_VERSIONS`; `CompiledSnapshotIntent` surfaces `record_session_id` + `tap_matrix`; philosophy doc + 5 adjacent test files updated; 14 new + 79 adjacent pytest cases green; jest schema mocks updated; atomic build clean.
-- `[>]` `T2509-8` — Snapshot editor Recorder/Looper entry-point visual polish — compact deck wrapper for existing `RecordingPanel` + looper button; graphical-only, no dependency/platform-layer changes expected.
+- `[✓]` `T2509-8` — Snapshot editor Recorder/Looper entry-point visual polish — closed 2026-05-13. Compact hardware-deck wrapper now groups `RecordingPanel` and `Open looper` in the Snapshot editor; no new dependencies/services/build assumptions; typecheck, build, and focused RecordingPanel jest green.
 - `[>]` `T2508` — Python recorder service + routes + artifacts integration (phase 4 of T2504) — **6 of 7 sub-tasks shipped 2026-05-11** (autonomous Continue cycles 4-9/15) ahead of the C++ RT-critical T2507 taps, per the operator's "RT safety is most important" directive. 5 `engine_command` verbs (cycle 4); RecorderService lifecycle (cycle 5); 6-route session HTTP surface (cycle 6); asset-type + service-plane library dir (cycle 7); 4-route artifact-registry HTTP surface (cycle 8); WS broadcaster on `recorder:session` topic + lifespan-init bridge (cycle 9, transition-only path). 125/125 combined sweep green; live `arm/list/delete` + `/api/recordings` empty + bridge init verified on :8080; zero changes inside `juce-engine/Source/` or the audioCallback. Remaining: periodic-task 15 fps real-time broadcaster (gated on T2507 counters), engine-side transport binding (gated on T2507).
 - `[>]` `T2459-H` — MIDI Backend Unification (controller-host + libremidi + ControllerEngine). All remaining gates consolidated into one bench-session runbook: [`docs/midi/T2459_FINAL_BENCH_SESSION.md`](midi/T2459_FINAL_BENCH_SESSION.md).
 - `[>]` `T2459-H3` — MeloAudio Commander device-pack cutover completion (gate consolidated into T2459 final bench session — `T2459_FINAL_BENCH_SESSION.md` Gate 1)
@@ -2277,7 +2277,7 @@ Sub-tasks:
 - `T2509-8` — Snapshot editor Recorder/Looper entry-point visual polish.
 
 ID: T2509-8
-Status: [>] In Progress
+Status: [✓] Done
 Parent: T2509
 Title: Give the Snapshot editor Recorder/Looper entry point a compact hardware-deck visual treatment without behavior changes.
 Description:
@@ -2287,7 +2287,8 @@ Description:
 - Estimated effort: Low.
 - Required outputs/deliverables: JSX/CSS polish, focused frontend validation, worklist closeout notes.
 Assigned to: Codex
-Last updated: 2026-05-13 06:27 EDT - Codex
+Completion note: 2026-05-13 — Implemented compact hardware-deck wrapper in `SnapshotEditorPageContent.tsx` and visual treatment in `SnapshotEditorPage.css`; preserved existing recorder hook behavior and `/snapshot-editor/looper` navigation; added no dependencies or platform-layer changes. Validation: `npm --prefix web run typecheck`, `npm --prefix web run build`, `npm --prefix web test -- --runInBand src/app/components/Recordings/RecordingPanel.test.tsx` all passed. Licensing: MAP2-owned AGPL source styling only; no third-party additions.
+Last updated: 2026-05-13 06:34 EDT - Codex
 
 Acceptance: `npm --prefix web run typecheck && npm --prefix web run build` clean; jest `npx jest --testPathPattern='Recording|AudioArtifacts'` green; bundle includes `RecordingDetailPanel-*.js`; `curl /artifacts` returns 200 and renders the recordings tab when the route param is `?tab=recordings`.
 

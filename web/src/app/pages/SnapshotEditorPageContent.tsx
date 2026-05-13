@@ -5271,21 +5271,32 @@ export function SnapshotEditorPage() {
               See docs/PROJECT_WORKLIST.md § T2509-4 for the worklist
               entry. */}
           {activeSnapshot ? (
-            <>
-              <RecordingPanel
-                snapshotId={activeSnapshot.id}
-                defaultTapMatrix={{}}
-              />
-              {/* T2512 — Looper entry point under the snapshot editor.
-                  Lives at /snapshot-editor/looper. */}
-              <Button
-                kind="tertiary"
-                size="md"
-                onClick={() => navigate('/snapshot-editor/looper')}
-              >
-                Open looper →
-              </Button>
-            </>
+            <div className="juce-grid-page__recorder-looper-entry" role="group" aria-label="Recorder and looper">
+              <div className="juce-grid-page__recorder-looper-topline">
+                <div>
+                  <p className="juce-grid-page__recorder-looper-kicker">Live capture</p>
+                  <h3 className="juce-grid-page__recorder-looper-title">Recorder / Looper</h3>
+                </div>
+                <span className="juce-grid-page__recorder-looper-chip">Snapshot-bound</span>
+              </div>
+              <div className="juce-grid-page__recorder-looper-controls">
+                <RecordingPanel
+                  snapshotId={activeSnapshot.id}
+                  defaultTapMatrix={{}}
+                />
+                {/* T2512 — Looper entry point under the snapshot editor.
+                    Lives at /snapshot-editor/looper. */}
+                <Button
+                  className="juce-grid-page__recorder-looper-button"
+                  kind="tertiary"
+                  size="md"
+                  renderIcon={Renew}
+                  onClick={() => navigate('/snapshot-editor/looper')}
+                >
+                  Open looper →
+                </Button>
+              </div>
+            </div>
           ) : null}
         </div>
       </section>
