@@ -288,6 +288,22 @@ export const looperApi = {
   /** T2512-PRESET — drop every named preset (no impact on active state). */
   clearPresets: () =>
     fetchJson<LooperStatus>(`${BASE}/presets`, { method: 'DELETE' }),
+  /**
+   * T2512-PRESET-RENAME — relabel a saved preset in place.
+   *
+   * Preserves the preset's insertion-order position so an operator's
+   * list ordering doesn't reshuffle on every rename. 404 on missing
+   * source; 409 on destination-name collision.
+   */
+  renamePreset: (oldName: string, newName: string) =>
+    fetchJson<LooperStatus>(
+      `${BASE}/presets/${encodeURIComponent(oldName)}`,
+      {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ new_name: newName }),
+      },
+    ),
 }
 
 function patch(url: string, body: unknown): Promise<LooperStatus> {

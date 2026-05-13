@@ -147,6 +147,7 @@ jest.mock('../../map2/clients/looper', () => ({
     applyPreset: jest.fn(async () => mockIdleSnapshot),
     deletePreset: jest.fn(async () => mockIdleSnapshot),
     clearPresets: jest.fn(async () => mockIdleSnapshot),
+    renamePreset: jest.fn(async () => mockIdleSnapshot),
     resetAutoPeak: jest.fn(async () => mockIdleSnapshot),
     setOneShotPasses: jest.fn(async () => mockIdleSnapshot),
     setMasterMuted: jest.fn(async () => mockIdleSnapshot),
@@ -1468,6 +1469,129 @@ describe('LooperPage T2512-PRESET-UI named-preset panel', () => {
         screen.getByTestId('looper-preset-save-button'),
       ).toHaveTextContent('Overwrite')
     })
+  })
+
+  // ---------------------------------------------------------------
+  // T2512-PRESET-RENAME — inline rename flow per row.
+  // ---------------------------------------------------------------
+
+  it('Rename button swaps the row name for an input prefilled with the current name', async () => {
+    renderPage()
+    await screen.findByTestId('looper-preset-panel')
+    await pushPresets(['set-a'])
+    fireEvent.click(
+      await screen.findByTestId('looper-preset-rename-set-a'),
+    )
+    const input = (await screen.findByTestId(
+      'looper-preset-rename-input-set-a',
+    )) as HTMLInputElement
+    expect(input.value).toBe('set-a')
+    // While editing: the Apply/Rename/Delete buttons are replaced with
+    // Save + Cancel.
+    expect(
+      screen.queryByTestId('looper-preset-rename-save-set-a'),
+    ).toBeInTheDocument()
+    expect(
+      screen.queryByTestId('looper-preset-rename-cancel-set-a'),
+    ).toBeInTheDocument()
+    expect(
+      screen.queryByTestId('looper-preset-apply-set-a'),
+    ).toBeNull()
+  })
+
+  it('Save commits the rename via looperApi.renamePreset', async () => {
+    const looperApiMod = require('../../map2/clients/looper') as {
+      looperApi: { renamePreset: jest.Mock }
+    }
+    looperApiMod.looperApi.renamePreset.mockClear()
+    renderPage()
+    await screen.findByTestId('looper-preset-panel')
+    await pushPresets(['set-a'])
+    fireEvent.click(
+      await screen.findByTestId('looper-preset-rename-set-a'),
+    )
+    const input = (await screen.findByTestId(
+      'looper-preset-rename-input-set-a',
+    )) as HTMLInputElement
+    fireEvent.change(input, { target: { value: 'intro' } })
+    fireEvent.click(screen.getByTestId('looper-preset-rename-save-set-a'))
+    await waitFor(() => {
+      expect(looperApiMod.looperApi.renamePreset).toHaveBeenCalledWith(
+        'set-a',
+        'intro',
+      )
+    })
+  })
+
+  it('Enter key on the rename input commits the rename', async () => {
+    const looperApiMod = require('../../map2/clients/looper') as {
+      looperApi: { renamePreset: jest.Mock }
+    }
+    looperApiMod.looperApi.renamePreset.mockClear()
+    renderPage()
+    await screen.findByTestId('looper-preset-panel')
+    await pushPresets(['set-a'])
+    fireEvent.click(
+      await screen.findByTestId('looper-preset-rename-set-a'),
+    )
+    const input = (await screen.findByTestId(
+      'looper-preset-rename-input-set-a',
+    )) as HTMLInputElement
+    fireEvent.change(input, { target: { value: 'verse' } })
+    fireEvent.keyDown(input, { key: 'Enter' })
+    await waitFor(() => {
+      expect(looperApiMod.looperApi.renamePreset).toHaveBeenCalledWith(
+        'set-a',
+        'verse',
+      )
+    })
+  })
+
+  it('Cancel exits edit mode without calling renamePreset', async () => {
+    const looperApiMod = require('../../map2/clients/looper') as {
+      looperApi: { renamePreset: jest.Mock }
+    }
+    looperApiMod.looperApi.renamePreset.mockClear()
+    renderPage()
+    await screen.findByTestId('looper-preset-panel')
+    await pushPresets(['set-a'])
+    fireEvent.click(
+      await screen.findByTestId('looper-preset-rename-set-a'),
+    )
+    fireEvent.click(
+      await screen.findByTestId('looper-preset-rename-cancel-set-a'),
+    )
+    // Back to the regular row buttons.
+    await waitFor(() => {
+      expect(
+        screen.queryByTestId('looper-preset-rename-input-set-a'),
+      ).toBeNull()
+    })
+    expect(looperApiMod.looperApi.renamePreset).not.toHaveBeenCalled()
+  })
+
+  it('Save button is disabled when the new name is empty or collides with another preset', async () => {
+    renderPage()
+    await screen.findByTestId('looper-preset-panel')
+    await pushPresets(['set-a', 'set-b'])
+    fireEvent.click(
+      await screen.findByTestId('looper-preset-rename-set-a'),
+    )
+    const input = (await screen.findByTestId(
+      'looper-preset-rename-input-set-a',
+    )) as HTMLInputElement
+    // Empty → disabled.
+    fireEvent.change(input, { target: { value: '   ' } })
+    const save = screen.getByTestId(
+      'looper-preset-rename-save-set-a',
+    ) as HTMLButtonElement
+    expect(save).toBeDisabled()
+    // Collision with another preset → disabled.
+    fireEvent.change(input, { target: { value: 'set-b' } })
+    expect(save).toBeDisabled()
+    // Renaming to its own name → enabled (no-op rename is fine).
+    fireEvent.change(input, { target: { value: 'set-a' } })
+    expect(save).not.toBeDisabled()
   })
 })
 

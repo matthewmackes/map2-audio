@@ -2512,3 +2512,99 @@ def test_round_trip_export_then_apply_preserves_state() -> None:
     assert b_status.tracks[1].one_shot is True
     assert b_status.tracks[2].auto_armed is True
     assert b_status.tracks[3].auto_threshold_db == -24.0
+
+
+# ---------------------------------------------------------------------------
+# T2512-PRESET-RENAME — rename a saved preset by name.
+# ---------------------------------------------------------------------------
+
+
+def test_rename_preset_changes_label_in_place() -> None:
+    service = LooperService()
+    service.save_preset("verse1")
+    service.set_locked(0, True)
+    service.save_preset("chorus")
+    service.rename_preset("verse1", "intro")
+    # Names update; insertion order ("intro" first, "chorus" second) is preserved.
+    assert service.list_presets() == ["intro", "chorus"]
+
+
+def test_rename_preset_preserves_state_payload() -> None:
+    service = LooperService()
+    service.set_locked(2, True)
+    service.set_one_shot_passes(0, 5)
+    service.save_preset("take-a")
+    # Mutate live, then rename — payload under the new name should be
+    # the SAME as what was saved (the rename does not re-snapshot).
+    service.set_locked(2, False)
+    service.rename_preset("take-a", "take-final")
+    # Restore via apply_preset on the new name.
+    service.apply_preset("take-final")
+    status = service.get_status()
+    assert status.tracks[2].locked is True
+    assert status.tracks[0].one_shot_passes == 5
+
+
+def test_rename_preset_unknown_old_name_raises() -> None:
+    service = LooperService()
+    with pytest.raises(LooperServiceError) as exc:
+        service.rename_preset("ghost", "newer")
+    assert exc.value.code == "preset_not_found"
+
+
+def test_rename_preset_collision_raises() -> None:
+    service = LooperService()
+    service.save_preset("a")
+    service.save_preset("b")
+    with pytest.raises(LooperServiceError) as exc:
+        service.rename_preset("a", "b")
+    assert exc.value.code == "preset_name_conflict"
+
+
+def test_rename_preset_empty_new_name_raises() -> None:
+    service = LooperService()
+    service.save_preset("a")
+    with pytest.raises(LooperServiceError) as exc:
+        service.rename_preset("a", "   ")
+    assert exc.value.code == "invalid_preset_name"
+
+
+def test_rename_preset_same_name_is_noop() -> None:
+    service = LooperService()
+    service.save_preset("only")
+    # Same effective name after trim — should not raise and should not
+    # remove the preset.
+    service.rename_preset("only", "  only  ")
+    assert service.list_presets() == ["only"]
+
+
+def test_rename_preset_trims_and_caps_length() -> None:
+    service = LooperService()
+    service.save_preset("orig")
+    long_name = "x" * 200
+    service.rename_preset("orig", long_name)
+    # Cap is 64 chars per the service constant.
+    names = service.list_presets()
+    assert len(names) == 1
+    assert len(names[0]) == 64
+
+
+def test_rename_preset_broadcasts_and_records_activity() -> None:
+    received: list = []
+    service = LooperService(broadcaster=received.append)
+    service.save_preset("first")
+    received.clear()
+    service.rename_preset("first", "second")
+    assert len(received) == 1
+    activity = service.get_activity()
+    assert any(ev.verb == "rename_preset" for ev in activity)
+
+
+def test_rename_preset_preserves_insertion_order_when_renaming_middle_entry() -> None:
+    service = LooperService()
+    service.save_preset("a")
+    service.save_preset("b")
+    service.save_preset("c")
+    service.rename_preset("b", "B-renamed")
+    # Middle entry rename keeps the slot index — operators expect this.
+    assert service.list_presets() == ["a", "B-renamed", "c"]

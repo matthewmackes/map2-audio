@@ -786,6 +786,66 @@ def test_status_route_surfaces_preset_names() -> None:
 
 
 # ---------------------------------------------------------------------------
+# T2512-PRESET-RENAME — relabel a preset in place over PATCH.
+# ---------------------------------------------------------------------------
+
+
+def test_rename_preset_route_changes_label_in_place() -> None:
+    client, _, _ = _build_client()
+    client.post("/api/v1/looper/presets/verse1")
+    client.post("/api/v1/looper/presets/chorus")
+    resp = client.patch(
+        "/api/v1/looper/presets/verse1",
+        json={"new_name": "intro"},
+    )
+    assert resp.status_code == 200
+    # Order preserved (intro at index 0, chorus at index 1).
+    assert resp.json()["preset_names"] == ["intro", "chorus"]
+
+
+def test_rename_preset_route_returns_404_for_unknown_source() -> None:
+    client, _, _ = _build_client()
+    resp = client.patch(
+        "/api/v1/looper/presets/ghost",
+        json={"new_name": "anywhere"},
+    )
+    assert resp.status_code == 404
+
+
+def test_rename_preset_route_returns_409_on_destination_collision() -> None:
+    client, _, _ = _build_client()
+    client.post("/api/v1/looper/presets/a")
+    client.post("/api/v1/looper/presets/b")
+    resp = client.patch(
+        "/api/v1/looper/presets/a",
+        json={"new_name": "b"},
+    )
+    assert resp.status_code == 409
+
+
+def test_rename_preset_route_rejects_empty_new_name() -> None:
+    client, _, _ = _build_client()
+    client.post("/api/v1/looper/presets/x")
+    resp = client.patch(
+        "/api/v1/looper/presets/x",
+        json={"new_name": ""},
+    )
+    # Pydantic min_length=1 → 422 unprocessable entity.
+    assert resp.status_code == 422
+
+
+def test_rename_preset_route_no_op_returns_200_with_same_name() -> None:
+    client, _, _ = _build_client()
+    client.post("/api/v1/looper/presets/keep")
+    resp = client.patch(
+        "/api/v1/looper/presets/keep",
+        json={"new_name": "  keep  "},
+    )
+    assert resp.status_code == 200
+    assert resp.json()["preset_names"] == ["keep"]
+
+
+# ---------------------------------------------------------------------------
 # T2512-OS-COUNT — multi-pass one-shot pass-count route
 # ---------------------------------------------------------------------------
 

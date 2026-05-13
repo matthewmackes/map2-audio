@@ -61,6 +61,7 @@ EXPECTED_PATHS_BY_METHOD: dict[str, set[str]] = {
         "/api/v1/looper/track/{track}/slices/{start_frame}",  # T2512-SLICE-RENAME
         "/api/v1/looper/master/level",
         "/api/v1/looper/master/muted",  # T2512-MASTER-MUTE
+        "/api/v1/looper/presets/{name}",  # T2512-PRESET-RENAME
     },
     "delete": {
         "/api/v1/looper/track/{track}/slices",           # T2512-SLICE — clear

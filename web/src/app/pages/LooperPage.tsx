@@ -939,6 +939,12 @@ function PresetPanel({
   setError: (msg: string | null) => void
 }) {
   const [draftName, setDraftName] = useState('')
+  // T2512-PRESET-RENAME — inline rename state. ``renamingName`` is the
+  // row currently in edit mode (null = none); ``renameDraft`` is the
+  // pending new label. Only one row can be in edit mode at a time so
+  // the operator's focus is always unambiguous.
+  const [renamingName, setRenamingName] = useState<string | null>(null)
+  const [renameDraft, setRenameDraft] = useState('')
   // Re-read the cache on every render of a name list that might have
   // diverged. Cheap: localStorage hits a synchronous map.
   const [cacheTick, setCacheTick] = useState(0)
@@ -1014,6 +1020,41 @@ function PresetPanel({
     },
     [onAction, setError],
   )
+
+  // T2512-PRESET-RENAME — commit an inline rename. Calls the route
+  // directly (not via ``onAction``) so a 409 collision can keep the
+  // row in edit mode while still surfacing the error to the operator.
+  // Mirrors the rename into the localStorage cache so the operator's
+  // persistent backup follows the new label.
+  const handleRenameCommit = useCallback(async () => {
+    if (!renamingName) return
+    const next = renameDraft.trim()
+    if (!next) return
+    if (next === renamingName) {
+      // No-op rename — just exit edit mode.
+      setRenamingName(null)
+      return
+    }
+    setError(null)
+    const oldName = renamingName
+    try {
+      await looperApi.renamePreset(oldName, next)
+      const current = readPresetCache()
+      if (current[oldName] !== undefined) {
+        const rebuilt: PresetCache = {}
+        for (const [k, v] of Object.entries(current)) {
+          if (k === oldName) rebuilt[next] = v
+          else rebuilt[k] = v
+        }
+        writePresetCache(rebuilt)
+      }
+      setCacheTick((v) => v + 1)
+      setRenamingName(null)
+    } catch (e: unknown) {
+      setError(e instanceof Error ? e.message : 'Rename failed')
+      // Leave the row in edit mode so the operator can fix the name.
+    }
+  }, [renameDraft, renamingName, setError])
 
   // T2512-PRESET-PERSIST-EXPORT — hidden file input + handler for
   // importing a cache JSON. Replaces the cache (does NOT merge) so
@@ -1188,40 +1229,104 @@ function PresetPanel({
             className="looper-page__presets-list"
             data-testid="looper-preset-list"
           >
-            {sortedNames.map((name) => (
-              <li
-                key={name}
-                className="looper-page__presets-row"
-                data-testid={`looper-preset-row-${name}`}
-              >
-                <span
-                  className="looper-page__presets-row-name"
-                  title={name}
+            {sortedNames.map((name) => {
+              const inEditMode = renamingName === name
+              return (
+                <li
+                  key={name}
+                  className="looper-page__presets-row"
+                  data-testid={`looper-preset-row-${name}`}
                 >
-                  {name}
-                </span>
-                <div className="looper-page__presets-row-actions">
-                  <Button
-                    kind="tertiary"
-                    size="sm"
-                    data-testid={`looper-preset-apply-${name}`}
-                    onClick={() =>
-                      void onAction(() => looperApi.applyPreset(name))
-                    }
-                  >
-                    Apply
-                  </Button>
-                  <Button
-                    kind="danger--ghost"
-                    size="sm"
-                    data-testid={`looper-preset-delete-${name}`}
-                    onClick={() => void handleDelete(name)}
-                  >
-                    Delete
-                  </Button>
-                </div>
-              </li>
-            ))}
+                  {inEditMode ? (
+                    <TextInput
+                      id={`looper-preset-rename-input-${name}`}
+                      labelText="New name"
+                      hideLabel
+                      size="sm"
+                      data-testid={`looper-preset-rename-input-${name}`}
+                      value={renameDraft}
+                      onChange={(e) =>
+                        setRenameDraft(e.target.value)
+                      }
+                      onKeyDown={(e) => {
+                        if (e.key === 'Enter') {
+                          e.preventDefault()
+                          void handleRenameCommit()
+                        } else if (e.key === 'Escape') {
+                          setRenamingName(null)
+                        }
+                      }}
+                    />
+                  ) : (
+                    <span
+                      className="looper-page__presets-row-name"
+                      title={name}
+                    >
+                      {name}
+                    </span>
+                  )}
+                  <div className="looper-page__presets-row-actions">
+                    {inEditMode ? (
+                      <>
+                        <Button
+                          kind="primary"
+                          size="sm"
+                          data-testid={`looper-preset-rename-save-${name}`}
+                          disabled={
+                            renameDraft.trim() === '' ||
+                            (renameDraft.trim() !== name &&
+                              sortedNames.includes(renameDraft.trim()))
+                          }
+                          onClick={() => void handleRenameCommit()}
+                        >
+                          Save
+                        </Button>
+                        <Button
+                          kind="ghost"
+                          size="sm"
+                          data-testid={`looper-preset-rename-cancel-${name}`}
+                          onClick={() => setRenamingName(null)}
+                        >
+                          Cancel
+                        </Button>
+                      </>
+                    ) : (
+                      <>
+                        <Button
+                          kind="tertiary"
+                          size="sm"
+                          data-testid={`looper-preset-apply-${name}`}
+                          onClick={() =>
+                            void onAction(() => looperApi.applyPreset(name))
+                          }
+                        >
+                          Apply
+                        </Button>
+                        <Button
+                          kind="ghost"
+                          size="sm"
+                          data-testid={`looper-preset-rename-${name}`}
+                          onClick={() => {
+                            setRenameDraft(name)
+                            setRenamingName(name)
+                          }}
+                        >
+                          Rename
+                        </Button>
+                        <Button
+                          kind="danger--ghost"
+                          size="sm"
+                          data-testid={`looper-preset-delete-${name}`}
+                          onClick={() => void handleDelete(name)}
+                        >
+                          Delete
+                        </Button>
+                      </>
+                    )}
+                  </div>
+                </li>
+              )
+            })}
           </ul>
           <div className="looper-page__presets-clear-row">
             <Button

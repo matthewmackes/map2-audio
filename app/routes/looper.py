@@ -77,6 +77,8 @@ def _http_for_error(exc: LooperServiceError) -> HTTPException:
         "invalid_preset_name": status.HTTP_400_BAD_REQUEST,
         "preset_not_found":    status.HTTP_404_NOT_FOUND,
         "preset_limit":        status.HTTP_409_CONFLICT,
+        # T2512-PRESET-RENAME — destination name already exists.
+        "preset_name_conflict": status.HTTP_409_CONFLICT,
     }.get(exc.code, status.HTTP_500_INTERNAL_SERVER_ERROR)
     return HTTPException(status_code=code, detail=str(exc))
 
@@ -240,6 +242,17 @@ class AddSliceAtPlayheadRequest(BaseModel):
     are computed service-side from the current playhead.
     """
     label: str = ""
+
+
+class RenamePresetRequest(BaseModel):
+    """T2512-PRESET-RENAME — change a saved preset's label.
+
+    The path carries the existing name; ``new_name`` is the desired
+    label. Both are normalized service-side (whitespace trim + length
+    cap), so an operator passing `"new"` and `"new  "` end up
+    targeting the same preset slot.
+    """
+    new_name: str = Field(..., min_length=1)
 
 
 class RenameSliceRequest(BaseModel):
@@ -1023,3 +1036,29 @@ async def clear_presets(
     """T2512-PRESET — wipe every named preset. Active state is
     unaffected. Returns the current LooperStatus."""
     return LooperStatusResponse.from_status(service.clear_presets())
+
+
+@router.patch("/presets/{name}",
+              response_model=LooperStatusResponse,
+              operation_id="looper_rename_preset",
+              summary="T2512-PRESET-RENAME — change a preset's name in place")
+async def rename_preset(
+    name: str,
+    body: RenamePresetRequest,
+    service: LooperService = Depends(_get_service),
+) -> LooperStatusResponse:
+    """T2512-PRESET-RENAME — relabel a saved preset.
+
+    Preserves the preset's insertion-order position so the operator's
+    list ordering doesn't shuffle on every rename. Returns:
+
+    - 404 ``preset_not_found`` when the source name doesn't match
+    - 400 ``invalid_preset_name`` when ``new_name`` normalizes to empty
+    - 409 ``preset_name_conflict`` when the destination name already
+      exists (operator must delete the target preset first)
+    """
+    try:
+        result = service.rename_preset(name, body.new_name)
+    except LooperServiceError as exc:
+        raise _http_for_error(exc)
+    return LooperStatusResponse.from_status(result)

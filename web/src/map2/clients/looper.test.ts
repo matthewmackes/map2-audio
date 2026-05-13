@@ -371,6 +371,22 @@ describe('looperApi HTTP surface', () => {
     expect(init?.method).toBe('DELETE')
   })
 
+  // T2512-PRESET-RENAME — patch the existing slot to a new label.
+  it('renamePreset("old","new") → PATCH /presets/old with new_name body', async () => {
+    await looperApi.renamePreset('old', 'new')
+    expect(fetchMock.mock.calls[0]?.[0]).toBe(`${BASE}/presets/old`)
+    const init = fetchMock.mock.calls[0]?.[1] as RequestInit | undefined
+    expect(init?.method).toBe('PATCH')
+    expect(JSON.parse(String(init?.body ?? '{}'))).toEqual({ new_name: 'new' })
+  })
+
+  it('renamePreset URL-encodes the source name', async () => {
+    await looperApi.renamePreset('verse 1/chorus', 'safe-name')
+    expect(fetchMock.mock.calls[0]?.[0]).toBe(
+      `${BASE}/presets/${encodeURIComponent('verse 1/chorus')}`,
+    )
+  })
+
   // ---------- Headers ----------
 
   it('PATCH calls send Content-Type: application/json', async () => {

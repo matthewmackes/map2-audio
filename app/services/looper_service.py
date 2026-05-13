@@ -1528,6 +1528,61 @@ class LooperService:
             )
         return self._broadcast(self.get_status())
 
+    def rename_preset(self, old_name: str, new_name: str) -> LooperStatus:
+        """T2512-PRESET-RENAME — rebind a saved preset to a new name.
+
+        Preserves insertion order so the operator's preset list
+        doesn't reshuffle on every rename (matches the UI's expectation
+        that a rename is a label change, not a reorder).
+
+        Raises ``LooperServiceError(preset_not_found)`` when
+        ``old_name`` doesn't match a saved preset, and
+        ``LooperServiceError(invalid_preset_name)`` when ``new_name``
+        is empty or unparseable. A rename onto its own current name
+        is a no-op (after sanitization).
+
+        A rename onto a *different* existing preset name raises
+        ``LooperServiceError(preset_limit)`` with the
+        ``preset_name_conflict`` shape: the operator should delete
+        the target preset first or pick a different name.
+        """
+        clean_old = self._sanitize_preset_name(old_name)
+        clean_new = self._sanitize_preset_name(new_name)
+        if clean_old not in self._presets:
+            raise LooperServiceError(
+                code="preset_not_found",
+                message=f"no preset named {clean_old!r}",
+            )
+        if clean_old == clean_new:
+            # No-op rename after sanitization (e.g. trailing whitespace
+            # only). Still broadcast so any subscriber that polls names
+            # gets a consistent frame.
+            return self._broadcast(self.get_status())
+        if clean_new in self._presets:
+            raise LooperServiceError(
+                code="preset_name_conflict",
+                message=(
+                    f"preset named {clean_new!r} already exists; delete "
+                    f"the existing one first or pick a different name"
+                ),
+            )
+        # Rebuild dict in insertion order with the renamed key swapped
+        # in place. dict comprehension preserves order on Python 3.7+;
+        # iterating via list(items) avoids mutation-during-iteration.
+        rebuilt: dict[str, dict[str, Any]] = {}
+        for k, v in self._presets.items():
+            if k == clean_old:
+                rebuilt[clean_new] = v
+            else:
+                rebuilt[k] = v
+        self._presets = rebuilt
+        self._record_activity(
+            "rename_preset",
+            None,
+            f"renamed preset {clean_old!r} -> {clean_new!r}",
+        )
+        return self._broadcast(self.get_status())
+
     # -------- Inspection --------
 
     def get_status(self) -> LooperStatus:
