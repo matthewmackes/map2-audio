@@ -2426,3 +2426,57 @@ describe('LooperPage T2512-SLICE-EDIT inline slice rename', () => {
     })
   })
 })
+
+describe('LooperPage T2512-FOOTER-STATS header verb-call chip', () => {
+  async function pushMetrics(metrics: Record<string, number>): Promise<void> {
+    act(() => {
+      sockets[0]!.onopen?.call(sockets[0] as unknown as WebSocket)
+    })
+    const frame = {
+      type: 'looper_status',
+      payload: { ...mockIdleSnapshot, metrics },
+    }
+    act(() => {
+      sockets[0]!.onmessage?.call(
+        sockets[0] as unknown as WebSocket,
+        { data: JSON.stringify(frame) } as MessageEvent,
+      )
+    })
+  }
+
+  it('chip is hidden when no verb has fired yet', async () => {
+    renderPage()
+    await screen.findByTestId('looper-ws-status')
+    expect(screen.queryByTestId('looper-footer-stats')).toBeNull()
+  })
+
+  it('renders the chip with the verb-call total once a frame arrives', async () => {
+    renderPage()
+    await pushMetrics({ record: 3, stop_track: 2 })
+    await waitFor(() => {
+      expect(screen.getByTestId('looper-footer-stats')).toHaveTextContent(
+        '5 calls',
+      )
+    })
+  })
+
+  it('uses singular "call" when total is exactly 1', async () => {
+    renderPage()
+    await pushMetrics({ record: 1 })
+    await waitFor(() => {
+      expect(screen.getByTestId('looper-footer-stats')).toHaveTextContent(
+        '1 call',
+      )
+    })
+  })
+
+  it('chip disappears again when metrics drop back to empty (reset)', async () => {
+    renderPage()
+    await pushMetrics({ record: 5 })
+    await screen.findByTestId('looper-footer-stats')
+    await pushMetrics({})
+    await waitFor(() => {
+      expect(screen.queryByTestId('looper-footer-stats')).toBeNull()
+    })
+  })
+})

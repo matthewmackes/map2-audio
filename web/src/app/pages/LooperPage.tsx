@@ -346,6 +346,30 @@ export function LooperPage() {
               {status.bpm.toFixed(1)} BPM
             </Tag>
           ) : null}
+          {/* T2512-FOOTER-STATS — compact metrics chip. Shows total
+              verb count without expanding the foldable MetricsPanel.
+              Reuses status.metrics so the value is push-synced via
+              WS — no extra HTTP round-trip. Hidden until at least
+              one verb has fired so the page header stays compact
+              for a fresh backend. */}
+          {(() => {
+            const metrics = status?.metrics ?? {}
+            const total = Object.values(metrics).reduce(
+              (sum, n) => sum + n,
+              0,
+            )
+            if (total === 0) return null
+            return (
+              <Tag
+                data-testid="looper-footer-stats"
+                type="cool-gray"
+                size="sm"
+                title={`${Object.keys(metrics).length} verbs tracked`}
+              >
+                {total} call{total === 1 ? '' : 's'}
+              </Tag>
+            )
+          })()}
         </div>
       </div>
 
