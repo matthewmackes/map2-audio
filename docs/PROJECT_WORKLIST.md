@@ -2576,6 +2576,37 @@ The earlier order-1 row is fully drained for pure-Python / pure-frontend slices.
 
 ---
 
+### Pick-up next (eighth Continue run handoff, filed 2026-05-13, end-of-run)
+
+**Eighth run total: 5 cycles + 1 port80-proxy fix + handoff doc, all dual-pushed. Cumulative T2512 test totals after eight runs: ~635 Python tests across 18 suites + 195+ web tests across 4 suites + 21 Node JS tests.**
+
+Shipped this run, in order:
+
+0. **port80-proxy retarget :80 → :3000** — Cleanup of an uncommitted working-tree change inherited from the previous session. The proxy was forwarding directly to FastAPI on :8080, which meant mobile/web clients hitting bare `http://<host>/<spa-route>` received FastAPI's `{"detail":"Not Found"}` instead of the React app. Retargeting through the static web server on :3000 keeps `/api/*` working (it's still proxied to :8080) AND lets bare SPA routes resolve. Regression test pins the new target.
+1. **T2512-KEYBOARD-CUSTOMIZE** — Operator-remappable keyboard shortcuts on LooperPage. New `looperKeybindings.ts` module with 11 canonical actions (selectTrack1..4, record, stop, undo, redo, muteToggle, reverseToggle, helpToggle), localStorage-backed binding map with schema version, code-wins-over-key matching, strict modifier-flag enforcement. New `LooperKeybindingsModal` with Rebind + Clear per action, "Reset all to defaults", duplicate-binding warning. +24 unit tests + 6 RTL tests.
+2. **T2512-METRICS-CHART** — Per-verb sparkline + recent-totals headline on the MetricsPanel. New `looperMetricsSparkline.ts` module with delta-tracker (negative-clamp + first-appearance-clamp at 1 + disappearing-verb-push of 0), 80×18 inline SVG polylines, trailing-N-sample sum helper. No recharts dependency. Toggle header surfaces "N in last 60 samples" once any verb fires. +13 unit tests + 4 RTL tests.
+3. **T2512-PRESET-RENAME** — Inline rename per preset row. New `LooperService.rename_preset()` with insertion-order preservation (slot index stays the same), `preset_name_conflict` 409 on destination collision, same-name no-op tolerance. New `PATCH /api/v1/looper/presets/{name}` with `RenamePresetRequest{new_name}`. New `looperApi.renamePreset()`. New inline-edit UI: Rename button swaps row name for prefilled TextInput; Save/Cancel + Enter/Esc; Save disabled on empty/collision/self-name. localStorage cache mirrors the rename. +9 service + 5 route + 1 OpenAPI + 2 client + 5 RTL tests.
+4. **T2512-PRESET-DRAG-REORDER** — Drag-to-reorder preset rows. New `LooperService.reorder_presets()` with strict-permutation validation (raises `invalid_preset_order` 400 on missing/unknown/duplicate names); rebuilds dict honoring the new sequence. New `POST /api/v1/looper/presets/reorder` registered BEFORE `POST /presets/{name}` so the literal path matches first (regression test pins this). New `looperApi.reorderPresets()`. Native HTML5 drag with `pendingOrder` optimistic state during the round-trip + roll-back on API failure. Handles race conditions where another tab saves/deletes a preset mid-drag. +9 service + 4 route + 1 OpenAPI + 1 client + 5 RTL tests.
+5. **T2515-6 + T2515-5 clock tab live-fetch** — New `GET /api/v1/devices/tascam-us144mkii/meters` returning a structured `MeterPayload` with `source="placeholder"` (silence-sentinel -150 dBFS per channel) until the engine ring-buffer wire-up lands. New `GET /api/v1/devices/tascam-us144mkii/clock-source` returning `ClockSourceResponse{selected, locked_for_tier1, sample_rate_hz, options[]}` with per-option `selectable` flag. `TascamUS144MKIIClockTab.tsx` now fetches the endpoint live via TanStack Query, renders kHz tag + "Pinned for tier-1" tag, radio group reads the options array, per-option label appends "— read-only" when selectable=false. +6 route tests.
+
+**Status of long-term priorities after this run:**
+- T2512 has reached the natural end of pure-frontend / pure-Python pickups. Every order-1 nice-to-have from prior handoffs is now shipped (KEYBOARD-CUSTOMIZE, METRICS-CHART, PRESET-RENAME, PRESET-DRAG-REORDER). Operators have inline rename, drag-reorder, customizable shortcuts, live sparklines, full preset backup/restore, and the looper-state envelope export.
+- T2515 (TASCAM US-144MKII) tier-1 ship is now functionally complete at the platform-route level: status / capabilities / meters / clock-source / reset all exist; Carbon panel binds live to all of them. Remaining work is the engine metering wire-up (T2515-Follow-up-METER-WIRE) and the transactional clock-source-change endpoint, both RT/bench-gated.
+- T2517 (MPX-1 effects block) was already farther along than its subtask checklist showed: `/api/plugins/discover` already wires `_get_hardware_plugins()`, the `InterfaceCapability` registry already loads TASCAM + UA-1000 capabilities, and the singleton-lock + chains-hardware-usage routes are in place. The remaining work is the chooser UI integration (T2517-4) + per-instance side-panel + calibration wizard (T2517-6) — both UI-heavy slices.
+
+**Next-session order-1 picks** (priority order; pure-Python or pure-frontend only):
+
+The T2512 pickup well is now genuinely dry on autonomous-safe slices. The next layer of looper work is RT-gated (QUANT-ENGINE / AUTO-TRIGGER engine binding / FADE-RAMP / SYNC-LOCK / LONG / FX / TIME / DAW / BYP / CLOCK-outbound / STOR) and needs operator review. Pickable elsewhere:
+
+1. **T2517-4** — Effects-chooser UI integration. `SnapshotEditorPluginBrowser.tsx` already exists; the new work is rendering `is_hardware: true` entries with availability-gated grey-out + tooltip + connection-type inline picker. Pure-frontend. Backend already returns these descriptors via `/api/plugins/discover`.
+2. **T2517-6** — Per-instance side-panel + measured-impulse calibration wizard for an inserted MPX-1 block. UI surfaces already filed at `web/src/app/components/Effects/MPX1Block/`. Pure-frontend until the calibration round-trip is wired (a small Python service slice).
+3. **T2515-Follow-up-METER-WIRE** — Connect the JUCE engine's per-device ring-buffer metering to the new `/meters` route. Bench-needed for soak proof but the wire-up itself is Python+IPC (no audioCallback changes).
+4. **T2459-H final bench session gates** — All consolidated under `docs/midi/T2459_FINAL_BENCH_SESSION.md`; requires physical hardware. Code-side complete.
+
+**Bench-only / spec-needed** (unchanged): T2512-STOR, T2512-LONG, T2512-FX, T2512-TIME, T2512-DAW, T2512-BYP, T2512-SYNC-LOCK, T2512-CLOCK outbound, T2517-Follow-up-A (AES soak), T2517-Follow-up-B (crossfade on hot-swap).
+
+---
+
 ### Pick-up next (seventh Continue run handoff, filed 2026-05-13, end-of-run)
 
 **Seventh run total: 4 cycles + handoff doc, all dual-pushed. Cumulative T2512 test totals after seven runs: ~600 Python tests across 18 suites + 173 web tests across 3 suites + 21 Node JS tests.**
