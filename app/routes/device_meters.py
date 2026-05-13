@@ -27,6 +27,7 @@ from pydantic import BaseModel, Field
 from app.services.devices import (
     edirol_ua1000_meters,  # noqa: F401 — import for registration side-effect
     hotone_jogg_meters,  # noqa: F401 — import for registration side-effect
+    lexicon_mpx1_meters,  # noqa: F401 — import for registration side-effect
     tascam_us144mkii_meters,  # noqa: F401 — import for registration side-effect
 )
 from app.services.devices._meter_source import get_registry

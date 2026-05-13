@@ -20,6 +20,7 @@ from app.routes import device_meters
 from app.services.devices import (
     edirol_ua1000_meters,
     hotone_jogg_meters,
+    lexicon_mpx1_meters,
     tascam_us144mkii_meters,
 )
 from app.services.devices._meter_source import MeterSnapshot, SILENCE_DBFS
@@ -32,10 +33,12 @@ def _clean_seam():
     tascam_us144mkii_meters.reset_active_meter_source()
     edirol_ua1000_meters.reset_active_meter_source()
     hotone_jogg_meters.reset_active_meter_source()
+    lexicon_mpx1_meters.reset_active_meter_source()
     yield
     tascam_us144mkii_meters.reset_active_meter_source()
     edirol_ua1000_meters.reset_active_meter_source()
     hotone_jogg_meters.reset_active_meter_source()
+    lexicon_mpx1_meters.reset_active_meter_source()
 
 
 @pytest.fixture
@@ -51,6 +54,7 @@ def client() -> TestClient:
         ("tascam-us144mkii", 4, 4),
         ("edirol-ua-1000", 10, 10),
         ("hotone-jogg", 2, 2),
+        ("lexicon-mpx1", 2, 2),
     ],
 )
 def test_route_returns_placeholder_for_registered_device(client, device_id, inp, out):

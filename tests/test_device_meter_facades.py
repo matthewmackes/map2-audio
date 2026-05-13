@@ -30,6 +30,7 @@ FACADE_MODULES = [
     ("app.services.devices.tascam_us144mkii_meters", "tascam-us144mkii", 4, 4),
     ("app.services.devices.edirol_ua1000_meters", "edirol-ua-1000", 10, 10),
     ("app.services.devices.hotone_jogg_meters", "hotone-jogg", 2, 2),
+    ("app.services.devices.lexicon_mpx1_meters", "lexicon-mpx1", 2, 2),
 ]
 
 
