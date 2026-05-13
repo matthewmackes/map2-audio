@@ -1,8 +1,15 @@
 """
-Port 80 to 8080 Reverse Proxy
+Port 80 to 3000 Reverse Proxy
 
-Lightweight TCP proxy that forwards connections from port 80 to port 8080.
+Lightweight TCP proxy that forwards connections from port 80 to port 3000.
 Required for mobile app compatibility (expects port 80).
+
+The web static server on :3000 already proxies /api/* + WebSocket upgrades to
+the FastAPI backend on :8080 and SPA-falls back unknown paths to index.html,
+so retargeting :80 → :3000 keeps backend traffic working AND lets browsers
+hitting bare http://<host>/<spa-route> reach the React app instead of
+receiving FastAPI's {"detail":"Not Found"}. (Previously :80 forwarded
+directly to :8080, which bypassed the SPA fallback.)
 
 Run with: sudo python -m app.services.port80_proxy
 Or as a systemd service.
@@ -17,12 +24,12 @@ logger = logging.getLogger(__name__)
 
 LISTEN_PORT = 80
 TARGET_HOST = "127.0.0.1"
-TARGET_PORT = 8080
+TARGET_PORT = 3000
 BUFFER_SIZE = 65536
 
 
 class PortProxy:
-    """Async TCP proxy for forwarding port 80 to 8080."""
+    """Async TCP proxy for forwarding port 80 to 3000 (the static web server)."""
 
     def __init__(self, listen_port: int = LISTEN_PORT,
                  target_host: str = TARGET_HOST,

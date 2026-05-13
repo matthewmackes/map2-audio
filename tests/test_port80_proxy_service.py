@@ -5,10 +5,28 @@ from pathlib import Path
 
 import pytest
 
-from app.services.port80_proxy import PortProxy
+from app.services.port80_proxy import LISTEN_PORT, TARGET_HOST, TARGET_PORT, PortProxy
 
 
 ROOT = Path(__file__).resolve().parents[1]
+
+
+def test_port80_proxy_targets_static_web_server_not_backend() -> None:
+    """The :80 proxy must forward to the :3000 static web server, not directly
+    to the :8080 FastAPI backend.
+
+    Why this matters: the static server on :3000 already proxies /api/* and
+    WebSocket upgrades to :8080 *and* SPA-falls-back unknown paths to index.html.
+    A direct :80 → :8080 chain would bypass the SPA fallback and surface
+    FastAPI's bare {"detail":"Not Found"} to mobile clients hitting a React
+    route, so this regression test pins the post-2026-05-13 target.
+    """
+    assert LISTEN_PORT == 80
+    assert TARGET_HOST == "127.0.0.1"
+    assert TARGET_PORT == 3000, (
+        "port80_proxy must forward to the static web server on :3000, "
+        "not directly to FastAPI on :8080"
+    )
 
 
 async def _start_echo_server() -> tuple[asyncio.AbstractServer, int]:
