@@ -117,6 +117,7 @@ jest.mock('../../map2/clients/looper', () => ({
     addSliceAtPlayhead: jest.fn(async () => mockIdleSnapshot),
     clearSlices: jest.fn(async () => mockIdleSnapshot),
     deleteSlice: jest.fn(async () => mockIdleSnapshot),
+    renameSlice: jest.fn(async () => mockIdleSnapshot),
     resetState: jest.fn(async () => mockIdleSnapshot),
     getActivity: jest.fn(async () => ({ events: [], cap: 200 })),
     clearActivity: jest.fn(async () => ({ events: [], cap: 200 })),
@@ -2276,5 +2277,152 @@ describe('LooperPage T2512-RESET-PEAK-ALL master shortcut', () => {
     expect(mod.looperApi.resetAutoPeak).toHaveBeenNthCalledWith(2, 1)
     expect(mod.looperApi.resetAutoPeak).toHaveBeenNthCalledWith(3, 2)
     expect(mod.looperApi.resetAutoPeak).toHaveBeenNthCalledWith(4, 3)
+  })
+})
+
+describe('LooperPage T2512-SLICE-EDIT inline slice rename', () => {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const mod = require('../../map2/clients/looper') as {
+    looperApi: { renameSlice: jest.Mock }
+  }
+
+  beforeEach(() => {
+    mod.looperApi.renameSlice.mockClear()
+  })
+
+  async function seedSlices(): Promise<void> {
+    const toggle = await screen.findByTestId('looper-slice-editor-toggle-0')
+    fireEvent.click(toggle)
+    act(() => {
+      sockets[0]!.onopen?.call(sockets[0] as unknown as WebSocket)
+    })
+    const frame = {
+      type: 'looper_status',
+      payload: {
+        ...mockIdleSnapshot,
+        tracks: mockIdleSnapshot.tracks.map((t, i) =>
+          i === 0
+            ? {
+                ...t,
+                slices: [
+                  { start_frame: 0, end_frame: 24000, label: 'intro' },
+                ],
+              }
+            : t,
+        ),
+      },
+    }
+    act(() => {
+      sockets[0]!.onmessage?.call(
+        sockets[0] as unknown as WebSocket,
+        { data: JSON.stringify(frame) } as MessageEvent,
+      )
+    })
+    await screen.findByTestId('looper-slice-list-0')
+  }
+
+  it('Rename button renders next to each slice label', async () => {
+    renderPage()
+    await seedSlices()
+    expect(
+      screen.getByTestId('looper-slice-rename-0-0'),
+    ).toHaveTextContent('Rename')
+  })
+
+  it('Rename swaps the row into edit mode with the existing label in the input', async () => {
+    renderPage()
+    await seedSlices()
+    fireEvent.click(screen.getByTestId('looper-slice-rename-0-0'))
+    const input = (await screen.findByTestId(
+      'looper-slice-rename-input-0-0',
+    )) as HTMLInputElement
+    expect(input.value).toBe('intro')
+    expect(screen.getByTestId('looper-slice-rename-save-0-0')).toBeInTheDocument()
+    expect(
+      screen.getByTestId('looper-slice-rename-cancel-0-0'),
+    ).toBeInTheDocument()
+  })
+
+  it('Save commits the trimmed label and exits edit mode', async () => {
+    renderPage()
+    await seedSlices()
+    fireEvent.click(screen.getByTestId('looper-slice-rename-0-0'))
+    const input = (await screen.findByTestId(
+      'looper-slice-rename-input-0-0',
+    )) as HTMLInputElement
+    fireEvent.change(input, { target: { value: '  verse-a  ' } })
+    fireEvent.click(screen.getByTestId('looper-slice-rename-save-0-0'))
+    await waitFor(() => {
+      expect(mod.looperApi.renameSlice).toHaveBeenCalledWith(0, 0, 'verse-a')
+    })
+    await waitFor(() => {
+      expect(
+        screen.queryByTestId('looper-slice-rename-input-0-0'),
+      ).toBeNull()
+    })
+  })
+
+  it('Cancel reverts the draft and does not call renameSlice', async () => {
+    renderPage()
+    await seedSlices()
+    fireEvent.click(screen.getByTestId('looper-slice-rename-0-0'))
+    const input = (await screen.findByTestId(
+      'looper-slice-rename-input-0-0',
+    )) as HTMLInputElement
+    fireEvent.change(input, { target: { value: 'CHANGED' } })
+    fireEvent.click(screen.getByTestId('looper-slice-rename-cancel-0-0'))
+    await waitFor(() => {
+      expect(
+        screen.queryByTestId('looper-slice-rename-input-0-0'),
+      ).toBeNull()
+    })
+    expect(mod.looperApi.renameSlice).not.toHaveBeenCalled()
+  })
+
+  it('Enter key submits the rename', async () => {
+    renderPage()
+    await seedSlices()
+    fireEvent.click(screen.getByTestId('looper-slice-rename-0-0'))
+    const input = (await screen.findByTestId(
+      'looper-slice-rename-input-0-0',
+    )) as HTMLInputElement
+    fireEvent.change(input, { target: { value: 'enter-key' } })
+    fireEvent.keyDown(input, { key: 'Enter' })
+    await waitFor(() => {
+      expect(mod.looperApi.renameSlice).toHaveBeenCalledWith(0, 0, 'enter-key')
+    })
+  })
+
+  it('Escape key cancels without calling renameSlice', async () => {
+    renderPage()
+    await seedSlices()
+    fireEvent.click(screen.getByTestId('looper-slice-rename-0-0'))
+    const input = (await screen.findByTestId(
+      'looper-slice-rename-input-0-0',
+    )) as HTMLInputElement
+    fireEvent.change(input, { target: { value: 'should-not-save' } })
+    fireEvent.keyDown(input, { key: 'Escape' })
+    await waitFor(() => {
+      expect(
+        screen.queryByTestId('looper-slice-rename-input-0-0'),
+      ).toBeNull()
+    })
+    expect(mod.looperApi.renameSlice).not.toHaveBeenCalled()
+  })
+
+  it('Save with an unchanged label skips the network round-trip', async () => {
+    renderPage()
+    await seedSlices()
+    fireEvent.click(screen.getByTestId('looper-slice-rename-0-0'))
+    // Don't change anything — just hit Save.
+    fireEvent.click(screen.getByTestId('looper-slice-rename-save-0-0'))
+    // No API call because the label is identical.
+    expect(mod.looperApi.renameSlice).not.toHaveBeenCalled()
+    // But the row exits edit mode either way.
+    await waitFor(() => {
+      expect(
+        screen.queryByTestId('looper-slice-rename-input-0-0'),
+      ).toBeNull()
+    })
   })
 })

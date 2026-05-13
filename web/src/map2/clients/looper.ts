@@ -196,6 +196,16 @@ export const looperApi = {
       `${BASE}/track/${track}/slices/${start_frame}`,
       { method: 'DELETE' },
     ),
+  /** T2512-SLICE-RENAME — replace an existing slice's label by start_frame. */
+  renameSlice: (track: number, start_frame: number, label: string) =>
+    fetchJson<LooperStatus>(
+      `${BASE}/track/${track}/slices/${start_frame}`,
+      {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ label }),
+      },
+    ),
   setMasterLevel: (db: number)                 => patch(`${BASE}/master/level`, { db }),
   /** T2512-MASTER-MUTE — toggle the global panic-mute flag. */
   setMasterMuted: (muted: boolean) => patch(`${BASE}/master/muted`, { value: muted }),

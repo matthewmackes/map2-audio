@@ -1463,36 +1463,14 @@ function SliceEditor({
                 data-testid={`looper-slice-list-${track.track}`}
               >
                 {track.slices.map((slc) => (
-                  <li key={`${slc.start_frame}-${slc.end_frame}`}>
-                    <input
-                      type="checkbox"
-                      className="looper-track__slice-checkbox"
-                      data-testid={`looper-slice-checkbox-${track.track}-${slc.start_frame}`}
-                      aria-label={`Select slice ${slc.start_frame}–${slc.end_frame}`}
-                      checked={validSelected.has(slc.start_frame)}
-                      onChange={() => toggleSelected(slc.start_frame)}
-                    />
-                    <span className="looper-track__slice-range">
-                      {slc.start_frame}–{slc.end_frame}
-                    </span>
-                    <span className="looper-track__slice-label-text">
-                      {slc.label || <em>unlabeled</em>}
-                    </span>
-                    <Button
-                      kind="ghost"
-                      size="sm"
-                      hasIconOnly
-                      renderIcon={TrashCan}
-                      iconDescription={`Delete slice ${slc.start_frame}–${slc.end_frame}`}
-                      tooltipPosition="left"
-                      data-testid={`looper-delete-slice-${track.track}-${slc.start_frame}`}
-                      onClick={() =>
-                        onAction(() =>
-                          looperApi.deleteSlice(track.track, slc.start_frame),
-                        )
-                      }
-                    />
-                  </li>
+                  <SliceRow
+                    key={`${slc.start_frame}-${slc.end_frame}`}
+                    trackIdx={track.track}
+                    slice={slc}
+                    selected={validSelected.has(slc.start_frame)}
+                    onToggleSelected={toggleSelected}
+                    onAction={onAction}
+                  />
                 ))}
               </ul>
             </>
@@ -1505,6 +1483,141 @@ function SliceEditor({
         </div>
       ) : null}
     </div>
+  )
+}
+
+/**
+ * T2512-SLICE-EDIT — single slice row with inline-rename affordance.
+ *
+ * Renames go through the existing T2512-SLICE-RENAME PATCH route;
+ * the rest of the row (checkbox / range / delete trash can) is
+ * unchanged from the original SliceEditor inline render.
+ *
+ * UX:
+ *   - Idle: shows label (or "unlabeled" placeholder) + a ghost edit
+ *     button that swaps the row into edit mode.
+ *   - Edit: shows a TextInput pre-populated with the current label;
+ *     Save commits, Cancel reverts. Enter submits; Escape cancels.
+ *
+ * State is local to the row so a parent re-render (WS frame
+ * application) does not stomp the operator's draft.
+ */
+function SliceRow({
+  trackIdx,
+  slice,
+  selected,
+  onToggleSelected,
+  onAction,
+}: {
+  trackIdx: number
+  slice: { start_frame: number; end_frame: number; label: string }
+  selected: boolean
+  onToggleSelected: (startFrame: number) => void
+  onAction: (fn: () => Promise<LooperStatus>) => Promise<void>
+}) {
+  const [editing, setEditing] = useState(false)
+  const [draft, setDraft] = useState(slice.label)
+
+  const startEdit = useCallback(() => {
+    setDraft(slice.label)
+    setEditing(true)
+  }, [slice.label])
+
+  const commit = useCallback(async () => {
+    const trimmed = draft.trim().slice(0, 64)
+    if (trimmed === slice.label) {
+      setEditing(false)
+      return
+    }
+    await onAction(() =>
+      looperApi.renameSlice(trackIdx, slice.start_frame, trimmed),
+    )
+    setEditing(false)
+  }, [draft, onAction, slice.label, slice.start_frame, trackIdx])
+
+  const cancel = useCallback(() => {
+    setDraft(slice.label)
+    setEditing(false)
+  }, [slice.label])
+
+  return (
+    <li>
+      <input
+        type="checkbox"
+        className="looper-track__slice-checkbox"
+        data-testid={`looper-slice-checkbox-${trackIdx}-${slice.start_frame}`}
+        aria-label={`Select slice ${slice.start_frame}–${slice.end_frame}`}
+        checked={selected}
+        onChange={() => onToggleSelected(slice.start_frame)}
+      />
+      <span className="looper-track__slice-range">
+        {slice.start_frame}–{slice.end_frame}
+      </span>
+      {editing ? (
+        <span className="looper-track__slice-label-edit">
+          <input
+            type="text"
+            className="looper-track__slice-label-input"
+            data-testid={`looper-slice-rename-input-${trackIdx}-${slice.start_frame}`}
+            value={draft}
+            maxLength={64}
+            autoFocus
+            onChange={(e) => setDraft(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === 'Enter') {
+                e.preventDefault()
+                void commit()
+              } else if (e.key === 'Escape') {
+                e.preventDefault()
+                cancel()
+              }
+            }}
+          />
+          <Button
+            kind="primary"
+            size="sm"
+            data-testid={`looper-slice-rename-save-${trackIdx}-${slice.start_frame}`}
+            onClick={() => void commit()}
+          >
+            Save
+          </Button>
+          <Button
+            kind="ghost"
+            size="sm"
+            data-testid={`looper-slice-rename-cancel-${trackIdx}-${slice.start_frame}`}
+            onClick={cancel}
+          >
+            Cancel
+          </Button>
+        </span>
+      ) : (
+        <span className="looper-track__slice-label-text">
+          <span data-testid={`looper-slice-label-${trackIdx}-${slice.start_frame}`}>
+            {slice.label || <em>unlabeled</em>}
+          </span>
+          <Button
+            kind="ghost"
+            size="sm"
+            data-testid={`looper-slice-rename-${trackIdx}-${slice.start_frame}`}
+            onClick={startEdit}
+          >
+            Rename
+          </Button>
+        </span>
+      )}
+      <Button
+        kind="ghost"
+        size="sm"
+        hasIconOnly
+        renderIcon={TrashCan}
+        iconDescription={`Delete slice ${slice.start_frame}–${slice.end_frame}`}
+        tooltipPosition="left"
+        data-testid={`looper-delete-slice-${trackIdx}-${slice.start_frame}`}
+        onClick={() =>
+          onAction(() => looperApi.deleteSlice(trackIdx, slice.start_frame))
+        }
+      />
+    </li>
   )
 }
 

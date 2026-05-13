@@ -209,6 +209,15 @@ describe('looperApi HTTP surface', () => {
     expect(init?.method).toBe('DELETE')
   })
 
+  it('renameSlice(0, 24000, "verse-a") → PATCH /track/0/slices/24000 with {label}', async () => {
+    // T2512-SLICE-RENAME — replace a slice label in place.
+    await looperApi.renameSlice(0, 24000, 'verse-a')
+    expect(fetchMock.mock.calls[0]?.[0]).toBe(`${BASE}/track/0/slices/24000`)
+    const init = fetchMock.mock.calls[0]?.[1] as RequestInit | undefined
+    expect(init?.method).toBe('PATCH')
+    expect(JSON.parse(String(init?.body))).toEqual({ label: 'verse-a' })
+  })
+
   it('addSliceAtPlayhead(0, "x") → POST /track/0/slices/at-playhead', async () => {
     await looperApi.addSliceAtPlayhead(0, 'x')
     expect(fetchMock.mock.calls[0]?.[0]).toBe(
