@@ -2784,3 +2784,164 @@ describe('LooperPage T2512-PRESET-EXPORT-WITH-LOCAL state-export envelope', () =
     expect(localStorage.getItem(CACHE_KEY)).toBeNull()
   })
 })
+
+describe('LooperPage T2512-KEYBOARD shortcuts', () => {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const mod = require('../../map2/clients/looper') as {
+    looperApi: {
+      record: jest.Mock
+      stop: jest.Mock
+      undo: jest.Mock
+      redo: jest.Mock
+      setMuted: jest.Mock
+      setReverse: jest.Mock
+    }
+  }
+
+  const ACTIVE_KEY = 'map2.looper.activeKbTrack'
+
+  beforeEach(() => {
+    localStorage.clear()
+    mod.looperApi.record.mockClear()
+    mod.looperApi.stop.mockClear()
+    mod.looperApi.undo.mockClear()
+    mod.looperApi.redo.mockClear()
+    mod.looperApi.setMuted.mockClear()
+    mod.looperApi.setReverse.mockClear()
+  })
+
+  function dispatchKey(opts: KeyboardEventInit & { key: string }): void {
+    // Dispatch directly on window via the native KeyboardEvent
+    // constructor — RTL's fireEvent.keyDown(window, …) does not route
+    // through the window-level listener that LooperPage installs.
+    act(() => {
+      window.dispatchEvent(new KeyboardEvent('keydown', opts))
+    })
+  }
+
+  it('renders the active-track chip starting at track 1', async () => {
+    renderPage()
+    const chip = await screen.findByTestId('looper-kb-active-track')
+    expect(chip).toHaveTextContent('track 1')
+  })
+
+  it('pressing "2" switches the active track to 2 and persists', async () => {
+    renderPage()
+    await screen.findByTestId('looper-kb-active-track')
+    dispatchKey({ key: '2' })
+    await waitFor(() => {
+      expect(screen.getByTestId('looper-kb-active-track')).toHaveTextContent(
+        'track 2',
+      )
+    })
+    expect(localStorage.getItem(ACTIVE_KEY)).toBe('1')
+  })
+
+  async function waitForStatusLoaded(): Promise<void> {
+    // status is null until refresh() resolves; wait for the master
+    // mute button which only renders after status loads.
+    await screen.findByTestId('looper-master-mute-button')
+  }
+
+  it('Space fires record on the active track', async () => {
+    renderPage()
+    await waitForStatusLoaded()
+    dispatchKey({ key: '3' })
+    dispatchKey({ key: ' ', code: 'Space' })
+    await waitFor(() => {
+      expect(mod.looperApi.record).toHaveBeenCalledWith(2)
+    })
+  })
+
+  it('Shift+Space fires stop on the active track', async () => {
+    renderPage()
+    await waitForStatusLoaded()
+    dispatchKey({ key: ' ', code: 'Space', shiftKey: true })
+    await waitFor(() => {
+      expect(mod.looperApi.stop).toHaveBeenCalledWith(0)
+    })
+    // Should NOT fire record (modifier suppresses it).
+    expect(mod.looperApi.record).not.toHaveBeenCalled()
+  })
+
+  it('U key fires undo; Y key fires redo', async () => {
+    renderPage()
+    await waitForStatusLoaded()
+    dispatchKey({ key: 'u' })
+    await waitFor(() => {
+      expect(mod.looperApi.undo).toHaveBeenCalledWith(0)
+    })
+    dispatchKey({ key: 'y' })
+    await waitFor(() => {
+      expect(mod.looperApi.redo).toHaveBeenCalledWith(0)
+    })
+  })
+
+  it('M toggles mute; R toggles reverse — both read current state', async () => {
+    renderPage()
+    await waitForStatusLoaded()
+    dispatchKey({ key: 'm' })
+    await waitFor(() => {
+      // Default mock snapshot has muted=false, so M flips to true.
+      expect(mod.looperApi.setMuted).toHaveBeenCalledWith(0, true)
+    })
+    dispatchKey({ key: 'r' })
+    await waitFor(() => {
+      expect(mod.looperApi.setReverse).toHaveBeenCalledWith(0, true)
+    })
+  })
+
+  it('shortcuts are suppressed while typing in an editable field', async () => {
+    renderPage()
+    // Preset name input is a text input — focus it and press Space.
+    const input = (await screen.findByTestId(
+      'looper-preset-name-input',
+    )) as HTMLInputElement
+    // Dispatch directly so the event target is the input, not window.
+    act(() => {
+      input.dispatchEvent(
+        new KeyboardEvent('keydown', { key: ' ', code: 'Space', bubbles: true }),
+      )
+    })
+    // No transport call should have fired.
+    expect(mod.looperApi.record).not.toHaveBeenCalled()
+    expect(mod.looperApi.stop).not.toHaveBeenCalled()
+  })
+
+  it('? opens the help modal', async () => {
+    renderPage()
+    await waitForStatusLoaded()
+    dispatchKey({ key: '?' })
+    // The Modal renders into the body; find by header text.
+    await waitFor(() => {
+      expect(screen.queryByText('Keyboard shortcuts')).toBeInTheDocument()
+    })
+  })
+
+  it('Help button click opens the modal', async () => {
+    renderPage()
+    const btn = await screen.findByTestId('looper-kb-help-button')
+    fireEvent.click(btn)
+    await waitFor(() => {
+      expect(screen.queryByText('Keyboard shortcuts')).toBeInTheDocument()
+    })
+  })
+
+  it('clicking the active-track chip cycles to the next track', async () => {
+    renderPage()
+    const chip = await screen.findByTestId('looper-kb-active-track')
+    fireEvent.click(chip)
+    await waitFor(() => {
+      expect(screen.getByTestId('looper-kb-active-track')).toHaveTextContent(
+        'track 2',
+      )
+    })
+  })
+
+  it('reads the active track from localStorage on mount', async () => {
+    localStorage.setItem(ACTIVE_KEY, '2')
+    renderPage()
+    const chip = await screen.findByTestId('looper-kb-active-track')
+    expect(chip).toHaveTextContent('track 3')
+  })
+})

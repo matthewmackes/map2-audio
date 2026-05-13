@@ -158,6 +158,24 @@ export function LooperPage() {
   const [wsConnected, setWsConnected] = useState(false)
   // T2512-RESET — confirmation modal state.
   const [resetModalOpen, setResetModalOpen] = useState(false)
+  // T2512-KEYBOARD — active track for keyboard transport shortcuts.
+  // Operators press 1..4 to retarget; Space records, Shift+Space stops,
+  // U/Y undo/redo, M toggles mute, R toggles reverse. ? toggles the
+  // help overlay. Defaults to 0; persisted to localStorage so an
+  // operator's preferred starting track survives a reload.
+  const [activeKbTrack, setActiveKbTrack] = useState<number>(() => {
+    try {
+      const raw = localStorage.getItem('map2.looper.activeKbTrack')
+      if (raw != null) {
+        const n = parseInt(raw, 10)
+        if (Number.isFinite(n) && n >= 0 && n < TRACK_COUNT) return n
+      }
+    } catch {
+      // Quota / private mode — fall through to default.
+    }
+    return 0
+  })
+  const [kbHelpOpen, setKbHelpOpen] = useState(false)
 
   // T2512-IMPORT-UI — file input ref + handler. The file picker is
   // a hidden <input type="file"> triggered by an Import button so we
@@ -384,6 +402,87 @@ export function LooperPage() {
     [],
   )
 
+  // T2512-KEYBOARD — persist the operator's chosen active track.
+  useEffect(() => {
+    try {
+      localStorage.setItem(
+        'map2.looper.activeKbTrack',
+        String(activeKbTrack),
+      )
+    } catch {
+      // Best-effort; quota / private-mode silently swallowed.
+    }
+  }, [activeKbTrack])
+
+  // T2512-KEYBOARD — global keyboard listener. We attach to window so
+  // an operator can drive the looper from anywhere on the page (not
+  // just when a button has focus). Shortcuts intentionally ignore
+  // when the event target is an editable field (input / textarea /
+  // contenteditable) so typing into a preset name or slice label
+  // doesn't accidentally fire a stomp verb.
+  useEffect(() => {
+    function isEditableTarget(el: EventTarget | null): boolean {
+      if (!(el instanceof HTMLElement)) return false
+      if (el.isContentEditable) return true
+      const tag = el.tagName
+      return tag === 'INPUT' || tag === 'TEXTAREA' || tag === 'SELECT'
+    }
+    function handler(ev: KeyboardEvent) {
+      if (isEditableTarget(ev.target)) return
+      // Track selectors (1..4 → 0..3). No modifier required.
+      if (!ev.ctrlKey && !ev.metaKey && !ev.altKey) {
+        if (ev.key >= '1' && ev.key <= String(TRACK_COUNT)) {
+          ev.preventDefault()
+          setActiveKbTrack(parseInt(ev.key, 10) - 1)
+          return
+        }
+        if (ev.key === '?') {
+          ev.preventDefault()
+          setKbHelpOpen((v) => !v)
+          return
+        }
+      }
+      const t = activeKbTrack
+      if (status == null) return
+      const track = status.tracks[t]
+      if (!track) return
+      // Transport: Space → record (Shift+Space → stop).
+      if (ev.code === 'Space') {
+        ev.preventDefault()
+        if (ev.shiftKey) {
+          void wrap(() => looperApi.stop(t))
+        } else {
+          void wrap(() => looperApi.record(t))
+        }
+        return
+      }
+      // Bare-key shortcuts; ignore when a modifier we don't recognize is held.
+      if (ev.ctrlKey || ev.metaKey || ev.altKey) return
+      switch (ev.key.toLowerCase()) {
+        case 'u':
+          ev.preventDefault()
+          void wrap(() => looperApi.undo(t))
+          break
+        case 'y':
+          ev.preventDefault()
+          void wrap(() => looperApi.redo(t))
+          break
+        case 'm':
+          ev.preventDefault()
+          void wrap(() => looperApi.setMuted(t, !track.muted))
+          break
+        case 'r':
+          ev.preventDefault()
+          void wrap(() => looperApi.setReverse(t, !track.reverse))
+          break
+        default:
+          break
+      }
+    }
+    window.addEventListener('keydown', handler)
+    return () => window.removeEventListener('keydown', handler)
+  }, [activeKbTrack, status, wrap])
+
   return (
     <div className="looper-page">
       <div className="looper-page__header">
@@ -414,6 +513,29 @@ export function LooperPage() {
               {status.bpm.toFixed(1)} BPM
             </Tag>
           ) : null}
+          {/* T2512-KEYBOARD — active-track chip. Click cycles 0→1→2→3→0.
+              Press 1..4 for direct selection. The current track is
+              what every transport shortcut acts on. */}
+          <Tag
+            type="blue"
+            size="sm"
+            data-testid="looper-kb-active-track"
+            title="Active track for keyboard shortcuts (press 1..4 to switch, ? for help)"
+            onClick={() =>
+              setActiveKbTrack((t) => (t + 1) % TRACK_COUNT)
+            }
+            style={{ cursor: 'pointer' }}
+          >
+            ⌨ track {activeKbTrack + 1}
+          </Tag>
+          <Button
+            kind="ghost"
+            size="sm"
+            data-testid="looper-kb-help-button"
+            onClick={() => setKbHelpOpen(true)}
+          >
+            ?
+          </Button>
           {/* T2512-FOOTER-STATS — compact metrics chip. Shows total
               verb count without expanding the foldable MetricsPanel.
               Reuses status.metrics so the value is push-synced via
@@ -607,6 +729,53 @@ export function LooperPage() {
               Captured loop content is <strong>not</strong> touched —
               use the per-track <em>Clear</em> button to discard a
               loop.
+            </p>
+          </Modal>
+
+          {/* T2512-KEYBOARD — shortcuts help modal. */}
+          <Modal
+            data-testid="looper-kb-help-modal"
+            open={kbHelpOpen}
+            modalHeading="Keyboard shortcuts"
+            passiveModal
+            onRequestClose={() => setKbHelpOpen(false)}
+          >
+            <ul style={{ listStyle: 'none', padding: 0, margin: 0, display: 'grid', gridTemplateColumns: 'auto 1fr', gap: '0.25rem 1rem' }}>
+              <li style={{ display: 'contents' }}>
+                <kbd>1..4</kbd>
+                <span>Select active track</span>
+              </li>
+              <li style={{ display: 'contents' }}>
+                <kbd>Space</kbd>
+                <span>Record / play / overdub on active track</span>
+              </li>
+              <li style={{ display: 'contents' }}>
+                <kbd>Shift + Space</kbd>
+                <span>Stop active track</span>
+              </li>
+              <li style={{ display: 'contents' }}>
+                <kbd>U</kbd>
+                <span>Undo last layer on active track</span>
+              </li>
+              <li style={{ display: 'contents' }}>
+                <kbd>Y</kbd>
+                <span>Redo last layer on active track</span>
+              </li>
+              <li style={{ display: 'contents' }}>
+                <kbd>M</kbd>
+                <span>Toggle mute on active track</span>
+              </li>
+              <li style={{ display: 'contents' }}>
+                <kbd>R</kbd>
+                <span>Toggle reverse on active track</span>
+              </li>
+              <li style={{ display: 'contents' }}>
+                <kbd>?</kbd>
+                <span>Toggle this help</span>
+              </li>
+            </ul>
+            <p style={{ marginTop: '1rem', color: 'var(--cds-text-secondary)' }}>
+              Shortcuts are suppressed while editing a text field (preset name, slice label, etc.).
             </p>
           </Modal>
 
