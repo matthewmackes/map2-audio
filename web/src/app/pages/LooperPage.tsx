@@ -708,6 +708,60 @@ function PresetPanel({
     [onAction, setError],
   )
 
+  // T2512-PRESET-PERSIST-EXPORT — hidden file input + handler for
+  // importing a cache JSON. Replaces the cache (does NOT merge) so
+  // an operator can pin a known-good set without leaving stale local
+  // entries behind. Validates that the payload is an object of
+  // ``name → LooperStatePayload``-shaped values; bad shapes are
+  // rejected via setError without touching the cache.
+  const cacheImportInputRef = useRef<HTMLInputElement | null>(null)
+  const handleImportCache = useCallback(
+    async (file: File): Promise<void> => {
+      try {
+        const text = await new Promise<string>((resolve, reject) => {
+          const reader = new FileReader()
+          reader.onload = () => {
+            const result = reader.result
+            if (typeof result === 'string') resolve(result)
+            else reject(new Error('FileReader returned non-string result'))
+          }
+          reader.onerror = () =>
+            reject(reader.error ?? new Error('Read failed'))
+          reader.readAsText(file)
+        })
+        const parsed = JSON.parse(text) as unknown
+        if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
+          throw new Error(
+            'Invalid cache payload — expected an object keyed by preset name',
+          )
+        }
+        // Shape-check each value: must have schema_version + tracks
+        // array + master_level_db. Reject the whole import if any
+        // entry fails — a partial import is hard to reason about.
+        const entries = Object.entries(parsed as Record<string, unknown>)
+        for (const [name, val] of entries) {
+          if (
+            typeof val !== 'object' ||
+            val === null ||
+            !Array.isArray((val as { tracks?: unknown }).tracks)
+          ) {
+            throw new Error(
+              `Invalid cache entry for "${name}" — missing tracks array`,
+            )
+          }
+        }
+        writePresetCache(parsed as PresetCache)
+        setCacheTick((v) => v + 1)
+        setError(null)
+      } catch (e: unknown) {
+        setError(
+          e instanceof Error ? e.message : 'Failed to import preset cache',
+        )
+      }
+    },
+    [setError],
+  )
+
   return (
     <Tile
       className="looper-page__presets"
@@ -722,6 +776,65 @@ function PresetPanel({
         >
           {sortedNames.length} / 32 saved
         </Tag>
+        {Object.keys(cache).length > 0 ? (
+          <Tag
+            type="purple"
+            size="sm"
+            data-testid="looper-preset-cache-tag"
+            title="Number of presets currently in the durable localStorage cache"
+          >
+            {Object.keys(cache).length} cached
+          </Tag>
+        ) : null}
+        {/* T2512-PRESET-PERSIST-EXPORT — operator-facing export of
+            the localStorage preset cache so an operator can transport
+            their named takes between machines or browser profiles.
+            Import accepts the same JSON shape and replaces the local
+            cache (intentional: an import wipes any local-only entries
+            the file doesn't have so the operator can pin a known
+            good set). The import does NOT touch the live backend
+            — operator hits Restore on each row to re-anchor names. */}
+        <Button
+          kind="ghost"
+          size="sm"
+          data-testid="looper-preset-cache-export"
+          disabled={Object.keys(cache).length === 0}
+          onClick={() => {
+            const json = JSON.stringify(cache, null, 2)
+            const blob = new Blob([json], { type: 'application/json' })
+            const url = URL.createObjectURL(blob)
+            const a = document.createElement('a')
+            const ts = new Date().toISOString().replace(/[:.]/g, '-')
+            a.href = url
+            a.download = `looper-preset-cache-${ts}.json`
+            document.body.appendChild(a)
+            a.click()
+            document.body.removeChild(a)
+            URL.revokeObjectURL(url)
+          }}
+        >
+          Export cache
+        </Button>
+        <Button
+          kind="ghost"
+          size="sm"
+          data-testid="looper-preset-cache-import"
+          onClick={() => cacheImportInputRef.current?.click()}
+        >
+          Import cache…
+        </Button>
+        <input
+          ref={cacheImportInputRef}
+          type="file"
+          accept=".json,application/json"
+          style={{ display: 'none' }}
+          data-testid="looper-preset-cache-import-input"
+          onChange={(e) => {
+            const file = e.target.files?.[0]
+            if (file) void handleImportCache(file)
+            e.target.value = ''
+          }}
+        />
       </div>
       <p className="looper-page__presets-help">
         Named in-memory snapshots of every per-track flag + master

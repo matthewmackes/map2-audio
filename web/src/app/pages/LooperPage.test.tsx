@@ -2480,3 +2480,142 @@ describe('LooperPage T2512-FOOTER-STATS header verb-call chip', () => {
     })
   })
 })
+
+describe('LooperPage T2512-PRESET-PERSIST-EXPORT cache export/import', () => {
+  const CACHE_KEY = 'map2.looper.presetCache'
+
+  beforeEach(() => {
+    localStorage.clear()
+  })
+
+  it('Export-cache button is disabled when the cache is empty', async () => {
+    renderPage()
+    await screen.findByTestId('looper-preset-panel')
+    const btn = screen.getByTestId('looper-preset-cache-export') as HTMLButtonElement
+    expect(btn).toBeDisabled()
+    // Count tag is hidden when cache empty.
+    expect(screen.queryByTestId('looper-preset-cache-tag')).toBeNull()
+  })
+
+  it('renders the cached-count Tag and enables Export when cache has entries', async () => {
+    localStorage.setItem(
+      CACHE_KEY,
+      JSON.stringify({
+        'verse-a': { schema_version: 1, tracks: [], master_level_db: 0 },
+        'chorus':  { schema_version: 1, tracks: [], master_level_db: -3 },
+      }),
+    )
+    renderPage()
+    await screen.findByTestId('looper-preset-panel')
+    expect(screen.getByTestId('looper-preset-cache-tag')).toHaveTextContent(
+      '2 cached',
+    )
+    expect(
+      screen.getByTestId('looper-preset-cache-export'),
+    ).not.toBeDisabled()
+  })
+
+  it('clicking Export triggers a download with the cache as JSON', async () => {
+    localStorage.setItem(
+      CACHE_KEY,
+      JSON.stringify({
+        'verse-a': { schema_version: 1, tracks: [], master_level_db: 0 },
+      }),
+    )
+    const createSpy = jest.fn(() => 'blob:fake-url')
+    const revokeSpy = jest.fn()
+    ;(URL.createObjectURL as unknown) = createSpy
+    ;(URL.revokeObjectURL as unknown) = revokeSpy
+    const clickSpy = jest.spyOn(HTMLAnchorElement.prototype, 'click').mockImplementation()
+
+    renderPage()
+    const btn = await screen.findByTestId('looper-preset-cache-export')
+    fireEvent.click(btn)
+    await waitFor(() => expect(createSpy).toHaveBeenCalled())
+    expect(clickSpy).toHaveBeenCalled()
+    expect(revokeSpy).toHaveBeenCalled()
+    clickSpy.mockRestore()
+  })
+
+  it('Import replaces the existing cache with the file contents', async () => {
+    localStorage.setItem(
+      CACHE_KEY,
+      JSON.stringify({
+        'old-entry': { schema_version: 1, tracks: [], master_level_db: 0 },
+      }),
+    )
+    renderPage()
+    const fileInput = (await screen.findByTestId(
+      'looper-preset-cache-import-input',
+    )) as HTMLInputElement
+    const fresh = JSON.stringify({
+      'new-entry': { schema_version: 1, tracks: [], master_level_db: -6 },
+    })
+    const file = new File([fresh], 'cache.json', { type: 'application/json' })
+    Object.defineProperty(fileInput, 'files', {
+      configurable: true,
+      value: [file],
+    })
+    fireEvent.change(fileInput)
+    await waitFor(() => {
+      const cache = JSON.parse(localStorage.getItem(CACHE_KEY) as string)
+      expect(cache).toHaveProperty('new-entry')
+      // Replacement, not merge — old-entry should be gone.
+      expect(cache).not.toHaveProperty('old-entry')
+    })
+  })
+
+  it('Import rejects a non-object JSON payload without touching the cache', async () => {
+    localStorage.setItem(
+      CACHE_KEY,
+      JSON.stringify({
+        'keep-me': { schema_version: 1, tracks: [], master_level_db: 0 },
+      }),
+    )
+    renderPage()
+    const fileInput = (await screen.findByTestId(
+      'looper-preset-cache-import-input',
+    )) as HTMLInputElement
+    const file = new File(['"a-string"'], 'cache.json', {
+      type: 'application/json',
+    })
+    Object.defineProperty(fileInput, 'files', {
+      configurable: true,
+      value: [file],
+    })
+    fireEvent.change(fileInput)
+    // Wait for the error to surface (InlineNotification).
+    await screen.findByText(/Invalid cache payload/)
+    // Cache untouched.
+    const cache = JSON.parse(localStorage.getItem(CACHE_KEY) as string)
+    expect(cache).toHaveProperty('keep-me')
+  })
+
+  it('Import rejects a payload with a malformed entry without partial writes', async () => {
+    localStorage.setItem(
+      CACHE_KEY,
+      JSON.stringify({
+        'keep-me': { schema_version: 1, tracks: [], master_level_db: 0 },
+      }),
+    )
+    renderPage()
+    const fileInput = (await screen.findByTestId(
+      'looper-preset-cache-import-input',
+    )) as HTMLInputElement
+    const bad = JSON.stringify({
+      'good':    { schema_version: 1, tracks: [], master_level_db: 0 },
+      'broken':  { schema_version: 1 /* no tracks array */ },
+    })
+    const file = new File([bad], 'cache.json', { type: 'application/json' })
+    Object.defineProperty(fileInput, 'files', {
+      configurable: true,
+      value: [file],
+    })
+    fireEvent.change(fileInput)
+    await screen.findByText(/Invalid cache entry for "broken"/)
+    // Atomic: cache untouched, the "good" entry was NOT written.
+    const cache = JSON.parse(localStorage.getItem(CACHE_KEY) as string)
+    expect(cache).toHaveProperty('keep-me')
+    expect(cache).not.toHaveProperty('good')
+  })
+})
