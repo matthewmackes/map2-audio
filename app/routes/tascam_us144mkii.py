@@ -20,6 +20,7 @@ from typing import Any, Dict, List, Optional
 from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel, Field
 
+from app.services.devices.tascam_us144mkii_meters import read_snapshot as _read_meter_snapshot
 from app.services.devices.tascam_us144mkii_preflight import (
     BOOT_PID,
     EnumerationStage,
@@ -195,20 +196,19 @@ async def get_capabilities() -> CapabilitiesResponse:
 async def get_meters() -> MeterPayload:
     """Per-channel peak meter values in dBFS.
 
-    Until **T2515-Follow-up-METER-WIRE** wires the JUCE engine's per-device
-    ring-buffer metering pipeline to this device, the endpoint returns a
-    placeholder payload (-150 dBFS per channel) so the Carbon panel renders
-    its structure cleanly instead of error-stating. The ``source`` field is
-    ``placeholder`` while this is the case; once the wire-up lands it will
-    flip to ``engine``.
+    Reads through the ``tascam_us144mkii_meters`` injection seam. The
+    default ``PlaceholderMeterSource`` returns -150 dBFS sentinels per
+    channel (Carbon panel renders these as em-dashes). When the JUCE
+    engine's per-device ring-buffer metering wire-up lands, lifespan
+    startup will swap in a ``JuceEngineMeterSource`` and the ``source``
+    field flips from ``placeholder`` to ``engine`` without any change
+    to this handler.
     """
-    spec = TASCAM_US144MKII
-    channels_in = int(spec["input_channels"])
-    channels_out = int(spec["output_channels"])
+    snapshot = await _read_meter_snapshot()
     return MeterPayload(
-        input_peak_db=[-150.0] * channels_in,
-        output_peak_db=[-150.0] * channels_out,
-        source="placeholder",
+        input_peak_db=list(snapshot.input_peak_db),
+        output_peak_db=list(snapshot.output_peak_db),
+        source=snapshot.source,
     )
 
 
