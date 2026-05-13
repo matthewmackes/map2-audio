@@ -1,4 +1,4 @@
-"""Device-pack consumer projection (T2482-P2.5 part 1).
+"""Device-pack consumer projection (T2482-P2.5 parts 1 + 2).
 
 Models per-device-pack DEFAULT bindings — the factory-supplied
 mappings that ship with a device-pack and apply unless an operator
@@ -15,14 +15,21 @@ consumer_id format:
 
 Today these defaults live as YAML inside each device-pack profile
 (e.g., `device-packs/native-instruments/profiles/maschine-mk1.midi.yaml`).
-P2.5 part 1 (this file) provides the typed projection adapter +
-helpers to convert pack-level YAML defaults into canonical bindings.
-P2.5 part 2 wires the migration that loads existing pack-level
-defaults into the canonical store.
+
+Part 1 (`make_create_payload`, `replace_device_pack_defaults`) is the
+typed projection adapter.
+
+Part 2 (`yaml_control_to_payload`, `payloads_for_profile`,
+`project_all_packs`) walks the on-disk YAML and rebuilds the canonical
+device-pack rows. It is invoked from the FastAPI lifespan after the
+ControllerService loads packs, and is safe to re-run on every boot:
+each pack's defaults are replaced atomically, so YAML edits propagate
+on the next restart with no orphan rows.
 """
 
 from __future__ import annotations
 
+import logging
 from typing import Any, Iterable, Optional
 
 from app.services.midi.authority import MidiBindingAuthority
@@ -32,6 +39,8 @@ from app.services.midi.schemas import (
     MidiBindingCreate,
     MidiBindingRead,
 )
+
+logger = logging.getLogger(__name__)
 
 
 def make_consumer_id(profile_key: str) -> str:
@@ -140,3 +149,186 @@ async def replace_device_pack_defaults(
     await authority.delete_for_consumer("device_pack", consumer_id)
     created = await authority.create_many(payloads)
     return created
+
+
+# ---------------------------------------------------------------------------
+# Part 2 — YAML → MidiBindingCreate converter + on-disk projection walker.
+#
+# Profile YAML schema (see device-packs/_schema/midi-profile.schema.yaml):
+#   controls:
+#     - status: 0x90 | 0xB0 | 0xC0 | ...
+#       midino: <int>            # note or CC number; absent for PC
+#       target: <engine target>  # optional — script-only entries omit
+#       action: <set|toggle|momentary|send_pc|...>
+#       script: <script.symbol>  # optional — JS handler
+#       fast_path: true|false
+#       description: <str>
+# ---------------------------------------------------------------------------
+
+# MIDI status-byte high nibble → BindingSourceType.
+_STATUS_TO_SOURCE: dict[int, BindingSourceType] = {
+    0x80: "midi_note",            # Note off — same descriptor as note-on
+    0x90: "midi_note",            # Note on
+    0xA0: "midi_aftertouch",      # Polyphonic aftertouch
+    0xB0: "midi_cc",              # Control change
+    0xC0: "midi_pc",              # Program change
+    0xD0: "midi_channel_pressure",
+    0xE0: "midi_pitchbend",
+}
+
+
+def _coerce_status_byte(raw: Any) -> Optional[int]:
+    """Accept ``0x90``, ``"0x90"``, or 144. Returns the int byte or None."""
+    if isinstance(raw, int):
+        return raw & 0xFF
+    if isinstance(raw, str):
+        try:
+            return int(raw, 0) & 0xFF
+        except ValueError:
+            return None
+    return None
+
+
+def yaml_control_to_payload(
+    *,
+    profile_key: str,
+    control: dict[str, Any],
+    pack_version: Optional[str] = None,
+) -> Optional[MidiBindingCreate]:
+    """Convert one ``controls:`` YAML entry into a MidiBindingCreate.
+
+    Returns None if the entry has no usable ``status`` byte (in which
+    case it can't drive a MIDI binding). All other malformed fields are
+    tolerated — the row still counts toward the device-pack's binding
+    total, which is what the index page surfaces.
+    """
+    status = _coerce_status_byte(control.get("status"))
+    if status is None:
+        return None
+
+    high_nibble = status & 0xF0
+    channel = status & 0x0F
+    source_type = _STATUS_TO_SOURCE.get(high_nibble)
+    if source_type is None:
+        return None
+
+    source_descriptor: dict[str, Any] = {"channel": channel}
+    midino = control.get("midino")
+    if isinstance(midino, int):
+        if source_type == "midi_note":
+            source_descriptor["note"] = midino
+        elif source_type == "midi_cc":
+            source_descriptor["cc"] = midino
+        elif source_type == "midi_aftertouch":
+            source_descriptor["note"] = midino
+        # midi_pc / midi_pitchbend / midi_channel_pressure don't take midino.
+
+    # Build the target. The dispatcher consumes engine_command frames; a
+    # YAML control either declares an explicit `target` (the canonical
+    # path) or runs through a `script` symbol (the JS slow path). We
+    # model both as engine_command so the binding row carries the
+    # full dispatch hint; downstream code can branch on `kind`.
+    target_descriptor: dict[str, Any] = {}
+    if "target" in control and control["target"]:
+        target_descriptor["kind"] = "engine_target"
+        target_descriptor["target"] = str(control["target"])
+    elif "script" in control and control["script"]:
+        target_descriptor["kind"] = "script"
+        target_descriptor["script"] = str(control["script"])
+    else:
+        target_descriptor["kind"] = "unbound"
+
+    if "action" in control and control["action"]:
+        target_descriptor["action"] = str(control["action"])
+    if control.get("fast_path") is True:
+        target_descriptor["fast_path"] = True
+
+    label = str(
+        control.get("description")
+        or control.get("script")
+        or control.get("target")
+        or f"status=0x{status:02X} midino={midino}"
+    ).strip()
+
+    extras: dict[str, Any] = {}
+    if "fast_path" in control:
+        extras["fast_path"] = bool(control["fast_path"])
+
+    return make_create_payload(
+        profile_key=profile_key,
+        binding_label=label[:255],
+        source_type=source_type,
+        source_descriptor=source_descriptor,
+        target_type="engine_command",
+        target_descriptor=target_descriptor,
+        extras=extras or None,
+        pack_version=pack_version,
+        source="pack-yaml",
+    )
+
+
+def payloads_for_profile(
+    *,
+    profile_key: str,
+    document: dict[str, Any],
+    pack_version: Optional[str] = None,
+) -> list[MidiBindingCreate]:
+    """Convert every ``controls:`` entry in a MIDI profile YAML to a payload."""
+    controls = document.get("controls") or []
+    if not isinstance(controls, list):
+        return []
+    payloads: list[MidiBindingCreate] = []
+    for control in controls:
+        if not isinstance(control, dict):
+            continue
+        payload = yaml_control_to_payload(
+            profile_key=profile_key,
+            control=control,
+            pack_version=pack_version,
+        )
+        if payload is not None:
+            payloads.append(payload)
+    return payloads
+
+
+def _profile_key_from(pack_id: str, model: str, kind: str) -> str:
+    """Canonical consumer_id, matches the format Hardware Store uses."""
+    return f"{pack_id}/{model}.{kind}"
+
+
+async def project_all_packs(
+    authority: MidiBindingAuthority,
+    registry: Any,  # ProfileRegistry — typed via duck-typing to avoid cycle
+) -> dict[str, int]:
+    """Project every MIDI profile in the registry into ``midi_bindings``.
+
+    Idempotent: each pack's existing ``device_pack`` rows are deleted
+    and rewritten from the current YAML, so a pack edit propagates on
+    the next backend restart with no orphan rows.
+
+    Returns a ``{profile_key: row_count}`` map for logging / verification.
+    """
+    summary: dict[str, int] = {}
+    for profile in registry.profiles(kind="midi"):
+        pack = registry.get_pack(profile.pack_id)
+        pack_version = None
+        if pack is not None:
+            pack_version = (pack.manifest.get("version") if pack.manifest else None)
+
+        profile_key = _profile_key_from(profile.pack_id, profile.model, profile.kind)
+        payloads = payloads_for_profile(
+            profile_key=profile_key,
+            document=profile.document,
+            pack_version=pack_version,
+        )
+        try:
+            created = await replace_device_pack_defaults(
+                authority, profile_key, payloads
+            )
+        except Exception:  # noqa: BLE001 — one bad pack must not block boot
+            logger.exception(
+                "device_pack projection failed for %s; skipping", profile_key
+            )
+            continue
+        summary[profile_key] = len(created)
+    return summary

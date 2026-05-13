@@ -893,6 +893,32 @@ async def lifespan(app):
         except Exception as exc:
             logger.warning("ConnectionEventBus not started: %s", exc)
 
+        # T2482-P2.5 part 2 — project every device-pack MIDI profile's YAML
+        # defaults into the canonical midi_bindings table as consumer_type
+        # `device_pack` rows. Idempotent: each pack's existing rows are
+        # replaced from the current on-disk YAML, so a pack edit propagates
+        # on the next backend restart. The /midi/devices index page reads
+        # these rows back via /api/midi/bindings?consumer_type=device_pack.
+        try:
+            from app.database import get_session
+            from app.services.controllers.profile_registry import (
+                get_profile_registry,
+            )
+            from app.services.midi.authority import MidiBindingAuthority
+            from app.services.midi.projections.device_pack import project_all_packs
+            registry = get_profile_registry()
+            async with get_session() as session:
+                authority = MidiBindingAuthority(session)
+                summary = await project_all_packs(authority, registry)
+            total = sum(summary.values())
+            logger.info(
+                "Device-pack defaults projected: %d rows across %d profiles",
+                total,
+                len(summary),
+            )
+        except Exception as exc:
+            logger.warning("Device-pack defaults projection skipped: %s", exc)
+
         # T2459-H Phase H L2 closeout — wire the engine-command dispatcher
         # to a real ``recall_snapshot`` hook + start the controller-host
         # subscription so MIDI Program Change → snapshot recall actually
