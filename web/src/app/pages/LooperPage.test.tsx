@@ -1894,3 +1894,175 @@ describe('LooperPage T2512-METRICS-UI verb-counter panel', () => {
     })
   })
 })
+
+describe('LooperPage T2512-PRESET-PERSIST localStorage cache', () => {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const mod = require('../../map2/clients/looper') as {
+    looperApi: {
+      savePreset: jest.Mock
+      applyPreset: jest.Mock
+      deletePreset: jest.Mock
+      clearPresets: jest.Mock
+      getState: jest.Mock
+      applyState: jest.Mock
+    }
+  }
+
+  const CACHE_KEY = 'map2.looper.presetCache'
+
+  beforeEach(() => {
+    localStorage.clear()
+    mod.looperApi.savePreset.mockClear()
+    mod.looperApi.applyPreset.mockClear()
+    mod.looperApi.deletePreset.mockClear()
+    mod.looperApi.clearPresets.mockClear()
+    mod.looperApi.getState.mockClear()
+    mod.looperApi.applyState.mockClear()
+  })
+
+  async function pushPresetNames(names: string[]): Promise<void> {
+    act(() => {
+      sockets[0]!.onopen?.call(sockets[0] as unknown as WebSocket)
+    })
+    const frame = {
+      type: 'looper_status',
+      payload: { ...mockIdleSnapshot, preset_names: names },
+    }
+    act(() => {
+      sockets[0]!.onmessage?.call(
+        sockets[0] as unknown as WebSocket,
+        { data: JSON.stringify(frame) } as MessageEvent,
+      )
+    })
+  }
+
+  it('Save shadows the preset payload into localStorage', async () => {
+    renderPage()
+    const input = (await screen.findByTestId(
+      'looper-preset-name-input',
+    )) as HTMLInputElement
+    fireEvent.change(input, { target: { value: 'verse-a' } })
+    const btn = screen.getByTestId(
+      'looper-preset-save-button',
+    ) as HTMLButtonElement
+    fireEvent.click(btn)
+    await waitFor(() => {
+      expect(mod.looperApi.savePreset).toHaveBeenCalledWith('verse-a')
+    })
+    await waitFor(() => {
+      const raw = localStorage.getItem(CACHE_KEY)
+      expect(raw).not.toBeNull()
+      const cache = JSON.parse(raw as string)
+      expect(cache).toHaveProperty('verse-a')
+      // The cached value is the LooperStatePayload returned by
+      // the mocked getState (schema_version + tracks + master).
+      expect(cache['verse-a'].schema_version).toBe(1)
+    })
+  })
+
+  it('Delete drops the name from localStorage', async () => {
+    localStorage.setItem(
+      CACHE_KEY,
+      JSON.stringify({ 'set-a': { schema_version: 1, tracks: [], master_level_db: 0 } }),
+    )
+    renderPage()
+    await screen.findByTestId('looper-preset-panel')
+    await pushPresetNames(['set-a'])
+    const del = (await screen.findByTestId(
+      'looper-preset-delete-set-a',
+    )) as HTMLButtonElement
+    fireEvent.click(del)
+    await waitFor(() => {
+      expect(mod.looperApi.deletePreset).toHaveBeenCalledWith('set-a')
+    })
+    await waitFor(() => {
+      const cache = JSON.parse(localStorage.getItem(CACHE_KEY) as string)
+      expect(cache).not.toHaveProperty('set-a')
+    })
+  })
+
+  it('Clear-all wipes the entire localStorage cache', async () => {
+    localStorage.setItem(
+      CACHE_KEY,
+      JSON.stringify({ a: { schema_version: 1, tracks: [], master_level_db: 0 } }),
+    )
+    renderPage()
+    await screen.findByTestId('looper-preset-panel')
+    await pushPresetNames(['a'])
+    // Wait for the row to render before clicking Clear-all.
+    await screen.findByTestId('looper-preset-row-a')
+    const btn = (await screen.findByTestId(
+      'looper-preset-clear-all',
+    )) as HTMLButtonElement
+    fireEvent.click(btn)
+    await waitFor(() => {
+      expect(mod.looperApi.clearPresets).toHaveBeenCalled()
+    })
+    await waitFor(() => {
+      const cache = JSON.parse(localStorage.getItem(CACHE_KEY) as string)
+      expect(Object.keys(cache)).toHaveLength(0)
+    })
+  })
+
+  it('Restore-section appears when the cache has names backend lacks', async () => {
+    localStorage.setItem(
+      CACHE_KEY,
+      JSON.stringify({
+        'verse-a': { schema_version: 1, tracks: [], master_level_db: 0 },
+        'chorus':  { schema_version: 1, tracks: [], master_level_db: -3 },
+      }),
+    )
+    renderPage()
+    await screen.findByTestId('looper-preset-panel')
+    // Backend has no preset_names; both cache entries are missing.
+    expect(
+      await screen.findByTestId('looper-preset-restore-section'),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByTestId('looper-preset-restore-row-verse-a'),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByTestId('looper-preset-restore-row-chorus'),
+    ).toBeInTheDocument()
+  })
+
+  it('Restore-section is hidden when every cached name is also on the backend', async () => {
+    localStorage.setItem(
+      CACHE_KEY,
+      JSON.stringify({
+        'set-a': { schema_version: 1, tracks: [], master_level_db: 0 },
+      }),
+    )
+    renderPage()
+    await screen.findByTestId('looper-preset-panel')
+    await pushPresetNames(['set-a'])
+    await waitFor(() => {
+      expect(
+        screen.queryByTestId('looper-preset-restore-section'),
+      ).toBeNull()
+    })
+  })
+
+  it('Restore button chains applyState then savePreset', async () => {
+    const payload = {
+      schema_version: 1,
+      tracks: [],
+      master_level_db: -3,
+    }
+    localStorage.setItem(
+      CACHE_KEY,
+      JSON.stringify({ 'verse-a': payload }),
+    )
+    renderPage()
+    const btn = (await screen.findByTestId(
+      'looper-preset-restore-verse-a',
+    )) as HTMLButtonElement
+    fireEvent.click(btn)
+    await waitFor(() => {
+      expect(mod.looperApi.applyState).toHaveBeenCalledWith(payload)
+    })
+    await waitFor(() => {
+      expect(mod.looperApi.savePreset).toHaveBeenCalledWith('verse-a')
+    })
+  })
+})

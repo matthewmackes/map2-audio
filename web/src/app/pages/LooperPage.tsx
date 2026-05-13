@@ -529,6 +529,53 @@ export function LooperPage() {
  * row per saved preset with Apply / Delete buttons. A Clear-all
  * button appears once any presets exist.
  */
+/**
+ * T2512-PRESET-PERSIST — durable preset cache.
+ *
+ * The backend's named-preset store is volatile (cleared on backend
+ * restart). This module shadows every save into localStorage so an
+ * operator's named takes survive a service restart: on page load we
+ * compare local cache vs backend ``preset_names`` and offer a
+ * one-click restore for any names the backend forgot.
+ *
+ * Cache shape: ``Record<name, LooperStatePayload>``. The payload is
+ * the exact same shape ``applyState`` accepts, so restore is a
+ * straight apply-then-save chain. Capped at 32 entries (same as
+ * the backend) — oldest write evicted when over.
+ */
+const PRESET_CACHE_KEY = 'map2.looper.presetCache'
+const PRESET_CACHE_MAX = 32
+
+type PresetCache = Record<string, import('../../map2/clients/looper').LooperStatePayload>
+
+function readPresetCache(): PresetCache {
+  try {
+    const raw = localStorage.getItem(PRESET_CACHE_KEY)
+    if (!raw) return {}
+    const parsed = JSON.parse(raw)
+    if (typeof parsed !== 'object' || parsed === null) return {}
+    return parsed as PresetCache
+  } catch {
+    return {}
+  }
+}
+
+function writePresetCache(cache: PresetCache): void {
+  try {
+    // Cap at PRESET_CACHE_MAX by dropping the oldest insertion-order
+    // entry first (JS object property order is insertion order).
+    const entries = Object.entries(cache)
+    if (entries.length > PRESET_CACHE_MAX) {
+      const trimmed = entries.slice(entries.length - PRESET_CACHE_MAX)
+      cache = Object.fromEntries(trimmed) as PresetCache
+    }
+    localStorage.setItem(PRESET_CACHE_KEY, JSON.stringify(cache))
+  } catch {
+    // Quota exhausted / private mode / etc. — the cache is best-effort,
+    // the backend is the source of truth.
+  }
+}
+
 function PresetPanel({
   presetNames,
   onAction,
@@ -539,7 +586,20 @@ function PresetPanel({
   setError: (msg: string | null) => void
 }) {
   const [draftName, setDraftName] = useState('')
+  // Re-read the cache on every render of a name list that might have
+  // diverged. Cheap: localStorage hits a synchronous map.
+  const [cacheTick, setCacheTick] = useState(0)
+  const cache = useMemo(() => readPresetCache(), [cacheTick])
   const sortedNames = useMemo(() => [...presetNames], [presetNames])
+  // Names cached locally but missing on the backend — restore
+  // candidates. Backend cleared its volatile store; ours survived.
+  const missingFromBackend = useMemo(() => {
+    const backendSet = new Set(sortedNames)
+    return Object.keys(cache)
+      .filter((n) => !backendSet.has(n))
+      .sort()
+  }, [cache, sortedNames])
+
   const isFull = sortedNames.length >= 32
   const trimmed = draftName.trim()
   const isDuplicate = trimmed !== '' && sortedNames.includes(trimmed)
@@ -550,8 +610,57 @@ function PresetPanel({
     const name = trimmed
     setError(null)
     await onAction(() => looperApi.savePreset(name))
+    // T2512-PRESET-PERSIST — shadow the save into localStorage. We
+    // pull the current state right after the server save so the cache
+    // mirrors whatever the backend just stored. If getState() fails
+    // (server hiccup), the server-side save is still committed; the
+    // cache simply stays stale.
+    try {
+      const payload = await looperApi.getState()
+      const next = { ...readPresetCache(), [name]: payload }
+      writePresetCache(next)
+      setCacheTick((v) => v + 1)
+    } catch {
+      // Best-effort cache shadow — log nothing to the UI.
+    }
     setDraftName('')
   }, [canSave, onAction, setError, trimmed])
+
+  const handleDelete = useCallback(
+    async (name: string) => {
+      setError(null)
+      await onAction(() => looperApi.deletePreset(name))
+      const next = { ...readPresetCache() }
+      delete next[name]
+      writePresetCache(next)
+      setCacheTick((v) => v + 1)
+    },
+    [onAction, setError],
+  )
+
+  const handleClearAll = useCallback(async () => {
+    setError(null)
+    await onAction(() => looperApi.clearPresets())
+    writePresetCache({})
+    setCacheTick((v) => v + 1)
+  }, [onAction, setError])
+
+  const handleRestoreFromCache = useCallback(
+    async (name: string) => {
+      const payload = readPresetCache()[name]
+      if (!payload) return
+      setError(null)
+      // Two-step: applyState to seed the live state, then savePreset
+      // to anchor the name. Both calls are caught by wrap()'s error
+      // path; failures surface through the existing InlineNotification.
+      await onAction(async () => {
+        await looperApi.applyState(payload)
+        return looperApi.savePreset(name)
+      })
+      setCacheTick((v) => v + 1)
+    },
+    [onAction, setError],
+  )
 
   return (
     <Tile
@@ -640,9 +749,7 @@ function PresetPanel({
                     kind="danger--ghost"
                     size="sm"
                     data-testid={`looper-preset-delete-${name}`}
-                    onClick={() =>
-                      void onAction(() => looperApi.deletePreset(name))
-                    }
+                    onClick={() => void handleDelete(name)}
                   >
                     Delete
                   </Button>
@@ -655,13 +762,59 @@ function PresetPanel({
               kind="danger--tertiary"
               size="sm"
               data-testid="looper-preset-clear-all"
-              onClick={() => void onAction(() => looperApi.clearPresets())}
+              onClick={() => void handleClearAll()}
             >
               Clear all presets
             </Button>
           </div>
         </>
       )}
+
+      {/* T2512-PRESET-PERSIST — Restore-from-cache section. Only
+          surfaces when the operator has a locally-cached preset the
+          backend doesn't have (typical after a backend restart). One
+          click re-seeds the state and saves under the same name. */}
+      {missingFromBackend.length > 0 ? (
+        <div
+          className="looper-page__presets-restore"
+          data-testid="looper-preset-restore-section"
+        >
+          <p className="looper-page__presets-help">
+            Local cache has {missingFromBackend.length} preset
+            {missingFromBackend.length === 1 ? '' : 's'} the backend
+            doesn't know about — restore in one click.
+          </p>
+          <ul
+            className="looper-page__presets-list"
+            data-testid="looper-preset-restore-list"
+          >
+            {missingFromBackend.map((name) => (
+              <li
+                key={name}
+                className="looper-page__presets-row"
+                data-testid={`looper-preset-restore-row-${name}`}
+              >
+                <span
+                  className="looper-page__presets-row-name"
+                  title={name}
+                >
+                  {name}
+                </span>
+                <div className="looper-page__presets-row-actions">
+                  <Button
+                    kind="primary"
+                    size="sm"
+                    data-testid={`looper-preset-restore-${name}`}
+                    onClick={() => void handleRestoreFromCache(name)}
+                  >
+                    Restore
+                  </Button>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </div>
+      ) : null}
     </Tile>
   )
 }
