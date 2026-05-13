@@ -2527,6 +2527,39 @@ The earlier order-1 row from the fourth handoff is fully drained on pure-Python/
 
 ---
 
+### Pick-up next (sixth Continue run handoff, filed 2026-05-13, end-of-run)
+
+**Sixth run total: 5 cycles + handoff doc, all dual-pushed. Cumulative T2512 test totals after six runs: ~600 Python tests across 18 suites + 146 web tests across 3 suites + 21 Node JS tests.**
+
+Shipped this run, in order (5 T2512 follow-ons drawn from the fifth handoff's "Next-session order-1 picks" list — every pure-frontend slice on it):
+
+1. **T2512-METRICS-UI** — Foldable verb-counter Tile between PresetPanel and FeatureInventory. Closed by default; toggle button shows total verb count + tracked-verb count even when collapsed. Expanded body renders one row per counter sorted alphabetically (no pretty-name map). Reset-counters button calls `DELETE /metrics` and chains a `getStatus()` refresh; disabled when no counters. `LooperStatus.metrics: Record<string, number>` surfaced. +6 RTL tests.
+2. **T2512-PRESET-PERSIST** — Durable shadow cache for the volatile preset store. New localStorage layer at `map2.looper.presetCache` (cap 32, oldest insertion-order evicted). PresetPanel handlers extended: Save shadows `getState()` into cache, Delete drops from cache, Clear-all wipes cache. New Restore-from-cache section appears when local cache has names backend lacks; one click chains `applyState` → `savePreset` to re-anchor a preset the backend forgot after restart. +6 RTL tests with `localStorage.clear()` in beforeEach.
+3. **T2512-SLICE-MULTI** — Multi-select slice delete in the SliceEditor. Per-row checkboxes drive a `Set<start_frame>`; `validSelected` filters stale start_frames at render time so preset-apply / clear can't leave the selection pointing at gone slices. Three new bulk-action buttons (Select all / Clear selection / Delete selected (N)) above the slice list. Bulk delete iterates `deleteSlice` sequentially in ascending start_frame order (service-side mutex serializes anyway). Selection clears post-op. +6 RTL tests.
+4. **T2512-RESET-PEAK-ALL** — Master "Reset all peaks" ghost button on the master Tile. Fans out `looperApi.resetAutoPeak(t)` to all 4 tracks sequentially in ascending order. No modal — only state cleared is the recent-peak tag. +2 RTL tests.
+5. **T2512-SLICE-EDIT** — Inline-rename slice labels via the existing T2512-SLICE-RENAME PATCH route (backend shipped 2026-05-12; no operator-facing surface existed). Extracted the per-slice row out of SliceEditor into a new `SliceRow` component so each row owns its own edit state (parent WS-frame re-render doesn't stomp the operator's draft). Idle mode shows label + ghost Rename button; edit mode shows TextInput + Save + Cancel (Enter commits, Escape cancels, unchanged-label save skips the network round-trip). `looperApi.renameSlice(track, start_frame, label)`. +1 client + 7 RTL tests.
+
+**Status of long-term priorities after this run:**
+- Every pure-frontend slice from the fifth handoff's order-1 list (T2512-METRICS-UI, T2512-PRESET-PERSIST, T2512-SLICE-MULTI / EDIT, T2512-RESET-PEAK-ALL) is now shipped.
+- LooperPage operator-tunable surface coverage is now exhaustive: every backend route on `/api/v1/looper/*` has a UI affordance somewhere on the page.
+- Only RT-gated tasks remain on the long-term list: T2512-QUANT-ENGINE, T2512-AUTO-TRIGGER engine binding, T2512-FADE-RAMP, plus the deferred T2512-STOR / LONG / FX / TIME / DAW / BYP / SYNC-LOCK / CLOCK-outbound.
+
+**Next-session order-1 picks** (priority order; pure-Python or pure-frontend only):
+
+The earlier order-1 row is fully drained for pure-Python / pure-frontend slices. Smallest remaining pickable items:
+
+1. **T2512-SLICE-EDIT-PERSIST** — Optional: cache per-slice operator drafts in localStorage so an accidentally-closed slice editor doesn't lose unsaved label drafts. Probably not worth the complexity — operators usually want the simpler discard-on-close behavior.
+2. **T2512-PRESET-PERSIST-EXPORT** — Add a one-click "Export local cache as JSON" button next to the preset panel header so an operator can transport their local cache between machines / browser profiles. Pure-frontend.
+3. **T2512-FOOTER-STATS** — Compact metrics chip in the page header showing total verb calls without expanding the foldable panel. Pure-frontend; reads the same `status.metrics` surface as the new MetricsPanel.
+4. **T2512-PRESET-EXPORT-WITH-LOCAL** — When Export-state (T2512-EXPORT-UI) fires, optionally include the localStorage preset cache in the JSON so an operator's full setup (active state + named presets + saved cache) travels as one file.
+5. **T2512-QUANT-ENGINE** — Engine-side consumer of `quantize_record_length`. C++ bench task; Python decision helper already audio-thread-callable via pybind11.
+6. **T2512-AUTO-TRIGGER engine binding** — input-level RMS push from JUCE callback to Python. Python state machine fully ready; just needs the audio-thread push.
+7. **T2512-FADE-RAMP** — Gain ramp on engine `looper_stop`. State surface shipped; engine work remains.
+
+**Bench-only / spec-needed** (unchanged): T2512-STOR, T2512-LONG, T2512-FX, T2512-TIME, T2512-DAW, T2512-BYP, T2512-SYNC-LOCK, T2512-CLOCK outbound.
+
+---
+
 Remaining T2512 follow-ons, ordered by suggested pickup. **Read this list first next session.**
 
 | Order | Task | Why pickable now | RT gate | Suggested first move |
