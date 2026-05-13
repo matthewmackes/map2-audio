@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1630** Python | **1670** TypeScript | **222** C++/H | **149** Docs | **4448** total commits | **4** stars | **0** forks | **0** open issues
+**1632** Python | **1672** TypeScript | **222** C++/H | **149** Docs | **4454** total commits | **4** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`56bce9c2`](https://github.com/matthewmackes/map2-audio/commit/56bce9c2f576314ca80cf6269b40c5cfb99dd795) | docs(worklist): ninth Continue run handoff + T2515/T2517 ... | Map2 Audio | 2026-05-13 |
+| [`e9cd3b08`](https://github.com/matthewmackes/map2-audio/commit/e9cd3b08e837ddd807bc7b5f415381354e1efee1) | feat(tascam-us144mkii): T2515-5 — metering tab silence se... | Map2 Audio | 2026-05-13 |
+| [`d5b1fe93`](https://github.com/matthewmackes/map2-audio/commit/d5b1fe932d9d8ecd9d1912e8b4551397cbde90f2) | feat(tascam-us144mkii): T2515-Follow-up-METER-WIRE — mete... | Map2 Audio | 2026-05-13 |
+| [`7625ca81`](https://github.com/matthewmackes/map2-audio/commit/7625ca81fccdd068204caea485c0260fa4eb9800) | test(mpx1-block): T2517-6 — RTL coverage for the per-inst... | Map2 Audio | 2026-05-13 |
+| [`e6f4d34d`](https://github.com/matthewmackes/map2-audio/commit/e6f4d34de475d446ec73163b0b489585e56c846a) | feat(snapshot-editor): T2517-4 — thread hardware-FX bridg... | Map2 Audio | 2026-05-13 |
+| [`7bc5e0a8`](https://github.com/matthewmackes/map2-audio/commit/7bc5e0a8f70564577e37e3e94770c319352e93a5) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-13 |
 | [`8b73479a`](https://github.com/matthewmackes/map2-audio/commit/8b73479a8fd930431c067c7c16db4b7eb79fddba) | docs(worklist): T2512 — eighth Continue run end-of-run ha... | Map2 Audio | 2026-05-13 |
 | [`6591bee8`](https://github.com/matthewmackes/map2-audio/commit/6591bee82a3a1ab3f168dc20c560950a5daa06ac) | feat(tascam-us144mkii): T2515-6 — /meters and /clock-sour... | Map2 Audio | 2026-05-13 |
-| [`25c0ed6d`](https://github.com/matthewmackes/map2-audio/commit/25c0ed6d84cb46dc9d7feb860d67bc1a9af51c6c) | feat(looper): T2512-PRESET-DRAG-REORDER — drag-to-reorder... | Map2 Audio | 2026-05-13 |
-| [`85bc5a12`](https://github.com/matthewmackes/map2-audio/commit/85bc5a12aacd7d25de1a75a3eeb8cfb9f964ab46) | feat(looper): T2512-PRESET-RENAME — relabel a saved prese... | Map2 Audio | 2026-05-13 |
-| [`0a0c2596`](https://github.com/matthewmackes/map2-audio/commit/0a0c259666e5a8548d19c53d59861c5763a9f351) | feat(looper): T2512-METRICS-CHART — per-verb sparkline + ... | Map2 Audio | 2026-05-13 |
-| [`2f6587af`](https://github.com/matthewmackes/map2-audio/commit/2f6587aff4f5e2af030479fb3cd0d0e4aab7ad3b) | feat(looper): T2512-KEYBOARD-CUSTOMIZE — operator-remappa... | Map2 Audio | 2026-05-13 |
-| [`5d21366c`](https://github.com/matthewmackes/map2-audio/commit/5d21366c3d1faef5cbea1e50a1e4ee0c2dff2762) | fix(port80-proxy): retarget :80 → :3000 to preserve SPA f... | Map2 Audio | 2026-05-13 |
-| [`ced52d2c`](https://github.com/matthewmackes/map2-audio/commit/ced52d2cc22b8d8bc4d7e8ccfe6c831516815f5b) | feat(midi): project device-pack YAML defaults into canoni... | Map2 Audio | 2026-05-13 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
