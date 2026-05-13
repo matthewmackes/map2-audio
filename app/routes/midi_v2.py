@@ -965,9 +965,26 @@ async def create_group(request: GroupCreateRequest):
 
 # ==================== Status & Devices ====================
 
+def _device_name_list(entries: Any) -> list[str]:
+    names: list[str] = []
+    if not isinstance(entries, list):
+        return names
+    for entry in entries:
+        if isinstance(entry, str):
+            name = entry.strip()
+        elif isinstance(entry, dict):
+            raw = entry.get("name")
+            name = raw.strip() if isinstance(raw, str) else ""
+        else:
+            name = ""
+        if name:
+            names.append(name)
+    return names
+
+
 async def _collect_midi_devices() -> Dict[str, Any]:
-    inputs = []
-    outputs = []
+    inputs: list[Any] = []
+    outputs: list[Any] = []
 
     if get_midi_hub is not None:
         try:
@@ -989,6 +1006,8 @@ async def _collect_midi_devices() -> Dict[str, Any]:
             return {
                 "inputs": inputs,
                 "outputs": outputs,
+                "input_devices": _device_name_list(inputs),
+                "output_devices": _device_name_list(outputs),
                 "source": "midi_hub",
             }
         except Exception as e:
@@ -1004,6 +1023,8 @@ async def _collect_midi_devices() -> Dict[str, Any]:
     return {
         "inputs": inputs,
         "outputs": outputs,
+        "input_devices": _device_name_list(inputs),
+        "output_devices": _device_name_list(outputs),
         "source": "juce_engine",
     }
 

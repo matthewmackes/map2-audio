@@ -60,10 +60,13 @@ export const midiApiV2 = {
   getStatus: () => fetchJson<MIDIStatus>(`${API_BASE}/v2/midi/status`),
 
   getDevices: () => fetchJson<{
+    inputs: Array<{ index?: number; name: string; type?: string; port_id?: string; kind?: string }>;
+    outputs: Array<{ index?: number; name: string; type?: string; port_id?: string; kind?: string }>;
     input_devices: string[];
     output_devices: string[];
-    current_input: string | null;
-    current_output: string | null;
+    current_input?: string | null;
+    current_output?: string | null;
+    source?: string;
   }>(`${API_BASE}/v2/midi/devices`),
 
   openInputDevice: (deviceName: string) =>

@@ -18,6 +18,8 @@ type MidiDeviceLike =
     }
 
 type MidiDevicesResponse = {
+  inputs?: MidiDeviceLike[]
+  outputs?: MidiDeviceLike[]
   input_devices?: string[]
   output_devices?: string[]
 } | null
@@ -118,24 +120,50 @@ function sameNames(left: string[], right: string[]): boolean {
   return left.every((value, index) => value === right[index])
 }
 
+function midiDeviceKind(device: MidiDeviceLike): string | null {
+  if (typeof device === 'string' || !device) {
+    return null
+  }
+  return device.kind ?? null
+}
+
 function isPhysicalMidiDevice(device: MidiDeviceLike): boolean {
-  if (typeof device === 'string') {
-    return !/virtual/i.test(device)
-  }
-
-  if (!device) {
+  const name = normalizeMidiName(device) ?? ''
+  if (!name) {
     return false
   }
-
-  if (device.is_virtual) {
+  if (typeof device !== 'string' && device?.is_virtual) {
     return false
   }
-
-  if (device.kind && device.kind !== 'alsa') {
+  const kind = midiDeviceKind(device)
+  // Reject MidiHub consumer/virtual ports — only kernel ALSA ports are
+  // physical interfaces. When kind is missing (legacy string-only payload)
+  // fall back to name-based heuristics.
+  if (kind && kind !== 'alsa') {
     return false
   }
+  if (/^System:/i.test(name) || /Midi Through/i.test(name)) {
+    return false
+  }
+  if (/MAP2 Audio Engine/i.test(name) || /map2-controller-host/i.test(name)) {
+    return false
+  }
+  if (/libremidi client-/i.test(name)) {
+    return false
+  }
+  if (/virtual/i.test(name)) {
+    return false
+  }
+  return true
+}
 
-  return !/virtual/i.test(device.name ?? '')
+function prettifyMidiInterfaceName(name: string): string {
+  // Strip the "Midi-Bridge:" prefix added by PipeWire-routed ALSA ports,
+  // and trailing "(capture)" / "(playback)" disambiguators — operators
+  // think of the physical interface, not its direction.
+  let cleaned = name.replace(/^Midi-Bridge:\s*/i, '')
+  cleaned = cleaned.replace(/\s*\((capture|playback)\)\s*$/i, '')
+  return cleaned.trim() || name
 }
 
 async function fetchLauncherInterfaces(): Promise<LauncherInterfaceSummary> {
@@ -149,10 +177,26 @@ async function fetchLauncherInterfaces(): Promise<LauncherInterfaceSummary> {
     ...(audioStatus?.available_output_devices ?? []),
   ])
 
-  const midiInterfaces = dedupeNames([
-    ...((midiDevices?.input_devices ?? []).filter(isPhysicalMidiDevice).map(normalizeMidiName)),
-    ...((midiDevices?.output_devices ?? []).filter(isPhysicalMidiDevice).map(normalizeMidiName)),
-  ])
+  // Prefer the rich {inputs, outputs} entries (carry `kind` so we can
+  // distinguish kernel ALSA ports from virtual consumer endpoints). Fall
+  // back to the flat `input_devices`/`output_devices` string arrays for
+  // older backends that don't ship the rich payload.
+  const richInputs = (midiDevices?.inputs ?? []) as MidiDeviceLike[]
+  const richOutputs = (midiDevices?.outputs ?? []) as MidiDeviceLike[]
+  const legacyInputs = (midiDevices?.input_devices ?? []) as MidiDeviceLike[]
+  const legacyOutputs = (midiDevices?.output_devices ?? []) as MidiDeviceLike[]
+  const candidates: MidiDeviceLike[] =
+    richInputs.length > 0 || richOutputs.length > 0
+      ? [...richInputs, ...richOutputs]
+      : [...legacyInputs, ...legacyOutputs]
+
+  const midiInterfaces = dedupeNames(
+    candidates
+      .filter(isPhysicalMidiDevice)
+      .map(normalizeMidiName)
+      .filter((name): name is string => Boolean(name))
+      .map(prettifyMidiInterfaceName),
+  )
 
   return {
     audioInterfaces,
