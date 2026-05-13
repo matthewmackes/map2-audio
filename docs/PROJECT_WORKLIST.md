@@ -2576,6 +2576,38 @@ The earlier order-1 row is fully drained for pure-Python / pure-frontend slices.
 
 ---
 
+### Pick-up next (ninth Continue run handoff, filed 2026-05-13, end-of-run)
+
+**Ninth run total: 4 cycles + worklist status sweep, all dual-pushed to origin + gitlab.** This run focused on the T2517 effects-chooser surfaces and the T2515 meter wire-up, picking up the order-1 items from the eighth handoff.
+
+Shipped this run, in order:
+
+1. **T2517-4 — hardware-FX bridges thread into the chooser** (commit `e6f4d34d`). The `HardwareBridgeTile` + `HardwareBridgeSection` components have existed since the original T2517-4 slice but no upstream caller actually populated their props — the plugin-browser bucket split routed `hardware://` URIs into the LV2 list, so the MPX-1 entry was rendered as an LV2 plugin (without availability gating, singleton awareness, or the Configure deep-link). The plugin-bucket split now forks into three buckets (`nativeProcessors` / `lv2Plugins` / `hardwarePlugins`); the call site passes `hardwarePlugins` + `currentChainId` (stringified from `Chain.id: number`); the header counter row gains a magenta "N hardware" Tag rendered only when non-empty. +3 RTL tests; existing 23 + new 3 = 26 plugin-browser/hardware-tile tests green.
+
+2. **T2517-6 — MPX1BlockSidePanel RTL coverage** (commit `7625ca81`). The per-instance MPX-1 configuration modal had zero test coverage — central operator surface, high refactor risk. New `MPX1BlockSidePanel.test.tsx` adds 14 RTL tests across four behavior surfaces: open/close rendering (Carbon ComposedModal `is-visible` state), form seeding (first eligible interface vs full prefill, save-button label flip), mutations (upsert with form state, delete + onClose propagation, bypass-toggle inversion), and affordances (calibration disabled until instance exists, placeholder vs measured sample count, no-eligible-interface warning Tag, upsert-409 conflict InlineNotification). Cumulative MPX1Block + plugin-browser tests now 40 (was 26).
+
+3. **T2515-Follow-up-METER-WIRE — meter source injection seam** (commit `d5b1fe93`). The `/meters` route previously hardcoded its placeholder payload inline; a future engine-backed source had to edit the route handler. New `app/services/devices/tascam_us144mkii_meters.py` extracts the seam: `MeterSnapshot` dataclass, `SILENCE_DBFS = -150.0` constant, `TascamMeterSource` Protocol (sync or async), `PlaceholderMeterSource` default, module-level singleton seam (`set/get/reset_active_meter_source`), awaitable-aware `read_snapshot()` helper. Route now reads through the seam in one line. When the C++ binding for the per-device peak ring lands, only the lifespan startup registers a `JuceEngineMeterSource` and the route flips `source` from `placeholder` to `engine` automatically. +11 new tests; 22 total tascam Python tests green.
+
+4. **T2515-5 — metering tab silence sentinel + source Tag** (commit `e9cd3b08`). The Carbon Metering tab previously hit its error notification on every load (route returned 404). Now that the route always returns a structured payload with a `source` field, the tab renders the channel structure live and flips its source Tag between warm-gray "Awaiting engine wire-up" (placeholder source) and green "Live" (engine source). New `formatPeakDb` helper renders `≤ -149.9` as an em-dash matching the Python `SILENCE_DBFS` constant. Error InlineNotification flipped to `kind="warning"` with subtitle emphasising that the missing fallback now indicates a real backend break (pre-seam this was expected; post-seam it's a real failure). +5 new RTL tests; 8 total tascam web tests across the View + Metering tab.
+
+Also: **T2515 + T2517 subtask checklists swept** — the previously stale `[ ]` markers were brought into truth with the actual codebase. T2515-1..6 + T2517-2..7 all flipped to `[✓]` with concrete file/route evidence. Remaining `[ ]` items are exclusively bench-gated (T2515-7 soak, T2517-8 soak) or C++/RT-gated (T2517-1 LexiconHardwareProcessor generalization).
+
+**Status of long-term priorities after this run:**
+- T2517 chooser-UI loop is closed: a hardware-FX bridge plugin discovered through `/api/plugins/discover` now renders correctly in the snapshot-editor effects chooser with availability gating, singleton-in-use awareness, and a Configure deep-link to the per-instance side-panel. End-to-end operator flow works against the existing backend.
+- T2515 platform routes are fully covered end-to-end (status / capabilities / meters / clock-source / reset). The /meters seam closes the only abstraction gap for the engine wire-up — a single lifespan-startup registration will flip the route + UI to live.
+- The only remaining T2515 / T2517 work is bench-gated (soak proof, AES-capable interface for T2517-Follow-up-A) or RT/C++-gated (T2517-1, T2515-Follow-up-METER-WIRE engine side, T2517-Follow-up-B crossfade-on-hot-swap).
+
+**Next-session order-1 picks** (priority order; pure-Python or pure-frontend only):
+
+1. **T2475-X / T2481-F sweeps** — Carbon token migrations across the remaining domain surfaces. Operator-canary-gated for the E-canary phases but autonomous-safe for the F-phase sweeps per the documented policy (see § "T2481 Completion Plan"). Search the worklist for the next `T2481-F<n>` `[ ]` subtask.
+2. **Generic device-meter primitive** — the new `tascam_us144mkii_meters.py` seam is shaped specifically for the US-144MKII. A future generic `DeviceMeterSource` primitive could host the same shape for UA-1000, Jogg, MPX-1 — pure-Python refactor, no behavior change. ~1-2 cycles.
+3. **TascamUS144MKII StatusTab — surface meter source in the top banner** — small pure-frontend slice: the `is_live` flag from /meters could drive a banner Tag on the Status tab so an operator sees "metering: live" or "metering: pending wire-up" without opening the Metering tab.
+4. **T2459-H final bench session gates** — `docs/midi/T2459_FINAL_BENCH_SESSION.md`; physical hardware required. Code side complete.
+
+**Bench-only / spec-needed** (unchanged): T2515-7, T2515-8, T2517-1 (C++ + RT review), T2517-8, T2517-9, T2517-Follow-up-A (AES soak), T2517-Follow-up-B (crossfade on hot-swap), plus the full looper RT-gated tail (T2512-STOR / LONG / FX / TIME / DAW / BYP / SYNC-LOCK / CLOCK outbound).
+
+---
+
 ### Pick-up next (eighth Continue run handoff, filed 2026-05-13, end-of-run)
 
 **Eighth run total: 5 cycles + 1 port80-proxy fix + handoff doc, all dual-pushed. Cumulative T2512 test totals after eight runs: ~635 Python tests across 18 suites + 195+ web tests across 4 suites + 21 Node JS tests.**
@@ -2811,17 +2843,19 @@ Description:
   - Soak evidence at `docs/fit-for-purpose-evidence/2026-05-12/tascam-us144mkii/` — 0 xruns, ≤0.35 ms peak jitter @ 48 k / 64-sample / 30 min
   - Worklist + memory file `project_t2515_us144mkii.md`
 - **Subtasks:**
-  - `T2515-0` [>] Worklist entries + memory pointer (this section + project memory file)
-  - `T2515-1` [ ] Hardware inventory + identity (VID/PID 0644:8020)
-  - `T2515-2` [ ] Python constants + auto-config + driver preflight module
-  - `T2515-3` [ ] Device pack `device-packs/tascam/` with S/PDIF role flags
-  - `T2515-4` [ ] Engine wiring: SR safety wrapper + JACK-direct enforcement
-  - `T2515-5` [ ] Full-custom React panel (Status/IO/Metering/Clock/Diagnostics/Bridge tabs + hardware banner)
-  - `T2515-6` [ ] Backend routes (`status`, `meters`, `clock-source`, `reset`)
-  - `T2515-7` [ ] Soak + fit-for-purpose evidence
-  - `T2515-8` [ ] Docs + memory + DoD close
+  - `T2515-0` [✓] Worklist entries + memory pointer — shipped 2026-05-12 (memory file `project_t2515_us144mkii.md` present, this worklist section live).
+  - `T2515-1` [✓] Hardware inventory + identity — VID/PID `0644:8020` recognized in `app/services/usb_audio_manager.py::TASCAM_DEVICES`, `app/services/cluster/hardware_inventory.py`, `app/services/cluster/enhanced_node_identity.py`.
+  - `T2515-2` [✓] Python constants + auto-config + preflight — `app/services/juce/common.py::TASCAM_US144MKII`, `app/services/devices/tascam_us144mkii_preflight.py`, `app/services/audio_io.py::auto_configure_tascam_us144mkii()`.
+  - `T2515-3` [✓] Device pack — `device-packs/tascam/pack.yaml` + `profiles/us-144mkii.{audio,midi}.yaml` with S/PDIF + `digital_io_stereo` + `spdif_coax` + `midi_1_in_1_out` capability tags.
+  - `T2515-4` [✓] Engine wiring — `app/services/devices/tascam_us144mkii_engine.py::ensure_jack_direct_or_raise()` enforces `MAP2_AUDIO_PREFER_JACK=1`; sample-rate-change safety inherited from the 2026-02-17 RT-safety pattern.
+  - `T2515-5` [✓] React panel — `web/src/app/components/Devices/TascamUS144MKII/` with 6 tabs (Status / I/O / Metering / Clock / Diagnostics / Bridge) + hardware banner. ClockTab now fetches `/clock-source` live (run 9). MeteringTab now distinguishes placeholder vs engine source via Tag + em-dash sentinel rendering (run 9).
+  - `T2515-6` [✓] Backend routes — `GET /status`, `GET /capabilities`, `GET /meters`, `GET /clock-source`, `POST /reset` all live; OpenAPI audit + 22 route tests green.
+  - `T2515-7` [ ] Soak + fit-for-purpose evidence — gated on a physical bench session with the US-144MKII connected. Target: 30 min @ 48k/64-sample, 0 xruns, ≤0.35 ms peak jitter. Evidence dir `docs/fit-for-purpose-evidence/<date>/tascam-us144mkii/`.
+  - `T2515-8` [ ] DoD close — gated on T2515-7.
 
-Last updated: 2026-05-12 — Claude.
+**T2515-Follow-up-METER-WIRE** [>] In Progress — Python injection seam for the per-device peak-dBFS source shipped run 9: `app/services/devices/tascam_us144mkii_meters.py` defines `TascamMeterSource` Protocol + `PlaceholderMeterSource` + module-level singleton seam. Route reads through `read_snapshot()` (awaitable-aware). Lifespan startup will register a `JuceEngineMeterSource` once the C++ binding for the per-device peak ring is wired; the route + UI both flip from `placeholder` to `engine` automatically without further edits.
+
+Last updated: 2026-05-13 — Claude (run 9).
 
 ---
 
@@ -2861,17 +2895,17 @@ Description:
   - `T2517-Follow-up-C` — Multi-rig federation (singleton lock is per-rig only)
   - `T2517-Follow-up-D` — Hardware-bridge generalization (extract base class when second hardware FX needs it; don't generalize prematurely)
 - **Subtasks:**
-  - `T2517-1` [ ] Generalize `LexiconHardwareProcessor`: drop UA-1000 constexprs; per-instance atomic `setChannelMapping` + `setConnectionType`
-  - `T2517-2` [ ] Wire MPX-1 descriptor into `/api/plugins/discover`; extend descriptor with `connection_types`, `singleton`, `requires_interface_capability`, `aliases`
-  - `T2517-3` [ ] Interface-capability registry + device-pack capability declarations (TASCAM + UA-1000)
-  - `T2517-4` [ ] Effects-chooser UI: hardware entries with availability gating + inline connection picker + "already in use" link
-  - `T2517-5` [ ] Graph builder + `hardware_singleton_lock.py` enforcement + `/api/v1/chains/hardware-usage`
-  - `T2517-6` [ ] Per-instance side-panel + measured-latency calibration wizard
-  - `T2517-7` [ ] Backend routes (`/api/v1/effects/mpx1/instance/...`, `/api/v1/interfaces/capabilities`)
-  - `T2517-8` [ ] Soak with MPX-1 in chain (S/PDIF first; AES filed as follow-up)
-  - `T2517-9` [ ] Docs + memory + DoD close
+  - `T2517-1` [ ] Generalize `LexiconHardwareProcessor` — drop UA-1000 hard-coded `static constexpr` channel constants; add per-instance atomic `setChannelMapping()` + `setConnectionType()`. RT-safety review required. C++ slice; not yet started.
+  - `T2517-2` [✓] MPX-1 descriptor wired into `/api/plugins/discover` — `_get_hardware_plugins()` in `app/routes/plugins.py:253` is now called from both the loader-available and loader-fallback discovery paths.
+  - `T2517-3` [✓] Interface-capability registry — `app/services/effects/interface_capabilities.py` scans every `device-packs/*/profiles/*.audio.yaml` and merges declared capability tags. UA-1000 declares `[digital_io_stereo, spdif_coax, adat, r_bus]`; TASCAM declares `[digital_io_stereo, spdif_coax, midi_1_in_1_out]`.
+  - `T2517-4` [✓] Effects-chooser UI — `HardwareBridgeTile` + `HardwareBridgeSection` render `is_hardware: true` plugins in their own section above the LV2 grouping, with availability gating (capability check + singleton-in-use awareness), connection-type Tags, and a Configure deep-link to the MPX1BlockSidePanel. Upstream wiring (3-bucket split + magenta "N hardware" count Tag) shipped run 9; +3 new RTL tests.
+  - `T2517-5` [✓] Graph builder + singleton lock + hardware-usage route — `app/services/effects/hardware_singleton_lock.py` + `GET /api/v1/chains/hardware-usage` live; 20 lock + effects-block route tests green.
+  - `T2517-6` [✓] Per-instance side-panel — `MPX1BlockSidePanel` covers connection picker / interface picker / channel mapping / latency calibration display + Run calibration button / bypass / remove from chain. +14 new RTL tests shipped run 9 covering open-close render, form seeding, mutation calls, calibration-disabled-until-instance-exists, conflict-409 inline notification.
+  - `T2517-7` [✓] Backend routes — `GET/POST /api/v1/effects/mpx1/instance/{chain_id}`, `POST .../calibrate`, `POST .../bypass`, `DELETE`, `GET /api/v1/chains/hardware-usage`, `GET /api/v1/interfaces/capabilities` all live.
+  - `T2517-8` [ ] Soak with MPX-1 in chain — gated on a physical bench session with an MPX-1 + AES-capable or S/PDIF interface. Target: 0 xruns, ≤0.35 ms peak jitter, ≤1-sample dry-vs-wet drift, mid-soak singleton 409 confirmed. Evidence dir `docs/fit-for-purpose-evidence/<date>/mpx1-effects-block/`.
+  - `T2517-9` [ ] DoD close — gated on T2517-8 + T2517-1.
 
-Last updated: 2026-05-12 — Claude.
+Last updated: 2026-05-13 — Claude (run 9).
 
 ---
 
