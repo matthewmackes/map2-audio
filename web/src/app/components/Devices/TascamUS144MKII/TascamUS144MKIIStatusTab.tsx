@@ -4,11 +4,16 @@
 // T2515-5 — Status tab. Driver + USB enumeration state at a glance.
 // Tenth Continue run: surface the meter-source health alongside the
 // enumeration stage so the operator sees "metering: live" or "metering:
-// pending wire-up" without opening the Metering tab.
+// pending wire-up" without opening the Metering tab. Eleventh Continue
+// run: refactored to consume the shared useDeviceMeterSource hook +
+// DeviceMeterSourceTag primitive so the policy stays consistent across
+// every device's Status surface.
 
-import { useQuery } from '@tanstack/react-query'
 import { Button, StructuredListBody, StructuredListCell, StructuredListHead, StructuredListRow, StructuredListWrapper, Tag } from '@carbon/react'
 import { Reset } from '@carbon/icons-react'
+
+import { useDeviceMeterSource } from '../../../hooks/useDeviceMeterSource'
+import { DeviceMeterSourceTag } from '../Shared/DeviceMeterSourceTag'
 
 import type { TascamStatusPayload } from './TascamUS144MKIIView'
 
@@ -17,46 +22,11 @@ export interface TascamUS144MKIIStatusTabProps {
   loading: boolean
 }
 
-interface MeterSourcePayload {
-  source: 'placeholder' | 'engine'
-}
-
-const METER_SOURCE_REFETCH_MS = 5_000
-
 function stageTag(status?: TascamStatusPayload) {
   if (!status) return <Tag type="cool-gray">unknown</Tag>
   if (status.enumeration_stage === 'operational') return <Tag type="green">Operational</Tag>
   if (status.enumeration_stage === 'boot_mode') return <Tag type="warm-gray">Boot mode</Tag>
   return <Tag type="red">Disconnected</Tag>
-}
-
-function meterSourceTag(source: MeterSourcePayload['source'] | undefined, isError: boolean) {
-  if (isError) {
-    return (
-      <Tag type="red" data-testid="tascam-status-meter-source">
-        Endpoint unavailable
-      </Tag>
-    )
-  }
-  if (source === 'engine') {
-    return (
-      <Tag type="green" data-testid="tascam-status-meter-source">
-        Live
-      </Tag>
-    )
-  }
-  if (source === 'placeholder') {
-    return (
-      <Tag type="warm-gray" data-testid="tascam-status-meter-source">
-        Awaiting engine wire-up
-      </Tag>
-    )
-  }
-  return (
-    <Tag type="cool-gray" data-testid="tascam-status-meter-source">
-      …
-    </Tag>
-  )
 }
 
 async function resetUsb(): Promise<void> {
@@ -68,17 +38,7 @@ async function resetUsb(): Promise<void> {
 }
 
 export function TascamUS144MKIIStatusTab({ status, loading }: TascamUS144MKIIStatusTabProps) {
-  const meterSourceQuery = useQuery<MeterSourcePayload>({
-    queryKey: ['tascam-us144mkii', 'status-meter-source'],
-    queryFn: async () => {
-      const resp = await fetch('/api/v1/devices/tascam-us144mkii/meters')
-      if (!resp.ok) throw new Error(`meters HTTP ${resp.status}`)
-      return resp.json()
-    },
-    refetchInterval: METER_SOURCE_REFETCH_MS,
-    staleTime: 0,
-    retry: false,
-  })
+  const meter = useDeviceMeterSource('tascam-us144mkii')
 
   return (
     <div className="stack">
@@ -127,7 +87,11 @@ export function TascamUS144MKIIStatusTab({ status, loading }: TascamUS144MKIISta
           <StructuredListRow>
             <StructuredListCell>Metering source</StructuredListCell>
             <StructuredListCell>
-              {meterSourceTag(meterSourceQuery.data?.source, meterSourceQuery.isError)}
+              <DeviceMeterSourceTag
+                source={meter.source}
+                isError={meter.isError}
+                testId="tascam-status-meter-source"
+              />
             </StructuredListCell>
           </StructuredListRow>
         </StructuredListBody>
