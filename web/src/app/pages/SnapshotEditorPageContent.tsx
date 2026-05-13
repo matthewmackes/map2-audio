@@ -2670,29 +2670,32 @@ export function SnapshotEditorPage() {
     }))
   }, [pluginsQuery.data, pluginSearchQuery, selectedCategory])
 
-  // Separate native JUCE processors from LV2 plugins
-  // Filter out hidden plugins based on Special settings
-  const { nativeProcessors, lv2Plugins } = useMemo(() => {
+  // Separate native JUCE processors from LV2 plugins and hardware-FX
+  // bridges. T2517-4 — hardware:// URIs go to their own bucket so the
+  // chooser renders them via HardwareBridgeSection instead of folding
+  // them into the LV2 grouping. Filter out hidden plugins based on
+  // Special settings.
+  const { nativeProcessors, lv2Plugins, hardwarePlugins } = useMemo(() => {
     const native: Plugin[] = []
     const lv2: Plugin[] = []
-    
+    const hardware: Plugin[] = []
+
     // Get list of hidden plugin URIs from Special settings
     const hiddenPlugins = specialSettings?.hiddenPlugins || []
     const hiddenSet = new Set(hiddenPlugins)
 
     filteredPlugins.forEach(p => {
-      // Check if it's a native JUCE processor (URI starts with map2://)
+      if (hiddenSet.has(p.uri)) return
       if (p.uri.startsWith('map2://')) {
-        // Only include if not in hidden list
-        if (!hiddenSet.has(p.uri)) {
-          native.push(p)
-        }
+        native.push(p)
+      } else if (p.uri.startsWith('hardware://')) {
+        hardware.push(p)
       } else {
         lv2.push(p)
       }
     })
 
-    return { nativeProcessors: native, lv2Plugins: lv2 }
+    return { nativeProcessors: native, lv2Plugins: lv2, hardwarePlugins: hardware }
   }, [filteredPlugins, specialSettings])
 
   // T2473 JSX partition — Plugin Browser derived-data extraction.
@@ -5538,6 +5541,8 @@ export function SnapshotEditorPage() {
         snapshotEditingLocked={snapshotEditingLocked}
         onAddPluginToCurrentChain={handleAddPluginToCurrentChain}
         onShowDetails={handleShowDetails}
+        hardwarePlugins={hardwarePlugins}
+        currentChainId={currentChain ? String(currentChain.id) : null}
       />
 
 

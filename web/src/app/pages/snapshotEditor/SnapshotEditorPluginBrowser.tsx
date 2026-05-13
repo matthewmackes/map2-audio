@@ -186,6 +186,9 @@ export function SnapshotEditorPluginBrowser({
                 <div className="juce-grid-page__browser-meta-tags">
                   <Tag type="cool-gray">{nativeCount} native</Tag>
                   <Tag type="cool-gray">{lv2Count} LV2</Tag>
+                  {hardwarePlugins && hardwarePlugins.length > 0 ? (
+                    <Tag type="magenta">{hardwarePlugins.length} hardware</Tag>
+                  ) : null}
                   <Tag type="cool-gray">{favoriteVisibleCount} favorites</Tag>
                   {!currentChain && <Tag type="warm-gray">New chain on add</Tag>}
                 </div>

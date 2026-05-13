@@ -11,6 +11,23 @@ import { Music } from '@carbon/icons-react'
 import { SnapshotEditorPluginBrowser } from './SnapshotEditorPluginBrowser'
 import type { Plugin } from '../../../map2/types'
 
+// T2517-4 — the hardware bridge section calls into the MPX-1 block API
+// hooks (TanStack Query against /api/v1/chains/hardware-usage and
+// /api/v1/interfaces/capabilities). Mock those so the browser tests
+// don't need a QueryClientProvider, and so the section can be rendered
+// in a deterministic "available" state for coverage.
+jest.mock('../../components/Effects/MPX1Block/useMpx1BlockApi', () => ({
+  useAutoConnectionType: () => ({
+    preferred: 'aes_ebu',
+    aesCapable: [{ interface_id: 'someaes.interface' }],
+    spdifCapable: [{ interface_id: 'tascam.us-144mkii' }],
+  }),
+  useMpx1InUseByChain: () => null,
+}))
+jest.mock('../../components/Effects/MPX1Block/MPX1BlockSidePanel', () => ({
+  MPX1BlockSidePanel: () => null,
+}))
+
 // Carbon Modal portal renders into document.body in jsdom; provide
 // the matchMedia / ResizeObserver shims it expects.
 beforeEach(() => {
@@ -123,5 +140,47 @@ describe('SnapshotEditorPluginBrowser', () => {
     const addButtons = screen.getAllByRole('button', { name: /^Add$/ })
     fireEvent.click(addButtons[0])
     expect(onAdd).toHaveBeenCalledWith('map2://juce/nam')
+  })
+
+  // ---------------------------------------------------------------
+  // T2517-4 — hardware-FX bridge section + count tag wiring.
+  // ---------------------------------------------------------------
+
+  const MPX1: Plugin = {
+    uri: 'hardware://lexicon-mpx1',
+    name: 'Lexicon MPX-1',
+    category: 'hardware-fx',
+    author: 'Lexicon / Harman',
+    format: 'Hardware',
+    // Hardware-only descriptor fields accepted as `Plugin & extras`.
+    is_hardware: true,
+    singleton: true,
+    connection_types: ['aes_ebu', 'spdif_coax'],
+    preferred_connection: 'aes_ebu',
+    requires_interface_capability: ['digital_io_stereo'],
+    format_name: 'Hardware FX bridge',
+  } as unknown as Plugin
+
+  it('does not render the hardware-count tag when no hardware plugins are supplied', () => {
+    render(<SnapshotEditorPluginBrowser {...baseProps()} />)
+    expect(screen.queryByText(/hardware$/i)).toBeNull()
+  })
+
+  it('renders the magenta "N hardware" count tag when hardwarePlugins is non-empty', () => {
+    render(
+      <SnapshotEditorPluginBrowser {...baseProps({ hardwarePlugins: [MPX1] })} />,
+    )
+    expect(screen.getByText('1 hardware')).toBeInTheDocument()
+  })
+
+  it('renders the HardwareBridgeSection with the supplied hardware plugins', () => {
+    render(
+      <SnapshotEditorPluginBrowser
+        {...baseProps({ hardwarePlugins: [MPX1], currentChainId: 'chain-A' })}
+      />,
+    )
+    // Section heading + tile heading both render.
+    expect(screen.getByText('Hardware FX bridges')).toBeInTheDocument()
+    expect(screen.getByText('Lexicon MPX-1')).toBeInTheDocument()
   })
 })
