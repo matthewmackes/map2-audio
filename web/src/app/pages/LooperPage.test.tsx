@@ -2246,3 +2246,35 @@ describe('LooperPage T2512-SLICE-MULTI bulk-delete on slice editor', () => {
     })
   })
 })
+
+describe('LooperPage T2512-RESET-PEAK-ALL master shortcut', () => {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const mod = require('../../map2/clients/looper') as {
+    looperApi: { resetAutoPeak: jest.Mock }
+  }
+
+  beforeEach(() => {
+    mod.looperApi.resetAutoPeak.mockClear()
+  })
+
+  it('Reset-all-peaks button renders on the master Tile', async () => {
+    renderPage()
+    const btn = await screen.findByTestId('looper-reset-all-peaks-button')
+    expect(btn).toHaveTextContent('Reset all peaks')
+  })
+
+  it('clicking fans out resetAutoPeak across all 4 tracks in order', async () => {
+    renderPage()
+    const btn = (await screen.findByTestId(
+      'looper-reset-all-peaks-button',
+    )) as HTMLButtonElement
+    fireEvent.click(btn)
+    await waitFor(() => {
+      expect(mod.looperApi.resetAutoPeak).toHaveBeenCalledTimes(4)
+    })
+    expect(mod.looperApi.resetAutoPeak).toHaveBeenNthCalledWith(1, 0)
+    expect(mod.looperApi.resetAutoPeak).toHaveBeenNthCalledWith(2, 1)
+    expect(mod.looperApi.resetAutoPeak).toHaveBeenNthCalledWith(3, 2)
+    expect(mod.looperApi.resetAutoPeak).toHaveBeenNthCalledWith(4, 3)
+  })
+})

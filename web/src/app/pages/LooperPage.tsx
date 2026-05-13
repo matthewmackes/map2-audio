@@ -457,6 +457,28 @@ export function LooperPage() {
               >
                 {status.master_muted ? 'Unmute master' : 'Panic mute'}
               </Button>
+              {/* T2512-RESET-PEAK-ALL — clears the auto-record peak
+                  indicator across all 4 tracks in one click. Fans out
+                  to the per-track ``/auto-record/reset-peak`` route
+                  sequentially; the service-side mutex serializes
+                  anyway. No modal: the only state cleared is the
+                  recent-peak tag — no recall-relevant data lost. */}
+              <Button
+                kind="ghost"
+                size="sm"
+                data-testid="looper-reset-all-peaks-button"
+                onClick={() =>
+                  wrap(async () => {
+                    let last: LooperStatus | null = null
+                    for (let t = 0; t < TRACK_COUNT; t++) {
+                      last = await looperApi.resetAutoPeak(t)
+                    }
+                    return last ?? (await looperApi.getStatus())
+                  })
+                }
+              >
+                Reset all peaks
+              </Button>
               <Button
                 kind="danger--tertiary"
                 size="sm"
