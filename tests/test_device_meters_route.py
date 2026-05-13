@@ -186,6 +186,48 @@ def test_registry_route_reflects_canonical_channel_counts(client):
     assert rows["lexicon-mpx1"]["output_channels"] == 2
 
 
+def test_registry_route_omits_snapshot_by_default(client):
+    """Default behavior must return the lightweight registry view —
+    no snapshot field populated. Callers opt in via the query param."""
+    resp = client.get("/api/v1/devices/peak-meters/registry")
+    body = resp.json()
+    for row in body["devices"]:
+        assert row.get("snapshot") is None
+
+
+def test_registry_route_includes_snapshot_when_requested(client):
+    """include_snapshot=true must inline the per-channel peak-meter
+    snapshot for every device. Lets a dashboard render the entire
+    bench with a single round-trip."""
+    resp = client.get("/api/v1/devices/peak-meters/registry?include_snapshot=true")
+    assert resp.status_code == 200
+    body = resp.json()
+    for row in body["devices"]:
+        assert row["snapshot"] is not None
+        assert row["snapshot"]["source"] == "placeholder"
+        assert len(row["snapshot"]["input_peak_db"]) == row["input_channels"]
+        assert len(row["snapshot"]["output_peak_db"]) == row["output_channels"]
+
+
+def test_registry_route_snapshot_reflects_installed_engine_source(client):
+    class EngineSource:
+        def snapshot(self):
+            return MeterSnapshot(
+                input_peak_db=[-12.0, -12.0, -12.0, -12.0],
+                output_peak_db=[-6.0, -6.0, -6.0, -6.0],
+                source="engine",
+            )
+
+    tascam_us144mkii_meters.set_active_meter_source(EngineSource())
+    resp = client.get("/api/v1/devices/peak-meters/registry?include_snapshot=true")
+    body = resp.json()
+    rows = {r["device_id"]: r for r in body["devices"]}
+    assert rows["tascam-us144mkii"]["snapshot"]["source"] == "engine"
+    assert rows["tascam-us144mkii"]["snapshot"]["input_peak_db"] == [-12.0] * 4
+    # Other devices stay placeholder.
+    assert rows["edirol-ua-1000"]["snapshot"]["source"] == "placeholder"
+
+
 def test_registry_route_does_not_shadow_parametric_route(client):
     """Registry path is the literal `/peak-meters/registry`, which
     sits *under* the parametric `/{device_id}/peak-meters` route

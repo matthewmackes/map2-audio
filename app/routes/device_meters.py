@@ -16,9 +16,9 @@ the supported entry point for future devices.
 
 from __future__ import annotations
 
-from typing import List
+from typing import List, Optional
 
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Query
 from pydantic import BaseModel, Field
 
 # Importing the facade modules forces their import-time registration
@@ -59,6 +59,18 @@ class GenericMeterPayload(BaseModel):
     )
 
 
+class DeviceRegistrySnapshot(BaseModel):
+    """Inline snapshot for ``include_snapshot=true`` requests.
+
+    Carries the same shape as ``GenericMeterPayload`` minus the echo
+    of ``device_id`` (the parent entry already has it).
+    """
+
+    input_peak_db: List[float]
+    output_peak_db: List[float]
+    source: str
+
+
 class DeviceRegistryEntry(BaseModel):
     """One row in the peak-meters registry enumeration."""
 
@@ -66,6 +78,13 @@ class DeviceRegistryEntry(BaseModel):
     input_channels: int
     output_channels: int
     has_engine_source: bool
+    snapshot: Optional[DeviceRegistrySnapshot] = Field(
+        None,
+        description=(
+            "Inline peak-meter snapshot. Only populated when the "
+            "request includes ``include_snapshot=true``."
+        ),
+    )
 
 
 class DeviceRegistryResponse(BaseModel):
@@ -81,13 +100,28 @@ class DeviceRegistryResponse(BaseModel):
 
 
 @router.get("/peak-meters/registry", response_model=DeviceRegistryResponse)
-async def get_peak_meters_registry() -> DeviceRegistryResponse:
+async def get_peak_meters_registry(
+    include_snapshot: bool = Query(
+        False,
+        description=(
+            "When true, inline the current peak-meter snapshot for "
+            "every device so a one-shot enumeration covers both "
+            "the wire-up state and the latest reading."
+        ),
+    ),
+) -> DeviceRegistryResponse:
     """Enumerate every device registered with the meter-source registry.
 
     Returned in alphabetical order by ``device_id``. Each entry carries
     the device's declared channel counts and a ``has_engine_source``
     flag indicating whether the engine wire-up is currently installed
     (vs the silence-fallback placeholder).
+
+    When called with ``include_snapshot=true``, each entry's
+    ``snapshot`` field is populated with the same peak-meter payload
+    served by ``GET /{device_id}/peak-meters``. This collapses the
+    common dashboard pattern (registry + N per-device polls) into a
+    single request.
 
     The path lives under the ``/api/v1/devices`` prefix and uses the
     ``peak-meters/registry`` segment so it does not collide with the
@@ -96,17 +130,26 @@ async def get_peak_meters_registry() -> DeviceRegistryResponse:
     """
     registry = get_registry()
     rows = registry.list_devices()
-    return DeviceRegistryResponse(
-        devices=[
+    entries: List[DeviceRegistryEntry] = []
+    for row in rows:
+        snapshot: Optional[DeviceRegistrySnapshot] = None
+        if include_snapshot:
+            snap = await registry.read_snapshot(row.device_id)
+            snapshot = DeviceRegistrySnapshot(
+                input_peak_db=list(snap.input_peak_db),
+                output_peak_db=list(snap.output_peak_db),
+                source=snap.source,
+            )
+        entries.append(
             DeviceRegistryEntry(
                 device_id=row.device_id,
                 input_channels=row.input_channels,
                 output_channels=row.output_channels,
                 has_engine_source=row.has_engine_source,
-            )
-            for row in rows
-        ],
-    )
+                snapshot=snapshot,
+            ),
+        )
+    return DeviceRegistryResponse(devices=entries)
 
 
 @router.get("/{device_id}/peak-meters", response_model=GenericMeterPayload)
