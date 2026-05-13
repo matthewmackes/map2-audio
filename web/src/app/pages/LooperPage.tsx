@@ -194,7 +194,47 @@ export function LooperPage() {
             'Invalid looper state payload — expected an object with a tracks array',
           )
         }
-        await looperApi.applyState(parsed as Parameters<typeof looperApi.applyState>[0])
+        // T2512-PRESET-EXPORT-WITH-LOCAL — if the file is an
+        // enveloped export (carries ``__preset_cache``), seed the
+        // localStorage cache from it after applying the live state.
+        // Strip the envelope fields before applyState so the backend
+        // sees only its schema. Backward-compat: plain state files
+        // (no envelope) just skip the cache write.
+        const obj = parsed as Record<string, unknown>
+        const cacheField = obj.__preset_cache
+        const stateOnly: Record<string, unknown> = { ...obj }
+        delete stateOnly.__preset_cache
+        delete stateOnly.__schema
+        await looperApi.applyState(
+          stateOnly as unknown as Parameters<typeof looperApi.applyState>[0],
+        )
+        if (
+          cacheField !== undefined &&
+          typeof cacheField === 'object' &&
+          cacheField !== null &&
+          !Array.isArray(cacheField)
+        ) {
+          // Quick shape-check before writing; same gate as the
+          // dedicated cache importer.
+          const entries = Object.entries(
+            cacheField as Record<string, unknown>,
+          )
+          const allValid = entries.every(([, v]) =>
+            typeof v === 'object' &&
+            v !== null &&
+            Array.isArray((v as { tracks?: unknown }).tracks),
+          )
+          if (allValid) {
+            try {
+              localStorage.setItem(
+                'map2.looper.presetCache',
+                JSON.stringify(cacheField),
+              )
+            } catch {
+              // Best-effort — quota / private mode silently swallowed.
+            }
+          }
+        }
         setError(null)
       } catch (e: unknown) {
         setError(
@@ -209,10 +249,38 @@ export function LooperPage() {
   // as pretty JSON, and trigger a browser download. No mutation;
   // safe to click any time. Filename includes ISO date so an
   // operator with multiple backups can sort by name.
+  //
+  // T2512-PRESET-EXPORT-WITH-LOCAL — envelope the state payload with
+  // an optional ``__preset_cache`` mirror of the localStorage preset
+  // cache. Imports remain backward-compatible: a plain
+  // LooperStatePayload (no envelope) still applies; an enveloped
+  // file additionally seeds the cache. The envelope's ``__schema``
+  // tag identifies the file format so future expansions (snapshot
+  // links, slice catalogs) can land additively.
   const handleExportState = useCallback(async () => {
     try {
       const payload = await looperApi.getState()
-      const json = JSON.stringify(payload, null, 2)
+      // Inline cache read — keep the file independent of PresetPanel
+      // state so the export still works while the panel is closed
+      // (it isn't in this layout, but the test mode toggles it).
+      let cache: Record<string, unknown> = {}
+      try {
+        const raw = localStorage.getItem('map2.looper.presetCache')
+        if (raw) {
+          const parsed = JSON.parse(raw)
+          if (typeof parsed === 'object' && parsed !== null) {
+            cache = parsed as Record<string, unknown>
+          }
+        }
+      } catch {
+        // Quota / parse / private-mode — fall through with empty cache.
+      }
+      const envelope: Record<string, unknown> = { ...payload }
+      if (Object.keys(cache).length > 0) {
+        envelope.__schema = 'map2.looper.state+cache@1'
+        envelope.__preset_cache = cache
+      }
+      const json = JSON.stringify(envelope, null, 2)
       const blob = new Blob([json], { type: 'application/json' })
       const url = URL.createObjectURL(blob)
       const a = document.createElement('a')

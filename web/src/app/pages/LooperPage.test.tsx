@@ -2619,3 +2619,168 @@ describe('LooperPage T2512-PRESET-PERSIST-EXPORT cache export/import', () => {
     expect(cache).not.toHaveProperty('good')
   })
 })
+
+describe('LooperPage T2512-PRESET-EXPORT-WITH-LOCAL state-export envelope', () => {
+  // eslint-disable-next-line @typescript-eslint/no-require-imports
+  const mod = require('../../map2/clients/looper') as {
+    looperApi: { getState: jest.Mock; applyState: jest.Mock }
+  }
+
+  const CACHE_KEY = 'map2.looper.presetCache'
+
+  beforeEach(() => {
+    localStorage.clear()
+    mod.looperApi.applyState.mockClear()
+    mod.looperApi.getState.mockClear()
+  })
+
+  it('Export with no cache writes the bare LooperStatePayload (no envelope)', async () => {
+    const captured: { json?: string } = {}
+    // Capture the Blob contents by spying on Blob construction.
+    const realBlob = global.Blob
+    ;(global as unknown as { Blob: typeof Blob }).Blob = class extends realBlob {
+      constructor(parts: BlobPart[], opts?: BlobPropertyBag) {
+        super(parts, opts)
+        captured.json = (parts as string[]).join('')
+      }
+    } as unknown as typeof Blob
+    const createSpy = jest.fn(() => 'blob:fake-url')
+    const revokeSpy = jest.fn()
+    ;(URL.createObjectURL as unknown) = createSpy
+    ;(URL.revokeObjectURL as unknown) = revokeSpy
+    const clickSpy = jest
+      .spyOn(HTMLAnchorElement.prototype, 'click')
+      .mockImplementation()
+
+    renderPage()
+    const btn = await screen.findByTestId('looper-export-state-button')
+    fireEvent.click(btn)
+    await waitFor(() => expect(captured.json).toBeDefined())
+    const parsed = JSON.parse(captured.json as string)
+    // No envelope when cache is empty.
+    expect(parsed).not.toHaveProperty('__preset_cache')
+    expect(parsed).not.toHaveProperty('__schema')
+    expect(parsed).toHaveProperty('tracks')
+    ;(global as unknown as { Blob: typeof Blob }).Blob = realBlob
+    clickSpy.mockRestore()
+  })
+
+  it('Export with a populated cache envelopes the file with __preset_cache', async () => {
+    localStorage.setItem(
+      CACHE_KEY,
+      JSON.stringify({
+        'verse-a': { schema_version: 1, tracks: [], master_level_db: 0 },
+      }),
+    )
+    const captured: { json?: string } = {}
+    const realBlob = global.Blob
+    ;(global as unknown as { Blob: typeof Blob }).Blob = class extends realBlob {
+      constructor(parts: BlobPart[], opts?: BlobPropertyBag) {
+        super(parts, opts)
+        captured.json = (parts as string[]).join('')
+      }
+    } as unknown as typeof Blob
+    const createSpy = jest.fn(() => 'blob:fake-url')
+    const revokeSpy = jest.fn()
+    ;(URL.createObjectURL as unknown) = createSpy
+    ;(URL.revokeObjectURL as unknown) = revokeSpy
+    const clickSpy = jest
+      .spyOn(HTMLAnchorElement.prototype, 'click')
+      .mockImplementation()
+
+    renderPage()
+    const btn = await screen.findByTestId('looper-export-state-button')
+    fireEvent.click(btn)
+    await waitFor(() => expect(captured.json).toBeDefined())
+    const parsed = JSON.parse(captured.json as string)
+    expect(parsed.__schema).toBe('map2.looper.state+cache@1')
+    expect(parsed.__preset_cache).toHaveProperty('verse-a')
+    expect(parsed).toHaveProperty('tracks')
+    ;(global as unknown as { Blob: typeof Blob }).Blob = realBlob
+    clickSpy.mockRestore()
+  })
+
+  it('Import strips envelope keys before calling applyState', async () => {
+    renderPage()
+    const fileInput = (await screen.findByTestId(
+      'looper-import-state-input',
+    )) as HTMLInputElement
+    const enveloped = JSON.stringify({
+      __schema: 'map2.looper.state+cache@1',
+      __preset_cache: {
+        'verse-a': { schema_version: 1, tracks: [], master_level_db: 0 },
+      },
+      schema_version: 1,
+      tracks: [],
+      master_level_db: -3,
+    })
+    const file = new File([enveloped], 'state.json', { type: 'application/json' })
+    Object.defineProperty(fileInput, 'files', {
+      configurable: true,
+      value: [file],
+    })
+    fireEvent.change(fileInput)
+    await waitFor(() => {
+      expect(mod.looperApi.applyState).toHaveBeenCalled()
+    })
+    const args = mod.looperApi.applyState.mock.calls[0]?.[0] as Record<
+      string,
+      unknown
+    >
+    // The envelope keys must NOT reach the backend.
+    expect(args).not.toHaveProperty('__schema')
+    expect(args).not.toHaveProperty('__preset_cache')
+    expect(args.master_level_db).toBe(-3)
+  })
+
+  it('Import seeds localStorage cache from a valid envelope', async () => {
+    renderPage()
+    const fileInput = (await screen.findByTestId(
+      'looper-import-state-input',
+    )) as HTMLInputElement
+    const enveloped = JSON.stringify({
+      __schema: 'map2.looper.state+cache@1',
+      __preset_cache: {
+        'verse-a': { schema_version: 1, tracks: [], master_level_db: 0 },
+      },
+      schema_version: 1,
+      tracks: [],
+      master_level_db: 0,
+    })
+    const file = new File([enveloped], 'state.json', { type: 'application/json' })
+    Object.defineProperty(fileInput, 'files', {
+      configurable: true,
+      value: [file],
+    })
+    fireEvent.change(fileInput)
+    await waitFor(() => {
+      const cache = localStorage.getItem(CACHE_KEY)
+      expect(cache).not.toBeNull()
+      const parsed = JSON.parse(cache as string)
+      expect(parsed).toHaveProperty('verse-a')
+    })
+  })
+
+  it('Import without envelope still applies state (backward-compat)', async () => {
+    renderPage()
+    const fileInput = (await screen.findByTestId(
+      'looper-import-state-input',
+    )) as HTMLInputElement
+    const plain = JSON.stringify({
+      schema_version: 1,
+      tracks: [],
+      master_level_db: -6,
+    })
+    const file = new File([plain], 'state.json', { type: 'application/json' })
+    Object.defineProperty(fileInput, 'files', {
+      configurable: true,
+      value: [file],
+    })
+    fireEvent.change(fileInput)
+    await waitFor(() => {
+      expect(mod.looperApi.applyState).toHaveBeenCalled()
+    })
+    // Localstorage cache is untouched (no envelope to seed from).
+    expect(localStorage.getItem(CACHE_KEY)).toBeNull()
+  })
+})
