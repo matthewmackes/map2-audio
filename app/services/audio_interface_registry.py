@@ -31,6 +31,8 @@ TRANSPORT_PIPEWIRE_ALSA = "pipewire_alsa"
 TRANSPORT_PIPEWIRE_OTHER = "pipewire_other"
 TRANSPORT_AVB = "avb"
 TRANSPORT_CLUSTER = "cluster"
+# T2521-7b — SonoBus / AOO remote-audio transport.
+TRANSPORT_SONOBUS = "sonobus"
 
 _KNOWN_TRANSPORTS = (
     TRANSPORT_PIPEWIRE_USB,
@@ -38,6 +40,7 @@ _KNOWN_TRANSPORTS = (
     TRANSPORT_PIPEWIRE_OTHER,
     TRANSPORT_AVB,
     TRANSPORT_CLUSTER,
+    TRANSPORT_SONOBUS,
 )
 
 
@@ -340,6 +343,109 @@ def _cluster_records_from_inventory(
     return records
 
 
+def _sonobus_records_from_bindings(
+    bindings: List[Dict[str, Any]],
+) -> List[AudioInterfaceRecord]:
+    """T2521-7b — project SonoBus binding rows into interface records.
+
+    `bindings` is shaped like the `SonoBusBindingRead` Pydantic export.
+    Only `binding_kind == "stream"` rows surface as interface records;
+    peers and groups are aggregated separately via `/api/sonobus/peers`
+    and `/api/sonobus/groups`.
+
+    Interface IDs follow `sonobus:<peer>:<group>:<stream>` as defined in
+    `app/services/sonobus/interface_ids.py`. When binding rows lack the
+    information needed to build a canonical ID, the row is dropped
+    rather than projecting an unstable identifier.
+    """
+    if not bindings:
+        return []
+    from app.services.sonobus.interface_ids import make_sonobus_interface_id
+
+    records: List[AudioInterfaceRecord] = []
+    for binding in bindings:
+        if not isinstance(binding, dict):
+            continue
+        if binding.get("binding_kind") != "stream":
+            continue
+
+        listener_node = str(binding.get("listener_node_id") or "").strip()
+        endpoint = ""
+        target = binding.get("target_descriptor")
+        if isinstance(target, dict):
+            endpoint = str(
+                target.get("listener_peer_endpoint") or target.get("endpoint") or ""
+            ).strip()
+        peer_id = listener_node or endpoint
+        group_id = str(binding.get("group_id") or "").strip()
+        stream_id = (
+            str(binding.get("consumer_id") or "").strip()
+            or str(binding.get("binding_id") or "").strip()
+        )
+        if not peer_id or not group_id or not stream_id:
+            continue
+        # Replace colons that would break the canonical ID shape.
+        peer_id = peer_id.replace(":", "_")
+        group_id = group_id.replace(":", "_")
+        stream_id = stream_id.replace(":", "_")
+        try:
+            interface_id = make_sonobus_interface_id(
+                peer_id=peer_id, group_id=group_id, stream_id=stream_id
+            )
+        except ValueError:
+            continue
+
+        display_name = str(
+            binding.get("consumer_label")
+            or f"{group_id} → {peer_id}"
+        ).strip()
+        channel_count = int(binding.get("channel_count") or 0)
+
+        record = AudioInterfaceRecord(
+            interface_id=interface_id,
+            display_name=display_name,
+            transport=TRANSPORT_SONOBUS,
+            vendor=None,
+            product=None,
+            serial=None,
+            sample_rate=48000,  # Q7/Q8 locked default.
+            available=bool(binding.get("enabled", True)),
+            direction="listener",
+        )
+        record.input_port_count = 0
+        record.output_port_count = channel_count
+        capability = binding.get("listener_capability")
+        if capability:
+            record.notes.append(f"Capability {capability}")
+        priority = binding.get("transport_priority")
+        if priority:
+            record.notes.append(f"Priority {priority}")
+        records.append(record)
+    return records
+
+
+async def _default_sonobus_bindings_loader() -> List[Dict[str, Any]]:
+    """Default loader — pulls enabled stream bindings from the
+    SonoBusBindingAuthority. Used by the registry when no override is
+    injected.
+    """
+    try:
+        from app.database import get_session
+        from app.services.sonobus.binding_authority import SonoBusBindingAuthority
+    except Exception:
+        return []
+    try:
+        async with get_session(read_only=True) as session:
+            authority = SonoBusBindingAuthority(session)
+            bindings = await authority.list_by_kind("stream", enabled_only=True)
+            return [b.model_dump() for b in bindings]
+    except Exception as exc:
+        logger.debug(
+            "AudioInterfaceRegistry: SonoBus bindings unavailable: %s", exc
+        )
+        return []
+
+
 # ---------------------------------------------------------------------------
 # Registry
 # ---------------------------------------------------------------------------
@@ -355,22 +461,25 @@ class AudioInterfaceRegistry:
         avb_capabilities_loader=None,
         cluster_inventory_loader=None,
         local_node_id_loader=None,
+        sonobus_bindings_loader=None,
     ) -> None:
         self._pipewire_dump_loader = pipewire_dump_loader
         self._avb_capabilities_loader = avb_capabilities_loader
         self._cluster_inventory_loader = cluster_inventory_loader
         self._local_node_id_loader = local_node_id_loader
+        self._sonobus_bindings_loader = sonobus_bindings_loader
 
     async def list_interfaces(self) -> Dict[str, Any]:
-        pipewire_records, avb_records, cluster_records = await asyncio.gather(
+        pipewire_records, avb_records, cluster_records, sonobus_records = await asyncio.gather(
             self._safe_pipewire_records(),
             self._safe_avb_records(),
             self._safe_cluster_records(),
+            self._safe_sonobus_records(),
         )
 
         seen: Dict[str, AudioInterfaceRecord] = {}
         ordered: List[AudioInterfaceRecord] = []
-        for record in (*pipewire_records, *avb_records, *cluster_records):
+        for record in (*pipewire_records, *avb_records, *cluster_records, *sonobus_records):
             if record.interface_id in seen:
                 continue
             seen[record.interface_id] = record
@@ -433,6 +542,15 @@ class AudioInterfaceRegistry:
             logger.debug("AudioInterfaceRegistry: cluster inventory unavailable: %s", exc)
             return []
         return _cluster_records_from_inventory(inventory or {}, local_node_id=local_node_id)
+
+    async def _safe_sonobus_records(self) -> List[AudioInterfaceRecord]:
+        try:
+            loader = self._sonobus_bindings_loader or _default_sonobus_bindings_loader
+            bindings = await loader()
+        except Exception as exc:
+            logger.debug("AudioInterfaceRegistry: SonoBus bindings unavailable: %s", exc)
+            return []
+        return _sonobus_records_from_bindings(bindings or [])
 
 
 # ---------------------------------------------------------------------------
