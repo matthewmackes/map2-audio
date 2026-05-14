@@ -1033,6 +1033,8 @@ function LiveMetersTab({ meterData, wsConnected }: { meterData: MeterData; wsCon
           <DeviceMeterSourceTag
             source={meterSource.source}
             isError={meterSource.isError}
+            isStale={meterSource.isStale}
+            ageSeconds={meterSource.ageSeconds}
             testId="ua1000-meter-source"
           />
         </div>

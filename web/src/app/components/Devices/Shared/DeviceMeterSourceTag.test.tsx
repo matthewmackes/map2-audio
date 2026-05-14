@@ -58,4 +58,56 @@ describe('DeviceMeterSourceTag', () => {
     )
     expect(screen.getByTestId('ua1000-meter-source')).toBeInTheDocument()
   })
+
+  it('renders warm-gray "Stale" with engine source when isStale=true', () => {
+    render(
+      <DeviceMeterSourceTag
+        source="engine"
+        isError={false}
+        isStale={true}
+        ageSeconds={30}
+      />,
+    )
+    const tag = screen.getByTestId('device-meter-source-tag')
+    expect(tag).toHaveTextContent('Stale (30s)')
+    expect(tag.classList.contains('cds--tag--warm-gray')).toBe(true)
+  })
+
+  it('formats stale age in minutes when over 60 seconds', () => {
+    render(
+      <DeviceMeterSourceTag
+        source="engine"
+        isError={false}
+        isStale={true}
+        ageSeconds={125}
+      />,
+    )
+    expect(screen.getByTestId('device-meter-source-tag')).toHaveTextContent(
+      'Stale (2m)',
+    )
+  })
+
+  it('renders red "Engine unavailable" for engine_unavailable source', () => {
+    render(
+      <DeviceMeterSourceTag source="engine_unavailable" isError={false} />,
+    )
+    const tag = screen.getByTestId('device-meter-source-tag')
+    expect(tag).toHaveTextContent('Engine unavailable')
+    expect(tag.classList.contains('cds--tag--red')).toBe(true)
+  })
+
+  it('ignores isStale when source is not engine', () => {
+    render(
+      <DeviceMeterSourceTag
+        source="placeholder"
+        isError={false}
+        isStale={true}
+        ageSeconds={300}
+      />,
+    )
+    // Placeholder copy wins — staleness only applies to engine source.
+    expect(screen.getByTestId('device-meter-source-tag')).toHaveTextContent(
+      'Awaiting engine wire-up',
+    )
+  })
 })

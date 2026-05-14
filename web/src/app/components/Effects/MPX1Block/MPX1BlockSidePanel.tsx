@@ -234,6 +234,8 @@ export function MPX1BlockSidePanel({ open, chainId, onClose }: MPX1BlockSidePane
             <DeviceMeterSourceTag
               source={meterSource.source}
               isError={meterSource.isError}
+              isStale={meterSource.isStale}
+              ageSeconds={meterSource.ageSeconds}
               testId="mpx1-meter-source"
             />
           </div>

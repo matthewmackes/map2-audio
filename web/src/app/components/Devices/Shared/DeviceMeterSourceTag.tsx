@@ -23,12 +23,34 @@ export interface DeviceMeterSourceTagProps {
    * RTL assertions stay clear.
    */
   testId?: string
+  /**
+   * When true (and `source === 'engine'`), render an amber "Stale"
+   * Tag instead of the green "Live" one. Pivot-13c cycle 3 — surfaces
+   * a paused/disconnected engine within seconds of the
+   * captured_at threshold crossing. The hook computes `isStale`.
+   */
+  isStale?: boolean
+  /**
+   * Optional age in seconds (rounded) — when provided, the "Stale"
+   * tag includes an "Xs" suffix so operators can tell at a glance how
+   * far behind the snapshot is. Hidden when not supplied.
+   */
+  ageSeconds?: number | null
+}
+
+function formatAge(ageSeconds: number | null | undefined): string {
+  if (typeof ageSeconds !== 'number' || !Number.isFinite(ageSeconds)) return ''
+  if (ageSeconds < 60) return ` (${Math.round(ageSeconds)}s)`
+  if (ageSeconds < 3600) return ` (${Math.round(ageSeconds / 60)}m)`
+  return ` (${Math.round(ageSeconds / 3600)}h)`
 }
 
 export function DeviceMeterSourceTag({
   source,
   isError,
   testId,
+  isStale,
+  ageSeconds,
 }: DeviceMeterSourceTagProps) {
   const dataTestId = testId ?? 'device-meter-source-tag'
 
@@ -39,7 +61,21 @@ export function DeviceMeterSourceTag({
       </Tag>
     )
   }
+  if (source === 'engine_unavailable') {
+    return (
+      <Tag type="red" data-testid={dataTestId}>
+        Engine unavailable
+      </Tag>
+    )
+  }
   if (source === 'engine') {
+    if (isStale) {
+      return (
+        <Tag type="warm-gray" data-testid={dataTestId}>
+          {`Stale${formatAge(ageSeconds)}`}
+        </Tag>
+      )
+    }
     return (
       <Tag type="green" data-testid={dataTestId}>
         Live

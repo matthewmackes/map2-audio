@@ -32,6 +32,8 @@ function JoggMeterSourceBanner({ enabled }: JoggMeterSourceBannerProps) {
       <DeviceMeterSourceTag
         source={meter.source}
         isError={meter.isError}
+        isStale={meter.isStale}
+        ageSeconds={meter.ageSeconds}
         testId="jogg-meter-source"
       />
     </div>

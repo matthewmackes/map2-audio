@@ -90,6 +90,8 @@ export function TascamUS144MKIIStatusTab({ status, loading }: TascamUS144MKIISta
               <DeviceMeterSourceTag
                 source={meter.source}
                 isError={meter.isError}
+                isStale={meter.isStale}
+                ageSeconds={meter.ageSeconds}
                 testId="tascam-status-meter-source"
               />
             </StructuredListCell>
