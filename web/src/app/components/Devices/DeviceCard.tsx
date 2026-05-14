@@ -55,6 +55,11 @@ export interface DeviceCardRow {
    * is `'legacy'`, Open and the title link navigate here instead of
    * the profile-registry `/devices/profile/...` route. */
   legacyRoute?: string
+  /** T2522 — legacy device manifest id (e.g. `maschine-mk1`). Used to
+   * gate device-specific extras like the "Advanced-Maschine" button
+   * that surfaces the extended Maschine GUI tabbed shell. Only set
+   * when `source === 'legacy'`. */
+  legacyId?: string
   /** T2461-A9 — count of Brain library assets whose
    * `authored_with_devices` snapshot includes this device's profile_key.
    * The page populates this from `sequencerApi.getAssetsForDevice(...)`.
@@ -157,10 +162,16 @@ export function DeviceCard({ row, onPinChanged }: DeviceCardProps): React.JSX.El
   }, [navigate, row.packId, row.model, row.source, row.legacyRoute])
 
   const handleConfigure = React.useCallback(() => {
-    navigate(
-      `/devices/profile/${encodeURIComponent(row.packId)}/${encodeURIComponent(row.model)}/learn`,
-    )
-  }, [navigate, row.packId, row.model])
+    const base = `/devices/profile/${encodeURIComponent(row.packId)}/${encodeURIComponent(row.model)}`
+    // Audio interfaces configure clock / sample rate / loopback via the
+    // Audio I/O tab on the /v2 detail page. MIDI and HID devices land
+    // on the MIDI Learn Wizard for control discovery + binding capture.
+    if (row.kind === 'audio') {
+      navigate(`${base}/v2?tab=audio-io`)
+    } else {
+      navigate(`${base}/learn`)
+    }
+  }, [navigate, row.packId, row.model, row.kind])
 
   const handleIdentifyOrTest = React.useCallback(() => {
     if (row.kind === 'audio') {
@@ -328,6 +339,15 @@ export function DeviceCard({ row, onPinChanged }: DeviceCardProps): React.JSX.El
 
       <div className="device-card__actions" role="group" aria-label={`${row.model} actions`}>
         <Button kind="primary" size="sm" onClick={handleOpen}>Open</Button>
+        {row.source === 'legacy' && row.legacyId === 'maschine-mk1' ? (
+          <Button
+            kind="tertiary"
+            size="sm"
+            onClick={() => navigate('/maschine?tab=workbench')}
+          >
+            Advanced-Maschine
+          </Button>
+        ) : null}
         {row.source === 'legacy' ? null : (
           <>
             <Button

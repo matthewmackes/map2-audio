@@ -259,3 +259,34 @@ test('DeviceCard: T2461-A9 — no asset tag when count is undefined', () => {
   renderCard()
   expect(screen.queryByText(/Used in .* Brain asset/)).not.toBeInTheDocument()
 })
+
+test('DeviceCard: T2522 — Advanced-Maschine button renders only on the Maschine MK1 legacy card', () => {
+  renderCard({
+    profileKey: 'legacy:maschine-mk1',
+    packId: 'maschine-mk1',
+    model: 'Maschine MK1',
+    kind: 'midi',
+    source: 'legacy',
+    legacyRoute: '/maschine',
+    legacyId: 'maschine-mk1',
+  })
+  expect(screen.getByRole('button', { name: 'Advanced-Maschine' })).toBeInTheDocument()
+})
+
+test('DeviceCard: T2522 — Advanced-Maschine button is hidden on other legacy cards', () => {
+  renderCard({
+    profileKey: 'legacy:mpx1',
+    packId: 'mpx1',
+    model: 'Lexicon MPX-1',
+    kind: 'midi',
+    source: 'legacy',
+    legacyRoute: '/devices/mpx1',
+    legacyId: 'mpx1',
+  })
+  expect(screen.queryByRole('button', { name: 'Advanced-Maschine' })).not.toBeInTheDocument()
+})
+
+test('DeviceCard: T2522 — Advanced-Maschine button is hidden on non-legacy cards', () => {
+  renderCard({ source: 'shipped' })
+  expect(screen.queryByRole('button', { name: 'Advanced-Maschine' })).not.toBeInTheDocument()
+})

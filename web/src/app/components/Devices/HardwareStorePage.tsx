@@ -335,6 +335,7 @@ export function HardwareStorePage(): React.JSX.Element {
       isPinned: false,
       lastSeenAt: null,
       legacyRoute: entry.legacyRoute,
+      legacyId: entry.id,
     }))
   }, [])
 
