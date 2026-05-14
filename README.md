@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1640** Python | **1681** TypeScript | **222** C++/H | **149** Docs | **4470** total commits | **4** stars | **0** forks | **0** open issues
+**1640** Python | **1681** TypeScript | **222** C++/H | **149** Docs | **4472** total commits | **4** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`51330687`](https://github.com/matthewmackes/map2-audio/commit/51330687e6a81405c26dbd753d6312cf43b5e47f) | docs(sonobus): twelfth-Continue-1 — T2521-2 architecture doc | Map2 Audio | 2026-05-13 |
+| [`7a220072`](https://github.com/matthewmackes/map2-audio/commit/7a22007269321765da10395446369ed0b6b32687) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-13 |
 | [`0a9742b5`](https://github.com/matthewmackes/map2-audio/commit/0a9742b5dd8ed3b3a37497008beaaa5b0e30e9e0) | docs(worklist): eleventh Continue run handoff (9 cycles, ... | Map2 Audio | 2026-05-13 |
 | [`9ed41788`](https://github.com/matthewmackes/map2-audio/commit/9ed417887759797e889e04fd70d288b01b1bcea9) | feat(devices): eleventh-Continue-14 — Peak (dBFS) column ... | Map2 Audio | 2026-05-13 |
 | [`359d0c52`](https://github.com/matthewmackes/map2-audio/commit/359d0c526ef6e437376b47b831b016ac2deae13d) | feat(devices): eleventh-Continue-13 — registry route incl... | Map2 Audio | 2026-05-13 |
 | [`1b7a7811`](https://github.com/matthewmackes/map2-audio/commit/1b7a78115e56a661a6625daab8f51c8277dc8643) | feat(devices): eleventh-Continue-12 — mount peak-meters o... | Map2 Audio | 2026-05-13 |
 | [`f5cac5df`](https://github.com/matthewmackes/map2-audio/commit/f5cac5df4e3f164bef3593524fcb2d071a790bdf) | feat(devices): eleventh-Continue-11 — useDevicesPeakMeter... | Map2 Audio | 2026-05-13 |
 | [`98fd2d21`](https://github.com/matthewmackes/map2-audio/commit/98fd2d213b88bbb5c670b95e4e8c84659ebd861b) | feat(devices): eleventh-Continue-10 — peak-meters registr... | Map2 Audio | 2026-05-13 |
-| [`980f85a1`](https://github.com/matthewmackes/map2-audio/commit/980f85a1c71b4f13ffa378793967eaad7058dca2) | feat(devices): eleventh-Continue-7..9 — UA-1000 + JoGG + ... | Map2 Audio | 2026-05-13 |
-| [`73b3add8`](https://github.com/matthewmackes/map2-audio/commit/73b3add81f6d0230802fc90349f9e1bca8514752) | feat(devices): eleventh-Continue-6 — shared useDeviceMete... | Map2 Audio | 2026-05-13 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
