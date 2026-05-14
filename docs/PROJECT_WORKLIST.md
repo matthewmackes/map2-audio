@@ -4183,7 +4183,7 @@ Subtasks:
   - Completion notes:
     - 2026-05-13 21:10 EDT - Claude: First slice shipped — `app/services/sonobus/binding_routes.py` with `/api/sonobus/status`, `/api/sonobus/bindings/count`, `/api/sonobus/bindings/matrix`, `/api/sonobus/bindings` (GET with consumer / kind / group / cluster / scope filters, POST 201), `/api/sonobus/bindings/{id}` (GET / PATCH / DELETE), and `/api/sonobus/bindings/{id}/{disable,enable}`. Router mounted in `app/main.py` after the AVB Services mount with the same try/except guard. 12 scaffold tests + 9 live-HTTP TestClient tests green; full SonoBus suite now 16 + 12 + 9 = 37 cases. Still pending in T2521-5: peer/session/network/diagnostics/profiles routes + cluster matrix fan-out + WS event stream (queued for the next Continue cycle after the daemon scaffold lands).
 - ID: T2521-6
-  Status: [ ] Todo
+  Status: [>] In Progress
   Title: Build Carbon SonoBus service workspace from AVB template
   Description:
   - Goal / acceptance criteria: Add a first-class `/sonobus` GUI workspace with Connections, Routing, Network/Peers, Profiles, Diagnostics, and setup/onboarding regions modeled after AVB Services.
@@ -4191,7 +4191,9 @@ Subtasks:
   - Dependencies: T2521-5
   - Estimated effort: High
   - Required outputs/deliverables: React routes/components/hooks/tests, navigation entries, Carbon-compliant styling, atomic build.
-  Last updated: 2026-05-13 19:52 EDT - Codex
+  Last updated: 2026-05-13 21:30 EDT - Claude (twelfth Continue cycle 4)
+  - Completion notes:
+    - 2026-05-13 21:30 EDT - Claude: First slice shipped — `web/src/app/pages/sonobus/SonoBusOverviewPage.tsx` mounted at `/sonobus` (lazy-loaded in `App.tsx`). Pure Carbon: Section + Layer + Tile + Tag, no MUI. Hook layer at `web/src/app/pages/sonobus/useSonoBusBindings.ts` exposes `useSonoBusStatus`, `useSonoBusBindingsCount`, `useSonoBusBindingsMatrix` (all 5s polling, staleTime 0). Page surfaces four tiles: Bindings (with per-kind breakdown rows from the matrix), Daemon (stub Stopped until T2521-4), Connection server (honours Q3 enabled-default), Transport priority (surfaces the Q18 avb_preferred default). 8 jest tests (`SonoBusOverviewPage.test.tsx`) all green. `tsc --noEmit` clean. `npm run build` produced `web/dist/assets/SonoBusOverviewPage-aGJYSP-X.js` (5.5 KB). Remaining T2521-6 work: Connections / Routing / Network / Peers / Profiles / Diagnostics regions + the full shell scaffold with shellWindow + tab bar.
 - ID: T2521-7
   Status: [ ] Todo
   Title: Integrate snapshots, interface picker, and routing matrix; exclude recorder/artifacts

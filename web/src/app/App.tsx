@@ -137,6 +137,8 @@ const AvbServicesDevicesPage     = lazy(() => import('./pages/avb-services/AvbSe
 const AvbServicesRoutingPage     = lazy(() => import('./pages/avb-services/AvbServicesRoutingPage').then(m => ({ default: m.AvbServicesRoutingPage })))
 const AvbServicesNetworkPage     = lazy(() => import('./pages/avb-services/AvbServicesNetworkPage').then(m => ({ default: m.AvbServicesNetworkPage })))
 const AvbServicesAvdeccBindingWizardPage = lazy(() => import('./pages/avb-services/AvbServicesAvdeccBindingWizardPage').then(m => ({ default: m.AvbServicesAvdeccBindingWizardPage })))
+// T2521-6 — SonoBus/AOO remote-audio transport mount scaffold.
+const SonoBusOverviewPage        = lazy(() => import('./pages/sonobus/SonoBusOverviewPage').then(m => ({ default: m.SonoBusOverviewPage })))
 // T2491 (2026-05-02 cleanup) — the 7 MidiHub*Page lazy imports
 // retired with the /midi-hub/* mount. Canonical /midi/* mount uses
 // MidiServicesConnectionsPage / MidiServicesPresetsPage / etc. The
@@ -942,6 +944,13 @@ export function App() {
                                       Brain-input bindings via /api/avb/bindings. */}
                                   <Route path="avdecc/binding-wizard" element={<AvbServicesAvdeccBindingWizardPage />} />
                                 </Route>
+                                {/* T2521-6 — SonoBus / AOO remote-audio transport.
+                                    First slice mounts only the Overview page;
+                                    Connections / Routing / Network / Peers /
+                                    Profiles / Diagnostics regions land in later
+                                    T2521 cycles. See
+                                    docs/architecture/SONOBUS_AOO_TRANSPORT.md. */}
+                                <Route path="/sonobus" element={<RouteBoundary title="SonoBus view crashed" actionLabel="Reload SonoBus"><SonoBusOverviewPage /></RouteBoundary>} />
                                 <Route path={HOST_MACHINE_ROUTE} element={<RouteBoundary title="Host Machine view crashed" actionLabel="Reload host machine"><HostMachinePage /></RouteBoundary>} />
                                 <Route path="/grid" element={<Navigate to="/snapshot-editor" replace />} />
                                 <Route path="/juce-grid" element={<Navigate to="/snapshot-editor" replace />} />
