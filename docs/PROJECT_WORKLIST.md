@@ -2579,6 +2579,45 @@ The earlier order-1 row is fully drained for pure-Python / pure-frontend slices.
 
 ---
 
+### Pick-up next (run-13g handoff, filed 2026-05-14, end-of-run)
+
+**Run-13g total: 5 cycles + handoff, all dual-pushed to origin + gitlab.** User invoked "continue × 5". Closed every order-1 pick from yesterday's run-13f handoff plus shipped the cluster WS stream end-to-end (deferred from run-13f).
+
+Shipped this run, in order:
+
+1. **Cycle 1 — Shared WS subscription store** (commit `48989a8c3`). New `wsSubscriptionStore` module: singleton WebSocket registry keyed by URL. One socket per URL regardless of how many subscribers; reconnect 250 ms → 5 s exponential backoff; listener-thrown errors routed via onError instead of crashing siblings; last unsubscribe closes the socket. `useDevicesPeakMetersStream` adapted to subscribe through the store (existing 9 hook tests still green; +10 store tests).
+
+2. **Cycle 2 — Cluster overview on `/devices` catalog** (commit `e929a4823`). `HardwareStorePage` now mounts `DevicePeakMetersClusterOverview` between the pinned section and the catalog sections — but only when at least one peer is discovered, so single-node rigs don't see an empty cluster section. 10 s polling cadence (slower than the diagnostics page's 5 s). +2 jest cases; existing HardwareStorePage suite 10/10.
+
+3. **Cycle 3 — `/peak-meters/cluster/stream` WS fan-in** (commit `bab137a23`). Cluster analogue of `/peak-meters/stream`: each tick recomputes the cluster registry (local + peers via the existing asyncio.gather helper) and pushes a versioned frame. Default cadence 5 fps via `CLUSTER_WS_BROADCAST_INTERVAL_SECONDS`. `?include_snapshot=true` propagates to every peer fetch. +4 pytest cases.
+
+4. **Cycle 4 — `useDevicesPeakMetersClusterStream` hook** (commit `4269f572f`). TanStack-free WS hook subscribing through the shared store (run-13g-1). Exposes `local`/`peers`/`errors`/`hasFirstFrame`/`isConnected`/`lastError`. +8 jest cases.
+
+5. **Cycle 5 — Cluster stream wired into the overview + contract doc** (commit `f7e5a960b`). `DevicePeakMetersClusterOverview` gains a `useStream` prop; polling/streaming hooks are mutually exclusive via their `enabled` flags so no double-fetch. `DiagnosticsAggregatePage` switched its cluster mount to the streaming variant ("Cluster-wide metering (live)"); the catalog page keeps the polling variant. API contract doc gains cluster-stream rows + frame-type + cadence constant. +3 overview cases + 1 contract presence case.
+
+**Cumulative meter coverage after run-13g:** 100 pytest cases (was 96; +4 cluster stream + 0 in cycles 1-2 + 1 contract) + 87 jest cases (was 67; +10 store + 2 catalog cluster + 8 cluster stream hook + 3 cluster overview useStream).
+
+Operator effect, end-to-end:
+- The shared WS store means a page mounting both an overview tile and a per-device panel against the same URL pays for one socket; multi-tile dashboards dedupe automatically as new consumers land.
+- The `/devices` catalog page now shows live cluster metering on multi-node rigs (single-node rigs auto-hide the section).
+- The `/devices/diagnostics` cluster overview streams at 5 fps over WS instead of polling at 5 s; failed peers still surface via the existing inline-warning banner without tearing down the local baseline.
+
+**Status of long-term priorities after this run:**
+- All three picks of run-13f — done.
+- Cluster WS surface — done end-to-end (route + hook + UI + diagnostics page + contract doc).
+- T2521 unchanged: T2521-4 daemon + T2521-10 soak still bench-gated.
+
+**Next-session order-1 picks** (priority order; pure-Python or pure-frontend only):
+
+1. **`useDeviceMeterSource` routes through the shared WS store** — currently uses TanStack polling. A WS variant would let per-device panels stay in sync with the rest of the page without each opening its own poll. ~2 cycles (route already exists at `/peak-meters/stream?device_ids=...`).
+2. **`DevicePeakMetersClusterOverview` per-row staleness** — same pattern shipped in pivot-13e cycle 1 for the local overview; mark rows whose `captured_at` is more than N seconds old. ~1 cycle.
+3. **Cluster overview "Last seen" column under useStream** — same logic shipped on the local overview in run-13f cycle 3. Pure-frontend. ~1 cycle.
+4. **T2459-H final bench session gates** — physical hardware required. Code-side complete.
+
+**Bench-only / spec-needed** (unchanged): T2515-7/8, T2517-1/8/9 + Follow-up-A/B, T2521-4/10, looper RT-gated tail.
+
+---
+
 ### Pick-up next (run-13f handoff, filed 2026-05-14, end-of-run)
 
 **Run-13f total: 5 cycles + handoff, all dual-pushed to origin + gitlab.** User invoked "continue × 5"; I closed cluster fan-out end-to-end (route + hook + UI + diagnostics mount + contract doc) plus the "Last seen Ns ago" column. The shared-WS-subscription store pick from yesterday's handoff is deferred — cluster fan-out was higher-value and the dedup work needs a larger test surface.
