@@ -1,0 +1,84 @@
+// SPDX-License-Identifier: AGPL-3.0-only
+// Copyright (c) 2026 Matthew Mackes — MAP2 Audio Platform
+//
+// DeviceLearnPage — route at /devices/profile/:packId/:model/learn
+// rendering the MIDI Learn Wizard for a device.
+//
+// Resolves the hardware `controllerKey` argument that MidiLearnWizard
+// needs from (in priority order):
+//   1. `?controller=<key>` query param.
+//   2. An existing active mapping for this pack+model, if one is bound.
+// When neither is available the page surfaces a notice instead of
+// silently starting a learn session against an unknown source.
+
+import React from 'react'
+import { useParams, useSearchParams } from 'react-router-dom'
+import { InlineNotification, Loading } from '@carbon/react'
+import { useQuery } from '@tanstack/react-query'
+
+import { MidiLearnWizard } from '../components/Devices/MidiLearnWizard'
+import { listActiveMappings } from '../../map2/clients/devices'
+
+export function DeviceLearnPage(): React.JSX.Element {
+  const { packId, model } = useParams<{ packId: string; model: string }>()
+  const [searchParams] = useSearchParams()
+  const controllerParam = searchParams.get('controller')
+
+  const mappingsQuery = useQuery({
+    queryKey: ['active-mappings'],
+    queryFn: listActiveMappings,
+    enabled: !controllerParam && Boolean(packId && model),
+    staleTime: 10_000,
+  })
+
+  if (!packId || !model) {
+    return (
+      <div style={{ padding: '1rem' }}>
+        <InlineNotification
+          kind="error"
+          lowContrast
+          hideCloseButton
+          title="Invalid learn URL"
+          subtitle="Expected /devices/profile/:packId/:model/learn."
+        />
+      </div>
+    )
+  }
+
+  let controllerKey: string | null = controllerParam
+  if (!controllerKey && mappingsQuery.data) {
+    const match = mappingsQuery.data.active_mappings.find(
+      (m) => m.pack_id === packId && m.model === model,
+    )
+    controllerKey = match?.controller_key ?? null
+  }
+
+  const isResolving = !controllerParam && mappingsQuery.isLoading
+
+  return (
+    <div data-testid="device-learn-page" style={{ padding: '1rem' }}>
+      <h2 style={{ marginBottom: '1rem' }}>
+        {packId} / {model} — MIDI Learn
+      </h2>
+      {isResolving ? (
+        <Loading withOverlay={false} description="Looking up controller…" small />
+      ) : controllerKey ? (
+        <MidiLearnWizard packId={packId} model={model} controllerKey={controllerKey} />
+      ) : (
+        <InlineNotification
+          kind="info"
+          lowContrast
+          hideCloseButton
+          title="No controller bound yet"
+          subtitle={
+            'Connect this device or open it from the Hardware Store so MAP2 can ' +
+            'discover its controller key, then return to Configure. You can also ' +
+            'pass ?controller=<alsa-seq-key> on the URL to target a specific port.'
+          }
+        />
+      )}
+    </div>
+  )
+}
+
+export default DeviceLearnPage

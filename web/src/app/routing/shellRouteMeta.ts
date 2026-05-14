@@ -354,6 +354,18 @@ const RULES: ShellRouteRule[] = [
       breadcrumbs: [{ label: 'Devices', to: '/devices' }, { label: startCase(params.packId) }, { label: startCase(params.model) }],
     }),
   },
+  {
+    path: '/devices/profile/:packId/:model/learn',
+    resolve: (params) => ({
+      windowLabel: `Learn ${startCase(params.model)}`,
+      breadcrumbs: [
+        { label: 'Devices', to: '/devices' },
+        { label: startCase(params.packId) },
+        { label: startCase(params.model), to: `/devices/profile/${params.packId}/${params.model}/v2` },
+        { label: 'Learn' },
+      ],
+    }),
+  },
   staticMeta('/devices/edirol-ua1000/:view', { windowLabel: 'Edirol UA-1000', breadcrumbs: [{ label: 'Devices', to: '/devices' }, { label: 'Edirol UA-1000' }] }),
   staticMeta('/devices/edirol-ua1000', { windowLabel: 'Edirol UA-1000', breadcrumbs: [{ label: 'Devices', to: '/devices' }, { label: 'Edirol UA-1000' }] }),
   staticMeta('/devices/hotone-jogg/:view', { windowLabel: 'Hotone Jogg', breadcrumbs: [{ label: 'Devices', to: '/devices' }, { label: 'Hotone Jogg' }] }),

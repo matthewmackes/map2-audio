@@ -174,6 +174,10 @@ const TascamUS144MKIIView   = lazy(() => import('./components/Devices/TascamUS14
 const DevicePage            = lazy(() => import('./pages/DevicePage').then(m => ({ default: m.DevicePage })))
 // T2459-C4 — Carbon node-graph mapping editor with Mixxx XML round-trip.
 const DeviceMappingsPage    = lazy(() => import('./pages/DeviceMappingsPage').then(m => ({ default: m.DeviceMappingsPage })))
+// T2459-D4 follow-up — host page for the MIDI Learn Wizard, hit by the
+// "Configure" action on every DeviceCard and by BindingsTab's "Open
+// Learn Wizard" button.
+const DeviceLearnPage       = lazy(() => import('./pages/DeviceLearnPage').then(m => ({ default: m.DeviceLearnPage })))
 // Note: LCDView is no longer a route target (T2430-A split it into LCDShell + 8 sub-views).
 // It remains as a shared component module exporting LCDSimulator, InputController, etc.
 const LCDShell              = lazy(() => import('./components/Devices/LCD/LCDShell').then(m => ({ default: m.LCDShell })))
@@ -1001,6 +1005,8 @@ export function App() {
                                   <Route path="profile/:packId/:model/v2" element={<RouteBoundary title="Device detail v2 crashed" actionLabel="Reload"><DeviceDetailRoute /></RouteBoundary>} />
                                   {/* T2459-C4 — node-graph mapping editor. */}
                                   <Route path="profile/:packId/:model/mappings" element={<RouteBoundary title="Mapping editor crashed" actionLabel="Reload"><DeviceMappingsPage /></RouteBoundary>} />
+                                  {/* T2459-D4 follow-up — MIDI Learn Wizard host. */}
+                                  <Route path="profile/:packId/:model/learn" element={<RouteBoundary title="Learn Wizard crashed" actionLabel="Reload"><DeviceLearnPage /></RouteBoundary>} />
                                   <Route path="lcd/*" element={<LCDShell />}>
                                     <Route index element={<Navigate to="displays" replace />} />
                                     <Route path="displays" element={<LCDDisplaysView />} />
