@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1649** Python | **1681** TypeScript | **222** C++/H | **149** Docs | **4476** total commits | **4** stars | **0** forks | **0** open issues
+**1649** Python | **1684** TypeScript | **222** C++/H | **149** Docs | **4478** total commits | **4** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`2b226cc1`](https://github.com/matthewmackes/map2-audio/commit/2b226cc1ec6bdd807cb94006a8671dc819ca29bb) | feat(sonobus): twelfth-Continue-4 — T2521-6 first slice (... | Map2 Audio | 2026-05-13 |
+| [`a5a797c3`](https://github.com/matthewmackes/map2-audio/commit/a5a797c334f9dc7f8040f0e495a7ed4dd99e7246) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-14 |
 | [`7ec1e908`](https://github.com/matthewmackes/map2-audio/commit/7ec1e908989ce8b7d6495fcfa9efb3ff23390fac) | feat(sonobus): twelfth-Continue-3 — T2521-5 first slice (... | Map2 Audio | 2026-05-13 |
 | [`41da5866`](https://github.com/matthewmackes/map2-audio/commit/41da5866db8a241fd801fc8baecdd4438a4940f7) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-14 |
 | [`292d0071`](https://github.com/matthewmackes/map2-audio/commit/292d00716c82ca97892aeeefcc743a3434031908) | feat(sonobus): twelfth-Continue-2 — T2521-3 SonoBusBindin... | Map2 Audio | 2026-05-13 |
 | [`7ed42841`](https://github.com/matthewmackes/map2-audio/commit/7ed42841d19c27415d6413574267df47029e9aee) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-14 |
 | [`51330687`](https://github.com/matthewmackes/map2-audio/commit/51330687e6a81405c26dbd753d6312cf43b5e47f) | docs(sonobus): twelfth-Continue-1 — T2521-2 architecture doc | Map2 Audio | 2026-05-13 |
 | [`7a220072`](https://github.com/matthewmackes/map2-audio/commit/7a22007269321765da10395446369ed0b6b32687) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-13 |
-| [`0a9742b5`](https://github.com/matthewmackes/map2-audio/commit/0a9742b5dd8ed3b3a37497008beaaa5b0e30e9e0) | docs(worklist): eleventh Continue run handoff (9 cycles, ... | Map2 Audio | 2026-05-13 |
-| [`9ed41788`](https://github.com/matthewmackes/map2-audio/commit/9ed417887759797e889e04fd70d288b01b1bcea9) | feat(devices): eleventh-Continue-14 — Peak (dBFS) column ... | Map2 Audio | 2026-05-13 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
