@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1660** Python | **1699** TypeScript | **222** C++/H | **149** Docs | **4500** total commits | **4** stars | **0** forks | **0** open issues
+**1661** Python | **1699** TypeScript | **222** C++/H | **149** Docs | **4503** total commits | **4** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`dab35e61`](https://github.com/matthewmackes/map2-audio/commit/dab35e6113144afbb3b3ee9f9c8d86d2f3297b94) | docs(worklist): thirteenth Continue run handoff (13 cycle... | Map2 Audio | 2026-05-13 |
+| [`46428b71`](https://github.com/matthewmackes/map2-audio/commit/46428b7154f0ef16749febe471f637973d729f33) | feat(sonobus): thirteenth-Continue-13 — T2521-7b interfac... | Map2 Audio | 2026-05-13 |
+| [`58f331d0`](https://github.com/matthewmackes/map2-audio/commit/58f331d009f0285b5c9cf6931317b68d4a09575e) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-14 |
 | [`d4094e5a`](https://github.com/matthewmackes/map2-audio/commit/d4094e5a1f69bf70c91d2012dbb17711b241b892) | docs(sonobus): thirteenth-Continue-12 — T2521-9b api-cont... | Map2 Audio | 2026-05-13 |
 | [`7d5b55c8`](https://github.com/matthewmackes/map2-audio/commit/7d5b55c89647f0bc265bb9f5fb55c5e3a73f2136) | feat(sonobus): thirteenth-Continue-11 — T2521-7 Q12 wired... | Map2 Audio | 2026-05-13 |
 | [`e04d875a`](https://github.com/matthewmackes/map2-audio/commit/e04d875acd593918ac470deaefe05568c1268d09) | feat(sonobus): thirteenth-Continue-10 — T2521-5e WS event... | Map2 Audio | 2026-05-13 |
 | [`a93995b6`](https://github.com/matthewmackes/map2-audio/commit/a93995b6486614521fce433652ce4fbee57bf3df) | feat(sonobus): thirteenth-Continue-9 — T2521-6f Profiles ... | Map2 Audio | 2026-05-13 |
 | [`28bf20dd`](https://github.com/matthewmackes/map2-audio/commit/28bf20dd6d350e48d7f77e72932bf68c53fbaf66) | feat(sonobus): thirteenth-Continue-8 — T2521-5d profile p... | Map2 Audio | 2026-05-13 |
-| [`98772933`](https://github.com/matthewmackes/map2-audio/commit/987729336d7db384cade71dca976cc81df31a773) | build(sonobus): thirteenth-Continue-7 — T2521-8b USE_SONO... | Map2 Audio | 2026-05-13 |
-| [`7bd55902`](https://github.com/matthewmackes/map2-audio/commit/7bd55902611f3ec9df6b9c38f3f0c6a2c19c52fd) | feat(sonobus): thirteenth-Continue-6 — T2521-6e nav entry | Map2 Audio | 2026-05-13 |
-| [`b8691b1f`](https://github.com/matthewmackes/map2-audio/commit/b8691b1f2c671872c4f6ae370b5acc729efd6252) | feat(sonobus): thirteenth-Continue-5 — T2521-6d shell + t... | Map2 Audio | 2026-05-13 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
