@@ -141,6 +141,76 @@ Success response:
 
 ---
 
+## Example: sonobus (T2521)
+
+The SonoBus / AOO remote-audio transport (T2521) ships under the
+`/api/sonobus/*` prefix. All endpoints follow the standard error
+envelope and tag `"SonoBus"` in the OpenAPI document. See
+`docs/architecture/SONOBUS_AOO_TRANSPORT.md` for the full surface.
+
+| Endpoint | Method | Purpose |
+| --- | --- | --- |
+| `/api/sonobus/status` | GET | Authority + daemon + connection-server health + Q18 priority default. |
+| `/api/sonobus/bindings` | GET / POST | List / create canonical SonoBusBinding rows. |
+| `/api/sonobus/bindings/count` | GET | Lightweight count for the Overview tile. |
+| `/api/sonobus/bindings/matrix` | GET | binding_kind × consumer_type aggregation + full row list. |
+| `/api/sonobus/bindings/{binding_id}` | GET / PATCH / DELETE | Single binding CRUD. |
+| `/api/sonobus/bindings/{binding_id}/{enable,disable}` | POST | Lifecycle toggles. |
+| `/api/sonobus/cluster/bindings/matrix` | GET | Cluster fan-out (2 s per-peer timeout). |
+| `/api/sonobus/peers` | GET | Projection over bindings — one row per (listener_node_id, endpoint, capability). |
+| `/api/sonobus/groups` | GET | Projection over bindings — channel-group totals. |
+| `/api/sonobus/sessions` | GET | Enabled bindings of kind `stream` + `client_session`. |
+| `/api/sonobus/profiles` | GET | Built-in codec + jitter + resend presets (Q7/Q8/Q9). |
+| `/api/sonobus/profiles/{profile_id}` | GET | Single preset lookup. |
+| `/api/sonobus/events` | WS | sonobus:state on connect + sonobus:heartbeat every 5 s; daemon-side events land with T2521-4. |
+
+Custom error codes registered for this surface:
+
+- `sonobus.daemon_unreachable` — daemon (T2521-4) is not running and the request requires it.
+- `sonobus.peer_capability_unsupported` — peer is `aoo_native` only and the operation requires `map2`.
+- `sonobus.binding_conflict` — duplicate consumer_id under the same consumer_type.
+- `sonobus.transport_disabled_for_recorder` — Q12 hard exclusion; the calling service rejected a `sonobus:` interface ID.
+
+Request (status):
+
+```http
+GET /api/sonobus/status
+```
+
+Success response:
+
+```json
+{
+  "authority_ok": true,
+  "table_present": true,
+  "binding_count": 0,
+  "enabled_binding_count": 0,
+  "daemon_running": false,
+  "daemon_endpoint": null,
+  "connection_server_enabled": true,
+  "connection_server_running": false,
+  "default_transport_priority": "avb_preferred"
+}
+```
+
+WebSocket frame shape (versioned via `schema_version`):
+
+```json
+{
+  "type": "sonobus:state",
+  "schema_version": 1,
+  "data": {
+    "authority_ok": true,
+    "binding_count": 0,
+    "enabled_binding_count": 0,
+    "daemon_running": false,
+    "timestamp": "2026-05-13T22:00:00+00:00"
+  }
+}
+```
+
+---
+
 ## TypeScript contract generation (T2455)
 
 Snapshot request/response payload types are generated from the live Pydantic
