@@ -230,6 +230,80 @@ describe('DevicePeakMetersClusterOverview', () => {
     ).toBeInTheDocument()
   })
 
+  it('renders a Stale Tag when captured_at exceeds the threshold', () => {
+    const nowSeconds = Date.now() / 1000
+    mockCluster.mockReturnValue({
+      local: {
+        devices: [
+          {
+            device_id: 'edirol-ua-1000',
+            input_channels: 10,
+            output_channels: 10,
+            has_engine_source: true,
+            snapshot: {
+              input_peak_db: [-6],
+              output_peak_db: [-3],
+              source: 'engine',
+              captured_at: nowSeconds - 60, // 60 s old
+            },
+          },
+        ],
+      },
+      peers: [],
+      errors: {},
+      isError: false,
+      isLoading: false,
+    })
+    render(
+      <DevicePeakMetersClusterOverview
+        includeSnapshot
+        staleThresholdSeconds={5}
+      />,
+    )
+    const tag = screen.getByTestId(
+      'cluster-overview-source-local:edirol-ua-1000',
+    )
+    expect(tag.textContent).toMatch(/Stale/)
+    expect(tag.classList.contains('cds--tag--warm-gray')).toBe(true)
+  })
+
+  it('keeps engine rows green when fresh', () => {
+    const nowSeconds = Date.now() / 1000
+    mockCluster.mockReturnValue({
+      local: {
+        devices: [
+          {
+            device_id: 'edirol-ua-1000',
+            input_channels: 10,
+            output_channels: 10,
+            has_engine_source: true,
+            snapshot: {
+              input_peak_db: [-6],
+              output_peak_db: [-3],
+              source: 'engine',
+              captured_at: nowSeconds, // fresh
+            },
+          },
+        ],
+      },
+      peers: [],
+      errors: {},
+      isError: false,
+      isLoading: false,
+    })
+    render(
+      <DevicePeakMetersClusterOverview
+        includeSnapshot
+        staleThresholdSeconds={5}
+      />,
+    )
+    const tag = screen.getByTestId(
+      'cluster-overview-source-local:edirol-ua-1000',
+    )
+    expect(tag.textContent).toBe('Live')
+    expect(tag.classList.contains('cds--tag--green')).toBe(true)
+  })
+
   it('mounts a Peak column when includeSnapshot is true', () => {
     mockCluster.mockReturnValue({
       local: {

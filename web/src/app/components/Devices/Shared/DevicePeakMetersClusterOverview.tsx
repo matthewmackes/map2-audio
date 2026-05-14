@@ -27,6 +27,7 @@ import {
 
 import { useDevicesPeakMetersClusterRegistry } from '../../../hooks/useDevicesPeakMetersClusterRegistry'
 import { useDevicesPeakMetersClusterStream } from '../../../hooks/useDevicesPeakMetersClusterStream'
+import type { DeviceMetersRegistryEntry } from '../../../hooks/useDevicesPeakMetersRegistry'
 
 export interface DevicePeakMetersClusterOverviewProps {
   /** Optional title above the table. */
@@ -42,7 +43,17 @@ export interface DevicePeakMetersClusterOverviewProps {
    * every cluster frame carries the same per-device snapshot shape.
    * Run-13g cycle 5. */
   useStream?: boolean
+  /** Seconds after which a row's snapshot is considered stale. When
+   * the wall-clock gap exceeds this threshold, the source Tag flips
+   * to a warm-gray "Stale (Ns)" pill instead of the green "Live"
+   * pill, and (when useStream is on) the row's Last seen column
+   * shows the age. Default 10 s — matches the local overview.
+   * Run-13h cycle 2. */
+  staleThresholdSeconds?: number
 }
+
+const DEFAULT_STALE_THRESHOLD_S = 10
+const STALE_TICK_INTERVAL_MS = 1_000
 
 type CarbonTagTone = 'green' | 'warm-gray' | 'red' | 'cool-gray' | 'gray'
 
@@ -53,6 +64,19 @@ interface ClusterRow {
   channels: string
   source: 'engine' | 'engine_unavailable' | 'placeholder'
   peak: string
+  /** Seconds since `captured_at`. `null` when the payload omitted
+   * the timestamp (older backends). Run-13h cycle 2. */
+  ageSeconds: number | null
+  /** True when `ageSeconds` exceeds the configured threshold. */
+  isStale: boolean
+}
+
+function formatLastSeen(ageSeconds: number | null): string {
+  if (ageSeconds === null || !Number.isFinite(ageSeconds)) return '—'
+  if (ageSeconds < 1) return '<1 s ago'
+  if (ageSeconds < 60) return `${Math.round(ageSeconds)} s ago`
+  if (ageSeconds < 3600) return `${Math.round(ageSeconds / 60)} m ago`
+  return `${Math.round(ageSeconds / 3600)} h ago`
 }
 
 const SILENCE_THRESHOLD_DBFS = -149.9
@@ -79,14 +103,29 @@ function formatPeak(snapshot: {
   return `in ${fmt(inMax)} / out ${fmt(outMax)} dBFS`
 }
 
-function sourceTagTone(s: ClusterRow['source']): CarbonTagTone {
-  if (s === 'engine') return 'green'
+function sourceTagTone(
+  s: ClusterRow['source'],
+  isStale: boolean,
+): CarbonTagTone {
+  if (s === 'engine') {
+    return isStale ? 'warm-gray' : 'green'
+  }
   if (s === 'engine_unavailable') return 'red'
   return 'warm-gray'
 }
 
-function sourceTagLabel(s: ClusterRow['source']): string {
-  if (s === 'engine') return 'Live'
+function sourceTagLabel(
+  s: ClusterRow['source'],
+  isStale: boolean,
+  ageSeconds: number | null,
+): string {
+  if (s === 'engine') {
+    if (isStale) {
+      const suffix = formatLastSeen(ageSeconds)
+      return suffix === '—' ? 'Stale' : `Stale (${suffix.replace(' ago', '')})`
+    }
+    return 'Live'
+  }
   if (s === 'engine_unavailable') return 'Engine unavailable'
   return 'Awaiting engine wire-up'
 }
@@ -96,7 +135,21 @@ export function DevicePeakMetersClusterOverview({
   refetchIntervalMs,
   includeSnapshot,
   useStream,
+  staleThresholdSeconds,
 }: DevicePeakMetersClusterOverviewProps): React.JSX.Element {
+  const staleThreshold = staleThresholdSeconds ?? DEFAULT_STALE_THRESHOLD_S
+
+  // Re-evaluate per-row staleness once per second even between frames
+  // so a stalled cluster path surfaces as Stale within ~1 s of crossing
+  // the threshold. Mirrors useDevicesPeakMetersStream / useDeviceMeterSource.
+  const [, forceRender] = React.useState(0)
+  React.useEffect(() => {
+    const timer = setInterval(
+      () => forceRender((prev) => prev + 1),
+      STALE_TICK_INTERVAL_MS,
+    )
+    return () => clearInterval(timer)
+  }, [])
   // Polling path. Disabled when streaming so two cluster queries don't
   // race.
   const polling = useDevicesPeakMetersClusterRegistry({
@@ -121,41 +174,57 @@ export function DevicePeakMetersClusterOverview({
     ? !streaming.hasFirstFrame
     : polling.isLoading
 
-  const rows: ClusterRow[] = React.useMemo(() => {
-    const out: ClusterRow[] = []
-    // Local devices first so an operator's own bench leads the table.
-    for (const dev of local?.devices ?? []) {
-      out.push({
-        id: `local:${dev.device_id}`,
-        node: 'local',
-        device_id: dev.device_id,
-        channels: `${dev.input_channels} / ${dev.output_channels}`,
-        source:
-          (dev.snapshot?.source as ClusterRow['source']) ??
-          (dev.has_engine_source ? 'engine' : 'placeholder'),
-        peak: formatPeak(dev.snapshot),
-      })
+  // Pulled out so the 1s tick re-derives ageSeconds against the live
+  // wall-clock. useMemo would memoize the row list against a stale
+  // `Date.now()` and break the per-row staleness signal.
+  const nowSeconds = Date.now() / 1000
+
+  function buildRow(
+    devEntry: DeviceMetersRegistryEntry,
+    id: string,
+    nodeLabel: string,
+  ): ClusterRow {
+    const capturedAt = devEntry.snapshot?.captured_at ?? null
+    let ageSeconds: number | null = null
+    let isStale = false
+    if (typeof capturedAt === 'number') {
+      ageSeconds = Math.max(0, nowSeconds - capturedAt)
+      if (ageSeconds > staleThreshold) isStale = true
     }
-    // Peer devices grouped by node, alphabetical inside each.
-    for (const peer of peers) {
-      const sortedDevices = [...peer.devices].sort((a, b) =>
-        a.device_id.localeCompare(b.device_id),
+    return {
+      id,
+      node: nodeLabel,
+      device_id: devEntry.device_id,
+      channels: `${devEntry.input_channels} / ${devEntry.output_channels}`,
+      source:
+        (devEntry.snapshot?.source as ClusterRow['source']) ??
+        (devEntry.has_engine_source ? 'engine' : 'placeholder'),
+      peak: formatPeak(devEntry.snapshot),
+      ageSeconds,
+      isStale,
+    }
+  }
+
+  const rows: ClusterRow[] = []
+  // Local devices first so an operator's own bench leads the table.
+  for (const dev of local?.devices ?? []) {
+    rows.push(buildRow(dev, `local:${dev.device_id}`, 'local'))
+  }
+  // Peer devices grouped by node, alphabetical inside each.
+  for (const peer of peers) {
+    const sortedDevices = [...peer.devices].sort((a, b) =>
+      a.device_id.localeCompare(b.device_id),
+    )
+    for (const dev of sortedDevices) {
+      rows.push(
+        buildRow(
+          dev,
+          `${peer.node_id}:${dev.device_id}`,
+          peer.hostname || peer.node_id,
+        ),
       )
-      for (const dev of sortedDevices) {
-        out.push({
-          id: `${peer.node_id}:${dev.device_id}`,
-          node: peer.hostname || peer.node_id,
-          device_id: dev.device_id,
-          channels: `${dev.input_channels} / ${dev.output_channels}`,
-          source:
-            (dev.snapshot?.source as ClusterRow['source']) ??
-            (dev.has_engine_source ? 'engine' : 'placeholder'),
-          peak: formatPeak(dev.snapshot),
-        })
-      }
     }
-    return out
-  }, [local, peers])
+  }
 
   const headers = includeSnapshot
     ? [
@@ -250,11 +319,18 @@ export function DevicePeakMetersClusterOverview({
                           return (
                             <TableCell key={cell.id}>
                               <Tag
-                                type={sourceTagTone(original.source)}
+                                type={sourceTagTone(
+                                  original.source,
+                                  original.isStale,
+                                )}
                                 size="sm"
                                 data-testid={`cluster-overview-source-${row.id}`}
                               >
-                                {sourceTagLabel(original.source)}
+                                {sourceTagLabel(
+                                  original.source,
+                                  original.isStale,
+                                  original.ageSeconds,
+                                )}
                               </Tag>
                             </TableCell>
                           )
