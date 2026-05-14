@@ -2579,6 +2579,36 @@ The earlier order-1 row is fully drained for pure-Python / pure-frontend slices.
 
 ---
 
+### Pick-up next (pivot-13d handoff, filed 2026-05-14, end-of-run)
+
+**Pivot-13d total: 3 cycles + handoff, all dual-pushed to origin + gitlab.** Closed every pure-Python / pure-frontend / pure-doc pick from yesterday's pivot-13c handoff.
+
+Shipped this run, in order:
+
+1. **Cycle 1 — Diagnostics page streams pinned-device meters** (commit `a3661b1d1`). Pick-1 of pivot-13c. The 30 fps `/peak-meters/stream` fan-out now lands on a real operator surface. New `meterRegistryIdFromPinnedId` + `meterRegistryIdsFromPinnedIds` helpers in `web/src/app/data/legacyDeviceManifest.ts` bridge the pinned-id namespace (`edirol-ua1000`, `mpx1`) to the meter-registry namespace (`edirol-ua-1000`, `lexicon-mpx1`); `null` for non-metered surfaces (LCD, Maschine, Push, Tesira). `DevicePeakMetersOverview` accepts a new `deviceIds` prop forwarded to `useDevicesPeakMetersStream`. `DiagnosticsAggregatePage` mounts a new "Pinned devices (live)" section above the existing polled overview whenever `pinnedMeterIds.length > 0`. +11 jest cases (8 manifest + 1 overview prop forwarding + 3 page conditional mounts).
+
+2. **Cycle 2 — `api-contract-standards.md` row for `/peak-meters/*`** (commit `e7d80b866` after rebase, originally `81eb6eef6`). Pick-2. New canonical contract section: endpoint table (per-device GET + registry GET + registry+include_snapshot + stream WS + stream WS+device_ids filter), per-device JSON example, three documented `source` states (`engine` / `engine_unavailable` / `placeholder`), `captured_at` semantics, WS frame envelope (`device_peak_meters:registry`, `schema_version=1`), `device_not_registered` error code, 30 fps broadcast-floor reference. +9 pytest presence tests.
+
+3. **Cycle 3 — `engine_unavailable` regression on per-device routes** (commit `e7d80b866`'s child). Pick-3. Forward-compatibility regression that pins the contract `JuceEngineMeterSource` exposes when its reader raises — the route layer must propagate `source="engine_unavailable"` verbatim (not 5xx, not collapse to placeholder). Verified across all three surfaces: per-device GET, registry+include_snapshot, WS stream frame. Plus a "distinct from placeholder" test that confirms a broken-engine source and an absent source emit identical silence values but distinguishable `source` fields. +4 pytest cases.
+
+**Cumulative meter coverage after pivot-13d:** 81 pytest cases (was 72; +9) + 38 jest cases (was 27; +11). All three pivot-13c picks closed.
+
+**Status of long-term priorities after this run:**
+- Picks 1, 2, 3 of pivot-13c — all done.
+- T2521 unchanged: T2521-4 daemon + T2521-10 soak still bench-gated.
+- T2519 surface continues to deepen: the operator-pinned WS subscription is wired, the contract is documented, and the engine-unavailable distinction is now regression-pinned at every entry point.
+
+**Next-session order-1 picks** (priority order; pure-Python or pure-frontend only):
+
+1. **Hook `captured_at` into the WS frame's age-rendering** — `useDevicesPeakMetersStream` could expose a per-device `ageSeconds` derived from `captured_at` the same way `useDeviceMeterSource` does. Then the `DevicePeakMetersOverview` Peak column could fade rows whose snapshot is stale (engine paused per-device, not just for the whole registry). Pure-frontend. ~1 cycle.
+2. **Devices Catalog page (`/devices`) gets the pinned-stream overview too** — DiagnosticsAggregatePage is the technical bench page; the operator-friendly `/devices` catalog also lists pinned devices and would benefit from the same live banner. Pure-frontend. ~1 cycle.
+3. **`/peak-meters/registry` route caches its placeholder snapshots inside the request scope** — `include_snapshot=true` currently calls `read_snapshot` per device sequentially. For a single request the snapshot can be built concurrently via `asyncio.gather` — bandwidth gain for dashboards calling registry+snapshot once per page load. Pure-Python. ~1 cycle.
+4. **T2459-H final bench session gates** — physical hardware required. Code-side complete.
+
+**Bench-only / spec-needed** (unchanged): T2515-7/8, T2517-1/8/9 + Follow-up-A/B, T2521-4/10, looper RT-gated tail.
+
+---
+
 ### Pick-up next (pivot-13c handoff, filed 2026-05-14, end-of-run)
 
 **Pivot-13c total: 3 commits (4 logical cycles, cycles 3+4 bundled), all dual-pushed to origin + gitlab.** Closed every order-1 pick from the pivot-13b handoff that landed yesterday.
