@@ -13,6 +13,7 @@
 import { DataTable, Table, TableBody, TableCell, TableContainer, TableHead, TableHeader, TableRow, Tag } from '@carbon/react'
 
 import { useDevicesPeakMetersRegistry } from '../../../hooks/useDevicesPeakMetersRegistry'
+import { useDevicesPeakMetersStream } from '../../../hooks/useDevicesPeakMetersStream'
 
 export interface DevicePeakMetersOverviewProps {
   /** Optional title above the table. Defaults to "Per-device metering". */
@@ -23,6 +24,11 @@ export interface DevicePeakMetersOverviewProps {
    * snapshot for every device and the overview gains a "Peak (dBFS)"
    * column summarizing the loudest channel per direction. */
   includeSnapshot?: boolean
+  /** When true, drive the table from the 30 fps WebSocket fan-out
+   * (`/api/v1/devices/peak-meters/stream`) instead of polling the
+   * registry route. Implies `includeSnapshot` semantics — every WS
+   * frame carries the full per-device snapshot. */
+  useStream?: boolean
 }
 
 interface OverviewRow {
@@ -72,13 +78,28 @@ export function DevicePeakMetersOverview({
   title,
   refetchIntervalMs,
   includeSnapshot,
+  useStream,
 }: DevicePeakMetersOverviewProps) {
-  const { devices, isError, isLoading } = useDevicesPeakMetersRegistry({
+  const pollingResult = useDevicesPeakMetersRegistry({
     refetchIntervalMs,
     includeSnapshot,
+    enabled: !useStream,
+  })
+  const streamResult = useDevicesPeakMetersStream({
+    enabled: Boolean(useStream),
   })
 
-  const headers = includeSnapshot
+  const devices = useStream ? streamResult.devices : pollingResult.devices
+  const isError = useStream ? streamResult.lastError !== null : pollingResult.isError
+  const isLoading = useStream
+    ? !streamResult.hasFirstFrame
+    : pollingResult.isLoading
+
+  // Streaming frames always include a snapshot; treat the table as if
+  // includeSnapshot is on in that case.
+  const showPeakColumn = Boolean(includeSnapshot || useStream)
+
+  const headers = showPeakColumn
     ? [
         { key: 'device_id', header: 'Device' },
         { key: 'channels', header: 'Channels (in/out)' },

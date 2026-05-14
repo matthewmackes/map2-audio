@@ -13,6 +13,10 @@ export interface DeviceMetersRegistrySnapshot {
   input_peak_db: number[]
   output_peak_db: number[]
   source: 'placeholder' | 'engine'
+  /** Unix timestamp (seconds since epoch, float) when the snapshot
+   * was produced. Added in pivot-13b-1; may be absent on older
+   * backends. */
+  captured_at?: number | null
 }
 
 export interface DeviceMetersRegistryEntry {
