@@ -305,7 +305,10 @@ describe('MaschinePage', () => {
     expect(screen.getByRole('heading', { name: 'Hardware Layout + MIDI Map' })).toBeTruthy()
     expect(screen.getAllByText('MAP2:Maschine-MK1').length).toBeGreaterThan(0)
     expect(within(screen.getByTestId('maschine-transport-panel')).getByText('usb-bulk')).toBeTruthy()
-    expect(screen.getByText('Mix')).toBeTruthy()
+    // Carbon's TabPanels keeps every panel mounted, so the "Mix"
+    // encoder label appears twice (Diagnostics' EncoderMap panel and
+    // the Twin's encoder ring labels). Match either via getAllByText.
+    expect(screen.getAllByText('Mix').length).toBeGreaterThan(0)
     expect(screen.getByText('62 slots')).toBeTruthy()
   })
 
@@ -322,7 +325,9 @@ describe('MaschinePage', () => {
     renderPage(['/maschine'])
     const twinTab = screen.getByRole('tab', { name: 'Hardware Twin' })
     expect(twinTab.getAttribute('aria-selected')).toBe('true')
-    expect(screen.getByText(/Photoreal SVG mirror of the MK1/)).toBeInTheDocument()
+    // Cycle 3 wired the real Twin SVG mirror; the placeholder copy is
+    // gone. Anchor on the canonical aria-label of the twin SVG.
+    expect(screen.getByRole('img', { name: 'NI Maschine MK1 hardware twin' })).toBeInTheDocument()
   })
 
   it('T2522 — ?tab=workbench deep-link selects the Profile Workbench tab', () => {
@@ -347,5 +352,12 @@ describe('MaschinePage', () => {
   it('T2522 — ?tab=<unknown> falls back to the default Hardware Twin tab', () => {
     renderPage(['/maschine?tab=bogus'])
     expect(screen.getByRole('tab', { name: 'Hardware Twin' }).getAttribute('aria-selected')).toBe('true')
+  })
+
+  it('T2522-A cycle 3 — Hardware Twin tab renders the live SVG mirror, not the placeholder', () => {
+    renderPage(['/maschine'])
+    expect(screen.getByRole('img', { name: 'NI Maschine MK1 hardware twin' })).toBeInTheDocument()
+    expect(screen.queryByText(/Photoreal SVG mirror of the MK1/)).not.toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Hardware Twin' })).toBeInTheDocument()
   })
 })

@@ -32,6 +32,85 @@
   max-width: 70ch;
 }
 
+/* T2522-A — Hardware Twin v1 (live SVG mirror). */
+.maschine-twin {
+  display: grid;
+  gap: 1rem;
+  padding: 1.25rem !important;
+  margin-top: 1rem;
+}
+
+.maschine-twin__head {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.maschine-twin__head h3 {
+  margin: 0;
+  font-size: var(--cds-heading-03-font-size, 1.25rem);
+  color: var(--cds-text-primary);
+}
+
+.maschine-twin__subtitle {
+  margin: 0.25rem 0 0;
+  color: var(--cds-text-secondary);
+  font-size: 0.875rem;
+  max-width: 70ch;
+}
+
+.maschine-twin__svg-wrap {
+  display: grid;
+  place-items: center;
+  padding: 0.5rem;
+  background: color-mix(in srgb, var(--cds-layer-02) 60%, transparent);
+  border-radius: 6px;
+  border: 1px solid color-mix(in srgb, var(--cds-border-subtle) 60%, transparent);
+}
+
+.maschine-twin__svg {
+  width: 100%;
+  max-width: 800px;
+  height: auto;
+  display: block;
+}
+
+.maschine-twin__pad {
+  transition: fill-opacity var(--map2-dur-fast, 140ms) ease;
+}
+
+.maschine-twin__pad--selected {
+  animation: maschine-twin-pad-pulse 1.2s ease-in-out infinite;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .maschine-twin__pad--selected {
+    animation: none;
+  }
+}
+
+@keyframes maschine-twin-pad-pulse {
+  0%, 100% { stroke-opacity: 1; stroke-width: 3; }
+  50% { stroke-opacity: 0.6; stroke-width: 4; }
+}
+
+.maschine-twin__legend {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.maschine-twin__legend-text {
+  color: var(--cds-text-secondary);
+  font-size: 0.75rem;
+}
+
+.maschine-twin__lcd-canvas {
+  background: #0b1020;
+}
+
 .maschine-page__grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
