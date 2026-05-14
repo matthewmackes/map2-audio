@@ -226,20 +226,21 @@ export function DevicePeakMetersClusterOverview({
     }
   }
 
-  const headers = includeSnapshot
-    ? [
-        { key: 'node', header: 'Node' },
-        { key: 'device_id', header: 'Device' },
-        { key: 'channels', header: 'Channels (in/out)' },
-        { key: 'source', header: 'Metering source' },
-        { key: 'peak', header: 'Peak (dBFS)' },
-      ]
-    : [
-        { key: 'node', header: 'Node' },
-        { key: 'device_id', header: 'Device' },
-        { key: 'channels', header: 'Channels (in/out)' },
-        { key: 'source', header: 'Metering source' },
-      ]
+  // Run-13h cycle 3 — Last seen column when streaming. Hidden in
+  // polling mode because polling rows don't carry per-row ages
+  // sub-second; the column would just be "5 s ago" repeated.
+  const headers: { key: string; header: string }[] = [
+    { key: 'node', header: 'Node' },
+    { key: 'device_id', header: 'Device' },
+    { key: 'channels', header: 'Channels (in/out)' },
+    { key: 'source', header: 'Metering source' },
+  ]
+  if (includeSnapshot) {
+    headers.push({ key: 'peak', header: 'Peak (dBFS)' })
+  }
+  if (useStream) {
+    headers.push({ key: 'lastSeen', header: 'Last seen' })
+  }
 
   if (isError) {
     return (
@@ -332,6 +333,16 @@ export function DevicePeakMetersClusterOverview({
                                   original.ageSeconds,
                                 )}
                               </Tag>
+                            </TableCell>
+                          )
+                        }
+                        if (cell.info.header === 'lastSeen' && original) {
+                          return (
+                            <TableCell
+                              key={cell.id}
+                              data-testid={`cluster-overview-last-seen-${row.id}`}
+                            >
+                              {formatLastSeen(original.ageSeconds)}
                             </TableCell>
                           )
                         }

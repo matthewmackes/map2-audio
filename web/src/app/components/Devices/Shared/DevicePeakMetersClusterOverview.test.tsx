@@ -304,6 +304,112 @@ describe('DevicePeakMetersClusterOverview', () => {
     expect(tag.classList.contains('cds--tag--green')).toBe(true)
   })
 
+  it('renders a Last seen column under useStream with formatted age', () => {
+    const nowSeconds = Date.now() / 1000
+    mockClusterStream.mockReturnValue({
+      local: {
+        devices: [
+          {
+            device_id: 'edirol-ua-1000',
+            input_channels: 10,
+            output_channels: 10,
+            has_engine_source: true,
+            snapshot: {
+              input_peak_db: [-6],
+              output_peak_db: [-3],
+              source: 'engine',
+              captured_at: nowSeconds - 3, // 3 s old
+            },
+          },
+        ],
+      },
+      peers: [],
+      errors: {},
+      hasFirstFrame: true,
+      isConnected: true,
+      lastError: null,
+    })
+    render(<DevicePeakMetersClusterOverview useStream />)
+    expect(screen.getByText('Last seen')).toBeInTheDocument()
+    const cell = screen.getByTestId(
+      'cluster-overview-last-seen-local:edirol-ua-1000',
+    )
+    expect(cell.textContent).toMatch(/3\s*s ago/)
+  })
+
+  it('formats minute-scale staleness in the Last seen column', () => {
+    const nowSeconds = Date.now() / 1000
+    mockClusterStream.mockReturnValue({
+      local: {
+        devices: [
+          {
+            device_id: 'tascam-us144mkii',
+            input_channels: 4,
+            output_channels: 4,
+            has_engine_source: true,
+            snapshot: {
+              input_peak_db: [-12],
+              output_peak_db: [-9],
+              source: 'engine',
+              captured_at: nowSeconds - 125, // ~2 min
+            },
+          },
+        ],
+      },
+      peers: [],
+      errors: {},
+      hasFirstFrame: true,
+      isConnected: true,
+      lastError: null,
+    })
+    render(
+      <DevicePeakMetersClusterOverview
+        useStream
+        staleThresholdSeconds={5}
+      />,
+    )
+    const cell = screen.getByTestId(
+      'cluster-overview-last-seen-local:tascam-us144mkii',
+    )
+    expect(cell.textContent).toMatch(/2\s*m ago/)
+  })
+
+  it('renders "—" in Last seen when row has no captured_at', () => {
+    mockClusterStream.mockReturnValue({
+      local: {
+        devices: [
+          {
+            device_id: 'hotone-jogg',
+            input_channels: 2,
+            output_channels: 2,
+            has_engine_source: false,
+            snapshot: {
+              input_peak_db: [-150],
+              output_peak_db: [-150],
+              source: 'placeholder',
+              captured_at: null,
+            },
+          },
+        ],
+      },
+      peers: [],
+      errors: {},
+      hasFirstFrame: true,
+      isConnected: true,
+      lastError: null,
+    })
+    render(<DevicePeakMetersClusterOverview useStream />)
+    const cell = screen.getByTestId(
+      'cluster-overview-last-seen-local:hotone-jogg',
+    )
+    expect(cell.textContent).toBe('—')
+  })
+
+  it('omits the Last seen column outside of useStream', () => {
+    render(<DevicePeakMetersClusterOverview />)
+    expect(screen.queryByText('Last seen')).not.toBeInTheDocument()
+  })
+
   it('mounts a Peak column when includeSnapshot is true', () => {
     mockCluster.mockReturnValue({
       local: {
