@@ -97,6 +97,56 @@ class RecorderServiceError(RuntimeError):
 
 
 # ---------------------------------------------------------------------------
+# T2521-7 Q12 — SonoBus exclusion gate
+# ---------------------------------------------------------------------------
+#
+# Per the T2521 decision lock (Q12: "no recorder/artifact integration
+# for this transport"), every Recorder code path that accepts an
+# interface ID must reject SonoBus IDs with a structured error.
+# Importing the canonical helper from app.services.sonobus.interface_ids
+# keeps the message + locked-decision rationale consistent across the
+# Recorder, Audio Artifacts, and any future recorder-adjacent service.
+#
+# Call `_assert_no_sonobus_in(interface_ids, service_name="Recorder")`
+# anywhere the Recorder ingests a list of interface IDs. The recorder
+# service today operates on snapshot-bound `tap_matrix` (per-chain
+# enables) rather than raw interface IDs, but the gate exists in this
+# module so future ingestion points have the contract co-located with
+# the rest of the recorder code.
+
+def assert_no_sonobus_interface_ids(
+    interface_ids: Optional[list[str]],
+    *,
+    service_name: str = "Recorder",
+) -> None:
+    """Q12 — reject any SonoBus interface ID in a recorder call path.
+
+    Raises ``RecorderServiceError`` with ``code="sonobus_excluded"`` so
+    routes return a 422 envelope citing the locked decision. Falls
+    through silently for empty / non-SonoBus IDs.
+
+    Wired into the public recorder API now even though `tap_matrix`
+    doesn't yet carry raw interface IDs — keeps the gate co-located
+    with the service it protects.
+    """
+    if not interface_ids:
+        return
+    from app.services.sonobus.interface_ids import (
+        SonoBusInterfaceForbiddenError,
+        assert_not_sonobus_id,
+    )
+
+    for interface_id in interface_ids:
+        try:
+            assert_not_sonobus_id(interface_id, service_name=service_name)
+        except SonoBusInterfaceForbiddenError as exc:
+            raise RecorderServiceError(
+                code="sonobus_excluded",
+                message=str(exc),
+            ) from exc
+
+
+# ---------------------------------------------------------------------------
 # Transport seam (engine IPC) + WS publisher
 # ---------------------------------------------------------------------------
 
