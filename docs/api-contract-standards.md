@@ -141,6 +141,75 @@ Success response:
 
 ---
 
+## Example: device peak-meters (T2519, pivot-13b/c/d)
+
+The unified per-device peak-meter surface lives under the
+`/api/v1/devices` prefix. Every device facade under
+`app/services/devices/*_meters.py` registers at import time with the
+canonical `DeviceMeterSourceRegistry`. The route layer is shared —
+adding a new device requires no route changes, only a new facade.
+
+| Endpoint | Method | Purpose |
+| --- | --- | --- |
+| `/api/v1/devices/{device_id}/peak-meters` | GET | Per-channel peak dBFS + `source` + `captured_at` for one device. |
+| `/api/v1/devices/peak-meters/registry` | GET | Alphabetical enumeration of every registered device with `has_engine_source`. |
+| `/api/v1/devices/peak-meters/registry?include_snapshot=true` | GET | Same enumeration with one inline snapshot per device (single-roundtrip dashboard). |
+| `/api/v1/devices/peak-meters/stream` | WS | 30 fps fan-out of the entire registry. Frame envelope is versioned via `schema_version=1`. |
+| `/api/v1/devices/peak-meters/stream?device_ids=a,b,c` | WS | Same stream restricted to the listed registry IDs. Unknown IDs silently dropped; whitespace + empty segments tolerated. |
+
+Per-device payload shape:
+
+```json
+{
+  "device_id": "edirol-ua-1000",
+  "input_peak_db": [-6.0, -150.0, -150.0, -150.0, -150.0, -150.0, -150.0, -150.0, -150.0, -150.0],
+  "output_peak_db": [-3.0, -150.0, -150.0, -150.0, -150.0, -150.0, -150.0, -150.0, -150.0, -150.0],
+  "source": "engine",
+  "captured_at": 1715731200.5
+}
+```
+
+The `source` field reports the wire-up state:
+
+- `"engine"` — measured from the engine's per-device peak buffer (via `JuceEngineMeterSource`).
+- `"engine_unavailable"` — engine wire-up installed but the reader callable raised. Silence-shaped payload, still timestamped.
+- `"placeholder"` — no engine source installed; values are the silence sentinel (-150.0 dBFS).
+
+The `captured_at` field is a unix timestamp (seconds since epoch, float). Backfilled by `DeviceMeterSourceRegistry.read_snapshot` with wall-clock when the underlying source omitted it; preserved verbatim when the source supplied a value. May be absent on responses from very old backends.
+
+WebSocket frame shape (every tick):
+
+```json
+{
+  "type": "device_peak_meters:registry",
+  "schema_version": 1,
+  "data": {
+    "devices": [
+      {
+        "device_id": "edirol-ua-1000",
+        "input_channels": 10,
+        "output_channels": 10,
+        "has_engine_source": false,
+        "snapshot": {
+          "input_peak_db": [...],
+          "output_peak_db": [...],
+          "source": "placeholder",
+          "captured_at": 1715731200.5
+        }
+      }
+    ]
+  }
+}
+```
+
+Initial state frame arrives immediately on connect; subsequent frames tick at `WS_BROADCAST_INTERVAL_SECONDS` (default 30 fps; module constant patchable for tests). Default cadence matches the MAP2 metering broadcast floor documented in `CLAUDE.md` § Service Polling Floors.
+
+Custom error code registered for this surface:
+
+- `device_not_registered` — the per-device GET path received a device_id absent from the registry. Returned with HTTP 404 wrapped in the standard envelope.
+
+---
+
 ## Example: sonobus (T2521)
 
 The SonoBus / AOO remote-audio transport (T2521) ships under the
