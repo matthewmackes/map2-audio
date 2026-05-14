@@ -285,6 +285,38 @@ export function DevicePeakMetersClusterOverview({
     }
   }
 
+  // Run-13j — synthetic rows for peers that appear in `errors` but
+  // not in `peers`. Operators looking at the table want to see *which*
+  // node went unreachable, not have it silently vanish below the
+  // failed-peer InlineNotification. Honors the same nodeFilter as
+  // the live rows so a single-peer zoom doesn't show every other
+  // down node.
+  const peerNodeIds = new Set(peers.map((p) => p.node_id))
+  for (const [nodeId, errMsg] of Object.entries(errors)) {
+    if (nodeId === '@local') continue
+    if (peerNodeIds.has(nodeId)) continue
+    if (
+      nodeFilter !== undefined &&
+      nodeFilter !== nodeId &&
+      nodeFilter !== 'local'
+    ) {
+      // When nodeFilter targets a specific peer that didn't fail,
+      // skip every other peer's down row. Filtering against
+      // hostname is best-effort — errors are keyed by node_id only.
+      continue
+    }
+    rows.push({
+      id: `down:${nodeId}`,
+      node: nodeId,
+      device_id: `(node down: ${errMsg || 'unreachable'})`,
+      channels: '—',
+      source: 'engine_unavailable',
+      peak: '—',
+      ageSeconds: null,
+      isStale: false,
+    })
+  }
+
   // Run-13h cycle 3 — Last seen column when streaming. Hidden in
   // polling mode because polling rows don't carry per-row ages
   // sub-second; the column would just be "5 s ago" repeated.

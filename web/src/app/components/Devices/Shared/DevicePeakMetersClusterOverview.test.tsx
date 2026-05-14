@@ -624,6 +624,72 @@ describe('DevicePeakMetersClusterOverview', () => {
     expect(table.querySelector('[aria-sort]')).toBeNull()
   })
 
+  it('renders a synthetic row for peers in errors but not peers', () => {
+    mockCluster.mockReturnValue({
+      local: { devices: [] },
+      peers: [],
+      errors: { 'peer-A': 'http 504' },
+      isError: false,
+      isLoading: false,
+    })
+    render(<DevicePeakMetersClusterOverview />)
+    // Node tag for the synthetic row uses the down:<node_id> id.
+    const downRow = screen.getByTestId('cluster-overview-node-down:peer-A')
+    expect(downRow).toHaveTextContent('peer-A')
+    const sourceTag = screen.getByTestId(
+      'cluster-overview-source-down:peer-A',
+    )
+    expect(sourceTag).toHaveTextContent('Engine unavailable')
+  })
+
+  it('does not duplicate a node down row when the peer also appears in peers', () => {
+    mockCluster.mockReturnValue({
+      local: { devices: [] },
+      peers: [
+        {
+          node_id: 'peer-A',
+          hostname: 'a.local',
+          devices: [
+            {
+              device_id: 'edirol-ua-1000',
+              input_channels: 10,
+              output_channels: 10,
+              has_engine_source: true,
+            },
+          ],
+          health: 'ok',
+        },
+      ],
+      errors: { 'peer-A': 'transient blip' },
+      isError: false,
+      isLoading: false,
+    })
+    render(<DevicePeakMetersClusterOverview />)
+    expect(
+      screen.getByTestId('cluster-overview-node-peer-A:edirol-ua-1000'),
+    ).toBeInTheDocument()
+    expect(
+      screen.queryByTestId('cluster-overview-node-down:peer-A'),
+    ).not.toBeInTheDocument()
+  })
+
+  it('omits unrelated node-down rows when nodeFilter is set', () => {
+    mockCluster.mockReturnValue({
+      local: { devices: [] },
+      peers: [],
+      errors: { 'peer-A': 'http 504', 'peer-B': 'timeout' },
+      isError: false,
+      isLoading: false,
+    })
+    render(<DevicePeakMetersClusterOverview nodeFilter="peer-A" />)
+    expect(
+      screen.getByTestId('cluster-overview-node-down:peer-A'),
+    ).toBeInTheDocument()
+    expect(
+      screen.queryByTestId('cluster-overview-node-down:peer-B'),
+    ).not.toBeInTheDocument()
+  })
+
   it('mounts a Peak column when includeSnapshot is true', () => {
     mockCluster.mockReturnValue({
       local: {
