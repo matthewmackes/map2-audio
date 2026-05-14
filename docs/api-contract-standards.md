@@ -160,6 +160,7 @@ adding a new device requires no route changes, only a new facade.
 | `/api/v1/devices/peak-meters/cluster/registry?include_snapshot=true` | GET | Same fan-out, propagating include_snapshot to every peer fetch so each device entry carries an inline snapshot. |
 | `/api/v1/devices/peak-meters/cluster/stream` | WS | Cluster WS fan-in: every tick recomputes the cluster registry and pushes a versioned frame. Default cadence 5 fps via `CLUSTER_WS_BROADCAST_INTERVAL_SECONDS`. Frame type: `device_peak_meters:cluster_registry`. |
 | `/api/v1/devices/peak-meters/cluster/stream?include_snapshot=true` | WS | Same stream with inline per-device snapshots in every frame. |
+| `/api/v1/devices/peak-meters/cluster/stream?node_ids=local,peer-A` | WS | Same stream restricted to the listed node IDs. `local` is a reserved keyword for the local slice; other entries match `peer.node_id` or `peer.hostname`. Unknown IDs silently dropped. |
 
 Per-device payload shape:
 

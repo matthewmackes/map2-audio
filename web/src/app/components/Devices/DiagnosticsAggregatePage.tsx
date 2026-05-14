@@ -170,6 +170,8 @@ export function DiagnosticsAggregatePage(): React.JSX.Element {
           title="Cluster-wide metering (live)"
           includeSnapshot
           useStream
+          sortable
+          showPerNodeCounts
         />
       </section>
 

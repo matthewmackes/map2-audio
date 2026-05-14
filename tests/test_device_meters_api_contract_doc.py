@@ -50,6 +50,15 @@ def test_documents_frontend_dedup_pattern():
     assert "Frontend dedup" in text
 
 
+def test_documents_cluster_stream_node_ids_filter():
+    """Run-13i cycle 5 — cluster stream node_ids filter must be
+    listed in the endpoint table with the 'local' keyword
+    documented."""
+    text = _text()
+    assert "node_ids=local,peer-A" in text
+    assert "reserved keyword" in text
+
+
 def test_documents_cluster_envelope():
     """Run-13f cycle 5 — the cluster fan-out envelope must be
     documented so consumers know to read local + peers + errors."""
