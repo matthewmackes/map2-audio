@@ -50,6 +50,16 @@ export interface DevicePeakMetersClusterOverviewProps {
    * shows the age. Default 10 s — matches the local overview.
    * Run-13h cycle 2. */
   staleThresholdSeconds?: number
+  /** Restrict the rendered rows to one node. Pass `"local"` for the
+   * local-node rows or a peer `node_id` for a single peer slice.
+   * When omitted, every node's rows render (existing behavior).
+   * Run-13h cycle 4. */
+  nodeFilter?: string
+  /** When `true`, render a small summary row above the table with
+   * the number of devices per node and total channel count. Off by
+   * default so single-node operators aren't shown a noisy stat.
+   * Run-13h cycle 4. */
+  showPerNodeCounts?: boolean
 }
 
 const DEFAULT_STALE_THRESHOLD_S = 10
@@ -136,6 +146,8 @@ export function DevicePeakMetersClusterOverview({
   includeSnapshot,
   useStream,
   staleThresholdSeconds,
+  nodeFilter,
+  showPerNodeCounts,
 }: DevicePeakMetersClusterOverviewProps): React.JSX.Element {
   const staleThreshold = staleThresholdSeconds ?? DEFAULT_STALE_THRESHOLD_S
 
@@ -206,21 +218,56 @@ export function DevicePeakMetersClusterOverview({
   }
 
   const rows: ClusterRow[] = []
-  // Local devices first so an operator's own bench leads the table.
-  for (const dev of local?.devices ?? []) {
-    rows.push(buildRow(dev, `local:${dev.device_id}`, 'local'))
+  // Per-node tallies for the optional summary row (run-13h cycle 4).
+  // Keyed by the node label as it appears in the table — keeps
+  // identity consistent with the filter logic below.
+  const perNodeDeviceCounts: Map<string, number> = new Map()
+  const perNodeChannelTotals: Map<string, number> = new Map()
+
+  const wantLocal = nodeFilter === undefined || nodeFilter === 'local'
+  if (wantLocal) {
+    for (const dev of local?.devices ?? []) {
+      rows.push(buildRow(dev, `local:${dev.device_id}`, 'local'))
+    }
   }
-  // Peer devices grouped by node, alphabetical inside each.
+  if (local?.devices?.length) {
+    perNodeDeviceCounts.set('local', local.devices.length)
+    perNodeChannelTotals.set(
+      'local',
+      (local.devices ?? []).reduce(
+        (sum, d) => sum + d.input_channels + d.output_channels,
+        0,
+      ),
+    )
+  }
+
   for (const peer of peers) {
+    const include =
+      nodeFilter === undefined ||
+      nodeFilter === peer.node_id ||
+      nodeFilter === peer.hostname
     const sortedDevices = [...peer.devices].sort((a, b) =>
       a.device_id.localeCompare(b.device_id),
     )
-    for (const dev of sortedDevices) {
-      rows.push(
-        buildRow(
-          dev,
-          `${peer.node_id}:${dev.device_id}`,
-          peer.hostname || peer.node_id,
+    if (include) {
+      for (const dev of sortedDevices) {
+        rows.push(
+          buildRow(
+            dev,
+            `${peer.node_id}:${dev.device_id}`,
+            peer.hostname || peer.node_id,
+          ),
+        )
+      }
+    }
+    if (peer.devices.length) {
+      const label = peer.hostname || peer.node_id
+      perNodeDeviceCounts.set(label, peer.devices.length)
+      perNodeChannelTotals.set(
+        label,
+        peer.devices.reduce(
+          (sum, d) => sum + d.input_channels + d.output_channels,
+          0,
         ),
       )
     }
@@ -273,6 +320,41 @@ export function DevicePeakMetersClusterOverview({
           style={{ marginBottom: 8 }}
           data-testid="device-peak-meters-cluster-overview-errors"
         />
+      ) : null}
+      {showPerNodeCounts && perNodeDeviceCounts.size > 0 ? (
+        <div
+          style={{
+            display: 'flex',
+            flexWrap: 'wrap',
+            gap: 8,
+            marginBottom: 8,
+          }}
+          data-testid="device-peak-meters-cluster-overview-per-node-counts"
+        >
+          {Array.from(perNodeDeviceCounts.entries()).map(([label, count]) => {
+            const channels = perNodeChannelTotals.get(label) ?? 0
+            return (
+              <Tag
+                key={`per-node:${label}`}
+                type={label === 'local' ? 'blue' : 'cool-gray'}
+                size="sm"
+                data-testid={`per-node-count-${label}`}
+              >
+                {`${label}: ${count} device${count === 1 ? '' : 's'} · ${channels} ch`}
+              </Tag>
+            )
+          })}
+        </div>
+      ) : null}
+      {nodeFilter !== undefined ? (
+        <div
+          style={{ marginBottom: 8 }}
+          data-testid="device-peak-meters-cluster-overview-filter-active"
+        >
+          <Tag type="purple" size="sm">
+            {`Filter: ${nodeFilter}`}
+          </Tag>
+        </div>
       ) : null}
       <DataTable rows={rows} headers={headers} size="sm">
         {({

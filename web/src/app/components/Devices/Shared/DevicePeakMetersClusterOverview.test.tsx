@@ -410,6 +410,173 @@ describe('DevicePeakMetersClusterOverview', () => {
     expect(screen.queryByText('Last seen')).not.toBeInTheDocument()
   })
 
+  it('restricts rows to a single peer when nodeFilter is set', () => {
+    mockCluster.mockReturnValue({
+      local: {
+        devices: [
+          {
+            device_id: 'edirol-ua-1000',
+            input_channels: 10,
+            output_channels: 10,
+            has_engine_source: true,
+          },
+        ],
+      },
+      peers: [
+        {
+          node_id: 'peer-A',
+          hostname: 'a.local',
+          devices: [
+            {
+              device_id: 'tascam-us144mkii',
+              input_channels: 4,
+              output_channels: 4,
+              has_engine_source: false,
+            },
+          ],
+          health: 'ok',
+        },
+        {
+          node_id: 'peer-B',
+          hostname: 'b.local',
+          devices: [
+            {
+              device_id: 'lexicon-mpx1',
+              input_channels: 2,
+              output_channels: 2,
+              has_engine_source: false,
+            },
+          ],
+          health: 'ok',
+        },
+      ],
+      errors: {},
+      isError: false,
+      isLoading: false,
+    })
+    render(<DevicePeakMetersClusterOverview nodeFilter="peer-A" />)
+    expect(
+      screen.getByTestId('cluster-overview-node-peer-A:tascam-us144mkii'),
+    ).toBeInTheDocument()
+    expect(
+      screen.queryByTestId('cluster-overview-node-local:edirol-ua-1000'),
+    ).not.toBeInTheDocument()
+    expect(
+      screen.queryByTestId('cluster-overview-node-peer-B:lexicon-mpx1'),
+    ).not.toBeInTheDocument()
+    expect(
+      screen.getByTestId('device-peak-meters-cluster-overview-filter-active'),
+    ).toHaveTextContent('peer-A')
+  })
+
+  it('restricts rows to local devices when nodeFilter="local"', () => {
+    mockCluster.mockReturnValue({
+      local: {
+        devices: [
+          {
+            device_id: 'edirol-ua-1000',
+            input_channels: 10,
+            output_channels: 10,
+            has_engine_source: true,
+          },
+        ],
+      },
+      peers: [
+        {
+          node_id: 'peer-A',
+          hostname: 'a.local',
+          devices: [
+            {
+              device_id: 'tascam-us144mkii',
+              input_channels: 4,
+              output_channels: 4,
+              has_engine_source: false,
+            },
+          ],
+          health: 'ok',
+        },
+      ],
+      errors: {},
+      isError: false,
+      isLoading: false,
+    })
+    render(<DevicePeakMetersClusterOverview nodeFilter="local" />)
+    expect(
+      screen.getByTestId('cluster-overview-node-local:edirol-ua-1000'),
+    ).toBeInTheDocument()
+    expect(
+      screen.queryByTestId('cluster-overview-node-peer-A:tascam-us144mkii'),
+    ).not.toBeInTheDocument()
+  })
+
+  it('renders per-node count Tags when showPerNodeCounts is true', () => {
+    mockCluster.mockReturnValue({
+      local: {
+        devices: [
+          {
+            device_id: 'edirol-ua-1000',
+            input_channels: 10,
+            output_channels: 10,
+            has_engine_source: true,
+          },
+        ],
+      },
+      peers: [
+        {
+          node_id: 'peer-A',
+          hostname: 'a.local',
+          devices: [
+            {
+              device_id: 'tascam-us144mkii',
+              input_channels: 4,
+              output_channels: 4,
+              has_engine_source: false,
+            },
+          ],
+          health: 'ok',
+        },
+      ],
+      errors: {},
+      isError: false,
+      isLoading: false,
+    })
+    render(<DevicePeakMetersClusterOverview showPerNodeCounts />)
+    expect(
+      screen.getByTestId('device-peak-meters-cluster-overview-per-node-counts'),
+    ).toBeInTheDocument()
+    const localTag = screen.getByTestId('per-node-count-local')
+    const peerTag = screen.getByTestId('per-node-count-a.local')
+    expect(localTag.textContent).toMatch(/local: 1 device/)
+    expect(localTag.textContent).toMatch(/20 ch/)
+    expect(peerTag.textContent).toMatch(/a\.local: 1 device/)
+    expect(peerTag.textContent).toMatch(/8 ch/)
+  })
+
+  it('omits per-node count Tags by default', () => {
+    mockCluster.mockReturnValue({
+      local: {
+        devices: [
+          {
+            device_id: 'edirol-ua-1000',
+            input_channels: 10,
+            output_channels: 10,
+            has_engine_source: true,
+          },
+        ],
+      },
+      peers: [],
+      errors: {},
+      isError: false,
+      isLoading: false,
+    })
+    render(<DevicePeakMetersClusterOverview />)
+    expect(
+      screen.queryByTestId(
+        'device-peak-meters-cluster-overview-per-node-counts',
+      ),
+    ).not.toBeInTheDocument()
+  })
+
   it('mounts a Peak column when includeSnapshot is true', () => {
     mockCluster.mockReturnValue({
       local: {
