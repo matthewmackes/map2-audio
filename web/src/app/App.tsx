@@ -139,6 +139,7 @@ const AvbServicesNetworkPage     = lazy(() => import('./pages/avb-services/AvbSe
 const AvbServicesAvdeccBindingWizardPage = lazy(() => import('./pages/avb-services/AvbServicesAvdeccBindingWizardPage').then(m => ({ default: m.AvbServicesAvdeccBindingWizardPage })))
 // T2521-6 — SonoBus/AOO remote-audio transport mount scaffold.
 const SonoBusOverviewPage        = lazy(() => import('./pages/sonobus/SonoBusOverviewPage').then(m => ({ default: m.SonoBusOverviewPage })))
+const SonoBusConnectionsPage     = lazy(() => import('./pages/sonobus/SonoBusConnectionsPage').then(m => ({ default: m.SonoBusConnectionsPage })))
 // T2491 (2026-05-02 cleanup) — the 7 MidiHub*Page lazy imports
 // retired with the /midi-hub/* mount. Canonical /midi/* mount uses
 // MidiServicesConnectionsPage / MidiServicesPresetsPage / etc. The
@@ -951,6 +952,7 @@ export function App() {
                                     T2521 cycles. See
                                     docs/architecture/SONOBUS_AOO_TRANSPORT.md. */}
                                 <Route path="/sonobus" element={<RouteBoundary title="SonoBus view crashed" actionLabel="Reload SonoBus"><SonoBusOverviewPage /></RouteBoundary>} />
+                                <Route path="/sonobus/connections" element={<RouteBoundary title="SonoBus Connections crashed" actionLabel="Reload SonoBus Connections"><SonoBusConnectionsPage /></RouteBoundary>} />
                                 <Route path={HOST_MACHINE_ROUTE} element={<RouteBoundary title="Host Machine view crashed" actionLabel="Reload host machine"><HostMachinePage /></RouteBoundary>} />
                                 <Route path="/grid" element={<Navigate to="/snapshot-editor" replace />} />
                                 <Route path="/juce-grid" element={<Navigate to="/snapshot-editor" replace />} />

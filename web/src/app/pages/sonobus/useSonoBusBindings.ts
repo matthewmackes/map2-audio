@@ -122,3 +122,81 @@ export function useSonoBusBindingsMatrix() {
     staleTime: 0,
   })
 }
+
+export interface SonoBusClusterPeerMatrix {
+  node_id: string
+  hostname: string
+  matrix: Record<string, Record<string, SonoBusMatrixCell>>
+  total_bindings: number
+  health: string
+}
+
+export interface SonoBusClusterBindingsMatrixResponse {
+  local: SonoBusBindingsMatrixResponse
+  peers: SonoBusClusterPeerMatrix[]
+  errors: Record<string, string>
+}
+
+async function fetchSonoBusClusterMatrix(): Promise<SonoBusClusterBindingsMatrixResponse> {
+  const response = await fetch('/api/sonobus/cluster/bindings/matrix')
+  if (!response.ok) {
+    throw new Error(`sonobus cluster matrix failed: ${response.status}`)
+  }
+  return (await response.json()) as SonoBusClusterBindingsMatrixResponse
+}
+
+export function useSonoBusClusterMatrix() {
+  return useQuery({
+    queryKey: ['sonobus-cluster-matrix'],
+    queryFn: fetchSonoBusClusterMatrix,
+    refetchInterval: 5000,
+    staleTime: 0,
+  })
+}
+
+export interface SonoBusPeerSummary {
+  peer_id: string
+  listener_node_id: string | null
+  listener_endpoint: string | null
+  listener_capability: string | null
+  binding_count: number
+  enabled_binding_count: number
+}
+
+export interface SonoBusGroupSummary {
+  group_id: string
+  session_label: string | null
+  binding_count: number
+  enabled_binding_count: number
+  channel_count_total: number
+}
+
+async function fetchSonoBusPeers(): Promise<SonoBusPeerSummary[]> {
+  const response = await fetch('/api/sonobus/peers')
+  if (!response.ok) throw new Error(`sonobus peers failed: ${response.status}`)
+  return (await response.json()) as SonoBusPeerSummary[]
+}
+
+async function fetchSonoBusGroups(): Promise<SonoBusGroupSummary[]> {
+  const response = await fetch('/api/sonobus/groups')
+  if (!response.ok) throw new Error(`sonobus groups failed: ${response.status}`)
+  return (await response.json()) as SonoBusGroupSummary[]
+}
+
+export function useSonoBusPeers() {
+  return useQuery({
+    queryKey: ['sonobus-peers'],
+    queryFn: fetchSonoBusPeers,
+    refetchInterval: 5000,
+    staleTime: 0,
+  })
+}
+
+export function useSonoBusGroups() {
+  return useQuery({
+    queryKey: ['sonobus-groups'],
+    queryFn: fetchSonoBusGroups,
+    refetchInterval: 5000,
+    staleTime: 0,
+  })
+}
