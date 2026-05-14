@@ -10,10 +10,26 @@
 // the placeholder. Renders nothing structural beyond the table — the
 // caller decides where to mount it.
 
-import { DataTable, Table, TableBody, TableCell, TableContainer, TableHead, TableHeader, TableRow, Tag } from '@carbon/react'
+import { useMemo, useState } from 'react'
+import {
+  ContentSwitcher,
+  DataTable,
+  Switch,
+  Table,
+  TableBody,
+  TableCell,
+  TableContainer,
+  TableHead,
+  TableHeader,
+  TableRow,
+  Tag,
+  Toggle,
+} from '@carbon/react'
 
 import { useDevicesPeakMetersRegistry } from '../../../hooks/useDevicesPeakMetersRegistry'
 import { useDevicesPeakMetersStream } from '../../../hooks/useDevicesPeakMetersStream'
+
+export type DevicePeakMetersOverviewSortMode = 'name' | 'source'
 
 export interface DevicePeakMetersOverviewProps {
   /** Optional title above the table. Defaults to "Per-device metering". */
@@ -29,6 +45,13 @@ export interface DevicePeakMetersOverviewProps {
    * registry route. Implies `includeSnapshot` semantics — every WS
    * frame carries the full per-device snapshot. */
   useStream?: boolean
+  /** When true, mount the column-toggle row + sort switcher above the
+   * table (pivot-13b cycle 4 / Pick-3 of the eleventh-run handoff).
+   * Persisted state stays in component-local React state — the caller
+   * doesn't have to wire any storage. */
+  showControls?: boolean
+  /** Initial sort mode when `showControls` is on. Defaults to `name`. */
+  initialSortMode?: DevicePeakMetersOverviewSortMode
 }
 
 interface OverviewRow {
@@ -79,6 +102,8 @@ export function DevicePeakMetersOverview({
   refetchIntervalMs,
   includeSnapshot,
   useStream,
+  showControls,
+  initialSortMode,
 }: DevicePeakMetersOverviewProps) {
   const pollingResult = useDevicesPeakMetersRegistry({
     refetchIntervalMs,
@@ -95,30 +120,70 @@ export function DevicePeakMetersOverview({
     ? !streamResult.hasFirstFrame
     : pollingResult.isLoading
 
+  const [splitChannels, setSplitChannels] = useState<boolean>(false)
+  const [sortMode, setSortMode] = useState<DevicePeakMetersOverviewSortMode>(
+    initialSortMode ?? 'name',
+  )
+
   // Streaming frames always include a snapshot; treat the table as if
   // includeSnapshot is on in that case.
   const showPeakColumn = Boolean(includeSnapshot || useStream)
 
-  const headers = showPeakColumn
-    ? [
-        { key: 'device_id', header: 'Device' },
-        { key: 'channels', header: 'Channels (in/out)' },
-        { key: 'source', header: 'Metering source' },
-        { key: 'peak', header: 'Peak (dBFS)' },
-      ]
-    : [
-        { key: 'device_id', header: 'Device' },
-        { key: 'channels', header: 'Channels (in/out)' },
-        { key: 'source', header: 'Metering source' },
-      ]
+  const headers = useMemo(() => {
+    const cols: { key: string; header: string }[] = [
+      { key: 'device_id', header: 'Device' },
+    ]
+    if (showControls && splitChannels) {
+      cols.push(
+        { key: 'inputs', header: 'Inputs' },
+        { key: 'outputs', header: 'Outputs' },
+      )
+    } else {
+      cols.push({ key: 'channels', header: 'Channels (in/out)' })
+    }
+    cols.push({ key: 'source', header: 'Metering source' })
+    if (showPeakColumn) {
+      cols.push({ key: 'peak', header: 'Peak (dBFS)' })
+    }
+    return cols
+  }, [showControls, splitChannels, showPeakColumn])
 
-  const rows: OverviewRow[] = devices.map((d) => ({
+  const baseRows: OverviewRow[] = devices.map((d) => ({
     id: d.device_id,
     device_id: d.device_id,
     channels: `${d.input_channels} / ${d.output_channels}`,
     source: d.has_engine_source ? 'engine' : 'placeholder',
     peak: formatPeak(d.snapshot ?? null),
   }))
+
+  const splitMeta = useMemo(() => {
+    const out: Record<string, { inputs: string; outputs: string }> = {}
+    for (const d of devices) {
+      out[d.device_id] = {
+        inputs: String(d.input_channels),
+        outputs: String(d.output_channels),
+      }
+    }
+    return out
+  }, [devices])
+
+  const rows: OverviewRow[] = useMemo(() => {
+    const list = [...baseRows]
+    if (sortMode === 'source') {
+      // Live (engine) devices first, then placeholders. Stable by
+      // device_id within each group so the operator sees a
+      // deterministic ordering.
+      list.sort((a, b) => {
+        const aLive = a.source === 'engine' ? 0 : 1
+        const bLive = b.source === 'engine' ? 0 : 1
+        if (aLive !== bLive) return aLive - bLive
+        return a.device_id.localeCompare(b.device_id)
+      })
+    } else {
+      list.sort((a, b) => a.device_id.localeCompare(b.device_id))
+    }
+    return list
+  }, [baseRows, sortMode])
 
   if (isError) {
     return (
@@ -139,6 +204,34 @@ export function DevicePeakMetersOverview({
   return (
     <div data-testid="device-peak-meters-overview">
       {title ? <h4 style={{ marginBottom: 8 }}>{title}</h4> : null}
+      {showControls ? (
+        <div
+          data-testid="device-peak-meters-overview-controls"
+          style={{ display: 'flex', gap: 24, marginBottom: 12, alignItems: 'center' }}
+        >
+          <Toggle
+            id="device-peak-meters-overview-split-channels"
+            labelText="Channel columns"
+            labelA="Combined"
+            labelB="Split"
+            toggled={splitChannels}
+            onToggle={(checked: boolean) => setSplitChannels(checked)}
+            data-testid="device-peak-meters-overview-toggle-split"
+          />
+          <ContentSwitcher
+            selectedIndex={sortMode === 'name' ? 0 : 1}
+            onChange={({ name }: { name?: string }) => {
+              if (name === 'source') setSortMode('source')
+              else setSortMode('name')
+            }}
+            size="sm"
+            data-testid="device-peak-meters-overview-sort"
+          >
+            <Switch name="name" text="Sort: name" />
+            <Switch name="source" text="Sort: live first" />
+          </ContentSwitcher>
+        </div>
+      ) : null}
       <DataTable rows={rows} headers={headers} size="sm">
         {({
           rows: tblRows,
@@ -170,6 +263,14 @@ export function DevicePeakMetersOverview({
                               {sourceTag(original?.source === 'engine')}
                             </TableCell>
                           )
+                        }
+                        if (cell.info.header === 'inputs') {
+                          const meta = splitMeta[row.id]
+                          return <TableCell key={cell.id}>{meta?.inputs ?? '—'}</TableCell>
+                        }
+                        if (cell.info.header === 'outputs') {
+                          const meta = splitMeta[row.id]
+                          return <TableCell key={cell.id}>{meta?.outputs ?? '—'}</TableCell>
                         }
                         return <TableCell key={cell.id}>{cell.value}</TableCell>
                       })}

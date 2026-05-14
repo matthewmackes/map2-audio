@@ -392,7 +392,7 @@ const baseNavigationCatalog: ShellNavigationItem[] = [
     homeSection: 'AVB',
     includeInAdvancedMenu: true,
     pinnable: true,
-    maturity: 'alpha',
+    maturity: 'experimental',
     kind: 'link',
     showOnHome: true,
   },
