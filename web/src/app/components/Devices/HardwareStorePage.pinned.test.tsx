@@ -71,6 +71,14 @@ jest.mock('../../hooks/useDevicesPeakMetersRegistry', () => ({
   }),
 }))
 
+// Run-13g cycle 2 — cluster registry hook now polled from this page.
+// Stub it so single-node tests don't accidentally show the cluster
+// overview.
+const mockCluster = jest.fn()
+jest.mock('../../hooks/useDevicesPeakMetersClusterRegistry', () => ({
+  useDevicesPeakMetersClusterRegistry: () => mockCluster(),
+}))
+
 // usePinnedDevices is the main lever for these tests.
 const mockUsePinnedDevices = jest.fn<readonly string[], []>()
 jest.mock('../../state/uiSettings', () => ({
@@ -101,6 +109,14 @@ beforeEach(() => {
     hasFirstFrame: true,
     isConnected: true,
     lastError: null,
+  })
+  // Default: no cluster peers → cluster overview stays hidden.
+  mockCluster.mockReturnValue({
+    local: { devices: [] },
+    peers: [],
+    errors: {},
+    isError: false,
+    isLoading: false,
   })
 })
 
@@ -166,4 +182,37 @@ test('HardwareStorePage: omits overview when pins are non-metered surfaces', asy
     expect(screen.getByText('Hardware Store')).toBeInTheDocument()
   })
   expect(screen.queryByTestId('hwstore-pinned-meters')).not.toBeInTheDocument()
+})
+
+test('HardwareStorePage: omits cluster overview on a single-node rig', async () => {
+  mockUsePinnedDevices.mockReturnValue([])
+  renderShell()
+  await waitFor(() => {
+    expect(screen.getByText('Hardware Store')).toBeInTheDocument()
+  })
+  // No peers → cluster overview hidden.
+  expect(screen.queryByTestId('hwstore-cluster-meters')).not.toBeInTheDocument()
+})
+
+test('HardwareStorePage: mounts cluster overview when peers are discovered', async () => {
+  mockUsePinnedDevices.mockReturnValue([])
+  mockCluster.mockReturnValue({
+    local: { devices: [] },
+    peers: [
+      {
+        node_id: 'peer-A',
+        hostname: 'a.local',
+        devices: [],
+        health: 'ok',
+      },
+    ],
+    errors: {},
+    isError: false,
+    isLoading: false,
+  })
+  renderShell()
+  await waitFor(() => {
+    expect(screen.getByTestId('hwstore-cluster-meters')).toBeInTheDocument()
+  })
+  expect(screen.getByText('Cluster-wide metering')).toBeInTheDocument()
 })

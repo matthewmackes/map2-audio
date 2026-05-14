@@ -41,6 +41,8 @@ import {
 } from '../../data/legacyDeviceManifest'
 import { usePinnedDevices } from '../../state/uiSettings'
 import { DevicePeakMetersOverview } from './Shared/DevicePeakMetersOverview'
+import { DevicePeakMetersClusterOverview } from './Shared/DevicePeakMetersClusterOverview'
+import { useDevicesPeakMetersClusterRegistry } from '../../hooks/useDevicesPeakMetersClusterRegistry'
 import { useDeviceBindingsByProfileKey } from './hooks/useDeviceBindingsByProfileKey'
 // Audit Arch-13 (cycle 56): pure data-shaping helpers extracted to a
 // sibling module so they are unit-testable without mounting the page.
@@ -106,6 +108,14 @@ export function HardwareStorePage(): React.JSX.Element {
     () => meterRegistryIdsFromPinnedIds(pinnedDevices),
     [pinnedDevices],
   )
+
+  // Run-13g cycle 2 — only mount the cluster overview tile when at
+  // least one peer is discovered on the network. Single-node
+  // operators don't see an empty "Cluster-wide metering" section.
+  const cluster = useDevicesPeakMetersClusterRegistry({
+    refetchIntervalMs: 10_000,
+  })
+  const hasClusterPeers = cluster.peers.length > 0
   const profilesQuery = useDeviceProfiles()
   const packsQuery = usePackSources()
   const connectedFallback = useConnectedDevices()
@@ -381,6 +391,19 @@ export function HardwareStorePage(): React.JSX.Element {
             title="Pinned devices (live)"
             useStream
             deviceIds={pinnedMeterIds}
+          />
+        </section>
+      )}
+
+      {hasClusterPeers && (
+        <section
+          className="hwstore-page__cluster-meters"
+          data-testid="hwstore-cluster-meters"
+          style={{ marginBottom: 24 }}
+        >
+          <DevicePeakMetersClusterOverview
+            title="Cluster-wide metering"
+            includeSnapshot
           />
         </section>
       )}
