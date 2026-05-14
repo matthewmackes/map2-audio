@@ -1,6 +1,7 @@
 import { Tag, Tile } from '@carbon/react'
 import { useEffect, useMemo, useState } from 'react'
 
+import { MaschinePadCurveEditor } from './MaschinePadCurveEditor'
 import type {
   MaschineDaemonStatus,
   MaschineEncoderMap,
@@ -242,6 +243,8 @@ export function MaschinePerformanceTab({
           ))}
         </div>
       </Tile>
+
+      <MaschinePadCurveEditor hidEvents={hidEvents} />
 
       <Tile className="maschine-perf__scene-strip">
         <h4 className="maschine-perf__strip-title">Scenes</h4>

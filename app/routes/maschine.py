@@ -10,6 +10,11 @@ from pydantic import BaseModel, ConfigDict, Field
 from app.config import get_config as get_runtime_config_manager
 from app.database import get_session
 from app.services.maschine.admin_console import get_maschine_admin_console_service
+from app.services.maschine.calibration_facade import (
+    get_pressure_curves as facade_get_pressure_curves,
+    update_pressure_curves as facade_update_pressure_curves,
+)
+from app.services.maschine.calibration_store import CalibrationSchemaError
 from app.services.maschine.incident_log import get_maschine_incident_log_service
 from app.services.maschine_lcd_service import get_maschine_lcd_render_service
 from app.services.maschine_service import get_maschine_service
@@ -18,6 +23,7 @@ from app.services.maschine.midi_map_config import (
     save_midi_map_config,
     MaschineMidiMapConfig,
 )
+from fastapi import HTTPException
 
 router = APIRouter(prefix="/api/maschine", tags=["maschine"])
 
@@ -387,6 +393,35 @@ async def clear_maschine_platform_event_overlay() -> dict[str, Any]:
         "status": "ok",
         "overlay": overlay,
     }
+
+
+class MaschinePressureCurvesRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    pressure_curves: dict[str, Any]
+
+
+@router.get("/calibration/pressure-curves")
+async def get_maschine_pressure_curves() -> dict[str, Any]:
+    """T2522-C cycle 6 — return the active device's pressure-curve
+    calibration block. Falls back to the linear default when no
+    calibration file exists on disk yet."""
+    payload = facade_get_pressure_curves()
+    return {"status": "ok", **payload}
+
+
+@router.put("/calibration/pressure-curves")
+async def update_maschine_pressure_curves(
+    request: MaschinePressureCurvesRequest,
+) -> dict[str, Any]:
+    """T2522-C cycle 6 — replace the active device's pressure-curve
+    block. Validates against the calibration_store schema; partial
+    payloads are rejected (see calibration_facade docstring)."""
+    try:
+        payload = facade_update_pressure_curves(request.pressure_curves)
+    except CalibrationSchemaError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return {"status": "ok", **payload}
 
 
 @router.websocket("/ws")

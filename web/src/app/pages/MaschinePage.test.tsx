@@ -29,6 +29,8 @@ jest.mock('../../map2/clients/maschine', () => ({
     resetMidiMap: jest.fn(),
     testMidiElement: jest.fn(),
     setLed: jest.fn(),
+    getPressureCurves: jest.fn(),
+    updatePressureCurves: jest.fn(),
   },
 }))
 
@@ -46,6 +48,8 @@ const { maschineApi } = jest.requireMock('../../map2/clients/maschine') as {
     resetMidiMap: jest.Mock
     testMidiElement: jest.Mock
     setLed: jest.Mock
+    getPressureCurves: jest.Mock
+    updatePressureCurves: jest.Mock
   }
 }
 
@@ -280,6 +284,19 @@ describe('MaschinePage', () => {
       test: 'led_set',
       result: { success: true },
     })
+    maschineApi.getPressureCurves.mockResolvedValue({
+      status: 'ok',
+      usb_serial: 'default-mk1',
+      pressure_curves: {
+        global_compensation: 0,
+        per_pad: Array.from({ length: 16 }, () => ({ polynomial: [0, 1] })),
+      },
+    })
+    maschineApi.updatePressureCurves.mockImplementation(async (curves: unknown) => ({
+      status: 'ok',
+      usb_serial: 'default-mk1',
+      pressure_curves: curves,
+    }))
   })
 
   it('renders all Maschine panels with cabl protocol info and shows connected status', async () => {

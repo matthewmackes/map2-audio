@@ -1,5 +1,6 @@
 import '@testing-library/jest-dom'
 import { fireEvent, render, screen } from '@testing-library/react'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 
 import { MaschinePerformanceTab } from './MaschinePerformanceTab'
 import type {
@@ -7,6 +8,34 @@ import type {
   MaschineEncoderMap,
   MaschineHidEvent,
 } from '../../../map2/types'
+
+// The curve editor (mounted by Performance) calls maschineApi at
+// render. Mock both methods with a stable default so the tests
+// here don't need a backend.
+jest.mock('../../../map2/clients/maschine', () => {
+  const defaults = {
+    status: 'ok',
+    usb_serial: 'default-mk1',
+    pressure_curves: {
+      global_compensation: 0,
+      per_pad: Array.from({ length: 16 }, () => ({ polynomial: [0, 1] })),
+    },
+  }
+  return {
+    __esModule: true,
+    maschineApi: {
+      getPressureCurves: jest.fn(async () => defaults),
+      updatePressureCurves: jest.fn(async () => defaults),
+    },
+  }
+})
+
+function withQuery(ui: React.ReactNode) {
+  const client = new QueryClient({
+    defaultOptions: { queries: { retry: false, gcTime: 0 } },
+  })
+  return <QueryClientProvider client={client}>{ui}</QueryClientProvider>
+}
 
 // T2522-C — Performance tab v1 unit tests.
 //
@@ -79,7 +108,9 @@ afterEach(() => {
 describe('MaschinePerformanceTab', () => {
   it('renders all 16 pads with their MIDI note labels', () => {
     render(
-      <MaschinePerformanceTab status={makeStatus()} encoderMap={null} hidEvents={[]} />,
+      withQuery(
+        <MaschinePerformanceTab status={makeStatus()} encoderMap={null} hidEvents={[]} />,
+      ),
     )
     // Pads label as N36..N51 (MIDI notes 36-51).
     for (let n = 36; n <= 51; n += 1) {
@@ -89,7 +120,9 @@ describe('MaschinePerformanceTab', () => {
 
   it('renders the kit name and BPM-ish label in the header', () => {
     render(
-      <MaschinePerformanceTab status={makeStatus()} encoderMap={sampleEncoderMap} hidEvents={[]} />,
+      withQuery(
+        <MaschinePerformanceTab status={makeStatus()} encoderMap={sampleEncoderMap} hidEvents={[]} />,
+      ),
     )
     expect(screen.getByText(/Live Snapshot/)).toBeInTheDocument()
     expect(screen.getByText('120 BPM')).toBeInTheDocument()
@@ -106,7 +139,9 @@ describe('MaschinePerformanceTab', () => {
       },
     ]
     render(
-      <MaschinePerformanceTab status={makeStatus()} encoderMap={null} hidEvents={events} />,
+      withQuery(
+        <MaschinePerformanceTab status={makeStatus()} encoderMap={null} hidEvents={events} />,
+      ),
     )
     expect(screen.getByText('v96')).toBeInTheDocument()
   })
@@ -131,7 +166,9 @@ describe('MaschinePerformanceTab', () => {
       },
     } as Partial<MaschineDaemonStatus>)
     render(
-      <MaschinePerformanceTab status={status} encoderMap={null} hidEvents={[]} onPadClick={onPadClick} />,
+      withQuery(
+        <MaschinePerformanceTab status={status} encoderMap={null} hidEvents={[]} onPadClick={onPadClick} />,
+      ),
     )
     const padButton = screen.getByRole('button', {
       name: /Pad 10 \(MIDI note 45\), mapped to NAM/,
@@ -144,7 +181,9 @@ describe('MaschinePerformanceTab', () => {
   it('disables pads that have no mounted block', () => {
     const onPadClick = jest.fn()
     render(
-      <MaschinePerformanceTab status={makeStatus()} encoderMap={null} hidEvents={[]} onPadClick={onPadClick} />,
+      withQuery(
+        <MaschinePerformanceTab status={makeStatus()} encoderMap={null} hidEvents={[]} onPadClick={onPadClick} />,
+      ),
     )
     const padButton = screen.getByRole('button', { name: /Pad 1 \(MIDI note 36\)/ })
     expect(padButton).toBeDisabled()
@@ -154,7 +193,9 @@ describe('MaschinePerformanceTab', () => {
 
   it('lights the matching scene cell when its led_array slot is non-zero', () => {
     const { container } = render(
-      <MaschinePerformanceTab status={makeStatus()} encoderMap={null} hidEvents={[]} />,
+      withQuery(
+        <MaschinePerformanceTab status={makeStatus()} encoderMap={null} hidEvents={[]} />,
+      ),
     )
     const lit = container.querySelectorAll('.maschine-perf__scene-cell--lit')
     // makeStatus() lights led_array[24] only — Group A.
@@ -164,22 +205,28 @@ describe('MaschinePerformanceTab', () => {
 
   it('shows the Disconnected chip when status.connected is false', () => {
     const { rerender } = render(
-      <MaschinePerformanceTab status={makeStatus()} encoderMap={null} hidEvents={[]} />,
+      withQuery(
+        <MaschinePerformanceTab status={makeStatus()} encoderMap={null} hidEvents={[]} />,
+      ),
     )
     expect(screen.getByText('Live')).toBeInTheDocument()
     rerender(
-      <MaschinePerformanceTab
-        status={makeStatus({ connected: false })}
-        encoderMap={null}
-        hidEvents={[]}
-      />,
+      withQuery(
+        <MaschinePerformanceTab
+          status={makeStatus({ connected: false })}
+          encoderMap={null}
+          hidEvents={[]}
+        />,
+      ),
     )
     expect(screen.getByText('Disconnected')).toBeInTheDocument()
   })
 
   it('renders the Quad Morph placeholder pointing at cycle 8', () => {
     render(
-      <MaschinePerformanceTab status={makeStatus()} encoderMap={null} hidEvents={[]} />,
+      withQuery(
+        <MaschinePerformanceTab status={makeStatus()} encoderMap={null} hidEvents={[]} />,
+      ),
     )
     expect(screen.getByText('Quad Morph')).toBeInTheDocument()
     expect(screen.getByText('Cycle 8')).toBeInTheDocument()

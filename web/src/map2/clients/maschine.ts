@@ -173,6 +173,27 @@ export interface MaschinePlatformEventOverlayResponse {
   overlay: MaschinePlatformEventOverlay
 }
 
+// T2522-C cycle 6 — pressure-curve calibration. Mirror of
+// app/services/maschine/calibration_store.default_pressure_curves().
+export interface MaschinePadPressureCurve {
+  /** 1..4 polynomial coefficients in ascending order (constant first).
+   * The default is [0.0, 1.0] = linear identity y = x. */
+  polynomial: number[]
+}
+
+export interface MaschinePressureCurves {
+  /** Master compensation in [-1, 1] applied on top of per-pad curves. */
+  global_compensation: number
+  /** Exactly 16 entries — one per pad. */
+  per_pad: MaschinePadPressureCurve[]
+}
+
+export interface MaschinePressureCurvesResponse {
+  status: string
+  usb_serial: string
+  pressure_curves: MaschinePressureCurves
+}
+
 export const maschineApi = {
   getStatus: () =>
     fetchJson<MaschineStatusResponse>(`${MASCHINE_API_BASE}/status`, { cache: 'no-store' }),
@@ -286,6 +307,16 @@ export const maschineApi = {
     fetchJson<MaschineAudioGridResponse>(`${MASCHINE_API_BASE}/audio-grid/bypass`, {
       method: 'POST',
       body: JSON.stringify({ block_id: blockId }),
+    }),
+
+  // T2522-C cycle 6 — pressure-curve calibration.
+  getPressureCurves: () =>
+    fetchJson<MaschinePressureCurvesResponse>(`${MASCHINE_API_BASE}/calibration/pressure-curves`, { cache: 'no-store' }),
+
+  updatePressureCurves: (pressure_curves: MaschinePressureCurves) =>
+    fetchJson<MaschinePressureCurvesResponse>(`${MASCHINE_API_BASE}/calibration/pressure-curves`, {
+      method: 'PUT',
+      body: JSON.stringify({ pressure_curves }),
     }),
 }
 
