@@ -2579,6 +2579,41 @@ The earlier order-1 row is fully drained for pure-Python / pure-frontend slices.
 
 ---
 
+### Pick-up next (run-13f handoff, filed 2026-05-14, end-of-run)
+
+**Run-13f total: 5 cycles + handoff, all dual-pushed to origin + gitlab.** User invoked "continue × 5"; I closed cluster fan-out end-to-end (route + hook + UI + diagnostics mount + contract doc) plus the "Last seen Ns ago" column. The shared-WS-subscription store pick from yesterday's handoff is deferred — cluster fan-out was higher-value and the dedup work needs a larger test surface.
+
+Shipped this run, in order:
+
+1. **Cycle 1 — Cluster `/peak-meters/cluster/registry` fan-out** (commit `c56f282b7`). `ClusterDeviceRegistryPeer` + `ClusterDeviceRegistryResponse` shapes mirror the AVB/SonoBus cluster-matrix pattern. asyncio.gather across discovered peers with 2 s per-peer timeout; `include_snapshot` propagates to peer URLs; discovery service failure short-circuits to a local-only baseline. +5 pytest cases.
+
+2. **Cycle 2 — `useDevicesPeakMetersClusterRegistry` hook** (commit `f45f9441b`). TanStack wrapper exposing `local`/`peers`/`errors` directly, default 5 s poll, `includeSnapshot` forks the cache key. +5 jest cases.
+
+3. **Cycle 3 — "Last seen Ns ago" column** (commit `99da30062`). Streaming overview gains a Last seen column rendering `formatLastSeen(ageSeconds)`: "<1 s ago" / "N s ago" / "N m ago" / "N h ago". Column only mounts under `useStream`; per-row `data-testid="overview-last-seen-<device_id>"`. +4 jest cases. Overview suite 21/21 across 3 files.
+
+4. **Cycle 4 — Cluster overview tile on `/devices/diagnostics`** (commit `b4fbb1f5a`). New `DevicePeakMetersClusterOverview` component renders every device across the cluster: local-first, peers grouped by node, blue Tag for local rows + cool-gray Tag for peer hostnames. Failed peers surface via an `InlineNotification` warning above the table without hiding the local baseline. Mounted below the existing per-device overview on the diagnostics page. +7 component jest cases + 1 page mount test. Diagnostics page sweep: 9/9.
+
+5. **Cycle 5 — API contract row for cluster endpoint** (commit `6fb51cee9`). `docs/api-contract-standards.md` gains new endpoint table entries for `/peak-meters/cluster/registry` + the include_snapshot variant, plus a JSON envelope example showing the local/peers/errors shape. Discovery-fallback behavior documented. +2 pytest presence cases (now 10/10).
+
+**Cumulative meter coverage after run-13f:** 96 pytest cases (was 86; +10) + 67 jest cases (was 48; +19).
+
+**Status of long-term priorities after this run:**
+- Pick-1 (cluster fan-in) — done end-to-end (route + hook + UI + diagnostics mount + contract doc).
+- Pick-3 (Last seen Ns ago column) — done.
+- Pick-2 (shared WS subscription store) — deferred; needs larger test surface to handle both consumers cleanly.
+- T2521 unchanged: T2521-4 daemon + T2521-10 soak still bench-gated.
+
+**Next-session order-1 picks** (priority order; pure-Python or pure-frontend only):
+
+1. **Shared WS subscription store for `useDeviceMeterSource` + `useDevicesPeakMetersStream`** — both hooks open their own connection. A singleton subscription store keyed by URL would deduplicate when a page mounts both (e.g. device panel below an overview). Pure-frontend refactor; needs a small in-memory event bus. ~2 cycles.
+2. **Cluster overview on `/devices` catalog page too** — same pattern as pivot-13d cycle 3 but for the cluster overview. One-liner mount + 2-3 test cases. ~1 cycle.
+3. **Cluster WS stream** — `/peak-meters/cluster/stream` would be the WS analogue of the cluster registry endpoint; would feed a 30 fps cluster overview without the polling cost. Pure-Python. ~2 cycles.
+4. **T2459-H final bench session gates** — physical hardware required. Code-side complete.
+
+**Bench-only / spec-needed** (unchanged): T2515-7/8, T2517-1/8/9 + Follow-up-A/B, T2521-4/10, looper RT-gated tail.
+
+---
+
 ### Pick-up next (pivot-13e handoff, filed 2026-05-14, end-of-run)
 
 **Pivot-13e total: 3 cycles + handoff, all dual-pushed to origin + gitlab.** Closed every pure-Python / pure-frontend pick from yesterday's pivot-13d handoff.
