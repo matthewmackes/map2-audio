@@ -57,6 +57,15 @@ class GenericMeterPayload(BaseModel):
             "Operators reading 'placeholder' should treat them as 'not yet measured'."
         ),
     )
+    captured_at: Optional[float] = Field(
+        None,
+        description=(
+            "Unix timestamp (seconds since epoch, float) when the source "
+            "produced the snapshot. Backfilled by the registry when the "
+            "underlying source does not stamp it. Order-2 of the eleventh "
+            "Continue run handoff."
+        ),
+    )
 
 
 class DeviceRegistrySnapshot(BaseModel):
@@ -69,6 +78,7 @@ class DeviceRegistrySnapshot(BaseModel):
     input_peak_db: List[float]
     output_peak_db: List[float]
     source: str
+    captured_at: Optional[float] = None
 
 
 class DeviceRegistryEntry(BaseModel):
@@ -139,6 +149,7 @@ async def get_peak_meters_registry(
                 input_peak_db=list(snap.input_peak_db),
                 output_peak_db=list(snap.output_peak_db),
                 source=snap.source,
+                captured_at=snap.captured_at,
             )
         entries.append(
             DeviceRegistryEntry(
@@ -189,4 +200,5 @@ async def get_device_peak_meters(device_id: str) -> GenericMeterPayload:
         input_peak_db=list(snap.input_peak_db),
         output_peak_db=list(snap.output_peak_db),
         source=snap.source,
+        captured_at=snap.captured_at,
     )

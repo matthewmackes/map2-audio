@@ -34,6 +34,7 @@ module, not this primitive.
 from __future__ import annotations
 
 import inspect
+import time
 from dataclasses import dataclass, field
 from threading import Lock
 from typing import Awaitable, Dict, List, Optional, Protocol, Tuple, runtime_checkable
@@ -60,11 +61,20 @@ class MeterSnapshot:
     source is the silence fallback. The route surfaces this field so
     the Carbon panel can label the row differently when measurements
     aren't live yet.
+
+    ``captured_at`` is the unix timestamp (seconds since epoch, float)
+    when the source produced the snapshot. ``None`` means the source
+    did not stamp the snapshot — the registry's ``read_snapshot`` /
+    ``read_snapshot_dict`` helpers backfill ``None`` with the current
+    wall-clock time so consumers can always render "n seconds ago"
+    without special-casing legacy sources. Order-2 of the eleventh
+    Continue run handoff.
     """
 
     input_peak_db: List[float] = field(default_factory=list)
     output_peak_db: List[float] = field(default_factory=list)
     source: str = "placeholder"
+    captured_at: Optional[float] = None
 
 
 @runtime_checkable
@@ -100,6 +110,7 @@ class PlaceholderMeterSource:
             input_peak_db=[SILENCE_DBFS] * self._input_channels,
             output_peak_db=[SILENCE_DBFS] * self._output_channels,
             source="placeholder",
+            captured_at=time.time(),
         )
 
 
@@ -202,12 +213,23 @@ class DeviceMeterSourceRegistry:
         Awaitable-aware: synchronous sources return ``MeterSnapshot``
         directly; async sources return a coroutine the registry
         awaits. Routes call this one-liner.
+
+        Backfills ``captured_at`` with the current wall-clock time when
+        the source returned a snapshot without one — keeps legacy
+        sources (engine adapters that haven't been updated yet)
+        compatible with consumers expecting the timestamp field.
         """
         source = self.get_active_source(device_id)
         result = source.snapshot()
         if inspect.isawaitable(result):
-            return await result
-        return result
+            snapshot = await result
+        else:
+            snapshot = result
+        if snapshot.captured_at is None:
+            from dataclasses import replace as _dc_replace
+
+            snapshot = _dc_replace(snapshot, captured_at=time.time())
+        return snapshot
 
     def list_devices(self) -> List["DeviceRegistration"]:
         """Snapshot of every registered device.
