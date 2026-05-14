@@ -35,7 +35,12 @@ import {
 } from './hooks/useDeviceProfiles'
 import { DeviceCard } from './DeviceCard'
 import { CatalogueSection } from './CatalogueSection'
-import { LEGACY_DEVICE_MANIFEST } from '../../data/legacyDeviceManifest'
+import {
+  LEGACY_DEVICE_MANIFEST,
+  meterRegistryIdsFromPinnedIds,
+} from '../../data/legacyDeviceManifest'
+import { usePinnedDevices } from '../../state/uiSettings'
+import { DevicePeakMetersOverview } from './Shared/DevicePeakMetersOverview'
 import { useDeviceBindingsByProfileKey } from './hooks/useDeviceBindingsByProfileKey'
 // Audit Arch-13 (cycle 56): pure data-shaping helpers extracted to a
 // sibling module so they are unit-testable without mounting the page.
@@ -89,6 +94,18 @@ export function HardwareStorePage(): React.JSX.Element {
   const ws = useDeviceConnections()
   useHotPlugToast(ws.lastEvent)
   const queryClient = useQueryClient()
+
+  // Pivot-13e cycle 3 — read the operator's pinned-device list and
+  // translate it to meter-registry IDs. When at least one pinned
+  // device is metered, the page mounts a live-streaming overview
+  // banner above the catalog sections so an operator sees their
+  // pinned interfaces' wire-up state without having to click into
+  // /devices/diagnostics.
+  const pinnedDevices = usePinnedDevices()
+  const pinnedMeterIds = React.useMemo(
+    () => meterRegistryIdsFromPinnedIds(pinnedDevices),
+    [pinnedDevices],
+  )
   const profilesQuery = useDeviceProfiles()
   const packsQuery = usePackSources()
   const connectedFallback = useConnectedDevices()
@@ -353,6 +370,20 @@ export function HardwareStorePage(): React.JSX.Element {
           </Tag>
         </div>
       </header>
+
+      {pinnedMeterIds.length > 0 && (
+        <section
+          className="hwstore-page__pinned-meters"
+          data-testid="hwstore-pinned-meters"
+          style={{ marginBottom: 24 }}
+        >
+          <DevicePeakMetersOverview
+            title="Pinned devices (live)"
+            useStream
+            deviceIds={pinnedMeterIds}
+          />
+        </section>
+      )}
 
       {(profilesQuery.error || packsQuery.error) && (
         <InlineNotification
