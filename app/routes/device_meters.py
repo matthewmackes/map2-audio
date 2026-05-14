@@ -142,14 +142,34 @@ async def get_peak_meters_registry(
     ``peak-meters/registry`` segment so it does not collide with the
     parametric ``/{device_id}/peak-meters`` route below. FastAPI's
     matcher tries literal segments first, so this stays unambiguous.
+
+    Pivot-13e cycle 2 — when ``include_snapshot`` is true, the
+    per-device ``read_snapshot`` calls run concurrently via
+    ``asyncio.gather`` instead of sequentially. For a registry of N
+    devices where each source is async (engine IPC), total latency
+    drops from N×t to roughly t. The result list is keyed back by
+    device_id before assembly so the returned ``devices`` field
+    preserves the alphabetical ordering ``list_devices()`` already
+    enforces.
     """
+    import asyncio
+
     registry = get_registry()
     rows = registry.list_devices()
+
+    snapshots_by_device: dict[str, "object"] = {}
+    if include_snapshot and rows:
+        device_ids = [row.device_id for row in rows]
+        snaps = await asyncio.gather(
+            *(registry.read_snapshot(device_id) for device_id in device_ids)
+        )
+        snapshots_by_device = dict(zip(device_ids, snaps))
+
     entries: List[DeviceRegistryEntry] = []
     for row in rows:
         snapshot: Optional[DeviceRegistrySnapshot] = None
         if include_snapshot:
-            snap = await registry.read_snapshot(row.device_id)
+            snap = snapshots_by_device[row.device_id]
             snapshot = DeviceRegistrySnapshot(
                 input_peak_db=list(snap.input_peak_db),
                 output_peak_db=list(snap.output_peak_db),
