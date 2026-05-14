@@ -28,6 +28,14 @@ from app.services.sonobus.binding_schemas import (
     SonoBusTransportPriority,
     SonoBusTransportProtocol,
 )
+from app.services.sonobus.interface_ids import (
+    SONOBUS_ID_PREFIX,
+    SonoBusInterfaceForbiddenError,
+    assert_not_sonobus_id,
+    is_sonobus_interface_id,
+    make_sonobus_interface_id,
+    parse_sonobus_interface_id,
+)
 
 __all__ = [
     # T2521-3 canonical SonoBusBinding surface
@@ -45,4 +53,11 @@ __all__ = [
     "SonoBusBindingCreate",
     "SonoBusBindingRead",
     "SonoBusBindingUpdate",
+    # T2521-7 interface ID + Q12 exclusion helpers
+    "SONOBUS_ID_PREFIX",
+    "SonoBusInterfaceForbiddenError",
+    "assert_not_sonobus_id",
+    "is_sonobus_interface_id",
+    "make_sonobus_interface_id",
+    "parse_sonobus_interface_id",
 ]

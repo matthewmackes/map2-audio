@@ -4195,7 +4195,7 @@ Subtasks:
   - Completion notes:
     - 2026-05-13 21:30 EDT - Claude: First slice shipped — `web/src/app/pages/sonobus/SonoBusOverviewPage.tsx` mounted at `/sonobus` (lazy-loaded in `App.tsx`). Pure Carbon: Section + Layer + Tile + Tag, no MUI. Hook layer at `web/src/app/pages/sonobus/useSonoBusBindings.ts` exposes `useSonoBusStatus`, `useSonoBusBindingsCount`, `useSonoBusBindingsMatrix` (all 5s polling, staleTime 0). Page surfaces four tiles: Bindings (with per-kind breakdown rows from the matrix), Daemon (stub Stopped until T2521-4), Connection server (honours Q3 enabled-default), Transport priority (surfaces the Q18 avb_preferred default). 8 jest tests (`SonoBusOverviewPage.test.tsx`) all green. `tsc --noEmit` clean. `npm run build` produced `web/dist/assets/SonoBusOverviewPage-aGJYSP-X.js` (5.5 KB). Remaining T2521-6 work: Connections / Routing / Network / Peers / Profiles / Diagnostics regions + the full shell scaffold with shellWindow + tab bar.
 - ID: T2521-7
-  Status: [ ] Todo
+  Status: [>] In Progress
   Title: Integrate snapshots, interface picker, and routing matrix; exclude recorder/artifacts
   Description:
   - Goal / acceptance criteria: Make SonoBus/AOO endpoints selectable wherever AVB/cluster audio endpoints are visible while explicitly keeping MAP2 Recorder and Audio Artifacts out of scope per Q12.
@@ -4203,7 +4203,9 @@ Subtasks:
   - Dependencies: T2518, T2521-5, T2521-6
   - Estimated effort: High
   - Required outputs/deliverables: Snapshot/interface updates, route adapters, no-recorder/no-artifact regression checks, routing tests.
-  Last updated: 2026-05-13 19:52 EDT - Codex
+  Last updated: 2026-05-13 22:20 EDT - Claude (twelfth Continue cycle 7)
+  - Completion notes:
+    - 2026-05-13 22:20 EDT - Claude: First slice shipped — the `sonobus:` interface-ID space + Q12 hard-exclusion helper. New module `app/services/sonobus/interface_ids.py` exposes `SONOBUS_ID_PREFIX`, `make_sonobus_interface_id(peer, group, stream)` (round-trip with `parse_sonobus_interface_id`), `is_sonobus_interface_id(maybe_id)`, plus the Q12 enforcement `assert_not_sonobus_id(interface_id, service_name=...)` and the typed `SonoBusInterfaceForbiddenError` (carries `interface_id` + `service_name`, error message cites "T2521 Q12: no recorder/artifact integration"). Re-exported from `app.services.sonobus`. 11 unit tests in `test_sonobus_interface_ids.py` cover prefix / round-trip / empty + colon rejection / Q12 raise paths. 11 regression tests in `test_sonobus_recorder_exclusion.py` parametrise over 5 recorder-adjacent service names (Recorder, Audio Artifacts, Recorder ingest, Recorder export, Audio Artifacts replay) confirming SonoBus IDs raise + AVB/PipeWire IDs pass. Full SonoBus suite: 80/80 green. Remaining T2521-7: T2518 `AudioInterfaceRegistry` integration once that registry exists; SonoBus routing region under `/sonobus/routing`; wiring `assert_not_sonobus_id` into recorder + artifacts entry points.
 - ID: T2521-8
   Status: [>] In Progress
   Title: Update installer, RPM, systemd, environment, firewall, and package manifests
