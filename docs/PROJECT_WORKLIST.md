@@ -2579,6 +2579,45 @@ The earlier order-1 row is fully drained for pure-Python / pure-frontend slices.
 
 ---
 
+### Pick-up next (run-13h handoff, filed 2026-05-14, end-of-run)
+
+**Run-13h total: 5 cycles + handoff, all dual-pushed to origin + gitlab.** User invoked "continue × 5". Closed all three picks from yesterday's run-13g handoff plus shipped first-panel adoption of the new WS variant.
+
+Shipped this run, in order:
+
+1. **Cycle 1 — `useDeviceMeterSourceStream` WS variant** (commit `6f18400a1`). New sibling hook for `useDeviceMeterSource` that subscribes through the shared `wsSubscriptionStore` to `/api/v1/devices/peak-meters/stream?device_ids=<id>`. Same `UseDeviceMeterSourceResult` shape so consumers can swap by changing the import. 1 s tick for staleness; socket errors clear on the next valid frame; `enabled=false` suppresses subscription. +7 jest cases.
+
+2. **Cycle 2 — Cluster overview per-row staleness** (commit `0ae5be137`). `DevicePeakMetersClusterOverview` rows now flip to a warm-gray "Stale (Ns)" Tag when `captured_at` exceeds `staleThresholdSeconds` (default 10s). `sourceTagTone` / `sourceTagLabel` updated to take `isStale` + `ageSeconds`; 1 s setInterval re-evaluates between frames. +2 jest cases.
+
+3. **Cycle 3 — Cluster overview "Last seen" column under useStream** (commit `18e0d2235`). Mirrors the local overview pattern from run-13f cycle 3. Column header only mounts under `useStream`; `data-testid="cluster-overview-last-seen-<row.id>"` so consumers can assert against it. +4 jest cases.
+
+4. **Cycle 4 — Cluster overview node-filter + per-node counts** (commit `6151a126d`). New `nodeFilter` prop restricts rendered rows to one node (accepts `"local"` or any peer `node_id` / hostname); mounts a purple "Filter: <node>" Tag above the table when active. New `showPerNodeCounts` prop renders a per-node summary strip with device + channel totals. Both props read at render time so a parent can toggle without re-mounting. +4 jest cases.
+
+5. **Cycle 5 — Tascam StatusTab opts into WS variant + api-contract addendum** (commit `cd9d8880b`). `TascamUS144MKIIStatusTab` gains `useStreamMeter?: boolean` prop; both polled + streamed hooks always run (React rules) with the inactive one disabled via `enabled` flag. `TascamUS144MKIIView` (the production page) passes `useStreamMeter` so the panel + diagnostics overview now share one WS via the store. API contract doc gains a "Frontend dedup (run-13h)" paragraph documenting the shared store pattern. +3 jest cases + 1 contract presence case.
+
+**Cumulative meter coverage after run-13h:** 100 pytest cases (unchanged) + 107 jest cases (was 87; +7 stream hook + 4 cluster Last seen + 2 cluster staleness + 4 node filter + 3 Tascam stream).
+
+Operator effect, end-to-end:
+- A Tascam page that mounts the StatusTab below the diagnostics cluster overview now pays for one WebSocket connection per unique device_ids URL via the shared store. Future panel adoptions (UA-1000, JoGG, MPX-1) inherit the dedup automatically.
+- Multi-node operators can now filter the cluster overview to a single peer (or local) and see a per-node device + channel summary above the table.
+- Frozen cluster paths surface as warm-gray "Stale (Ns)" within ~1 s; cluster-overview rows now expose the same staleness signal the local overview shipped in run-13f.
+
+**Status of long-term priorities after this run:**
+- All three picks of run-13g — done.
+- Cluster overview parity with the local overview (Last seen column, per-row staleness) — done.
+- T2521 unchanged: T2521-4 daemon + T2521-10 soak still bench-gated.
+
+**Next-session order-1 picks** (priority order; pure-Python or pure-frontend only):
+
+1. **UA-1000 / JoGG / MPX-1 panels adopt `useStreamMeter`** — same one-line flip as the Tascam adoption shipped in run-13h cycle 5. Each panel inherits dedup with the rest of the page. ~1 cycle.
+2. **`/peak-meters/cluster/stream` per-node filter** — `?node_ids=peer-A,peer-B` query parameter so a single-peer-zoom workspace can pay for one cluster stream sized to its filter. Mirrors the local stream's `device_ids` filter (pivot-13c cycle 2). ~1-2 cycles.
+3. **Sortable cluster overview** — clicking a column header toggles asc/desc sort, mirroring the existing `ContentSwitcher` sort on the local overview. ~1 cycle.
+4. **T2459-H final bench session gates** — physical hardware required. Code-side complete.
+
+**Bench-only / spec-needed** (unchanged): T2515-7/8, T2517-1/8/9 + Follow-up-A/B, T2521-4/10, looper RT-gated tail.
+
+---
+
 ### Pick-up next (run-13g handoff, filed 2026-05-14, end-of-run)
 
 **Run-13g total: 5 cycles + handoff, all dual-pushed to origin + gitlab.** User invoked "continue × 5". Closed every order-1 pick from yesterday's run-13f handoff plus shipped the cluster WS stream end-to-end (deferred from run-13f).
