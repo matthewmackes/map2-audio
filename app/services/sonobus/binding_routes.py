@@ -300,6 +300,92 @@ async def get_cluster_bindings_matrix() -> SonoBusClusterBindingsMatrixResponse:
     )
 
 
+class SonoBusProfilePreset(BaseModel):
+    """A built-in codec + jitter + resend posture preset.
+
+    The set of presets reflects the T2521 locked decisions (Q7/Q8/Q9).
+    Operator-defined custom profiles ride alongside the daemon-side
+    profile table once T2521-4 ships.
+    """
+
+    profile_id: str
+    label: str
+    codec_profile: str
+    stream_format: str
+    jitter_buffer_ms: int
+    resend_policy: str
+    latency_target_ms: int
+    description: str
+
+
+BUILT_IN_PROFILES: tuple[SonoBusProfilePreset, ...] = (
+    SonoBusProfilePreset(
+        profile_id="pcm_lowest_latency",
+        label="PCM lowest latency",
+        codec_profile="pcm",
+        stream_format="pcm_s24_48000",
+        jitter_buffer_ms=4,
+        resend_policy="burst_loss_only",
+        latency_target_ms=8,
+        description=(
+            "T2521 default per Q7/Q8/Q9 — PCM 24-bit/48 kHz with 4 ms "
+            "jitter buffer and burst-loss-only resends. Optimised for "
+            "lowest latency; tolerates occasional dropouts."
+        ),
+    ),
+    SonoBusProfilePreset(
+        profile_id="pcm_resilient",
+        label="PCM resilient",
+        codec_profile="pcm",
+        stream_format="pcm_s24_48000",
+        jitter_buffer_ms=12,
+        resend_policy="full",
+        latency_target_ms=20,
+        description=(
+            "PCM 24-bit/48 kHz with a wider jitter buffer and full "
+            "resends. For lossier paths where occasional dropouts are "
+            "unacceptable."
+        ),
+    ),
+    SonoBusProfilePreset(
+        profile_id="pcm_studio",
+        label="PCM studio",
+        codec_profile="pcm",
+        stream_format="pcm_s24_48000",
+        jitter_buffer_ms=8,
+        resend_policy="burst_loss_only",
+        latency_target_ms=12,
+        description=(
+            "PCM 24-bit/48 kHz with a moderate jitter buffer. "
+            "Balanced posture for stable LAN paths under recording "
+            "use (not Recorder per Q12 — for live monitoring)."
+        ),
+    ),
+)
+
+
+@router.get("/profiles", response_model=list[SonoBusProfilePreset])
+async def list_profiles() -> list[SonoBusProfilePreset]:
+    """T2521-5d — list of codec + jitter + resend presets.
+
+    Returns the built-in profiles derived from the T2521 locked
+    decisions. Operator-defined custom profiles land when T2521-4
+    ships its own profile table; this endpoint will then return both.
+    """
+    return list(BUILT_IN_PROFILES)
+
+
+@router.get("/profiles/{profile_id}", response_model=SonoBusProfilePreset)
+async def get_profile(profile_id: str) -> SonoBusProfilePreset:
+    """T2521-5d — single profile lookup."""
+    for preset in BUILT_IN_PROFILES:
+        if preset.profile_id == profile_id:
+            return preset
+    raise HTTPException(
+        status_code=404, detail=f"profile not found: {profile_id}"
+    )
+
+
 class SonoBusPeerSummary(BaseModel):
     """Aggregated peer view derived from bindings.
 

@@ -66,6 +66,11 @@ def test_sessions_endpoint_present():
     assert ("GET", "/api/sonobus/sessions") in _route_set()
 
 
+def test_profiles_endpoint_present():
+    assert ("GET", "/api/sonobus/profiles") in _route_set()
+    assert ("GET", "/api/sonobus/profiles/{profile_id}") in _route_set()
+
+
 def test_create_endpoint_present():
     assert ("POST", "/api/sonobus/bindings") in _route_set()
 
