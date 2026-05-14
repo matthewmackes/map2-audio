@@ -13,9 +13,16 @@ from __future__ import annotations
 
 from typing import Optional
 
-from fastapi import APIRouter, HTTPException, Query
+import asyncio
+import logging
+import uuid
+from datetime import datetime, timezone
+
+from fastapi import APIRouter, HTTPException, Query, WebSocket, WebSocketDisconnect
 from pydantic import BaseModel
 from sqlalchemy import Integer, cast, func, select
+
+logger = logging.getLogger(__name__)
 
 from app.database import get_session
 from app.services.sonobus.binding_authority import (
@@ -633,6 +640,77 @@ async def enable_binding(
             raise HTTPException(
                 status_code=404, detail=f"binding not found: {binding_id}"
             )
+
+
+# ---------- WebSocket event stream (T2521-5e) ----------
+
+
+@router.websocket("/events")
+async def sonobus_events_ws(websocket: WebSocket) -> None:
+    """T2521-5e — WebSocket event stream stub.
+
+    Mounted at `/api/sonobus/events` via the router prefix. The
+    daemon (T2521-4) will publish live peer-up/down + session-start/stop
+    + metric-snapshot events through this socket. Until then the
+    endpoint sends an initial state frame on connect and a heartbeat
+    every 5 seconds carrying authority + binding-count health so
+    operator tooling can begin wiring against the contract.
+
+    Frame shape (versioned via `schema_version` so future daemon
+    output stays compatible):
+
+        { "type": "sonobus:state", "schema_version": 1, "data": { ... } }
+        { "type": "sonobus:heartbeat", "schema_version": 1, "data": { ... } }
+    """
+    await websocket.accept()
+    client_id = f"sonobus-{uuid.uuid4()}"
+    logger.info("sonobus events ws connected: %s", client_id)
+
+    async def _snapshot() -> dict:
+        try:
+            async with get_session(read_only=True) as session:
+                authority = SonoBusBindingAuthority(session)
+                binding_count = await authority.count()
+                enabled_rows = await session.execute(
+                    select(func.count(SonoBusBinding.binding_id)).where(
+                        SonoBusBinding.enabled.is_(True)
+                    )
+                )
+                enabled_count = int(enabled_rows.scalar() or 0)
+                return {
+                    "authority_ok": True,
+                    "binding_count": binding_count,
+                    "enabled_binding_count": enabled_count,
+                    "daemon_running": False,
+                    "timestamp": datetime.now(timezone.utc).isoformat(),
+                }
+        except Exception as exc:  # pragma: no cover — defensive
+            return {
+                "authority_ok": False,
+                "error": str(exc),
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+            }
+
+    try:
+        await websocket.send_json(
+            {
+                "type": "sonobus:state",
+                "schema_version": 1,
+                "data": await _snapshot(),
+            }
+        )
+        while True:
+            await asyncio.sleep(5.0)
+            await websocket.send_json(
+                {
+                    "type": "sonobus:heartbeat",
+                    "schema_version": 1,
+                    "data": await _snapshot(),
+                }
+            )
+    except WebSocketDisconnect:
+        logger.info("sonobus events ws disconnected: %s", client_id)
+        return
 
 
 __all__ = ["router"]
