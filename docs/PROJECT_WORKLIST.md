@@ -2579,6 +2579,38 @@ The earlier order-1 row is fully drained for pure-Python / pure-frontend slices.
 
 ---
 
+### Pick-up next (pivot-13b handoff, filed 2026-05-14, end-of-run)
+
+**Pivot total: 4 cycles, all dual-pushed to origin + gitlab.** After the run-13 stop the user asked for a pivot; I picked up the eleventh-run order-1 list (untouched since runs 12-13 went into T2521 instead). All three picks closed in this short pivot run.
+
+Shipped this run, in order:
+
+1. **Cycle 1 — `MeterSnapshot.captured_at`** (commit `13d97cde7`). Pick-2 of the eleventh-run handoff. `MeterSnapshot` gains `captured_at: Optional[float]`; `PlaceholderMeterSource` stamps it; `DeviceMeterSourceRegistry.read_snapshot()` backfills legacy sources within the elapsed window; source-supplied values are preserved. `GenericMeterPayload` + `DeviceRegistrySnapshot` surface the field optionally so older clients keep working. +6 pytest cases; full meter sweep 50/50.
+
+2. **Cycle 2 — `/peak-meters/stream` WS fan-out** (commit `78638a1ff`). Pick-1a. New WebSocket at `/api/v1/devices/peak-meters/stream` pushes registry snapshots at 30 fps. Frame envelope `device_peak_meters:registry` with `schema_version=1`. Initial frame on connect, then ticks via `WS_BROADCAST_INTERVAL_SECONDS` (patchable for tests). Alphabetically ordered (matches `list_devices()`). +4 pytest cases; full meter sweep 54/54.
+
+3. **Cycle 3 — `useDevicesPeakMetersStream` + overview wiring** (commit `727762285`). Pick-1b. New TanStack-free WebSocket hook with exponential-backoff reconnect (250ms → 5s ceiling). Returns `devices` + `hasFirstFrame` + `isConnected` + `lastError`. `DevicePeakMetersOverview` gains a `useStream` prop that swaps the polling hook for the WS hook (polling held via `enabled=false` so two queries never race) and auto-enables the Peak (dBFS) column. +4 hook tests + 3 overview stream tests. Default behavior unchanged; existing 6 overview tests still green.
+
+4. **Cycle 4 — overview column toggles + sort filter** (commit `dc92c4324`). Pick-3. `DevicePeakMetersOverview` gains `showControls` + `initialSortMode` props mounting a Carbon `Toggle` (combined vs split channel columns) and a Carbon `ContentSwitcher` (sort by name vs live-first). Component-local state; no storage wiring needed. Also fixed a stray TS2322 in `advancedMenuItems.ts` (thirteenth-run cycle-6 SonoBus entry used `maturity: 'alpha'` which isn't a valid NavigationMaturityState — changed to `'experimental'`) so `npm run build` is clean. +5 overview controls tests; full overview sweep 14/14 across 3 files. `npm run build` emits a clean production bundle.
+
+**Cumulative meter coverage after this pivot run:** 60 pytest cases across 6 files + 17 jest cases across 4 files (overview + hooks). All three eleventh-handoff order-1 picks closed.
+
+**Status of long-term priorities after this run:**
+- All three eleventh-run order-1 picks are now done (WS streaming surface ✓, captured_at field ✓, column variants + sort ✓).
+- T2521 unchanged from end of thirteenth run — T2521-4 daemon + T2521-10 soak still bench-gated.
+- T2519 unchanged — all the meter primitive work this run extends rather than overlaps it.
+
+**Next-session order-1 picks** (priority order; pure-Python or pure-frontend only):
+
+1. **Engine-side `JuceEngineMeterSource` adapter (Python-only seam)** — once the C++ engine starts surfacing per-device peak buffers over IPC, the registry needs a concrete `MeterSource` implementation that reads them and stamps `captured_at` from the engine's wall clock. The Python side can land the seam + a stub that polls a fake ring-buffer fixture, ready for the C++ wire-up. ~2 cycles.
+2. **Stream surface — per-binding-kind frame filter** — `/peak-meters/stream` currently fans out every device every tick. A query-param filter (`?device_ids=tascam-us144mkii,edirol-ua-1000`) would cut bandwidth for panels watching one device. Pure-Python. ~1 cycle.
+3. **`captured_at`-driven "stale snapshot" banner on the per-device Status tab** — when `captured_at` is more than 5s old, render a "Stale" Tag instead of the wire-up tag. Pure-frontend, builds on the field shipped in cycle 1. ~1 cycle.
+4. **T2459-H final bench session gates** — physical hardware required. Code-side complete.
+
+**Bench-only / spec-needed** (unchanged): T2515-7/8, T2517-1/8/9 + Follow-up-A/B, T2521-4/10, looper RT-gated tail.
+
+---
+
 ### Pick-up next (thirteenth Continue run handoff, filed 2026-05-13, end-of-run)
 
 **Thirteenth run total: 13 cycles, all dual-pushed to origin + gitlab.** The user invoked "Continue" ten times — nominally 150 cycles — but I stopped at 13 because the remaining T2521 substrate naturally bottoms out at the daemon (T2521-4) and soak (T2521-10), both of which are bench/RT-gated and explicitly out-of-scope for autonomous shipping. Forcing 137 more cycles would have produced filler or unrelated drift. The 13 cycles shipped represent the full set of T2521 work the substrate genuinely supports without bench hardware.
