@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1670** Python | **1717** TypeScript | **222** C++/H | **149** Docs | **4549** total commits | **4** stars | **0** forks | **0** open issues
+**1670** Python | **1717** TypeScript | **222** C++/H | **149** Docs | **4556** total commits | **4** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -193,7 +193,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 |  |  |  |
 | :---: | :---: | :---: |
 | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/map2-banner.png" width="280" alt="map2 banner"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/map2-banner-3.png" width="280" alt="map2 banner 3"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot-Cli.png" width="280" alt="Screenshot Cli"> |
-| <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 08-00-43 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 08 00 43 Mackes Audio Platform 2 FEB2025"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 07-58-14 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 07 58 14 Mackes Audio Platform 2 FEB2025"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 07-57-33 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 07 57 33 Mackes Audio Platform 2 FEB2025"> |
+| <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 07-58-14 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 07 58 14 Mackes Audio Platform 2 FEB2025"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 08-00-43 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 08 00 43 Mackes Audio Platform 2 FEB2025"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 07-57-33 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 07 57 33 Mackes Audio Platform 2 FEB2025"> |
 | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/MAP2_AUDIO-NODE_ARCH_DIAGRAM3.png" width="280" alt="MAP2 AUDIO NODE ARCH DIAGRAM3"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/MAP2_AUDIO-NODE_ARCH_DIAGRAM2-BANG.png" width="280" alt="MAP2 AUDIO NODE ARCH DIAGRAM2 BANG"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/MAP2_AUDIO-NODE_ARCH_DIAGRAM.png" width="280" alt="MAP2 AUDIO NODE ARCH DIAGRAM"> |
 <!-- GALLERY:END -->
 
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`808b4fc5`](https://github.com/matthewmackes/map2-audio/commit/808b4fc5c92748cccea0848f15503be65676e512) | docs(worklist): run-13i handoff (5 cycles, panel adoption... | Map2 Audio | 2026-05-14 |
+| [`621909e8`](https://github.com/matthewmackes/map2-audio/commit/621909e8d88bf41c240f43ef85892f640f2750e0) | feat(devices): run-13i-5 — diagnostics page enables sorta... | Map2 Audio | 2026-05-14 |
+| [`16deaab2`](https://github.com/matthewmackes/map2-audio/commit/16deaab2d2b11046d4556c525076587c16a9d15a) | feat(devices): run-13i-4 — sortable cluster overview columns | Map2 Audio | 2026-05-14 |
+| [`85a59ef6`](https://github.com/matthewmackes/map2-audio/commit/85a59ef625a9a16d51598258bb27f8f08c982a2d) | feat(devices): run-13i-3 — cluster stream nodeIds hook op... | Map2 Audio | 2026-05-14 |
+| [`7561de91`](https://github.com/matthewmackes/map2-audio/commit/7561de91c487ec56e024b3dc0c13f09baad328ff) | feat(devices): run-13i-2 — cluster stream node_ids filter | Map2 Audio | 2026-05-14 |
+| [`8e58965f`](https://github.com/matthewmackes/map2-audio/commit/8e58965fb7c08fa049185499f468e5d5f1e63e53) | feat(devices): run-13i-1 — UA-1000 / JoGG / MPX-1 adopt u... | Map2 Audio | 2026-05-14 |
+| [`2dcf1d01`](https://github.com/matthewmackes/map2-audio/commit/2dcf1d011cb9f9887f754c3d2038eaa6b7cb9284) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-14 |
 | [`ded217c0`](https://github.com/matthewmackes/map2-audio/commit/ded217c087eb6938556245165d4d20e4af37c7a0) | docs(worklist): run-13h handoff (5 cycles, panel adoption... | Map2 Audio | 2026-05-14 |
-| [`b5213fc7`](https://github.com/matthewmackes/map2-audio/commit/b5213fc739063db116e5243f08b2fcaee197804a) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-14 |
-| [`cd9d8880`](https://github.com/matthewmackes/map2-audio/commit/cd9d8880b6e141da5345a854eb0669eba9b47b13) | feat(devices): run-13h-5 — Tascam StatusTab opts into WS ... | Map2 Audio | 2026-05-14 |
-| [`6151a126`](https://github.com/matthewmackes/map2-audio/commit/6151a126d294c88498725256bde14b6b19367689) | feat(devices): run-13h-4 — cluster overview node-filter +... | Map2 Audio | 2026-05-14 |
-| [`18e0d223`](https://github.com/matthewmackes/map2-audio/commit/18e0d223520a62e12e1b8b32b9202a4bc131d482) | feat(devices): run-13h-3 — cluster overview "Last seen" c... | Map2 Audio | 2026-05-14 |
-| [`0ae5be13`](https://github.com/matthewmackes/map2-audio/commit/0ae5be137dffc3d85597d142c81e53276f4be64b) | feat(devices): run-13h-2 — cluster overview per-row stale... | Map2 Audio | 2026-05-14 |
-| [`6f18400a`](https://github.com/matthewmackes/map2-audio/commit/6f18400a1f8be3b1c2ea55d43a1e18982dd7bf83) | feat(devices): run-13h-1 — useDeviceMeterSourceStream WS ... | Map2 Audio | 2026-05-14 |
-| [`e77c96ee`](https://github.com/matthewmackes/map2-audio/commit/e77c96ee462760355b589d4d60b89543626b0cad) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-14 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
