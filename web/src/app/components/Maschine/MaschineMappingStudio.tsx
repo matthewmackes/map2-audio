@@ -1,7 +1,8 @@
-import { Button, InlineLoading, Tag, Tile } from '@carbon/react'
+import { Button, InlineLoading, Tag, Tile, Toggle } from '@carbon/react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useEffect, useMemo, useState } from 'react'
 
+import { MaschinePadLedChoreography } from './MaschinePadLedChoreography'
 import { maschineApi } from '../../../map2/clients/maschine'
 import type {
   MaschineDaemonStatus,
@@ -70,6 +71,12 @@ function paramSources(status: MaschineDaemonStatus | null): DraggableParam[] {
 export function MaschineMappingStudio({ status, encoderMap, refetchStatus }: MappingStudioProps) {
   const queryClient = useQueryClient()
   const [workingMap, setWorkingMap] = useState<MaschineEncoderMap | null>(null)
+  // T2522-D cycle 10 — SHIFT-layer view toggle. When on, the editor
+  // works against `shift_enc1`...`shift_swing` keys instead of the
+  // base layer. Save still sends the full map (both layers) so the
+  // daemon can route at runtime based on the live SHIFT button state.
+  const [shiftLayer, setShiftLayer] = useState(false)
+  const slotKey = (slot: EncoderSlot): string => (shiftLayer ? `shift_${slot}` : slot)
 
   // Seed the working copy from the live encoder map. Re-seeding only
   // when a remote change actually lands keeps the operator's in-flight
@@ -113,9 +120,10 @@ export function MaschineMappingStudio({ status, encoderMap, refetchStatus }: Map
     if (!raw) return
     try {
       const param = JSON.parse(raw) as DraggableParam
+      const key = slotKey(slot)
       setWorkingMap((prev) => {
         const base: MaschineEncoderMap = prev ? { ...prev } : {}
-        base[slot] = {
+        base[key] = {
           block_id: param.block_id,
           param_id: param.param_id,
           label: param.display.length > 16 ? `${param.display.slice(0, 15)}…` : param.display,
@@ -129,14 +137,15 @@ export function MaschineMappingStudio({ status, encoderMap, refetchStatus }: Map
   }
 
   const handleClear = (slot: EncoderSlot) => () => {
+    const key = slotKey(slot)
     setWorkingMap((prev) => {
       if (!prev) return prev
       const next = { ...prev }
-      const existing = next[slot]
+      const existing = next[key]
       // Preserve fixed slots' existing entries — those are owned by the
       // daemon (vol = master gain, tempo = MIDI clock, etc.).
       if (existing?.fixed) return prev
-      next[slot] = null
+      next[key] = null
       return next
     })
   }
@@ -159,13 +168,24 @@ export function MaschineMappingStudio({ status, encoderMap, refetchStatus }: Map
           <h3>Mapping Studio</h3>
           <p className="maschine-mapping__sub">
             Drag any chain-parameter card from the left onto an MK1 encoder slot. Bindings are scoped to the
-            active snapshot. SHIFT-layer overlays + LED choreography land in cycle 10; full State Authority
-            phase-aware activation lands in cycle 11.
+            active snapshot. The SHIFT toggle scopes the editor to the secondary `shift_*` overlay; LED
+            choreography (per-pad idle + press color) is below. State Authority phase-aware activation lands
+            in cycle 11.
           </p>
         </div>
         <div className="maschine-mapping__header-actions">
           <Tag size="md" type="purple">{`Snapshot: ${snapshotLabel}`}</Tag>
+          {shiftLayer ? <Tag size="md" type="cyan">SHIFT layer</Tag> : null}
           {isDirty ? <Tag size="md" type="magenta">Unsaved</Tag> : null}
+          <Toggle
+            id="mapping-shift-layer"
+            size="sm"
+            labelText="SHIFT overlay"
+            labelA="Base layer"
+            labelB="SHIFT layer"
+            toggled={shiftLayer}
+            onToggle={(checked) => setShiftLayer(checked)}
+          />
           <Button kind="ghost" size="sm" onClick={handleRevert} disabled={!isDirty}>Revert</Button>
           {saveMutation.isPending ? (
             <InlineLoading description="Saving…" />
@@ -213,7 +233,7 @@ export function MaschineMappingStudio({ status, encoderMap, refetchStatus }: Map
           <h4 className="maschine-mapping__pane-title">Encoder targets — drop to bind</h4>
           <ul className="maschine-mapping__target-list">
             {ENCODER_SLOTS.map((slot) => {
-              const entry = workingMap?.[slot] ?? null
+              const entry = workingMap?.[slotKey(slot)] ?? null
               const isFixed = entry?.fixed === true
               return (
                 <li
@@ -254,11 +274,14 @@ export function MaschineMappingStudio({ status, encoderMap, refetchStatus }: Map
             })}
           </ul>
           <p className="maschine-mapping__targets-help">
-            Pads + buttons land in cycle 10 (SHIFT-layer overlays). Encoder bindings save through
-            <code> PUT /api/maschine/encoder-map</code>.
+            SHIFT toggle in the header scopes the editor to the secondary <code>shift_*</code> overlay (cycle 10).
+            Encoder bindings save through <code>PUT /api/maschine/encoder-map</code>; the daemon picks the right
+            layer at runtime based on the live SHIFT button state.
           </p>
         </Tile>
       </div>
+
+      <MaschinePadLedChoreography />
     </div>
   )
 }

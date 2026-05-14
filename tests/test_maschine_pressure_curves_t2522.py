@@ -223,3 +223,68 @@ def test_put_performance_patterns_rejects_bad_step_value(isolated_calibration_di
     )
     assert response.status_code == 400
     assert "0/1/2" in response.json()["detail"] or "must be 0" in response.json()["detail"]
+
+
+# ---------------------------------------------------------------------------
+# T2522-D cycle 10 — LED choreography
+# ---------------------------------------------------------------------------
+
+
+def test_get_led_choreography_returns_default(isolated_calibration_dir):
+    client = _build_client()
+    response = client.get("/api/maschine/led-choreography")
+    assert response.status_code == 200
+    body = response.json()
+    assert body["status"] == "ok"
+    cho = body["led_choreography"]
+    assert len(cho["per_pad"]) == 16
+    for entry in cho["per_pad"]:
+        assert entry["idle_color"] == "empty"
+        assert entry["press_color"] == "white"
+
+
+def test_put_led_choreography_round_trip(isolated_calibration_dir):
+    client = _build_client()
+    payload = {
+        "per_pad": [
+            {"idle_color": "cyan", "press_color": "magenta"} if i == 5
+            else {"idle_color": "empty", "press_color": "white"}
+            for i in range(16)
+        ],
+    }
+    put_response = client.put(
+        "/api/maschine/led-choreography",
+        json={"led_choreography": payload},
+    )
+    assert put_response.status_code == 200
+    assert put_response.json()["led_choreography"]["per_pad"][5]["idle_color"] == "cyan"
+
+    get_response = client.get("/api/maschine/led-choreography")
+    assert get_response.json()["led_choreography"]["per_pad"][5]["press_color"] == "magenta"
+
+
+def test_put_led_choreography_rejects_bad_color(isolated_calibration_dir):
+    client = _build_client()
+    payload = {
+        "per_pad": [{"idle_color": "fuchsia", "press_color": "white"}]  # fuchsia not in enum
+        + [{"idle_color": "empty", "press_color": "white"} for _ in range(15)],
+    }
+    response = client.put(
+        "/api/maschine/led-choreography",
+        json={"led_choreography": payload},
+    )
+    assert response.status_code == 400
+    assert "idle_color" in response.json()["detail"]
+
+
+def test_put_led_choreography_rejects_wrong_length(isolated_calibration_dir):
+    client = _build_client()
+    payload = {
+        "per_pad": [{"idle_color": "empty", "press_color": "white"} for _ in range(8)],
+    }
+    response = client.put(
+        "/api/maschine/led-choreography",
+        json={"led_choreography": payload},
+    )
+    assert response.status_code == 400
+    assert "16" in response.json()["detail"]

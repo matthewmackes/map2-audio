@@ -49,6 +49,8 @@ jest.mock('../../map2/clients/maschine', () => ({
     updatePressureCurves: jest.fn(),
     getPerformancePatterns: jest.fn(),
     updatePerformancePatterns: jest.fn(),
+    getLedChoreography: jest.fn(),
+    updateLedChoreography: jest.fn(),
   },
 }))
 
@@ -71,6 +73,8 @@ const { maschineApi } = jest.requireMock('../../map2/clients/maschine') as {
     updatePressureCurves: jest.Mock
     getPerformancePatterns: jest.Mock
     updatePerformancePatterns: jest.Mock
+    getLedChoreography: jest.Mock
+    updateLedChoreography: jest.Mock
   }
 }
 
@@ -331,6 +335,18 @@ describe('MaschinePage', () => {
     maschineApi.updateEncoderMap.mockImplementation(async (encoder_map: unknown) => ({
       status: 'ok',
       encoder_map,
+    }))
+    maschineApi.getLedChoreography.mockResolvedValue({
+      status: 'ok',
+      usb_serial: 'default-mk1',
+      led_choreography: {
+        per_pad: Array.from({ length: 16 }, () => ({ idle_color: 'empty', press_color: 'white' })),
+      },
+    })
+    maschineApi.updateLedChoreography.mockImplementation(async (cho: unknown) => ({
+      status: 'ok',
+      usb_serial: 'default-mk1',
+      led_choreography: cho,
     }))
   })
 

@@ -218,6 +218,34 @@ export interface MaschinePerformancePatternsResponse {
   performance_patterns: MaschinePerformancePatternsBank
 }
 
+// T2522-D cycle 10 — LED choreography (per-pad idle + press colors).
+export type MaschineLedColorName =
+  | 'empty'
+  | 'red'
+  | 'orange'
+  | 'yellow'
+  | 'green'
+  | 'cyan'
+  | 'blue'
+  | 'magenta'
+  | 'white'
+
+export interface MaschineLedChoreographyEntry {
+  idle_color: MaschineLedColorName
+  press_color: MaschineLedColorName
+}
+
+export interface MaschineLedChoreography {
+  /** Exactly 16 entries — one per pad. */
+  per_pad: MaschineLedChoreographyEntry[]
+}
+
+export interface MaschineLedChoreographyResponse {
+  status: string
+  usb_serial: string
+  led_choreography: MaschineLedChoreography
+}
+
 export const maschineApi = {
   getStatus: () =>
     fetchJson<MaschineStatusResponse>(`${MASCHINE_API_BASE}/status`, { cache: 'no-store' }),
@@ -360,6 +388,16 @@ export const maschineApi = {
     fetchJson<MaschinePerformancePatternsResponse>(`${MASCHINE_API_BASE}/performance/patterns`, {
       method: 'PUT',
       body: JSON.stringify({ performance_patterns: bank }),
+    }),
+
+  // T2522-D cycle 10 — LED choreography (per-pad idle + press colors).
+  getLedChoreography: () =>
+    fetchJson<MaschineLedChoreographyResponse>(`${MASCHINE_API_BASE}/led-choreography`, { cache: 'no-store' }),
+
+  updateLedChoreography: (choreography: MaschineLedChoreography) =>
+    fetchJson<MaschineLedChoreographyResponse>(`${MASCHINE_API_BASE}/led-choreography`, {
+      method: 'PUT',
+      body: JSON.stringify({ led_choreography: choreography }),
     }),
 }
 

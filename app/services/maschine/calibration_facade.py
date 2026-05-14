@@ -248,3 +248,84 @@ def update_performance_patterns(payload: Mapping[str, Any]) -> Dict[str, Any]:
     store = _store_for_active_device()
     store.update(performance_patterns=dict(payload))
     return get_performance_patterns()
+
+
+# ---------------------------------------------------------------------------
+# LED choreography (T2522-D cycle 10)
+# ---------------------------------------------------------------------------
+#
+# Schema:
+#
+#   led_choreography:
+#     per_pad:
+#       - idle_color: str       # one of the cabl LED color names
+#         press_color: str      # color shown while pad is pressed
+#       (16 entries, one per pad)
+#
+# The cabl protocol's LED-color enum is sparse and string-typed; the
+# daemon's MaschinePadLedState already stores a `color` field with
+# the same enum, so we mirror it here. The mapping studio writes new
+# choreographies; the daemon picks them up on next reconnect.
+
+LED_COLOR_NAMES = {
+    "empty",
+    "red",
+    "orange",
+    "yellow",
+    "green",
+    "cyan",
+    "blue",
+    "magenta",
+    "white",
+}
+
+
+def default_led_choreography() -> Dict[str, Any]:
+    return {
+        "per_pad": [{"idle_color": "empty", "press_color": "white"} for _ in range(16)],
+    }
+
+
+def _validate_led_choreography(payload: Any) -> None:
+    if not isinstance(payload, Mapping):
+        raise CalibrationSchemaError("led_choreography payload must be a mapping")
+    per_pad = payload.get("per_pad")
+    if not isinstance(per_pad, list) or len(per_pad) != 16:
+        raise CalibrationSchemaError(
+            f"led_choreography.per_pad must be a 16-entry list; got {type(per_pad).__name__} of length {len(per_pad) if isinstance(per_pad, list) else 'n/a'}",
+        )
+    for index, entry in enumerate(per_pad):
+        if not isinstance(entry, Mapping):
+            raise CalibrationSchemaError(
+                f"led_choreography.per_pad[{index}] must be a mapping",
+            )
+        for field in ("idle_color", "press_color"):
+            value = entry.get(field)
+            if not isinstance(value, str) or value not in LED_COLOR_NAMES:
+                raise CalibrationSchemaError(
+                    f"led_choreography.per_pad[{index}].{field}={value!r} must be one of {sorted(LED_COLOR_NAMES)}",
+                )
+
+
+def get_led_choreography() -> Dict[str, Any]:
+    store = _store_for_active_device()
+    try:
+        existing = store.load()
+    except Exception:
+        existing = None
+    block = (
+        (existing or {}).get("led_choreography")
+        if existing is not None
+        else None
+    ) or default_led_choreography()
+    return {
+        "usb_serial": store._usb_serial,
+        "led_choreography": block,
+    }
+
+
+def update_led_choreography(payload: Mapping[str, Any]) -> Dict[str, Any]:
+    _validate_led_choreography(payload)
+    store = _store_for_active_device()
+    store.update(led_choreography=dict(payload))
+    return get_led_choreography()

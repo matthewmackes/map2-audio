@@ -391,6 +391,10 @@ class MaschineCalibrationStore:
                     # validator-skipped section that the performance tab
                     # writes via the calibration_facade.
                     "performance_patterns",
+                    # T2522-D cycle 10 — per-pad idle-color palette
+                    # (LED choreography). Same additive pattern: skipped
+                    # by the schema validator, allowlisted here.
+                    "led_choreography",
                 }:
                     raise CalibrationSchemaError(
                         f"update(): unknown section {key!r}",

@@ -17,6 +17,18 @@ jest.mock('../../../map2/clients/maschine', () => ({
       status: 'ok',
       encoder_map,
     })),
+    getLedChoreography: jest.fn(async () => ({
+      status: 'ok',
+      usb_serial: 'default-mk1',
+      led_choreography: {
+        per_pad: Array.from({ length: 16 }, () => ({ idle_color: 'empty', press_color: 'white' })),
+      },
+    })),
+    updateLedChoreography: jest.fn(async (cho: unknown) => ({
+      status: 'ok',
+      usb_serial: 'default-mk1',
+      led_choreography: cho,
+    })),
   },
 }))
 
@@ -197,6 +209,50 @@ describe('MaschineMappingStudio', () => {
     expect(screen.queryByText('Unsaved')).not.toBeInTheDocument()
     // The Master Gain label remains.
     expect(screen.getByText('Master Gain')).toBeInTheDocument()
+  })
+
+  it('cycle-10 — SHIFT toggle scopes drops to shift_<slot> keys without losing base bindings', async () => {
+    const { container } = render(
+      withQuery(
+        <MaschineMappingStudio
+          status={makeStatus()}
+          encoderMap={emptyEncoderMap()}
+          refetchStatus={jest.fn()}
+        />,
+      ),
+    )
+    // Drop wet → enc1 in BASE layer.
+    const sourceCard = screen.getByText('wet').closest('li')!
+    const enc1Target = container.querySelector('li[data-encoder-slot="enc1"]')!
+    let dt = new FakeDataTransfer()
+    fireEvent.dragStart(sourceCard, { dataTransfer: dt })
+    fireEvent.dragOver(enc1Target, { dataTransfer: dt })
+    fireEvent.drop(enc1Target, { dataTransfer: dt })
+    // Toggle SHIFT layer on. Carbon's <Toggle> exposes a checkbox role.
+    const shiftToggle = screen.getByRole('switch', { name: /SHIFT overlay/ })
+    fireEvent.click(shiftToggle)
+    // Drop time → enc1 in SHIFT layer (a different slot key).
+    const timeCard = screen.getByText('time').closest('li')!
+    dt = new FakeDataTransfer()
+    fireEvent.dragStart(timeCard, { dataTransfer: dt })
+    fireEvent.dragOver(enc1Target, { dataTransfer: dt })
+    fireEvent.drop(enc1Target, { dataTransfer: dt })
+    // Save → both keys present in payload.
+    fireEvent.click(screen.getByRole('button', { name: 'Save bindings' }))
+    await waitFor(() => expect(maschineApi.updateEncoderMap).toHaveBeenCalledTimes(1))
+    const sent = maschineApi.updateEncoderMap.mock.calls[0][0] as Record<string, unknown>
+    expect(sent.enc1).toEqual({
+      block_id: 'block-reverb',
+      param_id: 'wet',
+      label: 'Reverb / wet',
+      fixed: false,
+    })
+    expect(sent.shift_enc1).toEqual({
+      block_id: 'block-delay',
+      param_id: 'time',
+      label: 'Delay / time',
+      fixed: false,
+    })
   })
 
   it('shows a clear empty-state when the active snapshot has no chain blocks', () => {

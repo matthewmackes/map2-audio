@@ -11,8 +11,10 @@ from app.config import get_config as get_runtime_config_manager
 from app.database import get_session
 from app.services.maschine.admin_console import get_maschine_admin_console_service
 from app.services.maschine.calibration_facade import (
+    get_led_choreography as facade_get_led_choreography,
     get_performance_patterns as facade_get_performance_patterns,
     get_pressure_curves as facade_get_pressure_curves,
+    update_led_choreography as facade_update_led_choreography,
     update_performance_patterns as facade_update_performance_patterns,
     update_pressure_curves as facade_update_pressure_curves,
 )
@@ -452,6 +454,35 @@ async def update_maschine_performance_patterns(
     active_pattern_id (if set) must match a pattern.id."""
     try:
         payload = facade_update_performance_patterns(request.performance_patterns)
+    except CalibrationSchemaError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return {"status": "ok", **payload}
+
+
+class MaschineLedChoreographyRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    led_choreography: dict[str, Any]
+
+
+@router.get("/led-choreography")
+async def get_maschine_led_choreography() -> dict[str, Any]:
+    """T2522-D cycle 10 — return the active device's LED-choreography
+    block (per-pad idle + press colors). Falls back to a default of
+    every pad idle=empty + press=white when no calibration file
+    exists yet."""
+    payload = facade_get_led_choreography()
+    return {"status": "ok", **payload}
+
+
+@router.put("/led-choreography")
+async def update_maschine_led_choreography(
+    request: MaschineLedChoreographyRequest,
+) -> dict[str, Any]:
+    """T2522-D cycle 10 — replace the active device's LED-choreography
+    block. Validates against the cabl color enum + 16-pad shape."""
+    try:
+        payload = facade_update_led_choreography(request.led_choreography)
     except CalibrationSchemaError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     return {"status": "ok", **payload}
