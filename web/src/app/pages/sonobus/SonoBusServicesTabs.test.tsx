@@ -25,6 +25,7 @@ describe('SonoBusServicesTabs', () => {
     expect(screen.getByTestId('sonobus-tab-peers')).toBeInTheDocument()
     expect(screen.getByTestId('sonobus-tab-groups')).toBeInTheDocument()
     expect(screen.getByTestId('sonobus-tab-network')).toBeInTheDocument()
+    expect(screen.getByTestId('sonobus-tab-profiles')).toBeInTheDocument()
     expect(screen.getByTestId('sonobus-tab-diagnostics')).toBeInTheDocument()
   })
 

@@ -145,6 +145,7 @@ const SonoBusPeersPage           = lazy(() => import('./pages/sonobus/SonoBusPee
 const SonoBusGroupsPage          = lazy(() => import('./pages/sonobus/SonoBusGroupsPage').then(m => ({ default: m.SonoBusGroupsPage })))
 const SonoBusNetworkPage         = lazy(() => import('./pages/sonobus/SonoBusNetworkPage').then(m => ({ default: m.SonoBusNetworkPage })))
 const SonoBusDiagnosticsPage     = lazy(() => import('./pages/sonobus/SonoBusDiagnosticsPage').then(m => ({ default: m.SonoBusDiagnosticsPage })))
+const SonoBusProfilesPage        = lazy(() => import('./pages/sonobus/SonoBusProfilesPage').then(m => ({ default: m.SonoBusProfilesPage })))
 // T2491 (2026-05-02 cleanup) — the 7 MidiHub*Page lazy imports
 // retired with the /midi-hub/* mount. Canonical /midi/* mount uses
 // MidiServicesConnectionsPage / MidiServicesPresetsPage / etc. The
@@ -964,6 +965,7 @@ export function App() {
                                   <Route path="peers" element={<SonoBusPeersPage />} />
                                   <Route path="groups" element={<SonoBusGroupsPage />} />
                                   <Route path="network" element={<SonoBusNetworkPage />} />
+                                  <Route path="profiles" element={<SonoBusProfilesPage />} />
                                   <Route path="diagnostics" element={<SonoBusDiagnosticsPage />} />
                                 </Route>
                                 <Route path={HOST_MACHINE_ROUTE} element={<RouteBoundary title="Host Machine view crashed" actionLabel="Reload host machine"><HostMachinePage /></RouteBoundary>} />

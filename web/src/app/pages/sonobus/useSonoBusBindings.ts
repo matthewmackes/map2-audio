@@ -200,3 +200,33 @@ export function useSonoBusGroups() {
     staleTime: 0,
   })
 }
+
+export interface SonoBusProfilePreset {
+  profile_id: string
+  label: string
+  codec_profile: string
+  stream_format: string
+  jitter_buffer_ms: number
+  resend_policy: string
+  latency_target_ms: number
+  description: string
+}
+
+async function fetchSonoBusProfiles(): Promise<SonoBusProfilePreset[]> {
+  const response = await fetch('/api/sonobus/profiles')
+  if (!response.ok) {
+    throw new Error(`sonobus profiles failed: ${response.status}`)
+  }
+  return (await response.json()) as SonoBusProfilePreset[]
+}
+
+export function useSonoBusProfiles() {
+  return useQuery({
+    queryKey: ['sonobus-profiles'],
+    queryFn: fetchSonoBusProfiles,
+    // Profile presets are immutable until T2521-4 ships custom profiles.
+    // Poll cheaply at 30s for forward-compat.
+    refetchInterval: 30000,
+    staleTime: 30000,
+  })
+}

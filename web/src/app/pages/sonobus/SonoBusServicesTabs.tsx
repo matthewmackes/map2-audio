@@ -31,6 +31,7 @@ const TABS: readonly SonoBusServicesTabDef[] = [
   { id: 'peers', label: 'Peers', sub: 'Listeners · Capabilities', to: '/sonobus/peers' },
   { id: 'groups', label: 'Groups', sub: 'Channel-groups · Sessions', to: '/sonobus/groups' },
   { id: 'network', label: 'Network', sub: 'Server · Ports · mDNS', to: '/sonobus/network' },
+  { id: 'profiles', label: 'Profiles', sub: 'Codec · Jitter · Resend', to: '/sonobus/profiles' },
   { id: 'diagnostics', label: 'Diagnostics', sub: 'Authority · Gates · Metrics', to: '/sonobus/diagnostics' },
 ]
 
