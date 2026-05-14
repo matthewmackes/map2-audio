@@ -2579,6 +2579,55 @@ The earlier order-1 row is fully drained for pure-Python / pure-frontend slices.
 
 ---
 
+### Pick-up next (twelfth Continue run handoff, filed 2026-05-13, end-of-run)
+
+**Twelfth run total: 7 cycles, all dual-pushed to origin + gitlab.** This run opened the SonoBus/AOO Remote-Audio Transport epic (T2521, decisions locked Q1-Q21 at kickoff) and shipped six T2521 sub-tasks in a single sitting. T2521 is the AVB-template companion epic: a new platform service offering for remote-audio transport, sitting beside AVB as a fallback / WAN path. Locked decisions live in `docs/architecture/SONOBUS_AOO_TRANSPORT.md §0`.
+
+Shipped this run, in order:
+
+1. **Cycle 1 — T2521-2 architecture doc** (commit `51330687e`). Lifts the AVB Services structure verbatim into `docs/architecture/SONOBUS_AOO_TRANSPORT.md`: locked decisions, four-services framing, 11-row inventory of new code surfaces, `SonoBusBinding` data model with Q-citations, migration strategy (greenfield + Q12 recorder/artifact exclusion), 12-entry risk register, 5 mermaid diagrams, API surface table (`/api/sonobus/*` + `/ws/sonobus/events`), 7-region GUI map, licensing posture for AOO BSD-3 + SonoBus GPLv3, validation gates per Q19. T2521-2 marked `[✓]` Done.
+
+2. **Cycle 2 — T2521-3 SonoBusBindingAuthority** (commit `292d00716`). New `app/services/sonobus/` package: `binding_models.py` (SQLAlchemy `sonobus_bindings` table with 25 columns + 7 indexes), `binding_schemas.py` (Pydantic Create/Update/Read with Q7/Q8/Q9/Q14/Q18 defaults baked in), `binding_authority.py` (the async single-writer service mirroring `AvbBindingAuthority`). Migration v14 (`sonobus_bindings_canonical_authority`) registered in `app/database.py` with sync + async idempotent helpers. 16 pytest cases. T2521-3 marked `[✓]` Done.
+
+3. **Cycle 3 — T2521-5 routes first slice** (commit `7ec1e9089`). New `app/services/sonobus/binding_routes.py` mounting `/api/sonobus/*` in `app/main.py`: `/status` (authority + daemon stub + Q3/Q18 defaults), `/bindings/count`, `/bindings/matrix` (binding_kind × consumer_type aggregation), `/bindings` (with consumer/kind/group/cluster/scope filters), `/bindings/{id}` (GET/PATCH/DELETE), `/bindings/{id}/{disable,enable}`. 12 scaffold + 9 live-HTTP TestClient cases. T2521-5 `[>]` In Progress (cluster matrix + peer/session/network/diagnostics/profiles + WS event stream deferred).
+
+4. **Cycle 4 — T2521-6 `/sonobus` Overview** (commit `2b226cc1e`). New `web/src/app/pages/sonobus/`: `useSonoBusBindings.ts` (TanStack hooks for status/count/matrix at 5 s poll), `SonoBusOverviewPage.tsx` (pure Carbon — Section + Layer + Tile + Tag), `SonoBusOverviewPage.css`. Lazy-mounted at `/sonobus` in `App.tsx`. 8 jest cases. `npm run typecheck` clean + `npm run build` produced `SonoBusOverviewPage-aGJYSP-X.js` (5.5 KB). T2521-6 `[>]` In Progress (Connections / Routing / Network / Peers / Profiles / Diagnostics regions + full shell scaffold queued).
+
+5. **Cycle 5 — T2521-8 packaging + systemd** (commit `ae2b63f84`). `systemd/map2-sonobus-transport.service` (locked Q3/Q14/Q18 defaults, `CPUAffinity=0 1 2 3` so the non-RT daemon stays off audio-isolated cores, `LimitRTPRIO=40`, `CAP_NET_BIND_SERVICE`, `ProtectSystem=strict` hardening). `systemd/firewalld/map2-sonobus.xml` (UDP 10000-10100). `etc/map2/sonobus.env.example` documenting every Q-derived environment variable. `installer/backend/packages.py` gains `SONOBUS_PACKAGES_FEDORA` (opus-devel + libuv-devel + avahi-devel — AOO source is vendored per Q20 so the daemon only needs build deps), Debian apt mappings, and a `sonobus` component entry. 8 pytest cases verify file presence + locked-decision defaults + audio-core avoidance + installer registration. T2521-8 `[>]` In Progress.
+
+6. **Cycle 6 — T2521-9 licensing/notices** (commit `a4417faa2`). `docs/THIRD_PARTY_NOTICES.md` gains AOO BSD-3 vendored row, SonoBus brand-only row, and three system-shared-lib rows (libopus / libuv / avahi-client). `docs/architecture/LICENSE_COMPATIBILITY.md` gains the matching matrix rows + an updated conclusion paragraph. 8 pytest cases verify the rows + brand-only clarification + audit history line. T2521-9 marked `[✓]` Done.
+
+7. **Cycle 7 — T2521-7 Q12 recorder exclusion + ID space** (commit `aadd8c018`). New `app/services/sonobus/interface_ids.py` exposing the canonical `sonobus:` ID prefix, `make_sonobus_interface_id` / `parse_sonobus_interface_id` round-trip, `is_sonobus_interface_id` detector, the typed `SonoBusInterfaceForbiddenError` (message cites "T2521 Q12: no recorder/artifact integration"), and the Q12 enforcement helper `assert_not_sonobus_id(interface_id, service_name=...)`. 11 unit tests + 8 parametrized regression tests across 5 recorder-adjacent service names. T2521-7 `[>]` In Progress (full T2518 registry integration + `/sonobus/routing` region + recorder entry-point wiring deferred).
+
+**Cumulative test coverage after the twelfth run: 80 SonoBus pytest cases across 7 files** (`test_sonobus_binding_authority.py` 16, `test_sonobus_binding_routes_scaffold.py` 12, `test_sonobus_binding_routes_live.py` 9, `test_sonobus_packaging.py` 8, `test_sonobus_licensing.py` 8, `test_sonobus_interface_ids.py` 11, `test_sonobus_recorder_exclusion.py` 8) + 8 jest cases (`SonoBusOverviewPage.test.tsx`). AVB + MIDI binding-authority suites still green (107 tests in the combined sanity sweep).
+
+**T2521 sub-task status after run 12:**
+
+| Sub-task | Status | Run-12 cycle |
+|---|---|---|
+| T2521-1 Decisions Q1-Q21 | [✓] Done | (kickoff) |
+| T2521-2 Architecture doc | [✓] Done | 1 |
+| T2521-3 Binding authority + persistence | [✓] Done | 2 |
+| T2521-4 `map2-sonobus-transport` daemon | [ ] Todo | — |
+| T2521-5 REST + WS | [>] In Progress | 3 |
+| T2521-6 Carbon workspace | [>] In Progress | 4 |
+| T2521-7 Snapshot/routing integration + Q12 exclusion | [>] In Progress | 7 |
+| T2521-8 Installer/RPM/systemd/firewall | [>] In Progress | 5 |
+| T2521-9 Licensing/notices | [✓] Done | 6 |
+| T2521-10 Validation/soak | [ ] Todo | — |
+
+**Next-session order-1 picks** (priority order; pure-Python or pure-frontend except where noted):
+
+1. **T2521-5 cluster matrix + peer/session routes** — extend `binding_routes.py` with `/cluster/bindings/matrix` (peer-fan-out, 2 s timeout, mirroring T2484/T2490 patterns) and the peer/session/group/network CRUD that the Connections + Network + Peers pages will consume. Pure-Python. ~2 cycles.
+2. **T2521-6 Connections + Routing region pages** — Carbon DataTable for the Connections page (consumes `/bindings` + `/bindings/matrix`) and a routing-matrix UI for `/sonobus/routing`. Each is a clean lift from the AVB equivalent. ~2 cycles.
+3. **T2521-8 RPM spec entries + `vendor/aoo/` skeleton** — wire `installer/` to invoke `install_component("sonobus")` during fresh installs; create `vendor/aoo/.gitkeep` + a CMake `option(USE_SONOBUS ...)` stub in `juce-engine/CMakeLists.txt` so T2521-4 has a place to land. Pure-Python + small CMake patch. ~1 cycle.
+4. **T2521-7 T2518 integration once that registry ships** — add a `_sonobus_meter_source.py` facade (mirroring the device meter facades) so SonoBus stream bindings register interface IDs through the unified registry, with the Q12 gate calling `assert_not_sonobus_id` on the recorder side. Soft-dependent on T2518; until then the standalone helper module + regression tests are the contract. ~1-2 cycles.
+5. **T2521-4 daemon (C++)** — RT-adjacent, requires bench. C++ + CMake + JACK port handoff. Skipped during this autonomous run; needs operator review of the AOO API binding choices before committing to a daemon binary layout.
+
+**Bench-only / spec-needed** (unchanged from run 11): T2521-4 (C++ daemon), T2521-10 (LAN two-node + impairment matrix), T2515-7/8, T2517-1/8/9 + Follow-up-A/B, looper RT-gated tail.
+
+---
+
 ### Pick-up next (eleventh Continue run handoff, filed 2026-05-13, end-of-run)
 
 **Eleventh run total: 9 cycles, all dual-pushed to origin + gitlab.** This run took the unified meter-source primitive shipped in run 10 (T2519) and built it out into a full operator-facing surface: shared hook + tag primitive, three device-panel parity rollouts, a registry-enumeration route, a frontend overview table, a wired diagnostics-page mount, and an opt-in snapshot-inlining mode with a live "Peak (dBFS)" column. T2519 stays `[✓]` but is now genuinely complete end-to-end.
