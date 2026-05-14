@@ -138,6 +138,7 @@ const AvbServicesRoutingPage     = lazy(() => import('./pages/avb-services/AvbSe
 const AvbServicesNetworkPage     = lazy(() => import('./pages/avb-services/AvbServicesNetworkPage').then(m => ({ default: m.AvbServicesNetworkPage })))
 const AvbServicesAvdeccBindingWizardPage = lazy(() => import('./pages/avb-services/AvbServicesAvdeccBindingWizardPage').then(m => ({ default: m.AvbServicesAvdeccBindingWizardPage })))
 // T2521-6 — SonoBus/AOO remote-audio transport mount scaffold.
+const SonoBusServicesShell       = lazy(() => import('./pages/SonoBusServicesShell').then(m => ({ default: m.SonoBusServicesShell })))
 const SonoBusOverviewPage        = lazy(() => import('./pages/sonobus/SonoBusOverviewPage').then(m => ({ default: m.SonoBusOverviewPage })))
 const SonoBusConnectionsPage     = lazy(() => import('./pages/sonobus/SonoBusConnectionsPage').then(m => ({ default: m.SonoBusConnectionsPage })))
 const SonoBusPeersPage           = lazy(() => import('./pages/sonobus/SonoBusPeersPage').then(m => ({ default: m.SonoBusPeersPage })))
@@ -955,12 +956,16 @@ export function App() {
                                     Profiles / Diagnostics regions land in later
                                     T2521 cycles. See
                                     docs/architecture/SONOBUS_AOO_TRANSPORT.md. */}
-                                <Route path="/sonobus" element={<RouteBoundary title="SonoBus view crashed" actionLabel="Reload SonoBus"><SonoBusOverviewPage /></RouteBoundary>} />
-                                <Route path="/sonobus/connections" element={<RouteBoundary title="SonoBus Connections crashed" actionLabel="Reload SonoBus Connections"><SonoBusConnectionsPage /></RouteBoundary>} />
-                                <Route path="/sonobus/peers" element={<RouteBoundary title="SonoBus Peers crashed" actionLabel="Reload SonoBus Peers"><SonoBusPeersPage /></RouteBoundary>} />
-                                <Route path="/sonobus/groups" element={<RouteBoundary title="SonoBus Groups crashed" actionLabel="Reload SonoBus Groups"><SonoBusGroupsPage /></RouteBoundary>} />
-                                <Route path="/sonobus/network" element={<RouteBoundary title="SonoBus Network crashed" actionLabel="Reload SonoBus Network"><SonoBusNetworkPage /></RouteBoundary>} />
-                                <Route path="/sonobus/diagnostics" element={<RouteBoundary title="SonoBus Diagnostics crashed" actionLabel="Reload SonoBus Diagnostics"><SonoBusDiagnosticsPage /></RouteBoundary>} />
+                                {/* T2521-6d — SonoBus shell with tab navigation.
+                                    Outlet children render under the shared tab rail. */}
+                                <Route path="/sonobus" element={<RouteBoundary title="SonoBus view crashed" actionLabel="Reload SonoBus"><SonoBusServicesShell /></RouteBoundary>}>
+                                  <Route index element={<SonoBusOverviewPage />} />
+                                  <Route path="connections" element={<SonoBusConnectionsPage />} />
+                                  <Route path="peers" element={<SonoBusPeersPage />} />
+                                  <Route path="groups" element={<SonoBusGroupsPage />} />
+                                  <Route path="network" element={<SonoBusNetworkPage />} />
+                                  <Route path="diagnostics" element={<SonoBusDiagnosticsPage />} />
+                                </Route>
                                 <Route path={HOST_MACHINE_ROUTE} element={<RouteBoundary title="Host Machine view crashed" actionLabel="Reload host machine"><HostMachinePage /></RouteBoundary>} />
                                 <Route path="/grid" element={<Navigate to="/snapshot-editor" replace />} />
                                 <Route path="/juce-grid" element={<Navigate to="/snapshot-editor" replace />} />

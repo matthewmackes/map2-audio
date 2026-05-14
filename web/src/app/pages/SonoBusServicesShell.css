@@ -1,0 +1,38 @@
+/*
+ * T2521-6d — SonoBusServicesShell.css
+ *
+ * Cloned from AvbServicesShell.css with class-prefix swap; tokens identical.
+ */
+
+.sonobus-services-shell {
+  --workspace-page-template-padding-block: var(--cds-spacing-06);
+  --workspace-page-template-padding-inline: clamp(1rem, 0.7rem + 1vw, 1.75rem);
+  --workspace-page-template-gap: var(--cds-spacing-06);
+  --workspace-page-template-content-only-padding-block: var(--cds-spacing-04);
+  --workspace-page-template-content-only-padding-inline: clamp(0.75rem, 0.45rem + 0.95vw, 1.9rem);
+  --workspace-page-template-content-only-gap: var(--cds-spacing-05);
+  min-height: 100%;
+  color: var(--cds-text-primary);
+  background: var(--cds-background);
+}
+
+.sonobus-services-shell__frame {
+  align-items: start;
+  min-height: calc(100vh - 6rem);
+}
+
+.sonobus-services-shell__content {
+  display: grid;
+  align-content: start;
+  gap: var(--cds-spacing-05);
+  min-width: 0;
+}
+
+.sonobus-services-shell__content-body {
+  display: grid;
+  align-content: start;
+  gap: var(--cds-spacing-05);
+  min-width: 0;
+  min-height: calc(100vh - 10rem);
+}
+
