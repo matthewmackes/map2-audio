@@ -3,6 +3,7 @@
 > **Filed:** 2026-05-09 under T2503 Set 1.
 > **Updated:** 2026-05-10 — pivoted from Tracktion Engine to MAP2-native DAW core; Tracktion rows removed, Mixxx clip-pattern reuse retained.
 > **Updated:** 2026-05-11 — T2503 DAW Service epic retired under T2504 / T2505. `MAP2_DAW_MODE` CMake flag and `juce-engine/Source/Daw/` tree have been removed; the archived doc is `docs/architecture/archive/DAW_SERVICE_RETIRED_2026-05-11.md`. Mixxx mapping/import attribution remains in effect for the controller-host device-pack subsystem (T2459-H).
+> **Updated:** 2026-05-13 — T2521-9 adds AOO (BSD-3) + SonoBus (GPLv3) rows for the new remote-audio transport. AOO is vendored under `vendor/aoo/`; SonoBus is brand/protocol reference only (no linkage).
 > **Scope:** verify that every third-party component vendored or fetched by MAP2 is compatible with the top-level AGPLv3-only license.
 
 ---
@@ -27,6 +28,11 @@ Nothing in this audit relicenses MAP2-owned code or alters the terms under which
 | **Open Color palette values** | MIT | Numeric constants in `externalPaletteThemes.ts` | **Yes** — MIT permissive | `yeun/open-color` |
 | **Material palette values** | (numeric constants only — values, not code) | Numeric constants in `externalPaletteThemes.ts` | **Yes** — bare numeric constants are not copyrightable | Google Material Design docs |
 | **Web fonts (Roboto, IBM Plex Sans, Plex Mono, Fira Sans, Space Grotesk, Inter)** | each per upstream license (Apache 2.0 / SIL OFL 1.1) | Bundled into web build | **Yes** — Apache 2.0 → AGPLv3 (one-way), SIL OFL is independent of GPL (fonts) | per-package metadata |
+| **AOO (Audio Over OSC)** | BSD-3-Clause | Vendored under `vendor/aoo/` (T2521-4). Built into `map2-sonobus-transport` daemon. | **Yes** — BSD-3 is permissive, compatible with any GPL family; one-way upgrade to AGPLv3 in the combined work. | upstream `vendor/aoo/LICENSE` |
+| **SonoBus (application)** | GPL-3.0 | **Not vendored, not linked.** Brand-name reference only — the `/sonobus` operator mount is named after the SonoBus brand per Q2 of the T2521 decision lock. The runtime is MAP2-owned `map2-sonobus-transport` built on AOO (BSD-3). | **N/A — no linkage.** If a future task vendors SonoBus code (mapping plugin, connection-server source), the GPLv3 boundary will be re-audited here and the affected code will stay in a process-isolated boundary (separate binary, not linked into the JUCE engine or FastAPI app). | https://github.com/essej/sonobus |
+| **Opus codec (`libopus`)** | BSD-3-Clause | Installed via DNF/apt as a dynamic shared library. Linked at build time by `map2-sonobus-transport`. Reserved for the future Opus codec slots (T2521 v1 ships PCM-only per Q7/Q8). | **Yes** — BSD-3 is permissive, compatible with AGPLv3 in the combined work. | xiph.org/opus |
+| **libuv** | MIT | Installed via DNF/apt as a dynamic shared library. Used by `map2-sonobus-transport` for the UDS bridge to the FastAPI authority layer. | **Yes** — MIT is permissive, compatible with AGPLv3 in the combined work. | libuv.org |
+| **Avahi client (`avahi-client`)** | LGPL-2.1-or-later | Installed via DNF/apt as a dynamic shared library. Dynamically linked by `map2-sonobus-transport` for mDNS peer discovery (Q17). | **Yes** — LGPL-2.1 dynamic linkage preserves library-replacement rights; compatible with AGPLv3 in the combined work. The `LGPLv2.1 → GPLv3 → AGPLv3` chain is permitted per LGPL-2.1 §3 (allowing relicensing of the *combination* to GPL-family work while the library itself remains LGPL). | avahi.org |
 
 **Components removed in the 2026-05-10 pivot:**
 - *Tracktion Engine (GPL-3.0-or-later)* — was planned for T2503 Set 2 but the version-coordination cost between Tracktion `develop` and JUCE 8.x patch releases proved too high for autonomous shipping. Replaced with a MAP2-native DAW core built on `juce::AudioProcessorGraph` (no new external dependency).
@@ -88,6 +94,8 @@ The `-DMAP2_DAW_MODE` CMake option that previously gated the DAW service tree wa
 
 Every third-party component currently vendored or fetched by MAP2 is **compatible with the top-level AGPLv3-only license**. The forthcoming Multi-Track Recorder + Playback subsystem (T2504) introduces no new external dependency — it builds on JUCE's `AudioProcessorGraph`, `AudioFormatReader`, and `io_uring` (kernel feature), all of which are already pulled by the live engine. Mixxx ControllerEngine patterns remain in use through the `map2-controller-host` device-pack subsystem (T2459-H) with attribution preserved.
 
+The SonoBus/AOO Remote-Audio Transport subsystem (T2521) adds AOO (BSD-3) as a vendored runtime dependency, libopus (BSD-3) / libuv (MIT) / avahi-client (LGPL-2.1) as system shared-library deps, and references SonoBus (GPL-3.0) as a brand/protocol target without linkage. All four are compatible with AGPLv3. The GPLv3 boundary against the SonoBus binary remains process-isolated (separate binary, no link-time dependency); any future change that vendors SonoBus code triggers a re-audit here.
+
 ---
 
-Last updated: 2026-05-11 EDT - Claude (T2505 retired T2503 DAW service epic; superseded by T2504)
+Last updated: 2026-05-13 EDT - Claude (T2521-9 added AOO + SonoBus + libopus + libuv + avahi-client rows for the new remote-audio transport)
