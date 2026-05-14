@@ -162,6 +162,41 @@ describe('useDevicesPeakMetersClusterStream', () => {
     expect(captures.length).toBe(0)
   })
 
+  it('appends node_ids when nodeIds is provided', () => {
+    renderHook(() =>
+      useDevicesPeakMetersClusterStream({
+        url: 'ws://test/cluster',
+        nodeIds: ['peer-A', 'local'],
+      }),
+    )
+    expect(captures[0].url).toBe(
+      'ws://test/cluster?node_ids=local%2Cpeer-A',
+    )
+  })
+
+  it('combines include_snapshot=true and node_ids in the URL', () => {
+    renderHook(() =>
+      useDevicesPeakMetersClusterStream({
+        url: 'ws://test/cluster',
+        includeSnapshot: true,
+        nodeIds: ['peer-A'],
+      }),
+    )
+    expect(captures[0].url).toBe(
+      'ws://test/cluster?include_snapshot=true&node_ids=peer-A',
+    )
+  })
+
+  it('does not append node_ids when the list is empty', () => {
+    renderHook(() =>
+      useDevicesPeakMetersClusterStream({
+        url: 'ws://test/cluster',
+        nodeIds: [],
+      }),
+    )
+    expect(captures[0].url).toBe('ws://test/cluster')
+  })
+
   it('unsubscribes on unmount', () => {
     const { unmount } = renderHook(() =>
       useDevicesPeakMetersClusterStream({ url: 'ws://test/cluster' }),

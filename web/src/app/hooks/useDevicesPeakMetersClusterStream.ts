@@ -36,6 +36,14 @@ export interface UseDevicesPeakMetersClusterStreamOptions {
   /** When true, request inline snapshots for every device in every
    * peer's registry. */
   includeSnapshot?: boolean
+  /** Restrict the stream to a specific node list. Translated to the
+   * canonical `?node_ids=a,b,c` query parameter (run-13i cycle 2).
+   * Use `"local"` for the local-node slice; other entries match
+   * peer.node_id or peer.hostname. Empty list / undefined means
+   * "no filter — return every node". Sorted before URL construction
+   * so a re-ordered prop doesn't tear down the socket. Run-13i
+   * cycle 3. */
+  nodeIds?: readonly string[]
 }
 
 export interface UseDevicesPeakMetersClusterStreamResult {
@@ -65,11 +73,25 @@ export function useDevicesPeakMetersClusterStream(
   const baseUrl = opts?.url ?? defaultClusterStreamUrl()
   const includeSnapshot = opts?.includeSnapshot ?? false
 
+  // Memoize via a stable join so re-ordered props don't bounce the
+  // shared subscription.
+  const nodeIdsKey = (opts?.nodeIds ?? [])
+    .map((id) => id.trim())
+    .filter((id) => id.length > 0)
+    .sort()
+    .join(',')
+
   const url = useMemo(() => {
-    if (!includeSnapshot) return baseUrl
-    const separator = baseUrl.includes('?') ? '&' : '?'
-    return `${baseUrl}${separator}include_snapshot=true`
-  }, [baseUrl, includeSnapshot])
+    let next = baseUrl
+    const params: string[] = []
+    if (includeSnapshot) params.push('include_snapshot=true')
+    if (nodeIdsKey) {
+      params.push(`node_ids=${encodeURIComponent(nodeIdsKey)}`)
+    }
+    if (params.length === 0) return next
+    const separator = next.includes('?') ? '&' : '?'
+    return `${next}${separator}${params.join('&')}`
+  }, [baseUrl, includeSnapshot, nodeIdsKey])
 
   const [local, setLocal] = useState<DeviceMetersRegistryPayload | undefined>(
     undefined,

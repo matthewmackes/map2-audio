@@ -170,10 +170,16 @@ export function DevicePeakMetersClusterOverview({
     enabled: !useStream,
   })
   // Streaming path. Disabled in polling mode so we don't keep a WS
-  // socket open unnecessarily.
+  // socket open unnecessarily. When nodeFilter is set under
+  // streaming, push it down to the subscription so the server-side
+  // filter (run-13i cycle 2) drops irrelevant peers before they hit
+  // the wire — operators with a single-peer focus pay one peer's
+  // worth of bandwidth rather than every peer's.
+  const streamingNodeIds = nodeFilter ? [nodeFilter] : undefined
   const streaming = useDevicesPeakMetersClusterStream({
     enabled: Boolean(useStream),
     includeSnapshot,
+    nodeIds: streamingNodeIds,
   })
 
   const local = useStream ? streaming.local : polling.local
