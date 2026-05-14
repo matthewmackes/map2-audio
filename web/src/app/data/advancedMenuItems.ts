@@ -2,6 +2,7 @@ import type { ComponentType } from 'react'
 import {
   BareMetalServer,
   Catalog,
+  Cloud,
   Dashboard,
   Devices as Monitor,
   Home as House,
@@ -376,6 +377,22 @@ const baseNavigationCatalog: ShellNavigationItem[] = [
     includeInAdvancedMenu: true,
     pinnable: true,
     maturity: 'beta',
+    kind: 'link',
+    showOnHome: true,
+  },
+  {
+    // T2521-6e — SonoBus / AOO remote-audio transport. Filed 2026-05-13
+    // (T2521 epic). AVB-preferred fallback transport per Q18; lives
+    // beside /avb as a sibling platform service.
+    to: '/sonobus',
+    label: 'SonoBus',
+    icon: Cloud as ComponentType<any>,
+    description: 'Remote-audio transport over AOO (BSD-3). MAP2-to-MAP2 peer audio with fallback from AVB. Connections, peers, groups, network, and diagnostics regions.',
+    color: 'var(--cds-support-info)',
+    homeSection: 'AVB',
+    includeInAdvancedMenu: true,
+    pinnable: true,
+    maturity: 'alpha',
     kind: 'link',
     showOnHome: true,
   },

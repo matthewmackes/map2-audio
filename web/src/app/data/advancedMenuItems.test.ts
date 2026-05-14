@@ -157,11 +157,13 @@ describe('navigation catalog', () => {
     // T2491 (cleanup) — actual menu order has /avb between /state-authority
     // and /avb/devices/tesira (the entry was added at the position the
     // T2490-1 patch landed it). Test updated to match observed order.
+    // T2521-6e — /sonobus entry inserted between /avb and /avb/devices/tesira.
     expect(advancedItems.map((item) => item.to)).toEqual([
       '/midi',
       '/devices',
       '/state-authority',
       '/avb',
+      '/sonobus',
       '/avb/devices/tesira',
       '/edirol-ua1000',
       '/hotone-jogg',
