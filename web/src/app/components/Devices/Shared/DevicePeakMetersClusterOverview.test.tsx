@@ -577,6 +577,53 @@ describe('DevicePeakMetersClusterOverview', () => {
     ).not.toBeInTheDocument()
   })
 
+  it('renders sortable column headers when sortable=true', () => {
+    mockCluster.mockReturnValue({
+      local: {
+        devices: [
+          {
+            device_id: 'edirol-ua-1000',
+            input_channels: 10,
+            output_channels: 10,
+            has_engine_source: true,
+          },
+        ],
+      },
+      peers: [],
+      errors: {},
+      isError: false,
+      isLoading: false,
+    })
+    render(<DevicePeakMetersClusterOverview sortable />)
+    // Carbon's sortable headers render as buttons inside the header
+    // cell; the easiest signal is the aria-sort attribute appearing
+    // somewhere in the table.
+    const table = screen.getByTestId('device-peak-meters-cluster-overview')
+    expect(table.querySelector('[aria-sort]')).not.toBeNull()
+  })
+
+  it('does not render sortable headers by default', () => {
+    mockCluster.mockReturnValue({
+      local: {
+        devices: [
+          {
+            device_id: 'edirol-ua-1000',
+            input_channels: 10,
+            output_channels: 10,
+            has_engine_source: true,
+          },
+        ],
+      },
+      peers: [],
+      errors: {},
+      isError: false,
+      isLoading: false,
+    })
+    render(<DevicePeakMetersClusterOverview />)
+    const table = screen.getByTestId('device-peak-meters-cluster-overview')
+    expect(table.querySelector('[aria-sort]')).toBeNull()
+  })
+
   it('mounts a Peak column when includeSnapshot is true', () => {
     mockCluster.mockReturnValue({
       local: {

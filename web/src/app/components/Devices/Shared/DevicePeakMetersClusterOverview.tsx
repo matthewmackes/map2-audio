@@ -60,6 +60,11 @@ export interface DevicePeakMetersClusterOverviewProps {
    * default so single-node operators aren't shown a noisy stat.
    * Run-13h cycle 4. */
   showPerNodeCounts?: boolean
+  /** When `true`, mount Carbon's built-in column sort affordances on
+   * every header. Clicking a header cycles none → asc → desc. Off
+   * by default so the existing local-first ordering survives.
+   * Run-13i cycle 4. */
+  sortable?: boolean
 }
 
 const DEFAULT_STALE_THRESHOLD_S = 10
@@ -148,6 +153,7 @@ export function DevicePeakMetersClusterOverview({
   staleThresholdSeconds,
   nodeFilter,
   showPerNodeCounts,
+  sortable,
 }: DevicePeakMetersClusterOverviewProps): React.JSX.Element {
   const staleThreshold = staleThresholdSeconds ?? DEFAULT_STALE_THRESHOLD_S
 
@@ -362,7 +368,12 @@ export function DevicePeakMetersClusterOverview({
           </Tag>
         </div>
       ) : null}
-      <DataTable rows={rows} headers={headers} size="sm">
+      <DataTable
+        rows={rows}
+        headers={headers}
+        size="sm"
+        isSortable={Boolean(sortable)}
+      >
         {({
           rows: tblRows,
           headers: tblHeaders,
