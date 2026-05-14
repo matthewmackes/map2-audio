@@ -41,6 +41,15 @@ def test_documents_cluster_stream_frame_type():
     assert "CLUSTER_WS_BROADCAST_INTERVAL_SECONDS" in text
 
 
+def test_documents_frontend_dedup_pattern():
+    """Run-13h cycle 5 — shared wsSubscriptionStore dedup pattern
+    must be referenced so consumers know multiple WS hooks against
+    the same URL share one socket."""
+    text = _text()
+    assert "wsSubscriptionStore" in text
+    assert "Frontend dedup" in text
+
+
 def test_documents_cluster_envelope():
     """Run-13f cycle 5 — the cluster fan-out envelope must be
     documented so consumers know to read local + peers + errors."""

@@ -13,6 +13,7 @@ import { Button, StructuredListBody, StructuredListCell, StructuredListHead, Str
 import { Reset } from '@carbon/icons-react'
 
 import { useDeviceMeterSource } from '../../../hooks/useDeviceMeterSource'
+import { useDeviceMeterSourceStream } from '../../../hooks/useDeviceMeterSourceStream'
 import { DeviceMeterSourceTag } from '../Shared/DeviceMeterSourceTag'
 
 import type { TascamStatusPayload } from './TascamUS144MKIIView'
@@ -20,6 +21,11 @@ import type { TascamStatusPayload } from './TascamUS144MKIIView'
 export interface TascamUS144MKIIStatusTabProps {
   status?: TascamStatusPayload
   loading: boolean
+  /** Run-13h cycle 5 — when true, read the meter source via the
+   * shared WS subscription store instead of polling.
+   * Default false so existing call sites + tests keep their
+   * polling-mode behavior. */
+  useStreamMeter?: boolean
 }
 
 function stageTag(status?: TascamStatusPayload) {
@@ -37,8 +43,20 @@ async function resetUsb(): Promise<void> {
   }
 }
 
-export function TascamUS144MKIIStatusTab({ status, loading }: TascamUS144MKIIStatusTabProps) {
-  const meter = useDeviceMeterSource('tascam-us144mkii')
+export function TascamUS144MKIIStatusTab({
+  status,
+  loading,
+  useStreamMeter,
+}: TascamUS144MKIIStatusTabProps) {
+  // Both hooks are React hooks, so they must always be called —
+  // we just disable the unused one via its `enabled` flag.
+  const polledMeter = useDeviceMeterSource('tascam-us144mkii', {
+    enabled: !useStreamMeter,
+  })
+  const streamedMeter = useDeviceMeterSourceStream('tascam-us144mkii', {
+    enabled: Boolean(useStreamMeter),
+  })
+  const meter = useStreamMeter ? streamedMeter : polledMeter
 
   return (
     <div className="stack">

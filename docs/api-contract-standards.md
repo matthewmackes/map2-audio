@@ -208,6 +208,8 @@ WebSocket frame shape (every tick):
 
 Initial state frame arrives immediately on connect; subsequent frames tick at `WS_BROADCAST_INTERVAL_SECONDS` (default 30 fps; module constant patchable for tests). Default cadence matches the MAP2 metering broadcast floor documented in `CLAUDE.md` § Service Polling Floors.
 
+Frontend dedup (run-13h): every WS consumer hook (`useDevicesPeakMetersStream`, `useDeviceMeterSourceStream`, `useDevicesPeakMetersClusterStream`) routes through a single shared `wsSubscriptionStore` keyed by URL. A page mounting multiple consumers against the same URL (e.g. an overview tile filtered to `device_ids=tascam-us144mkii` plus a per-device panel reading the same filter) pays for one socket. The store owns reconnect with exponential 250 ms → 5 s backoff and emits frame parse errors via `onError` rather than tearing down the socket.
+
 Cluster fan-out envelope (run-13f cycle 1):
 
 ```json

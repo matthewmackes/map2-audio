@@ -185,7 +185,11 @@ export function TascamUS144MKIIView() {
               </TabList>
               <TabPanels>
                 <TabPanel>
-                  <TascamUS144MKIIStatusTab status={status} loading={statusQuery.isLoading} />
+                  <TascamUS144MKIIStatusTab
+                    status={status}
+                    loading={statusQuery.isLoading}
+                    useStreamMeter
+                  />
                 </TabPanel>
                 <TabPanel>
                   <TascamUS144MKIIIORoutingTab capabilities={capabilities} />
