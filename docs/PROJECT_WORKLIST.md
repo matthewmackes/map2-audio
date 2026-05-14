@@ -2579,6 +2579,41 @@ The earlier order-1 row is fully drained for pure-Python / pure-frontend slices.
 
 ---
 
+### Pick-up next (pivot-13c handoff, filed 2026-05-14, end-of-run)
+
+**Pivot-13c total: 3 commits (4 logical cycles, cycles 3+4 bundled), all dual-pushed to origin + gitlab.** Closed every order-1 pick from the pivot-13b handoff that landed yesterday.
+
+Shipped this run, in order:
+
+1. **Cycle 1 — JuceEngineMeterSource adapter seam** (commit `725215ea4`). Pick-1 of pivot-13b. Concrete `MeterSource` implementation reading from a `RingBufferReader` callable (sync or async). Projects `RawPeakBuffer` onto `MeterSnapshot` with declared channel counts; pads short / truncates long buffers; preserves engine-supplied `captured_at` and falls back to wall-clock; reader failures surface as `source="engine_unavailable"` (silence-shaped, still timestamped) so panels can distinguish "wire-up installed but broken" from "no wire-up at all". +9 pytest cases. Full meter sweep 63/63.
+
+2. **Cycle 2 — `/peak-meters/stream` `device_ids` filter** (commit `fb4716c53`). Pick-2. Backend `_parse_device_ids_query` + WS handler filters frames by the requested ID set; unknown IDs silently dropped; alphabetical order preserved over the filtered subset. Frontend `useDevicesPeakMetersStream` gains a `deviceIds: readonly string[]` option, sorts before URL construction so re-ordering doesn't tear down the socket. +5 pytest + 3 jest cases. Bandwidth: panels watching one device pay one device's worth per tick instead of all.
+
+3. **Cycles 3+4 — `captured_at` staleness signal + `engine_unavailable` Tag, propagated** (commit `f743f5198`). Pick-3. Shared `useDeviceMeterSource` hook now returns `isStale` + `ageSeconds`; re-evaluates once per second so a paused engine flips to Stale within ~1 s. `DeviceMeterSourceTag` renders a warm-gray "Stale (30s)" / "Stale (2m)" pill on engine + stale, plus a new red "Engine unavailable" Tag for the `source === 'engine_unavailable'` state from cycle 1. All four consumers (Tascam StatusTab, UA-1000 view, JoGG view, MPX-1 BlockSidePanel) updated to pass `isStale` + `ageSeconds` through. Default threshold 10 s. +7 jest cases; 48/48 across 6 affected test suites.
+
+**Cumulative meter coverage after pivot-13c:** 72 pytest cases (was 60; +12 across cycles 1, 2) + 27 jest cases (was 17; +10 across cycles 2, 3+4).
+
+Operator effect, end-to-end:
+- The engine wire-up seam is in place: a future C++ surface that publishes per-device peak buffers needs only to construct a `JuceEngineMeterSource(input_channels=, output_channels=, reader=...)` and install it via the device facade's `set_active_meter_source`. Every panel and overview surface picks up "Live" automatically.
+- The 30 fps WS stream now supports per-device subscription, so a Devices landing page binding a per-device row to its own subscription pays one device's bandwidth per tick.
+- All four device panels render a staleness signal when the engine surface stops feeding (without operator intervention), distinct from the engine-unavailable signal (reader installed but raised) and the route-unreachable signal.
+
+**Status of long-term priorities after this run:**
+- Picks 1, 2, 3 of pivot-13b — all done.
+- T2521 unchanged from end of run-13: T2521-4 daemon + T2521-10 soak still bench-gated.
+- T2519 unchanged: the engine-side wire-up is now ready to land whenever C++ exposes the IPC; until then every surface keeps reading the placeholder.
+
+**Next-session order-1 picks** (priority order; pure-Python or pure-frontend only):
+
+1. **Devices landing — bind the stream hook to the operator's pinned-device list** — most operators pin 2-3 devices. The Devices landing page can subscribe `useDevicesPeakMetersStream({ deviceIds: pinnedIds })` so the bandwidth gain shipped in cycle 2 actually lands on a real surface. Pure-frontend. ~1 cycle.
+2. **OpenAPI / `api-contract-standards.md` row for `/api/v1/devices/peak-meters/stream` + `/peak-meters/registry`** — the route surface grew significantly across pivot-13b/13c without an OpenAPI write-up. Document the WS frame envelope (`device_peak_meters:registry` schema_version 1), the `device_ids` query parameter, and the `captured_at` field. Pure-doc. ~1 cycle.
+3. **`engine_unavailable` regression test on the registry route** — `_meter_source.py` doesn't yet validate that an `engine_unavailable` snapshot from a `JuceEngineMeterSource` surfaces correctly through the per-device GET route. One pytest case closes that gap. Pure-Python. ~1 cycle.
+4. **T2459-H final bench session gates** — physical hardware required. Code-side complete.
+
+**Bench-only / spec-needed** (unchanged): T2515-7/8, T2517-1/8/9 + Follow-up-A/B, T2521-4/10, looper RT-gated tail.
+
+---
+
 ### Pick-up next (pivot-13b handoff, filed 2026-05-14, end-of-run)
 
 **Pivot total: 4 cycles, all dual-pushed to origin + gitlab.** After the run-13 stop the user asked for a pivot; I picked up the eleventh-run order-1 list (untouched since runs 12-13 went into T2521 instead). All three picks closed in this short pivot run.
