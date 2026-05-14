@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1665** Python | **1704** TypeScript | **222** C++/H | **149** Docs | **4515** total commits | **4** stars | **0** forks | **0** open issues
+**1666** Python | **1705** TypeScript | **222** C++/H | **149** Docs | **4518** total commits | **4** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -176,8 +176,8 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 | Document | Last Updated |
 |:---------|:------------|
 | [MAP2 Canonical Project Worklist](https://github.com/matthewmackes/map2-audio/blob/master/docs/PROJECT_WORKLIST.md) | 2026-05-14 |
+| [MAP2 API Contract Standards](https://github.com/matthewmackes/map2-audio/blob/master/docs/api-contract-standards.md) | 2026-05-14 |
 | [Third-Party Notices](https://github.com/matthewmackes/map2-audio/blob/master/docs/THIRD_PARTY_NOTICES.md) | 2026-05-13 |
-| [MAP2 API Contract Standards](https://github.com/matthewmackes/map2-audio/blob/master/docs/api-contract-standards.md) | 2026-05-13 |
 | [MAP2 — No-Hardware Worklist](https://github.com/matthewmackes/map2-audio/blob/master/docs/PROJECT_WORKLIST_NO_HARDWARE.md) | 2026-05-11 |
 | [MAP2 Audio Platform — AI Instructions](https://github.com/matthewmackes/map2-audio/blob/master/docs/CLAUDE.md) | 2026-05-10 |
 | [React Staggered Reveal — universal page effect](https://github.com/matthewmackes/map2-audio/blob/master/docs/REACT_STAGGERED_REVEAL.md) | 2026-05-09 |
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`81eb6eef`](https://github.com/matthewmackes/map2-audio/commit/81eb6eef6a0ff4ee3f3e5b1992d275f6d642ab13) | docs(devices): pivot-13d-2 — api-contract-standards row f... | Map2 Audio | 2026-05-14 |
+| [`a3661b1d`](https://github.com/matthewmackes/map2-audio/commit/a3661b1d1b611e5695eb051755952966da64dc35) | feat(devices): pivot-13d-1 — Diagnostics page streams pin... | Map2 Audio | 2026-05-14 |
+| [`af03ddf5`](https://github.com/matthewmackes/map2-audio/commit/af03ddf5c96bcbd60742990199eef948d4d375e8) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-14 |
 | [`a2a34a43`](https://github.com/matthewmackes/map2-audio/commit/a2a34a43ed22b78cf9e3a561a2d000b07f92e2cc) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-14 |
 | [`8ac8e9ea`](https://github.com/matthewmackes/map2-audio/commit/8ac8e9ea2b9594377ada5da08c4696a090ea7e77) | docs(worklist): pivot-13c handoff (3 commits / 4 cycles, ... | Map2 Audio | 2026-05-14 |
 | [`f743f519`](https://github.com/matthewmackes/map2-audio/commit/f743f5198c64207a6f8a1948a75ab1c0321431e4) | feat(devices): pivot-13c-3 — captured_at staleness + engi... | Map2 Audio | 2026-05-14 |
 | [`fb4716c5`](https://github.com/matthewmackes/map2-audio/commit/fb4716c5329935966c41b7b3c931c4d1ddb92155) | feat(devices): pivot-13c-2 — /peak-meters/stream device_i... | Map2 Audio | 2026-05-14 |
 | [`725215ea`](https://github.com/matthewmackes/map2-audio/commit/725215ea4e43efb2678aa2c31aa004c6f2bdf3c0) | feat(devices): pivot-13c-1 — JuceEngineMeterSource adapte... | Map2 Audio | 2026-05-14 |
-| [`2b18acbb`](https://github.com/matthewmackes/map2-audio/commit/2b18acbbaa9020d545a8d0d6a399bdb37c60b053) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-14 |
-| [`5e5b95e8`](https://github.com/matthewmackes/map2-audio/commit/5e5b95e82bfc9a8e3fb8689677f0255e7b1fdd26) | docs(worklist): pivot-13b handoff (4 cycles, eleventh-run... | Map2 Audio | 2026-05-14 |
-| [`dc92c432`](https://github.com/matthewmackes/map2-audio/commit/dc92c43247db9a54281f8d407be3ae124502682d) | feat(devices): pivot-13b-4 — overview column toggles + so... | Map2 Audio | 2026-05-14 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
