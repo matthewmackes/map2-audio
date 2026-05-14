@@ -63,6 +63,14 @@ jest.mock('../../../hooks/useDeviceMeterSource', () => ({
   useDeviceMeterSource: (...args: unknown[]) => mockUseDeviceMeterSource(...(args as [])),
 }))
 
+// Run-13i cycle 1 — the MPX-1 panel reads the meter via the WS hook
+// when the modal is open. Same fake so existing assertions don't
+// have to know which one drove the row.
+jest.mock('../../../hooks/useDeviceMeterSourceStream', () => ({
+  useDeviceMeterSourceStream: (...args: unknown[]) =>
+    mockUseDeviceMeterSource(...(args as [])),
+}))
+
 jest.mock('./useMpx1BlockApi', () => ({
   useMpx1Instance: () => mockInstance(),
   useInterfaceCapabilities: () => mockInterfaces(),

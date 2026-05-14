@@ -32,6 +32,7 @@ import {
 } from './useMpx1BlockApi'
 import { DeviceMeterSourceTag } from '../../Devices/Shared/DeviceMeterSourceTag'
 import { useDeviceMeterSource } from '../../../hooks/useDeviceMeterSource'
+import { useDeviceMeterSourceStream } from '../../../hooks/useDeviceMeterSourceStream'
 
 export interface MPX1BlockSidePanelProps {
   open: boolean
@@ -49,8 +50,16 @@ export function MPX1BlockSidePanel({ open, chainId, onClose }: MPX1BlockSidePane
   // T2519 — meter-source signal for the MPX-1 hardware bridge. The
   // peak-meters route is registered via lexicon_mpx1_meters.py and
   // serves a placeholder snapshot until the engine wire-up lands.
-  // Gate on `open` so the closed modal doesn't fire the poll.
-  const meterSource = useDeviceMeterSource('lexicon-mpx1', { enabled: open })
+  //
+  // Run-13i cycle 1 — read through the shared WS subscription store
+  // so the MPX-1 panel dedupes with the diagnostics overview when
+  // both are mounted. Gate on `open` so the closed modal doesn't
+  // hold a subscription. The polled hook is held inactive (enabled=
+  // false) so it stays available as a one-line fallback for any
+  // future revert without API churn.
+  const _polled = useDeviceMeterSource('lexicon-mpx1', { enabled: false })
+  void _polled
+  const meterSource = useDeviceMeterSourceStream('lexicon-mpx1', { enabled: open })
 
   const upsertMutation = useUpsertMpx1Instance()
   const bypassMutation = useSetMpx1Bypass(chainId)

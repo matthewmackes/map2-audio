@@ -45,6 +45,15 @@ jest.mock('../../../hooks/useDeviceMeterSource', () => ({
   useDeviceMeterSource: (...args: unknown[]) => mockUseDeviceMeterSource(...(args as [])),
 }))
 
+// Run-13i cycle 1 — the JoGG banner switched to streaming via the
+// useStreamMeter prop. Mock the WS hook with the same fake so
+// existing assertions don't have to care which hook drives the
+// banner.
+jest.mock('../../../hooks/useDeviceMeterSourceStream', () => ({
+  useDeviceMeterSourceStream: (...args: unknown[]) =>
+    mockUseDeviceMeterSource(...(args as [])),
+}))
+
 describe('HoToneJoGGView', () => {
   beforeEach(() => {
     mockAudioInterfaceControl.mockClear()

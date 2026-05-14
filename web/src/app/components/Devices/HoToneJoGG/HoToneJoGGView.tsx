@@ -9,15 +9,27 @@ import { AudioInterfaceControl } from '../../../../map2/components/AudioInterfac
 import { useCluster } from '../../../contexts/useCluster'
 import { useDeviceNodeContext } from '../../../hooks/useDeviceNodeContext'
 import { useDeviceMeterSource } from '../../../hooks/useDeviceMeterSource'
+import { useDeviceMeterSourceStream } from '../../../hooks/useDeviceMeterSourceStream'
 
 interface JoggMeterSourceBannerProps {
   enabled: boolean
+  /** Run-13i cycle 1 — when true, route meter source through the
+   * shared WS subscription store (useDeviceMeterSourceStream). */
+  useStreamMeter?: boolean
 }
 
-function JoggMeterSourceBanner({ enabled }: JoggMeterSourceBannerProps) {
+function JoggMeterSourceBanner({ enabled, useStreamMeter }: JoggMeterSourceBannerProps) {
   // T2519 — meter-source signal for the JoGG. Pure status line; the
   // actual peak-meter values render inside AudioInterfaceControl.
-  const meter = useDeviceMeterSource('hotone-jogg', { enabled })
+  // Both hooks always run (React rules); the unused one is held via
+  // its `enabled` flag.
+  const polled = useDeviceMeterSource('hotone-jogg', {
+    enabled: enabled && !useStreamMeter,
+  })
+  const streamed = useDeviceMeterSourceStream('hotone-jogg', {
+    enabled: enabled && Boolean(useStreamMeter),
+  })
+  const meter = useStreamMeter ? streamed : polled
   return (
     <div
       data-testid="jogg-meter-source-banner"
@@ -89,7 +101,7 @@ export function HoToneJoGGView() {
 
       {deviceState === 'ready' || deviceState === 'needs_switch' ? (
         <>
-          <JoggMeterSourceBanner enabled={!controlIsRemote} />
+          <JoggMeterSourceBanner enabled={!controlIsRemote} useStreamMeter />
           <AudioInterfaceControl nodeId={apiNodeId} />
         </>
       ) : null}
