@@ -28,8 +28,17 @@ def test_lists_canonical_endpoints():
         "/api/v1/devices/peak-meters/registry",
         "/api/v1/devices/peak-meters/stream",
         "/api/v1/devices/peak-meters/cluster/registry",
+        "/api/v1/devices/peak-meters/cluster/stream",
     ):
         assert endpoint in text, f"missing endpoint: {endpoint}"
+
+
+def test_documents_cluster_stream_frame_type():
+    """Run-13g cycle 5 — cluster stream frame type + cadence constant
+    must be referenced so consumers know the envelope."""
+    text = _text()
+    assert "device_peak_meters:cluster_registry" in text
+    assert "CLUSTER_WS_BROADCAST_INTERVAL_SECONDS" in text
 
 
 def test_documents_cluster_envelope():

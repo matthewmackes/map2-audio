@@ -26,6 +26,7 @@ import {
 } from '@carbon/react'
 
 import { useDevicesPeakMetersClusterRegistry } from '../../../hooks/useDevicesPeakMetersClusterRegistry'
+import { useDevicesPeakMetersClusterStream } from '../../../hooks/useDevicesPeakMetersClusterStream'
 
 export interface DevicePeakMetersClusterOverviewProps {
   /** Optional title above the table. */
@@ -35,6 +36,12 @@ export interface DevicePeakMetersClusterOverviewProps {
   /** Mirror of the local overview: when true, request inline
    * snapshots for every device + show a Peak column. */
   includeSnapshot?: boolean
+  /** When true, drive the table from the cluster WS fan-in
+   * (/api/v1/devices/peak-meters/cluster/stream) instead of polling
+   * the cluster registry. Implies the includeSnapshot semantics —
+   * every cluster frame carries the same per-device snapshot shape.
+   * Run-13g cycle 5. */
+  useStream?: boolean
 }
 
 type CarbonTagTone = 'green' | 'warm-gray' | 'red' | 'cool-gray' | 'gray'
@@ -88,12 +95,31 @@ export function DevicePeakMetersClusterOverview({
   title,
   refetchIntervalMs,
   includeSnapshot,
+  useStream,
 }: DevicePeakMetersClusterOverviewProps): React.JSX.Element {
-  const { local, peers, errors, isError, isLoading } =
-    useDevicesPeakMetersClusterRegistry({
-      refetchIntervalMs,
-      includeSnapshot,
-    })
+  // Polling path. Disabled when streaming so two cluster queries don't
+  // race.
+  const polling = useDevicesPeakMetersClusterRegistry({
+    refetchIntervalMs,
+    includeSnapshot,
+    enabled: !useStream,
+  })
+  // Streaming path. Disabled in polling mode so we don't keep a WS
+  // socket open unnecessarily.
+  const streaming = useDevicesPeakMetersClusterStream({
+    enabled: Boolean(useStream),
+    includeSnapshot,
+  })
+
+  const local = useStream ? streaming.local : polling.local
+  const peers = useStream ? streaming.peers : polling.peers
+  const errors = useStream ? streaming.errors : polling.errors
+  const isError = useStream
+    ? streaming.lastError !== null
+    : polling.isError
+  const isLoading = useStream
+    ? !streaming.hasFirstFrame
+    : polling.isLoading
 
   const rows: ClusterRow[] = React.useMemo(() => {
     const out: ClusterRow[] = []

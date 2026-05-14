@@ -167,8 +167,9 @@ export function DiagnosticsAggregatePage(): React.JSX.Element {
         style={{ marginBottom: 24 }}
       >
         <DevicePeakMetersClusterOverview
-          title="Cluster-wide metering"
+          title="Cluster-wide metering (live)"
           includeSnapshot
+          useStream
         />
       </section>
 

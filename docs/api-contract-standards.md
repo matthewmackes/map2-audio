@@ -158,6 +158,8 @@ adding a new device requires no route changes, only a new facade.
 | `/api/v1/devices/peak-meters/stream?device_ids=a,b,c` | WS | Same stream restricted to the listed registry IDs. Unknown IDs silently dropped; whitespace + empty segments tolerated. |
 | `/api/v1/devices/peak-meters/cluster/registry` | GET | Cluster fan-out: local registry + per-peer registries + per-peer failure errors. asyncio.gather across discovered peers; 2 s per-peer timeout. |
 | `/api/v1/devices/peak-meters/cluster/registry?include_snapshot=true` | GET | Same fan-out, propagating include_snapshot to every peer fetch so each device entry carries an inline snapshot. |
+| `/api/v1/devices/peak-meters/cluster/stream` | WS | Cluster WS fan-in: every tick recomputes the cluster registry and pushes a versioned frame. Default cadence 5 fps via `CLUSTER_WS_BROADCAST_INTERVAL_SECONDS`. Frame type: `device_peak_meters:cluster_registry`. |
+| `/api/v1/devices/peak-meters/cluster/stream?include_snapshot=true` | WS | Same stream with inline per-device snapshots in every frame. |
 
 Per-device payload shape:
 

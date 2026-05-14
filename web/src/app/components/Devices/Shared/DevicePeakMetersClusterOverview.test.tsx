@@ -10,19 +10,33 @@ import { render, screen } from '@testing-library/react'
 import { DevicePeakMetersClusterOverview } from './DevicePeakMetersClusterOverview'
 
 const mockCluster = jest.fn()
+const mockClusterStream = jest.fn()
 
 jest.mock('../../../hooks/useDevicesPeakMetersClusterRegistry', () => ({
   useDevicesPeakMetersClusterRegistry: () => mockCluster(),
 }))
 
+jest.mock('../../../hooks/useDevicesPeakMetersClusterStream', () => ({
+  useDevicesPeakMetersClusterStream: () => mockClusterStream(),
+}))
+
 beforeEach(() => {
   mockCluster.mockReset()
+  mockClusterStream.mockReset()
   mockCluster.mockReturnValue({
     local: { devices: [] },
     peers: [],
     errors: {},
     isError: false,
     isLoading: false,
+  })
+  mockClusterStream.mockReturnValue({
+    local: undefined,
+    peers: [],
+    errors: {},
+    hasFirstFrame: false,
+    isConnected: false,
+    lastError: null,
   })
 })
 
@@ -150,6 +164,69 @@ describe('DevicePeakMetersClusterOverview', () => {
     render(<DevicePeakMetersClusterOverview />)
     expect(
       screen.getByTestId('device-peak-meters-cluster-overview-loading'),
+    ).toBeInTheDocument()
+  })
+
+  it('reads from the WS hook when useStream is true', () => {
+    mockClusterStream.mockReturnValue({
+      local: {
+        devices: [
+          {
+            device_id: 'edirol-ua-1000',
+            input_channels: 10,
+            output_channels: 10,
+            has_engine_source: true,
+          },
+        ],
+      },
+      peers: [
+        {
+          node_id: 'peer-A',
+          hostname: 'a.local',
+          devices: [],
+          health: 'ok',
+        },
+      ],
+      errors: {},
+      hasFirstFrame: true,
+      isConnected: true,
+      lastError: null,
+    })
+    render(<DevicePeakMetersClusterOverview useStream />)
+    // Polling hook still returns empty; the streamed entry should
+    // show up — confirms the source swap landed.
+    expect(
+      screen.getByTestId('cluster-overview-node-local:edirol-ua-1000'),
+    ).toBeInTheDocument()
+  })
+
+  it('renders a loading tag while useStream waits for the first frame', () => {
+    mockClusterStream.mockReturnValue({
+      local: undefined,
+      peers: [],
+      errors: {},
+      hasFirstFrame: false,
+      isConnected: false,
+      lastError: null,
+    })
+    render(<DevicePeakMetersClusterOverview useStream />)
+    expect(
+      screen.getByTestId('device-peak-meters-cluster-overview-loading'),
+    ).toBeInTheDocument()
+  })
+
+  it('renders error state when useStream reports a socket error', () => {
+    mockClusterStream.mockReturnValue({
+      local: undefined,
+      peers: [],
+      errors: {},
+      hasFirstFrame: false,
+      isConnected: false,
+      lastError: 'websocket error',
+    })
+    render(<DevicePeakMetersClusterOverview useStream />)
+    expect(
+      screen.getByTestId('device-peak-meters-cluster-overview-error'),
     ).toBeInTheDocument()
   })
 

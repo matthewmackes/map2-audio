@@ -47,6 +47,14 @@ jest.mock('../../hooks/useDevicesPeakMetersClusterRegistry', () => ({
     mockUseDevicesPeakMetersClusterRegistry(),
 }))
 
+// Run-13g cycle 5 — diagnostics page now uses the streaming variant
+// of the cluster overview. Stub the WS hook too.
+const mockUseDevicesPeakMetersClusterStream = jest.fn()
+jest.mock('../../hooks/useDevicesPeakMetersClusterStream', () => ({
+  useDevicesPeakMetersClusterStream: () =>
+    mockUseDevicesPeakMetersClusterStream(),
+}))
+
 const mockUsePinnedDevices = jest.fn<readonly string[], []>()
 jest.mock('../../state/uiSettings', () => ({
   __esModule: true,
@@ -91,6 +99,14 @@ beforeEach(() => {
     errors: {},
     isError: false,
     isLoading: false,
+  })
+  mockUseDevicesPeakMetersClusterStream.mockReturnValue({
+    local: { devices: [] },
+    peers: [],
+    errors: {},
+    hasFirstFrame: true,
+    isConnected: false,
+    lastError: null,
   })
   mockUsePinnedDevices.mockReturnValue([])
 })
@@ -253,7 +269,10 @@ test('DiagnosticsAggregatePage: mounts the cluster-wide overview tile', async ()
     diagnostics: [], count: 0,
     counts_by_severity: { info: 0, warning: 0, error: 0 },
   })
-  mockUseDevicesPeakMetersClusterRegistry.mockReturnValue({
+  // The diagnostics page mounts the streaming variant of the cluster
+  // overview (run-13g cycle 5); stub the WS hook with sample data so
+  // the table renders a row.
+  mockUseDevicesPeakMetersClusterStream.mockReturnValue({
     local: {
       devices: [
         {
@@ -266,15 +285,16 @@ test('DiagnosticsAggregatePage: mounts the cluster-wide overview tile', async ()
     },
     peers: [],
     errors: {},
-    isError: false,
-    isLoading: false,
+    hasFirstFrame: true,
+    isConnected: true,
+    lastError: null,
   })
 
   renderPage()
   await waitFor(() => {
     expect(screen.getByTestId('dx-meters-cluster-overview')).toBeInTheDocument()
   })
-  expect(screen.getByText('Cluster-wide metering')).toBeInTheDocument()
+  expect(screen.getByText('Cluster-wide metering (live)')).toBeInTheDocument()
 })
 
 test('DiagnosticsAggregatePage: omits pinned overview when pins are non-metered surfaces', async () => {
