@@ -145,6 +145,211 @@ def test_peer_failure_appears_in_errors(
     assert frame["data"]["errors"] == {"node-bad": "stubbed peer failure"}
 
 
+def test_node_ids_filter_restricts_peers(
+    app_with_router: FastAPI, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """`?node_ids=peer-A` restricts the frame to that peer (plus local
+    only when 'local' is in the filter)."""
+
+    class _PeerA:
+        node_id = "peer-A"
+        hostname = "a.local"
+        host = "10.0.0.5"
+        api_url = "http://10.0.0.5:8080"
+
+    class _PeerB:
+        node_id = "peer-B"
+        hostname = "b.local"
+        host = "10.0.0.6"
+        api_url = "http://10.0.0.6:8080"
+
+    class _StubDiscovery:
+        async def _load_peer_records(self):
+            return [_PeerA(), _PeerB()]
+
+    class _StubHealth:
+        async def get_remote_health(self, host):
+            class _S:
+                status = "ok"
+
+            return _S()
+
+    from app.services import node_discovery_service, node_health_service
+    from app.routes.device_meters import ClusterDeviceRegistryPeer
+
+    monkeypatch.setattr(
+        node_discovery_service,
+        "get_node_discovery_service",
+        lambda: _StubDiscovery(),
+    )
+    monkeypatch.setattr(
+        node_health_service,
+        "get_node_health_service",
+        lambda: _StubHealth(),
+    )
+
+    async def _fetch(**kwargs):
+        return (
+            ClusterDeviceRegistryPeer(
+                node_id=kwargs["node_id"],
+                hostname=kwargs["hostname"],
+                devices=[],
+                health=kwargs.get("health", "offline"),
+            ),
+            None,
+        )
+
+    monkeypatch.setattr(
+        device_meters_module,
+        "_fetch_peer_device_registry",
+        _fetch,
+    )
+
+    client = TestClient(app_with_router)
+    with client.websocket_connect(
+        "/api/v1/devices/peak-meters/cluster/stream?node_ids=peer-A"
+    ) as ws:
+        frame = ws.receive_json()
+    # Only peer-A in the frame; local is blanked when "local" is
+    # not in the filter.
+    peer_node_ids = [p["node_id"] for p in frame["data"]["peers"]]
+    assert peer_node_ids == ["peer-A"]
+    assert frame["data"]["local"]["devices"] == []
+
+
+def test_node_ids_filter_keyword_local_keeps_local_devices(
+    app_with_router: FastAPI, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """`?node_ids=local,peer-A` keeps local and peer-A; drops peer-B."""
+
+    class _PeerA:
+        node_id = "peer-A"
+        hostname = "a.local"
+        host = "10.0.0.5"
+        api_url = "http://10.0.0.5:8080"
+
+    class _PeerB:
+        node_id = "peer-B"
+        hostname = "b.local"
+        host = "10.0.0.6"
+        api_url = "http://10.0.0.6:8080"
+
+    class _StubDiscovery:
+        async def _load_peer_records(self):
+            return [_PeerA(), _PeerB()]
+
+    class _StubHealth:
+        async def get_remote_health(self, host):
+            class _S:
+                status = "ok"
+
+            return _S()
+
+    from app.services import node_discovery_service, node_health_service
+    from app.routes.device_meters import ClusterDeviceRegistryPeer
+
+    monkeypatch.setattr(
+        node_discovery_service,
+        "get_node_discovery_service",
+        lambda: _StubDiscovery(),
+    )
+    monkeypatch.setattr(
+        node_health_service,
+        "get_node_health_service",
+        lambda: _StubHealth(),
+    )
+
+    async def _fetch(**kwargs):
+        return (
+            ClusterDeviceRegistryPeer(
+                node_id=kwargs["node_id"],
+                hostname=kwargs["hostname"],
+                devices=[],
+                health=kwargs.get("health", "offline"),
+            ),
+            None,
+        )
+
+    monkeypatch.setattr(
+        device_meters_module,
+        "_fetch_peer_device_registry",
+        _fetch,
+    )
+
+    client = TestClient(app_with_router)
+    with client.websocket_connect(
+        "/api/v1/devices/peak-meters/cluster/stream?node_ids=local,peer-A"
+    ) as ws:
+        frame = ws.receive_json()
+    peer_node_ids = [p["node_id"] for p in frame["data"]["peers"]]
+    assert peer_node_ids == ["peer-A"]
+    # local key still present.
+    assert "devices" in frame["data"]["local"]
+
+
+def test_node_ids_filter_unknown_ids_silently_dropped(
+    app_with_router: FastAPI, monkeypatch: pytest.MonkeyPatch
+) -> None:
+    """An unknown node_id in the filter doesn't 5xx — it just yields
+    no peer rows."""
+
+    class _PeerA:
+        node_id = "peer-A"
+        hostname = "a.local"
+        host = "10.0.0.5"
+        api_url = "http://10.0.0.5:8080"
+
+    class _StubDiscovery:
+        async def _load_peer_records(self):
+            return [_PeerA()]
+
+    class _StubHealth:
+        async def get_remote_health(self, host):
+            class _S:
+                status = "ok"
+
+            return _S()
+
+    from app.services import node_discovery_service, node_health_service
+    from app.routes.device_meters import ClusterDeviceRegistryPeer
+
+    monkeypatch.setattr(
+        node_discovery_service,
+        "get_node_discovery_service",
+        lambda: _StubDiscovery(),
+    )
+    monkeypatch.setattr(
+        node_health_service,
+        "get_node_health_service",
+        lambda: _StubHealth(),
+    )
+
+    async def _fetch(**kwargs):
+        return (
+            ClusterDeviceRegistryPeer(
+                node_id=kwargs["node_id"],
+                hostname=kwargs["hostname"],
+                devices=[],
+                health="ok",
+            ),
+            None,
+        )
+
+    monkeypatch.setattr(
+        device_meters_module,
+        "_fetch_peer_device_registry",
+        _fetch,
+    )
+
+    client = TestClient(app_with_router)
+    with client.websocket_connect(
+        "/api/v1/devices/peak-meters/cluster/stream?node_ids=not-a-node"
+    ) as ws:
+        frame = ws.receive_json()
+    assert frame["data"]["peers"] == []
+    assert frame["data"]["local"]["devices"] == []
+
+
 def test_second_frame_arrives_after_cadence_tick(
     app_with_router: FastAPI, monkeypatch: pytest.MonkeyPatch
 ) -> None:

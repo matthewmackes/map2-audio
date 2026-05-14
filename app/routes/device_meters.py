@@ -554,15 +554,42 @@ async def stream_cluster_peak_meters(websocket: WebSocket) -> None:
     include_snapshot_raw = websocket.query_params.get("include_snapshot")
     include_snapshot = include_snapshot_raw == "true" if include_snapshot_raw else False
 
+    # Run-13i cycle 2 — node_ids filter. Reuses the same comma-list
+    # parsing as device_ids on the local stream. `"local"` is a
+    # reserved keyword that includes the local node's slice; any
+    # other entry is matched against peer.node_id. Unknown IDs are
+    # silently dropped — the caller's stale node list can't break
+    # the stream.
+    node_ids_raw = websocket.query_params.get("node_ids")
+    node_filter = _parse_device_ids_query(node_ids_raw)
+    include_local = node_filter is None or "local" in node_filter
+
     async def _snapshot_frame() -> dict:
         try:
             payload = await get_cluster_peak_meters_registry(
                 include_snapshot=include_snapshot,
             )
+            data = payload.model_dump()
+            if node_filter is not None:
+                if not include_local:
+                    data["local"] = {"devices": []}
+                data["peers"] = [
+                    peer
+                    for peer in data.get("peers", [])
+                    if peer.get("node_id") in node_filter
+                    or peer.get("hostname") in node_filter
+                ]
+                # Trim errors to peers actually requested so consumers
+                # don't see a sea of irrelevant unreachable peers.
+                data["errors"] = {
+                    node_id: err
+                    for node_id, err in data.get("errors", {}).items()
+                    if node_id in node_filter or node_id == "@local"
+                }
             return {
                 "type": "device_peak_meters:cluster_registry",
                 "schema_version": 1,
-                "data": payload.model_dump(),
+                "data": data,
             }
         except Exception as exc:  # pragma: no cover — defensive
             logger.debug(
