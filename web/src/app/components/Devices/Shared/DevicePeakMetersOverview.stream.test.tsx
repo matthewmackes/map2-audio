@@ -36,21 +36,21 @@ describe('DevicePeakMetersOverview useStream', () => {
   })
 
   it('renders rows from the stream hook when useStream is true', () => {
+    const dev = {
+      device_id: 'tascam-us144mkii',
+      input_channels: 4,
+      output_channels: 4,
+      has_engine_source: true,
+      snapshot: {
+        input_peak_db: [-12, -150, -150, -150],
+        output_peak_db: [-9, -150, -150, -150],
+        source: 'engine',
+        captured_at: 1715731200.0,
+      },
+    }
     mockStream.mockReturnValue({
-      devices: [
-        {
-          device_id: 'tascam-us144mkii',
-          input_channels: 4,
-          output_channels: 4,
-          has_engine_source: true,
-          snapshot: {
-            input_peak_db: [-12, -150, -150, -150],
-            output_peak_db: [-9, -150, -150, -150],
-            source: 'engine',
-            captured_at: 1715731200.0,
-          },
-        },
-      ],
+      devices: [dev],
+      rows: [{ ...dev, ageSeconds: 1, isStale: false }],
       hasFirstFrame: true,
       isConnected: true,
       lastError: null,
@@ -59,12 +59,17 @@ describe('DevicePeakMetersOverview useStream', () => {
     expect(screen.getByTestId('device-peak-meters-overview')).toBeInTheDocument()
     // Peak column auto-enables under useStream.
     expect(screen.getByText(/in -12\.0 \/ out -9\.0 dBFS/)).toBeInTheDocument()
-    expect(screen.getByTestId('overview-source-engine')).toBeInTheDocument()
+    // Streaming swaps the local Tag for DeviceMeterSourceTag, which
+    // uses an overview-stream-tag-<device_id> testid.
+    expect(
+      screen.getByTestId('overview-stream-tag-tascam-us144mkii'),
+    ).toBeInTheDocument()
   })
 
   it('renders the loading state until the first frame arrives', () => {
     mockStream.mockReturnValue({
       devices: [],
+      rows: [],
       hasFirstFrame: false,
       isConnected: false,
       lastError: null,
@@ -78,6 +83,7 @@ describe('DevicePeakMetersOverview useStream', () => {
   it('renders the error state when the socket reports an error', () => {
     mockStream.mockReturnValue({
       devices: [],
+      rows: [],
       hasFirstFrame: false,
       isConnected: false,
       lastError: 'websocket error',
@@ -92,6 +98,7 @@ describe('DevicePeakMetersOverview useStream', () => {
     streamArgs.length = 0
     mockStream.mockReturnValue({
       devices: [],
+      rows: [],
       hasFirstFrame: true,
       isConnected: true,
       lastError: null,
@@ -109,5 +116,55 @@ describe('DevicePeakMetersOverview useStream', () => {
       'tascam-us144mkii',
     ])
     expect(lastOpts.enabled).toBe(true)
+  })
+
+  it('renders a Stale Tag for rows whose snapshot age exceeds the threshold', () => {
+    const dev = {
+      device_id: 'tascam-us144mkii',
+      input_channels: 4,
+      output_channels: 4,
+      has_engine_source: true,
+      snapshot: {
+        input_peak_db: [-12, -150, -150, -150],
+        output_peak_db: [-9, -150, -150, -150],
+        source: 'engine' as const,
+        captured_at: 1715731000.0, // long ago
+      },
+    }
+    mockStream.mockReturnValue({
+      devices: [dev],
+      rows: [{ ...dev, ageSeconds: 90, isStale: true }],
+      hasFirstFrame: true,
+      isConnected: true,
+      lastError: null,
+    })
+    render(<DevicePeakMetersOverview useStream />)
+    const tag = screen.getByTestId('overview-stream-tag-tascam-us144mkii')
+    expect(tag).toHaveTextContent('Stale')
+  })
+
+  it('renders the Engine unavailable Tag for engine_unavailable rows', () => {
+    const dev = {
+      device_id: 'edirol-ua-1000',
+      input_channels: 10,
+      output_channels: 10,
+      has_engine_source: true,
+      snapshot: {
+        input_peak_db: Array(10).fill(-150),
+        output_peak_db: Array(10).fill(-150),
+        source: 'engine_unavailable' as const,
+        captured_at: 1715731200.0,
+      },
+    }
+    mockStream.mockReturnValue({
+      devices: [dev],
+      rows: [{ ...dev, ageSeconds: 1, isStale: false }],
+      hasFirstFrame: true,
+      isConnected: true,
+      lastError: null,
+    })
+    render(<DevicePeakMetersOverview useStream />)
+    const tag = screen.getByTestId('overview-stream-tag-edirol-ua-1000')
+    expect(tag).toHaveTextContent('Engine unavailable')
   })
 })

@@ -72,6 +72,7 @@ beforeEach(() => {
   })
   mockUseDevicesPeakMetersStream.mockReturnValue({
     devices: [],
+    rows: [],
     hasFirstFrame: true,
     isConnected: false,
     lastError: null,
@@ -201,6 +202,22 @@ test('DiagnosticsAggregatePage: mounts pinned-streaming overview when metered pi
           source: 'engine',
           captured_at: 1715731200.0,
         },
+      },
+    ],
+    rows: [
+      {
+        device_id: 'edirol-ua-1000',
+        input_channels: 10,
+        output_channels: 10,
+        has_engine_source: true,
+        snapshot: {
+          input_peak_db: [-6.0],
+          output_peak_db: [-3.0],
+          source: 'engine',
+          captured_at: 1715731200.0,
+        },
+        ageSeconds: 1,
+        isStale: false,
       },
     ],
     hasFirstFrame: true,

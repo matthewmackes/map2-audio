@@ -28,6 +28,8 @@ import {
 
 import { useDevicesPeakMetersRegistry } from '../../../hooks/useDevicesPeakMetersRegistry'
 import { useDevicesPeakMetersStream } from '../../../hooks/useDevicesPeakMetersStream'
+import { DeviceMeterSourceTag } from './DeviceMeterSourceTag'
+import type { DeviceMeterSource } from '../../../hooks/useDeviceMeterSource'
 
 export type DevicePeakMetersOverviewSortMode = 'name' | 'source'
 
@@ -66,6 +68,13 @@ interface OverviewRow {
   channels: string
   source: string
   peak: string
+  /** Streamed-row metadata threaded through for the source Tag. Only
+   * populated when `useStream` is on; polling mode leaves these
+   * undefined so the Tag falls back to the existing has-engine /
+   * placeholder colour policy. Pivot-13e cycle 1. */
+  meterSource?: DeviceMeterSource
+  isStale?: boolean
+  ageSeconds?: number | null
 }
 
 const SILENCE_THRESHOLD_DBFS = -149.9
@@ -123,6 +132,12 @@ export function DevicePeakMetersOverview({
   })
 
   const devices = useStream ? streamResult.devices : pollingResult.devices
+  const streamRows = useStream ? streamResult.rows : []
+  const streamRowsById = useMemo(() => {
+    const map = new Map<string, (typeof streamRows)[number]>()
+    for (const r of streamRows) map.set(r.device_id, r)
+    return map
+  }, [streamRows])
   const isError = useStream ? streamResult.lastError !== null : pollingResult.isError
   const isLoading = useStream
     ? !streamResult.hasFirstFrame
@@ -156,13 +171,25 @@ export function DevicePeakMetersOverview({
     return cols
   }, [showControls, splitChannels, showPeakColumn])
 
-  const baseRows: OverviewRow[] = devices.map((d) => ({
-    id: d.device_id,
-    device_id: d.device_id,
-    channels: `${d.input_channels} / ${d.output_channels}`,
-    source: d.has_engine_source ? 'engine' : 'placeholder',
-    peak: formatPeak(d.snapshot ?? null),
-  }))
+  const baseRows: OverviewRow[] = devices.map((d) => {
+    const streamRow = streamRowsById.get(d.device_id)
+    const snapshotSource = d.snapshot?.source as DeviceMeterSource | undefined
+    return {
+      id: d.device_id,
+      device_id: d.device_id,
+      channels: `${d.input_channels} / ${d.output_channels}`,
+      source: d.has_engine_source ? 'engine' : 'placeholder',
+      peak: formatPeak(d.snapshot ?? null),
+      // When the row is streamed, prefer the snapshot's source field
+      // (which covers engine / engine_unavailable / placeholder) over
+      // the cheaper has_engine_source flag. Polling mode keeps
+      // meterSource undefined so the existing Tag rendering is
+      // unchanged.
+      meterSource: useStream ? snapshotSource ?? (d.has_engine_source ? 'engine' : 'placeholder') : undefined,
+      isStale: streamRow?.isStale,
+      ageSeconds: streamRow?.ageSeconds,
+    }
+  })
 
   const splitMeta = useMemo(() => {
     const out: Record<string, { inputs: string; outputs: string }> = {}
@@ -266,6 +293,24 @@ export function DevicePeakMetersOverview({
                     <TableRow key={row.id} {...getRowProps({ row })}>
                       {row.cells.map((cell: any) => {
                         if (cell.info.header === 'source') {
+                          // Streaming mode: render the shared
+                          // DeviceMeterSourceTag so engine_unavailable
+                          // and stale states light up the per-row Tag.
+                          // Polling mode: keep the existing two-state
+                          // local Tag — no behavioral change.
+                          if (useStream && original?.meterSource) {
+                            return (
+                              <TableCell key={cell.id}>
+                                <DeviceMeterSourceTag
+                                  source={original.meterSource}
+                                  isError={false}
+                                  isStale={original.isStale}
+                                  ageSeconds={original.ageSeconds}
+                                  testId={`overview-stream-tag-${original.device_id}`}
+                                />
+                              </TableCell>
+                            )
+                          }
                           return (
                             <TableCell key={cell.id}>
                               {sourceTag(original?.source === 'engine')}

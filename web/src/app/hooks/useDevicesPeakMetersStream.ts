@@ -37,10 +37,29 @@ export interface UseDevicesPeakMetersStreamOptions {
    * every registered device on every tick. Updating this prop
    * re-establishes the connection with the new filter set. */
   deviceIds?: readonly string[]
+  /** Per-device staleness threshold in seconds. When the wall-clock
+   * gap between `Date.now()` and a device's `captured_at` exceeds
+   * this, the device's `isStale` flips true. Default 10 s — twice the
+   * registry-side polling fallback, so a single dropped frame doesn't
+   * trip it. Pivot-13e cycle 1. */
+  staleThresholdSeconds?: number
+}
+
+/** One per-device row enriched with derived staleness. */
+export interface DeviceMetersStreamRow extends DeviceMetersRegistryEntry {
+  /** Seconds since the snapshot was captured, or `null` when the
+   * payload lacks `captured_at`. */
+  ageSeconds: number | null
+  /** True when `ageSeconds` exceeds the configured stale threshold. */
+  isStale: boolean
 }
 
 export interface UseDevicesPeakMetersStreamResult {
   devices: DeviceMetersRegistryEntry[]
+  /** Same row list with per-device `ageSeconds` + `isStale` derived
+   * against the current wall-clock. Re-computed once per second so
+   * a stalled engine flips to stale even between frames. */
+  rows: DeviceMetersStreamRow[]
   /** True when an initial frame has been received. Lets the consumer
    * skip rendering a stale registry payload during the first
    * round-trip. */
@@ -50,6 +69,9 @@ export interface UseDevicesPeakMetersStreamResult {
   /** Last error message from the socket, or null. */
   lastError: string | null
 }
+
+const DEFAULT_STALE_THRESHOLD_S = 10
+const STALE_TICK_INTERVAL_MS = 1_000
 
 function defaultStreamUrl(): string {
   if (typeof window === 'undefined' || !window.location) {
@@ -93,6 +115,8 @@ export function useDevicesPeakMetersStream(
     [baseUrl, deviceIdsKey],
   )
   const maxBackoff = opts?.maxReconnectDelayMs ?? 5000
+  const staleThreshold =
+    opts?.staleThresholdSeconds ?? DEFAULT_STALE_THRESHOLD_S
 
   const [devices, setDevices] = useState<DeviceMetersRegistryEntry[]>([])
   const [hasFirstFrame, setHasFirstFrame] = useState(false)
@@ -167,8 +191,43 @@ export function useDevicesPeakMetersStream(
     }
   }, [enabled, url, maxBackoff])
 
-  return useMemo(
-    () => ({ devices, hasFirstFrame, isConnected, lastError }),
-    [devices, hasFirstFrame, isConnected, lastError],
-  )
+  // Re-evaluate per-device staleness once per second even between
+  // frames, so a paused engine surfaces as stale without waiting for
+  // the next tick. The counter only forces a render — `rows` is
+  // re-derived on every render from the freshest `devices` payload
+  // and the current wall-clock.
+  const [, forceRender] = useState(0)
+  useEffect(() => {
+    if (!enabled) return undefined
+    const timer = setInterval(
+      () => forceRender((prev) => prev + 1),
+      STALE_TICK_INTERVAL_MS,
+    )
+    return () => clearInterval(timer)
+  }, [enabled])
+
+  // Derived rows include per-device ageSeconds + isStale.
+  // Read wall-clock each render so the 1 s tick above always picks up
+  // the latest age; useMemo would memoize against a stale `Date.now()`.
+  const nowSeconds = Date.now() / 1000
+  const rows: DeviceMetersStreamRow[] = devices.map((d) => {
+    const capturedAt = d.snapshot?.captured_at ?? null
+    let ageSeconds: number | null = null
+    let isStale = false
+    if (typeof capturedAt === 'number') {
+      ageSeconds = Math.max(0, nowSeconds - capturedAt)
+      if (ageSeconds > staleThreshold) {
+        isStale = true
+      }
+    }
+    return { ...d, ageSeconds, isStale }
+  })
+
+  return {
+    devices,
+    rows,
+    hasFirstFrame,
+    isConnected,
+    lastError,
+  }
 }

@@ -158,4 +158,95 @@ describe('useDevicesPeakMetersStream', () => {
     )
     expect(lastSocket?.url).toBe('ws://test/peak')
   })
+
+  it('exposes rows with ageSeconds + isStale derived from captured_at', async () => {
+    const nowSeconds = Date.now() / 1000
+    const freshFrame = {
+      type: 'device_peak_meters:registry',
+      schema_version: 1,
+      data: {
+        devices: [
+          {
+            device_id: 'edirol-ua-1000',
+            input_channels: 10,
+            output_channels: 10,
+            has_engine_source: true,
+            snapshot: {
+              input_peak_db: [-6],
+              output_peak_db: [-3],
+              source: 'engine' as const,
+              captured_at: nowSeconds, // fresh
+            },
+          },
+          {
+            device_id: 'tascam-us144mkii',
+            input_channels: 4,
+            output_channels: 4,
+            has_engine_source: true,
+            snapshot: {
+              input_peak_db: [-9],
+              output_peak_db: [-12],
+              source: 'engine' as const,
+              captured_at: nowSeconds - 60, // 60 s old
+            },
+          },
+        ],
+      },
+    }
+    const { result } = renderHook(() =>
+      useDevicesPeakMetersStream({
+        url: 'ws://test/peak',
+        staleThresholdSeconds: 5,
+      }),
+    )
+    act(() => {
+      lastSocket?.onopen?.()
+      lastSocket?.onmessage?.({ data: JSON.stringify(freshFrame) })
+    })
+    await waitFor(() => {
+      expect(result.current.rows).toHaveLength(2)
+    })
+    const ua = result.current.rows.find((r) => r.device_id === 'edirol-ua-1000')!
+    const tas = result.current.rows.find((r) => r.device_id === 'tascam-us144mkii')!
+    expect(ua.isStale).toBe(false)
+    expect(ua.ageSeconds).not.toBeNull()
+    expect(ua.ageSeconds!).toBeLessThanOrEqual(5)
+    expect(tas.isStale).toBe(true)
+    expect(tas.ageSeconds!).toBeGreaterThanOrEqual(60)
+  })
+
+  it('reports ageSeconds=null when a device payload omits captured_at', async () => {
+    const frame = {
+      type: 'device_peak_meters:registry',
+      schema_version: 1,
+      data: {
+        devices: [
+          {
+            device_id: 'hotone-jogg',
+            input_channels: 2,
+            output_channels: 2,
+            has_engine_source: false,
+            snapshot: {
+              input_peak_db: [-150, -150],
+              output_peak_db: [-150, -150],
+              source: 'placeholder' as const,
+              // captured_at intentionally omitted
+            },
+          },
+        ],
+      },
+    }
+    const { result } = renderHook(() =>
+      useDevicesPeakMetersStream({ url: 'ws://test/peak' }),
+    )
+    act(() => {
+      lastSocket?.onopen?.()
+      lastSocket?.onmessage?.({ data: JSON.stringify(frame) })
+    })
+    await waitFor(() => {
+      expect(result.current.rows).toHaveLength(1)
+    })
+    expect(result.current.rows[0].ageSeconds).toBeNull()
+    expect(result.current.rows[0].isStale).toBe(false)
+  })
 })
