@@ -350,6 +350,78 @@
   background: color-mix(in srgb, var(--cds-layer-02) 50%, transparent);
 }
 
+.maschine-morph {
+  display: grid;
+  grid-template-columns: auto minmax(200px, 1fr);
+  gap: 1.5rem;
+  align-items: start;
+}
+
+@media (max-width: 720px) {
+  .maschine-morph {
+    grid-template-columns: 1fr;
+  }
+}
+
+.maschine-morph__pad-wrap {
+  display: flex;
+  justify-content: center;
+}
+
+.maschine-morph__legend-title {
+  margin: 0 0 0.5rem;
+  font-size: 0.85rem;
+  color: var(--cds-text-secondary);
+  font-weight: 600;
+}
+
+.maschine-morph__corner-list {
+  display: grid;
+  gap: 0.4rem;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.maschine-morph__corner-row {
+  display: grid;
+  grid-template-columns: 2rem 1fr auto;
+  gap: 0.75rem;
+  align-items: center;
+  padding: 0.4rem 0.6rem;
+  border: 1px solid color-mix(in srgb, var(--cds-border-subtle) 60%, transparent);
+  background: var(--cds-layer-02);
+  border-radius: 4px;
+  transition: border-color var(--map2-dur-fast, 140ms) ease, background var(--map2-dur-fast, 140ms) ease;
+}
+
+.maschine-morph__corner-row--active {
+  border-color: var(--cds-support-success);
+  background: color-mix(in srgb, #42be65 18%, var(--cds-layer-02));
+}
+
+.maschine-morph__corner-letter {
+  font-size: 1.25rem;
+  font-weight: 700;
+  text-align: center;
+  color: var(--cds-text-primary);
+}
+
+.maschine-morph__corner-snapshot {
+  font-size: 0.85rem;
+  color: var(--cds-text-primary);
+  font-family: var(--cds-code-02-font-family, monospace);
+  word-break: break-word;
+}
+
+.maschine-morph__corner-encoder {
+  font-size: 0.7rem;
+  color: var(--cds-text-secondary);
+  font-family: var(--cds-code-02-font-family, monospace);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
 /* T2522-C cycle 6 — Pressure / velocity curve editor */
 .maschine-curve-editor {
   padding: 1.25rem !important;

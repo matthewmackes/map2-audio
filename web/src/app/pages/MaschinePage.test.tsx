@@ -10,6 +10,21 @@ jest.mock('../layout/useSetShellWindow', () => ({
   useSetShellWindow: jest.fn(),
 }))
 
+// Stub the State Authority API client — the Quad Morph zone in the
+// Performance tab pulls it in transitively via MorphPad. Real morph
+// behavior is covered by stateAuthority/MorphPad's own tests.
+jest.mock('../../map2/clients/stateAuthority', () => ({
+  __esModule: true,
+  stateAuthorityApi: {
+    getMorphState: jest.fn(async () => ({ x: 0.5, y: 0.5, configured_corners: [] })),
+    setMorphPosition: jest.fn(async (x: number, y: number) => ({
+      x,
+      y,
+      configured_corners: [],
+    })),
+  },
+}))
+
 function getShellWindowPatches(): Array<{ title?: string; subtitle?: string; actions?: Array<{ id: string }> }> {
   const mocked = jest.requireMock('../layout/useSetShellWindow') as { useSetShellWindow: jest.Mock }
   return mocked.useSetShellWindow.mock.calls.map((call) => call[0])

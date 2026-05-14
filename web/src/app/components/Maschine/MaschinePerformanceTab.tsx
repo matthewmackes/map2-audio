@@ -2,6 +2,7 @@ import { Tag, Tile } from '@carbon/react'
 import { useEffect, useMemo, useState } from 'react'
 
 import { MaschinePadCurveEditor } from './MaschinePadCurveEditor'
+import { MaschineQuadMorphZone } from './MaschineQuadMorphZone'
 import { MaschineStepSequencer } from './MaschineStepSequencer'
 import type {
   MaschineDaemonStatus,
@@ -248,16 +249,7 @@ export function MaschinePerformanceTab({
 
       <MaschineStepSequencer />
 
-      <Tile className="maschine-perf__morph-zone">
-        <h4 className="maschine-perf__strip-title">Quad Morph</h4>
-        <div className="maschine-perf__morph-placeholder">
-          <Tag size="sm" type="purple">Cycle 8</Tag>
-          <span>
-            Touch-target XY pad bound to the State Authority MorphEngine — A/B/C/D corner snapshots, encoders 1-4 = weight
-            adjust, gesture recording via AutomationEngine.
-          </span>
-        </div>
-      </Tile>
+      <MaschineQuadMorphZone hidEvents={hidEvents} />
     </div>
   )
 }

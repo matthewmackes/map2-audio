@@ -9,6 +9,25 @@ import type {
   MaschineHidEvent,
 } from '../../../map2/types'
 
+// The Quad Morph zone mounts the State Authority MorphPad which
+// hits stateAuthorityApi on render. Stub it out — MorphPad's own
+// network behavior is covered by its dedicated test.
+jest.mock('../../../map2/clients/stateAuthority', () => ({
+  __esModule: true,
+  stateAuthorityApi: {
+    getMorphState: jest.fn(async () => ({
+      x: 0.5,
+      y: 0.5,
+      configured_corners: [],
+    })),
+    setMorphPosition: jest.fn(async (x: number, y: number) => ({
+      x,
+      y,
+      configured_corners: [],
+    })),
+  },
+}))
+
 // The curve editor (mounted by Performance) calls maschineApi at
 // render. Mock both methods with a stable default so the tests
 // here don't need a backend.
@@ -234,13 +253,16 @@ describe('MaschinePerformanceTab', () => {
     expect(screen.getByText('Disconnected')).toBeInTheDocument()
   })
 
-  it('renders the Quad Morph placeholder pointing at cycle 8', () => {
+  it('cycle-8 — Quad Morph zone is a real component (no placeholder)', async () => {
     render(
       withQuery(
         <MaschinePerformanceTab status={makeStatus()} encoderMap={null} hidEvents={[]} />,
       ),
     )
     expect(screen.getByText('Quad Morph')).toBeInTheDocument()
-    expect(screen.getByText('Cycle 8')).toBeInTheDocument()
+    // No placeholder copy from cycle 5; the morph zone now mounts the
+    // real corner legend.
+    expect(screen.queryByText('Cycle 8')).not.toBeInTheDocument()
+    expect(await screen.findByText(/cycle 11/i)).toBeInTheDocument()
   })
 })
