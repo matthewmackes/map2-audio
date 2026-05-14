@@ -216,6 +216,21 @@ async def get_device_peak_meters(device_id: str) -> GenericMeterPayload:
 WS_BROADCAST_INTERVAL_SECONDS = 1.0 / 30.0  # 30 fps target
 
 
+def _parse_device_ids_query(raw: Optional[str]) -> Optional[set[str]]:
+    """Parse a ``?device_ids=a,b,c`` query value into a filter set.
+
+    Returns ``None`` for an absent / empty filter (means "no filter,
+    fan-out all devices"). Whitespace and empty segments are tolerated.
+    Pivot-13c cycle 2.
+    """
+    if raw is None:
+        return None
+    cleaned = {part.strip() for part in raw.split(",") if part.strip()}
+    if not cleaned:
+        return None
+    return cleaned
+
+
 @router.websocket("/peak-meters/stream")
 async def stream_peak_meters(websocket: WebSocket) -> None:
     """WebSocket fan-out of the peak-meters registry.
@@ -248,6 +263,12 @@ async def stream_peak_meters(websocket: WebSocket) -> None:
             }
         }
 
+    Optional query filter ``?device_ids=tascam-us144mkii,edirol-ua-1000``
+    restricts the frame to the listed devices (pivot-13c cycle 2).
+    Unknown IDs in the filter set are silently ignored so a panel
+    consuming a stale device list can't break the stream. The frame
+    preserves alphabetical order over the filtered subset.
+
     The default 30 fps cadence matches the MAP2 metering broadcast
     floor documented in ``CLAUDE.md`` § Service Polling Floors. Tests
     that need a faster tick patch ``WS_BROADCAST_INTERVAL_SECONDS``.
@@ -256,11 +277,16 @@ async def stream_peak_meters(websocket: WebSocket) -> None:
     client_id = f"device-meters-{uuid.uuid4()}"
     logger.info("device meters ws connected: %s", client_id)
 
+    raw_filter = websocket.query_params.get("device_ids")
+    device_filter = _parse_device_ids_query(raw_filter)
+
     async def _snapshot_frame() -> dict:
         registry = get_registry()
         rows = registry.list_devices()
         device_payloads: list[dict] = []
         for row in rows:
+            if device_filter is not None and row.device_id not in device_filter:
+                continue
             try:
                 snap = await registry.read_snapshot(row.device_id)
             except Exception as exc:  # pragma: no cover — defensive

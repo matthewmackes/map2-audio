@@ -79,3 +79,66 @@ def test_devices_list_alphabetically_ordered(app_with_router: FastAPI) -> None:
         frame = ws.receive_json()
     device_ids = [d["device_id"] for d in frame["data"]["devices"]]
     assert device_ids == sorted(device_ids)
+
+
+def test_device_ids_filter_restricts_frame(app_with_router: FastAPI) -> None:
+    """`?device_ids=a,b` filters the frame to those devices only."""
+    client = TestClient(app_with_router)
+    with client.websocket_connect(
+        "/api/v1/devices/peak-meters/stream?device_ids=edirol-ua-1000"
+    ) as ws:
+        frame = ws.receive_json()
+    device_ids = [d["device_id"] for d in frame["data"]["devices"]]
+    assert device_ids == ["edirol-ua-1000"]
+
+
+def test_device_ids_filter_tolerates_unknown_ids(
+    app_with_router: FastAPI,
+) -> None:
+    """Unknown IDs in the filter set must be silently dropped — a stale
+    device list on the panel side can't break the stream."""
+    client = TestClient(app_with_router)
+    with client.websocket_connect(
+        "/api/v1/devices/peak-meters/stream?device_ids=edirol-ua-1000,not-a-real-device"
+    ) as ws:
+        frame = ws.receive_json()
+    device_ids = [d["device_id"] for d in frame["data"]["devices"]]
+    assert device_ids == ["edirol-ua-1000"]
+
+
+def test_device_ids_filter_with_whitespace_and_empty_segments(
+    app_with_router: FastAPI,
+) -> None:
+    """`?device_ids=  ,  ,edirol-ua-1000 , ` parses cleanly."""
+    client = TestClient(app_with_router)
+    with client.websocket_connect(
+        "/api/v1/devices/peak-meters/stream?device_ids=%20%20,%20,edirol-ua-1000%20,%20"
+    ) as ws:
+        frame = ws.receive_json()
+    device_ids = [d["device_id"] for d in frame["data"]["devices"]]
+    assert device_ids == ["edirol-ua-1000"]
+
+
+def test_no_device_ids_query_returns_all(app_with_router: FastAPI) -> None:
+    """Without the query parameter the stream behaves exactly as the
+    pre-pivot-13c contract — all registered devices fanned out."""
+    client = TestClient(app_with_router)
+    with client.websocket_connect(
+        "/api/v1/devices/peak-meters/stream"
+    ) as ws:
+        frame = ws.receive_json()
+    device_ids = [d["device_id"] for d in frame["data"]["devices"]]
+    assert len(device_ids) >= 2  # at least UA-1000 + tascam + others
+
+
+def test_device_ids_filter_empty_value_returns_all(
+    app_with_router: FastAPI,
+) -> None:
+    """`?device_ids=` (empty string) parses as None and fans out all."""
+    client = TestClient(app_with_router)
+    with client.websocket_connect(
+        "/api/v1/devices/peak-meters/stream?device_ids="
+    ) as ws:
+        frame = ws.receive_json()
+    device_ids = [d["device_id"] for d in frame["data"]["devices"]]
+    assert len(device_ids) >= 2

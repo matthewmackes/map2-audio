@@ -31,6 +31,12 @@ export interface UseDevicesPeakMetersStreamOptions {
   url?: string
   /** Reconnect backoff ceiling, in ms. Default 5 s. */
   maxReconnectDelayMs?: number
+  /** Restrict the stream to a specific device list. Translated to the
+   * canonical `?device_ids=a,b,c` query parameter the backend reads
+   * (pivot-13c cycle 2). When undefined or empty, the stream returns
+   * every registered device on every tick. Updating this prop
+   * re-establishes the connection with the new filter set. */
+  deviceIds?: readonly string[]
 }
 
 export interface UseDevicesPeakMetersStreamResult {
@@ -53,11 +59,39 @@ function defaultStreamUrl(): string {
   return `${proto}//${window.location.host}/api/v1/devices/peak-meters/stream`
 }
 
+function appendDeviceIdsParam(
+  baseUrl: string,
+  deviceIds: readonly string[] | undefined,
+): string {
+  if (!deviceIds || deviceIds.length === 0) return baseUrl
+  const joined = deviceIds
+    .map((id) => id.trim())
+    .filter((id) => id.length > 0)
+  if (joined.length === 0) return baseUrl
+  const value = encodeURIComponent(joined.join(','))
+  const separator = baseUrl.includes('?') ? '&' : '?'
+  return `${baseUrl}${separator}device_ids=${value}`
+}
+
 export function useDevicesPeakMetersStream(
   opts?: UseDevicesPeakMetersStreamOptions,
 ): UseDevicesPeakMetersStreamResult {
   const enabled = opts?.enabled ?? true
-  const url = opts?.url ?? defaultStreamUrl()
+  const baseUrl = opts?.url ?? defaultStreamUrl()
+  // Memoize the device list so a fresh array literal on each render
+  // doesn't tear down the socket. Joined value is the stable identity.
+  const deviceIdsKey = (opts?.deviceIds ?? [])
+    .map((id) => id.trim())
+    .filter((id) => id.length > 0)
+    .sort()
+    .join(',')
+  const url = useMemo(
+    () =>
+      deviceIdsKey
+        ? appendDeviceIdsParam(baseUrl, deviceIdsKey.split(','))
+        : baseUrl,
+    [baseUrl, deviceIdsKey],
+  )
   const maxBackoff = opts?.maxReconnectDelayMs ?? 5000
 
   const [devices, setDevices] = useState<DeviceMetersRegistryEntry[]>([])

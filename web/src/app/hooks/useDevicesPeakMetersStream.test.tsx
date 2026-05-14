@@ -121,4 +121,41 @@ describe('useDevicesPeakMetersStream', () => {
     )
     expect(lastSocket).toBeNull()
   })
+
+  it('appends device_ids query parameter when filter is provided', () => {
+    renderHook(() =>
+      useDevicesPeakMetersStream({
+        url: 'ws://test/peak',
+        deviceIds: ['tascam-us144mkii', 'edirol-ua-1000'],
+      }),
+    )
+    expect(lastSocket).not.toBeNull()
+    // Sorted alphabetically for stable identity (so re-ordering the
+    // prop doesn't bounce the socket).
+    expect(lastSocket?.url).toBe(
+      'ws://test/peak?device_ids=edirol-ua-1000%2Ctascam-us144mkii',
+    )
+  })
+
+  it('skips empty deviceIds entries in the filter', () => {
+    renderHook(() =>
+      useDevicesPeakMetersStream({
+        url: 'ws://test/peak',
+        deviceIds: ['  ', '', 'tascam-us144mkii'],
+      }),
+    )
+    expect(lastSocket?.url).toBe(
+      'ws://test/peak?device_ids=tascam-us144mkii',
+    )
+  })
+
+  it('does not append device_ids when filter is empty', () => {
+    renderHook(() =>
+      useDevicesPeakMetersStream({
+        url: 'ws://test/peak',
+        deviceIds: [],
+      }),
+    )
+    expect(lastSocket?.url).toBe('ws://test/peak')
+  })
 })
