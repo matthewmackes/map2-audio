@@ -4205,7 +4205,7 @@ Subtasks:
   - Required outputs/deliverables: Snapshot/interface updates, route adapters, no-recorder/no-artifact regression checks, routing tests.
   Last updated: 2026-05-13 19:52 EDT - Codex
 - ID: T2521-8
-  Status: [ ] Todo
+  Status: [>] In Progress
   Title: Update installer, RPM, systemd, environment, firewall, and package manifests
   Description:
   - Goal / acceptance criteria: Ensure fresh installs and upgrades provision the selected SonoBus/AOO runtime consistently, including dependencies, service units, config files, ports, capabilities, and rollback/uninstall behavior.
@@ -4213,7 +4213,9 @@ Subtasks:
   - Dependencies: T2521-4, T2521-5
   - Estimated effort: High
   - Required outputs/deliverables: Installer/RPM/package/env/systemd/firewall docs and tests.
-  Last updated: 2026-05-13 19:52 EDT - Codex
+  Last updated: 2026-05-13 21:50 EDT - Claude (twelfth Continue cycle 5)
+  - Completion notes:
+    - 2026-05-13 21:50 EDT - Claude: First slice shipped — scaffolding lands ahead of the T2521-4 daemon binary so installer + firewall coverage are atomic with the rest of T2521. New files: `systemd/map2-sonobus-transport.service` (T2521-8 service unit mirroring map2-controller-host's hardening — `CPUAffinity=0 1 2 3` so the daemon stays off audio-isolated cores 4-5, `LimitRTPRIO=40`, `CAP_NET_BIND_SERVICE`, locked Q3/Q14/Q18 defaults baked into Environment=, ProtectSystem=strict + PrivateTmp + NoNewPrivileges); `systemd/firewalld/map2-sonobus.xml` (UDP 10000-10100 zone fragment with install/rollback instructions); `etc/map2/sonobus.env.example` (operator-override fragment documenting every Q1-Q21 default). `installer/backend/packages.py` gains a `SONOBUS_PACKAGES_FEDORA` manifest (opus-devel + libuv-devel + avahi-devel — AOO source is vendored per Q20 so the daemon only needs build deps, not a distro package) with Debian/Ubuntu apt mappings + new `sonobus` entry in `install_component()`. 8 pytest cases in `tests/sonobus/test_sonobus_packaging.py` verify unit/fragment/env file presence, locked-decision defaults, audio-core avoidance, and installer manifest registration. ExecStart binary path is the T2521-4 deliverable; until then the unit fails-to-start by design. Remaining T2521-8: RPM spec entries, vendor/aoo/ skeleton, uninstaller rollback path.
 - ID: T2521-9
   Status: [ ] Todo
   Title: Complete licensing and third-party notices for full deployment

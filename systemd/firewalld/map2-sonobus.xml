@@ -1,0 +1,33 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+  T2521-8 — firewalld service fragment for the MAP2 SonoBus / AOO
+  remote-audio transport daemon.
+
+  Install path: /etc/firewalld/services/map2-sonobus.xml
+  Activation:
+    sudo cp systemd/firewalld/map2-sonobus.xml /etc/firewalld/services/
+    sudo firewall-cmd --reload
+    sudo firewall-cmd --add-service=map2-sonobus --permanent
+    sudo firewall-cmd --reload
+
+  Default UDP port range mirrors the systemd unit env (10000-10100):
+    MAP2_SONOBUS_UDP_PORT_BASE=10000
+    MAP2_SONOBUS_UDP_PORT_COUNT=100
+
+  Rollback:
+    sudo firewall-cmd --remove-service=map2-sonobus --permanent
+    sudo firewall-cmd --reload
+    sudo rm /etc/firewalld/services/map2-sonobus.xml
+
+  See docs/architecture/SONOBUS_AOO_TRANSPORT.md §6 (Validation gates)
+  for the firewall-impacted scenarios.
+-->
+<service version="1.0">
+  <short>MAP2 SonoBus / AOO</short>
+  <description>MAP2 remote-audio transport over AOO (BSD-3) and the
+  SonoBus protocol. Opens UDP ports 10000-10100 for the AOO source/sink
+  runtime + optional MAP2-hosted connection server (Q3). Multicast
+  ports for mDNS peer discovery (Q17) ride the existing mdns service
+  which firewalld activates automatically on the public zone.</description>
+  <port protocol="udp" port="10000-10100"/>
+</service>

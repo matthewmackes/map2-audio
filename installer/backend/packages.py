@@ -69,6 +69,22 @@ AVB_PACKAGES_FEDORA = [
     "ethtool", "iproute", "net-tools",
 ]
 
+# T2521-8 — SonoBus / AOO remote-audio transport.
+# AOO upstream is vendored into the repo at vendor/aoo/ per Q20, so no
+# distro package is required for the runtime itself. The packages
+# below cover the build deps the T2521-4 daemon needs:
+#   - liboscpack: lightweight OSC parser AOO uses for the control plane
+#   - libuv-devel: cross-platform async I/O for the daemon's UDS bridge
+#   - opus-devel: reserved codec dep for the future Opus codec slots
+#     (PCM-only in v1 per Q7/Q8, but the dep is cheap and forward-
+#     compatible)
+#   - avahi-devel: mDNS peer discovery (Q17)
+SONOBUS_PACKAGES_FEDORA = [
+    "opus-devel",
+    "libuv-devel",
+    "avahi-devel",
+]
+
 # Mapping from Fedora → apt names (incomplete but covers the main ones)
 FEDORA_TO_APT: dict[str, str] = {
     "python3-devel":          "python3-dev",
@@ -84,6 +100,10 @@ FEDORA_TO_APT: dict[str, str] = {
     "lv2-devel":              "lv2-dev",
     "lilv-devel":             "liblilv-dev",
     "suil-devel":             "libsuil-dev",
+    # T2521-8 — SonoBus build deps
+    "opus-devel":             "libopus-dev",
+    "libuv-devel":            "libuv1-dev",
+    "avahi-devel":            "libavahi-client-dev",
 }
 
 
@@ -183,6 +203,7 @@ class PackageManager:
             "node":     NODE_PACKAGES_FEDORA,
             "lv2":      LV2_PACKAGES_FEDORA,
             "avb":      AVB_PACKAGES_FEDORA,
+            "sonobus":  SONOBUS_PACKAGES_FEDORA,
         }
         pkgs = component_map.get(component, [])
         if not pkgs:
