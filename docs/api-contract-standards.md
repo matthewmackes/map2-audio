@@ -156,6 +156,8 @@ adding a new device requires no route changes, only a new facade.
 | `/api/v1/devices/peak-meters/registry?include_snapshot=true` | GET | Same enumeration with one inline snapshot per device (single-roundtrip dashboard). |
 | `/api/v1/devices/peak-meters/stream` | WS | 30 fps fan-out of the entire registry. Frame envelope is versioned via `schema_version=1`. |
 | `/api/v1/devices/peak-meters/stream?device_ids=a,b,c` | WS | Same stream restricted to the listed registry IDs. Unknown IDs silently dropped; whitespace + empty segments tolerated. |
+| `/api/v1/devices/peak-meters/cluster/registry` | GET | Cluster fan-out: local registry + per-peer registries + per-peer failure errors. asyncio.gather across discovered peers; 2 s per-peer timeout. |
+| `/api/v1/devices/peak-meters/cluster/registry?include_snapshot=true` | GET | Same fan-out, propagating include_snapshot to every peer fetch so each device entry carries an inline snapshot. |
 
 Per-device payload shape:
 
@@ -203,6 +205,25 @@ WebSocket frame shape (every tick):
 ```
 
 Initial state frame arrives immediately on connect; subsequent frames tick at `WS_BROADCAST_INTERVAL_SECONDS` (default 30 fps; module constant patchable for tests). Default cadence matches the MAP2 metering broadcast floor documented in `CLAUDE.md` § Service Polling Floors.
+
+Cluster fan-out envelope (run-13f cycle 1):
+
+```json
+{
+  "local": { "devices": [...] },
+  "peers": [
+    {
+      "node_id": "peer-A",
+      "hostname": "a.local",
+      "devices": [...],
+      "health": "ok"
+    }
+  ],
+  "errors": { "peer-B": "http 504" }
+}
+```
+
+A discovery service that fails entirely short-circuits to a local-only response (`peers: []`, `errors: {}`) so the operator surface always has a baseline.
 
 Custom error code registered for this surface:
 

@@ -27,8 +27,20 @@ def test_lists_canonical_endpoints():
         "/api/v1/devices/{device_id}/peak-meters",
         "/api/v1/devices/peak-meters/registry",
         "/api/v1/devices/peak-meters/stream",
+        "/api/v1/devices/peak-meters/cluster/registry",
     ):
         assert endpoint in text, f"missing endpoint: {endpoint}"
+
+
+def test_documents_cluster_envelope():
+    """Run-13f cycle 5 — the cluster fan-out envelope must be
+    documented so consumers know to read local + peers + errors."""
+    text = _text()
+    assert '"local"' in text
+    assert '"peers"' in text
+    assert '"errors"' in text
+    # Discovery-service-failure fallback documented.
+    assert "local-only response" in text
 
 
 def test_documents_include_snapshot_query():
