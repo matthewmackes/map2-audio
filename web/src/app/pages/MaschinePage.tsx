@@ -87,6 +87,7 @@ interface DiagnosticsTabProps {
   hidEvents: MaschineHidEvent[]
   isStatusError: boolean
   refetchStatus: () => void
+  onPadClick: (padIndex: number) => void
 }
 
 function MaschineDiagnosticsTab({
@@ -95,6 +96,7 @@ function MaschineDiagnosticsTab({
   hidEvents,
   isStatusError,
   refetchStatus,
+  onPadClick,
 }: DiagnosticsTabProps) {
   const transportConfigQuery = useQuery({
     queryKey: ['maschine', 'transport-config'],
@@ -111,32 +113,10 @@ function MaschineDiagnosticsTab({
     },
   })
 
-  const selectBlockMutation = useMutation({
-    mutationFn: (blockId: string) =>
-      maschineApi.getAudioGrid().then(() =>
-        fetch(`/api/maschine/audio-grid/select`, {
-          method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
-          body: JSON.stringify({ block_id: blockId }),
-        }).then((r) => r.json()),
-      ),
-  })
-
   const resolvedTransportConfig = transportConfigQuery.data?.config ?? null
   const lcdState = status?.lcd ?? null
   const ledArray = status?.led_array ?? status?.led_state?.led_array ?? null
   const isDeviceConnected = Boolean(status?.connected && status?.transport?.connected)
-
-  const handlePadClick = useCallback(
-    (padIndex: number) => {
-      const blocks = status?.audio_grid?.blocks ?? []
-      const block = blocks.find((b) => b.pad_index === padIndex)
-      if (block) {
-        selectBlockMutation.mutate(block.block_id)
-      }
-    },
-    [status, selectBlockMutation],
-  )
 
   return (
     <div className="maschine-page__diagnostics">
@@ -171,7 +151,7 @@ function MaschineDiagnosticsTab({
         <MaschineLedPreviewPanel
           ledState={status?.led_state ?? null}
           ledArray={ledArray}
-          onPadClick={handlePadClick}
+          onPadClick={onPadClick}
         />
         <MaschineLcdSimulatorPanel left={lcdState?.left ?? null} right={lcdState?.right ?? null} />
         <MaschineHwTestPanel isConnected={isDeviceConnected} />
@@ -211,6 +191,31 @@ export function MaschinePage() {
   // Single shared WS + polling subscription owned by the page so the
   // Twin and Diagnostics tabs paint from the same live frame stream.
   const live = useMaschineLiveStatus()
+
+  // Cycle 4 — page-scope pad-select. Both the Twin (when an audio-grid
+  // block is mounted on a clicked pad) and the Diagnostics LED preview
+  // panel call this. POST /api/maschine/audio-grid/select tells the
+  // daemon to focus the matching block; the next WS frame reflects the
+  // new selection.
+  const selectBlockMutation = useMutation({
+    mutationFn: (blockId: string) =>
+      fetch(`/api/maschine/audio-grid/select`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ block_id: blockId }),
+      }).then((r) => r.json()),
+  })
+
+  const handlePadClick = useCallback(
+    (padIndex: number) => {
+      const blocks = live.status?.audio_grid?.blocks ?? []
+      const block = blocks.find((b) => b.pad_index === padIndex)
+      if (block) {
+        selectBlockMutation.mutate(block.block_id)
+      }
+    },
+    [live.status, selectBlockMutation],
+  )
 
   const subtitle = useMemo(
     () => 'NI Maschine MK1 — extended GUI · 16 12-bit pressure pads · 11 encoders · dual 255×64 LCDs · 62 LEDs.',
@@ -253,7 +258,12 @@ export function MaschinePage() {
         </TabList>
         <TabPanels>
           <TabPanel>
-            <MaschineHardwareTwin status={live.status} encoderMap={live.encoderMap} />
+            <MaschineHardwareTwin
+              status={live.status}
+              encoderMap={live.encoderMap}
+              hidEvents={live.hidEvents}
+              onPadClick={handlePadClick}
+            />
           </TabPanel>
           <TabPanel>
             <ComingSoonTab
@@ -283,6 +293,7 @@ export function MaschinePage() {
               hidEvents={live.hidEvents}
               isStatusError={live.isStatusError}
               refetchStatus={live.refetchStatus}
+              onPadClick={handlePadClick}
             />
           </TabPanel>
         </TabPanels>

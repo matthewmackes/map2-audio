@@ -111,6 +111,41 @@
   background: #0b1020;
 }
 
+/* T2522-A cycle 4 — clickable pads (when an audio-grid block is mounted)
+ * + activity-flash on the most recent HID event. */
+.maschine-twin__pad--clickable {
+  cursor: pointer;
+}
+
+.maschine-twin__pad--clickable:hover {
+  filter: brightness(1.15);
+}
+
+.maschine-twin__pad--clickable:focus-visible {
+  outline: none;
+}
+
+/* Brief brightness pulse on whichever element matched the latest
+ * HID event. Uses opacity rather than transform so SVG strokes don't
+ * jitter. The accompanying TS clears the class after ~350ms; the
+ * keyframes deliberately end at 100% so the element settles back to
+ * its static styling without a snap. */
+.maschine-twin__active {
+  animation: maschine-twin-active-flash 0.35s ease-out 1;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .maschine-twin__active {
+    animation: none;
+  }
+}
+
+@keyframes maschine-twin-active-flash {
+  0% { opacity: 0.55; }
+  60% { opacity: 1; }
+  100% { opacity: 1; }
+}
+
 .maschine-page__grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
