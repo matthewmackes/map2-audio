@@ -34,6 +34,7 @@ jest.mock('../../map2/clients/maschine', () => ({
   maschineApi: {
     getStatus: jest.fn(),
     getEncoderMap: jest.fn(),
+    updateEncoderMap: jest.fn(),
     renderLcd: jest.fn(),
     getAudioGrid: jest.fn(),
     getTransportConfig: jest.fn(),
@@ -55,6 +56,7 @@ const { maschineApi } = jest.requireMock('../../map2/clients/maschine') as {
   maschineApi: {
     getStatus: jest.Mock
     getEncoderMap: jest.Mock
+    updateEncoderMap: jest.Mock
     renderLcd: jest.Mock
     getAudioGrid: jest.Mock
     getTransportConfig: jest.Mock
@@ -326,6 +328,10 @@ describe('MaschinePage', () => {
       usb_serial: 'default-mk1',
       performance_patterns: bank,
     }))
+    maschineApi.updateEncoderMap.mockImplementation(async (encoder_map: unknown) => ({
+      status: 'ok',
+      encoder_map,
+    }))
   })
 
   it('renders all Maschine panels with cabl protocol info and shows connected status', async () => {
@@ -394,10 +400,13 @@ describe('MaschinePage', () => {
     expect(await screen.findByText('Step sequencer + scenes')).toBeInTheDocument()
   })
 
-  it('T2522 — ?tab=mapping deep-link selects the Mapping Studio tab', () => {
+  it('T2522 — ?tab=mapping deep-link selects the Mapping Studio tab', async () => {
     renderPage(['/maschine?tab=mapping'])
     expect(screen.getByRole('tab', { name: 'Mapping Studio' }).getAttribute('aria-selected')).toBe('true')
-    expect(screen.getByText(/Full mapping editor scoped to the active snapshot/)).toBeInTheDocument()
+    // Cycle 9 wired the real Mapping Studio scaffold; the placeholder
+    // copy is gone. Anchor on the canonical heading + sources pane.
+    expect(screen.getByRole('heading', { name: 'Mapping Studio' })).toBeInTheDocument()
+    expect(await screen.findByText('Parameter sources')).toBeInTheDocument()
   })
 
   it('T2522 — ?tab=<unknown> falls back to the default Hardware Twin tab', () => {

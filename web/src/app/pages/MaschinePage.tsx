@@ -10,6 +10,7 @@ import { MaschineConnectionPanel } from '../components/Maschine/MaschineConnecti
 import { MaschineEncoderMapPanel } from '../components/Maschine/MaschineEncoderMapPanel'
 import { MaschineFirmwarePanel } from '../components/Maschine/MaschineFirmwarePanel'
 import { MaschineHardwareTwin } from '../components/Maschine/MaschineHardwareTwin'
+import { MaschineMappingStudio } from '../components/Maschine/MaschineMappingStudio'
 import { MaschinePerformanceTab } from '../components/Maschine/MaschinePerformanceTab'
 import { MaschineHidTrafficPanel } from '../components/Maschine/MaschineHidTrafficPanel'
 import { MaschineHwTestPanel } from '../components/Maschine/MaschineHwTestPanel'
@@ -282,10 +283,10 @@ export function MaschinePage() {
             />
           </TabPanel>
           <TabPanel>
-            <ComingSoonTab
-              title="Mapping Studio"
-              subtitle="Full mapping editor scoped to the active snapshot: drag any plugin/chain parameter onto any encoder/pad/button, see SHIFT-layer overlays, define per-snapshot LED choreography, drive macro recording via the AutomationEngine lane, with State Authority phase visibility (VALIDATING → STAGING → APPLYING → VERIFYING → LIVE)."
-              cycleRange="T2522-D · cycles 9-11"
+            <MaschineMappingStudio
+              status={live.status}
+              encoderMap={live.encoderMap}
+              refetchStatus={live.refetchStatus}
             />
           </TabPanel>
           <TabPanel>

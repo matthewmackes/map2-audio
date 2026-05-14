@@ -225,6 +225,15 @@ export const maschineApi = {
   getEncoderMap: () =>
     fetchJson<MaschineEncoderMapResponse>(`${MASCHINE_API_BASE}/encoder-map`, { cache: 'no-store' }),
 
+  // T2522-D cycle 9 — Mapping Studio writes encoder bindings here.
+  // The route is POST (not PUT) because the existing daemon endpoint
+  // is registered as POST /encoder-map.
+  updateEncoderMap: (encoder_map: Record<string, unknown>) =>
+    fetchJson<MaschineEncoderMapResponse>(`${MASCHINE_API_BASE}/encoder-map`, {
+      method: 'POST',
+      body: JSON.stringify({ encoder_map }),
+    }),
+
   renderLcd: (
     context: 'audio_grid' | 'stats' = 'audio_grid',
     focusMetric?: string | null,

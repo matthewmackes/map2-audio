@@ -422,6 +422,213 @@
   letter-spacing: 0.05em;
 }
 
+/* T2522-D cycle 9 — Mapping Studio */
+.maschine-mapping {
+  display: grid;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.maschine-mapping__header {
+  display: flex !important;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 1.25rem !important;
+}
+
+.maschine-mapping__header h3 {
+  margin: 0;
+  font-size: var(--cds-heading-03-font-size, 1.25rem);
+  color: var(--cds-text-primary);
+}
+
+.maschine-mapping__sub {
+  margin: 0.25rem 0 0;
+  color: var(--cds-text-secondary);
+  font-size: 0.875rem;
+  max-width: 70ch;
+}
+
+.maschine-mapping__header-actions {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.maschine-mapping__error {
+  padding: 0.75rem 1rem !important;
+  color: var(--cds-support-error);
+  border-left: 3px solid var(--cds-support-error);
+}
+
+.maschine-mapping__panes {
+  display: grid;
+  grid-template-columns: minmax(240px, 1fr) minmax(320px, 1.5fr);
+  gap: 1rem;
+  align-items: start;
+}
+
+@media (max-width: 720px) {
+  .maschine-mapping__panes {
+    grid-template-columns: 1fr;
+  }
+}
+
+.maschine-mapping__sources,
+.maschine-mapping__targets {
+  padding: 1rem !important;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.maschine-mapping__pane-title {
+  margin: 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--cds-text-primary);
+}
+
+.maschine-mapping__empty,
+.maschine-mapping__targets-help {
+  margin: 0;
+  font-size: 0.75rem;
+  color: var(--cds-text-secondary);
+}
+
+.maschine-mapping__source-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.4rem;
+  max-height: 30rem;
+  overflow-y: auto;
+}
+
+.maschine-mapping__source-card {
+  display: grid;
+  gap: 0.1rem;
+  padding: 0.55rem 0.7rem;
+  background: var(--cds-layer-02);
+  border: 1px solid color-mix(in srgb, var(--cds-border-subtle) 60%, transparent);
+  border-radius: 4px;
+  cursor: grab;
+  user-select: none;
+  transition: background var(--map2-dur-fast, 140ms) ease, border-color var(--map2-dur-fast, 140ms) ease;
+}
+
+.maschine-mapping__source-card:hover {
+  background: color-mix(in srgb, var(--cds-layer-02) 70%, var(--cds-layer-hover));
+  border-color: var(--cds-border-strong);
+}
+
+.maschine-mapping__source-card:active {
+  cursor: grabbing;
+}
+
+.maschine-mapping__source-block {
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--cds-text-primary);
+}
+
+.maschine-mapping__source-param {
+  font-size: 0.75rem;
+  color: var(--cds-text-secondary);
+  font-family: var(--cds-code-02-font-family, monospace);
+}
+
+.maschine-mapping__target-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(11rem, 1fr));
+  gap: 0.5rem;
+}
+
+.maschine-mapping__target {
+  position: relative;
+  display: grid;
+  gap: 0.4rem;
+  padding: 0.65rem 0.75rem;
+  border: 1px dashed color-mix(in srgb, var(--cds-border-subtle) 70%, transparent);
+  background: var(--cds-layer-02);
+  border-radius: 4px;
+  min-height: 4.5rem;
+  transition:
+    border-color var(--map2-dur-fast, 140ms) ease,
+    background var(--map2-dur-fast, 140ms) ease;
+}
+
+.maschine-mapping__target--bound {
+  border-style: solid;
+  border-color: var(--cds-support-success);
+  background: color-mix(in srgb, #42be65 10%, var(--cds-layer-02));
+}
+
+.maschine-mapping__target--fixed {
+  background: color-mix(in srgb, var(--cds-text-helper) 12%, var(--cds-layer-02));
+  cursor: not-allowed;
+}
+
+.maschine-mapping__target-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.maschine-mapping__target-slot {
+  font-size: 0.7rem;
+  font-family: var(--cds-code-02-font-family, monospace);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  color: var(--cds-text-secondary);
+}
+
+.maschine-mapping__target-label {
+  font-weight: 600;
+  font-size: 0.85rem;
+  color: var(--cds-text-primary);
+  word-break: break-word;
+}
+
+.maschine-mapping__target-empty {
+  font-size: 0.75rem;
+  color: var(--cds-text-helper);
+  font-style: italic;
+}
+
+.maschine-mapping__target-meta {
+  display: block;
+  font-size: 0.7rem;
+  color: var(--cds-text-secondary);
+  font-family: var(--cds-code-02-font-family, monospace);
+  margin-top: 0.15rem;
+}
+
+.maschine-mapping__target-clear {
+  position: absolute;
+  top: 0.25rem;
+  right: 0.4rem;
+  background: transparent;
+  border: none;
+  color: var(--cds-text-helper);
+  cursor: pointer;
+  font-size: 1rem;
+  line-height: 1;
+  padding: 0.1rem 0.3rem;
+  border-radius: 3px;
+}
+
+.maschine-mapping__target-clear:hover {
+  color: var(--cds-support-error);
+  background: color-mix(in srgb, var(--cds-support-error) 12%, transparent);
+}
+
 /* T2522-C cycle 6 — Pressure / velocity curve editor */
 .maschine-curve-editor {
   padding: 1.25rem !important;
