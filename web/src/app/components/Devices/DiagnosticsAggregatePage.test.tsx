@@ -32,6 +32,23 @@ jest.mock('../../hooks/useDevicesPeakMetersRegistry', () => ({
   useDevicesPeakMetersRegistry: () => mockUseDevicesPeakMetersRegistry(),
 }))
 
+// Pivot-13d cycle 1 — the pinned-devices streaming overview also
+// mounts on this page when at least one pinned device is metered.
+const mockUseDevicesPeakMetersStream = jest.fn()
+jest.mock('../../hooks/useDevicesPeakMetersStream', () => ({
+  useDevicesPeakMetersStream: () => mockUseDevicesPeakMetersStream(),
+}))
+
+const mockUsePinnedDevices = jest.fn<readonly string[], []>()
+jest.mock('../../state/uiSettings', () => ({
+  __esModule: true,
+  usePinnedDevices: () => mockUsePinnedDevices(),
+  // Other named exports the page doesn't use but the module exposes.
+  getPinnedDeviceIds: () => [],
+  pinDevice: jest.fn(),
+  unpinDevice: jest.fn(),
+}))
+
 import { DiagnosticsAggregatePage } from './DiagnosticsAggregatePage'
 
 function renderPage() {
@@ -53,6 +70,13 @@ beforeEach(() => {
     isError: false,
     isLoading: false,
   })
+  mockUseDevicesPeakMetersStream.mockReturnValue({
+    devices: [],
+    hasFirstFrame: true,
+    isConnected: false,
+    lastError: null,
+  })
+  mockUsePinnedDevices.mockReturnValue([])
 })
 
 test('DiagnosticsAggregatePage: renders header + counts when data loads', async () => {
@@ -140,4 +164,68 @@ test('DiagnosticsAggregatePage: pack_id column links to device profile', async (
   })
   const link = screen.getByText('edirol-ua').closest('a')
   expect(link?.getAttribute('href')).toBe('/devices/profile/edirol-ua/?from=diagnostics')
+})
+
+test('DiagnosticsAggregatePage: omits pinned-streaming overview when no devices pinned', async () => {
+  mockListDiagnostics.mockResolvedValue({
+    diagnostics: [], count: 0,
+    counts_by_severity: { info: 0, warning: 0, error: 0 },
+  })
+  mockUsePinnedDevices.mockReturnValue([])
+
+  renderPage()
+  await waitFor(() => {
+    expect(screen.getByTestId('dx-meters-overview')).toBeInTheDocument()
+  })
+  expect(screen.queryByTestId('dx-meters-overview-pinned')).not.toBeInTheDocument()
+})
+
+test('DiagnosticsAggregatePage: mounts pinned-streaming overview when metered pin exists', async () => {
+  mockListDiagnostics.mockResolvedValue({
+    diagnostics: [], count: 0,
+    counts_by_severity: { info: 0, warning: 0, error: 0 },
+  })
+  // 'edirol-ua1000' is in the pinned namespace; the translator rewrites
+  // it to 'edirol-ua-1000' in the registry namespace.
+  mockUsePinnedDevices.mockReturnValue(['edirol-ua1000', 'lcd'])
+  mockUseDevicesPeakMetersStream.mockReturnValue({
+    devices: [
+      {
+        device_id: 'edirol-ua-1000',
+        input_channels: 10,
+        output_channels: 10,
+        has_engine_source: true,
+        snapshot: {
+          input_peak_db: [-6.0],
+          output_peak_db: [-3.0],
+          source: 'engine',
+          captured_at: 1715731200.0,
+        },
+      },
+    ],
+    hasFirstFrame: true,
+    isConnected: true,
+    lastError: null,
+  })
+
+  renderPage()
+  await waitFor(() => {
+    expect(screen.getByTestId('dx-meters-overview-pinned')).toBeInTheDocument()
+  })
+  // Pinned overview title should appear.
+  expect(screen.getByText('Pinned devices (live)')).toBeInTheDocument()
+})
+
+test('DiagnosticsAggregatePage: omits pinned overview when pins are non-metered surfaces', async () => {
+  mockListDiagnostics.mockResolvedValue({
+    diagnostics: [], count: 0,
+    counts_by_severity: { info: 0, warning: 0, error: 0 },
+  })
+  mockUsePinnedDevices.mockReturnValue(['lcd', 'maschine-mk1', 'ableton-push'])
+
+  renderPage()
+  await waitFor(() => {
+    expect(screen.getByTestId('dx-meters-overview')).toBeInTheDocument()
+  })
+  expect(screen.queryByTestId('dx-meters-overview-pinned')).not.toBeInTheDocument()
 })

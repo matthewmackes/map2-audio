@@ -13,12 +13,16 @@ import { DevicePeakMetersOverview } from './DevicePeakMetersOverview'
 
 const mockPolling = jest.fn()
 const mockStream = jest.fn()
+const streamArgs: unknown[] = []
 
 jest.mock('../../../hooks/useDevicesPeakMetersRegistry', () => ({
   useDevicesPeakMetersRegistry: () => mockPolling(),
 }))
 jest.mock('../../../hooks/useDevicesPeakMetersStream', () => ({
-  useDevicesPeakMetersStream: () => mockStream(),
+  useDevicesPeakMetersStream: (...args: unknown[]) => {
+    streamArgs.push(args[0])
+    return mockStream()
+  },
 }))
 
 describe('DevicePeakMetersOverview useStream', () => {
@@ -82,5 +86,28 @@ describe('DevicePeakMetersOverview useStream', () => {
     expect(
       screen.getByTestId('device-peak-meters-overview-error'),
     ).toBeInTheDocument()
+  })
+
+  it('passes deviceIds through to the stream hook for pinned-device filtering', () => {
+    streamArgs.length = 0
+    mockStream.mockReturnValue({
+      devices: [],
+      hasFirstFrame: true,
+      isConnected: true,
+      lastError: null,
+    })
+    render(
+      <DevicePeakMetersOverview
+        useStream
+        deviceIds={['edirol-ua-1000', 'tascam-us144mkii']}
+      />,
+    )
+    expect(streamArgs.length).toBeGreaterThan(0)
+    const lastOpts = streamArgs[streamArgs.length - 1] as Record<string, unknown>
+    expect(lastOpts.deviceIds).toEqual([
+      'edirol-ua-1000',
+      'tascam-us144mkii',
+    ])
+    expect(lastOpts.enabled).toBe(true)
   })
 })

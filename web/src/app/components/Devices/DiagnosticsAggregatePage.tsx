@@ -28,6 +28,8 @@ import { Link as RouterLink } from 'react-router-dom'
 import { useDeviceDiagnostics } from './hooks/useDeviceProfiles'
 import type { DiagnosticEntry } from '../../../map2/clients/devices'
 import { DevicePeakMetersOverview } from './Shared/DevicePeakMetersOverview'
+import { meterRegistryIdsFromPinnedIds } from '../../data/legacyDeviceManifest'
+import { usePinnedDevices } from '../../state/uiSettings'
 
 import './DiagnosticsAggregatePage.css'
 
@@ -91,6 +93,15 @@ export function DiagnosticsAggregatePage(): React.JSX.Element {
 
   const counts = data?.counts_by_severity ?? { info: 0, warning: 0, error: 0 }
 
+  // Pivot-13d cycle 1 — translate the operator's pinned-device list
+  // (nav-shell namespace) into meter-registry IDs and feed them to the
+  // streaming overview when at least one pinned device is metered.
+  const pinnedDevices = usePinnedDevices()
+  const pinnedMeterIds = React.useMemo(
+    () => meterRegistryIdsFromPinnedIds(pinnedDevices),
+    [pinnedDevices],
+  )
+
   return (
     <div className="diagnostics-aggregate-page">
       <header className="diagnostics-aggregate-page__head">
@@ -125,6 +136,20 @@ export function DiagnosticsAggregatePage(): React.JSX.Element {
         <div className="diagnostics-aggregate-page__loading">
           <Loading withOverlay={false} small description="Loading diagnostics…" />
         </div>
+      ) : null}
+
+      {pinnedMeterIds.length > 0 ? (
+        <section
+          className="diagnostics-aggregate-page__meters-overview"
+          data-testid="dx-meters-overview-pinned"
+          style={{ marginBottom: 24 }}
+        >
+          <DevicePeakMetersOverview
+            title="Pinned devices (live)"
+            useStream
+            deviceIds={pinnedMeterIds}
+          />
+        </section>
       ) : null}
 
       <section

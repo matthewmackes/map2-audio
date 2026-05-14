@@ -48,3 +48,44 @@ export function getLegacyDeviceEntry(id: string): LegacyDeviceManifestEntry | un
 export function isKnownLegacyDeviceId(id: string): boolean {
   return _byId.has(id)
 }
+
+// Pivot-13d cycle 1 — translation between the legacy pinned-device id
+// space (used by the global nav pin store at
+// `state/uiSettings.pinnedDevices`) and the meter-source registry id
+// space (used by app/services/devices/*_meters.py + the
+// /api/v1/devices/{id}/peak-meters route).
+//
+// The two namespaces drifted historically — manifest uses
+// `edirol-ua1000` (no dash), the meter facade uses
+// `edirol-ua-1000` (canonical USB-class style with the dash). Same
+// for `mpx1` (manifest) vs `lexicon-mpx1` (registry vendor-prefixed).
+//
+// This map is intentionally narrow: only entries that appear in **both**
+// namespaces need an override. Devices that are not metered (LCDs,
+// Maschine, Push, controller surfaces) return null.
+const PIN_TO_REGISTRY: Readonly<Record<string, string>> = Object.freeze({
+  'edirol-ua1000': 'edirol-ua-1000',
+  'mpx1': 'lexicon-mpx1',
+  'hotone-jogg': 'hotone-jogg',
+  'tascam-us144mkii': 'tascam-us144mkii',
+})
+
+/**
+ * Translate a pinned-device id to the meter-source registry id used by
+ * `/api/v1/devices/{id}/peak-meters`. Returns `null` when the device
+ * isn't registered for metering at all (e.g. a controller surface) so
+ * callers can filter it out cleanly.
+ */
+export function meterRegistryIdFromPinnedId(pinnedId: string): string | null {
+  return PIN_TO_REGISTRY[pinnedId] ?? null
+}
+
+/** Convenience: translate a list of pinned ids, dropping non-metered entries. */
+export function meterRegistryIdsFromPinnedIds(pinnedIds: readonly string[]): string[] {
+  const out: string[] = []
+  for (const id of pinnedIds) {
+    const translated = meterRegistryIdFromPinnedId(id)
+    if (translated !== null) out.push(translated)
+  }
+  return out
+}

@@ -52,6 +52,12 @@ export interface DevicePeakMetersOverviewProps {
   showControls?: boolean
   /** Initial sort mode when `showControls` is on. Defaults to `name`. */
   initialSortMode?: DevicePeakMetersOverviewSortMode
+  /** When set with `useStream`, restricts the WS subscription to these
+   * meter-registry device IDs. Translation from pinned-id namespace
+   * is the caller's responsibility (see
+   * `data/legacyDeviceManifest.meterRegistryIdsFromPinnedIds`).
+   * Pivot-13d cycle 1. */
+  deviceIds?: readonly string[]
 }
 
 interface OverviewRow {
@@ -104,6 +110,7 @@ export function DevicePeakMetersOverview({
   useStream,
   showControls,
   initialSortMode,
+  deviceIds,
 }: DevicePeakMetersOverviewProps) {
   const pollingResult = useDevicesPeakMetersRegistry({
     refetchIntervalMs,
@@ -112,6 +119,7 @@ export function DevicePeakMetersOverview({
   })
   const streamResult = useDevicesPeakMetersStream({
     enabled: Boolean(useStream),
+    deviceIds,
   })
 
   const devices = useStream ? streamResult.devices : pollingResult.devices
