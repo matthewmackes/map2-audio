@@ -6,14 +6,18 @@
 // pivot-13b cycle 2. Pushes registry snapshots at 30 fps so a
 // Devices landing page renders without per-device polling cost.
 //
-// Pick-1 of the eleventh Continue run handoff.
+// Pick-1 of the eleventh Continue run handoff. Run-13g cycle 1 wires
+// it through the shared wsSubscriptionStore so multiple page-level
+// consumers (e.g. an overview tile + a per-device panel) share one
+// socket per URL.
 
-import { useEffect, useMemo, useRef, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 
 import type {
   DeviceMetersRegistryEntry,
   DeviceMetersRegistryPayload,
 } from './useDevicesPeakMetersRegistry'
+import { subscribe as subscribeWs } from './wsSubscriptionStore'
 
 interface StreamFrame {
   type: string
@@ -114,7 +118,11 @@ export function useDevicesPeakMetersStream(
         : baseUrl,
     [baseUrl, deviceIdsKey],
   )
-  const maxBackoff = opts?.maxReconnectDelayMs ?? 5000
+  // maxReconnectDelayMs is preserved on the option type for backward
+  // compat, but reconnect cadence now lives in wsSubscriptionStore. The
+  // store uses 250 ms → 5 s exponential backoff (matches the bespoke
+  // implementation this replaced).
+  void opts?.maxReconnectDelayMs
   const staleThreshold =
     opts?.staleThresholdSeconds ?? DEFAULT_STALE_THRESHOLD_S
 
@@ -123,73 +131,30 @@ export function useDevicesPeakMetersStream(
   const [isConnected, setIsConnected] = useState(false)
   const [lastError, setLastError] = useState<string | null>(null)
 
-  const socketRef = useRef<WebSocket | null>(null)
-  const reconnectTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const reconnectDelayRef = useRef<number>(250)
-  const cancelledRef = useRef(false)
-
   useEffect(() => {
     if (!enabled) {
       return undefined
     }
-    cancelledRef.current = false
-
-    const connect = (): void => {
-      if (cancelledRef.current) return
-      try {
-        const ws = new WebSocket(url)
-        socketRef.current = ws
-        ws.onopen = () => {
-          setIsConnected(true)
-          reconnectDelayRef.current = 250
+    const subscription = subscribeWs(url, {
+      onFrame: (frame) => {
+        const f = frame as StreamFrame | undefined
+        if (f?.data?.devices) {
+          setDevices(f.data.devices)
+          setHasFirstFrame(true)
+          setLastError(null)
         }
-        ws.onmessage = (event) => {
-          try {
-            const frame = JSON.parse(event.data) as StreamFrame
-            if (frame?.data?.devices) {
-              setDevices(frame.data.devices)
-              setHasFirstFrame(true)
-              setLastError(null)
-            }
-          } catch (err) {
-            setLastError((err as Error).message ?? 'frame parse failed')
-          }
-        }
-        ws.onerror = () => {
-          setLastError('websocket error')
-        }
-        ws.onclose = () => {
-          setIsConnected(false)
-          socketRef.current = null
-          if (cancelledRef.current) return
-          const delay = reconnectDelayRef.current
-          reconnectDelayRef.current = Math.min(maxBackoff, delay * 2)
-          reconnectTimerRef.current = setTimeout(connect, delay)
-        }
-      } catch (err) {
-        setLastError((err as Error).message ?? 'websocket construct failed')
-      }
-    }
-
-    connect()
-
+      },
+      onStateChange: (state) => {
+        setIsConnected(state === 'open')
+      },
+      onError: (message) => {
+        setLastError(message)
+      },
+    })
     return () => {
-      cancelledRef.current = true
-      if (reconnectTimerRef.current) {
-        clearTimeout(reconnectTimerRef.current)
-        reconnectTimerRef.current = null
-      }
-      const ws = socketRef.current
-      socketRef.current = null
-      if (ws) {
-        try {
-          ws.close()
-        } catch {
-          // ignored — disposal best-effort
-        }
-      }
+      subscription.unsubscribe()
     }
-  }, [enabled, url, maxBackoff])
+  }, [enabled, url])
 
   // Re-evaluate per-device staleness once per second even between
   // frames, so a paused engine surfaces as stale without waiting for
