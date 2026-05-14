@@ -2579,6 +2579,46 @@ The earlier order-1 row is fully drained for pure-Python / pure-frontend slices.
 
 ---
 
+### Pick-up next (run-13i handoff, filed 2026-05-14, end-of-run)
+
+**Run-13i total: 5 cycles + handoff, all dual-pushed to origin + gitlab.** User invoked "continue × 5". Closed every order-1 pick from yesterday's run-13h handoff plus shipped the cluster stream node filter end-to-end.
+
+Shipped this run, in order:
+
+1. **Cycle 1 — UA-1000 / JoGG / MPX-1 adopt useStreamMeter** (commit `8e58965fb`). Three more device panels switched from the polled peak-meters route to `useDeviceMeterSourceStream`. UA-1000 wholesale-renamed the import (no test file); JoGG added a `useStreamMeter` prop on the meter-source banner and flipped the production mount on; MPX-1 holds the polled hook disabled and reads from the streaming one. Tests for JoGG + MPX-1 mock both modules to the same fake.
+
+2. **Cycle 2 — Cluster stream `node_ids` filter** (commit `7561de91c`). `/peak-meters/cluster/stream` gains an opt-in `?node_ids=a,b,c` filter; `local` is a reserved keyword for the local slice; unknown IDs silently dropped. Applied post-fetch on the response shape so local + peers + errors all trim consistently. +3 pytest cases.
+
+3. **Cycle 3 — Cluster stream `nodeIds` hook option + wire-in** (commit `85a59ef62`). `useDevicesPeakMetersClusterStream` accepts a `nodeIds` option that maps to the backend's `?node_ids=` query. `DevicePeakMetersClusterOverview` wires its existing `nodeFilter` through to the streaming subscription so a single-peer-zoom workspace pays for one peer's bandwidth. +3 jest cases.
+
+4. **Cycle 4 — Sortable cluster overview** (commit `16deaab2d`). New `sortable?: boolean` prop flips Carbon's built-in column sort on every header. Off by default (existing local-first ordering survives). +2 jest cases.
+
+5. **Cycle 5 — Diagnostics page enables `sortable` + per-node counts + contract doc** (commit `621909e8d`). The real-time bench page opts into the new props (`sortable`, `showPerNodeCounts`); catalog page keeps defaults. API contract doc adds the cluster-stream `node_ids` row + reserved-keyword note. +1 pytest contract presence case.
+
+**Cumulative meter coverage after run-13i:** 103 pytest cases (was 100; +3 cluster stream filter) + 119 jest cases (was 107; +12 across hook/overview/panel changes).
+
+Operator effect, end-to-end:
+- All four metered device panels (Tascam, UA-1000, JoGG, MPX-1) now read through the shared WS subscription store. A page mounting any combination of overview + panel against the same URL dedupes to one socket via `wsSubscriptionStore`.
+- The cluster overview's nodeFilter now reduces wire bandwidth too — the backend WS handler trims the frame to the requested peer(s) before sending, instead of every consumer filtering client-side.
+- The diagnostics-page cluster overview gains sortable headers + per-node summary Tags by default; catalog page stays clean for the casual operator.
+
+**Status of long-term priorities after this run:**
+- All three picks of run-13h — done.
+- Per-device panel WS adoption — done for all four panels.
+- Cluster overview parity with local overview — done end-to-end (per-row staleness, Last seen column, sortable headers, node filter that lands on the server side too).
+- T2521 unchanged: T2521-4 daemon + T2521-10 soak still bench-gated.
+
+**Next-session order-1 picks** (priority order; pure-Python or pure-frontend only):
+
+1. **OpenAPI generation for the shared WS frame envelope** — every WS endpoint in `device_meters.py` emits a `device_peak_meters:*` versioned frame. A single dataclass + schema export would let backend tests assert the frame shape against a single source of truth. Pure-Python. ~1-2 cycles.
+2. **Reconnection back-pressure** — `wsSubscriptionStore` currently reconnects on exponential backoff but doesn't gate on document visibility. Mount/unmount `'visibilitychange'` so a background tab pauses subscriptions until refocused. Pure-frontend. ~1 cycle.
+3. **Cluster overview "node down" inline row** — when a peer appears in `errors` instead of `peers`, render a synthetic row in the table marking the failure (with `data-testid="cluster-overview-node-down-<node_id>"`). Pure-frontend. ~1 cycle.
+4. **T2459-H final bench session gates** — physical hardware required. Code-side complete.
+
+**Bench-only / spec-needed** (unchanged): T2515-7/8, T2517-1/8/9 + Follow-up-A/B, T2521-4/10, looper RT-gated tail.
+
+---
+
 ### Pick-up next (run-13h handoff, filed 2026-05-14, end-of-run)
 
 **Run-13h total: 5 cycles + handoff, all dual-pushed to origin + gitlab.** User invoked "continue × 5". Closed all three picks from yesterday's run-13g handoff plus shipped first-panel adoption of the new WS variant.
