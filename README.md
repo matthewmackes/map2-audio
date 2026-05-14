@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1670** Python | **1721** TypeScript | **222** C++/H | **149** Docs | **4564** total commits | **4** stars | **0** forks | **0** open issues
+**1672** Python | **1733** TypeScript | **222** C++/H | **149** Docs | **4571** total commits | **4** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -193,7 +193,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 |  |  |  |
 | :---: | :---: | :---: |
 | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/map2-banner.png" width="280" alt="map2 banner"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/map2-banner-3.png" width="280" alt="map2 banner 3"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot-Cli.png" width="280" alt="Screenshot Cli"> |
-| <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 08-00-43 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 08 00 43 Mackes Audio Platform 2 FEB2025"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 07-57-33 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 07 57 33 Mackes Audio Platform 2 FEB2025"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 07-58-14 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 07 58 14 Mackes Audio Platform 2 FEB2025"> |
+| <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 08-00-43 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 08 00 43 Mackes Audio Platform 2 FEB2025"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 07-58-14 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 07 58 14 Mackes Audio Platform 2 FEB2025"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 07-57-33 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 07 57 33 Mackes Audio Platform 2 FEB2025"> |
 | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/MAP2_AUDIO-NODE_ARCH_DIAGRAM3.png" width="280" alt="MAP2 AUDIO NODE ARCH DIAGRAM3"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/MAP2_AUDIO-NODE_ARCH_DIAGRAM2-BANG.png" width="280" alt="MAP2 AUDIO NODE ARCH DIAGRAM2 BANG"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/MAP2_AUDIO-NODE_ARCH_DIAGRAM.png" width="280" alt="MAP2 AUDIO NODE ARCH DIAGRAM"> |
 <!-- GALLERY:END -->
 
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`c09c7845`](https://github.com/matthewmackes/map2-audio/commit/c09c7845eb8e10553efa06c21fa6861f7adb5707) | feat(maschine): T2522-D cycle 10 + T2523 filing — SHIFT l... | Map2 Audio | 2026-05-14 |
+| [`9e5007ef`](https://github.com/matthewmackes/map2-audio/commit/9e5007ef549fe8689e941017d3f31992405a4616) | feat(maschine): T2522-D cycle 9 — Mapping Studio scaffold... | Map2 Audio | 2026-05-14 |
+| [`f5c16ff7`](https://github.com/matthewmackes/map2-audio/commit/f5c16ff704976ff45522dd9dec7811b45ffb31aa) | feat(maschine): T2522-C cycle 8 — Quad Morph zone (real M... | Map2 Audio | 2026-05-14 |
+| [`09cbda42`](https://github.com/matthewmackes/map2-audio/commit/09cbda42e3f1c38e1228ef68aa45604d91579947) | feat(maschine): T2522-C cycle 7 — step sequencer + scenes... | Map2 Audio | 2026-05-14 |
+| [`9fe99ef5`](https://github.com/matthewmackes/map2-audio/commit/9fe99ef518892025b774543c441ae38074f35c24) | feat(maschine): T2522-C cycle 6 — pressure/velocity curve... | Map2 Audio | 2026-05-14 |
+| [`3b2cecbb`](https://github.com/matthewmackes/map2-audio/commit/3b2cecbb861ea70d2a7045174fe8264b6ba54a40) | feat(maschine): T2522-C cycle 5 — Performance tab v1 (liv... | Map2 Audio | 2026-05-14 |
+| [`a94f5677`](https://github.com/matthewmackes/map2-audio/commit/a94f5677c0f9bf7bc96571767f18ba230c10a342) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-14 |
 | [`26da37e1`](https://github.com/matthewmackes/map2-audio/commit/26da37e14018f555359446f20796f8181f5ee1d6) | feat(maschine): T2522-A cycle 4 — Hardware Twin polish (h... | Map2 Audio | 2026-05-14 |
-| [`e0a0c8ae`](https://github.com/matthewmackes/map2-audio/commit/e0a0c8aecd9076a3a17d1b65e1aca71e7d25224a) | feat(maschine): T2522-A cycle 3 — Hardware Twin v1 (live ... | Map2 Audio | 2026-05-14 |
-| [`24ff1707`](https://github.com/matthewmackes/map2-audio/commit/24ff170733fe79e746d24d2815dbd54ed3b17bd8) | feat(maschine): T2522-A cycle 2 — convert /maschine to 5-... | Map2 Audio | 2026-05-14 |
-| [`a9d1a8a6`](https://github.com/matthewmackes/map2-audio/commit/a9d1a8a6b23ea9dd5627f5a384a40d2b6bad271a) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-14 |
-| [`7ff1819d`](https://github.com/matthewmackes/map2-audio/commit/7ff1819d448a9125237f9efe616946435a15aa5e) | feat(devices): T2522-1 — Advanced-Maschine button on Hard... | Map2 Audio | 2026-05-14 |
-| [`ea4ebd8d`](https://github.com/matthewmackes/map2-audio/commit/ea4ebd8d23656bc49f6a57d8362051c3258f1bc6) | fix(devices): wire /devices/profile/:packId/:model/learn ... | Map2 Audio | 2026-05-14 |
-| [`6e635d15`](https://github.com/matthewmackes/map2-audio/commit/6e635d15ab392eb69d888feced9015871a08f407) | feat(devices): run-13j — cluster overview synthesizes nod... | Map2 Audio | 2026-05-14 |
-| [`62e2056a`](https://github.com/matthewmackes/map2-audio/commit/62e2056a89d24bba7e24fcc8169e8a6b8b528adf) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-14 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
