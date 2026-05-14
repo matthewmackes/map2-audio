@@ -2579,6 +2579,41 @@ The earlier order-1 row is fully drained for pure-Python / pure-frontend slices.
 
 ---
 
+### Pick-up next (pivot-13e handoff, filed 2026-05-14, end-of-run)
+
+**Pivot-13e total: 3 cycles + handoff, all dual-pushed to origin + gitlab.** Closed every pure-Python / pure-frontend pick from yesterday's pivot-13d handoff.
+
+Shipped this run, in order:
+
+1. **Cycle 1 — Per-device staleness in `useDevicesPeakMetersStream`** (commit `df008aff6`). Pick-1 of pivot-13d. Hook now exposes `rows: DeviceMetersStreamRow[]` derived from `devices` against the current wall-clock, where each row carries `ageSeconds` + `isStale`. A 1 s setInterval forces re-renders between WS frames so staleness flips promptly even when the engine stalls mid-stream. `DevicePeakMetersOverview` consumes `rows` under `useStream` and swaps the local two-state Tag for the shared `DeviceMeterSourceTag` (which already renders engine_unavailable + stale states), so a paused engine surfaces as "Stale (Ns)" per row and `engine_unavailable` rows show a red Tag. Polling mode behavior unchanged. +4 hook + 2 overview jest cases.
+
+2. **Cycle 2 — `/peak-meters/registry?include_snapshot=true` concurrent fetch** (commit `55908bf2b`). Pick-2. `read_snapshot` calls for every registered device now run concurrently via `asyncio.gather` instead of a sequential await loop. For N async-engine devices total wallclock drops from N×t to roughly t. Alphabetical ordering preserved; `include_snapshot=false` still short-circuits. +5 pytest cases including a perf-bound assertion (50 ms slow sources × 4 devices completes under 125 ms; sequential would be ~200 ms).
+
+3. **Cycle 3 — `/devices` catalog page mounts pinned-stream overview** (commit `b1c1cd3a8`). Pick-3. `HardwareStorePage` (the `/devices` index) now mounts the same "Pinned devices (live)" overview the diagnostics page mounted in pivot-13d. Same `usePinnedDevices` + `meterRegistryIdsFromPinnedIds` plumbing. +3 jest cases on a new sibling test file (the existing 5 HardwareStorePage tests stay green — empty localStorage means the new section is invisible by default).
+
+**Cumulative meter coverage after pivot-13e:** 86 pytest cases (was 81; +5) + 48 jest cases (was 38; +10).
+
+Operator effect, end-to-end:
+- A pause anywhere in the engine wire-up chain now surfaces as a per-device "Stale (Ns)" Tag in both the diagnostics overview and the /devices catalog overview, within ~1 s of crossing the threshold, with no operator action needed.
+- One-page dashboards calling `/peak-meters/registry?include_snapshot=true` get every device's snapshot concurrently. For a 4-device rig with async engine sources at ~5 ms each, the call returns in roughly 5 ms instead of 20 ms.
+- Operators see live pinned-device meters on both the technical bench page (`/devices/diagnostics`) and the catalog page (`/devices`), without clicking into per-device panels.
+
+**Status of long-term priorities after this run:**
+- All three picks of pivot-13d — done.
+- T2521 unchanged: T2521-4 daemon + T2521-10 soak still bench-gated.
+- T2519 surface is now fully wired across both the diagnostics page and the catalog page, with concurrent backend fetch, WS streaming, per-device staleness, and the engine-unavailable distinction.
+
+**Next-session order-1 picks** (priority order; pure-Python or pure-frontend only):
+
+1. **Cluster `/peak-meters/cluster/stream` fan-in** — the per-node WS stream is local-only. A cluster-aware variant could fan in pinned devices from every cluster node and emit one merged frame per tick, mirroring the AVB cluster matrix pattern from T2490-7. Pure-Python. ~2 cycles.
+2. **`useDeviceMeterSource` + WS hook share a single subscription** — both hooks open their own connection. A shared singleton subscription store could deduplicate when both are mounted on the same page (e.g. a device panel below the overview). Pure-frontend refactor. ~1-2 cycles.
+3. **Carbon "Last seen Ns ago" column when staleness is on** — the overview shows the "Stale (Ns)" Tag inside the source cell but doesn't expose age for fresh rows. A new "Last seen" column (rendered only under `useStream`) would let an operator see exactly how recent each row is. Pure-frontend. ~1 cycle.
+4. **T2459-H final bench session gates** — physical hardware required. Code-side complete.
+
+**Bench-only / spec-needed** (unchanged): T2515-7/8, T2517-1/8/9 + Follow-up-A/B, T2521-4/10, looper RT-gated tail.
+
+---
+
 ### Pick-up next (pivot-13d handoff, filed 2026-05-14, end-of-run)
 
 **Pivot-13d total: 3 cycles + handoff, all dual-pushed to origin + gitlab.** Closed every pure-Python / pure-frontend / pure-doc pick from yesterday's pivot-13c handoff.
