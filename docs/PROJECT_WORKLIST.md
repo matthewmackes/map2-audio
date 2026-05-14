@@ -83,6 +83,8 @@ Each task/subtask should contain these fields:
 - `[>]` `T2517` — **MPX-1 as effects-chooser block + AES/S/PDIF dual-connection** (filed 2026-05-12). 9 sub-tasks. Generalize existing `LexiconHardwareProcessor` (drop hardcoded UA-1000 channel constexprs → per-instance atomic channel-config); wire existing `hardware://lexicon-mpx1-spdif` descriptor into `/api/plugins/discover` (currently defined but never returned); add interface-capability registry (`digital_io_stereo`, `aes_ebu`, `spdif_coax`); singleton-instance enforcement with structured 409; per-instance side-panel + measured-latency calibration wizard. AES preferred, S/PDIF fallback, both per-instance. Estimated 19-21 h active + 1.5 h soak.
 - `[>]` `T2518` — **Snapshot interface binding — world-class picker** (filed 2026-05-12). Snapshot publish UI only shows "Use rig default" because there's no unified enumeration. New `AudioInterfaceRegistry` merges PipeWire (local) + AVB endpoints + cluster nodes into a single stable-ID model (`pipewire:<vendor>:<product>:<serial>`, `avb:<endpoint_id>`, `cluster:<node_id>:<sub_id>`); new `GET /api/audio/interfaces` route; `AudioStateDesiredIO` gains `input_interface_id` / `output_interface_id` (display-name kept as resolver fallback for back-compat); new Carbon `SnapshotInterfacePicker` card-grid with transport chips, vendor/product, port counts, live availability tag, search/filter; wired into `SnapshotPublishPage` Devices section. Per-snapshot binding (all chains share). Estimated 8-10 h active.
 - `[✓]` `T2519` — **Unified device meter-source primitive** (filed + shipped 2026-05-13 in tenth Continue run, 4 cycles). Generalized the Tascam-specific meter-source seam from run 9 into a multi-device `DeviceMeterSourceRegistry` (`app/services/devices/_meter_source.py`) and migrated all four audio-interface + hardware-bridge devices onto it via thin facade modules: `tascam_us144mkii_meters.py` (rewritten, public API preserved verbatim), `edirol_ua1000_meters.py` (new, 10×10), `hotone_jogg_meters.py` (new, 2×2), `lexicon_mpx1_meters.py` (new, 2×2). New `GET /api/v1/devices/{device_id}/peak-meters` route serves every registered device through a single handler. New TascamUS144MKII StatusTab metering-source row surfaces the source state in the top-level panel without needing the Metering tab. 54 Python tests across 5 suites + 13 web tests across 3 Tascam suites green; legacy `/api/v1/devices/tascam-us144mkii/meters` route preserved for backwards-compat.
+- `[~]` `T2520` — **SonoBus/AOO remote audio transport evaluation and integration plan** (filed 2026-05-13; superseded 2026-05-13 by T2521 full-deployment epic after operator confirmed security is not a blocker and requested AVB-template integration). Preserved as historical review task; do not execute separately unless T2521 is cancelled.
+- `[>]` `T2521` — **SonoBus/AOO full remote-audio transport deployment epic** (filed 2026-05-13). Decision lock complete 2026-05-13 via 5-question protocol: native MAP2-owned AOO daemon, SonoBus `/sonobus`, self-hosted connection server enabled by default, AVB-template GUI/integration/clustering/storage, PCM 24-bit/48 kHz low-latency defaults, full multichannel, no recorder/artifact integration, AVB preferred with SonoBus fallback, same-LAN + impairment validation, vendored AOO source with notices. Next: T2521-2 architecture doc.
 - `[✓]` `T2500-MV` — MIDI Connections Visualization (closed 2026-05-10; all 18 subtasks shipped in one bundle). `/midi/connections/visualization` mounts a live three-tier `<SignalFlowGraph>` (Devices ↔ Mappings ↔ Engine targets) over a new `/ws/midi/visualization` WS that replays a rolling 5-min `MidiTrafficBuffer` on connect and live-streams events. Particle/heatmap canvas overlay + Carbon detail drawer + filter bar. Backend wiring: dispatcher gains `iter_registrations()` introspection + `subscribe()` observer registry; new `MidiVisualizationProducerBridge` mirrors dispatched + raw events into the buffer; new topology + WS routes registered in `app/main.py`. 54 backend tests + 23 jest tests green; backend live at `http://127.0.0.1:8080/api/midi/visualization/graph` (200, returns 4 registered targets); WS replay handshake verified; web preview serves the new bundle hash on port 3000.
 - `[✓]` `T2500` — Cabinet IR + Reverb IR pickers fix in Snapshot Editor (closed 2026-05-08; root cause was `appendNodeQuery` accepting a TanStack `QueryFunctionContext` object as `nodeId` and stringifying it to `[object Object]`. Fixed at the http.ts seam — single-line type-guard tightening neutralizes this class of bug for every bare `queryFn` reference. 15 new http unit tests; modal now surfaces real backend errors via the existing `getErrorMessage` helper).
 - `[✓]` `T2501` — Snapshot slot-style variants regression test coverage (closed 2026-05-09; +17 net tests across `Block.test.tsx` (+8) and new `useSnapshotSlotStyle.test.tsx` (9) — locks data-attr reflection, V4 ring SVG render, V6 LED bar width, idle-floor (4%), full-load ceiling (95%), and the localStorage hook's persistence + cross-tab sync + quota-error path; full targeted sweep 127/127).
@@ -4040,3 +4042,193 @@ Definition of Done:
 
 ---
 
+ID: T2520
+Status: [~] Cancelled
+Title: SonoBus/AOO remote audio transport evaluation and integration plan
+Description:
+- Goal / acceptance criteria: Decide whether and how to integrate SonoBus/AOO as a second MAP2 remote-audio transport beside AVB. Acceptance requires a written architecture decision, transport-provider boundary (`avb` vs `aoo_sonobus`), security model, licensing/third-party-notice plan, installer/package delta, prototype path, and bench validation gates. No production code should land until the plan proves the transport can stay outside the RT callback hot path and preserve MAP2's configuration-authority model.
+- Why it matters: SonoBus/AOO could give MAP2 internet/LAN peer-to-peer audio, NAT traversal, Opus/PCM profiles, per-peer jitter buffers, and cross-platform collaboration that AVB does not target. It also introduces non-deterministic WAN latency, no built-in audio encryption, extra network/build dependencies, and copyleft/third-party notice obligations that must be handled end-to-end.
+- Dependencies: T2490 (AVB Services authority), T2518 (unified interface/transport inventory), T2507/T2508 if recorder/remote-tap integration becomes part of the prototype.
+- Estimated effort: Medium for design/prototype plan; High if accepted for production implementation.
+- Required outputs/deliverables: `docs/architecture/SONOBUS_AOO_TRANSPORT_EVALUATION.md` or equivalent ADR; updated `docs/architecture/AVB_SERVICES.md` / transport inventory docs if accepted; installer/environment delta for Fedora packages and service units; third-party notice updates if any code or binary is vendored/packaged; lab prototype evidence comparing headless SonoBus/JACK bridge vs direct AOO daemon; soak results with xrun/jitter/CPU/network-loss metrics.
+Subtasks:
+- ID: T2520-1
+  Status: [ ] Todo
+  Title: Write SonoBus/AOO transport ADR
+  Description:
+  - Goal / acceptance criteria: Capture capabilities, non-goals, security/licensing posture, and recommended integration boundary.
+  - Why it matters: Prevents a plugin-style shortcut from compromising RT or platform-layer consistency.
+  - Dependencies: None
+  - Estimated effort: Low
+  - Required outputs/deliverables: ADR/evaluation doc with source links and explicit accept/reject criteria.
+  Last updated: 2026-05-13 19:41 EDT - Codex
+- ID: T2520-2
+  Status: [ ] Todo
+  Title: Prototype lab-only headless SonoBus over PipeWire/JACK
+  Description:
+  - Goal / acceptance criteria: Package/launch SonoBus headless with a private group or self-hosted connection server, expose JACK/PipeWire ports to MAP2 without opening hardware directly, and collect route/latency/xrun evidence.
+  - Why it matters: Quickly validates operator value without embedding third-party network code in the JUCE engine.
+  - Dependencies: T2520-1
+  - Estimated effort: Medium
+  - Required outputs/deliverables: systemd/env draft, setup file, routing notes, evidence folder, rollback steps.
+  Last updated: 2026-05-13 19:41 EDT - Codex
+- ID: T2520-3
+  Status: [ ] Todo
+  Title: Design production MAP2 AOO transport daemon
+  Description:
+  - Goal / acceptance criteria: Specify a MAP2-owned non-RT daemon using AOO source/sink APIs, lock-free audio handoff to the engine, REST/WS status, transport metrics, and authority-owned desired/observed state.
+  - Why it matters: This is the likely production-safe path if the prototype is valuable.
+  - Dependencies: T2520-1, T2520-2
+  - Estimated effort: High
+  - Required outputs/deliverables: daemon/API design, config-plane selection, test plan, soak gates.
+  Last updated: 2026-05-13 19:41 EDT - Codex
+Assigned to: Unassigned
+Last updated: 2026-05-13 19:52 EDT - Codex
+- Cancellation notes:
+  - 2026-05-13 19:52 EDT - Codex: Superseded by T2521 full-deployment epic after operator stated security is not a concern and requested an AVB-template GUI/integration rollout. Historical evaluation context remains useful but should not be executed as a separate task.
+
+---
+
+ID: T2521
+Status: [>] In Progress
+Title: SonoBus/AOO full remote-audio transport deployment epic
+Description:
+- Goal / acceptance criteria: Deploy SonoBus/AOO as a first-class MAP2 remote-audio transport beside AVB, using the AVB Services template for GUI and integration. Acceptance requires a canonical operator mount, backend authority/service layer, C++/daemon audio handoff, peer/session/routing APIs, Carbon GUI pages, TUI/control-plane coverage where affected, installer/RPM/systemd/firewall updates, docs, third-party notices, tests, and bench evidence. The transport must support full deployment, not just a lab prototype.
+- Why it matters: Adds internet/LAN peer-to-peer remote audio between MAP2 systems and external SonoBus-compatible clients while preserving MAP2's platform discipline: one authority, consistent config planes, coherent GUI/TUI/API surfaces, repeatable installation, and validated latency/xrun behavior.
+- Dependencies: T2490/AVB Services patterns; T2518 unified interface inventory; T2459 cluster/MIDI services for network peer UX patterns; locked decisions above. Recorder/artifacts are explicitly out of scope per Q12.
+- Estimated effort: High.
+- Required outputs/deliverables: AVB-template architecture doc/ADR; `SonoBusBindingAuthority` or equivalent transport authority; native `map2-sonobus-transport` / AOO daemon; `/api/sonobus/*` routes plus optional `/api/remote-audio/*` aggregate; Carbon `/sonobus` service workspace with Connections/Routing/Network/Peers/Diagnostics pages; snapshot/interface picker integration; explicit recorder/artifact exclusion per Q12; systemd units/env/firewall/RPM/installer updates; third-party notice/licensing updates; backend/frontend/C++ tests; soak evidence under `docs/fit-for-purpose-evidence/<date>/t2521-sonobus/`.
+
+Locked decisions (5-question protocol, 2026-05-13):
+- Q1 — Runtime architecture: **B — Direct MAP2-owned AOO daemon from day one.** Do not make full headless SonoBus the long-term runtime.
+- Q2 — Operator name and mount: **A — “SonoBus” at `/sonobus`.**
+- Q3 — Connection model: **A — MAP2 installs/runs its own local AOO/SonoBus connection server by default.**
+- Q4 — Peer/client scope: **C — MAP2-to-MAP2 first; non-MAP2 SonoBus clients visible but degraded/unsupported.**
+- Q5 — Continuation control: **A — continue.**
+- Q6 — Session configuration storage: **D — mirror AVB exactly.** Avoid introducing user-scoped recents/preferences unless AVB has an equivalent authority pattern.
+- Q7 — MAP2-to-MAP2 default audio format: **A — PCM 24-bit / 48 kHz with the lowest practical jitter buffer.**
+- Q8 — Non-MAP2 client default audio format: **A — same PCM 24-bit / 48 kHz profile.**
+- Q9 — Latency/jitter posture: **A — optimize for lowest latency and tolerate occasional dropouts.**
+- Q10 — Snapshot/routing participation: **A — first-class snapshot input/output interfaces and routing-matrix endpoints.**
+- Q11 — Continuation control: **A — continue.**
+- Q12 — Recorder/artifact integration: **D — no recorder/artifact integration for this transport.**
+- Q13 — GUI scope: **A+ — exact AVB-style workspace (Connections, Routing, Network, Peers/Devices, Profiles, Diagnostics), plus expose every useful service/interface/design option rather than hiding advanced controls.**
+- Q14 — Channel/session topology: **C — full multichannel from day one, matching SonoBus channel-group behavior.**
+- Q15 — Fresh install behavior: **A+ — installed and enabled by default, and detected/negotiated/included in network clustering and node negotiation.**
+- Q16 — Continuation control: **A — continue.**
+- Q17 — Cluster/node negotiation: **A — mirror AVB with mDNS discovery, cluster peer matrix, per-node transport capabilities, and authority-backed bindings.**
+- Q18 — AVB/SonoBus overlap behavior: **A — prefer AVB automatically; SonoBus/AOO is fallback.**
+- Q19 — Validation matrix: **B — same-LAN two-node plus network-loss/jitter emulation.**
+- Q20 — Packaging/source strategy: **A — vendor AOO source into this repo with preserved license notices.**
+- Q21 — Continuation control: **B — stop asking and proceed with the recorded answers.**
+
+Subtasks:
+- ID: T2521-1
+  Status: [✓] Done
+  Title: Lock SonoBus/AOO deployment decisions
+  Description:
+  - Goal / acceptance criteria: Answer and record the 20-question decision protocol before implementation.
+  - Why it matters: Prevents rework across GUI/API/daemon/installer layers.
+  - Dependencies: None
+  - Estimated effort: Low
+  - Required outputs/deliverables: Updated T2521 locked-decisions section and architecture doc seed.
+  Last updated: 2026-05-13 20:07 EDT - Codex
+  - Completion notes:
+    - 2026-05-13 19:55 EDT - Codex: Operator requested the formal 5-question clarification protocol for the 20-question decision lock; started sequential cycle 1.
+    - 2026-05-13 20:07 EDT - Codex: Protocol complete. Locked decisions Q1-Q21 recorded above, including continuation controls. Implementation should begin at T2521-2 with the architecture doc.
+- ID: T2521-2
+  Status: [✓] Done
+  Title: Create AVB-template SonoBus architecture doc
+  Description:
+  - Goal / acceptance criteria: Draft `docs/architecture/SONOBUS_AOO_TRANSPORT.md` mirroring AVB Services sections: locked decisions, authority model, data model, API surface, GUI regions, installer scope, risk register, validation gates.
+  - Why it matters: Makes SonoBus a platform service rather than an ad hoc binary launch.
+  - Dependencies: T2521-1
+  - Estimated effort: Medium
+  - Required outputs/deliverables: Architecture doc with diagrams and implementation slices.
+  Last updated: 2026-05-13 20:30 EDT - Claude (twelfth Continue cycle 1)
+  - Completion notes:
+    - 2026-05-13 20:30 EDT - Claude: Shipped `docs/architecture/SONOBUS_AOO_TRANSPORT.md` (8 sections, 5 mermaid diagrams, full Q1–Q21 decision table, `SonoBusBinding` data model, API surface table for `/api/sonobus/*` + `/ws/sonobus/events`, GUI region table for the 7 Carbon pages, licensing posture for AOO BSD-3 + SonoBus GPLv3, validation-gate matrix, risk register with 12 entries). Mirrors `AVB_SERVICES.md` template structure. T2521-3 (binding authority skeleton) is the next pickup.
+- ID: T2521-3
+  Status: [ ] Todo
+  Title: Implement transport authority and persistence model
+  Description:
+  - Goal / acceptance criteria: Add canonical binding/session models for peers, groups, streams, codec profiles, jitter/latency settings, and desired/observed runtime state.
+  - Why it matters: Matches AVB Binding Authority discipline and avoids duplicate runtime truths.
+  - Dependencies: T2521-1, T2521-2
+  - Estimated effort: High
+  - Required outputs/deliverables: DB models/migrations, service authority, schemas, tests.
+  Last updated: 2026-05-13 19:52 EDT - Codex
+- ID: T2521-4
+  Status: [ ] Todo
+  Title: Build MAP2 SonoBus/AOO transport runtime
+  Description:
+  - Goal / acceptance criteria: Deliver the selected runtime path (headless SonoBus sidecar, direct AOO daemon, or phased sidecar-to-daemon) with RT-safe audio handoff and metrics.
+  - Why it matters: This is the audio transport core and must not destabilize the JUCE callback.
+  - Dependencies: T2521-1, T2521-2, T2521-3
+  - Estimated effort: High
+  - Required outputs/deliverables: Daemon/source files, CMake/build hooks if needed, JACK/PipeWire routing, IPC/API bridge, focused tests.
+  Last updated: 2026-05-13 19:52 EDT - Codex
+- ID: T2521-5
+  Status: [ ] Todo
+  Title: Add `/api/sonobus/*` service routes and WebSocket events
+  Description:
+  - Goal / acceptance criteria: Expose status, peer/session CRUD, connect/disconnect, routing, codec/jitter profile, diagnostics, and event stream routes.
+  - Why it matters: GUI/TUI/control-plane surfaces need stable contracts like AVB Services.
+  - Dependencies: T2521-3, T2521-4
+  - Estimated effort: Medium
+  - Required outputs/deliverables: FastAPI routes, OpenAPI-valid schemas, pytest coverage.
+  Last updated: 2026-05-13 19:52 EDT - Codex
+- ID: T2521-6
+  Status: [ ] Todo
+  Title: Build Carbon SonoBus service workspace from AVB template
+  Description:
+  - Goal / acceptance criteria: Add a first-class `/sonobus` GUI workspace with Connections, Routing, Network/Peers, Profiles, Diagnostics, and setup/onboarding regions modeled after AVB Services.
+  - Why it matters: Operators need the same integration depth and visual coherence as AVB.
+  - Dependencies: T2521-5
+  - Estimated effort: High
+  - Required outputs/deliverables: React routes/components/hooks/tests, navigation entries, Carbon-compliant styling, atomic build.
+  Last updated: 2026-05-13 19:52 EDT - Codex
+- ID: T2521-7
+  Status: [ ] Todo
+  Title: Integrate snapshots, interface picker, and routing matrix; exclude recorder/artifacts
+  Description:
+  - Goal / acceptance criteria: Make SonoBus/AOO endpoints selectable wherever AVB/cluster audio endpoints are visible while explicitly keeping MAP2 Recorder and Audio Artifacts out of scope per Q12.
+  - Why it matters: Full deployment means the transport participates in live MAP2 routing workflows, but must not accidentally imply recorder/artifact support the operator rejected.
+  - Dependencies: T2518, T2521-5, T2521-6
+  - Estimated effort: High
+  - Required outputs/deliverables: Snapshot/interface updates, route adapters, no-recorder/no-artifact regression checks, routing tests.
+  Last updated: 2026-05-13 19:52 EDT - Codex
+- ID: T2521-8
+  Status: [ ] Todo
+  Title: Update installer, RPM, systemd, environment, firewall, and package manifests
+  Description:
+  - Goal / acceptance criteria: Ensure fresh installs and upgrades provision the selected SonoBus/AOO runtime consistently, including dependencies, service units, config files, ports, capabilities, and rollback/uninstall behavior.
+  - Why it matters: AGENTS.md requires dependency/runtime/build assumptions to be updated in the same task.
+  - Dependencies: T2521-4, T2521-5
+  - Estimated effort: High
+  - Required outputs/deliverables: Installer/RPM/package/env/systemd/firewall docs and tests.
+  Last updated: 2026-05-13 19:52 EDT - Codex
+- ID: T2521-9
+  Status: [ ] Todo
+  Title: Complete licensing and third-party notices for full deployment
+  Description:
+  - Goal / acceptance criteria: Preserve GPLv3/SonoBus and BSD/MIT dependency notices, document source-availability obligations, and update MAP2 third-party notice artifacts if any code/binary is vendored or distributed.
+  - Why it matters: MAP2's AGPL posture allows compatible open-source integration only if notices and source obligations stay accurate.
+  - Dependencies: T2521-2, T2521-4, T2521-8
+  - Estimated effort: Medium
+  - Required outputs/deliverables: Notice/license docs, packaging inclusions, compliance checklist evidence.
+  Last updated: 2026-05-13 19:52 EDT - Codex
+- ID: T2521-10
+  Status: [ ] Todo
+  Title: Validate deployment with latency, jitter, xrun, CPU, network-loss, and UI evidence
+  Description:
+  - Goal / acceptance criteria: Run repeatable bench validation comparable to AVB soaks, including LAN and WAN/overlay profiles, reconnect/failure tests, UI visual verification, and installer smoke tests.
+  - Why it matters: Remote audio must be proven under network stress before it can be called deployed.
+  - Dependencies: T2521-4 through T2521-9
+  - Estimated effort: High
+  - Required outputs/deliverables: Evidence folder, runbook, pass/fail thresholds, worklist closeout notes.
+  Last updated: 2026-05-13 19:52 EDT - Codex
+Assigned to: Unassigned
+Last updated: 2026-05-13 19:52 EDT - Codex
+
+---
