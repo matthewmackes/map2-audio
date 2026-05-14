@@ -143,6 +143,89 @@ describe('DevicePeakMetersOverview useStream', () => {
     expect(tag).toHaveTextContent('Stale')
   })
 
+  it('renders a "Last seen" column under useStream with formatted age', () => {
+    const dev = {
+      device_id: 'edirol-ua-1000',
+      input_channels: 10,
+      output_channels: 10,
+      has_engine_source: true,
+      snapshot: {
+        input_peak_db: [-6],
+        output_peak_db: [-3],
+        source: 'engine' as const,
+        captured_at: 1715731200.0,
+      },
+    }
+    mockStream.mockReturnValue({
+      devices: [dev],
+      rows: [{ ...dev, ageSeconds: 3, isStale: false }],
+      hasFirstFrame: true,
+      isConnected: true,
+      lastError: null,
+    })
+    render(<DevicePeakMetersOverview useStream />)
+    // Header
+    expect(screen.getByText('Last seen')).toBeInTheDocument()
+    // Cell with formatted age
+    const cell = screen.getByTestId('overview-last-seen-edirol-ua-1000')
+    expect(cell.textContent).toMatch(/3\s*s ago/)
+  })
+
+  it('formats minute-scale staleness in the Last seen column', () => {
+    const dev = {
+      device_id: 'tascam-us144mkii',
+      input_channels: 4,
+      output_channels: 4,
+      has_engine_source: true,
+      snapshot: {
+        input_peak_db: [-12],
+        output_peak_db: [-9],
+        source: 'engine' as const,
+        captured_at: 1715731200.0,
+      },
+    }
+    mockStream.mockReturnValue({
+      devices: [dev],
+      rows: [{ ...dev, ageSeconds: 125, isStale: true }],
+      hasFirstFrame: true,
+      isConnected: true,
+      lastError: null,
+    })
+    render(<DevicePeakMetersOverview useStream />)
+    const cell = screen.getByTestId('overview-last-seen-tascam-us144mkii')
+    expect(cell.textContent).toMatch(/2\s*m ago/)
+  })
+
+  it('renders "—" in Last seen when stream row has no ageSeconds', () => {
+    const dev = {
+      device_id: 'hotone-jogg',
+      input_channels: 2,
+      output_channels: 2,
+      has_engine_source: false,
+      snapshot: {
+        input_peak_db: [-150],
+        output_peak_db: [-150],
+        source: 'placeholder' as const,
+        captured_at: null,
+      },
+    }
+    mockStream.mockReturnValue({
+      devices: [dev],
+      rows: [{ ...dev, ageSeconds: null, isStale: false }],
+      hasFirstFrame: true,
+      isConnected: true,
+      lastError: null,
+    })
+    render(<DevicePeakMetersOverview useStream />)
+    const cell = screen.getByTestId('overview-last-seen-hotone-jogg')
+    expect(cell.textContent).toBe('—')
+  })
+
+  it('omits the Last seen column outside of useStream', () => {
+    render(<DevicePeakMetersOverview />)
+    expect(screen.queryByText('Last seen')).not.toBeInTheDocument()
+  })
+
   it('renders the Engine unavailable Tag for engine_unavailable rows', () => {
     const dev = {
       device_id: 'edirol-ua-1000',

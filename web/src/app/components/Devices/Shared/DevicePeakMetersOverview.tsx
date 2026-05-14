@@ -75,6 +75,16 @@ interface OverviewRow {
   meterSource?: DeviceMeterSource
   isStale?: boolean
   ageSeconds?: number | null
+  /** Formatted "last seen" label for the new column (run-13f cycle 3). */
+  lastSeen?: string
+}
+
+function formatLastSeen(ageSeconds: number | null | undefined): string {
+  if (typeof ageSeconds !== 'number' || !Number.isFinite(ageSeconds)) return '—'
+  if (ageSeconds < 1) return '<1 s ago'
+  if (ageSeconds < 60) return `${Math.round(ageSeconds)} s ago`
+  if (ageSeconds < 3600) return `${Math.round(ageSeconds / 60)} m ago`
+  return `${Math.round(ageSeconds / 3600)} h ago`
 }
 
 const SILENCE_THRESHOLD_DBFS = -149.9
@@ -168,8 +178,13 @@ export function DevicePeakMetersOverview({
     if (showPeakColumn) {
       cols.push({ key: 'peak', header: 'Peak (dBFS)' })
     }
+    // Run-13f cycle 3 — "Last seen" column only appears in streaming
+    // mode where every row carries a captured_at timestamp.
+    if (useStream) {
+      cols.push({ key: 'lastSeen', header: 'Last seen' })
+    }
     return cols
-  }, [showControls, splitChannels, showPeakColumn])
+  }, [showControls, splitChannels, showPeakColumn, useStream])
 
   const baseRows: OverviewRow[] = devices.map((d) => {
     const streamRow = streamRowsById.get(d.device_id)
@@ -188,6 +203,7 @@ export function DevicePeakMetersOverview({
       meterSource: useStream ? snapshotSource ?? (d.has_engine_source ? 'engine' : 'placeholder') : undefined,
       isStale: streamRow?.isStale,
       ageSeconds: streamRow?.ageSeconds,
+      lastSeen: useStream ? formatLastSeen(streamRow?.ageSeconds) : undefined,
     }
   })
 
@@ -324,6 +340,16 @@ export function DevicePeakMetersOverview({
                         if (cell.info.header === 'outputs') {
                           const meta = splitMeta[row.id]
                           return <TableCell key={cell.id}>{meta?.outputs ?? '—'}</TableCell>
+                        }
+                        if (cell.info.header === 'lastSeen') {
+                          return (
+                            <TableCell
+                              key={cell.id}
+                              data-testid={`overview-last-seen-${row.id}`}
+                            >
+                              {original?.lastSeen ?? '—'}
+                            </TableCell>
+                          )
                         }
                         return <TableCell key={cell.id}>{cell.value}</TableCell>
                       })}
