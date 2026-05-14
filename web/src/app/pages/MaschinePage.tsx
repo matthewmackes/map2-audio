@@ -10,6 +10,7 @@ import { MaschineConnectionPanel } from '../components/Maschine/MaschineConnecti
 import { MaschineEncoderMapPanel } from '../components/Maschine/MaschineEncoderMapPanel'
 import { MaschineFirmwarePanel } from '../components/Maschine/MaschineFirmwarePanel'
 import { MaschineHardwareTwin } from '../components/Maschine/MaschineHardwareTwin'
+import { MaschinePerformanceTab } from '../components/Maschine/MaschinePerformanceTab'
 import { MaschineHidTrafficPanel } from '../components/Maschine/MaschineHidTrafficPanel'
 import { MaschineHwTestPanel } from '../components/Maschine/MaschineHwTestPanel'
 import { MaschineLcdSimulatorPanel } from '../components/Maschine/MaschineLcdSimulatorPanel'
@@ -273,10 +274,11 @@ export function MaschinePage() {
             />
           </TabPanel>
           <TabPanel>
-            <ComingSoonTab
-              title="Performance"
-              subtitle="Player surface: 4×4 pad grid with per-pad sample/note assignment, velocity/pressure curves over the existing pad calibrator + curve fitter, step sequencer, scene/pattern banks, kit browser, Quad Morph XY pad."
-              cycleRange="T2522-C · cycles 5-8"
+            <MaschinePerformanceTab
+              status={live.status}
+              encoderMap={live.encoderMap}
+              hidEvents={live.hidEvents}
+              onPadClick={handlePadClick}
             />
           </TabPanel>
           <TabPanel>

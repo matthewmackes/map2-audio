@@ -146,6 +146,210 @@
   100% { opacity: 1; }
 }
 
+/* ── T2522-C Performance tab v1 ── */
+
+.maschine-perf {
+  display: grid;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.maschine-perf__header {
+  display: flex !important;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 1.25rem !important;
+}
+
+.maschine-perf__header-info h3 {
+  margin: 0;
+  font-size: var(--cds-heading-03-font-size, 1.25rem);
+  color: var(--cds-text-primary);
+}
+
+.maschine-perf__header-sub {
+  margin: 0.25rem 0 0;
+  color: var(--cds-text-secondary);
+  font-size: 0.875rem;
+}
+
+.maschine-perf__header-meta {
+  display: flex;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  align-items: flex-start;
+}
+
+.maschine-perf__pad-grid-tile {
+  padding: 1.25rem !important;
+}
+
+.maschine-perf__grid {
+  display: grid;
+  gap: 0.75rem;
+}
+
+.maschine-perf__grid-row {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.75rem;
+}
+
+.maschine-perf__pad {
+  position: relative;
+  aspect-ratio: 1 / 1;
+  min-height: 7rem;
+  border: 2px solid color-mix(in srgb, var(--cds-border-subtle) 50%, transparent);
+  border-radius: 8px;
+  padding: 0;
+  cursor: default;
+  overflow: hidden;
+  color: #0a0e1a;
+  font: inherit;
+  transition:
+    transform var(--map2-dur-fast, 140ms) ease,
+    border-color var(--map2-dur-fast, 140ms) ease;
+}
+
+.maschine-perf__pad--clickable {
+  cursor: pointer;
+}
+
+.maschine-perf__pad--clickable:hover {
+  filter: brightness(1.1);
+}
+
+.maschine-perf__pad--clickable:active {
+  transform: scale(0.98);
+}
+
+.maschine-perf__pad--selected {
+  border-color: var(--cds-support-success);
+  box-shadow: 0 0 0 1px var(--cds-support-success) inset;
+}
+
+.maschine-perf__pad-pressure {
+  position: absolute;
+  inset: auto 0 0 0;
+  background: linear-gradient(0deg, rgba(255, 255, 255, 0.55), rgba(255, 255, 255, 0.05));
+  transition: height 80ms linear, opacity 220ms ease;
+  pointer-events: none;
+}
+
+.maschine-perf__pad-content {
+  position: relative;
+  display: grid;
+  gap: 0.15rem;
+  height: 100%;
+  align-content: space-between;
+  padding: 0.5rem;
+  text-align: left;
+}
+
+.maschine-perf__pad-index {
+  font-size: 1rem;
+  font-weight: 700;
+  letter-spacing: 0.04em;
+}
+
+.maschine-perf__pad-note {
+  font-size: 0.7rem;
+  font-family: var(--cds-code-02-font-family, monospace);
+  color: rgba(10, 14, 26, 0.75);
+}
+
+.maschine-perf__pad-velocity {
+  font-size: 0.7rem;
+  font-weight: 700;
+  font-family: var(--cds-code-02-font-family, monospace);
+  background: rgba(10, 14, 26, 0.18);
+  padding: 0.05rem 0.3rem;
+  border-radius: 3px;
+  align-self: flex-end;
+  width: max-content;
+}
+
+.maschine-perf__pad-block {
+  font-size: 0.7rem;
+  font-weight: 600;
+  background: rgba(10, 14, 26, 0.15);
+  padding: 0.1rem 0.35rem;
+  border-radius: 3px;
+  align-self: flex-start;
+  width: max-content;
+}
+
+.maschine-perf__strip-title {
+  margin: 0 0 0.5rem;
+  font-size: var(--cds-heading-02-font-size, 1rem);
+  color: var(--cds-text-primary);
+}
+
+.maschine-perf__strip-help {
+  margin: 0.75rem 0 0;
+  color: var(--cds-text-secondary);
+  font-size: 0.75rem;
+  max-width: 70ch;
+}
+
+.maschine-perf__scene-strip {
+  padding: 1.25rem !important;
+}
+
+.maschine-perf__scene-row {
+  display: grid;
+  grid-template-columns: repeat(8, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+
+.maschine-perf__scene-cell {
+  display: grid;
+  gap: 0.15rem;
+  place-items: center;
+  padding: 0.6rem 0.4rem;
+  border: 1px solid color-mix(in srgb, var(--cds-border-subtle) 60%, transparent);
+  background: var(--cds-layer-02);
+  border-radius: 4px;
+  font-size: 0.75rem;
+  color: var(--cds-text-secondary);
+  transition: background var(--map2-dur-fast, 140ms) ease;
+}
+
+.maschine-perf__scene-cell--lit {
+  background: color-mix(in srgb, #33b1ff 22%, var(--cds-layer-02));
+  border-color: #33b1ff;
+  color: #f4f4f4;
+}
+
+.maschine-perf__scene-letter {
+  font-size: 1.15rem;
+  font-weight: 700;
+  letter-spacing: 0.05em;
+}
+
+.maschine-perf__scene-state {
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.07em;
+}
+
+.maschine-perf__morph-zone {
+  padding: 1.25rem !important;
+}
+
+.maschine-perf__morph-placeholder {
+  display: flex;
+  align-items: center;
+  gap: 1rem;
+  min-height: 6rem;
+  padding: 1rem;
+  border: 1px dashed color-mix(in srgb, var(--cds-border-subtle) 70%, transparent);
+  border-radius: 6px;
+  color: var(--cds-text-secondary);
+  background: color-mix(in srgb, var(--cds-layer-02) 50%, transparent);
+}
+
 .maschine-page__grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));

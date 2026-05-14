@@ -340,7 +340,11 @@ describe('MaschinePage', () => {
   it('T2522 — ?tab=performance deep-link selects the Performance tab', () => {
     renderPage(['/maschine?tab=performance'])
     expect(screen.getByRole('tab', { name: 'Performance' }).getAttribute('aria-selected')).toBe('true')
-    expect(screen.getByText(/Player surface: 4×4 pad grid/)).toBeInTheDocument()
+    // Cycle 5 wired the real Performance shell; the placeholder copy
+    // is gone. Anchor on the canonical Performance heading + scenes
+    // strip title.
+    expect(screen.getByRole('heading', { name: 'Performance' })).toBeInTheDocument()
+    expect(screen.getByRole('heading', { name: 'Scenes' })).toBeInTheDocument()
   })
 
   it('T2522 — ?tab=mapping deep-link selects the Mapping Studio tab', () => {
