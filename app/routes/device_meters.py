@@ -506,3 +506,87 @@ async def stream_peak_meters(websocket: WebSocket) -> None:
     except WebSocketDisconnect:
         logger.info("device meters ws disconnected: %s", client_id)
         return
+
+
+# ---------- Cluster WebSocket streaming surface (run-13g cycle 3) ----------
+
+
+# Cluster fan-in cadence is slower than the local 30 fps stream because
+# every tick triggers N peer fetches over HTTP. 5 fps keeps the cluster
+# overview responsive without saturating the cross-node link.
+CLUSTER_WS_BROADCAST_INTERVAL_SECONDS = 0.2  # 5 fps default
+
+
+@router.websocket("/peak-meters/cluster/stream")
+async def stream_cluster_peak_meters(websocket: WebSocket) -> None:
+    """WebSocket fan-in of every peer's `/peak-meters/registry`.
+
+    Cluster analogue of the local /peak-meters/stream endpoint. Each
+    tick computes a fresh cluster registry snapshot (local + every
+    discovered peer, fanned out via asyncio.gather) and pushes it as
+    a versioned frame.
+
+    Frame envelope:
+
+        {
+            "type": "device_peak_meters:cluster_registry",
+            "schema_version": 1,
+            "data": {
+                "local": { "devices": [...] },
+                "peers": [...],
+                "errors": { "node_id": "http 504" }
+            }
+        }
+
+    Default cadence: 5 fps (slower than the local 30 fps stream
+    because every tick triggers per-peer HTTP fetches). Override the
+    module-level CLUSTER_WS_BROADCAST_INTERVAL_SECONDS in tests.
+
+    `?include_snapshot=true` propagates to every peer fetch so the
+    response carries inline per-device snapshots — useful for
+    cluster dashboards that want to render Peak columns. Run-13g
+    cycle 3 of the run-13f handoff.
+    """
+    await websocket.accept()
+    client_id = f"cluster-device-meters-{uuid.uuid4()}"
+    logger.info("cluster device meters ws connected: %s", client_id)
+
+    include_snapshot_raw = websocket.query_params.get("include_snapshot")
+    include_snapshot = include_snapshot_raw == "true" if include_snapshot_raw else False
+
+    async def _snapshot_frame() -> dict:
+        try:
+            payload = await get_cluster_peak_meters_registry(
+                include_snapshot=include_snapshot,
+            )
+            return {
+                "type": "device_peak_meters:cluster_registry",
+                "schema_version": 1,
+                "data": payload.model_dump(),
+            }
+        except Exception as exc:  # pragma: no cover — defensive
+            logger.debug(
+                "cluster device meters ws: snapshot failed: %s", exc
+            )
+            return {
+                "type": "device_peak_meters:cluster_registry",
+                "schema_version": 1,
+                "data": {
+                    "local": {"devices": []},
+                    "peers": [],
+                    "errors": {"@local": str(exc)},
+                },
+            }
+
+    try:
+        # Initial state on connect so the consumer never has to wait
+        # a full interval before rendering.
+        await websocket.send_json(await _snapshot_frame())
+        while True:
+            await asyncio.sleep(CLUSTER_WS_BROADCAST_INTERVAL_SECONDS)
+            await websocket.send_json(await _snapshot_frame())
+    except WebSocketDisconnect:
+        logger.info(
+            "cluster device meters ws disconnected: %s", client_id
+        )
+        return
