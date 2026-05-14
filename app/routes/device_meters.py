@@ -16,10 +16,15 @@ the supported entry point for future devices.
 
 from __future__ import annotations
 
+import asyncio
+import logging
+import uuid
 from typing import List, Optional
 
-from fastapi import APIRouter, HTTPException, Query
+from fastapi import APIRouter, HTTPException, Query, WebSocket, WebSocketDisconnect
 from pydantic import BaseModel, Field
+
+logger = logging.getLogger(__name__)
 
 # Importing the facade modules forces their import-time registration
 # call to run, so the registry knows about every device even if no
@@ -202,3 +207,96 @@ async def get_device_peak_meters(device_id: str) -> GenericMeterPayload:
         source=snap.source,
         captured_at=snap.captured_at,
     )
+
+
+# ---------- WebSocket streaming surface (Pick-1 of eleventh-run handoff) ----------
+
+
+# Module-level so tests can patch the cadence cheaply.
+WS_BROADCAST_INTERVAL_SECONDS = 1.0 / 30.0  # 30 fps target
+
+
+@router.websocket("/peak-meters/stream")
+async def stream_peak_meters(websocket: WebSocket) -> None:
+    """WebSocket fan-out of the peak-meters registry.
+
+    Replaces the 5 s polled overview with a server-pushed 30 fps stream.
+    Frame envelope is versioned via ``schema_version`` so consumers can
+    expand it without breaking older operator tooling.
+
+    Frame shape:
+
+        {
+            "type": "device_peak_meters:registry",
+            "schema_version": 1,
+            "data": {
+                "devices": [
+                    {
+                        "device_id": "edirol-ua-1000",
+                        "input_channels": 10,
+                        "output_channels": 10,
+                        "has_engine_source": false,
+                        "snapshot": {
+                            "input_peak_db": [...],
+                            "output_peak_db": [...],
+                            "source": "placeholder",
+                            "captured_at": 1715731200.0
+                        }
+                    },
+                    ...
+                ]
+            }
+        }
+
+    The default 30 fps cadence matches the MAP2 metering broadcast
+    floor documented in ``CLAUDE.md`` § Service Polling Floors. Tests
+    that need a faster tick patch ``WS_BROADCAST_INTERVAL_SECONDS``.
+    """
+    await websocket.accept()
+    client_id = f"device-meters-{uuid.uuid4()}"
+    logger.info("device meters ws connected: %s", client_id)
+
+    async def _snapshot_frame() -> dict:
+        registry = get_registry()
+        rows = registry.list_devices()
+        device_payloads: list[dict] = []
+        for row in rows:
+            try:
+                snap = await registry.read_snapshot(row.device_id)
+            except Exception as exc:  # pragma: no cover — defensive
+                logger.debug(
+                    "device meters ws: snapshot %s failed: %s",
+                    row.device_id,
+                    exc,
+                )
+                continue
+            device_payloads.append(
+                {
+                    "device_id": row.device_id,
+                    "input_channels": row.input_channels,
+                    "output_channels": row.output_channels,
+                    "has_engine_source": row.has_engine_source,
+                    "snapshot": {
+                        "input_peak_db": list(snap.input_peak_db),
+                        "output_peak_db": list(snap.output_peak_db),
+                        "source": snap.source,
+                        "captured_at": snap.captured_at,
+                    },
+                }
+            )
+        return {
+            "type": "device_peak_meters:registry",
+            "schema_version": 1,
+            "data": {"devices": device_payloads},
+        }
+
+    try:
+        # Initial state immediately on connect — the consumer never has
+        # to wait an interval to render its first row.
+        await websocket.send_json(await _snapshot_frame())
+        while True:
+            await asyncio.sleep(WS_BROADCAST_INTERVAL_SECONDS)
+            await websocket.send_json(await _snapshot_frame())
+    except WebSocketDisconnect:
+        logger.info("device meters ws disconnected: %s", client_id)
+        return
