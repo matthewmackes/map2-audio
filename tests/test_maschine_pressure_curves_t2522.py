@@ -119,3 +119,107 @@ def test_put_pressure_curves_rejects_empty_polynomial(isolated_calibration_dir):
     )
     assert response.status_code == 400
     assert "polynomial" in response.json()["detail"]
+
+
+# ---------------------------------------------------------------------------
+# T2522-C cycle 7 — performance patterns + scenes
+# ---------------------------------------------------------------------------
+
+
+def _empty_pattern(pid: str, length: int = 4):
+    return {
+        "id": pid,
+        "name": f"Pattern {pid}",
+        "length": length,
+        "steps": [[0 for _ in range(length)] for _ in range(16)],
+        "scene_slot": None,
+    }
+
+
+def test_get_performance_patterns_returns_empty_default(isolated_calibration_dir):
+    client = _build_client()
+    response = client.get("/api/maschine/performance/patterns")
+    assert response.status_code == 200
+    body = response.json()
+    assert body["status"] == "ok"
+    assert body["performance_patterns"] == {"active_pattern_id": None, "patterns": []}
+
+
+def test_put_performance_patterns_round_trip(isolated_calibration_dir):
+    client = _build_client()
+    bank = {
+        "active_pattern_id": "p1",
+        "patterns": [
+            {**_empty_pattern("p1", 8), "scene_slot": 0},
+            _empty_pattern("p2", 16),
+        ],
+    }
+    put_response = client.put(
+        "/api/maschine/performance/patterns",
+        json={"performance_patterns": bank},
+    )
+    assert put_response.status_code == 200
+    body = put_response.json()
+    assert body["performance_patterns"]["active_pattern_id"] == "p1"
+    assert len(body["performance_patterns"]["patterns"]) == 2
+
+    get_response = client.get("/api/maschine/performance/patterns")
+    assert get_response.json()["performance_patterns"]["active_pattern_id"] == "p1"
+
+
+def test_put_performance_patterns_rejects_duplicate_ids(isolated_calibration_dir):
+    client = _build_client()
+    bank = {
+        "active_pattern_id": None,
+        "patterns": [_empty_pattern("dup"), _empty_pattern("dup")],
+    }
+    response = client.put(
+        "/api/maschine/performance/patterns",
+        json={"performance_patterns": bank},
+    )
+    assert response.status_code == 400
+    assert "duplicated" in response.json()["detail"]
+
+
+def test_put_performance_patterns_rejects_duplicate_scene_slots(isolated_calibration_dir):
+    client = _build_client()
+    bank = {
+        "active_pattern_id": None,
+        "patterns": [
+            {**_empty_pattern("p1"), "scene_slot": 0},
+            {**_empty_pattern("p2"), "scene_slot": 0},
+        ],
+    }
+    response = client.put(
+        "/api/maschine/performance/patterns",
+        json={"performance_patterns": bank},
+    )
+    assert response.status_code == 400
+    assert "scene_slot" in response.json()["detail"]
+
+
+def test_put_performance_patterns_rejects_active_id_not_in_bank(isolated_calibration_dir):
+    client = _build_client()
+    bank = {
+        "active_pattern_id": "ghost",
+        "patterns": [_empty_pattern("p1")],
+    }
+    response = client.put(
+        "/api/maschine/performance/patterns",
+        json={"performance_patterns": bank},
+    )
+    assert response.status_code == 400
+    assert "active_pattern_id" in response.json()["detail"]
+
+
+def test_put_performance_patterns_rejects_bad_step_value(isolated_calibration_dir):
+    client = _build_client()
+    pattern = _empty_pattern("p1", 4)
+    pattern["steps"][0][0] = 5  # invalid — must be 0/1/2
+    bank = {"active_pattern_id": None, "patterns": [pattern]}
+    response = client.put(
+        "/api/maschine/performance/patterns",
+        json={"performance_patterns": bank},
+    )
+    assert response.status_code == 400
+    assert "0/1/2" in response.json()["detail"] or "must be 0" in response.json()["detail"]

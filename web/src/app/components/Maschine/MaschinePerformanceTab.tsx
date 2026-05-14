@@ -2,6 +2,7 @@ import { Tag, Tile } from '@carbon/react'
 import { useEffect, useMemo, useState } from 'react'
 
 import { MaschinePadCurveEditor } from './MaschinePadCurveEditor'
+import { MaschineStepSequencer } from './MaschineStepSequencer'
 import type {
   MaschineDaemonStatus,
   MaschineEncoderMap,
@@ -141,7 +142,6 @@ export function MaschinePerformanceTab({
     return map
   }, [status])
 
-  const ledArray = status?.led_array ?? status?.led_state?.led_array ?? []
 
   // Best-effort BPM: encoderMap.tempo carries the master MIDI clock
   // BPM as a fixed-label slot; if the daemon hasn't reported it, fall
@@ -246,30 +246,7 @@ export function MaschinePerformanceTab({
 
       <MaschinePadCurveEditor hidEvents={hidEvents} />
 
-      <Tile className="maschine-perf__scene-strip">
-        <h4 className="maschine-perf__strip-title">Scenes</h4>
-        <div className="maschine-perf__scene-row">
-          {(['A', 'B', 'C', 'D', 'E', 'F', 'G', 'H'] as const).map((label, idx) => {
-            const slot = 24 + idx
-            const brightness = Math.min(1, Math.max(0, (ledArray[slot] ?? 0) / 255))
-            const lit = brightness > 0.05
-            return (
-              <div
-                key={`scene-${label}`}
-                className={`maschine-perf__scene-cell${lit ? ' maschine-perf__scene-cell--lit' : ''}`}
-                style={{ opacity: lit ? 0.6 + 0.4 * brightness : 1 }}
-              >
-                <span className="maschine-perf__scene-letter">{label}</span>
-                <span className="maschine-perf__scene-state">{lit ? 'lit' : 'idle'}</span>
-              </div>
-            )
-          })}
-        </div>
-        <p className="maschine-perf__strip-help">
-          Cycle 7 wires real scene recall through Snapshot Authority; today this strip surfaces the live
-          group-button LED state from the daemon.
-        </p>
-      </Tile>
+      <MaschineStepSequencer />
 
       <Tile className="maschine-perf__morph-zone">
         <h4 className="maschine-perf__strip-title">Quad Morph</h4>

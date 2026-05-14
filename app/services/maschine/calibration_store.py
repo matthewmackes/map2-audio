@@ -55,6 +55,11 @@ PAD_COUNT = 16  # MK1 has 16 pads in a 4x4 grid (T700 Q19/Q42).
 # minimum set of calibration data; anything missing → calibration is
 # considered incomplete and the orchestrator re-runs onboarding.
 REQUIRED_CALIBRATION_KEYS = {"pad_sensitivity", "pressure_curves", "lcd"}
+# T2522-C cycle 7 — optional sections that the orchestrator never
+# writes but that the calibration_facade may attach. The schema
+# validator skips unknown top-level keys (additive-only), so adding
+# a new optional block here doesn't require a migration.
+OPTIONAL_CALIBRATION_KEYS = {"performance_patterns"}
 
 # USB serial regex: USB-IF-permitted string. We accept ASCII letters /
 # digits / hyphen / underscore / dot. The regex is also our filename
@@ -382,6 +387,10 @@ class MaschineCalibrationStore:
                     "pressure_curves",
                     "lcd",
                     "selected_profile",
+                    # T2522-C cycle 7 — patterns are an additive, schema-
+                    # validator-skipped section that the performance tab
+                    # writes via the calibration_facade.
+                    "performance_patterns",
                 }:
                     raise CalibrationSchemaError(
                         f"update(): unknown section {key!r}",

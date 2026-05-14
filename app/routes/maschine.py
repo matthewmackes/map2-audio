@@ -11,7 +11,9 @@ from app.config import get_config as get_runtime_config_manager
 from app.database import get_session
 from app.services.maschine.admin_console import get_maschine_admin_console_service
 from app.services.maschine.calibration_facade import (
+    get_performance_patterns as facade_get_performance_patterns,
     get_pressure_curves as facade_get_pressure_curves,
+    update_performance_patterns as facade_update_performance_patterns,
     update_pressure_curves as facade_update_pressure_curves,
 )
 from app.services.maschine.calibration_store import CalibrationSchemaError
@@ -419,6 +421,37 @@ async def update_maschine_pressure_curves(
     payloads are rejected (see calibration_facade docstring)."""
     try:
         payload = facade_update_pressure_curves(request.pressure_curves)
+    except CalibrationSchemaError as exc:
+        raise HTTPException(status_code=400, detail=str(exc)) from exc
+    return {"status": "ok", **payload}
+
+
+class MaschinePerformancePatternsRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
+    performance_patterns: dict[str, Any]
+
+
+@router.get("/performance/patterns")
+async def get_maschine_performance_patterns() -> dict[str, Any]:
+    """T2522-C cycle 7 — return the active device's stored 16-step
+    performance patterns (and which one, if any, is bound to which
+    scene slot 0-7). Falls back to an empty pattern bank when no
+    calibration file exists yet."""
+    payload = facade_get_performance_patterns()
+    return {"status": "ok", **payload}
+
+
+@router.put("/performance/patterns")
+async def update_maschine_performance_patterns(
+    request: MaschinePerformancePatternsRequest,
+) -> dict[str, Any]:
+    """T2522-C cycle 7 — replace the active device's pattern bank.
+    Validates the bank wholesale (no partial updates): pattern ids
+    must be unique, scene slots must be unique across patterns, and
+    active_pattern_id (if set) must match a pattern.id."""
+    try:
+        payload = facade_update_performance_patterns(request.performance_patterns)
     except CalibrationSchemaError as exc:
         raise HTTPException(status_code=400, detail=str(exc)) from exc
     return {"status": "ok", **payload}

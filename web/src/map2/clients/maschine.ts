@@ -194,6 +194,30 @@ export interface MaschinePressureCurvesResponse {
   pressure_curves: MaschinePressureCurves
 }
 
+// T2522-C cycle 7 — performance patterns + scene bindings.
+export interface MaschinePerformancePattern {
+  /** Client-generated short id; the schema validator requires uniqueness. */
+  id: string
+  name: string
+  /** 1..16 columns. */
+  length: number
+  /** 16 × length matrix. Each cell is 0 (empty), 1 (on), or 2 (accent). */
+  steps: number[][]
+  /** 0..7 mapping to group-button scene slots A-H (or null for unbound). */
+  scene_slot: number | null
+}
+
+export interface MaschinePerformancePatternsBank {
+  active_pattern_id: string | null
+  patterns: MaschinePerformancePattern[]
+}
+
+export interface MaschinePerformancePatternsResponse {
+  status: string
+  usb_serial: string
+  performance_patterns: MaschinePerformancePatternsBank
+}
+
 export const maschineApi = {
   getStatus: () =>
     fetchJson<MaschineStatusResponse>(`${MASCHINE_API_BASE}/status`, { cache: 'no-store' }),
@@ -317,6 +341,16 @@ export const maschineApi = {
     fetchJson<MaschinePressureCurvesResponse>(`${MASCHINE_API_BASE}/calibration/pressure-curves`, {
       method: 'PUT',
       body: JSON.stringify({ pressure_curves }),
+    }),
+
+  // T2522-C cycle 7 — performance patterns + scene bindings.
+  getPerformancePatterns: () =>
+    fetchJson<MaschinePerformancePatternsResponse>(`${MASCHINE_API_BASE}/performance/patterns`, { cache: 'no-store' }),
+
+  updatePerformancePatterns: (bank: MaschinePerformancePatternsBank) =>
+    fetchJson<MaschinePerformancePatternsResponse>(`${MASCHINE_API_BASE}/performance/patterns`, {
+      method: 'PUT',
+      body: JSON.stringify({ performance_patterns: bank }),
     }),
 }
 

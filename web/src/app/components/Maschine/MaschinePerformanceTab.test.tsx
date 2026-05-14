@@ -21,11 +21,18 @@ jest.mock('../../../map2/clients/maschine', () => {
       per_pad: Array.from({ length: 16 }, () => ({ polynomial: [0, 1] })),
     },
   }
+  const patternsDefault = {
+    status: 'ok',
+    usb_serial: 'default-mk1',
+    performance_patterns: { active_pattern_id: null, patterns: [] },
+  }
   return {
     __esModule: true,
     maschineApi: {
       getPressureCurves: jest.fn(async () => defaults),
       updatePressureCurves: jest.fn(async () => defaults),
+      getPerformancePatterns: jest.fn(async () => patternsDefault),
+      updatePerformancePatterns: jest.fn(async () => patternsDefault),
     },
   }
 })
@@ -191,16 +198,21 @@ describe('MaschinePerformanceTab', () => {
     expect(onPadClick).not.toHaveBeenCalled()
   })
 
-  it('lights the matching scene cell when its led_array slot is non-zero', () => {
-    const { container } = render(
+  it('cycle-7 — embeds the step sequencer with the new scene strip', async () => {
+    render(
       withQuery(
         <MaschinePerformanceTab status={makeStatus()} encoderMap={null} hidEvents={[]} />,
       ),
     )
-    const lit = container.querySelectorAll('.maschine-perf__scene-cell--lit')
-    // makeStatus() lights led_array[24] only — Group A.
-    expect(lit.length).toBe(1)
-    expect(lit[0].textContent).toContain('A')
+    // The cycle-7 scene strip is rendered by MaschineStepSequencer; it
+    // shows the same 8 letters but as buttons (not just badges) so
+    // operators can recall a scene by clicking. No legacy
+    // .maschine-perf__scene-cell--lit strip should exist any more.
+    expect(await screen.findByText('Step sequencer + scenes')).toBeInTheDocument()
+    // 8 scene buttons A-H, all empty by default → all disabled.
+    // Wait for the working bank to seed before asserting.
+    const sceneButtons = await screen.findAllByRole('button', { name: /Scene [A-H] — empty/ })
+    expect(sceneButtons.length).toBe(8)
   })
 
   it('shows the Disconnected chip when status.connected is false', () => {

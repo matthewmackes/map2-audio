@@ -31,6 +31,8 @@ jest.mock('../../map2/clients/maschine', () => ({
     setLed: jest.fn(),
     getPressureCurves: jest.fn(),
     updatePressureCurves: jest.fn(),
+    getPerformancePatterns: jest.fn(),
+    updatePerformancePatterns: jest.fn(),
   },
 }))
 
@@ -50,6 +52,8 @@ const { maschineApi } = jest.requireMock('../../map2/clients/maschine') as {
     setLed: jest.Mock
     getPressureCurves: jest.Mock
     updatePressureCurves: jest.Mock
+    getPerformancePatterns: jest.Mock
+    updatePerformancePatterns: jest.Mock
   }
 }
 
@@ -297,6 +301,16 @@ describe('MaschinePage', () => {
       usb_serial: 'default-mk1',
       pressure_curves: curves,
     }))
+    maschineApi.getPerformancePatterns.mockResolvedValue({
+      status: 'ok',
+      usb_serial: 'default-mk1',
+      performance_patterns: { active_pattern_id: null, patterns: [] },
+    })
+    maschineApi.updatePerformancePatterns.mockImplementation(async (bank: unknown) => ({
+      status: 'ok',
+      usb_serial: 'default-mk1',
+      performance_patterns: bank,
+    }))
   })
 
   it('renders all Maschine panels with cabl protocol info and shows connected status', async () => {
@@ -354,14 +368,15 @@ describe('MaschinePage', () => {
     expect(screen.getByText(/JSON\+flexbox profile DSL/)).toBeInTheDocument()
   })
 
-  it('T2522 — ?tab=performance deep-link selects the Performance tab', () => {
+  it('T2522 — ?tab=performance deep-link selects the Performance tab', async () => {
     renderPage(['/maschine?tab=performance'])
     expect(screen.getByRole('tab', { name: 'Performance' }).getAttribute('aria-selected')).toBe('true')
-    // Cycle 5 wired the real Performance shell; the placeholder copy
-    // is gone. Anchor on the canonical Performance heading + scenes
-    // strip title.
+    // Cycle 5 wired the real Performance shell; cycle 7 swapped the
+    // legacy "Scenes" placeholder for the step sequencer + scene
+    // strip. Anchor on the Performance heading and the seq title
+    // (which renders inside the Performance tab body).
     expect(screen.getByRole('heading', { name: 'Performance' })).toBeInTheDocument()
-    expect(screen.getByRole('heading', { name: 'Scenes' })).toBeInTheDocument()
+    expect(await screen.findByText('Step sequencer + scenes')).toBeInTheDocument()
   })
 
   it('T2522 — ?tab=mapping deep-link selects the Mapping Studio tab', () => {

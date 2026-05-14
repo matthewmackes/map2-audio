@@ -128,3 +128,123 @@ def update_pressure_curves(payload: Mapping[str, Any]) -> Dict[str, Any]:
     store = _store_for_active_device()
     store.update(pressure_curves=dict(payload))
     return get_pressure_curves()
+
+
+# ---------------------------------------------------------------------------
+# Performance patterns + scenes (T2522-C cycle 7)
+# ---------------------------------------------------------------------------
+#
+# Schema:
+#
+#   performance_patterns:
+#     active_pattern_id: str | null
+#     patterns:
+#       - id: str            # client-generated short id (uuid-ish)
+#         name: str
+#         length: int        # 1..16 steps
+#         steps:             # PAD_COUNT × length matrix of step states
+#           - [0|1|2, ...]   # 0 = empty, 1 = on, 2 = accented
+#         scene_slot: int | null   # 0..7 mapping to group-button slots A-H
+#
+# We're intentionally honest about scope: this is operator-side
+# pattern + scene authoring + persistence. Audio-rate playback wires
+# in a separate `T2522-C-SEQ-PLAY` follow-on through the engine
+# command dispatcher; the recorded patterns are real and will play
+# back the moment that wiring lands.
+
+PATTERN_STEP_COUNT_MAX = 16
+PATTERN_STEP_VALUES = {0, 1, 2}
+
+
+def default_performance_patterns() -> Dict[str, Any]:
+    return {"active_pattern_id": None, "patterns": []}
+
+
+def _validate_pattern(pattern: Any, *, index: int) -> None:
+    if not isinstance(pattern, Mapping):
+        raise CalibrationSchemaError(f"patterns[{index}] must be a mapping")
+    pid = pattern.get("id")
+    if not isinstance(pid, str) or not pid:
+        raise CalibrationSchemaError(f"patterns[{index}].id must be a non-empty string")
+    name = pattern.get("name")
+    if not isinstance(name, str):
+        raise CalibrationSchemaError(f"patterns[{index}].name must be a string")
+    length = pattern.get("length")
+    if not isinstance(length, int) or not 1 <= length <= PATTERN_STEP_COUNT_MAX:
+        raise CalibrationSchemaError(
+            f"patterns[{index}].length must be int 1..{PATTERN_STEP_COUNT_MAX}; got {length!r}",
+        )
+    steps = pattern.get("steps")
+    if not isinstance(steps, list) or len(steps) != 16:
+        raise CalibrationSchemaError(
+            f"patterns[{index}].steps must be a 16-row list (one per pad); got {type(steps).__name__}",
+        )
+    for row_idx, row in enumerate(steps):
+        if not isinstance(row, list) or len(row) != length:
+            raise CalibrationSchemaError(
+                f"patterns[{index}].steps[{row_idx}] must be a list of length {length}",
+            )
+        for col_idx, cell in enumerate(row):
+            if cell not in PATTERN_STEP_VALUES:
+                raise CalibrationSchemaError(
+                    f"patterns[{index}].steps[{row_idx}][{col_idx}] must be 0/1/2; got {cell!r}",
+                )
+    scene_slot = pattern.get("scene_slot")
+    if scene_slot is not None and (not isinstance(scene_slot, int) or not 0 <= scene_slot <= 7):
+        raise CalibrationSchemaError(
+            f"patterns[{index}].scene_slot must be 0..7 or null; got {scene_slot!r}",
+        )
+
+
+def _validate_performance_patterns(payload: Any) -> None:
+    if not isinstance(payload, Mapping):
+        raise CalibrationSchemaError("performance_patterns payload must be a mapping")
+    active = payload.get("active_pattern_id")
+    if active is not None and not isinstance(active, str):
+        raise CalibrationSchemaError("active_pattern_id must be a string or null")
+    patterns = payload.get("patterns")
+    if not isinstance(patterns, list):
+        raise CalibrationSchemaError("patterns must be a list")
+    seen_ids: set[str] = set()
+    seen_slots: set[int] = set()
+    for index, pattern in enumerate(patterns):
+        _validate_pattern(pattern, index=index)
+        pid = pattern["id"]
+        if pid in seen_ids:
+            raise CalibrationSchemaError(f"patterns[{index}].id={pid!r} is duplicated")
+        seen_ids.add(pid)
+        slot = pattern.get("scene_slot")
+        if slot is not None:
+            if slot in seen_slots:
+                raise CalibrationSchemaError(
+                    f"patterns[{index}].scene_slot={slot} already bound to another pattern",
+                )
+            seen_slots.add(slot)
+    if active is not None and active not in seen_ids:
+        raise CalibrationSchemaError(
+            f"active_pattern_id={active!r} does not match any pattern.id",
+        )
+
+
+def get_performance_patterns() -> Dict[str, Any]:
+    store = _store_for_active_device()
+    try:
+        existing = store.load()
+    except Exception:
+        existing = None
+    block = (
+        (existing or {}).get("performance_patterns")
+        if existing is not None
+        else None
+    ) or default_performance_patterns()
+    return {
+        "usb_serial": store._usb_serial,
+        "performance_patterns": block,
+    }
+
+
+def update_performance_patterns(payload: Mapping[str, Any]) -> Dict[str, Any]:
+    _validate_performance_patterns(payload)
+    store = _store_for_active_device()
+    store.update(performance_patterns=dict(payload))
+    return get_performance_patterns()

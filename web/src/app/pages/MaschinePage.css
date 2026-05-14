@@ -417,6 +417,165 @@
   flex-wrap: wrap;
 }
 
+/* T2522-C cycle 7 — Step sequencer + scene strip */
+.maschine-seq {
+  padding: 1.25rem !important;
+  display: grid;
+  gap: 1rem;
+}
+
+.maschine-seq__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.maschine-seq__head-actions {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
+.maschine-seq__pattern-controls {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.6rem;
+  align-items: end;
+}
+
+.maschine-seq__pattern-controls .cds--form-item {
+  flex: 0 1 12rem;
+}
+
+.maschine-seq__grid-wrap {
+  overflow-x: auto;
+}
+
+.maschine-seq__grid {
+  display: grid;
+  gap: 2px;
+  min-width: 28rem;
+}
+
+.maschine-seq__corner {
+  background: transparent;
+}
+
+.maschine-seq__step-header {
+  text-align: center;
+  font-size: 0.7rem;
+  color: var(--cds-text-secondary);
+  padding: 0.2rem 0;
+  font-family: var(--cds-code-02-font-family, monospace);
+}
+
+.maschine-seq__step-header--downbeat {
+  color: var(--cds-text-primary);
+  font-weight: 700;
+}
+
+.maschine-seq__row-label {
+  display: grid;
+  place-items: center;
+  width: 2.25rem;
+  font-size: 0.75rem;
+  font-family: var(--cds-code-02-font-family, monospace);
+  color: var(--cds-text-primary);
+  background: var(--cds-layer-02);
+  border-radius: 3px;
+}
+
+.maschine-seq__row-label--empty {
+  color: var(--cds-text-helper);
+  background: transparent;
+}
+
+.maschine-seq__step {
+  height: 1.7rem;
+  border-radius: 3px;
+  border: 1px solid color-mix(in srgb, var(--cds-border-subtle) 50%, transparent);
+  background: var(--cds-layer-02);
+  cursor: pointer;
+  padding: 0;
+  transition: background var(--map2-dur-fast, 140ms) ease;
+}
+
+.maschine-seq__step:hover {
+  background: color-mix(in srgb, var(--cds-layer-02) 50%, var(--cds-layer-hover));
+}
+
+.maschine-seq__step--downbeat {
+  border-color: color-mix(in srgb, var(--cds-border-strong) 60%, transparent);
+}
+
+.maschine-seq__step--on {
+  background: var(--cds-support-success);
+  border-color: var(--cds-support-success);
+}
+
+.maschine-seq__step--accent {
+  background: var(--cds-support-warning);
+  border-color: var(--cds-support-warning);
+}
+
+.maschine-seq__scene-strip {
+  border-top: 1px solid color-mix(in srgb, var(--cds-border-subtle) 60%, transparent);
+  padding-top: 1rem;
+  display: grid;
+  gap: 0.5rem;
+}
+
+.maschine-seq__scene-title {
+  margin: 0;
+  font-size: 0.85rem;
+  color: var(--cds-text-secondary);
+  font-weight: 600;
+}
+
+.maschine-seq__scene-row {
+  display: grid;
+  grid-template-columns: repeat(8, minmax(0, 1fr));
+  gap: 0.5rem;
+}
+
+.maschine-seq__scene-cell {
+  display: grid;
+  gap: 0.15rem;
+  place-items: center;
+  padding: 0.6rem 0.4rem;
+  border: 1px solid color-mix(in srgb, var(--cds-border-subtle) 60%, transparent);
+  background: var(--cds-layer-02);
+  border-radius: 4px;
+  font-size: 0.75rem;
+  color: var(--cds-text-secondary);
+  cursor: not-allowed;
+  font: inherit;
+  transition: background var(--map2-dur-fast, 140ms) ease;
+}
+
+.maschine-seq__scene-cell--bound {
+  cursor: pointer;
+  color: var(--cds-text-primary);
+  background: color-mix(in srgb, #33b1ff 18%, var(--cds-layer-02));
+  border-color: #33b1ff;
+}
+
+.maschine-seq__scene-cell--bound:hover {
+  background: color-mix(in srgb, #33b1ff 30%, var(--cds-layer-02));
+}
+
+.maschine-seq__scene-cell--active {
+  background: color-mix(in srgb, #42be65 35%, var(--cds-layer-02));
+  border-color: var(--cds-support-success);
+  color: var(--cds-text-primary);
+}
+
+.maschine-seq__scene-name {
+  font-size: 0.65rem;
+  font-family: var(--cds-code-02-font-family, monospace);
+}
+
 .maschine-page__grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
