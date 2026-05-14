@@ -217,3 +217,84 @@ def test_create_rejects_unknown_field(tmp_path):
     payload["nonsense_field"] = "x"
     r = client.post("/api/sonobus/bindings", json=payload)
     assert r.status_code == 422
+
+
+def test_cluster_matrix_empty_peers(tmp_path, monkeypatch):
+    """T2521-5b — cluster matrix returns local + empty peers/errors
+    when discovery has no peer records."""
+    _init_temp_db(tmp_path)
+    client = TestClient(_build_app())
+
+    # Seed one binding so local matrix is non-empty.
+    client.post("/api/sonobus/bindings", json=_stream_payload("s-1"))
+
+    # Stub the node-discovery service so no peers are returned.
+    class _StubDiscovery:
+        async def _load_peer_records(self):
+            return []
+
+    from app.services import node_discovery_service
+
+    monkeypatch.setattr(
+        node_discovery_service, "get_node_discovery_service", lambda: _StubDiscovery()
+    )
+
+    r = client.get("/api/sonobus/cluster/bindings/matrix")
+    assert r.status_code == 200, r.text
+    body = r.json()
+    assert body["peers"] == []
+    assert body["errors"] == {}
+    assert body["local"]["total_bindings"] == 1
+    assert "stream" in body["local"]["matrix"]
+
+
+def test_cluster_matrix_peer_error_does_not_break_response(tmp_path, monkeypatch):
+    """T2521-5b — a peer that fails to respond populates `errors` but
+    the overall request still returns 200 with the local matrix intact."""
+    _init_temp_db(tmp_path)
+    client = TestClient(_build_app())
+    client.post("/api/sonobus/bindings", json=_stream_payload("s-1"))
+
+    class _StubPeer:
+        node_id = "node-bad"
+        hostname = "bad.local"
+        host = "10.255.255.254"
+        api_url = "http://10.255.255.254:8080"
+
+    class _StubDiscovery:
+        async def _load_peer_records(self):
+            return [_StubPeer()]
+
+    class _StubHealth:
+        async def get_remote_health(self, host):
+            class _S:
+                status = "offline"
+            return _S()
+
+    from app.services import node_discovery_service, node_health_service
+
+    monkeypatch.setattr(
+        node_discovery_service,
+        "get_node_discovery_service",
+        lambda: _StubDiscovery(),
+    )
+    monkeypatch.setattr(
+        node_health_service,
+        "get_node_health_service",
+        lambda: _StubHealth(),
+    )
+
+    # Force the peer fetch to fail fast by patching httpx to raise.
+    import app.services.sonobus.binding_routes as routes_module
+
+    async def _fail_fetch(*, node_id, hostname, api_url, timeout_s, health):
+        return None, "stubbed peer failure"
+
+    monkeypatch.setattr(routes_module, "_fetch_peer_sonobus_matrix", _fail_fetch)
+
+    r = client.get("/api/sonobus/cluster/bindings/matrix")
+    assert r.status_code == 200, r.text
+    body = r.json()
+    assert body["peers"] == []
+    assert body["errors"] == {"node-bad": "stubbed peer failure"}
+    assert body["local"]["total_bindings"] == 1

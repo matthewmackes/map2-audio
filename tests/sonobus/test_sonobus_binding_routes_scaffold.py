@@ -50,6 +50,10 @@ def test_matrix_endpoint_present():
     assert ("GET", "/api/sonobus/bindings/matrix") in _route_set()
 
 
+def test_cluster_matrix_endpoint_present():
+    assert ("GET", "/api/sonobus/cluster/bindings/matrix") in _route_set()
+
+
 def test_create_endpoint_present():
     assert ("POST", "/api/sonobus/bindings") in _route_set()
 

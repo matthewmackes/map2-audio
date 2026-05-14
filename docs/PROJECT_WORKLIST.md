@@ -4228,9 +4228,10 @@ Subtasks:
   - Dependencies: T2521-3, T2521-4
   - Estimated effort: Medium
   - Required outputs/deliverables: FastAPI routes, OpenAPI-valid schemas, pytest coverage.
-  Last updated: 2026-05-13 21:10 EDT - Claude (twelfth Continue cycle 3)
+  Last updated: 2026-05-13 22:35 EDT - Claude (thirteenth Continue cycle 1)
   - Completion notes:
-    - 2026-05-13 21:10 EDT - Claude: First slice shipped — `app/services/sonobus/binding_routes.py` with `/api/sonobus/status`, `/api/sonobus/bindings/count`, `/api/sonobus/bindings/matrix`, `/api/sonobus/bindings` (GET with consumer / kind / group / cluster / scope filters, POST 201), `/api/sonobus/bindings/{id}` (GET / PATCH / DELETE), and `/api/sonobus/bindings/{id}/{disable,enable}`. Router mounted in `app/main.py` after the AVB Services mount with the same try/except guard. 12 scaffold tests + 9 live-HTTP TestClient tests green; full SonoBus suite now 16 + 12 + 9 = 37 cases. Still pending in T2521-5: peer/session/network/diagnostics/profiles routes + cluster matrix fan-out + WS event stream (queued for the next Continue cycle after the daemon scaffold lands).
+    - 2026-05-13 21:10 EDT - Claude: First slice shipped — `app/services/sonobus/binding_routes.py` with `/api/sonobus/status`, `/api/sonobus/bindings/count`, `/api/sonobus/bindings/matrix`, `/api/sonobus/bindings` (GET with consumer / kind / group / cluster / scope filters, POST 201), `/api/sonobus/bindings/{id}` (GET / PATCH / DELETE), and `/api/sonobus/bindings/{id}/{disable,enable}`. Router mounted in `app/main.py` after the AVB Services mount with the same try/except guard. 12 scaffold tests + 9 live-HTTP TestClient tests green; full SonoBus suite now 16 + 12 + 9 = 37 cases.
+    - 2026-05-13 22:35 EDT - Claude (run 13 cycle 1): Cluster matrix fan-out shipped — `_fetch_peer_sonobus_matrix` helper + `GET /api/sonobus/cluster/bindings/matrix` route, returns `SonoBusClusterBindingsMatrixResponse` with local matrix + per-peer matrices + failure errors. asyncio.gather fan-out with 2s per-peer timeout, mirroring `_fetch_peer_avb_matrix`. +1 scaffold test + 2 live tests (empty-peers path + peer-error-recovery path). 14 scaffold + 11 live = 25 route tests green.
 - ID: T2521-6
   Status: [>] In Progress
   Title: Build Carbon SonoBus service workspace from AVB template
