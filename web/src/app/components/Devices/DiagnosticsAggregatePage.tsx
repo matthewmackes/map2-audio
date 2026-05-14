@@ -28,6 +28,7 @@ import { Link as RouterLink } from 'react-router-dom'
 import { useDeviceDiagnostics } from './hooks/useDeviceProfiles'
 import type { DiagnosticEntry } from '../../../map2/clients/devices'
 import { DevicePeakMetersOverview } from './Shared/DevicePeakMetersOverview'
+import { DevicePeakMetersClusterOverview } from './Shared/DevicePeakMetersClusterOverview'
 import { meterRegistryIdsFromPinnedIds } from '../../data/legacyDeviceManifest'
 import { usePinnedDevices } from '../../state/uiSettings'
 
@@ -158,6 +159,17 @@ export function DiagnosticsAggregatePage(): React.JSX.Element {
         style={{ marginBottom: 24 }}
       >
         <DevicePeakMetersOverview title="Per-device metering" includeSnapshot />
+      </section>
+
+      <section
+        className="diagnostics-aggregate-page__meters-overview"
+        data-testid="dx-meters-cluster-overview"
+        style={{ marginBottom: 24 }}
+      >
+        <DevicePeakMetersClusterOverview
+          title="Cluster-wide metering"
+          includeSnapshot
+        />
       </section>
 
       <DataTable

@@ -39,6 +39,14 @@ jest.mock('../../hooks/useDevicesPeakMetersStream', () => ({
   useDevicesPeakMetersStream: () => mockUseDevicesPeakMetersStream(),
 }))
 
+// Run-13f cycle 4 — cluster-wide overview tile also mounts on this
+// page. Stub its hook with the same empty defaults so tests stay tight.
+const mockUseDevicesPeakMetersClusterRegistry = jest.fn()
+jest.mock('../../hooks/useDevicesPeakMetersClusterRegistry', () => ({
+  useDevicesPeakMetersClusterRegistry: () =>
+    mockUseDevicesPeakMetersClusterRegistry(),
+}))
+
 const mockUsePinnedDevices = jest.fn<readonly string[], []>()
 jest.mock('../../state/uiSettings', () => ({
   __esModule: true,
@@ -76,6 +84,13 @@ beforeEach(() => {
     hasFirstFrame: true,
     isConnected: false,
     lastError: null,
+  })
+  mockUseDevicesPeakMetersClusterRegistry.mockReturnValue({
+    local: { devices: [] },
+    peers: [],
+    errors: {},
+    isError: false,
+    isLoading: false,
   })
   mockUsePinnedDevices.mockReturnValue([])
 })
@@ -231,6 +246,35 @@ test('DiagnosticsAggregatePage: mounts pinned-streaming overview when metered pi
   })
   // Pinned overview title should appear.
   expect(screen.getByText('Pinned devices (live)')).toBeInTheDocument()
+})
+
+test('DiagnosticsAggregatePage: mounts the cluster-wide overview tile', async () => {
+  mockListDiagnostics.mockResolvedValue({
+    diagnostics: [], count: 0,
+    counts_by_severity: { info: 0, warning: 0, error: 0 },
+  })
+  mockUseDevicesPeakMetersClusterRegistry.mockReturnValue({
+    local: {
+      devices: [
+        {
+          device_id: 'edirol-ua-1000',
+          input_channels: 10,
+          output_channels: 10,
+          has_engine_source: true,
+        },
+      ],
+    },
+    peers: [],
+    errors: {},
+    isError: false,
+    isLoading: false,
+  })
+
+  renderPage()
+  await waitFor(() => {
+    expect(screen.getByTestId('dx-meters-cluster-overview')).toBeInTheDocument()
+  })
+  expect(screen.getByText('Cluster-wide metering')).toBeInTheDocument()
 })
 
 test('DiagnosticsAggregatePage: omits pinned overview when pins are non-metered surfaces', async () => {
