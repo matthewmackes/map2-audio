@@ -63,10 +63,11 @@ function makeClient() {
   })
 }
 
-function renderPage() {
+function renderPage(initialEntries: string[] = ['/maschine?tab=diagnostics']) {
   return render(
     <QueryClientProvider client={makeClient()}>
       <MemoryRouter
+        initialEntries={initialEntries}
         future={{
           v7_startTransition: true,
           v7_relativeSplatPath: true,
@@ -306,5 +307,45 @@ describe('MaschinePage', () => {
     expect(within(screen.getByTestId('maschine-transport-panel')).getByText('usb-bulk')).toBeTruthy()
     expect(screen.getByText('Mix')).toBeTruthy()
     expect(screen.getByText('62 slots')).toBeTruthy()
+  })
+
+  it('T2522 — renders the five extended-GUI tabs in the shell', () => {
+    renderPage(['/maschine'])
+    expect(screen.getByRole('tab', { name: 'Hardware Twin' })).toBeInTheDocument()
+    expect(screen.getByRole('tab', { name: 'Profile Workbench' })).toBeInTheDocument()
+    expect(screen.getByRole('tab', { name: 'Performance' })).toBeInTheDocument()
+    expect(screen.getByRole('tab', { name: 'Mapping Studio' })).toBeInTheDocument()
+    expect(screen.getByRole('tab', { name: 'Diagnostics' })).toBeInTheDocument()
+  })
+
+  it('T2522 — defaults to the Hardware Twin tab when no ?tab param is set', () => {
+    renderPage(['/maschine'])
+    const twinTab = screen.getByRole('tab', { name: 'Hardware Twin' })
+    expect(twinTab.getAttribute('aria-selected')).toBe('true')
+    expect(screen.getByText(/Photoreal SVG mirror of the MK1/)).toBeInTheDocument()
+  })
+
+  it('T2522 — ?tab=workbench deep-link selects the Profile Workbench tab', () => {
+    renderPage(['/maschine?tab=workbench'])
+    const workbenchTab = screen.getByRole('tab', { name: 'Profile Workbench' })
+    expect(workbenchTab.getAttribute('aria-selected')).toBe('true')
+    expect(screen.getByText(/JSON\+flexbox profile DSL/)).toBeInTheDocument()
+  })
+
+  it('T2522 — ?tab=performance deep-link selects the Performance tab', () => {
+    renderPage(['/maschine?tab=performance'])
+    expect(screen.getByRole('tab', { name: 'Performance' }).getAttribute('aria-selected')).toBe('true')
+    expect(screen.getByText(/Player surface: 4×4 pad grid/)).toBeInTheDocument()
+  })
+
+  it('T2522 — ?tab=mapping deep-link selects the Mapping Studio tab', () => {
+    renderPage(['/maschine?tab=mapping'])
+    expect(screen.getByRole('tab', { name: 'Mapping Studio' }).getAttribute('aria-selected')).toBe('true')
+    expect(screen.getByText(/Full mapping editor scoped to the active snapshot/)).toBeInTheDocument()
+  })
+
+  it('T2522 — ?tab=<unknown> falls back to the default Hardware Twin tab', () => {
+    renderPage(['/maschine?tab=bogus'])
+    expect(screen.getByRole('tab', { name: 'Hardware Twin' }).getAttribute('aria-selected')).toBe('true')
   })
 })
