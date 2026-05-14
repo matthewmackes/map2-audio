@@ -140,6 +140,10 @@ const AvbServicesAvdeccBindingWizardPage = lazy(() => import('./pages/avb-servic
 // T2521-6 — SonoBus/AOO remote-audio transport mount scaffold.
 const SonoBusOverviewPage        = lazy(() => import('./pages/sonobus/SonoBusOverviewPage').then(m => ({ default: m.SonoBusOverviewPage })))
 const SonoBusConnectionsPage     = lazy(() => import('./pages/sonobus/SonoBusConnectionsPage').then(m => ({ default: m.SonoBusConnectionsPage })))
+const SonoBusPeersPage           = lazy(() => import('./pages/sonobus/SonoBusPeersPage').then(m => ({ default: m.SonoBusPeersPage })))
+const SonoBusGroupsPage          = lazy(() => import('./pages/sonobus/SonoBusGroupsPage').then(m => ({ default: m.SonoBusGroupsPage })))
+const SonoBusNetworkPage         = lazy(() => import('./pages/sonobus/SonoBusNetworkPage').then(m => ({ default: m.SonoBusNetworkPage })))
+const SonoBusDiagnosticsPage     = lazy(() => import('./pages/sonobus/SonoBusDiagnosticsPage').then(m => ({ default: m.SonoBusDiagnosticsPage })))
 // T2491 (2026-05-02 cleanup) — the 7 MidiHub*Page lazy imports
 // retired with the /midi-hub/* mount. Canonical /midi/* mount uses
 // MidiServicesConnectionsPage / MidiServicesPresetsPage / etc. The
@@ -953,6 +957,10 @@ export function App() {
                                     docs/architecture/SONOBUS_AOO_TRANSPORT.md. */}
                                 <Route path="/sonobus" element={<RouteBoundary title="SonoBus view crashed" actionLabel="Reload SonoBus"><SonoBusOverviewPage /></RouteBoundary>} />
                                 <Route path="/sonobus/connections" element={<RouteBoundary title="SonoBus Connections crashed" actionLabel="Reload SonoBus Connections"><SonoBusConnectionsPage /></RouteBoundary>} />
+                                <Route path="/sonobus/peers" element={<RouteBoundary title="SonoBus Peers crashed" actionLabel="Reload SonoBus Peers"><SonoBusPeersPage /></RouteBoundary>} />
+                                <Route path="/sonobus/groups" element={<RouteBoundary title="SonoBus Groups crashed" actionLabel="Reload SonoBus Groups"><SonoBusGroupsPage /></RouteBoundary>} />
+                                <Route path="/sonobus/network" element={<RouteBoundary title="SonoBus Network crashed" actionLabel="Reload SonoBus Network"><SonoBusNetworkPage /></RouteBoundary>} />
+                                <Route path="/sonobus/diagnostics" element={<RouteBoundary title="SonoBus Diagnostics crashed" actionLabel="Reload SonoBus Diagnostics"><SonoBusDiagnosticsPage /></RouteBoundary>} />
                                 <Route path={HOST_MACHINE_ROUTE} element={<RouteBoundary title="Host Machine view crashed" actionLabel="Reload host machine"><HostMachinePage /></RouteBoundary>} />
                                 <Route path="/grid" element={<Navigate to="/snapshot-editor" replace />} />
                                 <Route path="/juce-grid" element={<Navigate to="/snapshot-editor" replace />} />
