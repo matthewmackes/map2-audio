@@ -229,6 +229,166 @@ async def get_device_peak_meters(device_id: str) -> GenericMeterPayload:
     )
 
 
+# ---------- Cluster fan-out (run-13f cycle 1) ----------
+
+
+class ClusterDeviceRegistryPeer(BaseModel):
+    """One peer's slice of the cluster device-meter registry.
+
+    Mirrors the AVB/SonoBus per-peer fan-out shape. ``health`` is sourced
+    from `NodeHealthService` and baked in so the frontend doesn't need a
+    second fetch.
+    """
+
+    node_id: str
+    hostname: str
+    devices: List[DeviceRegistryEntry]
+    health: str = "offline"
+
+
+class ClusterDeviceRegistryResponse(BaseModel):
+    """Cluster-wide aggregation of every peer's
+    `GET /api/v1/devices/peak-meters/registry`. Local registry kept
+    under ``local``; per-peer slices under ``peers``; failed peers
+    populate ``errors`` keyed by ``node_id``.
+
+    Mirrors `AvbClusterBindingsMatrixResponse` /
+    `SonoBusClusterBindingsMatrixResponse`.
+    """
+
+    local: DeviceRegistryResponse
+    peers: List[ClusterDeviceRegistryPeer]
+    errors: dict[str, str]
+
+
+async def _fetch_peer_device_registry(
+    *,
+    node_id: str,
+    hostname: str,
+    api_url: str,
+    timeout_s: float,
+    include_snapshot: bool,
+    health: str = "offline",
+) -> tuple[Optional[ClusterDeviceRegistryPeer], Optional[str]]:
+    """Single-peer fetch helper. Returns (peer_or_none, error_or_none).
+
+    Mirrors `_fetch_peer_avb_matrix`. Each peer request is bounded by
+    ``timeout_s`` so a slow peer never holds the cluster registry.
+    """
+    import httpx
+
+    suffix = "?include_snapshot=true" if include_snapshot else ""
+    try:
+        async with httpx.AsyncClient(timeout=timeout_s) as client:
+            response = await client.get(
+                f"{api_url}/api/v1/devices/peak-meters/registry{suffix}"
+            )
+            if response.status_code != 200:
+                return None, f"http {response.status_code}"
+            payload = response.json()
+            devices = [
+                DeviceRegistryEntry(**entry) for entry in payload.get("devices", [])
+            ]
+            return (
+                ClusterDeviceRegistryPeer(
+                    node_id=node_id,
+                    hostname=hostname,
+                    devices=devices,
+                    health=health,
+                ),
+                None,
+            )
+    except Exception as exc:
+        return None, str(exc)
+
+
+@router.get(
+    "/peak-meters/cluster/registry",
+    response_model=ClusterDeviceRegistryResponse,
+)
+async def get_cluster_peak_meters_registry(
+    include_snapshot: bool = Query(
+        False,
+        description=(
+            "When true, propagate include_snapshot=true to every peer "
+            "fetch so the response carries inline snapshots for every "
+            "device across the cluster. Wallclock stays close to the "
+            "slowest single peer because all peer fetches run "
+            "concurrently."
+        ),
+    ),
+) -> ClusterDeviceRegistryResponse:
+    """Cluster-wide aggregation of every peer's
+    `GET /api/v1/devices/peak-meters/registry`.
+
+    All peer requests issue concurrently via ``asyncio.gather`` with a
+    2 s per-peer timeout. Failed peers populate ``errors`` but don't
+    fail the whole request. Local node's registry is returned under
+    ``local`` so consumers always have a baseline even when discovery
+    is empty.
+
+    Run-13f cycle 1 of the pivot-13e handoff.
+    """
+    import asyncio
+
+    local = await get_peak_meters_registry(include_snapshot=include_snapshot)
+
+    try:
+        from app.services.node_discovery_service import (
+            get_node_discovery_service,
+        )
+
+        discovery = get_node_discovery_service()
+        peer_records = await discovery._load_peer_records()
+    except Exception as exc:
+        logger.debug("cluster peak-meters: peer discovery unavailable: %s", exc)
+        peer_records = []
+
+    if not peer_records:
+        return ClusterDeviceRegistryResponse(local=local, peers=[], errors={})
+
+    try:
+        from app.services.node_health_service import get_node_health_service
+
+        health_service = get_node_health_service()
+
+        async def _peer_health(peer):
+            try:
+                health = await health_service.get_remote_health(peer.host)
+                return getattr(health, "status", "offline")
+            except Exception:
+                return "offline"
+
+        healths = await asyncio.gather(
+            *(_peer_health(p) for p in peer_records), return_exceptions=False
+        )
+    except Exception:
+        healths = ["offline"] * len(peer_records)
+
+    fetch_tasks = [
+        _fetch_peer_device_registry(
+            node_id=peer.node_id,
+            hostname=peer.hostname,
+            api_url=peer.api_url or f"http://{peer.host}:8080",
+            timeout_s=2.0,
+            include_snapshot=include_snapshot,
+            health=health,
+        )
+        for peer, health in zip(peer_records, healths)
+    ]
+    results = await asyncio.gather(*fetch_tasks, return_exceptions=False)
+
+    peers: list[ClusterDeviceRegistryPeer] = []
+    errors: dict[str, str] = {}
+    for peer, (peer_or_none, err_or_none) in zip(peer_records, results):
+        if peer_or_none is not None:
+            peers.append(peer_or_none)
+        if err_or_none is not None:
+            errors[peer.node_id] = err_or_none
+
+    return ClusterDeviceRegistryResponse(local=local, peers=peers, errors=errors)
+
+
 # ---------- WebSocket streaming surface (Pick-1 of eleventh-run handoff) ----------
 
 
