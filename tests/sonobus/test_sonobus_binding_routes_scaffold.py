@@ -54,6 +54,18 @@ def test_cluster_matrix_endpoint_present():
     assert ("GET", "/api/sonobus/cluster/bindings/matrix") in _route_set()
 
 
+def test_peers_endpoint_present():
+    assert ("GET", "/api/sonobus/peers") in _route_set()
+
+
+def test_groups_endpoint_present():
+    assert ("GET", "/api/sonobus/groups") in _route_set()
+
+
+def test_sessions_endpoint_present():
+    assert ("GET", "/api/sonobus/sessions") in _route_set()
+
+
 def test_create_endpoint_present():
     assert ("POST", "/api/sonobus/bindings") in _route_set()
 

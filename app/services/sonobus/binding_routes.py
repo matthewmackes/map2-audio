@@ -300,6 +300,128 @@ async def get_cluster_bindings_matrix() -> SonoBusClusterBindingsMatrixResponse:
     )
 
 
+class SonoBusPeerSummary(BaseModel):
+    """Aggregated peer view derived from bindings.
+
+    Until the T2521-4 daemon ships its own peer-discovery table, the
+    peer view is computed from binding rows: each unique (listener_node_id
+    or listener_peer_endpoint, listener_capability) tuple is a peer.
+    """
+
+    peer_id: str
+    listener_node_id: Optional[str]
+    listener_endpoint: Optional[str]
+    listener_capability: Optional[str]
+    binding_count: int
+    enabled_binding_count: int
+
+
+class SonoBusGroupSummary(BaseModel):
+    """Aggregated group view derived from bindings."""
+
+    group_id: str
+    session_label: Optional[str]
+    binding_count: int
+    enabled_binding_count: int
+    channel_count_total: int
+
+
+@router.get("/peers", response_model=list[SonoBusPeerSummary])
+async def list_peers() -> list[SonoBusPeerSummary]:
+    """T2521-5c — operator peer view derived from bindings.
+
+    Aggregates by (listener_node_id, listener_peer_endpoint,
+    listener_capability). Drives the `/sonobus/peers` Carbon page.
+    Until T2521-4 daemon ships its own discovered-peer table this is
+    the authoritative peer projection.
+    """
+    async with get_session(read_only=True) as session:
+        rows = await session.execute(select(SonoBusBinding))
+        peers: dict[tuple, SonoBusPeerSummary] = {}
+        for binding in rows.scalars().all():
+            endpoint = None
+            if isinstance(binding.target_descriptor, dict):
+                endpoint = binding.target_descriptor.get(
+                    "listener_peer_endpoint"
+                ) or binding.target_descriptor.get("endpoint")
+            key = (
+                binding.listener_node_id or "",
+                endpoint or "",
+                binding.listener_capability or "",
+            )
+            if not any(key):
+                continue
+            peer = peers.get(key)
+            if peer is None:
+                peer_id = ":".join(part or "-" for part in key)
+                peer = SonoBusPeerSummary(
+                    peer_id=peer_id,
+                    listener_node_id=binding.listener_node_id,
+                    listener_endpoint=endpoint,
+                    listener_capability=binding.listener_capability,
+                    binding_count=0,
+                    enabled_binding_count=0,
+                )
+                peers[key] = peer
+            peer.binding_count += 1
+            if binding.enabled:
+                peer.enabled_binding_count += 1
+        return sorted(peers.values(), key=lambda p: p.peer_id)
+
+
+@router.get("/groups", response_model=list[SonoBusGroupSummary])
+async def list_groups() -> list[SonoBusGroupSummary]:
+    """T2521-5c — operator group view derived from bindings.
+
+    Aggregates by `group_id`. Skips rows without a `group_id` (peer
+    bindings, cluster-route bindings).
+    """
+    async with get_session(read_only=True) as session:
+        rows = await session.execute(
+            select(SonoBusBinding).where(SonoBusBinding.group_id.is_not(None))
+        )
+        groups: dict[str, SonoBusGroupSummary] = {}
+        for binding in rows.scalars().all():
+            gid = binding.group_id or ""
+            if not gid:
+                continue
+            group = groups.get(gid)
+            if group is None:
+                group = SonoBusGroupSummary(
+                    group_id=gid,
+                    session_label=binding.session_label,
+                    binding_count=0,
+                    enabled_binding_count=0,
+                    channel_count_total=0,
+                )
+                groups[gid] = group
+            group.binding_count += 1
+            if binding.enabled:
+                group.enabled_binding_count += 1
+            group.channel_count_total += int(binding.channel_count or 0)
+            # Prefer first non-null session_label seen.
+            if group.session_label is None and binding.session_label:
+                group.session_label = binding.session_label
+        return sorted(groups.values(), key=lambda g: g.group_id)
+
+
+@router.get("/sessions", response_model=list[SonoBusBindingRead])
+async def list_sessions() -> list[SonoBusBindingRead]:
+    """T2521-5c — active session view.
+
+    Returns enabled `binding_kind in {stream, client_session}`. Daemon
+    integration in T2521-4 will swap this for a live-session projection
+    fed by the AOO runtime; the contract stays the same.
+    """
+    async with get_session(read_only=True) as session:
+        authority = SonoBusBindingAuthority(session)
+        streams = await authority.list_by_kind("stream", enabled_only=True)
+        sessions = await authority.list_by_kind(
+            "client_session", enabled_only=True
+        )
+        return streams + sessions
+
+
 @router.get("/bindings", response_model=list[SonoBusBindingRead])
 async def list_bindings(
     consumer_type: Optional[SonoBusBindingConsumerType] = Query(default=None),
