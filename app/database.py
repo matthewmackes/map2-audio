@@ -668,6 +668,32 @@ def _ensure_avb_bindings_schema_sync() -> None:
             logger.info("Created avb_bindings table (T2490-2)")
 
 
+def _ensure_sonobus_bindings_schema_sync() -> None:
+    """T2521-3: create the sonobus_bindings table (canonical SonoBus/AOO
+    binding authority). Idempotent — checks for the table before creating.
+
+    Sister of `_ensure_avb_bindings_schema_sync`. See
+    app/services/sonobus/binding_models.py for the ORM model and the
+    T2521 epic in docs/PROJECT_WORKLIST.md plus
+    docs/architecture/SONOBUS_AOO_TRANSPORT.md for design intent.
+    """
+    if _engine is None or _engine.dialect.name != "sqlite":
+        return
+
+    from app.services.sonobus.binding_models import sonobus_bindings_table
+
+    with _engine.begin() as conn:
+        result = conn.execute(
+            text(
+                "SELECT name FROM sqlite_master "
+                "WHERE type='table' AND name='sonobus_bindings'"
+            )
+        )
+        if result.fetchone() is None:
+            sonobus_bindings_table.create(bind=conn)
+            logger.info("Created sonobus_bindings table (T2521-3)")
+
+
 def _sqlite_columns(conn, table_name: str) -> set[str]:
     result = conn.execute(text(f"PRAGMA table_info({table_name})"))
     return {str(row[1]) for row in result.fetchall()}
@@ -1092,6 +1118,27 @@ async def _ensure_avb_bindings_schema_async(conn) -> None:
         logger.info("Created avb_bindings table (T2490-2) via async path")
 
 
+async def _ensure_sonobus_bindings_schema_async(conn) -> None:
+    """T2521-3: async sibling of `_ensure_sonobus_bindings_schema_sync`.
+
+    Creates the sonobus_bindings table if it doesn't exist. Idempotent.
+    """
+    if conn.dialect.name != "sqlite":
+        return
+
+    from app.services.sonobus.binding_models import sonobus_bindings_table
+
+    result = await conn.execute(
+        text(
+            "SELECT name FROM sqlite_master "
+            "WHERE type='table' AND name='sonobus_bindings'"
+        )
+    )
+    if result.fetchone() is None:
+        await conn.run_sync(sonobus_bindings_table.create)
+        logger.info("Created sonobus_bindings table (T2521-3) via async path")
+
+
 async def _sqlite_columns_async(conn, table_name: str) -> set[str]:
     result = await conn.execute(text(f"PRAGMA table_info({table_name})"))
     return {str(row[1]) for row in result.fetchall()}
@@ -1420,6 +1467,13 @@ SCHEMA_MIGRATIONS: Sequence[tuple[int, str, MigrationSync, MigrationAsync]] = (
     # routing decision, SRP reservation) collapses into rows of this
     # table. T2490-3 refactors avb_router.py to consume this authority.
     (13, "avb_bindings_canonical_authority", _ensure_avb_bindings_schema_sync, _ensure_avb_bindings_schema_async),
+    # T2521-3: sonobus_bindings canonical authority table.
+    # Foundation for the SonoBus/AOO remote-audio transport — every
+    # operator-visible peer / group / stream / client-session intent
+    # collapses into rows of this table. T2521-4 daemon and T2521-5
+    # routes consume this authority. See
+    # docs/architecture/SONOBUS_AOO_TRANSPORT.md for locked decisions.
+    (14, "sonobus_bindings_canonical_authority", _ensure_sonobus_bindings_schema_sync, _ensure_sonobus_bindings_schema_async),
 )
 
 

@@ -4149,7 +4149,7 @@ Subtasks:
   - Completion notes:
     - 2026-05-13 20:30 EDT - Claude: Shipped `docs/architecture/SONOBUS_AOO_TRANSPORT.md` (8 sections, 5 mermaid diagrams, full Q1–Q21 decision table, `SonoBusBinding` data model, API surface table for `/api/sonobus/*` + `/ws/sonobus/events`, GUI region table for the 7 Carbon pages, licensing posture for AOO BSD-3 + SonoBus GPLv3, validation-gate matrix, risk register with 12 entries). Mirrors `AVB_SERVICES.md` template structure. T2521-3 (binding authority skeleton) is the next pickup.
 - ID: T2521-3
-  Status: [ ] Todo
+  Status: [✓] Done
   Title: Implement transport authority and persistence model
   Description:
   - Goal / acceptance criteria: Add canonical binding/session models for peers, groups, streams, codec profiles, jitter/latency settings, and desired/observed runtime state.
@@ -4157,7 +4157,9 @@ Subtasks:
   - Dependencies: T2521-1, T2521-2
   - Estimated effort: High
   - Required outputs/deliverables: DB models/migrations, service authority, schemas, tests.
-  Last updated: 2026-05-13 19:52 EDT - Codex
+  Last updated: 2026-05-13 20:55 EDT - Claude (twelfth Continue cycle 2)
+  - Completion notes:
+    - 2026-05-13 20:55 EDT - Claude: Shipped the canonical SonoBus binding authority. New package `app/services/sonobus/` with `binding_models.py` (`sonobus_bindings` ORM table + 7 indexes), `binding_schemas.py` (Pydantic Create/Update/Read with the locked defaults: PCM-24/48 per Q7-Q8, jitter 4 ms + burst_loss_only per Q9, channel cap 32 per Q14, AVB-preferred per Q18), `binding_authority.py` (the single-writer service with create/get/list_for_consumer/list_by_kind/list_for_group/list_for_cluster_pair/list_in_scope/update/disable/enable/delete/delete_for_consumer/count). Migration v14 registered in `app/database.py` with both sync and async helpers, idempotent table-creation. 16 pytest cases in `tests/sonobus/test_sonobus_binding_authority.py` green; AVB authority tests still green (13/13). Next pickup: T2521-5 `/api/sonobus/*` routes seeded by this authority.
 - ID: T2521-4
   Status: [ ] Todo
   Title: Build MAP2 SonoBus/AOO transport runtime
