@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1665** Python | **1704** TypeScript | **222** C++/H | **149** Docs | **4514** total commits | **4** stars | **0** forks | **0** open issues
+**1665** Python | **1704** TypeScript | **222** C++/H | **149** Docs | **4515** total commits | **4** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,6 +206,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`a2a34a43`](https://github.com/matthewmackes/map2-audio/commit/a2a34a43ed22b78cf9e3a561a2d000b07f92e2cc) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-14 |
 | [`8ac8e9ea`](https://github.com/matthewmackes/map2-audio/commit/8ac8e9ea2b9594377ada5da08c4696a090ea7e77) | docs(worklist): pivot-13c handoff (3 commits / 4 cycles, ... | Map2 Audio | 2026-05-14 |
 | [`f743f519`](https://github.com/matthewmackes/map2-audio/commit/f743f5198c64207a6f8a1948a75ab1c0321431e4) | feat(devices): pivot-13c-3 — captured_at staleness + engi... | Map2 Audio | 2026-05-14 |
 | [`fb4716c5`](https://github.com/matthewmackes/map2-audio/commit/fb4716c5329935966c41b7b3c931c4d1ddb92155) | feat(devices): pivot-13c-2 — /peak-meters/stream device_i... | Map2 Audio | 2026-05-14 |
@@ -213,7 +214,6 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 | [`2b18acbb`](https://github.com/matthewmackes/map2-audio/commit/2b18acbbaa9020d545a8d0d6a399bdb37c60b053) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-14 |
 | [`5e5b95e8`](https://github.com/matthewmackes/map2-audio/commit/5e5b95e82bfc9a8e3fb8689677f0255e7b1fdd26) | docs(worklist): pivot-13b handoff (4 cycles, eleventh-run... | Map2 Audio | 2026-05-14 |
 | [`dc92c432`](https://github.com/matthewmackes/map2-audio/commit/dc92c43247db9a54281f8d407be3ae124502682d) | feat(devices): pivot-13b-4 — overview column toggles + so... | Map2 Audio | 2026-05-14 |
-| [`72776228`](https://github.com/matthewmackes/map2-audio/commit/72776228549ffb6148ccf16c43986295f9678b8f) | feat(devices): pivot-13b-3 — useDevicesPeakMetersStream +... | Map2 Audio | 2026-05-14 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
