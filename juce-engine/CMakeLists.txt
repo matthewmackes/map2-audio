@@ -253,6 +253,33 @@ else()
 endif()
 
 # ========================================
+# SonoBus / AOO Remote-Audio Transport (Optional, T2521-8b)
+# ========================================
+# T2521-8b: stub CMake option for the future map2-sonobus-transport
+# daemon (T2521-4). When ON and vendor/aoo/CMakeLists.txt exists, the
+# AOO source tree gets vendored into the build. When the daemon binary
+# arrives in T2521-4 it picks up SONOBUS_AVAILABLE here.
+#
+# Defaults to ON per Q15 (install + enable by default), but the
+# AOO source isn't vendored yet so SONOBUS_AVAILABLE stays FALSE until
+# vendor/aoo/CMakeLists.txt is added.
+option(USE_SONOBUS "Enable MAP2 SonoBus / AOO remote-audio transport (T2521)" ON)
+set(SONOBUS_AVAILABLE FALSE)
+if(USE_SONOBUS)
+    set(SONOBUS_VENDOR_DIR "${CMAKE_CURRENT_LIST_DIR}/../vendor/aoo")
+    if(EXISTS "${SONOBUS_VENDOR_DIR}/CMakeLists.txt")
+        message(STATUS "SonoBus / AOO: ENABLED (vendored at ${SONOBUS_VENDOR_DIR})")
+        set(SONOBUS_AVAILABLE TRUE)
+        # add_subdirectory call lands with the T2521-4 daemon target,
+        # when the vendor tree carries an actual AOO source root.
+    else()
+        message(STATUS "SonoBus / AOO: PLANNED (vendor/aoo/ skeleton only — T2521-4 daemon lands the AOO source)")
+    endif()
+else()
+    message(STATUS "SonoBus / AOO: DISABLED (USE_SONOBUS=OFF)")
+endif()
+
+# ========================================
 # Source files - JUCE-based engine
 # ========================================
 set(SOURCES
