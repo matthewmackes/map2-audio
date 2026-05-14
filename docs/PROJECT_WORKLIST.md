@@ -4171,7 +4171,7 @@ Subtasks:
   - Required outputs/deliverables: Daemon/source files, CMake/build hooks if needed, JACK/PipeWire routing, IPC/API bridge, focused tests.
   Last updated: 2026-05-13 19:52 EDT - Codex
 - ID: T2521-5
-  Status: [ ] Todo
+  Status: [>] In Progress
   Title: Add `/api/sonobus/*` service routes and WebSocket events
   Description:
   - Goal / acceptance criteria: Expose status, peer/session CRUD, connect/disconnect, routing, codec/jitter profile, diagnostics, and event stream routes.
@@ -4179,7 +4179,9 @@ Subtasks:
   - Dependencies: T2521-3, T2521-4
   - Estimated effort: Medium
   - Required outputs/deliverables: FastAPI routes, OpenAPI-valid schemas, pytest coverage.
-  Last updated: 2026-05-13 19:52 EDT - Codex
+  Last updated: 2026-05-13 21:10 EDT - Claude (twelfth Continue cycle 3)
+  - Completion notes:
+    - 2026-05-13 21:10 EDT - Claude: First slice shipped — `app/services/sonobus/binding_routes.py` with `/api/sonobus/status`, `/api/sonobus/bindings/count`, `/api/sonobus/bindings/matrix`, `/api/sonobus/bindings` (GET with consumer / kind / group / cluster / scope filters, POST 201), `/api/sonobus/bindings/{id}` (GET / PATCH / DELETE), and `/api/sonobus/bindings/{id}/{disable,enable}`. Router mounted in `app/main.py` after the AVB Services mount with the same try/except guard. 12 scaffold tests + 9 live-HTTP TestClient tests green; full SonoBus suite now 16 + 12 + 9 = 37 cases. Still pending in T2521-5: peer/session/network/diagnostics/profiles routes + cluster matrix fan-out + WS event stream (queued for the next Continue cycle after the daemon scaffold lands).
 - ID: T2521-6
   Status: [ ] Todo
   Title: Build Carbon SonoBus service workspace from AVB template

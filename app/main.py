@@ -1319,6 +1319,22 @@ def create_app():
         except Exception as e:
             logger.warning(f"Failed to load AVB Services routes: {e}")
 
+        # T2521-5: SonoBus/AOO transport routes (/api/sonobus/*).
+        # Mirrors the AVB Services authority surface. Daemon-side
+        # endpoints (peers, sessions, network/server lifecycle,
+        # diagnostics, cluster matrix, WS events) land in later
+        # T2521-5 slices once the T2521-4 daemon is in place. The
+        # authority + bindings CRUD + status + matrix are live from
+        # this slice on.
+        try:
+            from app.services.sonobus.binding_routes import (
+                router as sonobus_services_router,
+            )
+            app.include_router(sonobus_services_router)
+            logger.info("SonoBus Services routes registered (T2521-5)")
+        except Exception as e:
+            logger.warning(f"Failed to load SonoBus Services routes: {e}")
+
         # T2492-1: Device-pack auto-generation routes
         # (POST /api/midi/devices/auto-generate/{lookup,synthesize,commit}).
         # The wizard frontend (DevicePackGeneratorModal) walks the
