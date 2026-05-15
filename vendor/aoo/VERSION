@@ -1,0 +1,21 @@
+# vendor/aoo VERSION
+
+status: PLACEHOLDER
+filed_under: T2521-8b
+landed: 2026-05-13
+expected_full_vendor: T2521-4
+
+When the full AOO source tree lands here under T2521-4, this VERSION
+file MUST carry:
+
+  - upstream_repo: https://git.iem.at/cm/aoo
+  - upstream_tag_or_commit: <git ref the vendor copy matches>
+  - vendored_at: <UTC ISO timestamp of the vendor pull>
+  - license: BSD-3-Clause (same as upstream)
+
+Until then the bare placeholder fields below hold the slot.
+
+upstream_repo: https://git.iem.at/cm/aoo
+upstream_tag_or_commit: <pending>
+vendored_at: <pending>
+license: BSD-3-Clause

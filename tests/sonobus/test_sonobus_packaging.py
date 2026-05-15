@@ -94,3 +94,88 @@ def test_installer_component_map_contains_sonobus():
         Path(packages_module.__file__).read_text()
     )
     assert '"sonobus":  SONOBUS_PACKAGES_FEDORA' in source
+
+
+# ---------------------------------------------------------------------------
+# T2521-8 cycle 29 — RPM spec entries + vendor/aoo skeleton + uninstaller
+# ---------------------------------------------------------------------------
+
+
+def test_rpm_spec_installs_sonobus_systemd_unit():
+    spec = (REPO_ROOT / "packaging" / "rpm" / "map2.spec").read_text()
+    assert "map2-sonobus-transport.service" in spec
+    assert "/usr/lib/systemd/system/map2-sonobus-transport.service" in spec
+
+
+def test_rpm_spec_installs_firewalld_fragment():
+    spec = (REPO_ROOT / "packaging" / "rpm" / "map2.spec").read_text()
+    assert "systemd/firewalld/map2-sonobus.xml" in spec
+    assert "/usr/lib/firewalld/services/map2-sonobus.xml" in spec
+
+
+def test_rpm_spec_installs_env_example():
+    spec = (REPO_ROOT / "packaging" / "rpm" / "map2.spec").read_text()
+    assert "etc/map2/sonobus.env.example" in spec
+
+
+def test_rpm_spec_has_preun_hook_for_sonobus_disable():
+    """%preun must stop + disable the SonoBus transport so the daemon
+    doesn't keep its UDP ports + RT priority across uninstall."""
+    spec = (REPO_ROOT / "packaging" / "rpm" / "map2.spec").read_text()
+    assert "%preun" in spec
+    assert "systemctl stop map2-sonobus-transport.service" in spec
+    assert "systemctl disable map2-sonobus-transport.service" in spec
+
+
+def test_rpm_spec_has_postun_hook_for_firewalld_cleanup():
+    """%postun must drop the firewalld zone fragment on full uninstall."""
+    spec = (REPO_ROOT / "packaging" / "rpm" / "map2.spec").read_text()
+    assert "%postun" in spec
+    assert "firewall-cmd --remove-service=map2-sonobus" in spec
+
+
+def test_rpm_spec_changelog_records_t2521_8():
+    spec = (REPO_ROOT / "packaging" / "rpm" / "map2.spec").read_text()
+    assert "T2521-8" in spec
+
+
+def test_packaging_systemd_directory_has_sonobus_unit_copy():
+    """The packaging/systemd/ copy used by the RPM install script must
+    match the canonical systemd/ copy."""
+    canonical = REPO_ROOT / "systemd" / "map2-sonobus-transport.service"
+    packaged = (
+        REPO_ROOT / "packaging" / "systemd" / "map2-sonobus-transport.service"
+    )
+    assert packaged.is_file(), f"missing packaging copy at {packaged}"
+    # Same content end-to-end so a future operator-only edit in either
+    # path doesn't silently drift.
+    assert canonical.read_text() == packaged.read_text()
+
+
+def test_vendor_aoo_placeholder_files_present():
+    """The vendor/aoo/ skeleton must carry a VERSION + LICENSE
+    placeholder so the licensing posture is visible before the full
+    source pull lands in T2521-4."""
+    version = REPO_ROOT / "vendor" / "aoo" / "VERSION"
+    license_placeholder = REPO_ROOT / "vendor" / "aoo" / "LICENSE.placeholder"
+    assert version.is_file(), "vendor/aoo/VERSION placeholder missing"
+    assert license_placeholder.is_file(), (
+        "vendor/aoo/LICENSE.placeholder missing"
+    )
+    version_text = version.read_text()
+    assert "BSD-3-Clause" in version_text
+    assert "T2521-4" in version_text
+
+
+def test_vendor_aoo_has_no_cmakelists_yet():
+    """The CMake guard at juce-engine/CMakeLists.txt checks for
+    vendor/aoo/CMakeLists.txt to flip SONOBUS_AVAILABLE=TRUE. Until
+    the full source vendor lands in T2521-4, that file must NOT
+    exist so the engine build correctly logs PLANNED instead of
+    ENABLED."""
+    cmake = REPO_ROOT / "vendor" / "aoo" / "CMakeLists.txt"
+    assert not cmake.exists(), (
+        "vendor/aoo/CMakeLists.txt landed before the T2521-4 source pull. "
+        "The CMake guard would now claim SONOBUS_AVAILABLE=TRUE without a "
+        "real AOO source tree — that's a contract regression."
+    )

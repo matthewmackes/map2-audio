@@ -1,0 +1,16 @@
+AOO (Audio Over OSC) — BSD-3-Clause LICENSE PLACEHOLDER
+
+The actual upstream LICENSE file lands here as `LICENSE` (no
+suffix) when the full AOO source tree is vendored under T2521-4.
+
+This placeholder exists so the vendor directory carries a visible
+license posture before the source pull. The expected text comes
+verbatim from upstream's repo at https://git.iem.at/cm/aoo/-/blob/
+master/LICENSE — BSD 3-Clause.
+
+Until the real LICENSE lands, packagers MUST treat the AOO source
+as unvendored: the CMake gate at juce-engine/CMakeLists.txt line
+~270 checks for `vendor/aoo/CMakeLists.txt` (not LICENSE), so this
+placeholder is informational only.
+
+Filed under: T2521-8b (cycle 29, 2026-05-15).

@@ -75,6 +75,14 @@ install -m 644 packaging/systemd/map2-avb.target %{buildroot}/usr/lib/systemd/sy
 install -m 644 packaging/systemd/map2-ptp4l.service %{buildroot}/usr/lib/systemd/system/
 install -m 644 packaging/systemd/map2-phc2sys.service %{buildroot}/usr/lib/systemd/system/
 install -m 644 packaging/systemd/map2-srpd.service %{buildroot}/usr/lib/systemd/system/
+# T2521-8 — SonoBus / AOO remote-audio transport unit, env example,
+# and firewalld zone fragment. ExecStart binary lands with T2521-4
+# (until then the unit fails-to-start by design and an operator can
+# disable it via `systemctl disable map2-sonobus-transport.service`).
+install -m 644 packaging/systemd/map2-sonobus-transport.service %{buildroot}/usr/lib/systemd/system/
+install -m 644 etc/map2/sonobus.env.example %{buildroot}/etc/map2/sonobus.env.example
+mkdir -p %{buildroot}/usr/lib/firewalld/services
+install -m 644 systemd/firewalld/map2-sonobus.xml %{buildroot}/usr/lib/firewalld/services/map2-sonobus.xml
 
 mkdir -p %{buildroot}/usr/bin
 ln -s /opt/map2/scripts/cli.py %{buildroot}/usr/bin/map2-cli
@@ -82,6 +90,27 @@ ln -s /opt/map2/scripts/self_test.py %{buildroot}/usr/bin/map2-self-test
 
 %post
 useradd -r -s /bin/false map2 2>/dev/null || true
+# T2521-8 — reload firewalld so the SonoBus zone fragment becomes
+# available. Best-effort; firewalld may not be installed on minimal
+# images. The MAP2 service starts independent of firewalld.
+firewall-cmd --reload >/dev/null 2>&1 || true
+
+%preun
+# T2521-8 — stop + disable the SonoBus transport on uninstall so
+# the daemon doesn't keep its UDP ports + RT priority during the
+# package removal. Run only on full uninstall (arg=0); skip on upgrade.
+if [ $1 -eq 0 ]; then
+    systemctl stop map2-sonobus-transport.service >/dev/null 2>&1 || true
+    systemctl disable map2-sonobus-transport.service >/dev/null 2>&1 || true
+fi
+
+%postun
+# T2521-8 — drop the firewalld service fragment if the operator
+# enabled it. Best-effort; missing firewalld is not an error.
+if [ $1 -eq 0 ]; then
+    firewall-cmd --remove-service=map2-sonobus --permanent >/dev/null 2>&1 || true
+    firewall-cmd --reload >/dev/null 2>&1 || true
+fi
 
 %files
 %license /opt/map2/LICENSE
@@ -96,9 +125,16 @@ useradd -r -s /bin/false map2 2>/dev/null || true
 /usr/lib/systemd/system/map2-phc2sys.service
 /usr/lib/systemd/system/map2-srpd.service
 /usr/lib/systemd/system/map2-avb.target
+/usr/lib/systemd/system/map2-sonobus-transport.service
+/usr/lib/firewalld/services/map2-sonobus.xml
 /usr/bin/map2-cli
 /usr/bin/map2-self-test
 
 %changelog
+* Thu May 15 2026 Audio Team <audio@example.com>
+- T2521-8: add SonoBus / AOO transport scaffolding (systemd unit,
+  firewalld zone fragment, env example). Daemon binary lands with
+  T2521-4. %preun stops + disables the unit on uninstall; %postun
+  drops the firewalld fragment.
 * Thu Jan 16 2026 Audio Team <audio@example.com>
 - Initial release

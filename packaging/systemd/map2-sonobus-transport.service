@@ -1,0 +1,119 @@
+[Unit]
+Description=MAP2 SonoBus / AOO remote-audio transport daemon
+Documentation=https://github.com/matthewmackes/map2-audio
+Documentation=file:///home/mm/map2-audio/docs/architecture/SONOBUS_AOO_TRANSPORT.md
+# T2521-8 — service unit scaffolding shipped ahead of the T2521-4 daemon
+# binary. Per the locked Q15 decision the daemon is installed and
+# enabled by default; until T2521-4 lands `map2-sonobus-transport`, the
+# unit will fail to start (ExecStart binary missing) and is therefore
+# masked-by-presence rather than actually running. The systemd entry
+# exists now so installer + RPM + firewall coverage can land in this
+# slice.
+#
+# Order: starts AFTER sound.target so JACK/PipeWire are available for
+# the daemon's port handoff. Stays off the isolated audio cores (4,5)
+# — the AOO source/sink runtime is non-RT.
+After=network.target sound.target map2-irq-affinity.service
+Wants=sound.target
+StartLimitIntervalSec=300
+StartLimitBurst=5
+
+[Service]
+Type=simple
+User=mm
+Group=mm
+
+# Audio + JACK access for the AOO source/sink JACK client.
+SupplementaryGroups=audio
+
+WorkingDirectory=/home/mm/map2-audio
+Environment="PATH=/usr/local/bin:/usr/bin:/bin:/home/mm/.local/bin"
+
+# Standard XDG runtime + DBus session vars so PipeWire/JACK clients
+# can find the per-user session bus when running under systemd.
+Environment="XDG_RUNTIME_DIR=/run/user/1000"
+Environment="DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/1000/bus"
+Environment="JACK_DEFAULT_SERVER=pipewire"
+
+# Q3 — MAP2 hosts its own AOO/SonoBus connection server by default.
+# Operator can disable in /etc/map2/environment by setting
+# MAP2_SONOBUS_CONNECTION_SERVER=0.
+Environment="MAP2_SONOBUS_CONNECTION_SERVER=1"
+
+# Q14 — full multichannel from day one. The daemon caps per-binding
+# channel_count at 32 by default; this env var is the system-wide cap
+# the schema layer reads on startup.
+Environment="MAP2_SONOBUS_MAX_CHANNELS=32"
+
+# Q18 — default transport priority. The authority's per-binding
+# default reads from here.
+Environment="MAP2_SONOBUS_DEFAULT_TRANSPORT_PRIORITY=avb_preferred"
+
+# Default UDP port range (10000-10100). Firewalld zone fragment
+# `map2-sonobus.xml` opens the same range.
+Environment="MAP2_SONOBUS_UDP_PORT_BASE=10000"
+Environment="MAP2_SONOBUS_UDP_PORT_COUNT=100"
+
+EnvironmentFile=-/etc/map2/environment
+EnvironmentFile=-/etc/map2/sonobus.env
+
+# T2521-8 — placeholder ExecStart. The actual binary is delivered by
+# T2521-4 and will replace this path. systemctl will fail-to-start
+# until then, which is the intended state — the unit exists so the
+# installer + firewall + env land atomically, but the daemon is not
+# expected to run yet.
+ExecStart=/home/mm/map2-audio/juce-engine/build/map2-sonobus-transport \
+  --socket /run/map2/sonobus-transport.sock \
+  --port-base ${MAP2_SONOBUS_UDP_PORT_BASE} \
+  --port-count ${MAP2_SONOBUS_UDP_PORT_COUNT}
+
+# Graceful shutdown. The daemon handles SIGTERM by closing AOO
+# source/sink instances and JACK ports cleanly + flushing pending IPC
+# frames. ~5s is typical; force-kill at 15s.
+ExecStop=/bin/kill -TERM $MAINPID
+TimeoutStopSec=15
+TimeoutStartSec=30
+
+Restart=on-failure
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=map2-sonobus-transport
+
+# Modest RT eligibility for the AOO send/receive thread (below
+# audio-callback at 80, below libremidi I/O at 70). Network jitter
+# absorption is the daemon's primary job; SCHED_FIFO/40 is enough.
+LimitRTPRIO=40
+LimitMEMLOCK=infinity
+LimitNOFILE=65536
+
+# CPU affinity: stay off the isolated audio cores (4,5). The
+# AOO source/sink runtime is non-RT — JACK absorbs the audio handoff
+# via the lock-free port queue.
+CPUAffinity=0 1 2 3
+
+AmbientCapabilities=CAP_SYS_NICE CAP_NET_BIND_SERVICE
+CapabilityBoundingSet=CAP_SYS_NICE CAP_NET_BIND_SERVICE
+
+# UDS socket cleanup — same pattern as map2-controller-host.
+ExecStartPre=/bin/mkdir -p /run/map2
+ExecStartPre=/bin/chmod 0755 /run/map2
+
+# SELinux context fix for the daemon binary, mirroring map2-controller-host.
+# T2521-4 will replace the binary at the path below.
+ExecStartPre=+/usr/bin/chcon -t bin_t /home/mm/map2-audio/juce-engine/build/map2-sonobus-transport
+
+# Hardening — the daemon does not need most of the host filesystem.
+ProtectSystem=strict
+ReadWritePaths=/run/map2
+ProtectHome=read-only
+PrivateTmp=true
+NoNewPrivileges=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictRealtime=false
+RestrictNamespaces=true
+
+[Install]
+WantedBy=multi-user.target
