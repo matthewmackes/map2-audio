@@ -1784,14 +1784,23 @@
   gap: 0.5rem;
 }
 
+/* T2522-E-F9 — pad-shape unification. The Twin SVG pads, the
+   Performance CSS pads, and the Ops Console CSS pads previously
+   used 3 different visual idioms across the page. Canonical
+   shape: 8px border-radius + 2px border-width + the same
+   border color-mix ratio Performance uses. Ops Console pads
+   stay rectangular (vs Perf's 1:1 aspect-ratio) because the
+   content includes a Tag + name + ButtonSet that wouldn't fit
+   in a square; everything else aligns. */
 .maschine-ops__grid-pad {
   display: grid;
   gap: 0.35rem;
   padding: 0.6rem 0.65rem;
   min-height: 6.5rem;
-  border: 1px solid color-mix(in srgb, var(--cds-border-subtle) 60%, transparent);
+  border: 2px solid color-mix(in srgb, var(--cds-border-subtle) 50%, transparent);
   background: color-mix(in srgb, var(--cds-layer-02) 50%, transparent);
-  border-radius: 4px;
+  border-radius: 8px;
+  transition: border-color var(--map2-dur-fast, 140ms) ease;
 }
 
 .maschine-ops__grid-pad--empty {
