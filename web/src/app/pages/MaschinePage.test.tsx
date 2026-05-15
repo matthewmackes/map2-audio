@@ -22,6 +22,23 @@ jest.mock('../../map2/clients/stateAuthority', () => ({
       y,
       configured_corners: [],
     })),
+    getReconciliationMetrics: jest.fn(async () => ({
+      metrics: {
+        local_runs_total: 0,
+        local_drift_detected_total: 0,
+        local_corrections_applied_total: 0,
+        local_reactivations_required_total: 0,
+        cluster_runs_total: 0,
+        cluster_nodes_with_drift_total: 0,
+        last_local_reconcile_unix_s: 0,
+        last_cluster_reconcile_unix_s: 0,
+        last_local_status: 'IDLE',
+        last_cluster_status: 'IDLE',
+        last_local_error: null,
+        last_cluster_error: null,
+      },
+      prometheus: '',
+    })),
   },
 }))
 

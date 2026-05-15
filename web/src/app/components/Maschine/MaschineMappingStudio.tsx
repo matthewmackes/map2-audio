@@ -3,6 +3,7 @@ import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useEffect, useMemo, useState } from 'react'
 
 import { MaschinePadLedChoreography } from './MaschinePadLedChoreography'
+import { MaschinePhaseStrip } from './MaschinePhaseStrip'
 import { maschineApi } from '../../../map2/clients/maschine'
 import type {
   MaschineDaemonStatus,
@@ -202,6 +203,8 @@ export function MaschineMappingStudio({ status, encoderMap, refetchStatus }: Map
           {(saveMutation.error as Error)?.message ?? 'Failed to save encoder map'}
         </Tile>
       ) : null}
+
+      <MaschinePhaseStrip />
 
       <div className="maschine-mapping__panes">
         <Tile className="maschine-mapping__sources">

@@ -684,6 +684,70 @@
   flex: 0 0 auto;
 }
 
+/* T2522-D cycle 11 — State Authority phase strip */
+.maschine-phase-strip {
+  padding: 1rem 1.25rem !important;
+  display: grid;
+  gap: 0.6rem;
+}
+
+.maschine-phase-strip__head {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+}
+
+.maschine-phase-strip__head-left {
+  flex: 1;
+}
+
+.maschine-phase-strip__metrics {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(11rem, 1fr));
+  gap: 0.75rem;
+  margin: 0;
+}
+
+.maschine-phase-strip__metrics > div {
+  padding: 0.45rem 0.6rem;
+  background: var(--cds-layer-02);
+  border: 1px solid color-mix(in srgb, var(--cds-border-subtle) 60%, transparent);
+  border-radius: 4px;
+}
+
+.maschine-phase-strip__metrics dt {
+  font-size: 0.7rem;
+  color: var(--cds-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  margin: 0;
+}
+
+.maschine-phase-strip__metrics dd {
+  margin: 0.15rem 0 0;
+  font-size: 0.95rem;
+  font-weight: 600;
+  color: var(--cds-text-primary);
+  font-variant-numeric: tabular-nums;
+}
+
+.maschine-phase-strip__hint {
+  margin: 0;
+  font-size: 0.8rem;
+  color: var(--cds-text-secondary);
+  padding: 0.5rem 0.6rem;
+  background: color-mix(in srgb, #33b1ff 10%, var(--cds-layer-02));
+  border-left: 3px solid #33b1ff;
+  border-radius: 3px;
+}
+
+.maschine-phase-strip__error {
+  margin: 0;
+  color: var(--cds-support-error);
+  font-size: 0.85rem;
+}
+
 /* T2522-C cycle 6 — Pressure / velocity curve editor */
 .maschine-curve-editor {
   padding: 1.25rem !important;

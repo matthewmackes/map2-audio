@@ -10,6 +10,29 @@ import type {
 
 // T2522-D cycle 9 — Mapping Studio scaffold + drag-drop primitive.
 
+jest.mock('../../../map2/clients/stateAuthority', () => ({
+  __esModule: true,
+  stateAuthorityApi: {
+    getReconciliationMetrics: jest.fn(async () => ({
+      metrics: {
+        local_runs_total: 0,
+        local_drift_detected_total: 0,
+        local_corrections_applied_total: 0,
+        local_reactivations_required_total: 0,
+        cluster_runs_total: 0,
+        cluster_nodes_with_drift_total: 0,
+        last_local_reconcile_unix_s: 0,
+        last_cluster_reconcile_unix_s: 0,
+        last_local_status: 'IDLE',
+        last_cluster_status: 'IDLE',
+        last_local_error: null,
+        last_cluster_error: null,
+      },
+      prometheus: '',
+    })),
+  },
+}))
+
 jest.mock('../../../map2/clients/maschine', () => ({
   __esModule: true,
   maschineApi: {
