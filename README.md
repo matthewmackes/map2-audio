@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1675** Python | **1742** TypeScript | **222** C++/H | **149** Docs | **4614** total commits | **4** stars | **0** forks | **0** open issues
+**1675** Python | **1746** TypeScript | **222** C++/H | **149** Docs | **4616** total commits | **4** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`23d93c35`](https://github.com/matthewmackes/map2-audio/commit/23d93c354586cd1ff6198b4a688688d0d1af6edd) | feat(snapshot-editor): T2521-7 cycle 35 — Remote-peer flo... | Map2 Audio | 2026-05-15 |
+| [`e28fea7b`](https://github.com/matthewmackes/map2-audio/commit/e28fea7be83a99306cea918c0cd61019dd94130d) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-15 |
 | [`e67f0ad9`](https://github.com/matthewmackes/map2-audio/commit/e67f0ad92d2fc44d625aec1fb1fcfbd083e65d4a) | feat(snapshot-publish): T2521-7 cycle 34 — SonoBus exposu... | Map2 Audio | 2026-05-15 |
 | [`6b3386bc`](https://github.com/matthewmackes/map2-audio/commit/6b3386bcf5242f1c5f89579c9bf9da45b351fa75) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-15 |
 | [`8536aec5`](https://github.com/matthewmackes/map2-audio/commit/8536aec51972ece48eef0dd81f91ec92fa9b2951) | refactor(snapshot-editor): T2473 cycle 33 — hero-card han... | Map2 Audio | 2026-05-15 |
 | [`95f1410d`](https://github.com/matthewmackes/map2-audio/commit/95f1410dabf9462cf3a61638ad40c9c20a07e084) | feat(nav): collapse Home + Snapshot Editor + Sequencer ro... | Map2 Audio | 2026-05-15 |
 | [`ae090b67`](https://github.com/matthewmackes/map2-audio/commit/ae090b6713e5ca1fc3f0ad71e87363bf5d470abc) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-15 |
 | [`bb44f451`](https://github.com/matthewmackes/map2-audio/commit/bb44f451df2f815e03d877aac055f03065c190e5) | chore(maschine): T2522-E-F9 cycle 32 — Diagnostics pad sh... | Map2 Audio | 2026-05-15 |
-| [`222d4f56`](https://github.com/matthewmackes/map2-audio/commit/222d4f56d24f6961f9f061f1aec6de6252467cd3) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-15 |
-| [`50ae668b`](https://github.com/matthewmackes/map2-audio/commit/50ae668bf6a28c5d6188ead894eec69c50df8a35) | chore(maschine): T2522-E-F2 cycle 31 — tokenize Carbon-eq... | Map2 Audio | 2026-05-15 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
