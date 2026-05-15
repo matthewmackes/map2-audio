@@ -9,6 +9,33 @@ import type {
   MaschineHidEvent,
 } from '../../../map2/types'
 
+// T2523-C — Performance tab now mounts MaschineLooperSection, which
+// polls /api/v1/looper/status via TanStack Query. Stub the client
+// so the test doesn't hit the network and so the LooperSection
+// query never resolves to ``undefined`` (which TanStack rejects).
+jest.mock('../../../map2/clients/looper', () => ({
+  __esModule: true,
+  looperApi: {
+    getStatus: jest.fn(async () => ({
+      tracks: [],
+      active_track_count: 0,
+      sync_master: false,
+      master_level_db: 0,
+      master_muted: false,
+      bpm: null,
+      sync_master_track: null,
+      recent_activity: [],
+      metrics: {},
+      preset_names: [],
+    })),
+    play: jest.fn(),
+    stop: jest.fn(),
+    record: jest.fn(),
+    restart: jest.fn(),
+    clear: jest.fn(),
+  },
+}))
+
 // The Quad Morph zone mounts the State Authority MorphPad which
 // hits stateAuthorityApi on render. Stub it out — MorphPad's own
 // network behavior is covered by its dedicated test.

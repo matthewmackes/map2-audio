@@ -1,6 +1,7 @@
 import { Tag, Tile } from '@carbon/react'
 import { useEffect, useMemo, useState } from 'react'
 
+import { MaschineLooperSection } from './MaschineLooperSection'
 import { MaschinePadCurveEditor } from './MaschinePadCurveEditor'
 import { MaschineQuadMorphZone } from './MaschineQuadMorphZone'
 import { MaschineStepSequencer } from './MaschineStepSequencer'
@@ -248,6 +249,8 @@ export function MaschinePerformanceTab({
       <MaschinePadCurveEditor hidEvents={hidEvents} />
 
       <MaschineStepSequencer />
+
+      <MaschineLooperSection hidEvents={hidEvents} />
 
       <MaschineQuadMorphZone hidEvents={hidEvents} />
     </div>

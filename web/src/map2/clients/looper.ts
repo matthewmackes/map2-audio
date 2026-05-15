@@ -139,6 +139,13 @@ export const looperApi = {
   undo:      (track: number) => fetchJson<LooperStatus>(`${BASE}/track/${track}/undo`,   { method: 'POST' }),
   redo:      (track: number) => fetchJson<LooperStatus>(`${BASE}/track/${track}/redo`,   { method: 'POST' }),
 
+  // T2523 — Maschine MK1 (and any future transport surface) drives
+  // these verbs over the same surface as record/stop. Backend has
+  // matching routes since the T2523-A backend slice.
+  play:           (track: number) => fetchJson<LooperStatus>(`${BASE}/track/${track}/play`,             { method: 'POST' }),
+  restart:        (track: number) => fetchJson<LooperStatus>(`${BASE}/track/${track}/restart`,          { method: 'POST' }),
+  toggleQuantize: (track: number) => fetchJson<LooperStatus>(`${BASE}/track/${track}/toggle-quantize`, { method: 'POST' }),
+
   setLevel:    (track: number, db: number)    => patch(`${BASE}/track/${track}/level`,      { db }),
   setMuted:    (track: number, muted: boolean) => patch(`${BASE}/track/${track}/muted`,      { value: muted }),
   setSoloed:   (track: number, soloed: boolean) => patch(`${BASE}/track/${track}/soloed`,    { value: soloed }),

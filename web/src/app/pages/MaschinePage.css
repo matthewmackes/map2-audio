@@ -1732,3 +1732,108 @@
   word-break: break-word;
 }
 
+/* T2523-C — Performance tab Looper section. */
+
+.maschine-perf__looper-section {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  padding: 1rem 1.25rem;
+}
+
+.maschine-perf__looper-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.maschine-perf__looper-header h4 {
+  margin: 0 0.5rem 0 0;
+  font-size: 1rem;
+  font-weight: 600;
+}
+
+.maschine-perf__looper-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 0.5rem 0.75rem;
+}
+
+.maschine-perf__looper-track {
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding: 0.5rem 0.75rem;
+  background: var(--cds-layer-02);
+  border: 1px solid var(--cds-border-subtle);
+  border-radius: 4px;
+}
+
+.maschine-perf__looper-track--active {
+  border-color: var(--cds-support-info, #0f62fe);
+  box-shadow: 0 0 0 1px var(--cds-support-info, #0f62fe);
+}
+
+.maschine-perf__looper-track-meta {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.maschine-perf__looper-track-label {
+  font-family: var(--cds-code-02-font-family, monospace);
+  font-weight: 600;
+}
+
+.maschine-perf__looper-track-layers {
+  color: var(--cds-text-secondary);
+  font-family: var(--cds-code-02-font-family, monospace);
+  font-size: 0.78rem;
+}
+
+.maschine-perf__looper-track-bar {
+  position: relative;
+  height: 8px;
+  background: var(--cds-layer-accent-01);
+  border-radius: 4px;
+  overflow: hidden;
+}
+
+.maschine-perf__looper-track-bar-fill {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  left: 0;
+  background: var(--cds-support-info, #0f62fe);
+  transition: width 80ms linear;
+}
+
+.maschine-perf__looper-transport {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.5rem;
+}
+
+.maschine-perf__looper-transport [data-maschine-looper-flash="on"] {
+  animation: maschine-looper-flash 200ms ease-out;
+}
+
+@keyframes maschine-looper-flash {
+  0% {
+    box-shadow: 0 0 0 0 var(--cds-support-info, #0f62fe);
+  }
+  60% {
+    box-shadow: 0 0 0 6px rgba(15, 98, 254, 0.35);
+  }
+  100% {
+    box-shadow: 0 0 0 0 var(--cds-support-info, #0f62fe);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .maschine-perf__looper-transport [data-maschine-looper-flash="on"] {
+    animation: none;
+  }
+}
+
