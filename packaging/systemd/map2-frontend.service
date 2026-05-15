@@ -17,6 +17,11 @@ EnvironmentFile=-/etc/map2/environment.d/*.env
 ExecStart=/usr/bin/python3 -m http.server --directory /opt/map2-audio/web/dist 3000
 Restart=on-failure
 RestartSec=10
+
+# T2529-B2 — capability bounding set. Port 3000 is unprivileged, no
+# capabilities needed.
+CapabilityBoundingSet=
+AmbientCapabilities=
 StandardOutput=journal
 StandardError=journal
 SyslogIdentifier=map2-frontend

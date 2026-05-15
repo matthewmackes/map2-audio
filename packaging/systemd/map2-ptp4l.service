@@ -15,5 +15,27 @@ RestartSec=5s
 # Note: No Requires= to prevent blocking boot if unavailable
 # ptp4l output goes to journal for monitoring
 
+# T2529-B2 — ptp4l needs CAP_NET_ADMIN to bind raw PTP sockets +
+# CAP_SYS_TIME to adjust the PTP hardware clock.
+AmbientCapabilities=CAP_NET_ADMIN CAP_NET_RAW CAP_SYS_TIME
+CapabilityBoundingSet=CAP_NET_ADMIN CAP_NET_RAW CAP_SYS_TIME
+
+# T2529-B1 — sandbox model. PTP4L is a root daemon; the full Protect*
+# set applies the same as the AVB SRPD.
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectKernelLogs=true
+ProtectControlGroups=true
+ProtectHostname=true
+RestrictSUIDSGID=true
+RestrictNamespaces=true
+LockPersonality=true
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6 AF_NETLINK AF_PACKET
+ReadWritePaths=/var/log/map2
+
 [Install]
 WantedBy=map2-avb.target

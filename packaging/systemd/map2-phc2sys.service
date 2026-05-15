@@ -16,5 +16,26 @@ ExecStart=/usr/sbin/phc2sys -a -r -m
 Restart=on-failure
 RestartSec=5s
 
+# T2529-B2 — phc2sys needs CAP_SYS_TIME to set the system clock from
+# the PTP hardware clock + CAP_NET_ADMIN to read the PHC over netlink.
+AmbientCapabilities=CAP_SYS_TIME CAP_NET_ADMIN
+CapabilityBoundingSet=CAP_SYS_TIME CAP_NET_ADMIN
+
+# T2529-B1 — sandbox model.
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectKernelLogs=true
+ProtectControlGroups=true
+# ProtectClock=false — phc2sys's whole job is to set the clock
+RestrictSUIDSGID=true
+RestrictNamespaces=true
+LockPersonality=true
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6 AF_NETLINK
+ReadWritePaths=/var/log/map2
+
 [Install]
 WantedBy=map2-avb.target

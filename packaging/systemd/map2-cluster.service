@@ -19,6 +19,11 @@ EnvironmentFile=-/etc/map2/environment.d/*.env
 ExecStart=/usr/bin/python3 -m app.services.cluster.cluster_daemon
 Restart=on-failure
 RestartSec=10
+
+# T2529-B2 — capability bounding set. Cluster service needs no privileges;
+# empty bounding set drops every CAP_*.
+CapabilityBoundingSet=
+AmbientCapabilities=
 StandardOutput=journal
 StandardError=journal
 SyslogIdentifier=map2-cluster

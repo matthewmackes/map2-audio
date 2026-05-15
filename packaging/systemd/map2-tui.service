@@ -22,6 +22,11 @@ EnvironmentFile=-/etc/map2/environment.d/*.env
 ExecStart=/usr/bin/python3 -m tui.app
 Restart=on-failure
 RestartSec=5
+
+# T2529-B2 — capability bounding set. TUI needs no capabilities; the
+# empty bounding set drops every CAP_* per `man 7 capabilities`.
+CapabilityBoundingSet=
+AmbientCapabilities=
 StandardOutput=journal
 StandardError=journal
 SyslogIdentifier=map2-tui

@@ -21,6 +21,11 @@ Restart=on-failure
 RestartSec=5
 StateDirectory=map2/prometheus
 
+# T2529-B2 — capability bounding set. Binds 127.0.0.1:9090 (unprivileged),
+# no caps needed.
+CapabilityBoundingSet=
+AmbientCapabilities=
+
 # T2529-B1 — full sandbox model.
 NoNewPrivileges=yes
 PrivateTmp=yes

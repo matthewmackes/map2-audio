@@ -22,6 +22,11 @@ ExecStart=/usr/sbin/grafana-server \
 Restart=on-failure
 RestartSec=5
 
+# T2529-B2 — capability bounding set. Grafana binds port 3000 by default
+# (unprivileged); no capabilities needed.
+CapabilityBoundingSet=
+AmbientCapabilities=
+
 # T2529-B1 — full sandbox model.
 NoNewPrivileges=yes
 PrivateTmp=yes
