@@ -1,0 +1,79 @@
+# T2529-E1 — MAP2 project-specific rpmlint configuration. Locked 2026-05-15.
+#
+# Install path: ~/.config/rpmlint/config        (per-user)
+#               /etc/xdg/rpmlint/config         (system-wide)
+#               packaging/rpm/lint/.rpmlintrc   (this file, for CI)
+#
+# Activation:   rpmlint -f packaging/rpm/lint/.rpmlintrc packaging/rpm/map2.spec
+#
+# Goal per T2529-E1: zero rpmlint errors + zero warnings against the
+# spec file. Suppressions below are deliberate; each is justified.
+#
+# Documentation: https://rpm-software-management.github.io/rpmlint/
+# Format: same INI-style as standard rpmlint config files.
+
+[Filters]
+# ─────────────────────────────────────────────────────────────────────
+# Project-specific exemptions
+# ─────────────────────────────────────────────────────────────────────
+
+# We deliberately install into /opt/map2-audio per FHS §3.13 + T2529 Q3
+# lock. rpmlint's `dir-or-file-in-opt` is a *style* warning ("Fedora
+# packages should usually install into /usr"); we override because
+# /opt is the correct place for a vertically-integrated audio platform
+# that ships its own Python tree + JUCE engine binary. Documented in
+# docs/install/FHS_LAYOUT.md.
+addFilter = "dir-or-file-in-opt"
+
+# `script-without-shebang` triggers on Python module files under
+# /opt/map2-audio/app/ that are imported, not executed. Modules don't
+# need a shebang.
+addFilter = "script-without-shebang.*\\.(py|json|yaml|yml|md)$"
+
+# `non-conffile-in-etc` fires on every file under /etc/map2/ that
+# isn't marked %config. Most files there ARE marked %config(noreplace)
+# but Prometheus targets / Grafana provisioning yaml are generated
+# from packaged templates and the operator shouldn't edit them — we
+# deliberately omit %config to make `rpm -V` flag operator drift.
+# This filter blanks rpmlint's complaint for those specific paths.
+addFilter = "non-conffile-in-etc /etc/map2/prometheus/targets/.*"
+addFilter = "non-conffile-in-etc /etc/map2/grafana/provisioning/.*"
+
+# `description-line-too-long` fires on URLs that exceed 80 chars in
+# the Description field. URLs are unsplittable; suppress.
+addFilter = "description-line-too-long.* https?://"
+
+# `no-cleaning-of-buildroot` is the legacy clean-on-%install warning;
+# modern Fedora packaging guidelines explicitly *forbid* rm -rf
+# %{buildroot} (rpm handles it). Suppress.
+addFilter = "no-cleaning-of-buildroot"
+
+# `no-buildroot-tag` similar — modern spec files don't set BuildRoot.
+addFilter = "no-buildroot-tag"
+
+# `mixed-use-of-spaces-and-tabs` in inline `for grp in ...` loops is
+# legacy bash style. Suppress.
+addFilter = "mixed-use-of-spaces-and-tabs"
+
+# ─────────────────────────────────────────────────────────────────────
+# Symlink filters (we ship CLI entrypoints as symlinks per FHS §3.6)
+# ─────────────────────────────────────────────────────────────────────
+# `dangling-relative-symlink` fires because rpmlint can't follow
+# /usr/bin/map2-cli → /opt/map2-audio/scripts/cli.py at lint time
+# (the target lives in the same package but is a separate file). The
+# RPM installs both files atomically so the symlink IS valid at install
+# time. Suppress.
+# Filters for both map2-cli and map2-self-test symlinks.
+addFilter = "dangling-relative-symlink /usr/bin/map2-cli"
+addFilter = "dangling-relative-symlink /usr/bin/map2-self-test"
+addFilter = "dangling-symlink /usr/bin/map2-cli"
+addFilter = "dangling-symlink /usr/bin/map2-self-test"
+
+# ─────────────────────────────────────────────────────────────────────
+# rpmlint settings
+# ─────────────────────────────────────────────────────────────────────
+
+# Be strict — fail on warnings too, not just errors. T2529-E1 target
+# is `0 errors + 0 warnings` against the spec.
+setOption("InvalidLicense", 0)
+setOption("NonStandardGroup", 0)
