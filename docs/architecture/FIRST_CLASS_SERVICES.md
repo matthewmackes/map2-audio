@@ -1,24 +1,25 @@
 # First-class platform service offerings
 
-**Status**: Template established 2026-05-01 by T2482 (MIDI Services). Reusable across the four-services platform model.
+**Status**: Template established 2026-05-01 by T2482 (MIDI Services). Reusable across the five-services platform model (T2521 added SonoBus as the 5th first-class service offering on 2026-05-15).
 
 **Predecessor**: `~/.claude/projects/-home-mm-map2-audio/memory/project_first_class_services.md` (the standing platform directive).
 **Reference implementation**: `docs/architecture/MIDI_SERVICES.md` + `docs/architecture/MIDI_BACKEND.md` + the T2482 epic in `docs/PROJECT_WORKLIST.md`. Read those first; this doc is the abstraction over them.
 
 ---
 
-## 1. The four-services platform model
+## 1. The five-services platform model
 
-MAP2 is **four first-class platform service offerings** on equal architectural footing:
+MAP2 is **five first-class platform service offerings** on equal architectural footing:
 
-| Service | Status (2026-05-01) | Canonical surface | Canonical authority |
+| Service | Status (2026-05-15) | Canonical surface | Canonical authority |
 |---|---|---|---|
 | **MIDI Services** | Phase 2 SHIPPED, Phase 3 user-gated | `/midi` (Phase 3 pending) | `MidiBinding` table |
-| **AVB Services** | Epic stub queued | TBD (likely `/avb`) | TBD (stream + entity authority) |
+| **AVB Services** | Phase 1 SHIPPED | `/avb` | AVB stream + entity authority |
 | **Sampler Services** | Epic stub queued | TBD (likely `/sampler`) | TBD (asset + instrument authority) |
 | **Audio Effects Services** | Epic stub queued | TBD (likely `/effects`) | State Authority graph (already partial) |
+| **SonoBus / AOO Remote Transport** | Code-side complete (T2521 cycles 26-36, 2026-05-15); bench-gated daemon + validation only | `/sonobus` | `SonoBusBinding` table (`app/services/sonobus/binding_authority.py`) |
 
-Each gets the **same template**. Whatever pattern lands first becomes the template; MIDI Services is that first epic and this doc captures what it produced.
+Each gets the **same template**. Whatever pattern lands first becomes the template; MIDI Services is that first epic and this doc captures what it produced. SonoBus is the most recent service to land — it reused the AVB template verbatim (single-writer authority, `/sonobus` mount, capability-aware routing, recorder-gate Q12 enforcement) and shipped code-side in 11 cycles.
 
 ---
 
@@ -200,10 +201,15 @@ When you're ready to open the AVB / Sampler / Audio Effects epic:
   - `docs/architecture/MIDI_SERVICES.md` (design + diagrams)
   - `docs/architecture/MIDI_BACKEND.md` (implementation state)
   - `docs/PROJECT_WORKLIST.md` epic `T2482`
+- **AVB Services reference**: `docs/architecture/AVB_SERVICES.md`
+- **SonoBus / AOO reference** (5th service, added 2026-05-15):
+  - `docs/architecture/SONOBUS_AOO_TRANSPORT.md` (design + diagrams + 21 locked decisions)
+  - `docs/architecture/SONOBUS_BENCH_HANDOFF.md` (bench-gate runbook for T2521-4 + T2521-10)
+  - `docs/PROJECT_WORKLIST.md` epic `T2521`
 - **Production migration evidence**: `docs/fit-for-purpose-evidence/20260501/T2482_phase2_migration_evidence.md`
 - **Predecessor docs (subsumed)**:
   - `docs/architecture/CONTROLLER_LAYER.md` — T2459 controller subsystem locked decisions
 - **Memory files**:
-  - `project_first_class_services.md` — the four-services framing
+  - `project_first_class_services.md` — the five-services framing (updated 2026-05-15 with SonoBus)
   - `project_t2459_controller_layer.md` — historical (subsumed by T2482)
   - `project_t2459h_midi_unification.md` — historical (subsumed by T2482)
