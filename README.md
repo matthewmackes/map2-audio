@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1691** Python | **1748** TypeScript | **222** C++/H | **149** Docs | **4644** total commits | **4** stars | **0** forks | **0** open issues
+**1691** Python | **1748** TypeScript | **222** C++/H | **149** Docs | **4646** total commits | **4** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`ccf0cd1ca`](https://github.com/matthewmackes/map2-audio/commit/ccf0cd1cad50dc7712163739f709838f0790bb61) | docs(worklist): T2529 closeout — 20 cycles → software-com... | Map2 Audio | 2026-05-15 |
+| [`3de743a15`](https://github.com/matthewmackes/map2-audio/commit/3de743a151c7ca6f4b4bcea9394327656b0f1ae6) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-15 |
 | [`7762d75e4`](https://github.com/matthewmackes/map2-audio/commit/7762d75e4782c159fe94a0cc02fc84c0bdd23519) | feat(scripts): T2529-V2 cycle 20 — RT-audio evidence capt... | Map2 Audio | 2026-05-15 |
 | [`53810a637`](https://github.com/matthewmackes/map2-audio/commit/53810a637a41dc1c4663e5d0dc503a4e91c94764) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-15 |
 | [`70e60c55e`](https://github.com/matthewmackes/map2-audio/commit/70e60c55e1523082812ac4f1f0f2e6b9cdac2250) | docs(evidence): T2529-V1 cycle 19 — fit-for-purpose evide... | Map2 Audio | 2026-05-15 |
 | [`5ddea908f`](https://github.com/matthewmackes/map2-audio/commit/5ddea908f3ff36c0da1f56958576cdfe294fc48b) | feat(scripts): T2529-E5 cycle 18 — map2-self-test --full ... | Map2 Audio | 2026-05-15 |
 | [`11c1ed972`](https://github.com/matthewmackes/map2-audio/commit/11c1ed97283605ff8d39a1c028cd0ea793ab3a50) | ci(packaging): T2529-E3 + T2529-E4 cycles 16-17 — install... | Map2 Audio | 2026-05-15 |
 | [`6030a73ef`](https://github.com/matthewmackes/map2-audio/commit/6030a73efee9831e9440c746c08aae4a33240eb3) | feat(packaging): T2529-E2 cycle 15 — lintian cross-distro... | Map2 Audio | 2026-05-15 |
-| [`ba6f30108`](https://github.com/matthewmackes/map2-audio/commit/ba6f301086d79b658d92c5d84f3f97041ed1c138) | feat(packaging): T2529-E1 cycle 14 — rpmlint baseline + C... | Map2 Audio | 2026-05-15 |
-| [`56bb58652`](https://github.com/matthewmackes/map2-audio/commit/56bb58652602f6c4d90feb9e95e4f484514331ab) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-15 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
