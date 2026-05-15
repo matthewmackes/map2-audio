@@ -11,7 +11,7 @@ The router is mounted in `app/main.py` near the AVB Services mount.
 
 from __future__ import annotations
 
-from typing import Optional
+from typing import Any, Optional
 
 import asyncio
 import logging
@@ -63,9 +63,10 @@ class SonoBusBindingsMatrixResponse(BaseModel):
 class SonoBusStatusResponse(BaseModel):
     """High-level health summary the /sonobus Overview page uses.
 
-    The daemon/runtime side ships in T2521-4; until then the daemon
-    fields stay at their stub defaults. The authority/database side is
-    real from this slice on.
+    The daemon/runtime side lights up incrementally across T2521-4 cycles:
+    cycle 5 wires `daemon_running` + `daemon_endpoint` + `daemon_status`
+    + `daemon_capabilities` from the live supervisor. Authority/database
+    fields are live from T2521-3 onward.
     """
 
     authority_ok: bool
@@ -73,9 +74,18 @@ class SonoBusStatusResponse(BaseModel):
     binding_count: int
     enabled_binding_count: int
 
-    # Daemon-side fields populated by T2521-4 + later slices.
+    # Daemon-side fields. cycle 5 lights these up from the live supervisor.
     daemon_running: bool = False
     daemon_endpoint: Optional[str] = None
+    # Canonical supervisor state string (stopped / waiting-for-binary /
+    # waiting-for-daemon / connecting / running / reconnecting / degraded /
+    # shutdown). Used by the GUI to render the right tone Tag.
+    daemon_status: str = "stopped"
+    # Full daemon capability snapshot from the hello handshake. Lets the
+    # GUI show `stub mode` / `full mode` + the daemon's version + the
+    # locked Q1-Q21 defaults without an extra round-trip.
+    daemon_capabilities: Optional[dict[str, Any]] = None
+
     connection_server_enabled: bool = True  # Q3 default
     connection_server_running: bool = False
 
@@ -118,13 +128,45 @@ class SonoBusClusterBindingsMatrixResponse(BaseModel):
 # match the parameterized slot.
 
 
+def _supervisor_status_fields() -> dict[str, Any]:
+    """Pull live daemon-side fields from the supervisor singleton.
+
+    Wrapped in try/except so a failed import (e.g. during early
+    backend boot before the supervisor module is loaded) keeps the
+    status route alive with stub defaults.
+    """
+    try:
+        from app.services.sonobus.daemon_supervisor import (
+            get_sonobus_daemon_supervisor,
+        )
+        supervisor = get_sonobus_daemon_supervisor()
+        payload = supervisor.status_payload()
+        return {
+            "daemon_running": bool(payload.get("connected", False)),
+            "daemon_endpoint": (
+                payload.get("socket_path") if payload.get("connected") else None
+            ),
+            "daemon_status": str(payload.get("status", "stopped")),
+            "daemon_capabilities": payload.get("capabilities"),
+        }
+    except Exception:
+        return {
+            "daemon_running": False,
+            "daemon_endpoint": None,
+            "daemon_status": "stopped",
+            "daemon_capabilities": None,
+        }
+
+
 @router.get("/status", response_model=SonoBusStatusResponse)
 async def get_status() -> SonoBusStatusResponse:
     """High-level SonoBus status — drives the /sonobus Overview tile.
 
-    Daemon-side fields are placeholders until T2521-4 lands. Authority
-    and database fields are live from this slice on.
+    Authority + database fields are live from T2521-3 onward; daemon
+    fields are live from T2521-4 cycle 5 onward (sourced from the
+    SonoBusDaemonSupervisor singleton).
     """
+    daemon_fields = _supervisor_status_fields()
     try:
         async with get_session(read_only=True) as session:
             authority = SonoBusBindingAuthority(session)
@@ -150,6 +192,7 @@ async def get_status() -> SonoBusStatusResponse:
                 table_present=table_present,
                 binding_count=binding_count,
                 enabled_binding_count=enabled_binding_count,
+                **daemon_fields,
             )
     except Exception:
         return SonoBusStatusResponse(
@@ -157,6 +200,7 @@ async def get_status() -> SonoBusStatusResponse:
             table_present=False,
             binding_count=0,
             enabled_binding_count=0,
+            **daemon_fields,
         )
 
 

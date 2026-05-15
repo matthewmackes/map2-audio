@@ -28,6 +28,22 @@ from app.services.sonobus.binding_schemas import (
     SonoBusTransportPriority,
     SonoBusTransportProtocol,
 )
+from app.services.sonobus.daemon_client import (
+    DaemonCallTimeout,
+    DaemonCapabilities,
+    DaemonClientError,
+    DaemonCommandError,
+    DaemonHandshakeError,
+    DaemonNotConnected,
+    DaemonProtocolError,
+    SonoBusDaemonClient,
+)
+from app.services.sonobus.daemon_supervisor import (
+    SonoBusDaemonStatus,
+    SonoBusDaemonSupervisor,
+    get_sonobus_daemon_supervisor,
+    reset_sonobus_daemon_supervisor_for_tests,
+)
 from app.services.sonobus.interface_ids import (
     SONOBUS_ID_PREFIX,
     SonoBusInterfaceForbiddenError,
@@ -60,4 +76,17 @@ __all__ = [
     "is_sonobus_interface_id",
     "make_sonobus_interface_id",
     "parse_sonobus_interface_id",
+    # T2521-4 cycle 5 — daemon client + supervisor
+    "DaemonCallTimeout",
+    "DaemonCapabilities",
+    "DaemonClientError",
+    "DaemonCommandError",
+    "DaemonHandshakeError",
+    "DaemonNotConnected",
+    "DaemonProtocolError",
+    "SonoBusDaemonClient",
+    "SonoBusDaemonStatus",
+    "SonoBusDaemonSupervisor",
+    "get_sonobus_daemon_supervisor",
+    "reset_sonobus_daemon_supervisor_for_tests",
 ]

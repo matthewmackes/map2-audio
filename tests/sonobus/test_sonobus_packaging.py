@@ -140,16 +140,28 @@ def test_rpm_spec_changelog_records_t2521_8():
 
 
 def test_packaging_systemd_directory_has_sonobus_unit_copy():
-    """The packaging/systemd/ copy used by the RPM install script must
-    match the canonical systemd/ copy."""
+    """The packaging/systemd/ copy used by the RPM install script + the
+    dev-host systemd/ copy both exist.
+
+    T2529-A3 (2026-05-15) intentionally diverged the two: the dev-host
+    copy keeps `User=mm` + `/home/mm/map2-audio` so the developer
+    workflow runs without an RPM install, while the packaging copy uses
+    `User=map2` + `/opt/map2-audio` per the Q1+Q3 service-user/FHS
+    locks. Both files must be present; their contents intentionally
+    differ on identity + path.
+    """
     canonical = REPO_ROOT / "systemd" / "map2-sonobus-transport.service"
     packaged = (
         REPO_ROOT / "packaging" / "systemd" / "map2-sonobus-transport.service"
     )
+    assert canonical.is_file(), f"missing dev-host copy at {canonical}"
     assert packaged.is_file(), f"missing packaging copy at {packaged}"
-    # Same content end-to-end so a future operator-only edit in either
-    # path doesn't silently drift.
-    assert canonical.read_text() == packaged.read_text()
+    # Sanity-check the divergence is in the expected direction.
+    dev_text = canonical.read_text()
+    pkg_text = packaged.read_text()
+    assert "User=mm" in dev_text, "dev-host unit should still use User=mm"
+    assert "User=map2" in pkg_text, "packaged unit must use User=map2 (T2529)"
+    assert "/opt/map2-audio" in pkg_text, "packaged unit must use /opt/map2-audio (T2529)"
 
 
 def test_vendor_aoo_placeholder_files_present():
