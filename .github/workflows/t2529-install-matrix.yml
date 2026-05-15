@@ -1,0 +1,250 @@
+name: T2529 — Install Matrix (Fedora + Ubuntu)
+
+# T2529-E3 + T2529-E4 — cross-distro install verification.
+#
+# Per the T2529 Q5 lock (2026-05-15), every push to master MUST clean-install
+# on Fedora 41 + Ubuntu 24.04 with `0 rpmlint errors + 0 rpmlint warnings`
+# and `0 lintian errors + 0 lintian warnings` against the alien-converted
+# .deb.
+#
+# This workflow runs on every push and PR. It is the gate that catches
+# spec-file regressions (typos in scriptlets, unfiled files, dangling
+# symlinks, missing scriptlet macros) before they hit a production-like
+# install.
+
+on:
+  push:
+    branches: [master]
+    paths:
+      - 'packaging/**'
+      - 'app/paths.py'
+      - 'tests/test_t2529_*.py'
+      - '.github/workflows/t2529-install-matrix.yml'
+  pull_request:
+    paths:
+      - 'packaging/**'
+      - 'app/paths.py'
+      - 'tests/test_t2529_*.py'
+      - '.github/workflows/t2529-install-matrix.yml'
+  workflow_dispatch:
+
+env:
+  PYTHONUNBUFFERED: "1"
+
+jobs:
+  # ---------------------------------------------------------------------------
+  # Static-shape gates (no container — runs on the GH ubuntu-latest runner)
+  # ---------------------------------------------------------------------------
+
+  static:
+    name: T2529 static gates (pytest)
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install pytest
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytest
+
+      - name: Run T2529 pytest gate suite
+        # All 11 T2529 test files; locks every spec / unit / config /
+        # doc / Map2Paths shape. CI fast-fail before we bother with
+        # full Fedora/Ubuntu jobs.
+        run: |
+          python -m pytest -q \
+            tests/test_t2529_sysusers_tmpfiles.py \
+            tests/test_t2529_rpm_scriptlets.py \
+            tests/test_t2529_systemd_units.py \
+            tests/test_t2529_paths_fhs.py \
+            tests/test_t2529_pipewire_system.py \
+            tests/test_t2529_install_docs.py \
+            tests/test_t2529_sandbox_hardening.py \
+            tests/test_t2529_capabilities.py \
+            tests/test_t2529_syscall_filter.py \
+            tests/test_t2529_security_docs.py \
+            tests/test_t2529_rpmlint_baseline.py \
+            tests/test_t2529_lintian_baseline.py
+
+  # ---------------------------------------------------------------------------
+  # T2529-E3 — Fedora 41 clean-install matrix
+  # ---------------------------------------------------------------------------
+
+  fedora-41:
+    name: T2529-E3 Fedora 41 (rpmlint + rpmbuild + install)
+    runs-on: ubuntu-latest
+    needs: static
+    container:
+      image: fedora:41
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install build dependencies
+        run: |
+          dnf install -y \
+            rpm-build \
+            rpmlint \
+            systemd-rpm-macros \
+            cmake \
+            gcc-c++ \
+            make \
+            pkgconf-pkg-config \
+            alsa-lib-devel \
+            python3 \
+            python3-pip \
+            tar \
+            gzip \
+            git
+
+      - name: T2529-E1 — rpmlint baseline against the spec
+        # The gate: zero errors AND zero warnings against the spec file
+        # with the project-specific .rpmlintrc applied.
+        run: bash scripts/lint_rpm_spec.sh
+
+      - name: Build source tarball
+        run: |
+          mkdir -p ~/rpmbuild/{SOURCES,SPECS,RPMS,SRPMS,BUILD,BUILDROOT}
+          VERSION="$(grep -m1 '^Version:' packaging/rpm/map2.spec | awk '{print $2}')"
+          git archive \
+            --format=tar.gz \
+            --prefix="map2-${VERSION}/" \
+            -o ~/rpmbuild/SOURCES/map2-${VERSION}.tar.gz \
+            HEAD
+
+      - name: rpmbuild
+        run: |
+          cp packaging/rpm/map2.spec ~/rpmbuild/SPECS/
+          rpmbuild \
+            --define "_topdir ${HOME}/rpmbuild" \
+            -bb ~/rpmbuild/SPECS/map2.spec
+
+      - name: rpmlint on built RPM
+        # Second pass — lint the produced binary RPM (catches issues only
+        # visible after build, like unfiled files or symlink targets).
+        run: |
+          ARCH="x86_64"
+          rpmlint -f packaging/rpm/lint/.rpmlintrc -i ~/rpmbuild/RPMS/${ARCH}/*.rpm
+
+      - name: Install the RPM (idempotent + scriptlet exercise)
+        # Exercises %pre (sysusers_create_package) + %post (tmpfiles_create_package
+        # + usermod -aG loop) + %systemd_post.
+        run: |
+          ARCH="x86_64"
+          dnf install -y ~/rpmbuild/RPMS/${ARCH}/map2-*.rpm
+
+      - name: Verify map2 user was created
+        run: |
+          getent passwd map2 || { echo "FAIL: map2 user not created"; exit 1; }
+          getent group map2 || { echo "FAIL: map2 group not created"; exit 1; }
+          id map2
+
+      - name: Verify FHS dirs were provisioned
+        run: |
+          for d in /opt/map2-audio /etc/map2 /var/lib/map2 /var/cache/map2 /var/log/map2 /run/map2; do
+            test -d "$d" || { echo "FAIL: $d missing"; exit 1; }
+            echo "OK: $d"
+          done
+
+      - name: Verify FHS dir ownership
+        run: |
+          for d in /var/lib/map2 /var/cache/map2 /var/log/map2 /run/map2; do
+            owner=$(stat -c '%U:%G' "$d")
+            if [[ "$owner" != "map2:map2" ]]; then
+              echo "FAIL: $d ownership = $owner (expected map2:map2)"
+              exit 1
+            fi
+            echo "OK: $d $owner"
+          done
+
+      - name: Verify unit files installed
+        run: |
+          for u in map2-backend map2-tui map2-controller-host \
+                   map2-sonobus-transport map2-prometheus map2-grafana \
+                   map2-cluster map2-frontend; do
+            test -f "/usr/lib/systemd/system/${u}.service" || {
+              echo "FAIL: ${u}.service missing"; exit 1; }
+            echo "OK: ${u}.service"
+          done
+
+      - name: systemd-analyze security score per unit
+        # Captures the live exposure level. Logs only — V2 evidence dir
+        # will pin the score formally.
+        run: |
+          for u in map2-backend map2-tui map2-controller-host \
+                   map2-sonobus-transport map2-prometheus map2-grafana; do
+            systemd-analyze security "${u}.service" || true
+            echo "---"
+          done
+
+      - name: Uninstall (verify %preun + %postun scriptlets)
+        run: |
+          dnf remove -y map2
+          # map2 user MUST be preserved (T2529 Q4 lock + FHS §5.5).
+          getent passwd map2 || { echo "FAIL: map2 user was removed (Q4 lock violation)"; exit 1; }
+          # /var/lib/map2 MUST be preserved.
+          test -d /var/lib/map2 || { echo "FAIL: /var/lib/map2 was removed (Q4 lock violation)"; exit 1; }
+          echo "OK: map2 user + /var/lib/map2 preserved per Q4 lock"
+
+  # ---------------------------------------------------------------------------
+  # T2529-E4 — Ubuntu 24.04 cross-distro compliance via alien
+  # ---------------------------------------------------------------------------
+
+  ubuntu-2404:
+    name: T2529-E4 Ubuntu 24.04 (alien + lintian)
+    runs-on: ubuntu-24.04
+    needs: fedora-41
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Install conversion + lint tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y alien lintian fakeroot
+
+      - name: Download RPM from previous job
+        # The fedora-41 job produced the RPM; we need it here to convert.
+        # Use a workspace artifact instead of re-building inside Ubuntu.
+        # For now, rebuild inside Ubuntu — Ubuntu has rpm via apt.
+        run: sudo apt-get install -y rpm
+
+      - name: Pull rpmbuild deps + build RPM under Ubuntu
+        # Note: Ubuntu has rpm-build (`rpm` package) — we use it just to
+        # produce the .rpm artifact alien needs. This is NOT a target
+        # deployment platform; the .deb produced by alien is the actual
+        # cross-distro qualifier.
+        run: |
+          sudo apt-get install -y cmake gcc g++ pkg-config libasound2-dev \
+                                   python3 python3-pip tar
+          mkdir -p ~/rpmbuild/{SOURCES,SPECS,RPMS,SRPMS,BUILD,BUILDROOT}
+          VERSION="$(grep -m1 '^Version:' packaging/rpm/map2.spec | awk '{print $2}')"
+          git archive \
+            --format=tar.gz \
+            --prefix="map2-${VERSION}/" \
+            -o ~/rpmbuild/SOURCES/map2-${VERSION}.tar.gz \
+            HEAD
+          cp packaging/rpm/map2.spec ~/rpmbuild/SPECS/
+          rpmbuild \
+            --define "_topdir ${HOME}/rpmbuild" \
+            -bb ~/rpmbuild/SPECS/map2.spec
+
+      - name: T2529-E2 — alien-convert + lintian baseline
+        # The gate: zero errors AND zero warnings against the .deb.
+        run: |
+          ARCH="x86_64"
+          RPM_PATH=$(ls -1 ~/rpmbuild/RPMS/${ARCH}/map2-*.rpm | head -1)
+          sudo bash scripts/lint_deb_via_alien.sh "${RPM_PATH}"
