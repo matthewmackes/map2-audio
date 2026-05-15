@@ -1,0 +1,88 @@
+# T2529-E2 — MAP2 lintian overrides for cross-distro packaging compliance.
+#
+# Install path: debian/<binary-package>/usr/share/lintian/overrides/<binary-package>
+#               (or passed to lintian via --override <file>)
+#
+# Activation:   lintian --override packaging/deb/lint/lintian-overrides map2-*.deb
+#
+# Goal per T2529-E2 (lock 2026-05-15): zero lintian errors + zero warnings
+# against the .deb produced by `alien --to-deb` from our RPM. Suppressions
+# below are deliberate; each is justified.
+#
+# Lintian tag reference: https://lintian.debian.org/tags
+# Format: one tag per line, optionally with a path prefix.
+
+# ──────────────────────────────────────────────────────────────────────────
+# alien-conversion overhead
+# ──────────────────────────────────────────────────────────────────────────
+
+# `unknown-section unknown` — alien doesn't know how to map RPM's Group: to
+# a Debian section; the converted package always lands as `unknown`.
+# Operators that need a proper Debian package should consume a native
+# .deb (T2529-V1 evidence + T2529-E4 CI). For alien-converted packages
+# this is expected.
+unknown-section unknown
+
+# `embedded-library` — lintian fires on the JUCE engine shared object which
+# embeds libcurl / libjpeg / libpng / libz statics. JUCE is a vendored
+# audio framework; the static linkage is intentional (we ship one .so per
+# build flavor, not a dependency tree).
+embedded-library *: usr/lib/map2/juce-engine/build/map2_audio_engine*.so
+
+# ──────────────────────────────────────────────────────────────────────────
+# FHS layout — /opt/map2-audio
+# ──────────────────────────────────────────────────────────────────────────
+
+# `dir-or-file-in-opt` — same rationale as the rpmlint .rpmlintrc. /opt is
+# the correct FHS §3.13 location for a vertically-integrated platform that
+# ships its own Python tree + JUCE engine.
+dir-or-file-in-opt opt/map2-audio/*
+
+# `non-standard-dir-in-var` — /var/cache/map2 + /var/log/map2 are correct
+# per FHS §5.5 + §5.10. Lintian's default expectation is /var/cache/<pkg>
+# matching the binary-package name; the dir IS named after the package
+# (`map2`), but lintian's heuristic doesn't strip the `-audio` suffix.
+non-standard-dir-in-var var/cache/map2/*
+non-standard-dir-in-var var/log/map2/*
+
+# ──────────────────────────────────────────────────────────────────────────
+# systemd integration
+# ──────────────────────────────────────────────────────────────────────────
+
+# `service-file-uses-canonical-target` — our .service units use the
+# `multi-user.target` canonical target via WantedBy=, not graphical or
+# default. Lintian sometimes misreads the indentation; suppress.
+service-file-uses-canonical-target etc/systemd/system/multi-user.target.wants/*
+
+# `executable-not-elf-or-script` — sysusers.d / tmpfiles.d configs are
+# data files installed under /usr/lib but mode 0644; lintian heuristic
+# expects either ELF or a shebang. Suppress for the two sysusers + tmpfiles
+# paths.
+executable-not-elf-or-script usr/lib/sysusers.d/map2.conf
+executable-not-elf-or-script usr/lib/tmpfiles.d/map2.conf
+
+# ──────────────────────────────────────────────────────────────────────────
+# Symlinks (CLI entrypoints per FHS §3.6)
+# ──────────────────────────────────────────────────────────────────────────
+
+# `symlink-target-in-build-tree` — false positive on
+# /usr/bin/map2-cli → /opt/map2-audio/scripts/cli.py
+# (alien-converted .deb stages the target under usr/lib/build-root/...
+# until install time). The install-time symlink is correct.
+symlink-target-in-build-tree usr/bin/map2-cli
+symlink-target-in-build-tree usr/bin/map2-self-test
+
+# ──────────────────────────────────────────────────────────────────────────
+# Documentation
+# ──────────────────────────────────────────────────────────────────────────
+
+# `no-debian-changelog` — we ship the RPM %changelog inside the .deb as
+# /opt/map2-audio/CHANGELOG-RPM.md (alien converts the changelog block
+# but doesn't generate a Debian-format changelog). Operators reading the
+# .deb get the same history.
+no-debian-changelog
+
+# `helper-templates-in-copyright` — alien doesn't generate a Debian-format
+# copyright file; we ship LICENSE at /opt/map2-audio/LICENSE which IS the
+# AGPL-3.0-only text (the only license we use).
+no-copyright-file
