@@ -198,16 +198,17 @@ describe('AppShell global tree navigation', () => {
     const navTree = screen.getByLabelText('Global navigation')
     expect(navTree).toBeInTheDocument()
     // Nav reskin 2026-05-03 — the IA now reads:
-    //   Home → hero cards (Snapshot Editor, MultiTrack Recorder, Sequencer)
+    //   Home → hero cards (Snapshot Editor, Sequencer)
     //   → Services (MIDI Services, AVB, Audio Artifacts, Settings,
     //     Hardware, Node Ops) → Platform Guide.
     // The "Pinned" and "System" SectionBars were removed; System items
-    // were folded into the Services tree. MultiTrack Recorder hero added
-    // 2026-05-10 as the DAW entry point.
+    // were folded into the Services tree. The MultiTrack Recorder hero
+    // was retired under T2505 when the T2503 DAW service was cancelled;
+    // the reframed T2504 recorder mounts inside /artifacts so no hero
+    // card is in the IA today (returns once T2509 + T2511 ship playback).
     expectInDocumentOrder([
       'Home',
       'Snapshot Editor',
-      'MultiTrack Recorder',
       'Sequencer',
       'MIDI Services',
       'AVB',
@@ -229,17 +230,12 @@ describe('AppShell global tree navigation', () => {
     expect(screen.getByText('Settings')).toBeInTheDocument()
     expect(screen.getAllByText('Hardware').length).toBeGreaterThan(0)
     expect(screen.getAllByText('Devices').length).toBeGreaterThan(0)
-    // T2490 (AVB) + T2491 (MIDI cleanup) — MIDI Advanced exposes a
-    // "Connections" child once the parent is expanded.
-    expect(within(navTree).getAllByText('Connections').length).toBeGreaterThan(0)
-    expect(within(navTree).getAllByText('Presets').length).toBeGreaterThan(0)
-    // Node Ops + AVB are dense-row groups under System/Services and
-    // are NOT auto-expanded on first load (only Snapshot Editor,
-    // MultiTrack Recorder, Sequencer, MIDI Services, Hardware,
-    // Devices are expanded by default). Their child entries
-    // (Midpoint, LV2 Plugins, NAM Models, Overview, etc.) are
-    // exercised in the navigation tests below where the parent is
-    // opened first.
+    // T2525 — the global tree nav is single-open accordion: opening
+    // any subsection collapses unrelated subsections. On the landing
+    // route only the active branch is expanded, so MIDI Services'
+    // "Connections" / "Presets" children are not visible until the
+    // operator expands MIDI Services. The navigation tests below
+    // (which click a parent first) exercise those child rows.
 
     // The node identity card surfaces the display name plus the host/role plate.
     const nodeCard = screen.getByRole('button', { name: /Node map2-host \(Studio\)/i })

@@ -38,7 +38,8 @@
     "testPathIgnorePatterns": [
       "<rootDir>/web/src/map2/components/MAP2Dashboard.test.tsx",
       "<rootDir>/.claude/worktrees/",
-      "<rootDir>/device-packs/"
+      "<rootDir>/device-packs/",
+      "<rootDir>/web/src/_archive/"
     ]
   },
   "keywords": [],
