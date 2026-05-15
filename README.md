@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1675** Python | **1748** TypeScript | **222** C++/H | **149** Docs | **4622** total commits | **4** stars | **0** forks | **0** open issues
+**1675** Python | **1748** TypeScript | **222** C++/H | **149** Docs | **4624** total commits | **4** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`52485747`](https://github.com/matthewmackes/map2-audio/commit/52485747cf2982b888985aa3ae50721b4546b291) | docs(t2529): file T2529 epic — `map2` service user + FHS ... | Map2 Audio | 2026-05-15 |
+| [`88c47811`](https://github.com/matthewmackes/map2-audio/commit/88c478116ff2bbe4687a6b2c54eb9596bd48de82) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-15 |
 | [`586c3228`](https://github.com/matthewmackes/map2-audio/commit/586c32280fad32fc95d1b74093cd702b26ca5134) | docs(arch): T2521 cycle 38 — promote SonoBus to 5th first... | Map2 Audio | 2026-05-15 |
 | [`a0fba986`](https://github.com/matthewmackes/map2-audio/commit/a0fba9869ea71e69ca6517d66e0362983e151cfb) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-15 |
 | [`00cc049c`](https://github.com/matthewmackes/map2-audio/commit/00cc049c941f9b20230556a901efd357d3a0d9c7) | refactor(snapshot-editor): T2473 cycle 37 — extract one-s... | Map2 Audio | 2026-05-15 |
 | [`a05f9cc5`](https://github.com/matthewmackes/map2-audio/commit/a05f9cc5e0b4241499ac006cbca7a611cb45ab52) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-15 |
 | [`97f4a936`](https://github.com/matthewmackes/map2-audio/commit/97f4a936269d0a0fc0c1f5de6e0913059e07d7c1) | feat(snapshot-editor): T2521-7 cycle 36 — per-mode Cloud ... | Map2 Audio | 2026-05-15 |
 | [`15ca3270`](https://github.com/matthewmackes/map2-audio/commit/15ca3270b8f9ad76ca6b8e9ab49a4427d9067ca4) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-15 |
-| [`23d93c35`](https://github.com/matthewmackes/map2-audio/commit/23d93c354586cd1ff6198b4a688688d0d1af6edd) | feat(snapshot-editor): T2521-7 cycle 35 — Remote-peer flo... | Map2 Audio | 2026-05-15 |
-| [`e28fea7b`](https://github.com/matthewmackes/map2-audio/commit/e28fea7be83a99306cea918c0cd61019dd94130d) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-15 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
