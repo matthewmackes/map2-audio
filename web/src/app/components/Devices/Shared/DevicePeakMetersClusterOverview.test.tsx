@@ -717,4 +717,90 @@ describe('DevicePeakMetersClusterOverview', () => {
     expect(screen.getByText('Peak (dBFS)')).toBeInTheDocument()
     expect(screen.getByText(/in -6\.0 \/ out -3\.0 dBFS/)).toBeInTheDocument()
   })
+
+  // -------------------------------------------------------------------
+  // Run-13i pick #3 — canonical node-down row test-id + red tone
+  // -------------------------------------------------------------------
+  // The handoff spec calls for `cluster-overview-node-down-<node_id>`
+  // as the TR-level test-id so operator-tooling integration tests can
+  // assert on failed peers without scraping cell-level test-ids.
+
+  it('exposes the canonical TR test-id on synthetic node-down rows', () => {
+    mockCluster.mockReturnValue({
+      local: { devices: [] },
+      peers: [],
+      errors: { 'peer-A': 'http 504' },
+      isError: false,
+      isLoading: false,
+    })
+    render(<DevicePeakMetersClusterOverview />)
+    // The canonical test-id pattern from the run-13i handoff.
+    expect(
+      screen.getByTestId('cluster-overview-node-down-peer-A'),
+    ).toBeInTheDocument()
+  })
+
+  it('paints the node-down row Node tag in red', () => {
+    mockCluster.mockReturnValue({
+      local: { devices: [] },
+      peers: [],
+      errors: { 'peer-A': 'http 504' },
+      isError: false,
+      isLoading: false,
+    })
+    render(<DevicePeakMetersClusterOverview />)
+    const downRow = screen.getByTestId('cluster-overview-node-down:peer-A')
+    // Carbon Tag with type="red" applies the `.cds--tag--red` class.
+    expect(downRow.className).toMatch(/cds--tag--red/)
+  })
+
+  it('does not render a TR test-id for normal (non-down) rows', () => {
+    mockCluster.mockReturnValue({
+      local: {
+        devices: [
+          {
+            device_id: 'edirol-ua-1000',
+            input_channels: 10,
+            output_channels: 10,
+            has_engine_source: true,
+          },
+        ],
+      },
+      peers: [],
+      errors: {},
+      isError: false,
+      isLoading: false,
+    })
+    render(<DevicePeakMetersClusterOverview />)
+    // Live row should not carry the cluster-overview-node-down-* pattern.
+    expect(
+      document.querySelector(
+        '[data-testid^="cluster-overview-node-down-"]',
+      ),
+    ).toBeNull()
+  })
+
+  it('exposes the canonical TR test-id for each down peer when multiple peers fail', () => {
+    mockCluster.mockReturnValue({
+      local: { devices: [] },
+      peers: [],
+      errors: {
+        'peer-A': 'http 504',
+        'peer-B': 'timeout',
+        'peer-C': 'connection refused',
+      },
+      isError: false,
+      isLoading: false,
+    })
+    render(<DevicePeakMetersClusterOverview />)
+    expect(
+      screen.getByTestId('cluster-overview-node-down-peer-A'),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByTestId('cluster-overview-node-down-peer-B'),
+    ).toBeInTheDocument()
+    expect(
+      screen.getByTestId('cluster-overview-node-down-peer-C'),
+    ).toBeInTheDocument()
+  })
 })

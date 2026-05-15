@@ -430,15 +430,40 @@ export function DevicePeakMetersClusterOverview({
               <TableBody>
                 {tblRows.map((row: any) => {
                   const original = rows.find((r) => r.id === row.id)
+                  // Run-13i pick #3 — synthetic "node down" row. The
+                  // row.id has prefix "down:" for peers that appear in
+                  // `errors` but not in `peers`. Top-level data-testid
+                  // matches the canonical pattern from the handoff
+                  // (`cluster-overview-node-down-<node_id>`) so an
+                  // operator-tooling integration test can find these
+                  // failure rows without scraping cell-level test-ids.
+                  const isNodeDown =
+                    typeof row.id === 'string' && row.id.startsWith('down:')
+                  const downNodeId = isNodeDown
+                    ? row.id.slice('down:'.length)
+                    : null
+                  const rowProps = getRowProps({ row })
+                  const trDataTestId = downNodeId
+                    ? `cluster-overview-node-down-${downNodeId}`
+                    : undefined
                   return (
-                    <TableRow key={row.id} {...getRowProps({ row })}>
+                    <TableRow
+                      key={row.id}
+                      {...rowProps}
+                      data-testid={trDataTestId ?? rowProps['data-testid']}
+                    >
                       {row.cells.map((cell: any) => {
                         if (cell.info.header === 'node') {
                           const isLocal = original?.node === 'local'
+                          const nodeTagTone = isNodeDown
+                            ? 'red'
+                            : isLocal
+                              ? 'blue'
+                              : 'cool-gray'
                           return (
                             <TableCell key={cell.id}>
                               <Tag
-                                type={isLocal ? 'blue' : 'cool-gray'}
+                                type={nodeTagTone}
                                 size="sm"
                                 data-testid={`cluster-overview-node-${row.id}`}
                               >
