@@ -42,6 +42,18 @@ const TAB_IDS = ['twin', 'workbench', 'performance', 'mapping', 'diagnostics'] a
 type MaschineTabId = (typeof TAB_IDS)[number]
 const DEFAULT_TAB: MaschineTabId = 'twin'
 
+// T2522-E-F1 — operator-facing tab labels for the AppShell kicker.
+// Keep in sync with the <Tab> children below; the kicker shows
+// "Platform / Maschine MK1 / <Tab label>" so the breadcrumb survives
+// browser back/forward and deep-link entry from the Hardware Catalog.
+const TAB_LABELS: Record<MaschineTabId, string> = {
+  twin: 'Hardware Twin',
+  workbench: 'Profile Workbench',
+  performance: 'Performance',
+  mapping: 'Mapping Studio',
+  diagnostics: 'Diagnostics',
+}
+
 function tabIdFromIndex(index: number): MaschineTabId {
   return TAB_IDS[index] ?? DEFAULT_TAB
 }
@@ -249,12 +261,15 @@ export function MaschinePage() {
     disabled: true,
   })
 
+  // T2522-E-F1 — kicker carries the active tab name so the breadcrumb
+  // tracks tab transitions (deep-link entry, browser back/forward).
+  const activeTabLabel = TAB_LABELS[tabIdFromIndex(selectedIndex)]
   useSetShellWindow({
     title: 'Maschine MK1',
     subtitle,
-    kicker: 'Platform / Maschine MK1',
+    kicker: `Platform / Maschine MK1 / ${activeTabLabel}`,
     actions: shellActions,
-  }, [subtitle, handleScrollToHardware, live.status, isDiagnosticsTab])
+  }, [subtitle, handleScrollToHardware, live.status, isDiagnosticsTab, activeTabLabel])
 
   return (
     <div className="maschine-page">

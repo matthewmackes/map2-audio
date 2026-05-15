@@ -1,4 +1,4 @@
-import { Button, InlineLoading, Tag, Tile, Toggle } from '@carbon/react'
+import { Button, InlineLoading, Search, Tag, Tile, Toggle } from '@carbon/react'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { useEffect, useMemo, useState } from 'react'
 
@@ -71,6 +71,10 @@ function paramSources(status: MaschineDaemonStatus | null): DraggableParam[] {
 
 export function MaschineMappingStudio({ status, encoderMap, refetchStatus }: MappingStudioProps) {
   const queryClient = useQueryClient()
+  // T2522-E-F7 — sticky search box at top of source list. Filters
+  // by the visible display string (block name / param label) so
+  // long parameter rosters stay searchable.
+  const [sourceFilter, setSourceFilter] = useState<string>('')
   const [workingMap, setWorkingMap] = useState<MaschineEncoderMap | null>(null)
   // T2522-D cycle 10 — SHIFT-layer view toggle. When on, the editor
   // works against `shift_enc1`...`shift_swing` keys instead of the
@@ -89,6 +93,14 @@ export function MaschineMappingStudio({ status, encoderMap, refetchStatus }: Map
   }, [encoderMap, workingMap])
 
   const sources = useMemo(() => paramSources(status), [status])
+  const filteredSources = useMemo(() => {
+    const q = sourceFilter.trim().toLowerCase()
+    if (!q) return sources
+    return sources.filter((src) => {
+      const haystack = `${src.display} ${src.label}`.toLowerCase()
+      return haystack.includes(q)
+    })
+  }, [sources, sourceFilter])
   const isDirty = useMemo(() => {
     if (!workingMap || !encoderMap) return false
     return JSON.stringify(workingMap) !== JSON.stringify(encoderMap)
@@ -212,23 +224,48 @@ export function MaschineMappingStudio({ status, encoderMap, refetchStatus }: Map
           {sources.length === 0 ? (
             <p className="maschine-mapping__empty">
               No chain blocks mounted on the active snapshot. Mount blocks in the Snapshot Editor to
-              expose parameters here.
+              expose parameters here.{' '}
+              {/* T2522-E-F4 — deep-link the operator to the canonical
+                  surface for fixing the empty state. */}
+              <a href="/snapshot-editor" className="maschine-mapping__empty-link">
+                Set up your first chain →
+              </a>
             </p>
           ) : (
-            <ul className="maschine-mapping__source-list">
-              {sources.map((src) => (
-                <li
-                  key={`${src.block_id}::${src.param_id}`}
-                  draggable
-                  onDragStart={handleDragStart(src)}
-                  className="maschine-mapping__source-card"
-                  title={src.display}
-                >
-                  <span className="maschine-mapping__source-block">{src.display.split(' / ')[0]}</span>
-                  <span className="maschine-mapping__source-param">{src.label}</span>
-                </li>
-              ))}
-            </ul>
+            <>
+              {/* T2522-E-F7 — sticky search across the parameter
+                  roster so long source lists stay scannable. */}
+              <div className="maschine-mapping__source-search">
+                <Search
+                  id="maschine-mapping-source-search"
+                  size="sm"
+                  labelText="Filter parameter sources"
+                  placeholder="Filter sources"
+                  value={sourceFilter}
+                  onChange={(e: { target: { value: string } }) => setSourceFilter(e.target.value)}
+                  onClear={() => setSourceFilter('')}
+                />
+              </div>
+              <ul className="maschine-mapping__source-list">
+                {filteredSources.map((src) => (
+                  <li
+                    key={`${src.block_id}::${src.param_id}`}
+                    draggable
+                    onDragStart={handleDragStart(src)}
+                    className="maschine-mapping__source-card"
+                    title={src.display}
+                  >
+                    <span className="maschine-mapping__source-block">{src.display.split(' / ')[0]}</span>
+                    <span className="maschine-mapping__source-param">{src.label}</span>
+                  </li>
+                ))}
+                {filteredSources.length === 0 ? (
+                  <li className="maschine-mapping__source-empty">
+                    No sources match "{sourceFilter}".
+                  </li>
+                ) : null}
+              </ul>
+            </>
           )}
         </Tile>
 

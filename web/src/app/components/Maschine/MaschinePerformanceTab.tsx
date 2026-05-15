@@ -212,7 +212,7 @@ export function MaschinePerformanceTab({
           ) : null}
           {block ? (
             <span className="maschine-perf__pad-block" title={block.name}>
-              {block.name.slice(0, 10)}
+              {block.name}
             </span>
           ) : null}
         </div>

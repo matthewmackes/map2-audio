@@ -333,9 +333,27 @@ export function MaschineStepSequencer() {
               </div>
             </div>
           ) : (
-            <p className="maschine-curve-editor__sub">
-              No pattern selected. Click <strong>+ New pattern</strong> to start.
-            </p>
+            <div className="maschine-seq__empty-state" data-testid="maschine-seq-empty-state">
+              <p className="maschine-curve-editor__sub">
+                No pattern selected. Click <strong>+ New pattern</strong> to start.
+              </p>
+              {/* T2522-E-F6 — bar marker row every 4 steps even when
+                  no pattern is mounted, so the operator's eye lands
+                  on the downbeat positions before authoring. */}
+              <div
+                className="maschine-seq__bar-marker"
+                aria-label="16-step bar marker (downbeat highlight every 4 steps)"
+              >
+                {Array.from({ length: 16 }).map((_, stepIdx) => (
+                  <span
+                    key={`bar-${stepIdx}`}
+                    className={`maschine-seq__bar-cell${stepIdx % 4 === 0 ? ' maschine-seq__bar-cell--downbeat' : ''}`}
+                  >
+                    {stepIdx + 1}
+                  </span>
+                ))}
+              </div>
+            </div>
           )}
 
           <div className="maschine-seq__scene-strip">

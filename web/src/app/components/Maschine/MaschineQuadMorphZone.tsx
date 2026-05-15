@@ -125,6 +125,15 @@ export function MaschineQuadMorphZone({ hidEvents }: MaschineQuadMorphZoneProps)
         </div>
         <div className="maschine-morph__legend">
           <h5 className="maschine-morph__legend-title">Corners</h5>
+          {/* T2522-E-F6 — live X/Y position numerics next to the
+              corner legend so the operator can read the exact
+              MorphEngine state without inspecting the pad. */}
+          <div className="maschine-morph__coords" data-testid="maschine-morph-coords">
+            <span className="maschine-morph__coord-axis">X</span>
+            <span className="maschine-morph__coord-value">{(morphState?.x ?? 0).toFixed(2)}</span>
+            <span className="maschine-morph__coord-axis">Y</span>
+            <span className="maschine-morph__coord-value">{(morphState?.y ?? 0).toFixed(2)}</span>
+          </div>
           <ul className="maschine-morph__corner-list">
             {(['A', 'B', 'C', 'D'] as const).map((corner, idx) => (
               <li

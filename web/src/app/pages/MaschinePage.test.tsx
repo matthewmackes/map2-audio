@@ -42,7 +42,7 @@ jest.mock('../../map2/clients/stateAuthority', () => ({
   },
 }))
 
-function getShellWindowPatches(): Array<{ title?: string; subtitle?: string; actions?: Array<{ id: string }> }> {
+function getShellWindowPatches(): Array<{ title?: string; subtitle?: string; kicker?: string; actions?: Array<{ id: string }> }> {
   const mocked = jest.requireMock('../layout/useSetShellWindow') as { useSetShellWindow: jest.Mock }
   return mocked.useSetShellWindow.mock.calls.map((call) => call[0])
 }
@@ -494,5 +494,33 @@ describe('MaschinePage', () => {
       (p.actions ?? []).some((a: { id: string }) => a.id === 'hardware-layout'),
     )
     expect(hasHardwareLayout).toBe(true)
+  })
+
+  it('T2522-E-F1 — AppShell kicker carries the active tab name (Twin default)', () => {
+    renderPage(['/maschine'])
+    const patches = getShellWindowPatches()
+    const everIncluded = patches.some((p) => p.kicker === 'Platform / Maschine MK1 / Hardware Twin')
+    expect(everIncluded).toBe(true)
+  })
+
+  it('T2522-E-F1 — AppShell kicker tracks ?tab transitions', () => {
+    renderPage(['/maschine?tab=mapping'])
+    const patches = getShellWindowPatches()
+    const mappingKicker = patches.some((p) => p.kicker === 'Platform / Maschine MK1 / Mapping Studio')
+    expect(mappingKicker).toBe(true)
+  })
+
+  it('T2522-E-F1 — AppShell kicker labels each tab through TAB_LABELS', () => {
+    const cases: Array<[string, string]> = [
+      ['/maschine?tab=workbench', 'Platform / Maschine MK1 / Profile Workbench'],
+      ['/maschine?tab=performance', 'Platform / Maschine MK1 / Performance'],
+      ['/maschine?tab=diagnostics', 'Platform / Maschine MK1 / Diagnostics'],
+    ]
+    for (const [route, expected] of cases) {
+      renderPage([route])
+      const patches = getShellWindowPatches()
+      const hasExpected = patches.some((p) => p.kicker === expected)
+      expect(hasExpected).toBe(true)
+    }
   })
 })

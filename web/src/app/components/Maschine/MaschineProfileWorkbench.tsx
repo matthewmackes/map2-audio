@@ -227,6 +227,21 @@ export function MaschineProfileWorkbench() {
             />
           ) : null}
 
+          {drafts.length === 0 ? (
+            <p
+              className="maschine-workbench__drafts-empty"
+              data-testid="maschine-workbench-drafts-empty"
+            >
+              {/* T2522-E-F4 — explain the persistence model so an
+                  operator knows why drafts vanish on a different
+                  browser. Daemon-side ingest replaces this surface
+                  in a later slice. */}
+              Drafts are stored in your browser's localStorage under{' '}
+              <code>map2_maschine_profile_drafts</code> and survive page reloads on this device.
+              Daemon-side persistence lands once the workbench-to-runtime ingest path opens.
+            </p>
+          ) : null}
+
           {drafts.length > 0 ? (
             <div className="maschine-workbench__drafts">
               <h5 className="maschine-workbench__drafts-title">Saved drafts (localStorage)</h5>
