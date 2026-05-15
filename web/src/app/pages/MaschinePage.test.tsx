@@ -130,7 +130,17 @@ describe('MaschinePage', () => {
     ;(globalThis as typeof globalThis & { WebSocket?: typeof WebSocketMock }).WebSocket = WebSocketMock as never
     HTMLCanvasElement.prototype.getContext = jest.fn(() => ({
       fillStyle: '',
+      strokeStyle: '',
+      globalAlpha: 1,
+      font: '',
+      textBaseline: '',
+      textAlign: '',
       fillRect: jest.fn(),
+      fillText: jest.fn(),
+      beginPath: jest.fn(),
+      moveTo: jest.fn(),
+      lineTo: jest.fn(),
+      stroke: jest.fn(),
     })) as never
 
     maschineApi.getStatus.mockResolvedValue({

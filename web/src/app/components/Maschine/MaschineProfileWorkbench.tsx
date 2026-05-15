@@ -1,11 +1,12 @@
 import { Button, InlineNotification, Select, SelectItem, Tag, TextArea, Tile } from '@carbon/react'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useRef, useState } from 'react'
 
 import {
   STARTER_PROFILES,
   validateProfile,
   type MaschineProfile,
 } from './profileDsl'
+import { LCD_HEIGHT, LCD_WIDTH, renderLcdSpec } from './profileLcdRenderer'
 
 // T2522-B cycle 12 — Profile Workbench tab v1.
 //
@@ -184,33 +185,14 @@ export function MaschineProfileWorkbench() {
           <div className="maschine-workbench__preview">
             <h4 className="maschine-mapping__pane-title">LCD render preview</h4>
             <p className="maschine-mapping__sub" style={{ marginTop: '0.25rem' }}>
-              Cycle 13 wires the live JSON+flexbox layout engine + dual-LCD canvas render here. For now
-              the preview surfaces the template + block summary so the DSL shape is verifiable end-to-end.
+              Live render of the active profile through the cycle-13 layout engine. Canvases paint at the
+              MK1's native 255×64 frame size and scale up via CSS for visibility. What you see here is
+              what the device will display once the daemon ingests the profile.
             </p>
             {selectedProfile ? (
               <div className="maschine-workbench__preview-grid">
-                {(['lcd_left', 'lcd_right'] as const).map((side) => {
-                  const spec = selectedProfile[side]
-                  return (
-                    <div key={side} className="maschine-workbench__lcd-card">
-                      <div className="maschine-workbench__lcd-card-head">
-                        <Tag size="sm" type="cyan">{side === 'lcd_left' ? 'Left LCD' : 'Right LCD'}</Tag>
-                        <Tag size="sm" type="cool-gray">{spec.template}</Tag>
-                      </div>
-                      <div className="maschine-workbench__lcd-card-body">
-                        {spec.blocks.top?.text ? (
-                          <div className="maschine-workbench__lcd-band maschine-workbench__lcd-band--top">{spec.blocks.top.text}</div>
-                        ) : null}
-                        <div className="maschine-workbench__lcd-band maschine-workbench__lcd-band--canvas">
-                          {spec.blocks.canvas.kind} · {JSON.stringify(spec.blocks.canvas.data ?? {})}
-                        </div>
-                        {spec.blocks.bottom?.text ? (
-                          <div className="maschine-workbench__lcd-band maschine-workbench__lcd-band--bottom">{spec.blocks.bottom.text}</div>
-                        ) : null}
-                      </div>
-                    </div>
-                  )
-                })}
+                <ProfileLcdPreview side="left" profile={selectedProfile} />
+                <ProfileLcdPreview side="right" profile={selectedProfile} />
               </div>
             ) : null}
           </div>
@@ -279,6 +261,41 @@ export function MaschineProfileWorkbench() {
           ) : null}
         </Tile>
       </div>
+    </div>
+  )
+}
+
+const LCD_PREVIEW_SCALE = 2
+
+function ProfileLcdPreview({ side, profile }: { side: 'left' | 'right'; profile: MaschineProfile }) {
+  const ref = useRef<HTMLCanvasElement | null>(null)
+  const spec = side === 'left' ? profile.lcd_left : profile.lcd_right
+  useEffect(() => {
+    const canvas = ref.current
+    if (!canvas) return
+    canvas.width = LCD_WIDTH
+    canvas.height = LCD_HEIGHT
+    const ctx = canvas.getContext('2d')
+    if (!ctx) return
+    renderLcdSpec(ctx, spec)
+  }, [spec])
+  return (
+    <div className="maschine-workbench__lcd-card">
+      <div className="maschine-workbench__lcd-card-head">
+        <Tag size="sm" type="cyan">{side === 'left' ? 'Left LCD' : 'Right LCD'}</Tag>
+        <Tag size="sm" type="cool-gray">{spec.template}</Tag>
+      </div>
+      <canvas
+        ref={ref}
+        className="maschine-workbench__lcd-canvas"
+        style={{
+          width: `${LCD_WIDTH * LCD_PREVIEW_SCALE}px`,
+          height: `${LCD_HEIGHT * LCD_PREVIEW_SCALE}px`,
+          imageRendering: 'pixelated',
+          display: 'block',
+          maxWidth: '100%',
+        }}
+      />
     </div>
   )
 }

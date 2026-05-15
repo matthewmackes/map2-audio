@@ -70,4 +70,14 @@ describe('MaschineProfileWorkbench', () => {
     // T1 CTRL uses the param-list template on both sides.
     expect(screen.getAllByText('param-list').length).toBe(2)
   })
+
+  it('cycle-13 — paints both LCD canvases at native 255×64 dimensions', () => {
+    const { container } = render(<MaschineProfileWorkbench />)
+    const canvases = container.querySelectorAll('canvas.maschine-workbench__lcd-canvas') as NodeListOf<HTMLCanvasElement>
+    expect(canvases.length).toBe(2)
+    canvases.forEach((c) => {
+      expect(c.width).toBe(255)
+      expect(c.height).toBe(64)
+    })
+  })
 })
