@@ -119,6 +119,16 @@ install -m 644 etc/map2/sonobus.env.example %{buildroot}/etc/map2/sonobus.env.ex
 mkdir -p %{buildroot}/usr/lib/firewalld/services
 install -m 644 systemd/firewalld/map2-sonobus.xml %{buildroot}/usr/lib/firewalld/services/map2-sonobus.xml
 
+# T2529-A5 — system-wide PipeWire low-latency fragment + service drop-in.
+# The fragment lives in /etc/pipewire/pipewire.conf.d/ so it's picked up
+# by BOTH the per-user and the system-wide PipeWire instance. The drop-in
+# pins the system-wide instance off the isolated audio cores (4,5) and
+# grants RT scheduling parameters.
+mkdir -p %{buildroot}/etc/pipewire/pipewire.conf.d
+install -m 644 packaging/pipewire/99-map2-audio.conf %{buildroot}/etc/pipewire/pipewire.conf.d/99-map2-audio.conf
+mkdir -p %{buildroot}/usr/lib/systemd/system/pipewire-system.service.d
+install -m 644 packaging/pipewire/pipewire-system.service.d/10-map2-audio.conf %{buildroot}/usr/lib/systemd/system/pipewire-system.service.d/10-map2-audio.conf
+
 # Operator-facing CLI entrypoints (FHS path /usr/bin/, symlinks into /opt/map2-audio/scripts)
 mkdir -p %{buildroot}/usr/bin
 ln -s /opt/map2-audio/scripts/cli.py %{buildroot}/usr/bin/map2-cli
@@ -200,6 +210,8 @@ fi
 /usr/lib/firewalld/services/map2-sonobus.xml
 /usr/lib/sysusers.d/map2.conf
 /usr/lib/tmpfiles.d/map2.conf
+%config(noreplace) /etc/pipewire/pipewire.conf.d/99-map2-audio.conf
+/usr/lib/systemd/system/pipewire-system.service.d/10-map2-audio.conf
 /usr/bin/map2-cli
 /usr/bin/map2-self-test
 
