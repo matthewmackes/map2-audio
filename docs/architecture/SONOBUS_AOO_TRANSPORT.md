@@ -81,7 +81,7 @@ SonoBus/AOO is not a fifth platform service — it is a **transport** that sits 
 | **T2521-2** Architecture doc | 1 (this doc) | AVB-template doc with locked decisions, data model, API surface, GUI regions, installer scope, risk register, validation gates. |
 | **T2521-3** Transport authority + persistence | 2–3 | `SonoBusBindingAuthority`, `SonoBusBinding` table, migrations, schemas, tests. |
 | **T2521-4** Daemon runtime | 3–4 | `map2-sonobus-transport` C++ daemon + AOO vendor build + supervisor + JACK/PipeWire client + UDS IPC. RT-isolated. |
-| **T2521-5** REST + WS | 2 | `/api/sonobus/*` routes + `/ws/sonobus/events` event stream. |
+| **T2521-5** REST + WS | 2 | `/api/sonobus/*` routes + `/api/sonobus/events` event stream. |
 | **T2521-6** Carbon workspace | 3–4 | `/sonobus` shell + 7 region pages + shared components. |
 | **T2521-7** Snapshot/routing integration | 2 | `AudioInterfaceRegistry` adds SonoBus IDs; snapshot picker + routing matrix surface them. Explicit Recorder/Artifact exclusion regression tests. |
 | **T2521-8** Installer/RPM/systemd/firewall | 2–3 | RPM spec, service unit, firewall (firewalld zone), env, package manifest, rollback. |
@@ -301,7 +301,7 @@ flowchart TB
 
     subgraph apis["Public API surfaces (T2521-5)"]
         sonobus_routes["/api/sonobus/*"]
-        ws_events["/ws/sonobus/events"]
+        ws_events["/api/sonobus/events"]
         cluster_matrix_route["/api/sonobus/cluster/bindings/matrix"]
     end
 
@@ -349,7 +349,7 @@ flowchart LR
 
     subgraph phase_2["Phase 2 (T2521-4, T2521-5)"]
         daemon["map2-sonobus-transport\ndaemon + AOO vendor"]
-        routes["/api/sonobus/* + /ws/sonobus/events"]
+        routes["/api/sonobus/* + /api/sonobus/events"]
     end
 
     subgraph phase_3["Phase 3 (T2521-6, T2521-7)"]
@@ -416,7 +416,7 @@ flowchart TB
 
 ## 4. API surface (T2521-5)
 
-All routes mount under `/api/sonobus/*`. WebSocket events at `/ws/sonobus/events`. OpenAPI tag: `SonoBus`.
+All routes mount under `/api/sonobus/*`. WebSocket events at `/api/sonobus/events`. OpenAPI tag: `SonoBus`.
 
 | Route | Method | Purpose |
 |---|---|---|
@@ -436,7 +436,7 @@ All routes mount under `/api/sonobus/*`. WebSocket events at `/ws/sonobus/events
 | `/api/sonobus/network/connection-server` | GET / PATCH | MAP2-hosted connection-server lifecycle (Q3). |
 | `/api/sonobus/diagnostics` | GET | Per-binding metrics: RTT, loss, jitter, resends, observed latency. |
 | `/api/sonobus/cluster/bindings/matrix` | GET | Peer-fan-out cluster projection (mirrors AVB matrix, 2 s per-peer timeout). |
-| `/ws/sonobus/events` | WS | Push events: peer-up/down, session-start/stop, metric snapshots (1 Hz), authority writes. |
+| `/api/sonobus/events` | WS | Push events: peer-up/down, session-start/stop, metric snapshots (1 Hz), authority writes. |
 
 **Error envelope**: standard MAP2 envelope (`{ "error": { "code": ..., "message": ..., "details": null } }`). New error codes registered in `docs/api-contract-standards.md` under T2521-5:
 

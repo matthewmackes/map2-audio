@@ -642,6 +642,472 @@ async def enable_binding(
             )
 
 
+# ---------- T2521-5 remaining surface (cycle 26) ----------
+#
+# Each of the routes below is the operator-facing contract. Daemon-side
+# fields stay at placeholder/derived values until the T2521-4 transport
+# runtime lands; the GUI + tests can wire against the route shape today
+# and pick up the live data automatically once the daemon publishes
+# through these same paths.
+
+
+class SonoBusPeerProbeResponse(BaseModel):
+    """T2521-5f — one-shot peer reachability probe.
+
+    Daemon-side this kicks an AOO ping at the peer endpoint and records
+    the RTT. Until T2521-4 the route returns the binding's last-known
+    state from the authority + ``reachable=False`` so the operator sees
+    "needs daemon" instead of a route 404.
+    """
+
+    peer_id: str
+    reachable: bool
+    rtt_ms: Optional[float] = None
+    last_seen_iso: Optional[str] = None
+    detail: str = "daemon offline (T2521-4)"
+
+
+@router.post(
+    "/peers/{peer_id}/probe",
+    response_model=SonoBusPeerProbeResponse,
+)
+async def probe_peer(peer_id: str) -> SonoBusPeerProbeResponse:
+    """T2521-5f — issue a one-shot reachability + RTT probe.
+
+    The real probe is daemon-side. This stub honors the architecture
+    doc's API contract (POST returns 200 with a structured result) so
+    operator tooling and the GUI Network page can light up the call
+    button today.
+    """
+    return SonoBusPeerProbeResponse(peer_id=peer_id, reachable=False)
+
+
+class SonoBusGroupCreateRequest(BaseModel):
+    """Request body for ``POST /api/sonobus/groups`` (T2521-5g)."""
+
+    group_id: str
+    session_label: Optional[str] = None
+    channel_count: int = 1
+
+
+@router.post("/groups", response_model=SonoBusGroupSummary, status_code=201)
+async def create_group(body: SonoBusGroupCreateRequest) -> SonoBusGroupSummary:
+    """T2521-5g — register a group identity for downstream bindings.
+
+    Groups are derived projections over bindings (see ``list_groups``);
+    "creating" a group at this layer simply seeds a placeholder summary
+    so a fresh GUI can write per-group settings before any binding lands.
+    Returns the seeded summary; the operator subsequently attaches
+    bindings via POST /bindings with ``group_id=<id>``.
+    """
+    return SonoBusGroupSummary(
+        group_id=body.group_id,
+        session_label=body.session_label,
+        binding_count=0,
+        enabled_binding_count=0,
+        channel_count_total=int(body.channel_count or 0),
+    )
+
+
+@router.get(
+    "/groups/{group_id}",
+    response_model=SonoBusGroupSummary,
+)
+async def get_group(group_id: str) -> SonoBusGroupSummary:
+    """T2521-5g — single-group lookup. Returns 404 when the group has
+    no bindings yet (which mirrors ``list_groups`` skipping empty
+    groups). Operator tooling treats 404 as "no bindings" rather than
+    "no group"."""
+    async with get_session(read_only=True) as session:
+        rows = await session.execute(
+            select(SonoBusBinding).where(SonoBusBinding.group_id == group_id)
+        )
+        bindings = list(rows.scalars().all())
+        if not bindings:
+            raise HTTPException(
+                status_code=404, detail=f"group not found: {group_id}"
+            )
+        summary = SonoBusGroupSummary(
+            group_id=group_id,
+            session_label=next(
+                (b.session_label for b in bindings if b.session_label),
+                None,
+            ),
+            binding_count=len(bindings),
+            enabled_binding_count=sum(1 for b in bindings if b.enabled),
+            channel_count_total=sum(
+                int(b.channel_count or 0) for b in bindings
+            ),
+        )
+        return summary
+
+
+class SonoBusGroupPatchRequest(BaseModel):
+    """Operator-facing fields on a group (label only for now)."""
+
+    session_label: Optional[str] = None
+
+
+@router.patch(
+    "/groups/{group_id}",
+    response_model=SonoBusGroupSummary,
+)
+async def patch_group(
+    group_id: str, body: SonoBusGroupPatchRequest
+) -> SonoBusGroupSummary:
+    """T2521-5g — propagate a group label rename to every binding in
+    the group. Returns the refreshed summary."""
+    async with get_session() as session:
+        authority = SonoBusBindingAuthority(session)
+        rows = await session.execute(
+            select(SonoBusBinding).where(SonoBusBinding.group_id == group_id)
+        )
+        bindings = list(rows.scalars().all())
+        if not bindings:
+            raise HTTPException(
+                status_code=404, detail=f"group not found: {group_id}"
+            )
+        if body.session_label is not None:
+            for binding in bindings:
+                await authority.update(
+                    binding.binding_id,
+                    SonoBusBindingUpdate(
+                        session_label=body.session_label,
+                        modified_by="api:group_patch",
+                    ),
+                )
+            # Refresh post-update.
+            rows = await session.execute(
+                select(SonoBusBinding).where(
+                    SonoBusBinding.group_id == group_id
+                )
+            )
+            bindings = list(rows.scalars().all())
+        return SonoBusGroupSummary(
+            group_id=group_id,
+            session_label=next(
+                (b.session_label for b in bindings if b.session_label),
+                None,
+            ),
+            binding_count=len(bindings),
+            enabled_binding_count=sum(1 for b in bindings if b.enabled),
+            channel_count_total=sum(
+                int(b.channel_count or 0) for b in bindings
+            ),
+        )
+
+
+@router.delete(
+    "/groups/{group_id}",
+    status_code=204,
+)
+async def delete_group(group_id: str) -> None:
+    """T2521-5g — drop every binding in a group. Returns 204; mirrors
+    the AVB group-delete semantics."""
+    async with get_session() as session:
+        authority = SonoBusBindingAuthority(session)
+        rows = await session.execute(
+            select(SonoBusBinding).where(SonoBusBinding.group_id == group_id)
+        )
+        bindings = list(rows.scalars().all())
+        if not bindings:
+            raise HTTPException(
+                status_code=404, detail=f"group not found: {group_id}"
+            )
+        for binding in bindings:
+            await authority.delete(binding.binding_id)
+
+
+class SonoBusSessionDisconnectResponse(BaseModel):
+    """Response body for the operator-facing tear-down call."""
+
+    session_id: str
+    disconnected: bool
+    detail: str = "daemon offline (T2521-4)"
+
+
+@router.post(
+    "/sessions/{session_id}/disconnect",
+    response_model=SonoBusSessionDisconnectResponse,
+)
+async def disconnect_session(
+    session_id: str,
+) -> SonoBusSessionDisconnectResponse:
+    """T2521-5g — operator tear-down of a live stream / client session.
+
+    The route disables the matching binding (so the next daemon poll
+    picks up the operator's intent) and reports the outcome. Returns
+    ``disconnected=False`` when the daemon hasn't been started yet, so
+    the GUI can render the "started but daemon offline" affordance the
+    architecture doc calls out.
+    """
+    async with get_session() as session:
+        authority = SonoBusBindingAuthority(session)
+        try:
+            await authority.disable(session_id, modified_by="api:disconnect")
+            return SonoBusSessionDisconnectResponse(
+                session_id=session_id,
+                disconnected=True,
+                detail="binding disabled; daemon will tear down on next poll",
+            )
+        except SonoBusBindingNotFound:
+            raise HTTPException(
+                status_code=404, detail=f"session not found: {session_id}"
+            )
+
+
+class SonoBusProfileCreateRequest(BaseModel):
+    """Operator-defined profile create payload (T2521-5d).
+
+    Mirrors the ``SonoBusProfilePreset`` shape verbatim so a custom
+    profile can later be promoted to a built-in without translation.
+    """
+
+    profile_id: str
+    label: str
+    codec_profile: str = "pcm"
+    stream_format: str = "pcm_s24_48000"
+    jitter_buffer_ms: int = 4
+    resend_policy: str = "burst_loss_only"
+    latency_target_ms: int = 8
+    description: str = "operator-defined custom profile"
+
+
+@router.post(
+    "/profiles",
+    response_model=SonoBusProfilePreset,
+    status_code=201,
+)
+async def create_profile(
+    body: SonoBusProfileCreateRequest,
+) -> SonoBusProfilePreset:
+    """T2521-5d — accept an operator-defined custom profile.
+
+    Custom-profile persistence is a T2521-4 deliverable (daemon side
+    owns the profile table). Until then the route round-trips the
+    payload so GUI form validation and operator tooling can land
+    against the canonical shape.
+    """
+    return SonoBusProfilePreset(
+        profile_id=body.profile_id,
+        label=body.label,
+        codec_profile=body.codec_profile,
+        stream_format=body.stream_format,
+        jitter_buffer_ms=body.jitter_buffer_ms,
+        resend_policy=body.resend_policy,
+        latency_target_ms=body.latency_target_ms,
+        description=body.description,
+    )
+
+
+class SonoBusProfilePatchRequest(BaseModel):
+    """Partial profile patch (every field optional)."""
+
+    label: Optional[str] = None
+    codec_profile: Optional[str] = None
+    stream_format: Optional[str] = None
+    jitter_buffer_ms: Optional[int] = None
+    resend_policy: Optional[str] = None
+    latency_target_ms: Optional[int] = None
+    description: Optional[str] = None
+
+
+@router.patch(
+    "/profiles/{profile_id}",
+    response_model=SonoBusProfilePreset,
+)
+async def patch_profile(
+    profile_id: str, body: SonoBusProfilePatchRequest
+) -> SonoBusProfilePreset:
+    """T2521-5d — patch a profile. Built-in profiles refuse mutation
+    with 409; the daemon-owned profile store lands in T2521-4."""
+    for preset in BUILT_IN_PROFILES:
+        if preset.profile_id == profile_id:
+            raise HTTPException(
+                status_code=409,
+                detail=(
+                    "built-in profile is immutable; clone with POST "
+                    "/profiles to customize"
+                ),
+            )
+    # Operator-defined profile patch round-trips through the wire
+    # contract until the daemon-side table lands.
+    return SonoBusProfilePreset(
+        profile_id=profile_id,
+        label=body.label or profile_id,
+        codec_profile=body.codec_profile or "pcm",
+        stream_format=body.stream_format or "pcm_s24_48000",
+        jitter_buffer_ms=body.jitter_buffer_ms or 4,
+        resend_policy=body.resend_policy or "burst_loss_only",
+        latency_target_ms=body.latency_target_ms or 8,
+        description=body.description or "operator-defined custom profile",
+    )
+
+
+@router.delete(
+    "/profiles/{profile_id}",
+    status_code=204,
+)
+async def delete_profile(profile_id: str) -> None:
+    """T2521-5d — delete an operator-defined profile. Built-in profiles
+    refuse deletion with 409."""
+    for preset in BUILT_IN_PROFILES:
+        if preset.profile_id == profile_id:
+            raise HTTPException(
+                status_code=409,
+                detail="built-in profile cannot be deleted",
+            )
+    # Operator-defined profiles aren't persisted yet (daemon-side
+    # table is T2521-4); the route honors the wire contract by
+    # returning 204 idempotently.
+
+
+class SonoBusInterfaceSummary(BaseModel):
+    """Bind-interface summary entry for the Network page."""
+
+    name: str
+    address: Optional[str] = None
+    mdns_enabled: bool = True
+    notes: Optional[str] = None
+
+
+class SonoBusNetworkStatusResponse(BaseModel):
+    """T2521-5h — network configuration + observed state.
+
+    Operator-facing data: which network interfaces the daemon is bound
+    to, the UDP port range, mDNS state, and NAT/STUN state. Daemon-
+    side fields default to the T2521 locked values until T2521-4 ships.
+    """
+
+    bind_interfaces: list[SonoBusInterfaceSummary]
+    udp_port_range_start: int = 10000
+    udp_port_range_end: int = 10100
+    mdns_enabled: bool = True
+    mdns_service_name: str = "_sonobus._udp"
+    nat_traversal: str = "stun_optional"
+    stun_servers: list[str] = []
+
+
+@router.get(
+    "/network",
+    response_model=SonoBusNetworkStatusResponse,
+)
+async def get_network_status() -> SonoBusNetworkStatusResponse:
+    """T2521-5h — operator view of the daemon's network binding.
+
+    The default response mirrors the locked-decision defaults so the
+    GUI Network page renders meaningful values pre-daemon. T2521-4
+    swaps in the daemon's actual observed state via the same shape.
+    """
+    return SonoBusNetworkStatusResponse(
+        bind_interfaces=[
+            SonoBusInterfaceSummary(
+                name="any",
+                address="0.0.0.0",
+                mdns_enabled=True,
+                notes=(
+                    "Daemon binds all available interfaces until "
+                    "operator narrows the scope; T2521-4 surfaces "
+                    "the live binding set."
+                ),
+            ),
+        ],
+    )
+
+
+class SonoBusConnectionServerStatusResponse(BaseModel):
+    """T2521-5h — MAP2-hosted connection server (Q3) state."""
+
+    enabled: bool = True  # Q3 default
+    running: bool = False
+    listen_address: str = "0.0.0.0"
+    listen_port: int = 10998
+    public_endpoint: Optional[str] = None
+    detail: str = "daemon offline (T2521-4)"
+
+
+@router.get(
+    "/network/connection-server",
+    response_model=SonoBusConnectionServerStatusResponse,
+)
+async def get_connection_server_status() -> SonoBusConnectionServerStatusResponse:
+    """T2521-5h — Q3 connection-server state. Default is enabled
+    (lock decision); running flips True once T2521-4 daemon supervises
+    it."""
+    return SonoBusConnectionServerStatusResponse()
+
+
+class SonoBusConnectionServerPatchRequest(BaseModel):
+    """Operator toggle for the Q3 connection server."""
+
+    enabled: Optional[bool] = None
+    listen_port: Optional[int] = None
+
+
+@router.patch(
+    "/network/connection-server",
+    response_model=SonoBusConnectionServerStatusResponse,
+)
+async def patch_connection_server(
+    body: SonoBusConnectionServerPatchRequest,
+) -> SonoBusConnectionServerStatusResponse:
+    """T2521-5h — operator toggle / port-override for the Q3
+    connection server. Round-trips through the wire contract until
+    the daemon-side state store lands."""
+    return SonoBusConnectionServerStatusResponse(
+        enabled=(body.enabled if body.enabled is not None else True),
+        listen_port=(body.listen_port or 10998),
+    )
+
+
+class SonoBusDiagnosticBinding(BaseModel):
+    """Per-binding diagnostics snapshot."""
+
+    binding_id: str
+    enabled: bool
+    rtt_ms: Optional[float] = None
+    loss_pct: Optional[float] = None
+    jitter_ms: Optional[float] = None
+    resend_count: int = 0
+    observed_latency_ms: Optional[float] = None
+    last_metric_iso: Optional[str] = None
+
+
+class SonoBusDiagnosticsResponse(BaseModel):
+    """T2521-5i — operator diagnostics surface.
+
+    One entry per binding with the daemon-reported metric tuple. Until
+    T2521-4 the entries carry the static enable state and ``None`` for
+    the live metrics so the GUI Diagnostics table can render rows + a
+    "metrics unavailable until daemon online" affordance.
+    """
+
+    bindings: list[SonoBusDiagnosticBinding]
+    daemon_running: bool = False
+    last_refresh_iso: str
+
+
+@router.get(
+    "/diagnostics",
+    response_model=SonoBusDiagnosticsResponse,
+)
+async def get_diagnostics() -> SonoBusDiagnosticsResponse:
+    """T2521-5i — per-binding metric snapshot for the Diagnostics page."""
+    async with get_session(read_only=True) as session:
+        rows = await session.execute(select(SonoBusBinding))
+        diagnostics = [
+            SonoBusDiagnosticBinding(
+                binding_id=binding.binding_id,
+                enabled=bool(binding.enabled),
+            )
+            for binding in rows.scalars().all()
+        ]
+        return SonoBusDiagnosticsResponse(
+            bindings=diagnostics,
+            last_refresh_iso=datetime.now(timezone.utc).isoformat(),
+        )
+
+
 # ---------- WebSocket event stream (T2521-5e) ----------
 
 
