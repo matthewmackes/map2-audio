@@ -88,9 +88,26 @@ const fixturePayload = {
       direction: null,
       notes: [],
     },
+    // T2521-7 — SonoBus peer projection from the binding authority.
+    {
+      interface_id: 'sonobus:peer-remote-studio:band-jam:stream-1',
+      display_name: 'Remote Studio (SonoBus)',
+      transport: 'sonobus' as const,
+      vendor: 'SonoBus',
+      product: null,
+      serial: null,
+      input_port_count: 2,
+      output_port_count: 2,
+      sample_rate: 48000,
+      available: true,
+      is_default: false,
+      node_id: 'peer-remote-studio',
+      direction: null,
+      notes: ['AVB-preferred fallback'],
+    },
   ],
   default_interface_id: 'pipewire:usb:0x582:0x0007:edirol-0001',
-  transports: ['pipewire_usb', 'pipewire_alsa', 'pipewire_other', 'avb', 'cluster'],
+  transports: ['pipewire_usb', 'pipewire_alsa', 'pipewire_other', 'avb', 'cluster', 'sonobus'],
 }
 
 describe('SnapshotInterfacePicker', () => {
@@ -107,9 +124,32 @@ describe('SnapshotInterfacePicker', () => {
     })
     expect(screen.getByText('avb:avb-stream-0001')).toBeInTheDocument()
     expect(screen.getByText('cluster:peer-7:tascam')).toBeInTheDocument()
+    expect(
+      screen.getByText('sonobus:peer-remote-studio:band-jam:stream-1'),
+    ).toBeInTheDocument()
     expect(screen.getByText('Local interfaces')).toBeInTheDocument()
     expect(screen.getByText('AVB endpoints')).toBeInTheDocument()
     expect(screen.getByText('Cluster nodes')).toBeInTheDocument()
+    // T2521-7 — SonoBus group header + selectable card.
+    expect(screen.getByText('SonoBus peers')).toBeInTheDocument()
+  })
+
+  it('T2521-7 — sonobus interfaces are selectable through the same onChange path', async () => {
+    mockGetInterfaces.mockResolvedValue(fixturePayload)
+    const { onChange } = renderPicker()
+    await waitFor(() => {
+      expect(
+        screen.getByText('sonobus:peer-remote-studio:band-jam:stream-1'),
+      ).toBeInTheDocument()
+    })
+    fireEvent.click(
+      screen.getByTestId(
+        'snapshot-interface-card-sonobus:peer-remote-studio:band-jam:stream-1',
+      ),
+    )
+    expect(onChange).toHaveBeenCalledWith(
+      'sonobus:peer-remote-studio:band-jam:stream-1',
+    )
   })
 
   it('filters by direction — output picker hides talker-only AVB endpoints', async () => {

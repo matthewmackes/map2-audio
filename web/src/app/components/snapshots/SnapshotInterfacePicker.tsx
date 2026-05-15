@@ -3,6 +3,7 @@ import { useQuery } from '@tanstack/react-query'
 import {
   ArrowsHorizontal,
   AudioConsole,
+  Cloud,
   Network_3,
   Renew,
   Usb,
@@ -55,6 +56,13 @@ const TRANSPORT_GROUPS: Array<{
     label: 'Cluster nodes',
     match: (transport) => transport === 'cluster',
   },
+  // T2521-7 — SonoBus / AOO remote-audio transport. Sits below the
+  // local + AVB + cluster groups since Q18 locks AVB-preferred.
+  {
+    key: 'sonobus',
+    label: 'SonoBus peers',
+    match: (transport) => transport === 'sonobus',
+  },
 ]
 
 const TRANSPORT_ICON: Record<AudioInterfaceTransport, ReactNode> = {
@@ -63,6 +71,7 @@ const TRANSPORT_ICON: Record<AudioInterfaceTransport, ReactNode> = {
   pipewire_other: <AudioConsole size={16} aria-hidden="true" />,
   avb: <ArrowsHorizontal size={16} aria-hidden="true" />,
   cluster: <Network_3 size={16} aria-hidden="true" />,
+  sonobus: <Cloud size={16} aria-hidden="true" />,
 }
 
 const TRANSPORT_LABEL: Record<AudioInterfaceTransport, string> = {
@@ -71,6 +80,7 @@ const TRANSPORT_LABEL: Record<AudioInterfaceTransport, string> = {
   pipewire_other: 'PipeWire',
   avb: 'AVB',
   cluster: 'Cluster',
+  sonobus: 'SonoBus',
 }
 
 export interface SnapshotInterfacePickerProps {

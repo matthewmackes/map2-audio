@@ -497,7 +497,9 @@ export type AudioInterfaceTransport =
   | 'pipewire_alsa'
   | 'pipewire_other'
   | 'avb'
-  | 'cluster';
+  | 'cluster'
+  // T2521-7 — SonoBus / AOO remote audio transport.
+  | 'sonobus';
 
 export interface AudioInterfaceRecord {
   interface_id: string;
