@@ -24,6 +24,8 @@
 namespace map2 {
 namespace sonobus {
 
+using json = nlohmann::json;
+
 namespace {
 
 std::string transportResultName(TransportResult r)
@@ -108,11 +110,22 @@ int DaemonServer::run()
         });
     });
 
+    // Cycle 7 — source/sink lifecycle handlers also register with the
+    // metrics collector so the diagnostics surface reflects the
+    // currently-active stream set. In stub mode the AOO call returns
+    // transport_unavailable; we DO still register the stream so the
+    // operator sees the binding rows in /api/sonobus/diagnostics with
+    // metrics=0 (rather than an empty list that hides the binding).
+
     uds_->registerHandler("create_source", [this](const Frame& f) -> CommandResult {
         if (! f.payload.is_object() || ! f.payload.contains("stream_id"))
             return errResult("invalid_argument", "payload must contain stream_id");
         std::string stream_id = f.payload.at("stream_id").get<std::string>();
         auto r = aoo_->createSource(stream_id);
+        if (r == TransportResult::Ok || r == TransportResult::Unavailable)
+        {
+            metrics_->registerStream(stream_id);
+        }
         if (r != TransportResult::Ok)
             return errResult(transportResultName(r),
                              "createSource(" + stream_id + ") failed");
@@ -124,6 +137,7 @@ int DaemonServer::run()
             return errResult("invalid_argument", "payload must contain stream_id");
         std::string stream_id = f.payload.at("stream_id").get<std::string>();
         auto r = aoo_->destroySource(stream_id);
+        metrics_->unregisterStream(stream_id);
         if (r != TransportResult::Ok)
             return errResult(transportResultName(r),
                              "destroySource(" + stream_id + ") failed");
@@ -135,6 +149,10 @@ int DaemonServer::run()
             return errResult("invalid_argument", "payload must contain stream_id");
         std::string stream_id = f.payload.at("stream_id").get<std::string>();
         auto r = aoo_->createSink(stream_id);
+        if (r == TransportResult::Ok || r == TransportResult::Unavailable)
+        {
+            metrics_->registerStream(stream_id);
+        }
         if (r != TransportResult::Ok)
             return errResult(transportResultName(r),
                              "createSink(" + stream_id + ") failed");
@@ -146,10 +164,27 @@ int DaemonServer::run()
             return errResult("invalid_argument", "payload must contain stream_id");
         std::string stream_id = f.payload.at("stream_id").get<std::string>();
         auto r = aoo_->destroySink(stream_id);
+        metrics_->unregisterStream(stream_id);
         if (r != TransportResult::Ok)
             return errResult(transportResultName(r),
                              "destroySink(" + stream_id + ") failed");
         return okResult({{"stream_id", stream_id}});
+    });
+
+    // Cycle 7 — per-binding metrics query. Returns either the full
+    // metric snapshot (no payload.stream_id) or a single stream's
+    // metrics (when payload.stream_id is set).
+    uds_->registerHandler("metrics_query", [this](const Frame& f) -> CommandResult {
+        if (f.payload.is_object() && f.payload.contains("stream_id"))
+        {
+            std::string stream_id = f.payload.at("stream_id").get<std::string>();
+            auto snap = metrics_->snapshotStreamJson(stream_id);
+            if (snap.is_null())
+                return errResult("stream_not_found",
+                                 "no metrics tracked for stream_id=" + stream_id);
+            return okResult(snap);
+        }
+        return okResult(metrics_->snapshotJson());
     });
 
     uds_->registerHandler("shutdown", [this](const Frame&) -> CommandResult {
@@ -170,6 +205,19 @@ int DaemonServer::run()
         uds_->poll();
         aoo_->poll();
         metrics_->tick();
+
+        // Cycle 7 — periodic metrics_snapshot event push. The collector
+        // gates the snapshot internally (default 5s interval) so this
+        // call is essentially free until the timer elapses.
+        if (uds_->hasClient())
+        {
+            json snapshot;
+            if (metrics_->maybeBuildPeriodicSnapshot(snapshot))
+            {
+                uds_->pushEvent("metrics_snapshot", std::move(snapshot));
+            }
+        }
+
         std::this_thread::sleep_for(kPollIntervalMs);
     }
 

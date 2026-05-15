@@ -1131,23 +1131,74 @@ class SonoBusDiagnosticsResponse(BaseModel):
     last_refresh_iso: str
 
 
+def _live_metrics_for_diagnostics() -> tuple[dict[str, dict[str, Any]], bool]:
+    """Pull live metrics from the daemon supervisor. Falls back to an
+    empty dict if the supervisor module fails to import or the daemon
+    hasn't pushed a snapshot yet."""
+    try:
+        from app.services.sonobus.daemon_supervisor import (
+            get_sonobus_daemon_supervisor,
+        )
+        supervisor = get_sonobus_daemon_supervisor()
+        snapshot = supervisor.latest_metrics()
+        return snapshot.get("streams", {}), bool(supervisor.is_connected)
+    except Exception:
+        return {}, False
+
+
 @router.get(
     "/diagnostics",
     response_model=SonoBusDiagnosticsResponse,
 )
 async def get_diagnostics() -> SonoBusDiagnosticsResponse:
-    """T2521-5i — per-binding metric snapshot for the Diagnostics page."""
+    """T2521-5i — per-binding metric snapshot for the Diagnostics page.
+
+    T2521-4 cycle 7 lights up the live-metric fields: when the daemon
+    has pushed a `metrics_snapshot` event for a given binding's stream
+    in the last 30s, the rtt_ms / loss_pct / jitter_ms / resend_count /
+    observed_latency_ms fields carry the real values. Otherwise they
+    stay None (Diagnostics page renders "metrics unavailable").
+    """
+    metrics_by_stream, daemon_running = _live_metrics_for_diagnostics()
     async with get_session(read_only=True) as session:
         rows = await session.execute(select(SonoBusBinding))
-        diagnostics = [
-            SonoBusDiagnosticBinding(
-                binding_id=binding.binding_id,
-                enabled=bool(binding.enabled),
+        diagnostics = []
+        for binding in rows.scalars().all():
+            # The daemon keys metrics by stream_id; bindings carry it
+            # via stream_id (the canonical AOO source/sink identifier).
+            stream_id = getattr(binding, "stream_id", None) or binding.binding_id
+            live = metrics_by_stream.get(stream_id)
+            if live is None:
+                diagnostics.append(
+                    SonoBusDiagnosticBinding(
+                        binding_id=binding.binding_id,
+                        enabled=bool(binding.enabled),
+                    )
+                )
+                continue
+            last_update_ms = live.get("last_update_unix_ms")
+            last_iso = (
+                datetime.fromtimestamp(
+                    int(last_update_ms) / 1000.0, tz=timezone.utc
+                ).isoformat()
+                if isinstance(last_update_ms, (int, float))
+                else None
             )
-            for binding in rows.scalars().all()
-        ]
+            diagnostics.append(
+                SonoBusDiagnosticBinding(
+                    binding_id=binding.binding_id,
+                    enabled=bool(binding.enabled),
+                    rtt_ms=live.get("rtt_ms"),
+                    loss_pct=live.get("loss_pct"),
+                    jitter_ms=live.get("jitter_ms"),
+                    resend_count=int(live.get("resend_count") or 0),
+                    observed_latency_ms=live.get("observed_latency_ms"),
+                    last_metric_iso=last_iso,
+                )
+            )
         return SonoBusDiagnosticsResponse(
             bindings=diagnostics,
+            daemon_running=daemon_running,
             last_refresh_iso=datetime.now(timezone.utc).isoformat(),
         )
 
@@ -1177,6 +1228,7 @@ async def sonobus_events_ws(websocket: WebSocket) -> None:
     logger.info("sonobus events ws connected: %s", client_id)
 
     async def _snapshot() -> dict:
+        daemon_fields = _supervisor_status_fields()
         try:
             async with get_session(read_only=True) as session:
                 authority = SonoBusBindingAuthority(session)
@@ -1191,16 +1243,55 @@ async def sonobus_events_ws(websocket: WebSocket) -> None:
                     "authority_ok": True,
                     "binding_count": binding_count,
                     "enabled_binding_count": enabled_count,
-                    "daemon_running": False,
                     "timestamp": datetime.now(timezone.utc).isoformat(),
+                    **daemon_fields,
                 }
         except Exception as exc:  # pragma: no cover — defensive
             return {
                 "authority_ok": False,
                 "error": str(exc),
                 "timestamp": datetime.now(timezone.utc).isoformat(),
+                **daemon_fields,
             }
 
+    # Cycle 7 — subscribe to daemon events through the supervisor so
+    # peer_up / peer_down / session_start / session_stop /
+    # metrics_snapshot / transport_error all flow through this WS.
+    daemon_queue = None
+    supervisor = None
+    try:
+        from app.services.sonobus.daemon_supervisor import (
+            get_sonobus_daemon_supervisor,
+        )
+        supervisor = get_sonobus_daemon_supervisor()
+        daemon_queue = supervisor.subscribe_events(replay_buffer=True)
+    except Exception:
+        logger.debug("sonobus events ws: supervisor unavailable, daemon-event relay disabled")
+
+    async def _drain_daemon_events() -> None:
+        """Pump daemon events onto the WS as `sonobus:daemon` frames.
+        Wraps each in the canonical envelope so the GUI dispatcher
+        handles it identically to the heartbeat frame."""
+        if daemon_queue is None:
+            return
+        try:
+            while True:
+                event = await daemon_queue.get()
+                await websocket.send_json(
+                    {
+                        "type": "sonobus:daemon",
+                        "schema_version": 1,
+                        "data": event,
+                    }
+                )
+        except WebSocketDisconnect:
+            raise
+        except Exception:  # pragma: no cover — defensive
+            logger.exception("sonobus events ws daemon drain crashed")
+
+    daemon_task = (
+        asyncio.create_task(_drain_daemon_events()) if daemon_queue is not None else None
+    )
     try:
         await websocket.send_json(
             {
@@ -1221,6 +1312,18 @@ async def sonobus_events_ws(websocket: WebSocket) -> None:
     except WebSocketDisconnect:
         logger.info("sonobus events ws disconnected: %s", client_id)
         return
+    finally:
+        if daemon_task is not None and not daemon_task.done():
+            daemon_task.cancel()
+            try:
+                await daemon_task
+            except (asyncio.CancelledError, Exception):
+                pass
+        if supervisor is not None and daemon_queue is not None:
+            try:
+                supervisor.unsubscribe_events(daemon_queue)
+            except Exception:
+                pass
 
 
 __all__ = ["router"]

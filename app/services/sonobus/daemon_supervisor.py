@@ -112,6 +112,7 @@ class SonoBusDaemonSupervisor:
         max_backoff_seconds: float | None = None,
         spawn_subprocess: bool = False,
         client: SonoBusDaemonClient | None = None,
+        event_buffer_size: int = 512,
     ) -> None:
         self.binary_path = Path(binary_path or DEFAULT_BINARY_PATH)
         self.socket_path = Path(socket_path or DEFAULT_SOCKET_PATH)
@@ -144,11 +145,24 @@ class SonoBusDaemonSupervisor:
         self._capabilities: Optional[DaemonCapabilities] = None
         self._process: Optional[asyncio.subprocess.Process] = None
         self._supervisor_task: Optional[asyncio.Task[None]] = None
+        self._event_relay_task: Optional[asyncio.Task[None]] = None
         self._stop_event = asyncio.Event()
         self._crash_times: deque[float] = deque(maxlen=MAX_CRASHES_IN_WINDOW + 1)
         self._restart_count: int = 0
         self._last_error: Optional[str] = None
         self._connected_at: Optional[float] = None
+
+        # Cycle 7 — daemon event handling.
+        # Cache of the latest per-stream metrics (keyed by stream_id).
+        # Updated as `metrics_snapshot` events stream in from the daemon;
+        # the /api/sonobus/diagnostics route reads from here.
+        self._latest_metrics: dict[str, dict[str, Any]] = {}
+        self._latest_metrics_taken_at_ms: Optional[int] = None
+        # Bounded buffer of recent events for late-joining WS subscribers.
+        self._event_buffer: deque[dict[str, Any]] = deque(maxlen=event_buffer_size)
+        # Active WS-relay subscriptions. Each subscriber gets its own
+        # asyncio.Queue so a slow consumer can't backpressure the others.
+        self._event_subscribers: list[asyncio.Queue[dict[str, Any]]] = []
 
     # ------------------------------------------------------------------
     # Lifecycle
@@ -168,6 +182,14 @@ class SonoBusDaemonSupervisor:
             await self._client.disconnect()
         except Exception:
             logger.exception("SonoBusDaemonSupervisor: client disconnect failed")
+
+        if self._event_relay_task is not None and not self._event_relay_task.done():
+            self._event_relay_task.cancel()
+            try:
+                await self._event_relay_task
+            except (asyncio.CancelledError, Exception):
+                pass
+        self._event_relay_task = None
 
         if self._supervisor_task is not None:
             try:
@@ -244,6 +266,62 @@ class SonoBusDaemonSupervisor:
             logger.info("SonoBusDaemonSupervisor: storm guard reset")
 
     # ------------------------------------------------------------------
+    # Cycle 7 — daemon event/metrics surface
+    # ------------------------------------------------------------------
+
+    def latest_metrics(self) -> dict[str, Any]:
+        """Snapshot of the most recent metrics_snapshot event keyed by
+        stream_id. The /api/sonobus/diagnostics route consumes this.
+
+        Returns:
+            {
+              "streams": {stream_id: {rtt_ms, loss_pct, jitter_ms,
+                                       resend_count, observed_latency_ms,
+                                       last_update_unix_ms}},
+              "taken_at_unix_ms": <int or None>,
+              "fresh": <bool>,
+            }
+        Fresh=True iff a snapshot has been received in the last 30s.
+        """
+        # Take a shallow copy so the caller can iterate without lock.
+        streams = dict(self._latest_metrics)
+        taken_at = self._latest_metrics_taken_at_ms
+        fresh = False
+        if taken_at is not None:
+            age_ms = int(time.time() * 1000) - taken_at
+            fresh = age_ms < 30_000
+        return {
+            "streams": streams,
+            "taken_at_unix_ms": taken_at,
+            "fresh": fresh,
+        }
+
+    def subscribe_events(self, replay_buffer: bool = True) -> asyncio.Queue[dict[str, Any]]:
+        """Register a new WS subscriber. Returns an asyncio.Queue that
+        receives every future daemon event. If `replay_buffer=True`,
+        the queue is pre-loaded with the bounded recent-event buffer
+        so a late-joining subscriber sees recent peer-up / metrics
+        events without missing the boat.
+
+        Caller must call :meth:`unsubscribe_events` when done.
+        """
+        queue: asyncio.Queue[dict[str, Any]] = asyncio.Queue(maxsize=256)
+        if replay_buffer:
+            for event in list(self._event_buffer):
+                try:
+                    queue.put_nowait(event)
+                except asyncio.QueueFull:
+                    break
+        self._event_subscribers.append(queue)
+        return queue
+
+    def unsubscribe_events(self, queue: asyncio.Queue[dict[str, Any]]) -> None:
+        try:
+            self._event_subscribers.remove(queue)
+        except ValueError:
+            pass
+
+    # ------------------------------------------------------------------
     # Supervisor loop
     # ------------------------------------------------------------------
 
@@ -311,7 +389,7 @@ class SonoBusDaemonSupervisor:
                     backoff = min(backoff * 2, self.max_backoff_seconds)
                     continue
 
-                # 4. Connected. Reset backoff + run ping loop.
+                # 4. Connected. Reset backoff + spawn event relay + run ping loop.
                 self._capabilities = caps
                 self._connected_at = time.monotonic()
                 self._status = SonoBusDaemonStatus.RUNNING
@@ -322,7 +400,19 @@ class SonoBusDaemonSupervisor:
                     caps.version, caps.build_mode, caps.has_aoo,
                 )
 
-                await self._run_ping_loop()
+                self._event_relay_task = asyncio.create_task(self._event_relay_loop())
+                try:
+                    await self._run_ping_loop()
+                finally:
+                    # Ping loop returned → daemon disconnected. Cancel
+                    # the event relay before reconnecting.
+                    if self._event_relay_task is not None:
+                        self._event_relay_task.cancel()
+                        try:
+                            await self._event_relay_task
+                        except (asyncio.CancelledError, Exception):
+                            pass
+                        self._event_relay_task = None
 
                 # Ping loop returned → daemon disconnected.
                 self._connected_at = None
@@ -343,6 +433,57 @@ class SonoBusDaemonSupervisor:
             logger.exception("SonoBusDaemonSupervisor: loop crashed")
         finally:
             self._status = SonoBusDaemonStatus.SHUTDOWN
+
+    async def _event_relay_loop(self) -> None:
+        """Drain daemon events while connected. Updates the live metrics
+        cache from metrics_snapshot events; appends every event to the
+        ring buffer + fans out to WS subscribers."""
+        try:
+            async for event in self._client.events():
+                self._handle_daemon_event(event)
+        except asyncio.CancelledError:
+            raise
+        except Exception:
+            logger.exception("SonoBusDaemonSupervisor: event relay crashed")
+
+    def _handle_daemon_event(self, event: dict[str, Any]) -> None:
+        """Process one daemon event. Public-ish — exposed so tests can
+        feed synthetic events without spinning up a real client."""
+        event_type = event.get("type", "")
+
+        # Capture metrics_snapshot into the live cache.
+        if event_type == "metrics_snapshot":
+            payload = event.get("payload") or {}
+            streams_list = payload.get("streams") if isinstance(payload, dict) else None
+            if isinstance(streams_list, list):
+                new_cache: dict[str, dict[str, Any]] = {}
+                for entry in streams_list:
+                    if not isinstance(entry, dict):
+                        continue
+                    sid = entry.get("stream_id")
+                    if isinstance(sid, str):
+                        new_cache[sid] = dict(entry)
+                self._latest_metrics = new_cache
+                taken = payload.get("taken_at_unix_ms") if isinstance(payload, dict) else None
+                if isinstance(taken, (int, float)):
+                    self._latest_metrics_taken_at_ms = int(taken)
+                else:
+                    self._latest_metrics_taken_at_ms = int(time.time() * 1000)
+
+        # Always buffer + fan out (lets subscribers see metrics_snapshot
+        # as a structured event, in addition to the cache update).
+        self._event_buffer.append(event)
+        for queue in list(self._event_subscribers):
+            try:
+                queue.put_nowait(event)
+            except asyncio.QueueFull:
+                # Slow subscriber — drop the oldest item to keep
+                # backpressure off the supervisor loop.
+                try:
+                    queue.get_nowait()
+                    queue.put_nowait(event)
+                except (asyncio.QueueEmpty, asyncio.QueueFull):
+                    pass
 
     async def _run_ping_loop(self) -> None:
         """Periodic ping until disconnect or stop. Returns when the
