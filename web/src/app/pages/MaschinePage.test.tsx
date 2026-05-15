@@ -127,6 +127,12 @@ function renderPage(initialEntries: string[] = ['/maschine?tab=diagnostics']) {
 
 describe('MaschinePage', () => {
   beforeEach(() => {
+    // T2522-E cycle 15 — clear the useSetShellWindow mock between
+    // tests so action-list assertions only reflect the test's own
+    // renders, not state carried over from prior cases.
+    const mocked = jest.requireMock('../layout/useSetShellWindow') as { useSetShellWindow: jest.Mock }
+    mocked.useSetShellWindow.mockClear()
+
     ;(globalThis as typeof globalThis & { WebSocket?: typeof WebSocketMock }).WebSocket = WebSocketMock as never
     HTMLCanvasElement.prototype.getContext = jest.fn(() => ({
       fillStyle: '',
@@ -464,5 +470,29 @@ describe('MaschinePage', () => {
     expect(screen.getByRole('img', { name: 'NI Maschine MK1 hardware twin' })).toBeInTheDocument()
     expect(screen.queryByText(/Photoreal SVG mirror of the MK1/)).not.toBeInTheDocument()
     expect(screen.getByRole('heading', { name: 'Hardware Twin' })).toBeInTheDocument()
+  })
+
+  it('T2522-E cycle 15 — AppShell Hardware Layout action is hidden outside the Diagnostics tab', () => {
+    renderPage(['/maschine'])
+    const patches = getShellWindowPatches()
+    // On the default Twin tab, no patch should ever include the
+    // Hardware Layout action (the toggle hides it for non-diagnostics).
+    const everIncluded = patches.some((p) =>
+      (p.actions ?? []).some((a: { id: string }) => a.id === 'hardware-layout'),
+    )
+    expect(everIncluded).toBe(false)
+    const hasStatus = patches.some((p) =>
+      (p.actions ?? []).some((a: { id: string }) => a.id === 'status'),
+    )
+    expect(hasStatus).toBe(true)
+  })
+
+  it('T2522-E cycle 15 — AppShell Hardware Layout action is present on the Diagnostics tab', () => {
+    renderPage(['/maschine?tab=diagnostics'])
+    const patches = getShellWindowPatches()
+    const hasHardwareLayout = patches.some((p) =>
+      (p.actions ?? []).some((a: { id: string }) => a.id === 'hardware-layout'),
+    )
+    expect(hasHardwareLayout).toBe(true)
   })
 })

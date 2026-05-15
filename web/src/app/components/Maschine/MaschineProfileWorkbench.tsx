@@ -288,6 +288,8 @@ function ProfileLcdPreview({ side, profile }: { side: 'left' | 'right'; profile:
       <canvas
         ref={ref}
         className="maschine-workbench__lcd-canvas"
+        role="img"
+        aria-label={`${side === 'left' ? 'Left' : 'Right'} LCD preview for ${profile.label} profile (${spec.template} template)`}
         style={{
           width: `${LCD_WIDTH * LCD_PREVIEW_SCALE}px`,
           height: `${LCD_HEIGHT * LCD_PREVIEW_SCALE}px`,

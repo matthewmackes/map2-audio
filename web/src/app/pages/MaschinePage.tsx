@@ -230,24 +230,31 @@ export function MaschinePage() {
     [],
   )
 
+  // T2522-E cycle 15 — only show the "Hardware Layout" action on the
+  // Diagnostics tab, where the #hardware-layout scroll-target lives.
+  // On other tabs the click was a silent no-op.
+  const isDiagnosticsTab = tabIdFromIndex(selectedIndex) === 'diagnostics'
+  const shellActions: Array<{ id: string; label: string; onClick?: () => void; status?: 'ok' | 'warn' | 'error' | 'info'; disabled?: boolean }> = []
+  if (isDiagnosticsTab) {
+    shellActions.push({ id: 'hardware-layout', label: 'Hardware Layout', onClick: handleScrollToHardware })
+  }
+  shellActions.push({
+    id: 'status',
+    label: pageStatusLabel(live.status),
+    status: (pageStatusTone(live.status) === 'green' ? 'ok' : pageStatusTone(live.status) === 'red' ? 'error' : 'warn') as
+      | 'ok'
+      | 'warn'
+      | 'error'
+      | 'info',
+    disabled: true,
+  })
+
   useSetShellWindow({
     title: 'Maschine MK1',
     subtitle,
     kicker: 'Platform / Maschine MK1',
-    actions: [
-      { id: 'hardware-layout', label: 'Hardware Layout', onClick: handleScrollToHardware },
-      {
-        id: 'status',
-        label: pageStatusLabel(live.status),
-        status: (pageStatusTone(live.status) === 'green' ? 'ok' : pageStatusTone(live.status) === 'red' ? 'error' : 'warn') as
-          | 'ok'
-          | 'warn'
-          | 'error'
-          | 'info',
-        disabled: true,
-      },
-    ],
-  }, [subtitle, handleScrollToHardware, live.status])
+    actions: shellActions,
+  }, [subtitle, handleScrollToHardware, live.status, isDiagnosticsTab])
 
   return (
     <div className="maschine-page">
