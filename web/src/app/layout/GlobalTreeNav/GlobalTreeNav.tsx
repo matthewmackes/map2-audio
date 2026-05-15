@@ -154,8 +154,9 @@ const GLOBAL_TREE_EXPANDED_KEY: PersistedKey<string[]> = {
 // needed yet (it will return as a hero once T2509 + T2511 ship the
 // playback UX).
 const PINNED_HERO_ROUTES = ['/snapshot-editor', '/sequencer'] as const
-// Services section — MIDI, AVB, Audio Artifacts.
-const SERVICES_ROUTES = ['/midi-hub', '/avb', '/artifacts'] as const
+// Services section — MIDI, AVB, SonoBus (T2521 fallback transport),
+// Audio Artifacts.
+const SERVICES_ROUTES = ['/midi-hub', '/avb', '/sonobus', '/artifacts'] as const
 // System section — Settings, Hardware, Node Ops. Hardware bucket folds
 // in the launcher catalog + dynamic device pins per the design Q4.
 const SYSTEM_ROUTES = ['/settings', '/hardware', '/node-ops'] as const
@@ -214,6 +215,15 @@ const TREE_ICON_OVERRIDES: Record<string, CarbonIconComponent> = {
   '/avb/devices': Devices,
   '/avb/routing': ChartNetwork,
   '/avb/network': Network_3,
+  // T2521-6 SonoBus / AOO transport (sibling of /avb).
+  '/sonobus': ChartNetwork,
+  '/sonobus/connections': Plug,
+  '/sonobus/peers': Devices,
+  '/sonobus/groups': Connect,
+  '/sonobus/routing': ChartNetwork,
+  '/sonobus/network': Network_3,
+  '/sonobus/profiles': Document,
+  '/sonobus/diagnostics': Dashboard,
 }
 
 const TREE_LABEL_OVERRIDES: Record<string, string> = {
@@ -224,6 +234,7 @@ const TREE_LABEL_OVERRIDES: Record<string, string> = {
   '/sequencer': 'Sequencer',
   '/midi-hub': 'MIDI Services',
   '/avb': 'AVB',
+  '/sonobus': 'SonoBus',
   '/settings': 'Settings',
   '/midi/assignments': 'MIDI Assignments',
   '/hardware': 'Hardware',

@@ -74,3 +74,44 @@
   font-size: 0.8125rem;
   color: var(--cds-text-secondary);
 }
+
+/* T2521-7 — Routing matrix table. */
+
+.sonobus-routing__matrix {
+  overflow-x: auto;
+}
+
+.sonobus-routing__table {
+  border-collapse: collapse;
+  width: 100%;
+  font-size: 0.875rem;
+}
+
+.sonobus-routing__table th,
+.sonobus-routing__table td {
+  border: 1px solid var(--cds-border-subtle);
+  padding: 0.4rem 0.6rem;
+  text-align: left;
+}
+
+.sonobus-routing__corner {
+  background: var(--cds-layer-accent-01);
+  color: var(--cds-text-secondary);
+  font-weight: 600;
+}
+
+.sonobus-routing__listener,
+.sonobus-routing__talker {
+  background: var(--cds-layer-02);
+  font-family: var(--cds-code-02-font-family, monospace);
+  font-weight: 600;
+}
+
+.sonobus-routing__cell {
+  text-align: center;
+  min-width: 5rem;
+}
+
+.sonobus-routing__cell-empty {
+  color: var(--cds-text-helper);
+}

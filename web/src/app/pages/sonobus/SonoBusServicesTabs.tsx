@@ -30,6 +30,8 @@ const TABS: readonly SonoBusServicesTabDef[] = [
   { id: 'connections', label: 'Connections', sub: 'Bindings · Routes', to: '/sonobus/connections' },
   { id: 'peers', label: 'Peers', sub: 'Listeners · Capabilities', to: '/sonobus/peers' },
   { id: 'groups', label: 'Groups', sub: 'Channel-groups · Sessions', to: '/sonobus/groups' },
+  // T2521-7 — Routing region; talker × listener matrix mirror of /avb/routing.
+  { id: 'routing', label: 'Routing', sub: 'Talker × Listener · Priority', to: '/sonobus/routing' },
   { id: 'network', label: 'Network', sub: 'Server · Ports · mDNS', to: '/sonobus/network' },
   { id: 'profiles', label: 'Profiles', sub: 'Codec · Jitter · Resend', to: '/sonobus/profiles' },
   { id: 'diagnostics', label: 'Diagnostics', sub: 'Authority · Gates · Metrics', to: '/sonobus/diagnostics' },

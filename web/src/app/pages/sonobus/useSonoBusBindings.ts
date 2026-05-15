@@ -230,3 +230,123 @@ export function useSonoBusProfiles() {
     staleTime: 30000,
   })
 }
+
+// T2521-7 — raw bindings list for the Routing matrix.
+
+async function fetchSonoBusBindings(): Promise<SonoBusBindingRecord[]> {
+  // Empty filters return every binding (the API requires at least
+  // one filter at the route layer; ``scope=global`` is the canonical
+  // catch-all).
+  const response = await fetch('/api/sonobus/bindings?scope=global')
+  if (!response.ok) {
+    throw new Error(`sonobus bindings failed: ${response.status}`)
+  }
+  return (await response.json()) as SonoBusBindingRecord[]
+}
+
+export function useSonoBusBindings() {
+  return useQuery({
+    queryKey: ['sonobus-bindings-list'],
+    queryFn: fetchSonoBusBindings,
+    refetchInterval: 5000,
+    staleTime: 0,
+  })
+}
+
+// T2521-5h — network status (bind interfaces + UDP port range + mDNS).
+
+export interface SonoBusInterfaceSummary {
+  name: string
+  address: string | null
+  mdns_enabled: boolean
+  notes: string | null
+}
+
+export interface SonoBusNetworkStatusResponse {
+  bind_interfaces: SonoBusInterfaceSummary[]
+  udp_port_range_start: number
+  udp_port_range_end: number
+  mdns_enabled: boolean
+  mdns_service_name: string
+  nat_traversal: string
+  stun_servers: string[]
+}
+
+async function fetchSonoBusNetwork(): Promise<SonoBusNetworkStatusResponse> {
+  const response = await fetch('/api/sonobus/network')
+  if (!response.ok) {
+    throw new Error(`sonobus network failed: ${response.status}`)
+  }
+  return (await response.json()) as SonoBusNetworkStatusResponse
+}
+
+export function useSonoBusNetwork() {
+  return useQuery({
+    queryKey: ['sonobus-network'],
+    queryFn: fetchSonoBusNetwork,
+    refetchInterval: 5000,
+    staleTime: 0,
+  })
+}
+
+export interface SonoBusConnectionServerStatusResponse {
+  enabled: boolean
+  running: boolean
+  listen_address: string
+  listen_port: number
+  public_endpoint: string | null
+  detail: string
+}
+
+async function fetchSonoBusConnectionServer(): Promise<SonoBusConnectionServerStatusResponse> {
+  const response = await fetch('/api/sonobus/network/connection-server')
+  if (!response.ok) {
+    throw new Error(`sonobus connection-server failed: ${response.status}`)
+  }
+  return (await response.json()) as SonoBusConnectionServerStatusResponse
+}
+
+export function useSonoBusConnectionServer() {
+  return useQuery({
+    queryKey: ['sonobus-connection-server'],
+    queryFn: fetchSonoBusConnectionServer,
+    refetchInterval: 5000,
+    staleTime: 0,
+  })
+}
+
+// T2521-5i — diagnostics snapshot.
+
+export interface SonoBusDiagnosticBinding {
+  binding_id: string
+  enabled: boolean
+  rtt_ms: number | null
+  loss_pct: number | null
+  jitter_ms: number | null
+  resend_count: number
+  observed_latency_ms: number | null
+  last_metric_iso: string | null
+}
+
+export interface SonoBusDiagnosticsResponse {
+  bindings: SonoBusDiagnosticBinding[]
+  daemon_running: boolean
+  last_refresh_iso: string
+}
+
+async function fetchSonoBusDiagnostics(): Promise<SonoBusDiagnosticsResponse> {
+  const response = await fetch('/api/sonobus/diagnostics')
+  if (!response.ok) {
+    throw new Error(`sonobus diagnostics failed: ${response.status}`)
+  }
+  return (await response.json()) as SonoBusDiagnosticsResponse
+}
+
+export function useSonoBusDiagnostics() {
+  return useQuery({
+    queryKey: ['sonobus-diagnostics'],
+    queryFn: fetchSonoBusDiagnostics,
+    refetchInterval: 5000,
+    staleTime: 0,
+  })
+}

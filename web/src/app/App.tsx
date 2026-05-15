@@ -146,6 +146,7 @@ const SonoBusGroupsPage          = lazy(() => import('./pages/sonobus/SonoBusGro
 const SonoBusNetworkPage         = lazy(() => import('./pages/sonobus/SonoBusNetworkPage').then(m => ({ default: m.SonoBusNetworkPage })))
 const SonoBusDiagnosticsPage     = lazy(() => import('./pages/sonobus/SonoBusDiagnosticsPage').then(m => ({ default: m.SonoBusDiagnosticsPage })))
 const SonoBusProfilesPage        = lazy(() => import('./pages/sonobus/SonoBusProfilesPage').then(m => ({ default: m.SonoBusProfilesPage })))
+const SonoBusRoutingPage         = lazy(() => import('./pages/sonobus/SonoBusRoutingPage').then(m => ({ default: m.SonoBusRoutingPage })))
 // T2491 (2026-05-02 cleanup) — the 7 MidiHub*Page lazy imports
 // retired with the /midi-hub/* mount. Canonical /midi/* mount uses
 // MidiServicesConnectionsPage / MidiServicesPresetsPage / etc. The
@@ -968,6 +969,7 @@ export function App() {
                                   <Route path="connections" element={<SonoBusConnectionsPage />} />
                                   <Route path="peers" element={<SonoBusPeersPage />} />
                                   <Route path="groups" element={<SonoBusGroupsPage />} />
+                                  <Route path="routing" element={<SonoBusRoutingPage />} />
                                   <Route path="network" element={<SonoBusNetworkPage />} />
                                   <Route path="profiles" element={<SonoBusProfilesPage />} />
                                   <Route path="diagnostics" element={<SonoBusDiagnosticsPage />} />
