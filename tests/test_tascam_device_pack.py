@@ -44,7 +44,7 @@ def test_audio_profile_identity_kernel_module_and_card_regex():
     assert identity["hardware_id"] == "usb:0644:8020"
     assert identity["hardware_id_boot"] == "usb:0644:800F"
     assert identity["kernel_module"] == "snd-usb-us144mkii"
-    assert identity["alsa_card_regex"].startswith("^USx_4_Mk_II")
+    assert identity["alsa_card_regex"].startswith("^US144MKII")
 
 
 def test_audio_profile_spdif_ports_are_hardware_fx_bridge_capable():
@@ -95,7 +95,7 @@ def test_audio_profile_advertises_interface_capabilities():
 
 def test_midi_profile_alsa_client_pattern():
     midi = _load_yaml(PACK_ROOT / "profiles" / "us-144mkii.midi.yaml")
-    assert midi["identity"]["alsa_client_pattern"] == "US-144MKII MIDI"
+    assert midi["identity"]["alsa_client_pattern"] == "TASCAM US-144MKII"
     # No hardware controls → no MIDI bindings declared
     assert midi.get("controls") == []
 

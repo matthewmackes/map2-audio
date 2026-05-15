@@ -2,8 +2,8 @@ schema_version: 1
 identity:
   manufacturer: TASCAM (TEAC Corporation)
   model: us-144mkii
-  alsa_client_pattern: 'US-144MKII MIDI'
-  hardware_id: alsa-seq:US-144MKII MIDI:0
+  alsa_client_pattern: 'TASCAM US-144MKII'
+  hardware_id: alsa-seq:TASCAM US-144MKII:0
 
 # T2515 ships the US-144MKII as a tier-1 audio interface. MIDI is exposed via
 # snd-rawmidi (standard ALSA-seq client), unaffected by the PipeWire UMP

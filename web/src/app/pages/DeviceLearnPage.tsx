@@ -5,10 +5,14 @@
 // rendering the MIDI Learn Wizard for a device.
 //
 // Resolves the hardware `controllerKey` argument that MidiLearnWizard
-// needs from (in priority order):
-//   1. `?controller=<key>` query param.
-//   2. An existing active mapping for this pack+model, if one is bound.
-// When neither is available the page surfaces a notice instead of
+// needs in priority order:
+//   1. `?controller=<key>` query param (explicit override).
+//   2. The MIDI sibling profile's `identity.hardware_id`, which holds
+//      the canonical `alsa-seq:<client>:<port>` for any device pack
+//      that ships a MIDI profile (e.g. `alsa-seq:UA-1000 MIDI:0`).
+//   3. An existing active mapping for this pack+model, if one is
+//      bound — covers re-learn against a custom controller_key.
+// When none of these resolve, the page surfaces a notice instead of
 // silently starting a learn session against an unknown source.
 
 import React from 'react'
@@ -17,17 +21,34 @@ import { InlineNotification, Loading } from '@carbon/react'
 import { useQuery } from '@tanstack/react-query'
 
 import { MidiLearnWizard } from '../components/Devices/MidiLearnWizard'
-import { listActiveMappings } from '../../map2/clients/devices'
+import { getDeviceProfile, listActiveMappings } from '../../map2/clients/devices'
 
 export function DeviceLearnPage(): React.JSX.Element {
   const { packId, model } = useParams<{ packId: string; model: string }>()
   const [searchParams] = useSearchParams()
   const controllerParam = searchParams.get('controller')
 
+  const midiProfileQuery = useQuery({
+    queryKey: ['device-profile', packId, model, 'midi'],
+    queryFn: () => getDeviceProfile(packId!, model!, 'midi'),
+    enabled: !controllerParam && Boolean(packId && model),
+    staleTime: 60_000,
+    retry: false,
+  })
+
+  const profileHardwareId =
+    !controllerParam && midiProfileQuery.data?.profile.hardware_id
+      ? midiProfileQuery.data.profile.hardware_id
+      : null
+
   const mappingsQuery = useQuery({
     queryKey: ['active-mappings'],
     queryFn: listActiveMappings,
-    enabled: !controllerParam && Boolean(packId && model),
+    enabled:
+      !controllerParam &&
+      !profileHardwareId &&
+      midiProfileQuery.isFetched &&
+      Boolean(packId && model),
     staleTime: 10_000,
   })
 
@@ -45,7 +66,7 @@ export function DeviceLearnPage(): React.JSX.Element {
     )
   }
 
-  let controllerKey: string | null = controllerParam
+  let controllerKey: string | null = controllerParam ?? profileHardwareId
   if (!controllerKey && mappingsQuery.data) {
     const match = mappingsQuery.data.active_mappings.find(
       (m) => m.pack_id === packId && m.model === model,
@@ -53,7 +74,10 @@ export function DeviceLearnPage(): React.JSX.Element {
     controllerKey = match?.controller_key ?? null
   }
 
-  const isResolving = !controllerParam && mappingsQuery.isLoading
+  const isResolving =
+    !controllerParam &&
+    (midiProfileQuery.isLoading ||
+      (!profileHardwareId && mappingsQuery.isFetching))
 
   return (
     <div data-testid="device-learn-page" style={{ padding: '1rem' }}>
@@ -69,11 +93,12 @@ export function DeviceLearnPage(): React.JSX.Element {
           kind="info"
           lowContrast
           hideCloseButton
-          title="No controller bound yet"
+          title="No MIDI controller declared for this pack"
           subtitle={
-            'Connect this device or open it from the Hardware Store so MAP2 can ' +
-            'discover its controller key, then return to Configure. You can also ' +
-            'pass ?controller=<alsa-seq-key> on the URL to target a specific port.'
+            'This device pack does not ship a MIDI profile with a canonical ' +
+            'hardware_id, and no mapping is bound yet. Override with ' +
+            '?controller=<alsa-seq-key> on the URL, or add a MIDI profile to ' +
+            'the device pack.'
           }
         />
       )}

@@ -5,7 +5,7 @@ identity:
   family: TASCAM US-series
   hardware_id: usb:0644:8020
   hardware_id_boot: usb:0644:800F          # transitional; surfaced as boot stage only
-  alsa_card_regex: '^USx_4_Mk_II'
+  alsa_card_regex: '^US144MKII\b'
   jack_node_pattern: 'US-144MKII'
   kernel_module: snd-usb-us144mkii         # in-tree kernel >= 6.x; no DKMS fallback
 

@@ -1,5 +1,71 @@
-import { buildDevicesSubtree, resolveSnapshotEditorTreeStatus } from './GlobalTreeNav'
+import {
+  buildDevicesSubtree,
+  normalizeTreeAccordionExpandedIds,
+  resolveSnapshotEditorTreeStatus,
+  resolveTreeAccordionToggle,
+  type TreeItemDefinition,
+} from './GlobalTreeNav'
 import { LEGACY_DEVICE_MANIFEST } from '../../data/legacyDeviceManifest'
+
+const accordionTree: TreeItemDefinition[] = [
+  {
+    id: 'snapshot',
+    label: 'Snapshot',
+    children: [
+      { id: 'snapshot/live', label: 'Live', route: '/snapshot-editor' },
+      { id: 'snapshot/library', label: 'Library', route: '/snapshots' },
+    ],
+  },
+  {
+    id: 'hardware',
+    label: 'Hardware',
+    children: [
+      {
+        id: 'hardware/devices',
+        label: 'Devices',
+        children: [
+          { id: 'hardware/devices/mpx1', label: 'MPX-1', route: '/devices/mpx1' },
+        ],
+      },
+      { id: 'hardware/host', label: 'Host', route: '/host-machine' },
+    ],
+  },
+  {
+    id: 'midi',
+    label: 'MIDI',
+    children: [
+      { id: 'midi/bindings', label: 'Bindings', route: '/midi/bindings' },
+    ],
+  },
+]
+
+describe('GlobalTreeNav accordion expansion', () => {
+  it('opening a sibling subsection collapses the previously open branch', () => {
+    expect(resolveTreeAccordionToggle(accordionTree, ['snapshot'], 'midi')).toEqual(['midi'])
+  })
+
+  it('keeps only the ancestor path for nested subsection opens', () => {
+    expect(resolveTreeAccordionToggle(accordionTree, ['snapshot'], 'hardware/devices')).toEqual([
+      'hardware',
+      'hardware/devices',
+    ])
+  })
+
+  it('closing an open nested subsection leaves its parent branch open', () => {
+    expect(resolveTreeAccordionToggle(
+      accordionTree,
+      ['hardware', 'hardware/devices'],
+      'hardware/devices',
+    )).toEqual(['hardware'])
+  })
+
+  it('normalizes legacy persisted multi-open state to one branch', () => {
+    expect(normalizeTreeAccordionExpandedIds(
+      accordionTree,
+      ['snapshot', 'midi', 'hardware/devices'],
+    )).toEqual(['hardware', 'hardware/devices'])
+  })
+})
 
 describe('GlobalTreeNav devices subtree', () => {
   const navigate = jest.fn()

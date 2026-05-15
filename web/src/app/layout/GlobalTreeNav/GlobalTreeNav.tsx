@@ -516,6 +516,59 @@ function findActiveNodePath(items: TreeItemDefinition[], pathname: string, searc
   return null
 }
 
+export function findTreeItemPathById(items: TreeItemDefinition[], id: string): string[] | null {
+  for (const item of items) {
+    if (item.id === id) {
+      return [item.id]
+    }
+
+    if (item.children?.length) {
+      const childPath = findTreeItemPathById(item.children, id)
+      if (childPath) {
+        return [item.id, ...childPath]
+      }
+    }
+  }
+
+  return null
+}
+
+function areIdListsEqual(left: readonly string[], right: readonly string[]): boolean {
+  return left.length === right.length && left.every((value, index) => value === right[index])
+}
+
+export function normalizeTreeAccordionExpandedIds(
+  items: TreeItemDefinition[],
+  expandedIds: readonly string[],
+): string[] {
+  for (let index = expandedIds.length - 1; index >= 0; index -= 1) {
+    const path = findTreeItemPathById(items, expandedIds[index])
+    if (path) {
+      return path
+    }
+  }
+
+  return []
+}
+
+export function resolveTreeAccordionToggle(
+  items: TreeItemDefinition[],
+  expandedIds: readonly string[],
+  id: string,
+): string[] {
+  const targetPath = findTreeItemPathById(items, id)
+  if (!targetPath) {
+    return normalizeTreeAccordionExpandedIds(items, expandedIds)
+  }
+
+  const normalized = normalizeTreeAccordionExpandedIds(items, expandedIds)
+  if (normalized.includes(id)) {
+    return targetPath.slice(0, -1)
+  }
+
+  return targetPath
+}
+
 function joinClasses(...parts: Array<string | false | null | undefined>) {
   return parts.filter(Boolean).join(' ')
 }
@@ -798,6 +851,10 @@ export function GlobalTreeNav({
     [location.pathname, location.search, allItems],
   )
   const activeNodeId = activeNodePath?.[activeNodePath.length - 1] ?? null
+  const visibleExpandedIds = useMemo(
+    () => normalizeTreeAccordionExpandedIds(allItems, expandedIds),
+    [allItems, expandedIds],
+  )
   const homeActive = routeMatchesLocation('/', location.pathname, location.search)
   const guideActive = routeMatchesLocation('/about', location.pathname, location.search)
 
@@ -818,23 +875,25 @@ export function GlobalTreeNav({
     }
 
     setExpandedIds((previous) => {
-      const next = new Set(previous)
-      for (const ancestorId of activeNodePath.slice(0, -1)) {
-        next.add(ancestorId)
+      const next = activeNodePath.slice(0, -1)
+      if (areIdListsEqual(normalizeTreeAccordionExpandedIds(allItems, previous), next)) {
+        return previous
       }
-      return Array.from(next)
+      return next
     })
-  }, [activeNodePath, setExpandedIds])
+  }, [activeNodePath, allItems, setExpandedIds])
+
+  useEffect(() => {
+    setExpandedIds((previous) => {
+      const next = normalizeTreeAccordionExpandedIds(allItems, previous)
+      return areIdListsEqual(previous, next) ? previous : next
+    })
+  }, [allItems, setExpandedIds])
 
   const toggleExpanded = (id: string) => {
     setExpandedIds((previous) => {
-      const next = new Set(previous)
-      if (next.has(id)) {
-        next.delete(id)
-      } else {
-        next.add(id)
-      }
-      return Array.from(next)
+      const next = resolveTreeAccordionToggle(allItems, previous, id)
+      return areIdListsEqual(previous, next) ? previous : next
     })
   }
 
@@ -846,7 +905,7 @@ export function GlobalTreeNav({
           item={item}
           depth={0}
           activeId={activeNodeId}
-          expandedIds={expandedIds}
+          expandedIds={visibleExpandedIds}
           toggleExpanded={toggleExpanded}
           onNavigate={navigateTo}
         />
@@ -960,7 +1019,7 @@ export function GlobalTreeNav({
             <HeroCard
               key={item.id}
               item={item}
-              isOpen={expandedIds.includes(item.id)}
+              isOpen={visibleExpandedIds.includes(item.id)}
               activeId={activeNodeId}
               onToggle={() => toggleExpanded(item.id)}
               onNavigate={navigateTo}

@@ -26,9 +26,20 @@ properties:
         type: string
         pattern: "^(usb|alsa-seq|pci):.+"
         description: "Canonical identifier — 'usb:VVVV:PPPP' for USB, 'alsa-seq:<client>:<port>' otherwise."
+      hardware_id_boot:
+        type: string
+        pattern: "^(usb|alsa-seq|pci):.+"
+        description: "Optional transitional/boot-mode identifier for devices that enumerate under a different VID:PID before the kernel driver takes over (e.g. TASCAM US-144MKII)."
       alsa_card_regex:
         type: string
         description: "Regex matched against the ALSA card name to identify this device at runtime."
+      jack_node_pattern:
+        type: string
+        description: "PipeWire/JACK node-name substring used as a secondary detection hint."
+      kernel_module:
+        type: string
+        description: "Linux kernel module that owns this device (informational; not used for detection)."
+    additionalProperties: false
   ports:
     type: array
     minItems: 1
@@ -46,7 +57,7 @@ properties:
     properties:
       default_matrix:
         type: string
-        enum: [identity_NxN, identity_2x2, identity_8x8, identity_10x10, identity_16x16, identity_1x1, custom]
+        enum: [identity_NxN, identity_1x1, identity_2x2, identity_4x4, identity_8x8, identity_10x10, identity_16x16, custom]
       allowed_routes:
         type: array
         items: { type: string }
@@ -62,6 +73,33 @@ properties:
   use_case_presets:
     type: array
     items: { $ref: "#/definitions/use_case_preset" }
+    default: []
+  capabilities:
+    type: array
+    description: "Interface-level capability tags (e.g. 'digital_io_stereo', 'spdif_coax'). Used by chooser gating in features like T2517."
+    items: { type: string }
+  midi_ports:
+    type: array
+    description: "MIDI in/out pairs exposed by an audio interface (snd-rawmidi)."
+    items: { $ref: "#/definitions/midi_port" }
+    default: []
+  sample_rate_policy:
+    type: object
+    description: "Hard constraints around sample-rate / buffer-size changes for this device."
+    properties:
+      tier1_default: { type: integer, minimum: 8000 }
+      tier1_buffer_size: { type: integer, minimum: 16 }
+      requires_stream_stop_for_sr_change:
+        type: boolean
+        description: "If true, juce_engine_service must stop streams before changing SR."
+      prefer_jack:
+        type: boolean
+        description: "If true, MAP2_AUDIO_PREFER_JACK=1 should be set for this device."
+    additionalProperties: false
+  clock_sources:
+    type: array
+    description: "Clock-source options selectable on the Devices Clock tab."
+    items: { $ref: "#/definitions/clock_source" }
     default: []
   metadata:
     type: object
@@ -101,7 +139,20 @@ definitions:
         type: array
         items:
           type: string
-          enum: [trs_quarter_inch, ts_quarter_inch, xlr_male, xlr_female, rca, spdif_coax, spdif_optical, adat_optical, rbus_db25, headphone_quarter_inch, headphone_3_5mm, ethernet_rj45, midi_din5, usb_b, usb_c, usb_a, type_c]
+          enum: [trs_quarter_inch, ts_quarter_inch, xlr_male, xlr_female, xlr_combo_trs, rca, rca_coax_spdif, spdif_coax, spdif_optical, adat_optical, rbus_db25, headphone_quarter_inch, headphone_3_5mm, ethernet_rj45, midi_din5, usb_b, usb_c, usb_a, type_c]
+      channel_indices:
+        type: array
+        description: "0-based channel indices this port occupies inside the device's PCM stream."
+        items: { type: integer, minimum: 0 }
+      role:
+        type: string
+        description: "Optional semantic role tag consumed by feature-specific routing (e.g. 'hardware_fx_bridge_capable' for T2517)."
+      role_format:
+        type: string
+        description: "Format/wiring qualifier paired with 'role' (e.g. 'spdif_coax', 'aes_xlr')."
+      notes:
+        type: string
+        description: "Operator-facing description surfaced in Devices panels."
       jack_node_pattern:
         type: string
         description: "PipeWire/JACK node name pattern used to identify this port at runtime."
@@ -163,4 +214,39 @@ definitions:
       recommended_for:
         type: array
         items: { type: string }
+    additionalProperties: false
+  midi_port:
+    type: object
+    required: [id, kind, direction]
+    properties:
+      id:
+        type: string
+        pattern: "^[a-z0-9_]+$"
+      kind:
+        type: string
+        enum: [midi]
+      direction:
+        type: string
+        enum: [input, output, bidirectional]
+      count:
+        type: integer
+        minimum: 1
+      connectors:
+        type: array
+        items: { type: string }
+      notes: { type: string }
+    additionalProperties: false
+  clock_source:
+    type: object
+    required: [id, label]
+    properties:
+      id:
+        type: string
+        pattern: "^[a-z0-9_]+$"
+      label: { type: string }
+      is_default: { type: boolean }
+      requires_signal_on:
+        type: string
+        description: "Port id that must carry a live signal before this clock source is usable (e.g. spdif_in)."
+      notes: { type: string }
     additionalProperties: false

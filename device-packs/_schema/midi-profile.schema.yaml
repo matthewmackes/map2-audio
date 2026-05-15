@@ -50,6 +50,9 @@ properties:
     description: "Per-pack alias table for translating Mixxx ControlObject group names ([Channel1], [Master], ...) to MAP2 engine target prefixes (audio.chain.1, audio.master, ...)."
     additionalProperties:
       type: string
+  notes:
+    type: string
+    description: "Free-text operator-facing description of the controller's MIDI behavior."
 additionalProperties: false
 
 definitions:

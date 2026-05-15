@@ -8,7 +8,7 @@
 // intact until G11 cleanup.
 
 import * as React from 'react'
-import { useParams, Link as RouterLink } from 'react-router-dom'
+import { useParams, useSearchParams, Link as RouterLink } from 'react-router-dom'
 import {
   Tabs, TabList, Tab, TabPanels, TabPanel,
   Tag, InlineNotification, SkeletonText,
@@ -31,6 +31,14 @@ import { DiagnosticsTab } from './tabs/DiagnosticsTab'
 import './DeviceDetailRoute.css'
 
 const KIND_FALLBACKS: Array<'audio' | 'midi' | 'hid'> = ['audio', 'midi', 'hid']
+
+const TAB_SLUGS = ['overview', 'audio-io', 'bindings', 'diagnostics', 'license'] as const
+type TabSlug = (typeof TAB_SLUGS)[number]
+function tabSlugToIndex(slug: string | null): number {
+  if (!slug) return 0
+  const idx = (TAB_SLUGS as readonly string[]).indexOf(slug)
+  return idx >= 0 ? idx : 0
+}
 
 interface ResolveResult {
   profile: DeviceProfileDetail | null
@@ -60,6 +68,18 @@ async function resolveProfile(packId: string, model: string): Promise<ResolveRes
 
 export function DeviceDetailRoute(): React.JSX.Element {
   const { packId = '', model = '' } = useParams<{ packId: string; model: string }>()
+  const [searchParams, setSearchParams] = useSearchParams()
+  const selectedTab = tabSlugToIndex(searchParams.get('tab'))
+  const handleTabChange = React.useCallback(
+    ({ selectedIndex }: { selectedIndex: number }) => {
+      const slug: TabSlug = TAB_SLUGS[selectedIndex] ?? 'overview'
+      const next = new URLSearchParams(searchParams)
+      if (slug === 'overview') next.delete('tab')
+      else next.set('tab', slug)
+      setSearchParams(next, { replace: true })
+    },
+    [searchParams, setSearchParams],
+  )
   const profileQuery = useQuery<ResolveResult>({
     queryKey: ['devices', 'profile-resolve', packId, model],
     queryFn: () => resolveProfile(packId, model),
@@ -169,7 +189,7 @@ export function DeviceDetailRoute(): React.JSX.Element {
         </div>
       </header>
 
-      <Tabs>
+      <Tabs selectedIndex={selectedTab} onChange={handleTabChange}>
         <TabList aria-label="Device detail tabs" contained>
           <Tab>Overview</Tab>
           <Tab>Audio I/O</Tab>
