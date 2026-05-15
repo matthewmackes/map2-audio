@@ -187,6 +187,17 @@ jobs:
             echo "---"
           done
 
+      - name: T2529-E5 — map2-self-test --full
+        # The CI gate: after a clean dnf install, `map2-self-test --full`
+        # must exit 0. Catches install regressions that the static-shape
+        # gates miss (e.g. an RPM that installs the spec correctly but
+        # ships a Python tree that won't import).
+        run: |
+          # Need Python deps for the import-heavy tests; install runtime
+          # requirements from the packaged file.
+          pip3 install -r /opt/map2-audio/requirements-backend-runtime.txt --break-system-packages
+          /usr/bin/map2-self-test --full
+
       - name: Uninstall (verify %preun + %postun scriptlets)
         run: |
           dnf remove -y map2

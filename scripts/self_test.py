@@ -239,13 +239,186 @@ def test_midi_engine():
     print("✓ MIDI engine tests passed")
 
 
+def test_t2529_install_layout():
+    """T2529-E5 — verify the FHS install layout is in place.
+
+    Run by `map2-self-test --full` after `dnf install map2`. Confirms:
+      - The `map2` system service user exists with the right shell + home
+      - The four canonical FHS state dirs exist with map2:map2 ownership
+      - The /opt/map2-audio app tree is in place
+      - The /etc/map2 system-config tree exists
+      - Each map2-*.service unit is installed under /usr/lib/systemd/system/
+      - The sysusers.d + tmpfiles.d declarative sources are installed
+
+    Skipped when running under the dev-host (MAP2_APP_INSTALL_DIR overridden)
+    since the layout is intentionally different there.
+    """
+    import os
+    import pwd
+    import stat
+    from pathlib import Path
+
+    if os.environ.get("MAP2_APP_INSTALL_DIR"):
+        print("  Skipping T2529 install-layout check — running on dev-host")
+        print("✓ T2529 install-layout test skipped (not applicable)")
+        return
+
+    # ---- Service user ----
+    try:
+        entry = pwd.getpwnam("map2")
+    except KeyError:
+        raise AssertionError(
+            "map2 system service user MISSING — sysusers.d/map2.conf did "
+            "not run; check `%sysusers_create_package map2` in the RPM %pre"
+        )
+    assert entry.pw_shell == "/sbin/nologin", (
+        f"map2 user shell = {entry.pw_shell!r}, expected /sbin/nologin"
+    )
+    assert entry.pw_dir == "/var/lib/map2", (
+        f"map2 user home = {entry.pw_dir!r}, expected /var/lib/map2"
+    )
+    print(f"  ✓ map2 system user exists (UID={entry.pw_uid}, shell={entry.pw_shell})")
+
+    # ---- FHS state dirs ----
+    for path, expected_mode in [
+        (Path("/var/lib/map2"), 0o755),
+        (Path("/var/cache/map2"), 0o755),
+        (Path("/var/log/map2"), 0o750),
+        (Path("/run/map2"), 0o755),
+    ]:
+        if not path.is_dir():
+            raise AssertionError(
+                f"FHS state dir MISSING: {path} — tmpfiles.d/map2.conf "
+                f"did not run; check `%tmpfiles_create_package map2` in RPM %post"
+            )
+        st = path.stat()
+        actual_mode = stat.S_IMODE(st.st_mode)
+        if actual_mode != expected_mode:
+            raise AssertionError(
+                f"FHS state dir {path}: mode = {oct(actual_mode)}, "
+                f"expected {oct(expected_mode)}"
+            )
+        owner_name = pwd.getpwuid(st.st_uid).pw_name
+        if owner_name != "map2":
+            raise AssertionError(
+                f"FHS state dir {path}: owner = {owner_name}, expected map2"
+            )
+        print(f"  ✓ {path} mode={oct(actual_mode)} owner={owner_name}")
+
+    # ---- App tree ----
+    app_root = Path("/opt/map2-audio")
+    if not app_root.is_dir():
+        raise AssertionError(
+            f"App tree MISSING: {app_root} — RPM %install did not lay down "
+            f"the application files. Check spec %install section."
+        )
+    for required in ("app", "tui", "lcd", "scripts", "device-packs", "docs/install"):
+        sub = app_root / required
+        if not sub.exists():
+            raise AssertionError(
+                f"App tree subtree MISSING: {sub}"
+            )
+    print(f"  ✓ {app_root} app tree intact")
+
+    # ---- System config tree ----
+    etc_root = Path("/etc/map2")
+    if not etc_root.is_dir():
+        raise AssertionError(
+            f"System config tree MISSING: {etc_root}"
+        )
+    print(f"  ✓ {etc_root} system config tree exists")
+
+    # ---- systemd unit files ----
+    systemd_dir = Path("/usr/lib/systemd/system")
+    for unit in (
+        "map2-backend.service",
+        "map2-tui.service",
+        "map2-controller-host.service",
+        "map2-sonobus-transport.service",
+        "map2-prometheus.service",
+        "map2-grafana.service",
+        "map2-cluster.service",
+        "map2-frontend.service",
+    ):
+        unit_path = systemd_dir / unit
+        if not unit_path.is_file():
+            raise AssertionError(
+                f"systemd unit MISSING: {unit_path}"
+            )
+    print(f"  ✓ 8 map2-*.service units installed under {systemd_dir}")
+
+    # ---- Declarative sources ----
+    sysusers = Path("/usr/lib/sysusers.d/map2.conf")
+    tmpfiles = Path("/usr/lib/tmpfiles.d/map2.conf")
+    if not sysusers.is_file():
+        raise AssertionError(f"sysusers.d source MISSING: {sysusers}")
+    if not tmpfiles.is_file():
+        raise AssertionError(f"tmpfiles.d source MISSING: {tmpfiles}")
+    print(f"  ✓ sysusers.d + tmpfiles.d declarative sources installed")
+
+    print("✓ T2529 install-layout tests passed")
+
+
+def test_t2529_paths_resolve():
+    """T2529-A4 — verify Map2Paths resolves to the canonical FHS roots
+    when running on the FHS install (no MAP2_*_DIR overrides)."""
+    import os
+    from pathlib import Path
+
+    if os.environ.get("MAP2_APP_INSTALL_DIR"):
+        print("  Skipping Map2Paths default check — running on dev-host")
+        print("✓ T2529 Map2Paths test skipped (not applicable)")
+        return
+
+    from app.paths import Map2Paths
+
+    expected = {
+        "app_install": Path("/opt/map2-audio"),
+        "host_config": Path("/etc/map2"),
+        "service_state": Path("/var/lib/map2"),
+        "cache": Path("/var/cache/map2"),
+        "log": Path("/var/log/map2"),
+        "runtime": Path("/run/map2"),
+    }
+    assert Map2Paths.app_install_dir() == expected["app_install"]
+    assert Map2Paths.host_config_dir() == expected["host_config"]
+    assert Map2Paths.service_state_dir() == expected["service_state"]
+    assert Map2Paths.cache_dir() == expected["cache"]
+    assert Map2Paths.log_dir() == expected["log"]
+    assert Map2Paths.runtime_dir() == expected["runtime"]
+    assert Map2Paths.is_fhs_install() is True
+
+    for plane, path in expected.items():
+        print(f"  ✓ Map2Paths {plane:14s} → {path}")
+    print("✓ T2529 Map2Paths default-resolution tests passed")
+
+
 def main():
-    """Run all tests."""
+    """Run all tests.
+
+    Default: runs the baseline test set (LCD / Config / Plugin Host /
+    Audio Processor / Performance / Chain / MIDI Engine).
+
+    --full: also runs the T2529-E5 install-layout + Map2Paths checks
+            (verifies the FHS-install state). Use after `dnf install map2`
+            to confirm the install is healthy.
+    """
+    import argparse
+
+    parser = argparse.ArgumentParser(description="MAP2 self-test suite")
+    parser.add_argument(
+        "--full",
+        action="store_true",
+        help="Also run the T2529-E5 install-layout + Map2Paths checks "
+             "(FHS-install verification). Skipped on dev-host.",
+    )
+    args = parser.parse_args()
+
     print("MAP2 Self-Test Suite\n")
-    
+
     passed = 0
     failed = 0
-    
+
     tests = [
         ("LCD Display", test_lcd_display),
         ("Config Manager", test_config_manager),
@@ -255,7 +428,13 @@ def main():
         ("Chain Service", test_chain_service),
         ("MIDI Engine", test_midi_engine),
     ]
-    
+
+    if args.full:
+        tests.extend([
+            ("T2529 Install Layout", test_t2529_install_layout),
+            ("T2529 Map2Paths", test_t2529_paths_resolve),
+        ])
+
     for name, test_func in tests:
         try:
             print(f"\n[{name}]")
@@ -266,11 +445,11 @@ def main():
             import traceback
             traceback.print_exc()
             failed += 1
-    
+
     print(f"\n{'='*40}")
     print(f"Results: {passed} passed, {failed} failed")
     print(f"{'='*40}")
-    
+
     if failed == 0:
         print("\n✓ All tests passed!")
         return 0
