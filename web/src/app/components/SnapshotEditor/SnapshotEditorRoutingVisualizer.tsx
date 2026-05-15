@@ -19,6 +19,16 @@ export type JuceGridRoutingMarkerId =
   | 'morph'
   | 'sidechain'
   | 'key'
+  // T2521-7 cycle 35 — remote-peer marker variants. A flow whose
+  // chain is bound to a SonoBus peer at its input or output gets
+  // these promoted variants instead of the bare `input` / `output`
+  // markers so a future per-mode canvas slice can render a Cloud
+  // icon next to the marker label. Until that slice ships, the
+  // visualizer treats `inputRemote` as `input` for layout purposes
+  // and renders the badge inline via the `remoteInput`/`remoteOutput`
+  // flow flags below.
+  | 'inputRemote'
+  | 'outputRemote'
 
 export interface JuceGridRoutingInspectorItem {
   id: JuceGridRoutingMarkerId
@@ -32,6 +42,21 @@ export interface JuceGridRoutingFlowInfo {
   muted: boolean
   active?: boolean
   blendPercent?: number
+  /**
+   * T2521-7 cycle 35 — remote-peer annotations. When the chain
+   * bound to this flow has a SonoBus peer at its input or output
+   * (set via the publish-page I/O panel), the visualizer renders
+   * a small "SonoBus" badge next to the Input and/or Output
+   * marker so the operator sees at a glance that this flow's
+   * signal traverses a remote peer rather than a local interface.
+   *
+   * A future slice promotes this to a full remote-peer node in
+   * the canvas with its own marker id (`inputRemote` /
+   * `outputRemote`) + per-mode layout; the lightweight badge is
+   * the scaffolding step.
+   */
+  remoteInput?: boolean
+  remoteOutput?: boolean
 }
 
 interface JuceGridRoutingVisualizerProps {
@@ -242,6 +267,13 @@ export function getJuceGridRoutingInspectorItems(
     morph: 'Morph',
     sidechain: compact ? 'SC' : 'Sidechain',
     key: 'Key',
+    // T2521-7 cycle 35 — remote-peer marker variants. Labels reuse the
+    // local input/output labels because the per-mode canvas badge is
+    // rendered separately from the marker text; the future canvas
+    // slice swaps these for a "SonoBus" / "Remote" prefix once the
+    // per-mode SVG layout supports the badge.
+    inputRemote: compact ? 'In' : 'Input',
+    outputRemote: compact ? 'Out' : 'Output',
   }
 
   switch (mode) {
