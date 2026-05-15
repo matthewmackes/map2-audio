@@ -229,6 +229,22 @@ export const JuceGridRoutingVisualizer = memo(function JuceGridRoutingVisualizer
   )
 })
 
+/**
+ * T2521-7 cycle 36 — collapse the per-flow `remoteInput` /
+ * `remoteOutput` flags into the diagram-level "any flow remote
+ * on this side" booleans the build*Diagram functions thread into
+ * their terminal entries.
+ */
+function summarizeRemoteFlags(flows: JuceGridRoutingFlowInfo[]): {
+  remoteInput: boolean
+  remoteOutput: boolean
+} {
+  return {
+    remoteInput: flows.some((flow) => flow.remoteInput === true),
+    remoteOutput: flows.some((flow) => flow.remoteOutput === true),
+  }
+}
+
 interface DiagramFlowNode {
   id: string
   x: number
@@ -242,12 +258,28 @@ interface DiagramFlowNode {
   active: boolean
 }
 
+/**
+ * Terminal entry shape. `remote` flips on when any flow in the
+ * diagram has a SonoBus binding at the terminal's direction
+ * (input or output) — the visualizer then renders a small Cloud
+ * glyph next to the terminal label so the operator sees the
+ * signal traverses a remote peer. T2521-7 cycle 36.
+ */
+interface DiagramTerminal {
+  id: JuceGridRoutingMarkerId
+  x: number
+  y: number
+  label: string
+  active?: boolean
+  remote?: boolean
+}
+
 interface DiagramData {
   width: number
   height: number
   ariaLabel: string
   wires: Array<{ points: DiagramPoint[]; active: boolean; dashed?: boolean }>
-  terminals: Array<{ id: JuceGridRoutingMarkerId; x: number; y: number; label: string; active?: boolean }>
+  terminals: DiagramTerminal[]
   markers: Array<{ id: JuceGridRoutingMarkerId; x: number; y: number; label: string; active?: boolean }>
   flows: DiagramFlowNode[]
   morphBlock?: { x: number; y: number; progress: number }
@@ -320,7 +352,12 @@ function nodeH(compact: boolean) { return compact ? 52 : 62 }
 function hGap(compact: boolean)  { return compact ? 40 : 56 }
 function rowGap(compact: boolean){ return compact ? 76 : 92 }
 
-function buildSeriesDiagram(flows: JuceGridRoutingFlowInfo[], activeFlowId: string, compact: boolean): DiagramData {
+function buildSeriesDiagram(
+  flows: JuceGridRoutingFlowInfo[],
+  activeFlowId: string,
+  compact: boolean,
+): DiagramData {
+  const { remoteInput, remoteOutput } = summarizeRemoteFlags(flows)
   const nW = nodeW(compact)
   const nH = nodeH(compact)
   const gap = hGap(compact)
@@ -358,8 +395,8 @@ function buildSeriesDiagram(flows: JuceGridRoutingFlowInfo[], activeFlowId: stri
     ariaLabel: 'Series',
     wires,
     terminals: [
-      { id: 'input', x: 16, y, label: compact ? 'In' : 'Input', active: true },
-      { id: 'output', x: outputX, y, label: compact ? 'Out' : 'Output', active: true },
+      { id: 'input', x: 16, y, label: compact ? 'In' : 'Input', active: true, remote: remoteInput },
+      { id: 'output', x: outputX, y, label: compact ? 'Out' : 'Output', active: true, remote: remoteOutput },
     ],
     markers: [
       { id: 'series', x: firstX + (flowNodes.length * (nW + gap)) / 2, y: flowY - 24, label: 'Series', active: true },
@@ -369,6 +406,7 @@ function buildSeriesDiagram(flows: JuceGridRoutingFlowInfo[], activeFlowId: stri
 }
 
 function buildParallelDiagram(flows: JuceGridRoutingFlowInfo[], activeFlowId: string, compact: boolean): DiagramData {
+  const { remoteInput, remoteOutput } = summarizeRemoteFlags(flows)
   const nW = nodeW(compact)
   const nH = nodeH(compact)
   const rGap = rowGap(compact)
@@ -424,8 +462,8 @@ function buildParallelDiagram(flows: JuceGridRoutingFlowInfo[], activeFlowId: st
     ariaLabel: 'Parallel blend',
     wires,
     terminals: [
-      { id: 'input', x: 16, y: centerY, label: compact ? 'In' : 'Input', active: true },
-      { id: 'output', x: outputX, y: centerY, label: compact ? 'Out' : 'Output', active: true },
+      { id: 'input', x: 16, y: centerY, label: compact ? 'In' : 'Input', active: true, remote: remoteInput },
+      { id: 'output', x: outputX, y: centerY, label: compact ? 'Out' : 'Output', active: true, remote: remoteOutput },
     ],
     markers: [
       { id: 'split', x: splitterX, y: startY - 16, label: 'Split', active: true },
@@ -436,6 +474,7 @@ function buildParallelDiagram(flows: JuceGridRoutingFlowInfo[], activeFlowId: st
 }
 
 function buildABDiagram(flows: JuceGridRoutingFlowInfo[], activeFlowId: string, compact: boolean): DiagramData {
+  const { remoteInput, remoteOutput } = summarizeRemoteFlags(flows)
   const nW = nodeW(compact)
   const nH = nodeH(compact)
   const rGap = rowGap(compact)
@@ -482,8 +521,8 @@ function buildABDiagram(flows: JuceGridRoutingFlowInfo[], activeFlowId: string, 
     ariaLabel: 'A/B switch',
     wires,
     terminals: [
-      { id: 'input', x: 16, y: centerY, label: compact ? 'In' : 'Input', active: true },
-      { id: 'output', x: outputX, y: centerY, label: compact ? 'Out' : 'Output', active: true },
+      { id: 'input', x: 16, y: centerY, label: compact ? 'In' : 'Input', active: true, remote: remoteInput },
+      { id: 'output', x: outputX, y: centerY, label: compact ? 'Out' : 'Output', active: true, remote: remoteOutput },
     ],
     markers: [
       { id: 'ab', x: switchX, y: startY - 16, label: 'A/B', active: true },
@@ -498,6 +537,7 @@ function buildMorphDiagram(
   progress: number,
   compact: boolean,
 ): DiagramData {
+  const { remoteInput, remoteOutput } = summarizeRemoteFlags([source, target])
   const nW = nodeW(compact)
   const nH = nodeH(compact)
   const y = compact ? 80 : 96
@@ -541,8 +581,8 @@ function buildMorphDiagram(
     height: compact ? 160 : 184,
     ariaLabel: 'Morph',
     terminals: [
-      { id: 'input', x: 16, y, label: compact ? 'In' : 'Input', active: true },
-      { id: 'output', x: outputX, y, label: compact ? 'Out' : 'Output', active: true },
+      { id: 'input', x: 16, y, label: compact ? 'In' : 'Input', active: true, remote: remoteInput },
+      { id: 'output', x: outputX, y, label: compact ? 'Out' : 'Output', active: true, remote: remoteOutput },
     ],
     markers: [
       { id: 'morph', x: morphX + morphBlockW / 2, y: y - nH / 2 - 24, label: 'Morph', active: true },
@@ -567,6 +607,7 @@ function buildSidechainDiagram(primary: JuceGridRoutingFlowInfo, secondary: Juce
     return buildSeriesDiagram([primary], primary.id, compact)
   }
 
+  const { remoteInput, remoteOutput } = summarizeRemoteFlags([primary, secondary])
   const nW = nodeW(compact)
   const nH = nodeH(compact)
   const primaryY = compact ? 112 : 128
@@ -605,8 +646,8 @@ function buildSidechainDiagram(primary: JuceGridRoutingFlowInfo, secondary: Juce
     height: compact ? 184 : 212,
     ariaLabel: 'Sidechain',
     terminals: [
-      { id: 'input', x: inputX, y: primaryY, label: compact ? 'In' : 'Input', active: true },
-      { id: 'output', x: outputX, y: primaryY, label: compact ? 'Out' : 'Output', active: true },
+      { id: 'input', x: inputX, y: primaryY, label: compact ? 'In' : 'Input', active: true, remote: remoteInput },
+      { id: 'output', x: outputX, y: primaryY, label: compact ? 'Out' : 'Output', active: true, remote: remoteOutput },
       { id: 'key', x: inputX, y: sidechainY + nH / 2, label: 'Key', active: false },
     ],
     markers: [
@@ -690,24 +731,31 @@ function handleMarkerKeyDown(
  * No box, no border, no fill. Just label + flanking rules.
  */
 function renderTerminal(
-  terminal: { id: JuceGridRoutingMarkerId; x: number; y: number; label: string; active?: boolean },
+  terminal: DiagramTerminal,
   onMarkerSelect: ((markerId: JuceGridRoutingMarkerId) => void) | undefined,
   key: string,
 ) {
   const labelWidth = terminal.label.length * 7 + 8
   const ruleLen = 22
+  const ariaLabel = terminal.remote
+    ? `${terminal.label} routing inspector (SonoBus remote peer)`
+    : `${terminal.label} routing inspector`
   const interactiveProps = onMarkerSelect
     ? {
         role: 'button' as const,
         tabIndex: 0,
         onClick: () => onMarkerSelect(terminal.id),
         onKeyDown: (event: ReactKeyboardEvent<SVGGElement>) => handleMarkerKeyDown(event, terminal.id, onMarkerSelect),
-        'aria-label': `${terminal.label} routing inspector`,
+        'aria-label': ariaLabel,
       }
     : {}
 
   return (
-    <g key={key} className={`juce-grid-page__routing-terminal ${terminal.active ? 'is-active' : ''}`} {...interactiveProps}>
+    <g
+      key={key}
+      className={`juce-grid-page__routing-terminal ${terminal.active ? 'is-active' : ''}${terminal.remote ? ' is-remote' : ''}`}
+      {...interactiveProps}
+    >
       {/* Left rule */}
       <line
         x1={terminal.x - labelWidth / 2 - ruleLen - 4}
@@ -734,6 +782,27 @@ function renderTerminal(
       >
         {terminal.label}
       </text>
+      {/* T2521-7 cycle 36 — Cloud glyph next to the terminal label
+          when the flow binds a SonoBus remote peer at this side.
+          Hand-drawn SVG path so we don't pull a Carbon icon into the
+          SVG namespace (where mixing JSX-rendered Cloud + raw <svg>
+          would cause sizing/layout drift). The shape mirrors
+          Carbon's Cloud icon at 12px. */}
+      {terminal.remote ? (
+        <g
+          className="juce-grid-page__routing-terminal-remote-badge"
+          aria-hidden="true"
+          transform={`translate(${terminal.x + labelWidth / 2 + 8}, ${terminal.y - 6})`}
+        >
+          <title>SonoBus remote peer</title>
+          {/* Cloud silhouette — 12×8 viewport. */}
+          <path
+            d="M 2 6 Q 0 6 0 4 Q 0 2 2 2 Q 2 0 4 0 Q 6 0 6 2 Q 8 1 10 2 Q 12 2 12 4 Q 12 6 10 6 Z"
+            fill={terminal.active ? C_LINK : C_BORDER_STRONG}
+            stroke="none"
+          />
+        </g>
+      ) : null}
     </g>
   )
 }
