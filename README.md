@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1673** Python | **1737** TypeScript | **222** C++/H | **149** Docs | **4597** total commits | **4** stars | **0** forks | **0** open issues
+**1674** Python | **1737** TypeScript | **222** C++/H | **149** Docs | **4599** total commits | **4** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -175,7 +175,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-DOCS:START -->
 | Document | Last Updated |
 |:---------|:------------|
-| [MAP2 Canonical Project Worklist](https://github.com/matthewmackes/map2-audio/blob/master/docs/PROJECT_WORKLIST.md) | 2026-05-14 |
+| [MAP2 Canonical Project Worklist](https://github.com/matthewmackes/map2-audio/blob/master/docs/PROJECT_WORKLIST.md) | 2026-05-15 |
 | [MAP2 API Contract Standards](https://github.com/matthewmackes/map2-audio/blob/master/docs/api-contract-standards.md) | 2026-05-14 |
 | [Third-Party Notices](https://github.com/matthewmackes/map2-audio/blob/master/docs/THIRD_PARTY_NOTICES.md) | 2026-05-13 |
 | [MAP2 — No-Hardware Worklist](https://github.com/matthewmackes/map2-audio/blob/master/docs/PROJECT_WORKLIST_NO_HARDWARE.md) | 2026-05-11 |
@@ -193,7 +193,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 |  |  |  |
 | :---: | :---: | :---: |
 | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/map2-banner.png" width="280" alt="map2 banner"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/map2-banner-3.png" width="280" alt="map2 banner 3"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot-Cli.png" width="280" alt="Screenshot Cli"> |
-| <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 08-00-43 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 08 00 43 Mackes Audio Platform 2 FEB2025"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 07-58-14 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 07 58 14 Mackes Audio Platform 2 FEB2025"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 07-57-33 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 07 57 33 Mackes Audio Platform 2 FEB2025"> |
+| <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 07-58-14 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 07 58 14 Mackes Audio Platform 2 FEB2025"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 08-00-43 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 08 00 43 Mackes Audio Platform 2 FEB2025"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/Screenshot 2026-02-15 at 07-57-33 Mackes Audio Platform 2 FEB2025.png" width="280" alt="Screenshot 2026 02 15 at 07 57 33 Mackes Audio Platform 2 FEB2025"> |
 | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/MAP2_AUDIO-NODE_ARCH_DIAGRAM3.png" width="280" alt="MAP2 AUDIO NODE ARCH DIAGRAM3"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/MAP2_AUDIO-NODE_ARCH_DIAGRAM2-BANG.png" width="280" alt="MAP2 AUDIO NODE ARCH DIAGRAM2 BANG"> | <img src="https://raw.githubusercontent.com/matthewmackes/map2-audio/master/docs/images/MAP2_AUDIO-NODE_ARCH_DIAGRAM.png" width="280" alt="MAP2 AUDIO NODE ARCH DIAGRAM"> |
 <!-- GALLERY:END -->
 
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`8c45a62a`](https://github.com/matthewmackes/map2-audio/commit/8c45a62a95e0ab5a91cf606cfd830a4a15e0907d) | feat(sonobus): T2521-5 full route surface cycle 26 — 12 s... | Map2 Audio | 2026-05-15 |
+| [`c6eae59c`](https://github.com/matthewmackes/map2-audio/commit/c6eae59ca2e53892d5575651ea997c4652c54f62) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-15 |
 | [`c25fcad5`](https://github.com/matthewmackes/map2-audio/commit/c25fcad51cff8df055040a1d629bc8494c0a95ba) | chore(web): T2524-B slice 3 cycle 25 — repair pre-existin... | Map2 Audio | 2026-05-14 |
 | [`5800d7ca`](https://github.com/matthewmackes/map2-audio/commit/5800d7ca62ba25abc753b797feadfb511776bbc4) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-15 |
 | [`233b653c`](https://github.com/matthewmackes/map2-audio/commit/233b653c7bf3617874d13b22965335bb3d444115) | chore(web): T2524-B slice 2 cycle 24 — delete 8 orphan TS... | Map2 Audio | 2026-05-14 |
 | [`4802a8bd`](https://github.com/matthewmackes/map2-audio/commit/4802a8bdd3755885b4d05f2277a1c35ef85d2eae) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-15 |
 | [`d888fda2`](https://github.com/matthewmackes/map2-audio/commit/d888fda24b4a7071bf9b1095ebc22c2e04b20980) | feat(maschine): T2522-E-F3+F5+F8 cycle 23 — motion-reduce... | Map2 Audio | 2026-05-14 |
 | [`46deaf06`](https://github.com/matthewmackes/map2-audio/commit/46deaf068839c9998fb6048e554ba0fb4209edf2) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-15 |
-| [`9df82e16`](https://github.com/matthewmackes/map2-audio/commit/9df82e166ea05bbf57fbbce651bf59e71852879f) | feat(maschine): T2522-E-F1+F4+F6+F7 cycle 22 — chrome fol... | Map2 Audio | 2026-05-14 |
-| [`f5857f37`](https://github.com/matthewmackes/map2-audio/commit/f5857f37292baecca3c188be581bc2b6c9d4711f) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-15 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
