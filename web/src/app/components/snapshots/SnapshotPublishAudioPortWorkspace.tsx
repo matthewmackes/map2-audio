@@ -1,6 +1,6 @@
 import { useCallback, useEffect, useMemo, useState, type CSSProperties } from 'react'
 import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
-import { CheckmarkFilled, Flash, Link, Renew, VolumeUp } from '@carbon/icons-react'
+import { CheckmarkFilled, Cloud, Flash, Link, Renew, VolumeUp } from '@carbon/icons-react'
 import {
   Button,
   Checkbox,
@@ -21,6 +21,11 @@ import {
 import { useToasts } from '../Toasts'
 import { EmptyState } from '../shared/EmptyState'
 import { LoadingState } from '../shared/LoadingState'
+// T2521-7 — symmetric SonoBus peers section, mirrors the AVB pattern.
+import {
+  useSonoBusPeers,
+  type SonoBusPeerSummary,
+} from '../../pages/sonobus/useSonoBusBindings'
 import '../../pages/SnapshotEditorPage.css'
 
 type PortTabId = 'input' | 'output'
@@ -70,16 +75,23 @@ function groupPorts(ports: AudioPort[]) {
   }, {})
 }
 
-function formatChannelSummary(ports: number[], avbEndpoints: string[]) {
+function formatChannelSummary(
+  ports: number[],
+  avbEndpoints: string[],
+  sonoBusPeers: string[] = [],
+) {
+  const sonoBusSuffix = sonoBusPeers.length > 0 ? ` + ${sonoBusPeers.length} SonoBus` : ''
   if (ports.length === 0) {
-    if (avbEndpoints.length === 0) return 'None'
-    return `${avbEndpoints.length} AVB`
+    if (avbEndpoints.length === 0 && sonoBusPeers.length === 0) return 'None'
+    if (avbEndpoints.length === 0) return `${sonoBusPeers.length} SonoBus`
+    return `${avbEndpoints.length} AVB${sonoBusSuffix}`
   }
-  if (ports.length === 1) return 'Mono'
-  if (ports.length === 2 && ports[0] + 1 === ports[1]) return 'Stereo'
-  if (ports.length === 2) return '2ch'
+  if (ports.length === 1) return `Mono${sonoBusPeers.length > 0 ? sonoBusSuffix : ''}`
+  if (ports.length === 2 && ports[0] + 1 === ports[1]) return `Stereo${sonoBusPeers.length > 0 ? sonoBusSuffix : ''}`
+  if (ports.length === 2) return `2ch${sonoBusPeers.length > 0 ? sonoBusSuffix : ''}`
   const base = `${ports.length}ch`
-  return avbEndpoints.length > 0 ? `${base} + ${avbEndpoints.length} AVB` : base
+  const avbSuffix = avbEndpoints.length > 0 ? ` + ${avbEndpoints.length} AVB` : ''
+  return `${base}${avbSuffix}${sonoBusSuffix}`
 }
 
 export function SnapshotPublishAudioPortWorkspace({
@@ -101,6 +113,11 @@ export function SnapshotPublishAudioPortWorkspace({
   const [selectedOutputs, setSelectedOutputs] = useState<number[]>([])
   const [selectedInputAvbEndpoints, setSelectedInputAvbEndpoints] = useState<string[]>([])
   const [selectedOutputAvbEndpoints, setSelectedOutputAvbEndpoints] = useState<string[]>([])
+  // T2521-7 — SonoBus peer selections (frontend-local for v1; backend
+  // persistence in the audio-routing payload lands in a follow-on
+  // slice paired with the T2521-4 daemon).
+  const [selectedInputSonoBusPeers, setSelectedInputSonoBusPeers] = useState<string[]>([])
+  const [selectedOutputSonoBusPeers, setSelectedOutputSonoBusPeers] = useState<string[]>([])
   const [linkStereo, setLinkStereo] = useState(true)
   const [allowMultiSelect, setAllowMultiSelect] = useState(true)
   const [activeTab, setActiveTab] = useState<PortTabId>('input')
@@ -226,6 +243,15 @@ export function SnapshotPublishAudioPortWorkspace({
   const deviceName = portsQuery.data?.device || 'Audio Interface'
   const hasOverride = isPerChain && Boolean(chainRoutingQuery.data?.is_override)
 
+  // T2521-7 — SonoBus peer projection (binding-projection today;
+  // daemon-discovered peers merge in once T2521-4 ships). The same
+  // peer roster feeds both Inputs (operator subscribes as a listener)
+  // and Outputs (operator publishes as a talker); the selection
+  // state is per-direction so the same peer can be both sides of a
+  // call-and-response session.
+  const sonoBusPeersQuery = useSonoBusPeers()
+  const sonoBusPeers: SonoBusPeerSummary[] = sonoBusPeersQuery.data ?? []
+
   const avbReadinessState = useMemo(() => {
     const readiness = portsQuery.data?.avb_readiness
     if (!readiness || typeof readiness !== 'object') return 'unknown'
@@ -293,6 +319,21 @@ export function SnapshotPublishAudioPortWorkspace({
       previous.includes(endpointId)
         ? previous.filter((id) => id !== endpointId)
         : allowMultiSelect ? [...previous, endpointId] : [endpointId]
+    ))
+  }, [allowMultiSelect, readOnly])
+
+  // T2521-7 — SonoBus peer toggle (mirrors `toggleAvbEndpoint`).
+  const toggleSonoBusPeer = useCallback((type: PortTabId, peerId: string) => {
+    if (readOnly) {
+      return
+    }
+    const setter = type === 'input'
+      ? setSelectedInputSonoBusPeers
+      : setSelectedOutputSonoBusPeers
+    setter((previous) => (
+      previous.includes(peerId)
+        ? previous.filter((id) => id !== peerId)
+        : allowMultiSelect ? [...previous, peerId] : [peerId]
     ))
   }, [allowMultiSelect, readOnly])
 
@@ -455,6 +496,65 @@ export function SnapshotPublishAudioPortWorkspace({
                   </span>
                   <Tag type={endpoint.available ? 'green' : 'warm-gray'}>
                     {endpoint.available ? 'Available' : 'Offline'}
+                  </Tag>
+                </button>
+              )
+            })}
+          </div>
+        )}
+      </div>
+    )
+  }
+
+  // T2521-7 — SonoBus peers render. Mirrors `renderEndpointCards`
+  // structurally so a glance across "AVB talker inputs" / "SonoBus
+  // peers" reads as one product. The empty-state copy points at
+  // /sonobus (where the operator manages bindings) and explicitly
+  // calls out the T2521-4 daemon dependency for live discovery.
+  const renderSonoBusPeerCards = (
+    type: PortTabId,
+    peers: SonoBusPeerSummary[],
+    selectedPeerIds: string[],
+  ) => {
+    return (
+      <div className="juce-grid-page__port-endpoint-stack">
+        {peers.length === 0 ? (
+          <EmptyState
+            className="juce-grid-page__empty-state"
+            title="No SonoBus peers configured"
+            description={
+              type === 'input'
+                ? 'SonoBus remote talkers appear here when a binding lists this host as the listener. Manage bindings at /sonobus.'
+                : 'SonoBus remote listeners appear here when a binding routes a chain output to a remote peer. Manage bindings at /sonobus.'
+            }
+            compact
+            align="left"
+          />
+        ) : (
+          <div className="juce-grid-page__port-grid juce-grid-page__port-grid--wide">
+            {peers.map((peer) => {
+              const isSelected = selectedPeerIds.includes(peer.peer_id)
+              return (
+                <button
+                  key={`${type}-sonobus-${peer.peer_id}`}
+                  type="button"
+                  className={`juce-grid-page__port-card juce-grid-page__port-card--endpoint ${isSelected ? 'is-selected' : ''}`}
+                  onClick={() => toggleSonoBusPeer(type, peer.peer_id)}
+                  disabled={readOnly}
+                  data-testid={`sonobus-peer-card-${type}-${peer.peer_id}`}
+                >
+                  <span className="juce-grid-page__port-card-index">
+                    {isSelected ? <CheckmarkFilled size={16} /> : <Cloud size={16} />}
+                  </span>
+                  <span className="juce-grid-page__port-card-copy">
+                    <strong>{peer.listener_node_id ?? peer.peer_id}</strong>
+                    <span>
+                      {peer.listener_endpoint ?? 'no endpoint'} · {peer.enabled_binding_count}/{peer.binding_count} active
+                      {peer.listener_capability ? ` · ${peer.listener_capability}` : ''}
+                    </span>
+                  </span>
+                  <Tag type={peer.enabled_binding_count > 0 ? 'green' : 'warm-gray'}>
+                    {peer.enabled_binding_count > 0 ? 'Active' : 'Configured'}
                   </Tag>
                 </button>
               )
@@ -628,6 +728,17 @@ export function SnapshotPublishAudioPortWorkspace({
               </div>
               {renderEndpointCards('input', avbTalkers, selectedInputAvbEndpoints, missingInputAvbEndpointIds)}
             </section>
+
+            {/* T2521-7 — SonoBus peers section, mirrors the AVB
+                talker-inputs pattern. Sits below AVB per Q18
+                (AVB-preferred). */}
+            <section className="juce-grid-page__port-pane" data-testid="sonobus-peers-input-section">
+              <div className="juce-grid-page__compact-section-header">
+                <h2>SonoBus peers</h2>
+                <p>Remote audio talkers reachable over the SonoBus / AOO transport. AVB is preferred; SonoBus is the network-loss-tolerant fallback.</p>
+              </div>
+              {renderSonoBusPeerCards('input', sonoBusPeers, selectedInputSonoBusPeers)}
+            </section>
           </div>
         ) : (
           <div className="juce-grid-page__port-panel">
@@ -654,6 +765,15 @@ export function SnapshotPublishAudioPortWorkspace({
               </div>
               {renderEndpointCards('output', avbListeners, selectedOutputAvbEndpoints, missingOutputAvbEndpointIds)}
             </section>
+
+            {/* T2521-7 — SonoBus peers section (output side). */}
+            <section className="juce-grid-page__port-pane" data-testid="sonobus-peers-output-section">
+              <div className="juce-grid-page__compact-section-header">
+                <h2>SonoBus peers</h2>
+                <p>Remote audio listeners reachable over the SonoBus / AOO transport. Routes the processed signal to remote operators when AVB is unavailable.</p>
+              </div>
+              {renderSonoBusPeerCards('output', sonoBusPeers, selectedOutputSonoBusPeers)}
+            </section>
           </div>
         )}
 
@@ -661,21 +781,23 @@ export function SnapshotPublishAudioPortWorkspace({
           <Tile className="juce-grid-page__port-summary-tile">
             <div className="juce-grid-page__port-summary-copy">
               <strong>Inputs</strong>
-              <p>{formatChannelSummary(selectedInputs, selectedInputAvbEndpoints)}</p>
+              <p>{formatChannelSummary(selectedInputs, selectedInputAvbEndpoints, selectedInputSonoBusPeers)}</p>
             </div>
             <div className="juce-grid-page__port-summary-meta">
               {selectedInputs.length > 0 ? <span>Ch {selectedInputs.map((port) => port + 1).join(', ')}</span> : null}
               {selectedInputAvbEndpoints.length > 0 ? <span>AVB {selectedInputAvbEndpoints.length}</span> : null}
+              {selectedInputSonoBusPeers.length > 0 ? <span>SonoBus {selectedInputSonoBusPeers.length}</span> : null}
             </div>
           </Tile>
           <Tile className="juce-grid-page__port-summary-tile">
             <div className="juce-grid-page__port-summary-copy">
               <strong>Outputs</strong>
-              <p>{formatChannelSummary(selectedOutputs, selectedOutputAvbEndpoints)}</p>
+              <p>{formatChannelSummary(selectedOutputs, selectedOutputAvbEndpoints, selectedOutputSonoBusPeers)}</p>
             </div>
             <div className="juce-grid-page__port-summary-meta">
               {selectedOutputs.length > 0 ? <span>Ch {selectedOutputs.map((port) => port + 1).join(', ')}</span> : null}
               {selectedOutputAvbEndpoints.length > 0 ? <span>AVB {selectedOutputAvbEndpoints.length}</span> : null}
+              {selectedOutputSonoBusPeers.length > 0 ? <span>SonoBus {selectedOutputSonoBusPeers.length}</span> : null}
             </div>
           </Tile>
         </div>

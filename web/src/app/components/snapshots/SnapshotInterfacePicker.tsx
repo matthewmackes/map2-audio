@@ -240,7 +240,9 @@ export function SnapshotInterfacePicker({
                   ? 2
                   : transportFilter === 'cluster'
                     ? 3
-                    : 0
+                    : transportFilter === 'sonobus'
+                      ? 4
+                      : 0
           }
           onChange={({ name }) => setTransportFilter(name as typeof transportFilter)}
         >
@@ -248,6 +250,8 @@ export function SnapshotInterfacePicker({
           <Switch name="pipewire" text="Local" />
           <Switch name="avb" text="AVB" />
           <Switch name="cluster" text="Cluster" />
+          {/* T2521-7 — SonoBus / AOO peers (Q18 AVB-preferred fallback). */}
+          <Switch name="sonobus" text="SonoBus" />
         </ContentSwitcher>
       </div>
 
