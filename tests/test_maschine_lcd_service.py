@@ -479,3 +479,88 @@ async def test_render_phase2_tool_and_admin_profiles(monkeypatch):
     assert rendered["t19_midi_learn"]["profile_name"] == "T19 MIDI LEARN"
     assert rendered["t20_macro_recorder"]["profile_name"] == "T20 MACRO RECORDER"
     assert len(rendered["t18_admin_console"]["left"]["data"]) > 100
+
+
+# ---------------------------------------------------------------------------
+# T2523 — LCD looper render context (Maschine MK1 + GUI Twin)
+# ---------------------------------------------------------------------------
+
+
+@pytest.mark.asyncio
+async def test_render_looper_context_returns_structured_state_and_framebuffers():
+    """T2523-B — ``context="looper"`` short-circuits the JSON profile
+    runtime and composes its own LCD via ``_Canvas`` primitives. The
+    payload must include the structured looper state + both XBM
+    framebuffers so the GUI mirror and physical MK1 stay in sync."""
+    from app.services.looper_service import LooperService, set_looper_service
+
+    set_looper_service(LooperService())
+    reset_maschine_lcd_render_service()
+    service = MaschineLCDRenderService()
+
+    render = await service.render(
+        session=None,
+        maschine_service=_FakeMaschineService(),
+        context="looper",
+    )
+
+    assert render["context"] == "looper"
+    assert render["profile_id"] == "looper"
+    assert render["profile_name"] == "Looper"
+    assert "looper" in render
+    assert isinstance(render["looper"], dict)
+    assert len(render["looper"]["tracks"]) == 4
+    assert render["left"]["format"] == "xbm"
+    assert render["right"]["format"] == "xbm"
+    assert len(render["left"]["data"]) > 100
+    assert len(render["right"]["data"]) > 100
+    assert render["meta"]["profile_id"] == "looper"
+    assert render["meta"]["track_count"] == 4
+    assert render["meta"]["active_track_count"] == 0
+
+
+@pytest.mark.asyncio
+async def test_render_looper_context_reflects_master_state_in_right_panel():
+    """A non-default master gain + mute must produce a distinct right-
+    panel framebuffer (no equality with the default-state render)."""
+    from app.services.looper_service import (
+        LooperService,
+        get_looper_service,
+        set_looper_service,
+    )
+
+    set_looper_service(LooperService())
+    reset_maschine_lcd_render_service()
+    service = MaschineLCDRenderService()
+    default = await service.render(
+        session=None,
+        maschine_service=_FakeMaschineService(),
+        context="looper",
+    )
+
+    looper = get_looper_service()
+    looper.set_master_level_db(-12.0)
+    looper.set_master_muted(True)
+    changed = await service.render(
+        session=None,
+        maschine_service=_FakeMaschineService(),
+        context="looper",
+    )
+
+    assert default["right"]["data"] != changed["right"]["data"]
+    # master_level_db only flows through when the JUCE engine binding
+    # is present (T2511); the no-engine path keeps it at 0.0. Master
+    # mute is service-side state so it propagates regardless.
+    assert changed["looper"]["master_muted"] is True
+    assert default["looper"]["master_muted"] is False
+
+
+def test_looper_state_glyph_maps_known_states():
+    """Glyph map covers every TrackState label the operator can see."""
+    glyph = MaschineLCDRenderService._looper_state_glyph
+    assert glyph("empty") == "----"
+    assert glyph("recording") == "REC "
+    assert glyph("playing") == "PLAY"
+    assert glyph("overdubbing") == "OVR "
+    assert glyph("stopped") == "STOP"
+    assert glyph("unknown-future-state") == "----"

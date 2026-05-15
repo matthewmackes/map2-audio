@@ -141,10 +141,17 @@ class MaschineLCDRenderService(Singleton):
         *,
         session: Any,
         maschine_service: Any,
-        context: Literal["audio_grid", "stats"] | str = "audio_grid",
+        context: Literal["audio_grid", "stats", "looper"] | str = "audio_grid",
         focus_metric: str | None = None,
         profile_id: str | None = None,
     ) -> dict[str, Any]:
+        # T2523 — looper context bypasses the JSON profile runtime and
+        # composes its own framebuffer via _Canvas primitives. The
+        # output shape matches the rest of the render() responses so
+        # the existing WS frame consumer + Hardware Twin canvas can
+        # mount it without a special case.
+        if str(context) == "looper":
+            return self._render_looper()
         normalized_profile = PROFILE_ALIASES.get(str(profile_id or context or "t1_ctrl"), str(profile_id or context or "t1_ctrl"))
         stats = await self._collect_stats_snapshot()
         audio_grid = await maschine_service.get_audio_grid_projection(session)
@@ -290,6 +297,20 @@ class MaschineLCDRenderService(Singleton):
             return get_transport_service().get_state()
         except Exception:
             return {}
+
+    # T2523 — looper render context. Single source of truth for both
+    # physical MK1 LCDs and the GUI mirror; the frontend renders the
+    # structured ``looper`` payload returned alongside the rasterized
+    # framebuffer so the GUI can do its own typography while the
+    # hardware sees an identical pixel layout.
+    def _collect_looper_state(self) -> dict[str, Any]:
+        try:
+            from app.services.looper_service import get_looper_service
+
+            status = get_looper_service().get_status()
+        except Exception:
+            return {}
+        return status.to_payload() if hasattr(status, "to_payload") else dict(status or {})
 
     def _collect_step_state(self) -> dict[str, Any]:
         try:
@@ -1147,6 +1168,114 @@ class MaschineLCDRenderService(Singleton):
             "left": rendered.left,
             "right": rendered.right,
             "meta": rendered.meta,
+        }
+
+    # ------------------------------------------------------------------
+    # T2523 — Looper render context
+    # ------------------------------------------------------------------
+
+    @staticmethod
+    def _looper_state_glyph(state_label: str) -> str:
+        return {
+            "empty":       "----",
+            "recording":   "REC ",
+            "playing":     "PLAY",
+            "overdubbing": "OVR ",
+            "stopped":     "STOP",
+        }.get(str(state_label or "").lower(), "----")
+
+    def _render_looper_left(self, looper: dict[str, Any]) -> _Canvas:
+        """T2523 — Left LCD: 4-track loop-status grid.
+
+        Each row carries the track number, current state glyph, layer
+        count, and a position bar that fills proportionally to
+        playhead / loop length. The grid keeps a fixed 4-row layout
+        so the operator's eye always finds the same track in the
+        same place regardless of which tracks are populated.
+        """
+        canvas = _Canvas()
+        canvas.draw_text("LOOPER 4-TRACK", x=2, y=0, scale=1)
+        canvas.draw_hline(0, 10, LCD_WIDTH)
+        tracks = list(looper.get("tracks") or [])
+        # Pad / clip to exactly 4 entries so the grid is stable.
+        while len(tracks) < 4:
+            tracks.append({"track": len(tracks), "state_label": "empty",
+                           "loop_length_frames": 0, "playhead_frames": 0,
+                           "layer_count": 0})
+        row_height = 12
+        bar_origin_x = 60
+        bar_total_width = LCD_WIDTH - bar_origin_x - 4
+        for index, track in enumerate(tracks[:4]):
+            top = 12 + index * row_height
+            label = f"T{int(track.get('track', index))} {self._looper_state_glyph(track.get('state_label', ''))}"
+            canvas.draw_text(label, x=2, y=top, scale=1)
+            layers = int(track.get("layer_count", 0) or 0)
+            canvas.draw_text(f"L{layers}", x=42, y=top, scale=1)
+            length = max(int(track.get("loop_length_frames", 0) or 0), 0)
+            playhead = max(int(track.get("playhead_frames", 0) or 0), 0)
+            if length > 0:
+                fill = _clamp(
+                    int(bar_total_width * playhead / max(length, 1)),
+                    0,
+                    bar_total_width,
+                )
+            else:
+                fill = 0
+            # Hollow rectangle for the loop, filled portion shows playhead.
+            canvas.fill_rect(bar_origin_x, top + 1, bar_total_width, row_height - 4, value=0)
+            canvas.draw_hline(bar_origin_x, top + 1, bar_total_width)
+            canvas.draw_hline(bar_origin_x, top + row_height - 4, bar_total_width)
+            if fill > 0:
+                canvas.fill_rect(bar_origin_x, top + 2, fill, row_height - 6, value=31)
+        return canvas
+
+    def _render_looper_right(self, looper: dict[str, Any]) -> _Canvas:
+        """T2523 — Right LCD: master controls, tempo, sync, totals."""
+        canvas = _Canvas()
+        canvas.draw_text("LOOPER MASTER", x=2, y=0, scale=1)
+        canvas.draw_hline(0, 10, LCD_WIDTH)
+        active_count = int(looper.get("active_track_count", 0) or 0)
+        master_db = float(looper.get("master_level_db", 0.0) or 0.0)
+        master_muted = bool(looper.get("master_muted", False))
+        bpm = looper.get("bpm")
+        sync_master_track = looper.get("sync_master_track")
+        # Row 1: active track count + master gain
+        canvas.draw_text(f"ACTIVE  {active_count}/4", x=2, y=14, scale=1)
+        canvas.draw_text(f"MASTER  {master_db:+.1f} dB", x=2, y=24, scale=1)
+        canvas.draw_text(
+            f"MUTE    {_bool_label(master_muted)}",
+            x=2, y=34, scale=1,
+        )
+        bpm_label = f"{bpm:.1f}" if isinstance(bpm, (int, float)) and bpm else "----"
+        canvas.draw_text(f"TEMPO   {bpm_label}", x=2, y=44, scale=1)
+        sync_label = "---" if sync_master_track is None else f"T{sync_master_track}"
+        canvas.draw_text(f"SYNC    {sync_label}", x=2, y=54, scale=1)
+        return canvas
+
+    def _render_looper(self) -> dict[str, Any]:
+        """T2523 — top-level looper render. Returns the same shape
+        the rest of the render contexts emit so the WS frame
+        consumer + Hardware Twin GUI can mount the result without a
+        special case. The structured ``looper`` field carries the
+        full LooperService payload so GUI surfaces can do their own
+        typography without re-fetching."""
+        looper_payload = self._collect_looper_state()
+        left_canvas = self._render_looper_left(looper_payload)
+        right_canvas = self._render_looper_right(looper_payload)
+        return {
+            "context": "looper",
+            "profile_id": "looper",
+            "profile_name": "Looper",
+            "description": "Multi-track Looper transport + master surface (T2523).",
+            "looper": copy.deepcopy(looper_payload),
+            "left": _canvas_panel(left_canvas),
+            "right": _canvas_panel(right_canvas),
+            "meta": {
+                "context": "looper",
+                "profile_id": "looper",
+                "active_track_count": int(looper_payload.get("active_track_count", 0) or 0),
+                "track_count": len(list(looper_payload.get("tracks") or [])),
+            },
         }
 
     def _render_stats(self, *, stats: dict[str, Any], focus_metric: str | None = None) -> dict[str, Any]:
