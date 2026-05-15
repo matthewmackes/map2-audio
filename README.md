@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1672** Python | **1733** TypeScript | **222** C++/H | **149** Docs | **4571** total commits | **4** stars | **0** forks | **0** open issues
+**1672** Python | **1741** TypeScript | **222** C++/H | **149** Docs | **4577** total commits | **4** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`bcc0debd`](https://github.com/matthewmackes/map2-audio/commit/bcc0debd30919bb9671a6734966a672bf4ef9950) | feat(maschine): T2522-E cycle 15 — chrome review + immedi... | Map2 Audio | 2026-05-14 |
+| [`82808d20`](https://github.com/matthewmackes/map2-audio/commit/82808d207177fcb087a2dd615eac6f7ea1153714) | feat(maschine): T2522-B cycle 14 — deliver first 8 of 25 ... | Map2 Audio | 2026-05-14 |
+| [`c3cdc6d0`](https://github.com/matthewmackes/map2-audio/commit/c3cdc6d0273400a79e2617e1cd8c9f70a8a12c61) | feat(maschine): T2522-B cycle 13 — Profile DSL → 255×64 L... | Map2 Audio | 2026-05-14 |
+| [`c13ffd7d`](https://github.com/matthewmackes/map2-audio/commit/c13ffd7d41764956e95488a4522f65ef5e87812e) | feat(maschine): T2522-B cycle 12 — Profile Workbench scaf... | Map2 Audio | 2026-05-14 |
+| [`fcf0fd72`](https://github.com/matthewmackes/map2-audio/commit/fcf0fd72f6c38fbec1b748ae97fa0b52891baf9b) | feat(maschine): T2522-D cycle 11 — State Authority phase ... | Map2 Audio | 2026-05-14 |
+| [`15ca8f8b`](https://github.com/matthewmackes/map2-audio/commit/15ca8f8be686b59999bb2e797b5c6f65e910cf26) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-14 |
 | [`c09c7845`](https://github.com/matthewmackes/map2-audio/commit/c09c7845eb8e10553efa06c21fa6861f7adb5707) | feat(maschine): T2522-D cycle 10 + T2523 filing — SHIFT l... | Map2 Audio | 2026-05-14 |
 | [`9e5007ef`](https://github.com/matthewmackes/map2-audio/commit/9e5007ef549fe8689e941017d3f31992405a4616) | feat(maschine): T2522-D cycle 9 — Mapping Studio scaffold... | Map2 Audio | 2026-05-14 |
-| [`f5c16ff7`](https://github.com/matthewmackes/map2-audio/commit/f5c16ff704976ff45522dd9dec7811b45ffb31aa) | feat(maschine): T2522-C cycle 8 — Quad Morph zone (real M... | Map2 Audio | 2026-05-14 |
-| [`09cbda42`](https://github.com/matthewmackes/map2-audio/commit/09cbda42e3f1c38e1228ef68aa45604d91579947) | feat(maschine): T2522-C cycle 7 — step sequencer + scenes... | Map2 Audio | 2026-05-14 |
-| [`9fe99ef5`](https://github.com/matthewmackes/map2-audio/commit/9fe99ef518892025b774543c441ae38074f35c24) | feat(maschine): T2522-C cycle 6 — pressure/velocity curve... | Map2 Audio | 2026-05-14 |
-| [`3b2cecbb`](https://github.com/matthewmackes/map2-audio/commit/3b2cecbb861ea70d2a7045174fe8264b6ba54a40) | feat(maschine): T2522-C cycle 5 — Performance tab v1 (liv... | Map2 Audio | 2026-05-14 |
-| [`a94f5677`](https://github.com/matthewmackes/map2-audio/commit/a94f5677c0f9bf7bc96571767f18ba230c10a342) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-14 |
-| [`26da37e1`](https://github.com/matthewmackes/map2-audio/commit/26da37e14018f555359446f20796f8181f5ee1d6) | feat(maschine): T2522-A cycle 4 — Hardware Twin polish (h... | Map2 Audio | 2026-05-14 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
