@@ -107,6 +107,11 @@ install -m 644 packaging/systemd/map2-avb.target %{buildroot}/usr/lib/systemd/sy
 install -m 644 packaging/systemd/map2-ptp4l.service %{buildroot}/usr/lib/systemd/system/
 install -m 644 packaging/systemd/map2-phc2sys.service %{buildroot}/usr/lib/systemd/system/
 install -m 644 packaging/systemd/map2-srpd.service %{buildroot}/usr/lib/systemd/system/
+# T2529-A3 — controller-host daemon unit (libremidi + QuickJS dispatcher).
+install -m 644 packaging/systemd/map2-controller-host.service %{buildroot}/usr/lib/systemd/system/
+# T2529-A3 — cluster + frontend units land alongside the rest.
+install -m 644 packaging/systemd/map2-cluster.service %{buildroot}/usr/lib/systemd/system/
+install -m 644 packaging/systemd/map2-frontend.service %{buildroot}/usr/lib/systemd/system/
 # T2521-8 — SonoBus / AOO remote-audio transport unit, env example,
 # and firewalld zone fragment. ExecStart binary lands with T2521-4.
 install -m 644 packaging/systemd/map2-sonobus-transport.service %{buildroot}/usr/lib/systemd/system/
@@ -188,6 +193,9 @@ fi
 /usr/lib/systemd/system/map2-phc2sys.service
 /usr/lib/systemd/system/map2-srpd.service
 /usr/lib/systemd/system/map2-avb.target
+/usr/lib/systemd/system/map2-controller-host.service
+/usr/lib/systemd/system/map2-cluster.service
+/usr/lib/systemd/system/map2-frontend.service
 /usr/lib/systemd/system/map2-sonobus-transport.service
 /usr/lib/firewalld/services/map2-sonobus.xml
 /usr/lib/sysusers.d/map2.conf

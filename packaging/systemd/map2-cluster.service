@@ -1,5 +1,9 @@
 [Unit]
+# T2529-A3 — packaging-tree cluster service. Runs under the dedicated
+# `map2` system service user against the /opt/map2-audio FHS layout.
 Description=MAP2 Audio Platform - Cluster Management Service
+Documentation=https://github.com/matthewmackes/map2-audio
+Documentation=file:///opt/map2-audio/docs/install/SERVICE_USER.md
 After=map2-backend.service
 Wants=map2-backend.service
 
@@ -7,7 +11,11 @@ Wants=map2-backend.service
 Type=simple
 User=map2
 Group=map2
-WorkingDirectory=/opt/map2
+WorkingDirectory=/opt/map2-audio
+Environment="PYTHONPATH=/opt/map2-audio"
+Environment="XDG_RUNTIME_DIR=/run/map2"
+EnvironmentFile=-/etc/map2/environment
+EnvironmentFile=-/etc/map2/environment.d/*.env
 ExecStart=/usr/bin/python3 -m app.services.cluster.cluster_daemon
 Restart=on-failure
 RestartSec=10
@@ -15,12 +23,15 @@ StandardOutput=journal
 StandardError=journal
 SyslogIdentifier=map2-cluster
 
-# Security
+# Hardening
 PrivateTmp=yes
 NoNewPrivileges=yes
 ProtectSystem=strict
 ProtectHome=yes
-ReadWritePaths=/var/lib/map2 /var/log/map2 /etc/map2
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+ReadWritePaths=/var/lib/map2 /var/log/map2 /run/map2
 
 # Resource limits
 LimitNOFILE=65536

@@ -1,5 +1,9 @@
 [Unit]
+# T2529-A3 — packaging-tree frontend static server. Serves /opt/map2-audio/web/dist
+# on port 3000. Runs under the dedicated `map2` system service user.
 Description=MAP2 Audio Platform - Frontend Web Service
+Documentation=https://github.com/matthewmackes/map2-audio
+Documentation=file:///opt/map2-audio/docs/install/SERVICE_USER.md
 After=map2-backend.service
 Wants=map2-backend.service
 
@@ -7,19 +11,24 @@ Wants=map2-backend.service
 Type=simple
 User=map2
 Group=map2
-WorkingDirectory=/opt/map2/web
-ExecStart=/usr/bin/python3 -m http.server --directory /opt/map2/web/dist 3000
+WorkingDirectory=/opt/map2-audio/web
+EnvironmentFile=-/etc/map2/environment
+EnvironmentFile=-/etc/map2/environment.d/*.env
+ExecStart=/usr/bin/python3 -m http.server --directory /opt/map2-audio/web/dist 3000
 Restart=on-failure
 RestartSec=10
 StandardOutput=journal
 StandardError=journal
 SyslogIdentifier=map2-frontend
 
-# Security
+# Hardening
 PrivateTmp=yes
 NoNewPrivileges=yes
 ProtectSystem=strict
 ProtectHome=yes
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
 ReadWritePaths=/var/log/map2
 
 # Resource limits

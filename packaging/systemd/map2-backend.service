@@ -1,24 +1,151 @@
 [Unit]
-Description=MAP2 Audio Backend
-After=network.target
+# T2529-A3 — packaging-tree backend unit. Installed by RPM into
+# /usr/lib/systemd/system/map2-backend.service. Runs under the dedicated
+# `map2` system service user (created by systemd-sysusers from
+# /usr/lib/sysusers.d/map2.conf in %pre) with the FHS §3 install layout
+# (/opt/map2-audio app tree, /etc/map2 config, /var/lib/map2 state).
+#
+# Divergence note: systemd/map2-backend.service in the repo is the
+# DEV-HOST equivalent and still runs as `mm` against /home/mm/map2-audio.
+# It exists so the developer's working directory stays usable without
+# rebuilding the RPM on every Python edit; the operator-installed copy
+# of this file is the one that ships.
+#
+# T2529-A5 — XDG_RUNTIME_DIR points at /run/map2 (provisioned by
+# systemd-tmpfiles, see /usr/lib/tmpfiles.d/map2.conf), NOT at the
+# operator's /run/user/<UID>/ tree. The system-wide PipeWire instance
+# at /run/pipewire-system/pipewire-0 is the canonical audio substrate;
+# the map2 user is a member of the `pipewire-system` group (added by
+# the RPM %post via usermod -aG) and connects via PIPEWIRE_REMOTE.
+Description=MAP2 Audio Platform Backend API
+Documentation=https://github.com/matthewmackes/map2-audio
+Documentation=file:///opt/map2-audio/docs/install/SERVICE_USER.md
+After=network.target sound.target
+Wants=sound.target
+StartLimitIntervalSec=300
+StartLimitBurst=5
 
 [Service]
 Type=simple
 User=map2
-WorkingDirectory=/opt/map2
-Environment="PYTHONPATH=/opt/map2:/opt/map2/juce-engine/build"
-Environment="XDG_RUNTIME_DIR=/run/user/1000"
-Environment="DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/1000/bus"
-Environment="PIPEWIRE_REMOTE=pipewire-0"
+Group=map2
+
+# Supplementary groups needed for audio device + PipeWire socket access.
+# RPM %post adds the map2 user to these via usermod -aG (best-effort with
+# getent group, so minimal images without one of these groups don't break
+# the install). Listing them here is belt-and-suspenders: if the operator
+# manually re-creates the user, systemd will pick the groups up.
+SupplementaryGroups=audio pipewire pipewire-system video input plugdev
+
+WorkingDirectory=/opt/map2-audio
+Environment="PYTHONPATH=/opt/map2-audio:/opt/map2-audio/juce-engine/build"
+Environment="PATH=/usr/local/bin:/usr/bin:/bin"
+
+# T2529-A5: per-service runtime dir, NOT per-user. /run/map2 is created
+# at boot by systemd-tmpfiles (see /usr/lib/tmpfiles.d/map2.conf) with
+# map2:map2 ownership + mode 0755.
+Environment="XDG_RUNTIME_DIR=/run/map2"
+
+# T2529-A5: connect to the system-wide PipeWire instance rather than a
+# per-user one. /run/pipewire-system/pipewire-0 is the canonical socket
+# path when pipewire-system.service is enabled. The map2 user is a
+# member of the pipewire-system group so the socket is readable.
+Environment="PIPEWIRE_REMOTE=/run/pipewire-system/pipewire-0"
 Environment="JACK_DEFAULT_SERVER=pipewire"
-# ORDER REMARK: PipeWire resets quantum when force-rate changes.
-# Always apply rate first, then quantum.
+
+# Force JUCE to open the audio device via JACK direct rather than
+# ALSA-via-PipeWire. Without this, JUCE's AudioDeviceManager picks the
+# ALSA backend which routes through the PipeWire ALSA mixing layer,
+# adding ~5 ms of scheduling jitter on every callback — enough to fail
+# the RT soak gates (peak-block-jitter target 0.35 ms). Verified during
+# T2459-H6 closeout (2026-05-08).
+Environment="MAP2_AUDIO_PREFER_JACK=1"
+
+# Disable LCD by default; the operator opts in via /etc/map2/environment.
+Environment="MAP2_ENABLE_LCD=false"
+Environment="MAP2_LCD_SIMULATION=false"
+
+# Operator-overridable env files. /etc/map2/environment is root-owned;
+# /etc/map2/environment.d/*.env is group-writable by the map2 group (see
+# tmpfiles.d) so an operator with `sudo -g map2` can drop in overrides
+# without becoming root over the entire /etc/map2 tree.
+EnvironmentFile=-/etc/map2/environment
+EnvironmentFile=-/etc/map2/environment.d/*.env
+
+# PipeWire latency override. The pre-start commands below force the
+# quantum + rate at the system PipeWire instance to 64@48000.
+Environment="PIPEWIRE_LATENCY=64/48000"
+
+# ORDER IS CRITICAL: force-rate resets quantum internally in PipeWire.
+# Setting rate first, then quantum, guarantees quantum=64 is the final
+# active value. Do NOT swap these lines or add a second force-quantum.
 ExecStartPre=/usr/bin/pw-metadata -n settings 0 clock.force-rate 48000
-ExecStartPre=/usr/bin/pw-metadata -n settings 0 clock.force-quantum 128
-Environment="PIPEWIRE_LATENCY=128/48000"
+ExecStartPre=/usr/bin/pw-metadata -n settings 0 clock.force-quantum 64
+
+# Start the unified orchestrator via FastAPI / uvicorn.
 ExecStart=/usr/bin/python3 -m uvicorn app.main:app --host 0.0.0.0 --port 8080 --no-access-log
+
+# Graceful shutdown.
+ExecStop=/bin/kill -TERM $MAINPID
+TimeoutStopSec=30
+TimeoutStartSec=120
+
+# Readiness validation — wait for FastAPI to respond on /api/health.
+ExecStartPost=/bin/bash -c 'for i in $(seq 1 30); do curl -sf http://localhost:8080/api/health > /dev/null && exit 0; sleep 2; done; exit 1'
+
 Restart=on-failure
-RestartSec=5
+RestartSec=10
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=map2-backend
+
+# RT scheduling model:
+#   Python/uvicorn event loop  → Nice=-10, SCHED_OTHER (I/O bound, not RT)
+#   JUCE audio callback thread → SCHED_FIFO/80 (self-elevated by JUCE via
+#                                pthread_setschedparam on audio device open)
+#
+# INTENTIONAL: CPUSchedulingPolicy is NOT set to fifo. Setting the entire
+# uvicorn process to SCHED_FIFO would place the async HTTP event loop +
+# WebSocket handlers + FastAPI workers into the RT scheduler, starving
+# kernel threads. Only the JUCE audio callback thread needs RT. That
+# thread self-elevates using CAP_SYS_NICE + LimitRTPRIO=95.
+
+Nice=-10
+LimitRTPRIO=95
+LimitMEMLOCK=infinity
+LimitNOFILE=65536
+
+# CPU affinity: keep the Python/uvicorn process on the general-purpose
+# cores. CPUs 4,5 stay isolated for the JUCE callback thread.
+CPUAffinity=0 1 2 3
+
+# I/O priority — realtime class, high priority.
+IOSchedulingClass=realtime
+IOSchedulingPriority=1
+
+# Allow RT scheduling for the JUCE audio callback thread and AVDECC
+# packet sockets.
+#   CAP_SYS_NICE: pthread_setschedparam(SCHED_FIFO) without root.
+#   CAP_NET_RAW:  AVDECC/libpcap packet sockets on the AVB interface.
+AmbientCapabilities=CAP_SYS_NICE CAP_NET_RAW
+CapabilityBoundingSet=CAP_SYS_NICE CAP_NET_RAW
+
+# Security hardening — full Protect* set will be tightened further in
+# T2529-B1. NoNewPrivileges is omitted here because RT scheduling via
+# RTKit requires privilege transition; the audio callback thread
+# self-elevates via CAP_SYS_NICE which is already in AmbientCapabilities.
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+
+# T2529-A3 — FHS-aligned ReadWritePaths. /run/map2 hosts the controller-host
+# UDS + sonobus-transport UDS; /var/lib/map2 holds persistent state; /var/log/map2
+# holds logs; /var/cache/map2 holds caches; /etc/map2 is read-only from
+# the service's POV but listed here so drop-in env reloads work.
+ReadWritePaths=/run/map2 /var/lib/map2 /var/cache/map2 /var/log/map2
 
 [Install]
 WantedBy=multi-user.target

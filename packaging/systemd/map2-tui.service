@@ -1,15 +1,37 @@
 [Unit]
-Description=MAP2 Audio TUI
+# T2529-A3 — packaging-tree TUI console. Runs under the dedicated `map2`
+# system service user from /opt/map2-audio (FHS §3.13 — application tree).
+Description=MAP2 Audio Platform TUI Console
+Documentation=https://github.com/matthewmackes/map2-audio
+Documentation=file:///opt/map2-audio/docs/install/SERVICE_USER.md
 After=network.target map2-backend.service
 Requires=map2-backend.service
 
 [Service]
 Type=simple
 User=map2
-WorkingDirectory=/usr/lib/map2
+Group=map2
+SupplementaryGroups=audio
+
+WorkingDirectory=/opt/map2-audio
+Environment="PYTHONPATH=/opt/map2-audio"
+Environment="XDG_RUNTIME_DIR=/run/map2"
+EnvironmentFile=-/etc/map2/environment
+EnvironmentFile=-/etc/map2/environment.d/*.env
+
 ExecStart=/usr/bin/python3 -m tui.app
 Restart=on-failure
 RestartSec=5
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=map2-tui
+
+# Hardening — TUI doesn't need the operator's home.
+ProtectSystem=strict
+ProtectHome=true
+PrivateTmp=true
+NoNewPrivileges=true
+ReadWritePaths=/run/map2 /var/log/map2
 
 [Install]
 WantedBy=multi-user.target

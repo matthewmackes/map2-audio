@@ -1,0 +1,89 @@
+[Unit]
+# T2529-A3 — packaging-tree controller-host daemon. Runs under the
+# dedicated `map2` system service user against the FHS install layout.
+# This is the operator-installed copy; systemd/map2-controller-host.service
+# in the repo is the dev-host equivalent that still runs as `mm` against
+# /home/mm/map2-audio.
+#
+# Owns every MIDI port on the platform; map2-backend routes inbound
+# MIDI through this daemon's UDS at /run/map2/controller-host.sock
+# instead of opening rtmidi directly.
+Description=MAP2 Controller Host (libremidi I/O + QuickJS dispatcher)
+Documentation=https://github.com/matthewmackes/map2-audio
+Documentation=file:///opt/map2-audio/docs/install/SERVICE_USER.md
+# Order: starts AFTER sound.target (PipeWire/JACK present) so libremidi
+# binds JACK MIDI as the preferred backend. Falls through to ALSA seq if
+# JACK is unavailable.
+After=network.target sound.target
+Wants=sound.target
+StartLimitIntervalSec=300
+StartLimitBurst=5
+
+[Service]
+Type=simple
+User=map2
+Group=map2
+
+# Audio + JACK access for libremidi.
+SupplementaryGroups=audio pipewire pipewire-system input plugdev
+
+WorkingDirectory=/opt/map2-audio
+Environment="PATH=/usr/local/bin:/usr/bin:/bin"
+
+# T2529-A5: per-service runtime dir + system-wide PipeWire socket.
+Environment="XDG_RUNTIME_DIR=/run/map2"
+Environment="PIPEWIRE_REMOTE=/run/pipewire-system/pipewire-0"
+Environment="JACK_DEFAULT_SERVER=pipewire"
+
+EnvironmentFile=-/etc/map2/environment
+EnvironmentFile=-/etc/map2/environment.d/*.env
+
+# Daemon binary built by `cmake --build juce-engine/build` and installed
+# by RPM into /opt/map2-audio/juce-engine/build/.
+ExecStart=/opt/map2-audio/juce-engine/build/map2-controller-host \
+  --socket /run/map2/controller-host.sock
+
+# Graceful shutdown.
+ExecStop=/bin/kill -TERM $MAINPID
+TimeoutStopSec=15
+TimeoutStartSec=30
+
+# Readiness gate — wait for the UDS socket to appear.
+ExecStartPost=/bin/bash -c 'for i in $(seq 1 30); do test -S /run/map2/controller-host.sock && exit 0; sleep 0.5; done; exit 1'
+
+Restart=on-failure
+RestartSec=5
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=map2-controller-host
+
+# RT-eligibility for the libremidi I/O callback thread.
+LimitRTPRIO=80
+LimitMEMLOCK=infinity
+LimitNOFILE=65536
+
+# CPU affinity: stay off the isolated audio cores (4,5).
+CPUAffinity=0 1 2 3
+
+AmbientCapabilities=CAP_SYS_NICE
+CapabilityBoundingSet=CAP_SYS_NICE
+
+# UDS socket cleanup — systemd-tmpfiles is authoritative; this mkdir/chmod
+# pair keeps the unit self-contained.
+ExecStartPre=/bin/mkdir -p /run/map2
+ExecStartPre=/bin/chmod 0755 /run/map2
+
+# Hardening — the daemon does not need most of the host filesystem.
+ProtectSystem=strict
+ReadWritePaths=/run/map2 /var/log/map2
+ProtectHome=true
+PrivateTmp=true
+NoNewPrivileges=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectControlGroups=true
+RestrictRealtime=false
+RestrictNamespaces=true
+
+[Install]
+WantedBy=multi-user.target
