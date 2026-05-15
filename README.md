@@ -165,7 +165,7 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 ### Project Stats
 
 <!-- PROJECT-STATS:START -->
-**1685** Python | **1748** TypeScript | **222** C++/H | **149** Docs | **4636** total commits | **4** stars | **0** forks | **0** open issues
+**1690** Python | **1748** TypeScript | **222** C++/H | **149** Docs | **4642** total commits | **4** stars | **0** forks | **0** open issues
 <!-- PROJECT-STATS:END -->
 
 ---
@@ -206,14 +206,14 @@ Requires: CMake 3.22+, GCC 12+ or Clang 15+, JUCE dependencies (ALSA, freetype, 
 <!-- RECENT-ACTIVITY:START -->
 | Commit | Message | Author | Date |
 |:-------|:--------|:-------|:-----|
+| [`70e60c55e`](https://github.com/matthewmackes/map2-audio/commit/70e60c55e1523082812ac4f1f0f2e6b9cdac2250) | docs(evidence): T2529-V1 cycle 19 — fit-for-purpose evide... | Map2 Audio | 2026-05-15 |
+| [`5ddea908f`](https://github.com/matthewmackes/map2-audio/commit/5ddea908f3ff36c0da1f56958576cdfe294fc48b) | feat(scripts): T2529-E5 cycle 18 — map2-self-test --full ... | Map2 Audio | 2026-05-15 |
+| [`11c1ed972`](https://github.com/matthewmackes/map2-audio/commit/11c1ed97283605ff8d39a1c028cd0ea793ab3a50) | ci(packaging): T2529-E3 + T2529-E4 cycles 16-17 — install... | Map2 Audio | 2026-05-15 |
+| [`6030a73ef`](https://github.com/matthewmackes/map2-audio/commit/6030a73efee9831e9440c746c08aae4a33240eb3) | feat(packaging): T2529-E2 cycle 15 — lintian cross-distro... | Map2 Audio | 2026-05-15 |
+| [`ba6f30108`](https://github.com/matthewmackes/map2-audio/commit/ba6f301086d79b658d92c5d84f3f97041ed1c138) | feat(packaging): T2529-E1 cycle 14 — rpmlint baseline + C... | Map2 Audio | 2026-05-15 |
+| [`56bb58652`](https://github.com/matthewmackes/map2-audio/commit/56bb58652602f6c4d90feb9e95e4f484514331ab) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-15 |
 | [`47cdddeaa`](https://github.com/matthewmackes/map2-audio/commit/47cdddeaa32c1962518fe78b2c7e2158fd5c6990) | docs(install): T2529-B4 cycle 13 — security model documen... | Map2 Audio | 2026-05-15 |
 | [`31bd0a8ab`](https://github.com/matthewmackes/map2-audio/commit/31bd0a8ab5738ffb3ab8d42ae2753c91df861ef6) | feat(packaging): T2529-B3 cycle 12 — SystemCallFilter sec... | Map2 Audio | 2026-05-15 |
-| [`7d015ec66`](https://github.com/matthewmackes/map2-audio/commit/7d015ec66413b6577b39a8fd20f7099b7ddcb327) | feat(packaging): T2529-B2 cycle 11 — capability bounding ... | Map2 Audio | 2026-05-15 |
-| [`99a1982ff`](https://github.com/matthewmackes/map2-audio/commit/99a1982ffc3f4ddb11cf3858bb4b0c1f513388ea) | feat(packaging): T2529-B1 cycle 10 — full systemd sandbox... | Map2 Audio | 2026-05-15 |
-| [`5a21e5a9a`](https://github.com/matthewmackes/map2-audio/commit/5a21e5a9a45ff7afd017008a5460601cfcf08570) | chore: auto-update README with latest docs & activity | matthewmackes | 2026-05-15 |
-| [`fc6c200ae`](https://github.com/matthewmackes/map2-audio/commit/fc6c200ae3448186fd8ec874115e46d219a42946) | docs(install): T2529-A6 cycle 9 — install layout document... | Map2 Audio | 2026-05-15 |
-| [`09c167150`](https://github.com/matthewmackes/map2-audio/commit/09c1671508f2dc6914ce1b85e79056b8f98da371) | feat(packaging): T2529-A5 cycle 8 — system-wide PipeWire ... | Map2 Audio | 2026-05-15 |
-| [`a9d9f988b`](https://github.com/matthewmackes/map2-audio/commit/a9d9f988b4bb45504da25dda848ce700516449c7) | feat(app): T2529-A4 cycles 6-7 — Map2Paths FHS-aware plan... | Map2 Audio | 2026-05-15 |
 <!-- RECENT-ACTIVITY:END -->
 
 ---
