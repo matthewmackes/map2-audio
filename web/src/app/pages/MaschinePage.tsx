@@ -12,6 +12,7 @@ import { MaschineFirmwarePanel } from '../components/Maschine/MaschineFirmwarePa
 import { MaschineHardwareTwin } from '../components/Maschine/MaschineHardwareTwin'
 import { MaschineMappingStudio } from '../components/Maschine/MaschineMappingStudio'
 import { MaschinePerformanceTab } from '../components/Maschine/MaschinePerformanceTab'
+import { MaschineProfileWorkbench } from '../components/Maschine/MaschineProfileWorkbench'
 import { MaschineHidTrafficPanel } from '../components/Maschine/MaschineHidTrafficPanel'
 import { MaschineHwTestPanel } from '../components/Maschine/MaschineHwTestPanel'
 import { MaschineLcdSimulatorPanel } from '../components/Maschine/MaschineLcdSimulatorPanel'
@@ -268,11 +269,7 @@ export function MaschinePage() {
             />
           </TabPanel>
           <TabPanel>
-            <ComingSoonTab
-              title="Profile Workbench"
-              subtitle="Edit and preview the 25 T700 profiles (CTRL · STEP · BRWS · SMPL · SNAP · AUTO · Effect Chain Editor · Quad Morph · Brain Seq · Tuner · Admin Console …) using the JSON+flexbox profile DSL with live LCD render preview."
-              cycleRange="T2522-B · cycles 12-14"
-            />
+            <MaschineProfileWorkbench />
           </TabPanel>
           <TabPanel>
             <MaschinePerformanceTab

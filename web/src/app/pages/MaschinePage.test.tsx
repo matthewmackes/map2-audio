@@ -419,7 +419,9 @@ describe('MaschinePage', () => {
     renderPage(['/maschine?tab=workbench'])
     const workbenchTab = screen.getByRole('tab', { name: 'Profile Workbench' })
     expect(workbenchTab.getAttribute('aria-selected')).toBe('true')
-    expect(screen.getByText(/JSON\+flexbox profile DSL/)).toBeInTheDocument()
+    // Cycle 12 wired the real workbench; the placeholder copy is gone.
+    expect(screen.getByRole('heading', { name: 'Profile Workbench' })).toBeInTheDocument()
+    expect(screen.getByText('3 starter profiles')).toBeInTheDocument()
   })
 
   it('T2522 — ?tab=performance deep-link selects the Performance tab', async () => {

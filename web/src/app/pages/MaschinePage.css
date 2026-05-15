@@ -748,6 +748,197 @@
   font-size: 0.85rem;
 }
 
+/* T2522-B cycle 12 — Profile Workbench */
+.maschine-workbench {
+  display: grid;
+  gap: 1rem;
+  margin-top: 1rem;
+}
+
+.maschine-workbench__header {
+  display: flex !important;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  padding: 1.25rem !important;
+}
+
+.maschine-workbench__header h3 {
+  margin: 0;
+  font-size: var(--cds-heading-03-font-size, 1.25rem);
+  color: var(--cds-text-primary);
+}
+
+.maschine-workbench__body {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 1rem;
+  align-items: start;
+}
+
+@media (max-width: 1024px) {
+  .maschine-workbench__body {
+    grid-template-columns: 1fr;
+  }
+}
+
+.maschine-workbench__inspector,
+.maschine-workbench__editor {
+  padding: 1rem 1.25rem !important;
+  display: grid;
+  gap: 0.75rem;
+}
+
+.maschine-workbench__inspector-head {
+  display: grid;
+  gap: 0.4rem;
+}
+
+.maschine-workbench__meta {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.5rem;
+  margin: 0;
+}
+
+.maschine-workbench__meta > div {
+  padding: 0.4rem 0.55rem;
+  background: var(--cds-layer-02);
+  border: 1px solid color-mix(in srgb, var(--cds-border-subtle) 60%, transparent);
+  border-radius: 4px;
+}
+
+.maschine-workbench__meta dt {
+  font-size: 0.7rem;
+  color: var(--cds-text-secondary);
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.maschine-workbench__meta dd {
+  margin: 0.15rem 0 0;
+  font-size: 0.8rem;
+  color: var(--cds-text-primary);
+  font-family: var(--cds-code-02-font-family, monospace);
+  word-break: break-word;
+}
+
+.maschine-workbench__description {
+  margin: 0;
+  color: var(--cds-text-secondary);
+  font-size: 0.85rem;
+  line-height: 1.45;
+  max-width: 60ch;
+}
+
+.maschine-workbench__preview {
+  display: grid;
+  gap: 0.5rem;
+}
+
+.maschine-workbench__preview-grid {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 0.6rem;
+}
+
+.maschine-workbench__lcd-card {
+  display: grid;
+  gap: 0.4rem;
+  padding: 0.65rem;
+  background: var(--cds-layer-02);
+  border: 1px solid color-mix(in srgb, var(--cds-border-subtle) 60%, transparent);
+  border-radius: 4px;
+}
+
+.maschine-workbench__lcd-card-head {
+  display: flex;
+  gap: 0.4rem;
+  flex-wrap: wrap;
+}
+
+.maschine-workbench__lcd-card-body {
+  display: grid;
+  gap: 0.25rem;
+  background: #0b1020;
+  padding: 0.4rem;
+  border-radius: 3px;
+  font-family: var(--cds-code-02-font-family, monospace);
+  font-size: 0.7rem;
+  color: #94a3b8;
+  min-height: 5rem;
+}
+
+.maschine-workbench__lcd-band {
+  padding: 0.2rem 0.3rem;
+  border-radius: 2px;
+}
+
+.maschine-workbench__lcd-band--top,
+.maschine-workbench__lcd-band--bottom {
+  background: rgba(51, 177, 255, 0.12);
+  color: #cbd5f5;
+  font-size: 0.65rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+.maschine-workbench__lcd-band--canvas {
+  background: rgba(66, 190, 101, 0.08);
+  color: #42be65;
+  font-size: 0.7rem;
+  flex: 1;
+  word-break: break-all;
+}
+
+.maschine-workbench__editor-head {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.maschine-workbench__editor-actions {
+  display: flex;
+  gap: 0.5rem;
+}
+
+.maschine-workbench__drafts {
+  display: grid;
+  gap: 0.4rem;
+  margin-top: 0.5rem;
+  padding-top: 0.5rem;
+  border-top: 1px solid color-mix(in srgb, var(--cds-border-subtle) 60%, transparent);
+}
+
+.maschine-workbench__drafts-title {
+  margin: 0;
+  font-size: 0.8rem;
+  font-weight: 600;
+  color: var(--cds-text-secondary);
+}
+
+.maschine-workbench__drafts-list {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 0.3rem;
+}
+
+.maschine-workbench__draft-row {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+  flex-wrap: wrap;
+}
+
+.maschine-workbench__draft-time {
+  font-size: 0.7rem;
+  color: var(--cds-text-secondary);
+  font-family: var(--cds-code-02-font-family, monospace);
+}
+
 /* T2522-C cycle 6 — Pressure / velocity curve editor */
 .maschine-curve-editor {
   padding: 1.25rem !important;
