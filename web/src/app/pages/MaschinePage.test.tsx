@@ -431,7 +431,7 @@ describe('MaschinePage', () => {
     expect(workbenchTab.getAttribute('aria-selected')).toBe('true')
     // Cycle 12 wired the real workbench; the placeholder copy is gone.
     expect(screen.getByRole('heading', { name: 'Profile Workbench' })).toBeInTheDocument()
-    expect(screen.getByText('3 starter profiles')).toBeInTheDocument()
+    expect(screen.getByText('8 starter profiles')).toBeInTheDocument()
   })
 
   it('T2522 — ?tab=performance deep-link selects the Performance tab', async () => {

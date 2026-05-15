@@ -14,7 +14,7 @@ describe('MaschineProfileWorkbench', () => {
     render(<MaschineProfileWorkbench />)
     expect(screen.getByRole('heading', { name: 'Profile Workbench' })).toBeInTheDocument()
     // Starter profile chip + active profile select.
-    expect(screen.getByText('3 starter profiles')).toBeInTheDocument()
+    expect(screen.getByText('8 starter profiles')).toBeInTheDocument()
     expect(screen.getAllByText(/CTRL/)[0]).toBeInTheDocument()
   })
 

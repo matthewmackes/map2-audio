@@ -18,11 +18,27 @@ describe('profileDsl', () => {
     ])
   })
 
-  it('STARTER_PROFILES ships three valid profiles', () => {
-    expect(STARTER_PROFILES.length).toBe(3)
+  it('STARTER_PROFILES ships eight valid profiles', () => {
+    expect(STARTER_PROFILES.length).toBe(8)
     for (const profile of STARTER_PROFILES) {
       expect(() => validateProfile(profile)).not.toThrow()
     }
+  })
+
+  it('STARTER_PROFILES uses all 5 LCD templates across the catalog', () => {
+    const seen = new Set<string>()
+    for (const profile of STARTER_PROFILES) {
+      seen.add(profile.lcd_left.template)
+      seen.add(profile.lcd_right.template)
+    }
+    // All 5 templates should be exercised by the cycle-14 catalog
+    // EXCEPT 'console' which lands with the Admin / Incident-Log
+    // profiles in a future cycle (T18 / T13). The 4 in active use
+    // are: param-list, big-točka-value, kit-grid, signal-flow.
+    expect(seen.has('param-list')).toBe(true)
+    expect(seen.has('big-value')).toBe(true)
+    expect(seen.has('kit-grid')).toBe(true)
+    expect(seen.has('signal-flow')).toBe(true)
   })
 
   it('rejects a profile missing required string fields', () => {

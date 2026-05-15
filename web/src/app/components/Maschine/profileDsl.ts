@@ -317,4 +317,317 @@ export const STARTER_PROFILES: readonly MaschineProfile[] = [
       { slot: 'tempo', label: 'Clock BPM', unit: 'BPM' },
     ],
   },
+  // T2 — STEP: step sequencer profile. The 16 pads = 16 steps of
+  // the active pattern; group buttons swap which pad-row of the
+  // pattern is being edited (per-pad rows). Encoders 1-4 = step
+  // params (gate length, swing, shuffle, accent depth).
+  {
+    id: 'T2',
+    label: 'STEP',
+    name: 'Step Sequencer',
+    description:
+      'Live step sequencer profile. 16 pads = 16 steps of the active pattern; press cycles empty → on → accented. Group buttons A-H select which pad-row of the pattern is being edited. Encoders 1-4 control gate length, swing, shuffle, accent depth.',
+    lcd_left: {
+      template: 'kit-grid',
+      side: 'left',
+      blocks: {
+        top: { kind: 'breadcrumb', text: 'STEP · pattern A · row 1' },
+        canvas: { kind: 'canvas', data: { rows: 4, cols: 4 } },
+        bottom: { kind: 'monitor-strip', text: '16 steps · 4/4' },
+      },
+    },
+    lcd_right: {
+      template: 'param-list',
+      side: 'right',
+      blocks: {
+        top: { kind: 'breadcrumb', text: 'step params' },
+        canvas: {
+          kind: 'canvas',
+          data: {
+            columns: 2,
+            rows: 2,
+            entries: [
+              { label: 'gate', value: '50%' },
+              { label: 'swing', value: '0%' },
+              { label: 'shuffle', value: 'off' },
+              { label: 'accent', value: '0' },
+            ],
+          },
+        },
+        bottom: { kind: 'monitor-strip', text: '120 BPM · LIVE' },
+      },
+    },
+    pads: EMPTY_PADS.map((pad, i) => ({
+      ...pad,
+      label: `Step ${i + 1}`,
+      idle_color: i % 4 === 0 ? 'cyan' : 'empty',
+      press_color: 'white',
+    })),
+    encoders: [
+      { slot: 'enc1', label: 'Gate length', unit: '%' },
+      { slot: 'enc2', label: 'Swing', unit: '%' },
+      { slot: 'enc3', label: 'Shuffle', unit: '%' },
+      { slot: 'enc4', label: 'Accent depth' },
+      { slot: 'vol', label: 'Master Gain', unit: 'dB' },
+      { slot: 'tempo', label: 'Clock BPM', unit: 'BPM' },
+    ],
+  },
+  // T3 — BRWS: kit / preset browser. Pads = 16 most-recently-used
+  // kits, encoder 1 scrolls full library, encoder 2 toggles preview
+  // mode. Right LCD shows the active selection's metadata.
+  {
+    id: 'T3',
+    label: 'BRWS',
+    name: 'Kit Browser',
+    description:
+      'Kit + preset browser. 16 pads = the 16 most recently used kits; press to load. Encoder 1 scrolls the full library; encoder 2 toggles preview-on-scroll. Right LCD surfaces the active selection\'s metadata (vendor, category, BPM hint).',
+    lcd_left: {
+      template: 'kit-grid',
+      side: 'left',
+      blocks: {
+        top: { kind: 'breadcrumb', text: 'BRWS · recent kits' },
+        canvas: { kind: 'canvas', data: { rows: 4, cols: 4 } },
+        bottom: { kind: 'monitor-strip', text: 'enc1 = scroll' },
+      },
+    },
+    lcd_right: {
+      template: 'param-list',
+      side: 'right',
+      blocks: {
+        top: { kind: 'breadcrumb', text: 'inspector' },
+        canvas: {
+          kind: 'canvas',
+          data: {
+            columns: 1,
+            rows: 4,
+            entries: [
+              { label: 'vendor', value: '—' },
+              { label: 'category', value: '—' },
+              { label: 'bpm hint', value: '—' },
+              { label: 'tags', value: '—' },
+            ],
+          },
+        },
+        bottom: { kind: 'monitor-strip', text: 'press to load' },
+      },
+    },
+    pads: EMPTY_PADS.map((pad, i) => ({
+      ...pad,
+      label: `Kit ${i + 1}`,
+      idle_color: 'orange',
+      press_color: 'white',
+    })),
+    encoders: [
+      { slot: 'enc1', label: 'Browse library' },
+      { slot: 'enc2', label: 'Preview mode' },
+      { slot: 'vol', label: 'Master Gain', unit: 'dB' },
+    ],
+  },
+  // T4 — SMPL: sampler profile. Single sample editor — pads play
+  // mapped slices; encoders control start/end/loop/pitch/gain.
+  {
+    id: 'T4',
+    label: 'SMPL',
+    name: 'Sampler',
+    description:
+      'Single-sample editor. Pads play mapped slices (1-16). Encoders 1-5 control start, end, loop, pitch, gain. Encoder 6 = slice selector. Left LCD shows the sample waveform region; right LCD shows the parameter list.',
+    lcd_left: {
+      template: 'signal-flow',
+      side: 'left',
+      blocks: {
+        top: { kind: 'breadcrumb', text: 'SMPL · sample.wav' },
+        canvas: {
+          kind: 'canvas',
+          data: {
+            blocks: [
+              { label: 'IN' },
+              { label: 'TRIM' },
+              { label: 'PITCH' },
+              { label: 'GAIN' },
+              { label: 'OUT' },
+            ],
+          },
+        },
+        bottom: { kind: 'monitor-strip', text: 'slice 1 of 16' },
+      },
+    },
+    lcd_right: {
+      template: 'param-list',
+      side: 'right',
+      blocks: {
+        top: { kind: 'breadcrumb', text: 'sample params' },
+        canvas: {
+          kind: 'canvas',
+          data: {
+            columns: 2,
+            rows: 3,
+            entries: [
+              { label: 'start', value: '0.00s' },
+              { label: 'end', value: '1.50s' },
+              { label: 'loop', value: 'off' },
+              { label: 'pitch', value: '0' },
+              { label: 'gain', value: '0 dB' },
+              { label: 'slice', value: '1' },
+            ],
+          },
+        },
+        bottom: { kind: 'monitor-strip', text: '48 kHz · stereo' },
+      },
+    },
+    pads: EMPTY_PADS.map((pad, i) => ({
+      ...pad,
+      label: `Slice ${i + 1}`,
+      idle_color: 'magenta',
+      press_color: 'white',
+    })),
+    encoders: [
+      { slot: 'enc1', label: 'Start', unit: 's' },
+      { slot: 'enc2', label: 'End', unit: 's' },
+      { slot: 'enc3', label: 'Loop' },
+      { slot: 'enc4', label: 'Pitch', unit: 'st' },
+      { slot: 'enc5', label: 'Gain', unit: 'dB' },
+      { slot: 'enc6', label: 'Slice' },
+      { slot: 'vol', label: 'Master Gain', unit: 'dB' },
+    ],
+  },
+  // T6 — AUTO: automation lane viewer. Encoders 1-8 mirror the
+  // currently-armed automation targets; pads scrub the active lane.
+  {
+    id: 'T6',
+    label: 'AUTO',
+    name: 'Automation',
+    description:
+      'Automation lane viewer + recorder. Encoders 1-8 mirror the active snapshot\'s 8 automation targets. Pads 1-16 scrub the active lane (pad 1 = bar 1, pad 16 = bar 16). Press REC + turn an encoder to capture a gesture into the active lane.',
+    lcd_left: {
+      template: 'param-list',
+      side: 'left',
+      blocks: {
+        top: { kind: 'breadcrumb', text: 'AUTO · lanes 1-4' },
+        canvas: {
+          kind: 'canvas',
+          data: {
+            columns: 2,
+            rows: 2,
+            entries: [
+              { label: 'lane 1', value: '—' },
+              { label: 'lane 2', value: '—' },
+              { label: 'lane 3', value: '—' },
+              { label: 'lane 4', value: '—' },
+            ],
+          },
+        },
+        bottom: { kind: 'monitor-strip', text: 'pads = scrub' },
+      },
+    },
+    lcd_right: {
+      template: 'param-list',
+      side: 'right',
+      blocks: {
+        top: { kind: 'breadcrumb', text: 'lanes 5-8' },
+        canvas: {
+          kind: 'canvas',
+          data: {
+            columns: 2,
+            rows: 2,
+            entries: [
+              { label: 'lane 5', value: '—' },
+              { label: 'lane 6', value: '—' },
+              { label: 'lane 7', value: '—' },
+              { label: 'lane 8', value: '—' },
+            ],
+          },
+        },
+        bottom: { kind: 'monitor-strip', text: 'REC = arm' },
+      },
+    },
+    pads: EMPTY_PADS.map((pad, i) => ({
+      ...pad,
+      label: `Bar ${i + 1}`,
+      idle_color: 'blue',
+      press_color: 'white',
+    })),
+    encoders: [
+      { slot: 'enc1', label: 'Lane 1' },
+      { slot: 'enc2', label: 'Lane 2' },
+      { slot: 'enc3', label: 'Lane 3' },
+      { slot: 'enc4', label: 'Lane 4' },
+      { slot: 'enc5', label: 'Lane 5' },
+      { slot: 'enc6', label: 'Lane 6' },
+      { slot: 'enc7', label: 'Lane 7' },
+      { slot: 'enc8', label: 'Lane 8' },
+      { slot: 'vol', label: 'Master Gain', unit: 'dB' },
+    ],
+  },
+  // T9 — ECE: Effect Chain Editor. Live signal-flow view of the
+  // active chain. Pads = focus a block; encoders = block-specific
+  // parameters resolved from the focused block's top_parameters.
+  {
+    id: 'T9',
+    label: 'ECE',
+    name: 'Effect Chain Editor',
+    description:
+      'Effect Chain Editor. Left LCD shows the active chain as a left-to-right signal-flow diagram. Pads 1-16 focus blocks (page-paginated when chain length > 16). Encoders 1-8 expose the focused block\'s top 8 parameters.',
+    lcd_left: {
+      template: 'signal-flow',
+      side: 'left',
+      blocks: {
+        top: { kind: 'breadcrumb', text: 'ECE · chain · page 1' },
+        canvas: {
+          kind: 'canvas',
+          data: {
+            blocks: [
+              { label: 'NAM' },
+              { label: 'EQ' },
+              { label: 'COMP' },
+              { label: 'CAB IR' },
+              { label: 'REV' },
+            ],
+          },
+        },
+        bottom: { kind: 'monitor-strip', text: 'pad = focus block' },
+      },
+    },
+    lcd_right: {
+      template: 'param-list',
+      side: 'right',
+      blocks: {
+        top: { kind: 'breadcrumb', text: 'focused: NAM' },
+        canvas: {
+          kind: 'canvas',
+          data: {
+            columns: 2,
+            rows: 4,
+            entries: [
+              { label: 'gain', value: '+12 dB' },
+              { label: 'master', value: '−6 dB' },
+              { label: 'presence', value: '5' },
+              { label: 'depth', value: '7' },
+              { label: 'bass', value: '6' },
+              { label: 'mid', value: '5' },
+              { label: 'treble', value: '4' },
+              { label: 'bypass', value: 'off' },
+            ],
+          },
+        },
+        bottom: { kind: 'monitor-strip', text: 'enc = param' },
+      },
+    },
+    pads: EMPTY_PADS.map((pad, i) => ({
+      ...pad,
+      label: `Block ${i + 1}`,
+      idle_color: i < 5 ? 'green' : 'empty',
+      press_color: 'white',
+    })),
+    encoders: [
+      { slot: 'enc1', label: 'gain', unit: 'dB' },
+      { slot: 'enc2', label: 'master', unit: 'dB' },
+      { slot: 'enc3', label: 'presence' },
+      { slot: 'enc4', label: 'depth' },
+      { slot: 'enc5', label: 'bass' },
+      { slot: 'enc6', label: 'mid' },
+      { slot: 'enc7', label: 'treble' },
+      { slot: 'enc8', label: 'bypass' },
+      { slot: 'vol', label: 'Master Gain', unit: 'dB' },
+    ],
+  },
 ] as const
