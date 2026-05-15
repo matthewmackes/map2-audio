@@ -32,6 +32,10 @@ add_executable(map2-sonobus-transport
 target_include_directories(map2-sonobus-transport
     PRIVATE
         ${CMAKE_CURRENT_SOURCE_DIR}/Source
+        # nlohmann/json (header-only) — reused from the NAM vendor tree
+        # to avoid pulling a separate dependency. BSD-3 license posture
+        # is already documented in docs/THIRD_PARTY_NOTICES.md.
+        ${CMAKE_CURRENT_SOURCE_DIR}/../Modules/NeuralAmpModelerCore/Dependencies
 )
 
 target_compile_features(map2-sonobus-transport PRIVATE cxx_std_17)
