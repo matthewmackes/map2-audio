@@ -326,6 +326,7 @@ import { useSnapshotEditorPresetMutations } from './snapshotEditor/useSnapshotEd
 import { useSnapshotEditorUndoRedoMutations } from './snapshotEditor/useSnapshotEditorUndoRedoMutations'
 import { useSnapshotEditorHeroPublishMutations } from './snapshotEditor/useSnapshotEditorHeroPublishMutations'
 import { useSnapshotEditorHeroHandlers } from './snapshotEditor/useSnapshotEditorHeroHandlers'
+import { hydrateSnapshotEditorStoreOnce } from './snapshotEditor/hydrateSnapshotEditorStore'
 import { useSnapshotEditorMetadataMutations } from './snapshotEditor/useSnapshotEditorMetadataMutations'
 import { useSnapshotEditorLockMutation } from './snapshotEditor/useSnapshotEditorLockMutation'
 import { useSnapshotEditorChainEditMutations } from './snapshotEditor/useSnapshotEditorChainEditMutations'
@@ -448,58 +449,12 @@ import { SnapshotEditorTabletLayout } from './snapshotEditor/SnapshotEditorTable
 
 // extractActivationProgressMetrics lives in ./snapshotEditor/snapshotEditorPageHelpers (T2467 follow-up).
 
-// One-shot store hydration runs at module import, before any React render.
-// The page is lazy-loaded (App.tsx routes via React.lazy), so this fires
-// only when the user actually navigates to the snapshot editor and runs
+// T2473 cycle 37 — One-shot store hydration extracted into
+// `./snapshotEditor/hydrateSnapshotEditorStore.ts`. The page is
+// lazy-loaded (App.tsx routes via React.lazy), so this fires only
+// when the user actually navigates to the snapshot editor and runs
 // exactly once per session — Strict Mode's double-invocation cannot
 // re-trigger module evaluation.
-let snapshotEditorStoreHydrated = false
-function hydrateSnapshotEditorStoreOnce(): void {
-  if (snapshotEditorStoreHydrated) return
-  snapshotEditorStoreHydrated = true
-
-  const initialPersistedState = loadInitialJuceGridState()
-  const initialPluginPersistence = loadInitialJuceGridPluginPersistence()
-
-  // Two-key reads (current + legacy) wrapped in a single safe accessor so a
-  // poisoned localStorage entry can't crash the editor on mount.
-  const readSnapshotStorage = (currentKey: string, legacyKey: string): string | null => {
-    try {
-      return localStorage.getItem(currentKey) ?? localStorage.getItem(legacyKey)
-    } catch {
-      return null
-    }
-  }
-
-  const selectedCategory = readSnapshotStorage('map2_juce_grid_plugin_category', 'map2_grid_plugin_category') || 'all'
-
-  let collapsedCategories: Set<string> = new Set<string>()
-  const collapsedRaw = readSnapshotStorage('map2_juce_grid_collapsed_categories', 'map2_grid_collapsed_categories')
-  if (collapsedRaw) {
-    try {
-      const parsed: unknown = JSON.parse(collapsedRaw)
-      if (Array.isArray(parsed)) {
-        collapsedCategories = new Set<string>(parsed.filter((entry): entry is string => typeof entry === 'string'))
-      }
-    } catch { /* unparseable storage value — fall back to empty set */ }
-  }
-
-  useSnapshotEditorStore.setState({
-    flowSlots: initialPersistedState.flowSlots,
-    routing: initialPersistedState.routing,
-    activeFlowIndex: initialPersistedState.activeFlowIndex,
-    selectedPluginUri: initialPluginPersistence.selectedPluginUri,
-    selectedPluginPosition: initialPluginPersistence.selectedPluginPosition,
-    effectModalOpen: initialPluginPersistence.effectModalOpen,
-    selectedCategory,
-    collapsedCategories,
-    footswitchLabelDrafts: createEmptyFootswitchLabelDrafts(),
-    snapshotIoModalState: buildSnapshotIoModalState(null, null),
-    noiseGateThresholdDraft: DEFAULT_SYSTEM_NOISE_GATE_DEFAULTS.thresholdDb,
-    noiseGateReleaseDraft: DEFAULT_SYSTEM_NOISE_GATE_DEFAULTS.releaseMs,
-  })
-}
-
 if (typeof window !== 'undefined') {
   hydrateSnapshotEditorStoreOnce()
 }
