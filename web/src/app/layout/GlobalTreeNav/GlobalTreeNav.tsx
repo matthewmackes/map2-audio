@@ -109,10 +109,6 @@ export type TreeItemDefinition = {
   icon?: CarbonIconComponent
   children?: TreeItemDefinition[]
   actions?: TreeNodeAction[]
-  secondary?: string
-  secondaryTone?: TreeNodeSecondaryTone
-  badge?: string
-  featured?: boolean
   groupBoundary?: boolean
   separator?: boolean
 }
@@ -147,13 +143,6 @@ const GLOBAL_TREE_EXPANDED_KEY: PersistedKey<string[]> = {
   },
 }
 
-// Pinned (hero cards) — Snapshot Editor, Sequencer.
-// Hard-coded order, no user reorder. The MultiTrack Recorder hero was
-// retired under T2505 with the T2503 DAW Service cancellation; the
-// reframed T2504 recorder mounts inside /artifacts so no hero card is
-// needed yet (it will return as a hero once T2509 + T2511 ship the
-// playback UX).
-const PINNED_HERO_ROUTES = ['/snapshot-editor', '/sequencer'] as const
 // Services section — MIDI, AVB, SonoBus (T2521 fallback transport),
 // Audio Artifacts.
 const SERVICES_ROUTES = ['/midi-hub', '/avb', '/sonobus', '/artifacts'] as const
@@ -476,7 +465,6 @@ function buildSectionItems(
   pinnedIds: string[],
   navigateTo: (route: string) => void,
   onRequestUnpin: (entry: LegacyDeviceManifestEntry) => void,
-  snapshotEditorStatus: SnapshotEditorTreeStatus,
   benchStorePins: string[],
 ): TreeItemDefinition[] {
   return routes.flatMap((route) => {
@@ -502,10 +490,6 @@ function buildSectionItems(
       route: children.length > 0 ? children[0]?.route ?? route : normalizeTarget(route),
       icon: TREE_ICON_OVERRIDES[route] ?? (launcherItem?.icon as CarbonIconComponent | undefined) ?? (navigationItem?.icon as CarbonIconComponent | undefined),
       children,
-      secondary: route === '/snapshot-editor' ? snapshotEditorStatus.label : undefined,
-      secondaryTone: route === '/snapshot-editor' ? snapshotEditorStatus.tone : undefined,
-      badge: route === '/snapshot-editor' ? 'Signal Flow' : undefined,
-      featured: route === '/snapshot-editor',
     }]
   })
 }
@@ -582,100 +566,6 @@ export function resolveTreeAccordionToggle(
 
 function joinClasses(...parts: Array<string | false | null | undefined>) {
   return parts.filter(Boolean).join(' ')
-}
-
-function isItemOrDescendantActive(item: TreeItemDefinition, activeId: string | null): boolean {
-  if (!activeId) return false
-  if (item.id === activeId) return true
-  if (!item.children) return false
-  return item.children.some((child) => isItemOrDescendantActive(child, activeId))
-}
-
-function HeroCard({
-  item,
-  isOpen,
-  activeId,
-  onToggle,
-  onNavigate,
-}: {
-  item: TreeItemDefinition
-  isOpen: boolean
-  activeId: string | null
-  onToggle: () => void
-  onNavigate: (route: string) => void
-}) {
-  const Icon = item.icon
-  const childCount = item.children?.length ?? 0
-  const isActive = isItemOrDescendantActive(item, activeId)
-
-  return (
-    <div className={joinClasses('global-tree-nav__hero', isActive && 'is-active')}>
-      <button
-        type="button"
-        className="global-tree-nav__hero-header"
-        onClick={() => {
-          onToggle()
-          if (item.route) onNavigate(item.route)
-        }}
-        aria-expanded={isOpen}
-      >
-        <span className="global-tree-nav__hero-icon-tile" aria-hidden="true">
-          {Icon ? <Icon size={16} /> : null}
-        </span>
-        <span className="global-tree-nav__hero-text">
-          <span className="global-tree-nav__hero-title-row">
-            <span className="global-tree-nav__hero-title">{item.label}</span>
-            {item.badge ? (
-              <span className="global-tree-nav__hero-badge">{item.badge}</span>
-            ) : null}
-          </span>
-          {item.secondary ? (
-            <span
-              className={joinClasses(
-                'global-tree-nav__hero-status',
-                `is-${item.secondaryTone ?? 'neutral'}`,
-              )}
-            >
-              <span className="global-tree-nav__hero-status-dot" aria-hidden="true" />
-              {item.secondary}
-            </span>
-          ) : childCount > 0 ? (
-            <span className="global-tree-nav__hero-subtitle">
-              {childCount} {childCount === 1 ? 'section' : 'sections'}
-            </span>
-          ) : null}
-        </span>
-        <CaretRight
-          size={12}
-          className={joinClasses(
-            'global-tree-nav__hero-caret',
-            isOpen && 'is-open',
-          )}
-          aria-hidden="true"
-        />
-      </button>
-      {isOpen && childCount > 0 ? (
-        <div className="global-tree-nav__hero-body">
-          {item.children!.map((child) => {
-            const childActive = child.id === activeId
-            return (
-              <button
-                key={child.id}
-                type="button"
-                className={joinClasses(
-                  'global-tree-nav__hero-child',
-                  childActive && 'is-active',
-                )}
-                onClick={() => child.route && onNavigate(child.route)}
-              >
-                {child.label}
-              </button>
-            )
-          })}
-        </div>
-      ) : null}
-    </div>
-  )
 }
 
 function DenseRow({
@@ -819,27 +709,15 @@ export function GlobalTreeNav({
   // re-running on every render.
   const navigateTo = useCallback((route: string) => navigate(route), [navigate])
 
-  const pinnedItems = useMemo(
-    () => buildSectionItems(
-      PINNED_HERO_ROUTES,
-      pinnedDeviceIds,
-      navigateTo,
-      handleRequestUnpin,
-      snapshotEditorStatus,
-      benchStorePins,
-    ),
-    [pinnedDeviceIds, navigateTo, handleRequestUnpin, snapshotEditorStatus, benchStorePins],
-  )
   const servicesItems = useMemo(
     () => buildSectionItems(
       SERVICES_ROUTES,
       pinnedDeviceIds,
       navigateTo,
       handleRequestUnpin,
-      snapshotEditorStatus,
       benchStorePins,
     ),
-    [pinnedDeviceIds, navigateTo, handleRequestUnpin, snapshotEditorStatus, benchStorePins],
+    [pinnedDeviceIds, navigateTo, handleRequestUnpin, benchStorePins],
   )
   const systemItems = useMemo(
     () => buildSectionItems(
@@ -847,14 +725,13 @@ export function GlobalTreeNav({
       pinnedDeviceIds,
       navigateTo,
       handleRequestUnpin,
-      snapshotEditorStatus,
       benchStorePins,
     ),
-    [pinnedDeviceIds, navigateTo, handleRequestUnpin, snapshotEditorStatus, benchStorePins],
+    [pinnedDeviceIds, navigateTo, handleRequestUnpin, benchStorePins],
   )
   const allItems = useMemo(
-    () => [...pinnedItems, ...servicesItems, ...systemItems],
-    [pinnedItems, servicesItems, systemItems],
+    () => [...servicesItems, ...systemItems],
+    [servicesItems, systemItems],
   )
 
   const activeNodePath = useMemo(
@@ -868,6 +745,8 @@ export function GlobalTreeNav({
   )
   const homeActive = routeMatchesLocation('/', location.pathname, location.search)
   const guideActive = routeMatchesLocation('/about', location.pathname, location.search)
+  const snapshotEditorActive = routeMatchesLocation('/snapshot-editor', location.pathname, location.search)
+  const sequencerActive = routeMatchesLocation('/sequencer', location.pathname, location.search)
 
   const displayedNode = topologyNodes.find((node) => node.node_id === viewedNodeId)
     ?? topologyNodes.find((node) => node.is_local)
@@ -1015,27 +894,48 @@ export function GlobalTreeNav({
       </div>
 
       <div className="global-tree-nav__scroll">
-        <button
-          type="button"
-          className={joinClasses('global-tree-nav__home-row', homeActive && 'is-active')}
-          onClick={() => navigateTo('/')}
-        >
-          <span className="global-tree-nav__dense-spacer" aria-hidden="true" />
-          <Home size={14} className="global-tree-nav__dense-icon" aria-hidden="true" />
-          <span className="global-tree-nav__dense-label">Home</span>
-        </button>
-
-        <div className="global-tree-nav__hero-stack">
-          {pinnedItems.map((item) => (
-            <HeroCard
-              key={item.id}
-              item={item}
-              isOpen={visibleExpandedIds.includes(item.id)}
-              activeId={activeNodeId}
-              onToggle={() => toggleExpanded(item.id)}
-              onNavigate={navigateTo}
-            />
-          ))}
+        <div className="global-tree-nav__icon-row" role="group" aria-label="Primary destinations">
+          <Tooltip label="Home" align="bottom" enterDelayMs={300}>
+            <button
+              type="button"
+              className={joinClasses('global-tree-nav__icon-button', homeActive && 'is-active')}
+              aria-label="Home"
+              onClick={() => navigateTo('/')}
+            >
+              <Home size={20} aria-hidden="true" />
+              <span className="global-tree-nav__icon-button-label">Home</span>
+            </button>
+          </Tooltip>
+          <Tooltip label="Snapshot Editor" align="bottom" enterDelayMs={300}>
+            <button
+              type="button"
+              className={joinClasses('global-tree-nav__icon-button', snapshotEditorActive && 'is-active')}
+              aria-label="Snapshot Editor"
+              onClick={() => navigateTo('/snapshot-editor')}
+            >
+              <ScreenMap size={20} aria-hidden="true" />
+              <span
+                className={joinClasses(
+                  'global-tree-nav__icon-button-status',
+                  `is-${snapshotEditorStatus.tone}`,
+                )}
+                aria-label={snapshotEditorStatus.label}
+                title={snapshotEditorStatus.label}
+              />
+              <span className="global-tree-nav__icon-button-label">Snapshot Editor</span>
+            </button>
+          </Tooltip>
+          <Tooltip label="Sequencer" align="bottom" enterDelayMs={300}>
+            <button
+              type="button"
+              className={joinClasses('global-tree-nav__icon-button', sequencerActive && 'is-active')}
+              aria-label="Sequencer"
+              onClick={() => navigateTo('/sequencer')}
+            >
+              <Grid size={20} aria-hidden="true" />
+              <span className="global-tree-nav__icon-button-label">Sequencer</span>
+            </button>
+          </Tooltip>
         </div>
 
         <SectionBar tier="services" label="Services" />

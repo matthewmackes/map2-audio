@@ -197,8 +197,8 @@ describe('AppShell global tree navigation', () => {
     expect(container.querySelector('.window-title-strip')).toBeNull()
     const navTree = screen.getByLabelText('Global navigation')
     expect(navTree).toBeInTheDocument()
-    // Nav reskin 2026-05-03 — the IA now reads:
-    //   Home → hero cards (Snapshot Editor, Sequencer)
+    // Nav reskin 2026-05-15 — the IA now reads:
+    //   Primary destinations icon row (Home, Snapshot Editor, Sequencer)
     //   → Services (MIDI Services, AVB, Audio Artifacts, Settings,
     //     Hardware, Node Ops) → Platform Guide.
     // The "Pinned" and "System" SectionBars were removed; System items
@@ -206,6 +206,9 @@ describe('AppShell global tree navigation', () => {
     // was retired under T2505 when the T2503 DAW service was cancelled;
     // the reframed T2504 recorder mounts inside /artifacts so no hero
     // card is in the IA today (returns once T2509 + T2511 ship playback).
+    // The hero "Snapshot Editor" / "Sequencer" cards collapsed into the
+    // 3-icon row alongside Home; child sections live on each destination
+    // page rather than inline in the rail.
     expectInDocumentOrder([
       'Home',
       'Snapshot Editor',
@@ -220,11 +223,9 @@ describe('AppShell global tree navigation', () => {
     ])
     expect(container.querySelectorAll('.global-tree-nav__separator-line')).toHaveLength(0)
     expect(screen.getAllByText('Node Ops')).toHaveLength(1)
-    expect(screen.getByText('Snapshot Editor')).toBeInTheDocument()
-    // Hero card badge copy is "Signal Flow" per the Variant 6 spec.
-    expect(within(navTree).getByText('Signal Flow')).toBeInTheDocument()
-    expect(within(navTree).getByText('Live')).toBeInTheDocument()
-    expect(screen.getByText('Sequencer')).toBeInTheDocument()
+    expect(within(navTree).getByRole('button', { name: 'Snapshot Editor' })).toBeInTheDocument()
+    expect(within(navTree).getByRole('button', { name: 'Sequencer' })).toBeInTheDocument()
+    expect(within(navTree).getByRole('button', { name: 'Home' })).toBeInTheDocument()
     expect(screen.getByText('Audio Artifacts')).toBeInTheDocument()
     expect(screen.getByText('Platform Guide')).toBeInTheDocument()
     expect(screen.getByText('Settings')).toBeInTheDocument()
@@ -301,7 +302,8 @@ describe('AppShell global tree navigation', () => {
       ['/'],
     )
 
-    fireEvent.click(screen.getByText('Snapshot Editor'))
+    const navTree = screen.getByLabelText('Global navigation')
+    fireEvent.click(within(navTree).getByRole('button', { name: 'Snapshot Editor' }))
 
     await waitFor(() => {
       expect(screen.getByTestId('route-probe')).toHaveTextContent('/snapshot-editor')

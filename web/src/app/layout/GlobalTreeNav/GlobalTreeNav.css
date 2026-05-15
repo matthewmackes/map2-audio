@@ -139,31 +139,93 @@
   padding-bottom: 0.5rem;
 }
 
-/* ---------- Home row (utility above Pinned bar) ---------- */
+/* ---------- Icon row (Home + Snapshot Editor + Sequencer) ---------- */
 
-.global-tree-nav__home-row {
-  appearance: none;
-  display: flex;
-  align-items: center;
+.global-tree-nav__icon-row {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
   gap: 8px;
-  width: 100%;
-  padding: 6px 16px;
-  border: 0;
-  background: transparent;
-  color: var(--cds-text-secondary);
-  font: inherit;
-  font-size: var(--cds-helper-text-01-font-size, 0.75rem);
-  text-align: left;
-  cursor: pointer;
+  padding: 10px 12px 12px;
 }
 
-.global-tree-nav__home-row:hover {
+.global-tree-nav__icon-button {
+  appearance: none;
+  position: relative;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 4px;
+  width: 100%;
+  padding: 10px 4px;
+  border: 1px solid var(--cds-border-subtle);
+  border-radius: 8px;
+  background: var(--cds-layer);
+  color: var(--cds-icon-primary);
+  font: inherit;
+  cursor: pointer;
+  transition:
+    border-color var(--map2-dur-fast-02) var(--map2-ease-productive-standard),
+    background var(--map2-dur-fast-02) var(--map2-ease-productive-standard);
+}
+
+.global-tree-nav__icon-button:hover {
   background: var(--cds-layer-hover);
 }
 
-.global-tree-nav__home-row.is-active {
+.global-tree-nav__icon-button:focus-visible {
+  outline: 2px solid var(--cds-focus);
+  outline-offset: -2px;
+}
+
+.global-tree-nav__icon-button.is-active {
+  border-color: var(--cds-button-primary);
   background: var(--cds-button-primary);
   color: var(--cds-text-on-color);
+}
+
+.global-tree-nav__icon-button-label {
+  font-size: 9.5px;
+  font-weight: 600;
+  letter-spacing: 0.04em;
+  text-transform: uppercase;
+  color: var(--cds-text-secondary);
+  overflow: hidden;
+  white-space: nowrap;
+  text-overflow: ellipsis;
+  max-width: 100%;
+}
+
+.global-tree-nav__icon-button.is-active .global-tree-nav__icon-button-label {
+  color: var(--cds-text-on-color);
+}
+
+.global-tree-nav__icon-button-status {
+  position: absolute;
+  top: 6px;
+  right: 6px;
+  width: 7px;
+  height: 7px;
+  border-radius: 999px;
+  background: var(--cds-icon-disabled);
+  box-shadow: 0 0 0 3px color-mix(in srgb, currentColor 16%, transparent);
+}
+
+.global-tree-nav__icon-button-status.is-live {
+  background: var(--cds-support-success);
+  color: var(--cds-support-success);
+}
+.global-tree-nav__icon-button-status.is-warning {
+  background: var(--cds-support-warning);
+  color: var(--cds-support-warning);
+}
+.global-tree-nav__icon-button-status.is-offline {
+  background: var(--cds-support-error);
+  color: var(--cds-support-error);
+}
+.global-tree-nav__icon-button-status.is-neutral {
+  background: var(--cds-icon-disabled);
+  color: var(--cds-icon-disabled);
 }
 
 /* ---------- Section bars (Pinned / Services / System) ---------- */
@@ -224,186 +286,6 @@
 
 .global-tree-nav__section-bar.is-pinned .global-tree-nav__section-rule {
   background: color-mix(in srgb, var(--cds-button-primary) 20%, transparent);
-}
-
-/* ---------- Hero cards (Snapshot Editor + Sequencer) ---------- */
-
-.global-tree-nav__hero-stack {
-  display: flex;
-  flex-direction: column;
-  gap: 8px;
-  padding: 0 12px;
-}
-
-.global-tree-nav__hero {
-  border: 1px solid var(--cds-border-subtle);
-  border-radius: 10px;
-  background: var(--cds-layer);
-  overflow: hidden;
-  transition:
-    border-color var(--map2-dur-fast-02) var(--map2-ease-productive-standard),
-    background var(--map2-dur-fast-02) var(--map2-ease-productive-standard);
-}
-
-.global-tree-nav__hero.is-active {
-  border-color: var(--cds-button-primary);
-  background: var(--cds-layer-accent);
-}
-
-.global-tree-nav__hero-header {
-  appearance: none;
-  display: flex;
-  align-items: center;
-  gap: 10px;
-  width: 100%;
-  padding: 12px 14px;
-  border: 0;
-  background: transparent;
-  color: inherit;
-  font: inherit;
-  text-align: left;
-  cursor: pointer;
-}
-
-.global-tree-nav__hero-header:hover {
-  background: var(--cds-layer-hover);
-}
-
-.global-tree-nav__hero-header:focus-visible {
-  outline: 2px solid var(--cds-focus);
-  outline-offset: -2px;
-}
-
-.global-tree-nav__hero-icon-tile {
-  flex: 0 0 auto;
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  width: 30px;
-  height: 30px;
-  border-radius: 7px;
-  background: color-mix(in srgb, var(--cds-button-primary) 12%, transparent);
-  color: var(--cds-button-primary);
-}
-
-.global-tree-nav__hero.is-active .global-tree-nav__hero-icon-tile {
-  background: var(--cds-button-primary);
-  color: var(--cds-text-on-color);
-}
-
-.global-tree-nav__hero-text {
-  flex: 1;
-  min-width: 0;
-  display: flex;
-  flex-direction: column;
-  gap: 1px;
-}
-
-.global-tree-nav__hero-title-row {
-  display: flex;
-  align-items: center;
-  gap: 6px;
-  min-width: 0;
-}
-
-.global-tree-nav__hero-title {
-  flex: 0 1 auto;
-  font-size: 13.5px;
-  font-weight: 600;
-  letter-spacing: -0.01em;
-  color: var(--cds-text-primary);
-  overflow: hidden;
-  white-space: nowrap;
-  text-overflow: ellipsis;
-}
-
-.global-tree-nav__hero-badge {
-  flex: 0 0 auto;
-  padding: 2px 5px;
-  border-radius: 3px;
-  background: color-mix(in srgb, var(--cds-button-primary) 15%, transparent);
-  color: var(--cds-button-primary);
-  font-family: var(--cds-code-01-font-family, 'IBM Plex Mono', ui-monospace, monospace);
-  font-size: 8.5px;
-  font-weight: 600;
-  letter-spacing: 0.08em;
-  text-transform: uppercase;
-}
-
-.global-tree-nav__hero-subtitle {
-  font-family: var(--cds-code-01-font-family, 'IBM Plex Mono', ui-monospace, monospace);
-  font-size: 10.5px;
-  color: var(--cds-text-helper);
-}
-
-.global-tree-nav__hero-status {
-  display: inline-flex;
-  align-items: center;
-  gap: 4px;
-  font-family: var(--cds-code-01-font-family, 'IBM Plex Mono', ui-monospace, monospace);
-  font-size: 10.5px;
-  color: var(--cds-text-helper);
-}
-
-.global-tree-nav__hero-status.is-live {
-  color: var(--cds-support-success);
-}
-.global-tree-nav__hero-status.is-warning {
-  color: var(--cds-support-warning);
-}
-.global-tree-nav__hero-status.is-offline {
-  color: var(--cds-support-error);
-}
-
-.global-tree-nav__hero-status-dot {
-  flex: 0 0 auto;
-  width: 6px;
-  height: 6px;
-  border-radius: 999px;
-  background: currentColor;
-  box-shadow: 0 0 0 3px color-mix(in srgb, currentColor 18%, transparent);
-}
-
-.global-tree-nav__hero-caret {
-  flex: 0 0 auto;
-  color: var(--cds-icon-secondary);
-  transition: transform var(--map2-dur-moderate-01) var(--map2-ease-productive-standard);
-}
-
-.global-tree-nav__hero-caret.is-open {
-  transform: rotate(90deg);
-}
-
-.global-tree-nav__hero-body {
-  display: flex;
-  flex-direction: column;
-  gap: 2px;
-  padding: 2px 8px 10px;
-  border-block-start: 1px solid var(--cds-border-subtle);
-}
-
-.global-tree-nav__hero-child {
-  appearance: none;
-  display: block;
-  width: 100%;
-  padding: 5px 10px 5px 38px;
-  border: 0;
-  border-radius: 6px;
-  background: transparent;
-  color: var(--cds-text-secondary);
-  font: inherit;
-  font-size: var(--cds-helper-text-01-font-size, 0.75rem);
-  text-align: left;
-  cursor: pointer;
-}
-
-.global-tree-nav__hero-child:hover {
-  background: var(--cds-layer-hover);
-}
-
-.global-tree-nav__hero-child.is-active {
-  background: color-mix(in srgb, var(--cds-button-primary) 8%, transparent);
-  color: var(--cds-button-primary);
 }
 
 /* ---------- Dense rows (Services + System trees) ---------- */
