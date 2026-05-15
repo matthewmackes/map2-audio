@@ -253,18 +253,34 @@ else()
 endif()
 
 # ========================================
-# SonoBus / AOO Remote-Audio Transport (Optional, T2521-8b)
+# SonoBus / AOO Remote-Audio Transport (T2521-4)
 # ========================================
-# T2521-8b: stub CMake option for the future map2-sonobus-transport
-# daemon (T2521-4). When ON and vendor/aoo/CMakeLists.txt exists, the
-# AOO source tree gets vendored into the build. When the daemon binary
-# arrives in T2521-4 it picks up SONOBUS_AVAILABLE here.
+# Three build modes:
 #
-# Defaults to ON per Q15 (install + enable by default), but the
-# AOO source isn't vendored yet so SONOBUS_AVAILABLE stays FALSE until
-# vendor/aoo/CMakeLists.txt is added.
+#   USE_SONOBUS=ON  + vendor/aoo/CMakeLists.txt exists
+#     → Full daemon: links libaoo + libuv + JACK; AOO source/sink active.
+#       The standalone binary at /opt/map2-audio/juce-engine/build/
+#       map2-sonobus-transport ships in the RPM.
+#
+#   USE_SONOBUS=ON  + vendor/aoo/CMakeLists.txt missing  (CURRENT STATE)
+#     → Stub daemon: same binary, same UDS protocol, same supervisor
+#       integration — but AOO transport calls return E_AOO_UNAVAILABLE
+#       and audio I/O is a no-op (silence on output). Lets the backend
+#       supervisor + REST routes + WS event stream exercise the daemon
+#       lifecycle without requiring an AOO vendor pull. Bench operator
+#       lands the AOO vendor source via the T2521-4 runbook and flips
+#       this to full mode by rebuilding (no spec/code changes needed).
+#
+#   USE_SONOBUS=OFF
+#     → Daemon NOT built. /opt/map2-audio/juce-engine/build/ does not
+#       ship a binary. systemd unit fails-to-start (intended).
+#
+# This three-mode design lets the CI Fedora job validate the daemon
+# build path even without bench hardware, and lets the bench operator
+# wire up the real AOO transport by a single vendor-pull commit.
 option(USE_SONOBUS "Enable MAP2 SonoBus / AOO remote-audio transport (T2521)" ON)
 set(SONOBUS_AVAILABLE FALSE)
+set(SONOBUS_BUILD_STUB FALSE)
 if(USE_SONOBUS)
     set(SONOBUS_VENDOR_DIR "${CMAKE_CURRENT_LIST_DIR}/../vendor/aoo")
     if(EXISTS "${SONOBUS_VENDOR_DIR}/CMakeLists.txt")
@@ -272,8 +288,17 @@ if(USE_SONOBUS)
         set(SONOBUS_AVAILABLE TRUE)
         # add_subdirectory call lands with the T2521-4 daemon target,
         # when the vendor tree carries an actual AOO source root.
+        add_subdirectory(${SONOBUS_VENDOR_DIR} ${CMAKE_BINARY_DIR}/_aoo)
     else()
-        message(STATUS "SonoBus / AOO: PLANNED (vendor/aoo/ skeleton only — T2521-4 daemon lands the AOO source)")
+        message(STATUS "SonoBus / AOO: STUB MODE — daemon builds with E_AOO_UNAVAILABLE no-op transport (T2521-4 vendor pull required for full mode)")
+        set(SONOBUS_BUILD_STUB TRUE)
+    endif()
+
+    # The daemon target itself is built in BOTH full-mode and stub-mode
+    # (same source, different compile-time flag). The SonoBusDaemon
+    # subdir handles the conditional AOO linkage.
+    if(SONOBUS_AVAILABLE OR SONOBUS_BUILD_STUB)
+        add_subdirectory(SonoBusDaemon)
     endif()
 else()
     message(STATUS "SonoBus / AOO: DISABLED (USE_SONOBUS=OFF)")
