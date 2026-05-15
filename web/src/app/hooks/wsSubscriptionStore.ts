@@ -47,6 +47,69 @@ const RECONNECT_MAX_MS = 5_000
 
 const entriesByUrl = new Map<string, SubscriptionEntry>()
 
+// ---------------------------------------------------------------------------
+// Document-visibility back-pressure (run-13i pick #2 of the run-13i handoff)
+//
+// When the document becomes hidden (the operator switches to a different
+// browser tab, minimizes the window, locks the screen), the store closes
+// every open socket and clears any pending reconnect timer. Listeners
+// remain registered — the store keeps the entry alive so a re-subscribe
+// during the hidden state still hooks into the same shared connection
+// path. On `visibilitychange` → visible, every entry with at least one
+// listener reconnects (reset backoff).
+//
+// Why we want this:
+// - 30 fps device-meter streams + 5 fps cluster streams produce real
+//   bandwidth even when the operator isn't looking at the page
+// - Multi-monitor setups commonly leave MAP2 in a background tab while
+//   the operator runs their DAW in the foreground
+// - Mobile / tablet operator tools backgrounding the page should not
+//   continue to stream
+// ---------------------------------------------------------------------------
+
+let _visibilityListenerInstalled = false
+let _isDocumentHidden = false
+
+function isDocumentHidden(): boolean {
+  if (typeof document === 'undefined') return false
+  return document.visibilityState === 'hidden'
+}
+
+function ensureVisibilityListener(): void {
+  if (_visibilityListenerInstalled) return
+  if (typeof document === 'undefined') return
+  document.addEventListener('visibilitychange', onVisibilityChange)
+  _visibilityListenerInstalled = true
+  // Don't clobber a value the test helper has already set. We only
+  // sample document.visibilityState if we're still at the default.
+  if (!_isDocumentHidden) {
+    _isDocumentHidden = isDocumentHidden()
+  }
+}
+
+function onVisibilityChange(): void {
+  const nowHidden = isDocumentHidden()
+  if (nowHidden === _isDocumentHidden) return
+  _isDocumentHidden = nowHidden
+  if (nowHidden) {
+    // Tear down every open socket. Listeners stay registered.
+    for (const entry of entriesByUrl.values()) {
+      if (entry.listeners.size > 0) {
+        teardown(entry, { reset: true })
+      }
+    }
+  } else {
+    // Reopen every entry that still has at least one listener.
+    for (const entry of entriesByUrl.values()) {
+      if (entry.listeners.size > 0 && !entry.socket) {
+        entry.cancelled = false
+        entry.reconnectDelayMs = RECONNECT_MIN_MS
+        connect(entry)
+      }
+    }
+  }
+}
+
 function emitState(entry: SubscriptionEntry, next: WsSubscriberState): void {
   if (entry.state === next) return
   entry.state = next
@@ -122,6 +185,12 @@ function scheduleReconnect(entry: SubscriptionEntry): void {
 function connect(entry: SubscriptionEntry): void {
   if (entry.cancelled) return
   if (entry.socket) return
+  // Visibility back-pressure: do NOT open while the document is hidden.
+  // The visibilitychange listener will reopen on the visible transition.
+  if (_isDocumentHidden) {
+    emitState(entry, 'closed')
+    return
+  }
   emitState(entry, 'connecting')
   try {
     const ws = new WebSocket(entry.url)
@@ -170,6 +239,8 @@ export function subscribe(
   url: string,
   callbacks: WsSubscriberCallbacks,
 ): Subscription {
+  // First subscribe call installs the visibilitychange listener (idempotent).
+  ensureVisibilityListener()
   let entry = entriesByUrl.get(url)
   if (!entry) {
     entry = {
@@ -226,6 +297,34 @@ export function __resetForTests(): void {
     teardown(entry, { reset: true })
   }
   entriesByUrl.clear()
+  if (_visibilityListenerInstalled && typeof document !== 'undefined') {
+    document.removeEventListener('visibilitychange', onVisibilityChange)
+  }
+  _visibilityListenerInstalled = false
+  _isDocumentHidden = false
+}
+
+/** Test-only: simulate a visibilitychange event without touching the
+ * real document.visibilityState. JSDOM doesn't expose a writable
+ * visibilityState, so tests force the path through this hook. */
+export function __simulateVisibilityForTests(hidden: boolean): void {
+  // Mimic the real onVisibilityChange path: only fire the transition
+  // when the value actually changes.
+  if (hidden === _isDocumentHidden) return
+  _isDocumentHidden = hidden
+  if (hidden) {
+    for (const entry of entriesByUrl.values()) {
+      if (entry.listeners.size > 0) teardown(entry, { reset: true })
+    }
+  } else {
+    for (const entry of entriesByUrl.values()) {
+      if (entry.listeners.size > 0 && !entry.socket) {
+        entry.cancelled = false
+        entry.reconnectDelayMs = RECONNECT_MIN_MS
+        connect(entry)
+      }
+    }
+  }
 }
 
 /** Test-only: introspect store size. */

@@ -10,6 +10,7 @@ import {
   __resetForTests,
   __urlCountForTests,
   __listenerCountForTests,
+  __simulateVisibilityForTests,
 } from './wsSubscriptionStore'
 
 interface FakeSocket {
@@ -185,5 +186,118 @@ describe('wsSubscriptionStore', () => {
     // promoted to 'connecting' as connect() runs synchronously.
     expect(states.length).toBeGreaterThanOrEqual(1)
     expect(states[states.length - 1]).toBe('connecting')
+  })
+})
+
+// ---------------------------------------------------------------------------
+// Run-13i pick #2 — visibilitychange back-pressure
+// ---------------------------------------------------------------------------
+
+describe('wsSubscriptionStore visibility back-pressure', () => {
+  beforeEach(() => {
+    openedSockets = []
+    __resetForTests()
+  })
+
+  test('hiding the document tears down active sockets', () => {
+    subscribe('ws://test/visibility', { onFrame: () => undefined })
+    expect(openedSockets.length).toBe(1)
+    const sock = openedSockets[0]
+
+    __simulateVisibilityForTests(true)
+
+    expect(sock.close).toHaveBeenCalledTimes(1)
+  })
+
+  test('returning to visible re-opens a fresh socket', () => {
+    subscribe('ws://test/visibility', { onFrame: () => undefined })
+    expect(openedSockets.length).toBe(1)
+
+    __simulateVisibilityForTests(true)
+    expect(openedSockets.length).toBe(1)  // no new socket while hidden
+
+    __simulateVisibilityForTests(false)
+    expect(openedSockets.length).toBe(2)  // reopened on visible
+  })
+
+  test('subscribing while hidden does NOT open a socket', () => {
+    // Force hidden before any subscribe.
+    __simulateVisibilityForTests(true)
+    const sub = subscribe('ws://test/hidden-subscribe', {
+      onFrame: () => undefined,
+    })
+
+    expect(openedSockets.length).toBe(0)
+    expect(sub.state()).toBe('closed')
+
+    // Becoming visible should reconnect.
+    __simulateVisibilityForTests(false)
+    expect(openedSockets.length).toBe(1)
+  })
+
+  test('emit transitions to closed state when document is hidden', () => {
+    const states: string[] = []
+    subscribe('ws://test/visibility-state', {
+      onFrame: () => undefined,
+      onStateChange: (s) => states.push(s),
+    })
+    // Drain any startup states (we asserted those in the main suite).
+    states.length = 0
+
+    __simulateVisibilityForTests(true)
+    expect(states.at(-1)).toBe('closed')
+
+    __simulateVisibilityForTests(false)
+    expect(states.at(-1)).toBe('connecting')
+  })
+
+  test('hiding without active listeners does NOT crash', () => {
+    // Ensure no listeners + simulate hidden.
+    __resetForTests()
+    expect(__urlCountForTests()).toBe(0)
+    expect(() => __simulateVisibilityForTests(true)).not.toThrow()
+    expect(() => __simulateVisibilityForTests(false)).not.toThrow()
+  })
+
+  test('unsubscribing while hidden cleans up the entry', () => {
+    const sub = subscribe('ws://test/cleanup', { onFrame: () => undefined })
+    __simulateVisibilityForTests(true)
+    sub.unsubscribe()
+    expect(__urlCountForTests()).toBe(0)
+    // Becoming visible should not resurrect anything.
+    __simulateVisibilityForTests(false)
+    expect(openedSockets.length).toBe(1) // only the original
+  })
+
+  test('repeated hide events are idempotent', () => {
+    subscribe('ws://test/idempotent', { onFrame: () => undefined })
+    const sock = openedSockets[0]
+    __simulateVisibilityForTests(true)
+    expect(sock.close).toHaveBeenCalledTimes(1)
+    __simulateVisibilityForTests(true)  // no-op
+    expect(sock.close).toHaveBeenCalledTimes(1)
+  })
+
+  test('repeated visible events are idempotent', () => {
+    subscribe('ws://test/idempotent-visible', { onFrame: () => undefined })
+    __simulateVisibilityForTests(true)
+    __simulateVisibilityForTests(false)
+    const countAfterFirstShow = openedSockets.length
+    __simulateVisibilityForTests(false)  // no-op
+    expect(openedSockets.length).toBe(countAfterFirstShow)
+  })
+
+  test('hide+show resets exponential backoff so reconnect is immediate', () => {
+    // First subscribe + simulate two error reconnects to grow the backoff.
+    subscribe('ws://test/backoff-reset', { onFrame: () => undefined })
+    const initialSock = openedSockets[0]
+    // Trigger a fake disconnect to grow the backoff.
+    initialSock.onclose?.({} as CloseEvent)
+
+    __simulateVisibilityForTests(true)
+    __simulateVisibilityForTests(false)
+    // On show, a new connect runs synchronously (no backoff wait) — the
+    // socket count must have grown by 1 immediately.
+    expect(openedSockets.length).toBeGreaterThanOrEqual(2)
   })
 })
