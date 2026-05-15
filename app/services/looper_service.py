@@ -568,6 +568,40 @@ class LooperService:
         self._record_activity("redo", track, f"track {track} redo")
         return self._broadcast(self.get_status())
 
+    # -------- T2523 transport stomps (Maschine MK1 + future surfaces) --------
+
+    def play_track(self, track: int) -> LooperStatus:
+        """T2523 — resume / re-start playback on a track that already
+        has content. Engine-bound when ``looper_play`` is available;
+        otherwise a service-level activity record so the operator's
+        controller surface stays responsive against the deferred RT
+        engine binding (T2511)."""
+        _validate_track(track)
+        if self._engine and hasattr(self._engine, "looper_play"):
+            self._engine.looper_play(track)
+        self._record_activity("play", track, f"track {track} play")
+        return self._broadcast(self.get_status())
+
+    def restart_track(self, track: int) -> LooperStatus:
+        """T2523 — jump the track's playhead back to loop start
+        without erasing content. Engine-bound when
+        ``looper_restart`` is available."""
+        _validate_track(track)
+        if self._engine and hasattr(self._engine, "looper_restart"):
+            self._engine.looper_restart(track)
+        self._record_activity("restart", track, f"track {track} restart")
+        return self._broadcast(self.get_status())
+
+    def toggle_quantize(self, track: int) -> LooperStatus:
+        """T2523 — Maschine "Note Repeat" semantics: flip the track's
+        quantize grid between ``off`` and ``quarter``. Wraps the
+        existing ``set_quantize_division`` setter so the activity log,
+        broadcast, and lock-enforcement stay consistent."""
+        _validate_track(track)
+        current = self._quantize_division[track]
+        nxt = "quarter" if current == "off" else "off"
+        return self.set_quantize_division(track, nxt)
+
     # -------- Settings --------
 
     def set_level_db(self, track: int, db: float) -> LooperStatus:

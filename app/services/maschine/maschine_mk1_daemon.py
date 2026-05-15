@@ -107,6 +107,16 @@ from app.services.maschine_lcd_service import (
 from app.services.maschine_service import MaschineService
 from app.services.automation_engine import automation_engine
 from app.services.sequencer_service import get_sequencer_service
+# T2523 — Maschine MK1 transport buttons drive the multi-track Looper
+# in addition to the existing /api/transport/* dispatch. Looper service
+# is local Python; calling it directly avoids the HTTP round-trip and
+# the loop-amplification that would come from binding the HTTP endpoint
+# back into the same process.
+from app.services.looper_service import (
+    LooperService,
+    LooperServiceError,
+    get_looper_service,
+)
 # T2482 loop 9 / iter 86: rtmidi import + dispose helper removed.
 # Virtual-port creation goes exclusively through the controller-host's
 # MidiCreateVirtualPortRequest IPC envelope (iter 75). The legacy
@@ -3142,6 +3152,63 @@ class MaschineMK1Daemon:
             response.raise_for_status()
         except Exception as exc:
             LOGGER.debug("Transport action %s failed: %s", action, exc)
+        # T2523 — fold the same transport press into the Looper service.
+        # The five MK1 transport buttons drive Mixxx-style stomps on the
+        # active looper track (Track 0 for v1 — multi-track active-track
+        # selection lands once the operator picks a UX). Engine-side
+        # transport state is owned by the looper service; broadcasting
+        # is handled there.
+        self._dispatch_looper_transport(action)
+
+    # ------------------------------------------------------------------
+    # T2523 — Maschine MK1 transport buttons → Looper service
+    # ------------------------------------------------------------------
+
+    _LOOPER_ACTIVE_TRACK = 0  # v1: pin to Track 0 (4-track active-track
+    # selector lands when the operator picks a SHIFT-combo / pad-bank
+    # convention — filed as T2523 follow-on).
+
+    def _dispatch_looper_transport(self, action: str) -> None:
+        """T2523 — route a Maschine transport button press into the
+        Looper service. Mixxx-style state machine:
+
+        - ``play``    → ``play_track`` (resume / re-trigger)
+        - ``stop``    → ``stop_track`` (preserves loop content)
+        - ``record``  → ``record`` (state-machine: arm → record → close)
+        - ``restart`` → ``restart_track`` (jump to loop start)
+        - ``erase``   → ``clear`` (destroys content; long-press confirm
+                                  lives in the GUI surface)
+
+        All four mutating verbs respect the per-track write lock the
+        operator may have set; ``LooperServiceError("track_locked")`` is
+        swallowed to a debug log so a locked track produces silence on
+        the controller rather than a daemon crash.
+        """
+        track = self._LOOPER_ACTIVE_TRACK
+        try:
+            service: LooperService = get_looper_service()
+            if action == "play":
+                service.play_track(track)
+            elif action == "stop":
+                service.stop_track(track)
+            elif action == "record":
+                service.record(track)
+            elif action == "restart":
+                service.restart_track(track)
+            elif action == "erase":
+                service.clear(track)
+            else:
+                LOGGER.debug("Looper transport: unknown action %s", action)
+        except LooperServiceError as exc:
+            LOGGER.debug(
+                "Looper transport %s skipped on track %d: %s",
+                action, track, exc,
+            )
+        except Exception as exc:  # noqa: BLE001
+            LOGGER.warning(
+                "Looper transport %s failed on track %d: %s",
+                action, track, exc,
+            )
 
     def _cancel_active_long_operation(self, client: httpx.Client) -> bool:
         snapshot = self._long_operation_feedback.snapshot(now=time.monotonic())

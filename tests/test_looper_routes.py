@@ -1445,6 +1445,55 @@ def test_post_state_applies_payload_and_returns_status() -> None:
     assert body["tracks"][2]["auto_threshold_db"] == -24.0
 
 
+# ---------------------------------------------------------------------------
+# T2523 — Maschine MK1 transport routes (play / restart / toggle-quantize)
+# ---------------------------------------------------------------------------
+
+
+def test_play_route_returns_200_with_status_payload() -> None:
+    client, _, _ = _build_client()
+    resp = client.post("/api/v1/looper/track/0/play")
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["tracks"][0]["track"] == 0
+
+
+def test_restart_route_returns_200_with_status_payload() -> None:
+    client, _, _ = _build_client()
+    resp = client.post("/api/v1/looper/track/3/restart")
+    assert resp.status_code == 200
+    body = resp.json()
+    assert body["tracks"][3]["track"] == 3
+
+
+def test_toggle_quantize_route_flips_division() -> None:
+    client, _, _ = _build_client()
+    resp = client.post("/api/v1/looper/track/0/toggle-quantize")
+    assert resp.status_code == 200
+    assert resp.json()["tracks"][0]["quantize_division"] == "quarter"
+    resp = client.post("/api/v1/looper/track/0/toggle-quantize")
+    assert resp.json()["tracks"][0]["quantize_division"] == "off"
+
+
+def test_play_route_invalid_track_returns_400() -> None:
+    client, _, _ = _build_client()
+    resp = client.post("/api/v1/looper/track/9/play")
+    assert resp.status_code == 400
+
+
+def test_restart_route_invalid_track_returns_400() -> None:
+    client, _, _ = _build_client()
+    resp = client.post("/api/v1/looper/track/-1/restart")
+    # FastAPI rejects negative path int as 422
+    assert resp.status_code in (400, 422)
+
+
+def test_toggle_quantize_invalid_track_returns_400() -> None:
+    client, _, _ = _build_client()
+    resp = client.post("/api/v1/looper/track/4/toggle-quantize")
+    assert resp.status_code == 400
+
+
 def test_state_route_round_trip() -> None:
     """GET /state → mutate via setters → GET /state again must reflect
     the mutations. POST /state must reverse them."""

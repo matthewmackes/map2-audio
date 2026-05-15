@@ -361,6 +361,53 @@ async def redo_stomp(track: int,
     return LooperStatusResponse.from_status(result)
 
 
+# ---------------------------------------------------------------------------
+# T2523 — Maschine MK1 (and any future transport surface) needs explicit
+# play / restart / quantize-toggle verbs. Engine binding lands with T2511;
+# the routes work today against the service-layer state machine + activity
+# log so the operator's controller wiring is reachable end-to-end.
+# ---------------------------------------------------------------------------
+
+
+@router.post("/track/{track}/play",
+             response_model=LooperStatusResponse,
+             operation_id="looper_play_stomp",
+             summary="Resume / re-trigger playback on a track with content (T2523)")
+async def play_stomp(track: int,
+                     service: LooperService = Depends(_get_service)) -> LooperStatusResponse:
+    try:
+        result = service.play_track(track)
+    except LooperServiceError as exc:
+        raise _http_for_error(exc)
+    return LooperStatusResponse.from_status(result)
+
+
+@router.post("/track/{track}/restart",
+             response_model=LooperStatusResponse,
+             operation_id="looper_restart_stomp",
+             summary="Jump the track playhead back to loop start (T2523)")
+async def restart_stomp(track: int,
+                        service: LooperService = Depends(_get_service)) -> LooperStatusResponse:
+    try:
+        result = service.restart_track(track)
+    except LooperServiceError as exc:
+        raise _http_for_error(exc)
+    return LooperStatusResponse.from_status(result)
+
+
+@router.post("/track/{track}/toggle-quantize",
+             response_model=LooperStatusResponse,
+             operation_id="looper_toggle_quantize",
+             summary="Toggle the track's quantize grid off↔quarter (T2523)")
+async def toggle_quantize(track: int,
+                          service: LooperService = Depends(_get_service)) -> LooperStatusResponse:
+    try:
+        result = service.toggle_quantize(track)
+    except LooperServiceError as exc:
+        raise _http_for_error(exc)
+    return LooperStatusResponse.from_status(result)
+
+
 @router.patch("/track/{track}/level",
               response_model=LooperStatusResponse,
               operation_id="looper_set_track_level",

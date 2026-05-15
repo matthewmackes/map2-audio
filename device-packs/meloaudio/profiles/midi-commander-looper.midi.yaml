@@ -27,7 +27,7 @@ scripts:
   # ``Looper.track_<n>.<verb>`` global to ``engine.setValue(...)``
   # calls; the dispatcher (T2512-MIDI) routes the resulting
   # engine_command frames into LooperService.
-  - ../../_generic/midi-learn-looper/scripts/looper.js
+  - ../_generic/midi-learn-looper/scripts/looper.js
 
 controls:
   # ---------- Row 1 — Track 0 stomp surface ----------

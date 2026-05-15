@@ -2703,3 +2703,102 @@ def test_reorder_presets_invalid_name_raises_invalid_preset_name() -> None:
     with pytest.raises(LooperServiceError) as exc:
         service.reorder_presets([""])
     assert exc.value.code == "invalid_preset_name"
+
+
+# ---------------------------------------------------------------------------
+# T2523 — transport stomps (Maschine MK1 + future surfaces)
+# ---------------------------------------------------------------------------
+
+
+class _FakePlayRestartEngine(_FakeEngine):
+    """Adds T2523 play / restart bindings to the existing fake."""
+
+    def __init__(self) -> None:
+        super().__init__()
+        self.play_calls: list[int] = []
+        self.restart_calls: list[int] = []
+
+    def looper_play(self, track: int) -> None:
+        self.play_calls.append(track)
+
+    def looper_restart(self, track: int) -> None:
+        self.restart_calls.append(track)
+
+
+def test_play_track_invokes_engine_and_records_activity() -> None:
+    engine = _FakePlayRestartEngine()
+    service = LooperService(engine=engine)
+    service.play_track(0)
+    assert engine.play_calls == [0]
+    activity = service.get_activity()
+    assert any(ev.verb == "play" and ev.track == 0 for ev in activity)
+
+
+def test_restart_track_invokes_engine_and_records_activity() -> None:
+    engine = _FakePlayRestartEngine()
+    service = LooperService(engine=engine)
+    service.restart_track(2)
+    assert engine.restart_calls == [2]
+    activity = service.get_activity()
+    assert any(ev.verb == "restart" and ev.track == 2 for ev in activity)
+
+
+def test_play_track_no_engine_binding_still_records_activity() -> None:
+    """T2511 RT engine binding lands later; the service-layer activity
+    log + WS broadcast must work today so the controller UX is testable
+    against the deferred engine slice."""
+    received: list = []
+    service = LooperService(broadcaster=received.append)
+    service.play_track(1)
+    assert len(received) == 1
+    activity = service.get_activity()
+    assert any(ev.verb == "play" and ev.track == 1 for ev in activity)
+
+
+def test_restart_track_no_engine_binding_still_records_activity() -> None:
+    received: list = []
+    service = LooperService(broadcaster=received.append)
+    service.restart_track(3)
+    assert len(received) == 1
+    activity = service.get_activity()
+    assert any(ev.verb == "restart" and ev.track == 3 for ev in activity)
+
+
+def test_play_track_invalid_track_raises_invalid_track() -> None:
+    service = LooperService()
+    with pytest.raises(LooperServiceError) as exc:
+        service.play_track(4)
+    assert exc.value.code == "invalid_track"
+
+
+def test_restart_track_invalid_track_raises_invalid_track() -> None:
+    service = LooperService()
+    with pytest.raises(LooperServiceError) as exc:
+        service.restart_track(-1)
+    assert exc.value.code == "invalid_track"
+
+
+def test_toggle_quantize_flips_off_to_quarter_and_back() -> None:
+    service = LooperService()
+    assert service.get_status().tracks[0].quantize_division == "off"
+    service.toggle_quantize(0)
+    assert service.get_status().tracks[0].quantize_division == "quarter"
+    service.toggle_quantize(0)
+    assert service.get_status().tracks[0].quantize_division == "off"
+
+
+def test_toggle_quantize_invalid_track_raises_invalid_track() -> None:
+    service = LooperService()
+    with pytest.raises(LooperServiceError) as exc:
+        service.toggle_quantize(99)
+    assert exc.value.code == "invalid_track"
+
+
+def test_toggle_quantize_broadcasts_each_press() -> None:
+    received: list = []
+    service = LooperService(broadcaster=received.append)
+    received.clear()
+    service.toggle_quantize(0)
+    service.toggle_quantize(0)
+    # set_quantize_division broadcasts; toggle_quantize delegates.
+    assert len(received) == 2

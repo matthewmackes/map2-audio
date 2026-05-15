@@ -24,7 +24,7 @@ identity:
   variant: looper-4track
 
 scripts:
-  - ../../_generic/midi-learn-looper/scripts/looper.js
+  - ../_generic/midi-learn-looper/scripts/looper.js
 
 controls:
   # ---------- Row 1 — Record stomps for tracks 0-3 ----------

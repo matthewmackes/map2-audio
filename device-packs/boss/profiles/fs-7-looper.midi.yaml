@@ -20,7 +20,7 @@ scripts:
   # T2512-SCRIPT — inherit the generic looper handler library so the
   # release-at-zero filter + indexed-enum semantics come from one
   # canonical place.
-  - ../../_generic/midi-learn-looper/scripts/looper.js
+  - ../_generic/midi-learn-looper/scripts/looper.js
 
 controls:
   # ---------- Switch A — record / play / overdub stomp ----------
