@@ -36,6 +36,10 @@ from app.services.devices import (
     tascam_us144mkii_meters,  # noqa: F401 — import for registration side-effect
 )
 from app.services.devices._meter_source import get_registry
+from app.services.devices._meter_ws_schema import (
+    ClusterMeterRegistryFrame,
+    DeviceMeterRegistryFrame,
+)
 
 
 router = APIRouter(
@@ -112,6 +116,72 @@ class DeviceRegistryResponse(BaseModel):
     """
 
     devices: List[DeviceRegistryEntry]
+
+
+class PeakMeterWsSchemaResponse(BaseModel):
+    """Canonical schema export for the device-peak-meters WebSocket
+    frame envelope. The route returns BOTH frame variants' JSON
+    schemas so frontend codegen tooling (e.g. quicktype, json-schema-to-ts)
+    has a single source of truth without scraping the route handlers.
+
+    Established by the run-13i handoff (2026-05-14) as next-session
+    order-1 pick. See `app/services/devices/_meter_ws_schema.py` for
+    the canonical Pydantic models.
+    """
+
+    registry_topic: str = Field(
+        "device_peak_meters:registry",
+        description="Frame `type` value for the local stream endpoint.",
+    )
+    cluster_topic: str = Field(
+        "device_peak_meters:cluster_registry",
+        description="Frame `type` value for the cluster stream endpoint.",
+    )
+    schema_version: int = Field(
+        1,
+        description="Current schema version. Bumped only on breaking changes.",
+    )
+    registry_schema: dict = Field(
+        ...,
+        description=(
+            "Full JSON Schema for the local registry frame envelope "
+            "(top-level + nested device/snapshot models)."
+        ),
+    )
+    cluster_schema: dict = Field(
+        ...,
+        description=(
+            "Full JSON Schema for the cluster registry frame envelope."
+        ),
+    )
+
+
+@router.get(
+    "/peak-meters/ws-schema",
+    response_model=PeakMeterWsSchemaResponse,
+    summary="Canonical WebSocket frame envelope schema",
+)
+async def get_peak_meters_ws_schema() -> PeakMeterWsSchemaResponse:
+    """Publishes the canonical WS frame envelope schema as JSON Schema.
+
+    Use cases:
+    - Frontend codegen: feed the response into `json-schema-to-ts` to
+      generate TypeScript types that stay in lockstep with the backend.
+    - Test assertions: cross-process schema validation (e.g. a separate
+      operator-tooling process can pin the schema version).
+    - Operator diagnostics: confirm a running backend's frame envelope
+      matches the version the GUI expects before reproducing a metering
+      regression.
+
+    The schemas are derived from the canonical Pydantic models in
+    `app/services/devices/_meter_ws_schema.py` — single source of truth
+    for both the route handlers' frame emission AND test consumers'
+    frame validation.
+    """
+    return PeakMeterWsSchemaResponse(
+        registry_schema=DeviceMeterRegistryFrame.model_json_schema(),
+        cluster_schema=ClusterMeterRegistryFrame.model_json_schema(),
+    )
 
 
 @router.get("/peak-meters/registry", response_model=DeviceRegistryResponse)
