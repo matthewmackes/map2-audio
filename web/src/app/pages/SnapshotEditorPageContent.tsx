@@ -14,7 +14,7 @@
  */
 
 import { Fragment, useState, useCallback, useMemo, useEffect, useRef, type CSSProperties, type KeyboardEvent as ReactKeyboardEvent } from 'react'
-import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query'
+import { useQueryClient } from '@tanstack/react-query'
 import {
   Add,
   ArrowLeft,
@@ -325,6 +325,7 @@ import { useSnapshotEditorMidiMutations } from './snapshotEditor/useSnapshotEdit
 import { useSnapshotEditorPresetMutations } from './snapshotEditor/useSnapshotEditorPresetMutations'
 import { useSnapshotEditorUndoRedoMutations } from './snapshotEditor/useSnapshotEditorUndoRedoMutations'
 import { useSnapshotEditorHeroPublishMutations } from './snapshotEditor/useSnapshotEditorHeroPublishMutations'
+import { useSnapshotEditorHeroHandlers } from './snapshotEditor/useSnapshotEditorHeroHandlers'
 import { useSnapshotEditorMetadataMutations } from './snapshotEditor/useSnapshotEditorMetadataMutations'
 import { useSnapshotEditorLockMutation } from './snapshotEditor/useSnapshotEditorLockMutation'
 import { useSnapshotEditorChainEditMutations } from './snapshotEditor/useSnapshotEditorChainEditMutations'
@@ -1806,22 +1807,18 @@ export function SnapshotEditorPage() {
     heroPublishActionPending,
   } = useSnapshotEditorHeroPublishMutations({ activeSnapshot, pushToast })
 
-  const handleHeroCopyMetadataValue = useCallback((value: string) => {
-    if (!value) return
-    if (typeof navigator !== 'undefined' && navigator.clipboard?.writeText) {
-      void navigator.clipboard.writeText(value).then(
-        () => pushToast('Copied to clipboard', 'success'),
-        () => pushToast('Clipboard copy blocked by browser', 'warn'),
-      )
-      return
-    }
-    pushToast('Clipboard not available', 'warn')
-  }, [pushToast])
-
-  const handleHeroNavigateToPublishPage = useCallback(() => {
-    if (!activeSnapshot) return
-    navigate(`/snapshots/${activeSnapshot.id}/publish`)
-  }, [activeSnapshot, navigate])
+  // T2473 cycle 33 — hero-card handlers extracted into a sibling
+  // hook. Behavior preserved verbatim; see
+  // `useSnapshotEditorHeroHandlers.ts` for the canonical
+  // implementation.
+  const {
+    handleHeroCopyMetadataValue,
+    handleHeroNavigateToPublishPage,
+  } = useSnapshotEditorHeroHandlers({
+    activeSnapshot,
+    navigate,
+    pushToast,
+  })
 
   // Active-snapshot metadata mutations (rename / program / description / tempo)
   // are extracted into useSnapshotEditorMetadataMutations and called below
@@ -2850,8 +2847,11 @@ export function SnapshotEditorPage() {
     pushToast,
   })
 
-  // T2472 mutation extraction slice 17 — update-authority-live-chains mutation
-  // (the last remaining inline useMutation in the monolith)
+  // T2472 mutation extraction slice 17 — update-authority-live-chains
+  // mutation. With this extraction (and the subsequent `useMutation`
+  // import drop in cycle 33), zero inline `useMutation` blocks remain
+  // on the SnapshotEditor monolith — the page composes only via
+  // extracted hooks.
   const { updateAuthorityLiveChainsMutation } = useSnapshotEditorUpdateAuthorityLiveChainsMutation({
     authoritySnapshotId,
     cancelControlPlaneSnapshotCaches,
