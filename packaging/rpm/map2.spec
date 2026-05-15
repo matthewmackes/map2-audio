@@ -69,6 +69,12 @@ cp -r tui %{buildroot}/opt/map2-audio/
 cp -r lcd %{buildroot}/opt/map2-audio/
 cp -r scripts %{buildroot}/opt/map2-audio/
 cp -r device-packs %{buildroot}/opt/map2-audio/
+# T2529-A6 — operator-facing install docs land under the app tree so the
+# `Documentation=file:///opt/map2-audio/docs/install/SERVICE_USER.md`
+# directives on the service units resolve. We only ship the `install/`
+# subtree (not all of docs/, which is 100+ MB of architecture/RFC content).
+mkdir -p %{buildroot}/opt/map2-audio/docs/install
+cp -r docs/install/. %{buildroot}/opt/map2-audio/docs/install/
 cp requirements-backend-runtime.txt %{buildroot}/opt/map2-audio/
 cp requirements-installer.txt %{buildroot}/opt/map2-audio/
 cp LICENSE README.md %{buildroot}/opt/map2-audio/
