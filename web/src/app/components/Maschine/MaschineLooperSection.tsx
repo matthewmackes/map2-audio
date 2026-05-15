@@ -1,8 +1,9 @@
 import { Button, Tag, Tile } from '@carbon/react'
-import { useMutation, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useMutation } from '@tanstack/react-query'
 import { useEffect, useMemo } from 'react'
 
 import { looperApi, type LooperStatus } from '../../../map2/clients/looper'
+import { useLooperLiveStatus } from '../../hooks/useLooperLiveStatus'
 import type { MaschineHidEvent } from '../../../map2/types'
 
 // T2523-C — Performance tab Looper section.
@@ -22,7 +23,6 @@ import type { MaschineHidEvent } from '../../../map2/types'
 // the GUI mirror gets push updates in real time.
 
 const ACTIVE_TRACK = 0
-const STATUS_POLL_MS = 250
 
 interface TransportButtonProps {
   label: string
@@ -90,38 +90,18 @@ interface MaschineLooperSectionProps {
 }
 
 export function MaschineLooperSection({ hidEvents }: MaschineLooperSectionProps) {
-  const queryClient = useQueryClient()
-  const statusQuery = useQuery<LooperStatus>({
-    queryKey: ['looper', 'status'],
-    queryFn: () => looperApi.getStatus(),
-    refetchInterval: STATUS_POLL_MS,
-    staleTime: 0,
-  })
+  // T2523-D — single source of truth for live looper state. The
+  // hook subscribes to the ``looper:status`` WS topic + falls back
+  // to a 2s safety-net refresh while the WS is closed. Mutations
+  // still go through looperApi directly; the bridge broadcasts the
+  // post-mutation status frame back here.
+  const live = useLooperLiveStatus()
 
-  const refresh = () => {
-    queryClient.invalidateQueries({ queryKey: ['looper', 'status'] })
-  }
-
-  const playMutation = useMutation({
-    mutationFn: () => looperApi.play(ACTIVE_TRACK),
-    onSuccess: refresh,
-  })
-  const stopMutation = useMutation({
-    mutationFn: () => looperApi.stop(ACTIVE_TRACK),
-    onSuccess: refresh,
-  })
-  const recordMutation = useMutation({
-    mutationFn: () => looperApi.record(ACTIVE_TRACK),
-    onSuccess: refresh,
-  })
-  const restartMutation = useMutation({
-    mutationFn: () => looperApi.restart(ACTIVE_TRACK),
-    onSuccess: refresh,
-  })
-  const eraseMutation = useMutation({
-    mutationFn: () => looperApi.clear(ACTIVE_TRACK),
-    onSuccess: refresh,
-  })
+  const playMutation = useMutation({ mutationFn: () => looperApi.play(ACTIVE_TRACK) })
+  const stopMutation = useMutation({ mutationFn: () => looperApi.stop(ACTIVE_TRACK) })
+  const recordMutation = useMutation({ mutationFn: () => looperApi.record(ACTIVE_TRACK) })
+  const restartMutation = useMutation({ mutationFn: () => looperApi.restart(ACTIVE_TRACK) })
+  const eraseMutation = useMutation({ mutationFn: () => looperApi.clear(ACTIVE_TRACK) })
 
   // Subtle visual cue: flash the matching button briefly when the
   // physical transport press lands. Implemented via a transient
@@ -145,7 +125,7 @@ export function MaschineLooperSection({ hidEvents }: MaschineLooperSectionProps)
     return () => window.clearTimeout(handle)
   }, [hidEvents])
 
-  const tracks = statusQuery.data?.tracks ?? []
+  const tracks = live.status?.tracks ?? []
   const paddedTracks = useMemo(() => {
     const list = [...tracks]
     while (list.length < 4) {
@@ -178,18 +158,18 @@ export function MaschineLooperSection({ hidEvents }: MaschineLooperSectionProps)
     return list.slice(0, 4)
   }, [tracks])
 
-  const masterLevelDb = statusQuery.data?.master_level_db ?? 0
-  const masterMuted = statusQuery.data?.master_muted ?? false
-  const activeCount = statusQuery.data?.active_track_count ?? 0
-  const bpm = statusQuery.data?.bpm ?? null
-  const syncMasterTrack = statusQuery.data?.sync_master_track ?? null
+  const masterLevelDb = live.status?.master_level_db ?? 0
+  const masterMuted = live.status?.master_muted ?? false
+  const activeCount = live.status?.active_track_count ?? 0
+  const bpm = live.status?.bpm ?? null
+  const syncMasterTrack = live.status?.sync_master_track ?? null
 
   return (
     <Tile className="maschine-perf__looper-section" data-testid="maschine-looper-section">
       <div className="maschine-perf__looper-header">
         <h4>Looper</h4>
-        <Tag size="sm" type={statusQuery.data ? 'green' : 'warm-gray'}>
-          {statusQuery.data ? 'Live' : 'Connecting…'}
+        <Tag size="sm" type={live.status ? 'green' : 'warm-gray'}>
+          {live.status ? (live.isConnected ? 'Live' : 'Stale') : 'Connecting…'}
         </Tag>
         <Tag size="sm" type="cyan">{`Active ${activeCount}/4`}</Tag>
         <Tag size="sm" type={masterMuted ? 'red' : 'gray'}>
