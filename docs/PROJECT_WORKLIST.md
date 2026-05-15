@@ -92,6 +92,7 @@ Each task/subtask should contain these fields:
 - **T2473 cycle 33 progress (2026-05-15):** SnapshotEditor monolith janitorial — dropped two dead imports (`useQuery`, `useMutation` — every reference was already extracted into sibling hooks under `pages/snapshotEditor/`). New `useSnapshotEditorHeroHandlers` hook extracts `handleHeroCopyMetadataValue` + `handleHeroNavigateToPublishPage` (the two hero-card affordances) off the monolith into a 60 LoC sibling hook with 6 paired jest cases (clipboard happy path / blocked / unavailable / empty-value no-op / null-snapshot no-op / publish-page route). Behavioral parity preserved verbatim. Monolith net 5671 → 5668 LoC; SnapshotEditor jest sweep 547/547 green (was 541, +6 new); production build clean (`SnapshotEditorPageContent-BejWvTxf.js`). **Cycle 37 (2026-05-15):** Extracted the module-top `hydrateSnapshotEditorStoreOnce()` one-shot store hydrator (~45 LoC) into a new `./snapshotEditor/hydrateSnapshotEditorStore.ts` sibling module + paired test (8 cases: one-shot latch, current-key vs legacy-key fallback, selectedCategory='all' default, collapsed-categories JSON parse, malformed-JSON / non-array fallback, non-string-entry filtering). Test seam added: `resetSnapshotEditorStoreHydration()` clears the latch so tests can re-hydrate with fresh fixtures. Monolith 5668 → 5623 LoC (-45); SnapshotEditor jest sweep 581/581 green (was 547, +34 across cycles 35-37); production build clean (`SnapshotEditorPageContent-BbQVnSiA.js`).
 - `[✓]` `T2526` — **SynthForge/Sequencer GUI tab information-architecture review** — closed 2026-05-15. Review found 13 flat Sequencer tree children plus 5 inner overview tabs, duplicate labels (`Performance`/`Perform`, `Step`/`Sequence`), hidden `Setup`, and no dedicated SynthForge component/page despite live SynthForge API/import paths. Recommended regrouping into task-domain primary modes with secondary tabs.
 - `[ ]` `T2527` — **SynthForge/Sequencer tab regroup implementation** — follow-up candidate: collapse flat 13-section navigation into primary task domains with secondary tabs/drawer entries, pending operator approval.
+- `[>]` `T2529` — **`mm`/UID-1000 account → dedicated `map2` service user + FHS install (PRIMARY EFFORT 2026-05-15) → dedicated `map2` service user + FHS install (NEW PRIMARY EFFORT 2026-05-15).** Operator directive: fully migrate the platform to a dedicated system service user, FHS-compliant install layout, full POSIX/GNU standardization, well documented, rock solid. All other in-progress work is on hold until this completes. **Locked decisions (Q1-Q5):** (Q1) System user with per-machine UID via `/etc/login.defs UID_MIN` — `useradd --system` honors the host's UID range automatically. Group memberships: `audio`, `pipewire`, `video`, `input`, `plugdev`. Shell: `/sbin/nologin`. (Q2) **System-wide PipeWire instance** (FHS-pure) — switch from per-user `/run/user/<UID>/pipewire` to the system-wide instance at `/run/pipewire-system/`. `map2` user joins `pipewire-system` group. Installer flips `pipewire-system.service` at install time. (Q3) **Strict FHS §3 split**: `/opt/map2-audio/` (immutable application tree) + `/etc/map2/` (system config) + `/var/lib/map2/` (persistent state) + `/var/cache/map2/` (caches) + `/var/log/map2/` (logs) + `/run/map2/` (runtime sockets + PID files) + `/usr/lib/systemd/system/map2-*.service` (units) + `/usr/bin/map2-cli`, `map2-self-test` (symlinks). Operator preferences at `~/.config/map2/` per the X-user interacting with the platform. (Q4) **Fresh install only — no migration shim.** Document that the new `map2`-user layout is for fresh installs; existing `mm`-account installs continue running their current layout. (Q5) **Full test matrix**: Fedora 41 VM + Ubuntu 24.04 VM + non-mm operator account on dev host + RT audio gates re-run (xrun=0, jitter ≤0.35ms) + evidence dir at `docs/fit-for-purpose-evidence/<date>/t2528-service-user/`. **Implementation option: A + B + E (FULL HARDENING + CI MATRIX, 15-20 cycles).** A = sysusers.d/tmpfiles.d/RPM canonical packaging (FHS foundation). B = Capability sandboxing (`NoNewPrivileges`, `ProtectSystem=strict`, `CapabilityBoundingSet`, `SystemCallFilter=@system-service @audio @network-io`; target `systemd-analyze security` score < 2.0 per unit). E = rpmlint/lintian compliance + cross-distro CI install-matrix (Fedora 41 + Ubuntu 24.04 cloud-image VMs + clean-install verification + `map2-self-test --full`). **Subtasks A1-A6, B1-B4, E1-E5, V1-V2** filed in body. Cycle 1 (this commit): filing + decision lock.
 - `[✓]` `T2528` — **Expose existing Snapshot bundle downloads** — closed 2026-05-15. Snapshot explorer now shows a visible "Download bundle" link on every snapshot card, targeting the existing `GET /api/snapshots/{id}/export` `.map2snapshot` route directly. Removed the overflow-only blob-export action and cancelled the prior architecture-spike direction to construct another portable-snapshot solution. Focused Jest, typecheck, and production build clean; no installer/environment changes required.
 - `[✓]` `T2500-MV` — MIDI Connections Visualization (closed 2026-05-10; all 18 subtasks shipped in one bundle). `/midi/connections/visualization` mounts a live three-tier `<SignalFlowGraph>` (Devices ↔ Mappings ↔ Engine targets) over a new `/ws/midi/visualization` WS that replays a rolling 5-min `MidiTrafficBuffer` on connect and live-streams events. Particle/heatmap canvas overlay + Carbon detail drawer + filter bar. Backend wiring: dispatcher gains `iter_registrations()` introspection + `subscribe()` observer registry; new `MidiVisualizationProducerBridge` mirrors dispatched + raw events into the buffer; new topology + WS routes registered in `app/main.py`. 54 backend tests + 23 jest tests green; backend live at `http://127.0.0.1:8080/api/midi/visualization/graph` (200, returns 4 registered targets); WS replay handshake verified; web preview serves the new bundle hash on port 3000.
 - `[✓]` `T2500` — Cabinet IR + Reverb IR pickers fix in Snapshot Editor (closed 2026-05-08; root cause was `appendNodeQuery` accepting a TanStack `QueryFunctionContext` object as `nodeId` and stringifying it to `[object Object]`. Fixed at the http.ts seam — single-line type-guard tightening neutralizes this class of bug for every bare `queryFn` reference. 15 new http unit tests; modal now surfaces real backend errors via the existing `getErrorMessage` helper).
@@ -221,6 +222,247 @@ Progress notes:
 - 2026-05-15 10:00 EDT - Codex: answered storage-format discovery. Current canonical persisted shape is a local MAP2 JSON graph document (`snapshots.document`, revisions in `snapshot_revisions.document`) validated by `schemas/snapshot-graph-v1.schema.json` v2026.05 and normalized by `app/services/state_authority_graph.py`. Existing portable artifact is `.map2snapshot` (`application/vnd.map2.snapshot+zip`) containing `snapshot.json` plus bundled assets. Ansible is not required for snapshot parsing; it remains an optional outer host-provisioning layer. Platform-layer review: documentation/worklist-only; no code dependency/service/build/runtime changes.
 - 2026-05-15 09:56 EDT - Codex: operator directed implementation: expose the existing bundle download as a per-snapshot link in the Snapshot explorer and remove any plan to construct another solution. Scope rewritten from architecture spike to existing-bundle UI exposure.
 - 2026-05-15 10:02 EDT - Codex: shipped `web/src/app/components/artifacts/SnapshotArtifactsWorkspace.tsx` visible per-card bundle link (`/api/snapshots/{snapshot_id}/export`) with Download icon and direct `download` anchor; removed the old overflow-only `Export snapshot` blob mutation to keep one download path. Converted snapshot cards from nested `<button>` containers to focusable `<article role="listitem">` cards so the link, pin, and overflow controls are not invalid nested buttons. Added `web/src/app/components/artifacts/SnapshotArtifactsWorkspace.test.tsx` and CSS in `web/src/app/pages/AudioArtifactsPage.css`. Validation: `npm --prefix web test -- --runInBand --runTestsByPath src/app/components/artifacts/SnapshotArtifactsWorkspace.test.tsx` PASS; `npm --prefix web run typecheck` PASS; `npm --prefix web run build` PASS (`AudioArtifactsPage-B47xCS4A.js`). Platform-layer review: frontend-only exposure of an existing API route; no new dependencies, packages, services, runtime assumptions, build requirements, installer, or environment changes required. Licensing: MAP2-owned AGPL UI/test/CSS only; no third-party additions or notice changes.
+
+
+## T2529 — Untie platform from `mm`/UID-1000 account → dedicated `map2` service user + FHS install (NEW PRIMARY EFFORT)
+
+**Filed:** 2026-05-15 — operator-directed primary effort. All other in-progress work HELD until this completes.
+**Status:** `[>] In Progress` (cycle 1 of 20)
+**Implementation option:** A + B + E (FULL HARDENING + CI MATRIX)
+
+### Problem statement
+
+The MAP2 Audio Platform is tied to the `mm` operator account at multiple layers:
+- 12 systemd unit files in `systemd/` carry `User=mm`, `WorkingDirectory=/home/mm/map2-audio`, `XDG_RUNTIME_DIR=/run/user/1000`, `DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/1000/bus` — hard-coded to UID 1000 by literal string.
+- 30+ hardcoded `/home/mm/` paths in systemd units + RPM spec + installer scripts.
+- App-config layer reads from `~/.map2/`, `~/.config/pipewire/`, `~/.local/share/`, `~/.cache/` — all on the `mm` operator home.
+- PipeWire integration assumes a per-user session daemon (`/run/user/<UID>/pipewire-*`).
+
+A fresh install on a host where the first interactive user is NOT UID 1000 (or NOT named `mm`) silently fails at the audio path. The platform cannot be deployed to a customer site, a CI runner, or any non-`mm`-personal machine without manual surgery.
+
+### Locked decisions (operator-directed Q&A 2026-05-15)
+
+- **Q1 — Service user model:** `useradd --system` honoring `/etc/login.defs UID_MIN` for per-machine portability. Groups: `audio`, `pipewire`, `video`, `input`, `plugdev`. Shell: `/sbin/nologin`. Home: `/var/lib/map2`.
+- **Q2 — PipeWire model:** System-wide PipeWire instance (FHS-pure). Switch from per-user PipeWire to `pipewire-system.service` at `/run/pipewire-system/`. `map2` user joins `pipewire-system` group. `XDG_RUNTIME_DIR=/run/map2` bypasses the per-user runtime path entirely.
+- **Q3 — Install layout:** Strict FHS §3 split.
+  | Path | Purpose | Ownership |
+  |---|---|---|
+  | `/opt/map2-audio/` | Immutable application tree (Python, web/dist, juce-engine binaries, scripts) | `root:root 0755` |
+  | `/etc/map2/` | System config | `root:root 0755` |
+  | `/var/lib/map2/` | Persistent service state | `map2:map2 0755` |
+  | `/var/cache/map2/` | Caches | `map2:map2 0755` |
+  | `/var/log/map2/` | Logs | `map2:map2 0750` |
+  | `/run/map2/` | Runtime sockets + PID files | `map2:map2 0755` |
+  | `/usr/lib/systemd/system/map2-*.service` | Unit files | `root:root 0644` |
+  | `/usr/bin/map2-cli`, `/usr/bin/map2-self-test` | Operator-facing CLI entrypoints (symlinks into `/opt/map2-audio/scripts/`) | `root:root 0755` |
+  | `~/.config/map2/` (per-operator) | Operator preferences for the X-user interacting with the platform | `<operator>:<operator> 0755` |
+- **Q4 — Migration:** Fresh install only. No migration shim. Existing `mm`-account installs keep their current layout; the new `map2`-user layout is for fresh installs onto Fedora 41 / Ubuntu 24.04 hosts.
+- **Q5 — Verification:** Full test matrix.
+  - Clean Fedora 41 cloud-image VM install + full verify.
+  - Clean Ubuntu 24.04 cloud-image VM install + full verify.
+  - Non-mm operator account on the dev host (creates `testop` user, installs RPM, runs the platform under that account).
+  - RT audio gates re-run (xrun=0, peak jitter ≤0.35 ms).
+  - Evidence dir at `docs/fit-for-purpose-evidence/<date>/t2529-service-user/`.
+
+### Subtask plan (20 cycles)
+
+**Phase A — FHS foundation (cycles 2-9, 8 cycles):**
+
+- ID: T2529-A1
+  Status: [ ] Todo
+  Title: sysusers.d + tmpfiles.d declarative user + dir provisioning files
+  Description:
+  - `packaging/sysusers.d/map2.conf` declares the `map2` user with `u map2 - "MAP2 Audio Platform" /var/lib/map2 /sbin/nologin`.
+  - `packaging/tmpfiles.d/map2.conf` declares `/run/map2`, `/var/lib/map2`, `/var/cache/map2`, `/var/log/map2` with correct ownership + perms.
+  - `tests/test_t2529_sysusers_tmpfiles.py` pytest cases (≥6) verifying file presence + line shape.
+  - Why: systemd-native declarative provisioning honors `/etc/login.defs UID_MIN` automatically.
+  - Estimated: 1 cycle.
+
+- ID: T2529-A2
+  Status: [ ] Todo
+  Title: RPM spec `%pre` / `%post` / `%preun` / `%postun` scriptlets
+  Description:
+  - `%pre`: `systemd-sysusers --replace=/usr/lib/sysusers.d/map2.conf -` (creates user).
+  - `%post`: `systemd-tmpfiles --create map2.conf` + `usermod -aG audio,pipewire,pipewire-system,video,input,plugdev map2` + `firewall-cmd --reload` (best-effort).
+  - `%preun`: `systemctl stop map2-*.service` on full uninstall (arg=0); skip on upgrade.
+  - `%postun`: Drop firewalld fragment; deliberately do NOT remove the `map2` user (preserves `/var/lib/map2` data per FHS §5.5).
+  - pytest cases verifying scriptlet body shape.
+  - Estimated: 1 cycle.
+
+- ID: T2529-A3
+  Status: [ ] Todo
+  Title: Migrate all 12 systemd units to `User=map2` + FHS paths
+  Description:
+  - Every `User=mm` → `User=map2`, `Group=mm` → `Group=map2`.
+  - Every `WorkingDirectory=/home/mm/map2-audio` → `WorkingDirectory=/opt/map2-audio`.
+  - Every `Environment="PYTHONPATH=/home/mm/map2-audio"` → `Environment="PYTHONPATH=/opt/map2-audio"`.
+  - Every `XDG_RUNTIME_DIR=/run/user/1000` → `XDG_RUNTIME_DIR=/run/map2`.
+  - Every `ReadWritePaths=/home/mm/...` → minimum-needed FHS paths under `/var/lib/map2`, `/var/cache/map2`, `/var/log/map2`, `/run/map2`.
+  - Both `systemd/*.service` AND `packaging/systemd/*.service` copies (lockstep).
+  - pytest gate verifies the two copies match.
+  - Estimated: 2 cycles.
+
+- ID: T2529-A4
+  Status: [ ] Todo
+  Title: `app/config.py` + Python paths FHS-aware
+  Description:
+  - New `app/paths.py` module exposing the FHS-aware path constants:
+    `INSTALL_PREFIX=/opt/map2-audio`, `CONFIG_DIR=/etc/map2`, `STATE_DIR=/var/lib/map2`, `CACHE_DIR=/var/cache/map2`, `LOG_DIR=/var/log/map2`, `RUN_DIR=/run/map2`.
+  - Falls back to env-var overrides `MAP2_INSTALL_PREFIX`, `MAP2_CONFIG_DIR`, etc. for development setups.
+  - Every reader of `~/.map2/`, `~/.config/pipewire/99-map2-audio-latency.conf`, `~/.local/share/map2/` etc. migrates to the appropriate FHS path.
+  - Operator preferences remain at `~/.config/map2/` per the X-user interacting with the platform; the X-user reader uses `xdg.BaseDirectory.xdg_config_home`.
+  - pytest cases verify path computation + env-var override + the FHS layout.
+  - Estimated: 2 cycles.
+
+- ID: T2529-A5
+  Status: [ ] Todo
+  Title: System-wide PipeWire switch
+  Description:
+  - Installer flips per-user PipeWire to system-wide: `systemctl --global disable --now pipewire.socket pipewire.service` (informational warning) + `systemctl enable --now pipewire-system.service`.
+  - `~/.config/pipewire/99-map2-audio-latency.conf` content moves to `/etc/pipewire/pipewire-system.conf.d/99-map2-audio-latency.conf`.
+  - `pw-metadata` runs against the system instance (`-n /run/pipewire-system/pipewire-0`).
+  - `app/config.py` `EDIROL_UA1000["buffer_size"]` enforcement path uses the system-instance socket.
+  - pytest cases verify the configuration file shape.
+  - Estimated: 1 cycle.
+
+- ID: T2529-A6
+  Status: [ ] Todo
+  Title: Install layout + service-user documentation
+  Description:
+  - New `docs/install/SERVICE_USER.md` (~200 lines): lifecycle (install → upgrade → uninstall → manual cleanup).
+  - New `docs/install/FHS_LAYOUT.md`: every path in the install tree maps to its FHS §3 section with a rationale.
+  - `man map2-self-test` real `roff` man page under `/usr/share/man/man1/`.
+  - `CLAUDE.md` + `.gemini/instructions.md` updated with the new canonical paths.
+  - Estimated: 1 cycle.
+
+**Phase B — Capability sandboxing (cycles 10-13, 4 cycles):**
+
+- ID: T2529-B1
+  Status: [ ] Todo
+  Title: NoNewPrivileges / Protect* hardening on every unit
+  Description:
+  - Every unit gains: `NoNewPrivileges=true`, `ProtectSystem=strict`, `ProtectHome=true`, `ProtectKernelTunables=true`, `ProtectKernelModules=true`, `ProtectControlGroups=true`, `ProtectClock=true`, `PrivateTmp=true`, `RestrictSUIDSGID=true`, `LockPersonality=true`, `MemoryDenyWriteExecute=true` (where compatible with the engine's JIT-less Python path; verify per-unit), `RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6 AF_PACKET AF_NETLINK`, `RestrictNamespaces=true`.
+  - Per-unit ReadWritePaths trimmed to minimum.
+  - `systemd-analyze security <unit>` target < 2.0 ("OK") per unit; baseline numbers captured in evidence dir.
+  - Estimated: 1 cycle.
+
+- ID: T2529-B2
+  Status: [ ] Todo
+  Title: CapabilityBoundingSet + AmbientCapabilities per unit
+  Description:
+  - `map2-backend.service`: `CapabilityBoundingSet=CAP_SYS_NICE CAP_NET_RAW CAP_NET_BIND_SERVICE CAP_IPC_LOCK`; `AmbientCapabilities=CAP_SYS_NICE CAP_NET_RAW CAP_IPC_LOCK`.
+  - `map2-controller-host.service`: `CapabilityBoundingSet=CAP_SYS_NICE CAP_IPC_LOCK`; `AmbientCapabilities=CAP_SYS_NICE CAP_IPC_LOCK`.
+  - `map2-sonobus-transport.service`: `CapabilityBoundingSet=CAP_NET_BIND_SERVICE CAP_NET_RAW`; `AmbientCapabilities=CAP_NET_BIND_SERVICE`.
+  - All other units: minimum cap set (typically empty).
+  - Evidence: `getpcaps <pid>` snapshots per unit captured under the evidence dir.
+  - Estimated: 1 cycle.
+
+- ID: T2529-B3
+  Status: [ ] Todo
+  Title: SystemCallFilter seccomp policy
+  Description:
+  - `map2-backend.service`: `SystemCallFilter=@system-service @audio @network-io`.
+  - `map2-controller-host.service`: `SystemCallFilter=@system-service @audio`.
+  - `map2-sonobus-transport.service`: `SystemCallFilter=@system-service @network-io`.
+  - `SystemCallErrorNumber=EPERM` so denials log instead of crash.
+  - strace dry-run captures any denied syscalls during boot + first audio cycle; iteratively widen the filter (only if needed) and document the additions.
+  - Estimated: 1 cycle.
+
+- ID: T2529-B4
+  Status: [ ] Todo
+  Title: Security model documentation + man pages
+  Description:
+  - New `docs/install/SECURITY_MODEL.md`: per-unit capability list with rationale, seccomp posture, threat model.
+  - `man map2-security`: operational reference for the cap + seccomp posture.
+  - `systemd-analyze security` baseline scores recorded in the evidence dir.
+  - Estimated: 1 cycle.
+
+**Phase E — Quality gates + CI matrix (cycles 14-18, 5 cycles):**
+
+- ID: T2529-E1
+  Status: [ ] Todo
+  Title: rpmlint baseline + `.rpmlintrc`
+  Description:
+  - Run `rpmlint` against the built RPM. Resolve every WARNING. Document any unavoidable WARNINGs in `packaging/rpm/.rpmlintrc` with rationale.
+  - 0 ERRORS required.
+  - pytest gate: CI runs `rpmlint` and fails on any new warning.
+  - Estimated: 1 cycle.
+
+- ID: T2529-E2
+  Status: [ ] Todo
+  Title: `lintian` cross-distro compliance
+  Description:
+  - Build equivalent Debian package via `alien --to-deb` from the RPM.
+  - Run `lintian` against the .deb. Resolve every error per Debian Policy Manual §10 (file ownership), §9 (operating-system requirements), §3.7 (manual pages required).
+  - Document the rationale for any allowed exceptions.
+  - Estimated: 1 cycle.
+
+- ID: T2529-E3
+  Status: [ ] Todo
+  Title: CI install-matrix Fedora 41
+  Description:
+  - GitHub Actions / GitLab CI job: boots fresh Fedora 41 cloud-image in QEMU, installs the RPM, runs `map2-self-test --full`, verifies ownership + perms + service starts.
+  - Cleans up cleanly (`rpm -e map2` + verify `/var/lib/map2` preserved per FHS §5.5).
+  - Pass/fail gates the merge to master.
+  - Estimated: 1 cycle.
+
+- ID: T2529-E4
+  Status: [ ] Todo
+  Title: CI install-matrix Ubuntu 24.04
+  Description:
+  - Same matrix as Fedora but against Ubuntu 24.04 cloud-image (uses the .deb built via alien).
+  - Same pass/fail merge gate.
+  - Estimated: 1 cycle.
+
+- ID: T2529-E5
+  Status: [ ] Todo
+  Title: `map2-self-test --full` covers UID-agnostic checks
+  Description:
+  - Extends the existing self-test script with:
+    - Verify `map2` user exists with `id -un $(stat -c %U /var/lib/map2) == "map2"`.
+    - Verify `/var/lib/map2`, `/opt/map2-audio`, `/etc/map2`, `/run/map2`, `/var/cache/map2`, `/var/log/map2` all exist with correct ownership.
+    - Verify every `map2-*.service` is `active` or `inactive (dead)` (never failed).
+    - Verify the systemd unit `systemd-analyze security` score is below 2.0 per unit.
+    - Verify the PipeWire system-instance socket exists at `/run/pipewire-system/pipewire-0`.
+    - Verify `map2` user's group memberships include `audio`, `pipewire-system`.
+  - Output: structured JSON to `/var/log/map2/self-test-<timestamp>.json` + human-readable summary.
+  - Estimated: 1 cycle.
+
+**Phase V — Verification (cycles 19-20, 2 cycles):**
+
+- ID: T2529-V1
+  Status: [ ] Todo
+  Title: Clean-install VM matrix verification
+  Description:
+  - Manually drive the three install paths: Fedora 41 VM + Ubuntu 24.04 VM + non-mm operator account on dev host.
+  - Capture `map2-self-test --full` output for each as evidence.
+  - Document any operator-facing surprises in `docs/install/INSTALL_NOTES.md`.
+  - Estimated: 1 cycle.
+
+- ID: T2529-V2
+  Status: [ ] Todo
+  Title: RT audio gates re-run + evidence dir closeout
+  Description:
+  - Re-run the JUCE random-FX soak (`juce-random-effects-soak` skill) against the new `map2`-user install.
+  - Target: xrun=0, peak block jitter ≤0.35 ms, CPU headroom ≥30%.
+  - Compare against the previous `mm`-user soak evidence (same hardware, same config) and document any delta.
+  - Evidence dir at `docs/fit-for-purpose-evidence/<YYYYMMDD>/t2529-service-user/` with: `xrun_count.txt`, `peak_jitter_ms.txt`, `cpu_load.txt`, `systemd-analyze-security.txt`, `getpcaps-snapshot.txt`, `self-test-full.json`, `bench_runbook.md`.
+  - Estimated: 1 cycle.
+
+### Definition of Done
+
+1. All 18 subtasks closed (A1-A6, B1-B4, E1-E5, V1-V2).
+2. Three clean-install paths verified end-to-end (Fedora 41 VM, Ubuntu 24.04 VM, non-mm operator on dev host).
+3. RT audio soak passes the gates against the new install (≤0.35 ms peak jitter, 0 xruns, ≥30% CPU headroom).
+4. Every systemd unit scores < 2.0 on `systemd-analyze security`.
+5. CI install-matrix passes on every commit to master.
+6. Evidence dir + all install docs + man pages published.
+7. The five-services platform model docs (`FIRST_CLASS_SERVICES.md`, etc.) cross-reference the new install layout.
+8. `[>] In Progress` → `[✓] Done` with full closeout note.
+
+Assigned to: Claude
+Last updated: 2026-05-15 EDT - Claude: Filed as T2529 (T2528 was already in use for the Snapshot bundle download exposure). All 5 locked decisions captured. Implementation option A+B+E (full hardening + CI matrix) confirmed by operator.
+
 
 ## T2459 — Driver-to-completion campaign state (2026-05-08)
 
