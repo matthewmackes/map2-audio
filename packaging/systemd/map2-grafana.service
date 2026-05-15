@@ -27,6 +27,12 @@ RestartSec=5
 CapabilityBoundingSet=
 AmbientCapabilities=
 
+# T2529-B3 — seccomp allowlist.
+SystemCallFilter=@system-service
+SystemCallFilter=~@clock @cpu-emulation @debug @module @mount @obsolete @privileged @raw-io @reboot @resources @swap
+SystemCallErrorNumber=EPERM
+SystemCallArchitectures=native
+
 # T2529-B1 — full sandbox model.
 NoNewPrivileges=yes
 PrivateTmp=yes

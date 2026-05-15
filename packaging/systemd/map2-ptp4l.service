@@ -20,6 +20,14 @@ RestartSec=5s
 AmbientCapabilities=CAP_NET_ADMIN CAP_NET_RAW CAP_SYS_TIME
 CapabilityBoundingSet=CAP_NET_ADMIN CAP_NET_RAW CAP_SYS_TIME
 
+# T2529-B3 — seccomp allowlist. PTP4L's whole job is to adjust the PHC,
+# so @clock is in the allowlist (the matching ProtectClock=true was
+# deliberately omitted for the same reason).
+SystemCallFilter=@system-service @network-io @clock
+SystemCallFilter=~@cpu-emulation @debug @module @mount @obsolete @raw-io @reboot @resources @swap
+SystemCallErrorNumber=EPERM
+SystemCallArchitectures=native
+
 # T2529-B1 — sandbox model. PTP4L is a root daemon; the full Protect*
 # set applies the same as the AVB SRPD.
 NoNewPrivileges=true

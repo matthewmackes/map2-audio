@@ -21,6 +21,14 @@ RestartSec=5s
 AmbientCapabilities=CAP_NET_ADMIN CAP_NET_RAW
 CapabilityBoundingSet=CAP_NET_ADMIN CAP_NET_RAW
 
+# T2529-B3 — seccomp allowlist for the SRP/MSRP daemon. Raw socket
+# operations on the AVB interface are covered by @system-service +
+# @network-io (the AF_PACKET allowlist is granted via RestrictAddressFamilies).
+SystemCallFilter=@system-service @network-io
+SystemCallFilter=~@clock @cpu-emulation @debug @module @mount @obsolete @raw-io @reboot @resources @swap
+SystemCallErrorNumber=EPERM
+SystemCallArchitectures=native
+
 # T2529-B1 — full sandbox model. SRP/MSRP daemon is the AVB admission
 # control plane; runs as root because it needs raw socket access on the
 # AVB interface for IEEE 802.1Qat / 802.1AS PDUs.

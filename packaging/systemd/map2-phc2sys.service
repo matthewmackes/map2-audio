@@ -21,6 +21,13 @@ RestartSec=5s
 AmbientCapabilities=CAP_SYS_TIME CAP_NET_ADMIN
 CapabilityBoundingSet=CAP_SYS_TIME CAP_NET_ADMIN
 
+# T2529-B3 — seccomp allowlist. PHC2SYS sets the system clock from PHC,
+# so @clock is in the allowlist.
+SystemCallFilter=@system-service @network-io @clock
+SystemCallFilter=~@cpu-emulation @debug @module @mount @obsolete @raw-io @reboot @resources @swap
+SystemCallErrorNumber=EPERM
+SystemCallArchitectures=native
+
 # T2529-B1 — sandbox model.
 NoNewPrivileges=true
 PrivateTmp=true

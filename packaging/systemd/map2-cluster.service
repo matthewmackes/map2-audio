@@ -24,6 +24,13 @@ RestartSec=10
 # empty bounding set drops every CAP_*.
 CapabilityBoundingSet=
 AmbientCapabilities=
+
+# T2529-B3 — seccomp allowlist. Cluster service is Python + HTTP, same
+# minimal set as TUI.
+SystemCallFilter=@system-service
+SystemCallFilter=~@clock @cpu-emulation @debug @module @mount @obsolete @privileged @raw-io @reboot @resources @swap
+SystemCallErrorNumber=EPERM
+SystemCallArchitectures=native
 StandardOutput=journal
 StandardError=journal
 SyslogIdentifier=map2-cluster

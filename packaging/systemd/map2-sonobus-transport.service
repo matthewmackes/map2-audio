@@ -96,6 +96,14 @@ CPUAffinity=0 1 2 3
 AmbientCapabilities=CAP_SYS_NICE CAP_NET_BIND_SERVICE
 CapabilityBoundingSet=CAP_SYS_NICE CAP_NET_BIND_SERVICE
 
+# T2529-B3 — seccomp allowlist. The AOO source/sink uses JACK MIDI ports
+# for the audio handoff (covered by @audio) and UDP sockets for transport
+# (covered by @system-service).
+SystemCallFilter=@system-service @audio @resources
+SystemCallFilter=~@clock @cpu-emulation @debug @module @mount @obsolete @privileged @raw-io @reboot @swap
+SystemCallErrorNumber=EPERM
+SystemCallArchitectures=native
+
 # UDS socket cleanup — same pattern as map2-controller-host. systemd-tmpfiles
 # is authoritative; this mkdir/chmod pair keeps the unit self-contained
 # on hosts where tmpfiles hasn't yet run.

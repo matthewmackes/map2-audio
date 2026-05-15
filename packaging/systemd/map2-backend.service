@@ -130,6 +130,29 @@ IOSchedulingPriority=1
 AmbientCapabilities=CAP_SYS_NICE CAP_NET_RAW
 CapabilityBoundingSet=CAP_SYS_NICE CAP_NET_RAW
 
+# T2529-B3 — seccomp syscall allowlist. @system-service is the canonical
+# allowlist for service-style daemons (covers fork/exec/wait, basic file
+# I/O, signals, sockets, futex, mmap, etc.). We extend with:
+#   @audio        — ioctls needed by ALSA / JACK for audio device control
+#   @resources    — sched_setaffinity, setpriority, mlock (the JUCE audio
+#                   thread + memlock=infinity both need these)
+# We DROP:
+#   @clock        — set system time (covered by ProtectClock=yes)
+#   @cpu-emulation — vm86/vm86old (legacy x86 emulator)
+#   @debug        — ptrace, kcmp, perf_event_open (Python debuggers if needed
+#                   land in dev-host only)
+#   @module       — kernel module load/unload (covered by ProtectKernelModules)
+#   @mount        — mount/umount/pivot_root
+#   @obsolete     — old/deprecated syscalls
+#   @privileged   — CAP_SYS_ADMIN-style syscalls
+#   @raw-io       — ioperm, iopl (PIO)
+#   @reboot       — reboot, kexec_load
+#   @swap         — swapon/swapoff
+SystemCallFilter=@system-service @audio @resources
+SystemCallFilter=~@clock @cpu-emulation @debug @module @mount @obsolete @privileged @raw-io @reboot @swap
+SystemCallErrorNumber=EPERM
+SystemCallArchitectures=native
+
 # Security hardening — T2529-B1 full sandbox model.
 #
 # NoNewPrivileges=true: prevents the audio engine (or any plugin loaded

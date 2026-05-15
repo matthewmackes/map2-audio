@@ -68,6 +68,13 @@ CPUAffinity=0 1 2 3
 AmbientCapabilities=CAP_SYS_NICE
 CapabilityBoundingSet=CAP_SYS_NICE
 
+# T2529-B3 — seccomp allowlist (same set as backend; libremidi I/O thread
+# needs @audio for ALSA seq + sched_setaffinity from @resources).
+SystemCallFilter=@system-service @audio @resources
+SystemCallFilter=~@clock @cpu-emulation @debug @module @mount @obsolete @privileged @raw-io @reboot @swap
+SystemCallErrorNumber=EPERM
+SystemCallArchitectures=native
+
 # UDS socket cleanup — systemd-tmpfiles is authoritative; this mkdir/chmod
 # pair keeps the unit self-contained.
 ExecStartPre=/bin/mkdir -p /run/map2
