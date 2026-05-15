@@ -82,6 +82,17 @@ export function MaschineProfileWorkbench() {
     }
   }
 
+  // T2522-E-F8 — overwrite the editor buffer with the canonical
+  // starter content for the currently-selected profile. Operator
+  // affordance for "I lost track of my edits, give me a fresh slate".
+  const handleResetDraft = () => {
+    const current = profiles.find((p) => p.id === selectedId)
+    if (current) {
+      setDraftJson(JSON.stringify(current, null, 2))
+      setValidationError(null)
+    }
+  }
+
   const handleValidate = () => {
     try {
       const parsed = JSON.parse(draftJson)
@@ -202,6 +213,7 @@ export function MaschineProfileWorkbench() {
           <div className="maschine-workbench__editor-head">
             <h4 className="maschine-mapping__pane-title">DSL JSON editor</h4>
             <div className="maschine-workbench__editor-actions">
+              <Button kind="ghost" size="sm" onClick={handleResetDraft}>Reset to starter</Button>
               <Button kind="ghost" size="sm" onClick={handleValidate}>Validate</Button>
               <Button kind="primary" size="sm" onClick={handleSaveDraft}>Save draft</Button>
             </div>

@@ -342,9 +342,23 @@ export function MaschineHardwareTwin({
             Live SVG mirror — pads, encoders, group buttons, dual LCDs. Reflects the daemon&apos;s WS state in real time. Hover any control for live identity; click a pad with a block mounted to focus it.
           </p>
         </div>
-        <Tag size="sm" type={status?.connected ? 'green' : 'warm-gray'}>
-          {status?.connected ? 'Live' : 'Disconnected'}
-        </Tag>
+        <div className="maschine-twin__head-tags">
+          <Tag size="sm" type={status?.connected ? 'green' : 'warm-gray'}>
+            {status?.connected ? 'Live' : 'Disconnected'}
+          </Tag>
+          {/* T2522-E-F5 — live BPM next to the connection chip
+              mirrors the Performance header so a user landing on the
+              Twin sees the same tempo context. */}
+          <Tag size="sm" type="cyan">{encoderLabel('tempo', 'BPM —')}</Tag>
+          {/* T2522-E-F5 — jump-link to the deeper Diagnostics tab. */}
+          <a
+            href="/maschine?tab=diagnostics"
+            className="maschine-twin__diag-link"
+            data-testid="maschine-twin-diag-link"
+          >
+            View on Diagnostics →
+          </a>
+        </div>
       </header>
       <div className="maschine-twin__svg-wrap">
         <svg

@@ -60,6 +60,20 @@
   max-width: 70ch;
 }
 
+/* T2522-E-F5 — twin header tag stack (connection + BPM + diag jump). */
+.maschine-twin__head-tags {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 0.5rem;
+}
+
+.maschine-twin__diag-link {
+  color: var(--cds-link-primary);
+  text-decoration: underline;
+  font-size: 0.78rem;
+}
+
 .maschine-twin__svg-wrap {
   display: grid;
   place-items: center;
@@ -222,6 +236,17 @@
 
 .maschine-perf__pad--clickable:active {
   transform: scale(0.98);
+}
+
+/* T2522-E-F3 — motion-reduce opt-out: skip the scale-down feedback
+   on operators with reduced-motion preference. */
+@media (prefers-reduced-motion: reduce) {
+  .maschine-perf__pad {
+    transition: border-color var(--map2-dur-fast, 140ms) ease;
+  }
+  .maschine-perf__pad--clickable:active {
+    transform: none;
+  }
 }
 
 .maschine-perf__pad--selected {
@@ -1559,6 +1584,13 @@
 .maschine-test-suite__result-card--running {
   border-color: var(--cds-support-info);
   animation: maschine-test-pulse 1.5s ease-in-out infinite;
+}
+
+/* T2522-E-F3 — motion-reduce opt-out for the running-card pulse. */
+@media (prefers-reduced-motion: reduce) {
+  .maschine-test-suite__result-card--running {
+    animation: none;
+  }
 }
 
 .maschine-test-suite__input-monitor {
