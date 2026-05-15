@@ -73,7 +73,9 @@ CapabilityBoundingSet=CAP_SYS_NICE
 ExecStartPre=/bin/mkdir -p /run/map2
 ExecStartPre=/bin/chmod 0755 /run/map2
 
-# Hardening — the daemon does not need most of the host filesystem.
+# T2529-B1 — full sandbox model. Controller-host does not need the host
+# filesystem; this is mostly belt-and-suspenders since the daemon binary
+# is tightly scoped.
 ProtectSystem=strict
 ReadWritePaths=/run/map2 /var/log/map2
 ProtectHome=true
@@ -81,9 +83,15 @@ PrivateTmp=true
 NoNewPrivileges=true
 ProtectKernelTunables=true
 ProtectKernelModules=true
+ProtectKernelLogs=true
 ProtectControlGroups=true
-RestrictRealtime=false
+ProtectClock=true
+ProtectHostname=true
+RestrictSUIDSGID=true
 RestrictNamespaces=true
+LockPersonality=true
+RestrictRealtime=false  # libremidi I/O thread needs SCHED_FIFO
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6 AF_NETLINK
 
 [Install]
 WantedBy=multi-user.target

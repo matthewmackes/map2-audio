@@ -130,16 +130,31 @@ IOSchedulingPriority=1
 AmbientCapabilities=CAP_SYS_NICE CAP_NET_RAW
 CapabilityBoundingSet=CAP_SYS_NICE CAP_NET_RAW
 
-# Security hardening — full Protect* set will be tightened further in
-# T2529-B1. NoNewPrivileges is omitted here because RT scheduling via
-# RTKit requires privilege transition; the audio callback thread
-# self-elevates via CAP_SYS_NICE which is already in AmbientCapabilities.
+# Security hardening — T2529-B1 full sandbox model.
+#
+# NoNewPrivileges=true: prevents the audio engine (or any plugin loaded
+# into it) from gaining additional capabilities via setuid/setgid binaries
+# or file capabilities. The JUCE audio callback thread does not need
+# privilege transition — it self-elevates to SCHED_FIFO/80 via the
+# AmbientCapabilities=CAP_SYS_NICE granted below (no RTKit needed). The
+# old (pre-T2529-B1) note that "NoNewPrivileges removed - RT scheduling
+# via RTKit requires new privileges" is obsolete: the audio path runs
+# entirely via JUCE's pthread_setschedparam, not RTKit.
+NoNewPrivileges=true
 ProtectSystem=strict
 ProtectHome=true
 PrivateTmp=true
 ProtectKernelTunables=true
 ProtectKernelModules=true
 ProtectControlGroups=true
+ProtectKernelLogs=true
+ProtectClock=true
+ProtectHostname=true
+RestrictSUIDSGID=true
+RestrictNamespaces=true
+LockPersonality=true
+MemoryDenyWriteExecute=false  # JIT-capable Python + JUCE plugin loading require W^X
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6 AF_NETLINK AF_PACKET
 
 # T2529-A3 — FHS-aligned ReadWritePaths. /run/map2 hosts the controller-host
 # UDS + sonobus-transport UDS; /var/lib/map2 holds persistent state; /var/log/map2

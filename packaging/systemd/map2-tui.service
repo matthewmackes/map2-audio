@@ -26,11 +26,23 @@ StandardOutput=journal
 StandardError=journal
 SyslogIdentifier=map2-tui
 
-# Hardening — TUI doesn't need the operator's home.
+# T2529-B1 — full sandbox model. TUI is the most restrictive: it talks
+# to the backend only via HTTP/WS to localhost:8080, so the network
+# allowlist can drop AF_NETLINK / AF_PACKET entirely.
 ProtectSystem=strict
 ProtectHome=true
 PrivateTmp=true
 NoNewPrivileges=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectKernelLogs=true
+ProtectControlGroups=true
+ProtectClock=true
+ProtectHostname=true
+RestrictSUIDSGID=true
+RestrictNamespaces=true
+LockPersonality=true
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
 ReadWritePaths=/run/map2 /var/log/map2
 
 [Install]

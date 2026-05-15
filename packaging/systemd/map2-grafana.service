@@ -1,5 +1,9 @@
 [Unit]
+# T2529-A3 — Grafana server for the MAP2 platform.
+# T2529-B1 — full sandbox model.
 Description=MAP2 Grafana Server
+Documentation=https://github.com/matthewmackes/map2-audio
+Documentation=file:///opt/map2-audio/docs/install/FHS_LAYOUT.md
 After=network-online.target map2-prometheus.service
 Wants=network-online.target
 
@@ -17,6 +21,23 @@ ExecStart=/usr/sbin/grafana-server \
   cfg:default.paths.provisioning=/etc/map2/grafana/provisioning
 Restart=on-failure
 RestartSec=5
+
+# T2529-B1 — full sandbox model.
+NoNewPrivileges=yes
+PrivateTmp=yes
+ProtectSystem=strict
+ProtectHome=yes
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectKernelLogs=true
+ProtectControlGroups=true
+ProtectClock=true
+ProtectHostname=true
+RestrictSUIDSGID=true
+RestrictNamespaces=true
+LockPersonality=true
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+ReadWritePaths=/var/lib/map2/grafana /var/log/map2/grafana
 
 [Install]
 WantedBy=multi-user.target

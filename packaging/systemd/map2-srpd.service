@@ -1,6 +1,8 @@
 [Unit]
+# T2529-B1 — full sandbox model.
 Description=MAP2 SRP/MSRP Admission Daemon
 Documentation=https://github.com/matthewmackes/map2-audio
+Documentation=file:///opt/map2-audio/docs/install/SECURITY_MODEL.md
 ConditionPathExists=/etc/map2/avb-enabled
 PartOf=map2-avb.target
 After=network-online.target
@@ -13,8 +15,25 @@ EnvironmentFile=-/etc/default/map2-srpd
 ExecStart=/bin/bash -lc '${MAP2_SRPD_BIN:-/usr/sbin/mrpd} ${MAP2_SRPD_ARGS}'
 Restart=on-failure
 RestartSec=5s
+
+# T2529-B1 — full sandbox model. SRP/MSRP daemon is the AVB admission
+# control plane; runs as root because it needs raw socket access on the
+# AVB interface for IEEE 802.1Qat / 802.1AS PDUs.
 NoNewPrivileges=true
 PrivateTmp=true
+ProtectSystem=strict
+ProtectHome=true
+ProtectKernelTunables=true
+ProtectKernelModules=true
+ProtectKernelLogs=true
+ProtectControlGroups=true
+ProtectClock=true
+ProtectHostname=true
+RestrictSUIDSGID=true
+RestrictNamespaces=true
+LockPersonality=true
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6 AF_NETLINK AF_PACKET
+ReadWritePaths=/var/log/map2
 
 [Install]
 WantedBy=map2-avb.target

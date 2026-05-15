@@ -23,14 +23,21 @@ StandardOutput=journal
 StandardError=journal
 SyslogIdentifier=map2-cluster
 
-# Hardening
+# T2529-B1 — full sandbox model.
 PrivateTmp=yes
 NoNewPrivileges=yes
 ProtectSystem=strict
 ProtectHome=yes
 ProtectKernelTunables=true
 ProtectKernelModules=true
+ProtectKernelLogs=true
 ProtectControlGroups=true
+ProtectClock=true
+ProtectHostname=true
+RestrictSUIDSGID=true
+RestrictNamespaces=true
+LockPersonality=true
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
 ReadWritePaths=/var/lib/map2 /var/log/map2 /run/map2
 
 # Resource limits
