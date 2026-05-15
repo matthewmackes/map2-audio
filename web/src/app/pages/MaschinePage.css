@@ -122,6 +122,11 @@
 }
 
 .maschine-twin__lcd-canvas {
+  /* T2522-E-F2 — LCD pixel-palette dark base. Intentionally hardcoded:
+     this hex mimics the physical MK1's LCD substrate so the Hardware
+     Twin SVG mirror reads identically to the device. Carbon tokens
+     wouldn't render the same screen appearance. */
+  /* carbon-allow: lcd-mock-palette */
   background: #0b1020;
 }
 
@@ -219,7 +224,10 @@
   padding: 0;
   cursor: default;
   overflow: hidden;
-  color: #0a0e1a;
+  /* T2522-E-F2 — dark text reads on saturated LED pad background.
+     `text-on-color` is Carbon's canonical token for contrast over
+     vivid colors. */
+  color: var(--cds-text-on-color);
   font: inherit;
   transition:
     transform var(--map2-dur-fast, 140ms) ease,
@@ -347,9 +355,11 @@
 }
 
 .maschine-perf__scene-cell--lit {
-  background: color-mix(in srgb, #33b1ff 22%, var(--cds-layer-02));
-  border-color: #33b1ff;
-  color: #f4f4f4;
+  /* T2522-E-F2 — Carbon support-info (cyan-40) for the lit scene tint
+     + gray-10 (text-inverse) for the high-contrast lit-cell text. */
+  background: color-mix(in srgb, var(--cds-support-info) 22%, var(--cds-layer-02));
+  border-color: var(--cds-support-info);
+  color: var(--cds-text-inverse);
 }
 
 .maschine-perf__scene-letter {
@@ -930,11 +940,16 @@
 .maschine-workbench__lcd-card-body {
   display: grid;
   gap: 0.25rem;
+  /* T2522-E-F2 — LCD pixel-palette (same base as the Hardware Twin
+     canvas). These hexes intentionally mimic the physical MK1 LCD
+     so the workbench preview reads identically to the device. */
+  /* carbon-allow: lcd-mock-palette */
   background: #0b1020;
   padding: 0.4rem;
   border-radius: 3px;
   font-family: var(--cds-code-02-font-family, monospace);
   font-size: 0.7rem;
+  /* carbon-allow: lcd-mock-palette */
   color: #94a3b8;
   min-height: 5rem;
 }
@@ -946,7 +961,9 @@
 
 .maschine-workbench__lcd-band--top,
 .maschine-workbench__lcd-band--bottom {
+  /* carbon-allow: lcd-mock-palette */
   background: rgba(51, 177, 255, 0.12);
+  /* carbon-allow: lcd-mock-palette */
   color: #cbd5f5;
   font-size: 0.65rem;
   text-transform: uppercase;
@@ -954,7 +971,9 @@
 }
 
 .maschine-workbench__lcd-band--canvas {
+  /* carbon-allow: lcd-mock-palette */
   background: rgba(66, 190, 101, 0.08);
+  /* carbon-allow: lcd-mock-palette */
   color: #42be65;
   font-size: 0.7rem;
   flex: 1;
@@ -1261,8 +1280,9 @@
 .maschine-seq__scene-cell--bound {
   cursor: pointer;
   color: var(--cds-text-primary);
-  background: color-mix(in srgb, #33b1ff 18%, var(--cds-layer-02));
-  border-color: #33b1ff;
+  /* T2522-E-F2 — Carbon support-info (cyan-40) for the bound-cell tint. */
+  background: color-mix(in srgb, var(--cds-support-info) 18%, var(--cds-layer-02));
+  border-color: var(--cds-support-info);
 }
 
 .maschine-seq__scene-cell--bound:hover {
