@@ -41,6 +41,16 @@ def test_typecheck_runs_snapshot_codegen_check(scripts: dict[str, str]) -> None:
     )
 
 
+def test_typecheck_runs_sonobus_events_ws_codegen_check(scripts: dict[str, str]) -> None:
+    """Run-14c cycle 1: sonobus events WS codegen drift check must run before tsc."""
+    assert "verify:sonobus-events-ws-types" in scripts["typecheck"], (
+        "npm run typecheck must invoke `verify:sonobus-events-ws-types` "
+        "(sonobus events WS codegen drift gate) — drift here means "
+        "sonobusEventsWsFrame.generated.ts silently desyncs from the "
+        "canonical Pydantic schema"
+    )
+
+
 def test_typecheck_runs_meter_ws_codegen_check(scripts: dict[str, str]) -> None:
     """Run-14b pick #1: meter-WS codegen drift check must run before tsc."""
     assert "verify:meter-ws-types" in scripts["typecheck"], (
