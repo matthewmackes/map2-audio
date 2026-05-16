@@ -126,8 +126,54 @@ def ensure_build_prerequisites() -> None:
         raise SystemExit("Missing frontend build tools. Install web dependencies before running npm run build.")
 
 
+# Run-14c cycle 7 — codegen drift preflight.
+# Every Pydantic→TS codegen drift check the typecheck gate runs is
+# repeated here so a build that bypasses `npm run typecheck` (e.g.
+# direct `python3 scripts/build_web_dist_atomic.py`, or future
+# CI matrix paths) still catches drift. Drift here = nonzero exit
+# from the build → no deploy → operator-actionable error.
+CODEGEN_DRIFT_CHECKS: tuple[tuple[str, str], ...] = (
+    ("snapshots.generated.ts (T2455)",
+     "generate_typescript_contracts.py"),
+    ("meterWsFrame.generated.ts (run-14b cycle 2)",
+     "generate_meter_ws_types.py"),
+    ("sonobusEventsWsFrame.generated.ts (run-14c cycle 1)",
+     "generate_sonobus_events_ws_types.py"),
+    ("midiTrafficWsFrame.generated.ts (run-14c cycle 2)",
+     "generate_midi_traffic_ws_types.py"),
+)
+
+
+def run_codegen_drift_preflight() -> None:
+    """Run every Pydantic→TS codegen --check before tsc. A drifted
+    file would compound badly in tsc + vite output; better to fail
+    fast with the canonical 'rerun X' message."""
+    scripts_dir = ROOT_DIR / "scripts"
+    print("[build_web_dist_atomic] codegen drift preflight…")
+    for label, script_name in CODEGEN_DRIFT_CHECKS:
+        script_path = scripts_dir / script_name
+        if not script_path.is_file():
+            print(f"[build_web_dist_atomic] skipping {label}: {script_path} not found")
+            continue
+        result = subprocess.run(
+            [sys.executable, str(script_path), "--check"],
+            cwd=str(ROOT_DIR),
+            capture_output=True,
+            text=True,
+        )
+        if result.returncode != 0:
+            sys.stderr.write(result.stdout)
+            sys.stderr.write(result.stderr)
+            raise SystemExit(
+                f"[build_web_dist_atomic] FAIL: codegen drift in {label}. "
+                f"Run `python3 scripts/{script_name}` to refresh, then retry the build."
+            )
+        print(f"[build_web_dist_atomic]   ✓ {label}")
+
+
 def main() -> int:
     ensure_build_prerequisites()
+    run_codegen_drift_preflight()
 
     build_id = uuid.uuid4().hex[:8]
     staged_dist = WEB_DIR / f".dist-staging-{build_id}"
