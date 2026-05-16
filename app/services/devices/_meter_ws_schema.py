@@ -94,7 +94,15 @@ class MeterSnapshotPayload(BaseModel):
 
 
 class DeviceMeterRow(BaseModel):
-    """One device's slot in a registry frame's `data.devices[]` array."""
+    """One device's slot in a registry frame's `data.devices[]` array.
+
+    Run-14b cycle 1 (2026-05-16): `snapshot` is Optional. The cluster
+    registry projection emits rows without an inline snapshot when
+    `include_snapshot=false` (the default for the non-snapshot fan-out
+    path); the WS stream that feeds the diagnostics page DOES include
+    snapshots, so consumers that need the per-channel peak values
+    request the snapshot variant explicitly.
+    """
 
     device_id: str = Field(..., description="Stable device identifier (kebab-case).")
     input_channels: int = Field(..., ge=0, description="Channel count for inputs.")
@@ -107,9 +115,12 @@ class DeviceMeterRow(BaseModel):
             "yet received an engine tap."
         ),
     )
-    snapshot: MeterSnapshotPayload = Field(
-        default_factory=MeterSnapshotPayload,
-        description="Latest per-channel peak measurement.",
+    snapshot: Optional[MeterSnapshotPayload] = Field(
+        default=None,
+        description=(
+            "Latest per-channel peak measurement. None when the consumer "
+            "didn't request inline snapshots (cluster registry default)."
+        ),
     )
 
 
@@ -141,7 +152,14 @@ class DeviceMeterRegistryFrame(BaseModel):
 
 
 class ClusterPeerSlice(BaseModel):
-    """One peer's contribution to a cluster registry frame."""
+    """One peer's contribution to a cluster registry frame.
+
+    Run-14b cycle 1 (2026-05-16): added `health` to mirror the field
+    `ClusterDeviceRegistryPeer` carries on the REST projection. With
+    that field in place the cluster WS handler can drop the
+    dict-passthrough and route everything through strict Pydantic
+    validation.
+    """
 
     node_id: str = Field(..., description="Discovered peer node ID.")
     hostname: Optional[str] = Field(
@@ -149,6 +167,15 @@ class ClusterPeerSlice(BaseModel):
         description="Display hostname; None when discovery hasn't resolved it yet.",
     )
     devices: list[DeviceMeterRow] = Field(default_factory=list)
+    health: str = Field(
+        default="offline",
+        description=(
+            "Sourced from NodeHealthService and baked in so the frontend "
+            "doesn't need a second fetch. Mirrors the REST projection's "
+            "ClusterDeviceRegistryPeer.health field. One of: ok / warn / "
+            "critical / offline."
+        ),
+    )
     fetch_age_seconds: Optional[float] = Field(
         default=None,
         description=(

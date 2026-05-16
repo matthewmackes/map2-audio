@@ -38,6 +38,7 @@ from app.services.devices import (
 from app.services.devices._meter_source import get_registry
 from app.services.devices._meter_ws_schema import (
     CLUSTER_REGISTRY_FRAME_TYPE,
+    ClusterMeterRegistryData,
     ClusterMeterRegistryFrame,
     ClusterPeerSlice,
     DeviceMeterRegistryData,
@@ -645,17 +646,12 @@ async def stream_cluster_peak_meters(websocket: WebSocket) -> None:
     include_local = node_filter is None or "local" in node_filter
 
     async def _snapshot_frame() -> dict:
-        # Run-13i pick #1 follow-on (2026-05-16): wrap the cluster
-        # frame construction in build_cluster_registry_frame() so the
-        # canonical envelope schema (`type` + `schema_version`) lives
-        # in exactly one place. The peer-side data still flows through
-        # the existing get_cluster_peak_meters_registry projection
-        # (which itself pre-dates the schema module); only the outer
-        # envelope is canonicalized here. A future cycle can lift the
-        # inner peer data through ClusterPeerSlice as well — for now
-        # we keep the dict pass-through to preserve the rich peer
-        # fields (health, hostname-fallback, etc.) the existing
-        # projection emits that aren't yet on the slice model.
+        # Run-14b cycle 1 (2026-05-16): cluster frame now flows through
+        # strict ClusterMeterRegistryData validation end-to-end. The
+        # ClusterPeerSlice model picked up the `health` field this
+        # cycle so the projection's per-peer dicts validate cleanly.
+        # No more dict-passthrough; both the local and cluster paths
+        # share the canonical Pydantic source of truth.
         try:
             payload = await get_cluster_peak_meters_registry(
                 include_snapshot=include_snapshot,
@@ -677,20 +673,13 @@ async def stream_cluster_peak_meters(websocket: WebSocket) -> None:
                     for node_id, err in data.get("errors", {}).items()
                     if node_id in node_filter or node_id == "@local"
                 }
-            # Build the envelope using the canonical type+version
-            # constants from the schema module. We pass the inner data
-            # through as a plain dict (instead of strict ClusterMeterRegistryData
-            # model construction) so the projection's extra peer fields
-            # — health, hostname-fallback, etc. — survive unchanged.
-            # The envelope-level invariants (`type`, `schema_version`)
-            # are pinned via REGISTRY_FRAME_TYPE / SCHEMA_VERSION;
-            # tests/test_device_meters_ws_schema.py validates the
-            # full shape against the canonical Pydantic models.
-            return {
-                "type": CLUSTER_REGISTRY_FRAME_TYPE,
-                "schema_version": SCHEMA_VERSION,
-                "data": data,
-            }
+            # Strict validation through ClusterMeterRegistryData. If the
+            # projection ever emits a field the slice model doesn't
+            # know about, we fail loud here instead of silently
+            # passing it through.
+            return ClusterMeterRegistryFrame(
+                data=ClusterMeterRegistryData.model_validate(data),
+            ).model_dump()
         except Exception as exc:  # pragma: no cover — defensive
             logger.debug(
                 "cluster device meters ws: snapshot failed: %s", exc

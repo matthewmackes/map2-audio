@@ -152,6 +152,34 @@ def test_device_meter_row_input_channels_must_be_non_negative() -> None:
         )
 
 
+def test_device_meter_row_snapshot_optional_for_cluster_registry_default() -> None:
+    """Run-14b cycle 1: cluster registry projection emits rows without
+    a snapshot when include_snapshot=False (the default fan-out path)."""
+    row = DeviceMeterRow(
+        device_id="test",
+        input_channels=2,
+        output_channels=2,
+        has_engine_source=True,
+        # snapshot omitted
+    )
+    assert row.snapshot is None
+
+
+def test_cluster_peer_slice_health_field_carries_through() -> None:
+    """Run-14b cycle 1: ClusterPeerSlice gained `health` so the cluster
+    WS handler can validate the projection's per-peer dicts strictly."""
+    slice_ = ClusterPeerSlice(
+        node_id="peer-A",
+        hostname="audio-A",
+        devices=[],
+        health="ok",
+    )
+    assert slice_.health == "ok"
+    # Default is offline (matches the REST projection).
+    default_slice = ClusterPeerSlice(node_id="peer-B")
+    assert default_slice.health == "offline"
+
+
 def test_device_meter_registry_frame_locks_topic_and_version() -> None:
     """Constructing a frame without overriding `type` / `schema_version`
     must produce the canonical values."""
