@@ -48,7 +48,8 @@ const RECONNECT_MAX_MS = 5_000
 const entriesByUrl = new Map<string, SubscriptionEntry>()
 
 // ---------------------------------------------------------------------------
-// Document-visibility back-pressure (run-13i pick #2 of the run-13i handoff)
+// Document-visibility back-pressure (run-13i pick #2 of the run-13i handoff;
+// extracted to a shared hook in run-14c cycle 3)
 //
 // When the document becomes hidden (the operator switches to a different
 // browser tab, minimizes the window, locks the screen), the store closes
@@ -58,37 +59,23 @@ const entriesByUrl = new Map<string, SubscriptionEntry>()
 // path. On `visibilitychange` → visible, every entry with at least one
 // listener reconnects (reset backoff).
 //
-// Why we want this:
-// - 30 fps device-meter streams + 5 fps cluster streams produce real
-//   bandwidth even when the operator isn't looking at the page
-// - Multi-monitor setups commonly leave MAP2 in a background tab while
-//   the operator runs their DAW in the foreground
-// - Mobile / tablet operator tools backgrounding the page should not
-//   continue to stream
+// The visibility tracking is now owned by
+// `useDocumentVisibility.subscribeDocumentVisibility()`, a shared
+// non-React subscription. This module subscribes once at first
+// connect-attempt; the unsubscribe handle is held forever (the
+// listener load is constant once installed).
 // ---------------------------------------------------------------------------
 
-let _visibilityListenerInstalled = false
+import {
+  __resetDocumentVisibilityForTests as __resetVisHelperForTests,
+  __setDocumentVisibilityForTests as __setVisHelperForTests,
+  subscribeDocumentVisibility,
+} from './useDocumentVisibility'
+
+let _visibilitySubscriptionInstalled = false
 let _isDocumentHidden = false
 
-function isDocumentHidden(): boolean {
-  if (typeof document === 'undefined') return false
-  return document.visibilityState === 'hidden'
-}
-
-function ensureVisibilityListener(): void {
-  if (_visibilityListenerInstalled) return
-  if (typeof document === 'undefined') return
-  document.addEventListener('visibilitychange', onVisibilityChange)
-  _visibilityListenerInstalled = true
-  // Don't clobber a value the test helper has already set. We only
-  // sample document.visibilityState if we're still at the default.
-  if (!_isDocumentHidden) {
-    _isDocumentHidden = isDocumentHidden()
-  }
-}
-
-function onVisibilityChange(): void {
-  const nowHidden = isDocumentHidden()
+function onVisibilityChange(nowHidden: boolean): void {
   if (nowHidden === _isDocumentHidden) return
   _isDocumentHidden = nowHidden
   if (nowHidden) {
@@ -108,6 +95,14 @@ function onVisibilityChange(): void {
       }
     }
   }
+}
+
+function ensureVisibilityListener(): void {
+  if (_visibilitySubscriptionInstalled) return
+  _visibilitySubscriptionInstalled = true
+  // subscribeDocumentVisibility fires once on subscribe so we get the
+  // initial state without an extra read.
+  subscribeDocumentVisibility(onVisibilityChange)
 }
 
 function emitState(entry: SubscriptionEntry, next: WsSubscriberState): void {
@@ -289,39 +284,49 @@ export function subscribe(
   }
 }
 
-/** Test-only: reset the entire store. Closes every entry and drops
- * all listeners. Production code should never call this. */
+/** Test-only: reset the entire store. Closes every entry, drops all
+ * listeners, and also resets the shared useDocumentVisibility helper
+ * so a fresh test doesn't inherit a previous test's hidden state.
+ * Production code should never call this. */
 export function __resetForTests(): void {
   for (const entry of entriesByUrl.values()) {
     entry.cancelled = true
     teardown(entry, { reset: true })
   }
   entriesByUrl.clear()
-  if (_visibilityListenerInstalled && typeof document !== 'undefined') {
-    document.removeEventListener('visibilitychange', onVisibilityChange)
-  }
-  _visibilityListenerInstalled = false
   _isDocumentHidden = false
+  _visibilitySubscriptionInstalled = false
+  // Reset the shared visibility helper too so the next subscribe()
+  // doesn't pick up a previous test's hidden flag via the helper's
+  // initial-state fire-on-subscribe semantics.
+  __resetVisHelperForTests()
 }
 
-/** Test-only: simulate a visibilitychange event without touching the
- * real document.visibilityState. JSDOM doesn't expose a writable
- * visibilityState, so tests force the path through this hook. */
+/** Test-only: simulate a visibilitychange event. Forwards to the
+ * extracted hook's helper so both modules see the transition. */
 export function __simulateVisibilityForTests(hidden: boolean): void {
-  // Mimic the real onVisibilityChange path: only fire the transition
-  // when the value actually changes.
-  if (hidden === _isDocumentHidden) return
+  // The hook's helper fires every registered listener (including the
+  // wsSubscriptionStore's `onVisibilityChange` if it's subscribed).
+  // If the store hasn't subscribed yet (no prior `subscribe()` call),
+  // we still update the local cached flag so `connect()`'s
+  // `if (_isDocumentHidden)` guard reads the right value.
+  __setVisHelperForTests(hidden)
   _isDocumentHidden = hidden
-  if (hidden) {
-    for (const entry of entriesByUrl.values()) {
-      if (entry.listeners.size > 0) teardown(entry, { reset: true })
-    }
-  } else {
-    for (const entry of entriesByUrl.values()) {
-      if (entry.listeners.size > 0 && !entry.socket) {
-        entry.cancelled = false
-        entry.reconnectDelayMs = RECONNECT_MIN_MS
-        connect(entry)
+  // If the subscription hasn't been installed, the hook's listener
+  // fanout didn't reach us — apply the same teardown/reopen logic
+  // manually so tests work even on the first transition.
+  if (!_visibilitySubscriptionInstalled) {
+    if (hidden) {
+      for (const entry of entriesByUrl.values()) {
+        if (entry.listeners.size > 0) teardown(entry, { reset: true })
+      }
+    } else {
+      for (const entry of entriesByUrl.values()) {
+        if (entry.listeners.size > 0 && !entry.socket) {
+          entry.cancelled = false
+          entry.reconnectDelayMs = RECONNECT_MIN_MS
+          connect(entry)
+        }
       }
     }
   }
