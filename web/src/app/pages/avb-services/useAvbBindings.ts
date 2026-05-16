@@ -10,21 +10,39 @@
 
 import { useQuery } from '@tanstack/react-query'
 
+import type {
+  AvbBindingConsumerType,
+  AvbBindingScope,
+  AvbBindingSourceType,
+  AvbBindingTargetType,
+  AvbSrpClass,
+} from '../../types/avbBindingTypes'
+
+// Re-export the narrowed enum types so existing consumers can import
+// them from `useAvbBindings` without learning about the new types module.
+export type {
+  AvbBindingConsumerType,
+  AvbBindingScope,
+  AvbBindingSourceType,
+  AvbBindingTargetType,
+  AvbSrpClass,
+} from '../../types/avbBindingTypes'
+
 export interface AvbBindingRecord {
   binding_id: string
-  consumer_type: string
+  consumer_type: AvbBindingConsumerType
   consumer_id: string
   consumer_label: string
-  source_type: string
+  source_type: AvbBindingSourceType
   source_descriptor: Record<string, unknown>
-  target_type: string
+  target_type: AvbBindingTargetType
   target_descriptor: Record<string, unknown>
   stream_id: string | null
   stream_format: string | null
-  srp_class: 'A' | 'B' | null
+  srp_class: AvbSrpClass | null
   talker_node_id: string | null
   listener_node_id: string | null
-  scope: 'global' | 'snapshot' | 'node' | 'cluster'
+  scope: AvbBindingScope
   scope_id: string | null
   enabled: boolean
   source: string
